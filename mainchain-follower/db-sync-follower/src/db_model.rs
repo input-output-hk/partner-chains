@@ -527,3 +527,36 @@ pub(crate) async fn index_exists(pool: &Pool<Postgres>, index_name: &str) -> boo
 		.map(|rows| rows.len() == 1)
 		.unwrap()
 }
+
+#[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
+pub(crate) struct ReleasedTokens(pub Option<StakeDelegation>);
+
+#[cfg(feature = "native-token")]
+pub(crate) async fn get_native_token_releases(
+	pool: &Pool<Postgres>,
+	after_slot: SlotNumber,
+	to_slot: SlotNumber,
+	native_token_policy: PolicyId,
+	illiquid_supply_address: Address,
+) -> Result<ReleasedTokens, SqlxError> {
+	let query = sqlx::query_as::<_, ReleasedTokens>(
+		"
+SELECT
+    SUM(ma_tx_out.quantity)
+FROM tx_out
+LEFT JOIN ma_tx_out    ON ma_tx_out.tx_out_id = tx_out.id
+LEFT JOIN multi_asset  ON multi_asset.id = ma_tx_out.ident
+INNER JOIN tx          ON tx_out.tx_id = tx.id
+INNER JOIN block       ON tx.block_id = block.id
+WHERE address = $1
+AND multi_asset.policy = $2
+AND $3 < block.slot_no AND block.slot_no <= $4;
+    ",
+	)
+	.bind(&illiquid_supply_address.0)
+	.bind(native_token_policy.0)
+	.bind(after_slot)
+	.bind(to_slot);
+
+	Ok(query.fetch_one(pool).await?)
+}

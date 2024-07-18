@@ -187,9 +187,7 @@ fn sidechain_main_cli_version_prompt(version: String) -> String {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::config::config_fields::{
-		GOVERNANCE_AUTHORITY, KUPO_PORT, KUPO_PROTOCOL, OGMIOS_PORT,
-	};
+	use crate::config::config_fields::{GOVERNANCE_AUTHORITY, KUPO_PROTOCOL};
 	use crate::prepare_configuration::prepare_cardano_params::PREPROD_CARDANO_PARAMS;
 	use crate::prepare_configuration::tests::save_to_existing_file;
 	use crate::tests::MockIO;
