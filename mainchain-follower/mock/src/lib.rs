@@ -5,6 +5,8 @@ use std::sync::Arc;
 pub mod block;
 #[cfg(feature = "candidate-source")]
 pub mod candidate;
+#[cfg(feature = "native-token")]
+pub mod native_token;
 
 #[allow(unused)]
 pub(crate) struct UnimplementedMocks;

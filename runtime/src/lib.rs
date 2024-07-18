@@ -16,6 +16,8 @@ use authority_selection_inherents::filter_invalid_candidates::{
 use authority_selection_inherents::select_authorities::select_authorities;
 use chain_params::SidechainParams;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
+use frame_support::traits::fungible::Balanced;
+use frame_support::traits::tokens::Precision;
 use frame_support::BoundedVec;
 pub use frame_support::{
 	construct_runtime, parameter_types,
@@ -30,6 +32,7 @@ pub use frame_support::{
 	PalletId, StorageValue,
 };
 pub use frame_system::Call as SystemCall;
+use hex_literal::hex;
 use opaque::SessionKeys;
 pub use pallet_balances::Call as BalancesCall;
 use pallet_grandpa::AuthorityId as GrandpaId;
@@ -38,8 +41,8 @@ pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use session_manager::ValidatorManagementSessionManager;
 use sidechain_domain::{
-	MainchainPublicKey, PermissionedCandidateData, RegistrationData, ScEpochNumber, ScSlotNumber,
-	StakeDelegation,
+	MainchainPublicKey, NativeTokenAmount, PermissionedCandidateData, RegistrationData,
+	ScEpochNumber, ScSlotNumber, StakeDelegation,
 };
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -47,6 +50,7 @@ use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_partner_chains_session::CurrentSessionIndex;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+use sp_runtime::DispatchResult;
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
@@ -317,6 +321,31 @@ impl frame_system::Config for Runtime {
 	type PostTransactions = ();
 }
 
+pub struct TokenTransferHandler;
+
+impl pallet_native_token_management::TokenTransferHandler for TokenTransferHandler {
+	fn handle_token_transfer(token_amount: NativeTokenAmount) -> DispatchResult {
+		// Mint the "transfered" tokens into a dummy address.
+		// This is done for visibility in tests only.
+		// Despite using the `Balances` pallet to do the transfer here, the account balance
+		// is stored (and can be observed) in the `System` pallet's storage.
+		let _ = Balances::deposit(
+			&AccountId::from(hex!(
+				"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			)),
+			token_amount.0.into(),
+			Precision::Exact,
+		)?;
+		log::info!("💸 Registered transfer of {} native tokens", token_amount.0);
+		Ok(())
+	}
+}
+
+impl pallet_native_token_management::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type TokenTransferHandler = TokenTransferHandler;
+}
+
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
@@ -484,6 +513,7 @@ construct_runtime!(
 		BlockRewards: pallet_block_rewards,
 		// The order matters!! Session pallet needs to come last for correct initialization order
 		Session: pallet_partner_chains_session,
+		NativeTokenManagement: pallet_native_token_management,
 	}
 );
 
@@ -836,6 +866,12 @@ impl_runtime_apis! {
 		}
 		fn validate_permissioned_candidate_data(candidate: PermissionedCandidateData) -> Option<PermissionedCandidateDataError> {
 			validate_permissioned_candidate_data::<CrossChainPublic>(candidate).err()
+		}
+	}
+
+	impl sp_native_token_management::NativeTokenManagementApi<Block> for Runtime {
+		fn get_main_chain_scripts() -> sp_native_token_management::MainChainScripts {
+			NativeTokenManagement::get_main_chain_scripts()
 		}
 	}
 }

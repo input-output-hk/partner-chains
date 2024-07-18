@@ -17,7 +17,7 @@ serde_json = { workspace = true }
 sidechain-domain = { workspace = true }
 
 [features]
-default = [ "std", "block-source", "candidate-source" ]
+default = [ "std", "block-source", "candidate-source", "native-token" ]
 std = [
 	"serde_json/std",
 	"sidechain-domain/std",
@@ -27,3 +27,4 @@ std = [
 ]
 block-source = ["main-chain-follower-api/block-source"]
 candidate-source = ["main-chain-follower-api/candidate-source"]
+native-token = ["main-chain-follower-api/native-token"]

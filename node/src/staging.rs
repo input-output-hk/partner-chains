@@ -2,10 +2,11 @@ use crate::chain_spec::get_account_id_from_seed;
 use crate::chain_spec::*;
 use chain_params::SidechainParams;
 use sc_service::ChainType;
-use sidechain_domain::{MainchainAddressHash, UtxoId};
+use sidechain_domain::*;
 use sidechain_runtime::{
-	AccountId, AuraConfig, BalancesConfig, GrandpaConfig, RuntimeGenesisConfig,
-	SessionCommitteeManagementConfig, SessionConfig, SidechainConfig, SudoConfig, SystemConfig,
+	AccountId, AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig,
+	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
+	SudoConfig, SystemConfig,
 };
 use sp_core::bytes::from_hex;
 use sp_core::{ed25519, sr25519};
@@ -163,6 +164,18 @@ pub fn staging_genesis(
 				.map(|keys| (keys.cross_chain, keys.session))
 				.collect(),
 			main_chain_scripts: read_mainchain_scripts_from_env()?,
+		},
+		native_token_management: NativeTokenManagementConfig {
+			main_chain_scripts: sp_native_token_management::MainChainScripts {
+				native_token_policy: from_var::<PolicyId>("PARTNER_CHAIN_NATIVE_TOKEN_POLICY_ID")?,
+				native_token_asset_name: from_var::<AssetName>(
+					"PARTNER_CHAIN_NATIVE_TOKEN_ASSET_NAME",
+				)?,
+				illiquid_supply_address: from_var::<MainchainAddress>(
+					"PARTNER_CHAIN_ILLIQUID_SUPPLY_VALIDATOR_ADDRESS",
+				)?,
+			},
+			..Default::default()
 		},
 	};
 

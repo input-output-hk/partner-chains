@@ -1,0 +1,29 @@
+[package]
+name = "pallet-native-token-management"
+version = "0.1.0"
+edition = "2021"
+description = "Pallet responsible for handling changes to the illiquid supply of the native token on main chain."
+
+[dependencies]
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+log = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+sp-native-token-management = { workspace = true, features = ["serde"] }
+sidechain-domain = { workspace = true }
+
+[dev-dependencies]
+sp-io = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "frame-support/std",
+    "frame-system/std",
+    "log/std",
+    "scale-info/std",
+    "parity-scale-codec/std",
+    "scale-info/std",
+    "sp-native-token-management/std"
+]

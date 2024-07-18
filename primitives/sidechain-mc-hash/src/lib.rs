@@ -13,7 +13,7 @@ use std::{error::Error, ops::Deref};
 mod test;
 
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"scmchash";
-const MC_HASH_DIGEST_ID: [u8; 4] = *b"mcsh";
+pub const MC_HASH_DIGEST_ID: [u8; 4] = *b"mcsh";
 
 #[derive(Debug)]
 pub struct McHashInherentDataProvider {
@@ -118,6 +118,10 @@ impl McHashInherentDataProvider {
 
 	pub fn mc_block(&self) -> McBlockNumber {
 		self.mc_block.number
+	}
+
+	pub fn mc_hash(&self) -> McBlockHash {
+		self.mc_block.hash.clone()
 	}
 }
 

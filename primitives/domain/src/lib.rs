@@ -57,6 +57,23 @@ impl StakeDelegation {
 	}
 }
 
+#[derive(
+	Default,
+	Clone,
+	Copy,
+	Debug,
+	Encode,
+	Decode,
+	TypeInfo,
+	ToDatum,
+	PartialEq,
+	Eq,
+	From,
+	MaxEncodedLen,
+)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub struct NativeTokenAmount(pub u64);
+
 /// A main chain block number. In range [0, 2^31-1].
 #[derive(
 	Default,
@@ -162,6 +179,12 @@ const POLICY_ID_LEN: usize = 28;
 #[derive(Clone, Default, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
 #[byte_string(debug, decode_hex, hex_serialize, hex_deserialize)]
 pub struct PolicyId(pub [u8; POLICY_ID_LEN]);
+
+pub const MAX_ASSET_NAME_LEN: u32 = 32;
+
+#[derive(Clone, Default, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
+pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
 
 const MAINCHAIN_PUBLIC_KEY_LEN: usize = 32;
 
@@ -389,7 +412,7 @@ impl TryFrom<Vec<u8>> for McTxHash {
 	}
 }
 
-#[derive(Default, Clone, Decode, Encode, PartialEq, Eq, TypeInfo, ToDatum, MaxEncodedLen)]
+#[derive(Default, Clone, Decode, Encode, PartialEq, Eq, TypeInfo, ToDatum, MaxEncodedLen, Hash)]
 #[byte_string(debug, decode_hex, hex_serialize, hex_deserialize)]
 pub struct McBlockHash(pub [u8; 32]);
 

@@ -5668,6 +5668,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-native-token-management"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sidechain-domain",
+ "sp-io",
+ "sp-native-token-management",
+]
+
+[[package]]
 name = "pallet-partner-chains-session"
 version = "1.0.0"
 source = "git+https://github.com/input-output-hk/polkadot-sdk.git?tag=partnerchains-stable2407#09f9af33504a159f8b7c71860032ae577e1b94ff"
@@ -6098,6 +6112,7 @@ dependencies = [
  "sp-inherents",
  "sp-io",
  "sp-keyring",
+ "sp-native-token-management",
  "sp-runtime",
  "sp-session-validator-management",
  "sp-session-validator-management-query",
@@ -9016,6 +9031,7 @@ dependencies = [
  "pallet-balances",
  "pallet-block-rewards",
  "pallet-grandpa",
+ "pallet-native-token-management",
  "pallet-partner-chains-session",
  "pallet-session-validator-management",
  "pallet-session-validator-management-benchmarking",
@@ -9043,6 +9059,7 @@ dependencies = [
  "sp-inherents",
  "sp-io",
  "sp-keyring",
+ "sp-native-token-management",
  "sp-offchain",
  "sp-partner-chains-session",
  "sp-runtime",
@@ -9589,6 +9606,25 @@ dependencies = [
  "scale-info",
  "sp-api",
  "sp-application-crypto",
+]
+
+[[package]]
+name = "sp-native-token-management"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "main-chain-follower-api",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sidechain-domain",
+ "sidechain-mc-hash",
+ "sp-api",
+ "sp-blockchain",
+ "sp-inherents",
+ "sp-runtime",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]
