@@ -1,0 +1,10 @@
+./../target/release/partner-chains-node purge-chain --base-path /tmp/alice --chain local -y
+./../target/release/partner-chains-node purge-chain --base-path /tmp/bob --chain local -y
+./../target/release/partner-chains-node purge-chain --base-path /tmp/charlie --chain local -y
+./../target/release/partner-chains-node purge-chain --base-path /tmp/dave --chain local -y
+./../target/release/partner-chains-node purge-chain --base-path /tmp/eve --chain local -y
+./../target/debug/partner-chains-node purge-chain --base-path /tmp/alice --chain local -y
+./../target/debug/partner-chains-node purge-chain --base-path /tmp/bob --chain local -y
+./../target/debug/partner-chains-node purge-chain --base-path /tmp/charlie --chain local -y
+./../target/debug/partner-chains-node purge-chain --base-path /tmp/dave --chain local -y
+./../target/debug/partner-chains-node purge-chain --base-path /tmp/eve --chain local -y

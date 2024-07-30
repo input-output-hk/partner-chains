@@ -1,0 +1,35 @@
+[package]
+name = "selection"
+version = "0.1.0"
+description = "Selection logic for sidechain validators"
+edition = "2021"
+publish = false
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+sp-std = { workspace = true }
+sp-core = { workspace = true }
+rand_chacha = { workspace = true }
+rand = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+sidechain-domain = { workspace = true }
+
+[dev-dependencies]
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+quickcheck = { workspace = true }
+quickcheck_macros = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"sidechain-domain/std",
+    "sp-std/std",
+    "sp-core/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+    "rand/std"
+]

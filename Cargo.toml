@@ -1,0 +1,188 @@
+[workspace]
+members = [
+    "cli/commands",
+    "node",
+	"pallets/block-rewards",
+	"pallets/sidechain",
+	"pallets/sidechain/rpc",
+    "pallets/session-validator-management",
+    "pallets/session-validator-management/benchmarking",
+	"pallets/session-validator-management/rpc",
+    "primitives/block-rewards",
+	"primitives/chain-params",
+    "primitives/domain",
+    "primitives/epoch-derivation",
+    "primitives/mock-types",
+    "primitives/selection",
+	"primitives/sidechain-block-search",
+    "primitives/sidechain-slots",
+    "primitives/authority-selection-inherents",
+	"mainchain-follower/main-chain-follower-api",
+	"mainchain-follower/main-chain-follower-cli",
+    "mainchain-follower/db-sync-follower",
+	"mainchain-follower/mock",
+	"utils/byte-string-derivation",
+	"utils/plutus",
+	"utils/plutus/plutus-datum-derive",
+    "runtime",
+    "utils/time-source",
+    "primitives/sidechain-mc-hash",
+    "primitives/session-validator-management",
+    "primitives/session-manager",
+    "primitives/sidechain",
+	"partner-chains-cli"
+]
+resolver = "2"
+
+[profile.release]
+panic = "unwind"
+
+[profile.production]
+inherits = "release"
+
+# Sacrifice compile speed for execution speed by using optimization flags:
+
+# https://doc.rust-lang.org/rustc/linker-plugin-lto.html
+lto = "fat"
+# https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
+codegen-units = 1
+
+[workspace.dependencies]
+anyhow = "1.0.75"
+async-trait = "0.1.68"
+assert_cmd = "2.0.12"
+clap = { version = "4.4.18", features = ["derive"] }
+ed25519-zebra = { version = "4.0.3" }
+ed25519 = { version = "2.2.2" }
+figment = { version = "0.10.10", features=["env","test"]}
+futures = { version = "0.3.30", features = ["thread-pool"]}
+hex = { version = "0.4.3", features = ["alloc"], default-features = false }
+hex-literal = "0.4.1"
+itertools = "0.12.1"
+const-decoder = "0.3.0"
+jsonrpsee = { version = "0.23.2", features = ["client-core", "server", "macros"] }
+libp2p-identity = "0.2.8"
+log = { version = "0.4.17", default-features = false }
+minicbor = { version = "0.20.0", features = ["alloc"] }
+num-bigint = { version = "0.4.3", default-features = false }
+num-traits = { version = "0.2.8", default-features = false }
+parity-scale-codec = { package = "parity-scale-codec", version = "3.2.2", default-features = false, features = ["derive", "max-encoded-len"] }
+quickcheck = { version = "1.0.3" }
+proptest = { version = "1.2.0" }
+quickcheck_macros = { version = "1" }
+quote = "1.0"
+rand_chacha = { version = "0.3.1", default-features = false }
+rand = { version = "0.8.5", default-features = false }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive"] }
+secp256k1 = { version = "0.28.2", default-features = false }
+serde = { version = "1.0.188", default-features = false, features = ["derive", "alloc"] }
+serde_json = { version = '1.0.113', default-features = false, features = ['alloc'] }
+syn = "2.0.48"
+tempfile = "3.10.1"
+thiserror = { version = "1.0.30" }
+tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
+lazy_static = "1.4.0"
+lru = { version = "0.12.2" }
+pretty_assertions = { version = "1.4.0" }
+derive_more = { version = "0.99.17" }
+num-derive = { version = "0.4.2" }
+env_logger = { version = "0.11.2" }
+bigdecimal = { version = "0.4.3" }
+blake2b_simd = { version = "1.0.2", default-features = false }
+sealed_test = { version = "1.0.0" }
+derive-new = { version = "0.6.0" }
+inquire = { version = "0.7.5" }
+
+# substrate dependencies
+frame-benchmarking = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+frame-benchmarking-cli = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+frame-executive = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+frame-support = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+frame-system = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+frame-system-benchmarking = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+frame-system-rpc-runtime-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+frame-try-runtime = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+pallet-aura = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+pallet-balances = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+pallet-grandpa = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+pallet-sudo = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+pallet-timestamp = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+pallet-transaction-payment = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+pallet-transaction-payment-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+pallet-transaction-payment-rpc-runtime-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+pallet-partner-chains-session = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-basic-authorship = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-cli = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-client-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-client-db = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-consensus = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-consensus-aura = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-consensus-grandpa = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-consensus-grandpa-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-executor = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-network = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-rpc-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-service = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-telemetry = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-transaction-pool = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-transaction-pool-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sc-offchain = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-block-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-blockchain = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-consensus = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-consensus-aura = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-consensus-grandpa = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-consensus-slots = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-core = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-crypto-hashing = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-inherents = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-io = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-keyring = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-offchain = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-runtime = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-session = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-partner-chains-session = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-staking = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-std = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-timestamp = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-transaction-pool = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-version = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-storage = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-weights = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+substrate-build-script-utils = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+substrate-frame-rpc-system = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+substrate-prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+substrate-wasm-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+sp-genesis-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag = "partnerchains-v1.14.0" }
+
+# local dependencies
+sidechain-runtime = { path = "runtime" }
+pallet-block-rewards = { path = "pallets/block-rewards", default-features = false }
+pallet-sidechain = { path = "pallets/sidechain", default-features = false }
+pallet-sidechain-rpc = { path = "pallets/sidechain/rpc", default-features = false }
+sp-session-validator-management = { default-features = false, path = "primitives/session-validator-management" }
+pallet-session-validator-management = { default-features = false, path = "pallets/session-validator-management" }
+pallet-session-validator-management-benchmarking = { default-features = false, path = "pallets/session-validator-management/benchmarking" }
+pallet-session-validator-management-rpc = { path = "pallets/session-validator-management/rpc" }
+sp-block-rewards = { path = "primitives/block-rewards", default-features = false }
+selection = { version = "0.1.0", path = "primitives/selection", default-features = false }
+sidechain-domain = { path = "primitives/domain", default-features = false }
+sidechain-block-search = { path = "primitives/sidechain-block-search", default-features = false }
+main-chain-follower-api = { path = "mainchain-follower/main-chain-follower-api", default-features = false }
+db-sync-follower = { path = "mainchain-follower/db-sync-follower" }
+main-chain-follower-mock = { path = "mainchain-follower/mock", default-features = false }
+plutus = { path = "utils/plutus", default-features = false}
+plutus-datum-derive = { default-features = false, path = "utils/plutus/plutus-datum-derive" }
+byte-string-derive = { default-features = false, path = "utils/byte-string-derivation" }
+sidechain-slots = { path = "primitives/sidechain-slots", default-features = false }
+epoch-derivation = { path = "primitives/epoch-derivation", default-features = false }
+mock-types = { path = "primitives/mock-types", default-features = false }
+cli-commands = { path = "cli/commands" }
+time-source = { path = "utils/time-source" }
+sidechain-mc-hash = { path = "primitives/sidechain-mc-hash", default-features = false }
+authority-selection-inherents = { path = "primitives/authority-selection-inherents", default-features = false }
+session-manager = { path = "primitives/session-manager", default-features = false }
+sp-sidechain = { path = "primitives/sidechain", default-features = false }
+chain-params = { path = "primitives/chain-params", default-features = false }

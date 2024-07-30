@@ -1,0 +1,26 @@
+[package]
+name = "sp-sidechain"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+frame-support = { workspace = true }
+sidechain-domain = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+sp-api = { workspace = true }
+sp-runtime = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"sp-api/std",
+    "frame-support/std",
+    "parity-scale-codec/std",
+    "scale-info/std",
+	"sidechain-domain/std",
+    "sp-api/std",
+    "sp-runtime/std"
+]

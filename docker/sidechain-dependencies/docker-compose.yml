@@ -1,0 +1,80 @@
+version: "3.8"
+
+volumes:
+  ipc: {}
+  cardano-data: {}
+  db-sync-data: {}
+  postgres-data: {}
+  ogmios-data: {}
+
+services:
+  cardano-node:
+    image: ghcr.io/intersectmbo/cardano-node:9.1.0
+    network_mode: "host"
+    container_name: sidechains-cardano-node
+    environment:
+      - NETWORK=preview
+      - CARDANO_NODE_SOCKET_PATH=/ipc/node.socket
+    volumes:
+      - ipc:/ipc
+      - cardano-data:/data
+
+  postgres:
+    image: postgres:15.3
+    shm_size: 1g
+    container_name: sidechains-postgres
+    environment:
+      - POSTGRES_PASSWORD=password123
+      - POSTGRES_DB=cexplorer
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-sync:
+    image: ghcr.io/intersectmbo/cardano-db-sync:13.3.0.0
+    container_name: sidechains-db-sync
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - NETWORK=preview
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=cexplorer
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password123
+    volumes:
+      - ipc:/node-ipc
+      - db-sync-data:/var/lib
+
+  ogmios:
+    image: cardanosolutions/ogmios:v6.5.0
+    container_name: sidechains-ogmios
+    platform: linux/amd64
+    command: "--host 0.0.0.0 --node-config /config/preview/config.json --node-socket /ipc/node.socket"
+    environment:
+      - DATA_DIR=/data
+    ports:
+      - "1337:1337"
+    user: "0:0"
+    volumes:
+      - ipc:/ipc
+      - ogmios-data:/data
+      - $CARDANO_CONFIG_DIR:/config
+
+  kupo:
+    image: cardanosolutions/kupo:v2.9.0
+    container_name: sidechains-kupo
+    command: '--node-socket /ipc/node.socket --node-config /config/preview/config.json --host 0.0.0.0 --workdir /db --match "*" --since origin'
+    ports:
+      - "1442:1442"
+    volumes:
+      - $KUPO_WORKDIR:/db
+      - ipc:/ipc
+      - $CARDANO_CONFIG_DIR:/config

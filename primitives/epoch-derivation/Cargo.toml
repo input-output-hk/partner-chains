@@ -1,0 +1,30 @@
+[package]
+name = "epoch-derivation"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+figment = { workspace = true, optional = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+serde = { workspace = true }
+sidechain-domain = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+frame-support = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "figment",
+	"frame-support/std",
+    "parity-scale-codec/std",
+    "scale-info/std",
+    "serde/std",
+    "sidechain-domain/std",
+    "sp-core/std",
+    "sp-runtime/std",
+]

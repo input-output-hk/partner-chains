@@ -1,0 +1,46 @@
+{
+  "endpoint": "GetAddrs",
+  "addresses": {
+    "CommitteeCandidateValidator": "addr_test1wqrg57q8kcprrt5mrhda4umqcvx6d5kcxtmk4ys2gcx59mgsr7nsm",
+    "DsConfValidator": "addr_test1wztn8qa9vfhjtdqeehlthqepuqhnwgzjatvytxv7rslm8zgfvy6dw",
+    "DsInsertValidator": "addr_test1wr07ntmjul9348qe50utfaatdgc9av7hgctzplvq8tu23tgmvtzw6",
+    "VersionOracleValidator": "addr_test1wrx5lcuyutu9chdh9w2tvqskzcuygcl5jqxajfcpd9ax4ts5jzdrp",
+    "PermissionedCandidatesValidator": "addr_test1wp8vejvk63t9dgp8qxjv2fx86nnw20n58xwpfsja6nd6k7qv904va",
+    "DParameterValidator": "addr_test1wpafh7rsk29xclfwk3ncfa09nq0hc53wjd0auv3jmvpgntqt4rsy4",
+    "CommitteeHashValidator": "addr_test1wzyza40r0srj6g6ct6932jzyxq2h46all3g6gpp279jej4sz4xyey",
+    "CheckpointValidator": "addr_test1wzpehssqrv6j5znkes040qp5swpkksydquecm2rf6uuf49s06ye7x",
+    "MerkleRootTokenValidator": "addr_test1wq2z8ph2h9x7z5psew4wk0a4l6p9ltmxqq2l83whhe2dhqgflm2aa",
+    "ReserveValidator": "addr_test1wq3z2a7nkadugpck7t24auxfxpeenwaeh8swnr6aaryx5xgc4a68g",
+    "IlliquidCirculationSupplyValidator": "addr_test1wp373y562hjm09v9t8a3khpsygg7xyzgfhyd3czmxydchaglmglz9"
+  },
+  "validatorHashes": {
+    "CommitteeCandidateValidator": "068a7807b60231ae9b1ddbdaf360c30da6d2d832f76a920a460d42ed",
+    "DsConfValidator": "973383a5626f25b419cdfebb8321e02f372052ead845999e1c3fb389",
+    "DsInsertValidator": "dfe9af72e7cb1a9c19a3f8b4f7ab6a305eb3d7461620fd803af8a8ad",
+    "VersionOracleValidator": "cd4fe384e2f85c5db72b94b6021616384463f4900dd92701697a6aae",
+    "PermissionedCandidatesValidator": "4eccc996d45656a02701a4c524c7d4e6e53e74399c14c25dd4dbab78",
+    "DParameterValidator": "7a9bf870b28a6c7d2eb46784f5e5981f7c522e935fde3232db0289ac",
+    "CommitteeHashValidator": "882ed5e37c072d23585e8b15484430157aebbffc51a4042af1659956",
+    "CheckpointValidator": "839bc2001b352a0a76cc1f57803483836b408d07338da869d7389a96",
+    "MerkleRootTokenValidator": "142386eab94de15030cbaaeb3fb5fe825faf660015f3c5d7be54db81",
+    "ReserveValidator": "222577d3b75bc40716f2d55ef0c9307399bbb9b9e0e98f5de8c86a19",
+    "IlliquidCirculationSupplyValidator": "63e8929a55e5b7958559fb1b5c302211e310484dc8d8e05b311b8bf5"
+  },
+  "mintingPolicies": {
+    "DsConfPolicy": "2807ff3abc7ee05c23505aac744ed5a519e331ac3e1fc72ed55b31f8",
+    "CheckpointPolicy": "9ce16a8e2c378b41fdba60bff5a61b68a9d9c69a5bc08ea103ee9bb2",
+    "FUELProxyPolicy": "487f54dac88131fb685086f34bcdb3c7ed3454e8dd5461bdbde9aed4",
+    "VersionOraclePolicy": "48f0c9ff8a0dbc86871eb45e3992fe5b8212e7b461754a31be4798d0",
+    "PermissionedCandidatesPolicy": "307bc95f118ca5faf51bf1827d7d9bad7b36acdd626f498bf9425684",
+    "DParameterPolicy": "ebc88ac96f08c542165befec2f37e3b1c490da4ff396273f110de7e6",
+    "InitTokenPolicy": "bcad4722fe7ed79ba4e80e015a6c57716faf92fe41518cef4b3b5073",
+    "CommitteeCertificateVerificationPolicy": "c1e2f716fac7240fea18c5da828e78a60d96bc745275e2276c3efc31",
+    "CommitteeOraclePolicy": "1a34d1ade56c4b4ae68f0ab635050b5e6fe8a79864cfaabb916aae67",
+    "FUELMintingPolicy": "b8456a9cdee1505a981e991a5d61343ef50db39cfc79465ff8c7f15e",
+    "FUELBurningPolicy": "6896c2ed1aa7fe443a270a396d5002c56839eb2794071d1f11ac7530",
+    "DsKeyPolicy": "abe3f1373daae79332860982b683de7d3b4929aa2ef218cb435551e3",
+    "MerkleRootTokenPolicy": "7153b2e5044fb468b219c28ea90fbe22584d10d210b64ad96cd23d25",
+    "ReserveAuthPolicy": "52aa60086386b8b08e2c145886528172fd0b4472f3308edbd32ff415",
+    "CommitteePlainEcdsaSecp256k1ATMSPolicy": "c1e2f716fac7240fea18c5da828e78a60d96bc745275e2276c3efc31"
+  }
+}

@@ -1,0 +1,41 @@
+[package]
+name = "db-sync-follower"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+sqlx = { version = "0.7.4", default-features = false, features = ["runtime-tokio-rustls", "postgres", "macros", "chrono", "migrate", "bigdecimal"]}
+tokio = { workspace = true, features = ["full"]}
+testcontainers-modules = { version = "0.1.3", features = ["postgres"] }
+futures = { workspace = true }
+chrono = "0.4.31"
+hex = { workspace = true }
+hex-literal = { workspace = true }
+itertools = { workspace = true }
+plutus = { workspace = true, default-features = true }
+sidechain-domain = { workspace = true, default-features = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+bigdecimal = { workspace = true }
+async-trait = { workspace = true }
+main-chain-follower-api = { workspace = true, features = ["std"] }
+num-traits = { workspace = true }
+num-bigint = { workspace = true }
+log = { workspace = true }
+thiserror = { workspace = true }
+blake2b_simd = { workspace = true }
+figment = { workspace = true }
+epoch-derivation = { workspace = true, features = ["std"]}
+substrate-prometheus-endpoint = { workspace = true }
+derive-new = { workspace = true }
+lru = { workspace = true }
+
+[dev-dependencies]
+tokio-test = "0.4.3"
+ctor = "0.2.5"
+
+[features]
+default = []
+block-source = ["main-chain-follower-api/block-source"]
+candidate-source = ["main-chain-follower-api/candidate-source"]

@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+  relay:
+    # image build with Dockerfile from this repo contains config.json and signing keys
+    image: 689191102645.dkr.ecr.eu-central-1.amazonaws.com/relay:2.6.0-76f5738
+    network_mode: host
+    environment:
+      - NODE_URL=http://localhost:9933
+      - INIT_TIMEOUT=30 minutes

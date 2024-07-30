@@ -1,0 +1,27 @@
+[package]
+name = "sp-block-rewards"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = { workspace = true }
+parity-scale-codec = { workspace = true }
+sp-core = { workspace = true, optional = true }
+sp-inherents = { workspace = true }
+sp-runtime = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+sealed_test = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "sp-core",
+    "sp-core/std",
+	"sp-runtime/std",
+	"parity-scale-codec/std",
+	"sp-core/std",
+	"sp-inherents/std",
+	"sp-runtime/std",
+]

@@ -1,0 +1,22 @@
+[package]
+name = "sidechain-mc-hash"
+version = "0.1.0"
+edition = "2021"
+description = "Logic for putting a main chain block reference in digest and inherent data"
+
+[dependencies]
+async-trait = { workspace = true }
+main-chain-follower-api = { workspace = true, features = ["block-source"] }
+sp-consensus-slots = { workspace = true }
+sidechain-domain = { workspace = true, features = ["std"] }
+sp-consensus = { workspace = true }
+sp-inherents = { workspace = true, features = ["std"] }
+sp-runtime = { workspace = true, features = ["std"] }
+sp-timestamp = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+
+[features]
+mock = []

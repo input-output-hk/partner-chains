@@ -1,0 +1,40 @@
+[package]
+name = "main-chain-follower-api"
+version = "0.0.1-dev"
+authors = ["IOG"]
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/input-output-hk/partner-chains"
+description = "Core API for the main chain follower"
+readme = "README.md"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+async-trait = { workspace = true, optional = true }
+blake2b_simd = { workspace = true }
+byte-string-derive = { workspace = true }
+log = { workspace = true }
+sidechain-domain = { workspace = true }
+serde = { workspace = true }
+plutus = { workspace = true }
+thiserror = { workspace = true }
+derive-new = { workspace = true }
+derive_more = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+	"async-trait",
+    "blake2b_simd/std",
+    "sidechain-domain/std",
+    "serde"
+]
+serde = []
+block-source = ["std"]
+candidate-source = ["std"]
+all-sources = [
+    "block-source",
+    "candidate-source",
+]

@@ -1,0 +1,62 @@
+[package]
+name = "authority-selection-inherents"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-trait = { workspace = true, optional = true }
+epoch-derivation = { workspace = true }
+frame-support = { workspace = true }
+log = { workspace = true }
+main-chain-follower-api = { workspace = true, optional = true, features = ["candidate-source"] }
+minicbor = { workspace = true }
+sp-session-validator-management = { workspace = true }
+parity-scale-codec = { workspace = true }
+plutus = { workspace = true }
+plutus-datum-derive = { workspace = true }
+scale-info = { workspace = true }
+selection = { workspace = true }
+sidechain-domain = { workspace = true }
+sidechain-slots = { workspace = true, optional = true }
+sp-api = { workspace = true }
+sp-core = { workspace = true }
+sp-inherents = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+thiserror = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+sp-consensus-slots = { workspace = true }
+
+[dev-dependencies]
+chain-params = { workspace = true }
+hex = { workspace = true }
+hex-literal = { workspace = true }
+mock-types = { workspace = true, features = ["std"] }
+num-bigint = { workspace = true }
+num-traits = { workspace = true }
+tokio = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"frame-support/std",
+	"sidechain-domain/std",
+	"parity-scale-codec/std",
+    "epoch-derivation/std",
+    "main-chain-follower-api/candidate-source",
+    "main-chain-follower-api/std",
+    "serde/std",
+    "sidechain-slots",
+    "sidechain-slots/std",
+    "sp-api/std",
+    "sp-session-validator-management/std",
+    "sp-core/std",
+    "sp-inherents/std",
+    "sp-runtime/std",
+    "sp-std/std",
+    "thiserror",
+    "async-trait",
+    "selection/std",
+]

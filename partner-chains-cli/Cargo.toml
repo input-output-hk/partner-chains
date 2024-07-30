@@ -1,0 +1,35 @@
+[package]
+name = "partner-chains-cli"
+version = "0.1.0"
+authors = ["IOG"]
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/input-output-hk/partner-chains"
+description = "Wizard style CLI for getting started as partner chains participant"
+readme = "readme.md"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+sidechain-domain = { workspace = true, features = ["std"] }
+anyhow = { workspace = true }
+clap = { workspace = true }
+hex = { workspace = true }
+inquire = { workspace = true }
+libp2p-identity = { workspace = true, features = ["peerid", "ed25519"] }
+serde = { workspace = true }
+serde_json = { workspace = true, features = ["std"] }
+sidechain-runtime = { workspace = true }
+sp-core = { workspace = true, features = ["std"] }
+sp-runtime = { workspace = true }
+cli-commands = { workspace = true }
+chain-params = { workspace = true, features = ["std"] }
+thiserror = { workspace = true }
+tempfile = { workspace = true }
+epoch-derivation = { workspace = true, features = ["std"] }
+secp256k1 = { workspace = true, features = ["std"] }
+colored = { version = "2.1.0" }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }

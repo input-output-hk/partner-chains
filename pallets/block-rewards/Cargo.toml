@@ -1,0 +1,31 @@
+[package]
+name = "pallet-block-rewards"
+version = "0.1.0"
+edition = "2021"
+description = "Pallet to track due block rewards"
+
+[dependencies]
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+log = { workspace = true }
+sp-block-rewards = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+sp-std = { workspace = true }
+
+[dev-dependencies]
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "frame-support/std",
+    "frame-system/std",
+    "sp-block-rewards/std",
+    "log/std",
+    "parity-scale-codec/std",
+    "scale-info/std",
+    "sp-std/std",
+]

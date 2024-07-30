@@ -1,0 +1,140 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: integration-testing
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: substrate-node-sha-{{SHA}}
+  namespace: integration-testing
+  labels:
+    app: substrate-node
+    unique: substrate-node-sha-{{SHA}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: substrate-node
+      unique: substrate-node-sha-{{SHA}}
+  template:
+    metadata:
+      labels:
+        app: substrate-node
+        unique: substrate-node-sha-{{SHA}}
+    spec:
+      containers:
+        - name: substrate-node
+          image: {{SUBSTRATE_NODE_IMAGE}}
+          resources:
+            limits:
+              memory: "4096Mi"
+              cpu: "1000m"
+            requests:
+              memory: "4096Mi"
+              cpu: "1000m"
+          env:
+            - name: DB_SYNC_POSTGRES_CONNECTION_STRING
+              value: "postgres://postgres:password123@ferdie-service.sc.svc.cluster.local:5432/cexplorer"
+            - name: CARDANO_SECURITY_PARAMETER
+              value: "432"
+            - name: CARDANO_ACTIVE_SLOTS_COEFF
+              value: "0.05"
+            - name: MC__FIRST_EPOCH_TIMESTAMP_MILLIS
+              value: "1666656000000"
+            - name: MC__FIRST_EPOCH_NUMBER
+              value: "0"
+            - name: MC__EPOCH_DURATION_MILLIS
+              value: "86400000"
+            - name: MC__FIRST_SLOT_NUMBER
+              value: "0"
+            # The below values can be obtained with: scripts/echo_kubernetes_yamls.sh
+            - name: CHAIN_ID
+              value: "0"
+            - name: THRESHOLD_NUMERATOR
+              value: "2"
+            - name: THRESHOLD_DENOMINATOR
+              value: "3"
+            - name: GENESIS_COMMITTEE_UTXO
+              value: "67fa24dcda2ef78acf69dee758292d659493b85bf540a95b371cff4b10150359#1"
+            - name: GOVERNANCE_AUTHORITY
+              value: "88965c0bc8902c5056ca285684bc56e6498c77b6e04005cd78019175"
+            - name: COMMITTEE_CANDIDATE_ADDRESS
+              value: "addr_test1wrnv62hjzfj0uapagpgzuhh4nxzrvkr06y6lxyhpun32usqenuxw9"
+            - name: D_PARAMETER_POLICY_ID
+              value: "d7f493bbff9f17eefa50a3358d4609c71fc481de109eea52ee9c8a7e"
+            - name: PERMISSIONED_CANDIDATES_POLICY_ID
+              value: "393c202bf632a8914e5cca1ccb172f0564105f5b31ef05585d785e02"
+            - name: SIDECHAIN_BLOCK_BENEFICIARY
+              value: "0x0000000000000000000000000000000000000000000000000000000000000001"
+            - name: BLOCK_STABILITY_MARGIN
+              value: "0"
+          args:
+            - "--base-path"
+            - "/tmp/alice"
+            - "--chain"
+            - "dev"
+            - "--alice"
+            - "--node-key"
+            - "0000000000000000000000000000000000000000000000000000000000000001"
+            - "--unsafe-rpc-external"
+            - "--rpc-port"
+            - "9933"
+            - "--rpc-cors=all"
+            - "--prometheus-port"
+            - "9615"
+            - "--prometheus-external"
+          ports:
+            - containerPort: 30333
+              name: p2p
+            - containerPort: 9945
+              name: ws-port
+            - containerPort: 9933
+              name: rpc-port
+            - containerPort: 9615
+              name: prometheus
+          volumeMounts:
+            - name: substrate-node-data
+              mountPath: /data
+            - name: ipc
+              mountPath: /ipc
+      volumes:
+        - name: substrate-node-data
+          persistentVolumeClaim:
+            claimName: integration-testing-claim-substrate-node-sha-{{SHA}}-data
+        - name: ipc
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sha-{{SHA}}-service
+  namespace: integration-testing
+spec:
+  type: NodePort
+  selector:
+    app: substrate-node
+    unique: substrate-node-sha-{{SHA}}
+  ports:
+    - name: p2p-port
+      port: 30333
+      targetPort: 30333
+    - name: rpc-port
+      port: 9933
+      targetPort: 9933
+    - name: substrate-node-metrics
+      port: 9615
+      targetPort: 9615
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: integration-testing-claim-substrate-node-sha-{{SHA}}-data
+  namespace: integration-testing
+spec:
+    accessModes:
+        - ReadWriteMany
+    storageClassName: aws-efs-storageclass
+    resources:
+        requests:
+            storage: 10Gi

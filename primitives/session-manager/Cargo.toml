@@ -1,0 +1,33 @@
+[package]
+name = "session-manager"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+derive-new = { workspace = true }
+frame-system = { workspace = true }
+log = { workspace = true }
+pallet-session-validator-management = { workspace = true }
+pallet-sidechain = { workspace = true }
+pallet-partner-chains-session = { workspace = true }
+sidechain-domain = { workspace = true }
+sp-staking = { workspace = true }
+sp-std = { workspace = true }
+
+[dev-dependencies]
+pallet-session-validator-management = { workspace = true, features = ["mock"] }
+
+[features]
+default = ["std"]
+std = [
+	"frame-system/std",
+	"pallet-session-validator-management/std",
+	"pallet-sidechain/std",
+	"pallet-partner-chains-session/std",
+	"sidechain-domain/std",
+	"sp-staking/std",
+	"sp-std/std",
+    "log/std",
+]
