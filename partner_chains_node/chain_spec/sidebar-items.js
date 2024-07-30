@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["EnvVarReadError"],"fn":["from_var","from_var_or","get_account_id_from_seed","get_from_seed","read_mainchain_scripts_from_env","runtime_wasm"],"struct":["AuthorityKeys"],"type":["ChainSpec"]};

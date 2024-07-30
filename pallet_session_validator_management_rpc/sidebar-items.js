@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["error_object_from","error_object_from_str"],"mod":["get_registrations","types"],"struct":["SessionValidatorManagementRpc"],"trait":["SessionValidatorManagementRpcApiClient","SessionValidatorManagementRpcApiServer"]};

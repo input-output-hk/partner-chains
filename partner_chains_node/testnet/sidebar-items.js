@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["authority_keys","development_config","local_testnet_config","testnet_endowed_accounts","testnet_genesis","testnet_initial_authorities","testnet_sudo_key"]};

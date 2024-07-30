@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"pallet_session_validator_management":[["impl&lt;T&gt; Convert&lt;T, <a class=\"enum\" href=\"https://doc.rust-lang.org/1.77.0/core/option/enum.Option.html\" title=\"enum core::option::Option\">Option</a>&lt;T&gt;&gt; for <a class=\"struct\" href=\"pallet_session_validator_management/pallet/struct.OptionIdentity.html\" title=\"struct pallet_session_validator_management::pallet::OptionIdentity\">OptionIdentity</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["ariadne_inherent_data_provider","authority_selection_inputs","filter_invalid_candidates","select_authorities"]};

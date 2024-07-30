@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"sidechain_runtime":[["impl EnsureInherentsAreFirst&lt;&lt;<a class=\"struct\" href=\"sidechain_runtime/struct.Runtime.html\" title=\"struct sidechain_runtime::Runtime\">Runtime</a> as Config&gt;::Block&gt; for <a class=\"struct\" href=\"sidechain_runtime/struct.Runtime.html\" title=\"struct sidechain_runtime::Runtime\">Runtime</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["slot_config"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["RegistrationError"],"struct":["AriadneParameters","CandidateRegistrationEntry","CommitteeMember","DParameter","GetCommitteeResponse","PermissionedCandidateData"],"type":["GetRegistrationsResponseMap"]};

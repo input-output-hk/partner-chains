@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["key_params","output","registration_signatures","sidechain_main_cli_params","signing"]};

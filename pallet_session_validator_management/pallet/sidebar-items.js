@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Call","Error","Event"],"mod":["dispatchables","storage_types"],"struct":["CommitteeInfo","GenesisConfig","OptionIdentity","Pallet"],"trait":["Config"],"type":["CurrentCommittee","MainChainScriptsConfiguration","Module","NextCommittee"]};

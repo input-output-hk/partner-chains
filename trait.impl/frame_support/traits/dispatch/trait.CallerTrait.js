@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"sidechain_runtime":[["impl CallerTrait&lt;&lt;<a class=\"struct\" href=\"sidechain_runtime/struct.Runtime.html\" title=\"struct sidechain_runtime::Runtime\">Runtime</a> as Config&gt;::AccountId&gt; for <a class=\"enum\" href=\"sidechain_runtime/enum.OriginCaller.html\" title=\"enum sidechain_runtime::OriginCaller\">OriginCaller</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

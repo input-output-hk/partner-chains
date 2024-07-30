@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["register1","register2","register3"]};

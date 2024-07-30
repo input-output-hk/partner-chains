@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["prompt_can_write"],"struct":["DefaultCmdRunContext"],"trait":["IOContext"]};

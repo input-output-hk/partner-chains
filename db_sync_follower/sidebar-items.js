@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":["observed_async_trait"],"mod":["block","candidates","data_sources","metrics"],"struct":["SqlxError"]};
