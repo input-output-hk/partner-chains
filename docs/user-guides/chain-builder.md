@@ -1,6 +1,6 @@
 # Chain Builder (governance authority) onboarding
 
-Partner chain builders are organizations that want to build their own blockchains according to their business cases. They are the governance authorities for their new chains. They will utilize the partner chains toolkit and other tools to build and run a separate blockchain that can be interoperable with the Cardano network. Each builder will each have their own operation and business model. The partner chain toolkit aims to be versatile enough to support a wide range of use cases.
+Partner chain builders are organizations that want to build their own blockchains according to their business cases. They are the governance authorities for their new chains. They can utilize the partner chains toolkit and other tools to build and run a separate blockchain that can be interoperable with the Cardano network. Each builder can have their own operation and business model. The partner chain toolkit aims to be versatile enough to support a wide range of use cases.
 
 ## Order of Operations
 1. Install dependencies
@@ -216,7 +216,7 @@ journalctl -fu cardano-db-sync.service
 ---
 **NOTE**
 
-Ensure that the node is synced with the network to 100% as well as Kupo and DB Sync before continuing beyond this point. On preview network, it is roughly 24 hours before sync is complete. @TODO -- instructions for verification of sync
+Ensure that the node is synced with the network to 100% as well as Kupo and DB Sync before continuing beyond this point. On preview network, it is roughly 24 hours before sync is complete.
 
 ---
 
@@ -362,6 +362,6 @@ The start-node wizard is used to start a partner chain node. Make sure that `car
 
 ### 7. Distribute chain files to participants
 
-The partner chain is now ready to start accepting registered validator nodes. Permissioned candidates and registered candidates (@TODO -- link) have different onboarding processes. Please follow the respective steps for the type of user.
+The partner chain is now ready to start accepting registered validator nodes. [Permissioned candidates](./docs/user-guides/permissioned.md) and [Registered candidates](./docs/user-guides/registered.md) have different onboarding processes. Please follow the respective steps for the type of user.
 
 Be prepared to share `chain-spec.json` and `partner-chains-cli-chain-config.json` files to both types of users.

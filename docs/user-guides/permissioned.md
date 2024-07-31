@@ -1,6 +1,6 @@
 # Permissioned candidate onboarding
 
-A blockchain validator is a network node that helps process and validate transaction blocks on the platform according to the protocol consensus mechanism. A [permissioned candidate](../glossary/index.md#permissioned-candidate) is a block validator that has been whitelisted by the chain builder so it can validate partner chain blocks and secure the network.
+A blockchain validator is a network node that helps process and validate transaction blocks on the platform according to the protocol consensus mechanism. A permissioned candidate is a block producing validator that has been whitelisted by the chain builder so it can validate partner chain blocks and secure the network.
 
 Before you begin, some software must be installed.
 ## Order of Operations
