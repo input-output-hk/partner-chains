@@ -78,9 +78,6 @@ fn establish_governance_authority(
 	let cardano_payment_verification_key_file =
 		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
 			.prompt_with_default_from_file_and_save(context);
-	if !context.file_exists(&cardano_cli) {
-		return Err(anyhow!("Cardano CLI executable file ({cardano_cli}) is missing"));
-	}
 
 	let governance_authority = context.run_command(&format!("{cardano_cli} address key-hash --payment-verification-key-file {cardano_payment_verification_key_file}"))?;
 	let ga = MainchainAddressHash::decode_hex(governance_authority.trim())
@@ -148,7 +145,6 @@ mod tests {
 	fn happy_path() {
 		let final_chain_config = test_chain_config();
 		let mock_context = MockIOContext::new()
-			.with_file(CARDANO_CLI.default.unwrap(), "<mock executable>")
 			.with_expected_io(vec![
 			scenarios::show_intro(),
 			MockIO::prompt(CARDANO_CLI.name, CARDANO_CLI.default, "cardano-cli"),
@@ -182,7 +178,6 @@ mod tests {
 		});
 
 		let mock_context = MockIOContext::new()
-			.with_file(CARDANO_CLI.default.unwrap(), "<mock executable>")
 			.with_json_file(CHAIN_CONFIG_PATH, initial_chain_config).with_expected_io(vec![
 			scenarios::show_intro(),
 			MockIO::file_read(GOVERNANCE_AUTHORITY.config_file),
@@ -259,7 +254,6 @@ mod tests {
 		});
 
 		let mock_context = MockIOContext::new()
-			.with_file(CARDANO_CLI.default.unwrap(), "<mock executable>")
 			.with_json_file(CHAIN_ID.config_file, initial_chain_config).with_expected_io(vec![
 			scenarios::show_intro(),
 			MockIO::file_read(GOVERNANCE_AUTHORITY.config_file),
@@ -309,7 +303,6 @@ mod tests {
 		});
 
 		let mock_context = MockIOContext::new()
-			.with_file(CARDANO_CLI.default.unwrap(), "<mock executable>")
 			.with_json_file(GENESIS_COMMITTEE_UTXO.config_file ,initial_chain_config)
 			.with_expected_io(vec![
 			scenarios::show_intro(),
