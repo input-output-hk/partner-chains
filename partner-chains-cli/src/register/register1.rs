@@ -64,7 +64,6 @@ impl CmdRun for Register1Cmd {
 				.prompt_with_default_from_file_and_save(context);
 
 		verify_dependencies(
-			&cardano_cli,
 			&cardano_node_socket_path,
 			&cardano_payment_verification_key_file,
 			context,
@@ -157,14 +156,10 @@ impl CmdRun for Register1Cmd {
 }
 
 fn verify_dependencies<C: IOContext>(
-	cardano_cli: &str,
 	cardano_node_socket_path: &str,
 	cardano_payment_verification_key_file: &str,
 	context: &C,
 ) -> anyhow::Result<()> {
-	if !context.file_exists(cardano_cli) {
-		return Err(anyhow!("Cardano CLI executable file ({cardano_cli}) is missing"));
-	}
 	if !context.file_exists(cardano_node_socket_path) {
 		return Err(anyhow!("Cardano Node socket ({cardano_node_socket_path}) is missing. Please check if the node is running."));
 	}
@@ -697,29 +692,21 @@ MockIO::run_command("cardano-cli address build --payment-verification-key-file p
 	}
 
 	#[test]
-	fn should_display_relevant_error_when_cardano_cli_missing() {
-		let context = MockIOContext::new();
-		let result = verify_dependencies("cardano_cli", "cardano_socket", "cardano_key", &context);
-		assert_eq!(
-			result.unwrap_err().to_string(),
-			"Cardano CLI executable file (cardano_cli) is missing"
-		)
-	}
-	#[test]
 	fn should_display_relevant_error_when_cardano_node_socket_missing() {
 		let context = MockIOContext::new().with_file("cardano_cli", "<mock executable>");
-		let result = verify_dependencies("cardano_cli", "cardano_socket", "cardano_key", &context);
+		let result = verify_dependencies("cardano_socket", "cardano_key", &context);
 		assert_eq!(
 			result.unwrap_err().to_string(),
 			"Cardano Node socket (cardano_socket) is missing. Please check if the node is running."
 		)
 	}
+
 	#[test]
 	fn should_display_relevant_error_when_cardano_vkey_missing() {
 		let context = MockIOContext::new()
 			.with_file("cardano_cli", "<mock executable>")
 			.with_file("cardano_socket", "<mock socket>");
-		let result = verify_dependencies("cardano_cli", "cardano_socket", "cardano_key", &context);
+		let result = verify_dependencies("cardano_socket", "cardano_key", &context);
 		assert_eq!(
 			result.unwrap_err().to_string(),
 			"Cardano verification key provided (cardano_key) does not exist."
