@@ -63,6 +63,13 @@ impl CmdRun for Register1Cmd {
 			config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
 				.prompt_with_default_from_file_and_save(context);
 
+		verify_dependencies(
+			&cardano_cli,
+			&cardano_node_socket_path,
+			&cardano_payment_verification_key_file,
+			context,
+		)?;
+
 		context.print("⚙️ Deriving address...");
 		let address: String = derive_address(
 			context,
@@ -147,6 +154,25 @@ impl CmdRun for Register1Cmd {
 
 		Ok(())
 	}
+}
+
+fn verify_dependencies<C: IOContext>(
+	cardano_cli: &str,
+	cardano_node_socket_path: &str,
+	cardano_payment_verification_key_file: &str,
+	context: &C,
+) -> anyhow::Result<()> {
+	if !context.file_exists(cardano_cli) {
+		return Err(anyhow!("Cardano CLI executable file ({cardano_cli}) is missing"));
+	}
+	if !context.file_exists(cardano_node_socket_path) {
+		return Err(anyhow!("Cardano Node socket ({cardano_node_socket_path}) is missing. Please check if the node is running."));
+	}
+	if !context.file_exists(cardano_payment_verification_key_file) {
+		return Err(anyhow!("Cardano verification key provided ({cardano_payment_verification_key_file}) does not exist."));
+	}
+
+	Ok(())
 }
 
 fn get_ecdsa_pair_from_file<C: IOContext>(
@@ -292,6 +318,9 @@ mod tests {
 		});
 
 		let mock_context = MockIOContext::new()
+			.with_file("cardano-cli", "<mock executable>")
+			.with_file("node.socket", "<mock socket>")
+			.with_file("payment.vkey", "<mock key>")
 			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
 			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_without_cardano_fields)
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
@@ -359,6 +388,9 @@ mod tests {
 	#[test]
 	fn saved_prompt_fields_are_loaded_without_prompting() {
 		let mock_context = MockIOContext::new()
+			.with_file("cardano-cli", "<mock executable>")
+			.with_file("node.socket", "<mock socket>")
+			.with_file("payment.vkey", "<mock key>")
 			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
 			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
@@ -662,6 +694,36 @@ MockIO::run_command("cardano-cli address build --payment-verification-key-file p
 			let utxos = parse_utxo_query_output(&UtxoQueryOutput("invalid output".to_string()));
 			assert_eq!(utxos.len(), 0);
 		}
+	}
+
+	#[test]
+	fn should_display_relevant_error_when_cardano_cli_missing() {
+		let context = MockIOContext::new();
+		let result = verify_dependencies("cardano_cli", "cardano_socket", "cardano_key", &context);
+		assert_eq!(
+			result.unwrap_err().to_string(),
+			"Cardano CLI executable file (cardano_cli) is missing"
+		)
+	}
+	#[test]
+	fn should_display_relevant_error_when_cardano_node_socket_missing() {
+		let context = MockIOContext::new().with_file("cardano_cli", "<mock executable>");
+		let result = verify_dependencies("cardano_cli", "cardano_socket", "cardano_key", &context);
+		assert_eq!(
+			result.unwrap_err().to_string(),
+			"Cardano Node socket (cardano_socket) is missing. Please check if the node is running."
+		)
+	}
+	#[test]
+	fn should_display_relevant_error_when_cardano_vkey_missing() {
+		let context = MockIOContext::new()
+			.with_file("cardano_cli", "<mock executable>")
+			.with_file("cardano_socket", "<mock socket>");
+		let result = verify_dependencies("cardano_cli", "cardano_socket", "cardano_key", &context);
+		assert_eq!(
+			result.unwrap_err().to_string(),
+			"Cardano verification key provided (cardano_key) does not exist."
+		)
 	}
 
 	const CHAIN_CONFIG_PATH: &str = "partner-chains-cli-chain-config.json";
