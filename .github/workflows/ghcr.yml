@@ -1,6 +1,7 @@
 name: Build and Publish to GHCR Public Repository
 
 on:
+
   workflow_dispatch:
     inputs:
       commit_sha:
