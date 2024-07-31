@@ -1,6 +1,7 @@
 name: Build partner-chains-node and partner-chains-cli and push to binary-host
 
 on:
+
   workflow_dispatch:
     inputs:
       push_to_binary_host:

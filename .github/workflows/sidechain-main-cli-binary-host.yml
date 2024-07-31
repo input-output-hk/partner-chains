@@ -26,12 +26,12 @@ jobs:
 
       - name: Build
         run: nix build ./partner-chains-smart-contracts#sidechain-release-bundle
-        
+
       - name: Prepare Artifact
         run: |
           mkdir -p partner-chains-smart-contracts-artifact
           cp result/* partner-chains-smart-contracts-artifact
-          
+
       - name: Upload Directory as Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -80,7 +80,7 @@ jobs:
           chmod +x ./kubectl
           sudo mv ./kubectl /usr/local/bin/kubectl
           sudo apt update && sudo apt install -y awscli
-  
+
       - name: Configure kubectl
         run: |
           echo "${{ secrets.kubeconfig_base64 }}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml
@@ -93,8 +93,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: unzipped
-          path: artifact/unzipped 
-  
+          path: artifact/unzipped
+
       - name: Create SHA directory on binary-host
         run: |
           kubectl exec binary-host -c binary-host -n sc -- mkdir -p /tools/sidechain-main-cli/${{ github.event.inputs.commit_sha }}

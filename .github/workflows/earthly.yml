@@ -36,7 +36,7 @@ jobs:
         with:
           ssh_key: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
           config_tar: ${{ secrets.EARTHLY_TAR }}
-  
+
       - name: Build With Benchmarking Features Enabled
         if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci-off') && (github.ref_name == 'master' || inputs.upload == 'true') }}
         env:
@@ -88,7 +88,7 @@ jobs:
           done
           docker stop weight_generation
           docker rm weight_generation
-      
+
       - name: Upload Weights
         if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci-off') && (github.ref_name == 'master' || inputs.upload == 'true') }}
         continue-on-error: true
@@ -96,7 +96,7 @@ jobs:
         with:
           name: weights
           path: weights/
-      
+
       - name: Overwrite Weights in Runtime Directory
         continue-on-error: true
         if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci-off') && (github.ref_name == 'master' || inputs.upload == 'true') }}

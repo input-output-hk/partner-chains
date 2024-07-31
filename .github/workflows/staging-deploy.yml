@@ -1,6 +1,7 @@
 name: Deploy Staging
 
 on:
+
   workflow_dispatch:
     inputs:
       terms1:
@@ -45,7 +46,7 @@ jobs:
             exit 1
           fi
           echo "All terms and conditions accepted."
-    
+
       - name: Confirm Inputs and Evaluate Conditions
         id: evaluate-conditions
         run: |
@@ -56,19 +57,19 @@ jobs:
           echo "wipe: ${{ github.event.inputs.wipe }}"
           echo "rolling: ${{ github.event.inputs.rolling }}"
           echo "Evaluating Deployment Type..."
-      
+
           if [[ "${{ github.event.inputs.wipe }}" == 'true' ]]; then
             echo "wipe=true" >> $GITHUB_ENV
           else
             echo "wipe=false" >> $GITHUB_ENV
           fi
-      
+
           if [[ "${{ github.event.inputs.rolling }}" == 'true' ]]; then
             echo "rolling=true" >> $GITHUB_ENV
           else
             echo "rolling=false" >> $GITHUB_ENV
           fi
-          
+
           if [[ "${{ github.event.inputs.wipe }}" == 'true' && "${{ github.event.inputs.chain-spec-secret-name }}" != '' && "${{ github.event.inputs.substrate-node-image }}" != '' ]]; then
             echo "deployment_type=1" >> $GITHUB_ENV
             echo "Step: Deploy with chain-spec and image override will be run"
@@ -136,7 +137,7 @@ jobs:
           kubectl delete pvc validator-7-claim-substrate-node-data -n staging
           echo "Waiting for PVCs to delete..."
           kubectl wait --for=delete pvc/validator-1-claim-substrate-node-data pvc/validator-2-claim-substrate-node-data pvc/validator-3-claim-substrate-node-data pvc/validator-4-claim-substrate-node-data pvc/validator-5-claim-substrate-node-data pvc/validator-6-claim-substrate-node-data pvc/validator-7-claim-substrate-node-data -n staging --timeout=120s
-          
+
       - name: Deploy with chain-spec and image override
         if: env.deployment_type == 1
         run: |
@@ -148,7 +149,7 @@ jobs:
           helm upgrade --install validator-5 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-5 --set images.substrateNode="${{ github.event.inputs.substrate-node-image }}" --set chain.chainspec_secretName="${{ github.event.inputs.chain-spec-secret-name }}"
           helm upgrade --install validator-6 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-6 --set images.substrateNode="${{ github.event.inputs.substrate-node-image }}" --set chain.chainspec_secretName="${{ github.event.inputs.chain-spec-secret-name }}"
           helm upgrade --install validator-7 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-7 --set images.substrateNode="${{ github.event.inputs.substrate-node-image }}" --set chain.chainspec_secretName="${{ github.event.inputs.chain-spec-secret-name }}"
-          
+
       - name: Deploy with image override
         if: env.deployment_type == 2
         run: |
@@ -160,7 +161,7 @@ jobs:
           helm upgrade --install validator-5 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-5 --set images.substrateNode="${{ github.event.inputs.substrate-node-image }}"
           helm upgrade --install validator-6 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-6 --set images.substrateNode="${{ github.event.inputs.substrate-node-image }}"
           helm upgrade --install validator-7 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-7 --set images.substrateNode="${{ github.event.inputs.substrate-node-image }}"
-          
+
       - name: Deploy from master with no value overrides
         if: env.deployment_type == 3
         run: |
