@@ -349,13 +349,6 @@
 <a href="#347" id="347">347</a>
 <a href="#348" id="348">348</a>
 <a href="#349" id="349">349</a>
-<a href="#350" id="350">350</a>
-<a href="#351" id="351">351</a>
-<a href="#352" id="352">352</a>
-<a href="#353" id="353">353</a>
-<a href="#354" id="354">354</a>
-<a href="#355" id="355">355</a>
-<a href="#356" id="356">356</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	CHAIN_ID, GENESIS_COMMITTEE_UTXO, GOVERNANCE_AUTHORITY, THRESHOLD_DENOMINATOR,
 	THRESHOLD_NUMERATOR,
@@ -436,9 +429,6 @@
 	<span class="kw">let </span>cardano_payment_verification_key_file =
 		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
 			.prompt_with_default_from_file_and_save(context);
-	<span class="kw">if </span>!context.file_exists(<span class="kw-2">&amp;</span>cardano_cli) {
-		<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Cardano CLI executable file ({cardano_cli}) is missing"</span>));
-	}
 
 	<span class="kw">let </span>governance_authority = context.run_command(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"{cardano_cli} address key-hash --payment-verification-key-file {cardano_payment_verification_key_file}"</span>))<span class="question-mark">?</span>;
 	<span class="kw">let </span>ga = MainchainAddressHash::decode_hex(governance_authority.trim())
@@ -506,7 +496,6 @@
 	</span><span class="kw">fn </span>happy_path() {
 		<span class="kw">let </span>final_chain_config = test_chain_config();
 		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_file(CARDANO_CLI.default.unwrap(), <span class="string">"&lt;mock executable&gt;"</span>)
 			.with_expected_io(<span class="macro">vec!</span>[
 			scenarios::show_intro(),
 			MockIO::prompt(CARDANO_CLI.name, CARDANO_CLI.default, <span class="string">"cardano-cli"</span>),
@@ -540,7 +529,6 @@
 		});
 
 		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_file(CARDANO_CLI.default.unwrap(), <span class="string">"&lt;mock executable&gt;"</span>)
 			.with_json_file(CHAIN_CONFIG_PATH, initial_chain_config).with_expected_io(<span class="macro">vec!</span>[
 			scenarios::show_intro(),
 			MockIO::file_read(GOVERNANCE_AUTHORITY.config_file),
@@ -617,7 +605,6 @@
 		});
 
 		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_file(CARDANO_CLI.default.unwrap(), <span class="string">"&lt;mock executable&gt;"</span>)
 			.with_json_file(CHAIN_ID.config_file, initial_chain_config).with_expected_io(<span class="macro">vec!</span>[
 			scenarios::show_intro(),
 			MockIO::file_read(GOVERNANCE_AUTHORITY.config_file),
@@ -667,7 +654,6 @@
 		});
 
 		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_file(CARDANO_CLI.default.unwrap(), <span class="string">"&lt;mock executable&gt;"</span>)
 			.with_json_file(GENESIS_COMMITTEE_UTXO.config_file ,initial_chain_config)
 			.with_expected_io(<span class="macro">vec!</span>[
 			scenarios::show_intro(),
