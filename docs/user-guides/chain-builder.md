@@ -362,6 +362,6 @@ The start-node wizard is used to start a partner chain node. Make sure that `car
 
 ### 7. Distribute chain files to participants
 
-The partner chain is now ready to start accepting registered validator nodes. [Permissioned candidates](./docs/user-guides/permissioned.md) and [Registered candidates](./docs/user-guides/registered.md) have different onboarding processes. Please follow the respective steps for the type of user.
+The partner chain is now ready to start accepting registered validator nodes. [Permissioned candidates](permissioned.md) and [Registered candidates](registered.md) have different onboarding processes. Please follow the respective steps for the type of user.
 
 Be prepared to share `chain-spec.json` and `partner-chains-cli-chain-config.json` files to both types of users.
