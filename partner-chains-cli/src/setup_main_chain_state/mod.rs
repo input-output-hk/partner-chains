@@ -1,6 +1,7 @@
 use crate::config::config_fields::{CARDANO_PAYMENT_SIGNING_KEY_FILE, POSTGRES_CONNECTION_STRING};
 use crate::config::{
 	config_fields, ChainConfig, ConfigFieldDefinition, SidechainParams, CHAIN_CONFIG_FILE_PATH,
+	PARTNER_CHAINS_CLI_PATH,
 };
 use crate::io::IOContext;
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
@@ -94,6 +95,11 @@ impl CmdRun for SetupMainChainStateCmd {
 		context.print(
 			"This wizard will set or update D-Parameter and Permissioned Candidates on the main chain. Setting either of these costs ADA!",
 		);
+		if !context.file_exists(PARTNER_CHAINS_CLI_PATH) {
+			return Err(anyhow!(
+				"Partner Chains CLI executable file ({PARTNER_CHAINS_CLI_PATH}) is missing."
+			));
+		}
 		let config_initial_authorities =
 			initial_permissioned_candidates_from_chain_config(context)?;
 		if let Some(ariadne_parameters) = get_ariadne_parameters(context, &chain_config)? {
@@ -256,7 +262,7 @@ fn set_candidates_on_main_chain<C: IOContext>(
 			.collect::<Vec<_>>()
 			.join(" ");
 		let output = context.run_command(&format!(
-			"./sidechain-main-cli {} {} {} {}",
+			"{PARTNER_CHAINS_CLI_PATH} {} {} {} {}",
 			command,
 			candidate_keys,
 			smart_contracts::sidechain_params_arguments(chain_params),
@@ -300,7 +306,7 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
 		let sidechain_main_cli_command = insert.d_parameter_command();
 		let command = format!(
-			"./sidechain-main-cli {sidechain_main_cli_command} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}",
+			"{PARTNER_CHAINS_CLI_PATH} {sidechain_main_cli_command} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}",
 			smart_contracts::sidechain_params_arguments(chain_params),
 			smart_contracts::runtime_config_arguments(&sidechain_main_cli_resources, &payment_signing_key_path)
 		);
