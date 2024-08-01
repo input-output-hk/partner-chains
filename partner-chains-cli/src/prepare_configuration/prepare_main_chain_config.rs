@@ -8,7 +8,7 @@ use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params
 use crate::sidechain_main_cli_resources::{
 	establish_sidechain_main_cli_configuration, SidechainMainCliResources,
 };
-use crate::smart_contracts;
+use crate::smart_contracts::{self, check_for_kupo_ogmios_connection_error};
 use anyhow::anyhow;
 use serde_json::Value;
 
@@ -93,17 +93,7 @@ fn run_sidechain_main_cli_addresses<C: IOContext>(
 	);
 	let addresses_string = context.run_command(&cmd)?;
 
-	if addresses_string.contains("ECONNREFUSED") {
-		let kupo_port_str = &kupo_and_ogmios_config.kupo.port.to_string();
-		let (target, connection) = if addresses_string.contains(kupo_port_str) {
-			("Kupo", kupo_and_ogmios_config.kupo)
-		} else {
-			("Ogmios", kupo_and_ogmios_config.ogmios)
-		};
-		return Err(anyhow!(
-			"Failed to connect to {target} at {connection}. Please check connection configuration and try again."
-		));
-	}
+	check_for_kupo_ogmios_connection_error(&addresses_string, &kupo_and_ogmios_config)?;
 
 	let addresses_json: Value = serde_json::from_str(&addresses_string).map_err(|_| {
 		anyhow!("Failed to fetch data from Ogmios or Kupo. Please check connection configuration and try again.")
