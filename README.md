@@ -1,6 +1,6 @@
 # Partner Chains Node
 
-A [Substrate](https://substrate.io/) based blockchain node written in Rust, designed for operation of Cardano Partner chains. This node facilitates the creation and management of sidechains that integrate seamlessly with the Cardano ecosystem.
+A [Substrate](https://substrate.io/) based blockchain node written in Rust, designed for operation of Cardano Partner Chains. This node facilitates the creation and management of partner chains that integrate with the Cardano ecosystem.
 
 This alpha release is just the beginning of the journey. It is intended to get early feedback from the community, is provided "as is," and should not be used in live production networks. Use at your own risk. We welcome and appreciate your feedback!
 
