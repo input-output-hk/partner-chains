@@ -1,9 +1,11 @@
 # Permissioned candidate onboarding
 
-A blockchain validator is a network node that helps process and validate transaction blocks on the platform according to the protocol consensus mechanism. A permissioned candidate is a block producing validator that has been whitelisted by the chain builder so it can validate partner chain blocks and secure the network.
+A blockchain validator is a network node that helps process and validate transaction blocks on the platform according to the protocol consensus mechanism. A permissioned candidate is a block-producing validator that has been whitelisted by the chain builder so it can validate partner chain blocks and secure the network.
 
 Before you begin, some software must be installed.
+
 ## Order of Operations
+
 1. Install dependencies
     1. Cardano node v9.0.0
         1. DB Sync v13.3.0.0 (PostgreSQL v15.3)
@@ -16,7 +18,7 @@ Before you begin, some software must be installed.
 ---
 **NOTE**
 
-This guide is currently aimed at the preview testnet only. In most `cardano-node` operations, this can be set with `--testnet-magic 2`. If you need to set up an SPO, be sure it's set up on **preview**.
+This guide is currently aimed at the **preview testnet only**. In most `cardano-node` operations, this can be set with `--testnet-magic 2`. If you need to set up an SPO, be sure it's set up on **preview**.
 
 ---
 
@@ -26,7 +28,7 @@ To run the partner chains stack, several dependencies need to be installed on th
 
 ### 1.1 Cardano node v9.0.0
 
-A passive Cardano node is required to validate a partner chain. The installation of `cardano-node` is out of the scope of this guide. Refer to our [recommended guide](https://cardano-course.gitbook.io/cardano-course/handbook) for documentation and video instruction.
+A passive Cardano node is required to validate a partner chain. The installation of `cardano-node` is out of the scope of this guide. Refer to the [Cardano course handbook](https://cardano-course.gitbook.io/cardano-course/handbook) for documentation and video instruction.
 
 Once your node is synced with the preview testnet, you are ready to continue with this guide.
 
@@ -34,9 +36,13 @@ Once your node is synced with the preview testnet, you are ready to continue wit
 
 The partner chain needs DB Sync on a `cardano-node` to observe Cardano's state.
 
-#### A note on Cardano DB Sync
+#### A critical note on Cardano DB Sync!
 
-Before starting the partner chain node, and during normal operations, it is essential that the DB Sync component is fully synchronized. Running the node with lagging or not fully synced DB Sync will result in consensus errors, decreased peer reputation, and possibly a temporary ban by network peers. Sync time depends on hardware and network conditions, but here are approximate estimations for each network:
+> Before starting the partner chain node, and during normal operations, it is essential that the DB Sync component is fully synchronized.
+> Running the node with lagging or not fully synced DB Sync will result in consensus errors, decreased peer reputation, and possibly a temporary ban by network peers. 
+> Sync time depends on hardware and network conditions, but here are approximate estimations for each network:
+
+#### Sync time required
 
 - Preview: About 10 hours
 - Pre-production: usually ranges from several hours to a day
@@ -57,7 +63,7 @@ sudo systemctl start postgresql.service
 Enter shell as default postgres user:
 `sudo -i -u postgres`
 
-Enter the postgres CLII: `psql`
+Enter the postgres CLI: `psql`
 
 Create user: `CREATE USER ubuntu WITH PASSWORD 'XXXXXXXXXXXXX';`
 
@@ -85,7 +91,7 @@ List of databases
 (4 rows)
 ```
 
-If any command fails restart postgres service:
+If any command fails, restart postgres service:
 `sudo systemctl restart postgresql.service`
 
 This check should return empty. It will be filled with db sync relations:
@@ -122,15 +128,15 @@ journalctl -fu cardano-dy-sync.service
 ```
 
 ---
-**NOTE**
+**IMPORTANT NOTE**
 
 Ensure that the node is synced with the network to 100% as well as Kupo and DB Sync before continuing beyond this point. On preview network, it is roughly 24 hours before sync is complete.
 
 ---
 
-### 1.2 Download the partner chain node
+### 1.2 Download the Partner Chain node
 
-1. Download the partner chain node from the [official repository](https://github.com/input-output-hk/partner-chains)
+1. Download the Partner Chain node from the [official repository](https://github.com/input-output-hk/partner-chains)
 
 ### 2. Run the generate-keys wizard
 
@@ -170,10 +176,10 @@ Contact the chain builder and request the `chain-spec.json` and `partner-chains-
 
 ### 6. Run the partner chain node
 
-The start-node wizard is used to start a partner chain node. Make sure that `cardano-node` is running with DB Sync running and fully synced. You will need to provide a link to  postgreSQL server running with DB Sync as part of starting the node.
+The start-node wizard is used to start a partner chain node. Make sure that `cardano-node` is running with DB Sync running and fully synced. You will need to provide a link to postgreSQL server running with DB Sync as part of starting the node.
 
 1. Start the wizard: `./partner-chains-cli start-node`
-2. The wizard checks if all required keys are present. If not, it reminds you to the run the generate-keys wizard first, and exits.
+2. The wizard checks if all required keys are present. If not, it reminds you to run the generate-keys wizard first, and exits.
 3. If the `chain-spec` file is not present, you should obtain it from the chain builder.
 4. The wizard checks the `partner-chains-cli-chain-config.json` file. If it is missing or invalid, you should obtain it from the chain builder.
 5. If the `db_sync_postgres_connection_string` is missing from the `partner-chain-cli-resources-config.json` file, the wizard prompts for it, using the default value `postgresql://postgres-user:postgres-password@localhost:5432/cexplorer`.
