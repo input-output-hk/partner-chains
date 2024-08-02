@@ -5,6 +5,17 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 # Unreleased
 
 ## Changed
+* polkadot-sdk dependency updated to partnerchains-stable2407 (stable2407 is v1.15.0 in the previous scheme)
+
+## Removed
+
+## Fixed
+
+## Added
+
+# v1.0.0
+
+## Changed
 * ETCM-7498 - update to polkadot v1.12.0
 * ETCM-6262 - changed the way benchmarks are used in runtime. It now contains 'weights' directory with benchmarks for pallets, block and extrinsics overheads, machine and storage. New scripts for generating them were added.
 * ETCM-7506 - moved `generate-signatures` functionality to node command `registration-signatures`, output has changed, automation in this repository has been updated
