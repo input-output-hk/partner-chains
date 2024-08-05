@@ -1,5 +1,5 @@
-use crate::config::config_fields;
 use crate::config::config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
+use crate::config::{config_fields, SIDECHAIN_MAIN_CLI_PATH};
 use crate::config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
 use crate::prepare_configuration::tests::{
 	prompt_and_save_to_existing_file, prompt_with_default_and_save_to_existing_file,
@@ -15,6 +15,7 @@ use sp_core::offchain::Timestamp;
 #[test]
 fn no_ariadne_parameters_on_main_chain_no_updates() {
 	let mock_context = MockIOContext::new()
+		.with_file(SIDECHAIN_MAIN_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
@@ -35,6 +36,7 @@ fn no_ariadne_parameters_on_main_chain_no_updates() {
 #[test]
 fn no_ariadne_parameters_on_main_chain_do_updates() {
 	let mock_context = MockIOContext::new()
+		.with_file(SIDECHAIN_MAIN_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
@@ -57,6 +59,7 @@ fn no_ariadne_parameters_on_main_chain_do_updates() {
 #[test]
 fn ariadne_parameters_are_on_main_chain_no_updates() {
 	let mock_context = MockIOContext::new()
+		.with_file(SIDECHAIN_MAIN_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
@@ -78,6 +81,7 @@ fn ariadne_parameters_are_on_main_chain_no_updates() {
 #[test]
 fn ariadne_parameters_are_on_main_chain_do_update() {
 	let mock_context = MockIOContext::new()
+		.with_file(SIDECHAIN_MAIN_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
@@ -101,6 +105,7 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 #[test]
 fn fails_if_update_permissioned_candidates_fail() {
 	let mock_context = MockIOContext::new()
+		.with_file(SIDECHAIN_MAIN_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
@@ -120,6 +125,7 @@ fn fails_if_update_permissioned_candidates_fail() {
 #[test]
 fn candidates_on_main_chain_are_same_as_in_config_no_updates() {
 	let mock_context = MockIOContext::new()
+		.with_file(SIDECHAIN_MAIN_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
@@ -135,6 +141,19 @@ fn candidates_on_main_chain_are_same_as_in_config_no_updates() {
 	let result = SetupMainChainStateCmd.run(&mock_context);
 	mock_context.no_more_io_expected();
 	assert!(result.is_ok());
+}
+
+#[test]
+fn should_return_error_message_if_pc_cli_missing() {
+	let mock_context = MockIOContext::new()
+		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
+		.with_expected_io(vec![read_chain_config_io(), print_info_io()]);
+	let result = SetupMainChainStateCmd.run(&mock_context);
+	mock_context.no_more_io_expected();
+	assert_eq!(
+		result.unwrap_err().to_string(),
+		"Partner Chains Smart Contracts executable file (./sidechain-main-cli) is missing"
+	);
 }
 
 fn read_chain_config_io() -> MockIO {
