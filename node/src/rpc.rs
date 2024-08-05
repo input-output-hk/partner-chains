@@ -30,6 +30,7 @@ use sidechain_runtime::{BlockNumber, Hash};
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
+use sp_session_validator_management_query::SessionValidatorManagementQuery;
 use std::sync::Arc;
 use time_source::TimeSource;
 
@@ -134,10 +135,10 @@ where
 		.into_rpc(),
 	)?;
 	module.merge(
-		SessionValidatorManagementRpc::new(
+		SessionValidatorManagementRpc::new(Arc::new(SessionValidatorManagementQuery::new(
 			client.clone(),
 			main_chain_follower_data_sources.candidate.clone(),
-		)
+		)))
 		.into_rpc(),
 	)?;
 

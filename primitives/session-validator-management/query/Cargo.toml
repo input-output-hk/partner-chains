@@ -1,0 +1,31 @@
+[package]
+name = "sp-session-validator-management-query"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true }
+derive-new = { workspace = true }
+serde_json = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+sp-api = { workspace = true }
+sp-blockchain = { workspace = true }
+main-chain-follower-api = { workspace = true, features = ['std', 'candidate-source'] }
+sp-session-validator-management = { workspace = true, default-features = true }
+sp-sidechain = { workspace = true, default-features = true }
+sidechain-domain = { workspace = true, default-features = true }
+sidechain-block-search = { workspace = true }
+authority-selection-inherents = { workspace = true, default-features = true }
+thiserror = { workspace = true }
+plutus = { workspace = true }
+
+[dev-dependencies]
+sp-std = { workspace = true }
+hex-literal = { workspace = true }
+minicbor = { workspace = true }
+plutus-datum-derive = { workspace = true }
+tokio = { workspace = true }

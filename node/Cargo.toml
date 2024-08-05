@@ -59,6 +59,7 @@ sp-sidechain = { workspace = true }
 pallet-sidechain-rpc = { workspace = true }
 pallet-session-validator-management = { workspace = true }
 sp-session-validator-management = { workspace = true }
+sp-session-validator-management-query = { workspace = true }
 pallet-session-validator-management-rpc = { workspace = true }
 pallet-partner-chains-session = { workspace = true }
 serde = { workspace = true }
