@@ -327,9 +327,16 @@
 <a href="#325" id="325">325</a>
 <a href="#326" id="326">326</a>
 <a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{CARDANO_PAYMENT_SIGNING_KEY_FILE, POSTGRES_CONNECTION_STRING};
 <span class="kw">use </span><span class="kw">crate</span>::config::{
 	config_fields, ChainConfig, ConfigFieldDefinition, SidechainParams, CHAIN_CONFIG_FILE_PATH,
+	SIDECHAIN_MAIN_CLI_PATH,
 };
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
@@ -423,6 +430,11 @@
 		context.print(
 			<span class="string">"This wizard will set or update D-Parameter and Permissioned Candidates on the main chain. Setting either of these costs ADA!"</span>,
 		);
+		<span class="kw">if </span>!context.file_exists(SIDECHAIN_MAIN_CLI_PATH) {
+			<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(
+				<span class="string">"Partner Chains Smart Contracts executable file ({SIDECHAIN_MAIN_CLI_PATH}) is missing"</span>,
+			));
+		}
 		<span class="kw">let </span>config_initial_authorities =
 			initial_permissioned_candidates_from_chain_config(context)<span class="question-mark">?</span>;
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(ariadne_parameters) = get_ariadne_parameters(context, <span class="kw-2">&amp;</span>chain_config)<span class="question-mark">? </span>{
@@ -585,7 +597,7 @@
 			.collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
 			.join(<span class="string">" "</span>);
 		<span class="kw">let </span>output = context.run_command(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-			<span class="string">"./sidechain-main-cli {} {} {} {}"</span>,
+			<span class="string">"{SIDECHAIN_MAIN_CLI_PATH} {} {} {} {}"</span>,
 			command,
 			candidate_keys,
 			smart_contracts::sidechain_params_arguments(chain_params),
@@ -629,7 +641,7 @@
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
 		<span class="kw">let </span>sidechain_main_cli_command = insert.d_parameter_command();
 		<span class="kw">let </span>command = <span class="macro">format!</span>(
-			<span class="string">"./sidechain-main-cli {sidechain_main_cli_command} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}"</span>,
+			<span class="string">"{SIDECHAIN_MAIN_CLI_PATH} {sidechain_main_cli_command} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}"</span>,
 			smart_contracts::sidechain_params_arguments(chain_params),
 			smart_contracts::runtime_config_arguments(<span class="kw-2">&amp;</span>sidechain_main_cli_resources, <span class="kw-2">&amp;</span>payment_signing_key_path)
 		);
