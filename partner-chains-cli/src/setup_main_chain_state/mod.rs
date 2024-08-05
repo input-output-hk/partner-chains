@@ -98,7 +98,7 @@ impl CmdRun for SetupMainChainStateCmd {
 		);
 		if !context.file_exists(SIDECHAIN_MAIN_CLI_PATH) {
 			return Err(anyhow!(
-				"Partner Chains CLI executable file ({SIDECHAIN_MAIN_CLI_PATH}) is missing."
+				"Partner Chains Smart Contracts executable file ({SIDECHAIN_MAIN_CLI_PATH}) is missing",
 			));
 		}
 		let config_initial_authorities =

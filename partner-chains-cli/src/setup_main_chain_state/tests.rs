@@ -152,7 +152,7 @@ fn should_return_error_message_if_pc_cli_missing() {
 	mock_context.no_more_io_expected();
 	assert_eq!(
 		result.unwrap_err().to_string(),
-		"Partner Chains CLI executable file (./sidechain-main-cli) is missing."
+		"Partner Chains Smart Contracts executable file (./sidechain-main-cli) is missing"
 	);
 }
 
