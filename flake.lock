@@ -54,11 +54,11 @@
     "CHaP_12": {
       "flake": false,
       "locked": {
-        "lastModified": 1672829743,
-        "narHash": "sha256-lM3s0UQDxfipHbEFhmW2d5QcmKIPVsLT2ai6RnHAP84=",
+        "lastModified": 1694601145,
+        "narHash": "sha256-p7ZxorrOvoow6N+JKvfrCiRYFtUSPiEMgt8MR+rcTT4=",
         "owner": "input-output-hk",
         "repo": "cardano-haskell-packages",
-        "rev": "551630b2c90ed9107079ab402534ed3b56db6f04",
+        "rev": "e8298604717dbaa311c1e42e021b571670f4b039",
         "type": "github"
       },
       "original": {
@@ -122,11 +122,11 @@
     "CHaP_5": {
       "flake": false,
       "locked": {
-        "lastModified": 1719922263,
-        "narHash": "sha256-Jm1BjEKWwu2K6L/pgt/n3++wdRfs58PpLsteXjVgEtA=",
+        "lastModified": 1718835244,
+        "narHash": "sha256-HMjhDRE4H4ae+/I/ZLiRwG4+ceMQAmZLYmkS04AJrQ4=",
         "owner": "input-output-hk",
         "repo": "cardano-haskell-packages",
-        "rev": "52a272bdbc16e0f5df58fcbaeb3681e50c9b340c",
+        "rev": "e3afe42f8c3a0be8e8fb53602afd57f7839e040a",
         "type": "github"
       },
       "original": {
@@ -156,11 +156,11 @@
     "CHaP_7": {
       "flake": false,
       "locked": {
-        "lastModified": 1678160279,
-        "narHash": "sha256-IKbD0uqteVoo4KRcYh/QrLQ/HQJXwgCQS2Mq7grhSdM=",
+        "lastModified": 1718790880,
+        "narHash": "sha256-8lIMAxIBYRVs4uQXVnmWT3N5SND5zE2s1t9/chn7DX8=",
         "owner": "input-output-hk",
         "repo": "cardano-haskell-packages",
-        "rev": "e20bffc8ac331810efa671a1bb49932595fa21f6",
+        "rev": "5ba8c1a3835b87954354757f2aa6611174067165",
         "type": "github"
       },
       "original": {
@@ -716,7 +716,7 @@
     "agenix_3": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -744,7 +744,7 @@
     "agenix_4": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -771,7 +771,7 @@
     "agenix_5": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -815,7 +815,7 @@
     "agenix_7": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -842,7 +842,7 @@
     "agenix_8": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -907,7 +907,7 @@
         "flake-parts": "flake-parts_3",
         "inclusive": "inclusive",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-db-sync",
@@ -1116,28 +1116,28 @@
     "bitte-cells": {
       "inputs": {
         "cardano-db-sync": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
           "cardano-db-sync"
         ],
         "cardano-iohk-nix": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
           "iohk-nix"
         ],
         "cardano-node": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
           "cardano-node"
         ],
         "cardano-wallet": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -1145,28 +1145,28 @@
         ],
         "cicero": "cicero",
         "data-merge": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
           "data-merge"
         ],
         "n2c": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
           "n2c"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
           "nixpkgs"
         ],
         "std": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -2462,11 +2462,11 @@
     "cabal-34_24": {
       "flake": false,
       "locked": {
-        "lastModified": 1640353650,
-        "narHash": "sha256-N1t6M3/wqj90AEdRkeC8i923gQYUpzSr8b40qVOZ1Rk=",
+        "lastModified": 1645834128,
+        "narHash": "sha256-wG3d+dOt14z8+ydz4SL7pwGfe7SiimxcD/LOuPCV6xM=",
         "owner": "haskell",
         "repo": "cabal",
-        "rev": "942639c18c0cd8ec53e0a6f8d120091af35312cd",
+        "rev": "5ff598c67f53f7c4f48e31d722ba37172230c462",
         "type": "github"
       },
       "original": {
@@ -2496,11 +2496,11 @@
     "cabal-34_26": {
       "flake": false,
       "locked": {
-        "lastModified": 1640353650,
-        "narHash": "sha256-N1t6M3/wqj90AEdRkeC8i923gQYUpzSr8b40qVOZ1Rk=",
+        "lastModified": 1645834128,
+        "narHash": "sha256-wG3d+dOt14z8+ydz4SL7pwGfe7SiimxcD/LOuPCV6xM=",
         "owner": "haskell",
         "repo": "cabal",
-        "rev": "942639c18c0cd8ec53e0a6f8d120091af35312cd",
+        "rev": "5ff598c67f53f7c4f48e31d722ba37172230c462",
         "type": "github"
       },
       "original": {
@@ -2870,11 +2870,11 @@
     "cabal-36_22": {
       "flake": false,
       "locked": {
-        "lastModified": 1641652457,
-        "narHash": "sha256-BlFPKP4C4HRUJeAbdembX1Rms1LD380q9s0qVDeoAak=",
+        "lastModified": 1669081697,
+        "narHash": "sha256-I5or+V7LZvMxfbYgZATU4awzkicBwwok4mVoje+sGmU=",
         "owner": "haskell",
         "repo": "cabal",
-        "rev": "f27667f8ec360c475027dcaee0138c937477b070",
+        "rev": "8fd619e33d34924a94e691c5fea2c42f0fc7f144",
         "type": "github"
       },
       "original": {
@@ -2904,11 +2904,11 @@
     "cabal-36_24": {
       "flake": false,
       "locked": {
-        "lastModified": 1641652457,
-        "narHash": "sha256-BlFPKP4C4HRUJeAbdembX1Rms1LD380q9s0qVDeoAak=",
+        "lastModified": 1669081697,
+        "narHash": "sha256-I5or+V7LZvMxfbYgZATU4awzkicBwwok4mVoje+sGmU=",
         "owner": "haskell",
         "repo": "cabal",
-        "rev": "f27667f8ec360c475027dcaee0138c937477b070",
+        "rev": "8fd619e33d34924a94e691c5fea2c42f0fc7f144",
         "type": "github"
       },
       "original": {
@@ -3125,12 +3125,12 @@
       "inputs": {
         "flake-utils": "flake-utils_38",
         "haskellNix": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "haskellNix"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "nixpkgs"
         ],
@@ -3154,21 +3154,21 @@
       "inputs": {
         "flake-utils": "flake-utils_47",
         "haskellNix": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
           "haskellNix"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
           "nixpkgs"
         ],
         "tullia": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -3193,14 +3193,14 @@
       "inputs": {
         "flake-utils": "flake-utils_52",
         "haskellNix": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
           "haskellNix"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -3226,19 +3226,19 @@
       "inputs": {
         "flake-utils": "flake-utils_59",
         "haskellNix": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "haskellNix"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "nixpkgs"
         ],
         "tullia": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia"
@@ -3334,7 +3334,7 @@
         "haskellNix": "haskellNix_13",
         "iohkNix": "iohkNix_12",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-db-sync",
@@ -3699,7 +3699,7 @@
         "flake-root": "flake-root",
         "hercules-ci-effects": "hercules-ci-effects",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "nixpkgs"
         ],
@@ -3707,11 +3707,11 @@
         "treefmt-nix": "treefmt-nix_3"
       },
       "locked": {
-        "lastModified": 1719347639,
-        "narHash": "sha256-scs7lMJQ4kLSIh9nahzoxk9L6BRyt2hYFbr5nIaqCWY=",
+        "lastModified": 1717782115,
+        "narHash": "sha256-RfG3Z7Ph8UDQUsTAfGJ3lbLZK5W9p2i9iyceBJISb5Q=",
         "owner": "mlabs-haskell",
         "repo": "cardano.nix",
-        "rev": "5c8a8bffcee77189b72fea6123b2a2845d1e731e",
+        "rev": "f641fb662d17d38a2d7ca543966d36f39c9a6cba",
         "type": "github"
       },
       "original": {
@@ -3778,7 +3778,7 @@
         "hackageNix": "hackageNix_6",
         "haskellNix": "haskellNix_14",
         "hostNixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -3787,7 +3787,7 @@
         "iohkNix": "iohkNix_13",
         "nix2container": "nix2container_13",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -3796,7 +3796,7 @@
         ],
         "ops-lib": "ops-lib_3",
         "std": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -3833,7 +3833,7 @@
         "hackageNix": "hackageNix_7",
         "haskellNix": "haskellNix_15",
         "hostNixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -3842,7 +3842,7 @@
         "iohkNix": "iohkNix_14",
         "nix2container": "nix2container_16",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -4008,14 +4008,14 @@
         "hackageNix": "hackageNix_4",
         "haskellNix": "haskellNix_12",
         "hostNixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "nixpkgs"
         ],
         "iohkNix": "iohkNix_11",
         "nix2container": "nix2container_12",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "haskellNix",
           "nixpkgs-unstable"
@@ -4051,7 +4051,7 @@
         "hackageNix": "hackageNix_8",
         "haskellNix": "haskellNix_16",
         "hostNixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "nixpkgs"
@@ -4059,7 +4059,7 @@
         "iohkNix": "iohkNix_15",
         "nix2container": "nix2container_17",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "haskellNix",
@@ -4067,7 +4067,7 @@
         ],
         "ops-lib": "ops-lib_5",
         "std": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -4126,7 +4126,7 @@
         "iohk-nix-ng": "iohk-nix-ng",
         "nix": "nix_10",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-db-sync",
@@ -4586,7 +4586,7 @@
         "kupo": "kupo_3",
         "kupo-nixos": "kupo-nixos",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "haskell-nix",
           "nixpkgs-unstable"
@@ -4618,7 +4618,7 @@
         "flake-utils": "flake-utils_83",
         "haskellNix": "haskellNix_17",
         "hostNixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -4627,7 +4627,7 @@
         ],
         "iohkNix": "iohkNix_16",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -4675,7 +4675,7 @@
         "byron-chain": "byron-chain",
         "capsules": "capsules_2",
         "cardano-db-sync": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync"
         ],
@@ -4692,7 +4692,7 @@
         "nix-inclusive": "nix-inclusive",
         "nixpkgs": "nixpkgs_146",
         "nixpkgs-haskell": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -4768,7 +4768,7 @@
         "flake-compat": "flake-compat_25",
         "flake-utils": "flake-utils_44",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-db-sync",
@@ -4797,7 +4797,7 @@
         "flake-compat": "flake-compat_24",
         "flake-utils": "flake-utils_43",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "paisano-mdbook-preprocessor",
@@ -4824,7 +4824,7 @@
         "flake-compat": "flake-compat_36",
         "flake-utils": "flake-utils_57",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -4851,7 +4851,7 @@
     "crane_3": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "mithril",
           "nixpkgs"
         ]
@@ -5267,7 +5267,7 @@
         "haskellNix": "haskellNix_18",
         "iohkNix": "iohkNix_17",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "haskellNix",
@@ -5295,7 +5295,7 @@
         "fenix": "fenix_5",
         "flake-compat": "flake-compat_41",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -5327,7 +5327,7 @@
         "fenix": "fenix_7",
         "flake-compat": "flake-compat_42",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -5357,7 +5357,7 @@
         "fenix": "fenix_9",
         "flake-compat": "flake-compat_43",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -5462,7 +5462,7 @@
     "devshell_11": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -5470,7 +5470,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -5495,7 +5495,7 @@
     "devshell_12": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "nixpkgs"
@@ -5519,7 +5519,7 @@
     "devshell_13": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -5528,7 +5528,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -5554,7 +5554,7 @@
     "devshell_14": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -5564,7 +5564,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -5591,7 +5591,7 @@
     "devshell_15": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -5618,7 +5618,7 @@
       "inputs": {
         "flake-utils": "flake-utils_58",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "nixpkgs"
@@ -5641,7 +5641,7 @@
     "devshell_17": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -5649,7 +5649,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -5780,7 +5780,7 @@
     "devshell_23": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -5789,7 +5789,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -5959,7 +5959,7 @@
     "devshell_31": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -5967,7 +5967,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -5993,7 +5993,7 @@
       "inputs": {
         "flake-utils": "flake-utils_89",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -6226,7 +6226,7 @@
     "dmerge_10": {
       "inputs": {
         "nixlib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -6234,7 +6234,7 @@
           "nixpkgs"
         ],
         "yants": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -6259,20 +6259,20 @@
     "dmerge_11": {
       "inputs": {
         "haumea": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "haumea"
         ],
         "nixlib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "haumea",
           "nixpkgs"
         ],
         "yants": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "yants"
@@ -6296,7 +6296,7 @@
     "dmerge_12": {
       "inputs": {
         "nixlib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -6305,7 +6305,7 @@
           "nixpkgs"
         ],
         "yants": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -6331,7 +6331,7 @@
     "dmerge_13": {
       "inputs": {
         "nixlib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -6341,7 +6341,7 @@
           "nixpkgs"
         ],
         "yants": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -6368,7 +6368,7 @@
     "dmerge_14": {
       "inputs": {
         "haumea": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -6376,7 +6376,7 @@
           "haumea"
         ],
         "nixlib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -6385,7 +6385,7 @@
           "nixpkgs"
         ],
         "yants": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -6411,7 +6411,7 @@
     "dmerge_15": {
       "inputs": {
         "nixlib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -6419,7 +6419,7 @@
           "nixpkgs"
         ],
         "yants": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -6444,7 +6444,7 @@
     "dmerge_16": {
       "inputs": {
         "nixlib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -6453,7 +6453,7 @@
           "nixpkgs"
         ],
         "yants": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -6479,7 +6479,7 @@
     "dmerge_17": {
       "inputs": {
         "nixlib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -6487,7 +6487,7 @@
           "nixpkgs"
         ],
         "yants": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -6769,7 +6769,7 @@
         "inclusive": "inclusive_7",
         "nix": "nix_20",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -7081,7 +7081,7 @@
     "fenix_10": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -7127,7 +7127,7 @@
     "fenix_3": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-db-sync",
@@ -7193,7 +7193,7 @@
     "fenix_6": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -7240,7 +7240,7 @@
     "fenix_8": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -7975,11 +7975,11 @@
     "flake-compat_48": {
       "flake": false,
       "locked": {
-        "lastModified": 1673956053,
-        "narHash": "sha256-4gtG9iQuiKITOjNQQeQIpoIB6b16fm+504Ch3sNKLd8=",
+        "lastModified": 1696426674,
+        "narHash": "sha256-kvjfFW7WAETZlt09AgDn1MrtKzP7t90Vf7vypd3OL1U=",
         "owner": "edolstra",
         "repo": "flake-compat",
-        "rev": "35bb57c0c8d8b62bbfd284272c928ceb64ddbde9",
+        "rev": "0f9255e01c2351cc7d116c072cb317785dd33b33",
         "type": "github"
       },
       "original": {
@@ -8025,11 +8025,11 @@
     "flake-compat_50": {
       "flake": false,
       "locked": {
-        "lastModified": 1668681692,
-        "narHash": "sha256-Ht91NGdewz8IQLtWZ9LCeNXMSXHUss+9COoqu6JLmXU=",
+        "lastModified": 1673956053,
+        "narHash": "sha256-4gtG9iQuiKITOjNQQeQIpoIB6b16fm+504Ch3sNKLd8=",
         "owner": "edolstra",
         "repo": "flake-compat",
-        "rev": "009399224d5e398d03b22badca40a37ac85412a1",
+        "rev": "35bb57c0c8d8b62bbfd284272c928ceb64ddbde9",
         "type": "github"
       },
       "original": {
@@ -8279,7 +8279,7 @@
     "flake-parts_8": {
       "inputs": {
         "nixpkgs-lib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "hercules-ci-effects",
           "nixpkgs"
@@ -9799,7 +9799,7 @@
         "devshell": "devshell_26",
         "inclusive": "inclusive_8",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -10265,6 +10265,80 @@
         "type": "github"
       }
     },
+    "ghc910X": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1714520650,
+        "narHash": "sha256-4uz6RA1hRr0RheGNDM49a/B3jszqNNU8iHIow4mSyso=",
+        "ref": "ghc-9.10",
+        "rev": "2c6375b9a804ac7fca1e82eb6fcfc8594c67c5f5",
+        "revCount": 62663,
+        "submodules": true,
+        "type": "git",
+        "url": "https://gitlab.haskell.org/ghc/ghc"
+      },
+      "original": {
+        "ref": "ghc-9.10",
+        "submodules": true,
+        "type": "git",
+        "url": "https://gitlab.haskell.org/ghc/ghc"
+      }
+    },
+    "ghc910X_2": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1714520650,
+        "narHash": "sha256-4uz6RA1hRr0RheGNDM49a/B3jszqNNU8iHIow4mSyso=",
+        "ref": "ghc-9.10",
+        "rev": "2c6375b9a804ac7fca1e82eb6fcfc8594c67c5f5",
+        "revCount": 62663,
+        "submodules": true,
+        "type": "git",
+        "url": "https://gitlab.haskell.org/ghc/ghc"
+      },
+      "original": {
+        "ref": "ghc-9.10",
+        "submodules": true,
+        "type": "git",
+        "url": "https://gitlab.haskell.org/ghc/ghc"
+      }
+    },
+    "ghc911": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1714817013,
+        "narHash": "sha256-m2je4UvWfkgepMeUIiXHMwE6W+iVfUY38VDGkMzjCcc=",
+        "ref": "refs/heads/master",
+        "rev": "fc24c5cf6c62ca9e3c8d236656e139676df65034",
+        "revCount": 62816,
+        "submodules": true,
+        "type": "git",
+        "url": "https://gitlab.haskell.org/ghc/ghc"
+      },
+      "original": {
+        "submodules": true,
+        "type": "git",
+        "url": "https://gitlab.haskell.org/ghc/ghc"
+      }
+    },
+    "ghc911_2": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1714817013,
+        "narHash": "sha256-m2je4UvWfkgepMeUIiXHMwE6W+iVfUY38VDGkMzjCcc=",
+        "ref": "refs/heads/master",
+        "rev": "fc24c5cf6c62ca9e3c8d236656e139676df65034",
+        "revCount": 62816,
+        "submodules": true,
+        "type": "git",
+        "url": "https://gitlab.haskell.org/ghc/ghc"
+      },
+      "original": {
+        "submodules": true,
+        "type": "git",
+        "url": "https://gitlab.haskell.org/ghc/ghc"
+      }
+    },
     "ghc98X": {
       "flake": false,
       "locked": {
@@ -10379,7 +10453,7 @@
     "gitignore": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "pre-commit-hooks-nix",
@@ -10403,7 +10477,7 @@
     "gitignore_2": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "iogx",
           "pre-commit-hooks-nix",
           "nixpkgs"
@@ -10689,11 +10763,11 @@
     "hackage-nix": {
       "flake": false,
       "locked": {
-        "lastModified": 1719880711,
-        "narHash": "sha256-l6O9JzsNm0hK7AKHeegzQZ7FvAlzM5qxHIWOXMebzCk=",
+        "lastModified": 1718757495,
+        "narHash": "sha256-xviuxucDjsQ2HbqzfwVyB4ZmDIyzOnf2oDbVtwBHIco=",
         "owner": "input-output-hk",
         "repo": "hackage.nix",
-        "rev": "4b1044b947c482975b30a029a42e8e73a3bec073",
+        "rev": "0bb764772a383a926e3f945397a0e59ab3c64d6d",
         "type": "github"
       },
       "original": {
@@ -10945,11 +11019,11 @@
     "hackage_17": {
       "flake": false,
       "locked": {
-        "lastModified": 1719880711,
-        "narHash": "sha256-l6O9JzsNm0hK7AKHeegzQZ7FvAlzM5qxHIWOXMebzCk=",
+        "lastModified": 1718843827,
+        "narHash": "sha256-FrzH96+EaI7O6ZfCi7Ifya3KS82kLTb4cmqmM+eRhbE=",
         "owner": "input-output-hk",
         "repo": "hackage.nix",
-        "rev": "4b1044b947c482975b30a029a42e8e73a3bec073",
+        "rev": "18a2a34abd64aad840134c2fa04e57e0826848b8",
         "type": "github"
       },
       "original": {
@@ -11200,7 +11274,7 @@
         "hydra": "hydra_9",
         "iserv-proxy": "iserv-proxy_5",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-db-sync",
@@ -11217,7 +11291,7 @@
         "nixpkgs-unstable": "nixpkgs-unstable_15",
         "old-ghc-nix": "old-ghc-nix_15",
         "stackage": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-db-sync",
@@ -11252,7 +11326,7 @@
         "hpc-coveralls": "hpc-coveralls_20",
         "nix-tools": "nix-tools_8",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -11265,7 +11339,7 @@
         "nixpkgs-2105": "nixpkgs-2105_20",
         "nixpkgs-2111": "nixpkgs-2111_20",
         "nixpkgs-unstable": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -11300,7 +11374,7 @@
         "flake-utils": "flake-utils_85",
         "ghc-8.6.5-iohk": "ghc-8.6.5-iohk_22",
         "hackage": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -11310,7 +11384,7 @@
         "hydra": "hydra_18",
         "nix-tools": "nix-tools_10",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -11348,8 +11422,10 @@
         "cardano-shell": "cardano-shell_24",
         "flake-compat": "flake-compat_49",
         "ghc-8.6.5-iohk": "ghc-8.6.5-iohk_24",
+        "ghc910X": "ghc910X",
+        "ghc911": "ghc911",
         "hackage": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "hackage-nix"
         ],
@@ -11366,7 +11442,7 @@
         "hydra": "hydra_20",
         "iserv-proxy": "iserv-proxy_10",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "nixpkgs"
         ],
@@ -11382,11 +11458,11 @@
         "stackage": "stackage_23"
       },
       "locked": {
-        "lastModified": 1719881433,
-        "narHash": "sha256-q995hk+Ez6itYO9no8zeF0hrmTm4RmtSPy38E1qdgyE=",
+        "lastModified": 1718797200,
+        "narHash": "sha256-ueFxTuZrQ3ZT/Fj5sSeUWlqKa4+OkUU1xW0E+q/XTfw=",
         "owner": "input-output-hk",
         "repo": "haskell.nix",
-        "rev": "ba1756105ba7c77bbffbc1e39e6a72a33257e8d1",
+        "rev": "cb139fa956158397aa398186bb32dd26f7318784",
         "type": "github"
       },
       "original": {
@@ -11409,7 +11485,7 @@
         "hydra": "hydra_21",
         "nix-tools": "nix-tools_12",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "kupo-nixos",
           "haskell-nix",
@@ -11446,8 +11522,10 @@
         "cardano-shell": "cardano-shell_26",
         "flake-compat": "flake-compat_51",
         "ghc-8.6.5-iohk": "ghc-8.6.5-iohk_26",
+        "ghc910X": "ghc910X_2",
+        "ghc911": "ghc911_2",
         "hackage": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "hackage"
         ],
         "hls-1.10": "hls-1.10_9",
@@ -11463,7 +11541,7 @@
         "hydra": "hydra_22",
         "iserv-proxy": "iserv-proxy_11",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "haskell-nix",
           "nixpkgs-unstable"
         ],
@@ -11479,11 +11557,11 @@
         "stackage": "stackage_25"
       },
       "locked": {
-        "lastModified": 1719881433,
-        "narHash": "sha256-q995hk+Ez6itYO9no8zeF0hrmTm4RmtSPy38E1qdgyE=",
+        "lastModified": 1718844631,
+        "narHash": "sha256-7r7Yo5sHrsNVfr52xDokSWkCes3XAwLmpRCNt/psyY4=",
         "owner": "input-output-hk",
         "repo": "haskell.nix",
-        "rev": "ba1756105ba7c77bbffbc1e39e6a72a33257e8d1",
+        "rev": "476f3dbe4e4129ef092852f9f7d2cd9d93437529",
         "type": "github"
       },
       "original": {
@@ -11627,7 +11705,7 @@
         "ghc98X": "ghc98X",
         "ghc99": "ghc99",
         "hackage": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "hackageNix"
         ],
@@ -11640,7 +11718,7 @@
         "hydra": "hydra_8",
         "iserv-proxy": "iserv-proxy_4",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "nixpkgs"
         ],
@@ -11680,7 +11758,7 @@
         "ghc98X": "ghc98X_2",
         "ghc99": "ghc99_2",
         "hackage": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-db-sync",
@@ -11695,7 +11773,7 @@
         "hydra": "hydra_10",
         "iserv-proxy": "iserv-proxy_6",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-db-sync",
@@ -11737,7 +11815,7 @@
         "flake-utils": "flake-utils_48",
         "ghc-8.6.5-iohk": "ghc-8.6.5-iohk_17",
         "hackage": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -11748,7 +11826,7 @@
         "hydra": "hydra_11",
         "iserv-proxy": "iserv-proxy_7",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -11789,7 +11867,7 @@
         "ghc98X": "ghc98X_3",
         "ghc99": "ghc99_3",
         "hackage": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -11804,7 +11882,7 @@
         "hydra": "hydra_12",
         "iserv-proxy": "iserv-proxy_8",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -11845,7 +11923,7 @@
         "flake-utils": "flake-utils_60",
         "ghc-8.6.5-iohk": "ghc-8.6.5-iohk_19",
         "hackage": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "hackageNix"
@@ -11855,7 +11933,7 @@
         "hydra": "hydra_13",
         "iserv-proxy": "iserv-proxy_9",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "nixpkgs"
@@ -11897,7 +11975,7 @@
         "hydra": "hydra_17",
         "nix-tools": "nix-tools_9",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -11939,7 +12017,7 @@
         "hydra": "hydra_19",
         "nix-tools": "nix-tools_11",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "haskellNix",
@@ -12340,13 +12418,13 @@
     "hercules-ci-effects": {
       "inputs": {
         "flake-parts": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "flake-parts"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "nixpkgs"
@@ -12373,11 +12451,11 @@
         "nixpkgs": "nixpkgs_153"
       },
       "locked": {
-        "lastModified": 1719226092,
-        "narHash": "sha256-YNkUMcCUCpnULp40g+svYsaH1RbSEj6s4WdZY/SHe38=",
+        "lastModified": 1718018037,
+        "narHash": "sha256-03rLBd/lKecgaKz0j5ESUf9lDn5R0SJatZTKLL5unWE=",
         "owner": "hercules-ci",
         "repo": "hercules-ci-effects",
-        "rev": "11e4b8dc112e2f485d7c97e1cee77f9958f498f5",
+        "rev": "0ab08b23ce3c3f75fe9a5598756b6fb8bcf0b414",
         "type": "github"
       },
       "original": {
@@ -12610,11 +12688,11 @@
     "hls-2.0_5": {
       "flake": false,
       "locked": {
-        "lastModified": 1685164346,
-        "narHash": "sha256-pRaN3/LHroNOiQFnRLTB7uQ0vmcEx8QsOxH9nB+rdp8=",
+        "lastModified": 1687698105,
+        "narHash": "sha256-OHXlgRzs/kuJH8q7Sxh507H+0Rb8b7VOiPAjcY9sM1k=",
         "owner": "haskell",
         "repo": "haskell-language-server",
-        "rev": "788a473037a99fe6b70752685cb90ef5a56c0368",
+        "rev": "783905f211ac63edf982dd1889c671653327e441",
         "type": "github"
       },
       "original": {
@@ -12627,11 +12705,11 @@
     "hls-2.0_6": {
       "flake": false,
       "locked": {
-        "lastModified": 1685164346,
-        "narHash": "sha256-pRaN3/LHroNOiQFnRLTB7uQ0vmcEx8QsOxH9nB+rdp8=",
+        "lastModified": 1687698105,
+        "narHash": "sha256-OHXlgRzs/kuJH8q7Sxh507H+0Rb8b7VOiPAjcY9sM1k=",
         "owner": "haskell",
         "repo": "haskell-language-server",
-        "rev": "788a473037a99fe6b70752685cb90ef5a56c0368",
+        "rev": "783905f211ac63edf982dd1889c671653327e441",
         "type": "github"
       },
       "original": {
@@ -13476,7 +13554,7 @@
       "inputs": {
         "nix": "nix_11",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-db-sync",
@@ -13503,7 +13581,7 @@
       "inputs": {
         "nix": "nix_12",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -13530,7 +13608,7 @@
       "inputs": {
         "nix": "nix_13",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -13557,7 +13635,7 @@
       "inputs": {
         "nix": "nix_14",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "haskellNix",
@@ -13582,7 +13660,7 @@
     "hydra_14": {
       "inputs": {
         "nix": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -13592,7 +13670,7 @@
           "nix"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -13620,7 +13698,7 @@
     "hydra_15": {
       "inputs": {
         "nix": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -13628,7 +13706,7 @@
           "nix"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -13654,7 +13732,7 @@
     "hydra_16": {
       "inputs": {
         "nix": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -13663,7 +13741,7 @@
           "nix"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -13691,7 +13769,7 @@
       "inputs": {
         "nix": "nix_25",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -13719,7 +13797,7 @@
       "inputs": {
         "nix": "nix_26",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -13746,7 +13824,7 @@
       "inputs": {
         "nix": "nix_27",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "haskellNix",
@@ -13796,7 +13874,7 @@
       "inputs": {
         "nix": "nix_28",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "haskell-nix",
           "hydra",
@@ -13805,11 +13883,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1646878427,
-        "narHash": "sha256-KtbrofMtN8GlM7D+n90kixr7QpSlVmdN+vK5CA/aRzc=",
+        "lastModified": 1671755331,
+        "narHash": "sha256-hXsgJj0Cy0ZiCiYdW2OdBz5WmFyOMKuw4zyxKpgUKm4=",
         "owner": "NixOS",
         "repo": "hydra",
-        "rev": "28b682b85b7efc5cf7974065792a1f22203a5927",
+        "rev": "f48f00ee6d5727ae3e488cbf9ce157460853fea8",
         "type": "github"
       },
       "original": {
@@ -13821,7 +13899,7 @@
       "inputs": {
         "nix": "nix_29",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "kupo-nixos",
           "haskell-nix",
@@ -13847,7 +13925,7 @@
       "inputs": {
         "nix": "nix_30",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "haskell-nix",
           "hydra",
           "nix",
@@ -13855,11 +13933,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1646878427,
-        "narHash": "sha256-KtbrofMtN8GlM7D+n90kixr7QpSlVmdN+vK5CA/aRzc=",
+        "lastModified": 1671755331,
+        "narHash": "sha256-hXsgJj0Cy0ZiCiYdW2OdBz5WmFyOMKuw4zyxKpgUKm4=",
         "owner": "NixOS",
         "repo": "hydra",
-        "rev": "28b682b85b7efc5cf7974065792a1f22203a5927",
+        "rev": "f48f00ee6d5727ae3e488cbf9ce157460853fea8",
         "type": "github"
       },
       "original": {
@@ -13995,7 +14073,7 @@
       "inputs": {
         "nix": "nix_8",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "haskellNix",
           "hydra",
@@ -14020,7 +14098,7 @@
       "inputs": {
         "nix": "nix_9",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-db-sync",
@@ -14070,7 +14148,7 @@
     "incl_10": {
       "inputs": {
         "nixlib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -14096,7 +14174,7 @@
     "incl_11": {
       "inputs": {
         "nixlib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -14217,7 +14295,7 @@
     "incl_6": {
       "inputs": {
         "nixlib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -14242,7 +14320,7 @@
     "incl_7": {
       "inputs": {
         "nixlib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "haumea",
@@ -14266,7 +14344,7 @@
     "incl_8": {
       "inputs": {
         "nixlib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -14292,7 +14370,7 @@
     "incl_9": {
       "inputs": {
         "nixlib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -14596,24 +14674,24 @@
     "iogx": {
       "inputs": {
         "CHaP": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "CHaP"
         ],
         "easy-purescript-nix": "easy-purescript-nix_2",
         "flake-compat": "flake-compat_52",
         "flake-utils": "flake-utils_93",
         "hackage": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "hackage"
         ],
         "haskell-nix": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "haskell-nix"
         ],
         "iohk-nix": "iohk-nix_7",
         "nix2container": "nix2container_20",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "nixpkgs"
         ],
         "nixpkgs-stable": "nixpkgs-stable_2",
@@ -14621,11 +14699,11 @@
         "sphinxcontrib-haddock": "sphinxcontrib-haddock"
       },
       "locked": {
-        "lastModified": 1719234955,
-        "narHash": "sha256-KG8d1v48AYSTax6H7AQGwqJVpNS5LQU3p5qLOHLmQB0=",
+        "lastModified": 1718658482,
+        "narHash": "sha256-Nw2xhvDf90iQdlUYg0Bmy6oVic8mYbyBJOoR2DNSXwY=",
         "owner": "input-output-hk",
         "repo": "iogx",
-        "rev": "34f33e85a91bd27ee12ea4c0735d1230c2ce137d",
+        "rev": "0a8bf6e1876b459aa3cd8b2c544ab0fa62a1cae3",
         "type": "github"
       },
       "original": {
@@ -14725,7 +14803,7 @@
     "iohk-nix_4": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -14750,7 +14828,7 @@
       "inputs": {
         "blst": "blst_9",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "nixpkgs"
         ],
@@ -14758,11 +14836,11 @@
         "sodium": "sodium_9"
       },
       "locked": {
-        "lastModified": 1719443312,
-        "narHash": "sha256-JNDuUSmV/o5ck1CfnBtX8GJE/Pli4zYE73LZZ7u0E2Q=",
+        "lastModified": 1715898223,
+        "narHash": "sha256-G1LFsvP53twrqaC1FVard/6rjJJ3oitnpJ1E+mTZDGM=",
         "owner": "input-output-hk",
         "repo": "iohk-nix",
-        "rev": "b4025c38b609c6fb99762e2a6201e4e3488a39d3",
+        "rev": "29f19cd41dc593cf17bbc24194e34e7c20889fc9",
         "type": "github"
       },
       "original": {
@@ -14774,7 +14852,7 @@
     "iohk-nix_6": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "kupo-nixos",
           "haskell-nix",
@@ -14800,7 +14878,7 @@
       "inputs": {
         "blst": "blst_10",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "iogx",
           "nixpkgs"
         ],
@@ -14808,11 +14886,11 @@
         "sodium": "sodium_10"
       },
       "locked": {
-        "lastModified": 1718918026,
-        "narHash": "sha256-UwtI3Di9Nj3TeSbpxBF6ZeF6nlpX+01DX/BHAoq7VgM=",
+        "lastModified": 1715898223,
+        "narHash": "sha256-G1LFsvP53twrqaC1FVard/6rjJJ3oitnpJ1E+mTZDGM=",
         "owner": "input-output-hk",
         "repo": "iohk-nix",
-        "rev": "dd25b32946a82f109e1da6f82848f57edcbe758a",
+        "rev": "29f19cd41dc593cf17bbc24194e34e7c20889fc9",
         "type": "github"
       },
       "original": {
@@ -14873,7 +14951,7 @@
       "inputs": {
         "blst": "blst_2",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "nixpkgs"
         ],
@@ -14898,7 +14976,7 @@
       "inputs": {
         "blst": "blst_5",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-db-sync",
@@ -14925,7 +15003,7 @@
       "inputs": {
         "blst": "blst_6",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -14952,7 +15030,7 @@
       "inputs": {
         "blst": "blst_7",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -14979,7 +15057,7 @@
       "inputs": {
         "blst": "blst_8",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "nixpkgs"
@@ -15004,7 +15082,7 @@
     "iohkNix_16": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -15029,7 +15107,7 @@
     "iohkNix_17": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "nixpkgs"
@@ -15449,12 +15527,12 @@
         "haskell-nix": "haskell-nix_7",
         "iohk-nix": "iohk-nix_6",
         "kupo": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "kupo"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "kupo-nixos",
           "haskell-nix",
@@ -16255,11 +16333,11 @@
         "treefmt-nix": "treefmt-nix_4"
       },
       "locked": {
-        "lastModified": 1719913027,
-        "narHash": "sha256-WHzOM9AJX/NVjryD3PusRMl/sKvvMKb/lsfgsaT7nx8=",
+        "lastModified": 1718874890,
+        "narHash": "sha256-6pG5bheS6CZ2i6+xqzoTYEZY0jBTpzFBkWH6IWuCeGU=",
         "owner": "input-output-hk",
         "repo": "mithril",
-        "rev": "5816ed46afa60176ed9e3cdbd712900a01988ae5",
+        "rev": "727e7cde91f6c8003e12d8148efa1db4186ff21f",
         "type": "github"
       },
       "original": {
@@ -16300,7 +16378,7 @@
     "n2c_10": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -16308,7 +16386,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -16333,13 +16411,13 @@
     "n2c_11": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "nixpkgs"
@@ -16362,7 +16440,7 @@
     "n2c_12": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -16371,7 +16449,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -16397,7 +16475,7 @@
     "n2c_13": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -16407,7 +16485,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -16434,7 +16512,7 @@
     "n2c_14": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -16442,7 +16520,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -16467,7 +16545,7 @@
     "n2c_15": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -16475,7 +16553,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -16539,16 +16617,16 @@
       "inputs": {
         "flake-utils": "flake-utils_95",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1697285352,
-        "narHash": "sha256-tRGLm/DO8+anGUCgLYxTF5EPqWv8EZ9MVFWRdh285HU=",
+        "lastModified": 1712990762,
+        "narHash": "sha256-hO9W3w7NcnYeX8u8cleHiSpK2YJo7ecarFTUlbybl7k=",
         "owner": "nlewo",
         "repo": "nix2container",
-        "rev": "9d7f33ef0058f4df4c0912025f43c758a3289d76",
+        "rev": "20aad300c925639d5d6cbe30013c8357ce9f2a2e",
         "type": "github"
       },
       "original": {
@@ -16809,7 +16887,7 @@
       "inputs": {
         "devshell": "devshell_27",
         "inclusive": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -16818,7 +16896,7 @@
           "inclusive"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -16899,7 +16977,7 @@
       "inputs": {
         "flake-compat": "flake-compat_21",
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -16908,14 +16986,14 @@
         ],
         "gomod2nix": "gomod2nix_10",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
           "nixpkgs"
         ],
         "nixpkgs-lib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -16940,7 +17018,7 @@
       "inputs": {
         "flake-compat": "flake-compat_32",
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -16950,7 +17028,7 @@
         ],
         "gomod2nix": "gomod2nix_11",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -16958,7 +17036,7 @@
           "nixpkgs"
         ],
         "nixpkgs-lib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -16984,7 +17062,7 @@
       "inputs": {
         "flake-compat": "flake-compat_33",
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -16995,7 +17073,7 @@
         ],
         "gomod2nix": "gomod2nix_12",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -17004,7 +17082,7 @@
           "nixpkgs"
         ],
         "nixpkgs-lib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -17031,7 +17109,7 @@
       "inputs": {
         "flake-compat": "flake-compat_40",
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -17040,14 +17118,14 @@
         ],
         "gomod2nix": "gomod2nix_13",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
           "nixpkgs"
         ],
         "nixpkgs-lib": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -18386,16 +18464,16 @@
         "nixpkgs-regression": "nixpkgs-regression_26"
       },
       "locked": {
-        "lastModified": 1643066034,
-        "narHash": "sha256-xEPeMcNJVOeZtoN+d+aRwolpW8mFSEQx76HTRdlhPhg=",
+        "lastModified": 1661606874,
+        "narHash": "sha256-9+rpYzI+SmxJn+EbYxjGv68Ucp22bdFUSy/4LkHkkDQ=",
         "owner": "NixOS",
         "repo": "nix",
-        "rev": "a1cd7e58606a41fcf62bf8637804cf8306f17f62",
+        "rev": "11e45768b34fdafdcf019ddbd337afa16127ff0f",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "2.6.0",
+        "ref": "2.11.0",
         "repo": "nix",
         "type": "github"
       }
@@ -18449,16 +18527,16 @@
         "nixpkgs-regression": "nixpkgs-regression_28"
       },
       "locked": {
-        "lastModified": 1643066034,
-        "narHash": "sha256-xEPeMcNJVOeZtoN+d+aRwolpW8mFSEQx76HTRdlhPhg=",
+        "lastModified": 1661606874,
+        "narHash": "sha256-9+rpYzI+SmxJn+EbYxjGv68Ucp22bdFUSy/4LkHkkDQ=",
         "owner": "NixOS",
         "repo": "nix",
-        "rev": "a1cd7e58606a41fcf62bf8637804cf8306f17f62",
+        "rev": "11e45768b34fdafdcf019ddbd337afa16127ff0f",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "2.6.0",
+        "ref": "2.11.0",
         "repo": "nix",
         "type": "github"
       }
@@ -18657,7 +18735,7 @@
     "nixago_10": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -18665,7 +18743,7 @@
           "flake-utils"
         ],
         "nixago-exts": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -18673,7 +18751,7 @@
           "blank"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -18698,19 +18776,19 @@
     "nixago_11": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "flake-utils"
         ],
         "nixago-exts": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "blank"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "nixpkgs"
@@ -18733,7 +18811,7 @@
     "nixago_12": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -18742,7 +18820,7 @@
           "flake-utils"
         ],
         "nixago-exts": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -18751,7 +18829,7 @@
           "blank"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -18777,7 +18855,7 @@
     "nixago_13": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -18787,7 +18865,7 @@
           "flake-utils"
         ],
         "nixago-exts": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -18797,7 +18875,7 @@
           "blank"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -18824,7 +18902,7 @@
     "nixago_14": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -18832,7 +18910,7 @@
           "flake-utils"
         ],
         "nixago-exts": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -18840,7 +18918,7 @@
           "blank"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -18865,7 +18943,7 @@
     "nixago_15": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -18873,7 +18951,7 @@
           "flake-utils"
         ],
         "nixago-exts": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -18881,7 +18959,7 @@
           "blank"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -18906,7 +18984,7 @@
     "nixago_16": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -18916,7 +18994,7 @@
         ],
         "nixago-exts": "nixago-exts",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -18942,7 +19020,7 @@
     "nixago_17": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -18951,7 +19029,7 @@
         ],
         "nixago-exts": "nixago-exts_2",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -20021,11 +20099,11 @@
     },
     "nixpkgs-2105_24": {
       "locked": {
-        "lastModified": 1645296114,
-        "narHash": "sha256-y53N7TyIkXsjMpOG7RhvqJFGDacLs9HlyHeSTBioqYU=",
+        "lastModified": 1659914493,
+        "narHash": "sha256-lkA5X3VNMKirvA+SUzvEhfA7XquWLci+CGi505YFAIs=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "530a53dcbc9437363471167a5e4762c5fcfa34a1",
+        "rev": "022caabb5f2265ad4006c1fa5b1ebe69fb0c3faf",
         "type": "github"
       },
       "original": {
@@ -20437,11 +20515,11 @@
     },
     "nixpkgs-2111_24": {
       "locked": {
-        "lastModified": 1648744337,
-        "narHash": "sha256-bYe1dFJAXovjqiaPKrmAbSBEK5KUkgwVaZcTbSoJ7hg=",
+        "lastModified": 1659446231,
+        "narHash": "sha256-hekabNdTdgR/iLsgce5TGWmfIDZ86qjPhxDg/8TlzhE=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "0a58eebd8ec65ffdef2ce9562784123a73922052",
+        "rev": "eabc38219184cc3e04a974fe31857d8e0eac098d",
         "type": "github"
       },
       "original": {
@@ -20693,11 +20771,11 @@
     },
     "nixpkgs-2205_15": {
       "locked": {
-        "lastModified": 1663981975,
-        "narHash": "sha256-TKaxWAVJR+a5JJauKZqibmaM5e/Pi5tBDx9s8fl/kSE=",
+        "lastModified": 1685573264,
+        "narHash": "sha256-Zffu01pONhs/pqH07cjlF10NnMDLok8ix5Uk4rhOnZQ=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "309faedb8338d3ae8ad8f1043b3ccf48c9cc2970",
+        "rev": "380be19fbd2d9079f677978361792cb25e8a3635",
         "type": "github"
       },
       "original": {
@@ -21077,11 +21155,11 @@
     },
     "nixpkgs-2305_5": {
       "locked": {
-        "lastModified": 1705033721,
-        "narHash": "sha256-K5eJHmL1/kev6WuqyqqbS1cdNnSidIZ3jeqJ7GbrYnQ=",
+        "lastModified": 1701362232,
+        "narHash": "sha256-GVdzxL0lhEadqs3hfRLuj+L1OJFGiL/L7gCcelgBlsw=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "a1982c92d8980a0114372973cbdfe0a307f1bdea",
+        "rev": "d2332963662edffacfddfad59ff4f709dde80ffe",
         "type": "github"
       },
       "original": {
@@ -21093,11 +21171,11 @@
     },
     "nixpkgs-2305_6": {
       "locked": {
-        "lastModified": 1705033721,
-        "narHash": "sha256-K5eJHmL1/kev6WuqyqqbS1cdNnSidIZ3jeqJ7GbrYnQ=",
+        "lastModified": 1701362232,
+        "narHash": "sha256-GVdzxL0lhEadqs3hfRLuj+L1OJFGiL/L7gCcelgBlsw=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "a1982c92d8980a0114372973cbdfe0a307f1bdea",
+        "rev": "d2332963662edffacfddfad59ff4f709dde80ffe",
         "type": "github"
       },
       "original": {
@@ -21109,11 +21187,11 @@
     },
     "nixpkgs-2311": {
       "locked": {
-        "lastModified": 1719837636,
-        "narHash": "sha256-sTya/Vhqtdi7Kxx/eVldJRGTPKcyGgFG3ZugOqcbmiE=",
+        "lastModified": 1701386440,
+        "narHash": "sha256-xI0uQ9E7JbmEy/v8kR9ZQan6389rHug+zOtZeZFiDJk=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "28f8f3531ebdbea069995c20bd946a295699f275",
+        "rev": "293822e55ec1872f715a66d0eda9e592dc14419f",
         "type": "github"
       },
       "original": {
@@ -21125,11 +21203,11 @@
     },
     "nixpkgs-2311_2": {
       "locked": {
-        "lastModified": 1719837636,
-        "narHash": "sha256-sTya/Vhqtdi7Kxx/eVldJRGTPKcyGgFG3ZugOqcbmiE=",
+        "lastModified": 1701386440,
+        "narHash": "sha256-xI0uQ9E7JbmEy/v8kR9ZQan6389rHug+zOtZeZFiDJk=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "28f8f3531ebdbea069995c20bd946a295699f275",
+        "rev": "293822e55ec1872f715a66d0eda9e592dc14419f",
         "type": "github"
       },
       "original": {
@@ -21556,9 +21634,10 @@
         "type": "github"
       },
       "original": {
-        "id": "nixpkgs",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
         "rev": "215d4d0fd80ca5163643b03a33fde804a29cc1e2",
-        "type": "indirect"
+        "type": "github"
       }
     },
     "nixpkgs-regression_27": {
@@ -21586,9 +21665,10 @@
         "type": "github"
       },
       "original": {
-        "id": "nixpkgs",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
         "rev": "215d4d0fd80ca5163643b03a33fde804a29cc1e2",
-        "type": "indirect"
+        "type": "github"
       }
     },
     "nixpkgs-regression_3": {
@@ -21733,11 +21813,11 @@
     },
     "nixpkgs-stable_3": {
       "locked": {
-        "lastModified": 1718447546,
-        "narHash": "sha256-JHuXsrC9pr4kA4n7LuuPfWFJUVlDBVJ1TXDVpHEuUgM=",
+        "lastModified": 1710695816,
+        "narHash": "sha256-3Eh7fhEID17pv9ZxrPwCLfqXnYP006RKzSs0JptsN84=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "842253bf992c3a7157b67600c2857193f126563a",
+        "rev": "614b4613980a522ba49f0d194531beddbb7220d3",
         "type": "github"
       },
       "original": {
@@ -23115,17 +23195,18 @@
     },
     "nixpkgs_152": {
       "locked": {
-        "lastModified": 1632864508,
-        "narHash": "sha256-d127FIvGR41XbVRDPVvozUPQ/uRHbHwvfyKHwEt5xFM=",
+        "lastModified": 1657693803,
+        "narHash": "sha256-G++2CJ9u0E7NNTAi9n5G8TdDmGJXcIjkJ3NF8cetQB8=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "82891b5e2c2359d7e58d08849e4c89511ab94234",
+        "rev": "365e1b3a859281cf11b94f87231adeabbdd878a2",
         "type": "github"
       },
       "original": {
-        "id": "nixpkgs",
-        "ref": "nixos-21.05-small",
-        "type": "indirect"
+        "owner": "NixOS",
+        "ref": "nixos-22.05-small",
+        "repo": "nixpkgs",
+        "type": "github"
       }
     },
     "nixpkgs_153": {
@@ -23161,17 +23242,18 @@
     },
     "nixpkgs_155": {
       "locked": {
-        "lastModified": 1632864508,
-        "narHash": "sha256-d127FIvGR41XbVRDPVvozUPQ/uRHbHwvfyKHwEt5xFM=",
+        "lastModified": 1657693803,
+        "narHash": "sha256-G++2CJ9u0E7NNTAi9n5G8TdDmGJXcIjkJ3NF8cetQB8=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "82891b5e2c2359d7e58d08849e4c89511ab94234",
+        "rev": "365e1b3a859281cf11b94f87231adeabbdd878a2",
         "type": "github"
       },
       "original": {
-        "id": "nixpkgs",
-        "ref": "nixos-21.05-small",
-        "type": "indirect"
+        "owner": "NixOS",
+        "ref": "nixos-22.05-small",
+        "repo": "nixpkgs",
+        "type": "github"
       }
     },
     "nixpkgs_156": {
@@ -23191,11 +23273,11 @@
     },
     "nixpkgs_157": {
       "locked": {
-        "lastModified": 1718606988,
-        "narHash": "sha256-pmjP5ePc1jz+Okona3HxD7AYT0wbrCwm9bXAlj08nDM=",
+        "lastModified": 1710765496,
+        "narHash": "sha256-p7ryWEeQfMwTB6E0wIUd5V2cFTgq+DRRBz2hYGnJZyA=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "38d3352a65ac9d621b0cd3074d3bef27199ff78f",
+        "rev": "e367f7a1fb93137af22a3908f00b9a35e2d286a7",
         "type": "github"
       },
       "original": {
@@ -23899,11 +23981,11 @@
     },
     "nixpkgs_56": {
       "locked": {
-        "lastModified": 1705957679,
-        "narHash": "sha256-Q8LJaVZGJ9wo33wBafvZSzapYsjOaNjP/pOnSiKVGHY=",
+        "lastModified": 1687420147,
+        "narHash": "sha256-NILbmZVsoP2Aw0OAIXdbYXrWc/qggIDDyIwZ01yUx+Q=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "9a333eaa80901efe01df07eade2c16d183761fa3",
+        "rev": "d449a456ba7d81038fc9ec9141eae7ee3aaf2982",
         "type": "github"
       },
       "original": {
@@ -25837,7 +25919,7 @@
     "paisano": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -25846,7 +25928,7 @@
         ],
         "nosys": "nosys_6",
         "yants": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -25871,7 +25953,7 @@
     "paisano-actions": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "paisano-mdbook-preprocessor",
@@ -25895,7 +25977,7 @@
     "paisano-actions_2": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -25923,14 +26005,14 @@
         "crane": "crane",
         "fenix": "fenix_2",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "nixpkgs"
         ],
         "paisano-actions": "paisano-actions",
         "std": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std"
         ]
@@ -25954,7 +26036,7 @@
         "crane": "crane_2",
         "fenix": "fenix_4",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -25963,7 +26045,7 @@
         ],
         "paisano-actions": "paisano-actions_2",
         "std": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -25987,7 +26069,7 @@
     "paisano-tui": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -25995,7 +26077,7 @@
           "blank"
         ],
         "std": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -26019,13 +26101,13 @@
     "paisano-tui_2": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "blank"
         ],
         "std": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std"
         ]
@@ -26048,7 +26130,7 @@
     "paisano-tui_3": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -26058,7 +26140,7 @@
           "blank"
         ],
         "std": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -26084,7 +26166,7 @@
     "paisano-tui_4": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -26092,7 +26174,7 @@
           "blank"
         ],
         "std": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -26117,14 +26199,14 @@
     "paisano_2": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "nixpkgs"
         ],
         "nosys": "nosys_7",
         "yants": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "yants"
@@ -26148,7 +26230,7 @@
     "paisano_3": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -26159,7 +26241,7 @@
         ],
         "nosys": "nosys_9",
         "yants": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -26186,7 +26268,7 @@
     "paisano_4": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -26195,7 +26277,7 @@
         ],
         "nosys": "nosys_10",
         "yants": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -26218,32 +26300,74 @@
         "type": "github"
       }
     },
+    "partner-chains-smart-contracts": {
+      "inputs": {
+        "CHaP": "CHaP_5",
+        "cardano-node": "cardano-node_3",
+        "cardano-transaction-lib": "cardano-transaction-lib",
+        "hackage": "hackage_17",
+        "haskell-nix": "haskell-nix_8",
+        "iogx": "iogx",
+        "iohk-nix": [
+          "partner-chains-smart-contracts",
+          "cardano-transaction-lib",
+          "plutip",
+          "iohk-nix"
+        ],
+        "mithril": "mithril",
+        "n2c": "n2c_18",
+        "nixpkgs": [
+          "partner-chains-smart-contracts",
+          "haskell-nix",
+          "nixpkgs"
+        ],
+        "plutip": [
+          "partner-chains-smart-contracts",
+          "cardano-transaction-lib",
+          "plutip"
+        ]
+      },
+      "locked": {
+        "lastModified": 1720449001,
+        "narHash": "sha256-FjYhyPJZ0DG17xMSV0MU+rWc2HyqIJbUDe1syZCqirs=",
+        "owner": "input-output-hk",
+        "repo": "partner-chains-smart-contracts",
+        "rev": "04f656d4e755dbc4f5ce384957c2859695d7147c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "input-output-hk",
+        "ref": "v6.0.0",
+        "repo": "partner-chains-smart-contracts",
+        "type": "github"
+      }
+    },
     "plutip": {
       "inputs": {
         "CHaP": "CHaP_12",
         "cardano-node": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node"
         ],
         "flake-compat": "flake-compat_50",
         "hackage-nix": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "hackage-nix"
         ],
         "haskell-nix": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "haskell-nix"
         ],
         "iohk-nix": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "iohk-nix"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "nixpkgs"
         ]
@@ -26374,7 +26498,7 @@
       "inputs": {
         "flake-utils": "flake-utils_75",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -26422,13 +26546,13 @@
         "flake-compat": "flake-compat_37",
         "gitignore": "gitignore",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "nixpkgs"
         ],
         "nixpkgs-stable": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "nixpkgs"
@@ -26456,11 +26580,11 @@
         "nixpkgs-stable": "nixpkgs-stable_3"
       },
       "locked": {
-        "lastModified": 1718879355,
-        "narHash": "sha256-RTyqP4fBX2MdhNuMP+fnR3lIwbdtXhyj7w7fwtvgspc=",
+        "lastModified": 1717664902,
+        "narHash": "sha256-7XfBuLULizXjXfBYy/VV+SpYMHreNRHk9nKMsm1bgb4=",
         "owner": "cachix",
         "repo": "pre-commit-hooks.nix",
-        "rev": "8cd35b9496d21a6c55164d8547d9d5280162b07a",
+        "rev": "cc4d466cb1254af050ff7bdf47f6d404a7c646d1",
         "type": "github"
       },
       "original": {
@@ -26599,9 +26723,9 @@
         "kupo": "kupo",
         "nixpkgs": "nixpkgs_38",
         "ogmios": "ogmios",
+        "partner-chains-smart-contracts": "partner-chains-smart-contracts",
         "process-compose": "process-compose",
-        "services-flake": "services-flake",
-        "trustless-sidechain": "trustless-sidechain"
+        "services-flake": "services-flake"
       }
     },
     "rust-analyzer-src": {
@@ -26777,7 +26901,7 @@
     "rust-overlay": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "paisano-mdbook-preprocessor",
@@ -26785,7 +26909,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "paisano-mdbook-preprocessor",
@@ -26810,7 +26934,7 @@
     "rust-overlay_2": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -26820,7 +26944,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -26847,7 +26971,7 @@
     "rust-overlay_3": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -26858,7 +26982,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -26886,7 +27010,7 @@
     "rust-overlay_4": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -26896,7 +27020,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -26923,7 +27047,7 @@
     "rust-overlay_5": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -26932,7 +27056,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -26958,7 +27082,7 @@
     "rust-overlay_6": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -26968,7 +27092,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -26995,7 +27119,7 @@
     "rust-overlay_7": {
       "inputs": {
         "flake-utils": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -27004,7 +27128,7 @@
           "flake-utils"
         ],
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -27676,11 +27800,11 @@
     "stackage_23": {
       "flake": false,
       "locked": {
-        "lastModified": 1653355076,
-        "narHash": "sha256-mQdOgAyFkLUJBPrVDZmZQ2JRtgHKOQkil//SDdcjP1U=",
+        "lastModified": 1718756571,
+        "narHash": "sha256-8rL8viTbuE9/yV1of6SWp2tHmhVMD2UmkOfmN5KDbKg=",
         "owner": "input-output-hk",
         "repo": "stackage.nix",
-        "rev": "71b16ca68d6acd639121db43238896357fe53f54",
+        "rev": "027672fb6fd45828b0e623c8152572d4058429ad",
         "type": "github"
       },
       "original": {
@@ -27708,11 +27832,11 @@
     "stackage_25": {
       "flake": false,
       "locked": {
-        "lastModified": 1665537461,
-        "narHash": "sha256-60tLFJ0poKp3IIPMvIDx3yzmjwrX7CngypfCQqV+oXE=",
+        "lastModified": 1718842995,
+        "narHash": "sha256-z1ETU1nJoTUpK7BcdSYuYph6njhJJR8hTZ197lzXX3E=",
         "owner": "input-output-hk",
         "repo": "stackage.nix",
-        "rev": "fbf47f75f32aedcdd97143ec59c578f403fae35f",
+        "rev": "b224b7d7461de53fcf700bb14bde43d6efa2ee3b",
         "type": "github"
       },
       "original": {
@@ -27900,7 +28024,7 @@
     "std_10": {
       "inputs": {
         "arion": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -27913,7 +28037,7 @@
         "flake-utils": "flake-utils_40",
         "incl": "incl_6",
         "makes": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -27921,7 +28045,7 @@
           "blank"
         ],
         "microvm": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -27952,7 +28076,7 @@
     "std_11": {
       "inputs": {
         "arion": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "blank"
@@ -27964,13 +28088,13 @@
         "haumea": "haumea",
         "incl": "incl_7",
         "makes": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "blank"
         ],
         "microvm": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "blank"
@@ -28000,7 +28124,7 @@
     "std_12": {
       "inputs": {
         "arion": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -28014,7 +28138,7 @@
         "flake-utils": "flake-utils_51",
         "incl": "incl_8",
         "makes": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -28023,7 +28147,7 @@
           "blank"
         ],
         "microvm": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -28054,7 +28178,7 @@
     "std_13": {
       "inputs": {
         "arion": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -28069,7 +28193,7 @@
         "flake-utils": "flake-utils_54",
         "incl": "incl_9",
         "makes": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -28079,7 +28203,7 @@
           "blank"
         ],
         "microvm": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -28112,7 +28236,7 @@
     "std_14": {
       "inputs": {
         "arion": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -28126,7 +28250,7 @@
         "haumea": "haumea_2",
         "incl": "incl_10",
         "makes": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -28134,7 +28258,7 @@
           "blank"
         ],
         "microvm": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -28166,7 +28290,7 @@
     "std_15": {
       "inputs": {
         "arion": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -28179,7 +28303,7 @@
         "flake-utils": "flake-utils_63",
         "incl": "incl_11",
         "makes": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -28187,7 +28311,7 @@
           "blank"
         ],
         "microvm": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -29096,7 +29220,7 @@
         "bats-support": "bats-support_2",
         "flake-utils": "flake-utils_67",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -29127,7 +29251,7 @@
         "bats-support": "bats-support_3",
         "flake-utils": "flake-utils_72",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -29156,7 +29280,7 @@
         "bats-support": "bats-support_4",
         "flake-utils": "flake-utils_78",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -29201,7 +29325,7 @@
     "treefmt-nix_2": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-db-sync",
@@ -29226,7 +29350,7 @@
     "treefmt-nix_3": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "nixpkgs"
@@ -29249,7 +29373,7 @@
     "treefmt-nix_4": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "mithril",
           "nixpkgs"
         ]
@@ -29265,48 +29389,6 @@
       "original": {
         "owner": "numtide",
         "repo": "treefmt-nix",
-        "type": "github"
-      }
-    },
-    "trustless-sidechain": {
-      "inputs": {
-        "CHaP": "CHaP_5",
-        "cardano-node": "cardano-node_3",
-        "cardano-transaction-lib": "cardano-transaction-lib",
-        "hackage": "hackage_17",
-        "haskell-nix": "haskell-nix_8",
-        "iogx": "iogx",
-        "iohk-nix": [
-          "trustless-sidechain",
-          "cardano-transaction-lib",
-          "plutip",
-          "iohk-nix"
-        ],
-        "mithril": "mithril",
-        "n2c": "n2c_18",
-        "nixpkgs": [
-          "trustless-sidechain",
-          "haskell-nix",
-          "nixpkgs"
-        ],
-        "plutip": [
-          "trustless-sidechain",
-          "cardano-transaction-lib",
-          "plutip"
-        ]
-      },
-      "locked": {
-        "lastModified": 1720449001,
-        "narHash": "sha256-FjYhyPJZ0DG17xMSV0MU+rWc2HyqIJbUDe1syZCqirs=",
-        "owner": "input-output-hk",
-        "repo": "trustless-sidechain",
-        "rev": "04f656d4e755dbc4f5ce384957c2859695d7147c",
-        "type": "github"
-      },
-      "original": {
-        "owner": "input-output-hk",
-        "ref": "v6.0.0-rc3",
-        "repo": "trustless-sidechain",
         "type": "github"
       }
     },
@@ -29336,7 +29418,7 @@
         "nix-nomad": "nix-nomad_10",
         "nix2container": "nix2container_11",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "nixpkgs"
@@ -29383,7 +29465,7 @@
         "nix-nomad": "nix-nomad_12",
         "nix2container": "nix2container_15",
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -30441,7 +30523,7 @@
     "yants_10": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "cardano-automation",
           "tullia",
@@ -30466,7 +30548,7 @@
     "yants_11": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-node",
           "std",
           "haumea",
@@ -30490,7 +30572,7 @@
     "yants_12": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.1.1",
@@ -30516,7 +30598,7 @@
     "yants_13": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -30543,7 +30625,7 @@
     "yants_14": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-nix",
           "cardano-node-8.7.3",
@@ -30569,7 +30651,7 @@
     "yants_15": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "cardano-node",
           "tullia",
@@ -30612,7 +30694,7 @@
     "yants_17": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -30656,7 +30738,7 @@
     "yants_19": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
@@ -30705,7 +30787,7 @@
     "yants_20": {
       "inputs": {
         "nixpkgs": [
-          "trustless-sidechain",
+          "partner-chains-smart-contracts",
           "cardano-transaction-lib",
           "db-sync",
           "cardano-world",
