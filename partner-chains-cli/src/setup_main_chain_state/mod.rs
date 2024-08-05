@@ -6,7 +6,6 @@ use crate::config::{
 use crate::io::IOContext;
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
 use crate::sidechain_main_cli_resources::establish_sidechain_main_cli_configuration;
-use crate::smart_contracts::check_for_kupo_ogmios_connection_error;
 use crate::{smart_contracts, CmdRun};
 use anyhow::anyhow;
 use epoch_derivation::MainchainEpochDerivation;
@@ -272,7 +271,6 @@ fn set_candidates_on_main_chain<C: IOContext>(
 				&payment_signing_key_path
 			)
 		))?;
-		check_for_kupo_ogmios_connection_error(&output, &sidechain_main_cli_resources)?;
 		if output.contains("transactionId") {
 			context.print("Permissioned candidates updated. The change will be effective in two main chain epochs.");
 			Ok(())

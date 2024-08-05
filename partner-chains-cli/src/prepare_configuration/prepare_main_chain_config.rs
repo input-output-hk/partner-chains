@@ -8,7 +8,7 @@ use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params
 use crate::sidechain_main_cli_resources::{
 	establish_sidechain_main_cli_configuration, SidechainMainCliResources,
 };
-use crate::smart_contracts::{self, check_for_kupo_ogmios_connection_error};
+use crate::smart_contracts;
 use anyhow::anyhow;
 use serde_json::Value;
 
@@ -92,8 +92,6 @@ fn run_sidechain_main_cli_addresses<C: IOContext>(
 		&kupo_and_ogmios_config,
 	);
 	let addresses_string = context.run_command(&cmd)?;
-
-	check_for_kupo_ogmios_connection_error(&addresses_string, &kupo_and_ogmios_config)?;
 
 	let addresses_json: Value = serde_json::from_str(&addresses_string).map_err(|_| {
 		anyhow!("Failed to fetch data from Ogmios or Kupo. Please check connection configuration and try again.")
@@ -359,67 +357,6 @@ mod tests {
 			result.unwrap_err().to_string(),
 			"Partner Chains Smart Contracts executable file (./sidechain-main-cli) is missing"
 		)
-	}
-
-	#[test]
-	fn should_display_user_friendly_message_when_kupo_connection_fails() {
-		let context = MockIOContext::new()
-			.with_expected_io(vec![
-			MockIO::new_tmp_file(DUMMY_SKEY),
-			MockIO::run_command(
-				&addresses_cmd(
-					"/tmp/dummy0".to_string(),
-					test_sidechain_params(),
-					&SidechainMainCliResources::default(),
-				),
-				&format!("(UnknownContractError \"An error occurred when running CTL base monad: connect ECONNREFUSED ::1:{}\")", KUPO_PORT.default.unwrap())
-			),
-		]);
-
-		let result = run_sidechain_main_cli_addresses(
-			&context,
-			test_sidechain_params(),
-			SidechainMainCliResources::default(),
-		);
-
-		context.no_more_io_expected();
-
-		assert!(result.is_err());
-
-		assert_eq!(
-			result.unwrap_err().to_string(),
-			"Failed to connect to Kupo at http://localhost:1442. Please check connection configuration and try again."
-		);
-	}
-
-	#[test]
-	fn should_display_user_friendly_message_when_ogmios_connection_fails() {
-		let context = MockIOContext::new().with_expected_io(vec![
-			MockIO::new_tmp_file(DUMMY_SKEY),
-			MockIO::run_command(
-				&addresses_cmd(
-					"/tmp/dummy0".to_string(),
-					test_sidechain_params(),
-					&SidechainMainCliResources::default(),
-				),
-				&format!("(UnknownContractError \"An error occurred when running CTL base monad: connect ECONNREFUSED ::1:{}\")", OGMIOS_PORT.default.unwrap())
-			),
-		]);
-
-		let result = run_sidechain_main_cli_addresses(
-			&context,
-			test_sidechain_params(),
-			SidechainMainCliResources::default(),
-		);
-
-		context.no_more_io_expected();
-
-		assert!(result.is_err());
-
-		assert_eq!(
-			result.unwrap_err().to_string(),
-			"Failed to connect to Ogmios at http://localhost:1337. Please check connection configuration and try again."
-		);
 	}
 
 	fn test_sidechain_params() -> SidechainParams {
