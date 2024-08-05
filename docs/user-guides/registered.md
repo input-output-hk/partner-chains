@@ -18,15 +18,15 @@ A registered block producer is a Cardano stake pool operator (SPO) that desires 
 ---
 **NOTE**
 
-This guide is currently aimed at the preview testnet only. In most `cardano-node` operations, this can be set with `--testnet-magic 2`. If you need to set up an SPO, be sure it's set up on **preview**.
+This guide is currently aimed at the **preview testnet only**. In most `cardano-node` operations, this can be set with `--testnet-magic 2`. If you need to set up an SPO, be sure it's set up on **preview**.
 
 ---
 
 ### 1. Become a Cardano SPO on preview
 
-Cardano SPO keys are necessary to register as a partner chain validator. The installation for a Cardano SPO is out of the scope of this guide. Refer to our [recommended guide](https://cardano-course.gitbook.io/cardano-course/handbook) for documentation and video instruction.
+Cardano SPO keys are necessary to register as a partner chain validator. The installation for a Cardano SPO is out of the scope of this guide. Refer to the [Cardano course handbook](https://cardano-course.gitbook.io/cardano-course/handbook) for documentation and video instruction.
 
-Once you have the Cardano SPO keys you are ready to continue with this guide.
+Once you have the Cardano SPO keys, you are ready to continue with this guide.
 
 ### 2. Install partner chain dependencies
 
@@ -49,9 +49,9 @@ Be mindful of file paths in the instruction sets below. Your `cardano-node` may 
 
 Ogmios is a lightweight bridge interface for `cardano-node`. It offers a WebSocket API that enables local clients to speak to the main chain via JSON/RPC.
 
-It is recommend to install [Ogmios](https://github.com/CardanoSolutions/ogmios) via pre-built binaries.
+It is recommended to install [Ogmios](https://github.com/CardanoSolutions/ogmios) via pre-built binaries.
 
-You can also build from source, though it requires a significant number of depencies.
+You can also build from source, though it requires a significant number of dependencies.
 
 1. Obtain the [binary](https://github.com/CardanoSolutions/ogmios/releases)
 2. Change the file to an executable: `sudo chmod +x /home/ubuntu/ogmios`
@@ -134,21 +134,29 @@ Please refer to [Kupo](https://cardanosolutions.github.io/kupo/#section/Overview
 
 The partner chain needs DB Sync on a `cardano-node` to observe Cardano's state.
 
-#### A note on Cardano DB Sync
+#### A critical note on Cardano DB Sync!
 
-Before starting the partner chain node, and during normal operations, it is essential that the DB Sync component is fully synchronized. Running the node with lagging or not fully synced DB Sync will result in consensus errors, decreased peer reputation, and possibly a temporary ban by network peers. Sync time depends on hardware and network conditions, but here are approximate estimations for each network:
+> Before starting the partner chain node, and during normal operations, it is essential that the DB Sync component is fully synchronized.
+> Running the node with lagging or not fully synced DB Sync will result in consensus errors, decreased peer reputation, and possibly a temporary ban by network peers. 
+> Sync time depends on hardware and network conditions, but here are approximate estimations for each network:
+
+#### Sync time required
 
 - Preview: a few hours
 - Pre-production: usually ranges from several hours to a day
 - Mainnet: two or more days.
 
 Typical error message if db-sync is behind:
+
 ```
 💔 Verification failed for block 0x151ed479f5766f8dc56fa3626329baa77292d5a692cf7fb9d24e743ae57fe71c received from (12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp): "Main chain state e04eea9347162cd773a3505692d0aaee3d49b2c61f21a5b8a95f3d5711a63961 referenced in imported block at slot 286497345 with timestamp 1718984070000 not found"
 ```
 
+In this case, it's best to stop the partner chain node and make sure DB Sync is healthy and synchronized before restarting the node.
+
 1. Download the [binary](https://github.com/IntersectMBO/cardano-db-sync/releases) and add it to the PATH
 2. Set up PostgreSQL server:
+
 ```
 sudo apt install postgresql postgresql-contrib
 sudo systemctl start postgresql.service
@@ -156,7 +164,7 @@ sudo systemctl start postgresql.service
 
 Enter shell as default postgres user: `sudo -i -u postgres`
 
-Enter the postgres CLII: `psql`
+Enter the postgres CLI: `psql`
 
 Create User: `CREATE USER ubuntu WITH PASSWORD 'XXXXXXXXXXXXX';`
 
@@ -184,13 +192,14 @@ List of databases
 (4 rows)
 ```
 
-If any command fails restart postgres service:
+If any command fails, restart postgres service:
 `sudo systemctl restart postgresql.service`
 
 This check should return empty. It will be filled with db sync relations:
 `PGPASSFILE=~/cardano-db-sync/config/pgpass-preview ./postgresql-setup.sh --check`
 
 3. Run DB Sync as a service
+
 ```
 sudo tee /etc/systemd/system/cardano-db-sync.service > /dev/null <<EOF
 [Unit]
@@ -216,20 +225,21 @@ sudo systemctl start cardano-db-sync.service
 ```
 
 4. Observe logs
+
 ```
 journalctl -fu cardano-db-sync.service
 ```
 
 ---
-**NOTE**
+**WARNING**
 
 Ensure that the node is synced with the network to 100% as well as Kupo and DB Sync before continuing beyond this point. On preview network, it is roughly 24 hours before sync is complete.
 
 ---
 
-### 2.2 Download the partner chain node
+### 2.2 Download the Partner Chains node
 
-1. Download the partner chain node from the [official repository](https://github.com/input-output-hk/partner-chains)
+1. Download the Partner Chains node from the [official repository](https://github.com/input-output-hk/partner-chains)
 
 ### 3. Run the generate-keys wizard
 
@@ -247,7 +257,8 @@ If these keys already exist in the node’s keystore, you will be asked to overw
 `./partner-chains-cli generate-keys`
 3. Input the node base path. It is saved in `partner-chains-cli-resources-config.json`
 
-Now the wizard will output `partner-chains-public-keys.json` containing three keys.
+Now the wizard will output `partner-chains-public-keys.json` containing three keys:
+
 ``` javascript
 {
 	"sidechain_pub_key": "0x<key>",
@@ -264,11 +275,11 @@ Contact the chain builder and request the `chain-spec.json` file and the `partne
 
 ### 5. Register for the partner chain
 
-Registration is a three-step process, with the second step executed on the "cold" machine, so there are three wizards.
+Registration is a three-step process, with the second step executed on the 'cold' machine, so there are three wizards.
 
 #### Register-1 wizard
 
-The register-1 wizard obtains the registration UTXO
+The register-1 wizard obtains the registration UTXO.
 
 1. Start the wizard: `./partner-chains-cli register1`
 2. Follow the steps when prompted by the wizard
@@ -294,7 +305,7 @@ Finally, the wizard outputs the command for obtaining signatures. You use this c
 
 #### Register-2 wizard
 
-The register-2 wizard obtains signatures for the registration message. It only requires the `partner-chain-cli` binary executable to be installed on the "cold" machine.
+The register-2 wizard obtains signatures for the registration message. It only requires the `partner-chain-cli` binary executable to be installed on the 'cold' machine.
 
 1. Follow the steps when prompted by the wizard
 
@@ -312,11 +323,11 @@ The wizard will give you the option of displaying the registration status. If yo
 
 The start-node wizard is used to start a partner chain node. Make sure that `cardano-node` is running with DB Sync running and fully synced. You will need to provide a link to postgreSQL server running with DB Sync as part of starting the node.
 
-1. Start the wizard: `./partner-chains-cli start-node`
+1. Start the wizard: `./partner-chains-cli start-node`.
 2. The wizard checks if all required keys are present. If not, it reminds you to the run the generate-keys wizard first, and exits.
-3. If the `chain-spec` file is not present, you should obtain it from the governance authority
+3. If the `chain-spec` file is not present, you should obtain it from the governance authority.
 4. The wizard checks the `partner-chains-cli-chain-config.json` file. If it is missing or invalid, you should obtain it from the governance authority.
-5. If the `db_sync_postgres_connection_string` is missing from the `partner-chain-cli-resources-config.json` file, the wizard prompts for it, using the default value `postgresql://postgres-user:postgres-password@localhost:5432/cexplorer`.
+5. If the `db_sync_postgres_connection_string` is missing from the `partner-chain-cli-resources-config.json` file, the wizard prompts for it using the default value `postgresql://postgres-user:postgres-password@localhost:5432/cexplorer`.
 6. The wizard outputs all relevant parameters and asks if they are correct. If not, you should edit the `partner-chains-cli-chain-config.json` and/or `partner-chain-cli-resources-config.json` files and run the wizard again.
 
 The wizard sets the required environment variables and starts the node.
@@ -326,7 +337,7 @@ Registration is effective after 1-2 Cardano epochs. After the waiting period, th
 ---
 **NOTE**
 
-The configuration of the chain is stored in the file `partner-chains-cli-chain-config.json`. This file needs to remain idential with other nodes in the network.
+The configuration of the chain is stored in the file `partner-chains-cli-chain-config.json`. This file needs to remain identical with other nodes in the network.
 
 ---
 ---
