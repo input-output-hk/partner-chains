@@ -8,6 +8,8 @@ pub use crate::inherent_provider::{McHashInherentDataProvider, McHashInherentDig
 #[cfg(test)]
 mod test;
 
+pub type InherentData = sidechain_domain::McBlockHash;
+
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"scmchash";
 const MC_HASH_DIGEST_ID: [u8; 4] = *b"mcsh";
 
@@ -27,7 +29,7 @@ mod inherent_provider {
 
 	#[derive(Debug)]
 	pub struct McHashInherentDataProvider {
-		mc_block: MainchainBlock,
+		pub mc_block: MainchainBlock,
 	}
 
 	#[derive(Debug, PartialEq, thiserror::Error)]

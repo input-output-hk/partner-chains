@@ -9,9 +9,9 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 sp-inherents = { workspace = true }
+sidechain-domain = { workspace = true }
 
 sp-consensus-slots = { workspace = true, optional = true }
-sidechain-domain = { workspace = true, optional = true }
 main-chain-follower-api = { workspace = true, features = ["block-source"], optional = true }
 sp-timestamp = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }
@@ -28,7 +28,6 @@ std = [
     "async-trait",
     "main-chain-follower-api",
     "main-chain-follower-api/std",
-    "sidechain-domain",
     "sidechain-domain/std",
     "sp-consensus",
     "sp-consensus-slots",

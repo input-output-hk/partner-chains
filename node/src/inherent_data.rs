@@ -125,7 +125,7 @@ where
 		ScEpochNumber,
 	>,
 {
-	type InherentDataProviders = (TimestampIDP, AriadneIDP);
+	type InherentDataProviders = (TimestampIDP, McHashIDP, AriadneIDP);
 
 	async fn create_inherent_data_providers(
 		&self,
@@ -159,7 +159,7 @@ where
 		)
 		.await?;
 
-		Ok((timestamp, ariadne_data_provider))
+		Ok((timestamp, mc_state_reference, ariadne_data_provider))
 	}
 }
 

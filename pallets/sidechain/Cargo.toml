@@ -17,6 +17,8 @@ sp-sidechain = { workspace = true }
 sidechain-domain = { workspace = true }
 sidechain-slots = { workspace = true, features = ["serde"]}
 log = { workspace = true }
+sidechain-mc-hash = { workspace = true }
+sp-inherents = { workspace = true }
 
 [dev-dependencies]
 sp-io = { workspace = true }
@@ -34,4 +36,6 @@ std = [
 	"parity-scale-codec/std",
 	"sidechain-domain/std",
 	"sidechain-slots/std",
+	"sidechain-mc-hash/std",
+	"sp-inherents/std"
 ]

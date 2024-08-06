@@ -85,10 +85,10 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		VerifierCIDP::new(create_inherent_data_config.clone(), test_client(), data_sources);
 
 	let inherent_data_providers = verifier_cidp
-		.create_inherent_data_providers(mock_header().hash(), (30.into(), mc_block_hash))
+		.create_inherent_data_providers(mock_header().hash(), (30.into(), mc_block_hash.clone()))
 		.await
 		.unwrap();
-	let (timestamp, ariadne_data_provider) = inherent_data_providers;
+	let (timestamp, mc_hash, ariadne_data_provider) = inherent_data_providers;
 	let mut inherent_data = InherentData::new();
 	timestamp.provide_inherent_data(&mut inherent_data).await.unwrap();
 	ariadne_data_provider.provide_inherent_data(&mut inherent_data).await.unwrap();
@@ -97,6 +97,7 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		inherent_data.get_data::<Timestamp>(&sp_timestamp::INHERENT_IDENTIFIER).unwrap(),
 		Some(Timestamp::new(create_inherent_data_config.time_source.get_current_time_millis()))
 	);
+	assert_eq!(mc_hash.mc_block.hash, mc_block_hash);
 	assert!(inherent_data
 		.get_data::<AuthoritySelectionInputs>(&sp_session_validator_management::INHERENT_IDENTIFIER)
 		.unwrap()
