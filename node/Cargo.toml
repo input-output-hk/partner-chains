@@ -85,7 +85,7 @@ frame-benchmarking-cli = { workspace = true }
 
 # Local Dependencies
 sidechain-runtime = { workspace = true }
-sidechain-mc-hash = { workspace = true, features = ["mock"] }
+sidechain-mc-hash = { workspace = true, features = ["std", "mock"] }
 main-chain-follower-api = { workspace = true }
 db-sync-follower = { workspace = true, features = ["block-source", "candidate-source"] }
 main-chain-follower-mock = { workspace = true, features = ["block-source", "candidate-source"] }

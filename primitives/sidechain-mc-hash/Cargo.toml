@@ -4,19 +4,40 @@ version = "0.1.0"
 edition = "2021"
 description = "Logic for putting a main chain block reference in digest and inherent data"
 
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
 [dependencies]
-async-trait = { workspace = true }
-main-chain-follower-api = { workspace = true, features = ["block-source"] }
-sp-consensus-slots = { workspace = true }
-sidechain-domain = { workspace = true, features = ["std"] }
-sp-consensus = { workspace = true }
-sp-inherents = { workspace = true, features = ["std"] }
-sp-runtime = { workspace = true, features = ["std"] }
-sp-timestamp = { workspace = true }
-thiserror = { workspace = true }
+sp-inherents = { workspace = true }
+
+sp-consensus-slots = { workspace = true, optional = true }
+sidechain-domain = { workspace = true, optional = true }
+main-chain-follower-api = { workspace = true, features = ["block-source"], optional = true }
+sp-timestamp = { workspace = true, optional = true }
+async-trait = { workspace = true, optional = true }
+sp-consensus = { workspace = true, optional = true }
+sp-runtime = { workspace = true, optional = true }
+thiserror = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true }
 
 [features]
+default = ["std"]
+std = [
+    "async-trait",
+    "main-chain-follower-api",
+    "main-chain-follower-api/std",
+    "sidechain-domain",
+    "sidechain-domain/std",
+    "sp-consensus",
+    "sp-consensus-slots",
+    "sp-consensus-slots/std",
+    "sp-inherents/std",
+    "sp-runtime",
+    "sp-runtime/std",
+    "sp-timestamp",
+    "sp-timestamp/std",
+    "thiserror"
+]
 mock = []

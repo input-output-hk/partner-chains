@@ -1,7 +1,11 @@
+#[cfg(feature = "std")]
 mod inherent_digest_tests {
-	use crate::mock::*;
+	use crate::inherent_provider::mock::MockMcHashInherentDataProvider;
 	use crate::*;
+	use sidechain_domain::McBlockHash;
+	use sp_inherents::InherentDataProvider;
 	use sp_inherents::InherentDigest;
+	use sp_runtime::DigestItem;
 
 	#[tokio::test]
 	async fn from_inherent_data_works() {
@@ -28,8 +32,9 @@ mod inherent_digest_tests {
 	}
 }
 
+#[cfg(feature = "std")]
 mod validation_tests {
-	use crate::McHashInherentError::*;
+	use crate::inherent_provider::McHashInherentError::McStateReferenceRegressed;
 	use crate::*;
 	use main_chain_follower_api::{block::MainchainBlock, mock_services::MockBlockDataSource};
 	use sidechain_domain::*;
