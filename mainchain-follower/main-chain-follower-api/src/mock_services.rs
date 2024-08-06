@@ -69,7 +69,7 @@ mod block {
 	fn mock_block() -> MainchainBlock {
 		MainchainBlock {
 			number: McBlockNumber(5),
-			hash: McBlockHash(vec![1, 2, 3, 4]),
+			hash: McBlockHash([123; 32]),
 			epoch: McEpochNumber(3),
 			slot: McSlotNumber(12),
 			timestamp: 8,
@@ -79,7 +79,7 @@ mod block {
 	pub fn mock_stable_block() -> MainchainBlock {
 		MainchainBlock {
 			number: McBlockNumber(1),
-			hash: McBlockHash(vec![1; 32]),
+			hash: McBlockHash([1; 32]),
 			epoch: McEpochNumber(2),
 			slot: McSlotNumber(3),
 			timestamp: 4,

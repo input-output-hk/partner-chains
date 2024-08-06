@@ -27,7 +27,7 @@ impl BlockDataSource for BlockDataSourceMock {
 		hash_arr[..4].copy_from_slice(&block_number.to_be_bytes());
 		Ok(Some(MainchainBlock {
 			number: McBlockNumber(block_number),
-			hash: McBlockHash(hash_arr.to_vec()),
+			hash: McBlockHash(hash_arr),
 			epoch: McEpochNumber(epoch),
 			slot: McSlotNumber(block_number as u64),
 			timestamp: reference_timestamp.0,

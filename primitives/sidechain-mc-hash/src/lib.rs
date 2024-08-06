@@ -167,7 +167,7 @@ pub struct McHashInherentDigest;
 
 impl McHashInherentDigest {
 	pub fn from_mc_block_hash(mc_block_hash: McBlockHash) -> Vec<DigestItem> {
-		vec![DigestItem::PreRuntime(MC_HASH_DIGEST_ID, mc_block_hash.0)]
+		vec![DigestItem::PreRuntime(MC_HASH_DIGEST_ID, mc_block_hash.0.to_vec())]
 	}
 }
 
@@ -190,7 +190,11 @@ impl InherentDigest for McHashInherentDigest {
 		for item in digest {
 			if let DigestItem::PreRuntime(id, data) = item {
 				if *id == MC_HASH_DIGEST_ID {
-					return Ok(McBlockHash(data.clone()));
+					let data = data
+						.clone()
+						.try_into()
+						.map_err(|_| format!("Invalid MC hash in digest: {data:?}"))?;
+					return Ok(McBlockHash(data));
 				}
 			}
 		}

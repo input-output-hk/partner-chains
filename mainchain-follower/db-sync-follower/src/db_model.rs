@@ -104,7 +104,7 @@ impl From<Block> for main_chain_follower_api::block::MainchainBlock {
 	fn from(b: Block) -> Self {
 		main_chain_follower_api::block::MainchainBlock {
 			number: McBlockNumber(b.block_no.0),
-			hash: McBlockHash(b.hash.to_vec()),
+			hash: McBlockHash(b.hash),
 			epoch: McEpochNumber(b.epoch_no.0),
 			slot: McSlotNumber(b.slot_no.0),
 			timestamp: b.time.and_utc().timestamp().try_into().expect("i64 timestamp is valid u64"),

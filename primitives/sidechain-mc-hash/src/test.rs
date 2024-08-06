@@ -5,7 +5,7 @@ mod inherent_digest_tests {
 
 	#[tokio::test]
 	async fn from_inherent_data_works() {
-		let inherent_data = MockMcHashInherentDataProvider { mc_hash: McBlockHash(b"abcd".into()) }
+		let inherent_data = MockMcHashInherentDataProvider { mc_hash: McBlockHash([42; 32]) }
 			.create_inherent_data()
 			.await
 			.unwrap();
@@ -13,17 +13,18 @@ mod inherent_digest_tests {
 		let result = McHashInherentDigest::from_inherent_data(&inherent_data)
 			.expect("from_inherent_data should not fail");
 
-		assert_eq!(result, vec![DigestItem::PreRuntime(MC_HASH_DIGEST_ID, b"abcd".into())])
+		assert_eq!(result, vec![DigestItem::PreRuntime(MC_HASH_DIGEST_ID, vec![42; 32])])
 	}
 
 	#[tokio::test]
 	async fn value_from_digest_works() {
-		let digest = DigestItem::PreRuntime(MC_HASH_DIGEST_ID, b"abcdef".into());
+		let digest_to_ignore = DigestItem::PreRuntime(*b"irlv", vec![0; 32]);
+		let digest = DigestItem::PreRuntime(MC_HASH_DIGEST_ID, vec![42; 32]);
 
-		let result = McHashInherentDigest::value_from_digest(&[digest])
+		let result = McHashInherentDigest::value_from_digest(&[digest_to_ignore, digest])
 			.expect("value_from_digest should not fail");
 
-		assert_eq!(result, McBlockHash(b"abcdef".into()))
+		assert_eq!(result, McBlockHash([42; 32]))
 	}
 }
 
@@ -43,7 +44,7 @@ mod validation_tests {
 		let mut block_data_source = MockBlockDataSource::default();
 		let parent_stable_block =
 			block_data_source.get_all_stable_blocks().first().unwrap().clone();
-		let mc_block_hash = McBlockHash(vec![2; 32]);
+		let mc_block_hash = McBlockHash([2; 32]);
 		let slot_duration = SlotDuration::from_millis(1000);
 
 		block_data_source.push_stable_block(MainchainBlock {
@@ -77,7 +78,7 @@ mod validation_tests {
 			Default::default(),
 			Default::default(),
 			Default::default(),
-			Digest { logs: McHashInherentDigest::from_mc_block_hash(McBlockHash(vec![1; 32])) },
+			Digest { logs: McHashInherentDigest::from_mc_block_hash(McBlockHash([1; 32])) },
 		)
 	}
 }

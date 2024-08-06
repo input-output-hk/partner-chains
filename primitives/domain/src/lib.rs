@@ -381,9 +381,9 @@ impl TryFrom<Vec<u8>> for McTxHash {
 	}
 }
 
-#[derive(Default, Clone, Decode, Encode, PartialEq, Eq, TypeInfo, ToDatum)]
+#[derive(Default, Clone, Decode, Encode, PartialEq, Eq, TypeInfo, ToDatum, MaxEncodedLen)]
 #[byte_string(debug, decode_hex, hex_serialize, hex_deserialize)]
-pub struct McBlockHash(pub Vec<u8>);
+pub struct McBlockHash(pub [u8; 32]);
 
 impl Display for McBlockHash {
 	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
