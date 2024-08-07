@@ -2,7 +2,6 @@ pub mod commands;
 pub mod get_registrations;
 pub mod types;
 
-use async_trait::async_trait;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use derive_new::new;
@@ -23,8 +22,8 @@ use types::*;
 
 pub type QueryResult<T> = Result<T, String>;
 
-#[async_trait]
-pub trait SessionValidatorManagementQueryApi {
+#[trait_variant::make(SessionValidatorManagementQueryApi: Send)]
+pub trait LocalSessionValidatorManagementQueryApi {
 	/// Returns the committee for given sidechain epoch. The order of the list represents the order of slot allocation.
 	fn get_epoch_committee(&self, epoch_number: u64) -> QueryResult<GetCommitteeResponse>;
 
@@ -58,7 +57,6 @@ pub struct SessionValidatorManagementQuery<
 	_marker: std::marker::PhantomData<(Block, SessionKeys, CrossChainPublic, SidechainParams)>,
 }
 
-#[async_trait]
 impl<
 		C,
 		Block,
