@@ -1,6 +1,4 @@
-pub(crate) mod ariadne_parameters_cmd;
-pub(crate) mod registration_status_cmd;
-pub(crate) mod sidechain_params_cmd;
+pub(crate) mod partner_chain_commands;
 
 use crate::chain_init::{SleeperLive, GENERATED_CHAIN_SPEC_FILE_NAME};
 use crate::chain_spec::EnvVarReadError;
@@ -79,7 +77,7 @@ pub fn run() -> sc_cli::Result<()> {
 			runner.async_run(|config| async move {
 				let PartialComponents { client, task_manager, .. } =
 					service::new_partial(&config).await?;
-				Ok((cmd.run(client), task_manager))
+				Ok((print_result(sp_sidechain::query::get_sidechain_params(client)), task_manager))
 			})
 		},
 		Some(Subcommand::RegistrationStatus(cmd)) => {
