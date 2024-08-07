@@ -191,7 +191,7 @@ impl InherentDigest for McHashInherentDigest {
 			if let DigestItem::PreRuntime(id, data) = item {
 				if *id == MC_HASH_DIGEST_ID {
 					let data = data.clone().try_into().map_err(|_| {
-						format!("Invalid MC hash in digest: {:?}", ByteString(data.to_vec()))
+						format!("Invalid MC hash referenced by block author in digest: {:?}\nMC hash must be exactly 32 bytes long.", ByteString(data.to_vec()))
 					})?;
 					return Ok(McBlockHash(data));
 				}
