@@ -12,7 +12,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["pallet_block_rewards",["",[],["lib.rs"]]],\
 ["pallet_session_validator_management",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_session_validator_management_benchmarking",["",[],["lib.rs"]]],\
-["pallet_session_validator_management_rpc",["",[["types",[],["ariadne.rs","mod.rs","registrations.rs"]]],["get_registrations.rs","lib.rs"]]],\
+["pallet_session_validator_management_rpc",["",[],["lib.rs"]]],\
 ["pallet_sidechain",["",[],["lib.rs"]]],\
 ["pallet_sidechain_rpc",["",[["types",[],["mod.rs","sidechain.rs"]]],["lib.rs"]]],\
 ["partner_chains_cli",["",[["create_chain_spec",[],["mod.rs"]],["generate_keys",[],["mod.rs"]],["prepare_configuration",[],["mod.rs","prepare_cardano_params.rs","prepare_chain_params.rs","prepare_main_chain_config.rs"]],["register",[],["mod.rs","register1.rs","register2.rs","register3.rs"]],["setup_main_chain_state",[],["mod.rs"]],["start_node",[],["mod.rs"]]],["cardano_cli.rs","config.rs","io.rs","keystore.rs","main.rs","main_chain_follower.rs","permissioned_candidates.rs","sidechain_main_cli_resources.rs","smart_contracts.rs"]]],\
@@ -28,6 +28,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["sidechain_slots",["",[],["lib.rs","runtime_api_client.rs"]]],\
 ["sp_block_rewards",["",[],["lib.rs"]]],\
 ["sp_session_validator_management",["",[],["lib.rs"]]],\
+["sp_session_validator_management_query",["",[["types",[],["ariadne.rs","mod.rs","registrations.rs"]]],["commands.rs","get_registrations.rs","lib.rs"]]],\
 ["sp_sidechain",["",[],["lib.rs"]]],\
 ["time_source",["",[],["lib.rs"]]]\
 ]'));

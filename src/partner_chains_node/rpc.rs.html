@@ -150,6 +150,7 @@
 <a href="#148" id="148">148</a>
 <a href="#149" id="149">149</a>
 <a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! A collection of node-specific RPC methods.
 //! Substrate provides the `sc-rpc` crate, which defines the core RPC layer
 //! used by Substrate nodes. This file extends those RPC definitions with
@@ -182,6 +183,7 @@
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_block_builder::BlockBuilder;
 <span class="kw">use </span>sp_blockchain::{Error <span class="kw">as </span>BlockChainError, HeaderBackend, HeaderMetadata};
+<span class="kw">use </span>sp_session_validator_management_query::SessionValidatorManagementQuery;
 <span class="kw">use </span>std::sync::Arc;
 <span class="kw">use </span>time_source::TimeSource;
 
@@ -286,10 +288,10 @@
 		.into_rpc(),
 	)<span class="question-mark">?</span>;
 	module.merge(
-		SessionValidatorManagementRpc::new(
+		SessionValidatorManagementRpc::new(Arc::new(SessionValidatorManagementQuery::new(
 			client.clone(),
 			main_chain_follower_data_sources.candidate.clone(),
-		)
+		)))
 		.into_rpc(),
 	)<span class="question-mark">?</span>;
 

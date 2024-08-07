@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["GetRegistrationsRpcError"],"fn":["error_object_from"]};
