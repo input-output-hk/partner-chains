@@ -419,7 +419,7 @@
 	<span class="kw">let </span>trimmed = key.trim_start_matches(<span class="string">"0x"</span>);
 	<span class="kw">let </span>pk = PublicKey::from_str(trimmed)<span class="question-mark">?</span>;
 	<span class="kw">let </span>account_id: AccountId32 = MultiSigner::from(ecdsa::Public::from(pk)).into_account();
-	<span class="prelude-val">Ok</span>(hex::encode(<span class="kw-2">&amp;</span>account_id))
+	<span class="prelude-val">Ok</span>(hex::encode(account_id))
 }
 
 <span class="kw">pub fn </span>start_node&lt;C: IOContext&gt;(
