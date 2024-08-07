@@ -426,10 +426,6 @@ fn initialize_with_slot_digest_and_increment_block_number(slot_number: u64) {
 	System::initialize(&(System::block_number() + 1), &System::parent_hash(), &pre_digest);
 }
 
-fn current_epoch_number() -> ScEpochNumber {
-	sidechain_slots::epoch_number(pallet_aura::CurrentSlot::<Test>::get(), SLOTS_PER_EPOCH)
-}
-
 macro_rules! assert_current_epoch {
 	($epoch:expr) => {{
 		assert_eq!(Sidechain::current_epoch_number().0, $epoch + ARBITRARY_FIRST_EPOCH);

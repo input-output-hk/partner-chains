@@ -181,7 +181,7 @@ fn account_id_hex_from_ecdsa_key(key: &str) -> anyhow::Result<String> {
 	let trimmed = key.trim_start_matches("0x");
 	let pk = PublicKey::from_str(trimmed)?;
 	let account_id: AccountId32 = MultiSigner::from(ecdsa::Public::from(pk)).into_account();
-	Ok(hex::encode(&account_id))
+	Ok(hex::encode(account_id))
 }
 
 pub fn start_node<C: IOContext>(
