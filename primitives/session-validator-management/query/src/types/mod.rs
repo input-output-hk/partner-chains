@@ -44,7 +44,7 @@ impl CommitteeMember {
 
 #[cfg(test)]
 mod tests {
-	use crate::GetCommitteeResponse;
+	use crate::types::GetCommitteeResponse;
 	use serde_json;
 	use sidechain_domain::ScEpochNumber;
 	use sp_core::ecdsa;

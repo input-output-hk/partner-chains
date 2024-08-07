@@ -1,11 +1,8 @@
 use crate::*;
-
 use authority_selection_inherents::filter_invalid_candidates::RegistrationDataError;
 use authority_selection_inherents::filter_invalid_candidates::{
 	CandidateValidationApi, StakeError,
 };
-use jsonrpsee::types::ErrorObjectOwned;
-use main_chain_follower_api::DataSourceError;
 use plutus::ToDatum;
 use sidechain_domain::{
 	CandidateRegistrations, MainchainAddress, McEpochNumber, RegistrationData, StakeDelegation,
@@ -13,25 +10,13 @@ use sidechain_domain::{
 use sp_core::bytes::to_hex;
 use sp_sidechain::GetSidechainParams;
 
-/// Errors that occur on the client RPC
-#[derive(Debug)]
-pub enum GetRegistrationsRpcError {
-	MainchainFollowerError(DataSourceError),
-}
-
-impl From<GetRegistrationsRpcError> for ErrorObjectOwned {
-	fn from(e: GetRegistrationsRpcError) -> Self {
-		error_object_from(format!("{:?}", e))
-	}
-}
-
 impl<
 		C,
 		Block,
 		SessionKeys: parity_scale_codec::Decode + Send + Sync + 'static,
 		CrossChainPublic,
 		SidechainParams: parity_scale_codec::Decode + Send + Sync + ToDatum + Clone,
-	> SessionValidatorManagementRpc<C, Block, SessionKeys, CrossChainPublic, SidechainParams>
+	> SessionValidatorManagementQuery<C, Block, SessionKeys, CrossChainPublic, SidechainParams>
 where
 	Block: BlockT,
 	C: HeaderBackend<Block>,
@@ -42,7 +27,7 @@ where
 	async fn registrations_to_rpc_response(
 		&self,
 		candidate_registrations: Vec<CandidateRegistrations>,
-	) -> RpcResult<GetRegistrationsResponseMap> {
+	) -> Result<GetRegistrationsResponseMap, String> {
 		let api = self.client.runtime_api();
 		let best_block = self.client.info().best_hash;
 
@@ -58,14 +43,14 @@ where
 			registration_data_validation,
 			stake_validation,
 		)
-		.map_err(error_object_from)
+		.map_err(|err| format!("{err:?}"))
 	}
 
 	pub(crate) async fn candidates_registrations_for_epoch(
 		&self,
 		mc_epoch_number: McEpochNumber,
 		committee_candidate_address: MainchainAddress,
-	) -> RpcResult<GetRegistrationsResponseMap> {
+	) -> Result<GetRegistrationsResponseMap, String> {
 		let candidates = get_candidates_for_epoch(
 			mc_epoch_number,
 			self.candidate_data_source.as_ref(),
@@ -131,13 +116,9 @@ pub(crate) async fn get_candidates_for_epoch(
 	mainchain_epoch: McEpochNumber,
 	candidate_data_source: &(dyn CandidateDataSource + Send + Sync),
 	committee_candidate_address: MainchainAddress,
-) -> RpcResult<Vec<CandidateRegistrations>> {
-	Ok(candidate_data_source
+) -> Result<Vec<CandidateRegistrations>, String> {
+	candidate_data_source
 		.get_candidates(mainchain_epoch, committee_candidate_address)
 		.await
-		.map_err(GetRegistrationsRpcError::MainchainFollowerError)?)
-}
-
-pub fn error_object_from<T: std::fmt::Debug>(err: T) -> ErrorObjectOwned {
-	ErrorObject::owned::<u8>(-1, format!("{err:?}"), None)
+		.map_err(|err| format!("{err:?}"))
 }

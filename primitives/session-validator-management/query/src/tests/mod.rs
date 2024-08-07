@@ -1,10 +1,10 @@
 mod conversion;
 mod mock;
-mod rpc_mock;
+mod query_mock;
 mod runtime_api_mock;
 
 use super::types::{CommitteeMember, GetCommitteeResponse};
-use super::SessionValidatorManagementRpc;
+use super::SessionValidatorManagementQuery;
 use super::*;
 use main_chain_follower_api::mock_services::MockCandidateDataSource;
 use mock::*;
@@ -23,7 +23,7 @@ use std::sync::Arc;
 async fn get_epoch_committee() {
 	let client = Arc::new(TestApi {});
 	let candidate_data_source = MockCandidateDataSource::default();
-	let rpc = SessionValidatorManagementRpc::new(client, Arc::new(candidate_data_source));
+	let rpc = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source));
 	let response = rpc.get_epoch_committee(777).unwrap();
 
 	let expected_initial_committee: Vec<_> = runtime_api_mock::committee_for_epoch(777);
@@ -44,7 +44,7 @@ async fn get_epoch_committee() {
 async fn get_epoch_committee_should_not_work_when_committee_is_in_the_future() {
 	let client = Arc::new(TestApi {});
 	let candidate_data_source = MockCandidateDataSource::default();
-	let rpc = SessionValidatorManagementRpc::new(client, Arc::new(candidate_data_source));
+	let rpc = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source));
 	let error = rpc.get_epoch_committee(conversion::BEST_EPOCH + 2).unwrap_err();
 	assert_eq!(
 		error,
@@ -60,7 +60,7 @@ async fn get_epoch_committee_should_not_work_when_committee_is_in_the_future() {
 async fn get_epoch_committee_should_not_work_for_epoch_lesser_than_first_epoch() {
 	let client = Arc::new(TestApi {});
 	let candidate_data_source = MockCandidateDataSource::default();
-	let rpc = SessionValidatorManagementRpc::new(client, Arc::new(candidate_data_source));
+	let rpc = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source));
 	let error = rpc.get_epoch_committee(conversion::EPOCH_OF_BLOCK_1 - 1).unwrap_err();
 	assert_eq!(
 		error,
@@ -73,7 +73,7 @@ async fn get_epoch_committee_should_not_work_for_epoch_lesser_than_first_epoch()
 async fn get_epoch_committee_should_return_initial_committee_for_genesis_and_first_epoch() {
 	let client = Arc::new(TestApi {});
 	let candidate_data_source = MockCandidateDataSource::default();
-	let rpc = SessionValidatorManagementRpc::new(client, Arc::new(candidate_data_source));
+	let rpc = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source));
 
 	let expected_initial_committee: Vec<_> =
 		runtime_api_mock::committee_for_epoch(conversion::GENESIS_EPOCH);
@@ -99,7 +99,7 @@ async fn get_epoch_committee_should_return_initial_committee_for_genesis_and_fir
 async fn get_epoch_committee_should_work_correctly_for_next_epoch() {
 	let client = Arc::new(TestApi {});
 	let candidate_data_source = MockCandidateDataSource::default();
-	let rpc = SessionValidatorManagementRpc::new(client, Arc::new(candidate_data_source));
+	let rpc = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source));
 	let epoch = conversion::BEST_EPOCH + 1;
 	let response = rpc.get_epoch_committee(epoch).unwrap();
 
@@ -153,7 +153,7 @@ mod get_registration_tests {
 		let (candidate, registration) = get_first_candidate_and_first_registration(&response);
 
 		let client = Arc::new(TestApi {});
-		let api = SessionValidatorManagementRpc::new(client, Arc::new(candidate_data_source_mock));
+		let api = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source_mock));
 
 		let registrations = api
 			.get_registrations(support_epoch, candidate.mainchain_pub_key().clone())
@@ -228,7 +228,7 @@ mod get_registration_tests {
 		invalidate_registration(registration);
 
 		let client = Arc::new(TestApi {});
-		let api = SessionValidatorManagementRpc::new(client, Arc::new(candidate_data_source_mock));
+		let api = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source_mock));
 
 		let registrations = api
 			.get_registrations(supported_epoch, mainchain_pub_key_clone.clone())
@@ -285,7 +285,7 @@ mod get_registration_tests {
 
 			let client = Arc::new(TestApi {});
 			let api =
-				SessionValidatorManagementRpc::new(client, Arc::new(candidate_data_source_mock));
+				SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source_mock));
 
 			let registrations =
 				api.get_registrations(supported_epoch, mc_public_key).await.unwrap();
@@ -372,7 +372,7 @@ mod get_registration_tests {
 		};
 
 		let client = Arc::new(TestApi {});
-		let api = SessionValidatorManagementRpc::new(client, Arc::new(candidate_data_source_mock));
+		let api = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source_mock));
 
 		let ariadne_parameters = api.get_ariadne_parameters(McEpochNumber(1)).await.unwrap();
 		assert_eq!(ariadne_parameters, expected);
@@ -411,7 +411,7 @@ mod get_registration_tests {
 				Some(invalid_permissioned_candidates.clone()),
 			]);
 		let client = Arc::new(TestApi {});
-		let api = SessionValidatorManagementRpc::new(client, Arc::new(candidate_data_source_mock));
+		let api = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source_mock));
 		let ariadne_parameters = api.get_ariadne_parameters(McEpochNumber(1)).await.unwrap();
 
 		for permissioned_candidate in ariadne_parameters.permissioned_candidates.clone() {

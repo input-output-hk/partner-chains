@@ -12,12 +12,13 @@ use crate::{
 use crate::{chain_spec, staging, template_chain_spec, testnet};
 use epoch_derivation::EpochConfig;
 use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
-use futures::FutureExt;
-use pallet_session_validator_management_rpc::SessionValidatorManagementRpc;
+use futures::{Future, FutureExt};
 use sc_cli::{Runner, SubstrateCli};
 use sc_service::PartialComponents;
 use sidechain_runtime::{Block, EXISTENTIAL_DEPOSIT};
 use sp_keyring::Sr25519Keyring;
+use sp_session_validator_management_query::commands::*;
+use sp_session_validator_management_query::SessionValidatorManagementQuery;
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
@@ -86,9 +87,16 @@ pub fn run() -> sc_cli::Result<()> {
 			runner.async_run(|config| async move {
 				let PartialComponents { client, task_manager, other, .. } =
 					service::new_partial(&config).await?;
-				let rpc =
-					SessionValidatorManagementRpc::new(client.clone(), other.3.candidate.clone());
-				Ok((cmd.run_ignore_output(rpc), task_manager))
+				let query =
+					SessionValidatorManagementQuery::new(client.clone(), other.3.candidate.clone());
+				Ok((
+					print_result(cli_get_registration_status(
+						query,
+						cmd.mc_epoch_number,
+						cmd.mainchain_pub_key.clone(),
+					)),
+					task_manager,
+				))
 			})
 		},
 		Some(Subcommand::AriadneParameters(cmd)) => {
@@ -96,9 +104,12 @@ pub fn run() -> sc_cli::Result<()> {
 			runner.async_run(|config| async move {
 				let PartialComponents { client, task_manager, other, .. } =
 					service::new_partial(&config).await?;
-				let rpc =
-					SessionValidatorManagementRpc::new(client.clone(), other.3.candidate.clone());
-				Ok((cmd.run_ignore_output(rpc), task_manager))
+				let query =
+					SessionValidatorManagementQuery::new(client.clone(), other.3.candidate.clone());
+				Ok((
+					print_result(cli_get_ariadne_parameters(query, cmd.mc_epoch_number)),
+					task_manager,
+				))
 			})
 		},
 		Some(Subcommand::RegistrationSignatures(cmd)) => Ok(println!("{}", cmd.execute())),
@@ -299,4 +310,13 @@ fn initialize_chain_spec(runner: &Runner<Cli>) -> Result<Box<dyn sc_service::Cha
 			generated_chain_spec
 		})
 		.map_err(|_| "Initialization process terminated by user".into())
+}
+
+async fn print_result<FIn>(command_future: FIn) -> Result<(), sc_cli::Error>
+where
+	FIn: Future<Output = Result<String, String>>,
+{
+	let result = command_future.await?;
+	println!("{}", result);
+	Ok(())
 }

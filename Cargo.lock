@@ -5753,31 +5753,10 @@ dependencies = [
 name = "pallet-session-validator-management-rpc"
 version = "0.0.1"
 dependencies = [
- "authority-selection-inherents",
  "derive-new",
- "frame-support",
- "hex",
- "hex-literal",
  "jsonrpsee",
- "main-chain-follower-api",
- "minicbor",
- "parity-scale-codec",
- "plutus",
- "plutus-datum-derive",
- "scale-info",
- "serde",
- "serde_json",
- "sidechain-block-search",
  "sidechain-domain",
- "sp-api",
- "sp-blockchain",
- "sp-core",
- "sp-runtime",
- "sp-session-validator-management",
- "sp-sidechain",
- "sp-std",
- "thiserror",
- "tokio",
+ "sp-session-validator-management-query",
 ]
 
 [[package]]
@@ -6121,6 +6100,7 @@ dependencies = [
  "sp-keyring",
  "sp-runtime",
  "sp-session-validator-management",
+ "sp-session-validator-management-query",
  "sp-sidechain",
  "sp-timestamp",
  "substrate-build-script-utils",
@@ -9735,6 +9715,35 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "thiserror",
+]
+
+[[package]]
+name = "sp-session-validator-management-query"
+version = "1.0.0"
+dependencies = [
+ "async-trait",
+ "authority-selection-inherents",
+ "derive-new",
+ "hex-literal",
+ "main-chain-follower-api",
+ "minicbor",
+ "parity-scale-codec",
+ "plutus",
+ "plutus-datum-derive",
+ "scale-info",
+ "serde",
+ "serde_json",
+ "sidechain-block-search",
+ "sidechain-domain",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-runtime",
+ "sp-session-validator-management",
+ "sp-sidechain",
+ "sp-std",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]

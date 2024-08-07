@@ -28,6 +28,7 @@ members = [
     "utils/time-source",
     "primitives/sidechain-mc-hash",
     "primitives/session-validator-management",
+	"primitives/session-validator-management/query",
     "primitives/session-manager",
     "primitives/sidechain",
 	"partner-chains-cli"
@@ -163,6 +164,7 @@ pallet-block-rewards = { path = "pallets/block-rewards", default-features = fals
 pallet-sidechain = { path = "pallets/sidechain", default-features = false }
 pallet-sidechain-rpc = { path = "pallets/sidechain/rpc", default-features = false }
 sp-session-validator-management = { default-features = false, path = "primitives/session-validator-management" }
+sp-session-validator-management-query  = { default-features = false, path = "primitives/session-validator-management/query" }
 pallet-session-validator-management = { default-features = false, path = "pallets/session-validator-management" }
 pallet-session-validator-management-benchmarking = { default-features = false, path = "pallets/session-validator-management/benchmarking" }
 pallet-session-validator-management-rpc = { path = "pallets/session-validator-management/rpc" }
