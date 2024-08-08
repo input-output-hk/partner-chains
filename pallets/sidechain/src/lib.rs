@@ -32,11 +32,9 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	#[pallet::getter(fn epoch_number)]
 	pub(super) type EpochNumber<T: Config> = StorageValue<_, ScEpochNumber, ValueQuery>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn slots_per_epoch)]
 	pub(super) type SlotsPerEpoch<T: Config> =
 		StorageValue<_, sidechain_slots::SlotsPerEpoch, ValueQuery>;
 
@@ -52,6 +50,10 @@ pub mod pallet {
 			let current_slot = T::current_slot_number();
 			let slots_per_epoch = Self::slots_per_epoch();
 			slots_per_epoch.epoch_number_from_sc_slot(current_slot)
+		}
+
+		pub fn slots_per_epoch() -> sidechain_slots::SlotsPerEpoch {
+			SlotsPerEpoch::<T>::get()
 		}
 	}
 

@@ -97,7 +97,6 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	#[pallet::getter(fn current_committee_storage)]
 	pub type CurrentCommittee<T: Config> = StorageValue<
 		_,
 		CommitteeInfo<T::ScEpochNumber, T::AuthorityId, T::AuthorityKeys, T::MaxValidators>,
@@ -105,7 +104,6 @@ pub mod pallet {
 	>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn next_committee_storage)]
 	pub type NextCommittee<T: Config> = StorageValue<
 		_,
 		CommitteeInfo<T::ScEpochNumber, T::AuthorityId, T::AuthorityKeys, T::MaxValidators>,
@@ -278,6 +276,17 @@ pub mod pallet {
 				.get(index)
 				.map(|authority| authority.0.clone())
 				.clone()
+		}
+
+		pub fn current_committee_storage(
+		) -> CommitteeInfo<T::ScEpochNumber, T::AuthorityId, T::AuthorityKeys, T::MaxValidators> {
+			CurrentCommittee::<T>::get()
+		}
+
+		pub fn next_committee_storage() -> Option<
+			CommitteeInfo<T::ScEpochNumber, T::AuthorityId, T::AuthorityKeys, T::MaxValidators>,
+		> {
+			NextCommittee::<T>::get()
 		}
 
 		/// This function's result should be always defined after inherent call of 1st block of each epoch
