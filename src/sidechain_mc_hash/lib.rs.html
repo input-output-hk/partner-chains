@@ -226,11 +226,14 @@
 <a href="#224" id="224">224</a>
 <a href="#225" id="225">225</a>
 <a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::McHashInherentError::StableBlockNotFound;
 <span class="kw">use </span>main_chain_follower_api::{
 	block::MainchainBlock, common::Timestamp <span class="kw">as </span>McTimestamp, BlockDataSource, DataSourceError,
 };
-<span class="kw">use </span>sidechain_domain::{McBlockHash, McBlockNumber, McEpochNumber};
+<span class="kw">use </span>sidechain_domain::{byte_string::ByteString, McBlockHash, McBlockNumber, McEpochNumber};
 <span class="kw">use </span>sp_consensus_slots::{Slot, SlotDuration};
 <span class="kw">use </span>sp_inherents::{InherentData, InherentDataProvider, InherentDigest, InherentIdentifier};
 <span class="kw">use </span>sp_runtime::{traits::Header <span class="kw">as </span>HeaderT, DigestItem};
@@ -395,7 +398,7 @@
 
 <span class="kw">impl </span>McHashInherentDigest {
 	<span class="kw">pub fn </span>from_mc_block_hash(mc_block_hash: McBlockHash) -&gt; Vec&lt;DigestItem&gt; {
-		<span class="macro">vec!</span>[DigestItem::PreRuntime(MC_HASH_DIGEST_ID, mc_block_hash.<span class="number">0</span>)]
+		<span class="macro">vec!</span>[DigestItem::PreRuntime(MC_HASH_DIGEST_ID, mc_block_hash.<span class="number">0</span>.to_vec())]
 	}
 }
 
@@ -418,7 +421,10 @@
 		<span class="kw">for </span>item <span class="kw">in </span>digest {
 			<span class="kw">if let </span>DigestItem::PreRuntime(id, data) = item {
 				<span class="kw">if </span><span class="kw-2">*</span>id == MC_HASH_DIGEST_ID {
-					<span class="kw">return </span><span class="prelude-val">Ok</span>(McBlockHash(data.clone()));
+					<span class="kw">let </span>data = data.clone().try_into().map_err(|<span class="kw">_</span>| {
+						<span class="macro">format!</span>(<span class="string">"Invalid MC hash referenced by block author in digest: {:?}\nMC hash must be exactly 32 bytes long."</span>, ByteString(data.to_vec()))
+					})<span class="question-mark">?</span>;
+					<span class="kw">return </span><span class="prelude-val">Ok</span>(McBlockHash(data));
 				}
 			}
 		}

@@ -279,7 +279,7 @@
 	<span class="kw">fn </span>mock_block() -&gt; MainchainBlock {
 		MainchainBlock {
 			number: McBlockNumber(<span class="number">5</span>),
-			hash: McBlockHash(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>]),
+			hash: McBlockHash([<span class="number">123</span>; <span class="number">32</span>]),
 			epoch: McEpochNumber(<span class="number">3</span>),
 			slot: McSlotNumber(<span class="number">12</span>),
 			timestamp: <span class="number">8</span>,
@@ -289,7 +289,7 @@
 	<span class="kw">pub fn </span>mock_stable_block() -&gt; MainchainBlock {
 		MainchainBlock {
 			number: McBlockNumber(<span class="number">1</span>),
-			hash: McBlockHash(<span class="macro">vec!</span>[<span class="number">1</span>; <span class="number">32</span>]),
+			hash: McBlockHash([<span class="number">1</span>; <span class="number">32</span>]),
 			epoch: McEpochNumber(<span class="number">2</span>),
 			slot: McSlotNumber(<span class="number">3</span>),
 			timestamp: <span class="number">4</span>,

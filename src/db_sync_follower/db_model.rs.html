@@ -635,7 +635,7 @@
 	<span class="kw">fn </span>from(b: Block) -&gt; <span class="self">Self </span>{
 		main_chain_follower_api::block::MainchainBlock {
 			number: McBlockNumber(b.block_no.<span class="number">0</span>),
-			hash: McBlockHash(b.hash.to_vec()),
+			hash: McBlockHash(b.hash),
 			epoch: McEpochNumber(b.epoch_no.<span class="number">0</span>),
 			slot: McSlotNumber(b.slot_no.<span class="number">0</span>),
 			timestamp: b.time.and_utc().timestamp().try_into().expect(<span class="string">"i64 timestamp is valid u64"</span>),

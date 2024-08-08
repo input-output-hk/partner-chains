@@ -956,9 +956,9 @@
 	}
 }
 
-<span class="attr">#[derive(Default, Clone, Decode, Encode, PartialEq, Eq, TypeInfo, ToDatum)]
+<span class="attr">#[derive(Default, Clone, Decode, Encode, PartialEq, Eq, TypeInfo, ToDatum, MaxEncodedLen)]
 #[byte_string(debug, decode_hex, hex_serialize, hex_deserialize)]
-</span><span class="kw">pub struct </span>McBlockHash(<span class="kw">pub </span>Vec&lt;u8&gt;);
+</span><span class="kw">pub struct </span>McBlockHash(<span class="kw">pub </span>[u8; <span class="number">32</span>]);
 
 <span class="kw">impl </span>Display <span class="kw">for </span>McBlockHash {
 	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; core::fmt::Result {
