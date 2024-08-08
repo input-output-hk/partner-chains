@@ -10,10 +10,10 @@
     system,
     ...
   }: let
-    trustlessPkgs = inputs'.trustless-sidechain.packages;
+    smartContractsPkgs = inputs'.partner-chains-smart-contracts.packages;
   in {
     packages = {
-      inherit (trustlessPkgs) sidechain-main-cli-image;
+      inherit (smartContractsPkgs) sidechain-main-cli-image;
     };
   };
 }

@@ -102,7 +102,7 @@
         ];
       }
       {
-        category = "Sidechains";
+        category = "Partner Chains";
         pkgs = [
           {
             name = "cardano-cli";
@@ -111,15 +111,15 @@
             command = "${inputs'.cardano-node.packages.cardano-cli}/bin/cardano-cli $@";
           }
           {
-            name = "trustless-sidechain-cli-image:load:docker";
-            help = "Build and load the trustless sidechain cli image into docker";
+            name = "partner-chains-smart-contracts-cli-image:load:docker";
+            help = "Build and load the smart contracts CLI image into docker";
             command = ''
               nix run ${self}#sidechain-main-cli-image.copyToDockerDaemon
             '';
           }
           {
-            name = "trustless-sidechain-cli-image:load:podman";
-            help = "Build and load the trustless sidechain cli image into podman";
+            name = "partner-chains-smart-contracts-cli-image:load:podman";
+            help = "Build and load the smart contracts CLI image into podman";
             command = ''
               nix run ${self}#sidechain-main-cli-image.copyToPodman
             '';
@@ -131,7 +131,7 @@
       commands
       ++ self.lib.categorize [
         {
-          category = "Sidechains";
+          category = "Partner Chains";
           pkgs = [
             {
               name = "sidechains-stack";
@@ -146,12 +146,12 @@
             }
             {
               name = "sidechain-main-cli";
-              help = "CLI application to execute Trustless Sidechain Cardano endpoints";
+              help = "Partner Chains Substrate Node Devshell with Smart Contracts CLI";
               command = ''
                 ${
                   if isDarwin
-                  then inputs.trustless-sidechain.packages.x86_64-darwin.sidechain-main-cli
-                  else inputs'.trustless-sidechain.packages.sidechain-main-cli
+                  then inputs.partner-chains-smart-contracts.packages.x86_64-darwin.sidechain-main-cli
+                  else inputs'.partner-chains-smart-contracts.packages.sidechain-main-cli
                 }/bin/sidechain-main-cli $@
               '';
             }
@@ -161,30 +161,30 @@
   in {
     devshells.default = {
       inherit packages env commands;
-      name = "Sidechains Substrate Node Devshell";
+      name = "Partner Chains Substrate Node Devshell";
     };
     devshells.process-compose = {
       inherit packages env;
       commands = extraCommands;
-      name = "Sidechains Substrate Node Devshell with whole stack";
+      name = "Partner Chains Substrate Node Devshell with whole stack";
     };
-    devshells.trustless-sidechain = {
+    devshells.smart-contracts = {
       inherit packages env;
       commands = commands ++ [
         {
-          category = "Sidechains";
+          category = "Partner Chains";
           name = "sidechain-main-cli";
-          help = "CLI application to execute Trustless Sidechain Cardano endpoints";
+          help = "CLI application to execute Partner Chains Smart Contracts";
           command = ''
             ${
               if isDarwin
-              then inputs.trustless-sidechain.packages.x86_64-darwin.sidechain-main-cli
-              else inputs'.trustless-sidechain.packages.sidechain-main-cli
+              then inputs.partner-chains-smart-contracts.packages.x86_64-darwin.sidechain-main-cli
+              else inputs'.partner-chains-smart-contracts.packages.sidechain-main-cli
             }/bin/sidechain-main-cli $@
           '';
         }
       ];
-      name = "Sidechains Substrate Node Devshell with Trustless CLI";
+      name = "Partner Chains Substrate Node Devshell with Smart Contracts CLI";
     };
   };
 }
