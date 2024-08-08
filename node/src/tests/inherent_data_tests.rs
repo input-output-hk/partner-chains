@@ -69,7 +69,7 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 async fn block_verification_cidp_should_be_created_correctly() {
 	let mut block_data_source = MockBlockDataSource::default();
 	let parent_stable_block = block_data_source.get_all_stable_blocks().first().unwrap().clone();
-	let mc_block_hash = McBlockHash(vec![2; 32]);
+	let mc_block_hash = McBlockHash([2; 32]);
 	block_data_source.push_stable_block(MainchainBlock {
 		number: McBlockNumber(parent_stable_block.number.0 + 5),
 		hash: mc_block_hash.clone(),

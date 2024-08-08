@@ -2,7 +2,7 @@ use crate::McHashInherentError::StableBlockNotFound;
 use main_chain_follower_api::{
 	block::MainchainBlock, common::Timestamp as McTimestamp, BlockDataSource, DataSourceError,
 };
-use sidechain_domain::{McBlockHash, McBlockNumber, McEpochNumber};
+use sidechain_domain::{byte_string::ByteString, McBlockHash, McBlockNumber, McEpochNumber};
 use sp_consensus_slots::{Slot, SlotDuration};
 use sp_inherents::{InherentData, InherentDataProvider, InherentDigest, InherentIdentifier};
 use sp_runtime::{traits::Header as HeaderT, DigestItem};
@@ -167,7 +167,7 @@ pub struct McHashInherentDigest;
 
 impl McHashInherentDigest {
 	pub fn from_mc_block_hash(mc_block_hash: McBlockHash) -> Vec<DigestItem> {
-		vec![DigestItem::PreRuntime(MC_HASH_DIGEST_ID, mc_block_hash.0)]
+		vec![DigestItem::PreRuntime(MC_HASH_DIGEST_ID, mc_block_hash.0.to_vec())]
 	}
 }
 
@@ -190,7 +190,10 @@ impl InherentDigest for McHashInherentDigest {
 		for item in digest {
 			if let DigestItem::PreRuntime(id, data) = item {
 				if *id == MC_HASH_DIGEST_ID {
-					return Ok(McBlockHash(data.clone()));
+					let data = data.clone().try_into().map_err(|_| {
+						format!("Invalid MC hash referenced by block author in digest: {:?}\nMC hash must be exactly 32 bytes long.", ByteString(data.to_vec()))
+					})?;
+					return Ok(McBlockHash(data));
 				}
 			}
 		}

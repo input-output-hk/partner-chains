@@ -133,6 +133,6 @@ pub fn mock_header() -> <Block as BlockT>::Header {
 		Default::default(),
 		Default::default(),
 		Default::default(),
-		Digest { logs: McHashInherentDigest::from_mc_block_hash(McBlockHash(vec![1; 32])) },
+		Digest { logs: McHashInherentDigest::from_mc_block_hash(McBlockHash([1; 32])) },
 	)
 }

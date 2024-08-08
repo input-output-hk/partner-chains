@@ -16,9 +16,7 @@ async fn get_latest_block_info(pool: PgPool) {
 	let source = mk_datasource(pool, irrelevant_security_parameter);
 	let expected = MainchainBlock {
 		number: McBlockNumber(5),
-		hash: McBlockHash(
-			hex!("EBEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1").to_vec(),
-		),
+		hash: McBlockHash(hex!("EBEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1")),
 		epoch: McEpochNumber(193),
 		slot: McSlotNumber(193500),
 		timestamp: NaiveDateTime::from_str("2022-04-21T17:36:10")
@@ -129,9 +127,8 @@ async fn test_get_stable_block_at_filters_out_by_max_slots_boundary(pool: PgPool
 #[sqlx::test(migrations = "./testdata/migrations")]
 async fn test_get_stable_block_info_by_hash_for_unknown_hash(pool: PgPool) {
 	let source = mk_datasource(pool, 2);
-	let unknown_hash = McBlockHash(
-		hex!("0000D7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1").to_vec(),
-	);
+	let unknown_hash =
+		McBlockHash(hex!("0000D7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1"));
 	let result = source
 		.get_stable_block_for(unknown_hash, BLOCK_4_TS_MILLIS.into())
 		.await
@@ -197,7 +194,7 @@ async fn test_get_latest_stable_block_with_stability_margin_2(pool: PgPool) {
 #[sqlx::test(migrations = "./testdata/migrations")]
 async fn test_get_stable_block_caching(pool: PgPool) {
 	fn dummy_hash(n: u8) -> McBlockHash {
-		McBlockHash(vec![n; 32])
+		McBlockHash([n; 32])
 	}
 
 	async fn update_block_hash_in_db(pool: &PgPool, n: u8) {
@@ -285,9 +282,7 @@ fn mainchain_epoch_config() -> MainchainEpochConfig {
 fn block_0() -> MainchainBlock {
 	MainchainBlock {
 		number: McBlockNumber(0),
-		hash: McBlockHash(
-			hex!("0BEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1").to_vec(),
-		),
+		hash: McBlockHash(hex!("0BEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1")),
 		epoch: McEpochNumber(189),
 		slot: McSlotNumber(189410),
 		timestamp: 1650558480, // 2022-04-21T16:28:00Z
@@ -297,9 +292,7 @@ fn block_0() -> MainchainBlock {
 fn block_1() -> MainchainBlock {
 	MainchainBlock {
 		number: McBlockNumber(1),
-		hash: McBlockHash(
-			hex!("ABEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1").to_vec(),
-		),
+		hash: McBlockHash(hex!("ABEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1")),
 		epoch: McEpochNumber(190),
 		slot: McSlotNumber(190400),
 		timestamp: 1650559470, // 2022-04-21T16:44:30Z
@@ -309,9 +302,7 @@ fn block_1() -> MainchainBlock {
 fn block_2() -> MainchainBlock {
 	MainchainBlock {
 		number: McBlockNumber(2),
-		hash: McBlockHash(
-			hex!("BBEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1").to_vec(),
-		),
+		hash: McBlockHash(hex!("BBEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1")),
 		epoch: McEpochNumber(190),
 		slot: McSlotNumber(190500),
 		timestamp: 1650559570, // 2022-04-23T16:46:10Z
@@ -321,9 +312,7 @@ fn block_2() -> MainchainBlock {
 fn block_3() -> MainchainBlock {
 	MainchainBlock {
 		number: McBlockNumber(3),
-		hash: McBlockHash(
-			hex!("CBEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1").to_vec(),
-		),
+		hash: McBlockHash(hex!("CBEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1")),
 		epoch: McEpochNumber(191),
 		slot: McSlotNumber(191500),
 		timestamp: 1650560570, // 2022-04-21T17:02:50Z
@@ -333,9 +322,7 @@ fn block_3() -> MainchainBlock {
 fn block_4() -> MainchainBlock {
 	MainchainBlock {
 		number: McBlockNumber(4),
-		hash: McBlockHash(
-			hex!("DBEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1").to_vec(),
-		),
+		hash: McBlockHash(hex!("DBEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1")),
 		epoch: McEpochNumber(192),
 		slot: McSlotNumber(192500),
 		timestamp: 1650561570, // 2022-04-25T17:19:30Z

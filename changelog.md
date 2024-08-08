@@ -7,6 +7,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 ## Changed
 * polkadot-sdk dependency updated to partnerchains-stable2407 (stable2407 is v1.15.0 in the previous scheme)
 * remove Relay docker build files
+* changed the inner type of `McBlockHash` from Vec to an array
 
 ## Removed
 
