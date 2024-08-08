@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
-async-trait = { workspace = true }
+trait-variant = { workspace = true }
 serde = { workspace = true }
 derive-new = { workspace = true }
 serde_json = { workspace = true }
