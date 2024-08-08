@@ -119,6 +119,10 @@ impl McHashInherentDataProvider {
 	pub fn mc_block(&self) -> McBlockNumber {
 		self.mc_block.number
 	}
+
+	pub fn mc_hash(&self) -> McBlockHash {
+		self.mc_block.hash.clone()
+	}
 }
 
 async fn get_mc_state_reference(

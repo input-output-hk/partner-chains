@@ -31,8 +31,9 @@ members = [
 	"primitives/session-validator-management/query",
     "primitives/session-manager",
     "primitives/sidechain",
-	"partner-chains-cli"
-]
+	"partner-chains-cli",
+    "pallets/native-token-management",
+    "primitives/native-token-management"]
 resolver = "2"
 
 [profile.release]
@@ -188,3 +189,5 @@ authority-selection-inherents = { path = "primitives/authority-selection-inheren
 session-manager = { path = "primitives/session-manager", default-features = false }
 sp-sidechain = { path = "primitives/sidechain", default-features = false }
 chain-params = { path = "primitives/chain-params", default-features = false }
+pallet-native-token-management = { path = "pallets/native-token-management", default-features = false }
+sp-native-token-management = { path = "primitives/native-token-management", default-features = false }

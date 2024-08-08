@@ -6,6 +6,8 @@
 #[macro_use]
 extern crate frame_benchmarking;
 
+use core::str::FromStr;
+
 // A few exports that help ease life for downstream crates.
 use crate::weights::rocksdb_weights::constants::RocksDbWeight;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
@@ -30,6 +32,7 @@ pub use frame_support::{
 	PalletId, StorageValue,
 };
 pub use frame_system::Call as SystemCall;
+use hex_literal::hex;
 use opaque::SessionKeys;
 pub use pallet_balances::Call as BalancesCall;
 use pallet_grandpa::AuthorityId as GrandpaId;
@@ -38,8 +41,8 @@ pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use session_manager::ValidatorManagementSessionManager;
 use sidechain_domain::{
-	MainchainPublicKey, PermissionedCandidateData, RegistrationData, ScEpochNumber, ScSlotNumber,
-	StakeDelegation,
+	MainchainAddress, MainchainPublicKey, PermissionedCandidateData, PolicyId, RegistrationData,
+	ScEpochNumber, ScSlotNumber, StakeDelegation,
 };
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -47,6 +50,7 @@ use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_partner_chains_session::CurrentSessionIndex;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+use sp_runtime::DispatchResult;
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
@@ -317,6 +321,21 @@ impl frame_system::Config for Runtime {
 	type PostTransactions = ();
 }
 
+pub struct TokenReleaseHandler;
+
+impl pallet_native_token_management::TokenReleaseHandler<u128> for TokenReleaseHandler {
+	fn handle_token_release(token_amount: u128) -> DispatchResult {
+		log::info!("Release {token_amount} tokens");
+		Ok(())
+	}
+}
+
+impl pallet_native_token_management::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type TokenAmount = u128;
+	type TokenReleaseHandler = TokenReleaseHandler;
+}
+
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
@@ -484,6 +503,7 @@ construct_runtime!(
 		BlockRewards: pallet_block_rewards,
 		// The order matters!! Session pallet needs to come last for correct initialization order
 		Session: pallet_partner_chains_session,
+		NativeTokenManagement: pallet_native_token_management,
 	}
 );
 
@@ -836,6 +856,15 @@ impl_runtime_apis! {
 		}
 		fn validate_permissioned_candidate_data(candidate: PermissionedCandidateData) -> Option<PermissionedCandidateDataError> {
 			validate_permissioned_candidate_data::<CrossChainPublic>(candidate).err()
+		}
+	}
+
+	impl sp_native_token_management::NativeTokenManagementApi<Block> for Runtime {
+		fn get_main_chain_scripts() -> sp_native_token_management::MainChainScripts {
+			sp_native_token_management::MainChainScripts {
+				native_token_policy: PolicyId(hex!("ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4")),
+				illiquid_supply_address: MainchainAddress::from_str("addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz").unwrap(),
+			}
 		}
 	}
 }

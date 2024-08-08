@@ -1,9 +1,12 @@
+use db_sync_follower::native_token::NativeTokenManagementDataSourceImpl;
 use db_sync_follower::{
 	block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig},
 	candidates::{cached::CandidateDataSourceCached, CandidatesDataSourceImpl},
 	metrics::McFollowerMetrics,
 };
-use main_chain_follower_api::{BlockDataSource, CandidateDataSource};
+use main_chain_follower_api::{
+	BlockDataSource, CandidateDataSource, NativeTokenManagementDataSource,
+};
 use main_chain_follower_mock::{block::BlockDataSourceMock, candidate::MockCandidateDataSource};
 use sc_service::error::Error as ServiceError;
 use std::error::Error;
@@ -13,6 +16,7 @@ use std::sync::Arc;
 pub struct DataSources {
 	pub block: Arc<dyn BlockDataSource + Send + Sync>,
 	pub candidate: Arc<dyn CandidateDataSource + Send + Sync>,
+	pub native_token: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 }
 
 pub(crate) async fn create_cached_main_chain_follower_data_sources(
@@ -46,6 +50,7 @@ pub fn create_mock_data_sources(
 	Ok(DataSources {
 		block: Arc::new(BlockDataSourceMock),
 		candidate: Arc::new(MockCandidateDataSource::from_env()?),
+		native_token: todo!(),
 	})
 }
 
@@ -67,5 +72,6 @@ pub async fn create_cached_data_sources(
 			CandidatesDataSourceImpl::from_config(pool.clone(), metrics_opt.clone()).await?,
 			CANDIDATES_FOR_EPOCH_CACHE_SIZE,
 		)?),
+		native_token: Arc::new(NativeTokenManagementDataSourceImpl { pool, metrics_opt }),
 	})
 }
