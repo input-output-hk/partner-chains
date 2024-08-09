@@ -27,15 +27,12 @@ pub(crate) mod mock_pallet {
 	pub trait Config: frame_system::Config {}
 
 	#[pallet::storage]
-	#[pallet::getter(fn current_epoch)]
 	pub type CurrentEpoch<T: Config> = StorageValue<_, ScEpochNumber, ValueQuery>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn current_slot)]
 	pub type CurrentSlot<T: Config> = StorageValue<_, ScSlotNumber, ValueQuery>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn on_new_epoch_call_count)]
 	pub type OnNewEpochCallCount<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	impl<T: Config> OnNewEpoch for Pallet<T> {
@@ -97,7 +94,7 @@ impl frame_system::Config for Test {
 
 impl pallet::Config for Test {
 	fn current_slot_number() -> ScSlotNumber {
-		Mock::current_slot()
+		mock_pallet::CurrentSlot::<Test>::get()
 	}
 	type OnNewEpoch = Mock;
 	type SidechainParams = u64;
