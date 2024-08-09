@@ -18,7 +18,7 @@
     services-flake.url = "github:tgunnoe/services-flake";
 
     # Sidechains deps
-    trustless-sidechain.url = "github:input-output-hk/trustless-sidechain/v6.0.0-rc3";
+    trustless-sidechain.url = "github:input-output-hk/partner-chains-smart-contracts/692e7d2444229962b922e98a3eb16345f7d06f4c";
     cardano-node.url = "github:IntersectMBO/cardano-node/1.35.7";
     cardano-dbsync.url = "github:IntersectMBO/cardano-db-sync/13.1.1.3";
     ogmios.url = "github:mlabs-haskell/ogmios";

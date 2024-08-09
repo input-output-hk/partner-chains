@@ -29296,17 +29296,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1720449001,
-        "narHash": "sha256-FjYhyPJZ0DG17xMSV0MU+rWc2HyqIJbUDe1syZCqirs=",
+        "lastModified": 1722905828,
+        "narHash": "sha256-zKh7qJT9OVcRYR2KdlhYlXUJISV3F6tVTfM/ZNRvgjs=",
         "owner": "input-output-hk",
-        "repo": "trustless-sidechain",
-        "rev": "04f656d4e755dbc4f5ce384957c2859695d7147c",
+        "repo": "partner-chains-smart-contracts",
+        "rev": "692e7d2444229962b922e98a3eb16345f7d06f4c",
         "type": "github"
       },
       "original": {
         "owner": "input-output-hk",
-        "ref": "v6.0.0-rc3",
-        "repo": "trustless-sidechain",
+        "repo": "partner-chains-smart-contracts",
+        "rev": "692e7d2444229962b922e98a3eb16345f7d06f4c",
         "type": "github"
       }
     },
