@@ -1,6 +1,6 @@
 use crate::config::config_fields::{CARDANO_PAYMENT_SIGNING_KEY_FILE, POSTGRES_CONNECTION_STRING};
 use crate::config::{
-	cardano_network_arg_from_file, config_fields, ChainConfig, ConfigFieldDefinition,
+	config_fields, get_cardano_network_from_file, ChainConfig, ConfigFieldDefinition,
 	SidechainParams, CHAIN_CONFIG_FILE_PATH, SIDECHAIN_MAIN_CLI_PATH,
 };
 use crate::io::IOContext;
@@ -262,7 +262,7 @@ fn set_candidates_on_main_chain<C: IOContext>(
 			.collect::<Vec<_>>()
 			.join(" ");
 
-		let cardano_network = cardano_network_arg_from_file(context)?;
+		let cardano_network = get_cardano_network_from_file(context)?;
 
 		let output = context.run_command(&format!(
 			"{SIDECHAIN_MAIN_CLI_PATH} {} --network {} {} {} {}",
@@ -309,7 +309,7 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 		let payment_signing_key_path =
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
 		let sidechain_main_cli_command = insert.d_parameter_command();
-		let cardano_network = cardano_network_arg_from_file(context)?;
+		let cardano_network = get_cardano_network_from_file(context)?;
 		let command = format!(
 			"{SIDECHAIN_MAIN_CLI_PATH} {sidechain_main_cli_command} --network {} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}",
 			cardano_network.to_network_param(),

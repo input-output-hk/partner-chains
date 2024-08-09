@@ -398,7 +398,7 @@ pub fn load_chain_config(context: &impl IOContext) -> anyhow::Result<ChainConfig
 	}
 }
 
-pub fn cardano_network_arg_from_file(context: &impl IOContext) -> anyhow::Result<CardanoNetwork> {
+pub fn get_cardano_network_from_file(context: &impl IOContext) -> anyhow::Result<CardanoNetwork> {
 	config_fields::CARDANO_NETWORK.load_from_file(context).ok_or(anyhow!(
 		"Cardano network not configured. Please run prepare-main-chain-config command first."
 	))

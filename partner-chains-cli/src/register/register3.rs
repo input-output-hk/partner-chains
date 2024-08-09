@@ -1,6 +1,6 @@
 use crate::config;
-use crate::config::cardano_network_arg_from_file;
 use crate::config::config_fields;
+use crate::config::get_cardano_network_from_file;
 use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::config::SIDECHAIN_MAIN_CLI_PATH;
 use crate::io::IOContext;
@@ -60,7 +60,7 @@ impl CmdRun for Register3Cmd {
 			&cardano_payment_signing_key_path,
 		);
 
-		let cardano_network = cardano_network_arg_from_file(context)?;
+		let cardano_network = get_cardano_network_from_file(context)?;
 
 		let command = format!(
 			"{SIDECHAIN_MAIN_CLI_PATH} register --network {} {} --registration-utxo {} --sidechain-public-keys {}:{}:{} --sidechain-signature {} --spo-public-key {} --spo-signature {} --ada-based-staking {}",

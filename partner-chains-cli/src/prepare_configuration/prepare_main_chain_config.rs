@@ -3,7 +3,7 @@ use crate::config::config_fields::{
 	INITIAL_PERMISSIONED_CANDIDATES, PERMISSIONED_CANDIDATES_POLICY_ID,
 };
 use crate::config::{
-	cardano_network_arg_from_file, CardanoNetwork, SidechainParams, SIDECHAIN_MAIN_CLI_PATH,
+	get_cardano_network_from_file, CardanoNetwork, SidechainParams, SIDECHAIN_MAIN_CLI_PATH,
 };
 use crate::io::IOContext;
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
@@ -85,7 +85,7 @@ fn run_sidechain_main_cli_addresses<C: IOContext>(
 	kupo_and_ogmios_config: SidechainMainCliResources,
 ) -> anyhow::Result<()> {
 	let dummy_key_file = context.new_tmp_file(DUMMY_SKEY);
-	let cardano_network = cardano_network_arg_from_file(context)?;
+	let cardano_network = get_cardano_network_from_file(context)?;
 	let cmd = addresses_cmd(
 		dummy_key_file
 			.to_str()
