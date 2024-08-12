@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["SidechainStatus"],"trait":["GetSidechainParams","GetSidechainStatus","OnNewEpoch","SidechainApi"]};
+window.SIDEBAR_ITEMS = {"mod":["query"],"struct":["SidechainStatus"],"trait":["GetSidechainParams","GetSidechainStatus","OnNewEpoch","SidechainApi"]};

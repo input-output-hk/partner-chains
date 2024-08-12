@@ -70,6 +70,9 @@
 <a href="#68" id="68">68</a>
 <a href="#69" id="69">69</a>
 <a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">use </span>frame_support::pallet_prelude::Weight;
@@ -78,6 +81,9 @@
 <span class="kw">use </span>sidechain_domain::{ScEpochNumber, ScSlotNumber};
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
+
+<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+</span><span class="kw">pub mod </span>query;
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
