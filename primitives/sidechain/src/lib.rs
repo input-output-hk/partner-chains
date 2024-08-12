@@ -7,6 +7,9 @@ use sidechain_domain::{ScEpochNumber, ScSlotNumber};
 #[cfg(feature = "std")]
 use sp_runtime::traits::Block as BlockT;
 
+#[cfg(feature = "std")]
+pub mod query;
+
 #[cfg(test)]
 mod tests;
 

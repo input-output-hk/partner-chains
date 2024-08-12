@@ -1,6 +1,6 @@
-use crate::command::ariadne_parameters_cmd::AriadneParametersCmd;
-use crate::command::registration_status_cmd::RegistrationStatusCmd;
-use crate::command::sidechain_params_cmd::SidechainParamsCmd;
+use crate::command::partner_chain_commands::{
+	AriadneParametersCmd, RegistrationStatusCmd, SidechainParamsCmd,
+};
 use clap::command;
 use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use sc_cli::RunCmd;
