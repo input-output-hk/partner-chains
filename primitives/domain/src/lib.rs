@@ -3,15 +3,19 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod byte_string;
+pub mod crypto;
 
 extern crate alloc;
 extern crate core;
 extern crate num_derive;
 
+use alloc::format;
+use alloc::string::String;
 pub use alloc::vec::Vec;
 use alloc::{str::FromStr, string::ToString, vec};
 use byte_string_derive::byte_string;
 use core::fmt::{Display, Formatter};
+use crypto::blake2b;
 use derive_more::{From, Into};
 use num_derive::*;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -137,11 +141,14 @@ pub struct MainchainAddress(BoundedVec<u8, ConstU32<MAX_MAINCHAIN_ADDRESS_BYTES>
 
 #[cfg(feature = "serde")]
 impl FromStr for MainchainAddress {
-	type Err = &'static str;
+	type Err = String;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		let bytes: Vec<u8> = s.as_bytes().to_vec();
-		let bounded = BoundedVec::try_from(bytes).map_err(|_| "Invalid length")?;
+		let len = bytes.len();
+		let bounded = BoundedVec::try_from(bytes).map_err(|_| {
+			format!("Invalid length: {len}, expected max {MAX_MAINCHAIN_ADDRESS_BYTES}")
+		})?;
 		Ok(MainchainAddress(bounded))
 	}
 }
@@ -204,6 +211,12 @@ impl Display for MainchainAddressHash {
 	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
 		let hash = sp_core::hexdisplay::HexDisplay::from(&self.0);
 		write!(f, "0x{}", hash)
+	}
+}
+
+impl MainchainAddressHash {
+	pub fn from_vkey(vkey: [u8; 32]) -> Self {
+		Self(blake2b(&vkey))
 	}
 }
 

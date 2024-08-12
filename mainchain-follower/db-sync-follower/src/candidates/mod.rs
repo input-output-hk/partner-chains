@@ -7,7 +7,6 @@ use async_trait::async_trait;
 use itertools::Itertools;
 use log::error;
 use main_chain_follower_api::candidate::{AriadneParameters, RawPermissionedCandidateData};
-use main_chain_follower_api::common::blake2b_28;
 use main_chain_follower_api::{CandidateDataSource, DataSourceError::*, Result};
 use num_traits::ToPrimitive;
 use plutus::Datum;
@@ -234,7 +233,7 @@ impl CandidatesDataSourceImpl {
 		} else {
 			Some(
 				stake_map
-					.get(&MainchainAddressHash(blake2b_28(&mainchain_pub_key.0)))
+					.get(&MainchainAddressHash::from_vkey(mainchain_pub_key.0))
 					.cloned()
 					.unwrap_or(StakeDelegation(0)),
 			)
