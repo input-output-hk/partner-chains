@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["blake2b_28"],"struct":["Timestamp"]};
+window.SIDEBAR_ITEMS = {"struct":["Timestamp"]};

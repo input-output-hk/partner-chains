@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"sidechain_runtime":[["impl OpaqueKeys for <a class=\"struct\" href=\"sidechain_runtime/opaque/struct.CrossChainKey.html\" title=\"struct sidechain_runtime::opaque::CrossChainKey\">CrossChainKey</a>"],["impl OpaqueKeys for <a class=\"struct\" href=\"sidechain_runtime/opaque/struct.SessionKeys.html\" title=\"struct sidechain_runtime::opaque::SessionKeys\">SessionKeys</a>"]]
+"sidechain_runtime":[["impl OpaqueKeys for <a class=\"struct\" href=\"sidechain_runtime/opaque/struct.SessionKeys.html\" title=\"struct sidechain_runtime::opaque::SessionKeys\">SessionKeys</a>"],["impl OpaqueKeys for <a class=\"struct\" href=\"sidechain_runtime/opaque/struct.CrossChainKey.html\" title=\"struct sidechain_runtime::opaque::CrossChainKey\">CrossChainKey</a>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

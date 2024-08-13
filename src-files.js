@@ -22,7 +22,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["selection",["",[],["impls.rs","lib.rs","weighted_random.rs"]]],\
 ["session_manager",["",[],["lib.rs"]]],\
 ["sidechain_block_search",["",[],["binary_search.rs","impl_block_info.rs","impl_compare_strategy.rs","impl_find_block.rs","lib.rs"]]],\
-["sidechain_domain",["",[],["byte_string.rs","lib.rs"]]],\
+["sidechain_domain",["",[],["byte_string.rs","crypto.rs","lib.rs"]]],\
 ["sidechain_mc_hash",["",[],["lib.rs"]]],\
 ["sidechain_runtime",["",[["weights",[],["block_weights.rs","extrinsic_weights.rs","frame_system.rs","mod.rs","pallet_balances.rs","pallet_session_validator_management.rs","pallet_sudo.rs","pallet_timestamp.rs","rocksdb_weights.rs"]]],["lib.rs"]]],\
 ["sidechain_slots",["",[],["lib.rs","runtime_api_client.rs"]]],\

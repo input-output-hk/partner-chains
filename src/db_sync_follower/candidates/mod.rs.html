@@ -455,7 +455,6 @@
 <a href="#453" id="453">453</a>
 <a href="#454" id="454">454</a>
 <a href="#455" id="455">455</a>
-<a href="#456" id="456">456</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::db_model::{
 	<span class="self">self</span>, Address, Asset, BlockNumber, EpochNumber, MainchainTxOutput, StakePoolEntry,
 };
@@ -465,7 +464,6 @@
 <span class="kw">use </span>itertools::Itertools;
 <span class="kw">use </span>log::error;
 <span class="kw">use </span>main_chain_follower_api::candidate::{AriadneParameters, RawPermissionedCandidateData};
-<span class="kw">use </span>main_chain_follower_api::common::blake2b_28;
 <span class="kw">use </span>main_chain_follower_api::{CandidateDataSource, DataSourceError::<span class="kw-2">*</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use </span>num_traits::ToPrimitive;
 <span class="kw">use </span>plutus::Datum;
@@ -692,7 +690,7 @@
 		</span>} <span class="kw">else </span>{
 			<span class="prelude-val">Some</span>(
 				stake_map
-					.get(<span class="kw-2">&amp;</span>MainchainAddressHash(blake2b_28(<span class="kw-2">&amp;</span>mainchain_pub_key.<span class="number">0</span>)))
+					.get(<span class="kw-2">&amp;</span>MainchainAddressHash::from_vkey(mainchain_pub_key.<span class="number">0</span>))
 					.cloned()
 					.unwrap_or(StakeDelegation(<span class="number">0</span>)),
 			)

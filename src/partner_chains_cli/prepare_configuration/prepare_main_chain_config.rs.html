@@ -435,8 +435,6 @@
 <a href="#433" id="433">433</a>
 <a href="#434" id="434">434</a>
 <a href="#435" id="435">435</a>
-<a href="#436" id="436">436</a>
-<a href="#437" id="437">437</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	CARDANO_NETWORK, COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID,
 	INITIAL_PERMISSIONED_CANDIDATES, PERMISSIONED_CANDIDATES_POLICY_ID,
@@ -626,9 +624,7 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
-		GOVERNANCE_AUTHORITY, KUPO_PORT, KUPO_PROTOCOL, OGMIOS_PORT,
-	};
+	<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{GOVERNANCE_AUTHORITY, KUPO_PROTOCOL};
 	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::PREPROD_CARDANO_PARAMS;
 	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::tests::save_to_existing_file;
 	<span class="kw">use </span><span class="kw">crate</span>::tests::MockIO;
