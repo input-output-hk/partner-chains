@@ -9,8 +9,6 @@ extern crate alloc;
 extern crate core;
 extern crate num_derive;
 
-use alloc::format;
-use alloc::string::String;
 pub use alloc::vec::Vec;
 use alloc::{str::FromStr, string::ToString, vec};
 use byte_string_derive::byte_string;
@@ -141,14 +139,11 @@ pub struct MainchainAddress(BoundedVec<u8, ConstU32<MAX_MAINCHAIN_ADDRESS_BYTES>
 
 #[cfg(feature = "serde")]
 impl FromStr for MainchainAddress {
-	type Err = String;
+	type Err = &'static str;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		let bytes: Vec<u8> = s.as_bytes().to_vec();
-		let len = bytes.len();
-		let bounded = BoundedVec::try_from(bytes).map_err(|_| {
-			format!("Invalid length: {len}, expected max {MAX_MAINCHAIN_ADDRESS_BYTES}")
-		})?;
+		let bounded = BoundedVec::try_from(bytes).map_err(|_| "Invalid length")?;
 		Ok(MainchainAddress(bounded))
 	}
 }
