@@ -205,8 +205,7 @@ mod tests {
 
 		let result = prepare_chain_params(&mock_context);
 
-		result.unwrap();
-		// assert!(result.is_ok());
+		assert!(result.is_ok());
 		mock_context.no_more_io_expected();
 	}
 
