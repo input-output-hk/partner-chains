@@ -135,7 +135,8 @@ fn get_key_hash_from_file(
 mod tests {
 	use crate::config::config_fields::{
 		CARDANO_PAYMENT_VERIFICATION_KEY_FILE, CHAIN_ID, GENESIS_COMMITTEE_UTXO,
-		GOVERNANCE_AUTHORITY, THRESHOLD_DENOMINATOR, THRESHOLD_NUMERATOR,
+		GOVERNANCE_AUTHORITY as GOVERNANCE_AUTHORITY_FIELD, THRESHOLD_DENOMINATOR,
+		THRESHOLD_NUMERATOR,
 	};
 	use crate::config::RESOURCES_CONFIG_FILE_PATH;
 	use crate::prepare_configuration::prepare_chain_params::tests::scenarios::silently_fill_legacy_chain_params;
@@ -151,7 +152,7 @@ mod tests {
 	use sidechain_domain::{MainchainAddressHash, UtxoId};
 	use std::str::FromStr;
 
-	const GOV_AUTH: &str = "0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9";
+	const GOVERNANCE_AUTHORITY: &str = "0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9";
 
 	fn test_vkey_file_json() -> serde_json::Value {
 		serde_json::json!({
@@ -196,7 +197,7 @@ mod tests {
 				scenarios::show_intro(),
 				prompt_and_save_to_existing_file(CARDANO_PAYMENT_VERIFICATION_KEY_FILE, "payment.vkey"),
 				MockIO::file_read("payment.vkey"),
-				save_to_new_file(GOVERNANCE_AUTHORITY, GOV_AUTH),
+				save_to_new_file(GOVERNANCE_AUTHORITY_FIELD, GOVERNANCE_AUTHORITY),
 				MockIO::eprint("Governance authority has been set to 0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"),
 				MockIO::eprint(CHAIN_ID_PROMPT),
 				prompt_and_save_to_existing_file(CHAIN_ID, "0"),
@@ -215,7 +216,7 @@ mod tests {
 
 		let initial_chain_config = serde_json::json!({
 			"chain_parameters": {
-				"governance_authority": GOV_AUTH,
+				"governance_authority": GOVERNANCE_AUTHORITY,
 			}
 		});
 
@@ -224,12 +225,12 @@ mod tests {
 			.with_json_file("payment.vkey", test_vkey_file_json())
 			.with_json_file(CHAIN_CONFIG_PATH, initial_chain_config).with_expected_io(vec![
 				scenarios::show_intro(),
-				MockIO::file_read(GOVERNANCE_AUTHORITY.config_file),
-				MockIO::eprint(&GOVERNANCE_AUTHORITY.loaded_from_config_msg(&MainchainAddressHash::from_hex_unsafe(GOV_AUTH))),
+				MockIO::file_read(GOVERNANCE_AUTHORITY_FIELD.config_file),
+				MockIO::eprint(&GOVERNANCE_AUTHORITY_FIELD.loaded_from_config_msg(&MainchainAddressHash::from_hex_unsafe(GOVERNANCE_AUTHORITY))),
 				MockIO::prompt_yes_no(&is_gov_auth_valid_prompt(), true, false),
 				prompt_and_save_to_existing_file(CARDANO_PAYMENT_VERIFICATION_KEY_FILE, "payment.vkey"),
 				MockIO::file_read("payment.vkey"),
-				save_to_existing_file(GOVERNANCE_AUTHORITY, GOV_AUTH),
+				save_to_existing_file(GOVERNANCE_AUTHORITY_FIELD, GOVERNANCE_AUTHORITY),
 				MockIO::eprint("Governance authority has been set to 0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"),
 				MockIO::eprint(CHAIN_ID_PROMPT),
 				prompt_and_save_to_existing_file(CHAIN_ID, "0"),
@@ -246,7 +247,8 @@ mod tests {
 	#[test]
 	fn happy_path_without_overwriting_governance_authority() {
 		let mut final_chain_config = test_chain_config();
-		if let Some(gov_auth) = final_chain_config.pointer_mut(&GOVERNANCE_AUTHORITY.json_pointer())
+		if let Some(gov_auth) =
+			final_chain_config.pointer_mut(&GOVERNANCE_AUTHORITY_FIELD.json_pointer())
 		{
 			*gov_auth = "76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9".into();
 		}
@@ -263,11 +265,10 @@ mod tests {
 			.with_json_file(CHAIN_CONFIG_PATH, initial_chain_config)
 			.with_expected_io(vec![
 				scenarios::show_intro(),
-				MockIO::file_read(GOVERNANCE_AUTHORITY.config_file),
-				MockIO::eprint(
-					&GOVERNANCE_AUTHORITY
-						.loaded_from_config_msg(&MainchainAddressHash::from_hex_unsafe(GOV_AUTH)),
-				),
+				MockIO::file_read(GOVERNANCE_AUTHORITY_FIELD.config_file),
+				MockIO::eprint(&GOVERNANCE_AUTHORITY_FIELD.loaded_from_config_msg(
+					&MainchainAddressHash::from_hex_unsafe(GOVERNANCE_AUTHORITY),
+				)),
 				MockIO::prompt_yes_no(&is_gov_auth_valid_prompt(), true, true),
 				MockIO::eprint(CHAIN_ID_PROMPT),
 				prompt_and_save_to_existing_file(CHAIN_ID, "0"),
@@ -299,10 +300,10 @@ mod tests {
 			.with_file(RESOURCES_CONFIG_FILE_PATH, "{}")
 			.with_json_file(CHAIN_ID.config_file, initial_chain_config).with_expected_io(vec![
 				scenarios::show_intro(),
-				MockIO::file_read(GOVERNANCE_AUTHORITY.config_file),
+				MockIO::file_read(GOVERNANCE_AUTHORITY_FIELD.config_file),
 				prompt_and_save_to_existing_file(CARDANO_PAYMENT_VERIFICATION_KEY_FILE, "payment.vkey"),
 				MockIO::file_read("payment.vkey"),
-				save_to_existing_file(GOVERNANCE_AUTHORITY, GOV_AUTH),
+				save_to_existing_file(GOVERNANCE_AUTHORITY_FIELD, GOVERNANCE_AUTHORITY),
 				MockIO::eprint("Governance authority has been set to 0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"),
 				MockIO::eprint(CHAIN_ID_PROMPT),
 				prompt_with_default_and_save_to_existing_file(CHAIN_ID, Some("1"),"2"),
@@ -346,10 +347,10 @@ mod tests {
 			.with_json_file("payment.vkey", test_vkey_file_json())
 			.with_expected_io(vec![
 				scenarios::show_intro(),
-				MockIO::file_read(GOVERNANCE_AUTHORITY.config_file),
+				MockIO::file_read(GOVERNANCE_AUTHORITY_FIELD.config_file),
 				prompt_and_save_to_existing_file(CARDANO_PAYMENT_VERIFICATION_KEY_FILE, "payment.vkey"),
 				MockIO::file_read("payment.vkey"),
-				save_to_existing_file(GOVERNANCE_AUTHORITY, GOV_AUTH),
+				save_to_existing_file(GOVERNANCE_AUTHORITY_FIELD, GOVERNANCE_AUTHORITY),
 				MockIO::eprint("Governance authority has been set to 0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"),
 				MockIO::eprint(CHAIN_ID_PROMPT),
 				MockIO::file_read(CHAIN_ID.config_file),
