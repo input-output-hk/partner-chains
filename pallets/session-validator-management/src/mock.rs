@@ -31,7 +31,6 @@ pub mod mock_pallet {
 	pub trait Config: frame_system::Config {}
 
 	#[pallet::storage]
-	#[pallet::getter(fn current_epoch)]
 	pub type CurrentEpoch<T: Config> = StorageValue<_, u64, ValueQuery>;
 }
 
@@ -202,5 +201,5 @@ pub fn create_inherent_set_validators_call(
 }
 
 pub(crate) fn current_epoch_number() -> u64 {
-	Mock::current_epoch()
+	mock_pallet::CurrentEpoch::<Test>::get()
 }

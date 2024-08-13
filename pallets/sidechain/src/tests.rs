@@ -7,11 +7,11 @@ fn on_new_epoch_is_triggered_by_epoch_change() {
 	new_test_ext().execute_with(|| {
 		Mock::set_slot(4);
 		Sidechain::on_initialize(1);
-		assert_eq!(Mock::on_new_epoch_call_count(), 0);
+		assert_eq!(mock_pallet::OnNewEpochCallCount::<Test>::get(), 0);
 
 		Mock::set_slot(MOCK_SLOTS_PER_EPOCH.0.into());
 		Sidechain::on_initialize(3);
-		assert_eq!(Mock::on_new_epoch_call_count(), 1);
+		assert_eq!(mock_pallet::OnNewEpochCallCount::<Test>::get(), 1);
 	})
 }
 
@@ -23,7 +23,7 @@ fn on_new_epoch_is_not_triggered_without_epoch_change() {
 		Sidechain::on_initialize(2);
 		Mock::set_slot(u64::from(MOCK_SLOTS_PER_EPOCH.0) - 1);
 		Sidechain::on_initialize(3);
-		assert_eq!(Mock::on_new_epoch_call_count(), 0);
+		assert_eq!(mock_pallet::OnNewEpochCallCount::<Test>::get(), 0);
 	})
 }
 
