@@ -3,6 +3,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod byte_string;
+pub mod crypto;
 
 extern crate alloc;
 extern crate core;
@@ -12,6 +13,7 @@ pub use alloc::vec::Vec;
 use alloc::{str::FromStr, string::ToString, vec};
 use byte_string_derive::byte_string;
 use core::fmt::{Display, Formatter};
+use crypto::blake2b;
 use derive_more::{From, Into};
 use num_derive::*;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -204,6 +206,12 @@ impl Display for MainchainAddressHash {
 	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
 		let hash = sp_core::hexdisplay::HexDisplay::from(&self.0);
 		write!(f, "0x{}", hash)
+	}
+}
+
+impl MainchainAddressHash {
+	pub fn from_vkey(vkey: [u8; 32]) -> Self {
+		Self(blake2b(&vkey))
 	}
 }
 

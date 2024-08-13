@@ -9,6 +9,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * remove Relay docker build files
 * changed the inner type of `McBlockHash` from Vec to an array
 * removed usage of 'storage::getter' macros, following polkadot-sdk changes
+* governance authority key hash is now calculated in `prepare-configuration` without using external `cardano-cli`
 
 ## Removed
 

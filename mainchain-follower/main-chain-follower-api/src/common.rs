@@ -1,6 +1,5 @@
 #[cfg(feature = "serde")]
 use derive_more::FromStr;
-use sidechain_domain::*;
 use std::fmt::{Debug, Display, Formatter};
 
 extern crate alloc;
@@ -20,13 +19,4 @@ impl From<u64> for Timestamp {
 	fn from(value: u64) -> Self {
 		Timestamp(value)
 	}
-}
-
-pub fn blake2b_28(data: &[u8]) -> [u8; MAINCHAIN_ADDRESS_HASH_LEN] {
-	blake2b_simd::Params::new()
-		.hash_length(MAINCHAIN_ADDRESS_HASH_LEN)
-		.hash(data)
-		.as_bytes()
-		.try_into()
-		.expect("hash output always has expected length")
 }
