@@ -314,7 +314,24 @@ async fn print_result<FIn>(command_future: FIn) -> Result<(), sc_cli::Error>
 where
 	FIn: Future<Output = Result<String, String>>,
 {
-	let result = command_future.await?;
+	let result = match command_future.await {
+		Ok(r) => r,
+		Err(e) => e,
+	};
 	println!("{}", result);
 	Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+
+	async fn some_err() -> Result<String, String> {
+		Err("some err".to_string())
+	}
+
+	#[tokio::test]
+	async fn print_async_doesnt_fail_if_result_is_error() {
+		let result = super::print_result(some_err()).await;
+		assert!(result.is_ok());
+	}
 }
