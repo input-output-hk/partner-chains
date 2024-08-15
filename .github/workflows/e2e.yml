@@ -40,7 +40,7 @@ jobs:
       - name: Acquire AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_ }}
           aws-region: "eu-central-1"
 
       - name: checkout sidechains-tests develop
