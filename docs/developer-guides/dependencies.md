@@ -84,18 +84,3 @@ sidechains-stack attach --address <ip(default localhost)> --port 8081
 ```
 You can also access the swagger UI through the browser e.g. by visiting
 `127.0.0.1:8081`
-
-## Forwarding Ports using Kubernetes
-
-Running the dependencies locally can often be avoided by forwarding ports from the pods deployed to our devnet.
-This can be done by running:
-```sh
-kubectl port-forward devnet-services -n sc 1337 1337
-kubectl port-forward devnet-services -n sc 1442 1442
-```
-to expose Ogmios and Kupo ports from the devnet-services pod.
-
-```sh
-kubectl port-forward dave -n sc 5432 5432
-```
-to expose Postgres port from the dave pod.
