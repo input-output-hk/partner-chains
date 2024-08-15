@@ -36,7 +36,6 @@
         inputs.devshell.flakeModule
         inputs.process-compose.flakeModule
         ./nix/shell.nix
-        ./nix/packages.nix
         ./nix/processes.nix
       ];
       flake.lib = import ./nix/lib.nix {inherit (nixpkgs) lib;};
