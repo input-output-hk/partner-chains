@@ -110,20 +110,6 @@
             # This command has some eval because of IFD
             command = "${inputs'.cardano-node.packages.cardano-cli}/bin/cardano-cli $@";
           }
-          {
-            name = "trustless-sidechain-cli-image:load:docker";
-            help = "Build and load the trustless sidechain cli image into docker";
-            command = ''
-              nix run ${self}#sidechain-main-cli-image.copyToDockerDaemon
-            '';
-          }
-          {
-            name = "trustless-sidechain-cli-image:load:podman";
-            help = "Build and load the trustless sidechain cli image into podman";
-            command = ''
-              nix run ${self}#sidechain-main-cli-image.copyToPodman
-            '';
-          }
         ];
       }
     ];
