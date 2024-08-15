@@ -333,10 +333,16 @@
 <a href="#331" id="331">331</a>
 <a href="#332" id="332">332</a>
 <a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{CARDANO_PAYMENT_SIGNING_KEY_FILE, POSTGRES_CONNECTION_STRING};
 <span class="kw">use </span><span class="kw">crate</span>::config::{
-	config_fields, ChainConfig, ConfigFieldDefinition, SidechainParams, CHAIN_CONFIG_FILE_PATH,
-	SIDECHAIN_MAIN_CLI_PATH,
+	config_fields, get_cardano_network_from_file, ChainConfig, ConfigFieldDefinition,
+	SidechainParams, CHAIN_CONFIG_FILE_PATH, SIDECHAIN_MAIN_CLI_PATH,
 };
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
@@ -596,9 +602,13 @@
 			.map(|c| <span class="macro">format!</span>(<span class="string">"--add-candidate {}"</span>, c.to_smart_contracts_args_triple()))
 			.collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
 			.join(<span class="string">" "</span>);
+
+		<span class="kw">let </span>cardano_network = get_cardano_network_from_file(context)<span class="question-mark">?</span>;
+
 		<span class="kw">let </span>output = context.run_command(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-			<span class="string">"{SIDECHAIN_MAIN_CLI_PATH} {} {} {} {}"</span>,
+			<span class="string">"{SIDECHAIN_MAIN_CLI_PATH} {} --network {} {} {} {}"</span>,
 			command,
+			cardano_network.to_network_param(),
 			candidate_keys,
 			smart_contracts::sidechain_params_arguments(chain_params),
 			smart_contracts::runtime_config_arguments(
@@ -640,8 +650,10 @@
 		<span class="kw">let </span>payment_signing_key_path =
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
 		<span class="kw">let </span>sidechain_main_cli_command = insert.d_parameter_command();
+		<span class="kw">let </span>cardano_network = get_cardano_network_from_file(context)<span class="question-mark">?</span>;
 		<span class="kw">let </span>command = <span class="macro">format!</span>(
-			<span class="string">"{SIDECHAIN_MAIN_CLI_PATH} {sidechain_main_cli_command} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}"</span>,
+			<span class="string">"{SIDECHAIN_MAIN_CLI_PATH} {sidechain_main_cli_command} --network {} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}"</span>,
+			cardano_network.to_network_param(),
 			smart_contracts::sidechain_params_arguments(chain_params),
 			smart_contracts::runtime_config_arguments(<span class="kw-2">&amp;</span>sidechain_main_cli_resources, <span class="kw-2">&amp;</span>payment_signing_key_path)
 		);

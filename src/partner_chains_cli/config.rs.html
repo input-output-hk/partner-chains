@@ -710,11 +710,25 @@
 <a href="#708" id="708">708</a>
 <a href="#709" id="709">709</a>
 <a href="#710" id="710">710</a>
+<a href="#711" id="711">711</a>
+<a href="#712" id="712">712</a>
+<a href="#713" id="713">713</a>
+<a href="#714" id="714">714</a>
+<a href="#715" id="715">715</a>
+<a href="#716" id="716">716</a>
+<a href="#717" id="717">717</a>
+<a href="#718" id="718">718</a>
+<a href="#719" id="719">719</a>
+<a href="#720" id="720">720</a>
+<a href="#721" id="721">721</a>
+<a href="#722" id="722">722</a>
+<a href="#723" id="723">723</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	CARDANO_ACTIVE_SLOTS_COEFF, CARDANO_EPOCH_DURATION_MILLIS, CARDANO_FIRST_EPOCH_NUMBER,
 	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_SECURITY_PARAMETER,
 };
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
+<span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>clap::{arg, Parser};
 <span class="kw">use </span>serde::{de::DeserializeOwned, Deserialize, Serialize};
 <span class="kw">use </span>sidechain_domain::{MainchainAddressHash, UtxoId};
@@ -977,6 +991,12 @@
 	<span class="kw">pub fn </span>to_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32 {
 		<span class="self">self</span>.<span class="number">0
 	</span>}
+	<span class="kw">pub fn </span>to_network_param(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
+		<span class="kw">match </span><span class="self">self </span>{
+			CardanoNetwork(<span class="number">0</span>) =&gt; <span class="string">"mainnet"</span>.into(),
+			<span class="kw">_ </span>=&gt; <span class="string">"testnet"</span>.into(),
+		}
+	}
 }
 
 <span class="kw">impl </span>FromStr <span class="kw">for </span>CardanoNetwork {
@@ -1101,6 +1121,12 @@
 	} <span class="kw">else </span>{
 		<span class="prelude-val">Err</span>(<span class="macro">anyhow::anyhow!</span>(<span class="macro">format!</span>(<span class="string">"⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} does not exists. Run prepare-configuration wizard first."</span>)))
 	}
+}
+
+<span class="kw">pub fn </span>get_cardano_network_from_file(context: <span class="kw-2">&amp;</span><span class="kw">impl </span>IOContext) -&gt; anyhow::Result&lt;CardanoNetwork&gt; {
+	config_fields::CARDANO_NETWORK.load_from_file(context).ok_or(<span class="macro">anyhow!</span>(
+		<span class="string">"Cardano network not configured. Please run prepare-main-chain-config command first."
+	</span>))
 }
 
 <span class="kw">pub mod </span>config_fields {
