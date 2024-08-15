@@ -244,15 +244,15 @@
     },
     "services-flake": {
       "locked": {
-        "lastModified": 1701369356,
-        "narHash": "sha256-dG76HIfz72mChsNa7ZDFYHlK/PzyU7tUtBIskaMdR9E=",
-        "owner": "tgunnoe",
+        "lastModified": 1723336031,
+        "narHash": "sha256-FJOvmGACkAPnnOQE02xxhUg913V5g+XoRrXWt40t/fQ=",
+        "owner": "juspay",
         "repo": "services-flake",
-        "rev": "292e978eae9d0db205f6e0cfdf8fa798c964fabb",
+        "rev": "034722b4046bf687e8fafa6626a88890abfad33f",
         "type": "github"
       },
       "original": {
-        "owner": "tgunnoe",
+        "owner": "juspay",
         "repo": "services-flake",
         "type": "github"
       }
