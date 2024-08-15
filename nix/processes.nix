@@ -13,15 +13,15 @@
   }: let
     data-dir = "./.run";
     node-socket = "${data-dir}/cardano-node/node.socket";
-    configs-dir = "${self}/docker/config/preview";
-    node-config = "${configs-dir}/config.json";
+    configs-dir = "${inputs.configurations}/network/preview";
+    node-config = "${configs-dir}/cardano-node/config.json";
   in {
-    process-compose."sidechains-stack" = {
+    process-compose."partnerchains-stack-unwrapped" = {
       imports = [
         inputs.services-flake.processComposeModules.default
       ];
       tui = true;
-      port = 8081;
+      #port = 8081;
       services.postgres."postgres" = {
         enable = true;
         port = 5432;
@@ -42,7 +42,7 @@
             command = ''
               export CARDANO_NODE_SOCKET_PATH=${node-socket}
               while true; do
-                ${inputs'.cardano-node.packages.cardano-cli}/bin/cardano-cli \
+                ${self'.packages.cardano-cli}/bin/cardano-cli \
                   query tip --testnet-magic 2;
                 sleep 10
               done
@@ -56,7 +56,7 @@
               exec = {
                 command = ''
                   export CARDANO_NODE_SOCKET_PATH=${node-socket}
-                  ${inputs'.cardano-node.packages.cardano-cli}/bin/cardano-cli \
+                  ${self'.packages.cardano-cli}/bin/cardano-cli \
                   query tip --testnet-magic 2 \
                   | jq -e '.syncProgress == "100.00" | not' && exit 1 || exit 0
                 '';
@@ -104,8 +104,8 @@
               signal = 2;
             };
             command = ''
-              ${inputs'.cardano-node.packages.default}/bin/cardano-node run +RTS -N -RTS \
-              --topology ${configs-dir}/topology.json \
+              ${self'.packages.cardano-node}/bin/cardano-node run +RTS -N -RTS \
+              --topology ${configs-dir}/cardano-node/topology.json \
               --database-path ${data-dir}/cardano-node/data \
               --socket-path ${node-socket} \
               --host-addr 0.0.0.0 \
@@ -126,8 +126,8 @@
               name = "cardano-db-sync";
               runtimeInputs = [pkgs.postgresql];
               text = ''
-                ${inputs'.cardano-dbsync.packages.default}/bin/cardano-db-sync \
-                  --config ${configs-dir}/db-sync-config.json \
+                ${self'.packages."cardano-db-sync:exe:cardano-db-sync"}/bin/cardano-db-sync \
+                  --config ${configs-dir}/cardano-db-sync/config.json \
                   --socket-path ${node-socket} \
                   --state-dir ${data-dir}/db-sync/ledger-state \
                   --schema-dir  ${inputs.cardano-dbsync}/schema/
@@ -157,9 +157,9 @@
           };
           ogmios = {
             command = ''
-              ${inputs'.ogmios.packages."ogmios:exe:ogmios"}/bin/ogmios \
+              ${self'.packages.ogmios}/bin/ogmios \
                 --host 0.0.0.0 --node-config ${node-config} --node-socket ${node-socket}
-            '';
+          #   '';
             environment = {
               DATA_DIR = "${data-dir}/ogmios";
               OGMIOS_PORT = "1337";
@@ -192,7 +192,7 @@
           };
           kupo = {
             command = ''
-              ${inputs'.kupo.packages.kupo}/bin/kupo \
+              ${self'.packages.kupo}/bin/kupo \
                 --node-socket ${node-socket} \
                 --node-config ${node-config} \
                 --host 0.0.0.0 \

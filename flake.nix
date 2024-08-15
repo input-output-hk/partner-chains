@@ -14,15 +14,35 @@
       url = "github:numtide/devshell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    flake-compat = {
+      url = "github:input-output-hk/flake-compat/fixes";
+      flake = false;
+    };
+    blank.url = "github:input-output-hk/empty-flake";
     process-compose.url = "github:Platonic-Systems/process-compose-flake";
     services-flake.url = "github:tgunnoe/services-flake";
 
     # Sidechains deps
-    trustless-sidechain.url = "github:input-output-hk/trustless-sidechain/v6.0.0-rc3";
-    cardano-node.url = "github:IntersectMBO/cardano-node/1.35.7";
-    cardano-dbsync.url = "github:IntersectMBO/cardano-db-sync/13.1.1.3";
-    ogmios.url = "github:mlabs-haskell/ogmios";
-    kupo.url = "github:mlabs-haskell/kupo-nixos";
+    trustless-sidechain = {
+      url = "github:input-output-hk/partner-chains-smart-contracts/v6.1.0";
+      flake = false;
+    };
+    cardano-node = {
+      url = "github:IntersectMBO/cardano-node/9.1.0";
+      flake = false;
+    };
+    cardano-dbsync = {
+      url = "github:IntersectMBO/cardano-db-sync/13.3.0.0";
+      flake = false;
+    };
+    cardano-nix = {
+      url = "github:tgunnoe/cardano.nix/add-darwin";
+      flake = false;
+    };
+    configurations = {
+      url = "github:input-output-hk/cardano-configurations";
+      flake = false;
+    };
   };
   outputs = inputs @ {
     self,
@@ -31,11 +51,12 @@
     ...
   }:
     flake-parts.lib.mkFlake {inherit inputs;} {
-      systems = ["x86_64-linux" "x86_64-darwin" "aarch64-darwin"];
+      systems = ["x86_64-linux" "aarch64-darwin"];
       imports = [
         inputs.devshell.flakeModule
         inputs.process-compose.flakeModule
         ./nix/shell.nix
+        ./nix/packages.nix
         ./nix/processes.nix
       ];
       flake.lib = import ./nix/lib.nix {inherit (nixpkgs) lib;};
