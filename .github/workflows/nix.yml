@@ -36,11 +36,7 @@ jobs:
         run: echo "${{ secrets.NIX_SIGNING_KEY }}" > "${{ runner.temp }}/nix-key"
       - name: Run nixci to build/test all outputs
         run: |
-          args=()
-          if [[ ${{ matrix.os }} == "macos" ]]; then
-            args+=("--systems" "x86_64-darwin")
-          fi
-          nix run github:srid/nixci -- -v build ${args[@]} > /tmp/outputs
+          nix run github:srid/nixci -- -v build > /tmp/outputs
       - name: Copy nix scopes to nix cache
         run: |
           nix-store --stdin -q --deriver < /tmp/outputs | nix-store --stdin -qR --include-outputs \
