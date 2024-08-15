@@ -3,6 +3,7 @@ use crate::config::config_fields::{
 	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_SECURITY_PARAMETER,
 };
 use crate::io::IOContext;
+use anyhow::anyhow;
 use clap::{arg, Parser};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sidechain_domain::{MainchainAddressHash, UtxoId};
@@ -265,6 +266,12 @@ impl CardanoNetwork {
 	pub fn to_id(&self) -> u32 {
 		self.0
 	}
+	pub fn to_network_param(&self) -> String {
+		match self {
+			CardanoNetwork(0) => "mainnet".into(),
+			_ => "testnet".into(),
+		}
+	}
 }
 
 impl FromStr for CardanoNetwork {
@@ -389,6 +396,12 @@ pub fn load_chain_config(context: &impl IOContext) -> anyhow::Result<ChainConfig
 	} else {
 		Err(anyhow::anyhow!(format!("⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} does not exists. Run prepare-configuration wizard first.")))
 	}
+}
+
+pub fn get_cardano_network_from_file(context: &impl IOContext) -> anyhow::Result<CardanoNetwork> {
+	config_fields::CARDANO_NETWORK.load_from_file(context).ok_or(anyhow!(
+		"Cardano network not configured. Please run prepare-main-chain-config command first."
+	))
 }
 
 pub mod config_fields {

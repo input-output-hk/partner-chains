@@ -2,7 +2,9 @@ use crate::config::config_fields::{
 	CARDANO_NETWORK, COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID,
 	INITIAL_PERMISSIONED_CANDIDATES, PERMISSIONED_CANDIDATES_POLICY_ID,
 };
-use crate::config::{CardanoNetwork, SidechainParams};
+use crate::config::{
+	get_cardano_network_from_file, CardanoNetwork, SidechainParams, SIDECHAIN_MAIN_CLI_PATH,
+};
 use crate::io::IOContext;
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 use crate::sidechain_main_cli_resources::{
@@ -24,10 +26,10 @@ pub fn prepare_main_chain_config<C: IOContext>(
 	context: &C,
 	sidechain_params: SidechainParams,
 ) -> anyhow::Result<()> {
-	if !context.file_exists(SIDECHAIN_MAIN_CLI) {
+	if !context.file_exists(SIDECHAIN_MAIN_CLI_PATH) {
 		return Err(anyhow!(
 			"Partner Chains Smart Contracts executable file ({}) is missing",
-			SIDECHAIN_MAIN_CLI
+			SIDECHAIN_MAIN_CLI_PATH
 		));
 	}
 	let sidechain_main_cli_version = context.run_command(SIDECHAIN_MAIN_CLI_VERSION_CMD)?;
@@ -83,6 +85,7 @@ fn run_sidechain_main_cli_addresses<C: IOContext>(
 	kupo_and_ogmios_config: SidechainMainCliResources,
 ) -> anyhow::Result<()> {
 	let dummy_key_file = context.new_tmp_file(DUMMY_SKEY);
+	let cardano_network = get_cardano_network_from_file(context)?;
 	let cmd = addresses_cmd(
 		dummy_key_file
 			.to_str()
@@ -90,6 +93,7 @@ fn run_sidechain_main_cli_addresses<C: IOContext>(
 			.to_string(),
 		params,
 		&kupo_and_ogmios_config,
+		cardano_network,
 	);
 	let addresses_string = context.run_command(&cmd)?;
 
@@ -129,10 +133,12 @@ fn addresses_cmd(
 	key_file_path: String,
 	params: SidechainParams,
 	kupo_and_ogmios_config: &SidechainMainCliResources,
+	network: CardanoNetwork,
 ) -> String {
 	let sidechain_param_arg = smart_contracts::sidechain_params_arguments(&params);
 	format!(
-		"./sidechain-main-cli addresses \
+		"{SIDECHAIN_MAIN_CLI_PATH} addresses \
+	--network {} \
 	{} \
 	--version 1 \
 	--payment-signing-key-file {} \
@@ -143,6 +149,7 @@ fn addresses_cmd(
     --ogmios-port {} \
     {} \
 	",
+		network.to_network_param(),
 		sidechain_param_arg,
 		key_file_path,
 		kupo_and_ogmios_config.kupo.hostname,
@@ -177,17 +184,17 @@ If you intend to run a chain with permissioned candidates, you must manually set
 
 After setting up the permissioned candidates, execute the 'create-chain-spec' command to generate the final chain specification."#;
 
-const SIDECHAIN_MAIN_CLI: &str = "./sidechain-main-cli";
 const SIDECHAIN_MAIN_CLI_VERSION_CMD: &str = "./sidechain-main-cli cli-version";
 
 fn sidechain_main_cli_version_prompt(version: String) -> String {
-	format!("{} {}", SIDECHAIN_MAIN_CLI, version)
+	format!("{} {}", SIDECHAIN_MAIN_CLI_PATH, version)
 }
 
 #[cfg(test)]
 mod tests {
 	use super::*;
 	use crate::config::config_fields::{GOVERNANCE_AUTHORITY, KUPO_PROTOCOL};
+	use crate::config::CHAIN_CONFIG_FILE_PATH;
 	use crate::prepare_configuration::prepare_cardano_params::PREPROD_CARDANO_PARAMS;
 	use crate::prepare_configuration::tests::save_to_existing_file;
 	use crate::tests::MockIO;
@@ -206,6 +213,7 @@ mod tests {
 		"13db1ba564b3b264f45974fece44b2beb0a2326b10e65a0f7f300dfb";
 	const SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT: &str =
 		"Version: 5.0.0, a770e9bbdcc9410575f8d47c0890801b4ae5c31a";
+	const SIDECHAIN_MAIN_CLI: &str = "./sidechain-main-cli";
 
 	pub mod scenarios {
 		use super::*;
@@ -254,11 +262,13 @@ mod tests {
 				scenarios::save_cardano_params(),
 				crate::sidechain_main_cli_resources::tests::establish_sidechain_main_cli_configuration_io(None, SidechainMainCliResources::default()),
 				MockIO::new_tmp_file(DUMMY_SKEY),
+				MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 				MockIO::run_command(
 					&addresses_cmd(
 						"/tmp/dummy3".to_string(),
 						test_sidechain_params(),
 						&SidechainMainCliResources::default(),
+						CardanoNetwork(1)
 					),
 					&test_addresses_cmd_output().to_string(),
 				),
@@ -321,11 +331,13 @@ mod tests {
 				scenarios::save_cardano_params(),
 				crate::sidechain_main_cli_resources::tests::establish_sidechain_main_cli_configuration_io(None, SidechainMainCliResources::default()),
 				MockIO::new_tmp_file(DUMMY_SKEY),
+				MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 				MockIO::run_command(
 					&addresses_cmd(
 						"/tmp/dummy3".to_string(),
 						test_sidechain_params(),
 						&SidechainMainCliResources::default(),
+						CardanoNetwork(1)
 					),
 					&test_addresses_cmd_output().to_string(),
 				),
