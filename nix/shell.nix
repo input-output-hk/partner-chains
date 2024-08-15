@@ -106,9 +106,23 @@
         pkgs = [
           {
             name = "cardano-cli";
-            help = "CLI v1.35.7 that is used in sidechains dependency stack";
+            help = "CLI v9.1.0 that is used in sidechains dependency stack";
             # This command has some eval because of IFD
-            command = "${inputs'.cardano-node.packages.cardano-cli}/bin/cardano-cli $@";
+            command = "${self'.packages.cardano-cli}/bin/cardano-cli $@";
+          }
+          {
+            name = "trustless-sidechain-cli-image:load:docker";
+            help = "Build and load the trustless sidechain cli image into docker";
+            command = ''
+              nix run ${self}#sidechain-main-cli-image.copyToDockerDaemon
+            '';
+          }
+          {
+            name = "trustless-sidechain-cli-image:load:podman";
+            help = "Build and load the trustless sidechain cli image into podman";
+            command = ''
+              nix run ${self}#sidechain-main-cli-image.copyToPodman
+            '';
           }
         ];
       }
@@ -120,25 +134,17 @@
           category = "Sidechains";
           pkgs = [
             {
-              name = "sidechains-stack";
+              name = "partnerchains-stack";
               help = "Run a process-compose stack of all of the dependencies";
               command = ''
-                ${
-                  if isDarwin
-                  then self.packages.x86_64-darwin.sidechains-stack
-                  else self'.packages.sidechains-stack
-                }/bin/sidechains-stack $@
+                ${self'.packages.partnerchains-stack}/bin/partnerchains-stack $@
               '';
             }
             {
               name = "sidechain-main-cli";
               help = "CLI application to execute Trustless Sidechain Cardano endpoints";
               command = ''
-                ${
-                  if isDarwin
-                  then inputs.trustless-sidechain.packages.x86_64-darwin.sidechain-main-cli
-                  else inputs'.trustless-sidechain.packages.sidechain-main-cli
-                }/bin/sidechain-main-cli $@
+                ${self'.packages.sidechain-main-cli}/bin/sidechain-main-cli $@
               '';
             }
           ];
@@ -162,11 +168,7 @@
           name = "sidechain-main-cli";
           help = "CLI application to execute Trustless Sidechain Cardano endpoints";
           command = ''
-            ${
-              if isDarwin
-              then inputs.trustless-sidechain.packages.x86_64-darwin.sidechain-main-cli
-              else inputs'.trustless-sidechain.packages.sidechain-main-cli
-            }/bin/sidechain-main-cli $@
+            ${self'.packages.sidechain-main-cli}/bin/sidechain-main-cli $@
           '';
         }
       ];
