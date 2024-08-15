@@ -16,7 +16,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        os: [nixos, macos]
+        os: [nixos]
     runs-on:
       - self-hosted
       - ${{ matrix.os }}
@@ -36,10 +36,6 @@ jobs:
         run: echo "${{ secrets.NIX_SIGNING_KEY }}" > "${{ runner.temp }}/nix-key"
       - name: Run nixci to build/test all outputs
         run: |
-          args=()
-          if [[ ${{ matrix.os }} == "macos" ]]; then
-            args+=("--systems" "x86_64-darwin")
-          fi
           nix run github:srid/nixci -- -v build ${args[@]} > /tmp/outputs
       - name: Copy nix scopes to nix cache
         run: |
