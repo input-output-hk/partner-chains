@@ -6062,6 +6062,7 @@ dependencies = [
  "pallet-sidechain-rpc",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
+ "partner-chains-node-commands",
  "plutus",
  "plutus-datum-derive",
  "sc-basic-authorship",
@@ -6109,6 +6110,29 @@ dependencies = [
  "substrate-prometheus-endpoint",
  "thiserror",
  "time-source",
+ "tokio",
+]
+
+[[package]]
+name = "partner-chains-node-commands"
+version = "1.0.0"
+dependencies = [
+ "authority-selection-inherents",
+ "clap",
+ "cli-commands",
+ "frame-support",
+ "main-chain-follower-api",
+ "parity-scale-codec",
+ "plutus",
+ "sc-cli",
+ "sc-service",
+ "sidechain-domain",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime",
+ "sp-session-validator-management",
+ "sp-session-validator-management-query",
+ "sp-sidechain",
  "tokio",
 ]
 

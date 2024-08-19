@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "cli/commands",
+	"cli/node-commands",
     "node",
 	"pallets/block-rewards",
 	"pallets/sidechain",
@@ -182,6 +183,7 @@ sidechain-slots = { path = "primitives/sidechain-slots", default-features = fals
 epoch-derivation = { path = "primitives/epoch-derivation", default-features = false }
 mock-types = { path = "primitives/mock-types", default-features = false }
 cli-commands = { path = "cli/commands" }
+partner-chains-node-commands = { path = "cli/node-commands"}
 time-source = { path = "utils/time-source" }
 sidechain-mc-hash = { path = "primitives/sidechain-mc-hash", default-features = false }
 authority-selection-inherents = { path = "primitives/authority-selection-inherents", default-features = false }
