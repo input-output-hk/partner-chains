@@ -5,19 +5,27 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 # Unreleased
 
 ## Changed
-* polkadot-sdk dependency updated to partnerchains-stable2407 (stable2407 is v1.15.0 in the previous scheme)
-* remove Relay docker build files
-* changed the inner type of `McBlockHash` from Vec to an array
-* ETCM-7985 - bumped `partner-chains-smart-contracts` version and updated the `partner-chains-cli`
-to match. Now `partner-chains-cli` passes a network parameter to `sidechain-main-cli` where necessary.
-* removed usage of 'storage::getter' macros, following polkadot-sdk changes
-* governance authority key hash is now calculated in `prepare-configuration` without using external `cardano-cli`
 
 ## Removed
 
 ## Fixed
 
 ## Added
+
+# v1.0.0rc1
+
+## Changed
+
+* polkadot-sdk dependency updated to partnerchains-stable2407 (stable2407 is v1.15.0 in the previous scheme)
+* changed the inner type of `McBlockHash` from Vec to an array
+* ETCM-7985 - bumped `partner-chains-smart-contracts` version and updated the `partner-chains-cli`
+to match. Now `partner-chains-cli` passes a network parameter to `sidechain-main-cli` where necessary.
+* governance authority key hash is now calculated in `prepare-configuration` without using external `cardano-cli`
+
+## Removed
+
+* removed Relay docker build files
+* removed usage of 'storage::getter' macros, following polkadot-sdk changes
 
 # v1.0.0
 
