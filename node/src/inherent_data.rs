@@ -4,7 +4,7 @@ use authority_selection_inherents::authority_selection_inputs::AuthoritySelectio
 use derive_new::new;
 use epoch_derivation::EpochConfig;
 use jsonrpsee::core::async_trait;
-use sc_consensus_aura::{find_pre_digest, standalone::CurrentSlotProvider, SlotDuration};
+use sc_consensus_aura::{find_pre_digest, SlotDuration};
 use sc_service::Arc;
 use sidechain_domain::{McBlockHash, ScEpochNumber};
 use sidechain_mc_hash::McHashInherentDataProvider as McHashIDP;
@@ -24,6 +24,7 @@ use sp_inherents::CreateInherentDataProviders;
 use sp_native_token_management::{
 	NativeTokenManagementApi, NativeTokenManagementInherentDataProvider as NativeTokenIDP,
 };
+use sp_partner_chains_consensus_aura::CurrentSlotProvider;
 use sp_runtime::traits::{Block as BlockT, Header, Zero};
 use sp_session_validator_management::SessionValidatorManagementApi;
 use sp_timestamp::{InherentDataProvider as TimestampIDP, Timestamp};
