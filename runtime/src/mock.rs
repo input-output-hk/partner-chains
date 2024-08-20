@@ -44,6 +44,7 @@ frame_support::construct_runtime!(
 		Aura: pallet_aura,
 		Grandpa: pallet_grandpa,
 		Balances: pallet_balances,
+		Session0: pallet_session,
 		Session: pallet_partner_chains_session,
 	}
 );
@@ -102,8 +103,6 @@ impl pallet_balances::Config for Test {
 }
 
 use sp_consensus_aura::AURA_ENGINE_ID;
-use sp_partner_chains_session::CurrentSessionIndex;
-use sp_staking::SessionIndex;
 
 pub const SLOTS_PER_EPOCH: u32 = 7;
 
@@ -122,6 +121,8 @@ impl From<(sr25519::Public, ed25519::Public)> for TestSessionKeys {
 	}
 }
 
+pallet_session_runtime_stub::impl_pallet_session_config!(Test);
+
 impl pallet_partner_chains_session::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
@@ -130,12 +131,6 @@ impl pallet_partner_chains_session::Config for Test {
 	type SessionManager = ValidatorManagementSessionManager<Test>;
 	type SessionHandler = <TestSessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = TestSessionKeys;
-}
-
-impl CurrentSessionIndex for Test {
-	fn current_session_index() -> SessionIndex {
-		Session::current_index()
-	}
 }
 
 impl pallet_sidechain::Config for Test {
