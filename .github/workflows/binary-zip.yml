@@ -236,7 +236,7 @@ jobs:
   
       - name: Rename sidechain-cli to sidechain-main-cli
         run: |
-          mv artifact/unzipped/sidechain-cli ${{ needs.set-environment.outputs.sidechain_main_cli }}
+          mv artifact/unzipped/sidechain-cli artifact/unzipped/${{ needs.set-environment.outputs.sidechain_main_cli }}
   
       - name: Upload Renamed Artifact
         uses: actions/upload-artifact@v4
