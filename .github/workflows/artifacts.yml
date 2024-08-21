@@ -4,16 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       partner_chains_smart_contracts_sha:
-        description: "partner-chains-smart-contracts commit SHA"
-        default: "38f4c17e0f4052d885c9d438f7fb8ad0b2e7b25e"
+        description: "partner-chains-smart-contracts commit SHA or branch to build from"
       partner_chains_sha:
-        description: "partner-chains commit SHA"
-        default: "master"
+        description: "partner-chains commit SHA or branch to build from"
       partner-chains-tag:
-        description: "partner-chains release tag (optional)"
+        description: "partner-chains release tag to append to artifact name (optional)"
         required: false
       partner-chains-smart-contracts-tag:
-        description: "partner-chains-smart-contract release tag (optional)"
+        description: "partner-chains-smart-contract release tag to append to artifact name (optional)"
         required: false
 
 jobs:
