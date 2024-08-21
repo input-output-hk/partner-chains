@@ -148,16 +148,12 @@ jobs:
           ref: ${{ github.event.inputs.partner_chains_smart_contracts_sha }}
           path: partner-chains-smart-contracts
 
-      - name: Build and Rename
-        run: |
-          rm -rf result
-          nix build ./partner-chains-smart-contracts#sidechain-release-bundle
-          chmod -R 777 result/
-          mv result/release.zip result/sidechain-main-cli.zip
+      - name: Build
+        run: nix build ./partner-chains-smart-contracts#sidechain-release-bundle
 
-      - name: Upload release.zip
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: partner-chains-smart-contracts
-          path: result/sidechain-main-cli.zip
+          path: result/release.zip
 
