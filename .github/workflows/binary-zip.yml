@@ -17,46 +17,20 @@ on:
         required: false
 
 jobs:
-  set-environment:
-    runs-on: ubuntu-latest
-    outputs:
-      partner_chains_cli_x86_64_linux: ${{ steps.set-vars.outputs.partner_chains_cli_x86_64_linux }}
-      partner_chains_node_x86_64_linux: ${{ steps.set-vars.outputs.partner_chains_node_x86_64_linux }}
-      partner_chains_cli_x86_64_apple_darwin: ${{ steps.set-vars.outputs.partner_chains_cli_x86_64_apple_darwin }}
-      partner_chains_node_x86_64_apple_darwin: ${{ steps.set-vars.outputs.partner_chains_node_x86_64_apple_darwin }}
-      partner_chains_cli_aarch64_apple_darwin: ${{ steps.set-vars.outputs.partner_chains_cli_aarch64_apple_darwin }}
-      partner_chains_node_aarch64_apple_darwin: ${{ steps.set-vars.outputs.partner_chains_node_aarch64_apple_darwin }}
-      sidechain_main_cli: ${{ steps.set-vars.outputs.sidechain_main_cli }}
-    steps:
-      - name: Set environment variables based on inputs
-        id: set-vars
-        run: |
-          if [ -n "${{ github.event.inputs.partner-chains-tag }}" ]; then
-            echo "partner_chains_cli_x86_64_linux=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
-            echo "partner_chains_node_x86_64_linux=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
-            echo "partner_chains_cli_x86_64_apple_darwin=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
-            echo "partner_chains_node_x86_64_apple_darwin=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
-            echo "partner_chains_cli_aarch64_apple_darwin=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
-            echo "partner_chains_node_aarch64_apple_darwin=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
-          else
-            echo "partner_chains_cli_x86_64_linux=partner-chains-cli-x86_64-linux" >> $GITHUB_ENV
-            echo "partner_chains_node_x86_64_linux=partner-chains-node-x86_64-linux" >> $GITHUB_ENV
-            echo "partner_chains_cli_x86_64_apple_darwin=partner-chains-cli-x86_64-apple-darwin" >> $GITHUB_ENV
-            echo "partner_chains_node_x86_64_apple_darwin=partner-chains-node-x86_64-apple-darwin" >> $GITHUB_ENV
-            echo "partner_chains_cli_aarch64_apple_darwin=partner-chains-cli-aarch64-apple-darwin" >> $GITHUB_ENV
-            echo "partner_chains_node_aarch64_apple_darwin=partner-chains-node-aarch64-apple-darwin" >> $GITHUB_ENV
-          fi
-
-          if [ -n "${{ github.event.inputs.partner-chains-smart-contracts-tag }}" ]; then
-            echo "sidechain_main_cli=sidechain-main-cli-${{ github.event.inputs.partner-chains-smart-contracts-tag }}" >> $GITHUB_ENV
-          else
-            echo "sidechain_main_cli=sidechain-main-cli" >> $GITHUB_ENV
-          fi
-
   partner-chains-linux:
     runs-on: ubuntu-latest
-    needs: set-environment
     steps:
+      - name: Set filename variables
+        id: set-filenames
+        run: |
+          if [ -n "${{ github.event.inputs.partner-chains-tag }}" ]; then
+            echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+            echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+          else
+            echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-x86_64-linux" >> $GITHUB_ENV
+            echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-x86_64-linux" >> $GITHUB_ENV
+          fi
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -76,32 +50,42 @@ jobs:
         run: |
           rustup target add x86_64-unknown-linux-gnu
           cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
-          cp target/x86_64-unknown-linux-gnu/release/partner-chains-node ${{ needs.set-environment.outputs.partner_chains_node_x86_64_linux }}
-          chmod +x ${{ needs.set-environment.outputs.partner_chains_node_x86_64_linux }}
+          cp target/x86_64-unknown-linux-gnu/release/partner-chains-node $PARTNER_CHAINS_NODE_X86_64_LINUX
+          chmod +x $PARTNER_CHAINS_NODE_X86_64_LINUX
 
       - name: Build partner-chains-cli
         run: |
           rustup target add x86_64-unknown-linux-gnu
           cargo build -p partner-chains-cli --locked --release --target x86_64-unknown-linux-gnu
-          cp target/x86_64-unknown-linux-gnu/release/partner-chains-cli ${{ needs.set-environment.outputs.partner_chains_cli_x86_64_linux }}
-          chmod +x ${{ needs.set-environment.outputs.partner_chains_cli_x86_64_linux }}
+          cp target/x86_64-unknown-linux-gnu/release/partner-chains-cli $PARTNER_CHAINS_CLI_X86_64_LINUX
+          chmod +x $PARTNER_CHAINS_CLI_X86_64_LINUX
 
       - name: Upload partner-chains-cli-x86_64-linux
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ needs.set-environment.outputs.partner_chains_cli_x86_64_linux }}
-          path: ${{ needs.set-environment.outputs.partner_chains_cli_x86_64_linux }}
+          name: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}
+          path: $PARTNER_CHAINS_CLI_X86_64_LINUX
 
       - name: Upload partner-chains-node-x86_64-linux
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ needs.set-environment.outputs.partner_chains_node_x86_64_linux }}
-          path: ${{ needs.set-environment.outputs.partner_chains_node_x86_64_linux }}
+          name: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
+          path: $PARTNER_CHAINS_NODE_X86_64_LINUX
 
   partner-chains-macos-x86_64:
     runs-on: macos-latest
-    needs: set-environment
     steps:
+      - name: Set filename variables
+        id: set-filenames
+        run: |
+          if [ -n "${{ github.event.inputs.partner-chains-tag }}" ]; then
+            echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+            echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+          else
+            echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-x86_64-apple-darwin" >> $GITHUB_ENV
+            echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-x86_64-apple-darwin" >> $GITHUB_ENV
+          fi
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -124,32 +108,42 @@ jobs:
         run: |
           rustup target add x86_64-apple-darwin
           cargo build -p partner-chains-node --locked --release --target x86_64-apple-darwin
-          cp target/x86_64-apple-darwin/release/partner-chains-node ${{ needs.set-environment.outputs.partner_chains_node_x86_64_apple_darwin }}
-          chmod +x ${{ needs.set-environment.outputs.partner_chains_node_x86_64_apple_darwin }}
+          cp target/x86_64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN
+          chmod +x $PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN
 
       - name: Build partner-chains-cli
         run: |
           rustup target add x86_64-apple-darwin
           cargo build -p partner-chains-cli --locked --release --target x86_64-apple-darwin
-          cp target/x86_64-apple-darwin/release/partner-chains-cli ${{ needs.set-environment.outputs.partner_chains_cli_x86_64_apple_darwin }}
-          chmod +x ${{ needs.set-environment.outputs.partner_chains_cli_x86_64_apple_darwin }}
+          cp target/x86_64-apple-darwin/release/partner-chains-cli $PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN
+          chmod +x $PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN
 
       - name: Upload partner-chains-cli-x86_64-apple-darwin
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ needs.set-environment.outputs.partner_chains_cli_x86_64_apple_darwin }}
-          path: ${{ needs.set-environment.outputs.partner_chains_cli_x86_64_apple_darwin }}
+          name: ${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}
+          path: $PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN
 
       - name: Upload partner-chains-node-x86_64-apple-darwin
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ needs.set-environment.outputs.partner_chains_node_x86_64_apple_darwin }}
-          path: ${{ needs.set-environment.outputs.partner_chains_node_x86_64_apple_darwin }}
+          name: ${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}
+          path: $PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN
 
   partner-chains-macos-arm64:
     runs-on: macos-latest
-    needs: set-environment
     steps:
+      - name: Set filename variables
+        id: set-filenames
+        run: |
+          if [ -n "${{ github.event.inputs.partner-chains-tag }}" ]; then
+            echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+            echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+          else
+            echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-aarch64-apple-darwin" >> $GITHUB_ENV
+            echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-aarch64-apple-darwin" >> $GITHUB_ENV
+          fi
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -172,32 +166,40 @@ jobs:
         run: |
           rustup target add aarch64-apple-darwin
           cargo build -p partner-chains-node --locked --release --target aarch64-apple-darwin
-          cp target/aarch64-apple-darwin/release/partner-chains-node ${{ needs.set-environment.outputs.partner_chains_node_aarch64_apple_darwin }}
-          chmod +x ${{ needs.set-environment.outputs.partner_chains_node_aarch64_apple_darwin }}
+          cp target/aarch64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN
+          chmod +x $PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN
 
       - name: Build partner-chains-cli
         run: |
           rustup target add aarch64-apple-darwin
           cargo build -p partner-chains-cli --locked --release --target aarch64-apple-darwin
-          cp target/aarch64-apple-darwin/release/partner-chains-cli ${{ needs.set-environment.outputs.partner_chains_cli_aarch64_apple_darwin }}
-          chmod +x ${{ needs.set-environment.outputs.partner_chains_cli_aarch64_apple_darwin }}
+          cp target/aarch64-apple-darwin/release/partner-chains-cli $PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN
+          chmod +x $PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN
 
       - name: Upload partner-chains-cli-aarch64-apple-darwin
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ needs.set-environment.outputs.partner_chains_cli_aarch64_apple_darwin }}
-          path: ${{ needs.set-environment.outputs.partner_chains_cli_aarch64_apple_darwin }}
+          name: ${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}
+          path: $PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN
             
       - name: Upload partner-chains-node-aarch64-apple-darwin
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ needs.set-environment.outputs.partner_chains_node_aarch64_apple_darwin }}
-          path: ${{ needs.set-environment.outputs.partner_chains_node_aarch64_apple_darwin }}
+          name: ${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}
+          path: $PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN
 
   partner-chains-smart-contracts-build:
     runs-on: [self-hosted, nixos]
-    needs: set-environment
     steps:
+      - name: Set filename variables
+        id: set-filenames
+        run: |
+          if [ -n "${{ github.event.inputs.partner-chains-smart-contracts-tag }}" ]; then
+            echo "SIDECHAIN_MAIN_CLI=sidechain-main-cli-${{ github.event.inputs.partner-chains-smart-contracts-tag }}" >> $GITHUB_ENV
+          else
+            echo "SIDECHAIN_MAIN_CLI=sidechain-main-cli" >> $GITHUB_ENV
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -226,8 +228,8 @@ jobs:
           path: ./artifact
 
       - uses: geekyeggo/delete-artifact@v5
-        with:
-            name: partner-chains-smart-contracts
+      with:
+          name: partner-chains-smart-contracts
   
       - name: Unzip release.zip
         run: |
@@ -236,12 +238,10 @@ jobs:
           
       - name: Rename sidechain-cli to sidechain-main-cli
         run: |
-          destination_name="${{ needs.set-environment.outputs.sidechain_main_cli }}"
-          mv artifact/unzipped/sidechain-cli artifact/unzipped/$destination_name
+          mv artifact/unzipped/sidechain-cli artifact/unzipped/$SIDECHAIN_MAIN_CLI
   
       - name: Upload Renamed Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ needs.set-environment.outputs.sidechain_main_cli }}
-          path: artifact/unzipped/${{ needs.set-environment.outputs.sidechain_main_cli }}
-
+          name: $SIDECHAIN_MAIN_CLI
+          path: artifact/unzipped/$SIDECHAIN_MAIN_CLI
