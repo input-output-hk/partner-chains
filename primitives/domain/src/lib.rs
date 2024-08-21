@@ -72,7 +72,7 @@ impl StakeDelegation {
 	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize))]
-pub struct NativeTokenAmount(pub u64);
+pub struct NativeTokenAmount(pub u128);
 
 /// A main chain block number. In range [0, 2^31-1].
 #[derive(

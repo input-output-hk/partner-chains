@@ -273,7 +273,7 @@ impl<'r> Decode<'r, Postgres> for StakeDelegation {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct NativeTokenAmount(pub u64);
+pub(crate) struct NativeTokenAmount(pub u128);
 impl From<NativeTokenAmount> for sidechain_domain::NativeTokenAmount {
 	fn from(value: NativeTokenAmount) -> Self {
 		Self(value.0)
@@ -289,7 +289,7 @@ impl sqlx::Type<Postgres> for NativeTokenAmount {
 impl<'r> Decode<'r, Postgres> for NativeTokenAmount {
 	fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
 		let decoded = <sqlx::types::BigDecimal as Decode<Postgres>>::decode(value)?;
-		let i = decoded.to_u64().ok_or("NativeTokenQuantity is always a u64".to_string())?;
+		let i = decoded.to_u128().ok_or("NativeTokenQuantity is always a u128".to_string())?;
 		Ok(Self(i))
 	}
 }
