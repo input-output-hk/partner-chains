@@ -1,11 +1,8 @@
-use crate::db_model::Address;
-use crate::db_model::NativeTokenAmount;
-use crate::db_model::SlotNumber;
+use crate::db_model::{Address, NativeTokenAmount, SlotNumber};
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
 use async_trait::async_trait;
-use main_chain_follower_api::NativeTokenManagementDataSource;
-use main_chain_follower_api::Result;
+use main_chain_follower_api::{NativeTokenManagementDataSource, Result};
 use sidechain_domain::*;
 use sqlx::PgPool;
 
