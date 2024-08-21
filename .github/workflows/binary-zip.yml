@@ -5,7 +5,7 @@ on:
     inputs:
       partner_chains_smart_contracts_sha:
         description: "partner-chains-smart-contracts commit SHA"
-        default: "04f656d4e755dbc4f5ce384957c2859695d7147c"
+        default: "38f4c17e0f4052d885c9d438f7fb8ad0b2e7b25e"
       partner_chains_sha:
         description: "partner-chains commit SHA"
         default: "master"
