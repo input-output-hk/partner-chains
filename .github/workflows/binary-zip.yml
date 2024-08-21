@@ -166,6 +166,10 @@ jobs:
         with:
           name: partner-chains-smart-contracts
           path: ./artifact
+
+      - uses: geekyeggo/delete-artifact@v5
+        with:
+            name: partner-chains-smart-contracts
   
       - name: Unzip release.zip
         run: |
@@ -180,3 +184,5 @@ jobs:
         with:
           name: sidechain-main-cli
           path: artifact/unzipped/
+
+          
