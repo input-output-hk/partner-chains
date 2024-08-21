@@ -1,6 +1,7 @@
 name: Build and Upload Artifacts
 
 on:
+
   workflow_dispatch:
     inputs:
       partner_chains_smart_contracts_sha:
