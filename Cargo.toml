@@ -9,6 +9,7 @@ members = [
     "pallets/session-validator-management",
     "pallets/session-validator-management/benchmarking",
 	"pallets/session-validator-management/rpc",
+	"primitives/consensus/aura",
     "primitives/block-rewards",
 	"primitives/chain-params",
     "primitives/domain",
@@ -191,3 +192,4 @@ session-manager = { path = "primitives/session-manager", default-features = fals
 sp-sidechain = { path = "primitives/sidechain", default-features = false }
 chain-params = { path = "primitives/chain-params", default-features = false }
 sp-native-token-management = { path = "primitives/native-token-management", default-features = false }
+sp-partner-chains-consensus-aura = { path = "primitives/consensus/aura", default-features = false }

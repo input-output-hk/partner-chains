@@ -9658,6 +9658,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp-partner-chains-consensus-aura"
+version = "1.0.0"
+dependencies = [
+ "futures",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-consensus-slots",
+ "sp-inherents",
+ "sp-runtime",
+]
+
+[[package]]
 name = "sp-partner-chains-session"
 version = "4.0.0-dev"
 source = "git+https://github.com/input-output-hk/polkadot-sdk.git?tag=partnerchains-stable2407#09f9af33504a159f8b7c71860032ae577e1b94ff"
