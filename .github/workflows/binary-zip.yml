@@ -1,7 +1,6 @@
-name: Build zip with all artifacts
+name: Build and Upload Artifacts
 
 on:
-
   workflow_dispatch:
     inputs:
       partner_chains_smart_contracts_sha:
@@ -30,31 +29,27 @@ jobs:
       - name: Install protoc
         run: sudo apt-get install -y protobuf-compiler
 
-      - name: Setup and Build partner-chains-node
-        env:
-          PROTOC: /usr/bin/protoc
+      - name: Build partner-chains-node
         run: |
           rustup target add x86_64-unknown-linux-gnu
           cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
-          mkdir -p artifact
-          cp target/x86_64-unknown-linux-gnu/release/partner-chains-node artifact/
-          chmod -R +x artifact/partner-chains-node
+          cp target/x86_64-unknown-linux-gnu/release/partner-chains-node partner-chains-node-x86_64-linux
+          chmod +x partner-chains-node-x86_64-linux
 
-      - name: Setup and Build partner-chains-cli
-        env:
-          PROTOC: /usr/bin/protoc
+      - name: Build partner-chains-cli
         run: |
           rustup target add x86_64-unknown-linux-gnu
           cargo build -p partner-chains-cli --locked --release --target x86_64-unknown-linux-gnu
-          mkdir -p artifact
-          cp target/x86_64-unknown-linux-gnu/release/partner-chains-cli artifact/
-          chmod -R +x artifact/partner-chains-cli
+          cp target/x86_64-unknown-linux-gnu/release/partner-chains-cli partner-chains-cli-x86_64-linux
+          chmod +x partner-chains-cli-x86_64-linux
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: compiled-binaries-x86_64-unknown-linux-gnu
-          path: artifact/
+          name: compiled-binaries-x86_64-linux
+          path: |
+            partner-chains-node-x86_64-linux
+            partner-chains-cli-x86_64-linux
 
   build-macos-x86_64:
     runs-on: macos-latest
@@ -70,12 +65,6 @@ jobs:
           unzip protoc-21.3-osx-x86_64.zip -d $HOME/protoc
           sudo mv $HOME/protoc/bin/protoc /usr/local/bin/protoc
 
-      - name: Verify protoc installation
-        run: which protoc
-
-      - name: Output PATH
-        run: echo $PATH
-
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -83,27 +72,27 @@ jobs:
           default: true
           profile: minimal
 
-      - name: Setup and Build partner-chains-node
+      - name: Build partner-chains-node
         run: |
           rustup target add x86_64-apple-darwin
           cargo build -p partner-chains-node --locked --release --target x86_64-apple-darwin
-          mkdir -p artifact
-          cp target/x86_64-apple-darwin/release/partner-chains-node artifact/
-          chmod -R +x artifact/partner-chains-node
+          cp target/x86_64-apple-darwin/release/partner-chains-node partner-chains-node-x86_64-apple-darwin
+          chmod +x partner-chains-node-x86_64-apple-darwin
 
-      - name: Setup and Build partner-chains-cli
+      - name: Build partner-chains-cli
         run: |
           rustup target add x86_64-apple-darwin
           cargo build -p partner-chains-cli --locked --release --target x86_64-apple-darwin
-          mkdir -p artifact
-          cp target/x86_64-apple-darwin/release/partner-chains-cli artifact/
-          chmod -R +x artifact/partner-chains-cli
+          cp target/x86_64-apple-darwin/release/partner-chains-cli partner-chains-cli-x86_64-apple-darwin
+          chmod +x partner-chains-cli-x86_64-apple-darwin
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: compiled-binaries-x86_64-apple-darwin
-          path: artifact/
+          path: |
+            partner-chains-node-x86_64-apple-darwin
+            partner-chains-cli-x86_64-apple-darwin
 
   build-macos-arm64:
     runs-on: macos-latest
@@ -119,12 +108,6 @@ jobs:
           unzip protoc-21.3-osx-aarch_64.zip -d $HOME/protoc
           sudo mv $HOME/protoc/bin/protoc /usr/local/bin/protoc
 
-      - name: Verify protoc installation
-        run: which protoc
-
-      - name: Output PATH
-        run: echo $PATH
-
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -132,27 +115,27 @@ jobs:
           default: true
           profile: minimal
 
-      - name: Setup and Build partner-chains-node
+      - name: Build partner-chains-node
         run: |
           rustup target add aarch64-apple-darwin
           cargo build -p partner-chains-node --locked --release --target aarch64-apple-darwin
-          mkdir -p artifact
-          cp target/aarch64-apple-darwin/release/partner-chains-node artifact/
-          chmod -R +x artifact/partner-chains-node
+          cp target/aarch64-apple-darwin/release/partner-chains-node partner-chains-node-aarch64-apple-darwin
+          chmod +x partner-chains-node-aarch64-apple-darwin
 
-      - name: Setup and Build partner-chains-cli
+      - name: Build partner-chains-cli
         run: |
           rustup target add aarch64-apple-darwin
           cargo build -p partner-chains-cli --locked --release --target aarch64-apple-darwin
-          mkdir -p artifact
-          cp target/aarch64-apple-darwin/release/partner-chains-cli artifact/
-          chmod -R +x artifact/partner-chains-cli
+          cp target/aarch64-apple-darwin/release/partner-chains-cli partner-chains-cli-aarch64-apple-darwin
+          chmod +x partner-chains-cli-aarch64-apple-darwin
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: compiled-binaries-aarch64-apple-darwin
-          path: artifact/
+          path: |
+            partner-chains-node-aarch64-apple-darwin
+            partner-chains-cli-aarch64-apple-darwin
 
   partner-chains-smart-contracts:
     runs-on: [self-hosted, nixos]
@@ -171,125 +154,12 @@ jobs:
       - name: Prepare Artifact
         run: |
           mkdir -p partner-chains-smart-contracts-artifact
-          cp result/* partner-chains-smart-contracts-artifact
+          cp result/* partner-chains-smart-contracts-artifact/
+          mv partner-chains-smart-contracts-artifact/sidechain-cli partner-chains-smart-contracts-artifact/sidechain-main-cli
+          mv sidechain-main-cli sidechain-main-cli
 
       - name: Upload Directory as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: partner-chains-smart-contracts-artifact
-          path: partner-chains-smart-contracts-artifact/
-
-      - name: Post-build Cleanup
-        run: rm -rf partner-chains-smart-contracts-artifact
-
-  download-nodejs:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download Node.js binary for Linux
-        run: |
-          curl -LO https://nodejs.org/dist/v20.12.2/node-v20.12.2-linux-x64.tar.xz
-          tar -xf node-v20.12.2-linux-x64.tar.xz
-          mv node-v20.12.2-linux-x64 nodejs-linux
-
-      - name: Download Node.js binary for x86_64 macOS
-        run: |
-          curl -LO https://nodejs.org/dist/v20.12.2/node-v20.12.2-darwin-x64.tar.gz
-          tar -xf node-v20.12.2-darwin-x64.tar.gz
-          mv node-v20.12.2-darwin-x64 nodejs-macos-x86_64
-
-      - name: Download Node.js binary for ARM macOS
-        run: |
-          curl -LO https://nodejs.org/dist/v20.12.2/node-v20.12.2-darwin-arm64.tar.gz
-          tar -xf node-v20.12.2-darwin-arm64.tar.gz
-          mv node-v20.12.2-darwin-arm64 nodejs-macos-arm64
-
-      - name: Upload Node.js binary for Linux
-        uses: actions/upload-artifact@v4
-        with:
-          name: nodejs-linux
-          path: nodejs-linux/
-
-      - name: Upload Node.js binary for x86_64 macOS
-        uses: actions/upload-artifact@v4
-        with:
-          name: nodejs-macos-x86_64
-          path: nodejs-macos-x86_64/
-
-      - name: Upload Node.js binary for ARM macOS
-        uses: actions/upload-artifact@v4
-        with:
-          name: nodejs-macos-arm64
-          path: nodejs-macos-arm64/
-
-  combine-artifacts:
-    needs: [build-linux, build-macos-x86_64, build-macos-arm64, partner-chains-smart-contracts, download-nodejs]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: combined-artifacts/
-
-      - name: Unzip and Prepare Trustless Artifact
-        run: |
-          mkdir -p combined-artifacts/partner-chains-smart-contracts-artifact-dir
-          unzip combined-artifacts/partner-chains-smart-contracts-artifact/* -d combined-artifacts/partner-chains-smart-contracts-artifact-dir
-          mv combined-artifacts/partner-chains-smart-contracts-artifact-dir/sidechain-cli combined-artifacts/partner-chains-smart-contracts-artifact-dir/sidechain-main-cli
-          mv combined-artifacts/partner-chains-smart-contracts-artifact-dir/sidechain-main-cli combined-artifacts/
-          mv combined-artifacts/partner-chains-smart-contracts-artifact-dir/node_modules combined-artifacts/
-          rm -rf combined-artifacts/partner-chains-smart-contracts-artifact-dir/release.zip
-          rm -rf combined-artifacts/partner-chains-smart-contracts-artifact-dir
-
-      - name: Create Linux ZIP
-        run: |
-          mkdir -p combined-artifacts/linux_x86_64-dir
-          cp -r combined-artifacts/compiled-binaries-x86_64-unknown-linux-gnu/* combined-artifacts/linux_x86_64-dir/
-          cp combined-artifacts/nodejs-linux/bin/node combined-artifacts/linux_x86_64-dir/
-          cp combined-artifacts/sidechain-main-cli combined-artifacts/linux_x86_64-dir/
-          cp -r combined-artifacts/node_modules combined-artifacts/linux_x86_64-dir/
-          chmod -R +x combined-artifacts/linux_x86_64-dir
-          ls -la combined-artifacts/linux_x86_64-dir
-          cd combined-artifacts/linux_x86_64-dir
-          zip -r ../../linux_x86_64.zip .
-
-      - name: Upload Linux ZIP
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux_x86_64
-          path: linux_x86_64.zip
-
-      - name: Create macOS x86_64 ZIP
-        run: |
-          mkdir -p combined-artifacts/macos_x86_64-dir
-          cp -r combined-artifacts/compiled-binaries-x86_64-apple-darwin/* combined-artifacts/macos_x86_64-dir/
-          cp combined-artifacts/nodejs-macos-x86_64/bin/node combined-artifacts/macos_x86_64-dir/
-          cp combined-artifacts/sidechain-main-cli combined-artifacts/macos_x86_64-dir/
-          cp -r combined-artifacts/node_modules combined-artifacts/macos_x86_64-dir/
-          chmod -R +x combined-artifacts/macos_x86_64-dir
-          ls -la combined-artifacts/macos_x86_64-dir
-          cd combined-artifacts/macos_x86_64-dir
-          zip -r ../../macos_x86_64.zip .
-
-      - name: Upload macOS x86_64 ZIP
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos_x86_64
-          path: macos_x86_64.zip
-
-      - name: Create macOS ARM64 ZIP
-        run: |
-          mkdir -p combined-artifacts/macos_arm64-dir
-          cp -r combined-artifacts/compiled-binaries-aarch64-apple-darwin/* combined-artifacts/macos_arm64-dir/
-          cp combined-artifacts/nodejs-macos-arm64/bin/node combined-artifacts/macos_arm64-dir/
-          cp combined-artifacts/sidechain-main-cli combined-artifacts/macos_arm64-dir/
-          cp -r combined-artifacts/node_modules combined-artifacts/macos_arm64-dir/
-          chmod -R +x combined-artifacts/macos_arm64-dir
-          ls -la combined-artifacts/macos_arm64-dir
-          cd combined-artifacts/macos_arm64-dir
-          zip -r ../../macos_arm64.zip .
-
-      - name: Upload macOS ARM64 ZIP
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos_arm64
-          path: macos_arm64.zip
+          name: sidechain-main-cli
+          path: sidechain-main-cli
