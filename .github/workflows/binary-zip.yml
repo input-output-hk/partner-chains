@@ -11,7 +11,7 @@ on:
         default: "master"
 
 jobs:
-  build-linux:
+  partner-chains-linux:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -51,7 +51,7 @@ jobs:
             partner-chains-node-x86_64-linux
             partner-chains-cli-x86_64-linux
 
-  build-macos-x86_64:
+  partner-chains-macos-x86_64:
     runs-on: macos-latest
     steps:
       - name: Checkout code
@@ -94,7 +94,7 @@ jobs:
             partner-chains-node-x86_64-apple-darwin
             partner-chains-cli-x86_64-apple-darwin
 
-  build-macos-arm64:
+  partner-chains-macos-arm64:
     runs-on: macos-latest
     steps:
       - name: Checkout code
@@ -151,17 +151,12 @@ jobs:
       - name: Build
         run: nix build ./partner-chains-smart-contracts#sidechain-release-bundle
 
-      - name: Prepare Artifact
-        run: |
-          rm -rf partner-chains-smart-contracts-artifact
-          mkdir -p partner-chains-smart-contracts-artifact
-          nix-shell -p unzip --run "unzip result/release.zip -d partner-chains-smart-contracts-artifact/"
-          ls -la partner-chains-smart-contracts-artifact/
-          mv partner-chains-smart-contracts-artifact/sidechain-cli partner-chains-smart-contracts-artifact/sidechain-main-cli
-          mv partner-chains-smart-contracts-artifact partner-chains-smart-contracts-artifact-renamed
+      - name: Rename
+        run: mv result/release.zip result/sidechain-main-cli.zip
 
-      - name: Upload Directory as Artifact
+      - name: Upload release.zip
         uses: actions/upload-artifact@v4
         with:
-          name: sidechain-main-cli
-          path: sidechain-main-cli
+          name: partner-chains-smart-contracts
+          path: result/sidechain-main-cli.zip
+
