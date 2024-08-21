@@ -5,13 +5,13 @@ on:
     inputs:
       partner_chains_smart_contracts_sha:
         description: "partner-chains-smart-contracts commit SHA or branch to build from"
+      partner-chains-smart-contracts-tag:
+        description: "partner-chains-smart-contract release tag to append to artifact name (optional)"
+        required: false
       partner_chains_sha:
         description: "partner-chains commit SHA or branch to build from"
       partner-chains-tag:
         description: "partner-chains release tag to append to artifact name (optional)"
-        required: false
-      partner-chains-smart-contracts-tag:
-        description: "partner-chains-smart-contract release tag to append to artifact name (optional)"
         required: false
 
 jobs:
