@@ -155,6 +155,7 @@ jobs:
         run: |
           mkdir -p partner-chains-smart-contracts-artifact
           cp result/* partner-chains-smart-contracts-artifact/
+          ls -la partner-chains-smart-contracts-artifact/
           mv partner-chains-smart-contracts-artifact/sidechain-cli partner-chains-smart-contracts-artifact/sidechain-main-cli
           mv sidechain-main-cli sidechain-main-cli
 
