@@ -1,4 +1,4 @@
-name: "nix ci"
+name: "Nix Devshells CI"
 on:
   pull_request:
   push:
