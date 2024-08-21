@@ -70,6 +70,7 @@ sidechain-domain = { workspace = true, features = ["serde"] }
 chain-params = { workspace = true, features = ["serde"] }
 sidechain-slots = { workspace = true }
 session-manager = { workspace = true }
+sp-native-token-management = { workspace = true, features = ["serde"] }
 
 [dev-dependencies]
 sp-io = { workspace = true }
@@ -140,6 +141,7 @@ std = [
 	"sidechain-domain/std",
 	"sp-inherents/std",
 	"chain-params/std",
+	"sp-native-token-management/std"
 ]
 
 runtime-benchmarks = [

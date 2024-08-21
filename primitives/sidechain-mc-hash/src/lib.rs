@@ -3,9 +3,13 @@ use main_chain_follower_api::{
 	block::MainchainBlock, common::Timestamp as McTimestamp, BlockDataSource, DataSourceError,
 };
 use sidechain_domain::{byte_string::ByteString, McBlockHash, McBlockNumber, McEpochNumber};
+use sp_blockchain::HeaderBackend;
 use sp_consensus_slots::{Slot, SlotDuration};
 use sp_inherents::{InherentData, InherentDataProvider, InherentDigest, InherentIdentifier};
-use sp_runtime::{traits::Header as HeaderT, DigestItem};
+use sp_runtime::{
+	traits::{Block as BlockT, Header as HeaderT, Zero},
+	DigestItem,
+};
 use sp_timestamp::Timestamp;
 use std::{error::Error, ops::Deref};
 
@@ -13,7 +17,7 @@ use std::{error::Error, ops::Deref};
 mod test;
 
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"scmchash";
-const MC_HASH_DIGEST_ID: [u8; 4] = *b"mcsh";
+pub const MC_HASH_DIGEST_ID: [u8; 4] = *b"mcsh";
 
 #[derive(Debug)]
 pub struct McHashInherentDataProvider {
@@ -119,6 +123,10 @@ impl McHashInherentDataProvider {
 	pub fn mc_block(&self) -> McBlockNumber {
 		self.mc_block.number
 	}
+
+	pub fn mc_hash(&self) -> McBlockHash {
+		self.mc_block.hash.clone()
+	}
 }
 
 async fn get_mc_state_reference(
@@ -199,6 +207,38 @@ impl InherentDigest for McHashInherentDigest {
 		}
 		Err("Main chain block hash missing from digest".into())
 	}
+}
+
+pub fn get_inherent_digest_value_for_block<ID: InherentDigest, Block: BlockT, C>(
+	client: &C,
+	block_hash: Block::Hash,
+) -> Result<Option<ID::Value>, Box<dyn Error + Send + Sync>>
+where
+	C: HeaderBackend<Block>,
+	Block::Hash: std::fmt::Debug,
+{
+	let header = (client.header(block_hash))
+		.map_err(|err| format!("Failed to retrieve header for hash {block_hash:?}: {err:?}"))?
+		.ok_or(format!("Header for hash {block_hash:?} does not exist"))?;
+
+	if header.number().is_zero() {
+		Ok(None)
+	} else {
+		let value = ID::value_from_digest(&header.digest().logs)
+			.map_err(|err| format!("Failed to retrieve inherent digest from header: {err:?}"))?;
+		Ok(Some(value))
+	}
+}
+
+pub fn get_mc_hash_for_block<Block: BlockT, C>(
+	client: &C,
+	block_hash: Block::Hash,
+) -> Result<Option<McBlockHash>, Box<dyn Error + Send + Sync>>
+where
+	C: HeaderBackend<Block>,
+	Block::Hash: std::fmt::Debug,
+{
+	get_inherent_digest_value_for_block::<McHashInherentDigest, Block, C>(client, block_hash)
 }
 
 #[cfg(any(feature = "mock", test))]
