@@ -201,7 +201,6 @@ mod native_token {
 			_native_token_asset_name: AssetName,
 			_illiquid_supply_address: MainchainAddress,
 		) -> Result<NativeTokenAmount> {
-			println!("Called with {after_block:?} and {to_block:?}");
 			Ok(self.transfers.get(&(after_block, to_block)).cloned().unwrap_or_default())
 		}
 	}
