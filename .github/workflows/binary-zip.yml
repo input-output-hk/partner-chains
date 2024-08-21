@@ -149,7 +149,11 @@ jobs:
           path: partner-chains-smart-contracts
 
       - name: Build
-        run: nix build ./partner-chains-smart-contracts#sidechain-release-bundle
+        run: |
+          rm -rf partner-chains-smart-contracts
+          mkdir -p partner-chains-smart-contracts
+          cd partner-chains-smart-contracts
+          nix build ./partner-chains-smart-contracts#sidechain-release-bundle
 
       - name: Rename
         run: mv result/release.zip result/sidechain-main-cli.zip
