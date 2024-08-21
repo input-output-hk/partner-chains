@@ -228,7 +228,7 @@ jobs:
           path: ./artifact
 
       - uses: geekyeggo/delete-artifact@v5
-      with:
+        with:
           name: partner-chains-smart-contracts
   
       - name: Unzip release.zip
