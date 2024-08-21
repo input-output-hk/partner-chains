@@ -64,13 +64,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}
-          path: $PARTNER_CHAINS_CLI_X86_64_LINUX
+          path: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}
 
       - name: Upload partner-chains-node-x86_64-linux
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
-          path: $PARTNER_CHAINS_NODE_X86_64_LINUX
+          path: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
 
   partner-chains-macos-x86_64:
     runs-on: macos-latest
@@ -122,13 +122,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}
-          path: $PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN
+          path: ${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}
 
       - name: Upload partner-chains-node-x86_64-apple-darwin
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}
-          path: $PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN
+          path: ${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}
 
   partner-chains-macos-arm64:
     runs-on: macos-latest
@@ -180,13 +180,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}
-          path: $PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN
+          path: ${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}
             
       - name: Upload partner-chains-node-aarch64-apple-darwin
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}
-          path: $PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN
+          path: ${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}
 
   partner-chains-smart-contracts-build:
     runs-on: [self-hosted, nixos]
