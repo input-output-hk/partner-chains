@@ -28,6 +28,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * ETCM-7811 - native token movement observability components: `sp-native-token-management` and
 `pallet-native-token-management` crates; data sources behind the `native-token` feature in
 `main-chain-follower-api` and `db-sync-follower` crates.
+* added helper functions to `SidechainParams` and all `MainChainScripts` types to read them from environment
 
 # v1.0.0rc1
 

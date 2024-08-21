@@ -85,8 +85,8 @@ sp_api::mock_impl_runtime_apis! {
 		fn get_main_chain_scripts() -> sp_session_validator_management::MainChainScripts {
 			sp_session_validator_management::MainChainScripts {
 				committee_candidate_address: MainchainAddress::default(),
-				d_parameter_policy: PolicyId::default(),
-				permissioned_candidates_policy: PolicyId::default(),
+				d_parameter_policy_id: PolicyId::default(),
+				permissioned_candidates_policy_id: PolicyId::default(),
 			}
 		}
 	}
@@ -94,9 +94,9 @@ sp_api::mock_impl_runtime_apis! {
 	impl sp_native_token_management::NativeTokenManagementApi<Block> for TestApi {
 		fn get_main_chain_scripts() -> sp_native_token_management::MainChainScripts {
 			sp_native_token_management::MainChainScripts {
-				native_token_policy: Default::default(),
+				native_token_policy_id: Default::default(),
 				native_token_asset_name: Default::default(),
-				illiquid_supply_address: Default::default(),
+				illiquid_supply_validator_address: Default::default(),
 
 			}
 		}

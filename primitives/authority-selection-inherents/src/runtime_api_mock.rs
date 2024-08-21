@@ -40,8 +40,8 @@ sp_api::mock_impl_runtime_apis! {
 		fn get_main_chain_scripts() -> MainChainScripts {
 			MainChainScripts {
 				committee_candidate_address: MainchainAddress::default(),
-				d_parameter_policy: PolicyId::default(),
-				permissioned_candidates_policy: PolicyId::default(),
+				d_parameter_policy_id: PolicyId::default(),
+				permissioned_candidates_policy_id: PolicyId::default(),
 			}
 		}
 	}

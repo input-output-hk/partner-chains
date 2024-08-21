@@ -167,8 +167,8 @@ where
 			.candidate_data_source
 			.get_ariadne_parameters(
 				epoch_number,
-				scripts.d_parameter_policy,
-				scripts.permissioned_candidates_policy,
+				scripts.d_parameter_policy_id,
+				scripts.permissioned_candidates_policy_id,
 			)
 			.await
 			.map_err(err_debug)?;

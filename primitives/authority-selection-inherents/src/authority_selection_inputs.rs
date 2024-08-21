@@ -43,15 +43,15 @@ impl AuthoritySelectionInputs {
 		let ariadne_parameters_response = candidate_data_source
 			.get_ariadne_parameters(
 				for_epoch,
-				scripts.d_parameter_policy.clone(),
-				scripts.permissioned_candidates_policy.clone(),
+				scripts.d_parameter_policy_id.clone(),
+				scripts.permissioned_candidates_policy_id.clone(),
 			)
 			.await
 			.map_err(|err| {
 				AuthoritySelectionInputsCreationError::AriadneParametersQuery(
 					for_epoch,
-					scripts.d_parameter_policy,
-					scripts.permissioned_candidates_policy,
+					scripts.d_parameter_policy_id,
+					scripts.permissioned_candidates_policy_id,
 					err,
 				)
 			})?;

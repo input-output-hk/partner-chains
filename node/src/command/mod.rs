@@ -1,4 +1,3 @@
-use crate::chain_spec::EnvVarReadError;
 use crate::{
 	benchmarking::{inherent_benchmark_data, RemarkBuilder, TransferKeepAliveBuilder},
 	cli::{Cli, Subcommand},
@@ -42,22 +41,25 @@ impl SubstrateCli for Cli {
 			"staging" => staging::staging_config(),
 			"local" => testnet::local_testnet_config(),
 			"" => template_chain_spec::chain_spec(),
-			path => chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))
-				.map_err(|err| EnvVarReadError::ParseError(err.to_string())),
+			path => match chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path)) {
+				Ok(parsed) => Ok(parsed),
+				Err(err) => {
+					return Err(format!("Parsing chain spec file failed: {}", err.to_string()))
+				},
+			},
 		};
 
 		match maybe_chain_spec {
 			Ok(chain_spec) => Ok(Box::new(chain_spec)),
-			Err(EnvVarReadError::Missing(err)) => {
-				println!("{}", MISSING_ENV_VARIABLES_HELP);
-				Err(err)
+			Err(err) => {
+				println!("{}", INVALID_ENV_VARIABLES_HELP);
+				Err(format!("Reading configuration from environment failed: {}", err.to_string()))
 			},
-			Err(EnvVarReadError::ParseError(err)) => Err(err),
 		}
 	}
 }
 
-const MISSING_ENV_VARIABLES_HELP: &str = "Unable to start the node due to missing environment variables. This issue typically occurs when the node executable is launched directly. Instead, please use the `./partner-chains-cli start-node` command, which sets up all the necessary environment variables for you. This command also displays the complete node startup command, including the required environment variables, allowing you to use it directly if needed.";
+const INVALID_ENV_VARIABLES_HELP: &str = "Unable to start the node due to missing or malformed environment variables. This issue typically occurs when the node executable is launched directly. Instead, please use the `./partner-chains-cli start-node` command, which sets up all the necessary environment variables for you. This command also displays the complete node startup command, including the required environment variables, allowing you to use it directly if needed.";
 
 /// Parse and run command line arguments
 pub fn run() -> sc_cli::Result<()> {

@@ -17,6 +17,7 @@ sp-inherents = { workspace = true }
 sp-std = { workspace = true }
 sp-runtime = { workspace = true }
 thiserror = { workspace = true, optional = true }
+envy = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
@@ -28,7 +29,8 @@ std = [
     "sp-inherents/std",
     "sp-std/std",
     "sp-runtime/std",
-    "thiserror"
+    "thiserror",
+    "envy"
 ]
 serde = [
 	"dep:serde",

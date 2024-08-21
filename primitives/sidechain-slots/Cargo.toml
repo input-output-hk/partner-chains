@@ -18,6 +18,7 @@ sp-runtime = { workspace = true }
 sp-core = { workspace = true, features = ["serde"]}
 sp-consensus-slots = { workspace = true }
 serde = { workspace = true, optional = true }
+envy = { workspace = true, optional = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
@@ -31,6 +32,7 @@ std = [
 	'sp-blockchain',
     'sp-core/std',
     'sp-consensus-slots/std',
+    'envy'
 ]
 serde = [
     "dep:serde",

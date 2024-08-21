@@ -8,6 +8,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 async-trait = { workspace = true, optional = true }
+envy = { workspace = true, optional = true }
 main-chain-follower-api = { workspace = true, optional = true, features = ["native-token"] }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
@@ -36,7 +37,8 @@ std = [
     "sp-blockchain",
     "sp-inherents/std",
     "sp-runtime/std",
-    "thiserror"
+    "thiserror",
+    "envy"
 ]
 serde = [
 	"dep:serde",

@@ -1087,6 +1087,7 @@ name = "chain-params"
 version = "1.0.0"
 dependencies = [
  "clap",
+ "envy",
  "hex-literal",
  "parity-scale-codec",
  "plutus",
@@ -2259,6 +2260,15 @@ name = "environmental"
 version = "1.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e48c92028aaa870e83d51c64e5d4e0b6981b360c522198c23959f219a4e1b15b"
+
+[[package]]
+name = "envy"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f47e0157f2cb54f5ae1bd371b30a2ae4311e1c028f575cd4e81de7353215965"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "epoch-derivation"
@@ -6119,6 +6129,7 @@ dependencies = [
  "cli-commands",
  "db-sync-follower",
  "derive-new",
+ "envy",
  "epoch-derivation",
  "frame-benchmarking",
  "frame-benchmarking-cli",
@@ -9269,6 +9280,7 @@ dependencies = [
 name = "sidechain-slots"
 version = "0.1.0"
 dependencies = [
+ "envy",
  "parity-scale-codec",
  "proptest",
  "scale-info",
@@ -9821,6 +9833,7 @@ name = "sp-native-token-management"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "envy",
  "main-chain-follower-api",
  "parity-scale-codec",
  "scale-info",
@@ -9953,6 +9966,7 @@ dependencies = [
 name = "sp-session-validator-management"
 version = "0.1.0"
 dependencies = [
+ "envy",
  "epoch-derivation",
  "parity-scale-codec",
  "scale-info",
