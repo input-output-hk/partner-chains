@@ -243,5 +243,5 @@ jobs:
       - name: Upload Renamed Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: $SIDECHAIN_MAIN_CLI
+          name: ${{ env.SIDECHAIN_MAIN_CLI }}
           path: artifact/unzipped/
