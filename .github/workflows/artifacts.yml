@@ -153,6 +153,7 @@ jobs:
 
       - name: Prepare Artifact
         run: |
+          rm -rf partner-chains-smart-contracts-artifact
           mkdir -p partner-chains-smart-contracts-artifact
           cp result/* partner-chains-smart-contracts-artifact/
           ls -la partner-chains-smart-contracts-artifact/
