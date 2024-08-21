@@ -43,13 +43,17 @@ jobs:
           cp target/x86_64-unknown-linux-gnu/release/partner-chains-cli partner-chains-cli-x86_64-linux
           chmod +x partner-chains-cli-x86_64-linux
 
-      - name: Upload Artifacts
+      - name: Upload partner-chains-cli-x86_64-linux
         uses: actions/upload-artifact@v4
         with:
-          name: compiled-binaries-x86_64-linux
-          path: |
-            partner-chains-node-x86_64-linux
-            partner-chains-cli-x86_64-linux
+          name: partner-chains-cli-x86_64-linux
+          path: partner-chains-cli-x86_64-linux
+
+      - name: Upload partner-chains-node-x86_64-linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-chains-node-x86_64-linux
+          path: partner-chains-node-x86_64-linux
 
   partner-chains-macos-x86_64:
     runs-on: macos-latest
@@ -86,13 +90,17 @@ jobs:
           cp target/x86_64-apple-darwin/release/partner-chains-cli partner-chains-cli-x86_64-apple-darwin
           chmod +x partner-chains-cli-x86_64-apple-darwin
 
-      - name: Upload Artifacts
+      - name: Upload partner-chains-cli-x86_64-apple-darwin
         uses: actions/upload-artifact@v4
         with:
-          name: compiled-binaries-x86_64-apple-darwin
-          path: |
-            partner-chains-node-x86_64-apple-darwin
-            partner-chains-cli-x86_64-apple-darwin
+          name: partner-chains-cli-x86_64-apple-darwin
+          path: partner-chains-cli-x86_64-apple-darwin
+
+      - name: Upload partner-chains-node-x86_64-apple-darwin
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-chains-node-x86_64-apple-darwin
+          path: partner-chains-node-x86_64-apple-darwin
 
   partner-chains-macos-arm64:
     runs-on: macos-latest
@@ -129,13 +137,17 @@ jobs:
           cp target/aarch64-apple-darwin/release/partner-chains-cli partner-chains-cli-aarch64-apple-darwin
           chmod +x partner-chains-cli-aarch64-apple-darwin
 
-      - name: Upload Artifacts
+      - name: Upload partner-chains-cli-aarch64-apple-darwin
         uses: actions/upload-artifact@v4
         with:
-          name: compiled-binaries-aarch64-apple-darwin
-          path: |
-            partner-chains-node-aarch64-apple-darwin
-            partner-chains-cli-aarch64-apple-darwin
+          name: partner-chains-cli-aarch64-apple-darwin
+          path: partner-chains-cli-aarch64-apple-darwin
+            
+      - name: Upload partner-chains-node-aarch64-apple-darwin
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-chains-node-aarch64-apple-darwin
+          path: partner-chains-node-aarch64-apple-darwin
 
   partner-chains-smart-contracts-build:
     runs-on: [self-hosted, nixos]
