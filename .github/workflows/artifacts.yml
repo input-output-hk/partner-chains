@@ -34,13 +34,6 @@ jobs:
         with:
           ref: ${{ github.event.inputs.partner_chains_sha }}
 
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          default: true
-          profile: minimal
-
       - name: Install protoc
         run: sudo apt-get install -y protobuf-compiler
 
@@ -95,13 +88,6 @@ jobs:
           unzip protoc-21.3-osx-x86_64.zip -d $HOME/protoc
           sudo mv $HOME/protoc/bin/protoc /usr/local/bin/protoc
 
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          default: true
-          profile: minimal
-
       - name: Build partner-chains-node
         run: |
           rustup target add x86_64-apple-darwin
@@ -152,13 +138,6 @@ jobs:
           curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v21.3/protoc-21.3-osx-aarch_64.zip
           unzip protoc-21.3-osx-aarch_64.zip -d $HOME/protoc
           sudo mv $HOME/protoc/bin/protoc /usr/local/bin/protoc
-
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          default: true
-          profile: minimal
 
       - name: Build partner-chains-node
         run: |
