@@ -16,7 +16,7 @@ pub struct NativeTokenManagementDataSourceImpl {
 
 observed_async_trait!(
 impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
-	async fn get_token_transfer_events(
+	async fn get_total_native_token_transfer(
 		&self,
 		after_block: Option<McBlockHash>,
 		to_block: McBlockHash,

@@ -38,7 +38,7 @@ async fn defaults_to_zero_when_there_are_no_transfers(pool: PgPool) {
 	let after_block = None;
 	let to_block = genesis_hash();
 	let result = source
-		.get_token_transfer_events(
+		.get_total_native_token_transfer(
 			after_block,
 			to_block,
 			native_token_policy_id(),
@@ -57,7 +57,7 @@ async fn gets_sum_of_all_transfers_when_queried_up_to_latest_block(pool: PgPool)
 	let after_block = None;
 	let to_block = block_hash(5);
 	let result = source
-		.get_token_transfer_events(
+		.get_total_native_token_transfer(
 			after_block,
 			to_block,
 			native_token_policy_id(),
@@ -76,7 +76,7 @@ async fn gets_sum_of_transfers_in_range(pool: PgPool) {
 	let after_block = Some(block_hash(1));
 	let to_block = block_hash(5);
 	let result = source
-		.get_token_transfer_events(
+		.get_total_native_token_transfer(
 			after_block,
 			to_block,
 			native_token_policy_id(),

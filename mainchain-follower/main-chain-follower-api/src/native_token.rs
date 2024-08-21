@@ -5,7 +5,7 @@ use sidechain_domain::*;
 #[async_trait]
 pub trait NativeTokenManagementDataSource {
 	/// Retrieves total of native token transfers into the illiquid supply in the range (after_block, to_block]
-	async fn get_token_transfer_events(
+	async fn get_total_native_token_transfer(
 		&self,
 		after_block: Option<McBlockHash>,
 		to_block: McBlockHash,
