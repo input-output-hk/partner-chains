@@ -155,7 +155,7 @@ jobs:
         run: |
           rm -rf partner-chains-smart-contracts-artifact
           mkdir -p partner-chains-smart-contracts-artifact
-          unzip result/release.zip -d partner-chains-smart-contracts-artifact/
+          nix-shell -p unzip --run "unzip result/release.zip -d partner-chains-smart-contracts-artifact/"
           ls -la partner-chains-smart-contracts-artifact/
           mv partner-chains-smart-contracts-artifact/sidechain-cli partner-chains-smart-contracts-artifact/sidechain-main-cli
           mv partner-chains-smart-contracts-artifact partner-chains-smart-contracts-artifact-renamed
