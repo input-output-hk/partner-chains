@@ -94,14 +94,14 @@ jobs:
           path: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
 
       - name: Upload artifact to release
-        if: ${{ github.event.inputs.create_draft_release_page == 'true' && env.release_id != '' }}
+        if: ${{ github.event.inputs.create_draft_release_page == 'true' && needs.create-release.outputs.release_id != '' }}
         run: |
           for artifact in ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }} ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}; do
             curl -s -X POST \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Content-Type: application/octet-stream" \
               --data-binary @"$artifact" \
-              "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ env.release_id }}/assets?name=$(basename $artifact)"
+              "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ needs.create-release.outputs.release_id }}/assets?name=$(basename $artifact)"
           done
 
   partner-chains-macos-x86_64:
@@ -152,14 +152,14 @@ jobs:
           path: ${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}
 
       - name: Upload artifact to release
-        if: ${{ github.event.inputs.create_draft_release_page == 'true' && env.release_id != '' }}
+        if: ${{ github.event.inputs.create_draft_release_page == 'true' && needs.create-release.outputs.release_id != '' }}
         run: |
           for artifact in ${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }} ${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}; do
             curl -s -X POST \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Content-Type: application/octet-stream" \
               --data-binary @"$artifact" \
-              "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ env.release_id }}/assets?name=$(basename $artifact)"
+              "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ needs.create-release.outputs.release_id }}/assets?name=$(basename $artifact)"
           done
 
   partner-chains-macos-arm64:
@@ -210,12 +210,12 @@ jobs:
           path: ${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}
 
       - name: Upload artifact to release
-        if: ${{ github.event.inputs.create_draft_release_page == 'true' && env.release_id != '' }}
+        if: ${{ github.event.inputs.create_draft_release_page == 'true' && needs.create-release.outputs.release_id != '' }}
         run: |
           for artifact in ${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }} ${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}; do
             curl -s -X POST \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Content-Type: application/octet-stream" \
               --data-binary @"$artifact" \
-              "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ env.release_id }}/assets?name=$(basename $artifact)"
+              "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ needs.create-release.outputs.release_id }}/assets?name=$(basename $artifact)"
           done
