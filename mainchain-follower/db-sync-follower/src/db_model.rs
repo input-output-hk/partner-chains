@@ -82,6 +82,12 @@ impl Asset {
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 pub(crate) struct AssetName(pub Vec<u8>);
 
+impl From<sidechain_domain::AssetName> for AssetName {
+	fn from(name: sidechain_domain::AssetName) -> Self {
+		Self(name.0.to_vec())
+	}
+}
+
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 pub(crate) struct DistributedSetData {
 	pub utxo_id_tx_hash: [u8; 32],
@@ -198,6 +204,12 @@ pub(crate) struct MintAction {
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 pub(crate) struct PolicyId(pub Vec<u8>);
 
+impl From<sidechain_domain::PolicyId> for PolicyId {
+	fn from(id: sidechain_domain::PolicyId) -> Self {
+		Self(id.0.to_vec())
+	}
+}
+
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 pub(crate) struct StakePoolEntry {
 	pub pool_hash: [u8; 28],
@@ -256,6 +268,28 @@ impl<'r> Decode<'r, Postgres> for StakeDelegation {
 	fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
 		let decoded = <sqlx::types::BigDecimal as Decode<Postgres>>::decode(value)?;
 		let i = decoded.to_u64().ok_or("StakeDelegation is always a u64".to_string())?;
+		Ok(Self(i))
+	}
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct NativeTokenAmount(pub u128);
+impl From<NativeTokenAmount> for sidechain_domain::NativeTokenAmount {
+	fn from(value: NativeTokenAmount) -> Self {
+		Self(value.0)
+	}
+}
+
+impl sqlx::Type<Postgres> for NativeTokenAmount {
+	fn type_info() -> <Postgres as sqlx::Database>::TypeInfo {
+		PgTypeInfo::with_name("NUMERIC")
+	}
+}
+
+impl<'r> Decode<'r, Postgres> for NativeTokenAmount {
+	fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
+		let decoded = <sqlx::types::BigDecimal as Decode<Postgres>>::decode(value)?;
+		let i = decoded.to_u128().ok_or("NativeTokenQuantity is always a u128".to_string())?;
 		Ok(Self(i))
 	}
 }
@@ -352,7 +386,7 @@ LIMIT 1",
 }
 
 /// Query to get the block by its hash
-#[cfg(feature = "block-source")]
+#[cfg(any(feature = "block-source", feature = "native-token"))]
 pub(crate) async fn get_block_by_hash(
 	pool: &Pool<Postgres>,
 	hash: McBlockHash,
@@ -526,4 +560,36 @@ pub(crate) async fn index_exists(pool: &Pool<Postgres>, index_name: &str) -> boo
 		.await
 		.map(|rows| rows.len() == 1)
 		.unwrap()
+}
+
+#[cfg(feature = "native-token")]
+pub(crate) async fn get_total_native_tokens_transfered(
+	pool: &Pool<Postgres>,
+	after_slot: SlotNumber,
+	to_slot: SlotNumber,
+	asset: Asset,
+	illiquid_supply_address: Address,
+) -> Result<Option<NativeTokenAmount>, SqlxError> {
+	let query = sqlx::query_as::<_, (Option<NativeTokenAmount>,)>(
+		"
+SELECT
+    SUM(ma_tx_out.quantity)
+FROM tx_out
+LEFT JOIN ma_tx_out    ON ma_tx_out.tx_out_id = tx_out.id
+LEFT JOIN multi_asset  ON multi_asset.id = ma_tx_out.ident
+INNER JOIN tx          ON tx_out.tx_id = tx.id
+INNER JOIN block       ON tx.block_id = block.id
+WHERE address = $1
+AND multi_asset.policy = $2
+AND multi_asset.name = $3
+AND $4 < block.slot_no AND block.slot_no <= $5;
+    ",
+	)
+	.bind(&illiquid_supply_address.0)
+	.bind(&asset.policy_id.0)
+	.bind(&asset.asset_name.0)
+	.bind(after_slot)
+	.bind(to_slot);
+
+	Ok(query.fetch_one(pool).await?.0)
 }

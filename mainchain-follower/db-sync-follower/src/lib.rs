@@ -10,6 +10,8 @@ pub mod metrics;
 pub mod block;
 #[cfg(feature = "candidate-source")]
 pub mod candidates;
+#[cfg(feature = "native-token")]
+pub mod native_token;
 
 pub struct SqlxError(sqlx::Error);
 
