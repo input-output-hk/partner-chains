@@ -222,7 +222,7 @@
         "nixpkgs": "nixpkgs",
         "process-compose": "process-compose",
         "services-flake": "services-flake",
-        "trustless-sidechain": "trustless-sidechain"
+        "smart-contracts": "smart-contracts"
       }
     },
     "rust-analyzer-src": {
@@ -257,22 +257,7 @@
         "type": "github"
       }
     },
-    "systems": {
-      "locked": {
-        "lastModified": 1681028828,
-        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
-        "owner": "nix-systems",
-        "repo": "default",
-        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-systems",
-        "repo": "default",
-        "type": "github"
-      }
-    },
-    "trustless-sidechain": {
+    "smart-contracts": {
       "flake": false,
       "locked": {
         "lastModified": 1723670521,
@@ -286,6 +271,21 @@
         "owner": "input-output-hk",
         "ref": "v6.1.0",
         "repo": "partner-chains-smart-contracts",
+        "type": "github"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
         "type": "github"
       }
     }
