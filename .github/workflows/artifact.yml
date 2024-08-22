@@ -17,6 +17,8 @@ jobs:
   check-release:
     if: ${{ github.event.inputs.create_draft_release_page == 'true' }}
     runs-on: ubuntu-latest
+    outputs:
+      release_exists: ${{ steps.check_release.outputs.release_exists }}
     steps:
       - name: Check if release already exists
         id: check_release
@@ -26,12 +28,14 @@ jobs:
                               "https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag")
           if echo "$release_response" | grep -q '"message": "Not Found"'; then
             echo "release_exists=false" >> $GITHUB_ENV
+            echo "::set-output name=release_exists::false"
           else
             echo "release_exists=true" >> $GITHUB_ENV
+            echo "::set-output name=release_exists::true"
           fi
 
   create-release:
-    if: ${{ github.event.inputs.create_draft_release_page == 'true' && env.release_exists == 'false' }}
+    if: ${{ github.event.inputs.create_draft_release_page == 'true' && needs.check-release.outputs.release_exists == 'false' }}
     needs: check-release
     runs-on: ubuntu-latest
     steps:
@@ -50,6 +54,7 @@ jobs:
                               EOF
                             )
           echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
+          echo "::set-output name=release_id::$(echo $release_response | jq -r .id)"
 
   partner-chains-linux:
     runs-on: ubuntu-latest
