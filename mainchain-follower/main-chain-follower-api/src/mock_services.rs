@@ -180,15 +180,9 @@ mod native_token {
 	use derive_new::new;
 	use std::collections::HashMap;
 
-	#[derive(new)]
+	#[derive(new, Default)]
 	pub struct MockNativeTokenDataSource {
 		transfers: HashMap<(Option<McBlockHash>, McBlockHash), NativeTokenAmount>,
-	}
-
-	impl Default for MockNativeTokenDataSource {
-		fn default() -> Self {
-			Self { transfers: Default::default() }
-		}
 	}
 
 	#[async_trait]
