@@ -28,24 +28,15 @@ impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
 			return Ok(NativeTokenAmount(0).into());
 		}
 
-		let after_slot = match after_block {
-			None => SlotNumber(0),
-			Some(after_block) => {
-				crate::db_model::get_block_by_hash(&self.pool, after_block)
-					.await?
-					.expect("Parent MC hash is valid")
-					.slot_no
-			},
-		};
-		let to_slot = crate::db_model::get_block_by_hash(&self.pool, to_block)
-			.await?
-			.expect("current MC hash is valid")
-			.slot_no;
+		let (after_slot , to_slot) = futures::join!(
+			get_after_slot(after_block, &self.pool),
+			get_to_slot(to_block, &self.pool)
+		);
 
 		let total_transfer = crate::db_model::get_total_native_tokens_transfered(
 			&self.pool,
-			after_slot,
-			to_slot,
+			after_slot?,
+			to_slot?,
 			crate::db_model::Asset {
 				policy_id: native_token_policy_id.into(),
 				asset_name: native_token_asset_name.into(),
@@ -58,3 +49,20 @@ impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
 	}
 }
 );
+
+async fn get_after_slot(after_block: Option<McBlockHash>, pool: &PgPool) -> Result<SlotNumber> {
+	match after_block {
+		None => Ok(SlotNumber(0)),
+		Some(after_block) => Ok(crate::db_model::get_block_by_hash(pool, after_block)
+			.await?
+			.expect("Parent MC hash is valid")
+			.slot_no),
+	}
+}
+
+async fn get_to_slot(to_block: McBlockHash, pool: &PgPool) -> Result<SlotNumber> {
+	Ok(crate::db_model::get_block_by_hash(pool, to_block)
+		.await?
+		.expect("current MC hash is valid")
+		.slot_no)
+}
