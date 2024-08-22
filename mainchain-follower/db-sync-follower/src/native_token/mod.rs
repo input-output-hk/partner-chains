@@ -28,15 +28,15 @@ impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
 			return Ok(NativeTokenAmount(0).into());
 		}
 
-		let (after_slot , to_slot) = futures::join!(
+		let (after_slot , to_slot) = futures::try_join!(
 			get_after_slot(after_block, &self.pool),
 			get_to_slot(to_block, &self.pool)
-		);
+		)?;
 
 		let total_transfer = crate::db_model::get_total_native_tokens_transfered(
 			&self.pool,
-			after_slot?,
-			to_slot?,
+			after_slot,
+			to_slot,
 			crate::db_model::Asset {
 				policy_id: native_token_policy_id.into(),
 				asset_name: native_token_asset_name.into(),
