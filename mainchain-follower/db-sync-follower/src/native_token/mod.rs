@@ -2,7 +2,7 @@ use crate::db_model::{Address, NativeTokenAmount, SlotNumber};
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
 use async_trait::async_trait;
-use main_chain_follower_api::{NativeTokenManagementDataSource, Result};
+use main_chain_follower_api::{DataSourceError, NativeTokenManagementDataSource, Result};
 use sidechain_domain::*;
 use sqlx::PgPool;
 
@@ -53,16 +53,20 @@ impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
 async fn get_after_slot(after_block: Option<McBlockHash>, pool: &PgPool) -> Result<SlotNumber> {
 	match after_block {
 		None => Ok(SlotNumber(0)),
-		Some(after_block) => Ok(crate::db_model::get_block_by_hash(pool, after_block)
+		Some(after_block) => Ok(crate::db_model::get_block_by_hash(pool, after_block.clone())
 			.await?
-			.expect("Parent MC hash is valid")
+			.ok_or(DataSourceError::ExpectedDataNotFound(format!(
+				"Lower bound block {after_block} not found when querying for native token transfers"
+			)))?
 			.slot_no),
 	}
 }
 
 async fn get_to_slot(to_block: McBlockHash, pool: &PgPool) -> Result<SlotNumber> {
-	Ok(crate::db_model::get_block_by_hash(pool, to_block)
+	Ok(crate::db_model::get_block_by_hash(pool, to_block.clone())
 		.await?
-		.expect("current MC hash is valid")
+		.ok_or(DataSourceError::ExpectedDataNotFound(format!(
+			"Upper bound block {to_block} not found when querying for native token transfers"
+		)))?
 		.slot_no)
 }
