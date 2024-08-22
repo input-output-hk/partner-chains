@@ -170,12 +170,44 @@ mod candidates {
 	}
 }
 
+#[cfg(feature = "native-token")]
+pub use native_token::*;
+
+#[cfg(feature = "native-token")]
+mod native_token {
+	use super::*;
+	use crate::native_token::*;
+	use derive_new::new;
+	use std::collections::HashMap;
+
+	#[derive(new, Default)]
+	pub struct MockNativeTokenDataSource {
+		transfers: HashMap<(Option<McBlockHash>, McBlockHash), NativeTokenAmount>,
+	}
+
+	#[async_trait]
+	impl NativeTokenManagementDataSource for MockNativeTokenDataSource {
+		async fn get_total_native_token_transfer(
+			&self,
+			after_block: Option<McBlockHash>,
+			to_block: McBlockHash,
+			_native_token_policy_id: PolicyId,
+			_native_token_asset_name: AssetName,
+			_illiquid_supply_address: MainchainAddress,
+		) -> Result<NativeTokenAmount> {
+			Ok(self.transfers.get(&(after_block, to_block)).cloned().unwrap_or_default())
+		}
+	}
+}
+
 #[derive(Clone)]
 pub struct TestDataSources {
 	#[cfg(feature = "block-source")]
 	pub block: Arc<dyn BlockDataSource + Send + Sync>,
 	#[cfg(feature = "candidate-source")]
 	pub candidate: Arc<dyn CandidateDataSource + Send + Sync>,
+	#[cfg(feature = "native-token")]
+	pub native_token: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 }
 
 impl Default for TestDataSources {
@@ -191,6 +223,8 @@ impl TestDataSources {
 			block: Arc::from(MockBlockDataSource::default()),
 			#[cfg(feature = "candidate-source")]
 			candidate: Arc::from(MockCandidateDataSource::default()),
+			#[cfg(feature = "native-token")]
+			native_token: Arc::from(MockNativeTokenDataSource::default()),
 		}
 	}
 

@@ -203,6 +203,14 @@ fn gen_from_hex(name: &syn::Ident, ty: &SupportedType, generics: &Generics) -> i
 				Ok(#name(value))
 			}
 		},
+		SupportedType::BoundedVec(ty) => quote! {
+			pub fn decode_hex(s: &str) -> Result<Self, &'static str> {
+				let bytes = sp_core::bytes::from_hex(s).map_err(|_| "Cannot decode bytes from hex string")?;
+				let value = <#ty>::try_from(bytes).map_err(|_| "Invalid length")?;
+				Ok(#name(value))
+			}
+
+		},
 		_ => quote! {
 			pub fn decode_hex(s: &str) -> Result<Self, &'static str> {
 				Ok(#name(sp_core::bytes::from_hex(s).map_err(|_| "Cannot decode bytes from hex string")?))
