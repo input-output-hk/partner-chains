@@ -20,12 +20,12 @@
     flake-compat = import inputs.flake-compat;
     cardanoPackages = (flake-compat { src = inputs.cardano-node; }).defaultNix.packages.${system};
     dbSyncPackages = (flake-compat { src = inputs.cardano-dbsync; }).defaultNix.packages.${system};
-    trustlessPkgs = (flake-compat { src = inputs.smart-contracts; }).defaultNix.packages.${system};
+    smartContractsPkgs = (flake-compat { src = inputs.smart-contracts; }).defaultNix.packages.${system};
     cardanoExtraPkgs = (flake-compat { src = inputs.cardano-nix; }).defaultNix.packages.${system};
 
   in {
     packages = {
-      inherit (trustlessPkgs) sidechain-main-cli;
+      inherit (smartContractsPkgs) sidechain-main-cli;
       inherit (cardanoPackages) cardano-node cardano-cli cardano-testnet;
       inherit (dbSyncPackages) "cardano-db-sync:exe:cardano-db-sync";
       kupo = cardanoExtraPkgs."kupo-${kupoVersion}";
