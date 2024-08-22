@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["DataSourceError"],"mod":["block","candidate","common","mock_services"],"type":["Result"]};
+window.SIDEBAR_ITEMS = {"enum":["DataSourceError"],"mod":["block","candidate","common","mock_services","native_token"],"type":["Result"]};

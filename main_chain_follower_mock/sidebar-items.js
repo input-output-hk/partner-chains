@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["block","candidate"]};
+window.SIDEBAR_ITEMS = {"mod":["block","candidate","native_token"]};

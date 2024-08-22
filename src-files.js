@@ -3,11 +3,11 @@ var srcIndex = new Map(JSON.parse('[\
 ["byte_string_derive",["",[],["lib.rs"]]],\
 ["chain_params",["",[],["lib.rs"]]],\
 ["cli_commands",["",[],["key_params.rs","lib.rs","output.rs","registration_signatures.rs","sidechain_main_cli_params.rs","signing.rs"]]],\
-["db_sync_follower",["",[["block",[],["mod.rs"]],["candidates",[],["cached.rs","mod.rs"]]],["data_sources.rs","db_datum.rs","db_model.rs","lib.rs","metrics.rs"]]],\
+["db_sync_follower",["",[["block",[],["mod.rs"]],["candidates",[],["cached.rs","mod.rs"]],["native_token",[],["mod.rs"]]],["data_sources.rs","db_datum.rs","db_model.rs","lib.rs","metrics.rs"]]],\
 ["epoch_derivation",["",[],["lib.rs","mainchain.rs"]]],\
-["main_chain_follower_api",["",[],["block.rs","candidate.rs","common.rs","lib.rs","mock_services.rs"]]],\
+["main_chain_follower_api",["",[],["block.rs","candidate.rs","common.rs","lib.rs","mock_services.rs","native_token.rs"]]],\
 ["main_chain_follower_cli",["",[],["main.rs"]]],\
-["main_chain_follower_mock",["",[],["block.rs","candidate.rs","lib.rs"]]],\
+["main_chain_follower_mock",["",[],["block.rs","candidate.rs","lib.rs","native_token.rs"]]],\
 ["mock_types",["",[],["lib.rs","session_keys.rs"]]],\
 ["pallet_block_rewards",["",[],["lib.rs"]]],\
 ["pallet_session_validator_management",["",[],["lib.rs","weights.rs"]]],\

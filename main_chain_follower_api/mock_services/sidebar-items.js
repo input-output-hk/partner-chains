@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["mock_stable_block"],"struct":["MockBlockDataSource","MockCandidateDataSource","TestDataSources"]};
+window.SIDEBAR_ITEMS = {"fn":["mock_stable_block"],"struct":["MockBlockDataSource","MockCandidateDataSource","MockNativeTokenDataSource","TestDataSources"]};

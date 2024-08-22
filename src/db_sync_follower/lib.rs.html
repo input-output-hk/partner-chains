@@ -58,6 +58,8 @@
 <a href="#56" id="56">56</a>
 <a href="#57" id="57">57</a>
 <a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Provides implementations of Data Sources that read from db-sync postgres
 </span><span class="kw">use </span>main_chain_follower_api::DataSourceError;
 
@@ -70,6 +72,8 @@
 </span><span class="kw">pub mod </span>block;
 <span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
 </span><span class="kw">pub mod </span>candidates;
+<span class="attr">#[cfg(feature = <span class="string">"native-token"</span>)]
+</span><span class="kw">pub mod </span>native_token;
 
 <span class="kw">pub struct </span>SqlxError(sqlx::Error);
 

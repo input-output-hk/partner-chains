@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"sidechain_runtime":[["impl VariantCount for <a class=\"enum\" href=\"sidechain_runtime/enum.RuntimeHoldReason.html\" title=\"enum sidechain_runtime::RuntimeHoldReason\">RuntimeHoldReason</a>"],["impl VariantCount for <a class=\"enum\" href=\"sidechain_runtime/enum.RuntimeFreezeReason.html\" title=\"enum sidechain_runtime::RuntimeFreezeReason\">RuntimeFreezeReason</a>"]]
+"sidechain_runtime":[["impl VariantCount for <a class=\"enum\" href=\"sidechain_runtime/enum.RuntimeFreezeReason.html\" title=\"enum sidechain_runtime::RuntimeFreezeReason\">RuntimeFreezeReason</a>"],["impl VariantCount for <a class=\"enum\" href=\"sidechain_runtime/enum.RuntimeHoldReason.html\" title=\"enum sidechain_runtime::RuntimeHoldReason\">RuntimeHoldReason</a>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
