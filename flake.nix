@@ -22,8 +22,8 @@
     process-compose.url = "github:Platonic-Systems/process-compose-flake";
     services-flake.url = "github:tgunnoe/services-flake";
 
-    # Sidechains deps
-    trustless-sidechain = {
+    # Partner Chains deps
+    smart-contracts = {
       url = "github:input-output-hk/partner-chains-smart-contracts/v6.1.0";
       flake = false;
     };

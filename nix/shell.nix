@@ -102,27 +102,13 @@
         ];
       }
       {
-        category = "Sidechains";
+        category = "Partner Chains";
         pkgs = [
           {
             name = "cardano-cli";
-            help = "CLI v9.1.0 that is used in sidechains dependency stack";
+            help = "CLI v9.1.0 that is used in partner-chains dependency stack";
             # This command has some eval because of IFD
             command = "${self'.packages.cardano-cli}/bin/cardano-cli $@";
-          }
-          {
-            name = "trustless-sidechain-cli-image:load:docker";
-            help = "Build and load the trustless sidechain cli image into docker";
-            command = ''
-              nix run ${self}#sidechain-main-cli-image.copyToDockerDaemon
-            '';
-          }
-          {
-            name = "trustless-sidechain-cli-image:load:podman";
-            help = "Build and load the trustless sidechain cli image into podman";
-            command = ''
-              nix run ${self}#sidechain-main-cli-image.copyToPodman
-            '';
           }
         ];
       }
@@ -131,7 +117,7 @@
       commands
       ++ self.lib.categorize [
         {
-          category = "Sidechains";
+          category = "Partner Chains";
           pkgs = [
             {
               name = "partnerchains-stack";
@@ -142,7 +128,7 @@
             }
             {
               name = "sidechain-main-cli";
-              help = "CLI application to execute Trustless Sidechain Cardano endpoints";
+              help = "CLI to interact with Partner Chains Smart Contracts";
               command = ''
                 ${self'.packages.sidechain-main-cli}/bin/sidechain-main-cli $@
               '';
@@ -153,26 +139,26 @@
   in {
     devshells.default = {
       inherit packages env commands;
-      name = "Sidechains Substrate Node Devshell";
+      name = "Partner Chains Substrate Node Devshell";
     };
     devshells.process-compose = {
       inherit packages env;
       commands = extraCommands;
-      name = "Sidechains Substrate Node Devshell with whole stack";
+      name = "Partner Chains Substrate Node Devshell with whole stack";
     };
-    devshells.trustless-sidechain = {
+    devshells.smart-contracts = {
       inherit packages env;
       commands = commands ++ [
         {
-          category = "Sidechains";
+          category = "Partner Chains";
           name = "sidechain-main-cli";
-          help = "CLI application to execute Trustless Sidechain Cardano endpoints";
+          help = "CLI to interact with Partner Chains Smart Contracts";
           command = ''
             ${self'.packages.sidechain-main-cli}/bin/sidechain-main-cli $@
           '';
         }
       ];
-      name = "Sidechains Substrate Node Devshell with Trustless CLI";
+      name = "Partner Chains Substrate Node Devshell with Smart Contracts CLI";
     };
   };
 }
