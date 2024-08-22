@@ -241,6 +241,7 @@ jobs:
                           "artifact-macos-x86_64/${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}" \
                           "artifact-macos-arm64/${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}" \
                           "artifact-macos-arm64/${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}"; do
+            chmod +x "$artifact"
             curl -s -X POST \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Content-Type: application/octet-stream" \
