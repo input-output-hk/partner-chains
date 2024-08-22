@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-pub use main_chain_follower_api::block::*;
 use main_chain_follower_api::native_token::*;
 use main_chain_follower_api::*;
 use sidechain_domain::*;
