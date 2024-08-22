@@ -168,38 +168,38 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}
-          path: ./linux-x86_64
-
+          path: artifact-linux/
+  
       - name: Download Linux NODE artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
-          path: ./linux-x86_64
-
+          path: artifact-linux/
+  
       - name: Download macOS x86_64 CLI artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}
-          path: ./macos-x86_64
-
+          path: artifact-macos-x86_64/
+  
       - name: Download macOS x86_64 NODE artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}
-          path: ./macos-x86_64
-
+          path: artifact-macos-x86_64/
+  
       - name: Download macOS ARM64 CLI artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}
-          path: ./macos-arm64
-
+          path: artifact-macos-arm64/
+  
       - name: Download macOS ARM64 NODE artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}
-          path: ./macos-arm64
-
+          path: artifact-macos-arm64/
+  
       - name: Check if release already exists
         id: check_release
         run: |
@@ -215,7 +215,7 @@ jobs:
             echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
             echo "::set-output name=release_id::$(echo $release_response | jq -r .id)"
           fi
-
+  
       - name: Create draft release
         id: create_release
         if: ${{ steps.check_release.outputs.release_exists == 'false' }}
@@ -226,7 +226,7 @@ jobs:
                             "https://api.github.com/repos/${{ github.repository }}/releases")
           echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
           echo "::set-output name=release_id::$(echo $release_response | jq -r .id)"
-
+  
       - name: Upload artifacts to release
         if: ${{ steps.check_release.outputs.release_exists == 'true' || steps.create_release.outputs.release_id != '' }}
         run: |
@@ -234,7 +234,7 @@ jobs:
           if [ -z "$release_id" ]; then
             release_id="${{ steps.check_release.outputs.release_id }}"
           fi
-
+  
           for artifact in "artifact-linux/${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}" \
                           "artifact-linux/${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}" \
                           "artifact-macos-x86_64/${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}" \
