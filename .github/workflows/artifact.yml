@@ -151,7 +151,7 @@ jobs:
   
   release:
     runs-on: ubuntu-latest
-    needs: partner-chains-smart-contracts-process
+    needs: [partner-chains-linux, partner-chains-macos-x86_64, partner-chains-macos-arm64]
     if: ${{ github.event.inputs.create_draft_release_page == 'true' }}
     steps:
       - name: Set filename variables
