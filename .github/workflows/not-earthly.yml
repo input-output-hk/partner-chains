@@ -23,6 +23,8 @@ jobs:
     concurrency:
       group: pr-${{ github.event.pull_request.number }}-author-${{ github.event.pull_request.user.login }}
       cancel-in-progress: true
+    env:
+      PATH: ${{ github.workspace }}/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     permissions:
       id-token: write
       contents: write
