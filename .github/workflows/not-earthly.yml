@@ -33,7 +33,7 @@ jobs:
       - name: Checkout partner-chains
         uses: actions/checkout@v4
 
-      - name: Cache Cargo packages
+      - name: Cache dependencies
         uses: actions/cache@v2
         with:
           path: |
@@ -46,11 +46,10 @@ jobs:
           
       - name: Build binary
         run: |
-          pwd
-          ls -la
+          echo "CARGO_HOME=/home/ubuntu/.cargo" >> $GITHUB_ENV
+          echo "CARGO_TARGET_DIR=/actions-runner/_work/cargo_target" >> $GITHUB_ENV
           cargo build --locked --release --target x86_64-unknown-linux-gnu  
-          ls -la 
-          ls -la target/*
+          ls -la $CARGO_TARGET_DIR/release
           
       - name: Run tests
         run: |
