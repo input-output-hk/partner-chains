@@ -46,7 +46,11 @@ jobs:
           
       - name: Build binary
         run: |
-          cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu    
+          pwd
+          ls -la
+          cargo build --locked --release --target x86_64-unknown-linux-gnu  
+          ls -la 
+          ls -la target/*
           
       - name: Run tests
         run: |
