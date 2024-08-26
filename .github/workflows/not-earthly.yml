@@ -30,13 +30,6 @@ jobs:
       - name: Checkout partner-chains
         uses: actions/checkout@v4
 
-      - name: Checkout sidechains-infra-priv
-        uses: actions/checkout@v4
-        with:
-          repository: input-output-hk/sidechains-infra-priv
-          token: ${{ secrets.ACTIONS_PAT }}
-          path: sidechains-infra-priv
-
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -50,14 +43,12 @@ jobs:
           cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
           cp target/x86_64-unknown-linux-gnu/release/partner-chains-node partner-chains-node
 
-      - name: Transform YAML to JSON and Build chain specs
+      - name: Generate Chain Specs
         run: |
-          mkdir -p configs
-          yq eval-all -i '. as $item ireduce ({}; . * $item )' sidechains-infra-priv/src/kube/substrate-poc/environments/helm/substrate-node-stack-chart/values/chains/*.yaml -o=json
-          mv sidechains-infra-priv/src/kube/*.json configs/
-          source ./configs/devnet.json
+          chmod +x ./partner-chains-node
+          source ./devnet/.envrc
           ./partner-chains-node build-spec --chain local --disable-default-bootnode --raw > devnet_chain_spec.json
-          source ./configs/staging.json
+          source ./staging/.envrc
           ./partner-chains-node build-spec --chain staging --disable-default-bootnode --raw > staging_chain_spec.json
 
       - name: Create and Configure Docker Container
