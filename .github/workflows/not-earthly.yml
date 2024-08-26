@@ -18,7 +18,7 @@ env:
 
 jobs:
   build-and-push-without-earthly:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ubuntu]
     if: github.event.action != 'closed' || github.event.pull_request.merged == true
     concurrency:
       group: pr-${{ github.event.pull_request.number }}-author-${{ github.event.pull_request.user.login }}
