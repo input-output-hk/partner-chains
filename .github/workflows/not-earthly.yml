@@ -42,14 +42,6 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y protobuf-compiler build-essential clang libclang-dev cmake libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          source $HOME/.cargo/env
-          rustup target add x86_64-unknown-linux-gnu
           
       - name: Build binary
         run: |
