@@ -1,6 +1,6 @@
 [package]
 name = "sidechain-domain"
-version = "0.0.1"
+version = "1.1.0"
 authors = [ "Nikolaos Dymitriadis <nikolaos.dymitriadis@iohk.io>" ]
 edition = "2021"
 
