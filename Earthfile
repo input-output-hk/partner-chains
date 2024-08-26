@@ -1,6 +1,7 @@
 VERSION 0.8
 ARG --global PROFILE=release
 ARG --global FEATURES
+ARG TEMP_CARGO_HOME=/tmp/cargo_home
 
 ci:
   BUILD +build
@@ -15,10 +16,9 @@ setup:
   FROM paritytech/ci-unified:bullseye-1.77.0-2024-04-10-v202406031250
   WORKDIR /build
 
-  # copy pre-existing $CARGO_HOME artifacts into the cache
-  RUN cp -rl $CARGO_HOME /tmp/cargo
-  CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN cp -rua /tmp/cargo/. $CARGO_HOME && rm -rf /tmp/cargo
+  # Redirect CARGO_HOME to a temporary directory
+  ENV CARGO_HOME=$TEMP_CARGO_HOME
+  RUN mkdir -p $CARGO_HOME
 
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
   RUN rustup show
