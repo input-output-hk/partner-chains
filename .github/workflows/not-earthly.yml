@@ -17,7 +17,7 @@ env:
   SSH_AUTH_SOCK: /tmp/ssh_agent.sock
 
 jobs:
-  build-and-push:
+  build-and-push-without-earthly:
     runs-on: ubuntu-latest
     if: github.event.action != 'closed' || github.event.pull_request.merged == true
     concurrency:
@@ -112,7 +112,7 @@ jobs:
             ./staging_chain_spec.json
 
   generate-manifest:
-    needs: build-and-push
+    needs: build-and-push-without-earthly
     if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
     runs-on: ubuntu-latest
     steps:
@@ -139,7 +139,7 @@ jobs:
 
   teardown:
     runs-on: ubuntu-latest
-    needs: [build-and-push, generate-manifest, run-e2e-tests]
+    needs: [build-and-push-without-earthly, generate-manifest, run-e2e-tests]
     if: always() && needs.generate-manifest.result == 'success'
     steps:
       - name: Checkout ArgoCD Repository
@@ -186,7 +186,7 @@ jobs:
 
   chain-specs:
     runs-on: [self-hosted, eks]
-    needs: [build-and-push]
+    needs: [build-and-push-without-earthly]
     if: github.ref_name == 'master' || inputs.upload == true
     permissions:
       id-token: write
