@@ -25,6 +25,7 @@ jobs:
       cancel-in-progress: true
     env:
       PATH: /home/ubuntu/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      CARGO_TARGET_DIR: /actions-runner/_work/cargo_target
     permissions:
       id-token: write
       contents: write
