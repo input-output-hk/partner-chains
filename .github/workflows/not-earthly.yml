@@ -40,6 +40,10 @@ jobs:
           source $HOME/.cargo/env
           rustup target add x86_64-unknown-linux-gnu
           
+      - name: Build binary
+        run: |
+          cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu    
+          
       - name: Run tests
         run: |
           cargo test --locked --release --features runtime-benchmarks
