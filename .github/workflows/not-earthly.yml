@@ -92,19 +92,19 @@ jobs:
 
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
-        if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.upload == 'true' || github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to ECR
         uses: docker/login-action@v3
-        if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.upload == 'true' || github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
         with:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
 
       - name: Push to Docker Registry
-        if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.upload == 'true' || github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
         run: |
           docker push substrate/node:${{ github.sha }}
 
