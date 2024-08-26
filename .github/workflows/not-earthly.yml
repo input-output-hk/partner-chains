@@ -32,6 +32,17 @@ jobs:
       - name: Checkout partner-chains
         uses: actions/checkout@v4
 
+      - name: Cache Cargo packages
+        uses: actions/cache@v2
+        with:
+          path: |
+            /home/ubuntu/.cargo/registry
+            /home/ubuntu/.cargo/git
+            /actions-runner/_work/cargo_target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
       - name: Install dependencies
         run: |
           sudo apt-get update
