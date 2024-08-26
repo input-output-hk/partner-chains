@@ -39,12 +39,15 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           source $HOME/.cargo/env
           rustup target add x86_64-unknown-linux-gnu
-
-      - name: Build partner-chains-node
+          
+      - name: Run tests
         run: |
-          cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
-          cp target/x86_64-unknown-linux-gnu/release/partner-chains-node partner-chains-node
+          cargo test --locked --release --features runtime-benchmarks
 
+      - name: Copy binary
+        run: |
+          cp target/x86_64-unknown-linux-gnu/release/partner-chains-node partner-chains-node
+          
       - name: Generate Chain Specs
         run: |
           chmod +x ./partner-chains-node
