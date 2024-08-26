@@ -64,6 +64,7 @@ jobs:
           cp target/x86_64-unknown-linux-gnu/release/partner-chains-node partner-chains-node
           
       - name: Generate Chain Specs
+        id: generate-chain-specs
         run: |
           chmod +x ./partner-chains-node
           source ./devnet/.envrc
@@ -75,7 +76,7 @@ jobs:
         id: create-container
         run: |
           container_id=$(docker run -d debian:bullseye-slim sleep infinity)
-          echo "container_id=$container_id" >> $GITHUB_ENV
+          echo "::set-output name=container_id::$container_id"
           docker exec $container_id useradd -m -u 1000 -U -s /bin/sh -d /substrate substrate
           docker exec $container_id mkdir -p /data /substrate/.local/share/partner-chains-node
           docker exec $container_id chown -R substrate:substrate /data /substrate
@@ -109,13 +110,13 @@ jobs:
           docker push substrate/node:${{ github.sha }}
 
       - name: Cleanup Docker Container
-        if: always()
+        if: steps.create-container.outputs.success == 'true'
         run: |
           docker rm -f ${{ env.container_id }}
 
       - name: Upload chain spec artifacts
+        if: steps.generate-chain-specs.outputs.success == 'true'
         uses: actions/upload-artifact@v4
-        if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
         with:
           name: chain-specs
           path: |
