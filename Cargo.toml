@@ -185,7 +185,7 @@ pallet-session-validator-management = { default-features = false, path = "pallet
 pallet-session-validator-management-benchmarking = { default-features = false, path = "pallets/session-validator-management/benchmarking" }
 pallet-session-validator-management-rpc = { path = "pallets/session-validator-management/rpc" }
 sp-block-rewards = { path = "primitives/block-rewards", default-features = false }
-selection = { version = "0.1.0", path = "primitives/selection", default-features = false }
+selection = { path = "primitives/selection", default-features = false }
 sidechain-domain = { path = "primitives/domain", default-features = false }
 sidechain-block-search = { path = "primitives/sidechain-block-search", default-features = false }
 main-chain-follower-api = { path = "mainchain-follower/main-chain-follower-api", default-features = false }
