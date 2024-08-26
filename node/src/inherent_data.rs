@@ -25,8 +25,6 @@ use sp_timestamp::InherentDataProvider as TimestampIDP;
 use sp_timestamp::Timestamp;
 use std::error::Error;
 use time_source::TimeSource;
-
-#[cfg(feature = "block-beneficiary")]
 use {sidechain_runtime::BeneficiaryId, sp_block_rewards::BlockBeneficiaryInherentProvider};
 
 #[derive(new)]
@@ -50,7 +48,6 @@ where
 	>,
 	T::Api: NativeTokenManagementApi<Block>,
 {
-	#[cfg(feature = "block-beneficiary")]
 	type InherentDataProviders = (
 		AuraIDP,
 		TimestampIDP,
@@ -59,8 +56,6 @@ where
 		BlockBeneficiaryInherentProvider<BeneficiaryId>,
 		NativeTokenIDP,
 	);
-	#[cfg(not(feature = "block-beneficiary"))]
-	type InherentDataProviders = (AuraIDP, TimestampIDP, McHashIDP, AriadneIDP, NativeTokenIDP);
 
 	async fn create_inherent_data_providers(
 		&self,
@@ -89,10 +84,10 @@ where
 			mc_hash.mc_epoch(),
 		)
 		.await?;
-		#[cfg(feature = "block-beneficiary")]
-		let block_beneficiary_provider = BlockBeneficiaryInherentProvider::<BeneficiaryId>::from_env(
-			"SIDECHAIN_BLOCK_BENEFICIARY",
-		)?;
+		let block_beneficiary_provider =
+			BlockBeneficiaryInherentProvider::<BeneficiaryId>::from_env(
+				"SIDECHAIN_BLOCK_BENEFICIARY",
+			)?;
 
 		let native_token = NativeTokenIDP::new(
 			client.clone(),
@@ -107,7 +102,6 @@ where
 			timestamp,
 			mc_hash,
 			ariadne_data_provider,
-			#[cfg(feature = "block-beneficiary")]
 			block_beneficiary_provider,
 			native_token,
 		))
