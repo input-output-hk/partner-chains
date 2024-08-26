@@ -27,10 +27,10 @@ jobs:
       id-token: write
       contents: write
     steps:
-      - name: Checkout main repo
+      - name: Checkout partner-chains
         uses: actions/checkout@v4
 
-      - name: Checkout config repo
+      - name: Checkout sidechains-infra-priv
         uses: actions/checkout@v4
         with:
           repository: input-output-hk/sidechains-infra-priv
