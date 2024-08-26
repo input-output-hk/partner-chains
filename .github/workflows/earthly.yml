@@ -43,6 +43,7 @@ jobs:
           EARTHLY_CI: true
         run: |
           export EARTHLY_OUTPUT=true
+          earthly --no-cache +all
           earthly -P +build --PROFILE=production --FEATURES=runtime-benchmarks
 
       - name: Generate and Extract Weights
