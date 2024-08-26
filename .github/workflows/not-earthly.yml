@@ -72,19 +72,19 @@ jobs:
 
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
-        if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci-off') && (github.ref_name == 'master' || inputs.upload == true) }}
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to ECR
         uses: docker/login-action@v3
-        if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci-off') && (github.ref_name == 'master' || inputs.upload == true) }}
         with:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
 
       - name: Push to Docker Registry
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci-off') && (github.ref_name == 'master' || inputs.upload == true) }}
         run: |
           docker push substrate/node:${{ github.sha }}
 
