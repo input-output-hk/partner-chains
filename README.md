@@ -40,3 +40,4 @@ docker pull ghcr.io/input-output-hk/partner-chains/partner-chains-node:latest
 ## How to Use
 
 Refer to the [documentation](docs/user-guides) for detailed instructions on how to use the node and CLI tools.
+.
