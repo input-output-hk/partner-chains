@@ -20,9 +20,9 @@ jobs:
   build-and-push-without-earthly:
     runs-on: ubuntu-latest
     if: github.event.action != 'closed' || github.event.pull_request.merged == true
-    concurrency:
-      group: pr-${{ github.event.pull_request.number }}-author-${{ github.event.pull_request.user.login }}
-      cancel-in-progress: true
+#    concurrency:
+#      group: ${{ github.event_name == 'pull_request' && format('pr-{0}-author-{1}', github.event.pull_request.number, github.event.pull_request.user.login) || 'no-concurrency-group' }}
+#      cancel-in-progress: true
     permissions:
       id-token: write
       contents: write
