@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["block_proposal","inherent_digest"],"trait":["CurrentSlotProvider"]};

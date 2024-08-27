@@ -29,6 +29,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["sidechain_slots",["",[],["lib.rs","runtime_api_client.rs"]]],\
 ["sp_block_rewards",["",[],["lib.rs"]]],\
 ["sp_native_token_management",["",[],["lib.rs"]]],\
+["sp_partner_chains_consensus_aura",["",[],["block_proposal.rs","inherent_digest.rs","lib.rs"]]],\
 ["sp_session_validator_management",["",[],["lib.rs"]]],\
 ["sp_session_validator_management_query",["",[["types",[],["ariadne.rs","mod.rs","registrations.rs"]]],["commands.rs","get_registrations.rs","lib.rs"]]],\
 ["sp_sidechain",["",[],["lib.rs","query.rs"]]],\
