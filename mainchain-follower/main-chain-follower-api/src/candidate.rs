@@ -11,7 +11,6 @@ pub struct RawPermissionedCandidateData {
 	pub grandpa_public_key: GrandpaPublicKey,
 }
 
-// Minotaur
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct AriadneParameters {

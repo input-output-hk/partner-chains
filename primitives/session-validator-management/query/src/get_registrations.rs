@@ -76,13 +76,13 @@ fn get_registrations_response_map(
 		let mainchain_pub_key = candidate.mainchain_pub_key().clone();
 
 		let mut registration_entries: Vec<CandidateRegistrationEntry> = candidate
-			.registrations
-			.iter()
+			.registrations.ada_registrations()
+			.into_iter()
 			.map(|registration_data| {
 				let registration_data_validation_result =
-					validate_registration_data(&mainchain_pub_key, registration_data)?;
+					validate_registration_data(&mainchain_pub_key, &registration_data.clone().into())?;
 				Ok::<CandidateRegistrationEntry, sp_api::ApiError>(CandidateRegistrationEntry::new(
-					registration_data.clone(),
+					(*registration_data).clone(),
 					mainchain_pub_key.clone(),
 					candidate.stake_delegation,
 					registration_data_validation_result,

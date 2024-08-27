@@ -451,6 +451,31 @@ impl UtxoInfo {
 	}
 }
 
+#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+pub struct EthInfo {
+	pub epoch_number: McEpochNumber,
+	pub block_number: McBlockNumber,
+	pub slot_number: McSlotNumber,
+	pub tx_index_within_block: McTxIndexInBlock,
+}
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct EthInfoOrderingKey {
+	pub block_number: McBlockNumber,
+	pub tx_index_within_block: McTxIndexInBlock,
+}
+
+impl EthInfo {
+	pub fn ordering_key(&self) -> EthInfoOrderingKey {
+		EthInfoOrderingKey {
+			block_number: self.block_number,
+			tx_index_within_block: self.tx_index_within_block,
+		}
+	}
+}
+
 #[derive(Default, Clone, PartialEq, Eq, Encode, Decode)]
 #[byte_string(debug, hex_serialize, hex_deserialize)]
 pub struct CommitteeHash(pub Vec<u8>);
@@ -460,7 +485,7 @@ pub struct CommitteeHash(pub Vec<u8>);
 /// Note: A Registration Transaction is called by a user on Cardano to register themselves as a Sidechain Authority Candidate
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
-pub struct RegistrationData {
+pub struct AdaRegistrationData {
 	/// UTXO that is an input parameter to the registration transaction
 	pub consumed_input: UtxoId,
 	pub sidechain_signature: SidechainSignature,
@@ -474,7 +499,77 @@ pub struct RegistrationData {
 	pub grandpa_pub_key: GrandpaPublicKey,
 }
 
-// Minotaur
+/// Registration Record on Ethereum
+///
+/// Note: A Registration Transaction is called by a user on Ethereum to register themselves as a Minotaur Authority Candidate
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub struct EthRegistrationData {
+	pub sidechain_signature: SidechainSignature,
+	pub mainchain_signature: MainchainSignature,
+	pub cross_chain_signature: CrossChainSignature,
+	pub sidechain_pub_key: SidechainPublicKey,
+	pub cross_chain_pub_key: CrossChainPublicKey,
+	pub tx_info: EthInfo,
+	pub aura_pub_key: AuraPublicKey,
+	pub grandpa_pub_key: GrandpaPublicKey,
+}
+
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub enum Registrations {
+	Ada(Vec<AdaRegistrationData>),
+	Eth(Vec<EthRegistrationData>),
+}
+
+impl Registrations {
+	pub fn ada_registrations(&self) -> Vec<&AdaRegistrationData> {
+		match self {
+			Registrations::Ada(registrations) => registrations.iter().collect(),
+			_ => vec![],
+		}
+	}
+}
+
+impl From<Vec<AdaRegistrationData>> for Registrations {
+	fn from(x: Vec<AdaRegistrationData>) -> Self {
+		Registrations::Ada(x)
+	}
+}
+
+impl From<Vec<EthRegistrationData>> for Registrations {
+	fn from(x: Vec<EthRegistrationData>) -> Self {
+		Registrations::Eth(x)
+	}
+}
+
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub enum RegistrationData {
+	Ada(AdaRegistrationData),
+	Eth(EthRegistrationData),
+}
+
+impl From<AdaRegistrationData> for RegistrationData {
+	fn from(x: AdaRegistrationData) -> Self {
+		RegistrationData::Ada(x.clone())
+	}
+}
+
+impl From<EthRegistrationData> for RegistrationData {
+	fn from(x: EthRegistrationData) -> Self {
+		RegistrationData::Eth(x)
+	}
+}
+
+impl RegistrationData {
+  pub fn mainchain_signature(&self) -> &MainchainSignature {
+	match self {
+	  RegistrationData::Ada(data) => &data.mainchain_signature,
+	  RegistrationData::Eth(data) => &data.mainchain_signature,
+	}
+  }
+}
 
 /// Information about an Authority Candidate's Registrations at some block.
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
@@ -482,7 +577,7 @@ pub struct RegistrationData {
 pub struct CandidateRegistrations {
 	pub mainchain_pub_key: MainchainPublicKey,
 	/// **List of Registrations** done by the **Authority Candidate**
-	pub registrations: Vec<RegistrationData>,
+	pub registrations: Registrations,
 	pub stake_delegation: Option<StakeDelegation>,
 }
 
@@ -490,7 +585,7 @@ impl CandidateRegistrations {
 	pub fn new(
 		mainchain_pub_key: MainchainPublicKey,
 		stake_delegation: Option<StakeDelegation>,
-		registrations: Vec<RegistrationData>,
+		registrations: Registrations,
 	) -> Self {
 		Self { mainchain_pub_key, registrations, stake_delegation }
 	}
@@ -499,7 +594,7 @@ impl CandidateRegistrations {
 		&self.mainchain_pub_key
 	}
 
-	pub fn registrations(&self) -> &[RegistrationData] {
+	pub fn registrations(&self) -> &Registrations {
 		&self.registrations
 	}
 }

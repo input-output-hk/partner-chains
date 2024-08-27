@@ -396,7 +396,7 @@ fn create_epoch_candidates_idp(validators: &[MockValidator]) -> Vec<CandidateReg
 			let sidechain_signature = validator.ecdsa_pair().sign(&signed_message_encoded[..]);
 			let sidechain_signature_bytes_no_recovery = sidechain_signature.0[..64].to_vec();
 
-			let registration_data = RegistrationData {
+			let registration_data = AdaRegistrationData {
 				consumed_input: signed_message.input_utxo,
 				sidechain_signature: SidechainSignature(
 					sidechain_signature_bytes_no_recovery.clone(),
@@ -413,7 +413,7 @@ fn create_epoch_candidates_idp(validators: &[MockValidator]) -> Vec<CandidateReg
 
 			CandidateRegistrations {
 				mainchain_pub_key: MainchainPublicKey(mainchain_key_pair.public().0),
-				registrations: vec![registration_data],
+				registrations: Registrations::Ada(vec![registration_data]),
 				stake_delegation: Some(StakeDelegation(validator.stake)),
 			}
 		})

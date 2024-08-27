@@ -82,23 +82,44 @@ where
 	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
 {
 	let stake_delegation = validate_stake(candidate_registrations.stake_delegation).ok()?;
-	let mainchain_pub_key = candidate_registrations.mainchain_pub_key;
+	let mainchain_pub_key = candidate_registrations.mainchain_pub_key.clone();
 
-	let (candidate_data, _) = candidate_registrations
-		.registrations
-		.into_iter()
-		.filter_map(|registration_data| {
-			match validate_registration_data(
-				&mainchain_pub_key,
-				&registration_data,
-				sidechain_params,
-			) {
-				Ok(candidate) => Some((candidate, registration_data.utxo_info)),
-				Err(_) => None,
-			}
-		})
-		// Get the latest valid registration of the authority candidate
-		.max_by_key(|(_, utxo_info)| utxo_info.ordering_key())?;
+	let registrations = candidate_registrations.registrations();
+
+	let candidate_data = match registrations {
+		Registrations::Ada(regs) => {
+			regs.into_iter()
+				.filter_map(|registration_data| {
+					match validate_registration_data(
+						&mainchain_pub_key,
+						&RegistrationData::Ada(registration_data.clone()),
+						sidechain_params,
+					) {
+						Ok(candidate) => Some((candidate, registration_data.utxo_info)),
+						Err(_) => None,
+					}
+				})
+				// Get the latest valid registration of the authority candidate
+				.max_by_key(|(_, utxo_info)| utxo_info.ordering_key())?
+				.0
+		},
+		Registrations::Eth(regs) => {
+			regs.into_iter()
+				.filter_map(|registration_data| {
+					match validate_registration_data(
+						&mainchain_pub_key,
+						&RegistrationData::Eth(registration_data.clone()),
+						sidechain_params,
+					) {
+						Ok(candidate) => Some((candidate, registration_data.tx_info)),
+						Err(_) => None,
+					}
+				})
+				// Get the latest valid registration of the authority candidate
+				.max_by_key(|(_, tx_info)| tx_info.ordering_key())?
+				.0
+		},
+	};
 
 	Some(CandidateWithStake {
 		candidate: Candidate {
@@ -114,7 +135,11 @@ where
 pub enum StakeError {
 	#[cfg_attr(feature = "std", error("Stake should be greater than 0"))]
 	InvalidStake,
-	#[cfg_attr(feature = "std", error("Stake delegation information cannot be computed yet. Registration will turn valid if stake delegation for the epoch will be greater than 0"))]
+	#[cfg_attr(
+        feature = "std",
+        error("Stake delegation information cannot be computed yet. Registration will turn valid if stake delegation for the epoch will be greater than 0"
+        )
+    )]
 	UnknownStake,
 }
 
@@ -179,39 +204,52 @@ pub fn validate_registration_data<Params: ToDatum + Clone>(
 	registration_data: &RegistrationData,
 	sidechain_params: &Params,
 ) -> Result<Candidate<ecdsa::Public, (sr25519::Public, ed25519::Public)>, RegistrationDataError> {
-	let aura_pub_key = registration_data
-		.aura_pub_key
-		.try_into_sr25519()
-		.ok_or(RegistrationDataError::InvalidAuraKey)?;
-	let grandpa_pub_key = registration_data
-		.grandpa_pub_key
-		.try_into_ed25519()
-		.ok_or(RegistrationDataError::InvalidGrandpaKey)?;
-	let sidechain_pub_key = ecdsa::Public::from(
-		<[u8; 33]>::try_from(registration_data.sidechain_pub_key.0.clone())
-			.map_err(|_| RegistrationDataError::InvalidSidechainPubKey)?,
-	);
+	match registration_data {
+		RegistrationData::Ada(registration_data) => {
+			let aura_pub_key = registration_data
+				.aura_pub_key
+				.try_into_sr25519()
+				.ok_or(RegistrationDataError::InvalidAuraKey)?;
+			let grandpa_pub_key = registration_data
+				.grandpa_pub_key
+				.try_into_ed25519()
+				.ok_or(RegistrationDataError::InvalidGrandpaKey)?;
+			let sidechain_pub_key = ecdsa::Public::from(
+				<[u8; 33]>::try_from(registration_data.sidechain_pub_key.0.clone())
+					.map_err(|_| RegistrationDataError::InvalidSidechainPubKey)?,
+			);
 
-	let signed_message = RegisterValidatorSignedMessage {
-		sidechain_params: sidechain_params.clone(),
-		sidechain_pub_key: registration_data.sidechain_pub_key.0.clone(),
-		input_utxo: registration_data.consumed_input,
-	};
+			let signed_message = RegisterValidatorSignedMessage {
+				sidechain_params: sidechain_params.clone(),
+				sidechain_pub_key: registration_data.sidechain_pub_key.0.clone(),
+				input_utxo: registration_data.consumed_input,
+			};
 
-	let signed_message_encoded = minicbor::to_vec(signed_message.to_datum())
-		.expect("`RegisterValidatorSignedMessage` should always be encodable");
+			let signed_message_encoded = minicbor::to_vec(signed_message.to_datum())
+				.expect("`RegisterValidatorSignedMessage` should always be encodable");
 
-	verify_mainchain_signature(mainchain_pub_key, registration_data, &signed_message_encoded)?;
-	verify_sidechain_signature(
-		sidechain_pub_key,
-		&registration_data.sidechain_signature,
-		&signed_message_encoded,
-	)?;
-	verify_tx_inputs(registration_data)?;
+			verify_mainchain_signature(
+				mainchain_pub_key,
+				&RegistrationData::Ada(registration_data.clone()),
+				&signed_message_encoded,
+			)?;
+			verify_sidechain_signature(
+				sidechain_pub_key,
+				&registration_data.sidechain_signature,
+				&signed_message_encoded,
+			)?;
+			verify_tx_inputs(registration_data)?;
 
-	// TODO - Stake Validation: https://input-output.atlassian.net/browse/ETCM-4082
+			// TODO - Stake Validation: https://input-output.atlassian.net/browse/ETCM-4082
 
-	Ok(Candidate { account_id: sidechain_pub_key, account_keys: (aura_pub_key, grandpa_pub_key) })
+			Ok(Candidate {
+				account_id: sidechain_pub_key,
+				account_keys: (aura_pub_key, grandpa_pub_key),
+			})
+		},
+
+		RegistrationData::Eth(registration_data) => todo!("Ethereum registration data validation"),
+	}
 }
 
 pub fn validate_stake(stake: Option<StakeDelegation>) -> Result<StakeDelegation, StakeError> {
@@ -233,7 +271,7 @@ fn verify_mainchain_signature(
 	signed_message_encoded: &[u8],
 ) -> Result<(), RegistrationDataError> {
 	let mainchain_signature: [u8; 64] = registration_data
-		.mainchain_signature
+		.mainchain_signature()
 		.0
 		.clone()
 		.try_into()
@@ -273,7 +311,7 @@ fn verify_sidechain_signature(
 	}
 }
 
-fn verify_tx_inputs(registration_data: &RegistrationData) -> Result<(), RegistrationDataError> {
+fn verify_tx_inputs(registration_data: &AdaRegistrationData) -> Result<(), RegistrationDataError> {
 	if registration_data.tx_inputs.contains(&registration_data.consumed_input) {
 		Ok(())
 	} else {
@@ -297,9 +335,10 @@ mod tests {
 	use chain_params::SidechainParams;
 	use hex_literal::hex;
 	use sp_core::Pair;
+	use RegistrationData::*;
 
 	/// Get Valid Parameters of the `is_registration_data_valid()` function
-	fn create_valid_parameters() -> (MainchainPublicKey, RegistrationData, SidechainParams) {
+	fn create_valid_parameters() -> (MainchainPublicKey, AdaRegistrationData, SidechainParams) {
 		let input_utxo = UtxoId {
 			tx_hash: McTxHash(hex!(
 				"d260a76b267e27fdf79c217ec61b776d6436dc78eefeac8f3c615486a71f38eb"
@@ -307,7 +346,7 @@ mod tests {
 			index: UtxoIndex(1),
 		};
 
-		let registration_data = RegistrationData {
+		let registration_data = AdaRegistrationData {
 			consumed_input: input_utxo,
 			sidechain_signature: SidechainSignature(
 				hex!("f31f26ea682a5721cd07cb337a3a7ca134d3909f6afcd09c74a67dda35f28aa20983e396cb444ba87d146ab3bf9ecf2c129572decfde7db9cfb2580e429d8744").to_vec()
@@ -377,7 +416,7 @@ mod tests {
 		fn create_parameters(
 			signing_sidechain_account: ecdsa::Pair,
 			sidechain_pub_key: Vec<u8>,
-		) -> (MainchainPublicKey, RegistrationData, SidechainParams) {
+		) -> (MainchainPublicKey, AdaRegistrationData, SidechainParams) {
 			let mainchain_account = ed25519::Pair::from_seed_slice(&[7u8; 32]).unwrap();
 
 			let signed_message = RegisterValidatorSignedMessage {
@@ -404,7 +443,7 @@ mod tests {
 				signing_sidechain_account.sign(&signed_message_encoded[..]).0.as_slice()[..64]
 					.to_vec();
 
-			let registration_data = RegistrationData {
+			let registration_data = AdaRegistrationData {
 				consumed_input: signed_message.input_utxo,
 				sidechain_signature: SidechainSignature(sidechain_signature),
 				mainchain_signature: MainchainSignature(mainchain_signature.0.to_vec()),
@@ -436,7 +475,7 @@ mod tests {
 				create_valid_parameters();
 			assert!(validate_registration_data(
 				&mainchain_pub_key,
-				&registration_data,
+				&registration_data.into(),
 				&sidechain_params,
 			)
 			.is_ok());
@@ -452,7 +491,7 @@ mod tests {
 			assert_eq!(
 				validate_registration_data(
 					&different_mainchain_pub_key,
-					&registration_data,
+					&registration_data.into(),
 					&sidechain_params,
 				),
 				Err(RegistrationDataError::InvalidMainchainSignature)
@@ -469,7 +508,7 @@ mod tests {
 			assert_eq!(
 				validate_registration_data(
 					&mainchain_pub_key,
-					&registration_data,
+					&registration_data.into(),
 					&sidechain_params,
 				),
 				Err(RegistrationDataError::InvalidSidechainSignature)
@@ -487,7 +526,7 @@ mod tests {
 			assert_eq!(
 				validate_registration_data(
 					&mainchain_pub_key,
-					&registration_data,
+					&registration_data.into(),
 					&sidechain_params,
 				),
 				Err(RegistrationDataError::InvalidGrandpaKey)
@@ -505,7 +544,7 @@ mod tests {
 			assert_eq!(
 				validate_registration_data(
 					&mainchain_pub_key,
-					&registration_data,
+					&registration_data.into(),
 					&sidechain_params,
 				),
 				Err(RegistrationDataError::InvalidAuraKey)
@@ -523,7 +562,7 @@ mod tests {
 			assert_ne!(different_sidechain_params, sidechain_params);
 			assert!(validate_registration_data(
 				&mainchain_pub_key,
-				&registration_data,
+				&registration_data.into(),
 				&different_sidechain_params,
 			)
 			.is_err());
@@ -537,7 +576,7 @@ mod tests {
 			assert_eq!(
 				validate_registration_data(
 					&mainchain_pub_key,
-					&registration_data,
+					&registration_data.into(),
 					&sidechain_params,
 				),
 				Err(RegistrationDataError::InvalidTxInput)
@@ -551,22 +590,22 @@ mod tests {
 		let candidate_registrations = vec![
 			CandidateRegistrations {
 				mainchain_pub_key: mc_pub_key.clone(),
-				registrations: vec![registration_data.clone()],
+				registrations: Registrations::Ada(vec![registration_data.clone()]),
 				stake_delegation: Some(StakeDelegation(0)),
 			},
 			CandidateRegistrations {
 				mainchain_pub_key: mc_pub_key.clone(),
-				registrations: vec![registration_data.clone()],
+				registrations: Registrations::Ada(vec![registration_data.clone()]),
 				stake_delegation: Some(StakeDelegation(1)),
 			},
 			CandidateRegistrations {
 				mainchain_pub_key: mc_pub_key.clone(),
-				registrations: vec![registration_data.clone()],
+				registrations: Registrations::Ada(vec![registration_data.clone()]),
 				stake_delegation: None,
 			},
 			CandidateRegistrations {
 				mainchain_pub_key: mc_pub_key,
-				registrations: vec![registration_data],
+				registrations: Registrations::Ada(vec![registration_data]),
 				stake_delegation: Some(StakeDelegation(2)),
 			},
 		];

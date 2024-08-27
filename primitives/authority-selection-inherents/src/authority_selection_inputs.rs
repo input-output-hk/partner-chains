@@ -11,8 +11,6 @@ use {
 	main_chain_follower_api::DataSourceError, sidechain_domain::McEpochNumber,
 };
 
-// Minotaur
-
 /// The part of data for selection of authorities that comes from the main chain.
 /// It is unfiltered, so the selection algorithm should filter out invalid candidates.
 #[derive(Clone, Debug, Encode, Decode, TypeInfo, PartialEq, Eq)]

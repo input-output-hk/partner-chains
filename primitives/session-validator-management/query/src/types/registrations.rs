@@ -3,9 +3,7 @@
 use authority_selection_inherents::filter_invalid_candidates::{RegistrationDataError, StakeError};
 use parity_scale_codec::Decode;
 use serde::{Deserialize, Serialize};
-use sidechain_domain::{
-	MainchainPublicKey, RegistrationData, SidechainPublicKey, StakeDelegation, UtxoInfo,
-};
+use sidechain_domain::{AdaRegistrationData, MainchainPublicKey, RegistrationData, SidechainPublicKey, StakeDelegation, UtxoInfo};
 use sp_core::{
 	bytes::to_hex,
 	crypto::{AccountId32, Ss58Codec},
@@ -49,7 +47,7 @@ pub type GetRegistrationsResponseMap = HashMap<String, Vec<CandidateRegistration
 
 impl CandidateRegistrationEntry {
 	pub fn new(
-		registration_data: RegistrationData,
+		registration_data: AdaRegistrationData,
 		mainchain_pub_key: MainchainPublicKey,
 		stake_delegation: Option<StakeDelegation>,
 		invalid_reasons: Option<RegistrationDataError>,

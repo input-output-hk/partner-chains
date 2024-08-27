@@ -20,8 +20,6 @@ use {
 /// The type of the inherent.
 pub type InherentType = AuthoritySelectionInputs;
 
-// Minotaur
-
 #[derive(Clone, Debug, Encode, Decode)]
 pub struct AriadneInherentDataProvider {
 	pub data: Option<AuthoritySelectionInputs>,

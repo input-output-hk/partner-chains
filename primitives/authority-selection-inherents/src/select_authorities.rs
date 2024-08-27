@@ -12,8 +12,6 @@ use selection::{Weight, WeightedRandomSelectionConfig};
 use sidechain_domain::{DParameter, ScEpochNumber};
 use sp_core::{ecdsa, ed25519, sr25519, Get};
 
-// Minotaur
-
 type CandidateWithWeight<A, B> = (Candidate<A, B>, Weight);
 
 /// Pseudo-random selection the authorities for the given sidechain epoch, according to the

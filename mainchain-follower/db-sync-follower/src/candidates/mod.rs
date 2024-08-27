@@ -144,7 +144,10 @@ impl CandidateDataSource for CandidatesDataSourceImpl {
 		Ok(Self::group_candidates_by_mc_pub_key(candidates).into_iter().map(|(mainchain_pub_key, candidate_registrations)| {
 			CandidateRegistrations {
 				mainchain_pub_key: mainchain_pub_key.clone(),
-				registrations: candidate_registrations.into_iter().map(Self::make_registration_data).collect(),
+				registrations: Registrations::Ada(candidate_registrations
+					.into_iter()
+					.map(Self::make_registration_data)
+					.collect()),
 				stake_delegation: Self::get_stake_delegation(&stake_map, &mainchain_pub_key),
 			}
 		}).collect())
@@ -200,8 +203,8 @@ impl CandidatesDataSourceImpl {
 		candidates.into_iter().into_group_map_by(|c| c.mainchain_pub_key.clone())
 	}
 
-	fn make_registration_data(c: RegisteredCandidate) -> RegistrationData {
-		RegistrationData {
+	fn make_registration_data(c: RegisteredCandidate) -> AdaRegistrationData {
+		AdaRegistrationData {
 			consumed_input: c.consumed_input,
 			sidechain_signature: c.sidechain_signature,
 			mainchain_signature: c.mainchain_signature,

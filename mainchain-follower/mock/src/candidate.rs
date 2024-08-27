@@ -45,7 +45,7 @@ impl From<MockRegistration> for CandidateRegistrations {
 		let mainchain_pub_key = MainchainPublicKey(mock.mainchain_pub_key.0.try_into().expect(
 			"Invalid mock configuration. 'mainchain_pub_key' public key should be 32 bytes.",
 		));
-		let registrations = vec![RegistrationData {
+		let registrations = vec![AdaRegistrationData {
 			consumed_input: mock.input_utxo,
 			sidechain_signature: SidechainSignature(mock.sidechain_signature.0.clone()),
 			mainchain_signature: MainchainSignature(mock.mainchain_signature.0),
@@ -69,7 +69,7 @@ impl From<MockRegistration> for CandidateRegistrations {
 			grandpa_pub_key: GrandpaPublicKey(mock.grandpa_pub_key.0),
 		}];
 		let stake_delegation = Some(StakeDelegation(333));
-		CandidateRegistrations { mainchain_pub_key, registrations, stake_delegation }
+		CandidateRegistrations { mainchain_pub_key, registrations: registrations.into(), stake_delegation }
 	}
 }
 
