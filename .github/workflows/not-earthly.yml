@@ -174,7 +174,7 @@ jobs:
   chain-specs:
     runs-on: [self-hosted, eks]
     needs: [build-and-push-without-earthly]
-    if: github.ref_name == 'master' || inputs.upload == true
+    if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
     permissions:
       id-token: write
       contents: write
