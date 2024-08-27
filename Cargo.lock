@@ -6062,6 +6062,7 @@ dependencies = [
  "pallet-sidechain-rpc",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
+ "partner-chains-node-commands",
  "plutus",
  "plutus-datum-derive",
  "sc-basic-authorship",
@@ -6098,6 +6099,7 @@ dependencies = [
  "sp-inherents",
  "sp-io",
  "sp-keyring",
+ "sp-native-token-management",
  "sp-runtime",
  "sp-session-validator-management",
  "sp-session-validator-management-query",
@@ -6108,6 +6110,29 @@ dependencies = [
  "substrate-prometheus-endpoint",
  "thiserror",
  "time-source",
+ "tokio",
+]
+
+[[package]]
+name = "partner-chains-node-commands"
+version = "1.0.0"
+dependencies = [
+ "authority-selection-inherents",
+ "clap",
+ "cli-commands",
+ "frame-support",
+ "main-chain-follower-api",
+ "parity-scale-codec",
+ "plutus",
+ "sc-cli",
+ "sc-service",
+ "sidechain-domain",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime",
+ "sp-session-validator-management",
+ "sp-session-validator-management-query",
+ "sp-sidechain",
  "tokio",
 ]
 
@@ -8984,6 +9009,7 @@ dependencies = [
  "async-trait",
  "main-chain-follower-api",
  "sidechain-domain",
+ "sp-blockchain",
  "sp-consensus",
  "sp-consensus-slots",
  "sp-inherents",
@@ -9043,6 +9069,7 @@ dependencies = [
  "sp-inherents",
  "sp-io",
  "sp-keyring",
+ "sp-native-token-management",
  "sp-offchain",
  "sp-partner-chains-session",
  "sp-runtime",
@@ -9592,6 +9619,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp-native-token-management"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "main-chain-follower-api",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sidechain-domain",
+ "sidechain-mc-hash",
+ "sp-api",
+ "sp-blockchain",
+ "sp-inherents",
+ "sp-runtime",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "sp-offchain"
 version = "34.0.0"
 source = "git+https://github.com/input-output-hk/polkadot-sdk.git?tag=partnerchains-stable2407#09f9af33504a159f8b7c71860032ae577e1b94ff"
@@ -9609,6 +9655,18 @@ dependencies = [
  "backtrace",
  "lazy_static",
  "regex",
+]
+
+[[package]]
+name = "sp-partner-chains-consensus-aura"
+version = "1.0.0"
+dependencies = [
+ "futures",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-consensus-slots",
+ "sp-inherents",
+ "sp-runtime",
 ]
 
 [[package]]

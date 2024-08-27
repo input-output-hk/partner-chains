@@ -1,9 +1,7 @@
-use crate::command::partner_chain_commands::{
-	AriadneParametersCmd, RegistrationStatusCmd, SidechainParamsCmd,
-};
 use clap::command;
-use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use sc_cli::RunCmd;
+use chain_params::SidechainParams;
+use partner_chains_node_commands::PartnerChainsSubcommand;
 
 #[derive(Debug, clap::Parser)]
 pub struct Cli {
@@ -20,23 +18,8 @@ pub enum Subcommand {
 	#[command(subcommand)]
 	Key(sc_cli::KeySubcommand),
 
-	/// Returns sidechain parameters
-	SidechainParams(SidechainParamsCmd),
-
-	/// Returns registration status for a given mainchain public key and epoch number.
-	/// If registration has been included in Cardano block in epoch N, then it should be returned by this command if epoch greater than N+1 is provided.
-	/// If this command won't show your registration after a few minutes after it has been included in a cardano block, you can start debugging for unsuccessful registration.
-	#[clap(
-		after_help = "Example: partner-chains-node -- registration-status --mainchain-pub-key 0x702b81ab2e86cf73a87062af1eb0da666d451976d9d91c63a119ed94e6a33dc0 --mc-epoch-number 586"
-	)]
-	RegistrationStatus(RegistrationStatusCmd),
-
-	/// Returns ariadne parameters effective at given mainchain epoch number.
-	/// Parameters are effective two epochs after the block their change is included in.
-	AriadneParameters(AriadneParametersCmd),
-
-	/// Generates registration signatures for partner chains committee candidates
-	RegistrationSignatures(RegistrationSignaturesCmd<chain_params::SidechainParams>),
+	#[clap(flatten)]
+	PartnerChains(PartnerChainsSubcommand<SidechainParams>),
 
 	/// Build a chain specification.
 	BuildSpec(sc_cli::BuildSpecCmd),

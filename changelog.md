@@ -6,6 +6,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* moved out some cli related code from `node` crate, in order to require less copy-paste in users nodes
+
 ## Removed
 
 ## Fixed
