@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["PartnerChainsSubcommand"],"fn":["run"],"struct":["AriadneParametersCmd","RegistrationStatusCmd","SidechainParamsCmd"]};

@@ -17,6 +17,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["pallet_sidechain_rpc",["",[["types",[],["mod.rs","sidechain.rs"]]],["lib.rs"]]],\
 ["partner_chains_cli",["",[["create_chain_spec",[],["mod.rs"]],["generate_keys",[],["mod.rs"]],["prepare_configuration",[],["mod.rs","prepare_cardano_params.rs","prepare_chain_params.rs","prepare_main_chain_config.rs"]],["register",[],["mod.rs","register1.rs","register2.rs","register3.rs"]],["setup_main_chain_state",[],["mod.rs"]],["start_node",[],["mod.rs"]]],["cardano_cli.rs","config.rs","io.rs","keystore.rs","main.rs","main_chain_follower.rs","permissioned_candidates.rs","sidechain_main_cli_resources.rs","smart_contracts.rs"]]],\
 ["partner_chains_node",["",[],["chain_init.rs","chain_spec.rs","inherent_data.rs","lib.rs","main_chain_follower.rs","rpc.rs","service.rs","staging.rs","template_chain_spec.rs","testnet.rs"]]],\
+["partner_chains_node_commands",["",[],["lib.rs"]]],\
 ["plutus",["",[],["cbor.rs","lib.rs"]]],\
 ["plutus_datum_derive",["",[],["lib.rs"]]],\
 ["selection",["",[],["impls.rs","lib.rs","weighted_random.rs"]]],\
