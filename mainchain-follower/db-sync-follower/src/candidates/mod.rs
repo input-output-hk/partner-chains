@@ -309,13 +309,14 @@ impl CandidatesDataSourceImpl {
 	// Datum decoders
 	fn decode_d_parameter_datum(datum: &Datum) -> Result<DParameter> {
 		let d_parameter = match datum {
-			ListDatum(items) => match items.first().zip(items.get(1)) {
-				Some((IntegerDatum(p), IntegerDatum(t))) => {
-					p.to_u16().zip(t.to_u16()).map(|(p, t)| DParameter {
+			ListDatum(items) => match items.first().zip(items.get(1)).zip(items.get(2)) {
+				Some(((IntegerDatum(p), IntegerDatum(a)), IntegerDatum(e))) => {
+					p.to_u16().zip(a.to_u16()).zip(e.to_u16()).map(|((p, a), e)| DParameter {
 						num_permissioned_candidates: p,
-						num_registered_candidates: t,
+						num_ada_candidates: a,
+						num_eth_candidates: e,
 					})
-				},
+				}
 				_ => None,
 			},
 			_ => None,

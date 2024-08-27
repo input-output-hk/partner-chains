@@ -118,18 +118,19 @@ impl From<MockPermissionedCandidate> for RawPermissionedCandidateData {
 #[derive(Deserialize, Clone, Debug)]
 pub struct MockDParam {
 	permissioned: u16,
-	registered: u16,
+	registered_ada: u16,
+	registered_eth: u16,
 }
 
 impl MockDParam {
 	pub fn info_string(&self) -> String {
-		format!("permissioned: {}, registered: {}", self.permissioned, self.registered)
+		format!("permissioned: {}, registered_ada: {}, registered_eth: {}", self.permissioned, self.registered_ada, self.registered_eth)
 	}
 }
 
 impl From<MockDParam> for DParameter {
-	fn from(MockDParam { permissioned, registered }: MockDParam) -> Self {
-		Self { num_permissioned_candidates: permissioned, num_registered_candidates: registered }
+	fn from(MockDParam { permissioned, registered_ada, registered_eth }: MockDParam) -> Self {
+		Self { num_permissioned_candidates: permissioned, num_ada_candidates: registered_ada, num_eth_candidates: registered_eth }
 	}
 }
 

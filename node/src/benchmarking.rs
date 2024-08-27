@@ -166,7 +166,8 @@ pub fn inherent_benchmark_data() -> Result<InherentData> {
 		data: Some(AuthoritySelectionInputs {
 			d_parameter: DParameter {
 				num_permissioned_candidates: 1,
-				num_registered_candidates: 0,
+				num_ada_candidates: 0,
+			    num_eth_candidates: 0,
 			},
 			permissioned_candidates,
 			registered_candidates: vec![],

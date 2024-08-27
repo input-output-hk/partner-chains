@@ -474,6 +474,8 @@ pub struct RegistrationData {
 	pub grandpa_pub_key: GrandpaPublicKey,
 }
 
+// Minotaur
+
 /// Information about an Authority Candidate's Registrations at some block.
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -563,7 +565,14 @@ impl GrandpaPublicKey {
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct DParameter {
 	pub num_permissioned_candidates: u16,
-	pub num_registered_candidates: u16,
+	pub num_ada_candidates: u16,
+	pub num_eth_candidates: u16,
+}
+
+impl DParameter {
+	pub fn num_registered_candidates(&self) -> u16 {
+		self.num_ada_candidates + self.num_eth_candidates
+	}
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo)]

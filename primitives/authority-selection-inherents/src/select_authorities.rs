@@ -12,6 +12,8 @@ use selection::{Weight, WeightedRandomSelectionConfig};
 use sidechain_domain::{DParameter, ScEpochNumber};
 use sp_core::{ecdsa, ed25519, sr25519, Get};
 
+// Minotaur
+
 type CandidateWithWeight<A, B> = (Candidate<A, B>, Weight);
 
 /// Pseudo-random selection the authorities for the given sidechain epoch, according to the
@@ -63,7 +65,7 @@ pub fn select_authorities<
 	let random_seed =
 		selection::impls::seed_from_nonce_and_sc_epoch(&input.epoch_nonce, &sidechain_epoch);
 	let committee_size =
-		input.d_parameter.num_registered_candidates + input.d_parameter.num_permissioned_candidates;
+		input.d_parameter.num_registered_candidates() + input.d_parameter.num_permissioned_candidates;
 	if let Some(validators) =
 		weighted_selection(candidates_with_weight, committee_size, random_seed)
 	{
@@ -81,7 +83,7 @@ fn trustless_candidates_with_weights<A: Clone, B: Clone>(
 	permissioned_candidates_count: usize,
 ) -> Vec<CandidateWithWeight<A, B>> {
 	let weight_factor = if permissioned_candidates_count > 0 {
-		u128::from(d_parameter.num_registered_candidates) * permissioned_candidates_count as u128
+		u128::from(d_parameter.num_registered_candidates()) * permissioned_candidates_count as u128
 	} else {
 		1 // if there are no permissioned candidates, trustless candidates should be selected using unmodified stake
 	};
@@ -97,7 +99,7 @@ fn permissioned_candidates_with_weights<A: Clone, B: Clone>(
 	valid_trustless_candidates: &[CandidateWithStake<A, B>],
 ) -> Vec<CandidateWithWeight<A, B>> {
 	let total_stake: u64 = valid_trustless_candidates.iter().map(|c| c.stake_delegation.0).sum();
-	let weight = if total_stake > 0 && d_parameter.num_registered_candidates > 0 {
+	let weight = if total_stake > 0 && d_parameter.num_registered_candidates() > 0 {
 		u128::from(d_parameter.num_permissioned_candidates) * u128::from(total_stake)
 	} else {
 		1 // if there are no trustless candidates, permissioned candidates should be selected with equal weight

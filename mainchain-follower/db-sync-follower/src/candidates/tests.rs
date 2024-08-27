@@ -68,7 +68,7 @@ async fn test_get_ariadne_parameters_returns_the_latest_value_for_the_future_epo
 		.unwrap();
 	assert_eq!(
 		result.d_parameter,
-		DParameter { num_permissioned_candidates: 1, num_registered_candidates: 3 }
+		DParameter { num_permissioned_candidates: 1, num_ada_candidates: 2, num_eth_candidates: 1 }
 	)
 }
 
@@ -90,7 +90,7 @@ async fn test_get_ariadne_parameters_returns_the_latest_candidates_if_there_were
 	assert_eq!(result.permissioned_candidates, latest_permissioned_candidates());
 	assert_eq!(
 		result.d_parameter,
-		DParameter { num_permissioned_candidates: 1, num_registered_candidates: 3 }
+		DParameter { num_permissioned_candidates: 1, num_ada_candidates: 2, num_eth_candidates: 1 }
 	)
 }
 
@@ -197,7 +197,7 @@ mod candidate_caching {
 			.unwrap();
 		assert_eq!(
 			epoch_193_ariadne_parameters.d_parameter,
-			DParameter { num_permissioned_candidates: 1, num_registered_candidates: 3 }
+			DParameter { num_permissioned_candidates: 1, num_ada_candidates: 2, num_eth_candidates: 1 }
 		);
 		// Remove all registrations to prove that one request was cached and the other not
 		sqlx::raw_sql("DELETE FROM tx WHERE block_id >= 0")
