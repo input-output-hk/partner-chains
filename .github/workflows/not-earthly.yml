@@ -76,8 +76,8 @@ jobs:
           docker exec $container_id chown -R substrate:substrate /data /substrate
           docker exec $container_id rm -rf /usr/bin/apt* /usr/bin/dpkg*
           docker exec $container_id ln -s /data /substrate/.local/share/partner-chains-node
-          docker cp ./partner-chains-node ${{ env.container_id }}:/usr/local/bin/partner-chains-node
-          docker commit --change='EXPOSE 30333 9615 9933 9944' --change='ENTRYPOINT ["/usr/local/bin/partner-chains-node"]' ${{ env.container_id }} substrate-node:${{ github.sha }}
+          docker cp ./partner-chains-node $container_id:/usr/local/bin/partner-chains-node
+          docker commit --change='EXPOSE 30333 9615 9933 9944' --change='ENTRYPOINT ["/usr/local/bin/partner-chains-node"]' $container_id substrate-node:${{ github.sha }}
 
       - name: Push to ECR
         run: |
