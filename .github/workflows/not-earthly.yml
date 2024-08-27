@@ -57,6 +57,7 @@ jobs:
       - name: Run tests
         run: |
           echo "BINARY_PATH=$PWD/target/x86_64-unknown-linux-gnu/release/partner-chains-node" >> $GITHUB_ENV
+          chmod +x target/x86_64-unknown-linux-gnu/release/partner-chains-node
           cargo test --locked --release --features runtime-benchmarks
 
       - name: Generate Chain Specs
