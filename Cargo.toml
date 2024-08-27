@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "cli/commands",
+	"cli/node-commands",
     "node",
 	"pallets/block-rewards",
 	"pallets/sidechain",
@@ -8,6 +9,7 @@ members = [
     "pallets/session-validator-management",
     "pallets/session-validator-management/benchmarking",
 	"pallets/session-validator-management/rpc",
+	"primitives/consensus/aura",
     "primitives/block-rewards",
 	"primitives/chain-params",
     "primitives/domain",
@@ -31,8 +33,8 @@ members = [
 	"primitives/session-validator-management/query",
     "primitives/session-manager",
     "primitives/sidechain",
-	"partner-chains-cli"
-]
+	"partner-chains-cli",
+    "primitives/native-token-management"]
 resolver = "2"
 
 [profile.release]
@@ -182,9 +184,12 @@ sidechain-slots = { path = "primitives/sidechain-slots", default-features = fals
 epoch-derivation = { path = "primitives/epoch-derivation", default-features = false }
 mock-types = { path = "primitives/mock-types", default-features = false }
 cli-commands = { path = "cli/commands" }
+partner-chains-node-commands = { path = "cli/node-commands"}
 time-source = { path = "utils/time-source" }
 sidechain-mc-hash = { path = "primitives/sidechain-mc-hash", default-features = false }
 authority-selection-inherents = { path = "primitives/authority-selection-inherents", default-features = false }
 session-manager = { path = "primitives/session-manager", default-features = false }
 sp-sidechain = { path = "primitives/sidechain", default-features = false }
 chain-params = { path = "primitives/chain-params", default-features = false }
+sp-native-token-management = { path = "primitives/native-token-management", default-features = false }
+sp-partner-chains-consensus-aura = { path = "primitives/consensus/aura", default-features = false }

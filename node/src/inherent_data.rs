@@ -17,6 +17,8 @@ use sp_consensus_aura::inherents::InherentDataProvider as AuraIDP;
 use sp_consensus_aura::{sr25519::AuthorityPair as AuraPair, Slot};
 use sp_core::Pair;
 use sp_inherents::CreateInherentDataProviders;
+use sp_native_token_management::NativeTokenManagementApi;
+use sp_native_token_management::NativeTokenManagementInherentDataProvider as NativeTokenIDP;
 use sp_runtime::traits::{Block as BlockT, Header, Zero};
 use sp_session_validator_management::SessionValidatorManagementApi;
 use sp_timestamp::InherentDataProvider as TimestampIDP;
@@ -38,6 +40,7 @@ pub struct ProposalCIDP<T> {
 impl<T> CreateInherentDataProviders<Block, ()> for ProposalCIDP<T>
 where
 	T: ProvideRuntimeApi<Block> + Send + Sync + 'static,
+	T: HeaderBackend<Block>,
 	T::Api: SessionValidatorManagementApi<
 		Block,
 		SessionKeys,
@@ -45,6 +48,7 @@ where
 		AuthoritySelectionInputs,
 		ScEpochNumber,
 	>,
+	T::Api: NativeTokenManagementApi<Block>,
 {
 	#[cfg(feature = "block-beneficiary")]
 	type InherentDataProviders = (
@@ -53,9 +57,10 @@ where
 		McHashIDP,
 		AriadneIDP,
 		BlockBeneficiaryInherentProvider<BeneficiaryId>,
+		NativeTokenIDP,
 	);
 	#[cfg(not(feature = "block-beneficiary"))]
-	type InherentDataProviders = (AuraIDP, TimestampIDP, McHashIDP, AriadneIDP);
+	type InherentDataProviders = (AuraIDP, TimestampIDP, McHashIDP, AriadneIDP, NativeTokenIDP);
 
 	async fn create_inherent_data_providers(
 		&self,
@@ -89,6 +94,14 @@ where
 			"SIDECHAIN_BLOCK_BENEFICIARY",
 		)?;
 
+		let native_token = NativeTokenIDP::new(
+			client.clone(),
+			data_sources.native_token.as_ref(),
+			mc_hash.mc_hash(),
+			parent_hash.clone(),
+		)
+		.await?;
+
 		Ok((
 			slot,
 			timestamp,
@@ -96,6 +109,7 @@ where
 			ariadne_data_provider,
 			#[cfg(feature = "block-beneficiary")]
 			block_beneficiary_provider,
+			native_token,
 		))
 	}
 }
@@ -124,8 +138,9 @@ where
 		AuthoritySelectionInputs,
 		ScEpochNumber,
 	>,
+	T::Api: NativeTokenManagementApi<Block>,
 {
-	type InherentDataProviders = (TimestampIDP, AriadneIDP);
+	type InherentDataProviders = (TimestampIDP, AriadneIDP, NativeTokenIDP);
 
 	async fn create_inherent_data_providers(
 		&self,
@@ -142,7 +157,7 @@ where
 			parent_header,
 			parent_slot,
 			verified_block_slot,
-			mc_hash,
+			mc_hash.clone(),
 			config.slot_duration(),
 			data_sources.block.as_ref(),
 		)
@@ -159,7 +174,15 @@ where
 		)
 		.await?;
 
-		Ok((timestamp, ariadne_data_provider))
+		let native_token = NativeTokenIDP::new(
+			client.clone(),
+			data_sources.native_token.as_ref(),
+			mc_hash,
+			parent_hash.clone(),
+		)
+		.await?;
+
+		Ok((timestamp, ariadne_data_provider, native_token))
 	}
 }
 

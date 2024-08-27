@@ -838,6 +838,16 @@ impl_runtime_apis! {
 			validate_permissioned_candidate_data::<CrossChainPublic>(candidate).err()
 		}
 	}
+
+	impl sp_native_token_management::NativeTokenManagementApi<Block> for Runtime {
+		fn get_main_chain_scripts() -> sp_native_token_management::MainChainScripts {
+			sp_native_token_management::MainChainScripts {
+				native_token_policy: Default::default(),
+				native_token_asset_name: Default::default(),
+				illiquid_supply_address: Default::default(),
+			}
+		}
+	}
 }
 
 #[cfg(test)]
