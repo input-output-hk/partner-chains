@@ -18,49 +18,47 @@ env:
 
 jobs:
   build-and-push-without-earthly:
-    runs-on: [self-hosted, ubuntu]
+    runs-on: ubuntu-latest
     if: github.event.action != 'closed' || github.event.pull_request.merged == true
     concurrency:
       group: pr-${{ github.event.pull_request.number }}-author-${{ github.event.pull_request.user.login }}
       cancel-in-progress: true
-    env:
-      PATH: /home/ubuntu/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-      CARGO_TARGET_DIR: /actions-runner/_work/cargo_target
     permissions:
       id-token: write
       contents: write
     steps:
       - name: Checkout partner-chains
         uses: actions/checkout@v4
-
-      - name: Cache dependencies
-        uses: actions/cache@v2
+        
+      - name: Acquire AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          path: |
-            /home/ubuntu/.cargo/registry
-            /home/ubuntu/.cargo/git
-            /actions-runner/_work/cargo_target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
-          
-      - name: Build binary
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ECR_REGISTRY_SECRET }}
+
+      - name: Install dependencies
         run: |
-          echo "CARGO_HOME=/home/ubuntu/.cargo" >> $GITHUB_ENV
-          echo "CARGO_TARGET_DIR=/actions-runner/_work/cargo_target" >> $GITHUB_ENV
-          cargo build --locked --release --target x86_64-unknown-linux-gnu  
-          ls -la $CARGO_TARGET_DIR/release
-          
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source $HOME/.cargo/env
+          rustup target add x86_64-unknown-linux-gnu
+
+      - name: Build partner-chains-node
+        run: |
+          cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
+          cp target/x86_64-unknown-linux-gnu/release/partner-chains-node partner-chains-node
+
       - name: Run tests
         run: |
           cargo test --locked --release --features runtime-benchmarks
 
-      - name: Copy binary
-        run: |
-          cp target/x86_64-unknown-linux-gnu/release/partner-chains-node partner-chains-node
-          
       - name: Generate Chain Specs
-        id: generate-chain-specs
         run: |
           chmod +x ./partner-chains-node
           source ./devnet/.envrc
@@ -72,47 +70,28 @@ jobs:
         id: create-container
         run: |
           container_id=$(docker run -d debian:bullseye-slim sleep infinity)
-          echo "::set-output name=container_id::$container_id"
+          echo "container_id=$container_id" >> $GITHUB_ENV
           docker exec $container_id useradd -m -u 1000 -U -s /bin/sh -d /substrate substrate
           docker exec $container_id mkdir -p /data /substrate/.local/share/partner-chains-node
           docker exec $container_id chown -R substrate:substrate /data /substrate
           docker exec $container_id rm -rf /usr/bin/apt* /usr/bin/dpkg*
           docker exec $container_id ln -s /data /substrate/.local/share/partner-chains-node
-
-      - name: Copy Binary to Docker Container
-        run: |
           docker cp ./partner-chains-node ${{ env.container_id }}:/usr/local/bin/partner-chains-node
+          docker commit --change='EXPOSE 30333 9615 9933 9944' --change='ENTRYPOINT ["/usr/local/bin/partner-chains-node"]' ${{ env.container_id }} substrate-node:${{ github.sha }}
 
-      - name: Finalize Docker Image
+      - name: Push to ECR
         run: |
-          docker commit --change='EXPOSE 30333 9615 9933 9944' --change='ENTRYPOINT ["/usr/local/bin/partner-chains-node"]' ${{ env.container_id }} substrate/node:${{ github.sha }}
-
-      - name: Acquire AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.upload == 'true' || github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to ECR
-        uses: docker/login-action@v3
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.upload == 'true' || github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
-        with:
-          registry: ${{ secrets.ECR_REGISTRY_SECRET }}
-
-      - name: Push to Docker Registry
-        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.upload == 'true' || github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
-        run: |
-          docker push substrate/node:${{ github.sha }}
+          docker tag substrate-node:${{ github.sha }} ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ github.sha }}
+          docker push ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ github.sha }}
 
       - name: Cleanup Docker Container
-        if: steps.create-container.outputs.success == 'true'
+        if: always()
         run: |
           docker rm -f ${{ env.container_id }}
 
       - name: Upload chain spec artifacts
-        if: steps.generate-chain-specs.outputs.success == 'true'
         uses: actions/upload-artifact@v4
+        if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
         with:
           name: chain-specs
           path: |
