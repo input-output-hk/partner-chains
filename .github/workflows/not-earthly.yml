@@ -49,19 +49,14 @@ jobs:
           source $HOME/.cargo/env
           rustup target add x86_64-unknown-linux-gnu
 
-      - name: Set global environment variables
-        run: |
-          echo "CARGO_TARGET_DIR=$PWD/target" >> $GITHUB_ENV
-          echo "$PWD/target/x86_64-unknown-linux-gnu/release" >> $GITHUB_PATH
-
       - name: Build partner-chains-node
         run: |
           cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
-          chmod +x $CARGO_TARGET_DIR/x86_64-unknown-linux-gnu/release/partner-chains-node
-          cp $CARGO_TARGET_DIR/x86_64-unknown-linux-gnu/release/partner-chains-node ./partner-chains-node
+          chmod +x target/x86_64-unknown-linux-gnu/release/partner-chains-node
+          cp target/x86_64-unknown-linux-gnu/release/partner-chains-node ./partner-chains-node
 
       - name: Run tests
-        run: cargo test --locked --release --features runtime-benchmarks
+        run: cargo test --locked --release --target x86_64-unknown-linux-gnu
 
       - name: Generate Chain Specs
         run: |
