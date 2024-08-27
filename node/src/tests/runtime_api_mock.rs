@@ -7,15 +7,18 @@ use sidechain_runtime::opaque::SessionKeys;
 use sidechain_runtime::CrossChainPublic;
 use sp_api::{ApiRef, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_runtime::traits::{Block as BlockT, Header, NumberFor, Zero};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT, NumberFor, Zero};
 use sp_runtime::Digest;
 use sp_sidechain::GetSidechainParams;
 use std::collections::HashMap;
 
+type Hash = <Block as BlockT>::Hash;
+type Header = <Block as BlockT>::Header;
+
 #[derive(Clone)]
 pub struct TestApi {
 	pub next_unset_epoch_number: ScEpochNumber,
-	pub headers: HashMap<<Block as BlockT>::Hash, <Block as BlockT>::Header>,
+	pub headers: HashMap<Hash, Header>,
 }
 
 impl TestApi {
@@ -24,6 +27,10 @@ impl TestApi {
 		let mut headers = HashMap::new();
 		headers.insert(header.hash(), header);
 		Self { next_unset_epoch_number, headers }
+	}
+
+	pub fn with_headers<Hs: Into<HashMap<Hash, Header>>>(self, headers: Hs) -> Self {
+		Self { headers: headers.into(), ..self }
 	}
 }
 
@@ -79,6 +86,17 @@ sp_api::mock_impl_runtime_apis! {
 				committee_candidate_address: MainchainAddress::default(),
 				d_parameter_policy: PolicyId::default(),
 				permissioned_candidates_policy: PolicyId::default(),
+			}
+		}
+	}
+
+	impl sp_native_token_management::NativeTokenManagementApi<Block> for TestApi {
+		fn get_main_chain_scripts() -> sp_native_token_management::MainChainScripts {
+			sp_native_token_management::MainChainScripts {
+				native_token_policy: Default::default(),
+				native_token_asset_name: Default::default(),
+				illiquid_supply_address: Default::default(),
+
 			}
 		}
 	}
