@@ -1019,14 +1019,6 @@
 <a href="#1017" id="1017">1017</a>
 <a href="#1018" id="1018">1018</a>
 <a href="#1019" id="1019">1019</a>
-<a href="#1020" id="1020">1020</a>
-<a href="#1021" id="1021">1021</a>
-<a href="#1022" id="1022">1022</a>
-<a href="#1023" id="1023">1023</a>
-<a href="#1024" id="1024">1024</a>
-<a href="#1025" id="1025">1025</a>
-<a href="#1026" id="1026">1026</a>
-<a href="#1027" id="1027">1027</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attr">#![recursion_limit = <span class="string">"256"</span>]
@@ -1463,16 +1455,11 @@
 
 <span class="kw">pub struct </span>LogBeneficiaries;
 <span class="kw">impl </span>sp_sidechain::OnNewEpoch <span class="kw">for </span>LogBeneficiaries {
-	<span class="attr">#[cfg(feature = <span class="string">"block-beneficiary"</span>)]
-	</span><span class="kw">fn </span>on_new_epoch(old_epoch: ScEpochNumber, _new_epoch: ScEpochNumber) -&gt; sp_weights::Weight {
+	<span class="kw">fn </span>on_new_epoch(old_epoch: ScEpochNumber, _new_epoch: ScEpochNumber) -&gt; sp_weights::Weight {
 		<span class="kw">let </span>rewards = BlockRewards::get_rewards_and_clear();
 		<span class="macro">log::info!</span>(<span class="string">"Rewards accrued in epoch {old_epoch}: {rewards:?}"</span>);
 
 		DbWeight::get().reads_writes(<span class="number">1</span>, <span class="number">1</span>)
-	}
-	<span class="attr">#[cfg(not(feature = <span class="string">"block-beneficiary"</span>))]
-	</span><span class="kw">fn </span>on_new_epoch(_old_epoch: ScEpochNumber, _new_epoch: ScEpochNumber) -&gt; sp_weights::Weight {
-		Weight::zero()
 	}
 }
 
@@ -1485,11 +1472,9 @@
 	<span class="kw">type </span>SidechainParams = chain_params::SidechainParams;
 }
 
-<span class="attr">#[cfg(feature = <span class="string">"block-beneficiary"</span>)]
-</span><span class="kw">pub type </span>BeneficiaryId = sidechain_domain::byte_string::SizedByteString&lt;<span class="number">32</span>&gt;;
+<span class="kw">pub type </span>BeneficiaryId = sidechain_domain::byte_string::SizedByteString&lt;<span class="number">32</span>&gt;;
 
-<span class="attr">#[cfg(feature = <span class="string">"block-beneficiary"</span>)]
-</span><span class="kw">impl </span>pallet_block_rewards::Config <span class="kw">for </span>Runtime {
+<span class="kw">impl </span>pallet_block_rewards::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>BeneficiaryId = BeneficiaryId;
 	<span class="kw">type </span>BlockRewardPoints = u32;
 	<span class="kw">type </span>GetBlockRewardPoints = sp_block_rewards::SimpleBlockCount;
@@ -1509,8 +1494,7 @@
 		// Sidechain pallet must come after the Aura pallet, since it gets the slot number from it
 		</span>Sidechain: pallet_sidechain,
 		SessionCommitteeManagement: pallet_session_validator_management,
-		<span class="attr">#[cfg(feature = <span class="string">"block-beneficiary"</span>)]
-		</span>BlockRewards: pallet_block_rewards,
+		BlockRewards: pallet_block_rewards,
 		<span class="comment">// The order matters!! Session pallet needs to come last for correct initialization order
 		</span>Session: pallet_partner_chains_session,
 	}

@@ -218,9 +218,6 @@
 <a href="#216" id="216">216</a>
 <a href="#217" id="217">217</a>
 <a href="#218" id="218">218</a>
-<a href="#219" id="219">219</a>
-<a href="#220" id="220">220</a>
-<a href="#221" id="221">221</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::main_chain_follower::DataSources;
 <span class="kw">use </span>authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider <span class="kw">as </span>AriadneIDP;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
@@ -231,26 +228,27 @@
 <span class="kw">use </span>sc_service::Arc;
 <span class="kw">use </span>sidechain_domain::{McBlockHash, ScEpochNumber};
 <span class="kw">use </span>sidechain_mc_hash::McHashInherentDataProvider <span class="kw">as </span>McHashIDP;
-<span class="kw">use </span>sidechain_runtime::opaque::{Block, SessionKeys};
-<span class="kw">use </span>sidechain_runtime::CrossChainPublic;
+<span class="kw">use </span>sidechain_runtime::{
+	opaque::{Block, SessionKeys},
+	BeneficiaryId, CrossChainPublic,
+};
 <span class="kw">use </span>sidechain_slots::ScSlotConfig;
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
+<span class="kw">use </span>sp_block_rewards::BlockBeneficiaryInherentProvider;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
-<span class="kw">use </span>sp_consensus_aura::inherents::InherentDataProvider <span class="kw">as </span>AuraIDP;
-<span class="kw">use </span>sp_consensus_aura::{sr25519::AuthorityPair <span class="kw">as </span>AuraPair, Slot};
+<span class="kw">use </span>sp_consensus_aura::{
+	inherents::InherentDataProvider <span class="kw">as </span>AuraIDP, sr25519::AuthorityPair <span class="kw">as </span>AuraPair, Slot,
+};
 <span class="kw">use </span>sp_core::Pair;
 <span class="kw">use </span>sp_inherents::CreateInherentDataProviders;
-<span class="kw">use </span>sp_native_token_management::NativeTokenManagementApi;
-<span class="kw">use </span>sp_native_token_management::NativeTokenManagementInherentDataProvider <span class="kw">as </span>NativeTokenIDP;
+<span class="kw">use </span>sp_native_token_management::{
+	NativeTokenManagementApi, NativeTokenManagementInherentDataProvider <span class="kw">as </span>NativeTokenIDP,
+};
 <span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, Header, Zero};
 <span class="kw">use </span>sp_session_validator_management::SessionValidatorManagementApi;
-<span class="kw">use </span>sp_timestamp::InherentDataProvider <span class="kw">as </span>TimestampIDP;
-<span class="kw">use </span>sp_timestamp::Timestamp;
+<span class="kw">use </span>sp_timestamp::{InherentDataProvider <span class="kw">as </span>TimestampIDP, Timestamp};
 <span class="kw">use </span>std::error::Error;
 <span class="kw">use </span>time_source::TimeSource;
-
-<span class="attr">#[cfg(feature = <span class="string">"block-beneficiary"</span>)]
-</span><span class="kw">use </span>{sidechain_runtime::BeneficiaryId, sp_block_rewards::BlockBeneficiaryInherentProvider};
 
 <span class="attr">#[derive(new)]
 </span><span class="kw">pub struct </span>ProposalCIDP&lt;T&gt; {
@@ -273,8 +271,7 @@
 	&gt;,
 	T::Api: NativeTokenManagementApi&lt;Block&gt;,
 {
-	<span class="attr">#[cfg(feature = <span class="string">"block-beneficiary"</span>)]
-	</span><span class="kw">type </span>InherentDataProviders = (
+	<span class="kw">type </span>InherentDataProviders = (
 		AuraIDP,
 		TimestampIDP,
 		McHashIDP,
@@ -282,8 +279,6 @@
 		BlockBeneficiaryInherentProvider&lt;BeneficiaryId&gt;,
 		NativeTokenIDP,
 	);
-	<span class="attr">#[cfg(not(feature = <span class="string">"block-beneficiary"</span>))]
-	</span><span class="kw">type </span>InherentDataProviders = (AuraIDP, TimestampIDP, McHashIDP, AriadneIDP, NativeTokenIDP);
 
 	<span class="kw">async fn </span>create_inherent_data_providers(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
@@ -312,10 +307,10 @@
 			mc_hash.mc_epoch(),
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;
-		<span class="attr">#[cfg(feature = <span class="string">"block-beneficiary"</span>)]
-		</span><span class="kw">let </span>block_beneficiary_provider = BlockBeneficiaryInherentProvider::&lt;BeneficiaryId&gt;::from_env(
-			<span class="string">"SIDECHAIN_BLOCK_BENEFICIARY"</span>,
-		)<span class="question-mark">?</span>;
+		<span class="kw">let </span>block_beneficiary_provider =
+			BlockBeneficiaryInherentProvider::&lt;BeneficiaryId&gt;::from_env(
+				<span class="string">"SIDECHAIN_BLOCK_BENEFICIARY"</span>,
+			)<span class="question-mark">?</span>;
 
 		<span class="kw">let </span>native_token = NativeTokenIDP::new(
 			client.clone(),
@@ -330,8 +325,7 @@
 			timestamp,
 			mc_hash,
 			ariadne_data_provider,
-			<span class="attr">#[cfg(feature = <span class="string">"block-beneficiary"</span>)]
-			</span>block_beneficiary_provider,
+			block_beneficiary_provider,
 			native_token,
 		))
 	}
