@@ -127,7 +127,7 @@ pub mod pallet {
 			data: &InherentData,
 		) -> Option<TokenTransferData> {
 			data.get_data::<TokenTransferData>(&INHERENT_IDENTIFIER)
-				.expect("Token transfer data not correctly encoded")
+				.expect("Token transfer data is not encoded correctly")
 		}
 	}
 
