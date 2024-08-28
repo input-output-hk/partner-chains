@@ -18,7 +18,6 @@
 //!
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::inherent::IsFatalError;
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
@@ -30,19 +29,6 @@ mod tests;
 
 #[cfg(any(test, feature = "mock"))]
 mod mock;
-
-#[derive(Encode, Debug, PartialEq)]
-pub enum InherentError {
-	TokenTransferNotHandled,
-	IncorrectTokenNumberTransfered,
-	UnexpectedTokenTransferInherent,
-}
-
-impl IsFatalError for InherentError {
-	fn is_fatal_error(&self) -> bool {
-		true
-	}
-}
 
 /// Interface for user-provided logic to handle native token transfers into the illiquid supply on the main chain.
 ///
@@ -101,12 +87,23 @@ pub mod pallet {
 		}
 
 		fn check_inherent(call: &Self::Call, data: &InherentData) -> Result<(), Self::Error> {
-			let Some(token_transfer) = Self::get_transfered_tokens_from_inherent_data(data) else {
-				return Err(InherentError::UnexpectedTokenTransferInherent);
+			let actual_transfer = match call {
+				Call::transfer_tokens { token_amount } => token_amount.clone(),
+				_ => return Ok(()),
 			};
-			let Call::transfer_tokens { token_amount } = call else { return Ok(()) };
-			if token_transfer.token_amount != *token_amount {
-				return Err(InherentError::IncorrectTokenNumberTransfered);
+
+			let expected_transfer = match Self::get_transfered_tokens_from_inherent_data(data) {
+				Some(data) => data.token_amount.clone(),
+				None => {
+					return Err(InherentError::UnexpectedTokenTransferInherent(actual_transfer))
+				},
+			};
+
+			if expected_transfer != actual_transfer {
+				return Err(InherentError::IncorrectTokenNumberTransfered(
+					expected_transfer,
+					actual_transfer,
+				));
 			}
 
 			Ok(())
@@ -118,7 +115,7 @@ pub mod pallet {
 
 		fn is_inherent_required(data: &InherentData) -> Result<Option<Self::Error>, Self::Error> {
 			Ok(Self::get_transfered_tokens_from_inherent_data(data)
-				.map(|_| InherentError::TokenTransferNotHandled))
+				.map(|data| InherentError::TokenTransferNotHandled(data.token_amount.clone())))
 		}
 	}
 

@@ -1,9 +1,10 @@
+use self::mock::NativeTokenManagement;
 use self::mock::{RuntimeOrigin, Test};
-	use self::mock::NativeTokenManagement;
 use crate::mock::mock_pallet;
 use crate::mock::new_test_ext;
 use crate::*;
 use frame_support::traits::UnfilteredDispatchable;
+use sp_native_token_management::InherentError;
 
 mod create_inherent {
 	use super::*;
@@ -52,7 +53,10 @@ mod check_inherent {
 
 			let result = NativeTokenManagement::check_inherent(&inherent, &inherent_data);
 
-			assert_eq!(result, Err(InherentError::IncorrectTokenNumberTransfered))
+			assert_eq!(
+				result,
+				Err(InherentError::IncorrectTokenNumberTransfered(1002.into(), 9999.into()))
+			)
 		})
 	}
 	#[test]
@@ -63,7 +67,7 @@ mod check_inherent {
 
 			let result = NativeTokenManagement::check_inherent(&inherent, &inherent_data);
 
-			assert_eq!(result, Err(InherentError::UnexpectedTokenTransferInherent));
+			assert_eq!(result, Err(InherentError::UnexpectedTokenTransferInherent(1002.into())));
 		})
 	}
 }
@@ -79,7 +83,7 @@ mod is_inherent_required {
 				.expect("Check should successfully run.")
 				.expect("Check should return an error object.");
 
-			assert_eq!(error, InherentError::TokenTransferNotHandled);
+			assert_eq!(error, InherentError::TokenTransferNotHandled(1001.into()));
 		})
 	}
 
