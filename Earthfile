@@ -22,11 +22,10 @@ setup:
 
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
   RUN rustup show
-  RUN cargo install --locked cargo-chef
+  RUN cargo install --locked cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
 
 source:
   FROM +setup
-  COPY --dir +vendor/vendor +vendor/.cargo .
   ARG CRATES=$(tomlq -r .workspace.members[] Cargo.toml)
   FOR crate IN $CRATES
       COPY --dir $crate $crate
@@ -34,7 +33,7 @@ source:
   COPY --dir +build-deps/target .
 
 build-deps:
-  FROM +vendor
+  FROM +fetch-deps
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo --locked chef prepare
   RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES
@@ -122,20 +121,10 @@ mock:
       && for crate in $SRCS; do if [ ! -f $crate/lib.rs ]; then touch $crate/main.rs; fi; done \
       && touch node/src/lib.rs
 
-vendor:
+fetch-deps:
   FROM +mock
-  CACHE --sharing shared --id cargo /root/.cargo
-  RUN apt-get update && apt-get install --yes patch
-  # FIXME: setting CARGO_HOME breaks `cargo vendor` https://github.com/rust-lang/cargo/issues/8120
-  RUN --ssh \
-    export OLD=$CARGO_HOME \
-    && unset CARGO_HOME \
-	&& mkdir -p .cargo \
-    && cargo vendor --locked > .cargo/config.toml \
-    && export CARGO_HOME=$OLD \
-    && unset OLD
-  SAVE ARTIFACT vendor
-  SAVE ARTIFACT .cargo
+  CACHE --sharing shared --id cargo $CARGO_HOME
+  RUN --ssh cargo fetch --locked
 
 INSTALL:
   FUNCTION
