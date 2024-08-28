@@ -102,8 +102,8 @@ impl CmdRun for SetupMainChainStateCmd {
 
 		let has_sidechain_main_cli =
 			context.file_exists(&sidechain_exec) || context.which(&sidechain_exec).is_some();
+
 		if !has_sidechain_main_cli {
-			println!("sidechain_exec: {:?}", sidechain_exec);
 			return Err(anyhow!(
 				"Partner Chains Smart Contracts executable file ({SIDECHAIN_MAIN_CLI_PATH}) is missing",
 			));
