@@ -696,6 +696,7 @@ MockIO::run_command("cardano-cli address build --payment-verification-key-file p
 	fn resource_config_content() -> serde_json::Value {
 		serde_json::json!({
 			"substrate_node_base_path": "/path/to/data",
+			"sidechain_main_cli": "./sidechain-main-cli",
 			"cardano_cli": "cardano-cli",
 			"cardano_node_socket_path": "node.socket",
 			"cardano_payment_verification_key_file": "payment.vkey"
@@ -730,7 +731,7 @@ MockIO::run_command("cardano-cli address build --payment-verification-key-file p
 			MockIO::file_read(RESOURCE_CONFIG_PATH),
 			MockIO::file_write_json(
 				RESOURCE_CONFIG_PATH,
-				serde_json::json!({"cardano_cli": "cardano-cli", "substrate_node_base_path": "/path/to/data" }),
+				serde_json::json!({"cardano_cli": "cardano-cli", "substrate_node_base_path": "/path/to/data"}),
 			),
 		]
 	}
@@ -748,7 +749,9 @@ MockIO::run_command("cardano-cli address build --payment-verification-key-file p
 				RESOURCE_CONFIG_PATH,
 				serde_json::json!({"cardano_cli": "cardano-cli", "substrate_node_base_path": "/path/to/data", "cardano_node_socket_path": "node.socket"}),
 			),
-			MockIO::print("⚙️ Set `CARDANO_NODE_SOCKET_PATH` environment variable to `node.socket`"),
+			MockIO::print(
+				"⚙️ Set `CARDANO_NODE_SOCKET_PATH` environment variable to `node.socket`",
+			),
 			MockIO::set_env_var("CARDANO_NODE_SOCKET_PATH", "node.socket"),
 		]
 	}
@@ -776,7 +779,7 @@ MockIO::run_command("cardano-cli address build --payment-verification-key-file p
 			MockIO::file_read(RESOURCE_CONFIG_PATH),
 			MockIO::file_write_json(
 				RESOURCE_CONFIG_PATH,
-				serde_json::json!({"cardano_cli": "cardano-cli", "substrate_node_base_path": "/path/to/data", "cardano_node_socket_path": "node.socket", "cardano_payment_verification_key_file": "payment.vkey"}),
+				serde_json::json!({"cardano_cli": "cardano-cli", "substrate_node_base_path": "/path/to/data", "cardano_node_socket_path": "node.socket", "cardano_payment_verification_key_file": "payment.vkey", "sidechain_main_cli": "./sidechain-main-cli"}),
 			),
 			MockIO::file_read(RESOURCE_CONFIG_PATH),
 			MockIO::prompt(
@@ -787,9 +790,11 @@ MockIO::run_command("cardano-cli address build --payment-verification-key-file p
 			MockIO::file_read(RESOURCE_CONFIG_PATH),
 			MockIO::file_write_json(
 				RESOURCE_CONFIG_PATH,
-				serde_json::json!({"cardano_cli": "cardano-cli", "substrate_node_base_path": "/path/to/data", "cardano_node_socket_path": "node.socket", "cardano_payment_verification_key_file": "payment.vkey"}),
+				serde_json::json!({"cardano_cli": "cardano-cli", "substrate_node_base_path": "/path/to/data", "cardano_node_socket_path": "node.socket", "cardano_payment_verification_key_file": "payment.vkey", "sidechain_main_cli": "./sidechain-main-cli"}),
 			),
-			MockIO::print("⚙️ Set `CARDANO_NODE_SOCKET_PATH` environment variable to `node.socket`"),
+			MockIO::print(
+				"⚙️ Set `CARDANO_NODE_SOCKET_PATH` environment variable to `node.socket`",
+			),
 			MockIO::set_env_var("CARDANO_NODE_SOCKET_PATH", "node.socket"),
 			MockIO::file_read(RESOURCE_CONFIG_PATH),
 			MockIO::prompt(
@@ -800,7 +805,7 @@ MockIO::run_command("cardano-cli address build --payment-verification-key-file p
 			MockIO::file_read(RESOURCE_CONFIG_PATH),
 			MockIO::file_write_json(
 				RESOURCE_CONFIG_PATH,
-				serde_json::json!({"cardano_cli": "cardano-cli", "substrate_node_base_path": "/path/to/data", "cardano_node_socket_path": "node.socket", "cardano_payment_verification_key_file": "payment.vkey"}),
+				serde_json::json!({"cardano_cli": "cardano-cli", "substrate_node_base_path": "/path/to/data", "cardano_node_socket_path": "node.socket", "cardano_payment_verification_key_file": "payment.vkey", "sidechain_main_cli": "./sidechain-main-cli"}),
 			),
 		]
 	}

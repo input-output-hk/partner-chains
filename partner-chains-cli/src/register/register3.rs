@@ -404,6 +404,7 @@ mod tests {
 		serde_json::json!({
 			"substrate_node_base_path": "/path/to/data",
 			"substrate_node_executable_path": "/path/to/node",
+			"sidechain_main_cli": "./sidechain-main-cli",
 			"cardano_cli": "cardano-cli",
 			"cardano_node_socket_path": "node.socket",
 			"cardano_payment_verification_key_file": "payment.vkey",

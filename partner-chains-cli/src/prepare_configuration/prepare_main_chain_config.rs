@@ -3,8 +3,7 @@ use crate::config::config_fields::{
 	INITIAL_PERMISSIONED_CANDIDATES, PERMISSIONED_CANDIDATES_POLICY_ID,
 };
 use crate::config::{
-	get_cardano_network_from_file, CardanoNetwork, SidechainParams, SIDECHAIN_MAIN_CLI_NAME,
-	SIDECHAIN_MAIN_CLI_PATH,
+	get_cardano_network_from_file, CardanoNetwork, SidechainParams, SIDECHAIN_MAIN_CLI_PATH,
 };
 use crate::io::IOContext;
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
@@ -258,7 +257,7 @@ mod tests {
 			.with_json_file(KUPO_PROTOCOL.config_file, serde_json::json!({}))
 			.with_expected_io(vec![
 				MockIO::run_command(SIDECHAIN_MAIN_CLI_VERSION_CMD, SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT),
-				MockIO::eprint(&sidechain_main_cli_version_prompt(SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT.to_string())),
+				MockIO::eprint(&sidechain_main_cli_version_prompt(SIDECHAIN_MAIN_CLI_PATH, SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT.to_string())),
 
 				MockIO::file_read(CARDANO_NETWORK.config_file),
 				MockIO::prompt_multi_option(
@@ -284,6 +283,7 @@ mod tests {
 				MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 				MockIO::run_command(
 					&addresses_cmd(
+						SIDECHAIN_MAIN_CLI_PATH.to_string(),
 						"/tmp/dummy3".to_string(),
 						test_sidechain_params(),
 						&SidechainMainCliResources::default(),
@@ -328,7 +328,7 @@ mod tests {
 			.with_json_file(KUPO_PROTOCOL.config_file, serde_json::json!({}))
 			.with_expected_io(vec![
 				MockIO::run_command(SIDECHAIN_MAIN_CLI_VERSION_CMD, SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT),
-				MockIO::eprint(&sidechain_main_cli_version_prompt(SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT.to_string())),
+				MockIO::eprint(&sidechain_main_cli_version_prompt(SIDECHAIN_MAIN_CLI_PATH, SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT.to_string())),
 				MockIO::file_read(CARDANO_NETWORK.config_file),
 				MockIO::prompt_multi_option(
 					CHOOSE_CARDANO_NETWORK,
@@ -353,6 +353,7 @@ mod tests {
 				MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 				MockIO::run_command(
 					&addresses_cmd(
+						SIDECHAIN_MAIN_CLI_PATH.to_string(),
 						"/tmp/dummy3".to_string(),
 						test_sidechain_params(),
 						&SidechainMainCliResources::default(),

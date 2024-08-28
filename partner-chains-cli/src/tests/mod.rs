@@ -272,6 +272,10 @@ impl IOContext for MockIOContext {
 		self.files.borrow_mut().get::<String>(&path.to_string()).is_some()
 	}
 
+	fn which(&self, _cmd: &str) -> Option<String> {
+		self.files.borrow_mut().get::<String>(&_cmd.to_string()).cloned()
+	}
+
 	fn prompt_yes_no(&self, prompt: &str, default: bool) -> bool {
 		match self.pop_next_action() {
 			Some(MockIO::PromptYN {
