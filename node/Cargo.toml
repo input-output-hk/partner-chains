@@ -100,7 +100,6 @@ substrate-build-script-utils = { workspace = true }
 
 [dev-dependencies]
 hex-literal = { workspace = true }
-minicbor = { workspace = true }
 time-source = { workspace = true, features = ["mock"] }
 assert_cmd = { workspace = true }
 

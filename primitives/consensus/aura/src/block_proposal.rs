@@ -87,11 +87,11 @@ mod tests {
 	pub type Block = sp_runtime::generic::Block<Header<u32, BlakeTwo256>, OpaqueExtrinsic>;
 
 	fn expected_item() -> DigestItem {
-		DigestItem::Other(vec![1,3,3,7])
+		DigestItem::Other(vec![1, 3, 3, 7])
 	}
 
 	fn other_item() -> DigestItem {
-		DigestItem::Other(vec![0,0,0,0])
+		DigestItem::Other(vec![0, 0, 0, 0])
 	}
 
 	struct TestInherentDigest;
