@@ -96,7 +96,7 @@ pub mod pallet {
 
 		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
 			Self::get_transfered_tokens_from_inherent_data(data)
-				.filter(|data| !data.token_amount.0 > 0)
+				.filter(|data| data.token_amount.0 > 0)
 				.map(|data| Call::transfer_tokens { token_amount: data.token_amount })
 		}
 
