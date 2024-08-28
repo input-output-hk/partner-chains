@@ -104,9 +104,7 @@ pub mod pallet {
 			let Some(token_transfer) = Self::get_transfered_tokens_from_inherent_data(data) else {
 				return Err(InherentError::UnexpectedTokenTransferInherent);
 			};
-			let Call::transfer_tokens { token_amount } = call else {
-				unreachable!("There is no other extrinsic in this pallet");
-			};
+			let Call::transfer_tokens { token_amount } = call else { return Ok(()) };
 			if token_transfer.token_amount != *token_amount {
 				return Err(InherentError::IncorrectTokenNumberTransfered);
 			}
