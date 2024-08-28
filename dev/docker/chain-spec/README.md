@@ -23,7 +23,7 @@ Validators have the option to either use the provided raw chain spec as is, trus
 ```
 docker build . -t chain-spec
 ```
-in the `docker/chain-spec` folder.
+in the `dev/docker/chain-spec` folder.
 
 ## Using the image
 

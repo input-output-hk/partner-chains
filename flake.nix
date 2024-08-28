@@ -60,11 +60,11 @@
       imports = [
         inputs.devshell.flakeModule
         inputs.process-compose.flakeModule
-        ./nix/shell.nix
-        ./nix/packages
-        ./nix/processes.nix
+        ./dev/nix/shell.nix
+        ./dev/nix/packages.nix
+        ./dev/nix/processes.nix
       ];
-      flake.lib = import ./nix/lib.nix {inherit (nixpkgs) lib;};
+      flake.lib = import ./dev/nix/lib.nix {inherit (nixpkgs) lib;};
     };
   nixConfig = {
     extra-substituters = [

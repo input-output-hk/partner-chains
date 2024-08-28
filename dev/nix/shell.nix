@@ -14,7 +14,7 @@
     fenixPkgs = inputs'.fenix.packages;
     rustToolchain = with fenixPkgs;
       fromToolchainFile {
-        file = ../rust-toolchain.toml;
+        file = ../../rust-toolchain.toml;
         # Probably should be a flake input instead
         sha256 = "VZZnlyP69+Y3crrLHQyJirqlHrTtGTsyiSnZB8jEvVo=";
       };
