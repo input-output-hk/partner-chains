@@ -66,7 +66,7 @@
           exec = {
             command = ''
               while true; do
-                if  [ -S ${node-socket} ] && nc -U -z -w 1 ${node-socket}; then
+                if  [ -S ${node-socket} ] && ${pkgs.netcat}/bin/nc -U -z -w 1 ${node-socket}; then
                   exit 0
                 fi
                 sleep 5
