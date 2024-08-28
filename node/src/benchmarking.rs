@@ -15,7 +15,6 @@ use sidechain_domain::{
 	SidechainPublicKey,
 };
 use sidechain_runtime as runtime;
-#[cfg(feature = "block-beneficiary")]
 use sp_block_rewards::BlockBeneficiaryInherentProvider;
 use sp_core::{Encode, Pair};
 use sp_inherents::{InherentData, InherentDataProvider};
@@ -145,7 +144,6 @@ pub fn create_benchmark_extrinsic(
 
 const DUMMY_EPOCH_NONCE: &[u8] = &[1u8, 2u8, 3u8];
 
-#[cfg(feature = "block-beneficiary")]
 pub type BeneficiaryId = sidechain_domain::byte_string::SizedByteString<32>;
 /// Generates inherent data for the `benchmark overhead` command.
 ///
@@ -175,14 +173,12 @@ pub fn inherent_benchmark_data() -> Result<InherentData> {
 			epoch_nonce: EpochNonce(DUMMY_EPOCH_NONCE.to_vec()),
 		}),
 	};
-	#[cfg(feature = "block-beneficiary")]
 	let block_beneficiary_provider =
 		BlockBeneficiaryInherentProvider::<BeneficiaryId>::from_env("SIDECHAIN_BLOCK_BENEFICIARY")
 			.map_err(|err| sc_cli::Error::Application(err.into()))?;
 	futures::executor::block_on(async {
 		timestamp.provide_inherent_data(&mut inherent_data).await?;
 		ariadne_inherent_data_provider.provide_inherent_data(&mut inherent_data).await?;
-		#[cfg(feature = "block-beneficiary")]
 		block_beneficiary_provider.provide_inherent_data(&mut inherent_data).await?;
 		Ok(())
 	})

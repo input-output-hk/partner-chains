@@ -108,15 +108,10 @@ assert_cmd = { workspace = true }
 default = [
 	"sidechain-domain/std",
 	"chain-params/std",
-	"block-beneficiary"
 ]
 # Dependencies that are only required if runtime benchmarking should be build.
 runtime-benchmarks = [
 	"sidechain-runtime/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-benchmarking-cli/runtime-benchmarks",
-]
-
-block-beneficiary = [
-    "sidechain-runtime/block-beneficiary"
 ]
