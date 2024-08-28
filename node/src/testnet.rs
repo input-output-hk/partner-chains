@@ -206,13 +206,7 @@ pub fn testnet_genesis(
 			main_chain_scripts: read_mainchain_scripts_from_env()?,
 		},
 		native_token_management: NativeTokenManagementConfig {
-			main_chain_scripts: sp_native_token_management::MainChainScripts {
-				native_token_policy: from_var::<PolicyId>("NATIVE_TOKEN_POLICY_ID")?,
-				native_token_asset_name: from_var::<AssetName>("NATIVE_TOKEN_ASSET_NAME")?,
-				illiquid_supply_address: from_var::<MainchainAddress>(
-					"ILLIQUID_SUPPLY_VALIDATOR_ADDRESS",
-				)?,
-			},
+			main_chain_scripts: read_native_token_main_chain_scripts_from_env()?,
 			..Default::default()
 		},
 	};

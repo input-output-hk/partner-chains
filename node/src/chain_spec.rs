@@ -1,4 +1,4 @@
-use sidechain_domain::PolicyId;
+use sidechain_domain::{AssetName, MainchainAddress, PolicyId};
 use sidechain_runtime::CrossChainPublic;
 use sidechain_runtime::{opaque::SessionKeys, AccountId, Signature, WASM_BINARY};
 use sp_core::{Pair, Public};
@@ -80,5 +80,14 @@ pub fn read_mainchain_scripts_from_env() -> Result<MainChainScripts, EnvVarReadE
 		committee_candidate_address,
 		d_parameter_policy,
 		permissioned_candidates_policy,
+	})
+}
+
+pub fn read_native_token_main_chain_scripts_from_env(
+) -> Result<sp_native_token_management::MainChainScripts, EnvVarReadError> {
+	Ok(sp_native_token_management::MainChainScripts {
+		native_token_policy: from_var::<PolicyId>("NATIVE_TOKEN_POLICY_ID")?,
+		native_token_asset_name: from_var::<AssetName>("NATIVE_TOKEN_ASSET_NAME")?,
+		illiquid_supply_address: from_var::<MainchainAddress>("ILLIQUID_SUPPLY_VALIDATOR_ADDRESS")?,
 	})
 }

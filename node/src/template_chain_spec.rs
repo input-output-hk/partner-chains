@@ -1,7 +1,7 @@
 use crate::chain_spec::*;
 use chain_params::SidechainParams;
 use sc_service::ChainType;
-use sidechain_domain::{AssetName, MainchainAddress, MainchainAddressHash, PolicyId, UtxoId};
+use sidechain_domain::{MainchainAddressHash, UtxoId};
 use sidechain_runtime::{
 	AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig, RuntimeGenesisConfig,
 	SessionCommitteeManagementConfig, SessionConfig, SidechainConfig, SudoConfig, SystemConfig,
@@ -45,13 +45,7 @@ pub fn chain_spec() -> Result<ChainSpec, EnvVarReadError> {
 			main_chain_scripts: read_mainchain_scripts_from_env()?,
 		},
 		native_token_management: NativeTokenManagementConfig {
-			main_chain_scripts: sp_native_token_management::MainChainScripts {
-				native_token_policy: from_var::<PolicyId>("NATIVE_TOKEN_POLICY_ID")?,
-				native_token_asset_name: from_var::<AssetName>("NATIVE_TOKEN_ASSET_NAME")?,
-				illiquid_supply_address: from_var::<MainchainAddress>(
-					"ILLIQUID_SUPPLY_VALIDATOR_ADDRESS",
-				)?,
-			},
+			main_chain_scripts: read_native_token_main_chain_scripts_from_env()?,
 			..Default::default()
 		},
 	};
