@@ -31,9 +31,6 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 	.await
 	.unwrap();
 
-	#[cfg(not(feature = "block-beneficiary"))]
-	let (slot, timestamp, mc_hash, ariadne_data, native_token) = inherent_data_providers;
-	#[cfg(feature = "block-beneficiary")]
 	let (slot, timestamp, mc_hash, ariadne_data, block_beneficiary, native_token) =
 		inherent_data_providers;
 	let mut inherent_data = InherentData::new();
@@ -41,7 +38,6 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 	timestamp.provide_inherent_data(&mut inherent_data).await.unwrap();
 	mc_hash.provide_inherent_data(&mut inherent_data).await.unwrap();
 	ariadne_data.provide_inherent_data(&mut inherent_data).await.unwrap();
-	#[cfg(feature = "block-beneficiary")]
 	block_beneficiary.provide_inherent_data(&mut inherent_data).await.unwrap();
 	native_token.provide_inherent_data(&mut inherent_data).await.unwrap();
 	assert_eq!(

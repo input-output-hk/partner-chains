@@ -8,26 +8,27 @@ use sc_consensus_aura::{find_pre_digest, standalone::CurrentSlotProvider, SlotDu
 use sc_service::Arc;
 use sidechain_domain::{McBlockHash, ScEpochNumber};
 use sidechain_mc_hash::McHashInherentDataProvider as McHashIDP;
-use sidechain_runtime::opaque::{Block, SessionKeys};
-use sidechain_runtime::CrossChainPublic;
+use sidechain_runtime::{
+	opaque::{Block, SessionKeys},
+	BeneficiaryId, CrossChainPublic,
+};
 use sidechain_slots::ScSlotConfig;
 use sp_api::ProvideRuntimeApi;
+use sp_block_rewards::BlockBeneficiaryInherentProvider;
 use sp_blockchain::HeaderBackend;
-use sp_consensus_aura::inherents::InherentDataProvider as AuraIDP;
-use sp_consensus_aura::{sr25519::AuthorityPair as AuraPair, Slot};
+use sp_consensus_aura::{
+	inherents::InherentDataProvider as AuraIDP, sr25519::AuthorityPair as AuraPair, Slot,
+};
 use sp_core::Pair;
 use sp_inherents::CreateInherentDataProviders;
-use sp_native_token_management::NativeTokenManagementApi;
-use sp_native_token_management::NativeTokenManagementInherentDataProvider as NativeTokenIDP;
+use sp_native_token_management::{
+	NativeTokenManagementApi, NativeTokenManagementInherentDataProvider as NativeTokenIDP,
+};
 use sp_runtime::traits::{Block as BlockT, Header, Zero};
 use sp_session_validator_management::SessionValidatorManagementApi;
-use sp_timestamp::InherentDataProvider as TimestampIDP;
-use sp_timestamp::Timestamp;
+use sp_timestamp::{InherentDataProvider as TimestampIDP, Timestamp};
 use std::error::Error;
 use time_source::TimeSource;
-
-#[cfg(feature = "block-beneficiary")]
-use {sidechain_runtime::BeneficiaryId, sp_block_rewards::BlockBeneficiaryInherentProvider};
 
 #[derive(new)]
 pub struct ProposalCIDP<T> {
@@ -50,7 +51,6 @@ where
 	>,
 	T::Api: NativeTokenManagementApi<Block>,
 {
-	#[cfg(feature = "block-beneficiary")]
 	type InherentDataProviders = (
 		AuraIDP,
 		TimestampIDP,
@@ -59,8 +59,6 @@ where
 		BlockBeneficiaryInherentProvider<BeneficiaryId>,
 		NativeTokenIDP,
 	);
-	#[cfg(not(feature = "block-beneficiary"))]
-	type InherentDataProviders = (AuraIDP, TimestampIDP, McHashIDP, AriadneIDP, NativeTokenIDP);
 
 	async fn create_inherent_data_providers(
 		&self,
@@ -89,10 +87,10 @@ where
 			mc_hash.mc_epoch(),
 		)
 		.await?;
-		#[cfg(feature = "block-beneficiary")]
-		let block_beneficiary_provider = BlockBeneficiaryInherentProvider::<BeneficiaryId>::from_env(
-			"SIDECHAIN_BLOCK_BENEFICIARY",
-		)?;
+		let block_beneficiary_provider =
+			BlockBeneficiaryInherentProvider::<BeneficiaryId>::from_env(
+				"SIDECHAIN_BLOCK_BENEFICIARY",
+			)?;
 
 		let native_token = NativeTokenIDP::new(
 			client.clone(),
@@ -107,7 +105,6 @@ where
 			timestamp,
 			mc_hash,
 			ariadne_data_provider,
-			#[cfg(feature = "block-beneficiary")]
 			block_beneficiary_provider,
 			native_token,
 		))

@@ -434,16 +434,11 @@ parameter_types! {
 
 pub struct LogBeneficiaries;
 impl sp_sidechain::OnNewEpoch for LogBeneficiaries {
-	#[cfg(feature = "block-beneficiary")]
 	fn on_new_epoch(old_epoch: ScEpochNumber, _new_epoch: ScEpochNumber) -> sp_weights::Weight {
 		let rewards = BlockRewards::get_rewards_and_clear();
 		log::info!("Rewards accrued in epoch {old_epoch}: {rewards:?}");
 
 		DbWeight::get().reads_writes(1, 1)
-	}
-	#[cfg(not(feature = "block-beneficiary"))]
-	fn on_new_epoch(_old_epoch: ScEpochNumber, _new_epoch: ScEpochNumber) -> sp_weights::Weight {
-		Weight::zero()
 	}
 }
 
@@ -456,10 +451,8 @@ impl pallet_sidechain::Config for Runtime {
 	type SidechainParams = chain_params::SidechainParams;
 }
 
-#[cfg(feature = "block-beneficiary")]
 pub type BeneficiaryId = sidechain_domain::byte_string::SizedByteString<32>;
 
-#[cfg(feature = "block-beneficiary")]
 impl pallet_block_rewards::Config for Runtime {
 	type BeneficiaryId = BeneficiaryId;
 	type BlockRewardPoints = u32;
@@ -480,7 +473,6 @@ construct_runtime!(
 		// Sidechain pallet must come after the Aura pallet, since it gets the slot number from it
 		Sidechain: pallet_sidechain,
 		SessionCommitteeManagement: pallet_session_validator_management,
-		#[cfg(feature = "block-beneficiary")]
 		BlockRewards: pallet_block_rewards,
 		// The order matters!! Session pallet needs to come last for correct initialization order
 		Session: pallet_partner_chains_session,
