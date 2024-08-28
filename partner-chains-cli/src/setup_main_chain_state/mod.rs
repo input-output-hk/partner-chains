@@ -95,7 +95,15 @@ impl CmdRun for SetupMainChainStateCmd {
 		context.print(
 			"This wizard will set or update D-Parameter and Permissioned Candidates on the main chain. Setting either of these costs ADA!",
 		);
-		if !context.file_exists(SIDECHAIN_MAIN_CLI_PATH) {
+
+		let sidechain_exec = config_fields::SIDECHAIN_MAIN_CLI
+			.load_from_file(context)
+			.ok_or_else(|| anyhow::anyhow!("⚠️ Unable to load sidechain cli executable"))?;
+
+		let has_sidechain_main_cli =
+			context.file_exists(&sidechain_exec) || context.which(&sidechain_exec).is_some();
+		if !has_sidechain_main_cli {
+			println!("sidechain_exec: {:?}", sidechain_exec);
 			return Err(anyhow!(
 				"Partner Chains Smart Contracts executable file ({SIDECHAIN_MAIN_CLI_PATH}) is missing",
 			));
@@ -264,8 +272,13 @@ fn set_candidates_on_main_chain<C: IOContext>(
 
 		let cardano_network = get_cardano_network_from_file(context)?;
 
+		let sidechain_exec = config_fields::SIDECHAIN_MAIN_CLI
+			.load_from_file(context)
+			.ok_or_else(|| anyhow::anyhow!("⚠️ Unable to load sidechain cli executable"))?;
+
 		let output = context.run_command(&format!(
-			"{SIDECHAIN_MAIN_CLI_PATH} {} --network {} {} {} {}",
+			"{} {} --network {} {} {} {}",
+			sidechain_exec,
 			command,
 			cardano_network.to_network_param(),
 			candidate_keys,

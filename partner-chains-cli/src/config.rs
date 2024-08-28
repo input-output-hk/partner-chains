@@ -387,7 +387,8 @@ pub const KEYS_FILE_PATH: &str = "partner-chains-public-keys.json";
 pub const CHAIN_CONFIG_FILE_PATH: &str = "partner-chains-cli-chain-config.json";
 pub const RESOURCES_CONFIG_FILE_PATH: &str = "partner-chains-cli-resources-config.json";
 pub const CHAIN_SPEC_PATH: &str = "chain-spec.json";
-pub const SIDECHAIN_MAIN_CLI_PATH: &str = "./sidechain-main-cli";
+pub const SIDECHAIN_MAIN_CLI_NAME: &str = "sidechain-main-cli";
+pub const SIDECHAIN_MAIN_CLI_PATH: &str = "./{SIDECHAIN_MAIN_CLI_NAME}";
 
 pub fn load_chain_config(context: &impl IOContext) -> anyhow::Result<ChainConfig> {
 	if let Some(chain_config_file) = context.read_file(CHAIN_CONFIG_FILE_PATH) {
@@ -432,6 +433,14 @@ pub mod config_fields {
 		path: &["cardano_cli"],
 		name: "cardano cli executable",
 		default: Some("cardano-cli"),
+		_marker: PhantomData,
+	};
+
+	pub const SIDECHAIN_MAIN_CLI: ConfigFieldDefinition<'static, String> = ConfigFieldDefinition {
+		config_file: RESOURCES_CONFIG_FILE_PATH,
+		path: &["sidechain_main_cli"],
+		name: "sidechain cli executable",
+		default: Some(SIDECHAIN_MAIN_CLI_PATH),
 		_marker: PhantomData,
 	};
 
