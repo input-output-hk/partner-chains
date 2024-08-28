@@ -1,12 +1,10 @@
 use crate::mock::sp_runtime::testing::H256;
-use crate::DispatchResult;
-use crate::TokenTransferHandler;
-use frame_support::sp_runtime::traits::BlakeTwo256;
-use frame_support::sp_runtime::traits::IdentityLookup;
-use frame_support::sp_runtime::BuildStorage;
-use frame_support::traits::ConstU16;
-use frame_support::traits::ConstU32;
-use frame_support::traits::ConstU64;
+use crate::{DispatchResult, TokenTransferHandler};
+use frame_support::sp_runtime::{
+	traits::{BlakeTwo256, IdentityLookup},
+	BuildStorage,
+};
+use frame_support::traits::{ConstU16, ConstU32, ConstU64};
 use frame_support::*;
 use sidechain_domain::*;
 
