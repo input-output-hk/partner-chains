@@ -46,12 +46,10 @@ pub fn chain_spec() -> Result<ChainSpec, EnvVarReadError> {
 		},
 		native_token_management: NativeTokenManagementConfig {
 			main_chain_scripts: sp_native_token_management::MainChainScripts {
-				native_token_policy: from_var::<PolicyId>("PARTNER_CHAIN_NATIVE_TOKEN_POLICY_ID")?,
-				native_token_asset_name: from_var::<AssetName>(
-					"PARTNER_CHAIN_NATIVE_TOKEN_ASSET_NAME",
-				)?,
+				native_token_policy: from_var::<PolicyId>("NATIVE_TOKEN_POLICY_ID")?,
+				native_token_asset_name: from_var::<AssetName>("NATIVE_TOKEN_ASSET_NAME")?,
 				illiquid_supply_address: from_var::<MainchainAddress>(
-					"PARTNER_CHAIN_ILLIQUID_SUPPLY_VALIDATOR_ADDRESS",
+					"ILLIQUID_SUPPLY_VALIDATOR_ADDRESS",
 				)?,
 			},
 			..Default::default()
