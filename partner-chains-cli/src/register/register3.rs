@@ -62,8 +62,13 @@ impl CmdRun for Register3Cmd {
 
 		let cardano_network = get_cardano_network_from_file(context)?;
 
+		let sidechain_exec = config_fields::SIDECHAIN_MAIN_CLI
+			.load_from_file(context)
+			.ok_or_else(|| anyhow::anyhow!("⚠️ Unable to load sidechain cli executable"))?;
+
 		let command = format!(
-			"{SIDECHAIN_MAIN_CLI_PATH} register --network {} {} --registration-utxo {} --sidechain-public-keys {}:{}:{} --sidechain-signature {} --spo-public-key {} --spo-signature {} --ada-based-staking {}",
+			"{} register --network {} {} --registration-utxo {} --sidechain-public-keys {}:{}:{} --sidechain-signature {} --spo-public-key {} --spo-signature {} --ada-based-staking {}",
+			sidechain_exec,
 			cardano_network.to_network_param(),
 			sidechain_param_arg,
 			self.registration_utxo,
