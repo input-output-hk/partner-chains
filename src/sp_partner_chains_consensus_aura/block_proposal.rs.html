@@ -255,11 +255,11 @@
 	<span class="kw">pub type </span>Block = sp_runtime::generic::Block&lt;Header&lt;u32, BlakeTwo256&gt;, OpaqueExtrinsic&gt;;
 
 	<span class="kw">fn </span>expected_item() -&gt; DigestItem {
-		DigestItem::Other(<span class="macro">vec!</span>[<span class="number">1</span>,<span class="number">3</span>,<span class="number">3</span>,<span class="number">7</span>])
+		DigestItem::Other(<span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">7</span>])
 	}
 
 	<span class="kw">fn </span>other_item() -&gt; DigestItem {
-		DigestItem::Other(<span class="macro">vec!</span>[<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>])
+		DigestItem::Other(<span class="macro">vec!</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>])
 	}
 
 	<span class="kw">struct </span>TestInherentDigest;

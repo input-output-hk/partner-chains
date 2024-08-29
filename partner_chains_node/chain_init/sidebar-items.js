@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["GENERATED_CHAIN_SPEC_FILE_NAME"],"fn":["get_initial_authorities_with_waits","read_spec","run","save_spec"],"struct":["EpochTimerLive","SleeperLive"],"trait":["EpochTimer","Sleeper"]};
