@@ -56,12 +56,16 @@
 <a href="#54" id="54">54</a>
 <a href="#55" id="55">55</a>
 <a href="#56" id="56">56</a>
+<a href="#57" id="57">57</a>
+<a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::chain_spec::<span class="kw-2">*</span>;
 <span class="kw">use </span>chain_params::SidechainParams;
 <span class="kw">use </span>sc_service::ChainType;
 <span class="kw">use </span>sidechain_domain::{MainchainAddressHash, UtxoId};
 <span class="kw">use </span>sidechain_runtime::{
-	AuraConfig, BalancesConfig, GrandpaConfig, RuntimeGenesisConfig,
+	AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig, RuntimeGenesisConfig,
 	SessionCommitteeManagementConfig, SessionConfig, SidechainConfig, SudoConfig, SystemConfig,
 };
 
@@ -101,6 +105,10 @@
 			<span class="comment">// Same as SessionConfig
 			</span>initial_authorities: <span class="macro">vec!</span>[],
 			main_chain_scripts: read_mainchain_scripts_from_env()<span class="question-mark">?</span>,
+		},
+		native_token_management: NativeTokenManagementConfig {
+			main_chain_scripts: read_native_token_main_chain_scripts_from_env()<span class="question-mark">?</span>,
+			..Default::default()
 		},
 	};
 	<span class="kw">let </span>genesis_json = serde_json::to_value(runtime_genesis_config)

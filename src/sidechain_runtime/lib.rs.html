@@ -1019,6 +1019,32 @@
 <a href="#1017" id="1017">1017</a>
 <a href="#1018" id="1018">1018</a>
 <a href="#1019" id="1019">1019</a>
+<a href="#1020" id="1020">1020</a>
+<a href="#1021" id="1021">1021</a>
+<a href="#1022" id="1022">1022</a>
+<a href="#1023" id="1023">1023</a>
+<a href="#1024" id="1024">1024</a>
+<a href="#1025" id="1025">1025</a>
+<a href="#1026" id="1026">1026</a>
+<a href="#1027" id="1027">1027</a>
+<a href="#1028" id="1028">1028</a>
+<a href="#1029" id="1029">1029</a>
+<a href="#1030" id="1030">1030</a>
+<a href="#1031" id="1031">1031</a>
+<a href="#1032" id="1032">1032</a>
+<a href="#1033" id="1033">1033</a>
+<a href="#1034" id="1034">1034</a>
+<a href="#1035" id="1035">1035</a>
+<a href="#1036" id="1036">1036</a>
+<a href="#1037" id="1037">1037</a>
+<a href="#1038" id="1038">1038</a>
+<a href="#1039" id="1039">1039</a>
+<a href="#1040" id="1040">1040</a>
+<a href="#1041" id="1041">1041</a>
+<a href="#1042" id="1042">1042</a>
+<a href="#1043" id="1043">1043</a>
+<a href="#1044" id="1044">1044</a>
+<a href="#1045" id="1045">1045</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attr">#![recursion_limit = <span class="string">"256"</span>]
@@ -1037,6 +1063,8 @@
 <span class="kw">use </span>authority_selection_inherents::select_authorities::select_authorities;
 <span class="kw">use </span>chain_params::SidechainParams;
 <span class="kw">use </span>frame_support::genesis_builder_helper::{build_state, get_preset};
+<span class="kw">use </span>frame_support::traits::fungible::Balanced;
+<span class="kw">use </span>frame_support::traits::tokens::Precision;
 <span class="kw">use </span>frame_support::BoundedVec;
 <span class="kw">pub use </span>frame_support::{
 	construct_runtime, parameter_types,
@@ -1051,6 +1079,7 @@
 	PalletId, StorageValue,
 };
 <span class="kw">pub use </span>frame_system::Call <span class="kw">as </span>SystemCall;
+<span class="kw">use </span>hex_literal::hex;
 <span class="kw">use </span>opaque::SessionKeys;
 <span class="kw">pub use </span>pallet_balances::Call <span class="kw">as </span>BalancesCall;
 <span class="kw">use </span>pallet_grandpa::AuthorityId <span class="kw">as </span>GrandpaId;
@@ -1059,8 +1088,8 @@
 <span class="kw">use </span>pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 <span class="kw">use </span>session_manager::ValidatorManagementSessionManager;
 <span class="kw">use </span>sidechain_domain::{
-	MainchainPublicKey, PermissionedCandidateData, RegistrationData, ScEpochNumber, ScSlotNumber,
-	StakeDelegation,
+	MainchainPublicKey, NativeTokenAmount, PermissionedCandidateData, RegistrationData,
+	ScEpochNumber, ScSlotNumber, StakeDelegation,
 };
 <span class="kw">use </span>sp_api::impl_runtime_apis;
 <span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityId <span class="kw">as </span>AuraId;
@@ -1068,6 +1097,7 @@
 <span class="kw">use </span>sp_partner_chains_session::CurrentSessionIndex;
 <span class="attr">#[cfg(any(feature = <span class="string">"std"</span>, test))]
 </span><span class="kw">pub use </span>sp_runtime::BuildStorage;
+<span class="kw">use </span>sp_runtime::DispatchResult;
 <span class="kw">use </span>sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
@@ -1338,6 +1368,31 @@
 	<span class="kw">type </span>PostTransactions = ();
 }
 
+<span class="kw">pub struct </span>TokenTransferHandler;
+
+<span class="kw">impl </span>pallet_native_token_management::TokenTransferHandler <span class="kw">for </span>TokenTransferHandler {
+	<span class="kw">fn </span>handle_token_transfer(token_amount: NativeTokenAmount) -&gt; DispatchResult {
+		<span class="comment">// Mint the "transfered" tokens into a dummy address.
+		// This is done for visibility in tests only.
+		// Despite using the `Balances` pallet to do the transfer here, the account balance
+		// is stored (and can be observed) in the `System` pallet's storage.
+		</span><span class="kw">let _ </span>= Balances::deposit(
+			<span class="kw-2">&amp;</span>AccountId::from(<span class="macro">hex!</span>(
+				<span class="string">"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			</span>)),
+			token_amount.<span class="number">0</span>.into(),
+			Precision::Exact,
+		)<span class="question-mark">?</span>;
+		<span class="macro">log::info!</span>(<span class="string">"💸 Registered transfer of {} native tokens"</span>, token_amount.<span class="number">0</span>);
+		<span class="prelude-val">Ok</span>(())
+	}
+}
+
+<span class="kw">impl </span>pallet_native_token_management::Config <span class="kw">for </span>Runtime {
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>TokenTransferHandler = TokenTransferHandler;
+}
+
 <span class="kw">impl </span>pallet_aura::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>AuthorityId = AuraId;
 	<span class="kw">type </span>DisabledValidators = ();
@@ -1497,6 +1552,7 @@
 		BlockRewards: pallet_block_rewards,
 		<span class="comment">// The order matters!! Session pallet needs to come last for correct initialization order
 		</span>Session: pallet_partner_chains_session,
+		NativeTokenManagement: pallet_native_token_management,
 	}
 );
 
@@ -1854,11 +1910,7 @@
 
 	<span class="kw">impl </span>sp_native_token_management::NativeTokenManagementApi&lt;Block&gt; <span class="kw">for </span>Runtime {
 		<span class="kw">fn </span>get_main_chain_scripts() -&gt; sp_native_token_management::MainChainScripts {
-			sp_native_token_management::MainChainScripts {
-				native_token_policy: Default::default(),
-				native_token_asset_name: Default::default(),
-				illiquid_supply_address: Default::default(),
-			}
+			NativeTokenManagement::get_main_chain_scripts()
 		}
 	}
 }

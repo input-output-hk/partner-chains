@@ -170,14 +170,20 @@
 <a href="#168" id="168">168</a>
 <a href="#169" id="169">169</a>
 <a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::chain_spec::get_account_id_from_seed;
 <span class="kw">use </span><span class="kw">crate</span>::chain_spec::<span class="kw-2">*</span>;
 <span class="kw">use </span>chain_params::SidechainParams;
 <span class="kw">use </span>sc_service::ChainType;
-<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, UtxoId};
+<span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 <span class="kw">use </span>sidechain_runtime::{
-	AccountId, AuraConfig, BalancesConfig, GrandpaConfig, RuntimeGenesisConfig,
-	SessionCommitteeManagementConfig, SessionConfig, SidechainConfig, SudoConfig, SystemConfig,
+	AccountId, AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig,
+	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
+	SudoConfig, SystemConfig,
 };
 <span class="kw">use </span>sp_core::bytes::from_hex;
 <span class="kw">use </span>sp_core::{ed25519, sr25519};
@@ -335,6 +341,10 @@
 				.map(|keys| (keys.cross_chain, keys.session))
 				.collect(),
 			main_chain_scripts: read_mainchain_scripts_from_env()<span class="question-mark">?</span>,
+		},
+		native_token_management: NativeTokenManagementConfig {
+			main_chain_scripts: read_native_token_main_chain_scripts_from_env()<span class="question-mark">?</span>,
+			..Default::default()
 		},
 	};
 

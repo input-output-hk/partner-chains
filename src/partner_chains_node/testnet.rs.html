@@ -210,13 +210,19 @@
 <a href="#208" id="208">208</a>
 <a href="#209" id="209">209</a>
 <a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::chain_spec::<span class="kw-2">*</span>;
 <span class="kw">use </span>chain_params::SidechainParams;
 <span class="kw">use </span>sc_service::ChainType;
-<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, UtxoId};
+<span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 <span class="kw">use </span>sidechain_runtime::{
-	AccountId, AuraConfig, BalancesConfig, GrandpaConfig, RuntimeGenesisConfig,
-	SessionCommitteeManagementConfig, SessionConfig, SidechainConfig, SudoConfig, SystemConfig,
+	AccountId, AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig,
+	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
+	SudoConfig, SystemConfig,
 };
 <span class="kw">use </span>sidechain_slots::SlotsPerEpoch;
 <span class="kw">use </span>sp_core::bytes::from_hex;
@@ -415,6 +421,10 @@
 				.map(|keys| (keys.cross_chain, keys.session))
 				.collect(),
 			main_chain_scripts: read_mainchain_scripts_from_env()<span class="question-mark">?</span>,
+		},
+		native_token_management: NativeTokenManagementConfig {
+			main_chain_scripts: read_native_token_main_chain_scripts_from_env()<span class="question-mark">?</span>,
+			..Default::default()
 		},
 	};
 

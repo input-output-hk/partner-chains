@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"sidechain_runtime":[["impl <a class=\"trait\" href=\"pallet_native_token_management/pallet/trait.Config.html\" title=\"trait pallet_native_token_management::pallet::Config\">Config</a> for <a class=\"struct\" href=\"sidechain_runtime/struct.Runtime.html\" title=\"struct sidechain_runtime::Runtime\">Runtime</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -10,6 +10,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["main_chain_follower_mock",["",[],["block.rs","candidate.rs","lib.rs","native_token.rs"]]],\
 ["mock_types",["",[],["lib.rs","session_keys.rs"]]],\
 ["pallet_block_rewards",["",[],["lib.rs"]]],\
+["pallet_native_token_management",["",[],["lib.rs"]]],\
 ["pallet_session_validator_management",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_session_validator_management_benchmarking",["",[],["lib.rs"]]],\
 ["pallet_session_validator_management_rpc",["",[],["lib.rs"]]],\
