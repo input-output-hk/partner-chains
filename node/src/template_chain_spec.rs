@@ -3,7 +3,7 @@ use chain_params::SidechainParams;
 use sc_service::ChainType;
 use sidechain_domain::{MainchainAddressHash, UtxoId};
 use sidechain_runtime::{
-	AuraConfig, BalancesConfig, GrandpaConfig, RuntimeGenesisConfig,
+	AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig, RuntimeGenesisConfig,
 	SessionCommitteeManagementConfig, SessionConfig, SidechainConfig, SudoConfig, SystemConfig,
 };
 
@@ -43,6 +43,10 @@ pub fn chain_spec() -> Result<ChainSpec, EnvVarReadError> {
 			// Same as SessionConfig
 			initial_authorities: vec![],
 			main_chain_scripts: read_mainchain_scripts_from_env()?,
+		},
+		native_token_management: NativeTokenManagementConfig {
+			main_chain_scripts: read_native_token_main_chain_scripts_from_env()?,
+			..Default::default()
 		},
 	};
 	let genesis_json = serde_json::to_value(runtime_genesis_config)
