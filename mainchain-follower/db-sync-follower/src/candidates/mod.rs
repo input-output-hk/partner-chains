@@ -312,19 +312,19 @@ impl CandidatesDataSourceImpl {
 	// Datum decoders
 	fn decode_d_parameter_datum(datum: &Datum) -> Result<DParameter> {
 		let d_parameter = match datum {
-			ListDatum(items) => match items.first().zip(items.get(1)).zip(items.get(2)) {
-				Some(((IntegerDatum(p), IntegerDatum(a)), IntegerDatum(e))) => {
-					p.to_u16().zip(a.to_u16()).zip(e.to_u16()).map(|((p, a), e)| DParameter {
+			ListDatum(items) => match items.first().zip(items.get(1)) {
+				Some((IntegerDatum(p), IntegerDatum(t))) => {
+					p.to_u16().zip(t.to_u16()).map(|(p, t)| DParameter {
 						num_permissioned_candidates: p,
-						num_ada_candidates: a,
-						num_eth_candidates: e,
+						num_ada_candidates: t,
+						num_eth_candidates: 0,
 					})
-				}
+				},
 				_ => None,
 			},
 			_ => None,
 		}
-		.ok_or(DatumDecodeError { datum: datum.clone(), to: "DParameter".to_string() });
+			.ok_or(DatumDecodeError { datum: datum.clone(), to: "DParameter".to_string() });
 		if d_parameter.is_err() {
 			error!("Could not decode {:?} to DParameter. Expected [u16, u16].", datum.clone());
 		}

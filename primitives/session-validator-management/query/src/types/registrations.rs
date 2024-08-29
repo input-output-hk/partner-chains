@@ -162,13 +162,13 @@ mod tests {
 					"sidechainSignature": "0x3da1014f1ba4ece29a82b98e2ee4e707bd062523f558e84857cd97d95c525ebd4762812bc1baaf92117861d41acd8641d474f1b30367f0c1ebcf0d280ec44338",
 					"mainchainSignature": "0x37a45144a24ddd0ded388b7b39441b4ceb7abd1935d02fe6abf07f14025b663e81b53678b3f6701a7c76af7981246537eeee6a790aac18445bb8494bea38990f",
 					"crossChainSignature": "0x3da1014f1ba4ece29a82b98e2ee4e707bd062523f558e84857cd97d95c525ebd4762812bc1baaf92117861d41acd8641d474f1b30367f0c1ebcf0d280ec44338",
-					"utxo": {
+					"txInfo": {"Ada": {
 						"utxoId": "a40c500e3cd4a374916947bc1ff419d5ed1b3e0bef410ba793c3507703f3d6de#0",
 						"epochNumber": 303,
 						"blockNumber": 1147672,
 						"slotNumber": 26223403,
 						"txIndexWithinBlock": 0,
-					},
+					}},
 					"stakeDelegation": 2380000000u32,
 					"isValid": true
 				})
