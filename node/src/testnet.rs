@@ -188,8 +188,8 @@ pub fn testnet_genesis(
 				.collect(),
 		},
 		sidechain: SidechainConfig {
-			params: SidechainParams::read_from_env_with_defaults().unwrap(),
-			slots_per_epoch: SlotsPerEpoch::read_from_env().unwrap(),
+			params: SidechainParams::read_from_env_with_defaults()?,
+			slots_per_epoch: SlotsPerEpoch::read_from_env()?,
 			..Default::default()
 		},
 		polkadot_session_stub_for_grandpa: Default::default(),
@@ -198,12 +198,10 @@ pub fn testnet_genesis(
 				.into_iter()
 				.map(|keys| (keys.cross_chain, keys.session))
 				.collect(),
-			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()
-				.unwrap(),
+			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()?,
 		},
 		native_token_management: NativeTokenManagementConfig {
-			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()
-				.unwrap(),
+			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()?,
 			..Default::default()
 		},
 	};

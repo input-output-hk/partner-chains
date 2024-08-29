@@ -59,11 +59,10 @@ impl MainChainScripts {
 			committee_candidate_address,
 			d_parameter_policy_id,
 			permissioned_candidates_policy_id,
-		} = envy::from_env::<MainChainScriptsEnvConfig>().unwrap();
+		} = envy::from_env::<MainChainScriptsEnvConfig>()?;
 
 		let committee_candidate_address = FromStr::from_str(&committee_candidate_address)
-			.map_err(|err| envy::Error::Custom(format!("Incorrect main chain address: {}", err)))
-			.unwrap();
+			.map_err(|err| envy::Error::Custom(format!("Incorrect main chain address: {}", err)))?;
 
 		Ok(Self {
 			committee_candidate_address,

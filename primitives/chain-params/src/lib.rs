@@ -49,6 +49,19 @@ pub fn default_denominator() -> u64 {
 #[cfg(feature = "std")]
 impl SidechainParams {
 	pub fn read_from_env_with_defaults() -> Result<Self, envy::Error> {
+		/// This structure is needed to read sidechain params from the environment variables because the main
+		/// type uses `rename_all = "camelCase"` serde option
+		#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+		struct SidechainParamsEnvConfiguration {
+			#[serde(default = "default_chain_id")]
+			pub chain_id: u16,
+			pub genesis_committee_utxo: UtxoId,
+			#[serde(default = "default_numerator")]
+			pub threshold_numerator: u64,
+			#[serde(default = "default_denominator")]
+			pub threshold_denominator: u64,
+			pub governance_authority: MainchainAddressHash,
+		}
 		let raw = envy::from_env::<SidechainParamsEnvConfiguration>()?;
 		Ok(Self {
 			chain_id: raw.chain_id,
@@ -58,19 +71,4 @@ impl SidechainParams {
 			governance_authority: raw.governance_authority,
 		})
 	}
-}
-
-/// This structure is needed to read sidechain params from the environment variables because the main
-/// type uses `rename_all = "camelCase"` serde option
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg(feature = "std")]
-struct SidechainParamsEnvConfiguration {
-	#[serde(default = "default_chain_id")]
-	pub chain_id: u16,
-	pub genesis_committee_utxo: UtxoId,
-	#[serde(default = "default_numerator")]
-	pub threshold_numerator: u64,
-	#[serde(default = "default_denominator")]
-	pub threshold_denominator: u64,
-	pub governance_authority: MainchainAddressHash,
 }

@@ -15,12 +15,6 @@ use sp_core::offchain::Timestamp;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SlotsPerEpoch(pub u32);
 
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-struct SlotsPerEpochEnvConfig {
-	#[cfg_attr(feature = "serde", serde(default = "default_slots_per_epoch"))]
-	slots_per_epoch: u32,
-}
-
 pub fn default_slots_per_epoch() -> u32 {
 	60
 }
@@ -35,6 +29,12 @@ impl Default for SlotsPerEpoch {
 impl SlotsPerEpoch {
 	#[cfg(feature = "std")]
 	pub fn read_from_env() -> Result<Self, envy::Error> {
+		#[derive(Serialize, Deserialize)]
+		struct SlotsPerEpochEnvConfig {
+			#[serde(default = "default_slots_per_epoch")]
+			slots_per_epoch: u32,
+		}
+
 		let raw = envy::from_env::<SlotsPerEpochEnvConfig>()?;
 		Ok(Self(raw.slots_per_epoch))
 	}
