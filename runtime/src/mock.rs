@@ -344,7 +344,7 @@ pub fn create_inherent_data_struct(
 			let mainchain_signature = dummy_mainchain_pub_key.sign(&signed_message_encoded[..]);
 			let sidechain_signature = validator.cross_chain.sign(&signed_message_encoded[..]);
 
-			let registration_data = RegistrationData {
+			let registration_data = AdaRegistrationData {
 				consumed_input: signed_message.input_utxo,
 				sidechain_signature: SidechainSignature(
 					sidechain_signature.into_inner().0[..64].to_vec(),
@@ -363,7 +363,7 @@ pub fn create_inherent_data_struct(
 
 			CandidateRegistrations {
 				mainchain_pub_key: MainchainPublicKey(dummy_mainchain_pub_key.public().0),
-				registrations: vec![registration_data],
+				registrations: Registrations::Ada(vec![registration_data]),
 				stake_delegation: Some(StakeDelegation(7)),
 			}
 		})

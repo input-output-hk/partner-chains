@@ -3,7 +3,7 @@
 use authority_selection_inherents::filter_invalid_candidates::{RegistrationDataError, StakeError};
 use parity_scale_codec::Decode;
 use serde::{Deserialize, Serialize};
-use sidechain_domain::{AdaRegistrationData, MainchainPublicKey, RegistrationData, SidechainPublicKey, StakeDelegation, UtxoInfo};
+use sidechain_domain::{EthInfo, MainchainPublicKey, RegistrationData, RegistrationOrderingKey, SidechainPublicKey, StakeDelegation, UtxoInfo};
 use sp_core::{
 	bytes::to_hex,
 	crypto::{AccountId32, Ss58Codec},
@@ -20,6 +20,31 @@ pub enum RegistrationError {
 	InvalidRegistrationData(#[from] RegistrationDataError),
 }
 
+/// Registration transaction info for each type of the followed chain.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RegistrationTxInfo {
+	/// Utxo info from Cardano chain
+	Ada(UtxoInfo),
+	/// Eth info from Ethereum chain
+	Eth(EthInfo),
+}
+
+/// default for RegistrationTxInfo is Ada
+impl Default for RegistrationTxInfo {
+	fn default() -> Self {
+		RegistrationTxInfo::Ada(UtxoInfo::default())
+	}
+}
+
+impl RegistrationTxInfo {
+	pub fn ordering_key(&self) -> RegistrationOrderingKey {
+		match self {
+			RegistrationTxInfo::Ada(utxo) => utxo.ordering_key(),
+			RegistrationTxInfo::Eth(eth) => eth.ordering_key(),
+		}
+	}
+}
+
 #[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CandidateRegistrationEntry {
@@ -33,12 +58,12 @@ pub struct CandidateRegistrationEntry {
 	pub sidechain_signature: String,
 	pub mainchain_signature: String,
 	pub cross_chain_signature: String,
-	/// Data of Utxo that contained this registration"
-	pub utxo: UtxoInfo,
+	/// Data of transaction that contained this registration
+	pub tx_info: RegistrationTxInfo,
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub stake_delegation: Option<u64>,
 	pub is_valid: bool,
-	/// Human readable reasons of registration being invalid. Present only for invalid entries.
+	/// Human-readable reasons of registration being invalid. Present only for invalid entries.
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub invalid_reasons: Option<RegistrationError>,
 }
@@ -47,25 +72,28 @@ pub type GetRegistrationsResponseMap = HashMap<String, Vec<CandidateRegistration
 
 impl CandidateRegistrationEntry {
 	pub fn new(
-		registration_data: AdaRegistrationData,
+		registration_data: RegistrationData,
 		mainchain_pub_key: MainchainPublicKey,
 		stake_delegation: Option<StakeDelegation>,
 		invalid_reasons: Option<RegistrationDataError>,
 	) -> Self {
 		Self {
-			sidechain_pub_key: to_hex(&registration_data.sidechain_pub_key.0, false),
+			sidechain_pub_key: to_hex(&registration_data.sidechain_pub_key().0, false),
 			sidechain_account_id: Self::sidechain_account_ss58(
-				registration_data.sidechain_pub_key.clone(),
+				registration_data.sidechain_pub_key().clone(),
 			)
 			.unwrap_or("Invalid Sidechain Public Key. Could not decode...".into()),
 			mainchain_pub_key: to_hex(&mainchain_pub_key.0.clone(), false),
-			cross_chain_pub_key: to_hex(&registration_data.cross_chain_pub_key.0, false),
-			aura_pub_key: to_hex(&registration_data.aura_pub_key.0, false),
-			grandpa_pub_key: to_hex(&registration_data.grandpa_pub_key.0, false),
-			sidechain_signature: to_hex(&registration_data.sidechain_signature.0, false),
-			mainchain_signature: to_hex(&registration_data.mainchain_signature.0, false),
-			cross_chain_signature: to_hex(&registration_data.cross_chain_signature.0, false),
-			utxo: registration_data.utxo_info,
+			cross_chain_pub_key: to_hex(&registration_data.cross_chain_pub_key().0, false),
+			aura_pub_key: to_hex(&registration_data.aura_pub_key().0, false),
+			grandpa_pub_key: to_hex(&registration_data.grandpa_pub_key().0, false),
+			sidechain_signature: to_hex(&registration_data.sidechain_signature().0, false),
+			mainchain_signature: to_hex(&registration_data.mainchain_signature().0, false),
+			cross_chain_signature: to_hex(&registration_data.cross_chain_signature().0, false),
+			tx_info: match registration_data {
+				RegistrationData::Ada(utxo) => RegistrationTxInfo::Ada(utxo.utxo_info),
+				RegistrationData::Eth(eth) => RegistrationTxInfo::Eth(eth.tx_info),
+			},
 			stake_delegation: stake_delegation.map(|sd| sd.0),
 			is_valid: invalid_reasons.is_none(),
 			invalid_reasons: invalid_reasons.map(|e| e.into()),
@@ -106,7 +134,7 @@ mod tests {
 				sidechain_signature: "0x3da1014f1ba4ece29a82b98e2ee4e707bd062523f558e84857cd97d95c525ebd4762812bc1baaf92117861d41acd8641d474f1b30367f0c1ebcf0d280ec44338".to_string(),
 				mainchain_signature: "0x37a45144a24ddd0ded388b7b39441b4ceb7abd1935d02fe6abf07f14025b663e81b53678b3f6701a7c76af7981246537eeee6a790aac18445bb8494bea38990f".to_string(),
 				cross_chain_signature: "0x3da1014f1ba4ece29a82b98e2ee4e707bd062523f558e84857cd97d95c525ebd4762812bc1baaf92117861d41acd8641d474f1b30367f0c1ebcf0d280ec44338".to_string(),
-				utxo: UtxoInfo {
+				tx_info: RegistrationTxInfo::Ada(UtxoInfo {
 					utxo_id: UtxoId {
 						tx_hash: McTxHash(hex!("a40c500e3cd4a374916947bc1ff419d5ed1b3e0bef410ba793c3507703f3d6de")),
 						index: UtxoIndex(0),
@@ -115,7 +143,7 @@ mod tests {
 					block_number: McBlockNumber(1147672),
 					slot_number: McSlotNumber(26223403),
 					tx_index_within_block: McTxIndexInBlock(0),
-				},
+				}),
 				stake_delegation: Some(2380000000),
 				is_valid: true,
 				invalid_reasons: None,

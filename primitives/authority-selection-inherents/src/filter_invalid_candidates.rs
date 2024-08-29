@@ -248,7 +248,7 @@ pub fn validate_registration_data<Params: ToDatum + Clone>(
 			})
 		},
 
-		RegistrationData::Eth(registration_data) => todo!("Ethereum registration data validation"),
+		RegistrationData::Eth(_) => todo!("Ethereum registration data validation"),
 	}
 }
 
@@ -335,7 +335,6 @@ mod tests {
 	use chain_params::SidechainParams;
 	use hex_literal::hex;
 	use sp_core::Pair;
-	use RegistrationData::*;
 
 	/// Get Valid Parameters of the `is_registration_data_valid()` function
 	fn create_valid_parameters() -> (MainchainPublicKey, AdaRegistrationData, SidechainParams) {

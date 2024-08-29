@@ -43,6 +43,7 @@ mod tests {
 		AuraPublicKey, GrandpaPublicKey, MainchainPublicKey, McBlockNumber, McSlotNumber, McTxHash,
 		McTxIndexInBlock, SidechainPublicKey, UtxoId, UtxoIndex, UtxoInfo,
 	};
+	use crate::types::RegistrationTxInfo;
 
 	struct MockSessionValidatorManagementQuery {
 		pub ariadne_parameters: Option<AriadneParameters>,
@@ -136,7 +137,7 @@ mod tests {
 			sidechain_signature: "0x3da1014f1ba4ece29a82b98e2ee4e707bd062523f558e84857cd97d95c525ebd4762812bc1baaf92117861d41acd8641d474f1b30367f0c1ebcf0d280ec44338".to_string(),
 			mainchain_signature: "0x37a45144a24ddd0ded388b7b39441b4ceb7abd1935d02fe6abf07f14025b663e81b53678b3f6701a7c76af7981246537eeee6a790aac18445bb8494bea38990f".to_string(),
 			cross_chain_signature: "0x3da1014f1ba4ece29a82b98e2ee4e707bd062523f558e84857cd97d95c525ebd4762812bc1baaf92117861d41acd8641d474f1b30367f0c1ebcf0d280ec44338".to_string(),
-			utxo: UtxoInfo {
+			tx_info: RegistrationTxInfo::Ada(UtxoInfo {
 				utxo_id: UtxoId {
 					tx_hash: McTxHash(hex!("a40c500e3cd4a374916947bc1ff419d5ed1b3e0bef410ba793c3507703f3d6de")),
 					index: UtxoIndex(0),
@@ -145,7 +146,7 @@ mod tests {
 				block_number: McBlockNumber(1147672),
 				slot_number: McSlotNumber(26223403),
 				tx_index_within_block: McTxIndexInBlock(0),
-			},
+			}),
 			stake_delegation: Some(2380000000),
 			is_valid: true,
 			invalid_reasons: None,

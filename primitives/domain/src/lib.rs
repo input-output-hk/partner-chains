@@ -435,18 +435,18 @@ pub struct UtxoInfo {
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct UtxoInfoOrderingKey {
+pub struct RegistrationOrderingKey {
 	pub block_number: McBlockNumber,
 	pub tx_index_within_block: McTxIndexInBlock,
-	pub utxo_id_index: UtxoIndex,
+	pub index_within_tx: UtxoIndex,
 }
 
 impl UtxoInfo {
-	pub fn ordering_key(&self) -> UtxoInfoOrderingKey {
-		UtxoInfoOrderingKey {
+	pub fn ordering_key(&self) -> RegistrationOrderingKey {
+		RegistrationOrderingKey {
 			block_number: self.block_number,
 			tx_index_within_block: self.tx_index_within_block,
-			utxo_id_index: self.utxo_id.index,
+			index_within_tx: self.utxo_id.index,
 		}
 	}
 }
@@ -461,17 +461,12 @@ pub struct EthInfo {
 	pub tx_index_within_block: McTxIndexInBlock,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct EthInfoOrderingKey {
-	pub block_number: McBlockNumber,
-	pub tx_index_within_block: McTxIndexInBlock,
-}
-
 impl EthInfo {
-	pub fn ordering_key(&self) -> EthInfoOrderingKey {
-		EthInfoOrderingKey {
+	pub fn ordering_key(&self) -> RegistrationOrderingKey {
+		RegistrationOrderingKey {
 			block_number: self.block_number,
 			tx_index_within_block: self.tx_index_within_block,
+			index_within_tx: UtxoIndex(0),
 		}
 	}
 }
@@ -523,10 +518,12 @@ pub enum Registrations {
 }
 
 impl Registrations {
-	pub fn ada_registrations(&self) -> Vec<&AdaRegistrationData> {
+	pub fn registration_data_items(&self) -> Vec<RegistrationData> {
 		match self {
-			Registrations::Ada(registrations) => registrations.iter().collect(),
-			_ => vec![],
+			Registrations::Ada(registrations) =>
+				registrations.iter().map(|i|i.clone().into()).collect(),
+			Registrations::Eth(registrations) =>
+				registrations.iter().map(|i|i.clone().into()).collect(),
 		}
 	}
 }
@@ -562,13 +559,28 @@ impl From<EthRegistrationData> for RegistrationData {
 	}
 }
 
+/// Generates accessor method for common fields of different RegistrationData variants.
+macro_rules! common_field_accessor {
+	($struct_type: ident, $name: ident, $type: ident) => {
+		pub fn $name(&self) -> &$type {
+			match self {
+				$struct_type::Ada(data) => &data.$name,
+				$struct_type::Eth(data) => &data.$name,
+			}
+		}
+	};
+}
+
 impl RegistrationData {
-  pub fn mainchain_signature(&self) -> &MainchainSignature {
-	match self {
-	  RegistrationData::Ada(data) => &data.mainchain_signature,
-	  RegistrationData::Eth(data) => &data.mainchain_signature,
-	}
-  }
+	// TODO: This is likely a temporary solution until a better design is found for multi-chain registration data.
+	/// Accessor methods for common fields of different RegistrationData variants.
+	common_field_accessor!(RegistrationData, sidechain_signature, SidechainSignature);
+	common_field_accessor!(RegistrationData, mainchain_signature, MainchainSignature);
+	common_field_accessor!(RegistrationData, cross_chain_signature, CrossChainSignature);
+	common_field_accessor!(RegistrationData, sidechain_pub_key, SidechainPublicKey);
+	common_field_accessor!(RegistrationData, cross_chain_pub_key, CrossChainPublicKey);
+	common_field_accessor!(RegistrationData, aura_pub_key, AuraPublicKey);
+	common_field_accessor!(RegistrationData, grandpa_pub_key, GrandpaPublicKey);
 }
 
 /// Information about an Authority Candidate's Registrations at some block.

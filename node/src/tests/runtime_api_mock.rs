@@ -70,15 +70,17 @@ sp_api::mock_impl_runtime_apis! {
 			if authority_selection_inputs.registered_candidates.is_empty() {
 				None
 			} else {
-				let result: Vec<(CrossChainPublic, SessionKeys)> = authority_selection_inputs.registered_candidates.into_iter().map(|candidate| {
-					let registration = candidate.registrations().first().unwrap().clone();
-					let cross_chain_pub_slice: [u8; 33] = registration.cross_chain_pub_key.0.try_into().unwrap();
-					let cross_chain_public: CrossChainPublic = CrossChainPublic::from(ecdsa::Public::from(cross_chain_pub_slice));
-					let aura_pub_key = registration.aura_pub_key.try_into_sr25519().unwrap();
-					let grandpa_pub_key = registration.grandpa_pub_key.try_into_ed25519().unwrap();
-					let session_keys = (aura_pub_key, grandpa_pub_key).into();
-					(cross_chain_public, session_keys)
-				}).collect();
+				let result: Vec<(CrossChainPublic, SessionKeys)> = authority_selection_inputs
+					.registered_candidates.into_iter()
+					.map(|candidate| {
+						let registration = candidate.registrations().registration_data_items().first().unwrap().clone();
+						let cross_chain_pub_slice: [u8; 33] = registration.cross_chain_pub_key().0.clone().try_into().unwrap();
+						let cross_chain_public = CrossChainPublic::from(ecdsa::Public::from(cross_chain_pub_slice));
+						let aura_pub_key = registration.aura_pub_key().try_into_sr25519().unwrap();
+						let grandpa_pub_key = registration.grandpa_pub_key().try_into_ed25519().unwrap();
+						let session_keys = (aura_pub_key, grandpa_pub_key).into();
+						(cross_chain_public, session_keys)
+					}).collect();
 				Some(result)
 			}
 		}

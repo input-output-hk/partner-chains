@@ -294,8 +294,8 @@ fn latest_permissioned_candidates() -> Vec<RawPermissionedCandidateData> {
 fn leader_candidate_spo_a() -> CandidateRegistrations {
 	CandidateRegistrations {
 			mainchain_pub_key: MainchainPublicKey(hex!("bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d")),
-			registrations: vec![
-				RegistrationData {
+			registrations: Registrations::Ada(vec![
+				AdaRegistrationData {
 					consumed_input: UtxoId::new(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"), 1),
 					sidechain_signature: SidechainSignature(hex!("f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e").to_vec()),
 					mainchain_signature: MainchainSignature(hex!("28d1c3b7df297a60d24a3f88bc53d7029a8af35e8dd876764fd9e7a24203a3482a98263cc8ba2ddc7dc8e7faea31c2e7bad1f00e28c43bc863503e3172dc6b0a").to_vec()),
@@ -316,7 +316,7 @@ fn leader_candidate_spo_a() -> CandidateRegistrations {
 						UtxoId::new(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"), 0),
 					],
 				}
-			],
+			]),
 			stake_delegation: Some(StakeDelegation(1001995478725)),
 		}
 }
@@ -324,8 +324,8 @@ fn leader_candidate_spo_a() -> CandidateRegistrations {
 fn leader_candidate_spo_b() -> CandidateRegistrations {
 	CandidateRegistrations {
 			mainchain_pub_key: MainchainPublicKey(hex!("cfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d")),
-			registrations: vec![
-				RegistrationData {
+			registrations: Registrations::Ada(vec![
+				AdaRegistrationData {
 					consumed_input: UtxoId::new(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"), 1),
 					sidechain_signature: SidechainSignature(hex!("f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e").to_vec()),
 					mainchain_signature: MainchainSignature(hex!("28d1c3b7df297a60d24a3f88bc53d7029a8af35e8dd876764fd9e7a24203a3482a98263cc8ba2ddc7dc8e7faea31c2e7bad1f00e28c43bc863503e3172dc6b0a").to_vec()),
@@ -346,7 +346,7 @@ fn leader_candidate_spo_b() -> CandidateRegistrations {
 						UtxoId::new(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"), 0),
 					],
 				}
-			],
+			]),
 			stake_delegation: Some(StakeDelegation(5001995651486)),
 		}
 }
@@ -354,8 +354,8 @@ fn leader_candidate_spo_b() -> CandidateRegistrations {
 fn leader_candidate_spo_c() -> CandidateRegistrations {
 	CandidateRegistrations {
 			mainchain_pub_key: MainchainPublicKey(hex!("3fd6618bfcb8d964f44beba4280bd91c6e87ac5bca4aa1c8f1cde9e85352660b")),
-			registrations: vec![
-				RegistrationData {
+			registrations: Registrations::Ada(vec![
+				AdaRegistrationData {
 					consumed_input: UtxoId::new(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"), 2),
 					sidechain_signature: SidechainSignature(hex!("3e8a8b29e513a08d0a66e22422a1a85d1bf409987f30a8c6fcab85ba38a85d0d27793df7e7fb63ace12203b062feb7edb5e6664ac1810b94c38182acc6167425").to_vec()),
 					mainchain_signature: MainchainSignature(hex!("1fd2f1e5ad14c829c7359474764701cd74ab9c433c29b0bbafaa6bcf22376e9d651391d08ae6f40b418d2abf827c4c1fcb007e779a2beba7894d68012942c708").to_vec()),
@@ -375,7 +375,7 @@ fn leader_candidate_spo_c() -> CandidateRegistrations {
 						UtxoId::new(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"), 2),
 					],
 				}
-			],
+			]),
 			stake_delegation: Some(StakeDelegation(123456789)),
 		}
 }
