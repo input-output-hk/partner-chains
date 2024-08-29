@@ -98,7 +98,7 @@ impl CmdRun for SetupMainChainStateCmd {
 
 		let sidechain_exec = config_fields::SIDECHAIN_MAIN_CLI
 			.load_from_file(context)
-			.ok_or_else(|| anyhow::anyhow!("⚠️ Unable to load sidechain cli executable"))?;
+			.ok_or_else(|| anyhow::anyhow!("Partner Chains Smart Contracts executable file (./sidechain-main-cli) is missing"))?;
 
 		let has_sidechain_main_cli =
 			context.file_exists(&sidechain_exec) || context.which(&sidechain_exec).is_some();
@@ -274,7 +274,7 @@ fn set_candidates_on_main_chain<C: IOContext>(
 
 		let sidechain_exec = config_fields::SIDECHAIN_MAIN_CLI
 			.load_from_file(context)
-			.ok_or_else(|| anyhow::anyhow!("⚠️ Unable to load sidechain cli executable"))?;
+			.ok_or_else(|| anyhow::anyhow!("Partner Chains Smart Contracts executable file (./sidechain-main-cli) is missing"))?;
 
 		let output = context.run_command(&format!(
 			"{} {} --network {} {} {} {}",
@@ -323,7 +323,7 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
 		let sidechain_exec = config_fields::SIDECHAIN_MAIN_CLI
 			.load_from_file(context)
-			.ok_or_else(|| anyhow::anyhow!("⚠️ Unable to load sidechain cli executable"))?;
+			.ok_or_else(|| anyhow::anyhow!("Partner Chains Smart Contracts executable file (./sidechain-main-cli) is missing"))?;
 		let sidechain_main_cli_command = insert.d_parameter_command();
 		let cardano_network = get_cardano_network_from_file(context)?;
 		let command = format!(

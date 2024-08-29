@@ -98,6 +98,7 @@ impl MockIO {
 	}
 }
 
+#[derive(Debug)]
 pub struct MockIOContext {
 	expected_io: RefCell<Vec<MockIO>>,
 	files: RefCell<HashMap<String, String>>,

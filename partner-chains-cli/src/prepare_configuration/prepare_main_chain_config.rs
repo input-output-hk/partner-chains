@@ -26,9 +26,12 @@ pub fn prepare_main_chain_config<C: IOContext>(
 	context: &C,
 	sidechain_params: SidechainParams,
 ) -> anyhow::Result<()> {
-	let sidechain_exec = config_fields::SIDECHAIN_MAIN_CLI
-		.load_from_file(context)
-		.ok_or_else(|| anyhow::anyhow!("⚠️ Unable to load sidechain cli executable"))?;
+	let sidechain_exec =
+		config_fields::SIDECHAIN_MAIN_CLI.load_from_file(context).ok_or_else(|| {
+			anyhow::anyhow!(
+				"Partner Chains Smart Contracts executable file (./sidechain-main-cli) is missing"
+			)
+		})?;
 	let has_sidechain_main_cli =
 		context.file_exists(&sidechain_exec) || context.which(&sidechain_exec).is_some();
 
