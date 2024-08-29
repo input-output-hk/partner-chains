@@ -218,13 +218,14 @@
 <a href="#216" id="216">216</a>
 <a href="#217" id="217">217</a>
 <a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::main_chain_follower::DataSources;
 <span class="kw">use </span>authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider <span class="kw">as </span>AriadneIDP;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>derive_new::new;
 <span class="kw">use </span>epoch_derivation::EpochConfig;
 <span class="kw">use </span>jsonrpsee::core::async_trait;
-<span class="kw">use </span>sc_consensus_aura::{find_pre_digest, standalone::CurrentSlotProvider, SlotDuration};
+<span class="kw">use </span>sc_consensus_aura::{find_pre_digest, SlotDuration};
 <span class="kw">use </span>sc_service::Arc;
 <span class="kw">use </span>sidechain_domain::{McBlockHash, ScEpochNumber};
 <span class="kw">use </span>sidechain_mc_hash::McHashInherentDataProvider <span class="kw">as </span>McHashIDP;
@@ -244,6 +245,7 @@
 <span class="kw">use </span>sp_native_token_management::{
 	NativeTokenManagementApi, NativeTokenManagementInherentDataProvider <span class="kw">as </span>NativeTokenIDP,
 };
+<span class="kw">use </span>sp_partner_chains_consensus_aura::CurrentSlotProvider;
 <span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, Header, Zero};
 <span class="kw">use </span>sp_session_validator_management::SessionValidatorManagementApi;
 <span class="kw">use </span>sp_timestamp::{InherentDataProvider <span class="kw">as </span>TimestampIDP, Timestamp};

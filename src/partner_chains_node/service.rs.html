@@ -396,6 +396,15 @@
 <a href="#394" id="394">394</a>
 <a href="#395" id="395">395</a>
 <a href="#396" id="396">396</a>
+<a href="#397" id="397">397</a>
+<a href="#398" id="398">398</a>
+<a href="#399" id="399">399</a>
+<a href="#400" id="400">400</a>
+<a href="#401" id="401">401</a>
+<a href="#402" id="402">402</a>
+<a href="#403" id="403">403</a>
+<a href="#404" id="404">404</a>
+<a href="#405" id="405">405</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 </span><span class="kw">use </span><span class="kw">crate</span>::inherent_data::{CreateInherentDataConfig, ProposalCIDP, VerifierCIDP};
@@ -409,12 +418,14 @@
 <span class="kw">use </span>sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 <span class="kw">use </span>sc_consensus_grandpa::SharedVoterState;
 <span class="kw">pub use </span>sc_executor::WasmExecutor;
+<span class="kw">use </span>sc_partner_chains_consensus_aura::import_queue <span class="kw">as </span>partner_chains_aura_import_queue;
 <span class="kw">use </span>sc_service::{error::Error <span class="kw">as </span>ServiceError, Configuration, TaskManager, WarpSyncParams};
 <span class="kw">use </span>sc_telemetry::{Telemetry, TelemetryWorker};
 <span class="kw">use </span>sc_transaction_pool_api::OffchainTransactionPoolFactory;
 <span class="kw">use </span>sidechain_mc_hash::McHashInherentDigest;
 <span class="kw">use </span>sidechain_runtime::{<span class="self">self</span>, opaque::Block, RuntimeApi};
 <span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityPair <span class="kw">as </span>AuraPair;
+<span class="kw">use </span>sp_partner_chains_consensus_aura::block_proposal::PartnerChainsProposerFactory;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="kw">use </span>std::{sync::Arc, time::Duration};
 <span class="kw">use </span>time_source::SystemTimeSource;
@@ -518,24 +529,29 @@
 	<span class="kw">let </span>epoch_config = EpochConfig::read().map_err(|err| ServiceError::Application(err.into()))<span class="question-mark">?</span>;
 	<span class="kw">let </span>inherent_config = CreateInherentDataConfig::new(epoch_config, sc_slot_config, time_source);
 
-	<span class="kw">let </span>import_queue =
-		sc_consensus_aura::import_queue::&lt;AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, McHashInherentDigest&gt;(
-			ImportQueueParams {
-				block_import: grandpa_block_import.clone(),
-				justification_import: <span class="prelude-val">Some</span>(Box::new(grandpa_block_import.clone())),
-				client: client.clone(),
-				create_inherent_data_providers: VerifierCIDP::new(
-					inherent_config,
-					client.clone(),
-					data_sources.clone(),
-				),
-				spawner: <span class="kw-2">&amp;</span>task_manager.spawn_essential_handle(),
-				registry: config.prometheus_registry(),
-				check_for_equivocation: Default::default(),
-				telemetry: telemetry.as_ref().map(|x| x.handle()),
-				compatibility_mode: Default::default(),
-			},
-		)<span class="question-mark">?</span>;
+	<span class="kw">let </span>import_queue = partner_chains_aura_import_queue::import_queue::&lt;
+		AuraPair,
+		<span class="kw">_</span>,
+		<span class="kw">_</span>,
+		<span class="kw">_</span>,
+		<span class="kw">_</span>,
+		<span class="kw">_</span>,
+		McHashInherentDigest,
+	&gt;(ImportQueueParams {
+		block_import: grandpa_block_import.clone(),
+		justification_import: <span class="prelude-val">Some</span>(Box::new(grandpa_block_import.clone())),
+		client: client.clone(),
+		create_inherent_data_providers: VerifierCIDP::new(
+			inherent_config,
+			client.clone(),
+			data_sources.clone(),
+		),
+		spawner: <span class="kw-2">&amp;</span>task_manager.spawn_essential_handle(),
+		registry: config.prometheus_registry(),
+		check_for_equivocation: Default::default(),
+		telemetry: telemetry.as_ref().map(|x| x.handle()),
+		compatibility_mode: Default::default(),
+	})<span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(sc_service::PartialComponents {
 		client,
@@ -687,13 +703,15 @@
 	})<span class="question-mark">?</span>;
 
 	<span class="kw">if </span>role.is_authority() {
-		<span class="kw">let </span>proposer_factory = sc_basic_authorship::ProposerFactory::new(
+		<span class="kw">let </span>basic_authorship_proposer_factory = sc_basic_authorship::ProposerFactory::new(
 			task_manager.spawn_handle(),
 			client.clone(),
 			transaction_pool.clone(),
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|x| x.handle()),
 		);
+		<span class="kw">let </span>proposer_factory: PartnerChainsProposerFactory&lt;<span class="kw">_</span>, <span class="kw">_</span>, McHashInherentDigest&gt; =
+			PartnerChainsProposerFactory::new(basic_authorship_proposer_factory);
 
 		<span class="kw">let </span>sc_slot_config = sidechain_slots::runtime_api_client::slot_config(<span class="kw-2">&amp;*</span>client)
 			.map_err(sp_blockchain::Error::from)<span class="question-mark">?</span>;
@@ -702,7 +720,7 @@
 			EpochConfig::read().map_err(|err| ServiceError::Application(err.into()))<span class="question-mark">?</span>;
 		<span class="kw">let </span>inherent_config =
 			CreateInherentDataConfig::new(epoch_config, sc_slot_config.clone(), time_source);
-		<span class="kw">let </span>aura = sc_consensus_aura::start_aura::&lt;
+		<span class="kw">let </span>aura = sc_partner_chains_consensus_aura::start_aura::&lt;
 			AuraPair,
 			<span class="kw">_</span>,
 			<span class="kw">_</span>,

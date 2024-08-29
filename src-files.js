@@ -21,6 +21,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["partner_chains_node_commands",["",[],["lib.rs"]]],\
 ["plutus",["",[],["cbor.rs","lib.rs"]]],\
 ["plutus_datum_derive",["",[],["lib.rs"]]],\
+["sc_partner_chains_consensus_aura",["",[],["import_queue.rs","lib.rs"]]],\
 ["selection",["",[],["impls.rs","lib.rs","weighted_random.rs"]]],\
 ["session_manager",["",[],["lib.rs"]]],\
 ["sidechain_block_search",["",[],["binary_search.rs","impl_block_info.rs","impl_compare_strategy.rs","impl_find_block.rs","lib.rs"]]],\

@@ -269,6 +269,7 @@
 <a href="#267" id="267">267</a>
 <a href="#268" id="268">268</a>
 <a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::McHashInherentError::StableBlockNotFound;
 <span class="kw">use </span>main_chain_follower_api::{
 	block::MainchainBlock, common::Timestamp <span class="kw">as </span>McTimestamp, BlockDataSource, DataSourceError,
@@ -276,7 +277,8 @@
 <span class="kw">use </span>sidechain_domain::{byte_string::ByteString, McBlockHash, McBlockNumber, McEpochNumber};
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_consensus_slots::{Slot, SlotDuration};
-<span class="kw">use </span>sp_inherents::{InherentData, InherentDataProvider, InherentDigest, InherentIdentifier};
+<span class="kw">use </span>sp_inherents::{InherentData, InherentDataProvider, InherentIdentifier};
+<span class="kw">use </span>sp_partner_chains_consensus_aura::inherent_digest::InherentDigest;
 <span class="kw">use </span>sp_runtime::{
 	traits::{Block <span class="kw">as </span>BlockT, Header <span class="kw">as </span>HeaderT, Zero},
 	DigestItem,
