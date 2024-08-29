@@ -1,7 +1,7 @@
-use clap::command;
-use sc_cli::RunCmd;
 use chain_params::SidechainParams;
+use clap::command;
 use partner_chains_node_commands::PartnerChainsSubcommand;
+use sc_cli::RunCmd;
 
 #[derive(Debug, clap::Parser)]
 pub struct Cli {

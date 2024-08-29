@@ -3,7 +3,6 @@
 
 #[macro_use]
 mod benchmarking;
-mod chain_init;
 mod chain_spec;
 mod cli;
 mod command;

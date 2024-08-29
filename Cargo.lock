@@ -6055,7 +6055,6 @@ dependencies = [
  "log",
  "main-chain-follower-api",
  "main-chain-follower-mock",
- "minicbor",
  "pallet-partner-chains-session",
  "pallet-session-validator-management",
  "pallet-session-validator-management-rpc",

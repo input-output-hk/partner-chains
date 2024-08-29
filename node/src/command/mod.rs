@@ -1,4 +1,3 @@
-use crate::chain_init::{SleeperLive, GENERATED_CHAIN_SPEC_FILE_NAME};
 use crate::chain_spec::EnvVarReadError;
 use crate::{
 	benchmarking::{inherent_benchmark_data, RemarkBuilder, TransferKeepAliveBuilder},
@@ -6,10 +5,8 @@ use crate::{
 	service,
 };
 use crate::{chain_spec, staging, template_chain_spec, testnet};
-use epoch_derivation::EpochConfig;
 use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE};
-use futures::FutureExt;
-use sc_cli::{Runner, SubstrateCli};
+use sc_cli::SubstrateCli;
 use sc_service::PartialComponents;
 use sidechain_runtime::{Block, EXISTENTIAL_DEPOSIT};
 use sp_keyring::Sr25519Keyring;
@@ -69,10 +66,10 @@ pub fn run() -> sc_cli::Result<()> {
 	match &cli.subcommand {
 		Some(Subcommand::Key(cmd)) => cmd.run(&cli),
 		Some(Subcommand::PartnerChains(cmd)) => {
-			let make_dependencies = |config| { async move {
+			let make_dependencies = |config| async move {
 				let components = service::new_partial(&config).await?;
 				Ok((components.client, components.task_manager, components.other.3.candidate))
-			}};
+			};
 			partner_chains_node_commands::run(&cli, make_dependencies, cmd.clone())
 		},
 		Some(Subcommand::BuildSpec(cmd)) => {
@@ -205,28 +202,7 @@ pub fn run() -> sc_cli::Result<()> {
 			runner.sync_run(|config| async move { cmd.run::<Block>(&config) })
 		},
 		None => {
-			let use_chain_init = read_chain_init_flag();
-
-			let mut runner = cli.create_runner(&cli.run)?;
-
-			if use_chain_init {
-				let chain_spec = match crate::chain_init::read_spec(GENERATED_CHAIN_SPEC_FILE_NAME)
-				{
-					Ok(spec) => {
-						// Excessive logging to avoid confusion
-						log::info!("💡{} has been found in the working directory, and it will be used as the chain specification for the node. This is because the USE_CHAIN_INIT flag is currently set to true. If you wish to use a custom chain specification, please disable the USE_CHAIN_INIT flag.", GENERATED_CHAIN_SPEC_FILE_NAME);
-						spec
-					},
-					Err(_) => {
-						log::info!("🏗️ Starting chain initialization procedure...");
-						initialize_chain_spec(&runner)?
-					},
-				};
-				// Update the runner config with the chain spec and run the node
-				runner.config_mut().chain_spec = chain_spec;
-				log::info!("Starting the node with the generated chain spec");
-			}
-
+			let runner = cli.create_runner(&cli.run)?;
 			runner.run_node_until_exit(|config| async move {
 				service::new_full::<sc_network::NetworkWorker<_, _>>(config)
 					.await
@@ -234,42 +210,4 @@ pub fn run() -> sc_cli::Result<()> {
 			})
 		},
 	}
-}
-
-fn read_chain_init_flag() -> bool {
-	std::env::var("USE_CHAIN_INIT")
-		.ok()
-		.and_then(|val| val.parse::<bool>().ok())
-		.unwrap_or(false)
-}
-
-fn initialize_chain_spec(runner: &Runner<Cli>) -> Result<Box<dyn sc_service::ChainSpec>, String> {
-	let chain_init_client_future = service::chain_init_client(&runner.config).map(|res| res.ok());
-	let (client, data_sources) = runner
-		.interruptible_block_on(chain_init_client_future)
-		.map_err(|err| format!("Failed to create client: {:?}", err))?;
-
-	let epoch_config =
-		EpochConfig::read().map_err(|err| format!("Failed to read epoch config: {:?}", err))?;
-
-	let generated_chain_spec_future =
-		crate::chain_init::run(client, &data_sources, &epoch_config, runner.config(), SleeperLive)
-			.map(|res| res.ok());
-
-	runner
-		.interruptible_block_on(generated_chain_spec_future)
-		.map(|generated_chain_spec| {
-			log::info!("✅ Chain initialization success, the initial committee has been selected");
-			log::info!("💾 Saving the generated chain spec to {}", GENERATED_CHAIN_SPEC_FILE_NAME);
-			let _ = crate::chain_init::save_spec(
-				generated_chain_spec.cloned_box(),
-				GENERATED_CHAIN_SPEC_FILE_NAME,
-			)
-			.map_err(|err| {
-				log::error!("Failed to save the generated chain spec: {:?}", err);
-			});
-
-			generated_chain_spec
-		})
-		.map_err(|_| "Initialization process terminated by user".into())
 }

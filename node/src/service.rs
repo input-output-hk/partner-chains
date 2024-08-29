@@ -151,24 +151,6 @@ pub async fn new_partial(
 	})
 }
 
-pub async fn chain_init_client(
-	config: &Configuration,
-) -> Result<(Arc<FullClient>, DataSources), ServiceError> {
-	let executor = sc_service::new_wasm_executor(config);
-
-	let (client, _, _, _) =
-		sc_service::new_full_parts::<Block, RuntimeApi, _>(config, None, executor)?;
-
-	let client = Arc::new(client);
-
-	// TODO enable metrics for chain init
-	let data_sources =
-		crate::main_chain_follower::create_cached_main_chain_follower_data_sources(None).await?;
-
-	Ok((client, data_sources))
-}
-
-/// Builds a new service for a full client.
 pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as BlockT>::Hash>>(
 	config: Configuration,
 ) -> Result<TaskManager, ServiceError> {
