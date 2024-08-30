@@ -94,11 +94,10 @@ pub fn run<Cli, Dependencies, SmartContractsParams, Block, CrossChainPublic, Ses
 where
 	Cli: SubstrateCli,
 	Dependencies: Future<
-		Output = Result<(
-			Arc<Client>,
-			TaskManager,
-			Arc<dyn CandidateDataSource + Send + Sync>,
-		), sc_service::error::Error>,
+		Output = Result<
+			(Arc<Client>, TaskManager, Arc<dyn CandidateDataSource + Send + Sync>),
+			sc_service::error::Error,
+		>,
 	>,
 	SmartContractsParams: Args + ToDatum + Clone + Decode + Serialize + Send + Sync + 'static,
 	Client: ProvideRuntimeApi<Block> + HeaderBackend<Block> + 'static,

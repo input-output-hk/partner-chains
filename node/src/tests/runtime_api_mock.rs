@@ -1,4 +1,4 @@
-use super::*;
+use super::mock::mock_sidechain_params;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use chain_params::SidechainParams;
 use sidechain_domain::*;
@@ -7,6 +7,7 @@ use sidechain_runtime::opaque::SessionKeys;
 use sidechain_runtime::CrossChainPublic;
 use sp_api::{ApiRef, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
+use sp_core::ecdsa;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, NumberFor, Zero};
 use sp_runtime::Digest;
 use sp_sidechain::GetSidechainParams;

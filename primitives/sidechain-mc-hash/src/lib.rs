@@ -5,7 +5,8 @@ use main_chain_follower_api::{
 use sidechain_domain::{byte_string::ByteString, McBlockHash, McBlockNumber, McEpochNumber};
 use sp_blockchain::HeaderBackend;
 use sp_consensus_slots::{Slot, SlotDuration};
-use sp_inherents::{InherentData, InherentDataProvider, InherentDigest, InherentIdentifier};
+use sp_inherents::{InherentData, InherentDataProvider, InherentIdentifier};
+use sp_partner_chains_consensus_aura::inherent_digest::InherentDigest;
 use sp_runtime::{
 	traits::{Block as BlockT, Header as HeaderT, Zero},
 	DigestItem,

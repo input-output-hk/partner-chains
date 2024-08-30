@@ -1,0 +1,50 @@
+[package]
+name = "sc-partner-chains-consensus-aura"
+version = "1.0.0"
+description = "Partner Chains modification to the Substrate Aura consensus engine"
+authors = [ "IOG "]
+homepage = "https://iohk.io/"
+edition = "2021"
+license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
+repository = "https://github.com/input-output-hk/partner-chains/"
+readme = "README.md"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+async-trait = { workspace = true }
+parity-scale-codec = { workspace = true, default-features = true }
+futures = { workspace = true }
+log = { workspace = true, default-features = true }
+sc-client-api = { workspace = true, default-features = true }
+sc-consensus = { workspace = true, default-features = true }
+sc-consensus-aura = { workspace = true, default-features = true }
+sc-consensus-slots = { workspace = true, default-features = true }
+sc-telemetry = { workspace = true, default-features = true }
+sp-api = { workspace = true, default-features = true }
+sp-application-crypto = { workspace = true, default-features = true }
+sp-blockchain = { workspace = true, default-features = true }
+sp-block-builder = { workspace = true, default-features = true }
+sp-consensus = { workspace = true, default-features = true }
+sp-consensus-aura = { workspace = true, default-features = true }
+sp-consensus-slots = { workspace = true, default-features = true }
+sp-core = { workspace = true, default-features = true }
+sp-inherents = { workspace = true, default-features = true }
+sp-keystore = { workspace = true, default-features = true }
+sp-runtime = { workspace = true, default-features = true }
+sp-partner-chains-consensus-aura = { workspace = true, default-features = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+parking_lot = { workspace = true, default-features = true }
+tempfile = { workspace = true }
+sc-block-builder = { workspace = true, default-features = true }
+sc-keystore = { workspace = true, default-features = true }
+sc-network = { workspace = true, default-features = true }
+sc-network-test = { workspace = true }
+sp-keyring = { workspace = true, default-features = true }
+sp-timestamp = { workspace = true, default-features = true }
+sp-tracing = { workspace = true, default-features = true }
+substrate-test-runtime-client = { workspace = true }
+tokio = { workspace = true, default-features = true }

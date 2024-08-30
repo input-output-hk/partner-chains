@@ -32,6 +32,26 @@ pub struct TokenTransferData {
 	pub token_amount: NativeTokenAmount,
 }
 
+#[derive(Encode, Debug, PartialEq)]
+#[cfg_attr(feature = "std", derive(Decode, thiserror::Error))]
+pub enum InherentError {
+	#[cfg_attr(feature = "std", error("Inherent missing for token transfer of {}", 0.0))]
+	TokenTransferNotHandled(NativeTokenAmount),
+	#[cfg_attr(
+		feature = "std",
+		error("Incorrect token transfer amount: expected {}, got {}", 0.0, 1.0)
+	)]
+	IncorrectTokenNumberTransfered(NativeTokenAmount, NativeTokenAmount),
+	#[cfg_attr(feature = "std", error("Unexpected transfer of {} tokens", 0.0))]
+	UnexpectedTokenTransferInherent(NativeTokenAmount),
+}
+
+impl IsFatalError for InherentError {
+	fn is_fatal_error(&self) -> bool {
+		true
+	}
+}
+
 #[cfg(feature = "std")]
 mod inherent_provider {
 	use super::*;
@@ -105,13 +125,15 @@ mod inherent_provider {
 		async fn try_handle_error(
 			&self,
 			identifier: &InherentIdentifier,
-			_error: &[u8],
+			mut error: &[u8],
 		) -> Option<Result<(), sp_inherents::Error>> {
-			if *identifier == INHERENT_IDENTIFIER {
-				panic!("BUG: {:?} inherent shouldn't return any errors", INHERENT_IDENTIFIER)
-			} else {
-				None
+			if *identifier != INHERENT_IDENTIFIER {
+				return None;
 			}
+
+			let error = InherentError::decode(&mut error).ok()?;
+
+			Some(Err(sp_inherents::Error::Application(Box::from(error))))
 		}
 	}
 }

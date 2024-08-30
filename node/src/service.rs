@@ -11,12 +11,14 @@ use sc_client_api::{Backend, BlockBackend};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 use sc_consensus_grandpa::SharedVoterState;
 pub use sc_executor::WasmExecutor;
+use sc_partner_chains_consensus_aura::import_queue as partner_chains_aura_import_queue;
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager, WarpSyncParams};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sidechain_mc_hash::McHashInherentDigest;
 use sidechain_runtime::{self, opaque::Block, RuntimeApi};
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
+use sp_partner_chains_consensus_aura::block_proposal::PartnerChainsProposerFactory;
 use sp_runtime::traits::Block as BlockT;
 use std::{sync::Arc, time::Duration};
 use time_source::SystemTimeSource;
@@ -120,24 +122,29 @@ pub async fn new_partial(
 	let epoch_config = EpochConfig::read().map_err(|err| ServiceError::Application(err.into()))?;
 	let inherent_config = CreateInherentDataConfig::new(epoch_config, sc_slot_config, time_source);
 
-	let import_queue =
-		sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _, McHashInherentDigest>(
-			ImportQueueParams {
-				block_import: grandpa_block_import.clone(),
-				justification_import: Some(Box::new(grandpa_block_import.clone())),
-				client: client.clone(),
-				create_inherent_data_providers: VerifierCIDP::new(
-					inherent_config,
-					client.clone(),
-					data_sources.clone(),
-				),
-				spawner: &task_manager.spawn_essential_handle(),
-				registry: config.prometheus_registry(),
-				check_for_equivocation: Default::default(),
-				telemetry: telemetry.as_ref().map(|x| x.handle()),
-				compatibility_mode: Default::default(),
-			},
-		)?;
+	let import_queue = partner_chains_aura_import_queue::import_queue::<
+		AuraPair,
+		_,
+		_,
+		_,
+		_,
+		_,
+		McHashInherentDigest,
+	>(ImportQueueParams {
+		block_import: grandpa_block_import.clone(),
+		justification_import: Some(Box::new(grandpa_block_import.clone())),
+		client: client.clone(),
+		create_inherent_data_providers: VerifierCIDP::new(
+			inherent_config,
+			client.clone(),
+			data_sources.clone(),
+		),
+		spawner: &task_manager.spawn_essential_handle(),
+		registry: config.prometheus_registry(),
+		check_for_equivocation: Default::default(),
+		telemetry: telemetry.as_ref().map(|x| x.handle()),
+		compatibility_mode: Default::default(),
+	})?;
 
 	Ok(sc_service::PartialComponents {
 		client,
@@ -151,24 +158,6 @@ pub async fn new_partial(
 	})
 }
 
-pub async fn chain_init_client(
-	config: &Configuration,
-) -> Result<(Arc<FullClient>, DataSources), ServiceError> {
-	let executor = sc_service::new_wasm_executor(config);
-
-	let (client, _, _, _) =
-		sc_service::new_full_parts::<Block, RuntimeApi, _>(config, None, executor)?;
-
-	let client = Arc::new(client);
-
-	// TODO enable metrics for chain init
-	let data_sources =
-		crate::main_chain_follower::create_cached_main_chain_follower_data_sources(None).await?;
-
-	Ok((client, data_sources))
-}
-
-/// Builds a new service for a full client.
 pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as BlockT>::Hash>>(
 	config: Configuration,
 ) -> Result<TaskManager, ServiceError> {
@@ -307,13 +296,15 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 	})?;
 
 	if role.is_authority() {
-		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
+		let basic_authorship_proposer_factory = sc_basic_authorship::ProposerFactory::new(
 			task_manager.spawn_handle(),
 			client.clone(),
 			transaction_pool.clone(),
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|x| x.handle()),
 		);
+		let proposer_factory: PartnerChainsProposerFactory<_, _, McHashInherentDigest> =
+			PartnerChainsProposerFactory::new(basic_authorship_proposer_factory);
 
 		let sc_slot_config = sidechain_slots::runtime_api_client::slot_config(&*client)
 			.map_err(sp_blockchain::Error::from)?;
@@ -322,7 +313,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 			EpochConfig::read().map_err(|err| ServiceError::Application(err.into()))?;
 		let inherent_config =
 			CreateInherentDataConfig::new(epoch_config, sc_slot_config.clone(), time_source);
-		let aura = sc_consensus_aura::start_aura::<
+		let aura = sc_partner_chains_consensus_aura::start_aura::<
 			AuraPair,
 			_,
 			_,
