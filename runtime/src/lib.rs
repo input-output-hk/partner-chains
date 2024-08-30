@@ -499,7 +499,7 @@ construct_runtime!(
 		BlockRewards: pallet_block_rewards,
 		// pallet_grandpa depends on pallet_session CurrentIndex storage.
 		// Only stub implementation of pallet_session should be wired.
-		// Partner Chains session_manager ValidatorManagementSessionManager write to this storage.
+		// Partner Chains session_manager ValidatorManagementSessionManager writes to this storage.
 		// It is wired in by pallet_partner_chains_session.
 		PolkadotSessionStubForGrandpa: pallet_session,
 		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
