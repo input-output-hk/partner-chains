@@ -31,7 +31,7 @@ pub struct AuthoritySelectionInputs {
 	//   - should contain valid mainchain_pub_key
     //   - may have optional eth_pub_key, in which case it may also have valid EthRegistrationData records
 
-	/// List of registered candidates from the main chain, one for each mainchain_public_key.
+	/// List of registered candidates from the main chain, one for each sidechain_public_key.
 	pub registered_candidates: Vec<CandidateRegistrations>,
 
 	/// The nonce for the epoch coming from the main chain.

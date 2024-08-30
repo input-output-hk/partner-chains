@@ -53,7 +53,7 @@ pub struct StakeDelegation {
 	/// Amount of Lovelace (which is a fraction of 1 ADA) staked/locked on Cardano
 	pub ada: StakeAmount,
 
-	// TODO u64 if not enough to count stake on Ethereum in Wei
+	// TODO ETH: u64 if not enough to count stake on Ethereum in Wei
 	/// Amount of Wei (which is a fraction of 1 ETH) staked/locked on Ethereum
 	pub eth: StakeAmount,
 }
@@ -217,7 +217,7 @@ pub const MAX_ASSET_NAME_LEN: u32 = 32;
 pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
 
 const MAINCHAIN_PUBLIC_KEY_LEN: usize = 32;
-const ETH_PUBLIC_KEY_LEN: usize = 32;
+const ETH_PUBLIC_KEY_LEN: usize = 32; // TODO ETH: is this correct length?
 
 // TODO ETH: this should be renamed to CardanoPublicKey
 /// This type represents a public key on Cardano.
@@ -621,7 +621,7 @@ impl RegistrationData {
 /// on different blockchains of the same Authority Candidate identified by the `sidechain_pub_key`,
 /// such that the actual registrations are stored in the `registrations` field and stake is stored in
 /// the `stake_delegation` field.
-/// Currently one two blockchains are supported: Cardano and Ethereum, but in principle this can be
+/// Currently only two blockchains are supported: Cardano and Ethereum, but in principle this can be
 /// generalized to any number of blockchains, as long as the registration mechanics are similar.
 /// see also `AuthoritySelectionInputs`, `Registrations` and `StakeDelegation`
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]

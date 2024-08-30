@@ -288,7 +288,7 @@ pub fn validate_registration_data<Params: ToDatum + Clone>(
 
 		RegistrationData::Eth(_) =>
 		    // TODO ETH: validate ETH registration data:
-		    // - form signed message using TX nonce instead of input_utxo
+		    // - form signed message using registration TX nonce instead of input_utxo
 		    // - verify registration_data.mainchain_signature using using eth_pub_key
 		    // - verify registration_data.sidechain_signature using using sidechain_pub_key
 		    // - create Candidate with CandidateType::Eth

@@ -68,13 +68,11 @@ impl From<MockRegistration> for CandidateRegistrations {
 			aura_pub_key: AuraPublicKey(mock.aura_pub_key.0),
 			grandpa_pub_key: GrandpaPublicKey(mock.grandpa_pub_key.0),
 		}];
-		let stake_delegation = Some(StakeDelegation::of_ada(333));
-		CandidateRegistrations {
+		CandidateRegistrations::from_cardano(
 			mainchain_pub_key,
-			eth_pub_key: None,
-			registrations: Registrations { ada_registrations: registrations, ..Default::default() },
-			stake_delegation
-		}
+			registrations,
+			333
+		)
 	}
 }
 
