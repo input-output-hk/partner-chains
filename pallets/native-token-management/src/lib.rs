@@ -115,6 +115,7 @@ pub mod pallet {
 
 		fn is_inherent_required(data: &InherentData) -> Result<Option<Self::Error>, Self::Error> {
 			Ok(Self::get_transfered_tokens_from_inherent_data(data)
+				.filter(|data| data.token_amount.0 > 0)
 				.map(|data| InherentError::TokenTransferNotHandled(data.token_amount.clone())))
 		}
 	}
