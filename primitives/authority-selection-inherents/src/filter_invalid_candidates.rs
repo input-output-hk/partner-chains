@@ -43,7 +43,7 @@ pub struct Candidate<TAccountId, TAccountKeys> {
 }
 
 /// Get the valid trustless candidates from the registrations from inherent data.
-/// One candidate per (ChainType, TAccountId) is selected based on the latest valid registration.
+/// One candidate per (CandidateType, TAccountId) is selected based on the latest valid registration.
 pub fn filter_trustless_candidates_registrations<
 	TAccountId,
 	TAccountKeys,
@@ -97,7 +97,8 @@ where
 	let Some(stake_delegation) = validate_stake(candidate_registrations.stake_delegation).ok() else {
 		return vec![];
 	};
-	let mainchain_pub_key = candidate_registrations.mainchain_pub_key.clone();
+	let mainchain_pub_key = &candidate_registrations.mainchain_pub_key;
+	let eth_pub_key = &candidate_registrations.eth_pub_key;
 
 	let registrations = candidate_registrations.registrations();
 
@@ -109,6 +110,7 @@ where
 			.filter_map(|registration_data| {
 				match validate_registration_data(
 					&mainchain_pub_key,
+					&eth_pub_key,
 					&RegistrationData::Ada(registration_data.clone()),
 					sidechain_params,
 				) {
@@ -138,6 +140,7 @@ where
 			.filter_map(|registration_data| {
 				match validate_registration_data(
 					&mainchain_pub_key,
+					&eth_pub_key,
 					&RegistrationData::Eth(registration_data.clone()),
 					sidechain_params,
 				) {
@@ -234,6 +237,7 @@ pub fn validate_permissioned_candidate_data<AccountId: TryFrom<SidechainPublicKe
 /// Is the registration data provided by the authority candidate valid?
 pub fn validate_registration_data<Params: ToDatum + Clone>(
 	mainchain_pub_key: &MainchainPublicKey,
+	_eth_pub_key: &Option<EthPublicKey>,
 	registration_data: &RegistrationData,
 	sidechain_params: &Params,
 ) -> Result<Candidate<ecdsa::Public, (sr25519::Public, ed25519::Public)>, RegistrationDataError> {
@@ -283,6 +287,11 @@ pub fn validate_registration_data<Params: ToDatum + Clone>(
 		}
 
 		RegistrationData::Eth(_) =>
+		    // TODO ETH: validate ETH registration data:
+		    // - form signed message using TX nonce instead of input_utxo
+		    // - verify registration_data.mainchain_signature using using eth_pub_key
+		    // - verify registration_data.sidechain_signature using using sidechain_pub_key
+		    // - create Candidate with CandidateType::Eth
 			todo!("Ethereum registration data validation"),
 	}
 }
@@ -509,6 +518,7 @@ mod tests {
 				create_valid_parameters();
 			assert!(validate_registration_data(
 				&mainchain_pub_key,
+				&None,
 				&registration_data.into(),
 				&sidechain_params,
 			)
@@ -525,6 +535,7 @@ mod tests {
 			assert_eq!(
 				validate_registration_data(
 					&different_mainchain_pub_key,
+					&None,
 					&registration_data.into(),
 					&sidechain_params,
 				),
@@ -542,6 +553,7 @@ mod tests {
 			assert_eq!(
 				validate_registration_data(
 					&mainchain_pub_key,
+					&None,
 					&registration_data.into(),
 					&sidechain_params,
 				),
@@ -560,6 +572,7 @@ mod tests {
 			assert_eq!(
 				validate_registration_data(
 					&mainchain_pub_key,
+					&None,
 					&registration_data.into(),
 					&sidechain_params,
 				),
@@ -578,6 +591,7 @@ mod tests {
 			assert_eq!(
 				validate_registration_data(
 					&mainchain_pub_key,
+					&None,
 					&registration_data.into(),
 					&sidechain_params,
 				),
@@ -596,6 +610,7 @@ mod tests {
 			assert_ne!(different_sidechain_params, sidechain_params);
 			assert!(validate_registration_data(
 				&mainchain_pub_key,
+				&None,
 				&registration_data.into(),
 				&different_sidechain_params,
 			)
@@ -610,6 +625,7 @@ mod tests {
 			assert_eq!(
 				validate_registration_data(
 					&mainchain_pub_key,
+					&None,
 					&registration_data.into(),
 					&sidechain_params,
 				),
@@ -622,26 +638,27 @@ mod tests {
 	fn should_filter_out_candidates_with_invalid_stake() {
 		let (mc_pub_key, registration_data, sidechain_params) = create_valid_parameters();
 		let candidate_registrations = vec![
+			CandidateRegistrations::from_cardano(
+				mc_pub_key.clone(),
+				vec![registration_data.clone()],
+				0
+			),
+			CandidateRegistrations::from_cardano(
+				mc_pub_key.clone(),
+				vec![registration_data.clone()],
+				1,
+			),
 			CandidateRegistrations {
 				mainchain_pub_key: mc_pub_key.clone(),
-				registrations: Registrations::of_ada(vec![registration_data.clone()]),
-				stake_delegation: Some(StakeDelegation::of_ada(0)),
-			},
-			CandidateRegistrations {
-				mainchain_pub_key: mc_pub_key.clone(),
-				registrations: Registrations::of_ada(vec![registration_data.clone()]),
-				stake_delegation: Some(StakeDelegation::of_ada(1)),
-			},
-			CandidateRegistrations {
-				mainchain_pub_key: mc_pub_key.clone(),
+				eth_pub_key: None,
 				registrations: Registrations::of_ada(vec![registration_data.clone()]),
 				stake_delegation: None,
 			},
-			CandidateRegistrations {
-				mainchain_pub_key: mc_pub_key,
-				registrations: Registrations::of_ada(vec![registration_data]),
-				stake_delegation: Some(StakeDelegation::of_ada(2)),
-			},
+			CandidateRegistrations::from_cardano(
+				mc_pub_key,
+				vec![registration_data],
+				2,
+			),
 		];
 
 		let valid_candidates = filter_trustless_candidates_registrations::<AccountId, AccountKeys, _>(

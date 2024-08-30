@@ -363,6 +363,7 @@ pub fn create_inherent_data_struct(
 
 			CandidateRegistrations {
 				mainchain_pub_key: MainchainPublicKey(dummy_mainchain_pub_key.public().0),
+				eth_pub_key: None,
 				registrations: Registrations::of_ada(vec![registration_data]),
 				stake_delegation: Some(StakeDelegation::of_ada(7)),
 			}

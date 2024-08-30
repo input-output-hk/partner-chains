@@ -851,7 +851,12 @@ impl_runtime_apis! {
 
 	impl authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi<Block> for Runtime {
 		fn validate_registered_candidate_data(mainchain_pub_key: &MainchainPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError> {
-			authority_selection_inherents::filter_invalid_candidates::validate_registration_data(mainchain_pub_key, registration_data, &Sidechain::sidechain_params()).err()
+			authority_selection_inherents::filter_invalid_candidates::validate_registration_data(
+				mainchain_pub_key,
+				&None, // TODO ETH: path the key here though a new parameter
+				registration_data,
+				&Sidechain::sidechain_params()
+			).err()
 		}
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError> {
 			authority_selection_inherents::filter_invalid_candidates::validate_stake(stake).err()

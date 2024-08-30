@@ -147,18 +147,19 @@ impl CandidateDataSource for CandidatesDataSourceImpl {
 			.get_registered_candidates(epoch, committee_candidate_address)
 			.await?;
 
-		// TODO: ETH: get registered candidates for ETH
+		// TODO ETH: get registered candidates for ETH
 
 		let stake_map = Self::make_stake_map(db_model::get_stake_distribution(&self.pool, epoch).await?);
 		Ok(Self::group_candidates_by_mc_pub_key(ada_candidates).into_iter().map(|(mainchain_pub_key, candidate_registrations)| {
 			CandidateRegistrations {
 				mainchain_pub_key: mainchain_pub_key.clone(),
+				eth_pub_key: None,  // TODO ETH: add ETH pub key
 				registrations: Registrations {
 						ada_registrations: candidate_registrations
 							.into_iter()
 							.map(Self::make_registration_data)
 							.collect(),
-						eth_registrations: vec![]  // TODO: ETH: add ETH registrations
+						eth_registrations: vec![]  // TODO ETH: add ETH registrations
 					},
 				stake_delegation: Self::get_stake_delegation(&stake_map, &mainchain_pub_key)
 					.map(|stake| StakeDelegation { ada: stake, eth: StakeAmount::zero() }),

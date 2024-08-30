@@ -217,17 +217,18 @@ pub const MAX_ASSET_NAME_LEN: u32 = 32;
 pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
 
 const MAINCHAIN_PUBLIC_KEY_LEN: usize = 32;
+const ETH_PUBLIC_KEY_LEN: usize = 32;
 
-/// This type represents a public key on some mainchain (Cardano or Ethereum).
-/// Currently, it only supports Cardano public keys, but can also be used for
-/// Ethereum public keys and more chain types.
-/// The concrete representation can also be changed to String or Vec<u8> to make it more flexible,
-/// however with some performance penalty due to allocations.
-/// Alternatively this type can be transformed to enum with variants for each chain type.
-/// This will keep it stack allocated, but will require proper abstraction to make it an opaque type.
+// TODO ETH: this should be renamed to CardanoPublicKey
+/// This type represents a public key on Cardano.
 #[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize)]
 pub struct MainchainPublicKey(pub [u8; MAINCHAIN_PUBLIC_KEY_LEN]);
+
+/// This type represents a public key on Ethereum.
+#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize)]
+pub struct EthPublicKey(pub [u8; ETH_PUBLIC_KEY_LEN]);
 
 #[cfg(feature = "serde")]
 impl FromStr for MainchainPublicKey {
@@ -604,7 +605,7 @@ macro_rules! common_field_accessor {
 }
 
 impl RegistrationData {
-	// TODO: This is likely a temporary solution until a better design is found for multi-chain registration data.
+	// TODO ETH: This is likely a temporary solution until a better design is found for multi-chain registration data.
 	// Accessor methods for common fields of different RegistrationData variants.
 	common_field_accessor!(RegistrationData, sidechain_signature, SidechainSignature);
 	common_field_accessor!(RegistrationData, mainchain_signature, MainchainSignature);
@@ -617,18 +618,23 @@ impl RegistrationData {
 
 /// Information about an Authority Candidate's Registrations at some block.
 /// Current implementation assumes that each instance of this structure represents all registrations
-/// on different blockchains of the same Authority Candidate identified by the `mainchain_pub_key`,
+/// on different blockchains of the same Authority Candidate identified by the `sidechain_pub_key`,
 /// such that the actual registrations are stored in the `registrations` field and stake is stored in
 /// the `stake_delegation` field.
-/// Alternatively, this structure can be turned inside out, so that this structure will have on field
-/// for each chain with all the registrations and stake for that chain in the field.
-/// This will require changes in the code.
-/// Another possible change is to use sidechain public key as identity of the Candidate.
+/// Currently one two blockchains are supported: Cardano and Ethereum, but in principle this can be
+/// generalized to any number of blockchains, as long as the registration mechanics are similar.
+/// see also `AuthoritySelectionInputs`, `Registrations` and `StakeDelegation`
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct CandidateRegistrations {
-	/// **Public Key** of the **Authority Candidate** on the
+	/// **Public Key** of the **Authority Candidate** on Cardano which was used to generate
+	/// mainnet_signature in the ADA registration records
 	pub mainchain_pub_key: MainchainPublicKey,
+
+	/// **Public Key** of the **Authority Candidate** on the Ethereum which was used to generate
+	/// mainnet_signature in the ETH registration records
+	pub eth_pub_key: Option<EthPublicKey>,
+
 	/// **Registrations** done by the **Authority Candidate** on different blockchains
 	pub registrations: Registrations,
 	pub stake_delegation: Option<StakeDelegation>,
@@ -640,7 +646,20 @@ impl CandidateRegistrations {
 		stake_delegation: Option<StakeDelegation>,
 		registrations: Registrations,
 	) -> Self {
-		Self { mainchain_pub_key, registrations, stake_delegation }
+		Self { mainchain_pub_key, eth_pub_key: None, registrations, stake_delegation }
+	}
+
+	pub fn from_cardano(
+		mainchain_pub_key: MainchainPublicKey,
+		ada_registrations: Vec<AdaRegistrationData>,
+	    ada_stake: u64,
+	) -> Self {
+		CandidateRegistrations {
+			mainchain_pub_key,
+			eth_pub_key: None,
+			registrations: Registrations::of_ada(ada_registrations),
+			stake_delegation: Some(StakeDelegation::of_ada(ada_stake)),
+		}
 	}
 
 	pub fn mainchain_pub_key(&self) -> &MainchainPublicKey {

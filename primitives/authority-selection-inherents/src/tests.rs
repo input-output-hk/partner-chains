@@ -411,11 +411,11 @@ fn create_epoch_candidates_idp(validators: &[MockValidator]) -> Vec<CandidateReg
 				tx_inputs: vec![signed_message.input_utxo],
 			};
 
-			CandidateRegistrations {
-				mainchain_pub_key: MainchainPublicKey(mainchain_key_pair.public().0),
-				registrations: Registrations::of_ada(vec![registration_data]),
-				stake_delegation: Some(StakeDelegation::of_ada(validator.stake)),
-			}
+			CandidateRegistrations::from_cardano(
+				MainchainPublicKey(mainchain_key_pair.public().0),
+				vec![registration_data],
+				validator.stake,
+			)
 		})
 		.collect();
 

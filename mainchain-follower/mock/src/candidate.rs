@@ -71,6 +71,7 @@ impl From<MockRegistration> for CandidateRegistrations {
 		let stake_delegation = Some(StakeDelegation::of_ada(333));
 		CandidateRegistrations {
 			mainchain_pub_key,
+			eth_pub_key: None,
 			registrations: Registrations { ada_registrations: registrations, ..Default::default() },
 			stake_delegation
 		}
