@@ -1,0 +1,42 @@
+VERSION 0.8
+
+FETCH:
+  FUNCTION
+  CACHE --sharing shared --id cargo $CARGO_HOME
+  RUN --ssh cargo fetch --locked
+
+BUILD:
+  FUNCTION
+  ARG --required PROFILE
+  ARG --required BIN
+  ARG FEATURES
+  CACHE --sharing shared --id cargo $CARGO_HOME
+  RUN cargo --locked chef prepare --bin $BIN
+  RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES -p $BIN
+  SAVE ARTIFACT target
+
+COMPILE_SOURCE:
+  FUNCTION
+  LET CRATES=$(tomlq -r .workspace.members[] Cargo.toml)
+  FOR crate IN $CRATES
+      COPY --dir $crate $crate
+  END
+
+COMPILE_RUNTIME:
+  FUNCTION
+  # calculate libary deps
+  RUN ldd $BIN \
+      | awk 'NF == 4 { system("echo " $3) }' \
+      | tar -czf deps.tgz --files-from=-
+  SAVE ARTIFACT deps.tgz deps
+
+INSTALL:
+  FUNCTION
+  ARG --required BIN
+  # install deps
+  RUN tar -v -C / -xzf /tmp/deps.tgz \
+      && rm -rf /tmp/deps.tgz
+
+  # Sanity checks
+  RUN ldd /usr/local/bin/$BIN \
+      && /usr/local/bin/$BIN --version

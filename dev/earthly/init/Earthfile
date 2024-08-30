@@ -1,0 +1,78 @@
+VERSION 0.8
+
+INSTALL:
+  FUNCTION
+
+  COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
+
+  # CACHE:
+  #
+  # CARGO_HOME is shared between all the targets of our build.
+  #
+  # Using the `CARGO_HOME` as a named (`--id cargo`), shared `CACHE`
+  # allows changes to persist between runs, saving significant time
+  # e.g. pulling dependencies.
+  #
+  # Also, without the `CACHE`, changes to `CARGO_HOME` would be copied
+  # and bloat up to the image's final layer.
+  #
+  # Keeping this first, ensures all subsequent steps will benefit.
+  #
+  RUN cp -rl $CARGO_HOME /tmp/cargo
+  CACHE --sharing shared --id cargo $CARGO_HOME
+  RUN cp -rua /tmp/cargo/. $CARGO_HOME && rm -rf /tmp/cargo
+
+  # INSTALL:
+  #
+  # Install the specified rust-toolchain.toml.
+  #
+  # Calling immediately after cache setup ensures subsequent calls to
+  # `cargo` will not waste time setting up the toolchain.
+  #
+  RUN rustup show
+
+  # CHEF:
+  #
+  # We use Cargo Chef to split building dependencies into its own stage
+  # Since dependencies change far less often than in repo code, this
+  # allows us to spend less time rebuilding shared crates.
+  #
+  # We further copy the installed binary into the image layer itself,
+  # ensuring it exists if the cache is in an inconsistent state.
+  #
+  RUN cargo install --locked cargo-chef; cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
+
+
+MOCK:
+  FUNCTION
+  # MOCK:
+  #
+  # Create empty files mocking the structure of the rust code.
+  #
+  # Cargo Chef reads only the workspace crates' manifest files
+  # to determine the dependencies we need to build.
+  #
+  # We can leverage this to build dependencies less often if we
+  # mock our directory structure so that Cargo Chef can minimally
+  # determine dependencies, helping Earthly avoiding rebuilding on
+  # unrelated code changes in-between.
+  #
+  # To have `cargo chef` build what we actually need it to build,
+  # we have to take some care to create a mock structure that
+  # accurately reflects the project, by creating empty lib.rs
+  # and main.rs files where they exist in repo.
+  #
+  # This is a bit of a challenge, since we cannot read the local
+  # repo directly, but we can piece together the information
+  # we need from the Cargo.toml files we copied.
+  #
+  LET CRATES=$(tomlq -r '.workspace.members[]' Cargo.toml)
+  LET SRCS=$(tomlq -r '.workspace.members[] + "/src"' Cargo.toml)
+  LET LIBS=$(tomlq -r '.workspace.dependencies[]|select(type == "object" and has("path")).path + "/src/lib.rs"' Cargo.toml)
+  FOR crate IN $CRATES
+    COPY --if-exists $crate/Cargo.toml $crate/Cargo.toml
+  END
+  RUN mkdir -p $SRCS \
+      && touch $LIBS \
+      && for crate in $SRCS; do if [ ! -f $crate/lib.rs ]; then touch $crate/main.rs; fi; done \
+      && touch node/src/lib.rs
