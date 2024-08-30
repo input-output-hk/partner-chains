@@ -170,6 +170,7 @@
 <a href="#168" id="168">168</a>
 <a href="#169" id="169">169</a>
 <a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Pallet allowing Partner Chains to support movement of their native token from Cardano.
 //!
 //! Partner Chains Smart Contracts establish a notion of liquid and illiquid supply of the native
@@ -287,6 +288,7 @@
 
 		<span class="kw">fn </span>is_inherent_required(data: <span class="kw-2">&amp;</span>InherentData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Error&gt;, <span class="self">Self</span>::Error&gt; {
 			<span class="prelude-val">Ok</span>(<span class="self">Self</span>::get_transfered_tokens_from_inherent_data(data)
+				.filter(|data| data.token_amount.<span class="number">0 </span>&gt; <span class="number">0</span>)
 				.map(|data| InherentError::TokenTransferNotHandled(data.token_amount.clone())))
 		}
 	}
