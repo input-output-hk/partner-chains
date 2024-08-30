@@ -76,7 +76,7 @@ mod is_inherent_required {
 	use super::*;
 
 	#[test]
-	fn yes_when_data_present() {
+	fn yes_when_nonzero_data_present() {
 		new_test_ext().execute_with(|| {
 			let inherent_data = test_inherent_data(1001);
 			let error = NativeTokenManagement::is_inherent_required(&inherent_data)
@@ -84,6 +84,17 @@ mod is_inherent_required {
 				.expect("Check should return an error object.");
 
 			assert_eq!(error, InherentError::TokenTransferNotHandled(1001.into()));
+		})
+	}
+
+	#[test]
+	fn no_when_data_present_but_is_zero() {
+		new_test_ext().execute_with(|| {
+			let inherent_data = test_inherent_data(0);
+			let error = NativeTokenManagement::is_inherent_required(&inherent_data)
+				.expect("Check should successfully run.");
+
+			assert_eq!(error, None);
 		})
 	}
 
