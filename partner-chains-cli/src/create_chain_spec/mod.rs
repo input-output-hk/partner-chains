@@ -105,6 +105,9 @@ impl CreateChainSpecCmd {
 			"PERMISSIONED_CANDIDATES_POLICY_ID",
 			&config.permissioned_candidates_policy_id.to_string(),
 		);
+		context.set_env_var("NATIVE_TOKEN_POLICY_ID", &config.native_token_policy);
+		context.set_env_var("NATIVE_TOKEN_ASSET_NAME", &config.native_token_asset_name);
+		context.set_env_var("ILLIQUID_SUPPLY_VALIDATOR_ADDRESS", &config.illiquid_supply_address);
 		context.run_command(
 			format!("{node_executable} build-spec --disable-default-bootnode > chain-spec.json")
 				.to_string()
@@ -172,6 +175,9 @@ struct CreateChainSpecConfig {
 	committee_candidate_address: String,
 	d_parameter_policy_id: String,
 	permissioned_candidates_policy_id: String,
+	native_token_policy: String,
+	native_token_asset_name: String,
+	illiquid_supply_address: String,
 }
 
 impl CreateChainSpecConfig {
@@ -200,6 +206,9 @@ impl CreateChainSpecConfig {
 				c,
 				&config_fields::PERMISSIONED_CANDIDATES_POLICY_ID,
 			)?,
+			native_token_policy: load_config_field(c, &config_fields::NATIVE_TOKEN_POLICY)?,
+			native_token_asset_name: load_config_field(c, &config_fields::NATIVE_TOKEN_ASSET_NAME)?,
+			illiquid_supply_address: load_config_field(c, &config_fields::ILLIQUID_SUPPLY_ADDRESS)?,
 		})
 	}
 }

@@ -1,6 +1,7 @@
 use crate::config::config_fields::{
-	CARDANO_NETWORK, COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID,
-	INITIAL_PERMISSIONED_CANDIDATES, PERMISSIONED_CANDIDATES_POLICY_ID,
+	CARDANO_NETWORK, COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
+	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
+	PERMISSIONED_CANDIDATES_POLICY_ID,
 };
 use crate::config::{
 	get_cardano_network_from_file, CardanoNetwork, SidechainParams, PC_CONTRACTS_CLI_PATH,
@@ -13,6 +14,7 @@ use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params
 use crate::smart_contracts;
 use anyhow::anyhow;
 use serde_json::Value;
+use sidechain_domain::PolicyId;
 
 // pc-contracts-cli addresses command requires providing a signing key, but the key has no influence on
 // its output, thus using a dummy key
@@ -41,6 +43,7 @@ pub fn prepare_main_chain_config<C: IOContext>(
 	if INITIAL_PERMISSIONED_CANDIDATES.load_from_file(context).is_none() {
 		INITIAL_PERMISSIONED_CANDIDATES.save_to_file(&vec![], context)
 	}
+	prepare_native_token(context)?;
 	context.eprint(OUTRO);
 	Ok(())
 }
@@ -126,6 +129,31 @@ fn run_pc_contracts_cli_addresses<C: IOContext>(
 			.ok_or(anyhow!("Permissioned candidates policy id from pc-contracts-cli addresses command output cannot be converted to string"))?
 			.to_string(),
 		context);
+	ILLIQUID_SUPPLY_ADDRESS.save_to_file(
+		&addresses_json.pointer("/addresses/IlliquidCirculationSupplyValidator")
+			.ok_or(anyhow!("Illiquid circulation supply validator address is missing from pc-contracts-cli addresses command output"))?
+			.as_str()
+			.ok_or(anyhow!("Illiquid circulation supply validator address from pc-contracts-cli addresses command output cannot be converted to string"))?
+			.to_string(),
+		context,
+	);
+	Ok(())
+}
+
+fn prepare_native_token<C: IOContext>(context: &C) -> anyhow::Result<()> {
+	context.print(
+		"Partner Chains can store their initial token supply on Cardano as Cardano native tokens.",
+	);
+	context.print("Creation of the native token is not supported by this wizard and must be performed manually before this step.");
+	if context.prompt_yes_no("Do you want to configure a native token for you Partner Chain?", true)
+	{
+		NATIVE_TOKEN_POLICY.prompt_with_default_from_file_and_save(context);
+		NATIVE_TOKEN_ASSET_NAME.prompt_with_default_from_file_and_save(context);
+	} else {
+		NATIVE_TOKEN_POLICY.save_to_file(&PolicyId::default().to_hex_string(), context);
+		NATIVE_TOKEN_ASSET_NAME.save_to_file(&"0x0".into(), context);
+	}
+
 	Ok(())
 }
 
@@ -211,6 +239,8 @@ mod tests {
 		"addr_test1wz5fe8fmxx4v83gzfsdlnhgxm8x7zpldegrqh2wakl3wteqe834r4";
 	const TEST_PERMISSIONED_CANDIDATES_POLICY_ID: &str =
 		"13db1ba564b3b264f45974fece44b2beb0a2326b10e65a0f7f300dfb";
+	const TEST_ILLIQUID_SUPPLY_ADDRESS: &str =
+		"addr_test1wqn2pkvvmesmxtfa4tz7w8gh8vumr52lpkrhcs4dkg30uqq77h5z4";
 	const PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT: &str =
 		"Version: 5.0.0, a770e9bbdcc9410575f8d47c0890801b4ae5c31a";
 	const PC_CONTRACTS_CLI: &str = "./pc-contracts-cli";
@@ -228,6 +258,38 @@ mod tests {
 					&PREPROD_CARDANO_PARAMS.first_epoch_timestamp_millis.to_string(),
 				),
 			])
+		}
+
+		pub fn prompt_and_save_native_asset_scripts() -> MockIO {
+			MockIO::Group(vec![
+						MockIO::print("Partner Chains can store their initial token supply on Cardano as Cardano native tokens."),
+						MockIO::print("Creation of the native token is not supported by this wizard and must be performed manually before this step."),
+						MockIO::prompt_yes_no(
+							"Do you want to configure a native token for you Partner Chain?",
+							true,
+							true,
+						),
+						MockIO::file_read(NATIVE_TOKEN_POLICY.config_file),
+						MockIO::prompt(
+							NATIVE_TOKEN_POLICY.name,
+							None,
+							"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
+						),
+						MockIO::file_read(NATIVE_TOKEN_POLICY.config_file),
+						MockIO::file_write_json_contains(
+							NATIVE_TOKEN_POLICY.config_file,
+							&NATIVE_TOKEN_POLICY.json_pointer(),
+							"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
+						),
+						MockIO::file_read(NATIVE_TOKEN_ASSET_NAME.config_file),
+						MockIO::prompt(NATIVE_TOKEN_ASSET_NAME.name, None, "5043546f6b656e44656d6f"),
+						MockIO::file_read(NATIVE_TOKEN_ASSET_NAME.config_file),
+						MockIO::file_write_json_contains(
+							NATIVE_TOKEN_ASSET_NAME.config_file,
+							&NATIVE_TOKEN_ASSET_NAME.json_pointer(),
+							"5043546f6b656e44656d6f",
+						),
+					])
 		}
 	}
 
@@ -281,12 +343,19 @@ mod tests {
 					PERMISSIONED_CANDIDATES_POLICY_ID,
 					TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
 				),
+				save_to_existing_file(
+					ILLIQUID_SUPPLY_ADDRESS,
+					TEST_ILLIQUID_SUPPLY_ADDRESS,
+				),
 				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				MockIO::file_write_json(
 					INITIAL_PERMISSIONED_CANDIDATES.config_file,
 					test_chain_config(),
 				),
+
+				scenarios::prompt_and_save_native_asset_scripts(),
+
 				MockIO::eprint(OUTRO),
 			]);
 		prepare_main_chain_config(&mock_context, test_sidechain_params()).expect("should succeed");
@@ -349,7 +418,12 @@ mod tests {
 					PERMISSIONED_CANDIDATES_POLICY_ID,
 					TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
 				),
+				save_to_existing_file(
+					ILLIQUID_SUPPLY_ADDRESS,
+					TEST_ILLIQUID_SUPPLY_ADDRESS,
+				),
 				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
+				scenarios::prompt_and_save_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
 			]);
 		prepare_main_chain_config(&mock_context, test_sidechain_params()).expect("should succeed");
@@ -393,7 +467,10 @@ mod tests {
 			"cardano_addresses": {
 				"committee_candidates_address": TEST_COMMITTEE_CANDIDATES_ADDRESS,
 				"d_parameter_policy_id": TEST_D_PARAMETER_POLICY_ID,
-				"permissioned_candidates_policy_id": TEST_PERMISSIONED_CANDIDATES_POLICY_ID
+				"permissioned_candidates_policy_id": TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
+				"native_token": {
+					"illiquid_supply_address": TEST_ILLIQUID_SUPPLY_ADDRESS,
+				}
 			},
 			"initial_permissioned_candidates": []
 		})
@@ -411,7 +488,8 @@ mod tests {
 			"DParameterValidator": "addr_test1wpqqhw53gnqqpv0t694qlnafkvv2yl4fkusvq5lue9z4srqrqjdh3",
 			"MerkleRootTokenValidator": "addr_test1wz3gsl0z2wsrqeav0mr869avzln5kuz5dl8wal4mlm6w5nsast866",
 			"CheckpointValidator": "addr_test1wrln5wjm88f3sg7yg58nt4mlefr45qq89pg3yf6l39kavlqu5jnwk",
-			"CommitteeHashValidator": "addr_test1wrpf0tq92fgwc3t3y2fe8pf7tgzuneehfh0p6hvp8y5kemsyrkaa5"
+			"CommitteeHashValidator": "addr_test1wrpf0tq92fgwc3t3y2fe8pf7tgzuneehfh0p6hvp8y5kemsyrkaa5",
+			"IlliquidCirculationSupplyValidator": TEST_ILLIQUID_SUPPLY_ADDRESS
 		  },
 		  "validatorHashes": {
 			"CommitteeCandidateValidator": "a89c9d3b31aac3c5024c1bf9dd06d9cde107edca060ba9ddb7e2e5e4",
