@@ -39,10 +39,7 @@ mod tests {
 	use async_trait::async_trait;
 	use hex_literal::hex;
 	use serde_json::Value;
-	use sidechain_domain::{
-		AuraPublicKey, GrandpaPublicKey, MainchainPublicKey, McBlockNumber, McSlotNumber, McTxHash,
-		McTxIndexInBlock, SidechainPublicKey, UtxoId, UtxoIndex, UtxoInfo,
-	};
+	use sidechain_domain::{AuraPublicKey, GrandpaPublicKey, MainchainPublicKey, McBlockNumber, McSlotNumber, McTxHash, McTxIndexInBlock, SidechainPublicKey, UtxoId, UtxoIndex, UtxoInfo};
 	use crate::types::RegistrationTxInfo;
 
 	struct MockSessionValidatorManagementQuery {

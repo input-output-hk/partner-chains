@@ -46,14 +46,44 @@ impl Display for McEpochNumber {
 		u32::fmt(&self.0, f)
 	}
 }
-/// Amount of Lovelace (which is a fraction of 1 ADA) staked/locked on Cardano
+
 #[derive(Default, Clone, Copy, Debug, Encode, Decode, TypeInfo, ToDatum, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
-pub struct StakeDelegation(pub u64);
+pub struct StakeDelegation {
+	/// Amount of Lovelace (which is a fraction of 1 ADA) staked/locked on Cardano
+	pub ada: StakeAmount,
+
+	// TODO u64 if not enough to count stake on Ethereum in Wei
+	/// Amount of Wei (which is a fraction of 1 ETH) staked/locked on Ethereum
+	pub eth: StakeAmount,
+}
 
 impl StakeDelegation {
+	pub fn of_ada(ada: u64) -> Self {
+		Self { ada: StakeAmount(ada), eth: StakeAmount::zero() }
+	}
+	pub fn is_zero(&self) -> bool {
+		self.ada.0 == 0 && self.eth.0 == 0
+	}
+}
+
+#[derive(Default, Clone, Copy, Debug, Encode, Decode, TypeInfo, ToDatum, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub struct StakeAmount(pub u64);
+
+impl StakeAmount {
+	pub fn zero() -> Self {
+		Self(0)
+	}
+
 	pub fn is_zero(&self) -> bool {
 		self.0 == 0
+	}
+}
+
+impl From<u64> for StakeAmount {
+	fn from(value: u64) -> Self {
+		Self(value)
 	}
 }
 
@@ -188,6 +218,13 @@ pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
 
 const MAINCHAIN_PUBLIC_KEY_LEN: usize = 32;
 
+/// This type represents a public key on some mainchain (Cardano or Ethereum).
+/// Currently, it only supports Cardano public keys, but can also be used for
+/// Ethereum public keys and more chain types.
+/// The concrete representation can also be changed to String or Vec<u8> to make it more flexible,
+/// however with some performance penalty due to allocations.
+/// Alternatively this type can be transformed to enum with variants for each chain type.
+/// This will keep it stack allocated, but will require proper abstraction to make it an opaque type.
 #[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize)]
 pub struct MainchainPublicKey(pub [u8; MAINCHAIN_PUBLIC_KEY_LEN]);
@@ -510,33 +547,28 @@ pub struct EthRegistrationData {
 	pub grandpa_pub_key: GrandpaPublicKey,
 }
 
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
+#[derive(Default, Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
-pub enum Registrations {
-	Ada(Vec<AdaRegistrationData>),
-	Eth(Vec<EthRegistrationData>),
+pub struct Registrations {
+	pub ada_registrations: Vec<AdaRegistrationData>,
+	pub eth_registrations: Vec<EthRegistrationData>,
+}
+
+impl Registrations {
+	pub fn of_ada(ada_registrations: Vec<AdaRegistrationData>) -> Registrations {
+		Registrations { ada_registrations, eth_registrations: vec![] }
+	}
 }
 
 impl Registrations {
 	pub fn registration_data_items(&self) -> Vec<RegistrationData> {
-		match self {
-			Registrations::Ada(registrations) =>
-				registrations.iter().map(|i|i.clone().into()).collect(),
-			Registrations::Eth(registrations) =>
-				registrations.iter().map(|i|i.clone().into()).collect(),
-		}
-	}
-}
-
-impl From<Vec<AdaRegistrationData>> for Registrations {
-	fn from(x: Vec<AdaRegistrationData>) -> Self {
-		Registrations::Ada(x)
-	}
-}
-
-impl From<Vec<EthRegistrationData>> for Registrations {
-	fn from(x: Vec<EthRegistrationData>) -> Self {
-		Registrations::Eth(x)
+		let adas = self.ada_registrations.iter()
+			.map(|i| i.clone().into())
+			.collect::<Vec<RegistrationData>>();
+		let eths = self.eth_registrations.iter()
+			.map(|i| i.clone().into())
+			.collect::<Vec<RegistrationData>>();
+		adas.into_iter().chain(eths.into_iter()).collect()
 	}
 }
 
@@ -573,7 +605,7 @@ macro_rules! common_field_accessor {
 
 impl RegistrationData {
 	// TODO: This is likely a temporary solution until a better design is found for multi-chain registration data.
-	/// Accessor methods for common fields of different RegistrationData variants.
+	// Accessor methods for common fields of different RegistrationData variants.
 	common_field_accessor!(RegistrationData, sidechain_signature, SidechainSignature);
 	common_field_accessor!(RegistrationData, mainchain_signature, MainchainSignature);
 	common_field_accessor!(RegistrationData, cross_chain_signature, CrossChainSignature);
@@ -584,11 +616,20 @@ impl RegistrationData {
 }
 
 /// Information about an Authority Candidate's Registrations at some block.
+/// Current implementation assumes that each instance of this structure represents all registrations
+/// on different blockchains of the same Authority Candidate identified by the `mainchain_pub_key`,
+/// such that the actual registrations are stored in the `registrations` field and stake is stored in
+/// the `stake_delegation` field.
+/// Alternatively, this structure can be turned inside out, so that this structure will have on field
+/// for each chain with all the registrations and stake for that chain in the field.
+/// This will require changes in the code.
+/// Another possible change is to use sidechain public key as identity of the Candidate.
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct CandidateRegistrations {
+	/// **Public Key** of the **Authority Candidate** on the
 	pub mainchain_pub_key: MainchainPublicKey,
-	/// **List of Registrations** done by the **Authority Candidate**
+	/// **Registrations** done by the **Authority Candidate** on different blockchains
 	pub registrations: Registrations,
 	pub stake_delegation: Option<StakeDelegation>,
 }

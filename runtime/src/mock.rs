@@ -363,8 +363,8 @@ pub fn create_inherent_data_struct(
 
 			CandidateRegistrations {
 				mainchain_pub_key: MainchainPublicKey(dummy_mainchain_pub_key.public().0),
-				registrations: Registrations::Ada(vec![registration_data]),
-				stake_delegation: Some(StakeDelegation(7)),
+				registrations: Registrations::of_ada(vec![registration_data]),
+				stake_delegation: Some(StakeDelegation::of_ada(7)),
 			}
 		})
 		.collect();

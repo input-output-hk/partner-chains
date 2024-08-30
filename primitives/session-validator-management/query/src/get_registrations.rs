@@ -73,7 +73,7 @@ fn get_registrations_response_map(
 	let mut map = GetRegistrationsResponseMap::new();
 
 	for candidate in candidates {
-		let mainchain_pub_key = candidate.mainchain_pub_key().clone();
+		let mainchain_pub_key = candidate.mainchain_pub_key();
 
 		let mut registration_entries: Vec<CandidateRegistrationEntry> = candidate
 			.registrations.registration_data_items()
@@ -81,10 +81,16 @@ fn get_registrations_response_map(
 			.map(|registration_data| {
 				let registration_data_validation_result =
 					validate_registration_data(&mainchain_pub_key, &registration_data)?;
+				let stake_amount = candidate.stake_delegation.map(|sd| {
+					match registration_data {
+						RegistrationData::Ada(_) => sd.ada,
+						RegistrationData::Eth(_) => sd.eth
+					}
+				});
 				Ok::<CandidateRegistrationEntry, sp_api::ApiError>(CandidateRegistrationEntry::new(
 					registration_data,
 					mainchain_pub_key.clone(),
-					candidate.stake_delegation,
+					stake_amount,
 					registration_data_validation_result,
 				))
 			})
@@ -109,7 +115,8 @@ fn get_registrations_response_map(
 			}
 		}
 
-		map.insert(to_hex(&mainchain_pub_key.0, false), registration_entries);
+		let key = to_hex(&mainchain_pub_key.0, false);
+		map.insert(key, registration_entries);
 	}
 
 	Ok(map)

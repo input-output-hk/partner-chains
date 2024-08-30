@@ -68,8 +68,12 @@ impl From<MockRegistration> for CandidateRegistrations {
 			aura_pub_key: AuraPublicKey(mock.aura_pub_key.0),
 			grandpa_pub_key: GrandpaPublicKey(mock.grandpa_pub_key.0),
 		}];
-		let stake_delegation = Some(StakeDelegation(333));
-		CandidateRegistrations { mainchain_pub_key, registrations: registrations.into(), stake_delegation }
+		let stake_delegation = Some(StakeDelegation::of_ada(333));
+		CandidateRegistrations {
+			mainchain_pub_key,
+			registrations: Registrations { ada_registrations: registrations, ..Default::default() },
+			stake_delegation
+		}
 	}
 }
 
