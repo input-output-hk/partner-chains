@@ -44,7 +44,7 @@ frame_support::construct_runtime!(
 		Aura: pallet_aura,
 		Grandpa: pallet_grandpa,
 		Balances: pallet_balances,
-		Session0: pallet_session,
+		PolkadotSessionStubForGrandpa: pallet_session,
 		Session: pallet_partner_chains_session,
 	}
 );

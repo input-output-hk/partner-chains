@@ -502,7 +502,7 @@ construct_runtime!(
 		// Partner Chains session_manager ValidatorManagementSessionManager write to this storage.
 		// It is wired in by pallet_partner_chains_session.
 		PolkadotSessionStubForGrandpa: pallet_session,
-		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order,
+		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
 		Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,
 	}
