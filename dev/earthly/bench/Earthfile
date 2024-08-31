@@ -1,0 +1,11 @@
+VERSION 0.8
+
+WEIGH:
+  FUNCTION
+  ARG --required PROFILE
+  COPY --dir scripts dev/devnet .
+  RUN . devnet/.envrc \
+      && scripts/run_all_pallet_overhead_and_machine_benchmarks.sh -b \
+      && scripts/run_storage_benchmarks.sh -b || true \
+      && rm -rf scripts dev
+  SAVE ARTIFACT ./runtime/src/weights AS LOCAL weights
