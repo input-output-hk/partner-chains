@@ -1,6 +1,7 @@
 VERSION 0.8
 IMPORT ./dev/earthly/init
 IMPORT ./dev/earthly/deps
+IMPORT ./dev/earthly/bench
 
 ARG --global PROFILE=release
 ARG --global FEATURES
@@ -79,6 +80,11 @@ build:
   LET WASM_BUILD_STD=0
   CACHE --sharing shared --id cargo $CARGO_HOME
   ARG EARTHLY_GIT_HASH
+  # generate new weights only for production builds
+  IF [ $PROFILE = 'production' ]
+    RUN cargo build --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks -p $BIN
+    DO --pass-args bench+WEIGH
+  END
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES -p $BIN
   SAVE ARTIFACT target/*/$BIN AS LOCAL $BIN
 
