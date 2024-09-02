@@ -5,7 +5,10 @@ use main_chain_follower_api::*;
 use sidechain_domain::*;
 use std::env;
 
-pub struct BlockDataSourceMock;
+pub struct BlockDataSourceMock {
+	/// Duration of a mainchain epoch in milliseconds
+	mc_epoch_duration_millis: u32,
+}
 
 #[async_trait]
 impl BlockDataSource for BlockDataSourceMock {
@@ -22,7 +25,7 @@ impl BlockDataSource for BlockDataSourceMock {
 		reference_timestamp: Timestamp,
 	) -> Result<Option<MainchainBlock>> {
 		let block_number = (reference_timestamp.0 / 20000) as u32;
-		let epoch = block_number / BlockDataSourceMock::blocks_per_epoch();
+		let epoch = block_number / (self.mc_epoch_duration_millis / 20000);
 		let mut hash_arr = [0u8; 32];
 		hash_arr[..4].copy_from_slice(&block_number.to_be_bytes());
 		Ok(Some(MainchainBlock {
@@ -49,11 +52,5 @@ impl BlockDataSourceMock {
 			.duration_since(std::time::UNIX_EPOCH)
 			.unwrap()
 			.as_millis() as u64
-	}
-
-	fn blocks_per_epoch() -> u32 {
-		let val = env::var("MC__EPOCH_DURATION_MILLIS").unwrap();
-		let millis: u32 = val.parse().unwrap();
-		millis / 20000
 	}
 }

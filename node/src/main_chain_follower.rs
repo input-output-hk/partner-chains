@@ -50,8 +50,13 @@ fn use_mock_follower() -> bool {
 
 pub fn create_mock_data_sources(
 ) -> std::result::Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
+	let mv_epoch_duration_millis: u32 = env::var("MC__EPOCH_DURATION_MILLIS")
+		.ok()
+		.and_then(|v| v.parse::<u32>().ok())
+		.unwrap();
+	let block_data_source_mock = BlockDataSourceMock::new(mc_epoch_duration_millis);
 	Ok(DataSources {
-		block: Arc::new(BlockDataSourceMock),
+		block: Arc::new(block_data_source_mock),
 		candidate: Arc::new(MockCandidateDataSource::from_env()?),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
 	})
