@@ -25,7 +25,7 @@ pub struct RegisterValidatorSignedMessage<Params> {
 pub struct CandidateWithStake<TAccountId, TAccountKeys> {
 	pub candidate: Candidate<TAccountId, TAccountKeys>,
 	/// Amount of ADA staked/locked by the Authority Candidate
-	pub stake_delegation: StakeAmount,
+	pub stake_delegation: NormalizedStake,
 }
 
 #[derive(Clone, Debug, Encode, Decode, PartialEq)]
@@ -129,7 +129,7 @@ where
 					account_id: c.account_id.into(),
 					account_keys: c.account_keys.into(),
 				},
-				stake_delegation: stake_delegation.ada,
+				stake_delegation: stake_delegation.ada.0.into(),
 			});
 		}
 	}
@@ -158,7 +158,7 @@ where
 					account_id: c.account_id.into(),
 					account_keys: c.account_keys.into(),
 				},
-				stake_delegation: stake_delegation.eth,
+				stake_delegation: stake_delegation.eth.0.into(),
 			});
 		}
 	}
@@ -667,8 +667,8 @@ mod tests {
 		);
 
 		assert_eq!(valid_candidates.len(), 2);
-		assert_eq!(valid_candidates[0].stake_delegation, StakeAmount(1));
-		assert_eq!(valid_candidates[1].stake_delegation, StakeAmount(2));
+		assert_eq!(valid_candidates[0].stake_delegation, NormalizedStake(1));
+		assert_eq!(valid_candidates[1].stake_delegation, NormalizedStake(2));
 	}
 
 	#[test]

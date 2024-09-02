@@ -3,7 +3,7 @@
 use authority_selection_inherents::filter_invalid_candidates::{RegistrationDataError, StakeError};
 use parity_scale_codec::Decode;
 use serde::{Deserialize, Serialize};
-use sidechain_domain::{EthInfo, MainchainPublicKey, RegistrationData, RegistrationOrderingKey, SidechainPublicKey, StakeAmount, UtxoInfo};
+use sidechain_domain::{EthInfo, MainchainPublicKey, RegistrationData, RegistrationOrderingKey, SidechainPublicKey, UtxoInfo};
 use sp_core::{
 	bytes::to_hex,
 	crypto::{AccountId32, Ss58Codec},
@@ -74,7 +74,7 @@ impl CandidateRegistrationEntry {
 	pub fn new(
 		registration_data: RegistrationData,
 		mainchain_pub_key: MainchainPublicKey,
-		stake_delegation: Option<StakeAmount>,
+		stake_delegation: Option<u64>,
 		invalid_reasons: Option<RegistrationDataError>,
 	) -> Self {
 		Self {
@@ -94,7 +94,7 @@ impl CandidateRegistrationEntry {
 				RegistrationData::Ada(utxo) => RegistrationTxInfo::Ada(utxo.utxo_info),
 				RegistrationData::Eth(eth) => RegistrationTxInfo::Eth(eth.tx_info),
 			},
-			stake_delegation: stake_delegation.map(|sd| sd.0),
+			stake_delegation,
 			is_valid: invalid_reasons.is_none(),
 			invalid_reasons: invalid_reasons.map(|e| e.into()),
 		}

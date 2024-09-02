@@ -164,7 +164,7 @@ impl CandidateDataSource for CandidatesDataSourceImpl {
 						eth_registrations: vec![]  // TODO ETH: add ETH registrations
 					},
 				stake_delegation: Self::get_stake_delegation(&stake_map, &mainchain_pub_key)
-					.map(|stake| StakeDelegation { ada: stake, eth: StakeAmount::zero() }),
+					.map(|stake| StakeDelegation { ada: stake, eth: EthStakeAmount::zero() }),
 			}
 		}).collect())
 	}

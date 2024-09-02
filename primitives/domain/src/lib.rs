@@ -55,12 +55,12 @@ pub struct StakeDelegation {
 
 	// TODO ETH: u64 if not enough to count stake on Ethereum in Wei
 	/// Amount of Wei (which is a fraction of 1 ETH) staked/locked on Ethereum
-	pub eth: StakeAmount,
+	pub eth: EthStakeAmount,
 }
 
 impl StakeDelegation {
 	pub fn of_ada(ada: u64) -> Self {
-		Self { ada: StakeAmount(ada), eth: StakeAmount::zero() }
+		Self { ada: StakeAmount(ada), eth: EthStakeAmount::zero() }
 	}
 	pub fn is_zero(&self) -> bool {
 		self.ada.0 == 0 && self.eth.0 == 0
@@ -84,6 +84,46 @@ impl StakeAmount {
 impl From<u64> for StakeAmount {
 	fn from(value: u64) -> Self {
 		Self(value)
+	}
+}
+
+#[derive(Default, Clone, Copy, Debug, Encode, Decode, TypeInfo, ToDatum, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub struct EthStakeAmount(pub u64);
+
+impl EthStakeAmount {
+	pub fn zero() -> Self {
+		Self(0)
+	}
+
+	pub fn is_zero(&self) -> bool {
+		self.0 == 0
+	}
+}
+
+impl From<u64> for EthStakeAmount {
+	fn from(value: u64) -> Self {
+		Self(value.into())
+	}
+}
+
+#[derive(Default, Clone, Copy, Debug, Encode, Decode, TypeInfo, ToDatum, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub struct NormalizedStake(pub u64);
+
+impl NormalizedStake {
+	pub fn zero() -> Self {
+		Self(0)
+	}
+
+	pub fn is_zero(&self) -> bool {
+		self.0 == 0
+	}
+}
+
+impl From<u64> for NormalizedStake {
+	fn from(value: u64) -> Self {
+		Self(value.into())
 	}
 }
 

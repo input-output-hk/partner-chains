@@ -26,10 +26,11 @@ pub struct AuthoritySelectionInputs {
 	// stake on different chains. The registration schema is symmetric with all chains and hence
 	// the same sidechain_public_key can be related to many public keys on different chains.
 	// Thus:
-	// - only one CandidateRegistrations per each candidate
+	// - only one CandidateRegistrations per each candidate (i.e. per each sidechain_public_key operating PC node)
 	// - each registered_candidates[i]:
-	//   - should contain valid mainchain_pub_key
-    //   - may have optional eth_pub_key, in which case it may also have valid EthRegistrationData records
+	//   - should contain valid mainchain_pub_key (i.e. pk used to register on the main chain)
+    //   - in addition, may have optional eth_pub_key
+	//     if Some(eth_pub_key) is defined, then it should also have valid EthRegistrationData records
 
 	/// List of registered candidates from the main chain, one for each sidechain_public_key.
 	pub registered_candidates: Vec<CandidateRegistrations>,

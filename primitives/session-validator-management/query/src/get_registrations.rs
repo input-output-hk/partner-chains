@@ -83,8 +83,8 @@ fn get_registrations_response_map(
 					validate_registration_data(&mainchain_pub_key, &registration_data)?;
 				let stake_amount = candidate.stake_delegation.map(|sd| {
 					match registration_data {
-						RegistrationData::Ada(_) => sd.ada,
-						RegistrationData::Eth(_) => sd.eth
+						RegistrationData::Ada(_) => sd.ada.0,
+						RegistrationData::Eth(_) => sd.eth.0,
 					}
 				});
 				Ok::<CandidateRegistrationEntry, sp_api::ApiError>(CandidateRegistrationEntry::new(
