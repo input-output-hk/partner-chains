@@ -134,7 +134,9 @@ impl CandidateDataSource for CandidatesDataSourceImpl {
 	}
 
 	// Get all registered candidate registrations for the given epoch.
-	// Note, this method requests only ADA candidates from Cardano and
+	// Note, this method requests only ADA candidates from Cardano.
+	// TODO ETH: From Minotaur perspective, there is a choice to make, whether CandidateDataSource
+	// is responsible to request only ADA candidates or ETH candidates as well.
 	async fn get_candidates(
 			&self,
 			epoch: McEpochNumber,
@@ -147,7 +149,7 @@ impl CandidateDataSource for CandidatesDataSourceImpl {
 			.get_registered_candidates(epoch, committee_candidate_address)
 			.await?;
 
-		// TODO ETH: get registered candidates for ETH
+		// TODO ETH: get registered candidates for ETH if CandidateDataSource is acting as unified facade
 
 		let stake_map = Self::make_stake_map(db_model::get_stake_distribution(&self.pool, epoch).await?);
 		Ok(Self::group_candidates_by_mc_pub_key(ada_candidates).into_iter().map(|(mainchain_pub_key, candidate_registrations)| {

@@ -652,7 +652,7 @@ impl CandidateRegistrations {
 	pub fn from_cardano(
 		mainchain_pub_key: MainchainPublicKey,
 		ada_registrations: Vec<AdaRegistrationData>,
-	    ada_stake: u64,
+		ada_stake: u64,
 	) -> Self {
 		CandidateRegistrations {
 			mainchain_pub_key,
