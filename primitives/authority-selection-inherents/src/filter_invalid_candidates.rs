@@ -355,7 +355,7 @@ fn verify_sidechain_signature(
 	}
 }
 
-fn verify_tx_inputs(registration_data: &AdaRegistrationData) -> Result<(), RegistrationDataError> {
+fn verify_tx_inputs(registration_data: &CardanoRegistrationData) -> Result<(), RegistrationDataError> {
 	if registration_data.tx_inputs.contains(&registration_data.consumed_input) {
 		Ok(())
 	} else {
@@ -381,7 +381,7 @@ mod tests {
 	use sp_core::Pair;
 
 	/// Get Valid Parameters of the `is_registration_data_valid()` function
-	fn create_valid_parameters() -> (MainchainPublicKey, AdaRegistrationData, SidechainParams) {
+	fn create_valid_parameters() -> (MainchainPublicKey, CardanoRegistrationData, SidechainParams) {
 		let input_utxo = UtxoId {
 			tx_hash: McTxHash(hex!(
 				"d260a76b267e27fdf79c217ec61b776d6436dc78eefeac8f3c615486a71f38eb"
@@ -389,7 +389,7 @@ mod tests {
 			index: UtxoIndex(1),
 		};
 
-		let registration_data = AdaRegistrationData {
+		let registration_data = CardanoRegistrationData {
 			consumed_input: input_utxo,
 			sidechain_signature: SidechainSignature(
 				hex!("f31f26ea682a5721cd07cb337a3a7ca134d3909f6afcd09c74a67dda35f28aa20983e396cb444ba87d146ab3bf9ecf2c129572decfde7db9cfb2580e429d8744").to_vec()
@@ -459,7 +459,7 @@ mod tests {
 		fn create_parameters(
 			signing_sidechain_account: ecdsa::Pair,
 			sidechain_pub_key: Vec<u8>,
-		) -> (MainchainPublicKey, AdaRegistrationData, SidechainParams) {
+		) -> (MainchainPublicKey, CardanoRegistrationData, SidechainParams) {
 			let mainchain_account = ed25519::Pair::from_seed_slice(&[7u8; 32]).unwrap();
 
 			let signed_message = RegisterValidatorSignedMessage {
@@ -486,7 +486,7 @@ mod tests {
 				signing_sidechain_account.sign(&signed_message_encoded[..]).0.as_slice()[..64]
 					.to_vec();
 
-			let registration_data = AdaRegistrationData {
+			let registration_data = CardanoRegistrationData {
 				consumed_input: signed_message.input_utxo,
 				sidechain_signature: SidechainSignature(sidechain_signature),
 				mainchain_signature: MainchainSignature(mainchain_signature.0.to_vec()),

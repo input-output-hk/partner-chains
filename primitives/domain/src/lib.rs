@@ -518,7 +518,7 @@ pub struct CommitteeHash(pub Vec<u8>);
 /// Note: A Registration Transaction is called by a user on Cardano to register themselves as a Sidechain Authority Candidate
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
-pub struct AdaRegistrationData {
+pub struct CardanoRegistrationData {
 	/// UTXO that is an input parameter to the registration transaction
 	pub consumed_input: UtxoId,
 	pub sidechain_signature: SidechainSignature,
@@ -551,12 +551,12 @@ pub struct EthRegistrationData {
 #[derive(Default, Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Registrations {
-	pub ada_registrations: Vec<AdaRegistrationData>,
+	pub ada_registrations: Vec<CardanoRegistrationData>,
 	pub eth_registrations: Vec<EthRegistrationData>,
 }
 
 impl Registrations {
-	pub fn of_ada(ada_registrations: Vec<AdaRegistrationData>) -> Registrations {
+	pub fn of_ada(ada_registrations: Vec<CardanoRegistrationData>) -> Registrations {
 		Registrations { ada_registrations, eth_registrations: vec![] }
 	}
 }
@@ -576,12 +576,12 @@ impl Registrations {
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum RegistrationData {
-	Ada(AdaRegistrationData),
+	Ada(CardanoRegistrationData),
 	Eth(EthRegistrationData),
 }
 
-impl From<AdaRegistrationData> for RegistrationData {
-	fn from(x: AdaRegistrationData) -> Self {
+impl From<CardanoRegistrationData> for RegistrationData {
+	fn from(x: CardanoRegistrationData) -> Self {
 		RegistrationData::Ada(x.clone())
 	}
 }
@@ -651,7 +651,7 @@ impl CandidateRegistrations {
 
 	pub fn from_cardano(
 		mainchain_pub_key: MainchainPublicKey,
-		ada_registrations: Vec<AdaRegistrationData>,
+		ada_registrations: Vec<CardanoRegistrationData>,
 		ada_stake: u64,
 	) -> Self {
 		CandidateRegistrations {

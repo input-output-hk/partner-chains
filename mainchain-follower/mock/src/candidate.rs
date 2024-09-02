@@ -45,7 +45,7 @@ impl From<MockRegistration> for CandidateRegistrations {
 		let mainchain_pub_key = MainchainPublicKey(mock.mainchain_pub_key.0.try_into().expect(
 			"Invalid mock configuration. 'mainchain_pub_key' public key should be 32 bytes.",
 		));
-		let registrations = vec![AdaRegistrationData {
+		let registrations = vec![CardanoRegistrationData {
 			consumed_input: mock.input_utxo,
 			sidechain_signature: SidechainSignature(mock.sidechain_signature.0.clone()),
 			mainchain_signature: MainchainSignature(mock.mainchain_signature.0),

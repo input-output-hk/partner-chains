@@ -344,7 +344,7 @@ pub fn create_inherent_data_struct(
 			let mainchain_signature = dummy_mainchain_pub_key.sign(&signed_message_encoded[..]);
 			let sidechain_signature = validator.cross_chain.sign(&signed_message_encoded[..]);
 
-			let registration_data = AdaRegistrationData {
+			let registration_data = CardanoRegistrationData {
 				consumed_input: signed_message.input_utxo,
 				sidechain_signature: SidechainSignature(
 					sidechain_signature.into_inner().0[..64].to_vec(),

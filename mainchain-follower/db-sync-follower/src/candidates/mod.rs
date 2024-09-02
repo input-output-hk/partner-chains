@@ -219,8 +219,8 @@ impl CandidatesDataSourceImpl {
 		candidates.into_iter().into_group_map_by(|c| c.mainchain_pub_key.clone())
 	}
 
-	fn make_registration_data(c: RegisteredCandidate) -> AdaRegistrationData {
-		AdaRegistrationData {
+	fn make_registration_data(c: RegisteredCandidate) -> CardanoRegistrationData {
+		CardanoRegistrationData {
 			consumed_input: c.consumed_input,
 			sidechain_signature: c.sidechain_signature,
 			mainchain_signature: c.mainchain_signature,
