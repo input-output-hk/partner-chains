@@ -25,7 +25,7 @@ impl BlockDataSource for BlockDataSourceMock {
 		reference_timestamp: Timestamp,
 	) -> Result<Option<MainchainBlock>> {
 		let block_number = (reference_timestamp.0 / 20000) as u32;
-		let epoch = block_number / (self.mc_epoch_duration_millis / 20000);
+		let epoch = block_number / self.block_per_epoch();
 		let mut hash_arr = [0u8; 32];
 		hash_arr[..4].copy_from_slice(&block_number.to_be_bytes());
 		Ok(Some(MainchainBlock {
@@ -47,6 +47,10 @@ impl BlockDataSource for BlockDataSourceMock {
 }
 
 impl BlockDataSourceMock {
+	fn block_per_epoch(&self) -> u32 {
+		self.mc_epoch_duration_millis / 20000
+	}
+
 	fn millis_now() -> u64 {
 		std::time::SystemTime::now()
 			.duration_since(std::time::UNIX_EPOCH)
