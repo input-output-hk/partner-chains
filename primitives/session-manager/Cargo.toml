@@ -9,6 +9,7 @@ edition = "2021"
 derive-new = { workspace = true }
 frame-system = { workspace = true }
 log = { workspace = true }
+pallet-session = { workspace = true }
 pallet-session-validator-management = { workspace = true }
 pallet-sidechain = { workspace = true }
 pallet-partner-chains-session = { workspace = true }
