@@ -1044,7 +1044,6 @@
 <a href="#1042" id="1042">1042</a>
 <a href="#1043" id="1043">1043</a>
 <a href="#1044" id="1044">1044</a>
-<a href="#1045" id="1045">1045</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attr">#![recursion_limit = <span class="string">"256"</span>]
@@ -1094,7 +1093,6 @@
 <span class="kw">use </span>sp_api::impl_runtime_apis;
 <span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityId <span class="kw">as </span>AuraId;
 <span class="kw">use </span>sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-<span class="kw">use </span>sp_partner_chains_session::CurrentSessionIndex;
 <span class="attr">#[cfg(any(feature = <span class="string">"std"</span>, test))]
 </span><span class="kw">pub use </span>sp_runtime::BuildStorage;
 <span class="kw">use </span>sp_runtime::DispatchResult;
@@ -1109,7 +1107,6 @@
 };
 <span class="kw">pub use </span>sp_runtime::{Perbill, Permill};
 <span class="kw">use </span>sp_sidechain::SidechainStatus;
-<span class="kw">use </span>sp_staking::SessionIndex;
 <span class="kw">use </span>sp_std::prelude::<span class="kw-2">*</span>;
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">use </span>sp_version::NativeVersion;
@@ -1401,6 +1398,8 @@
 	<span class="kw">type </span>SlotDuration = ConstU64&lt;SLOT_DURATION&gt;;
 }
 
+<span class="macro">pallet_session_runtime_stub::impl_pallet_session_config!</span>(Runtime);
+
 <span class="kw">impl </span>pallet_grandpa::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 
@@ -1469,12 +1468,6 @@
 	<span class="kw">type </span>SessionManager = ValidatorManagementSessionManager&lt;Runtime&gt;;
 	<span class="kw">type </span>SessionHandler = &lt;opaque::SessionKeys <span class="kw">as </span>OpaqueKeys&gt;::KeyTypeIdProviders;
 	<span class="kw">type </span>Keys = opaque::SessionKeys;
-}
-
-<span class="kw">impl </span>CurrentSessionIndex <span class="kw">for </span>Runtime {
-	<span class="kw">fn </span>current_session_index() -&gt; SessionIndex {
-		Session::current_index()
-	}
 }
 
 <span class="macro">parameter_types! </span>{
@@ -1550,7 +1543,12 @@
 		</span>Sidechain: pallet_sidechain,
 		SessionCommitteeManagement: pallet_session_validator_management,
 		BlockRewards: pallet_block_rewards,
-		<span class="comment">// The order matters!! Session pallet needs to come last for correct initialization order
+		<span class="comment">// pallet_grandpa depends on pallet_session CurrentIndex storage.
+		// Only stub implementation of pallet_session should be wired.
+		// Partner Chains session_manager ValidatorManagementSessionManager writes to this storage.
+		// It is wired in by pallet_partner_chains_session.
+		</span>PolkadotSessionStubForGrandpa: pallet_session,
+		<span class="comment">// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
 		</span>Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,
 	}

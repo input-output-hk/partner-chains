@@ -60,6 +60,7 @@
 <a href="#58" id="58">58</a>
 <a href="#59" id="59">59</a>
 <a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::chain_spec::<span class="kw-2">*</span>;
 <span class="kw">use </span>chain_params::SidechainParams;
 <span class="kw">use </span>sc_service::ChainType;
@@ -101,6 +102,7 @@
 			},
 			..Default::default()
 		},
+		polkadot_session_stub_for_grandpa: Default::default(),
 		session_committee_management: SessionCommitteeManagementConfig {
 			<span class="comment">// Same as SessionConfig
 			</span>initial_authorities: <span class="macro">vec!</span>[],

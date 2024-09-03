@@ -1,0 +1,70 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Session Pallet"><title>pallet_partner_chains_session - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="pallet_partner_chains_session" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-4c98445ec4002617.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../pallet_partner_chains_session/index.html">pallet_partner_chains_session</a><span class="version">1.1.0</span></h2></div><div class="sidebar-elems"><ul class="block">
+            <li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#modules">Modules</a></li><li><a href="#traits">Traits</a></li></ul></section></div></nav><div class="sidebar-resizer"></div>
+    <main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../pallet_partner_chains_session/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">pallet_partner_chains_session</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="src" href="../src/pallet_partner_chains_session/lib.rs.html#22-525">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="session-pallet"><a class="doc-anchor" href="#session-pallet">§</a>Session Pallet</h2>
+<p>The Session pallet allows validators to manage their session keys, provides a function for
+changing the session length, and handles session rotation.</p>
+<ul>
+<li><a href="pallet/trait.Config.html" title="trait pallet_partner_chains_session::pallet::Config"><code>Config</code></a></li>
+<li><a href="pallet/enum.Call.html" title="enum pallet_partner_chains_session::pallet::Call"><code>Call</code></a></li>
+<li><a href="pallet/struct.Pallet.html" title="struct pallet_partner_chains_session::pallet::Pallet"><code>Pallet</code></a></li>
+</ul>
+<h3 id="overview"><a class="doc-anchor" href="#overview">§</a>Overview</h3><h4 id="terminology"><a class="doc-anchor" href="#terminology">§</a>Terminology</h4><!-- Original author of paragraph: @gavofyork -->
+<ul>
+<li>
+<p><strong>Session:</strong> A session is a period of time that has a constant set of validators. Validators
+can only join or exit the validator set at a session change. It is measured in block numbers.
+The block where a session is ended is determined by the <code>ShouldEndSession</code> trait. When the
+session is ending, a new validator set can be chosen by <code>OnSessionEnding</code> implementations.</p>
+</li>
+<li>
+<p><strong>Session key:</strong> A session key is actually several keys kept together that provide the various
+signing functions required by network authorities/validators in pursuit of their duties.</p>
+</li>
+<li>
+<p><strong>Validator ID:</strong> Every account has an associated validator ID. For some simple staking
+systems, this may just be the same as the account ID. For staking systems using a
+stash/controller model, the validator ID would be the stash account ID of the controller.</p>
+</li>
+<li>
+<p><strong>Session key configuration process:</strong> Session keys are set using <code>set_keys</code> for use not in
+the next session, but the session after next. They are stored in <code>NextKeys</code>, a mapping between
+the caller’s <code>ValidatorId</code> and the session keys provided. <code>set_keys</code> allows users to set their
+session key prior to being selected as validator. It is a public call since it uses
+<code>ensure_signed</code>, which checks that the origin is a signed account. As such, the account ID of
+the origin stored in <code>NextKeys</code> may not necessarily be associated with a block author or a
+validator. The session keys of accounts are removed once their account balance is zero.</p>
+</li>
+<li>
+<p><strong>Session length:</strong> This pallet does not assume anything about the length of each session.
+Rather, it relies on an implementation of <code>ShouldEndSession</code> to dictate a new session’s start.
+This pallet provides the <code>PeriodicSessions</code> struct for simple periodic sessions.</p>
+</li>
+<li>
+<p><strong>Session rotation configuration:</strong> Configure as either a ‘normal’ (rewardable session where
+rewards are applied) or ‘exceptional’ (slashable) session rotation.</p>
+</li>
+<li>
+<p><strong>Session rotation process:</strong> At the beginning of each block, the <code>on_initialize</code> function
+queries the provided implementation of <code>ShouldEndSession</code>. If the session is to end the newly
+activated validator IDs and session keys are taken from storage and passed to the
+<code>SessionHandler</code>. The validator set supplied by <code>SessionManager::new_session</code> and the
+corresponding session keys, which may have been registered via <code>set_keys</code> during the previous
+session, are written to storage where they will wait one session before being passed to the
+<code>SessionHandler</code> themselves.</p>
+</li>
+</ul>
+<h4 id="goals"><a class="doc-anchor" href="#goals">§</a>Goals</h4>
+<p>The Session pallet is designed to make the following possible:</p>
+<ul>
+<li>Set session keys of the validator set for upcoming sessions.</li>
+<li>Control the length of sessions.</li>
+<li>Configure and switch between either normal or exceptional session rotations.</li>
+</ul>
+<h3 id="interface"><a class="doc-anchor" href="#interface">§</a>Interface</h3><h4 id="public-functions"><a class="doc-anchor" href="#public-functions">§</a>Public Functions</h4>
+<ul>
+<li><code>rotate_session</code> - Change to the next session. Register the new authority set.</li>
+<li><code>disable_index</code> - Disable a validator by index.</li>
+<li><code>disable</code> - Disable a validator by Validator ID</li>
+</ul>
+</div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><code>pub use <a class="mod" href="pallet/index.html" title="mod pallet_partner_chains_session::pallet">pallet</a>::*;</code></div></li></ul><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="pallet/index.html" title="mod pallet_partner_chains_session::pallet">pallet</a></div><div class="desc docblock-short">The <code>pallet</code> module in each FRAME pallet hosts the most important items needed
+to construct this pallet.</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.SessionHandler.html" title="trait pallet_partner_chains_session::SessionHandler">SessionHandler</a></div><div class="desc docblock-short">Handler for session life cycle events.</div></li><li><div class="item-name"><a class="trait" href="trait.SessionManager.html" title="trait pallet_partner_chains_session::SessionManager">SessionManager</a></div><div class="desc docblock-short">A trait for managing creation of new validator set.</div></li><li><div class="item-name"><a class="trait" href="trait.ShouldEndSession.html" title="trait pallet_partner_chains_session::ShouldEndSession">ShouldEndSession</a></div><div class="desc docblock-short">Decides whether the session should be ended.</div></li></ul></section></div></main></body></html>

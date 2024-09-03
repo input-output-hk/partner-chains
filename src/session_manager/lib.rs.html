@@ -105,6 +105,7 @@
 <a href="#103" id="103">103</a>
 <a href="#104" id="104">104</a>
 <a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">use </span>core::marker::PhantomData;
@@ -120,7 +121,7 @@
 }
 
 <span class="doccomment">/// SessionManager, which takes committee from pallet_session_validator_management.
-</span><span class="kw">impl</span>&lt;T: pallet_session_validator_management::Config&gt;
+</span><span class="kw">impl</span>&lt;T: pallet_session_validator_management::Config + pallet_session::Config&gt;
 	pallet_partner_chains_session::SessionManager&lt;T::AccountId, T::AuthorityKeys&gt;
 	<span class="kw">for </span>ValidatorManagementSessionManager&lt;T&gt;
 {
@@ -140,6 +141,7 @@
 	// important programming errors.
 	</span><span class="kw">fn </span>new_session(new_index: SessionIndex) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;(T::AccountId, T::AuthorityKeys)&gt;&gt; {
 		<span class="macro">info!</span>(<span class="string">"New session {new_index}"</span>);
+		pallet_session::pallet::CurrentIndex::&lt;T&gt;::put(new_index);
 		<span class="prelude-val">Some</span>(
 			pallet_session_validator_management::Pallet::&lt;T&gt;::rotate_committee_to_next_epoch()
 				.expect(

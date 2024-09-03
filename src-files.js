@@ -11,6 +11,8 @@ var srcIndex = new Map(JSON.parse('[\
 ["mock_types",["",[],["lib.rs","session_keys.rs"]]],\
 ["pallet_block_rewards",["",[],["lib.rs"]]],\
 ["pallet_native_token_management",["",[],["lib.rs"]]],\
+["pallet_partner_chains_session",["",[],["lib.rs"]]],\
+["pallet_session_runtime_stub",["",[],["lib.rs"]]],\
 ["pallet_session_validator_management",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_session_validator_management_benchmarking",["",[],["lib.rs"]]],\
 ["pallet_session_validator_management_rpc",["",[],["lib.rs"]]],\

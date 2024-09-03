@@ -175,6 +175,7 @@
 <a href="#173" id="173">173</a>
 <a href="#174" id="174">174</a>
 <a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::chain_spec::get_account_id_from_seed;
 <span class="kw">use </span><span class="kw">crate</span>::chain_spec::<span class="kw-2">*</span>;
 <span class="kw">use </span>chain_params::SidechainParams;
@@ -335,6 +336,7 @@
 			},
 			..Default::default()
 		},
+		polkadot_session_stub_for_grandpa: Default::default(),
 		session_committee_management: SessionCommitteeManagementConfig {
 			initial_authorities: initial_authorities
 				.into_iter()

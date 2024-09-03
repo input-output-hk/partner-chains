@@ -215,6 +215,7 @@
 <a href="#213" id="213">213</a>
 <a href="#214" id="214">214</a>
 <a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::chain_spec::<span class="kw-2">*</span>;
 <span class="kw">use </span>chain_params::SidechainParams;
 <span class="kw">use </span>sc_service::ChainType;
@@ -415,6 +416,7 @@
 			slots_per_epoch: SlotsPerEpoch(from_var_or(<span class="string">"SLOTS_PER_EPOCH"</span>, <span class="number">60</span>)<span class="question-mark">?</span>),
 			..Default::default()
 		},
+		polkadot_session_stub_for_grandpa: Default::default(),
 		session_committee_management: SessionCommitteeManagementConfig {
 			initial_authorities: initial_authorities
 				.into_iter()
