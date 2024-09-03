@@ -80,6 +80,11 @@
 <a href="#78" id="78">78</a>
 <a href="#79" id="79">79</a>
 <a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>db_sync_follower::native_token::NativeTokenManagementDataSourceImpl;
 <span class="kw">use </span>db_sync_follower::{
 	block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig},
@@ -132,8 +137,13 @@
 
 <span class="kw">pub fn </span>create_mock_data_sources(
 ) -&gt; std::result::Result&lt;DataSources, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
+	<span class="kw">let </span>mc_epoch_duration_millis: u32 = std::env::var(<span class="string">"MC__EPOCH_DURATION_MILLIS"</span>)
+		.ok()
+		.and_then(|v| v.parse::&lt;u32&gt;().ok())
+		.unwrap();
+	<span class="kw">let </span>block_data_source_mock = BlockDataSourceMock::new(mc_epoch_duration_millis);
 	<span class="prelude-val">Ok</span>(DataSources {
-		block: Arc::new(BlockDataSourceMock),
+		block: Arc::new(block_data_source_mock),
 		candidate: Arc::new(MockCandidateDataSource::from_env()<span class="question-mark">?</span>),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
 	})
