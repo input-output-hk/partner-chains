@@ -39,6 +39,7 @@ pub fn chain_spec() -> Result<ChainSpec, EnvVarReadError> {
 			},
 			..Default::default()
 		},
+		polkadot_session_stub_for_grandpa: Default::default(),
 		session_committee_management: SessionCommitteeManagementConfig {
 			// Same as SessionConfig
 			initial_authorities: vec![],

@@ -13,7 +13,7 @@ pub struct ValidatorManagementSessionManager<T> {
 }
 
 /// SessionManager, which takes committee from pallet_session_validator_management.
-impl<T: pallet_session_validator_management::Config>
+impl<T: pallet_session_validator_management::Config + pallet_session::Config>
 	pallet_partner_chains_session::SessionManager<T::AccountId, T::AuthorityKeys>
 	for ValidatorManagementSessionManager<T>
 {
@@ -33,6 +33,7 @@ impl<T: pallet_session_validator_management::Config>
 	// important programming errors.
 	fn new_session(new_index: SessionIndex) -> Option<Vec<(T::AccountId, T::AuthorityKeys)>> {
 		info!("New session {new_index}");
+		pallet_session::pallet::CurrentIndex::<T>::put(new_index);
 		Some(
 			pallet_session_validator_management::Pallet::<T>::rotate_committee_to_next_epoch()
 				.expect(

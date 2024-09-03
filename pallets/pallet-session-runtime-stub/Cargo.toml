@@ -1,0 +1,27 @@
+[package]
+name = "pallet-session-runtime-stub"
+version = "1.1.0"
+description = "Runtime implementations for polkadot-sdk pallet-session when pallet-partner-chains-session is used"
+edition = "2021"
+license = "Apache-2.0"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+pallet-partner-chains-session = { workspace = true }
+pallet-session = { workspace = true }
+sp-runtime = { workspace = true }
+sp-staking = { workspace = true }
+sp-std = {workspace = true}
+
+[features]
+default = [ "std" ]
+
+std = [
+	"pallet-partner-chains-session/std",
+	"pallet-session/std",
+	"sp-runtime/std",
+	"sp-staking/std",
+	"sp-std/std"
+]

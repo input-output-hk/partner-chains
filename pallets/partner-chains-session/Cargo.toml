@@ -1,0 +1,37 @@
+[package]
+name = "pallet-partner-chains-session"
+version = "1.1.0"
+description = "FRAME pallet for setting validators with InherentData and session management"
+edition = "2021"
+license = "Apache-2.0"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+parity-scale-codec = { workspace = true, features = ["derive"] }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+impl-trait-for-tuples = "0.2.2"
+log = { workspace = true }
+pallet-timestamp = { workspace = true }
+scale-info = { workspace = true, features = ["derive", "serde"] }
+sp-core = { workspace = true, features = ["serde"] }
+sp-runtime = { workspace = true, features = ["serde"] }
+sp-staking = { workspace = true, features = ["serde"] }
+sp-std = { workspace = true }
+
+[features]
+default = ["std", "polkadot-js-compat"]
+std = [
+	"parity-scale-codec/std",
+	"frame-support/std",
+	"frame-system/std",
+	"log/std",
+	"scale-info/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"sp-staking/std",
+	"sp-std/std",
+]
+polkadot-js-compat = []
