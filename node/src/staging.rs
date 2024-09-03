@@ -158,6 +158,7 @@ pub fn staging_genesis(
 			},
 			..Default::default()
 		},
+		polkadot_session_stub_for_grandpa: Default::default(),
 		session_committee_management: SessionCommitteeManagementConfig {
 			initial_authorities: initial_authorities
 				.into_iter()

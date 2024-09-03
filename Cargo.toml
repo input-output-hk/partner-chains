@@ -5,6 +5,8 @@ members = [
 	"client/consensus/aura",
     "node",
 	"pallets/block-rewards",
+	"pallets/pallet-session-runtime-stub",
+	"pallets/partner-chains-session",
 	"pallets/sidechain",
 	"pallets/sidechain/rpc",
     "pallets/session-validator-management",
@@ -100,76 +102,75 @@ inquire = { version = "0.7.5" }
 parking_lot = { version = "0.12.1", default-features = false }
 
 # substrate dependencies
-frame-benchmarking = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-frame-benchmarking-cli = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-frame-executive = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-frame-support = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-frame-system = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-frame-system-benchmarking = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-frame-system-rpc-runtime-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-frame-try-runtime = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-pallet-aura = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-pallet-balances = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-pallet-grandpa = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-pallet-sudo = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-pallet-timestamp = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-pallet-transaction-payment = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-pallet-transaction-payment-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-pallet-transaction-payment-rpc-runtime-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-pallet-partner-chains-session = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-basic-authorship = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-block-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-consensus-slots = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-cli = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-client-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-client-db = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-consensus = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-consensus-aura = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-consensus-grandpa = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-consensus-grandpa-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-executor = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-keystore = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-network = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-network-test = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-rpc-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-service = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-telemetry = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-transaction-pool = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-transaction-pool-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sc-offchain = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-application-crypto = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-block-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-blockchain = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-consensus = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-consensus-aura = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-consensus-grandpa = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-consensus-slots = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-core = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-crypto-hashing = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-inherents = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-io = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-keyring = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-keystore = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-offchain = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-runtime = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-session = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-tracing = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-partner-chains-session = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-staking = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-std = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-timestamp = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-transaction-pool = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-version = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-storage = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-weights = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-substrate-build-script-utils = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-substrate-frame-rpc-system = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-substrate-prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-substrate-test-runtime-client = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-substrate-wasm-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
-sp-genesis-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-revert-changes-1" }
+frame-benchmarking = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+frame-benchmarking-cli = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+frame-executive = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+frame-support = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+frame-system = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+frame-system-benchmarking = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+frame-system-rpc-runtime-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+frame-try-runtime = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+pallet-aura = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+pallet-balances = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+pallet-grandpa = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+pallet-session = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+pallet-sudo = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+pallet-timestamp = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+pallet-transaction-payment = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+pallet-transaction-payment-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+pallet-transaction-payment-rpc-runtime-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-basic-authorship = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-block-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-consensus-slots = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-cli = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-client-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-client-db = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-consensus = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-consensus-aura = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-consensus-grandpa = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-consensus-grandpa-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-executor = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-keystore = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-network = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-network-test = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-rpc = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-rpc-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-service = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-telemetry = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-transaction-pool = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-transaction-pool-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sc-offchain = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-api = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-application-crypto = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-block-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-blockchain = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-consensus = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-consensus-aura = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-consensus-grandpa = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-consensus-slots = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-core = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-crypto-hashing = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-inherents = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-io = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-keyring = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-keystore = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-offchain = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-runtime = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-session = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-tracing = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-staking = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-std = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-timestamp = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-transaction-pool = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-version = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-storage = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-weights = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+substrate-build-script-utils = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+substrate-frame-rpc-system = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+substrate-prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+substrate-test-runtime-client = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+substrate-wasm-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
+sp-genesis-builder = { default-features = false, git = "https://github.com/input-output-hk/polkadot-sdk.git", tag ="partnerchains-stable-2407-1-v2" }
 
 # local dependencies
 sidechain-runtime = { path = "runtime" }
@@ -206,3 +207,5 @@ pallet-native-token-management = { path = "pallets/native-token-management", def
 sp-native-token-management = { path = "primitives/native-token-management", default-features = false }
 sc-partner-chains-consensus-aura = { path = "client/consensus/aura", default-features = false }
 sp-partner-chains-consensus-aura = { path = "primitives/consensus/aura", default-features = false }
+pallet-partner-chains-session = { path = "pallets/partner-chains-session", default-features = false }
+pallet-session-runtime-stub = { path = "pallets/pallet-session-runtime-stub", default-features = false }

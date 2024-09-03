@@ -47,7 +47,6 @@ use sidechain_domain::{
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_partner_chains_session::CurrentSessionIndex;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 use sp_runtime::DispatchResult;
@@ -62,7 +61,6 @@ use sp_runtime::{
 };
 pub use sp_runtime::{Perbill, Permill};
 use sp_sidechain::SidechainStatus;
-use sp_staking::SessionIndex;
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -354,6 +352,8 @@ impl pallet_aura::Config for Runtime {
 	type SlotDuration = ConstU64<SLOT_DURATION>;
 }
 
+pallet_session_runtime_stub::impl_pallet_session_config!(Runtime);
+
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 
@@ -422,12 +422,6 @@ impl pallet_partner_chains_session::Config for Runtime {
 	type SessionManager = ValidatorManagementSessionManager<Runtime>;
 	type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = opaque::SessionKeys;
-}
-
-impl CurrentSessionIndex for Runtime {
-	fn current_session_index() -> SessionIndex {
-		Session::current_index()
-	}
 }
 
 parameter_types! {
@@ -503,7 +497,12 @@ construct_runtime!(
 		Sidechain: pallet_sidechain,
 		SessionCommitteeManagement: pallet_session_validator_management,
 		BlockRewards: pallet_block_rewards,
-		// The order matters!! Session pallet needs to come last for correct initialization order
+		// pallet_grandpa depends on pallet_session CurrentIndex storage.
+		// Only stub implementation of pallet_session should be wired.
+		// Partner Chains session_manager ValidatorManagementSessionManager writes to this storage.
+		// It is wired in by pallet_partner_chains_session.
+		PolkadotSessionStubForGrandpa: pallet_session,
+		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
 		Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,
 	}
