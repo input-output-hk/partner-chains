@@ -8,6 +8,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 * moved out some cli related code from `node` crate, in order to require less copy-paste in users nodes
 * removed USE_CHAIN_INIT code. Migration strategy is to remove copy-pasted and adapted code. It will not compile with vanilla polkadot-sdk, that we plan to use in future.
+* moved `pallet-partner-chains-session` from polkadot-sdk fork to this repository. Node uses vanilla grandpa and aura consensus now. No migration is needed.
 * moved `sc-consensus-aura` from input-output-hk/polkadot-sdk fork to this repository,
   to `sc-partner-chains-consensus-aura` and `sp-partner-chains-consensus-aura`.
   This change requires migration of the node, PartnerChainsProposerFactory has to be used.
