@@ -11,7 +11,14 @@ on:
         description: "Upload the container to our registry"
         default: false
         type: boolean
-
+      repository:
+        description: "GitHub repository name (e.g., username/repo)"
+        required: true
+        default: 'input-output-hk'
+      branch:
+        description: "Branch name to build"
+        required: true
+        default: 'master'
 env:
   AWS_REGION: "eu-central-1"
   SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -28,7 +35,10 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ github.event.inputs.repository }}
+          ref: ${{ github.event.inputs.branch }}
 
       - name: Setup Earthly
         uses: ./.github/earthly-setup
