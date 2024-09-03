@@ -50,7 +50,7 @@ fn use_mock_follower() -> bool {
 
 pub fn create_mock_data_sources(
 ) -> std::result::Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
-	let mv_epoch_duration_millis: u32 = env::var("MC__EPOCH_DURATION_MILLIS")
+	let mc_epoch_duration_millis: u32 = std::env::var("MC__EPOCH_DURATION_MILLIS")
 		.ok()
 		.and_then(|v| v.parse::<u32>().ok())
 		.unwrap();
