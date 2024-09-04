@@ -4,7 +4,7 @@ Partner Chain builders are organizations that want to build their own blockchain
 
 ## Order of Operations
 1. Install dependencies
-    1. Cardano node v9.1.0
+    1. Cardano node v9.1.1
         1. Ogmios v6.5.0
         2. Kupo - v2.9.0
         3. DB Sync  v13.3.0.0 (PostgreSQLv15.3)
