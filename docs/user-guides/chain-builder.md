@@ -24,7 +24,7 @@ To run the Partner Chains stack, several dependencies need to be installed on a 
 
 Ogmios, Kupo and DB Sync are essential to enable registration communication with the main chain (Cardano). Ogmios and Kupo are used for submitting transactions to Cardano, and DB Sync is for observation of main chain state.
 
-### 1.1 Cardano node v9.0.0
+### 1.1 Cardano node v9.1.1
 
 Cardano node is required to start a partner chain. The installation of `cardano-node` is out of the scope of this guide. Refer to our [Cardano course handbook](https://cardano-course.gitbook.io/cardano-course/handbook) for documentation and video instruction.
 
