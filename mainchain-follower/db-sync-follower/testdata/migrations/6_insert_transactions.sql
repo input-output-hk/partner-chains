@@ -132,10 +132,10 @@ BEGIN
 -- SPO C registers during block id 2 (epoch 191)
 INSERT INTO tx ( id            , hash            , block_id, block_index, out_sum, fee, deposit, size, invalid_before, invalid_hereafter, valid_contract, script_size )
 
-    VALUES     ( consumed_tx_id, consumed_tx_hash, 0       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
-              ,( reg_tx_id     , hash1           , 0       , 1          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
-              ,( dereg_tx_id   , hash2           , 2       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
-              ,( reg_tx_id2    , hash5           , 3       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
+    VALUES     ( consumed_tx_id, consumed_tx_hash, 1       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
+              ,( reg_tx_id     , hash1           , 1       , 1          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
+              ,( dereg_tx_id   , hash2           , 4       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
+              ,( reg_tx_id2    , hash5           , 6       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
 ;
 
 
@@ -184,8 +184,8 @@ BEGIN
 -- some UTXOs are created during block id 0 (epoch 189)
 -- one is consumed and one is created during block 2 (epoch 190)
 INSERT INTO tx ( id         , hash , block_id, block_index, out_sum, fee, deposit, size, invalid_before, invalid_hereafter, valid_contract, script_size )
-    VALUES     ( tx1id      , hash1, 0       , 3          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
-              ,( tx2id      , hash2, 2       , 2          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
+    VALUES     ( tx1id      , hash1, 1       , 3          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
+              ,( tx2id      , hash2, 4       , 2          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
 ;
 
 
@@ -272,13 +272,13 @@ DECLARE
 BEGIN
 
 INSERT INTO tx ( id                 , hash                 , block_id , block_index , out_sum , fee , deposit , size , invalid_before , invalid_hereafter , valid_contract , script_size )
-        VALUES ( xc_tx_id1          , tx_hash1             , 3        , 1           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
-              ,( xc_tx_id2          , tx_hash2             , 3        , 2           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
-              ,( xc_tx_id3          , tx_hash3             , 4        , 0           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
-              ,( invalid_xc_tx_1_id , invalid_xc_tx_1_hash , 4        , 1           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
-              ,( upd_xc_tx_id1      , upd_tx_hash1         , 3        , 3           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
-              ,( upd_xc_tx_id2      , upd_tx_hash2         , 3        , 4           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
-              ,( upd_xc_tx_id3      , upd_tx_hash3         , 4        , 2           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+        VALUES ( xc_tx_id1          , tx_hash1             , 6        , 1           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+              ,( xc_tx_id2          , tx_hash2             , 6        , 2           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+              ,( xc_tx_id3          , tx_hash3             , 7        , 0           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+              ,( invalid_xc_tx_1_id , invalid_xc_tx_1_hash , 7        , 1           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+              ,( upd_xc_tx_id1      , upd_tx_hash1         , 6        , 3           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+              ,( upd_xc_tx_id2      , upd_tx_hash2         , 6        , 4           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+              ,( upd_xc_tx_id3      , upd_tx_hash3         , 7        , 2           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
 ;
 
 INSERT INTO tx_out ( id   , tx_id                 , index , address     , address_raw , address_has_script , payment_cred , stake_address_id , value , data_hash                  )
@@ -348,8 +348,8 @@ DECLARE
 BEGIN
 
 INSERT INTO tx ( id    , hash     , block_id , block_index , out_sum , fee , deposit , size , invalid_before , invalid_hereafter , valid_contract , script_size )
-    VALUES     ( tx1id , tx_hash1 , 3        , 5           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
-              ,( tx2id , tx_hash2 , 4        , 3           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+    VALUES     ( tx1id , tx_hash1 , 6        , 5           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+              ,( tx2id , tx_hash2 , 7        , 3           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
 ;
 INSERT INTO tx_out ( id   , tx_id , index , address    , address_raw , address_has_script , payment_cred , stake_address_id , value , data_hash                  )
             VALUES ( 3005 , tx1id , 0     , owner_addr , ''          , TRUE               , NULL         , NULL             , 0     , datum_hash1                ) -- first committee (consumed)
@@ -394,8 +394,8 @@ BEGIN
 -- the set is fist broken into two utxos, the second is consumed to get 3 elements
 
 INSERT INTO tx ( id    , hash     , block_id , block_index , out_sum , fee , deposit , size , invalid_before , invalid_hereafter , valid_contract , script_size )
-    VALUES     ( tx1id , tx_hash1 , 3        , 6           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
-              ,( tx2id , tx_hash2 , 4        , 4           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+    VALUES     ( tx1id , tx_hash1 , 6        , 6           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+              ,( tx2id , tx_hash2 , 7        , 4           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
 ;
 INSERT INTO tx_out ( id   , tx_id , index , address    , address_raw , address_has_script , payment_cred , stake_address_id , value , data_hash                  )
             VALUES ( 4000 , tx1id , 0     , owner_addr , ''          , TRUE               , NULL         , NULL             , 0     , datum_hash1                ) -- first element
@@ -442,7 +442,7 @@ DO $$
         checkpoint_nft_policy hash28type := decode('500000000000000000000000000000000000434845434b504f494e54', 'hex');
     BEGIN
         INSERT INTO tx ( id     , hash     , block_id , block_index , out_sum , fee , deposit , size , invalid_before , invalid_hereafter , valid_contract , script_size )
-        VALUES         ( tx1_id , tx1_hash , 5        , 2           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+        VALUES         ( tx1_id , tx1_hash , 8        , 2           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
         ;
 
         INSERT INTO tx_out ( id   , tx_id  , index , address    , address_raw , address_has_script , payment_cred , stake_address_id , value , data_hash                  )
@@ -472,7 +472,7 @@ DO $$
         d_parameter_policy hash28type := decode('500000000000000000000000000000000000434845434b504f494e69', 'hex');
     BEGIN
         INSERT INTO tx ( id     , hash     , block_id , block_index , out_sum , fee , deposit , size , invalid_before , invalid_hereafter , valid_contract , script_size )
-        VALUES         ( tx1_id , tx1_hash , 1        , 0           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+        VALUES         ( tx1_id , tx1_hash , 3        , 0           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
         ;
 
         INSERT INTO tx_out ( id   , tx_id  , index , address    , address_raw , address_has_script , payment_cred , stake_address_id , value , data_hash                  )
@@ -501,7 +501,7 @@ DO $$
         d_parameter_policy hash28type := decode('500000000000000000000000000000000000434845434b504f494e69', 'hex');
     BEGIN
         INSERT INTO tx ( id     , hash     , block_id , block_index , out_sum , fee , deposit , size , invalid_before , invalid_hereafter , valid_contract , script_size )
-        VALUES         ( tx1_id , tx1_hash , 2        , 10           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+        VALUES         ( tx1_id , tx1_hash , 4        , 10           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
         ;
 
         INSERT INTO tx_out ( id   , tx_id  , index , address    , address_raw , address_has_script , payment_cred , stake_address_id , value , data_hash                  )
@@ -527,7 +527,7 @@ DO $$
         permissioned_candidates_policy hash28type := decode('500000000000000000000000000000000000434845434b504f494e19', 'hex');
     BEGIN
         INSERT INTO tx ( id     , hash     , block_id , block_index , out_sum , fee , deposit , size , invalid_before , invalid_hereafter , valid_contract , script_size )
-        VALUES         ( tx1_id , tx1_hash , 1        , 1           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+        VALUES         ( tx1_id , tx1_hash , 3        , 1           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
         ;
 
         INSERT INTO tx_out ( id   , tx_id  , index , address    , address_raw , address_has_script , payment_cred , stake_address_id , value , data_hash                  )
@@ -555,7 +555,7 @@ DO $$
         datum1_hash hash32type := decode('5000000000000000000000000000000000000000000000000000000000000045', 'hex');
     BEGIN
         INSERT INTO tx ( id     , hash     , block_id , block_index , out_sum , fee , deposit , size , invalid_before , invalid_hereafter , valid_contract , script_size )
-        VALUES         ( tx1_id , tx1_hash , 2        , 11          , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+        VALUES         ( tx1_id , tx1_hash , 4        , 11          , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
         ;
 
         INSERT INTO tx_out ( id   , tx_id  , index , address    , address_raw , address_has_script , payment_cred , stake_address_id , value , data_hash                  )
