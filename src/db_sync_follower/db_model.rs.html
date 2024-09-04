@@ -595,6 +595,8 @@
 <a href="#593" id="593">593</a>
 <a href="#594" id="594">594</a>
 <a href="#595" id="595">595</a>
+<a href="#596" id="596">596</a>
+<a href="#597" id="597">597</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::db_datum::DbDatum;
 <span class="kw">use </span><span class="kw">crate</span>::SqlxError;
 <span class="kw">use </span>chrono::NaiveDateTime;
@@ -1001,9 +1003,11 @@ LIMIT 1"</span>,
 	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
 	epoch: EpochNumber,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Block&gt;, SqlxError&gt; {
-	<span class="kw">let </span>sql = <span class="string">"SELECT block.block_no, block.hash, block.epoch_no, block.slot_no, block.time
+	<span class="comment">// Query below contains additional filters for slot_no and block_no not null, because
+	// there exists blocks in Byron Era with Ouroboros classic consensus that have null values for these fields.
+	</span><span class="kw">let </span>sql = <span class="string">"SELECT block.block_no, block.hash, block.epoch_no, block.slot_no, block.time
 		FROM block
-		WHERE block.epoch_no &lt;= $1
+		WHERE block.epoch_no &lt;= $1 AND block.slot_no IS NOT NULL AND block.block_no IS NOT NULL
 		ORDER BY block.slot_no DESC
 		LIMIT 1"</span>;
 	<span class="prelude-val">Ok</span>(sqlx::query_as::&lt;<span class="kw">_</span>, Block&gt;(sql).bind(epoch).fetch_optional(pool).<span class="kw">await</span><span class="question-mark">?</span>)
