@@ -69,6 +69,8 @@ spec:
               value: "0x0000000000000000000000000000000000000000000000000000000000000001"
             - name: BLOCK_STABILITY_MARGIN
               value: "0"
+            - name: NATIVE_TOKEN_POLICY_ID
+              value: "ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"
           args:
             - "--base-path"
             - "/tmp/alice"
