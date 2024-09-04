@@ -5,7 +5,7 @@ A registered block producer is a Cardano stake pool operator (SPO) that desires 
 ## Order of Operations
 1. Become a Cardano SPO
 2. Install partner chains dependencies 
-    1. Cardano node v9.1.0
+    1. Cardano node v9.1.1
         1. Ogmios v6.5.0
         2. Kupo - v2.9.0
         3. Cardano DB Sync v13.3.0.0 (PostgreSQL v15.3)
