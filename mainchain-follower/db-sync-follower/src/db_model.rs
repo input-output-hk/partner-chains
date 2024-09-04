@@ -404,9 +404,11 @@ pub(crate) async fn get_latest_block_for_epoch(
 	pool: &Pool<Postgres>,
 	epoch: EpochNumber,
 ) -> Result<Option<Block>, SqlxError> {
+	// Query below contains additional filters for slot_no and block_no not null, because
+	// there exists blocks in Byron Era with Ouroboros classic consensus that have null values for these fields.
 	let sql = "SELECT block.block_no, block.hash, block.epoch_no, block.slot_no, block.time
 		FROM block
-		WHERE block.epoch_no <= $1
+		WHERE block.epoch_no <= $1 AND block.slot_no IS NOT NULL AND block.block_no IS NOT NULL
 		ORDER BY block.slot_no DESC
 		LIMIT 1";
 	Ok(sqlx::query_as::<_, Block>(sql).bind(epoch).fetch_optional(pool).await?)
