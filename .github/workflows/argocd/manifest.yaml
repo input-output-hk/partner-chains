@@ -69,6 +69,12 @@ spec:
               value: "0x0000000000000000000000000000000000000000000000000000000000000001"
             - name: BLOCK_STABILITY_MARGIN
               value: "0"
+            - name: NATIVE_TOKEN_POLICY_ID
+              value: "ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"
+            - name: NATIVE_TOKEN_ASSET_NAME
+              value: "5043546f6b656e44656d6f"
+            - name: ILLIQUID_SUPPLY_VALIDATOR_ADDRESS
+              value: "addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
           args:
             - "--base-path"
             - "/tmp/alice"
