@@ -1,0 +1,24 @@
+
+  ogmios:
+    container_name: ogmios
+    image: ${OGMIOS_IMAGE} 
+    platform: linux/amd64
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    environment:
+      - DATA_DIR=/data
+      - OGMIOS_PORT=${OGMIOS_PORT}
+    volumes:
+      - shared-volume:/shared
+      - ogmios-data:/data
+      - cardano-node-1-data:/node-ipc
+      - ./configurations/ogmios/entrypoint.sh:/entrypoint.sh
+      - ./configurations/busybox:/busybox
+    ports:
+      - "${OGMIOS_PORT}:${OGMIOS_PORT}"
+    healthcheck:
+      disable: true
+    deploy:
+      resources:
+        limits:
+          cpus: ${CPU_OGMIOS:-}
+          memory: ${MEM_OGMIOS:-}

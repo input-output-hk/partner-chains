@@ -1,0 +1,15 @@
+
+volumes:
+  cardano-node-1-data: {}
+  cardano-node-2-data: {}
+  cardano-node-3-data: {}
+  shared-volume: {}
+  db-sync-state-dir: {}
+  partner-chains-node-1-data: {}
+  partner-chains-node-2-data: {}
+  partner-chains-node-3-data: {}
+  partner-chains-node-4-data: {}
+  partner-chains-node-5-data: {}
+  ogmios-data: {}
+  ipc: {}
+  kupo-workdir: {}

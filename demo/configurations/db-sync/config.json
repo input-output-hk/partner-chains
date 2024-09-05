@@ -1,0 +1,179 @@
+{
+  "EnableLogMetrics": false,
+  "EnableLogging": true,
+  "NetworkName": "Testnet",
+  "NodeConfigFile": "/shared/node-1-config.json",
+  "ByronGenesisFile": "/shared/byron/genesis.json",
+  "ShelleyGenesisFile": "/shared/shelley/genesis.json",
+  "AlonzoGenesisFile": "/shared/shelley/genesis.alonzo.json",
+  "ConwayGenesisFile": "/shared/conway/genesis.conway.json",
+  "ApplicationVersion": 1,
+  "LastKnownBlockVersion-Alt": 0,
+  "LastKnownBlockVersion-Major": 6,
+  "LastKnownBlockVersion-Minor": 0,
+  "PBftSignatureThreshold": 1,
+  "TraceBlockFetchClient": false,
+  "TraceBlockFetchDecisions": false,
+  "TraceBlockFetchProtocol": false,
+  "TraceBlockFetchProtocolSerialised": false,
+  "TraceBlockFetchServer": false,
+  "TraceChainDb": true,
+  "TraceChainSyncBlockServer": false,
+  "TraceChainSyncClient": false,
+  "TraceChainSyncHeaderServer": false,
+  "TraceChainSyncProtocol": false,
+  "TraceDNSResolver": true,
+  "TraceDNSSubscription": true,
+  "TraceErrorPolicy": true,
+  "TraceForge": true,
+  "TraceHandshake": true,
+  "TraceIpSubscription": true,
+  "TraceLocalChainSyncProtocol": false,
+  "TraceLocalErrorPolicy": true,
+  "TraceLocalHandshake": false,
+  "TraceLocalTxSubmissionProtocol": false,
+  "TraceLocalTxSubmissionServer": false,
+  "TraceMempool": true,
+  "TraceMux": true,
+  "TraceConnectionManager": true,
+  "TraceConnectionManagerTransitions": true,
+  "TracePeerSelection": true,
+  "TracePeerSelectionActions": true,
+  "TraceDebugPeerSelection": true,
+  "TraceTxInbound": false,
+  "TraceTxOutbound": false,
+  "TraceTxSubmissionProtocol": false,
+  "TraceInboundGovernor": true,
+  "TraceServer": true,
+  "TraceInboundGovernorCounters": true,
+  "TraceInboundGovernorTransitions": true,
+  "DebugPeerSelectionInitiator": true,
+  "DebugPeerSelectionInitiatorResponder": true,
+  "TracingVerbosity": "NormalVerbosity",
+  "TurnOnLogMetrics": true,
+  "TurnOnLogging": true,
+  "hasEKG": 32006,
+  "hasPrometheus": [
+    "127.0.0.1",
+    32007
+  ],
+  "TestShelleyHardForkAtEpoch": 0,
+  "TestAllegraHardForkAtEpoch": 0,
+  "TestMaryHardForkAtEpoch": 0,
+  "TestAlonzoHardForkAtEpoch": 0,
+  "TestBabbageHardForkAtEpoch": 0,
+  "ExperimentalProtocolsEnabled": true,
+  "ApplicationName": "cardano-sl",
+  "ByronGenesisHash": "",
+  "ShelleyGenesisHash": "",
+  "AlonzoGenesisHash": "",
+  "Protocol": "Cardano",
+  "PrometheusPort": 8080,
+  "RequiresNetworkMagic": "RequiresMagic",
+  "defaultBackends": [
+    "KatipBK"
+  ],
+  "defaultScribes": [
+    [
+      "StdoutSK",
+      "stdout"
+    ]
+  ],
+  "minSeverity": "Info",
+  "options": {
+    "cfokey": {
+      "value": "Release-1.0.0"
+    },
+    "mapBackends": {},
+    "mapSeverity": {
+      "db-sync-node": "Info",
+      "db-sync-node.Mux": "Error",
+      "db-sync-node.Subscription": "Error"
+    },
+    "mapSubtrace": {
+      "#ekgview": {
+        "contents": [
+          [
+            {
+              "contents": "cardano.epoch-validation.benchmark",
+              "tag": "Contains"
+            },
+            [
+              {
+                "contents": ".monoclock.basic.",
+                "tag": "Contains"
+              }
+            ]
+          ],
+          [
+            {
+              "contents": "cardano.epoch-validation.benchmark",
+              "tag": "Contains"
+            },
+            [
+              {
+                "contents": "diff.RTS.cpuNs.timed.",
+                "tag": "Contains"
+              }
+            ]
+          ],
+          [
+            {
+              "contents": "#ekgview.#aggregation.cardano.epoch-validation.benchmark",
+              "tag": "StartsWith"
+            },
+            [
+              {
+                "contents": "diff.RTS.gcNum.timed.",
+                "tag": "Contains"
+              }
+            ]
+          ]
+        ],
+        "subtrace": "FilterTrace"
+      },
+      "#messagecounters.aggregation": {
+        "subtrace": "NoTrace"
+      },
+      "#messagecounters.ekgview": {
+        "subtrace": "NoTrace"
+      },
+      "#messagecounters.katip": {
+        "subtrace": "NoTrace"
+      },
+      "#messagecounters.monitoring": {
+        "subtrace": "NoTrace"
+      },
+      "#messagecounters.switchboard": {
+        "subtrace": "NoTrace"
+      },
+      "benchmark": {
+        "contents": [
+          "GhcRtsStats",
+          "MonotonicClock"
+        ],
+        "subtrace": "ObservableTrace"
+      },
+      "cardano.epoch-validation.utxo-stats": {
+        "subtrace": "NoTrace"
+      }
+    }
+  },
+  "rotation": {
+    "rpKeepFilesNum": 10,
+    "rpLogLimitBytes": 5000000,
+    "rpMaxAgeHours": 24
+  },
+  "setupBackends": [
+    "AggregationBK",
+    "KatipBK"
+  ],
+  "setupScribes": [
+    {
+      "scFormat": "ScText",
+      "scKind": "StdoutSK",
+      "scName": "stdout",
+      "scRotation": null
+    }
+  ]
+}

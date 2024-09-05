@@ -1,0 +1,22 @@
+
+  postgres:
+    container_name: postgres
+    image: ${POSTGRES_IMAGE}
+    platform: linux/amd64
+    command: postgres -c maintenance_work_mem=256MB -p ${POSTGRES_PORT}
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGDATA=/pgdata
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_MULTIPLE_DATABASES=cexplorer,qa_demo
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    volumes:
+      - ./configurations/postgres/entrypoint.sh:/usr/local/bin/custom-entrypoint.sh
+      - ./configurations/postgres/init.sh:/docker-entrypoint-initdb.d/init.sh
+    deploy:
+      resources:
+        limits:
+          cpus: ${CPU_POSTGRES:-}
+          memory: ${MEM_POSTGRES:-}
