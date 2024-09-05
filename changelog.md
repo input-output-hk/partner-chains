@@ -6,6 +6,10 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* Reverted usage of custom Runner that allowed `async_run` with asynchronous initializer.
+  Now `Runner` code used is the same as in paritytech/polkadot-sdk.
+  This change requires updates in node: `new_partial` cannot be async.
+  Run command dispatch looks more like in paritytech/polkadot-sdk.
 * bugfix for Mainnet compatibility in the db-sync main-chain follower. Fixes null block_no column decoding problem.
 * moved out some cli related code from `node` crate, in order to require less copy-paste in users nodes
 * removed USE_CHAIN_INIT code. Migration strategy is to remove copy-pasted and adapted code. It will not compile with vanilla polkadot-sdk, that we plan to use in future.

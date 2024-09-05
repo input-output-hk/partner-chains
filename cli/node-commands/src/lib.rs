@@ -86,19 +86,18 @@ pub enum PartnerChainsSubcommand<SidechainParams: clap::Args> {
 	RegistrationSignatures(RegistrationSignaturesCmd<SidechainParams>),
 }
 
-pub fn run<Cli, Dependencies, SmartContractsParams, Block, CrossChainPublic, SessionKeys, Client>(
+pub fn run<Cli, SmartContractsParams, Block, CrossChainPublic, SessionKeys, Client>(
 	cli: &Cli,
-	get_deps: impl FnOnce(sc_service::Configuration) -> Dependencies,
+	get_deps: impl FnOnce(
+		sc_service::Configuration,
+	) -> Result<
+		(Arc<Client>, TaskManager, Arc<dyn CandidateDataSource + Send + Sync>),
+		sc_service::error::Error,
+	>,
 	cmd: PartnerChainsSubcommand<SmartContractsParams>,
 ) -> sc_cli::Result<()>
 where
 	Cli: SubstrateCli,
-	Dependencies: Future<
-		Output = Result<
-			(Arc<Client>, TaskManager, Arc<dyn CandidateDataSource + Send + Sync>),
-			sc_service::error::Error,
-		>,
-	>,
 	SmartContractsParams: Args + ToDatum + Clone + Decode + Serialize + Send + Sync + 'static,
 	Client: ProvideRuntimeApi<Block> + HeaderBackend<Block> + 'static,
 	Client::Api: GetSidechainParams<Block, SmartContractsParams>
@@ -118,15 +117,15 @@ where
 	match cmd {
 		PartnerChainsSubcommand::SidechainParams(cmd) => {
 			let runner = cli.create_runner(&cmd)?;
-			runner.async_run(|config| async move {
-				let (client, task_manager, _) = get_deps(config).await?;
+			runner.async_run(|config| {
+				let (client, task_manager, _) = get_deps(config)?;
 				Ok((print_result(sp_sidechain::query::get_sidechain_params(client)), task_manager))
 			})
 		},
 		PartnerChainsSubcommand::RegistrationStatus(cmd) => {
 			let runner = cli.create_runner(&cmd)?;
-			runner.async_run(|config| async move {
-				let (client, task_manager, ds) = get_deps(config).await?;
+			runner.async_run(move |config| {
+				let (client, task_manager, ds) = get_deps(config)?;
 				let query = SessionValidatorManagementQuery::new(client.clone(), ds.clone());
 				Ok((
 					print_result(cli_get_registration_status(
@@ -140,8 +139,8 @@ where
 		},
 		PartnerChainsSubcommand::AriadneParameters(cmd) => {
 			let runner = cli.create_runner(&cmd)?;
-			runner.async_run(|config| async move {
-				let (client, task_manager, ds) = get_deps(config).await?;
+			runner.async_run(move |config| {
+				let (client, task_manager, ds) = get_deps(config)?;
 				let query = SessionValidatorManagementQuery::new(client.clone(), ds.clone());
 				Ok((
 					print_result(cli_get_ariadne_parameters(query, cmd.mc_epoch_number)),
