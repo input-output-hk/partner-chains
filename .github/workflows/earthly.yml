@@ -14,7 +14,7 @@ on:
       repository:
         description: "GitHub repository name (e.g., username/repo)"
         required: true
-        default: 'input-output-hk'
+        default: 'input-output-hk/partner-chains'
       branch:
         description: "Branch name to build"
         required: true
