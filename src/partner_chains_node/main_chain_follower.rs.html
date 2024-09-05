@@ -111,7 +111,7 @@
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>create_cached_main_chain_follower_data_sources(
 	metrics_opt: <span class="prelude-ty">Option</span>&lt;McFollowerMetrics&gt;,
-) -&gt; std::result::Result&lt;DataSources, ServiceError&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;DataSources, ServiceError&gt; {
 	<span class="kw">if </span>use_mock_follower() {
 		create_mock_data_sources().map_err(|err| {
 			ServiceError::Application(

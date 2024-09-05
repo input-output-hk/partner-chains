@@ -149,12 +149,12 @@
 
 <span class="kw">pub async fn </span>get_connection(
 	connection_string: <span class="kw-2">&amp;</span>str,
-	aquire_timeout: std::time::Duration,
+	acquire_timeout: std::time::Duration,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;PgPool, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
 	<span class="kw">let </span>connect_options = PgConnectOptions::from_str(connection_string)<span class="question-mark">?</span>;
 	<span class="kw">let </span>pool = PgPoolOptions::new()
 		.max_connections(<span class="number">5</span>)
-		.acquire_timeout(aquire_timeout)
+		.acquire_timeout(acquire_timeout)
 		.connect_with(connect_options.clone())
 		.<span class="kw">await
 		</span>.map_err(|e| {
