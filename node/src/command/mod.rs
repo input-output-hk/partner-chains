@@ -66,57 +66,55 @@ pub fn run() -> sc_cli::Result<()> {
 	match &cli.subcommand {
 		Some(Subcommand::Key(cmd)) => cmd.run(&cli),
 		Some(Subcommand::PartnerChains(cmd)) => {
-			let make_dependencies = |config| async move {
-				let components = service::new_partial(&config).await?;
+			let make_dependencies = |config| {
+				let components = service::new_partial(&config)?;
 				Ok((components.client, components.task_manager, components.other.3.candidate))
 			};
 			partner_chains_node_commands::run(&cli, make_dependencies, cmd.clone())
 		},
 		Some(Subcommand::BuildSpec(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.sync_run(|config| async move { cmd.run(config.chain_spec, config.network) })
+			runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
 		},
 		Some(Subcommand::CheckBlock(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| async move {
+			runner.async_run(|config| {
 				let PartialComponents { client, task_manager, import_queue, .. } =
-					service::new_partial(&config).await?;
+					service::new_partial(&config)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
 		Some(Subcommand::ExportBlocks(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| async move {
-				let PartialComponents { client, task_manager, .. } =
-					service::new_partial(&config).await?;
+			runner.async_run(|config| {
+				let PartialComponents { client, task_manager, .. } = service::new_partial(&config)?;
 				Ok((cmd.run(client, config.database), task_manager))
 			})
 		},
 		Some(Subcommand::ExportState(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| async move {
-				let PartialComponents { client, task_manager, .. } =
-					service::new_partial(&config).await?;
+			runner.async_run(|config| {
+				let PartialComponents { client, task_manager, .. } = service::new_partial(&config)?;
 				Ok((cmd.run(client, config.chain_spec), task_manager))
 			})
 		},
 		Some(Subcommand::ImportBlocks(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| async move {
+			runner.async_run(|config| {
 				let PartialComponents { client, task_manager, import_queue, .. } =
-					service::new_partial(&config).await?;
+					service::new_partial(&config)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
 		Some(Subcommand::PurgeChain(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.sync_run(|config| async move { cmd.run(config.database) })
+			runner.sync_run(|config| cmd.run(config.database))
 		},
 		Some(Subcommand::Revert(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| async move {
+			runner.async_run(|config| {
 				let PartialComponents { client, task_manager, backend, .. } =
-					service::new_partial(&config).await?;
+					service::new_partial(&config)?;
 				let aux_revert = Box::new(|client, _, blocks| {
 					sc_consensus_grandpa::revert(client, blocks)?;
 					Ok(())
@@ -127,7 +125,7 @@ pub fn run() -> sc_cli::Result<()> {
 		Some(Subcommand::Benchmark(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 
-			runner.sync_run(|config| async move {
+			runner.sync_run(|config| {
 				// This switch needs to be in the client, since the client decides
 				// which sub-commands it wants to support.
 				match cmd {
@@ -145,8 +143,7 @@ pub fn run() -> sc_cli::Result<()> {
 						))
 					},
 					BenchmarkCmd::Block(cmd) => {
-						let PartialComponents { client, .. } =
-							service::new_partial(&config).await?;
+						let PartialComponents { client, .. } = service::new_partial(&config)?;
 						cmd.run(client)
 					},
 					#[cfg(not(feature = "runtime-benchmarks"))]
@@ -157,15 +154,14 @@ pub fn run() -> sc_cli::Result<()> {
 					#[cfg(feature = "runtime-benchmarks")]
 					BenchmarkCmd::Storage(cmd) => {
 						let PartialComponents { client, backend, .. } =
-							service::new_partial(&config).await?;
+							service::new_partial(&config)?;
 						let db = backend.expose_db();
 						let storage = backend.expose_storage();
 
 						cmd.run(config, client, db, storage)
 					},
 					BenchmarkCmd::Overhead(cmd) => {
-						let PartialComponents { client, .. } =
-							service::new_partial(&config).await?;
+						let PartialComponents { client, .. } = service::new_partial(&config)?;
 						let ext_builder = RemarkBuilder::new(client.clone());
 
 						cmd.run(
@@ -177,8 +173,7 @@ pub fn run() -> sc_cli::Result<()> {
 						)
 					},
 					BenchmarkCmd::Extrinsic(cmd) => {
-						let PartialComponents { client, .. } =
-							service::new_partial(&config).await?;
+						let PartialComponents { client, .. } = service::new_partial(&config)?;
 						// Register the *Remark* and *TKA* builders.
 						let ext_factory = ExtrinsicFactory(vec![
 							Box::new(RemarkBuilder::new(client.clone())),
@@ -199,7 +194,7 @@ pub fn run() -> sc_cli::Result<()> {
 		},
 		Some(Subcommand::ChainInfo(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.sync_run(|config| async move { cmd.run::<Block>(&config) })
+			runner.sync_run(|config| cmd.run::<Block>(&config))
 		},
 		None => {
 			let runner = cli.create_runner(&cli.run)?;

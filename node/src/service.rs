@@ -22,6 +22,7 @@ use sp_partner_chains_consensus_aura::block_proposal::PartnerChainsProposerFacto
 use sp_runtime::traits::Block as BlockT;
 use std::{sync::Arc, time::Duration};
 use time_source::SystemTimeSource;
+use tokio::task;
 
 /// Only enable the benchmarking host functions when we actually want to benchmark.
 #[cfg(feature = "runtime-benchmarks")]
@@ -41,7 +42,7 @@ type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 
 #[allow(clippy::type_complexity)]
-pub async fn new_partial(
+pub fn new_partial(
 	config: &Configuration,
 ) -> Result<
 	sc_service::PartialComponents<
@@ -66,10 +67,13 @@ pub async fn new_partial(
 	ServiceError,
 > {
 	let mc_follower_metrics = register_metrics_warn_errors(config.prometheus_registry());
-	let data_sources = crate::main_chain_follower::create_cached_main_chain_follower_data_sources(
-		mc_follower_metrics.clone(),
-	)
-	.await?;
+	let data_sources = task::block_in_place(|| {
+		config.tokio_handle.block_on(
+			crate::main_chain_follower::create_cached_main_chain_follower_data_sources(
+				mc_follower_metrics.clone(),
+			),
+		)
+	})?;
 
 	let telemetry = config
 		.telemetry_endpoints
@@ -173,8 +177,8 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		keystore_container,
 		select_chain,
 		transaction_pool,
-		other: (block_import, grandpa_link, mut telemetry, data_sources, mc_follower_metrics_opt),
-	} = new_partial(&config).await?;
+		other: (block_import, grandpa_link, mut telemetry, data_sources, _),
+	} = new_partial(&config)?;
 
 	let metrics = Network::register_notification_metrics(
 		config.prometheus_config.as_ref().map(|cfg| &cfg.registry),
@@ -251,11 +255,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		let shared_voter_state = shared_voter_state.clone();
 		let shared_authority_set = grandpa_link.shared_authority_set().clone();
 		let justification_stream = grandpa_link.justification_stream();
-		let main_chain_follower_data_sources =
-			crate::main_chain_follower::create_cached_main_chain_follower_data_sources(
-				mc_follower_metrics_opt,
-			)
-			.await?;
+		let main_chain_follower_data_sources = data_sources.clone();
 
 		Box::new(move |deny_unsafe, subscription_executor| {
 			let grandpa = GrandpaDeps {

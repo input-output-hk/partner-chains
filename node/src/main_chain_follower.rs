@@ -24,7 +24,7 @@ pub struct DataSources {
 
 pub(crate) async fn create_cached_main_chain_follower_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
-) -> std::result::Result<DataSources, ServiceError> {
+) -> Result<DataSources, ServiceError> {
 	if use_mock_follower() {
 		create_mock_data_sources().map_err(|err| {
 			ServiceError::Application(

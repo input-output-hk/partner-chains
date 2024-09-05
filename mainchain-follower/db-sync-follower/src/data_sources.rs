@@ -45,12 +45,12 @@ impl Debug for SecretString {
 
 pub async fn get_connection(
 	connection_string: &str,
-	aquire_timeout: std::time::Duration,
+	acquire_timeout: std::time::Duration,
 ) -> Result<PgPool, Box<dyn Error + Send + Sync + 'static>> {
 	let connect_options = PgConnectOptions::from_str(connection_string)?;
 	let pool = PgPoolOptions::new()
 		.max_connections(5)
-		.acquire_timeout(aquire_timeout)
+		.acquire_timeout(acquire_timeout)
 		.connect_with(connect_options.clone())
 		.await
 		.map_err(|e| {
