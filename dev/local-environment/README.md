@@ -1,8 +1,8 @@
-# Partner Chains Demo
+# Partner Chains Local Environment
 
 This stack is designed to run a 5 x Partner Chains node local environment for a partnerchain. It is based on the custom IO Substrate image.
 
-The stack includes:
+The local environment includes:
 
 - 5 x Partner Chains Nodes (3 x permissioned, 2 x registered)
 - 3 x Cardano Nodes running private testnet with pre-configured genesis files
@@ -24,14 +24,24 @@ The pc-contracts-cli will insert D parameter values and register Partner Chains 
 
 Once Postgres is populated with the required data, the Partner Chains nodes will begin syncing the chain and will begin block production after 2 Mainchain epochs.
 
-## Run `setup.sh` script to create the environment .env values and docker-compose.yml
+## Configuring the environment
+
+Run `setup.sh` script to create the environment .env values and docker-compose.yml
 
 ```
 chmod +x setup.sh
 bash setup.sh`
 ```
 
-## Once initialized, deploy the local environment from .env values with the following:
+The `setup.sh` script also support a `--non-interactive` flag to accept default configuration settings, and some additional arguments to set configuration values directly. See the help page for more information
+
+```
+bash setup.sh --help
+```
+
+## Starting the environment
+
+Once initialized, deploy the local environment from .env values with the following:
 
 ```
 docker compose up -d
@@ -39,12 +49,9 @@ docker compose up -d
 
 We recommend using a visual Docker UI tool such as [lazydocker](https://github.com/jesseduffield/lazydocker) or [Docker Desktop](https://www.docker.com/products/docker-desktop/) for following the live logs and performance of all containers in the environment. Each component has been scripted to provide verbose logging of all configuration actions it is performing to demonstrate the end-to-end setup of a Cardano Partner Chain.
 
-## The `setup.sh` script also support a `--non-interactive` flag to accept default configuration settings, and some additional arguments to set configuration values directly. See the help page for more information
+## Stopping the environment
 
-```
-bash setup.sh --help
-```
-## When stopping the stack, it is mandatory to also wipe all volumes. The environment does not yet support persistent state. To tear down the environment and remove all volumes, use the following: 
+When stopping the stack, it is mandatory to also wipe all volumes. The environment does not yet support persistent state. To tear down the environment and remove all volumes, use the following: 
 
 ```
 docker compose down --volumes
