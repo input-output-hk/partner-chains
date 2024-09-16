@@ -1,0 +1,179 @@
+
+  partner-chains-node-1:
+    container_name: partner-chains-node-1
+    image: ${PARTNER_CHAINS_NODE_IMAGE} 
+    platform: linux/amd64
+    volumes:
+      - shared-volume:/shared
+      - partner-chains-node-1-data:/data
+      - ./configurations/partner-chains-nodes/partner-chains-node-1/entrypoint.sh:/entrypoint.sh
+    environment:
+      DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
+      SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000001"
+      CHAIN_ID: "0"
+      GENESIS_COMMITTEE_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
+      GOVERNANCE_AUTHORITY: "e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
+      CARDANO_SECURITY_PARAMETER: "5"
+      CARDANO_ACTIVE_SLOTS_COEFF: "0.2"
+      MC__FIRST_EPOCH_NUMBER: "0"
+      MC__FIRST_SLOT_NUMBER: "0"
+      MC__EPOCH_DURATION_MILLIS: "120000"
+      THRESHOLD_NUMERATOR: "2"
+      THRESHOLD_DENOMINATOR: "3"
+      BLOCK_STABILITY_MARGIN: "0"
+      MINIMUM_MC_EPOCH: "0"
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    ports:
+      - "30333:30333"
+      - "9933:9933"
+      - "9615:9615"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: ${CPU_PARTNER_CHAINS_NODE:-}
+          memory: ${MEM_PARTNER_CHAINS_NODE:-}
+
+  partner-chains-node-2:
+    container_name: partner-chains-node-2
+    image: ${PARTNER_CHAINS_NODE_IMAGE} 
+    platform: linux/amd64
+    volumes:
+      - partner-chains-node-2-data:/data
+      - shared-volume:/shared
+      - ./configurations/partner-chains-nodes/partner-chains-node-2/entrypoint.sh:/entrypoint.sh
+    environment:
+      DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
+      SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000002"
+      CHAIN_ID: "0"
+      GENESIS_COMMITTEE_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
+      GOVERNANCE_AUTHORITY: "e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
+      CARDANO_SECURITY_PARAMETER: "5"
+      CARDANO_ACTIVE_SLOTS_COEFF: "0.2"
+      MC__FIRST_EPOCH_NUMBER: "0"
+      MC__FIRST_SLOT_NUMBER: "0"
+      MC__EPOCH_DURATION_MILLIS: "120000"
+      THRESHOLD_NUMERATOR: "2"
+      THRESHOLD_DENOMINATOR: "3"
+      BLOCK_STABILITY_MARGIN: "0"
+      MINIMUM_MC_EPOCH: "0"
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    ports:
+      - "30334:30334"
+      - "9934:9934"
+      - "9616:9616"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: ${CPU_PARTNER_CHAINS_NODE:-}
+          memory: ${MEM_PARTNER_CHAINS_NODE:-}
+
+  partner-chains-node-3:
+    container_name: partner-chains-node-3
+    image: ${PARTNER_CHAINS_NODE_IMAGE} 
+    platform: linux/amd64
+    volumes:
+      - partner-chains-node-3-data:/data
+      - shared-volume:/shared
+      - ./configurations/partner-chains-nodes/partner-chains-node-3/entrypoint.sh:/entrypoint.sh
+    environment:
+      DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
+      SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000003"
+      GOVERNANCE_AUTHORITY: "e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
+      CHAIN_ID: "0"
+      GENESIS_COMMITTEE_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
+      CARDANO_SECURITY_PARAMETER: "5"
+      CARDANO_ACTIVE_SLOTS_COEFF: "0.2"
+      MC__FIRST_EPOCH_NUMBER: "0"
+      MC__FIRST_SLOT_NUMBER: "0"
+      MC__EPOCH_DURATION_MILLIS: "120000"
+      THRESHOLD_NUMERATOR: "2"
+      THRESHOLD_DENOMINATOR: "3"
+      BLOCK_STABILITY_MARGIN: "0"
+      MINIMUM_MC_EPOCH: "0"
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    ports:
+      - "30335:30335"
+      - "9935:9935"
+      - "9617:9617"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: ${CPU_PARTNER_CHAINS_NODE:-}
+          memory: ${MEM_PARTNER_CHAINS_NODE:-}
+
+  partner-chains-node-4:
+    container_name: partner-chains-node-4
+    image: ${PARTNER_CHAINS_NODE_IMAGE} 
+    platform: linux/amd64
+    volumes:
+      - partner-chains-node-4-data:/data
+      - shared-volume:/shared
+      - ./configurations/partner-chains-nodes/partner-chains-node-4/entrypoint.sh:/entrypoint.sh
+      - ./configurations/partner-chains-nodes/partner-chains-node-4/keystore:/keystore
+      - ./configurations/partner-chains-nodes/partner-chains-node-4/network:/network
+    environment:
+      DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
+      SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000004"
+      GOVERNANCE_AUTHORITY: "e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
+      CHAIN_ID: "0"
+      GENESIS_COMMITTEE_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
+      CARDANO_SECURITY_PARAMETER: "5"
+      CARDANO_ACTIVE_SLOTS_COEFF: "0.2"
+      MC__FIRST_EPOCH_NUMBER: "0"
+      MC__FIRST_SLOT_NUMBER: "0"
+      MC__EPOCH_DURATION_MILLIS: "120000"
+      THRESHOLD_NUMERATOR: "2"
+      THRESHOLD_DENOMINATOR: "3"
+      BLOCK_STABILITY_MARGIN: "0"
+      MINIMUM_MC_EPOCH: "0"
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    ports:
+      - "30336:30336"
+      - "9936:9936"
+      - "9618:9618"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: ${CPU_PARTNER_CHAINS_NODE:-}
+          memory: ${MEM_PARTNER_CHAINS_NODE:-}
+
+  partner-chains-node-5:
+    container_name: partner-chains-node-5
+    image: ${PARTNER_CHAINS_NODE_IMAGE} 
+    platform: linux/amd64
+    volumes:
+      - partner-chains-node-5-data:/data
+      - shared-volume:/shared
+      - ./configurations/partner-chains-nodes/partner-chains-node-5/entrypoint.sh:/entrypoint.sh
+      - ./configurations/partner-chains-nodes/partner-chains-node-5/keystore:/keystore
+      - ./configurations/partner-chains-nodes/partner-chains-node-5/network:/network
+    environment:
+      DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
+      SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000005"
+      GOVERNANCE_AUTHORITY: "e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
+      CHAIN_ID: "0"
+      GENESIS_COMMITTEE_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
+      CARDANO_SECURITY_PARAMETER: "5"
+      CARDANO_ACTIVE_SLOTS_COEFF: "0.2"
+      MC__FIRST_EPOCH_NUMBER: "0"
+      MC__FIRST_SLOT_NUMBER: "0"
+      MC__EPOCH_DURATION_MILLIS: "120000"
+      THRESHOLD_NUMERATOR: "2"
+      THRESHOLD_DENOMINATOR: "3"
+      BLOCK_STABILITY_MARGIN: "0"
+      MINIMUM_MC_EPOCH: "0"
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    ports:
+      - "30337:30337"
+      - "9937:9937"
+      - "9619:9619"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: ${CPU_PARTNER_CHAINS_NODE:-}
+          memory: ${MEM_PARTNER_CHAINS_NODE:-}
