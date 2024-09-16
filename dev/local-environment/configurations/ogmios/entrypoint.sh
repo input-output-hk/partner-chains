@@ -17,6 +17,4 @@ exec /bin/ogmios \
   --node-config=/shared/node-1-config.json \
   --node-socket=/node-ipc/node.socket &
 
-  touch /shared/ogmios.ready
-
-  wait
+wait

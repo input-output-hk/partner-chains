@@ -20,6 +20,4 @@ exec /bin/kupo \
   --match=* \
   --since=origin &
 
-  touch /shared/kupo.ready
-
-  wait
+wait

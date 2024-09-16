@@ -65,7 +65,7 @@ chmod +x ./pc-contracts-cli
 
 # Install jq
 apt -qq update &> /dev/null
-apt -qq -y install jq &> /dev/null
+apt -qq -y install jq netcat &> /dev/null
 
 echo "Dependencies downloaded and binaries made executable."
 
@@ -73,7 +73,7 @@ echo "Dependencies downloaded and binaries made executable."
 echo "Waiting for the Cardano network to sync and for Kupo and Ogmios to start..."
 
 while true; do
-    if [ -f "/shared/kupo.ready" ] && [ -f "/shared/ogmios.ready" ]; then
+    if nc -z kupo $KUPO_PORT && nc -z ogmios $OGMIOS_PORT; then
         break
     else
         sleep 10
