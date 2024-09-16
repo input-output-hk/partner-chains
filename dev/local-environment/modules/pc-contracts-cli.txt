@@ -24,6 +24,4 @@
       - KUPO_PORT=${KUPO_PORT}
       - OGMIOS_PORT=${OGMIOS_PORT}
       - ARTIFACT_OVERRIDE=${ARTIFACT_OVERRIDE}
-      - KUPO_PORT=${KUPO_PORT}
-      - OGMIOS_PORT=${OGMIOS_PORT}
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
