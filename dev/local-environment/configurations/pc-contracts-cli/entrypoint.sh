@@ -65,7 +65,7 @@ chmod +x ./pc-contracts-cli
 
 # Install jq
 apt -qq update &> /dev/null
-apt -qq -y install jq netcat &> /dev/null
+apt -qq -y install jq ncat &> /dev/null
 
 echo "Dependencies downloaded and binaries made executable."
 
