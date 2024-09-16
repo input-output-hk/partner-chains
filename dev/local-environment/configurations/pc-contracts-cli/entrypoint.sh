@@ -69,7 +69,6 @@ apt -qq -y install jq ncat &> /dev/null
 
 echo "Dependencies downloaded and binaries made executable."
 
-# Wait for the node to start
 echo "Waiting for the Cardano network to sync and for Kupo and Ogmios to start..."
 
 while true; do
@@ -80,8 +79,6 @@ while true; do
     fi
 done
 
-echo "Kupo and Ogmios have started. Waiting 10 seconds for them to stabilise, and then will begin configuration..."
-sleep 10
 echo "Beginning configuration..."
 
 chmod 644 /shared/shelley/genesis-utxo.skey
