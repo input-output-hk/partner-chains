@@ -1,0 +1,575 @@
+name: Build, test, release and deploy 
+
+on:
+  workflow_dispatch:
+    inputs:
+      partner-chains-sha:
+        description: "partner-chains commit SHA or branch to build from"
+      partner-chains-tag:
+        description: "partner-chains release tag"
+        required: true
+
+jobs:
+  partner-chains-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set filename variables
+        id: set-filenames
+        run: |
+          echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.partner-chains-sha }}
+
+      - name: Acquire AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          aws-region: ${{ env.AWS_REGION }}
+  
+      - name: Login to ECR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ECR_REGISTRY_SECRET }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source $HOME/.cargo/env
+          rustup target add x86_64-unknown-linux-gnu
+
+      - name: Build partner-chains-node
+        run: |
+          rustup target add x86_64-unknown-linux-gnu
+          cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
+          cp target/x86_64-unknown-linux-gnu/release/partner-chains-node $PARTNER_CHAINS_NODE_X86_64_LINUX
+          chmod +x $PARTNER_CHAINS_NODE_X86_64_LINUX
+
+      - name: Run tests
+        run: cargo test --locked --release --target x86_64-unknown-linux-gnu
+
+      - name: Generate Chain Specs
+        run: |
+          chmod +x ./partner-chains-node
+          source ./devnet/.envrc
+          ./partner-chains-node build-spec --chain local --disable-default-bootnode --raw > devnet_chain_spec.json
+          source ./staging/.envrc
+          ./partner-chains-node build-spec --chain staging --disable-default-bootnode --raw > staging_chain_spec.json
+
+      - name: Create and Configure Docker Container
+        id: create-container
+        run: |
+          container_id=$(docker run -d debian:bullseye-slim sleep infinity)
+          echo "container_id=$container_id" >> $GITHUB_ENV
+          docker exec $container_id useradd -m -u 1000 -U -s /bin/sh -d /substrate substrate
+          docker exec $container_id mkdir -p /data /substrate/.local/share/partner-chains-node
+          docker exec $container_id chown -R substrate:substrate /data /substrate
+          docker exec $container_id rm -rf /usr/bin/apt* /usr/bin/dpkg*
+          docker exec $container_id ln -s /data /substrate/.local/share/partner-chains-node
+          docker cp ./partner-chains-node $container_id:/usr/local/bin/partner-chains-node
+          docker commit --change='EXPOSE 30333 9615 9933 9944' --change='ENTRYPOINT ["/usr/local/bin/partner-chains-node"]' $container_id substrate-node:${{ github.sha }}
+  
+      - name: Cleanup Docker Container
+        if: always()
+        run: |
+          docker rm -f ${{ env.container_id }}
+
+      - name: Build partner-chains-cli
+        run: |
+          rustup target add x86_64-unknown-linux-gnu
+          cargo build -p partner-chains-cli --locked --release --target x86_64-unknown-linux-gnu
+          cp target/x86_64-unknown-linux-gnu/release/partner-chains-cli $PARTNER_CHAINS_CLI_X86_64_LINUX
+          chmod +x $PARTNER_CHAINS_CLI_X86_64_LINUX
+
+      - name: Push to ECR
+        run: |
+          docker tag substrate-node:${{ github.sha }} ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ github.sha }}
+          docker push ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ github.sha }}
+
+      - name: Upload partner-chains-cli-x86_64-linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}
+          path: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}
+
+      - name: Upload partner-chains-node-x86_64-linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
+          path: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
+
+      - name: Upload chain spec artifacts
+        uses: actions/upload-artifact@v4
+        if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
+        with:
+          name: chain-specs
+          path: |
+            ./staging_chain_spec.json
+
+      - name: Update Kubernetes secret for staging-preview chain spec
+        run: |
+          TIMESTAMP=$(date +%Y%m%d%H%M)
+          SHA=${{ github.sha }}
+          kubectl delete secret "staging-preview-chain-spec" --namespace=staging || true
+          kubectl create secret generic "staging-preview-chain-spec" --from-file=staging_chain_spec.json=./staging_chain_spec.json --namespace=staging
+
+  partner-chains-macos-x86_64:
+    runs-on: macos-latest
+    steps:
+      - name: Set filename variables
+        id: set-filenames
+        run: |
+          echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.partner-chains-sha }}
+
+      - name: Install protoc
+        run: |
+          curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v21.3/protoc-21.3-osx-x86_64.zip
+          unzip protoc-21.3-osx-x86_64.zip -d $HOME/protoc
+          sudo mv $HOME/protoc/bin/protoc /usr/local/bin/protoc
+
+      - name: Build partner-chains-node
+        run: |
+          rustup target add x86_64-apple-darwin
+          cargo build -p partner-chains-node --locked --release --target x86_64-apple-darwin
+          cp target/x86_64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN
+          chmod +x $PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN
+
+      - name: Build partner-chains-cli
+        run: |
+          rustup target add x86_64-apple-darwin
+          cargo build -p partner-chains-cli --locked --release --target x86_64-apple-darwin
+          cp target/x86_64-apple-darwin/release/partner-chains-cli $PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN
+          chmod +x $PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN
+
+      - name: Upload partner-chains-cli-x86_64-apple-darwin
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}
+          path: ${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}
+
+      - name: Upload partner-chains-node-x86_64-apple-darwin
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}
+          path: ${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}
+
+  partner-chains-macos-arm64:
+    runs-on: macos-latest
+    steps:
+      - name: Set filename variables
+        id: set-filenames
+        run: |
+          echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.partner-chains-sha }}
+
+      - name: Install protoc
+        run: |
+          curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v21.3/protoc-21.3-osx-aarch_64.zip
+          unzip protoc-21.3-osx-aarch_64.zip -d $HOME/protoc
+          sudo mv $HOME/protoc/bin/protoc /usr/local/bin/protoc
+
+      - name: Build partner-chains-node
+        run: |
+          rustup target add aarch64-apple-darwin
+          cargo build -p partner-chains-node --locked --release --target aarch64-apple-darwin
+          cp target/aarch64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN
+          chmod +x $PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN
+
+      - name: Build partner-chains-cli
+        run: |
+          rustup target add aarch64-apple-darwin
+          cargo build -p partner-chains-cli --locked --release --target aarch64-apple-darwin
+          cp target/aarch64-apple-darwin/release/partner-chains-cli $PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN
+          chmod +x $PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN
+
+      - name: Upload partner-chains-cli-aarch64-apple-darwin
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}
+          path: ${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}
+
+      - name: Upload partner-chains-node-aarch64-apple-darwin
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}
+          path: ${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}
+
+  partner-chains-smart-contracts-x86_64-linux:
+    runs-on: [self-hosted, nixos]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.partner_chains_smart_contracts_sha }}
+
+      - name: Build
+        run: nix build ./#sidechain-release-bundle
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-chains-smart-contracts-x86_64-linux
+          path: result/release.zip
+
+  partner-chains-smart-contracts-process:
+    runs-on: ubuntu-latest
+    needs: [partner-chains-smart-contracts-x86_64-linux]
+    steps:
+      - name: Download x86_64-linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: partner-chains-smart-contracts-x86_64-linux
+          path: ./x86_64-linux
+
+      - name: Unzip release.zip
+        run: |
+          mkdir -p ./x86_64-linux/unzipped
+          unzip ./x86_64-linux/release.zip -d ./x86_64-linux/unzipped
+
+  local-environment:          
+    runs-on: ubuntu-latest
+    needs: [partner-chains-linux, partner-chains-macos-x86_64, partner-chains-macos-arm64, partner-chains-smart-contracts-process]
+    steps:
+    - name: Checkout master 
+      uses: actions/checkout@v4
+      with:
+        path: ./partner-chains-master
+
+    - name: Set filename variables
+      id: set-filenames
+      run: |
+        echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+        echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+
+    - name: Deploy local environment with overrides
+      run: |
+        cp -r ./partner-chains-cli-* ./partner-chains-master/dev/local-environment/configurations/partner-chains-cli/overrides/partner-chains-cli
+        cp -r ./partner-chains-node-* ./partner-chains-master/dev/local-environment/configurations/partner-chains-cli/overrides/partner-chains-node
+        cp -r ./x86_64-linux/unzipped/* ./partner-chains-master/dev/local-environment/configurations/sidechain-release-bundle/overrides/
+        cd ./partner-chains-master/dev/local-environment
+        bash setup.sh --non-interactive --overrides --postgres-password=postgres
+        docker compose up -d
+
+    - name: Run tests
+      run: #TODO i.e. python ./tests.py
+
+    - name: Stop partner-chains-demo
+      run: docker compose down --volumes
+
+  pre-release-candidate:
+    runs-on: ubuntu-latest
+    needs: [local-environment]
+    steps:
+      - name: Set filename variables
+        id: set-filenames
+        run: |
+          echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+  
+      - name: Download Linux CLI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}
+          path: artifact-linux/
+  
+      - name: Download Linux NODE artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
+          path: artifact-linux/
+  
+      - name: Download macOS x86_64 CLI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}
+          path: artifact-macos-x86_64/
+  
+      - name: Download macOS x86_64 NODE artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}
+          path: artifact-macos-x86_64/
+  
+      - name: Download macOS ARM64 CLI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}
+          path: artifact-macos-arm64/
+  
+      - name: Download macOS ARM64 NODE artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}
+          path: artifact-macos-arm64/
+  
+      - name: Check if release already exists
+        id: check_release
+        run: |
+          tag="${{ github.event.inputs.partner-chains-tag }}"
+          release_response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag")
+          if echo "$release_response" | grep -q '"message": "Not Found"'; then
+            echo "release_exists=false" >> $GITHUB_ENV
+            echo "::set-output name=release_exists::false"
+          else
+            echo "release_exists=true" >> $GITHUB_ENV
+            echo "::set-output name=release_exists::true"
+            echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
+            echo "::set-output name=release_id::$(echo $release_response | jq -r .id)"
+          fi
+  
+      - name: Create draft release
+        id: create_release
+        if: ${{ steps.check_release.outputs.release_exists == 'false' }}
+        run: |
+          tag="${{ github.event.inputs.partner-chains-tag }}"
+          release_response=$(curl -s -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                            -d '{"tag_name": "'$tag'", "name": "'$tag'", "body": "Draft release for '$tag'", "draft": true}' \
+                            "https://api.github.com/repos/${{ github.repository }}/releases")
+          echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
+          echo "::set-output name=release_id::$(echo $release_response | jq -r .id)"
+  
+      - name: Upload artifacts to release
+        if: ${{ steps.check_release.outputs.release_exists == 'true' || steps.create_release.outputs.release_id != '' }}
+        run: |
+          release_id="${{ steps.create_release.outputs.release_id }}"
+          if [ -z "$release_id" ]; then
+            release_id="${{ steps.check_release.outputs.release_id }}"
+          fi
+  
+          for artifact in "artifact-linux/${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}" \
+                          "artifact-linux/${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}" \
+                          "artifact-macos-x86_64/${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}" \
+                          "artifact-macos-x86_64/${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}" \
+                          "artifact-macos-arm64/${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}" \
+                          "artifact-macos-arm64/${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}"; do
+            chmod +x "$artifact"
+            curl -s -X POST \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary @"$artifact" \
+              "https://uploads.github.com/repos/${{ github.repository }}/releases/$release_id/assets?name=$(basename $artifact)"
+          done
+
+  deploy-staging-preview:
+    runs-on: [self-hosted, eks]
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Checkout sidechains-infra-priv repo
+        uses: actions/checkout@v4
+        with:
+          repository: input-output-hk/sidechains-infra-priv
+          token: ${{ secrets.ACTIONS_PAT }}
+          path: sidechains-infra-priv
+
+      - name: Acquire AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          aws-region: ${{ env.AWS_REGION }}
+    
+      - name: Login to ECR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ECR_REGISTRY_SECRET }}
+  
+      - name: Install kubectl, kubernetes-helm and awscli
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x ./kubectl
+          sudo mv ./kubectl /usr/local/bin/kubectl
+          curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+          sudo apt-get install apt-transport-https --yes
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+          sudo apt-get update
+          sudo apt-get install helm
+  
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.kubeconfig_base64 }}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml
+          kubectl config set-cluster my-cluster --server=${{ secrets.K8S_SERVER }} --insecure-skip-tls-verify=true
+          kubectl config set-credentials github-actions --token=${{ secrets.K8S_SA_TOKEN }}
+          kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
+          kubectl config use-context my-context
+  
+      - name: Delete pods
+        continue-on-error: true
+        run: |
+          kubectl delete pod validator-1 -n staging || true
+          kubectl delete pod validator-2 -n staging || true
+          kubectl delete pod validator-3 -n staging || true
+          kubectl delete pod validator-4 -n staging || true
+          echo "Waiting for pods to delete..."
+          kubectl wait --for=delete pod/validator-1 pod/validator-2 pod/validator-3 pod/validator-4 -n staging --timeout=120s || true
+  
+      - name: Delete substrate PVCs
+        continue-on-error: true
+        run: |
+          kubectl delete pvc validator-1-claim-substrate-node-data -n staging
+          kubectl delete pvc validator-2-claim-substrate-node-data -n staging
+          kubectl delete pvc validator-3-claim-substrate-node-data -n staging
+          kubectl delete pvc validator-4-claim-substrate-node-data -n staging
+          echo "Waiting for PVCs to delete..."
+          kubectl wait --for=delete pvc/validator-1-claim-substrate-node-data pvc/validator-2-claim-substrate-node-data pvc/validator-3-claim-substrate-node-data pvc/validator-4-claim-substrate-node-data -n staging --timeout=120s
+  
+      - name: Deploy with chain-spec and image override
+        run: |
+          cd sidechains-infra-priv/src/kube/substrate-poc/environments/helm/substrate-node-stack-chart/
+          helm upgrade --install validator-1 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-1 --set images.substrateNode="${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ github.sha }}" --set chain.chainspec_secretName="staging-preview-chain-spec"
+          helm upgrade --install validator-2 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-2 --set images.substrateNode="${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ github.sha }}" --set chain.chainspec_secretName="staging-preview-chain-spec"
+          helm upgrade --install validator-3 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-3 --set images.substrateNode="${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ github.sha }}" --set chain.chainspec_secretName="staging-preview-chain-spec"
+          helm upgrade --install validator-4 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-4 --set images.substrateNode="${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ github.sha }}" --set chain.chainspec_secretName="staging-preview-chain-spec"
+  
+      - name: Wait
+        run: |
+          echo "Waiting for validator-1..."
+          kubectl wait --for=condition=ready pod validator-1 -n staging --timeout=300s
+          echo "Waiting for validator-2..."
+          kubectl wait --for=condition=ready pod validator-2 -n staging --timeout=300s
+          echo "Waiting for validator-3..."
+          kubectl wait --for=condition=ready pod validator-3 -n staging --timeout=300s
+          echo "Waiting for validator-4..."
+          kubectl wait --for=condition=ready pod validator-4 -n staging --timeout=300s
+  
+      - name: Validate
+        run: |
+          echo "Checking validator-1..."
+          kubectl get pod validator-1 -n staging -o jsonpath="{.status.containerStatuses[*].ready}"
+          echo "Checking validator-2..."
+          kubectl get pod validator-2 -n staging -o jsonpath="{.status.containerStatuses[*].ready}"
+          echo "Checking validator-3..."
+          kubectl get pod validator-3 -n staging -o jsonpath="{.status.containerStatuses[*].ready}"
+          echo "Checking validator-4..."
+          kubectl get pod validator-4 -n staging -o jsonpath="{.status.containerStatuses[*].ready}"
+          kubectl get pods -n sc -o custom-columns='NAME:.metadata.name,READY:.status.containerStatuses[*].ready' | grep -E '^(validator-1|validator-2|validator-3|validator-4)' | awk '{if ($2 != "true,true,true,true") exit 1}'
+          echo "All pods are 4/4 up and ready"
+
+  publish-ghcr-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.partner-chains-sha }}
+
+      - name: Setup Earthly
+        uses: ./.github/earthly-setup
+        with:
+          ssh_key: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          config_tar: ${{ secrets.EARTHLY_TAR }}
+
+      - name: Build and Benchmark
+        env:
+          EARTHLY_CI: true
+        run: |
+          export EARTHLY_OUTPUT=true
+          earthly -P +build --PROFILE=production --FEATURES=runtime-benchmarks
+
+      - name: Generate and Extract Weights
+        continue-on-error: true
+        run: |
+          repository_name="${GITHUB_REPOSITORY##*/}"
+          echo "Listing contents on the runner host in /home/runner/work/${repository_name}/${repository_name}:"
+          ls -la /home/runner/work/${repository_name}/${repository_name}
+          echo "Pulling Docker image..."
+          docker pull ubuntu:22.04
+          mkdir -p weights
+          echo "Running Docker container..."
+          docker run -d --name weight_generation \
+              --memory=4096m \
+              --cpus=1 \
+              -v /home/runner/work/${repository_name}/${repository_name}:/workspace \
+              ubuntu:22.04 \
+              /bin/bash -c "sleep infinity"
+          echo "Installing necessary packages inside the container..."
+          docker exec weight_generation bash -c "\
+              apt-get update && \
+              apt-get install -y jq curl build-essential && \
+              echo 'Checking files in workspace...' && \
+              ls -la /workspace && \
+              mkdir -p /workspace/target/production && \
+              cp /workspace/sidechains-substrate-node /workspace/target/production/sidechains-substrate-node && \
+              echo 'Verifying the binary is in the expected path...' && \
+              ls -la /workspace/target/production && \
+              cd /workspace && \
+              echo 'Setting the current working directory to /workspace...' && \
+              chmod +x scripts/run_all_pallet_overhead_and_machine_benchmarks.sh && \
+              chmod +x scripts/run_storage_benchmarks.sh && \
+              source .envrc || true && \
+              ./scripts/run_all_pallet_overhead_and_machine_benchmarks.sh -b && \
+              ./scripts/run_storage_benchmarks.sh -b || true"
+          echo "Finding and copying weight files..."
+          weight_files=$(docker exec weight_generation find /workspace/runtime/src/weights -name '*.rs')
+          echo "$weight_files" | while read weight_file; do
+              weight_file_name=$(basename "$weight_file")
+              echo "Copying ${weight_file_name}"
+              docker cp "weight_generation:$weight_file" "weights/${weight_file_name}"
+          done
+          docker stop weight_generation
+          docker rm weight_generation
+
+      - name: Overwrite Weights in Runtime Directory
+        continue-on-error: true
+        run: |
+          sudo chmod -R a+rwx ./runtime/src/weights
+          for weight_file in weights/*.rs
+          do
+            cp "$weight_file" "./runtime/src/weights/$(basename "$weight_file")"
+          done
+
+      - name: Main Build
+        if: ${{ inputs.publish_to_ghcr }}
+        env:
+          EARTHLY_CI: true
+          EARTHLY_PUSH: false
+          EARTHLY_OUTPUT: true
+        run: earthly -P +docker --image="ghcr-image" --tags="latest"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          logout: true
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+          FORCE_COLOR: 1
+
+      - name: Tag and Push Image to GHCR
+        run: |
+          repository_name="${GITHUB_REPOSITORY##*/}"
+          target_image="ghcr.io/${{ github.repository }}/$repository_name-node"
+
+          docker tag ghcr-image:latest $target_image:latest
+          docker tag ghcr-image:latest $target_image:${{ github.event.inputs.partner-chains-sha }}
+          docker tag ghcr-image:latest $target_image:${{ github.event.inputs.partner-chains-tag }}
+
+          docker push $target_image:latest
+          docker push $target_image:${{ github.event.inputs.partner-chains-sha }}
+          docker push $target_image:${{ github.event.inputs.partner-chains-tag }}
