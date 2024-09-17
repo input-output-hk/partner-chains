@@ -7,7 +7,7 @@ on:
         description: "Node Image"
         required: true
       tag:
-        description: "Artifact Tag"
+        description: "PC Artifact Tag"
         required: true
 
 jobs:
