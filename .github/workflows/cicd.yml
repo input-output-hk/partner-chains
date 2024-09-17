@@ -197,7 +197,7 @@ jobs:
       sha: #TODO
 
   local-environment-tests:          
-    needs: [partner-chains-linux, partner-chains-smart-contracts-process]
+    needs: [partner-chains-linux, partner-chains-smart-contracts]
     uses: ./.github/workflows/modules/local-environment-tests.yml
     with:
       tag: ${{ inputs.tag }}  
