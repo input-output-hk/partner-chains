@@ -57,7 +57,7 @@ jobs:
         cp -r ./partner-chains-node-* ./partner-chains-master/dev/local-environment/configurations/partner-chains-cli/overrides/partner-chains-node
         cp -r ./partner-chains-smart-contracts-x86_64-linux/* ./partner-chains-master/dev/local-environment/configurations/sidechain-release-bundle/overrides/
         cd ./partner-chains-master/dev/local-environment
-        bash setup.sh --non-interactive --overrides --postgres-password=postgres
+        bash setup.sh --non-interactive --overrides --postgres-password=postgres --node-image=${{ inputs.image }}
         docker compose up -d
     
     - name: Run tests
