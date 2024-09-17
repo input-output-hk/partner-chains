@@ -3,14 +3,11 @@ name: Deploy and test aganst local-environment
 on:
   workflow_call:
     inputs:
-      sha:
-        description: "Commit SHA to build from"
-        required: true
       image:
         description: "Node Image"
         required: true
       tag:
-        description: "Chain Spec Secret Name"
+        description: "Artifact Tag"
         required: true
 
 jobs:

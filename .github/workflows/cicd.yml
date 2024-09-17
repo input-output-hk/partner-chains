@@ -227,7 +227,6 @@ jobs:
     needs: [partner-chains-linux, partner-chains-smart-contracts-process]
     uses: ./.github/workflows/modules/local-environment-tests.yml
     with:
-      sha: ${{ inputs.sha }}  
       tag: ${{ inputs.tag }}  
       image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
 
