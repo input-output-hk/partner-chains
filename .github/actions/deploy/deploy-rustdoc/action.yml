@@ -1,0 +1,51 @@
+name: "Deploy Rust Docs"
+description: "Installs necessary tooling, generates Rust documentation, and deploys it to GitHub Pages."
+inputs:
+  ssh_key:
+    description: "SSH key to read Substrate Repo"
+    required: true
+
+outputs: {}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install tooling
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y protobuf-compiler
+        protoc --version
+      shell: bash
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Add SSH key to read Substrate Repo
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan github.com >> ~/.ssh/known_hosts
+        ssh-agent -a /tmp/ssh_agent.sock > /dev/null
+        ssh-add - <<< "${{ inputs.ssh_key }}"
+      shell: bash
+
+    - name: Rust versions
+      run: rustup show
+      shell: bash
+
+    - name: Rust cache
+      uses: Swatinem/rust-cache@v2.6.2
+
+    - name: Build rustdocs
+      run: SKIP_WASM_BUILD=1 cargo doc --all --no-deps
+      shell: bash
+
+    - name: Make index.html
+      run: echo "<meta http-equiv=refresh content=0;url=node_template/index.html>" > ./target/doc/index.html
+      shell: bash
+
+    - name: Deploy documentation
+      if: ${{ github.ref_name == 'master' }}
+      uses: peaceiris/actions-gh-pages@v3.9.3
+      with:
+        publish_branch: gh-pages
+        publish_dir: ./target/doc

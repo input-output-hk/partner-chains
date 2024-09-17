@@ -1,0 +1,55 @@
+name: "Parse Flake and Download PCSC Release"
+description: "Extracts PCSC release info from flake.nix, constructs an artifact name, downloads, and uploads the artifact"
+inputs:
+  sha:
+    description: "SHA or branch to checkout"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.sha }}
+
+    - name: Extract PCSC Release Info from flake.nix
+      shell: bash
+      id: extract-release
+      run: |
+        echo "Extracting PCSC release version from flake.nix..."
+        release=$(grep -Po 'url = "github:input-output-hk/partner-chains-smart-contracts/v\K[0-9.]+(?=";)' flake.nix)
+        echo "Release version: v$release"
+        echo "::set-output name=release::v$release"
+
+    - name: Construct Artifact Name
+      shell: bash
+      id: construct-artifact
+      run: |
+        version_without_v=${{ steps.extract-release.outputs.release#v }}
+        artifact="trustless-sidechain-cli-${version_without_v}-x86_64-linux.zip"
+        echo "Constructed artifact name: $artifact"
+        echo "::set-output name=artifact::$artifact"
+
+    - name: Download Artifact as zipped.zip
+      shell: bash
+      run: |
+        wget -O zipped.zip "https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/${{ steps.extract-release.outputs.release }}/${{ steps.construct-artifact.outputs.artifact }}"
+
+    - name: Extract zipped.zip to a temporary directory
+      shell: bash
+      run: |
+        mkdir temp_dir
+        unzip zipped.zip -d temp_dir
+
+    - name: Rename extracted directory to partner-chains-smart-contracts
+      shell: bash
+      run: |
+        original_dir=$(ls temp_dir)
+        mv "temp_dir/$original_dir" partner-chains-smart-contracts
+
+    - name: Upload Extracted Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: partner-chains-smart-contracts-artifact
+        path: partner-chains-smart-contracts

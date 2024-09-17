@@ -10,17 +10,7 @@ while true; do
     fi
 done
 
-echo "pc-contracts-cli configuration complete. Waiting 2 epochs to start..."
-
-while true; do
-    if [ -f "/shared/2-epochs.ready" ]; then
-        break
-    else
-        sleep 10
-    fi
-done
-
-echo "2 mainchain epochs passed, starting node..."
+echo "pc-contracts-cli configuration complete. Starting node..."
 
 export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP_MILLIS)
 export COMMITTEE_CANDIDATE_ADDRESS=$(cat /shared/COMMITTEE_CANDIDATE_ADDRESS)

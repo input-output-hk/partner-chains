@@ -104,6 +104,11 @@ export PERMISSIONED_CANDIDATES_POLICY_ID=$(jq -r '.mintingPolicies.PermissionedC
 echo "Permissioned candidates policy ID: $PERMISSIONED_CANDIDATES_POLICY_ID"
 echo PERMISSIONED_CANDIDATES_POLICY_ID=$PERMISSIONED_CANDIDATES_POLICY_ID > /shared/PERMISSIONED_CANDIDATES_POLICY_ID
 
+echo "Importing environment variables from shared files..."
+export NATIVE_TOKEN_POLICY_ID=$(cat /shared/NATIVE_TOKEN_POLICY_ID)
+export NATIVE_TOKEN_ASSET_NAME=$(cat /shared/NATIVE_TOKEN_ASSET_NAME)
+export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS=$(cat /shared/ILLIQUID_SUPPLY_VALIDATOR_ADDRESS)
+
 echo "Inserting D parameter..."
 
 ./pc-contracts-cli insert-d-parameter \
@@ -273,10 +278,22 @@ echo -e "\n===== Partnerchain Configuration Complete =====\n"
 echo -e "Container will now idle, but will remain available for accessing the pc-contracts-cli utility as follows:\n"
 echo "docker exec pc-contracts-cli /pc-contracts-cli/pc-contracts-cli --help"
 
-epoch_length=$(cat /shared/mc-epoch-length)
-slot_length=$(cat /shared/mc-slot-length)
-sleep_time=$((2 * epoch_length * slot_length))
-sleep $sleep_time
+echo "Waiting 2 epochs for DParam to become active..."
+epoch=$(curl -s --request POST \
+    --url "http://ogmios:1337" \
+    --header 'Content-Type: application/json' \
+    --data '{"jsonrpc": "2.0", "method": "queryLedgerState/epoch"}' | jq .result)
+n_2_epoch=$((epoch + 2))
+echo "Current epoch: $epoch"
+while [ $epoch -lt $n_2_epoch ]; do
+  sleep 10
+  epoch=$(curl -s --request POST \
+    --url "http://ogmios:1337" \
+    --header 'Content-Type: application/json' \
+    --data '{"jsonrpc": "2.0", "method": "queryLedgerState/epoch"}' | jq .result)
+  echo "Current epoch: $epoch"
+done
+echo "DParam is now active!"
 touch /shared/2-epochs.ready
 
 tail -f /dev/null

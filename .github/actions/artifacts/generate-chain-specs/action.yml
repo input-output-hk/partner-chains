@@ -1,0 +1,35 @@
+name: "Generate Chain Specs from Node Binary"
+description: "Downloads the partner-chains node binary, generates chain specs for different environments, and uploads them."
+inputs:
+  sha:
+    description: "Commit SHA to append to chain spec secret name"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Download Linux partner-chains-node artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: partner-chains-node-x86_64-linux-artifact-artifact
+        path: ./
+
+    - name: Generate Chain Specs
+      shell: bash
+      run: |
+        chmod +x ./partner-chains-node
+        source ./envs/devnet/.envrc
+        ./partner-chains-node build-spec --chain local --disable-default-bootnode --raw > devnet_chain_spec.json
+        source ./envs/staging-preview/.envrc
+        ./partner-chains-node build-spec --chain staging --disable-default-bootnode --raw > staging_preview_chain_spec.json
+        source ./envs/staging-preprod/.envrc
+        ./partner-chains-node build-spec --chain staging --disable-default-bootnode --raw > staging_preprod_chain_spec.json
+
+    - name: Upload Chain Specs
+      uses: actions/upload-artifact@v4
+      with:
+        name: chain-specs
+        path: |
+          devnet_chain_spec.json
+          staging_preview_chain_spec.json
+          staging_preprod_chain_spec.json
