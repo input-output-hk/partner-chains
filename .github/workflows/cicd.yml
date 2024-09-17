@@ -20,13 +20,13 @@ jobs:
       - name: Set filename variables
         id: set-filenames
         run: |
-          echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.partner-chains-sha }}
+          ref: ${{ inputs.sha }}
 
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -57,14 +57,6 @@ jobs:
       - name: Run tests
         run: cargo test --locked --release --target x86_64-unknown-linux-gnu
 
-      - name: Generate Chain Specs
-        run: |
-          chmod +x ./partner-chains-node
-          source ./devnet/.envrc
-          ./partner-chains-node build-spec --chain local --disable-default-bootnode --raw > devnet_chain_spec.json
-          source ./staging/.envrc
-          ./partner-chains-node build-spec --chain staging --disable-default-bootnode --raw > staging_chain_spec.json
-
       - name: Create and Configure Docker Container
         id: create-container
         run: |
@@ -76,7 +68,7 @@ jobs:
           docker exec $container_id rm -rf /usr/bin/apt* /usr/bin/dpkg*
           docker exec $container_id ln -s /data /substrate/.local/share/partner-chains-node
           docker cp ./partner-chains-node $container_id:/usr/local/bin/partner-chains-node
-          docker commit --change='EXPOSE 30333 9615 9933 9944' --change='ENTRYPOINT ["/usr/local/bin/partner-chains-node"]' $container_id substrate-node:${{ inputs.partner-chains-sha }}
+          docker commit --change='EXPOSE 30333 9615 9933 9944' --change='ENTRYPOINT ["/usr/local/bin/partner-chains-node"]' $container_id substrate-node:${{ inputs.sha }}
   
       - name: Cleanup Docker Container
         if: always()
@@ -92,8 +84,8 @@ jobs:
 
       - name: Push to ECR
         run: |
-          docker tag substrate-node:${{ inputs.partner-chains-sha }} ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.partner-chains-sha }}
-          docker push ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.partner-chains-sha }}
+          docker tag substrate-node:${{ inputs.sha }} ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
+          docker push ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
 
       - name: Upload partner-chains-cli-x86_64-linux
         uses: actions/upload-artifact@v4
@@ -107,28 +99,19 @@ jobs:
           name: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
           path: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
 
-      - name: Upload chain spec artifacts
-        uses: actions/upload-artifact@v4
-        if: ${{ github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'ci-off') }}
-        with:
-          name: chain-specs
-          path: |
-            ./devnet_chain_spec.json
-            ./staging_chain_spec.json
-
   partner-chains-macos-x86_64:
     runs-on: macos-latest
     steps:
       - name: Set filename variables
         id: set-filenames
         run: |
-          echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ inputs.tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ inputs.tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.partner-chains-sha }}
+          ref: ${{ inputs.sha }}
 
       - name: Install protoc
         run: |
@@ -168,13 +151,13 @@ jobs:
       - name: Set filename variables
         id: set-filenames
         run: |
-          echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ inputs.tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ inputs.tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.partner-chains-sha }}
+          ref: ${{ inputs.sha }}
 
       - name: Install protoc
         run: |
@@ -252,8 +235,8 @@ jobs:
     - name: Set filename variables
       id: set-filenames
       run: |
-        echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
-        echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+        echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
+        echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
 
     - name: Deploy local environment with overrides
       run: |
@@ -277,12 +260,12 @@ jobs:
       - name: Set filename variables
         id: set-filenames
         run: |
-          echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ inputs.tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ inputs.tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ inputs.tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ inputs.tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
   
       - name: Download Linux CLI artifact
         uses: actions/download-artifact@v4
@@ -323,7 +306,7 @@ jobs:
       - name: Check if release already exists
         id: check_release
         run: |
-          tag="${{ inputs.partner-chains-tag }}"
+          tag="${{ inputs.tag }}"
           release_response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                             "https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag")
           if echo "$release_response" | grep -q '"message": "Not Found"'; then
@@ -340,7 +323,7 @@ jobs:
         id: create_release
         if: ${{ steps.check_release.outputs.release_exists == 'false' }}
         run: |
-          tag="${{ inputs.partner-chains-tag }}"
+          tag="${{ inputs.tag }}"
           release_response=$(curl -s -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                             -d '{"tag_name": "'$tag'", "name": "'$tag'", "body": "Draft release for '$tag'", "draft": true}' \
                             "https://api.github.com/repos/${{ github.repository }}/releases")
@@ -369,110 +352,23 @@ jobs:
               "https://uploads.github.com/repos/${{ github.repository }}/releases/$release_id/assets?name=$(basename $artifact)"
           done
 
-  upload-chain-specs:
+  chain-specs:
     needs: partner-chains-linux
-    uses: ./.github/workflows/modules/upload-chain-specs.yml
+    uses: ./.github/workflows/modules/chain-specs.yml
     with:
-      sha: ${{ inputs.partner-chains-sha }}  
+      sha: ${{ inputs.sha }}  
+      tag: ${{ inputs.tag }}  
 
   deploy-staging-preview:
-    runs-on: [self-hosted, eks]
-    permissions:
-      id-token: write
-      contents: write
-    steps:
-      - name: Checkout sidechains-infra-priv repo
-        uses: actions/checkout@v4
-        with:
-          repository: input-output-hk/sidechains-infra-priv
-          token: ${{ secrets.ACTIONS_PAT }}
-          path: sidechains-infra-priv
+    needs: chain-specs
+    uses: ./.github/workflows/modules/staging-preview-deploy.yml
+    with:
+      image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
+      chain-spec-secret: staging-chain-spec-${{ inputs.sha }}
 
-      - name: Acquire AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-          aws-region: ${{ env.AWS_REGION }}
-    
-      - name: Login to ECR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ secrets.ECR_REGISTRY_SECRET }}
-  
-      - name: Install kubectl, kubernetes-helm and awscli
-        run: |
-          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          chmod +x ./kubectl
-          sudo mv ./kubectl /usr/local/bin/kubectl
-          curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
-          sudo apt-get install apt-transport-https --yes
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
-          sudo apt-get update
-          sudo apt-get install helm
-  
-      - name: Configure kubectl
-        run: |
-          echo "${{ secrets.kubeconfig_base64 }}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml
-          kubectl config set-cluster my-cluster --server=${{ secrets.K8S_SERVER }} --insecure-skip-tls-verify=true
-          kubectl config set-credentials github-actions --token=${{ secrets.K8S_SA_TOKEN }}
-          kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
-          kubectl config use-context my-context
-  
-      - name: Delete pods
-        continue-on-error: true
-        run: |
-          kubectl delete pod validator-1 -n staging || true
-          kubectl delete pod validator-2 -n staging || true
-          kubectl delete pod validator-3 -n staging || true
-          kubectl delete pod validator-4 -n staging || true
-          echo "Waiting for pods to delete..."
-          kubectl wait --for=delete pod/validator-1 pod/validator-2 pod/validator-3 pod/validator-4 -n staging --timeout=120s || true
-  
-      - name: Delete substrate PVCs
-        continue-on-error: true
-        run: |
-          kubectl delete pvc validator-1-claim-substrate-node-data -n staging
-          kubectl delete pvc validator-2-claim-substrate-node-data -n staging
-          kubectl delete pvc validator-3-claim-substrate-node-data -n staging
-          kubectl delete pvc validator-4-claim-substrate-node-data -n staging
-          echo "Waiting for PVCs to delete..."
-          kubectl wait --for=delete pvc/validator-1-claim-substrate-node-data pvc/validator-2-claim-substrate-node-data pvc/validator-3-claim-substrate-node-data pvc/validator-4-claim-substrate-node-data -n staging --timeout=120s
-  
-      - name: Deploy with chain-spec and image override
-        run: |
-          cd sidechains-infra-priv/src/kube/substrate-poc/environments/helm/substrate-node-stack-chart/
-          helm upgrade --install validator-1 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-1 --set images.substrateNode="${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.partner-chains-sha }}" --set chain.chainspec_secretName="staging-preview-chain-spec"
-          helm upgrade --install validator-2 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-2 --set images.substrateNode="${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.partner-chains-sha }}" --set chain.chainspec_secretName="staging-preview-chain-spec"
-          helm upgrade --install validator-3 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-3 --set images.substrateNode="${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.partner-chains-sha }}" --set chain.chainspec_secretName="staging-preview-chain-spec"
-          helm upgrade --install validator-4 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-4 --set images.substrateNode="${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.partner-chains-sha }}" --set chain.chainspec_secretName="staging-preview-chain-spec"
-  
-      - name: Wait
-        run: |
-          echo "Waiting for validator-1..."
-          kubectl wait --for=condition=ready pod validator-1 -n staging --timeout=300s
-          echo "Waiting for validator-2..."
-          kubectl wait --for=condition=ready pod validator-2 -n staging --timeout=300s
-          echo "Waiting for validator-3..."
-          kubectl wait --for=condition=ready pod validator-3 -n staging --timeout=300s
-          echo "Waiting for validator-4..."
-          kubectl wait --for=condition=ready pod validator-4 -n staging --timeout=300s
-  
-      - name: Validate
-        run: |
-          echo "Checking validator-1..."
-          kubectl get pod validator-1 -n staging -o jsonpath="{.status.containerStatuses[*].ready}"
-          echo "Checking validator-2..."
-          kubectl get pod validator-2 -n staging -o jsonpath="{.status.containerStatuses[*].ready}"
-          echo "Checking validator-3..."
-          kubectl get pod validator-3 -n staging -o jsonpath="{.status.containerStatuses[*].ready}"
-          echo "Checking validator-4..."
-          kubectl get pod validator-4 -n staging -o jsonpath="{.status.containerStatuses[*].ready}"
-          kubectl get pods -n sc -o custom-columns='NAME:.metadata.name,READY:.status.containerStatuses[*].ready' | grep -E '^(validator-1|validator-2|validator-3|validator-4)' | awk '{if ($2 != "true,true,true,true") exit 1}'
-          echo "All pods are 4/4 up and ready"
-
-  publish-ghcr-image:
+   publish-ghcr-image:
     uses: ./.github/workflows/modules/build-and-publish-ghcr-image.yml
     with:
-      commit_sha: ${{ inputs.partner-chains-sha }}
-      ghcr_tag: ${{ inputs.partner-chains-tag }}
+      commit_sha: ${{ inputs.sha }}
+      ghcr_tag: ${{ inputs.tag }}
       publish_to_ghcr: true

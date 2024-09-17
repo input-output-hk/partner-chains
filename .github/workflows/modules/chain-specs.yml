@@ -7,6 +7,9 @@ on:
         description: 'Commit SHA to append to chain spec secret name'
         required: true
         type: string
+      tag:
+        description: "partner-chains release tag"
+        required: true
 
 jobs:
   chain-specs:
@@ -15,6 +18,16 @@ jobs:
       id-token: write
       contents: write
     steps:
+      - name: Set filename variables
+        id: set-filenames
+        run: |
+          echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
+
       - name: Install kubectl and awscli
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -30,11 +43,19 @@ jobs:
           kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
           kubectl config use-context my-context
 
-      - name: Download chain spec artifacts
+      - name: Download Linux partner-chains-node artifact
         uses: actions/download-artifact@v4
         with:
-          name: chain-specs
-          path: ./artifacts
+          name: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
+          path: ./
+
+      - name: Generate Chain Specs
+        run: |
+          chmod +x ./partner-chains-node
+          source ./devnet/.envrc
+          ./partner-chains-node build-spec --chain local --disable-default-bootnode --raw > devnet_chain_spec.json
+          source ./staging/.envrc
+          ./partner-chains-node build-spec --chain staging --disable-default-bootnode --raw > staging_chain_spec.json
 
       - name: Update Kubernetes secret for devnet chain spec
         run: |
