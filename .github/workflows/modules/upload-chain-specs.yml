@@ -1,0 +1,58 @@
+name: Upload chain spec artifacts to Kubernetes 
+
+on:
+  workflow_call:
+    inputs:
+      sha:
+        description: 'Commit SHA to append to chain spec secret name'
+        required: true
+        type: string
+
+jobs:
+  chain-specs:
+    runs-on: [self-hosted, eks]
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Install kubectl and awscli
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x ./kubectl
+          sudo mv ./kubectl /usr/local/bin/kubectl
+          sudo apt update && sudo apt install -y awscli
+
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.kubeconfig_base64 }}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml
+          kubectl config set-cluster my-cluster --server=${{ secrets.K8S_SERVER }} --insecure-skip-tls-verify=true
+          kubectl config set-credentials github-actions --token=${{ secrets.K8S_SA_TOKEN }}
+          kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
+          kubectl config use-context my-context
+
+      - name: Download chain spec artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: chain-specs
+          path: ./artifacts
+
+      - name: Update Kubernetes secret for devnet chain spec
+        run: |
+          SHA=${{ inputs.sha }}
+          SECRET_NAME="devnet-chain-spec-${SHA}"
+      
+          kubectl delete secret "$SECRET_NAME" --namespace=sc --ignore-not-found
+          kubectl create secret generic "$SECRET_NAME" \
+            --from-file=devnet_chain_spec.json=./artifacts/devnet_chain_spec.json \
+            --namespace=sc
+      
+      - name: Update Kubernetes secret for staging chain spec
+        run: |
+          SHA=${{ inputs.sha }}
+          SECRET_NAME="staging-chain-spec-${SHA}"
+      
+          kubectl delete secret "$SECRET_NAME" --namespace=staging --ignore-not-found
+          kubectl create secret generic "$SECRET_NAME" \
+            --from-file=staging_chain_spec.json=./artifacts/staging_chain_spec.json \
+            --namespace=staging
+        

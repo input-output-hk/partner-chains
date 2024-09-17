@@ -9,6 +9,10 @@ on:
         description: "partner-chains release tag"
         required: true
 
+env:
+  AWS_REGION: "eu-central-1"
+  SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+
 jobs:
   partner-chains-linux:
     runs-on: ubuntu-latest
@@ -16,13 +20,13 @@ jobs:
       - name: Set filename variables
         id: set-filenames
         run: |
-          echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.partner-chains-sha }}
+          ref: ${{ inputs.partner-chains-sha }}
 
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -72,7 +76,7 @@ jobs:
           docker exec $container_id rm -rf /usr/bin/apt* /usr/bin/dpkg*
           docker exec $container_id ln -s /data /substrate/.local/share/partner-chains-node
           docker cp ./partner-chains-node $container_id:/usr/local/bin/partner-chains-node
-          docker commit --change='EXPOSE 30333 9615 9933 9944' --change='ENTRYPOINT ["/usr/local/bin/partner-chains-node"]' $container_id substrate-node:${{ github.sha }}
+          docker commit --change='EXPOSE 30333 9615 9933 9944' --change='ENTRYPOINT ["/usr/local/bin/partner-chains-node"]' $container_id substrate-node:${{ inputs.partner-chains-sha }}
   
       - name: Cleanup Docker Container
         if: always()
@@ -88,8 +92,8 @@ jobs:
 
       - name: Push to ECR
         run: |
-          docker tag substrate-node:${{ github.sha }} ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ github.sha }}
-          docker push ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ github.sha }}
+          docker tag substrate-node:${{ inputs.partner-chains-sha }} ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.partner-chains-sha }}
+          docker push ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.partner-chains-sha }}
 
       - name: Upload partner-chains-cli-x86_64-linux
         uses: actions/upload-artifact@v4
@@ -109,14 +113,8 @@ jobs:
         with:
           name: chain-specs
           path: |
+            ./devnet_chain_spec.json
             ./staging_chain_spec.json
-
-      - name: Update Kubernetes secret for staging-preview chain spec
-        run: |
-          TIMESTAMP=$(date +%Y%m%d%H%M)
-          SHA=${{ github.sha }}
-          kubectl delete secret "staging-preview-chain-spec" --namespace=staging || true
-          kubectl create secret generic "staging-preview-chain-spec" --from-file=staging_chain_spec.json=./staging_chain_spec.json --namespace=staging
 
   partner-chains-macos-x86_64:
     runs-on: macos-latest
@@ -124,13 +122,13 @@ jobs:
       - name: Set filename variables
         id: set-filenames
         run: |
-          echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.partner-chains-sha }}
+          ref: ${{ inputs.partner-chains-sha }}
 
       - name: Install protoc
         run: |
@@ -170,13 +168,13 @@ jobs:
       - name: Set filename variables
         id: set-filenames
         run: |
-          echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.partner-chains-sha }}
+          ref: ${{ inputs.partner-chains-sha }}
 
       - name: Install protoc
         run: |
@@ -216,7 +214,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.partner_chains_smart_contracts_sha }}
+          ref: ${{ inputs.partner_chains_smart_contracts_sha }}
 
       - name: Build
         run: nix build ./#sidechain-release-bundle
@@ -244,7 +242,7 @@ jobs:
 
   local-environment:          
     runs-on: ubuntu-latest
-    needs: [partner-chains-linux, partner-chains-macos-x86_64, partner-chains-macos-arm64, partner-chains-smart-contracts-process]
+    needs: [partner-chains-linux, partner-chains-smart-contracts-process]
     steps:
     - name: Checkout master 
       uses: actions/checkout@v4
@@ -254,14 +252,14 @@ jobs:
     - name: Set filename variables
       id: set-filenames
       run: |
-        echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
-        echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+        echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+        echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
 
     - name: Deploy local environment with overrides
       run: |
         cp -r ./partner-chains-cli-* ./partner-chains-master/dev/local-environment/configurations/partner-chains-cli/overrides/partner-chains-cli
         cp -r ./partner-chains-node-* ./partner-chains-master/dev/local-environment/configurations/partner-chains-cli/overrides/partner-chains-node
-        cp -r ./x86_64-linux/unzipped/* ./partner-chains-master/dev/local-environment/configurations/sidechain-release-bundle/overrides/
+        cp -r ./partner-chains-smart-contracts/* ./partner-chains-master/dev/local-environment/configurations/sidechain-release-bundle/overrides/
         cd ./partner-chains-master/dev/local-environment
         bash setup.sh --non-interactive --overrides --postgres-password=postgres
         docker compose up -d
@@ -279,12 +277,12 @@ jobs:
       - name: Set filename variables
         id: set-filenames
         run: |
-          echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
   
       - name: Download Linux CLI artifact
         uses: actions/download-artifact@v4
@@ -325,7 +323,7 @@ jobs:
       - name: Check if release already exists
         id: check_release
         run: |
-          tag="${{ github.event.inputs.partner-chains-tag }}"
+          tag="${{ inputs.partner-chains-tag }}"
           release_response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                             "https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag")
           if echo "$release_response" | grep -q '"message": "Not Found"'; then
@@ -342,7 +340,7 @@ jobs:
         id: create_release
         if: ${{ steps.check_release.outputs.release_exists == 'false' }}
         run: |
-          tag="${{ github.event.inputs.partner-chains-tag }}"
+          tag="${{ inputs.partner-chains-tag }}"
           release_response=$(curl -s -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                             -d '{"tag_name": "'$tag'", "name": "'$tag'", "body": "Draft release for '$tag'", "draft": true}' \
                             "https://api.github.com/repos/${{ github.repository }}/releases")
@@ -370,6 +368,12 @@ jobs:
               --data-binary @"$artifact" \
               "https://uploads.github.com/repos/${{ github.repository }}/releases/$release_id/assets?name=$(basename $artifact)"
           done
+
+  upload-chain-specs:
+    needs: partner-chains-linux
+    uses: ./.github/workflows/modules/upload-chain-specs.yml
+    with:
+      sha: ${{ inputs.partner-chains-sha }}  
 
   deploy-staging-preview:
     runs-on: [self-hosted, eks]
@@ -437,10 +441,10 @@ jobs:
       - name: Deploy with chain-spec and image override
         run: |
           cd sidechains-infra-priv/src/kube/substrate-poc/environments/helm/substrate-node-stack-chart/
-          helm upgrade --install validator-1 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-1 --set images.substrateNode="${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ github.sha }}" --set chain.chainspec_secretName="staging-preview-chain-spec"
-          helm upgrade --install validator-2 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-2 --set images.substrateNode="${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ github.sha }}" --set chain.chainspec_secretName="staging-preview-chain-spec"
-          helm upgrade --install validator-3 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-3 --set images.substrateNode="${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ github.sha }}" --set chain.chainspec_secretName="staging-preview-chain-spec"
-          helm upgrade --install validator-4 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-4 --set images.substrateNode="${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ github.sha }}" --set chain.chainspec_secretName="staging-preview-chain-spec"
+          helm upgrade --install validator-1 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-1 --set images.substrateNode="${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.partner-chains-sha }}" --set chain.chainspec_secretName="staging-preview-chain-spec"
+          helm upgrade --install validator-2 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-2 --set images.substrateNode="${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.partner-chains-sha }}" --set chain.chainspec_secretName="staging-preview-chain-spec"
+          helm upgrade --install validator-3 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-3 --set images.substrateNode="${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.partner-chains-sha }}" --set chain.chainspec_secretName="staging-preview-chain-spec"
+          helm upgrade --install validator-4 . -f values/chains/staging.yaml -f values/nodes/staging/validator/validator-4 --set images.substrateNode="${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.partner-chains-sha }}" --set chain.chainspec_secretName="staging-preview-chain-spec"
   
       - name: Wait
         run: |
@@ -469,6 +473,6 @@ jobs:
   publish-ghcr-image:
     uses: ./.github/workflows/modules/build-and-publish-ghcr-image.yml
     with:
-      commit_sha: ${{ github.event.inputs.partner-chains-sha }}
-      ghcr_tag: ${{ github.event.inputs.partner-chains-tag }}
+      commit_sha: ${{ inputs.partner-chains-sha }}
+      ghcr_tag: ${{ inputs.partner-chains-tag }}
       publish_to_ghcr: true

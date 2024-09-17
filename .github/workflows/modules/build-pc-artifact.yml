@@ -1,0 +1,162 @@
+name: Build and Upload PC Artifacts
+
+on:
+  workflow_call:
+    inputs:
+      partner_chains_sha:
+        description: "partner-chains commit SHA or branch to build from"
+      partner-chains-tag:
+        description: "partner-chains release tag to append to artifact name"
+        required: true
+      create_draft_release_page:
+        description: "Create a draft release page"
+        required: false
+        default: "false"
+  workflow_dispatch:
+    inputs:
+      partner_chains_sha:
+        description: "partner-chains commit SHA or branch to build from"
+      partner-chains-tag:
+        description: "partner-chains release tag to append to artifact name"
+        required: true
+      create_draft_release_page:
+        description: "Create a draft release page"
+        required: false
+        default: "false"
+
+jobs:
+  partner-chains-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set filename variables
+        id: set-filenames
+        run: |
+          echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.partner_chains_sha }}
+
+      - name: Install protoc
+        run: sudo apt-get install -y protobuf-compiler
+
+      - name: Build partner-chains-node
+        run: |
+          rustup target add x86_64-unknown-linux-gnu
+          cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
+          cp target/x86_64-unknown-linux-gnu/release/partner-chains-node $PARTNER_CHAINS_NODE_X86_64_LINUX
+          chmod +x $PARTNER_CHAINS_NODE_X86_64_LINUX
+
+      - name: Build partner-chains-cli
+        run: |
+          rustup target add x86_64-unknown-linux-gnu
+          cargo build -p partner-chains-cli --locked --release --target x86_64-unknown-linux-gnu
+          cp target/x86_64-unknown-linux-gnu/release/partner-chains-cli $PARTNER_CHAINS_CLI_X86_64_LINUX
+          chmod +x $PARTNER_CHAINS_CLI_X86_64_LINUX
+
+      - name: Upload partner-chains-cli-x86_64-linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}
+          path: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}
+
+      - name: Upload partner-chains-node-x86_64-linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
+          path: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
+
+  partner-chains-macos-x86_64:
+    runs-on: macos-latest
+    steps:
+      - name: Set filename variables
+        id: set-filenames
+        run: |
+          echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.partner_chains_sha }}
+
+      - name: Install protoc
+        run: |
+          curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v21.3/protoc-21.3-osx-x86_64.zip
+          unzip protoc-21.3-osx-x86_64.zip -d $HOME/protoc
+          sudo mv $HOME/protoc/bin/protoc /usr/local/bin/protoc
+
+      - name: Build partner-chains-node
+        run: |
+          rustup target add x86_64-apple-darwin
+          cargo build -p partner-chains-node --locked --release --target x86_64-apple-darwin
+          cp target/x86_64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN
+          chmod +x $PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN
+
+      - name: Build partner-chains-cli
+        run: |
+          rustup target add x86_64-apple-darwin
+          cargo build -p partner-chains-cli --locked --release --target x86_64-apple-darwin
+          cp target/x86_64-apple-darwin/release/partner-chains-cli $PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN
+          chmod +x $PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN
+
+      - name: Upload partner-chains-cli-x86_64-apple-darwin
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}
+          path: ${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}
+
+      - name: Upload partner-chains-node-x86_64-apple-darwin
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}
+          path: ${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}
+
+  partner-chains-macos-arm64:
+    runs-on: macos-latest
+    steps:
+      - name: Set filename variables
+        id: set-filenames
+        run: |
+          echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.partner_chains_sha }}
+
+      - name: Install protoc
+        run: |
+          curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v21.3/protoc-21.3-osx-aarch_64.zip
+          unzip protoc-21.3-osx-aarch_64.zip -d $HOME/protoc
+          sudo mv $HOME/protoc/bin/protoc /usr/local/bin/protoc
+
+      - name: Build partner-chains-node
+        run: |
+          rustup target add aarch64-apple-darwin
+          cargo build -p partner-chains-node --locked --release --target aarch64-apple-darwin
+          cp target/aarch64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN
+          chmod +x $PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN
+
+      - name: Build partner-chains-cli
+        run: |
+          rustup target add aarch64-apple-darwin
+          cargo build -p partner-chains-cli --locked --release --target aarch64-apple-darwin
+          cp target/aarch64-apple-darwin/release/partner-chains-cli $PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN
+          chmod +x $PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN
+
+      - name: Upload partner-chains-cli-aarch64-apple-darwin
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}
+          path: ${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}
+
+      - name: Upload partner-chains-node-aarch64-apple-darwin
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}
+          path: ${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}
+  

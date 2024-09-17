@@ -1,35 +1,34 @@
 name: Build and Publish to GHCR
 
 on:
-    workflow_call:
-      inputs:
-        commit_sha:
-          description: 'Commit SHA to build from'
-          required: true
-          type: string
-        ghcr_tag:
-          description: "Tag for GHCR image"
-          required: true
-          type: string
-        publish_to_ghcr:
-          description: "Publish to GitHub Container Registry"
-          default: true
-          type: boolean
-  
-    workflow_dispatch:
-      inputs:
-        commit_sha:
-          description: 'Commit SHA to build from'
-          required: true
-          type: string
-        ghcr_tag:
-          description: "Tag for GHCR image"
-          required: true
-          type: string
-        publish_to_ghcr:
-          description: "Publish to GitHub Container Registry"
-          default: true
-          type: boolean
+  workflow_call:
+    inputs:
+      commit_sha:
+        description: 'Commit SHA to build from'
+        required: true
+        type: string
+      ghcr_tag:
+        description: "Tag for GHCR image"
+        required: true
+        type: string
+      publish_to_ghcr:
+        description: "Publish to GitHub Container Registry"
+        default: true
+        type: boolean
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: 'Commit SHA to build from'
+        required: true
+        type: string
+      ghcr_tag:
+        description: "Tag for GHCR image"
+        required: true
+        type: string
+      publish_to_ghcr:
+        description: "Publish to GitHub Container Registry"
+        default: true
+        type: boolean
 
 env:
   SSH_AUTH_SOCK: /tmp/ssh_agent.sock

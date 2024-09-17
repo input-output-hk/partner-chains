@@ -1,0 +1,54 @@
+name: Build and Upload PCSC Artifact (Linux Only)
+
+on:
+  workflow_call:
+    inputs:
+      partner_chains_smart_contracts_sha:
+        description: "partner-chains-smart-contracts commit SHA or branch to build from"
+  workflow_dispatch:
+    inputs:
+      partner_chains_smart_contracts_sha:
+        description: "partner-chains-smart-contracts commit SHA or branch to build from"
+
+jobs:
+  partner-chains-smart-contracts-x86_64-linux:
+    runs-on: [self-hosted, nixos]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.partner_chains_smart_contracts_sha }}
+
+      - name: Build
+        run: nix build ./#sidechain-release-bundle
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-chains-smart-contracts-x86_64-linux
+          path: result/release.zip
+
+  partner-chains-smart-contracts-process:
+    runs-on: ubuntu-latest
+    needs: [partner-chains-smart-contracts-x86_64-linux]
+    steps:
+      - name: Download x86_64-linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: partner-chains-smart-contracts-x86_64-linux
+          path: ./x86_64-linux
+
+      - uses: geekyeggo/delete-artifact@v5
+        with:
+          name: partner-chains-smart-contracts-x86_64-linux
+
+      - name: Unzip release.zip
+        run: |
+          mkdir -p ./x86_64-linux/unzipped
+          unzip ./x86_64-linux/release.zip -d ./partner-chains-smart-contracts
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-chains-smart-contracts-x86_64-linux
+          path: ./partner-chains-smart-contracts 
