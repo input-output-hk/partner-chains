@@ -1,0 +1,65 @@
+name: Deploy and test aganst local-environment
+
+on:
+  workflow_call:
+    inputs:
+      sha:
+        description: "Commit SHA to build from"
+        required: true
+      image:
+        description: "Node Image"
+        required: true
+      tag:
+        description: "Chain Spec Secret Name"
+        required: true
+
+jobs:
+  local-environment-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout master 
+      uses: actions/checkout@v4
+      with:
+        path: ./partner-chains-master
+    
+    - name: Set filename variables
+      id: set-filenames
+      run: |
+        echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
+        echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
+
+    - name: Acquire AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+        aws-region: ${{ env.AWS_REGION }}
+ 
+    - name: Login to ECR
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ secrets.ECR_REGISTRY_SECRET }}
+
+    - name: Download partner-chains-node 
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }} 
+
+    - name: Download partner-chains-cli
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }} 
+
+    - name: Deploy local environment with overrides
+      run: |
+        cp -r ./partner-chains-cli-* ./partner-chains-master/dev/local-environment/configurations/partner-chains-cli/overrides/partner-chains-cli
+        cp -r ./partner-chains-node-* ./partner-chains-master/dev/local-environment/configurations/partner-chains-cli/overrides/partner-chains-node
+        cp -r ./partner-chains-smart-contracts/* ./partner-chains-master/dev/local-environment/configurations/sidechain-release-bundle/overrides/
+        cd ./partner-chains-master/dev/local-environment
+        bash setup.sh --non-interactive --overrides --postgres-password=postgres
+        docker compose up -d
+    
+    - name: Run tests
+      run: #TODO i.e. python ./tests.py
+    
+    - name: Stop partner-chains-demo
+      run: docker compose down --volumes

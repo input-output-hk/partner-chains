@@ -223,35 +223,13 @@ jobs:
           mkdir -p ./x86_64-linux/unzipped
           unzip ./x86_64-linux/release.zip -d ./x86_64-linux/unzipped
 
-  local-environment:          
-    runs-on: ubuntu-latest
+  local-environment-tests:          
     needs: [partner-chains-linux, partner-chains-smart-contracts-process]
-    steps:
-    - name: Checkout master 
-      uses: actions/checkout@v4
-      with:
-        path: ./partner-chains-master
-
-    - name: Set filename variables
-      id: set-filenames
-      run: |
-        echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
-        echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
-
-    - name: Deploy local environment with overrides
-      run: |
-        cp -r ./partner-chains-cli-* ./partner-chains-master/dev/local-environment/configurations/partner-chains-cli/overrides/partner-chains-cli
-        cp -r ./partner-chains-node-* ./partner-chains-master/dev/local-environment/configurations/partner-chains-cli/overrides/partner-chains-node
-        cp -r ./partner-chains-smart-contracts/* ./partner-chains-master/dev/local-environment/configurations/sidechain-release-bundle/overrides/
-        cd ./partner-chains-master/dev/local-environment
-        bash setup.sh --non-interactive --overrides --postgres-password=postgres
-        docker compose up -d
-
-    - name: Run tests
-      run: #TODO i.e. python ./tests.py
-
-    - name: Stop partner-chains-demo
-      run: docker compose down --volumes
+    uses: ./.github/workflows/modules/local-environment-tests.yml
+    with:
+      sha: ${{ inputs.sha }}  
+      tag: ${{ inputs.tag }}  
+      image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
 
   pre-release-candidate:
     runs-on: ubuntu-latest
