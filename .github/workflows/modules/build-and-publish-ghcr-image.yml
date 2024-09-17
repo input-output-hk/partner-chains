@@ -1,21 +1,35 @@
-name: Build and Publish to GHCR Public Repository
+name: Build and Publish to GHCR
 
 on:
-
-  workflow_dispatch:
-    inputs:
-      commit_sha:
-        description: 'Commit SHA to build from'
-        required: true
-        type: string
-      publish_to_ghcr:
-        description: "Publish to GitHub Container Registry"
-        default: true
-        type: boolean
-      ghcr_tag:
-        description: "Tag for GHCR image"
-        required: true
-        type: string
+    workflow_call:
+      inputs:
+        commit_sha:
+          description: 'Commit SHA to build from'
+          required: true
+          type: string
+        ghcr_tag:
+          description: "Tag for GHCR image"
+          required: true
+          type: string
+        publish_to_ghcr:
+          description: "Publish to GitHub Container Registry"
+          default: true
+          type: boolean
+  
+    workflow_dispatch:
+      inputs:
+        commit_sha:
+          description: 'Commit SHA to build from'
+          required: true
+          type: string
+        ghcr_tag:
+          description: "Tag for GHCR image"
+          required: true
+          type: string
+        publish_to_ghcr:
+          description: "Publish to GitHub Container Registry"
+          default: true
+          type: boolean
 
 env:
   SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -31,7 +45,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.commit_sha }}
+          ref: ${{ inputs.commit_sha }}
 
       - name: Setup Earthly
         uses: ./.github/earthly-setup
@@ -121,7 +135,7 @@ jobs:
         run: |
           repository_name="${GITHUB_REPOSITORY##*/}"
           target_image="ghcr.io/${{ github.repository }}/$repository_name-node"
-          commit_sha="${{ github.event.inputs.commit_sha }}"
+          commit_sha="${{ inputs.commit_sha }}"
           custom_tag="${{ inputs.ghcr_tag }}"
 
           docker tag ghcr-image:latest $target_image:latest
