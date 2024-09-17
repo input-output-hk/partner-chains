@@ -95,7 +95,15 @@ impl CmdRun for SetupMainChainStateCmd {
 		context.print(
 			"This wizard will set or update D-Parameter and Permissioned Candidates on the main chain. Setting either of these costs ADA!",
 		);
-		if !context.file_exists(SIDECHAIN_MAIN_CLI_PATH) {
+
+		let sidechain_exec = config_fields::SIDECHAIN_MAIN_CLI
+			.load_from_file(context)
+			.ok_or_else(|| anyhow::anyhow!("Partner Chains Smart Contracts executable file (./sidechain-main-cli) is missing"))?;
+
+		let has_sidechain_main_cli =
+			context.file_exists(&sidechain_exec) || context.which(&sidechain_exec).is_some();
+
+		if !has_sidechain_main_cli {
 			return Err(anyhow!(
 				"Partner Chains Smart Contracts executable file ({SIDECHAIN_MAIN_CLI_PATH}) is missing",
 			));
@@ -264,8 +272,13 @@ fn set_candidates_on_main_chain<C: IOContext>(
 
 		let cardano_network = get_cardano_network_from_file(context)?;
 
+		let sidechain_exec = config_fields::SIDECHAIN_MAIN_CLI
+			.load_from_file(context)
+			.ok_or_else(|| anyhow::anyhow!("Partner Chains Smart Contracts executable file (./sidechain-main-cli) is missing"))?;
+
 		let output = context.run_command(&format!(
-			"{SIDECHAIN_MAIN_CLI_PATH} {} --network {} {} {} {}",
+			"{} {} --network {} {} {} {}",
+			sidechain_exec,
 			command,
 			cardano_network.to_network_param(),
 			candidate_keys,
@@ -308,10 +321,14 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 		let sidechain_main_cli_resources = establish_sidechain_main_cli_configuration(context)?;
 		let payment_signing_key_path =
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
+		let sidechain_exec = config_fields::SIDECHAIN_MAIN_CLI
+			.load_from_file(context)
+			.ok_or_else(|| anyhow::anyhow!("Partner Chains Smart Contracts executable file (./sidechain-main-cli) is missing"))?;
 		let sidechain_main_cli_command = insert.d_parameter_command();
 		let cardano_network = get_cardano_network_from_file(context)?;
 		let command = format!(
-			"{SIDECHAIN_MAIN_CLI_PATH} {sidechain_main_cli_command} --network {} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}",
+			"{} {sidechain_main_cli_command} --network {} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}",
+			sidechain_exec,
 			cardano_network.to_network_param(),
 			smart_contracts::sidechain_params_arguments(chain_params),
 			smart_contracts::runtime_config_arguments(&sidechain_main_cli_resources, &payment_signing_key_path)

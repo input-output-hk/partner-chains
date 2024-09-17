@@ -22,6 +22,7 @@ pub trait IOContext {
 	fn new_tmp_dir(&self) -> PathBuf;
 	fn read_file(&self, path: &str) -> Option<String>;
 	fn file_exists(&self, path: &str) -> bool;
+	fn which(&self, cmd: &str) -> Option<String>;
 	fn list_directory(&self, path: &str) -> anyhow::Result<Option<Vec<String>>>;
 	fn delete_file(&self, path: &str) -> anyhow::Result<()>;
 	fn set_env_var(&self, key: &str, value: &str);
@@ -128,6 +129,12 @@ impl IOContext for DefaultCmdRunContext {
 	fn file_exists(&self, path: &str) -> bool {
 		fs::metadata(path).is_ok()
 	}
+
+	fn which(&self, cmd: &str) -> Option<String> {
+		let output = self.run_command(&format!("which {cmd}")).ok()?;
+		Some(output.trim().to_string())
+	}
+
 	fn list_directory(&self, path: &str) -> anyhow::Result<Option<Vec<String>>> {
 		if !self.file_exists(path) {
 			return Ok(None);

@@ -98,6 +98,7 @@ impl MockIO {
 	}
 }
 
+#[derive(Debug)]
 pub struct MockIOContext {
 	expected_io: RefCell<Vec<MockIO>>,
 	files: RefCell<HashMap<String, String>>,
@@ -270,6 +271,10 @@ impl IOContext for MockIOContext {
 
 	fn file_exists(&self, path: &str) -> bool {
 		self.files.borrow_mut().get::<String>(&path.to_string()).is_some()
+	}
+
+	fn which(&self, _cmd: &str) -> Option<String> {
+		self.files.borrow_mut().get::<String>(&_cmd.to_string()).cloned()
 	}
 
 	fn prompt_yes_no(&self, prompt: &str, default: bool) -> bool {

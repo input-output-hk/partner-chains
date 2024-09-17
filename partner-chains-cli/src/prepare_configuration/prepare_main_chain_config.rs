@@ -1,5 +1,5 @@
 use crate::config::config_fields::{
-	CARDANO_NETWORK, COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID,
+	self, CARDANO_NETWORK, COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID,
 	INITIAL_PERMISSIONED_CANDIDATES, PERMISSIONED_CANDIDATES_POLICY_ID,
 };
 use crate::config::{
@@ -26,14 +26,25 @@ pub fn prepare_main_chain_config<C: IOContext>(
 	context: &C,
 	sidechain_params: SidechainParams,
 ) -> anyhow::Result<()> {
-	if !context.file_exists(SIDECHAIN_MAIN_CLI_PATH) {
+	let sidechain_exec =
+		config_fields::SIDECHAIN_MAIN_CLI.load_from_file(context).ok_or_else(|| {
+			anyhow::anyhow!(
+				"Partner Chains Smart Contracts executable file (./sidechain-main-cli) is missing"
+			)
+		})?;
+	let has_sidechain_main_cli =
+		context.file_exists(&sidechain_exec) || context.which(&sidechain_exec).is_some();
+
+	if !has_sidechain_main_cli {
 		return Err(anyhow!(
 			"Partner Chains Smart Contracts executable file ({}) is missing",
-			SIDECHAIN_MAIN_CLI_PATH
+			sidechain_exec
 		));
 	}
-	let sidechain_main_cli_version = context.run_command(SIDECHAIN_MAIN_CLI_VERSION_CMD)?;
-	context.eprint(&sidechain_main_cli_version_prompt(sidechain_main_cli_version));
+
+	let sidechain_main_cli_version =
+		context.run_command(sidechain_main_cli_version_cmd(&sidechain_exec).as_str())?;
+	context.eprint(&sidechain_main_cli_version_prompt(&sidechain_exec, sidechain_main_cli_version));
 
 	let cardano_network = prompt_cardano_network(context)?;
 	prepare_cardano_params(context, cardano_network)?;
@@ -84,9 +95,13 @@ fn run_sidechain_main_cli_addresses<C: IOContext>(
 	params: SidechainParams,
 	kupo_and_ogmios_config: SidechainMainCliResources,
 ) -> anyhow::Result<()> {
+	let sidechain_cli_path = config_fields::SIDECHAIN_MAIN_CLI
+		.load_from_file(context)
+		.ok_or_else(|| anyhow!("⚠️ Unable to load sidechain cli executable"))?;
 	let dummy_key_file = context.new_tmp_file(DUMMY_SKEY);
 	let cardano_network = get_cardano_network_from_file(context)?;
 	let cmd = addresses_cmd(
+		sidechain_cli_path,
 		dummy_key_file
 			.to_str()
 			.ok_or(anyhow!("Cannot convert temporary file name to unicode string"))?
@@ -130,6 +145,7 @@ fn run_sidechain_main_cli_addresses<C: IOContext>(
 }
 
 fn addresses_cmd(
+	sidechain_cli_path: String,
 	key_file_path: String,
 	params: SidechainParams,
 	kupo_and_ogmios_config: &SidechainMainCliResources,
@@ -137,7 +153,7 @@ fn addresses_cmd(
 ) -> String {
 	let sidechain_param_arg = smart_contracts::sidechain_params_arguments(&params);
 	format!(
-		"{SIDECHAIN_MAIN_CLI_PATH} addresses \
+		"{} addresses \
 	--network {} \
 	{} \
 	--version 1 \
@@ -149,6 +165,7 @@ fn addresses_cmd(
     --ogmios-port {} \
     {} \
 	",
+		sidechain_cli_path,
 		network.to_network_param(),
 		sidechain_param_arg,
 		key_file_path,
@@ -184,10 +201,14 @@ If you intend to run a chain with permissioned candidates, you must manually set
 
 After setting up the permissioned candidates, execute the 'create-chain-spec' command to generate the final chain specification."#;
 
-const SIDECHAIN_MAIN_CLI_VERSION_CMD: &str = "./sidechain-main-cli cli-version";
+const SIDECHAIN_MAIN_CLI_VERSION_CMD: &str = "{SIDECHAIN_MAIN_CLI_PATH} cli-version";
 
-fn sidechain_main_cli_version_prompt(version: String) -> String {
-	format!("{} {}", SIDECHAIN_MAIN_CLI_PATH, version)
+fn sidechain_main_cli_version_cmd(sidechain_exec: &str) -> String {
+	format!("{} cli-version", sidechain_exec)
+}
+
+fn sidechain_main_cli_version_prompt(sidechain_exe: &str, version: String) -> String {
+	format!("{} {}", sidechain_exe, version)
 }
 
 #[cfg(test)]
@@ -239,7 +260,7 @@ mod tests {
 			.with_json_file(KUPO_PROTOCOL.config_file, serde_json::json!({}))
 			.with_expected_io(vec![
 				MockIO::run_command(SIDECHAIN_MAIN_CLI_VERSION_CMD, SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT),
-				MockIO::eprint(&sidechain_main_cli_version_prompt(SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT.to_string())),
+				MockIO::eprint(&sidechain_main_cli_version_prompt(SIDECHAIN_MAIN_CLI_PATH, SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT.to_string())),
 
 				MockIO::file_read(CARDANO_NETWORK.config_file),
 				MockIO::prompt_multi_option(
@@ -265,6 +286,7 @@ mod tests {
 				MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 				MockIO::run_command(
 					&addresses_cmd(
+						SIDECHAIN_MAIN_CLI_PATH.to_string(),
 						"/tmp/dummy3".to_string(),
 						test_sidechain_params(),
 						&SidechainMainCliResources::default(),
@@ -309,7 +331,7 @@ mod tests {
 			.with_json_file(KUPO_PROTOCOL.config_file, serde_json::json!({}))
 			.with_expected_io(vec![
 				MockIO::run_command(SIDECHAIN_MAIN_CLI_VERSION_CMD, SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT),
-				MockIO::eprint(&sidechain_main_cli_version_prompt(SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT.to_string())),
+				MockIO::eprint(&sidechain_main_cli_version_prompt(SIDECHAIN_MAIN_CLI_PATH, SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT.to_string())),
 				MockIO::file_read(CARDANO_NETWORK.config_file),
 				MockIO::prompt_multi_option(
 					CHOOSE_CARDANO_NETWORK,
@@ -334,6 +356,7 @@ mod tests {
 				MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 				MockIO::run_command(
 					&addresses_cmd(
+						SIDECHAIN_MAIN_CLI_PATH.to_string(),
 						"/tmp/dummy3".to_string(),
 						test_sidechain_params(),
 						&SidechainMainCliResources::default(),
