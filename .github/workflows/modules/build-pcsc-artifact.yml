@@ -3,11 +3,11 @@ name: Build and Upload PCSC Artifact (Linux Only)
 on:
   workflow_call:
     inputs:
-      partner_chains_smart_contracts_sha:
+      sha:
         description: "partner-chains-smart-contracts commit SHA or branch to build from"
   workflow_dispatch:
     inputs:
-      partner_chains_smart_contracts_sha:
+      sha:
         description: "partner-chains-smart-contracts commit SHA or branch to build from"
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.partner_chains_smart_contracts_sha }}
+          ref: ${{ inputs.sha }}
 
       - name: Build
         run: nix build ./#sidechain-release-bundle

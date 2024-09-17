@@ -46,6 +46,11 @@ jobs:
       with:
         name: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }} 
 
+    - name: Download partner-chains-smart-contracts
+      uses: actions/download-artifact@v4
+      with:
+        name: partner-chains-smart-contracts-x86_64-linux
+
     - name: Deploy local environment with overrides
       run: |
         cp -r ./partner-chains-cli-* ./partner-chains-master/dev/local-environment/configurations/partner-chains-cli/overrides/partner-chains-cli
