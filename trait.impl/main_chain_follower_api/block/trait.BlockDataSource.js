@@ -1,5 +1,5 @@
 (function() {var implementors = {
-"db_sync_follower":[["impl BlockDataSource for <a class=\"struct\" href=\"db_sync_follower/block/struct.BlockDataSourceImpl.html\" title=\"struct db_sync_follower::block::BlockDataSourceImpl\">BlockDataSourceImpl</a>"]],
+"db_sync_follower":[["impl <a class=\"trait\" href=\"main_chain_follower_api/block/trait.BlockDataSource.html\" title=\"trait main_chain_follower_api::block::BlockDataSource\">BlockDataSource</a> for <a class=\"struct\" href=\"db_sync_follower/block/struct.BlockDataSourceImpl.html\" title=\"struct db_sync_follower::block::BlockDataSourceImpl\">BlockDataSourceImpl</a>"]],
 "main_chain_follower_api":[],
 "main_chain_follower_mock":[["impl <a class=\"trait\" href=\"main_chain_follower_mock/block/trait.BlockDataSource.html\" title=\"trait main_chain_follower_mock::block::BlockDataSource\">BlockDataSource</a> for <a class=\"struct\" href=\"main_chain_follower_mock/block/struct.BlockDataSourceMock.html\" title=\"struct main_chain_follower_mock::block::BlockDataSourceMock\">BlockDataSourceMock</a>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

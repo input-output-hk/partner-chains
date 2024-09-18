@@ -270,6 +270,9 @@
 <a href="#268" id="268">268</a>
 <a href="#269" id="269">269</a>
 <a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::McHashInherentError::StableBlockNotFound;
 <span class="kw">use </span>main_chain_follower_api::{
 	block::MainchainBlock, common::Timestamp <span class="kw">as </span>McTimestamp, BlockDataSource, DataSourceError,
@@ -338,7 +341,7 @@
 		slot_duration: SlotDuration,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, McHashInherentError&gt; {
 		<span class="kw">let </span>slot_start_timestamp =
-			slot.starting_timestamp(slot_duration).ok_or(McHashInherentError::SlotTooBig)<span class="question-mark">?</span>;
+			slot_starting_timestamp(slot, slot_duration).ok_or(McHashInherentError::SlotTooBig)<span class="question-mark">?</span>;
 		<span class="kw">let </span>mc_block = data_source
 			.get_latest_stable_block_for(McTimestamp(slot_start_timestamp.as_millis()))
 			.<span class="kw">await</span><span class="question-mark">?
@@ -408,8 +411,7 @@
 	slot_duration: SlotDuration,
 	data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>BlockDataSource + Send + Sync),
 ) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainBlock, McHashInherentError&gt; {
-	<span class="kw">let </span>timestamp = verified_block_slot
-		.starting_timestamp(slot_duration)
+	<span class="kw">let </span>timestamp = slot_starting_timestamp(verified_block_slot, slot_duration)
 		.ok_or(McHashInherentError::SlotTooBig)<span class="question-mark">?</span>;
 	data_source
 		.get_stable_block_for(verified_block_mc_hash.clone(), McTimestamp(timestamp.as_millis()))
@@ -420,6 +422,10 @@
 			verified_block_slot,
 			timestamp,
 		))
+}
+
+<span class="kw">fn </span>slot_starting_timestamp(slot: Slot, slot_duration: SlotDuration) -&gt; <span class="prelude-ty">Option</span>&lt;Timestamp&gt; {
+	slot_duration.as_millis().checked_mul(<span class="kw-2">*</span>slot).map(Timestamp::new)
 }
 
 <span class="attr">#[async_trait::async_trait]
