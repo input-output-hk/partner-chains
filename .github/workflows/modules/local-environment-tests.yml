@@ -1,4 +1,4 @@
-name: Deploy and test aganst local-environment
+name: Deploy and test against local-environment
 
 on:
   workflow_call:
@@ -14,7 +14,7 @@ jobs:
   local-environment-tests:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout master 
+    - name: Checkout master
       uses: actions/checkout@v4
       with:
         path: ./partner-chains-master
@@ -57,11 +57,14 @@ jobs:
         cp -r ./partner-chains-node-* ./partner-chains-master/dev/local-environment/configurations/partner-chains-cli/overrides/partner-chains-node
         cp -r ./partner-chains-smart-contracts*/* ./partner-chains-master/dev/local-environment/configurations/sidechain-release-bundle/overrides/
         cd ./partner-chains-master/dev/local-environment
-        bash setup.sh --non-interactive --overrides --postgres-password=postgres --node-image=${{ inputs.image }}
+        bash setup.sh --non-interactive --overrides --postgres-password=azMpOp4mTqhlKDmgCVQr --node-image=${{ inputs.image }}
         docker compose up -d
     
-    - name: Run tests
-      run: #TODO i.e. python ./tests.py
+    - name: Run e2e tests
+      runs-on: ubuntu-latest 
+      steps:
+      - uses: ./partner-chains-master/.github/workflows/modules/run-e2e-tests.yml
+      secrets: inherit
     
     - name: Stop partner-chains-demo
       run: docker compose down --volumes

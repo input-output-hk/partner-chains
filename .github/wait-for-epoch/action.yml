@@ -1,0 +1,21 @@
+name: 'Wait for epoch'
+description: 'Wait for epoch in local environment'
+
+inputs:
+  epoch:
+    description: 'Expected epoch'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Wait for epoch
+      shell: bash
+      run: |
+        epoch=$(docker exec cardano-node-1 cardano-cli query tip --testnet-magic 42 | jq -r .epoch)
+        while [ $epoch -lt ${{ inputs.epoch }} ]; do \
+          echo "Epoch: $epoch" && \
+          sleep 10 && \
+          epoch=$(docker exec cardano-node-1 cardano-cli query tip --testnet-magic 42 | jq -r .epoch); \
+        done
+        echo "Epoch: $epoch"

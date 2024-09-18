@@ -1,0 +1,51 @@
+name: 'Run e2e tests'
+description: 'Activate python venv and run e2e tests'
+
+inputs:
+  env:
+    description: 'Test environment'
+    required: true
+  keyword:
+    description: 'Run tests by keyword (-k)'
+    required: false
+    default: 'test_'
+  markers:
+    description: 'Run tests by markers (-m)'
+    required: false
+    default: 'not active_flow and not passive_flow and not probability'
+  mc_epoch:
+    description: 'MC epoch to test (committee tests)'
+    required: false
+  log_level:
+    description: 'Log CLI level'
+    required: false
+    default: 'info'
+  init_timestamp:
+    description: 'MC initialization timestamp in seconds'
+    required: false
+    default: '0'
+
+runs:
+  using: composite
+  steps:
+    - name: Run tests
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.mc_epoch }}" ]; then
+          mc_epoch_switch="--mc-epoch ${{ inputs.mc_epoch }}"
+        fi
+
+        cd e2e-tests
+        source venv/bin/activate
+        pytest --blockchain substrate \
+          --env ${{ inputs.env }} \
+          --stack ${{ inputs.env }} \
+          --log-cli-level ${{ inputs.log_level }} \
+          -k "${{ inputs.keyword }}" \
+          -m "${{ inputs.markers }}" \
+          --init-timestamp ${{ inputs.init_timestamp }} \
+          $mc_epoch_switch \
+          --decrypt \
+          --json-report \
+          --json-report-summary \
+          --junitxml=junit_report.xml
