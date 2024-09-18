@@ -8,8 +8,9 @@ on:
         required: true
         type: string
       tag:
-        description: "partner-chains release tag"
+        description: 'Release Tag'
         required: true
+        type: string
 
 jobs:
   chain-specs:
@@ -18,11 +19,6 @@ jobs:
       id-token: write
       contents: write
     steps:
-      - name: Set filename variables
-        id: set-filenames
-        run: |
-          echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -46,7 +42,7 @@ jobs:
       - name: Download Linux partner-chains-node artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
+          name: partner-chains-node-x86_64-linux-artifact-artifact
           path: ./
 
       - name: Generate Chain Specs
@@ -60,7 +56,8 @@ jobs:
       - name: Update Kubernetes secret for devnet chain spec
         run: |
           SHA=${{ inputs.sha }}
-          SECRET_NAME="devnet-chain-spec-${SHA}"
+          TAG=${{ inputs.tag }}
+          SECRET_NAME="devnet-chain-spec-${SHA}-${TAG}"
       
           kubectl delete secret "$SECRET_NAME" --namespace=sc --ignore-not-found
           kubectl create secret generic "$SECRET_NAME" \
@@ -70,7 +67,8 @@ jobs:
       - name: Update Kubernetes secret for staging chain spec
         run: |
           SHA=${{ inputs.sha }}
-          SECRET_NAME="staging-chain-spec-${SHA}"
+          TAG=${{ inputs.tag }}
+          SECRET_NAME="staging-chain-spec-${SHA}-${TAG}"
       
           kubectl delete secret "$SECRET_NAME" --namespace=staging --ignore-not-found
           kubectl create secret generic "$SECRET_NAME" \

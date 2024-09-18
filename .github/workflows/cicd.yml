@@ -1,13 +1,16 @@
-name: Build, test, release and deploy 
+name: Build, test, release and deploy
 
 on:
   workflow_dispatch:
     inputs:
       sha:
-        description: "partner-chains commit SHA or branch to build from"
+        description: "partner-chains commit SHA to build from"
+        required: true
+        type: string
       tag:
         description: "partner-chains release tag"
         required: true
+        type: string
 
 env:
   AWS_REGION: "eu-central-1"
@@ -15,17 +18,21 @@ env:
 
 jobs:
   build-pc-artifacts:
-    uses: ./.github/workflows/modules/build-pc-artifacts.yml
-    with:
-      sha: ${{ inputs.sha }}
-      tag: ${{ inputs.tag }}
+    runs-on: ubuntu-latest 
+    steps:
+      - uses: ./.github/workflows/modules/build-pc-artifacts.yml
+        with:
+          sha: ${{ inputs.sha }}
+          tag: ${{ inputs.tag }}
 
-  publish-ecr-image:
+  build-and-publish-ecr-image:
     needs: build-pc-artifacts
-    uses: ./.github/workflows/modules/build-and-publish-ecr-image.yml
-    with:
-      sha: ${{ inputs.sha }}
-      tag: ${{ inputs.tag }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/workflows/modules/build-and-publish-ecr-image.yml
+        with:
+          sha: ${{ inputs.sha }}
+          tag: ${{ inputs.tag }}
 
   partner-chains-smart-contracts:
     uses: ./.github/workflows/modules/download-pcsc-artifact.yml
@@ -38,8 +45,11 @@ jobs:
     #  sha: #TODO
 
   local-environment-tests:          
-    needs: [partner-chains-linux, partner-chains-smart-contracts]
+    needs: [build-pc-artifacts, partner-chains-smart-contracts]
     uses: ./.github/workflows/modules/local-environment-tests.yml
+    permissions:
+      id-token: write
+      contents: write
     with:
       tag: ${{ inputs.tag }}  
       image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
@@ -144,8 +154,11 @@ jobs:
           done
 
   chain-specs:
-    needs: partner-chains-linux
+    needs: build-pc-artifacts
     uses: ./.github/workflows/modules/chain-specs.yml
+    permissions:
+      id-token: write
+      contents: write
     with:
       sha: ${{ inputs.sha }}  
       tag: ${{ inputs.tag }}  
@@ -153,11 +166,14 @@ jobs:
   deploy-staging-preview:
     needs: chain-specs
     uses: ./.github/workflows/modules/staging-preview-deploy.yml
+    permissions:
+      id-token: write
+      contents: write
     with:
       image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
       chain-spec-secret: staging-chain-spec-${{ inputs.sha }}
 
-   publish-ghcr-image:
+  build-and-publish-ghcr-image:
     uses: ./.github/workflows/modules/build-and-publish-ghcr-image.yml
     with:
       commit_sha: ${{ inputs.sha }}
