@@ -1,0 +1,20 @@
+name: Download PCSC Artifact
+
+on:
+  workflow_call:
+    inputs:
+      release:
+        description: "release name"
+      artifact:
+        description: "artifact name"
+
+jobs:
+  - name: Download Artifact from GitHub Release
+    run: |
+      wget "https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/${{ inputs.release }}/${{ inputs.artifact }}"
+
+  - name: Upload Artifact
+    uses: actions/upload-artifact@v4
+    with:
+      name: partner-chains-smart-contracts-artifact
+      path: ${{ inputs.artifact }} 

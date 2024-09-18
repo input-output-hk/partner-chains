@@ -3,15 +3,12 @@ name: Build and Upload PC Artifacts
 on:
   workflow_call:
     inputs:
-      partner_chains_sha:
+      sha:
         description: "partner-chains commit SHA or branch to build from"
-      partner-chains-tag:
+        required: true
+      tag:
         description: "partner-chains release tag to append to artifact name"
         required: true
-      create_draft_release_page:
-        description: "Create a draft release page"
-        required: false
-        default: "false"
   workflow_dispatch:
     inputs:
       partner_chains_sha:
@@ -49,6 +46,9 @@ jobs:
           cp target/x86_64-unknown-linux-gnu/release/partner-chains-node $PARTNER_CHAINS_NODE_X86_64_LINUX
           chmod +x $PARTNER_CHAINS_NODE_X86_64_LINUX
 
+      - name: Test partner-chains-node
+        run: cargo test --locked --release --target x86_64-unknown-linux-gnu
+
       - name: Build partner-chains-cli
         run: |
           rustup target add x86_64-unknown-linux-gnu
@@ -59,13 +59,13 @@ jobs:
       - name: Upload partner-chains-cli-x86_64-linux
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}
+          name: partner-chains-cli-x86_64-linux-artifact
           path: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}
 
       - name: Upload partner-chains-node-x86_64-linux
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
+          name: partner-chains-node-x86_64-linux-artifact
           path: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
 
   partner-chains-macos-x86_64:
@@ -74,13 +74,13 @@ jobs:
       - name: Set filename variables
         id: set-filenames
         run: |
-          echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ inputs.tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ inputs.tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.partner_chains_sha }}
+          ref: ${{ inputs.sha }}
 
       - name: Install protoc
         run: |
@@ -95,6 +95,9 @@ jobs:
           cp target/x86_64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN
           chmod +x $PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN
 
+      - name: Test partner-chains-node
+        run: cargo test --locked --release --target x86_64-apple-darwin
+
       - name: Build partner-chains-cli
         run: |
           rustup target add x86_64-apple-darwin
@@ -105,28 +108,28 @@ jobs:
       - name: Upload partner-chains-cli-x86_64-apple-darwin
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}
+          name: partner-chains-cli-x86_64-apple-darwin-artifact
           path: ${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}
 
       - name: Upload partner-chains-node-x86_64-apple-darwin
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}
+          name: partner-chains-node-x86_64-apple-darwin-artifact
           path: ${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}
-
+        
   partner-chains-macos-arm64:
     runs-on: macos-latest
     steps:
       - name: Set filename variables
         id: set-filenames
         run: |
-          echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ inputs.tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ inputs.tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.partner_chains_sha }}
+          ref: ${{ inputs.sha }}
 
       - name: Install protoc
         run: |
@@ -141,6 +144,9 @@ jobs:
           cp target/aarch64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN
           chmod +x $PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN
 
+      - name: Test partner-chains-node
+        run: cargo test --locked --release --target aarch64-apple-darwin
+
       - name: Build partner-chains-cli
         run: |
           rustup target add aarch64-apple-darwin
@@ -151,12 +157,12 @@ jobs:
       - name: Upload partner-chains-cli-aarch64-apple-darwin
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}
+          name: partner-chains-cli-aarch64-apple-darwin-artifact
           path: ${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}
 
       - name: Upload partner-chains-node-aarch64-apple-darwin
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}
+          name: partner-chains-node-aarch64-apple-darwin-artifact
           path: ${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}
   

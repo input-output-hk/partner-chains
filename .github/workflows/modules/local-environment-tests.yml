@@ -36,26 +36,26 @@ jobs:
       with:
         registry: ${{ secrets.ECR_REGISTRY_SECRET }}
 
-    - name: Download partner-chains-node 
-      uses: actions/download-artifact@v4
-      with:
-        name: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }} 
-
     - name: Download partner-chains-cli
       uses: actions/download-artifact@v4
       with:
-        name: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }} 
+        name: partner-chains-cli-x86_64-linux-artifact-artifact
+
+    - name: Download partner-chains-node 
+      uses: actions/download-artifact@v4
+      with:
+        name: partner-chains-node-x86_64-linux-artifact-artifact
 
     - name: Download partner-chains-smart-contracts
       uses: actions/download-artifact@v4
       with:
-        name: partner-chains-smart-contracts-x86_64-linux
+        name: partner-chains-smart-contracts-artifact
 
     - name: Deploy local environment with overrides
       run: |
         cp -r ./partner-chains-cli-* ./partner-chains-master/dev/local-environment/configurations/partner-chains-cli/overrides/partner-chains-cli
         cp -r ./partner-chains-node-* ./partner-chains-master/dev/local-environment/configurations/partner-chains-cli/overrides/partner-chains-node
-        cp -r ./partner-chains-smart-contracts-x86_64-linux/* ./partner-chains-master/dev/local-environment/configurations/sidechain-release-bundle/overrides/
+        cp -r ./partner-chains-smart-contracts*/* ./partner-chains-master/dev/local-environment/configurations/sidechain-release-bundle/overrides/
         cd ./partner-chains-master/dev/local-environment
         bash setup.sh --non-interactive --overrides --postgres-password=postgres --node-image=${{ inputs.image }}
         docker compose up -d
