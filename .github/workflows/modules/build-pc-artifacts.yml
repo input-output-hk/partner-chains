@@ -11,15 +11,11 @@ on:
         required: true
   workflow_dispatch:
     inputs:
-      partner_chains_sha:
+      sha:
         description: "partner-chains commit SHA or branch to build from"
-      partner-chains-tag:
+      tag:
         description: "partner-chains release tag to append to artifact name"
         required: true
-      create_draft_release_page:
-        description: "Create a draft release page"
-        required: false
-        default: "false"
 
 jobs:
   partner-chains-linux:
@@ -28,13 +24,13 @@ jobs:
       - name: Set filename variables
         id: set-filenames
         run: |
-          echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.partner_chains_sha }}
+          ref: ${{ inputs.sha }}
 
       - name: Install protoc
         run: sudo apt-get install -y protobuf-compiler

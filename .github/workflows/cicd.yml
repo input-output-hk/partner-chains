@@ -39,14 +39,26 @@ jobs:
           tag: ${{ inputs.tag }}
 
   partner-chains-smart-contracts:
-    uses: ./.github/workflows/modules/download-pcsc-artifact.yml
-    with:
-      release: 
-      artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
 
-    #uses: ./.github/workflows/modules/build-pcsc-artifact.yml
-    #with:
-    #  sha: #TODO
+      - name: Extract PCSC Release Info from flake.nix
+        id: extract-release
+        run: |
+          echo "Extracting PCSC release version from flake.nix..."
+          release=$(cat flake.nix | grep -Po 'url = "github:input-output-hk/partner-chains-smart-contracts/v\K[0-9.]+(?=";)')
+          echo "Release version: $release"
+          echo "::set-output name=release::$release"
+
+      - name: Call Download Artifact Workflow
+        uses: ./.github/workflows/modules/download-pcsc-artifact.yml
+        with:
+          release: ${{ steps.extract-release.outputs.release }}
+          artifact: "Specify-your-artifact-name-here" 
 
   local-environment-tests:          
     needs: [build-pc-artifacts, partner-chains-smart-contracts]
