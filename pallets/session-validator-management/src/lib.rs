@@ -1,4 +1,4 @@
-//!  Pallet for setting the Sidechain validators using inherent data
+//!  Pallet for setting the Partner Chain validators using inherent data
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
@@ -251,15 +251,6 @@ pub mod pallet {
 				committee: validators,
 			});
 			Ok(())
-		}
-	}
-
-	// TODO move the code below to some primitives module or sth like that
-	pub struct OptionIdentity;
-
-	impl<T> sp_runtime::traits::Convert<T, Option<T>> for OptionIdentity {
-		fn convert(controller: T) -> Option<T> {
-			Some(controller)
 		}
 	}
 
