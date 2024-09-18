@@ -2,13 +2,6 @@ name: Run e2e tests against local environment
 
 on:
   workflow_call:
-    inputs:
-      image:
-        description: "Node Image"
-        required: true
-      tag:
-        description: "PC Artifact Tag"
-        required: true
 
 jobs:
   run-e2e-tests:
