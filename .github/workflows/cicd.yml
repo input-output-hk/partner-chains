@@ -1,5 +1,9 @@
 name: Build, test, release and deploy
 
+permissions:
+  id-token: write
+  contents: write
+
 on:
   workflow_dispatch:
     inputs:
@@ -47,9 +51,6 @@ jobs:
   local-environment-tests:          
     needs: [build-pc-artifacts, partner-chains-smart-contracts]
     uses: ./.github/workflows/modules/local-environment-tests.yml
-    permissions:
-      id-token: write
-      contents: write
     with:
       tag: ${{ inputs.tag }}  
       image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
@@ -156,9 +157,6 @@ jobs:
   chain-specs:
     needs: build-pc-artifacts
     uses: ./.github/workflows/modules/chain-specs.yml
-    permissions:
-      id-token: write
-      contents: write
     with:
       sha: ${{ inputs.sha }}  
       tag: ${{ inputs.tag }}  
@@ -166,9 +164,6 @@ jobs:
   deploy-staging-preview:
     needs: chain-specs
     uses: ./.github/workflows/modules/staging-preview-deploy.yml
-    permissions:
-      id-token: write
-      contents: write
     with:
       image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
       chain-spec-secret: staging-chain-spec-${{ inputs.sha }}
@@ -176,6 +171,5 @@ jobs:
   build-and-publish-ghcr-image:
     uses: ./.github/workflows/modules/build-and-publish-ghcr-image.yml
     with:
-      commit_sha: ${{ inputs.sha }}
-      ghcr_tag: ${{ inputs.tag }}
-      publish_to_ghcr: true
+      sha: ${{ inputs.sha }}
+      tag: ${{ inputs.tag }}
