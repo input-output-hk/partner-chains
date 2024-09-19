@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# Define release URLs as variables
-PC_CONTRACTS_CLI_ZIP_URL="https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/v6.1.0/trustless-sidechain-cli-6.1.0-x86_64-linux.zip"
-PARTNER_CHAINS_NODE_URL="https://github.com/input-output-hk/partner-chains/releases/download/1.1.1-rc1/partner-chains-node-1.1.1-rc1-x86_64-linux"
-PARTNER_CHAINS_CLI_URL="https://github.com/input-output-hk/partner-chains/releases/download/1.1.1-rc1/partner-chains-cli-1.1.1-rc1-x86_64-linux"
-
 # Initialize flags
 PC_NODE_READY=0
 PC_CLI_READY=0
