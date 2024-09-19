@@ -54,17 +54,9 @@
 <a href="#52" id="52">52</a>
 <a href="#53" id="53">53</a>
 <a href="#54" id="54">54</a>
-<a href="#55" id="55">55</a>
-<a href="#56" id="56">56</a>
-<a href="#57" id="57">57</a>
-<a href="#58" id="58">58</a>
-<a href="#59" id="59">59</a>
-<a href="#60" id="60">60</a>
-<a href="#61" id="61">61</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::chain_spec::<span class="kw-2">*</span>;
 <span class="kw">use </span>chain_params::SidechainParams;
 <span class="kw">use </span>sc_service::ChainType;
-<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, UtxoId};
 <span class="kw">use </span>sidechain_runtime::{
 	AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig, RuntimeGenesisConfig,
 	SessionCommitteeManagementConfig, SessionConfig, SidechainConfig, SudoConfig, SystemConfig,
@@ -74,7 +66,7 @@
 /// This code should be run by `partner-chains-cli chain-spec`, to produce JSON chain spec file.
 /// `initial_validators` fields should be updated by the `partner-chains-cli chain-spec`.
 /// Add and modify other fields of `ChainSpec` accordingly to the needs of your chain.
-</span><span class="kw">pub fn </span>chain_spec() -&gt; <span class="prelude-ty">Result</span>&lt;ChainSpec, EnvVarReadError&gt; {
+</span><span class="kw">pub fn </span>chain_spec() -&gt; <span class="prelude-ty">Result</span>&lt;ChainSpec, envy::Error&gt; {
 	<span class="kw">let </span>runtime_genesis_config = RuntimeGenesisConfig {
 		system: SystemConfig { ..Default::default() },
 		balances: BalancesConfig {
@@ -93,23 +85,17 @@
 			</span>initial_validators: <span class="macro">vec!</span>[],
 		},
 		sidechain: SidechainConfig {
-			params: SidechainParams {
-				chain_id: from_var(<span class="string">"CHAIN_ID"</span>)<span class="question-mark">?</span>,
-				governance_authority: from_var::&lt;MainchainAddressHash&gt;(<span class="string">"GOVERNANCE_AUTHORITY"</span>)<span class="question-mark">?</span>,
-				threshold_numerator: from_var(<span class="string">"THRESHOLD_NUMERATOR"</span>)<span class="question-mark">?</span>,
-				threshold_denominator: from_var(<span class="string">"THRESHOLD_DENOMINATOR"</span>)<span class="question-mark">?</span>,
-				genesis_committee_utxo: from_var::&lt;UtxoId&gt;(<span class="string">"GENESIS_COMMITTEE_UTXO"</span>)<span class="question-mark">?</span>,
-			},
+			params: SidechainParams::read_from_env_with_defaults()<span class="question-mark">?</span>,
 			..Default::default()
 		},
 		polkadot_session_stub_for_grandpa: Default::default(),
 		session_committee_management: SessionCommitteeManagementConfig {
 			<span class="comment">// Same as SessionConfig
 			</span>initial_authorities: <span class="macro">vec!</span>[],
-			main_chain_scripts: read_mainchain_scripts_from_env()<span class="question-mark">?</span>,
+			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()<span class="question-mark">?</span>,
 		},
 		native_token_management: NativeTokenManagementConfig {
-			main_chain_scripts: read_native_token_main_chain_scripts_from_env()<span class="question-mark">?</span>,
+			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()<span class="question-mark">?</span>,
 			..Default::default()
 		},
 	};

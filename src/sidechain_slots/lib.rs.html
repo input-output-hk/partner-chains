@@ -113,6 +113,22 @@
 <a href="#111" id="111">111</a>
 <a href="#112" id="112">112</a>
 <a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 #[cfg(feature = <span class="string">"std"</span>)]
@@ -130,6 +146,10 @@
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 </span><span class="kw">pub struct </span>SlotsPerEpoch(<span class="kw">pub </span>u32);
 
+<span class="kw">pub fn </span>default_slots_per_epoch() -&gt; u32 {
+	<span class="number">60
+</span>}
+
 <span class="kw">impl </span>Default <span class="kw">for </span>SlotsPerEpoch {
 	<span class="doccomment">/// Set to 60 to maintain backwards compatibility with existing chains.
 	</span><span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
@@ -138,6 +158,18 @@
 }
 
 <span class="kw">impl </span>SlotsPerEpoch {
+	<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+	</span><span class="kw">pub fn </span>read_from_env() -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, envy::Error&gt; {
+		<span class="attr">#[derive(Serialize, Deserialize)]
+		</span><span class="kw">struct </span>SlotsPerEpochEnvConfig {
+			<span class="attr">#[serde(default = <span class="string">"default_slots_per_epoch"</span>)]
+			</span>slots_per_epoch: u32,
+		}
+
+		<span class="kw">let </span>raw = envy::from_env::&lt;SlotsPerEpochEnvConfig&gt;()<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(<span class="self">Self</span>(raw.slots_per_epoch))
+	}
+
 	<span class="kw">pub fn </span>epoch_number(<span class="kw-2">&amp;</span><span class="self">self</span>, slot: Slot) -&gt; ScEpochNumber {
 		epoch_number(slot, <span class="self">self</span>.<span class="number">0</span>)
 	}

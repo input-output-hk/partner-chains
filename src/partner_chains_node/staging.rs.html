@@ -170,12 +170,6 @@
 <a href="#168" id="168">168</a>
 <a href="#169" id="169">169</a>
 <a href="#170" id="170">170</a>
-<a href="#171" id="171">171</a>
-<a href="#172" id="172">172</a>
-<a href="#173" id="173">173</a>
-<a href="#174" id="174">174</a>
-<a href="#175" id="175">175</a>
-<a href="#176" id="176">176</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::chain_spec::get_account_id_from_seed;
 <span class="kw">use </span><span class="kw">crate</span>::chain_spec::<span class="kw-2">*</span>;
 <span class="kw">use </span>chain_params::SidechainParams;
@@ -281,7 +275,7 @@
 	)
 }
 
-<span class="kw">pub fn </span>staging_config() -&gt; <span class="prelude-ty">Result</span>&lt;ChainSpec, EnvVarReadError&gt; {
+<span class="kw">pub fn </span>staging_config() -&gt; <span class="prelude-ty">Result</span>&lt;ChainSpec, envy::Error&gt; {
 	<span class="prelude-val">Ok</span>(ChainSpec::builder(runtime_wasm(), <span class="prelude-val">None</span>)
 		.with_name(<span class="string">"Staging"</span>)
 		.with_id(<span class="string">"staging"</span>)
@@ -304,7 +298,7 @@
 	root_key: <span class="prelude-ty">Option</span>&lt;AccountId&gt;,
 	endowed_accounts: Vec&lt;AccountId&gt;,
 	_enable_println: bool,
-) -&gt; <span class="prelude-ty">Result</span>&lt;serde_json::Value, EnvVarReadError&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;serde_json::Value, envy::Error&gt; {
 	<span class="kw">let </span>config = RuntimeGenesisConfig {
 		system: SystemConfig { ..Default::default() },
 		balances: BalancesConfig {
@@ -327,13 +321,7 @@
 				.collect(),
 		},
 		sidechain: SidechainConfig {
-			params: SidechainParams {
-				chain_id: from_var_or(<span class="string">"CHAIN_ID"</span>, <span class="number">1</span>)<span class="question-mark">?</span>,
-				threshold_numerator: from_var_or(<span class="string">"THRESHOLD_NUMERATOR"</span>, <span class="number">2</span>)<span class="question-mark">?</span>,
-				threshold_denominator: from_var_or(<span class="string">"THRESHOLD_DENOMINATOR"</span>, <span class="number">3</span>)<span class="question-mark">?</span>,
-				genesis_committee_utxo: from_var::&lt;UtxoId&gt;(<span class="string">"GENESIS_COMMITTEE_UTXO"</span>)<span class="question-mark">?</span>,
-				governance_authority: from_var::&lt;MainchainAddressHash&gt;(<span class="string">"GOVERNANCE_AUTHORITY"</span>)<span class="question-mark">?</span>,
-			},
+			params: SidechainParams::read_from_env_with_defaults()<span class="question-mark">?</span>,
 			..Default::default()
 		},
 		polkadot_session_stub_for_grandpa: Default::default(),
@@ -342,10 +330,10 @@
 				.into_iter()
 				.map(|keys| (keys.cross_chain, keys.session))
 				.collect(),
-			main_chain_scripts: read_mainchain_scripts_from_env()<span class="question-mark">?</span>,
+			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()<span class="question-mark">?</span>,
 		},
 		native_token_management: NativeTokenManagementConfig {
-			main_chain_scripts: read_native_token_main_chain_scripts_from_env()<span class="question-mark">?</span>,
+			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()<span class="question-mark">?</span>,
 			..Default::default()
 		},
 	};

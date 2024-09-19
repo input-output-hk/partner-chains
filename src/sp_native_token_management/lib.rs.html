@@ -139,9 +139,40 @@
 <a href="#137" id="137">137</a>
 <a href="#138" id="138">138</a>
 <a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
-#[cfg(feature = <span class="string">"std"</span>)]
+</span><span class="kw">use </span>core::str::FromStr;
+
+<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">pub use </span>inherent_provider::<span class="kw-2">*</span>;
 
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -157,9 +188,36 @@
 <span class="attr">#[derive(Default, Debug, Clone, PartialEq, Eq, TypeInfo, Encode, Decode, MaxEncodedLen)]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
 </span><span class="kw">pub struct </span>MainChainScripts {
-	<span class="kw">pub </span>native_token_policy: PolicyId,
+	<span class="kw">pub </span>native_token_policy_id: PolicyId,
 	<span class="kw">pub </span>native_token_asset_name: AssetName,
-	<span class="kw">pub </span>illiquid_supply_address: MainchainAddress,
+	<span class="kw">pub </span>illiquid_supply_validator_address: MainchainAddress,
+}
+
+<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+</span><span class="kw">impl </span>MainChainScripts {
+	<span class="kw">pub fn </span>read_from_env() -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, envy::Error&gt; {
+		<span class="attr">#[derive(serde::Serialize, serde::Deserialize)]
+		</span><span class="kw">pub struct </span>MainChainScriptsEnvConfig {
+			<span class="kw">pub </span>native_token_policy_id: PolicyId,
+			<span class="kw">pub </span>native_token_asset_name: AssetName,
+			<span class="kw">pub </span>illiquid_supply_validator_address: String,
+		}
+
+		<span class="kw">let </span>MainChainScriptsEnvConfig {
+			native_token_policy_id,
+			native_token_asset_name,
+			illiquid_supply_validator_address,
+		} = envy::from_env()<span class="question-mark">?</span>;
+		<span class="kw">let </span>illiquid_supply_validator_address =
+			FromStr::from_str(<span class="kw-2">&amp;</span>illiquid_supply_validator_address).map_err(|err| {
+				envy::Error::Custom(<span class="macro">format!</span>(<span class="string">"Incorrect main chain address: {}"</span>, err))
+			})<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+			native_token_policy_id,
+			native_token_asset_name,
+			illiquid_supply_validator_address,
+		})
+	}
 }
 
 <span class="macro">sp_api::decl_runtime_apis! </span>{
@@ -241,9 +299,9 @@
 				.get_total_native_token_transfer(
 					parent_mc_hash,
 					mc_hash,
-					scripts.native_token_policy,
+					scripts.native_token_policy_id,
 					scripts.native_token_asset_name,
-					scripts.illiquid_supply_address,
+					scripts.illiquid_supply_validator_address,
 				)
 				.<span class="kw">await</span><span class="question-mark">?</span>;
 
