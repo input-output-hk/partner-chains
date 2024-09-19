@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["key_params","output","registration_signatures","sidechain_main_cli_params","signing"]};
+window.SIDEBAR_ITEMS = {"mod":["key_params","output","pc_contracts_cli_params","registration_signatures","signing"]};

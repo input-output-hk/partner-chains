@@ -452,18 +452,18 @@
 	INITIAL_PERMISSIONED_CANDIDATES, PERMISSIONED_CANDIDATES_POLICY_ID,
 };
 <span class="kw">use </span><span class="kw">crate</span>::config::{
-	get_cardano_network_from_file, CardanoNetwork, SidechainParams, SIDECHAIN_MAIN_CLI_PATH,
+	get_cardano_network_from_file, CardanoNetwork, SidechainParams, PC_CONTRACTS_CLI_PATH,
 };
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
-<span class="kw">use </span><span class="kw">crate</span>::sidechain_main_cli_resources::{
-	establish_sidechain_main_cli_configuration, SidechainMainCliResources,
+<span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::{
+	establish_pc_contracts_cli_configuration, PcContractsCliResources,
 };
 <span class="kw">use </span><span class="kw">crate</span>::smart_contracts;
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>serde_json::Value;
 
-<span class="comment">// sidechain-main-cli addresses command requires providing a signing key, but the key has no influence on
+<span class="comment">// pc-contracts-cli addresses command requires providing a signing key, but the key has no influence on
 // its output, thus using a dummy key
 </span><span class="kw">const </span>DUMMY_SKEY: <span class="kw-2">&amp;</span>str = <span class="string">"{
 	\"type\": \"PaymentSigningKeyShelley_ed25519\",
@@ -475,14 +475,14 @@
 	context: <span class="kw-2">&amp;</span>C,
 	sidechain_params: SidechainParams,
 ) -&gt; anyhow::Result&lt;()&gt; {
-	<span class="kw">if </span>!context.file_exists(SIDECHAIN_MAIN_CLI_PATH) {
+	<span class="kw">if </span>!context.file_exists(PC_CONTRACTS_CLI_PATH) {
 		<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(
 			<span class="string">"Partner Chains Smart Contracts executable file ({}) is missing"</span>,
-			SIDECHAIN_MAIN_CLI_PATH
+			PC_CONTRACTS_CLI_PATH
 		));
 	}
-	<span class="kw">let </span>sidechain_main_cli_version = context.run_command(SIDECHAIN_MAIN_CLI_VERSION_CMD)<span class="question-mark">?</span>;
-	context.eprint(<span class="kw-2">&amp;</span>sidechain_main_cli_version_prompt(sidechain_main_cli_version));
+	<span class="kw">let </span>pc_contracts_cli_version = context.run_command(PC_CONTRACTS_CLI_VERSION_CMD)<span class="question-mark">?</span>;
+	context.eprint(<span class="kw-2">&amp;</span>pc_contracts_cli_version_prompt(pc_contracts_cli_version));
 
 	<span class="kw">let </span>cardano_network = prompt_cardano_network(context)<span class="question-mark">?</span>;
 	prepare_cardano_params(context, cardano_network)<span class="question-mark">?</span>;
@@ -523,15 +523,15 @@
 	context: <span class="kw-2">&amp;</span>C,
 	params: SidechainParams,
 ) -&gt; anyhow::Result&lt;()&gt; {
-	<span class="kw">let </span>kupo_ogmios_config = establish_sidechain_main_cli_configuration(context)<span class="question-mark">?</span>;
-	run_sidechain_main_cli_addresses(context, params, kupo_ogmios_config)<span class="question-mark">?</span>;
+	<span class="kw">let </span>kupo_ogmios_config = establish_pc_contracts_cli_configuration(context)<span class="question-mark">?</span>;
+	run_pc_contracts_cli_addresses(context, params, kupo_ogmios_config)<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">fn </span>run_sidechain_main_cli_addresses&lt;C: IOContext&gt;(
+<span class="kw">fn </span>run_pc_contracts_cli_addresses&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
 	params: SidechainParams,
-	kupo_and_ogmios_config: SidechainMainCliResources,
+	kupo_and_ogmios_config: PcContractsCliResources,
 ) -&gt; anyhow::Result&lt;()&gt; {
 	<span class="kw">let </span>dummy_key_file = context.new_tmp_file(DUMMY_SKEY);
 	<span class="kw">let </span>cardano_network = get_cardano_network_from_file(context)<span class="question-mark">?</span>;
@@ -552,27 +552,27 @@
 
 	COMMITTEE_CANDIDATES_ADDRESS.save_to_file(
 		<span class="kw-2">&amp;</span>addresses_json.pointer(<span class="string">"/addresses/CommitteeCandidateValidator"</span>)
-			.ok_or(<span class="macro">anyhow!</span>(<span class="string">"committee candidate address missing from sidechain-main-cli addresses command output"</span>))<span class="question-mark">?
+			.ok_or(<span class="macro">anyhow!</span>(<span class="string">"committee candidate address missing from pc-contracts-cli addresses command output"</span>))<span class="question-mark">?
 			</span>.as_str()
-			.ok_or(<span class="macro">anyhow!</span>(<span class="string">"committee candidate address from sidechain-main-cli addresses command output cannot be converted to string"</span>))<span class="question-mark">?
+			.ok_or(<span class="macro">anyhow!</span>(<span class="string">"committee candidate address from pc-contracts-cli addresses command output cannot be converted to string"</span>))<span class="question-mark">?
 			</span>.to_string(),
 		context);
 	D_PARAMETER_POLICY_ID.save_to_file(
 		<span class="kw-2">&amp;</span>addresses_json
 			.pointer(<span class="string">"/mintingPolicies/DParameterPolicy"</span>)
 			.ok_or(<span class="macro">anyhow!</span>(
-				<span class="string">"D parameter policy id missing from sidechain-main-cli addresses command output"
+				<span class="string">"D parameter policy id missing from pc-contracts-cli addresses command output"
 			</span>))<span class="question-mark">?
 			</span>.as_str()
-			.ok_or(<span class="macro">anyhow!</span>(<span class="string">"D parameter policy id from sidechain-main-cli addresses command output cannot be converted to string"</span>))<span class="question-mark">?
+			.ok_or(<span class="macro">anyhow!</span>(<span class="string">"D parameter policy id from pc-contracts-cli addresses command output cannot be converted to string"</span>))<span class="question-mark">?
 			</span>.to_string(),
 		context,
 	);
 	PERMISSIONED_CANDIDATES_POLICY_ID.save_to_file(
 		<span class="kw-2">&amp;</span>addresses_json.pointer(<span class="string">"/mintingPolicies/PermissionedCandidatesPolicy"</span>)
-			.ok_or(<span class="macro">anyhow!</span>(<span class="string">"permissioned candidates policy id address missing from sidechain-main-cli addresses command output"</span>))<span class="question-mark">?
+			.ok_or(<span class="macro">anyhow!</span>(<span class="string">"permissioned candidates policy id address missing from pc-contracts-cli addresses command output"</span>))<span class="question-mark">?
 			</span>.as_str()
-			.ok_or(<span class="macro">anyhow!</span>(<span class="string">"Permissioned candidates policy id from sidechain-main-cli addresses command output cannot be converted to string"</span>))<span class="question-mark">?
+			.ok_or(<span class="macro">anyhow!</span>(<span class="string">"Permissioned candidates policy id from pc-contracts-cli addresses command output cannot be converted to string"</span>))<span class="question-mark">?
 			</span>.to_string(),
 		context);
 	<span class="prelude-val">Ok</span>(())
@@ -581,12 +581,12 @@
 <span class="kw">fn </span>addresses_cmd(
 	key_file_path: String,
 	params: SidechainParams,
-	kupo_and_ogmios_config: <span class="kw-2">&amp;</span>SidechainMainCliResources,
+	kupo_and_ogmios_config: <span class="kw-2">&amp;</span>PcContractsCliResources,
 	network: CardanoNetwork,
 ) -&gt; String {
 	<span class="kw">let </span>sidechain_param_arg = smart_contracts::sidechain_params_arguments(<span class="kw-2">&amp;</span>params);
 	<span class="macro">format!</span>(
-		<span class="string">"{SIDECHAIN_MAIN_CLI_PATH} addresses \
+		<span class="string">"{PC_CONTRACTS_CLI_PATH} addresses \
 	--network {} \
 	{} \
 	--version 1 \
@@ -633,10 +633,10 @@ If you intend to run a chain with permissioned candidates, you must manually set
 
 After setting up the permissioned candidates, execute the 'create-chain-spec' command to generate the final chain specification."#</span>;
 
-<span class="kw">const </span>SIDECHAIN_MAIN_CLI_VERSION_CMD: <span class="kw-2">&amp;</span>str = <span class="string">"./sidechain-main-cli cli-version"</span>;
+<span class="kw">const </span>PC_CONTRACTS_CLI_VERSION_CMD: <span class="kw-2">&amp;</span>str = <span class="string">"./pc-contracts-cli cli-version"</span>;
 
-<span class="kw">fn </span>sidechain_main_cli_version_prompt(version: String) -&gt; String {
-	<span class="macro">format!</span>(<span class="string">"{} {}"</span>, SIDECHAIN_MAIN_CLI_PATH, version)
+<span class="kw">fn </span>pc_contracts_cli_version_prompt(version: String) -&gt; String {
+	<span class="macro">format!</span>(<span class="string">"{} {}"</span>, PC_CONTRACTS_CLI_PATH, version)
 }
 
 <span class="attr">#[cfg(test)]
@@ -660,9 +660,9 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 		<span class="string">"addr_test1wz5fe8fmxx4v83gzfsdlnhgxm8x7zpldegrqh2wakl3wteqe834r4"</span>;
 	<span class="kw">const </span>TEST_PERMISSIONED_CANDIDATES_POLICY_ID: <span class="kw-2">&amp;</span>str =
 		<span class="string">"13db1ba564b3b264f45974fece44b2beb0a2326b10e65a0f7f300dfb"</span>;
-	<span class="kw">const </span>SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT: <span class="kw-2">&amp;</span>str =
+	<span class="kw">const </span>PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT: <span class="kw-2">&amp;</span>str =
 		<span class="string">"Version: 5.0.0, a770e9bbdcc9410575f8d47c0890801b4ae5c31a"</span>;
-	<span class="kw">const </span>SIDECHAIN_MAIN_CLI: <span class="kw-2">&amp;</span>str = <span class="string">"./sidechain-main-cli"</span>;
+	<span class="kw">const </span>PC_CONTRACTS_CLI: <span class="kw-2">&amp;</span>str = <span class="string">"./pc-contracts-cli"</span>;
 
 	<span class="kw">pub mod </span>scenarios {
 		<span class="kw">use super</span>::<span class="kw-2">*</span>;
@@ -683,12 +683,12 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>happy_path() {
 		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_file(SIDECHAIN_MAIN_CLI, <span class="string">"&lt;mock executable&gt;"</span>)
+			.with_file(PC_CONTRACTS_CLI, <span class="string">"&lt;mock executable&gt;"</span>)
 			.with_json_file(GOVERNANCE_AUTHORITY.config_file, <span class="macro">serde_json::json!</span>({}))
 			.with_json_file(KUPO_PROTOCOL.config_file, <span class="macro">serde_json::json!</span>({}))
 			.with_expected_io(<span class="macro">vec!</span>[
-				MockIO::run_command(SIDECHAIN_MAIN_CLI_VERSION_CMD, SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT),
-				MockIO::eprint(<span class="kw-2">&amp;</span>sidechain_main_cli_version_prompt(SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT.to_string())),
+				MockIO::run_command(PC_CONTRACTS_CLI_VERSION_CMD, PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT),
+				MockIO::eprint(<span class="kw-2">&amp;</span>pc_contracts_cli_version_prompt(PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT.to_string())),
 
 				MockIO::file_read(CARDANO_NETWORK.config_file),
 				MockIO::prompt_multi_option(
@@ -709,14 +709,14 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 					<span class="string">"1"</span>,
 				),
 				scenarios::save_cardano_params(),
-				<span class="kw">crate</span>::sidechain_main_cli_resources::tests::establish_sidechain_main_cli_configuration_io(<span class="prelude-val">None</span>, SidechainMainCliResources::default()),
+				<span class="kw">crate</span>::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io(<span class="prelude-val">None</span>, PcContractsCliResources::default()),
 				MockIO::new_tmp_file(DUMMY_SKEY),
 				MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 				MockIO::run_command(
 					<span class="kw-2">&amp;</span>addresses_cmd(
 						<span class="string">"/tmp/dummy3"</span>.to_string(),
 						test_sidechain_params(),
-						<span class="kw-2">&amp;</span>SidechainMainCliResources::default(),
+						<span class="kw-2">&amp;</span>PcContractsCliResources::default(),
 						CardanoNetwork(<span class="number">1</span>)
 					),
 					<span class="kw-2">&amp;</span>test_addresses_cmd_output().to_string(),
@@ -745,7 +745,7 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>happy_path_with_initial_permissioned_candidates() {
 		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_file(SIDECHAIN_MAIN_CLI, <span class="string">"&lt;mock executable&gt;"</span>)
+			.with_file(PC_CONTRACTS_CLI, <span class="string">"&lt;mock executable&gt;"</span>)
 			.with_json_file(INITIAL_PERMISSIONED_CANDIDATES.config_file, <span class="macro">serde_json::json!</span>({
 				<span class="string">"initial_permissioned_candidates"</span>: [
 					{
@@ -757,8 +757,8 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 			}))
 			.with_json_file(KUPO_PROTOCOL.config_file, <span class="macro">serde_json::json!</span>({}))
 			.with_expected_io(<span class="macro">vec!</span>[
-				MockIO::run_command(SIDECHAIN_MAIN_CLI_VERSION_CMD, SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT),
-				MockIO::eprint(<span class="kw-2">&amp;</span>sidechain_main_cli_version_prompt(SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT.to_string())),
+				MockIO::run_command(PC_CONTRACTS_CLI_VERSION_CMD, PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT),
+				MockIO::eprint(<span class="kw-2">&amp;</span>pc_contracts_cli_version_prompt(PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT.to_string())),
 				MockIO::file_read(CARDANO_NETWORK.config_file),
 				MockIO::prompt_multi_option(
 					CHOOSE_CARDANO_NETWORK,
@@ -778,14 +778,14 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 					<span class="string">"1"</span>,
 				),
 				scenarios::save_cardano_params(),
-				<span class="kw">crate</span>::sidechain_main_cli_resources::tests::establish_sidechain_main_cli_configuration_io(<span class="prelude-val">None</span>, SidechainMainCliResources::default()),
+				<span class="kw">crate</span>::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io(<span class="prelude-val">None</span>, PcContractsCliResources::default()),
 				MockIO::new_tmp_file(DUMMY_SKEY),
 				MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 				MockIO::run_command(
 					<span class="kw-2">&amp;</span>addresses_cmd(
 						<span class="string">"/tmp/dummy3"</span>.to_string(),
 						test_sidechain_params(),
-						<span class="kw-2">&amp;</span>SidechainMainCliResources::default(),
+						<span class="kw-2">&amp;</span>PcContractsCliResources::default(),
 						CardanoNetwork(<span class="number">1</span>)
 					),
 					<span class="kw-2">&amp;</span>test_addresses_cmd_output().to_string(),
@@ -814,7 +814,7 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 		<span class="macro">assert!</span>(result.is_err());
 		<span class="macro">assert_eq!</span>(
 			result.unwrap_err().to_string(),
-			<span class="string">"Partner Chains Smart Contracts executable file (./sidechain-main-cli) is missing"
+			<span class="string">"Partner Chains Smart Contracts executable file (./pc-contracts-cli) is missing"
 		</span>)
 	}
 

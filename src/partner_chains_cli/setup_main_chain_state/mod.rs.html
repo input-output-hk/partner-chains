@@ -342,11 +342,11 @@
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{CARDANO_PAYMENT_SIGNING_KEY_FILE, POSTGRES_CONNECTION_STRING};
 <span class="kw">use </span><span class="kw">crate</span>::config::{
 	config_fields, get_cardano_network_from_file, ChainConfig, ConfigFieldDefinition,
-	SidechainParams, CHAIN_CONFIG_FILE_PATH, SIDECHAIN_MAIN_CLI_PATH,
+	SidechainParams, CHAIN_CONFIG_FILE_PATH, PC_CONTRACTS_CLI_PATH,
 };
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
-<span class="kw">use </span><span class="kw">crate</span>::sidechain_main_cli_resources::establish_sidechain_main_cli_configuration;
+<span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::establish_pc_contracts_cli_configuration;
 <span class="kw">use crate</span>::{smart_contracts, CmdRun};
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>epoch_derivation::MainchainEpochDerivation;
@@ -436,9 +436,9 @@
 		context.print(
 			<span class="string">"This wizard will set or update D-Parameter and Permissioned Candidates on the main chain. Setting either of these costs ADA!"</span>,
 		);
-		<span class="kw">if </span>!context.file_exists(SIDECHAIN_MAIN_CLI_PATH) {
+		<span class="kw">if </span>!context.file_exists(PC_CONTRACTS_CLI_PATH) {
 			<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(
-				<span class="string">"Partner Chains Smart Contracts executable file ({SIDECHAIN_MAIN_CLI_PATH}) is missing"</span>,
+				<span class="string">"Partner Chains Smart Contracts executable file ({PC_CONTRACTS_CLI_PATH}) is missing"</span>,
 			));
 		}
 		<span class="kw">let </span>config_initial_authorities =
@@ -592,7 +592,7 @@
 ) -&gt; anyhow::Result&lt;()&gt; {
 	<span class="kw">let </span>update = context.prompt_yes_no(<span class="string">"Do you want to set/update the permissioned candidates on the main chain with values from configuration file?"</span>, <span class="bool-val">false</span>);
 	<span class="kw">if </span>update {
-		<span class="kw">let </span>sidechain_main_cli_resources = establish_sidechain_main_cli_configuration(context)<span class="question-mark">?</span>;
+		<span class="kw">let </span>pc_contracts_cli_resources = establish_pc_contracts_cli_configuration(context)<span class="question-mark">?</span>;
 		<span class="kw">let </span>payment_signing_key_path =
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
 		<span class="kw">let </span>command = insert_or_update.permissioned_candidates_command();
@@ -606,13 +606,13 @@
 		<span class="kw">let </span>cardano_network = get_cardano_network_from_file(context)<span class="question-mark">?</span>;
 
 		<span class="kw">let </span>output = context.run_command(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-			<span class="string">"{SIDECHAIN_MAIN_CLI_PATH} {} --network {} {} {} {}"</span>,
+			<span class="string">"{PC_CONTRACTS_CLI_PATH} {} --network {} {} {} {}"</span>,
 			command,
 			cardano_network.to_network_param(),
 			candidate_keys,
 			smart_contracts::sidechain_params_arguments(chain_params),
 			smart_contracts::runtime_config_arguments(
-				<span class="kw-2">&amp;</span>sidechain_main_cli_resources,
+				<span class="kw-2">&amp;</span>pc_contracts_cli_resources,
 				<span class="kw-2">&amp;</span>payment_signing_key_path
 			)
 		))<span class="question-mark">?</span>;
@@ -646,16 +646,16 @@
 			<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>default_d_parameter.num_registered_candidates.to_string()),
 		);
 		<span class="kw">let </span>r: u64 = r.parse()<span class="question-mark">?</span>;
-		<span class="kw">let </span>sidechain_main_cli_resources = establish_sidechain_main_cli_configuration(context)<span class="question-mark">?</span>;
+		<span class="kw">let </span>pc_contracts_cli_resources = establish_pc_contracts_cli_configuration(context)<span class="question-mark">?</span>;
 		<span class="kw">let </span>payment_signing_key_path =
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
-		<span class="kw">let </span>sidechain_main_cli_command = insert.d_parameter_command();
+		<span class="kw">let </span>pc_contracts_cli_command = insert.d_parameter_command();
 		<span class="kw">let </span>cardano_network = get_cardano_network_from_file(context)<span class="question-mark">?</span>;
 		<span class="kw">let </span>command = <span class="macro">format!</span>(
-			<span class="string">"{SIDECHAIN_MAIN_CLI_PATH} {sidechain_main_cli_command} --network {} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}"</span>,
+			<span class="string">"{PC_CONTRACTS_CLI_PATH} {pc_contracts_cli_command} --network {} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}"</span>,
 			cardano_network.to_network_param(),
 			smart_contracts::sidechain_params_arguments(chain_params),
-			smart_contracts::runtime_config_arguments(<span class="kw-2">&amp;</span>sidechain_main_cli_resources, <span class="kw-2">&amp;</span>payment_signing_key_path)
+			smart_contracts::runtime_config_arguments(<span class="kw-2">&amp;</span>pc_contracts_cli_resources, <span class="kw-2">&amp;</span>payment_signing_key_path)
 		);
 		<span class="kw">let </span>output = context.run_command(<span class="kw-2">&amp;</span>command)<span class="question-mark">?</span>;
 		<span class="kw">if </span>output.contains(<span class="string">"transactionId"</span>) {

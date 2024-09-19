@@ -1112,7 +1112,7 @@
 <span class="kw">pub const </span>CHAIN_CONFIG_FILE_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"partner-chains-cli-chain-config.json"</span>;
 <span class="kw">pub const </span>RESOURCES_CONFIG_FILE_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"partner-chains-cli-resources-config.json"</span>;
 <span class="kw">pub const </span>CHAIN_SPEC_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"chain-spec.json"</span>;
-<span class="kw">pub const </span>SIDECHAIN_MAIN_CLI_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"./sidechain-main-cli"</span>;
+<span class="kw">pub const </span>PC_CONTRACTS_CLI_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"./pc-contracts-cli"</span>;
 
 <span class="kw">pub fn </span>load_chain_config(context: <span class="kw-2">&amp;</span><span class="kw">impl </span>IOContext) -&gt; anyhow::Result&lt;ChainConfig&gt; {
 	<span class="kw">if let </span><span class="prelude-val">Some</span>(chain_config_file) = context.read_file(CHAIN_CONFIG_FILE_PATH) {
