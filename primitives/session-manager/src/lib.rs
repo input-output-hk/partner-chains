@@ -71,6 +71,69 @@ where
 	}
 }
 
+#[derive(new)]
+pub struct PalletSessionValidatorManagementSessionManager<T> {
+	_phantom: PhantomData<T>,
+}
+
+/// SessionManager, which takes committee from pallet_session_validator_management.
+impl<T: pallet_session_validator_management::Config + pallet_session::Config>
+	pallet_session::SessionManager<T::AccountId> for PalletSessionValidatorManagementSessionManager<T>
+{
+	fn new_session_genesis(_new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
+		Some(
+			pallet_session_validator_management::Pallet::<T>::current_committee_storage()
+				.committee
+				.into_iter()
+				.map(|(id, _)| id.into())
+				.collect::<Vec<_>>(),
+		)
+	}
+
+	// Instead of Some((*).expect) we could just use (*). However, we rather panic in presence of
+	// important programming errors.
+	fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
+		info!("PalletSessionValidatorManagementSessionManager: New session {new_index}");
+		pallet_session::pallet::CurrentIndex::<T>::put(new_index);
+		Some(
+			pallet_session_validator_management::Pallet::<T>::rotate_committee_to_next_epoch()
+				.expect(
+					"PalletSessionValidatorManagementSessionManager: Session should never end without current epoch validators defined. \
+				Check ShouldEndSession implementation or if it is used before starting new session",
+				).into_iter().map(|(id, _)| id.into()).collect::<Vec<_>>(),
+		)
+	}
+
+	fn end_session(end_index: SessionIndex) {
+		info!("PalletSessionValidatorManagementSessionManager: End session {end_index}");
+	}
+
+	// Session is expected to be at least 1 block behind sidechain epoch.
+	fn start_session(start_index: SessionIndex) {
+		let epoch_number = T::current_epoch_number();
+		info!("PalletSessionValidatorManagementSessionManager: Start session {start_index}, epoch {epoch_number}");
+	}
+}
+
+/// This implementation tries to end each session in the first block of each partner chains
+/// (sidechain) epoch in which the committee for the epoch is defined.
+impl<T, EpochNumber> pallet_session::ShouldEndSession<BlockNumberFor<T>>
+	for PalletSessionValidatorManagementSessionManager<T>
+where
+	T: pallet_session_validator_management::Config<ScEpochNumber = EpochNumber>,
+	EpochNumber: Clone + PartialOrd,
+{
+	fn should_end_session(n: BlockNumberFor<T>) -> bool {
+		let current_epoch_number = T::current_epoch_number();
+
+		let should_end = current_epoch_number
+			> pallet_session_validator_management::Pallet::<T>::current_committee_storage().epoch
+			&& pallet_session_validator_management::Pallet::<T>::next_committee().is_some();
+		info!("PalletSessionValidatorManagementSessionManager: should_end_session({n:?}) = {should_end}");
+		should_end
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use crate::*;

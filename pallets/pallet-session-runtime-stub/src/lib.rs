@@ -22,7 +22,9 @@ impl<T> pallet_session::SessionManager<T> for PalletSessionStubImpls {
 	fn start_session(_: SessionIndex) {}
 }
 
-impl<T> sp_runtime::traits::Convert<T, Option<T>> for PalletSessionStubImpls {
+pub struct AccountIdIsValidatorId;
+
+impl<T> sp_runtime::traits::Convert<T, Option<T>> for AccountIdIsValidatorId {
 	fn convert(t: T) -> Option<T> {
 		Some(t)
 	}
@@ -39,7 +41,7 @@ macro_rules! impl_pallet_session_config {
 		{
 			type RuntimeEvent = <$type as pallet_partner_chains_session::Config>::RuntimeEvent;
 			type ValidatorId = <$type as pallet_partner_chains_session::Config>::ValidatorId;
-			type ValidatorIdOf = pallet_session_runtime_stub::PalletSessionStubImpls;
+			type ValidatorIdOf = pallet_session_runtime_stub::AccountIdIsValidatorId;
 			type ShouldEndSession = pallet_session_runtime_stub::PalletSessionStubImpls;
 			type NextSessionRotation = ();
 			type SessionManager = pallet_session_runtime_stub::PalletSessionStubImpls;

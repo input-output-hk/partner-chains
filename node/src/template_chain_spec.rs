@@ -2,8 +2,9 @@ use crate::chain_spec::*;
 use chain_params::SidechainParams;
 use sc_service::ChainType;
 use sidechain_runtime::{
-	AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig, RuntimeGenesisConfig,
-	SessionCommitteeManagementConfig, SessionConfig, SidechainConfig, SudoConfig, SystemConfig,
+	AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig, PalletSessionConfig,
+	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SidechainConfig, SudoConfig,
+	SystemConfig,
 };
 
 /// Produces template chain spec for Partner Chains.
@@ -24,15 +25,16 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 			key: None,
 		},
 		transaction_payment: Default::default(),
-		session: SessionConfig {
+		pallet_session: PalletSessionConfig {
 			// Initial validators are meant to be updated in the chain spec file, so it is empty here.
-			initial_validators: vec![],
+			// TODO: update the code that does it. SETs have their code to be updated as well.
+			keys: vec![],
+			non_authority_keys: vec![],
 		},
 		sidechain: SidechainConfig {
 			params: SidechainParams::read_from_env_with_defaults()?,
 			..Default::default()
 		},
-		pallet_session: Default::default(),
 		session_committee_management: SessionCommitteeManagementConfig {
 			// Same as SessionConfig
 			initial_authorities: vec![],

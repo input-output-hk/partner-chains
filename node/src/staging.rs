@@ -5,7 +5,7 @@ use sc_service::ChainType;
 use sidechain_domain::*;
 use sidechain_runtime::{
 	AccountId, AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig,
-	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
+	PalletSessionConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig, SidechainConfig,
 	SudoConfig, SystemConfig,
 };
 use sp_core::bytes::from_hex;
@@ -140,19 +140,23 @@ pub fn staging_genesis(
 			key: root_key,
 		},
 		transaction_payment: Default::default(),
-		session: SessionConfig {
-			initial_validators: initial_authorities
+		pallet_session: PalletSessionConfig {
+			keys: initial_authorities
 				.iter()
 				.map(|authority_keys| {
-					(authority_keys.cross_chain.clone().into(), authority_keys.session.clone())
+					(
+						authority_keys.cross_chain.clone().into(),
+						authority_keys.cross_chain.clone().into(),
+						authority_keys.session.clone(),
+					)
 				})
 				.collect(),
+			non_authority_keys: vec![],
 		},
 		sidechain: SidechainConfig {
 			params: SidechainParams::read_from_env_with_defaults()?,
 			..Default::default()
 		},
-		pallet_session: Default::default(),
 		session_committee_management: SessionCommitteeManagementConfig {
 			initial_authorities: initial_authorities
 				.into_iter()
