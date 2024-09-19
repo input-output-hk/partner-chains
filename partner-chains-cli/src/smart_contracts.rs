@@ -1,5 +1,5 @@
 use crate::config::SidechainParams;
-use crate::sidechain_main_cli_resources::SidechainMainCliResources;
+use crate::pc_contracts_cli_resources::PcContractsCliResources;
 
 pub fn sidechain_params_arguments(sidechain_params: &SidechainParams) -> String {
 	format!("--sidechain-id {} --genesis-committee-hash-utxo {} --threshold-numerator {} --threshold-denominator {} --governance-authority {} --atms-kind plain-ecdsa-secp256k1",
@@ -11,7 +11,7 @@ pub fn sidechain_params_arguments(sidechain_params: &SidechainParams) -> String 
 }
 
 pub fn runtime_config_arguments(
-	runtime_config: &SidechainMainCliResources,
+	runtime_config: &PcContractsCliResources,
 	payment_signing_key_path: &str,
 ) -> String {
 	format!("--kupo-host {} --kupo-port {} {} --ogmios-host {} --ogmios-port {} {} --payment-signing-key-file {}",

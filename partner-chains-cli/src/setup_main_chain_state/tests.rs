@@ -1,12 +1,12 @@
 use crate::config::config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
-use crate::config::{config_fields, SIDECHAIN_MAIN_CLI_PATH};
+use crate::config::{config_fields, PC_CONTRACTS_CLI_PATH};
 use crate::config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
 use crate::prepare_configuration::tests::{
 	prompt_and_save_to_existing_file, prompt_with_default_and_save_to_existing_file,
 };
 use crate::setup_main_chain_state::SetupMainChainStateCmd;
-use crate::sidechain_main_cli_resources::tests::establish_sidechain_main_cli_configuration_io;
-use crate::sidechain_main_cli_resources::SidechainMainCliResources;
+use crate::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io;
+use crate::pc_contracts_cli_resources::PcContractsCliResources;
 use crate::tests::{MockIO, MockIOContext};
 use crate::CmdRun;
 use serde_json::json;
@@ -15,7 +15,7 @@ use sp_core::offchain::Timestamp;
 #[test]
 fn no_ariadne_parameters_on_main_chain_no_updates() {
 	let mock_context = MockIOContext::new()
-		.with_file(SIDECHAIN_MAIN_CLI_PATH, "<mock executable>")
+		.with_file(PC_CONTRACTS_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
@@ -36,7 +36,7 @@ fn no_ariadne_parameters_on_main_chain_no_updates() {
 #[test]
 fn no_ariadne_parameters_on_main_chain_do_updates() {
 	let mock_context = MockIOContext::new()
-		.with_file(SIDECHAIN_MAIN_CLI_PATH, "<mock executable>")
+		.with_file(PC_CONTRACTS_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
@@ -59,7 +59,7 @@ fn no_ariadne_parameters_on_main_chain_do_updates() {
 #[test]
 fn ariadne_parameters_are_on_main_chain_no_updates() {
 	let mock_context = MockIOContext::new()
-		.with_file(SIDECHAIN_MAIN_CLI_PATH, "<mock executable>")
+		.with_file(PC_CONTRACTS_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
@@ -81,7 +81,7 @@ fn ariadne_parameters_are_on_main_chain_no_updates() {
 #[test]
 fn ariadne_parameters_are_on_main_chain_do_update() {
 	let mock_context = MockIOContext::new()
-		.with_file(SIDECHAIN_MAIN_CLI_PATH, "<mock executable>")
+		.with_file(PC_CONTRACTS_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
@@ -105,7 +105,7 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 #[test]
 fn fails_if_update_permissioned_candidates_fail() {
 	let mock_context = MockIOContext::new()
-		.with_file(SIDECHAIN_MAIN_CLI_PATH, "<mock executable>")
+		.with_file(PC_CONTRACTS_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
@@ -125,7 +125,7 @@ fn fails_if_update_permissioned_candidates_fail() {
 #[test]
 fn candidates_on_main_chain_are_same_as_in_config_no_updates() {
 	let mock_context = MockIOContext::new()
-		.with_file(SIDECHAIN_MAIN_CLI_PATH, "<mock executable>")
+		.with_file(PC_CONTRACTS_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
@@ -152,7 +152,7 @@ fn should_return_error_message_if_pc_cli_missing() {
 	mock_context.no_more_io_expected();
 	assert_eq!(
 		result.unwrap_err().to_string(),
-		"Partner Chains Smart Contracts executable file (./sidechain-main-cli) is missing"
+		"Partner Chains Smart Contracts executable file (./pc-contracts-cli) is missing"
 	);
 }
 
@@ -217,10 +217,10 @@ fn prompt_permissioned_candidates_update_io(choice: bool) -> MockIO {
 
 fn insert_permissioned_candidates_io() -> MockIO {
 	MockIO::Group(vec![
-		establish_sidechain_main_cli_config_io(),
+		establish_pc_contracts_cli_config_io(),
 		MockIO::file_read("partner-chains-cli-chain-config.json"),
 		MockIO::run_command(
-			"./sidechain-main-cli update-permissioned-candidates --remove-all-candidates --network testnet --add-candidate 020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d:88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee --add-candidate 0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27:8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48:d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69 --sidechain-id 1234 --genesis-committee-hash-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9 --atms-kind plain-ecdsa-secp256k1 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file payment.skey",
+			"./pc-contracts-cli update-permissioned-candidates --remove-all-candidates --network testnet --add-candidate 020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d:88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee --add-candidate 0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27:8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48:d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69 --sidechain-id 1234 --genesis-committee-hash-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9 --atms-kind plain-ecdsa-secp256k1 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file payment.skey",
 			"{\"endpoint\":\"UpdatePermissionedCandidates\",\"transactionId\":\"bbb5ab1232fde32884678333b44aa4f92a2229d7ba7a65d9eae4cb8b8c87d735\"}"
 		),
 		MockIO::print(
@@ -230,10 +230,10 @@ fn insert_permissioned_candidates_io() -> MockIO {
 
 fn update_permissioned_candidates_io() -> MockIO {
 	MockIO::Group(vec![
-		establish_sidechain_main_cli_config_io(),
+		establish_pc_contracts_cli_config_io(),
 		MockIO::file_read("partner-chains-cli-chain-config.json"),
 		MockIO::run_command(
-			"./sidechain-main-cli update-permissioned-candidates --remove-all-candidates --network testnet --add-candidate 020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d:88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee --add-candidate 0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27:8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48:d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69 --sidechain-id 1234 --genesis-committee-hash-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9 --atms-kind plain-ecdsa-secp256k1 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file payment.skey",
+			"./pc-contracts-cli update-permissioned-candidates --remove-all-candidates --network testnet --add-candidate 020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d:88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee --add-candidate 0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27:8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48:d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69 --sidechain-id 1234 --genesis-committee-hash-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9 --atms-kind plain-ecdsa-secp256k1 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file payment.skey",
 			"{\"endpoint\":\"UpdatePermissionedCandidates\",\"transactionId\":\"bbb5ab1232fde32884678333b44aa4f92a2229d7ba7a65d9eae4cb8b8c87d735\"}"
 		),
 		MockIO::print(
@@ -243,18 +243,18 @@ fn update_permissioned_candidates_io() -> MockIO {
 
 fn update_permissioned_candidates_failed_io() -> MockIO {
 	MockIO::Group(vec![
-		establish_sidechain_main_cli_config_io(),
+		establish_pc_contracts_cli_config_io(),
 		MockIO::file_read("partner-chains-cli-chain-config.json"),
 		MockIO::run_command(
-			"./sidechain-main-cli update-permissioned-candidates --remove-all-candidates --network testnet --add-candidate 020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d:88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee --add-candidate 0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27:8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48:d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69 --sidechain-id 1234 --genesis-committee-hash-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9 --atms-kind plain-ecdsa-secp256k1 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file payment.skey",
+			"./pc-contracts-cli update-permissioned-candidates --remove-all-candidates --network testnet --add-candidate 020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d:88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee --add-candidate 0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27:8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48:d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69 --sidechain-id 1234 --genesis-committee-hash-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9 --atms-kind plain-ecdsa-secp256k1 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file payment.skey",
 			"Some thing went wrong"
 		),
 	])
 }
 
-fn establish_sidechain_main_cli_config_io() -> MockIO {
+fn establish_pc_contracts_cli_config_io() -> MockIO {
 	MockIO::Group(vec![
-		establish_sidechain_main_cli_configuration_io(None, SidechainMainCliResources::default()),
+		establish_pc_contracts_cli_configuration_io(None, PcContractsCliResources::default()),
 		prompt_with_default_and_save_to_existing_file(
 			CARDANO_PAYMENT_SIGNING_KEY_FILE,
 			Some("payment.skey"),
@@ -275,10 +275,10 @@ fn insert_d_parameter_io() -> MockIO {
 			Some("0"),
 			"7",
 		),
-		establish_sidechain_main_cli_config_io(),
+		establish_pc_contracts_cli_config_io(),
 		MockIO::file_read("partner-chains-cli-chain-config.json"),
 		MockIO::run_command(
-			"./sidechain-main-cli insert-d-parameter --network testnet --d-parameter-permissioned-candidates-count 4 --d-parameter-registered-candidates-count 7 --sidechain-id 1234 --genesis-committee-hash-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9 --atms-kind plain-ecdsa-secp256k1 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file payment.skey",
+			"./pc-contracts-cli insert-d-parameter --network testnet --d-parameter-permissioned-candidates-count 4 --d-parameter-registered-candidates-count 7 --sidechain-id 1234 --genesis-committee-hash-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9 --atms-kind plain-ecdsa-secp256k1 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file payment.skey",
 			"{\"endpoint\":\"UpdateDParameter\",\"transactionId\":\"d7127c3b728501a80c27e513d7eadb2c713f10a540441f98dbca45a323118a65\"}"
 		),
 		MockIO::print(
@@ -299,10 +299,10 @@ fn update_d_parameter_io() -> MockIO {
 			Some("4"),
 			"7",
 		),
-		establish_sidechain_main_cli_config_io(),
+		establish_pc_contracts_cli_config_io(),
 		MockIO::file_read("partner-chains-cli-chain-config.json"),
 		MockIO::run_command(
-			"./sidechain-main-cli update-d-parameter --network testnet --d-parameter-permissioned-candidates-count 4 --d-parameter-registered-candidates-count 7 --sidechain-id 1234 --genesis-committee-hash-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9 --atms-kind plain-ecdsa-secp256k1 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file payment.skey",
+			"./pc-contracts-cli update-d-parameter --network testnet --d-parameter-permissioned-candidates-count 4 --d-parameter-registered-candidates-count 7 --sidechain-id 1234 --genesis-committee-hash-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9 --atms-kind plain-ecdsa-secp256k1 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file payment.skey",
 			"{\"endpoint\":\"UpdateDParameter\",\"transactionId\":\"d7127c3b728501a80c27e513d7eadb2c713f10a540441f98dbca45a323118a65\"}"
 		),
 		MockIO::print(

@@ -511,7 +511,7 @@ impl CandidateRegistrations {
 /// -- keyi - 33 bytes compressed ECDSA public key of a committee member
 /// -- @
 /// newtype ATMSPlainAggregatePubKey = ATMSPlainAggregatePubKey ByteString
-/// https://github.com/input-output-hk/trustless-sidechain/blob/5b19d25a95c3ab49ae0e4c6ce0ec3376f13b3766/docs/Specification.md#L554-L561
+/// https://github.com/input-output-hk/partner-chains-smart-contracts/blob/5b19d25a95c3ab49ae0e4c6ce0ec3376f13b3766/docs/Specification.md#L554-L561
 #[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, ToDatum, TypeInfo)]
 pub struct ATMSPlainAggregatePubKey(pub [u8; 32]);
 

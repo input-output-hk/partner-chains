@@ -13,9 +13,9 @@ use std::collections::HashMap;
 
 #[test]
 fn registration_message_encoding() {
-	//Expected datum and cbor hex were obtained using trustless-sidechain tests vectors
+	//Expected datum and cbor hex were obtained using partner-chains-smart-contracts tests vectors
 	//and are deemed as the source of truth.
-	//Test data is at https://github.com/input-output-hk/trustless-sidechain/blob/54e561d62732e37d8f3b6f9e7c02d343122a5d4c/onchain/test/Test/TrustlessSidechain/Types.hs
+	//Test data is at https://github.com/input-output-hk/partner-chains-smart-contracts/blob/54e561d62732e37d8f3b6f9e7c02d343122a5d4c/onchain/test/Test/TrustlessSidechain/Types.hs
 
 	let sample_utxo_id_hash_bytes: [u8; 32] =
 		hex!("e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efa");
@@ -34,7 +34,7 @@ fn registration_message_encoding() {
 			governance_authority: MainchainAddressHash(governance_authority_bytes),
 		},
 		sidechain_pub_key: sidechain_pub_key_bytes.clone(),
-		// Unfortunately test vector in trustless-sidechain uses same UTxO in two places.
+		// Unfortunately test vector in partner-chains-smart-contracts uses same UTxO in two places.
 		input_utxo: sample_tx_out_ref,
 	};
 
@@ -75,7 +75,7 @@ fn registration_message_encoding() {
 	assert_eq!(msg.to_datum(), expected);
 
 	let cbor_bytes = minicbor::to_vec(msg.to_datum()).unwrap();
-	// https://github.com/input-output-hk/trustless-sidechain/blob/6e6aca0edeb09cecd3a93913020e9ceaa1ce1d25/onchain/test/golden/BlockProducerRegistrationMsg-cbor.golden#L1
+	// https://github.com/input-output-hk/partner-chains-smart-contracts/blob/6e6aca0edeb09cecd3a93913020e9ceaa1ce1d25/onchain/test/golden/BlockProducerRegistrationMsg-cbor.golden#L1
 	let expected_hex = "d8799fd8799f0bd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ff0203581c4f2d6145e1700ad11dc074cad9f4194cc53b0dbab6bd25dfea6c501aff582102dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ecd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ffff";
 	assert_eq!(hex::encode(cbor_bytes), expected_hex);
 }

@@ -1,4 +1,4 @@
-name: Build sidechain-main-cli and Push to EKS binary-host (optional)
+name: Build pc-contracts-cli and Push to EKS binary-host (optional)
 
 on:
   workflow_dispatch:
@@ -25,7 +25,7 @@ jobs:
           path: partner-chains-smart-contracts
 
       - name: Build
-        run: nix build ./partner-chains-smart-contracts#sidechain-release-bundle
+        run: nix build ./partner-chains-smart-contracts#pc-contracts-release-bundle
 
       - name: Prepare Artifact
         run: |
@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-upload
     steps:
-      - name: Download sidechain-main-cli Artifact
+      - name: Download pc-contracts-cli Artifact
         uses: actions/download-artifact@v4
         with:
           name: partner-chains-smart-contracts-artifact
@@ -55,10 +55,6 @@ jobs:
         run: |
           mkdir -p artifact/unzipped
           unzip artifact/release.zip -d artifact/unzipped
-
-      - name: Rename Binary
-        run: |
-          mv artifact/unzipped/sidechain-cli artifact/unzipped/sidechain-main-cli
 
       - name: Upload Unzipped Artifact
         uses: actions/upload-artifact@v4
@@ -97,13 +93,13 @@ jobs:
 
       - name: Create SHA directory on binary-host
         run: |
-          kubectl exec binary-host -c binary-host -n sc -- mkdir -p /tools/sidechain-main-cli/${{ github.event.inputs.commit_sha }}
+          kubectl exec binary-host -c binary-host -n sc -- mkdir -p /tools/pc-contracts-cli/${{ github.event.inputs.commit_sha }}
 
       - name: Copy to binary-host
         run: |
-          kubectl cp artifact/unzipped/sidechain-main-cli binary-host:/tools/sidechain-main-cli/${{ github.event.inputs.commit_sha }} -c binary-host -n sc
-          kubectl cp artifact/unzipped/node_modules binary-host:/tools/sidechain-main-cli/${{ github.event.inputs.commit_sha }} -c binary-host -n sc
+          kubectl cp artifact/unzipped/pc-contracts-cli binary-host:/tools/pc-contracts-cli/${{ github.event.inputs.commit_sha }} -c binary-host -n sc
+          kubectl cp artifact/unzipped/node_modules binary-host:/tools/pc-contracts-cli/${{ github.event.inputs.commit_sha }} -c binary-host -n sc
 
       - name: Make binary executable
         run: |
-          kubectl exec binary-host -c binary-host -n sc -- chmod +x /tools/sidechain-main-cli/${{ github.event.inputs.commit_sha }}/sidechain-main-cli
+          kubectl exec binary-host -c binary-host -n sc -- chmod +x /tools/pc-contracts-cli/${{ github.event.inputs.commit_sha }}/pc-contracts-cli

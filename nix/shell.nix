@@ -127,10 +127,10 @@
               '';
             }
             {
-              name = "sidechain-main-cli";
+              name = "pc-contracts-cli";
               help = "CLI to interact with Partner Chains Smart Contracts";
               command = ''
-                ${self'.packages.sidechain-main-cli}/bin/sidechain-main-cli $@
+                ${self'.packages.pc-contracts-cli}/bin/pc-contracts-cli $@
               '';
             }
           ];
@@ -151,10 +151,10 @@
       commands = commands ++ [
         {
           category = "Partner Chains";
-          name = "sidechain-main-cli";
+          name = "pc-contracts-cli";
           help = "CLI to interact with Partner Chains Smart Contracts";
           command = ''
-            ${self'.packages.sidechain-main-cli}/bin/sidechain-main-cli $@
+            ${self'.packages.pc-contracts-cli}/bin/pc-contracts-cli $@
           '';
         }
       ];

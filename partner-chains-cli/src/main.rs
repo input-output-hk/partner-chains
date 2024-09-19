@@ -9,7 +9,7 @@ pub(crate) mod permissioned_candidates;
 mod prepare_configuration;
 pub mod register;
 mod setup_main_chain_state;
-pub(crate) mod sidechain_main_cli_resources;
+pub(crate) mod pc_contracts_cli_resources;
 pub(crate) mod smart_contracts;
 pub mod start_node;
 

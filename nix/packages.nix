@@ -25,7 +25,7 @@
 
   in {
     packages = {
-      inherit (smartContractsPkgs) sidechain-main-cli;
+      inherit (smartContractsPkgs) pc-contracts-cli;
       inherit (cardanoPackages) cardano-node cardano-cli cardano-testnet;
       inherit (dbSyncPackages) "cardano-db-sync:exe:cardano-db-sync";
       kupo = cardanoExtraPkgs."kupo-${kupoVersion}";

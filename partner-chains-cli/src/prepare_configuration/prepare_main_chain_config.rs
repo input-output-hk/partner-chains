@@ -3,18 +3,18 @@ use crate::config::config_fields::{
 	INITIAL_PERMISSIONED_CANDIDATES, PERMISSIONED_CANDIDATES_POLICY_ID,
 };
 use crate::config::{
-	get_cardano_network_from_file, CardanoNetwork, SidechainParams, SIDECHAIN_MAIN_CLI_PATH,
+	get_cardano_network_from_file, CardanoNetwork, SidechainParams, PC_CONTRACTS_CLI_PATH,
 };
 use crate::io::IOContext;
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
-use crate::sidechain_main_cli_resources::{
-	establish_sidechain_main_cli_configuration, SidechainMainCliResources,
+use crate::pc_contracts_cli_resources::{
+	establish_pc_contracts_cli_configuration, PcContractsCliResources,
 };
 use crate::smart_contracts;
 use anyhow::anyhow;
 use serde_json::Value;
 
-// sidechain-main-cli addresses command requires providing a signing key, but the key has no influence on
+// pc-contracts-cli addresses command requires providing a signing key, but the key has no influence on
 // its output, thus using a dummy key
 const DUMMY_SKEY: &str = "{
 	\"type\": \"PaymentSigningKeyShelley_ed25519\",
@@ -26,14 +26,14 @@ pub fn prepare_main_chain_config<C: IOContext>(
 	context: &C,
 	sidechain_params: SidechainParams,
 ) -> anyhow::Result<()> {
-	if !context.file_exists(SIDECHAIN_MAIN_CLI_PATH) {
+	if !context.file_exists(PC_CONTRACTS_CLI_PATH) {
 		return Err(anyhow!(
 			"Partner Chains Smart Contracts executable file ({}) is missing",
-			SIDECHAIN_MAIN_CLI_PATH
+			PC_CONTRACTS_CLI_PATH
 		));
 	}
-	let sidechain_main_cli_version = context.run_command(SIDECHAIN_MAIN_CLI_VERSION_CMD)?;
-	context.eprint(&sidechain_main_cli_version_prompt(sidechain_main_cli_version));
+	let pc_contracts_cli_version = context.run_command(PC_CONTRACTS_CLI_VERSION_CMD)?;
+	context.eprint(&pc_contracts_cli_version_prompt(pc_contracts_cli_version));
 
 	let cardano_network = prompt_cardano_network(context)?;
 	prepare_cardano_params(context, cardano_network)?;
@@ -74,15 +74,15 @@ fn set_up_cardano_addresses<C: IOContext>(
 	context: &C,
 	params: SidechainParams,
 ) -> anyhow::Result<()> {
-	let kupo_ogmios_config = establish_sidechain_main_cli_configuration(context)?;
-	run_sidechain_main_cli_addresses(context, params, kupo_ogmios_config)?;
+	let kupo_ogmios_config = establish_pc_contracts_cli_configuration(context)?;
+	run_pc_contracts_cli_addresses(context, params, kupo_ogmios_config)?;
 	Ok(())
 }
 
-fn run_sidechain_main_cli_addresses<C: IOContext>(
+fn run_pc_contracts_cli_addresses<C: IOContext>(
 	context: &C,
 	params: SidechainParams,
-	kupo_and_ogmios_config: SidechainMainCliResources,
+	kupo_and_ogmios_config: PcContractsCliResources,
 ) -> anyhow::Result<()> {
 	let dummy_key_file = context.new_tmp_file(DUMMY_SKEY);
 	let cardano_network = get_cardano_network_from_file(context)?;
@@ -103,27 +103,27 @@ fn run_sidechain_main_cli_addresses<C: IOContext>(
 
 	COMMITTEE_CANDIDATES_ADDRESS.save_to_file(
 		&addresses_json.pointer("/addresses/CommitteeCandidateValidator")
-			.ok_or(anyhow!("committee candidate address missing from sidechain-main-cli addresses command output"))?
+			.ok_or(anyhow!("committee candidate address missing from pc-contracts-cli addresses command output"))?
 			.as_str()
-			.ok_or(anyhow!("committee candidate address from sidechain-main-cli addresses command output cannot be converted to string"))?
+			.ok_or(anyhow!("committee candidate address from pc-contracts-cli addresses command output cannot be converted to string"))?
 			.to_string(),
 		context);
 	D_PARAMETER_POLICY_ID.save_to_file(
 		&addresses_json
 			.pointer("/mintingPolicies/DParameterPolicy")
 			.ok_or(anyhow!(
-				"D parameter policy id missing from sidechain-main-cli addresses command output"
+				"D parameter policy id missing from pc-contracts-cli addresses command output"
 			))?
 			.as_str()
-			.ok_or(anyhow!("D parameter policy id from sidechain-main-cli addresses command output cannot be converted to string"))?
+			.ok_or(anyhow!("D parameter policy id from pc-contracts-cli addresses command output cannot be converted to string"))?
 			.to_string(),
 		context,
 	);
 	PERMISSIONED_CANDIDATES_POLICY_ID.save_to_file(
 		&addresses_json.pointer("/mintingPolicies/PermissionedCandidatesPolicy")
-			.ok_or(anyhow!("permissioned candidates policy id address missing from sidechain-main-cli addresses command output"))?
+			.ok_or(anyhow!("permissioned candidates policy id address missing from pc-contracts-cli addresses command output"))?
 			.as_str()
-			.ok_or(anyhow!("Permissioned candidates policy id from sidechain-main-cli addresses command output cannot be converted to string"))?
+			.ok_or(anyhow!("Permissioned candidates policy id from pc-contracts-cli addresses command output cannot be converted to string"))?
 			.to_string(),
 		context);
 	Ok(())
@@ -132,12 +132,12 @@ fn run_sidechain_main_cli_addresses<C: IOContext>(
 fn addresses_cmd(
 	key_file_path: String,
 	params: SidechainParams,
-	kupo_and_ogmios_config: &SidechainMainCliResources,
+	kupo_and_ogmios_config: &PcContractsCliResources,
 	network: CardanoNetwork,
 ) -> String {
 	let sidechain_param_arg = smart_contracts::sidechain_params_arguments(&params);
 	format!(
-		"{SIDECHAIN_MAIN_CLI_PATH} addresses \
+		"{PC_CONTRACTS_CLI_PATH} addresses \
 	--network {} \
 	{} \
 	--version 1 \
@@ -184,10 +184,10 @@ If you intend to run a chain with permissioned candidates, you must manually set
 
 After setting up the permissioned candidates, execute the 'create-chain-spec' command to generate the final chain specification."#;
 
-const SIDECHAIN_MAIN_CLI_VERSION_CMD: &str = "./sidechain-main-cli cli-version";
+const PC_CONTRACTS_CLI_VERSION_CMD: &str = "./pc-contracts-cli cli-version";
 
-fn sidechain_main_cli_version_prompt(version: String) -> String {
-	format!("{} {}", SIDECHAIN_MAIN_CLI_PATH, version)
+fn pc_contracts_cli_version_prompt(version: String) -> String {
+	format!("{} {}", PC_CONTRACTS_CLI_PATH, version)
 }
 
 #[cfg(test)]
@@ -211,9 +211,9 @@ mod tests {
 		"addr_test1wz5fe8fmxx4v83gzfsdlnhgxm8x7zpldegrqh2wakl3wteqe834r4";
 	const TEST_PERMISSIONED_CANDIDATES_POLICY_ID: &str =
 		"13db1ba564b3b264f45974fece44b2beb0a2326b10e65a0f7f300dfb";
-	const SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT: &str =
+	const PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT: &str =
 		"Version: 5.0.0, a770e9bbdcc9410575f8d47c0890801b4ae5c31a";
-	const SIDECHAIN_MAIN_CLI: &str = "./sidechain-main-cli";
+	const PC_CONTRACTS_CLI: &str = "./pc-contracts-cli";
 
 	pub mod scenarios {
 		use super::*;
@@ -234,12 +234,12 @@ mod tests {
 	#[test]
 	fn happy_path() {
 		let mock_context = MockIOContext::new()
-			.with_file(SIDECHAIN_MAIN_CLI, "<mock executable>")
+			.with_file(PC_CONTRACTS_CLI, "<mock executable>")
 			.with_json_file(GOVERNANCE_AUTHORITY.config_file, serde_json::json!({}))
 			.with_json_file(KUPO_PROTOCOL.config_file, serde_json::json!({}))
 			.with_expected_io(vec![
-				MockIO::run_command(SIDECHAIN_MAIN_CLI_VERSION_CMD, SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT),
-				MockIO::eprint(&sidechain_main_cli_version_prompt(SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT.to_string())),
+				MockIO::run_command(PC_CONTRACTS_CLI_VERSION_CMD, PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT),
+				MockIO::eprint(&pc_contracts_cli_version_prompt(PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT.to_string())),
 
 				MockIO::file_read(CARDANO_NETWORK.config_file),
 				MockIO::prompt_multi_option(
@@ -260,14 +260,14 @@ mod tests {
 					"1",
 				),
 				scenarios::save_cardano_params(),
-				crate::sidechain_main_cli_resources::tests::establish_sidechain_main_cli_configuration_io(None, SidechainMainCliResources::default()),
+				crate::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io(None, PcContractsCliResources::default()),
 				MockIO::new_tmp_file(DUMMY_SKEY),
 				MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 				MockIO::run_command(
 					&addresses_cmd(
 						"/tmp/dummy3".to_string(),
 						test_sidechain_params(),
-						&SidechainMainCliResources::default(),
+						&PcContractsCliResources::default(),
 						CardanoNetwork(1)
 					),
 					&test_addresses_cmd_output().to_string(),
@@ -296,7 +296,7 @@ mod tests {
 	#[test]
 	fn happy_path_with_initial_permissioned_candidates() {
 		let mock_context = MockIOContext::new()
-			.with_file(SIDECHAIN_MAIN_CLI, "<mock executable>")
+			.with_file(PC_CONTRACTS_CLI, "<mock executable>")
 			.with_json_file(INITIAL_PERMISSIONED_CANDIDATES.config_file, serde_json::json!({
 				"initial_permissioned_candidates": [
 					{
@@ -308,8 +308,8 @@ mod tests {
 			}))
 			.with_json_file(KUPO_PROTOCOL.config_file, serde_json::json!({}))
 			.with_expected_io(vec![
-				MockIO::run_command(SIDECHAIN_MAIN_CLI_VERSION_CMD, SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT),
-				MockIO::eprint(&sidechain_main_cli_version_prompt(SIDECHAIN_MAIN_CLI_VERSION_CMD_OUTPUT.to_string())),
+				MockIO::run_command(PC_CONTRACTS_CLI_VERSION_CMD, PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT),
+				MockIO::eprint(&pc_contracts_cli_version_prompt(PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT.to_string())),
 				MockIO::file_read(CARDANO_NETWORK.config_file),
 				MockIO::prompt_multi_option(
 					CHOOSE_CARDANO_NETWORK,
@@ -329,14 +329,14 @@ mod tests {
 					"1",
 				),
 				scenarios::save_cardano_params(),
-				crate::sidechain_main_cli_resources::tests::establish_sidechain_main_cli_configuration_io(None, SidechainMainCliResources::default()),
+				crate::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io(None, PcContractsCliResources::default()),
 				MockIO::new_tmp_file(DUMMY_SKEY),
 				MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 				MockIO::run_command(
 					&addresses_cmd(
 						"/tmp/dummy3".to_string(),
 						test_sidechain_params(),
-						&SidechainMainCliResources::default(),
+						&PcContractsCliResources::default(),
 						CardanoNetwork(1)
 					),
 					&test_addresses_cmd_output().to_string(),
@@ -365,7 +365,7 @@ mod tests {
 		assert!(result.is_err());
 		assert_eq!(
 			result.unwrap_err().to_string(),
-			"Partner Chains Smart Contracts executable file (./sidechain-main-cli) is missing"
+			"Partner Chains Smart Contracts executable file (./pc-contracts-cli) is missing"
 		)
 	}
 

@@ -1,7 +1,7 @@
 use clap::Parser;
 
 #[derive(Clone, Debug, Default, Parser)]
-pub struct SidechainMainCliParams {
+pub struct PcContractsCliParams {
 	#[arg(long)]
 	pub ogmios_host: Option<String>,
 	#[arg(long)]
@@ -17,7 +17,7 @@ pub struct SidechainMainCliParams {
 	pub kupo_secure: bool,
 }
 
-impl SidechainMainCliParams {
+impl PcContractsCliParams {
 	pub fn command_line_params(&self) -> Vec<Vec<String>> {
 		let mut args = vec![];
 		if let Some(ogmios_host) = &self.ogmios_host {

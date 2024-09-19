@@ -2,10 +2,10 @@ use crate::config;
 use crate::config::config_fields;
 use crate::config::get_cardano_network_from_file;
 use crate::config::CHAIN_CONFIG_FILE_PATH;
-use crate::config::SIDECHAIN_MAIN_CLI_PATH;
+use crate::config::PC_CONTRACTS_CLI_PATH;
 use crate::io::IOContext;
 use crate::main_chain_follower::set_main_chain_follower_env;
-use crate::sidechain_main_cli_resources::establish_sidechain_main_cli_configuration;
+use crate::pc_contracts_cli_resources::establish_pc_contracts_cli_configuration;
 use crate::smart_contracts;
 use crate::CmdRun;
 use clap::Parser;
@@ -54,16 +54,16 @@ impl CmdRun for Register3Cmd {
 		let sidechain_param_arg =
 			smart_contracts::sidechain_params_arguments(&self.sidechain_params);
 
-		let sidechain_main_cli_resources = establish_sidechain_main_cli_configuration(context)?;
+		let pc_contracts_cli_resources = establish_pc_contracts_cli_configuration(context)?;
 		let runtime_config_arguments = smart_contracts::runtime_config_arguments(
-			&sidechain_main_cli_resources,
+			&pc_contracts_cli_resources,
 			&cardano_payment_signing_key_path,
 		);
 
 		let cardano_network = get_cardano_network_from_file(context)?;
 
 		let command = format!(
-			"{SIDECHAIN_MAIN_CLI_PATH} register --network {} {} --registration-utxo {} --sidechain-public-keys {}:{}:{} --sidechain-signature {} --spo-public-key {} --spo-signature {} --ada-based-staking {}",
+			"{PC_CONTRACTS_CLI_PATH} register --network {} {} --registration-utxo {} --sidechain-public-keys {}:{}:{} --sidechain-signature {} --spo-public-key {} --spo-signature {} --ada-based-staking {}",
 			cardano_network.to_network_param(),
 			sidechain_param_arg,
 			self.registration_utxo,
@@ -167,8 +167,8 @@ fn get_current_mainchain_epoch(context: &impl IOContext) -> Result<McEpochNumber
 mod tests {
 	use super::*;
 	use crate::config::config_fields::POSTGRES_CONNECTION_STRING;
-	use crate::sidechain_main_cli_resources::tests::establish_sidechain_main_cli_configuration_io;
-	use crate::sidechain_main_cli_resources::SidechainMainCliResources;
+	use crate::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io;
+	use crate::pc_contracts_cli_resources::PcContractsCliResources;
 	use crate::{
 		config::CHAIN_CONFIG_FILE_PATH,
 		config::RESOURCES_CONFIG_FILE_PATH,
@@ -187,9 +187,9 @@ mod tests {
 				vec![
 					intro_msg_io(),
 					prompt_mc_payment_key_path_io(),
-					vec![establish_sidechain_main_cli_configuration_io(
+					vec![establish_pc_contracts_cli_configuration_io(
 						None,
-						SidechainMainCliResources::default(),
+						PcContractsCliResources::default(),
 					)],
 					run_registration_command_io(),
 					prompt_for_registration_status_y(),
@@ -215,9 +215,9 @@ mod tests {
 				vec![
 					intro_msg_io(),
 					prompt_mc_payment_key_path_io(),
-					vec![establish_sidechain_main_cli_configuration_io(
+					vec![establish_pc_contracts_cli_configuration_io(
 						None,
-						SidechainMainCliResources::default(),
+						PcContractsCliResources::default(),
 					)],
 					run_registration_command_fail_io(),
 				]
@@ -241,9 +241,9 @@ mod tests {
 				vec![
 					intro_msg_io(),
 					prompt_mc_payment_key_path_io(),
-					vec![establish_sidechain_main_cli_configuration_io(
+					vec![establish_pc_contracts_cli_configuration_io(
 						None,
-						SidechainMainCliResources::default(),
+						PcContractsCliResources::default(),
 					)],
 					run_registration_command_io(),
 					prompt_for_registration_status_n(),
@@ -314,14 +314,14 @@ mod tests {
 	fn run_registration_command_io() -> Vec<MockIO> {
 		vec![
 			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
-			MockIO::run_command("./sidechain-main-cli register --network mainnet --sidechain-id 0 --genesis-committee-hash-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x00112233445566778899001122334455667788990011223344556677 --atms-kind plain-ecdsa-secp256k1 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature 448ddd2592a681ee3235aa68356290c3ec93cc1b8b757bf4713a0b6629a3b75028e984a06cd275a99f861f8303dba1778c36feef084ea4a5379775ca13043202 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey", "{\"endpoint\":\"CommitteeCandidateReg\",\"transactionId\":\"1ab93b52d20ce114bfdb48a256ac48f3d8d46d00aec585c38a904b672a70e3a3\"}"),
+			MockIO::run_command("./pc-contracts-cli register --network mainnet --sidechain-id 0 --genesis-committee-hash-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x00112233445566778899001122334455667788990011223344556677 --atms-kind plain-ecdsa-secp256k1 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature 448ddd2592a681ee3235aa68356290c3ec93cc1b8b757bf4713a0b6629a3b75028e984a06cd275a99f861f8303dba1778c36feef084ea4a5379775ca13043202 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey", "{\"endpoint\":\"CommitteeCandidateReg\",\"transactionId\":\"1ab93b52d20ce114bfdb48a256ac48f3d8d46d00aec585c38a904b672a70e3a3\"}"),
         ]
 	}
 
 	fn run_registration_command_fail_io() -> Vec<MockIO> {
 		vec![
 			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
-			MockIO::run_command("./sidechain-main-cli register --network mainnet --sidechain-id 0 --genesis-committee-hash-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x00112233445566778899001122334455667788990011223344556677 --atms-kind plain-ecdsa-secp256k1 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature 448ddd2592a681ee3235aa68356290c3ec93cc1b8b757bf4713a0b6629a3b75028e984a06cd275a99f861f8303dba1778c36feef084ea4a5379775ca13043202 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey", "TxRefNotFound"),
+			MockIO::run_command("./pc-contracts-cli register --network mainnet --sidechain-id 0 --genesis-committee-hash-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x00112233445566778899001122334455667788990011223344556677 --atms-kind plain-ecdsa-secp256k1 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature 448ddd2592a681ee3235aa68356290c3ec93cc1b8b757bf4713a0b6629a3b75028e984a06cd275a99f861f8303dba1778c36feef084ea4a5379775ca13043202 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey", "TxRefNotFound"),
 			MockIO::eprint("The registration transaction could not be submitted: TxRefNotFound"),
         ]
 	}

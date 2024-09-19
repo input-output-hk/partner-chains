@@ -4,12 +4,12 @@ use crate::io::IOContext;
 use std::str::FromStr;
 
 #[derive(Debug, Clone)]
-pub(crate) struct SidechainMainCliResources {
+pub(crate) struct PcContractsCliResources {
 	pub(crate) kupo: ServiceConfig,
 	pub(crate) ogmios: ServiceConfig,
 }
 
-impl Default for SidechainMainCliResources {
+impl Default for PcContractsCliResources {
 	fn default() -> Self {
 		Self {
 			kupo: ServiceConfig {
@@ -34,9 +34,9 @@ impl Default for SidechainMainCliResources {
 
 pub(crate) const KUPO_AND_OGMIOS_REQUIRED: &str = "Partner Chains Smart Contracts require access to Kupo and Ogmios. Please provide their configuration.";
 
-pub(crate) fn establish_sidechain_main_cli_configuration<C: IOContext>(
+pub(crate) fn establish_pc_contracts_cli_configuration<C: IOContext>(
 	context: &C,
-) -> anyhow::Result<SidechainMainCliResources> {
+) -> anyhow::Result<PcContractsCliResources> {
 	context.print(KUPO_AND_OGMIOS_REQUIRED);
 	let kupo_protocol = KUPO_PROTOCOL
 		.select_options_with_default_from_file_and_save(KUPO_PROTOCOL.name, context)
@@ -48,7 +48,7 @@ pub(crate) fn establish_sidechain_main_cli_configuration<C: IOContext>(
 		.map_err(anyhow::Error::msg)?;
 	let ogmios_hostname = OGMIOS_HOSTNAME.prompt_with_default_from_file_and_save(context);
 	let ogmios_port = OGMIOS_PORT.prompt_with_default_from_file_parse_and_save(context)?;
-	Ok(SidechainMainCliResources {
+	Ok(PcContractsCliResources {
 		kupo: ServiceConfig { protocol: kupo_protocol, hostname: kupo_hostname, port: kupo_port },
 		ogmios: ServiceConfig {
 			protocol: ogmios_protocol,
@@ -64,13 +64,13 @@ pub(crate) mod tests {
 		prompt_multi_option_with_default_and_save_to_existing_file,
 		prompt_with_default_and_save_to_existing_file,
 	};
-	use crate::sidechain_main_cli_resources::*;
+	use crate::pc_contracts_cli_resources::*;
 	use crate::tests::MockIO;
 
 	/// Assumption for this function is that resources config file exists, so tests context should have it.
-	pub(crate) fn establish_sidechain_main_cli_configuration_io(
-		existing_config: Option<SidechainMainCliResources>,
-		config_to_set: SidechainMainCliResources,
+	pub(crate) fn establish_pc_contracts_cli_configuration_io(
+		existing_config: Option<PcContractsCliResources>,
+		config_to_set: PcContractsCliResources,
 	) -> MockIO {
 		let default_config = existing_config.unwrap_or_default();
 		MockIO::Group(vec![

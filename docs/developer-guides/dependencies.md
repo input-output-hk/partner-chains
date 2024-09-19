@@ -5,7 +5,7 @@ The main chain follower reads from **postgres** that **db-sync** writes to.
 **db-sync** itself requires UDS connection to **cardano-node**.
 
 For executing **partner-chains-smart-contracts** CLI commands **ogmios** and **kupo** are required.
-Both of them open HTTP ports that `sidechain-main-cli` is looking for by default (1337 and 1442).
+Both of them open HTTP ports that `pc-contracts-cli` is looking for by default (1337 and 1442).
 
 This document will help you with spinning up the dependencies running in either docker; or
 _process-compose_; the latter utilizing containerless, natively built binaries via nix.
