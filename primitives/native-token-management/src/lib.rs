@@ -1,5 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use core::str::FromStr;
+
 #[cfg(feature = "std")]
 pub use inherent_provider::*;
 
@@ -16,9 +18,36 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"nattoken";
 #[derive(Default, Debug, Clone, PartialEq, Eq, TypeInfo, Encode, Decode, MaxEncodedLen)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MainChainScripts {
-	pub native_token_policy: PolicyId,
+	pub native_token_policy_id: PolicyId,
 	pub native_token_asset_name: AssetName,
-	pub illiquid_supply_address: MainchainAddress,
+	pub illiquid_supply_validator_address: MainchainAddress,
+}
+
+#[cfg(feature = "std")]
+impl MainChainScripts {
+	pub fn read_from_env() -> Result<Self, envy::Error> {
+		#[derive(serde::Serialize, serde::Deserialize)]
+		pub struct MainChainScriptsEnvConfig {
+			pub native_token_policy_id: PolicyId,
+			pub native_token_asset_name: AssetName,
+			pub illiquid_supply_validator_address: String,
+		}
+
+		let MainChainScriptsEnvConfig {
+			native_token_policy_id,
+			native_token_asset_name,
+			illiquid_supply_validator_address,
+		} = envy::from_env()?;
+		let illiquid_supply_validator_address =
+			FromStr::from_str(&illiquid_supply_validator_address).map_err(|err| {
+				envy::Error::Custom(format!("Incorrect main chain address: {}", err))
+			})?;
+		Ok(Self {
+			native_token_policy_id,
+			native_token_asset_name,
+			illiquid_supply_validator_address,
+		})
+	}
 }
 
 sp_api::decl_runtime_apis! {
@@ -100,9 +129,9 @@ mod inherent_provider {
 				.get_total_native_token_transfer(
 					parent_mc_hash,
 					mc_hash,
-					scripts.native_token_policy,
+					scripts.native_token_policy_id,
 					scripts.native_token_asset_name,
-					scripts.illiquid_supply_address,
+					scripts.illiquid_supply_validator_address,
 				)
 				.await?;
 

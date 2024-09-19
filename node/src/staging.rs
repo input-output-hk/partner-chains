@@ -103,7 +103,7 @@ pub fn staging_sudo_key() -> AccountId {
 	)
 }
 
-pub fn staging_config() -> Result<ChainSpec, EnvVarReadError> {
+pub fn staging_config() -> Result<ChainSpec, envy::Error> {
 	Ok(ChainSpec::builder(runtime_wasm(), None)
 		.with_name("Staging")
 		.with_id("staging")
@@ -126,7 +126,7 @@ pub fn staging_genesis(
 	root_key: Option<AccountId>,
 	endowed_accounts: Vec<AccountId>,
 	_enable_println: bool,
-) -> Result<serde_json::Value, EnvVarReadError> {
+) -> Result<serde_json::Value, envy::Error> {
 	let config = RuntimeGenesisConfig {
 		system: SystemConfig { ..Default::default() },
 		balances: BalancesConfig {
@@ -149,13 +149,7 @@ pub fn staging_genesis(
 				.collect(),
 		},
 		sidechain: SidechainConfig {
-			params: SidechainParams {
-				chain_id: from_var_or("CHAIN_ID", 1)?,
-				threshold_numerator: from_var_or("THRESHOLD_NUMERATOR", 2)?,
-				threshold_denominator: from_var_or("THRESHOLD_DENOMINATOR", 3)?,
-				genesis_committee_utxo: from_var::<UtxoId>("GENESIS_COMMITTEE_UTXO")?,
-				governance_authority: from_var::<MainchainAddressHash>("GOVERNANCE_AUTHORITY")?,
-			},
+			params: SidechainParams::read_from_env_with_defaults()?,
 			..Default::default()
 		},
 		polkadot_session_stub_for_grandpa: Default::default(),
@@ -164,10 +158,10 @@ pub fn staging_genesis(
 				.into_iter()
 				.map(|keys| (keys.cross_chain, keys.session))
 				.collect(),
-			main_chain_scripts: read_mainchain_scripts_from_env()?,
+			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()?,
 		},
 		native_token_management: NativeTokenManagementConfig {
-			main_chain_scripts: read_native_token_main_chain_scripts_from_env()?,
+			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()?,
 			..Default::default()
 		},
 	};

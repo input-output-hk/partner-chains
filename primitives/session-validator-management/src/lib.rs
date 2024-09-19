@@ -1,5 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use core::str::FromStr;
+
 use scale_info::TypeInfo;
 use sidechain_domain::{MainchainAddress, PolicyId};
 use sp_core::{Decode, Encode, MaxEncodedLen};
@@ -39,8 +41,35 @@ impl From<InherentError> for sp_inherents::Error {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MainChainScripts {
 	pub committee_candidate_address: MainchainAddress,
-	pub d_parameter_policy: PolicyId,
-	pub permissioned_candidates_policy: PolicyId,
+	pub d_parameter_policy_id: PolicyId,
+	pub permissioned_candidates_policy_id: PolicyId,
+}
+
+#[cfg(feature = "std")]
+impl MainChainScripts {
+	pub fn read_from_env() -> Result<MainChainScripts, envy::Error> {
+		#[derive(serde::Serialize, serde::Deserialize)]
+		pub struct MainChainScriptsEnvConfig {
+			pub committee_candidate_address: String,
+			pub d_parameter_policy_id: PolicyId,
+			pub permissioned_candidates_policy_id: PolicyId,
+		}
+
+		let MainChainScriptsEnvConfig {
+			committee_candidate_address,
+			d_parameter_policy_id,
+			permissioned_candidates_policy_id,
+		} = envy::from_env::<MainChainScriptsEnvConfig>()?;
+
+		let committee_candidate_address = FromStr::from_str(&committee_candidate_address)
+			.map_err(|err| envy::Error::Custom(format!("Incorrect main chain address: {}", err)))?;
+
+		Ok(Self {
+			committee_candidate_address,
+			d_parameter_policy_id,
+			permissioned_candidates_policy_id,
+		})
+	}
 }
 
 sp_api::decl_runtime_apis! {

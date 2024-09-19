@@ -148,15 +148,15 @@ pub mod pallet {
 		#[pallet::weight((1, DispatchClass::Normal))]
 		pub fn set_main_chain_scripts(
 			origin: OriginFor<T>,
-			native_token_policy: PolicyId,
+			native_token_policy_id: PolicyId,
 			native_token_asset_name: AssetName,
-			illiquid_supply_address: MainchainAddress,
+			illiquid_supply_validator_address: MainchainAddress,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			let new_scripts = sp_native_token_management::MainChainScripts {
-				native_token_policy,
+				native_token_policy_id,
 				native_token_asset_name,
-				illiquid_supply_address,
+				illiquid_supply_validator_address,
 			};
 			MainChainScriptsConfiguration::<T>::put(new_scripts);
 			Ok(())

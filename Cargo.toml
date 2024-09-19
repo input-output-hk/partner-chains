@@ -38,7 +38,8 @@ members = [
     "primitives/sidechain",
 	"partner-chains-cli",
     "pallets/native-token-management",
-    "primitives/native-token-management"]
+    "primitives/native-token-management"
+]
 resolver = "2"
 
 [profile.release]
@@ -100,6 +101,7 @@ sealed_test = { version = "1.0.0" }
 derive-new = { version = "0.6.0" }
 inquire = { version = "0.7.5" }
 parking_lot = { version = "0.12.1", default-features = false }
+envy = { version = "0.4.2" }
 
 # substrate dependencies
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2407-2" }

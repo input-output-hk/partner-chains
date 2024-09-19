@@ -13,6 +13,7 @@ plutus-datum-derive = { workspace = true }
 scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
 hex-literal = { workspace = true }
+envy = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
@@ -22,6 +23,7 @@ std = [
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"sidechain-domain/std",
+	"envy"
 ]
 serde = [
 	"dep:serde",
