@@ -7,8 +7,8 @@ Partner Chain builders are organizations that want to build their own blockchain
     1. Cardano node v9.1.1
         1. Ogmios v6.5.0
         2. Kupo - v2.9.0
-        3. DB Sync  v13.3.0.0 (PostgreSQLv15.3)
-    2. Download the partner chain node v1.0
+        3. DB Sync  v13.5.0.2 (PostgreSQLv15.3)
+    2. Download the partner chain node v1.1.0
 2. Run the generate-keys wizard
 3. Run the prepare-configuration wizard
     1. Set chain parameters
@@ -126,7 +126,7 @@ sudo systemctl start kupo.service
 
 Please refer to [Kupo](https://cardanosolutions.github.io/kupo/#section/Overview) for detailed instructions.
 
-### 1.1.3 Cardano DB Sync v13.3.0.0
+### 1.1.3 Cardano DB Sync v13.5.0.2
 
 The partner chain needs DB Sync on `cardano-node` to observe Cardano's state.
 
