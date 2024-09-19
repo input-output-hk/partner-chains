@@ -7,6 +7,9 @@ KUPO_IMAGE="cardanosolutions/kupo:v2.9.0"
 OGMIOS_IMAGE="cardanosolutions/ogmios:v6.6.0"
 POSTGRES_IMAGE="postgres:15.3"
 SIDECHAIN_MAIN_CLI_IMAGE="node:22-bookworm"
+PC_CONTRACTS_CLI_ZIP_URL="https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/v6.1.0/trustless-sidechain-cli-6.1.0-x86_64-linux.zip"
+PARTNER_CHAINS_NODE_URL="https://github.com/input-output-hk/partner-chains/releases/download/1.1.1-rc1/partner-chains-node-1.1.1-rc1-x86_64-linux"
+PARTNER_CHAINS_CLI_URL="https://github.com/input-output-hk/partner-chains/releases/download/1.1.1-rc1/partner-chains-cli-1.1.1-rc1-x86_64-linux"
 
 display_banner() {
   cat <<'EOF'
@@ -370,6 +373,9 @@ OGMIOS_IMAGE=$OGMIOS_IMAGE
 POSTGRES_IMAGE=$POSTGRES_IMAGE
 SIDECHAIN_MAIN_CLI_IMAGE=$SIDECHAIN_MAIN_CLI_IMAGE
 PARTNER_CHAINS_NODE_IMAGE=${node_image:-$PARTNER_CHAINS_NODE_IMAGE}
+PC_CONTRACTS_CLI_ZIP_URL=$PC_CONTRACTS_CLI_ZIP_URL
+PARTNER_CHAINS_NODE_URL=$PARTNER_CHAINS_NODE_URL
+PARTNER_CHAINS_CLI_URL=$PARTNER_CHAINS_CLI_URL
 EOF
 
     if [ "$mode" == "interactive" ]; then
