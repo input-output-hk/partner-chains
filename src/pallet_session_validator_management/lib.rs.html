@@ -353,6 +353,28 @@
 <a href="#351" id="351">351</a>
 <a href="#352" id="352">352</a>
 <a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!  Pallet for setting the Partner Chain validators using inherent data
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -376,6 +398,7 @@
 	<span class="kw">use </span>frame_support::pallet_prelude::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 	<span class="kw">use </span>log::{info, warn};
+	<span class="kw">use </span>sidechain_domain::{MainchainAddress, PolicyId};
 	<span class="kw">use </span>sp_runtime::traits::{One, Zero};
 	<span class="kw">use </span>sp_session_validator_management::<span class="kw-2">*</span>;
 	<span class="kw">use </span>sp_std::fmt::Display;
@@ -605,6 +628,27 @@
 				epoch: for_epoch_number,
 				committee: validators,
 			});
+			<span class="prelude-val">Ok</span>(())
+		}
+
+		<span class="doccomment">/// Changes the main chain scripts used for committee rotation.
+		///
+		/// This extrinsic must be run either using `sudo` or some other chain governance mechanism.
+		</span><span class="attr">#[pallet::call_index(<span class="number">1</span>)]
+		#[pallet::weight(T::WeightInfo::set(<span class="number">1</span>))]
+		</span><span class="kw">pub fn </span>set_main_chain_scripts(
+			origin: OriginFor&lt;T&gt;,
+			committee_candidate_address: MainchainAddress,
+			d_parameter_policy_id: PolicyId,
+			permissioned_candidates_policy_id: PolicyId,
+		) -&gt; DispatchResult {
+			ensure_root(origin)<span class="question-mark">?</span>;
+			<span class="kw">let </span>new_scripts = MainChainScripts {
+				committee_candidate_address,
+				d_parameter_policy_id,
+				permissioned_candidates_policy_id,
+			};
+			MainChainScriptsConfiguration::&lt;T&gt;::put(new_scripts);
 			<span class="prelude-val">Ok</span>(())
 		}
 	}

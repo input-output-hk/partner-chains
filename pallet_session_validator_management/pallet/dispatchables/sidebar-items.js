@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["set"]};
+window.SIDEBAR_ITEMS = {"fn":["set","set_main_chain_scripts"]};
