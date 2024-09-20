@@ -148,7 +148,7 @@ bob_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/grandpa.
 if [ $? -eq 0 ]; then
    echo "Permissioned candidates Alice and Bob inserted successfully!"
 else
-    echo "Permission candidates for Alice and Bob failed..."
+    echo "Permission candidates Alice and Bob failed to be added..."
 fi
 
 echo "Inserting registered candidates for Dave..."
