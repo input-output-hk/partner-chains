@@ -151,7 +151,7 @@ else
     echo "Permission candidates Alice and Bob failed to be added..."
 fi
 
-echo "Inserting registered candidates for Dave..."
+echo "Inserting registered candidate Dave..."
 
 # Prepare Dave registration values
 dave_utxo=$(cat /shared/dave.utxo)
