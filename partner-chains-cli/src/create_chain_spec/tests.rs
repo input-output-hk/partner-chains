@@ -1,6 +1,6 @@
 use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::create_chain_spec::{CreateChainSpecCmd, INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE};
-use crate::tests::{MockIO, MockIOContext};
+use crate::tests::{should_be_failure, should_be_success, MockIO, MockIOContext};
 use crate::{config, CmdRun};
 use anyhow::anyhow;
 use colored::Colorize;
@@ -23,8 +23,7 @@ fn happy_path() {
 			show_outro(),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_ok());
+	should_be_success!(result, mock_context)
 }
 
 #[test]
@@ -57,8 +56,7 @@ If you are the governance authority, please make sure you have run the `prepare-
 If you are a validator, you can obtain the chain configuration file from the governance authority."),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_err());
+	should_be_failure!(result, mock_context);
 }
 
 #[test]
@@ -72,8 +70,7 @@ If you are the governance authority, please make sure you have run the `prepare-
 If you are a validator, you can obtain the chain configuration file from the governance authority."),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_err());
+	should_be_failure!(result, mock_context);
 }
 
 #[test]
@@ -90,10 +87,9 @@ fn errors_if_chain_spec_is_missing() {
 			read_chain_spec_io(),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_err());
+	let err = should_be_failure!(result, mock_context);
 	assert_eq!(
-		result.err().unwrap().to_string(),
+		err.to_string(),
 		"Could not read chain-spec.json file. File is expected to exists.".to_string()
 	);
 }
@@ -113,9 +109,8 @@ fn forwards_build_spec_error_if_it_fails() {
 			run_build_spec_io(Err(error)),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_err());
-	assert_eq!(result.err().unwrap().to_string(), "Failed miserably".to_string())
+	let err = should_be_failure!(result, mock_context);
+	assert_eq!(err.to_string(), "Failed miserably".to_string())
 }
 
 fn test_config_content() -> serde_json::Value {

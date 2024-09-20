@@ -169,6 +169,8 @@ mod tests {
 	use crate::config::config_fields::POSTGRES_CONNECTION_STRING;
 	use crate::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io;
 	use crate::pc_contracts_cli_resources::PcContractsCliResources;
+	use crate::tests::should_be_failure;
+	use crate::tests::should_be_success;
 	use crate::{
 		config::CHAIN_CONFIG_FILE_PATH,
 		config::RESOURCES_CONFIG_FILE_PATH,
@@ -201,8 +203,7 @@ mod tests {
 			);
 
 		let result = mock_register3_cmd().run(&mock_context);
-		mock_context.no_more_io_expected();
-		assert!(result.is_ok());
+		should_be_success!(result, mock_context);
 	}
 
 	#[test]
@@ -227,8 +228,7 @@ mod tests {
 			);
 
 		let result = mock_register3_cmd().run(&mock_context);
-		mock_context.no_more_io_expected();
-		assert!(result.is_err());
+		should_be_failure!(result, mock_context);
 	}
 
 	#[test]
@@ -254,8 +254,7 @@ mod tests {
 			);
 
 		let result = mock_register3_cmd().run(&mock_context);
-		mock_context.no_more_io_expected();
-		assert!(result.is_ok());
+		should_be_success!(result, mock_context);
 	}
 
 	fn intro_msg_io() -> Vec<MockIO> {

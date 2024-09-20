@@ -76,7 +76,7 @@ pub mod tests {
 	use crate::config::config_fields::CARDANO_SECURITY_PARAMETER;
 	use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 	use crate::prepare_configuration::prepare_cardano_params::tests::scenarios::save_cardano_params;
-	use crate::tests::MockIOContext;
+	use crate::tests::{should_be_success, MockIOContext};
 	use serde_json::Value;
 
 	const CUSTOM_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
@@ -203,8 +203,8 @@ pub mod tests {
 		let mock_context = MockIOContext::new()
 			.with_json_file(CARDANO_SECURITY_PARAMETER.config_file, serde_json::json!({}))
 			.with_expected_io(vec![save_cardano_params(cardano_parameters.clone())]);
-		let params = prepare_cardano_params(&mock_context, cardano_network).unwrap();
-		mock_context.no_more_io_expected();
+		let result = prepare_cardano_params(&mock_context, cardano_network);
+		let params = should_be_success!(result, mock_context);
 		assert_eq!(params, cardano_parameters)
 	}
 

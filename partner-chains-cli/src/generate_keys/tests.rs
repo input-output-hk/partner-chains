@@ -181,9 +181,7 @@ fn happy_path() {
 
 	let result = GenerateKeysCmd {}.run(&mock_context);
 
-	mock_context.no_more_io_expected();
-
-	assert!(result.is_ok());
+	should_be_success!(result, mock_context);
 }
 
 mod config_read {
@@ -199,7 +197,7 @@ mod config_read {
 
 		let result = GenerateKeysConfig::load(&context);
 
-		context.no_more_io_expected();
+		should_have_no_io_left!(context);
 
 		assert_eq!(result.chain_name, CHAIN_NAME);
 		assert_eq!(result.node_executable, EXECUTABLE_PATH);
@@ -227,7 +225,7 @@ mod config_read {
 
 		let result = GenerateKeysConfig::load(&context);
 
-		context.no_more_io_expected();
+		should_have_no_io_left!(context);
 
 		assert_eq!(result.chain_name, CHAIN_NAME);
 		assert_eq!(result.node_executable, EXECUTABLE_PATH);
@@ -301,9 +299,7 @@ mod generate_spo_keys {
 
 		let result = generate_spo_keys(&default_config(), &mock_context);
 
-		mock_context.no_more_io_expected();
-
-		assert!(result.is_ok());
+		should_be_success!(result, mock_context);
 	}
 
 	#[test]
@@ -328,9 +324,7 @@ mod generate_spo_keys {
 
 		let result = generate_spo_keys(&default_config(), &mock_context);
 
-		mock_context.no_more_io_expected();
-
-		assert!(result.is_ok());
+		should_be_success!(result, mock_context);
 	}
 }
 

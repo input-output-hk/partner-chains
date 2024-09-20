@@ -99,8 +99,8 @@ impl MockIO {
 }
 
 pub struct MockIOContext {
-	expected_io: RefCell<Vec<MockIO>>,
-	files: RefCell<HashMap<String, String>>,
+	pub expected_io: RefCell<Vec<MockIO>>,
+	pub files: RefCell<HashMap<String, String>>,
 }
 
 impl MockIOContext {
@@ -132,14 +132,44 @@ impl MockIOContext {
 			None => None,
 		}
 	}
-	pub fn no_more_io_expected(&self) {
-		assert!(
-			self.expected_io.borrow().is_empty(),
-			"Expected IO operations left unperformed: {:?}",
-			self.expected_io
-		)
-	}
 }
+
+macro_rules! should_have_no_io_left {
+	($context:expr) => {{
+		assert!(
+			$context.expected_io.borrow().is_empty(),
+			"Expected IO operations left unperformed: {:?}",
+			$context.expected_io
+		);
+	}};
+}
+pub(crate) use should_have_no_io_left;
+
+macro_rules! should_be_success {
+	($result:expr, $context:expr) => {{
+		let result = $result.unwrap();
+		assert!(
+			$context.expected_io.borrow().is_empty(),
+			"Expected IO operations left unperformed: {:?}",
+			$context.expected_io
+		);
+		result
+	}};
+}
+pub(crate) use should_be_success;
+
+macro_rules! should_be_failure {
+	($result:expr, $context:expr) => {{
+		let err = $result.unwrap_err();
+		assert!(
+			$context.expected_io.borrow().is_empty(),
+			"Expected IO operations left unperformed: {:?}",
+			$context.expected_io
+		);
+		err
+	}};
+}
+pub(crate) use should_be_failure;
 
 impl IOContext for MockIOContext {
 	fn run_command(&self, cmd: &str) -> anyhow::Result<String> {
