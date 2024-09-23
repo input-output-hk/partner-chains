@@ -88,7 +88,7 @@ fn get_mainchain_cold_skey<C: IOContext>(
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::tests::{should_be_failure, should_be_success, MockIO, MockIOContext};
+	use crate::tests::{should_have_no_io_left, MockIO, MockIOContext};
 
 	#[test]
 	fn happy_path() {
@@ -102,7 +102,8 @@ mod tests {
 			);
 
 		let result = mock_register2_cmd().run(&mock_context);
-		should_be_success!(result, mock_context);
+		result.expect("Expected the result to be a success");
+		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -119,7 +120,8 @@ mod tests {
 		]);
 
 		let result = mock_register2_cmd().run(&mock_context);
-		should_be_failure!(result, mock_context);
+		result.expect_err("Expected the result to be an error");
+		should_have_no_io_left!(mock_context);
 	}
 
 	fn intro_msg_io() -> Vec<MockIO> {

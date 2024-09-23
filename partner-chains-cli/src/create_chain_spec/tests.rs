@@ -1,6 +1,6 @@
 use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::create_chain_spec::{CreateChainSpecCmd, INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE};
-use crate::tests::{should_be_failure, should_be_success, MockIO, MockIOContext};
+use crate::tests::{should_have_no_io_left, MockIO, MockIOContext};
 use crate::{config, CmdRun};
 use anyhow::anyhow;
 use colored::Colorize;
@@ -23,7 +23,8 @@ fn happy_path() {
 			show_outro(),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	should_be_success!(result, mock_context)
+	result.expect("Expected the result to be a success");
+	should_have_no_io_left!(mock_context);
 }
 
 #[test]
@@ -56,7 +57,8 @@ If you are the governance authority, please make sure you have run the `prepare-
 If you are a validator, you can obtain the chain configuration file from the governance authority."),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	should_be_failure!(result, mock_context);
+	result.expect_err("Expected the result to be an error");
+	should_have_no_io_left!(mock_context);
 }
 
 #[test]
@@ -70,7 +72,8 @@ If you are the governance authority, please make sure you have run the `prepare-
 If you are a validator, you can obtain the chain configuration file from the governance authority."),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	should_be_failure!(result, mock_context);
+	result.expect_err("Expected the result to be an error");
+	should_have_no_io_left!(mock_context);
 }
 
 #[test]
@@ -87,11 +90,12 @@ fn errors_if_chain_spec_is_missing() {
 			read_chain_spec_io(),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	let err = should_be_failure!(result, mock_context);
+	let err = result.expect_err("Expected the result to be an error");
 	assert_eq!(
 		err.to_string(),
 		"Could not read chain-spec.json file. File is expected to exists.".to_string()
 	);
+	should_have_no_io_left!(mock_context);
 }
 
 #[test]
@@ -109,8 +113,9 @@ fn forwards_build_spec_error_if_it_fails() {
 			run_build_spec_io(Err(error)),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	let err = should_be_failure!(result, mock_context);
-	assert_eq!(err.to_string(), "Failed miserably".to_string())
+	let err = result.expect_err("Expected the result to be an error");
+	assert_eq!(err.to_string(), "Failed miserably".to_string());
+	should_have_no_io_left!(mock_context);
 }
 
 fn test_config_content() -> serde_json::Value {

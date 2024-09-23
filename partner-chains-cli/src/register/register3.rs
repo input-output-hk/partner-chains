@@ -174,7 +174,7 @@ mod tests {
 		pc_contracts_cli_resources::{
 			tests::establish_pc_contracts_cli_configuration_io, PcContractsCliResources,
 		},
-		tests::{should_be_failure, should_be_success, MockIO, MockIOContext},
+		tests::{should_have_no_io_left, MockIO, MockIOContext},
 	};
 	use serde_json::json;
 	use sp_core::offchain::Timestamp;
@@ -203,7 +203,8 @@ mod tests {
 			);
 
 		let result = mock_register3_cmd().run(&mock_context);
-		should_be_success!(result, mock_context);
+		result.expect("Expected the result to be a success");
+		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -228,7 +229,8 @@ mod tests {
 			);
 
 		let result = mock_register3_cmd().run(&mock_context);
-		should_be_failure!(result, mock_context);
+		result.expect_err("Expected the result to be an error");
+		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -254,7 +256,8 @@ mod tests {
 			);
 
 		let result = mock_register3_cmd().run(&mock_context);
-		should_be_success!(result, mock_context);
+		result.expect("Expected the result to be a success");
+		should_have_no_io_left!(mock_context);
 	}
 
 	fn intro_msg_io() -> Vec<MockIO> {

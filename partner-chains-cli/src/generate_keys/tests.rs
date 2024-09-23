@@ -181,7 +181,8 @@ fn happy_path() {
 
 	let result = GenerateKeysCmd {}.run(&mock_context);
 
-	should_be_success!(result, mock_context);
+	result.expect("Expected the result to be a success");
+	should_have_no_io_left!(mock_context);
 }
 
 mod config_read {
@@ -299,7 +300,8 @@ mod generate_spo_keys {
 
 		let result = generate_spo_keys(&default_config(), &mock_context);
 
-		should_be_success!(result, mock_context);
+		result.expect("Expected the result to be a success");
+		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -324,7 +326,8 @@ mod generate_spo_keys {
 
 		let result = generate_spo_keys(&default_config(), &mock_context);
 
-		should_be_success!(result, mock_context);
+		result.expect("Expected the result to be a success");
+		should_have_no_io_left!(mock_context);
 	}
 }
 

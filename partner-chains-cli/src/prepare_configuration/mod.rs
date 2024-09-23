@@ -192,7 +192,7 @@ pub mod tests {
 	use crate::config::{ConfigFieldDefinition, SelectOptions, RESOURCES_CONFIG_FILE_PATH};
 	use crate::prepare_configuration::PrepareConfigurationError::NetworkKeyNotFoundError;
 	use crate::prepare_configuration::Protocol::{Dns, Ipv4};
-	use crate::tests::{should_be_failure, should_be_success, MockIO, MockIOContext};
+	use crate::tests::{should_have_no_io_left, MockIO, MockIOContext};
 
 	const KEY: &str = "962515971a22aa95706c2109ba6e9502c7f39b33bdf63024f46f77894424f1fe";
 	pub const CHAIN_NAME: &str = "partner_chains_template";
@@ -327,7 +327,8 @@ pub mod tests {
 
 		let result = establish_bootnodes(&mock_context);
 
-		should_be_success!(result, mock_context);
+		result.expect("Expected the result to be a success");
+		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -342,7 +343,8 @@ pub mod tests {
 
 		let result = establish_bootnodes(&mock_context);
 
-		should_be_success!(result, mock_context);
+		result.expect("Expected the result to be a success");
+		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -370,7 +372,8 @@ pub mod tests {
 
 		let result = establish_bootnodes(&mock_context);
 
-		should_be_success!(result, mock_context);
+		result.expect("Expected the result to be a success");
+		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -398,7 +401,8 @@ pub mod tests {
 
 		let result = establish_bootnodes(&mock_context);
 
-		should_be_success!(result, mock_context);
+		result.expect("Expected the result to be a success");
+		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -409,9 +413,9 @@ pub mod tests {
 
 		let result = PrepareConfigurationCmd {}.run(&mock_context);
 
-		let error = should_be_failure!(result, mock_context);
-
+		let error = result.expect_err("Expected the result to be an error");
 		assert_eq!(error.to_string(), NetworkKeyNotFoundError(network_key_file()).to_string());
+		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -433,7 +437,8 @@ pub mod tests {
 
 		let result = establish_bootnodes(&mock_context);
 
-		should_be_success!(result, mock_context);
+		result.expect("Expected the result to be a success");
+		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -451,8 +456,9 @@ pub mod tests {
 
 		let result = PrepareConfigurationCmd {}.run(&mock_context);
 
-		let error = should_be_failure!(result, mock_context);
+		let error = result.expect_err("Expected the result to be an error");
 		assert!(error.to_string().contains("⚠️ Invalid IP address"));
+		should_have_no_io_left!(mock_context);
 	}
 
 	pub fn save_to_existing_file<T>(
