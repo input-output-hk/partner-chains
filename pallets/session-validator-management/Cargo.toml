@@ -1,6 +1,6 @@
 [package]
 name = "pallet-session-validator-management"
-version = "0.1.0"
+version = "1.1.0"
 description = "FRAME pallet for setting validators with InherentData using pallet-session"
 edition = "2021"
 license = "Unlicense"
@@ -20,6 +20,7 @@ sp-runtime = { workspace = true }
 sp-core = { workspace = true }
 sp-session-validator-management = { workspace = true }
 sp-io = { workspace = true, optional = true }
+sidechain-domain = { workspace = true }
 
 [dev-dependencies]
 sp-io = { workspace = true }
