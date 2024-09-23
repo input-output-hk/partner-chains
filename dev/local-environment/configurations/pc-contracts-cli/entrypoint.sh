@@ -121,7 +121,7 @@ echo "Inserting D parameter..."
 echo "Successfully inserted D-parameter (P = 3, R = 2)!"
 
 # sidechain.vkey:aura.vkey:grandpa.vkey
-echo "Inserting permissioned candidates for Alice, Bob and Charlie..."
+echo "Inserting permissioned candidates for Alice and Bob..."
 
 alice_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/sidechain.vkey)
 alice_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/aura.vkey)
@@ -131,17 +131,12 @@ bob_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/sidech
 bob_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/aura.vkey)
 bob_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/grandpa.vkey)
 
-charlie_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-3/keys/sidechain.vkey)
-charlie_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-3/keys/aura.vkey)
-charlie_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-3/keys/grandpa.vkey)
-
 ./pc-contracts-cli update-permissioned-candidates \
     --network testnet \
     --kupo-host kupo --kupo-port $KUPO_PORT \
     --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
     --add-candidate $alice_sidechain_vkey:$alice_aura_vkey:$alice_grandpa_vkey \
     --add-candidate $bob_sidechain_vkey:$bob_aura_vkey:$bob_grandpa_vkey \
-    --add-candidate $charlie_sidechain_vkey:$charlie_aura_vkey:$charlie_grandpa_vkey \
     --genesis-committee-hash-utxo $GENESIS_COMMITTEE_UTXO \
     --governance-authority $GOVERNANCE_AUTHORITY \
     --threshold-numerator $THRESHOLD_NUMERATOR \
@@ -151,12 +146,12 @@ charlie_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-3/keys/gran
     --payment-signing-key-file /keys/funded_address.skey
 
 if [ $? -eq 0 ]; then
-   echo "Permissioned candidates Alice, Bob and Charlie inserted successfully!"
+   echo "Permissioned candidates Alice and Bob inserted successfully!"
 else
-    echo "Permission candidates for Alice, Bob and Charlie failed..."
+    echo "Permission candidates Alice and Bob failed to be added..."
 fi
 
-echo "Inserting registered candidates for Dave..."
+echo "Inserting registered candidate Dave..."
 
 # Prepare Dave registration values
 dave_utxo=$(cat /shared/dave.utxo)
@@ -204,56 +199,6 @@ if [ $? -eq 0 ]; then
     echo "Registered candidate Dave inserted successfully!"
 else
     echo "Registration for Dave failed."
-fi
-
-echo "Inserting registered candidates for Eve..."
-
-# Prepare Eve registration values
-eve_utxo=$(cat /shared/eve.utxo)
-eve_mainchain_signing_key=$(jq -r '.cborHex | .[4:]' /partner-chains-nodes/partner-chains-node-5/keys/cold.skey)
-eve_sidechain_signing_key=$(cat /partner-chains-nodes/partner-chains-node-5/keys/sidechain.skey)
-
-# Process registration signatures for Eve
-eve_output=$(./partner-chains-node registration-signatures \
-    --chain-id 0 \
-    --genesis-committee-utxo $GENESIS_COMMITTEE_UTXO \
-    --governance-authority $GOVERNANCE_AUTHORITY \
-    --mainchain-signing-key $eve_mainchain_signing_key \
-    --sidechain-signing-key $eve_sidechain_signing_key \
-    --registration-utxo $eve_utxo \
-    --threshold-numerator 2 --threshold-denominator 3)
-
-# Extract signatures and keys from Eve output
-eve_spo_public_key=$(echo "$eve_output" | jq -r ".spo_public_key")
-eve_spo_signature=$(echo "$eve_output" | jq -r ".spo_signature")
-eve_sidechain_public_key=$(echo "$eve_output" | jq -r ".sidechain_public_key")
-eve_sidechain_signature=$(echo "$eve_output" | jq -r ".sidechain_signature")
-eve_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/aura.vkey)
-eve_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/grandpa.vkey)
-
-# Register Eve
-./pc-contracts-cli register \
-    --network testnet \
-    --kupo-host kupo --kupo-port $KUPO_PORT \
-    --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
-    --sidechain-id 0 \
-    --genesis-committee-hash-utxo $GENESIS_COMMITTEE_UTXO \
-    --governance-authority $GOVERNANCE_AUTHORITY \
-    --atms-kind plain-ecdsa-secp256k1 \
-    --threshold-numerator 2 \
-    --threshold-denominator 3 \
-    --spo-public-key $eve_spo_public_key \
-    --spo-signature $eve_spo_signature \
-    --sidechain-public-keys $eve_sidechain_public_key:$eve_aura_vkey:$eve_grandpa_vkey \
-    --sidechain-signature $eve_sidechain_signature \
-    --ada-based-staking \
-    --registration-utxo $eve_utxo \
-    --payment-signing-key-file /partner-chains-nodes/partner-chains-node-5/keys/payment.skey
-
-if [ $? -eq 0 ]; then
-    echo "Registered candidate Eve inserted successfully!"
-else
-    echo "Registration for Eve failed."
 fi
 
 echo "Generating chain-spec.json file for Parterchain Nodes..."
