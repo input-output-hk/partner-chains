@@ -152,7 +152,7 @@ pub fn staging_genesis(
 			params: SidechainParams::read_from_env_with_defaults()?,
 			..Default::default()
 		},
-		polkadot_session_stub_for_grandpa: Default::default(),
+		pallet_session: Default::default(),
 		session_committee_management: SessionCommitteeManagementConfig {
 			initial_authorities: initial_authorities
 				.into_iter()

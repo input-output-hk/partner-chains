@@ -192,7 +192,7 @@ pub fn testnet_genesis(
 			slots_per_epoch: SlotsPerEpoch::read_from_env()?,
 			..Default::default()
 		},
-		polkadot_session_stub_for_grandpa: Default::default(),
+		pallet_session: Default::default(),
 		session_committee_management: SessionCommitteeManagementConfig {
 			initial_authorities: initial_authorities
 				.into_iter()
