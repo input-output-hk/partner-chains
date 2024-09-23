@@ -30,6 +30,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 `pallet-native-token-management` crates; data sources behind the `native-token` feature in
 `main-chain-follower-api` and `db-sync-follower` crates.
 * added helper functions to `SidechainParams` and all `MainChainScripts` types to read them from environment
+* Extrinsic `set_main_chain_scripts` for migrating to new committee selection main chain scripts
 
 # v1.0.0rc1
 

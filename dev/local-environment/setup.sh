@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node:v1.1.1-rc1"
-CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:9.1.0"
-DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.3.0.0"
+CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:9.1.1"
+DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.5.0.2"
 KUPO_IMAGE="cardanosolutions/kupo:v2.9.0"
 OGMIOS_IMAGE="cardanosolutions/ogmios:v6.6.0"
 POSTGRES_IMAGE="postgres:15.3"
