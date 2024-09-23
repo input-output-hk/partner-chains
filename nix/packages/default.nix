@@ -12,24 +12,22 @@
     system,
     ...
   }: let
-
-    # These need to be specified because cardano.nix provides multiples
     kupoVersion = "2.9.0";
-    ogmiosVersion = "6.5.0";
+    ogmiosVersion = "6.6.2";
 
     flake-compat = import inputs.flake-compat;
     cardanoPackages = (flake-compat { src = inputs.cardano-node; }).defaultNix.packages.${system};
     dbSyncPackages = (flake-compat { src = inputs.cardano-dbsync; }).defaultNix.packages.${system};
     smartContractsPkgs = (flake-compat { src = inputs.smart-contracts; }).defaultNix.packages.${system};
-    cardanoExtraPkgs = (flake-compat { src = inputs.cardano-nix; }).defaultNix.packages.${system};
+    #cardanoExtraPkgs = (flake-compat { src = inputs.cardano-nix; }).defaultNix.packages.${system};
 
   in {
     packages = {
       inherit (smartContractsPkgs) pc-contracts-cli;
       inherit (cardanoPackages) cardano-node cardano-cli cardano-testnet;
       inherit (dbSyncPackages) "cardano-db-sync:exe:cardano-db-sync";
-      kupo = cardanoExtraPkgs."kupo-${kupoVersion}";
-      ogmios = cardanoExtraPkgs."ogmios-${ogmiosVersion}";
+      kupo = pkgs.callPackage ./kupo.nix { version = kupoVersion; };
+      ogmios = pkgs.callPackage ./ogmios.nix { version = ogmiosVersion; };
       partnerchains-stack = pkgs.stdenv.mkDerivation {
         name = "partnerchains-stack";
         phases = [ "installPhase" ];

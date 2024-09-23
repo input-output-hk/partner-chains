@@ -32,23 +32,6 @@
         "type": "github"
       }
     },
-    "cardano-nix": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1723187995,
-        "narHash": "sha256-tzDJrakcsxzUN5IXJ6UkpPg/udbsqLnsrjNLZMNohgg=",
-        "owner": "tgunnoe",
-        "repo": "cardano.nix",
-        "rev": "9f88a5ba4e61e0278943081c0b1b093ab1eafcd8",
-        "type": "github"
-      },
-      "original": {
-        "owner": "tgunnoe",
-        "ref": "add-darwin",
-        "repo": "cardano.nix",
-        "type": "github"
-      }
-    },
     "cardano-node": {
       "flake": false,
       "locked": {
@@ -158,6 +141,23 @@
         "type": "github"
       }
     },
+    "kupo": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1721405349,
+        "narHash": "sha256-s6NVXrtjyoeSQpT5BEiM/Dkal9IXhdQJYFLyPQLWiPA=",
+        "owner": "CardanoSolutions",
+        "repo": "kupo",
+        "rev": "61ad7e47f40d577b741cd1689dc08db7ea8d2c79",
+        "type": "github"
+      },
+      "original": {
+        "owner": "CardanoSolutions",
+        "ref": "v2.9.0",
+        "repo": "kupo",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1724479785,
@@ -186,6 +186,23 @@
         "url": "https://github.com/NixOS/nixpkgs/archive/a5d394176e64ab29c852d03346c1fc9b0b7d33eb.tar.gz"
       }
     },
+    "ogmios": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1725966092,
+        "narHash": "sha256-c+5SikopKEylvxIZfp36qmdgElkTR7n95YCtLUZ78Q4=",
+        "owner": "CardanoSolutions",
+        "repo": "ogmios",
+        "rev": "9619c8ff017844f6c0f1dcad4f6bcf9f24f12ebd",
+        "type": "github"
+      },
+      "original": {
+        "owner": "CardanoSolutions",
+        "ref": "v6.6.2",
+        "repo": "ogmios",
+        "type": "github"
+      }
+    },
     "process-compose": {
       "locked": {
         "lastModified": 1724606023,
@@ -205,14 +222,15 @@
       "inputs": {
         "blank": "blank",
         "cardano-dbsync": "cardano-dbsync",
-        "cardano-nix": "cardano-nix",
         "cardano-node": "cardano-node",
         "configurations": "configurations",
         "devshell": "devshell",
         "fenix": "fenix",
         "flake-compat": "flake-compat",
         "flake-parts": "flake-parts",
+        "kupo": "kupo",
         "nixpkgs": "nixpkgs",
+        "ogmios": "ogmios",
         "process-compose": "process-compose",
         "services-flake": "services-flake",
         "smart-contracts": "smart-contracts"

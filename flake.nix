@@ -36,8 +36,12 @@
       url = "github:IntersectMBO/cardano-db-sync/13.5.0.2";
       flake = false;
     };
-    cardano-nix = {
-      url = "github:tgunnoe/cardano.nix/add-darwin";
+    kupo = {
+      url = "github:CardanoSolutions/kupo/v2.9.0";
+      flake = false;
+    };
+    ogmios = {
+      url = "github:CardanoSolutions/ogmios/v6.6.2";
       flake = false;
     };
     configurations = {
@@ -57,7 +61,7 @@
         inputs.devshell.flakeModule
         inputs.process-compose.flakeModule
         ./nix/shell.nix
-        ./nix/packages.nix
+        ./nix/packages
         ./nix/processes.nix
       ];
       flake.lib = import ./nix/lib.nix {inherit (nixpkgs) lib;};
