@@ -120,16 +120,16 @@ impl MockIOContext {
 		let expected_commands = expected_commands.into();
 		Self { expected_io: expected_commands, files: self.files.clone() }
 	}
-	pub fn pop_next_action(&self) -> Option<MockIO> {
+	pub fn pop_next_action(&self, description: &str) -> MockIO {
 		let next = self.expected_io.borrow_mut().pop();
 		match next {
 			Some(MockIO::Group(mut group)) => {
 				group.reverse();
 				self.expected_io.borrow_mut().append(&mut group);
-				self.pop_next_action()
+				self.pop_next_action(description)
 			},
-			Some(other) => Some(other),
-			None => None,
+			Some(other) => other,
+			None => panic!("No more IO expected, but {description} called"),
 		}
 	}
 }
@@ -148,28 +148,26 @@ impl Drop for MockIOContext {
 
 impl IOContext for MockIOContext {
 	fn run_command(&self, cmd: &str) -> anyhow::Result<String> {
-		match self.pop_next_action() {
-			Some(MockIO::RunCommand { expected_cmd, output }) => {
+		let next = self.pop_next_action(&format!("run_command({cmd})"));
+		match next {
+			MockIO::RunCommand { expected_cmd, output } => {
 				assert_eq!(
 					cmd, expected_cmd,
 					"Incorrect command executed: {cmd}  expected: {expected_cmd}"
 				);
 				output
 			},
-			Some(other) => panic!("Unexpected command executed: {cmd}, expected: {other:?}"),
-			None => panic!("Unexpected command executed: {cmd}, expected no more content actions"),
+			other => panic!("Unexpected command executed: {cmd}, expected: {other:?}"),
 		}
 	}
 
 	fn eprint(&self, msg: &str) {
-		match self.pop_next_action() {
-			Some(MockIO::EPrint(expected_msg)) => {
+		let next = self.pop_next_action(&format!("eprint({msg})"));
+		match next {
+			MockIO::EPrint(expected_msg) => {
 				assert_eq!(msg, expected_msg, "Incorrect message printed")
 			},
-			Some(other) => panic!("Unexpected stderr message printed: {msg}, expected: {other:?}"),
-			None => {
-				panic!("Unexpected stderr message printed: {msg}, expected no more content actions")
-			},
+			other => panic!("Unexpected stderr message printed: {msg}, expected: {other:?}"),
 		}
 	}
 
@@ -178,20 +176,20 @@ impl IOContext for MockIOContext {
 	}
 
 	fn print(&self, msg: &str) {
-		match self.pop_next_action() {
-			Some(MockIO::Print(expected_msg)) => {
+		let next = self.pop_next_action(&format!("print({msg})"));
+		match next {
+			MockIO::Print(expected_msg) => {
 				assert_eq!(msg, expected_msg, "Incorrect message printed")
 			},
-			Some(other) => panic!("Unexpected message printed: {msg}, expected: {other:?}"),
-			None => {
-				panic!("Unexpected stdout message printed: {msg}, expected no more content actions")
-			},
+			other => panic!("Unexpected message printed: {msg}, expected: {other:?}"),
 		}
 	}
 
 	fn prompt(&self, prompt: &str, default: Option<&str>) -> String {
-		match self.pop_next_action() {
-			Some(MockIO::Prompt { prompt: expected_prompt, default: expected_default, input }) => {
+		let next =
+			self.pop_next_action(&format!("prompt(prompt = {prompt}, default = {default:?})"));
+		match next {
+			MockIO::Prompt { prompt: expected_prompt, default: expected_default, input } => {
 				assert_eq!(prompt, expected_prompt, "Invalid prompt displayed");
 				assert_eq!(
 					default.map(|s| s.into()),
@@ -200,18 +198,18 @@ impl IOContext for MockIOContext {
 				);
 				input
 			},
-			Some(other) => panic!("Unexpected prompt displayed: {prompt}, expected: {other:?}"),
-			None => panic!("Unexpected prompt displayed: {prompt}, no more actions expected"),
+			other => panic!("Unexpected prompt displayed: {prompt}, expected: {other:?}"),
 		}
 	}
 
 	fn write_file(&self, path: &str, input: &str) {
-		match self.pop_next_action() {
-			Some(MockIO::FileWriteJsonField {
+		let next = self.pop_next_action(&format!("write_file(path = {path}, input = {input})"));
+		match next {
+			MockIO::FileWriteJsonField {
 				path: expected_path,
 				key: expected_key,
 				value: expected_value,
-			}) => {
+			} => {
 				assert_eq!(
 					path, expected_path,
 					"Unexpected file write: {path}, expected: {expected_path}"
@@ -230,7 +228,7 @@ impl IOContext for MockIOContext {
 				);
 				self.files.borrow_mut().insert(path.into(), input.into());
 			},
-			Some(MockIO::FileWriteJson { path: expected_path, input: expected_input }) => {
+			MockIO::FileWriteJson { path: expected_path, input: expected_input } => {
 				assert_eq!(
 					path, expected_path,
 					"Unexpected file write: {path}, expected: {expected_path}"
@@ -243,7 +241,7 @@ impl IOContext for MockIOContext {
 				);
 				self.files.borrow_mut().insert(path.into(), input.into());
 			},
-			Some(MockIO::FileWrite { path: expected_path, input: expected_input }) => {
+			MockIO::FileWrite { path: expected_path, input: expected_input } => {
 				assert_eq!(
 					path, expected_path,
 					"Unexpected file write: {path}, expected: {expected_path}"
@@ -254,22 +252,21 @@ impl IOContext for MockIOContext {
 				);
 				self.files.borrow_mut().insert(path.into(), input.into());
 			},
-			Some(other) => panic!("Unexpected file write action, expected: {other:?}"),
-			None => panic!("Unexpected file write action, no more actions expected"),
+			other => panic!("Unexpected file write action, expected: {other:?}"),
 		}
 	}
 
 	fn read_file(&self, path: &str) -> Option<String> {
-		match self.pop_next_action() {
-			Some(MockIO::FileRead { path: expected_path }) => {
+		let next = self.pop_next_action(&format!("read_file({path})"));
+		match next {
+			MockIO::FileRead { path: expected_path } => {
 				assert_eq!(
 					path, &expected_path,
 					"File read for incorrect file {path}, expected: {expected_path}"
 				);
 				self.files.borrow_mut().get::<String>(&path.to_string()).cloned()
 			},
-			Some(other) => panic!("Unexpected file read for {path}, expected: {other:?}"),
-			None => panic!("Unexpected file read for {path}, no more actions expected"),
+			other => panic!("Unexpected file read for {path}, expected: {other:?}"),
 		}
 	}
 
@@ -278,86 +275,86 @@ impl IOContext for MockIOContext {
 	}
 
 	fn prompt_yes_no(&self, prompt: &str, default: bool) -> bool {
-		match self.pop_next_action() {
-			Some(MockIO::PromptYN {
-				prompt: expected_prompt,
-				default: expected_default,
-				choice,
-			}) => {
+		let next =
+			self.pop_next_action(&format!("prompt_yes_no(prompt = {prompt}, default = {default})"));
+		match next {
+			MockIO::PromptYN { prompt: expected_prompt, default: expected_default, choice } => {
 				assert_eq!(prompt, expected_prompt);
 				assert_eq!(default, expected_default);
 				choice
 			},
-			Some(other) => panic!("Unexpected Y/N prompt, expected: {other:?}"),
-			None => panic!("Unexpected Y/N prompt: {prompt}, no more actions expected"),
+			other => panic!("Unexpected Y/N prompt, expected: {other:?}"),
 		}
 	}
 
 	fn list_directory(&self, path: &str) -> anyhow::Result<Option<Vec<String>>> {
-		match self.pop_next_action() {
-			Some(MockIO::ListDirectory { path: expected_path, result }) => {
+		let next = self.pop_next_action(&format!("list_directory({path})"));
+		match next {
+			MockIO::ListDirectory { path: expected_path, result } => {
 				assert_eq!(
 					path, expected_path,
 					"Incorrect directory listed: {path}, expected: {expected_path}"
 				);
 				Ok(result)
 			},
-			Some(other) => panic!("Unexpected directory listing for {path}. Expected: {other:?}"),
-			None => panic!("Unexpected directory listing for {path}, no more actions expected"),
+			other => panic!("Unexpected directory listing for {path}. Expected: {other:?}"),
 		}
 	}
 
 	fn delete_file(&self, path: &str) -> anyhow::Result<()> {
-		match self.pop_next_action() {
-			Some(MockIO::DeleteFile { path: expected_path }) => {
+		let next = self.pop_next_action(&format!("delete_file({path})"));
+		match next {
+			MockIO::DeleteFile { path: expected_path } => {
 				assert_eq!(
 					path, expected_path,
 					"Incorrect file delete: {path}, expected: {expected_path}"
 				);
 				Ok(())
 			},
-			Some(other) => panic!("Unexpected file deletion of {path}, expected: {other:?}"),
-			None => panic!("Unexpected file deletion of {path}, no more actions expected"),
+			other => panic!("Unexpected file deletion of {path}, expected: {other:?}"),
 		}
 	}
 
 	fn prompt_multi_option(&self, prompt: &str, options: Vec<String>) -> String {
-		match self.pop_next_action() {
-			Some(MockIO::PromptMultiOption {
+		let next = self.pop_next_action(&format!(
+			"prompt_multi_option(prompt = {prompt}, options = {options:?})",
+		));
+		match next {
+			MockIO::PromptMultiOption {
 				prompt: expected_prompt,
 				options: expected_options,
 				choice,
-			}) => {
+			} => {
 				assert_eq!(prompt, expected_prompt);
 				assert_eq!(options, expected_options);
 				choice
 			},
-			Some(other) => panic!("Unexpected multi-option prompt, expected: {other:?}"),
-			None => panic!("Unexpected multi-option prompt: {prompt}, no more actions expected"),
+			other => panic!("Unexpected multi-option prompt, expected: {other:?}"),
 		}
 	}
 
 	fn set_env_var(&self, key: &str, value: &str) {
-		match self.pop_next_action() {
-			Some(MockIO::SetEnvVar { key: expected_key, value: expected_value }) => {
+		let next = self.pop_next_action(&format!("set_env_var(key = {key}, value = {value})"));
+		match next {
+			MockIO::SetEnvVar { key: expected_key, value: expected_value } => {
 				assert_eq!(key, expected_key, "Invalid env var key");
 				assert_eq!(value, expected_value, "Invalid env var value");
 			},
-			Some(other) => panic!("Unexpected env var set: {key}={value}, expected: {other:?}"),
-			None => panic!("Unexpected env var set: {key}={value}, no more actions expected"),
+			other => panic!("Unexpected env var set: {key}={value}, expected: {other:?}"),
 		}
 	}
 
 	fn current_timestamp(&self) -> Timestamp {
-		match self.pop_next_action() {
-			Some(MockIO::SystemTimeNow(time)) => time,
-			Some(other) => panic!("Unexpected system time request, expected: {other:?}"),
-			None => panic!("Unexpected system time request, no more actions expected"),
+		let next = self.pop_next_action(&format!("current_timestamp()"));
+		match next {
+			MockIO::SystemTimeNow(time) => time,
+			other => panic!("Unexpected system time request, expected: {other:?}"),
 		}
 	}
 	fn new_tmp_file(&self, content: &str) -> TempPath {
-		match self.pop_next_action() {
-			Some(MockIO::NewTmpFile { content: expected_content }) => {
+		let next = self.pop_next_action(&format!("new_tmp_file(content = {content})"));
+		match next {
+			MockIO::NewTmpFile { content: expected_content } => {
 				assert_eq!(
 					content, expected_content,
 					"Unexpected file write: {content}, expected content: {expected_content}"
@@ -366,18 +363,17 @@ impl IOContext for MockIOContext {
 				self.files.borrow_mut().insert(path.clone(), content.into());
 				TempPath::from_path(Path::new(&path))
 			},
-			Some(other) => panic!("Unexpected new tmp file action, expected: {other:?}"),
-			None => panic!("Unexpected new tmp file action, no more actions expected"),
+			other => panic!("Unexpected new tmp file action, expected: {other:?}"),
 		}
 	}
 
 	fn new_tmp_dir(&self) -> PathBuf {
-		match self.pop_next_action() {
-			Some(MockIO::NewTmpDir) => PathBuf::from("/tmp/MockIOContext_tmp_dir"),
-			Some(other) => {
+		let next = self.pop_next_action("new_tmp_dir()");
+		match next {
+			MockIO::NewTmpDir => PathBuf::from("/tmp/MockIOContext_tmp_dir"),
+			other => {
 				panic!("Unexpected new temporary directory request, expected: {other:?}")
 			},
-			None => panic!("Unexpected new temporary directory request, no more actions expected"),
 		}
 	}
 }
