@@ -88,8 +88,7 @@ fn get_mainchain_cold_skey<C: IOContext>(
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::tests::should_be_success;
-	use crate::tests::{should_be_failure, MockIO, MockIOContext};
+	use crate::tests::{should_be_failure, should_be_success, MockIO, MockIOContext};
 
 	#[test]
 	fn happy_path() {

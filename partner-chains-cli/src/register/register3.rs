@@ -166,15 +166,15 @@ fn get_current_mainchain_epoch(context: &impl IOContext) -> Result<McEpochNumber
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::config::config_fields::POSTGRES_CONNECTION_STRING;
-	use crate::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io;
-	use crate::pc_contracts_cli_resources::PcContractsCliResources;
-	use crate::tests::should_be_failure;
-	use crate::tests::should_be_success;
 	use crate::{
-		config::CHAIN_CONFIG_FILE_PATH,
-		config::RESOURCES_CONFIG_FILE_PATH,
-		tests::{MockIO, MockIOContext},
+		config::{
+			config_fields::POSTGRES_CONNECTION_STRING, CHAIN_CONFIG_FILE_PATH,
+			RESOURCES_CONFIG_FILE_PATH,
+		},
+		pc_contracts_cli_resources::{
+			tests::establish_pc_contracts_cli_configuration_io, PcContractsCliResources,
+		},
+		tests::{should_be_failure, should_be_success, MockIO, MockIOContext},
 	};
 	use serde_json::json;
 	use sp_core::offchain::Timestamp;
