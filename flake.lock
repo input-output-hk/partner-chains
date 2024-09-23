@@ -27,7 +27,7 @@
       },
       "original": {
         "owner": "IntersectMBO",
-        "ref": "13.3.0.0",
+        "ref": "13.5.0.2",
         "repo": "cardano-db-sync",
         "type": "github"
       }
@@ -61,7 +61,7 @@
       },
       "original": {
         "owner": "IntersectMBO",
-        "ref": "9.1.0",
+        "ref": "9.1.1",
         "repo": "cardano-node",
         "type": "github"
       }

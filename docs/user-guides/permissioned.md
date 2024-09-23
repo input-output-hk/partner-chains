@@ -8,8 +8,8 @@ Before you begin, some software must be installed.
 
 1. Install dependencies
     1. Cardano node v9.1.1
-        1. DB Sync v13.3.0.0 (PostgreSQL v15.3)
-2. Download the partner chain node v1.0
+        1. DB Sync v13.5.0.2 (PostgreSQL v15.3)
+2. Download the partner chain node v1.1.0
 3. Run the generate-keys wizard
 4. Share keys with the chain builder
 5. Obtain the chain configuration and specification files

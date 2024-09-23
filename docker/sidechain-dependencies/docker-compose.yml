@@ -9,7 +9,7 @@ volumes:
 
 services:
   cardano-node:
-    image: ghcr.io/intersectmbo/cardano-node:9.1.0
+    image: ghcr.io/intersectmbo/cardano-node:9.1.1
     network_mode: "host"
     container_name: sidechains-cardano-node
     environment:
@@ -37,7 +37,7 @@ services:
       retries: 5
 
   db-sync:
-    image: ghcr.io/intersectmbo/cardano-db-sync:13.3.0.0
+    image: ghcr.io/intersectmbo/cardano-db-sync:13.5.0.2
     container_name: sidechains-db-sync
     depends_on:
       postgres:
