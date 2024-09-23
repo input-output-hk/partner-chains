@@ -31,7 +31,7 @@ fn no_ariadne_parameters_on_main_chain_no_updates() {
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
 
-	result.expect("Expected the result to be a success");
+	result.expect("should succeed");
 	should_have_no_io_left!(mock_context);
 }
 
@@ -54,7 +54,7 @@ fn no_ariadne_parameters_on_main_chain_do_updates() {
 			print_post_update_info_io(),
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
-	result.expect("Expected the result to be a success");
+	result.expect("should succeed");
 	should_have_no_io_left!(mock_context);
 }
 
@@ -76,7 +76,7 @@ fn ariadne_parameters_are_on_main_chain_no_updates() {
 			print_post_update_info_io(),
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
-	result.expect("Expected the result to be a success");
+	result.expect("should succeed");
 	should_have_no_io_left!(mock_context);
 }
 
@@ -100,7 +100,7 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 			print_post_update_info_io(),
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
-	result.expect("Expected the result to be a success");
+	result.expect("should succeed");
 	should_have_no_io_left!(mock_context);
 }
 
@@ -120,7 +120,7 @@ fn fails_if_update_permissioned_candidates_fail() {
 			update_permissioned_candidates_failed_io(),
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
-	result.expect_err("Expected the result to be an error");
+	result.expect_err("should return error");
 	should_have_no_io_left!(mock_context);
 }
 
@@ -141,7 +141,7 @@ fn candidates_on_main_chain_are_same_as_in_config_no_updates() {
 			print_post_update_info_io(),
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
-	result.expect("Expected the result to be a success");
+	result.expect("should succeed");
 	should_have_no_io_left!(mock_context);
 }
 
@@ -151,7 +151,7 @@ fn should_return_error_message_if_pc_cli_missing() {
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_expected_io(vec![read_chain_config_io(), print_info_io()]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
-	let err = result.expect_err("Expected the result to be an error");
+	let err = result.expect_err("should return error");
 	assert_eq!(
 		err.to_string(),
 		"Partner Chains Smart Contracts executable file (./pc-contracts-cli) is missing"

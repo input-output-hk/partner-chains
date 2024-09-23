@@ -204,7 +204,7 @@ pub mod tests {
 			.with_json_file(CARDANO_SECURITY_PARAMETER.config_file, serde_json::json!({}))
 			.with_expected_io(vec![save_cardano_params(cardano_parameters.clone())]);
 		let result = prepare_cardano_params(&mock_context, cardano_network);
-		let params = result.expect("Expected the result to be a success");
+		let params = result.expect("should succeed");
 		assert_eq!(params, cardano_parameters);
 		should_have_no_io_left!(mock_context);
 	}

@@ -316,7 +316,7 @@ mod tests {
 			);
 
 		let result = Register1Cmd {}.run(&mock_context);
-		result.expect("Expected the result to be a success");
+		result.expect("should succeed");
 		should_have_no_io_left!(mock_context);
 	}
 
@@ -330,7 +330,7 @@ mod tests {
 		);
 
 		let result = Register1Cmd {}.run(&mock_context);
-		result.expect_err("Expected the result to be an error");
+		result.expect_err("should return error");
 		should_have_no_io_left!(mock_context);
 	}
 
@@ -350,7 +350,7 @@ mod tests {
 			);
 
 		let result = Register1Cmd {}.run(&mock_context);
-		result.expect_err("Expected the result to be an error");
+		result.expect_err("should return error");
 		should_have_no_io_left!(mock_context);
 	}
 

@@ -289,8 +289,7 @@ mod tests {
 				),
 				MockIO::eprint(OUTRO),
 			]);
-		prepare_main_chain_config(&mock_context, test_sidechain_params())
-			.expect("Expected the result to be a success");
+		prepare_main_chain_config(&mock_context, test_sidechain_params()).expect("should succeed");
 		should_have_no_io_left!(mock_context);
 	}
 
@@ -354,8 +353,7 @@ mod tests {
 				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				MockIO::eprint(OUTRO),
 			]);
-		prepare_main_chain_config(&mock_context, test_sidechain_params())
-			.expect("Expected the result to be a success");
+		prepare_main_chain_config(&mock_context, test_sidechain_params()).expect("should succeed");
 		should_have_no_io_left!(mock_context);
 	}
 

@@ -145,7 +145,7 @@ fn happy_path() {
 
 	let result = StartNodeCmd { silent: false }.run(&context);
 
-	result.expect("Expected the result to be a success");
+	result.expect("should succeed");
 	should_have_no_io_left!(context);
 }
 
@@ -196,7 +196,7 @@ mod check_keystore {
 
 		let result = check_keystore(&default_config(), &context);
 
-		result.expect("Expected the result to be a success");
+		result.expect("should succeed");
 		should_have_no_io_left!(context);
 	}
 
@@ -214,7 +214,7 @@ mod check_keystore {
 		]);
 
 		let result = check_keystore(&default_config(), &context);
-		let result = result.expect("Expected the result to be a success");
+		let result = result.expect("should succeed");
 		assert!(!result);
 		should_have_no_io_left!(context);
 	}

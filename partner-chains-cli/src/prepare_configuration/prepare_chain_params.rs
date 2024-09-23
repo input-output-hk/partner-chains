@@ -207,7 +207,7 @@ mod tests {
 
 		let result = prepare_chain_params(&mock_context);
 
-		result.expect("Expected the result to be a success");
+		result.expect("should succeed");
 		should_have_no_io_left!(mock_context);
 	}
 
@@ -240,7 +240,7 @@ mod tests {
 
 		let result = prepare_chain_params(&mock_context);
 
-		result.expect("Expected the result to be a success");
+		result.expect("should succeed");
 		should_have_no_io_left!(mock_context);
 	}
 
@@ -277,7 +277,7 @@ mod tests {
 
 		let result = prepare_chain_params(&mock_context);
 
-		result.expect("Expected the result to be a success");
+		result.expect("should succeed");
 		should_have_no_io_left!(mock_context);
 	}
 
@@ -311,7 +311,7 @@ mod tests {
 
 		let result = prepare_chain_params(&mock_context);
 
-		result.expect("Expected the result to be a success");
+		result.expect("should succeed");
 		should_have_no_io_left!(mock_context);
 	}
 
@@ -366,7 +366,7 @@ mod tests {
 
 		let result = prepare_chain_params(&mock_context);
 
-		result.expect("Expected the result to be a success");
+		result.expect("should succeed");
 		should_have_no_io_left!(mock_context);
 	}
 

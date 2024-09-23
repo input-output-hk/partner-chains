@@ -327,7 +327,7 @@ pub mod tests {
 
 		let result = establish_bootnodes(&mock_context);
 
-		result.expect("Expected the result to be a success");
+		result.expect("should succeed");
 		should_have_no_io_left!(mock_context);
 	}
 
@@ -343,7 +343,7 @@ pub mod tests {
 
 		let result = establish_bootnodes(&mock_context);
 
-		result.expect("Expected the result to be a success");
+		result.expect("should succeed");
 		should_have_no_io_left!(mock_context);
 	}
 
@@ -372,7 +372,7 @@ pub mod tests {
 
 		let result = establish_bootnodes(&mock_context);
 
-		result.expect("Expected the result to be a success");
+		result.expect("should succeed");
 		should_have_no_io_left!(mock_context);
 	}
 
@@ -401,7 +401,7 @@ pub mod tests {
 
 		let result = establish_bootnodes(&mock_context);
 
-		result.expect("Expected the result to be a success");
+		result.expect("should succeed");
 		should_have_no_io_left!(mock_context);
 	}
 
@@ -413,7 +413,7 @@ pub mod tests {
 
 		let result = PrepareConfigurationCmd {}.run(&mock_context);
 
-		let error = result.expect_err("Expected the result to be an error");
+		let error = result.expect_err("should return error");
 		assert_eq!(error.to_string(), NetworkKeyNotFoundError(network_key_file()).to_string());
 		should_have_no_io_left!(mock_context);
 	}
@@ -437,7 +437,7 @@ pub mod tests {
 
 		let result = establish_bootnodes(&mock_context);
 
-		result.expect("Expected the result to be a success");
+		result.expect("should succeed");
 		should_have_no_io_left!(mock_context);
 	}
 
@@ -456,7 +456,7 @@ pub mod tests {
 
 		let result = PrepareConfigurationCmd {}.run(&mock_context);
 
-		let error = result.expect_err("Expected the result to be an error");
+		let error = result.expect_err("should return error");
 		assert!(error.to_string().contains("⚠️ Invalid IP address"));
 		should_have_no_io_left!(mock_context);
 	}
