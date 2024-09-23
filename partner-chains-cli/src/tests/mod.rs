@@ -147,7 +147,7 @@ pub(crate) use should_have_no_io_left;
 
 macro_rules! should_be_success {
 	($result:expr, $context:expr) => {{
-		let result = $result.unwrap();
+		let result = $result.expect("Expected the result to be a success");
 		assert!(
 			$context.expected_io.borrow().is_empty(),
 			"Expected IO operations left unperformed: {:?}",
@@ -160,7 +160,7 @@ pub(crate) use should_be_success;
 
 macro_rules! should_be_failure {
 	($result:expr, $context:expr) => {{
-		let err = $result.unwrap_err();
+		let err = $result.expect_err("Expected the result to be an error");
 		assert!(
 			$context.expected_io.borrow().is_empty(),
 			"Expected IO operations left unperformed: {:?}",
