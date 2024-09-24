@@ -151,7 +151,7 @@ fn prepare_native_token<C: IOContext>(context: &C) -> anyhow::Result<()> {
 		NATIVE_TOKEN_ASSET_NAME.prompt_with_default_from_file_and_save(context);
 	} else {
 		NATIVE_TOKEN_POLICY.save_to_file(&PolicyId::default().to_hex_string(), context);
-		NATIVE_TOKEN_ASSET_NAME.save_to_file(&"0x0".into(), context);
+		NATIVE_TOKEN_ASSET_NAME.save_to_file(&"0x".into(), context);
 	}
 
 	Ok(())
