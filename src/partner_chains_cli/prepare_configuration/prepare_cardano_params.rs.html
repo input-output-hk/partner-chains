@@ -428,9 +428,9 @@
 		<span class="kw">let </span>mock_context = MockIOContext::new()
 			.with_json_file(CARDANO_SECURITY_PARAMETER.config_file, <span class="macro">serde_json::json!</span>({}))
 			.with_expected_io(<span class="macro">vec!</span>[save_cardano_params(cardano_parameters.clone())]);
-		<span class="kw">let </span>params = prepare_cardano_params(<span class="kw-2">&amp;</span>mock_context, cardano_network).unwrap();
-		mock_context.no_more_io_expected();
-		<span class="macro">assert_eq!</span>(params, cardano_parameters)
+		<span class="kw">let </span>result = prepare_cardano_params(<span class="kw-2">&amp;</span>mock_context, cardano_network);
+		<span class="kw">let </span>params = result.expect(<span class="string">"should succeed"</span>);
+		<span class="macro">assert_eq!</span>(params, cardano_parameters);
 	}
 
 	<span class="kw">fn </span>test_chain_config(cardano_parameters: CardanoParameters) -&gt; Value {

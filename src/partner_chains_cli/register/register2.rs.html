@@ -174,8 +174,6 @@
 <a href="#172" id="172">172</a>
 <a href="#173" id="173">173</a>
 <a href="#174" id="174">174</a>
-<a href="#175" id="175">175</a>
-<a href="#176" id="176">176</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::CmdRun;
 <span class="kw">use </span>clap::Parser;
@@ -280,8 +278,7 @@
 			);
 
 		<span class="kw">let </span>result = mock_register2_cmd().run(<span class="kw-2">&amp;</span>mock_context);
-		mock_context.no_more_io_expected();
-		<span class="macro">assert!</span>(result.is_ok());
+		result.expect(<span class="string">"should succeed"</span>);
 	}
 
 	<span class="attr">#[test]
@@ -298,8 +295,7 @@
 		]);
 
 		<span class="kw">let </span>result = mock_register2_cmd().run(<span class="kw-2">&amp;</span>mock_context);
-		mock_context.no_more_io_expected();
-		<span class="macro">assert!</span>(result.is_err());
+		result.expect_err(<span class="string">"should return error"</span>);
 	}
 
 	<span class="kw">fn </span>intro_msg_io() -&gt; Vec&lt;MockIO&gt; {

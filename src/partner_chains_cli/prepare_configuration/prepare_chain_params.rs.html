@@ -379,12 +379,6 @@
 <a href="#377" id="377">377</a>
 <a href="#378" id="378">378</a>
 <a href="#379" id="379">379</a>
-<a href="#380" id="380">380</a>
-<a href="#381" id="381">381</a>
-<a href="#382" id="382">382</a>
-<a href="#383" id="383">383</a>
-<a href="#384" id="384">384</a>
-<a href="#385" id="385">385</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	CHAIN_ID, GENESIS_COMMITTEE_UTXO, GOVERNANCE_AUTHORITY, THRESHOLD_DENOMINATOR,
 	THRESHOLD_NUMERATOR,
@@ -534,6 +528,7 @@
 		prompt_and_save_to_existing_file, prompt_with_default_and_save_to_existing_file,
 		save_to_existing_file, save_to_new_file, CHAIN_CONFIG_PATH,
 	};
+
 	<span class="kw">use </span><span class="kw">crate</span>::tests::{MockIO, MockIOContext};
 	<span class="kw">use </span>serde_json::Value;
 	<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, UtxoId};
@@ -593,8 +588,7 @@
 
 		<span class="kw">let </span>result = prepare_chain_params(<span class="kw-2">&amp;</span>mock_context);
 
-		<span class="macro">assert!</span>(result.is_ok());
-		mock_context.no_more_io_expected();
+		result.expect(<span class="string">"should succeed"</span>);
 	}
 
 	<span class="attr">#[test]
@@ -626,9 +620,7 @@
 
 		<span class="kw">let </span>result = prepare_chain_params(<span class="kw-2">&amp;</span>mock_context);
 
-		mock_context.no_more_io_expected();
-
-		<span class="macro">assert!</span>(result.is_ok());
+		result.expect(<span class="string">"should succeed"</span>);
 	}
 
 	<span class="attr">#[test]
@@ -664,9 +656,7 @@
 
 		<span class="kw">let </span>result = prepare_chain_params(<span class="kw-2">&amp;</span>mock_context);
 
-		mock_context.no_more_io_expected();
-
-		<span class="macro">assert!</span>(result.is_ok());
+		result.expect(<span class="string">"should succeed"</span>);
 	}
 
 	<span class="attr">#[test]
@@ -699,8 +689,7 @@
 
 		<span class="kw">let </span>result = prepare_chain_params(<span class="kw-2">&amp;</span>mock_context);
 
-		mock_context.no_more_io_expected();
-		<span class="macro">assert!</span>(result.is_ok());
+		result.expect(<span class="string">"should succeed"</span>);
 	}
 
 	<span class="attr">#[test]
@@ -754,8 +743,7 @@
 
 		<span class="kw">let </span>result = prepare_chain_params(<span class="kw-2">&amp;</span>mock_context);
 
-		mock_context.no_more_io_expected();
-		<span class="macro">assert!</span>(result.is_ok());
+		result.expect(<span class="string">"should succeed"</span>);
 	}
 
 	<span class="kw">fn </span>test_chain_config() -&gt; Value {

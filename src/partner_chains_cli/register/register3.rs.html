@@ -410,7 +410,6 @@
 <a href="#408" id="408">408</a>
 <a href="#409" id="409">409</a>
 <a href="#410" id="410">410</a>
-<a href="#411" id="411">411</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config;
 <span class="kw">use </span><span class="kw">crate</span>::config::config_fields;
 <span class="kw">use </span><span class="kw">crate</span>::config::get_cardano_network_from_file;
@@ -579,12 +578,14 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::POSTGRES_CONNECTION_STRING;
-	<span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io;
-	<span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::PcContractsCliResources;
 	<span class="kw">use crate</span>::{
-		config::CHAIN_CONFIG_FILE_PATH,
-		config::RESOURCES_CONFIG_FILE_PATH,
+		config::{
+			config_fields::POSTGRES_CONNECTION_STRING, CHAIN_CONFIG_FILE_PATH,
+			RESOURCES_CONFIG_FILE_PATH,
+		},
+		pc_contracts_cli_resources::{
+			tests::establish_pc_contracts_cli_configuration_io, PcContractsCliResources,
+		},
 		tests::{MockIO, MockIOContext},
 	};
 	<span class="kw">use </span>serde_json::json;
@@ -614,8 +615,7 @@
 			);
 
 		<span class="kw">let </span>result = mock_register3_cmd().run(<span class="kw-2">&amp;</span>mock_context);
-		mock_context.no_more_io_expected();
-		<span class="macro">assert!</span>(result.is_ok());
+		result.expect(<span class="string">"should succeed"</span>);
 	}
 
 	<span class="attr">#[test]
@@ -640,8 +640,7 @@
 			);
 
 		<span class="kw">let </span>result = mock_register3_cmd().run(<span class="kw-2">&amp;</span>mock_context);
-		mock_context.no_more_io_expected();
-		<span class="macro">assert!</span>(result.is_err());
+		result.expect_err(<span class="string">"should return error"</span>);
 	}
 
 	<span class="attr">#[test]
@@ -667,8 +666,7 @@
 			);
 
 		<span class="kw">let </span>result = mock_register3_cmd().run(<span class="kw-2">&amp;</span>mock_context);
-		mock_context.no_more_io_expected();
-		<span class="macro">assert!</span>(result.is_ok());
+		result.expect(<span class="string">"should succeed"</span>);
 	}
 
 	<span class="kw">fn </span>intro_msg_io() -&gt; Vec&lt;MockIO&gt; {

@@ -445,8 +445,6 @@
 <a href="#443" id="443">443</a>
 <a href="#444" id="444">444</a>
 <a href="#445" id="445">445</a>
-<a href="#446" id="446">446</a>
-<a href="#447" id="447">447</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	CARDANO_NETWORK, COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID,
 	INITIAL_PERMISSIONED_CANDIDATES, PERMISSIONED_CANDIDATES_POLICY_ID,
@@ -455,10 +453,10 @@
 	get_cardano_network_from_file, CardanoNetwork, SidechainParams, PC_CONTRACTS_CLI_PATH,
 };
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
-<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 <span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::{
 	establish_pc_contracts_cli_configuration, PcContractsCliResources,
 };
+<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 <span class="kw">use </span><span class="kw">crate</span>::smart_contracts;
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>serde_json::Value;
@@ -738,8 +736,7 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 				),
 				MockIO::eprint(OUTRO),
 			]);
-		prepare_main_chain_config(<span class="kw-2">&amp;</span>mock_context, test_sidechain_params()).unwrap();
-		mock_context.no_more_io_expected();
+		prepare_main_chain_config(<span class="kw-2">&amp;</span>mock_context, test_sidechain_params()).expect(<span class="string">"should succeed"</span>);
 	}
 
 	<span class="attr">#[test]
@@ -802,8 +799,7 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				MockIO::eprint(OUTRO),
 			]);
-		prepare_main_chain_config(<span class="kw-2">&amp;</span>mock_context, test_sidechain_params()).unwrap();
-		mock_context.no_more_io_expected();
+		prepare_main_chain_config(<span class="kw-2">&amp;</span>mock_context, test_sidechain_params()).expect(<span class="string">"should succeed"</span>);
 	}
 
 	<span class="attr">#[test]

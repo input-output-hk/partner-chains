@@ -907,11 +907,6 @@
 <a href="#905" id="905">905</a>
 <a href="#906" id="906">906</a>
 <a href="#907" id="907">907</a>
-<a href="#908" id="908">908</a>
-<a href="#909" id="909">909</a>
-<a href="#910" id="910">910</a>
-<a href="#911" id="911">911</a>
-<a href="#912" id="912">912</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_cli::testnet_magic_arg;
 <span class="kw">use </span><span class="kw">crate</span>::config::config_values::DEFAULT_CHAIN_NAME;
 <span class="kw">use </span><span class="kw">crate</span>::config::KEYS_FILE_PATH;
@@ -1230,8 +1225,7 @@
 			);
 
 		<span class="kw">let </span>result = Register1Cmd {}.run(<span class="kw-2">&amp;</span>mock_context);
-		mock_context.no_more_io_expected();
-		<span class="macro">assert!</span>(result.is_ok());
+		result.expect(<span class="string">"should succeed"</span>);
 	}
 
 	<span class="attr">#[test]
@@ -1244,9 +1238,7 @@
 		);
 
 		<span class="kw">let </span>result = Register1Cmd {}.run(<span class="kw-2">&amp;</span>mock_context);
-		mock_context.no_more_io_expected();
-
-		<span class="macro">assert!</span>(result.is_err());
+		result.expect_err(<span class="string">"should return error"</span>);
 	}
 
 	<span class="attr">#[test]
@@ -1265,9 +1257,7 @@
 			);
 
 		<span class="kw">let </span>result = Register1Cmd {}.run(<span class="kw-2">&amp;</span>mock_context);
-		mock_context.no_more_io_expected();
-
-		<span class="macro">assert!</span>(result.is_err());
+		result.expect_err(<span class="string">"should return error"</span>);
 	}
 
 	<span class="attr">#[test]
