@@ -864,6 +864,9 @@ impl_runtime_apis! {
 		fn get_main_chain_scripts() -> Option<sp_native_token_management::MainChainScripts> {
 			NativeTokenManagement::get_main_chain_scripts()
 		}
+		fn initialized() -> bool {
+			NativeTokenManagement::initialized()
+		}
 	}
 }
 

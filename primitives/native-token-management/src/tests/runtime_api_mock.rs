@@ -32,6 +32,10 @@ sp_api::mock_impl_runtime_apis! {
 			self.main_chain_scripts.clone()
 		}
 
+		fn initialized() -> bool {
+			true
+		}
+
 	}
 }
 
