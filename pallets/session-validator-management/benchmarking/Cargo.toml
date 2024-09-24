@@ -1,6 +1,6 @@
 [package]
 name = "pallet-session-validator-management-benchmarking"
-version = "1.1.0"
+version = "1.2.0"
 edition = "2021"
 
 [package.metadata.docs.rs]
