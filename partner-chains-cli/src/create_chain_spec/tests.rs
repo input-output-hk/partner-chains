@@ -1,6 +1,6 @@
 use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::create_chain_spec::{CreateChainSpecCmd, INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE};
-use crate::tests::{should_have_no_io_left, MockIO, MockIOContext};
+use crate::tests::{MockIO, MockIOContext};
 use crate::{config, CmdRun};
 use anyhow::anyhow;
 use colored::Colorize;
@@ -24,7 +24,6 @@ fn happy_path() {
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
 	result.expect("should succeed");
-	should_have_no_io_left!(mock_context);
 }
 
 #[test]
@@ -58,7 +57,6 @@ If you are a validator, you can obtain the chain configuration file from the gov
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
 	result.expect_err("should return error");
-	should_have_no_io_left!(mock_context);
 }
 
 #[test]
@@ -73,7 +71,6 @@ If you are a validator, you can obtain the chain configuration file from the gov
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
 	result.expect_err("should return error");
-	should_have_no_io_left!(mock_context);
 }
 
 #[test]
@@ -95,7 +92,6 @@ fn errors_if_chain_spec_is_missing() {
 		err.to_string(),
 		"Could not read chain-spec.json file. File is expected to exists.".to_string()
 	);
-	should_have_no_io_left!(mock_context);
 }
 
 #[test]
@@ -115,7 +111,6 @@ fn forwards_build_spec_error_if_it_fails() {
 	let result = CreateChainSpecCmd.run(&mock_context);
 	let err = result.expect_err("should return error");
 	assert_eq!(err.to_string(), "Failed miserably".to_string());
-	should_have_no_io_left!(mock_context);
 }
 
 fn test_config_content() -> serde_json::Value {

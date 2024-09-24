@@ -283,7 +283,7 @@ fn parse_utxo_query_output(utxo_query_output: &UtxoQueryOutput) -> Vec<ValidUtxo
 mod tests {
 	use super::*;
 	use crate::config::config_fields::{CARDANO_CLI, CARDANO_PAYMENT_VERIFICATION_KEY_FILE};
-	use crate::tests::{should_have_no_io_left, MockIO, MockIOContext};
+	use crate::tests::{MockIO, MockIOContext};
 
 	#[test]
 	fn happy_path() {
@@ -317,7 +317,6 @@ mod tests {
 
 		let result = Register1Cmd {}.run(&mock_context);
 		result.expect("should succeed");
-		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -331,7 +330,6 @@ mod tests {
 
 		let result = Register1Cmd {}.run(&mock_context);
 		result.expect_err("should return error");
-		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -351,7 +349,6 @@ mod tests {
 
 		let result = Register1Cmd {}.run(&mock_context);
 		result.expect_err("should return error");
-		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]

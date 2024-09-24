@@ -174,7 +174,7 @@ mod tests {
 		pc_contracts_cli_resources::{
 			tests::establish_pc_contracts_cli_configuration_io, PcContractsCliResources,
 		},
-		tests::{should_have_no_io_left, MockIO, MockIOContext},
+		tests::{MockIO, MockIOContext},
 	};
 	use serde_json::json;
 	use sp_core::offchain::Timestamp;
@@ -204,7 +204,6 @@ mod tests {
 
 		let result = mock_register3_cmd().run(&mock_context);
 		result.expect("should succeed");
-		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -230,7 +229,6 @@ mod tests {
 
 		let result = mock_register3_cmd().run(&mock_context);
 		result.expect_err("should return error");
-		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -257,7 +255,6 @@ mod tests {
 
 		let result = mock_register3_cmd().run(&mock_context);
 		result.expect("should succeed");
-		should_have_no_io_left!(mock_context);
 	}
 
 	fn intro_msg_io() -> Vec<MockIO> {

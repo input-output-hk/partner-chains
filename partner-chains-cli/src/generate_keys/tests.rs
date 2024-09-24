@@ -182,7 +182,6 @@ fn happy_path() {
 	let result = GenerateKeysCmd {}.run(&mock_context);
 
 	result.expect("should succeed");
-	should_have_no_io_left!(mock_context);
 }
 
 mod config_read {
@@ -197,8 +196,6 @@ mod config_read {
 			.with_expected_io(vec![scenarios::prompt_all_config_fields()]);
 
 		let result = GenerateKeysConfig::load(&context);
-
-		should_have_no_io_left!(context);
 
 		assert_eq!(result.chain_name, CHAIN_NAME);
 		assert_eq!(result.node_executable, EXECUTABLE_PATH);
@@ -226,8 +223,6 @@ mod config_read {
 
 		let result = GenerateKeysConfig::load(&context);
 
-		should_have_no_io_left!(context);
-
 		assert_eq!(result.chain_name, CHAIN_NAME);
 		assert_eq!(result.node_executable, EXECUTABLE_PATH);
 		assert_eq!(result.substrate_node_base_path, DATA_PATH);
@@ -235,15 +230,7 @@ mod config_read {
 
 	#[test]
 	fn verify_executable_returns_error_when_node_executable_missing() {
-		let context = MockIOContext::new().with_expected_io(vec![
-			MockIO::file_write_json(
-				RESOURCES_CONFIG_PATH,
-				serde_json::json!({
-				  "substrate_node_executable_path": "./partner-chains-node"
-				}),
-			),
-			MockIO::file_read(RESOURCES_CONFIG_PATH),
-		]);
+		let context = MockIOContext::new();
 
 		let result = verify_executable(&default_config(), &context);
 
@@ -301,7 +288,6 @@ mod generate_spo_keys {
 		let result = generate_spo_keys(&default_config(), &mock_context);
 
 		result.expect("should succeed");
-		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -327,7 +313,6 @@ mod generate_spo_keys {
 		let result = generate_spo_keys(&default_config(), &mock_context);
 
 		result.expect("should succeed");
-		should_have_no_io_left!(mock_context);
 	}
 }
 

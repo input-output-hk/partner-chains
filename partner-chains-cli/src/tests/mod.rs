@@ -118,7 +118,7 @@ impl MockIOContext {
 	pub fn with_expected_io(self, mut expected_commands: Vec<MockIO>) -> Self {
 		expected_commands.reverse();
 		let expected_commands = expected_commands.into();
-		Self { expected_io: expected_commands, ..self }
+		Self { expected_io: expected_commands, files: self.files.clone() }
 	}
 	pub fn pop_next_action(&self) -> Option<MockIO> {
 		let next = self.expected_io.borrow_mut().pop();
@@ -134,16 +134,13 @@ impl MockIOContext {
 	}
 }
 
-macro_rules! should_have_no_io_left {
-	($context:expr) => {{
-		assert!(
-			$context.expected_io.borrow().is_empty(),
-			"Expected IO operations left unperformed: {:?}",
-			$context.expected_io
-		);
-	}};
+impl Drop for MockIOContext {
+	fn drop(&mut self) {
+		if let Some(next_expected) = self.expected_io.borrow().first() {
+			panic!("IO operations left unperformed. Next expected: {:?}", next_expected);
+		}
+	}
 }
-pub(crate) use should_have_no_io_left;
 
 impl IOContext for MockIOContext {
 	fn run_command(&self, cmd: &str) -> anyhow::Result<String> {

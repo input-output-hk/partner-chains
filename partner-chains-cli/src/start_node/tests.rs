@@ -1,4 +1,4 @@
-use crate::tests::{should_have_no_io_left, MockIO, MockIOContext};
+use crate::tests::{MockIO, MockIOContext};
 
 use super::*;
 
@@ -146,11 +146,9 @@ fn happy_path() {
 	let result = StartNodeCmd { silent: false }.run(&context);
 
 	result.expect("should succeed");
-	should_have_no_io_left!(context);
 }
 
 mod check_chain_spec {
-	use crate::tests::should_have_no_io_left;
 
 	use super::*;
 
@@ -160,7 +158,6 @@ mod check_chain_spec {
 		let result = check_chain_spec(&context);
 
 		assert!(result);
-		should_have_no_io_left!(context);
 	}
 
 	#[test]
@@ -173,12 +170,11 @@ mod check_chain_spec {
 		let result = check_chain_spec(&context);
 
 		assert!(!result);
-		should_have_no_io_left!(context);
 	}
 }
 
 mod check_keystore {
-	use crate::tests::{should_have_no_io_left, MockIOContext};
+	use crate::tests::MockIOContext;
 
 	use super::*;
 
@@ -197,7 +193,6 @@ mod check_keystore {
 		let result = check_keystore(&default_config(), &context);
 
 		result.expect("should succeed");
-		should_have_no_io_left!(context);
 	}
 
 	#[test]
@@ -216,7 +211,6 @@ mod check_keystore {
 		let result = check_keystore(&default_config(), &context);
 		let result = result.expect("should succeed");
 		assert!(!result);
-		should_have_no_io_left!(context);
 	}
 }
 

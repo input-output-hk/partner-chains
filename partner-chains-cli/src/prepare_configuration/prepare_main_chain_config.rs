@@ -197,8 +197,8 @@ mod tests {
 	use crate::config::CHAIN_CONFIG_FILE_PATH;
 	use crate::prepare_configuration::prepare_cardano_params::PREPROD_CARDANO_PARAMS;
 	use crate::prepare_configuration::tests::save_to_existing_file;
+	use crate::tests::MockIO;
 	use crate::tests::MockIOContext;
-	use crate::tests::{should_have_no_io_left, MockIO};
 	use serde_json::Value;
 	use sidechain_domain::{MainchainAddressHash, UtxoId};
 	use std::str::FromStr;
@@ -290,7 +290,6 @@ mod tests {
 				MockIO::eprint(OUTRO),
 			]);
 		prepare_main_chain_config(&mock_context, test_sidechain_params()).expect("should succeed");
-		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -354,7 +353,6 @@ mod tests {
 				MockIO::eprint(OUTRO),
 			]);
 		prepare_main_chain_config(&mock_context, test_sidechain_params()).expect("should succeed");
-		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]

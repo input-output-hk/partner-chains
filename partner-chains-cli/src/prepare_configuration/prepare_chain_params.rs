@@ -147,7 +147,7 @@ mod tests {
 		prompt_and_save_to_existing_file, prompt_with_default_and_save_to_existing_file,
 		save_to_existing_file, save_to_new_file, CHAIN_CONFIG_PATH,
 	};
-	use crate::tests::should_have_no_io_left;
+
 	use crate::tests::{MockIO, MockIOContext};
 	use serde_json::Value;
 	use sidechain_domain::{MainchainAddressHash, UtxoId};
@@ -208,7 +208,6 @@ mod tests {
 		let result = prepare_chain_params(&mock_context);
 
 		result.expect("should succeed");
-		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -241,7 +240,6 @@ mod tests {
 		let result = prepare_chain_params(&mock_context);
 
 		result.expect("should succeed");
-		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -278,7 +276,6 @@ mod tests {
 		let result = prepare_chain_params(&mock_context);
 
 		result.expect("should succeed");
-		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -312,7 +309,6 @@ mod tests {
 		let result = prepare_chain_params(&mock_context);
 
 		result.expect("should succeed");
-		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -367,7 +363,6 @@ mod tests {
 		let result = prepare_chain_params(&mock_context);
 
 		result.expect("should succeed");
-		should_have_no_io_left!(mock_context);
 	}
 
 	fn test_chain_config() -> Value {

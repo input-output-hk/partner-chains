@@ -2,7 +2,7 @@ use crate::config::*;
 
 mod config_field {
 
-	use crate::tests::{should_have_no_io_left, MockIO, MockIOContext};
+	use crate::tests::{MockIO, MockIOContext};
 
 	use super::*;
 
@@ -32,8 +32,6 @@ mod config_field {
 		)]);
 
 		config_field.save_to_file(&"this is a test string".into(), &mock_context);
-
-		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]
@@ -77,8 +75,6 @@ mod config_field {
 			]);
 
 		config_field.save_to_file(&"this is a test string".into(), &mock_context);
-
-		should_have_no_io_left!(mock_context);
 	}
 
 	#[test]

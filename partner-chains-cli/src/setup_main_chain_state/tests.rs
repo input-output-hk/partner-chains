@@ -7,7 +7,7 @@ use crate::prepare_configuration::tests::{
 	prompt_and_save_to_existing_file, prompt_with_default_and_save_to_existing_file,
 };
 use crate::setup_main_chain_state::SetupMainChainStateCmd;
-use crate::tests::should_have_no_io_left;
+
 use crate::tests::{MockIO, MockIOContext};
 use crate::CmdRun;
 use serde_json::json;
@@ -32,7 +32,6 @@ fn no_ariadne_parameters_on_main_chain_no_updates() {
 	let result = SetupMainChainStateCmd.run(&mock_context);
 
 	result.expect("should succeed");
-	should_have_no_io_left!(mock_context);
 }
 
 #[test]
@@ -55,7 +54,6 @@ fn no_ariadne_parameters_on_main_chain_do_updates() {
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
 	result.expect("should succeed");
-	should_have_no_io_left!(mock_context);
 }
 
 #[test]
@@ -77,7 +75,6 @@ fn ariadne_parameters_are_on_main_chain_no_updates() {
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
 	result.expect("should succeed");
-	should_have_no_io_left!(mock_context);
 }
 
 #[test]
@@ -101,7 +98,6 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
 	result.expect("should succeed");
-	should_have_no_io_left!(mock_context);
 }
 
 #[test]
@@ -121,7 +117,6 @@ fn fails_if_update_permissioned_candidates_fail() {
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
 	result.expect_err("should return error");
-	should_have_no_io_left!(mock_context);
 }
 
 #[test]
@@ -142,7 +137,6 @@ fn candidates_on_main_chain_are_same_as_in_config_no_updates() {
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
 	result.expect("should succeed");
-	should_have_no_io_left!(mock_context);
 }
 
 #[test]
@@ -156,7 +150,6 @@ fn should_return_error_message_if_pc_cli_missing() {
 		err.to_string(),
 		"Partner Chains Smart Contracts executable file (./pc-contracts-cli) is missing"
 	);
-	should_have_no_io_left!(mock_context);
 }
 
 fn read_chain_config_io() -> MockIO {
