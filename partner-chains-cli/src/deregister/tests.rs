@@ -117,7 +117,7 @@ fn read_config_twice_io() -> MockIO {
 
 fn print_info_io() -> MockIO {
 	MockIO::print(
-		r##"This wizard will remove the candidate identified by given from the committee candidates of a chain identified by parameters:
+		r##"This wizard will remove the specified candidate from the committee candidates based on the following chain parameters:
 {
   "chain_id": 1234,
   "genesis_committee_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0",
@@ -125,7 +125,7 @@ fn print_info_io() -> MockIO {
   "threshold_denominator": 3,
   "governance_authority": "0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"
 }.
-Committee Candidate Validator Address is addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc
+Committee Candidate Validator Address is 'addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc'
 "##,
 	)
 }
