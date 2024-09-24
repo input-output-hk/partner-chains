@@ -23,8 +23,7 @@ fn happy_path() {
 			show_outro(),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_ok());
+	result.expect("should succeed");
 }
 
 #[test]
@@ -57,8 +56,7 @@ If you are the governance authority, please make sure you have run the `prepare-
 If you are a validator, you can obtain the chain configuration file from the governance authority."),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_err());
+	result.expect_err("should return error");
 }
 
 #[test]
@@ -72,8 +70,7 @@ If you are the governance authority, please make sure you have run the `prepare-
 If you are a validator, you can obtain the chain configuration file from the governance authority."),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_err());
+	result.expect_err("should return error");
 }
 
 #[test]
@@ -90,10 +87,9 @@ fn errors_if_chain_spec_is_missing() {
 			read_chain_spec_io(),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_err());
+	let err = result.expect_err("should return error");
 	assert_eq!(
-		result.err().unwrap().to_string(),
+		err.to_string(),
 		"Could not read chain-spec.json file. File is expected to exists.".to_string()
 	);
 }
@@ -113,9 +109,8 @@ fn forwards_build_spec_error_if_it_fails() {
 			run_build_spec_io(Err(error)),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_err());
-	assert_eq!(result.err().unwrap().to_string(), "Failed miserably".to_string())
+	let err = result.expect_err("should return error");
+	assert_eq!(err.to_string(), "Failed miserably".to_string());
 }
 
 fn test_config_content() -> serde_json::Value {

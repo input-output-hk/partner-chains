@@ -6,10 +6,10 @@ use crate::config::{
 	get_cardano_network_from_file, CardanoNetwork, SidechainParams, PC_CONTRACTS_CLI_PATH,
 };
 use crate::io::IOContext;
-use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 use crate::pc_contracts_cli_resources::{
 	establish_pc_contracts_cli_configuration, PcContractsCliResources,
 };
+use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 use crate::smart_contracts;
 use anyhow::anyhow;
 use serde_json::Value;
@@ -289,8 +289,7 @@ mod tests {
 				),
 				MockIO::eprint(OUTRO),
 			]);
-		prepare_main_chain_config(&mock_context, test_sidechain_params()).unwrap();
-		mock_context.no_more_io_expected();
+		prepare_main_chain_config(&mock_context, test_sidechain_params()).expect("should succeed");
 	}
 
 	#[test]
@@ -353,8 +352,7 @@ mod tests {
 				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				MockIO::eprint(OUTRO),
 			]);
-		prepare_main_chain_config(&mock_context, test_sidechain_params()).unwrap();
-		mock_context.no_more_io_expected();
+		prepare_main_chain_config(&mock_context, test_sidechain_params()).expect("should succeed");
 	}
 
 	#[test]

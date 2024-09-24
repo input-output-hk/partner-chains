@@ -1,12 +1,13 @@
 use crate::config::config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
 use crate::config::{config_fields, PC_CONTRACTS_CLI_PATH};
 use crate::config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
+use crate::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io;
+use crate::pc_contracts_cli_resources::PcContractsCliResources;
 use crate::prepare_configuration::tests::{
 	prompt_and_save_to_existing_file, prompt_with_default_and_save_to_existing_file,
 };
 use crate::setup_main_chain_state::SetupMainChainStateCmd;
-use crate::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io;
-use crate::pc_contracts_cli_resources::PcContractsCliResources;
+
 use crate::tests::{MockIO, MockIOContext};
 use crate::CmdRun;
 use serde_json::json;
@@ -29,8 +30,8 @@ fn no_ariadne_parameters_on_main_chain_no_updates() {
 			print_post_update_info_io(),
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_ok());
+
+	result.expect("should succeed");
 }
 
 #[test]
@@ -52,8 +53,7 @@ fn no_ariadne_parameters_on_main_chain_do_updates() {
 			print_post_update_info_io(),
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_ok());
+	result.expect("should succeed");
 }
 
 #[test]
@@ -74,8 +74,7 @@ fn ariadne_parameters_are_on_main_chain_no_updates() {
 			print_post_update_info_io(),
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_ok());
+	result.expect("should succeed");
 }
 
 #[test]
@@ -98,8 +97,7 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 			print_post_update_info_io(),
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_ok());
+	result.expect("should succeed");
 }
 
 #[test]
@@ -118,8 +116,7 @@ fn fails_if_update_permissioned_candidates_fail() {
 			update_permissioned_candidates_failed_io(),
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
-	assert!(result.is_err());
-	mock_context.no_more_io_expected();
+	result.expect_err("should return error");
 }
 
 #[test]
@@ -139,8 +136,7 @@ fn candidates_on_main_chain_are_same_as_in_config_no_updates() {
 			print_post_update_info_io(),
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_ok());
+	result.expect("should succeed");
 }
 
 #[test]
@@ -149,9 +145,9 @@ fn should_return_error_message_if_pc_cli_missing() {
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_expected_io(vec![read_chain_config_io(), print_info_io()]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
+	let err = result.expect_err("should return error");
 	assert_eq!(
-		result.unwrap_err().to_string(),
+		err.to_string(),
 		"Partner Chains Smart Contracts executable file (./pc-contracts-cli) is missing"
 	);
 }

@@ -166,12 +166,14 @@ fn get_current_mainchain_epoch(context: &impl IOContext) -> Result<McEpochNumber
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::config::config_fields::POSTGRES_CONNECTION_STRING;
-	use crate::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io;
-	use crate::pc_contracts_cli_resources::PcContractsCliResources;
 	use crate::{
-		config::CHAIN_CONFIG_FILE_PATH,
-		config::RESOURCES_CONFIG_FILE_PATH,
+		config::{
+			config_fields::POSTGRES_CONNECTION_STRING, CHAIN_CONFIG_FILE_PATH,
+			RESOURCES_CONFIG_FILE_PATH,
+		},
+		pc_contracts_cli_resources::{
+			tests::establish_pc_contracts_cli_configuration_io, PcContractsCliResources,
+		},
 		tests::{MockIO, MockIOContext},
 	};
 	use serde_json::json;
@@ -201,8 +203,7 @@ mod tests {
 			);
 
 		let result = mock_register3_cmd().run(&mock_context);
-		mock_context.no_more_io_expected();
-		assert!(result.is_ok());
+		result.expect("should succeed");
 	}
 
 	#[test]
@@ -227,8 +228,7 @@ mod tests {
 			);
 
 		let result = mock_register3_cmd().run(&mock_context);
-		mock_context.no_more_io_expected();
-		assert!(result.is_err());
+		result.expect_err("should return error");
 	}
 
 	#[test]
@@ -254,8 +254,7 @@ mod tests {
 			);
 
 		let result = mock_register3_cmd().run(&mock_context);
-		mock_context.no_more_io_expected();
-		assert!(result.is_ok());
+		result.expect("should succeed");
 	}
 
 	fn intro_msg_io() -> Vec<MockIO> {
