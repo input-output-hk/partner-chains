@@ -71,6 +71,10 @@ impl CreateChainSpecCmd {
 			)
 			.as_str(),
 		);
+		context.print("Native Token Management Configuration (unused if empty):");
+		context.print(&format!("- asset name: {}", config.native_token_asset_name));
+		context.print(&format!("- asset policy ID: {}", config.native_token_policy));
+		context.print(&format!("- illiquid supply address: {}", config.illiquid_supply_address));
 		use colored::Colorize;
 		if config.initial_permissioned_candidates_raw.is_empty() {
 			context.print("WARNING: The list of initial permissioned candidates is empty. Generated chain spec will not allow the chain to start.".red().to_string().as_str());
