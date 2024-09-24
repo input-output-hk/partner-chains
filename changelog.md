@@ -6,6 +6,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* Added 'deregister' command to partner-chains-cli.
 * Switched to paritytech/polkadot-sdk polkadot-stable2407-2. No migration is required because of this change.
 * Reverted usage of custom Runner that allowed `async_run` with asynchronous initializer.
   Now `Runner` code used is the same as in paritytech/polkadot-sdk.

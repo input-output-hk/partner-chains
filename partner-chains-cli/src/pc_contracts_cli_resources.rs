@@ -60,11 +60,11 @@ pub(crate) fn establish_pc_contracts_cli_configuration<C: IOContext>(
 
 #[cfg(test)]
 pub(crate) mod tests {
+	use crate::pc_contracts_cli_resources::*;
 	use crate::prepare_configuration::tests::{
 		prompt_multi_option_with_default_and_save_to_existing_file,
 		prompt_with_default_and_save_to_existing_file,
 	};
-	use crate::pc_contracts_cli_resources::*;
 	use crate::tests::MockIO;
 
 	/// Assumption for this function is that resources config file exists, so tests context should have it.

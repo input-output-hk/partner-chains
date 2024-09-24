@@ -1,15 +1,16 @@
 mod cardano_cli;
 pub mod config;
 pub mod create_chain_spec;
+mod deregister;
 pub mod generate_keys;
 pub mod io;
 pub mod keystore;
 pub(crate) mod main_chain_follower;
+pub(crate) mod pc_contracts_cli_resources;
 pub(crate) mod permissioned_candidates;
 mod prepare_configuration;
 pub mod register;
 mod setup_main_chain_state;
-pub(crate) mod pc_contracts_cli_resources;
 pub(crate) mod smart_contracts;
 pub mod start_node;
 
@@ -43,6 +44,8 @@ pub enum Command {
 	Register2(register::register2::Register2Cmd),
 	/// The final step of registering as a committee candidate, not using cold keys.
 	Register3(register::register3::Register3Cmd),
+	/// Deregister from the candidates set. This command requires chain config file present in the running directory.
+	Deregister(deregister::DeregisterCmd),
 }
 
 pub trait CmdRun {
@@ -60,6 +63,7 @@ fn main() -> anyhow::Result<()> {
 		Command::Register1(cmd) => cmd.run(&DefaultCmdRunContext)?,
 		Command::Register2(cmd) => cmd.run(&DefaultCmdRunContext)?,
 		Command::Register3(cmd) => cmd.run(&DefaultCmdRunContext)?,
+		Command::Deregister(cmd) => cmd.run(&DefaultCmdRunContext)?,
 	}
 	Ok(())
 }
@@ -85,6 +89,7 @@ const HELP_EXAMPLES: &str = r#"
 ║   3. register2             : complete registration with cold keys              ║
 ║   4. register3             : finalize registration                             ║
 ║   5. start-node            : start the validator node                          ║
+║   6. deregister            : cancels registration                              ║
 ║                                                                                ║
 ║   Note: This sequence assumes that the chain-spec.json and                     ║
 ║         partner-chains-cli-chain-config.json files have been obtained from     ║
