@@ -1084,7 +1084,7 @@ dependencies = [
 
 [[package]]
 name = "chain-params"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "clap",
  "envy",
@@ -5730,7 +5730,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-native-token-management"
-version = "0.1.0"
+version = "1.1.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6202,7 +6202,7 @@ dependencies = [
 
 [[package]]
 name = "partner-chains-node-commands"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "authority-selection-inherents",
  "clap",
@@ -8328,7 +8328,7 @@ dependencies = [
 
 [[package]]
 name = "sc-partner-chains-consensus-aura"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "async-trait",
  "futures",
@@ -9211,7 +9211,7 @@ dependencies = [
 
 [[package]]
 name = "sidechain-runtime"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "authority-selection-inherents",
  "chain-params",
@@ -9831,7 +9831,7 @@ dependencies = [
 
 [[package]]
 name = "sp-native-token-management"
-version = "0.1.0"
+version = "1.1.0"
 dependencies = [
  "async-trait",
  "envy",
@@ -9871,7 +9871,7 @@ dependencies = [
 
 [[package]]
 name = "sp-partner-chains-consensus-aura"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "futures",
  "sp-blockchain",
@@ -9983,7 +9983,7 @@ dependencies = [
 
 [[package]]
 name = "sp-session-validator-management-query"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "async-trait",
  "authority-selection-inherents",

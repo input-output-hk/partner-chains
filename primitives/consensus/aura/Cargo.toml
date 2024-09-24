@@ -1,6 +1,6 @@
 [package]
 name = "sp-partner-chains-consensus-aura"
-version = "1.0.0"
+version = "1.1.0"
 description = "Primitives required by Partner Chains customized Aura consensus"
 authors = [ "IOG "]
 homepage = "https://iohk.io/"
