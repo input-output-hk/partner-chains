@@ -26,7 +26,8 @@
         nodejs
         clang
         nodePackages.npm
-		gnumake
+		    gnumake
+        cargo-edit
       ]
       ++ (
         if isDarwin
