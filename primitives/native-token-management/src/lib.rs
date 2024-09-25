@@ -133,7 +133,7 @@ mod inherent_provider {
 			if version_check(version) {
 				Self::new(client, data_source, mc_hash, parent_hash).await
 			} else {
-				Ok(Self { token_amount: Some(0.into()) })
+				Ok(Self { token_amount: None })
 			}
 		}
 
