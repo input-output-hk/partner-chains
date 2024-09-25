@@ -105,18 +105,24 @@
 <a href="#103" id="103">103</a>
 <a href="#104" id="104">104</a>
 <a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
 </pre></div><pre class="rust"><code><span class="kw">mod </span>cardano_cli;
 <span class="kw">pub mod </span>config;
 <span class="kw">pub mod </span>create_chain_spec;
+<span class="kw">mod </span>deregister;
 <span class="kw">pub mod </span>generate_keys;
 <span class="kw">pub mod </span>io;
 <span class="kw">pub mod </span>keystore;
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>main_chain_follower;
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>pc_contracts_cli_resources;
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>permissioned_candidates;
 <span class="kw">mod </span>prepare_configuration;
 <span class="kw">pub mod </span>register;
 <span class="kw">mod </span>setup_main_chain_state;
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>pc_contracts_cli_resources;
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>smart_contracts;
 <span class="kw">pub mod </span>start_node;
 
@@ -150,6 +156,8 @@
 	</span>Register2(register::register2::Register2Cmd),
 	<span class="doccomment">/// The final step of registering as a committee candidate, not using cold keys.
 	</span>Register3(register::register3::Register3Cmd),
+	<span class="doccomment">/// Deregister from the candidates set. This command requires chain config file present in the running directory.
+	</span>Deregister(deregister::DeregisterCmd),
 }
 
 <span class="kw">pub trait </span>CmdRun {
@@ -167,6 +175,7 @@
 		Command::Register1(cmd) =&gt; cmd.run(<span class="kw-2">&amp;</span>DefaultCmdRunContext)<span class="question-mark">?</span>,
 		Command::Register2(cmd) =&gt; cmd.run(<span class="kw-2">&amp;</span>DefaultCmdRunContext)<span class="question-mark">?</span>,
 		Command::Register3(cmd) =&gt; cmd.run(<span class="kw-2">&amp;</span>DefaultCmdRunContext)<span class="question-mark">?</span>,
+		Command::Deregister(cmd) =&gt; cmd.run(<span class="kw-2">&amp;</span>DefaultCmdRunContext)<span class="question-mark">?</span>,
 	}
 	<span class="prelude-val">Ok</span>(())
 }
@@ -192,6 +201,7 @@
 ║   3. register2             : complete registration with cold keys              ║
 ║   4. register3             : finalize registration                             ║
 ║   5. start-node            : start the validator node                          ║
+║   6. deregister            : cancels registration                              ║
 ║                                                                                ║
 ║   Note: This sequence assumes that the chain-spec.json and                     ║
 ║         partner-chains-cli-chain-config.json files have been obtained from     ║
