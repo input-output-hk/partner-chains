@@ -29,7 +29,7 @@
       flake = false;
     };
     cardano-node = {
-      url = "github:IntersectMBO/cardano-node/9.1.1";
+      url = "github:IntersectMBO/cardano-node/9.2.1";
       flake = false;
     };
     cardano-dbsync = {
