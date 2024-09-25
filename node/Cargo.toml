@@ -20,7 +20,6 @@ name = "partner-chains-node"
 async-trait = { workspace = true }
 clap = { workspace = true }
 futures = { workspace = true }
-epoch-derivation = { workspace = true }
 log = { workspace = true }
 sc-cli = { workspace = true, features = ["rocksdb"] }
 sp-core = { workspace = true }

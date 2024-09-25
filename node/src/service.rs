@@ -5,7 +5,6 @@ use crate::main_chain_follower::DataSources;
 use crate::rpc::GrandpaDeps;
 use db_sync_follower::metrics::register_metrics_warn_errors;
 use db_sync_follower::metrics::McFollowerMetrics;
-use epoch_derivation::MainchainEpochConfig;
 use futures::FutureExt;
 use sc_client_api::{Backend, BlockBackend};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
@@ -15,6 +14,7 @@ use sc_partner_chains_consensus_aura::import_queue as partner_chains_aura_import
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager, WarpSyncParams};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
+use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_mc_hash::McHashInherentDigest;
 use sidechain_runtime::{self, opaque::Block, RuntimeApi};
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;

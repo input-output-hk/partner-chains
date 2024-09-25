@@ -1,10 +1,10 @@
 //! Data sources implementations that read from db-sync postgres.
 
-#[cfg(feature = "block-source")]
-use epoch_derivation::MainchainEpochConfig;
 use figment::providers::Env;
 use figment::Figment;
 use serde::Deserialize;
+#[cfg(feature = "block-source")]
+use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 pub use sqlx::PgPool;
 use std::error::Error;

@@ -10,7 +10,7 @@ use crate::smart_contracts;
 use crate::CmdRun;
 use clap::Parser;
 use cli_commands::key_params::{PlainPublicKeyParam, SidechainPublicKeyParam};
-use epoch_derivation::{MainchainEpochConfig, MainchainEpochDerivation};
+use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_domain::{McEpochNumber, UtxoId};
 
 #[derive(Clone, Debug, Parser)]

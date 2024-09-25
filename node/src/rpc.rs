@@ -9,7 +9,6 @@ use crate::main_chain_follower::DataSources;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use chain_params::SidechainParams;
-use epoch_derivation::MainchainEpochConfig;
 use jsonrpsee::RpcModule;
 use pallet_session_validator_management_rpc::*;
 use pallet_sidechain_rpc::*;
@@ -20,6 +19,7 @@ use sc_consensus_grandpa_rpc::{Grandpa, GrandpaApiServer};
 use sc_rpc::SubscriptionTaskExecutor;
 pub use sc_rpc_api::DenyUnsafe;
 use sc_transaction_pool_api::TransactionPool;
+use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::ScEpochNumber;
 use sidechain_runtime::CrossChainPublic;
 use sidechain_runtime::{

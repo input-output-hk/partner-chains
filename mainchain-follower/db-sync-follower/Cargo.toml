@@ -26,7 +26,6 @@ log = { workspace = true }
 thiserror = { workspace = true }
 blake2b_simd = { workspace = true }
 figment = { workspace = true }
-epoch-derivation = { workspace = true, features = ["std"]}
 substrate-prometheus-endpoint = { workspace = true }
 derive-new = { workspace = true }
 lru = { workspace = true }

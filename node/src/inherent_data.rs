@@ -2,10 +2,10 @@ use crate::main_chain_follower::DataSources;
 use authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider as AriadneIDP;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use derive_new::new;
-use epoch_derivation::MainchainEpochConfig;
 use jsonrpsee::core::async_trait;
 use sc_consensus_aura::{find_pre_digest, SlotDuration};
 use sc_service::Arc;
+use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::{McBlockHash, ScEpochNumber};
 use sidechain_mc_hash::McHashInherentDataProvider as McHashIDP;
 use sidechain_runtime::{

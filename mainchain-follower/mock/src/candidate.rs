@@ -1,10 +1,10 @@
 use async_trait::async_trait;
-use epoch_derivation::MainchainEpochConfig;
 use hex_literal::hex;
 use log::{debug, info};
 use main_chain_follower_api::{candidate::*, Result};
 use serde::*;
 use sidechain_domain::byte_string::*;
+use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::*;
 use std::error::Error;
 

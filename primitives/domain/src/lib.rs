@@ -4,6 +4,7 @@
 
 pub mod byte_string;
 pub mod crypto;
+pub mod mainchain_epoch;
 
 extern crate alloc;
 extern crate core;

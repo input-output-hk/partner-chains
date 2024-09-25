@@ -12,9 +12,9 @@ use sidechain_domain::*;
 
 mod get_status_tests {
 	use super::*;
-	use epoch_derivation::{Duration, MainchainEpochConfig};
 	use main_chain_follower_api::block::MainchainBlock;
 	use pretty_assertions::assert_eq;
+	use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig};
 	use sp_consensus_slots::SlotDuration;
 
 	#[tokio::test]

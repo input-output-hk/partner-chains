@@ -24,7 +24,6 @@ serde_json = { workspace = true, features = ['std'] }
 sp-timestamp = { workspace = true, features = ['std'] }
 hex = { workspace = true, features = ['std'] }
 tokio = { workspace = true, features = ["macros", "time", "parking_lot"] }
-epoch-derivation = { workspace = true, features = ['std'] }
 time-source = { workspace = true }
 derive-new = { workspace = true }
 

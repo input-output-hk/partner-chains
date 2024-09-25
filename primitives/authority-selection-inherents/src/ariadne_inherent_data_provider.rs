@@ -1,11 +1,11 @@
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
-use epoch_derivation::MainchainEpochConfig;
 use parity_scale_codec::{Decode, Encode};
+use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 #[cfg(feature = "std")]
 use {
 	crate::authority_selection_inputs::AuthoritySelectionInputsCreationError,
-	epoch_derivation::MainchainEpochDerivation,
 	main_chain_follower_api::{CandidateDataSource, DataSourceError},
+	sidechain_domain::mainchain_epoch::MainchainEpochDerivation,
 	sidechain_domain::*,
 	sidechain_slots::ScSlotConfig,
 	sp_api::ProvideRuntimeApi,
@@ -93,7 +93,7 @@ pub enum InherentProviderCreationError {
 	#[error("Slot represents a timestamp bigger than of u64::MAX")]
 	SlotTooBig,
 	#[error("Couldn't convert timestamp to main chain epoch: {0}")]
-	McEpochDerivationError(#[from] epoch_derivation::EpochDerivationError),
+	McEpochDerivationError(#[from] sidechain_domain::mainchain_epoch::EpochDerivationError),
 	#[error("Runtime API call failed: {0}")]
 	ApiError(#[from] sp_api::ApiError),
 	#[error("Failed to create authority selection inputs: {0}")]
@@ -195,8 +195,8 @@ mod tests {
 	use super::*;
 	use crate::ariadne_inherent_data_provider::AriadneInherentDataProvider;
 	use crate::runtime_api_mock::*;
-	use epoch_derivation::*;
 	use main_chain_follower_api::mock_services::MockCandidateDataSource;
+	use sidechain_domain::mainchain_epoch::*;
 	use sidechain_slots::*;
 	use sp_core::H256;
 	use SlotDuration;
