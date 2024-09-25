@@ -1,15 +1,16 @@
 mod cardano_cli;
 pub mod config;
 pub mod create_chain_spec;
+mod dereg;
 pub mod generate_keys;
 pub mod io;
 pub mod keystore;
 pub(crate) mod main_chain_follower;
+pub(crate) mod pc_contracts_cli_resources;
 pub(crate) mod permissioned_candidates;
 mod prepare_configuration;
 pub mod register;
 mod setup_main_chain_state;
-pub(crate) mod pc_contracts_cli_resources;
 pub(crate) mod smart_contracts;
 pub mod start_node;
 
@@ -43,6 +44,7 @@ pub enum Command {
 	Register2(register::register2::Register2Cmd),
 	/// The final step of registering as a committee candidate, not using cold keys.
 	Register3(register::register3::Register3Cmd),
+	Dereg(dereg::DeregCmd),
 }
 
 pub trait CmdRun {

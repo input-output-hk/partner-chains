@@ -30,6 +30,7 @@ tempfile = { workspace = true }
 epoch-derivation = { workspace = true, features = ["std"] }
 secp256k1 = { workspace = true, features = ["std"] }
 colored = { version = "2.1.0" }
+whisky = { version = "0.8.5" }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }
