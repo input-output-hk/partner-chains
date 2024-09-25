@@ -34,6 +34,8 @@ provider will not query the main chain state or produce inherent data at all.
   This change requires migration of the node, PartnerChainsProposerFactory has to be used.
   See `service.rs` in `partner-chains-node` crate for an example.
 * renamed sidechain-main-cli and relevant naming to pc-contracts-cli
+* Added `new_for_runtime_version` factory for the native token inherent data provider,
+allowing to selectively query main chain state based on runtime version
 
 ## Fixed
 * ETCM-8267 - fixed `partner-chains-cli` missing the native token configuration
