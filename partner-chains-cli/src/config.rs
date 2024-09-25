@@ -377,6 +377,13 @@ pub struct SidechainParams {
 	pub governance_authority: MainchainAddressHash,
 }
 
+impl Display for SidechainParams {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		let json_string = serde_json::to_string_pretty(self).unwrap();
+		write!(f, "{}", &json_string)
+	}
+}
+
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct AssetConfig {
 	policy_id: String,
@@ -496,8 +503,17 @@ pub mod config_fields {
 		ConfigFieldDefinition {
 			config_file: RESOURCES_CONFIG_FILE_PATH,
 			path: &["cardano_payment_signing_key_file"],
-			name: "path to the payment signing file",
+			name: "path to the payment signing key file",
 			default: Some("payment.skey"),
+			_marker: PhantomData,
+		};
+
+	pub const CARDANO_COLD_VERIFICATION_KEY_FILE: ConfigFieldDefinition<'static, String> =
+		ConfigFieldDefinition {
+			config_file: RESOURCES_CONFIG_FILE_PATH,
+			path: &["cardano_cold_verification_key_file"],
+			name: "path to the cold verification key file",
+			default: Some("cold.vkey"),
 			_marker: PhantomData,
 		};
 
