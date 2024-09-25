@@ -20,7 +20,6 @@
     dbSyncPackages = (flake-compat { src = inputs.cardano-dbsync; }).defaultNix.packages.${system};
     smartContractsPkgs = (flake-compat { src = inputs.smart-contracts; }).defaultNix.packages.${system};
     #cardanoExtraPkgs = (flake-compat { src = inputs.cardano-nix; }).defaultNix.packages.${system};
-
   in {
     packages = {
       inherit (smartContractsPkgs) pc-contracts-cli;
@@ -28,18 +27,8 @@
       inherit (dbSyncPackages) "cardano-db-sync:exe:cardano-db-sync";
       kupo = pkgs.callPackage ./kupo.nix { version = kupoVersion; };
       ogmios = pkgs.callPackage ./ogmios.nix { version = ogmiosVersion; };
-      partnerchains-stack = pkgs.stdenv.mkDerivation {
-        name = "partnerchains-stack";
-        phases = [ "installPhase" ];
-        nativeBuildInputs = [ pkgs.makeWrapper ];
-        installPhase = ''
-          mkdir -p $out/bin
-          cp ${self'.packages.partnerchains-stack-unwrapped}/bin/partnerchains-stack-unwrapped \
-            $out/bin/partnerchains-stack
-          wrapProgram $out/bin/partnerchains-stack \
-            --run "cd \$(${pkgs.git}/bin/git rev-parse --show-toplevel) || exit 1"
-        '';
-      };
+      partnerchains-stack = pkgs.callPackage ./partnerchains-stack { inherit (self'.packages) partnerchains-stack-unwrapped; };
+
     };
   };
 }
