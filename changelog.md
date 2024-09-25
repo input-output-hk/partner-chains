@@ -6,6 +6,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* Added 'deregister' command to partner-chains-cli.
+
 ## Removed
 
 ## Fixed
@@ -34,6 +36,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 ## Removed
 
 ## Fixed
+* ETCM-8267 - fixed `partner-chains-cli` missing the native token configuration
 
 ## Added
 * ETCM-7811 - native token movement observability components: `sp-native-token-management` and

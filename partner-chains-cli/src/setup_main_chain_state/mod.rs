@@ -4,8 +4,8 @@ use crate::config::{
 	SidechainParams, CHAIN_CONFIG_FILE_PATH, PC_CONTRACTS_CLI_PATH,
 };
 use crate::io::IOContext;
-use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
 use crate::pc_contracts_cli_resources::establish_pc_contracts_cli_configuration;
+use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
 use crate::{smart_contracts, CmdRun};
 use anyhow::anyhow;
 use epoch_derivation::MainchainEpochDerivation;
