@@ -267,6 +267,10 @@
       ];
       package = self'.packages.process-compose;
       tui = true;
+      httpServer = {
+        enable = true;
+        port = 8081;
+      };
       settings.processes = mkStack "preview" // mkStack "preprod" // mkStack "sanchonet"// mkStack "mainnet";
       services.postgres = mkService "preview" // mkService "preprod" // mkService "sanchonet" // mkService "mainnet";
     };
