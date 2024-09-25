@@ -71,22 +71,22 @@ struct RegisteredCandidate {
 * }
  */
 #[derive(Clone, Debug)]
-struct RegisterValidatorDatum {
-	stake_ownership: AdaBasedStaking,
-	sidechain_pub_key: SidechainPublicKey,
-	sidechain_signature: SidechainSignature,
-	consumed_input: UtxoId,
-	//ownPkh we don't use,
-	aura_pub_key: AuraPublicKey,
-	grandpa_pub_key: GrandpaPublicKey,
+pub struct RegisterValidatorDatum {
+	pub stake_ownership: AdaBasedStaking,
+	pub sidechain_pub_key: SidechainPublicKey,
+	pub sidechain_signature: SidechainSignature,
+	pub consumed_input: UtxoId,
+	pub own_pkh: [u8; 28],
+	pub aura_pub_key: AuraPublicKey,
+	pub grandpa_pub_key: GrandpaPublicKey,
 }
 
 /// AdaBasedStaking is a variant of Plutus type StakeOwnership.
 /// The other variant, TokenBasedStaking, is not supported
 #[derive(Clone, Debug)]
-struct AdaBasedStaking {
-	pub_key: MainchainPublicKey,
-	signature: MainchainSignature,
+pub struct AdaBasedStaking {
+	pub pub_key: MainchainPublicKey,
+	pub signature: MainchainSignature,
 }
 
 pub struct CandidatesDataSourceImpl {
@@ -282,11 +282,9 @@ impl CandidatesDataSourceImpl {
 					"Missing registration datum for {:?}",
 					output.clone().utxo_id
 				))?;
-				let register_validator_datum = Self::decode_register_validator_datum(&datum)
-					.ok_or(format!(
-						"Invalid registration datum for {:?}",
-						output.clone().utxo_id
-					))?;
+				let register_validator_datum = decode_register_validator_datum(&datum).ok_or(
+					format!("Invalid registration datum for {:?}", output.clone().utxo_id),
+				)?;
 				Ok(ParsedCandidate {
 					utxo_info: UtxoInfo {
 						utxo_id: output.utxo_id,
@@ -371,85 +369,6 @@ impl CandidatesDataSourceImpl {
 		permissioned_candidates
 	}
 
-	fn decode_register_validator_datum(datum: &Datum) -> Option<RegisterValidatorDatum> {
-		match datum {
-			ConstructorDatum { constructor: 0, fields } => {
-				let stake_ownership =
-					fields.first().and_then(Self::decode_ada_based_staking_datum)?;
-				let sidechain_pub_key = fields
-					.get(1)
-					.and_then(|d| d.as_bytestring())
-					.map(|bytes| SidechainPublicKey(bytes.clone()))?;
-				let sidechain_signature = fields
-					.get(2)
-					.and_then(|d| d.as_bytestring())
-					.map(|bytes| SidechainSignature(bytes.clone()))?;
-				let consumed_input = fields.get(3).and_then(Self::decode_utxo_id_datum)?;
-				let _own_pkh = fields.get(4).and_then(|d| d.as_bytestring())?;
-				let aura_pub_key = fields
-					.get(5)
-					.and_then(|d| d.as_bytestring())
-					.map(|bytes| AuraPublicKey(bytes.clone()))?;
-				let grandpa_pub_key = fields
-					.get(6)
-					.and_then(|d| d.as_bytestring())
-					.map(|bytes| GrandpaPublicKey(bytes.clone()))?;
-				Some(RegisterValidatorDatum {
-					stake_ownership,
-					sidechain_pub_key,
-					sidechain_signature,
-					consumed_input,
-					aura_pub_key,
-					grandpa_pub_key,
-				})
-			},
-
-			_ => None,
-		}
-	}
-
-	fn decode_ada_based_staking_datum(datum: &Datum) -> Option<AdaBasedStaking> {
-		match datum {
-			ConstructorDatum { constructor: 0, fields } => {
-				match fields.first().zip(fields.get(1)) {
-					Some((ByteStringDatum(f0), ByteStringDatum(f1))) => {
-						let pub_key = TryFrom::try_from(f0.clone()).ok()?;
-						Some(AdaBasedStaking { pub_key, signature: MainchainSignature(f1.clone()) })
-					},
-					_ => None,
-				}
-			},
-			_ => None,
-		}
-	}
-
-	fn decode_utxo_id_datum(datum: &Datum) -> Option<UtxoId> {
-		match datum {
-			ConstructorDatum { constructor: 0, fields } => {
-				match fields.first().zip(fields.get(1)) {
-					Some((f0, IntegerDatum(f1))) => {
-						let tx_hash = Self::decode_tx_hash_datum(f0)?;
-						let index: u16 = TryFrom::try_from(f1.clone()).ok()?;
-						Some(UtxoId { tx_hash, index: UtxoIndex(index) })
-					},
-					_ => None,
-				}
-			},
-			_ => None,
-		}
-	}
-
-	/// Plutus type for TxHash is a sum type, we can parse only variant with constructor 0.
-	fn decode_tx_hash_datum(datum: &Datum) -> Option<McTxHash> {
-		match datum {
-			ConstructorDatum { constructor: 0, fields } => {
-				let bytes = fields.first().and_then(|d| d.as_bytestring())?;
-				Some(McTxHash(TryFrom::try_from(bytes.clone()).ok()?))
-			},
-			_ => None,
-		}
-	}
-
 	fn get_epoch_of_data_storage(
 		&self,
 		epoch_of_data_usage: McEpochNumber,
@@ -463,5 +382,83 @@ impl CandidatesDataSourceImpl {
 		} else {
 			Ok(McEpochNumber(epoch_of_data_usage.0 - 2))
 		}
+	}
+}
+
+pub fn decode_register_validator_datum(datum: &Datum) -> Option<RegisterValidatorDatum> {
+	match datum {
+		ConstructorDatum { constructor: 0, fields } => {
+			let stake_ownership = fields.first().and_then(decode_ada_based_staking_datum)?;
+			let sidechain_pub_key = fields
+				.get(1)
+				.and_then(|d| d.as_bytestring())
+				.map(|bytes| SidechainPublicKey(bytes.clone()))?;
+			let sidechain_signature = fields
+				.get(2)
+				.and_then(|d| d.as_bytestring())
+				.map(|bytes| SidechainSignature(bytes.clone()))?;
+			let consumed_input = fields.get(3).and_then(decode_utxo_id_datum)?;
+			let own_pkh = fields
+				.get(4)
+				.and_then(|d| d.as_bytestring())
+				.and_then(|bytes| TryFrom::try_from(bytes.clone()).ok())?;
+			let aura_pub_key = fields
+				.get(5)
+				.and_then(|d| d.as_bytestring())
+				.map(|bytes| AuraPublicKey(bytes.clone()))?;
+			let grandpa_pub_key = fields
+				.get(6)
+				.and_then(|d| d.as_bytestring())
+				.map(|bytes| GrandpaPublicKey(bytes.clone()))?;
+			Some(RegisterValidatorDatum {
+				stake_ownership,
+				sidechain_pub_key,
+				sidechain_signature,
+				consumed_input,
+				own_pkh,
+				aura_pub_key,
+				grandpa_pub_key,
+			})
+		},
+
+		_ => None,
+	}
+}
+
+fn decode_ada_based_staking_datum(datum: &Datum) -> Option<AdaBasedStaking> {
+	match datum {
+		ConstructorDatum { constructor: 0, fields } => match fields.first().zip(fields.get(1)) {
+			Some((ByteStringDatum(f0), ByteStringDatum(f1))) => {
+				let pub_key = TryFrom::try_from(f0.clone()).ok()?;
+				Some(AdaBasedStaking { pub_key, signature: MainchainSignature(f1.clone()) })
+			},
+			_ => None,
+		},
+		_ => None,
+	}
+}
+
+fn decode_utxo_id_datum(datum: &Datum) -> Option<UtxoId> {
+	match datum {
+		ConstructorDatum { constructor: 0, fields } => match fields.first().zip(fields.get(1)) {
+			Some((f0, IntegerDatum(f1))) => {
+				let tx_hash = decode_tx_hash_datum(f0)?;
+				let index: u16 = TryFrom::try_from(f1.clone()).ok()?;
+				Some(UtxoId { tx_hash, index: UtxoIndex(index) })
+			},
+			_ => None,
+		},
+		_ => None,
+	}
+}
+
+/// Plutus type for TxHash is a sum type, we can parse only variant with constructor 0.
+fn decode_tx_hash_datum(datum: &Datum) -> Option<McTxHash> {
+	match datum {
+		ConstructorDatum { constructor: 0, fields } => {
+			let bytes = fields.first().and_then(|d| d.as_bytestring())?;
+			Some(McTxHash(TryFrom::try_from(bytes.clone()).ok()?))
+		},
+		_ => None,
 	}
 }

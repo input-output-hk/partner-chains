@@ -12,6 +12,7 @@ readme = "readme.md"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+
 sidechain-domain = { workspace = true, features = ["std"] }
 anyhow = { workspace = true }
 clap = { workspace = true }
