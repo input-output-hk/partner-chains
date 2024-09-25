@@ -229,6 +229,19 @@
 <a href="#227" id="227">227</a>
 <a href="#228" id="228">228</a>
 <a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{NODE_EXECUTABLE, NODE_EXECUTABLE_DEFAULT};
 <span class="kw">use </span><span class="kw">crate</span>::config::ConfigFieldDefinition;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
@@ -302,6 +315,10 @@
 			)
 			.as_str(),
 		);
+		context.print(<span class="string">"Native Token Management Configuration (unused if empty):"</span>);
+		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"- asset name: {}"</span>, config.native_token_asset_name));
+		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"- asset policy ID: {}"</span>, config.native_token_policy));
+		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"- illiquid supply address: {}"</span>, config.illiquid_supply_address));
 		<span class="kw">use </span>colored::Colorize;
 		<span class="kw">if </span>config.initial_permissioned_candidates_raw.is_empty() {
 			context.print(<span class="string">"WARNING: The list of initial permissioned candidates is empty. Generated chain spec will not allow the chain to start."</span>.red().to_string().as_str());
@@ -336,6 +353,9 @@
 			<span class="string">"PERMISSIONED_CANDIDATES_POLICY_ID"</span>,
 			<span class="kw-2">&amp;</span>config.permissioned_candidates_policy_id.to_string(),
 		);
+		context.set_env_var(<span class="string">"NATIVE_TOKEN_POLICY_ID"</span>, <span class="kw-2">&amp;</span>config.native_token_policy);
+		context.set_env_var(<span class="string">"NATIVE_TOKEN_ASSET_NAME"</span>, <span class="kw-2">&amp;</span>config.native_token_asset_name);
+		context.set_env_var(<span class="string">"ILLIQUID_SUPPLY_VALIDATOR_ADDRESS"</span>, <span class="kw-2">&amp;</span>config.illiquid_supply_address);
 		context.run_command(
 			<span class="macro">format!</span>(<span class="string">"{node_executable} build-spec --disable-default-bootnode &gt; chain-spec.json"</span>)
 				.to_string()
@@ -403,6 +423,9 @@
 	committee_candidate_address: String,
 	d_parameter_policy_id: String,
 	permissioned_candidates_policy_id: String,
+	native_token_policy: String,
+	native_token_asset_name: String,
+	illiquid_supply_address: String,
 }
 
 <span class="kw">impl </span>CreateChainSpecConfig {
@@ -431,6 +454,9 @@
 				c,
 				<span class="kw-2">&amp;</span>config_fields::PERMISSIONED_CANDIDATES_POLICY_ID,
 			)<span class="question-mark">?</span>,
+			native_token_policy: load_config_field(c, <span class="kw-2">&amp;</span>config_fields::NATIVE_TOKEN_POLICY)<span class="question-mark">?</span>,
+			native_token_asset_name: load_config_field(c, <span class="kw-2">&amp;</span>config_fields::NATIVE_TOKEN_ASSET_NAME)<span class="question-mark">?</span>,
+			illiquid_supply_address: load_config_field(c, <span class="kw-2">&amp;</span>config_fields::ILLIQUID_SUPPLY_ADDRESS)<span class="question-mark">?</span>,
 		})
 	}
 }

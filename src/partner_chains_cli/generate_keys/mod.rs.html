@@ -258,6 +258,18 @@
 <a href="#256" id="256">256</a>
 <a href="#257" id="257">257</a>
 <a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="self">self</span>::config::KEYS_FILE_PATH;
 <span class="kw">use </span><span class="kw">crate</span>::config::config_values::DEFAULT_CHAIN_NAME;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
@@ -365,6 +377,18 @@
 	);
 	context.set_env_var(
 		<span class="string">"PERMISSIONED_CANDIDATES_POLICY_ID"</span>,
+		<span class="string">"00000000000000000000000000000000000000000000000000000000"</span>,
+	);
+	context.set_env_var(
+		<span class="string">"NATIVE_TOKEN_POLICY_ID"</span>,
+		<span class="string">"00000000000000000000000000000000000000000000000000000000"</span>,
+	);
+	context.set_env_var(
+		<span class="string">"NATIVE_TOKEN_ASSET_NAME"</span>,
+		<span class="string">"00000000000000000000000000000000000000000000000000000000"</span>,
+	);
+	context.set_env_var(
+		<span class="string">"ILLIQUID_SUPPLY_VALIDATOR_ADDRESS"</span>,
 		<span class="string">"00000000000000000000000000000000000000000000000000000000"</span>,
 	);
 }
