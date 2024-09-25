@@ -5,7 +5,7 @@ use crate::main_chain_follower::DataSources;
 use crate::rpc::GrandpaDeps;
 use db_sync_follower::metrics::register_metrics_warn_errors;
 use db_sync_follower::metrics::McFollowerMetrics;
-use epoch_derivation::EpochConfig;
+use epoch_derivation::MainchainEpochConfig;
 use futures::FutureExt;
 use sc_client_api::{Backend, BlockBackend};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
@@ -123,7 +123,8 @@ pub fn new_partial(
 		.map_err(sp_blockchain::Error::from)?;
 
 	let time_source = Arc::new(SystemTimeSource);
-	let epoch_config = EpochConfig::read().map_err(|err| ServiceError::Application(err.into()))?;
+	let epoch_config = MainchainEpochConfig::read_from_env()
+		.map_err(|err| ServiceError::Application(err.into()))?;
 	let inherent_config = CreateInherentDataConfig::new(epoch_config, sc_slot_config, time_source);
 
 	let import_queue = partner_chains_aura_import_queue::import_queue::<
@@ -309,10 +310,10 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		let sc_slot_config = sidechain_slots::runtime_api_client::slot_config(&*client)
 			.map_err(sp_blockchain::Error::from)?;
 		let time_source = Arc::new(SystemTimeSource);
-		let epoch_config =
-			EpochConfig::read().map_err(|err| ServiceError::Application(err.into()))?;
+		let mc_epoch_config = MainchainEpochConfig::read_from_env()
+			.map_err(|err| ServiceError::Application(err.into()))?;
 		let inherent_config =
-			CreateInherentDataConfig::new(epoch_config, sc_slot_config.clone(), time_source);
+			CreateInherentDataConfig::new(mc_epoch_config, sc_slot_config.clone(), time_source);
 		let aura = sc_partner_chains_consensus_aura::start_aura::<
 			AuraPair,
 			_,

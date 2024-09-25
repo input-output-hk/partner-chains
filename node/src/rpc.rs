@@ -9,7 +9,7 @@ use crate::main_chain_follower::DataSources;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use chain_params::SidechainParams;
-use epoch_derivation::EpochConfig;
+use epoch_derivation::MainchainEpochConfig;
 use jsonrpsee::RpcModule;
 use pallet_session_validator_management_rpc::*;
 use pallet_sidechain_rpc::*;
@@ -110,7 +110,7 @@ where
 	module.merge(
 		SidechainRpc::new(
 			client.clone(),
-			EpochConfig::read().unwrap(),
+			MainchainEpochConfig::read_from_env().unwrap(),
 			main_chain_follower_data_sources.block.clone(),
 			time_source.clone(),
 		)

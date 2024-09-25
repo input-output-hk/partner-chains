@@ -55,6 +55,13 @@ impl MainchainEpochConfig {
 	fn slots_per_epoch(&self) -> u64 {
 		self.epoch_duration_millis.millis() / 1000
 	}
+
+	#[cfg(feature = "std")]
+	pub fn read_from_env() -> figment::error::Result<Self> {
+		figment::Figment::new()
+			.merge(figment::providers::Env::prefixed("MC__"))
+			.extract()
+	}
 }
 
 impl MainchainEpochDerivation for MainchainEpochConfig {
