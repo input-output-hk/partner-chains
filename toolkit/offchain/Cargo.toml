@@ -1,0 +1,31 @@
+[package]
+name = "partner-chains-cardano-offchain"
+version = "1.2.0"
+authors = ["IOG"]
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/input-output-hk/partner-chains"
+description = "Partner Chains Smart Contracts Offchain code"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+anyhow = { workspace = true }
+cardano-serialization-lib = { workspace = true }
+cbor_event = { workspace = true }
+chain-params = { workspace = true, features = ["std"] }
+db-sync-follower = { workspace = true, features = ["candidate-source"] }
+hex = { workspace = true }
+hex-literal = { workspace = true }
+jsonrpsee = { workspace = true, features = ["client-core", "http-client", "macros"] }
+minicbor = { workspace = true }
+ogmios-client = { workspace = true, features = ["jsonrpsee-client"] }
+pallas-addresses = { workspace = true }
+pallas-primitives = { workspace = true }
+plutus = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true, features = ["std"] }
+secp256k1 = { workspace = true, features = ["std"] }
+sidechain-domain = { workspace = true, features = ["std"] }
+uplc = { workspace = true }

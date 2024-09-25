@@ -12,7 +12,7 @@ use crate::pc_contracts_cli_resources::{
 };
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 use crate::smart_contracts;
-use anyhow::{anyhow};
+use anyhow::anyhow;
 use serde_json::Value;
 use sidechain_domain::PolicyId;
 
