@@ -28,8 +28,6 @@ Partner Chain developer team.
 
 ## Migration scenario - adding the feature
 
-#### ATTENTION: If migration described below is performed, only native token transfers that have taken place _after the MC hash referenced by the block after runtime upgrade in step 7_ will be observed. If there have been earlier transfers to the illiquid supply that your Partner Chain needs to account for, use a different migration strategy or wait for a newer version of the native token management pallet!
-
 1. Add the pallet into the runtime. This requires implementing the trait `TokenTransferHandler`, which
 is left for the developers of each particular Partner Chain to implement according to their needs and
 ledger structure. Consult the implementation in `runtime/src/lib.rs` for an example with a mocked handler.
