@@ -23,11 +23,9 @@ lazy_static = { workspace = true }
 blake2b_simd = { workspace = true }
 figment = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
-sp-runtime = { workspace = true, optional = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }
-frame-support = { workspace = true }
 
 [features]
 default = ["std"]
@@ -39,8 +37,6 @@ std = [
 	"num-bigint/std",
 	"figment",
 	"thiserror",
-	"sp-runtime",
-	"sp-runtime/std"
 ]
 serde = [
 	"dep:serde",

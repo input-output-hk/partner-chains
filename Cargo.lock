@@ -9155,7 +9155,6 @@ dependencies = [
  "byte-string-derive",
  "derive_more",
  "figment",
- "frame-support",
  "hex",
  "lazy_static",
  "num-bigint",
@@ -9169,7 +9168,6 @@ dependencies = [
  "serde_json",
  "sp-core",
  "sp-crypto-hashing",
- "sp-runtime",
  "sp-std",
  "thiserror",
 ]
