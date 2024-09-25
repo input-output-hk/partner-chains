@@ -178,6 +178,7 @@ const POLICY_ID_LEN: usize = 28;
 /// Cardano Policy Id
 #[derive(Clone, Default, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
 #[byte_string(debug, decode_hex, hex_serialize, hex_deserialize)]
+#[cfg_attr(feature = "std", byte_string(to_hex_string))]
 pub struct PolicyId(pub [u8; POLICY_ID_LEN]);
 
 pub const MAX_ASSET_NAME_LEN: u32 = 32;

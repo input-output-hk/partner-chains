@@ -314,6 +314,7 @@ pub struct MainChainAddresses {
 	pub committee_candidates_address: String,
 	pub d_parameter_policy_id: String,
 	pub permissioned_candidates_policy_id: String,
+	pub native_token: NativeTokenConfig,
 }
 #[derive(Deserialize, PartialEq, Clone, Debug)]
 pub struct CardanoParameters {
@@ -376,6 +377,18 @@ pub struct SidechainParams {
 	pub governance_authority: MainchainAddressHash,
 }
 
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct AssetConfig {
+	policy_id: String,
+	asset_name: String,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct NativeTokenConfig {
+	pub asset: AssetConfig,
+	pub illiquid_supply_address: String,
+}
+
 #[derive(Deserialize)]
 pub struct ChainConfig {
 	pub cardano: CardanoParameters,
@@ -407,6 +420,32 @@ pub fn get_cardano_network_from_file(context: &impl IOContext) -> anyhow::Result
 pub mod config_fields {
 	use super::*;
 	use sidechain_domain::{MainchainAddressHash, UtxoId};
+
+	pub const NATIVE_TOKEN_POLICY: ConfigFieldDefinition<'static, String> = ConfigFieldDefinition {
+		config_file: CHAIN_CONFIG_FILE_PATH,
+		path: &["cardano_addresses", "native_token", "asset", "policy_id"],
+		name: "native token policy ID",
+		default: None,
+		_marker: PhantomData,
+	};
+
+	pub const NATIVE_TOKEN_ASSET_NAME: ConfigFieldDefinition<'static, String> =
+		ConfigFieldDefinition {
+			config_file: CHAIN_CONFIG_FILE_PATH,
+			path: &["cardano_addresses", "native_token", "asset", "asset_name"],
+			name: "native token asset name in hex",
+			default: None,
+			_marker: PhantomData,
+		};
+
+	pub const ILLIQUID_SUPPLY_ADDRESS: ConfigFieldDefinition<'static, String> =
+		ConfigFieldDefinition {
+			config_file: CHAIN_CONFIG_FILE_PATH,
+			path: &["cardano_addresses", "native_token", "illiquid_supply_address"],
+			name: "native token illiquid token supply address",
+			default: None,
+			_marker: PhantomData,
+		};
 
 	pub const SUBSTRATE_NODE_DATA_BASE_PATH: ConfigFieldDefinition<'static, String> =
 		ConfigFieldDefinition {

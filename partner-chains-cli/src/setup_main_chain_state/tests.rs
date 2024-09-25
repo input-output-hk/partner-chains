@@ -349,6 +349,13 @@ fn test_chain_config_content() -> serde_json::Value {
 			"committee_candidates_address": "addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc",
 			"d_parameter_policy_id": "d0ebb61e2ba362255a7c4a253c6578884603b56fb0a68642657602d6",
 			"permissioned_candidates_policy_id": "58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe",
+			"native_token": {
+				"asset": {
+					"policy_id": "ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
+					"asset_name": "5043546f6b656e44656d6f",
+				},
+				"illiquid_supply_address": "addr_test1wqn2pkvvmesmxtfa4tz7w8gh8vumr52lpkrhcs4dkg30uqq77h5z4"
+			},
 		},
 		"initial_permissioned_candidates": [
 			{
@@ -361,7 +368,7 @@ fn test_chain_config_content() -> serde_json::Value {
 			  "grandpa_pub_key": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
 			  "sidechain_pub_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27"
 			}
-		]
+		],
 	})
 }
 
