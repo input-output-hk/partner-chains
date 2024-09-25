@@ -133,7 +133,7 @@ mod inherent_provider {
 			if version_check(version) {
 				Self::new(client, data_source, mc_hash, parent_hash).await
 			} else {
-				Ok(Self { token_amount: 0.into() })
+				Ok(Self { token_amount: Some(0.into()) })
 			}
 		}
 
@@ -166,7 +166,7 @@ mod inherent_provider {
 				)
 				.await?;
 
-			let token_amount = Some(token_amount).filter(|amount| amount.0 > 0);
+			let token_amount = if token_amount.0 > 0 { Some(token_amount) } else { None };
 
 			Ok(Self { token_amount })
 		}
