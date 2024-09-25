@@ -1,6 +1,6 @@
 [package]
 name = "sc-partner-chains-consensus-aura"
-version = "1.1.0"
+version = "1.2.0"
 description = "Partner Chains modification to the Substrate Aura consensus engine"
 authors = [ "IOG "]
 homepage = "https://iohk.io/"

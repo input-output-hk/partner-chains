@@ -32,8 +32,6 @@ mod config_field {
 		)]);
 
 		config_field.save_to_file(&"this is a test string".into(), &mock_context);
-
-		mock_context.no_more_io_expected();
 	}
 
 	#[test]
@@ -77,8 +75,6 @@ mod config_field {
 			]);
 
 		config_field.save_to_file(&"this is a test string".into(), &mock_context);
-
-		mock_context.no_more_io_expected();
 	}
 
 	#[test]

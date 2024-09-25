@@ -102,8 +102,7 @@ mod tests {
 			);
 
 		let result = mock_register2_cmd().run(&mock_context);
-		mock_context.no_more_io_expected();
-		assert!(result.is_ok());
+		result.expect("should succeed");
 	}
 
 	#[test]
@@ -120,8 +119,7 @@ mod tests {
 		]);
 
 		let result = mock_register2_cmd().run(&mock_context);
-		mock_context.no_more_io_expected();
-		assert!(result.is_err());
+		result.expect_err("should return error");
 	}
 
 	fn intro_msg_io() -> Vec<MockIO> {

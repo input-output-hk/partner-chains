@@ -153,6 +153,18 @@ pub mod scenarios {
 				"PERMISSIONED_CANDIDATES_POLICY_ID",
 				"00000000000000000000000000000000000000000000000000000000",
 			),
+			MockIO::set_env_var(
+				"NATIVE_TOKEN_POLICY_ID",
+				"00000000000000000000000000000000000000000000000000000000",
+			),
+			MockIO::set_env_var(
+				"NATIVE_TOKEN_ASSET_NAME",
+				"00000000000000000000000000000000000000000000000000000000",
+			),
+			MockIO::set_env_var(
+				"ILLIQUID_SUPPLY_VALIDATOR_ADDRESS",
+				"00000000000000000000000000000000000000000000000000000000",
+			),
 		])
 	}
 }
@@ -181,9 +193,7 @@ fn happy_path() {
 
 	let result = GenerateKeysCmd {}.run(&mock_context);
 
-	mock_context.no_more_io_expected();
-
-	assert!(result.is_ok());
+	result.expect("should succeed");
 }
 
 mod config_read {
@@ -198,8 +208,6 @@ mod config_read {
 			.with_expected_io(vec![scenarios::prompt_all_config_fields()]);
 
 		let result = GenerateKeysConfig::load(&context);
-
-		context.no_more_io_expected();
 
 		assert_eq!(result.chain_name, CHAIN_NAME);
 		assert_eq!(result.node_executable, EXECUTABLE_PATH);
@@ -227,8 +235,6 @@ mod config_read {
 
 		let result = GenerateKeysConfig::load(&context);
 
-		context.no_more_io_expected();
-
 		assert_eq!(result.chain_name, CHAIN_NAME);
 		assert_eq!(result.node_executable, EXECUTABLE_PATH);
 		assert_eq!(result.substrate_node_base_path, DATA_PATH);
@@ -236,15 +242,7 @@ mod config_read {
 
 	#[test]
 	fn verify_executable_returns_error_when_node_executable_missing() {
-		let context = MockIOContext::new().with_expected_io(vec![
-			MockIO::file_write_json(
-				RESOURCES_CONFIG_PATH,
-				serde_json::json!({
-				  "substrate_node_executable_path": "./partner-chains-node"
-				}),
-			),
-			MockIO::file_read(RESOURCES_CONFIG_PATH),
-		]);
+		let context = MockIOContext::new();
 
 		let result = verify_executable(&default_config(), &context);
 
@@ -301,9 +299,7 @@ mod generate_spo_keys {
 
 		let result = generate_spo_keys(&default_config(), &mock_context);
 
-		mock_context.no_more_io_expected();
-
-		assert!(result.is_ok());
+		result.expect("should succeed");
 	}
 
 	#[test]
@@ -328,9 +324,7 @@ mod generate_spo_keys {
 
 		let result = generate_spo_keys(&default_config(), &mock_context);
 
-		mock_context.no_more_io_expected();
-
-		assert!(result.is_ok());
+		result.expect("should succeed");
 	}
 }
 

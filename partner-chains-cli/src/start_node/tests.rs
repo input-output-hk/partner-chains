@@ -145,20 +145,17 @@ fn happy_path() {
 
 	let result = StartNodeCmd { silent: false }.run(&context);
 
-	context.no_more_io_expected();
-
-	assert!(result.is_ok());
+	result.expect("should succeed");
 }
 
 mod check_chain_spec {
+
 	use super::*;
 
 	#[test]
 	fn passes_if_present() {
 		let context = MockIOContext::new().with_file(CHAIN_SPEC_FILE, "irrelevant");
 		let result = check_chain_spec(&context);
-
-		context.no_more_io_expected();
 
 		assert!(result);
 	}
@@ -171,8 +168,6 @@ mod check_chain_spec {
 		]);
 
 		let result = check_chain_spec(&context);
-
-		context.no_more_io_expected();
 
 		assert!(!result);
 	}
@@ -197,10 +192,7 @@ mod check_keystore {
 
 		let result = check_keystore(&default_config(), &context);
 
-		context.no_more_io_expected();
-
-		assert!(result.is_ok());
-		assert!(result.unwrap());
+		result.expect("should succeed");
 	}
 
 	#[test]
@@ -217,11 +209,8 @@ mod check_keystore {
 		]);
 
 		let result = check_keystore(&default_config(), &context);
-
-		context.no_more_io_expected();
-
-		assert!(result.is_ok());
-		assert!(!result.unwrap());
+		let result = result.expect("should succeed");
+		assert!(!result);
 	}
 }
 

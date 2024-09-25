@@ -1,6 +1,6 @@
 [package]
 name = "pallet-session-runtime-stub"
-version = "1.1.0"
+version = "1.2.0"
 description = "Runtime implementations for polkadot-sdk pallet-session when pallet-partner-chains-session is used"
 edition = "2021"
 license = "Apache-2.0"

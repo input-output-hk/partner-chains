@@ -99,8 +99,8 @@ impl MockIO {
 }
 
 pub struct MockIOContext {
-	expected_io: RefCell<Vec<MockIO>>,
-	files: RefCell<HashMap<String, String>>,
+	pub expected_io: RefCell<Vec<MockIO>>,
+	pub files: RefCell<HashMap<String, String>>,
 }
 
 impl MockIOContext {
@@ -118,7 +118,7 @@ impl MockIOContext {
 	pub fn with_expected_io(self, mut expected_commands: Vec<MockIO>) -> Self {
 		expected_commands.reverse();
 		let expected_commands = expected_commands.into();
-		Self { expected_io: expected_commands, ..self }
+		Self { expected_io: expected_commands, files: self.files.clone() }
 	}
 	pub fn pop_next_action(&self) -> Option<MockIO> {
 		let next = self.expected_io.borrow_mut().pop();
@@ -132,12 +132,13 @@ impl MockIOContext {
 			None => None,
 		}
 	}
-	pub fn no_more_io_expected(&self) {
-		assert!(
-			self.expected_io.borrow().is_empty(),
-			"Expected IO operations left unperformed: {:?}",
-			self.expected_io
-		)
+}
+
+impl Drop for MockIOContext {
+	fn drop(&mut self) {
+		if let Some(next_expected) = self.expected_io.borrow().first() {
+			panic!("IO operations left unperformed. Next expected: {:?}", next_expected);
+		}
 	}
 }
 

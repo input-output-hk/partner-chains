@@ -316,8 +316,7 @@ mod tests {
 			);
 
 		let result = Register1Cmd {}.run(&mock_context);
-		mock_context.no_more_io_expected();
-		assert!(result.is_ok());
+		result.expect("should succeed");
 	}
 
 	#[test]
@@ -330,9 +329,7 @@ mod tests {
 		);
 
 		let result = Register1Cmd {}.run(&mock_context);
-		mock_context.no_more_io_expected();
-
-		assert!(result.is_err());
+		result.expect_err("should return error");
 	}
 
 	#[test]
@@ -351,9 +348,7 @@ mod tests {
 			);
 
 		let result = Register1Cmd {}.run(&mock_context);
-		mock_context.no_more_io_expected();
-
-		assert!(result.is_err());
+		result.expect_err("should return error");
 	}
 
 	#[test]

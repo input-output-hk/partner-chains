@@ -147,6 +147,7 @@ mod tests {
 		prompt_and_save_to_existing_file, prompt_with_default_and_save_to_existing_file,
 		save_to_existing_file, save_to_new_file, CHAIN_CONFIG_PATH,
 	};
+
 	use crate::tests::{MockIO, MockIOContext};
 	use serde_json::Value;
 	use sidechain_domain::{MainchainAddressHash, UtxoId};
@@ -206,8 +207,7 @@ mod tests {
 
 		let result = prepare_chain_params(&mock_context);
 
-		assert!(result.is_ok());
-		mock_context.no_more_io_expected();
+		result.expect("should succeed");
 	}
 
 	#[test]
@@ -239,9 +239,7 @@ mod tests {
 
 		let result = prepare_chain_params(&mock_context);
 
-		mock_context.no_more_io_expected();
-
-		assert!(result.is_ok());
+		result.expect("should succeed");
 	}
 
 	#[test]
@@ -277,9 +275,7 @@ mod tests {
 
 		let result = prepare_chain_params(&mock_context);
 
-		mock_context.no_more_io_expected();
-
-		assert!(result.is_ok());
+		result.expect("should succeed");
 	}
 
 	#[test]
@@ -312,8 +308,7 @@ mod tests {
 
 		let result = prepare_chain_params(&mock_context);
 
-		mock_context.no_more_io_expected();
-		assert!(result.is_ok());
+		result.expect("should succeed");
 	}
 
 	#[test]
@@ -367,8 +362,7 @@ mod tests {
 
 		let result = prepare_chain_params(&mock_context);
 
-		mock_context.no_more_io_expected();
-		assert!(result.is_ok());
+		result.expect("should succeed");
 	}
 
 	fn test_chain_config() -> Value {

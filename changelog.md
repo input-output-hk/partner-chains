@@ -7,6 +7,17 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 ## Changed
 
 * Added 'deregister' command to partner-chains-cli.
+
+## Removed
+
+## Fixed
+
+## Added
+
+# 1.2.0
+
+## Changed
+
 * Switched to paritytech/polkadot-sdk polkadot-stable2407-2. No migration is required because of this change.
 * Reverted usage of custom Runner that allowed `async_run` with asynchronous initializer.
   Now `Runner` code used is the same as in paritytech/polkadot-sdk.
@@ -25,6 +36,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 ## Removed
 
 ## Fixed
+* ETCM-8267 - fixed `partner-chains-cli` missing the native token configuration
 
 ## Added
 * ETCM-7811 - native token movement observability components: `sp-native-token-management` and

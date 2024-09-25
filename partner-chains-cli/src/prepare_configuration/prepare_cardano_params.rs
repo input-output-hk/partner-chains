@@ -203,9 +203,9 @@ pub mod tests {
 		let mock_context = MockIOContext::new()
 			.with_json_file(CARDANO_SECURITY_PARAMETER.config_file, serde_json::json!({}))
 			.with_expected_io(vec![save_cardano_params(cardano_parameters.clone())]);
-		let params = prepare_cardano_params(&mock_context, cardano_network).unwrap();
-		mock_context.no_more_io_expected();
-		assert_eq!(params, cardano_parameters)
+		let result = prepare_cardano_params(&mock_context, cardano_network);
+		let params = result.expect("should succeed");
+		assert_eq!(params, cardano_parameters);
 	}
 
 	fn test_chain_config(cardano_parameters: CardanoParameters) -> Value {

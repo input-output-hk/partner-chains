@@ -23,8 +23,7 @@ fn happy_path() {
 			show_outro(),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_ok());
+	result.expect("should succeed");
 }
 
 #[test]
@@ -57,8 +56,7 @@ If you are the governance authority, please make sure you have run the `prepare-
 If you are a validator, you can obtain the chain configuration file from the governance authority."),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_err());
+	result.expect_err("should return error");
 }
 
 #[test]
@@ -72,8 +70,7 @@ If you are the governance authority, please make sure you have run the `prepare-
 If you are a validator, you can obtain the chain configuration file from the governance authority."),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_err());
+	result.expect_err("should return error");
 }
 
 #[test]
@@ -90,10 +87,9 @@ fn errors_if_chain_spec_is_missing() {
 			read_chain_spec_io(),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_err());
+	let err = result.expect_err("should return error");
 	assert_eq!(
-		result.err().unwrap().to_string(),
+		err.to_string(),
 		"Could not read chain-spec.json file. File is expected to exists.".to_string()
 	);
 }
@@ -113,9 +109,8 @@ fn forwards_build_spec_error_if_it_fails() {
 			run_build_spec_io(Err(error)),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
-	mock_context.no_more_io_expected();
-	assert!(result.is_err());
-	assert_eq!(result.err().unwrap().to_string(), "Failed miserably".to_string())
+	let err = result.expect_err("should return error");
+	assert_eq!(err.to_string(), "Failed miserably".to_string());
 }
 
 fn test_config_content() -> serde_json::Value {
@@ -133,7 +128,7 @@ fn test_config_content() -> serde_json::Value {
 			  "sidechain_pub_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27"
 			}
 		],
-		"cardano_addresses": cardano_addresses_json()
+		"cardano_addresses": cardano_addresses_json(),
 	})
 }
 
@@ -179,7 +174,7 @@ fn test_config_content_with_empty_initial_permissioned_candidates() -> serde_jso
 	serde_json::json!({
 		"chain_parameters": chain_parameters_json(),
 		"initial_permissioned_candidates": [],
-		"cardano_addresses": cardano_addresses_json()
+		"cardano_addresses": cardano_addresses_json(),
 	})
 }
 
@@ -197,7 +192,14 @@ fn cardano_addresses_json() -> serde_json::Value {
 	serde_json::json!({
 		"committee_candidates_address": "addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc",
 		"d_parameter_policy_id": "d0ebb61e2ba362255a7c4a253c6578884603b56fb0a68642657602d6",
-		"permissioned_candidates_policy_id": "58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe"
+		"permissioned_candidates_policy_id": "58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe",
+		"native_token": {
+			"asset": {
+				"policy_id": "ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
+				"asset_name": "5043546f6b656e44656d6f",
+			},
+			"illiquid_supply_address": "addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
+		},
 	})
 }
 
@@ -218,6 +220,10 @@ fn show_chain_parameters() -> MockIO {
 		MockIO::print("- committee_candidate_address: addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc"),
 		MockIO::print("- d_parameter_policy_id: d0ebb61e2ba362255a7c4a253c6578884603b56fb0a68642657602d6"),
 		MockIO::print("- permissioned_candidates_policy_id: 58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe"),
+		MockIO::print("Native Token Management Configuration (unused if empty):"),
+		MockIO::print("- asset name: 5043546f6b656e44656d6f"),
+		MockIO::print("- asset policy ID: ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"),
+		MockIO::print("- illiquid supply address: addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"),
 	])
 }
 
@@ -253,6 +259,15 @@ fn set_env_vars_io() -> MockIO {
 		MockIO::set_env_var(
 			"PERMISSIONED_CANDIDATES_POLICY_ID",
 			"58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe",
+		),
+		MockIO::set_env_var(
+			"NATIVE_TOKEN_POLICY_ID",
+			"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
+		),
+		MockIO::set_env_var("NATIVE_TOKEN_ASSET_NAME", "5043546f6b656e44656d6f"),
+		MockIO::set_env_var(
+			"ILLIQUID_SUPPLY_VALIDATOR_ADDRESS",
+			"addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz",
 		),
 	])
 }
@@ -354,5 +369,8 @@ fn read_chain_config_io() -> MockIO {
 		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // committee candidates address
 		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // d parameter policy id
 		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // permissioned candidates policy id
+		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // native token policy id
+		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // native token asset name
+		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // illiquid supply validator address
 	])
 }
