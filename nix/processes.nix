@@ -24,11 +24,17 @@
         ogmios = 1338;
         kupo = 1443;
       };
-      mainnet = {
+      sanchonet = {
         node = 3032;
         postgres = 5434;
         ogmios = 1339;
         kupo = 1444;
+      };
+      mainnet = {
+        node = 3033;
+        postgres = 5435;
+        ogmios = 1340;
+        kupo = 1445;
       };
     }."${network}";
     mkStack = network: let
@@ -261,8 +267,8 @@
       ];
       package = self'.packages.process-compose;
       tui = true;
-      settings.processes = mkStack "preview" // mkStack "preprod" // mkStack "mainnet";
-      services.postgres = mkService "preview" // mkService "preprod" // mkService "mainnet";
+      settings.processes = mkStack "preview" // mkStack "preprod" // mkStack "sanchonet"// mkStack "mainnet";
+      services.postgres = mkService "preview" // mkService "preprod" // mkService "sanchonet" // mkService "mainnet";
     };
   };
 }
