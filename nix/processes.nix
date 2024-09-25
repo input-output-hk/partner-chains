@@ -11,12 +11,32 @@
     system,
     ...
   }: let
+    ports = network: {
+      preview = {
+        node = 3030;
+        postgres = 5432;
+        ogmios = 1337;
+        kupo = 1442;
+      };
+      preprod = {
+        node = 3031;
+        postgres = 5433;
+        ogmios = 1338;
+        kupo = 1443;
+      };
+      mainnet = {
+        node = 3032;
+        postgres = 5434;
+        ogmios = 1339;
+        kupo = 1444;
+      };
+    }."${network}";
     mkStack = network: let
       data-dir = "./.run/${network}";
       node-socket = "${data-dir}/cardano-node/node.socket";
       configs-dir = "${inputs.configurations}/network/${network}";
       node-config = "${configs-dir}/cardano-node/config.json";
-      magic = if network == "preview" then "2" else "1";
+      magic = " --testnet-magic ${if network == "preview" then "2" else "1"}";
     in {
       "tip-status-${network}" = {
         namespace = network;
@@ -24,7 +44,7 @@
           export CARDANO_NODE_SOCKET_PATH=${node-socket}
           while true; do
             ${self'.packages.cardano-cli}/bin/cardano-cli \
-              query tip --testnet-magic ${magic};
+              query tip ${if network == "mainnet" then "--mainnet" else magic};
             sleep 10
           done
         '';
@@ -37,8 +57,8 @@
             command = ''
               export CARDANO_NODE_SOCKET_PATH=${node-socket}
               ${self'.packages.cardano-cli}/bin/cardano-cli \
-              query tip --testnet-magic ${magic} \
-              | jq -e '.syncProgress == "100.00" | not' && exit 1 || exit 0
+                query tip ${if network == "mainnet" then "--mainnet" else magic}; \
+                | jq -e '.syncProgress == "100.00" | not' && exit 1 || exit 0
             '';
           };
           initial_delay_seconds = 25;
@@ -89,7 +109,7 @@
           --database-path ${data-dir}/cardano-node/data \
           --socket-path ${node-socket} \
           --host-addr 0.0.0.0 \
-          --port ${if network == "preview" then "3030" else "3031"} \
+          --port ${toString (ports network).node} \
           --config ${node-config}
         '';
         environment = {
@@ -99,7 +119,7 @@
       };
       "db-sync-${network}" = let
         pgpass = pkgs.writeText "pgpass-mainnet" ''
-          127.0.0.1:${if network == "preview" then "5432" else "5433"}:cexplorer:postgres:password123
+          127.0.0.1:${toString (ports network).postgres}:cexplorer:postgres:password123
         '';
       in {
         namespace = network;
@@ -130,7 +150,7 @@
           NETWORK = network;
           PGPASSFILE = "${pgpass}";
           POSTGRES_HOST = "127.0.0.1";
-          POSTGRES_PORT = if network == "preview" then "5432" else "5433";
+          POSTGRES_PORT = "${toString (ports network).postgres}";
           POSTGRES_DB = "cexplorer";
           POSTGRES_USER = "postgres";
           POSTGRES_PASSWORD = "password123";
@@ -143,11 +163,11 @@
             --host 0.0.0.0 \
             --node-config ${node-config} \
             --node-socket ${node-socket} \
-            --port ${if network == "preview" then "1337" else "1338"}
+            --port ${toString (ports network).ogmios}
         '';
         environment = {
           DATA_DIR = "${data-dir}/ogmios";
-          OGMIOS_PORT = if network == "preview" then "1337" else "1338";
+          OGMIOS_PORT = "${toString (ports network).ogmios}";
         };
         liveness_probe = {
           exec = {
@@ -164,7 +184,7 @@
         readiness_probe = {
           http_get = {
             host = "0.0.0.0";
-            port = if network == "preview" then 1337 else 1338;
+            port = (ports network).ogmios;
           };
           initial_delay_seconds = 5;
           period_seconds = 5;
@@ -185,7 +205,7 @@
             --workdir ${data-dir}/kupo \
             --match "*" \
             --since origin \
-            --port ${if network == "preview" then "1442" else "1443"}
+            --port ${toString (ports network).kupo}
         '';
         liveness_probe = {
           exec = {
@@ -202,7 +222,7 @@
         readiness_probe = {
           http_get = {
             host = "0.0.0.0";
-            port = if network == "preview" then 1442 else 1443;
+            port = (ports network).kupo;
             path = "/matches";
           };
           initial_delay_seconds = 5;
@@ -221,7 +241,7 @@
       "postgres-${network}" = {
         enable = true;
         namespace = network;
-        port = if network == "preview" then 5432 else 5433;
+        port = (ports network).postgres;
         dataDir = "${data-dir}/db-sync/database";
         listen_addresses = "127.0.0.1";
         initialDatabases = [{name = "cexplorer";}];
@@ -239,9 +259,10 @@
       imports = [
         inputs.services-flake.processComposeModules.default
       ];
+      #package = self'.packages.process-compose;
       tui = true;
-      settings.processes = mkStack "preview" // mkStack "preprod";
-      services.postgres = mkService "preview" // mkService "preprod";
+      settings.processes = mkStack "preview" // mkStack "preprod" // mkStack "mainnet";
+      services.postgres = mkService "preview" // mkService "preprod" // mkService "mainnet";
     };
   };
 }
