@@ -9845,6 +9845,7 @@ dependencies = [
  "sp-blockchain",
  "sp-inherents",
  "sp-runtime",
+ "sp-version",
  "thiserror",
  "tokio",
 ]
