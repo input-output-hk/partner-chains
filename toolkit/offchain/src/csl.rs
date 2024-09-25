@@ -3,12 +3,13 @@
 use cardano_serialization_lib::{
 	Address, AssetName, Assets, BigNum, CostModel, Costmdls, Credential, EnterpriseAddress,
 	ExUnitPrices, ExUnits, JsError, Language, LanguageKind, LinearFee, MultiAsset, NetworkIdKind,
-	ScriptHash, TransactionBuilderConfig, TransactionBuilderConfigBuilder, UnitInterval, Value,
+	ScriptHash, TransactionBuilderConfig, TransactionBuilderConfigBuilder, TransactionHash,
+	TransactionInput, UnitInterval, Value,
 };
 use ogmios_client::{
 	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse},
 	transactions::OgmiosBudget,
-	types::OgmiosValue,
+	types::{OgmiosUtxo, OgmiosValue},
 };
 
 pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: LanguageKind) -> [u8; 28] {
@@ -34,9 +35,17 @@ pub fn plutus_script_address(
 
 pub fn payment_address(key_bytes: &[u8], network: NetworkIdKind) -> Address {
 	let key_hash = sidechain_domain::crypto::blake2b(key_bytes);
+	key_ed25519_hash_address(key_hash, network)
+}
+
+/// Builds an CSL `Address` for plutus script from the data obtained from smart contracts.
+pub(crate) fn key_ed25519_hash_address(
+	key_hash_bytes: [u8; 28],
+	network: NetworkIdKind,
+) -> Address {
 	EnterpriseAddress::new(
 		network_id_kind_to_u8(network),
-		&Credential::from_keyhash(&key_hash.into()),
+		&Credential::from_keyhash(&key_hash_bytes.into()),
 	)
 	.to_address()
 }
@@ -118,6 +127,11 @@ pub(crate) fn convert_ex_units(v: &OgmiosBudget) -> ExUnits {
 	ExUnits::new(&v.memory.into(), &v.cpu.into())
 }
 
+/// Conversion of ogmios-client UTXO to CSL transaction input
+pub fn utxo_to_tx_input(utxo: &OgmiosUtxo) -> TransactionInput {
+	TransactionInput::new(&TransactionHash::from(utxo.transaction.id), utxo.index.into())
+}
+
 #[cfg(test)]
 mod tests {
 	use crate::plutus_script::PlutusScript;
@@ -126,10 +140,11 @@ mod tests {
 	use ogmios_client::{
 		query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, ScriptExecutionPrices},
 		transactions::OgmiosBudget,
-		types::{Asset, OgmiosBytesSize, OgmiosValue},
+		types::{Asset, OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue},
 	};
 
 	use super::payment_address;
+	use super::utxo_to_tx_input;
 
 	#[test]
 	fn candidates_script_address_test() {
@@ -277,5 +292,25 @@ mod tests {
 				plutus_v3: vec![-900, 166917843],
 			},
 		}
+	}
+
+	#[test]
+	fn utxo_to_tx_input_test() {
+		let tx_input = utxo_to_tx_input(&OgmiosUtxo {
+			transaction: OgmiosTx {
+				id: hex!("0011223344556677001122334455667700112233445566770011223344556677"),
+			},
+			index: 42,
+			address: "irrelevant".into(),
+			value: OgmiosValue::new_lovelace(1234567),
+			datum: None,
+			datum_hash: None,
+			script: None,
+		});
+		assert_eq!(tx_input.index(), 42);
+		assert_eq!(
+			tx_input.transaction_id().to_hex(),
+			"0011223344556677001122334455667700112233445566770011223344556677"
+		);
 	}
 }
