@@ -27,6 +27,9 @@
       inherit (dbSyncPackages) "cardano-db-sync:exe:cardano-db-sync";
       kupo = pkgs.callPackage ./kupo.nix { version = kupoVersion; };
       ogmios = pkgs.callPackage ./ogmios.nix { version = ogmiosVersion; };
+      process-compose = pkgs.process-compose.overrideAttrs (oldAttrs: {
+        patches = [ ./pc.patch ];
+      });
       partnerchains-stack = pkgs.callPackage ./partnerchains-stack { inherit (self'.packages) partnerchains-stack-unwrapped; };
 
     };

@@ -259,7 +259,7 @@
       imports = [
         inputs.services-flake.processComposeModules.default
       ];
-      #package = self'.packages.process-compose;
+      package = self'.packages.process-compose;
       tui = true;
       settings.processes = mkStack "preview" // mkStack "preprod" // mkStack "mainnet";
       services.postgres = mkService "preview" // mkService "preprod" // mkService "mainnet";
