@@ -136,6 +136,10 @@ impl MockIOContext {
 
 impl Drop for MockIOContext {
 	fn drop(&mut self) {
+		if std::thread::panicking() {
+			// the test has already failed, do not panic again
+			return;
+		}
 		if let Some(next_expected) = self.expected_io.borrow().first() {
 			panic!("IO operations left unperformed. Next expected: {:?}", next_expected);
 		}
