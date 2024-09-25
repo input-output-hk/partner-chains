@@ -90,6 +90,8 @@ pallet_session_runtime_stub::impl_pallet_session_config!(Runtime);
 ```
 Then add: `PolkadotSession:pallet_session` in the `construct_runtime!` macro.
 
+Increase the `spec_version`, so it will be possible to upgrade the runtime.
+
 ## sc-cli
 
 `Runner` has been reverted to pairtytech version, this requires changes in the node code,
