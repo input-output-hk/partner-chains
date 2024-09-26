@@ -30,7 +30,9 @@ tempfile = { workspace = true }
 epoch-derivation = { workspace = true, features = ["std"] }
 secp256k1 = { workspace = true, features = ["std"] }
 colored = { version = "2.1.0" }
-whisky = { version = "0.8.5" }
+hex-literal = { workspace = true }
+pallas-addresses = { git = "https://github.com/txpipe/pallas.git", tag = "v0.30.2" }
+jsonrpsee = { workspace = true }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

@@ -62,6 +62,7 @@ fn main() -> anyhow::Result<()> {
 		Command::Register1(cmd) => cmd.run(&DefaultCmdRunContext)?,
 		Command::Register2(cmd) => cmd.run(&DefaultCmdRunContext)?,
 		Command::Register3(cmd) => cmd.run(&DefaultCmdRunContext)?,
+		Command::Dereg(cmd) => cmd.run(&DefaultCmdRunContext)?,
 	}
 	Ok(())
 }
