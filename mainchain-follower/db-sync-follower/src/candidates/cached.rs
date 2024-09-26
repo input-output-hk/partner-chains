@@ -84,7 +84,7 @@ impl CandidateDataSourceCacheConfig {
 			.merge(Env::raw())
 			.extract()
 			.map_err(|e| format!("Failed to read candidates data source config: {e}"))?;
-		info!("Using candidate data source configuration: {config:?}");
+		info!("Using candidate data source configuration: {config:?}.");
 		Ok(config)
 	}
 }
