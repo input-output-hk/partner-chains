@@ -221,7 +221,7 @@ The `<type>` and `<summary>` fields are mandatory, the `(<scope>)` field is opti
 
 ##### Type
 
-Must classify commit to the certain type. Some of he examples of good types to use:
+Must classify commit to the certain type. Some of the examples of good types to use:
 
 * **build**: Changes that affect the build system or external dependencies
 * **ci**: Changes to our CI configuration files and scripts
