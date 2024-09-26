@@ -138,6 +138,10 @@ pub mod pallet {
 			token_amount: NativeTokenAmount,
 		) -> DispatchResult {
 			ensure_none(origin)?;
+			assert!(
+				MainChainScriptsConfiguration::<T>::exists(),
+				"BUG: Inherent should not be run unless the main chain scripts are set."
+			);
 			T::TokenTransferHandler::handle_token_transfer(token_amount)
 		}
 
