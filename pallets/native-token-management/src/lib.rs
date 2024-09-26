@@ -58,7 +58,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type MainChainScriptsConfiguration<T: Config> =
-		StorageValue<_, sp_native_token_management::MainChainScripts, ValueQuery>;
+		StorageValue<_, sp_native_token_management::MainChainScripts, OptionQuery>;
 
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
@@ -164,7 +164,7 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		pub fn get_main_chain_scripts() -> sp_native_token_management::MainChainScripts {
+		pub fn get_main_chain_scripts() -> Option<sp_native_token_management::MainChainScripts> {
 			MainChainScriptsConfiguration::<T>::get()
 		}
 	}

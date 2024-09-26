@@ -52,7 +52,7 @@ impl MainChainScripts {
 
 sp_api::decl_runtime_apis! {
 	pub trait NativeTokenManagementApi {
-		fn get_main_chain_scripts() -> MainChainScripts;
+		fn get_main_chain_scripts() -> Option<MainChainScripts>;
 	}
 }
 
@@ -92,7 +92,7 @@ mod inherent_provider {
 	use std::sync::Arc;
 
 	pub struct NativeTokenManagementInherentDataProvider {
-		pub token_amount: NativeTokenAmount,
+		pub token_amount: Option<NativeTokenAmount>,
 	}
 
 	#[derive(thiserror::Error, sp_runtime::RuntimeDebug)]
@@ -145,10 +145,11 @@ mod inherent_provider {
 			&self,
 			inherent_data: &mut InherentData,
 		) -> Result<(), sp_inherents::Error> {
-			inherent_data.put_data(
-				INHERENT_IDENTIFIER,
-				&TokenTransferData { token_amount: self.token_amount.clone() },
-			)
+			if let Some(token_amount) = self.token_amount.clone() {
+				inherent_data.put_data(INHERENT_IDENTIFIER, &TokenTransferData { token_amount })
+			} else {
+				Ok(())
+			}
 		}
 
 		async fn try_handle_error(

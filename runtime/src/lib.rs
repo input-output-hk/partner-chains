@@ -861,7 +861,7 @@ impl_runtime_apis! {
 	}
 
 	impl sp_native_token_management::NativeTokenManagementApi<Block> for Runtime {
-		fn get_main_chain_scripts() -> sp_native_token_management::MainChainScripts {
+		fn get_main_chain_scripts() -> Option<sp_native_token_management::MainChainScripts> {
 			NativeTokenManagement::get_main_chain_scripts()
 		}
 	}
