@@ -1,0 +1,42 @@
+name: "Nix Devshells Tests"
+description: "Builds and tests Nix Devshells with AWS credentials and Nix signing key."
+inputs: {}
+
+outputs: {}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Update flake.lock with calling PR
+      if: ${{ github.event_name == 'repository_dispatch' }}
+      run: |
+        nix flake lock --update-input trustless-sidechain \
+        --override-input trustless-sidechain \
+        github:input-output-hk/partner-chains-smart-contracts/${{ github.event.client_payload.ref }}
+      shell: bash
+
+    - name: Acquire AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Add signing key for Nix
+      run: echo "${{ secrets.NIX_SIGNING_KEY }}" > "${{ runner.temp }}/nix-key"
+      shell: bash
+
+    - name: Run nixci to build/test all outputs
+      run: |
+        nix run github:srid/nixci -- -v build -- --fallback > /tmp/outputs
+      shell: bash
+
+    - name: Copy nix scopes to nix cache
+      run: |
+        nix-store --stdin -q --deriver < /tmp/outputs | nix-store --stdin -qR --include-outputs \
+        | nix copy --stdin --to \
+        "s3://cache.sc.iog.io?secret-key=${{ runner.temp }}/nix-key&region=$AWS_REGION" \
+        && rm /tmp/outputs
+      shell: bash

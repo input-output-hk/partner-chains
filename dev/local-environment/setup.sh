@@ -156,11 +156,10 @@ configure_artifact_overrides() {
 
         if [ "$overrides" == "yes" ]; then
             echo -e "Artifact overrides enabled. \n"
-            artifact_override=yes
         else
             read -p "Do you want to override artifacts from local paths? (Y/N): " override_artifact
             if [[ $override_artifact == [Yy]* ]]; then
-                artifact_override=yes
+                overrides=yes
                 echo -e "Artifact overrides enabled. \n"
                 echo "To override pc-contracts-cli artifact, copy artifacts to path:"
                 echo -e "./configurations/pc-contracts-cli/overrides/pc-contracts-cli and ./configurations/pc-contracts-cli/overrides/node_modules \n"
@@ -169,7 +168,6 @@ configure_artifact_overrides() {
                 echo "To override the partner-chains-cli artifact, copy artifact to path:"
                 echo -e "./configurations/pc-contracts-cli/overrides/partner-chains-cli \n"
             else
-                artifact_override=no
                 echo -e "Artifact overrides disabled. Stable versions will be automatically downloaded within the container from Github Releases. \n"
             fi
         fi
@@ -177,14 +175,11 @@ configure_artifact_overrides() {
         # Non-interactive mode
         if [ "$overrides" == "yes" ]; then
             echo -e "Artifact overrides enabled. \n"
-            artifact_override=yes
-        else
-            artifact_override=no
         fi
     fi
 
     # Check for the existence of the artifact paths
-    if [ "$artifact_override" == "yes" ]; then
+    if [ "$overrides" == "yes" ]; then
         # Check for pc-contracts-cli artifact
         if [[ -f "./configurations/pc-contracts-cli/overrides/pc-contracts-cli" && -d "./configurations/pc-contracts-cli/overrides/node_modules" ]]; then
             echo -e "pc-contracts-cli and node_modules found. Override enabled. \n"
@@ -341,7 +336,7 @@ CPU_OGMIOS=0.000
 MEM_OGMIOS=1000G
 CPU_KUPO=0.000
 MEM_KUPO=1000G
-ARTIFACT_OVERRIDE=$artifact_override
+ARTIFACT_OVERRIDE=$overrides
 EOF
     else
         cat <<EOF >.env
@@ -361,7 +356,7 @@ CPU_OGMIOS=$cpu_ogmios
 MEM_OGMIOS=$mem_ogmios
 CPU_KUPO=$cpu_kupo
 MEM_KUPO=$mem_kupo
-ARTIFACT_OVERRIDE=$artifact_override
+ARTIFACT_OVERRIDE=$overrides
 EOF
     fi
 

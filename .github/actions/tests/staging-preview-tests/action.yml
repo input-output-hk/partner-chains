@@ -1,0 +1,42 @@
+name: "Test Against Staging Preview Environment"
+description: "Tests against Staging Preview Environment"
+inputs:
+  node-host:
+    description: "Host for the node"
+    required: true
+  node-port:
+    description: "Port for the node"
+    required: true
+
+outputs: {}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install kubectl and awscli
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x ./kubectl
+        sudo mv ./kubectl /usr/local/bin/kubectl
+        sudo apt update && sudo apt install -y awscli
+      shell: bash
+    - name: Configure kubectl
+      run: |
+        echo "${{ env.kubeconfig_base64 }}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml
+        kubectl config set-cluster my-cluster --server=${{ env.K8S_SERVER }} --insecure-skip-tls-verify=true
+        kubectl config set-credentials github-actions --token=${{ env.K8S_SA_TOKEN }}
+        kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
+        kubectl config use-context my-context
+      shell: bash
+    - name: Health check integration env
+      run: |
+        curl --request POST \
+          --url "http://${{ inputs['node-host'] }}:${{ inputs['node-port'] }}" \
+          --header 'Content-Type: application/json' \
+          --data '{
+          "jsonrpc": "2.0",
+          "method": "sidechain_getStatus",
+          "params": [],
+          "id": 1
+        }'
+      shell: bash
