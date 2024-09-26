@@ -147,7 +147,6 @@ pub mod pallet {
 			);
 			Initialized::<T>::mutate(|initialized| {
 				if !*initialized {
-					log::info!("");
 					*initialized = true
 				}
 				true
