@@ -1,0 +1,351 @@
+name: CD 
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "partner-chains commit SHA to build from"
+        required: true
+        type: string
+      tag:
+        description: "partner-chains release tag"
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: write
+
+env:
+  AWS_REGION: "eu-central-1"
+  SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+
+jobs:
+  build-linux:
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: master 
+      - name: Build and Upload for Linux
+        uses: ./.github/actions/artifacts/build-pc-artifacts
+        with:
+          sha: ${{ inputs.sha }}
+          tag: ${{ inputs.tag }}
+          os: linux
+
+  build-macos-x86_64:
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: master 
+      - name: Build and Upload for macOS x86_64
+        uses: ./.github/actions/artifacts/build-pc-artifacts
+        with:
+          sha: ${{ inputs.sha }}
+          tag: ${{ inputs.tag }}
+          os: macos-x86_64
+
+  build-macos-arm64:
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: master 
+      - name: Build and Upload for macOS arm64
+        uses: ./.github/actions/artifacts/build-pc-artifacts
+        with:
+          sha: ${{ inputs.sha }}
+          tag: ${{ inputs.tag }}
+          os: macos-arm64
+
+  build-and-publish-ecr:
+    permissions:
+      id-token: write
+      contents: write
+    needs: build-linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build and Publish to ECR
+        uses: ./.github/actions/images/build-and-publish-ecr
+        with:
+          sha: ${{ inputs.sha }}
+          tag: ${{ inputs.tag }}
+        env:
+          AWS_REGION: "eu-central-1"
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          CONFIG_TAR: ${{ secrets.EARTHLY_TAR }}
+
+  local-environment-tests:          
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: ubuntu-latest
+    needs: [build-linux]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Deploy and test against local environment
+        uses: ./.github/actions/tests/local-environment-tests
+        with:
+          tag: ${{ inputs.tag }}  
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
+
+  deploy-argocd:
+    needs: local-environment-tests
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+  
+      - name: Deploy ArgoCD Node
+        uses: ./.github/actions/deploy/argocd/deploy-argocd
+        with:
+          sha: ${{ inputs.sha }}
+        env:
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }} 
+        
+  argocd-tests:
+    needs: deploy-argocd
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: [self-hosted, eks]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run Tests
+        uses: ./.github/actions/tests/argocd-tests
+        with:
+          node-host: sha-${{ inputs.sha }}-service.integration-testing.svc.cluster.local
+          node-port: 9933
+          ssh_key_earthly: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          config_tar: ${{ secrets.EARTHLY_TAR }}
+          ssh_key_binary_host: ${{ secrets.SSH_KEY_BINARY_HOST }}
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+          AWS_ROLE_ARN_: ${{ secrets.AWS_ROLE_ARN_ }}
+          SSH_KEY_BINARY_HOST: ${{ secrets.SSH_KEY_BINARY_HOST }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }} 
+
+  teardown-argocd:
+    needs: argocd-tests
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Teardown ArgoCD Environment
+        uses: ./.github/actions/deploy/argocd/teardown-argocd
+        with:
+          sha: ${{ inputs.sha }}
+        env:
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+
+  create-draft-release:
+    permissions:
+      id-token: write
+      contents: write
+    needs: [local-environment-tests, argocd-tests, teardown-argocd]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Create Draft Release
+        uses: ./.github/actions/release/create-draft-release
+        with:
+          tag: ${{ inputs.tag }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  generate-chain-specs:
+    permissions:
+      id-token: write
+      contents: write
+    needs: local-environment-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Generate Chain Specs
+        uses: ./.github/actions/artifacts/generate-chain-specs
+        with:
+          sha: ${{ inputs.sha }}
+
+  upload-chain-specs:
+    permissions:
+      id-token: write
+      contents: write
+    needs: generate-chain-specs
+    runs-on: [self-hosted, eks]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Upload chain spec artifacts to Kubernetes
+        uses: ./.github/actions/upload-chain-specs
+        with:
+          sha: ${{ github.sha }}
+        env:
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+
+  deploy-staging-preview:
+    permissions:
+      id-token: write
+      contents: write
+    needs: upload-chain-specs
+    runs-on: [self-hosted, eks]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Deploy staging-preview
+        uses: ./.github/actions/deploy/deploy-staging-preview
+        with:
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
+          chain-spec-secret: ${{ inputs.chain-spec-secret }}
+        env:
+          AWS_REGION: "eu-central-1"
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+
+  staging-preview-tests: 
+    permissions:
+      id-token: write
+      contents: write
+    needs: deploy-staging-preview
+    runs-on: [self-hosted, eks]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run Tests
+        uses: ./.github/actions/tests/staging-preview-tests
+        with:
+          node-host: staging-preview-validator-1.staging-preview.svc.cluster.local
+          node-port: 9933
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+          AWS_ROLE_ARN_: ${{ secrets.AWS_ROLE_ARN_ }}
+          SSH_KEY_BINARY_HOST: ${{ secrets.SSH_KEY_BINARY_HOST }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+
+  build-and-publish-ghcr:
+    permissions:
+      id-token: write
+      contents: write
+    needs: staging-preview-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build and Publish to GHCR
+        uses: ./.github/actions/images/build-and-publish-ghcr
+        with:
+          sha: ${{ inputs.sha }}
+          tag: ${{ inputs.tag }}
+          ssh_key_earthly: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          config_tar: ${{ secrets.EARTHLY_TAR }}
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
+
+  publish-release:
+    permissions:
+      id-token: write
+      contents: write
+    needs: staging-preview-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Publish Release
+        uses: ./.github/actions/publish-release
+        with:
+          tag: ${{ inputs.tag }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-staging-preprod:
+    permissions:
+      id-token: write
+      contents: write
+    needs: staging-preview-tests 
+    runs-on: [self-hosted, eks]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Deploy staging-preprod
+        uses: ./.github/actions/deploy-staging-preprod
+        with:
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
+          chain-spec-secret: ${{ inputs.chain-spec-secret }}
+        env:
+          AWS_REGION: "eu-central-1"
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+
+  staging-preprod-tests: 
+    permissions:
+      id-token: write
+      contents: write
+    needs: deploy-staging-preprod
+    runs-on: [self-hosted, eks]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run Tests
+        uses: ./.github/actions/tests/staging-preprod-tests
+        with:
+          node-host: staging-preprod-validator-1.staging-preprod.svc.cluster.local
+          node-port: 9933
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+          AWS_ROLE_ARN_: ${{ secrets.AWS_ROLE_ARN_ }}
+          SSH_KEY_BINARY_HOST: ${{ secrets.SSH_KEY_BINARY_HOST }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}

@@ -1,0 +1,26 @@
+name: "Deploy ArgoCD Node"
+description: "Deploys an ArgoCD node using a specified commit SHA."
+inputs:
+  sha:
+    description: "Commit SHA"
+    required: true
+
+outputs: {}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Create and Push Manifest
+      env:
+        GH_TOKEN: ${{ env.ACTIONS_PAT }}
+      run: |
+        cd .github/actions/deploy/argocd/
+        bash generate-manifest.sh ${{ inputs.sha }}
+      shell: bash
+
+    - name: Wait for 8.5 minutes (ArgoCD refresh interval is 15s + 15s to build + 60s for node to start producing blocks)
+      run: sleep 90
+      shell: bash

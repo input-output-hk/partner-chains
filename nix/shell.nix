@@ -106,7 +106,7 @@
         pkgs = [
           {
             name = "cardano-cli";
-            help = "CLI v9.1.1 that is used in partner-chains dependency stack";
+            help = "CLI v9.2.1 that is used in partner-chains dependency stack";
             # This command has some eval because of IFD
             command = "${self'.packages.cardano-cli}/bin/cardano-cli $@";
           }
@@ -121,7 +121,7 @@
           pkgs = [
             {
               name = "partnerchains-stack";
-              help = "Run a process-compose stack of all of the dependencies";
+              help = "Run a containerless stack of all of the dependencies. Use -n <network> to specify networks";
               command = ''
                 ${self'.packages.partnerchains-stack}/bin/partnerchains-stack $@
               '';
