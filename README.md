@@ -70,7 +70,10 @@ For managing payouts, they will leverage the provided artifacts to distribute pa
 
 1. Block Production Tracking: The Partner Chain node logs block production data. Each block has a beneficiary, identified by Partner Chain receiving addresses (such as `SizedByteStrings(0x1)`, `SizedByteStrings(0x2)`, etc.). At the end of each Partner Chain epoch, the node summarizes who produced how many blocks.
 2. Smart Contract Implementation: Two main smart contracts are involved: 
-   a. Permissioned candidates contract: Lists approved validators with their public keys.
-   b. Registered candidates contract: Lists registered SPOs who can act as validators.
+
+	a. Permissioned candidates contract: Lists approved validators with their public keys.
+
+	b. Registered candidates contract: Lists registered SPOs who can act as validators.
+
 3. Reward Distribution Mechanism: The Partner Chain instance uses the block production data from the node logs and the information from the smart contracts to determine the reward distribution. It then implements the transactions to send the appropriate amount of rewards to each validator.
 4. Automation and Verification: The entire process needs to be automated within the consensus layer of the Partner Chain. Automated tests will be implemented to verify that the reward distribution is functioning correctly over time.
