@@ -15,6 +15,7 @@ pub type Header = <Block as sp_runtime::traits::Block>::Header;
 #[derive(Clone)]
 pub struct TestApi {
 	pub headers: HashMap<<Block as BlockT>::Hash, <Block as BlockT>::Header>,
+	pub main_chain_scripts: Option<MainChainScripts>,
 }
 
 impl sp_api::ProvideRuntimeApi<Block> for TestApi {
@@ -28,7 +29,7 @@ impl sp_api::ProvideRuntimeApi<Block> for TestApi {
 sp_api::mock_impl_runtime_apis! {
 	impl crate::NativeTokenManagementApi<Block> for TestApi {
 		fn get_main_chain_scripts() -> Option<MainChainScripts> {
-			Some(MainChainScripts::default())
+			self.main_chain_scripts.clone()
 		}
 
 	}
