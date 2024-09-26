@@ -1,33 +1,57 @@
 use crate::CmdRun;
 use crate::IOContext;
 use hex_literal::hex;
-use jsonrpsee::client_transport::ws::{Url, WsTransportClientBuilder};
-use jsonrpsee::core::client::{Client, ClientBuilder, ClientT};
+use jsonrpsee::core::client::ClientT;
+use jsonrpsee::core::params::ObjectParams;
+use jsonrpsee::core::traits::ToRpcParams;
+use jsonrpsee::http_client::HttpClient;
+use jsonrpsee::rpc_params;
 use pallas_addresses::{ShelleyAddress, ShelleyDelegationPart, ShelleyPaymentPart};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Debug, clap::Parser)]
 pub struct DeregCmd;
 
 impl CmdRun for DeregCmd {
-	fn run<C: IOContext>(&self, _context: &C) -> anyhow::Result<()> {
-		let own_payment_vkey =
-			hex!("a35ef86f1622172816bb9e916aea86903b2c8d32c728ad5c9b9472be7e3c5e88");
-		let own_payment_key_hash =
-			sidechain_domain::MainchainAddressHash::from_vkey(own_payment_vkey);
-		let own_addr = ShelleyAddress::new(
-			pallas_addresses::Network::Testnet,
-			ShelleyPaymentPart::key_hash(own_payment_key_hash.0.into()),
-			ShelleyDelegationPart::Null,
-		);
-		//addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy
-		println!(
-			"own_phk: {:?}, own_addr: {:?}",
-			own_payment_key_hash,
-			own_addr.to_bech32().unwrap()
-		);
+	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
+		let _ = tokio::task::block_in_place(|| {
+			tokio::runtime::Runtime::new().unwrap().block_on(async_run(context))
+		});
 		Ok(())
 	}
+}
+
+async fn async_run<C: IOContext>(context: &C) -> anyhow::Result<()> {
+	let own_payment_vkey = hex!("a35ef86f1622172816bb9e916aea86903b2c8d32c728ad5c9b9472be7e3c5e88");
+	let own_payment_key_hash = sidechain_domain::MainchainAddressHash::from_vkey(own_payment_vkey);
+	let own_addr = ShelleyAddress::new(
+		pallas_addresses::Network::Testnet,
+		ShelleyPaymentPart::key_hash(own_payment_key_hash.0.into()),
+		ShelleyDelegationPart::Null,
+	);
+	//addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy
+	println!("own_phk: {:?}, own_addr: {:?}", own_payment_key_hash, own_addr.to_bech32().unwrap());
+
+	let client = HttpClient::builder().build("http://localhost:1337")?;
+	let mut params = ObjectParams::new();
+	params
+		.insert(
+			"addresses",
+			vec!["addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy"],
+		)
+		.unwrap();
+
+	context.print(&format!("Params: {}", params.clone().to_rpc_params().unwrap().unwrap()));
+	let response: Result<Vec<OgmiosUtxo>, _> =
+		client.request("queryLedgerState/utxo", params).await;
+	context.print(&format!("Response: {:?}", response));
+	Ok(())
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct OgmiosUtxoQueryParams {
+	addresses: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
