@@ -27,6 +27,7 @@
         clang
         nodePackages.npm
 		    gnumake
+        gawk
         cargo-edit
       ]
       ++ (

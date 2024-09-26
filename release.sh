@@ -69,7 +69,9 @@ echo "Making release changes for new release $next_version (last version: $curre
 
 cargo set-version $next_version
 
-sed -i "s/# Unreleased/# Unreleased\n\n# v$next_version/" changelog.md
+# update changelog: we remove empty sections, add next version header and
+#   prepend new unreleased section
+gawk -i inplace -v RS="\0" -v ORS="" "{gsub(/# (Changed|Removed|Fixed|Added)[ \n]+#/,\"\");gsub(/# Unreleased/,\"# Unreleased\n\n## Changed\n\n## Removed\n\n## Fixed\n\n## Added\n\n# v$next_version\")}7" changelog.md
 
 git checkout -b "release-v$next_version"
 git add .
