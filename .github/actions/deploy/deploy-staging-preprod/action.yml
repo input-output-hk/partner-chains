@@ -1,0 +1,110 @@
+name: "Deploy staging-preprod"
+description: "Deploys the staging-preprod environment with chain-spec and image override using Kubernetes and Helm."
+inputs:
+  image:
+    description: "Node Image"
+    required: true
+  chain-spec-secret:
+    description: "Chain Spec Secret Name"
+    required: true
+
+outputs: {}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout sidechains-infra-priv repo
+      uses: actions/checkout@v4
+      with:
+        repository: input-output-hk/sidechains-infra-priv
+        token: ${{ env.ACTIONS_PAT }}
+        path: sidechains-infra-priv
+
+    - name: Acquire AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ env.AWS_ROLE_ARN_SECRET }}
+        aws-region: eu-central-1
+
+    - name: Login to ECR
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.ECR_REGISTRY_SECRET }}
+
+    - name: Install kubectl, kubernetes-helm, and awscli
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x ./kubectl
+        sudo mv ./kubectl /usr/local/bin/kubectl
+        curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+        sudo apt-get install apt-transport-https --yes
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+        sudo apt-get update
+        sudo apt-get install helm
+      shell: bash
+
+    - name: Configure kubectl
+      run: |
+        echo "${{ env.kubeconfig_base64 }}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml
+        kubectl config set-cluster my-cluster --server=${{ env.K8S_SERVER }} --insecure-skip-tls-verify=true
+        kubectl config set-credentials github-actions --token=${{ env.K8S_SA_TOKEN }}
+        kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
+        kubectl config use-context my-context
+      shell: bash
+
+    - name: Delete pods
+      continue-on-error: true
+      run: |
+        kubectl delete pod staging-preprod-validator-1 -n staging-preprod || true
+        kubectl delete pod staging-preprod-validator-2 -n staging-preprod || true
+        kubectl delete pod staging-preprod-validator-3 -n staging-preprod || true
+        kubectl delete pod staging-preprod-validator-4 -n staging-preprod || true
+        echo "Waiting for pods to delete..."
+        kubectl wait --for=delete pod/staging-preprod-validator-1 pod/staging-preprod-validator-2 pod/staging-preprod-validator-3 pod/staging-preprod-validator-4 -n staging-preprod --timeout=120s || true
+      shell: bash
+
+    - name: Delete substrate PVCs
+      continue-on-error: true
+      run: |
+        kubectl delete pvc staging-preprod-validator-1-claim-substrate-node-data -n staging-preprod
+        kubectl delete pvc staging-preprod-validator-2-claim-substrate-node-data -n staging-preprod
+        kubectl delete pvc staging-preprod-validator-3-claim-substrate-node-data -n staging-preprod
+        kubectl delete pvc staging-preprod-validator-4-claim-substrate-node-data -n staging-preprod
+        echo "Waiting for PVCs to delete..."
+        kubectl wait --for=delete pvc/staging-preprod-validator-1-claim-substrate-node-data pvc/staging-preprod-validator-2-claim-substrate-node-data pvc/staging-preprod-validator-3-claim-substrate-node-data pvc/staging-preprod-validator-4-claim-substrate-node-data -n staging-preprod --timeout=120s
+      shell: bash
+
+    - name: Deploy with chain-spec and image override
+      run: |
+        cd sidechains-infra-priv/src/kube/substrate-poc/environments/helm/substrate-node-stack-chart/
+        helm upgrade --install staging-preprod-validator-1 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-1 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="${{ inputs.chain-spec-secret }}"
+        helm upgrade --install staging-preprod-validator-2 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-2 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="${{ inputs.chain-spec-secret }}"
+        helm upgrade --install staging-preprod-validator-3 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-3 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="${{ inputs.chain-spec-secret }}"
+        helm upgrade --install staging-preprod-validator-4 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-4 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="${{ inputs.chain-spec-secret }}"
+      shell: bash
+
+    - name: Wait
+      run: |
+        echo "Waiting for staging-preprod-validator-1..."
+        kubectl wait --for=condition=ready pod staging-preprod-validator-1 -n staging-preprod --timeout=300s
+        echo "Waiting for staging-preprod-validator-2..."
+        kubectl wait --for=condition=ready pod staging-preprod-validator-2 -n staging-preprod --timeout=300s
+        echo "Waiting for staging-preprod-validator-3..."
+        kubectl wait --for=condition=ready pod staging-preprod-validator-3 -n staging-preprod --timeout=300s
+        echo "Waiting for staging-preprod-validator-4..."
+        kubectl wait --for=condition=ready pod staging-preprod-validator-4 -n staging-preprod --timeout=300s
+      shell: bash
+
+    - name: Validate
+      run: |
+        echo "Checking staging-preprod-validator-1..."
+        kubectl get pod staging-preprod-validator-1 -n staging-preprod -o jsonpath="{.status.containerStatuses[*].ready}"
+        echo "Checking staging-preprod-validator-2..."
+        kubectl get pod staging-preprod-validator-2 -n staging-preprod -o jsonpath="{.status.containerStatuses[*].ready}"
+        echo "Checking staging-preprod-validator-3..."
+        kubectl get pod staging-preprod-validator-3 -n staging-preprod -o jsonpath="{.status.containerStatuses[*].ready}"
+        echo "Checking staging-preprod-validator-4..."
+        kubectl get pod staging-preprod-validator-4 -n staging-preprod -o jsonpath="{.status.containerStatuses[*].ready}"
+        kubectl get pods -n sc -o custom-columns='NAME:.metadata.name,READY:.status.containerStatuses[*].ready' | grep -E '^(staging-preprod-validator-1|staging-preprod-validator-2|staging-preprod-validator-3|staging-preprod-validator-4)' | awk '{if ($2 != "true,true,true,true") exit 1}'
+        echo "All pods are 4/4 up and ready"
+      shell: bash

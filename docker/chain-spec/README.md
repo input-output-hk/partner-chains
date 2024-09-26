@@ -71,8 +71,7 @@ Cache cargo home for faster builds.
 -e CARGO_HOME=/cargo-home \
 ```
 
-Set an env variable to specify which chain to use. Currently, we only have "local" (devnet) and
-"staging". These IDs are used in `build-spec` command and pattern matched in `command.rs`, `SubstrateCli impl` `load_spec` function.
+Set an env variable to specify which chain to use. Currently, we only have "local" (devnet) and "staging". These IDs are used in `build-spec` command and pattern matched in `command.rs`, `SubstrateCli impl` `load_spec` function.
 Omit, if `--chain` option should not be used for the build-spec command.
 ```
 -e CHAIN=staging \

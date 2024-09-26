@@ -1,0 +1,97 @@
+name: "Run Tests against ArgoCD Node"
+description: "Run end-to-end tests against the ArgoCD node"
+inputs:
+  node-host:
+    description: "Host for the node"
+    required: true
+  node-port:
+    description: "Port for the node"
+    required: true
+  ssh_key_binary_host:
+    description: "SSH key for binary host"
+    required: true
+
+outputs: {}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Health Check Integration Env
+      run: |
+        curl --request POST \
+          --url "http://${{ inputs.node-host }}:${{ inputs.node-port }}" \
+          --header 'Content-Type: application/json' \
+          --data '{
+          "jsonrpc": "2.0",
+          "method": "sidechain_getStatus",
+          "params": [],
+          "id": 1
+        }'
+      shell: bash
+
+    - name: Set SSH-Agent to Binary Host
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ env.SSH_KEY_BINARY_HOST }}
+
+    - name: Acquire AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ env.AWS_ROLE_ARN_ }}
+        aws-region: "eu-central-1"
+
+    - name: checkout pc-tests ref_name branch
+      id: pc-tests
+      uses: actions/checkout@v4
+      continue-on-error: true
+      with:
+        repository: input-output-hk/sidechains-tests
+        token: ${{ env.ACTIONS_PAT }}
+        ref: ${{ github.head_ref || github.ref_name }}
+        path: e2e-tests
+
+    - name: checkout pc-tests master (fallback)
+      if: steps.pc-tests.outcome == 'failure'
+      uses: actions/checkout@v4
+      with:
+        repository: input-output-hk/sidechains-tests
+        token: ${{ env.ACTIONS_PAT }}
+        ref: master
+        path: e2e-tests
+
+    - name: Setup earthly
+      uses: earthly/actions-setup@v1
+      with:
+        github-token: ${{ github.token }}
+        use-cache: false
+        version: ^0.8.0
+
+    - name: Run Tests
+      env:
+        EARTHLY_BUILD_ARGS: "CI_RUN=true"
+        FORCE_COLOR: 1
+        SLACK_WEBHOOK_URL: ${{ env.SLACK_WEBHOOK_URL }}
+        JIRA_URL: ${{ env.JIRA_URL }}
+        JOB_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      run: |
+        cd e2e-tests
+        earthly --secret AWS_SESSION_TOKEN="$AWS_SESSION_TOKEN" \
+                --secret AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+                --secret AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+                --secret SLACK_WEBHOOK_URL="$SLACK_WEBHOOK_URL" \
+                --secret JIRA_URL="$JIRA_URL" \
+                --ssh-auth-sock="$SSH_AUTH_SOCK" \
+                +report \
+                --markers=CD \
+                --node_host="${{ inputs.node-host }}" \
+                --node_port="${{ inputs.node-port }}" \
+                --log_level=debug \
+                --report_to_slack=true \
+                --slack_ref_name ${{ github.ref_name }} \
+                --github_actor_username "${{ github.actor }}" \
+                --repository "${{ github.repository }}" \
+                --job_url="$JOB_URL" \
+                --env="ci" \
+                --stack="ci" \
+                --decrypt=true
+      shell: bash

@@ -1,0 +1,28 @@
+diff --git a/src/cmd/root.go b/src/cmd/root.go
+index 28f6429..86f60ad 100644
+--- a/src/cmd/root.go
++++ b/src/cmd/root.go
+@@ -85,7 +85,7 @@ func init() {
+ 	rootCmd.PersistentFlags().IntVarP(pcFlags.PortNum, "port", "p", *pcFlags.PortNum, "port number (env: "+config.EnvVarNamePort+")")
+ 	rootCmd.Flags().StringArrayVarP(&opts.FileNames, "config", "f", config.GetConfigDefault(), "path to config files to load (env: "+config.EnvVarNameConfig+")")
+ 	rootCmd.Flags().StringArrayVarP(&opts.EnvFileNames, "env", "e", []string{".env"}, "path to env files to load")
+-	rootCmd.Flags().StringArrayVarP(&nsAdmitter.EnabledNamespaces, "namespace", "n", nil, "run only specified namespaces (default all)")
++	rootCmd.Flags().StringArrayVarP(&nsAdmitter.EnabledNamespaces, "namespace", "n", nil, "run only specified namespaces (default: preview, supported: preview, preprod, sanchonet, mainnet)")
+ 	rootCmd.PersistentFlags().StringVarP(pcFlags.LogFile, "log-file", "L", *pcFlags.LogFile, "Specify the log file path (env: "+config.LogPathEnvVarName+")")
+ 	rootCmd.PersistentFlags().BoolVar(pcFlags.IsReadOnlyMode, "read-only", *pcFlags.IsReadOnlyMode, "enable read-only mode (env: "+config.EnvVarReadOnlyMode+")")
+ 	rootCmd.Flags().BoolVar(pcFlags.DisableDotEnv, "disable-dotenv", *pcFlags.DisableDotEnv, "disable .env file loading (env: "+config.EnvVarDisableDotEnv+"=1)")
+diff --git a/src/config/config.go b/src/config/config.go
+index d076810..76ec6e1 100644
+--- a/src/config/config.go
++++ b/src/config/config.go
+@@ -18,8 +18,8 @@ var (
+ 	CheckForUpdates   = "false"
+ 	License           = "Apache-2.0"
+ 	Discord           = "https://discord.gg/S4xgmRSHdC"
+-	ProjectName       = "Process Compose 🔥"
+-	RemoteProjectName = "Process Compose ⚡"
++	ProjectName       = "🤠 Partner Chains (₳)"
++	RemoteProjectName = "🤠 Partner Chains (₳)⚡"
+ 
+ 	scFiles = []string{
+ 		"shortcuts.yaml",

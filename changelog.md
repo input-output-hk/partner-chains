@@ -6,6 +6,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* Added 'deregister' command to partner-chains-cli.
+
 ## Removed
 
 ## Fixed

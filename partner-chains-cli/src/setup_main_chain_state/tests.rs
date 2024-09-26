@@ -7,7 +7,6 @@ use crate::prepare_configuration::tests::{
 	prompt_and_save_to_existing_file, prompt_with_default_and_save_to_existing_file,
 };
 use crate::setup_main_chain_state::SetupMainChainStateCmd;
-
 use crate::tests::{MockIO, MockIOContext};
 use crate::CmdRun;
 use serde_json::json;

@@ -20,7 +20,7 @@
     };
     blank.url = "github:input-output-hk/empty-flake";
     process-compose.url = "github:Platonic-Systems/process-compose-flake";
-    services-flake.url = "github:tgunnoe/services-flake";
+    services-flake.url = "github:juspay/services-flake";
 
     # Partner Chains deps
     smart-contracts = {
@@ -29,15 +29,19 @@
       flake = false;
     };
     cardano-node = {
-      url = "github:IntersectMBO/cardano-node/9.1.1";
+      url = "github:IntersectMBO/cardano-node/9.2.1";
       flake = false;
     };
     cardano-dbsync = {
       url = "github:IntersectMBO/cardano-db-sync/13.5.0.2";
       flake = false;
     };
-    cardano-nix = {
-      url = "github:tgunnoe/cardano.nix/add-darwin";
+    kupo = {
+      url = "github:CardanoSolutions/kupo/v2.9.0";
+      flake = false;
+    };
+    ogmios = {
+      url = "github:CardanoSolutions/ogmios/v6.6.2";
       flake = false;
     };
     configurations = {
@@ -57,7 +61,7 @@
         inputs.devshell.flakeModule
         inputs.process-compose.flakeModule
         ./nix/shell.nix
-        ./nix/packages.nix
+        ./nix/packages
         ./nix/processes.nix
       ];
       flake.lib = import ./nix/lib.nix {inherit (nixpkgs) lib;};
