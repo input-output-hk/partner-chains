@@ -20,12 +20,25 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 		"0x0000000000000000000000000000000000000000000000000000000000000001",
 	);
 
+	let block_data_source = MockBlockDataSource::default();
+	let native_token_data_source = MockNativeTokenDataSource::new(
+		[(
+			(None, block_data_source.stable_blocks.first().unwrap().hash.clone()),
+			NativeTokenAmount(1000),
+		)]
+		.into(),
+	);
+	let data_sources = TestDataSources::new()
+		.with_block_data_source(block_data_source)
+		.with_native_token_data_source(native_token_data_source)
+		.into();
+
 	let inherent_data_providers = ProposalCIDP::new(
 		test_create_inherent_data_config(),
 		TestApi::new(ScEpochNumber(2))
 			.with_headers([(H256::zero(), mock_header())])
 			.into(),
-		TestDataSources::new().into(),
+		data_sources,
 	)
 	.create_inherent_data_providers(H256::zero(), ())
 	.await
@@ -83,7 +96,17 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		timestamp: parent_stable_block.timestamp + 101,
 		epoch: McEpochNumber(parent_stable_block.epoch.0),
 	});
-	let data_sources = TestDataSources::new().with_block_data_source(block_data_source).into();
+	let native_token_data_source = MockNativeTokenDataSource::new(
+		[(
+			(None, block_data_source.stable_blocks.last().unwrap().hash.clone()),
+			NativeTokenAmount(1000),
+		)]
+		.into(),
+	);
+	let data_sources = TestDataSources::new()
+		.with_block_data_source(block_data_source)
+		.with_native_token_data_source(native_token_data_source)
+		.into();
 
 	let create_inherent_data_config = test_create_inherent_data_config();
 

@@ -27,8 +27,8 @@ impl sp_api::ProvideRuntimeApi<Block> for TestApi {
 
 sp_api::mock_impl_runtime_apis! {
 	impl crate::NativeTokenManagementApi<Block> for TestApi {
-		fn get_main_chain_scripts() -> MainChainScripts {
-			MainChainScripts::default()
+		fn get_main_chain_scripts() -> Option<MainChainScripts> {
+			Some(MainChainScripts::default())
 		}
 
 	}

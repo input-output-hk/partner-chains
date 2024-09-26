@@ -119,9 +119,12 @@ mod inherent_provider {
 			C::Api: NativeTokenManagementApi<Block>,
 		{
 			let api = client.runtime_api();
-			let scripts = api
+			let Some(scripts) = api
 				.get_main_chain_scripts(parent_hash)
-				.map_err(IDPCreationError::GetMainChainScriptsError)?;
+				.map_err(IDPCreationError::GetMainChainScriptsError)?
+			else {
+				return Ok(Self { token_amount: None });
+			};
 			let parent_mc_hash: Option<McBlockHash> =
 				get_mc_hash_for_block(client.as_ref(), parent_hash)
 					.map_err(IDPCreationError::McHashError)?;
@@ -134,6 +137,8 @@ mod inherent_provider {
 					scripts.illiquid_supply_validator_address,
 				)
 				.await?;
+
+			let token_amount = Some(token_amount).filter(|amount| amount.0 > 0);
 
 			Ok(Self { token_amount })
 		}

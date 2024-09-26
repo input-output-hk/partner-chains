@@ -92,13 +92,15 @@ sp_api::mock_impl_runtime_apis! {
 	}
 
 	impl sp_native_token_management::NativeTokenManagementApi<Block> for TestApi {
-		fn get_main_chain_scripts() -> sp_native_token_management::MainChainScripts {
-			sp_native_token_management::MainChainScripts {
-				native_token_policy_id: Default::default(),
-				native_token_asset_name: Default::default(),
-				illiquid_supply_validator_address: Default::default(),
+		fn get_main_chain_scripts() -> Option<sp_native_token_management::MainChainScripts> {
+			Some(
+				sp_native_token_management::MainChainScripts {
+					native_token_policy_id: Default::default(),
+					native_token_asset_name: Default::default(),
+					illiquid_supply_validator_address: Default::default(),
 
-			}
+				}
+			)
 		}
 	}
 }

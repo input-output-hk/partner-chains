@@ -36,7 +36,7 @@ mod inherent_provider {
 		.await
 		.expect("Should not fail");
 
-		assert_eq!(inherent_provider.token_amount.0, total_transfered)
+		assert_eq!(inherent_provider.token_amount, Some(NativeTokenAmount(total_transfered)))
 	}
 
 	#[tokio::test]
@@ -61,7 +61,7 @@ mod inherent_provider {
 		.await
 		.expect("Should not fail");
 
-		assert_eq!(inherent_provider.token_amount.0, total_transfered)
+		assert_eq!(inherent_provider.token_amount, Some(NativeTokenAmount(total_transfered)))
 	}
 
 	#[tokio::test]
@@ -84,7 +84,7 @@ mod inherent_provider {
 		.await
 		.expect("Should not fail");
 
-		assert_eq!(inherent_provider.token_amount.0, 0)
+		assert_eq!(inherent_provider.token_amount, None);
 	}
 
 	#[tokio::test]
@@ -94,7 +94,7 @@ mod inherent_provider {
 		let mut inherent_data = InherentData::new();
 
 		let inherent_provider = NativeTokenManagementInherentDataProvider {
-			token_amount: NativeTokenAmount(token_amount),
+			token_amount: Some(NativeTokenAmount(token_amount)),
 		};
 
 		inherent_provider.provide_inherent_data(&mut inherent_data).await.unwrap();
