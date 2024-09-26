@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node:v1.1.1-rc1"
+PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node:v1.1.0"
 CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:9.1.1"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.5.0.2"
 KUPO_IMAGE="cardanosolutions/kupo:v2.9.0"
@@ -8,8 +8,8 @@ OGMIOS_IMAGE="cardanosolutions/ogmios:v6.6.0"
 POSTGRES_IMAGE="postgres:15.3"
 SIDECHAIN_MAIN_CLI_IMAGE="node:22-bookworm"
 PC_CONTRACTS_CLI_ZIP_URL="https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/v6.1.0/trustless-sidechain-cli-6.1.0-x86_64-linux.zip"
-PARTNER_CHAINS_NODE_URL="https://github.com/input-output-hk/partner-chains/releases/download/1.1.1-rc1/partner-chains-node-1.1.1-rc1-x86_64-linux"
-PARTNER_CHAINS_CLI_URL="https://github.com/input-output-hk/partner-chains/releases/download/1.1.1-rc1/partner-chains-cli-1.1.1-rc1-x86_64-linux"
+PARTNER_CHAINS_NODE_URL="https://github.com/input-output-hk/partner-chains/releases/download/v1.1.0/linux_x86_64.zip"
+PARTNER_CHAINS_CLI_URL="https://github.com/input-output-hk/partner-chains/releases/download/v1.1.0/linux_x86_64.zip"
 
 display_banner() {
   cat <<'EOF'
