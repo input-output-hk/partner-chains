@@ -7,8 +7,6 @@
       - shared-volume:/shared
       - db-sync-state-dir:/var/lib
       - cardano-node-1-data:/node-ipc
-      - ./configurations/genesis/shelley/genesis.alonzo.json:/shared/shelley/genesis.alonzo.json
-      - ./configurations/genesis/conway/genesis.conway.json:/shared/conway/genesis.conway.json
       - ./configurations/busybox:/busybox
       - ./configurations/db-sync/entrypoint.sh:/entrypoint.sh
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
