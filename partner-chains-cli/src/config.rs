@@ -366,13 +366,7 @@ impl From<CardanoParameters> for epoch_derivation::MainchainEpochConfig {
 #[derive(Deserialize, Serialize, Parser, Clone, Debug)]
 pub struct SidechainParams {
 	#[arg(long)]
-	pub chain_id: u16,
-	#[arg(long)]
 	pub genesis_committee_utxo: UtxoId,
-	#[arg(long)]
-	pub threshold_numerator: u64,
-	#[arg(long)]
-	pub threshold_denominator: u64,
 	#[arg(long)]
 	pub governance_authority: MainchainAddressHash,
 }
@@ -525,30 +519,6 @@ pub mod config_fields {
 			default: Some("0"),
 			_marker: PhantomData,
 		};
-
-	pub const CHAIN_ID: ConfigFieldDefinition<'static, u16> = ConfigFieldDefinition {
-		config_file: CHAIN_CONFIG_FILE_PATH,
-		path: &["chain_parameters", "chain_id"],
-		name: "partner chain id",
-		default: Some("0"),
-		_marker: PhantomData,
-	};
-
-	pub const THRESHOLD_NUMERATOR: ConfigFieldDefinition<'static, u64> = ConfigFieldDefinition {
-		config_file: CHAIN_CONFIG_FILE_PATH,
-		path: &["chain_parameters", "threshold_numerator"],
-		name: "threshold numerator",
-		default: Some("2"),
-		_marker: PhantomData,
-	};
-
-	pub const THRESHOLD_DENOMINATOR: ConfigFieldDefinition<'static, u64> = ConfigFieldDefinition {
-		config_file: CHAIN_CONFIG_FILE_PATH,
-		path: &["chain_parameters", "threshold_denominator"],
-		name: "threshold denominator",
-		default: Some("3"),
-		_marker: PhantomData,
-	};
 
 	pub const GOVERNANCE_AUTHORITY: ConfigFieldDefinition<'static, MainchainAddressHash> =
 		ConfigFieldDefinition {

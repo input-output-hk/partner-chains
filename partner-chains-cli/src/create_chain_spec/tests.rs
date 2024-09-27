@@ -180,10 +180,7 @@ fn test_config_content_with_empty_initial_permissioned_candidates() -> serde_jso
 
 fn chain_parameters_json() -> serde_json::Value {
 	serde_json::json!({
-	  "chain_id": 1234,
 	  "governance_authority": "0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9",
-	  "threshold_numerator": 2,
-	  "threshold_denominator": 3,
 	  "genesis_committee_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0"
 	})
 }
@@ -210,11 +207,8 @@ fn show_intro() -> MockIO {
 fn show_chain_parameters() -> MockIO {
 	MockIO::Group(vec![
 		MockIO::print("Chain parameters:"),
-		MockIO::print("- Chain ID: 1234"),
 		MockIO::print("- Governance authority: 0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"),
 		MockIO::print("Legacy parameters (keep defaults as long as you are not sure to do otherwise):"),
-		MockIO::print("- Threshold numerator: 2"),
-		MockIO::print("- Threshold denominator: 3"),
 		MockIO::print("- Genesis committee hash UTXO: 0000000000000000000000000000000000000000000000000000000000000000#0"),
 		MockIO::print("SessionValidatorManagement Main Chain Configuration:"),
 		MockIO::print("- committee_candidate_address: addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc"),
@@ -237,13 +231,10 @@ fn show_initial_permissioned_candidates() -> MockIO {
 
 fn set_env_vars_io() -> MockIO {
 	MockIO::Group(vec![
-		MockIO::set_env_var("CHAIN_ID", "1234"),
 		MockIO::set_env_var(
 			"GOVERNANCE_AUTHORITY",
 			"0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9",
 		),
-		MockIO::set_env_var("THRESHOLD_NUMERATOR", "2"),
-		MockIO::set_env_var("THRESHOLD_DENOMINATOR", "3"),
 		MockIO::set_env_var(
 			"GENESIS_COMMITTEE_UTXO",
 			"0000000000000000000000000000000000000000000000000000000000000000#0",
@@ -360,9 +351,6 @@ fn show_outro() -> MockIO {
 
 fn read_chain_config_io() -> MockIO {
 	MockIO::Group(vec![
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // chain id
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // threshold numerator
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // threshold threshold_denominator
 		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // governance authority
 		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // genesis committee utxo
 		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // initial permissioned candidates

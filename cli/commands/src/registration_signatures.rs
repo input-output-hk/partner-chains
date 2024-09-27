@@ -116,13 +116,10 @@ mod tests {
 		)
 		.unwrap();
 		let sidechain_params = SidechainParams {
-			chain_id: 11,
 			genesis_committee_utxo: UtxoId::from_str(
 				"e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efa#4",
 			)
 			.unwrap(),
-			threshold_numerator: 2,
-			threshold_denominator: 3,
 			governance_authority: MainchainAddressHash::from_hex_unsafe(
 				"4f2d6145e1700ad11dc074cad9f4194cc53b0dbab6bd25dfea6c501a",
 			),

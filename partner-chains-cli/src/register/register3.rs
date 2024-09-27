@@ -313,14 +313,14 @@ mod tests {
 	fn run_registration_command_io() -> Vec<MockIO> {
 		vec![
 			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
-			MockIO::run_command("./pc-contracts-cli register --network mainnet --sidechain-id 0 --genesis-committee-hash-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x00112233445566778899001122334455667788990011223344556677 --atms-kind plain-ecdsa-secp256k1 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature 448ddd2592a681ee3235aa68356290c3ec93cc1b8b757bf4713a0b6629a3b75028e984a06cd275a99f861f8303dba1778c36feef084ea4a5379775ca13043202 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey", "{\"endpoint\":\"CommitteeCandidateReg\",\"transactionId\":\"1ab93b52d20ce114bfdb48a256ac48f3d8d46d00aec585c38a904b672a70e3a3\"}"),
+			MockIO::run_command("./pc-contracts-cli register --network mainnet --genesis-committee-hash-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --governance-authority 0x00112233445566778899001122334455667788990011223344556677 --atms-kind plain-ecdsa-secp256k1 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature 448ddd2592a681ee3235aa68356290c3ec93cc1b8b757bf4713a0b6629a3b75028e984a06cd275a99f861f8303dba1778c36feef084ea4a5379775ca13043202 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey", "{\"endpoint\":\"CommitteeCandidateReg\",\"transactionId\":\"1ab93b52d20ce114bfdb48a256ac48f3d8d46d00aec585c38a904b672a70e3a3\"}"),
         ]
 	}
 
 	fn run_registration_command_fail_io() -> Vec<MockIO> {
 		vec![
 			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
-			MockIO::run_command("./pc-contracts-cli register --network mainnet --sidechain-id 0 --genesis-committee-hash-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x00112233445566778899001122334455667788990011223344556677 --atms-kind plain-ecdsa-secp256k1 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature 448ddd2592a681ee3235aa68356290c3ec93cc1b8b757bf4713a0b6629a3b75028e984a06cd275a99f861f8303dba1778c36feef084ea4a5379775ca13043202 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey", "TxRefNotFound"),
+			MockIO::run_command("./pc-contracts-cli register --network mainnet --genesis-committee-hash-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --governance-authority 0x00112233445566778899001122334455667788990011223344556677 --atms-kind plain-ecdsa-secp256k1 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature 448ddd2592a681ee3235aa68356290c3ec93cc1b8b757bf4713a0b6629a3b75028e984a06cd275a99f861f8303dba1778c36feef084ea4a5379775ca13043202 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey", "TxRefNotFound"),
 			MockIO::eprint("The registration transaction could not be submitted: TxRefNotFound"),
         ]
 	}
@@ -328,9 +328,6 @@ mod tests {
 	fn mock_register3_cmd() -> Register3Cmd {
 		Register3Cmd {
             sidechain_params: config::SidechainParams {
-                chain_id: 0,
-                threshold_numerator: 2,
-                threshold_denominator: 3,
                 genesis_committee_utxo: "f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0".parse().unwrap(),
                 governance_authority: "00112233445566778899001122334455667788990011223344556677".parse().unwrap(),
             },
@@ -393,10 +390,7 @@ mod tests {
 
 	fn chain_parameters_json() -> serde_json::Value {
 		json!({
-		  "chain_id": 1234,
 		  "governance_authority": "0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9",
-		  "threshold_numerator": 2,
-		  "threshold_denominator": 3,
 		  "genesis_committee_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0"
 		})
 	}

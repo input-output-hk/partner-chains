@@ -24,26 +24,10 @@ use sidechain_domain::{MainchainAddressHash, UtxoId};
 #[cfg_attr(feature = "std", command(author, version, about, long_about = None))]
 pub struct SidechainParams {
 	#[cfg_attr(feature = "std", arg(long))]
-	pub chain_id: u16,
-	#[cfg_attr(feature = "std", arg(long))]
 	pub genesis_committee_utxo: UtxoId,
-	#[cfg_attr(feature = "std", arg(long))]
-	pub threshold_numerator: u64,
-	#[cfg_attr(feature = "std", arg(long))]
-	pub threshold_denominator: u64,
 	/// Obtained with cardano-cli address key-hash --payment-verification-key-file <vkey of chosen governance>
 	#[cfg_attr(feature = "std", arg(long))]
 	pub governance_authority: MainchainAddressHash,
-}
-
-pub fn default_chain_id() -> u16 {
-	1
-}
-pub fn default_numerator() -> u64 {
-	2
-}
-pub fn default_denominator() -> u64 {
-	3
 }
 
 #[cfg(feature = "std")]
@@ -53,21 +37,12 @@ impl SidechainParams {
 		/// type uses `rename_all = "camelCase"` serde option
 		#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 		struct SidechainParamsEnvConfiguration {
-			#[serde(default = "default_chain_id")]
-			pub chain_id: u16,
 			pub genesis_committee_utxo: UtxoId,
-			#[serde(default = "default_numerator")]
-			pub threshold_numerator: u64,
-			#[serde(default = "default_denominator")]
-			pub threshold_denominator: u64,
 			pub governance_authority: MainchainAddressHash,
 		}
 		let raw = envy::from_env::<SidechainParamsEnvConfiguration>()?;
 		Ok(Self {
-			chain_id: raw.chain_id,
 			genesis_committee_utxo: raw.genesis_committee_utxo,
-			threshold_numerator: raw.threshold_numerator,
-			threshold_denominator: raw.threshold_denominator,
 			governance_authority: raw.governance_authority,
 		})
 	}

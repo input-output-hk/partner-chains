@@ -344,15 +344,12 @@ mod tests {
 		};
 
 		let sidechain_params = SidechainParams {
-			chain_id: 0,
 			genesis_committee_utxo: UtxoId {
 				tx_hash: McTxHash(hex!(
 					"f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e"
 				)),
 				index: UtxoIndex(0),
 			},
-			threshold_numerator: 2,
-			threshold_denominator: 3,
 			governance_authority: MainchainAddressHash(hex!(
 				"00112233445566778899001122334455667788990011223344556677"
 			)),
@@ -382,13 +379,10 @@ mod tests {
 
 			let signed_message = RegisterValidatorSignedMessage {
 				sidechain_params: SidechainParams {
-					chain_id: 101,
 					genesis_committee_utxo: UtxoId {
 						tx_hash: McTxHash([7u8; TX_HASH_SIZE]),
 						index: UtxoIndex(0),
 					},
-					threshold_numerator: 2,
-					threshold_denominator: 3,
 					governance_authority: MainchainAddressHash(hex!(
 						"00112233445566778899001122334455667788990011223344556677"
 					)),
@@ -517,7 +511,10 @@ mod tests {
 			let (mainchain_pub_key, registration_data, sidechain_params) =
 				create_valid_parameters();
 			let different_sidechain_params = SidechainParams {
-				chain_id: sidechain_params.chain_id + 1,
+				genesis_committee_utxo: UtxoId {
+					tx_hash: McTxHash([8u8; TX_HASH_SIZE]),
+					index: UtxoIndex(0),
+				},
 				..sidechain_params.clone()
 			};
 			assert_ne!(different_sidechain_params, sidechain_params);

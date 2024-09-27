@@ -98,7 +98,6 @@ echo "Generating addresses.json file..."
     --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
     --payment-signing-key-file /keys/funded_address.skey \
     --genesis-committee-hash-utxo $GENESIS_COMMITTEE_UTXO \
-    --sidechain-id $CHAIN_ID --threshold-numerator $THRESHOLD_NUMERATOR --threshold-denominator $THRESHOLD_DENOMINATOR \
     --governance-authority $GOVERNANCE_AUTHORITY \
     --version 1 \
     --atms-kind plain-ecdsa-secp256k1 \
@@ -128,7 +127,6 @@ echo "Inserting D parameter..."
     --kupo-host kupo --kupo-port $KUPO_PORT \
     --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
     --genesis-committee-hash-utxo $GENESIS_COMMITTEE_UTXO \
-    --sidechain-id $CHAIN_ID --threshold-numerator $THRESHOLD_NUMERATOR --threshold-denominator $THRESHOLD_DENOMINATOR \
     --governance-authority $GOVERNANCE_AUTHORITY \
     --atms-kind plain-ecdsa-secp256k1 \
     --d-parameter-permissioned-candidates-count 3 \
@@ -156,9 +154,6 @@ bob_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/grandpa.
     --add-candidate $bob_sidechain_vkey:$bob_aura_vkey:$bob_grandpa_vkey \
     --genesis-committee-hash-utxo $GENESIS_COMMITTEE_UTXO \
     --governance-authority $GOVERNANCE_AUTHORITY \
-    --threshold-numerator $THRESHOLD_NUMERATOR \
-    --threshold-denominator $THRESHOLD_DENOMINATOR \
-    --sidechain-id 0 \
     --atms-kind plain-ecdsa-secp256k1 \
     --payment-signing-key-file /keys/funded_address.skey
 
@@ -177,13 +172,11 @@ dave_sidechain_signing_key=$(cat /partner-chains-nodes/partner-chains-node-4/key
 
 # Process registration signatures for Dave
 dave_output=$(./partner-chains-node registration-signatures \
-    --chain-id 0 \
     --genesis-committee-utxo $GENESIS_COMMITTEE_UTXO \
     --governance-authority $GOVERNANCE_AUTHORITY \
     --mainchain-signing-key $dave_mainchain_signing_key \
     --sidechain-signing-key $dave_sidechain_signing_key \
-    --registration-utxo $dave_utxo \
-    --threshold-numerator 2 --threshold-denominator 3)
+    --registration-utxo $dave_utxo)
 
 # Extract signatures and keys from Dave output
 dave_spo_public_key=$(echo "$dave_output" | jq -r ".spo_public_key")
@@ -198,12 +191,9 @@ dave_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/grandpa
     --network testnet \
     --kupo-host kupo --kupo-port $KUPO_PORT \
     --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
-    --sidechain-id 0 \
     --genesis-committee-hash-utxo $GENESIS_COMMITTEE_UTXO \
     --governance-authority $GOVERNANCE_AUTHORITY \
     --atms-kind plain-ecdsa-secp256k1 \
-    --threshold-numerator 2 \
-    --threshold-denominator 3 \
     --spo-public-key $dave_spo_public_key \
     --spo-signature $dave_spo_signature \
     --sidechain-public-keys $dave_sidechain_public_key:$dave_aura_vkey:$dave_grandpa_vkey \
@@ -280,7 +270,7 @@ echo "Configuring Epoch Length..."
 jq '.genesis.runtimeGenesis.config.sidechain.slotsPerEpoch = 2' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
 echo "Copying chain-spec.json file to /shared/chain-spec.json..."
-cp chain-spec.json /shared/chain-spec.json 
+cp chain-spec.json /shared/chain-spec.json
 echo "chain-spec.json generation complete."
 
 echo "Partnerchain configuration is complete, and will be able to start after two mainchain epochs."
