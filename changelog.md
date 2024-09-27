@@ -33,8 +33,6 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
   See `service.rs` in `partner-chains-node` crate for an example.
 * renamed sidechain-main-cli and relevant naming to pc-contracts-cli
 
-## Removed
-
 ## Fixed
 * ETCM-8267 - fixed `partner-chains-cli` missing the native token configuration
 
@@ -98,8 +96,6 @@ Partner Chains nodes that did not use Active Flow.
 * `sidechain-runtime` and `sidechains-substrate-node` crates are updated to version 1.0.0
 * renamed `sidechains-substrate-node` to `partner-chains-node`
 
-## Removed
-
 ## Fixed
 * ETCM-7745 - do not overwrite legacy chain params in partner-chains-cli prepare-configuration wizard
 * ETCM-7713 - partner-chains-cli prepare-configuration small improvements and fixes
@@ -121,12 +117,8 @@ Cleaned `inherent_data.rs` which now contains only wiring and necessary minor he
 * renamed the `block-rewards-primitives` crate to `sp-block-rewards` for consistency
 * made `pallet-block-rewards` crate depend on `sp-block-rewards` and moved some types and traits there
 
-## Removed
-
 ## Fixed
 * ETCM-7463 - fixed incoming transactions cache in db-sync-follower, it was not working at all
-
-## Added
 
 # v0.1.0
 
@@ -147,8 +139,6 @@ hiding each data source type behind a feature
   sidechain_getEpochSignatures field 'params' has changed - Relay 2.6.x is not compatible with this change, use Relay 2.7.x.
 * ETCM-7108 - unknown or 0 stake delegation makes registration invalid. It should not change committee selection results.
 * Refactoring: moved `sidechain_getAridaneParameters` and `sidechain_getRegistrations` to `pallet-session-validator-management-rpc`.
-
-## Removed
 
 ## Fixed
 * ETCM-7080 - use the same candidate validation as in runtime for `sidechain_getRegistrations` and `sidechain_getAriadneParameters` rpc methods.
@@ -179,8 +169,6 @@ types instead of raw byte arrays
 * BREAKING: ETCM-6776 - use MC hash in the incoming transactions calculation
 * ETCM-7072 - move `ValidatorManagementSessionManager` to a dedicated crate
 
-## Removed
-
 ## Fixed
 * ETCM-6854 - make endpoints_spec.json file consistent with the actual implementation in session-validator-management
 * ETCM-7051 - sidechain_getEpochSignatures nextCommitteePubKeys were returning next committee of the current epoch
@@ -202,10 +190,6 @@ types instead of raw byte arrays
 * ETCM-6818 - remove pallet session validator management dependency to pallet sidechains session
 * ETCM-6814 - decouple session-validator-management pallet from sidechain pallet.
 * ETCM-6600 - updated the Polkadot SDK version to 1.7
-
-## Removed
-
-## Fixed
 
 # v0.0.24
 
