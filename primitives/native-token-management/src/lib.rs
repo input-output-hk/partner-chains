@@ -15,11 +15,16 @@ mod tests;
 
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"nattoken";
 
+/// Values identifying on-chain entities involved in the native token management system on Cardano.
 #[derive(Default, Debug, Clone, PartialEq, Eq, TypeInfo, Encode, Decode, MaxEncodedLen)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MainChainScripts {
+	/// Minting policy ID of the native token
 	pub native_token_policy_id: PolicyId,
+	/// Asset name of the native token
 	pub native_token_asset_name: AssetName,
+	/// Address of the illiquid supply validator. All tokens sent to that address are effectively locked
+	/// and considered "sent" to the Partner Chain.
 	pub illiquid_supply_validator_address: MainchainAddress,
 }
 
