@@ -22,11 +22,11 @@
       - ./configurations/db-sync/config.json:/shared/db-sync-config.json.base
       - ./configurations/genesis/byron/genesis.json:/shared/byron/genesis.json.base
       - ./configurations/genesis/shelley/genesis.json:/shared/shelley/genesis.json.base
-      - ./configurations/genesis/shelley/genesis.alonzo.json:/shared/shelley/genesis.alonzo.json
+      - ./configurations/genesis/shelley/genesis.alonzo.json:/shared/shelley/genesis.alonzo.json.base
       - ./configurations/genesis/shelley/genesis-utxo.addr:/shared/shelley/genesis-utxo.addr
       - ./configurations/genesis/shelley/genesis-utxo.skey:/shared/shelley/genesis-utxo.skey
       - ./configurations/genesis/shelley/genesis-utxo.vkey:/shared/shelley/genesis-utxo.vkey
-      - ./configurations/genesis/conway/genesis.conway.json:/shared/conway/genesis.conway.json
+      - ./configurations/genesis/conway/genesis.conway.json:/shared/conway/genesis.conway.json.base
     environment:
       - CARDANO_NODE_SOCKET_PATH=/data/node.socket
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
@@ -47,8 +47,6 @@
       - ./configurations/cardano/cardano-node-2/keys/kes.skey:/keys/kes.skey
       - ./configurations/cardano/cardano-node-2/keys/vrf.skey:/keys/vrf.skey
       - ./configurations/cardano/cardano-node-2/keys/op.cert:/keys/node.cert
-      - ./configurations/genesis/shelley/genesis.alonzo.json:/shared/shelley/genesis.alonzo.json
-      - ./configurations/genesis/conway/genesis.conway.json:/shared/conway/genesis.conway.json
     environment:
       - CARDANO_NODE_SOCKET_PATH=/data/node.socket
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
@@ -69,8 +67,6 @@
       - ./configurations/cardano/cardano-node-3/keys/kes.skey:/keys/kes.skey
       - ./configurations/cardano/cardano-node-3/keys/vrf.skey:/keys/vrf.skey
       - ./configurations/cardano/cardano-node-3/keys/op.cert:/keys/node.cert
-      - ./configurations/genesis/shelley/genesis.alonzo.json:/shared/shelley/genesis.alonzo.json
-      - ./configurations/genesis/conway/genesis.conway.json:/shared/conway/genesis.conway.json
     environment:
       - CARDANO_NODE_SOCKET_PATH=/data/node.socket
     entrypoint: ["/bin/bash", "/entrypoint.sh"]

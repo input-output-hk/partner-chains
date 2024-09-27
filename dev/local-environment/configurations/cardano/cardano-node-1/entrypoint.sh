@@ -29,6 +29,10 @@ echo "Created /shared/mc-epoch-length with value: $(cat /shared/mc-epoch-length)
 /busybox awk -F':|,' '/"slotLength"/ {print $2}' /shared/shelley/genesis.json.base > /shared/mc-slot-length
 echo "Created /shared/mc-slot-length with value: $(cat /shared/mc-slot-length)"
 
+cp /shared/conway/genesis.conway.json.base /shared/conway/genesis.conway.json
+cp /shared/shelley/genesis.alonzo.json.base /shared/shelley/genesis.alonzo.json
+echo "Created /shared/conway/genesis.conway.json and /shared/shelley/genesis.alonzo.json"
+
 byron_hash=$(/bin/cardano-cli byron genesis print-genesis-hash --genesis-json /shared/byron/genesis.json)
 shelley_hash=$(/bin/cardano-cli genesis hash --genesis /shared/shelley/genesis.json)
 alonzo_hash=$(/bin/cardano-cli genesis hash --genesis /shared/shelley/genesis.alonzo.json)
