@@ -8,7 +8,7 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ./shared-volume/
+      device: ./
   db-sync-state-dir: {}
   partner-chains-node-1-data: {}
   partner-chains-node-2-data: {}
