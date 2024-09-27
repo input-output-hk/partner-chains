@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# offical semver regex from https://regex101.com/r/Ly7O1x/3/
+semver_pattern="^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-((0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?$"
+current_version=$(cat VERSION)
+
 if [[ -z $IN_NIX_SHELL ]]; then
 	echo "The release script must be run from inside a nix shell"
 	echo "    run 'nix develop' first"
@@ -29,35 +33,29 @@ if [[ $(git rev-parse --abbrev-ref HEAD) != "master" ]]; then
     fi
 fi
 
-# we first do a dry-run and parse the output to check that all crates are
-# on the same version and to get the new version string
 case $1 in
-    next-major) setversion_result=$(cargo set-version --dry-run --bump major 2>&1) ;;
-    next-minor) setversion_result=$(cargo set-version --dry-run --bump minor 2>&1) ;;
-    next-patch) setversion_result=$(cargo set-version --dry-run --bump patch 2>&1) ;;
-    *) setversion_result=$(cargo set-version --dry-run $1 2>&1) ;;
+    next-major | next-minor | next-patch)
+        if [[ "$current_version" =~ $semver_pattern ]]; then
+            case $1 in
+                next-major) next_version="$((BASH_REMATCH[1]+1)).0.0" ;;
+                next-minor) next_version="${BASH_REMATCH[1]}.$((BASH_REMATCH[2]+1)).0" ;;
+                next-patch) next_version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.$((BASH_REMATCH[3]+1))" ;;
+            esac
+        else
+            echo "FATAL: version number in VERSION is not valid semver!"
+        fi
+    ;;
+    *)
+        if [[ "$1" =~ $semver_pattern ]]; then
+            next_version=$1
+        else
+            echo "ERROR: provided version ($1) is not valid semver"
+        fi
+    ;;
 esac
 
-# if cargo set-version failed we exit
-if [ $? -ne 0 ]; then
-    echo "Error: cargo set-version failed to upgrade crate versions"
-    exit 1
-fi
-
-# check that all crates are on the same version
-readarray -t current_versions <<<$(echo "$setversion_result" |
-    head -n -1 | # we drop the dry-run warning line from the output
-    sed -r "s/^\s*Upgrading \S+ from (\S+) to \S+$/\1/g")
-
-if [ $(printf "%s\000" "${current_versions[@]}" |
-       LC_ALL=C sort -z -u |
-       grep -z -c .) -ne 1 ] ; then
-    echo "ERROR: Not all crates are the same version"
-    exit 1
-fi
-
-current_version="${current_versions[0]}"
-next_version=$(echo $setversion_result | sed -r "s/Upgrading \S+ from \S+ to (\S+)/\1\n/" | head -n 1)
+# if we didn't set next_version above we exit
+if [ -z "${next_version+x}" ]; then exit 1; fi
 
 # we check if release tag already exists
 if git show-ref --tags "v$next_version" --quiet; then
@@ -68,6 +66,14 @@ fi
 echo "Making release changes for new release $next_version (last version: $current_version)"
 
 cargo set-version $next_version
+
+# if cargo set-version failed we exit
+if [ $? -ne 0 ]; then
+    echo "Error: cargo set-version failed to upgrade crate versions"
+    exit 1
+fi
+
+echo $next_version > VERSION
 
 # update changelog: we remove empty sections, add next version header and
 #   prepend new unreleased section
