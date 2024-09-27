@@ -150,7 +150,7 @@ mod inherent_provider {
 			&self,
 			inherent_data: &mut InherentData,
 		) -> Result<(), sp_inherents::Error> {
-			if let Some(token_amount) = self.token_amount.clone() {
+			if let Some(token_amount) = self.token_amount {
 				inherent_data.put_data(INHERENT_IDENTIFIER, &TokenTransferData { token_amount })
 			} else {
 				Ok(())
