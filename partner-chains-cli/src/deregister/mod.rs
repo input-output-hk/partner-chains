@@ -58,7 +58,7 @@ fn read_chain_config_file<C: IOContext>(
 }
 
 fn get_cardano_keys<C: IOContext>(context: &C) -> Result<(String, String), anyhow::Error> {
-	context.print("Payment signing key and verification key of cold key used for registration are required to dereigster.");
+	context.print("Payment signing key and verification key of cold key used for registration are required to deregister.");
 	let payment_signing_key_path =
 		CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
 	let _ = get_mainchain_key_hex(context, &payment_signing_key_path)?;
