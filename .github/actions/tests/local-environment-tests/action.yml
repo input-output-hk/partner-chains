@@ -41,6 +41,9 @@ runs:
         path: dev/local-environment/configurations/pc-contracts-cli/overrides/ 
     - name: Deploy local environment with overrides
       run: |
+        docker volume prune -f
+        docker rm -f $(docker ps -a -q)
+        docker volume rm $(docker volume ls -q)
         mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli
         mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node
         cd dev/local-environment
