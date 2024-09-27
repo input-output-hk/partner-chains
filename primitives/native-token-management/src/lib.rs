@@ -53,6 +53,9 @@ impl MainChainScripts {
 sp_api::decl_runtime_apis! {
 	pub trait NativeTokenManagementApi {
 		fn get_main_chain_scripts() -> Option<MainChainScripts>;
+		/// Gets current initializaion status and set it to `true` afterwards. This check is used to
+		/// determine whether historical data from the beginning of main chain should be queried.
+		fn initialized() -> bool;
 	}
 }
 
@@ -153,9 +156,12 @@ mod inherent_provider {
 			let Some(scripts) = api.get_main_chain_scripts(parent_hash)? else {
 				return Ok(Self { token_amount: None });
 			};
-			let parent_mc_hash: Option<McBlockHash> =
+			let parent_mc_hash: Option<McBlockHash> = if api.initialized(parent_hash)? {
 				get_mc_hash_for_block(client.as_ref(), parent_hash)
-					.map_err(IDPCreationError::McHashError)?;
+					.map_err(IDPCreationError::McHashError)?
+			} else {
+				None
+			};
 			let token_amount = data_source
 				.get_total_native_token_transfer(
 					parent_mc_hash,

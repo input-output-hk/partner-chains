@@ -102,6 +102,10 @@ sp_api::mock_impl_runtime_apis! {
 				}
 			)
 		}
+
+		fn initialized() -> bool {
+			true
+		}
 	}
 }
 

@@ -116,11 +116,13 @@ mod inherent {
 	#[test]
 	fn succeeds_and_calls_transfer_handler() {
 		new_test_ext().execute_with(|| {
+			assert_eq!(Initialized::<Test>::get(), false);
 			let inherent: Call<Test> = Call::transfer_tokens { token_amount: 1000.into() };
 
 			let _ = inherent.dispatch_bypass_filter(RuntimeOrigin::none()).unwrap();
 
-			assert_eq!(mock_pallet::LastTokenTransfer::<Test>::get().unwrap().0, 1000)
+			assert_eq!(mock_pallet::LastTokenTransfer::<Test>::get().unwrap().0, 1000);
+			assert_eq!(Initialized::<Test>::get(), true);
 		})
 	}
 

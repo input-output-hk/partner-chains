@@ -9,12 +9,15 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * Added 'deregister' command to partner-chains-cli.
 * Made `MainChainScripts` in the native token pallet optional. If they are not set, the inherent data
 provider will not query the main chain state or produce inherent data at all.
+* ETCM-8366 - native token management pallet can now observe historical transfers when added after the genesis block
 
 ## Removed
 
 ## Fixed
 
 ## Added
+* Added `new_for_runtime_version` factory for the native token inherent data provider,
+allowing to selectively query main chain state based on runtime version
 
 # 1.2.0
 
@@ -34,8 +37,6 @@ provider will not query the main chain state or produce inherent data at all.
   This change requires migration of the node, PartnerChainsProposerFactory has to be used.
   See `service.rs` in `partner-chains-node` crate for an example.
 * renamed sidechain-main-cli and relevant naming to pc-contracts-cli
-* Added `new_for_runtime_version` factory for the native token inherent data provider,
-allowing to selectively query main chain state based on runtime version
 
 ## Fixed
 * ETCM-8267 - fixed `partner-chains-cli` missing the native token configuration
