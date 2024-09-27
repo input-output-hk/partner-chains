@@ -38,7 +38,7 @@ mod inherent_provider {
 		.await
 		.expect("Should not fail");
 
-		assert_eq!(inherent_provider.token_amount, Some(NativeTokenAmount(total_transfered)))
+		assert_eq!(inherent_provider.token_amount, Some(total_transfered.into()))
 	}
 
 	#[tokio::test]
@@ -64,7 +64,7 @@ mod inherent_provider {
 		.await
 		.expect("Should not fail");
 
-		assert_eq!(inherent_provider.token_amount, Some(NativeTokenAmount(total_transfered)))
+		assert_eq!(inherent_provider.token_amount, Some(total_transfered.into()))
 	}
 
 	#[tokio::test]

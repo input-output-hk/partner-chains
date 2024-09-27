@@ -20,6 +20,7 @@ sp-inherents = { workspace = true }
 sp-runtime = { workspace = true }
 thiserror = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
+sp-version = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true }
@@ -38,7 +39,9 @@ std = [
     "sp-inherents/std",
     "sp-runtime/std",
     "thiserror",
-    "envy"
+    "envy",
+    "sp-version",
+    "sp-version/std",
 ]
 serde = [
 	"dep:serde",

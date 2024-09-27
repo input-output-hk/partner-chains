@@ -86,8 +86,9 @@ mod inherent_provider {
 	use super::*;
 	use main_chain_follower_api::{DataSourceError, NativeTokenManagementDataSource};
 	use sidechain_mc_hash::get_mc_hash_for_block;
-	use sp_api::{ApiError, ProvideRuntimeApi};
+	use sp_api::{ApiError, Core, ProvideRuntimeApi};
 	use sp_blockchain::HeaderBackend;
+	use sp_version::RuntimeVersion;
 	use std::error::Error;
 	use std::sync::Arc;
 
@@ -99,13 +100,43 @@ mod inherent_provider {
 	pub enum IDPCreationError {
 		#[error("Failed to read native token data from data source: {0:?}")]
 		DataSourceError(#[from] DataSourceError),
-		#[error("Failed to retrieve main chain scripts from the runtime: {0:?}")]
-		GetMainChainScriptsError(ApiError),
+		#[error("Failed to call runtime API: {0:?}")]
+		ApiError(ApiError),
 		#[error("Failed to retrieve previous MC hash: {0:?}")]
 		McHashError(Box<dyn Error + Send + Sync>),
 	}
 
+	impl From<ApiError> for IDPCreationError {
+		fn from(err: ApiError) -> Self {
+			Self::ApiError(err)
+		}
+	}
+
 	impl NativeTokenManagementInherentDataProvider {
+		/// Checks the current runtime version against `version_check` predicate, returns zero transfers
+		/// if outside the version bounds.
+		pub async fn new_for_runtime_version<Block, C>(
+			version_check: fn(RuntimeVersion) -> bool,
+			client: Arc<C>,
+			data_source: &(dyn NativeTokenManagementDataSource + Send + Sync),
+			mc_hash: McBlockHash,
+			parent_hash: <Block as BlockT>::Hash,
+		) -> Result<Self, IDPCreationError>
+		where
+			Block: BlockT,
+			C: HeaderBackend<Block>,
+			C: ProvideRuntimeApi<Block> + Send + Sync,
+			C::Api: NativeTokenManagementApi<Block>,
+		{
+			let version = client.runtime_api().version(parent_hash)?;
+
+			if version_check(version) {
+				Self::new(client, data_source, mc_hash, parent_hash).await
+			} else {
+				Ok(Self { token_amount: None })
+			}
+		}
+
 		pub async fn new<Block, C>(
 			client: Arc<C>,
 			data_source: &(dyn NativeTokenManagementDataSource + Send + Sync),
@@ -119,10 +150,7 @@ mod inherent_provider {
 			C::Api: NativeTokenManagementApi<Block>,
 		{
 			let api = client.runtime_api();
-			let Some(scripts) = api
-				.get_main_chain_scripts(parent_hash)
-				.map_err(IDPCreationError::GetMainChainScriptsError)?
-			else {
+			let Some(scripts) = api.get_main_chain_scripts(parent_hash)? else {
 				return Ok(Self { token_amount: None });
 			};
 			let parent_mc_hash: Option<McBlockHash> =
@@ -138,7 +166,7 @@ mod inherent_provider {
 				)
 				.await?;
 
-			let token_amount = Some(token_amount).filter(|amount| amount.0 > 0);
+			let token_amount = if token_amount.0 > 0 { Some(token_amount) } else { None };
 
 			Ok(Self { token_amount })
 		}
