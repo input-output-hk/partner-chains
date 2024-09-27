@@ -7,6 +7,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 ## Changed
 
 * Added 'deregister' command to partner-chains-cli.
+* Made `MainChainScripts` in the native token pallet optional. If they are not set, the inherent data
+provider will not query the main chain state or produce inherent data at all.
 
 ## Removed
 

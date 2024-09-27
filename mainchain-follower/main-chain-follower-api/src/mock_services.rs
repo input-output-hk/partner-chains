@@ -13,8 +13,8 @@ mod block {
 
 	#[derive(new, Clone)]
 	pub struct MockBlockDataSource {
-		mainchain_block: MainchainBlock,
-		stable_blocks: Vec<MainchainBlock>,
+		pub mainchain_block: MainchainBlock,
+		pub stable_blocks: Vec<MainchainBlock>,
 	}
 
 	impl Default for MockBlockDataSource {
@@ -237,6 +237,12 @@ impl TestDataSources {
 	#[cfg(feature = "candidate-source")]
 	pub fn with_candidate_data_source(mut self, s: MockCandidateDataSource) -> TestDataSources {
 		self.candidate = Arc::from(s);
+		self
+	}
+
+	#[cfg(feature = "native-token")]
+	pub fn with_native_token_data_source(mut self, s: MockNativeTokenDataSource) -> Self {
+		self.native_token = Arc::from(s);
 		self
 	}
 }
