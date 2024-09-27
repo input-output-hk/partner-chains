@@ -70,7 +70,7 @@ fn fails_when_payment_signing_key_is_not_valid() {
 		.with_expected_io(vec![
             read_config_twice_io(),
 			print_info_io(),
-            MockIO::print("Payment signing key and verification key of cold key used for registration are required to dereigster."),
+            MockIO::print("Payment signing key and verification key of cold key used for registration are required to deregister."),
             read_payment_signing_key()
 		]);
 	let result = DeregisterCmd.run(&mock_context);
@@ -120,7 +120,7 @@ Committee Candidate Validator Address is 'addr_test1wz5qc7fk2pat0058w4zwvkw35ytp
 
 fn read_keys_io() -> MockIO {
 	MockIO::Group(vec![
-        MockIO::print("Payment signing key and verification key of cold key used for registration are required to dereigster."),
+        MockIO::print("Payment signing key and verification key of cold key used for registration are required to deregister."),
         read_payment_signing_key(),
         read_cold_verification_key(),
 	])
