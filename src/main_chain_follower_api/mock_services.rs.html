@@ -242,6 +242,12 @@
 <a href="#240" id="240">240</a>
 <a href="#241" id="241">241</a>
 <a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::<span class="kw-2">*</span>;
 <span class="kw">use </span>async_trait::async_trait;
 <span class="kw">use </span>std::sync::Arc;
@@ -257,8 +263,8 @@
 
 	<span class="attr">#[derive(new, Clone)]
 	</span><span class="kw">pub struct </span>MockBlockDataSource {
-		mainchain_block: MainchainBlock,
-		stable_blocks: Vec&lt;MainchainBlock&gt;,
+		<span class="kw">pub </span>mainchain_block: MainchainBlock,
+		<span class="kw">pub </span>stable_blocks: Vec&lt;MainchainBlock&gt;,
 	}
 
 	<span class="kw">impl </span>Default <span class="kw">for </span>MockBlockDataSource {
@@ -481,6 +487,12 @@
 	<span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
 	</span><span class="kw">pub fn </span>with_candidate_data_source(<span class="kw-2">mut </span><span class="self">self</span>, s: MockCandidateDataSource) -&gt; TestDataSources {
 		<span class="self">self</span>.candidate = Arc::from(s);
+		<span class="self">self
+	</span>}
+
+	<span class="attr">#[cfg(feature = <span class="string">"native-token"</span>)]
+	</span><span class="kw">pub fn </span>with_native_token_data_source(<span class="kw-2">mut </span><span class="self">self</span>, s: MockNativeTokenDataSource) -&gt; <span class="self">Self </span>{
+		<span class="self">self</span>.native_token = Arc::from(s);
 		<span class="self">self
 	</span>}
 }

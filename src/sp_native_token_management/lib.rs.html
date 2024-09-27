@@ -168,6 +168,12 @@
 <a href="#166" id="166">166</a>
 <a href="#167" id="167">167</a>
 <a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">use </span>core::str::FromStr;
@@ -222,7 +228,7 @@
 
 <span class="macro">sp_api::decl_runtime_apis! </span>{
 	<span class="kw">pub trait </span>NativeTokenManagementApi {
-		<span class="kw">fn </span>get_main_chain_scripts() -&gt; MainChainScripts;
+		<span class="kw">fn </span>get_main_chain_scripts() -&gt; <span class="prelude-ty">Option</span>&lt;MainChainScripts&gt;;
 	}
 }
 
@@ -262,7 +268,7 @@
 	<span class="kw">use </span>std::sync::Arc;
 
 	<span class="kw">pub struct </span>NativeTokenManagementInherentDataProvider {
-		<span class="kw">pub </span>token_amount: NativeTokenAmount,
+		<span class="kw">pub </span>token_amount: <span class="prelude-ty">Option</span>&lt;NativeTokenAmount&gt;,
 	}
 
 	<span class="attr">#[derive(thiserror::Error, sp_runtime::RuntimeDebug)]
@@ -289,9 +295,12 @@
 			C::Api: NativeTokenManagementApi&lt;Block&gt;,
 		{
 			<span class="kw">let </span>api = client.runtime_api();
-			<span class="kw">let </span>scripts = api
+			<span class="kw">let </span><span class="prelude-val">Some</span>(scripts) = api
 				.get_main_chain_scripts(parent_hash)
-				.map_err(IDPCreationError::GetMainChainScriptsError)<span class="question-mark">?</span>;
+				.map_err(IDPCreationError::GetMainChainScriptsError)<span class="question-mark">?
+			</span><span class="kw">else </span>{
+				<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="self">Self </span>{ token_amount: <span class="prelude-val">None </span>});
+			};
 			<span class="kw">let </span>parent_mc_hash: <span class="prelude-ty">Option</span>&lt;McBlockHash&gt; =
 				get_mc_hash_for_block(client.as_ref(), parent_hash)
 					.map_err(IDPCreationError::McHashError)<span class="question-mark">?</span>;
@@ -305,6 +314,8 @@
 				)
 				.<span class="kw">await</span><span class="question-mark">?</span>;
 
+			<span class="kw">let </span>token_amount = <span class="prelude-val">Some</span>(token_amount).filter(|amount| amount.<span class="number">0 </span>&gt; <span class="number">0</span>);
+
 			<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ token_amount })
 		}
 	}
@@ -315,10 +326,11 @@
 			<span class="kw-2">&amp;</span><span class="self">self</span>,
 			inherent_data: <span class="kw-2">&amp;mut </span>InherentData,
 		) -&gt; <span class="prelude-ty">Result</span>&lt;(), sp_inherents::Error&gt; {
-			inherent_data.put_data(
-				INHERENT_IDENTIFIER,
-				<span class="kw-2">&amp;</span>TokenTransferData { token_amount: <span class="self">self</span>.token_amount.clone() },
-			)
+			<span class="kw">if let </span><span class="prelude-val">Some</span>(token_amount) = <span class="self">self</span>.token_amount {
+				inherent_data.put_data(INHERENT_IDENTIFIER, <span class="kw-2">&amp;</span>TokenTransferData { token_amount })
+			} <span class="kw">else </span>{
+				<span class="prelude-val">Ok</span>(())
+			}
 		}
 
 		<span class="kw">async fn </span>try_handle_error(

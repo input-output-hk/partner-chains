@@ -171,6 +171,10 @@
 <a href="#169" id="169">169</a>
 <a href="#170" id="170">170</a>
 <a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Pallet allowing Partner Chains to support movement of their native token from Cardano.
 //!
 //! Partner Chains Smart Contracts establish a notion of liquid and illiquid supply of the native
@@ -231,7 +235,7 @@
 
 	<span class="attr">#[pallet::storage]
 	</span><span class="kw">pub type </span>MainChainScriptsConfiguration&lt;T: Config&gt; =
-		StorageValue&lt;<span class="kw">_</span>, sp_native_token_management::MainChainScripts, ValueQuery&gt;;
+		StorageValue&lt;<span class="kw">_</span>, sp_native_token_management::MainChainScripts, OptionQuery&gt;;
 
 	<span class="attr">#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
@@ -311,6 +315,10 @@
 			token_amount: NativeTokenAmount,
 		) -&gt; DispatchResult {
 			ensure_none(origin)<span class="question-mark">?</span>;
+			<span class="macro">assert!</span>(
+				MainChainScriptsConfiguration::&lt;T&gt;::exists(),
+				<span class="string">"BUG: Inherent should not be run unless the main chain scripts are set."
+			</span>);
 			T::TokenTransferHandler::handle_token_transfer(token_amount)
 		}
 
@@ -337,7 +345,7 @@
 	}
 
 	<span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
-		<span class="kw">pub fn </span>get_main_chain_scripts() -&gt; sp_native_token_management::MainChainScripts {
+		<span class="kw">pub fn </span>get_main_chain_scripts() -&gt; <span class="prelude-ty">Option</span>&lt;sp_native_token_management::MainChainScripts&gt; {
 			MainChainScriptsConfiguration::&lt;T&gt;::get()
 		}
 	}

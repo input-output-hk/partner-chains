@@ -1907,7 +1907,7 @@
 	}
 
 	<span class="kw">impl </span>sp_native_token_management::NativeTokenManagementApi&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="kw">fn </span>get_main_chain_scripts() -&gt; sp_native_token_management::MainChainScripts {
+		<span class="kw">fn </span>get_main_chain_scripts() -&gt; <span class="prelude-ty">Option</span>&lt;sp_native_token_management::MainChainScripts&gt; {
 			NativeTokenManagement::get_main_chain_scripts()
 		}
 	}
