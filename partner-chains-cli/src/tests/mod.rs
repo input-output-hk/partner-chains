@@ -33,7 +33,7 @@ pub enum MockIO {
 }
 
 impl MockIO {
-	pub fn with_line_number<T>(self, f: impl Fn(MockIO) -> T + UnwindSafe) -> T {
+	pub fn print_mock_location_on_panic<T>(self, f: impl Fn(MockIO) -> T + UnwindSafe) -> T {
 		match self {
 			MockIO::WithFileLocation(file, line, io) => {
 				let result = catch_unwind(move || f(*io));
@@ -198,7 +198,7 @@ impl Drop for MockIOContext {
 impl IOContext for MockIOContext {
 	fn run_command(&self, cmd: &str) -> anyhow::Result<String> {
 		let next = self.pop_next_action(&format!("run_command({cmd})"));
-		next.with_line_number(|next| match next {
+		next.print_mock_location_on_panic(|next| match next {
 			MockIO::RunCommand { expected_cmd, output } => {
 				assert_eq!(
 					cmd, expected_cmd,
@@ -212,7 +212,7 @@ impl IOContext for MockIOContext {
 
 	fn eprint(&self, msg: &str) {
 		let next = self.pop_next_action(&format!("eprint({msg})"));
-		next.with_line_number(|next| match next {
+		next.print_mock_location_on_panic(|next| match next {
 			MockIO::EPrint(expected_msg) => {
 				assert_eq!(msg, expected_msg, "Incorrect message printed")
 			},
@@ -226,7 +226,7 @@ impl IOContext for MockIOContext {
 
 	fn print(&self, msg: &str) {
 		let next = self.pop_next_action(&format!("print({msg})"));
-		next.with_line_number(|next| match next {
+		next.print_mock_location_on_panic(|next| match next {
 			MockIO::Print(expected_msg) => {
 				assert_eq!(msg, expected_msg, "Incorrect message printed")
 			},
@@ -237,7 +237,7 @@ impl IOContext for MockIOContext {
 	fn prompt(&self, prompt: &str, default: Option<&str>) -> String {
 		let next =
 			self.pop_next_action(&format!("prompt(prompt = {prompt}, default = {default:?})"));
-		next.with_line_number(|next| match next {
+		next.print_mock_location_on_panic(|next| match next {
 			MockIO::Prompt { prompt: expected_prompt, default: expected_default, input } => {
 				assert_eq!(prompt, expected_prompt, "Invalid prompt displayed");
 				assert_eq!(
@@ -253,7 +253,7 @@ impl IOContext for MockIOContext {
 
 	fn write_file(&self, path: &str, input: &str) {
 		let next = self.pop_next_action(&format!("write_file(path = {path}, input = {input})"));
-		next.with_line_number(|next| match next {
+		next.print_mock_location_on_panic(|next| match next {
 			MockIO::FileWriteJsonField {
 				path: expected_path,
 				key: expected_key,
@@ -308,7 +308,7 @@ impl IOContext for MockIOContext {
 	fn read_file(&self, path: &str) -> Option<String> {
 		let next = self.pop_next_action(&format!("read_file({path})"));
 		let content = self.files.lock().unwrap().get::<String>(&path.to_string()).cloned();
-		next.with_line_number(|next| match next {
+		next.print_mock_location_on_panic(|next| match next {
 			MockIO::FileRead { path: expected_path } => {
 				assert_eq!(
 					path, expected_path,
@@ -327,7 +327,7 @@ impl IOContext for MockIOContext {
 	fn prompt_yes_no(&self, prompt: &str, default: bool) -> bool {
 		let next =
 			self.pop_next_action(&format!("prompt_yes_no(prompt = {prompt}, default = {default})"));
-		next.with_line_number(|next| match next {
+		next.print_mock_location_on_panic(|next| match next {
 			MockIO::PromptYN { prompt: expected_prompt, default: expected_default, choice } => {
 				assert_eq!(prompt, expected_prompt);
 				assert_eq!(default, expected_default);
@@ -339,7 +339,7 @@ impl IOContext for MockIOContext {
 
 	fn list_directory(&self, path: &str) -> anyhow::Result<Option<Vec<String>>> {
 		let next = self.pop_next_action(&format!("list_directory({path})"));
-		next.with_line_number(|next| match next {
+		next.print_mock_location_on_panic(|next| match next {
 			MockIO::ListDirectory { path: expected_path, result } => {
 				assert_eq!(
 					path, expected_path,
@@ -353,7 +353,7 @@ impl IOContext for MockIOContext {
 
 	fn delete_file(&self, path: &str) -> anyhow::Result<()> {
 		let next = self.pop_next_action(&format!("delete_file({path})"));
-		next.with_line_number(|next| match next {
+		next.print_mock_location_on_panic(|next| match next {
 			MockIO::DeleteFile { path: expected_path } => {
 				assert_eq!(
 					path, expected_path,
@@ -369,7 +369,7 @@ impl IOContext for MockIOContext {
 		let next = self.pop_next_action(&format!(
 			"prompt_multi_option(prompt = {prompt}, options = {options:?})",
 		));
-		next.with_line_number(|next| match next {
+		next.print_mock_location_on_panic(|next| match next {
 			MockIO::PromptMultiOption {
 				prompt: expected_prompt,
 				options: expected_options,
@@ -385,7 +385,7 @@ impl IOContext for MockIOContext {
 
 	fn set_env_var(&self, key: &str, value: &str) {
 		let next = self.pop_next_action(&format!("set_env_var(key = {key}, value = {value})"));
-		next.with_line_number(|next| match next {
+		next.print_mock_location_on_panic(|next| match next {
 			MockIO::SetEnvVar { key: expected_key, value: expected_value } => {
 				assert_eq!(key, expected_key, "Invalid env var key");
 				assert_eq!(value, expected_value, "Invalid env var value");
@@ -396,14 +396,14 @@ impl IOContext for MockIOContext {
 
 	fn current_timestamp(&self) -> Timestamp {
 		let next = self.pop_next_action(&format!("current_timestamp()"));
-		next.with_line_number(|next| match next {
+		next.print_mock_location_on_panic(|next| match next {
 			MockIO::SystemTimeNow(time) => time,
 			other => panic!("Unexpected system time request, expected: {other:?}"),
 		})
 	}
 	fn new_tmp_file(&self, content: &str) -> TempPath {
 		let next = self.pop_next_action(&format!("new_tmp_file(content = {content})"));
-		next.with_line_number(|next| match next {
+		next.print_mock_location_on_panic(|next| match next {
 			MockIO::NewTmpFile { content: expected_content } => {
 				assert_eq!(
 					content, expected_content,
@@ -419,7 +419,7 @@ impl IOContext for MockIOContext {
 
 	fn new_tmp_dir(&self) -> PathBuf {
 		let next = self.pop_next_action("new_tmp_dir()");
-		next.with_line_number(|next| match next {
+		next.print_mock_location_on_panic(|next| match next {
 			MockIO::NewTmpDir => PathBuf::from("/tmp/MockIOContext_tmp_dir"),
 			other => {
 				panic!("Unexpected new temporary directory request, expected: {other:?}")
