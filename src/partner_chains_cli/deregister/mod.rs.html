@@ -165,7 +165,7 @@
 }
 
 <span class="kw">fn </span>get_cardano_keys&lt;C: IOContext&gt;(context: <span class="kw-2">&amp;</span>C) -&gt; <span class="prelude-ty">Result</span>&lt;(String, String), anyhow::Error&gt; {
-	context.print(<span class="string">"Payment signing key and verification key of cold key used for registration are required to dereigster."</span>);
+	context.print(<span class="string">"Payment signing key and verification key of cold key used for registration are required to deregister."</span>);
 	<span class="kw">let </span>payment_signing_key_path =
 		CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
 	<span class="kw">let _ </span>= get_mainchain_key_hex(context, <span class="kw-2">&amp;</span>payment_signing_key_path)<span class="question-mark">?</span>;
