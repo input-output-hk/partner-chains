@@ -32,6 +32,7 @@
         gawk
         cargo-edit
         perl
+        cargo-audit
       ]
       ++ (
         if isDarwin
