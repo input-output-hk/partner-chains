@@ -1,10 +1,10 @@
 use async_trait::async_trait;
-use epoch_derivation::MainchainEpochConfig;
 use hex_literal::hex;
 use log::{debug, info};
 use main_chain_follower_api::{candidate::*, Result};
 use serde::*;
 use sidechain_domain::byte_string::*;
+use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::*;
 use std::error::Error;
 
@@ -167,7 +167,7 @@ impl MockRegistrationsConfig {
 
 pub struct MockCandidateDataSource {
 	pub registrations_data: MockRegistrationsConfig,
-	pub epoch_config: MainchainEpochConfig,
+	pub mc_epoch_config: MainchainEpochConfig,
 }
 
 impl MockCandidateDataSource {
@@ -179,8 +179,8 @@ impl MockCandidateDataSource {
 
 	pub fn from_env() -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {
 		let registrations_data = MockRegistrationsConfig::read()?;
-		let epoch_config = epoch_derivation::EpochConfig::read()?.mc;
-		Ok(MockCandidateDataSource { registrations_data, epoch_config })
+		let mc_epoch_config = MainchainEpochConfig::read_from_env()?;
+		Ok(MockCandidateDataSource { registrations_data, mc_epoch_config })
 	}
 }
 

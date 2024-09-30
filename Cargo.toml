@@ -16,7 +16,6 @@ members = [
     "primitives/block-rewards",
 	"primitives/chain-params",
     "primitives/domain",
-    "primitives/epoch-derivation",
     "primitives/mock-types",
     "primitives/selection",
 	"primitives/sidechain-block-search",
@@ -195,7 +194,6 @@ plutus = { path = "utils/plutus", default-features = false}
 plutus-datum-derive = { default-features = false, path = "utils/plutus/plutus-datum-derive" }
 byte-string-derive = { default-features = false, path = "utils/byte-string-derivation" }
 sidechain-slots = { path = "primitives/sidechain-slots", default-features = false }
-epoch-derivation = { path = "primitives/epoch-derivation", default-features = false }
 mock-types = { path = "primitives/mock-types", default-features = false }
 cli-commands = { path = "cli/commands" }
 partner-chains-node-commands = { path = "cli/node-commands"}

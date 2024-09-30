@@ -1,11 +1,11 @@
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use parity_scale_codec::{Decode, Encode};
+use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 #[cfg(feature = "std")]
 use {
 	crate::authority_selection_inputs::AuthoritySelectionInputsCreationError,
-	epoch_derivation::{EpochConfig, MainchainEpochDerivation},
-	main_chain_follower_api::CandidateDataSource,
-	main_chain_follower_api::DataSourceError,
+	main_chain_follower_api::{CandidateDataSource, DataSourceError},
+	sidechain_domain::mainchain_epoch::MainchainEpochDerivation,
 	sidechain_domain::*,
 	sidechain_slots::ScSlotConfig,
 	sp_api::ProvideRuntimeApi,
@@ -43,7 +43,7 @@ impl AriadneInherentDataProvider {
 	pub async fn new<Block, SessionKeys, CrossChainPublic, T>(
 		client: &T,
 		sc_slot_config: &ScSlotConfig,
-		epoch_config: &EpochConfig,
+		mc_epoch_config: &MainchainEpochConfig,
 		parent_hash: <Block as BlockT>::Hash,
 		slot: Slot,
 		candidate_data_source: &(dyn CandidateDataSource + Send + Sync),
@@ -65,7 +65,7 @@ impl AriadneInherentDataProvider {
 		let for_mc_epoch = mc_epoch_for_next_ariadne_cidp(
 			client,
 			sc_slot_config,
-			epoch_config,
+			mc_epoch_config,
 			parent_hash,
 			slot,
 		)?;
@@ -93,7 +93,7 @@ pub enum InherentProviderCreationError {
 	#[error("Slot represents a timestamp bigger than of u64::MAX")]
 	SlotTooBig,
 	#[error("Couldn't convert timestamp to main chain epoch: {0}")]
-	McEpochDerivationError(#[from] epoch_derivation::EpochDerivationError),
+	McEpochDerivationError(#[from] sidechain_domain::mainchain_epoch::EpochDerivationError),
 	#[error("Runtime API call failed: {0}")]
 	ApiError(#[from] sp_api::ApiError),
 	#[error("Failed to create authority selection inputs: {0}")]
@@ -106,7 +106,7 @@ pub enum InherentProviderCreationError {
 fn mc_epoch_for_next_ariadne_cidp<Block, SessionKeys, CrossChainPublic, T>(
 	client: &T,
 	sc_slot_config: &ScSlotConfig,
-	epoch_config: &EpochConfig,
+	epoch_config: &MainchainEpochConfig,
 	parent_hash: <Block as BlockT>::Hash,
 	slot: Slot,
 ) -> Result<McEpochNumber, InherentProviderCreationError>
@@ -143,14 +143,13 @@ where
 fn sc_epoch_to_mc_epoch(
 	sc_epoch: ScEpochNumber,
 	sc_slot_config: &ScSlotConfig,
-	epoch_config: &EpochConfig,
+	epoch_config: &MainchainEpochConfig,
 ) -> Result<McEpochNumber, InherentProviderCreationError> {
 	let timestamp = sc_slot_config
 		.epoch_start_time(sc_epoch)
 		.ok_or(InherentProviderCreationError::SlotTooBig)?;
 
 	epoch_config
-		.mc
 		.timestamp_to_mainchain_epoch(timestamp)
 		.map_err(InherentProviderCreationError::McEpochDerivationError)
 }
@@ -196,8 +195,8 @@ mod tests {
 	use super::*;
 	use crate::ariadne_inherent_data_provider::AriadneInherentDataProvider;
 	use crate::runtime_api_mock::*;
-	use epoch_derivation::*;
 	use main_chain_follower_api::mock_services::MockCandidateDataSource;
+	use sidechain_domain::mainchain_epoch::*;
 	use sidechain_slots::*;
 	use sp_core::H256;
 	use SlotDuration;
@@ -211,17 +210,15 @@ mod tests {
 			slots_per_epoch: SlotsPerEpoch(10),
 			slot_duration: SlotDuration::from_millis(1000),
 		};
-		let epoch_config = EpochConfig {
-			mc: MainchainEpochConfig {
-				first_epoch_timestamp_millis: Timestamp::from_unix_millis(0),
-				first_epoch_number: 0,
-				epoch_duration_millis: Duration::from_millis(
-					u64::from(sc_slot_config.slots_per_epoch.0)
-						* sc_slot_config.slot_duration.as_millis()
-						* 10,
-				),
-				first_slot_number: 0,
-			},
+		let epoch_config = MainchainEpochConfig {
+			first_epoch_timestamp_millis: Timestamp::from_unix_millis(0),
+			first_epoch_number: 0,
+			epoch_duration_millis: Duration::from_millis(
+				u64::from(sc_slot_config.slots_per_epoch.0)
+					* sc_slot_config.slot_duration.as_millis()
+					* 10,
+			),
+			first_slot_number: 0,
 		};
 		let mc_reference_epoch = McEpochNumber(1);
 		let empty_ariadne_idp = AriadneInherentDataProvider::new(

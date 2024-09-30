@@ -1,10 +1,10 @@
 //! Data sources implementations that read from db-sync postgres.
 
-#[cfg(feature = "block-source")]
-use epoch_derivation::{EpochConfig, MainchainEpochConfig};
 use figment::providers::Env;
 use figment::Figment;
 use serde::Deserialize;
+#[cfg(feature = "block-source")]
+use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 pub use sqlx::PgPool;
 use std::error::Error;
@@ -14,9 +14,8 @@ use std::str::FromStr;
 
 #[cfg(feature = "block-source")]
 pub fn read_mc_epoch_config() -> Result<MainchainEpochConfig, Box<dyn Error + Send + Sync>> {
-	Ok(EpochConfig::read()
-		.map_err(|e| format!("Failed to read main chain config: {}", e))?
-		.mc)
+	Ok(MainchainEpochConfig::read_from_env()
+		.map_err(|e| format!("Failed to read main chain config: {}", e))?)
 }
 
 #[derive(Debug, Clone, Deserialize)]

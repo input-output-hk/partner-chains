@@ -6,7 +6,6 @@ publish = false
 
 [dependencies]
 async-trait = { workspace = true }
-epoch-derivation = { workspace = true, default-features = true }
 hex = { workspace = true }
 hex-literal = { workspace = true }
 log = { workspace = true }
@@ -22,7 +21,6 @@ std = [
 	"serde_json/std",
 	"sidechain-domain/std",
 	"main-chain-follower-api/std",
-	"epoch-derivation/std",
 	"rand/std"
 ]
 block-source = ["main-chain-follower-api/block-source"]

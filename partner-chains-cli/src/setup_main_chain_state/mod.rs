@@ -8,9 +8,9 @@ use crate::pc_contracts_cli_resources::establish_pc_contracts_cli_configuration;
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
 use crate::{smart_contracts, CmdRun};
 use anyhow::anyhow;
-use epoch_derivation::MainchainEpochDerivation;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use sidechain_domain::mainchain_epoch::MainchainEpochDerivation;
 use sidechain_domain::McEpochNumber;
 
 #[cfg(test)]
@@ -220,7 +220,7 @@ fn get_current_mainchain_epoch(
 	context: &impl IOContext,
 	chain_config: &ChainConfig,
 ) -> Result<McEpochNumber, anyhow::Error> {
-	let mc_epoch_config: epoch_derivation::MainchainEpochConfig =
+	let mc_epoch_config: sidechain_domain::mainchain_epoch::MainchainEpochConfig =
 		From::from(chain_config.cardano.clone());
 	mc_epoch_config
 		.timestamp_to_mainchain_epoch(context.current_timestamp())

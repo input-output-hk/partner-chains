@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 async-trait = { workspace = true, optional = true }
-epoch-derivation = { workspace = true }
 frame-support = { workspace = true }
 log = { workspace = true }
 main-chain-follower-api = { workspace = true, optional = true, features = ["candidate-source"] }
@@ -44,7 +43,6 @@ std = [
 	"frame-support/std",
 	"sidechain-domain/std",
 	"parity-scale-codec/std",
-    "epoch-derivation/std",
     "main-chain-follower-api/candidate-source",
     "main-chain-follower-api/std",
     "serde/std",

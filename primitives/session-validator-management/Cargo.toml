@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-epoch-derivation = { workspace = true }
 scale-info = { workspace = true }
 parity-scale-codec = { workspace = true }
 serde = { workspace = true, optional = true }
@@ -22,7 +21,6 @@ envy = { workspace = true, optional = true }
 [features]
 default = ["std"]
 std = [
-    "epoch-derivation/std",
     "parity-scale-codec/std",
     "sp-api/std",
     "sp-core/std",

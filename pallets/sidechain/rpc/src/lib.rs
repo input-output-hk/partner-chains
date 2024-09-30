@@ -1,14 +1,13 @@
 pub mod types;
 
 use derive_new::new;
-use epoch_derivation::{EpochConfig, MainchainEpochDerivation};
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
 	types::{error::ErrorCode, ErrorObject, ErrorObjectOwned},
 };
 use main_chain_follower_api::BlockDataSource;
-use sidechain_domain::McEpochNumber;
+use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_slots::SlotApi;
 use sp_api::ProvideRuntimeApi;
 use sp_core::offchain::Timestamp;
@@ -34,7 +33,7 @@ pub trait SidechainRpcApi<SidechainParams> {
 #[derive(new)]
 pub struct SidechainRpc<C, Block> {
 	client: Arc<C>,
-	epoch_config: EpochConfig,
+	mc_epoch_config: MainchainEpochConfig,
 	block_data_source: Arc<dyn BlockDataSource + Send + Sync>,
 	time_source: Arc<dyn TimeSource + Send + Sync>,
 	_marker: std::marker::PhantomData<Block>,
@@ -88,9 +87,8 @@ where
 				)
 			})?;
 		let next_mainchain_epoch_timestamp = self
-			.epoch_config
-			.mc
-			.mainchain_epoch_to_timestamp(McEpochNumber(latest_mainchain_block.epoch.0 + 1));
+			.mc_epoch_config
+			.mainchain_epoch_to_timestamp(latest_mainchain_block.epoch.next());
 
 		Ok(GetStatusResponse {
 			sidechain: SidechainData {

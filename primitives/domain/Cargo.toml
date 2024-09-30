@@ -21,6 +21,8 @@ num-derive = { workspace = true }
 sp-std = { workspace = true }
 lazy_static = { workspace = true }
 blake2b_simd = { workspace = true }
+figment = { workspace = true, optional = true }
+thiserror = { workspace = true, optional = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }
@@ -33,6 +35,8 @@ std = [
 	"parity-scale-codec/std",
 	"scale-info/std",
 	"num-bigint/std",
+	"figment",
+	"thiserror",
 ]
 serde = [
 	"dep:serde",

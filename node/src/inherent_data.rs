@@ -2,10 +2,10 @@ use crate::main_chain_follower::DataSources;
 use authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider as AriadneIDP;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use derive_new::new;
-use epoch_derivation::EpochConfig;
 use jsonrpsee::core::async_trait;
 use sc_consensus_aura::{find_pre_digest, SlotDuration};
 use sc_service::Arc;
+use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::{McBlockHash, ScEpochNumber};
 use sidechain_mc_hash::McHashInherentDataProvider as McHashIDP;
 use sidechain_runtime::{
@@ -67,7 +67,7 @@ where
 		_extra_args: (),
 	) -> Result<Self::InherentDataProviders, Box<dyn std::error::Error + Send + Sync>> {
 		let Self { config, client, data_sources } = self;
-		let CreateInherentDataConfig { epoch_config, sc_slot_config, time_source } = config;
+		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source } = config;
 
 		let (slot, timestamp) =
 			timestamp_and_slot_cidp(sc_slot_config.slot_duration, time_source.clone());
@@ -81,7 +81,7 @@ where
 		let ariadne_data_provider = AriadneIDP::new(
 			client.as_ref(),
 			sc_slot_config,
-			epoch_config,
+			mc_epoch_config,
 			parent_hash,
 			*slot,
 			data_sources.candidate.as_ref(),
@@ -146,7 +146,7 @@ where
 		(verified_block_slot, mc_hash): (Slot, McBlockHash),
 	) -> Result<Self::InherentDataProviders, Box<dyn Error + Send + Sync>> {
 		let Self { config, client, data_sources } = self;
-		let CreateInherentDataConfig { epoch_config, sc_slot_config, time_source, .. } = config;
+		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source, .. } = config;
 
 		let timestamp = TimestampIDP::new(Timestamp::new(time_source.get_current_time_millis()));
 		let parent_header = client.expect_header(parent_hash)?;
@@ -164,7 +164,7 @@ where
 		let ariadne_data_provider = AriadneIDP::new(
 			client.as_ref(),
 			sc_slot_config,
-			epoch_config,
+			mc_epoch_config,
 			parent_hash,
 			verified_block_slot,
 			data_sources.candidate.as_ref(),
@@ -197,7 +197,7 @@ pub fn slot_from_predigest(
 
 #[derive(new, Clone)]
 pub(crate) struct CreateInherentDataConfig {
-	pub epoch_config: EpochConfig,
+	pub mc_epoch_config: MainchainEpochConfig,
 	// TODO ETCM-4079 make sure that this struct can be instantiated only if sidechain epoch duration is divisible by slot_duration
 	pub sc_slot_config: ScSlotConfig,
 	pub time_source: Arc<dyn TimeSource + Send + Sync>,

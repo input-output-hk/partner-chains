@@ -6,7 +6,6 @@ use crate::observed_async_trait;
 use async_trait::async_trait;
 use chrono::{DateTime, NaiveDateTime, TimeDelta};
 use derive_new::new;
-use epoch_derivation::{MainchainEpochConfig, MainchainEpochDerivation};
 use figment::providers::Env;
 use figment::Figment;
 use log::{debug, info};
@@ -14,6 +13,7 @@ use main_chain_follower_api::{
 	block::MainchainBlock, common::Timestamp, BlockDataSource, DataSourceError::*, Result,
 };
 use serde::Deserialize;
+use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_domain::McBlockHash;
 use sqlx::PgPool;
 use std::error::Error;
@@ -238,7 +238,7 @@ impl BlockDataSourceImpl {
 			.timestamp_millis()
 			.try_into()
 			.map_err(|_| BadRequest(format!("Datetime out of range: {dt:?}")))?;
-		let ts = epoch_derivation::Timestamp::from_unix_millis(millis);
+		let ts = sidechain_domain::mainchain_epoch::Timestamp::from_unix_millis(millis);
 		let slot = self
 			.mainchain_epoch_config
 			.timestamp_to_mainchain_slot_number(ts)

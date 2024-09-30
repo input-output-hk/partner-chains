@@ -350,7 +350,7 @@ impl CardanoParameters {
 	}
 }
 
-impl From<CardanoParameters> for epoch_derivation::MainchainEpochConfig {
+impl From<CardanoParameters> for sidechain_domain::mainchain_epoch::MainchainEpochConfig {
 	fn from(value: CardanoParameters) -> Self {
 		Self {
 			first_epoch_timestamp_millis: Timestamp::from_unix_millis(

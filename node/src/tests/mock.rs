@@ -4,10 +4,10 @@ use crate::inherent_data::CreateInherentDataConfig;
 use crate::main_chain_follower::DataSources;
 use crate::tests::runtime_api_mock::TestApi;
 use chain_params::SidechainParams;
-use epoch_derivation::{EpochConfig, MainchainEpochConfig};
 use hex_literal::hex;
 use main_chain_follower_api::mock_services::TestDataSources;
 use sc_consensus_aura::SlotDuration;
+use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::*;
 use sidechain_slots::{ScSlotConfig, SlotsPerEpoch};
 use sp_core::offchain::{Duration, Timestamp};
@@ -43,19 +43,17 @@ pub fn test_slot_config() -> ScSlotConfig {
 	}
 }
 
-pub fn test_epoch_config() -> EpochConfig {
+pub fn test_epoch_config() -> MainchainEpochConfig {
 	let sc_slot_config = test_slot_config();
-	EpochConfig {
-		mc: MainchainEpochConfig {
-			first_epoch_timestamp_millis: Timestamp::from_unix_millis(0),
-			first_epoch_number: 0,
-			epoch_duration_millis: Duration::from_millis(
-				u64::from(sc_slot_config.slots_per_epoch.0)
-					* sc_slot_config.slot_duration.as_millis()
-					* 10,
-			),
-			first_slot_number: 0,
-		},
+	MainchainEpochConfig {
+		first_epoch_timestamp_millis: Timestamp::from_unix_millis(0),
+		first_epoch_number: 0,
+		epoch_duration_millis: Duration::from_millis(
+			u64::from(sc_slot_config.slots_per_epoch.0)
+				* sc_slot_config.slot_duration.as_millis()
+				* 10,
+		),
+		first_slot_number: 0,
 	}
 }
 
@@ -65,7 +63,7 @@ pub fn test_client() -> Arc<TestApi> {
 
 pub fn test_create_inherent_data_config() -> CreateInherentDataConfig {
 	CreateInherentDataConfig {
-		epoch_config: test_epoch_config(),
+		mc_epoch_config: test_epoch_config(),
 		sc_slot_config: test_slot_config(),
 		time_source: Arc::new(time_source::MockedTimeSource { current_time_millis: 30000 }),
 	}
