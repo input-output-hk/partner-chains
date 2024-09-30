@@ -1044,6 +1044,9 @@
 <a href="#1042" id="1042">1042</a>
 <a href="#1043" id="1043">1043</a>
 <a href="#1044" id="1044">1044</a>
+<a href="#1045" id="1045">1045</a>
+<a href="#1046" id="1046">1046</a>
+<a href="#1047" id="1047">1047</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attr">#![recursion_limit = <span class="string">"256"</span>]
@@ -1909,6 +1912,9 @@
 	<span class="kw">impl </span>sp_native_token_management::NativeTokenManagementApi&lt;Block&gt; <span class="kw">for </span>Runtime {
 		<span class="kw">fn </span>get_main_chain_scripts() -&gt; <span class="prelude-ty">Option</span>&lt;sp_native_token_management::MainChainScripts&gt; {
 			NativeTokenManagement::get_main_chain_scripts()
+		}
+		<span class="kw">fn </span>initialized() -&gt; bool {
+			NativeTokenManagement::initialized()
 		}
 	}
 }

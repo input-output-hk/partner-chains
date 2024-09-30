@@ -239,17 +239,14 @@
 <a href="#237" id="237">237</a>
 <a href="#238" id="238">238</a>
 <a href="#239" id="239">239</a>
-<a href="#240" id="240">240</a>
-<a href="#241" id="241">241</a>
-<a href="#242" id="242">242</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode};
+<span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">use </span>{
 	<span class="kw">crate</span>::authority_selection_inputs::AuthoritySelectionInputsCreationError,
-	epoch_derivation::{EpochConfig, MainchainEpochDerivation},
-	main_chain_follower_api::CandidateDataSource,
-	main_chain_follower_api::DataSourceError,
+	main_chain_follower_api::{CandidateDataSource, DataSourceError},
+	sidechain_domain::mainchain_epoch::MainchainEpochDerivation,
 	sidechain_domain::<span class="kw-2">*</span>,
 	sidechain_slots::ScSlotConfig,
 	sp_api::ProvideRuntimeApi,
@@ -287,7 +284,7 @@
 	<span class="kw">pub async fn </span>new&lt;Block, SessionKeys, CrossChainPublic, T&gt;(
 		client: <span class="kw-2">&amp;</span>T,
 		sc_slot_config: <span class="kw-2">&amp;</span>ScSlotConfig,
-		epoch_config: <span class="kw-2">&amp;</span>EpochConfig,
+		mc_epoch_config: <span class="kw-2">&amp;</span>MainchainEpochConfig,
 		parent_hash: &lt;Block <span class="kw">as </span>BlockT&gt;::Hash,
 		slot: Slot,
 		candidate_data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>CandidateDataSource + Send + Sync),
@@ -309,7 +306,7 @@
 		<span class="kw">let </span>for_mc_epoch = mc_epoch_for_next_ariadne_cidp(
 			client,
 			sc_slot_config,
-			epoch_config,
+			mc_epoch_config,
 			parent_hash,
 			slot,
 		)<span class="question-mark">?</span>;
@@ -337,7 +334,7 @@
 	<span class="attr">#[error(<span class="string">"Slot represents a timestamp bigger than of u64::MAX"</span>)]
 	</span>SlotTooBig,
 	<span class="attr">#[error(<span class="string">"Couldn't convert timestamp to main chain epoch: {0}"</span>)]
-	</span>McEpochDerivationError(<span class="attr">#[from] </span>epoch_derivation::EpochDerivationError),
+	</span>McEpochDerivationError(<span class="attr">#[from] </span>sidechain_domain::mainchain_epoch::EpochDerivationError),
 	<span class="attr">#[error(<span class="string">"Runtime API call failed: {0}"</span>)]
 	</span>ApiError(<span class="attr">#[from] </span>sp_api::ApiError),
 	<span class="attr">#[error(<span class="string">"Failed to create authority selection inputs: {0}"</span>)]
@@ -350,7 +347,7 @@
 </span><span class="kw">fn </span>mc_epoch_for_next_ariadne_cidp&lt;Block, SessionKeys, CrossChainPublic, T&gt;(
 	client: <span class="kw-2">&amp;</span>T,
 	sc_slot_config: <span class="kw-2">&amp;</span>ScSlotConfig,
-	epoch_config: <span class="kw-2">&amp;</span>EpochConfig,
+	epoch_config: <span class="kw-2">&amp;</span>MainchainEpochConfig,
 	parent_hash: &lt;Block <span class="kw">as </span>BlockT&gt;::Hash,
 	slot: Slot,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;McEpochNumber, InherentProviderCreationError&gt;
@@ -387,14 +384,13 @@
 </span><span class="kw">fn </span>sc_epoch_to_mc_epoch(
 	sc_epoch: ScEpochNumber,
 	sc_slot_config: <span class="kw-2">&amp;</span>ScSlotConfig,
-	epoch_config: <span class="kw-2">&amp;</span>EpochConfig,
+	epoch_config: <span class="kw-2">&amp;</span>MainchainEpochConfig,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;McEpochNumber, InherentProviderCreationError&gt; {
 	<span class="kw">let </span>timestamp = sc_slot_config
 		.epoch_start_time(sc_epoch)
 		.ok_or(InherentProviderCreationError::SlotTooBig)<span class="question-mark">?</span>;
 
 	epoch_config
-		.mc
 		.timestamp_to_mainchain_epoch(timestamp)
 		.map_err(InherentProviderCreationError::McEpochDerivationError)
 }
@@ -440,8 +436,8 @@
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span><span class="kw">crate</span>::ariadne_inherent_data_provider::AriadneInherentDataProvider;
 	<span class="kw">use </span><span class="kw">crate</span>::runtime_api_mock::<span class="kw-2">*</span>;
-	<span class="kw">use </span>epoch_derivation::<span class="kw-2">*</span>;
 	<span class="kw">use </span>main_chain_follower_api::mock_services::MockCandidateDataSource;
+	<span class="kw">use </span>sidechain_domain::mainchain_epoch::<span class="kw-2">*</span>;
 	<span class="kw">use </span>sidechain_slots::<span class="kw-2">*</span>;
 	<span class="kw">use </span>sp_core::H256;
 	<span class="kw">use </span>SlotDuration;
@@ -455,17 +451,15 @@
 			slots_per_epoch: SlotsPerEpoch(<span class="number">10</span>),
 			slot_duration: SlotDuration::from_millis(<span class="number">1000</span>),
 		};
-		<span class="kw">let </span>epoch_config = EpochConfig {
-			mc: MainchainEpochConfig {
-				first_epoch_timestamp_millis: Timestamp::from_unix_millis(<span class="number">0</span>),
-				first_epoch_number: <span class="number">0</span>,
-				epoch_duration_millis: Duration::from_millis(
-					u64::from(sc_slot_config.slots_per_epoch.<span class="number">0</span>)
-						* sc_slot_config.slot_duration.as_millis()
-						* <span class="number">10</span>,
-				),
-				first_slot_number: <span class="number">0</span>,
-			},
+		<span class="kw">let </span>epoch_config = MainchainEpochConfig {
+			first_epoch_timestamp_millis: Timestamp::from_unix_millis(<span class="number">0</span>),
+			first_epoch_number: <span class="number">0</span>,
+			epoch_duration_millis: Duration::from_millis(
+				u64::from(sc_slot_config.slots_per_epoch.<span class="number">0</span>)
+					* sc_slot_config.slot_duration.as_millis()
+					* <span class="number">10</span>,
+			),
+			first_slot_number: <span class="number">0</span>,
 		};
 		<span class="kw">let </span>mc_reference_epoch = McEpochNumber(<span class="number">1</span>);
 		<span class="kw">let </span>empty_ariadne_idp = AriadneInherentDataProvider::new(

@@ -429,7 +429,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::CmdRun;
 <span class="kw">use </span>clap::Parser;
 <span class="kw">use </span>cli_commands::key_params::{PlainPublicKeyParam, SidechainPublicKeyParam};
-<span class="kw">use </span>epoch_derivation::{MainchainEpochConfig, MainchainEpochDerivation};
+<span class="kw">use </span>sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 <span class="kw">use </span>sidechain_domain::{McEpochNumber, UtxoId};
 
 <span class="attr">#[derive(Clone, Debug, Parser)]

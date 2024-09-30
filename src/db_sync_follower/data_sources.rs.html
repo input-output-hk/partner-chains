@@ -101,14 +101,13 @@
 <a href="#99" id="99">99</a>
 <a href="#100" id="100">100</a>
 <a href="#101" id="101">101</a>
-<a href="#102" id="102">102</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Data sources implementations that read from db-sync postgres.
 
-</span><span class="attr">#[cfg(feature = <span class="string">"block-source"</span>)]
-</span><span class="kw">use </span>epoch_derivation::{EpochConfig, MainchainEpochConfig};
-<span class="kw">use </span>figment::providers::Env;
+</span><span class="kw">use </span>figment::providers::Env;
 <span class="kw">use </span>figment::Figment;
 <span class="kw">use </span>serde::Deserialize;
+<span class="attr">#[cfg(feature = <span class="string">"block-source"</span>)]
+</span><span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 <span class="kw">use </span>sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 <span class="kw">pub use </span>sqlx::PgPool;
 <span class="kw">use </span>std::error::Error;
@@ -118,9 +117,8 @@
 
 <span class="attr">#[cfg(feature = <span class="string">"block-source"</span>)]
 </span><span class="kw">pub fn </span>read_mc_epoch_config() -&gt; <span class="prelude-ty">Result</span>&lt;MainchainEpochConfig, Box&lt;<span class="kw">dyn </span>Error + Send + Sync&gt;&gt; {
-	<span class="prelude-val">Ok</span>(EpochConfig::read()
-		.map_err(|e| <span class="macro">format!</span>(<span class="string">"Failed to read main chain config: {}"</span>, e))<span class="question-mark">?
-		</span>.mc)
+	<span class="prelude-val">Ok</span>(MainchainEpochConfig::read_from_env()
+		.map_err(|e| <span class="macro">format!</span>(<span class="string">"Failed to read main chain config: {}"</span>, e))<span class="question-mark">?</span>)
 }
 
 <span class="attr">#[derive(Debug, Clone, Deserialize)]

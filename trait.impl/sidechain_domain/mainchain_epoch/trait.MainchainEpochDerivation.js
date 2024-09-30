@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"epoch_derivation":[]
+"sidechain_domain":[]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

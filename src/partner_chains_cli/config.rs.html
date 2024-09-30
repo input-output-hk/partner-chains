@@ -1130,7 +1130,7 @@
 	}
 }
 
-<span class="kw">impl </span>From&lt;CardanoParameters&gt; <span class="kw">for </span>epoch_derivation::MainchainEpochConfig {
+<span class="kw">impl </span>From&lt;CardanoParameters&gt; <span class="kw">for </span>sidechain_domain::mainchain_epoch::MainchainEpochConfig {
 	<span class="kw">fn </span>from(value: CardanoParameters) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
 			first_epoch_timestamp_millis: Timestamp::from_unix_millis(

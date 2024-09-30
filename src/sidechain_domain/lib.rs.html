@@ -605,12 +605,14 @@
 <a href="#603" id="603">603</a>
 <a href="#604" id="604">604</a>
 <a href="#605" id="605">605</a>
+<a href="#606" id="606">606</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">pub mod </span>byte_string;
 <span class="kw">pub mod </span>crypto;
+<span class="kw">pub mod </span>mainchain_epoch;
 
 <span class="kw">extern crate </span>alloc;
 <span class="kw">extern crate </span>core;

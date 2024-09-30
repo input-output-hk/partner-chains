@@ -175,6 +175,18 @@
 <a href="#173" id="173">173</a>
 <a href="#174" id="174">174</a>
 <a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Pallet allowing Partner Chains to support movement of their native token from Cardano.
 //!
 //! Partner Chains Smart Contracts establish a notion of liquid and illiquid supply of the native
@@ -236,6 +248,9 @@
 	<span class="attr">#[pallet::storage]
 	</span><span class="kw">pub type </span>MainChainScriptsConfiguration&lt;T: Config&gt; =
 		StorageValue&lt;<span class="kw">_</span>, sp_native_token_management::MainChainScripts, OptionQuery&gt;;
+
+	<span class="attr">#[pallet::storage]
+	</span><span class="kw">pub type </span>Initialized&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, bool, ValueQuery&gt;;
 
 	<span class="attr">#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
@@ -319,6 +334,12 @@
 				MainChainScriptsConfiguration::&lt;T&gt;::exists(),
 				<span class="string">"BUG: Inherent should not be run unless the main chain scripts are set."
 			</span>);
+			Initialized::&lt;T&gt;::mutate(|initialized| {
+				<span class="kw">if </span>!<span class="kw-2">*</span>initialized {
+					<span class="kw-2">*</span>initialized = <span class="bool-val">true
+				</span>}
+				<span class="bool-val">true
+			</span>});
 			T::TokenTransferHandler::handle_token_transfer(token_amount)
 		}
 
@@ -347,6 +368,9 @@
 	<span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
 		<span class="kw">pub fn </span>get_main_chain_scripts() -&gt; <span class="prelude-ty">Option</span>&lt;sp_native_token_management::MainChainScripts&gt; {
 			MainChainScriptsConfiguration::&lt;T&gt;::get()
+		}
+		<span class="kw">pub fn </span>initialized() -&gt; bool {
+			Initialized::&lt;T&gt;::get()
 		}
 	}
 }

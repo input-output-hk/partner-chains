@@ -349,9 +349,9 @@
 <span class="kw">use </span><span class="kw">crate</span>::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
 <span class="kw">use crate</span>::{smart_contracts, CmdRun};
 <span class="kw">use </span>anyhow::anyhow;
-<span class="kw">use </span>epoch_derivation::MainchainEpochDerivation;
 <span class="kw">use </span>serde::de::DeserializeOwned;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
+<span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochDerivation;
 <span class="kw">use </span>sidechain_domain::McEpochNumber;
 
 <span class="attr">#[cfg(test)]
@@ -561,7 +561,7 @@
 	context: <span class="kw-2">&amp;</span><span class="kw">impl </span>IOContext,
 	chain_config: <span class="kw-2">&amp;</span>ChainConfig,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;McEpochNumber, anyhow::Error&gt; {
-	<span class="kw">let </span>mc_epoch_config: epoch_derivation::MainchainEpochConfig =
+	<span class="kw">let </span>mc_epoch_config: sidechain_domain::mainchain_epoch::MainchainEpochConfig =
 		From::from(chain_config.cardano.clone());
 	mc_epoch_config
 		.timestamp_to_mainchain_epoch(context.current_timestamp())

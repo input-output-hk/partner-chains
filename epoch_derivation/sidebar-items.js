@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["mainchain"],"struct":["Duration","EpochConfig","Timestamp"]};

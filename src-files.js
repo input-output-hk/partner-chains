@@ -4,7 +4,6 @@ var srcIndex = new Map(JSON.parse('[\
 ["chain_params",["",[],["lib.rs"]]],\
 ["cli_commands",["",[],["key_params.rs","lib.rs","output.rs","pc_contracts_cli_params.rs","registration_signatures.rs","signing.rs"]]],\
 ["db_sync_follower",["",[["block",[],["mod.rs"]],["candidates",[],["cached.rs","mod.rs"]],["native_token",[],["mod.rs"]]],["data_sources.rs","db_datum.rs","db_model.rs","lib.rs","metrics.rs"]]],\
-["epoch_derivation",["",[],["lib.rs","mainchain.rs"]]],\
 ["main_chain_follower_api",["",[],["block.rs","candidate.rs","common.rs","lib.rs","mock_services.rs","native_token.rs"]]],\
 ["main_chain_follower_cli",["",[],["main.rs"]]],\
 ["main_chain_follower_mock",["",[],["block.rs","candidate.rs","lib.rs","native_token.rs"]]],\
@@ -27,7 +26,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["selection",["",[],["impls.rs","lib.rs","weighted_random.rs"]]],\
 ["session_manager",["",[],["lib.rs"]]],\
 ["sidechain_block_search",["",[],["binary_search.rs","impl_block_info.rs","impl_compare_strategy.rs","impl_find_block.rs","lib.rs"]]],\
-["sidechain_domain",["",[],["byte_string.rs","crypto.rs","lib.rs"]]],\
+["sidechain_domain",["",[],["byte_string.rs","crypto.rs","lib.rs","mainchain_epoch.rs"]]],\
 ["sidechain_mc_hash",["",[],["lib.rs"]]],\
 ["sidechain_runtime",["",[["weights",[],["block_weights.rs","extrinsic_weights.rs","frame_system.rs","mod.rs","pallet_balances.rs","pallet_session_validator_management.rs","pallet_sudo.rs","pallet_timestamp.rs","rocksdb_weights.rs"]]],["lib.rs"]]],\
 ["sidechain_slots",["",[],["lib.rs","runtime_api_client.rs"]]],\

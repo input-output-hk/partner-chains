@@ -223,10 +223,10 @@
 <span class="kw">use </span>authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider <span class="kw">as </span>AriadneIDP;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>derive_new::new;
-<span class="kw">use </span>epoch_derivation::EpochConfig;
 <span class="kw">use </span>jsonrpsee::core::async_trait;
 <span class="kw">use </span>sc_consensus_aura::{find_pre_digest, SlotDuration};
 <span class="kw">use </span>sc_service::Arc;
+<span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 <span class="kw">use </span>sidechain_domain::{McBlockHash, ScEpochNumber};
 <span class="kw">use </span>sidechain_mc_hash::McHashInherentDataProvider <span class="kw">as </span>McHashIDP;
 <span class="kw">use </span>sidechain_runtime::{
@@ -288,7 +288,7 @@
 		_extra_args: (),
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::InherentDataProviders, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span><span class="self">Self </span>{ config, client, data_sources } = <span class="self">self</span>;
-		<span class="kw">let </span>CreateInherentDataConfig { epoch_config, sc_slot_config, time_source } = config;
+		<span class="kw">let </span>CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source } = config;
 
 		<span class="kw">let </span>(slot, timestamp) =
 			timestamp_and_slot_cidp(sc_slot_config.slot_duration, time_source.clone());
@@ -302,7 +302,7 @@
 		<span class="kw">let </span>ariadne_data_provider = AriadneIDP::new(
 			client.as_ref(),
 			sc_slot_config,
-			epoch_config,
+			mc_epoch_config,
 			parent_hash,
 			<span class="kw-2">*</span>slot,
 			data_sources.candidate.as_ref(),
@@ -367,7 +367,7 @@
 		(verified_block_slot, mc_hash): (Slot, McBlockHash),
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::InherentDataProviders, Box&lt;<span class="kw">dyn </span>Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span><span class="self">Self </span>{ config, client, data_sources } = <span class="self">self</span>;
-		<span class="kw">let </span>CreateInherentDataConfig { epoch_config, sc_slot_config, time_source, .. } = config;
+		<span class="kw">let </span>CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source, .. } = config;
 
 		<span class="kw">let </span>timestamp = TimestampIDP::new(Timestamp::new(time_source.get_current_time_millis()));
 		<span class="kw">let </span>parent_header = client.expect_header(parent_hash)<span class="question-mark">?</span>;
@@ -385,7 +385,7 @@
 		<span class="kw">let </span>ariadne_data_provider = AriadneIDP::new(
 			client.as_ref(),
 			sc_slot_config,
-			epoch_config,
+			mc_epoch_config,
 			parent_hash,
 			verified_block_slot,
 			data_sources.candidate.as_ref(),
@@ -418,7 +418,7 @@
 
 <span class="attr">#[derive(new, Clone)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>CreateInherentDataConfig {
-	<span class="kw">pub </span>epoch_config: EpochConfig,
+	<span class="kw">pub </span>mc_epoch_config: MainchainEpochConfig,
 	<span class="comment">// TODO ETCM-4079 make sure that this struct can be instantiated only if sidechain epoch duration is divisible by slot_duration
 	</span><span class="kw">pub </span>sc_slot_config: ScSlotConfig,
 	<span class="kw">pub </span>time_source: Arc&lt;<span class="kw">dyn </span>TimeSource + Send + Sync&gt;,

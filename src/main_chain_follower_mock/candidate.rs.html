@@ -251,12 +251,12 @@
 <a href="#249" id="249">249</a>
 <a href="#250" id="250">250</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>async_trait::async_trait;
-<span class="kw">use </span>epoch_derivation::MainchainEpochConfig;
 <span class="kw">use </span>hex_literal::hex;
 <span class="kw">use </span>log::{debug, info};
 <span class="kw">use </span>main_chain_follower_api::{candidate::<span class="kw-2">*</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use </span>serde::<span class="kw-2">*</span>;
 <span class="kw">use </span>sidechain_domain::byte_string::<span class="kw-2">*</span>;
+<span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 <span class="kw">use </span>std::error::Error;
 
@@ -419,7 +419,7 @@
 
 <span class="kw">pub struct </span>MockCandidateDataSource {
 	<span class="kw">pub </span>registrations_data: MockRegistrationsConfig,
-	<span class="kw">pub </span>epoch_config: MainchainEpochConfig,
+	<span class="kw">pub </span>mc_epoch_config: MainchainEpochConfig,
 }
 
 <span class="kw">impl </span>MockCandidateDataSource {
@@ -431,8 +431,8 @@
 
 	<span class="kw">pub fn </span>from_env() -&gt; std::result::Result&lt;<span class="self">Self</span>, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
 		<span class="kw">let </span>registrations_data = MockRegistrationsConfig::read()<span class="question-mark">?</span>;
-		<span class="kw">let </span>epoch_config = epoch_derivation::EpochConfig::read()<span class="question-mark">?</span>.mc;
-		<span class="prelude-val">Ok</span>(MockCandidateDataSource { registrations_data, epoch_config })
+		<span class="kw">let </span>mc_epoch_config = MainchainEpochConfig::read_from_env()<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(MockCandidateDataSource { registrations_data, mc_epoch_config })
 	}
 }
 

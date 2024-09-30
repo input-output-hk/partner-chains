@@ -162,7 +162,6 @@
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 <span class="kw">use </span>chain_params::SidechainParams;
-<span class="kw">use </span>epoch_derivation::EpochConfig;
 <span class="kw">use </span>jsonrpsee::RpcModule;
 <span class="kw">use </span>pallet_session_validator_management_rpc::<span class="kw-2">*</span>;
 <span class="kw">use </span>pallet_sidechain_rpc::<span class="kw-2">*</span>;
@@ -173,6 +172,7 @@
 <span class="kw">use </span>sc_rpc::SubscriptionTaskExecutor;
 <span class="kw">pub use </span>sc_rpc_api::DenyUnsafe;
 <span class="kw">use </span>sc_transaction_pool_api::TransactionPool;
+<span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 <span class="kw">use </span>sidechain_domain::ScEpochNumber;
 <span class="kw">use </span>sidechain_runtime::CrossChainPublic;
 <span class="kw">use </span>sidechain_runtime::{
@@ -263,7 +263,7 @@
 	module.merge(
 		SidechainRpc::new(
 			client.clone(),
-			EpochConfig::read().unwrap(),
+			MainchainEpochConfig::read_from_env().unwrap(),
 			main_chain_follower_data_sources.block.clone(),
 			time_source.clone(),
 		)

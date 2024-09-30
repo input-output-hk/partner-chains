@@ -287,7 +287,6 @@
 <span class="kw">use </span>async_trait::async_trait;
 <span class="kw">use </span>chrono::{DateTime, NaiveDateTime, TimeDelta};
 <span class="kw">use </span>derive_new::new;
-<span class="kw">use </span>epoch_derivation::{MainchainEpochConfig, MainchainEpochDerivation};
 <span class="kw">use </span>figment::providers::Env;
 <span class="kw">use </span>figment::Figment;
 <span class="kw">use </span>log::{debug, info};
@@ -295,6 +294,7 @@
 	block::MainchainBlock, common::Timestamp, BlockDataSource, DataSourceError::<span class="kw-2">*</span>, <span class="prelude-ty">Result</span>,
 };
 <span class="kw">use </span>serde::Deserialize;
+<span class="kw">use </span>sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 <span class="kw">use </span>sidechain_domain::McBlockHash;
 <span class="kw">use </span>sqlx::PgPool;
 <span class="kw">use </span>std::error::Error;
@@ -519,7 +519,7 @@
 			.timestamp_millis()
 			.try_into()
 			.map_err(|<span class="kw">_</span>| BadRequest(<span class="macro">format!</span>(<span class="string">"Datetime out of range: {dt:?}"</span>)))<span class="question-mark">?</span>;
-		<span class="kw">let </span>ts = epoch_derivation::Timestamp::from_unix_millis(millis);
+		<span class="kw">let </span>ts = sidechain_domain::mainchain_epoch::Timestamp::from_unix_millis(millis);
 		<span class="kw">let </span>slot = <span class="self">self
 			</span>.mainchain_epoch_config
 			.timestamp_to_mainchain_slot_number(ts)

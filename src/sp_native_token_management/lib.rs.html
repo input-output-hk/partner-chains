@@ -174,6 +174,45 @@
 <a href="#172" id="172">172</a>
 <a href="#173" id="173">173</a>
 <a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">use </span>core::str::FromStr;
@@ -191,12 +230,17 @@
 
 <span class="kw">pub const </span>INHERENT_IDENTIFIER: InherentIdentifier = <span class="kw-2">*</span><span class="string">b"nattoken"</span>;
 
-<span class="attr">#[derive(Default, Debug, Clone, PartialEq, Eq, TypeInfo, Encode, Decode, MaxEncodedLen)]
+<span class="doccomment">/// Values identifying on-chain entities involved in the native token management system on Cardano.
+</span><span class="attr">#[derive(Default, Debug, Clone, PartialEq, Eq, TypeInfo, Encode, Decode, MaxEncodedLen)]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
 </span><span class="kw">pub struct </span>MainChainScripts {
-	<span class="kw">pub </span>native_token_policy_id: PolicyId,
-	<span class="kw">pub </span>native_token_asset_name: AssetName,
-	<span class="kw">pub </span>illiquid_supply_validator_address: MainchainAddress,
+	<span class="doccomment">/// Minting policy ID of the native token
+	</span><span class="kw">pub </span>native_token_policy_id: PolicyId,
+	<span class="doccomment">/// Asset name of the native token
+	</span><span class="kw">pub </span>native_token_asset_name: AssetName,
+	<span class="doccomment">/// Address of the illiquid supply validator. All tokens sent to that address are effectively locked
+	/// and considered "sent" to the Partner Chain.
+	</span><span class="kw">pub </span>illiquid_supply_validator_address: MainchainAddress,
 }
 
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
@@ -229,6 +273,9 @@
 <span class="macro">sp_api::decl_runtime_apis! </span>{
 	<span class="kw">pub trait </span>NativeTokenManagementApi {
 		<span class="kw">fn </span>get_main_chain_scripts() -&gt; <span class="prelude-ty">Option</span>&lt;MainChainScripts&gt;;
+		<span class="doccomment">/// Gets current initializaion status and set it to `true` afterwards. This check is used to
+		/// determine whether historical data from the beginning of main chain should be queried.
+		</span><span class="kw">fn </span>initialized() -&gt; bool;
 	}
 }
 
@@ -262,8 +309,9 @@
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span>main_chain_follower_api::{DataSourceError, NativeTokenManagementDataSource};
 	<span class="kw">use </span>sidechain_mc_hash::get_mc_hash_for_block;
-	<span class="kw">use </span>sp_api::{ApiError, ProvideRuntimeApi};
+	<span class="kw">use </span>sp_api::{ApiError, Core, ProvideRuntimeApi};
 	<span class="kw">use </span>sp_blockchain::HeaderBackend;
+	<span class="kw">use </span>sp_version::RuntimeVersion;
 	<span class="kw">use </span>std::error::Error;
 	<span class="kw">use </span>std::sync::Arc;
 
@@ -275,13 +323,43 @@
 	</span><span class="kw">pub enum </span>IDPCreationError {
 		<span class="attr">#[error(<span class="string">"Failed to read native token data from data source: {0:?}"</span>)]
 		</span>DataSourceError(<span class="attr">#[from] </span>DataSourceError),
-		<span class="attr">#[error(<span class="string">"Failed to retrieve main chain scripts from the runtime: {0:?}"</span>)]
-		</span>GetMainChainScriptsError(ApiError),
+		<span class="attr">#[error(<span class="string">"Failed to call runtime API: {0:?}"</span>)]
+		</span>ApiError(ApiError),
 		<span class="attr">#[error(<span class="string">"Failed to retrieve previous MC hash: {0:?}"</span>)]
 		</span>McHashError(Box&lt;<span class="kw">dyn </span>Error + Send + Sync&gt;),
 	}
 
+	<span class="kw">impl </span>From&lt;ApiError&gt; <span class="kw">for </span>IDPCreationError {
+		<span class="kw">fn </span>from(err: ApiError) -&gt; <span class="self">Self </span>{
+			<span class="self">Self</span>::ApiError(err)
+		}
+	}
+
 	<span class="kw">impl </span>NativeTokenManagementInherentDataProvider {
+		<span class="doccomment">/// Checks the current runtime version against `version_check` predicate, returns zero transfers
+		/// if outside the version bounds.
+		</span><span class="kw">pub async fn </span>new_for_runtime_version&lt;Block, C&gt;(
+			version_check: <span class="kw">fn</span>(RuntimeVersion) -&gt; bool,
+			client: Arc&lt;C&gt;,
+			data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>NativeTokenManagementDataSource + Send + Sync),
+			mc_hash: McBlockHash,
+			parent_hash: &lt;Block <span class="kw">as </span>BlockT&gt;::Hash,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, IDPCreationError&gt;
+		<span class="kw">where
+			</span>Block: BlockT,
+			C: HeaderBackend&lt;Block&gt;,
+			C: ProvideRuntimeApi&lt;Block&gt; + Send + Sync,
+			C::Api: NativeTokenManagementApi&lt;Block&gt;,
+		{
+			<span class="kw">let </span>version = client.runtime_api().version(parent_hash)<span class="question-mark">?</span>;
+
+			<span class="kw">if </span>version_check(version) {
+				<span class="self">Self</span>::new(client, data_source, mc_hash, parent_hash).<span class="kw">await
+			</span>} <span class="kw">else </span>{
+				<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ token_amount: <span class="prelude-val">None </span>})
+			}
+		}
+
 		<span class="kw">pub async fn </span>new&lt;Block, C&gt;(
 			client: Arc&lt;C&gt;,
 			data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>NativeTokenManagementDataSource + Send + Sync),
@@ -295,15 +373,15 @@
 			C::Api: NativeTokenManagementApi&lt;Block&gt;,
 		{
 			<span class="kw">let </span>api = client.runtime_api();
-			<span class="kw">let </span><span class="prelude-val">Some</span>(scripts) = api
-				.get_main_chain_scripts(parent_hash)
-				.map_err(IDPCreationError::GetMainChainScriptsError)<span class="question-mark">?
-			</span><span class="kw">else </span>{
+			<span class="kw">let </span><span class="prelude-val">Some</span>(scripts) = api.get_main_chain_scripts(parent_hash)<span class="question-mark">? </span><span class="kw">else </span>{
 				<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="self">Self </span>{ token_amount: <span class="prelude-val">None </span>});
 			};
-			<span class="kw">let </span>parent_mc_hash: <span class="prelude-ty">Option</span>&lt;McBlockHash&gt; =
+			<span class="kw">let </span>parent_mc_hash: <span class="prelude-ty">Option</span>&lt;McBlockHash&gt; = <span class="kw">if </span>api.initialized(parent_hash)<span class="question-mark">? </span>{
 				get_mc_hash_for_block(client.as_ref(), parent_hash)
-					.map_err(IDPCreationError::McHashError)<span class="question-mark">?</span>;
+					.map_err(IDPCreationError::McHashError)<span class="question-mark">?
+			</span>} <span class="kw">else </span>{
+				<span class="prelude-val">None
+			</span>};
 			<span class="kw">let </span>token_amount = data_source
 				.get_total_native_token_transfer(
 					parent_mc_hash,
@@ -314,7 +392,7 @@
 				)
 				.<span class="kw">await</span><span class="question-mark">?</span>;
 
-			<span class="kw">let </span>token_amount = <span class="prelude-val">Some</span>(token_amount).filter(|amount| amount.<span class="number">0 </span>&gt; <span class="number">0</span>);
+			<span class="kw">let </span>token_amount = <span class="kw">if </span>token_amount.<span class="number">0 </span>&gt; <span class="number">0 </span>{ <span class="prelude-val">Some</span>(token_amount) } <span class="kw">else </span>{ <span class="prelude-val">None </span>};
 
 			<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ token_amount })
 		}
