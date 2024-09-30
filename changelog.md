@@ -37,7 +37,7 @@ allowing to selectively query main chain state based on runtime version
   This change requires migration of the node, PartnerChainsProposerFactory has to be used.
   See `service.rs` in `partner-chains-node` crate for an example.
 * renamed sidechain-main-cli and relevant naming to pc-contracts-cli
-* ETCM-6092 - removed the `epoch-derivation` crate, moving epoch derivation logit to the `sidechain-domain`
+* ETCM-6092 - removed the `epoch-derivation` crate, moving epoch derivation logic to the `sidechain-domain`
 crate. Removed `EpochConfig` wrapper type; code using it should be changed to use `MainchainEpochConfig`
 type directly, `EpochConfig::read()` uses should be replaced by `MainchainEpochConfig::read_from_env()`.
 
