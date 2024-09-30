@@ -99,6 +99,6 @@ mod data_source {
 	}
 
 	pub async fn candidate() -> Result<CandidatesDataSourceImpl> {
-		Ok(CandidatesDataSourceImpl::from_config(pool().await?, None).await?)
+		Ok(CandidatesDataSourceImpl::new(pool().await?, None).await?)
 	}
 }

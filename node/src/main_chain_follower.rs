@@ -1,8 +1,6 @@
+use db_sync_follower::candidates::CandidatesDataSourceImpl;
 use db_sync_follower::native_token::NativeTokenManagementDataSourceImpl;
-use db_sync_follower::{
-	block::BlockDataSourceImpl, candidates::cached::CandidateDataSourceCached,
-	metrics::McFollowerMetrics,
-};
+use db_sync_follower::{block::BlockDataSourceImpl, metrics::McFollowerMetrics};
 use main_chain_follower_api::{
 	BlockDataSource, CandidateDataSource, NativeTokenManagementDataSource,
 };
@@ -67,12 +65,9 @@ pub async fn create_cached_data_sources(
 			BlockDataSourceImpl::new_from_env(pool.clone(), metrics_opt.clone()).await?,
 		),
 		candidate: Arc::new(
-			CandidateDataSourceCached::new_from_env(
-				pool.clone(),
-				metrics_opt.clone(),
-				CANDIDATES_FOR_EPOCH_CACHE_SIZE,
-			)
-			.await?,
+			CandidatesDataSourceImpl::new(pool.clone(), metrics_opt.clone())
+				.await?
+				.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE)?,
 		),
 		native_token: Arc::new(NativeTokenManagementDataSourceImpl::new(pool, metrics_opt)),
 	})

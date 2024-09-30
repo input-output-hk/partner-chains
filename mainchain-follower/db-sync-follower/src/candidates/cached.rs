@@ -3,7 +3,7 @@
 //! Also provides a way of batching and caching incoming transactions,
 //! to allow efficient queries when syncing the chain.
 
-use crate::{candidates::CandidatesDataSourceImpl, metrics::McFollowerMetrics};
+use crate::candidates::CandidatesDataSourceImpl;
 use async_trait::async_trait;
 use figment::{providers::Env, Figment};
 use log::info;
@@ -11,7 +11,6 @@ use lru::LruCache;
 use main_chain_follower_api::{candidate::*, Result};
 use serde::Deserialize;
 use sidechain_domain::*;
-use sqlx::PgPool;
 use std::{
 	error::Error,
 	sync::{Arc, Mutex},
@@ -108,13 +107,12 @@ impl CandidateDataSourceCached {
 			highest_seen_stable_epoch: Arc::new(Mutex::new(None)),
 		}
 	}
-	pub async fn new_from_env(
-		pool: PgPool,
-		metrics_opt: Option<McFollowerMetrics>,
+
+	pub fn new_from_env(
+		inner: CandidatesDataSourceImpl,
 		candidates_for_epoch_cache_size: usize,
 	) -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {
 		let config = CandidateDataSourceCacheConfig::from_env()?;
-		let inner = CandidatesDataSourceImpl::from_config(pool, metrics_opt).await?;
 		Ok(Self::new(inner, candidates_for_epoch_cache_size, config.cardano_security_parameter))
 	}
 

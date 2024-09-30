@@ -112,7 +112,7 @@ async fn test_get_ariadne_parameters_returns_the_latest_params_for_the_future_ep
 #[sqlx::test(migrations = "./testdata/migrations")]
 async fn test_make_source_creates_index(pool: PgPool) {
 	assert!(!index_exists(&pool, "idx_ma_tx_out_ident").await);
-	CandidatesDataSourceImpl::from_config(pool.clone(), None).await.unwrap();
+	CandidatesDataSourceImpl::new(pool.clone(), None).await.unwrap();
 	assert!(index_exists(&pool, "idx_ma_tx_out_ident").await);
 }
 
