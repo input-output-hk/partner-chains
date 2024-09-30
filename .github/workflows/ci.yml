@@ -16,6 +16,9 @@ permissions:
 jobs:
   build:
     if: github.event.action != 'closed' || github.event.pull_request.merged == true
+    concurrency:
+      group: pr-${{ github.event.pull_request.number }}-author-${{ github.event.pull_request.user.login }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     permissions:
       id-token: write
