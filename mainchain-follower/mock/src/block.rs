@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use async_trait::async_trait;
 pub use main_chain_follower_api::block::*;
 use main_chain_follower_api::common::*;
@@ -48,6 +50,12 @@ impl BlockDataSource for BlockDataSourceMock {
 impl BlockDataSourceMock {
 	pub fn new(mc_epoch_duration_millis: u32) -> Self {
 		Self { mc_epoch_duration_millis }
+	}
+
+	pub fn new_from_env() -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {
+		let mc_epoch_duration_millis: u32 =
+			std::env::var("MC__EPOCH_DURATION_MILLIS")?.parse::<u32>()?;
+		Ok(Self::new(mc_epoch_duration_millis))
 	}
 
 	fn block_per_epoch(&self) -> u32 {
