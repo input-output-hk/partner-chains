@@ -4,8 +4,9 @@ use crate::observed_async_trait;
 use async_trait::async_trait;
 use derive_new::new;
 use itertools::Itertools;
-use main_chain_follower_api::{DataSourceError, NativeTokenManagementDataSource, Result};
+use main_chain_follower_api::{DataSourceError, Result};
 use sidechain_domain::*;
+use sp_native_token_management::NativeTokenManagementDataSource;
 use sqlx::PgPool;
 use std::sync::{Arc, Mutex};
 
@@ -24,6 +25,8 @@ pub struct NativeTokenManagementDataSourceImpl {
 
 observed_async_trait!(
 impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
+	type Error = DataSourceError;
+
 	// after_block is always less or equal to_block
 	// to_block is always a stable block
 	async fn get_total_native_token_transfer(
@@ -33,7 +36,7 @@ impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
 		policy_id: PolicyId,
 		asset_name: AssetName,
 		address: MainchainAddress,
-	) -> Result<NativeTokenAmount> {
+	) -> std::result::Result<NativeTokenAmount, Self::Error> {
 		if let Some(after_block) = after_block {
 			if after_block == to_block {
 				Ok(NativeTokenAmount(0))

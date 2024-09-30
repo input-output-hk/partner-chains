@@ -1,6 +1,6 @@
 use super::NativeTokenManagementDataSourceImpl;
-use main_chain_follower_api::NativeTokenManagementDataSource;
 use sidechain_domain::{AssetName, MainchainAddress, McBlockHash, PolicyId};
+use sp_native_token_management::NativeTokenManagementDataSource;
 use sqlx::PgPool;
 use std::str::FromStr;
 

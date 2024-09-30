@@ -19,11 +19,6 @@ pub mod candidate;
 #[cfg(feature = "candidate-source")]
 pub use candidate::CandidateDataSource;
 
-#[cfg(feature = "native-token")]
-pub mod native_token;
-#[cfg(feature = "native-token")]
-pub use native_token::NativeTokenManagementDataSource;
-
 #[cfg(feature = "std")]
 pub mod mock_services;
 

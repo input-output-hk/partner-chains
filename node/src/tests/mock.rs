@@ -1,23 +1,15 @@
 #![allow(clippy::type_complexity)]
 
 use crate::inherent_data::CreateInherentDataConfig;
-use crate::main_chain_follower::DataSources;
 use crate::tests::runtime_api_mock::TestApi;
 use chain_params::SidechainParams;
 use hex_literal::hex;
-use main_chain_follower_api::mock_services::TestDataSources;
 use sc_consensus_aura::SlotDuration;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::*;
 use sidechain_slots::{ScSlotConfig, SlotsPerEpoch};
 use sp_core::offchain::{Duration, Timestamp};
 use std::sync::Arc;
-
-impl From<TestDataSources> for DataSources {
-	fn from(value: TestDataSources) -> Self {
-		Self { block: value.block, candidate: value.candidate, native_token: value.native_token }
-	}
-}
 
 pub fn mock_sidechain_params() -> SidechainParams {
 	SidechainParams {
