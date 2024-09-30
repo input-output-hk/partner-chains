@@ -82,7 +82,7 @@ impl DbSyncBlockDataSourceConfig {
 }
 
 impl BlockDataSourceImpl {
-	pub async fn from_env(
+	pub async fn new_from_env(
 		pool: PgPool,
 		metrics_opt: Option<McFollowerMetrics>,
 	) -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {

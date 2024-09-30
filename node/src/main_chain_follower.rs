@@ -51,7 +51,7 @@ pub fn create_mock_data_sources(
 ) -> std::result::Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
 	Ok(DataSources {
 		block: Arc::new(BlockDataSourceMock::new_from_env()?),
-		candidate: Arc::new(MockCandidateDataSource::from_env()?),
+		candidate: Arc::new(MockCandidateDataSource::new_from_env()?),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
 	})
 }
@@ -63,7 +63,9 @@ pub async fn create_cached_data_sources(
 ) -> Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
 	let pool = db_sync_follower::data_sources::get_connection_from_env().await?;
 	Ok(DataSources {
-		block: Arc::new(BlockDataSourceImpl::from_env(pool.clone(), metrics_opt.clone()).await?),
+		block: Arc::new(
+			BlockDataSourceImpl::new_from_env(pool.clone(), metrics_opt.clone()).await?,
+		),
 		candidate: Arc::new(
 			CandidateDataSourceCached::new_from_env(
 				pool.clone(),

@@ -177,7 +177,7 @@ impl MockCandidateDataSource {
 		self.registrations_data.epoch_rotation[rotation_no].clone()
 	}
 
-	pub fn from_env() -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {
+	pub fn new_from_env() -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {
 		let registrations_data = MockRegistrationsConfig::read()?;
 		let mc_epoch_config = MainchainEpochConfig::read_from_env()?;
 		Ok(MockCandidateDataSource { registrations_data, mc_epoch_config })
