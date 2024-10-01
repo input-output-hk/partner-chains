@@ -48,7 +48,6 @@ sp-weights = { workspace = true }
 authority-selection-inherents = { workspace = true }
 
 hex-literal = { workspace = true }
-const-decoder = { workspace = true }
 
 # Used for the node template's RPCs
 frame-system-rpc-runtime-api = { workspace = true }

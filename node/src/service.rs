@@ -11,7 +11,7 @@ use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 use sc_consensus_grandpa::SharedVoterState;
 pub use sc_executor::WasmExecutor;
 use sc_partner_chains_consensus_aura::import_queue as partner_chains_aura_import_queue;
-use sc_service::{error::Error as ServiceError, Configuration, TaskManager, WarpSyncParams};
+use sc_service::{error::Error as ServiceError, Configuration, TaskManager, WarpSyncConfig};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
@@ -86,7 +86,7 @@ pub fn new_partial(
 		})
 		.transpose()?;
 
-	let executor = sc_service::new_wasm_executor(config);
+	let executor = sc_service::new_wasm_executor(&config.executor);
 
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, _>(
@@ -181,11 +181,11 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		other: (block_import, grandpa_link, mut telemetry, data_sources, _),
 	} = new_partial(&config)?;
 
-	let metrics = Network::register_notification_metrics(
-		config.prometheus_config.as_ref().map(|cfg| &cfg.registry),
+	let metrics = Network::register_notification_metrics(config.prometheus_registry());
+	let mut net_config = sc_network::config::FullNetworkConfiguration::<_, _, Network>::new(
+		&config.network,
+		config.prometheus_registry().map(|r| r.clone()),
 	);
-	let mut net_config =
-		sc_network::config::FullNetworkConfiguration::<_, _, Network>::new(&config.network);
 
 	let grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
 		&client.block_hash(0).ok().flatten().expect("Genesis block exists; qed"),
@@ -215,7 +215,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue,
 			block_announce_validator_builder: None,
-			warp_sync_params: Some(WarpSyncParams::WithProvider(warp_sync)),
+			warp_sync_config: Some(WarpSyncConfig::WithProvider(warp_sync)),
 			block_relay: None,
 			metrics,
 		})?;
@@ -258,7 +258,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		let justification_stream = grandpa_link.justification_stream();
 		let main_chain_follower_data_sources = data_sources.clone();
 
-		Box::new(move |deny_unsafe, subscription_executor| {
+		move |subscription_executor| {
 			let grandpa = GrandpaDeps {
 				shared_voter_state: shared_voter_state.clone(),
 				shared_authority_set: shared_authority_set.clone(),
@@ -273,12 +273,11 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 				client: client.clone(),
 				pool: pool.clone(),
 				grandpa,
-				deny_unsafe,
 				main_chain_follower_data_sources: main_chain_follower_data_sources.clone(),
 				time_source: Arc::new(SystemTimeSource),
 			};
 			crate::rpc::create_full(deps).map_err(Into::into)
-		})
+		}
 	};
 
 	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
@@ -287,7 +286,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		keystore: keystore_container.keystore(),
 		task_manager: &mut task_manager,
 		transaction_pool: transaction_pool.clone(),
-		rpc_builder: rpc_extensions_builder,
+		rpc_builder: Box::new(rpc_extensions_builder),
 		backend,
 		system_rpc_tx,
 		tx_handler_controller,

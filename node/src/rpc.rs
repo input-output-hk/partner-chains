@@ -17,7 +17,6 @@ use sc_consensus_grandpa::{
 };
 use sc_consensus_grandpa_rpc::{Grandpa, GrandpaApiServer};
 use sc_rpc::SubscriptionTaskExecutor;
-pub use sc_rpc_api::DenyUnsafe;
 use sc_transaction_pool_api::TransactionPool;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::ScEpochNumber;
@@ -54,8 +53,6 @@ pub struct FullDeps<C, P, B, T> {
 	pub client: Arc<C>,
 	/// Transaction pool instance.
 	pub pool: Arc<P>,
-	/// Whether to deny unsafe calls
-	pub deny_unsafe: DenyUnsafe,
 	/// GRANDPA specific dependencies.
 	pub grandpa: GrandpaDeps<B>,
 	/// Main chain follower data sources.
@@ -96,16 +93,9 @@ where
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 
 	let mut module = RpcModule::new(());
-	let FullDeps {
-		client,
-		pool,
-		grandpa,
-		deny_unsafe,
-		main_chain_follower_data_sources,
-		time_source,
-	} = deps;
+	let FullDeps { client, pool, grandpa, main_chain_follower_data_sources, time_source } = deps;
 
-	module.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
+	module.merge(System::new(client.clone(), pool.clone()).into_rpc())?;
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 	module.merge(
 		SidechainRpc::new(
