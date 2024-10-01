@@ -122,11 +122,11 @@ runs:
         deployment: docker
         node: cardano-node-1
         environment:
-    - name: Run registration tests
+    - name: Run all tests
       uses: ./.github/actions/tests/run-e2e-tests
       with:
         env: ${{ env.TEST_ENVIRONMENT }}
-        keyword: "test_register_candidate or test_deregister_candidate or test_add_permissioned_candidate or test_remove_permissioned_candidate"
+        mc_epoch: 2
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
     - name: Wait for epoch 4
