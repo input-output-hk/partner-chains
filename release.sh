@@ -75,9 +75,16 @@ fi
 
 echo $next_version > VERSION
 
-# update changelog: we remove empty sections, add next version header and
-#   prepend new unreleased section
-gawk -i inplace -v RS="\0" -v ORS="" "{gsub(/# (Changed|Removed|Fixed|Added)[ \n]+#/,\"\");gsub(/# Unreleased/,\"# Unreleased\n\n## Changed\n\n## Removed\n\n## Fixed\n\n## Added\n\n# v$next_version\")}7" changelog.md
+mv "changelog/unreleased.md" "$next_version.md"
+cat > "changelog/unreleased.md" <<EOF
+# Changed
+
+# Removed
+
+# Fixed
+
+# Added
+EOF
 
 git checkout -b "release-v$next_version"
 git add .
