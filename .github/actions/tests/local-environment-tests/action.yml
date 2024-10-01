@@ -119,6 +119,7 @@ runs:
         env: ${{ env.TEST_ENVIRONMENT }}
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
+        markers: "not active_flow and not passive_flow and not probability and not rpc"
     - name: Wait for epoch 3
       if: ${{ inputs.tests == 'postmerge' }}
       uses: ./.github/actions/tests/wait-for-epoch
