@@ -14,6 +14,7 @@ A registered block producer is a Cardano stake pool operator (SPO) that desires 
 4. Obtain chain parameters from the chain builder
 5. Register for the partner chain
 6. Run the partner chain node
+7. Optionally: deregister from the partner chain
 
 ---
 **NOTE**
@@ -333,6 +334,17 @@ The start-node wizard is used to start a partner chain node. Make sure that `car
 The wizard sets the required environment variables and starts the node.
 
 Registration is effective after 1-2 Cardano epochs. After the waiting period, the partner chain node is registered on the partner chain and is a selection option for the consensus committee.
+
+### 7. Optionally: deregister from the partner chain
+
+To deregister from the block producers candidates, you need to run the deregister wizard.
+
+1. Start the wizard: `./partner-chains-cli deregister`.
+2. The wizard checks the `partner-chains-cli-chain-config.json` file.
+3. The wizard prompts for the payment verification key file used during registration.
+4. The wizard prompts for the cold verification key matching the cold signing key used during registration.
+5. The wizard prompts for ogmios and kupo addresses.
+6. The wizard executes the deregistration command. The change will be effective after two Cardano epochs boundaries.
 
 ---
 **NOTE**
