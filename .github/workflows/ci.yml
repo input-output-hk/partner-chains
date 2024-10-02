@@ -114,7 +114,7 @@ jobs:
 
   argocd-tests:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
-    needs: deploy-argocd
+    needs: [build, deploy-argocd]  # Add 'build' to the needs array
     runs-on: [self-hosted, eks]
     steps:
       - name: Checkout
@@ -128,12 +128,12 @@ jobs:
           node-host: sha-${{ needs.build.outputs.sha }}-service.integration-testing.svc.cluster.local
           node-port: 9933
           ssh_key_binary_host: ${{ secrets.SSH_KEY_BINARY_HOST }}
-        env:
-          AWS_ROLE_ARN_: ${{ secrets.AWS_ROLE_ARN_ }}
-          SSH_KEY_BINARY_HOST: ${{ secrets.SSH_KEY_BINARY_HOST }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          JIRA_URL: ${{ secrets.JIRA_URL }}
-          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+      env:
+        AWS_ROLE_ARN_: ${{ secrets.AWS_ROLE_ARN_ }}
+        SSH_KEY_BINARY_HOST: ${{ secrets.SSH_KEY_BINARY_HOST }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        JIRA_URL: ${{ secrets.JIRA_URL }}
+        ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
 
   teardown-argocd:
     if: always()
