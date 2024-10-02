@@ -54,7 +54,7 @@ jobs:
           EARTHLY_OUTPUT: true
           EARTHLY_PUSH: true
         run: |
-          earthly -P +ci --image=${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ steps.get_sha.outputs.sha }}
+          earthly -P +ci --image=${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node
       - name: Upload partner-chains-cli artifact
         uses: actions/upload-artifact@v4
         with:
