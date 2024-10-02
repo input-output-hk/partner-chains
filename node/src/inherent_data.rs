@@ -21,9 +21,6 @@ use sp_consensus_aura::{
 };
 use sp_core::Pair;
 use sp_inherents::CreateInherentDataProviders;
-use sp_native_token_management::{
-	NativeTokenManagementApi, NativeTokenManagementInherentDataProvider as NativeTokenIDP,
-};
 use sp_partner_chains_consensus_aura::CurrentSlotProvider;
 use sp_runtime::traits::{Block as BlockT, Header, Zero};
 use sp_session_validator_management::SessionValidatorManagementApi;
@@ -50,7 +47,6 @@ where
 		AuthoritySelectionInputs,
 		ScEpochNumber,
 	>,
-	T::Api: NativeTokenManagementApi<Block>,
 {
 	type InherentDataProviders = (
 		AuraIDP,
@@ -58,7 +54,6 @@ where
 		McHashIDP,
 		AriadneIDP,
 		BlockBeneficiaryInherentProvider<BeneficiaryId>,
-		NativeTokenIDP,
 	);
 
 	async fn create_inherent_data_providers(
@@ -93,22 +88,7 @@ where
 				"SIDECHAIN_BLOCK_BENEFICIARY",
 			)?;
 
-		let native_token = NativeTokenIDP::new(
-			client.clone(),
-			data_sources.native_token.as_ref(),
-			mc_hash.mc_hash(),
-			parent_hash.clone(),
-		)
-		.await?;
-
-		Ok((
-			slot,
-			timestamp,
-			mc_hash,
-			ariadne_data_provider,
-			block_beneficiary_provider,
-			native_token,
-		))
+		Ok((slot, timestamp, mc_hash, ariadne_data_provider, block_beneficiary_provider))
 	}
 }
 
@@ -136,9 +116,8 @@ where
 		AuthoritySelectionInputs,
 		ScEpochNumber,
 	>,
-	T::Api: NativeTokenManagementApi<Block>,
 {
-	type InherentDataProviders = (TimestampIDP, AriadneIDP, NativeTokenIDP);
+	type InherentDataProviders = (TimestampIDP, AriadneIDP);
 
 	async fn create_inherent_data_providers(
 		&self,
@@ -172,15 +151,7 @@ where
 		)
 		.await?;
 
-		let native_token = NativeTokenIDP::new(
-			client.clone(),
-			data_sources.native_token.as_ref(),
-			mc_hash,
-			parent_hash.clone(),
-		)
-		.await?;
-
-		Ok((timestamp, ariadne_data_provider, native_token))
+		Ok((timestamp, ariadne_data_provider))
 	}
 }
 

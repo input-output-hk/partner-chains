@@ -3,9 +3,7 @@ use crate::tests::mock::{test_client, test_create_inherent_data_config};
 use crate::tests::runtime_api_mock::{mock_header, TestApi};
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use main_chain_follower_api::{block::MainchainBlock, mock_services::*};
-use sidechain_domain::{
-	McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, NativeTokenAmount, ScEpochNumber,
-};
+use sidechain_domain::{McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, ScEpochNumber};
 use sp_consensus_aura::Slot;
 use sp_core::H256;
 use sp_inherents::CreateInherentDataProviders;
@@ -31,15 +29,13 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 	.await
 	.unwrap();
 
-	let (slot, timestamp, mc_hash, ariadne_data, block_beneficiary, native_token) =
-		inherent_data_providers;
+	let (slot, timestamp, mc_hash, ariadne_data, block_beneficiary) = inherent_data_providers;
 	let mut inherent_data = InherentData::new();
 	slot.provide_inherent_data(&mut inherent_data).await.unwrap();
 	timestamp.provide_inherent_data(&mut inherent_data).await.unwrap();
 	mc_hash.provide_inherent_data(&mut inherent_data).await.unwrap();
 	ariadne_data.provide_inherent_data(&mut inherent_data).await.unwrap();
 	block_beneficiary.provide_inherent_data(&mut inherent_data).await.unwrap();
-	native_token.provide_inherent_data(&mut inherent_data).await.unwrap();
 	assert_eq!(
 		inherent_data
 			.get_data::<Slot>(&sp_consensus_aura::inherents::INHERENT_IDENTIFIER)
@@ -65,10 +61,6 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 		.get_data::<AuthoritySelectionInputs>(&sp_session_validator_management::INHERENT_IDENTIFIER)
 		.unwrap()
 		.is_some());
-	assert!(inherent_data
-		.get_data::<NativeTokenAmount>(&sp_native_token_management::INHERENT_IDENTIFIER)
-		.unwrap()
-		.is_some())
 }
 
 #[tokio::test]
@@ -94,11 +86,10 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		.create_inherent_data_providers(mock_header().hash(), (30.into(), mc_block_hash))
 		.await
 		.unwrap();
-	let (timestamp, ariadne_data_provider, native_token_provider) = inherent_data_providers;
+	let (timestamp, ariadne_data_provider) = inherent_data_providers;
 	let mut inherent_data = InherentData::new();
 	timestamp.provide_inherent_data(&mut inherent_data).await.unwrap();
 	ariadne_data_provider.provide_inherent_data(&mut inherent_data).await.unwrap();
-	native_token_provider.provide_inherent_data(&mut inherent_data).await.unwrap();
 
 	assert_eq!(
 		inherent_data.get_data::<Timestamp>(&sp_timestamp::INHERENT_IDENTIFIER).unwrap(),
@@ -108,8 +99,4 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		.get_data::<AuthoritySelectionInputs>(&sp_session_validator_management::INHERENT_IDENTIFIER)
 		.unwrap()
 		.is_some());
-	assert!(inherent_data
-		.get_data::<NativeTokenAmount>(&sp_native_token_management::INHERENT_IDENTIFIER)
-		.unwrap()
-		.is_some())
 }

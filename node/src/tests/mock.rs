@@ -15,7 +15,7 @@ use std::sync::Arc;
 
 impl From<TestDataSources> for DataSources {
 	fn from(value: TestDataSources) -> Self {
-		Self { block: value.block, candidate: value.candidate, native_token: value.native_token }
+		Self { block: value.block, candidate: value.candidate }
 	}
 }
 

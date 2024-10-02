@@ -37,8 +37,6 @@ members = [
     "primitives/session-manager",
     "primitives/sidechain",
 	"partner-chains-cli",
-    "pallets/native-token-management",
-    "primitives/native-token-management"
 ]
 resolver = "2"
 
@@ -205,8 +203,6 @@ authority-selection-inherents = { path = "primitives/authority-selection-inheren
 session-manager = { path = "primitives/session-manager", default-features = false }
 sp-sidechain = { path = "primitives/sidechain", default-features = false }
 chain-params = { path = "primitives/chain-params", default-features = false }
-pallet-native-token-management = { path = "pallets/native-token-management", default-features = false }
-sp-native-token-management = { path = "primitives/native-token-management", default-features = false }
 sc-partner-chains-consensus-aura = { path = "client/consensus/aura", default-features = false }
 sp-partner-chains-consensus-aura = { path = "primitives/consensus/aura", default-features = false }
 pallet-partner-chains-session = { path = "pallets/partner-chains-session", default-features = false }

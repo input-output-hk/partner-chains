@@ -4,9 +4,8 @@ use chain_params::SidechainParams;
 use sc_service::ChainType;
 use sidechain_domain::*;
 use sidechain_runtime::{
-	AccountId, AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig,
-	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
-	SudoConfig, SystemConfig,
+	AccountId, AuraConfig, BalancesConfig, GrandpaConfig, RuntimeGenesisConfig,
+	SessionCommitteeManagementConfig, SessionConfig, SidechainConfig, SudoConfig, SystemConfig,
 };
 use sp_core::bytes::from_hex;
 use sp_core::{ed25519, sr25519};
@@ -159,10 +158,6 @@ pub fn staging_genesis(
 				.map(|keys| (keys.cross_chain, keys.session))
 				.collect(),
 			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()?,
-		},
-		native_token_management: NativeTokenManagementConfig {
-			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()?,
-			..Default::default()
 		},
 	};
 

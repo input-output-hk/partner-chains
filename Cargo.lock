@@ -5729,20 +5729,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-native-token-management"
-version = "1.2.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sidechain-domain",
- "sp-io",
- "sp-native-token-management",
-]
-
-[[package]]
 name = "pallet-partner-chains-session"
 version = "1.2.0"
 dependencies = [
@@ -6185,7 +6171,6 @@ dependencies = [
  "sp-inherents",
  "sp-io",
  "sp-keyring",
- "sp-native-token-management",
  "sp-partner-chains-consensus-aura",
  "sp-runtime",
  "sp-session-validator-management",
@@ -9232,7 +9217,6 @@ dependencies = [
  "pallet-balances",
  "pallet-block-rewards",
  "pallet-grandpa",
- "pallet-native-token-management",
  "pallet-partner-chains-session",
  "pallet-session",
  "pallet-session-runtime-stub",
@@ -9262,7 +9246,6 @@ dependencies = [
  "sp-inherents",
  "sp-io",
  "sp-keyring",
- "sp-native-token-management",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -9827,26 +9810,6 @@ dependencies = [
  "scale-info",
  "sp-api",
  "sp-application-crypto",
-]
-
-[[package]]
-name = "sp-native-token-management"
-version = "1.2.0"
-dependencies = [
- "async-trait",
- "envy",
- "main-chain-follower-api",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sidechain-domain",
- "sidechain-mc-hash",
- "sp-api",
- "sp-blockchain",
- "sp-inherents",
- "sp-runtime",
- "thiserror",
- "tokio",
 ]
 
 [[package]]

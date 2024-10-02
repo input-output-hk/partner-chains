@@ -70,8 +70,6 @@ sidechain-domain = { workspace = true, features = ["serde"] }
 chain-params = { workspace = true, features = ["serde"] }
 sidechain-slots = { workspace = true }
 session-manager = { workspace = true }
-pallet-native-token-management = { workspace = true }
-sp-native-token-management = { workspace = true, features = ["serde"] }
 pallet-session-runtime-stub = { workspace = true, default-features = false }
 
 [dev-dependencies]
@@ -142,8 +140,6 @@ std = [
 	"sidechain-domain/std",
 	"sp-inherents/std",
 	"chain-params/std",
-	"pallet-native-token-management/std",
-	"sp-native-token-management/std",
 	"pallet-session-runtime-stub/std",
 ]
 

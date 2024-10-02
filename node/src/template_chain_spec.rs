@@ -2,7 +2,7 @@ use crate::chain_spec::*;
 use chain_params::SidechainParams;
 use sc_service::ChainType;
 use sidechain_runtime::{
-	AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig, RuntimeGenesisConfig,
+	AuraConfig, BalancesConfig, GrandpaConfig, RuntimeGenesisConfig,
 	SessionCommitteeManagementConfig, SessionConfig, SidechainConfig, SudoConfig, SystemConfig,
 };
 
@@ -37,10 +37,6 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 			// Same as SessionConfig
 			initial_authorities: vec![],
 			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()?,
-		},
-		native_token_management: NativeTokenManagementConfig {
-			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()?,
-			..Default::default()
 		},
 	};
 	let genesis_json = serde_json::to_value(runtime_genesis_config)
