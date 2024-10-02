@@ -49,12 +49,6 @@ spec:
             - name: MC__FIRST_SLOT_NUMBER
               value: "0"
             # The below values can be obtained with: scripts/echo_kubernetes_yamls.sh
-            - name: CHAIN_ID
-              value: "0"
-            - name: THRESHOLD_NUMERATOR
-              value: "2"
-            - name: THRESHOLD_DENOMINATOR
-              value: "3"
             - name: GENESIS_COMMITTEE_UTXO
               value: "67fa24dcda2ef78acf69dee758292d659493b85bf540a95b371cff4b10150359#1"
             - name: GOVERNANCE_AUTHORITY

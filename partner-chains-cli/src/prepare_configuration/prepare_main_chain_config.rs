@@ -443,10 +443,7 @@ mod tests {
 
 	fn test_sidechain_params() -> SidechainParams {
 		SidechainParams {
-			chain_id: 0,
 			genesis_committee_utxo: UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
-			threshold_numerator: 2,
-			threshold_denominator: 3,
 			governance_authority: MainchainAddressHash::from_hex_unsafe(
 				"0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9",
 			),

@@ -23,11 +23,6 @@ impl CmdRun for Register1Cmd {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		context.print("⚙️ Registering as a committee candidate (step 1/3)");
 
-		let chain_id = load_chain_config_field(context, &config_fields::CHAIN_ID)?;
-		let threshold_numerator =
-			load_chain_config_field(context, &config_fields::THRESHOLD_NUMERATOR)?;
-		let threshold_denominator =
-			load_chain_config_field(context, &config_fields::THRESHOLD_DENOMINATOR)?;
 		let governance_authority =
 			load_chain_config_field(context, &config_fields::GOVERNANCE_AUTHORITY)?;
 		let genesis_committee_utxo =
@@ -106,13 +101,8 @@ impl CmdRun for Register1Cmd {
 		context.print("Please do not spend this UTXO, it needs to be consumed by the registration transaction.");
 		context.print("");
 
-		let sidechain_params = chain_params::SidechainParams {
-			chain_id,
-			threshold_numerator,
-			threshold_denominator,
-			genesis_committee_utxo,
-			governance_authority,
-		};
+		let sidechain_params =
+			chain_params::SidechainParams { genesis_committee_utxo, governance_authority };
 
 		let sidechain_pub_key_typed: SidechainPublicKey =
 			SidechainPublicKey(from_hex(&sidechain_pub_key).map_err(|e| {
@@ -143,7 +133,7 @@ impl CmdRun for Register1Cmd {
 
 		context.print("Run the following command to generate signatures on the next step. It has to be executed on the machine with your SPO cold signing key.");
 		context.print("");
-		context.print(&format!("./partner-chains-cli register2 \\\n --chain-id {chain_id} \\\n --threshold-numerator {threshold_numerator} \\\n --threshold-denominator {threshold_denominator} \\\n --governance-authority {governance_authority} \\\n --genesis-committee-utxo {genesis_committee_utxo} \\\n --registration-utxo {input_utxo} \\\n --aura-pub-key {aura_pub_key} \\\n --grandpa-pub-key {grandpa_pub_key} \\\n --sidechain-pub-key {sidechain_pub_key} \\\n --sidechain-signature {sidechain_signature}"));
+		context.print(&format!("./partner-chains-cli register2 \\\n --governance-authority {governance_authority} \\\n --genesis-committee-utxo {genesis_committee_utxo} \\\n --registration-utxo {input_utxo} \\\n --aura-pub-key {aura_pub_key} \\\n --grandpa-pub-key {grandpa_pub_key} \\\n --sidechain-pub-key {sidechain_pub_key} \\\n --sidechain-signature {sidechain_signature}"));
 
 		Ok(())
 	}
@@ -410,9 +400,6 @@ MockIO::run_command("cardano-cli address build --payment-verification-key-file p
 	fn cardano_cli_called_with_mainnet_flag() {
 		let chain_config_content_mainnet: serde_json::Value = serde_json::json!({
 			"chain_parameters": {
-				"chain_id": 0,
-				"threshold_numerator": 2,
-				"threshold_denominator": 3,
 				"genesis_committee_utxo": "0000000000000000000000000000000000000000000000000000000000000001#0",
 				"governance_authority": "0x00112233445566778899001122334455667788990011223344556677"
 			},
@@ -450,9 +437,6 @@ MockIO::run_command("cardano-cli address build --payment-verification-key-file p
 	fn fail_if_cardano_network_is_not_specified() {
 		let chain_config_without_cardano_network: serde_json::Value = serde_json::json!({
 			"chain_parameters": {
-				"chain_id": 0,
-				"threshold_numerator": 2,
-				"threshold_denominator": 3,
 				"genesis_committee_utxo": "0000000000000000000000000000000000000000000000000000000000000001#0",
 				"governance_authority": "0x00112233445566778899001122334455667788990011223344556677"
 			},
@@ -665,9 +649,6 @@ MockIO::run_command("cardano-cli address build --payment-verification-key-file p
 	fn chain_config_content() -> serde_json::Value {
 		serde_json::json!({
 			"chain_parameters": {
-				"chain_id": 0,
-				"threshold_numerator": 2,
-				"threshold_denominator": 3,
 				"genesis_committee_utxo": "0000000000000000000000000000000000000000000000000000000000000001#0",
 				"governance_authority": "0x00112233445566778899001122334455667788990011223344556677",
 			},
@@ -702,9 +683,6 @@ MockIO::run_command("cardano-cli address build --payment-verification-key-file p
 	}
 	fn read_chain_config_io() -> Vec<MockIO> {
 		vec![
-			MockIO::file_read(CHAIN_CONFIG_PATH), // chain id
-			MockIO::file_read(CHAIN_CONFIG_PATH), // threshold numerator
-			MockIO::file_read(CHAIN_CONFIG_PATH), // threshold threshold_denominator
 			MockIO::file_read(CHAIN_CONFIG_PATH), // governance authority
 			MockIO::file_read(CHAIN_CONFIG_PATH), // genesis committee utxo
 			MockIO::file_read(CHAIN_CONFIG_PATH), // cardano network
@@ -834,7 +812,7 @@ MockIO::print("⚙️ Address: addr_test1vpl6fzacldwksp866f3rwuuvujgdsj0y2eckrcu
 		vec![
 		MockIO::print("Run the following command to generate signatures on the next step. It has to be executed on the machine with your SPO cold signing key."),
 		MockIO::print(""),
-		MockIO::print("./partner-chains-cli register2 \\\n --chain-id 0 \\\n --threshold-numerator 2 \\\n --threshold-denominator 3 \\\n --governance-authority 0x00112233445566778899001122334455667788990011223344556677 \\\n --genesis-committee-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n --registration-utxo 4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 \\\n --aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n --grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n --sidechain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n --sidechain-signature fd19b89e8549c9299a5711b1146b4c2db53648d886c111280e3c02e01df143c7169a858c7ecbcd961a3407a2f8bd5c308901784d9b1c18528f00bd74fc54aa1c")
+		MockIO::print("./partner-chains-cli register2 \\\n --governance-authority 0x00112233445566778899001122334455667788990011223344556677 \\\n --genesis-committee-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n --registration-utxo 4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 \\\n --aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n --grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n --sidechain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n --sidechain-signature fd19b89e8549c9299a5711b1146b4c2db53648d886c111280e3c02e01df143c7169a858c7ecbcd961a3407a2f8bd5c308901784d9b1c18528f00bd74fc54aa1c")
 		]
 	}
 
