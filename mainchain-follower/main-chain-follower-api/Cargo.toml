@@ -34,9 +34,7 @@ std = [
 serde = []
 block-source = ["std"]
 candidate-source = ["std"]
-native-token= ["std"]
 all-sources = [
     "block-source",
     "candidate-source",
-    "native-token"
 ]

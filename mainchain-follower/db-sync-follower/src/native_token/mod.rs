@@ -2,8 +2,9 @@ use crate::db_model::{Address, NativeTokenAmount, SlotNumber};
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
 use async_trait::async_trait;
-use main_chain_follower_api::{DataSourceError, NativeTokenManagementDataSource, Result};
+use main_chain_follower_api::DataSourceError;
 use sidechain_domain::*;
+use sp_native_token_management::NativeTokenManagementDataSource;
 use sqlx::PgPool;
 
 #[cfg(test)]
@@ -16,6 +17,8 @@ pub struct NativeTokenManagementDataSourceImpl {
 
 observed_async_trait!(
 impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
+	type Error = DataSourceError;
+
 	async fn get_total_native_token_transfer(
 		&self,
 		after_block: Option<McBlockHash>,
@@ -23,7 +26,7 @@ impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
 		native_token_policy_id: PolicyId,
 		native_token_asset_name: AssetName,
 		illiquid_supply_address: MainchainAddress,
-	) -> Result<sidechain_domain::NativeTokenAmount> {
+	) -> Result<sidechain_domain::NativeTokenAmount, DataSourceError> {
 		if after_block == Some(to_block.clone()) {
 			return Ok(NativeTokenAmount(0).into());
 		}
@@ -50,7 +53,10 @@ impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
 }
 );
 
-async fn get_after_slot(after_block: Option<McBlockHash>, pool: &PgPool) -> Result<SlotNumber> {
+async fn get_after_slot(
+	after_block: Option<McBlockHash>,
+	pool: &PgPool,
+) -> Result<SlotNumber, DataSourceError> {
 	match after_block {
 		None => Ok(SlotNumber(0)),
 		Some(after_block) => Ok(crate::db_model::get_block_by_hash(pool, after_block.clone())
@@ -62,7 +68,7 @@ async fn get_after_slot(after_block: Option<McBlockHash>, pool: &PgPool) -> Resu
 	}
 }
 
-async fn get_to_slot(to_block: McBlockHash, pool: &PgPool) -> Result<SlotNumber> {
+async fn get_to_slot(to_block: McBlockHash, pool: &PgPool) -> Result<SlotNumber, DataSourceError> {
 	Ok(crate::db_model::get_block_by_hash(pool, to_block.clone())
 		.await?
 		.ok_or(DataSourceError::ExpectedDataNotFound(format!(
