@@ -187,6 +187,7 @@
 <a href="#185" id="185">185</a>
 <a href="#186" id="186">186</a>
 <a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Provides caches for call which results are immutable,
 //! like epoch candidates queries made by inherent data producers.
 //! Also provides a way of batching and caching incoming transactions,
@@ -296,6 +297,7 @@
 			highest_seen_stable_epoch: Arc::new(Mutex::new(<span class="prelude-val">None</span>)),
 		}
 	}
+
 	<span class="kw">pub fn </span>new_from_env(
 		inner: CandidatesDataSourceImpl,
 		candidates_for_epoch_cache_size: usize,

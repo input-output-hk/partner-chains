@@ -74,23 +74,9 @@
 <a href="#72" id="72">72</a>
 <a href="#73" id="73">73</a>
 <a href="#74" id="74">74</a>
-<a href="#75" id="75">75</a>
-<a href="#76" id="76">76</a>
-<a href="#77" id="77">77</a>
-<a href="#78" id="78">78</a>
-<a href="#79" id="79">79</a>
-<a href="#80" id="80">80</a>
-<a href="#81" id="81">81</a>
-<a href="#82" id="82">82</a>
-<a href="#83" id="83">83</a>
-<a href="#84" id="84">84</a>
-<a href="#85" id="85">85</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>db_sync_follower::native_token::NativeTokenManagementDataSourceImpl;
-<span class="kw">use </span>db_sync_follower::{
-	block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig},
-	candidates::{cached::CandidateDataSourceCached, CandidatesDataSourceImpl},
-	metrics::McFollowerMetrics,
-};
+</pre></div><pre class="rust"><code><span class="kw">use </span>db_sync_follower::candidates::CandidatesDataSourceImpl;
+<span class="kw">use </span>db_sync_follower::native_token::NativeTokenManagementDataSourceImpl;
+<span class="kw">use </span>db_sync_follower::{block::BlockDataSourceImpl, metrics::McFollowerMetrics};
 <span class="kw">use </span>main_chain_follower_api::{
 	BlockDataSource, CandidateDataSource, NativeTokenManagementDataSource,
 };
@@ -137,14 +123,9 @@
 
 <span class="kw">pub fn </span>create_mock_data_sources(
 ) -&gt; std::result::Result&lt;DataSources, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
-	<span class="kw">let </span>mc_epoch_duration_millis: u32 = std::env::var(<span class="string">"MC__EPOCH_DURATION_MILLIS"</span>)
-		.ok()
-		.and_then(|v| v.parse::&lt;u32&gt;().ok())
-		.unwrap();
-	<span class="kw">let </span>block_data_source_mock = BlockDataSourceMock::new(mc_epoch_duration_millis);
 	<span class="prelude-val">Ok</span>(DataSources {
-		block: Arc::new(block_data_source_mock),
-		candidate: Arc::new(MockCandidateDataSource::from_env()<span class="question-mark">?</span>),
+		block: Arc::new(BlockDataSourceMock::new_from_env()<span class="question-mark">?</span>),
+		candidate: Arc::new(MockCandidateDataSource::new_from_env()<span class="question-mark">?</span>),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
 	})
 }
@@ -155,19 +136,16 @@
 	metrics_opt: <span class="prelude-ty">Option</span>&lt;McFollowerMetrics&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;DataSources, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
 	<span class="kw">let </span>pool = db_sync_follower::data_sources::get_connection_from_env().<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="kw">let </span>mc_epoch_config = <span class="kw-2">&amp;</span>db_sync_follower::data_sources::read_mc_epoch_config()<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(DataSources {
-		block: Arc::new(BlockDataSourceImpl::from_config(
-			pool.clone(),
-			DbSyncBlockDataSourceConfig::from_env()<span class="question-mark">?</span>,
-			mc_epoch_config,
-			metrics_opt.clone(),
-		)),
-		candidate: Arc::new(CandidateDataSourceCached::new_from_env(
-			CandidatesDataSourceImpl::from_config(pool.clone(), metrics_opt.clone()).<span class="kw">await</span><span class="question-mark">?</span>,
-			CANDIDATES_FOR_EPOCH_CACHE_SIZE,
-		)<span class="question-mark">?</span>),
-		native_token: Arc::new(NativeTokenManagementDataSourceImpl { pool, metrics_opt }),
+		block: Arc::new(
+			BlockDataSourceImpl::new_from_env(pool.clone(), metrics_opt.clone()).<span class="kw">await</span><span class="question-mark">?</span>,
+		),
+		candidate: Arc::new(
+			CandidatesDataSourceImpl::new(pool.clone(), metrics_opt.clone())
+				.<span class="kw">await</span><span class="question-mark">?
+				</span>.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE)<span class="question-mark">?</span>,
+		),
+		native_token: Arc::new(NativeTokenManagementDataSourceImpl::new(pool, metrics_opt)),
 	})
 }
 </code></pre></div></section></main></body></html>

@@ -363,7 +363,7 @@
 }
 
 <span class="kw">impl </span>BlockDataSourceImpl {
-	<span class="kw">pub async fn </span>from_env(
+	<span class="kw">pub async fn </span>new_from_env(
 		pool: PgPool,
 		metrics_opt: <span class="prelude-ty">Option</span>&lt;McFollowerMetrics&gt;,
 	) -&gt; std::result::Result&lt;<span class="self">Self</span>, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {

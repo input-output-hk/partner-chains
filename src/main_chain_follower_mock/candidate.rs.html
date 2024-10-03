@@ -429,7 +429,7 @@
 		<span class="self">self</span>.registrations_data.epoch_rotation[rotation_no].clone()
 	}
 
-	<span class="kw">pub fn </span>from_env() -&gt; std::result::Result&lt;<span class="self">Self</span>, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
+	<span class="kw">pub fn </span>new_from_env() -&gt; std::result::Result&lt;<span class="self">Self</span>, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
 		<span class="kw">let </span>registrations_data = MockRegistrationsConfig::read()<span class="question-mark">?</span>;
 		<span class="kw">let </span>mc_epoch_config = MainchainEpochConfig::read_from_env()<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(MockCandidateDataSource { registrations_data, mc_epoch_config })

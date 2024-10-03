@@ -205,7 +205,7 @@
 	}
 
 	<span class="kw">pub async fn </span>candidate() -&gt; <span class="prelude-ty">Result</span>&lt;CandidatesDataSourceImpl&gt; {
-		<span class="prelude-val">Ok</span>(CandidatesDataSourceImpl::from_config(pool().<span class="kw">await</span><span class="question-mark">?</span>, <span class="prelude-val">None</span>).<span class="kw">await</span><span class="question-mark">?</span>)
+		<span class="prelude-val">Ok</span>(CandidatesDataSourceImpl::new(pool().<span class="kw">await</span><span class="question-mark">?</span>, <span class="prelude-val">None</span>).<span class="kw">await</span><span class="question-mark">?</span>)
 	}
 }
 </code></pre></div></section></main></body></html>
