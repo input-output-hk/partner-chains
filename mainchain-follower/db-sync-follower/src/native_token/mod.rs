@@ -2,6 +2,7 @@ use crate::db_model::{Address, NativeTokenAmount, SlotNumber};
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
 use async_trait::async_trait;
+use derive_new::new;
 use main_chain_follower_api::{DataSourceError, NativeTokenManagementDataSource, Result};
 use sidechain_domain::*;
 use sqlx::PgPool;
@@ -9,6 +10,7 @@ use sqlx::PgPool;
 #[cfg(test)]
 mod tests;
 
+#[derive(new)]
 pub struct NativeTokenManagementDataSourceImpl {
 	pub pool: PgPool,
 	pub metrics_opt: Option<McFollowerMetrics>,

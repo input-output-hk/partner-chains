@@ -14,6 +14,7 @@ use plutus::Datum::*;
 use sidechain_domain::*;
 use sqlx::PgPool;
 use std::collections::HashMap;
+use std::error::Error;
 
 pub mod cached;
 
@@ -162,16 +163,19 @@ impl CandidateDataSource for CandidatesDataSourceImpl {
 });
 
 impl CandidatesDataSourceImpl {
-	pub(crate) fn new(pool: PgPool, metrics_opt: Option<McFollowerMetrics>) -> Self {
-		Self { pool, metrics_opt }
-	}
-
-	pub async fn from_config(
+	pub async fn new(
 		pool: PgPool,
 		metrics_opt: Option<McFollowerMetrics>,
 	) -> Result<CandidatesDataSourceImpl> {
 		db_model::create_idx_ma_tx_out_ident(&pool).await?;
-		Ok(CandidatesDataSourceImpl::new(pool, metrics_opt))
+		Ok(Self { pool, metrics_opt })
+	}
+
+	pub fn cached(
+		self,
+		candidates_for_epoch_cache_size: usize,
+	) -> std::result::Result<cached::CandidateDataSourceCached, Box<dyn Error + Send + Sync>> {
+		cached::CandidateDataSourceCached::new_from_env(self, candidates_for_epoch_cache_size)
 	}
 
 	/// Registrations state up to this block are considered as "active", after it - as "pending".

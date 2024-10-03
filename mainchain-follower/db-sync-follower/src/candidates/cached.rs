@@ -107,6 +107,7 @@ impl CandidateDataSourceCached {
 			highest_seen_stable_epoch: Arc::new(Mutex::new(None)),
 		}
 	}
+
 	pub fn new_from_env(
 		inner: CandidatesDataSourceImpl,
 		candidates_for_epoch_cache_size: usize,
