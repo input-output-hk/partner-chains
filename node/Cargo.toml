@@ -2,7 +2,7 @@
 name = "partner-chains-node"
 version = "1.2.0"
 description = "A reference implementation of a partner chain node"
-authors = [ "IOG "]
+authors = ["IOG"]
 homepage = "https://iohk.io/"
 edition = "2021"
 license = "Unlicense"
@@ -106,10 +106,7 @@ time-source = { workspace = true, features = ["mock"] }
 assert_cmd = { workspace = true }
 
 [features]
-default = [
-	"sidechain-domain/std",
-	"chain-params/std",
-]
+default = ["sidechain-domain/std", "chain-params/std"]
 # Dependencies that are only required if runtime benchmarking should be build.
 runtime-benchmarks = [
 	"sidechain-runtime/runtime-benchmarks",

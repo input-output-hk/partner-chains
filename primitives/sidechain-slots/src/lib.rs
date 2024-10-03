@@ -72,11 +72,9 @@ impl ScSlotConfig {
 		Slot::from_timestamp(timestamp.into(), self.slot_duration)
 	}
 	pub fn epoch_start_time(&self, epoch: ScEpochNumber) -> Option<Timestamp> {
-		let slot = self.first_slot_number(epoch);
-		self.slot_duration
-			.as_millis()
-			.checked_mul(*slot)
-			.map(Timestamp::from_unix_millis)
+		self.first_slot_number(epoch)
+			.timestamp(self.slot_duration)
+			.map(|s| Timestamp::from_unix_millis(s.as_millis()))
 	}
 }
 

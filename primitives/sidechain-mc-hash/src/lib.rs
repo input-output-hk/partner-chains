@@ -66,7 +66,7 @@ impl McHashInherentDataProvider {
 		slot_duration: SlotDuration,
 	) -> Result<Self, McHashInherentError> {
 		let slot_start_timestamp =
-			slot_starting_timestamp(slot, slot_duration).ok_or(McHashInherentError::SlotTooBig)?;
+			slot.timestamp(slot_duration).ok_or(McHashInherentError::SlotTooBig)?;
 		let mc_block = data_source
 			.get_latest_stable_block_for(McTimestamp(slot_start_timestamp.as_millis()))
 			.await?
@@ -136,7 +136,8 @@ async fn get_mc_state_reference(
 	slot_duration: SlotDuration,
 	data_source: &(dyn BlockDataSource + Send + Sync),
 ) -> Result<MainchainBlock, McHashInherentError> {
-	let timestamp = slot_starting_timestamp(verified_block_slot, slot_duration)
+	let timestamp = verified_block_slot
+		.timestamp(slot_duration)
 		.ok_or(McHashInherentError::SlotTooBig)?;
 	data_source
 		.get_stable_block_for(verified_block_mc_hash.clone(), McTimestamp(timestamp.as_millis()))
@@ -147,10 +148,6 @@ async fn get_mc_state_reference(
 			verified_block_slot,
 			timestamp,
 		))
-}
-
-fn slot_starting_timestamp(slot: Slot, slot_duration: SlotDuration) -> Option<Timestamp> {
-	slot_duration.as_millis().checked_mul(*slot).map(Timestamp::new)
 }
 
 #[async_trait::async_trait]
