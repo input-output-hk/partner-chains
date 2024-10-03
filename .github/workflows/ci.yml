@@ -1,10 +1,12 @@
-name: CI 
+name: CI
 
 on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
       - master
+  workflow_dispatch:
+
 env:
   AWS_REGION: "eu-central-1"
   SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -15,14 +17,18 @@ permissions:
 
 jobs:
   build:
-    if: github.event.action != 'closed' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: write
+    outputs:
+      sha: ${{ steps.get_sha.outputs.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Get current commit SHA
+        id: get_sha
+        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Setup Earthly
         uses: ./.github/earthly-setup
         with:
@@ -64,21 +70,21 @@ jobs:
             ./staging_preprod_chain_spec.json
 
   local-environment-tests:
-    if: github.event.pull_request.merged == false
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
     needs: build
-    permissions:
-      id-token: write
-      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Deploy and test against local environment
         uses: ./.github/actions/tests/local-environment-tests
         with:
           tag: CI 
-          image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ github.sha }}
-          sha: ${{ github.sha }}
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ needs.build.outputs.sha }}
+          sha: ${{ needs.build.outputs.sha }}
           tests: premerge
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
@@ -90,36 +96,36 @@ jobs:
           TEST_ENVIRONMENT: local
 
   deploy-argocd:
-    if: github.event.pull_request.merged == false
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
     needs: build
-    permissions:
-      id-token: write
-      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Deploy ArgoCD Node
         uses: ./.github/actions/deploy/argocd/deploy-argocd
         with:
-          sha: ${{ github.sha }}
+          sha: ${{ needs.build.outputs.sha }}
         env:
-          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }} 
-        
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+
   argocd-tests:
-    if: github.event.pull_request.merged == false
-    needs: deploy-argocd
-    permissions:
-      id-token: write
-      contents: write
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
+    needs: [build, deploy-argocd]
     runs-on: [self-hosted, eks]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Run Tests
         uses: ./.github/actions/tests/argocd-tests
         with:
-          node-host: sha-${{ github.sha }}-service.integration-testing.svc.cluster.local
+          node-host: sha-${{ needs.build.outputs.sha }}-service.integration-testing.svc.cluster.local
           node-port: 9933
           ssh_key_binary_host: ${{ secrets.SSH_KEY_BINARY_HOST }}
         env:
@@ -127,31 +133,28 @@ jobs:
           SSH_KEY_BINARY_HOST: ${{ secrets.SSH_KEY_BINARY_HOST }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           JIRA_URL: ${{ secrets.JIRA_URL }}
-          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }} 
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
 
   teardown-argocd:
     if: always()
     needs: argocd-tests
-    permissions:
-      id-token: write
-      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Teardown ArgoCD Environment
         uses: ./.github/actions/deploy/argocd/teardown-argocd
         with:
-          sha: ${{ github.sha }}
+          sha: ${{ needs.build.outputs.sha }}
         env:
           ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
 
   devshell-tests:
-    if: github.event.pull_request.merged == false
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
     needs: build
-    permissions:
-      id-token: write
-      contents: write
     strategy:
       matrix:
         os: [nixos, macos]
@@ -161,6 +164,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Acquire AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -179,7 +185,7 @@ jobs:
           && rm /tmp/outputs
 
   pre-merge-checks-complete:
-    if: github.event.pull_request.merged == false
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
     needs: [build, local-environment-tests, deploy-argocd, argocd-tests, teardown-argocd, devshell-tests]
     runs-on: ubuntu-latest
     steps:
@@ -187,34 +193,34 @@ jobs:
         run: echo "All pre-merge checks have passed. PR is ready to merge."
 
   upload-chain-specs:
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     needs: build
-    permissions:
-      id-token: write
-      contents: write
     runs-on: [self-hosted, eks]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Upload chain spec artifacts to Kubernetes
         uses: ./.github/actions/deploy/upload-chain-specs
         with:
-          sha: ${{ github.sha }}
+          sha: ${{ needs.build.outputs.sha }}
         env:
           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   deploy-rustdoc:
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     needs: build
-    permissions:
-      id-token: write
-      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Deploy Rust Docs
         uses: ./.github/actions/deploy/deploy-rustdoc
         with:
@@ -222,23 +228,24 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-          
+
   local-environment-tests-post-merge:
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     needs: build
-    permissions:
-      id-token: write
-      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Use the merge commit SHA for post-merge testing
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
       - name: Deploy and test against local environment
         uses: ./.github/actions/tests/local-environment-tests
         with:
           tag: CI 
-          image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ github.sha }}
-          sha: ${{ github.sha }}
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ needs.build.outputs.sha }}
+          sha: ${{ needs.build.outputs.sha }}
           tests: postmerge
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
@@ -248,9 +255,9 @@ jobs:
           ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
           ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
           TEST_ENVIRONMENT: local
-    
+
   post-merge-actions-complete:
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     needs: [deploy-rustdoc, upload-chain-specs, local-environment-tests-post-merge]
     runs-on: ubuntu-latest
     steps:
