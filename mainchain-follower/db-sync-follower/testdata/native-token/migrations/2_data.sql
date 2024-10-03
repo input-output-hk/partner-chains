@@ -11,6 +11,7 @@ declare
     block_hash_3 hash32type := decode('b000000000000000000000000000000000000000000000000000000000000003','hex');
     block_hash_4 hash32type := decode('b000000000000000000000000000000000000000000000000000000000000004','hex');
     block_hash_5 hash32type := decode('b000000000000000000000000000000000000000000000000000000000000005','hex');
+    block_hash_6 hash32type := decode('b000000000000000000000000000000000000000000000000000000000000006','hex');
 
     transfer_tx_id_1 integer := 1;
     transfer_tx_id_2 integer := 2;
@@ -40,7 +41,7 @@ values
 (2        , '\xbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad02', '\xbadbadbadbadbadbadbadbadbadbadbad002', 'asset1thisassetshouldbeignoredbythequeries02')
 ;
 
--- the integration test assume a securityParameter of 50, epoch duration of 1000 slots and a coeff of 1
+-- the integration test assume a securityParameter of 1
 
 INSERT INTO block
 (id, hash        , epoch_no, slot_no , epoch_slot_no, block_no, previous_id, slot_leader_id, size, "time"                     , tx_count, proto_major, proto_minor, vrf_key, op_cert, op_cert_counter)
@@ -50,7 +51,8 @@ VALUES
 (2 , block_hash_2, 190     , 190500, 500            , 2       , NULL       , 0             , 1024, '2022-04-21T16:46:10Z'     , 1       , 0          , 0          , ''     , NULL   , NULL           ),
 (3 , block_hash_3, 191     , 191500, 500            , 3       , NULL       , 0             , 1024, '2022-04-21T17:02:50Z'     , 1       , 0          , 0          , ''     , NULL   , NULL           ),
 (4 , block_hash_4, 192     , 192500, 500            , 4       , NULL       , 0             , 1024, '2022-04-21T17:19:30Z'     , 1       , 0          , 0          , ''     , NULL   , NULL           ),
-(5 , block_hash_5, 193     , 193500, 500            , 5       , NULL       , 0             , 1024, '2022-04-21T17:36:10Z'     , 1       , 0          , 0          , ''     , NULL   , NULL           )
+(5 , block_hash_5, 193     , 193500, 500            , 5       , NULL       , 0             , 1024, '2022-04-21T17:36:10Z'     , 1       , 0          , 0          , ''     , NULL   , NULL           ),
+(6 , block_hash_6, 194     , 194500, 500            , 6       , NULL       , 0             , 1024, '2022-04-21T17:52:50Z'     , 0       , 0          , 0          , ''     , NULL   , NULL           )
 ;
 -- sometimes the block number can be null so we add this block just to handle that case
 INSERT INTO block

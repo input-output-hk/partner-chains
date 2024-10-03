@@ -306,7 +306,13 @@ impl Default for TxPosition {
 	}
 }
 
-#[cfg(feature = "block-source")]
+#[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
+pub(crate) struct BlockTokenAmount {
+	pub block_hash: [u8; 32],
+	pub amount: NativeTokenAmount,
+}
+
+#[cfg(any(feature = "block-source", feature = "native-token"))]
 pub(crate) async fn get_latest_block_info(
 	pool: &Pool<Postgres>,
 ) -> Result<Option<Block>, SqlxError> {
@@ -564,18 +570,19 @@ pub(crate) async fn index_exists(pool: &Pool<Postgres>, index_name: &str) -> boo
 		.unwrap()
 }
 
+/// Sums all transfers between genesis and the first block that is produced with the feature on.
+/// Used by `get_native_token_transfers` (NativeTokenDataSourceImpl).
 #[cfg(feature = "native-token")]
 pub(crate) async fn get_total_native_tokens_transfered(
 	pool: &Pool<Postgres>,
-	after_slot: SlotNumber,
-	to_slot: SlotNumber,
+	to_block: BlockNumber,
 	asset: Asset,
 	illiquid_supply_address: Address,
-) -> Result<Option<NativeTokenAmount>, SqlxError> {
-	let query = sqlx::query_as::<_, (Option<NativeTokenAmount>,)>(
+) -> Result<NativeTokenAmount, SqlxError> {
+	let query = sqlx::query_as::<_, (NativeTokenAmount,)>(
 		"
 SELECT
-    SUM(ma_tx_out.quantity)
+    COALESCE(SUM(ma_tx_out.quantity), 0)
 FROM tx_out
 LEFT JOIN ma_tx_out    ON ma_tx_out.tx_out_id = tx_out.id
 LEFT JOIN multi_asset  ON multi_asset.id = ma_tx_out.ident
@@ -584,14 +591,49 @@ INNER JOIN block       ON tx.block_id = block.id
 WHERE address = $1
 AND multi_asset.policy = $2
 AND multi_asset.name = $3
-AND $4 < block.slot_no AND block.slot_no <= $5;
+AND block.block_no <= $4;
     ",
 	)
 	.bind(&illiquid_supply_address.0)
 	.bind(&asset.policy_id.0)
 	.bind(&asset.asset_name.0)
-	.bind(after_slot)
-	.bind(to_slot);
+	.bind(to_block);
 
 	Ok(query.fetch_one(pool).await?.0)
+}
+
+/// Returns the list of all blocks in given range,
+/// together with the sum of all token amounts transferred to illiquid supply address in this block.
+/// On devnet postgres it takes around 5ms to execute when querying 1000 blocks.
+/// Used by `get_native_token_transfers` (NativeTokenDataSourceImpl).
+#[cfg(feature = "native-token")]
+pub(crate) async fn get_native_token_transfers(
+	pool: &Pool<Postgres>,
+	from_block: BlockNumber,
+	to_block: BlockNumber,
+	asset: Asset,
+	illiquid_supply_address: Address,
+) -> Result<Vec<BlockTokenAmount>, SqlxError> {
+	let query = sqlx::query_as::<_, BlockTokenAmount>(
+		"
+SELECT
+    block.hash as block_hash, COALESCE(SUM(ma_tx_out.quantity), 0) as amount
+FROM block
+    LEFT JOIN tx ON block.id = tx.block_id
+    LEFT JOIN tx_out ON tx.id = tx_out.tx_id AND tx_out.address = $1
+    LEFT JOIN ma_tx_out    ON ma_tx_out.tx_out_id = tx_out.id
+    LEFT JOIN multi_asset  ON multi_asset.id = ma_tx_out.ident AND multi_asset.policy = $2 AND multi_asset.name = $3
+WHERE
+    $4 <= block.block_no AND block.block_no <= $5
+GROUP BY block.block_no, block.hash
+ORDER BY block.block_no ASC;
+    ",
+	)
+	.bind(&illiquid_supply_address.0)
+	.bind(&asset.policy_id.0)
+	.bind(&asset.asset_name.0)
+	.bind(from_block)
+	.bind(to_block);
+
+	Ok(query.fetch_all(pool).await?)
 }
