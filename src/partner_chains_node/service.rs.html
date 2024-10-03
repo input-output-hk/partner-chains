@@ -405,7 +405,6 @@
 <a href="#403" id="403">403</a>
 <a href="#404" id="404">404</a>
 <a href="#405" id="405">405</a>
-<a href="#406" id="406">406</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 </span><span class="kw">use </span><span class="kw">crate</span>::inherent_data::{CreateInherentDataConfig, ProposalCIDP, VerifierCIDP};
@@ -419,7 +418,7 @@
 <span class="kw">use </span>sc_consensus_grandpa::SharedVoterState;
 <span class="kw">pub use </span>sc_executor::WasmExecutor;
 <span class="kw">use </span>sc_partner_chains_consensus_aura::import_queue <span class="kw">as </span>partner_chains_aura_import_queue;
-<span class="kw">use </span>sc_service::{error::Error <span class="kw">as </span>ServiceError, Configuration, TaskManager, WarpSyncParams};
+<span class="kw">use </span>sc_service::{error::Error <span class="kw">as </span>ServiceError, Configuration, TaskManager, WarpSyncConfig};
 <span class="kw">use </span>sc_telemetry::{Telemetry, TelemetryWorker};
 <span class="kw">use </span>sc_transaction_pool_api::OffchainTransactionPoolFactory;
 <span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochConfig;
@@ -494,7 +493,7 @@
 		})
 		.transpose()<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>executor = sc_service::new_wasm_executor(config);
+	<span class="kw">let </span>executor = sc_service::new_wasm_executor(<span class="kw-2">&amp;</span>config.executor);
 
 	<span class="kw">let </span>(client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::&lt;Block, RuntimeApi, <span class="kw">_</span>&gt;(
@@ -589,11 +588,11 @@
 		other: (block_import, grandpa_link, <span class="kw-2">mut </span>telemetry, data_sources, <span class="kw">_</span>),
 	} = new_partial(<span class="kw-2">&amp;</span>config)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>metrics = Network::register_notification_metrics(
-		config.prometheus_config.as_ref().map(|cfg| <span class="kw-2">&amp;</span>cfg.registry),
+	<span class="kw">let </span>metrics = Network::register_notification_metrics(config.prometheus_registry());
+	<span class="kw">let </span><span class="kw-2">mut </span>net_config = sc_network::config::FullNetworkConfiguration::&lt;<span class="kw">_</span>, <span class="kw">_</span>, Network&gt;::new(
+		<span class="kw-2">&amp;</span>config.network,
+		config.prometheus_registry().map(|r| r.clone()),
 	);
-	<span class="kw">let </span><span class="kw-2">mut </span>net_config =
-		sc_network::config::FullNetworkConfiguration::&lt;<span class="kw">_</span>, <span class="kw">_</span>, Network&gt;::new(<span class="kw-2">&amp;</span>config.network);
 
 	<span class="kw">let </span>grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
 		<span class="kw-2">&amp;</span>client.block_hash(<span class="number">0</span>).ok().flatten().expect(<span class="string">"Genesis block exists; qed"</span>),
@@ -623,7 +622,7 @@
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue,
 			block_announce_validator_builder: <span class="prelude-val">None</span>,
-			warp_sync_params: <span class="prelude-val">Some</span>(WarpSyncParams::WithProvider(warp_sync)),
+			warp_sync_config: <span class="prelude-val">Some</span>(WarpSyncConfig::WithProvider(warp_sync)),
 			block_relay: <span class="prelude-val">None</span>,
 			metrics,
 		})<span class="question-mark">?</span>;
@@ -666,7 +665,7 @@
 		<span class="kw">let </span>justification_stream = grandpa_link.justification_stream();
 		<span class="kw">let </span>main_chain_follower_data_sources = data_sources.clone();
 
-		Box::new(<span class="kw">move </span>|deny_unsafe, subscription_executor| {
+		<span class="kw">move </span>|subscription_executor| {
 			<span class="kw">let </span>grandpa = GrandpaDeps {
 				shared_voter_state: shared_voter_state.clone(),
 				shared_authority_set: shared_authority_set.clone(),
@@ -681,12 +680,11 @@
 				client: client.clone(),
 				pool: pool.clone(),
 				grandpa,
-				deny_unsafe,
 				main_chain_follower_data_sources: main_chain_follower_data_sources.clone(),
 				time_source: Arc::new(SystemTimeSource),
 			};
 			<span class="kw">crate</span>::rpc::create_full(deps).map_err(Into::into)
-		})
+		}
 	};
 
 	<span class="kw">let </span>_rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
@@ -695,7 +693,7 @@
 		keystore: keystore_container.keystore(),
 		task_manager: <span class="kw-2">&amp;mut </span>task_manager,
 		transaction_pool: transaction_pool.clone(),
-		rpc_builder: rpc_extensions_builder,
+		rpc_builder: Box::new(rpc_extensions_builder),
 		backend,
 		system_rpc_tx,
 		tx_handler_controller,

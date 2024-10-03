@@ -127,8 +127,6 @@
 <a href="#125" id="125">125</a>
 <a href="#126" id="126">126</a>
 <a href="#127" id="127">127</a>
-<a href="#128" id="128">128</a>
-<a href="#129" id="129">129</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 #[cfg(feature = <span class="string">"std"</span>)]
@@ -203,11 +201,9 @@
 		Slot::from_timestamp(timestamp.into(), <span class="self">self</span>.slot_duration)
 	}
 	<span class="kw">pub fn </span>epoch_start_time(<span class="kw-2">&amp;</span><span class="self">self</span>, epoch: ScEpochNumber) -&gt; <span class="prelude-ty">Option</span>&lt;Timestamp&gt; {
-		<span class="kw">let </span>slot = <span class="self">self</span>.first_slot_number(epoch);
-		<span class="self">self</span>.slot_duration
-			.as_millis()
-			.checked_mul(<span class="kw-2">*</span>slot)
-			.map(Timestamp::from_unix_millis)
+		<span class="self">self</span>.first_slot_number(epoch)
+			.timestamp(<span class="self">self</span>.slot_duration)
+			.map(|s| Timestamp::from_unix_millis(s.as_millis()))
 	}
 }
 
