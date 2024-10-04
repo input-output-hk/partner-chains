@@ -277,7 +277,7 @@ jq '.genesis.runtimeGenesis.config.balances.balances = [
 ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
 echo "Configuring Epoch Length..."
-jq '.genesis.runtimeGenesis.config.sidechain.slotsPerEpoch = 5' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
+jq '.genesis.runtimeGenesis.config.sidechain.slotsPerEpoch = 3' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
 echo "Copying chain-spec.json file to /shared/chain-spec.json..."
 cp chain-spec.json /shared/chain-spec.json 
