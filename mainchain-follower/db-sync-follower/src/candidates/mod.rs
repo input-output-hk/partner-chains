@@ -134,19 +134,38 @@ impl CandidateDataSource for CandidatesDataSourceImpl {
 		Ok(AriadneParameters { d_parameter: d_param, permissioned_candidates: candidates })
 	}
 
+	// Get all registered candidate registrations for the given epoch.
+	// Note, this method requests only ADA candidates from Cardano.
+	// TODO ETH: From Minotaur perspective, there is a choice to make, whether CandidateDataSource
+	// is responsible to request only ADA candidates or ETH candidates as well.
 	async fn get_candidates(
 			&self,
 			epoch: McEpochNumber,
 			committee_candidate_address: MainchainAddress
 		)-> Result<Vec<CandidateRegistrations>> {
 		let epoch = EpochNumber::from(self.get_epoch_of_data_storage(epoch)?);
-		let candidates = self.get_registered_candidates(epoch, committee_candidate_address).await?;
+
+		// get registered candidates for ADA
+		let ada_candidates = self
+			.get_registered_candidates(epoch, committee_candidate_address)
+			.await?;
+
+		// TODO ETH: get registered candidates for ETH if CandidateDataSource is acting as unified facade
+
 		let stake_map = Self::make_stake_map(db_model::get_stake_distribution(&self.pool, epoch).await?);
-		Ok(Self::group_candidates_by_mc_pub_key(candidates).into_iter().map(|(mainchain_pub_key, candidate_registrations)| {
+		Ok(Self::group_candidates_by_mc_pub_key(ada_candidates).into_iter().map(|(mainchain_pub_key, candidate_registrations)| {
 			CandidateRegistrations {
 				mainchain_pub_key: mainchain_pub_key.clone(),
-				registrations: candidate_registrations.into_iter().map(Self::make_registration_data).collect(),
-				stake_delegation: Self::get_stake_delegation(&stake_map, &mainchain_pub_key),
+				eth_pub_key: None,  // TODO ETH: add ETH pub key
+				registrations: Registrations {
+						ada_registrations: candidate_registrations
+							.into_iter()
+							.map(Self::make_registration_data)
+							.collect(),
+						eth_registrations: vec![]  // TODO ETH: add ETH registrations
+					},
+				stake_delegation: Self::get_stake_delegation(&stake_map, &mainchain_pub_key)
+					.map(|stake| StakeDelegation { ada: stake, eth: EthStakeAmount::zero() }),
 			}
 		}).collect())
 	}
@@ -204,8 +223,8 @@ impl CandidatesDataSourceImpl {
 		candidates.into_iter().into_group_map_by(|c| c.mainchain_pub_key.clone())
 	}
 
-	fn make_registration_data(c: RegisteredCandidate) -> RegistrationData {
-		RegistrationData {
+	fn make_registration_data(c: RegisteredCandidate) -> CardanoRegistrationData {
+		CardanoRegistrationData {
 			consumed_input: c.consumed_input,
 			sidechain_signature: c.sidechain_signature,
 			mainchain_signature: c.mainchain_signature,
@@ -221,17 +240,17 @@ impl CandidatesDataSourceImpl {
 
 	fn make_stake_map(
 		stake_pool_entries: Vec<StakePoolEntry>,
-	) -> HashMap<MainchainAddressHash, StakeDelegation> {
+	) -> HashMap<MainchainAddressHash, StakeAmount> {
 		stake_pool_entries
 			.into_iter()
-			.map(|e| (MainchainAddressHash(e.pool_hash), StakeDelegation(e.stake.0)))
+			.map(|e| (MainchainAddressHash(e.pool_hash), StakeAmount(e.stake.0)))
 			.collect()
 	}
 
 	fn get_stake_delegation(
-		stake_map: &HashMap<MainchainAddressHash, StakeDelegation>,
+		stake_map: &HashMap<MainchainAddressHash, StakeAmount>,
 		mainchain_pub_key: &MainchainPublicKey,
-	) -> Option<StakeDelegation> {
+	) -> Option<StakeAmount> {
 		if stake_map.is_empty() {
 			None
 		} else {
@@ -239,7 +258,7 @@ impl CandidatesDataSourceImpl {
 				stake_map
 					.get(&MainchainAddressHash::from_vkey(mainchain_pub_key.0))
 					.cloned()
-					.unwrap_or(StakeDelegation(0)),
+					.unwrap_or(StakeAmount(0)),
 			)
 		}
 	}
@@ -317,14 +336,15 @@ impl CandidatesDataSourceImpl {
 				Some((IntegerDatum(p), IntegerDatum(t))) => {
 					p.to_u16().zip(t.to_u16()).map(|(p, t)| DParameter {
 						num_permissioned_candidates: p,
-						num_registered_candidates: t,
+						num_ada_candidates: t,
+						num_eth_candidates: 0,
 					})
 				},
 				_ => None,
 			},
 			_ => None,
 		}
-		.ok_or(DatumDecodeError { datum: datum.clone(), to: "DParameter".to_string() });
+			.ok_or(DatumDecodeError { datum: datum.clone(), to: "DParameter".to_string() });
 		if d_parameter.is_err() {
 			error!("Could not decode {:?} to DParameter. Expected [u16, u16].", datum.clone());
 		}

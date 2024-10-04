@@ -11,14 +11,34 @@ use {
 	main_chain_follower_api::DataSourceError, sidechain_domain::McEpochNumber,
 };
 
-/// The part of data for selection of authorities that comes from the main chain.
+/// The part of data for selection of authorities that comes from the main chains.
 /// It is unfiltered, so the selection algorithm should filter out invalid candidates.
+/// Note, this is part of the state storage (see pallet_session_validator_management).
 #[derive(Clone, Debug, Encode, Decode, TypeInfo, PartialEq, Eq)]
 pub struct AuthoritySelectionInputs {
 	pub d_parameter: DParameter,
+
+	/// List of permissioned candidates from the side chain, one for each sidechain_public_key.
 	pub permissioned_candidates: Vec<PermissionedCandidateData>,
+
+	// TODO ETH: The items in the Vec should be uniquely identified by sidechain_public_key
+	// (instead of  mainchain_public_key). This is necessary to allow one PC operator to register
+	// stake on different chains. The registration schema is symmetric with all chains and hence
+	// the same sidechain_public_key can be related to many public keys on different chains.
+	// Thus:
+	// - only one CandidateRegistrations per each candidate (i.e. per each sidechain_public_key operating PC node)
+	// - each registered_candidates[i]:
+	//   - should contain valid mainchain_pub_key (i.e. pk used to register on the main chain)
+    //   - in addition, may have optional eth_pub_key
+	//     if Some(eth_pub_key) is defined, then it should also have valid EthRegistrationData records
+
+	/// List of registered candidates from the main chain, one for each sidechain_public_key.
 	pub registered_candidates: Vec<CandidateRegistrations>,
+
+	/// The nonce for the epoch coming from the main chain.
 	pub epoch_nonce: EpochNonce,
+
+	// TODO ETH: add nonce from Ethereum chain
 }
 
 // #[derive(Debug, PartialEq, Eq, Clone, Decode, thiserror::Error, Serialize, Deserialize)]

@@ -25,16 +25,25 @@ pub struct RegisterValidatorSignedMessage<Params> {
 pub struct CandidateWithStake<TAccountId, TAccountKeys> {
 	pub candidate: Candidate<TAccountId, TAccountKeys>,
 	/// Amount of ADA staked/locked by the Authority Candidate
-	pub stake_delegation: StakeDelegation,
+	pub stake_delegation: NormalizedStake,
+}
+
+#[derive(Clone, Debug, Encode, Decode, PartialEq)]
+pub enum CandidateType {
+	Permissioned,
+	Ada,
+	Eth,
 }
 
 #[derive(Clone, Debug, Encode, Decode, PartialEq)]
 pub struct Candidate<TAccountId, TAccountKeys> {
+	pub candidate_type: CandidateType,
 	pub account_id: TAccountId,
 	pub account_keys: TAccountKeys,
 }
 
-/// Get the valid trustless candidates from the registrations from inherent data
+/// Get the valid trustless candidates from the registrations from inherent data.
+/// One candidate per (CandidateType, TAccountId) is selected based on the latest valid registration.
 pub fn filter_trustless_candidates_registrations<
 	TAccountId,
 	TAccountKeys,
@@ -68,45 +77,93 @@ where
 			let (account_id, aura_key, grandpa_key) =
 				validate_permissioned_candidate_data(candidate).ok()?;
 			let account_keys = (aura_key, grandpa_key).into();
-			Some(Candidate { account_id, account_keys })
+			Some(Candidate {
+				candidate_type: CandidateType::Permissioned,
+				account_id, account_keys
+			})
 		})
 		.collect()
 }
 
+/// Select the latest valid candidate from the registrations on each chain.
 fn select_latest_valid_candidate<TAccountId, TAccountKeys, Params: ToDatum + Clone>(
 	candidate_registrations: CandidateRegistrations,
 	sidechain_params: &Params,
-) -> Option<CandidateWithStake<TAccountId, TAccountKeys>>
+) -> Vec<CandidateWithStake<TAccountId, TAccountKeys>>
 where
 	TAccountId: From<ecdsa::Public>,
 	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
 {
-	let stake_delegation = validate_stake(candidate_registrations.stake_delegation).ok()?;
-	let mainchain_pub_key = candidate_registrations.mainchain_pub_key;
+	let Some(stake_delegation) = validate_stake(candidate_registrations.stake_delegation).ok() else {
+		return vec![];
+	};
+	let mainchain_pub_key = &candidate_registrations.mainchain_pub_key;
+	let eth_pub_key = &candidate_registrations.eth_pub_key;
 
-	let (candidate_data, _) = candidate_registrations
-		.registrations
-		.into_iter()
-		.filter_map(|registration_data| {
-			match validate_registration_data(
-				&mainchain_pub_key,
-				&registration_data,
-				sidechain_params,
-			) {
-				Ok(candidate) => Some((candidate, registration_data.utxo_info)),
-				Err(_) => None,
-			}
-		})
-		// Get the latest valid registration of the authority candidate
-		.max_by_key(|(_, utxo_info)| utxo_info.ordering_key())?;
+	let registrations = candidate_registrations.registrations();
 
-	Some(CandidateWithStake {
-		candidate: Candidate {
-			account_id: candidate_data.account_id.into(),
-			account_keys: candidate_data.account_keys.into(),
-		},
-		stake_delegation,
-	})
+	let mut res_candidates: Vec<CandidateWithStake<TAccountId, TAccountKeys>> = vec![];
+
+	if stake_delegation.ada.0 > 0 {
+		// when non-zero ADA is staked
+		let ada_candidate = registrations.ada_registrations.iter()
+			.filter_map(|registration_data| {
+				match validate_registration_data(
+					&mainchain_pub_key,
+					&eth_pub_key,
+					&RegistrationData::Ada(registration_data.clone()),
+					sidechain_params,
+				) {
+					Ok(candidate) => Some((candidate, registration_data.utxo_info)),
+					Err(_) => None,
+				}
+			})
+			// Get the latest valid registration of the authority candidate
+			.max_by_key(|(_, utxo_info)| utxo_info.ordering_key())
+			.map(|p|p.0);
+
+		if let Some(c) = ada_candidate {
+			res_candidates.push( CandidateWithStake {
+				candidate: Candidate {
+					candidate_type: c.candidate_type,
+					account_id: c.account_id.into(),
+					account_keys: c.account_keys.into(),
+				},
+				stake_delegation: stake_delegation.ada.0.into(),
+			});
+		}
+	}
+
+	if stake_delegation.eth.0 > 0 {
+		// when non-zero ETH is staked
+		let eth_candidate = registrations.eth_registrations.iter()
+			.filter_map(|registration_data| {
+				match validate_registration_data(
+					&mainchain_pub_key,
+					&eth_pub_key,
+					&RegistrationData::Eth(registration_data.clone()),
+					sidechain_params,
+				) {
+					Ok(candidate) => Some((candidate, registration_data.tx_info)),
+					Err(_) => None,
+				}
+			})
+			// Get the latest valid registration of the authority candidate
+			.max_by_key(|(_, tx_info)| tx_info.ordering_key())
+			.map(|p|p.0);
+		if let Some(c) = eth_candidate {
+			res_candidates.push(CandidateWithStake {
+				candidate: Candidate {
+					candidate_type: c.candidate_type,
+					account_id: c.account_id.into(),
+					account_keys: c.account_keys.into(),
+				},
+				stake_delegation: stake_delegation.eth.0.into(),
+			});
+		}
+	}
+	// at this point we have up to 1 candidate per chain type
+	res_candidates
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Encode, Decode, TypeInfo)]
@@ -114,7 +171,11 @@ where
 pub enum StakeError {
 	#[cfg_attr(feature = "std", error("Stake should be greater than 0"))]
 	InvalidStake,
-	#[cfg_attr(feature = "std", error("Stake delegation information cannot be computed yet. Registration will turn valid if stake delegation for the epoch will be greater than 0"))]
+	#[cfg_attr(
+        feature = "std",
+        error("Stake delegation information cannot be computed yet. Registration will turn valid if stake delegation for the epoch will be greater than 0"
+        )
+    )]
 	UnknownStake,
 }
 
@@ -176,42 +237,63 @@ pub fn validate_permissioned_candidate_data<AccountId: TryFrom<SidechainPublicKe
 /// Is the registration data provided by the authority candidate valid?
 pub fn validate_registration_data<Params: ToDatum + Clone>(
 	mainchain_pub_key: &MainchainPublicKey,
+	_eth_pub_key: &Option<EthPublicKey>,
 	registration_data: &RegistrationData,
 	sidechain_params: &Params,
 ) -> Result<Candidate<ecdsa::Public, (sr25519::Public, ed25519::Public)>, RegistrationDataError> {
 	let aura_pub_key = registration_data
-		.aura_pub_key
+		.aura_pub_key()
 		.try_into_sr25519()
 		.ok_or(RegistrationDataError::InvalidAuraKey)?;
 	let grandpa_pub_key = registration_data
-		.grandpa_pub_key
+		.grandpa_pub_key()
 		.try_into_ed25519()
 		.ok_or(RegistrationDataError::InvalidGrandpaKey)?;
 	let sidechain_pub_key = ecdsa::Public::from(
-		<[u8; 33]>::try_from(registration_data.sidechain_pub_key.0.clone())
+		<[u8; 33]>::try_from(registration_data.sidechain_pub_key().0.clone())
 			.map_err(|_| RegistrationDataError::InvalidSidechainPubKey)?,
 	);
 
-	let signed_message = RegisterValidatorSignedMessage {
-		sidechain_params: sidechain_params.clone(),
-		sidechain_pub_key: registration_data.sidechain_pub_key.0.clone(),
-		input_utxo: registration_data.consumed_input,
-	};
+	match registration_data {
+		RegistrationData::Ada(ada_registration) => {
+			let signed_message = RegisterValidatorSignedMessage {
+				sidechain_params: sidechain_params.clone(),
+				sidechain_pub_key: ada_registration.sidechain_pub_key.0.clone(),
+				input_utxo: ada_registration.consumed_input,
+			};
 
-	let signed_message_encoded = minicbor::to_vec(signed_message.to_datum())
-		.expect("`RegisterValidatorSignedMessage` should always be encodable");
+			let signed_message_encoded = minicbor::to_vec(signed_message.to_datum())
+				.expect("`RegisterValidatorSignedMessage` should always be encodable");
 
-	verify_mainchain_signature(mainchain_pub_key, registration_data, &signed_message_encoded)?;
-	verify_sidechain_signature(
-		sidechain_pub_key,
-		&registration_data.sidechain_signature,
-		&signed_message_encoded,
-	)?;
-	verify_tx_inputs(registration_data)?;
+			verify_mainchain_signature(
+				mainchain_pub_key,
+				&registration_data,
+				&signed_message_encoded,
+			)?;
+			verify_sidechain_signature(
+				sidechain_pub_key,
+				&ada_registration.sidechain_signature,
+				&signed_message_encoded,
+			)?;
+			verify_tx_inputs(ada_registration)?;
 
-	// TODO - Stake Validation: https://input-output.atlassian.net/browse/ETCM-4082
+			// TODO - Stake Validation: https://input-output.atlassian.net/browse/ETCM-4082
 
-	Ok(Candidate { account_id: sidechain_pub_key, account_keys: (aura_pub_key, grandpa_pub_key) })
+			Ok(Candidate {
+				candidate_type: CandidateType::Ada,
+				account_id: sidechain_pub_key,
+				account_keys: (aura_pub_key, grandpa_pub_key),
+			})
+		}
+
+		RegistrationData::Eth(_) =>
+		    // TODO ETH: validate ETH registration data:
+		    // - form signed message using registration TX nonce instead of input_utxo
+		    // - verify registration_data.mainchain_signature using using eth_pub_key
+		    // - verify registration_data.sidechain_signature using using sidechain_pub_key
+		    // - create Candidate with CandidateType::Eth
+			todo!("Ethereum registration data validation"),
+	}
 }
 
 pub fn validate_stake(stake: Option<StakeDelegation>) -> Result<StakeDelegation, StakeError> {
@@ -233,7 +315,7 @@ fn verify_mainchain_signature(
 	signed_message_encoded: &[u8],
 ) -> Result<(), RegistrationDataError> {
 	let mainchain_signature: [u8; 64] = registration_data
-		.mainchain_signature
+		.mainchain_signature()
 		.0
 		.clone()
 		.try_into()
@@ -273,7 +355,7 @@ fn verify_sidechain_signature(
 	}
 }
 
-fn verify_tx_inputs(registration_data: &RegistrationData) -> Result<(), RegistrationDataError> {
+fn verify_tx_inputs(registration_data: &CardanoRegistrationData) -> Result<(), RegistrationDataError> {
 	if registration_data.tx_inputs.contains(&registration_data.consumed_input) {
 		Ok(())
 	} else {
@@ -299,7 +381,7 @@ mod tests {
 	use sp_core::Pair;
 
 	/// Get Valid Parameters of the `is_registration_data_valid()` function
-	fn create_valid_parameters() -> (MainchainPublicKey, RegistrationData, SidechainParams) {
+	fn create_valid_parameters() -> (MainchainPublicKey, CardanoRegistrationData, SidechainParams) {
 		let input_utxo = UtxoId {
 			tx_hash: McTxHash(hex!(
 				"d260a76b267e27fdf79c217ec61b776d6436dc78eefeac8f3c615486a71f38eb"
@@ -307,7 +389,7 @@ mod tests {
 			index: UtxoIndex(1),
 		};
 
-		let registration_data = RegistrationData {
+		let registration_data = CardanoRegistrationData {
 			consumed_input: input_utxo,
 			sidechain_signature: SidechainSignature(
 				hex!("f31f26ea682a5721cd07cb337a3a7ca134d3909f6afcd09c74a67dda35f28aa20983e396cb444ba87d146ab3bf9ecf2c129572decfde7db9cfb2580e429d8744").to_vec()
@@ -377,7 +459,7 @@ mod tests {
 		fn create_parameters(
 			signing_sidechain_account: ecdsa::Pair,
 			sidechain_pub_key: Vec<u8>,
-		) -> (MainchainPublicKey, RegistrationData, SidechainParams) {
+		) -> (MainchainPublicKey, CardanoRegistrationData, SidechainParams) {
 			let mainchain_account = ed25519::Pair::from_seed_slice(&[7u8; 32]).unwrap();
 
 			let signed_message = RegisterValidatorSignedMessage {
@@ -404,7 +486,7 @@ mod tests {
 				signing_sidechain_account.sign(&signed_message_encoded[..]).0.as_slice()[..64]
 					.to_vec();
 
-			let registration_data = RegistrationData {
+			let registration_data = CardanoRegistrationData {
 				consumed_input: signed_message.input_utxo,
 				sidechain_signature: SidechainSignature(sidechain_signature),
 				mainchain_signature: MainchainSignature(mainchain_signature.0.to_vec()),
@@ -436,7 +518,8 @@ mod tests {
 				create_valid_parameters();
 			assert!(validate_registration_data(
 				&mainchain_pub_key,
-				&registration_data,
+				&None,
+				&registration_data.into(),
 				&sidechain_params,
 			)
 			.is_ok());
@@ -452,7 +535,8 @@ mod tests {
 			assert_eq!(
 				validate_registration_data(
 					&different_mainchain_pub_key,
-					&registration_data,
+					&None,
+					&registration_data.into(),
 					&sidechain_params,
 				),
 				Err(RegistrationDataError::InvalidMainchainSignature)
@@ -469,7 +553,8 @@ mod tests {
 			assert_eq!(
 				validate_registration_data(
 					&mainchain_pub_key,
-					&registration_data,
+					&None,
+					&registration_data.into(),
 					&sidechain_params,
 				),
 				Err(RegistrationDataError::InvalidSidechainSignature)
@@ -487,7 +572,8 @@ mod tests {
 			assert_eq!(
 				validate_registration_data(
 					&mainchain_pub_key,
-					&registration_data,
+					&None,
+					&registration_data.into(),
 					&sidechain_params,
 				),
 				Err(RegistrationDataError::InvalidGrandpaKey)
@@ -505,7 +591,8 @@ mod tests {
 			assert_eq!(
 				validate_registration_data(
 					&mainchain_pub_key,
-					&registration_data,
+					&None,
+					&registration_data.into(),
 					&sidechain_params,
 				),
 				Err(RegistrationDataError::InvalidAuraKey)
@@ -523,7 +610,8 @@ mod tests {
 			assert_ne!(different_sidechain_params, sidechain_params);
 			assert!(validate_registration_data(
 				&mainchain_pub_key,
-				&registration_data,
+				&None,
+				&registration_data.into(),
 				&different_sidechain_params,
 			)
 			.is_err());
@@ -537,7 +625,8 @@ mod tests {
 			assert_eq!(
 				validate_registration_data(
 					&mainchain_pub_key,
-					&registration_data,
+					&None,
+					&registration_data.into(),
 					&sidechain_params,
 				),
 				Err(RegistrationDataError::InvalidTxInput)
@@ -549,26 +638,27 @@ mod tests {
 	fn should_filter_out_candidates_with_invalid_stake() {
 		let (mc_pub_key, registration_data, sidechain_params) = create_valid_parameters();
 		let candidate_registrations = vec![
+			CandidateRegistrations::from_cardano(
+				mc_pub_key.clone(),
+				vec![registration_data.clone()],
+				0
+			),
+			CandidateRegistrations::from_cardano(
+				mc_pub_key.clone(),
+				vec![registration_data.clone()],
+				1,
+			),
 			CandidateRegistrations {
 				mainchain_pub_key: mc_pub_key.clone(),
-				registrations: vec![registration_data.clone()],
-				stake_delegation: Some(StakeDelegation(0)),
-			},
-			CandidateRegistrations {
-				mainchain_pub_key: mc_pub_key.clone(),
-				registrations: vec![registration_data.clone()],
-				stake_delegation: Some(StakeDelegation(1)),
-			},
-			CandidateRegistrations {
-				mainchain_pub_key: mc_pub_key.clone(),
-				registrations: vec![registration_data.clone()],
+				eth_pub_key: None,
+				registrations: Registrations::of_ada(vec![registration_data.clone()]),
 				stake_delegation: None,
 			},
-			CandidateRegistrations {
-				mainchain_pub_key: mc_pub_key,
-				registrations: vec![registration_data],
-				stake_delegation: Some(StakeDelegation(2)),
-			},
+			CandidateRegistrations::from_cardano(
+				mc_pub_key,
+				vec![registration_data],
+				2,
+			),
 		];
 
 		let valid_candidates = filter_trustless_candidates_registrations::<AccountId, AccountKeys, _>(
@@ -577,8 +667,8 @@ mod tests {
 		);
 
 		assert_eq!(valid_candidates.len(), 2);
-		assert_eq!(valid_candidates[0].stake_delegation, StakeDelegation(1));
-		assert_eq!(valid_candidates[1].stake_delegation, StakeDelegation(2));
+		assert_eq!(valid_candidates[0].stake_delegation, NormalizedStake(1));
+		assert_eq!(valid_candidates[1].stake_delegation, NormalizedStake(2));
 	}
 
 	#[test]

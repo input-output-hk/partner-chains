@@ -181,7 +181,7 @@ fn ariadne_all_permissioned_test() {
 	// Expected committee: [alice, bob]
 	let permissioned_validators = vec![ALICE, BOB];
 	let registered_validators = vec![CHARLIE, DAVE];
-	let d_parameter = DParameter { num_permissioned_candidates: 8, num_registered_candidates: 0 };
+	let d_parameter = DParameter { num_permissioned_candidates: 8, num_ada_candidates: 0, num_eth_candidates: 0 };
 	let authority_selection_inputs = create_authority_selection_inputs(
 		&permissioned_validators,
 		&registered_validators,
@@ -210,7 +210,7 @@ fn ariadne_only_permissioned_candidates_are_present_test() {
 	// D-param: (4, 4)
 	let permissioned_validators = vec![ALICE, BOB];
 	let registered_validators = vec![];
-	let d_parameter = DParameter { num_permissioned_candidates: 4, num_registered_candidates: 4 };
+	let d_parameter = DParameter { num_permissioned_candidates: 4, num_ada_candidates: 2, num_eth_candidates: 2 };
 	let authority_selection_inputs = create_authority_selection_inputs(
 		&permissioned_validators,
 		&registered_validators,
@@ -239,7 +239,7 @@ fn ariadne_3_to_2_test() {
 	// D-param: (3, 2)
 	let permissioned_validators = vec![ALICE, BOB, CHARLIE];
 	let registered_validators = vec![DAVE, EVE];
-	let d_parameter = DParameter { num_permissioned_candidates: 3, num_registered_candidates: 2 };
+	let d_parameter = DParameter { num_permissioned_candidates: 3, num_ada_candidates: 1, num_eth_candidates: 1 };
 	let authority_selection_inputs = create_authority_selection_inputs(
 		&permissioned_validators,
 		&registered_validators,
@@ -268,7 +268,7 @@ fn ariadne_3_to_2_with_more_available_candidates_test() {
 	// D-param: (3, 2)
 	let permissioned_validators = vec![ALICE, BOB, CHARLIE, DAVE, EVE];
 	let registered_validators = vec![FERDIE, GREG, HENRY, IDA];
-	let d_parameter = DParameter { num_permissioned_candidates: 3, num_registered_candidates: 2 };
+	let d_parameter = DParameter { num_permissioned_candidates: 3, num_ada_candidates: 1, num_eth_candidates: 1 };
 	let authority_selection_inputs = create_authority_selection_inputs(
 		&permissioned_validators,
 		&registered_validators,
@@ -297,7 +297,7 @@ fn ariadne_4_to_7_test() {
 	// D-param: (4, 7)
 	let permissioned_validators = vec![ALICE, BOB, CHARLIE, DAVE];
 	let registered_validators = vec![EVE, FERDIE, GREG, HENRY, IDA, JAMES, KIM];
-	let d_parameter = DParameter { num_permissioned_candidates: 4, num_registered_candidates: 7 };
+	let d_parameter = DParameter { num_permissioned_candidates: 4, num_ada_candidates: 4, num_eth_candidates: 3 };
 	let authority_selection_inputs = create_authority_selection_inputs(
 		&permissioned_validators,
 		&registered_validators,
@@ -329,7 +329,7 @@ fn ariadne_selection_statistics_test() {
 	let permissioned_validators = vec![ALICE, BOB];
 	let registered_validators = vec![CHARLIE, DAVE];
 	let d_parameter =
-		DParameter { num_permissioned_candidates: 20000, num_registered_candidates: 10000 };
+		DParameter { num_permissioned_candidates: 20000, num_ada_candidates: 5000, num_eth_candidates: 5000 };
 	let authority_selection_inputs = create_authority_selection_inputs(
 		&permissioned_validators,
 		&registered_validators,
@@ -363,7 +363,7 @@ fn ariadne_does_not_return_empty_committee() {
 	let authority_selection_inputs = create_authority_selection_inputs(
 		&[],
 		&[],
-		DParameter { num_permissioned_candidates: 1, num_registered_candidates: 1 },
+		DParameter { num_permissioned_candidates: 1, num_ada_candidates: 1, num_eth_candidates: 0 },
 	);
 	let calculated_committee =
 		select_authorities::<AccountId, AccountKeys, SidechainParams, ConstU32<10>>(
@@ -396,7 +396,7 @@ fn create_epoch_candidates_idp(validators: &[MockValidator]) -> Vec<CandidateReg
 			let sidechain_signature = validator.ecdsa_pair().sign(&signed_message_encoded[..]);
 			let sidechain_signature_bytes_no_recovery = sidechain_signature.0[..64].to_vec();
 
-			let registration_data = RegistrationData {
+			let registration_data = CardanoRegistrationData {
 				consumed_input: signed_message.input_utxo,
 				sidechain_signature: SidechainSignature(
 					sidechain_signature_bytes_no_recovery.clone(),
@@ -411,11 +411,11 @@ fn create_epoch_candidates_idp(validators: &[MockValidator]) -> Vec<CandidateReg
 				tx_inputs: vec![signed_message.input_utxo],
 			};
 
-			CandidateRegistrations {
-				mainchain_pub_key: MainchainPublicKey(mainchain_key_pair.public().0),
-				registrations: vec![registration_data],
-				stake_delegation: Some(StakeDelegation(validator.stake)),
-			}
+			CandidateRegistrations::from_cardano(
+				MainchainPublicKey(mainchain_key_pair.public().0),
+				vec![registration_data],
+				validator.stake,
+			)
 		})
 		.collect();
 

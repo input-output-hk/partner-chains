@@ -47,14 +47,84 @@ impl Display for McEpochNumber {
 		u32::fmt(&self.0, f)
 	}
 }
-/// Amount of Lovelace (which is a fraction of 1 ADA) staked/locked on Cardano
+
 #[derive(Default, Clone, Copy, Debug, Encode, Decode, TypeInfo, ToDatum, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
-pub struct StakeDelegation(pub u64);
+pub struct StakeDelegation {
+	/// Amount of Lovelace (which is a fraction of 1 ADA) staked/locked on Cardano
+	pub ada: StakeAmount,
+
+	// TODO ETH: u64 if not enough to count stake on Ethereum in Wei
+	/// Amount of Wei (which is a fraction of 1 ETH) staked/locked on Ethereum
+	pub eth: EthStakeAmount,
+}
 
 impl StakeDelegation {
+	pub fn of_ada(ada: u64) -> Self {
+		Self { ada: StakeAmount(ada), eth: EthStakeAmount::zero() }
+	}
+	pub fn is_zero(&self) -> bool {
+		self.ada.0 == 0 && self.eth.0 == 0
+	}
+}
+
+#[derive(Default, Clone, Copy, Debug, Encode, Decode, TypeInfo, ToDatum, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub struct StakeAmount(pub u64);
+
+impl StakeAmount {
+	pub fn zero() -> Self {
+		Self(0)
+	}
+
 	pub fn is_zero(&self) -> bool {
 		self.0 == 0
+	}
+}
+
+impl From<u64> for StakeAmount {
+	fn from(value: u64) -> Self {
+		Self(value)
+	}
+}
+
+#[derive(Default, Clone, Copy, Debug, Encode, Decode, TypeInfo, ToDatum, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub struct EthStakeAmount(pub u64);
+
+impl EthStakeAmount {
+	pub fn zero() -> Self {
+		Self(0)
+	}
+
+	pub fn is_zero(&self) -> bool {
+		self.0 == 0
+	}
+}
+
+impl From<u64> for EthStakeAmount {
+	fn from(value: u64) -> Self {
+		Self(value.into())
+	}
+}
+
+#[derive(Default, Clone, Copy, Debug, Encode, Decode, TypeInfo, ToDatum, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub struct NormalizedStake(pub u64);
+
+impl NormalizedStake {
+	pub fn zero() -> Self {
+		Self(0)
+	}
+
+	pub fn is_zero(&self) -> bool {
+		self.0 == 0
+	}
+}
+
+impl From<u64> for NormalizedStake {
+	fn from(value: u64) -> Self {
+		Self(value.into())
 	}
 }
 
@@ -189,10 +259,18 @@ pub const MAX_ASSET_NAME_LEN: u32 = 32;
 pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
 
 const MAINCHAIN_PUBLIC_KEY_LEN: usize = 32;
+const ETH_PUBLIC_KEY_LEN: usize = 32; // TODO ETH: is this correct length?
 
+// TODO ETH: this should be renamed to CardanoPublicKey
+/// This type represents a public key on Cardano.
 #[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize)]
 pub struct MainchainPublicKey(pub [u8; MAINCHAIN_PUBLIC_KEY_LEN]);
+
+/// This type represents a public key on Ethereum.
+#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize)]
+pub struct EthPublicKey(pub [u8; ETH_PUBLIC_KEY_LEN]);
 
 #[cfg(feature = "serde")]
 impl FromStr for MainchainPublicKey {
@@ -437,18 +515,38 @@ pub struct UtxoInfo {
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct UtxoInfoOrderingKey {
+pub struct RegistrationOrderingKey {
 	pub block_number: McBlockNumber,
 	pub tx_index_within_block: McTxIndexInBlock,
-	pub utxo_id_index: UtxoIndex,
+	pub index_within_tx: UtxoIndex,
 }
 
 impl UtxoInfo {
-	pub fn ordering_key(&self) -> UtxoInfoOrderingKey {
-		UtxoInfoOrderingKey {
+	pub fn ordering_key(&self) -> RegistrationOrderingKey {
+		RegistrationOrderingKey {
 			block_number: self.block_number,
 			tx_index_within_block: self.tx_index_within_block,
-			utxo_id_index: self.utxo_id.index,
+			index_within_tx: self.utxo_id.index,
+		}
+	}
+}
+
+#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
+pub struct EthInfo {
+	pub epoch_number: McEpochNumber,
+	pub block_number: McBlockNumber,
+	pub slot_number: McSlotNumber,
+	pub tx_index_within_block: McTxIndexInBlock,
+}
+
+impl EthInfo {
+	pub fn ordering_key(&self) -> RegistrationOrderingKey {
+		RegistrationOrderingKey {
+			block_number: self.block_number,
+			tx_index_within_block: self.tx_index_within_block,
+			index_within_tx: UtxoIndex(0),
 		}
 	}
 }
@@ -462,7 +560,7 @@ pub struct CommitteeHash(pub Vec<u8>);
 /// Note: A Registration Transaction is called by a user on Cardano to register themselves as a Sidechain Authority Candidate
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
-pub struct RegistrationData {
+pub struct CardanoRegistrationData {
 	/// UTXO that is an input parameter to the registration transaction
 	pub consumed_input: UtxoId,
 	pub sidechain_signature: SidechainSignature,
@@ -476,13 +574,111 @@ pub struct RegistrationData {
 	pub grandpa_pub_key: GrandpaPublicKey,
 }
 
+/// Registration Record on Ethereum
+///
+/// Note: A Registration Transaction is called by a user on Ethereum to register themselves as a Minotaur Authority Candidate
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub struct EthRegistrationData {
+	pub sidechain_signature: SidechainSignature,
+	pub mainchain_signature: MainchainSignature,
+	pub cross_chain_signature: CrossChainSignature,
+	pub sidechain_pub_key: SidechainPublicKey,
+	pub cross_chain_pub_key: CrossChainPublicKey,
+	pub tx_info: EthInfo,
+	pub aura_pub_key: AuraPublicKey,
+	pub grandpa_pub_key: GrandpaPublicKey,
+}
+
+#[derive(Default, Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub struct Registrations {
+	pub ada_registrations: Vec<CardanoRegistrationData>,
+	pub eth_registrations: Vec<EthRegistrationData>,
+}
+
+impl Registrations {
+	pub fn of_ada(ada_registrations: Vec<CardanoRegistrationData>) -> Registrations {
+		Registrations { ada_registrations, eth_registrations: vec![] }
+	}
+}
+
+impl Registrations {
+	pub fn registration_data_items(&self) -> Vec<RegistrationData> {
+		let adas = self.ada_registrations.iter()
+			.map(|i| i.clone().into())
+			.collect::<Vec<RegistrationData>>();
+		let eths = self.eth_registrations.iter()
+			.map(|i| i.clone().into())
+			.collect::<Vec<RegistrationData>>();
+		adas.into_iter().chain(eths.into_iter()).collect()
+	}
+}
+
+#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub enum RegistrationData {
+	Ada(CardanoRegistrationData),
+	Eth(EthRegistrationData),
+}
+
+impl From<CardanoRegistrationData> for RegistrationData {
+	fn from(x: CardanoRegistrationData) -> Self {
+		RegistrationData::Ada(x.clone())
+	}
+}
+
+impl From<EthRegistrationData> for RegistrationData {
+	fn from(x: EthRegistrationData) -> Self {
+		RegistrationData::Eth(x)
+	}
+}
+
+/// Generates accessor method for common fields of different RegistrationData variants.
+macro_rules! common_field_accessor {
+	($struct_type: ident, $name: ident, $type: ident) => {
+		pub fn $name(&self) -> &$type {
+			match self {
+				$struct_type::Ada(data) => &data.$name,
+				$struct_type::Eth(data) => &data.$name,
+			}
+		}
+	};
+}
+
+impl RegistrationData {
+	// TODO ETH: This is likely a temporary solution until a better design is found for multi-chain registration data.
+	// Accessor methods for common fields of different RegistrationData variants.
+	common_field_accessor!(RegistrationData, sidechain_signature, SidechainSignature);
+	common_field_accessor!(RegistrationData, mainchain_signature, MainchainSignature);
+	common_field_accessor!(RegistrationData, cross_chain_signature, CrossChainSignature);
+	common_field_accessor!(RegistrationData, sidechain_pub_key, SidechainPublicKey);
+	common_field_accessor!(RegistrationData, cross_chain_pub_key, CrossChainPublicKey);
+	common_field_accessor!(RegistrationData, aura_pub_key, AuraPublicKey);
+	common_field_accessor!(RegistrationData, grandpa_pub_key, GrandpaPublicKey);
+}
+
 /// Information about an Authority Candidate's Registrations at some block.
+/// Current implementation assumes that each instance of this structure represents all registrations
+/// on different blockchains of the same Authority Candidate identified by the `sidechain_pub_key`,
+/// such that the actual registrations are stored in the `registrations` field and stake is stored in
+/// the `stake_delegation` field.
+/// Currently only two blockchains are supported: Cardano and Ethereum, but in principle this can be
+/// generalized to any number of blockchains, as long as the registration mechanics are similar.
+/// see also `AuthoritySelectionInputs`, `Registrations` and `StakeDelegation`
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct CandidateRegistrations {
+	/// **Public Key** of the **Authority Candidate** on Cardano which was used to generate
+	/// mainnet_signature in the ADA registration records
 	pub mainchain_pub_key: MainchainPublicKey,
-	/// **List of Registrations** done by the **Authority Candidate**
-	pub registrations: Vec<RegistrationData>,
+
+	/// **Public Key** of the **Authority Candidate** on the Ethereum which was used to generate
+	/// mainnet_signature in the ETH registration records
+	pub eth_pub_key: Option<EthPublicKey>,
+
+	/// **Registrations** done by the **Authority Candidate** on different blockchains
+	pub registrations: Registrations,
 	pub stake_delegation: Option<StakeDelegation>,
 }
 
@@ -490,16 +686,29 @@ impl CandidateRegistrations {
 	pub fn new(
 		mainchain_pub_key: MainchainPublicKey,
 		stake_delegation: Option<StakeDelegation>,
-		registrations: Vec<RegistrationData>,
+		registrations: Registrations,
 	) -> Self {
-		Self { mainchain_pub_key, registrations, stake_delegation }
+		Self { mainchain_pub_key, eth_pub_key: None, registrations, stake_delegation }
+	}
+
+	pub fn from_cardano(
+		mainchain_pub_key: MainchainPublicKey,
+		ada_registrations: Vec<CardanoRegistrationData>,
+		ada_stake: u64,
+	) -> Self {
+		CandidateRegistrations {
+			mainchain_pub_key,
+			eth_pub_key: None,
+			registrations: Registrations::of_ada(ada_registrations),
+			stake_delegation: Some(StakeDelegation::of_ada(ada_stake)),
+		}
 	}
 
 	pub fn mainchain_pub_key(&self) -> &MainchainPublicKey {
 		&self.mainchain_pub_key
 	}
 
-	pub fn registrations(&self) -> &[RegistrationData] {
+	pub fn registrations(&self) -> &Registrations {
 		&self.registrations
 	}
 }
@@ -565,7 +774,14 @@ impl GrandpaPublicKey {
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct DParameter {
 	pub num_permissioned_candidates: u16,
-	pub num_registered_candidates: u16,
+	pub num_ada_candidates: u16,
+	pub num_eth_candidates: u16,
+}
+
+impl DParameter {
+	pub fn num_registered_candidates(&self) -> u16 {
+		self.num_ada_candidates + self.num_eth_candidates
+	}
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo)]

@@ -45,7 +45,7 @@ impl From<MockRegistration> for CandidateRegistrations {
 		let mainchain_pub_key = MainchainPublicKey(mock.mainchain_pub_key.0.try_into().expect(
 			"Invalid mock configuration. 'mainchain_pub_key' public key should be 32 bytes.",
 		));
-		let registrations = vec![RegistrationData {
+		let registrations = vec![CardanoRegistrationData {
 			consumed_input: mock.input_utxo,
 			sidechain_signature: SidechainSignature(mock.sidechain_signature.0.clone()),
 			mainchain_signature: MainchainSignature(mock.mainchain_signature.0),
@@ -68,8 +68,11 @@ impl From<MockRegistration> for CandidateRegistrations {
 			aura_pub_key: AuraPublicKey(mock.aura_pub_key.0),
 			grandpa_pub_key: GrandpaPublicKey(mock.grandpa_pub_key.0),
 		}];
-		let stake_delegation = Some(StakeDelegation(333));
-		CandidateRegistrations { mainchain_pub_key, registrations, stake_delegation }
+		CandidateRegistrations::from_cardano(
+			mainchain_pub_key,
+			registrations,
+			333
+		)
 	}
 }
 
@@ -118,18 +121,19 @@ impl From<MockPermissionedCandidate> for RawPermissionedCandidateData {
 #[derive(Deserialize, Clone, Debug)]
 pub struct MockDParam {
 	permissioned: u16,
-	registered: u16,
+	registered_ada: u16,
+	registered_eth: u16,
 }
 
 impl MockDParam {
 	pub fn info_string(&self) -> String {
-		format!("permissioned: {}, registered: {}", self.permissioned, self.registered)
+		format!("permissioned: {}, registered_ada: {}, registered_eth: {}", self.permissioned, self.registered_ada, self.registered_eth)
 	}
 }
 
 impl From<MockDParam> for DParameter {
-	fn from(MockDParam { permissioned, registered }: MockDParam) -> Self {
-		Self { num_permissioned_candidates: permissioned, num_registered_candidates: registered }
+	fn from(MockDParam { permissioned, registered_ada, registered_eth }: MockDParam) -> Self {
+		Self { num_permissioned_candidates: permissioned, num_ada_candidates: registered_ada, num_eth_candidates: registered_eth }
 	}
 }
 

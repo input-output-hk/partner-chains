@@ -16,17 +16,25 @@ pub struct AriadneParameters {
 #[serde(rename_all = "camelCase")]
 pub struct DParameter {
 	pub num_permissioned_candidates: u16,
-	pub num_registered_candidates: u16,
+	pub num_ada_candidates: u16,
+	pub num_eth_candidates: u16,
+}
+
+impl DParameter {
+	pub fn num_registered_candidates(&self) -> u16 {
+		self.num_ada_candidates + self.num_eth_candidates
+	}
 }
 
 impl From<sidechain_domain::DParameter> for DParameter {
 	fn from(
 		sidechain_domain::DParameter {
-			num_permissioned_candidates,
-			num_registered_candidates,
+		  	num_permissioned_candidates,
+			num_ada_candidates,
+			num_eth_candidates,
 		}: sidechain_domain::DParameter,
 	) -> Self {
-		Self { num_permissioned_candidates, num_registered_candidates }
+		Self { num_permissioned_candidates, num_ada_candidates, num_eth_candidates }
 	}
 }
 

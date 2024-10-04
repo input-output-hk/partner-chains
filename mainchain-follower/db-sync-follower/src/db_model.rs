@@ -213,7 +213,7 @@ impl From<sidechain_domain::PolicyId> for PolicyId {
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 pub(crate) struct StakePoolEntry {
 	pub pool_hash: [u8; 28],
-	pub stake: StakeDelegation,
+	pub stake: StakeAmount,
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
@@ -256,15 +256,15 @@ impl<'r> Decode<'r, Postgres> for TxValue {
 
 /// CREATE DOMAIN "lovelace" AS numeric(20,0) CONSTRAINT flyway_needs_this CHECK (VALUE >= 0::numeric AND VALUE <= '18446744073709551615'::numeric);
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct StakeDelegation(pub u64);
+pub(crate) struct StakeAmount(pub u64);
 
-impl sqlx::Type<Postgres> for StakeDelegation {
+impl sqlx::Type<Postgres> for StakeAmount {
 	fn type_info() -> <Postgres as sqlx::Database>::TypeInfo {
 		PgTypeInfo::with_name("NUMERIC")
 	}
 }
 
-impl<'r> Decode<'r, Postgres> for StakeDelegation {
+impl<'r> Decode<'r, Postgres> for StakeAmount {
 	fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
 		let decoded = <sqlx::types::BigDecimal as Decode<Postgres>>::decode(value)?;
 		let i = decoded.to_u64().ok_or("StakeDelegation is always a u64".to_string())?;

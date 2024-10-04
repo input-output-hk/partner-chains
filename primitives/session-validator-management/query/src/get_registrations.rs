@@ -73,30 +73,39 @@ fn get_registrations_response_map(
 	let mut map = GetRegistrationsResponseMap::new();
 
 	for candidate in candidates {
-		let mainchain_pub_key = candidate.mainchain_pub_key().clone();
+		let mainchain_pub_key = candidate.mainchain_pub_key();
 
 		let mut registration_entries: Vec<CandidateRegistrationEntry> = candidate
-			.registrations
-			.iter()
+			.registrations.registration_data_items()
+			.into_iter()
 			.map(|registration_data| {
 				let registration_data_validation_result =
-					validate_registration_data(&mainchain_pub_key, registration_data)?;
+					validate_registration_data(&mainchain_pub_key, &registration_data)?;
+				let stake_amount = candidate.stake_delegation.map(|sd| {
+					match registration_data {
+						RegistrationData::Ada(_) => sd.ada.0,
+						RegistrationData::Eth(_) => sd.eth.0,
+					}
+				});
 				Ok::<CandidateRegistrationEntry, sp_api::ApiError>(CandidateRegistrationEntry::new(
-					registration_data.clone(),
+					registration_data,
 					mainchain_pub_key.clone(),
-					candidate.stake_delegation,
+					stake_amount,
 					registration_data_validation_result,
 				))
 			})
 			.collect::<Result<Vec<_>, _>>()?;
 
-		registration_entries.sort_by_key(|entry| entry.utxo.ordering_key());
+		registration_entries.sort_by_key(|entry| entry.tx_info.ordering_key());
 		let latest_valid_or_zero = registration_entries
 			.iter()
 			.rposition(|registration| registration.is_valid)
 			.unwrap_or(0);
 
 		registration_entries.drain(..latest_valid_or_zero);
+		// TODO: check correctness: the registration_entries at this point may have a tail of
+		// invalid entries, is this intended?
+
 		if let Some(err) = validate_stake(&candidate.stake_delegation)? {
 			if let Some(first) = registration_entries.first_mut() {
 				if first.is_valid {
@@ -106,7 +115,8 @@ fn get_registrations_response_map(
 			}
 		}
 
-		map.insert(to_hex(&mainchain_pub_key.0, false), registration_entries);
+		let key = to_hex(&mainchain_pub_key.0, false);
+		map.insert(key, registration_entries);
 	}
 
 	Ok(map)

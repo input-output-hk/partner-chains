@@ -339,7 +339,7 @@ pub fn create_inherent_data_struct(
 			let mainchain_signature = dummy_mainchain_pub_key.sign(&signed_message_encoded[..]);
 			let sidechain_signature = validator.cross_chain.sign(&signed_message_encoded[..]);
 
-			let registration_data = RegistrationData {
+			let registration_data = CardanoRegistrationData {
 				consumed_input: signed_message.input_utxo,
 				sidechain_signature: SidechainSignature(
 					sidechain_signature.into_inner().0[..64].to_vec(),
@@ -358,8 +358,9 @@ pub fn create_inherent_data_struct(
 
 			CandidateRegistrations {
 				mainchain_pub_key: MainchainPublicKey(dummy_mainchain_pub_key.public().0),
-				registrations: vec![registration_data],
-				stake_delegation: Some(StakeDelegation(7)),
+				eth_pub_key: None,
+				registrations: Registrations::of_ada(vec![registration_data]),
+				stake_delegation: Some(StakeDelegation::of_ada(7)),
 			}
 		})
 		.collect();
@@ -368,7 +369,8 @@ pub fn create_inherent_data_struct(
 		data: Some(AuthoritySelectionInputs {
 			d_parameter: DParameter {
 				num_permissioned_candidates: 0,
-				num_registered_candidates: max(candidates.len() as u16, 1),
+				num_ada_candidates: max(candidates.len() as u16, 1),
+				num_eth_candidates: 0,
 			},
 			permissioned_candidates: vec![],
 			registered_candidates: candidates,

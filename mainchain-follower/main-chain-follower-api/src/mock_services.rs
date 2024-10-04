@@ -142,7 +142,8 @@ mod candidates {
 				Some(Some(candidates)) => Ok(AriadneParameters {
 					d_parameter: DParameter {
 						num_permissioned_candidates: 3,
-						num_registered_candidates: 2,
+						num_ada_candidates: 1,
+						num_eth_candidates: 1,
 					},
 					permissioned_candidates: candidates.clone(),
 				}),
