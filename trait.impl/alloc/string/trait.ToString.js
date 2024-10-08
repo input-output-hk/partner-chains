@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"sidechain_domain":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.77.0/alloc/string/trait.ToString.html\" title=\"trait alloc::string::ToString\">ToString</a> for <a class=\"struct\" href=\"sidechain_domain/struct.MainchainAddress.html\" title=\"struct sidechain_domain::MainchainAddress\">MainchainAddress</a>"]]
+"sidechain_domain":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.81.0/alloc/string/trait.ToString.html\" title=\"trait alloc::string::ToString\">ToString</a> for <a class=\"struct\" href=\"sidechain_domain/struct.MainchainAddress.html\" title=\"struct sidechain_domain::MainchainAddress\">MainchainAddress</a>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

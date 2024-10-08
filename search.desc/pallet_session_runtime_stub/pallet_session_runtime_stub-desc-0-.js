@@ -1,0 +1,1 @@
+searchState.loadedDescShard("pallet_session_runtime_stub", 0, "Use this when you need to have a pallet-session Config …\nReturns the argument unchanged.\nGet a mutable reference to the inner from the outer.\nGet a reference to the inner from the outer.\nMacro to implement <code>pallet_session::Config</code>, using existing `…\nCalls <code>U::from(self)</code>.")

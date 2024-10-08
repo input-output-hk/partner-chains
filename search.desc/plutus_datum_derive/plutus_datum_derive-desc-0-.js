@@ -1,0 +1,1 @@
+searchState.loadedDescShard("plutus_datum_derive", 0, "This crate creates the attribute macro <code>ToDatum</code>\nDerives ToDatum instance for annotated struct. …")
