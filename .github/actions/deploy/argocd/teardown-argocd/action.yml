@@ -81,9 +81,9 @@ runs:
             console.log(`Target file not found: ${targetFile}`);
           }
 
-          // Get the current time and calculate the cutoff time (24 hours ago)
+          // Get the current time and calculate the cutoff time (1 hour ago)
           const currentTime = new Date();
-          const cutoffTime = new Date(currentTime.getTime() - (24 * 60 * 60 * 1000));
+          const cutoffTime = new Date(currentTime.getTime() - (1 * 60 * 60 * 1000)); // 1 hour in milliseconds
 
           // List all files in the target directory using GitHub API
           const listResponse = await github.rest.repos.getContent({
@@ -124,9 +124,9 @@ runs:
               const lastCommit = commitsResponse.data[0];
               const commitDate = new Date(lastCommit.commit.author.date);
 
-              // Check if the last commit was older than 24 hours
+              // Check if the last commit was older than 1 hour
               if (commitDate < cutoffTime) {
-                console.log(`File ${fileName} is older than 24 hours (last commit: ${commitDate.toISOString()}). Deleting.`);
+                console.log(`File ${fileName} is older than 1 hour (last commit: ${commitDate.toISOString()}). Deleting.`);
                 await deleteFile(
                   'input-output-hk',
                   'sidechains-argocd',
@@ -135,7 +135,7 @@ runs:
                   'main'
                 );
               } else {
-                console.log(`File ${fileName} is not older than 24 hours (last commit: ${commitDate.toISOString()}). Keeping.`);
+                console.log(`File ${fileName} is not older than 1 hour (last commit: ${commitDate.toISOString()}). Keeping.`);
               }
             }
           } else {

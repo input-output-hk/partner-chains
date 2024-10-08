@@ -125,6 +125,7 @@ jobs:
       - name: Run Tests
         uses: ./.github/actions/tests/argocd-tests
         with:
+          sha: ${{ needs.build.outputs.sha }}
           node-host: sha-${{ needs.build.outputs.sha }}-service.integration-testing.svc.cluster.local
           node-port: 9933
           ssh_key_binary_host: ${{ secrets.SSH_KEY_BINARY_HOST }}
@@ -134,6 +135,9 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           JIRA_URL: ${{ secrets.JIRA_URL }}
           ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   teardown-argocd:
     if: always()

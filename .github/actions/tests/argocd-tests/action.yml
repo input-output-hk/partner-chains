@@ -1,6 +1,9 @@
 name: "Run Tests against ArgoCD Node"
 description: "Run end-to-end tests against the ArgoCD node"
 inputs:
+  sha: 
+    description: "SHA of the commit"
+    required: true
   node-host:
     description: "Host for the node"
     required: true
@@ -16,6 +19,32 @@ outputs: {}
 runs:
   using: "composite"
   steps:
+    - name: Install kubectl and awscli
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x ./kubectl
+        sudo mv ./kubectl /usr/local/bin/kubectl
+        sudo apt update && sudo apt install -y awscli
+      shell: bash
+
+    - name: Configure kubectl
+      env:
+        KUBECONFIG_BASE64: ${{ env.kubeconfig_base64 }}
+        K8S_SERVER: ${{ env.K8S_SERVER }}
+        K8S_SA_TOKEN: ${{ env.K8S_SA_TOKEN }}
+      run: |
+        echo "${KUBECONFIG_BASE64}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml
+        kubectl config set-cluster my-cluster --server=${K8S_SERVER} --insecure-skip-tls-verify=true
+        kubectl config set-credentials github-actions --token=${K8S_SA_TOKEN}
+        kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
+        kubectl config use-context my-context
+      shell: bash
+
+    - name: Check if pod is ready
+      run: |
+        kubectl get pods -n integration-testing substrate-node-sha-${{ inputs.sha }} -o jsonpath="{.status.containerStatuses[*].ready}"
+      shell: bash
+
     - name: Health Check Integration Env
       run: |
         curl --request POST \
