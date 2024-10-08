@@ -1,4 +1,4 @@
-FROM paritytech/ci-unified:bullseye-1.77.0-2024-04-10-v202406031250
+FROM paritytech/ci-unified:bullseye-1.81.0-2024-09-11-v202409111034
 
 RUN apt-get update && apt-get install -y git protobuf-compiler jq &&  \
     rm -rf /var/lib/apt/lists/*
