@@ -112,9 +112,7 @@ impl NativeTokenManagementDataSourceImpl {
 		to_block: &McBlockHash,
 	) -> Option<NativeTokenAmount> {
 		if let Ok(cache) = self.cache.lock() {
-			cache
-				.get_sum_in_range(after_block, to_block)
-				.map(|amount| NativeTokenAmount(amount))
+			cache.get_sum_in_range(after_block, to_block).map(NativeTokenAmount)
 		} else {
 			None
 		}
@@ -176,7 +174,7 @@ impl NativeTokenManagementDataSourceImpl {
 		asset_name: &AssetName,
 		address: &MainchainAddress,
 	) -> Result<NativeTokenAmount> {
-		let to_block = get_to_block_no(&to_block, &self.pool).await?;
+		let to_block = get_to_block_no(to_block, &self.pool).await?;
 		Ok(crate::db_model::get_total_native_tokens_transfered(
 			&self.pool,
 			to_block,
@@ -210,11 +208,11 @@ async fn get_to_block_no(to_block: &McBlockHash, pool: &PgPool) -> Result<BlockN
 }
 
 async fn get_latest_block(pool: &PgPool) -> Result<Block> {
-	Ok(crate::db_model::get_latest_block_info(pool).await?.ok_or(
+	crate::db_model::get_latest_block_info(pool).await?.ok_or(
 		DataSourceError::ExpectedDataNotFound(
 			"The latest block not found when querying for native token transfers".to_string(),
 		),
-	)?)
+	)
 }
 
 #[derive(new)]
