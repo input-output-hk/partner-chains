@@ -115,7 +115,6 @@ jobs:
   argocd-tests:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
     needs: [build, deploy-argocd]
-    continue-on-error: true
     runs-on: [self-hosted, eks]
     steps:
       - name: Checkout
@@ -187,7 +186,7 @@ jobs:
 
   pre-merge-checks-complete:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
-    needs: [build, local-environment-tests, deploy-argocd, argocd-tests, teardown-argocd, devshell-tests]
+    needs: [build, local-environment-tests, deploy-argocd, teardown-argocd, devshell-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Pre Merge Checks Complete

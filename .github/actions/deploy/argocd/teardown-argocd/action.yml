@@ -25,14 +25,15 @@ runs:
           const fs = require('fs');
           const path = require('path');
 
-          // Define the target directory
-          const directory = 'sidechains-argocd/integration-testing';
+          // Inject the SHA from inputs
+          const sha = '${{ inputs.sha }}';
+          const targetFile = `manifest-sha-${sha}.yaml`;
+
+          // Correct directory path relative to the repository root
+          const directory = 'integration-testing';
           
-          // Define the specific file to delete based on the input SHA
-          const targetFile = `manifest-sha-${{ inputs.sha }}.yaml`;
-          
-          // Full path to the target file
-          const targetFilePath = path.join(directory, targetFile);
+          // Full path to the target file (local filesystem)
+          const targetFilePath = path.join('sidechains-argocd', directory, targetFile);
 
           // Function to delete a file via GitHub API
           async function deleteFile(owner, repo, filePath, commitMessage, branch) {
@@ -57,29 +58,34 @@ runs:
 
               console.log(`Deleted file: ${filePath}`);
             } catch (error) {
-              console.error(`Failed to delete file ${filePath}:`, error);
+              if (error.status === 404) {
+                console.log(`File not found (already deleted or never existed): ${filePath}`);
+              } else {
+                console.error(`Failed to delete file ${filePath}:`, error);
+                throw error; // Re-throw to fail the step if necessary
+              }
             }
           }
 
-          // Delete the specific target file if it exists
+          // Delete the specific target file if it exists locally
           if (fs.existsSync(targetFilePath)) {
             console.log(`Deleting target file: ${targetFile}`);
             await deleteFile(
               'input-output-hk',
               'sidechains-argocd',
-              `integration-testing/${targetFile}`,
-              `ci: Tear down integration-testing environment for SHA ${{ inputs.sha }}`,
+              `${directory}/${targetFile}`,
+              `ci: Tear down integration-testing environment for SHA ${sha}`,
               'main'
             );
           } else {
             console.log(`Target file not found: ${targetFile}`);
           }
 
-          // Get the current time in ISO format and calculate the cutoff time (24 hours ago)
+          // Get the current time and calculate the cutoff time (24 hours ago)
           const currentTime = new Date();
           const cutoffTime = new Date(currentTime.getTime() - (24 * 60 * 60 * 1000));
 
-          // List all files in the target directory
+          // List all files in the target directory using GitHub API
           const listResponse = await github.rest.repos.getContent({
             owner: 'input-output-hk',
             repo: 'sidechains-argocd',
@@ -96,16 +102,16 @@ runs:
                 continue;
               }
 
-              // Only process YAML files (optional, based on your file types)
+              // Only process YAML files
               if (path.extname(fileName) !== '.yaml' && path.extname(fileName) !== '.yml') {
                 continue;
               }
 
-              // Get the commits that modified the file, limit to the latest one
+              // Get the latest commit that modified the file
               const commitsResponse = await github.rest.repos.listCommits({
                 owner: 'input-output-hk',
                 repo: 'sidechains-argocd',
-                path: `integration-testing/${fileName}`,
+                path: `${directory}/${fileName}`,
                 per_page: 1,
                 page: 1
               });
@@ -124,7 +130,7 @@ runs:
                 await deleteFile(
                   'input-output-hk',
                   'sidechains-argocd',
-                  `integration-testing/${fileName}`,
+                  `${directory}/${fileName}`,
                   `ci: Cleanup old integration-testing file ${fileName}`,
                   'main'
                 );
@@ -134,4 +140,5 @@ runs:
             }
           } else {
             console.error(`The path ${directory} is not a directory or could not be accessed.`);
+            throw new Error(`Failed to list contents of directory: ${directory}`);
           }
