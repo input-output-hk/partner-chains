@@ -16,7 +16,7 @@
       fromToolchainFile {
         file = ../rust-toolchain.toml;
         # Probably should be a flake input instead
-        sha256 = "+syqAd2kX8KVa8/U2gz3blIQTTsYYt3U63xBWaGOSc8=";
+        sha256 = "VZZnlyP69+Y3crrLHQyJirqlHrTtGTsyiSnZB8jEvVo=";
       };
     packages = with pkgs;
       [

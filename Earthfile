@@ -12,7 +12,7 @@ ci:
   BUILD +docker --image=$image --tags=$tags
 
 setup:
-  FROM paritytech/ci-unified:bullseye-1.77.0-2024-04-10-v202406031250
+  FROM paritytech/ci-unified:bullseye-1.81.0-2024-09-11-v202409111034
   WORKDIR /build
 
   # copy pre-existing $CARGO_HOME artifacts into the cache
@@ -164,4 +164,3 @@ chainspecs:
   SAVE ARTIFACT devnet_chain_spec.json AS LOCAL devnet_chain_spec.json
   SAVE ARTIFACT staging_preview_chain_spec.json AS LOCAL staging_preview_chain_spec.json
   SAVE ARTIFACT staging_preprod_chain_spec.json AS LOCAL staging_preprod_chain_spec.json
-      

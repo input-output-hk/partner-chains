@@ -14,6 +14,7 @@ provider will not query the main chain state or produce inherent data at all.
 * * Requires some downstream changes in the node code.
 * * See diff of the commit that adds this changelog line for hints.
 * * Specific changes will depend on the node implementation.
+* Update toolchain to 1.81.0
 
 ## Removed
 

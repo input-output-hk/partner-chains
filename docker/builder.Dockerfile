@@ -1,4 +1,4 @@
-FROM docker.io/paritytech/ci-unified:bullseye-1.77.0-2024-04-10-v202406031250 as builder
+FROM docker.io/paritytech/ci-unified:bullseye-1.81.0-2024-09-11-v202409111034 as builder
 
 WORKDIR /partner-chains-node
 COPY . /partner-chains-node
