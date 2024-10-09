@@ -144,7 +144,6 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   teardown-argocd:
-    if: always()
     needs: [build, argocd-tests]
     runs-on: ubuntu-latest
     steps:
