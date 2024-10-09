@@ -145,7 +145,7 @@ jobs:
 
   teardown-argocd:
     if: always()
-    needs: argocd-tests
+    needs: [build, argocd-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
