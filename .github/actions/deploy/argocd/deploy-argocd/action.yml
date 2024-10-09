@@ -40,8 +40,8 @@ runs:
         kubectl apply -f manifest-sha-${{ inputs.sha }}.yaml
       shell: bash
 
-    - name: Check if pod is ready
+    - name: Wait for Deployment to be Ready
       run: |
-        kubectl get pods -n integration-testing substrate-node-sha-${{ inputs.sha }} -o jsonpath="{.status.containerStatuses[*].ready}"
-      shell: bash
-   
+        kubectl wait --for=condition=available deployment/substrate-node-sha-${{ inputs.sha }} -n integration-testing --timeout=5m
+        kubectl rollout status deployment/substrate-node-sha-${{ inputs.sha }} -n integration-testing
+      shell: bash 

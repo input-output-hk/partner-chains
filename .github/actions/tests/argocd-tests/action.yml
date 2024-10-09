@@ -40,9 +40,10 @@ runs:
         kubectl config use-context my-context
       shell: bash
 
-    - name: Check if pod is ready
+    - name: Check Deployment 
       run: |
-        kubectl get pods -n integration-testing substrate-node-sha-${{ inputs.sha }} -o jsonpath="{.status.containerStatuses[*].ready}"
+        kubectl get deployment -n integration-testing substrate-node-sha-${{ inputs.sha }}
+        kubectl describe deployment -n integration-testing substrate-node-sha-${{ inputs.sha }}
       shell: bash
 
     - name: Health Check Integration Env
