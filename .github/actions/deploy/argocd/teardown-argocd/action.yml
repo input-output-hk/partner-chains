@@ -17,6 +17,50 @@ runs:
         token: ${{ env.ACTIONS_PAT }}
         path: sidechains-argocd
 
+    - name: Install kubectl and awscli
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x ./kubectl
+        sudo mv ./kubectl /usr/local/bin/kubectl
+        sudo apt update && sudo apt install -y awscli
+      shell: bash
+
+    - name: Configure kubectl
+      env:
+        KUBECONFIG_BASE64: ${{ env.kubeconfig_base64 }}
+        K8S_SERVER: ${{ env.K8S_SERVER }}
+        K8S_SA_TOKEN: ${{ env.K8S_SA_TOKEN }}
+      run: |
+        echo "${KUBECONFIG_BASE64}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml
+        kubectl config set-cluster my-cluster --server=${K8S_SERVER} --insecure-skip-tls-verify=true
+        kubectl config set-credentials github-actions --token=${K8S_SA_TOKEN}
+        kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
+        kubectl config use-context my-context
+      shell: bash
+
+    - name: Download Manifest Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: manifest-sha-${{ inputs.sha }}
+
+    - name: Terminate Deployment 
+      run: |
+        kubectl delete -f manifest-sha-${{ inputs.sha }}.yaml 
+      shell: bash 
+
+    - name: Delete Deployments and Services Older Than 1 Hour
+      run: |
+        now=$(date +%s)
+        kubectl get deployments -n integration-testing -o json | jq -r '.items[] | "\(.metadata.name) \(.metadata.creationTimestamp)"' | while read name ts; do
+          age=$(( (now - $(date -d "$ts" +%s)) / 60 ))
+          if [ "$age" -ge 60 ]; then
+            echo "Deleting Deployment $name which is $age minutes old..."
+            kubectl delete deployment "$name" -n integration-testing
+            kubectl delete service "sha-${name#substrate-node-sha-}-service" -n integration-testing 2>/dev/null || true
+          fi
+        done
+      shell: bash
+
     - name: Delete Ephemeral Environment File and Cleanup Old Files
       uses: actions/github-script@v7
       with:
