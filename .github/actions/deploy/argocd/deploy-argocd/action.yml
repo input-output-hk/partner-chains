@@ -45,3 +45,10 @@ runs:
         kubectl wait --for=condition=available deployment/substrate-node-sha-${{ inputs.sha }} -n integration-testing --timeout=5m
         kubectl rollout status deployment/substrate-node-sha-${{ inputs.sha }} -n integration-testing
       shell: bash 
+
+    - name: Upload Manifest as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: manifest-sha-${{ inputs.sha }}
+        path: manifest-sha-${{ inputs.sha }}.yaml
+
