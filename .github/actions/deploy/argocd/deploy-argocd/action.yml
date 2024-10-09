@@ -13,14 +13,35 @@ runs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Create and Push Manifest
-      env:
-        GH_TOKEN: ${{ env.ACTIONS_PAT }}
+    - name: Install kubectl and awscli
       run: |
-        cd .github/actions/deploy/argocd/
-        bash generate-manifest.sh ${{ inputs.sha }}
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x ./kubectl
+        sudo mv ./kubectl /usr/local/bin/kubectl
+        sudo apt update && sudo apt install -y awscli
       shell: bash
 
-    - name: Wait for 8.5 minutes (ArgoCD refresh interval is 15s + 15s to build + 60s for node to start producing blocks)
-      run: sleep 90
+    - name: Configure kubectl
+      env:
+        KUBECONFIG_BASE64: ${{ env.kubeconfig_base64 }}
+        K8S_SERVER: ${{ env.K8S_SERVER }}
+        K8S_SA_TOKEN: ${{ env.K8S_SA_TOKEN }}
+      run: |
+        echo "${KUBECONFIG_BASE64}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml
+        kubectl config set-cluster my-cluster --server=${K8S_SERVER} --insecure-skip-tls-verify=true
+        kubectl config set-credentials github-actions --token=${K8S_SA_TOKEN}
+        kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
+        kubectl config use-context my-context
       shell: bash
+
+    - name: Render and Apply Kubernetes Manifest
+      run: |
+        sed "s|{{SHA}}|${{ inputs.sha }}|g; s|{{SUBSTRATE_NODE_IMAGE}}|689191102645.dkr.ecr.eu-central-1.amazonaws.com/substrate-node:${{ inputs.sha }}|g" .github/actions/deploy/argocd/manifest.yaml > manifest-sha-${{ inputs.sha }}.yaml
+        kubectl apply -f manifest-sha-${{ inputs.sha }}.yaml
+      shell: bash
+
+    - name: Check if pod is ready
+      run: |
+        kubectl get pods -n integration-testing substrate-node-sha-${{ inputs.sha }} -o jsonpath="{.status.containerStatuses[*].ready}"
+      shell: bash
+   
