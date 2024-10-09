@@ -38,27 +38,33 @@ runs:
 
     - name: Update Kubernetes secret for devnet chain spec
       run: |
-        SECRET_NAME="devnet-chain-spec-${{ inputs.sha }}"
-        kubectl delete secret "$SECRET_NAME" --namespace=sc --ignore-not-found
-        kubectl create secret generic "$SECRET_NAME" \
-          --from-file=devnet_chain_spec.json=./devnet_chain_spec.json \
-          --namespace=sc
+        if [ -f ./devnet_chain_spec.json ]; then
+          SECRET_NAME="devnet-chain-spec-${{ inputs.sha }}"
+          kubectl delete secret "$SECRET_NAME" --namespace=sc --ignore-not-found
+          kubectl create secret generic "$SECRET_NAME" \
+            --from-file=devnet_chain_spec.json=./devnet_chain_spec.json \
+            --namespace=sc
+        fi
       shell: bash
-
+    
     - name: Update Kubernetes secret for staging-preview chain spec
       run: |
-        SECRET_NAME="staging-preview-chain-spec-${{ inputs.sha }}"
-        kubectl delete secret "$SECRET_NAME" --namespace=staging-preview --ignore-not-found
-        kubectl create secret generic "$SECRET_NAME" \
-          --from-file=staging_preview_chain_spec.json=./staging_preview_chain_spec.json \
-          --namespace=staging-preview
+        if [ -f ./staging_preview_chain_spec.json ]; then
+          SECRET_NAME="staging-preview-chain-spec-${{ inputs.sha }}"
+          kubectl delete secret "$SECRET_NAME" --namespace=staging-preview --ignore-not-found
+          kubectl create secret generic "$SECRET_NAME" \
+            --from-file=staging_preview_chain_spec.json=./staging_preview_chain_spec.json \
+            --namespace=staging-preview
+        fi
       shell: bash
-
+    
     - name: Update Kubernetes secret for staging-preprod chain spec
       run: |
-        SECRET_NAME="staging-preprod-chain-spec-${{ inputs.sha }}"
-        kubectl delete secret "$SECRET_NAME" --namespace=staging-preprod --ignore-not-found
-        kubectl create secret generic "$SECRET_NAME" \
-          --from-file=staging_preprod_chain_spec.json=./staging_preprod_chain_spec.json \
-          --namespace=staging-preprod
+        if [ -f ./staging_preprod_chain_spec.json ]; then
+          SECRET_NAME="staging-preprod-chain-spec-${{ inputs.sha }}"
+          kubectl delete secret "$SECRET_NAME" --namespace=staging-preprod --ignore-not-found
+          kubectl create secret generic "$SECRET_NAME" \
+            --from-file=staging_preprod_chain_spec.json=./staging_preprod_chain_spec.json \
+            --namespace=staging-preprod
+        fi
       shell: bash

@@ -1,30 +1,28 @@
 name: "Generate Chain Specs from Node Binary"
 description: "Downloads the partner-chains node binary, generates chain specs for different environments, and uploads them."
 inputs:
-  sha:
-    description: "Commit SHA to append to chain spec secret name"
+  tag:
+    description: "Node tag"
     required: true
 
 runs:
   using: "composite"
   steps:
-    - name: Download Linux partner-chains-node artifact
+    - name: Download partner-chains-node-linux-artifact
       uses: actions/download-artifact@v4
       with:
-        name: partner-chains-node-x86_64-linux-artifact-artifact
+        name: partner-chains-node-linux-artifact
         path: ./
-
     - name: Generate Chain Specs
       shell: bash
       run: |
-        chmod +x ./partner-chains-node
+        chmod +x partner-chains-node-${{ inputs.tag }}-x86_64-linux
         source ./envs/devnet/.envrc
-        ./partner-chains-node build-spec --chain local --disable-default-bootnode --raw > devnet_chain_spec.json
+        ./partner-chains-node-${{ inputs.tag }}-x86_64-linux build-spec --chain local --disable-default-bootnode --raw > devnet_chain_spec.json
         source ./envs/staging-preview/.envrc
-        ./partner-chains-node build-spec --chain staging --disable-default-bootnode --raw > staging_preview_chain_spec.json
+        ./partner-chains-node-${{ inputs.tag }}-x86_64-linux build-spec --chain staging --disable-default-bootnode --raw > staging_preview_chain_spec.json
         source ./envs/staging-preprod/.envrc
-        ./partner-chains-node build-spec --chain staging --disable-default-bootnode --raw > staging_preprod_chain_spec.json
-
+        ./partner-chains-node-${{ inputs.tag }}-x86_64-linux build-spec --chain staging --disable-default-bootnode --raw > staging_preprod_chain_spec.json
     - name: Upload Chain Specs
       uses: actions/upload-artifact@v4
       with:
