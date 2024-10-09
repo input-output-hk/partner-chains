@@ -184,6 +184,14 @@ jobs:
           "s3://cache.sc.iog.io?secret-key=${{ runner.temp }}/nix-key&region=$AWS_DEFAULT_REGION" \
           && rm /tmp/outputs
 
+  security_audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rustsec/audit-check@v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
   pre-merge-checks-complete:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
     needs: [build, local-environment-tests, deploy-argocd, argocd-tests, teardown-argocd, devshell-tests]
