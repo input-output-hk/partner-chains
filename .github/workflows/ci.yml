@@ -18,6 +18,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (github.event.pull_request.merged || github.event.action != 'closed'))
     outputs:
       sha: ${{ steps.get_sha.outputs.sha }}
     steps:
@@ -111,6 +112,9 @@ jobs:
           sha: ${{ needs.build.outputs.sha }}
         env:
           ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   argocd-tests:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
@@ -141,7 +145,7 @@ jobs:
 
   teardown-argocd:
     if: always()
-    needs: argocd-tests
+    needs: [build, argocd-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -155,9 +159,11 @@ jobs:
           sha: ${{ needs.build.outputs.sha }}
         env:
           ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   devshell-tests:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
     needs: build
     strategy:
       matrix:
