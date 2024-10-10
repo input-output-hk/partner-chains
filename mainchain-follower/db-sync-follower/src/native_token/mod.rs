@@ -18,6 +18,7 @@ pub struct NativeTokenManagementDataSourceImpl {
 	pub metrics_opt: Option<McFollowerMetrics>,
 	security_parameter: u32,
 	cache_size: u16,
+	#[new(default)]
 	cache: Arc<Mutex<Cache>>,
 }
 
@@ -73,22 +74,6 @@ impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
 });
 
 impl NativeTokenManagementDataSourceImpl {
-	#[cfg(test)]
-	pub fn test_new(
-		pool: PgPool,
-		metrics_opt: Option<McFollowerMetrics>,
-		security_parameter: u32,
-		cache_size: u16,
-	) -> Self {
-		Self {
-			pool,
-			metrics_opt,
-			security_parameter,
-			cache_size,
-			cache: Arc::new(Mutex::new(Cache::new())),
-		}
-	}
-
 	pub fn new_from_env(
 		pool: PgPool,
 		metrics_opt: Option<McFollowerMetrics>,
@@ -102,7 +87,7 @@ impl NativeTokenManagementDataSourceImpl {
 			metrics_opt,
 			security_parameter,
 			cache_size: 1000,
-			cache: Arc::new(Mutex::new(Cache::new())),
+			cache: Default::default(),
 		})
 	}
 
@@ -212,10 +197,9 @@ async fn get_latest_block(pool: &PgPool) -> Result<Block> {
 	)
 }
 
-#[derive(new)]
+#[derive(Default)]
 pub(crate) struct Cache {
 	/// Continous blocks with their respective total native token transfer amount
-	#[new(default)]
 	block_hash_to_amount: Vec<(McBlockHash, u128)>,
 }
 

@@ -25,7 +25,7 @@ fn block_hash(i: u32) -> McBlockHash {
 }
 
 fn make_source(pool: PgPool) -> NativeTokenManagementDataSourceImpl {
-	NativeTokenManagementDataSourceImpl::test_new(pool, None, 1u32, 10u16)
+	NativeTokenManagementDataSourceImpl::new(pool, None, 1u32, 10u16)
 }
 
 #[sqlx::test(migrations = "./testdata/native-token/migrations")]

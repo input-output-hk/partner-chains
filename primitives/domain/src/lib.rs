@@ -167,10 +167,11 @@ impl FromStr for MainchainAddress {
 }
 
 #[cfg(feature = "std")]
-impl ToString for MainchainAddress {
-	fn to_string(&self) -> String {
-		String::from_utf8(self.0.to_vec())
-			.expect("MainchainAddressString is always properly encoded UTF-8")
+impl std::fmt::Display for MainchainAddress {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let s = String::from_utf8(self.0.to_vec())
+			.expect("MainchainAddressString is always properly encoded UTF-8");
+		write!(f, "{}", s)
 	}
 }
 
