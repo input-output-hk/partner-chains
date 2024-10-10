@@ -111,11 +111,8 @@ impl NativeTokenManagementDataSourceImpl {
 		after_block: &McBlockHash,
 		to_block: &McBlockHash,
 	) -> Option<NativeTokenAmount> {
-		if let Ok(cache) = self.cache.lock() {
-			cache.get_sum_in_range(after_block, to_block).map(NativeTokenAmount)
-		} else {
-			None
-		}
+		let cache = self.cache.lock().ok()?;
+		cache.get_sum_in_range(after_block, to_block).map(NativeTokenAmount)
 	}
 
 	// invariant: to_block is always a stable block
