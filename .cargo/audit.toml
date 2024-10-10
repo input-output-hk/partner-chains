@@ -1,0 +1,11 @@
+[advisories]
+ignore = []
+severity_threshold = "low"
+
+[output]
+format = "json"
+quiet = false
+
+[yanked]
+enabled = true
+
