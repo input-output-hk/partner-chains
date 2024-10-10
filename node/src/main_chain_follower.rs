@@ -69,6 +69,9 @@ pub async fn create_cached_data_sources(
 				.await?
 				.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE)?,
 		),
-		native_token: Arc::new(NativeTokenManagementDataSourceImpl::new(pool, metrics_opt)),
+		native_token: Arc::new(NativeTokenManagementDataSourceImpl::new_from_env(
+			pool,
+			metrics_opt,
+		)?),
 	})
 }

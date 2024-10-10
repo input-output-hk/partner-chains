@@ -22,11 +22,13 @@ type CandidateWithWeight<A, B> = (Candidate<A, B>, Weight);
 /// Committee size is P+T, where P (permissioned) and T (trustless) are constituents of the D parameter.
 ///
 /// Committee is a result of the weighted selection with repetition.
+///
 /// Weight function for trustless candidate is:
 ///   * let `n` be the number of permissioned candidates from MC data
 ///   * if `n == 0`, then the weight is `stake_delegation`
 ///   * otherwise, the weight is `n * T * stake_delegation`
-///Weight for each permissioned candidates is:
+///
+/// Weight for each permissioned candidates is:
 ///   * let `W` be the sum of all stake delegations of trustless candidates
 ///   * if `W == 0` or `T == 0` (there are no valid trustless candidates, or they are not taken into account), then the weight is `1`
 ///   * otherwise, the weight is `P * W`

@@ -35,11 +35,9 @@ impl CmdRun for Register2Cmd {
 
 		let mainchain_signing_key_path =
 			context.prompt("Path to mainchain signing key file", Some("cold.skey"));
-		let mainchain_signing_key = get_mainchain_cold_skey(context, &mainchain_signing_key_path)
-			.map_err(|e| {
-			context.eprint("Unable to read mainchain signing key file");
-			e
-		})?;
+		let mainchain_signing_key =
+			get_mainchain_cold_skey(context, &mainchain_signing_key_path)
+				.inspect_err(|_| context.eprint("Unable to read mainchain signing key file"))?;
 
 		let registration_message = RegisterValidatorMessage::<chain_params::SidechainParams> {
 			sidechain_params: self.sidechain_params.clone(),

@@ -97,7 +97,7 @@ where
 			client.clone(),
 			data_sources.native_token.as_ref(),
 			mc_hash.mc_hash(),
-			parent_hash.clone(),
+			parent_hash,
 		)
 		.await?;
 
@@ -176,7 +176,7 @@ where
 			client.clone(),
 			data_sources.native_token.as_ref(),
 			mc_hash,
-			parent_hash.clone(),
+			parent_hash,
 		)
 		.await?;
 

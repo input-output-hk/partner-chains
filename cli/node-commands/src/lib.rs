@@ -66,6 +66,7 @@ impl CliConfiguration for RegistrationStatusCmd {
 }
 
 #[derive(Clone, Debug, clap::Subcommand)]
+#[allow(clippy::large_enum_variant)]
 pub enum PartnerChainsSubcommand<SidechainParams: clap::Args> {
 	/// Returns sidechain parameters
 	SidechainParams(SidechainParamsCmd),

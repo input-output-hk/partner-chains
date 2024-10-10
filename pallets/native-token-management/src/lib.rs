@@ -27,7 +27,7 @@ use sp_native_token_management::*;
 #[cfg(test)]
 mod tests;
 
-#[cfg(any(test, feature = "mock"))]
+#[cfg(test)]
 mod mock;
 
 /// Interface for user-provided logic to handle native token transfers into the illiquid supply on the main chain.
@@ -91,12 +91,12 @@ pub mod pallet {
 
 		fn check_inherent(call: &Self::Call, data: &InherentData) -> Result<(), Self::Error> {
 			let actual_transfer = match call {
-				Call::transfer_tokens { token_amount } => token_amount.clone(),
+				Call::transfer_tokens { token_amount } => *token_amount,
 				_ => return Ok(()),
 			};
 
 			let expected_transfer = match Self::get_transfered_tokens_from_inherent_data(data) {
-				Some(data) => data.token_amount.clone(),
+				Some(data) => data.token_amount,
 				None => {
 					return Err(InherentError::UnexpectedTokenTransferInherent(actual_transfer))
 				},
@@ -119,7 +119,7 @@ pub mod pallet {
 		fn is_inherent_required(data: &InherentData) -> Result<Option<Self::Error>, Self::Error> {
 			Ok(Self::get_transfered_tokens_from_inherent_data(data)
 				.filter(|data| data.token_amount.0 > 0)
-				.map(|data| InherentError::TokenTransferNotHandled(data.token_amount.clone())))
+				.map(|data| InherentError::TokenTransferNotHandled(data.token_amount)))
 		}
 	}
 

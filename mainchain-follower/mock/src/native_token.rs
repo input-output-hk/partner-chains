@@ -11,6 +11,12 @@ impl NativeTokenDataSourceMock {
 	}
 }
 
+impl Default for NativeTokenDataSourceMock {
+	fn default() -> Self {
+		Self::new()
+	}
+}
+
 #[async_trait]
 impl NativeTokenManagementDataSource for NativeTokenDataSourceMock {
 	async fn get_total_native_token_transfer(

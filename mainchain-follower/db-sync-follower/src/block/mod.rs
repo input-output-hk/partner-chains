@@ -265,8 +265,7 @@ pub(crate) struct BlocksCache {
 
 impl BlocksCache {
 	fn find_by_hash(&self, hash: McBlockHash) -> Option<Block> {
-		let hash_bytes: [u8; 32] = hash.0.try_into().ok()?;
-		self.from_last_by_hash.iter().find(|b| b.hash == hash_bytes).cloned()
+		self.from_last_by_hash.iter().find(|b| b.hash == hash.0).cloned()
 	}
 
 	pub fn update(&mut self, from_last_by_hash: Vec<Block>) {

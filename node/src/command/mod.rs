@@ -43,9 +43,7 @@ impl SubstrateCli for Cli {
 			"" => template_chain_spec::chain_spec(),
 			path => match chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path)) {
 				Ok(parsed) => Ok(parsed),
-				Err(err) => {
-					return Err(format!("Parsing chain spec file failed: {}", err.to_string()))
-				},
+				Err(err) => return Err(format!("Parsing chain spec file failed: {}", err)),
 			},
 		};
 
@@ -53,7 +51,7 @@ impl SubstrateCli for Cli {
 			Ok(chain_spec) => Ok(Box::new(chain_spec)),
 			Err(err) => {
 				println!("{}", INVALID_ENV_VARIABLES_HELP);
-				Err(format!("Reading configuration from environment failed: {}", err.to_string()))
+				Err(format!("Reading configuration from environment failed: {}", err))
 			},
 		}
 	}
