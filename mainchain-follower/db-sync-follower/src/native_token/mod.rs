@@ -1,4 +1,4 @@
-use crate::db_model::{Address, Block, BlockNumber};
+use crate::db_model::{Block, BlockNumber};
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
 use async_trait::async_trait;
@@ -138,11 +138,8 @@ impl NativeTokenManagementDataSourceImpl {
 		native_token_asset_name: &AssetName,
 		illiquid_supply_address: &MainchainAddress,
 	) -> Result<Vec<crate::db_model::BlockTokenAmount>> {
-		let address = Address(illiquid_supply_address.to_string());
-		let asset = crate::db_model::Asset {
-			policy_id: native_token_policy_id.clone().into(),
-			asset_name: native_token_asset_name.clone().into(),
-		};
+		let address = illiquid_supply_address.clone().into();
+		let asset = to_db_asset(native_token_policy_id, native_token_asset_name);
 		Ok(crate::db_model::get_native_token_transfers(
 			&self.pool, from_block, to_block, asset, address,
 		)
@@ -160,14 +157,18 @@ impl NativeTokenManagementDataSourceImpl {
 		Ok(crate::db_model::get_total_native_tokens_transfered(
 			&self.pool,
 			to_block,
-			crate::db_model::Asset {
-				policy_id: policy_id.clone().into(),
-				asset_name: asset_name.clone().into(),
-			},
-			Address(address.to_string()),
+			to_db_asset(policy_id, asset_name),
+			address.clone().into(),
 		)
 		.await?
 		.into())
+	}
+}
+
+fn to_db_asset(policy_id: &PolicyId, asset_name: &AssetName) -> crate::db_model::Asset {
+	crate::db_model::Asset {
+		policy_id: policy_id.clone().into(),
+		asset_name: asset_name.clone().into(),
 	}
 }
 

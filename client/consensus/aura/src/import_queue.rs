@@ -53,6 +53,7 @@ use std::{fmt::Debug, marker::PhantomData, sync::Arc};
 /// containing the seal.
 ///
 /// This digest item will always return `Some` when used with `as_aura_seal`.
+#[allow(clippy::type_complexity)]
 fn check_header<C, B: BlockT, P: Pair>(
 	client: &C,
 	slot_now: Slot,
@@ -75,7 +76,7 @@ where
 	match check_result {
 		Ok((header, slot, seal)) => {
 			let expected_author =
-				sc_consensus_aura::standalone::slot_author::<P>(slot, &authorities);
+				sc_consensus_aura::standalone::slot_author::<P>(slot, authorities);
 			let should_equiv_check = matches!(check_for_equivocation, CheckForEquivocation::Yes);
 			if let (true, Some(expected)) = (should_equiv_check, expected_author) {
 				if let Some(equivocation_proof) =
@@ -362,5 +363,5 @@ where
 async fn create_inherent_data<B: BlockT>(
 	provider: &impl InherentDataProvider,
 ) -> Result<InherentData, Error<B>> {
-	Ok(provider.create_inherent_data().await.map_err(Error::<B>::Inherent)?)
+	provider.create_inherent_data().await.map_err(Error::<B>::Inherent)
 }

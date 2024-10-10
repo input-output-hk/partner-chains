@@ -138,6 +138,12 @@ impl From<EpochNumberRow> for EpochNumber {
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 pub(crate) struct Address(pub String);
 
+impl From<MainchainAddress> for Address {
+	fn from(addr: MainchainAddress) -> Self {
+		Self(addr.to_string())
+	}
+}
+
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 pub(crate) struct MainchainEpochNonce(pub Vec<u8>);
 

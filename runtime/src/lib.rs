@@ -331,7 +331,7 @@ impl pallet_native_token_management::TokenTransferHandler for TokenTransferHandl
 			&AccountId::from(hex!(
 				"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 			)),
-			token_amount.0.into(),
+			token_amount.0,
 			Precision::Exact,
 		)?;
 		log::info!("💸 Registered transfer of {} native tokens", token_amount.0);

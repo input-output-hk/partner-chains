@@ -184,7 +184,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 	let metrics = Network::register_notification_metrics(config.prometheus_registry());
 	let mut net_config = sc_network::config::FullNetworkConfiguration::<_, _, Network>::new(
 		&config.network,
-		config.prometheus_registry().map(|r| r.clone()),
+		config.prometheus_registry().cloned(),
 	);
 
 	let grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
@@ -241,7 +241,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		);
 	}
 
-	let role = config.role.clone();
+	let role = config.role;
 	let force_authoring = config.force_authoring;
 	let backoff_authoring_blocks: Option<()> = None;
 	let name = config.network.node_name.clone();
