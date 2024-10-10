@@ -364,6 +364,7 @@
 <a href="#364" id="364">364</a>
 <a href="#365" id="365">365</a>
 <a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
 </pre></div><pre class="rust"><code><span class="comment">// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
@@ -419,6 +420,7 @@
 /// containing the seal.
 ///
 /// This digest item will always return `Some` when used with `as_aura_seal`.
+</span><span class="attr">#[allow(clippy::type_complexity)]
 </span><span class="kw">fn </span>check_header&lt;C, B: BlockT, P: Pair&gt;(
 	client: <span class="kw-2">&amp;</span>C,
 	slot_now: Slot,
@@ -441,7 +443,7 @@
 	<span class="kw">match </span>check_result {
 		<span class="prelude-val">Ok</span>((header, slot, seal)) =&gt; {
 			<span class="kw">let </span>expected_author =
-				sc_consensus_aura::standalone::slot_author::&lt;P&gt;(slot, <span class="kw-2">&amp;</span>authorities);
+				sc_consensus_aura::standalone::slot_author::&lt;P&gt;(slot, authorities);
 			<span class="kw">let </span>should_equiv_check = <span class="macro">matches!</span>(check_for_equivocation, CheckForEquivocation::Yes);
 			<span class="kw">if let </span>(<span class="bool-val">true</span>, <span class="prelude-val">Some</span>(expected)) = (should_equiv_check, expected_author) {
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(equivocation_proof) =
@@ -728,6 +730,6 @@
 <span class="kw">async fn </span>create_inherent_data&lt;B: BlockT&gt;(
 	provider: <span class="kw-2">&amp;</span><span class="kw">impl </span>InherentDataProvider,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;InherentData, Error&lt;B&gt;&gt; {
-	<span class="prelude-val">Ok</span>(provider.create_inherent_data().<span class="kw">await</span>.map_err(Error::&lt;B&gt;::Inherent)<span class="question-mark">?</span>)
+	provider.create_inherent_data().<span class="kw">await</span>.map_err(Error::&lt;B&gt;::Inherent)
 }
 </code></pre></div></section></main></body></html>

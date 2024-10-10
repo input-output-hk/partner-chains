@@ -316,7 +316,7 @@
 			client.clone(),
 			data_sources.native_token.as_ref(),
 			mc_hash.mc_hash(),
-			parent_hash.clone(),
+			parent_hash,
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;
 
@@ -395,7 +395,7 @@
 			client.clone(),
 			data_sources.native_token.as_ref(),
 			mc_hash,
-			parent_hash.clone(),
+			parent_hash,
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;
 

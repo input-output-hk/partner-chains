@@ -595,6 +595,54 @@
 <a href="#595" id="595">595</a>
 <a href="#596" id="596">596</a>
 <a href="#597" id="597">597</a>
+<a href="#598" id="598">598</a>
+<a href="#599" id="599">599</a>
+<a href="#600" id="600">600</a>
+<a href="#601" id="601">601</a>
+<a href="#602" id="602">602</a>
+<a href="#603" id="603">603</a>
+<a href="#604" id="604">604</a>
+<a href="#605" id="605">605</a>
+<a href="#606" id="606">606</a>
+<a href="#607" id="607">607</a>
+<a href="#608" id="608">608</a>
+<a href="#609" id="609">609</a>
+<a href="#610" id="610">610</a>
+<a href="#611" id="611">611</a>
+<a href="#612" id="612">612</a>
+<a href="#613" id="613">613</a>
+<a href="#614" id="614">614</a>
+<a href="#615" id="615">615</a>
+<a href="#616" id="616">616</a>
+<a href="#617" id="617">617</a>
+<a href="#618" id="618">618</a>
+<a href="#619" id="619">619</a>
+<a href="#620" id="620">620</a>
+<a href="#621" id="621">621</a>
+<a href="#622" id="622">622</a>
+<a href="#623" id="623">623</a>
+<a href="#624" id="624">624</a>
+<a href="#625" id="625">625</a>
+<a href="#626" id="626">626</a>
+<a href="#627" id="627">627</a>
+<a href="#628" id="628">628</a>
+<a href="#629" id="629">629</a>
+<a href="#630" id="630">630</a>
+<a href="#631" id="631">631</a>
+<a href="#632" id="632">632</a>
+<a href="#633" id="633">633</a>
+<a href="#634" id="634">634</a>
+<a href="#635" id="635">635</a>
+<a href="#636" id="636">636</a>
+<a href="#637" id="637">637</a>
+<a href="#638" id="638">638</a>
+<a href="#639" id="639">639</a>
+<a href="#640" id="640">640</a>
+<a href="#641" id="641">641</a>
+<a href="#642" id="642">642</a>
+<a href="#643" id="643">643</a>
+<a href="#644" id="644">644</a>
+<a href="#645" id="645">645</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::db_datum::DbDatum;
 <span class="kw">use </span><span class="kw">crate</span>::SqlxError;
 <span class="kw">use </span>chrono::NaiveDateTime;
@@ -734,6 +782,12 @@
 
 <span class="attr">#[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>Address(<span class="kw">pub </span>String);
+
+<span class="kw">impl </span>From&lt;MainchainAddress&gt; <span class="kw">for </span>Address {
+	<span class="kw">fn </span>from(addr: MainchainAddress) -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>(addr.to_string())
+	}
+}
 
 <span class="attr">#[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>MainchainEpochNonce(<span class="kw">pub </span>Vec&lt;u8&gt;);
@@ -903,7 +957,13 @@
 	}
 }
 
-<span class="attr">#[cfg(feature = <span class="string">"block-source"</span>)]
+<span class="attr">#[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>BlockTokenAmount {
+	<span class="kw">pub </span>block_hash: [u8; <span class="number">32</span>],
+	<span class="kw">pub </span>amount: NativeTokenAmount,
+}
+
+<span class="attr">#[cfg(any(feature = <span class="string">"block-source"</span>, feature = <span class="string">"native-token"</span>))]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_latest_block_info(
 	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Block&gt;, SqlxError&gt; {
@@ -1161,18 +1221,19 @@ LIMIT 1"</span>;
 		.unwrap()
 }
 
-<span class="attr">#[cfg(feature = <span class="string">"native-token"</span>)]
+<span class="doccomment">/// Sums all transfers between genesis and the first block that is produced with the feature on.
+/// Used by `get_native_token_transfers` (NativeTokenDataSourceImpl).
+</span><span class="attr">#[cfg(feature = <span class="string">"native-token"</span>)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_total_native_tokens_transfered(
 	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
-	after_slot: SlotNumber,
-	to_slot: SlotNumber,
+	to_block: BlockNumber,
 	asset: Asset,
 	illiquid_supply_address: Address,
-) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;NativeTokenAmount&gt;, SqlxError&gt; {
-	<span class="kw">let </span>query = sqlx::query_as::&lt;<span class="kw">_</span>, (<span class="prelude-ty">Option</span>&lt;NativeTokenAmount&gt;,)&gt;(
+) -&gt; <span class="prelude-ty">Result</span>&lt;NativeTokenAmount, SqlxError&gt; {
+	<span class="kw">let </span>query = sqlx::query_as::&lt;<span class="kw">_</span>, (NativeTokenAmount,)&gt;(
 		<span class="string">"
 SELECT
-    SUM(ma_tx_out.quantity)
+    COALESCE(SUM(ma_tx_out.quantity), 0)
 FROM tx_out
 LEFT JOIN ma_tx_out    ON ma_tx_out.tx_out_id = tx_out.id
 LEFT JOIN multi_asset  ON multi_asset.id = ma_tx_out.ident
@@ -1181,15 +1242,50 @@ INNER JOIN block       ON tx.block_id = block.id
 WHERE address = $1
 AND multi_asset.policy = $2
 AND multi_asset.name = $3
-AND $4 &lt; block.slot_no AND block.slot_no &lt;= $5;
+AND block.block_no &lt;= $4;
     "</span>,
 	)
 	.bind(<span class="kw-2">&amp;</span>illiquid_supply_address.<span class="number">0</span>)
 	.bind(<span class="kw-2">&amp;</span>asset.policy_id.<span class="number">0</span>)
 	.bind(<span class="kw-2">&amp;</span>asset.asset_name.<span class="number">0</span>)
-	.bind(after_slot)
-	.bind(to_slot);
+	.bind(to_block);
 
 	<span class="prelude-val">Ok</span>(query.fetch_one(pool).<span class="kw">await</span><span class="question-mark">?</span>.<span class="number">0</span>)
+}
+
+<span class="doccomment">/// Returns the list of all blocks in given range,
+/// together with the sum of all token amounts transferred to illiquid supply address in this block.
+/// On devnet postgres it takes around 5ms to execute when querying 1000 blocks.
+/// Used by `get_native_token_transfers` (NativeTokenDataSourceImpl).
+</span><span class="attr">#[cfg(feature = <span class="string">"native-token"</span>)]
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_native_token_transfers(
+	pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;,
+	from_block: BlockNumber,
+	to_block: BlockNumber,
+	asset: Asset,
+	illiquid_supply_address: Address,
+) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;BlockTokenAmount&gt;, SqlxError&gt; {
+	<span class="kw">let </span>query = sqlx::query_as::&lt;<span class="kw">_</span>, BlockTokenAmount&gt;(
+		<span class="string">"
+SELECT
+    block.hash as block_hash, COALESCE(SUM(ma_tx_out.quantity), 0) as amount
+FROM block
+    LEFT JOIN tx ON block.id = tx.block_id
+    LEFT JOIN tx_out ON tx.id = tx_out.tx_id AND tx_out.address = $1
+    LEFT JOIN ma_tx_out    ON ma_tx_out.tx_out_id = tx_out.id
+    LEFT JOIN multi_asset  ON multi_asset.id = ma_tx_out.ident AND multi_asset.policy = $2 AND multi_asset.name = $3
+WHERE
+    $4 &lt;= block.block_no AND block.block_no &lt;= $5
+GROUP BY block.block_no, block.hash
+ORDER BY block.block_no ASC;
+    "</span>,
+	)
+	.bind(<span class="kw-2">&amp;</span>illiquid_supply_address.<span class="number">0</span>)
+	.bind(<span class="kw-2">&amp;</span>asset.policy_id.<span class="number">0</span>)
+	.bind(<span class="kw-2">&amp;</span>asset.asset_name.<span class="number">0</span>)
+	.bind(from_block)
+	.bind(to_block);
+
+	<span class="prelude-val">Ok</span>(query.fetch_all(pool).<span class="kw">await</span><span class="question-mark">?</span>)
 }
 </code></pre></div></section></main></body></html>

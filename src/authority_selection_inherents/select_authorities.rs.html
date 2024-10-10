@@ -118,6 +118,8 @@
 <a href="#118" id="118">118</a>
 <a href="#119" id="119">119</a>
 <a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Functionality related to selecting the validators from the valid candidates
 
 </span><span class="kw">use </span><span class="kw">crate</span>::authority_selection_inputs::AuthoritySelectionInputs;
@@ -142,11 +144,13 @@
 /// Committee size is P+T, where P (permissioned) and T (trustless) are constituents of the D parameter.
 ///
 /// Committee is a result of the weighted selection with repetition.
+///
 /// Weight function for trustless candidate is:
 ///   * let `n` be the number of permissioned candidates from MC data
 ///   * if `n == 0`, then the weight is `stake_delegation`
 ///   * otherwise, the weight is `n * T * stake_delegation`
-///Weight for each permissioned candidates is:
+///
+/// Weight for each permissioned candidates is:
 ///   * let `W` be the sum of all stake delegations of trustless candidates
 ///   * if `W == 0` or `T == 0` (there are no valid trustless candidates, or they are not taken into account), then the weight is `1`
 ///   * otherwise, the weight is `P * W`

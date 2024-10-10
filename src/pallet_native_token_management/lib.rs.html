@@ -214,7 +214,7 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
 
-<span class="attr">#[cfg(any(test, feature = <span class="string">"mock"</span>))]
+<span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>mock;
 
 <span class="doccomment">/// Interface for user-provided logic to handle native token transfers into the illiquid supply on the main chain.
@@ -278,12 +278,12 @@
 
 		<span class="kw">fn </span>check_inherent(call: <span class="kw-2">&amp;</span><span class="self">Self</span>::Call, data: <span class="kw-2">&amp;</span>InherentData) -&gt; <span class="prelude-ty">Result</span>&lt;(), <span class="self">Self</span>::Error&gt; {
 			<span class="kw">let </span>actual_transfer = <span class="kw">match </span>call {
-				Call::transfer_tokens { token_amount } =&gt; token_amount.clone(),
+				Call::transfer_tokens { token_amount } =&gt; <span class="kw-2">*</span>token_amount,
 				<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(()),
 			};
 
 			<span class="kw">let </span>expected_transfer = <span class="kw">match </span><span class="self">Self</span>::get_transfered_tokens_from_inherent_data(data) {
-				<span class="prelude-val">Some</span>(data) =&gt; data.token_amount.clone(),
+				<span class="prelude-val">Some</span>(data) =&gt; data.token_amount,
 				<span class="prelude-val">None </span>=&gt; {
 					<span class="kw">return </span><span class="prelude-val">Err</span>(InherentError::UnexpectedTokenTransferInherent(actual_transfer))
 				},
@@ -306,7 +306,7 @@
 		<span class="kw">fn </span>is_inherent_required(data: <span class="kw-2">&amp;</span>InherentData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Error&gt;, <span class="self">Self</span>::Error&gt; {
 			<span class="prelude-val">Ok</span>(<span class="self">Self</span>::get_transfered_tokens_from_inherent_data(data)
 				.filter(|data| data.token_amount.<span class="number">0 </span>&gt; <span class="number">0</span>)
-				.map(|data| InherentError::TokenTransferNotHandled(data.token_amount.clone())))
+				.map(|data| InherentError::TokenTransferNotHandled(data.token_amount)))
 		}
 	}
 

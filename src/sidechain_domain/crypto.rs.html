@@ -6,16 +6,12 @@
 <a href="#6" id="6">6</a>
 <a href="#7" id="7">7</a>
 <a href="#8" id="8">8</a>
-<a href="#9" id="9">9</a>
-<a href="#10" id="10">10</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>alloc::format;
-
-<span class="kw">pub fn </span>blake2b&lt;<span class="kw">const </span>N: usize&gt;(data: <span class="kw-2">&amp;</span>[u8]) -&gt; [u8; N] {
+</pre></div><pre class="rust"><code><span class="kw">pub fn </span>blake2b&lt;<span class="kw">const </span>N: usize&gt;(data: <span class="kw-2">&amp;</span>[u8]) -&gt; [u8; N] {
 	blake2b_simd::Params::new()
 		.hash_length(N)
 		.hash(data)
 		.as_bytes()
 		.try_into()
-		.expect(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"hash output always has expected length of {N}"</span>))
+		.unwrap_or_else(|<span class="kw">_</span>| <span class="macro">panic!</span>(<span class="string">"hash output always has expected length of {N}"</span>))
 }
 </code></pre></div></section></main></body></html>

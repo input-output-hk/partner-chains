@@ -276,7 +276,6 @@
 <a href="#276" id="276">276</a>
 <a href="#277" id="277">277</a>
 <a href="#278" id="278">278</a>
-<a href="#279" id="279">279</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::data_sources::read_mc_epoch_config;
 <span class="kw">use </span><span class="kw">crate</span>::db_model;
 <span class="kw">use </span><span class="kw">crate</span>::db_model::{Block, BlockNumber, SlotNumber};
@@ -544,8 +543,7 @@
 
 <span class="kw">impl </span>BlocksCache {
 	<span class="kw">fn </span>find_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: McBlockHash) -&gt; <span class="prelude-ty">Option</span>&lt;Block&gt; {
-		<span class="kw">let </span>hash_bytes: [u8; <span class="number">32</span>] = hash.<span class="number">0</span>.try_into().ok()<span class="question-mark">?</span>;
-		<span class="self">self</span>.from_last_by_hash.iter().find(|b| b.hash == hash_bytes).cloned()
+		<span class="self">self</span>.from_last_by_hash.iter().find(|b| b.hash == hash.<span class="number">0</span>).cloned()
 	}
 
 	<span class="kw">pub fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, from_last_by_hash: Vec&lt;Block&gt;) {

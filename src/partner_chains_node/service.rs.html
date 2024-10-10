@@ -589,7 +589,7 @@
 	<span class="kw">let </span>metrics = Network::register_notification_metrics(config.prometheus_registry());
 	<span class="kw">let </span><span class="kw-2">mut </span>net_config = sc_network::config::FullNetworkConfiguration::&lt;<span class="kw">_</span>, <span class="kw">_</span>, Network&gt;::new(
 		<span class="kw-2">&amp;</span>config.network,
-		config.prometheus_registry().map(|r| r.clone()),
+		config.prometheus_registry().cloned(),
 	);
 
 	<span class="kw">let </span>grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
@@ -646,7 +646,7 @@
 		);
 	}
 
-	<span class="kw">let </span>role = config.role.clone();
+	<span class="kw">let </span>role = config.role;
 	<span class="kw">let </span>force_authoring = config.force_authoring;
 	<span class="kw">let </span>backoff_authoring_blocks: <span class="prelude-ty">Option</span>&lt;()&gt; = <span class="prelude-val">None</span>;
 	<span class="kw">let </span>name = config.network.node_name.clone();

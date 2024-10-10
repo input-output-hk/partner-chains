@@ -1378,7 +1378,7 @@
 			<span class="kw-2">&amp;</span>AccountId::from(<span class="macro">hex!</span>(
 				<span class="string">"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 			</span>)),
-			token_amount.<span class="number">0</span>.into(),
+			token_amount.<span class="number">0</span>,
 			Precision::Exact,
 		)<span class="question-mark">?</span>;
 		<span class="macro">log::info!</span>(<span class="string">"💸 Registered transfer of {} native tokens"</span>, token_amount.<span class="number">0</span>);

@@ -604,6 +604,7 @@
 <a href="#604" id="604">604</a>
 <a href="#605" id="605">605</a>
 <a href="#606" id="606">606</a>
+<a href="#607" id="607">607</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -773,10 +774,11 @@
 }
 
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
-</span><span class="kw">impl </span>ToString <span class="kw">for </span>MainchainAddress {
-	<span class="kw">fn </span>to_string(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
-		String::from_utf8(<span class="self">self</span>.<span class="number">0</span>.to_vec())
-			.expect(<span class="string">"MainchainAddressString is always properly encoded UTF-8"</span>)
+</span><span class="kw">impl </span>std::fmt::Display <span class="kw">for </span>MainchainAddress {
+	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>std::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; std::fmt::Result {
+		<span class="kw">let </span>s = String::from_utf8(<span class="self">self</span>.<span class="number">0</span>.to_vec())
+			.expect(<span class="string">"MainchainAddressString is always properly encoded UTF-8"</span>);
+		<span class="macro">write!</span>(f, <span class="string">"{}"</span>, s)
 	}
 }
 
