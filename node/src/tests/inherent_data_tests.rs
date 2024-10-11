@@ -3,11 +3,11 @@ use crate::main_chain_follower::DataSources;
 use crate::tests::mock::{test_client, test_create_inherent_data_config};
 use crate::tests::runtime_api_mock::{mock_header, TestApi};
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
-use main_chain_follower_api::{block::MainchainBlock, mock_services::*};
+use main_chain_follower_api::mock_services::*;
 use sidechain_domain::{
 	McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, NativeTokenAmount, ScEpochNumber,
 };
-use sidechain_mc_hash::mock::MockMcHashDataSource;
+use sidechain_mc_hash::{mock::MockMcHashDataSource, MainchainBlock};
 use sp_consensus_aura::Slot;
 use sp_core::H256;
 use sp_inherents::CreateInherentDataProviders;
@@ -32,7 +32,7 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 		)]
 		.into(),
 	);
-	let mc_hash_data_source = MockMcHashDataSource::from(vec![sidechain_mc_hash::MainchainBlock {
+	let mc_hash_data_source = MockMcHashDataSource::from(vec![MainchainBlock {
 		number: McBlockNumber(1),
 		hash: McBlockHash([1; 32]),
 		epoch: McEpochNumber(2),
@@ -99,24 +99,13 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 
 #[tokio::test]
 async fn block_verification_cidp_should_be_created_correctly() {
-	let mut block_data_source = MockBlockDataSource::default();
+	let block_data_source = MockBlockDataSource::default();
 	let parent_stable_block = block_data_source.get_all_stable_blocks().first().unwrap().clone();
 	let mc_block_hash = McBlockHash([2; 32]);
-	block_data_source.push_stable_block(MainchainBlock {
-		number: McBlockNumber(parent_stable_block.number.0 + 5),
-		hash: mc_block_hash.clone(),
-		slot: McSlotNumber(parent_stable_block.slot.0 + 100),
-		timestamp: parent_stable_block.timestamp + 101,
-		epoch: McEpochNumber(parent_stable_block.epoch.0),
-	});
 	let native_token_data_source = MockNativeTokenDataSource::new(
-		[(
-			(None, block_data_source.stable_blocks.last().unwrap().hash.clone()),
-			NativeTokenAmount(1000),
-		)]
-		.into(),
+		[((None, mc_block_hash.clone()), NativeTokenAmount(1000))].into(),
 	);
-	let mc_hash_data_source = MockMcHashDataSource::from(vec![sidechain_mc_hash::MainchainBlock {
+	let mc_hash_data_source = MockMcHashDataSource::from(vec![MainchainBlock {
 		number: McBlockNumber(parent_stable_block.number.0 + 5),
 		hash: mc_block_hash.clone(),
 		slot: McSlotNumber(parent_stable_block.slot.0 + 100),

@@ -26,18 +26,6 @@ mod block {
 			Self { mainchain_block: block, ..self }
 		}
 
-		pub fn with_stable_blocks(self, blocks: Vec<MainchainBlock>) -> Self {
-			Self { stable_blocks: blocks, ..self }
-		}
-
-		pub fn with_one_stable_block(self, block: MainchainBlock) -> Self {
-			Self { stable_blocks: vec![block], ..self }
-		}
-
-		pub fn push_stable_block(&mut self, block: MainchainBlock) {
-			self.stable_blocks.push(block);
-		}
-
 		pub fn get_all_stable_blocks(&self) -> Vec<MainchainBlock> {
 			self.stable_blocks.clone()
 		}
