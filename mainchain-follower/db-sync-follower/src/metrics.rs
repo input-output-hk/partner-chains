@@ -61,10 +61,12 @@ pub fn register_metrics_warn_errors(
 #[macro_export]
 macro_rules! observed_async_trait {
 	(impl $trait_name:ident for $target_type:ty {
+		$(type $type_name:ident = $type:ty;)*
 		$(async fn $method:ident(&$self:tt $(,$param_name:ident: $param_type:ty)* $(,)?) -> $res:ty $body:block)*
 	})=> {
 		#[async_trait]
 		impl $trait_name for $target_type {
+		$(type $type_name = $type;)*
 		$(
 			async fn $method(&$self $(,$param_name: $param_type)*,) -> $res {
 				let method_name = stringify!($method);

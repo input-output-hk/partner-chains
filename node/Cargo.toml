@@ -104,6 +104,7 @@ substrate-build-script-utils = { workspace = true }
 hex-literal = { workspace = true }
 time-source = { workspace = true, features = ["mock"] }
 assert_cmd = { workspace = true }
+sp-native-token-management = { workspace = true, features = ["mock"] }
 
 [features]
 default = ["sidechain-domain/std", "chain-params/std"]

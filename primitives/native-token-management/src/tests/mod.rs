@@ -3,10 +3,10 @@ pub(crate) mod runtime_api_mock;
 #[cfg(feature = "std")]
 mod inherent_provider {
 	use super::runtime_api_mock::*;
+	use crate::inherent_provider::mock::*;
 	use crate::inherent_provider::*;
 	use crate::MainChainScripts;
 	use crate::INHERENT_IDENTIFIER;
-	use main_chain_follower_api::mock_services::MockNativeTokenDataSource;
 	use sidechain_domain::*;
 	use sidechain_mc_hash::MC_HASH_DIGEST_ID;
 	use sp_inherents::InherentData;
@@ -14,6 +14,13 @@ mod inherent_provider {
 	use sp_runtime::testing::Digest;
 	use sp_runtime::testing::DigestItem;
 	use std::sync::Arc;
+
+	#[derive(thiserror::Error, sp_runtime::RuntimeDebug)]
+	pub enum TestErr {
+		#[allow(unused)]
+		#[error("Test error")]
+		Err,
+	}
 
 	#[tokio::test]
 	async fn correctly_fetches_total_transfer_between_two_hashes() {
@@ -75,7 +82,7 @@ mod inherent_provider {
 		let parent_hash = Hash::from([2; 32]);
 		let parent_mc_hash = Some(McBlockHash([3; 32]));
 
-		let data_source = MockNativeTokenDataSource::new([].into());
+		let data_source = MockNativeTokenDataSource::<TestErr>::new([].into());
 		let main_chain_scripts = Some(MainChainScripts::default());
 		let client = create_client(parent_hash, parent_mc_hash, parent_number, main_chain_scripts);
 
@@ -143,7 +150,7 @@ mod inherent_provider {
 		parent_mc_hash: Option<McBlockHash>,
 		mc_hash: McBlockHash,
 		total_transfered: u128,
-	) -> MockNativeTokenDataSource {
+	) -> MockNativeTokenDataSource<TestErr> {
 		let total_transfered = NativeTokenAmount(total_transfered);
 		MockNativeTokenDataSource::new([((parent_mc_hash, mc_hash), total_transfered)].into())
 	}

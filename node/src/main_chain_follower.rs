@@ -1,14 +1,14 @@
-use db_sync_follower::candidates::CandidatesDataSourceImpl;
 use db_sync_follower::native_token::NativeTokenManagementDataSourceImpl;
-use db_sync_follower::{block::BlockDataSourceImpl, metrics::McFollowerMetrics};
-use main_chain_follower_api::{
-	BlockDataSource, CandidateDataSource, NativeTokenManagementDataSource,
+use db_sync_follower::{
+	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl, metrics::McFollowerMetrics,
 };
+use main_chain_follower_api::{BlockDataSource, CandidateDataSource, DataSourceError};
 use main_chain_follower_mock::{
 	block::BlockDataSourceMock, candidate::MockCandidateDataSource,
 	native_token::NativeTokenDataSourceMock,
 };
 use sc_service::error::Error as ServiceError;
+use sp_native_token_management::NativeTokenManagementDataSource;
 use std::error::Error;
 use std::sync::Arc;
 
@@ -16,7 +16,8 @@ use std::sync::Arc;
 pub struct DataSources {
 	pub block: Arc<dyn BlockDataSource + Send + Sync>,
 	pub candidate: Arc<dyn CandidateDataSource + Send + Sync>,
-	pub native_token: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
+	pub native_token:
+		Arc<dyn NativeTokenManagementDataSource<Error = DataSourceError> + Send + Sync>,
 }
 
 pub(crate) async fn create_cached_main_chain_follower_data_sources(

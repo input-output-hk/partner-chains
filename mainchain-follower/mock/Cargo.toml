@@ -14,6 +14,7 @@ rand = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sidechain-domain = { workspace = true }
+sp-native-token-management = { workspace = true, optional = true }
 
 [features]
 default = [ "std", "block-source", "candidate-source", "native-token" ]
@@ -21,8 +22,9 @@ std = [
 	"serde_json/std",
 	"sidechain-domain/std",
 	"main-chain-follower-api/std",
-	"rand/std"
+	"rand/std",
+	"sp-native-token-management?/std"
 ]
 block-source = ["main-chain-follower-api/block-source"]
 candidate-source = ["main-chain-follower-api/candidate-source"]
-native-token = ["main-chain-follower-api/native-token"]
+native-token = ["sp-native-token-management"]

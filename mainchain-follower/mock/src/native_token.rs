@@ -1,7 +1,7 @@
 use async_trait::async_trait;
-use main_chain_follower_api::native_token::*;
 use main_chain_follower_api::*;
 use sidechain_domain::*;
+use sp_native_token_management::NativeTokenManagementDataSource;
 
 pub struct NativeTokenDataSourceMock;
 
@@ -19,6 +19,8 @@ impl Default for NativeTokenDataSourceMock {
 
 #[async_trait]
 impl NativeTokenManagementDataSource for NativeTokenDataSourceMock {
+	type Error = DataSourceError;
+
 	async fn get_total_native_token_transfer(
 		&self,
 		_after_block: Option<McBlockHash>,
