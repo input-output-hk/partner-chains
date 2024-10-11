@@ -1779,6 +1779,7 @@ name = "db-sync-follower"
 version = "1.2.0"
 dependencies = [
  "async-trait",
+ "authority-selection-inherents",
  "bigdecimal 0.4.5",
  "blake2b_simd",
  "chrono",
@@ -4834,6 +4835,7 @@ dependencies = [
 name = "main-chain-follower-cli"
 version = "1.2.0"
 dependencies = [
+ "authority-selection-inherents",
  "clap",
  "db-sync-follower",
  "env_logger 0.11.3",
@@ -4850,6 +4852,7 @@ name = "main-chain-follower-mock"
 version = "1.2.0"
 dependencies = [
  "async-trait",
+ "authority-selection-inherents",
  "hex",
  "hex-literal",
  "log",

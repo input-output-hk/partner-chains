@@ -127,7 +127,7 @@ where
 	module.merge(
 		SessionValidatorManagementRpc::new(Arc::new(SessionValidatorManagementQuery::new(
 			client.clone(),
-			main_chain_follower_data_sources.candidate.clone(),
+			main_chain_follower_data_sources.authority_selection.clone(),
 		)))
 		.into_rpc(),
 	)?;

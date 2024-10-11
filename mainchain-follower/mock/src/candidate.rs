@@ -1,7 +1,8 @@
 use async_trait::async_trait;
+use authority_selection_inherents::authority_selection_inputs::*;
 use hex_literal::hex;
 use log::{debug, info};
-use main_chain_follower_api::{candidate::*, Result};
+use main_chain_follower_api::Result;
 use serde::*;
 use sidechain_domain::byte_string::*;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
@@ -185,7 +186,7 @@ impl MockCandidateDataSource {
 }
 
 #[async_trait]
-impl CandidateDataSource for MockCandidateDataSource {
+impl AuthoritySelectionDataSource for MockCandidateDataSource {
 	async fn get_ariadne_parameters(
 		&self,
 		epoch_number: McEpochNumber,

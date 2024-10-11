@@ -5,10 +5,11 @@
 
 use crate::candidates::CandidatesDataSourceImpl;
 use async_trait::async_trait;
+use authority_selection_inherents::authority_selection_inputs::*;
 use figment::{providers::Env, Figment};
 use log::info;
 use lru::LruCache;
-use main_chain_follower_api::{candidate::*, Result};
+use main_chain_follower_api::Result;
 use serde::Deserialize;
 use sidechain_domain::*;
 use std::{
@@ -31,7 +32,7 @@ pub struct CandidateDataSourceCached {
 }
 
 #[async_trait]
-impl CandidateDataSource for CandidateDataSourceCached {
+impl AuthoritySelectionDataSource for CandidateDataSourceCached {
 	async fn get_ariadne_parameters(
 		&self,
 		epoch: McEpochNumber,

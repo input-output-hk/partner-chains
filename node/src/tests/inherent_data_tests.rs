@@ -1,8 +1,9 @@
 use crate::inherent_data::{ProposalCIDP, VerifierCIDP};
 use crate::tests::mock::{test_client, test_create_inherent_data_config};
 use crate::tests::runtime_api_mock::{mock_header, TestApi};
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
-use main_chain_follower_api::mock_services::*;
+use authority_selection_inherents::{
+	authority_selection_inputs::AuthoritySelectionInputs, mock::MockAuthoritySelectionDataSource,
+};
 use sidechain_domain::{
 	MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, NativeTokenAmount,
 	ScEpochNumber,
@@ -42,7 +43,7 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 			.with_headers([(H256::zero(), mock_header())])
 			.into(),
 		Arc::new(mc_hash_data_source),
-		Arc::new(MockCandidateDataSource::default()),
+		Arc::new(MockAuthoritySelectionDataSource::default()),
 		Arc::new(native_token_data_source),
 	)
 	.create_inherent_data_providers(H256::zero(), ())
@@ -113,7 +114,7 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		create_inherent_data_config.clone(),
 		test_client(),
 		Arc::new(mc_hash_data_source),
-		Arc::new(MockCandidateDataSource::default()),
+		Arc::new(MockAuthoritySelectionDataSource::default()),
 		Arc::new(native_token_data_source),
 	);
 

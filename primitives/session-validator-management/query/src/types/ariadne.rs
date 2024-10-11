@@ -1,6 +1,6 @@
 use crate::types::GetRegistrationsResponseMap;
+use authority_selection_inherents::authority_selection_inputs::RawPermissionedCandidateData;
 use authority_selection_inherents::filter_invalid_candidates::PermissionedCandidateDataError;
-use main_chain_follower_api::candidate::RawPermissionedCandidateData;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::{AuraPublicKey, GrandpaPublicKey, SidechainPublicKey};
 

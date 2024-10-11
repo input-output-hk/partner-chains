@@ -3,11 +3,10 @@ use crate::db_model::{
 };
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
-use async_trait::async_trait;
+use authority_selection_inherents::authority_selection_inputs::*;
 use itertools::Itertools;
 use log::error;
-use main_chain_follower_api::candidate::{AriadneParameters, RawPermissionedCandidateData};
-use main_chain_follower_api::{CandidateDataSource, DataSourceError::*, Result};
+use main_chain_follower_api::{DataSourceError::*, Result};
 use num_traits::ToPrimitive;
 use plutus::Datum;
 use plutus::Datum::*;
@@ -96,7 +95,7 @@ pub struct CandidatesDataSourceImpl {
 }
 
 observed_async_trait!(
-impl CandidateDataSource for CandidatesDataSourceImpl {
+impl AuthoritySelectionDataSource for CandidatesDataSourceImpl {
 	async fn get_ariadne_parameters(
 			&self,
 			epoch: McEpochNumber,

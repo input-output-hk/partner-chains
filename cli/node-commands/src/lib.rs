@@ -1,10 +1,10 @@
+use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use clap::{Args, Parser};
 use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use frame_support::sp_runtime::traits::NumberFor;
 use frame_support::Serialize;
-use main_chain_follower_api::CandidateDataSource;
 use parity_scale_codec::{Decode, Encode};
 use plutus::ToDatum;
 use sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
@@ -92,7 +92,7 @@ pub fn run<Cli, SmartContractsParams, Block, CrossChainPublic, SessionKeys, Clie
 	get_deps: impl FnOnce(
 		sc_service::Configuration,
 	) -> Result<
-		(Arc<Client>, TaskManager, Arc<dyn CandidateDataSource + Send + Sync>),
+		(Arc<Client>, TaskManager, Arc<dyn AuthoritySelectionDataSource + Send + Sync>),
 		sc_service::error::Error,
 	>,
 	cmd: PartnerChainsSubcommand<SmartContractsParams>,

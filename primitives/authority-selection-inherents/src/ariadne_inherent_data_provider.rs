@@ -1,10 +1,12 @@
+#[cfg(feature = "std")]
+use crate::authority_selection_inputs::AuthoritySelectionDataSource;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use parity_scale_codec::{Decode, Encode};
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 #[cfg(feature = "std")]
 use {
 	crate::authority_selection_inputs::AuthoritySelectionInputsCreationError,
-	main_chain_follower_api::{CandidateDataSource, DataSourceError},
+	main_chain_follower_api::DataSourceError,
 	sidechain_domain::mainchain_epoch::MainchainEpochDerivation,
 	sidechain_domain::*,
 	sidechain_slots::ScSlotConfig,
@@ -28,7 +30,7 @@ pub struct AriadneInherentDataProvider {
 #[cfg(feature = "std")]
 impl AriadneInherentDataProvider {
 	pub async fn from_mc_data(
-		candidate_data_source: &(dyn CandidateDataSource + Send + Sync),
+		candidate_data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
 		for_epoch: McEpochNumber,
 		scripts: MainChainScripts,
 	) -> Result<Self, InherentProviderCreationError> {
@@ -46,7 +48,7 @@ impl AriadneInherentDataProvider {
 		mc_epoch_config: &MainchainEpochConfig,
 		parent_hash: <Block as BlockT>::Hash,
 		slot: Slot,
-		candidate_data_source: &(dyn CandidateDataSource + Send + Sync),
+		candidate_data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
 		mc_reference_epoch: McEpochNumber,
 	) -> Result<Self, InherentProviderCreationError>
 	where
@@ -194,8 +196,8 @@ pub struct CommitteeConfig {
 mod tests {
 	use super::*;
 	use crate::ariadne_inherent_data_provider::AriadneInherentDataProvider;
+	use crate::mock::MockAuthoritySelectionDataSource;
 	use crate::runtime_api_mock::*;
-	use main_chain_follower_api::mock_services::MockCandidateDataSource;
 	use sidechain_domain::mainchain_epoch::*;
 	use sidechain_slots::*;
 	use sp_core::H256;
@@ -228,7 +230,7 @@ mod tests {
 			H256::zero(),
 			// This is the slot that will be used to calculate current_epoch_number
 			Slot::from(400u64),
-			&MockCandidateDataSource::default(),
+			&MockAuthoritySelectionDataSource::default(),
 			mc_reference_epoch,
 		)
 		.await;

@@ -1,15 +1,10 @@
 use parity_scale_codec::{Decode, Encode};
 use plutus::*;
 use scale_info::TypeInfo;
-use sidechain_domain::{
-	CandidateRegistrations, DParameter, EpochNonce, PermissionedCandidateData, PolicyId,
-};
+use sidechain_domain::*;
 
 #[cfg(feature = "std")]
-use {
-	main_chain_follower_api::candidate::CandidateDataSource,
-	main_chain_follower_api::DataSourceError, sidechain_domain::McEpochNumber,
-};
+use main_chain_follower_api::DataSourceError;
 
 /// The part of data for selection of authorities that comes from the main chain.
 /// It is unfiltered, so the selection algorithm should filter out invalid candidates.
@@ -33,10 +28,64 @@ pub enum AuthoritySelectionInputsCreationError {
 	GetEpochNonceQuery(McEpochNumber, DataSourceError),
 }
 
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct RawPermissionedCandidateData {
+	pub sidechain_public_key: SidechainPublicKey,
+	pub aura_public_key: AuraPublicKey,
+	pub grandpa_public_key: GrandpaPublicKey,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct AriadneParameters {
+	pub d_parameter: DParameter,
+	pub permissioned_candidates: Vec<RawPermissionedCandidateData>,
+}
+
+/// Queries about the Authority Candidates
+#[cfg(feature = "std")]
+#[async_trait::async_trait]
+pub trait AuthoritySelectionDataSource {
+	/// Returns D-parameter and list of permissioned candidates that is effective for the given epoch.
+	/// The data from the latest block of `data_epoch(epoch)` will be used if available, otherwise returns data at the latest block of the chain.
+	async fn get_ariadne_parameters(
+		&self,
+		epoch_number: McEpochNumber,
+		d_parameter: PolicyId,
+		permissioned_candidates: PolicyId,
+	) -> Result<AriadneParameters, DataSourceError>;
+
+	/// Returns the list of registrations that is effective for the given epoch.
+	/// The data from the latest block of `data_epoch(epoch)` will be used if available, otherwise returns data at the latest block of the chain.
+	/// Each item is a list of one candidate registrations.
+	async fn get_candidates(
+		&self,
+		epoch: McEpochNumber,
+		committee_candidate_address: MainchainAddress,
+	) -> Result<Vec<CandidateRegistrations>, DataSourceError>;
+
+	/// Returns Cardano Epoch Nonce. None, if the nonce for given epoch is not known yet.
+	async fn get_epoch_nonce(
+		&self,
+		epoch: McEpochNumber,
+	) -> Result<Option<EpochNonce>, DataSourceError>;
+
+	///
+	/// # Arguments
+	///
+	/// * `for_epoch`: main chain epoch number during which candidate data is meant to be used
+	///
+	/// returns: Result<McEpochNumber, DataSourceError> - data source methods called with `for_epoch` will query only for data which was stored on main chain in the returned epoch or earlier
+	///
+	///
+	async fn data_epoch(&self, for_epoch: McEpochNumber) -> Result<McEpochNumber, DataSourceError>;
+}
+
 impl AuthoritySelectionInputs {
 	#[cfg(feature = "std")]
 	pub async fn from_mc_data(
-		candidate_data_source: &(dyn CandidateDataSource + Send + Sync),
+		candidate_data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
 		for_epoch: McEpochNumber,
 		scripts: sp_session_validator_management::MainChainScripts,
 	) -> Result<Self, AuthoritySelectionInputsCreationError> {

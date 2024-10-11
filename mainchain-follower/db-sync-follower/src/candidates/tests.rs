@@ -1,8 +1,10 @@
-use crate::candidates::{CandidateDataSource, CandidatesDataSourceImpl};
+use crate::candidates::CandidatesDataSourceImpl;
 use crate::db_model::index_exists;
 use crate::metrics::mock::test_metrics;
+use authority_selection_inherents::authority_selection_inputs::{
+	AuthoritySelectionDataSource, RawPermissionedCandidateData,
+};
 use hex_literal::hex;
-use main_chain_follower_api::candidate::RawPermissionedCandidateData;
 use sidechain_domain::*;
 use sqlx::PgPool;
 use std::str::FromStr;

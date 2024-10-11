@@ -1,8 +1,9 @@
 use authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider as AriadneIDP;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
+use authority_selection_inherents::authority_selection_inputs::{
+	AuthoritySelectionDataSource, AuthoritySelectionInputs,
+};
 use derive_new::new;
 use jsonrpsee::core::async_trait;
-use main_chain_follower_api::CandidateDataSource;
 use sc_consensus_aura::{find_pre_digest, SlotDuration};
 use sc_service::Arc;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
@@ -38,7 +39,7 @@ pub struct ProposalCIDP<T> {
 	config: CreateInherentDataConfig,
 	client: Arc<T>,
 	mc_hash_data_source: Arc<dyn McHashDataSource + Send + Sync>,
-	candidate_data_source: Arc<dyn CandidateDataSource + Send + Sync>,
+	authority_selection_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
 	native_token_data_source: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 }
 
@@ -74,7 +75,7 @@ where
 			config,
 			client,
 			mc_hash_data_source,
-			candidate_data_source,
+			authority_selection_data_source,
 			native_token_data_source,
 		} = self;
 		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source } = config;
@@ -94,7 +95,7 @@ where
 			mc_epoch_config,
 			parent_hash,
 			*slot,
-			candidate_data_source.as_ref(),
+			authority_selection_data_source.as_ref(),
 			mc_hash.mc_epoch(),
 		)
 		.await?;
@@ -127,7 +128,7 @@ pub struct VerifierCIDP<T> {
 	config: CreateInherentDataConfig,
 	client: Arc<T>,
 	mc_hash_data_source: Arc<dyn McHashDataSource + Send + Sync>,
-	candidate_data_source: Arc<dyn CandidateDataSource + Send + Sync>,
+	authority_selection_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
 	native_token_data_source: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 }
 
@@ -161,7 +162,7 @@ where
 			config,
 			client,
 			mc_hash_data_source,
-			candidate_data_source,
+			authority_selection_data_source,
 			native_token_data_source,
 		} = self;
 		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source, .. } = config;
@@ -185,7 +186,7 @@ where
 			mc_epoch_config,
 			parent_hash,
 			verified_block_slot,
-			candidate_data_source.as_ref(),
+			authority_selection_data_source.as_ref(),
 			mc_state_reference.epoch,
 		)
 		.await?;
