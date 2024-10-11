@@ -9,7 +9,6 @@ use derive_new::new;
 use figment::providers::Env;
 use figment::Figment;
 use log::{debug, info};
-use main_chain_follower_api::DataSourceError;
 use main_chain_follower_api::{
 	block::MainchainBlock, common::Timestamp, BlockDataSource, DataSourceError::*, Result,
 };
@@ -62,49 +61,6 @@ impl BlockDataSource for BlockDataSourceImpl {
 		self.get_stable_block_by_hash(hash, reference_timestamp).await
 	}
 });
-
-#[async_trait]
-impl sidechain_mc_hash::McHashDataSource for BlockDataSourceImpl {
-	type Error = DataSourceError;
-
-	async fn get_latest_stable_block_for(
-		&self,
-		reference_timestamp: sp_timestamp::Timestamp,
-	) -> std::result::Result<Option<sidechain_mc_hash::MainchainBlock>, Self::Error> {
-		Ok(<BlockDataSourceImpl as BlockDataSource>::get_latest_stable_block_for(
-			self,
-			Timestamp(reference_timestamp.as_millis()),
-		)
-		.await?
-		.map(|block| sidechain_mc_hash::MainchainBlock {
-			epoch: block.epoch,
-			hash: block.hash,
-			number: block.number,
-			slot: block.slot,
-			timestamp: block.timestamp,
-		}))
-	}
-
-	async fn get_stable_block_for(
-		&self,
-		hash: McBlockHash,
-		reference_timestamp: sp_timestamp::Timestamp,
-	) -> std::result::Result<Option<sidechain_mc_hash::MainchainBlock>, Self::Error> {
-		Ok(<BlockDataSourceImpl as BlockDataSource>::get_stable_block_for(
-			self,
-			hash,
-			Timestamp(reference_timestamp.as_millis()),
-		)
-		.await?
-		.map(|block| sidechain_mc_hash::MainchainBlock {
-			epoch: block.epoch,
-			hash: block.hash,
-			number: block.number,
-			slot: block.slot,
-			timestamp: block.timestamp,
-		}))
-	}
-}
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct DbSyncBlockDataSourceConfig {

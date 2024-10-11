@@ -1,10 +1,11 @@
-use db_sync_follower::native_token::NativeTokenManagementDataSourceImpl;
 use db_sync_follower::{
-	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl, metrics::McFollowerMetrics,
+	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl,
+	mc_hash::McHashDataSourceImpl, metrics::McFollowerMetrics,
+	native_token::NativeTokenManagementDataSourceImpl,
 };
 use main_chain_follower_api::{BlockDataSource, CandidateDataSource};
 use main_chain_follower_mock::{
-	block::BlockDataSourceMock, candidate::MockCandidateDataSource,
+	block::BlockDataSourceMock, candidate::MockCandidateDataSource, mc_hash::McHashDataSourceMock,
 	native_token::NativeTokenDataSourceMock,
 };
 use sc_service::error::Error as ServiceError;
@@ -49,9 +50,10 @@ fn use_mock_follower() -> bool {
 
 pub fn create_mock_data_sources(
 ) -> std::result::Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
+	let block = Arc::new(BlockDataSourceMock::new_from_env()?);
 	Ok(DataSources {
-		block: Arc::new(BlockDataSourceMock::new_from_env()?),
-		mc_hash: Arc::new(BlockDataSourceMock::new_from_env()?),
+		block: block.clone(),
+		mc_hash: Arc::new(McHashDataSourceMock::new(block)),
 		candidate: Arc::new(MockCandidateDataSource::new_from_env()?),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
 	})
@@ -63,13 +65,11 @@ pub async fn create_cached_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
 ) -> Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
 	let pool = db_sync_follower::data_sources::get_connection_from_env().await?;
+	let block =
+		Arc::new(BlockDataSourceImpl::new_from_env(pool.clone(), metrics_opt.clone()).await?);
 	Ok(DataSources {
-		block: Arc::new(
-			BlockDataSourceImpl::new_from_env(pool.clone(), metrics_opt.clone()).await?,
-		),
-		mc_hash: Arc::new(
-			BlockDataSourceImpl::new_from_env(pool.clone(), metrics_opt.clone()).await?,
-		),
+		block: block.clone(),
+		mc_hash: Arc::new(McHashDataSourceImpl::new(block)),
 		candidate: Arc::new(
 			CandidatesDataSourceImpl::new(pool.clone(), metrics_opt.clone())
 				.await?

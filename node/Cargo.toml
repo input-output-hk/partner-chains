@@ -92,8 +92,8 @@ sidechain-runtime = { workspace = true }
 sidechain-mc-hash = { workspace = true, features = ["mock"] }
 sp-native-token-management = { workspace = true }
 main-chain-follower-api = { workspace = true }
-db-sync-follower = { workspace = true, features = ["block-source", "candidate-source", "native-token"] }
-main-chain-follower-mock = { workspace = true, features = ["block-source", "candidate-source", "native-token"] }
+db-sync-follower = { workspace = true, features = ["block-source", "candidate-source", "native-token", "mc-hash"] }
+main-chain-follower-mock = { workspace = true, features = ["block-source", "candidate-source", "native-token", "mc-hash"] }
 tokio = { workspace = true }
 cli-commands = { workspace = true }
 

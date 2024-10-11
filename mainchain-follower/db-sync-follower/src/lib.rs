@@ -10,6 +10,8 @@ pub mod metrics;
 pub mod block;
 #[cfg(feature = "candidate-source")]
 pub mod candidates;
+#[cfg(feature = "mc-hash")]
+pub mod mc_hash;
 #[cfg(feature = "native-token")]
 pub mod native_token;
 
