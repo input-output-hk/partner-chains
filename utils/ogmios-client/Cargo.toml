@@ -23,4 +23,5 @@ anyhow = { workspace = true }
 tokio = { workspace = true }
 
 [features]
+default = ["jsonrpsee-client"]
 jsonrpsee-client = ["jsonrpsee"]

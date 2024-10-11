@@ -1,3 +1,5 @@
+#![cfg(feature = "jsonrpsee-client")]
+
 use jsonrpsee::{
 	http_client::HttpClient,
 	server::Server,
