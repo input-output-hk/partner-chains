@@ -6187,7 +6187,9 @@ dependencies = [
  "colored",
  "hex",
  "inquire",
+ "jsonrpsee",
  "libp2p-identity",
+ "ogmios-client",
  "pretty_assertions",
  "secp256k1",
  "serde",
@@ -6198,6 +6200,7 @@ dependencies = [
  "sp-runtime",
  "tempfile",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]
