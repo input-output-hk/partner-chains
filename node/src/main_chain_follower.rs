@@ -8,6 +8,7 @@ use main_chain_follower_mock::{
 	native_token::NativeTokenDataSourceMock,
 };
 use sc_service::error::Error as ServiceError;
+use sidechain_mc_hash::McHashDataSource;
 use sp_native_token_management::NativeTokenManagementDataSource;
 use std::error::Error;
 use std::sync::Arc;
@@ -15,13 +16,14 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub struct DataSources {
 	pub block: Arc<dyn BlockDataSource + Send + Sync>,
+	pub mc_hash: Arc<dyn McHashDataSource<Error = DataSourceError> + Send + Sync>,
 	pub candidate: Arc<dyn CandidateDataSource + Send + Sync>,
 	pub native_token: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 }
 
 pub(crate) async fn create_cached_main_chain_follower_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
-) -> Result<DataSources, ServiceError> {
+) -> std::result::Result<DataSources, ServiceError> {
 	if use_mock_follower() {
 		create_mock_data_sources().map_err(|err| {
 			ServiceError::Application(
@@ -49,6 +51,7 @@ pub fn create_mock_data_sources(
 ) -> std::result::Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
 	Ok(DataSources {
 		block: Arc::new(BlockDataSourceMock::new_from_env()?),
+		mc_hash: Arc::new(BlockDataSourceMock::new_from_env()?),
 		candidate: Arc::new(MockCandidateDataSource::new_from_env()?),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
 	})
@@ -62,6 +65,9 @@ pub async fn create_cached_data_sources(
 	let pool = db_sync_follower::data_sources::get_connection_from_env().await?;
 	Ok(DataSources {
 		block: Arc::new(
+			BlockDataSourceImpl::new_from_env(pool.clone(), metrics_opt.clone()).await?,
+		),
+		mc_hash: Arc::new(
 			BlockDataSourceImpl::new_from_env(pool.clone(), metrics_opt.clone()).await?,
 		),
 		candidate: Arc::new(

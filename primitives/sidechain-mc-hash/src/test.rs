@@ -29,10 +29,9 @@ mod inherent_digest_tests {
 }
 
 mod validation_tests {
+	use crate::mock::MockMcHashDataSource;
 	use crate::McHashInherentError::*;
 	use crate::*;
-	use main_chain_follower_api::{block::MainchainBlock, mock_services::MockBlockDataSource};
-	use sidechain_domain::*;
 	use sp_consensus_slots::Slot;
 	use sp_consensus_slots::SlotDuration;
 	use sp_runtime::testing::Digest;
@@ -41,19 +40,28 @@ mod validation_tests {
 
 	#[tokio::test]
 	async fn mc_state_reference_block_numbers_should_not_decrease() {
-		let mut block_data_source = MockBlockDataSource::default();
-		let parent_stable_block =
-			block_data_source.get_all_stable_blocks().first().unwrap().clone();
 		let mc_block_hash = McBlockHash([2; 32]);
 		let slot_duration = SlotDuration::from_millis(1000);
 
-		block_data_source.push_stable_block(MainchainBlock {
+		let parent_stable_block = MainchainBlock {
+			number: McBlockNumber(1),
+			hash: McBlockHash([1; 32]),
+			epoch: McEpochNumber(2),
+			slot: McSlotNumber(3),
+			timestamp: 4,
+		};
+
+		let next_stable_block = MainchainBlock {
 			number: McBlockNumber(parent_stable_block.number.0 - 1),
 			hash: mc_block_hash.clone(),
 			slot: McSlotNumber(parent_stable_block.slot.0 - 1),
 			timestamp: parent_stable_block.timestamp - 1,
 			epoch: McEpochNumber(parent_stable_block.epoch.0),
-		});
+		};
+		let block_data_source = MockMcHashDataSource::<McHashInherentError>::new(vec![
+			parent_stable_block,
+			next_stable_block,
+		]);
 
 		let err = McHashInherentDataProvider::new_verification(
 			mock_header(),

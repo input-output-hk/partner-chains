@@ -72,7 +72,7 @@ where
 		let (slot, timestamp) =
 			timestamp_and_slot_cidp(sc_slot_config.slot_duration, time_source.clone());
 		let mc_hash = McHashIDP::new_proposal(
-			data_sources.block.as_ref(),
+			data_sources.mc_hash.as_ref(),
 			*slot,
 			sc_slot_config.slot_duration,
 		)
@@ -157,7 +157,7 @@ where
 			verified_block_slot,
 			mc_hash.clone(),
 			config.slot_duration(),
-			data_sources.block.as_ref(),
+			data_sources.mc_hash.as_ref(),
 		)
 		.await?;
 

@@ -1798,7 +1798,9 @@ dependencies = [
  "serde",
  "serde_json",
  "sidechain-domain",
+ "sidechain-mc-hash",
  "sp-native-token-management",
+ "sp-timestamp",
  "sqlx",
  "substrate-prometheus-endpoint",
  "testcontainers-modules",
@@ -4855,7 +4857,9 @@ dependencies = [
  "serde",
  "serde_json",
  "sidechain-domain",
+ "sidechain-mc-hash",
  "sp-native-token-management",
+ "sp-timestamp",
 ]
 
 [[package]]
@@ -9368,7 +9372,7 @@ name = "sidechain-mc-hash"
 version = "1.2.0"
 dependencies = [
  "async-trait",
- "main-chain-follower-api",
+ "derive-new",
  "sidechain-domain",
  "sp-blockchain",
  "sp-consensus",

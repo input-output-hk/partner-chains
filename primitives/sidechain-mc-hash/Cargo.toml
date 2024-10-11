@@ -6,7 +6,6 @@ description = "Logic for putting a main chain block reference in digest and inhe
 
 [dependencies]
 async-trait = { workspace = true }
-main-chain-follower-api = { workspace = true, features = ["block-source"] }
 sp-consensus-slots = { workspace = true }
 sp-partner-chains-consensus-aura = { workspace = true, features = ["std"] }
 sidechain-domain = { workspace = true, features = ["std"] }
@@ -16,9 +15,12 @@ sp-inherents = { workspace = true, features = ["std"] }
 sp-runtime = { workspace = true, features = ["std"] }
 sp-timestamp = { workspace = true }
 thiserror = { workspace = true }
+derive-new = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true }
+derive-new = { workspace = true }
 
 [features]
-mock = []
+mock = ["derive-new"]
+serde = []

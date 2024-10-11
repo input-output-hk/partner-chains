@@ -7,6 +7,7 @@ use main_chain_follower_api::{block::MainchainBlock, mock_services::*};
 use sidechain_domain::{
 	McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, NativeTokenAmount, ScEpochNumber,
 };
+use sidechain_mc_hash::mock::MockMcHashDataSource;
 use sp_consensus_aura::Slot;
 use sp_core::H256;
 use sp_inherents::CreateInherentDataProviders;
@@ -31,10 +32,18 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 		)]
 		.into(),
 	);
+	let mc_hash_data_source = MockMcHashDataSource::from(vec![sidechain_mc_hash::MainchainBlock {
+		number: McBlockNumber(1),
+		hash: McBlockHash([1; 32]),
+		epoch: McEpochNumber(2),
+		slot: McSlotNumber(3),
+		timestamp: 4,
+	}]);
 	let data_sources = DataSources {
 		block: Arc::new(block_data_source),
 		candidate: Arc::new(MockCandidateDataSource::default()),
 		native_token: Arc::new(native_token_data_source),
+		mc_hash: Arc::new(mc_hash_data_source),
 	};
 
 	let inherent_data_providers = ProposalCIDP::new(
@@ -107,10 +116,18 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		)]
 		.into(),
 	);
+	let mc_hash_data_source = MockMcHashDataSource::from(vec![sidechain_mc_hash::MainchainBlock {
+		number: McBlockNumber(parent_stable_block.number.0 + 5),
+		hash: mc_block_hash.clone(),
+		slot: McSlotNumber(parent_stable_block.slot.0 + 100),
+		timestamp: parent_stable_block.timestamp + 101,
+		epoch: McEpochNumber(parent_stable_block.epoch.0),
+	}]);
 	let data_sources = DataSources {
 		block: Arc::new(block_data_source),
 		candidate: Arc::new(MockCandidateDataSource::default()),
 		native_token: Arc::new(native_token_data_source),
+		mc_hash: Arc::new(mc_hash_data_source),
 	};
 
 	let create_inherent_data_config = test_create_inherent_data_config();
