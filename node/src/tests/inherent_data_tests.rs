@@ -4,6 +4,7 @@ use crate::tests::mock::{test_client, test_create_inherent_data_config};
 use crate::tests::runtime_api_mock::{mock_header, TestApi};
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use main_chain_follower_api::mock_services::*;
+use pallet_sidechain_rpc::mock::SidechainRpcDataSourceMock;
 use sidechain_domain::{
 	McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, NativeTokenAmount, ScEpochNumber,
 };
@@ -40,10 +41,12 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 		timestamp: 4,
 	}]);
 	let data_sources = DataSources {
-		block: Arc::new(block_data_source),
 		candidate: Arc::new(MockCandidateDataSource::default()),
 		native_token: Arc::new(native_token_data_source),
 		mc_hash: Arc::new(mc_hash_data_source),
+		sidechain_rpc: Arc::new(SidechainRpcDataSourceMock::new(
+			pallet_sidechain_rpc::MainchainBlock { epoch: McEpochNumber(2), slot: McSlotNumber(3) },
+		)),
 	};
 
 	let inherent_data_providers = ProposalCIDP::new(
@@ -113,10 +116,12 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		epoch: McEpochNumber(parent_stable_block.epoch.0),
 	}]);
 	let data_sources = DataSources {
-		block: Arc::new(block_data_source),
 		candidate: Arc::new(MockCandidateDataSource::default()),
 		native_token: Arc::new(native_token_data_source),
 		mc_hash: Arc::new(mc_hash_data_source),
+		sidechain_rpc: Arc::new(SidechainRpcDataSourceMock::new(
+			pallet_sidechain_rpc::MainchainBlock { epoch: McEpochNumber(2), slot: McSlotNumber(3) },
+		)),
 	};
 
 	let create_inherent_data_config = test_create_inherent_data_config();

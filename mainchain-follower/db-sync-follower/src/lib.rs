@@ -14,6 +14,8 @@ pub mod candidates;
 pub mod mc_hash;
 #[cfg(feature = "native-token")]
 pub mod native_token;
+#[cfg(feature = "sidechain-rpc")]
+pub mod sidechain_rpc;
 
 pub struct SqlxError(sqlx::Error);
 

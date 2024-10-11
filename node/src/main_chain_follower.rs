@@ -1,25 +1,25 @@
 use db_sync_follower::{
 	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl,
 	mc_hash::McHashDataSourceImpl, metrics::McFollowerMetrics,
-	native_token::NativeTokenManagementDataSourceImpl,
+	native_token::NativeTokenManagementDataSourceImpl, sidechain_rpc::SidechainRpcDataSourceImpl,
 };
-use main_chain_follower_api::{BlockDataSource, CandidateDataSource};
+use main_chain_follower_api::{CandidateDataSource, DataSourceError};
 use main_chain_follower_mock::{
 	block::BlockDataSourceMock, candidate::MockCandidateDataSource, mc_hash::McHashDataSourceMock,
-	native_token::NativeTokenDataSourceMock,
+	native_token::NativeTokenDataSourceMock, sidechain_rpc::SidechainRpcDataSourceMock,
 };
+use pallet_sidechain_rpc::SidechainRpcDataSource;
 use sc_service::error::Error as ServiceError;
 use sidechain_mc_hash::McHashDataSource;
 use sp_native_token_management::NativeTokenManagementDataSource;
-use std::error::Error;
-use std::sync::Arc;
+use std::{error::Error, sync::Arc};
 
 #[derive(Clone)]
 pub struct DataSources {
-	pub block: Arc<dyn BlockDataSource + Send + Sync>,
 	pub mc_hash: Arc<dyn McHashDataSource<Error = DataSourceError> + Send + Sync>,
 	pub candidate: Arc<dyn CandidateDataSource + Send + Sync>,
 	pub native_token: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
+	pub sidechain_rpc: Arc<dyn SidechainRpcDataSource<Error = DataSourceError> + Send + Sync>,
 }
 
 pub(crate) async fn create_cached_main_chain_follower_data_sources(
@@ -52,7 +52,7 @@ pub fn create_mock_data_sources(
 ) -> std::result::Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
 	let block = Arc::new(BlockDataSourceMock::new_from_env()?);
 	Ok(DataSources {
-		block: block.clone(),
+		sidechain_rpc: Arc::new(SidechainRpcDataSourceMock::new(block.clone())),
 		mc_hash: Arc::new(McHashDataSourceMock::new(block)),
 		candidate: Arc::new(MockCandidateDataSource::new_from_env()?),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
@@ -68,7 +68,7 @@ pub async fn create_cached_data_sources(
 	let block =
 		Arc::new(BlockDataSourceImpl::new_from_env(pool.clone(), metrics_opt.clone()).await?);
 	Ok(DataSources {
-		block: block.clone(),
+		sidechain_rpc: Arc::new(SidechainRpcDataSourceImpl::new(block.clone())),
 		mc_hash: Arc::new(McHashDataSourceImpl::new(block)),
 		candidate: Arc::new(
 			CandidatesDataSourceImpl::new(pool.clone(), metrics_opt.clone())

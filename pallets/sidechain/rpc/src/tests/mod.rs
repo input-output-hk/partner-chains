@@ -1,18 +1,16 @@
-mod mock;
 mod rpc_mock;
 mod runtime_api_mock;
 
 use super::SidechainRpc;
 use super::*;
+use crate::mock::Block;
 use crate::SidechainRpcApiServer;
-use main_chain_follower_api::mock_services::MockBlockDataSource;
-use mock::Block;
 use rpc_mock::*;
-use sidechain_domain::*;
 
 mod get_status_tests {
 	use super::*;
-	use main_chain_follower_api::block::MainchainBlock;
+	use crate::MainchainBlock;
+	use mock::SidechainRpcDataSourceMock;
 	use pretty_assertions::assert_eq;
 	use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig};
 	use sp_consensus_slots::SlotDuration;
@@ -25,15 +23,9 @@ mod get_status_tests {
 			first_epoch_number: 50,
 			first_slot_number: 501,
 		};
-		let mainchain_block = MainchainBlock {
-			number: McBlockNumber(1001),
-			hash: Default::default(),
-			epoch: McEpochNumber(99),
-			slot: McSlotNumber(2000),
-			timestamp: mc_epoch_config.epoch_duration_millis.millis() * 98 + 100,
-		};
+		let mainchain_block = MainchainBlock { epoch: McEpochNumber(99), slot: McSlotNumber(2000) };
 		let block_data_source_mock =
-			Arc::new(MockBlockDataSource::default().with_mainchain_block(mainchain_block.clone()));
+			Arc::new(SidechainRpcDataSourceMock::<ErrorObjectOwned>::new(mainchain_block.clone()));
 		let slot_duration = SlotDuration::from_millis(60);
 		let slots_per_epoch = 10;
 
@@ -83,11 +75,12 @@ mod get_status_tests {
 			first_epoch_number: 50,
 			first_slot_number: 501,
 		};
+		let mainchain_block = MainchainBlock { epoch: McEpochNumber(99), slot: McSlotNumber(2000) };
 
 		let api = SidechainRpc::new(
 			client,
 			irrelevant_epoch_config,
-			Arc::new(MockBlockDataSource::default()),
+			Arc::new(SidechainRpcDataSourceMock::<ErrorObjectOwned>::new(mainchain_block)),
 			Arc::new(MockedTimeSource { current_time_millis: 0 }),
 		);
 		let response = api.get_params();

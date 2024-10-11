@@ -6,8 +6,10 @@ use jsonrpsee::{
 	proc_macros::rpc,
 	types::{error::ErrorCode, ErrorObject, ErrorObjectOwned},
 };
-use main_chain_follower_api::BlockDataSource;
-use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
+use sidechain_domain::{
+	mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation},
+	McEpochNumber, McSlotNumber,
+};
 use sidechain_slots::SlotApi;
 use sp_api::ProvideRuntimeApi;
 use sp_core::offchain::Timestamp;
@@ -20,6 +22,9 @@ use types::*;
 #[cfg(test)]
 mod tests;
 
+#[cfg(any(test, feature = "mock"))]
+pub mod mock;
+
 #[rpc(client, server, namespace = "sidechain")]
 pub trait SidechainRpcApi<SidechainParams> {
 	#[method(name = "getParams")]
@@ -30,23 +35,37 @@ pub trait SidechainRpcApi<SidechainParams> {
 	async fn get_status(&self) -> RpcResult<GetStatusResponse>;
 }
 
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+pub struct MainchainBlock {
+	pub epoch: McEpochNumber,
+	pub slot: McSlotNumber,
+}
+
+#[async_trait]
+pub trait SidechainRpcDataSource {
+	type Error;
+
+	async fn get_latest_block_info(&self) -> Result<MainchainBlock, Self::Error>;
+}
+
 #[derive(new)]
-pub struct SidechainRpc<C, Block> {
+pub struct SidechainRpc<C, Block, DSE> {
 	client: Arc<C>,
 	mc_epoch_config: MainchainEpochConfig,
-	block_data_source: Arc<dyn BlockDataSource + Send + Sync>,
+	block_data_source: Arc<dyn SidechainRpcDataSource<Error = DSE> + Send + Sync>,
 	time_source: Arc<dyn TimeSource + Send + Sync>,
 	_marker: std::marker::PhantomData<Block>,
 }
 
-impl<C, B> SidechainRpc<C, B> {
+impl<C, B, DSE> SidechainRpc<C, B, DSE> {
 	fn get_current_timestamp(&self) -> Timestamp {
 		Timestamp::from_unix_millis(self.time_source.get_current_time_millis())
 	}
 }
 
 #[async_trait]
-impl<C, Block, SidechainParams> SidechainRpcApiServer<SidechainParams> for SidechainRpc<C, Block>
+impl<C, Block, SidechainParams, DSE> SidechainRpcApiServer<SidechainParams>
+	for SidechainRpc<C, Block, DSE>
 where
 	Block: BlockT,
 	SidechainParams: parity_scale_codec::Decode,
@@ -54,6 +73,7 @@ where
 	C: ProvideRuntimeApi<Block>,
 	C: GetBestHash<Block>,
 	C::Api: SlotApi<Block> + GetSidechainParams<Block, SidechainParams> + GetSidechainStatus<Block>,
+	DSE: 'static + std::error::Error,
 {
 	fn get_params(&self) -> RpcResult<SidechainParams> {
 		let api = self.client.runtime_api();
