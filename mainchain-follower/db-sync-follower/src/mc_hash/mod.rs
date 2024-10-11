@@ -1,4 +1,6 @@
 use crate::block::BlockDataSourceImpl;
+use crate::metrics::McFollowerMetrics;
+use crate::observed_async_trait;
 use async_trait::async_trait;
 use main_chain_follower_api::DataSourceError;
 use main_chain_follower_api::{common::Timestamp, BlockDataSource};
@@ -7,16 +9,17 @@ use sidechain_mc_hash::McHashDataSource;
 use std::sync::Arc;
 
 pub struct McHashDataSourceImpl {
-	block_source: Arc<BlockDataSourceImpl>,
+	inner: Arc<BlockDataSourceImpl>,
+	metrics_opt: Option<McFollowerMetrics>,
 }
 
 impl McHashDataSourceImpl {
-	pub fn new(inner: Arc<BlockDataSourceImpl>) -> Self {
-		Self { block_source: inner }
+	pub fn new(inner: Arc<BlockDataSourceImpl>, metrics_opt: Option<McFollowerMetrics>) -> Self {
+		Self { inner, metrics_opt }
 	}
 }
 
-#[async_trait]
+observed_async_trait!(
 impl McHashDataSource for McHashDataSourceImpl {
 	type Error = DataSourceError;
 
@@ -25,7 +28,7 @@ impl McHashDataSource for McHashDataSourceImpl {
 		reference_timestamp: sp_timestamp::Timestamp,
 	) -> std::result::Result<Option<sidechain_mc_hash::MainchainBlock>, Self::Error> {
 		Ok(<BlockDataSourceImpl as BlockDataSource>::get_latest_stable_block_for(
-			&self.block_source,
+			&self.inner,
 			Timestamp(reference_timestamp.as_millis()),
 		)
 		.await?
@@ -44,7 +47,7 @@ impl McHashDataSource for McHashDataSourceImpl {
 		reference_timestamp: sp_timestamp::Timestamp,
 	) -> std::result::Result<Option<sidechain_mc_hash::MainchainBlock>, Self::Error> {
 		Ok(<BlockDataSourceImpl as BlockDataSource>::get_stable_block_for(
-			&self.block_source,
+			&self.inner,
 			hash,
 			Timestamp(reference_timestamp.as_millis()),
 		)
@@ -58,3 +61,4 @@ impl McHashDataSource for McHashDataSourceImpl {
 		}))
 	}
 }
+);

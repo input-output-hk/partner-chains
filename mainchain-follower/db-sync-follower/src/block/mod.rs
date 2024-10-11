@@ -1,8 +1,6 @@
 use crate::data_sources::read_mc_epoch_config;
 use crate::db_model;
 use crate::db_model::{Block, BlockNumber, SlotNumber};
-use crate::metrics::McFollowerMetrics;
-use crate::observed_async_trait;
 use async_trait::async_trait;
 use chrono::{DateTime, NaiveDateTime, TimeDelta};
 use derive_new::new;
@@ -33,12 +31,11 @@ pub struct BlockDataSourceImpl {
 	max_slot_boundary_as_seconds: TimeDelta,
 	mainchain_epoch_config: MainchainEpochConfig,
 	block_stability_margin: u32,
-	metrics_opt: Option<McFollowerMetrics>,
 	cache_size: u16,
 	stable_blocks_cache: Arc<Mutex<BlocksCache>>,
 }
 
-observed_async_trait!(
+#[async_trait]
 impl BlockDataSource for BlockDataSourceImpl {
 	async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
 		db_model::get_latest_block_info(&self.pool)
@@ -47,7 +44,10 @@ impl BlockDataSource for BlockDataSourceImpl {
 			.ok_or(ExpectedDataNotFound("No latest block on chain.".to_string()))
 	}
 
-	async fn get_latest_stable_block_for(&self, reference_timestamp: Timestamp) -> Result<Option<MainchainBlock>> {
+	async fn get_latest_stable_block_for(
+		&self,
+		reference_timestamp: Timestamp,
+	) -> Result<Option<MainchainBlock>> {
 		let reference_timestamp = BlockDataSourceImpl::timestamp_to_db_type(reference_timestamp)?;
 		let latest = self.get_latest_block_info().await?;
 		let offset = self.security_parameter + self.block_stability_margin;
@@ -56,11 +56,15 @@ impl BlockDataSource for BlockDataSourceImpl {
 		Ok(block.map(From::from))
 	}
 
-	async fn get_stable_block_for(&self, hash: McBlockHash, reference_timestamp: Timestamp) -> Result<Option<MainchainBlock>> {
+	async fn get_stable_block_for(
+		&self,
+		hash: McBlockHash,
+		reference_timestamp: Timestamp,
+	) -> Result<Option<MainchainBlock>> {
 		let reference_timestamp = BlockDataSourceImpl::timestamp_to_db_type(reference_timestamp)?;
 		self.get_stable_block_by_hash(hash, reference_timestamp).await
 	}
-});
+}
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct DbSyncBlockDataSourceConfig {
@@ -84,13 +88,11 @@ impl DbSyncBlockDataSourceConfig {
 impl BlockDataSourceImpl {
 	pub async fn new_from_env(
 		pool: PgPool,
-		metrics_opt: Option<McFollowerMetrics>,
 	) -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {
 		Ok(Self::from_config(
 			pool,
 			DbSyncBlockDataSourceConfig::from_env()?,
 			&read_mc_epoch_config()?,
-			metrics_opt,
 		))
 	}
 
@@ -102,7 +104,6 @@ impl BlockDataSourceImpl {
 			block_stability_margin,
 		}: DbSyncBlockDataSourceConfig,
 		mc_epoch_config: &MainchainEpochConfig,
-		metrics_opt: Option<McFollowerMetrics>,
 	) -> BlockDataSourceImpl {
 		let k: f64 = cardano_security_parameter.into();
 		let min_slot_boundary = (k / cardano_active_slots_coeff).round() as i64;
@@ -115,7 +116,6 @@ impl BlockDataSourceImpl {
 			TimeDelta::seconds(max_slot_boundary),
 			mc_epoch_config.clone(),
 			block_stability_margin,
-			metrics_opt,
 			cache_size,
 			BlocksCache::new_arc_mutex(),
 		)

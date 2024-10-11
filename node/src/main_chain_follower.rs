@@ -65,11 +65,13 @@ pub async fn create_cached_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
 ) -> Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
 	let pool = db_sync_follower::data_sources::get_connection_from_env().await?;
-	let block =
-		Arc::new(BlockDataSourceImpl::new_from_env(pool.clone(), metrics_opt.clone()).await?);
+	let block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone()).await?);
 	Ok(DataSources {
-		sidechain_rpc: Arc::new(SidechainRpcDataSourceImpl::new(block.clone())),
-		mc_hash: Arc::new(McHashDataSourceImpl::new(block)),
+		sidechain_rpc: Arc::new(SidechainRpcDataSourceImpl::new(
+			block.clone(),
+			metrics_opt.clone(),
+		)),
+		mc_hash: Arc::new(McHashDataSourceImpl::new(block, metrics_opt.clone())),
 		candidate: Arc::new(
 			CandidatesDataSourceImpl::new(pool.clone(), metrics_opt.clone())
 				.await?
