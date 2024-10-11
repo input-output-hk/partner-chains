@@ -1,4 +1,4 @@
-use crate::block::{BlockDataSource, BlockDataSourceImpl, BlocksCache};
+use crate::block::{BlockDataSourceImpl, BlocksCache};
 use chrono::{NaiveDateTime, TimeDelta};
 use hex_literal::hex;
 use main_chain_follower_api::block::MainchainBlock;

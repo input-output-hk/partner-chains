@@ -1,14 +1,13 @@
 use crate::data_sources::read_mc_epoch_config;
 use crate::db_model;
 use crate::db_model::{Block, BlockNumber, SlotNumber};
-use async_trait::async_trait;
 use chrono::{DateTime, NaiveDateTime, TimeDelta};
 use derive_new::new;
 use figment::providers::Env;
 use figment::Figment;
 use log::{debug, info};
 use main_chain_follower_api::{
-	block::MainchainBlock, common::Timestamp, BlockDataSource, DataSourceError::*, Result,
+	block::MainchainBlock, common::Timestamp, DataSourceError::*, Result,
 };
 use serde::Deserialize;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
@@ -35,16 +34,15 @@ pub struct BlockDataSourceImpl {
 	stable_blocks_cache: Arc<Mutex<BlocksCache>>,
 }
 
-#[async_trait]
-impl BlockDataSource for BlockDataSourceImpl {
-	async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
+impl BlockDataSourceImpl {
+	pub async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
 		db_model::get_latest_block_info(&self.pool)
 			.await?
 			.map(From::from)
 			.ok_or(ExpectedDataNotFound("No latest block on chain.".to_string()))
 	}
 
-	async fn get_latest_stable_block_for(
+	pub async fn get_latest_stable_block_for(
 		&self,
 		reference_timestamp: Timestamp,
 	) -> Result<Option<MainchainBlock>> {
@@ -56,7 +54,7 @@ impl BlockDataSource for BlockDataSourceImpl {
 		Ok(block.map(From::from))
 	}
 
-	async fn get_stable_block_for(
+	pub async fn get_stable_block_for(
 		&self,
 		hash: McBlockHash,
 		reference_timestamp: Timestamp,

@@ -25,13 +25,8 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 		"0x0000000000000000000000000000000000000000000000000000000000000001",
 	);
 
-	let block_data_source = MockBlockDataSource::default();
 	let native_token_data_source = MockNativeTokenDataSource::new(
-		[(
-			(None, block_data_source.stable_blocks.first().unwrap().hash.clone()),
-			NativeTokenAmount(1000),
-		)]
-		.into(),
+		[((None, McBlockHash([1; 32])), NativeTokenAmount(1000))].into(),
 	);
 	let mc_hash_data_source = MockMcHashDataSource::from(vec![MainchainBlock {
 		number: McBlockNumber(1),
@@ -85,10 +80,7 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 		inherent_data
 			.get_data::<McBlockHash>(&sidechain_mc_hash::INHERENT_IDENTIFIER)
 			.unwrap(),
-		MockBlockDataSource::default()
-			.get_all_stable_blocks()
-			.first()
-			.map(|b| b.hash.clone())
+		Some(McBlockHash([1; 32]))
 	);
 	assert!(inherent_data
 		.get_data::<AuthoritySelectionInputs>(&sp_session_validator_management::INHERENT_IDENTIFIER)
@@ -102,8 +94,13 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 
 #[tokio::test]
 async fn block_verification_cidp_should_be_created_correctly() {
-	let block_data_source = MockBlockDataSource::default();
-	let parent_stable_block = block_data_source.get_all_stable_blocks().first().unwrap().clone();
+	let parent_stable_block = MainchainBlock {
+		number: McBlockNumber(1),
+		hash: McBlockHash([1; 32]),
+		epoch: McEpochNumber(2),
+		slot: McSlotNumber(3),
+		timestamp: 4,
+	};
 	let mc_block_hash = McBlockHash([2; 32]);
 	let native_token_data_source = MockNativeTokenDataSource::new(
 		[((None, mc_block_hash.clone()), NativeTokenAmount(1000))].into(),

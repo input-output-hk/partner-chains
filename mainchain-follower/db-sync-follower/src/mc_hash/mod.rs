@@ -2,8 +2,8 @@ use crate::block::BlockDataSourceImpl;
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
 use async_trait::async_trait;
+use main_chain_follower_api::common::Timestamp;
 use main_chain_follower_api::DataSourceError;
-use main_chain_follower_api::{common::Timestamp, BlockDataSource};
 use sidechain_domain::McBlockHash;
 use sidechain_mc_hash::McHashDataSource;
 use std::sync::Arc;
@@ -27,9 +27,8 @@ impl McHashDataSource for McHashDataSourceImpl {
 		&self,
 		reference_timestamp: sp_timestamp::Timestamp,
 	) -> std::result::Result<Option<sidechain_mc_hash::MainchainBlock>, Self::Error> {
-		Ok(<BlockDataSourceImpl as BlockDataSource>::get_latest_stable_block_for(
-			&self.inner,
-			Timestamp(reference_timestamp.as_millis()),
+		Ok(self.inner.get_latest_stable_block_for(
+			Timestamp(reference_timestamp.as_millis())
 		)
 		.await?
 		.map(|block| sidechain_mc_hash::MainchainBlock {
@@ -46,8 +45,7 @@ impl McHashDataSource for McHashDataSourceImpl {
 		hash: McBlockHash,
 		reference_timestamp: sp_timestamp::Timestamp,
 	) -> std::result::Result<Option<sidechain_mc_hash::MainchainBlock>, Self::Error> {
-		Ok(<BlockDataSourceImpl as BlockDataSource>::get_stable_block_for(
-			&self.inner,
+		Ok(self.inner.get_stable_block_for(
 			hash,
 			Timestamp(reference_timestamp.as_millis()),
 		)
