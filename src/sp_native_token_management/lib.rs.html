@@ -211,6 +211,58 @@
 <a href="#211" id="211">211</a>
 <a href="#212" id="212">212</a>
 <a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">use </span>core::str::FromStr;
@@ -305,13 +357,27 @@
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">mod </span>inherent_provider {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use </span>main_chain_follower_api::{DataSourceError, NativeTokenManagementDataSource};
 	<span class="kw">use </span>sidechain_mc_hash::get_mc_hash_for_block;
 	<span class="kw">use </span>sp_api::{ApiError, Core, ProvideRuntimeApi};
 	<span class="kw">use </span>sp_blockchain::HeaderBackend;
 	<span class="kw">use </span>sp_version::RuntimeVersion;
 	<span class="kw">use </span>std::error::Error;
 	<span class="kw">use </span>std::sync::Arc;
+
+	<span class="attr">#[async_trait::async_trait]
+	</span><span class="kw">pub trait </span>NativeTokenManagementDataSource {
+		<span class="kw">type </span>Error;
+
+		<span class="doccomment">/// Retrieves total of native token transfers into the illiquid supply in the range (after_block, to_block]
+		</span><span class="kw">async fn </span>get_total_native_token_transfer(
+			<span class="kw-2">&amp;</span><span class="self">self</span>,
+			after_block: <span class="prelude-ty">Option</span>&lt;McBlockHash&gt;,
+			to_block: McBlockHash,
+			native_token_policy_id: PolicyId,
+			native_token_asset_name: AssetName,
+			illiquid_supply_address: MainchainAddress,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;NativeTokenAmount, <span class="self">Self</span>::Error&gt;;
+	}
 
 	<span class="kw">pub struct </span>NativeTokenManagementInherentDataProvider {
 		<span class="kw">pub </span>token_amount: <span class="prelude-ty">Option</span>&lt;NativeTokenAmount&gt;,
@@ -320,7 +386,7 @@
 	<span class="attr">#[derive(thiserror::Error, sp_runtime::RuntimeDebug)]
 	</span><span class="kw">pub enum </span>IDPCreationError {
 		<span class="attr">#[error(<span class="string">"Failed to read native token data from data source: {0:?}"</span>)]
-		</span>DataSourceError(<span class="attr">#[from] </span>DataSourceError),
+		</span>DataSourceError(Box&lt;<span class="kw">dyn </span>Error + Send + Sync&gt;),
 		<span class="attr">#[error(<span class="string">"Failed to call runtime API: {0:?}"</span>)]
 		</span>ApiError(ApiError),
 		<span class="attr">#[error(<span class="string">"Failed to retrieve previous MC hash: {0:?}"</span>)]
@@ -336,10 +402,10 @@
 	<span class="kw">impl </span>NativeTokenManagementInherentDataProvider {
 		<span class="doccomment">/// Checks the current runtime version against `version_check` predicate, returns zero transfers
 		/// if outside the version bounds.
-		</span><span class="kw">pub async fn </span>new_for_runtime_version&lt;Block, C&gt;(
+		</span><span class="kw">pub async fn </span>new_for_runtime_version&lt;Block, C, E&gt;(
 			version_check: <span class="kw">fn</span>(RuntimeVersion) -&gt; bool,
 			client: Arc&lt;C&gt;,
-			data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>NativeTokenManagementDataSource + Send + Sync),
+			data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>NativeTokenManagementDataSource&lt;Error = E&gt; + Send + Sync),
 			mc_hash: McBlockHash,
 			parent_hash: &lt;Block <span class="kw">as </span>BlockT&gt;::Hash,
 		) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, IDPCreationError&gt;
@@ -348,6 +414,7 @@
 			C: HeaderBackend&lt;Block&gt;,
 			C: ProvideRuntimeApi&lt;Block&gt; + Send + Sync,
 			C::Api: NativeTokenManagementApi&lt;Block&gt;,
+			E: std::error::Error + Send + Sync + <span class="lifetime">'static</span>,
 		{
 			<span class="kw">let </span>version = client.runtime_api().version(parent_hash)<span class="question-mark">?</span>;
 
@@ -358,9 +425,9 @@
 			}
 		}
 
-		<span class="kw">pub async fn </span>new&lt;Block, C&gt;(
+		<span class="kw">pub async fn </span>new&lt;Block, C, E&gt;(
 			client: Arc&lt;C&gt;,
-			data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>NativeTokenManagementDataSource + Send + Sync),
+			data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>NativeTokenManagementDataSource&lt;Error = E&gt; + Send + Sync),
 			mc_hash: McBlockHash,
 			parent_hash: &lt;Block <span class="kw">as </span>BlockT&gt;::Hash,
 		) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, IDPCreationError&gt;
@@ -369,6 +436,7 @@
 			C: HeaderBackend&lt;Block&gt;,
 			C: ProvideRuntimeApi&lt;Block&gt; + Send + Sync,
 			C::Api: NativeTokenManagementApi&lt;Block&gt;,
+			E: std::error::Error + Send + Sync + <span class="lifetime">'static</span>,
 		{
 			<span class="kw">let </span>api = client.runtime_api();
 			<span class="kw">let </span><span class="prelude-val">Some</span>(scripts) = api.get_main_chain_scripts(parent_hash)<span class="question-mark">? </span><span class="kw">else </span>{
@@ -388,7 +456,8 @@
 					scripts.native_token_asset_name,
 					scripts.illiquid_supply_validator_address,
 				)
-				.<span class="kw">await</span><span class="question-mark">?</span>;
+				.<span class="kw">await
+				</span>.map_err(|err| IDPCreationError::DataSourceError(Box::new(err)))<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>token_amount = <span class="kw">if </span>token_amount.<span class="number">0 </span>&gt; <span class="number">0 </span>{ <span class="prelude-val">Some</span>(token_amount) } <span class="kw">else </span>{ <span class="prelude-val">None </span>};
 
@@ -421,6 +490,41 @@
 			<span class="kw">let </span>error = InherentError::decode(<span class="kw-2">&amp;mut </span>error).ok()<span class="question-mark">?</span>;
 
 			<span class="prelude-val">Some</span>(<span class="prelude-val">Err</span>(sp_inherents::Error::Application(Box::from(error))))
+		}
+	}
+
+	<span class="attr">#[cfg(any(test, feature = <span class="string">"mock"</span>))]
+	</span><span class="kw">pub mod </span>mock {
+		<span class="kw">use </span><span class="kw">crate</span>::NativeTokenManagementDataSource;
+		<span class="kw">use </span>async_trait::async_trait;
+		<span class="kw">use </span>core::marker::PhantomData;
+		<span class="kw">use </span>derive_new::new;
+		<span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
+		<span class="kw">use </span>std::collections::HashMap;
+
+		<span class="attr">#[derive(new, Default)]
+		</span><span class="kw">pub struct </span>MockNativeTokenDataSource&lt;<span class="prelude-val">Err</span>&gt; {
+			transfers: HashMap&lt;(<span class="prelude-ty">Option</span>&lt;McBlockHash&gt;, McBlockHash), NativeTokenAmount&gt;,
+			_marker: PhantomData&lt;<span class="prelude-val">Err</span>&gt;,
+		}
+
+		<span class="attr">#[async_trait]
+		</span><span class="kw">impl</span>&lt;<span class="prelude-val">Err</span>&gt; NativeTokenManagementDataSource <span class="kw">for </span>MockNativeTokenDataSource&lt;<span class="prelude-val">Err</span>&gt;
+		<span class="kw">where
+			</span><span class="prelude-val">Err</span>: std::error::Error + Send + Sync,
+		{
+			<span class="kw">type </span>Error = <span class="prelude-val">Err</span>;
+
+			<span class="kw">async fn </span>get_total_native_token_transfer(
+				<span class="kw-2">&amp;</span><span class="self">self</span>,
+				after_block: <span class="prelude-ty">Option</span>&lt;McBlockHash&gt;,
+				to_block: McBlockHash,
+				_native_token_policy_id: PolicyId,
+				_native_token_asset_name: AssetName,
+				_illiquid_supply_address: MainchainAddress,
+			) -&gt; <span class="prelude-ty">Result</span>&lt;NativeTokenAmount, <span class="self">Self</span>::Error&gt; {
+				<span class="prelude-val">Ok</span>(<span class="self">self</span>.transfers.get(<span class="kw-2">&amp;</span>(after_block, to_block)).cloned().unwrap_or_default())
+			}
 		}
 	}
 }

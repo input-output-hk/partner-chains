@@ -219,14 +219,18 @@
 <a href="#219" id="219">219</a>
 <a href="#220" id="220">220</a>
 <a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::db_model::{Block, BlockNumber};
 <span class="kw">use </span><span class="kw">crate</span>::metrics::McFollowerMetrics;
 <span class="kw">use </span><span class="kw">crate</span>::observed_async_trait;
 <span class="kw">use </span>async_trait::async_trait;
 <span class="kw">use </span>derive_new::new;
 <span class="kw">use </span>itertools::Itertools;
-<span class="kw">use </span>main_chain_follower_api::{DataSourceError, NativeTokenManagementDataSource, <span class="prelude-ty">Result</span>};
+<span class="kw">use </span>main_chain_follower_api::{DataSourceError, <span class="prelude-ty">Result</span>};
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
+<span class="kw">use </span>sp_native_token_management::NativeTokenManagementDataSource;
 <span class="kw">use </span>sqlx::PgPool;
 <span class="kw">use </span>std::sync::{Arc, Mutex};
 
@@ -245,6 +249,8 @@
 
 <span class="macro">observed_async_trait!</span>(
 <span class="kw">impl </span>NativeTokenManagementDataSource <span class="kw">for </span>NativeTokenManagementDataSourceImpl {
+	<span class="kw">type </span>Error = DataSourceError;
+
 	<span class="comment">// after_block is always less or equal to_block
 	// to_block is always a stable block
 	</span><span class="kw">async fn </span>get_total_native_token_transfer(
@@ -254,7 +260,7 @@
 		policy_id: PolicyId,
 		asset_name: AssetName,
 		address: MainchainAddress,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;NativeTokenAmount&gt; {
+	) -&gt; std::result::Result&lt;NativeTokenAmount, <span class="self">Self</span>::Error&gt; {
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(after_block) = after_block {
 			<span class="kw">if </span>after_block == to_block {
 				<span class="prelude-val">Ok</span>(NativeTokenAmount(<span class="number">0</span>))

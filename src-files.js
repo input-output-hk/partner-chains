@@ -4,7 +4,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["chain_params",["",[],["lib.rs"]]],\
 ["cli_commands",["",[],["key_params.rs","lib.rs","output.rs","pc_contracts_cli_params.rs","registration_signatures.rs","signing.rs"]]],\
 ["db_sync_follower",["",[["block",[],["mod.rs"]],["candidates",[],["cached.rs","mod.rs"]],["native_token",[],["mod.rs"]]],["data_sources.rs","db_datum.rs","db_model.rs","lib.rs","metrics.rs"]]],\
-["main_chain_follower_api",["",[],["block.rs","candidate.rs","common.rs","lib.rs","mock_services.rs","native_token.rs"]]],\
+["main_chain_follower_api",["",[],["block.rs","candidate.rs","common.rs","lib.rs","mock_services.rs"]]],\
 ["main_chain_follower_cli",["",[],["main.rs"]]],\
 ["main_chain_follower_mock",["",[],["block.rs","candidate.rs","lib.rs","native_token.rs"]]],\
 ["mock_types",["",[],["lib.rs","session_keys.rs"]]],\

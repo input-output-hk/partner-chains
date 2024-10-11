@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["INHERENT_IDENTIFIER"],"enum":["IDPCreationError","InherentError"],"struct":["MainChainScripts","NativeTokenManagementInherentDataProvider","TokenTransferData"],"trait":["NativeTokenManagementApi"]};
+window.SIDEBAR_ITEMS = {"constant":["INHERENT_IDENTIFIER"],"enum":["IDPCreationError","InherentError"],"struct":["MainChainScripts","NativeTokenManagementInherentDataProvider","TokenTransferData"],"trait":["NativeTokenManagementApi","NativeTokenManagementDataSource"]};
