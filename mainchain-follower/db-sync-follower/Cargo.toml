@@ -40,8 +40,8 @@ ctor = "0.2.5"
 
 [features]
 default = []
-block-source = ["main-chain-follower-api/block-source", "sidechain-mc-hash"]
+block-source = []
 candidate-source = ["main-chain-follower-api/candidate-source"]
 native-token = ["sp-native-token-management"]
-mc-hash = ["sidechain-mc-hash"]
-sidechain-rpc = ["pallet-sidechain-rpc"]
+mc-hash = ["sidechain-mc-hash", "block-source"]
+sidechain-rpc = ["pallet-sidechain-rpc", "block-source"]
