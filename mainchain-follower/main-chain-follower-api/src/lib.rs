@@ -11,8 +11,6 @@ pub mod common;
 
 #[cfg(feature = "block-source")]
 pub mod block;
-#[cfg(feature = "block-source")]
-pub use block::BlockDataSource;
 
 #[cfg(feature = "candidate-source")]
 pub mod candidate;

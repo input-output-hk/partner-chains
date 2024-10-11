@@ -58,7 +58,7 @@ impl Deref for McHashInherentDataProvider {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct MainchainBlock {
 	pub number: McBlockNumber,
 	pub hash: McBlockHash,

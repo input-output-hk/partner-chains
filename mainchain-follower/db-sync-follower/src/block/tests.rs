@@ -1,7 +1,6 @@
-use crate::block::{BlockDataSourceImpl, BlocksCache};
+use crate::block::{BlockDataSourceImpl, BlocksCache, MainchainBlock};
 use chrono::{NaiveDateTime, TimeDelta};
 use hex_literal::hex;
-use main_chain_follower_api::block::MainchainBlock;
 use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig, Timestamp};
 use sidechain_domain::{McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber};
 use sqlx::PgPool;

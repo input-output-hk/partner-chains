@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 pub use main_chain_follower_api::block::*;
 use main_chain_follower_api::common::*;
 use main_chain_follower_api::*;
@@ -10,9 +9,8 @@ pub struct BlockDataSourceMock {
 	mc_epoch_duration_millis: u32,
 }
 
-#[async_trait]
-impl BlockDataSource for BlockDataSourceMock {
-	async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
+impl BlockDataSourceMock {
+	pub async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
 		Ok(self
 			.get_latest_stable_block_for(Timestamp(BlockDataSourceMock::millis_now()))
 			.await
@@ -20,7 +18,7 @@ impl BlockDataSource for BlockDataSourceMock {
 			.unwrap())
 	}
 
-	async fn get_latest_stable_block_for(
+	pub async fn get_latest_stable_block_for(
 		&self,
 		reference_timestamp: Timestamp,
 	) -> Result<Option<MainchainBlock>> {
@@ -37,7 +35,7 @@ impl BlockDataSource for BlockDataSourceMock {
 		}))
 	}
 
-	async fn get_stable_block_for(
+	pub async fn get_stable_block_for(
 		&self,
 		_hash: McBlockHash,
 		reference_timestamp: Timestamp,

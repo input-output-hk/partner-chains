@@ -6,12 +6,10 @@ use derive_new::new;
 use figment::providers::Env;
 use figment::Figment;
 use log::{debug, info};
-use main_chain_follower_api::{
-	block::MainchainBlock, common::Timestamp, DataSourceError::*, Result,
-};
-use serde::Deserialize;
+use main_chain_follower_api::{common::Timestamp, DataSourceError::*, Result};
+use serde::{Deserialize, Serialize};
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
-use sidechain_domain::McBlockHash;
+use sidechain_domain::*;
 use sqlx::PgPool;
 use std::error::Error;
 use std::sync::{Arc, Mutex};
@@ -32,6 +30,27 @@ pub struct BlockDataSourceImpl {
 	block_stability_margin: u32,
 	cache_size: u16,
 	stable_blocks_cache: Arc<Mutex<BlocksCache>>,
+}
+
+#[derive(PartialEq, Eq, Debug, Clone, Serialize)]
+pub struct MainchainBlock {
+	pub number: McBlockNumber,
+	pub hash: McBlockHash,
+	pub epoch: McEpochNumber,
+	pub slot: McSlotNumber,
+	pub timestamp: u64, // seconds since UNIX_EPOCH
+}
+
+impl From<Block> for MainchainBlock {
+	fn from(b: Block) -> Self {
+		MainchainBlock {
+			number: McBlockNumber(b.block_no.0),
+			hash: McBlockHash(b.hash),
+			epoch: McEpochNumber(b.epoch_no.0),
+			slot: McSlotNumber(b.slot_no.0),
+			timestamp: b.time.and_utc().timestamp().try_into().expect("i64 timestamp is valid u64"),
+		}
+	}
 }
 
 impl BlockDataSourceImpl {

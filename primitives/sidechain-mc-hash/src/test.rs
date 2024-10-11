@@ -58,7 +58,7 @@ mod validation_tests {
 			timestamp: parent_stable_block.timestamp - 1,
 			epoch: McEpochNumber(parent_stable_block.epoch.0),
 		};
-		let block_data_source = MockMcHashDataSource::<McHashInherentError>::new(vec![
+		let mc_hash_data_source = MockMcHashDataSource::<McHashInherentError>::new(vec![
 			parent_stable_block,
 			next_stable_block,
 		]);
@@ -69,7 +69,7 @@ mod validation_tests {
 			30.into(),
 			mc_block_hash.clone(),
 			slot_duration,
-			&block_data_source,
+			&mc_hash_data_source,
 		)
 		.await;
 		assert!(err.is_err());

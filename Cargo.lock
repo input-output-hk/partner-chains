@@ -9374,6 +9374,7 @@ version = "1.2.0"
 dependencies = [
  "async-trait",
  "derive-new",
+ "serde",
  "sidechain-domain",
  "sp-blockchain",
  "sp-consensus",

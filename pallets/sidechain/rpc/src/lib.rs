@@ -52,7 +52,7 @@ pub trait SidechainRpcDataSource {
 pub struct SidechainRpc<C, Block, DSE> {
 	client: Arc<C>,
 	mc_epoch_config: MainchainEpochConfig,
-	block_data_source: Arc<dyn SidechainRpcDataSource<Error = DSE> + Send + Sync>,
+	data_source: Arc<dyn SidechainRpcDataSource<Error = DSE> + Send + Sync>,
 	time_source: Arc<dyn TimeSource + Send + Sync>,
 	_marker: std::marker::PhantomData<Block>,
 }
@@ -99,7 +99,7 @@ where
 			.ok_or(GetStatusRpcError::CannotConvertSidechainSlotToTimestamp)?;
 
 		let latest_mainchain_block =
-			self.block_data_source.get_latest_block_info().await.map_err(|err| {
+			self.data_source.get_latest_block_info().await.map_err(|err| {
 				ErrorObject::owned(
 					ErrorCode::InternalError.code(),
 					format!("Internal error: GetLatestBlockResponse error '{:?}", err),

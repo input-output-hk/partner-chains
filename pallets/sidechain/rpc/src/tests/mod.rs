@@ -24,7 +24,7 @@ mod get_status_tests {
 			first_slot_number: 501,
 		};
 		let mainchain_block = MainchainBlock { epoch: McEpochNumber(99), slot: McSlotNumber(2000) };
-		let block_data_source_mock =
+		let sidechain_rpc_data_source =
 			Arc::new(SidechainRpcDataSourceMock::<ErrorObjectOwned>::new(mainchain_block.clone()));
 		let slot_duration = SlotDuration::from_millis(60);
 		let slots_per_epoch = 10;
@@ -39,8 +39,12 @@ mod get_status_tests {
 		let current_time_millis: u64 = 1_000_000_000_000;
 		let time_source = Arc::new(MockedTimeSource { current_time_millis });
 
-		let api =
-			SidechainRpc::new(client, mc_epoch_config.clone(), block_data_source_mock, time_source);
+		let api = SidechainRpc::new(
+			client,
+			mc_epoch_config.clone(),
+			sidechain_rpc_data_source,
+			time_source,
+		);
 		let current_epoch = current_time_millis / (slot_duration.as_millis() * slots_per_epoch);
 		let status_response = api.get_status().await;
 
