@@ -1,9 +1,6 @@
-use crate::block::BlockDataSourceImpl;
-use crate::metrics::McFollowerMetrics;
-use crate::observed_async_trait;
+use crate::{block::BlockDataSourceImpl, metrics::McFollowerMetrics, observed_async_trait};
 use async_trait::async_trait;
-use main_chain_follower_api::common::Timestamp;
-use main_chain_follower_api::DataSourceError;
+use main_chain_follower_api::{common::Timestamp, DataSourceError};
 use sidechain_domain::McBlockHash;
 use sidechain_mc_hash::McHashDataSource;
 use std::sync::Arc;

@@ -1,18 +1,20 @@
-use crate::data_sources::read_mc_epoch_config;
-use crate::db_model;
-use crate::db_model::{Block, BlockNumber, SlotNumber};
+use crate::{
+	data_sources::read_mc_epoch_config,
+	db_model::{self, Block, BlockNumber, SlotNumber},
+};
 use chrono::{DateTime, NaiveDateTime, TimeDelta};
 use derive_new::new;
-use figment::providers::Env;
-use figment::Figment;
+use figment::{providers::Env, Figment};
 use log::{debug, info};
 use main_chain_follower_api::{common::Timestamp, DataSourceError::*, Result};
 use serde::{Deserialize, Serialize};
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_domain::*;
 use sqlx::PgPool;
-use std::error::Error;
-use std::sync::{Arc, Mutex};
+use std::{
+	error::Error,
+	sync::{Arc, Mutex},
+};
 
 #[cfg(test)]
 mod tests;

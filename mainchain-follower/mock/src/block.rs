@@ -1,4 +1,3 @@
-pub use main_chain_follower_api::block::*;
 use main_chain_follower_api::common::*;
 use main_chain_follower_api::*;
 use sidechain_domain::*;
@@ -7,6 +6,15 @@ use std::error::Error;
 pub struct BlockDataSourceMock {
 	/// Duration of a mainchain epoch in milliseconds
 	mc_epoch_duration_millis: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+pub struct MainchainBlock {
+	pub number: McBlockNumber,
+	pub hash: McBlockHash,
+	pub epoch: McEpochNumber,
+	pub slot: McSlotNumber,
+	pub timestamp: u64, // seconds since UNIX_EPOCH
 }
 
 impl BlockDataSourceMock {

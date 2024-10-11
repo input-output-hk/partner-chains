@@ -1,7 +1,6 @@
-use crate::block::BlockDataSourceImpl;
-use crate::metrics::McFollowerMetrics;
-use crate::observed_async_trait;
-use crate::DataSourceError;
+use crate::{
+	block::BlockDataSourceImpl, metrics::McFollowerMetrics, observed_async_trait, DataSourceError,
+};
 use async_trait::async_trait;
 use pallet_sidechain_rpc::{MainchainBlock, SidechainRpcDataSource};
 use std::sync::Arc;
