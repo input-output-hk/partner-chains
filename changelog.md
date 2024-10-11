@@ -17,6 +17,7 @@ provider will not query the main chain state or produce inherent data at all.
 * Update toolchain to 1.81.0
 * Implemented batch queries and caching for the native token observability. Improves performance of the full-sync.
 * Decoupled the native token inherent data provider from the `main-chain-follower-api` crate.
+* Added ogmios-client interal library for communication with Ogmios
 
 ## Removed
 

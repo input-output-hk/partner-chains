@@ -1,6 +1,6 @@
 use jsonrpsee::{http_client::HttpClient, server::Server, RpcModule};
 use ogmios_client::{
-	query_ledger_state::{EpochBoundary, EpochParameters, EraSummariesResponse, QueryLedgerState},
+	query_ledger_state::{EpochBoundary, EpochParameters, EraSummary, QueryLedgerState},
 	types::{SlotLength, TimeSeconds},
 };
 use serde_json::json;
@@ -24,7 +24,7 @@ async fn era_summaries() {
 	assert_eq!(era_summaries.len(), 3);
 	assert_eq!(
 		era_summaries[0],
-		EraSummariesResponse {
+		EraSummary {
 			start: EpochBoundary { time: TimeSeconds { seconds: 0 }, slot: 0, epoch: 0 },
 			end: EpochBoundary { time: TimeSeconds { seconds: 1728000 }, slot: 86400, epoch: 4 },
 			parameters: EpochParameters {

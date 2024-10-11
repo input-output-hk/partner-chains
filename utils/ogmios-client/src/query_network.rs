@@ -22,6 +22,7 @@ impl<T: OgmiosClient> QueryNetwork for T {}
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ShelleyGenesisConfigurationResponse {
+	pub network_magic: u32,
 	pub security_parameter: u32,
 	// Ogmios returns active_slots_coefficient as string representing rational number, like "1/20"
 	pub active_slots_coefficient: String,

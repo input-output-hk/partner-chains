@@ -8,7 +8,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 hex = { workspace = true }
-jsonrpsee = { workspace = true, features = [
+jsonrpsee = { workspace = true, optional = true, features = [
     "client-core",
     "http-client",
     "macros",
@@ -21,3 +21,6 @@ time = { workspace = true, features = ["std", "serde", "parsing"] }
 [dev-dependencies]
 anyhow = { workspace = true }
 tokio = { workspace = true }
+
+[features]
+jsonrpsee-client = ["jsonrpsee"]

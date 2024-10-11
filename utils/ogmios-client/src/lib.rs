@@ -1,5 +1,6 @@
 //! This module provides a high-level API for interacting with the Ogmios JSON-RPC API.
 
+#[cfg(feature = "jsonrpsee-client")]
 pub mod jsonrpsee;
 pub mod query_ledger_state;
 pub mod query_network;

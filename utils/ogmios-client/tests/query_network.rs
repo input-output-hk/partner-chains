@@ -30,6 +30,7 @@ async fn shelley_genesis_configuration() {
 	assert_eq!(
 		genesis_configuration,
 		ShelleyGenesisConfigurationResponse {
+			network_magic: 2,
 			start_time: OffsetDateTime::from_unix_timestamp(1666656000).unwrap(),
 			security_parameter: 432,
 			epoch_length: 86400,
