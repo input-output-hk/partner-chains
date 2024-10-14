@@ -91,17 +91,14 @@ build:
 chainspecs:
   FROM +boot
   DO +INSTALL
-  COPY dev/devnet/.envrc devnet/.envrc
-  COPY dev/devnet/addresses.json devnet/addresses.json
-  COPY dev/staging/.envrc staging/.envrc
-  COPY dev/staging/addresses.json staging/addresses.json
-  # `.` (dot) is equivalent of `source` in /bin/sh
-  RUN . ./devnet/.envrc \
-      && $BIN build-spec --chain local --disable-default-bootnode --raw > devnet_chain_spec.json
-  RUN. ./staging/.envrc \
-      && $BIN build-spec --chain staging --disable-default-bootnode --raw > staging_chain_spec.json
-  SAVE ARTIFACT devnet_chain_spec.json AS LOCAL devnet_chain_spec.json
-  SAVE ARTIFACT staging_chain_spec.json AS LOCAL staging_chain_spec.json
+  LET ENV=""
+  FOR env IN "devnet staging-preview staging-preprod"
+    SET ENV=$(echo "$env" | tr - _)
+    COPY --dir dev/envs/$env $env
+    RUN ADDRESSES="$env/addresses.json" . ./$env/.envrc \
+        && $BIN build-spec --chain local --disable-default-bootnode --raw > "$ENV"_chain_spec.json
+    SAVE ARTIFACT "$ENV"_chain_spec.json AS LOCAL "$ENV"_chain_spec.json
+  END
 
 source:
   FROM +boot
