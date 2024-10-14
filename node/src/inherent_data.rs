@@ -1,12 +1,14 @@
-use crate::main_chain_follower::DataSources;
 use authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider as AriadneIDP;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use derive_new::new;
 use jsonrpsee::core::async_trait;
+use main_chain_follower_api::CandidateDataSource;
+use main_chain_follower_api::DataSourceError;
 use sc_consensus_aura::{find_pre_digest, SlotDuration};
 use sc_service::Arc;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::{McBlockHash, ScEpochNumber};
+use sidechain_mc_hash::McHashDataSource;
 use sidechain_mc_hash::McHashInherentDataProvider as McHashIDP;
 use sidechain_runtime::{
 	opaque::{Block, SessionKeys},
@@ -22,7 +24,8 @@ use sp_consensus_aura::{
 use sp_core::Pair;
 use sp_inherents::CreateInherentDataProviders;
 use sp_native_token_management::{
-	NativeTokenManagementApi, NativeTokenManagementInherentDataProvider as NativeTokenIDP,
+	NativeTokenManagementApi, NativeTokenManagementDataSource,
+	NativeTokenManagementInherentDataProvider as NativeTokenIDP,
 };
 use sp_partner_chains_consensus_aura::CurrentSlotProvider;
 use sp_runtime::traits::{Block as BlockT, Header, Zero};
@@ -35,7 +38,10 @@ use time_source::TimeSource;
 pub struct ProposalCIDP<T> {
 	config: CreateInherentDataConfig,
 	client: Arc<T>,
-	data_sources: DataSources,
+	mc_hash_data_source: Arc<dyn McHashDataSource + Send + Sync>,
+	candidate_data_source: Arc<dyn CandidateDataSource + Send + Sync>,
+	native_token_data_source:
+		Arc<dyn NativeTokenManagementDataSource<Error = DataSourceError> + Send + Sync>,
 }
 
 #[async_trait]
@@ -66,13 +72,19 @@ where
 		parent_hash: <Block as BlockT>::Hash,
 		_extra_args: (),
 	) -> Result<Self::InherentDataProviders, Box<dyn std::error::Error + Send + Sync>> {
-		let Self { config, client, data_sources } = self;
+		let Self {
+			config,
+			client,
+			mc_hash_data_source,
+			candidate_data_source,
+			native_token_data_source,
+		} = self;
 		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source } = config;
 
 		let (slot, timestamp) =
 			timestamp_and_slot_cidp(sc_slot_config.slot_duration, time_source.clone());
 		let mc_hash = McHashIDP::new_proposal(
-			data_sources.mc_hash.as_ref(),
+			mc_hash_data_source.as_ref(),
 			*slot,
 			sc_slot_config.slot_duration,
 		)
@@ -84,7 +96,7 @@ where
 			mc_epoch_config,
 			parent_hash,
 			*slot,
-			data_sources.candidate.as_ref(),
+			candidate_data_source.as_ref(),
 			mc_hash.mc_epoch(),
 		)
 		.await?;
@@ -95,7 +107,7 @@ where
 
 		let native_token = NativeTokenIDP::new(
 			client.clone(),
-			data_sources.native_token.as_ref(),
+			native_token_data_source.as_ref(),
 			mc_hash.mc_hash(),
 			parent_hash,
 		)
@@ -116,7 +128,10 @@ where
 pub struct VerifierCIDP<T> {
 	config: CreateInherentDataConfig,
 	client: Arc<T>,
-	data_sources: DataSources,
+	mc_hash_data_source: Arc<dyn McHashDataSource + Send + Sync>,
+	candidate_data_source: Arc<dyn CandidateDataSource + Send + Sync>,
+	native_token_data_source:
+		Arc<dyn NativeTokenManagementDataSource<Error = DataSourceError> + Send + Sync>,
 }
 
 impl<T: Send + Sync> CurrentSlotProvider for VerifierCIDP<T> {
@@ -145,7 +160,13 @@ where
 		parent_hash: <Block as BlockT>::Hash,
 		(verified_block_slot, mc_hash): (Slot, McBlockHash),
 	) -> Result<Self::InherentDataProviders, Box<dyn Error + Send + Sync>> {
-		let Self { config, client, data_sources } = self;
+		let Self {
+			config,
+			client,
+			mc_hash_data_source,
+			candidate_data_source,
+			native_token_data_source,
+		} = self;
 		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source, .. } = config;
 
 		let timestamp = TimestampIDP::new(Timestamp::new(time_source.get_current_time_millis()));
@@ -157,7 +178,7 @@ where
 			verified_block_slot,
 			mc_hash.clone(),
 			config.slot_duration(),
-			data_sources.mc_hash.as_ref(),
+			mc_hash_data_source.as_ref(),
 		)
 		.await?;
 
@@ -167,14 +188,14 @@ where
 			mc_epoch_config,
 			parent_hash,
 			verified_block_slot,
-			data_sources.candidate.as_ref(),
+			candidate_data_source.as_ref(),
 			mc_state_reference.epoch,
 		)
 		.await?;
 
 		let native_token = NativeTokenIDP::new(
 			client.clone(),
-			data_sources.native_token.as_ref(),
+			native_token_data_source.as_ref(),
 			mc_hash,
 			parent_hash,
 		)
