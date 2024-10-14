@@ -6,6 +6,7 @@ pub mod runtime_api_client;
 use core::ops::Rem;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sidechain_domain::{ScEpochNumber, ScSlotNumber};
 pub use sp_consensus_slots::{Slot, SlotDuration};
