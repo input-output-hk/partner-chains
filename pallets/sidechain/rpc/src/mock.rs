@@ -1,9 +1,10 @@
 use std::marker::PhantomData;
 
-use crate::{MainchainBlock, SidechainRpcDataSource};
+use crate::SidechainRpcDataSource;
 use derive_new::new;
 use jsonrpsee::core::async_trait;
 use parity_scale_codec::Decode;
+use sidechain_domain::MainchainBlock;
 
 // The build.rs file of `substrate_test_runtime` is throwing an error. So a `Block` is being manually defined
 pub type Block = sp_runtime::generic::Block<

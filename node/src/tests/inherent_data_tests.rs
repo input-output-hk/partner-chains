@@ -6,9 +6,10 @@ use authority_selection_inherents::authority_selection_inputs::AuthoritySelectio
 use main_chain_follower_api::mock_services::*;
 use pallet_sidechain_rpc::mock::SidechainRpcDataSourceMock;
 use sidechain_domain::{
-	McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, NativeTokenAmount, ScEpochNumber,
+	MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, NativeTokenAmount,
+	ScEpochNumber,
 };
-use sidechain_mc_hash::{mock::MockMcHashDataSource, MainchainBlock};
+use sidechain_mc_hash::mock::MockMcHashDataSource;
 use sp_consensus_aura::Slot;
 use sp_core::H256;
 use sp_inherents::CreateInherentDataProviders;
@@ -28,20 +29,19 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 	let native_token_data_source = MockNativeTokenDataSource::new(
 		[((None, McBlockHash([1; 32])), NativeTokenAmount(1000))].into(),
 	);
-	let mc_hash_data_source = MockMcHashDataSource::from(vec![MainchainBlock {
+	let stable_block = MainchainBlock {
 		number: McBlockNumber(1),
 		hash: McBlockHash([1; 32]),
 		epoch: McEpochNumber(2),
 		slot: McSlotNumber(3),
 		timestamp: 4,
-	}]);
+	};
+	let mc_hash_data_source = MockMcHashDataSource::from(vec![stable_block.clone()]);
 	let data_sources = DataSources {
 		candidate: Arc::new(MockCandidateDataSource::default()),
 		native_token: Arc::new(native_token_data_source),
 		mc_hash: Arc::new(mc_hash_data_source),
-		sidechain_rpc: Arc::new(SidechainRpcDataSourceMock::new(
-			pallet_sidechain_rpc::MainchainBlock { epoch: McEpochNumber(2), slot: McSlotNumber(3) },
-		)),
+		sidechain_rpc: Arc::new(SidechainRpcDataSourceMock::new(stable_block)),
 	};
 
 	let inherent_data_providers = ProposalCIDP::new(
@@ -116,9 +116,7 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		candidate: Arc::new(MockCandidateDataSource::default()),
 		native_token: Arc::new(native_token_data_source),
 		mc_hash: Arc::new(mc_hash_data_source),
-		sidechain_rpc: Arc::new(SidechainRpcDataSourceMock::new(
-			pallet_sidechain_rpc::MainchainBlock { epoch: McEpochNumber(2), slot: McSlotNumber(3) },
-		)),
+		sidechain_rpc: Arc::new(SidechainRpcDataSourceMock::new(parent_stable_block)),
 	};
 
 	let create_inherent_data_config = test_create_inherent_data_config();

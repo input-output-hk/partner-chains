@@ -7,7 +7,7 @@ use derive_new::new;
 use figment::{providers::Env, Figment};
 use log::{debug, info};
 use main_chain_follower_api::{common::Timestamp, DataSourceError::*, Result};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_domain::*;
 use sqlx::PgPool;
@@ -32,15 +32,6 @@ pub struct BlockDataSourceImpl {
 	block_stability_margin: u32,
 	cache_size: u16,
 	stable_blocks_cache: Arc<Mutex<BlocksCache>>,
-}
-
-#[derive(PartialEq, Eq, Debug, Clone, Serialize)]
-pub struct MainchainBlock {
-	pub number: McBlockNumber,
-	pub hash: McBlockHash,
-	pub epoch: McEpochNumber,
-	pub slot: McSlotNumber,
-	pub timestamp: u64, // seconds since UNIX_EPOCH
 }
 
 impl From<Block> for MainchainBlock {

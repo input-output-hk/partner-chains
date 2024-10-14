@@ -8,15 +8,6 @@ pub struct BlockDataSourceMock {
 	mc_epoch_duration_millis: u32,
 }
 
-#[derive(Debug, Clone, PartialEq, serde::Serialize)]
-pub struct MainchainBlock {
-	pub number: McBlockNumber,
-	pub hash: McBlockHash,
-	pub epoch: McEpochNumber,
-	pub slot: McSlotNumber,
-	pub timestamp: u64, // seconds since UNIX_EPOCH
-}
-
 impl BlockDataSourceMock {
 	pub async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
 		Ok(self

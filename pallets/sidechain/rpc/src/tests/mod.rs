@@ -9,10 +9,10 @@ use rpc_mock::*;
 
 mod get_status_tests {
 	use super::*;
-	use crate::MainchainBlock;
 	use mock::SidechainRpcDataSourceMock;
 	use pretty_assertions::assert_eq;
 	use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig};
+	use sidechain_domain::*;
 	use sp_consensus_slots::SlotDuration;
 
 	#[tokio::test]
@@ -23,7 +23,11 @@ mod get_status_tests {
 			first_epoch_number: 50,
 			first_slot_number: 501,
 		};
-		let mainchain_block = MainchainBlock { epoch: McEpochNumber(99), slot: McSlotNumber(2000) };
+		let mainchain_block = MainchainBlock {
+			epoch: McEpochNumber(99),
+			slot: McSlotNumber(2000),
+			..Default::default()
+		};
 		let sidechain_rpc_data_source =
 			Arc::new(SidechainRpcDataSourceMock::<ErrorObjectOwned>::new(mainchain_block.clone()));
 		let slot_duration = SlotDuration::from_millis(60);
@@ -79,7 +83,11 @@ mod get_status_tests {
 			first_epoch_number: 50,
 			first_slot_number: 501,
 		};
-		let mainchain_block = MainchainBlock { epoch: McEpochNumber(99), slot: McSlotNumber(2000) };
+		let mainchain_block = MainchainBlock {
+			epoch: McEpochNumber(99),
+			slot: McSlotNumber(2000),
+			..Default::default()
+		};
 
 		let api = SidechainRpc::new(
 			client,

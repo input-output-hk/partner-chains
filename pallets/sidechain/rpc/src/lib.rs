@@ -6,10 +6,8 @@ use jsonrpsee::{
 	proc_macros::rpc,
 	types::{error::ErrorCode, ErrorObject, ErrorObjectOwned},
 };
-use sidechain_domain::{
-	mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation},
-	McEpochNumber, McSlotNumber,
-};
+use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
+use sidechain_domain::MainchainBlock;
 use sidechain_slots::SlotApi;
 use sp_api::ProvideRuntimeApi;
 use sp_core::offchain::Timestamp;
@@ -33,12 +31,6 @@ pub trait SidechainRpcApi<SidechainParams> {
 	/// Returns data related to the status of both the main chain and the sidechain, like their epochs or the timestamp associated to the next epoch.
 	#[method(name = "getStatus")]
 	async fn get_status(&self) -> RpcResult<GetStatusResponse>;
-}
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize)]
-pub struct MainchainBlock {
-	pub epoch: McEpochNumber,
-	pub slot: McSlotNumber,
 }
 
 #[async_trait]

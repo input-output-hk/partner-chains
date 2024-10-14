@@ -57,16 +57,6 @@ impl Deref for McHashInherentDataProvider {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-pub struct MainchainBlock {
-	pub number: McBlockNumber,
-	pub hash: McBlockHash,
-	pub epoch: McEpochNumber,
-	pub slot: McSlotNumber,
-	pub timestamp: u64, // seconds since UNIX_EPOCH
-}
-
 /// Queries about Cardano Blocks
 #[async_trait]
 pub trait McHashDataSource {
