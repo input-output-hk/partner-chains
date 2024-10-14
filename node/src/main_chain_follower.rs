@@ -16,10 +16,10 @@ use std::{error::Error, sync::Arc};
 
 #[derive(Clone)]
 pub struct DataSources {
-	pub mc_hash: Arc<dyn McHashDataSource<Error = DataSourceError> + Send + Sync>,
+	pub mc_hash: Arc<dyn McHashDataSource + Send + Sync>,
 	pub candidate: Arc<dyn CandidateDataSource + Send + Sync>,
 	pub native_token: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
-	pub sidechain_rpc: Arc<dyn SidechainRpcDataSource<Error = DataSourceError> + Send + Sync>,
+	pub sidechain_rpc: Arc<dyn SidechainRpcDataSource + Send + Sync>,
 }
 
 pub(crate) async fn create_cached_main_chain_follower_data_sources(

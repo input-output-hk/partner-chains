@@ -35,29 +35,26 @@ pub trait SidechainRpcApi<SidechainParams> {
 
 #[async_trait]
 pub trait SidechainRpcDataSource {
-	type Error;
-
-	async fn get_latest_block_info(&self) -> Result<MainchainBlock, Self::Error>;
+	async fn get_latest_block_info(&self) -> Result<MainchainBlock, Box<dyn std::error::Error>>;
 }
 
 #[derive(new)]
-pub struct SidechainRpc<C, Block, DSE> {
+pub struct SidechainRpc<C, Block> {
 	client: Arc<C>,
 	mc_epoch_config: MainchainEpochConfig,
-	data_source: Arc<dyn SidechainRpcDataSource<Error = DSE> + Send + Sync>,
+	data_source: Arc<dyn SidechainRpcDataSource + Send + Sync>,
 	time_source: Arc<dyn TimeSource + Send + Sync>,
 	_marker: std::marker::PhantomData<Block>,
 }
 
-impl<C, B, DSE> SidechainRpc<C, B, DSE> {
+impl<C, B> SidechainRpc<C, B> {
 	fn get_current_timestamp(&self) -> Timestamp {
 		Timestamp::from_unix_millis(self.time_source.get_current_time_millis())
 	}
 }
 
 #[async_trait]
-impl<C, Block, SidechainParams, DSE> SidechainRpcApiServer<SidechainParams>
-	for SidechainRpc<C, Block, DSE>
+impl<C, Block, SidechainParams> SidechainRpcApiServer<SidechainParams> for SidechainRpc<C, Block>
 where
 	Block: BlockT,
 	SidechainParams: parity_scale_codec::Decode,
@@ -65,7 +62,6 @@ where
 	C: ProvideRuntimeApi<Block>,
 	C: GetBestHash<Block>,
 	C::Api: SlotApi<Block> + GetSidechainParams<Block, SidechainParams> + GetSidechainStatus<Block>,
-	DSE: 'static + std::error::Error,
 {
 	fn get_params(&self) -> RpcResult<SidechainParams> {
 		let api = self.client.runtime_api();

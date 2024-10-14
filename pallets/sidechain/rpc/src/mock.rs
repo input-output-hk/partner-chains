@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use crate::SidechainRpcDataSource;
 use derive_new::new;
 use jsonrpsee::core::async_trait;
@@ -21,16 +19,13 @@ pub(crate) fn mock_sidechain_params() -> TestSidechainParams {
 }
 
 #[derive(new)]
-pub struct SidechainRpcDataSourceMock<Err> {
+pub struct SidechainRpcDataSourceMock {
 	latest_block: MainchainBlock,
-	_marker: PhantomData<Err>,
 }
 
 #[async_trait]
-impl<Err: Send + Sync> SidechainRpcDataSource for SidechainRpcDataSourceMock<Err> {
-	type Error = Err;
-
-	async fn get_latest_block_info(&self) -> Result<MainchainBlock, Self::Error> {
+impl SidechainRpcDataSource for SidechainRpcDataSourceMock {
+	async fn get_latest_block_info(&self) -> Result<MainchainBlock, Box<dyn std::error::Error>> {
 		Ok(self.latest_block.clone())
 	}
 }

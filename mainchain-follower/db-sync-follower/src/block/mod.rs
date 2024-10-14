@@ -34,18 +34,6 @@ pub struct BlockDataSourceImpl {
 	stable_blocks_cache: Arc<Mutex<BlocksCache>>,
 }
 
-impl From<Block> for MainchainBlock {
-	fn from(b: Block) -> Self {
-		MainchainBlock {
-			number: McBlockNumber(b.block_no.0),
-			hash: McBlockHash(b.hash),
-			epoch: McEpochNumber(b.epoch_no.0),
-			slot: McSlotNumber(b.slot_no.0),
-			timestamp: b.time.and_utc().timestamp().try_into().expect("i64 timestamp is valid u64"),
-		}
-	}
-}
-
 impl BlockDataSourceImpl {
 	pub async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
 		db_model::get_latest_block_info(&self.pool)

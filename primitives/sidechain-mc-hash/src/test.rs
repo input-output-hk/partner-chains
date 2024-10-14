@@ -58,10 +58,8 @@ mod validation_tests {
 			timestamp: parent_stable_block.timestamp - 1,
 			epoch: McEpochNumber(parent_stable_block.epoch.0),
 		};
-		let mc_hash_data_source = MockMcHashDataSource::<McHashInherentError>::new(vec![
-			parent_stable_block,
-			next_stable_block,
-		]);
+		let mc_hash_data_source =
+			MockMcHashDataSource::new(vec![parent_stable_block, next_stable_block]);
 
 		let err = McHashInherentDataProvider::new_verification(
 			mock_header(),

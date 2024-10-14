@@ -29,7 +29,7 @@ mod get_status_tests {
 			..Default::default()
 		};
 		let sidechain_rpc_data_source =
-			Arc::new(SidechainRpcDataSourceMock::<ErrorObjectOwned>::new(mainchain_block.clone()));
+			Arc::new(SidechainRpcDataSourceMock::new(mainchain_block.clone()));
 		let slot_duration = SlotDuration::from_millis(60);
 		let slots_per_epoch = 10;
 
@@ -92,7 +92,7 @@ mod get_status_tests {
 		let api = SidechainRpc::new(
 			client,
 			irrelevant_epoch_config,
-			Arc::new(SidechainRpcDataSourceMock::<ErrorObjectOwned>::new(mainchain_block)),
+			Arc::new(SidechainRpcDataSourceMock::new(mainchain_block)),
 			Arc::new(MockedTimeSource { current_time_millis: 0 }),
 		);
 		let response = api.get_params();

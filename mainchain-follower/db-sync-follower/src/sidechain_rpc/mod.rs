@@ -1,6 +1,4 @@
-use crate::{
-	block::BlockDataSourceImpl, metrics::McFollowerMetrics, observed_async_trait, DataSourceError,
-};
+use crate::{block::BlockDataSourceImpl, metrics::McFollowerMetrics, observed_async_trait};
 use async_trait::async_trait;
 use pallet_sidechain_rpc::SidechainRpcDataSource;
 use sidechain_domain::MainchainBlock;
@@ -19,12 +17,8 @@ impl SidechainRpcDataSourceImpl {
 
 observed_async_trait!(
 impl SidechainRpcDataSource for SidechainRpcDataSourceImpl {
-	type Error = DataSourceError;
-
-	async fn get_latest_block_info(&self) -> Result<MainchainBlock, Self::Error> {
-		let block = self.inner.get_latest_block_info().await?;
-
-		Ok(block)
+	async fn get_latest_block_info(&self) -> Result<MainchainBlock, Box<dyn std::error::Error>> {
+		Ok(self.inner.get_latest_block_info().await?)
 	}
 }
 );

@@ -60,8 +60,6 @@ impl Deref for McHashInherentDataProvider {
 /// Queries about Cardano Blocks
 #[async_trait]
 pub trait McHashDataSource {
-	type Error;
-
 	/// Query for the currently latest stable block with timestamp within the `allowable_range(reference_timestamp) = [reference_timestamp - seconds(max_slot_boundary), reference_timestamp - seconds(slot_boundary)]`
 	/// where `max_slot_boundary` is `3 * security_parameter/active_slot_coeff` (`3k/f`) and `min_slot_boundary` is `security_parameter/active_slot_coeff` (`k/f`).
 	/// # Arguments
@@ -73,7 +71,7 @@ pub trait McHashDataSource {
 	async fn get_latest_stable_block_for(
 		&self,
 		reference_timestamp: Timestamp,
-	) -> Result<Option<MainchainBlock>, Self::Error>;
+	) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>>;
 
 	/// Find block by hash, filtered by block timestamp being in `allowable_range(reference_timestamp)`
 	/// # Arguments
@@ -87,40 +85,36 @@ pub trait McHashDataSource {
 		&self,
 		hash: McBlockHash,
 		reference_timestamp: Timestamp,
-	) -> Result<Option<MainchainBlock>, Self::Error>;
+	) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>>;
 }
 
 impl McHashInherentDataProvider {
-	pub async fn new_proposal<E>(
-		data_source: &(dyn McHashDataSource<Error = E> + Send + Sync),
+	pub async fn new_proposal(
+		data_source: &(dyn McHashDataSource + Send + Sync),
 		slot: Slot,
 		slot_duration: SlotDuration,
-	) -> Result<Self, McHashInherentError>
-	where
-		E: std::error::Error + Send + Sync + 'static,
-	{
+	) -> Result<Self, McHashInherentError> {
 		let slot_start_timestamp =
 			slot.timestamp(slot_duration).ok_or(McHashInherentError::SlotTooBig)?;
 		let mc_block = data_source
 			.get_latest_stable_block_for(slot_start_timestamp)
 			.await
-			.map_err(|err| McHashInherentError::DataSourceError(Box::new(err)))?
+			.map_err(|err| McHashInherentError::DataSourceError(err))?
 			.ok_or(StableBlockNotFound(slot_start_timestamp))?;
 
 		Ok(Self { mc_block })
 	}
 
-	pub async fn new_verification<Header, E>(
+	pub async fn new_verification<Header>(
 		parent_header: Header,
 		parent_slot: Option<Slot>,
 		verified_block_slot: Slot,
 		mc_state_reference_hash: McBlockHash,
 		slot_duration: SlotDuration,
-		block_source: &(dyn McHashDataSource<Error = E> + Send + Sync),
+		block_source: &(dyn McHashDataSource + Send + Sync),
 	) -> Result<Self, McHashInherentError>
 	where
 		Header: HeaderT,
-		E: std::error::Error + Send + Sync + 'static,
 	{
 		let mc_state_reference_block = get_mc_state_reference(
 			verified_block_slot,
@@ -166,22 +160,19 @@ impl McHashInherentDataProvider {
 	}
 }
 
-async fn get_mc_state_reference<E>(
+async fn get_mc_state_reference(
 	verified_block_slot: Slot,
 	verified_block_mc_hash: McBlockHash,
 	slot_duration: SlotDuration,
-	data_source: &(dyn McHashDataSource<Error = E> + Send + Sync),
-) -> Result<MainchainBlock, McHashInherentError>
-where
-	E: std::error::Error + Send + Sync + 'static,
-{
+	data_source: &(dyn McHashDataSource + Send + Sync),
+) -> Result<MainchainBlock, McHashInherentError> {
 	let timestamp = verified_block_slot
 		.timestamp(slot_duration)
 		.ok_or(McHashInherentError::SlotTooBig)?;
 	data_source
 		.get_stable_block_for(verified_block_mc_hash.clone(), timestamp)
 		.await
-		.map_err(|err| McHashInherentError::DataSourceError(Box::new(err)))?
+		.map_err(|err| McHashInherentError::DataSourceError(err))?
 		.ok_or(McHashInherentError::McStateReferenceInvalid(
 			verified_block_mc_hash,
 			verified_block_slot,
@@ -285,7 +276,6 @@ where
 pub mod mock {
 	use super::*;
 	use derive_new::new;
-	use std::marker::PhantomData;
 
 	pub struct MockMcHashInherentDataProvider {
 		pub mc_hash: McBlockHash,
@@ -310,28 +300,22 @@ pub mod mock {
 	}
 
 	#[derive(new, Clone)]
-	pub struct MockMcHashDataSource<Err> {
+	pub struct MockMcHashDataSource {
 		pub stable_blocks: Vec<MainchainBlock>,
-		_marker: PhantomData<Err>,
 	}
 
-	impl<E> From<Vec<MainchainBlock>> for MockMcHashDataSource<E> {
+	impl From<Vec<MainchainBlock>> for MockMcHashDataSource {
 		fn from(stable_blocks: Vec<MainchainBlock>) -> Self {
-			Self { stable_blocks, _marker: Default::default() }
+			Self { stable_blocks }
 		}
 	}
 
 	#[async_trait]
-	impl<Err> McHashDataSource for MockMcHashDataSource<Err>
-	where
-		Err: std::error::Error + Send + Sync,
-	{
-		type Error = Err;
-
+	impl McHashDataSource for MockMcHashDataSource {
 		async fn get_latest_stable_block_for(
 			&self,
 			_reference_timestamp: Timestamp,
-		) -> Result<Option<MainchainBlock>, Self::Error> {
+		) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
 			Ok(self.stable_blocks.last().cloned())
 		}
 
@@ -339,7 +323,7 @@ pub mod mock {
 			&self,
 			hash: McBlockHash,
 			_reference_timestamp: Timestamp,
-		) -> Result<Option<MainchainBlock>, Self::Error> {
+		) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
 			Ok(self.stable_blocks.iter().find(|b| b.hash == hash).cloned())
 		}
 	}
