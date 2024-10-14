@@ -29,6 +29,7 @@
         gnumake
         gawk
         cargo-edit
+        perl
       ]
       ++ (
         if isDarwin
