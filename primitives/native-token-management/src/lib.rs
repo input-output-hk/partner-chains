@@ -101,8 +101,6 @@ mod inherent_provider {
 
 	#[async_trait::async_trait]
 	pub trait NativeTokenManagementDataSource {
-		type Error;
-
 		/// Retrieves total of native token transfers into the illiquid supply in the range (after_block, to_block]
 		async fn get_total_native_token_transfer(
 			&self,
@@ -111,7 +109,7 @@ mod inherent_provider {
 			native_token_policy_id: PolicyId,
 			native_token_asset_name: AssetName,
 			illiquid_supply_address: MainchainAddress,
-		) -> Result<NativeTokenAmount, Self::Error>;
+		) -> Result<NativeTokenAmount, Box<dyn std::error::Error + Send + Sync>>;
 	}
 
 	pub struct NativeTokenManagementInherentDataProvider {
@@ -140,7 +138,7 @@ mod inherent_provider {
 		pub async fn new_for_runtime_version<Block, C, E>(
 			version_check: fn(RuntimeVersion) -> bool,
 			client: Arc<C>,
-			data_source: &(dyn NativeTokenManagementDataSource<Error = E> + Send + Sync),
+			data_source: &(dyn NativeTokenManagementDataSource + Send + Sync),
 			mc_hash: McBlockHash,
 			parent_hash: <Block as BlockT>::Hash,
 		) -> Result<Self, IDPCreationError>
@@ -149,7 +147,6 @@ mod inherent_provider {
 			C: HeaderBackend<Block>,
 			C: ProvideRuntimeApi<Block> + Send + Sync,
 			C::Api: NativeTokenManagementApi<Block>,
-			E: std::error::Error + Send + Sync + 'static,
 		{
 			let version = client.runtime_api().version(parent_hash)?;
 
@@ -160,9 +157,9 @@ mod inherent_provider {
 			}
 		}
 
-		pub async fn new<Block, C, E>(
+		pub async fn new<Block, C>(
 			client: Arc<C>,
-			data_source: &(dyn NativeTokenManagementDataSource<Error = E> + Send + Sync),
+			data_source: &(dyn NativeTokenManagementDataSource + Send + Sync),
 			mc_hash: McBlockHash,
 			parent_hash: <Block as BlockT>::Hash,
 		) -> Result<Self, IDPCreationError>
@@ -171,7 +168,6 @@ mod inherent_provider {
 			C: HeaderBackend<Block>,
 			C: ProvideRuntimeApi<Block> + Send + Sync,
 			C::Api: NativeTokenManagementApi<Block>,
-			E: std::error::Error + Send + Sync + 'static,
 		{
 			let api = client.runtime_api();
 			let Some(scripts) = api.get_main_chain_scripts(parent_hash)? else {
@@ -192,7 +188,7 @@ mod inherent_provider {
 					scripts.illiquid_supply_validator_address,
 				)
 				.await
-				.map_err(|err| IDPCreationError::DataSourceError(Box::new(err)))?;
+				.map_err(IDPCreationError::DataSourceError)?;
 
 			let token_amount = if token_amount.0 > 0 { Some(token_amount) } else { None };
 
@@ -232,24 +228,17 @@ mod inherent_provider {
 	pub mod mock {
 		use crate::NativeTokenManagementDataSource;
 		use async_trait::async_trait;
-		use core::marker::PhantomData;
 		use derive_new::new;
 		use sidechain_domain::*;
 		use std::collections::HashMap;
 
 		#[derive(new, Default)]
-		pub struct MockNativeTokenDataSource<Err> {
+		pub struct MockNativeTokenDataSource {
 			transfers: HashMap<(Option<McBlockHash>, McBlockHash), NativeTokenAmount>,
-			_marker: PhantomData<Err>,
 		}
 
 		#[async_trait]
-		impl<Err> NativeTokenManagementDataSource for MockNativeTokenDataSource<Err>
-		where
-			Err: std::error::Error + Send + Sync,
-		{
-			type Error = Err;
-
+		impl NativeTokenManagementDataSource for MockNativeTokenDataSource {
 			async fn get_total_native_token_transfer(
 				&self,
 				after_block: Option<McBlockHash>,
@@ -257,7 +246,7 @@ mod inherent_provider {
 				_native_token_policy_id: PolicyId,
 				_native_token_asset_name: AssetName,
 				_illiquid_supply_address: MainchainAddress,
-			) -> Result<NativeTokenAmount, Self::Error> {
+			) -> Result<NativeTokenAmount, Box<dyn std::error::Error + Send + Sync>> {
 				Ok(self.transfers.get(&(after_block, to_block)).cloned().unwrap_or_default())
 			}
 		}

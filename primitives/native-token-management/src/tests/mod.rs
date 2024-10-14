@@ -15,13 +15,6 @@ mod inherent_provider {
 	use sp_runtime::testing::DigestItem;
 	use std::sync::Arc;
 
-	#[derive(thiserror::Error, sp_runtime::RuntimeDebug)]
-	pub enum TestErr {
-		#[allow(unused)]
-		#[error("Test error")]
-		Err,
-	}
-
 	#[tokio::test]
 	async fn correctly_fetches_total_transfer_between_two_hashes() {
 		let parent_number = 1; // not genesis
@@ -82,7 +75,7 @@ mod inherent_provider {
 		let parent_hash = Hash::from([2; 32]);
 		let parent_mc_hash = Some(McBlockHash([3; 32]));
 
-		let data_source = MockNativeTokenDataSource::<TestErr>::new([].into());
+		let data_source = MockNativeTokenDataSource::new([].into());
 		let main_chain_scripts = Some(MainChainScripts::default());
 		let client = create_client(parent_hash, parent_mc_hash, parent_number, main_chain_scripts);
 
@@ -150,7 +143,7 @@ mod inherent_provider {
 		parent_mc_hash: Option<McBlockHash>,
 		mc_hash: McBlockHash,
 		total_transfered: u128,
-	) -> MockNativeTokenDataSource<TestErr> {
+	) -> MockNativeTokenDataSource {
 		let total_transfered = NativeTokenAmount(total_transfered);
 		MockNativeTokenDataSource::new([((parent_mc_hash, mc_hash), total_transfered)].into())
 	}

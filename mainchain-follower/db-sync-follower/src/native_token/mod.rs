@@ -25,8 +25,6 @@ pub struct NativeTokenManagementDataSourceImpl {
 
 observed_async_trait!(
 impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
-	type Error = DataSourceError;
-
 	// after_block is always less or equal to_block
 	// to_block is always a stable block
 	async fn get_total_native_token_transfer(
@@ -36,7 +34,7 @@ impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
 		policy_id: PolicyId,
 		asset_name: AssetName,
 		address: MainchainAddress,
-	) -> std::result::Result<NativeTokenAmount, Self::Error> {
+	) -> std::result::Result<NativeTokenAmount, Box<dyn std::error::Error + Send + Sync>> {
 		if let Some(after_block) = after_block {
 			if after_block == to_block {
 				Ok(NativeTokenAmount(0))
