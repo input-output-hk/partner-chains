@@ -9,7 +9,6 @@ edition = "2021"
 async-trait = { workspace = true, optional = true }
 frame-support = { workspace = true }
 log = { workspace = true }
-main-chain-follower-api = { workspace = true, optional = true, features = ["candidate-source"] }
 minicbor = { workspace = true }
 sp-session-validator-management = { workspace = true }
 parity-scale-codec = { workspace = true }
@@ -43,8 +42,6 @@ std = [
 	"frame-support/std",
 	"sidechain-domain/std",
 	"parity-scale-codec/std",
-    "main-chain-follower-api/candidate-source",
-    "main-chain-follower-api/std",
     "serde/std",
     "sidechain-slots",
     "sidechain-slots/std",

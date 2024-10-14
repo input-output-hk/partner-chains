@@ -15,7 +15,7 @@ impl SidechainRpcDataSourceMock {
 
 #[async_trait::async_trait]
 impl SidechainRpcDataSource for SidechainRpcDataSourceMock {
-	async fn get_latest_block_info(&self) -> Result<MainchainBlock, Box<dyn Error>> {
+	async fn get_latest_block_info(&self) -> Result<MainchainBlock, Box<dyn Error + Send + Sync>> {
 		Ok(self.block_source.get_latest_block_info().await?)
 	}
 }

@@ -6,7 +6,6 @@ use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 #[cfg(feature = "std")]
 use {
 	crate::authority_selection_inputs::AuthoritySelectionInputsCreationError,
-	main_chain_follower_api::DataSourceError,
 	sidechain_domain::mainchain_epoch::MainchainEpochDerivation,
 	sidechain_domain::*,
 	sidechain_slots::ScSlotConfig,
@@ -101,7 +100,7 @@ pub enum InherentProviderCreationError {
 	#[error("Failed to create authority selection inputs: {0}")]
 	InputsCreationError(#[from] AuthoritySelectionInputsCreationError),
 	#[error("Data source call failed: {0}")]
-	DataSourceError(#[from] DataSourceError),
+	DataSourceError(#[from] Box<dyn std::error::Error + Send + Sync>),
 }
 
 #[cfg(feature = "std")]

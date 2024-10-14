@@ -25,7 +25,9 @@ pub struct SidechainRpcDataSourceMock {
 
 #[async_trait]
 impl SidechainRpcDataSource for SidechainRpcDataSourceMock {
-	async fn get_latest_block_info(&self) -> Result<MainchainBlock, Box<dyn std::error::Error>> {
+	async fn get_latest_block_info(
+		&self,
+	) -> Result<MainchainBlock, Box<dyn std::error::Error + Send + Sync>> {
 		Ok(self.latest_block.clone())
 	}
 }

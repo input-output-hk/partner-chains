@@ -1,5 +1,4 @@
 use crate::authority_selection_inputs::*;
-use main_chain_follower_api::DataSourceError::{self, ExpectedDataNotFound};
 use sidechain_domain::*;
 
 #[derive(Clone)]
@@ -27,7 +26,7 @@ impl AuthoritySelectionDataSource for MockAuthoritySelectionDataSource {
 		epoch_number: McEpochNumber,
 		_d_parameter_policy: PolicyId,
 		_permissioned_candidates_policy: PolicyId,
-	) -> Result<AriadneParameters, DataSourceError> {
+	) -> Result<AriadneParameters, Box<dyn std::error::Error + Send + Sync>> {
 		match self.permissioned_candidates.get(epoch_number.0 as usize) {
 			Some(Some(candidates)) => Ok(AriadneParameters {
 				d_parameter: DParameter {
@@ -36,7 +35,7 @@ impl AuthoritySelectionDataSource for MockAuthoritySelectionDataSource {
 				},
 				permissioned_candidates: candidates.clone(),
 			}),
-			_ => Err(ExpectedDataNotFound("mock was called with unexpected argument".to_string())),
+			_ => Err(format!("mock was called with unexpected argument").into()),
 		}
 	}
 
@@ -44,18 +43,21 @@ impl AuthoritySelectionDataSource for MockAuthoritySelectionDataSource {
 		&self,
 		epoch_number: McEpochNumber,
 		_committee_candidate_address: MainchainAddress,
-	) -> Result<Vec<CandidateRegistrations>, DataSourceError> {
+	) -> Result<Vec<CandidateRegistrations>, Box<dyn std::error::Error + Send + Sync>> {
 		Ok(self.candidates.get(epoch_number.0 as usize).cloned().unwrap_or(vec![]))
 	}
 
 	async fn get_epoch_nonce(
 		&self,
 		_epoch: McEpochNumber,
-	) -> Result<Option<EpochNonce>, DataSourceError> {
+	) -> Result<Option<EpochNonce>, Box<dyn std::error::Error + Send + Sync>> {
 		Ok(Some(EpochNonce(vec![42u8])))
 	}
 
-	async fn data_epoch(&self, for_epoch: McEpochNumber) -> Result<McEpochNumber, DataSourceError> {
+	async fn data_epoch(
+		&self,
+		for_epoch: McEpochNumber,
+	) -> Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>> {
 		Ok(for_epoch)
 	}
 }

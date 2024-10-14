@@ -9,7 +9,6 @@ use authority_selection_inherents::authority_selection_inputs::*;
 use figment::{providers::Env, Figment};
 use log::info;
 use lru::LruCache;
-use main_chain_follower_api::Result;
 use serde::Deserialize;
 use sidechain_domain::*;
 use std::{
@@ -38,7 +37,7 @@ impl AuthoritySelectionDataSource for CandidateDataSourceCached {
 		epoch: McEpochNumber,
 		d_parameter_policy: PolicyId,
 		permissioned_candidates_policy: PolicyId,
-	) -> Result<AriadneParameters> {
+	) -> Result<AriadneParameters, Box<dyn std::error::Error + Send + Sync>> {
 		if self.can_use_caching_for_request(epoch).await? {
 			self.get_ariadne_parameters_with_caching(
 				epoch,
@@ -57,7 +56,7 @@ impl AuthoritySelectionDataSource for CandidateDataSourceCached {
 		&self,
 		epoch: McEpochNumber,
 		committee_candidate_address: MainchainAddress,
-	) -> Result<Vec<CandidateRegistrations>> {
+	) -> Result<Vec<CandidateRegistrations>, Box<dyn std::error::Error + Send + Sync>> {
 		if self.can_use_caching_for_request(epoch).await? {
 			self.get_candidates_with_caching(epoch, committee_candidate_address).await
 		} else {
@@ -65,11 +64,17 @@ impl AuthoritySelectionDataSource for CandidateDataSourceCached {
 		}
 	}
 
-	async fn get_epoch_nonce(&self, epoch: McEpochNumber) -> Result<Option<EpochNonce>> {
+	async fn get_epoch_nonce(
+		&self,
+		epoch: McEpochNumber,
+	) -> Result<Option<EpochNonce>, Box<dyn std::error::Error + Send + Sync>> {
 		self.inner.get_epoch_nonce(epoch).await
 	}
 
-	async fn data_epoch(&self, for_epoch: McEpochNumber) -> Result<McEpochNumber> {
+	async fn data_epoch(
+		&self,
+		for_epoch: McEpochNumber,
+	) -> Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>> {
 		self.inner.data_epoch(for_epoch).await
 	}
 }
@@ -121,7 +126,7 @@ impl CandidateDataSourceCached {
 		&self,
 		epoch: McEpochNumber,
 		committee_candidate_address: MainchainAddress,
-	) -> Result<Vec<CandidateRegistrations>> {
+	) -> Result<Vec<CandidateRegistrations>, Box<dyn std::error::Error + Send + Sync>> {
 		log::debug!("get_candidates_with_caching({:?})", epoch.0);
 		let key = (epoch, committee_candidate_address.to_string());
 		if let Ok(mut cache) = self.get_candidates_for_epoch_cache.lock() {
@@ -145,7 +150,7 @@ impl CandidateDataSourceCached {
 		epoch: McEpochNumber,
 		d_parameter_validator: PolicyId,
 		permissioned_candidates_validator: PolicyId,
-	) -> Result<AriadneParameters> {
+	) -> Result<AriadneParameters, Box<dyn std::error::Error + Send + Sync>> {
 		log::debug!("get_ariadne_parameters_with_caching({:?})", epoch.0);
 		let key = (epoch, d_parameter_validator.clone(), permissioned_candidates_validator.clone());
 		if let Ok(mut cache) = self.get_ariadne_parameters_for_epoch_cache.lock() {
@@ -166,7 +171,10 @@ impl CandidateDataSourceCached {
 		Ok(response)
 	}
 
-	async fn can_use_caching_for_request(&self, request_epoch: McEpochNumber) -> Result<bool> {
+	async fn can_use_caching_for_request(
+		&self,
+		request_epoch: McEpochNumber,
+	) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
 		let data_epoch = self.inner.data_epoch(request_epoch).await?;
 		if let Ok(stable_epoch) = self.highest_seen_stable_epoch.lock() {
 			if stable_epoch.map_or(false, |stable_epoch| stable_epoch >= data_epoch) {
