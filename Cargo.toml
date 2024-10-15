@@ -63,6 +63,7 @@ clap = { version = "4.5.10", features = ["derive"] }
 ed25519-zebra = { version = "4.0.3" }
 ed25519 = { version = "2.2.2" }
 figment = { version = "0.10.19", features = ["env", "test"] }
+fraction = { version = "0.15.3", default-features = false }
 futures = { version = "0.3.30", features = ["thread-pool"] }
 hex = { version = "0.4.3", features = ["alloc"], default-features = false }
 hex-literal = "0.4.1"

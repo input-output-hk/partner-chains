@@ -1,5 +1,6 @@
 #![cfg(feature = "jsonrpsee-client")]
 
+use fraction::{Decimal, Fraction};
 use jsonrpsee::{
 	http_client::HttpClient,
 	server::Server,
@@ -36,7 +37,7 @@ async fn shelley_genesis_configuration() {
 			start_time: OffsetDateTime::from_unix_timestamp(1666656000).unwrap(),
 			security_parameter: 432,
 			epoch_length: 86400,
-			active_slots_coefficient: "1/20".to_string(),
+			active_slots_coefficient: Decimal::from_fraction(Fraction::new(1u64, 20u64)),
 			slot_length: SlotLength { milliseconds: 1000 },
 		}
 	)

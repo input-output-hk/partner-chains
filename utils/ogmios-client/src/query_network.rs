@@ -1,9 +1,11 @@
 //! Queries that start with `queryNetwork/`.
 
 use crate::{types::SlotLength, OgmiosClient, OgmiosClientError, OgmiosParams};
-use serde::Deserialize;
+use fraction::Decimal;
+use serde::{Deserialize, Deserializer};
 use serde_json::Value;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 pub trait QueryNetwork: OgmiosClient {
 	#[allow(async_fn_in_trait)]
@@ -24,10 +26,18 @@ impl<T: OgmiosClient> QueryNetwork for T {}
 pub struct ShelleyGenesisConfigurationResponse {
 	pub network_magic: u32,
 	pub security_parameter: u32,
-	// Ogmios returns active_slots_coefficient as string representing rational number, like "1/20"
-	pub active_slots_coefficient: String,
+	#[serde(deserialize_with = "parse_fraction")]
+	pub active_slots_coefficient: Decimal,
 	pub epoch_length: u32,
 	pub slot_length: SlotLength,
 	#[serde(deserialize_with = "time::serde::iso8601::deserialize")]
 	pub start_time: time::OffsetDateTime,
+}
+
+fn parse_fraction<'de, D>(deserializer: D) -> Result<Decimal, D::Error>
+where
+	D: Deserializer<'de>,
+{
+	let buf = String::deserialize(deserializer)?;
+	Decimal::from_str(&buf).map_err(serde::de::Error::custom)
 }
