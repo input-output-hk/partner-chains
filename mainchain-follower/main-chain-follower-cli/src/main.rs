@@ -5,7 +5,6 @@ use db_sync_follower::{
 	candidates::CandidatesDataSourceImpl,
 	data_sources::{read_mc_epoch_config, PgPool},
 };
-use main_chain_follower_api::common::*;
 use sidechain_domain::*;
 use std::error::Error;
 

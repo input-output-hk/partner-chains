@@ -1,6 +1,5 @@
 use crate::{block::BlockDataSourceImpl, metrics::McFollowerMetrics, observed_async_trait};
-use main_chain_follower_api::common::Timestamp;
-use sidechain_domain::{MainchainBlock, McBlockHash};
+use sidechain_domain::{MainchainBlock, McBlockHash, Timestamp};
 use sidechain_mc_hash::McHashDataSource;
 use std::sync::Arc;
 

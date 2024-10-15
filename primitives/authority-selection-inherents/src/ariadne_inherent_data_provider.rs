@@ -199,6 +199,7 @@ mod tests {
 	use crate::runtime_api_mock::*;
 	use sidechain_domain::mainchain_epoch::*;
 	use sidechain_slots::*;
+	use sp_core::offchain::Timestamp;
 	use sp_core::H256;
 	use SlotDuration;
 

@@ -6,7 +6,7 @@ use chrono::{DateTime, NaiveDateTime, TimeDelta};
 use derive_new::new;
 use figment::{providers::Env, Figment};
 use log::{debug, info};
-use main_chain_follower_api::{common::Timestamp, DataSourceError::*};
+use main_chain_follower_api::DataSourceError::*;
 use serde::Deserialize;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_domain::*;

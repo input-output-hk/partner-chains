@@ -5,9 +5,6 @@ use plutus::Datum;
 use std::sync::Arc;
 use thiserror::Error;
 
-/// Types that will be used by the Cardano follower
-pub mod common;
-
 #[derive(Debug, PartialEq, Error)]
 pub enum DataSourceError {
 	#[error("Bad request: `{0}`.")]

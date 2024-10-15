@@ -1,4 +1,3 @@
-use main_chain_follower_api::common::*;
 use main_chain_follower_api::*;
 use sidechain_domain::*;
 use std::error::Error;

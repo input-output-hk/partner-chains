@@ -126,6 +126,23 @@ pub struct MainchainBlock {
 	pub timestamp: u64, // seconds since UNIX_EPOCH
 }
 
+/// Timestamp - milliseconds since Unix Epoch
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(FromStr))]
+pub struct Timestamp(pub u64);
+
+impl Display for Timestamp {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+		write!(f, "{}", self.0)
+	}
+}
+
+impl From<u64> for Timestamp {
+	fn from(value: u64) -> Self {
+		Timestamp(value)
+	}
+}
+
 /// An index of transaction in a block. In range [0, 2^31-1].
 #[derive(
 	Default,

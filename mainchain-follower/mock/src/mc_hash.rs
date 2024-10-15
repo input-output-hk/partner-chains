@@ -1,6 +1,5 @@
 use crate::block::BlockDataSourceMock;
 use async_trait::async_trait;
-use main_chain_follower_api::common::*;
 use sidechain_domain::*;
 use std::sync::Arc;
 
