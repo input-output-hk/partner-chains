@@ -20,33 +20,31 @@ impl OgmiosClient for HttpClient {
 				let mut object_params = ObjectParams::new();
 				map.into_iter()
 					.try_for_each(|(k, v)| object_params.insert(k, v))
-					.map_err(serde_error_to_ogmios_error)?;
-				ClientT::request(self, method, object_params)
-					.await
-					.map_err(jsonrpsee_to_ogmios_error)
+					.map_err(serde_error_to_parameters_error)?;
+				Ok(ClientT::request(self, method, object_params).await?)
 			},
 			OgmiosParams::Positional(v) => {
 				let mut array_params = ArrayParams::new();
 				v.into_iter()
 					.try_for_each(|v| array_params.insert(v))
-					.map_err(serde_error_to_ogmios_error)?;
-				ClientT::request(self, method, array_params)
-					.await
-					.map_err(jsonrpsee_to_ogmios_error)
+					.map_err(serde_error_to_parameters_error)?;
+				Ok(ClientT::request(self, method, array_params).await?)
 			},
 		}
 	}
 }
 
-fn jsonrpsee_to_ogmios_error(e: jsonrpsee::core::ClientError) -> OgmiosClientError {
-	match e {
-		jsonrpsee::core::ClientError::ParseError(e) => {
-			OgmiosClientError::ResponseError(e.to_string())
-		},
-		e => OgmiosClientError::RequestError(e.to_string()),
+impl From<jsonrpsee::core::ClientError> for OgmiosClientError {
+	fn from(e: jsonrpsee::core::ClientError) -> Self {
+		match e {
+			jsonrpsee::core::ClientError::ParseError(e) => {
+				OgmiosClientError::ResponseError(e.to_string())
+			},
+			e => OgmiosClientError::RequestError(e.to_string()),
+		}
 	}
 }
 
-fn serde_error_to_ogmios_error(e: serde_json::Error) -> OgmiosClientError {
+fn serde_error_to_parameters_error(e: serde_json::Error) -> OgmiosClientError {
 	OgmiosClientError::ParametersError(e.to_string())
 }
