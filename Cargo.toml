@@ -29,6 +29,7 @@ members = [
 	"utils/plutus",
 	"utils/plutus/plutus-datum-derive",
 	"runtime",
+	"utils/ogmios-client",
 	"utils/time-source",
 	"primitives/sidechain-mc-hash",
 	"primitives/session-validator-management",
@@ -62,6 +63,7 @@ clap = { version = "4.5.10", features = ["derive"] }
 ed25519-zebra = { version = "4.0.3" }
 ed25519 = { version = "2.2.2" }
 figment = { version = "0.10.19", features = ["env", "test"] }
+fraction = { version = "0.15.3", default-features = false }
 futures = { version = "0.3.30", features = ["thread-pool"] }
 hex = { version = "0.4.3", features = ["alloc"], default-features = false }
 hex-literal = "0.4.1"
@@ -86,6 +88,7 @@ serde_json = { version = '1.0.127', default-features = false, features = ['alloc
 syn = "2.0.65"
 tempfile = "3.10.1"
 thiserror = { version = "1.0.48" }
+time = { version = "0.3.36", default-features = false }
 tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
 lazy_static = "1.4.0"
 lru = { version = "0.12.4" }
@@ -182,6 +185,7 @@ sp-session-validator-management-query = { default-features = false, path = "prim
 pallet-session-validator-management = { default-features = false, path = "pallets/session-validator-management" }
 pallet-session-validator-management-benchmarking = { default-features = false, path = "pallets/session-validator-management/benchmarking" }
 pallet-session-validator-management-rpc = { path = "pallets/session-validator-management/rpc" }
+ogmios-client = { path = "utils/ogmios-client", default-features = false }
 sp-block-rewards = { path = "primitives/block-rewards", default-features = false }
 selection = { path = "primitives/selection", default-features = false }
 sidechain-domain = { path = "primitives/domain", default-features = false }
