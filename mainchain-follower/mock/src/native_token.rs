@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-use main_chain_follower_api::*;
 use sidechain_domain::*;
 use sp_native_token_management::NativeTokenManagementDataSource;
 
@@ -19,8 +18,6 @@ impl Default for NativeTokenDataSourceMock {
 
 #[async_trait]
 impl NativeTokenManagementDataSource for NativeTokenDataSourceMock {
-	type Error = DataSourceError;
-
 	async fn get_total_native_token_transfer(
 		&self,
 		_after_block: Option<McBlockHash>,
@@ -28,7 +25,7 @@ impl NativeTokenManagementDataSource for NativeTokenDataSourceMock {
 		_native_token_policy_id: PolicyId,
 		_native_token_asset_name: AssetName,
 		_illiquid_supply_address: MainchainAddress,
-	) -> Result<NativeTokenAmount> {
+	) -> Result<NativeTokenAmount, Box<dyn std::error::Error + Send + Sync>> {
 		Ok(NativeTokenAmount(1000))
 	}
 }
