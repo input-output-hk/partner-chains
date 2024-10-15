@@ -19,7 +19,6 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 bigdecimal = { workspace = true }
 async-trait = { workspace = true }
-main-chain-follower-api = { workspace = true, features = ["std"] }
 num-traits = { workspace = true }
 num-bigint = { workspace = true }
 log = { workspace = true }

@@ -91,7 +91,6 @@ frame-benchmarking-cli = { workspace = true }
 sidechain-runtime = { workspace = true }
 sidechain-mc-hash = { workspace = true, features = ["mock"] }
 sp-native-token-management = { workspace = true }
-main-chain-follower-api = { workspace = true }
 db-sync-follower = { workspace = true, features = ["block-source", "candidate-source", "native-token", "mc-hash", "sidechain-rpc"] }
 main-chain-follower-mock = { workspace = true, features = ["block-source", "candidate-source", "native-token", "mc-hash", "sidechain-rpc"] }
 tokio = { workspace = true }

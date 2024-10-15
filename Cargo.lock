@@ -1791,7 +1791,6 @@ dependencies = [
  "itertools 0.13.0",
  "log",
  "lru",
- "main-chain-follower-api",
  "num-bigint",
  "num-traits",
  "pallet-sidechain-rpc",
@@ -4815,22 +4814,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "main-chain-follower-api"
-version = "1.2.0"
-dependencies = [
- "async-trait",
- "blake2b_simd",
- "byte-string-derive",
- "derive-new",
- "derive_more",
- "log",
- "plutus",
- "serde",
- "sidechain-domain",
- "thiserror",
-]
-
-[[package]]
 name = "main-chain-follower-cli"
 version = "1.2.0"
 dependencies = [
@@ -4839,7 +4822,6 @@ dependencies = [
  "db-sync-follower",
  "env_logger 0.11.3",
  "log",
- "main-chain-follower-api",
  "serde",
  "serde_json",
  "sidechain-domain",
@@ -6229,7 +6211,6 @@ dependencies = [
  "hex-literal",
  "jsonrpsee",
  "log",
- "main-chain-follower-api",
  "main-chain-follower-mock",
  "pallet-partner-chains-session",
  "pallet-session-validator-management",
@@ -6298,7 +6279,6 @@ dependencies = [
  "clap",
  "cli-commands",
  "frame-support",
- "main-chain-follower-api",
  "parity-scale-codec",
  "plutus",
  "sc-cli",
@@ -10171,7 +10151,6 @@ dependencies = [
  "authority-selection-inherents",
  "derive-new",
  "hex-literal",
- "main-chain-follower-api",
  "minicbor",
  "parity-scale-codec",
  "plutus",

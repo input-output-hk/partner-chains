@@ -9,7 +9,6 @@ edition = "2021"
 clap = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-main-chain-follower-api = { workspace = true }
 db-sync-follower = { workspace = true, features = ["block-source", "candidate-source"] }
 tokio = { workspace = true }
 env_logger = { workspace = true }
