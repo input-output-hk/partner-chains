@@ -3,10 +3,10 @@ use crate::db_model::{
 };
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
+use crate::DataSourceError::*;
 use authority_selection_inherents::authority_selection_inputs::*;
 use itertools::Itertools;
 use log::error;
-use main_chain_follower_api::DataSourceError::*;
 use num_traits::ToPrimitive;
 use plutus::Datum;
 use plutus::Datum::*;

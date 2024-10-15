@@ -1,5 +1,5 @@
 //! Provides implementations of Data Sources that read from db-sync postgres
-use main_chain_follower_api::DataSourceError;
+use plutus::Datum;
 
 pub mod data_sources;
 mod db_datum;
@@ -36,6 +36,22 @@ impl From<SqlxError> for Box<dyn std::error::Error + Send + Sync> {
 		e.0.into()
 	}
 }
+
+#[derive(Debug, PartialEq, thiserror::Error)]
+pub enum DataSourceError {
+	#[error("Bad request: `{0}`.")]
+	BadRequest(String),
+	#[error("Internal error of data source: `{0}`.")]
+	InternalDataSourceError(String),
+	#[error("Could not decode {datum:?} to {to:?}, this means that there is an error in Plutus scripts or chain-follower is obsolete.")]
+	DatumDecodeError { datum: Datum, to: String },
+	#[error("'{0}' not found. Possible causes: main chain follower configuration error, db-sync not synced fully, or data not set on the main chain.")]
+	ExpectedDataNotFound(String),
+	#[error("Invalid data. {0} Possible cause it an error in Plutus scripts or chain-follower is obsolete.")]
+	InvalidData(String),
+}
+
+pub type Result<T> = std::result::Result<T, DataSourceError>;
 
 #[cfg(test)]
 mod tests {
