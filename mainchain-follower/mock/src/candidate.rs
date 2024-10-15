@@ -1,3 +1,4 @@
+use crate::Result;
 use async_trait::async_trait;
 use authority_selection_inherents::authority_selection_inputs::*;
 use hex_literal::hex;
@@ -6,7 +7,6 @@ use serde::*;
 use sidechain_domain::byte_string::*;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::*;
-use std::error::Error;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct MockRegistration {
@@ -148,15 +148,12 @@ pub struct MockRegistrationsConfig {
 }
 
 impl MockRegistrationsConfig {
-	pub fn read(
-	) -> std::result::Result<MockRegistrationsConfig, Box<dyn Error + Send + Sync + 'static>> {
+	pub fn read() -> Result<MockRegistrationsConfig> {
 		let registrations_file_path = std::env::var("MAIN_CHAIN_FOLLOWER_MOCK_REGISTRATIONS_FILE")?;
 		let registrations_config = Self::read_registrations(registrations_file_path)?;
 		Ok(registrations_config)
 	}
-	pub fn read_registrations(
-		path: String,
-	) -> std::result::Result<MockRegistrationsConfig, Box<dyn Error + Send + Sync + 'static>> {
+	pub fn read_registrations(path: String) -> Result<MockRegistrationsConfig> {
 		info!("Reading registrations from: {path}");
 		let file = std::fs::File::open(path)?;
 		let epoch_rotation: Vec<MockEpochCandidates> = serde_json::from_reader(file)?;
@@ -177,7 +174,7 @@ impl MockCandidateDataSource {
 		self.registrations_data.epoch_rotation[rotation_no].clone()
 	}
 
-	pub fn new_from_env() -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {
+	pub fn new_from_env() -> Result<Self> {
 		let registrations_data = MockRegistrationsConfig::read()?;
 		let mc_epoch_config = MainchainEpochConfig::read_from_env()?;
 		Ok(MockCandidateDataSource { registrations_data, mc_epoch_config })
@@ -191,7 +188,7 @@ impl AuthoritySelectionDataSource for MockCandidateDataSource {
 		epoch_number: McEpochNumber,
 		_d_parameter_validator: PolicyId,
 		_permissioned_candidates_validator: PolicyId,
-	) -> Result<AriadneParameters, Box<dyn std::error::Error + Send + Sync>> {
+	) -> Result<AriadneParameters> {
 		let epoch_number = epoch_number.0;
 		debug!("Received get_d_parameter_for_epoch({epoch_number}) request");
 
@@ -217,7 +214,7 @@ impl AuthoritySelectionDataSource for MockCandidateDataSource {
 		&self,
 		epoch: McEpochNumber,
 		_committee_candidate_address: MainchainAddress,
-	) -> Result<Vec<CandidateRegistrations>, Box<dyn std::error::Error + Send + Sync>> {
+	) -> Result<Vec<CandidateRegistrations>> {
 		let epoch_number = epoch.0;
 		debug!("Received get_candidates({epoch_number}) request");
 
@@ -232,10 +229,7 @@ impl AuthoritySelectionDataSource for MockCandidateDataSource {
 		Ok(registrations.into_iter().map(CandidateRegistrations::from).collect())
 	}
 
-	async fn get_epoch_nonce(
-		&self,
-		epoch_number: McEpochNumber,
-	) -> Result<Option<EpochNonce>, Box<dyn std::error::Error + Send + Sync>> {
+	async fn get_epoch_nonce(&self, epoch_number: McEpochNumber) -> Result<Option<EpochNonce>> {
 		let epoch_number = epoch_number.0;
 		debug!("Received get_epoch_nonce({epoch_number}) request");
 		let epoch_conf = self.epoch_data(epoch_number);
@@ -247,10 +241,7 @@ impl AuthoritySelectionDataSource for MockCandidateDataSource {
 		Ok(Some(EpochNonce(epoch_conf.nonce.clone().0)))
 	}
 
-	async fn data_epoch(
-		&self,
-		for_epoch: McEpochNumber,
-	) -> Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>> {
+	async fn data_epoch(&self, for_epoch: McEpochNumber) -> Result<McEpochNumber> {
 		Ok(McEpochNumber(for_epoch.0 - 2))
 	}
 }

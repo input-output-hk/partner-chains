@@ -1,3 +1,4 @@
+use crate::Result;
 use async_trait::async_trait;
 use sidechain_domain::*;
 use sp_native_token_management::NativeTokenManagementDataSource;
@@ -25,7 +26,7 @@ impl NativeTokenManagementDataSource for NativeTokenDataSourceMock {
 		_native_token_policy_id: PolicyId,
 		_native_token_asset_name: AssetName,
 		_illiquid_supply_address: MainchainAddress,
-	) -> Result<NativeTokenAmount, Box<dyn std::error::Error + Send + Sync>> {
+	) -> Result<NativeTokenAmount> {
 		Ok(NativeTokenAmount(1000))
 	}
 }

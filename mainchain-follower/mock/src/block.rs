@@ -1,6 +1,5 @@
-use main_chain_follower_api::*;
+use crate::Result;
 use sidechain_domain::*;
-use std::error::Error;
 
 pub struct BlockDataSourceMock {
 	/// Duration of a mainchain epoch in milliseconds
@@ -47,7 +46,7 @@ impl BlockDataSourceMock {
 		Self { mc_epoch_duration_millis }
 	}
 
-	pub fn new_from_env() -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {
+	pub fn new_from_env() -> Result<Self> {
 		let mc_epoch_duration_millis: u32 =
 			std::env::var("MC__EPOCH_DURATION_MILLIS")?.parse::<u32>()?;
 		Ok(Self::new(mc_epoch_duration_millis))

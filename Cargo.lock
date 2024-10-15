@@ -4855,7 +4855,6 @@ dependencies = [
  "hex",
  "hex-literal",
  "log",
- "main-chain-follower-api",
  "pallet-sidechain-rpc",
  "rand",
  "serde",
