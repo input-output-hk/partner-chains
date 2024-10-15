@@ -10,6 +10,8 @@ on:
 env:
   AWS_REGION: "eu-central-1"
   SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+  NODE_BIN: partner-chains-node
+  CLI_BIN: partner-chains-cli
 
 permissions:
   id-token: write
@@ -51,16 +53,16 @@ jobs:
           EARTHLY_PUSH: true
         run: |
           earthly -P +ci --image=${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node
-      - name: Upload partner-chains-cli artifact
+      - name: Upload ${{ env.CLI_BIN }} artifact
         uses: actions/upload-artifact@v4
         with:
-          name: partner-chains-cli-artifact
-          path: partner-chains-cli-artifact
-      - name: Upload partner-chains-node artifact
+          name: ${{ env.CLI_BIN }}-ci
+          path: build/${{ env.CLI_BIN }}
+      - name: Upload ${{ env.NODE_BIN }} artifact
         uses: actions/upload-artifact@v4
         with:
-          name: partner-chains-node-artifact
-          path: partner-chains-node-artifact
+          name: ${{ env.NODE_BIN }}-ci
+          path: build/${{ env.NODE_BIN }}
       - name: Upload chain spec artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -87,6 +89,8 @@ jobs:
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ needs.build.outputs.sha }}
           sha: ${{ needs.build.outputs.sha }}
           tests: premerge
+          node_bin: ${{ env.NODE_BIN }}
+          cli_bin: ${{ env.CLI_BIN }}
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
           EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}

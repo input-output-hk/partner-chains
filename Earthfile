@@ -5,7 +5,8 @@ IMPORT ./dev/earthly/bench
 
 ARG --global PROFILE=release
 ARG --global FEATURES
-ARG --global BIN=partner-chains-node
+ARG --global NODE=partner-chains-node
+ARG --global CLI=partner-chains-cli
 
 boot:
   FROM paritytech/ci-unified:bullseye-1.77.0-2024-04-10-v202406031250
@@ -19,23 +20,23 @@ ci:
   BUILD +fmt
   BUILD +chainspecs
 
-  ARG image=$BIN
+  ARG image=$NODE
   ARG tags
   BUILD +docker --image=$image --tags=$tags
 
 docker:
     FROM debian:bullseye-slim
-    ARG image=$BIN
+    ARG image=$NODE
     ARG tags
 
     DO +INSTALL
 
     RUN useradd -m -u 1000 -U -s /bin/sh -d /substrate substrate \
-        && mkdir -p /data /substrate/.local/share/$BIN \
+        && mkdir -p /data /substrate/.local/share/$NODE \
         && chown -R substrate:substrate /data /substrate \
         # remove package managers
         && rm -rf /usr/bin/apt* /usr/bin/dpkg* \
-        && ln -s /data /substrate/.local/share/$BIN
+        && ln -s /data /substrate/.local/share/$NODE
 
     USER substrate
 
@@ -50,7 +51,7 @@ docker:
 
     VOLUME ["/data"]
 
-    ENTRYPOINT ["./usr/local/bin/$BIN"]
+    ENTRYPOINT ["./usr/local/bin/$NODE"]
 
     ARG EARTHLY_GIT_HASH
     ENV EARTHLY_GIT_HASH=$EARTHLY_GIT_HASH
@@ -82,11 +83,13 @@ build:
   ARG EARTHLY_GIT_HASH
   # generate new weights only for production builds
   IF [ $PROFILE = 'production' ]
-    RUN cargo build --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks -p $BIN
+    RUN cargo build --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks -p $NODE
     DO --pass-args bench+WEIGH
   END
-  RUN cargo build --locked --profile=$PROFILE --features=$FEATURES -p $BIN
-  SAVE ARTIFACT target/*/$BIN AS LOCAL $BIN
+  RUN cargo build --locked --profile=$PROFILE --features=$FEATURES -p $NODE -p $CLI
+  FOR artifact IN "$NODE $CLI"
+    SAVE ARTIFACT target/$PROFILE/$artifact AS LOCAL build/$artifact
+  END
 
 chainspecs:
   FROM +boot
@@ -96,7 +99,7 @@ chainspecs:
     SET ENV=$(echo "$env" | tr - _)
     COPY --dir dev/envs/$env $env
     RUN ADDRESSES="$env/addresses.json" . ./$env/.envrc \
-        && $BIN build-spec --chain local --disable-default-bootnode --raw > "$ENV"_chain_spec.json
+        && $NODE build-spec --chain local --disable-default-bootnode --raw > "$ENV"_chain_spec.json
     SAVE ARTIFACT "$ENV"_chain_spec.json AS LOCAL "$ENV"_chain_spec.json
   END
 
@@ -115,7 +118,7 @@ fetch-deps:
 
 deps:
     FROM +source
-    COPY +build/$BIN .
+    COPY +build/$NODE .
     DO deps+COMPILE_RUNTIME
 
 source-mock:
@@ -124,6 +127,6 @@ source-mock:
 
 INSTALL:
   FUNCTION
-  COPY +build/$BIN /usr/local/bin
+  COPY +build/$NODE /usr/local/bin
   COPY +deps/deps /tmp/deps.tgz
   DO --pass-args deps+INSTALL
