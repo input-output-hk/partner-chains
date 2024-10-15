@@ -3,7 +3,7 @@ use db_sync_follower::{
 	mc_hash::McHashDataSourceImpl, metrics::McFollowerMetrics,
 	native_token::NativeTokenManagementDataSourceImpl, sidechain_rpc::SidechainRpcDataSourceImpl,
 };
-use main_chain_follower_api::{CandidateDataSource, DataSourceError};
+use main_chain_follower_api::CandidateDataSource;
 use main_chain_follower_mock::{
 	block::BlockDataSourceMock, candidate::MockCandidateDataSource, mc_hash::McHashDataSourceMock,
 	native_token::NativeTokenDataSourceMock, sidechain_rpc::SidechainRpcDataSourceMock,

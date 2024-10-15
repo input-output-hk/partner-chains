@@ -3,7 +3,6 @@ use authority_selection_inherents::authority_selection_inputs::AuthoritySelectio
 use derive_new::new;
 use jsonrpsee::core::async_trait;
 use main_chain_follower_api::CandidateDataSource;
-use main_chain_follower_api::DataSourceError;
 use sc_consensus_aura::{find_pre_digest, SlotDuration};
 use sc_service::Arc;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
@@ -40,8 +39,7 @@ pub struct ProposalCIDP<T> {
 	client: Arc<T>,
 	mc_hash_data_source: Arc<dyn McHashDataSource + Send + Sync>,
 	candidate_data_source: Arc<dyn CandidateDataSource + Send + Sync>,
-	native_token_data_source:
-		Arc<dyn NativeTokenManagementDataSource<Error = DataSourceError> + Send + Sync>,
+	native_token_data_source: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 }
 
 #[async_trait]
@@ -130,8 +128,7 @@ pub struct VerifierCIDP<T> {
 	client: Arc<T>,
 	mc_hash_data_source: Arc<dyn McHashDataSource + Send + Sync>,
 	candidate_data_source: Arc<dyn CandidateDataSource + Send + Sync>,
-	native_token_data_source:
-		Arc<dyn NativeTokenManagementDataSource<Error = DataSourceError> + Send + Sync>,
+	native_token_data_source: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 }
 
 impl<T: Send + Sync> CurrentSlotProvider for VerifierCIDP<T> {
