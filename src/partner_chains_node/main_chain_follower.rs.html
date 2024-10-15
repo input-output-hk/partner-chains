@@ -75,12 +75,11 @@
 <a href="#75" id="75">75</a>
 <a href="#76" id="76">76</a>
 <a href="#77" id="77">77</a>
-<a href="#78" id="78">78</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>db_sync_follower::native_token::NativeTokenManagementDataSourceImpl;
 <span class="kw">use </span>db_sync_follower::{
 	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl, metrics::McFollowerMetrics,
 };
-<span class="kw">use </span>main_chain_follower_api::{BlockDataSource, CandidateDataSource, DataSourceError};
+<span class="kw">use </span>main_chain_follower_api::{BlockDataSource, CandidateDataSource};
 <span class="kw">use </span>main_chain_follower_mock::{
 	block::BlockDataSourceMock, candidate::MockCandidateDataSource,
 	native_token::NativeTokenDataSourceMock,
@@ -94,8 +93,7 @@
 </span><span class="kw">pub struct </span>DataSources {
 	<span class="kw">pub </span>block: Arc&lt;<span class="kw">dyn </span>BlockDataSource + Send + Sync&gt;,
 	<span class="kw">pub </span>candidate: Arc&lt;<span class="kw">dyn </span>CandidateDataSource + Send + Sync&gt;,
-	<span class="kw">pub </span>native_token:
-		Arc&lt;<span class="kw">dyn </span>NativeTokenManagementDataSource&lt;Error = DataSourceError&gt; + Send + Sync&gt;,
+	<span class="kw">pub </span>native_token: Arc&lt;<span class="kw">dyn </span>NativeTokenManagementDataSource + Send + Sync&gt;,
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>create_cached_main_chain_follower_data_sources(
