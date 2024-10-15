@@ -8,6 +8,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["main_chain_follower_cli",["",[],["main.rs"]]],\
 ["main_chain_follower_mock",["",[],["block.rs","candidate.rs","lib.rs","native_token.rs"]]],\
 ["mock_types",["",[],["lib.rs","session_keys.rs"]]],\
+["ogmios_client",["",[],["jsonrpsee.rs","lib.rs","query_ledger_state.rs","query_network.rs","types.rs"]]],\
 ["pallet_block_rewards",["",[],["lib.rs"]]],\
 ["pallet_native_token_management",["",[],["lib.rs"]]],\
 ["pallet_partner_chains_session",["",[],["lib.rs"]]],\
