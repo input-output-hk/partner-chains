@@ -64,7 +64,7 @@ macro_rules! observed_async_trait {
 		$(type $type_name:ident = $type:ty;)*
 		$(async fn $method:ident(&$self:tt $(,$param_name:ident: $param_type:ty)* $(,)?) -> $res:ty $body:block)*
 	})=> {
-		#[async_trait]
+		#[async_trait::async_trait]
 		impl $trait_name for $target_type {
 		$(type $type_name = $type;)*
 		$(

@@ -33,6 +33,7 @@ sp-timestamp = { workspace = true }
 sp-native-token-management = { workspace = true, features = ["std"], optional = true }
 sidechain-mc-hash = { workspace = true, optional = true }
 pallet-sidechain-rpc = { workspace = true, optional = true }
+authority-selection-inherents = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio-test = "0.4.3"
@@ -41,7 +42,7 @@ ctor = "0.2.5"
 [features]
 default = []
 block-source = []
-candidate-source = ["main-chain-follower-api/candidate-source"]
+candidate-source = ["authority-selection-inherents"]
 native-token = ["sp-native-token-management"]
 mc-hash = ["sidechain-mc-hash", "block-source"]
 sidechain-rpc = ["pallet-sidechain-rpc", "block-source"]

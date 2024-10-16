@@ -1,9 +1,9 @@
+use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 use db_sync_follower::{
 	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl,
 	mc_hash::McHashDataSourceImpl, metrics::McFollowerMetrics,
 	native_token::NativeTokenManagementDataSourceImpl, sidechain_rpc::SidechainRpcDataSourceImpl,
 };
-use main_chain_follower_api::CandidateDataSource;
 use main_chain_follower_mock::{
 	block::BlockDataSourceMock, candidate::MockCandidateDataSource, mc_hash::McHashDataSourceMock,
 	native_token::NativeTokenDataSourceMock, sidechain_rpc::SidechainRpcDataSourceMock,
@@ -17,7 +17,7 @@ use std::{error::Error, sync::Arc};
 #[derive(Clone)]
 pub struct DataSources {
 	pub mc_hash: Arc<dyn McHashDataSource + Send + Sync>,
-	pub candidate: Arc<dyn CandidateDataSource + Send + Sync>,
+	pub authority_selection: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
 	pub native_token: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 	pub sidechain_rpc: Arc<dyn SidechainRpcDataSource + Send + Sync>,
 }
@@ -54,7 +54,7 @@ pub fn create_mock_data_sources(
 	Ok(DataSources {
 		sidechain_rpc: Arc::new(SidechainRpcDataSourceMock::new(block.clone())),
 		mc_hash: Arc::new(McHashDataSourceMock::new(block)),
-		candidate: Arc::new(MockCandidateDataSource::new_from_env()?),
+		authority_selection: Arc::new(MockCandidateDataSource::new_from_env()?),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
 	})
 }
@@ -72,7 +72,7 @@ pub async fn create_cached_data_sources(
 			metrics_opt.clone(),
 		)),
 		mc_hash: Arc::new(McHashDataSourceImpl::new(block, metrics_opt.clone())),
-		candidate: Arc::new(
+		authority_selection: Arc::new(
 			CandidatesDataSourceImpl::new(pool.clone(), metrics_opt.clone())
 				.await?
 				.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE)?,

@@ -1,7 +1,6 @@
 use crate::db_model::{Block, BlockNumber};
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
-use async_trait::async_trait;
 use derive_new::new;
 use itertools::Itertools;
 use main_chain_follower_api::{DataSourceError, Result};

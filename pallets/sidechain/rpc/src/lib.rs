@@ -35,7 +35,9 @@ pub trait SidechainRpcApi<SidechainParams> {
 
 #[async_trait]
 pub trait SidechainRpcDataSource {
-	async fn get_latest_block_info(&self) -> Result<MainchainBlock, Box<dyn std::error::Error>>;
+	async fn get_latest_block_info(
+		&self,
+	) -> Result<MainchainBlock, Box<dyn std::error::Error + Send + Sync>>;
 }
 
 #[derive(new)]
