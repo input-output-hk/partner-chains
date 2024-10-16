@@ -3,6 +3,9 @@ name: Staging Partner Chains Tests
 on:
   schedule:
     - cron: '0 4 * * *'
+  push:
+    branches:
+      - feature/e2e-tests
   workflow_dispatch:
     inputs:
       keyword:
