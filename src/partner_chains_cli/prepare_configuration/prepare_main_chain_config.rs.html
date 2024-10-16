@@ -504,25 +504,8 @@
 <a href="#504" id="504">504</a>
 <a href="#505" id="505">505</a>
 <a href="#506" id="506">506</a>
-<a href="#507" id="507">507</a>
-<a href="#508" id="508">508</a>
-<a href="#509" id="509">509</a>
-<a href="#510" id="510">510</a>
-<a href="#511" id="511">511</a>
-<a href="#512" id="512">512</a>
-<a href="#513" id="513">513</a>
-<a href="#514" id="514">514</a>
-<a href="#515" id="515">515</a>
-<a href="#516" id="516">516</a>
-<a href="#517" id="517">517</a>
-<a href="#518" id="518">518</a>
-<a href="#519" id="519">519</a>
-<a href="#520" id="520">520</a>
-<a href="#521" id="521">521</a>
-<a href="#522" id="522">522</a>
-<a href="#523" id="523">523</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
-	CARDANO_NETWORK, COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
+	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
 	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
 	PERMISSIONED_CANDIDATES_POLICY_ID,
 };
@@ -560,9 +543,10 @@
 	<span class="kw">let </span>pc_contracts_cli_version = context.run_command(PC_CONTRACTS_CLI_VERSION_CMD)<span class="question-mark">?</span>;
 	context.eprint(<span class="kw-2">&amp;</span>pc_contracts_cli_version_prompt(pc_contracts_cli_version));
 
-	<span class="kw">let </span>cardano_network = prompt_cardano_network(context)<span class="question-mark">?</span>;
-	prepare_cardano_params(context, cardano_network)<span class="question-mark">?</span>;
-	set_up_cardano_addresses(context, sidechain_params)<span class="question-mark">?</span>;
+	<span class="kw">let </span>kupo_ogmios_config = establish_pc_contracts_cli_configuration(context)<span class="question-mark">?</span>;
+	<span class="kw">let </span>cardano_parameteres = prepare_cardano_params(<span class="kw-2">&amp;</span>kupo_ogmios_config.ogmios, context)<span class="question-mark">?</span>;
+	cardano_parameteres.save(context);
+	set_up_cardano_addresses(context, sidechain_params, kupo_ogmios_config)<span class="question-mark">?</span>;
 	<span class="kw">if </span>INITIAL_PERMISSIONED_CANDIDATES.load_from_file(context).is_none() {
 		INITIAL_PERMISSIONED_CANDIDATES.save_to_file(<span class="kw-2">&amp;</span><span class="macro">vec!</span>[], context)
 	}
@@ -571,36 +555,11 @@
 	<span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">fn </span>prompt_for_custom_cardano_network_id(context: <span class="kw-2">&amp;</span><span class="kw">impl </span>IOContext) -&gt; anyhow::Result&lt;u32&gt; {
-	<span class="kw">loop </span>{
-		<span class="kw">let </span>id = context.prompt(<span class="string">"Enter custom cardano network ID"</span>, <span class="prelude-val">Some</span>(<span class="string">"3"</span>));
-		<span class="kw">match </span>id.parse::&lt;u32&gt;() {
-			<span class="prelude-val">Ok</span>(id) <span class="kw">if </span>id &gt;= <span class="number">3 </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(id),
-			<span class="kw">_ </span>=&gt; context.eprint(<span class="string">"Custom cardano network ID must be a number greater or equal to 3"</span>),
-		}
-	}
-}
-
-<span class="kw">fn </span>prompt_cardano_network&lt;C: IOContext&gt;(context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;u32&gt; {
-	<span class="kw">let </span>selected_network: CardanoNetwork = CARDANO_NETWORK
-		.select_options_with_default_from_file_and_save(CHOOSE_CARDANO_NETWORK, context)
-		.map_err(anyhow::Error::msg)<span class="question-mark">?</span>;
-	<span class="kw">let </span>cardano_network: CardanoNetwork = <span class="kw">match </span>selected_network {
-		CardanoNetwork(id) <span class="kw">if </span>id &gt;= <span class="number">3 </span>=&gt; {
-			<span class="kw">let </span>custom_id = prompt_for_custom_cardano_network_id(context)<span class="question-mark">?</span>;
-			CardanoNetwork(custom_id)
-		},
-		<span class="kw">_ </span>=&gt; selected_network,
-	};
-	CARDANO_NETWORK.save_to_file(<span class="kw-2">&amp;</span>cardano_network, context);
-	<span class="prelude-val">Ok</span>(cardano_network.to_id())
-}
-
 <span class="kw">fn </span>set_up_cardano_addresses&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
 	params: SidechainParams,
+	kupo_ogmios_config: PcContractsCliResources,
 ) -&gt; anyhow::Result&lt;()&gt; {
-	<span class="kw">let </span>kupo_ogmios_config = establish_pc_contracts_cli_configuration(context)<span class="question-mark">?</span>;
 	run_pc_contracts_cli_addresses(context, params, kupo_ogmios_config)<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(())
 }
@@ -712,7 +671,6 @@
 	)
 }
 
-<span class="kw">const </span>CHOOSE_CARDANO_NETWORK: <span class="kw-2">&amp;</span>str = <span class="string">"Which cardano network would you like to use?"</span>;
 <span class="kw">const </span>OUTRO: <span class="kw-2">&amp;</span>str = <span class="string">r#"Chain configuration (partner-chains-cli-chain-config.json) is now ready for distribution to network participants.
 
 If you intend to run a chain with permissioned candidates, you must manually set their keys in the partner-chains-cli-chain-config.json file before proceeding. Here's an example of how to add permissioned candidates:
@@ -746,7 +704,10 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{GOVERNANCE_AUTHORITY, KUPO_PROTOCOL};
 	<span class="kw">use </span><span class="kw">crate</span>::config::CHAIN_CONFIG_FILE_PATH;
-	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::PREPROD_CARDANO_PARAMS;
+	<span class="kw">use </span><span class="kw">crate</span>::ogmios::{OgmiosRequest, OgmiosResponse};
+	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::tests::{
+		preprod_eras_summaries, preprod_shelley_config, PREPROD_CARDANO_PARAMS,
+	};
 	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::tests::save_to_existing_file;
 	<span class="kw">use </span><span class="kw">crate</span>::tests::MockIO;
 	<span class="kw">use </span><span class="kw">crate</span>::tests::MockIOContext;
@@ -770,12 +731,34 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 
 	<span class="kw">pub mod </span>scenarios {
 		<span class="kw">use super</span>::<span class="kw-2">*</span>;
-		<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS;
-		<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::tests::scenarios::save_cardano_params_but_last;
+		<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::<span class="kw-2">*</span>;
 
 		<span class="kw">pub fn </span>save_cardano_params() -&gt; MockIO {
 			MockIO::Group(<span class="macro">vec!</span>[
-				save_cardano_params_but_last(PREPROD_CARDANO_PARAMS),
+				save_to_existing_file(
+					CARDANO_NETWORK,
+					<span class="kw-2">&amp;</span>PREPROD_CARDANO_PARAMS.network.<span class="number">0</span>.to_string(),
+				),
+				save_to_existing_file(
+					CARDANO_SECURITY_PARAMETER,
+					<span class="kw-2">&amp;</span>PREPROD_CARDANO_PARAMS.security_parameter.to_string(),
+				),
+				save_to_existing_file(
+					CARDANO_ACTIVE_SLOTS_COEFF,
+					<span class="kw-2">&amp;</span>PREPROD_CARDANO_PARAMS.active_slots_coeff.to_string(),
+				),
+				save_to_existing_file(
+					CARDANO_FIRST_EPOCH_NUMBER,
+					<span class="kw-2">&amp;</span>PREPROD_CARDANO_PARAMS.first_epoch_number.to_string(),
+				),
+				save_to_existing_file(
+					CARDANO_FIRST_SLOT_NUMBER,
+					<span class="kw-2">&amp;</span>PREPROD_CARDANO_PARAMS.first_slot_number.to_string(),
+				),
+				save_to_existing_file(
+					CARDANO_EPOCH_DURATION_MILLIS,
+					<span class="kw-2">&amp;</span>PREPROD_CARDANO_PARAMS.epoch_duration_millis.to_string(),
+				),
 				save_to_existing_file(
 					CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS,
 					<span class="kw-2">&amp;</span>PREPROD_CARDANO_PARAMS.first_epoch_timestamp_millis.to_string(),
@@ -825,27 +808,18 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 			.with_expected_io(<span class="macro">vec!</span>[
 				MockIO::run_command(PC_CONTRACTS_CLI_VERSION_CMD, PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT),
 				MockIO::eprint(<span class="kw-2">&amp;</span>pc_contracts_cli_version_prompt(PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT.to_string())),
-
-				MockIO::file_read(CARDANO_NETWORK.config_file),
-				MockIO::prompt_multi_option(
-					CHOOSE_CARDANO_NETWORK,
-					<span class="macro">vec!</span>[<span class="string">"mainnet"</span>.to_string(), <span class="string">"preprod"</span>.to_string(), <span class="string">"preview"</span>.to_string(), <span class="string">"custom"</span>.to_string()],
-					<span class="string">"preprod"
-				</span>),
-				MockIO::file_read(CARDANO_NETWORK.config_file),
-				MockIO::file_write_json_contains(
-					CARDANO_NETWORK.config_file,
-					<span class="kw-2">&amp;</span>CARDANO_NETWORK.json_pointer(),
-					<span class="string">"1"</span>,
+				<span class="kw">crate</span>::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io(<span class="prelude-val">None</span>, PcContractsCliResources::default()),
+				MockIO::ogmios_request(
+					<span class="string">"http://localhost:1337"</span>,
+					OgmiosRequest::QueryLedgerStateEraSummaries,
+					OgmiosResponse::QueryLedgerStateEraSummaries(preprod_eras_summaries()),
 				),
-				MockIO::file_read(CARDANO_NETWORK.config_file),
-				MockIO::file_write_json_contains(
-					CARDANO_NETWORK.config_file,
-					<span class="kw-2">&amp;</span>CARDANO_NETWORK.json_pointer(),
-					<span class="string">"1"</span>,
+				MockIO::ogmios_request(
+					<span class="string">"http://localhost:1337"</span>,
+					OgmiosRequest::QueryNetworkShelleyGenesis,
+					OgmiosResponse::QueryNetworkShelleyGenesis(preprod_shelley_config()),
 				),
 				scenarios::save_cardano_params(),
-				<span class="kw">crate</span>::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io(<span class="prelude-val">None</span>, PcContractsCliResources::default()),
 				MockIO::new_tmp_file(DUMMY_SKEY),
 				MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 				MockIO::run_command(
@@ -901,26 +875,18 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 			.with_expected_io(<span class="macro">vec!</span>[
 				MockIO::run_command(PC_CONTRACTS_CLI_VERSION_CMD, PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT),
 				MockIO::eprint(<span class="kw-2">&amp;</span>pc_contracts_cli_version_prompt(PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT.to_string())),
-				MockIO::file_read(CARDANO_NETWORK.config_file),
-				MockIO::prompt_multi_option(
-					CHOOSE_CARDANO_NETWORK,
-					<span class="macro">vec!</span>[<span class="string">"mainnet"</span>.to_string(), <span class="string">"preprod"</span>.to_string(), <span class="string">"preview"</span>.to_string(), <span class="string">"custom"</span>.to_string()],
-					<span class="string">"preprod"
-				</span>),
-				MockIO::file_read(CARDANO_NETWORK.config_file),
-				MockIO::file_write_json_contains(
-					CARDANO_NETWORK.config_file,
-					<span class="kw-2">&amp;</span>CARDANO_NETWORK.json_pointer(),
-					<span class="string">"1"</span>,
+				<span class="kw">crate</span>::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io(<span class="prelude-val">None</span>, PcContractsCliResources::default()),
+				MockIO::ogmios_request(
+					<span class="string">"http://localhost:1337"</span>,
+					OgmiosRequest::QueryLedgerStateEraSummaries,
+					OgmiosResponse::QueryLedgerStateEraSummaries(preprod_eras_summaries()),
 				),
-				MockIO::file_read(CARDANO_NETWORK.config_file),
-				MockIO::file_write_json_contains(
-					CARDANO_NETWORK.config_file,
-					<span class="kw-2">&amp;</span>CARDANO_NETWORK.json_pointer(),
-					<span class="string">"1"</span>,
+				MockIO::ogmios_request(
+					<span class="string">"http://localhost:1337"</span>,
+					OgmiosRequest::QueryNetworkShelleyGenesis,
+					OgmiosResponse::QueryNetworkShelleyGenesis(preprod_shelley_config()),
 				),
 				scenarios::save_cardano_params(),
-				<span class="kw">crate</span>::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io(<span class="prelude-val">None</span>, PcContractsCliResources::default()),
 				MockIO::new_tmp_file(DUMMY_SKEY),
 				MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 				MockIO::run_command(

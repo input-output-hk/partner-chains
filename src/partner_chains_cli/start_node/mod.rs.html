@@ -234,6 +234,7 @@
 <a href="#234" id="234">234</a>
 <a href="#235" id="235">235</a>
 <a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	NODE_P2P_PORT, POSTGRES_CONNECTION_STRING, SIDECHAIN_BLOCK_BENEFICIARY,
 };
@@ -431,6 +432,7 @@
 				first_slot_number,
 				epoch_duration_millis,
 				first_epoch_timestamp_millis,
+				network: _network,
 			},
 		bootnodes,
 	}: StartNodeChainConfig,

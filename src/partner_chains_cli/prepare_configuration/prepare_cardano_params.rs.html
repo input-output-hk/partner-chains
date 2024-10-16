@@ -221,227 +221,271 @@
 <a href="#221" id="221">221</a>
 <a href="#222" id="222">222</a>
 <a href="#223" id="223">223</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
-	CARDANO_ACTIVE_SLOTS_COEFF, CARDANO_EPOCH_DURATION_MILLIS, CARDANO_FIRST_EPOCH_NUMBER,
-	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_SECURITY_PARAMETER,
-};
-<span class="kw">use </span><span class="kw">crate</span>::config::CardanoParameters;
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::{CardanoNetwork, CardanoParameters, ServiceConfig};
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
-
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>PREPROD_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
-	security_parameter: <span class="number">2160</span>,
-	active_slots_coeff: <span class="number">0.05</span>,
-	first_epoch_number: <span class="number">4</span>,
-	first_slot_number: <span class="number">86400</span>,
-	epoch_duration_millis: <span class="number">432000000</span>,
-	first_epoch_timestamp_millis: <span class="number">1655769600000</span>,
-};
-
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>MAINNET_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
-	security_parameter: <span class="number">2160</span>,
-	active_slots_coeff: <span class="number">0.05</span>,
-	first_epoch_number: <span class="number">208</span>,
-	first_slot_number: <span class="number">4492800</span>,
-	epoch_duration_millis: <span class="number">432000000</span>,
-	first_epoch_timestamp_millis: <span class="number">1596059091000</span>,
-};
-
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>PREVIEW_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
-	security_parameter: <span class="number">432</span>,
-	active_slots_coeff: <span class="number">0.05</span>,
-	first_epoch_number: <span class="number">0</span>,
-	first_slot_number: <span class="number">0</span>,
-	epoch_duration_millis: <span class="number">86400000</span>,
-	first_epoch_timestamp_millis: <span class="number">1666656000000</span>,
-};
+<span class="kw">use </span><span class="kw">crate</span>::ogmios::{EraSummary, OgmiosRequest, OgmiosResponse, ShelleyGenesisConfiguration};
 
 <span class="kw">pub fn </span>prepare_cardano_params&lt;C: IOContext&gt;(
+	ogmios_config: <span class="kw-2">&amp;</span>ServiceConfig,
 	context: <span class="kw-2">&amp;</span>C,
-	cardano_network: u32,
 ) -&gt; anyhow::Result&lt;CardanoParameters&gt; {
-	<span class="prelude-val">Ok</span>(<span class="kw">match </span>cardano_network {
-		<span class="number">0 </span>=&gt; {
-			MAINNET_CARDANO_PARAMS.save(context);
-			MAINNET_CARDANO_PARAMS
-		},
-		<span class="number">1 </span>=&gt; {
-			PREPROD_CARDANO_PARAMS.save(context);
-			PREPROD_CARDANO_PARAMS
-		},
-		<span class="number">2 </span>=&gt; {
-			PREVIEW_CARDANO_PARAMS.save(context);
-			PREVIEW_CARDANO_PARAMS
-		},
-		<span class="kw">_ </span>=&gt; prompt_for_custom_cardano_params(context)<span class="question-mark">?</span>,
+	<span class="kw">let </span>addr = <span class="macro">format!</span>(<span class="string">"{}"</span>, ogmios_config);
+	<span class="kw">let </span>eras_summaries = get_eras_summaries(<span class="kw-2">&amp;</span>addr, context)<span class="question-mark">?</span>;
+	<span class="kw">let </span>shelley_config = get_shelley_config(<span class="kw-2">&amp;</span>addr, context)<span class="question-mark">?</span>;
+	caradano_parameters(eras_summaries, shelley_config)
+}
+
+<span class="kw">fn </span>get_eras_summaries&lt;C: IOContext&gt;(addr: <span class="kw-2">&amp;</span>str, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;Vec&lt;EraSummary&gt;&gt; {
+	<span class="kw">let </span>eras_summaries = context.ogmios_rpc(addr, OgmiosRequest::QueryLedgerStateEraSummaries)<span class="question-mark">?</span>;
+	<span class="kw">match </span>eras_summaries {
+		OgmiosResponse::QueryLedgerStateEraSummaries(eras_summaries) =&gt; <span class="prelude-val">Ok</span>(eras_summaries),
+		other =&gt; <span class="prelude-val">Err</span>(<span class="macro">anyhow::anyhow!</span>(<span class="macro">format!</span>(
+			<span class="string">"Unexpected response from Ogmios when quering for era summaries: {other:?}"
+		</span>))),
+	}
+}
+
+<span class="kw">fn </span>get_shelley_config&lt;C: IOContext&gt;(
+	addr: <span class="kw-2">&amp;</span>str,
+	context: <span class="kw-2">&amp;</span>C,
+) -&gt; anyhow::Result&lt;ShelleyGenesisConfiguration&gt; {
+	<span class="kw">let </span>response = context.ogmios_rpc(addr, OgmiosRequest::QueryNetworkShelleyGenesis)<span class="question-mark">?</span>;
+	<span class="kw">match </span>response {
+        OgmiosResponse::QueryNetworkShelleyGenesis(shelley_config) =&gt; <span class="prelude-val">Ok</span>(shelley_config),
+        other =&gt; <span class="prelude-val">Err</span>(<span class="macro">anyhow::anyhow!</span>(<span class="macro">format!</span>(<span class="string">"Unexpected response from Ogmios when quering for shelley genesis configuration: {other:?}"</span>))),
+    }
+}
+
+<span class="kw">fn </span>caradano_parameters(
+	eras_summaries: Vec&lt;EraSummary&gt;,
+	shelley_config: ShelleyGenesisConfiguration,
+) -&gt; anyhow::Result&lt;CardanoParameters&gt; {
+	<span class="kw">let </span>first_epoch_era = get_first_epoch_era(eras_summaries)<span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>(CardanoParameters {
+		security_parameter: shelley_config.security_parameter.into(),
+		active_slots_coeff: shelley_config.active_slots_coefficient,
+		epoch_duration_millis: (shelley_config.epoch_length <span class="kw">as </span>u64)
+			.checked_mul(shelley_config.slot_length_millis)
+			.ok_or_else(|| <span class="macro">anyhow::anyhow!</span>(<span class="string">"Epoch duration overflow"</span>))<span class="question-mark">?</span>,
+		first_epoch_number: first_epoch_era.start.epoch,
+		first_slot_number: first_epoch_era.start.slot,
+		first_epoch_timestamp_millis: shelley_config
+			.start_time
+			.checked_add(first_epoch_era.start.time_seconds)
+			.and_then(|seconds| seconds.checked_mul(<span class="number">1000</span>))
+			.ok_or_else(|| <span class="macro">anyhow::anyhow!</span>(<span class="string">"First epoch timestamp overflow"</span>))<span class="question-mark">?</span>,
+		network: CardanoNetwork(shelley_config.network_magic),
 	})
 }
 
-<span class="kw">fn </span>prompt_for_custom_cardano_params(context: <span class="kw-2">&amp;</span><span class="kw">impl </span>IOContext) -&gt; anyhow::Result&lt;CardanoParameters&gt; {
-	<span class="prelude-val">Ok</span>(CardanoParameters {
-		security_parameter: CARDANO_SECURITY_PARAMETER
-			.prompt_with_default_from_file_parse_and_save(context)<span class="question-mark">?</span>,
-		active_slots_coeff: CARDANO_ACTIVE_SLOTS_COEFF
-			.prompt_with_default_from_file_parse_and_save(context)<span class="question-mark">?</span>,
-		first_epoch_number: CARDANO_FIRST_EPOCH_NUMBER
-			.prompt_with_default_from_file_parse_and_save(context)<span class="question-mark">?</span>,
-		first_slot_number: CARDANO_FIRST_SLOT_NUMBER
-			.prompt_with_default_from_file_parse_and_save(context)<span class="question-mark">?</span>,
-		epoch_duration_millis: CARDANO_EPOCH_DURATION_MILLIS
-			.prompt_with_default_from_file_parse_and_save(context)<span class="question-mark">?</span>,
-		first_epoch_timestamp_millis: CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS
-			.prompt_with_default_from_file_parse_and_save(context)<span class="question-mark">?</span>,
-	})
+<span class="comment">// Partner Chains Main Chain follower supports only eras with 1 second slots.
+// This functions gets the first era with 1 second slots,
+// such that all following eras have the same slot length and epoch length.
+</span><span class="kw">fn </span>get_first_epoch_era(eras_summaries: Vec&lt;EraSummary&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;EraSummary, anyhow::Error&gt; {
+	<span class="kw">let </span>latest_era_parameters = eras_summaries
+		.last()
+		.ok_or_else(|| <span class="macro">anyhow::anyhow!</span>(<span class="string">"No eras found"</span>))<span class="question-mark">?
+		</span>.parameters
+		.clone();
+	<span class="kw">if </span>latest_era_parameters.slot_length_millis != <span class="number">1000 </span>{
+		<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow::anyhow!</span>(
+			<span class="string">"Unexpected slot length in latest era, Partner Chains support only 1 second slots"
+		</span>));
+	}
+	<span class="kw">let </span>first_epoch_era = eras_summaries
+		.into_iter()
+		.find(|era| era.parameters == latest_era_parameters)
+		.ok_or_else(|| <span class="macro">anyhow::anyhow!</span>(<span class="string">"No eras found"</span>))<span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>(first_epoch_era)
 }
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">pub mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::CARDANO_SECURITY_PARAMETER;
+	<span class="kw">use </span><span class="kw">crate</span>::config::{NetworkProtocol, CHAIN_CONFIG_FILE_PATH};
+	<span class="kw">use </span><span class="kw">crate</span>::ogmios::{EpochBoundary, EpochParameters, EraSummary};
 	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
-	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::tests::scenarios::save_cardano_params;
-	<span class="kw">use </span><span class="kw">crate</span>::tests::MockIOContext;
-	<span class="kw">use </span>serde_json::Value;
+	<span class="kw">use </span><span class="kw">crate</span>::tests::{MockIO, MockIOContext};
 
-	<span class="kw">const </span>CUSTOM_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
-		security_parameter: <span class="number">431</span>,
-		active_slots_coeff: <span class="number">0.07</span>,
-		first_epoch_number: <span class="number">0</span>,
-		first_slot_number: <span class="number">0</span>,
-		epoch_duration_millis: <span class="number">86800000</span>,
-		first_epoch_timestamp_millis: <span class="number">1866656000000</span>,
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>PREPROD_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
+		security_parameter: <span class="number">2160</span>,
+		active_slots_coeff: <span class="number">0.05</span>,
+		first_epoch_number: <span class="number">4</span>,
+		first_slot_number: <span class="number">86400</span>,
+		epoch_duration_millis: <span class="number">432000000</span>,
+		first_epoch_timestamp_millis: <span class="number">1655769600000</span>,
+		network: CardanoNetwork(<span class="number">1</span>),
 	};
 
-	<span class="kw">pub mod </span>scenarios {
-		<span class="kw">use super</span>::<span class="kw-2">*</span>;
-		<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
-			CARDANO_ACTIVE_SLOTS_COEFF, CARDANO_EPOCH_DURATION_MILLIS, CARDANO_FIRST_EPOCH_NUMBER,
-			CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER,
-			CARDANO_SECURITY_PARAMETER,
-		};
-		<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::tests::{
-			prompt_with_default_and_save_to_existing_file, save_to_existing_file,
-		};
-		<span class="kw">use </span><span class="kw">crate</span>::tests::MockIO;
-
-		<span class="kw">pub fn </span>save_cardano_params(cardano_parameters: CardanoParameters) -&gt; MockIO {
-			MockIO::Group(<span class="macro">vec!</span>[
-				save_cardano_params_but_last(cardano_parameters.clone()),
-				MockIO::file_read(CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS.config_file),
-				MockIO::file_write_json(
-					CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS.config_file,
-					test_chain_config(cardano_parameters),
-				),
-			])
-		}
-
-		<span class="kw">pub fn </span>save_cardano_params_but_last(cardano_parameters: CardanoParameters) -&gt; MockIO {
-			MockIO::Group(<span class="macro">vec!</span>[
-				save_to_existing_file(
-					CARDANO_SECURITY_PARAMETER,
-					<span class="kw-2">&amp;</span>cardano_parameters.security_parameter.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_ACTIVE_SLOTS_COEFF,
-					<span class="kw-2">&amp;</span>cardano_parameters.active_slots_coeff.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_FIRST_EPOCH_NUMBER,
-					<span class="kw-2">&amp;</span>cardano_parameters.first_epoch_number.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_FIRST_SLOT_NUMBER,
-					<span class="kw-2">&amp;</span>cardano_parameters.first_slot_number.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_EPOCH_DURATION_MILLIS,
-					<span class="kw-2">&amp;</span>cardano_parameters.epoch_duration_millis.to_string(),
-				),
-			])
-		}
-
-		<span class="kw">pub fn </span>prompt_for_custom_cardano_params() -&gt; MockIO {
-			MockIO::Group(<span class="macro">vec!</span>[
-				prompt_with_default_and_save_to_existing_file(
-					CARDANO_SECURITY_PARAMETER,
-					CARDANO_SECURITY_PARAMETER.default,
-					<span class="kw-2">&amp;</span>CUSTOM_CARDANO_PARAMS.security_parameter.to_string(),
-				),
-				prompt_with_default_and_save_to_existing_file(
-					CARDANO_ACTIVE_SLOTS_COEFF,
-					CARDANO_ACTIVE_SLOTS_COEFF.default,
-					<span class="kw-2">&amp;</span>CUSTOM_CARDANO_PARAMS.active_slots_coeff.to_string(),
-				),
-				prompt_with_default_and_save_to_existing_file(
-					CARDANO_FIRST_EPOCH_NUMBER,
-					CARDANO_FIRST_EPOCH_NUMBER.default,
-					<span class="kw-2">&amp;</span>CUSTOM_CARDANO_PARAMS.first_epoch_number.to_string(),
-				),
-				prompt_with_default_and_save_to_existing_file(
-					CARDANO_FIRST_SLOT_NUMBER,
-					CARDANO_FIRST_SLOT_NUMBER.default,
-					<span class="kw-2">&amp;</span>CUSTOM_CARDANO_PARAMS.first_slot_number.to_string(),
-				),
-				prompt_with_default_and_save_to_existing_file(
-					CARDANO_EPOCH_DURATION_MILLIS,
-					CARDANO_EPOCH_DURATION_MILLIS.default,
-					<span class="kw-2">&amp;</span>CUSTOM_CARDANO_PARAMS.epoch_duration_millis.to_string(),
-				),
-				prompt_with_default_and_save_to_existing_file(
-					CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS,
-					CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS.default,
-					<span class="kw-2">&amp;</span>CUSTOM_CARDANO_PARAMS.first_epoch_timestamp_millis.to_string(),
-				),
-			])
-		}
-	}
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>PREVIEW_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
+		security_parameter: <span class="number">432</span>,
+		active_slots_coeff: <span class="number">0.05</span>,
+		first_epoch_number: <span class="number">0</span>,
+		first_slot_number: <span class="number">0</span>,
+		epoch_duration_millis: <span class="number">86400000</span>,
+		first_epoch_timestamp_millis: <span class="number">1666656000000</span>,
+		network: CardanoNetwork(<span class="number">2</span>),
+	};
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>should_persist_correct_cardano_params_for_preview() {
-		test_saving_cardano_params_for_hardcoded_networks(PREVIEW_CARDANO_PARAMS, <span class="number">2</span>)
-	}
-
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>should_persist_correct_cardano_params_for_mainnet() {
-		test_saving_cardano_params_for_hardcoded_networks(MAINNET_CARDANO_PARAMS, <span class="number">0</span>)
+		test_saving_cardano_params_for_known_network(
+			preview_eras_summaries(),
+			preview_shelley_config(),
+			PREVIEW_CARDANO_PARAMS,
+		)
 	}
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>should_persist_correct_cardano_params_for_preprod() {
-		test_saving_cardano_params_for_hardcoded_networks(PREPROD_CARDANO_PARAMS, <span class="number">1</span>)
+		test_saving_cardano_params_for_known_network(
+			preprod_eras_summaries(),
+			preprod_shelley_config(),
+			PREPROD_CARDANO_PARAMS,
+		)
 	}
 
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>prompt_for_custom_params() {
-		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_json_file(CARDANO_SECURITY_PARAMETER.config_file, <span class="macro">serde_json::json!</span>({}))
-			.with_expected_io(<span class="macro">vec!</span>[scenarios::prompt_for_custom_cardano_params()]);
-		<span class="kw">let </span>params = prepare_cardano_params(<span class="kw-2">&amp;</span>mock_context, <span class="number">3</span>).unwrap();
-		<span class="macro">assert_eq!</span>(params, CUSTOM_CARDANO_PARAMS)
-	}
-
-	<span class="kw">fn </span>test_saving_cardano_params_for_hardcoded_networks(
-		cardano_parameters: CardanoParameters,
-		cardano_network: u32,
+	<span class="kw">fn </span>test_saving_cardano_params_for_known_network(
+		eras_summaries: Vec&lt;EraSummary&gt;,
+		shelley_config: ShelleyGenesisConfiguration,
+		expected_cardano_parameters: CardanoParameters,
 	) {
+		<span class="kw">let </span>ogmios_config = ServiceConfig {
+			protocol: NetworkProtocol::Https,
+			hostname: <span class="string">"ogmios.com"</span>.to_string(),
+			port: <span class="number">7654</span>,
+		};
 		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_json_file(CARDANO_SECURITY_PARAMETER.config_file, <span class="macro">serde_json::json!</span>({}))
-			.with_expected_io(<span class="macro">vec!</span>[save_cardano_params(cardano_parameters.clone())]);
-		<span class="kw">let </span>result = prepare_cardano_params(<span class="kw-2">&amp;</span>mock_context, cardano_network);
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, <span class="macro">serde_json::json!</span>({}))
+			.with_expected_io(<span class="macro">vec!</span>[
+				MockIO::ogmios_request(
+					<span class="string">"https://ogmios.com:7654"</span>,
+					OgmiosRequest::QueryLedgerStateEraSummaries,
+					OgmiosResponse::QueryLedgerStateEraSummaries(eras_summaries),
+				),
+				MockIO::ogmios_request(
+					<span class="string">"https://ogmios.com:7654"</span>,
+					OgmiosRequest::QueryNetworkShelleyGenesis,
+					OgmiosResponse::QueryNetworkShelleyGenesis(shelley_config),
+				),
+			]);
+		<span class="kw">let </span>result = prepare_cardano_params(<span class="kw-2">&amp;</span>ogmios_config, <span class="kw-2">&amp;</span>mock_context);
 		<span class="kw">let </span>params = result.expect(<span class="string">"should succeed"</span>);
-		<span class="macro">assert_eq!</span>(params, cardano_parameters);
+		<span class="macro">assert_eq!</span>(params, expected_cardano_parameters);
 	}
 
-	<span class="kw">fn </span>test_chain_config(cardano_parameters: CardanoParameters) -&gt; Value {
-		<span class="macro">serde_json::json!</span>({
-			<span class="string">"cardano"</span>: {
-				<span class="string">"security_parameter"</span>: cardano_parameters.security_parameter,
-				<span class="string">"active_slots_coeff"</span>: cardano_parameters.active_slots_coeff,
-				<span class="string">"first_epoch_number"</span>: cardano_parameters.first_epoch_number,
-				<span class="string">"first_slot_number"</span>: cardano_parameters.first_slot_number,
-				<span class="string">"epoch_duration_millis"</span>: cardano_parameters.epoch_duration_millis,
-				<span class="string">"first_epoch_timestamp_millis"</span>: cardano_parameters.first_epoch_timestamp_millis
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>preprod_eras_summaries() -&gt; Vec&lt;EraSummary&gt; {
+		<span class="macro">vec!</span>[
+			EraSummary {
+				start: EpochBoundary { time_seconds: <span class="number">0</span>, slot: <span class="number">0</span>, epoch: <span class="number">0 </span>},
+				parameters: EpochParameters { epoch_length: <span class="number">21600</span>, slot_length_millis: <span class="number">20000 </span>},
 			},
-		})
+			EraSummary {
+				start: EpochBoundary { time_seconds: <span class="number">1728000</span>, slot: <span class="number">86400</span>, epoch: <span class="number">4 </span>},
+				parameters: EpochParameters { epoch_length: <span class="number">432000</span>, slot_length_millis: <span class="number">1000 </span>},
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: <span class="number">2160000</span>, slot: <span class="number">518400</span>, epoch: <span class="number">5 </span>},
+				parameters: EpochParameters { epoch_length: <span class="number">432000</span>, slot_length_millis: <span class="number">1000 </span>},
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: <span class="number">2592000</span>, slot: <span class="number">950400</span>, epoch: <span class="number">6 </span>},
+				parameters: EpochParameters { epoch_length: <span class="number">432000</span>, slot_length_millis: <span class="number">1000 </span>},
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: <span class="number">3024000</span>, slot: <span class="number">1382400</span>, epoch: <span class="number">7 </span>},
+				parameters: EpochParameters { epoch_length: <span class="number">432000</span>, slot_length_millis: <span class="number">1000 </span>},
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: <span class="number">5184000</span>, slot: <span class="number">3542400</span>, epoch: <span class="number">12 </span>},
+				parameters: EpochParameters { epoch_length: <span class="number">432000</span>, slot_length_millis: <span class="number">1000 </span>},
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: <span class="number">5184000</span>, slot: <span class="number">3542400</span>, epoch: <span class="number">12 </span>},
+				parameters: EpochParameters { epoch_length: <span class="number">432000</span>, slot_length_millis: <span class="number">1000 </span>},
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: <span class="number">70416000</span>, slot: <span class="number">68774400</span>, epoch: <span class="number">163 </span>},
+				parameters: EpochParameters { epoch_length: <span class="number">432000</span>, slot_length_millis: <span class="number">1000 </span>},
+			},
+		]
+	}
+
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>preprod_shelley_config() -&gt; ShelleyGenesisConfiguration {
+		ShelleyGenesisConfiguration {
+			network_magic: <span class="number">1</span>,
+			security_parameter: <span class="number">2160</span>,
+			active_slots_coefficient: <span class="number">0.05</span>,
+			epoch_length: <span class="number">432000</span>,
+			slot_length_millis: <span class="number">1000</span>,
+			start_time: <span class="number">1654041600</span>,
+		}
+	}
+
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>preview_eras_summaries() -&gt; Vec&lt;EraSummary&gt; {
+		<span class="macro">vec!</span>[
+			EraSummary {
+				start: EpochBoundary { time_seconds: <span class="number">0</span>, slot: <span class="number">0</span>, epoch: <span class="number">0 </span>},
+				parameters: EpochParameters { epoch_length: <span class="number">4320</span>, slot_length_millis: <span class="number">20000 </span>},
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: <span class="number">0</span>, slot: <span class="number">0</span>, epoch: <span class="number">0 </span>},
+				parameters: EpochParameters { epoch_length: <span class="number">86400</span>, slot_length_millis: <span class="number">1000 </span>},
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: <span class="number">0</span>, slot: <span class="number">0</span>, epoch: <span class="number">0 </span>},
+				parameters: EpochParameters { epoch_length: <span class="number">86400</span>, slot_length_millis: <span class="number">1000 </span>},
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: <span class="number">0</span>, slot: <span class="number">0</span>, epoch: <span class="number">0 </span>},
+				parameters: EpochParameters { epoch_length: <span class="number">86400</span>, slot_length_millis: <span class="number">1000 </span>},
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: <span class="number">0</span>, slot: <span class="number">0</span>, epoch: <span class="number">0 </span>},
+				parameters: EpochParameters { epoch_length: <span class="number">86400</span>, slot_length_millis: <span class="number">1000 </span>},
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: <span class="number">259200</span>, slot: <span class="number">259200</span>, epoch: <span class="number">3 </span>},
+				parameters: EpochParameters { epoch_length: <span class="number">86400</span>, slot_length_millis: <span class="number">1000 </span>},
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: <span class="number">55814400</span>, slot: <span class="number">55814400</span>, epoch: <span class="number">646 </span>},
+				parameters: EpochParameters { epoch_length: <span class="number">86400</span>, slot_length_millis: <span class="number">1000 </span>},
+			},
+		]
+	}
+
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>preview_shelley_config() -&gt; ShelleyGenesisConfiguration {
+		ShelleyGenesisConfiguration {
+			network_magic: <span class="number">2</span>,
+			security_parameter: <span class="number">432</span>,
+			active_slots_coefficient: <span class="number">0.05</span>,
+			epoch_length: <span class="number">86400</span>,
+			slot_length_millis: <span class="number">1000</span>,
+			start_time: <span class="number">1666656000</span>,
+		}
 	}
 }
 </code></pre></div></section></main></body></html>

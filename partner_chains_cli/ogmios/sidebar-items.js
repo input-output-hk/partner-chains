@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["OgmiosRequest","OgmiosResponse"],"fn":["ogmios_request"],"struct":["EpochBoundary","EpochParameters","EraSummary","ShelleyGenesisConfiguration"]};
