@@ -1,0 +1,26 @@
+{
+    "stack_config": {
+        "ogmios_host": "ogmios",
+        "ogmios_port": 1337,
+        "kupo_host": "kupo",
+        "kupo_port": 1442,
+        "tools_shell": "/bin/bash",
+        "tools": {
+            "cardano_cli": {
+                "cli": "cardano-cli",
+                "shell": "docker exec cardano-node-1 bash -c"
+            },
+            "sidechain_main_cli": {
+                "cli": "./pc-contracts-cli",
+                "shell": "docker exec pc-contracts-cli bash -c"
+            },
+            "generate_signatures_cli": {
+                "cli": "./partner-chains-node",
+                "shell": "docker exec pc-contracts-cli bash -c"
+            },
+            "bech32": {
+                "cli": "bech32"
+            }
+        }
+    }
+}

@@ -1,0 +1,5 @@
+{
+    "stack_config": {
+        "tools_host": "binary-host-service.sc.svc.cluster.local"
+    }
+}
