@@ -18,8 +18,7 @@ sp-blockchain = { workspace = true }
 
 sp-sidechain = { workspace = true, features = ['std'] }
 sidechain-domain = { workspace = true, features = ['std'] }
-sidechain-slots = { workspace = true, features = ['std'] }
-main-chain-follower-api = { workspace = true, features = ['std', 'block-source'] }
+sidechain-slots = { workspace = true, features = ['std', 'serde'] }
 serde_json = { workspace = true, features = ['std'] }
 sp-timestamp = { workspace = true, features = ['std'] }
 hex = { workspace = true, features = ['std'] }
@@ -35,3 +34,4 @@ sp-consensus-slots = { workspace = true, features = ["std"] }
 
 [features]
 default = []
+mock = []

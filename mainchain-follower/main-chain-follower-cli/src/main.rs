@@ -1,13 +1,13 @@
-use std::error::Error;
-
+use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 use clap::Parser;
 use db_sync_follower::{
 	block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig},
 	candidates::CandidatesDataSourceImpl,
 	data_sources::{read_mc_epoch_config, PgPool},
 };
-use main_chain_follower_api::{common::*, *};
+use main_chain_follower_api::common::*;
 use sidechain_domain::*;
+use std::error::Error;
 
 type Result<T> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
 
@@ -94,7 +94,6 @@ mod data_source {
 			pool().await?,
 			DbSyncBlockDataSourceConfig::from_env()?,
 			&read_mc_epoch_config()?,
-			None,
 		))
 	}
 

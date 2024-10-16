@@ -114,7 +114,7 @@ fn get_registrations_response_map(
 
 pub(crate) async fn get_candidates_for_epoch(
 	mainchain_epoch: McEpochNumber,
-	candidate_data_source: &(dyn CandidateDataSource + Send + Sync),
+	candidate_data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
 	committee_candidate_address: MainchainAddress,
 ) -> Result<Vec<CandidateRegistrations>, String> {
 	candidate_data_source

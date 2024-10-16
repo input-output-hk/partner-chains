@@ -15,3 +15,4 @@ tokio = { workspace = true }
 env_logger = { workspace = true }
 log = { workspace = true }
 sidechain-domain = { workspace = true }
+authority-selection-inherents = { workspace = true }

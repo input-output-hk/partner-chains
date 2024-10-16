@@ -10,8 +10,12 @@ pub mod metrics;
 pub mod block;
 #[cfg(feature = "candidate-source")]
 pub mod candidates;
+#[cfg(feature = "mc-hash")]
+pub mod mc_hash;
 #[cfg(feature = "native-token")]
 pub mod native_token;
+#[cfg(feature = "sidechain-rpc")]
+pub mod sidechain_rpc;
 
 pub struct SqlxError(sqlx::Error);
 
@@ -24,6 +28,12 @@ impl From<sqlx::Error> for SqlxError {
 impl From<SqlxError> for DataSourceError {
 	fn from(e: SqlxError) -> Self {
 		DataSourceError::InternalDataSourceError(e.0.to_string())
+	}
+}
+
+impl From<SqlxError> for Box<dyn std::error::Error + Send + Sync> {
+	fn from(e: SqlxError) -> Self {
+		e.0.into()
 	}
 }
 

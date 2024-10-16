@@ -101,7 +101,7 @@ where
 		SidechainRpc::new(
 			client.clone(),
 			MainchainEpochConfig::read_from_env().unwrap(),
-			main_chain_follower_data_sources.block.clone(),
+			main_chain_follower_data_sources.sidechain_rpc.clone(),
 			time_source.clone(),
 		)
 		.into_rpc(),
@@ -127,7 +127,7 @@ where
 	module.merge(
 		SessionValidatorManagementRpc::new(Arc::new(SessionValidatorManagementQuery::new(
 			client.clone(),
-			main_chain_follower_data_sources.candidate.clone(),
+			main_chain_follower_data_sources.authority_selection.clone(),
 		)))
 		.into_rpc(),
 	)?;

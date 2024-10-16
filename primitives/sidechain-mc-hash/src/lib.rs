@@ -1,8 +1,6 @@
 use crate::McHashInherentError::StableBlockNotFound;
-use main_chain_follower_api::{
-	block::MainchainBlock, common::Timestamp as McTimestamp, BlockDataSource, DataSourceError,
-};
-use sidechain_domain::{byte_string::ByteString, McBlockHash, McBlockNumber, McEpochNumber};
+use async_trait::async_trait;
+use sidechain_domain::{byte_string::ByteString, *};
 use sp_blockchain::HeaderBackend;
 use sp_consensus_slots::{Slot, SlotDuration};
 use sp_inherents::{InherentData, InherentDataProvider, InherentIdentifier};
@@ -25,10 +23,10 @@ pub struct McHashInherentDataProvider {
 	mc_block: MainchainBlock,
 }
 
-#[derive(Debug, PartialEq, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum McHashInherentError {
 	#[error("{0}")]
-	DataSourceError(#[from] DataSourceError),
+	DataSourceError(Box<dyn Error + Send + Sync>),
 	#[error("Stable block not found at {0}. It means that the main chain wasn't producing blocks for a long time.")]
 	StableBlockNotFound(Timestamp),
 	#[error("Slot represents a timestamp bigger than of u64::MAX")]
@@ -59,17 +57,49 @@ impl Deref for McHashInherentDataProvider {
 	}
 }
 
+/// Queries about Cardano Blocks
+#[async_trait]
+pub trait McHashDataSource {
+	/// Query for the currently latest stable block with timestamp within the `allowable_range(reference_timestamp) = [reference_timestamp - seconds(max_slot_boundary), reference_timestamp - seconds(slot_boundary)]`
+	/// where `max_slot_boundary` is `3 * security_parameter/active_slot_coeff` (`3k/f`) and `min_slot_boundary` is `security_parameter/active_slot_coeff` (`k/f`).
+	/// # Arguments
+	/// * `reference_timestamp` - restricts the timestamps of MC blocks
+	///
+	/// # Returns
+	/// * `Some(block)` - the latest stable block, with timestamp in the allowable range
+	/// * `None` - none of the blocks is stable, and with timestamp valid in according to `reference_timestamp`
+	async fn get_latest_stable_block_for(
+		&self,
+		reference_timestamp: Timestamp,
+	) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>>;
+
+	/// Find block by hash, filtered by block timestamp being in `allowable_range(reference_timestamp)`
+	/// # Arguments
+	/// * `hash` - the hash of the block
+	/// * `reference_timestamp` - restricts the timestamp of the MC block
+	///
+	/// # Returns
+	/// * `Some(block)` - the block with given hash, with timestamp in the allowable range
+	/// * `None` - no stable block with given hash and timestamp in the allowable range exists
+	async fn get_stable_block_for(
+		&self,
+		hash: McBlockHash,
+		reference_timestamp: Timestamp,
+	) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>>;
+}
+
 impl McHashInherentDataProvider {
 	pub async fn new_proposal(
-		data_source: &(dyn BlockDataSource + Send + Sync),
+		data_source: &(dyn McHashDataSource + Send + Sync),
 		slot: Slot,
 		slot_duration: SlotDuration,
 	) -> Result<Self, McHashInherentError> {
 		let slot_start_timestamp =
 			slot.timestamp(slot_duration).ok_or(McHashInherentError::SlotTooBig)?;
 		let mc_block = data_source
-			.get_latest_stable_block_for(McTimestamp(slot_start_timestamp.as_millis()))
-			.await?
+			.get_latest_stable_block_for(slot_start_timestamp)
+			.await
+			.map_err(|err| McHashInherentError::DataSourceError(err))?
 			.ok_or(StableBlockNotFound(slot_start_timestamp))?;
 
 		Ok(Self { mc_block })
@@ -81,7 +111,7 @@ impl McHashInherentDataProvider {
 		verified_block_slot: Slot,
 		mc_state_reference_hash: McBlockHash,
 		slot_duration: SlotDuration,
-		block_source: &(dyn BlockDataSource + Send + Sync),
+		block_source: &(dyn McHashDataSource + Send + Sync),
 	) -> Result<Self, McHashInherentError>
 	where
 		Header: HeaderT,
@@ -134,15 +164,15 @@ async fn get_mc_state_reference(
 	verified_block_slot: Slot,
 	verified_block_mc_hash: McBlockHash,
 	slot_duration: SlotDuration,
-	data_source: &(dyn BlockDataSource + Send + Sync),
+	data_source: &(dyn McHashDataSource + Send + Sync),
 ) -> Result<MainchainBlock, McHashInherentError> {
 	let timestamp = verified_block_slot
 		.timestamp(slot_duration)
 		.ok_or(McHashInherentError::SlotTooBig)?;
 	data_source
-		.get_stable_block_for(verified_block_mc_hash.clone(), McTimestamp(timestamp.as_millis()))
+		.get_stable_block_for(verified_block_mc_hash.clone(), timestamp)
 		.await
-		.map_err(McHashInherentError::DataSourceError)?
+		.map_err(|err| McHashInherentError::DataSourceError(err))?
 		.ok_or(McHashInherentError::McStateReferenceInvalid(
 			verified_block_mc_hash,
 			verified_block_slot,
@@ -245,6 +275,7 @@ where
 #[cfg(any(feature = "mock", test))]
 pub mod mock {
 	use super::*;
+	use derive_new::new;
 
 	pub struct MockMcHashInherentDataProvider {
 		pub mc_hash: McBlockHash,
@@ -265,6 +296,35 @@ pub mod mock {
 			_error: &[u8],
 		) -> Option<Result<(), sp_inherents::Error>> {
 			None
+		}
+	}
+
+	#[derive(new, Clone)]
+	pub struct MockMcHashDataSource {
+		pub stable_blocks: Vec<MainchainBlock>,
+	}
+
+	impl From<Vec<MainchainBlock>> for MockMcHashDataSource {
+		fn from(stable_blocks: Vec<MainchainBlock>) -> Self {
+			Self { stable_blocks }
+		}
+	}
+
+	#[async_trait]
+	impl McHashDataSource for MockMcHashDataSource {
+		async fn get_latest_stable_block_for(
+			&self,
+			_reference_timestamp: Timestamp,
+		) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
+			Ok(self.stable_blocks.last().cloned())
+		}
+
+		async fn get_stable_block_for(
+			&self,
+			hash: McBlockHash,
+			_reference_timestamp: Timestamp,
+		) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
+			Ok(self.stable_blocks.iter().find(|b| b.hash == hash).cloned())
 		}
 	}
 }
