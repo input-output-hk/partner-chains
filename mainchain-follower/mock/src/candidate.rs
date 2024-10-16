@@ -162,12 +162,12 @@ impl MockRegistrationsConfig {
 	}
 }
 
-pub struct MockCandidateDataSource {
+pub struct AuthoritySelectionDataSourceMock {
 	pub registrations_data: MockRegistrationsConfig,
 	pub mc_epoch_config: MainchainEpochConfig,
 }
 
-impl MockCandidateDataSource {
+impl AuthoritySelectionDataSourceMock {
 	pub fn epoch_data(&self, epoch_number: u32) -> MockEpochCandidates {
 		let rotation_no: usize =
 			epoch_number as usize % (self.registrations_data.epoch_rotation.len());
@@ -177,12 +177,12 @@ impl MockCandidateDataSource {
 	pub fn new_from_env() -> Result<Self> {
 		let registrations_data = MockRegistrationsConfig::read()?;
 		let mc_epoch_config = MainchainEpochConfig::read_from_env()?;
-		Ok(MockCandidateDataSource { registrations_data, mc_epoch_config })
+		Ok(AuthoritySelectionDataSourceMock { registrations_data, mc_epoch_config })
 	}
 }
 
 #[async_trait]
-impl AuthoritySelectionDataSource for MockCandidateDataSource {
+impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceMock {
 	async fn get_ariadne_parameters(
 		&self,
 		epoch_number: McEpochNumber,
