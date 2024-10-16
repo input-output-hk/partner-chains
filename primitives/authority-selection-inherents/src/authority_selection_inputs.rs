@@ -1,15 +1,7 @@
 use parity_scale_codec::{Decode, Encode};
 use plutus::*;
 use scale_info::TypeInfo;
-use sidechain_domain::{
-	CandidateRegistrations, DParameter, EpochNonce, PermissionedCandidateData, PolicyId,
-};
-
-#[cfg(feature = "std")]
-use {
-	main_chain_follower_api::candidate::CandidateDataSource,
-	main_chain_follower_api::DataSourceError, sidechain_domain::McEpochNumber,
-};
+use sidechain_domain::*;
 
 /// The part of data for selection of authorities that comes from the main chain.
 /// It is unfiltered, so the selection algorithm should filter out invalid candidates.
@@ -26,17 +18,79 @@ pub struct AuthoritySelectionInputs {
 #[derive(Debug, thiserror::Error)]
 pub enum AuthoritySelectionInputsCreationError {
 	#[cfg_attr(feature = "std", error("Failed to get Ariadne parameters for epoch: {0}, D-parameter: {1:?}, permissioned candidates: {2:?}: {3}"))]
-	AriadneParametersQuery(McEpochNumber, PolicyId, PolicyId, DataSourceError),
+	AriadneParametersQuery(
+		McEpochNumber,
+		PolicyId,
+		PolicyId,
+		Box<dyn std::error::Error + Send + Sync>,
+	),
 	#[cfg_attr(feature = "std", error("Failed to get registered candidates for epoch: {0}, committee candidate address: {1}: {2}."))]
-	GetCandidatesQuery(McEpochNumber, String, DataSourceError),
+	GetCandidatesQuery(McEpochNumber, String, Box<dyn std::error::Error + Send + Sync>),
 	#[cfg_attr(feature = "std", error("Failed to get epoch nonce for epoch: {0}: {1}."))]
-	GetEpochNonceQuery(McEpochNumber, DataSourceError),
+	GetEpochNonceQuery(McEpochNumber, Box<dyn std::error::Error + Send + Sync>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct RawPermissionedCandidateData {
+	pub sidechain_public_key: SidechainPublicKey,
+	pub aura_public_key: AuraPublicKey,
+	pub grandpa_public_key: GrandpaPublicKey,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct AriadneParameters {
+	pub d_parameter: DParameter,
+	pub permissioned_candidates: Vec<RawPermissionedCandidateData>,
+}
+
+/// Queries about the Authority Candidates
+#[cfg(feature = "std")]
+#[async_trait::async_trait]
+pub trait AuthoritySelectionDataSource {
+	/// Returns D-parameter and list of permissioned candidates that is effective for the given epoch.
+	/// The data from the latest block of `data_epoch(epoch)` will be used if available, otherwise returns data at the latest block of the chain.
+	async fn get_ariadne_parameters(
+		&self,
+		epoch_number: McEpochNumber,
+		d_parameter: PolicyId,
+		permissioned_candidates: PolicyId,
+	) -> Result<AriadneParameters, Box<dyn std::error::Error + Send + Sync>>;
+
+	/// Returns the list of registrations that is effective for the given epoch.
+	/// The data from the latest block of `data_epoch(epoch)` will be used if available, otherwise returns data at the latest block of the chain.
+	/// Each item is a list of one candidate registrations.
+	async fn get_candidates(
+		&self,
+		epoch: McEpochNumber,
+		committee_candidate_address: MainchainAddress,
+	) -> Result<Vec<CandidateRegistrations>, Box<dyn std::error::Error + Send + Sync>>;
+
+	/// Returns Cardano Epoch Nonce. None, if the nonce for given epoch is not known yet.
+	async fn get_epoch_nonce(
+		&self,
+		epoch: McEpochNumber,
+	) -> Result<Option<EpochNonce>, Box<dyn std::error::Error + Send + Sync>>;
+
+	///
+	/// # Arguments
+	///
+	/// * `for_epoch`: main chain epoch number during which candidate data is meant to be used
+	///
+	/// returns: Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>> - data source methods called with `for_epoch` will query only for data which was stored on main chain in the returned epoch or earlier
+	///
+	///
+	async fn data_epoch(
+		&self,
+		for_epoch: McEpochNumber,
+	) -> Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>>;
 }
 
 impl AuthoritySelectionInputs {
 	#[cfg(feature = "std")]
 	pub async fn from_mc_data(
-		candidate_data_source: &(dyn CandidateDataSource + Send + Sync),
+		candidate_data_source: &(dyn AuthoritySelectionDataSource + Send + Sync),
 		for_epoch: McEpochNumber,
 		scripts: sp_session_validator_management::MainChainScripts,
 	) -> Result<Self, AuthoritySelectionInputsCreationError> {

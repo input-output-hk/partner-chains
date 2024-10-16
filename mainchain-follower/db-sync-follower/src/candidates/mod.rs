@@ -3,11 +3,10 @@ use crate::db_model::{
 };
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
-use async_trait::async_trait;
+use authority_selection_inherents::authority_selection_inputs::*;
 use itertools::Itertools;
 use log::error;
-use main_chain_follower_api::candidate::{AriadneParameters, RawPermissionedCandidateData};
-use main_chain_follower_api::{CandidateDataSource, DataSourceError::*, Result};
+use main_chain_follower_api::DataSourceError::*;
 use num_traits::ToPrimitive;
 use plutus::Datum;
 use plutus::Datum::*;
@@ -96,13 +95,13 @@ pub struct CandidatesDataSourceImpl {
 }
 
 observed_async_trait!(
-impl CandidateDataSource for CandidatesDataSourceImpl {
+impl AuthoritySelectionDataSource for CandidatesDataSourceImpl {
 	async fn get_ariadne_parameters(
 			&self,
 			epoch: McEpochNumber,
 			d_parameter_policy: PolicyId,
 			permissioned_candidate_policy: PolicyId
-		) -> Result<AriadneParameters> {
+	) -> Result<AriadneParameters, Box<dyn std::error::Error + Send + Sync>> {
 		let epoch = EpochNumber::from(self.get_epoch_of_data_storage(epoch)?);
 		let d_parameter_asset = Asset::new(d_parameter_policy);
 		let permissioned_candidate_asset = Asset::new(permissioned_candidate_policy);
@@ -138,7 +137,7 @@ impl CandidateDataSource for CandidatesDataSourceImpl {
 			&self,
 			epoch: McEpochNumber,
 			committee_candidate_address: MainchainAddress
-		)-> Result<Vec<CandidateRegistrations>> {
+	)-> Result<Vec<CandidateRegistrations>, Box<dyn std::error::Error + Send + Sync>> {
 		let epoch = EpochNumber::from(self.get_epoch_of_data_storage(epoch)?);
 		let candidates = self.get_registered_candidates(epoch, committee_candidate_address).await?;
 		let stake_map = Self::make_stake_map(db_model::get_stake_distribution(&self.pool, epoch).await?);
@@ -151,13 +150,13 @@ impl CandidateDataSource for CandidatesDataSourceImpl {
 		}).collect())
 	}
 
-	async fn get_epoch_nonce(&self, epoch: McEpochNumber) -> Result<Option<EpochNonce>> {
+	async fn get_epoch_nonce(&self, epoch: McEpochNumber) -> Result<Option<EpochNonce>, Box<dyn std::error::Error + Send + Sync>> {
 		let epoch = self.get_epoch_of_data_storage(epoch)?;
 		let nonce = db_model::get_epoch_nonce(&self.pool, EpochNumber(epoch.0)).await?;
 		Ok(nonce.map(|n| EpochNonce(n.0)))
 	}
 
-	async fn data_epoch(&self, for_epoch: McEpochNumber) -> Result<McEpochNumber> {
+	async fn data_epoch(&self, for_epoch: McEpochNumber) -> Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>> {
 		self.get_epoch_of_data_storage(for_epoch)
 	}
 });
@@ -166,7 +165,7 @@ impl CandidatesDataSourceImpl {
 	pub async fn new(
 		pool: PgPool,
 		metrics_opt: Option<McFollowerMetrics>,
-	) -> Result<CandidatesDataSourceImpl> {
+	) -> Result<CandidatesDataSourceImpl, Box<dyn std::error::Error + Send + Sync>> {
 		db_model::create_idx_ma_tx_out_ident(&pool).await?;
 		Ok(Self { pool, metrics_opt })
 	}
@@ -179,7 +178,10 @@ impl CandidatesDataSourceImpl {
 	}
 
 	/// Registrations state up to this block are considered as "active", after it - as "pending".
-	async fn get_last_block_for_epoch(&self, epoch: EpochNumber) -> Result<Option<BlockNumber>> {
+	async fn get_last_block_for_epoch(
+		&self,
+		epoch: EpochNumber,
+	) -> Result<Option<BlockNumber>, Box<dyn std::error::Error + Send + Sync>> {
 		let block_option = db_model::get_latest_block_for_epoch(&self.pool, epoch).await?;
 		Ok(block_option.map(|b| b.block_no))
 	}
@@ -188,7 +190,7 @@ impl CandidatesDataSourceImpl {
 		&self,
 		epoch: EpochNumber,
 		committee_candidate_address: MainchainAddress,
-	) -> Result<Vec<RegisteredCandidate>> {
+	) -> Result<Vec<RegisteredCandidate>, Box<dyn std::error::Error + Send + Sync>> {
 		let registrations_block_for_epoch = self.get_last_block_for_epoch(epoch).await?;
 		let address: Address = Address(committee_candidate_address.to_string());
 		let active_utxos = match registrations_block_for_epoch {
@@ -248,7 +250,7 @@ impl CandidatesDataSourceImpl {
 	fn convert_utxos_to_candidates(
 		&self,
 		outputs: &[MainchainTxOutput],
-	) -> Result<Vec<RegisteredCandidate>> {
+	) -> Result<Vec<RegisteredCandidate>, Box<dyn std::error::Error + Send + Sync>> {
 		Self::parse_candidates(outputs)
 			.into_iter()
 			.map(|c| {
@@ -311,7 +313,9 @@ impl CandidatesDataSourceImpl {
 	}
 
 	// Datum decoders
-	fn decode_d_parameter_datum(datum: &Datum) -> Result<DParameter> {
+	fn decode_d_parameter_datum(
+		datum: &Datum,
+	) -> Result<DParameter, Box<dyn std::error::Error + Send + Sync>> {
 		let d_parameter = match datum {
 			ListDatum(items) => match items.first().zip(items.get(1)) {
 				Some((IntegerDatum(p), IntegerDatum(t))) => {
@@ -328,13 +332,16 @@ impl CandidatesDataSourceImpl {
 		if d_parameter.is_err() {
 			error!("Could not decode {:?} to DParameter. Expected [u16, u16].", datum.clone());
 		}
-		d_parameter
+		Ok(d_parameter?)
 	}
 
 	fn decode_permissioned_candidates_datum(
 		datum: &Datum,
-	) -> Result<Vec<RawPermissionedCandidateData>> {
-		let permissioned_candidates: Result<Vec<RawPermissionedCandidateData>> = match datum {
+	) -> Result<Vec<RawPermissionedCandidateData>, Box<dyn std::error::Error + Send + Sync>> {
+		let permissioned_candidates: Result<
+			Vec<RawPermissionedCandidateData>,
+			Box<dyn std::error::Error + Send + Sync>,
+		> = match datum {
 			ListDatum(list_datums) => list_datums
 				.iter()
 				.map(|keys_datum| match keys_datum {
@@ -353,10 +360,10 @@ impl CandidatesDataSourceImpl {
 				.collect::<Option<Vec<RawPermissionedCandidateData>>>(),
 			_ => None,
 		}
-		.ok_or(DatumDecodeError {
+		.ok_or(Box::new(DatumDecodeError {
 			datum: datum.clone(),
 			to: "RawPermissionedCandidateData".to_string(),
-		});
+		}));
 
 		if permissioned_candidates.is_err() {
 			error!("Could not decode {:?} to Permissioned candidates datum. Expected [[ByteString, ByteString, ByteString]].", datum.clone());
@@ -446,12 +453,13 @@ impl CandidatesDataSourceImpl {
 	fn get_epoch_of_data_storage(
 		&self,
 		epoch_of_data_usage: McEpochNumber,
-	) -> Result<McEpochNumber> {
+	) -> Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>> {
 		if epoch_of_data_usage.0 < 2 {
 			Err(BadRequest(format!(
 				"Minimum supported epoch of data usage is 2, but {} was provided",
 				epoch_of_data_usage.0
-			)))
+			))
+			.into())
 		} else {
 			Ok(McEpochNumber(epoch_of_data_usage.0 - 2))
 		}

@@ -120,8 +120,6 @@ mod get_registration_tests {
 	use authority_selection_inherents::filter_invalid_candidates::{
 		PermissionedCandidateDataError, RegistrationDataError, StakeError,
 	};
-	use main_chain_follower_api::candidate::RawPermissionedCandidateData;
-	use main_chain_follower_api::CandidateDataSource;
 
 	const SEED: [u8; 32] = [7u8; 32];
 	const SEED2: [u8; 32] = [8u8; 32];
@@ -153,7 +151,8 @@ mod get_registration_tests {
 		let (candidate, registration) = get_first_candidate_and_first_registration(&response);
 
 		let client = Arc::new(TestApi {});
-		let api = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source_mock));
+		let api =
+			SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source_mock));
 
 		let registrations = api
 			.get_registrations(support_epoch, candidate.mainchain_pub_key().clone())
@@ -228,7 +227,8 @@ mod get_registration_tests {
 		invalidate_registration(registration);
 
 		let client = Arc::new(TestApi {});
-		let api = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source_mock));
+		let api =
+			SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source_mock));
 
 		let registrations = api
 			.get_registrations(supported_epoch, mainchain_pub_key_clone.clone())
@@ -372,7 +372,8 @@ mod get_registration_tests {
 		};
 
 		let client = Arc::new(TestApi {});
-		let api = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source_mock));
+		let api =
+			SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source_mock));
 
 		let ariadne_parameters = api.get_ariadne_parameters(McEpochNumber(1)).await.unwrap();
 		assert_eq!(ariadne_parameters, expected);
@@ -411,7 +412,8 @@ mod get_registration_tests {
 				Some(invalid_permissioned_candidates.clone()),
 			]);
 		let client = Arc::new(TestApi {});
-		let api = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source_mock));
+		let api =
+			SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source_mock));
 		let ariadne_parameters = api.get_ariadne_parameters(McEpochNumber(1)).await.unwrap();
 
 		for permissioned_candidate in ariadne_parameters.permissioned_candidates.clone() {

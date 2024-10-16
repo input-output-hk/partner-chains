@@ -6,7 +6,7 @@ use chrono::{DateTime, NaiveDateTime, TimeDelta};
 use derive_new::new;
 use figment::{providers::Env, Figment};
 use log::{debug, info};
-use main_chain_follower_api::{common::Timestamp, DataSourceError::*, Result};
+use main_chain_follower_api::{common::Timestamp, DataSourceError::*};
 use serde::Deserialize;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_domain::*;
@@ -35,17 +35,19 @@ pub struct BlockDataSourceImpl {
 }
 
 impl BlockDataSourceImpl {
-	pub async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
+	pub async fn get_latest_block_info(
+		&self,
+	) -> Result<MainchainBlock, Box<dyn std::error::Error + Send + Sync>> {
 		db_model::get_latest_block_info(&self.pool)
 			.await?
 			.map(From::from)
-			.ok_or(ExpectedDataNotFound("No latest block on chain.".to_string()))
+			.ok_or(ExpectedDataNotFound("No latest block on chain.".to_string()).into())
 	}
 
 	pub async fn get_latest_stable_block_for(
 		&self,
 		reference_timestamp: Timestamp,
-	) -> Result<Option<MainchainBlock>> {
+	) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
 		let reference_timestamp = BlockDataSourceImpl::timestamp_to_db_type(reference_timestamp)?;
 		let latest = self.get_latest_block_info().await?;
 		let offset = self.security_parameter + self.block_stability_margin;
@@ -58,7 +60,7 @@ impl BlockDataSourceImpl {
 		&self,
 		hash: McBlockHash,
 		reference_timestamp: Timestamp,
-	) -> Result<Option<MainchainBlock>> {
+	) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
 		let reference_timestamp = BlockDataSourceImpl::timestamp_to_db_type(reference_timestamp)?;
 		self.get_stable_block_by_hash(hash, reference_timestamp).await
 	}
@@ -122,7 +124,7 @@ impl BlockDataSourceImpl {
 		&self,
 		max_block: BlockNumber,
 		reference_timestamp: NaiveDateTime,
-	) -> Result<Option<Block>> {
+	) -> Result<Option<Block>, Box<dyn std::error::Error + Send + Sync>> {
 		let min_time = self.min_block_allowed_time(reference_timestamp);
 		let min_slot = self.date_time_to_slot(min_time)?;
 		let max_time = self.max_allowed_block_time(reference_timestamp);
@@ -153,7 +155,7 @@ impl BlockDataSourceImpl {
 		&self,
 		hash: McBlockHash,
 		reference_timestamp: NaiveDateTime,
-	) -> Result<Option<MainchainBlock>> {
+	) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
 		if let Some(block) =
 			self.get_stable_block_by_hash_from_cache(hash.clone(), reference_timestamp)
 		{
@@ -191,7 +193,7 @@ impl BlockDataSourceImpl {
 		&self,
 		hash: McBlockHash,
 		reference_timestamp: NaiveDateTime,
-	) -> Result<Option<Block>> {
+	) -> Result<Option<Block>, Box<dyn std::error::Error + Send + Sync>> {
 		let block = db_model::get_block_by_hash(&self.pool, hash).await?;
 		let latest_block = db_model::get_latest_block_info(&self.pool).await?;
 		Ok(block
@@ -204,7 +206,10 @@ impl BlockDataSourceImpl {
 	}
 
 	/// Caches stable blocks for lookup by hash.
-	async fn fill_cache(&self, from_block: &Block) -> Result<()> {
+	async fn fill_cache(
+		&self,
+		from_block: &Block,
+	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 		let from_block_no = from_block.block_no;
 		let size = u32::from(self.cache_size);
 		let latest_block =
@@ -230,7 +235,10 @@ impl BlockDataSourceImpl {
 		Ok(())
 	}
 
-	fn date_time_to_slot(&self, dt: NaiveDateTime) -> Result<SlotNumber> {
+	fn date_time_to_slot(
+		&self,
+		dt: NaiveDateTime,
+	) -> Result<SlotNumber, Box<dyn std::error::Error + Send + Sync>> {
 		let millis: u64 = dt
 			.and_utc()
 			.timestamp_millis()
@@ -244,7 +252,9 @@ impl BlockDataSourceImpl {
 		Ok(SlotNumber(slot))
 	}
 
-	fn timestamp_to_db_type(timestamp: Timestamp) -> Result<NaiveDateTime> {
+	fn timestamp_to_db_type(
+		timestamp: Timestamp,
+	) -> Result<NaiveDateTime, Box<dyn std::error::Error + Send + Sync>> {
 		let millis: Option<i64> = timestamp.0.try_into().ok();
 		let dt = millis
 			.and_then(DateTime::from_timestamp_millis)

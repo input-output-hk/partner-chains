@@ -3,11 +3,11 @@ pub mod get_registrations;
 pub mod types;
 
 use async_trait::async_trait;
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
+use authority_selection_inherents::authority_selection_inputs::{
+	AuthoritySelectionDataSource, AuthoritySelectionInputs, RawPermissionedCandidateData,
+};
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use derive_new::new;
-use main_chain_follower_api::candidate::RawPermissionedCandidateData;
-use main_chain_follower_api::CandidateDataSource;
 use plutus::ToDatum;
 use sidechain_block_search::{predicates::AnyBlockInEpoch, FindSidechainBlock, SidechainInfo};
 use sidechain_domain::{MainchainPublicKey, McEpochNumber, ScEpochNumber};
@@ -54,7 +54,7 @@ pub struct SessionValidatorManagementQuery<
 	SidechainParams: parity_scale_codec::Decode + ToDatum + Clone + Send + Sync + 'static,
 > {
 	client: Arc<C>,
-	candidate_data_source: Arc<dyn CandidateDataSource + Send + Sync>,
+	candidate_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
 	_marker: std::marker::PhantomData<(Block, SessionKeys, CrossChainPublic, SidechainParams)>,
 }
 

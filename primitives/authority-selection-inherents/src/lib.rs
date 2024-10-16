@@ -11,3 +11,6 @@ pub mod select_authorities;
 mod runtime_api_mock;
 #[cfg(test)]
 mod tests;
+
+#[cfg(any(test, feature = "mock"))]
+pub mod mock;

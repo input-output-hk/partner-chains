@@ -31,6 +31,12 @@ impl From<SqlxError> for DataSourceError {
 	}
 }
 
+impl From<SqlxError> for Box<dyn std::error::Error + Send + Sync> {
+	fn from(e: SqlxError) -> Self {
+		e.0.into()
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use ctor::{ctor, dtor};

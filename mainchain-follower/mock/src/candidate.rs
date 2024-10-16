@@ -1,7 +1,7 @@
 use async_trait::async_trait;
+use authority_selection_inherents::authority_selection_inputs::*;
 use hex_literal::hex;
 use log::{debug, info};
-use main_chain_follower_api::{candidate::*, Result};
 use serde::*;
 use sidechain_domain::byte_string::*;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
@@ -185,13 +185,13 @@ impl MockCandidateDataSource {
 }
 
 #[async_trait]
-impl CandidateDataSource for MockCandidateDataSource {
+impl AuthoritySelectionDataSource for MockCandidateDataSource {
 	async fn get_ariadne_parameters(
 		&self,
 		epoch_number: McEpochNumber,
 		_d_parameter_validator: PolicyId,
 		_permissioned_candidates_validator: PolicyId,
-	) -> Result<AriadneParameters> {
+	) -> Result<AriadneParameters, Box<dyn std::error::Error + Send + Sync>> {
 		let epoch_number = epoch_number.0;
 		debug!("Received get_d_parameter_for_epoch({epoch_number}) request");
 
@@ -217,7 +217,7 @@ impl CandidateDataSource for MockCandidateDataSource {
 		&self,
 		epoch: McEpochNumber,
 		_committee_candidate_address: MainchainAddress,
-	) -> Result<Vec<CandidateRegistrations>> {
+	) -> Result<Vec<CandidateRegistrations>, Box<dyn std::error::Error + Send + Sync>> {
 		let epoch_number = epoch.0;
 		debug!("Received get_candidates({epoch_number}) request");
 
@@ -232,7 +232,10 @@ impl CandidateDataSource for MockCandidateDataSource {
 		Ok(registrations.into_iter().map(CandidateRegistrations::from).collect())
 	}
 
-	async fn get_epoch_nonce(&self, epoch_number: McEpochNumber) -> Result<Option<EpochNonce>> {
+	async fn get_epoch_nonce(
+		&self,
+		epoch_number: McEpochNumber,
+	) -> Result<Option<EpochNonce>, Box<dyn std::error::Error + Send + Sync>> {
 		let epoch_number = epoch_number.0;
 		debug!("Received get_epoch_nonce({epoch_number}) request");
 		let epoch_conf = self.epoch_data(epoch_number);
@@ -244,7 +247,10 @@ impl CandidateDataSource for MockCandidateDataSource {
 		Ok(Some(EpochNonce(epoch_conf.nonce.clone().0)))
 	}
 
-	async fn data_epoch(&self, for_epoch: McEpochNumber) -> Result<McEpochNumber> {
+	async fn data_epoch(
+		&self,
+		for_epoch: McEpochNumber,
+	) -> Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>> {
 		Ok(McEpochNumber(for_epoch.0 - 2))
 	}
 }
