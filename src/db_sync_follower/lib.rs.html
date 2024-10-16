@@ -58,6 +58,10 @@
 <a href="#58" id="58">58</a>
 <a href="#59" id="59">59</a>
 <a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
+<a href="#62" id="62">62</a>
+<a href="#63" id="63">63</a>
+<a href="#64" id="64">64</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Provides implementations of Data Sources that read from db-sync postgres
 </span><span class="kw">use </span>main_chain_follower_api::DataSourceError;
 
@@ -70,8 +74,12 @@
 </span><span class="kw">pub mod </span>block;
 <span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
 </span><span class="kw">pub mod </span>candidates;
+<span class="attr">#[cfg(feature = <span class="string">"mc-hash"</span>)]
+</span><span class="kw">pub mod </span>mc_hash;
 <span class="attr">#[cfg(feature = <span class="string">"native-token"</span>)]
 </span><span class="kw">pub mod </span>native_token;
+<span class="attr">#[cfg(feature = <span class="string">"sidechain-rpc"</span>)]
+</span><span class="kw">pub mod </span>sidechain_rpc;
 
 <span class="kw">pub struct </span>SqlxError(sqlx::Error);
 

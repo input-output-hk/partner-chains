@@ -108,6 +108,14 @@
 <a href="#108" id="108">108</a>
 <a href="#109" id="109">109</a>
 <a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
 </pre></div><pre class="rust"><code><span class="kw">pub mod </span>types;
 
 <span class="kw">use </span>derive_new::new;
@@ -116,8 +124,8 @@
 	proc_macros::rpc,
 	types::{error::ErrorCode, ErrorObject, ErrorObjectOwned},
 };
-<span class="kw">use </span>main_chain_follower_api::BlockDataSource;
 <span class="kw">use </span>sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
+<span class="kw">use </span>sidechain_domain::MainchainBlock;
 <span class="kw">use </span>sidechain_slots::SlotApi;
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_core::offchain::Timestamp;
@@ -130,6 +138,9 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
 
+<span class="attr">#[cfg(any(test, feature = <span class="string">"mock"</span>))]
+</span><span class="kw">pub mod </span>mock;
+
 <span class="attr">#[rpc(client, server, namespace = <span class="string">"sidechain"</span>)]
 </span><span class="kw">pub trait </span>SidechainRpcApi&lt;SidechainParams&gt; {
 	<span class="attr">#[method(name = <span class="string">"getParams"</span>)]
@@ -140,11 +151,16 @@
 	</span><span class="kw">async fn </span>get_status(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;GetStatusResponse&gt;;
 }
 
+<span class="attr">#[async_trait]
+</span><span class="kw">pub trait </span>SidechainRpcDataSource {
+	<span class="kw">async fn </span>get_latest_block_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainBlock, Box&lt;<span class="kw">dyn </span>std::error::Error&gt;&gt;;
+}
+
 <span class="attr">#[derive(new)]
 </span><span class="kw">pub struct </span>SidechainRpc&lt;C, Block&gt; {
 	client: Arc&lt;C&gt;,
 	mc_epoch_config: MainchainEpochConfig,
-	block_data_source: Arc&lt;<span class="kw">dyn </span>BlockDataSource + Send + Sync&gt;,
+	data_source: Arc&lt;<span class="kw">dyn </span>SidechainRpcDataSource + Send + Sync&gt;,
 	time_source: Arc&lt;<span class="kw">dyn </span>TimeSource + Send + Sync&gt;,
 	_marker: std::marker::PhantomData&lt;Block&gt;,
 }
@@ -189,7 +205,7 @@
 			.ok_or(GetStatusRpcError::CannotConvertSidechainSlotToTimestamp)<span class="question-mark">?</span>;
 
 		<span class="kw">let </span>latest_mainchain_block =
-			<span class="self">self</span>.block_data_source.get_latest_block_info().<span class="kw">await</span>.map_err(|err| {
+			<span class="self">self</span>.data_source.get_latest_block_info().<span class="kw">await</span>.map_err(|err| {
 				ErrorObject::owned(
 					ErrorCode::InternalError.code(),
 					<span class="macro">format!</span>(<span class="string">"Internal error: GetLatestBlockResponse error '{:?}"</span>, err),

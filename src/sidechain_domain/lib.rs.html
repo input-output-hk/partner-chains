@@ -605,6 +605,16 @@
 <a href="#605" id="605">605</a>
 <a href="#606" id="606">606</a>
 <a href="#607" id="607">607</a>
+<a href="#608" id="608">608</a>
+<a href="#609" id="609">609</a>
+<a href="#610" id="610">610</a>
+<a href="#611" id="611">611</a>
+<a href="#612" id="612">612</a>
+<a href="#613" id="613">613</a>
+<a href="#614" id="614">614</a>
+<a href="#615" id="615">615</a>
+<a href="#616" id="616">616</a>
+<a href="#617" id="617">617</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -722,6 +732,16 @@
 )]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize, FromStr))]
 </span><span class="kw">pub struct </span>ScSlotNumber(<span class="kw">pub </span>u64);
+
+<span class="attr">#[derive(Debug, Clone, PartialEq, Default)]
+#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize))]
+</span><span class="kw">pub struct </span>MainchainBlock {
+	<span class="kw">pub </span>number: McBlockNumber,
+	<span class="kw">pub </span>hash: McBlockHash,
+	<span class="kw">pub </span>epoch: McEpochNumber,
+	<span class="kw">pub </span>slot: McSlotNumber,
+	<span class="kw">pub </span>timestamp: u64, <span class="comment">// seconds since UNIX_EPOCH
+</span>}
 
 <span class="doccomment">/// An index of transaction in a block. In range [0, 2^31-1].
 </span><span class="attr">#[derive(

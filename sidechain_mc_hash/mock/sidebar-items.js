@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["MockMcHashInherentDataProvider"]};
+window.SIDEBAR_ITEMS = {"struct":["MockMcHashDataSource","MockMcHashInherentDataProvider"]};

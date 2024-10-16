@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["INHERENT_IDENTIFIER","MC_HASH_DIGEST_ID"],"enum":["McHashInherentError"],"fn":["get_inherent_digest_value_for_block","get_mc_hash_for_block"],"mod":["mock"],"struct":["McHashInherentDataProvider","McHashInherentDigest"]};
+window.SIDEBAR_ITEMS = {"constant":["INHERENT_IDENTIFIER","MC_HASH_DIGEST_ID"],"enum":["McHashInherentError"],"fn":["get_inherent_digest_value_for_block","get_mc_hash_for_block"],"mod":["mock"],"struct":["McHashInherentDataProvider","McHashInherentDigest"],"trait":["McHashDataSource"]};

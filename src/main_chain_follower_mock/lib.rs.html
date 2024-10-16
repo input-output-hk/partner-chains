@@ -10,6 +10,10 @@
 <a href="#10" id="10">10</a>
 <a href="#11" id="11">11</a>
 <a href="#12" id="12">12</a>
+<a href="#13" id="13">13</a>
+<a href="#14" id="14">14</a>
+<a href="#15" id="15">15</a>
+<a href="#16" id="16">16</a>
 </pre></div><pre class="rust"><code><span class="attr">#[allow(unused_imports)]
 </span><span class="kw">use </span>std::sync::Arc;
 
@@ -17,8 +21,12 @@
 </span><span class="kw">pub mod </span>block;
 <span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
 </span><span class="kw">pub mod </span>candidate;
+<span class="attr">#[cfg(feature = <span class="string">"mc-hash"</span>)]
+</span><span class="kw">pub mod </span>mc_hash;
 <span class="attr">#[cfg(feature = <span class="string">"native-token"</span>)]
 </span><span class="kw">pub mod </span>native_token;
+<span class="attr">#[cfg(feature = <span class="string">"sidechain-rpc"</span>)]
+</span><span class="kw">pub mod </span>sidechain_rpc;
 
 <span class="attr">#[allow(unused)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>UnimplementedMocks;

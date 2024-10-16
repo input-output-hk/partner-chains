@@ -268,11 +268,69 @@
 <a href="#268" id="268">268</a>
 <a href="#269" id="269">269</a>
 <a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::McHashInherentError::StableBlockNotFound;
-<span class="kw">use </span>main_chain_follower_api::{
-	block::MainchainBlock, common::Timestamp <span class="kw">as </span>McTimestamp, BlockDataSource, DataSourceError,
-};
-<span class="kw">use </span>sidechain_domain::{byte_string::ByteString, McBlockHash, McBlockNumber, McEpochNumber};
+<span class="kw">use </span>async_trait::async_trait;
+<span class="kw">use </span>sidechain_domain::{byte_string::ByteString, <span class="kw-2">*</span>};
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_consensus_slots::{Slot, SlotDuration};
 <span class="kw">use </span>sp_inherents::{InherentData, InherentDataProvider, InherentIdentifier};
@@ -295,10 +353,10 @@
 	mc_block: MainchainBlock,
 }
 
-<span class="attr">#[derive(Debug, PartialEq, thiserror::Error)]
+<span class="attr">#[derive(Debug, thiserror::Error)]
 </span><span class="kw">pub enum </span>McHashInherentError {
 	<span class="attr">#[error(<span class="string">"{0}"</span>)]
-	</span>DataSourceError(<span class="attr">#[from] </span>DataSourceError),
+	</span>DataSourceError(Box&lt;<span class="kw">dyn </span>Error + Send + Sync&gt;),
 	<span class="attr">#[error(<span class="string">"Stable block not found at {0}. It means that the main chain wasn't producing blocks for a long time."</span>)]
 	</span>StableBlockNotFound(Timestamp),
 	<span class="attr">#[error(<span class="string">"Slot represents a timestamp bigger than of u64::MAX"</span>)]
@@ -329,17 +387,49 @@
 	}
 }
 
+<span class="doccomment">/// Queries about Cardano Blocks
+</span><span class="attr">#[async_trait]
+</span><span class="kw">pub trait </span>McHashDataSource {
+	<span class="doccomment">/// Query for the currently latest stable block with timestamp within the `allowable_range(reference_timestamp) = [reference_timestamp - seconds(max_slot_boundary), reference_timestamp - seconds(slot_boundary)]`
+	/// where `max_slot_boundary` is `3 * security_parameter/active_slot_coeff` (`3k/f`) and `min_slot_boundary` is `security_parameter/active_slot_coeff` (`k/f`).
+	/// # Arguments
+	/// * `reference_timestamp` - restricts the timestamps of MC blocks
+	///
+	/// # Returns
+	/// * `Some(block)` - the latest stable block, with timestamp in the allowable range
+	/// * `None` - none of the blocks is stable, and with timestamp valid in according to `reference_timestamp`
+	</span><span class="kw">async fn </span>get_latest_stable_block_for(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		reference_timestamp: Timestamp,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;;
+
+	<span class="doccomment">/// Find block by hash, filtered by block timestamp being in `allowable_range(reference_timestamp)`
+	/// # Arguments
+	/// * `hash` - the hash of the block
+	/// * `reference_timestamp` - restricts the timestamp of the MC block
+	///
+	/// # Returns
+	/// * `Some(block)` - the block with given hash, with timestamp in the allowable range
+	/// * `None` - no stable block with given hash and timestamp in the allowable range exists
+	</span><span class="kw">async fn </span>get_stable_block_for(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		hash: McBlockHash,
+		reference_timestamp: Timestamp,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;;
+}
+
 <span class="kw">impl </span>McHashInherentDataProvider {
 	<span class="kw">pub async fn </span>new_proposal(
-		data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>BlockDataSource + Send + Sync),
+		data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>McHashDataSource + Send + Sync),
 		slot: Slot,
 		slot_duration: SlotDuration,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, McHashInherentError&gt; {
 		<span class="kw">let </span>slot_start_timestamp =
 			slot.timestamp(slot_duration).ok_or(McHashInherentError::SlotTooBig)<span class="question-mark">?</span>;
 		<span class="kw">let </span>mc_block = data_source
-			.get_latest_stable_block_for(McTimestamp(slot_start_timestamp.as_millis()))
-			.<span class="kw">await</span><span class="question-mark">?
+			.get_latest_stable_block_for(slot_start_timestamp)
+			.<span class="kw">await
+			</span>.map_err(|err| McHashInherentError::DataSourceError(err))<span class="question-mark">?
 			</span>.ok_or(StableBlockNotFound(slot_start_timestamp))<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ mc_block })
@@ -351,7 +441,7 @@
 		verified_block_slot: Slot,
 		mc_state_reference_hash: McBlockHash,
 		slot_duration: SlotDuration,
-		block_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>BlockDataSource + Send + Sync),
+		block_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>McHashDataSource + Send + Sync),
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, McHashInherentError&gt;
 	<span class="kw">where
 		</span>Header: HeaderT,
@@ -404,15 +494,15 @@
 	verified_block_slot: Slot,
 	verified_block_mc_hash: McBlockHash,
 	slot_duration: SlotDuration,
-	data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>BlockDataSource + Send + Sync),
+	data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>McHashDataSource + Send + Sync),
 ) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainBlock, McHashInherentError&gt; {
 	<span class="kw">let </span>timestamp = verified_block_slot
 		.timestamp(slot_duration)
 		.ok_or(McHashInherentError::SlotTooBig)<span class="question-mark">?</span>;
 	data_source
-		.get_stable_block_for(verified_block_mc_hash.clone(), McTimestamp(timestamp.as_millis()))
+		.get_stable_block_for(verified_block_mc_hash.clone(), timestamp)
 		.<span class="kw">await
-		</span>.map_err(McHashInherentError::DataSourceError)<span class="question-mark">?
+		</span>.map_err(|err| McHashInherentError::DataSourceError(err))<span class="question-mark">?
 		</span>.ok_or(McHashInherentError::McStateReferenceInvalid(
 			verified_block_mc_hash,
 			verified_block_slot,
@@ -515,6 +605,7 @@
 <span class="attr">#[cfg(any(feature = <span class="string">"mock"</span>, test))]
 </span><span class="kw">pub mod </span>mock {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use </span>derive_new::new;
 
 	<span class="kw">pub struct </span>MockMcHashInherentDataProvider {
 		<span class="kw">pub </span>mc_hash: McBlockHash,
@@ -536,6 +627,35 @@
 		) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="prelude-ty">Result</span>&lt;(), sp_inherents::Error&gt;&gt; {
 			<span class="prelude-val">None
 		</span>}
+	}
+
+	<span class="attr">#[derive(new, Clone)]
+	</span><span class="kw">pub struct </span>MockMcHashDataSource {
+		<span class="kw">pub </span>stable_blocks: Vec&lt;MainchainBlock&gt;,
+	}
+
+	<span class="kw">impl </span>From&lt;Vec&lt;MainchainBlock&gt;&gt; <span class="kw">for </span>MockMcHashDataSource {
+		<span class="kw">fn </span>from(stable_blocks: Vec&lt;MainchainBlock&gt;) -&gt; <span class="self">Self </span>{
+			<span class="self">Self </span>{ stable_blocks }
+		}
+	}
+
+	<span class="attr">#[async_trait]
+	</span><span class="kw">impl </span>McHashDataSource <span class="kw">for </span>MockMcHashDataSource {
+		<span class="kw">async fn </span>get_latest_stable_block_for(
+			<span class="kw-2">&amp;</span><span class="self">self</span>,
+			_reference_timestamp: Timestamp,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
+			<span class="prelude-val">Ok</span>(<span class="self">self</span>.stable_blocks.last().cloned())
+		}
+
+		<span class="kw">async fn </span>get_stable_block_for(
+			<span class="kw-2">&amp;</span><span class="self">self</span>,
+			hash: McBlockHash,
+			_reference_timestamp: Timestamp,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
+			<span class="prelude-val">Ok</span>(<span class="self">self</span>.stable_blocks.iter().find(|b| b.hash == hash).cloned())
+		}
 	}
 }
 </code></pre></div></section></main></body></html>

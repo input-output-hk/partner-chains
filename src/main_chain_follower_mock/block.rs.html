@@ -65,12 +65,7 @@
 <a href="#65" id="65">65</a>
 <a href="#66" id="66">66</a>
 <a href="#67" id="67">67</a>
-<a href="#68" id="68">68</a>
-<a href="#69" id="69">69</a>
-<a href="#70" id="70">70</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>async_trait::async_trait;
-<span class="kw">pub use </span>main_chain_follower_api::block::<span class="kw-2">*</span>;
-<span class="kw">use </span>main_chain_follower_api::common::<span class="kw-2">*</span>;
+</pre></div><pre class="rust"><code><span class="kw">use </span>main_chain_follower_api::common::<span class="kw-2">*</span>;
 <span class="kw">use </span>main_chain_follower_api::<span class="kw-2">*</span>;
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 <span class="kw">use </span>std::error::Error;
@@ -80,9 +75,8 @@
 	</span>mc_epoch_duration_millis: u32,
 }
 
-<span class="attr">#[async_trait]
-</span><span class="kw">impl </span>BlockDataSource <span class="kw">for </span>BlockDataSourceMock {
-	<span class="kw">async fn </span>get_latest_block_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainBlock&gt; {
+<span class="kw">impl </span>BlockDataSourceMock {
+	<span class="kw">pub async fn </span>get_latest_block_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainBlock&gt; {
 		<span class="prelude-val">Ok</span>(<span class="self">self
 			</span>.get_latest_stable_block_for(Timestamp(BlockDataSourceMock::millis_now()))
 			.<span class="kw">await
@@ -90,7 +84,7 @@
 			.unwrap())
 	}
 
-	<span class="kw">async fn </span>get_latest_stable_block_for(
+	<span class="kw">pub async fn </span>get_latest_stable_block_for(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		reference_timestamp: Timestamp,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;&gt; {
@@ -107,7 +101,7 @@
 		}))
 	}
 
-	<span class="kw">async fn </span>get_stable_block_for(
+	<span class="kw">pub async fn </span>get_stable_block_for(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		_hash: McBlockHash,
 		reference_timestamp: Timestamp,

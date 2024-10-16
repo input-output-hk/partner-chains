@@ -75,30 +75,41 @@
 <a href="#75" id="75">75</a>
 <a href="#76" id="76">76</a>
 <a href="#77" id="77">77</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>db_sync_follower::native_token::NativeTokenManagementDataSourceImpl;
-<span class="kw">use </span>db_sync_follower::{
-	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl, metrics::McFollowerMetrics,
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span>db_sync_follower::{
+	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl,
+	mc_hash::McHashDataSourceImpl, metrics::McFollowerMetrics,
+	native_token::NativeTokenManagementDataSourceImpl, sidechain_rpc::SidechainRpcDataSourceImpl,
 };
-<span class="kw">use </span>main_chain_follower_api::{BlockDataSource, CandidateDataSource};
+<span class="kw">use </span>main_chain_follower_api::CandidateDataSource;
 <span class="kw">use </span>main_chain_follower_mock::{
-	block::BlockDataSourceMock, candidate::MockCandidateDataSource,
-	native_token::NativeTokenDataSourceMock,
+	block::BlockDataSourceMock, candidate::MockCandidateDataSource, mc_hash::McHashDataSourceMock,
+	native_token::NativeTokenDataSourceMock, sidechain_rpc::SidechainRpcDataSourceMock,
 };
+<span class="kw">use </span>pallet_sidechain_rpc::SidechainRpcDataSource;
 <span class="kw">use </span>sc_service::error::Error <span class="kw">as </span>ServiceError;
+<span class="kw">use </span>sidechain_mc_hash::McHashDataSource;
 <span class="kw">use </span>sp_native_token_management::NativeTokenManagementDataSource;
-<span class="kw">use </span>std::error::Error;
-<span class="kw">use </span>std::sync::Arc;
+<span class="kw">use </span>std::{error::Error, sync::Arc};
 
 <span class="attr">#[derive(Clone)]
 </span><span class="kw">pub struct </span>DataSources {
-	<span class="kw">pub </span>block: Arc&lt;<span class="kw">dyn </span>BlockDataSource + Send + Sync&gt;,
+	<span class="kw">pub </span>mc_hash: Arc&lt;<span class="kw">dyn </span>McHashDataSource + Send + Sync&gt;,
 	<span class="kw">pub </span>candidate: Arc&lt;<span class="kw">dyn </span>CandidateDataSource + Send + Sync&gt;,
 	<span class="kw">pub </span>native_token: Arc&lt;<span class="kw">dyn </span>NativeTokenManagementDataSource + Send + Sync&gt;,
+	<span class="kw">pub </span>sidechain_rpc: Arc&lt;<span class="kw">dyn </span>SidechainRpcDataSource + Send + Sync&gt;,
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>create_cached_main_chain_follower_data_sources(
 	metrics_opt: <span class="prelude-ty">Option</span>&lt;McFollowerMetrics&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;DataSources, ServiceError&gt; {
+) -&gt; std::result::Result&lt;DataSources, ServiceError&gt; {
 	<span class="kw">if </span>use_mock_follower() {
 		create_mock_data_sources().map_err(|err| {
 			ServiceError::Application(
@@ -124,8 +135,10 @@
 
 <span class="kw">pub fn </span>create_mock_data_sources(
 ) -&gt; std::result::Result&lt;DataSources, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
+	<span class="kw">let </span>block = Arc::new(BlockDataSourceMock::new_from_env()<span class="question-mark">?</span>);
 	<span class="prelude-val">Ok</span>(DataSources {
-		block: Arc::new(BlockDataSourceMock::new_from_env()<span class="question-mark">?</span>),
+		sidechain_rpc: Arc::new(SidechainRpcDataSourceMock::new(block.clone())),
+		mc_hash: Arc::new(McHashDataSourceMock::new(block)),
 		candidate: Arc::new(MockCandidateDataSource::new_from_env()<span class="question-mark">?</span>),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
 	})
@@ -137,10 +150,13 @@
 	metrics_opt: <span class="prelude-ty">Option</span>&lt;McFollowerMetrics&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;DataSources, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
 	<span class="kw">let </span>pool = db_sync_follower::data_sources::get_connection_from_env().<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone()).<span class="kw">await</span><span class="question-mark">?</span>);
 	<span class="prelude-val">Ok</span>(DataSources {
-		block: Arc::new(
-			BlockDataSourceImpl::new_from_env(pool.clone(), metrics_opt.clone()).<span class="kw">await</span><span class="question-mark">?</span>,
-		),
+		sidechain_rpc: Arc::new(SidechainRpcDataSourceImpl::new(
+			block.clone(),
+			metrics_opt.clone(),
+		)),
+		mc_hash: Arc::new(McHashDataSourceImpl::new(block, metrics_opt.clone())),
 		candidate: Arc::new(
 			CandidatesDataSourceImpl::new(pool.clone(), metrics_opt.clone())
 				.<span class="kw">await</span><span class="question-mark">?

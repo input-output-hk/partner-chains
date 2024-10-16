@@ -101,7 +101,6 @@
 <a href="#101" id="101">101</a>
 <a href="#102" id="102">102</a>
 <a href="#103" id="103">103</a>
-<a href="#104" id="104">104</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::error::Error;
 
 <span class="kw">use </span>clap::Parser;
@@ -198,7 +197,6 @@
 			pool().<span class="kw">await</span><span class="question-mark">?</span>,
 			DbSyncBlockDataSourceConfig::from_env()<span class="question-mark">?</span>,
 			<span class="kw-2">&amp;</span>read_mc_epoch_config()<span class="question-mark">?</span>,
-			<span class="prelude-val">None</span>,
 		))
 	}
 

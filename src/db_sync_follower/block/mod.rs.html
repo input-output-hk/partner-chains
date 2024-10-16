@@ -274,28 +274,23 @@
 <a href="#274" id="274">274</a>
 <a href="#275" id="275">275</a>
 <a href="#276" id="276">276</a>
-<a href="#277" id="277">277</a>
-<a href="#278" id="278">278</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::data_sources::read_mc_epoch_config;
-<span class="kw">use </span><span class="kw">crate</span>::db_model;
-<span class="kw">use </span><span class="kw">crate</span>::db_model::{Block, BlockNumber, SlotNumber};
-<span class="kw">use </span><span class="kw">crate</span>::metrics::McFollowerMetrics;
-<span class="kw">use </span><span class="kw">crate</span>::observed_async_trait;
-<span class="kw">use </span>async_trait::async_trait;
+</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
+	data_sources::read_mc_epoch_config,
+	db_model::{<span class="self">self</span>, Block, BlockNumber, SlotNumber},
+};
 <span class="kw">use </span>chrono::{DateTime, NaiveDateTime, TimeDelta};
 <span class="kw">use </span>derive_new::new;
-<span class="kw">use </span>figment::providers::Env;
-<span class="kw">use </span>figment::Figment;
+<span class="kw">use </span>figment::{providers::Env, Figment};
 <span class="kw">use </span>log::{debug, info};
-<span class="kw">use </span>main_chain_follower_api::{
-	block::MainchainBlock, common::Timestamp, BlockDataSource, DataSourceError::<span class="kw-2">*</span>, <span class="prelude-ty">Result</span>,
-};
+<span class="kw">use </span>main_chain_follower_api::{common::Timestamp, DataSourceError::<span class="kw-2">*</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use </span>serde::Deserialize;
 <span class="kw">use </span>sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
-<span class="kw">use </span>sidechain_domain::McBlockHash;
+<span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 <span class="kw">use </span>sqlx::PgPool;
-<span class="kw">use </span>std::error::Error;
-<span class="kw">use </span>std::sync::{Arc, Mutex};
+<span class="kw">use </span>std::{
+	error::Error,
+	sync::{Arc, Mutex},
+};
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
@@ -311,21 +306,22 @@
 	</span>max_slot_boundary_as_seconds: TimeDelta,
 	mainchain_epoch_config: MainchainEpochConfig,
 	block_stability_margin: u32,
-	metrics_opt: <span class="prelude-ty">Option</span>&lt;McFollowerMetrics&gt;,
 	cache_size: u16,
 	stable_blocks_cache: Arc&lt;Mutex&lt;BlocksCache&gt;&gt;,
 }
 
-<span class="macro">observed_async_trait!</span>(
-<span class="kw">impl </span>BlockDataSource <span class="kw">for </span>BlockDataSourceImpl {
-	<span class="kw">async fn </span>get_latest_block_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainBlock&gt; {
+<span class="kw">impl </span>BlockDataSourceImpl {
+	<span class="kw">pub async fn </span>get_latest_block_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainBlock&gt; {
 		db_model::get_latest_block_info(<span class="kw-2">&amp;</span><span class="self">self</span>.pool)
 			.<span class="kw">await</span><span class="question-mark">?
 			</span>.map(From::from)
 			.ok_or(ExpectedDataNotFound(<span class="string">"No latest block on chain."</span>.to_string()))
 	}
 
-	<span class="kw">async fn </span>get_latest_stable_block_for(<span class="kw-2">&amp;</span><span class="self">self</span>, reference_timestamp: Timestamp) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;&gt; {
+	<span class="kw">pub async fn </span>get_latest_stable_block_for(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		reference_timestamp: Timestamp,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;&gt; {
 		<span class="kw">let </span>reference_timestamp = BlockDataSourceImpl::timestamp_to_db_type(reference_timestamp)<span class="question-mark">?</span>;
 		<span class="kw">let </span>latest = <span class="self">self</span>.get_latest_block_info().<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let </span>offset = <span class="self">self</span>.security_parameter + <span class="self">self</span>.block_stability_margin;
@@ -334,11 +330,15 @@
 		<span class="prelude-val">Ok</span>(block.map(From::from))
 	}
 
-	<span class="kw">async fn </span>get_stable_block_for(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: McBlockHash, reference_timestamp: Timestamp) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;&gt; {
+	<span class="kw">pub async fn </span>get_stable_block_for(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		hash: McBlockHash,
+		reference_timestamp: Timestamp,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;&gt; {
 		<span class="kw">let </span>reference_timestamp = BlockDataSourceImpl::timestamp_to_db_type(reference_timestamp)<span class="question-mark">?</span>;
 		<span class="self">self</span>.get_stable_block_by_hash(hash, reference_timestamp).<span class="kw">await
 	</span>}
-});
+}
 
 <span class="attr">#[derive(Debug, Clone, Deserialize)]
 </span><span class="kw">pub struct </span>DbSyncBlockDataSourceConfig {
@@ -362,13 +362,11 @@
 <span class="kw">impl </span>BlockDataSourceImpl {
 	<span class="kw">pub async fn </span>new_from_env(
 		pool: PgPool,
-		metrics_opt: <span class="prelude-ty">Option</span>&lt;McFollowerMetrics&gt;,
 	) -&gt; std::result::Result&lt;<span class="self">Self</span>, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
 		<span class="prelude-val">Ok</span>(<span class="self">Self</span>::from_config(
 			pool,
 			DbSyncBlockDataSourceConfig::from_env()<span class="question-mark">?</span>,
 			<span class="kw-2">&amp;</span>read_mc_epoch_config()<span class="question-mark">?</span>,
-			metrics_opt,
 		))
 	}
 
@@ -380,7 +378,6 @@
 			block_stability_margin,
 		}: DbSyncBlockDataSourceConfig,
 		mc_epoch_config: <span class="kw-2">&amp;</span>MainchainEpochConfig,
-		metrics_opt: <span class="prelude-ty">Option</span>&lt;McFollowerMetrics&gt;,
 	) -&gt; BlockDataSourceImpl {
 		<span class="kw">let </span>k: f64 = cardano_security_parameter.into();
 		<span class="kw">let </span>min_slot_boundary = (k / cardano_active_slots_coeff).round() <span class="kw">as </span>i64;
@@ -393,7 +390,6 @@
 			TimeDelta::seconds(max_slot_boundary),
 			mc_epoch_config.clone(),
 			block_stability_margin,
-			metrics_opt,
 			cache_size,
 			BlocksCache::new_arc_mutex(),
 		)

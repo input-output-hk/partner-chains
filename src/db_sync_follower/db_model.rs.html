@@ -751,9 +751,9 @@
 }
 
 <span class="attr">#[cfg(feature = <span class="string">"block-source"</span>)]
-</span><span class="kw">impl </span>From&lt;Block&gt; <span class="kw">for </span>main_chain_follower_api::block::MainchainBlock {
+</span><span class="kw">impl </span>From&lt;Block&gt; <span class="kw">for </span>MainchainBlock {
 	<span class="kw">fn </span>from(b: Block) -&gt; <span class="self">Self </span>{
-		main_chain_follower_api::block::MainchainBlock {
+		MainchainBlock {
 			number: McBlockNumber(b.block_no.<span class="number">0</span>),
 			hash: McBlockHash(b.hash),
 			epoch: McEpochNumber(b.epoch_no.<span class="number">0</span>),
