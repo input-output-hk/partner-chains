@@ -457,16 +457,23 @@
 <a href="#457" id="457">457</a>
 <a href="#458" id="458">458</a>
 <a href="#459" id="459">459</a>
+<a href="#460" id="460">460</a>
+<a href="#461" id="461">461</a>
+<a href="#462" id="462">462</a>
+<a href="#463" id="463">463</a>
+<a href="#464" id="464">464</a>
+<a href="#465" id="465">465</a>
+<a href="#466" id="466">466</a>
+<a href="#467" id="467">467</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::db_model::{
 	<span class="self">self</span>, Address, Asset, BlockNumber, EpochNumber, MainchainTxOutput, StakePoolEntry,
 };
 <span class="kw">use </span><span class="kw">crate</span>::metrics::McFollowerMetrics;
 <span class="kw">use </span><span class="kw">crate</span>::observed_async_trait;
-<span class="kw">use </span>async_trait::async_trait;
+<span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::<span class="kw-2">*</span>;
 <span class="kw">use </span>itertools::Itertools;
 <span class="kw">use </span>log::error;
-<span class="kw">use </span>main_chain_follower_api::candidate::{AriadneParameters, RawPermissionedCandidateData};
-<span class="kw">use </span>main_chain_follower_api::{CandidateDataSource, DataSourceError::<span class="kw-2">*</span>, <span class="prelude-ty">Result</span>};
+<span class="kw">use </span>main_chain_follower_api::DataSourceError::<span class="kw-2">*</span>;
 <span class="kw">use </span>num_traits::ToPrimitive;
 <span class="kw">use </span>plutus::Datum;
 <span class="kw">use </span>plutus::Datum::<span class="kw-2">*</span>;
@@ -555,13 +562,13 @@
 }
 
 <span class="macro">observed_async_trait!</span>(
-<span class="kw">impl </span>CandidateDataSource <span class="kw">for </span>CandidatesDataSourceImpl {
+<span class="kw">impl </span>AuthoritySelectionDataSource <span class="kw">for </span>CandidatesDataSourceImpl {
 	<span class="kw">async fn </span>get_ariadne_parameters(
 			<span class="kw-2">&amp;</span><span class="self">self</span>,
 			epoch: McEpochNumber,
 			d_parameter_policy: PolicyId,
 			permissioned_candidate_policy: PolicyId
-		) -&gt; <span class="prelude-ty">Result</span>&lt;AriadneParameters&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;AriadneParameters, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>epoch = EpochNumber::from(<span class="self">self</span>.get_epoch_of_data_storage(epoch)<span class="question-mark">?</span>);
 		<span class="kw">let </span>d_parameter_asset = Asset::new(d_parameter_policy);
 		<span class="kw">let </span>permissioned_candidate_asset = Asset::new(permissioned_candidate_policy);
@@ -597,7 +604,7 @@
 			<span class="kw-2">&amp;</span><span class="self">self</span>,
 			epoch: McEpochNumber,
 			committee_candidate_address: MainchainAddress
-		)-&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;CandidateRegistrations&gt;&gt; {
+	)-&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;CandidateRegistrations&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>epoch = EpochNumber::from(<span class="self">self</span>.get_epoch_of_data_storage(epoch)<span class="question-mark">?</span>);
 		<span class="kw">let </span>candidates = <span class="self">self</span>.get_registered_candidates(epoch, committee_candidate_address).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let </span>stake_map = <span class="self">Self</span>::make_stake_map(db_model::get_stake_distribution(<span class="kw-2">&amp;</span><span class="self">self</span>.pool, epoch).<span class="kw">await</span><span class="question-mark">?</span>);
@@ -610,13 +617,13 @@
 		}).collect())
 	}
 
-	<span class="kw">async fn </span>get_epoch_nonce(<span class="kw-2">&amp;</span><span class="self">self</span>, epoch: McEpochNumber) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;EpochNonce&gt;&gt; {
+	<span class="kw">async fn </span>get_epoch_nonce(<span class="kw-2">&amp;</span><span class="self">self</span>, epoch: McEpochNumber) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;EpochNonce&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>epoch = <span class="self">self</span>.get_epoch_of_data_storage(epoch)<span class="question-mark">?</span>;
 		<span class="kw">let </span>nonce = db_model::get_epoch_nonce(<span class="kw-2">&amp;</span><span class="self">self</span>.pool, EpochNumber(epoch.<span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(nonce.map(|n| EpochNonce(n.<span class="number">0</span>)))
 	}
 
-	<span class="kw">async fn </span>data_epoch(<span class="kw-2">&amp;</span><span class="self">self</span>, for_epoch: McEpochNumber) -&gt; <span class="prelude-ty">Result</span>&lt;McEpochNumber&gt; {
+	<span class="kw">async fn </span>data_epoch(<span class="kw-2">&amp;</span><span class="self">self</span>, for_epoch: McEpochNumber) -&gt; <span class="prelude-ty">Result</span>&lt;McEpochNumber, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="self">self</span>.get_epoch_of_data_storage(for_epoch)
 	}
 });
@@ -625,7 +632,7 @@
 	<span class="kw">pub async fn </span>new(
 		pool: PgPool,
 		metrics_opt: <span class="prelude-ty">Option</span>&lt;McFollowerMetrics&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;CandidatesDataSourceImpl&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;CandidatesDataSourceImpl, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		db_model::create_idx_ma_tx_out_ident(<span class="kw-2">&amp;</span>pool).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ pool, metrics_opt })
 	}
@@ -638,7 +645,10 @@
 	}
 
 	<span class="doccomment">/// Registrations state up to this block are considered as "active", after it - as "pending".
-	</span><span class="kw">async fn </span>get_last_block_for_epoch(<span class="kw-2">&amp;</span><span class="self">self</span>, epoch: EpochNumber) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;BlockNumber&gt;&gt; {
+	</span><span class="kw">async fn </span>get_last_block_for_epoch(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		epoch: EpochNumber,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;BlockNumber&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>block_option = db_model::get_latest_block_for_epoch(<span class="kw-2">&amp;</span><span class="self">self</span>.pool, epoch).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(block_option.map(|b| b.block_no))
 	}
@@ -647,7 +657,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		epoch: EpochNumber,
 		committee_candidate_address: MainchainAddress,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;RegisteredCandidate&gt;&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;RegisteredCandidate&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>registrations_block_for_epoch = <span class="self">self</span>.get_last_block_for_epoch(epoch).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let </span>address: Address = Address(committee_candidate_address.to_string());
 		<span class="kw">let </span>active_utxos = <span class="kw">match </span>registrations_block_for_epoch {
@@ -707,7 +717,7 @@
 	</span><span class="kw">fn </span>convert_utxos_to_candidates(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		outputs: <span class="kw-2">&amp;</span>[MainchainTxOutput],
-	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;RegisteredCandidate&gt;&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;RegisteredCandidate&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="self">Self</span>::parse_candidates(outputs)
 			.into_iter()
 			.map(|c| {
@@ -770,7 +780,9 @@
 	}
 
 	<span class="comment">// Datum decoders
-	</span><span class="kw">fn </span>decode_d_parameter_datum(datum: <span class="kw-2">&amp;</span>Datum) -&gt; <span class="prelude-ty">Result</span>&lt;DParameter&gt; {
+	</span><span class="kw">fn </span>decode_d_parameter_datum(
+		datum: <span class="kw-2">&amp;</span>Datum,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;DParameter, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>d_parameter = <span class="kw">match </span>datum {
 			ListDatum(items) =&gt; <span class="kw">match </span>items.first().zip(items.get(<span class="number">1</span>)) {
 				<span class="prelude-val">Some</span>((IntegerDatum(p), IntegerDatum(t))) =&gt; {
@@ -787,13 +799,16 @@
 		<span class="kw">if </span>d_parameter.is_err() {
 			<span class="macro">error!</span>(<span class="string">"Could not decode {:?} to DParameter. Expected [u16, u16]."</span>, datum.clone());
 		}
-		d_parameter
+		<span class="prelude-val">Ok</span>(d_parameter<span class="question-mark">?</span>)
 	}
 
 	<span class="kw">fn </span>decode_permissioned_candidates_datum(
 		datum: <span class="kw-2">&amp;</span>Datum,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;RawPermissionedCandidateData&gt;&gt; {
-		<span class="kw">let </span>permissioned_candidates: <span class="prelude-ty">Result</span>&lt;Vec&lt;RawPermissionedCandidateData&gt;&gt; = <span class="kw">match </span>datum {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;RawPermissionedCandidateData&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
+		<span class="kw">let </span>permissioned_candidates: <span class="prelude-ty">Result</span>&lt;
+			Vec&lt;RawPermissionedCandidateData&gt;,
+			Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;,
+		&gt; = <span class="kw">match </span>datum {
 			ListDatum(list_datums) =&gt; list_datums
 				.iter()
 				.map(|keys_datum| <span class="kw">match </span>keys_datum {
@@ -812,10 +827,10 @@
 				.collect::&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;RawPermissionedCandidateData&gt;&gt;&gt;(),
 			<span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
 		}
-		.ok_or(DatumDecodeError {
+		.ok_or(Box::new(DatumDecodeError {
 			datum: datum.clone(),
 			to: <span class="string">"RawPermissionedCandidateData"</span>.to_string(),
-		});
+		}));
 
 		<span class="kw">if </span>permissioned_candidates.is_err() {
 			<span class="macro">error!</span>(<span class="string">"Could not decode {:?} to Permissioned candidates datum. Expected [[ByteString, ByteString, ByteString]]."</span>, datum.clone());
@@ -905,12 +920,13 @@
 	<span class="kw">fn </span>get_epoch_of_data_storage(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		epoch_of_data_usage: McEpochNumber,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;McEpochNumber&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;McEpochNumber, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">if </span>epoch_of_data_usage.<span class="number">0 </span>&lt; <span class="number">2 </span>{
 			<span class="prelude-val">Err</span>(BadRequest(<span class="macro">format!</span>(
 				<span class="string">"Minimum supported epoch of data usage is 2, but {} was provided"</span>,
 				epoch_of_data_usage.<span class="number">0
-			</span>)))
+			</span>))
+			.into())
 		} <span class="kw">else </span>{
 			<span class="prelude-val">Ok</span>(McEpochNumber(epoch_of_data_usage.<span class="number">0 </span>- <span class="number">2</span>))
 		}

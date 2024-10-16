@@ -274,6 +274,16 @@
 <a href="#274" id="274">274</a>
 <a href="#275" id="275">275</a>
 <a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
 	data_sources::read_mc_epoch_config,
 	db_model::{<span class="self">self</span>, Block, BlockNumber, SlotNumber},
@@ -282,7 +292,7 @@
 <span class="kw">use </span>derive_new::new;
 <span class="kw">use </span>figment::{providers::Env, Figment};
 <span class="kw">use </span>log::{debug, info};
-<span class="kw">use </span>main_chain_follower_api::{common::Timestamp, DataSourceError::<span class="kw-2">*</span>, <span class="prelude-ty">Result</span>};
+<span class="kw">use </span>main_chain_follower_api::{common::Timestamp, DataSourceError::<span class="kw-2">*</span>};
 <span class="kw">use </span>serde::Deserialize;
 <span class="kw">use </span>sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
@@ -311,17 +321,19 @@
 }
 
 <span class="kw">impl </span>BlockDataSourceImpl {
-	<span class="kw">pub async fn </span>get_latest_block_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainBlock&gt; {
+	<span class="kw">pub async fn </span>get_latest_block_info(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainBlock, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		db_model::get_latest_block_info(<span class="kw-2">&amp;</span><span class="self">self</span>.pool)
 			.<span class="kw">await</span><span class="question-mark">?
 			</span>.map(From::from)
-			.ok_or(ExpectedDataNotFound(<span class="string">"No latest block on chain."</span>.to_string()))
+			.ok_or(ExpectedDataNotFound(<span class="string">"No latest block on chain."</span>.to_string()).into())
 	}
 
 	<span class="kw">pub async fn </span>get_latest_stable_block_for(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		reference_timestamp: Timestamp,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>reference_timestamp = BlockDataSourceImpl::timestamp_to_db_type(reference_timestamp)<span class="question-mark">?</span>;
 		<span class="kw">let </span>latest = <span class="self">self</span>.get_latest_block_info().<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let </span>offset = <span class="self">self</span>.security_parameter + <span class="self">self</span>.block_stability_margin;
@@ -334,7 +346,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		hash: McBlockHash,
 		reference_timestamp: Timestamp,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>reference_timestamp = BlockDataSourceImpl::timestamp_to_db_type(reference_timestamp)<span class="question-mark">?</span>;
 		<span class="self">self</span>.get_stable_block_by_hash(hash, reference_timestamp).<span class="kw">await
 	</span>}
@@ -398,7 +410,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		max_block: BlockNumber,
 		reference_timestamp: NaiveDateTime,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Block&gt;&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Block&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>min_time = <span class="self">self</span>.min_block_allowed_time(reference_timestamp);
 		<span class="kw">let </span>min_slot = <span class="self">self</span>.date_time_to_slot(min_time)<span class="question-mark">?</span>;
 		<span class="kw">let </span>max_time = <span class="self">self</span>.max_allowed_block_time(reference_timestamp);
@@ -429,7 +441,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		hash: McBlockHash,
 		reference_timestamp: NaiveDateTime,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(block) =
 			<span class="self">self</span>.get_stable_block_by_hash_from_cache(hash.clone(), reference_timestamp)
 		{
@@ -467,7 +479,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		hash: McBlockHash,
 		reference_timestamp: NaiveDateTime,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Block&gt;&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Block&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>block = db_model::get_block_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>.pool, hash).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let </span>latest_block = db_model::get_latest_block_info(<span class="kw-2">&amp;</span><span class="self">self</span>.pool).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(block
@@ -480,7 +492,10 @@
 	}
 
 	<span class="doccomment">/// Caches stable blocks for lookup by hash.
-	</span><span class="kw">async fn </span>fill_cache(<span class="kw-2">&amp;</span><span class="self">self</span>, from_block: <span class="kw-2">&amp;</span>Block) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+	</span><span class="kw">async fn </span>fill_cache(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		from_block: <span class="kw-2">&amp;</span>Block,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;(), Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>from_block_no = from_block.block_no;
 		<span class="kw">let </span>size = u32::from(<span class="self">self</span>.cache_size);
 		<span class="kw">let </span>latest_block =
@@ -506,7 +521,10 @@
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">fn </span>date_time_to_slot(<span class="kw-2">&amp;</span><span class="self">self</span>, dt: NaiveDateTime) -&gt; <span class="prelude-ty">Result</span>&lt;SlotNumber&gt; {
+	<span class="kw">fn </span>date_time_to_slot(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		dt: NaiveDateTime,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;SlotNumber, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>millis: u64 = dt
 			.and_utc()
 			.timestamp_millis()
@@ -520,7 +538,9 @@
 		<span class="prelude-val">Ok</span>(SlotNumber(slot))
 	}
 
-	<span class="kw">fn </span>timestamp_to_db_type(timestamp: Timestamp) -&gt; <span class="prelude-ty">Result</span>&lt;NaiveDateTime&gt; {
+	<span class="kw">fn </span>timestamp_to_db_type(
+		timestamp: Timestamp,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;NaiveDateTime, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>millis: <span class="prelude-ty">Option</span>&lt;i64&gt; = timestamp.<span class="number">0</span>.try_into().ok();
 		<span class="kw">let </span>dt = millis
 			.and_then(DateTime::from_timestamp_millis)

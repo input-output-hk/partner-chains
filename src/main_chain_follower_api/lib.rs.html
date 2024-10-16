@@ -23,33 +23,15 @@
 <a href="#23" id="23">23</a>
 <a href="#24" id="24">24</a>
 <a href="#25" id="25">25</a>
-<a href="#26" id="26">26</a>
-<a href="#27" id="27">27</a>
-<a href="#28" id="28">28</a>
-<a href="#29" id="29">29</a>
-<a href="#30" id="30">30</a>
-<a href="#31" id="31">31</a>
-<a href="#32" id="32">32</a>
-<a href="#33" id="33">33</a>
-<a href="#34" id="34">34</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Core API for the main chain queries
 
 </span><span class="kw">use </span>plutus::Datum;
-<span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 <span class="attr">#[allow(unused_imports)]
 </span><span class="kw">use </span>std::sync::Arc;
 <span class="kw">use </span>thiserror::Error;
 
 <span class="doccomment">/// Types that will be used by the Cardano follower
 </span><span class="kw">pub mod </span>common;
-
-<span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
-</span><span class="kw">pub mod </span>candidate;
-<span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
-</span><span class="kw">pub use </span>candidate::CandidateDataSource;
-
-<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
-</span><span class="kw">pub mod </span>mock_services;
 
 <span class="attr">#[derive(Debug, PartialEq, Error)]
 </span><span class="kw">pub enum </span>DataSourceError {

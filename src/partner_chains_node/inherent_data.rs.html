@@ -235,11 +235,13 @@
 <a href="#235" id="235">235</a>
 <a href="#236" id="236">236</a>
 <a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider <span class="kw">as </span>AriadneIDP;
-<span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
+<span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::{
+	AuthoritySelectionDataSource, AuthoritySelectionInputs,
+};
 <span class="kw">use </span>derive_new::new;
 <span class="kw">use </span>jsonrpsee::core::async_trait;
-<span class="kw">use </span>main_chain_follower_api::CandidateDataSource;
 <span class="kw">use </span>sc_consensus_aura::{find_pre_digest, SlotDuration};
 <span class="kw">use </span>sc_service::Arc;
 <span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochConfig;
@@ -275,7 +277,7 @@
 	config: CreateInherentDataConfig,
 	client: Arc&lt;T&gt;,
 	mc_hash_data_source: Arc&lt;<span class="kw">dyn </span>McHashDataSource + Send + Sync&gt;,
-	candidate_data_source: Arc&lt;<span class="kw">dyn </span>CandidateDataSource + Send + Sync&gt;,
+	authority_selection_data_source: Arc&lt;<span class="kw">dyn </span>AuthoritySelectionDataSource + Send + Sync&gt;,
 	native_token_data_source: Arc&lt;<span class="kw">dyn </span>NativeTokenManagementDataSource + Send + Sync&gt;,
 }
 
@@ -311,7 +313,7 @@
 			config,
 			client,
 			mc_hash_data_source,
-			candidate_data_source,
+			authority_selection_data_source,
 			native_token_data_source,
 		} = <span class="self">self</span>;
 		<span class="kw">let </span>CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source } = config;
@@ -331,7 +333,7 @@
 			mc_epoch_config,
 			parent_hash,
 			<span class="kw-2">*</span>slot,
-			candidate_data_source.as_ref(),
+			authority_selection_data_source.as_ref(),
 			mc_hash.mc_epoch(),
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;
@@ -364,7 +366,7 @@
 	config: CreateInherentDataConfig,
 	client: Arc&lt;T&gt;,
 	mc_hash_data_source: Arc&lt;<span class="kw">dyn </span>McHashDataSource + Send + Sync&gt;,
-	candidate_data_source: Arc&lt;<span class="kw">dyn </span>CandidateDataSource + Send + Sync&gt;,
+	authority_selection_data_source: Arc&lt;<span class="kw">dyn </span>AuthoritySelectionDataSource + Send + Sync&gt;,
 	native_token_data_source: Arc&lt;<span class="kw">dyn </span>NativeTokenManagementDataSource + Send + Sync&gt;,
 }
 
@@ -398,7 +400,7 @@
 			config,
 			client,
 			mc_hash_data_source,
-			candidate_data_source,
+			authority_selection_data_source,
 			native_token_data_source,
 		} = <span class="self">self</span>;
 		<span class="kw">let </span>CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source, .. } = config;
@@ -422,7 +424,7 @@
 			mc_epoch_config,
 			parent_hash,
 			verified_block_slot,
-			candidate_data_source.as_ref(),
+			authority_selection_data_source.as_ref(),
 			mc_state_reference.epoch,
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;

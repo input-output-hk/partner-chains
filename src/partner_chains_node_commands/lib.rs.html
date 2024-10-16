@@ -175,13 +175,13 @@
 <a href="#175" id="175">175</a>
 <a href="#176" id="176">176</a>
 <a href="#177" id="177">177</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
+</pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
+<span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 <span class="kw">use </span>clap::{Args, Parser};
 <span class="kw">use </span>cli_commands::registration_signatures::RegistrationSignaturesCmd;
 <span class="kw">use </span>frame_support::sp_runtime::traits::NumberFor;
 <span class="kw">use </span>frame_support::Serialize;
-<span class="kw">use </span>main_chain_follower_api::CandidateDataSource;
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode};
 <span class="kw">use </span>plutus::ToDatum;
 <span class="kw">use </span>sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
@@ -269,7 +269,7 @@
 	get_deps: <span class="kw">impl </span>FnOnce(
 		sc_service::Configuration,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;
-		(Arc&lt;Client&gt;, TaskManager, Arc&lt;<span class="kw">dyn </span>CandidateDataSource + Send + Sync&gt;),
+		(Arc&lt;Client&gt;, TaskManager, Arc&lt;<span class="kw">dyn </span>AuthoritySelectionDataSource + Send + Sync&gt;),
 		sc_service::error::Error,
 	&gt;,
 	cmd: PartnerChainsSubcommand&lt;SmartContractsParams&gt;,

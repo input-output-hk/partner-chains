@@ -125,6 +125,7 @@
 <a href="#125" id="125">125</a>
 <a href="#126" id="126">126</a>
 <a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 #[cfg(feature = <span class="string">"std"</span>)]
@@ -133,7 +134,8 @@
 <span class="kw">use </span>core::ops::Rem;
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 <span class="kw">use </span>scale_info::TypeInfo;
-<span class="kw">use </span>serde::{Deserialize, Serialize};
+<span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
+</span><span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>sidechain_domain::{ScEpochNumber, ScSlotNumber};
 <span class="kw">pub use </span>sp_consensus_slots::{Slot, SlotDuration};
 <span class="kw">use </span>sp_core::offchain::Timestamp;

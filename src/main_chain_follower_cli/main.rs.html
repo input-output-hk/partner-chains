@@ -101,16 +101,16 @@
 <a href="#101" id="101">101</a>
 <a href="#102" id="102">102</a>
 <a href="#103" id="103">103</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>std::error::Error;
-
+</pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 <span class="kw">use </span>clap::Parser;
 <span class="kw">use </span>db_sync_follower::{
 	block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig},
 	candidates::CandidatesDataSourceImpl,
 	data_sources::{read_mc_epoch_config, PgPool},
 };
-<span class="kw">use </span>main_chain_follower_api::{common::<span class="kw-2">*</span>, <span class="kw-2">*</span>};
+<span class="kw">use </span>main_chain_follower_api::common::<span class="kw-2">*</span>;
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
+<span class="kw">use </span>std::error::Error;
 
 <span class="kw">type </span><span class="prelude-ty">Result</span>&lt;T&gt; = std::result::Result&lt;T, Box&lt;<span class="kw">dyn </span>Error + Send + Sync&gt;&gt;;
 

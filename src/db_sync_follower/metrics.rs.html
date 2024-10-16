@@ -231,7 +231,7 @@
 		$(<span class="kw">type </span><span class="macro-nonterminal">$type_name</span>:ident = <span class="macro-nonterminal">$</span><span class="kw">type</span>:<span class="macro-nonterminal">ty</span>;)*
 		$(<span class="kw">async fn </span><span class="macro-nonterminal">$method</span>:ident(<span class="kw-2">&amp;</span><span class="macro-nonterminal">$self</span>:tt $(,<span class="macro-nonterminal">$param_name</span>:ident: <span class="macro-nonterminal">$param_type</span>:ty)* $(,)<span class="question-mark">?</span>) -&gt; <span class="macro-nonterminal">$res</span>:ty <span class="macro-nonterminal">$body</span>:block)*
 	})=&gt; {
-		<span class="attr">#[async_trait]
+		<span class="attr">#[async_trait::async_trait]
 		</span><span class="kw">impl </span><span class="macro-nonterminal">$trait_name </span><span class="kw">for </span><span class="macro-nonterminal">$target_type </span>{
 		$(<span class="kw">type </span><span class="macro-nonterminal">$type_name </span>= <span class="macro-nonterminal">$</span><span class="kw">type</span>;)*
 		$(

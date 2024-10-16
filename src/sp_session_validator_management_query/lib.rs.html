@@ -214,11 +214,11 @@
 <span class="kw">pub mod </span>types;
 
 <span class="kw">use </span>async_trait::async_trait;
-<span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
+<span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::{
+	AuthoritySelectionDataSource, AuthoritySelectionInputs, RawPermissionedCandidateData,
+};
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 <span class="kw">use </span>derive_new::new;
-<span class="kw">use </span>main_chain_follower_api::candidate::RawPermissionedCandidateData;
-<span class="kw">use </span>main_chain_follower_api::CandidateDataSource;
 <span class="kw">use </span>plutus::ToDatum;
 <span class="kw">use </span>sidechain_block_search::{predicates::AnyBlockInEpoch, FindSidechainBlock, SidechainInfo};
 <span class="kw">use </span>sidechain_domain::{MainchainPublicKey, McEpochNumber, ScEpochNumber};
@@ -265,7 +265,7 @@
 	SidechainParams: parity_scale_codec::Decode + ToDatum + Clone + Send + Sync + <span class="lifetime">'static</span>,
 &gt; {
 	client: Arc&lt;C&gt;,
-	candidate_data_source: Arc&lt;<span class="kw">dyn </span>CandidateDataSource + Send + Sync&gt;,
+	candidate_data_source: Arc&lt;<span class="kw">dyn </span>AuthoritySelectionDataSource + Send + Sync&gt;,
 	_marker: std::marker::PhantomData&lt;(Block, SessionKeys, CrossChainPublic, SidechainParams)&gt;,
 }
 

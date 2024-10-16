@@ -248,10 +248,16 @@
 <a href="#248" id="248">248</a>
 <a href="#249" id="249">249</a>
 <a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>async_trait::async_trait;
+<span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::<span class="kw-2">*</span>;
 <span class="kw">use </span>hex_literal::hex;
 <span class="kw">use </span>log::{debug, info};
-<span class="kw">use </span>main_chain_follower_api::{candidate::<span class="kw-2">*</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use </span>serde::<span class="kw-2">*</span>;
 <span class="kw">use </span>sidechain_domain::byte_string::<span class="kw-2">*</span>;
 <span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochConfig;
@@ -435,13 +441,13 @@
 }
 
 <span class="attr">#[async_trait]
-</span><span class="kw">impl </span>CandidateDataSource <span class="kw">for </span>MockCandidateDataSource {
+</span><span class="kw">impl </span>AuthoritySelectionDataSource <span class="kw">for </span>MockCandidateDataSource {
 	<span class="kw">async fn </span>get_ariadne_parameters(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		epoch_number: McEpochNumber,
 		_d_parameter_validator: PolicyId,
 		_permissioned_candidates_validator: PolicyId,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;AriadneParameters&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;AriadneParameters, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>epoch_number = epoch_number.<span class="number">0</span>;
 		<span class="macro">debug!</span>(<span class="string">"Received get_d_parameter_for_epoch({epoch_number}) request"</span>);
 
@@ -467,7 +473,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		epoch: McEpochNumber,
 		_committee_candidate_address: MainchainAddress,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;CandidateRegistrations&gt;&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;CandidateRegistrations&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>epoch_number = epoch.<span class="number">0</span>;
 		<span class="macro">debug!</span>(<span class="string">"Received get_candidates({epoch_number}) request"</span>);
 
@@ -482,7 +488,10 @@
 		<span class="prelude-val">Ok</span>(registrations.into_iter().map(CandidateRegistrations::from).collect())
 	}
 
-	<span class="kw">async fn </span>get_epoch_nonce(<span class="kw-2">&amp;</span><span class="self">self</span>, epoch_number: McEpochNumber) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;EpochNonce&gt;&gt; {
+	<span class="kw">async fn </span>get_epoch_nonce(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		epoch_number: McEpochNumber,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;EpochNonce&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>epoch_number = epoch_number.<span class="number">0</span>;
 		<span class="macro">debug!</span>(<span class="string">"Received get_epoch_nonce({epoch_number}) request"</span>);
 		<span class="kw">let </span>epoch_conf = <span class="self">self</span>.epoch_data(epoch_number);
@@ -494,7 +503,10 @@
 		<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(EpochNonce(epoch_conf.nonce.clone().<span class="number">0</span>)))
 	}
 
-	<span class="kw">async fn </span>data_epoch(<span class="kw-2">&amp;</span><span class="self">self</span>, for_epoch: McEpochNumber) -&gt; <span class="prelude-ty">Result</span>&lt;McEpochNumber&gt; {
+	<span class="kw">async fn </span>data_epoch(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		for_epoch: McEpochNumber,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;McEpochNumber, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="prelude-val">Ok</span>(McEpochNumber(for_epoch.<span class="number">0 </span>- <span class="number">2</span>))
 	}
 }

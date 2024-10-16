@@ -238,7 +238,7 @@
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_candidates_for_epoch(
 	mainchain_epoch: McEpochNumber,
-	candidate_data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>CandidateDataSource + Send + Sync),
+	candidate_data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>AuthoritySelectionDataSource + Send + Sync),
 	committee_candidate_address: MainchainAddress,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;CandidateRegistrations&gt;, String&gt; {
 	candidate_data_source

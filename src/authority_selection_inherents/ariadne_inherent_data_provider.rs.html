@@ -237,13 +237,15 @@
 <a href="#237" id="237">237</a>
 <a href="#238" id="238">238</a>
 <a href="#239" id="239">239</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::authority_selection_inputs::AuthoritySelectionInputs;
+<a href="#240" id="240">240</a>
+</pre></div><pre class="rust"><code><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+</span><span class="kw">use </span><span class="kw">crate</span>::authority_selection_inputs::AuthoritySelectionDataSource;
+<span class="kw">use </span><span class="kw">crate</span>::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode};
 <span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">use </span>{
 	<span class="kw">crate</span>::authority_selection_inputs::AuthoritySelectionInputsCreationError,
-	main_chain_follower_api::{CandidateDataSource, DataSourceError},
 	sidechain_domain::mainchain_epoch::MainchainEpochDerivation,
 	sidechain_domain::<span class="kw-2">*</span>,
 	sidechain_slots::ScSlotConfig,
@@ -267,7 +269,7 @@
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">impl </span>AriadneInherentDataProvider {
 	<span class="kw">pub async fn </span>from_mc_data(
-		candidate_data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>CandidateDataSource + Send + Sync),
+		candidate_data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>AuthoritySelectionDataSource + Send + Sync),
 		for_epoch: McEpochNumber,
 		scripts: MainChainScripts,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, InherentProviderCreationError&gt; {
@@ -285,7 +287,7 @@
 		mc_epoch_config: <span class="kw-2">&amp;</span>MainchainEpochConfig,
 		parent_hash: &lt;Block <span class="kw">as </span>BlockT&gt;::Hash,
 		slot: Slot,
-		candidate_data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>CandidateDataSource + Send + Sync),
+		candidate_data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>AuthoritySelectionDataSource + Send + Sync),
 		mc_reference_epoch: McEpochNumber,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, InherentProviderCreationError&gt;
 	<span class="kw">where
@@ -338,7 +340,7 @@
 	<span class="attr">#[error(<span class="string">"Failed to create authority selection inputs: {0}"</span>)]
 	</span>InputsCreationError(<span class="attr">#[from] </span>AuthoritySelectionInputsCreationError),
 	<span class="attr">#[error(<span class="string">"Data source call failed: {0}"</span>)]
-	</span>DataSourceError(<span class="attr">#[from] </span>DataSourceError),
+	</span>DataSourceError(<span class="attr">#[from] </span>Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;),
 }
 
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
@@ -433,8 +435,8 @@
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span><span class="kw">crate</span>::ariadne_inherent_data_provider::AriadneInherentDataProvider;
+	<span class="kw">use </span><span class="kw">crate</span>::mock::MockAuthoritySelectionDataSource;
 	<span class="kw">use </span><span class="kw">crate</span>::runtime_api_mock::<span class="kw-2">*</span>;
-	<span class="kw">use </span>main_chain_follower_api::mock_services::MockCandidateDataSource;
 	<span class="kw">use </span>sidechain_domain::mainchain_epoch::<span class="kw-2">*</span>;
 	<span class="kw">use </span>sidechain_slots::<span class="kw-2">*</span>;
 	<span class="kw">use </span>sp_core::H256;
@@ -467,7 +469,7 @@
 			H256::zero(),
 			<span class="comment">// This is the slot that will be used to calculate current_epoch_number
 			</span>Slot::from(<span class="number">400u64</span>),
-			<span class="kw-2">&amp;</span>MockCandidateDataSource::default(),
+			<span class="kw-2">&amp;</span>MockAuthoritySelectionDataSource::default(),
 			mc_reference_epoch,
 		)
 		.<span class="kw">await</span>;

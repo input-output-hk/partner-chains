@@ -36,7 +36,7 @@
 
 <span class="attr">#[async_trait::async_trait]
 </span><span class="kw">impl </span>SidechainRpcDataSource <span class="kw">for </span>SidechainRpcDataSourceMock {
-	<span class="kw">async fn </span>get_latest_block_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainBlock, Box&lt;<span class="kw">dyn </span>Error&gt;&gt; {
+	<span class="kw">async fn </span>get_latest_block_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainBlock, Box&lt;<span class="kw">dyn </span>Error + Send + Sync&gt;&gt; {
 		<span class="prelude-val">Ok</span>(<span class="self">self</span>.block_source.get_latest_block_info().<span class="kw">await</span><span class="question-mark">?</span>)
 	}
 }

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["AuthoritySelectionInputsCreationError"],"struct":["AuthoritySelectionInputs"]};
+window.SIDEBAR_ITEMS = {"enum":["AuthoritySelectionInputsCreationError"],"struct":["AriadneParameters","AuthoritySelectionInputs","RawPermissionedCandidateData"],"trait":["AuthoritySelectionDataSource"]};

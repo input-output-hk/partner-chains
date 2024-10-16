@@ -116,6 +116,8 @@
 <a href="#116" id="116">116</a>
 <a href="#117" id="117">117</a>
 <a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
 </pre></div><pre class="rust"><code><span class="kw">pub mod </span>types;
 
 <span class="kw">use </span>derive_new::new;
@@ -153,7 +155,9 @@
 
 <span class="attr">#[async_trait]
 </span><span class="kw">pub trait </span>SidechainRpcDataSource {
-	<span class="kw">async fn </span>get_latest_block_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainBlock, Box&lt;<span class="kw">dyn </span>std::error::Error&gt;&gt;;
+	<span class="kw">async fn </span>get_latest_block_info(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainBlock, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;;
 }
 
 <span class="attr">#[derive(new)]
