@@ -1,0 +1,134 @@
+{
+    "chain_id": 0,
+    "deployment_mc_epoch": 695,
+    "genesis_committee_hash_utxo": "c69406ebe660371bdf8fcddd57330557cf761df1a6bc2aa9e5a95578a61f7b50#0",
+    "governance_authority": "0x658704794f35a9d0b7f1143eb2fda0d61ca586ca881c57264a0498b0",
+    "deployment_version": "1.1.0-rc2",
+    "test_environment": "halo2-qa",
+    "committee_participation_tolerance": 0.15,
+    "nodes_config": {
+        "governance_authority": {
+            "mainchain_address": "addr_test1vpjcwprefu66n59h7y2ravha5rtpefvxe2ypc4exfgzf3vqr2h7z7",
+            "mainchain_key": "./secrets/midnight/halo2-qa/keys/midnight-dev.skey"
+        },
+        "nodes": {
+            "rpc": {
+                "host": "rpc.halo2-qa.dev.midnight.network",
+                "port": "443",
+                "rpc_scheme": "https",
+                "scheme": "wss",
+                "public_key": "",
+                "aura_public_key": "",
+                "grandpa_public_key": "",
+                "aura_ss58_address": "",
+                "permissioned_candidate": false,
+                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            "alice": {
+                "host": "node-03.halo2-qa.dev.midnight.network",
+                "port": "9944",
+                "aura_ss58_address": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+                "public_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
+                "aura_public_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
+                "grandpa_public_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
+                "permissioned_candidate": false,
+                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000003"
+            },
+            "bob": {
+                "host": "node-04.halo2-qa.dev.midnight.network",
+                "port": "9944",
+                "aura_ss58_address": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+                "public_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27",
+                "aura_public_key": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
+                "grandpa_public_key": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
+                "permissioned_candidate": false,
+                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000004"
+            },
+            "charlie": {
+                "host": "node-05.halo2-qa.dev.midnight.network",
+                "port": "9944",
+                "aura_ss58_address": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+                "public_key": "0x0389411795514af1627765eceffcbd002719f031604fadd7d188e2dc585b4e1afb",
+                "aura_public_key": "0x90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22",
+                "grandpa_public_key": "0x439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f",
+                "permissioned_candidate": false,
+                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000005"
+            },
+            "dave": {
+                "host": "node-06.halo2-qa.dev.midnight.network",
+                "port": "9944",
+                "aura_ss58_address": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
+                "public_key": "0x03bc9d0ca094bd5b8b3225d7651eac5d18c1c04bf8ae8f8b263eebca4e1410ed0c",
+                "aura_public_key": "0x306721211d5404bd9da88e0204360a1a9ab8b87c66c1bc2fcdd37f3c2222cc20",
+                "grandpa_public_key": "0x5e639b43e0052c47447dac87d6fd2b6ec50bdd4d0f614e4299c665249bbd09d9",
+                "rotation_candidate": true,
+                "cardano_payment_addr": "addr_test1vzww5e2glejnvtvng3fe77qhl5tsr9mgfehx76n350rtjxsmckcm7",
+                "keys_files": {
+                    "cardano_payment_key": "./secrets/midnight/halo2-qa/keys/spo/Midnight-Dev-Dave/payment.skey",
+                    "spo_signing_key": "./secrets/midnight/halo2-qa/keys/spo/Midnight-Dev-Dave/cold.skey",
+                    "spo_public_key": "./secrets/midnight/halo2-qa/keys/spo/Midnight-Dev-Dave/cold.vkey",
+                    "partner_chain_signing_key": "./secrets/midnight/halo2-qa/keys/spo/Midnight-Dev-Dave/sidechain.skey"
+                },
+                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000006"
+            },
+            "eve": {
+                "host": "node-07.halo2-qa.dev.midnight.network",
+                "port": "9944",
+                "aura_ss58_address": "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw",
+                "public_key": "0x031d10105e323c4afce225208f71a6441ee327a65b9e646e772500c74d31f669aa",
+                "aura_public_key": "0xe659a7a1628cdd93febc04a4e0646ea20e9f5f0ce097d9a05290d4a9e054df4e",
+                "grandpa_public_key": "0x1dfe3e22cc0d45c70779c1095f7489a8ef3cf52d62fbd8c2fa38c9f1723502b5",
+                "permissioned_candidate": true,
+                "cardano_payment_addr": "addr_test1vpjcwprefu66n59h7y2ravha5rtpefvxe2ypc4exfgzf3vqr2h7z7",
+                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000007"
+            },
+            "ferdie": {
+                "host": "node-08.halo2-qa.dev.midnight.network",
+                "port": "9954",
+                "aura_ss58_address": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
+                "public_key": "0x0291f1217d5a04cb83312ee3d88a6e6b33284e053e6ccfc3a90339a0299d12967c",
+                "aura_public_key": "0x1cbd2d43530a44705ad088af313e18f80b53ef16b36177cd4b77b846f2a5f07c",
+                "grandpa_public_key": "0x568cb4a574c6d178feb39c27dfc8b3f789e5f5423e19c71633c748b9acf086b5",
+                "permissioned_candidate": true,
+                "cardano_payment_addr": "addr_test1vpjcwprefu66n59h7y2ravha5rtpefvxe2ypc4exfgzf3vqr2h7z7",
+                "keys_files": {
+                    "cardano_payment_key": "./secrets/midnight/halo2-qa/keys/midnight-dev.skey"
+                },
+                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000008"
+            },
+            "one": {
+                "host": "node-09.halo2-qa.dev.midnight.network",
+                "port": "9954",
+                "aura_ss58_address": "5Fxune7f71ZbpP2FoY3mhYcmM596Erhv1gRue4nsPwkxMR4n",
+                "public_key": "0x036c6ae73d36d0c02b54d7877a57b1734b8e096134bd2c1b829431aa38f18bcce1",
+                "aura_public_key": "0xac859f8a216eeb1b320b4c76d118da3d7407fa523484d0a980126d3b4d0d220a",
+                "grandpa_public_key": "0x16f97016bbea8f7b45ae6757b49efc1080accc175d8f018f9ba719b60b0815e4",
+                "rotation_candidate": true,
+                "cardano_payment_addr": "addr_test1vp4uf8hlzt6kdx9ahmuyqdzvgxrk8mvsxxtfcs3ydgmw5nskqusf4",
+                "keys_files": {
+                    "cardano_payment_key": "./secrets/midnight/halo2-qa/keys/spo/Midnight-Dev-One/payment.skey",
+                    "spo_signing_key": "./secrets/midnight/halo2-qa/keys/spo/Midnight-Dev-One/cold.skey",
+                    "spo_public_key": "./secrets/midnight/halo2-qa/keys/spo/Midnight-Dev-One/cold.vkey",
+                    "partner_chain_signing_key": "./secrets/midnight/halo2-qa/keys/spo/Midnight-Dev-One/sidechain.skey"
+                },
+                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000009"
+            }
+        },
+        "selected_node": "rpc",
+        "node": "${nodes_config[nodes][${nodes_config[selected_node]}]}",
+        "token_conversion_rate": 9,
+        "block_duration": 6,
+        "slots_in_epoch": 1200,
+        "token_policy_id": "",
+        "fees": {
+            "ECDSA": {
+                "lock": 113638153,
+                "send": 298945144
+            },
+            "SR25519": {
+                "lock": 817414140,
+                "send": 298945143
+            }
+        }
+    }
+}

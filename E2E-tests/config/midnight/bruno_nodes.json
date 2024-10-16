@@ -1,0 +1,134 @@
+{
+  "chain_id": 0,
+  "deployment_mc_epoch": 521,
+  "genesis_committee_hash_utxo": "5f966ea504398e9d710336748a4368772c299fe7158af5cb34a9b384c53396b7#0",
+  "governance_authority": "93f21ad1bba9ffc51f5c323e28a716c7f2a42c5b51517080b90028a6",
+  "nodes_config": {
+    "governance_authority": {
+      "mainchain_address": "addr_testlvzflyxk3hw5lL3gltseru298zmrl9fpvtdg4zuyqhyqz3fsr0jlg9",
+      "mainchain_key": "./secrets/midnight/bruno/keys/spo/mpp5.skey"
+    },
+    "nodes": {
+      "midnight-node-boot-01-0": {
+        "host": "node-01.temp.pre.platform.midnight.network",
+        "port": "9944",
+        "aura_ss58_address": "5FHGipjxcN3WPFCeTCqonYFC9QpyYZdbkwjMMcH8KqHigaYJ",
+        "public_key": "0x0273343d1dddd4effa89b756852dc1ee3fb934e5ace02430cfcb1e58c38b8a2229",
+        "aura_public_key": "0x8e4a471e1a9a258bee45c26e7f687ff04362921446c25d0eaf911cc10ab56479",
+        "grandpa_public_key": "0x5dc2b4ae37ff60f6e5d684c24e4ccc972e6f2dc3db9bfdbe1032b2b634162681",
+        "rotation_candidate": false,
+        "permissioned_candidate": false,
+        "cardano_payment_addr": "addr_testlvzflyxk3hw5lL3gltseru298zmrl9fpvtdg4zuyqhyqz3fsr0jlg9",
+        "keys_files": {
+          "cardano_payment_key": "./secrets/midnight/bruno/keys/mpp5.skey"
+        }
+      },
+      "midnight-node-boot-02-0": {
+        "host": "node-02.temp.pre.platform.midnight.network",
+        "port": "9944",
+        "aura_ss58_address": "5ESNfWAF1UxXrgA9W4qaBjkcggMLNWEB39fXNUipUMBWAQWe",
+        "public_key": "0x036d24d093fca0ef58d26e2d883e224eb96aff4a2f520b1edd7f14e6ebf62cbe97",
+        "aura_public_key": "0x68ff4211528ea46330f1e78d5e8bec0826ee43deb5aaa46e260703907e141254",
+        "grandpa_public_key": "0x832c899569fb0bb31c974ef223dd2d8f2a54ef1246c399acf6b9ef11963ae107",
+        "rotation_candidate": false,
+        "permissioned_candidate": false,
+        "cardano_payment_addr": "addr_testlvzflyxk3hw5lL3gltseru298zmrl9fpvtdg4zuyqhyqz3fsr0jlg9",
+        "keys_files": {
+          "cardano_payment_key": "./secrets/midnight/bruno/keys/mpp5.skey"
+        }
+      },
+      "midnight-node-boot-03-0": {
+        "host": "node-03.temp.pre.platform.midnight.network",
+        "port": "9944",
+        "aura_ss58_address": "5Guuf5E8SezwR4NkwK8q7jYwRWDH7V9j2mqeXWk7wwDR9K3N",
+        "public_key": "0x033c81e92687c6742d40d6f1f0a07d55050184a2b705e0e58c1733fe061294bf45",
+        "aura_public_key": "0xd677ae669618f3d13dc72dfe6b2a6f63ae5b4a9c2c741b3f347b421676424726",
+        "grandpa_public_key": "0xc6a1555e680eeecd997b36d3cd4c811bacb455d7112db7f5aad236f047f0733c",
+        "rotation_candidate": false,
+        "permissioned_candidate": false,
+        "cardano_payment_addr": "addr_testlvzflyxk3hw5lL3gltseru298zmrl9fpvtdg4zuyqhyqz3fsr0jlg9",
+        "keys_files": {
+          "cardano_payment_key": "./secrets/midnight/bruno/keys/mpp5.skey"
+        }
+      },
+      "midnight-node-boot-04-0": {
+        "host": "node-04.temp.pre.platform.midnight.network",
+        "port": "9944",
+        "aura_ss58_address": "5DAaqPDGBhT4gSZRvdyu9boVnaR1CuQDcTKNxADsH6UcWXkN",
+        "public_key": "0x03dd69fd7faf335881550cf75bf43c9abbf716d4623dcc8e0edc8768e63e5c5148",
+        "aura_public_key": "0x30b81133f1839d4b0e5ef815458caa6f823ab5b8a32a41b1ac9efc4b7f575a78",
+        "grandpa_public_key": "0x9997a95819ff7626554214819589b4a0bc71654788ccc1c2967126fd50c1bcbb",
+        "rotation_candidate": false,
+        "permissioned_candidate": true,
+        "cardano_payment_addr": "addr_test1vzww5e2glejnvtvng3fe77qhl5tsr9mgfehx76n350rtjxsmckcm7",
+        "keys_files": {
+          "cardano_payment_key": "./secrets/midnight/topaz/keys/spo/Midnight-Dev-Dave/payment.skey"
+        }
+      },
+      "midnight-node-boot-05-0": {
+        "host": "node-05.temp.pre.platform.midnight.network",
+        "port": "9944",
+        "aura_ss58_address": "5CQM4NLqQMzntfXd6Y2czCdjx5uXYLcHMx2BF7i5cup6fdJA",
+        "public_key": "0x0260e991ba0346539bddb84fe9d668393150b103704b79b984873738b26abfe08d",
+        "aura_public_key": "0x0efae514fae0a0748a843b3cd2c67619b9775aed235ebeb4efda8ad578cd0b1c",
+        "grandpa_public_key": "0x4ed137238efddb726081d36146d01411c9d7ba0a787282ae52cba0bac4ad96f8",
+        "rotation_candidate": false,
+        "permissioned_candidate": true,
+        "cardano_payment_addr": "addr_testlvzflyxk3hw5lL3gltseru298zmrl9fpvtdg4zuyqhyqz3fsr0jlg9",
+        "keys_files": {
+          "cardano_payment_key": "./secrets/midnight/bruno/keys/mpp5.skey"
+        }
+    },
+        "midnight-node-boot-06-0": {
+          "host": "node-06.temp.pre.platform.midnight.network",
+          "port": "9944",
+          "aura_ss58_address": "5GYRaa7QYQxuvAaJQstAJ8XiQ1cHc8t7P8aprqRpWhpuZnta",
+          "public_key": "0x0316ed00e5ee6479a26600b65aa671da684558415a5cd50052db1f60a7e547a002",
+          "aura_public_key": "0xc615029399b6bba6d2af8cd901d3ff2b2fd5b726d6c6886f4afc3149e29f5075",
+          "grandpa_public_key": "0xef2d8e9c180235f0f92c63783fa8311c19f2104bae4a895d4dac445d99ddf75b",
+          "rotation_candidate": true,
+          "permissioned_candidate": false,
+          "cardano_payment_addr": "addr_testlvzflyxk3hw5lL3gltseru298zmrl9fpvtdg4zuyqhyqz3fsr0jlg9",
+          "keys_files": {
+            "cardano_payment_key": "./secrets/midnight/bruno/keys/spo/mpp5.skey",
+            "spo_signing_key": "./secrets/midnight/bruno/keys/spo/mpp5-cold.skey",
+            "spo_public_key": "./secrets/midnight/bruno/keys/spo/mpp5-cold.vkey",
+            "partner_chain_signing_key": "./secrets/midnight/bruno/keys/spo/mpp5-sidechain.skey"
+          }
+        },
+        "midnight-node-boot-07-0": {
+          "host": "node-07.temp.pre.platform.midnight.network",
+          "port": "9944",
+          "aura_ss58_address": "5GQiQYw1nqEuD8gBd6mkeijN4y7QPXktS5jEjcR376BsNCuG",
+          "public_key": "0x034850b1f64127848baaa6d993fcefc20d5923d22540f455e35fb72a415e376e30",
+          "aura_public_key": "0xc033b13e25ae1e0ac5aebb9443f6d3a33d13804cd65d0bcd81717391a8464d65",
+          "grandpa_public_key": "0x009ea084a269a2f8a6f962509736d4f61455fb100ec3fa91e95041e5cee0947f",
+          "rotation_candidate": true,
+          "permissioned_candidate": false,
+          "cardano_payment_addr": "addr_test1vq2xzc69nwndx87pc7h6tqdx2s4mLqyy0erah5wf7yd4ykq49ynwa",
+          "keys_files": {
+            "cardano_payment_key": "./secrets/midnight/bruno/keys/spo/mpp6.skey",
+            "spo_signing_key": "./secrets/midnight/bruno/keys/spo/mpp6-cold.skey",
+            "spo_public_key": "./secrets/midnight/bruno/keys/spo/mpp6-cold.vkey",
+            "partner_chain_signing_key": "./secrets/midnight/bruno/keys/spo/mpp6-sidechain.skey"
+          }
+        }
+      },
+      "selected_node": "midnight-node-boot-03-0",
+      "node": "${nodes_config[nodes][${nodes_config[selected_node]}]}",
+      "token_conversion_rate": 9,
+      "block_duration": 6,
+      "slots_in_epoch": 60,
+      "token_policy_id": "6cc65e7e5359df31fad6c788f718f9e6c0767d81aa769e203001ac77",
+      "fees": {
+        "ECDSA": {
+          "lock": 113638153,
+          "send": 298945144
+        },
+        "SR25519": {
+          "lock": 817414140,
+          "send": 298945143
+        }
+      }
+    }
+  }
