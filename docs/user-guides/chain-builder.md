@@ -4,8 +4,8 @@ Partner Chain builders are organizations that want to build their own blockchain
 
 ## Order of Operations
 1. Install dependencies
-    1. Cardano node v9.1.1
-        1. Ogmios v6.5.0
+    1. Cardano node v9.2.1
+        1. Ogmios v6.8.0
         2. Kupo - v2.9.0
         3. DB Sync  v13.5.0.2 (PostgreSQLv15.3)
     2. Download the partner chain node v1.1.0
@@ -24,7 +24,7 @@ To run the Partner Chains stack, several dependencies need to be installed on a 
 
 Ogmios, Kupo and DB Sync are essential to enable registration communication with the main chain (Cardano). Ogmios and Kupo are used for submitting transactions to Cardano, and DB Sync is for observation of main chain state.
 
-### 1.1 Cardano node v9.1.1
+### 1.1 Cardano node v9.2.1
 
 Cardano node is required to start a partner chain. The installation of `cardano-node` is out of the scope of this guide. Refer to our [Cardano course handbook](https://cardano-course.gitbook.io/cardano-course/handbook) for documentation and video instruction.
 
@@ -39,7 +39,7 @@ Be mindful of file paths in the instruction sets below. Your Cardano node may ha
 
 ---
 
-### 1.1.1 Ogmios - v6.5.0
+### 1.1.1 Ogmios - v6.8.0
 
 Ogmios is a lightweight bridge interface for `cardano-node`. It offers a WebSocket API that enables local clients to speak to the main chain via JSON/RPC.
 
