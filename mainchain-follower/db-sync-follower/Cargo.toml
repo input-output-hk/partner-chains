@@ -35,7 +35,6 @@ sidechain-mc-hash = { workspace = true, optional = true }
 pallet-sidechain-rpc = { workspace = true, optional = true }
 authority-selection-inherents = { workspace = true, optional = true }
 
-
 [dev-dependencies]
 tokio-test = "0.4.3"
 ctor = "0.2.5"
