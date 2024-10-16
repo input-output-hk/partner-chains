@@ -42,6 +42,7 @@ std = [
     "envy",
     "sp-version",
     "sp-version/std",
+    "serde"
 ]
 serde = [
 	"dep:serde",

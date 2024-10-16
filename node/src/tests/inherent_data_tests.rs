@@ -1,12 +1,13 @@
 use crate::inherent_data::{ProposalCIDP, VerifierCIDP};
-use crate::main_chain_follower::DataSources;
 use crate::tests::mock::{test_client, test_create_inherent_data_config};
 use crate::tests::runtime_api_mock::{mock_header, TestApi};
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
-use main_chain_follower_api::{block::MainchainBlock, mock_services::*};
+use main_chain_follower_api::mock_services::*;
 use sidechain_domain::{
-	McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, NativeTokenAmount, ScEpochNumber,
+	MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, NativeTokenAmount,
+	ScEpochNumber,
 };
+use sidechain_mc_hash::mock::MockMcHashDataSource;
 use sp_consensus_aura::Slot;
 use sp_core::H256;
 use sp_inherents::CreateInherentDataProviders;
@@ -23,26 +24,26 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 		"0x0000000000000000000000000000000000000000000000000000000000000001",
 	);
 
-	let block_data_source = MockBlockDataSource::default();
 	let native_token_data_source = MockNativeTokenDataSource::new(
-		[(
-			(None, block_data_source.stable_blocks.first().unwrap().hash.clone()),
-			NativeTokenAmount(1000),
-		)]
-		.into(),
+		[((None, McBlockHash([1; 32])), NativeTokenAmount(1000))].into(),
 	);
-	let data_sources = DataSources {
-		block: Arc::new(block_data_source),
-		candidate: Arc::new(MockCandidateDataSource::default()),
-		native_token: Arc::new(native_token_data_source),
+	let stable_block = MainchainBlock {
+		number: McBlockNumber(1),
+		hash: McBlockHash([1; 32]),
+		epoch: McEpochNumber(2),
+		slot: McSlotNumber(3),
+		timestamp: 4,
 	};
+	let mc_hash_data_source = MockMcHashDataSource::from(vec![stable_block.clone()]);
 
 	let inherent_data_providers = ProposalCIDP::new(
 		test_create_inherent_data_config(),
 		TestApi::new(ScEpochNumber(2))
 			.with_headers([(H256::zero(), mock_header())])
 			.into(),
-		data_sources,
+		Arc::new(mc_hash_data_source),
+		Arc::new(MockCandidateDataSource::default()),
+		Arc::new(native_token_data_source),
 	)
 	.create_inherent_data_providers(H256::zero(), ())
 	.await
@@ -73,10 +74,7 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 		inherent_data
 			.get_data::<McBlockHash>(&sidechain_mc_hash::INHERENT_IDENTIFIER)
 			.unwrap(),
-		MockBlockDataSource::default()
-			.get_all_stable_blocks()
-			.first()
-			.map(|b| b.hash.clone())
+		Some(McBlockHash([1; 32]))
 	);
 	assert!(inherent_data
 		.get_data::<AuthoritySelectionInputs>(&sp_session_validator_management::INHERENT_IDENTIFIER)
@@ -90,33 +88,34 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 
 #[tokio::test]
 async fn block_verification_cidp_should_be_created_correctly() {
-	let mut block_data_source = MockBlockDataSource::default();
-	let parent_stable_block = block_data_source.get_all_stable_blocks().first().unwrap().clone();
+	let parent_stable_block = MainchainBlock {
+		number: McBlockNumber(1),
+		hash: McBlockHash([1; 32]),
+		epoch: McEpochNumber(2),
+		slot: McSlotNumber(3),
+		timestamp: 4,
+	};
 	let mc_block_hash = McBlockHash([2; 32]);
-	block_data_source.push_stable_block(MainchainBlock {
+	let native_token_data_source = MockNativeTokenDataSource::new(
+		[((None, mc_block_hash.clone()), NativeTokenAmount(1000))].into(),
+	);
+	let mc_hash_data_source = MockMcHashDataSource::from(vec![MainchainBlock {
 		number: McBlockNumber(parent_stable_block.number.0 + 5),
 		hash: mc_block_hash.clone(),
 		slot: McSlotNumber(parent_stable_block.slot.0 + 100),
 		timestamp: parent_stable_block.timestamp + 101,
 		epoch: McEpochNumber(parent_stable_block.epoch.0),
-	});
-	let native_token_data_source = MockNativeTokenDataSource::new(
-		[(
-			(None, block_data_source.stable_blocks.last().unwrap().hash.clone()),
-			NativeTokenAmount(1000),
-		)]
-		.into(),
-	);
-	let data_sources = DataSources {
-		block: Arc::new(block_data_source),
-		candidate: Arc::new(MockCandidateDataSource::default()),
-		native_token: Arc::new(native_token_data_source),
-	};
+	}]);
 
 	let create_inherent_data_config = test_create_inherent_data_config();
 
-	let verifier_cidp =
-		VerifierCIDP::new(create_inherent_data_config.clone(), test_client(), data_sources);
+	let verifier_cidp = VerifierCIDP::new(
+		create_inherent_data_config.clone(),
+		test_client(),
+		Arc::new(mc_hash_data_source),
+		Arc::new(MockCandidateDataSource::default()),
+		Arc::new(native_token_data_source),
+	);
 
 	let inherent_data_providers = verifier_cidp
 		.create_inherent_data_providers(mock_header().hash(), (30.into(), mc_block_hash))

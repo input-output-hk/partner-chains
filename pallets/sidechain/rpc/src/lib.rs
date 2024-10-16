@@ -6,8 +6,8 @@ use jsonrpsee::{
 	proc_macros::rpc,
 	types::{error::ErrorCode, ErrorObject, ErrorObjectOwned},
 };
-use main_chain_follower_api::BlockDataSource;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
+use sidechain_domain::MainchainBlock;
 use sidechain_slots::SlotApi;
 use sp_api::ProvideRuntimeApi;
 use sp_core::offchain::Timestamp;
@@ -20,6 +20,9 @@ use types::*;
 #[cfg(test)]
 mod tests;
 
+#[cfg(any(test, feature = "mock"))]
+pub mod mock;
+
 #[rpc(client, server, namespace = "sidechain")]
 pub trait SidechainRpcApi<SidechainParams> {
 	#[method(name = "getParams")]
@@ -30,11 +33,16 @@ pub trait SidechainRpcApi<SidechainParams> {
 	async fn get_status(&self) -> RpcResult<GetStatusResponse>;
 }
 
+#[async_trait]
+pub trait SidechainRpcDataSource {
+	async fn get_latest_block_info(&self) -> Result<MainchainBlock, Box<dyn std::error::Error>>;
+}
+
 #[derive(new)]
 pub struct SidechainRpc<C, Block> {
 	client: Arc<C>,
 	mc_epoch_config: MainchainEpochConfig,
-	block_data_source: Arc<dyn BlockDataSource + Send + Sync>,
+	data_source: Arc<dyn SidechainRpcDataSource + Send + Sync>,
 	time_source: Arc<dyn TimeSource + Send + Sync>,
 	_marker: std::marker::PhantomData<Block>,
 }
@@ -79,7 +87,7 @@ where
 			.ok_or(GetStatusRpcError::CannotConvertSidechainSlotToTimestamp)?;
 
 		let latest_mainchain_block =
-			self.block_data_source.get_latest_block_info().await.map_err(|err| {
+			self.data_source.get_latest_block_info().await.map_err(|err| {
 				ErrorObject::owned(
 					ErrorCode::InternalError.code(),
 					format!("Internal error: GetLatestBlockResponse error '{:?}", err),

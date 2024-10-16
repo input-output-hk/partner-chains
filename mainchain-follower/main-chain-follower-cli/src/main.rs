@@ -94,7 +94,6 @@ mod data_source {
 			pool().await?,
 			DbSyncBlockDataSourceConfig::from_env()?,
 			&read_mc_epoch_config()?,
-			None,
 		))
 	}
 
