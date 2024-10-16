@@ -45,24 +45,12 @@ fi
 
 if [ "$PC_NODE_READY" -eq 0 ]; then
   echo "Downloading partner-chains-node..."
-  mkdir partner-chains-node-tmp
-  cd partner-chains-node-tmp
-  wget -q -O ./partner-chains-node.zip "$PARTNER_CHAINS_NODE_URL"
-  unzip -q -o ./partner-chains-node.zip > /dev/null
-  unzip -q -o ./linux_x86_64.zip
-  mv ./partner-chains-node ../partner-chains-node
-  cd ..
+  wget -q -O ./partner-chains-node "$PARTNER_CHAINS_NODE_URL"
 fi
 
 if [ "$PC_CLI_READY" -eq 0 ]; then
   echo "Downloading partner-chains-cli..."
-  mkdir partner-chains-cli-tmp
-  cd partner-chains-cli-tmp
-  wget -q -O ./partner-chains-cli.zip "$PARTNER_CHAINS_CLI_URL"
-  unzip -q -o ./partner-chains-cli.zip > /dev/null
-  unzip -q -o ./linux_x86_64.zip > /dev/null
-  mv ./partner-chains-cli ../partner-chains-cli
-  cd ..
+  wget -q -O ./partner-chains-cli "$PARTNER_CHAINS_CLI_URL"
 fi
 
 # Set executable permissions
