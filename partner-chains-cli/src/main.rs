@@ -6,6 +6,7 @@ pub mod generate_keys;
 pub mod io;
 pub mod keystore;
 pub(crate) mod main_chain_follower;
+pub(crate) mod ogmios;
 pub(crate) mod pc_contracts_cli_resources;
 pub(crate) mod permissioned_candidates;
 mod prepare_configuration;

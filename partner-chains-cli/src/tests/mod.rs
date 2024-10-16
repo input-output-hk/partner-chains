@@ -1,4 +1,5 @@
 use crate::io::IOContext;
+use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 use pretty_assertions::assert_eq;
 use sp_core::offchain::Timestamp;
 use std::collections::HashMap;
@@ -30,6 +31,7 @@ pub enum MockIO {
 	SystemTimeNow(Timestamp),
 	Group(Vec<MockIO>),
 	WithFileLocation(&'static str, u32, Box<MockIO>),
+	OgmiosRPC { addr: &'static str, req: OgmiosRequest, res: OgmiosResponse },
 }
 
 impl MockIO {
@@ -134,6 +136,11 @@ impl MockIO {
 	#[track_caller]
 	pub fn set_env_var(key: &str, value: &str) -> Self {
 		Self::SetEnvVar { key: key.into(), value: value.into() }.with_location()
+	}
+
+	#[track_caller]
+	pub fn ogmios_request(addr: &'static str, req: OgmiosRequest, res: OgmiosResponse) -> Self {
+		Self::OgmiosRPC { addr, req, res }
 	}
 
 	#[track_caller]
@@ -424,6 +431,22 @@ impl IOContext for MockIOContext {
 			other => {
 				panic!("Unexpected new temporary directory request, expected: {other:?}")
 			},
+		})
+	}
+
+	fn ogmios_rpc(
+		&self,
+		addr: &str,
+		req: crate::ogmios::OgmiosRequest,
+	) -> anyhow::Result<crate::ogmios::OgmiosResponse> {
+		let next = self.pop_next_action(&format!("ogmios_rpc(addr = {addr}, req = {req:?})"));
+		next.print_mock_location_on_panic(|next| match next {
+			MockIO::OgmiosRPC { addr: expected_addr, req: expected_req, res } => {
+				assert_eq!(addr, expected_addr, "Unexpected Ogmios RPC address");
+				assert_eq!(req, expected_req, "Unexpected Ogmios RPC request");
+				Ok(res)
+			},
+			other => panic!("Unexpected Ogmios RPC request, expected: {other:?}"),
 		})
 	}
 }

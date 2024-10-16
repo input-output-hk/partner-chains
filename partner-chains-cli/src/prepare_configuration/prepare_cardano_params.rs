@@ -1,223 +1,245 @@
-use crate::config::config_fields::{
-	CARDANO_ACTIVE_SLOTS_COEFF, CARDANO_EPOCH_DURATION_MILLIS, CARDANO_FIRST_EPOCH_NUMBER,
-	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_SECURITY_PARAMETER,
-};
-use crate::config::CardanoParameters;
+use crate::config::{CardanoNetwork, CardanoParameters, ServiceConfig};
 use crate::io::IOContext;
-
-pub(crate) const PREPROD_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
-	security_parameter: 2160,
-	active_slots_coeff: 0.05,
-	first_epoch_number: 4,
-	first_slot_number: 86400,
-	epoch_duration_millis: 432000000,
-	first_epoch_timestamp_millis: 1655769600000,
-};
-
-pub(crate) const MAINNET_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
-	security_parameter: 2160,
-	active_slots_coeff: 0.05,
-	first_epoch_number: 208,
-	first_slot_number: 4492800,
-	epoch_duration_millis: 432000000,
-	first_epoch_timestamp_millis: 1596059091000,
-};
-
-pub(crate) const PREVIEW_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
-	security_parameter: 432,
-	active_slots_coeff: 0.05,
-	first_epoch_number: 0,
-	first_slot_number: 0,
-	epoch_duration_millis: 86400000,
-	first_epoch_timestamp_millis: 1666656000000,
-};
+use crate::ogmios::{EraSummary, OgmiosRequest, OgmiosResponse, ShelleyGenesisConfiguration};
 
 pub fn prepare_cardano_params<C: IOContext>(
+	ogmios_config: &ServiceConfig,
 	context: &C,
-	cardano_network: u32,
 ) -> anyhow::Result<CardanoParameters> {
-	Ok(match cardano_network {
-		0 => {
-			MAINNET_CARDANO_PARAMS.save(context);
-			MAINNET_CARDANO_PARAMS
-		},
-		1 => {
-			PREPROD_CARDANO_PARAMS.save(context);
-			PREPROD_CARDANO_PARAMS
-		},
-		2 => {
-			PREVIEW_CARDANO_PARAMS.save(context);
-			PREVIEW_CARDANO_PARAMS
-		},
-		_ => prompt_for_custom_cardano_params(context)?,
+	let addr = format!("{}", ogmios_config);
+	let eras_summaries = get_eras_summaries(&addr, context)?;
+	let shelley_config = get_shelley_config(&addr, context)?;
+	caradano_parameters(eras_summaries, shelley_config)
+}
+
+fn get_eras_summaries<C: IOContext>(addr: &str, context: &C) -> anyhow::Result<Vec<EraSummary>> {
+	let eras_summaries = context.ogmios_rpc(addr, OgmiosRequest::QueryLedgerStateEraSummaries)?;
+	match eras_summaries {
+		OgmiosResponse::QueryLedgerStateEraSummaries(eras_summaries) => Ok(eras_summaries),
+		other => Err(anyhow::anyhow!(format!(
+			"Unexpected response from Ogmios when quering for era summaries: {other:?}"
+		))),
+	}
+}
+
+fn get_shelley_config<C: IOContext>(
+	addr: &str,
+	context: &C,
+) -> anyhow::Result<ShelleyGenesisConfiguration> {
+	let response = context.ogmios_rpc(addr, OgmiosRequest::QueryNetworkShelleyGenesis)?;
+	match response {
+        OgmiosResponse::QueryNetworkShelleyGenesis(shelley_config) => Ok(shelley_config),
+        other => Err(anyhow::anyhow!(format!("Unexpected response from Ogmios when quering for shelley genesis configuration: {other:?}"))),
+    }
+}
+
+fn caradano_parameters(
+	eras_summaries: Vec<EraSummary>,
+	shelley_config: ShelleyGenesisConfiguration,
+) -> anyhow::Result<CardanoParameters> {
+	let first_epoch_era = get_first_epoch_era(eras_summaries)?;
+	Ok(CardanoParameters {
+		security_parameter: shelley_config.security_parameter.into(),
+		active_slots_coeff: shelley_config.active_slots_coefficient,
+		epoch_duration_millis: (shelley_config.epoch_length as u64)
+			.checked_mul(shelley_config.slot_length_millis)
+			.ok_or_else(|| anyhow::anyhow!("Epoch duration overflow"))?,
+		first_epoch_number: first_epoch_era.start.epoch,
+		first_slot_number: first_epoch_era.start.slot,
+		first_epoch_timestamp_millis: shelley_config
+			.start_time
+			.checked_add(first_epoch_era.start.time_seconds)
+			.and_then(|seconds| seconds.checked_mul(1000))
+			.ok_or_else(|| anyhow::anyhow!("First epoch timestamp overflow"))?,
+		network: CardanoNetwork(shelley_config.network_magic),
 	})
 }
 
-fn prompt_for_custom_cardano_params(context: &impl IOContext) -> anyhow::Result<CardanoParameters> {
-	Ok(CardanoParameters {
-		security_parameter: CARDANO_SECURITY_PARAMETER
-			.prompt_with_default_from_file_parse_and_save(context)?,
-		active_slots_coeff: CARDANO_ACTIVE_SLOTS_COEFF
-			.prompt_with_default_from_file_parse_and_save(context)?,
-		first_epoch_number: CARDANO_FIRST_EPOCH_NUMBER
-			.prompt_with_default_from_file_parse_and_save(context)?,
-		first_slot_number: CARDANO_FIRST_SLOT_NUMBER
-			.prompt_with_default_from_file_parse_and_save(context)?,
-		epoch_duration_millis: CARDANO_EPOCH_DURATION_MILLIS
-			.prompt_with_default_from_file_parse_and_save(context)?,
-		first_epoch_timestamp_millis: CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS
-			.prompt_with_default_from_file_parse_and_save(context)?,
-	})
+// Partner Chains Main Chain follower supports only eras with 1 second slots.
+// This functions gets the first era with 1 second slots,
+// such that all following eras have the same slot length and epoch length.
+fn get_first_epoch_era(eras_summaries: Vec<EraSummary>) -> Result<EraSummary, anyhow::Error> {
+	let latest_era_parameters = eras_summaries
+		.last()
+		.ok_or_else(|| anyhow::anyhow!("No eras found"))?
+		.parameters
+		.clone();
+	if latest_era_parameters.slot_length_millis != 1000 {
+		return Err(anyhow::anyhow!(
+			"Unexpected slot length in latest era, Partner Chains support only 1 second slots"
+		));
+	}
+	let first_epoch_era = eras_summaries
+		.into_iter()
+		.find(|era| era.parameters == latest_era_parameters)
+		.ok_or_else(|| anyhow::anyhow!("No eras found"))?;
+	Ok(first_epoch_era)
 }
 
 #[cfg(test)]
 pub mod tests {
 	use super::*;
-	use crate::config::config_fields::CARDANO_SECURITY_PARAMETER;
+	use crate::config::{NetworkProtocol, CHAIN_CONFIG_FILE_PATH};
+	use crate::ogmios::{EpochBoundary, EpochParameters, EraSummary};
 	use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
-	use crate::prepare_configuration::prepare_cardano_params::tests::scenarios::save_cardano_params;
-	use crate::tests::MockIOContext;
-	use serde_json::Value;
+	use crate::tests::{MockIO, MockIOContext};
 
-	const CUSTOM_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
-		security_parameter: 431,
-		active_slots_coeff: 0.07,
-		first_epoch_number: 0,
-		first_slot_number: 0,
-		epoch_duration_millis: 86800000,
-		first_epoch_timestamp_millis: 1866656000000,
+	pub(crate) const PREPROD_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
+		security_parameter: 2160,
+		active_slots_coeff: 0.05,
+		first_epoch_number: 4,
+		first_slot_number: 86400,
+		epoch_duration_millis: 432000000,
+		first_epoch_timestamp_millis: 1655769600000,
+		network: CardanoNetwork(1),
 	};
 
-	pub mod scenarios {
-		use super::*;
-		use crate::config::config_fields::{
-			CARDANO_ACTIVE_SLOTS_COEFF, CARDANO_EPOCH_DURATION_MILLIS, CARDANO_FIRST_EPOCH_NUMBER,
-			CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER,
-			CARDANO_SECURITY_PARAMETER,
-		};
-		use crate::prepare_configuration::tests::{
-			prompt_with_default_and_save_to_existing_file, save_to_existing_file,
-		};
-		use crate::tests::MockIO;
-
-		pub fn save_cardano_params(cardano_parameters: CardanoParameters) -> MockIO {
-			MockIO::Group(vec![
-				save_cardano_params_but_last(cardano_parameters.clone()),
-				MockIO::file_read(CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS.config_file),
-				MockIO::file_write_json(
-					CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS.config_file,
-					test_chain_config(cardano_parameters),
-				),
-			])
-		}
-
-		pub fn save_cardano_params_but_last(cardano_parameters: CardanoParameters) -> MockIO {
-			MockIO::Group(vec![
-				save_to_existing_file(
-					CARDANO_SECURITY_PARAMETER,
-					&cardano_parameters.security_parameter.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_ACTIVE_SLOTS_COEFF,
-					&cardano_parameters.active_slots_coeff.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_FIRST_EPOCH_NUMBER,
-					&cardano_parameters.first_epoch_number.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_FIRST_SLOT_NUMBER,
-					&cardano_parameters.first_slot_number.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_EPOCH_DURATION_MILLIS,
-					&cardano_parameters.epoch_duration_millis.to_string(),
-				),
-			])
-		}
-
-		pub fn prompt_for_custom_cardano_params() -> MockIO {
-			MockIO::Group(vec![
-				prompt_with_default_and_save_to_existing_file(
-					CARDANO_SECURITY_PARAMETER,
-					CARDANO_SECURITY_PARAMETER.default,
-					&CUSTOM_CARDANO_PARAMS.security_parameter.to_string(),
-				),
-				prompt_with_default_and_save_to_existing_file(
-					CARDANO_ACTIVE_SLOTS_COEFF,
-					CARDANO_ACTIVE_SLOTS_COEFF.default,
-					&CUSTOM_CARDANO_PARAMS.active_slots_coeff.to_string(),
-				),
-				prompt_with_default_and_save_to_existing_file(
-					CARDANO_FIRST_EPOCH_NUMBER,
-					CARDANO_FIRST_EPOCH_NUMBER.default,
-					&CUSTOM_CARDANO_PARAMS.first_epoch_number.to_string(),
-				),
-				prompt_with_default_and_save_to_existing_file(
-					CARDANO_FIRST_SLOT_NUMBER,
-					CARDANO_FIRST_SLOT_NUMBER.default,
-					&CUSTOM_CARDANO_PARAMS.first_slot_number.to_string(),
-				),
-				prompt_with_default_and_save_to_existing_file(
-					CARDANO_EPOCH_DURATION_MILLIS,
-					CARDANO_EPOCH_DURATION_MILLIS.default,
-					&CUSTOM_CARDANO_PARAMS.epoch_duration_millis.to_string(),
-				),
-				prompt_with_default_and_save_to_existing_file(
-					CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS,
-					CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS.default,
-					&CUSTOM_CARDANO_PARAMS.first_epoch_timestamp_millis.to_string(),
-				),
-			])
-		}
-	}
+	pub(crate) const PREVIEW_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
+		security_parameter: 432,
+		active_slots_coeff: 0.05,
+		first_epoch_number: 0,
+		first_slot_number: 0,
+		epoch_duration_millis: 86400000,
+		first_epoch_timestamp_millis: 1666656000000,
+		network: CardanoNetwork(2),
+	};
 
 	#[test]
 	fn should_persist_correct_cardano_params_for_preview() {
-		test_saving_cardano_params_for_hardcoded_networks(PREVIEW_CARDANO_PARAMS, 2)
-	}
-
-	#[test]
-	fn should_persist_correct_cardano_params_for_mainnet() {
-		test_saving_cardano_params_for_hardcoded_networks(MAINNET_CARDANO_PARAMS, 0)
+		test_saving_cardano_params_for_known_network(
+			preview_eras_summaries(),
+			preview_shelley_config(),
+			PREVIEW_CARDANO_PARAMS,
+		)
 	}
 
 	#[test]
 	fn should_persist_correct_cardano_params_for_preprod() {
-		test_saving_cardano_params_for_hardcoded_networks(PREPROD_CARDANO_PARAMS, 1)
+		test_saving_cardano_params_for_known_network(
+			preprod_eras_summaries(),
+			preprod_shelley_config(),
+			PREPROD_CARDANO_PARAMS,
+		)
 	}
 
-	#[test]
-	fn prompt_for_custom_params() {
-		let mock_context = MockIOContext::new()
-			.with_json_file(CARDANO_SECURITY_PARAMETER.config_file, serde_json::json!({}))
-			.with_expected_io(vec![scenarios::prompt_for_custom_cardano_params()]);
-		let params = prepare_cardano_params(&mock_context, 3).unwrap();
-		assert_eq!(params, CUSTOM_CARDANO_PARAMS)
-	}
-
-	fn test_saving_cardano_params_for_hardcoded_networks(
-		cardano_parameters: CardanoParameters,
-		cardano_network: u32,
+	fn test_saving_cardano_params_for_known_network(
+		eras_summaries: Vec<EraSummary>,
+		shelley_config: ShelleyGenesisConfiguration,
+		expected_cardano_parameters: CardanoParameters,
 	) {
+		let ogmios_config = ServiceConfig {
+			protocol: NetworkProtocol::Https,
+			hostname: "ogmios.com".to_string(),
+			port: 7654,
+		};
 		let mock_context = MockIOContext::new()
-			.with_json_file(CARDANO_SECURITY_PARAMETER.config_file, serde_json::json!({}))
-			.with_expected_io(vec![save_cardano_params(cardano_parameters.clone())]);
-		let result = prepare_cardano_params(&mock_context, cardano_network);
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, serde_json::json!({}))
+			.with_expected_io(vec![
+				MockIO::ogmios_request(
+					"https://ogmios.com:7654",
+					OgmiosRequest::QueryLedgerStateEraSummaries,
+					OgmiosResponse::QueryLedgerStateEraSummaries(eras_summaries),
+				),
+				MockIO::ogmios_request(
+					"https://ogmios.com:7654",
+					OgmiosRequest::QueryNetworkShelleyGenesis,
+					OgmiosResponse::QueryNetworkShelleyGenesis(shelley_config),
+				),
+			]);
+		let result = prepare_cardano_params(&ogmios_config, &mock_context);
 		let params = result.expect("should succeed");
-		assert_eq!(params, cardano_parameters);
+		assert_eq!(params, expected_cardano_parameters);
 	}
 
-	fn test_chain_config(cardano_parameters: CardanoParameters) -> Value {
-		serde_json::json!({
-			"cardano": {
-				"security_parameter": cardano_parameters.security_parameter,
-				"active_slots_coeff": cardano_parameters.active_slots_coeff,
-				"first_epoch_number": cardano_parameters.first_epoch_number,
-				"first_slot_number": cardano_parameters.first_slot_number,
-				"epoch_duration_millis": cardano_parameters.epoch_duration_millis,
-				"first_epoch_timestamp_millis": cardano_parameters.first_epoch_timestamp_millis
+	pub(crate) fn preprod_eras_summaries() -> Vec<EraSummary> {
+		vec![
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 21600, slot_length_millis: 20000 },
 			},
-		})
+			EraSummary {
+				start: EpochBoundary { time_seconds: 1728000, slot: 86400, epoch: 4 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 2160000, slot: 518400, epoch: 5 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 2592000, slot: 950400, epoch: 6 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 3024000, slot: 1382400, epoch: 7 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 5184000, slot: 3542400, epoch: 12 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 5184000, slot: 3542400, epoch: 12 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 70416000, slot: 68774400, epoch: 163 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+		]
+	}
+
+	pub(crate) fn preprod_shelley_config() -> ShelleyGenesisConfiguration {
+		ShelleyGenesisConfiguration {
+			network_magic: 1,
+			security_parameter: 2160,
+			active_slots_coefficient: 0.05,
+			epoch_length: 432000,
+			slot_length_millis: 1000,
+			start_time: 1654041600,
+		}
+	}
+
+	pub(crate) fn preview_eras_summaries() -> Vec<EraSummary> {
+		vec![
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 4320, slot_length_millis: 20000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 259200, slot: 259200, epoch: 3 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 55814400, slot: 55814400, epoch: 646 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+		]
+	}
+
+	pub(crate) fn preview_shelley_config() -> ShelleyGenesisConfiguration {
+		ShelleyGenesisConfiguration {
+			network_magic: 2,
+			security_parameter: 432,
+			active_slots_coefficient: 0.05,
+			epoch_length: 86400,
+			slot_length_millis: 1000,
+			start_time: 1666656000,
+		}
 	}
 }

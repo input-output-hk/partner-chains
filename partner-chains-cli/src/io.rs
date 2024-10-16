@@ -1,3 +1,4 @@
+use crate::ogmios::{ogmios_request, OgmiosRequest, OgmiosResponse};
 use anyhow::{anyhow, Context};
 use sp_core::offchain::Timestamp;
 use std::path::PathBuf;
@@ -26,6 +27,7 @@ pub trait IOContext {
 	fn delete_file(&self, path: &str) -> anyhow::Result<()>;
 	fn set_env_var(&self, key: &str, value: &str);
 	fn current_timestamp(&self) -> Timestamp;
+	fn ogmios_rpc(&self, addr: &str, req: OgmiosRequest) -> anyhow::Result<OgmiosResponse>;
 }
 
 pub struct DefaultCmdRunContext;
@@ -153,6 +155,10 @@ impl IOContext for DefaultCmdRunContext {
 			.duration_since(std::time::SystemTime::UNIX_EPOCH)
 			.expect("Current time is always after unix epoch");
 		Timestamp::from_unix_millis(duration.as_millis() as u64)
+	}
+
+	fn ogmios_rpc(&self, addr: &str, req: OgmiosRequest) -> anyhow::Result<OgmiosResponse> {
+		ogmios_request(addr, req)
 	}
 }
 

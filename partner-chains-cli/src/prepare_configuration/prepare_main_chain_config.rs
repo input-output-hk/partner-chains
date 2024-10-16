@@ -1,5 +1,5 @@
 use crate::config::config_fields::{
-	CARDANO_NETWORK, COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
+	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
 	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
 	PERMISSIONED_CANDIDATES_POLICY_ID,
 };
@@ -37,9 +37,10 @@ pub fn prepare_main_chain_config<C: IOContext>(
 	let pc_contracts_cli_version = context.run_command(PC_CONTRACTS_CLI_VERSION_CMD)?;
 	context.eprint(&pc_contracts_cli_version_prompt(pc_contracts_cli_version));
 
-	let cardano_network = prompt_cardano_network(context)?;
-	prepare_cardano_params(context, cardano_network)?;
-	set_up_cardano_addresses(context, sidechain_params)?;
+	let kupo_ogmios_config = establish_pc_contracts_cli_configuration(context)?;
+	let cardano_parameteres = prepare_cardano_params(&kupo_ogmios_config.ogmios, context)?;
+	cardano_parameteres.save(context);
+	set_up_cardano_addresses(context, sidechain_params, kupo_ogmios_config)?;
 	if INITIAL_PERMISSIONED_CANDIDATES.load_from_file(context).is_none() {
 		INITIAL_PERMISSIONED_CANDIDATES.save_to_file(&vec![], context)
 	}
@@ -48,36 +49,11 @@ pub fn prepare_main_chain_config<C: IOContext>(
 	Ok(())
 }
 
-fn prompt_for_custom_cardano_network_id(context: &impl IOContext) -> anyhow::Result<u32> {
-	loop {
-		let id = context.prompt("Enter custom cardano network ID", Some("3"));
-		match id.parse::<u32>() {
-			Ok(id) if id >= 3 => return Ok(id),
-			_ => context.eprint("Custom cardano network ID must be a number greater or equal to 3"),
-		}
-	}
-}
-
-fn prompt_cardano_network<C: IOContext>(context: &C) -> anyhow::Result<u32> {
-	let selected_network: CardanoNetwork = CARDANO_NETWORK
-		.select_options_with_default_from_file_and_save(CHOOSE_CARDANO_NETWORK, context)
-		.map_err(anyhow::Error::msg)?;
-	let cardano_network: CardanoNetwork = match selected_network {
-		CardanoNetwork(id) if id >= 3 => {
-			let custom_id = prompt_for_custom_cardano_network_id(context)?;
-			CardanoNetwork(custom_id)
-		},
-		_ => selected_network,
-	};
-	CARDANO_NETWORK.save_to_file(&cardano_network, context);
-	Ok(cardano_network.to_id())
-}
-
 fn set_up_cardano_addresses<C: IOContext>(
 	context: &C,
 	params: SidechainParams,
+	kupo_ogmios_config: PcContractsCliResources,
 ) -> anyhow::Result<()> {
-	let kupo_ogmios_config = establish_pc_contracts_cli_configuration(context)?;
 	run_pc_contracts_cli_addresses(context, params, kupo_ogmios_config)?;
 	Ok(())
 }
@@ -189,7 +165,6 @@ fn addresses_cmd(
 	)
 }
 
-const CHOOSE_CARDANO_NETWORK: &str = "Which cardano network would you like to use?";
 const OUTRO: &str = r#"Chain configuration (partner-chains-cli-chain-config.json) is now ready for distribution to network participants.
 
 If you intend to run a chain with permissioned candidates, you must manually set their keys in the partner-chains-cli-chain-config.json file before proceeding. Here's an example of how to add permissioned candidates:
@@ -223,7 +198,10 @@ mod tests {
 	use super::*;
 	use crate::config::config_fields::{GOVERNANCE_AUTHORITY, KUPO_PROTOCOL};
 	use crate::config::CHAIN_CONFIG_FILE_PATH;
-	use crate::prepare_configuration::prepare_cardano_params::PREPROD_CARDANO_PARAMS;
+	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
+	use crate::prepare_configuration::prepare_cardano_params::tests::{
+		preprod_eras_summaries, preprod_shelley_config, PREPROD_CARDANO_PARAMS,
+	};
 	use crate::prepare_configuration::tests::save_to_existing_file;
 	use crate::tests::MockIO;
 	use crate::tests::MockIOContext;
@@ -247,12 +225,34 @@ mod tests {
 
 	pub mod scenarios {
 		use super::*;
-		use crate::config::config_fields::CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS;
-		use crate::prepare_configuration::prepare_cardano_params::tests::scenarios::save_cardano_params_but_last;
+		use crate::config::config_fields::*;
 
 		pub fn save_cardano_params() -> MockIO {
 			MockIO::Group(vec![
-				save_cardano_params_but_last(PREPROD_CARDANO_PARAMS),
+				save_to_existing_file(
+					CARDANO_NETWORK,
+					&PREPROD_CARDANO_PARAMS.network.0.to_string(),
+				),
+				save_to_existing_file(
+					CARDANO_SECURITY_PARAMETER,
+					&PREPROD_CARDANO_PARAMS.security_parameter.to_string(),
+				),
+				save_to_existing_file(
+					CARDANO_ACTIVE_SLOTS_COEFF,
+					&PREPROD_CARDANO_PARAMS.active_slots_coeff.to_string(),
+				),
+				save_to_existing_file(
+					CARDANO_FIRST_EPOCH_NUMBER,
+					&PREPROD_CARDANO_PARAMS.first_epoch_number.to_string(),
+				),
+				save_to_existing_file(
+					CARDANO_FIRST_SLOT_NUMBER,
+					&PREPROD_CARDANO_PARAMS.first_slot_number.to_string(),
+				),
+				save_to_existing_file(
+					CARDANO_EPOCH_DURATION_MILLIS,
+					&PREPROD_CARDANO_PARAMS.epoch_duration_millis.to_string(),
+				),
 				save_to_existing_file(
 					CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS,
 					&PREPROD_CARDANO_PARAMS.first_epoch_timestamp_millis.to_string(),
@@ -302,27 +302,18 @@ mod tests {
 			.with_expected_io(vec![
 				MockIO::run_command(PC_CONTRACTS_CLI_VERSION_CMD, PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT),
 				MockIO::eprint(&pc_contracts_cli_version_prompt(PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT.to_string())),
-
-				MockIO::file_read(CARDANO_NETWORK.config_file),
-				MockIO::prompt_multi_option(
-					CHOOSE_CARDANO_NETWORK,
-					vec!["mainnet".to_string(), "preprod".to_string(), "preview".to_string(), "custom".to_string()],
-					"preprod"
+				crate::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io(None, PcContractsCliResources::default()),
+				MockIO::ogmios_request(
+					"http://localhost:1337",
+					OgmiosRequest::QueryLedgerStateEraSummaries,
+					OgmiosResponse::QueryLedgerStateEraSummaries(preprod_eras_summaries()),
 				),
-				MockIO::file_read(CARDANO_NETWORK.config_file),
-				MockIO::file_write_json_contains(
-					CARDANO_NETWORK.config_file,
-					&CARDANO_NETWORK.json_pointer(),
-					"1",
-				),
-				MockIO::file_read(CARDANO_NETWORK.config_file),
-				MockIO::file_write_json_contains(
-					CARDANO_NETWORK.config_file,
-					&CARDANO_NETWORK.json_pointer(),
-					"1",
+				MockIO::ogmios_request(
+					"http://localhost:1337",
+					OgmiosRequest::QueryNetworkShelleyGenesis,
+					OgmiosResponse::QueryNetworkShelleyGenesis(preprod_shelley_config()),
 				),
 				scenarios::save_cardano_params(),
-				crate::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io(None, PcContractsCliResources::default()),
 				MockIO::new_tmp_file(DUMMY_SKEY),
 				MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 				MockIO::run_command(
@@ -378,26 +369,18 @@ mod tests {
 			.with_expected_io(vec![
 				MockIO::run_command(PC_CONTRACTS_CLI_VERSION_CMD, PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT),
 				MockIO::eprint(&pc_contracts_cli_version_prompt(PC_CONTRACTS_CLI_VERSION_CMD_OUTPUT.to_string())),
-				MockIO::file_read(CARDANO_NETWORK.config_file),
-				MockIO::prompt_multi_option(
-					CHOOSE_CARDANO_NETWORK,
-					vec!["mainnet".to_string(), "preprod".to_string(), "preview".to_string(), "custom".to_string()],
-					"preprod"
+				crate::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io(None, PcContractsCliResources::default()),
+				MockIO::ogmios_request(
+					"http://localhost:1337",
+					OgmiosRequest::QueryLedgerStateEraSummaries,
+					OgmiosResponse::QueryLedgerStateEraSummaries(preprod_eras_summaries()),
 				),
-				MockIO::file_read(CARDANO_NETWORK.config_file),
-				MockIO::file_write_json_contains(
-					CARDANO_NETWORK.config_file,
-					&CARDANO_NETWORK.json_pointer(),
-					"1",
-				),
-				MockIO::file_read(CARDANO_NETWORK.config_file),
-				MockIO::file_write_json_contains(
-					CARDANO_NETWORK.config_file,
-					&CARDANO_NETWORK.json_pointer(),
-					"1",
+				MockIO::ogmios_request(
+					"http://localhost:1337",
+					OgmiosRequest::QueryNetworkShelleyGenesis,
+					OgmiosResponse::QueryNetworkShelleyGenesis(preprod_shelley_config()),
 				),
 				scenarios::save_cardano_params(),
-				crate::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io(None, PcContractsCliResources::default()),
 				MockIO::new_tmp_file(DUMMY_SKEY),
 				MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 				MockIO::run_command(

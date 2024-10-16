@@ -18,6 +18,7 @@ provider will not query the main chain state or produce inherent data at all.
 * Implemented batch queries and caching for the native token observability. Improves performance of the full-sync.
 * Decoupled the native token inherent data provider from the `main-chain-follower-api` crate.
 * Added ogmios-client interal library for communication with Ogmios
+* Using Ogmios for reading Cardano Network parameters in `partner-chains-cli`, instead of asking user to choose them
 
 ## Removed
 
