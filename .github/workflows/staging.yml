@@ -57,7 +57,7 @@ jobs:
     - name: Acquire AWS Credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN_ }}
         aws-region: "eu-central-1"
 
     - name: checkout code
@@ -67,7 +67,7 @@ jobs:
 
     - name: Set deployment_version as env variable
       run: echo "DEPLOYMENT_VERSION=$(jq -r .deployment_version ./config/substrate/staging_nodes.json)" >> $GITHUB_ENV
-    
+
     - name: Set XRay variables
       run: |
         if [ ! -z "${{ inputs.plan }}" ]; then

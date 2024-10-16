@@ -38,7 +38,7 @@ jobs:
       contents: read
 
     runs-on: [self-hosted, eks]
-    
+
     if: github.event.pull_request.draft == false
 
     env:
@@ -53,7 +53,7 @@ jobs:
     - name: Acquire AWS Credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN_ }}
         aws-region: "eu-central-1"
 
     - name: checkout code
@@ -63,7 +63,7 @@ jobs:
 
     - name: Set deployment_version as env variable
       run: echo "DEPLOYMENT_VERSION=$(jq -r .deployment_version ./config/substrate/devnet_nodes.json)" >> $GITHUB_ENV
-    
+
     - name: Set XRay variables
       run: |
         if [ ! -z "${{ inputs.plan }}" ]; then
@@ -76,7 +76,7 @@ jobs:
 
     - name: set report_to_xray env variable
       run: |
-        echo "REPORT_TO_XRAY=$([[ '${{ github.event_name }}' == 'schedule' || -n '${{ github.event.inputs.plan }}' || -n '${{ github.event.inputs.execution }}' ]] && echo true || echo false )" >> $GITHUB_ENV    
+        echo "REPORT_TO_XRAY=$([[ '${{ github.event_name }}' == 'schedule' || -n '${{ github.event.inputs.plan }}' || -n '${{ github.event.inputs.execution }}' ]] && echo true || echo false )" >> $GITHUB_ENV
 
     - name: install earthly
       uses: earthly/actions-setup@v1
@@ -143,11 +143,11 @@ jobs:
       if: ${{ !cancelled() }}
       with:
         node-version: 'latest'
-  
+
     - name: Install Ctrf
       if: ${{ !cancelled() }}
       run: npm install github-actions-ctrf
-  
+
     - name: Generate Summary Report
       if: ${{ !cancelled() }}
       run: |
