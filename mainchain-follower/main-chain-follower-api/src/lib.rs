@@ -9,11 +9,6 @@ use thiserror::Error;
 /// Types that will be used by the Cardano follower
 pub mod common;
 
-#[cfg(feature = "block-source")]
-pub mod block;
-#[cfg(feature = "block-source")]
-pub use block::BlockDataSource;
-
 #[cfg(feature = "candidate-source")]
 pub mod candidate;
 #[cfg(feature = "candidate-source")]

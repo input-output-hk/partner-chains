@@ -142,7 +142,9 @@ pub fn new_partial(
 		create_inherent_data_providers: VerifierCIDP::new(
 			inherent_config,
 			client.clone(),
-			data_sources.clone(),
+			data_sources.mc_hash.clone(),
+			data_sources.candidate.clone(),
+			data_sources.native_token.clone(),
 		),
 		spawner: &task_manager.spawn_essential_handle(),
 		registry: config.prometheus_registry(),
@@ -335,7 +337,9 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 			create_inherent_data_providers: ProposalCIDP::new(
 				inherent_config,
 				client.clone(),
-				data_sources.clone(),
+				data_sources.mc_hash.clone(),
+				data_sources.candidate.clone(),
+				data_sources.native_token.clone(),
 			),
 			force_authoring,
 			backoff_authoring_blocks,

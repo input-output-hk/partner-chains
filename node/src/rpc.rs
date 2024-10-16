@@ -101,7 +101,7 @@ where
 		SidechainRpc::new(
 			client.clone(),
 			MainchainEpochConfig::read_from_env().unwrap(),
-			main_chain_follower_data_sources.block.clone(),
+			main_chain_follower_data_sources.sidechain_rpc.clone(),
 			time_source.clone(),
 		)
 		.into_rpc(),

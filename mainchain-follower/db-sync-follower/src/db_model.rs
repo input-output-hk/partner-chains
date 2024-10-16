@@ -106,9 +106,9 @@ pub(crate) struct Block {
 }
 
 #[cfg(feature = "block-source")]
-impl From<Block> for main_chain_follower_api::block::MainchainBlock {
+impl From<Block> for MainchainBlock {
 	fn from(b: Block) -> Self {
-		main_chain_follower_api::block::MainchainBlock {
+		MainchainBlock {
 			number: McBlockNumber(b.block_no.0),
 			hash: McBlockHash(b.hash),
 			epoch: McEpochNumber(b.epoch_no.0),

@@ -116,6 +116,16 @@ impl Display for McSlotNumber {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, FromStr))]
 pub struct ScSlotNumber(pub u64);
 
+#[derive(Debug, Clone, PartialEq, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct MainchainBlock {
+	pub number: McBlockNumber,
+	pub hash: McBlockHash,
+	pub epoch: McEpochNumber,
+	pub slot: McSlotNumber,
+	pub timestamp: u64, // seconds since UNIX_EPOCH
+}
+
 /// An index of transaction in a block. In range [0, 2^31-1].
 #[derive(
 	Default,

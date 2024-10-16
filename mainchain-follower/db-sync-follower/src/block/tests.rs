@@ -1,7 +1,6 @@
-use crate::block::{BlockDataSource, BlockDataSourceImpl, BlocksCache};
+use crate::block::{BlockDataSourceImpl, BlocksCache, MainchainBlock};
 use chrono::{NaiveDateTime, TimeDelta};
 use hex_literal::hex;
-use main_chain_follower_api::block::MainchainBlock;
 use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig, Timestamp};
 use sidechain_domain::{McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber};
 use sqlx::PgPool;
@@ -263,7 +262,6 @@ fn mk_datasource(pool: PgPool, security_parameter: u32) -> BlockDataSourceImpl {
 		max_slot_boundary_as_seconds: TimeDelta::seconds(5000),
 		mainchain_epoch_config: mainchain_epoch_config(),
 		block_stability_margin: 0,
-		metrics_opt: None,
 		cache_size: 100,
 		stable_blocks_cache: BlocksCache::new_arc_mutex(),
 	}

@@ -92,8 +92,8 @@ sidechain-runtime = { workspace = true }
 sidechain-mc-hash = { workspace = true, features = ["mock"] }
 sp-native-token-management = { workspace = true }
 main-chain-follower-api = { workspace = true }
-db-sync-follower = { workspace = true, features = ["block-source", "candidate-source", "native-token"] }
-main-chain-follower-mock = { workspace = true, features = ["block-source", "candidate-source", "native-token"] }
+db-sync-follower = { workspace = true, features = ["block-source", "candidate-source", "native-token", "mc-hash", "sidechain-rpc"] }
+main-chain-follower-mock = { workspace = true, features = ["block-source", "candidate-source", "native-token", "mc-hash", "sidechain-rpc"] }
 tokio = { workspace = true }
 cli-commands = { workspace = true }
 
@@ -105,6 +105,7 @@ hex-literal = { workspace = true }
 time-source = { workspace = true, features = ["mock"] }
 assert_cmd = { workspace = true }
 sp-native-token-management = { workspace = true, features = ["mock"] }
+pallet-sidechain-rpc = { workspace = true, features = ["mock"] }
 
 [features]
 default = ["sidechain-domain/std", "chain-params/std"]
