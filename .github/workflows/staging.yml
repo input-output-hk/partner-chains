@@ -88,6 +88,13 @@ jobs:
         ssh_key: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
         config_tar: ${{ secrets.EARTHLY_TAR }}
 
+    - name: List directory structure
+      run: |
+        echo "Current directory:"
+        pwd
+        echo "Directory structure:"
+        tree -L 3 || ls -R  # tree command might not be available, so we use ls -R as a fallback
+
     - name: run
       env:
         EARTHLY_BUILD_ARGS: "CI_RUN=true"
@@ -106,6 +113,13 @@ jobs:
         JIRA_URL: ${{ secrets.JIRA_URL }}
         MARKERS: "not active_flow and not passive_flow"
       run: |
+        echo "Current directory:"
+        pwd
+        echo "Contents of current directory:"
+        ls -la
+        echo "Contents of E2E-tests directory (if it exists):"
+        ls -la E2E-tests || echo "E2E-tests directory not found"
+        
         earthly \
           --secret AWS_SESSION_TOKEN="$AWS_SESSION_TOKEN" \
           --secret AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
