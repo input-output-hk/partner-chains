@@ -92,8 +92,8 @@ jobs:
       run: |
         echo "Current directory:"
         pwd
-        echo "Directory structure:"
-        tree -L 3 || ls -R  # tree command might not be available, so we use ls -R as a fallback
+        echo "Directory structure from root:"
+        tree -L 3 ../../ || ls -R ../../  # Go up two levels to reach the root
 
     - name: run
       env:
@@ -115,10 +115,10 @@ jobs:
       run: |
         echo "Current directory:"
         pwd
-        echo "Contents of current directory:"
-        ls -la
-        echo "Contents of E2E-tests directory (if it exists):"
-        ls -la E2E-tests || echo "E2E-tests directory not found"
+        echo "Contents of root directory:"
+        ls -la ../../
+        echo "Contents of E2E-tests directory:"
+        ls -la ../../E2E-tests || echo "E2E-tests directory not found"
         
         earthly \
           --secret AWS_SESSION_TOKEN="$AWS_SESSION_TOKEN" \
@@ -130,7 +130,7 @@ jobs:
           --secret XRAY_API_BASE_URL="$XRAY_API_BASE_URL" \
           --secret JIRA_URL="$JIRA_URL" \
           --ssh-auth-sock="$SSH_AUTH_SOCK" \
-          ./E2E-tests+report \
+          ../../E2E-tests+report \
           --log_level="${LOG_LEVEL:-"info"}" \
           --env=${{ env.TEST_ENVIRONMENT }} \
           --stack=${{ env.TEST_ENVIRONMENT }} \
