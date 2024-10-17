@@ -2,6 +2,7 @@ use crate::block::BlockDataSourceMock;
 use crate::Result;
 use async_trait::async_trait;
 use sidechain_domain::*;
+use sp_timestamp::Timestamp;
 use std::sync::Arc;
 
 pub struct McHashDataSourceMock {
@@ -22,7 +23,7 @@ impl sidechain_mc_hash::McHashDataSource for McHashDataSourceMock {
 	) -> Result<Option<MainchainBlock>> {
 		Ok(self
 			.block_source
-			.get_latest_stable_block_for(Timestamp(reference_timestamp.as_millis()))
+			.get_latest_stable_block_for(Timestamp::new(reference_timestamp.as_millis()))
 			.await?)
 	}
 
@@ -33,7 +34,7 @@ impl sidechain_mc_hash::McHashDataSource for McHashDataSourceMock {
 	) -> Result<Option<MainchainBlock>> {
 		Ok(self
 			.block_source
-			.get_stable_block_for(hash, Timestamp(reference_timestamp.as_millis()))
+			.get_stable_block_for(hash, Timestamp::new(reference_timestamp.as_millis()))
 			.await?)
 	}
 }
