@@ -1,14 +1,19 @@
 use super::*;
+use crate::tests::query_mock::TestRuntimeApi;
 use authority_selection_inherents::filter_invalid_candidates::{
 	validate_permissioned_candidate_data, validate_registration_data,
 	PermissionedCandidateDataError, RegistrationDataError, StakeError,
 };
 use mock::*;
-use rpc_mock::*;
 use sidechain_domain::*;
 use sp_core::{Decode, Encode};
 use sp_session_validator_management::MainChainScripts;
 use std::str::FromStr;
+
+pub type Block = sp_runtime::generic::Block<
+	sp_runtime::generic::Header<u32, sp_runtime::traits::BlakeTwo256>,
+	sp_runtime::OpaqueExtrinsic,
+>;
 
 type SessionKeys = u64;
 #[derive(Encode, Decode)]
@@ -59,8 +64,8 @@ sp_api::mock_impl_runtime_apis! {
 			self.check_using_same_instance_for_same_block(at.encode())?;
 			Ok(MainChainScripts{
 				committee_candidate_address: MainchainAddress::from_str("addr_0000").unwrap(),
-				d_parameter_policy: PolicyId([1u8; 28]),
-				permissioned_candidates_policy: PolicyId([2u8; 28]),
+				d_parameter_policy_id: PolicyId([1u8; 28]),
+				permissioned_candidates_policy_id: PolicyId([2u8; 28]),
 			})
 		}
 	}

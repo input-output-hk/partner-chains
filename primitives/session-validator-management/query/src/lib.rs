@@ -21,6 +21,9 @@ use sp_sidechain::{GetSidechainParams, GetSidechainStatus};
 use std::sync::Arc;
 use types::*;
 
+#[cfg(test)]
+mod tests;
+
 pub type QueryResult<T> = Result<T, String>;
 
 #[async_trait]

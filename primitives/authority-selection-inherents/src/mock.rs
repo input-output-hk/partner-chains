@@ -19,6 +19,19 @@ impl Default for MockAuthoritySelectionDataSource {
 	}
 }
 
+impl MockAuthoritySelectionDataSource {
+	pub fn with_candidates_per_epoch(self, candidates: Vec<Vec<CandidateRegistrations>>) -> Self {
+		Self { candidates, ..self }
+	}
+
+	pub fn with_permissioned_candidates(
+		self,
+		permissioned_candidates: Vec<Option<Vec<RawPermissionedCandidateData>>>,
+	) -> Self {
+		Self { permissioned_candidates, ..self }
+	}
+}
+
 #[async_trait::async_trait]
 impl AuthoritySelectionDataSource for MockAuthoritySelectionDataSource {
 	async fn get_ariadne_parameters(

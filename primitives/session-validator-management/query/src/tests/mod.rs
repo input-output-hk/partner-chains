@@ -6,8 +6,9 @@ mod runtime_api_mock;
 use super::types::{CommitteeMember, GetCommitteeResponse};
 use super::SessionValidatorManagementQuery;
 use super::*;
+use crate::tests::query_mock::TestApi;
+use authority_selection_inherents::mock::MockAuthoritySelectionDataSource;
 use mock::*;
-use rpc_mock::*;
 use sidechain_domain::*;
 use sp_core::bytes::to_hex;
 use sp_core::crypto::Ss58Codec;
@@ -45,14 +46,7 @@ async fn get_epoch_committee_should_not_work_when_committee_is_in_the_future() {
 	let candidate_data_source = MockAuthoritySelectionDataSource::default();
 	let rpc = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source));
 	let error = rpc.get_epoch_committee(conversion::BEST_EPOCH + 2).unwrap_err();
-	assert_eq!(
-		error,
-		ErrorObject::owned(
-			-1,
-			format!("Committee is unknown for epoch {}", conversion::BEST_EPOCH + 2),
-			None::<u8>
-		)
-	);
+	assert_eq!(error, format!("Committee is unknown for epoch {}", conversion::BEST_EPOCH + 2));
 }
 
 #[tokio::test]
@@ -61,10 +55,7 @@ async fn get_epoch_committee_should_not_work_for_epoch_lesser_than_first_epoch()
 	let candidate_data_source = MockAuthoritySelectionDataSource::default();
 	let rpc = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source));
 	let error = rpc.get_epoch_committee(conversion::EPOCH_OF_BLOCK_1 - 1).unwrap_err();
-	assert_eq!(
-		error,
-		ErrorObject::owned(-1, "Epoch 16 is earlier than the Initial Epoch!", None::<u8>)
-	);
+	assert_eq!(error, "Epoch 16 is earlier than the Initial Epoch!");
 	assert!(rpc.get_epoch_committee(conversion::EPOCH_OF_BLOCK_1).is_ok());
 }
 
