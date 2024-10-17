@@ -78,12 +78,12 @@ jobs:
       run: |
         echo "REPORT_TO_XRAY=$([[ '${{ github.event_name }}' == 'schedule' || -n '${{ github.event.inputs.plan }}' || -n '${{ github.event.inputs.execution }}' ]] && echo true || echo false )" >> $GITHUB_ENV
 
-    - name: install earthly
-      uses: earthly/actions-setup@v1
+    - name: Setup Earthly
+      uses: ./.github/earthly-setup
       with:
-        github-token: ${{ github.token }}
-        use-cache: true
-        version: ^0.7.0
+        ssh_key: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+        config_tar: ${{ secrets.EARTHLY_TAR }}
+
     - name: run
       env:
         EARTHLY_BUILD_ARGS: "CI_RUN=true"
