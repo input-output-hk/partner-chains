@@ -1,9 +1,9 @@
 use crate::db_model::{Block, BlockNumber};
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
+use crate::{DataSourceError, Result};
 use derive_new::new;
 use itertools::Itertools;
-use main_chain_follower_api::{DataSourceError, Result};
 use sidechain_domain::*;
 use sp_native_token_management::NativeTokenManagementDataSource;
 use sqlx::PgPool;

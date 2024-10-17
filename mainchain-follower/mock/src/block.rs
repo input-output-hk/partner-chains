@@ -1,7 +1,6 @@
-use main_chain_follower_api::common::*;
-use main_chain_follower_api::*;
+use crate::Result;
 use sidechain_domain::*;
-use std::error::Error;
+use sp_timestamp::Timestamp;
 
 pub struct BlockDataSourceMock {
 	/// Duration of a mainchain epoch in milliseconds
@@ -11,7 +10,7 @@ pub struct BlockDataSourceMock {
 impl BlockDataSourceMock {
 	pub async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
 		Ok(self
-			.get_latest_stable_block_for(Timestamp(BlockDataSourceMock::millis_now()))
+			.get_latest_stable_block_for(Timestamp::new(BlockDataSourceMock::millis_now()))
 			.await
 			.unwrap()
 			.unwrap())
@@ -21,7 +20,7 @@ impl BlockDataSourceMock {
 		&self,
 		reference_timestamp: Timestamp,
 	) -> Result<Option<MainchainBlock>> {
-		let block_number = (reference_timestamp.0 / 20000) as u32;
+		let block_number = (reference_timestamp.as_millis() / 20000) as u32;
 		let epoch = block_number / self.block_per_epoch();
 		let mut hash_arr = [0u8; 32];
 		hash_arr[..4].copy_from_slice(&block_number.to_be_bytes());
@@ -30,7 +29,7 @@ impl BlockDataSourceMock {
 			hash: McBlockHash(hash_arr),
 			epoch: McEpochNumber(epoch),
 			slot: McSlotNumber(block_number as u64),
-			timestamp: reference_timestamp.0,
+			timestamp: reference_timestamp.as_millis(),
 		}))
 	}
 
@@ -48,7 +47,7 @@ impl BlockDataSourceMock {
 		Self { mc_epoch_duration_millis }
 	}
 
-	pub fn new_from_env() -> std::result::Result<Self, Box<dyn Error + Send + Sync + 'static>> {
+	pub fn new_from_env() -> Result<Self> {
 		let mc_epoch_duration_millis: u32 =
 			std::env::var("MC__EPOCH_DURATION_MILLIS")?.parse::<u32>()?;
 		Ok(Self::new(mc_epoch_duration_millis))

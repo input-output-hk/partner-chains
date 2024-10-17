@@ -6,7 +6,6 @@ mod runtime_api_mock;
 use super::types::{CommitteeMember, GetCommitteeResponse};
 use super::SessionValidatorManagementQuery;
 use super::*;
-use main_chain_follower_api::mock_services::MockCandidateDataSource;
 use mock::*;
 use rpc_mock::*;
 use sidechain_domain::*;
@@ -22,7 +21,7 @@ use std::sync::Arc;
 #[tokio::test]
 async fn get_epoch_committee() {
 	let client = Arc::new(TestApi {});
-	let candidate_data_source = MockCandidateDataSource::default();
+	let candidate_data_source = MockAuthoritySelectionDataSource::default();
 	let rpc = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source));
 	let response = rpc.get_epoch_committee(777).unwrap();
 
@@ -43,7 +42,7 @@ async fn get_epoch_committee() {
 #[tokio::test]
 async fn get_epoch_committee_should_not_work_when_committee_is_in_the_future() {
 	let client = Arc::new(TestApi {});
-	let candidate_data_source = MockCandidateDataSource::default();
+	let candidate_data_source = MockAuthoritySelectionDataSource::default();
 	let rpc = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source));
 	let error = rpc.get_epoch_committee(conversion::BEST_EPOCH + 2).unwrap_err();
 	assert_eq!(
@@ -59,7 +58,7 @@ async fn get_epoch_committee_should_not_work_when_committee_is_in_the_future() {
 #[tokio::test]
 async fn get_epoch_committee_should_not_work_for_epoch_lesser_than_first_epoch() {
 	let client = Arc::new(TestApi {});
-	let candidate_data_source = MockCandidateDataSource::default();
+	let candidate_data_source = MockAuthoritySelectionDataSource::default();
 	let rpc = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source));
 	let error = rpc.get_epoch_committee(conversion::EPOCH_OF_BLOCK_1 - 1).unwrap_err();
 	assert_eq!(
@@ -72,7 +71,7 @@ async fn get_epoch_committee_should_not_work_for_epoch_lesser_than_first_epoch()
 #[tokio::test]
 async fn get_epoch_committee_should_return_initial_committee_for_genesis_and_first_epoch() {
 	let client = Arc::new(TestApi {});
-	let candidate_data_source = MockCandidateDataSource::default();
+	let candidate_data_source = MockAuthoritySelectionDataSource::default();
 	let rpc = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source));
 
 	let expected_initial_committee: Vec<_> =
@@ -98,7 +97,7 @@ async fn get_epoch_committee_should_return_initial_committee_for_genesis_and_fir
 #[tokio::test]
 async fn get_epoch_committee_should_work_correctly_for_next_epoch() {
 	let client = Arc::new(TestApi {});
-	let candidate_data_source = MockCandidateDataSource::default();
+	let candidate_data_source = MockAuthoritySelectionDataSource::default();
 	let rpc = SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source));
 	let epoch = conversion::BEST_EPOCH + 1;
 	let response = rpc.get_epoch_committee(epoch).unwrap();
@@ -138,7 +137,7 @@ mod get_registration_tests {
 	#[tokio::test]
 	async fn should_work() {
 		let support_epoch = McEpochNumber(1);
-		let candidate_data_source_mock = MockCandidateDataSource::default()
+		let candidate_data_source_mock = MockAuthoritySelectionDataSource::default()
 			.with_candidates_per_epoch(vec![
 				vec![],
 				create_candidates(vec![SEED, SEED2], TEST_SIDECHAIN_PARAMS),
@@ -216,7 +215,7 @@ mod get_registration_tests {
 		expected_error: RegistrationError,
 	) {
 		let supported_epoch = McEpochNumber(1);
-		let mut candidate_data_source_mock = MockCandidateDataSource::default()
+		let mut candidate_data_source_mock = MockAuthoritySelectionDataSource::default()
 			.with_candidates_per_epoch(vec![
 				vec![],
 				create_candidates(vec![SEED], TEST_SIDECHAIN_PARAMS),
@@ -273,7 +272,7 @@ mod get_registration_tests {
 					.collect::<Vec<_>>(),
 			);
 
-			let candidate_data_source_mock = MockCandidateDataSource::default()
+			let candidate_data_source_mock = MockAuthoritySelectionDataSource::default()
 				.with_candidates_per_epoch(vec![
 					vec![],
 					vec![CandidateRegistrations {
@@ -342,7 +341,7 @@ mod get_registration_tests {
 	async fn return_correct_ariadne_parameters() {
 		let permissioned_candidates = vec![valid_permissioned_candidate()];
 		let candidate_registrations = create_candidates(vec![SEED], TEST_SIDECHAIN_PARAMS);
-		let candidate_data_source_mock = MockCandidateDataSource::default()
+		let candidate_data_source_mock = MockAuthoritySelectionDataSource::default()
 			.with_candidates_per_epoch(vec![vec![], candidate_registrations.clone()])
 			.with_permissioned_candidates(vec![None, Some(permissioned_candidates.clone())]);
 
@@ -405,7 +404,7 @@ mod get_registration_tests {
 		];
 
 		// let candidate_registrations = create_candidates(vec![SEED], mock_sidechain_params());
-		let candidate_data_source_mock = MockCandidateDataSource::default()
+		let candidate_data_source_mock = MockAuthoritySelectionDataSource::default()
 			// .with_candidates_per_epoch(vec![vec![], candidate_registrations.clone()])
 			.with_permissioned_candidates(vec![
 				None,

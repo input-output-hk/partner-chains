@@ -14,6 +14,7 @@ mod get_status_tests {
 	use sidechain_domain::mainchain_epoch::{Duration, MainchainEpochConfig};
 	use sidechain_domain::*;
 	use sp_consensus_slots::SlotDuration;
+	use sp_core::offchain::Timestamp;
 
 	#[tokio::test]
 	async fn should_return_correct_status() {

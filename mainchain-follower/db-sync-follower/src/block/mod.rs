@@ -1,15 +1,16 @@
 use crate::{
 	data_sources::read_mc_epoch_config,
 	db_model::{self, Block, BlockNumber, SlotNumber},
+	DataSourceError::*,
 };
 use chrono::{DateTime, NaiveDateTime, TimeDelta};
 use derive_new::new;
 use figment::{providers::Env, Figment};
 use log::{debug, info};
-use main_chain_follower_api::{common::Timestamp, DataSourceError::*};
 use serde::Deserialize;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_domain::*;
+use sp_timestamp::Timestamp;
 use sqlx::PgPool;
 use std::{
 	error::Error,
@@ -255,7 +256,7 @@ impl BlockDataSourceImpl {
 	fn timestamp_to_db_type(
 		timestamp: Timestamp,
 	) -> Result<NaiveDateTime, Box<dyn std::error::Error + Send + Sync>> {
-		let millis: Option<i64> = timestamp.0.try_into().ok();
+		let millis: Option<i64> = timestamp.as_millis().try_into().ok();
 		let dt = millis
 			.and_then(DateTime::from_timestamp_millis)
 			.ok_or(BadRequest(format!("Timestamp out of range: {timestamp:?}")))?;

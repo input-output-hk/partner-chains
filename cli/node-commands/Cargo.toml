@@ -9,7 +9,6 @@ authority-selection-inherents = { workspace = true }
 clap = { workspace = true }
 cli-commands = { workspace = true }
 frame-support = { workspace = true }
-main-chain-follower-api = { workspace = true }
 parity-scale-codec = { workspace = true }
 plutus = { workspace = true }
 sidechain-domain = { workspace = true, default-features = true }

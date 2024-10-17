@@ -5,8 +5,8 @@ use db_sync_follower::{
 	candidates::CandidatesDataSourceImpl,
 	data_sources::{read_mc_epoch_config, PgPool},
 };
-use main_chain_follower_api::common::*;
 use sidechain_domain::*;
+use sp_timestamp::Timestamp;
 use std::error::Error;
 
 type Result<T> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
@@ -71,8 +71,8 @@ macro_rules! follower_commands {
 follower_commands! {
 	block {
 		async fn get_latest_block_info();
-		async fn get_latest_stable_block_for(1 reference_timestamp: Timestamp);
-		async fn get_stable_block_for(1 hash: McBlockHash, 2 reference_timestamp: Timestamp);
+		async fn get_latest_stable_block_for(1 reference_timestamp: u64);
+		async fn get_stable_block_for(1 hash: McBlockHash, 2 reference_timestamp: u64);
 	}
 	candidate {
 		async fn get_ariadne_parameters(1 epoch_number: McEpochNumber, 2 d_parameter_policy: PolicyId, 3 permissioned_candidates_policy: PolicyId);
@@ -89,12 +89,41 @@ mod data_source {
 		db_sync_follower::data_sources::get_connection_from_env().await
 	}
 
-	pub async fn block() -> Result<BlockDataSourceImpl> {
-		Ok(BlockDataSourceImpl::from_config(
-			pool().await?,
-			DbSyncBlockDataSourceConfig::from_env()?,
-			&read_mc_epoch_config()?,
-		))
+	pub struct BlockDataSourceWrapper {
+		inner: BlockDataSourceImpl,
+	}
+
+	impl BlockDataSourceWrapper {
+		pub async fn get_latest_block_info(&self) -> Result<MainchainBlock> {
+			self.inner.get_latest_block_info().await
+		}
+
+		pub async fn get_latest_stable_block_for(
+			&self,
+			reference_timestamp: u64,
+		) -> Result<Option<MainchainBlock>> {
+			self.inner
+				.get_latest_stable_block_for(Timestamp::new(reference_timestamp))
+				.await
+		}
+
+		pub async fn get_stable_block_for(
+			&self,
+			hash: McBlockHash,
+			reference_timestamp: u64,
+		) -> Result<Option<MainchainBlock>> {
+			self.inner.get_stable_block_for(hash, Timestamp::new(reference_timestamp)).await
+		}
+	}
+
+	pub async fn block() -> Result<BlockDataSourceWrapper> {
+		Ok(BlockDataSourceWrapper {
+			inner: BlockDataSourceImpl::from_config(
+				pool().await?,
+				DbSyncBlockDataSourceConfig::from_env()?,
+				&read_mc_epoch_config()?,
+			),
+		})
 	}
 
 	pub async fn candidate() -> Result<CandidatesDataSourceImpl> {

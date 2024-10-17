@@ -5,8 +5,9 @@ use db_sync_follower::{
 	native_token::NativeTokenManagementDataSourceImpl, sidechain_rpc::SidechainRpcDataSourceImpl,
 };
 use main_chain_follower_mock::{
-	block::BlockDataSourceMock, candidate::MockCandidateDataSource, mc_hash::McHashDataSourceMock,
-	native_token::NativeTokenDataSourceMock, sidechain_rpc::SidechainRpcDataSourceMock,
+	block::BlockDataSourceMock, candidate::AuthoritySelectionDataSourceMock,
+	mc_hash::McHashDataSourceMock, native_token::NativeTokenDataSourceMock,
+	sidechain_rpc::SidechainRpcDataSourceMock,
 };
 use pallet_sidechain_rpc::SidechainRpcDataSource;
 use sc_service::error::Error as ServiceError;
@@ -54,7 +55,7 @@ pub fn create_mock_data_sources(
 	Ok(DataSources {
 		sidechain_rpc: Arc::new(SidechainRpcDataSourceMock::new(block.clone())),
 		mc_hash: Arc::new(McHashDataSourceMock::new(block)),
-		authority_selection: Arc::new(MockCandidateDataSource::new_from_env()?),
+		authority_selection: Arc::new(AuthoritySelectionDataSourceMock::new_from_env()?),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
 	})
 }
@@ -65,6 +66,7 @@ pub async fn create_cached_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
 ) -> Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
 	let pool = db_sync_follower::data_sources::get_connection_from_env().await?;
+	// block data source is reused between mc_hash and sidechain_rpc to share cache
 	let block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone()).await?);
 	Ok(DataSources {
 		sidechain_rpc: Arc::new(SidechainRpcDataSourceImpl::new(

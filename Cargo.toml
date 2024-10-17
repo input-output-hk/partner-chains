@@ -21,7 +21,6 @@ members = [
 	"primitives/sidechain-block-search",
 	"primitives/sidechain-slots",
 	"primitives/authority-selection-inherents",
-	"mainchain-follower/main-chain-follower-api",
 	"mainchain-follower/main-chain-follower-cli",
 	"mainchain-follower/db-sync-follower",
 	"mainchain-follower/mock",
@@ -190,7 +189,6 @@ sp-block-rewards = { path = "primitives/block-rewards", default-features = false
 selection = { path = "primitives/selection", default-features = false }
 sidechain-domain = { path = "primitives/domain", default-features = false }
 sidechain-block-search = { path = "primitives/sidechain-block-search", default-features = false }
-main-chain-follower-api = { path = "mainchain-follower/main-chain-follower-api", default-features = false }
 db-sync-follower = { path = "mainchain-follower/db-sync-follower" }
 main-chain-follower-mock = { path = "mainchain-follower/mock", default-features = false }
 plutus = { path = "utils/plutus", default-features = false }
