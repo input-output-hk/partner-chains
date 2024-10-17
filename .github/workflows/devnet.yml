@@ -112,7 +112,7 @@ jobs:
           --secret XRAY_API_BASE_URL="$XRAY_API_BASE_URL" \
           --secret JIRA_URL="$JIRA_URL" \
           --ssh-auth-sock="$SSH_AUTH_SOCK" \
-          +report \
+          ./E2E-tests+report \
           --log_level="${LOG_LEVEL:-"info"}" \
           --env=${{ env.TEST_ENVIRONMENT }} \
           --stack=${{ env.TEST_ENVIRONMENT }} \
