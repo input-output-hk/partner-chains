@@ -209,6 +209,9 @@
 <a href="#209" id="209">209</a>
 <a href="#210" id="210">210</a>
 <a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
 </pre></div><pre class="rust"><code><span class="kw">pub mod </span>commands;
 <span class="kw">pub mod </span>get_registrations;
 <span class="kw">pub mod </span>types;
@@ -231,6 +234,9 @@
 <span class="kw">use </span>sp_sidechain::{GetSidechainParams, GetSidechainStatus};
 <span class="kw">use </span>std::sync::Arc;
 <span class="kw">use </span>types::<span class="kw-2">*</span>;
+
+<span class="attr">#[cfg(test)]
+</span><span class="kw">mod </span>tests;
 
 <span class="kw">pub type </span>QueryResult&lt;T&gt; = <span class="prelude-ty">Result</span>&lt;T, String&gt;;
 
