@@ -52,24 +52,6 @@ pub fn staging_initial_authorities() -> Vec<AuthorityKeys> {
 			"0x34b71fdad96431bf115350d8ad21eec07a2b154ff32dc31125f988e308bebea8",
 			"0x025e19f82c5e2bac5e8869d49ff26359e442628bc5cfa38eeb5275f43d04015da8",
 		),
-		// validator-5
-		authority_keys(
-			"0x500d7ff6d903c85db5ee5624df9510c2a085cf30da260166bd370010d0bdc97a",
-			"0xa04d74c1539550876d04e4d2de4e0531087c3b6810ce96ddc16d78ccf4ac4f11",
-			"0x03f38a062a4b372c045c1dddc4fe98a2c9cb1d6eec8bf02f973fd29b1096cd8155",
-		),
-		// validator-6
-		authority_keys(
-			"0xc2a8354c3928ffacf21eb8b2c3e6bceda9d54b0e2ce10f48fe8b9afafb7d8a3a",
-			"0x82e56b009c755e4f8a4dcb2ff22d1e6b98d984b4df02d83a75157335222b218b",
-			"0x033d3a2e581821fdd222581f6015eaabc798dd4dc0f7eeb3d6630b84449d76c9c9",
-		),
-		// validator-7
-		authority_keys(
-			"0x22c9f9d51022b7ad2204131e6268ab079c84bcdb44a4c6907affed5779da9c7b",
-			"0x5d100e44ecd41aeb0292d17bdefb99ebfc879682a1cd8b489ed0a66d3ee0b391",
-			"0x0232ebed4c0c742fa951b471fe6f6f2f09a2d235bf7e9992fbf786cf032c97247e",
-		),
 	]
 }
 pub fn staging_endowed_accounts() -> Vec<AccountId> {
