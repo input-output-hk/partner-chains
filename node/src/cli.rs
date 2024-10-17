@@ -73,9 +73,6 @@ mod registration_signatures_tests {
 
 	const REGISTRATION_SIGS_CMD: &str = "registration-signatures \
       --genesis-committee-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 \
-      --chain-id 0 \
-      --threshold-numerator 2 \
-      --threshold-denominator 3 \
       --governance-authority 00112233445566778899001122334455667788990011223344556677 \
       --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 \
       --mainchain-signing-key 0x79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf \
