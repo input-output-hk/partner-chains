@@ -64,11 +64,9 @@
 <a href="#64" id="64">64</a>
 <a href="#65" id="65">65</a>
 <a href="#66" id="66">66</a>
-<a href="#67" id="67">67</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>main_chain_follower_api::common::<span class="kw-2">*</span>;
-<span class="kw">use </span>main_chain_follower_api::<span class="kw-2">*</span>;
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::Result;
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
-<span class="kw">use </span>std::error::Error;
+<span class="kw">use </span>sp_timestamp::Timestamp;
 
 <span class="kw">pub struct </span>BlockDataSourceMock {
 	<span class="doccomment">/// Duration of a mainchain epoch in milliseconds
@@ -78,7 +76,7 @@
 <span class="kw">impl </span>BlockDataSourceMock {
 	<span class="kw">pub async fn </span>get_latest_block_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainBlock&gt; {
 		<span class="prelude-val">Ok</span>(<span class="self">self
-			</span>.get_latest_stable_block_for(Timestamp(BlockDataSourceMock::millis_now()))
+			</span>.get_latest_stable_block_for(Timestamp::new(BlockDataSourceMock::millis_now()))
 			.<span class="kw">await
 			</span>.unwrap()
 			.unwrap())
@@ -88,7 +86,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		reference_timestamp: Timestamp,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;&gt; {
-		<span class="kw">let </span>block_number = (reference_timestamp.<span class="number">0 </span>/ <span class="number">20000</span>) <span class="kw">as </span>u32;
+		<span class="kw">let </span>block_number = (reference_timestamp.as_millis() / <span class="number">20000</span>) <span class="kw">as </span>u32;
 		<span class="kw">let </span>epoch = block_number / <span class="self">self</span>.block_per_epoch();
 		<span class="kw">let </span><span class="kw-2">mut </span>hash_arr = [<span class="number">0u8</span>; <span class="number">32</span>];
 		hash_arr[..<span class="number">4</span>].copy_from_slice(<span class="kw-2">&amp;</span>block_number.to_be_bytes());
@@ -97,7 +95,7 @@
 			hash: McBlockHash(hash_arr),
 			epoch: McEpochNumber(epoch),
 			slot: McSlotNumber(block_number <span class="kw">as </span>u64),
-			timestamp: reference_timestamp.<span class="number">0</span>,
+			timestamp: reference_timestamp.as_millis(),
 		}))
 	}
 
@@ -115,7 +113,7 @@
 		<span class="self">Self </span>{ mc_epoch_duration_millis }
 	}
 
-	<span class="kw">pub fn </span>new_from_env() -&gt; std::result::Result&lt;<span class="self">Self</span>, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
+	<span class="kw">pub fn </span>new_from_env() -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
 		<span class="kw">let </span>mc_epoch_duration_millis: u32 =
 			std::env::var(<span class="string">"MC__EPOCH_DURATION_MILLIS"</span>)<span class="question-mark">?</span>.parse::&lt;u32&gt;()<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(<span class="self">Self</span>::new(mc_epoch_duration_millis))

@@ -222,9 +222,9 @@
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::db_model::{Block, BlockNumber};
 <span class="kw">use </span><span class="kw">crate</span>::metrics::McFollowerMetrics;
 <span class="kw">use </span><span class="kw">crate</span>::observed_async_trait;
+<span class="kw">use crate</span>::{DataSourceError, <span class="prelude-ty">Result</span>};
 <span class="kw">use </span>derive_new::new;
 <span class="kw">use </span>itertools::Itertools;
-<span class="kw">use </span>main_chain_follower_api::{DataSourceError, <span class="prelude-ty">Result</span>};
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 <span class="kw">use </span>sp_native_token_management::NativeTokenManagementDataSource;
 <span class="kw">use </span>sqlx::PgPool;

@@ -37,10 +37,12 @@
 <a href="#37" id="37">37</a>
 <a href="#38" id="38">38</a>
 <a href="#39" id="39">39</a>
+<a href="#40" id="40">40</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::block::BlockDataSourceMock;
+<span class="kw">use </span><span class="kw">crate</span>::Result;
 <span class="kw">use </span>async_trait::async_trait;
-<span class="kw">use </span>main_chain_follower_api::common::<span class="kw-2">*</span>;
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
+<span class="kw">use </span>sp_timestamp::Timestamp;
 <span class="kw">use </span>std::sync::Arc;
 
 <span class="kw">pub struct </span>McHashDataSourceMock {
@@ -58,10 +60,10 @@
 	<span class="kw">async fn </span>get_latest_stable_block_for(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		reference_timestamp: sp_timestamp::Timestamp,
-	) -&gt; std::result::Result&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;&gt; {
 		<span class="prelude-val">Ok</span>(<span class="self">self
 			</span>.block_source
-			.get_latest_stable_block_for(Timestamp(reference_timestamp.as_millis()))
+			.get_latest_stable_block_for(Timestamp::new(reference_timestamp.as_millis()))
 			.<span class="kw">await</span><span class="question-mark">?</span>)
 	}
 
@@ -69,10 +71,10 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		hash: McBlockHash,
 		reference_timestamp: sp_timestamp::Timestamp,
-	) -&gt; std::result::Result&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;&gt; {
 		<span class="prelude-val">Ok</span>(<span class="self">self
 			</span>.block_source
-			.get_stable_block_for(hash, Timestamp(reference_timestamp.as_millis()))
+			.get_stable_block_for(hash, Timestamp::new(reference_timestamp.as_millis()))
 			.<span class="kw">await</span><span class="question-mark">?</span>)
 	}
 }

@@ -19,10 +19,12 @@
 <a href="#19" id="19">19</a>
 <a href="#20" id="20">20</a>
 <a href="#21" id="21">21</a>
+<a href="#22" id="22">22</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::block::BlockDataSourceMock;
+<span class="kw">use </span><span class="kw">crate</span>::Result;
 <span class="kw">use </span>pallet_sidechain_rpc::SidechainRpcDataSource;
 <span class="kw">use </span>sidechain_domain::MainchainBlock;
-<span class="kw">use </span>std::{error::Error, sync::Arc};
+<span class="kw">use </span>std::sync::Arc;
 
 <span class="kw">pub struct </span>SidechainRpcDataSourceMock {
 	block_source: Arc&lt;BlockDataSourceMock&gt;,
@@ -36,7 +38,7 @@
 
 <span class="attr">#[async_trait::async_trait]
 </span><span class="kw">impl </span>SidechainRpcDataSource <span class="kw">for </span>SidechainRpcDataSourceMock {
-	<span class="kw">async fn </span>get_latest_block_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainBlock, Box&lt;<span class="kw">dyn </span>Error + Send + Sync&gt;&gt; {
+	<span class="kw">async fn </span>get_latest_block_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainBlock&gt; {
 		<span class="prelude-val">Ok</span>(<span class="self">self</span>.block_source.get_latest_block_info().<span class="kw">await</span><span class="question-mark">?</span>)
 	}
 }

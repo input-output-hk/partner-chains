@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["DataSourceError"],"mod":["common"],"type":["Result"]};

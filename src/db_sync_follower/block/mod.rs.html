@@ -284,18 +284,20 @@
 <a href="#284" id="284">284</a>
 <a href="#285" id="285">285</a>
 <a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
 	data_sources::read_mc_epoch_config,
 	db_model::{<span class="self">self</span>, Block, BlockNumber, SlotNumber},
+	DataSourceError::<span class="kw-2">*</span>,
 };
 <span class="kw">use </span>chrono::{DateTime, NaiveDateTime, TimeDelta};
 <span class="kw">use </span>derive_new::new;
 <span class="kw">use </span>figment::{providers::Env, Figment};
 <span class="kw">use </span>log::{debug, info};
-<span class="kw">use </span>main_chain_follower_api::{common::Timestamp, DataSourceError::<span class="kw-2">*</span>};
 <span class="kw">use </span>serde::Deserialize;
 <span class="kw">use </span>sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
+<span class="kw">use </span>sp_timestamp::Timestamp;
 <span class="kw">use </span>sqlx::PgPool;
 <span class="kw">use </span>std::{
 	error::Error,
@@ -541,7 +543,7 @@
 	<span class="kw">fn </span>timestamp_to_db_type(
 		timestamp: Timestamp,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;NaiveDateTime, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
-		<span class="kw">let </span>millis: <span class="prelude-ty">Option</span>&lt;i64&gt; = timestamp.<span class="number">0</span>.try_into().ok();
+		<span class="kw">let </span>millis: <span class="prelude-ty">Option</span>&lt;i64&gt; = timestamp.as_millis().try_into().ok();
 		<span class="kw">let </span>dt = millis
 			.and_then(DateTime::from_timestamp_millis)
 			.ok_or(BadRequest(<span class="macro">format!</span>(<span class="string">"Timestamp out of range: {timestamp:?}"</span>)))<span class="question-mark">?</span>;

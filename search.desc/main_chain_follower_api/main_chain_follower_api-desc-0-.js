@@ -1,1 +1,0 @@
-searchState.loadedDescShard("main_chain_follower_api", 0, "Core API for the main chain queries\nContains the error value\nContains the success value\nTypes that will be used by the Cardano follower\nReturns the argument unchanged.\nCalls <code>U::from(self)</code>.\nTimestamp - milliseconds since Unix Epoch\nReturns the argument unchanged.\nCalls <code>U::from(self)</code>.")

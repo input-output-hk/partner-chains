@@ -40,9 +40,9 @@
 <a href="#40" id="40">40</a>
 <a href="#41" id="41">41</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{block::BlockDataSourceImpl, metrics::McFollowerMetrics, observed_async_trait};
-<span class="kw">use </span>main_chain_follower_api::common::Timestamp;
 <span class="kw">use </span>sidechain_domain::{MainchainBlock, McBlockHash};
 <span class="kw">use </span>sidechain_mc_hash::McHashDataSource;
+<span class="kw">use </span>sp_timestamp::Timestamp;
 <span class="kw">use </span>std::sync::Arc;
 
 <span class="kw">pub struct </span>McHashDataSourceImpl {
@@ -64,7 +64,7 @@
 	) -&gt; std::result::Result&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="prelude-val">Ok</span>(<span class="self">self
 			</span>.inner
-			.get_latest_stable_block_for(Timestamp(reference_timestamp.as_millis()))
+			.get_latest_stable_block_for(Timestamp::new(reference_timestamp.as_millis()))
 			.<span class="kw">await</span><span class="question-mark">?</span>)
 	}
 
@@ -75,7 +75,7 @@
 	) -&gt; std::result::Result&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="prelude-val">Ok</span>(<span class="self">self
 			</span>.inner
-			.get_stable_block_for(hash, Timestamp(reference_timestamp.as_millis()))
+			.get_stable_block_for(hash, Timestamp::new(reference_timestamp.as_millis()))
 			.<span class="kw">await</span><span class="question-mark">?</span>)
 	}
 }

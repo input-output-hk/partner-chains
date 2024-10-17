@@ -245,16 +245,8 @@
 <a href="#245" id="245">245</a>
 <a href="#246" id="246">246</a>
 <a href="#247" id="247">247</a>
-<a href="#248" id="248">248</a>
-<a href="#249" id="249">249</a>
-<a href="#250" id="250">250</a>
-<a href="#251" id="251">251</a>
-<a href="#252" id="252">252</a>
-<a href="#253" id="253">253</a>
-<a href="#254" id="254">254</a>
-<a href="#255" id="255">255</a>
-<a href="#256" id="256">256</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>async_trait::async_trait;
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::Result;
+<span class="kw">use </span>async_trait::async_trait;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::<span class="kw-2">*</span>;
 <span class="kw">use </span>hex_literal::hex;
 <span class="kw">use </span>log::{debug, info};
@@ -262,7 +254,6 @@
 <span class="kw">use </span>sidechain_domain::byte_string::<span class="kw-2">*</span>;
 <span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
-<span class="kw">use </span>std::error::Error;
 
 <span class="attr">#[derive(Deserialize, Debug, Clone)]
 </span><span class="kw">pub struct </span>MockRegistration {
@@ -404,15 +395,12 @@
 }
 
 <span class="kw">impl </span>MockRegistrationsConfig {
-	<span class="kw">pub fn </span>read(
-	) -&gt; std::result::Result&lt;MockRegistrationsConfig, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
+	<span class="kw">pub fn </span>read() -&gt; <span class="prelude-ty">Result</span>&lt;MockRegistrationsConfig&gt; {
 		<span class="kw">let </span>registrations_file_path = std::env::var(<span class="string">"MAIN_CHAIN_FOLLOWER_MOCK_REGISTRATIONS_FILE"</span>)<span class="question-mark">?</span>;
 		<span class="kw">let </span>registrations_config = <span class="self">Self</span>::read_registrations(registrations_file_path)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(registrations_config)
 	}
-	<span class="kw">pub fn </span>read_registrations(
-		path: String,
-	) -&gt; std::result::Result&lt;MockRegistrationsConfig, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
+	<span class="kw">pub fn </span>read_registrations(path: String) -&gt; <span class="prelude-ty">Result</span>&lt;MockRegistrationsConfig&gt; {
 		<span class="macro">info!</span>(<span class="string">"Reading registrations from: {path}"</span>);
 		<span class="kw">let </span>file = std::fs::File::open(path)<span class="question-mark">?</span>;
 		<span class="kw">let </span>epoch_rotation: Vec&lt;MockEpochCandidates&gt; = serde_json::from_reader(file)<span class="question-mark">?</span>;
@@ -421,33 +409,33 @@
 	}
 }
 
-<span class="kw">pub struct </span>MockCandidateDataSource {
+<span class="kw">pub struct </span>AuthoritySelectionDataSourceMock {
 	<span class="kw">pub </span>registrations_data: MockRegistrationsConfig,
 	<span class="kw">pub </span>mc_epoch_config: MainchainEpochConfig,
 }
 
-<span class="kw">impl </span>MockCandidateDataSource {
+<span class="kw">impl </span>AuthoritySelectionDataSourceMock {
 	<span class="kw">pub fn </span>epoch_data(<span class="kw-2">&amp;</span><span class="self">self</span>, epoch_number: u32) -&gt; MockEpochCandidates {
 		<span class="kw">let </span>rotation_no: usize =
 			epoch_number <span class="kw">as </span>usize % (<span class="self">self</span>.registrations_data.epoch_rotation.len());
 		<span class="self">self</span>.registrations_data.epoch_rotation[rotation_no].clone()
 	}
 
-	<span class="kw">pub fn </span>new_from_env() -&gt; std::result::Result&lt;<span class="self">Self</span>, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
+	<span class="kw">pub fn </span>new_from_env() -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
 		<span class="kw">let </span>registrations_data = MockRegistrationsConfig::read()<span class="question-mark">?</span>;
 		<span class="kw">let </span>mc_epoch_config = MainchainEpochConfig::read_from_env()<span class="question-mark">?</span>;
-		<span class="prelude-val">Ok</span>(MockCandidateDataSource { registrations_data, mc_epoch_config })
+		<span class="prelude-val">Ok</span>(AuthoritySelectionDataSourceMock { registrations_data, mc_epoch_config })
 	}
 }
 
 <span class="attr">#[async_trait]
-</span><span class="kw">impl </span>AuthoritySelectionDataSource <span class="kw">for </span>MockCandidateDataSource {
+</span><span class="kw">impl </span>AuthoritySelectionDataSource <span class="kw">for </span>AuthoritySelectionDataSourceMock {
 	<span class="kw">async fn </span>get_ariadne_parameters(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		epoch_number: McEpochNumber,
 		_d_parameter_validator: PolicyId,
 		_permissioned_candidates_validator: PolicyId,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;AriadneParameters, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;AriadneParameters&gt; {
 		<span class="kw">let </span>epoch_number = epoch_number.<span class="number">0</span>;
 		<span class="macro">debug!</span>(<span class="string">"Received get_d_parameter_for_epoch({epoch_number}) request"</span>);
 
@@ -473,7 +461,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		epoch: McEpochNumber,
 		_committee_candidate_address: MainchainAddress,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;CandidateRegistrations&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;CandidateRegistrations&gt;&gt; {
 		<span class="kw">let </span>epoch_number = epoch.<span class="number">0</span>;
 		<span class="macro">debug!</span>(<span class="string">"Received get_candidates({epoch_number}) request"</span>);
 
@@ -488,10 +476,7 @@
 		<span class="prelude-val">Ok</span>(registrations.into_iter().map(CandidateRegistrations::from).collect())
 	}
 
-	<span class="kw">async fn </span>get_epoch_nonce(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		epoch_number: McEpochNumber,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;EpochNonce&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
+	<span class="kw">async fn </span>get_epoch_nonce(<span class="kw-2">&amp;</span><span class="self">self</span>, epoch_number: McEpochNumber) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;EpochNonce&gt;&gt; {
 		<span class="kw">let </span>epoch_number = epoch_number.<span class="number">0</span>;
 		<span class="macro">debug!</span>(<span class="string">"Received get_epoch_nonce({epoch_number}) request"</span>);
 		<span class="kw">let </span>epoch_conf = <span class="self">self</span>.epoch_data(epoch_number);
@@ -503,10 +488,7 @@
 		<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(EpochNonce(epoch_conf.nonce.clone().<span class="number">0</span>)))
 	}
 
-	<span class="kw">async fn </span>data_epoch(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		for_epoch: McEpochNumber,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;McEpochNumber, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
+	<span class="kw">async fn </span>data_epoch(<span class="kw-2">&amp;</span><span class="self">self</span>, for_epoch: McEpochNumber) -&gt; <span class="prelude-ty">Result</span>&lt;McEpochNumber&gt; {
 		<span class="prelude-val">Ok</span>(McEpochNumber(for_epoch.<span class="number">0 </span>- <span class="number">2</span>))
 	}
 }

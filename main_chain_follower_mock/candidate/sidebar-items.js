@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["MockRegistrationStatus"],"struct":["MockCandidateDataSource","MockDParam","MockEpochCandidates","MockPermissionedCandidate","MockRegistration","MockRegistrationsConfig"]};
+window.SIDEBAR_ITEMS = {"enum":["MockRegistrationStatus"],"struct":["AuthoritySelectionDataSourceMock","MockDParam","MockEpochCandidates","MockPermissionedCandidate","MockRegistration","MockRegistrationsConfig"]};

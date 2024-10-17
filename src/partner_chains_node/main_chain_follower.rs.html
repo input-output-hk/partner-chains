@@ -83,6 +83,8 @@
 <a href="#83" id="83">83</a>
 <a href="#84" id="84">84</a>
 <a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 <span class="kw">use </span>db_sync_follower::{
 	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl,
@@ -90,8 +92,9 @@
 	native_token::NativeTokenManagementDataSourceImpl, sidechain_rpc::SidechainRpcDataSourceImpl,
 };
 <span class="kw">use </span>main_chain_follower_mock::{
-	block::BlockDataSourceMock, candidate::MockCandidateDataSource, mc_hash::McHashDataSourceMock,
-	native_token::NativeTokenDataSourceMock, sidechain_rpc::SidechainRpcDataSourceMock,
+	block::BlockDataSourceMock, candidate::AuthoritySelectionDataSourceMock,
+	mc_hash::McHashDataSourceMock, native_token::NativeTokenDataSourceMock,
+	sidechain_rpc::SidechainRpcDataSourceMock,
 };
 <span class="kw">use </span>pallet_sidechain_rpc::SidechainRpcDataSource;
 <span class="kw">use </span>sc_service::error::Error <span class="kw">as </span>ServiceError;
@@ -139,7 +142,7 @@
 	<span class="prelude-val">Ok</span>(DataSources {
 		sidechain_rpc: Arc::new(SidechainRpcDataSourceMock::new(block.clone())),
 		mc_hash: Arc::new(McHashDataSourceMock::new(block)),
-		authority_selection: Arc::new(MockCandidateDataSource::new_from_env()<span class="question-mark">?</span>),
+		authority_selection: Arc::new(AuthoritySelectionDataSourceMock::new_from_env()<span class="question-mark">?</span>),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
 	})
 }
@@ -150,7 +153,8 @@
 	metrics_opt: <span class="prelude-ty">Option</span>&lt;McFollowerMetrics&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;DataSources, Box&lt;<span class="kw">dyn </span>Error + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
 	<span class="kw">let </span>pool = db_sync_follower::data_sources::get_connection_from_env().<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="kw">let </span>block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone()).<span class="kw">await</span><span class="question-mark">?</span>);
+	<span class="comment">// block data source is reused between mc_hash and sidechain_rpc to share cache
+	</span><span class="kw">let </span>block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone()).<span class="kw">await</span><span class="question-mark">?</span>);
 	<span class="prelude-val">Ok</span>(DataSources {
 		sidechain_rpc: Arc::new(SidechainRpcDataSourceImpl::new(
 			block.clone(),

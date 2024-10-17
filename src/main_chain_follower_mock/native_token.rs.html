@@ -29,7 +29,9 @@
 <a href="#29" id="29">29</a>
 <a href="#30" id="30">30</a>
 <a href="#31" id="31">31</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>async_trait::async_trait;
+<a href="#32" id="32">32</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::Result;
+<span class="kw">use </span>async_trait::async_trait;
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 <span class="kw">use </span>sp_native_token_management::NativeTokenManagementDataSource;
 
@@ -56,7 +58,7 @@
 		_native_token_policy_id: PolicyId,
 		_native_token_asset_name: AssetName,
 		_illiquid_supply_address: MainchainAddress,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;NativeTokenAmount, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;NativeTokenAmount&gt; {
 		<span class="prelude-val">Ok</span>(NativeTokenAmount(<span class="number">1000</span>))
 	}
 }
