@@ -88,29 +88,6 @@ jobs:
         ssh_key: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
         config_tar: ${{ secrets.EARTHLY_TAR }}
 
-    - name: List directory structure
-      run: |
-        echo "Current directory:"
-        pwd
-        echo "Directory structure from root:"
-        tree -L 3 ../../ || ls -R ../../  # Go up two levels to reach the root
-
-    - name: Find Earthfile
-      run: |
-        echo "Current directory:"
-        pwd
-        echo "Searching for Earthfile:"
-        find . -name "Earthfile" -type f
-        echo "Directory structure:"
-        tree -L 3 || ls -R
-
-    - name: Check current branch
-      run: |
-        echo "Current branch: ${{ github.ref }}"
-        echo "GitHub event name: ${{ github.event_name }}"
-        git branch
-        git status
-
     - name: run
       env:
         EARTHLY_BUILD_ARGS: "CI_RUN=true"
@@ -129,17 +106,7 @@ jobs:
         JIRA_URL: ${{ secrets.JIRA_URL }}
         MARKERS: "not active_flow and not passive_flow"
       run: |
-        # Find the directory containing the Earthfile
-        EARTHFILE_DIR=$(find . -name "Earthfile" -type f -print0 | xargs -0 -n1 dirname | grep -v "/\\.")
-        if [ -z "$EARTHFILE_DIR" ]; then
-          echo "Error: Earthfile not found"
-          exit 1
-        fi
-        echo "Earthfile found in: $EARTHFILE_DIR"
-        
-        # Change to the directory containing the Earthfile
-        cd "$EARTHFILE_DIR"
-        
+        cd E2E-tests
         earthly \
           --secret AWS_SESSION_TOKEN="$AWS_SESSION_TOKEN" \
           --secret AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
