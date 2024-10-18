@@ -95,6 +95,15 @@ jobs:
         echo "Directory structure from root:"
         tree -L 3 ../../ || ls -R ../../  # Go up two levels to reach the root
 
+    - name: Find Earthfile
+      run: |
+        echo "Current directory:"
+        pwd
+        echo "Searching for Earthfile:"
+        find . -name "Earthfile" -type f
+        echo "Directory structure:"
+        tree -L 3 || ls -R
+
     - name: run
       env:
         EARTHLY_BUILD_ARGS: "CI_RUN=true"
@@ -113,12 +122,16 @@ jobs:
         JIRA_URL: ${{ secrets.JIRA_URL }}
         MARKERS: "not active_flow and not passive_flow"
       run: |
-        echo "Current directory:"
-        pwd
-        echo "Contents of root directory:"
-        ls -la ../../
-        echo "Contents of E2E-tests directory:"
-        ls -la ../../E2E-tests || echo "E2E-tests directory not found"
+        # Find the directory containing the Earthfile
+        EARTHFILE_DIR=$(find . -name "Earthfile" -type f -print0 | xargs -0 -n1 dirname | grep -v "/\\.")
+        if [ -z "$EARTHFILE_DIR" ]; then
+          echo "Error: Earthfile not found"
+          exit 1
+        fi
+        echo "Earthfile found in: $EARTHFILE_DIR"
+        
+        # Change to the directory containing the Earthfile
+        cd "$EARTHFILE_DIR"
         
         earthly \
           --secret AWS_SESSION_TOKEN="$AWS_SESSION_TOKEN" \
@@ -130,7 +143,7 @@ jobs:
           --secret XRAY_API_BASE_URL="$XRAY_API_BASE_URL" \
           --secret JIRA_URL="$JIRA_URL" \
           --ssh-auth-sock="$SSH_AUTH_SOCK" \
-          ../../E2E-tests+report \
+          +report \
           --log_level="${LOG_LEVEL:-"info"}" \
           --env=${{ env.TEST_ENVIRONMENT }} \
           --stack=${{ env.TEST_ENVIRONMENT }} \
