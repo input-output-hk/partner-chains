@@ -7,25 +7,25 @@ KUPO_IMAGE="cardanosolutions/kupo:v2.9.0"
 OGMIOS_IMAGE="cardanosolutions/ogmios:v6.8.0"
 POSTGRES_IMAGE="postgres:15.3"
 SIDECHAIN_MAIN_CLI_IMAGE="node:22-bookworm"
-PC_CONTRACTS_CLI_ZIP_URL="https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/v6.1.0/trustless-sidechain-cli-6.1.0-x86_64-linux.zip"
+PC_CONTRACTS_CLI_ZIP_URL="https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/v6.2.0/pc-contracts-cli-v6.2.0.zip"
 PARTNER_CHAINS_NODE_URL="https://github.com/input-output-hk/partner-chains/releases/download/v1.2.0/partner-chains-node-v1.2.0-x86_64-linux"
 PARTNER_CHAINS_CLI_URL="https://github.com/input-output-hk/partner-chains/releases/download/v1.2.0/partner-chains-cli-v1.2.0-x86_64-linux"
 
 display_banner() {
   cat <<'EOF'
-  ___                _      ___       _             _                
- |_ _|_ _  _ __ _  _| |_   / _ \ _  _| |_ _ __ _  _| |_              
-  | || ' \| '_ \ || |  _| | (_) | || |  _| '_ \ || |  _|             
- |___|_||_| .__/\_,_|\__|__\___/ \_,_|\__| .__/\_,_|\__|         _   
- | |   ___|_|_ __ _| | | __|_ ___ _(_)_ _|_|_ _ _  _ __  ___ _ _| |_ 
+  ___                _      ___       _             _
+ |_ _|_ _  _ __ _  _| |_   / _ \ _  _| |_ _ __ _  _| |_
+  | || ' \| '_ \ || |  _| | (_) | || |  _| '_ \ || |  _|
+ |___|_||_| .__/\_,_|\__|__\___/ \_,_|\__| .__/\_,_|\__|         _
+ | |   ___|_|_ __ _| | | __|_ ___ _(_)_ _|_|_ _ _  _ __  ___ _ _| |_
  | |__/ _ \/ _/ _` | | | _|| ' \ V / | '_/ _ \ ' \| '  \/ -_) ' \  _|
  |____\___/\__\__,_|_| |___|_||_\_/|_|_| \___/_||_|_|_|_\___|_||_\__|
-                                                                     
+
 EOF
 }
 
 detect_os() {
-    local mode=$1 
+    local mode=$1
 
     unameOut="$(uname -s)"
     archOut="$(uname -m)"
@@ -53,7 +53,7 @@ detect_os() {
 }
 
 backup_files() {
-    local mode=$1 
+    local mode=$1
 
     if [ -f ".env" ]; then
         if [ "$mode" == "interactive" ]; then
@@ -149,7 +149,7 @@ configure_kupo() {
 }
 
 configure_artifact_overrides() {
-    local mode=$1 
+    local mode=$1
 
     if [ "$mode" == "interactive" ]; then
         echo "===== ARTIFACT OVERRIDE CONFIGURATION ========"
@@ -311,7 +311,7 @@ configure_postgres() {
 }
 
 configure_env() {
-    local mode=$1 
+    local mode=$1
 
     if [ "$mode" == "interactive" ]; then
         echo "===== ENV FILE CREATION ============"
@@ -394,7 +394,7 @@ choose_deployment_option() {
 }
 
 create_docker_compose() {
-    local mode=$1 
+    local mode=$1
 
     if [ "$mode" == "interactive" ]; then
         echo "===== DOCKER-COMPOSE.YML CREATION ============"
@@ -532,7 +532,7 @@ main() {
         configure_kupo
         configure_artifact_overrides "interactive"
         resource_limits_setup
-        
+
         if [ "$deployment_option" -eq 4 ]; then
             choose_deployment_option
         fi
@@ -548,6 +548,3 @@ main() {
 }
 
 main "$@"
-
-
-
