@@ -69,8 +69,9 @@ pub fn select_authorities<
 	if let Some(validators) =
 		weighted_selection(candidates_with_weight, committee_size, random_seed)
 	{
-		info!("💼 Selected {} validators for epoch {}, from {} permissioned candidates and {} trustless candidates", validators.len(), sidechain_epoch, valid_permissioned_candidates.len(), valid_trustless_candidates.len());
-		Some(BoundedVec::truncate_from(validators))
+		let validators = BoundedVec::truncate_from(validators);
+		info!("💼 Selected committee of {} seats for epoch {} from {} permissioned and {} registered candidates", validators.len(), sidechain_epoch, valid_permissioned_candidates.len(), valid_trustless_candidates.len());
+		Some(validators)
 	} else {
 		warn!("🚫 Failed to select validators for epoch {}", sidechain_epoch);
 		None
