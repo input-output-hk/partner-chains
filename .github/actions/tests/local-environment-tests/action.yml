@@ -83,7 +83,7 @@ runs:
         pip install -r requirements.txt
         cd ..
       shell: bash
-    - name: Wait for the PC node 1 to start
+    - name: Wait for partner-chains-node-1 to start
       id: wait-pc-node
       continue-on-error: true
       run: |
