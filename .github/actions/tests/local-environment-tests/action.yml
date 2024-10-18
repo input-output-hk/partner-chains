@@ -104,7 +104,6 @@ runs:
         done
       shell: bash
     - name: Collect and zip Docker logs
-      if: ${{ steps.wait-pc-node.outcome == 'failure' }}
       run: |
         mkdir -p docker_logs
         docker ps -a --format '{{.Names}}' | while read line; do
@@ -114,7 +113,6 @@ runs:
         zip -r docker_logs.zip docker_logs/
       shell: bash
     - name: Upload Docker logs artifact
-      if: ${{ steps.wait-pc-node.outcome == 'failure' }}
       uses: actions/upload-artifact@v4
       with:
         name: docker_logs
