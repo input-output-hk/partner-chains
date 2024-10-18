@@ -228,9 +228,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 	pallet_sidechain::GenesisConfig::<Test> {
 		params: chain_params::SidechainParams {
-			chain_id: 0,
-			threshold_numerator: 2,
-			threshold_denominator: 3,
 			genesis_committee_utxo: UtxoId::new(
 				hex!("abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"),
 				0,

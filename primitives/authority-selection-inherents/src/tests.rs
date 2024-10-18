@@ -27,10 +27,7 @@ fn registration_message_encoding() {
 		UtxoId { tx_hash: McTxHash(sample_utxo_id_hash_bytes), index: UtxoIndex(4) };
 	let msg = RegisterValidatorSignedMessage {
 		sidechain_params: SidechainParams {
-			chain_id: 11,
 			genesis_committee_utxo: sample_tx_out_ref,
-			threshold_numerator: 2,
-			threshold_denominator: 3,
 			governance_authority: MainchainAddressHash(governance_authority_bytes),
 		},
 		sidechain_pub_key: sidechain_pub_key_bytes.clone(),
@@ -75,8 +72,8 @@ fn registration_message_encoding() {
 	assert_eq!(msg.to_datum(), expected);
 
 	let cbor_bytes = minicbor::to_vec(msg.to_datum()).unwrap();
-	// https://github.com/input-output-hk/partner-chains-smart-contracts/blob/6e6aca0edeb09cecd3a93913020e9ceaa1ce1d25/onchain/test/golden/BlockProducerRegistrationMsg-cbor.golden#L1
-	let expected_hex = "d8799fd8799f0bd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ff0203581c4f2d6145e1700ad11dc074cad9f4194cc53b0dbab6bd25dfea6c501aff582102dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ecd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ffff";
+	// https://github.com/input-output-hk/partner-chains-smart-contracts/blob/master/onchain/test/golden/BlockProducerRegistrationMsg-cbor.golden#L1
+	let expected_hex = "d8799fd8799fd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ff581c4f2d6145e1700ad11dc074cad9f4194cc53b0dbab6bd25dfea6c501aff582102dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ecd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ffff";
 	assert_eq!(hex::encode(cbor_bytes), expected_hex);
 }
 

@@ -40,7 +40,6 @@ docker run -it \
   -v /tmp/cargo-home:/cargo-home \
   -e CARGO_HOME=/cargo-home \
   -e CHAIN=staging \
-  -e CHAIN_ID=12345 \
   -e GOVERNANCE_AUTHORITY=00000000000000000000000000000000000000000000000000000000 \
   -e SPEC_FILE_UID=$(id -u) \
   -e SPEC_FILE_GID=$(id -g) \
