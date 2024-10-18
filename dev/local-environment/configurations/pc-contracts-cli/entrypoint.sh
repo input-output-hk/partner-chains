@@ -40,7 +40,6 @@ if [ "$PC_CONTRACTS_CLI_READY" -eq 0 ]; then
   echo "Downloading pc-contracts-cli and node_modules..."
   wget -q -O ./pc-contracts-cli.zip "$PC_CONTRACTS_CLI_ZIP_URL"
   unzip -o ./pc-contracts-cli.zip > /dev/null
-  mv ./sidechain-cli ./pc-contracts-cli
 fi
 
 if [ "$PC_NODE_READY" -eq 0 ]; then
@@ -89,7 +88,6 @@ echo "Generating addresses.json file..."
     --sidechain-id $CHAIN_ID --threshold-numerator $THRESHOLD_NUMERATOR --threshold-denominator $THRESHOLD_DENOMINATOR \
     --governance-authority $GOVERNANCE_AUTHORITY \
     --version 1 \
-    --atms-kind plain-ecdsa-secp256k1 \
 > addresses.json
 
 export COMMITTEE_CANDIDATE_ADDRESS=$(jq -r '.addresses.CommitteeCandidateValidator' addresses.json)
@@ -118,7 +116,6 @@ echo "Inserting D parameter..."
     --genesis-committee-hash-utxo $GENESIS_COMMITTEE_UTXO \
     --sidechain-id $CHAIN_ID --threshold-numerator $THRESHOLD_NUMERATOR --threshold-denominator $THRESHOLD_DENOMINATOR \
     --governance-authority $GOVERNANCE_AUTHORITY \
-    --atms-kind plain-ecdsa-secp256k1 \
     --d-parameter-permissioned-candidates-count 3 \
     --d-parameter-registered-candidates-count 2 \
     --payment-signing-key-file /keys/funded_address.skey
@@ -147,7 +144,6 @@ bob_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/grandpa.
     --threshold-numerator $THRESHOLD_NUMERATOR \
     --threshold-denominator $THRESHOLD_DENOMINATOR \
     --sidechain-id 0 \
-    --atms-kind plain-ecdsa-secp256k1 \
     --payment-signing-key-file /keys/funded_address.skey
 
 if [ $? -eq 0 ]; then
@@ -189,7 +185,6 @@ dave_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/grandpa
     --sidechain-id 0 \
     --genesis-committee-hash-utxo $GENESIS_COMMITTEE_UTXO \
     --governance-authority $GOVERNANCE_AUTHORITY \
-    --atms-kind plain-ecdsa-secp256k1 \
     --threshold-numerator 2 \
     --threshold-denominator 3 \
     --spo-public-key $dave_spo_public_key \
