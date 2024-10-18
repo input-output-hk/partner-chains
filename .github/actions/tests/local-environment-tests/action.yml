@@ -84,6 +84,8 @@ runs:
         cd ..
       shell: bash
     - name: Wait for the PC node 1 to start
+      id: wait-pc-node
+      continue-on-error: true
       run: |
         while ! docker exec cardano-node-1 [ -e /shared/cardano.ready ]; do sleep 1; done
         echo "Cardano network is ready! Waiting for Partner Chain first node to start..."
@@ -94,7 +96,26 @@ runs:
           echo "Epoch: $epoch" && \
           sleep 10; \
         done
+      shell: bash 
+    - name: Collect and zip Docker logs
+#      if: ${{ steps.wait-pc-node.outcome == 'failure' }}
+      run: |
+        mkdir -p docker_logs
+        docker ps -a --format '{{.Names}}' | while read line; do
+          echo "Collecting logs for container $line"
+          docker logs "$line" > "docker_logs/$line.log" 2>&1 || true
+        done
+        zip -r docker_logs.zip docker_logs/
       shell: bash
+    - name: Upload Docker logs artifact
+#      if: ${{ steps.wait-pc-node.outcome == 'failure' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: docker_logs
+        path: docker_logs.zip
+    - name: Fail the job
+#      if: ${{ steps.wait-pc-node.outcome == 'failure' }}
+      run: exit 1
     - name: Run smoke tests
       uses: ./.github/actions/tests/run-e2e-tests
       with:
