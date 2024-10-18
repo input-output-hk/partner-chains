@@ -12,7 +12,13 @@ inputs:
     required: true
   tests:
     description: "Test set to run (premerge or postmerge)"
-    required: true    
+    required: true
+  node_bin:
+    description: "The name of the node binary"
+    required: true
+  cli_bin:
+    description: "The name of the cli binary"
+    required: true
 
 outputs: {}
 
@@ -35,17 +41,15 @@ runs:
     - name: Download partner-chains-cli artifact
       uses: actions/download-artifact@v4
       with:
-        name: partner-chains-cli-artifact
-        path: dev/local-environment/configurations/pc-contracts-cli/overrides/ 
+        name: ${{ inputs.cli_bin }}-ci
+        path: dev/local-environment/configurations/pc-contracts-cli/overrides/
     - name: Download partner-chains-node artifact
       uses: actions/download-artifact@v4
       with:
-        name: partner-chains-node-artifact
-        path: dev/local-environment/configurations/pc-contracts-cli/overrides/ 
+        name: ${{ inputs.node_bin }}-ci
+        path: dev/local-environment/configurations/pc-contracts-cli/overrides/
     - name: Deploy local environment with overrides
       run: |
-        mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli
-        mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node
         cd dev/local-environment
         bash setup.sh --non-interactive --overrides --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ inputs.image }}
         docker compose up -d
