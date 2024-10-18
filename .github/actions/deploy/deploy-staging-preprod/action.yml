@@ -59,8 +59,9 @@ runs:
         kubectl delete pod staging-preprod-validator-2 -n staging-preprod || true
         kubectl delete pod staging-preprod-validator-3 -n staging-preprod || true
         kubectl delete pod staging-preprod-validator-4 -n staging-preprod || true
+        kubectl delete pod staging-preprod-validator-5 -n staging-preprod || true
         echo "Waiting for pods to delete..."
-        kubectl wait --for=delete pod/staging-preprod-validator-1 pod/staging-preprod-validator-2 pod/staging-preprod-validator-3 pod/staging-preprod-validator-4 -n staging-preprod --timeout=120s || true
+        kubectl wait --for=delete pod/staging-preprod-validator-1 pod/staging-preprod-validator-2 pod/staging-preprod-validator-3 pod/staging-preprod-validator-4 pod/staging-preprod-validator-5 -n staging-preprod --timeout=120s || true
       shell: bash
 
     - name: Delete substrate PVCs
@@ -70,8 +71,9 @@ runs:
         kubectl delete pvc staging-preprod-validator-2-claim-substrate-node-data -n staging-preprod
         kubectl delete pvc staging-preprod-validator-3-claim-substrate-node-data -n staging-preprod
         kubectl delete pvc staging-preprod-validator-4-claim-substrate-node-data -n staging-preprod
+        kubectl delete pvc staging-preprod-validator-5-claim-substrate-node-data -n staging-preprod
         echo "Waiting for PVCs to delete..."
-        kubectl wait --for=delete pvc/staging-preprod-validator-1-claim-substrate-node-data pvc/staging-preprod-validator-2-claim-substrate-node-data pvc/staging-preprod-validator-3-claim-substrate-node-data pvc/staging-preprod-validator-4-claim-substrate-node-data -n staging-preprod --timeout=120s
+        kubectl wait --for=delete pvc/staging-preprod-validator-1-claim-substrate-node-data pvc/staging-preprod-validator-2-claim-substrate-node-data pvc/staging-preprod-validator-3-claim-substrate-node-data pvc/staging-preprod-validator-4-claim-substrate-node-data pvc/staging-preprod-validator-5-claim-substrate-node-data -n staging-preprod --timeout=120s
       shell: bash
 
     - name: Deploy with chain-spec and image override
@@ -81,6 +83,7 @@ runs:
         helm upgrade --install staging-preprod-validator-2 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-2 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="staging-preprod-chain-spec-${{ inputs.sha }}"
         helm upgrade --install staging-preprod-validator-3 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-3 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="staging-preprod-chain-spec-${{ inputs.sha }}"
         helm upgrade --install staging-preprod-validator-4 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-4 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="staging-preprod-chain-spec-${{ inputs.sha }}"
+        helm upgrade --install staging-preprod-validator-5 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-5 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="staging-preprod-chain-spec-${{ inputs.sha }}"
       shell: bash
 
     - name: Wait
@@ -93,6 +96,8 @@ runs:
         kubectl wait --for=condition=ready pod staging-preprod-validator-3 -n staging-preprod --timeout=300s
         echo "Waiting for staging-preprod-validator-4..."
         kubectl wait --for=condition=ready pod staging-preprod-validator-4 -n staging-preprod --timeout=300s
+        echo "Waiting for staging-preprod-validator-5..."
+        kubectl wait --for=condition=ready pod staging-preprod-validator-5 -n staging-preprod --timeout=300s
       shell: bash
 
     - name: Validate
@@ -105,6 +110,8 @@ runs:
         kubectl get pod staging-preprod-validator-3 -n staging-preprod -o jsonpath="{.status.containerStatuses[*].ready}"
         echo "Checking staging-preprod-validator-4..."
         kubectl get pod staging-preprod-validator-4 -n staging-preprod -o jsonpath="{.status.containerStatuses[*].ready}"
-        kubectl get pods -n staging-preprod -o custom-columns='NAME:.metadata.name,READY:.status.containerStatuses[*].ready' | grep -E '^(staging-preprod-validator-1|staging-preprod-validator-2|staging-preprod-validator-3|staging-preprod-validator-4)' | awk '{if ($2 != "true,true,true,true") exit 1}'
-        echo "All pods are 4/4 up and ready"
+        echo "Checking staging-preprod-validator-5..."
+        kubectl get pod staging-preprod-validator-5 -n staging-preprod -o jsonpath="{.status.containerStatuses[*].ready}"
+        kubectl get pods -n staging-preprod -o custom-columns='NAME:.metadata.name,READY:.status.containerStatuses[*].ready' | grep -E '^(staging-preprod-validator-1|staging-preprod-validator-2|staging-preprod-validator-3|staging-preprod-validator-4|staging-preprod-validator-5)' | awk '{if ($2 != "true,true,true,true") exit 1}'
+        echo "All pods are 5/5 up and ready"
       shell: bash
