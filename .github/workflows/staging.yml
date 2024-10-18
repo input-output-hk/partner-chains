@@ -104,6 +104,13 @@ jobs:
         echo "Directory structure:"
         tree -L 3 || ls -R
 
+    - name: Check current branch
+      run: |
+        echo "Current branch: ${{ github.ref }}"
+        echo "GitHub event name: ${{ github.event_name }}"
+        git branch
+        git status
+
     - name: run
       env:
         EARTHLY_BUILD_ARGS: "CI_RUN=true"
