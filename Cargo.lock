@@ -9223,6 +9223,8 @@ dependencies = [
  "pallet-session-validator-management",
  "pallet-sidechain",
  "sidechain-domain",
+ "sp-runtime",
+ "sp-session-validator-management",
  "sp-staking",
  "sp-std",
 ]

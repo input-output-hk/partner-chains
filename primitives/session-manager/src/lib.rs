@@ -7,6 +7,9 @@ use log::info;
 use sp_staking::SessionIndex;
 use sp_std::vec::Vec;
 
+/// [`pallet_session`] and [`pallet_session_validator_management`] integration.
+pub mod pallet_session_support;
+
 #[derive(new)]
 pub struct ValidatorManagementSessionManager<T> {
 	_phantom: PhantomData<T>,

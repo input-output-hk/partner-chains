@@ -11,9 +11,11 @@ frame-system = { workspace = true }
 log = { workspace = true }
 pallet-session = { workspace = true }
 pallet-session-validator-management = { workspace = true }
+sp-session-validator-management = { workspace = true, optional = true }
 pallet-sidechain = { workspace = true }
 pallet-partner-chains-session = { workspace = true }
 sidechain-domain = { workspace = true }
+sp-runtime = { workspace = true, optional = true }
 sp-staking = { workspace = true }
 sp-std = { workspace = true }
 
@@ -23,12 +25,16 @@ pallet-session-validator-management = { workspace = true, features = ["mock"] }
 [features]
 default = ["std"]
 std = [
-	"frame-system/std",
-	"pallet-session-validator-management/std",
-	"pallet-sidechain/std",
-	"pallet-partner-chains-session/std",
-	"sidechain-domain/std",
-	"sp-staking/std",
-	"sp-std/std",
+    "frame-system/std",
+    "pallet-session-validator-management/std",
+    "sp-session-validator-management/std",
+    "sp-session-validator-management/serde",
+    "pallet-session/std",
+    "pallet-sidechain/std",
+    "pallet-partner-chains-session/std",
+    "sidechain-domain/std",
+    "sp-runtime/std",
+    "sp-staking/std",
+    "sp-std/std",
     "log/std",
 ]
