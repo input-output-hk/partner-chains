@@ -2,36 +2,35 @@
 
 ## About
 
-This document describes how to add the native token management capabilities to an already running
-Partner Chain and how to remove it once added.
+This document describes how to add the Native Token Management features to an already running
+partner chain and how to remove it.
 
 ## Context
 
-The native token management system in the Partner Chain SDK Substrate stack consists of the pallet,
-the primitives crate, also containing the inherent data provider, and the supporting DB-Sync data source.
-It complements the main chain part by providing its observability.
+The Native Token Management feature in the Partner Chain Toolkit consists of the pallet,
+the primitives crate, and the supporting DB-Sync data source. It complements the main chain component by providing its observability.
 
-Care must be taken when adding this feature to a running chain, since the data source and inherent
+Care must be taken when adding this feature to a running chain, because the data source and inherent
 data provider require runtime data for operation.
 
 ## Obtaining the main chain scripts
 
 The native token management observability is configured using the following parameters:
 * `illiquid supply validator address` - this is the address to which the native tokens are sent on the 
-main chain to lock them so that they can be unlocked on the Partner Chain. This address is derived
+main chain to lock them so that they can be unlocked on the partner chain. This address is derived
 from the sidechain params and is present in the output of the `addresses` command of the
 `partner-chains-smart-contracts` CLI under `addresses/IlliquidCirculationSupplyValidator`.
 When using the `parner-chains-cli` wizard, it will be automatically set up in the `prepare-configuration` step.
-* native token minting `policy ID` and `asset name` - those should come from the native Cardano asset
-used to represent the Partner Chain's token on main chain. Because each native asset used can have
+* native token minting `policy ID` and `asset name` - those should come from the Cardano Native Asset
+used to represent the partner chain's token on the main chain. Because each native asset used can have
 different logic in its minting policy, development and creation of the asset is left for each
-Partner Chain developer team.
+partner chain builder.
 When using the `parner-chains-cli` wizard, these can be set up in the `prepare-configuration` step.
 
-## Migration scenario - adding the feature
+## Migration Steps - adding the feature
 
 1. Add the pallet into the runtime. This requires implementing the trait `TokenTransferHandler`, which
-is left for the developers of each particular Partner Chain to implement according to their needs and
+is left for the developers of each particular partner chain to implement according to their needs and
 ledger structure. Consult the implementation in `runtime/src/lib.rs` for an example with a mocked handler.
 2. Bump the runtime spec version and note its new value, we will refer to it as `start_version`.
 3. Wire the data source into the node.
@@ -49,7 +48,7 @@ this step all information necessary is present, and the native token data provid
 the inherent data based on observed native token transfers, triggering the pallet's inherent when necessary. 
 
 
-## Migration scenario - removing the feature
+## Migration Steps - removing the feature
 
 1. Decide on a runtime version `stop_version` from which the native token observation should cease.
 2. Update the runtime version range predicate for `new_for_runtime_version` to use this runtime version as a limit.
@@ -61,5 +60,10 @@ Bump the runtime spec version to `stop_version` with these changes.
 5. Perform runtime upgrade.
 After this step _no further native token movement will be observed, even if performed on the main chain_.
 
-_Important_: To support syncing and validating historical blocks, the data source and inherent data provider
-can not be removed from the node.
+---
+**NOTE**
+
+To support syncing and validating historical blocks, the data source and inherent data provider
+*must* not be removed from the node.
+
+---
