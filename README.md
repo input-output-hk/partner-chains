@@ -1,6 +1,6 @@
 # Partner Chains Node
 
-A [Substrate](https://substrate.io/)-based blockchain node written in Rust, designed for operation of Cardano Partner Chains, this node facilitates the creation and management of sidechains that integrate seamlessly with the Cardano ecosystem.
+A [Substrate](https://substrate.io/)-based blockchain node written in Rust, designed for operation of Cardano Partner Chains, this node facilitates the creation and management of sidechains that integrate with the Cardano ecosystem.
 
 This alpha release is just the beginning of the journey. It is intended to gather early feedback from the community and is provided "as is." It should not be used in live production networks. Use at your own risk. We welcome and appreciate your feedback!
 
@@ -41,7 +41,9 @@ docker pull ghcr.io/input-output-hk/partner-chains/partner-chains-node:latest
 
 Refer to the [documentation](docs/user-guides) for detailed instructions on how to use the node and CLI tools.
 
-## Block Production Rewards for Validators
+## Features
+
+### Block Production Rewards for Validators
 
 The Partner Chains node provides a simple mechanism for exposing the mapping of block beneficiaries with produced blocks. 
 The chain builder is responsible for using this input to accurately calculate and distribute block rewards on their partner chain, following the tokenomics they will design and implement. 
@@ -54,19 +56,19 @@ For managing payouts, they will leverage the provided artifacts to distribute pa
 | Reward calculation | Determined by the Partner Chain instance (for example, N tokens per block) |
 | Smart contracts | Track permissioned candidates, and registered candidates |
 
-### For Partner Chains Node Operators
+#### For Partner Chains Node Operators
 
 1. Implement a reward distribution system using the block production data provided by the Partner Chains node. 
 2. Set up and manage the required smart contracts on Cardano.
 3. Automate the reward calculation and distribution process within the consensus layer.
 4. Establish a registration process for validators.
 
-### For Stake Pool Operators (SPOs)
+#### For Stake Pool Operators (SPOs)
 
 - Register to become a partner chain validator.
 - Monitor block production and reward distribution for your pool.
 
-### More Details
+#### More Details
 
 1. Block Production Tracking: The Partner Chain node logs block production data. Each block has a beneficiary, identified by Partner Chain receiving addresses (such as `SizedByteStrings(0x1)`, `SizedByteStrings(0x2)`, etc.). At the end of each Partner Chain epoch, the node summarizes who produced how many blocks.
 2. Smart Contract Implementation: Two main smart contracts are involved: 
@@ -77,3 +79,15 @@ For managing payouts, they will leverage the provided artifacts to distribute pa
 
 3. Reward Distribution Mechanism: The Partner Chain instance uses the block production data from the node logs and the information from the smart contracts to determine the reward distribution. It then implements the transactions to send the appropriate amount of rewards to each validator.
 4. Automation and Verification: The entire process needs to be automated within the consensus layer of the Partner Chain. Automated tests will be implemented to verify that the reward distribution is functioning correctly over time.
+
+### Native Token Management
+
+When establishing a partner chain managing the token treasury used for block production rewards and other applications is a central part of leveraging the Cardano network as the root of trust, as one of the primary objectives of a possible adversarial group attacking a partner chain might be to get access to the token treasury.
+
+As such partner chain developers may want to use a model where their token exists “canonically” on multiple chains. In this case it is paramount that the circulating and total supply of the token is maintained and acting predicatably, even with the release of tokens into circulation on the partner chain as a part of block production rewards, or services rendered.
+
+The mechanism for this includes a partner chain builder initializing a token reserve on Cardano, along with a circulating supply on both chains. The circulating tokens exist in a locked, or unlocked state, and the relation between the locked state on Cardano and unlocked on the partner chain should be 1:1 and vice versa.
+
+This means that tokens are moved from the reserve into a locked circulating supply on Cardano, at which point they become available in circulation on the partner chain either through a time direct observability.
+
+For more details on how to implement Native Token Management in a partner chain, refer to the [Native Token Migration Guide](docs/developer-guides/native-token-migration-guide.md)
