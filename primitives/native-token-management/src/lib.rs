@@ -93,7 +93,7 @@ impl IsFatalError for InherentError {
 mod inherent_provider {
 	use super::*;
 	use sidechain_mc_hash::get_mc_hash_for_block;
-	use sp_api::{ApiError, Core, ProvideRuntimeApi};
+	use sp_api::{ApiError, Core, ProvideRuntimeApi, RuntimeApiInfo};
 	use sp_blockchain::HeaderBackend;
 	use sp_version::RuntimeVersion;
 	use std::error::Error;
@@ -133,10 +133,9 @@ mod inherent_provider {
 	}
 
 	impl NativeTokenManagementInherentDataProvider {
-		/// Checks the current runtime version against `version_check` predicate, returns zero transfers
-		/// if outside the version bounds.
-		pub async fn new_for_runtime_version<Block, C, E>(
-			version_check: fn(RuntimeVersion) -> bool,
+		/// Creates inherent data provider only if the pallet is present in the runtime.
+		/// Returns zero transfers if not.
+		pub async fn new_if_pallet_present<Block, C, E>(
 			client: Arc<C>,
 			data_source: &(dyn NativeTokenManagementDataSource + Send + Sync),
 			mc_hash: McBlockHash,
@@ -150,7 +149,7 @@ mod inherent_provider {
 		{
 			let version = client.runtime_api().version(parent_hash)?;
 
-			if version_check(version) {
+			if version.has_api_with(&<dyn NativeTokenManagementApi<Block>>::ID, |_| true) {
 				Self::new(client, data_source, mc_hash, parent_hash).await
 			} else {
 				Ok(Self { token_amount: None })
