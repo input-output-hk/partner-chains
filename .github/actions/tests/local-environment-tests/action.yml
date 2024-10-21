@@ -83,17 +83,29 @@ runs:
         pip install -r requirements.txt
         cd ..
       shell: bash
-    - name: Wait for the PC node 1 to start
+    - name: Wait for partner-chains-node-1 to start
+      id: wait-pc-node
+      continue-on-error: true
       run: |
+        # Wait for the Cardano node to be ready
         while ! docker exec cardano-node-1 [ -e /shared/cardano.ready ]; do sleep 1; done
         echo "Cardano network is ready! Waiting for Partner Chain first node to start..."
         INIT_TIMESTAMP=$(docker exec cardano-node-1 cat /shared/cardano.start)
         echo "INIT_TIMESTAMP=$INIT_TIMESTAMP" >> $GITHUB_ENV
-        while ! docker exec partner-chains-node-1 [ -e /shared/partner-chains-node-1.ready ]; do \
-          epoch=$(docker exec cardano-node-1 cardano-cli query tip --testnet-magic 42 | jq -r .epoch) && \
-          echo "Epoch: $epoch" && \
-          sleep 10; \
+        epoch=0
+        while ! docker exec partner-chains-node-1 [ -e /shared/partner-chains-node-1.ready ]; do
+          epoch=$(docker exec cardano-node-1 cardano-cli query tip --testnet-magic 42 | jq -r .epoch)
+          echo "Epoch: $epoch"
+          if [ "$epoch" -ge 3 ]; then
+            echo "MC has reached epoch 3 and partner-chains-node-1 is still not ready. Failing test and gathering logs."
+            exit 1
+          fi
+          sleep 10
         done
+      shell: bash
+    - name: Fail the job
+      if: ${{ steps.wait-pc-node.outcome == 'failure' }}
+      run: exit 1
       shell: bash
     - name: Run smoke tests
       uses: ./.github/actions/tests/run-e2e-tests
@@ -150,6 +162,22 @@ runs:
         mc_epoch: 3
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
+    - name: Collect and zip container logs
+      if: always()
+      run: |
+        mkdir -p local_environment_logs
+        docker ps -a --format '{{.Names}}' | while read line; do
+          echo "Collecting logs for container $line"
+          docker logs "$line" > "local_environment_logs/$line.log" 2>&1 || true
+        done
+        zip -r local_environment_logs.zip local_environment_logs/
+      shell: bash
+    - name: Upload container logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: local_environment_logs
+        path: local_environment_logs.zip
     - name: Stop partner-chains-demo
       run: |
         cd dev/local-environment

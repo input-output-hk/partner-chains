@@ -59,8 +59,9 @@ runs:
         kubectl delete pod staging-preview-validator-2 -n staging-preview || true
         kubectl delete pod staging-preview-validator-3 -n staging-preview || true
         kubectl delete pod staging-preview-validator-4 -n staging-preview || true
+        kubectl delete pod staging-preview-validator-5 -n staging-preview || true
         echo "Waiting for pods to delete..."
-        kubectl wait --for=delete pod/staging-preview-validator-1 pod/staging-preview-validator-2 pod/staging-preview-validator-3 pod/staging-preview-validator-4 -n staging-preview --timeout=120s || true
+        kubectl wait --for=delete pod/staging-preview-validator-1 pod/staging-preview-validator-2 pod/staging-preview-validator-3 pod/staging-preview-validator-4 pod/staging-preview-validator-5 -n staging-preview --timeout=120s || true
       shell: bash
 
     - name: Delete substrate PVCs
@@ -70,8 +71,9 @@ runs:
         kubectl delete pvc staging-preview-validator-2-claim-substrate-node-data -n staging-preview
         kubectl delete pvc staging-preview-validator-3-claim-substrate-node-data -n staging-preview
         kubectl delete pvc staging-preview-validator-4-claim-substrate-node-data -n staging-preview
+        kubectl delete pvc staging-preview-validator-5-claim-substrate-node-data -n staging-preview
         echo "Waiting for PVCs to delete..."
-        kubectl wait --for=delete pvc/staging-preview-validator-1-claim-substrate-node-data pvc/staging-preview-validator-2-claim-substrate-node-data pvc/staging-preview-validator-3-claim-substrate-node-data pvc/staging-preview-validator-4-claim-substrate-node-data -n staging-preview --timeout=120s
+        kubectl wait --for=delete pvc/staging-preview-validator-1-claim-substrate-node-data pvc/staging-preview-validator-2-claim-substrate-node-data pvc/staging-preview-validator-3-claim-substrate-node-data pvc/staging-preview-validator-4-claim-substrate-node-data pvc/staging-preview-validator-5-claim-substrate-node-data -n staging-preview --timeout=120s
       shell: bash
 
     - name: Deploy with chain-spec and image override
@@ -81,6 +83,7 @@ runs:
         helm upgrade --install staging-preview-validator-2 . -f values/chains/staging-preview.yaml -f values/nodes/staging-preview/validator/staging-preview-validator-2 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="staging-preview-chain-spec-${{ inputs.sha }}"
         helm upgrade --install staging-preview-validator-3 . -f values/chains/staging-preview.yaml -f values/nodes/staging-preview/validator/staging-preview-validator-3 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="staging-preview-chain-spec-${{ inputs.sha }}"
         helm upgrade --install staging-preview-validator-4 . -f values/chains/staging-preview.yaml -f values/nodes/staging-preview/validator/staging-preview-validator-4 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="staging-preview-chain-spec-${{ inputs.sha }}"
+        helm upgrade --install staging-preview-validator-5 . -f values/chains/staging-preview.yaml -f values/nodes/staging-preview/validator/staging-preview-validator-5 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="staging-preview-chain-spec-${{ inputs.sha }}"
       shell: bash
 
     - name: Wait
@@ -93,6 +96,8 @@ runs:
         kubectl wait --for=condition=ready pod staging-preview-validator-3 -n staging-preview --timeout=300s
         echo "Waiting for staging-preview-validator-4..."
         kubectl wait --for=condition=ready pod staging-preview-validator-4 -n staging-preview --timeout=300s
+        echo "Waiting for staging-preview-validator-5..."
+        kubectl wait --for=condition=ready pod staging-preview-validator-5 -n staging-preview --timeout=300s
       shell: bash
 
     - name: Validate
@@ -105,6 +110,8 @@ runs:
         kubectl get pod staging-preview-validator-3 -n staging-preview -o jsonpath="{.status.containerStatuses[*].ready}"
         echo "Checking staging-preview-validator-4..."
         kubectl get pod staging-preview-validator-4 -n staging-preview -o jsonpath="{.status.containerStatuses[*].ready}"
-        kubectl get pods -n staging-preview -o custom-columns='NAME:.metadata.name,READY:.status.containerStatuses[*].ready' | grep -E '^(staging-preview-validator-1|staging-preview-validator-2|staging-preview-validator-3|staging-preview-validator-4)' | awk '{if ($2 != "true,true,true,true") exit 1}'
-        echo "All pods are 4/4 up and ready"
+        echo "Checking staging-preview-validator-5..."
+        kubectl get pod staging-preview-validator-5 -n staging-preview -o jsonpath="{.status.containerStatuses[*].ready}"
+        kubectl get pods -n staging-preview -o custom-columns='NAME:.metadata.name,READY:.status.containerStatuses[*].ready' | grep -E '^(staging-preview-validator-1|staging-preview-validator-2|staging-preview-validator-3|staging-preview-validator-4|staging-preview-validator-5)' | awk '{if ($2 != "true,true,true,true") exit 1}'
+        echo "All pods are 5/5 up and ready"
       shell: bash
