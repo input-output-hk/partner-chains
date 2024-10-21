@@ -3,9 +3,6 @@ name: Staging Partner Chains Tests
 on:
   schedule:
     - cron: '0 4 * * *'
-  push:
-    branches:
-      - feature/e2e-tests
   workflow_dispatch:
     inputs:
       keyword:
@@ -63,7 +60,7 @@ jobs:
     - name: checkout code
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'feature/e2e-tests' }}
+        ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
     - name: Set deployment_version as env variable
       run: echo "DEPLOYMENT_VERSION=$(jq -r .deployment_version ./config/substrate/staging_nodes.json)" >> $GITHUB_ENV
