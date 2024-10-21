@@ -28,11 +28,11 @@ figment = { workspace = true }
 substrate-prometheus-endpoint = { workspace = true }
 derive-new = { workspace = true }
 lru = { workspace = true }
-sp-timestamp = { workspace = true }
+sp-timestamp = { workspace = true, features = ["std"] }
 sp-native-token-management = { workspace = true, features = ["std"], optional = true }
 sidechain-mc-hash = { workspace = true, optional = true }
 pallet-sidechain-rpc = { workspace = true, optional = true }
-authority-selection-inherents = { workspace = true, optional = true }
+authority-selection-inherents = { workspace = true, features = ["std"], optional = true }
 
 [dev-dependencies]
 tokio-test = "0.4.3"
