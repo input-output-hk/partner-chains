@@ -108,6 +108,7 @@ jobs:
       run: |
         cd E2E-tests
         earthly \
+          --no-satellites \
           --secret AWS_SESSION_TOKEN="$AWS_SESSION_TOKEN" \
           --secret AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
           --secret AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
