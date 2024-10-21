@@ -642,7 +642,6 @@
 <a href="#642" id="642">642</a>
 <a href="#643" id="643">643</a>
 <a href="#644" id="644">644</a>
-<a href="#645" id="645">645</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::db_datum::DbDatum;
 <span class="kw">use </span><span class="kw">crate</span>::SqlxError;
 <span class="kw">use </span>chrono::NaiveDateTime;
@@ -1201,8 +1200,7 @@ LIMIT 1"</span>;
 	<span class="prelude-val">Ok</span>(result<span class="question-mark">?</span>)
 }
 <span class="doccomment">/// Used by `get_token_utxo_for_epoch` (CandidatesDataSourceImpl),
-/// `get_distributed_set_utxo` (DistributedSetDataSourceImpl),
-/// `get_nft_utxo` (CertificateDataSourceImpl),
+</span><span class="attr">#[cfg(feature = <span class="string">"candidate-source"</span>)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>create_idx_ma_tx_out_ident(pool: <span class="kw-2">&amp;</span>Pool&lt;Postgres&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), SqlxError&gt; {
 	<span class="kw">let </span>sql = <span class="string">"CREATE INDEX IF NOT EXISTS idx_ma_tx_out_ident ON ma_tx_out(ident)"</span>;
 	<span class="macro">info!</span>(<span class="string">"Executing '{}', this might take a while"</span>, sql);
