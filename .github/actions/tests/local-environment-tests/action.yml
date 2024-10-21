@@ -103,20 +103,6 @@ runs:
           sleep 10
         done
       shell: bash
-    - name: Collect and zip Docker logs
-      run: |
-        mkdir -p docker_logs
-        docker ps -a --format '{{.Names}}' | while read line; do
-          echo "Collecting logs for container $line"
-          docker logs "$line" > "docker_logs/$line.log" 2>&1 || true
-        done
-        zip -r docker_logs.zip docker_logs/
-      shell: bash
-    - name: Upload Docker logs artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: docker_logs
-        path: docker_logs.zip
     - name: Fail the job
       if: ${{ steps.wait-pc-node.outcome == 'failure' }}
       run: exit 1
@@ -176,6 +162,22 @@ runs:
         mc_epoch: 3
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
+    - name: Collect and zip Docker logs
+      if: always()
+      run: |
+        mkdir -p docker_logs
+        docker ps -a --format '{{.Names}}' | while read line; do
+          echo "Collecting logs for container $line"
+          docker logs "$line" > "docker_logs/$line.log" 2>&1 || true
+        done
+        zip -r docker_logs.zip docker_logs/
+      shell: bash
+    - name: Upload Docker logs artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: docker_logs
+        path: docker_logs.zip
     - name: Stop partner-chains-demo
       run: |
         cd dev/local-environment
