@@ -29,35 +29,32 @@ When using the `parner-chains-cli` wizard, these can be set up in the `prepare-c
 
 ## Migration Steps - adding the feature
 
+### Preparing changes
 1. Add the pallet into the runtime. This requires implementing the trait `TokenTransferHandler`, which
 is left for the developers of each particular partner chain to implement according to their needs and
 ledger structure. Consult the implementation in `runtime/src/lib.rs` for an example with a mocked handler.
-2. Bump the runtime spec version and note its new value, we will refer to it as `start_version`.
-3. Wire the data source into the node.
+2. Wire the data source into the node.
 Consult the reference implementation in `node/src/main_chain_follower.rs` for an example.
-4. Add the inherent data provider to your inherent data provider creation logic.
+3. Add the inherent data provider to your inherent data provider creation logic.
 Consult the implementation in `node/src/inherent_data.rs` for an example.
 Because the inherent data provider should only run after the pallet is added and fully configured
-in the runtime, `new_for_runtime_version` factory function should be used, which accepts an additional predicate as argument, making it possible to specify the correct runtime version range:
-in this case `|version| version.spec_version >= start_version` should be used.
-5. Upgrade the nodes running the chain to the new node version containing the IDP added in previous steps.
-6. Perform a runtime upgrade (using `sudo` or other governance feature) to the spec version `start_version` containing the pallet.
-7. Invoke the `set_main_chain_scripts` extrinsic on the newly added pallet, using the governance mechanism,
+in the runtime, `new_if_pallet_present` factory function should be used instead of `new`, when added to an already running chain.
+4. Release or otherwise make available for deployment the new version of node and runtime.
+
+### Upgrading the chain
+
+The following steps need to be performed in order:
+1. Upgrade the nodes running the chain to the new node version containing the IDP.
+2. Perform a runtime upgrade (using `sudo` or other governance feature) to the new rutime version containing the pallet.
+3. Invoke the `set_main_chain_scripts` extrinsic on the newly added pallet, using the governance mechanism,
 to set the native token `policy ID` and `asset name`, and the `illiquid supply validator address`. After
 this step all information necessary is present, and the native token data provider will start producing
 the inherent data based on observed native token transfers, triggering the pallet's inherent when necessary. 
 
-
 ## Migration Steps - removing the feature
 
-1. Decide on a runtime version `stop_version` from which the native token observation should cease.
-2. Update the runtime version range predicate for `new_for_runtime_version` to use this runtime version as a limit.
-Assuming the "adding the feature" scenario was implemented earlier, the version bound will look like
-this: `|version| version.spec_version >= start_version && version.spec_version < stop_version`.
-3. Upgrade the nodes in the network to this new version.
-4. Remove the pallet completely from the runtime. The `TokenTransferHandler` can be removed as well.
-Bump the runtime spec version to `stop_version` with these changes.
-5. Perform runtime upgrade.
+1. Remove the pallet completely from the runtime. The `TokenTransferHandler` can be removed as well.
+2. Perform runtime upgrade.
 After this step _no further native token movement will be observed, even if performed on the main chain_.
 
 ---
@@ -65,5 +62,7 @@ After this step _no further native token movement will be observed, even if perf
 
 To support syncing and validating historical blocks, the data source and inherent data provider
 *must* not be removed from the node.
+
+Re-adding the pallet after it has been removed is not supported and its behaviour is left unspecified.
 
 ---
