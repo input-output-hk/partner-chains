@@ -12,7 +12,7 @@ use syn::{GenericParam, TypeParamBound};
 /// `constructor_datum` parameter should be used on a single field structs to decide if the field
 /// should be mapped to datum directly or wrapped in constructor datum with one variant and single
 /// field. Such distinction is required because exactly same Datum encoding, as in
-/// https://github.com/input-output-hk/trustless-sidechain, is required.
+/// <https://github.com/input-output-hk/partner-chains-smart-contracts>, is required.
 #[proc_macro_derive(ToDatum, attributes(constructor_datum))]
 pub fn to_datum_derive(input: TokenStream) -> TokenStream {
 	let ast = syn::parse(input).expect("Cannot parse source");
