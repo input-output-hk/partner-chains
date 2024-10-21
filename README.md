@@ -88,6 +88,6 @@ As such partner chain developers may want to use a model where their token exist
 
 The mechanism for this includes a partner chain builder initializing a token reserve on Cardano, along with a circulating supply on both chains. The circulating tokens exist in a locked, or unlocked state, and the relation between the locked state on Cardano and unlocked on the partner chain should be 1:1 and vice versa.
 
-This means that tokens are moved from the reserve into a locked circulating supply on Cardano, at which point they become available in circulation on the partner chain either through a time synchronized set of contracts, or direct observability.
+This means that tokens are moved from the reserve into a locked circulating supply on Cardano, at which point they become available in circulation on the partner chain either through a time direct observability.
 
 For more details on how to implement Native Token Management in a partner chain, refer to the [Native Token Migration Guide](docs/developer-guides/native-token-migration-guide.md)
