@@ -29,20 +29,23 @@ When using the `parner-chains-cli` wizard, these can be set up in the `prepare-c
 
 ## Migration Steps - adding the feature
 
-### Preparing the nodes
-1. Wire the data source into the node.
-Consult the reference implementation in `node/src/main_chain_follower.rs` for an example.
-2. Add the inherent data provider to your inherent data provider creation logic.
-Consult the implementation in `node/src/inherent_data.rs` for an example.
-Because the inherent data provider should only run after the pallet is added and fully configured
-in the runtime, `new_if_pallet_present` factory function should be used instead of `new`.
-3. Upgrade the nodes running the chain to the new node version containing the IDP added in previous steps.
-
-### Adding the pallet
+### Preparing changes
 1. Add the pallet into the runtime. This requires implementing the trait `TokenTransferHandler`, which
 is left for the developers of each particular partner chain to implement according to their needs and
 ledger structure. Consult the implementation in `runtime/src/lib.rs` for an example with a mocked handler.
-2. Perform a runtime upgrade (using `sudo` or other governance feature) to the version containing the pallet.
+2. Wire the data source into the node.
+Consult the reference implementation in `node/src/main_chain_follower.rs` for an example.
+3. Add the inherent data provider to your inherent data provider creation logic.
+Consult the implementation in `node/src/inherent_data.rs` for an example.
+Because the inherent data provider should only run after the pallet is added and fully configured
+in the runtime, `new_if_pallet_present` factory function should be used instead of `new`.
+4. Release the new version of node and runtime.
+
+### Upgrading the chain
+
+The following steps need to be performed in order:
+1. Upgrade the nodes running the chain to the new node version containing the IDP.
+2. Perform a runtime upgrade (using `sudo` or other governance feature) to the new rutime version containing the pallet.
 3. Invoke the `set_main_chain_scripts` extrinsic on the newly added pallet, using the governance mechanism,
 to set the native token `policy ID` and `asset name`, and the `illiquid supply validator address`. After
 this step all information necessary is present, and the native token data provider will start producing
