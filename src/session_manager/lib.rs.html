@@ -104,6 +104,9 @@
 <a href="#104" id="104">104</a>
 <a href="#105" id="105">105</a>
 <a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">use </span>core::marker::PhantomData;
@@ -112,6 +115,9 @@
 <span class="kw">use </span>log::info;
 <span class="kw">use </span>sp_staking::SessionIndex;
 <span class="kw">use </span>sp_std::vec::Vec;
+
+<span class="doccomment">/// [`pallet_session`] and [`pallet_session_validator_management`] integration.
+</span><span class="kw">pub mod </span>pallet_session_support;
 
 <span class="attr">#[derive(new)]
 </span><span class="kw">pub struct </span>ValidatorManagementSessionManager&lt;T&gt; {

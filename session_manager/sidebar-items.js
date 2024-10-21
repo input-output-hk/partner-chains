@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ValidatorManagementSessionManager"]};
+window.SIDEBAR_ITEMS = {"mod":["pallet_session_support"],"struct":["ValidatorManagementSessionManager"]};

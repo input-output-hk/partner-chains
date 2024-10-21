@@ -846,7 +846,7 @@
 <span class="kw">pub const </span>MAINCHAIN_ADDRESS_HASH_LEN: usize = <span class="number">28</span>;
 
 <span class="doccomment">/// Some hash of MainchainAddress, 28 bytes. Presumably blake2b_224.
-/// Way to get it: cardano-cli address key-hash --payment-verification-key-file &lt;path to vkey&gt;
+/// Way to get it: cardano-cli address key-hash --payment-verification-key-file FILE
 </span><span class="attr">#[derive(
 	Clone, Copy, Decode, Default, Eq, Encode, Hash, MaxEncodedLen, PartialEq, ToDatum, TypeInfo,
 )]
@@ -1141,7 +1141,7 @@
 /// -- keyi - 33 bytes compressed ECDSA public key of a committee member
 /// -- @
 /// newtype ATMSPlainAggregatePubKey = ATMSPlainAggregatePubKey ByteString
-/// https://github.com/input-output-hk/partner-chains-smart-contracts/blob/5b19d25a95c3ab49ae0e4c6ce0ec3376f13b3766/docs/Specification.md#L554-L561
+/// &lt;https://github.com/input-output-hk/partner-chains-smart-contracts/blob/5b19d25a95c3ab49ae0e4c6ce0ec3376f13b3766/docs/Specification.md#L554-L561&gt;
 </span><span class="attr">#[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, ToDatum, TypeInfo)]
 </span><span class="kw">pub struct </span>ATMSPlainAggregatePubKey(<span class="kw">pub </span>[u8; <span class="number">32</span>]);
 

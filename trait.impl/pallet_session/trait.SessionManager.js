@@ -1,3 +1,4 @@
 (function() {var implementors = {
-"pallet_session_runtime_stub":[["impl&lt;T&gt; SessionManager&lt;T&gt; for <a class=\"struct\" href=\"pallet_session_runtime_stub/struct.PalletSessionStubImpls.html\" title=\"struct pallet_session_runtime_stub::PalletSessionStubImpls\">PalletSessionStubImpls</a>"]]
+"pallet_session_runtime_stub":[["impl&lt;T&gt; SessionManager&lt;T&gt; for <a class=\"struct\" href=\"pallet_session_runtime_stub/struct.PalletSessionStubImpls.html\" title=\"struct pallet_session_runtime_stub::PalletSessionStubImpls\">PalletSessionStubImpls</a>"]],
+"session_manager":[["impl&lt;T: Config + Config&gt; SessionManager&lt;&lt;T as Config&gt;::AccountId&gt; for <a class=\"struct\" href=\"session_manager/pallet_session_support/struct.PalletSessionSupport.html\" title=\"struct session_manager::pallet_session_support::PalletSessionSupport\">PalletSessionSupport</a>&lt;T&gt;"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

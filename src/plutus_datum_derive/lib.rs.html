@@ -101,7 +101,7 @@
 /// `constructor_datum` parameter should be used on a single field structs to decide if the field
 /// should be mapped to datum directly or wrapped in constructor datum with one variant and single
 /// field. Such distinction is required because exactly same Datum encoding, as in
-/// https://github.com/input-output-hk/trustless-sidechain, is required.
+/// &lt;https://github.com/input-output-hk/partner-chains-smart-contracts&gt;, is required.
 </span><span class="attr">#[proc_macro_derive(ToDatum, attributes(constructor_datum))]
 </span><span class="kw">pub fn </span>to_datum_derive(input: TokenStream) -&gt; TokenStream {
 	<span class="kw">let </span>ast = syn::parse(input).expect(<span class="string">"Cannot parse source"</span>);
