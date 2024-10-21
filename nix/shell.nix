@@ -21,11 +21,13 @@
     packages = with pkgs;
       [
         coreutils
+        pkg-config
         protobuf
-        rustToolchain # The rust toolchain we constructed above
+        rustToolchain
         nodejs
-        clang
         nodePackages.npm
+        pkgs.libiconv
+        pkgs.openssl
         gnumake
         gawk
         cargo-edit
@@ -34,37 +36,22 @@
       ++ (
         if isDarwin
         then
-          with pkgs.darwin.apple_sdk_11_0; [
-            frameworks.SystemConfiguration
-            frameworks.CoreFoundation
-            darwin.Libsystem
-          ]
-        else []
+           [ pkgs.darwin.apple_sdk.frameworks.SystemConfiguration ]
+        else [ pkgs.clang ]
       );
     env = [
       {
         name = "RUST_SRC_PATH";
         value = "${rustToolchain}/lib/rustlib/src/rust/library";
       }
-      {
-        name = "LIBCLANG_PATH";
-        value = "${pkgs.libclang.lib}/lib";
-      }
-      {
-        name = "LD_LIBRARY_PATH";
-        value = "${rustToolchain}/lib";
-      }
-      {
-        name = "BINDGEN_EXTRA_CLANG_ARGS";
-        value = with pkgs;
-          if isDarwin
-          then "-isystem ${darwin.Libsystem}/include"
-          else "-isystem ${libclang.lib}/lib/clang/${lib.getVersion libclang}/include";
-      }
-      {
-        name = "PATH";
-        prefix = "${pkgs.coreutils}/bin";
-      }
+      { name = "LIBCLANG_PATH"; value = "${pkgs.libclang.lib}/lib"; }
+      { name = "LD_LIBRARY_PATH"; value = "${rustToolchain}/lib"; }
+      { name = "ROCKSDB_LIB_DIR"; value = "${pkgs.rocksdb}/lib/"; }
+      { name = "OPENSSL_NO_VENDOR"; value = 1; }
+      { name = "OPENSSL_DIR"; value = "${pkgs.openssl.dev}"; }
+      { name = "OPENSSL_INCLUDE_DIR"; value = "${pkgs.openssl.dev}/include"; }
+      { name = "OPENSSL_LIB_DIR"; value = "${pkgs.openssl.out}/lib"; }
+
     ];
     # Main Categories which can include pkgs, or devShell-like sets
     # for commands and helpers
