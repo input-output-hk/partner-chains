@@ -22,6 +22,7 @@ provider will not query the main chain state or produce inherent data at all.
 * Removed the `main-chain-follower-api` completely. Each crate that depended on it now defines its own `*DataSource`
 trait, implemented by separate types in `db-sync-follower` and `main-chain-follower-mock` crates. For reference
 on how to create these new data sources see `node/src/main_chain_follower.rs` file.
+* Added `pallet-session` integration for `pallet-session-validator-management`. Not wired in the node.
 
 ## Removed
 
