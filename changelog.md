@@ -29,7 +29,7 @@ on how to create these new data sources see `node/src/main_chain_follower.rs` fi
 ## Fixed
 
 ## Added
-* Added `new_for_runtime_version` factory for the native token inherent data provider,
+* Added `new_if_pallet_present` factory for the native token inherent data provider,
 allowing to selectively query main chain state based on runtime version
 
 # 1.2.0
