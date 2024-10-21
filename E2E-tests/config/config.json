@@ -21,7 +21,7 @@
         "default_port": 9933
     },
     "timeouts": {
-        "long_running_function": 20,
+        "long_running_function": 50,
         "register_cmd": 300,
         "deregister_cmd": 300,
         "burn_cmd": 300,
