@@ -52,6 +52,12 @@ pub fn staging_initial_authorities() -> Vec<AuthorityKeys> {
 			"0x34b71fdad96431bf115350d8ad21eec07a2b154ff32dc31125f988e308bebea8",
 			"0x025e19f82c5e2bac5e8869d49ff26359e442628bc5cfa38eeb5275f43d04015da8",
 		),
+		// validator-5
+		authority_keys(
+			"0x500d7ff6d903c85db5ee5624df9510c2a085cf30da260166bd370010d0bdc97a",
+			"0xa04d74c1539550876d04e4d2de4e0531087c3b6810ce96ddc16d78ccf4ac4f11",
+			"0x03f38a062a4b372c045c1dddc4fe98a2c9cb1d6eec8bf02f973fd29b1096cd8155",
+		),
 	]
 }
 pub fn staging_endowed_accounts() -> Vec<AccountId> {
