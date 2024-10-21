@@ -3,6 +3,9 @@ name: Devnet Partner Chains Tests
 on:
   schedule:
     - cron:  '30 4 * * *'
+  push:
+    branches:
+      - feature/e2e-tests
   workflow_dispatch:
     inputs:
       keyword:
@@ -114,7 +117,7 @@ jobs:
           --secret XRAY_API_BASE_URL="$XRAY_API_BASE_URL" \
           --secret JIRA_URL="$JIRA_URL" \
           --ssh-auth-sock="$SSH_AUTH_SOCK" \
-          ./E2E-tests+report \
+          +report \
           --log_level="${LOG_LEVEL:-"info"}" \
           --env=${{ env.TEST_ENVIRONMENT }} \
           --stack=${{ env.TEST_ENVIRONMENT }} \
