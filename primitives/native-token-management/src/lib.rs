@@ -135,7 +135,7 @@ mod inherent_provider {
 	impl NativeTokenManagementInherentDataProvider {
 		/// Creates inherent data provider only if the pallet is present in the runtime.
 		/// Returns zero transfers if not.
-		pub async fn new_if_pallet_present<Block, C, E>(
+		pub async fn new_if_pallet_present<Block, C>(
 			client: Arc<C>,
 			data_source: &(dyn NativeTokenManagementDataSource + Send + Sync),
 			mc_hash: McBlockHash,
