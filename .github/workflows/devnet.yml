@@ -103,6 +103,7 @@ jobs:
         JIRA_URL: ${{ secrets.JIRA_URL }}
         MARKERS: "not active_flow and not passive_flow"
       run: |
+        cd E2E-tests
         earthly \
           --secret AWS_SESSION_TOKEN="$AWS_SESSION_TOKEN" \
           --secret AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
