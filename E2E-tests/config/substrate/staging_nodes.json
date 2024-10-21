@@ -1,10 +1,9 @@
 {
     "chain_id": 1,
-    "deployment_mc_epoch": 721,
-    "initial_pc_epoch": 4802742,
+    "deployment_mc_epoch": 727,
     "genesis_committee_hash_utxo": "4e65eddc6132c1b9891d43f9d67a4a0a7b6e614b648f59dc97538f3f23eb96bf#1",
     "governance_authority": "0x1f0977bc0f57c67ca6d77296c1b575fe05a6dc2c5fa38056ba63c50c",
-    "deployment_version": "1.1.0",
+    "deployment_version": "master",
     "test_environment": "staging",
     "nodes_config": {
         "nodes": {
@@ -79,6 +78,23 @@
                     "partner_chain_signing_key": "./secrets/substrate/staging/keys/validator-4/partner_chain.skey.json.decrypted"
                 },
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000204"
+            },
+            "validator-5": {
+                "host": "10.0.10.90",
+                "port": "30325",
+                "aura_ss58_address": "5DsfhT7HJe6i5LYeKBzefrXijW5UgPsn2Cuyw5WMa4uEktTn",
+                "pool_id": "ae81beee7a6c3fa13bba811f91f63ebdd7eb25dd8a62476d4996de10",
+                "public_key": "0x03f38a062a4b372c045c1dddc4fe98a2c9cb1d6eec8bf02f973fd29b1096cd8155",
+                "aura_public_key": "0x500d7ff6d903c85db5ee5624df9510c2a085cf30da260166bd370010d0bdc97a",
+                "grandpa_public_key": "0xa04d74c1539550876d04e4d2de4e0531087c3b6810ce96ddc16d78ccf4ac4f11",
+                "cardano_payment_addr": "addr_test1vqqm36dcg5xeeqgc29r8gu6wujlmr4fyrdrvuzq4qnem2vs7g2kvj",
+                "keys_files": {
+                    "cardano_payment_key": "./secrets/substrate/staging/keys/validator-5/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/staging/keys/validator-5/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/staging/keys/validator-5/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/staging/keys/validator-5/partner_chain.skey.json.decrypted"
+                },
+                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000205"
             }
         },
         "passive_transfer_account": {
@@ -112,7 +128,7 @@
             "mainchain_address": "addr_test1vq0sjaaupatuvl9x6aefdsd4whlqtfku93068qzkhf3u2rqt9cnuq",
             "mainchain_key": "./secrets/substrate/staging/keys/governance_authority/init.skey.json.decrypted"
         },
-        "selected_node": "validator-3",
+        "selected_node": "validator-4",
         "node": "${nodes_config[nodes][${nodes_config[selected_node]}]}",
         "token_conversion_rate": 9,
         "block_duration": 6,
