@@ -41,7 +41,7 @@ jobs:
       contents: read
 
 
-    runs-on: [self-hosted, eks]
+    runs-on: eks
 
     if: github.event.pull_request.draft == false
 
