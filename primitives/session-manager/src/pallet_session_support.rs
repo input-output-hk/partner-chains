@@ -3,7 +3,7 @@
 use core::marker::PhantomData;
 use derive_new::new;
 use frame_system::pallet_prelude::BlockNumberFor;
-use log::debug;
+use log::{debug, warn};
 use sp_staking::SessionIndex;
 use sp_std::vec::Vec;
 
@@ -39,9 +39,8 @@ impl<T: pallet_session_validator_management::Config + pallet_session::Config>
 		Some(
 			pallet_session_validator_management::Pallet::<T>::rotate_committee_to_next_epoch()
 				.expect(
-					"PalletSessionSupport: Session should never end without current epoch validators defined. \
-				Check ShouldEndSession implementation or if it is used before starting new session",
-				).into_iter().map(|(id, _)| id.into()).collect::<Vec<_>>(),
+					"PalletSessionSupport: Session should never end without current epoch validators defined. This may be caused by ShouldEndSession invalid behavior or being called before starting new session",
+				).into_iter().map(|(id, _)| id).collect::<Vec<_>>(),
 		)
 	}
 
@@ -64,12 +63,22 @@ where
 {
 	fn should_end_session(n: BlockNumberFor<T>) -> bool {
 		let current_epoch_number = T::current_epoch_number();
-
-		let should_end = current_epoch_number
-			> pallet_session_validator_management::Pallet::<T>::current_committee_storage().epoch
-			&& pallet_session_validator_management::Pallet::<T>::next_committee().is_some();
-		debug!("PalletSessionValidatorManagementSessionManager: should_end_session({n:?}) = {should_end}");
-		should_end
+		let current_committee_epoch =
+			pallet_session_validator_management::Pallet::<T>::current_committee_storage().epoch;
+		let next_committee_is_defined =
+			pallet_session_validator_management::Pallet::<T>::next_committee().is_some();
+		if current_epoch_number > current_committee_epoch {
+			if next_committee_is_defined {
+				debug!("PalletSessionSupport: should_end_session({n:?}) = true");
+				true
+			} else {
+				warn!("PalletSessionSupport: should_end_session({n:?}) 'current epoch' > 'committee epoch' but the next committee is not defined");
+				false
+			}
+		} else {
+			debug!("PalletSessionSupport: should_end_session({n:?}) = false");
+			false
+		}
 	}
 }
 
