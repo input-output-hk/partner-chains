@@ -556,8 +556,7 @@ pub(crate) async fn get_utxos_for_address(
 	Ok(result?)
 }
 /// Used by `get_token_utxo_for_epoch` (CandidatesDataSourceImpl),
-/// `get_distributed_set_utxo` (DistributedSetDataSourceImpl),
-/// `get_nft_utxo` (CertificateDataSourceImpl),
+#[cfg(feature = "candidate-source")]
 pub(crate) async fn create_idx_ma_tx_out_ident(pool: &Pool<Postgres>) -> Result<(), SqlxError> {
 	let sql = "CREATE INDEX IF NOT EXISTS idx_ma_tx_out_ident ON ma_tx_out(ident)";
 	info!("Executing '{}', this might take a while", sql);
