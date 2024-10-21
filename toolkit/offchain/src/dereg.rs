@@ -1,4 +1,3 @@
-use crate::ogmios::{self, OgmiosUtxo};
 use crate::{plutus_data, tx};
 use anyhow::anyhow;
 use cardano_serialization_lib::ExUnits;
@@ -6,6 +5,9 @@ use chain_params::SidechainParams;
 use db_sync_follower::candidates::RegisterValidatorDatum;
 use hex_literal::hex;
 use jsonrpsee::http_client::HttpClient;
+use ogmios_client::{
+	query_ledger_state::QueryLedgerState, transactions::Transactions, types::OgmiosUtxo,
+};
 use pallas_addresses::{ShelleyAddress, ShelleyDelegationPart, ShelleyPaymentPart};
 use pallas_primitives::alonzo::PlutusData;
 use plutus::ToDatum;
@@ -15,7 +17,6 @@ use uplc::{
 	ast::{DeBruijn, Program},
 	plutus_data,
 };
-
 /// This is copied from smart-contracts repo
 pub const CANDIDATE_VALIDATOR_CBOR: [u8; 318] = hex!("59013b590138010000323322323322323232322222533553353232323233012225335001100f2215333573466e3c014dd7001080909802000980798051bac330033530040022200148040dd7198011a980180311000a4010660026a600400644002900019112999ab9a33710002900009805a4810350543600133003001002300f22253350011300b49103505437002215333573466e1d20000041002133005337020089001000919199109198008018011aab9d001300735573c0026ea80044028402440204c01d2401035054350030092233335573e0024016466a0146ae84008c00cd5d100124c6010446666aae7c00480288cd4024d5d080118019aba20024988c98cd5ce00080109000891001091000980191299a800880211099a80280118020008910010910911980080200191918008009119801980100100081");
 
@@ -38,15 +39,15 @@ pub async fn deregister(network: pallas_addresses::Network) -> anyhow::Result<()
 	println!("validator_address: {:?}", validator_address.to_bech32().unwrap());
 
 	let client = HttpClient::builder().build("http://localhost:1337")?;
-	let own_utxos = ogmios::query_utxos(&own_addr, &client).await?;
-	let validator_utxos = ogmios::query_utxos(&validator_address, &client).await?;
+	let own_utxos = client.query_utxos(&[own_addr.to_bech32().unwrap()]).await?;
+	let validator_utxos = client.query_utxos(&[validator_address.to_bech32().unwrap()]).await?;
 	println!("There are {} validator utxos", validator_utxos.len());
 	println!("There are {} own utxos", own_utxos.len());
 	let own_registration_utxos =
 		find_own_registration_utxos(&own_payment_key_hash, &spo_pub_key, validator_utxos);
 	println!("There are {} own registration utxos", own_registration_utxos.len());
 
-	let protocol_parameters = ogmios::query_protocol_parameters(&client).await?;
+	let protocol_parameters = client.query_protocol_parameters().await?;
 	let payment_skey = hex!("cf86dc85e4933424826e846c18d2695689bf65de1fc0c40fcd9389ba1cbdc069");
 
 	let tx_with_invalid_budget = tx::make_deregister_tx(
@@ -54,22 +55,22 @@ pub async fn deregister(network: pallas_addresses::Network) -> anyhow::Result<()
 		&own_registration_utxos,
 		&own_addr,
 		own_payment_key_hash,
-		protocol_parameters.clone(),
+		&protocol_parameters,
 		applied_validator.clone(),
 		ExUnits::new(&0u32.into(), &0u32.into()),
 	)
 	.map_err(|e| anyhow!("Error when building de-register transaction: {}", e))?;
 
-	let costs = ogmios::evalutate_tx(&tx_with_invalid_budget.to_bytes(), &client).await?;
+	let costs = client.evalute_transaction(&tx_with_invalid_budget.to_bytes()).await?;
 	let cost = costs.first().unwrap();
 
 	println!("cost: {:#?}", cost);
 	let unsigned_tx = tx::make_deregister_tx(
-		&own_utxos.first().unwrap(),
+		own_utxos.first().unwrap(),
 		&own_registration_utxos,
 		&own_addr,
 		own_payment_key_hash,
-		protocol_parameters.clone(),
+		&protocol_parameters,
 		applied_validator.clone(),
 		tx::convert_ex_units(&cost.budget),
 	)
@@ -77,7 +78,7 @@ pub async fn deregister(network: pallas_addresses::Network) -> anyhow::Result<()
 
 	let signed_tx = tx::sign_tx(&unsigned_tx, &payment_skey);
 	//println!("{}", tx_bytes.clone());
-	let res = ogmios::submit_tx(&signed_tx.to_bytes(), &client).await?;
+	let res = client.submit_transaction(&signed_tx.to_bytes()).await?;
 	println!("{:#?}", res);
 	Ok(())
 }
@@ -90,10 +91,9 @@ fn find_own_registration_utxos(
 	validator_utxos
 		.into_iter()
 		.filter(|utxo| {
-			let d = utxo.datum.clone();
-			let rd_opt: Option<RegisterValidatorDatum> = d
-				.and_then(|datum| hex::decode(datum).ok())
-				.and_then(|cbor_bytes| minicbor::decode(&cbor_bytes).ok())
+			let datum = utxo.datum.clone();
+			let rd_opt: Option<RegisterValidatorDatum> = datum
+				.and_then(|d| minicbor::decode(&d).ok())
 				.and_then(|pd: PlutusData| plutus_data::decode_register_validator_datum(&pd));
 			if let Some(rd) = rd_opt {
 				&rd.own_pkh == own_pkh && &rd.stake_ownership.pub_key == spo_pub_key
@@ -142,7 +142,7 @@ fn apply_params_to_script(
 
 /// RawScripts.purs in smart-contracts have a single layer of CBOR wrapping, so we have to unwrap it.
 fn unwrap_one_layer_of_cbor(plutus_script_bytes_wrapped: &[u8]) -> Result<Vec<u8>, anyhow::Error> {
-	let plutus_script_bytes: PlutusData = minicbor::decode(&plutus_script_bytes_wrapped).unwrap();
+	let plutus_script_bytes: PlutusData = minicbor::decode(plutus_script_bytes_wrapped).unwrap();
 	let plutus_script_bytes = match plutus_script_bytes {
 		PlutusData::BoundedBytes(bb) => Ok(bb),
 		_ => Err(anyhow!("expected validator raw to be BoundedBytes")),

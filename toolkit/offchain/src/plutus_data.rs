@@ -79,10 +79,7 @@ fn decode_utxo_id_datum(datum: &PlutusData) -> Option<UtxoId> {
 
 pub fn decode_u16(pd: &PlutusData) -> Option<u16> {
 	match pd {
-		PlutusData::BigInt(bi) => match bi {
-			BigInt::Int(i) => TryFrom::try_from(**i).ok(),
-			_ => None,
-		},
+		PlutusData::BigInt(BigInt::Int(i)) => TryFrom::try_from(**i).ok(),
 		_ => None,
 	}
 }
@@ -99,7 +96,7 @@ fn decode_tx_hash_datum(datum: &PlutusData) -> Option<McTxHash> {
 
 fn decode_bytestring(d: &PlutusData) -> Option<&Vec<u8>> {
 	match d {
-		PlutusData::BoundedBytes(bb) => Some(*&bb),
+		PlutusData::BoundedBytes(bb) => Some(bb),
 		_ => None,
 	}
 }

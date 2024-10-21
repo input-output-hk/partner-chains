@@ -5751,6 +5751,7 @@ dependencies = [
  "anyhow",
  "fraction",
  "hex",
+ "hex-literal",
  "jsonrpsee",
  "serde",
  "serde_json",
@@ -6471,6 +6472,7 @@ dependencies = [
  "hex-literal",
  "jsonrpsee",
  "minicbor",
+ "ogmios-client",
  "pallas-addresses 0.30.2 (git+https://github.com/txpipe/pallas.git?tag=v0.30.2)",
  "pallas-primitives 0.30.2 (git+https://github.com/txpipe/pallas.git?tag=v0.30.2)",
  "plutus",
@@ -6478,6 +6480,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sidechain-domain",
+ "sp-io",
  "tokio",
  "uplc",
 ]
@@ -9610,9 +9613,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.127"
+version = "1.0.132"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8043c06d9f82bd7271361ed64f415fe5e12a77fdb52e573e7f06a516dea329ad"
+checksum = "d726bfaff4b320266d395898905d0eba0345aae23b54aee3a737e260fd46db03"
 dependencies = [
  "itoa",
  "memchr",

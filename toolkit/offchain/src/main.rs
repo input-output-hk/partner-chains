@@ -1,5 +1,4 @@
 mod dereg;
-mod ogmios;
 mod plutus_data;
 mod tx;
 
