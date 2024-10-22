@@ -26,13 +26,20 @@ pub struct OgmiosUtxo {
 	// bech32 address
 	pub address: String,
 	pub value: OgmiosValue,
-	pub datum: Option<Vec<u8>>,
+	pub datum: Option<Datum>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(transparent)]
 pub struct Datum {
 	#[serde(deserialize_with = "parse_bytes")]
 	pub bytes: Vec<u8>,
+}
+
+impl From<Vec<u8>> for Datum {
+	fn from(bytes: Vec<u8>) -> Self {
+		Datum { bytes }
+	}
 }
 
 fn parse_bytes<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>

@@ -172,7 +172,7 @@ async fn query_utxos() {
 					map
 				},
 			},
-			datum: Some(hex!("d8799fff").to_vec()),
+			datum: Some(hex!("d8799fff").to_vec().into()),
 		}
 	)
 }
