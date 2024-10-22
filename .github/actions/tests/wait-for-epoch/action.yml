@@ -32,9 +32,9 @@ runs:
 
         elif [ "${{ inputs.deployment }}" == "kubernetes" ]; then
           if [ "${{ inputs.environment }}" == "staging-preview" ]; then
-            testnet_magic=1 
-          elif [ "${{ inputs.environment }}" == "staging-preprod" ]; then
             testnet_magic=2 
+          elif [ "${{ inputs.environment }}" == "staging-preprod" ]; then
+            testnet_magic=1
           else
             echo "Invalid environment for Kubernetes deployment"
             exit 1

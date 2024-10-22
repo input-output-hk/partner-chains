@@ -16,6 +16,12 @@ inputs:
   mc_epoch:
     description: 'MC epoch to test (committee tests)'
     required: false
+  latest_mc_epoch:
+    description: 'Parametrize committee tests to verify whole last MC epoch'
+    required: false
+  deployment_mc_epoch:
+    description: 'Deployment MC epoch'
+    required: false
   log_level:
     description: 'Log CLI level'
     required: false
@@ -27,6 +33,9 @@ inputs:
   blockchain:
     description: 'Blockchain to test'
     required: true
+  decrypt:
+    description: 'Decrypt secrets'
+    required: false
 
 runs:
   using: composite
@@ -36,6 +45,15 @@ runs:
       run: |
         if [ -n "${{ inputs.mc_epoch }}" ]; then
           mc_epoch_switch="--mc-epoch ${{ inputs.mc_epoch }}"
+        fi
+        if [ "${{ inputs.latest_mc_epoch }}" = "true" ]; then
+          latest_mc_epoch_switch="--latest-mc-epoch"
+        fi
+        if [ -n "${{ inputs.deployment_mc_epoch }}" ]; then
+          deployment_mc_epoch_switch="--deployment-mc-epoch ${{ inputs.deployment_mc_epoch }}"
+        fi
+        if [ "${{ inputs.decrypt }}" = "true" ]; then
+          decrypt_switch="--decrypt"
         fi
 
         cd e2e-tests
@@ -48,6 +66,8 @@ runs:
           -m "${{ inputs.markers }}" \
           --init-timestamp ${{ inputs.init_timestamp }} \
           $mc_epoch_switch \
+          $latest_mc_epoch_switch \
+          $decrypt_switch \
           --json-report \
           --json-report-summary \
           --junitxml=junit_report.xml
