@@ -21,7 +21,7 @@ fn happy_path() {
 			print_info_io(),
 			read_keys_io(),
 			establish_pc_contracts_cli_configuration_io(None, PcContractsCliResources::default()),
-			run_smart_contract_io(r#"{"endpoint":"CommitteeCandidateDereg","transactionId":"9aebb6d1d7f92f773f7d3025dd2fca67804ad6aea4a84a7696cd5ad15a4ee432"}"#),
+			run_smart_contract_io(Ok(r#"{"endpoint":"CommitteeCandidateDereg","transactionId":"9aebb6d1d7f92f773f7d3025dd2fca67804ad6aea4a84a7696cd5ad15a4ee432"}"#.to_owned())),
 			MockIO::print(r#"Deregistration successful: {"endpoint":"CommitteeCandidateDereg","transactionId":"9aebb6d1d7f92f773f7d3025dd2fca67804ad6aea4a84a7696cd5ad15a4ee432"}"#),
 		]);
 	let result = DeregisterCmd.run(&mock_context);
@@ -40,13 +40,12 @@ fn errors_if_smart_contracts_dont_output_transaction_id() {
 			print_info_io(),
 			read_keys_io(),
 			establish_pc_contracts_cli_configuration_io(None, PcContractsCliResources::default()),
-			run_smart_contract_io(r#"(NotFoundInputUtxo "Couldn't find registration UTxO")"#),
+			run_smart_contract_io(Err(anyhow::anyhow!(
+				r#"(NotFoundInputUtxo "Couldn't find registration UTxO")"#
+			))),
 		]);
 	let result = DeregisterCmd.run(&mock_context);
-	assert_eq!(
-		result.err().unwrap().to_string(),
-		r#"Deregistration failed: (NotFoundInputUtxo "Couldn't find registration UTxO")"#
-	);
+	assert_eq!(result.err().unwrap().to_string(), r#"Deregistration failed"#);
 }
 
 #[test]
@@ -158,8 +157,10 @@ fn read_cold_verification_key() -> MockIO {
 	])
 }
 
-fn run_smart_contract_io(output: &str) -> MockIO {
-	MockIO::run_command("./pc-contracts-cli deregister --network testnet --ada-based-staking --spo-public-key 1111111111111111111111111111111111111111111111111111111111111111 --sidechain-id 1234 --genesis-committee-hash-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9 --atms-kind plain-ecdsa-secp256k1 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file my_payment.skey", output)
+fn run_smart_contract_io(output: anyhow::Result<std::string::String>) -> MockIO {
+	MockIO::run_command_with_result(
+		"./pc-contracts-cli deregister --network testnet --ada-based-staking --spo-public-key 1111111111111111111111111111111111111111111111111111111111111111 --sidechain-id 1234 --genesis-committee-hash-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file my_payment.skey",
+		output)
 }
 
 fn test_chain_config_content() -> serde_json::Value {
