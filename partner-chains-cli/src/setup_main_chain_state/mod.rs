@@ -8,6 +8,7 @@ use crate::pc_contracts_cli_resources::establish_pc_contracts_cli_configuration;
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
 use crate::{smart_contracts, CmdRun};
 use anyhow::anyhow;
+use anyhow::Context;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::mainchain_epoch::MainchainEpochDerivation;
@@ -264,26 +265,22 @@ fn set_candidates_on_main_chain<C: IOContext>(
 
 		let cardano_network = get_cardano_network_from_file(context)?;
 
-		let output = context.run_command(&format!(
-			"{PC_CONTRACTS_CLI_PATH} {} --network {} {} {} {}",
-			command,
-			cardano_network.to_network_param(),
-			candidate_keys,
-			smart_contracts::sidechain_params_arguments(chain_params),
-			smart_contracts::runtime_config_arguments(
-				&pc_contracts_cli_resources,
-				&payment_signing_key_path
-			)
-		))?;
-		if output.contains("transactionId") {
-			context.print("Permissioned candidates updated. The change will be effective in two main chain epochs.");
-			Ok(())
-		} else {
-			Err(anyhow::anyhow!("Permissioned candidates update failed: {}", output))
-		}
-	} else {
-		Ok(())
+		context
+			.run_command(&format!(
+				"{PC_CONTRACTS_CLI_PATH} {} --network {} {} {} {}",
+				command,
+				cardano_network.to_network_param(),
+				candidate_keys,
+				smart_contracts::sidechain_params_arguments(chain_params),
+				smart_contracts::runtime_config_arguments(
+					&pc_contracts_cli_resources,
+					&payment_signing_key_path
+				)
+			))
+			.context("Permissioned candidates update failed")?;
+		context.print("Permissioned candidates updated. The change will be effective in two main chain epochs.");
 	}
+	Ok(())
 }
 
 fn set_d_parameter_on_main_chain<C: IOContext>(
@@ -316,16 +313,10 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 			smart_contracts::sidechain_params_arguments(chain_params),
 			smart_contracts::runtime_config_arguments(&pc_contracts_cli_resources, &payment_signing_key_path)
 		);
-		let output = context.run_command(&command)?;
-		if output.contains("transactionId") {
-			context.print(&format!("D-parameter updated to ({}, {}). The change will be effective in two main chain epochs.", p, r));
-			Ok(())
-		} else {
-			Err(anyhow::anyhow!("Setting D-parameter failed: {}", output))
-		}
-	} else {
-		Ok(())
+		context.run_command(&command).context("Setting D-parameter failed")?;
+		context.print(&format!("D-parameter updated to ({}, {}). The change will be effective in two main chain epochs.", p, r));
 	}
+	Ok(())
 }
 
 fn load_chain_config_field<C: IOContext, T: DeserializeOwned>(

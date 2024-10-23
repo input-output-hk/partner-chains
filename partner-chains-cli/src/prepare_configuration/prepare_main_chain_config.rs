@@ -12,7 +12,7 @@ use crate::pc_contracts_cli_resources::{
 };
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 use crate::smart_contracts;
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use serde_json::Value;
 use sidechain_domain::PolicyId;
 
@@ -76,9 +76,7 @@ fn run_pc_contracts_cli_addresses<C: IOContext>(
 	);
 	let addresses_string = context.run_command(&cmd)?;
 
-	let addresses_json: Value = serde_json::from_str(&addresses_string).map_err(|_| {
-		anyhow!("Failed to fetch data from Ogmios or Kupo. Please check connection configuration and try again.")
-	})?;
+	let addresses_json: Value = serde_json::from_str(&addresses_string)?;
 
 	COMMITTEE_CANDIDATES_ADDRESS.save_to_file(
 		&addresses_json.pointer("/addresses/CommitteeCandidateValidator")

@@ -2,7 +2,7 @@ use crate::config::SidechainParams;
 use crate::pc_contracts_cli_resources::PcContractsCliResources;
 
 pub fn sidechain_params_arguments(sidechain_params: &SidechainParams) -> String {
-	format!("--sidechain-id {} --genesis-committee-hash-utxo {} --threshold-numerator {} --threshold-denominator {} --governance-authority {} --atms-kind plain-ecdsa-secp256k1",
+	format!("--sidechain-id {} --genesis-committee-hash-utxo {} --threshold-numerator {} --threshold-denominator {} --governance-authority {}",
 			sidechain_params.chain_id,
 			sidechain_params.genesis_committee_utxo,
 			sidechain_params.threshold_numerator,

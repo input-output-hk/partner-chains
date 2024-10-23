@@ -13,7 +13,7 @@ use crate::pc_contracts_cli_resources::{
 	establish_pc_contracts_cli_configuration, PcContractsCliResources,
 };
 use crate::{smart_contracts, CmdRun};
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 
 #[derive(Debug, clap::Parser)]
 pub struct DeregisterCmd;
@@ -36,13 +36,8 @@ impl CmdRun for DeregisterCmd {
 			pc_contracts_cli_resources,
 			payment_signing_key_path,
 		);
-		let output = context.run_command(&command)?;
-		// Smart Contracts CLI return code is 0 even if the deregistration fails, so we need to check the output text.
-		if output.contains("transactionId") {
-			Ok(context.print(&format!("Deregistration successful: {}", output)))
-		} else {
-			Err(anyhow!("Deregistration failed: {}", output))
-		}
+		let output = context.run_command(&command).context("Deregistration failed")?;
+		Ok(context.print(&format!("Deregistration successful: {}", output)))
 	}
 }
 
