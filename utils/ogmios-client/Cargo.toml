@@ -9,18 +9,15 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 fraction = { workspace = true, features = ["with-decimal", "with-serde-support"] }
 hex = { workspace = true }
-jsonrpsee = { workspace = true, optional = true, features = [
-    "client-core",
-    "http-client",
-    "macros",
-] }
+jsonrpsee = { workspace = true, optional = true, features = ["client-core", "http-client", "macros"] }
 serde = { workspace = true }
-serde_json = { workspace = true, features = ["raw_value"] }
+serde_json = { workspace = true, features = ["raw_value", "arbitrary_precision"] }
 thiserror = { workspace = true }
 time = { workspace = true, features = ["std", "serde", "parsing"] }
 
 [dev-dependencies]
 anyhow = { workspace = true }
+hex-literal = { workspace = true }
 tokio = { workspace = true }
 
 [features]

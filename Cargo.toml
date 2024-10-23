@@ -67,7 +67,7 @@ futures = { version = "0.3.30", features = ["thread-pool"] }
 hex = { version = "0.4.3", features = ["alloc"], default-features = false }
 hex-literal = "0.4.1"
 itertools = "0.13.0"
-jsonrpsee = { version = "0.24.3", features = ["client-core", "server",	"macros"] }
+jsonrpsee = { version = "0.24.3", features = ["client-core", "server", "macros" ] }
 libp2p-identity = "0.2.9"
 log = { version = "0.4.22", default-features = false }
 minicbor = { version = "0.20", features = ["alloc"] }
@@ -83,7 +83,7 @@ rand = { version = "0.8.5", default-features = false }
 scale-info = { version = "2.11.1", default-features = false, features = ["derive"] }
 secp256k1 = { version = "0.28.2", default-features = false }
 serde = { version = "1.0.209", default-features = false, features = ["derive", "alloc"] }
-serde_json = { version = '1.0.127', default-features = false, features = ['alloc'] }
+serde_json = { version = '1.0.132', default-features = false, features = ["alloc"] }
 syn = "2.0.65"
 tempfile = "3.10.1"
 thiserror = { version = "1.0.48" }
