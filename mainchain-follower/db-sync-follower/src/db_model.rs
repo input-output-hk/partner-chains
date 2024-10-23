@@ -89,14 +89,6 @@ impl From<sidechain_domain::AssetName> for AssetName {
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
-pub(crate) struct DistributedSetData {
-	pub utxo_id_tx_hash: [u8; 32],
-	pub utxo_id_index: TxIndex,
-	pub asset_name: Vec<u8>,
-	pub datum: DbDatum,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 pub(crate) struct Block {
 	pub block_no: BlockNumber,
 	pub hash: [u8; 32],

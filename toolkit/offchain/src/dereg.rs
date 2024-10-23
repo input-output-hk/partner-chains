@@ -2,7 +2,7 @@ use crate::{plutus_data, tx};
 use anyhow::anyhow;
 use cardano_serialization_lib::ExUnits;
 use chain_params::SidechainParams;
-use db_sync_follower::candidates::RegisterValidatorDatum;
+use db_sync_follower::candidates::datum::RegisterValidatorDatum;
 use hex_literal::hex;
 use jsonrpsee::http_client::HttpClient;
 use ogmios_client::{
@@ -61,7 +61,7 @@ pub async fn deregister(network: pallas_addresses::Network) -> anyhow::Result<()
 	)
 	.map_err(|e| anyhow!("Error when building de-register transaction: {}", e))?;
 
-	let costs = client.evalute_transaction(&tx_with_invalid_budget.to_bytes()).await?;
+	let costs = client.evaluate_transaction(&tx_with_invalid_budget.to_bytes()).await?;
 	let cost = costs.first().unwrap();
 
 	println!("cost: {:#?}", cost);
@@ -93,12 +93,15 @@ fn find_own_registration_utxos(
 		.filter(|utxo| {
 			let datum = utxo.datum.clone();
 			let rd_opt: Option<RegisterValidatorDatum> = datum
-				.and_then(|d| minicbor::decode(&d).ok())
+				.and_then(|d| minicbor::decode(&d.bytes).ok())
 				.and_then(|pd: PlutusData| plutus_data::decode_register_validator_datum(&pd));
-			if let Some(rd) = rd_opt {
-				&rd.own_pkh == own_pkh && &rd.stake_ownership.pub_key == spo_pub_key
-			} else {
-				false
+			match rd_opt {
+				Some(RegisterValidatorDatum::V0 {
+					stake_ownership,
+					own_pkh: datum_own_pkh,
+					..
+				}) => &datum_own_pkh == own_pkh && &stake_ownership.pub_key == spo_pub_key,
+				_ => false,
 			}
 		})
 		.collect()

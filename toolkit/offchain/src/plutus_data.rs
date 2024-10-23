@@ -1,4 +1,4 @@
-use db_sync_follower::candidates::{AdaBasedStaking, RegisterValidatorDatum};
+use db_sync_follower::candidates::datum::{AdaBasedStaking, RegisterValidatorDatum};
 use pallas_primitives::alonzo::{BigInt, PlutusData};
 use sidechain_domain::{
 	AuraPublicKey, GrandpaPublicKey, McTxHash, SidechainPublicKey, SidechainSignature, UtxoId,
@@ -30,7 +30,7 @@ pub fn decode_register_validator_datum(datum: &PlutusData) -> Option<RegisterVal
 				.get(6)
 				.and_then(|d| decode_bytestring(d))
 				.map(|bytes| GrandpaPublicKey(bytes.clone()))?;
-			Some(RegisterValidatorDatum {
+			Some(RegisterValidatorDatum::V0 {
 				stake_ownership,
 				sidechain_pub_key,
 				sidechain_signature,

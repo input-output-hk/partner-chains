@@ -1,6 +1,5 @@
 /// This file contains the functions to create and sign a transaction.
 /// It is implemented with cardano-serialization-lib, not pallas.
-//use crate::ogmios::{OgmiosBudget, OgmiosUtxo, OgmiosValue, ProtocolParametersResponse};
 use cardano_serialization_lib::{
 	Address, AssetName, Assets, BigNum, CostModel, Costmdls, ExUnitPrices, ExUnits, JsError,
 	Language, LinearFee, MultiAsset, PlutusData, PlutusScript, PlutusWitness, PrivateKey, Redeemer,
