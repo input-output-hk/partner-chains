@@ -1,12 +1,10 @@
+use super::PlutusDataExtensions;
 use crate::candidates::{
 	AuraPublicKey, GrandpaPublicKey, MainchainSignature, McTxHash, SidechainPublicKey,
 	SidechainSignature, UtxoId, UtxoIndex,
 };
-
 use cardano_serialization_lib::PlutusData;
 use sidechain_domain::*;
-
-use super::PlutusDataExtensions;
 
 /** Representation of the plutus type in the mainchain contract (rev 4ed2cc66c554ec8c5bec7b90ad9273e9069a1fb4)
 *
@@ -67,68 +65,55 @@ impl TryFrom<PlutusData> for RegisterValidatorDatum {
 }
 
 pub fn decode_legacy_register_validator_datum(datum: PlutusData) -> Option<RegisterValidatorDatum> {
-	match datum.as_constr_plutus_data() {
-		Some(datum) if datum.alternative().is_zero() && datum.data().len() >= 7 => {
-			let fields = datum.data();
-			let stake_ownership = decode_ada_based_staking_datum(fields.get(0))?;
-			let sidechain_pub_key = fields.get(1).as_bytes().map(SidechainPublicKey)?;
-			let sidechain_signature = fields.get(2).as_bytes().map(SidechainSignature)?;
-			let consumed_input = decode_utxo_id_datum(fields.get(3))?;
-			let _own_pkh = fields.get(4).as_bytes()?;
-			let aura_pub_key = fields.get(5).as_bytes().map(AuraPublicKey)?;
-			let grandpa_pub_key = fields.get(6).as_bytes().map(GrandpaPublicKey)?;
-			Some(RegisterValidatorDatum::V0 {
-				stake_ownership,
-				sidechain_pub_key,
-				sidechain_signature,
-				consumed_input,
-				aura_pub_key,
-				grandpa_pub_key,
-			})
-		},
-
-		_ => None,
-	}
+	let fields = datum
+		.as_constr_plutus_data()
+		.filter(|datum| datum.alternative().is_zero())
+		.filter(|datum| datum.data().len() >= 7)?
+		.data();
+	let stake_ownership = decode_ada_based_staking_datum(fields.get(0))?;
+	let sidechain_pub_key = fields.get(1).as_bytes().map(SidechainPublicKey)?;
+	let sidechain_signature = fields.get(2).as_bytes().map(SidechainSignature)?;
+	let consumed_input = decode_utxo_id_datum(fields.get(3))?;
+	let _own_pkh = fields.get(4).as_bytes()?;
+	let aura_pub_key = fields.get(5).as_bytes().map(AuraPublicKey)?;
+	let grandpa_pub_key = fields.get(6).as_bytes().map(GrandpaPublicKey)?;
+	Some(RegisterValidatorDatum::V0 {
+		stake_ownership,
+		sidechain_pub_key,
+		sidechain_signature,
+		consumed_input,
+		aura_pub_key,
+		grandpa_pub_key,
+	})
 }
 
 fn decode_ada_based_staking_datum(datum: PlutusData) -> Option<AdaBasedStaking> {
-	match datum.as_constr_plutus_data() {
-		Some(datum) if datum.alternative().is_zero() && datum.data().len() >= 2 => {
-			let fields = datum.data();
-			match (fields.get(0).as_bytes(), fields.get(1).as_bytes()) {
-				(Some(f0), Some(f1)) => {
-					let pub_key = TryFrom::try_from(f0).ok()?;
-					Some(AdaBasedStaking { pub_key, signature: MainchainSignature(f1) })
-				},
-				_ => None,
-			}
-		},
-		_ => None,
-	}
+	let fields = datum
+		.as_constr_plutus_data()
+		.filter(|datum| datum.alternative().is_zero())
+		.filter(|datum| datum.data().len() >= 2)?
+		.data();
+	let pub_key = TryFrom::try_from(fields.get(0).as_bytes()?).ok()?;
+	let signature = MainchainSignature(fields.get(1).as_bytes()?);
+	Some(AdaBasedStaking { pub_key, signature })
 }
 fn decode_utxo_id_datum(datum: PlutusData) -> Option<UtxoId> {
-	match datum.as_constr_plutus_data() {
-		Some(datum) if datum.alternative().is_zero() && datum.data().len() >= 2 => {
-			let fields = datum.data();
-			match (fields.get(0), fields.get(1).as_u16()) {
-				(f0, Some(f1)) => {
-					let tx_hash = decode_tx_hash_datum(f0)?;
-					let index = UtxoIndex(f1);
-					Some(UtxoId { tx_hash, index })
-				},
-				_ => None,
-			}
-		},
-		_ => None,
-	}
+	let fields = datum
+		.as_constr_plutus_data()
+		.filter(|datum| datum.alternative().is_zero())
+		.filter(|datum| datum.data().len() >= 2)?
+		.data();
+	let tx_hash = decode_tx_hash_datum(fields.get(0))?;
+	let index = UtxoIndex(fields.get(1).as_u16()?);
+	Some(UtxoId { tx_hash, index })
 }
 /// Plutus type for TxHash is a sum type, we can parse only variant with constructor 0.
 fn decode_tx_hash_datum(datum: PlutusData) -> Option<McTxHash> {
-	match datum.as_constr_plutus_data() {
-		Some(datum) if datum.alternative().is_zero() && datum.data().len() > 0 => {
-			let bytes = datum.data().get(0).as_bytes()?;
-			Some(McTxHash(TryFrom::try_from(bytes.clone()).ok()?))
-		},
-		_ => None,
-	}
+	let constructor_datum = datum
+		.as_constr_plutus_data()
+		.filter(|datum| datum.alternative().is_zero())
+		.filter(|datum| datum.data().len() >= 1)?;
+	let bytes = constructor_datum.data().get(0).as_bytes()?;
+
+	Some(McTxHash(TryFrom::try_from(bytes).ok()?))
 }

@@ -1,6 +1,5 @@
 pub use d_param::DParamDatum;
 pub use permissioned::PermissionedCandidateDatums;
-
 pub use registered::*;
 
 mod d_param;

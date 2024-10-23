@@ -1,5 +1,4 @@
 //! Provides implementations of Data Sources that read from db-sync postgres
-
 use cardano_serialization_lib::PlutusData;
 
 pub mod data_sources;
