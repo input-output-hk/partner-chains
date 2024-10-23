@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["EpochBoundary","EpochParameters","EraSummary"],"trait":["QueryLedgerState"]};
+window.SIDEBAR_ITEMS = {"struct":["EpochBoundary","EpochParameters","EraSummary","ProtocolParametersResponse"],"trait":["QueryLedgerState"]};

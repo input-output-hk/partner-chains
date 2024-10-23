@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["OgmiosClientError","OgmiosParams"],"mod":["jsonrpsee","query_ledger_state","query_network","types"],"trait":["OgmiosClient"]};
+window.SIDEBAR_ITEMS = {"enum":["OgmiosClientError","OgmiosParams"],"mod":["jsonrpsee","query_ledger_state","query_network","transactions","types"],"struct":["ByNameParamsBuilder"],"trait":["OgmiosClient"]};

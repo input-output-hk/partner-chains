@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["SlotLength","TimeSeconds"]};
+window.SIDEBAR_ITEMS = {"struct":["Asset","Datum","OgmiosBytesSize","OgmiosTx","OgmiosUtxo","OgmiosValue","SlotLength","TimeSeconds"]};
