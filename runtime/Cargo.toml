@@ -80,7 +80,6 @@ sp-keyring = { workspace = true }
 hex = { workspace = true }
 sp-consensus-slots = { workspace = true }
 minicbor = { workspace = true }
-plutus = { workspace = true }
 pretty_assertions = { workspace = true }
 serde_json = { workspace = true }
 
