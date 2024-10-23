@@ -1,4 +1,6 @@
-use cardano_serialization_lib::PlutusData;
+use cardano_serialization_lib::{
+	encode_json_value_to_plutus_datum, PlutusData, PlutusDatumSchema::DetailedSchema,
+};
 use sqlx::database::HasValueRef;
 use sqlx::error::BoxDynError;
 use sqlx::postgres::{types::Oid, PgTypeInfo};
@@ -21,10 +23,7 @@ where
 {
 	fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
 		let value: JsonValue = <JsonValue as Decode<Postgres>>::decode(value)?;
-		let datum = PlutusData::from_json(
-			&value.to_string(),
-			cardano_serialization_lib::PlutusDatumSchema::DetailedSchema,
-		);
+		let datum = encode_json_value_to_plutus_datum(value, DetailedSchema);
 		Ok(DbDatum(datum?))
 	}
 }
