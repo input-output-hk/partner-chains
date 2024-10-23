@@ -13,7 +13,6 @@ chrono = "0.4.31"
 hex = { workspace = true }
 hex-literal = { workspace = true }
 itertools = { workspace = true }
-plutus = { workspace = true, default-features = true }
 sidechain-domain = { workspace = true, default-features = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

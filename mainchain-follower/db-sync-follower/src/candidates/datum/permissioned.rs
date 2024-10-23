@@ -1,8 +1,7 @@
 use crate::DataSourceError::DatumDecodeError;
 use authority_selection_inherents::authority_selection_inputs::RawPermissionedCandidateData;
+use cardano_serialization_lib::PlutusData;
 use log::error;
-use plutus::Datum::*;
-use plutus::*;
 use sidechain_domain::*;
 
 pub enum PermissionedCandidateDatums {
@@ -16,9 +15,9 @@ pub struct PermissionedCandidateDatumV0 {
 	grandpa_public_key: GrandpaPublicKey,
 }
 
-impl TryFrom<&Datum> for PermissionedCandidateDatums {
+impl TryFrom<PlutusData> for PermissionedCandidateDatums {
 	type Error = super::Error;
-	fn try_from(datum: &Datum) -> super::Result<Self> {
+	fn try_from(datum: PlutusData) -> super::Result<Self> {
 		Ok(PermissionedCandidateDatums::V0(decode_legacy_permissioned_candidates_datums(datum)?))
 	}
 }
@@ -44,75 +43,35 @@ impl From<PermissionedCandidateDatums> for Vec<RawPermissionedCandidateData> {
 }
 
 fn decode_legacy_permissioned_candidates_datums(
-	datum: &Datum,
+	datum: PlutusData,
 ) -> super::Result<Vec<PermissionedCandidateDatumV0>> {
-	let permissioned_candidates: super::Result<Vec<PermissionedCandidateDatumV0>> = match datum {
-		ListDatum(list_datums) => list_datums
-			.iter()
-			.map(|keys_datum| match keys_datum {
-				ListDatum(d) => {
-					let sc = d.first().and_then(|d| d.as_bytestring())?;
-					let aura = d.get(1).and_then(|d| d.as_bytestring())?;
-					let grandpa = d.get(2).and_then(|d| d.as_bytestring())?;
-					Some(PermissionedCandidateDatumV0 {
-						sidechain_public_key: SidechainPublicKey(sc.clone()),
-						aura_public_key: AuraPublicKey(aura.clone()),
-						grandpa_public_key: GrandpaPublicKey(grandpa.clone()),
-					})
-				},
-				_ => None,
-			})
-			.collect::<Option<Vec<PermissionedCandidateDatumV0>>>(),
-		_ => None,
-	}
-	.ok_or(Box::new(DatumDecodeError {
-		datum: datum.clone(),
-		to: "PermissionedCandidateDatumV0".to_string(),
-	}));
+	let permissioned_candidates: super::Result<Vec<PermissionedCandidateDatumV0>> =
+		match datum.as_list() {
+			Some(list_datums) => list_datums
+				.into_iter()
+				.map(|keys_datum| match keys_datum.as_list() {
+					Some(d) if d.len() == 3 => {
+						let sc = d.get(0).as_bytes()?;
+						let aura = d.get(1).as_bytes()?;
+						let grandpa = d.get(2).as_bytes()?;
+						Some(PermissionedCandidateDatumV0 {
+							sidechain_public_key: SidechainPublicKey(sc.clone()),
+							aura_public_key: AuraPublicKey(aura.clone()),
+							grandpa_public_key: GrandpaPublicKey(grandpa.clone()),
+						})
+					},
+					_ => None,
+				})
+				.collect::<Option<Vec<PermissionedCandidateDatumV0>>>(),
+			_ => None,
+		}
+		.ok_or(Box::new(DatumDecodeError {
+			datum: datum.clone(),
+			to: "PermissionedCandidateDatumV0".to_string(),
+		}));
 
 	if permissioned_candidates.is_err() {
 		error!("Could not decode {:?} to Permissioned candidates datum. Expected [[ByteString, ByteString, ByteString]].", datum.clone());
 	}
 	permissioned_candidates
-}
-
-#[allow(dead_code)]
-mod csl {
-	use cardano_serialization_lib::PlutusData;
-
-	use super::*;
-	fn decode_legacy_permissioned_candidates_datums(
-		datum: &PlutusData,
-	) -> super::super::Result<Vec<PermissionedCandidateDatumV0>> {
-		let permissioned_candidates: super::super::Result<Vec<PermissionedCandidateDatumV0>> =
-			match datum.as_list() {
-				Some(list_datums) => list_datums
-					.into_iter()
-					.map(|keys_datum| match keys_datum.as_list() {
-						Some(d) if d.len() == 3 => {
-							let sc = d.get(0).as_bytes()?;
-							let aura = d.get(1).as_bytes()?;
-							let grandpa = d.get(2).as_bytes()?;
-							Some(PermissionedCandidateDatumV0 {
-								sidechain_public_key: SidechainPublicKey(sc.clone()),
-								aura_public_key: AuraPublicKey(aura.clone()),
-								grandpa_public_key: GrandpaPublicKey(grandpa.clone()),
-							})
-						},
-						_ => None,
-					})
-					.collect::<Option<Vec<PermissionedCandidateDatumV0>>>(),
-				_ => None,
-			}
-			.ok_or(format!("error").into());
-		// .ok_or(Box::new(DatumDecodeError {
-		// 	datum: datum.clone(),
-		// 	to: "PermissionedCandidateDatumV0".to_string(),
-		// }));
-
-		if permissioned_candidates.is_err() {
-			error!("Could not decode {:?} to Permissioned candidates datum. Expected [[ByteString, ByteString, ByteString]].", datum.clone());
-		}
-		permissioned_candidates
-	}
 }

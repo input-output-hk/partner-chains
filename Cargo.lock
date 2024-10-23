@@ -1865,7 +1865,6 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "pallet-sidechain-rpc",
- "plutus",
  "serde",
  "serde_json",
  "sidechain-domain",

@@ -1,14 +1,13 @@
-use plutus::{Datum, FromJsonError};
+use cardano_serialization_lib::PlutusData;
 use sqlx::database::HasValueRef;
 use sqlx::error::BoxDynError;
 use sqlx::postgres::{types::Oid, PgTypeInfo};
 use sqlx::types::JsonValue;
 use sqlx::{Decode, Postgres};
-use std::fmt::{Display, Formatter};
 
-/// Wraps plutus::Datum to provide sqlx::Decode and sqlx::Type implementations
+/// Wraps PlutusData to provide sqlx::Decode and sqlx::Type implementations
 #[derive(Debug, Clone, PartialEq)]
-pub struct DbDatum(pub Datum);
+pub struct DbDatum(pub PlutusData);
 
 impl sqlx::Type<Postgres> for DbDatum {
 	fn type_info() -> <Postgres as sqlx::Database>::TypeInfo {
@@ -22,18 +21,10 @@ where
 {
 	fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
 		let value: JsonValue = <JsonValue as Decode<Postgres>>::decode(value)?;
-		let datum: Datum = TryFrom::try_from(&value).map_err(DbDatumDecodeError)?;
-		Ok(DbDatum(datum))
+		let datum = PlutusData::from_json(
+			&value.to_string(),
+			cardano_serialization_lib::PlutusDatumSchema::DetailedSchema,
+		);
+		Ok(DbDatum(datum?))
 	}
 }
-
-#[derive(Clone, Debug)]
-pub struct DbDatumDecodeError(pub FromJsonError);
-
-impl Display for DbDatumDecodeError {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		write!(f, "{:?}", self.0)
-	}
-}
-
-impl std::error::Error for DbDatumDecodeError {}
