@@ -1,7 +1,5 @@
 //! Queries that start with `queryLedgerState/`.
 
-use std::collections::HashMap;
-
 use crate::{
 	types::{OgmiosBytesSize, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
 	ByNameParamsBuilder, OgmiosClient, OgmiosClientError, OgmiosParams,
@@ -60,7 +58,7 @@ pub struct EpochParameters {
 	pub safe_zone: u32,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ProtocolParametersResponse {
 	pub min_fee_coefficient: u32,
@@ -69,5 +67,25 @@ pub struct ProtocolParametersResponse {
 	pub stake_credential_deposit: OgmiosValue,
 	pub max_value_size: OgmiosBytesSize,
 	pub max_transaction_size: OgmiosBytesSize,
-	pub plutus_cost_models: HashMap<String, Vec<i128>>,
+	pub min_utxo_deposit_coefficient: u64,
+	pub script_execution_prices: ScriptExecutionPrices,
+	pub plutus_cost_models: PlutusCostModels,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+pub struct ScriptExecutionPrices {
+	#[serde(deserialize_with = "crate::types::parse_fraction_ratio_u64")]
+	pub memory: fraction::Ratio<u64>,
+	#[serde(deserialize_with = "crate::types::parse_fraction_ratio_u64")]
+	pub cpu: fraction::Ratio<u64>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+pub struct PlutusCostModels {
+	#[serde(rename = "plutus:v1")]
+	pub plutus_v1: Vec<i128>,
+	#[serde(rename = "plutus:v2")]
+	pub plutus_v2: Vec<i128>,
+	#[serde(rename = "plutus:v3")]
+	pub plutus_v3: Vec<i128>,
 }

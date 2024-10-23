@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 /// This file contains the functions to create and sign a transaction.
 /// It is implemented with cardano-serialization-lib, not pallas.
 //use crate::ogmios::{OgmiosBudget, OgmiosUtxo, OgmiosValue, ProtocolParametersResponse};
@@ -11,7 +9,7 @@ use cardano_serialization_lib::{
 	Vkeywitnesses,
 };
 use ogmios_client::{
-	query_ledger_state::ProtocolParametersResponse,
+	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse},
 	transactions::OgmiosBudget,
 	types::{OgmiosUtxo, OgmiosValue},
 };
@@ -104,13 +102,13 @@ fn get_builder_config(
 		builder.key_deposit(&convert_value(&protocol_parameters.stake_credential_deposit)?.coin());
 	let builder = builder.max_value_size(protocol_parameters.max_value_size.bytes);
 	let builder = builder.max_tx_size(protocol_parameters.max_transaction_size.bytes);
-	// TODO: present in the protocol parameters, but as string in format "n/d"
+	let sep = &protocol_parameters.script_execution_prices;
 	let builder = builder.ex_unit_prices(&ExUnitPrices::new(
-		&UnitInterval::new(&577u32.into(), &10000u32.into()),
-		&UnitInterval::new(&721u32.into(), &10000000u32.into()),
+		&UnitInterval::new(&(*sep.memory.numer()).into(), &(*sep.memory.denom()).into()),
+		&UnitInterval::new(&(*sep.cpu.numer()).into(), &(*sep.cpu.denom()).into()),
 	));
-	// TODO: perhaps 'minUtxoDepositCoefficient'
-	let builder = builder.coins_per_utxo_byte(&4310u32.into());
+	let builder =
+		builder.coins_per_utxo_byte(&protocol_parameters.min_utxo_deposit_coefficient.into());
 	builder.build()
 }
 
@@ -154,16 +152,11 @@ fn convert_value(value: &OgmiosValue) -> Result<Value, JsError> {
 	}
 }
 
-fn convert_cost_models(m: &HashMap<String, Vec<i128>>) -> Costmdls {
-	fn extract(key: &str, map: &HashMap<String, Vec<i128>>) -> CostModel {
-		let v: Vec<i128> = map.get(key).unwrap().clone();
-		CostModel::from(v)
-	}
-
+fn convert_cost_models(m: &PlutusCostModels) -> Costmdls {
 	let mut mdls = Costmdls::new();
-	mdls.insert(&Language::new_plutus_v1(), &extract("plutus:v1", m));
-	mdls.insert(&Language::new_plutus_v2(), &extract("plutus:v2", m));
-	mdls.insert(&Language::new_plutus_v3(), &extract("plutus:v3", m));
+	mdls.insert(&Language::new_plutus_v1(), &CostModel::from(m.plutus_v1.to_owned()));
+	mdls.insert(&Language::new_plutus_v2(), &CostModel::from(m.plutus_v2.to_owned()));
+	mdls.insert(&Language::new_plutus_v3(), &CostModel::from(m.plutus_v3.to_owned()));
 	mdls
 }
 
