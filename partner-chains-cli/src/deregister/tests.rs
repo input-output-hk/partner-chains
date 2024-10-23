@@ -107,10 +107,7 @@ fn print_info_io() -> MockIO {
 	MockIO::print(
 		r##"This wizard will remove the specified candidate from the committee candidates based on the following chain parameters:
 {
-  "chain_id": 1234,
   "genesis_committee_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0",
-  "threshold_numerator": 2,
-  "threshold_denominator": 3,
   "governance_authority": "0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"
 }.
 Committee Candidate Validator Address is 'addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc'
@@ -159,7 +156,7 @@ fn read_cold_verification_key() -> MockIO {
 }
 
 fn run_smart_contract_io(output: &str) -> MockIO {
-	MockIO::run_command("./pc-contracts-cli deregister --network testnet --ada-based-staking --spo-public-key 1111111111111111111111111111111111111111111111111111111111111111 --sidechain-id 1234 --genesis-committee-hash-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9 --atms-kind plain-ecdsa-secp256k1 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file my_payment.skey", output)
+	MockIO::run_command("./pc-contracts-cli deregister --network testnet --ada-based-staking --spo-public-key 1111111111111111111111111111111111111111111111111111111111111111 --genesis-committee-hash-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --governance-authority 0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9 --atms-kind plain-ecdsa-secp256k1 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file my_payment.skey", output)
 }
 
 fn test_chain_config_content() -> serde_json::Value {
@@ -207,10 +204,7 @@ fn invalid_chain_config_content() -> serde_json::Value {
 
 fn chain_parameters_json() -> serde_json::Value {
 	json!({
-	  "chain_id": 1234,
 	  "governance_authority": "0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9",
-	  "threshold_numerator": 2,
-	  "threshold_denominator": 3,
 	  "genesis_committee_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0"
 	})
 }
