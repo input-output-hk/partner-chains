@@ -402,19 +402,6 @@
 <a href="#402" id="402">402</a>
 <a href="#403" id="403">403</a>
 <a href="#404" id="404">404</a>
-<a href="#405" id="405">405</a>
-<a href="#406" id="406">406</a>
-<a href="#407" id="407">407</a>
-<a href="#408" id="408">408</a>
-<a href="#409" id="409">409</a>
-<a href="#410" id="410">410</a>
-<a href="#411" id="411">411</a>
-<a href="#412" id="412">412</a>
-<a href="#413" id="413">413</a>
-<a href="#414" id="414">414</a>
-<a href="#415" id="415">415</a>
-<a href="#416" id="416">416</a>
-<a href="#417" id="417">417</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config;
 <span class="kw">use </span><span class="kw">crate</span>::config::config_fields;
 <span class="kw">use </span><span class="kw">crate</span>::config::get_cardano_network_from_file;
@@ -425,6 +412,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::establish_pc_contracts_cli_configuration;
 <span class="kw">use </span><span class="kw">crate</span>::smart_contracts;
 <span class="kw">use </span><span class="kw">crate</span>::CmdRun;
+<span class="kw">use </span>anyhow::Context;
 <span class="kw">use </span>clap::Parser;
 <span class="kw">use </span>cli_commands::key_params::{PlainPublicKeyParam, SidechainPublicKeyParam};
 <span class="kw">use </span>sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
@@ -493,8 +481,9 @@
 			runtime_config_arguments
 		);
 
-		<span class="kw">let </span>sidechain_cli_output = context.run_command(<span class="kw-2">&amp;</span>command)<span class="question-mark">?</span>;
-		error_if_registration_call_failed(context, sidechain_cli_output)<span class="question-mark">?</span>;
+		context
+			.run_command(<span class="kw-2">&amp;</span>command)
+			.context(<span class="string">"The registration transaction could not be submitted"</span>)<span class="question-mark">?</span>;
 
 		<span class="kw">if </span>context.prompt_yes_no(<span class="string">"Show registration status?"</span>, <span class="bool-val">true</span>) {
 			context.print(<span class="string">"The registration status will be queried from a db-sync instance for which a valid connection string is required. Please note that this db-sync instance needs to be up and synced with the main chain."</span>);
@@ -545,22 +534,6 @@
 	context.print(<span class="string">"Registration status:"</span>);
 	context.print(<span class="kw-2">&amp;</span>output);
 	<span class="prelude-val">Ok</span>(())
-}
-
-<span class="comment">// An example of a succesful output:
-// {"endpoint":"CommitteeCandidateReg","transactionId":"1ab93b52d20ce114bfdb48a256ac48f3d8d46d00aec585c38a904b672a70e3a3"}
-</span><span class="kw">fn </span>error_if_registration_call_failed(
-	context: <span class="kw-2">&amp;</span><span class="kw">impl </span>IOContext,
-	output: String,
-) -&gt; <span class="prelude-ty">Result</span>&lt;(), anyhow::Error&gt; {
-	<span class="kw">if </span>output.contains(<span class="string">"transactionId"</span>) {
-		<span class="prelude-val">Ok</span>(())
-	} <span class="kw">else </span>{
-		context.eprint(
-			<span class="macro">format!</span>(<span class="string">"The registration transaction could not be submitted: {}"</span>, output).as_str(),
-		);
-		<span class="prelude-val">Err</span>(<span class="macro">anyhow::anyhow!</span>(<span class="string">"Registration failed"</span>))
-	}
 }
 
 <span class="attr">#[derive(serde::Deserialize, Debug, Clone)]
@@ -730,15 +703,16 @@
 	<span class="kw">fn </span>run_registration_command_io() -&gt; Vec&lt;MockIO&gt; {
 		<span class="macro">vec!</span>[
 			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
-			MockIO::run_command(<span class="string">"./pc-contracts-cli register --network mainnet --sidechain-id 0 --genesis-committee-hash-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x00112233445566778899001122334455667788990011223344556677 --atms-kind plain-ecdsa-secp256k1 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature 448ddd2592a681ee3235aa68356290c3ec93cc1b8b757bf4713a0b6629a3b75028e984a06cd275a99f861f8303dba1778c36feef084ea4a5379775ca13043202 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey"</span>, <span class="string">"{\"endpoint\":\"CommitteeCandidateReg\",\"transactionId\":\"1ab93b52d20ce114bfdb48a256ac48f3d8d46d00aec585c38a904b672a70e3a3\"}"</span>),
+			MockIO::run_command(<span class="string">"./pc-contracts-cli register --network mainnet --sidechain-id 0 --genesis-committee-hash-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x00112233445566778899001122334455667788990011223344556677 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature 448ddd2592a681ee3235aa68356290c3ec93cc1b8b757bf4713a0b6629a3b75028e984a06cd275a99f861f8303dba1778c36feef084ea4a5379775ca13043202 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey"</span>, <span class="string">"{\"endpoint\":\"CommitteeCandidateReg\",\"transactionId\":\"1ab93b52d20ce114bfdb48a256ac48f3d8d46d00aec585c38a904b672a70e3a3\"}"</span>),
         ]
 	}
 
 	<span class="kw">fn </span>run_registration_command_fail_io() -&gt; Vec&lt;MockIO&gt; {
 		<span class="macro">vec!</span>[
 			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
-			MockIO::run_command(<span class="string">"./pc-contracts-cli register --network mainnet --sidechain-id 0 --genesis-committee-hash-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x00112233445566778899001122334455667788990011223344556677 --atms-kind plain-ecdsa-secp256k1 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature 448ddd2592a681ee3235aa68356290c3ec93cc1b8b757bf4713a0b6629a3b75028e984a06cd275a99f861f8303dba1778c36feef084ea4a5379775ca13043202 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey"</span>, <span class="string">"TxRefNotFound"</span>),
-			MockIO::eprint(<span class="string">"The registration transaction could not be submitted: TxRefNotFound"</span>),
+			MockIO::run_command_with_result(
+				<span class="string">"./pc-contracts-cli register --network mainnet --sidechain-id 0 --genesis-committee-hash-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x00112233445566778899001122334455667788990011223344556677 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature 448ddd2592a681ee3235aa68356290c3ec93cc1b8b757bf4713a0b6629a3b75028e984a06cd275a99f861f8303dba1778c36feef084ea4a5379775ca13043202 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey"</span>,
+				<span class="prelude-val">Err</span>(<span class="macro">anyhow::anyhow!</span>(<span class="string">"TxRefNotFound"</span>))),
         ]
 	}
 

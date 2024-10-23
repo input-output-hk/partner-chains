@@ -502,8 +502,6 @@
 <a href="#502" id="502">502</a>
 <a href="#503" id="503">503</a>
 <a href="#504" id="504">504</a>
-<a href="#505" id="505">505</a>
-<a href="#506" id="506">506</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
 	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
@@ -518,7 +516,7 @@
 };
 <span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 <span class="kw">use </span><span class="kw">crate</span>::smart_contracts;
-<span class="kw">use </span>anyhow::anyhow;
+<span class="kw">use </span>anyhow::{anyhow, Context};
 <span class="kw">use </span>serde_json::Value;
 <span class="kw">use </span>sidechain_domain::PolicyId;
 
@@ -582,9 +580,7 @@
 	);
 	<span class="kw">let </span>addresses_string = context.run_command(<span class="kw-2">&amp;</span>cmd)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>addresses_json: Value = serde_json::from_str(<span class="kw-2">&amp;</span>addresses_string).map_err(|<span class="kw">_</span>| {
-		<span class="macro">anyhow!</span>(<span class="string">"Failed to fetch data from Ogmios or Kupo. Please check connection configuration and try again."</span>)
-	})<span class="question-mark">?</span>;
+	<span class="kw">let </span>addresses_json: Value = serde_json::from_str(<span class="kw-2">&amp;</span>addresses_string)<span class="question-mark">?</span>;
 
 	COMMITTEE_CANDIDATES_ADDRESS.save_to_file(
 		<span class="kw-2">&amp;</span>addresses_json.pointer(<span class="string">"/addresses/CommitteeCandidateValidator"</span>)

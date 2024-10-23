@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["error_if_registration_call_failed","get_current_mainchain_epoch","prepare_mc_follower_env","show_registration_status"],"struct":["McEpochConfigJson","Register3Cmd"]};
+window.SIDEBAR_ITEMS = {"fn":["get_current_mainchain_epoch","prepare_mc_follower_env","show_registration_status"],"struct":["McEpochConfigJson","Register3Cmd"]};

@@ -28,7 +28,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::PcContractsCliResources;
 
 <span class="kw">pub fn </span>sidechain_params_arguments(sidechain_params: <span class="kw-2">&amp;</span>SidechainParams) -&gt; String {
-	<span class="macro">format!</span>(<span class="string">"--sidechain-id {} --genesis-committee-hash-utxo {} --threshold-numerator {} --threshold-denominator {} --governance-authority {} --atms-kind plain-ecdsa-secp256k1"</span>,
+	<span class="macro">format!</span>(<span class="string">"--sidechain-id {} --genesis-committee-hash-utxo {} --threshold-numerator {} --threshold-denominator {} --governance-authority {}"</span>,
 			sidechain_params.chain_id,
 			sidechain_params.genesis_committee_utxo,
 			sidechain_params.threshold_numerator,
