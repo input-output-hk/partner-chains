@@ -74,9 +74,7 @@ fn run_pc_contracts_cli_addresses<C: IOContext>(
 		&kupo_and_ogmios_config,
 		cardano_network,
 	);
-	let addresses_string = context
-		.run_command(&cmd)
-		.context("Failed to fetch data from Ogmios or Kupo. Please check connection configuration and try again.")?;
+	let addresses_string = context.run_command(&cmd)?;
 
 	let addresses_json: Value = serde_json::from_str(&addresses_string)?;
 
