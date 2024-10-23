@@ -6,6 +6,8 @@ use crate::candidates::{
 use cardano_serialization_lib::PlutusData;
 use sidechain_domain::*;
 
+use super::PlutusDataExtensions;
+
 /** Representation of the plutus type in the mainchain contract (rev 4ed2cc66c554ec8c5bec7b90ad9273e9069a1fb4)
 *
 * Note that the ECDSA secp256k1 public key is serialized in compressed format and the
@@ -108,11 +110,11 @@ fn decode_utxo_id_datum(datum: PlutusData) -> Option<UtxoId> {
 	match datum.as_constr_plutus_data() {
 		Some(datum) if datum.alternative().is_zero() && datum.data().len() >= 2 => {
 			let fields = datum.data();
-			match (fields.get(0), fields.get(1).as_integer()) {
+			match (fields.get(0), fields.get(1).as_u16()) {
 				(f0, Some(f1)) => {
 					let tx_hash = decode_tx_hash_datum(f0)?;
-					let index: u16 = TryFrom::try_from(u32::try_from(f1.as_u64()?).ok()?).ok()?;
-					Some(UtxoId { tx_hash, index: UtxoIndex(index) })
+					let index = UtxoIndex(f1);
+					Some(UtxoId { tx_hash, index })
 				},
 				_ => None,
 			}
