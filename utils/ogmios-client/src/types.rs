@@ -1,8 +1,8 @@
 //! Common types used in the Ogmios API.
 
-use std::collections::HashMap;
-
 use serde::{Deserialize, Deserializer};
+use std::collections::HashMap;
+use std::str::FromStr;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 pub struct SlotLength {
@@ -78,6 +78,12 @@ pub struct OgmiosValue {
 	pub native_tokens: HashMap<ScriptHash, Vec<Asset>>,
 }
 
+impl OgmiosValue {
+	pub fn new_lovelace(lovelace: u64) -> Self {
+		Self { lovelace, native_tokens: HashMap::new() }
+	}
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Asset {
 	pub name: Vec<u8>,
@@ -125,6 +131,24 @@ impl TryFrom<serde_json::Value> for OgmiosValue {
 pub struct OgmiosTx {
 	#[serde(deserialize_with = "parse_tx_id")]
 	pub id: [u8; 32],
+}
+
+pub(crate) fn parse_fraction_decimal<'de, D>(deserializer: D) -> Result<fraction::Decimal, D::Error>
+where
+	D: Deserializer<'de>,
+{
+	let buf = String::deserialize(deserializer)?;
+	fraction::Decimal::from_str(&buf).map_err(serde::de::Error::custom)
+}
+
+pub(crate) fn parse_fraction_ratio_u64<'de, D>(
+	deserializer: D,
+) -> Result<fraction::Ratio<u64>, D::Error>
+where
+	D: Deserializer<'de>,
+{
+	let buf = String::deserialize(deserializer)?;
+	fraction::Ratio::<u64>::from_str(&buf).map_err(serde::de::Error::custom)
 }
 
 #[cfg(test)]
