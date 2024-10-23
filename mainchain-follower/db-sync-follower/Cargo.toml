@@ -33,6 +33,7 @@ sp-native-token-management = { workspace = true, features = ["std"], optional = 
 sidechain-mc-hash = { workspace = true, optional = true }
 pallet-sidechain-rpc = { workspace = true, optional = true }
 authority-selection-inherents = { workspace = true, features = ["std"], optional = true }
+cardano-serialization-lib = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio-test = "0.4.3"
@@ -41,7 +42,7 @@ ctor = "0.2.5"
 [features]
 default = []
 block-source = []
-candidate-source = ["authority-selection-inherents"]
+candidate-source = ["authority-selection-inherents", "cardano-serialization-lib"]
 native-token = ["sp-native-token-management"]
 mc-hash = ["sidechain-mc-hash", "block-source"]
 sidechain-rpc = ["pallet-sidechain-rpc", "block-source"]

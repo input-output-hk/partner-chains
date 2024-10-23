@@ -75,3 +75,44 @@ fn decode_legacy_permissioned_candidates_datums(
 	}
 	permissioned_candidates
 }
+
+#[allow(dead_code)]
+mod csl {
+	use cardano_serialization_lib::PlutusData;
+
+	use super::*;
+	fn decode_legacy_permissioned_candidates_datums(
+		datum: &PlutusData,
+	) -> super::super::Result<Vec<PermissionedCandidateDatumV0>> {
+		let permissioned_candidates: super::super::Result<Vec<PermissionedCandidateDatumV0>> =
+			match datum.as_list() {
+				Some(list_datums) => list_datums
+					.into_iter()
+					.map(|keys_datum| match keys_datum.as_list() {
+						Some(d) if d.len() == 3 => {
+							let sc = d.get(0).as_bytes()?;
+							let aura = d.get(1).as_bytes()?;
+							let grandpa = d.get(2).as_bytes()?;
+							Some(PermissionedCandidateDatumV0 {
+								sidechain_public_key: SidechainPublicKey(sc.clone()),
+								aura_public_key: AuraPublicKey(aura.clone()),
+								grandpa_public_key: GrandpaPublicKey(grandpa.clone()),
+							})
+						},
+						_ => None,
+					})
+					.collect::<Option<Vec<PermissionedCandidateDatumV0>>>(),
+				_ => None,
+			}
+			.ok_or(format!("error").into());
+		// .ok_or(Box::new(DatumDecodeError {
+		// 	datum: datum.clone(),
+		// 	to: "PermissionedCandidateDatumV0".to_string(),
+		// }));
+
+		if permissioned_candidates.is_err() {
+			error!("Could not decode {:?} to Permissioned candidates datum. Expected [[ByteString, ByteString, ByteString]].", datum.clone());
+		}
+		permissioned_candidates
+	}
+}
