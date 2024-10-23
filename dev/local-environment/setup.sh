@@ -7,7 +7,7 @@ KUPO_IMAGE="cardanosolutions/kupo:v2.9.0"
 OGMIOS_IMAGE="cardanosolutions/ogmios:v6.8.0"
 POSTGRES_IMAGE="postgres:15.3"
 SIDECHAIN_MAIN_CLI_IMAGE="node:22-bookworm"
-PC_CONTRACTS_CLI_ZIP_URL="https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/v6.2.0/pc-contracts-cli-v6.2.0.zip"
+PC_CONTRACTS_CLI_ZIP_URL="https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/v6.2.1/pc-contracts-cli-v6.2.1.zip"
 PARTNER_CHAINS_NODE_URL="https://github.com/input-output-hk/partner-chains/releases/download/v1.2.0/partner-chains-node-v1.2.0-x86_64-linux"
 PARTNER_CHAINS_CLI_URL="https://github.com/input-output-hk/partner-chains/releases/download/v1.2.0/partner-chains-cli-v1.2.0-x86_64-linux"
 

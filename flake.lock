@@ -280,7 +280,7 @@
       },
       "original": {
         "owner": "input-output-hk",
-        "ref": "v6.2.0",
+        "ref": "v6.2.1",
         "repo": "partner-chains-smart-contracts",
         "type": "github"
       }
