@@ -1,3 +1,4 @@
+use crate::candidates::datum::RegisterValidatorDatum;
 use crate::db_model::{
 	self, Address, Asset, BlockNumber, EpochNumber, MainchainTxOutput, StakePoolEntry,
 };
@@ -5,17 +6,16 @@ use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
 use crate::DataSourceError::*;
 use authority_selection_inherents::authority_selection_inputs::*;
+use datum::{DParamDatum, PermissionedCandidateDatums};
 use itertools::Itertools;
 use log::error;
-use num_traits::ToPrimitive;
-use plutus::Datum;
-use plutus::Datum::*;
 use sidechain_domain::*;
 use sqlx::PgPool;
 use std::collections::HashMap;
 use std::error::Error;
 
 pub mod cached;
+mod datum;
 
 #[cfg(test)]
 pub mod tests;
@@ -40,53 +40,6 @@ struct RegisteredCandidate {
 	aura_pub_key: AuraPublicKey,
 	grandpa_pub_key: GrandpaPublicKey,
 	utxo_info: UtxoInfo,
-}
-
-/** Representation of the plutus type in the mainchain contract (rev 4ed2cc66c554ec8c5bec7b90ad9273e9069a1fb4)
-*
-* Note that the ECDSA secp256k1 public key is serialized in compressed format and the
-* sidechain signature does not contain the recovery bytes (it's just r an s concatenated).
-*
-* data BlockProducerRegistration = BlockProducerRegistration
-* { -- | Verification keys required by the stake ownership model
-*   -- | @since v4.0.0
-*  stakeOwnership :: StakeOwnership
-* , -- | public key in the sidechain's desired format
-*  sidechainPubKey :: LedgerBytes
-* , -- | Signature of the sidechain
-*   -- | @since v4.0.0
-*  sidechainSignature :: Signature
-* , -- | A UTxO that must be spent by the transaction
-*   -- | @since v4.0.0
-*  inputUtxo :: TxOutRef
-* , -- | Owner public key hash
-*   -- | @since v4.0.0
-*  ownPkh :: PubKeyHash
-* , -- | Sidechain authority discovery key
-*   -- | @since Unreleased
-*   auraKey :: LedgerBytes
-* , -- | Sidechain grandpa key
-*   -- | @since Unreleased
-*   grandpaKey :: LedgerBytes
-* }
- */
-#[derive(Clone, Debug)]
-struct RegisterValidatorDatum {
-	stake_ownership: AdaBasedStaking,
-	sidechain_pub_key: SidechainPublicKey,
-	sidechain_signature: SidechainSignature,
-	consumed_input: UtxoId,
-	//ownPkh we don't use,
-	aura_pub_key: AuraPublicKey,
-	grandpa_pub_key: GrandpaPublicKey,
-}
-
-/// AdaBasedStaking is a variant of Plutus type StakeOwnership.
-/// The other variant, TokenBasedStaking, is not supported
-#[derive(Clone, Debug)]
-struct AdaBasedStaking {
-	pub_key: MainchainPublicKey,
-	signature: MainchainSignature,
 }
 
 pub struct CandidatesDataSourceImpl {
@@ -118,7 +71,7 @@ impl AuthoritySelectionDataSource for CandidatesDataSourceImpl {
 			.map(|d| d.0)
 			.ok_or(ExpectedDataNotFound("DParameter Datum".to_string()))?;
 
-		let d_param = Self::decode_d_parameter_datum(&d_datum)?;
+		let d_parameter = DParamDatum::try_from(&d_datum)?.into();
 
 		let candidates_output = candidates_output_opt
 			.ok_or(ExpectedDataNotFound("Permissioned Candidates List".to_string()))?;
@@ -128,9 +81,9 @@ impl AuthoritySelectionDataSource for CandidatesDataSourceImpl {
 			.map(|d| d.0)
 			.ok_or(ExpectedDataNotFound("Permissioned Candidates List Datum".to_string()))?;
 
-		let candidates = Self::decode_permissioned_candidates_datum(&candidates_datum)?;
+		let permissioned_candidates = PermissionedCandidateDatums::try_from(&candidates_datum)?.into();
 
-		Ok(AriadneParameters { d_parameter: d_param, permissioned_candidates: candidates })
+		Ok(AriadneParameters { d_parameter, permissioned_candidates })
 	}
 
 	async fn get_candidates(
@@ -254,19 +207,25 @@ impl CandidatesDataSourceImpl {
 		Self::parse_candidates(outputs)
 			.into_iter()
 			.map(|c| {
+				let RegisterValidatorDatum::V0 {
+					stake_ownership,
+					sidechain_pub_key,
+					sidechain_signature,
+					consumed_input,
+					aura_pub_key,
+					grandpa_pub_key,
+				} = c.datum;
 				Ok(RegisteredCandidate {
-					mainchain_pub_key: c.datum.stake_ownership.pub_key,
-					mainchain_signature: c.datum.stake_ownership.signature,
+					mainchain_pub_key: stake_ownership.pub_key,
+					mainchain_signature: stake_ownership.signature,
 					// For now we use the same key for both cross chain and sidechain actions
-					cross_chain_pub_key: CrossChainPublicKey(c.datum.sidechain_pub_key.0.clone()),
-					cross_chain_signature: CrossChainSignature(
-						c.datum.sidechain_signature.0.clone(),
-					),
-					sidechain_signature: c.datum.sidechain_signature,
-					sidechain_pub_key: c.datum.sidechain_pub_key,
-					aura_pub_key: c.datum.aura_pub_key,
-					grandpa_pub_key: c.datum.grandpa_pub_key,
-					consumed_input: c.datum.consumed_input,
+					cross_chain_pub_key: CrossChainPublicKey(sidechain_pub_key.0.clone()),
+					cross_chain_signature: CrossChainSignature(sidechain_signature.0.clone()),
+					sidechain_signature,
+					sidechain_pub_key,
+					aura_pub_key,
+					grandpa_pub_key,
+					consumed_input,
 					tx_inputs: c.tx_inputs,
 					utxo_info: c.utxo_info,
 				})
@@ -282,11 +241,10 @@ impl CandidatesDataSourceImpl {
 					"Missing registration datum for {:?}",
 					output.clone().utxo_id
 				))?;
-				let register_validator_datum = Self::decode_register_validator_datum(&datum)
-					.ok_or(format!(
-						"Invalid registration datum for {:?}",
-						output.clone().utxo_id
-					))?;
+				let register_validator_datum =
+					RegisterValidatorDatum::try_from(&datum).map_err(|_| {
+						format!("Invalid registration datum for {:?}", output.clone().utxo_id)
+					})?;
 				Ok(ParsedCandidate {
 					utxo_info: UtxoInfo {
 						utxo_id: output.utxo_id,
@@ -310,144 +268,6 @@ impl CandidatesDataSourceImpl {
 				},
 			})
 			.collect()
-	}
-
-	// Datum decoders
-	fn decode_d_parameter_datum(
-		datum: &Datum,
-	) -> Result<DParameter, Box<dyn std::error::Error + Send + Sync>> {
-		let d_parameter = match datum {
-			ListDatum(items) => match items.first().zip(items.get(1)) {
-				Some((IntegerDatum(p), IntegerDatum(t))) => {
-					p.to_u16().zip(t.to_u16()).map(|(p, t)| DParameter {
-						num_permissioned_candidates: p,
-						num_registered_candidates: t,
-					})
-				},
-				_ => None,
-			},
-			_ => None,
-		}
-		.ok_or(DatumDecodeError { datum: datum.clone(), to: "DParameter".to_string() });
-		if d_parameter.is_err() {
-			error!("Could not decode {:?} to DParameter. Expected [u16, u16].", datum.clone());
-		}
-		Ok(d_parameter?)
-	}
-
-	fn decode_permissioned_candidates_datum(
-		datum: &Datum,
-	) -> Result<Vec<RawPermissionedCandidateData>, Box<dyn std::error::Error + Send + Sync>> {
-		let permissioned_candidates: Result<
-			Vec<RawPermissionedCandidateData>,
-			Box<dyn std::error::Error + Send + Sync>,
-		> = match datum {
-			ListDatum(list_datums) => list_datums
-				.iter()
-				.map(|keys_datum| match keys_datum {
-					ListDatum(d) => {
-						let sc = d.first().and_then(|d| d.as_bytestring())?;
-						let aura = d.get(1).and_then(|d| d.as_bytestring())?;
-						let grandpa = d.get(2).and_then(|d| d.as_bytestring())?;
-						Some(RawPermissionedCandidateData {
-							sidechain_public_key: SidechainPublicKey(sc.clone()),
-							aura_public_key: AuraPublicKey(aura.clone()),
-							grandpa_public_key: GrandpaPublicKey(grandpa.clone()),
-						})
-					},
-					_ => None,
-				})
-				.collect::<Option<Vec<RawPermissionedCandidateData>>>(),
-			_ => None,
-		}
-		.ok_or(Box::new(DatumDecodeError {
-			datum: datum.clone(),
-			to: "RawPermissionedCandidateData".to_string(),
-		}));
-
-		if permissioned_candidates.is_err() {
-			error!("Could not decode {:?} to Permissioned candidates datum. Expected [[ByteString, ByteString, ByteString]].", datum.clone());
-		}
-		permissioned_candidates
-	}
-
-	fn decode_register_validator_datum(datum: &Datum) -> Option<RegisterValidatorDatum> {
-		match datum {
-			ConstructorDatum { constructor: 0, fields } => {
-				let stake_ownership =
-					fields.first().and_then(Self::decode_ada_based_staking_datum)?;
-				let sidechain_pub_key = fields
-					.get(1)
-					.and_then(|d| d.as_bytestring())
-					.map(|bytes| SidechainPublicKey(bytes.clone()))?;
-				let sidechain_signature = fields
-					.get(2)
-					.and_then(|d| d.as_bytestring())
-					.map(|bytes| SidechainSignature(bytes.clone()))?;
-				let consumed_input = fields.get(3).and_then(Self::decode_utxo_id_datum)?;
-				let _own_pkh = fields.get(4).and_then(|d| d.as_bytestring())?;
-				let aura_pub_key = fields
-					.get(5)
-					.and_then(|d| d.as_bytestring())
-					.map(|bytes| AuraPublicKey(bytes.clone()))?;
-				let grandpa_pub_key = fields
-					.get(6)
-					.and_then(|d| d.as_bytestring())
-					.map(|bytes| GrandpaPublicKey(bytes.clone()))?;
-				Some(RegisterValidatorDatum {
-					stake_ownership,
-					sidechain_pub_key,
-					sidechain_signature,
-					consumed_input,
-					aura_pub_key,
-					grandpa_pub_key,
-				})
-			},
-
-			_ => None,
-		}
-	}
-
-	fn decode_ada_based_staking_datum(datum: &Datum) -> Option<AdaBasedStaking> {
-		match datum {
-			ConstructorDatum { constructor: 0, fields } => {
-				match fields.first().zip(fields.get(1)) {
-					Some((ByteStringDatum(f0), ByteStringDatum(f1))) => {
-						let pub_key = TryFrom::try_from(f0.clone()).ok()?;
-						Some(AdaBasedStaking { pub_key, signature: MainchainSignature(f1.clone()) })
-					},
-					_ => None,
-				}
-			},
-			_ => None,
-		}
-	}
-
-	fn decode_utxo_id_datum(datum: &Datum) -> Option<UtxoId> {
-		match datum {
-			ConstructorDatum { constructor: 0, fields } => {
-				match fields.first().zip(fields.get(1)) {
-					Some((f0, IntegerDatum(f1))) => {
-						let tx_hash = Self::decode_tx_hash_datum(f0)?;
-						let index: u16 = TryFrom::try_from(f1.clone()).ok()?;
-						Some(UtxoId { tx_hash, index: UtxoIndex(index) })
-					},
-					_ => None,
-				}
-			},
-			_ => None,
-		}
-	}
-
-	/// Plutus type for TxHash is a sum type, we can parse only variant with constructor 0.
-	fn decode_tx_hash_datum(datum: &Datum) -> Option<McTxHash> {
-		match datum {
-			ConstructorDatum { constructor: 0, fields } => {
-				let bytes = fields.first().and_then(|d| d.as_bytestring())?;
-				Some(McTxHash(TryFrom::try_from(bytes.clone()).ok()?))
-			},
-			_ => None,
-		}
 	}
 
 	fn get_epoch_of_data_storage(

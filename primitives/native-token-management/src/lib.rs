@@ -95,7 +95,6 @@ mod inherent_provider {
 	use sidechain_mc_hash::get_mc_hash_for_block;
 	use sp_api::{ApiError, Core, ProvideRuntimeApi, RuntimeApiInfo};
 	use sp_blockchain::HeaderBackend;
-	use sp_version::RuntimeVersion;
 	use std::error::Error;
 	use std::sync::Arc;
 
