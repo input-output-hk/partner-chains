@@ -11,7 +11,7 @@ pub trait Transactions: OgmiosClient {
 	/// Parameters:
 	/// - `tx_bytes: &[u8]` - CBOR-serialized transaction
 	#[allow(async_fn_in_trait)]
-	async fn evalute_transaction(
+	async fn evaluate_transaction(
 		&self,
 		tx_bytes: &[u8],
 	) -> Result<Vec<OgmiosEvaluateTransactionResponse>, OgmiosClientError> {
