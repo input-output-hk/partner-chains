@@ -48,7 +48,7 @@ impl From<Vec<u8>> for Datum {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(transparent)]
 pub struct DatumHash {
-	#[serde(deserialize_with = "parse_u8_32")]
+	#[serde(deserialize_with = "parse_bytes_array")]
 	pub bytes: [u8; 32],
 }
 
@@ -76,7 +76,7 @@ pub struct PlutusScript {
 #[serde(tag = "clause", rename_all = "lowercase")]
 pub enum NativeScript {
 	Signature {
-		#[serde(deserialize_with = "parse_u8_28")]
+		#[serde(deserialize_with = "parse_bytes_array")]
 		from: [u8; 28],
 	},
 	All {
@@ -93,32 +93,6 @@ pub enum NativeScript {
 	Before {
 		slot: u64,
 	},
-}
-
-fn parse_bytes<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
-where
-	D: Deserializer<'de>,
-{
-	let buf = String::deserialize(deserializer)?;
-	hex::decode(buf).map_err(serde::de::Error::custom)
-}
-
-fn parse_u8_28<'de, D>(deserializer: D) -> Result<[u8; 28], D::Error>
-where
-	D: Deserializer<'de>,
-{
-	let buf = String::deserialize(deserializer)?;
-	let bytes = hex::decode(buf).map_err(serde::de::Error::custom)?;
-	TryFrom::try_from(bytes).map_err(|_| serde::de::Error::custom("expected 28 bytes"))
-}
-
-fn parse_u8_32<'de, D>(deserializer: D) -> Result<[u8; 32], D::Error>
-where
-	D: Deserializer<'de>,
-{
-	let buf = String::deserialize(deserializer)?;
-	let bytes = hex::decode(buf).map_err(serde::de::Error::custom)?;
-	TryFrom::try_from(bytes).map_err(|_| serde::de::Error::custom("expected 32 bytes"))
 }
 
 impl<'de> Deserialize<'de> for OgmiosValue {
@@ -191,8 +165,26 @@ impl TryFrom<serde_json::Value> for OgmiosValue {
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 pub struct OgmiosTx {
-	#[serde(deserialize_with = "parse_u8_32")]
+	#[serde(deserialize_with = "parse_bytes_array")]
 	pub id: [u8; 32],
+}
+
+pub(crate) fn parse_bytes<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+where
+	D: Deserializer<'de>,
+{
+	let buf = String::deserialize(deserializer)?;
+	hex::decode(buf).map_err(serde::de::Error::custom)
+}
+
+pub(crate) fn parse_bytes_array<'de, D, const N: usize>(
+	deserializer: D,
+) -> Result<[u8; N], D::Error>
+where
+	D: Deserializer<'de>,
+{
+	let bytes = parse_bytes(deserializer)?;
+	TryFrom::try_from(bytes).map_err(|_| serde::de::Error::custom(format!("expected {} bytes", N)))
 }
 
 pub(crate) fn parse_fraction_decimal<'de, D>(deserializer: D) -> Result<fraction::Decimal, D::Error>
