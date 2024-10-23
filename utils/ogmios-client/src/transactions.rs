@@ -1,7 +1,7 @@
 //! Requests to evalute and submit transactions via Ogmios`.
 
-use crate::{ByNameParamsBuilder, OgmiosClient, OgmiosClientError};
-use serde::{Deserialize, Deserializer};
+use crate::{types::OgmiosTx, ByNameParamsBuilder, OgmiosClient, OgmiosClientError};
+use serde::Deserialize;
 
 pub trait Transactions: OgmiosClient {
 	/// Evaluates a transaction.
@@ -61,16 +61,5 @@ pub struct OgmiosBudget {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 pub struct SubmitTransactionResponse {
-	#[serde(deserialize_with = "parse_tx_id")]
-	pub id: [u8; 32],
-}
-
-fn parse_tx_id<'de, D>(deserializer: D) -> Result<[u8; 32], D::Error>
-where
-	D: Deserializer<'de>,
-{
-	let buf = String::deserialize(deserializer)?;
-	let vec = hex::decode(buf).map_err(serde::de::Error::custom)?;
-	TryFrom::try_from(vec)
-		.map_err(|e| serde::de::Error::custom(format!("{} has invalid size", hex::encode(e))))
+	pub transaction: OgmiosTx,
 }
