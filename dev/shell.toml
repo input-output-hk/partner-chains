@@ -1,0 +1,16 @@
+[packages]
+list = [
+  "nodejs",
+  "gnumake",
+  "gawk",
+  "cargo-edit",
+  "perl",
+  "earthly",
+  "awscli2",
+  "kubectl",
+  "kubernetes-helm"
+]
+
+[envs]
+MY_CUSTOM_VAR = "custom value"
+ANOTHER_VAR = "another value"
