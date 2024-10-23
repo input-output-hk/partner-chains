@@ -255,6 +255,8 @@ async fn query_utxos() {
 				},
 			},
 			datum: Some(hex!("d8799fff").to_vec().into()),
+			datum_hash: None,
+			script: None
 		}
 	)
 }
