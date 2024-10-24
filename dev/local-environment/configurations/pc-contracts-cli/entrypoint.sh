@@ -55,6 +55,7 @@ fi
 # Set executable permissions
 chmod +x ./partner-chains-node
 chmod +x ./partner-chains-cli
+mv ./sidechain-cli ./pc-contracts-cli
 chmod +x ./pc-contracts-cli
 
 # Install jq
@@ -83,6 +84,7 @@ echo "Generating addresses.json file..."
     --network testnet \
     --kupo-host kupo --kupo-port $KUPO_PORT \
     --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
+    --atms-kind plain-ecdsa-secp256k1 \
     --payment-signing-key-file /keys/funded_address.skey \
     --genesis-committee-hash-utxo $GENESIS_COMMITTEE_UTXO \
     --sidechain-id $CHAIN_ID --threshold-numerator $THRESHOLD_NUMERATOR --threshold-denominator $THRESHOLD_DENOMINATOR \
