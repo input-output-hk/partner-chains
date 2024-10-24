@@ -46,6 +46,7 @@ runs:
           --log-cli-level ${{ inputs.log_level }} \
           -k "${{ inputs.keyword }}" \
           -m "${{ inputs.markers }}" \
+          -n4 \
           --init-timestamp ${{ inputs.init_timestamp }} \
           $mc_epoch_switch \
           --json-report \
