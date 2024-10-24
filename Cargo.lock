@@ -9597,6 +9597,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
+ "plutus",
  "pretty_assertions",
  "scale-info",
  "serde_json",

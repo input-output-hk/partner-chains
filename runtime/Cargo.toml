@@ -82,6 +82,7 @@ sp-consensus-slots = { workspace = true }
 minicbor = { workspace = true }
 pretty_assertions = { workspace = true }
 serde_json = { workspace = true }
+plutus = { workspace = true }
 
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
