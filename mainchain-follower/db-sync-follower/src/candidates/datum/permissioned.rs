@@ -52,19 +52,7 @@ fn decode_legacy_permissioned_candidates_datums(
 
 	let permissioned_candidates: Vec<PermissionedCandidateDatumV0> = list_datums
 		.into_iter()
-		.map(|keys_datum| match keys_datum.as_list() {
-			Some(d) if d.len() == 3 => {
-				let sc = d.get(0).as_bytes()?;
-				let aura = d.get(1).as_bytes()?;
-				let grandpa = d.get(2).as_bytes()?;
-				Some(PermissionedCandidateDatumV0 {
-					sidechain_public_key: SidechainPublicKey(sc),
-					aura_public_key: AuraPublicKey(aura),
-					grandpa_public_key: GrandpaPublicKey(grandpa),
-				})
-			},
-			_ => None,
-		})
+		.map(decode_legacy_candidate_datum)
 		.collect::<Option<Vec<PermissionedCandidateDatumV0>>>()
 		.ok_or_else(|| {
 			log::error!("Could not decode {:?} to Permissioned candidates datum. Expected [[ByteString, ByteString, ByteString]].", datum.clone());
@@ -75,4 +63,18 @@ fn decode_legacy_permissioned_candidates_datums(
 		})?;
 
 	Ok(permissioned_candidates)
+}
+
+fn decode_legacy_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandidateDatumV0> {
+	let datums = datum.as_list().filter(|datums| datums.len() == 3)?;
+
+	let sc = datums.get(0).as_bytes()?;
+	let aura = datums.get(1).as_bytes()?;
+	let grandpa = datums.get(2).as_bytes()?;
+
+	Some(PermissionedCandidateDatumV0 {
+		sidechain_public_key: SidechainPublicKey(sc),
+		aura_public_key: AuraPublicKey(aura),
+		grandpa_public_key: GrandpaPublicKey(grandpa),
+	})
 }
