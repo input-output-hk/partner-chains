@@ -6001,6 +6001,7 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "scale-info",
+ "sp-address-associations",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -10086,6 +10087,20 @@ dependencies = [
  "log",
  "rand",
  "sha1",
+]
+
+[[package]]
+name = "sp-address-associations"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "parity-scale-codec",
+ "sidechain-domain",
+ "sp-api",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+ "thiserror",
 ]
 
 [[package]]
