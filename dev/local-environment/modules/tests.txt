@@ -1,0 +1,13 @@
+
+  tests:
+    container_name: tests 
+    image: ${TESTS_IMAGE} 
+    platform: linux/amd64
+    volumes:
+      - shared-volume:/shared
+      - cardano-node-1-data:/data
+      - ./configurations/tests/entrypoint.sh:/entrypoint.sh
+      - ./configurations/tests/e2e-tests/:/e2e-tests/
+    environment:
+      - PYTHONUNBUFFERED=1
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]

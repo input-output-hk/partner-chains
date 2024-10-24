@@ -7,6 +7,7 @@ KUPO_IMAGE="cardanosolutions/kupo:v2.9.0"
 OGMIOS_IMAGE="cardanosolutions/ogmios:v6.8.0"
 POSTGRES_IMAGE="postgres:15.3"
 SIDECHAIN_MAIN_CLI_IMAGE="node:22-bookworm"
+TESTS_IMAGE="python:3.10-slim"
 PC_CONTRACTS_CLI_ZIP_URL="https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/v6.2.1/pc-contracts-cli-v6.2.1.zip"
 PARTNER_CHAINS_NODE_URL="https://github.com/input-output-hk/partner-chains/releases/download/v1.2.0/partner-chains-node-v1.2.0-x86_64-linux"
 PARTNER_CHAINS_CLI_URL="https://github.com/input-output-hk/partner-chains/releases/download/v1.2.0/partner-chains-cli-v1.2.0-x86_64-linux"
@@ -367,6 +368,7 @@ KUPO_IMAGE=$KUPO_IMAGE
 OGMIOS_IMAGE=$OGMIOS_IMAGE
 POSTGRES_IMAGE=$POSTGRES_IMAGE
 SIDECHAIN_MAIN_CLI_IMAGE=$SIDECHAIN_MAIN_CLI_IMAGE
+TESTS_IMAGE=$TESTS_IMAGE
 PARTNER_CHAINS_NODE_IMAGE=${node_image:-$PARTNER_CHAINS_NODE_IMAGE}
 PC_CONTRACTS_CLI_ZIP_URL=$PC_CONTRACTS_CLI_ZIP_URL
 PARTNER_CHAINS_NODE_URL=$PARTNER_CHAINS_NODE_URL
@@ -433,7 +435,10 @@ create_docker_compose() {
         cat ./modules/pc-contracts-cli.txt >> docker-compose.yml
         ;;
     esac
-
+    if [ "$tests_enabled" == "yes" ]; then
+        echo -e "Including tests.\n"
+        cat ./modules/tests.txt >> docker-compose.yml
+    fi
     cat ./modules/volumes.txt >> docker-compose.yml
     echo -e "docker-compose.yml file created successfully.\n"
 }
@@ -443,6 +448,7 @@ parse_arguments() {
     deployment_option=4
     postgres_password=""
     overrides="no"
+    tests_enabled="no" 
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -482,6 +488,11 @@ parse_arguments() {
                     exit 1
                 fi
                 ;;
+            -t|--tests)
+                tests_enabled="yes"
+                echo "Tests enabled. Ensure contents of e2e-tests directory is copied to ./configurations/tests/."
+                shift
+                ;;
             -h|--help)
                 echo "Usage: $0 [OPTION]..."
                 echo "Initialize and configure the Docker environment."
@@ -490,10 +501,11 @@ parse_arguments() {
                 echo "  -p, --postgres-password   Set a specific password for PostgreSQL (overrides automatic generation)."
                 echo "  -o, --overrides           Enable custom artifact overrides from artifacts in ./configurations/pc-contracts-cli/ (PC and PCSC)."
                 echo "  -i, --node-image          Specify a custom Partner Chains Node image."
+                echo "  -t, --tests               Include tests container."
                 echo "  -h, --help                Display this help dialogue and exit."
                 exit 0
                 ;;
-            --) # End of options
+            --)
                 shift
                 break
                 ;;
@@ -510,7 +522,9 @@ parse_arguments() {
     export postgres_password
     export overrides
     export node_image
+    export tests_enabled 
 }
+
 
 main() {
     parse_arguments "$@"
