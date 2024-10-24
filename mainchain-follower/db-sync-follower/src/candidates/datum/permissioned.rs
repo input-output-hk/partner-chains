@@ -41,6 +41,7 @@ impl From<PermissionedCandidateDatums> for Vec<RawPermissionedCandidateData> {
 	}
 }
 
+/// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.
 fn decode_legacy_permissioned_candidates_datums(
 	datum: PlutusData,
 ) -> super::Result<Vec<PermissionedCandidateDatumV0>> {

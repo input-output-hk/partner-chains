@@ -64,6 +64,7 @@ impl TryFrom<PlutusData> for RegisterValidatorDatum {
 	}
 }
 
+/// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.
 pub fn decode_legacy_register_validator_datum(datum: PlutusData) -> Option<RegisterValidatorDatum> {
 	let fields = datum
 		.as_constr_plutus_data()

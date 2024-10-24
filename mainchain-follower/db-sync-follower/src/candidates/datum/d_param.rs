@@ -25,6 +25,7 @@ impl From<DParamDatum> for DParameter {
 	}
 }
 
+/// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.
 fn decode_legacy_d_parameter_datum(datum: PlutusData) -> super::Result<DParamDatum> {
 	let d_parameter = datum
 		.as_list()
