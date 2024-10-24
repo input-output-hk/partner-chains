@@ -71,11 +71,27 @@
 <a href="#71" id="71">71</a>
 <a href="#72" id="72">72</a>
 <a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Queries that start with `queryLedgerState/`.
 
-</span><span class="kw">use </span>std::collections::HashMap;
-
-<span class="kw">use crate</span>::{
+</span><span class="kw">use crate</span>::{
 	types::{OgmiosBytesSize, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
 	ByNameParamsBuilder, OgmiosClient, OgmiosClientError, OgmiosParams,
 };
@@ -133,7 +149,7 @@
 	<span class="kw">pub </span>safe_zone: u32,
 }
 
-<span class="attr">#[derive(Clone, Debug, Deserialize)]
+<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>ProtocolParametersResponse {
 	<span class="kw">pub </span>min_fee_coefficient: u32,
@@ -142,6 +158,26 @@
 	<span class="kw">pub </span>stake_credential_deposit: OgmiosValue,
 	<span class="kw">pub </span>max_value_size: OgmiosBytesSize,
 	<span class="kw">pub </span>max_transaction_size: OgmiosBytesSize,
-	<span class="kw">pub </span>plutus_cost_models: HashMap&lt;String, Vec&lt;i128&gt;&gt;,
+	<span class="kw">pub </span>min_utxo_deposit_coefficient: u64,
+	<span class="kw">pub </span>script_execution_prices: ScriptExecutionPrices,
+	<span class="kw">pub </span>plutus_cost_models: PlutusCostModels,
+}
+
+<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+</span><span class="kw">pub struct </span>ScriptExecutionPrices {
+	<span class="attr">#[serde(deserialize_with = <span class="string">"crate::types::parse_fraction_ratio_u64"</span>)]
+	</span><span class="kw">pub </span>memory: fraction::Ratio&lt;u64&gt;,
+	<span class="attr">#[serde(deserialize_with = <span class="string">"crate::types::parse_fraction_ratio_u64"</span>)]
+	</span><span class="kw">pub </span>cpu: fraction::Ratio&lt;u64&gt;,
+}
+
+<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+</span><span class="kw">pub struct </span>PlutusCostModels {
+	<span class="attr">#[serde(rename = <span class="string">"plutus:v1"</span>)]
+	</span><span class="kw">pub </span>plutus_v1: Vec&lt;i128&gt;,
+	<span class="attr">#[serde(rename = <span class="string">"plutus:v2"</span>)]
+	</span><span class="kw">pub </span>plutus_v2: Vec&lt;i128&gt;,
+	<span class="attr">#[serde(rename = <span class="string">"plutus:v3"</span>)]
+	</span><span class="kw">pub </span>plutus_v3: Vec&lt;i128&gt;,
 }
 </code></pre></div></section></main></body></html>
