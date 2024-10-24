@@ -30,155 +30,146 @@ env:
   STAGING_PREVIEW_VALIDATOR_1_PORT: 9933
 
 jobs:
-  # build-linux:
-  #   permissions:
-  #     id-token: write
-  #     contents: write
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         ref: ${{ inputs.sha }}
-  #     - name: Build and Upload for Linux
-  #       uses: ./.github/actions/artifacts/build-pc-artifacts
-  #       with:
-  #         tag: ${{ inputs.tag }}
-  #         os: linux
+  build-linux:
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
+      - name: Build and Upload for Linux
+        uses: ./.github/actions/artifacts/build-pc-artifacts
+        with:
+          tag: ${{ inputs.tag }}
+          os: linux
 
-  # build-macos-x86_64:
-  #   permissions:
-  #     id-token: write
-  #     contents: write
-  #   runs-on: macos-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         ref: ${{ inputs.sha }} 
-  #     - name: Build and Upload for macOS x86_64
-  #       uses: ./.github/actions/artifacts/build-pc-artifacts
-  #       with:
-  #         tag: ${{ inputs.tag }}
-  #         os: macos-x86_64
+  build-macos-x86_64:
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }} 
+      - name: Build and Upload for macOS x86_64
+        uses: ./.github/actions/artifacts/build-pc-artifacts
+        with:
+          tag: ${{ inputs.tag }}
+          os: macos-x86_64
 
-  # build-macos-arm64:
-  #   permissions:
-  #     id-token: write
-  #     contents: write
-  #   runs-on: macos-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         ref: ${{ inputs.sha }}
-  #     - name: Build and Upload for macOS arm64
-  #       uses: ./.github/actions/artifacts/build-pc-artifacts
-  #       with:
-  #         tag: ${{ inputs.tag }}
-  #         os: macos-arm64
+  build-macos-arm64:
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
+      - name: Build and Upload for macOS arm64
+        uses: ./.github/actions/artifacts/build-pc-artifacts
+        with:
+          tag: ${{ inputs.tag }}
+          os: macos-arm64
 
-  # build-and-publish-ecr:
-  #   permissions:
-  #     id-token: write
-  #     contents: write
-  #   needs: build-linux
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #     - name: Build and Publish to ECR
-  #       uses: ./.github/actions/images/build-and-publish-ecr
-  #       with:
-  #         sha: ${{ inputs.sha }}
-  #         tag: ${{ inputs.tag }}
-  #       env:
-  #         AWS_REGION: "eu-central-1"
-  #         ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-  #         AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-  #         SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+  build-and-publish-ecr:
+    permissions:
+      id-token: write
+      contents: write
+    needs: build-linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build and Publish to ECR
+        uses: ./.github/actions/images/build-and-publish-ecr
+        with:
+          sha: ${{ inputs.sha }}
+          tag: ${{ inputs.tag }}
+        env:
+          AWS_REGION: "eu-central-1"
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
 
-  # create-draft-release:
-  #   permissions:
-  #     id-token: write
-  #     contents: write
-  #   needs: [build-linux, build-macos-x86_64, build-macos-arm64]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #     - name: Create Draft Release
-  #       if: ${{ github.event.inputs.no-release == 'false' }}
-  #       uses: ./.github/actions/release/create-draft-release
-  #       with:
-  #         tag: ${{ inputs.tag }}
-  #       env:
-  #         GITHUB_TOKEN: ${{ github.token }}
+  create-draft-release:
+    permissions:
+      id-token: write
+      contents: write
+    needs: [build-linux, build-macos-x86_64, build-macos-arm64]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Create Draft Release
+        if: ${{ github.event.inputs.no-release == 'false' }}
+        uses: ./.github/actions/release/create-draft-release
+        with:
+          tag: ${{ inputs.tag }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
-  # generate-chain-specs:
-  #   permissions:
-  #     id-token: write
-  #     contents: write
-  #   needs: build-linux
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #     - name: Generate Chain Specs
-  #       uses: ./.github/actions/artifacts/generate-chain-specs
-  #       with:
-  #         tag: ${{ inputs.tag }}
+  generate-chain-specs:
+    permissions:
+      id-token: write
+      contents: write
+    needs: build-linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Generate Chain Specs
+        uses: ./.github/actions/artifacts/generate-chain-specs
+        with:
+          tag: ${{ inputs.tag }}
 
-  # upload-chain-specs:
-  #   permissions:
-  #     id-token: write
-  #     contents: write
-  #   needs: generate-chain-specs
-  #   runs-on: eks
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #     - name: Upload chain spec artifacts to Kubernetes
-  #       uses: ./.github/actions/deploy/upload-chain-specs
-  #       with:
-  #         sha: ${{ github.sha }}
-  #       env:
-  #         kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-  #         K8S_SERVER: ${{ secrets.K8S_SERVER }}
-  #         K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
-
-  # deploy-staging-preview:
-  #   permissions:
-  #     id-token: write
-  #     contents: write
-  #   needs: [build-and-publish-ecr, upload-chain-specs]
-  #   runs-on: eks
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #     - name: Deploy staging-preview
-  #       uses: ./.github/actions/deploy/deploy-staging-preview
-  #       with:
-  #         image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
-  #         sha: ${{ github.sha }}
-  #       env:
-  #         AWS_REGION: "eu-central-1"
-  #         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-  #         ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-  #         AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-  #         ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-  #         kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-  #         K8S_SERVER: ${{ secrets.K8S_SERVER }}
-  #         K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
-
-  deploy-staging-preview:
+  upload-chain-specs:
+    permissions:
+      id-token: write
+      contents: write
+    needs: generate-chain-specs
     runs-on: eks
     steps:
-      - name: Deploy
-        run: |
-          echo "Deploying staging-preview... 🚀"
-          echo "Done! 🎉" 
-        shell: bash
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Upload chain spec artifacts to Kubernetes
+        uses: ./.github/actions/deploy/upload-chain-specs
+        with:
+          sha: ${{ github.sha }}
+        env:
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+
+  deploy-staging-preview:
+    permissions:
+      id-token: write
+      contents: write
+    needs: [build-and-publish-ecr, upload-chain-specs]
+    runs-on: eks
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Deploy staging-preview
+        uses: ./.github/actions/deploy/deploy-staging-preview
+        with:
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
+          sha: ${{ github.sha }}
+        env:
+          AWS_REGION: "eu-central-1"
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   partner-chain-ready:
     runs-on: eks
