@@ -1,9 +1,9 @@
 use crate::db_datum::DbDatum;
 use crate::SqlxError;
+use cardano_serialization_lib::PlutusData;
 use chrono::NaiveDateTime;
 use log::info;
 use num_traits::ToPrimitive;
-use plutus::Datum;
 use sidechain_domain::*;
 use sqlx::database::{HasArguments, HasValueRef};
 use sqlx::encode::IsNull;
@@ -151,7 +151,7 @@ pub(crate) struct MainchainTxOutput {
 	pub tx_epoch_no: EpochNumber,
 	pub tx_index_in_block: TxIndexInBlock,
 	pub address: String,
-	pub datum: Option<Datum>,
+	pub datum: Option<PlutusData>,
 	pub tx_inputs: Vec<UtxoId>,
 }
 

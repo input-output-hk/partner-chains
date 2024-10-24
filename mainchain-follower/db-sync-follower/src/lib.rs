@@ -1,5 +1,5 @@
 //! Provides implementations of Data Sources that read from db-sync postgres
-use plutus::Datum;
+use cardano_serialization_lib::PlutusData;
 
 pub mod data_sources;
 mod db_datum;
@@ -44,7 +44,7 @@ pub enum DataSourceError {
 	#[error("Internal error of data source: `{0}`.")]
 	InternalDataSourceError(String),
 	#[error("Could not decode {datum:?} to {to:?}, this means that there is an error in Plutus scripts or chain-follower is obsolete.")]
-	DatumDecodeError { datum: Datum, to: String },
+	DatumDecodeError { datum: PlutusData, to: String },
 	#[error("'{0}' not found. Possible causes: main chain follower configuration error, db-sync not synced fully, or data not set on the main chain.")]
 	ExpectedDataNotFound(String),
 	#[error("Invalid data. {0} Possible cause it an error in Plutus scripts or chain-follower is obsolete.")]
