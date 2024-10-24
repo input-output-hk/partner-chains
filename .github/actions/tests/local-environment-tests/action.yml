@@ -12,7 +12,7 @@ inputs:
     required: true
   tests:
     description: "Test set to run (premerge or postmerge)"
-    required: true    
+    required: true
 
 outputs: {}
 
@@ -36,12 +36,12 @@ runs:
       uses: actions/download-artifact@v4
       with:
         name: partner-chains-cli-artifact
-        path: dev/local-environment/configurations/pc-contracts-cli/overrides/ 
+        path: dev/local-environment/configurations/pc-contracts-cli/overrides/
     - name: Download partner-chains-node artifact
       uses: actions/download-artifact@v4
       with:
         name: partner-chains-node-artifact
-        path: dev/local-environment/configurations/pc-contracts-cli/overrides/ 
+        path: dev/local-environment/configurations/pc-contracts-cli/overrides/
     - name: Deploy local environment with overrides
       run: |
         mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli
@@ -92,17 +92,48 @@ runs:
         echo "Cardano network is ready! Waiting for Partner Chain first node to start..."
         INIT_TIMESTAMP=$(docker exec cardano-node-1 cat /shared/cardano.start)
         echo "INIT_TIMESTAMP=$INIT_TIMESTAMP" >> $GITHUB_ENV
+
         epoch=0
+        restart_count=0
+        max_restarts=10
+
+        # Wait for the Partner Chain node to be ready or until max restarts or epoch 2 is reached
         while ! docker exec partner-chains-node-1 [ -e /shared/partner-chains-node-1.ready ]; do
           epoch=$(docker exec cardano-node-1 cardano-cli query tip --testnet-magic 42 | jq -r .epoch)
           echo "Epoch: $epoch"
-          if [ "$epoch" -ge 3 ]; then
-            echo "MC has reached epoch 3 and partner-chains-node-1 is still not ready. Failing test and gathering logs."
+          container_status=$(docker inspect -f '{{.State.Status}}' partner-chains-node-1)
+          echo "Container status: $container_status"
+          if [ "$container_status" = "restarting" ]; then
+            restart_count=$((restart_count + 1))
+            echo "partner-chains-node-1 is restarting ($restart_count/$max_restarts)"
+            if [ "$restart_count" -ge "$max_restarts" ]; then
+              echo "partner-chains-node-1 has restarted $restart_count times. Failing early."
+              exit 1
+            fi
+          else
+            restart_count=0
+          fi
+          if [ "$epoch" -ge 2 ]; then
+            echo "Epoch has reached 2 and partner-chains-node-1 is still not ready."
             exit 1
           fi
           sleep 10
         done
       shell: bash
+    - name: Collect and zip Docker logs
+      run: |
+        mkdir -p local-environment-logs
+        docker ps -a --format '{{.Names}}' | while read line; do
+          echo "Collecting logs for container $line"
+          docker logs "$line" > "local-environment-logs/$line.log" 2>&1 || true
+        done
+        zip -r local-environment-logs.zip local-environment-logs/
+      shell: bash
+    - name: Upload Docker logs artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: local-environment-logs
+        path: local-environment-logs.zip
     - name: Fail the job
       if: ${{ steps.wait-pc-node.outcome == 'failure' }}
       run: exit 1

@@ -115,6 +115,13 @@ impl MockIO {
 			.with_location()
 	}
 	#[track_caller]
+	pub fn run_command_with_result(
+		expected_cmd: &str,
+		output: anyhow::Result<std::string::String>,
+	) -> Self {
+		Self::RunCommand { expected_cmd: expected_cmd.into(), output }.with_location()
+	}
+	#[track_caller]
 	pub fn run_command_json(expected_cmd: &str, output: &serde_json::Value) -> Self {
 		Self::run_command(expected_cmd, &serde_json::to_string_pretty(output).unwrap())
 	}

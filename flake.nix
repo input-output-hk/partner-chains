@@ -24,8 +24,7 @@
 
     # Partner Chains deps
     smart-contracts = {
-      # Update to desired tag when ready for release
-      url = "github:input-output-hk/partner-chains-smart-contracts";
+      url = "github:input-output-hk/partner-chains-smart-contracts/v6.2.1";
       flake = false;
     };
     cardano-node = {
