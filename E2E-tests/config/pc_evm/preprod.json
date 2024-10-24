@@ -1,0 +1,18 @@
+{
+    "nodes": {
+        "faucet": {
+            "url": "https://faucet.sidechain.evmtestnet.iohkdev.io"
+        },
+        "validator0": {
+            "url": "https://validator-0.sidechain.evmtestnet.iohkdev.io"
+        },
+        "validator1": {
+            "url": "https://validator-1.sidechain.evmtestnet.iohkdev.io"
+        }
+    },
+    "selected_node": "faucet",
+    "node_url": "${nodes[${selected_node}][url]}",
+    "chain_id": 78,
+    "token_conversion_rate": 18,
+    "block_duration": 5
+}
