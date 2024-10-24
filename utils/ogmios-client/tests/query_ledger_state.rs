@@ -3,8 +3,11 @@
 use hex_literal::hex;
 use jsonrpsee::http_client::HttpClient;
 use ogmios_client::{
-	query_ledger_state::{EpochBoundary, EpochParameters, EraSummary, QueryLedgerState},
-	types::{Asset, OgmiosTx, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
+	query_ledger_state::{
+		EpochBoundary, EpochParameters, EraSummary, PlutusCostModels, ProtocolParametersResponse,
+		QueryLedgerState, ScriptExecutionPrices,
+	},
+	types::{Asset, OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
 };
 use serde_json::json;
 
@@ -104,6 +107,85 @@ async fn era_summaries() {
 }
 
 #[tokio::test]
+async fn protocol_parameters() {
+	let address = server::for_single_test("queryLedgerState/protocolParameters", |_| {
+		Ok(json!({
+		  "minFeeCoefficient": 44,
+		  "minFeeConstant": {
+			"ada": {
+			  "lovelace": 155381
+			}
+		  },
+		  "maxValueSize": {
+			"bytes": 5000
+		  },
+		  "maxBlockBodySize": {
+			"bytes": 90112
+		  },
+		  "maxTransactionSize": {
+			"bytes": 16384
+		  },
+		  "stakeCredentialDeposit": {
+			"ada": {
+			  "lovelace": 2000000
+			}
+		  },
+		  "stakePoolDeposit": {
+			"ada": {
+			  "lovelace": 500000000
+			}
+		  },
+		  "minUtxoDepositCoefficient": 4310,
+		  "plutusCostModels": {
+			"plutus:v1": [
+			  898148,
+			  53384111,
+			  14333,
+			],
+			"plutus:v2": [
+			  43053543,
+			  10
+			],
+			"plutus:v3": [
+			  -900,
+			  166917843,
+			]
+		  },
+		  "scriptExecutionPrices": {
+			"memory": "577/10000",
+			"cpu": "721/10000000"
+		  },
+		}))
+	})
+	.await
+	.unwrap();
+	let client = HttpClient::builder().build(format!("http://{address}")).unwrap();
+	let parameters = client.query_protocol_parameters().await.unwrap();
+
+	assert_eq!(
+		parameters,
+		ProtocolParametersResponse {
+			min_fee_coefficient: 44,
+			min_fee_constant: OgmiosValue::new_lovelace(155381),
+			stake_pool_deposit: OgmiosValue::new_lovelace(500000000),
+			stake_credential_deposit: OgmiosValue::new_lovelace(2000000),
+			max_value_size: OgmiosBytesSize { bytes: 5000 },
+			max_transaction_size: OgmiosBytesSize { bytes: 16384 },
+			min_utxo_deposit_coefficient: 4310,
+			script_execution_prices: ScriptExecutionPrices {
+				memory: fraction::Ratio::new_raw(577, 10000),
+				cpu: fraction::Ratio::new_raw(721, 10000000),
+			},
+			plutus_cost_models: PlutusCostModels {
+				plutus_v1: vec![898148, 53384111, 14333],
+				plutus_v2: vec![43053543, 10],
+				plutus_v3: vec![-900, 166917843],
+			},
+		}
+	);
+}
+
+#[tokio::test]
 async fn query_utxos() {
 	let address = server::for_single_test("queryLedgerState/utxo", |_| {
 		Ok(json!([
@@ -173,6 +255,8 @@ async fn query_utxos() {
 				},
 			},
 			datum: Some(hex!("d8799fff").to_vec().into()),
+			datum_hash: None,
+			script: None
 		}
 	)
 }
