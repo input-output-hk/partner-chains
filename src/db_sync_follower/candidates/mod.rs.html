@@ -358,7 +358,7 @@
 			.map(|d| d.<span class="number">0</span>)
 			.ok_or(ExpectedDataNotFound(<span class="string">"DParameter Datum"</span>.to_string()))<span class="question-mark">?</span>;
 
-		<span class="kw">let </span>d_parameter = DParamDatum::try_from(<span class="kw-2">&amp;</span>d_datum)<span class="question-mark">?</span>.into();
+		<span class="kw">let </span>d_parameter = DParamDatum::try_from(d_datum)<span class="question-mark">?</span>.into();
 
 		<span class="kw">let </span>candidates_output = candidates_output_opt
 			.ok_or(ExpectedDataNotFound(<span class="string">"Permissioned Candidates List"</span>.to_string()))<span class="question-mark">?</span>;
@@ -368,7 +368,7 @@
 			.map(|d| d.<span class="number">0</span>)
 			.ok_or(ExpectedDataNotFound(<span class="string">"Permissioned Candidates List Datum"</span>.to_string()))<span class="question-mark">?</span>;
 
-		<span class="kw">let </span>permissioned_candidates = PermissionedCandidateDatums::try_from(<span class="kw-2">&amp;</span>candidates_datum)<span class="question-mark">?</span>.into();
+		<span class="kw">let </span>permissioned_candidates = PermissionedCandidateDatums::try_from(candidates_datum)<span class="question-mark">?</span>.into();
 
 		<span class="prelude-val">Ok</span>(AriadneParameters { d_parameter, permissioned_candidates })
 	}
@@ -529,7 +529,7 @@
 					output.clone().utxo_id
 				))<span class="question-mark">?</span>;
 				<span class="kw">let </span>register_validator_datum =
-					RegisterValidatorDatum::try_from(<span class="kw-2">&amp;</span>datum).map_err(|<span class="kw">_</span>| {
+					RegisterValidatorDatum::try_from(datum).map_err(|<span class="kw">_</span>| {
 						<span class="macro">format!</span>(<span class="string">"Invalid registration datum for {:?}"</span>, output.clone().utxo_id)
 					})<span class="question-mark">?</span>;
 				<span class="prelude-val">Ok</span>(ParsedCandidate {

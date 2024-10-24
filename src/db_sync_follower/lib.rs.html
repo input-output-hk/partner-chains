@@ -85,7 +85,7 @@
 <a href="#85" id="85">85</a>
 <a href="#86" id="86">86</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Provides implementations of Data Sources that read from db-sync postgres
-</span><span class="kw">use </span>plutus::Datum;
+</span><span class="kw">use </span>cardano_serialization_lib::PlutusData;
 
 <span class="kw">pub mod </span>data_sources;
 <span class="kw">mod </span>db_datum;
@@ -130,7 +130,7 @@
 	<span class="attr">#[error(<span class="string">"Internal error of data source: `{0}`."</span>)]
 	</span>InternalDataSourceError(String),
 	<span class="attr">#[error(<span class="string">"Could not decode {datum:?} to {to:?}, this means that there is an error in Plutus scripts or chain-follower is obsolete."</span>)]
-	</span>DatumDecodeError { datum: Datum, to: String },
+	</span>DatumDecodeError { datum: PlutusData, to: String },
 	<span class="attr">#[error(<span class="string">"'{0}' not found. Possible causes: main chain follower configuration error, db-sync not synced fully, or data not set on the main chain."</span>)]
 	</span>ExpectedDataNotFound(String),
 	<span class="attr">#[error(<span class="string">"Invalid data. {0} Possible cause it an error in Plutus scripts or chain-follower is obsolete."</span>)]

@@ -636,10 +636,10 @@
 <a href="#636" id="636">636</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::db_datum::DbDatum;
 <span class="kw">use </span><span class="kw">crate</span>::SqlxError;
+<span class="kw">use </span>cardano_serialization_lib::PlutusData;
 <span class="kw">use </span>chrono::NaiveDateTime;
 <span class="kw">use </span>log::info;
 <span class="kw">use </span>num_traits::ToPrimitive;
-<span class="kw">use </span>plutus::Datum;
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 <span class="kw">use </span>sqlx::database::{HasArguments, HasValueRef};
 <span class="kw">use </span>sqlx::encode::IsNull;
@@ -787,7 +787,7 @@
 	<span class="kw">pub </span>tx_epoch_no: EpochNumber,
 	<span class="kw">pub </span>tx_index_in_block: TxIndexInBlock,
 	<span class="kw">pub </span>address: String,
-	<span class="kw">pub </span>datum: <span class="prelude-ty">Option</span>&lt;Datum&gt;,
+	<span class="kw">pub </span>datum: <span class="prelude-ty">Option</span>&lt;PlutusData&gt;,
 	<span class="kw">pub </span>tx_inputs: Vec&lt;UtxoId&gt;,
 }
 
