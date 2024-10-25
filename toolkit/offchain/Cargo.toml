@@ -16,6 +16,7 @@ cardano-serialization-lib = { workspace = true }
 cbor_event = { workspace = true }
 chain-params = { workspace = true, features = ["std"] }
 db-sync-follower = { workspace = true, features = ["candidate-source"] }
+fraction = { workspace = true }
 hex = { workspace = true }
 hex-literal = { workspace = true }
 jsonrpsee = { workspace = true, features = ["client-core", "http-client", "macros"] }

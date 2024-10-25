@@ -6469,6 +6469,7 @@ dependencies = [
  "cbor_event",
  "chain-params",
  "db-sync-follower",
+ "fraction",
  "hex",
  "hex-literal",
  "jsonrpsee",
