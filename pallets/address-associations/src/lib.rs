@@ -61,7 +61,7 @@ pub mod pallet {
 		/// in the runtime and should be invoked only when necessary.
 		#[pallet::call_index(1)]
 		#[pallet::weight((1, DispatchClass::Normal))]
-		pub fn set_main_chain_scripts(
+		pub fn set_observability_configuration(
 			origin: OriginFor<T>,
 			observability_config: T::ObservabilityConfigurationType,
 		) -> DispatchResult {
