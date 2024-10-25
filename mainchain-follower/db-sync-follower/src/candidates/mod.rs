@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use std::error::Error;
 
 pub mod cached;
-mod datum;
+pub mod datum;
 
 #[cfg(test)]
 pub mod tests;
@@ -212,6 +212,7 @@ impl CandidatesDataSourceImpl {
 					sidechain_pub_key,
 					sidechain_signature,
 					consumed_input,
+					own_pkh: _own_pkh,
 					aura_pub_key,
 					grandpa_pub_key,
 				} = c.datum;
