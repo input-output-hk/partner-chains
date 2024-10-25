@@ -129,6 +129,7 @@ runs:
         env: ${{ env.TEST_ENVIRONMENT }}
         keyword: "test_get_status or test_get_params"
         blockchain: substrate
+        local-environment: "true"
     - name: Wait for epoch 2
       uses: ./.github/actions/tests/wait-for-epoch
       with:
@@ -147,6 +148,7 @@ runs:
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
         markers: "not active_flow and not passive_flow and not probability and not rpc"
+        local-environment: "true"
     - name: Wait for epoch 3
       if: ${{ inputs.tests == 'postmerge' }}
       uses: ./.github/actions/tests/wait-for-epoch
@@ -162,6 +164,7 @@ runs:
         env: ${{ env.TEST_ENVIRONMENT }}
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
+        local-environment: "true"
     - name: Wait for epoch 4
       if: ${{ inputs.tests == 'postmerge' }}
       uses: ./.github/actions/tests/wait-for-epoch
@@ -178,6 +181,7 @@ runs:
         mc_epoch: 3
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
+        local-environment: "true"
     - name: Collect and zip container logs
       if: always()
       run: |
