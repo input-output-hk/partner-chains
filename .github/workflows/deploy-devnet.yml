@@ -33,7 +33,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, eks]
+    runs-on: eks
     permissions:
       id-token: write
       contents: write
