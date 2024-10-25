@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["cached"],"struct":["CandidatesDataSourceImpl"]};
+window.SIDEBAR_ITEMS = {"mod":["cached","datum"],"struct":["CandidatesDataSourceImpl"]};

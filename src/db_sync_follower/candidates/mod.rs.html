@@ -285,6 +285,7 @@
 <a href="#285" id="285">285</a>
 <a href="#286" id="286">286</a>
 <a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::candidates::datum::RegisterValidatorDatum;
 <span class="kw">use </span><span class="kw">crate</span>::db_model::{
 	<span class="self">self</span>, Address, Asset, BlockNumber, EpochNumber, MainchainTxOutput, StakePoolEntry,
@@ -302,7 +303,7 @@
 <span class="kw">use </span>std::error::Error;
 
 <span class="kw">pub mod </span>cached;
-<span class="kw">mod </span>datum;
+<span class="kw">pub mod </span>datum;
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">pub mod </span>tests;
@@ -499,6 +500,7 @@
 					sidechain_pub_key,
 					sidechain_signature,
 					consumed_input,
+					own_pkh: _own_pkh,
 					aura_pub_key,
 					grandpa_pub_key,
 				} = c.datum;

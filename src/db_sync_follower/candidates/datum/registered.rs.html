@@ -118,6 +118,8 @@
 <a href="#118" id="118">118</a>
 <a href="#119" id="119">119</a>
 <a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">super</span>::PlutusDataExtensions;
 <span class="kw">use </span><span class="kw">crate</span>::candidates::{
 	AuraPublicKey, GrandpaPublicKey, MainchainSignature, McTxHash, SidechainPublicKey,
@@ -162,8 +164,9 @@
 		sidechain_pub_key: SidechainPublicKey,
 		sidechain_signature: SidechainSignature,
 		consumed_input: UtxoId,
-		<span class="comment">//ownPkh we don't use,
-		</span>aura_pub_key: AuraPublicKey,
+		<span class="comment">//own_pkh is used by offchain code to find the registration UTXO when re-registering or deregistering
+		</span>own_pkh: MainchainAddressHash,
+		aura_pub_key: AuraPublicKey,
 		grandpa_pub_key: GrandpaPublicKey,
 	},
 }
@@ -195,7 +198,7 @@
 	<span class="kw">let </span>sidechain_pub_key = fields.get(<span class="number">1</span>).as_bytes().map(SidechainPublicKey)<span class="question-mark">?</span>;
 	<span class="kw">let </span>sidechain_signature = fields.get(<span class="number">2</span>).as_bytes().map(SidechainSignature)<span class="question-mark">?</span>;
 	<span class="kw">let </span>consumed_input = decode_utxo_id_datum(fields.get(<span class="number">3</span>))<span class="question-mark">?</span>;
-	<span class="kw">let </span>_own_pkh = fields.get(<span class="number">4</span>).as_bytes()<span class="question-mark">?</span>;
+	<span class="kw">let </span>own_pkh = MainchainAddressHash(fields.get(<span class="number">4</span>).as_bytes()<span class="question-mark">?</span>.try_into().ok()<span class="question-mark">?</span>);
 	<span class="kw">let </span>aura_pub_key = fields.get(<span class="number">5</span>).as_bytes().map(AuraPublicKey)<span class="question-mark">?</span>;
 	<span class="kw">let </span>grandpa_pub_key = fields.get(<span class="number">6</span>).as_bytes().map(GrandpaPublicKey)<span class="question-mark">?</span>;
 	<span class="prelude-val">Some</span>(RegisterValidatorDatum::V0 {
@@ -203,6 +206,7 @@
 		sidechain_pub_key,
 		sidechain_signature,
 		consumed_input,
+		own_pkh,
 		aura_pub_key,
 		grandpa_pub_key,
 	})
