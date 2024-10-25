@@ -8,14 +8,12 @@ on:
   workflow_dispatch:
     inputs:
       run_mode:
-        description: "Select run mode: 'ci', 'cd', or 'both'"
+        description: "Select run mode: 'ci' or 'cd'"
         required: true
         type: choice
         options:
           - ci
           - cd
-          - both
-        default: ci
       sha:
         description: "CD: commit SHA"
         required: false
@@ -52,24 +50,25 @@ jobs:
         id: set-mode
         run: |
           run_mode="${{ github.event.inputs.run_mode }}"
-          if [[ "$run_mode" != "ci" && "$run_mode" != "cd" && "$run_mode" != "both" ]]; then
-            echo "::error::Invalid 'run_mode' value: $run_mode. Must be 'ci', 'cd', or 'both'."
+          if [[ "$run_mode" != "ci" && "$run_mode" != "cd" ]]; then
+            echo "::error::Invalid 'run_mode' value: $run_mode. Must be 'ci' or 'cd'."
             exit 1
           fi
-          if [[ "$run_mode" == "cd" || "$run_mode" == "both" ]]; then
+          if [[ "$run_mode" == "cd" ]]; then
             if [ -z "${{ github.event.inputs.sha }}" ] || [ -z "${{ github.event.inputs.tag }}" ]; then
-              echo "::error::'sha' and 'tag' inputs are required when 'run_mode' is 'cd' or 'both'."
+              echo "::error::'sha' and 'tag' inputs are required when 'run_mode' is 'cd'."
               exit 1
             fi
           fi
           echo "mode=$run_mode" >> $GITHUB_OUTPUT
 
+  # CI Jobs
   build:
     runs-on: ubuntu-latest
     needs: validate-inputs
     if: |
-      needs.validate-inputs.outputs.mode != 'cd' &&
-      (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged != true && github.event.action != 'closed'))
+      (github.event_name == 'pull_request' && github.event.action != 'closed') ||
+      (github.event_name == 'workflow_dispatch' && needs.validate-inputs.outputs.mode == 'ci')
     outputs:
       sha: ${{ steps.get_sha.outputs.sha }}
     steps:
@@ -123,8 +122,8 @@ jobs:
 
   local-environment-tests:
     if: |
-      needs.validate-inputs.outputs.mode != 'cd' &&
-      (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false))
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == false) ||
+      (github.event_name == 'workflow_dispatch' && needs.validate-inputs.outputs.mode == 'ci')
     needs: [validate-inputs, build]
     runs-on: ubuntu-latest
     steps:
@@ -151,8 +150,8 @@ jobs:
 
   deploy-argocd:
     if: |
-      needs.validate-inputs.outputs.mode != 'cd' &&
-      (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false))
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == false) ||
+      (github.event_name == 'workflow_dispatch' && needs.validate-inputs.outputs.mode == 'ci')
     needs: [validate-inputs, build]
     runs-on: ubuntu-latest
     steps:
@@ -173,8 +172,8 @@ jobs:
 
   argocd-tests:
     if: |
-      needs.validate-inputs.outputs.mode != 'cd' &&
-      (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false))
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == false) ||
+      (github.event_name == 'workflow_dispatch' && needs.validate-inputs.outputs.mode == 'ci')
     needs: [validate-inputs, build, deploy-argocd]
     runs-on: eks
     steps:
@@ -202,8 +201,8 @@ jobs:
 
   teardown-argocd:
     if: |
-      needs.validate-inputs.outputs.mode != 'cd' &&
-      (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false))
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == false) ||
+      (github.event_name == 'workflow_dispatch' && needs.validate-inputs.outputs.mode == 'ci')
     needs: [validate-inputs, build, argocd-tests]
     runs-on: ubuntu-latest
     steps:
@@ -224,8 +223,8 @@ jobs:
 
   devshell-tests:
     if: |
-      (needs.validate-inputs.outputs.mode == 'ci' || needs.validate-inputs.outputs.mode == 'both') &&
-      (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged != true && github.event.action != 'closed'))
+      (github.event_name == 'pull_request' && github.event.action != 'closed') ||
+      (github.event_name == 'workflow_dispatch' && needs.validate-inputs.outputs.mode == 'ci')
     needs: [validate-inputs, build]
     strategy:
       matrix:
@@ -258,8 +257,8 @@ jobs:
 
   pre-merge-checks-complete:
     if: |
-      needs.validate-inputs.outputs.mode != 'cd' &&
-      (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false))
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == false) ||
+      (github.event_name == 'workflow_dispatch' && needs.validate-inputs.outputs.mode == 'ci')
     needs: [validate-inputs, build, local-environment-tests, deploy-argocd, teardown-argocd, devshell-tests]
     runs-on: ubuntu-latest
     steps:
@@ -267,7 +266,7 @@ jobs:
         run: echo "All pre-merge checks have passed. PR is ready to merge."
 
   upload-chain-specs:
-    if: needs.validate-inputs.outputs.mode != 'cd' && github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     needs: [validate-inputs, build]
     runs-on: eks
     steps:
@@ -286,7 +285,7 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   deploy-rustdoc:
-    if: needs.validate-inputs.outputs.mode != 'cd' && github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     needs: [validate-inputs, build]
     runs-on: ubuntu-latest
     steps:
@@ -304,7 +303,7 @@ jobs:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
 
   local-environment-tests-post-merge:
-    if: needs.validate-inputs.outputs.mode != 'cd' && github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     needs: [validate-inputs, build]
     runs-on: ubuntu-latest
     steps:
@@ -330,15 +329,16 @@ jobs:
           TEST_ENVIRONMENT: local
 
   post-merge-actions-complete:
-    if: needs.validate-inputs.outputs.mode != 'cd' && github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     needs: [validate-inputs, deploy-rustdoc, upload-chain-specs, local-environment-tests-post-merge]
     runs-on: ubuntu-latest
     steps:
       - name: Post Merge Actions Complete
         run: echo "All post-merge actions have been successfully completed."
 
+  # CD Jobs
   build-linux:
-    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch'
+    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch'
     permissions:
       id-token: write
       contents: write
@@ -356,7 +356,7 @@ jobs:
           os: linux
 
   build-macos-x86_64:
-    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch'
+    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch'
     permissions:
       id-token: write
       contents: write
@@ -374,7 +374,7 @@ jobs:
           os: macos-x86_64
 
   build-macos-arm64:
-    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch'
+    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch'
     permissions:
       id-token: write
       contents: write
@@ -392,7 +392,7 @@ jobs:
           os: macos-arm64
 
   build-and-publish-ecr:
-    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch'
+    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch'
     permissions:
       id-token: write
       contents: write
@@ -413,7 +413,7 @@ jobs:
           SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
 
   create-draft-release:
-    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch' && github.event.inputs.no-release != 'true'
+    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch' && github.event.inputs.no-release != 'true'
     permissions:
       id-token: write
       contents: write
@@ -430,7 +430,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   generate-chain-specs:
-    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch'
+    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch'
     permissions:
       id-token: write
       contents: write
@@ -445,7 +445,7 @@ jobs:
           tag: ${{ github.event.inputs.tag }}
 
   upload-chain-specs-cd:
-    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch'
+    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch'
     permissions:
       id-token: write
       contents: write
@@ -464,7 +464,7 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   deploy-staging-preview:
-    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch'
+    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch'
     permissions:
       id-token: write
       contents: write
@@ -489,7 +489,7 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   partner-chain-ready:
-    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch'
+    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch'
     runs-on: eks
     needs: [validate-inputs, deploy-staging-preview]
     outputs:
@@ -516,7 +516,7 @@ jobs:
         shell: bash
 
   run-smoke-tests:
-    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch'
+    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch'
     permissions:
       id-token: write
       contents: read
@@ -541,7 +541,7 @@ jobs:
           markers: "not active_flow and not passive_flow and (CD or rpc)"
 
   run-all-tests:
-    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch'
+    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch'
     permissions:
       id-token: write
       contents: read
@@ -569,7 +569,7 @@ jobs:
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
 
   wait-for-n1-epoch:
-    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch'
+    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch'
     permissions:
       id-token: write
       contents: read
@@ -603,7 +603,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n1-epoch:
-    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch'
+    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch'
     permissions:
       id-token: write
       contents: read
@@ -632,7 +632,7 @@ jobs:
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
 
   wait-for-n2-epoch:
-    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch'
+    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch'
     permissions:
       id-token: write
       contents: read
@@ -666,7 +666,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n2-epoch:
-    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch'
+    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch'
     permissions:
       id-token: write
       contents: read
@@ -695,7 +695,7 @@ jobs:
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
 
   publish:
-    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch' && github.event.inputs.no-release != 'true'
+    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch' && github.event.inputs.no-release != 'true'
     permissions:
       id-token: write
       contents: write
@@ -712,7 +712,7 @@ jobs:
             -d '{"ref": "main", "inputs": {"sha": "${{ github.sha }}", "tag": "${{ github.ref }}"}}'
 
 #  deploy-staging-preprod:
-#    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch' && github.event.inputs.no-release != 'true'
+#    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch' && github.event.inputs.no-release != 'true'
 #    permissions:
 #      id-token: write
 #      contents: write
@@ -737,7 +737,7 @@ jobs:
 #          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 #
 #  staging-preprod-tests:
-#    if: needs.validate-inputs.outputs.mode != 'ci' && github.event_name == 'workflow_dispatch' && github.event.inputs.no-release != 'true'
+#    if: needs.validate-inputs.outputs.mode == 'cd' && github.event_name == 'workflow_dispatch' && github.event.inputs.no-release != 'true'
 #    permissions:
 #      id-token: write
 #      contents: write
