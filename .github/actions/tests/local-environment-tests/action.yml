@@ -42,15 +42,6 @@ runs:
       with:
         name: partner-chains-node-artifact
         path: dev/local-environment/configurations/pc-contracts-cli/overrides/
-    - name: Deploy local environment with overrides
-      run: |
-        mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli
-        mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node
-        cd dev/local-environment
-        bash setup.sh --non-interactive --overrides --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ inputs.image }}
-        docker compose up -d
-        cd ../../
-      shell: bash
     - name: checkout pc-tests ref_name branch
       id: pc-tests
       uses: actions/checkout@v4
@@ -59,7 +50,7 @@ runs:
         repository: input-output-hk/sidechains-tests
         token: ${{ env.ACTIONS_PAT }}
         ref: ${{ github.head_ref || github.ref_name }}
-        path: e2e-tests
+        path: dev/local-environment/configurations/tests/e2e-tests
     - name: checkout pc-tests master (fallback)
       if: steps.pc-tests.outcome == 'failure'
       uses: actions/checkout@v4
@@ -67,21 +58,15 @@ runs:
         repository: input-output-hk/sidechains-tests
         token: ${{ env.ACTIONS_PAT }}
         ref: master
-        path: e2e-tests
-    - name: Setup python and dependencies
+        path: dev/local-environment/configurations/tests/e2e-tests
+    - name: Deploy local environment with overrides
       run: |
-        cd e2e-tests
-        sudo apt update
-        sudo apt install -y software-properties-common
-        sudo add-apt-repository ppa:deadsnakes/ppa
-        sudo apt update
-        sudo apt install -y python3.10 python3.10-venv python3.10-dev
-        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
-        curl -L --silent https://github.com/getsops/sops/releases/download/v3.7.3/sops_3.7.3_amd64.deb > sops.deb && sudo dpkg -i sops.deb && rm sops.deb
-        python -m venv venv
-        source venv/bin/activate
-        pip install -r requirements.txt
-        cd ..
+        mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli
+        mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node
+        cd dev/local-environment
+        bash setup.sh --non-interactive --overrides --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ inputs.image }} --tests
+        docker compose up -d
+        cd ../../
       shell: bash
     - name: Wait for partner-chains-node-1 to start
       id: wait-pc-node

@@ -27,6 +27,10 @@ inputs:
   blockchain:
     description: 'Blockchain to test'
     required: true
+  local-environment:
+    description: 'Run tests in local environment (true or false)'
+    required: false
+    default: 'false'
 
 runs:
   using: composite
@@ -34,20 +38,33 @@ runs:
     - name: Run tests
       shell: bash
       run: |
+        mc_epoch_switch=""
         if [ -n "${{ inputs.mc_epoch }}" ]; then
-          mc_epoch_switch="--mc-epoch ${{ inputs.mc_epoch }}"
+          mc_epoch_switch="--mc-epoch '${{ inputs.mc_epoch }}'"
         fi
 
-        cd e2e-tests
-        source venv/bin/activate
-        pytest --blockchain ${{ inputs.blockchain }}\
-          --env ${{ inputs.env }} \
-          --stack ${{ inputs.env }} \
-          --log-cli-level ${{ inputs.log_level }} \
-          -k "${{ inputs.keyword }}" \
-          -m "${{ inputs.markers }}" \
-          --init-timestamp ${{ inputs.init_timestamp }} \
-          $mc_epoch_switch \
+        pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
+          --env '${{ inputs.env }}' \
+          --stack '${{ inputs.env }}' \
+          --log-cli-level '${{ inputs.log_level }}' \
+          -k '${{ inputs.keyword }}' \
+          -m '${{ inputs.markers }}' \
+          --init-timestamp '${{ inputs.init_timestamp }}' \
+          ${mc_epoch_switch} \
           --json-report \
           --json-report-summary \
-          --junitxml=junit_report.xml
+          --junitxml=junit_report.xml"
+
+        if [[ "${{ inputs.local-environment }}" == "true" ]]; then
+          echo "Running tests via docker exec"
+          docker exec tests bash -c "
+            cd /e2e-tests &&
+            source venv/bin/activate &&
+            $pytest_cmd
+          "
+        else
+          echo "Running tests locally"
+          cd e2e-tests
+          source venv/bin/activate
+          eval "$pytest_cmd"
+        fi

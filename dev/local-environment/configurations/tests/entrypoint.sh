@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -d "/tests" ]; then
+if [ -d "/e2e-tests" ]; then
   cd /e2e-tests
 else
   echo "Error: Directory /e2e-tests does not exist. Ensure e2e-tests directory was copied to ./configuration/tests/e2e-tests/ before bringing up the container"
