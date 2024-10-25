@@ -1,0 +1,1 @@
+searchState.loadedDescShard("partner_chains_cardano_offchain", 0, "General purpose code for interacting with …\nModule for interaction with the untyped plutus scripts")
