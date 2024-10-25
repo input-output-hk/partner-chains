@@ -87,6 +87,7 @@ jobs:
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ needs.build.outputs.sha }}
           sha: ${{ needs.build.outputs.sha }}
           tests: premerge
+          local-environment: true
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
           EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
