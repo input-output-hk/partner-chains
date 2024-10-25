@@ -64,6 +64,8 @@ runs:
           --log-cli-level ${{ inputs.log_level }} \
           -k "${{ inputs.keyword }}" \
           -m "${{ inputs.markers }}" \
+          -n4 \
+          --dist=loadgroup \
           --init-timestamp ${{ inputs.init_timestamp }} \
           $mc_epoch_switch \
           $latest_mc_epoch_switch \
