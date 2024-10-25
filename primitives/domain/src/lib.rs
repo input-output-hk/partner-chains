@@ -353,19 +353,19 @@ impl<'de> Deserialize<'de> for UtxoId {
 
 #[cfg(feature = "serde")]
 impl FromStr for UtxoId {
-	type Err = &'static str;
+	type Err = alloc::string::String;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		let split: Vec<&str> = s.split('#').collect();
 		let &[hash_str, index_str] = split.as_slice() else {
-			return Err("UtxoId string must conform to format: '<hash>#<index>'");
+			return Err("UtxoId string must conform to format: '<hash>#<index>'".into());
 		};
 
 		Ok(UtxoId {
 			tx_hash: McTxHash::from_str(hash_str)
-				.map_err(|_| "invalid string input for McTxHash")?,
+				.map_err(|err| alloc::format!("invalid string input for McTxHash: {err}"))?,
 			index: UtxoIndex::from_str(index_str)
-				.map_err(|_| "invalid string input for OutputIndex")?,
+				.map_err(|err| alloc::format!("invalid string input for OutputIndex: {err}"))?,
 		})
 	}
 }
