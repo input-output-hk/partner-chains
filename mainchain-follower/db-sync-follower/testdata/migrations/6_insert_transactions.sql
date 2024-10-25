@@ -39,7 +39,7 @@ DECLARE
         ],
         "constructor": 0
       },
-      { "bytes": "aabbccddeeff" },
+      { "bytes": "aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00" },
       { "bytes": "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d" },
       { "bytes": "88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee" }
     ]
@@ -66,7 +66,7 @@ DECLARE
         ],
         "constructor": 0
       },
-      { "bytes": "020000000000b3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c8111111" },
+      { "bytes": "aa112233445566aa112233445566aa112233445566aa112233445566" },
       { "bytes": "8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48" },
       { "bytes": "d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69" }
     ]
@@ -93,7 +93,7 @@ DECLARE
         ],
         "constructor": 0
       },
-      { "bytes": "ffffffffffeeeeaaae88d7da1caa713307290291897f100efb911672d317147f72" },
+      { "bytes": "00112233445566001122334455660011223344556600112233445566" },
       { "bytes": "8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f23333" },
       { "bytes": "d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fad3333" }
     ]

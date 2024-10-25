@@ -42,7 +42,8 @@ pub enum RegisterValidatorDatum {
 		sidechain_pub_key: SidechainPublicKey,
 		sidechain_signature: SidechainSignature,
 		consumed_input: UtxoId,
-		//ownPkh we don't use,
+		//own_pkh is used by offchain code to find the registration UTXO when re-registering or deregistering
+		own_pkh: MainchainAddressHash,
 		aura_pub_key: AuraPublicKey,
 		grandpa_pub_key: GrandpaPublicKey,
 	},
@@ -75,7 +76,7 @@ pub fn decode_legacy_register_validator_datum(datum: PlutusData) -> Option<Regis
 	let sidechain_pub_key = fields.get(1).as_bytes().map(SidechainPublicKey)?;
 	let sidechain_signature = fields.get(2).as_bytes().map(SidechainSignature)?;
 	let consumed_input = decode_utxo_id_datum(fields.get(3))?;
-	let _own_pkh = fields.get(4).as_bytes()?;
+	let own_pkh = MainchainAddressHash(fields.get(4).as_bytes()?.try_into().ok()?);
 	let aura_pub_key = fields.get(5).as_bytes().map(AuraPublicKey)?;
 	let grandpa_pub_key = fields.get(6).as_bytes().map(GrandpaPublicKey)?;
 	Some(RegisterValidatorDatum::V0 {
@@ -83,6 +84,7 @@ pub fn decode_legacy_register_validator_datum(datum: PlutusData) -> Option<Regis
 		sidechain_pub_key,
 		sidechain_signature,
 		consumed_input,
+		own_pkh,
 		aura_pub_key,
 		grandpa_pub_key,
 	})
