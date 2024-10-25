@@ -5,7 +5,7 @@ This stack is designed to run a 5 x Partner Chains node local environment for a 
 The local environment includes:
 
 - 5 x Partner Chains Nodes (3 x permissioned, 2 x registered)
-- 3 x Cardano Nodes running private testnet with pre-configured genesis files
+- 3 x Cardano Nodes running private testnet with pre-configured genesis files (2 minutes epochs)
 - 1 x PostgreSQL database
 - 1 x Db-sync
 - 1 x Ogmios
@@ -22,7 +22,7 @@ Once the Cardano chain is synced, Ogmios, Kupo and DB-Sync will in turn connect 
 
 The pc-contracts-cli will insert D parameter values and register Partner Chains Node keys with the Cardano chain.
 
-Once Postgres is populated with the required data, the Partner Chains nodes will begin syncing the chain and will begin block production after 2 Mainchain epochs.
+Once Postgres is populated with the required data, the Partner Chains nodes will begin syncing the chain and will begin block production after 2 main chain epochs.
 
 ## Configuring the environment
 
@@ -56,3 +56,9 @@ When stopping the stack, it is mandatory to also wipe all volumes. The environme
 ```
 docker compose down --volumes
 ```
+
+## Using custom node image
+
+To use custom node image one simply has to update `PARTNER_CHAINS_NODE_IMAGE` (docker image) and `PARTNER_CHAINS_NODE_URL` (node artifact, used to build chain-spec and generate signatures for SPO registration) in `setup.sh` script.
+
+Also, make sure that `PC_CONTRACTS_CLI_ZIP_URL` version is compatible with your custom node.
