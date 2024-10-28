@@ -7,6 +7,13 @@ pub enum DParamDatum {
 	V0 { num_permissioned_candidates: u16, num_registered_candidates: u16 },
 }
 
+impl TryFrom<PlutusData> for DParamDatum {
+	type Error = DataDecodingError;
+	fn try_from(datum: PlutusData) -> DecodingResult<Self> {
+		decode_legacy_d_parameter_datum(datum)
+	}
+}
+
 impl From<DParamDatum> for sidechain_domain::DParameter {
 	fn from(datum: DParamDatum) -> Self {
 		match datum {
@@ -14,13 +21,6 @@ impl From<DParamDatum> for sidechain_domain::DParameter {
 				Self { num_permissioned_candidates, num_registered_candidates }
 			},
 		}
-	}
-}
-
-impl TryFrom<PlutusData> for DParamDatum {
-	type Error = DataDecodingError;
-	fn try_from(datum: PlutusData) -> DecodingResult<Self> {
-		decode_legacy_d_parameter_datum(datum)
 	}
 }
 

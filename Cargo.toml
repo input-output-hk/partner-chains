@@ -38,7 +38,8 @@ members = [
 	"partner-chains-cli",
 	"pallets/native-token-management",
 	"primitives/native-token-management",
-	"toolkit/offchain", "primitives/plutus-data",
+	"toolkit/offchain",
+	"primitives/plutus-data",
 ]
 resolver = "2"
 
@@ -216,5 +217,5 @@ sc-partner-chains-consensus-aura = { path = "client/consensus/aura", default-fea
 sp-partner-chains-consensus-aura = { path = "primitives/consensus/aura", default-features = false }
 pallet-partner-chains-session = { path = "pallets/partner-chains-session", default-features = false }
 pallet-session-runtime-stub = { path = "pallets/pallet-session-runtime-stub", default-features = false }
-partner-chains-cardano-offchain = { path = "toolkit/offchain" }
-partner-chains-plutus-data = { path = "primitives/plutus-data" }
+partner-chains-cardano-offchain = { path = "toolkit/offchain", default-features = false }
+partner-chains-plutus-data = { path = "primitives/plutus-data", default-features = false }
