@@ -1,6 +1,7 @@
 use cardano_serialization_lib::PlutusData;
 
 pub mod d_param;
+pub mod permissioned_candidates;
 
 #[derive(Debug, PartialEq, thiserror::Error)]
 #[error("Could not decode {datum:?} to {to}: {msg}")]

@@ -6,9 +6,11 @@ use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
 use crate::DataSourceError::*;
 use authority_selection_inherents::authority_selection_inputs::*;
-use datum::{DParamDatum, PermissionedCandidateDatums};
+use datum::raw_permissioned_candidate_data_vec_from;
+use datum::DParamDatum;
 use itertools::Itertools;
 use log::error;
+use partner_chains_plutus_data::permissioned_candidates::PermissionedCandidateDatums;
 use sidechain_domain::*;
 use sqlx::PgPool;
 use std::collections::HashMap;
@@ -81,7 +83,9 @@ impl AuthoritySelectionDataSource for CandidatesDataSourceImpl {
 			.map(|d| d.0)
 			.ok_or(ExpectedDataNotFound("Permissioned Candidates List Datum".to_string()))?;
 
-		let permissioned_candidates = PermissionedCandidateDatums::try_from(candidates_datum)?.into();
+		let permissioned_candidates = raw_permissioned_candidate_data_vec_from(
+			PermissionedCandidateDatums::try_from(candidates_datum)?
+		);
 
 		Ok(AriadneParameters { d_parameter, permissioned_candidates })
 	}
