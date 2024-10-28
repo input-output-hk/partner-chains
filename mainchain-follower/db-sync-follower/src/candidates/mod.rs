@@ -6,11 +6,12 @@ use crate::observed_async_trait;
 use crate::DataSourceError::*;
 use authority_selection_inherents::authority_selection_inputs::*;
 use datum::raw_permissioned_candidate_data_vec_from;
-use datum::DParamDatum;
 use itertools::Itertools;
 use log::error;
-use partner_chains_plutus_data::permissioned_candidates::PermissionedCandidateDatums;
-use partner_chains_plutus_data::registered_candidates::RegisterValidatorDatum;
+use partner_chains_plutus_data::{
+	d_param::DParamDatum, permissioned_candidates::PermissionedCandidateDatums,
+	registered_candidates::RegisterValidatorDatum,
+};
 use sidechain_domain::*;
 use sqlx::PgPool;
 use std::collections::HashMap;

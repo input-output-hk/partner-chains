@@ -1,5 +1,4 @@
 use authority_selection_inherents::authority_selection_inputs::RawPermissionedCandidateData;
-pub use partner_chains_plutus_data::d_param::DParamDatum;
 use partner_chains_plutus_data::permissioned_candidates::PermissionedCandidateDatumV0;
 use partner_chains_plutus_data::permissioned_candidates::PermissionedCandidateDatums;
 use sidechain_domain::*;
