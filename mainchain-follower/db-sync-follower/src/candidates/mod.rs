@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use std::error::Error;
 
 pub mod cached;
-mod datum;
+pub mod datum;
 
 #[cfg(test)]
 pub mod tests;
@@ -71,7 +71,7 @@ impl AuthoritySelectionDataSource for CandidatesDataSourceImpl {
 			.map(|d| d.0)
 			.ok_or(ExpectedDataNotFound("DParameter Datum".to_string()))?;
 
-		let d_parameter = DParamDatum::try_from(&d_datum)?.into();
+		let d_parameter = DParamDatum::try_from(d_datum)?.into();
 
 		let candidates_output = candidates_output_opt
 			.ok_or(ExpectedDataNotFound("Permissioned Candidates List".to_string()))?;
@@ -81,7 +81,7 @@ impl AuthoritySelectionDataSource for CandidatesDataSourceImpl {
 			.map(|d| d.0)
 			.ok_or(ExpectedDataNotFound("Permissioned Candidates List Datum".to_string()))?;
 
-		let permissioned_candidates = PermissionedCandidateDatums::try_from(&candidates_datum)?.into();
+		let permissioned_candidates = PermissionedCandidateDatums::try_from(candidates_datum)?.into();
 
 		Ok(AriadneParameters { d_parameter, permissioned_candidates })
 	}
@@ -212,6 +212,7 @@ impl CandidatesDataSourceImpl {
 					sidechain_pub_key,
 					sidechain_signature,
 					consumed_input,
+					own_pkh: _own_pkh,
 					aura_pub_key,
 					grandpa_pub_key,
 				} = c.datum;
@@ -242,7 +243,7 @@ impl CandidatesDataSourceImpl {
 					output.clone().utxo_id
 				))?;
 				let register_validator_datum =
-					RegisterValidatorDatum::try_from(&datum).map_err(|_| {
+					RegisterValidatorDatum::try_from(datum).map_err(|_| {
 						format!("Invalid registration datum for {:?}", output.clone().utxo_id)
 					})?;
 				Ok(ParsedCandidate {

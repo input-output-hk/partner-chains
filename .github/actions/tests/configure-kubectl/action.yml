@@ -1,12 +1,5 @@
-name: "Test Against Staging Preview Environment"
-description: "Tests against Staging Preview Environment"
-inputs:
-  node-host:
-    description: "Host for the node"
-    required: true
-  node-port:
-    description: "Port for the node"
-    required: true
+name: "Install and configure kubectl and awscli"
+description: "Install and configure kubectl and awscli (used in e2e tests)"
 
 outputs: {}
 
@@ -27,16 +20,4 @@ runs:
         kubectl config set-credentials github-actions --token=${{ env.K8S_SA_TOKEN }}
         kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
         kubectl config use-context my-context
-      shell: bash
-    - name: Health check integration env
-      run: |
-        curl --request POST \
-          --url "http://${{ inputs['node-host'] }}:${{ inputs['node-port'] }}" \
-          --header 'Content-Type: application/json' \
-          --data '{
-          "jsonrpc": "2.0",
-          "method": "sidechain_getStatus",
-          "params": [],
-          "id": 1
-        }'
       shell: bash

@@ -1,8 +1,8 @@
 //! Common types used in the Ogmios API.
 
-use std::collections::HashMap;
-
 use serde::{Deserialize, Deserializer};
+use std::collections::HashMap;
+use std::str::FromStr;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 pub struct SlotLength {
@@ -20,6 +20,7 @@ pub struct OgmiosBytesSize {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct OgmiosUtxo {
 	pub transaction: OgmiosTx,
 	pub index: u32,
@@ -27,6 +28,8 @@ pub struct OgmiosUtxo {
 	pub address: String,
 	pub value: OgmiosValue,
 	pub datum: Option<Datum>,
+	pub datum_hash: Option<DatumHash>,
+	pub script: Option<OgmiosScript>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -42,21 +45,54 @@ impl From<Vec<u8>> for Datum {
 	}
 }
 
-fn parse_bytes<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
-where
-	D: Deserializer<'de>,
-{
-	let buf = String::deserialize(deserializer)?;
-	hex::decode(buf).map_err(serde::de::Error::custom)
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(transparent)]
+pub struct DatumHash {
+	#[serde(deserialize_with = "parse_bytes_array")]
+	pub bytes: [u8; 32],
 }
 
-fn parse_tx_id<'de, D>(deserializer: D) -> Result<[u8; 32], D::Error>
-where
-	D: Deserializer<'de>,
-{
-	let buf = String::deserialize(deserializer)?;
-	let bytes = hex::decode(buf).map_err(serde::de::Error::custom)?;
-	TryFrom::try_from(bytes).map_err(|_| serde::de::Error::custom("expected 32 bytes"))
+impl From<[u8; 32]> for DatumHash {
+	fn from(bytes: [u8; 32]) -> Self {
+		DatumHash { bytes }
+	}
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(untagged)]
+pub enum OgmiosScript {
+	Plutus(PlutusScript),
+	Native(NativeScript),
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+pub struct PlutusScript {
+	pub language: String,
+	#[serde(deserialize_with = "parse_bytes")]
+	pub cbor: Vec<u8>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(tag = "clause", rename_all = "lowercase")]
+pub enum NativeScript {
+	Signature {
+		#[serde(deserialize_with = "parse_bytes_array")]
+		from: [u8; 28],
+	},
+	All {
+		from: Vec<NativeScript>,
+	},
+	Any {
+		from: Vec<NativeScript>,
+	},
+	#[serde(rename_all = "camelCase")]
+	Some {
+		from: Vec<NativeScript>,
+		at_least: u32,
+	},
+	Before {
+		slot: u64,
+	},
 }
 
 impl<'de> Deserialize<'de> for OgmiosValue {
@@ -76,6 +112,12 @@ type ScriptHash = [u8; 28];
 pub struct OgmiosValue {
 	pub lovelace: u64,
 	pub native_tokens: HashMap<ScriptHash, Vec<Asset>>,
+}
+
+impl OgmiosValue {
+	pub fn new_lovelace(lovelace: u64) -> Self {
+		Self { lovelace, native_tokens: HashMap::new() }
+	}
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -123,13 +165,50 @@ impl TryFrom<serde_json::Value> for OgmiosValue {
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 pub struct OgmiosTx {
-	#[serde(deserialize_with = "parse_tx_id")]
+	#[serde(deserialize_with = "parse_bytes_array")]
 	pub id: [u8; 32],
+}
+
+pub(crate) fn parse_bytes<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+where
+	D: Deserializer<'de>,
+{
+	let buf = String::deserialize(deserializer)?;
+	hex::decode(buf).map_err(serde::de::Error::custom)
+}
+
+pub(crate) fn parse_bytes_array<'de, D, const N: usize>(
+	deserializer: D,
+) -> Result<[u8; N], D::Error>
+where
+	D: Deserializer<'de>,
+{
+	let bytes = parse_bytes(deserializer)?;
+	TryFrom::try_from(bytes).map_err(|_| serde::de::Error::custom(format!("expected {} bytes", N)))
+}
+
+pub(crate) fn parse_fraction_decimal<'de, D>(deserializer: D) -> Result<fraction::Decimal, D::Error>
+where
+	D: Deserializer<'de>,
+{
+	let buf = String::deserialize(deserializer)?;
+	fraction::Decimal::from_str(&buf).map_err(serde::de::Error::custom)
+}
+
+pub(crate) fn parse_fraction_ratio_u64<'de, D>(
+	deserializer: D,
+) -> Result<fraction::Ratio<u64>, D::Error>
+where
+	D: Deserializer<'de>,
+{
+	let buf = String::deserialize(deserializer)?;
+	fraction::Ratio::<u64>::from_str(&buf).map_err(serde::de::Error::custom)
 }
 
 #[cfg(test)]
 mod tests {
-	use crate::types::{Asset, OgmiosValue};
+	use super::OgmiosUtxo;
+	use crate::types::{Asset, NativeScript, OgmiosScript, OgmiosTx, OgmiosValue, PlutusScript};
 	use hex_literal::hex;
 
 	#[test]
@@ -181,5 +260,105 @@ mod tests {
 			assets.iter().find(|asset| asset.name == hex!("aaaa").to_vec()).unwrap().amount,
 			1
 		);
+	}
+
+	#[test]
+	fn parse_utxo_with_datum() {
+		let value = serde_json::json!({
+			"transaction": { "id": "106b0d7d1544c97941777041699412fb7c8b94855210987327199620c0599580" },
+			"index": 1,
+			"address": "addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy",
+			"value": { "ada": {	"lovelace": 1356118 } },
+			"datum": "d8799fff",
+			"datumHash": "c248757d390181c517a5beadc9c3fe64bf821d3e889a963fc717003ec248757d"
+		});
+		let utxo: OgmiosUtxo = serde_json::from_value(value).unwrap();
+		assert_eq!(
+			utxo,
+			OgmiosUtxo {
+				transaction: OgmiosTx {
+					id: hex!("106b0d7d1544c97941777041699412fb7c8b94855210987327199620c0599580")
+				},
+				index: 1,
+				address: "addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy"
+					.to_string(),
+				value: OgmiosValue::new_lovelace(1356118),
+				datum: Some(hex!("d8799fff").to_vec().into()),
+				datum_hash: Some(
+					hex!("c248757d390181c517a5beadc9c3fe64bf821d3e889a963fc717003ec248757d").into()
+				),
+				script: None,
+			}
+		)
+	}
+
+	#[test]
+	fn parse_utxo_with_plutus_script() {
+		let value = serde_json::json!({
+			"transaction": {
+			  "id": "106b0d7d1544c97941777041699412fb7c8b94855210987327199620c0599580"
+			},
+			"index": 1,
+			"address": "addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy",
+			"value": { "ada": { "lovelace": 1356118 } },
+			"script": {
+				"cbor": "aabbccdd00112233",
+				"language": "plutus:v3"
+			}
+		});
+		let utxo: OgmiosUtxo = serde_json::from_value(value).unwrap();
+		assert_eq!(
+			utxo,
+			OgmiosUtxo {
+				transaction: OgmiosTx {
+					id: hex!("106b0d7d1544c97941777041699412fb7c8b94855210987327199620c0599580")
+				},
+				index: 1,
+				address: "addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy"
+					.to_string(),
+				value: OgmiosValue::new_lovelace(1356118),
+				datum: None,
+				datum_hash: None,
+				script: Some(OgmiosScript::Plutus(PlutusScript {
+					language: "plutus:v3".into(),
+					cbor: hex!("aabbccdd00112233").to_vec()
+				}))
+			}
+		)
+	}
+
+	#[test]
+	fn parse_utxo_with_native_script() {
+		let value = serde_json::json!({
+			"transaction": { "id": "106b0d7d1544c97941777041699412fb7c8b94855210987327199620c0599580" },
+			"index": 1,
+			"address": "addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy",
+			"value": { "ada": {	"lovelace": 1356118 } },
+			"script": {"clause": "some", "atLeast": 1, "from":[{"clause": "signature","from": "a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7"}, {"clause": "before", "slot": 100 }]}
+		});
+		let utxo: OgmiosUtxo = serde_json::from_value(value).unwrap();
+		assert_eq!(
+			utxo,
+			OgmiosUtxo {
+				transaction: OgmiosTx {
+					id: hex!("106b0d7d1544c97941777041699412fb7c8b94855210987327199620c0599580")
+				},
+				index: 1,
+				address: "addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy"
+					.to_string(),
+				value: OgmiosValue::new_lovelace(1356118),
+				datum: None,
+				datum_hash: None,
+				script: Some(OgmiosScript::Native(NativeScript::Some {
+					from: vec![
+						NativeScript::Signature {
+							from: hex!("a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7")
+						},
+						NativeScript::Before { slot: 100 }
+					],
+					at_least: 1
+				}))
+			}
+		)
 	}
 }

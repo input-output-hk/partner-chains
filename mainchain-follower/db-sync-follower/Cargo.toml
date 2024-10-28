@@ -13,7 +13,6 @@ chrono = "0.4.31"
 hex = { workspace = true }
 hex-literal = { workspace = true }
 itertools = { workspace = true }
-plutus = { workspace = true, default-features = true }
 sidechain-domain = { workspace = true, default-features = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -33,6 +32,7 @@ sp-native-token-management = { workspace = true, features = ["std"], optional = 
 sidechain-mc-hash = { workspace = true, optional = true }
 pallet-sidechain-rpc = { workspace = true, optional = true }
 authority-selection-inherents = { workspace = true, features = ["std"], optional = true }
+cardano-serialization-lib = { workspace = true }
 
 [dev-dependencies]
 tokio-test = "0.4.3"

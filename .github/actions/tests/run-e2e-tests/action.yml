@@ -16,6 +16,12 @@ inputs:
   mc_epoch:
     description: 'MC epoch to test (committee tests)'
     required: false
+  latest_mc_epoch:
+    description: 'Parametrize committee tests to verify whole last MC epoch'
+    required: false
+  deployment_mc_epoch:
+    description: 'Deployment MC epoch'
+    required: false
   log_level:
     description: 'Log CLI level'
     required: false
@@ -31,6 +37,9 @@ inputs:
     description: 'Run tests in local environment (true or false)'
     required: false
     default: 'false'
+  decrypt:
+    description: 'Decrypt secrets'
+    required: false
 
 runs:
   using: composite
@@ -42,6 +51,15 @@ runs:
         if [ -n "${{ inputs.mc_epoch }}" ]; then
           mc_epoch_switch="--mc-epoch '${{ inputs.mc_epoch }}'"
         fi
+        if [ "${{ inputs.latest_mc_epoch }}" = "true" ]; then
+          latest_mc_epoch_switch="--latest-mc-epoch"
+        fi
+        if [ -n "${{ inputs.deployment_mc_epoch }}" ]; then
+          deployment_mc_epoch_switch="--deployment-mc-epoch ${{ inputs.deployment_mc_epoch }}"
+        fi
+        if [ "${{ inputs.decrypt }}" = "true" ]; then
+          decrypt_switch="--decrypt"
+        fi
 
         pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
           --env '${{ inputs.env }}' \
@@ -49,8 +67,12 @@ runs:
           --log-cli-level '${{ inputs.log_level }}' \
           -k '${{ inputs.keyword }}' \
           -m '${{ inputs.markers }}' \
+          -n4 \
+          --dist=loadgroup \
           --init-timestamp '${{ inputs.init_timestamp }}' \
           ${mc_epoch_switch} \
+          $latest_mc_epoch_switch \
+          $decrypt_switch \
           --json-report \
           --json-report-summary \
           --junitxml=junit_report.xml"
