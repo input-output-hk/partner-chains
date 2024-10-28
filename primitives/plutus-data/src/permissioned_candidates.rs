@@ -71,30 +71,7 @@ mod tests {
 	use pretty_assertions::assert_eq;
 
 	#[test]
-	fn valid_permissioned_candidates_1() {
-		let plutus_data = test_plutus_data!({"list": [
-			{"list": [{"bytes": "bb11"}, {"bytes": "cc11"}, {"bytes": "dd11"}]},
-			{"list": [{"bytes": "bb22"}, {"bytes": "cc22"}, {"bytes": "dd22"}]}
-		]});
-
-		let expected_datum = PermissionedCandidateDatums::V0(vec![
-			PermissionedCandidateDatumV0 {
-				sidechain_public_key: SidechainPublicKey(hex!("bb11").into()),
-				aura_public_key: AuraPublicKey(hex!("cc11").into()),
-				grandpa_public_key: GrandpaPublicKey(hex!("dd11").into()),
-			},
-			PermissionedCandidateDatumV0 {
-				sidechain_public_key: SidechainPublicKey(hex!("bb22").into()),
-				aura_public_key: AuraPublicKey(hex!("cc22").into()),
-				grandpa_public_key: GrandpaPublicKey(hex!("dd22").into()),
-			},
-		]);
-
-		assert_eq!(PermissionedCandidateDatums::try_from(plutus_data).unwrap(), expected_datum)
-	}
-
-	#[test]
-	fn valid_permissioned_candidates_2() {
+	fn valid_legacy_permissioned_candidates() {
 		let plutus_data = test_plutus_data!({"list": [
 			{"list": [
 				{"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"},
