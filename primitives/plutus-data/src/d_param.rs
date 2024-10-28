@@ -1,21 +1,12 @@
-use super::PlutusDataExtensions;
-use crate::DataSourceError::DatumDecodeError;
+use crate::{DataDecodingError, DecodingResult, PlutusDataExtensions};
 use cardano_serialization_lib::PlutusData;
-use sidechain_domain::*;
 
 pub enum DParamDatum {
 	/// Initial/legacy datum schema. If a datum doesn't contain a version, it is assumed to be V0
 	V0 { num_permissioned_candidates: u16, num_registered_candidates: u16 },
 }
 
-impl TryFrom<PlutusData> for DParamDatum {
-	type Error = super::Error;
-	fn try_from(datum: PlutusData) -> super::Result<Self> {
-		decode_legacy_d_parameter_datum(datum)
-	}
-}
-
-impl From<DParamDatum> for DParameter {
+impl From<DParamDatum> for sidechain_domain::DParameter {
 	fn from(datum: DParamDatum) -> Self {
 		match datum {
 			DParamDatum::V0 { num_permissioned_candidates, num_registered_candidates } => {
@@ -25,8 +16,15 @@ impl From<DParamDatum> for DParameter {
 	}
 }
 
+impl TryFrom<PlutusData> for DParamDatum {
+	type Error = DataDecodingError;
+	fn try_from(datum: PlutusData) -> DecodingResult<Self> {
+		decode_legacy_d_parameter_datum(datum)
+	}
+}
+
 /// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.
-fn decode_legacy_d_parameter_datum(datum: PlutusData) -> super::Result<DParamDatum> {
+fn decode_legacy_d_parameter_datum(datum: PlutusData) -> DecodingResult<DParamDatum> {
 	let d_parameter = datum
 		.as_list()
 		.filter(|datum| datum.len() == 2)
@@ -38,7 +36,11 @@ fn decode_legacy_d_parameter_datum(datum: PlutusData) -> super::Result<DParamDat
 		})
 		.ok_or_else(|| {
 			log::error!("Could not decode {:?} to DParameter. Expected [u16, u16].", datum.clone());
-			DatumDecodeError { datum: datum.clone(), to: "DParameter".to_string() }
+			DataDecodingError {
+				datum: datum.clone(),
+				to: "DParameter".to_string(),
+				msg: "Expected [u16, u16]".to_string(),
+			}
 		})?;
 
 	Ok(d_parameter)

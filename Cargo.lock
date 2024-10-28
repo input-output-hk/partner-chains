@@ -1895,6 +1895,7 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "pallet-sidechain-rpc",
+ "partner-chains-plutus-data",
  "serde",
  "serde_json",
  "sidechain-domain",
@@ -6612,6 +6613,16 @@ dependencies = [
  "sp-session-validator-management-query",
  "sp-sidechain",
  "tokio",
+]
+
+[[package]]
+name = "partner-chains-plutus-data"
+version = "0.1.0"
+dependencies = [
+ "cardano-serialization-lib",
+ "log",
+ "sidechain-domain",
+ "thiserror",
 ]
 
 [[package]]

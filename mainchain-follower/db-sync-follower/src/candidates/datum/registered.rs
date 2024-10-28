@@ -1,9 +1,9 @@
-use super::PlutusDataExtensions;
 use crate::candidates::{
 	AuraPublicKey, GrandpaPublicKey, MainchainSignature, McTxHash, SidechainPublicKey,
 	SidechainSignature, UtxoId, UtxoIndex,
 };
 use cardano_serialization_lib::PlutusData;
+use partner_chains_plutus_data::PlutusDataExtensions;
 use sidechain_domain::*;
 
 /** Representation of the plutus type in the mainchain contract (rev 4ed2cc66c554ec8c5bec7b90ad9273e9069a1fb4)
