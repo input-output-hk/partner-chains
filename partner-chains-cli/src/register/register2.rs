@@ -1,3 +1,4 @@
+use crate::cardano_key::get_key_bytes_from_file;
 use crate::io::IOContext;
 use crate::CmdRun;
 use clap::Parser;
@@ -7,7 +8,6 @@ use cli_commands::key_params::{
 use cli_commands::registration_signatures::RegisterValidatorMessage;
 use cli_commands::signing::mainchain_public_key_and_signature;
 use sidechain_domain::UtxoId;
-use std::str::FromStr;
 
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
@@ -60,27 +60,11 @@ impl CmdRun for Register2Cmd {
 	}
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-struct CardanoKey {
-	cbor_hex: String,
-}
-
-impl CardanoKey {
-	pub fn cbor_hex_no_prefix(&self) -> &str {
-		&self.cbor_hex[4..]
-	}
-}
-
 fn get_mainchain_cold_skey<C: IOContext>(
 	context: &C,
 	keys_path: &str,
 ) -> Result<MainchainSigningKeyParam, anyhow::Error> {
-	let cold_key = context
-		.read_file(keys_path)
-		.ok_or_else(|| anyhow::anyhow!("Unable to read mainchain signing key file"))?;
-	let mc_signing_key = serde_json::from_str::<CardanoKey>(&cold_key)?;
-	Ok(MainchainSigningKeyParam::from_str(mc_signing_key.cbor_hex_no_prefix())?)
+	Ok(MainchainSigningKeyParam::from(get_key_bytes_from_file(keys_path, context)?))
 }
 
 #[cfg(test)]

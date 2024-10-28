@@ -23,6 +23,7 @@ provider will not query the main chain state or produce inherent data at all.
 trait, implemented by separate types in `db-sync-follower` and `main-chain-follower-mock` crates. For reference
 on how to create these new data sources see `node/src/main_chain_follower.rs` file.
 * Added `pallet-session` integration for `pallet-session-validator-management`. Not wired in the node.
+* `partner-chains-cli` does not use `cardano-cli` to derive address not to query utxos.
 
 ## Removed
 

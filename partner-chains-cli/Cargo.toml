@@ -36,6 +36,9 @@ jsonrpsee = { workspace = true, features = [
 ] }
 ogmios-client = { workspace = true, features = ["jsonrpsee-client"] }
 tokio = { workspace = true }
+cardano-serialization-lib = { workspace = true }
+partner-chains-cardano-offchain = { workspace = true }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }
+hex-literal = { workspace = true }

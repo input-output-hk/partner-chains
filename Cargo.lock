@@ -6491,15 +6491,18 @@ name = "partner-chains-cli"
 version = "1.2.0"
 dependencies = [
  "anyhow",
+ "cardano-serialization-lib",
  "chain-params",
  "clap",
  "cli-commands",
  "colored",
  "hex",
+ "hex-literal",
  "inquire",
  "jsonrpsee",
  "libp2p-identity",
  "ogmios-client",
+ "partner-chains-cardano-offchain",
  "pretty_assertions",
  "secp256k1 0.28.2",
  "serde",

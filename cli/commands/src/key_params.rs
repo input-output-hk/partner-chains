@@ -87,3 +87,9 @@ impl FromStr for MainchainSigningKeyParam {
 		Ok(MainchainSigningKeyParam(key))
 	}
 }
+
+impl From<[u8; 32]> for MainchainSigningKeyParam {
+	fn from(key: [u8; 32]) -> Self {
+		MainchainSigningKeyParam(ed25519_zebra::SigningKey::from(key))
+	}
+}

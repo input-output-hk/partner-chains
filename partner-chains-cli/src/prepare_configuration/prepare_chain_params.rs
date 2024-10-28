@@ -1,3 +1,4 @@
+use crate::cardano_key::get_key_hash_from_file;
 use crate::config::config_fields::{
 	CHAIN_ID, GENESIS_COMMITTEE_UTXO, GOVERNANCE_AUTHORITY, THRESHOLD_DENOMINATOR,
 	THRESHOLD_NUMERATOR,
@@ -6,7 +7,6 @@ use crate::config::{config_fields, ConfigFieldDefinition, SidechainParams};
 use crate::io::IOContext;
 use anyhow::{anyhow, Context};
 use serde::de::DeserializeOwned;
-use serde::Deserialize;
 use sidechain_domain::{MainchainAddressHash, UtxoId};
 
 pub fn prepare_chain_params<C: IOContext>(context: &C) -> anyhow::Result<SidechainParams> {
@@ -91,44 +91,6 @@ const CHAIN_ID_PROMPT: &str = "Now, let's set up chain id. It has to fall in ran
 
 fn is_gov_auth_valid_prompt() -> String {
 	format!("Is the {} displayed above correct?", GOVERNANCE_AUTHORITY.name)
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct PaymentKeyFileContent {
-	cbor_hex: String,
-}
-
-const CBOR_KEY_PREFIX: &str = "5820";
-
-fn get_key_hash_from_file(
-	path: &str,
-	context: &impl IOContext,
-) -> anyhow::Result<MainchainAddressHash> {
-	let Some(file_content) = context.read_file(path) else {
-		return Err(anyhow!("Failed to read public key file {path}"));
-	};
-
-	let json = serde_json::from_str::<PaymentKeyFileContent>(&file_content)
-		.map_err(|err| anyhow!("Failed to parse public key file {path}: {err:?}"))?;
-
-	let Some(vkey) = json.cbor_hex.strip_prefix(CBOR_KEY_PREFIX) else {
-		return Err(anyhow!(
-			"Invalid cbor value of public key - missing prefix {CBOR_KEY_PREFIX}: {}",
-			json.cbor_hex
-		));
-	};
-
-	let bytes: [u8; 32] = hex::decode(vkey)
-		.map_err(|err| {
-			anyhow!("Invalid cbor value of public key - not valid hex: {}\n{err:?}", json.cbor_hex)
-		})?
-		.try_into()
-		.map_err(|_| {
-			anyhow!("Invalid cbor value of public key - incorrect length: {}", json.cbor_hex)
-		})?;
-
-	Ok(MainchainAddressHash::from_vkey(bytes))
 }
 
 #[cfg(test)]

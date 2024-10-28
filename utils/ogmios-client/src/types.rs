@@ -19,11 +19,11 @@ pub struct OgmiosBytesSize {
 	pub bytes: u32,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct OgmiosUtxo {
 	pub transaction: OgmiosTx,
-	pub index: u32,
+	pub index: u16,
 	// bech32 address
 	pub address: String,
 	pub value: OgmiosValue,
@@ -108,7 +108,7 @@ impl<'de> Deserialize<'de> for OgmiosValue {
 
 type ScriptHash = [u8; 28];
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct OgmiosValue {
 	pub lovelace: u64,
 	pub native_tokens: HashMap<ScriptHash, Vec<Asset>>,
@@ -163,7 +163,7 @@ impl TryFrom<serde_json::Value> for OgmiosValue {
 	}
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
 pub struct OgmiosTx {
 	#[serde(deserialize_with = "parse_bytes_array")]
 	pub id: [u8; 32],
