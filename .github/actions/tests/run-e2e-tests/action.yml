@@ -75,6 +75,7 @@ runs:
           -m '${{ inputs.markers }}' \
           -n 4 \
           --dist=loadgroup \
+          --ci-run \
           --init-timestamp '${{ inputs.init_timestamp }}' \
           ${mc_epoch_switch} \
           ${latest_mc_epoch_switch} \
