@@ -1,5 +1,5 @@
 name: 'Run Pytest Tests'
-description: 'Activate python venv and run e2e tests'
+description: 'Activate Python virtual environment and run end-to-end tests'
 
 inputs:
   env:
@@ -17,7 +17,7 @@ inputs:
     description: 'MC epoch to test (committee tests)'
     required: false
   latest_mc_epoch:
-    description: 'Parametrize committee tests to verify whole last MC epoch'
+    description: 'Parametrize committee tests to verify the whole last MC epoch'
     required: false
   deployment_mc_epoch:
     description: 'Deployment MC epoch'
@@ -51,12 +51,18 @@ runs:
         if [ -n "${{ inputs.mc_epoch }}" ]; then
           mc_epoch_switch="--mc-epoch '${{ inputs.mc_epoch }}'"
         fi
+
+        latest_mc_epoch_switch=""
         if [ "${{ inputs.latest_mc_epoch }}" = "true" ]; then
           latest_mc_epoch_switch="--latest-mc-epoch"
         fi
+
+        deployment_mc_epoch_switch=""
         if [ -n "${{ inputs.deployment_mc_epoch }}" ]; then
-          deployment_mc_epoch_switch="--deployment-mc-epoch ${{ inputs.deployment_mc_epoch }}"
+          deployment_mc_epoch_switch="--deployment-mc-epoch '${{ inputs.deployment_mc_epoch }}'"
         fi
+
+        decrypt_switch=""
         if [ "${{ inputs.decrypt }}" = "true" ]; then
           decrypt_switch="--decrypt"
         fi
@@ -67,12 +73,13 @@ runs:
           --log-cli-level '${{ inputs.log_level }}' \
           -k '${{ inputs.keyword }}' \
           -m '${{ inputs.markers }}' \
-          -n4 \
+          -n 4 \
           --dist=loadgroup \
           --init-timestamp '${{ inputs.init_timestamp }}' \
           ${mc_epoch_switch} \
-          $latest_mc_epoch_switch \
-          $decrypt_switch \
+          ${latest_mc_epoch_switch} \
+          ${deployment_mc_epoch_switch} \
+          ${decrypt_switch} \
           --json-report \
           --json-report-summary \
           --junitxml=junit_report.xml"
