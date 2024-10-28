@@ -1,6 +1,7 @@
 use crate::{DataDecodingError, DecodingResult, PlutusDataExtensions};
 use cardano_serialization_lib::PlutusData;
 
+#[derive(Clone, Debug, PartialEq)]
 pub enum DParamDatum {
 	/// Initial/legacy datum schema. If a datum doesn't contain a version, it is assumed to be V0
 	V0 { num_permissioned_candidates: u16, num_registered_candidates: u16 },
@@ -44,4 +45,26 @@ fn decode_legacy_d_parameter_datum(datum: PlutusData) -> DecodingResult<DParamDa
 		})?;
 
 	Ok(d_parameter)
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use cardano_serialization_lib::{encode_json_value_to_plutus_datum, PlutusDatumSchema};
+	use pretty_assertions::assert_eq;
+	use serde_json::json;
+
+	#[test]
+	fn valid_d_param_1() {
+		let plutus_data = encode_json_value_to_plutus_datum(
+			json!({"list": [{"int": 1}, {"int": 2}]}),
+			PlutusDatumSchema::DetailedSchema,
+		)
+		.expect("test data is valid");
+
+		let expected_datum =
+			DParamDatum::V0 { num_permissioned_candidates: 1, num_registered_candidates: 2 };
+
+		assert_eq!(DParamDatum::try_from(plutus_data).unwrap(), expected_datum)
+	}
 }

@@ -6620,7 +6620,10 @@ name = "partner-chains-plutus-data"
 version = "0.1.0"
 dependencies = [
  "cardano-serialization-lib",
+ "hex-literal",
  "log",
+ "pretty_assertions",
+ "serde_json",
  "sidechain-domain",
  "thiserror",
 ]

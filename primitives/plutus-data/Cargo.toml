@@ -10,3 +10,8 @@ sidechain-domain = { workspace = true, default-features = true }
 
 cardano-serialization-lib = { workspace = true }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+hex-literal = { workspace = true }
+pretty_assertions = { workspace = true }
