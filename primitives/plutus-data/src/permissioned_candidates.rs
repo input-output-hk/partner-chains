@@ -42,7 +42,7 @@ fn decode_legacy_permissioned_candidates_datums(
 			DataDecodingError {
 				datum: datum.clone(),
 				to: "PermissionedCandidateDatumV0".to_string(),
-                msg: "Expected [[ByteString, ByteString, ByteString]]".to_string()
+				msg: "Expected [[ByteString, ByteString, ByteString]]".to_string()
 			}
 		})?;
 
