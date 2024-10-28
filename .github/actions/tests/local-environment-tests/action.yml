@@ -107,18 +107,18 @@ runs:
       shell: bash
     - name: Collect and zip Docker logs
       run: |
-        mkdir -p local-environment-logs
+        mkdir -p local-environment-logs-initial
         docker ps -a --format '{{.Names}}' | while read line; do
           echo "Collecting logs for container $line"
-          docker logs "$line" > "local-environment-logs/$line.log" 2>&1 || true
+          docker logs "$line" > "local-environment-logs-initial/$line.log" 2>&1 || true
         done
-        zip -r local-environment-logs.zip local-environment-logs/
+        zip -r local-environment-logs-initial.zip local-environment-logs-initial/
       shell: bash
     - name: Upload Docker logs artifact
       uses: actions/upload-artifact@v4
       with:
-        name: local-environment-logs
-        path: local-environment-logs.zip
+        name: local-environment-logs-initial
+        path: local-environment-logs-initial.zip
     - name: Fail the job
       if: ${{ steps.wait-pc-node.outcome == 'failure' }}
       run: exit 1
@@ -185,19 +185,19 @@ runs:
     - name: Collect and zip container logs
       if: always()
       run: |
-        mkdir -p local_environment_logs
+        mkdir -p local-environment-logs-full
         docker ps -a --format '{{.Names}}' | while read line; do
           echo "Collecting logs for container $line"
-          docker logs "$line" > "local_environment_logs/$line.log" 2>&1 || true
+          docker logs "$line" > "local-environment-logs-full/$line.log" 2>&1 || true
         done
-        zip -r local_environment_logs.zip local_environment_logs/
+        zip -r local-environment-logs-full.zip local-environment-logs-full/
       shell: bash
     - name: Upload container logs
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: local_environment_logs
-        path: local_environment_logs.zip
+        name: local-environment-logs-full
+        path: local-environment-logs-full.zip
     - name: Stop partner-chains-demo
       run: |
         cd dev/local-environment

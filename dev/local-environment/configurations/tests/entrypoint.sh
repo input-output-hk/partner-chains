@@ -21,4 +21,4 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 
-wait
+tail -f /dev/null
