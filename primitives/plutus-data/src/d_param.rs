@@ -50,17 +50,12 @@ fn decode_legacy_d_parameter_datum(datum: PlutusData) -> DecodingResult<DParamDa
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use cardano_serialization_lib::{encode_json_value_to_plutus_datum, PlutusDatumSchema};
+	use crate::test_helpers::*;
 	use pretty_assertions::assert_eq;
-	use serde_json::json;
 
 	#[test]
 	fn valid_d_param_1() {
-		let plutus_data = encode_json_value_to_plutus_datum(
-			json!({"list": [{"int": 1}, {"int": 2}]}),
-			PlutusDatumSchema::DetailedSchema,
-		)
-		.expect("test data is valid");
+		let plutus_data = test_plutus_data!({"list": [{"int": 1}, {"int": 2}]});
 
 		let expected_datum =
 			DParamDatum::V0 { num_permissioned_candidates: 1, num_registered_candidates: 2 };

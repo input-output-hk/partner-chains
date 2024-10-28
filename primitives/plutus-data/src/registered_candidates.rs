@@ -5,32 +5,32 @@ use sidechain_domain::*;
 use crate::{DataDecodingError, DecodingResult};
 
 /** Representation of the plutus type in the mainchain contract (rev 4ed2cc66c554ec8c5bec7b90ad9273e9069a1fb4)
-*
-* Note that the ECDSA secp256k1 public key is serialized in compressed format and the
-* sidechain signature does not contain the recovery bytes (it's just r an s concatenated).
-*
-* data BlockProducerRegistration = BlockProducerRegistration
-* { -- | Verification keys required by the stake ownership model
-*   -- | @since v4.0.0
-*  stakeOwnership :: StakeOwnership
-* , -- | public key in the sidechain's desired format
-*  sidechainPubKey :: LedgerBytes
-* , -- | Signature of the sidechain
-*   -- | @since v4.0.0
-*  sidechainSignature :: Signature
-* , -- | A UTxO that must be spent by the transaction
-*   -- | @since v4.0.0
-*  inputUtxo :: TxOutRef
-* , -- | Owner public key hash
-*   -- | @since v4.0.0
-*  ownPkh :: PubKeyHash
-* , -- | Sidechain authority discovery key
-*   -- | @since Unreleased
-*   auraKey :: LedgerBytes
-* , -- | Sidechain grandpa key
-*   -- | @since Unreleased
-*   grandpaKey :: LedgerBytes
-* }
+ *
+ * Note that the ECDSA secp256k1 public key is serialized in compressed format and the
+ * sidechain signature does not contain the recovery bytes (it's just r an s concatenated).
+ *
+ * data BlockProducerRegistration = BlockProducerRegistration
+ * { -- | Verification keys required by the stake ownership model
+ *   -- | @since v4.0.0
+ *  stakeOwnership :: StakeOwnership
+ * , -- | public key in the sidechain's desired format
+ *  sidechainPubKey :: LedgerBytes
+ * , -- | Signature of the sidechain
+ *   -- | @since v4.0.0
+ *  sidechainSignature :: Signature
+ * , -- | A UTxO that must be spent by the transaction
+ *   -- | @since v4.0.0
+ *  inputUtxo :: TxOutRef
+ * , -- | Owner public key hash
+ *   -- | @since v4.0.0
+ *  ownPkh :: PubKeyHash
+ * , -- | Sidechain authority discovery key
+ *   -- | @since Unreleased
+ *   auraKey :: LedgerBytes
+ * , -- | Sidechain grandpa key
+ *   -- | @since Unreleased
+ *   grandpaKey :: LedgerBytes
+ * }
  */
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RegisterValidatorDatum {
@@ -128,43 +128,39 @@ fn decode_tx_hash_datum(datum: PlutusData) -> Option<McTxHash> {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use cardano_serialization_lib::{encode_json_value_to_plutus_datum, PlutusDatumSchema};
+	use crate::test_helpers::*;
 	use hex_literal::hex;
 	use pretty_assertions::assert_eq;
-	use serde_json::json;
 
 	#[test]
 	fn valid_legacy_registration_1() {
-		let plutus_data = encode_json_value_to_plutus_datum(
-			json!({
+		let plutus_data = test_plutus_data!({
 			"constructor": 0,
 			"fields": [
-			  {
-				  "constructor": 0,
-				"fields": [
-					{ "bytes": "bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d" },
-					{ "bytes": "28d1c3b7df297a60d24a3f88bc53d7029a8af35e8dd876764fd9e7a24203a3482a98263cc8ba2ddc7dc8e7faea31c2e7bad1f00e28c43bc863503e3172dc6b0a" }
-				]
-			  },
-			  { "bytes": "02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af" },
-			  { "bytes": "f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e" },
-			  {
-				"fields": [
-				  {
+				{
 					"constructor": 0,
-					"fields": [ { "bytes": "cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"} ]
-				  },
-				  { "int": 1 }
-				],
-				"constructor": 0
-			  },
-			  { "bytes": "aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00" },
-			  { "bytes": "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d" },
-			  { "bytes": "88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee" }
+					"fields": [
+						{ "bytes": "bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d" },
+						{ "bytes": "28d1c3b7df297a60d24a3f88bc53d7029a8af35e8dd876764fd9e7a24203a3482a98263cc8ba2ddc7dc8e7faea31c2e7bad1f00e28c43bc863503e3172dc6b0a" }
+					]
+				},
+				{ "bytes": "02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af" },
+				{ "bytes": "f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e" },
+				{
+					"fields": [
+						{
+							"constructor": 0,
+							"fields": [ { "bytes": "cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"} ]
+						},
+						{ "int": 1 }
+					],
+					"constructor": 0
+				},
+				{ "bytes": "aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00" },
+				{ "bytes": "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d" },
+				{ "bytes": "88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee" }
 			]
-				}),
-			PlutusDatumSchema::DetailedSchema,
-		).expect("test data is valid");
+		});
 
 		let expected_datum = RegisterValidatorDatum::V0 {
 			stake_ownership: AdaBasedStaking {
@@ -187,36 +183,33 @@ mod tests {
 
 	#[test]
 	fn valid_legacy_registration_2() {
-		let plutus_data = encode_json_value_to_plutus_datum(
-			json!({
-    "constructor": 0,
-    "fields": [
-      {
-        "constructor": 0,
-        "fields": [
-          { "bytes": "cfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d" },
-          { "bytes": "28d1c3b7df297a60d24a3f88bc53d7029a8af35e8dd876764fd9e7a24203a3482a98263cc8ba2ddc7dc8e7faea31c2e7bad1f00e28c43bc863503e3172dc6b0a" }
-        ]
-      },
-      { "bytes": "02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af" },
-      { "bytes": "f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e" },
-      {
-        "fields": [
-          {
-            "constructor": 0,
-            "fields": [ { "bytes": "cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"} ]
-          },
-          { "int": 1 }
-        ],
-        "constructor": 0
-      },
-      { "bytes": "aa112233445566aa112233445566aa112233445566aa112233445566" },
-      { "bytes": "8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48" },
-      { "bytes": "d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69" }
-    ]
-  }),
-			PlutusDatumSchema::DetailedSchema,
-		).expect("test data is valid");
+		let plutus_data = test_plutus_data!({
+			"constructor": 0,
+			"fields": [
+				{
+					"constructor": 0,
+					"fields": [
+						{ "bytes": "cfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d" },
+						{ "bytes": "28d1c3b7df297a60d24a3f88bc53d7029a8af35e8dd876764fd9e7a24203a3482a98263cc8ba2ddc7dc8e7faea31c2e7bad1f00e28c43bc863503e3172dc6b0a" }
+					]
+				},
+				{ "bytes": "02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af" },
+				{ "bytes": "f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e" },
+				{
+					"fields": [
+						{
+							"constructor": 0,
+							"fields": [ { "bytes": "cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"} ]
+						},
+						{ "int": 1 }
+					],
+					"constructor": 0
+				},
+				{ "bytes": "aa112233445566aa112233445566aa112233445566aa112233445566" },
+				{ "bytes": "8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48" },
+				{ "bytes": "d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69" }
+			]
+		});
 
 		let expected_datum = RegisterValidatorDatum::V0 {
 			stake_ownership: AdaBasedStaking {
@@ -239,36 +232,33 @@ mod tests {
 
 	#[test]
 	fn valid_legacy_registration_3() {
-		let plutus_data = encode_json_value_to_plutus_datum(
-			json!({
-    "constructor": 0,
-    "fields": [
-      {
-        "constructor": 0,
-        "fields": [
-          { "bytes": "3fd6618bfcb8d964f44beba4280bd91c6e87ac5bca4aa1c8f1cde9e85352660b" },
-          { "bytes": "1fd2f1e5ad14c829c7359474764701cd74ab9c433c29b0bbafaa6bcf22376e9d651391d08ae6f40b418d2abf827c4c1fcb007e779a2beba7894d68012942c708" }
-        ]
-      },
-      { "bytes": "02333e47cab242fefe88d7da1caa713307290291897f100efb911672d317147f72" },
-      { "bytes": "3e8a8b29e513a08d0a66e22422a1a85d1bf409987f30a8c6fcab85ba38a85d0d27793df7e7fb63ace12203b062feb7edb5e6664ac1810b94c38182acc6167425" },
-      {
-        "fields": [
-          {
-            "constructor": 0,
-            "fields": [ { "bytes": "cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"} ]
-          },
-          { "int": 2 }
-        ],
-        "constructor": 0
-      },
-      { "bytes": "00112233445566001122334455660011223344556600112233445566" },
-      { "bytes": "8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f23333" },
-      { "bytes": "d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fad3333" }
-    ]
-  }),
-			PlutusDatumSchema::DetailedSchema,
-		).expect("test data is valid");
+		let plutus_data = test_plutus_data!({
+			"constructor": 0,
+			"fields": [
+				{
+					"constructor": 0,
+					"fields": [
+						{ "bytes": "3fd6618bfcb8d964f44beba4280bd91c6e87ac5bca4aa1c8f1cde9e85352660b" },
+						{ "bytes": "1fd2f1e5ad14c829c7359474764701cd74ab9c433c29b0bbafaa6bcf22376e9d651391d08ae6f40b418d2abf827c4c1fcb007e779a2beba7894d68012942c708" }
+					]
+				},
+				{ "bytes": "02333e47cab242fefe88d7da1caa713307290291897f100efb911672d317147f72" },
+				{ "bytes": "3e8a8b29e513a08d0a66e22422a1a85d1bf409987f30a8c6fcab85ba38a85d0d27793df7e7fb63ace12203b062feb7edb5e6664ac1810b94c38182acc6167425" },
+				{
+					"fields": [
+						{
+							"constructor": 0,
+							"fields": [ { "bytes": "cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"} ]
+						},
+						{ "int": 2 }
+					],
+					"constructor": 0
+				},
+				{ "bytes": "00112233445566001122334455660011223344556600112233445566" },
+				{ "bytes": "8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f23333" },
+				{ "bytes": "d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fad3333" }
+			]
+		});
 
 		let expected_datum = RegisterValidatorDatum::V0 {
 			stake_ownership: AdaBasedStaking {

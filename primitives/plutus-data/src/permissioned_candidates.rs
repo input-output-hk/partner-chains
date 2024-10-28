@@ -66,21 +66,16 @@ fn decode_legacy_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandi
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use cardano_serialization_lib::{encode_json_value_to_plutus_datum, PlutusDatumSchema};
+	use crate::test_helpers::*;
 	use hex_literal::hex;
 	use pretty_assertions::assert_eq;
-	use serde_json::json;
 
 	#[test]
 	fn valid_permissioned_candidates_1() {
-		let plutus_data = encode_json_value_to_plutus_datum(
-			json!({"list": [
-				{"list": [{"bytes": "bb11"}, {"bytes": "cc11"}, {"bytes": "dd11"}]},
-				{"list": [{"bytes": "bb22"}, {"bytes": "cc22"}, {"bytes": "dd22"}]}
-			]}),
-			PlutusDatumSchema::DetailedSchema,
-		)
-		.expect("test data is valid");
+		let plutus_data = test_plutus_data!({"list": [
+			{"list": [{"bytes": "bb11"}, {"bytes": "cc11"}, {"bytes": "dd11"}]},
+			{"list": [{"bytes": "bb22"}, {"bytes": "cc22"}, {"bytes": "dd22"}]}
+		]});
 
 		let expected_datum = PermissionedCandidateDatums::V0(vec![
 			PermissionedCandidateDatumV0 {
@@ -100,22 +95,18 @@ mod tests {
 
 	#[test]
 	fn valid_permissioned_candidates_2() {
-		let plutus_data = encode_json_value_to_plutus_datum(
-			json!({"list": [
-				{"list": [
-					{"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"},
-					{"bytes": "bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"},
-					{"bytes": "9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"}
-				]},
-				{"list": [
-					{"bytes": "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"},
-					{"bytes": "56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"},
-					{"bytes": "7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"}
-				]}
-			]}),
-			PlutusDatumSchema::DetailedSchema,
-		)
-		.expect("test data is valid");
+		let plutus_data = test_plutus_data!({"list": [
+			{"list": [
+				{"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"},
+				{"bytes": "bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"},
+				{"bytes": "9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"}
+			]},
+			{"list": [
+				{"bytes": "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"},
+				{"bytes": "56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"},
+				{"bytes": "7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"}
+			]}
+		]});
 
 		let expected_datum = PermissionedCandidateDatums::V0(vec![
 			PermissionedCandidateDatumV0 {

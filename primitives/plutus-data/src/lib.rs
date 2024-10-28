@@ -23,3 +23,17 @@ impl PlutusDataExtensions for cardano_serialization_lib::PlutusData {
 		u16::try_from(u32::try_from(self.as_integer()?.as_u64()?).ok()?).ok()
 	}
 }
+
+#[cfg(test)]
+pub(crate) mod test_helpers {
+	macro_rules! test_plutus_data {
+		($json:tt) => {
+			cardano_serialization_lib::encode_json_value_to_plutus_datum(
+				serde_json::json!($json),
+				cardano_serialization_lib::PlutusDatumSchema::DetailedSchema,
+			)
+			.expect("test data is valid")
+		};
+	}
+	pub(crate) use test_plutus_data;
+}
