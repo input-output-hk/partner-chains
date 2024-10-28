@@ -1,10 +1,8 @@
-use crate::candidates::{
-	AuraPublicKey, GrandpaPublicKey, MainchainSignature, McTxHash, SidechainPublicKey,
-	SidechainSignature, UtxoId, UtxoIndex,
-};
-use cardano_serialization_lib::PlutusData;
-use partner_chains_plutus_data::PlutusDataExtensions;
+use crate::PlutusDataExtensions;
+use cardano_serialization_lib::*;
 use sidechain_domain::*;
+
+use crate::{DataDecodingError, DecodingResult};
 
 /** Representation of the plutus type in the mainchain contract (rev 4ed2cc66c554ec8c5bec7b90ad9273e9069a1fb4)
 *
@@ -58,15 +56,21 @@ pub struct AdaBasedStaking {
 }
 
 impl TryFrom<PlutusData> for RegisterValidatorDatum {
-	type Error = super::Error;
+	type Error = DataDecodingError;
 
-	fn try_from(datum: PlutusData) -> super::Result<Self> {
-		decode_legacy_register_validator_datum(datum).ok_or("Invalid registration datum".into())
+	fn try_from(datum: PlutusData) -> DecodingResult<Self> {
+		decode_legacy_register_validator_datum(&datum).ok_or(DataDecodingError {
+			datum,
+			to: "RegisterValidatorDatum".to_string(),
+			msg: "Invalid Plutus data".to_string(),
+		})
 	}
 }
 
 /// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.
-pub fn decode_legacy_register_validator_datum(datum: PlutusData) -> Option<RegisterValidatorDatum> {
+pub fn decode_legacy_register_validator_datum(
+	datum: &PlutusData,
+) -> Option<RegisterValidatorDatum> {
 	let fields = datum
 		.as_constr_plutus_data()
 		.filter(|datum| datum.alternative().is_zero())

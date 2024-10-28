@@ -1,4 +1,3 @@
-use crate::candidates::datum::RegisterValidatorDatum;
 use crate::db_model::{
 	self, Address, Asset, BlockNumber, EpochNumber, MainchainTxOutput, StakePoolEntry,
 };
@@ -11,6 +10,7 @@ use datum::DParamDatum;
 use itertools::Itertools;
 use log::error;
 use partner_chains_plutus_data::permissioned_candidates::PermissionedCandidateDatums;
+use partner_chains_plutus_data::registered_candidates::RegisterValidatorDatum;
 use sidechain_domain::*;
 use sqlx::PgPool;
 use std::collections::HashMap;
