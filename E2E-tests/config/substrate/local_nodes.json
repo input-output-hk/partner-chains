@@ -8,7 +8,7 @@
         "slot_length": 1,
         "active_slots_coeff": 0.8,
         "security_param": 5,
-        "init_timestamp": 1726772040,
+        "init_timestamp": 1730141520,
         "block_stability_margin": 0
     },
     "nodes_config": {
@@ -16,10 +16,11 @@
             "alice": {
                 "host": "127.0.0.1",
                 "port": "9933",
-                "aura_ss58_address": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-                "public_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
+                "aura_ss58_address": "5D9eDKbFt4JKaEndQvMmbJYnpX9ENUj8U9UUg1AxSa64FJxE",
+                "public_key": "0x02f449bb87545fc16b9691227d2202455fa0a3c690443c2d4113ffc8b04929cf30",
                 "aura_public_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
                 "grandpa_public_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
+                "permissioned_candidate": false,
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000001"
             },
             "bob": {
