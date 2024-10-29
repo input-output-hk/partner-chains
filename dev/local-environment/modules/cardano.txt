@@ -11,14 +11,23 @@
       - ./configurations/cardano/cardano-node-1/entrypoint.sh:/entrypoint.sh
       - ./configurations/cardano/cardano-node-1/topology-pool1.json:/shared/node-1-topology.json
       - ./configurations/cardano/cardano-node-1/keys/cold.vkey:/keys/cold.vkey
+      - ./configurations/cardano/cardano-node-2/keys/cold.vkey:/keys/cardano-node-2/cold.vkey
+      - ./configurations/cardano/cardano-node-3/keys/cold.vkey:/keys/cardano-node-3/cold.vkey
       - ./configurations/cardano/cardano-node-1/keys/kes.skey:/keys/kes.skey
       - ./configurations/cardano/cardano-node-1/keys/vrf.skey:/keys/vrf.skey
+      - ./configurations/cardano/cardano-node-1/keys/owner-stake.vkey:/keys/owner-stake.vkey
+      - ./configurations/cardano/cardano-node-1/keys/owner.addr:/keys/owner.addr
+      - ./configurations/cardano/cardano-node-1/keys/owner-utxo.skey:/keys/owner-utxo.skey
       - ./configurations/cardano/cardano-node-1/keys/funded_address.skey:/keys/funded_address.skey
       - ./configurations/cardano/cardano-node-1/keys/funded_address.vkey:/keys/funded_address.vkey
       - ./configurations/cardano/cardano-node-1/keys/op.cert:/keys/node.cert
       - ./configurations/cardano/cardano-node-1/config-pool1.json:/shared/node-1-config.json.base
       - ./configurations/cardano/cardano-node-2/config-pool2.json:/shared/node-2-config.json.base
       - ./configurations/cardano/cardano-node-3/config-pool3.json:/shared/node-3-config.json.base
+      - ./configurations/cardano/cc-member-1/cc_member1_committee_hot.vkey:/keys/cc-member-1/cc_member1_committee_hot.vkey
+      - ./configurations/cardano/cc-member-2/cc_member2_committee_hot.vkey:/keys/cc-member-2/cc_member2_committee_hot.vkey
+      - ./configurations/cardano/cc-member-3/cc_member3_committee_hot.vkey:/keys/cc-member-3/cc_member3_committee_hot.vkey
+
       - ./configurations/db-sync/config.json:/shared/db-sync-config.json.base
       - ./configurations/genesis/byron/genesis.json:/shared/byron/genesis.json.base
       - ./configurations/genesis/shelley/genesis.json:/shared/shelley/genesis.json.base
