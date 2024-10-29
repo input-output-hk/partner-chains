@@ -1,4 +1,4 @@
-use crate::PlutusDataExtensions;
+use crate::{PlutusDataExtensions, VersionedDatum};
 use cardano_serialization_lib::*;
 use sidechain_domain::*;
 
@@ -59,18 +59,32 @@ impl TryFrom<PlutusData> for RegisterValidatorDatum {
 	type Error = DataDecodingError;
 
 	fn try_from(datum: PlutusData) -> DecodingResult<Self> {
-		decode_legacy_register_validator_datum(&datum).ok_or(DataDecodingError {
-			datum,
-			to: "RegisterValidatorDatum".to_string(),
-			msg: "Invalid Plutus data".to_string(),
-		})
+		Self::decode(&datum)
+	}
+}
+
+impl VersionedDatum for RegisterValidatorDatum {
+	const NAME: &str = "RegisterValidatorDatum";
+
+	fn decode_legacy(data: &PlutusData) -> Result<Self, String> {
+		decode_legacy_register_validator_datum(data).ok_or_else(|| "Invalid data".into())
+	}
+
+	fn decode_versioned(
+		version: u32,
+		_const_data: &PlutusData,
+		mut_data: &PlutusData,
+	) -> Result<Self, String> {
+		match version {
+			0 => Self::decode_legacy(mut_data)
+				.map_err(|msg| format!("Can not parse mutable part of data: {msg}")),
+			_ => Err(format!("Unknown version: {version}")),
+		}
 	}
 }
 
 /// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.
-pub fn decode_legacy_register_validator_datum(
-	datum: &PlutusData,
-) -> Option<RegisterValidatorDatum> {
+fn decode_legacy_register_validator_datum(datum: &PlutusData) -> Option<RegisterValidatorDatum> {
 	let fields = datum
 		.as_constr_plutus_data()
 		.filter(|datum| datum.alternative().is_zero())
@@ -159,6 +173,61 @@ mod tests {
 				{ "bytes": "aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00" },
 				{ "bytes": "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d" },
 				{ "bytes": "88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee" }
+			]
+		});
+
+		let expected_datum = RegisterValidatorDatum::V0 {
+			stake_ownership: AdaBasedStaking {
+				pub_key: MainchainPublicKey(hex!("bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d")),
+				signature: MainchainSignature(hex!("28d1c3b7df297a60d24a3f88bc53d7029a8af35e8dd876764fd9e7a24203a3482a98263cc8ba2ddc7dc8e7faea31c2e7bad1f00e28c43bc863503e3172dc6b0a").into()),
+			},
+			sidechain_pub_key: SidechainPublicKey(hex!("02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af").into()),
+			sidechain_signature: SidechainSignature(hex!("f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e").into()),
+			consumed_input: UtxoId {
+				tx_hash: McTxHash(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13")),
+				index: UtxoIndex(1),
+			},
+			own_pkh: MainchainAddressHash(hex!("aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00")),
+			aura_pub_key: AuraPublicKey(hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").into()),
+			grandpa_pub_key: GrandpaPublicKey(hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee").into()),
+		};
+
+		assert_eq!(RegisterValidatorDatum::try_from(plutus_data).unwrap(), expected_datum)
+	}
+
+	#[test]
+	fn valid_v0_registration() {
+		let plutus_data = test_plutus_data!({
+			"list": [
+				{ "constructor": 0, "fields": [ { "bytes": "aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00" } ] },
+				{
+					"constructor": 0,
+					"fields": [
+						{
+							"constructor": 0,
+							"fields": [
+								{ "bytes": "bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d" },
+								{ "bytes": "28d1c3b7df297a60d24a3f88bc53d7029a8af35e8dd876764fd9e7a24203a3482a98263cc8ba2ddc7dc8e7faea31c2e7bad1f00e28c43bc863503e3172dc6b0a" }
+							]
+						},
+						{ "bytes": "02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af" },
+						{ "bytes": "f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e" },
+						{
+							"fields": [
+								{
+									"constructor": 0,
+									"fields": [ { "bytes": "cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"} ]
+								},
+								{ "int": 1 }
+							],
+							"constructor": 0
+						},
+						{ "bytes": "aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00" },
+						{ "bytes": "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d" },
+						{ "bytes": "88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee" }
+					]
+				},
+				{ "int": 0 }
 			]
 		});
 

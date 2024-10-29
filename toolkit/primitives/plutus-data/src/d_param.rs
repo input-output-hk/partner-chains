@@ -1,4 +1,4 @@
-use crate::{DataDecodingError, DecodingResult, PlutusDataExtensions};
+use crate::{DataDecodingError, DecodingResult, PlutusDataExtensions, VersionedDatum};
 use cardano_serialization_lib::{PlutusData, PlutusList};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -10,7 +10,7 @@ pub enum DParamDatum {
 impl TryFrom<PlutusData> for DParamDatum {
 	type Error = DataDecodingError;
 	fn try_from(datum: PlutusData) -> DecodingResult<Self> {
-		decode_legacy_d_parameter_datum(datum)
+		Self::decode(&datum)
 	}
 }
 
@@ -31,27 +31,35 @@ pub fn d_parameter_to_plutus_data(d_param: &sidechain_domain::DParameter) -> Plu
 	PlutusData::new_list(&list)
 }
 
-/// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.
-fn decode_legacy_d_parameter_datum(datum: PlutusData) -> DecodingResult<DParamDatum> {
-	let d_parameter = datum
-		.as_list()
-		.filter(|datum| datum.len() == 2)
-		.and_then(|items| {
-			Some(DParamDatum::V0 {
-				num_permissioned_candidates: items.get(0).as_u16()?,
-				num_registered_candidates: items.get(1).as_u16()?,
-			})
-		})
-		.ok_or_else(|| {
-			log::error!("Could not decode {:?} to DParameter. Expected [u16, u16].", datum.clone());
-			DataDecodingError {
-				datum: datum.clone(),
-				to: "DParameter".to_string(),
-				msg: "Expected [u16, u16]".to_string(),
-			}
-		})?;
+impl VersionedDatum for DParamDatum {
+	const NAME: &str = "DParamDatum";
 
-	Ok(d_parameter)
+	fn decode_legacy(data: &PlutusData) -> Result<Self, String> {
+		let d_parameter = data
+			.as_list()
+			.filter(|datum| datum.len() == 2)
+			.and_then(|items| {
+				Some(DParamDatum::V0 {
+					num_permissioned_candidates: items.get(0).as_u16()?,
+					num_registered_candidates: items.get(1).as_u16()?,
+				})
+			})
+			.ok_or_else(|| "Expected [u16, u16]")?;
+
+		Ok(d_parameter)
+	}
+
+	fn decode_versioned(
+		version: u32,
+		_const_data: &PlutusData,
+		mut_data: &PlutusData,
+	) -> Result<Self, String> {
+		match version {
+			0 => DParamDatum::decode_legacy(mut_data)
+				.map_err(|msg| format!("Can not parse mutable part of data: {msg}")),
+			_ => Err(format!("Unknown version: {version}")),
+		}
+	}
 }
 
 #[cfg(test)]
@@ -61,7 +69,7 @@ mod tests {
 	use pretty_assertions::assert_eq;
 
 	#[test]
-	fn valid_d_param_1() {
+	fn valid_legacy_d_param() {
 		let plutus_data = test_plutus_data!({"list": [{"int": 1}, {"int": 2}]});
 
 		let expected_datum =
@@ -80,5 +88,23 @@ mod tests {
 		let expected_plutus_data = test_plutus_data!({"list": [{"int": 1}, {"int": 2}]});
 
 		assert_eq!(d_parameter_to_plutus_data(&d_param), expected_plutus_data)
+	}
+	#[test]
+	fn valid_v0_d_param() {
+		let plutus_data = test_plutus_data!({
+			"list": [
+				{ "constructor": 0, "fields": [] },
+				{ "list": [
+					{ "int": 17 },
+					{ "int": 42 }
+				] },
+				{ "int": 0 }
+			]
+		});
+
+		let expected_datum =
+			DParamDatum::V0 { num_permissioned_candidates: 17, num_registered_candidates: 42 };
+
+		assert_eq!(DParamDatum::try_from(plutus_data).unwrap(), expected_datum)
 	}
 }
