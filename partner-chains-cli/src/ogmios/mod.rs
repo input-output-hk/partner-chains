@@ -16,7 +16,6 @@ pub enum OgmiosResponse {
 	QueryLedgerStateEraSummaries(Vec<EraSummary>),
 	QueryNetworkShelleyGenesis(ShelleyGenesisConfiguration),
 	QueryUtxo(Vec<OgmiosUtxo>),
-	Error(String),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

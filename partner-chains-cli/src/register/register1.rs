@@ -436,7 +436,7 @@ mod tests {
     							address: "addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy"
     								.into(),
     						},
-    						OgmiosResponse::Error("Failed!".into()),
+    						Err(anyhow!("Ogmios request failed!")),
     					),
 					]
 				]
@@ -447,10 +447,7 @@ mod tests {
 
 		let result = Register1Cmd {}.run(&mock_context);
 		assert!(result.is_err());
-		assert_eq!(
-			result.unwrap_err().to_string(),
-			"Unexpected response from Ogmios when quering for utxos: Error(\"Failed!\")".to_owned()
-		);
+		assert_eq!(result.unwrap_err().to_string(), "Ogmios request failed!".to_owned());
 	}
 
 	#[test]
@@ -708,7 +705,7 @@ mod tests {
 					address: "addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy"
 						.into(),
 				},
-				OgmiosResponse::QueryUtxo(mock_result_5_valid()),
+				Ok(OgmiosResponse::QueryUtxo(mock_result_5_valid())),
 			),
 		]
 	}
