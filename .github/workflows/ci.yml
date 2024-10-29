@@ -95,6 +95,35 @@ jobs:
           ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
           ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
           TEST_ENVIRONMENT: local
+  
+  local-environment-tests-alert:
+    needs: local-environment-tests
+    if: always() && needs.local-environment-tests.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout pc-tests master
+        uses: actions/checkout@v4
+        with:
+          repository: input-output-hk/sidechains-tests
+          token: ${{ secrets.ACTIONS_PAT }}
+          ref: master
+      - name: Download test report
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+      - name: Report to slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          repository: ${{ github.repository }}
+          slack_ref_name: ${{ github.ref_name }}
+          job_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          github_actor_username: ${{ github.actor }}
+          env: local-pre-merge
+        run: |
+          ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
+        shell: bash
+
 
   deploy-argocd:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
@@ -264,6 +293,34 @@ jobs:
           ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
           ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
           TEST_ENVIRONMENT: local
+
+  local-environment-tests-post-merge-alert:
+    needs: local-environment-tests-post-merge
+    if: always() && needs.local-environment-tests-post-merge.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout pc-tests master
+        uses: actions/checkout@v4
+        with:
+          repository: input-output-hk/sidechains-tests
+          token: ${{ secrets.ACTIONS_PAT }}
+          ref: master
+      - name: Download test report
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+      - name: Report to slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          repository: ${{ github.repository }}
+          slack_ref_name: ${{ github.ref_name }}
+          job_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          github_actor_username: ${{ github.actor }}
+          env: local-post-merge
+        run: |
+          ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
+        shell: bash
 
   post-merge-actions-complete:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
