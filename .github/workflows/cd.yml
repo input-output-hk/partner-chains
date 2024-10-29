@@ -315,7 +315,7 @@ jobs:
       contents: read
     needs: [partner-chain-ready, wait-for-n1-epoch]
     runs-on: eks
-    timeout-minutes: 1440
+    timeout-minutes: 1450
     steps:
       - name: Checkout
         uses: actions/checkout@v4
