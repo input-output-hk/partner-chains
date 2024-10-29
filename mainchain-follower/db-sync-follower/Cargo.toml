@@ -33,6 +33,7 @@ sidechain-mc-hash = { workspace = true, optional = true }
 pallet-sidechain-rpc = { workspace = true, optional = true }
 authority-selection-inherents = { workspace = true, features = ["std"], optional = true }
 cardano-serialization-lib = { workspace = true }
+partner-chains-plutus-data = { workspace = true }
 
 [dev-dependencies]
 tokio-test = "0.4.3"
