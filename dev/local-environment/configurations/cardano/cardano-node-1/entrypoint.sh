@@ -34,9 +34,9 @@ cp /shared/shelley/genesis.alonzo.json.base /shared/shelley/genesis.alonzo.json
 echo "Created /shared/conway/genesis.conway.json and /shared/shelley/genesis.alonzo.json"
 
 byron_hash=$(/bin/cardano-cli byron genesis print-genesis-hash --genesis-json /shared/byron/genesis.json)
-shelley_hash=$(/bin/cardano-cli genesis hash --genesis /shared/shelley/genesis.json)
-alonzo_hash=$(/bin/cardano-cli genesis hash --genesis /shared/shelley/genesis.alonzo.json)
-conway_hash=$(/bin/cardano-cli genesis hash --genesis /shared/conway/genesis.conway.json)
+shelley_hash=$(/bin/cardano-cli latest genesis hash --genesis /shared/shelley/genesis.json)
+alonzo_hash=$(/bin/cardano-cli latest genesis hash --genesis /shared/shelley/genesis.alonzo.json)
+conway_hash=$(/bin/cardano-cli latest genesis hash --genesis /shared/conway/genesis.conway.json)
 
 /busybox sed "s/\"ByronGenesisHash\": \"[^\"]*\"/\"ByronGenesisHash\": \"$byron_hash\"/" /shared/node-1-config.json.base > /shared/node-1-config.json.base.byron
 /busybox sed "s/\"ByronGenesisHash\": \"[^\"]*\"/\"ByronGenesisHash\": \"$byron_hash\"/" /shared/node-2-config.json.base > /shared/node-2-config.json.base.byron
@@ -99,7 +99,7 @@ done
 
 echo "Generating new address and funding it with 2 UTXOs from the genesis address"
 
-new_address=$(cardano-cli address build \
+new_address=$(cardano-cli latest address build \
   --payment-verification-key-file /keys/funded_address.vkey \
   --testnet-magic 42)
 
@@ -127,7 +127,7 @@ fee=1000000
 change=$((tx_in_amount - total_output - fee))
 
 # Build the raw transaction
-cardano-cli transaction build-raw \
+cardano-cli latest transaction build-raw \
   --tx-in $tx_in1 \
   --tx-out "$new_address+$tx_out1" \
   --tx-out "$new_address+$tx_out2" \
@@ -138,7 +138,7 @@ cardano-cli transaction build-raw \
   --out-file /data/tx.raw
 
 # Sign the transaction
-cardano-cli transaction sign \
+cardano-cli latest transaction sign \
   --tx-body-file /data/tx.raw \
   --signing-key-file /shared/shelley/genesis-utxo.skey \
   --testnet-magic 42 \
@@ -150,7 +150,7 @@ echo "Transaction prepared, waiting 20 seconds for other nodes to start..."
 sleep 20
 
 echo "Submitting transaction..."
-cardano-cli transaction submit \
+cardano-cli latest transaction submit \
   --tx-file /data/tx.signed \
   --testnet-magic 42
 
@@ -160,17 +160,17 @@ echo "Balance:"
 
 # Query UTXOs at new_address, dave_address, and eve_address
 echo "Querying UTXO for new_address:"
-cardano-cli query utxo \
+cardano-cli latest query utxo \
   --testnet-magic 42 \
   --address $new_address
 
 echo "Querying UTXO for Dave address:"
-cardano-cli query utxo \
+cardano-cli latest query utxo \
   --testnet-magic 42 \
   --address $dave_address
 
 echo "Querying UTXO for Eve address:"
-cardano-cli query utxo \
+cardano-cli latest query utxo \
   --testnet-magic 42 \
   --address $eve_address
 
@@ -179,12 +179,12 @@ echo $new_address > /shared/FUNDED_ADDRESS
 echo "Created /shared/FUNDED_ADDRESS with value: $new_address"
 
 echo "Querying and saving the first UTXO details for Dave address to /shared/dave.utxo:"
-cardano-cli query utxo --testnet-magic 42 --address "${dave_address}" | /busybox awk 'NR>2 { print $1 "#" $2; exit }' > /shared/dave.utxo
+cardano-cli latest query utxo --testnet-magic 42 --address "${dave_address}" | /busybox awk 'NR>2 { print $1 "#" $2; exit }' > /shared/dave.utxo
 echo "UTXO details for Dave saved in /shared/dave.utxo."
 cat /shared/dave.utxo
 
 echo "Querying and saving the first UTXO details for Eve address to /shared/eve.utxo:"
-cardano-cli query utxo --testnet-magic 42 --address "${eve_address}" | /busybox awk 'NR>2 { print $1 "#" $2; exit }' > /shared/eve.utxo
+cardano-cli latest query utxo --testnet-magic 42 --address "${eve_address}" | /busybox awk 'NR>2 { print $1 "#" $2; exit }' > /shared/eve.utxo
 echo "UTXO details for Eve saved in /shared/eve.utxo."
 cat /shared/eve.utxo
 
