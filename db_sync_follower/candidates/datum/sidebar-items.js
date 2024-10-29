@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["DParamDatum","PermissionedCandidateDatums","RegisterValidatorDatum"],"fn":["decode_legacy_register_validator_datum"],"struct":["AdaBasedStaking"]};
+window.SIDEBAR_ITEMS = {"fn":["raw_permissioned_candidate_data_from","raw_permissioned_candidate_data_vec_from"]};

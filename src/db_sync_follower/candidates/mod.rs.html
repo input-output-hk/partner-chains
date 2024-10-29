@@ -286,17 +286,25 @@
 <a href="#286" id="286">286</a>
 <a href="#287" id="287">287</a>
 <a href="#288" id="288">288</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::candidates::datum::RegisterValidatorDatum;
-<span class="kw">use </span><span class="kw">crate</span>::db_model::{
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::db_model::{
 	<span class="self">self</span>, Address, Asset, BlockNumber, EpochNumber, MainchainTxOutput, StakePoolEntry,
 };
 <span class="kw">use </span><span class="kw">crate</span>::metrics::McFollowerMetrics;
 <span class="kw">use </span><span class="kw">crate</span>::observed_async_trait;
 <span class="kw">use </span><span class="kw">crate</span>::DataSourceError::<span class="kw-2">*</span>;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::<span class="kw-2">*</span>;
-<span class="kw">use </span>datum::{DParamDatum, PermissionedCandidateDatums};
+<span class="kw">use </span>datum::raw_permissioned_candidate_data_vec_from;
 <span class="kw">use </span>itertools::Itertools;
 <span class="kw">use </span>log::error;
+<span class="kw">use </span>partner_chains_plutus_data::{
+	d_param::DParamDatum, permissioned_candidates::PermissionedCandidateDatums,
+	registered_candidates::RegisterValidatorDatum,
+};
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 <span class="kw">use </span>sqlx::PgPool;
 <span class="kw">use </span>std::collections::HashMap;
@@ -369,7 +377,9 @@
 			.map(|d| d.<span class="number">0</span>)
 			.ok_or(ExpectedDataNotFound(<span class="string">"Permissioned Candidates List Datum"</span>.to_string()))<span class="question-mark">?</span>;
 
-		<span class="kw">let </span>permissioned_candidates = PermissionedCandidateDatums::try_from(candidates_datum)<span class="question-mark">?</span>.into();
+		<span class="kw">let </span>permissioned_candidates = raw_permissioned_candidate_data_vec_from(
+			PermissionedCandidateDatums::try_from(candidates_datum)<span class="question-mark">?
+		</span>);
 
 		<span class="prelude-val">Ok</span>(AriadneParameters { d_parameter, permissioned_candidates })
 	}

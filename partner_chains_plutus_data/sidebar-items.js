@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["d_param","permissioned_candidates","registered_candidates"],"struct":["DataDecodingError"],"trait":["PlutusDataExtensions"]};

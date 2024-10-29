@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["RegisterValidatorDatum"],"fn":["decode_legacy_register_validator_datum"],"struct":["AdaBasedStaking"]};

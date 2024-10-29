@@ -3,7 +3,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["byte_string_derive",["",[],["lib.rs"]]],\
 ["chain_params",["",[],["lib.rs"]]],\
 ["cli_commands",["",[],["key_params.rs","lib.rs","output.rs","pc_contracts_cli_params.rs","registration_signatures.rs","signing.rs"]]],\
-["db_sync_follower",["",[["block",[],["mod.rs"]],["candidates",[["datum",[],["d_param.rs","mod.rs","permissioned.rs","registered.rs"]]],["cached.rs","mod.rs"]],["mc_hash",[],["mod.rs"]],["native_token",[],["mod.rs"]],["sidechain_rpc",[],["mod.rs"]]],["data_sources.rs","db_datum.rs","db_model.rs","lib.rs","metrics.rs"]]],\
+["db_sync_follower",["",[["block",[],["mod.rs"]],["candidates",[],["cached.rs","datum.rs","mod.rs"]],["mc_hash",[],["mod.rs"]],["native_token",[],["mod.rs"]],["sidechain_rpc",[],["mod.rs"]]],["data_sources.rs","db_datum.rs","db_model.rs","lib.rs","metrics.rs"]]],\
 ["main_chain_follower_cli",["",[],["main.rs"]]],\
 ["main_chain_follower_mock",["",[],["block.rs","candidate.rs","lib.rs","mc_hash.rs","native_token.rs","sidechain_rpc.rs"]]],\
 ["mock_types",["",[],["lib.rs","session_keys.rs"]]],\
@@ -21,6 +21,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["partner_chains_cli",["",[["create_chain_spec",[],["mod.rs"]],["deregister",[],["mod.rs"]],["generate_keys",[],["mod.rs"]],["ogmios",[],["mod.rs"]],["prepare_configuration",[],["mod.rs","prepare_cardano_params.rs","prepare_chain_params.rs","prepare_main_chain_config.rs"]],["register",[],["mod.rs","register1.rs","register2.rs","register3.rs"]],["setup_main_chain_state",[],["mod.rs"]],["start_node",[],["mod.rs"]]],["cardano_cli.rs","config.rs","io.rs","keystore.rs","main.rs","main_chain_follower.rs","pc_contracts_cli_resources.rs","permissioned_candidates.rs","smart_contracts.rs"]]],\
 ["partner_chains_node",["",[],["chain_spec.rs","inherent_data.rs","lib.rs","main_chain_follower.rs","rpc.rs","service.rs","staging.rs","template_chain_spec.rs","testnet.rs"]]],\
 ["partner_chains_node_commands",["",[],["lib.rs"]]],\
+["partner_chains_plutus_data",["",[],["d_param.rs","lib.rs","permissioned_candidates.rs","registered_candidates.rs"]]],\
 ["plutus",["",[],["cbor.rs","lib.rs"]]],\
 ["plutus_datum_derive",["",[],["lib.rs"]]],\
 ["sc_partner_chains_consensus_aura",["",[],["import_queue.rs","lib.rs"]]],\
