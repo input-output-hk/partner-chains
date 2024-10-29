@@ -42,15 +42,6 @@ runs:
       with:
         name: partner-chains-node-artifact
         path: dev/local-environment/configurations/pc-contracts-cli/overrides/
-    - name: Deploy local environment with overrides
-      run: |
-        mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli
-        mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node
-        cd dev/local-environment
-        bash setup.sh --non-interactive --overrides --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ inputs.image }}
-        docker compose up -d
-        cd ../../
-      shell: bash
     - name: checkout pc-tests ref_name branch
       id: pc-tests
       uses: actions/checkout@v4
@@ -59,7 +50,7 @@ runs:
         repository: input-output-hk/sidechains-tests
         token: ${{ env.ACTIONS_PAT }}
         ref: ${{ github.head_ref || github.ref_name }}
-        path: e2e-tests
+        path: dev/local-environment/configurations/tests/e2e-tests
     - name: checkout pc-tests master (fallback)
       if: steps.pc-tests.outcome == 'failure'
       uses: actions/checkout@v4
@@ -67,21 +58,15 @@ runs:
         repository: input-output-hk/sidechains-tests
         token: ${{ env.ACTIONS_PAT }}
         ref: master
-        path: e2e-tests
-    - name: Setup python and dependencies
+        path: dev/local-environment/configurations/tests/e2e-tests
+    - name: Deploy local environment with overrides
       run: |
-        cd e2e-tests
-        sudo apt update
-        sudo apt install -y software-properties-common
-        sudo add-apt-repository ppa:deadsnakes/ppa
-        sudo apt update
-        sudo apt install -y python3.10 python3.10-venv python3.10-dev
-        sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
-        curl -L --silent https://github.com/getsops/sops/releases/download/v3.7.3/sops_3.7.3_amd64.deb > sops.deb && sudo dpkg -i sops.deb && rm sops.deb
-        python -m venv venv
-        source venv/bin/activate
-        pip install -r requirements.txt
-        cd ..
+        mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli
+        mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node
+        cd dev/local-environment
+        bash setup.sh --non-interactive --overrides --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ inputs.image }} --tests
+        docker compose up -d
+        cd ../../
       shell: bash
     - name: Wait for partner-chains-node-1 to start
       id: wait-pc-node
@@ -122,18 +107,18 @@ runs:
       shell: bash
     - name: Collect and zip Docker logs
       run: |
-        mkdir -p local-environment-logs
+        mkdir -p local-environment-logs-initial
         docker ps -a --format '{{.Names}}' | while read line; do
           echo "Collecting logs for container $line"
-          docker logs "$line" > "local-environment-logs/$line.log" 2>&1 || true
+          docker logs "$line" > "local-environment-logs-initial/$line.log" 2>&1 || true
         done
-        zip -r local-environment-logs.zip local-environment-logs/
+        zip -r local-environment-logs-initial.zip local-environment-logs-initial/
       shell: bash
     - name: Upload Docker logs artifact
       uses: actions/upload-artifact@v4
       with:
-        name: local-environment-logs
-        path: local-environment-logs.zip
+        name: local-environment-logs-initial
+        path: local-environment-logs-initial.zip
     - name: Fail the job
       if: ${{ steps.wait-pc-node.outcome == 'failure' }}
       run: exit 1
@@ -144,6 +129,7 @@ runs:
         env: ${{ env.TEST_ENVIRONMENT }}
         keyword: "test_get_status or test_get_params"
         blockchain: substrate
+        local-environment: "true"
     - name: Wait for epoch 2
       uses: ./.github/actions/tests/wait-for-epoch
       with:
@@ -162,6 +148,7 @@ runs:
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
         markers: "not active_flow and not passive_flow and not probability and not rpc"
+        local-environment: "true"
     - name: Wait for epoch 3
       if: ${{ inputs.tests == 'postmerge' }}
       uses: ./.github/actions/tests/wait-for-epoch
@@ -177,6 +164,7 @@ runs:
         env: ${{ env.TEST_ENVIRONMENT }}
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
+        local-environment: "true"
     - name: Wait for epoch 4
       if: ${{ inputs.tests == 'postmerge' }}
       uses: ./.github/actions/tests/wait-for-epoch
@@ -193,6 +181,7 @@ runs:
         mc_epoch: 3
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
+        local-environment: "true"
     - name: Check if no skipped tests
       if: ${{ inputs.tests == 'postmerge' }}
       run: |
@@ -205,19 +194,19 @@ runs:
     - name: Collect and zip container logs
       if: always()
       run: |
-        mkdir -p local_environment_logs
+        mkdir -p local-environment-logs-full
         docker ps -a --format '{{.Names}}' | while read line; do
           echo "Collecting logs for container $line"
-          docker logs "$line" > "local_environment_logs/$line.log" 2>&1 || true
+          docker logs "$line" > "local-environment-logs-full/$line.log" 2>&1 || true
         done
-        zip -r local_environment_logs.zip local_environment_logs/
+        zip -r local-environment-logs-full.zip local-environment-logs-full/
       shell: bash
     - name: Upload container logs
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: local_environment_logs
-        path: local_environment_logs.zip
+        name: local-environment-logs-full
+        path: local-environment-logs-full.zip
     - name: Stop partner-chains-demo
       run: |
         cd dev/local-environment
