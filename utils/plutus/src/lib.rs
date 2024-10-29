@@ -72,6 +72,12 @@ where
 	}
 }
 
+impl ToDatum for Datum {
+	fn to_datum(&self) -> Datum {
+		self.clone()
+	}
+}
+
 impl Datum {
 	fn integer<T>(value: T) -> Datum
 	where

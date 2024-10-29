@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 use anyhow::anyhow;
-use pallas_primitives::conway::PlutusData;
 use plutus::ToDatum;
 use uplc::ast::{DeBruijn, Program};
 use uplc::plutus_data;
@@ -10,31 +9,56 @@ use uplc::plutus_data;
 /// Currently there is no other known option to apply parameters to plutus script in Rust.
 ///
 /// Parameters:
-/// * `params` - parameters to apply to the script
+/// * `param` - single PlutusData parameter to apply to the script
 /// * `plutus_script_raw` - raw plutus script in CBOR format, like in `RawScripts.purs` in smart-contracts repository
-pub(crate) fn apply_params_to_script<T: ToDatum>(
-	params: &T,
+pub fn apply_params_to_script<T: ToDatum>(
+	param: &T,
 	plutus_script_raw: &[u8],
 ) -> Result<Vec<u8>, anyhow::Error> {
-	let params: uplc::PlutusData =
-		plutus_data(&minicbor::to_vec(params.to_datum()).expect("to_vec is Infallible"))
-			.expect("trasformation from PC Datum to pallas PlutusData can't fail");
+	let param = datum_to_uplc_plutus_data(param);
+	apply_uplc_params_to_script(&[&param], plutus_script_raw)
+}
 
+/// Parameters:
+/// * `params` - list of PlutusData parameters to apply to the script, not necessarily the "partner-chain params"
+/// * `plutus_script_raw` - raw plutus script in CBOR format, like in `RawScripts.purs` in smart-contracts repository
+pub fn apply_uplc_params_to_script(
+	params: &[&uplc::PlutusData],
+	plutus_script_raw: &[u8],
+) -> Result<Vec<u8>, anyhow::Error> {
 	// RawScripts.purs in smart-contracts have a single layer of CBOR wrapping, so we have to unwrap it.
 	let plutus_script = unwrap_one_layer_of_cbor(plutus_script_raw)?;
 
 	let mut buffer = Vec::new();
-	Program::<DeBruijn>::from_cbor(&plutus_script, &mut buffer)
-		.map_err(|e| anyhow!(e.to_string()))?
-		.apply_data(params)
+	let mut program = Program::<DeBruijn>::from_cbor(&plutus_script, &mut buffer)
+		.map_err(|e| anyhow!(e.to_string()))?;
+	for param in params {
+		program = program.apply_data((*param).clone());
+	}
+	program
 		.to_cbor()
 		.map_err(|_| anyhow!("Couldn't encode resulting script as CBOR."))
 }
 
-fn unwrap_one_layer_of_cbor(plutus_script_raw: &[u8]) -> Result<Vec<u8>, anyhow::Error> {
-	let plutus_script_bytes: PlutusData = minicbor::decode(plutus_script_raw)?;
+pub fn datum_to_uplc_plutus_data<T: ToDatum>(datum: &T) -> uplc::PlutusData {
+	plutus_data(&minicbor::to_vec(datum.to_datum()).expect("to_vec is Infallible"))
+		.expect("trasformation from PC Datum to pallas PlutusData can't fail")
+}
+
+/// Map from `cardano_serialization_lib::PlutusData` to `uplc::PlutusData` via CBOR bytes.
+pub fn csl_plutus_data_to_uplc(
+	d: &cardano_serialization_lib::PlutusData,
+) -> anyhow::Result<uplc::PlutusData> {
+	let mut se = cbor_event::se::Serializer::new_vec();
+	cbor_event::se::Serialize::serialize(d, &mut se).map_err(|e| anyhow!(e))?;
+	let bytes = se.finalize();
+	minicbor::decode(&bytes).map_err(|e| anyhow!(e.to_string()))
+}
+
+pub(crate) fn unwrap_one_layer_of_cbor(plutus_script_raw: &[u8]) -> Result<Vec<u8>, anyhow::Error> {
+	let plutus_script_bytes: uplc::PlutusData = minicbor::decode(plutus_script_raw)?;
 	let plutus_script_bytes = match plutus_script_bytes {
-		PlutusData::BoundedBytes(bb) => Ok(bb),
+		uplc::PlutusData::BoundedBytes(bb) => Ok(bb),
 		_ => Err(anyhow!("expected validator raw to be BoundedBytes")),
 	}?;
 	Ok(plutus_script_bytes.into())
