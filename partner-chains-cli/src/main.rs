@@ -1,4 +1,4 @@
-mod cardano_cli;
+pub(crate) mod cardano_key;
 pub mod config;
 pub mod create_chain_spec;
 mod deregister;

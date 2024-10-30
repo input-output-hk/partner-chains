@@ -275,6 +275,15 @@ impl CardanoNetwork {
 	}
 }
 
+impl From<CardanoNetwork> for cardano_serialization_lib::NetworkIdKind {
+	fn from(network: CardanoNetwork) -> cardano_serialization_lib::NetworkIdKind {
+		match network {
+			CardanoNetwork(0) => cardano_serialization_lib::NetworkIdKind::Mainnet,
+			_ => cardano_serialization_lib::NetworkIdKind::Testnet,
+		}
+	}
+}
+
 impl std::fmt::Display for CardanoNetwork {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		match self {
@@ -452,23 +461,6 @@ pub mod config_fields {
 		default: Some(NODE_EXECUTABLE_DEFAULT),
 		_marker: PhantomData,
 	};
-
-	pub const CARDANO_CLI: ConfigFieldDefinition<'static, String> = ConfigFieldDefinition {
-		config_file: RESOURCES_CONFIG_FILE_PATH,
-		path: &["cardano_cli"],
-		name: "cardano cli executable",
-		default: Some("cardano-cli"),
-		_marker: PhantomData,
-	};
-
-	pub const CARDANO_NODE_SOCKET_PATH: ConfigFieldDefinition<'static, String> =
-		ConfigFieldDefinition {
-			config_file: RESOURCES_CONFIG_FILE_PATH,
-			path: &["cardano_node_socket_path"],
-			name: "path to the cardano node socket file",
-			default: Some("node.socket"),
-			_marker: PhantomData,
-		};
 
 	pub const CARDANO_PAYMENT_VERIFICATION_KEY_FILE: ConfigFieldDefinition<'static, String> =
 		ConfigFieldDefinition {
@@ -731,7 +723,8 @@ pub mod config_values {
 
 #[cfg(test)]
 mod tests {
-	use crate::config::config_fields::GOVERNANCE_AUTHORITY;
+	use crate::config::{config_fields::GOVERNANCE_AUTHORITY, CardanoNetwork};
+	use cardano_serialization_lib::NetworkIdKind;
 	use sidechain_domain::MainchainAddressHash;
 
 	#[test]
@@ -754,5 +747,13 @@ mod tests {
 				"000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"
 			))
 		);
+	}
+
+	#[test]
+	fn test_from_network_id() {
+		assert_eq!(NetworkIdKind::from(CardanoNetwork(0)), NetworkIdKind::Mainnet);
+		assert_eq!(NetworkIdKind::from(CardanoNetwork(1)), NetworkIdKind::Testnet);
+		assert_eq!(NetworkIdKind::from(CardanoNetwork(2)), NetworkIdKind::Testnet);
+		assert_eq!(NetworkIdKind::from(CardanoNetwork(42)), NetworkIdKind::Testnet);
 	}
 }

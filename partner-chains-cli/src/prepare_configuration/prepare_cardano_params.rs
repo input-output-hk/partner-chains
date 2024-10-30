@@ -138,12 +138,12 @@ pub mod tests {
 				MockIO::ogmios_request(
 					"https://ogmios.com:7654",
 					OgmiosRequest::QueryLedgerStateEraSummaries,
-					OgmiosResponse::QueryLedgerStateEraSummaries(eras_summaries),
+					Ok(OgmiosResponse::QueryLedgerStateEraSummaries(eras_summaries)),
 				),
 				MockIO::ogmios_request(
 					"https://ogmios.com:7654",
 					OgmiosRequest::QueryNetworkShelleyGenesis,
-					OgmiosResponse::QueryNetworkShelleyGenesis(shelley_config),
+					Ok(OgmiosResponse::QueryNetworkShelleyGenesis(shelley_config)),
 				),
 			]);
 		let result = prepare_cardano_params(&ogmios_config, &mock_context);

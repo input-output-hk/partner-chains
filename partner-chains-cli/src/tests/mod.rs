@@ -31,7 +31,7 @@ pub enum MockIO {
 	SystemTimeNow(Timestamp),
 	Group(Vec<MockIO>),
 	WithFileLocation(&'static str, u32, Box<MockIO>),
-	OgmiosRPC { addr: &'static str, req: OgmiosRequest, res: OgmiosResponse },
+	OgmiosRPC { addr: &'static str, req: OgmiosRequest, res: anyhow::Result<OgmiosResponse> },
 }
 
 impl MockIO {
@@ -146,7 +146,11 @@ impl MockIO {
 	}
 
 	#[track_caller]
-	pub fn ogmios_request(addr: &'static str, req: OgmiosRequest, res: OgmiosResponse) -> Self {
+	pub fn ogmios_request(
+		addr: &'static str,
+		req: OgmiosRequest,
+		res: anyhow::Result<OgmiosResponse>,
+	) -> Self {
 		Self::OgmiosRPC { addr, req, res }
 	}
 
@@ -451,7 +455,7 @@ impl IOContext for MockIOContext {
 			MockIO::OgmiosRPC { addr: expected_addr, req: expected_req, res } => {
 				assert_eq!(addr, expected_addr, "Unexpected Ogmios RPC address");
 				assert_eq!(req, expected_req, "Unexpected Ogmios RPC request");
-				Ok(res)
+				res
 			},
 			other => panic!("Unexpected Ogmios RPC request, expected: {other:?}"),
 		})

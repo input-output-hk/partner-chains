@@ -304,12 +304,12 @@ mod tests {
 				MockIO::ogmios_request(
 					"http://localhost:1337",
 					OgmiosRequest::QueryLedgerStateEraSummaries,
-					OgmiosResponse::QueryLedgerStateEraSummaries(preprod_eras_summaries()),
+					Ok(OgmiosResponse::QueryLedgerStateEraSummaries(preprod_eras_summaries())),
 				),
 				MockIO::ogmios_request(
 					"http://localhost:1337",
 					OgmiosRequest::QueryNetworkShelleyGenesis,
-					OgmiosResponse::QueryNetworkShelleyGenesis(preprod_shelley_config()),
+					Ok(OgmiosResponse::QueryNetworkShelleyGenesis(preprod_shelley_config())),
 				),
 				scenarios::save_cardano_params(),
 				MockIO::new_tmp_file(DUMMY_SKEY),
@@ -371,12 +371,12 @@ mod tests {
 				MockIO::ogmios_request(
 					"http://localhost:1337",
 					OgmiosRequest::QueryLedgerStateEraSummaries,
-					OgmiosResponse::QueryLedgerStateEraSummaries(preprod_eras_summaries()),
+					Ok(OgmiosResponse::QueryLedgerStateEraSummaries(preprod_eras_summaries())),
 				),
 				MockIO::ogmios_request(
 					"http://localhost:1337",
 					OgmiosRequest::QueryNetworkShelleyGenesis,
-					OgmiosResponse::QueryNetworkShelleyGenesis(preprod_shelley_config()),
+					Ok(OgmiosResponse::QueryNetworkShelleyGenesis(preprod_shelley_config())),
 				),
 				scenarios::save_cardano_params(),
 				MockIO::new_tmp_file(DUMMY_SKEY),

@@ -1,17 +1,21 @@
 use anyhow::anyhow;
 use jsonrpsee::http_client::HttpClient;
-use ogmios_client::{query_ledger_state::QueryLedgerState, query_network::QueryNetwork};
+use ogmios_client::{
+	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, types::OgmiosUtxo,
+};
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum OgmiosRequest {
 	QueryLedgerStateEraSummaries,
 	QueryNetworkShelleyGenesis,
+	QueryUtxo { address: String },
 }
 
 #[derive(Debug)]
 pub enum OgmiosResponse {
 	QueryLedgerStateEraSummaries(Vec<EraSummary>),
 	QueryNetworkShelleyGenesis(ShelleyGenesisConfiguration),
+	QueryUtxo(Vec<OgmiosUtxo>),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -44,6 +48,22 @@ pub struct ShelleyGenesisConfiguration {
 	pub start_time: u64,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct Utxo {
+	pub tx_id: [u8; 32],
+	pub index: u32,
+	pub value: UtxoValue,
+}
+
+type AssetName = Vec<u8>;
+type PolicyId = [u8; 28];
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct UtxoValue {
+	pub lovelace: u64,
+	pub assets: Vec<(PolicyId, Vec<(AssetName, i128)>)>,
+}
+
 pub fn ogmios_request(addr: &str, req: OgmiosRequest) -> anyhow::Result<OgmiosResponse> {
 	let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 	let client = HttpClient::builder().build(addr).map_err(|e| anyhow::anyhow!(e))?;
@@ -60,6 +80,12 @@ pub fn ogmios_request(addr: &str, req: OgmiosRequest) -> anyhow::Result<OgmiosRe
 				.map_err(|e| anyhow::anyhow!(e))?;
 			let shelley_genesis = ShelleyGenesisConfiguration::try_from(shelley_genesis)?;
 			Ok(OgmiosResponse::QueryNetworkShelleyGenesis(shelley_genesis))
+		},
+		OgmiosRequest::QueryUtxo { address } => {
+			let utxos = tokio_runtime
+				.block_on(client.query_utxos(&[address]))
+				.map_err(|e| anyhow::anyhow!(e))?;
+			Ok(OgmiosResponse::QueryUtxo(utxos))
 		},
 	}
 }

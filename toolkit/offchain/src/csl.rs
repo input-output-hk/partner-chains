@@ -12,7 +12,7 @@ use ogmios_client::{
 };
 
 /// Builds an CSL `Address` for plutus script from the data obtained from smart contracts.
-pub(crate) fn plutus_script_address(
+pub fn plutus_script_address(
 	script_bytes: &[u8],
 	network: NetworkIdKind,
 	language: LanguageKind,
@@ -24,6 +24,15 @@ pub(crate) fn plutus_script_address(
 	EnterpriseAddress::new(
 		network_id_kind_to_u8(network),
 		&Credential::from_scripthash(&script_hash.into()),
+	)
+	.to_address()
+}
+
+pub fn payment_address(key_bytes: &[u8], network: NetworkIdKind) -> Address {
+	let key_hash = sidechain_domain::crypto::blake2b(key_bytes);
+	EnterpriseAddress::new(
+		network_id_kind_to_u8(network),
+		&Credential::from_keyhash(&key_hash.into()),
 	)
 	.to_address()
 }
@@ -116,6 +125,8 @@ mod tests {
 		types::{Asset, OgmiosBytesSize, OgmiosValue},
 	};
 
+	use super::payment_address;
+
 	#[test]
 	fn candidates_script_address_test() {
 		let address = plutus_script_address(
@@ -127,6 +138,18 @@ mod tests {
 			address.to_bech32(None).unwrap(),
 			"addr_test1wq7vcwawqa29a5a2z7q8qs6k0cuvp6z2puvd8xx7vasuajq86paxz"
 		);
+	}
+
+	#[test]
+	fn payment_address_test() {
+		let address = payment_address(
+			&hex!("a35ef86f1622172816bb9e916aea86903b2c8d32c728ad5c9b9472be7e3c5e88"),
+			NetworkIdKind::Testnet,
+		);
+		assert_eq!(
+			address.to_bech32(None).unwrap(),
+			"addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy"
+		)
 	}
 
 	#[test]

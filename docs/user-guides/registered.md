@@ -285,15 +285,8 @@ The register-1 wizard obtains the registration UTXO.
 1. Start the wizard: `./partner-chains-cli register1`
 2. Follow the steps when prompted by the wizard
 
-The wizard derives a payment address from the payment verification key:
-```
-<cardano-cli-command> address build --payment-verification-key-file <cardano-payment-verification-key-file> <cardano-network-parameter>
-```
-
-The wizard executes the command to read user UTXOs:
-`<cardano-cli-command> query utxo <cardano-network-parameter> --address <derived-address>`
-
-It parses the output, filters the UTXOs, retains only the ones with `TxOutDatumNone`, and presents them to you, together with their lovelace balance, as a table. Use the up and down arrow keys to choose a row and press `enter` to select it.
+The wizard derives a payment address from the payment verification key and queries Ogmios for the UTXOs of the derived address.
+It filters the UTXOs, retains only the ones without assets, and presents them to you, together with their lovelace balance, as a table. Use the up and down arrow keys to choose a row and press `enter` to select it.
 
 ---
 **NOTE**
