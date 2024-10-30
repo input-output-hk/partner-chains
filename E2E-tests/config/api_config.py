@@ -157,6 +157,7 @@ class ApiConfig:
     nodes_config: NodesApiConfig = MISSING
     stack_config: StackApiConfig = MISSING
     deployment_mc_epoch: int = MISSING
+    init_timestamp: int = MISSING
     initial_pc_epoch: Optional[int] = None
     block_encoding_suffix_grandpa: str = MISSING
     block_encoding_suffix_aura: str = MISSING

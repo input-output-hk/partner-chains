@@ -43,7 +43,6 @@ def pytest_addoption(parser):
     # NOTE: do not add default values so config defaults are used
     parser.addoption("--node-host", action="store", help="Overrides node host")
     parser.addoption("--node-port", action="store", help="Overrides node port")
-    parser.addoption("--init-timestamp", action="store", type=int, help="Initial timestamp of the mainchain.")
     parser.addoption("--deployment-mc-epoch", action="store", type=int, help="Deployment main chain epoch.")
     parser.addoption("--init-timestamp", action="store", type=int, help="Initial timestamp of the main chain.")
 
