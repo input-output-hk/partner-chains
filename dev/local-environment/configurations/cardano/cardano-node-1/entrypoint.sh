@@ -106,10 +106,6 @@ new_address=$(cardano-cli latest address build \
 echo "New address created: $new_address"
 
 owner_address=$(cat /keys/owner.addr)
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
 dave_address="addr_test1vphpcf32drhhznv6rqmrmgpuwq06kug0lkg22ux777rtlqst2er0r"
 eve_address="addr_test1vzzt5pwz3pum9xdgxalxyy52m3aqur0n43pcl727l37ggscl8h7v8"
 
@@ -122,11 +118,7 @@ tx_out1=1000000000 # new_address utxo 1
 tx_out2=1000000000 # new_address utxo 2
 tx_out3=1000000000 # partner-chains-node-4 (dave)
 tx_out4=1000000000 # partner-chains-node-5 (eve)
-<<<<<<< Updated upstream
-tx_out5=1000000000 # owner address
-=======
 tx_out5=1000000000000 # owner address
->>>>>>> Stashed changes
 
 # Total output without fee
 total_output=$((tx_out1 + tx_out2 + tx_out3 + tx_out4 + tx_out5))
