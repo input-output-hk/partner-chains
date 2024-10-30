@@ -13,6 +13,9 @@
       - ./configurations/cardano/cardano-node-1/keys/cold.vkey:/keys/cold.vkey
       - ./configurations/cardano/cardano-node-2/keys/cold.vkey:/keys/cardano-node-2/cold.vkey
       - ./configurations/cardano/cardano-node-3/keys/cold.vkey:/keys/cardano-node-3/cold.vkey
+      - ./configurations/cardano/cardano-node-1/keys/cold.skey:/keys/cold.skey
+      - ./configurations/cardano/cardano-node-2/keys/cold.skey:/keys/cardano-node-2/cold.skey
+      - ./configurations/cardano/cardano-node-3/keys/cold.skey:/keys/cardano-node-3/cold.skey
       - ./configurations/cardano/cardano-node-1/keys/kes.skey:/keys/kes.skey
       - ./configurations/cardano/cardano-node-1/keys/vrf.skey:/keys/vrf.skey
       - ./configurations/cardano/cardano-node-1/keys/owner-stake.vkey:/keys/owner-stake.vkey
@@ -27,7 +30,9 @@
       - ./configurations/cardano/cc-member-1/cc_member1_committee_hot.vkey:/keys/cc-member-1/cc_member1_committee_hot.vkey
       - ./configurations/cardano/cc-member-2/cc_member2_committee_hot.vkey:/keys/cc-member-2/cc_member2_committee_hot.vkey
       - ./configurations/cardano/cc-member-3/cc_member3_committee_hot.vkey:/keys/cc-member-3/cc_member3_committee_hot.vkey
-
+      - ./configurations/cardano/cc-member-1/cc_member1_committee_hot.skey:/keys/cc-member-1/cc_member1_committee_hot.skey
+      - ./configurations/cardano/cc-member-2/cc_member2_committee_hot.skey:/keys/cc-member-2/cc_member2_committee_hot.skey
+      - ./configurations/cardano/cc-member-3/cc_member3_committee_hot.skey:/keys/cc-member-3/cc_member3_committee_hot.skey
       - ./configurations/db-sync/config.json:/shared/db-sync-config.json.base
       - ./configurations/genesis/byron/genesis.json:/shared/byron/genesis.json.base
       - ./configurations/genesis/shelley/genesis.json:/shared/shelley/genesis.json.base
