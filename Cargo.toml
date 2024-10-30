@@ -40,6 +40,7 @@ members = [
 	"primitives/native-token-management",
 	"toolkit/offchain",
 	"primitives/plutus-data",
+	"cli/offchain-commands",
 ]
 resolver = "2"
 
@@ -221,3 +222,4 @@ pallet-partner-chains-session = { path = "pallets/partner-chains-session", defau
 pallet-session-runtime-stub = { path = "pallets/pallet-session-runtime-stub", default-features = false }
 partner-chains-cardano-offchain = { path = "toolkit/offchain", default-features = false }
 partner-chains-plutus-data = { path = "primitives/plutus-data", default-features = false }
+partner-chains-offchain-commands = { path = "cli/offchain-commands", default-features = false }
