@@ -40,6 +40,7 @@ members = [
 	"primitives/native-token-management",
 	"toolkit/offchain",
 	"primitives/plutus-data",
+	"cli/offchain-commands",
 ]
 resolver = "2"
 
@@ -180,6 +181,7 @@ substrate-frame-rpc-system = { default-features = false, git = "https://github.c
 substrate-prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409" }
 substrate-test-runtime-client = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409" }
 substrate-wasm-builder = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409" }
+raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", rev = "f4d29236260f8a9dd9ac434045ecaec773909554" }
 
 # local dependencies
 sidechain-runtime = { path = "runtime" }
@@ -219,3 +221,4 @@ pallet-partner-chains-session = { path = "pallets/partner-chains-session", defau
 pallet-session-runtime-stub = { path = "pallets/pallet-session-runtime-stub", default-features = false }
 partner-chains-cardano-offchain = { path = "toolkit/offchain", default-features = false }
 partner-chains-plutus-data = { path = "primitives/plutus-data", default-features = false }
+partner-chains-offchain-commands = { path = "cli/offchain-commands", default-features = false }

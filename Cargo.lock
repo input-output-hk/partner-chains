@@ -6479,10 +6479,12 @@ dependencies = [
  "pallas-addresses 0.30.2 (git+https://github.com/txpipe/pallas.git?tag=v0.30.2)",
  "pallas-primitives 0.30.2 (git+https://github.com/txpipe/pallas.git?tag=v0.30.2)",
  "plutus",
+ "raw-scripts",
  "secp256k1 0.28.2",
  "serde",
  "serde_json",
  "sidechain-domain",
+ "tokio",
  "uplc",
 ]
 
@@ -6544,6 +6546,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
  "partner-chains-node-commands",
+ "partner-chains-offchain-commands",
  "plutus",
  "plutus-datum-derive",
  "sc-basic-authorship",
@@ -6605,6 +6608,7 @@ dependencies = [
  "cli-commands",
  "frame-support",
  "parity-scale-codec",
+ "partner-chains-offchain-commands",
  "plutus",
  "sc-cli",
  "sc-service",
@@ -6616,6 +6620,28 @@ dependencies = [
  "sp-session-validator-management-query",
  "sp-sidechain",
  "tokio",
+]
+
+[[package]]
+name = "partner-chains-offchain-commands"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "assert_cmd",
+ "chain-params",
+ "clap",
+ "ed25519",
+ "ed25519-zebra",
+ "hex",
+ "hex-literal",
+ "plutus",
+ "plutus-datum-derive",
+ "secp256k1 0.28.2",
+ "serde",
+ "serde_json",
+ "sidechain-domain",
+ "sp-io",
+ "thiserror",
 ]
 
 [[package]]
@@ -7639,6 +7665,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb9ee317cfe3fbd54b36a511efc1edd42e216903c9cd575e686dd68a2ba90d8d"
 dependencies = [
  "bitflags 2.6.0",
+]
+
+[[package]]
+name = "raw-scripts"
+version = "6.2.1"
+source = "git+https://github.com/input-output-hk/partner-chains-smart-contracts.git?rev=f4d29236260f8a9dd9ac434045ecaec773909554#f4d29236260f8a9dd9ac434045ecaec773909554"
+dependencies = [
+ "hex-literal",
 ]
 
 [[package]]

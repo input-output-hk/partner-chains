@@ -6,6 +6,7 @@ use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use frame_support::sp_runtime::traits::NumberFor;
 use frame_support::Serialize;
 use parity_scale_codec::{Decode, Encode};
+use partner_chains_offchain_commands::OffchainCmd;
 use plutus::ToDatum;
 use sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 use sc_service::TaskManager;
@@ -85,6 +86,10 @@ pub enum PartnerChainsSubcommand<SidechainParams: clap::Args> {
 
 	/// Generates registration signatures for partner chains committee candidates
 	RegistrationSignatures(RegistrationSignaturesCmd<SidechainParams>),
+
+	/// Offchain commands for interacting with Partner Chain smart contracts on Cardano
+	#[command(subcommand)]
+	Offchain(OffchainCmd),
 }
 
 pub fn run<Cli, SmartContractsParams, Block, CrossChainPublic, SessionKeys, Client>(
@@ -150,6 +155,10 @@ where
 			})
 		},
 		PartnerChainsSubcommand::RegistrationSignatures(cmd) => Ok(println!("{}", cmd.execute())),
+		PartnerChainsSubcommand::Offchain(cmd) => {
+			cmd.execute()?;
+			Ok(())
+		},
 	}
 }
 
