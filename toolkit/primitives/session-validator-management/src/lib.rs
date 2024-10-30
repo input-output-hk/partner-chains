@@ -3,7 +3,7 @@
 use core::str::FromStr;
 
 use scale_info::TypeInfo;
-use sidechain_domain::{MainchainAddress, PolicyId};
+use sidechain_domain::{byte_string::SizedByteString, MainchainAddress, PolicyId};
 use sp_core::{Decode, Encode, MaxEncodedLen};
 use sp_inherents::{InherentIdentifier, IsFatalError};
 
@@ -22,6 +22,11 @@ pub enum InherentError {
 		error("Candidates inherent required: committee needs to be stored one epoch in advance")
 	)]
 	CommitteeNeedsToBeStoredOneEpochInAdvance,
+	#[cfg_attr(
+		feature = "std",
+		error("Inherent called with data hash {0:?} but {1:?} expected from inherent data")
+	)]
+	DataHashMismatch(SizedByteString<32>, SizedByteString<32>),
 }
 
 impl IsFatalError for InherentError {

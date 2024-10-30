@@ -242,7 +242,7 @@ fn gen_to_hex(name: &syn::Ident, generics: &Generics) -> impl ToTokens {
 
 	quote! {
 		impl #impl_generics #name #ty_generics #where_clause {
-			pub fn to_hex_string(&self) -> String {
+			pub fn to_hex_string(&self) -> alloc::string::String {
 				sp_core::bytes::to_hex(&self.0, false)
 			}
 		}

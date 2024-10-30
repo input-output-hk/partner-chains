@@ -56,7 +56,7 @@ mod inherent_tests {
 			);
 			assert_ok!(<SessionCommitteeManagement as ProvideInherent>::check_inherent(
 				&call,
-				&create_inherent_data(&validators)
+				&create_inherent_data(&validators).0
 			));
 		});
 	}
@@ -77,11 +77,13 @@ mod inherent_tests {
 				committee: ids_and_keys_fn(&[ALICE, BOB]),
 				epoch: 43,
 			});
+			let (inherent_data_from_which_committee_cannot_be_selected, selection_inputs_hash) =
+				create_inherent_data(&[]);
 			let set_call = pallet::Call::set {
 				validators: ids_and_keys_fn(&[ALICE, BOB]),
 				for_epoch_number: 43,
+				selection_inputs_hash,
 			};
-			let inherent_data_from_which_committee_cannot_be_selected = create_inherent_data(&[]);
 			assert_ok!(<SessionCommitteeManagement as ProvideInherent>::check_inherent(
 				&set_call,
 				&inherent_data_from_which_committee_cannot_be_selected
@@ -97,11 +99,13 @@ mod inherent_tests {
 		let genesis_validators = [ALICE, BOB];
 		new_test_ext_with_genesis_initial_authorities(&genesis_validators).execute_with(|| {
 			assert!(pallet::NextCommittee::<Test>::get().is_none());
+			let (inherent_data_from_which_committee_cannot_be_selected, selection_inputs_hash) =
+				create_inherent_data(&[]);
 			let call = pallet::Call::set {
 				validators: ids_and_keys_fn(&genesis_validators),
 				for_epoch_number: 43,
+				selection_inputs_hash,
 			};
-			let inherent_data_from_which_committee_cannot_be_selected = create_inherent_data(&[]);
 			// Should be Ok, because check_inherent should use CurrentCommittee value.
 			assert_ok!(<SessionCommitteeManagement as ProvideInherent>::check_inherent(
 				&call,
