@@ -44,6 +44,8 @@ def pytest_addoption(parser):
     parser.addoption("--node-host", action="store", help="Overrides node host")
     parser.addoption("--node-port", action="store", help="Overrides node port")
     parser.addoption("--init-timestamp", action="store", type=int, help="Initial timestamp of the mainchain.")
+    parser.addoption("--deployment-mc-epoch", action="store", type=int, help="Deployment main chain epoch.")
+    parser.addoption("--init-timestamp", action="store", type=int, help="Initial timestamp of the main chain.")
 
     # committee tests parametrization
     parser.addoption(
@@ -95,6 +97,7 @@ def pytest_configure(config: Config):
         config.getoption("--ci-run"),
         config.getoption("--node-host"),
         config.getoption("--node-port"),
+        config.getoption("--deployment-mc-epoch"),
         config.getoption("--init-timestamp"),
     )
 
@@ -224,7 +227,7 @@ def decrypt(request):
     return request.config.getoption("--decrypt")
 
 
-def load_config(blockchain, nodes_env, stack_env, ci_run, node_host, node_port, init_timestamp):
+def load_config(blockchain, nodes_env, stack_env, ci_run, node_host, node_port, deployment_mc_epoch, init_timestamp):
     default_config_path = f"{os.getcwd()}/config/config.json"
     assert os.path.isfile(default_config_path), f"Config file not found {default_config_path}"
     default_config = OmegaConf.load(default_config_path)
@@ -251,6 +254,9 @@ def load_config(blockchain, nodes_env, stack_env, ci_run, node_host, node_port, 
 
     if node_port:
         config.nodes_config.node.port = node_port
+
+    if deployment_mc_epoch:
+        config.deployment_mc_epoch = deployment_mc_epoch
 
     if init_timestamp:
         config.main_chain.init_timestamp = init_timestamp
