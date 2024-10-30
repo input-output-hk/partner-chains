@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["derive_address","get_ecdsa_pair_from_file","load_chain_config_field","parse_utxo_query_output","query_utxos","read_generated_keys","sign_registration_message_with_sidechain_key"],"struct":["GeneratedKeysFileContent","Register1Cmd","UtxoEntry","UtxoQueryOutput","ValidUtxo"]};
+window.SIDEBAR_ITEMS = {"fn":["derive_address","filter_utxos","get_ecdsa_pair_from_file","load_chain_config_field","query_utxos","read_generated_keys","sign_registration_message_with_sidechain_key"],"struct":["GeneratedKeysFileContent","Register1Cmd","ValidUtxo"]};

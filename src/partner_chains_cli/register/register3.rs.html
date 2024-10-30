@@ -400,8 +400,6 @@
 <a href="#400" id="400">400</a>
 <a href="#401" id="401">401</a>
 <a href="#402" id="402">402</a>
-<a href="#403" id="403">403</a>
-<a href="#404" id="404">404</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config;
 <span class="kw">use </span><span class="kw">crate</span>::config::config_fields;
 <span class="kw">use </span><span class="kw">crate</span>::config::get_cardano_network_from_file;
@@ -796,8 +794,6 @@
 		<span class="macro">serde_json::json!</span>({
 			<span class="string">"substrate_node_base_path"</span>: <span class="string">"/path/to/data"</span>,
 			<span class="string">"substrate_node_executable_path"</span>: <span class="string">"/path/to/node"</span>,
-			<span class="string">"cardano_cli"</span>: <span class="string">"cardano-cli"</span>,
-			<span class="string">"cardano_node_socket_path"</span>: <span class="string">"node.socket"</span>,
 			<span class="string">"cardano_payment_verification_key_file"</span>: <span class="string">"payment.vkey"</span>,
 		})
 	}

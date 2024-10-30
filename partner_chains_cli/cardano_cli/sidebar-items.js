@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["testnet_magic_arg"]};

@@ -383,11 +383,11 @@
 	<span class="kw">pub </span>bytes: u32,
 }
 
-<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+<span class="attr">#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>OgmiosUtxo {
 	<span class="kw">pub </span>transaction: OgmiosTx,
-	<span class="kw">pub </span>index: u32,
+	<span class="kw">pub </span>index: u16,
 	<span class="comment">// bech32 address
 	</span><span class="kw">pub </span>address: String,
 	<span class="kw">pub </span>value: OgmiosValue,
@@ -472,7 +472,7 @@
 
 <span class="kw">type </span>ScriptHash = [u8; <span class="number">28</span>];
 
-<span class="attr">#[derive(Clone, Debug, PartialEq, Eq)]
+<span class="attr">#[derive(Clone, Debug, Default, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>OgmiosValue {
 	<span class="kw">pub </span>lovelace: u64,
 	<span class="kw">pub </span>native_tokens: HashMap&lt;ScriptHash, Vec&lt;Asset&gt;&gt;,
@@ -527,7 +527,7 @@
 	}
 }
 
-<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+<span class="attr">#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
 </span><span class="kw">pub struct </span>OgmiosTx {
 	<span class="attr">#[serde(deserialize_with = <span class="string">"parse_bytes_array"</span>)]
 	</span><span class="kw">pub </span>id: [u8; <span class="number">32</span>],

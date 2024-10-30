@@ -839,78 +839,7 @@
 <a href="#839" id="839">839</a>
 <a href="#840" id="840">840</a>
 <a href="#841" id="841">841</a>
-<a href="#842" id="842">842</a>
-<a href="#843" id="843">843</a>
-<a href="#844" id="844">844</a>
-<a href="#845" id="845">845</a>
-<a href="#846" id="846">846</a>
-<a href="#847" id="847">847</a>
-<a href="#848" id="848">848</a>
-<a href="#849" id="849">849</a>
-<a href="#850" id="850">850</a>
-<a href="#851" id="851">851</a>
-<a href="#852" id="852">852</a>
-<a href="#853" id="853">853</a>
-<a href="#854" id="854">854</a>
-<a href="#855" id="855">855</a>
-<a href="#856" id="856">856</a>
-<a href="#857" id="857">857</a>
-<a href="#858" id="858">858</a>
-<a href="#859" id="859">859</a>
-<a href="#860" id="860">860</a>
-<a href="#861" id="861">861</a>
-<a href="#862" id="862">862</a>
-<a href="#863" id="863">863</a>
-<a href="#864" id="864">864</a>
-<a href="#865" id="865">865</a>
-<a href="#866" id="866">866</a>
-<a href="#867" id="867">867</a>
-<a href="#868" id="868">868</a>
-<a href="#869" id="869">869</a>
-<a href="#870" id="870">870</a>
-<a href="#871" id="871">871</a>
-<a href="#872" id="872">872</a>
-<a href="#873" id="873">873</a>
-<a href="#874" id="874">874</a>
-<a href="#875" id="875">875</a>
-<a href="#876" id="876">876</a>
-<a href="#877" id="877">877</a>
-<a href="#878" id="878">878</a>
-<a href="#879" id="879">879</a>
-<a href="#880" id="880">880</a>
-<a href="#881" id="881">881</a>
-<a href="#882" id="882">882</a>
-<a href="#883" id="883">883</a>
-<a href="#884" id="884">884</a>
-<a href="#885" id="885">885</a>
-<a href="#886" id="886">886</a>
-<a href="#887" id="887">887</a>
-<a href="#888" id="888">888</a>
-<a href="#889" id="889">889</a>
-<a href="#890" id="890">890</a>
-<a href="#891" id="891">891</a>
-<a href="#892" id="892">892</a>
-<a href="#893" id="893">893</a>
-<a href="#894" id="894">894</a>
-<a href="#895" id="895">895</a>
-<a href="#896" id="896">896</a>
-<a href="#897" id="897">897</a>
-<a href="#898" id="898">898</a>
-<a href="#899" id="899">899</a>
-<a href="#900" id="900">900</a>
-<a href="#901" id="901">901</a>
-<a href="#902" id="902">902</a>
-<a href="#903" id="903">903</a>
-<a href="#904" id="904">904</a>
-<a href="#905" id="905">905</a>
-<a href="#906" id="906">906</a>
-<a href="#907" id="907">907</a>
-<a href="#908" id="908">908</a>
-<a href="#909" id="909">909</a>
-<a href="#910" id="910">910</a>
-<a href="#911" id="911">911</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_cli::testnet_magic_arg;
-<span class="kw">use </span><span class="kw">crate</span>::config::config_values::DEFAULT_CHAIN_NAME;
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_values::DEFAULT_CHAIN_NAME;
 <span class="kw">use </span><span class="kw">crate</span>::config::KEYS_FILE_PATH;
 <span class="kw">use </span><span class="kw">crate</span>::generate_keys::keystore_path;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
@@ -919,12 +848,14 @@
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cli_commands::registration_signatures::RegisterValidatorMessage;
 <span class="kw">use </span>cli_commands::signing::sc_public_key_and_signature_for_datum;
+<span class="kw">use </span>config::{CardanoNetwork, ServiceConfig};
+<span class="kw">use </span>ogmios::{OgmiosRequest, OgmiosResponse};
+<span class="kw">use </span>ogmios_client::types::OgmiosUtxo;
 <span class="kw">use </span>serde::de::DeserializeOwned;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
-<span class="kw">use </span>sidechain_domain::{SidechainPublicKey, UtxoId};
+<span class="kw">use </span>sidechain_domain::{McTxHash, SidechainPublicKey, UtxoId};
 <span class="kw">use </span>sp_core::bytes::from_hex;
 <span class="kw">use </span>sp_core::{ecdsa, Pair};
-<span class="kw">use </span>std::collections::HashMap;
 <span class="kw">use </span>std::str::FromStr;
 
 <span class="attr">#[derive(Debug, clap::Parser)]
@@ -960,34 +891,13 @@
 				<span class="macro">anyhow!</span>(e)
 			})<span class="question-mark">?</span>;
 
-		<span class="kw">let </span>cardano_cli =
-			config_fields::CARDANO_CLI.prompt_with_default_from_file_and_save(context);
-		<span class="kw">let </span>cardano_node_socket_path =
-			config_fields::CARDANO_NODE_SOCKET_PATH.prompt_with_default_from_file_and_save(context);
+		context.print(<span class="string">"This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service"</span>);
+		<span class="kw">let </span>address = derive_address(context, cardano_network)<span class="question-mark">?</span>;
+		<span class="kw">let </span>ogmios_configuration =
+			pc_contracts_cli_resources::prompt_ogmios_configuration(context)<span class="question-mark">?</span>;
+		<span class="kw">let </span>utxo_query_result = query_utxos(context, <span class="kw-2">&amp;</span>ogmios_configuration, <span class="kw-2">&amp;</span>address)<span class="question-mark">?</span>;
 
-		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-			<span class="string">"⚙️ Set `CARDANO_NODE_SOCKET_PATH` environment variable to `{cardano_node_socket_path}`"
-		</span>));
-		context.set_env_var(<span class="string">"CARDANO_NODE_SOCKET_PATH"</span>, <span class="kw-2">&amp;</span>cardano_node_socket_path);
-
-		<span class="kw">let </span>cardano_payment_verification_key_file =
-			config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
-				.prompt_with_default_from_file_and_save(context);
-
-		context.print(<span class="string">"⚙️ Deriving address..."</span>);
-		<span class="kw">let </span>address: String = derive_address(
-			context,
-			<span class="kw-2">&amp;</span>cardano_cli,
-			<span class="kw-2">&amp;</span>cardano_payment_verification_key_file,
-			cardano_network.to_id(),
-		)<span class="question-mark">?</span>;
-		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"⚙️ Address: {address}"</span>));
-
-		context.print(<span class="string">"⚙️ Querying UTXOs..."</span>);
-		<span class="kw">let </span>utxo_query_result: UtxoQueryOutput =
-			query_utxos(context, <span class="kw-2">&amp;</span>cardano_cli, <span class="kw-2">&amp;</span>address, cardano_network.to_id())<span class="question-mark">?</span>;
-
-		<span class="kw">let </span>valid_utxos: Vec&lt;ValidUtxo&gt; = parse_utxo_query_output(<span class="kw-2">&amp;</span>utxo_query_result);
+		<span class="kw">let </span>valid_utxos: Vec&lt;ValidUtxo&gt; = filter_utxos(utxo_query_result);
 
 		<span class="kw">if </span>valid_utxos.is_empty() {
 			context.eprint(<span class="string">"⚠️ No UTXOs found for the given address"</span>);
@@ -1114,31 +1024,16 @@
 
 <span class="kw">fn </span>derive_address&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
-	cardano_cli: <span class="kw-2">&amp;</span>str,
-	payment_verification_key_file: <span class="kw-2">&amp;</span>str,
-	cardano_network: u32,
+	cardano_network: CardanoNetwork,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;String, anyhow::Error&gt; {
-	<span class="kw">let </span>testnet_magic = testnet_magic_arg(cardano_network);
-	<span class="kw">match </span>context
-		.run_command(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"{cardano_cli} address build --payment-verification-key-file {payment_verification_key_file} {testnet_magic}"</span>)) {
-		<span class="prelude-val">Ok</span>(output) =&gt; {
-			<span class="kw">if </span>output.starts_with(<span class="string">"addr"</span>) {
-				<span class="prelude-val">Ok</span>(output)
-			} <span class="kw">else </span>{
-				context.eprint(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"⚠️ Address derivation returned an invalid address: {output}"</span>));
-				<span class="prelude-val">Err</span>(<span class="macro">anyhow::anyhow!</span>(<span class="string">"Failed to derive address"</span>))
-			}
-		},
-		<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(<span class="macro">anyhow::anyhow!</span>(<span class="string">"Failed to derive address"</span>)),
-	}
-}
-
-<span class="doccomment">/// Output of the `cardano-cli query utxo` command
-</span><span class="kw">struct </span>UtxoQueryOutput(String);
-
-<span class="attr">#[derive(Debug, Deserialize)]
-</span><span class="kw">struct </span>UtxoEntry {
-	value: HashMap&lt;String, serde_json::Value&gt;,
+	<span class="kw">let </span>cardano_payment_verification_key_file =
+		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
+			.prompt_with_default_from_file_and_save(context);
+	<span class="kw">let </span>key_bytes: [u8; <span class="number">32</span>] =
+		cardano_key::get_key_bytes_from_file(<span class="kw-2">&amp;</span>cardano_payment_verification_key_file, context)<span class="question-mark">?</span>;
+	<span class="kw">let </span>address =
+		partner_chains_cardano_offchain::csl::payment_address(<span class="kw-2">&amp;</span>key_bytes, cardano_network.into());
+	address.to_bech32(<span class="prelude-val">None</span>).map_err(|e| <span class="macro">anyhow!</span>(e.to_string()))
 }
 
 <span class="attr">#[derive(Debug, PartialEq)]
@@ -1155,36 +1050,40 @@
 
 <span class="kw">fn </span>query_utxos&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
-	cardano_cli: <span class="kw-2">&amp;</span>str,
+	ogmios_config: <span class="kw-2">&amp;</span>ServiceConfig,
 	address: <span class="kw-2">&amp;</span>str,
-	cardano_network: u32,
-) -&gt; <span class="prelude-ty">Result</span>&lt;UtxoQueryOutput, anyhow::Error&gt; {
-	<span class="kw">let </span>testnet_magic = testnet_magic_arg(cardano_network);
-	context
-		.run_command(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-			<span class="string">"{cardano_cli} query utxo --out-file /dev/stdout --address {address} {testnet_magic}"
-		</span>))
-		.map(UtxoQueryOutput)
+) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;OgmiosUtxo&gt;, anyhow::Error&gt; {
+	<span class="kw">let </span>ogmios_addr = ogmios_config.to_string();
+	context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"⚙️ Querying UTXOs of {address} from Ogmios at {ogmios_addr}..."</span>));
+	<span class="kw">let </span>response = context
+		.ogmios_rpc(<span class="kw-2">&amp;</span>ogmios_addr, OgmiosRequest::QueryUtxo { address: address.into() })
+		.map_err(|e| <span class="macro">anyhow!</span>(e))<span class="question-mark">?</span>;
+	<span class="kw">match </span>response {
+		OgmiosResponse::QueryUtxo(utxos) =&gt; <span class="prelude-val">Ok</span>(utxos),
+		other =&gt; <span class="prelude-val">Err</span>(<span class="macro">anyhow::anyhow!</span>(<span class="macro">format!</span>(
+			<span class="string">"Unexpected response from Ogmios when querying for utxos: {other:?}"
+		</span>))),
+	}
 }
 
-<span class="kw">fn </span>parse_utxo_query_output(utxo_query_output: <span class="kw-2">&amp;</span>UtxoQueryOutput) -&gt; Vec&lt;ValidUtxo&gt; {
-	<span class="kw">let </span><span class="kw-2">mut </span>utxos: Vec&lt;ValidUtxo&gt; =
-		serde_json::from_str::&lt;HashMap&lt;String, UtxoEntry&gt;&gt;(<span class="kw-2">&amp;</span>utxo_query_output.<span class="number">0</span>)
-			.unwrap_or_default()
-			.into_iter()
-			.filter_map(|(utxo_id_str, entry)| {
-				<span class="kw">if let </span>(<span class="prelude-val">Some</span>(serde_json::Value::Number(lovelace)), <span class="number">1</span>) =
-					(entry.value.get(<span class="string">"lovelace"</span>), entry.value.len())
-				{
-					<span class="kw">if let </span><span class="prelude-val">Some</span>(lovelace) = lovelace.as_u64() {
-						<span class="kw">if let </span><span class="prelude-val">Ok</span>(utxo_id) = UtxoId::from_str(<span class="kw-2">&amp;</span>utxo_id_str) {
-							<span class="kw">return </span><span class="prelude-val">Some</span>(ValidUtxo { utxo_id, lovelace });
-						}
-					}
-				}
+<span class="comment">// Take only the UTXOs without multi-asset tokens
+</span><span class="kw">fn </span>filter_utxos(utxos: Vec&lt;OgmiosUtxo&gt;) -&gt; Vec&lt;ValidUtxo&gt; {
+	<span class="kw">let </span><span class="kw-2">mut </span>utxos: Vec&lt;ValidUtxo&gt; = utxos
+		.into_iter()
+		.filter_map(|utxo| {
+			<span class="kw">if </span>utxo.value.native_tokens.is_empty() {
+				<span class="prelude-val">Some</span>(ValidUtxo {
+					utxo_id: UtxoId {
+						tx_hash: McTxHash(utxo.transaction.id),
+						index: sidechain_domain::UtxoIndex(utxo.index),
+					},
+					lovelace: utxo.value.lovelace,
+				})
+			} <span class="kw">else </span>{
 				<span class="prelude-val">None
-			</span>})
-			.collect();
+			</span>}
+		})
+		.collect();
 
 	utxos.sort_by_key(|utxo| std::cmp::Reverse(utxo.lovelace));
 	utxos
@@ -1193,8 +1092,14 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{CARDANO_CLI, CARDANO_PAYMENT_VERIFICATION_KEY_FILE};
 	<span class="kw">use </span><span class="kw">crate</span>::tests::{MockIO, MockIOContext};
+	<span class="kw">use </span>hex_literal::hex;
+	<span class="kw">use </span>ogmios_client::types::{Asset, OgmiosTx, OgmiosValue};
+	<span class="kw">use </span>pc_contracts_cli_resources::default_ogmios_service_config;
+	<span class="kw">use </span>pc_contracts_cli_resources::tests::prompt_ogmios_configuration_io;
+	<span class="kw">use </span>std::collections::HashMap;
+
+	<span class="kw">const </span>PAYMENT_VKEY_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"payment.vkey"</span>;
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>happy_path() {
@@ -1207,14 +1112,12 @@
 			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_without_cardano_fields)
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
 			.with_file(ECDSA_KEY_PATH, ECDSA_KEY_FILE_CONTENT)
+			.with_file(PAYMENT_VKEY_PATH, PAYMENT_VKEY_CONTENT)
 			.with_expected_io(
 				<span class="macro">vec!</span>[
 					intro_msg_io(),
 					read_chain_config_io(),
 					read_resource_config_io(),
-					prompt_cardano_cli_io(),
-					prompt_cardano_node_socket_path_io(),
-					prompt_cardano_payment_verification_key_file_io(),
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
@@ -1268,13 +1171,13 @@
 			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
 			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
+			.with_file(PAYMENT_VKEY_PATH, PAYMENT_VKEY_CONTENT)
 			.with_file(ECDSA_KEY_PATH, ECDSA_KEY_FILE_CONTENT)
 			.with_expected_io(
 				<span class="macro">vec!</span>[
 					intro_msg_io(),
 					read_chain_config_io(),
 					read_resource_config_io(),
-					load_prompt_fields_io(),
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
@@ -1288,73 +1191,6 @@
 
 		<span class="kw">let </span>result = Register1Cmd {}.run(<span class="kw-2">&amp;</span>mock_context);
 		<span class="macro">assert!</span>(result.is_ok());
-	}
-
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>address_derivation_error() {
-		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
-			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
-			.with_expected_io(
-				<span class="macro">vec!</span>[
-					intro_msg_io(),
-					read_chain_config_io(),
-					read_resource_config_io(),
-					load_prompt_fields_io(),
-					<span class="macro">vec!</span>[
-						MockIO::print(<span class="string">"⚙️ Deriving address..."</span>),
-MockIO::run_command(<span class="string">"cardano-cli address build --payment-verification-key-file payment.vkey --testnet-magic 2"</span>, <span class="string">"invalid_address"</span>),
-						MockIO::eprint(<span class="string">"⚠️ Address derivation returned an invalid address: invalid_address"</span>),
-					]
-				]
-				.into_iter()
-				.flatten()
-				.collect::&lt;Vec&lt;MockIO&gt;&gt;(),
-			);
-
-		<span class="kw">let </span>result = Register1Cmd {}.run(<span class="kw-2">&amp;</span>mock_context);
-		<span class="macro">assert!</span>(result.is_err());
-	}
-
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>cardano_cli_called_with_mainnet_flag() {
-		<span class="kw">let </span>chain_config_content_mainnet: serde_json::Value = <span class="macro">serde_json::json!</span>({
-			<span class="string">"chain_parameters"</span>: {
-				<span class="string">"chain_id"</span>: <span class="number">0</span>,
-				<span class="string">"threshold_numerator"</span>: <span class="number">2</span>,
-				<span class="string">"threshold_denominator"</span>: <span class="number">3</span>,
-				<span class="string">"genesis_committee_utxo"</span>: <span class="string">"0000000000000000000000000000000000000000000000000000000000000001#0"</span>,
-				<span class="string">"governance_authority"</span>: <span class="string">"0x00112233445566778899001122334455667788990011223344556677"
-			</span>},
-			<span class="string">"cardano"</span>: {
-				<span class="string">"network"</span>: <span class="number">0
-			</span>}
-		});
-
-		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content_mainnet)
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
-			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
-			.with_expected_io(
-				<span class="macro">vec!</span>[
-					intro_msg_io(),
-					read_chain_config_io(),
-					read_resource_config_io(),
-					load_prompt_fields_io(),
-					<span class="macro">vec!</span>[
-						MockIO::print(<span class="string">"⚙️ Deriving address..."</span>),
-MockIO::run_command(<span class="string">"cardano-cli address build --payment-verification-key-file payment.vkey --mainnet"</span>, <span class="string">"invalid_address"</span>),
-						MockIO::eprint(<span class="string">"⚠️ Address derivation returned an invalid address: invalid_address"</span>),
-					]
-				]
-				.into_iter()
-				.flatten()
-				.collect::&lt;Vec&lt;MockIO&gt;&gt;(),
-			);
-
-		<span class="kw">let </span>result = Register1Cmd {}.run(<span class="kw-2">&amp;</span>mock_context);
-		<span class="macro">assert!</span>(result.is_err());
 	}
 
 	<span class="attr">#[test]
@@ -1391,23 +1227,58 @@ MockIO::run_command(<span class="string">"cardano-cli address build --payment-ve
 	}
 
 	<span class="attr">#[test]
-	</span><span class="kw">fn </span>utxo_query_error() {
+	</span><span class="kw">fn </span>report_error_if_payment_file_is_invalid() {
 		<span class="kw">let </span>mock_context = MockIOContext::new()
 			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
 			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
+			.with_file(PAYMENT_VKEY_PATH, <span class="string">"invalid content"</span>)
 			.with_expected_io(
 				<span class="macro">vec!</span>[
 					intro_msg_io(),
 					read_chain_config_io(),
 					read_resource_config_io(),
-					load_prompt_fields_io(),
 					derive_address_io(),
+				]
+				.into_iter()
+				.flatten()
+				.collect::&lt;Vec&lt;MockIO&gt;&gt;(),
+			);
+
+		<span class="kw">let </span>result = Register1Cmd {}.run(<span class="kw-2">&amp;</span>mock_context);
+		<span class="macro">assert!</span>(result.is_err());
+		<span class="macro">assert!</span>(result
+			.unwrap_err()
+			.to_string()
+			.contains(<span class="string">"Failed to parse Cardano key file payment.vkey"</span>));
+	}
+
+	<span class="attr">#[test]
+	</span><span class="kw">fn </span>utxo_query_error() {
+		<span class="kw">let </span>mock_context = MockIOContext::new()
+			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
+			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
+			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
+			.with_file(PAYMENT_VKEY_PATH, PAYMENT_VKEY_CONTENT)
+			.with_expected_io(
+				<span class="macro">vec!</span>[
+					intro_msg_io(),
+					read_chain_config_io(),
+					read_resource_config_io(),
 					<span class="macro">vec!</span>[
-						MockIO::print(<span class="string">"⚙️ Querying UTXOs..."</span>),
-						MockIO::run_command(<span class="string">"cardano-cli query utxo --out-file /dev/stdout --address addr_test1vpl6fzacldwksp866f3rwuuvujgdsj0y2eckrcu2hpq4lucnzv00d --testnet-magic 2"</span>, <span class="string">"invalid output"</span>),
-						MockIO::eprint(<span class="string">"⚠️ No UTXOs found for the given address"</span>),
-						MockIO::eprint(<span class="string">"The registering transaction requires at least one UTXO to be present at the address."</span>),
+    					address_and_utxo_msg_io(),
+    					prompt_cardano_payment_verification_key_file_io(),
+    					read_payment_verification_key_file_io(),
+    					prompt_ogmios_configuration_io(<span class="kw-2">&amp;</span>default_ogmios_service_config(), <span class="kw-2">&amp;</span>default_ogmios_service_config()),
+    					MockIO::print(<span class="string">"⚙️ Querying UTXOs of addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy from Ogmios at http://localhost:1337..."</span>),
+    					MockIO::ogmios_request(
+    						<span class="string">"http://localhost:1337"</span>,
+    						OgmiosRequest::QueryUtxo {
+    							address: <span class="string">"addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy"
+    								</span>.into(),
+    						},
+    						<span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Ogmios request failed!"</span>)),
+    					),
 					]
 				]
 				.into_iter()
@@ -1417,6 +1288,7 @@ MockIO::run_command(<span class="string">"cardano-cli address build --payment-ve
 
 		<span class="kw">let </span>result = Register1Cmd {}.run(<span class="kw-2">&amp;</span>mock_context);
 		<span class="macro">assert!</span>(result.is_err());
+		<span class="macro">assert_eq!</span>(result.unwrap_err().to_string(), <span class="string">"Ogmios request failed!"</span>.to_owned());
 	}
 
 	<span class="attr">#[test]
@@ -1445,13 +1317,13 @@ MockIO::run_command(<span class="string">"cardano-cli address build --payment-ve
 		<span class="kw">let </span>mock_context = MockIOContext::new()
 			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
 			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
+			.with_file(PAYMENT_VKEY_PATH, PAYMENT_VKEY_CONTENT)
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
 			.with_expected_io(
 				<span class="macro">vec!</span>[
 					intro_msg_io(),
 					read_chain_config_io(),
 					read_resource_config_io(),
-					load_prompt_fields_io(),
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
@@ -1475,13 +1347,13 @@ MockIO::run_command(<span class="string">"cardano-cli address build --payment-ve
 			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
 			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
+			.with_file(PAYMENT_VKEY_PATH, PAYMENT_VKEY_CONTENT)
 			.with_file(ECDSA_KEY_PATH, <span class="string">"invalid seed phrase"</span>)
 			.with_expected_io(
 				<span class="macro">vec!</span>[
 					intro_msg_io(),
 					read_chain_config_io(),
 					read_resource_config_io(),
-					load_prompt_fields_io(),
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
@@ -1504,7 +1376,7 @@ MockIO::run_command(<span class="string">"cardano-cli address build --payment-ve
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>test_parse_utxo_query_output() {
 		{
-			<span class="kw">let </span>utxos = parse_utxo_query_output(<span class="kw-2">&amp;</span>UtxoQueryOutput(mock_result_5_valid()));
+			<span class="kw">let </span>utxos = filter_utxos(mock_result_5_valid());
 
 			<span class="macro">assert_eq!</span>(utxos.len(), <span class="number">5</span>);
 			<span class="macro">assert_eq!</span>(
@@ -1560,12 +1432,7 @@ MockIO::run_command(<span class="string">"cardano-cli address build --payment-ve
 		}
 
 		{
-			<span class="kw">let </span>utxos = parse_utxo_query_output(<span class="kw-2">&amp;</span>UtxoQueryOutput(mock_result_0_valid()));
-			<span class="macro">assert_eq!</span>(utxos.len(), <span class="number">0</span>);
-		}
-
-		{
-			<span class="kw">let </span>utxos = parse_utxo_query_output(<span class="kw-2">&amp;</span>UtxoQueryOutput(<span class="string">"invalid output"</span>.to_string()));
+			<span class="kw">let </span>utxos = filter_utxos(mock_result_0_valid());
 			<span class="macro">assert_eq!</span>(utxos.len(), <span class="number">0</span>);
 		}
 	}
@@ -1596,14 +1463,20 @@ MockIO::run_command(<span class="string">"cardano-cli address build --payment-ve
 		</span>})
 	}
 
+	<span class="kw">const </span>PAYMENT_VKEY_CONTENT: <span class="kw-2">&amp;</span>str = <span class="string">r#"
+{
+    "type": "StakePoolVerificationKey_ed25519",
+    "description": "Stake Pool Operator Verification Key",
+    "cborHex": "5820a35ef86f1622172816bb9e916aea86903b2c8d32c728ad5c9b9472be7e3c5e88"
+}
+"#</span>;
+
 	<span class="kw">const </span>ECDSA_KEY_FILE_CONTENT: <span class="kw-2">&amp;</span>str =
 		<span class="string">"\"end fury stamp spatial focus tired video tumble good critic tail hood\""</span>;
 
 	<span class="kw">fn </span>resource_config_content() -&gt; serde_json::Value {
 		<span class="macro">serde_json::json!</span>({
 			<span class="string">"substrate_node_base_path"</span>: <span class="string">"/path/to/data"</span>,
-			<span class="string">"cardano_cli"</span>: <span class="string">"cardano-cli"</span>,
-			<span class="string">"cardano_node_socket_path"</span>: <span class="string">"node.socket"</span>,
 			<span class="string">"cardano_payment_verification_key_file"</span>: <span class="string">"payment.vkey"
 		</span>})
 	}
@@ -1629,104 +1502,52 @@ MockIO::run_command(<span class="string">"cardano-cli address build --payment-ve
 		</span>]
 	}
 
-	<span class="kw">fn </span>prompt_cardano_cli_io() -&gt; Vec&lt;MockIO&gt; {
-		<span class="macro">vec!</span>[
-			MockIO::file_read(RESOURCE_CONFIG_PATH),
-			MockIO::prompt(<span class="string">"cardano cli executable"</span>, CARDANO_CLI.default, <span class="string">"cardano-cli"</span>),
-			MockIO::file_read(RESOURCE_CONFIG_PATH),
-			MockIO::file_write_json(
-				RESOURCE_CONFIG_PATH,
-				<span class="macro">serde_json::json!</span>({<span class="string">"cardano_cli"</span>: <span class="string">"cardano-cli"</span>, <span class="string">"substrate_node_base_path"</span>: <span class="string">"/path/to/data" </span>}),
-			),
-		]
+	<span class="kw">fn </span>address_and_utxo_msg_io() -&gt; MockIO {
+		MockIO::Group(<span class="macro">vec!</span>[
+			MockIO::print(<span class="string">"This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service"</span>),
+		])
 	}
 
-	<span class="kw">fn </span>prompt_cardano_node_socket_path_io() -&gt; Vec&lt;MockIO&gt; {
-		<span class="macro">vec!</span>[
-			MockIO::file_read(RESOURCE_CONFIG_PATH),
-			MockIO::prompt(
-				<span class="string">"path to the cardano node socket file"</span>,
-				<span class="prelude-val">Some</span>(<span class="string">"node.socket"</span>),
-				<span class="string">"node.socket"</span>,
-			),
-			MockIO::file_read(RESOURCE_CONFIG_PATH),
-			MockIO::file_write_json(
-				RESOURCE_CONFIG_PATH,
-				<span class="macro">serde_json::json!</span>({<span class="string">"cardano_cli"</span>: <span class="string">"cardano-cli"</span>, <span class="string">"substrate_node_base_path"</span>: <span class="string">"/path/to/data"</span>, <span class="string">"cardano_node_socket_path"</span>: <span class="string">"node.socket"</span>}),
-			),
-			MockIO::print(
-				<span class="string">"⚙️ Set `CARDANO_NODE_SOCKET_PATH` environment variable to `node.socket`"</span>,
-			),
-			MockIO::set_env_var(<span class="string">"CARDANO_NODE_SOCKET_PATH"</span>, <span class="string">"node.socket"</span>),
-		]
-	}
-
-	<span class="kw">fn </span>prompt_cardano_payment_verification_key_file_io() -&gt; Vec&lt;MockIO&gt; {
-		<span class="macro">vec!</span>[
+	<span class="kw">fn </span>prompt_cardano_payment_verification_key_file_io() -&gt; MockIO {
+		MockIO::Group(<span class="macro">vec!</span>[
 			MockIO::file_read(RESOURCE_CONFIG_PATH),
 			MockIO::prompt(
 				<span class="string">"path to the payment verification file"</span>,
-				CARDANO_PAYMENT_VERIFICATION_KEY_FILE.default,
-				<span class="string">"payment.vkey"</span>,
+				<span class="prelude-val">Some</span>(PAYMENT_VKEY_PATH),
+				PAYMENT_VKEY_PATH,
 			),
 			MockIO::file_read(RESOURCE_CONFIG_PATH),
 			MockIO::file_write_json(
 				RESOURCE_CONFIG_PATH,
-				<span class="macro">serde_json::json!</span>({<span class="string">"cardano_cli"</span>: <span class="string">"cardano-cli"</span>, <span class="string">"substrate_node_base_path"</span>: <span class="string">"/path/to/data"</span>, <span class="string">"cardano_node_socket_path"</span>: <span class="string">"node.socket"</span>, <span class="string">"cardano_payment_verification_key_file"</span>: <span class="string">"payment.vkey"</span>}),
+				<span class="macro">serde_json::json!</span>({<span class="string">"substrate_node_base_path"</span>: <span class="string">"/path/to/data"</span>, <span class="string">"cardano_payment_verification_key_file"</span>: PAYMENT_VKEY_PATH}),
 			),
-		]
+		])
 	}
 
-	<span class="kw">fn </span>load_prompt_fields_io() -&gt; Vec&lt;MockIO&gt; {
-		<span class="macro">vec!</span>[
-			MockIO::file_read(RESOURCE_CONFIG_PATH),
-			MockIO::prompt(<span class="string">"cardano cli executable"</span>, <span class="prelude-val">Some</span>(<span class="string">"cardano-cli"</span>), <span class="string">"cardano-cli"</span>),
-			MockIO::file_read(RESOURCE_CONFIG_PATH),
-			MockIO::file_write_json(
-				RESOURCE_CONFIG_PATH,
-				<span class="macro">serde_json::json!</span>({<span class="string">"cardano_cli"</span>: <span class="string">"cardano-cli"</span>, <span class="string">"substrate_node_base_path"</span>: <span class="string">"/path/to/data"</span>, <span class="string">"cardano_node_socket_path"</span>: <span class="string">"node.socket"</span>, <span class="string">"cardano_payment_verification_key_file"</span>: <span class="string">"payment.vkey"</span>}),
-			),
-			MockIO::file_read(RESOURCE_CONFIG_PATH),
-			MockIO::prompt(
-				<span class="string">"path to the cardano node socket file"</span>,
-				<span class="prelude-val">Some</span>(<span class="string">"node.socket"</span>),
-				<span class="string">"node.socket"</span>,
-			),
-			MockIO::file_read(RESOURCE_CONFIG_PATH),
-			MockIO::file_write_json(
-				RESOURCE_CONFIG_PATH,
-				<span class="macro">serde_json::json!</span>({<span class="string">"cardano_cli"</span>: <span class="string">"cardano-cli"</span>, <span class="string">"substrate_node_base_path"</span>: <span class="string">"/path/to/data"</span>, <span class="string">"cardano_node_socket_path"</span>: <span class="string">"node.socket"</span>, <span class="string">"cardano_payment_verification_key_file"</span>: <span class="string">"payment.vkey"</span>}),
-			),
-			MockIO::print(
-				<span class="string">"⚙️ Set `CARDANO_NODE_SOCKET_PATH` environment variable to `node.socket`"</span>,
-			),
-			MockIO::set_env_var(<span class="string">"CARDANO_NODE_SOCKET_PATH"</span>, <span class="string">"node.socket"</span>),
-			MockIO::file_read(RESOURCE_CONFIG_PATH),
-			MockIO::prompt(
-				<span class="string">"path to the payment verification file"</span>,
-				<span class="prelude-val">Some</span>(<span class="string">"payment.vkey"</span>),
-				<span class="string">"payment.vkey"</span>,
-			),
-			MockIO::file_read(RESOURCE_CONFIG_PATH),
-			MockIO::file_write_json(
-				RESOURCE_CONFIG_PATH,
-				<span class="macro">serde_json::json!</span>({<span class="string">"cardano_cli"</span>: <span class="string">"cardano-cli"</span>, <span class="string">"substrate_node_base_path"</span>: <span class="string">"/path/to/data"</span>, <span class="string">"cardano_node_socket_path"</span>: <span class="string">"node.socket"</span>, <span class="string">"cardano_payment_verification_key_file"</span>: <span class="string">"payment.vkey"</span>}),
-			),
-		]
+	<span class="kw">fn </span>read_payment_verification_key_file_io() -&gt; MockIO {
+		MockIO::file_read(<span class="string">"payment.vkey"</span>)
 	}
 
 	<span class="kw">fn </span>derive_address_io() -&gt; Vec&lt;MockIO&gt; {
 		<span class="macro">vec!</span>[
-			MockIO::print(<span class="string">"⚙️ Deriving address..."</span>),
-MockIO::run_command(<span class="string">"cardano-cli address build --payment-verification-key-file payment.vkey --testnet-magic 2"</span>, <span class="string">"addr_test1vpl6fzacldwksp866f3rwuuvujgdsj0y2eckrcu2hpq4lucnzv00d"</span>),
-MockIO::print(<span class="string">"⚙️ Address: addr_test1vpl6fzacldwksp866f3rwuuvujgdsj0y2eckrcu2hpq4lucnzv00d"</span>),
+			address_and_utxo_msg_io(),
+			prompt_cardano_payment_verification_key_file_io(),
+			read_payment_verification_key_file_io(),
 		]
 	}
 
 	<span class="kw">fn </span>query_utxos_io() -&gt; Vec&lt;MockIO&gt; {
 		<span class="macro">vec!</span>[
-			MockIO::print(<span class="string">"⚙️ Querying UTXOs..."</span>),
-			MockIO::run_command(<span class="string">"cardano-cli query utxo --out-file /dev/stdout --address addr_test1vpl6fzacldwksp866f3rwuuvujgdsj0y2eckrcu2hpq4lucnzv00d --testnet-magic 2"</span>, mock_result_5_valid().as_str()),
+			prompt_ogmios_configuration_io(<span class="kw-2">&amp;</span>default_ogmios_service_config(), <span class="kw-2">&amp;</span>default_ogmios_service_config()),
+			MockIO::print(<span class="string">"⚙️ Querying UTXOs of addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy from Ogmios at http://localhost:1337..."</span>),
+			MockIO::ogmios_request(
+				<span class="string">"http://localhost:1337"</span>,
+				OgmiosRequest::QueryUtxo {
+					address: <span class="string">"addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy"
+						</span>.into(),
+				},
+				<span class="prelude-val">Ok</span>(OgmiosResponse::QueryUtxo(mock_result_5_valid())),
+			),
 		]
 	}
 
@@ -1763,61 +1584,100 @@ MockIO::print(<span class="string">"⚙️ Address: addr_test1vpl6fzacldwksp866f
 		<span class="macro">vec!</span>[MockIO::eprint(<span class="string">"⚠️ The chain configuration file `partner-chains-cli-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority."</span>)]
 	}
 
-	<span class="kw">fn </span>mock_result_5_valid() -&gt; String {
-		<span class="string">r#"
-    {
-        "4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93": {
-            "value": {
-                "lovelace": 1100000
-            }
-        },
-        "76ddb0a474eb893e6e17de4cc692bce12e57271351cccb4c0e7e2ad864347b64#0": {
-            "value": {
-                "lovelace": 1200000
-            }
-        },
-        "8a0d3e5644b3e84a775556b44e6407971d01b8bfa3f339294b7228ac18ddb29c#0": {
-            "value": {
-                "lovelace": 1300000,
-                "244d83c5418732113e891db15ede8f0d15df75b705a1542d86937875.4c757854657374546f6b656e54727932": 1
-            }
-        },
-        "917e3dba3ed5faee7855d99b4a797859ac7b1941b381aef36080d767127bdaba#0": {
-            "value": {
-                "lovelace": 1400000
-            }
-        },
-        "b031cda9c257fed6eed781596ab5ca9495ae88a860e807763b2cd67c72c4cc1e#0": {
-            "value": {
-                "lovelace": 1500000
-            }
-        },
-        "b9da3bfe0c7c177d494aeea0937ce4da9827c8dfc80bedb5825cd08887cbedb8#0": {
-            "value": {
-                "lovelace": 1600000,
-                "7726c67e096e60ff24757de0ec0a78c659ce73c9b12e98df7d2fda2c": 1
-            }
-        },
-        "f5f58c0d5ab357a3562ca043a4dd67567a8399da77968cef59fb271d72db57bd#0": {
-            "value": {
-                "lovelace": 1700000
-            }
-        }
-    }
-    "#</span>.to_string()
+	<span class="kw">fn </span>mock_result_5_valid() -&gt; Vec&lt;OgmiosUtxo&gt; {
+		<span class="macro">vec!</span>[
+			OgmiosUtxo {
+				transaction: OgmiosTx {
+					id: <span class="macro">hex!</span>(<span class="string">"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02"</span>),
+				},
+				index: <span class="number">93</span>,
+				value: OgmiosValue::new_lovelace(<span class="number">1100000</span>),
+				..Default::default()
+			},
+			OgmiosUtxo {
+				transaction: OgmiosTx {
+					id: <span class="macro">hex!</span>(<span class="string">"76ddb0a474eb893e6e17de4cc692bce12e57271351cccb4c0e7e2ad864347b64"</span>),
+				},
+				index: <span class="number">0</span>,
+				value: OgmiosValue::new_lovelace(<span class="number">1200000</span>),
+				..Default::default()
+			},
+			OgmiosUtxo {
+				transaction: OgmiosTx {
+					id: <span class="macro">hex!</span>(<span class="string">"b9da3bfe0c7c177d494aeea0937ce4da9827c8dfc80bedb5825cd08887cbedb8"</span>),
+				},
+				index: <span class="number">0</span>,
+				value: OgmiosValue {
+					lovelace: <span class="number">1300000</span>,
+					native_tokens: HashMap::from([(
+						<span class="macro">hex!</span>(<span class="string">"244d83c5418732113e891db15ede8f0d15df75b705a1542d86937875"</span>),
+						<span class="macro">vec!</span>[Asset {
+							name: <span class="macro">hex!</span>(<span class="string">"4c757854657374546f6b656e54727932"</span>).to_vec(),
+							amount: <span class="number">1</span>,
+						}],
+					)]),
+				},
+				..Default::default()
+			},
+			OgmiosUtxo {
+				transaction: OgmiosTx {
+					id: <span class="macro">hex!</span>(<span class="string">"917e3dba3ed5faee7855d99b4a797859ac7b1941b381aef36080d767127bdaba"</span>),
+				},
+				index: <span class="number">0</span>,
+				value: OgmiosValue::new_lovelace(<span class="number">1400000</span>),
+				..Default::default()
+			},
+			OgmiosUtxo {
+				transaction: OgmiosTx {
+					id: <span class="macro">hex!</span>(<span class="string">"b031cda9c257fed6eed781596ab5ca9495ae88a860e807763b2cd67c72c4cc1e"</span>),
+				},
+				index: <span class="number">0</span>,
+				value: OgmiosValue::new_lovelace(<span class="number">1500000</span>),
+				..Default::default()
+			},
+			OgmiosUtxo {
+				transaction: OgmiosTx {
+					id: <span class="macro">hex!</span>(<span class="string">"b9da3bfe0c7c177d494aeea0937ce4da9827c8dfc80bedb5825cd08887cbedb8"</span>),
+				},
+				index: <span class="number">0</span>,
+				value: OgmiosValue {
+					lovelace: <span class="number">1600000</span>,
+					native_tokens: HashMap::from([(
+						<span class="macro">hex!</span>(<span class="string">"7726c67e096e60ff24757de0ec0a78c659ce73c9b12e98df7d2fda2c"</span>),
+						<span class="macro">vec!</span>[Asset { name: <span class="macro">vec!</span>[], amount: <span class="number">1 </span>}],
+					)]),
+				},
+				..Default::default()
+			},
+			OgmiosUtxo {
+				transaction: OgmiosTx {
+					id: <span class="macro">hex!</span>(<span class="string">"f5f58c0d5ab357a3562ca043a4dd67567a8399da77968cef59fb271d72db57bd"</span>),
+				},
+				index: <span class="number">0</span>,
+				value: OgmiosValue::new_lovelace(<span class="number">1700000</span>),
+				..Default::default()
+			},
+		]
 	}
 
-	<span class="kw">fn </span>mock_result_0_valid() -&gt; String {
-		<span class="string">r#"
-    {
-        "8a0d3e5644b3e84a775556b44e6407971d01b8bfa3f339294b7228ac18ddb29c#0": {
-            "value": {
-                "lovelace": 10000000,
-                "244d83c5418732113e891db15ede8f0d15df75b705a1542d86937875.4c757854657374546f6b656e54727932": 1
-            }
-        }
-    }
-    "#</span>.to_string()
+	<span class="kw">fn </span>mock_result_0_valid() -&gt; Vec&lt;OgmiosUtxo&gt; {
+		<span class="macro">vec!</span>[OgmiosUtxo {
+			transaction: OgmiosTx {
+				id: <span class="macro">hex!</span>(<span class="string">"8a0d3e5644b3e84a775556b44e6407971d01b8bfa3f339294b7228ac18ddb29c"</span>),
+			},
+			index: <span class="number">0</span>,
+			value: OgmiosValue {
+				lovelace: <span class="number">10000000</span>,
+				native_tokens: HashMap::from([(
+					<span class="macro">hex!</span>(<span class="string">"244d83c5418732113e891db15ede8f0d15df75b705a1542d86937875"</span>),
+					<span class="macro">vec!</span>[Asset {
+						name: <span class="macro">hex!</span>(<span class="string">"4c757854657374546f6b656e54727932"</span>).to_vec(),
+						amount: <span class="number">1</span>,
+					}],
+				)]),
+			},
+			..Default::default()
+		}]
 	}
 }
 </code></pre></div></section></main></body></html>

@@ -756,6 +756,7 @@
 <a href="#756" id="756">756</a>
 <a href="#757" id="757">757</a>
 <a href="#758" id="758">758</a>
+<a href="#759" id="759">759</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	CARDANO_ACTIVE_SLOTS_COEFF, CARDANO_EPOCH_DURATION_MILLIS, CARDANO_FIRST_EPOCH_NUMBER,
 	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_NETWORK,
@@ -1033,6 +1034,15 @@
 	}
 }
 
+<span class="kw">impl </span>From&lt;CardanoNetwork&gt; <span class="kw">for </span>cardano_serialization_lib::NetworkIdKind {
+	<span class="kw">fn </span>from(network: CardanoNetwork) -&gt; cardano_serialization_lib::NetworkIdKind {
+		<span class="kw">match </span>network {
+			CardanoNetwork(<span class="number">0</span>) =&gt; cardano_serialization_lib::NetworkIdKind::Mainnet,
+			<span class="kw">_ </span>=&gt; cardano_serialization_lib::NetworkIdKind::Testnet,
+		}
+	}
+}
+
 <span class="kw">impl </span>std::fmt::Display <span class="kw">for </span>CardanoNetwork {
 	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; std::fmt::Result {
 		<span class="kw">match </span><span class="self">self </span>{
@@ -1210,23 +1220,6 @@
 		default: <span class="prelude-val">Some</span>(NODE_EXECUTABLE_DEFAULT),
 		_marker: PhantomData,
 	};
-
-	<span class="kw">pub const </span>CARDANO_CLI: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; = ConfigFieldDefinition {
-		config_file: RESOURCES_CONFIG_FILE_PATH,
-		path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_cli"</span>],
-		name: <span class="string">"cardano cli executable"</span>,
-		default: <span class="prelude-val">Some</span>(<span class="string">"cardano-cli"</span>),
-		_marker: PhantomData,
-	};
-
-	<span class="kw">pub const </span>CARDANO_NODE_SOCKET_PATH: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
-		ConfigFieldDefinition {
-			config_file: RESOURCES_CONFIG_FILE_PATH,
-			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano_node_socket_path"</span>],
-			name: <span class="string">"path to the cardano node socket file"</span>,
-			default: <span class="prelude-val">Some</span>(<span class="string">"node.socket"</span>),
-			_marker: PhantomData,
-		};
 
 	<span class="kw">pub const </span>CARDANO_PAYMENT_VERIFICATION_KEY_FILE: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
 		ConfigFieldDefinition {
@@ -1489,7 +1482,8 @@
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
-	<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::GOVERNANCE_AUTHORITY;
+	<span class="kw">use </span><span class="kw">crate</span>::config::{config_fields::GOVERNANCE_AUTHORITY, CardanoNetwork};
+	<span class="kw">use </span>cardano_serialization_lib::NetworkIdKind;
 	<span class="kw">use </span>sidechain_domain::MainchainAddressHash;
 
 	<span class="attr">#[test]
@@ -1512,6 +1506,14 @@
 				<span class="string">"000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"
 			</span>))
 		);
+	}
+
+	<span class="attr">#[test]
+	</span><span class="kw">fn </span>test_from_network_id() {
+		<span class="macro">assert_eq!</span>(NetworkIdKind::from(CardanoNetwork(<span class="number">0</span>)), NetworkIdKind::Mainnet);
+		<span class="macro">assert_eq!</span>(NetworkIdKind::from(CardanoNetwork(<span class="number">1</span>)), NetworkIdKind::Testnet);
+		<span class="macro">assert_eq!</span>(NetworkIdKind::from(CardanoNetwork(<span class="number">2</span>)), NetworkIdKind::Testnet);
+		<span class="macro">assert_eq!</span>(NetworkIdKind::from(CardanoNetwork(<span class="number">42</span>)), NetworkIdKind::Testnet);
 	}
 }
 </code></pre></div></section></main></body></html>

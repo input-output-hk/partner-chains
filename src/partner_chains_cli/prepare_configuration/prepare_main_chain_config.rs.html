@@ -808,12 +808,12 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 				MockIO::ogmios_request(
 					<span class="string">"http://localhost:1337"</span>,
 					OgmiosRequest::QueryLedgerStateEraSummaries,
-					OgmiosResponse::QueryLedgerStateEraSummaries(preprod_eras_summaries()),
+					<span class="prelude-val">Ok</span>(OgmiosResponse::QueryLedgerStateEraSummaries(preprod_eras_summaries())),
 				),
 				MockIO::ogmios_request(
 					<span class="string">"http://localhost:1337"</span>,
 					OgmiosRequest::QueryNetworkShelleyGenesis,
-					OgmiosResponse::QueryNetworkShelleyGenesis(preprod_shelley_config()),
+					<span class="prelude-val">Ok</span>(OgmiosResponse::QueryNetworkShelleyGenesis(preprod_shelley_config())),
 				),
 				scenarios::save_cardano_params(),
 				MockIO::new_tmp_file(DUMMY_SKEY),
@@ -875,12 +875,12 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 				MockIO::ogmios_request(
 					<span class="string">"http://localhost:1337"</span>,
 					OgmiosRequest::QueryLedgerStateEraSummaries,
-					OgmiosResponse::QueryLedgerStateEraSummaries(preprod_eras_summaries()),
+					<span class="prelude-val">Ok</span>(OgmiosResponse::QueryLedgerStateEraSummaries(preprod_eras_summaries())),
 				),
 				MockIO::ogmios_request(
 					<span class="string">"http://localhost:1337"</span>,
 					OgmiosRequest::QueryNetworkShelleyGenesis,
-					OgmiosResponse::QueryNetworkShelleyGenesis(preprod_shelley_config()),
+					<span class="prelude-val">Ok</span>(OgmiosResponse::QueryNetworkShelleyGenesis(preprod_shelley_config())),
 				),
 				scenarios::save_cardano_params(),
 				MockIO::new_tmp_file(DUMMY_SKEY),

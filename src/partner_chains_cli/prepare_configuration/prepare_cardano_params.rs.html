@@ -383,12 +383,12 @@
 				MockIO::ogmios_request(
 					<span class="string">"https://ogmios.com:7654"</span>,
 					OgmiosRequest::QueryLedgerStateEraSummaries,
-					OgmiosResponse::QueryLedgerStateEraSummaries(eras_summaries),
+					<span class="prelude-val">Ok</span>(OgmiosResponse::QueryLedgerStateEraSummaries(eras_summaries)),
 				),
 				MockIO::ogmios_request(
 					<span class="string">"https://ogmios.com:7654"</span>,
 					OgmiosRequest::QueryNetworkShelleyGenesis,
-					OgmiosResponse::QueryNetworkShelleyGenesis(shelley_config),
+					<span class="prelude-val">Ok</span>(OgmiosResponse::QueryNetworkShelleyGenesis(shelley_config)),
 				),
 			]);
 		<span class="kw">let </span>result = prepare_cardano_params(<span class="kw-2">&amp;</span>ogmios_config, <span class="kw-2">&amp;</span>mock_context);

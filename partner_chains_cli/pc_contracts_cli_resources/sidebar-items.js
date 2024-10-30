@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["KUPO_AND_OGMIOS_REQUIRED"],"fn":["establish_pc_contracts_cli_configuration"],"struct":["PcContractsCliResources"]};
+window.SIDEBAR_ITEMS = {"constant":["KUPO_AND_OGMIOS_REQUIRED"],"fn":["default_ogmios_service_config","establish_pc_contracts_cli_configuration","prompt_ogmios_configuration"],"struct":["PcContractsCliResources"]};

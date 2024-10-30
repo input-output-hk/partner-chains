@@ -108,6 +108,22 @@
 <a href="#108" id="108">108</a>
 <a href="#109" id="109">109</a>
 <a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::config::{NetworkProtocol, ServiceConfig};
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
@@ -130,15 +146,19 @@
 				hostname: KUPO_HOSTNAME.default.unwrap_or(<span class="string">"localhost"</span>).to_string(),
 				port: KUPO_PORT.default.unwrap_or(<span class="string">"1442"</span>).parse().unwrap(),
 			},
-			ogmios: ServiceConfig {
-				protocol: OGMIOS_PROTOCOL
-					.default
-					.and_then(|p| NetworkProtocol::from_str(p).ok())
-					.unwrap_or(NetworkProtocol::Http),
-				hostname: OGMIOS_HOSTNAME.default.unwrap_or(<span class="string">"localhost"</span>).to_string(),
-				port: OGMIOS_PORT.default.unwrap_or(<span class="string">"1337"</span>).parse().unwrap(),
-			},
+			ogmios: default_ogmios_service_config(),
 		}
+	}
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>default_ogmios_service_config() -&gt; ServiceConfig {
+	ServiceConfig {
+		protocol: OGMIOS_PROTOCOL
+			.default
+			.and_then(|p| NetworkProtocol::from_str(p).ok())
+			.unwrap_or(NetworkProtocol::Http),
+		hostname: OGMIOS_HOSTNAME.default.unwrap_or(<span class="string">"localhost"</span>).to_string(),
+		port: OGMIOS_PORT.default.unwrap_or(<span class="string">"1337"</span>).parse().unwrap(),
 	}
 }
 
@@ -153,19 +173,22 @@
 		.map_err(anyhow::Error::msg)<span class="question-mark">?</span>;
 	<span class="kw">let </span>kupo_hostname = KUPO_HOSTNAME.prompt_with_default_from_file_and_save(context);
 	<span class="kw">let </span>kupo_port = KUPO_PORT.prompt_with_default_from_file_parse_and_save(context)<span class="question-mark">?</span>;
+	<span class="kw">let </span>ogmios = prompt_ogmios_configuration(context)<span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>(PcContractsCliResources {
+		kupo: ServiceConfig { protocol: kupo_protocol, hostname: kupo_hostname, port: kupo_port },
+		ogmios,
+	})
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>prompt_ogmios_configuration&lt;C: IOContext&gt;(
+	context: <span class="kw-2">&amp;</span>C,
+) -&gt; anyhow::Result&lt;ServiceConfig&gt; {
 	<span class="kw">let </span>ogmios_protocol = OGMIOS_PROTOCOL
 		.select_options_with_default_from_file_and_save(OGMIOS_PROTOCOL.name, context)
 		.map_err(anyhow::Error::msg)<span class="question-mark">?</span>;
 	<span class="kw">let </span>ogmios_hostname = OGMIOS_HOSTNAME.prompt_with_default_from_file_and_save(context);
 	<span class="kw">let </span>ogmios_port = OGMIOS_PORT.prompt_with_default_from_file_parse_and_save(context)<span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(PcContractsCliResources {
-		kupo: ServiceConfig { protocol: kupo_protocol, hostname: kupo_hostname, port: kupo_port },
-		ogmios: ServiceConfig {
-			protocol: ogmios_protocol,
-			hostname: ogmios_hostname,
-			port: ogmios_port,
-		},
-	})
+	<span class="prelude-val">Ok</span>(ServiceConfig { protocol: ogmios_protocol, hostname: ogmios_hostname, port: ogmios_port })
 }
 
 <span class="attr">#[cfg(test)]
@@ -200,20 +223,29 @@
 				<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>default_config.kupo.port.to_string()),
 				<span class="kw-2">&amp;</span>config_to_set.kupo.port.to_string(),
 			),
+			prompt_ogmios_configuration_io(<span class="kw-2">&amp;</span>default_config.ogmios, <span class="kw-2">&amp;</span>config_to_set.ogmios),
+		])
+	}
+
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>prompt_ogmios_configuration_io(
+		default_config: <span class="kw-2">&amp;</span>ServiceConfig,
+		config_to_set: <span class="kw-2">&amp;</span>ServiceConfig,
+	) -&gt; MockIO {
+		MockIO::Group(<span class="macro">vec!</span>[
 			prompt_multi_option_with_default_and_save_to_existing_file(
 				OGMIOS_PROTOCOL,
-				<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>default_config.ogmios.protocol.to_string()),
-				<span class="kw-2">&amp;</span>config_to_set.ogmios.protocol.to_string(),
+				<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>default_config.protocol.to_string()),
+				<span class="kw-2">&amp;</span>config_to_set.protocol.to_string(),
 			),
 			prompt_with_default_and_save_to_existing_file(
 				OGMIOS_HOSTNAME,
-				<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>default_config.ogmios.hostname),
-				<span class="kw-2">&amp;</span>config_to_set.ogmios.hostname,
+				<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>default_config.hostname),
+				<span class="kw-2">&amp;</span>config_to_set.hostname,
 			),
 			prompt_with_default_and_save_to_existing_file(
 				OGMIOS_PORT,
-				<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>default_config.ogmios.port.to_string()),
-				<span class="kw-2">&amp;</span>config_to_set.ogmios.port.to_string(),
+				<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>default_config.port.to_string()),
+				<span class="kw-2">&amp;</span>config_to_set.port.to_string(),
 			),
 		])
 	}
