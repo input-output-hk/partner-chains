@@ -525,4 +525,6 @@ sleep 240
 echo "=========================================================================================================================="
 echo "Querying protocol parameters to verify the change..."
 echo "=========================================================================================================================="
-cardano-cli conway query protocol-parameters --testnet-magic 42 | jq .protocolVersion
+cardano-cli conway query protocol-parameters --testnet-magic 42
+
+wait
