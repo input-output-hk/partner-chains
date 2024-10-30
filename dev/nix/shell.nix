@@ -30,40 +30,45 @@
     # Resolve the packages
     tracePackages =  builtins.trace "Package names: ${builtins.toString (shellConfig.packages.list)}" shellConfig.packages.list;
 
-    packages = map resolvePackage shellConfig.packages.list;
+    packages = map resolvePackage shellConfig.packages;
 
   in {
-    devShells.default = pkgs.mkShell ({
-      RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
-      LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
-      LD_LIBRARY_PATH = "${rustToolchain}/lib";
-      ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
-      OPENSSL_NO_VENDOR = 1;
-      OPENSSL_DIR  = "${pkgs.openssl.dev}";
-      OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
-      OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
+    devShells = {
+      default = pkgs.mkShell ({
+        RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
+        LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
+        LD_LIBRARY_PATH = "${rustToolchain}/lib";
+        ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
+        OPENSSL_NO_VENDOR = 1;
+        OPENSSL_DIR  = "${pkgs.openssl.dev}";
+        OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
+        OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
 
-      # Set packages, reading from shellConfig.packages.list
-      packages = [
-        (if isDarwin
-         then
-           pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
-         else pkgs.clang
-        )
-        rustToolchain
-        pkgs.coreutils
-        pkgs.pkg-config
-        pkgs.protobuf
-        pkgs.libiconv
-        pkgs.openssl
-        pkgs.just
-      ] ++ packages;
+        # Required packages for shell functionality
+        packages = [
+          (if isDarwin
+           then
+             pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+           else pkgs.clang
+          )
+          rustToolchain
+          pkgs.coreutils
+          pkgs.pkg-config
+          pkgs.protobuf
+          pkgs.libiconv
+          pkgs.openssl
+          pkgs.just
+        ] ++ packages;
 
-      # Additional shell hook
-      shellHook = ''
-        echo 'Welcome to Partner Chains'
-        echo 'run just -l to see a list of actions'
+        # Additional shell hook
+        shellHook = ''
+          echo 'Welcome to Partner Chains'
+          echo 'run just -l to see a list of actions'
       '';
-    } // shellConfig.envs);
+      } // shellConfig.envs.default);
+      devnet = pkgs.mkShell ({
+        inputsFrom = [ self'.devShells.default ];
+      } // shellConfig.envs.devnet);
+    };
   };
 }
