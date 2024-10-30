@@ -212,7 +212,7 @@ fn query_utxos<C: IOContext>(
 	ogmios_config: &ServiceConfig,
 	address: &str,
 ) -> Result<Vec<OgmiosUtxo>, anyhow::Error> {
-	let ogmios_addr = format!("{}", ogmios_config);
+	let ogmios_addr = ogmios_config.to_string();
 	context.print(&format!("⚙️ Querying UTXOs of {address} from Ogmios at {ogmios_addr}..."));
 	let response = context
 		.ogmios_rpc(&ogmios_addr, OgmiosRequest::QueryUtxo { address: address.into() })
@@ -220,7 +220,7 @@ fn query_utxos<C: IOContext>(
 	match response {
 		OgmiosResponse::QueryUtxo(utxos) => Ok(utxos),
 		other => Err(anyhow::anyhow!(format!(
-			"Unexpected response from Ogmios when quering for utxos: {other:?}"
+			"Unexpected response from Ogmios when querying for utxos: {other:?}"
 		))),
 	}
 }
