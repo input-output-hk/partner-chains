@@ -274,16 +274,31 @@ def config():
 
 
 @fixture(scope="session")
-def secrets(blockchain, nodes_env, decrypt):
+def secrets(blockchain, nodes_env, decrypt, ci_run):
     path = f"{os.getcwd()}/secrets/{blockchain}/{nodes_env}/{nodes_env}.json"
     assert os.path.isfile(path), f"Secrets file not found {path}"
     if decrypt:
         decrypted_data = subprocess.check_output(["sops", "--decrypt", path], encoding="utf-8")
         secrets = OmegaConf.create(json.loads(decrypted_data))
     else:
-        with open(path) as file:
-            secrets = OmegaConf.create(json.load(file))
+        secrets = OmegaConf.load(path)
 
+    ci_path = f"{os.getcwd()}/secrets/{blockchain}/{nodes_env}/{nodes_env}-ci.json"
+    if ci_run and os.path.isfile(ci_path):
+        secrets = secrets_ci(secrets, decrypt, ci_path)
+
+    return secrets
+
+
+def secrets_ci(secrets, decrypt, ci_path):
+    """Override secrets with values specific for ci run."""
+    if decrypt:
+        decrypted_data = subprocess.check_output(["sops", "--decrypt", ci_path], encoding="utf-8")
+        ci_secrets = OmegaConf.create(json.loads(decrypted_data))
+    else:
+        ci_secrets = OmegaConf.load(ci_path)
+
+    secrets = OmegaConf.merge(secrets, ci_secrets)
     return secrets
 
 
