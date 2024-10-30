@@ -45,6 +45,8 @@ runs:
   using: composite
   steps:
     - name: Run tests
+      id: run-tests
+      continue-on-error: true
       shell: bash
       run: |
         mc_epoch_switch=""
@@ -92,9 +94,24 @@ runs:
             source venv/bin/activate &&
             $pytest_cmd
           "
+          echo "Storing test results"
+          mkdir -p e2e-tests
+          docker cp tests:/e2e-tests/.report.json e2e-tests/.report.json
         else
           echo "Running tests locally"
           cd e2e-tests
           source venv/bin/activate
           eval "$pytest_cmd"
         fi
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: e2e-tests/.report.json
+        overwrite: true
+        if-no-files-found: error
+        include-hidden-files: true
+    - name: Fail the job
+      if: ${{ steps.run-tests.outcome == 'failure' }}
+      run: exit 1
+      shell: bash
