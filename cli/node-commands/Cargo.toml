@@ -10,6 +10,7 @@ clap = { workspace = true }
 cli-commands = { workspace = true }
 frame-support = { workspace = true }
 parity-scale-codec = { workspace = true }
+partner-chains-offchain-commands = { workspace = true }
 plutus = { workspace = true }
 sidechain-domain = { workspace = true, default-features = true }
 sc-cli = { workspace = true, default-features = true }

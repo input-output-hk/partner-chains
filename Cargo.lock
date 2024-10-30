@@ -6547,6 +6547,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
  "partner-chains-node-commands",
+ "partner-chains-offchain-commands",
  "plutus",
  "plutus-datum-derive",
  "sc-basic-authorship",
@@ -6608,6 +6609,7 @@ dependencies = [
  "cli-commands",
  "frame-support",
  "parity-scale-codec",
+ "partner-chains-offchain-commands",
  "plutus",
  "sc-cli",
  "sc-service",
@@ -6619,6 +6621,13 @@ dependencies = [
  "sp-session-validator-management-query",
  "sp-sidechain",
  "tokio",
+]
+
+[[package]]
+name = "partner-chains-offchain-commands"
+version = "0.1.0"
+dependencies = [
+ "clap",
 ]
 
 [[package]]

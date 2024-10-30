@@ -70,6 +70,7 @@ thiserror = { workspace = true }
 time-source = { workspace = true }
 derive-new = { workspace = true }
 partner-chains-node-commands = { workspace = true }
+partner-chains-offchain-commands = { workspace = true }
 envy = { workspace = true }
 
 # These dependencies are used for the node template's RPCs
