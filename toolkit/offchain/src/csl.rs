@@ -87,7 +87,7 @@ fn ratio_to_unit_interval(ratio: &fraction::Ratio<u64>) -> UnitInterval {
 /// Coverts ogmios value to CSL value.
 /// It could fail if the input contains negative values, for example ogmios values representing burn.
 pub(crate) fn convert_value(value: &OgmiosValue) -> Result<Value, JsError> {
-	if value.native_tokens.len() > 0 {
+	if !value.native_tokens.is_empty() {
 		let mut multiasset = MultiAsset::new();
 		for (policy_id, assets) in value.native_tokens.iter() {
 			let mut csl_assets = Assets::new();

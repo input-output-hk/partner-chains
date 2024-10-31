@@ -145,18 +145,18 @@ fn version_oracle(
 	network: NetworkIdKind,
 ) -> Result<(ScriptBytes, PolicyId, PlutusData), anyhow::Error> {
 	let init_token_policy =
-		get_script_policy_id(raw_scripts::INIT_TOKEN_POLICY, &[&pc_params_data])?;
+		get_script_policy_id(raw_scripts::INIT_TOKEN_POLICY, &[pc_params_data])?;
 	let init_token_asset_data = PlutusData::Array(vec![
 		PlutusData::BoundedBytes(init_token_policy.0.to_vec().into()),
 		PlutusData::BoundedBytes(b"Version oracle InitToken".to_vec().into()),
 	]);
 
 	let validator =
-		apply_uplc_params_to_script(&[&pc_params_data], raw_scripts::VERSION_ORACLE_VALIDATOR)?;
+		apply_uplc_params_to_script(&[pc_params_data], raw_scripts::VERSION_ORACLE_VALIDATOR)?;
 	let validator_address = plutus_script_address(&validator, network, LanguageKind::PlutusV2);
 	let policy_script = apply_uplc_params_to_script(
 		&[
-			&pc_params_data,
+			pc_params_data,
 			&init_token_asset_data,
 			&csl_plutus_data_to_uplc(&CSLPlutusData::from_address(&validator_address)?)?,
 		],
