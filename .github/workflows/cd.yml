@@ -189,12 +189,30 @@ jobs:
               xargs -I {} curl -s -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"chain_getHeader","params":["{}"],"id":"1"}' http://$STAGING_PREVIEW_VALIDATOR_1_HOST:$STAGING_PREVIEW_VALIDATOR_1_PORT |
               jq -r ".result.number" | xargs printf "%d"
           )
-          if [ "$FINALIZED_NUMBER" -gt 0 ]; then
-            echo "Blocks are being finalized. Finalized Block Number: $FINALIZED_NUMBER"
-          else
-            echo "No blocks are being finalized. Finalized Block Number: $FINALIZED_NUMBER"
-            exit 1
-          fi
+
+          timeout=300  # Timeout in seconds
+          interval=10  # Interval in seconds
+          elapsed=0
+
+          while [ "$FINALIZED_NUMBER" -le 0 ]; do
+            if [ $elapsed -ge $timeout ]; then
+              echo "Timeout reached: $timeout seconds"
+              exit 1
+            fi
+
+            echo "Waiting for blocks to be finalized..."
+            sleep $interval
+            elapsed=$((elapsed + interval))
+
+            FINALIZED_NUMBER=$(
+              curl -s -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"chain_getFinalizedHead","params":[],"id":"1"}' http://$STAGING_PREVIEW_VALIDATOR_1_HOST:$STAGING_PREVIEW_VALIDATOR_1_PORT |
+              jq -r ".result" |
+              xargs -I {} curl -s -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"chain_getHeader","params":["{}"],"id":"1"}' http://$STAGING_PREVIEW_VALIDATOR_1_HOST:$STAGING_PREVIEW_VALIDATOR_1_PORT |
+              jq -r ".result.number" | xargs printf "%d"
+            )
+          done
+
+          echo "Blocks are being finalized. Finalized Block Number: $FINALIZED_NUMBER"
         shell: bash
 
   run-smoke-tests: 
@@ -220,6 +238,7 @@ jobs:
           env: staging
           decrypt: true
           markers: "not active_flow and not passive_flow and (CD or rpc)"
+          threads: 1
 
   run-all-tests:
     permissions:
@@ -247,6 +266,7 @@ jobs:
           decrypt: true
           markers: "not active_flow and not passive_flow"
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
+          threads: 1
 
   wait-for-n1-epoch:
     permissions:
@@ -308,6 +328,7 @@ jobs:
           latest_mc_epoch: true
           markers: "not active_flow and not passive_flow"
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
+          threads: 1
 
   wait-for-n2-epoch:
     permissions:
@@ -369,6 +390,7 @@ jobs:
           latest_mc_epoch: true
           markers: "not active_flow and not passive_flow"
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
+          threads: 1
 
   publish:
     permissions:

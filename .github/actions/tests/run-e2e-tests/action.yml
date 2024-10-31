@@ -40,6 +40,10 @@ inputs:
   decrypt:
     description: 'Decrypt secrets'
     required: false
+  threads:
+    description: 'Number of threads to use'
+    required: false
+    default: '4'
 
 runs:
   using: composite
@@ -75,7 +79,7 @@ runs:
           --log-cli-level '${{ inputs.log_level }}' \
           -k '${{ inputs.keyword }}' \
           -m '${{ inputs.markers }}' \
-          -n 4 \
+          -n '${{ inputs.threads}}' \
           --dist=loadgroup \
           --ci-run \
           --init-timestamp '${{ inputs.init_timestamp }}' \
@@ -101,7 +105,7 @@ runs:
           eval "$pytest_cmd"
         fi
     - name: Copy .report.json if run with docker exec
-      if: ${{ inputs.local-environment }} == 'true'
+      if: ${{ inputs.local-environment == 'true' }}
       run: |
         echo "Copy test results from docker container"
         mkdir -p e2e-tests
