@@ -181,6 +181,8 @@ substrate-prometheus-endpoint = { package = "substrate-prometheus-endpoint", git
 substrate-test-runtime-client = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409" }
 substrate-wasm-builder = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409" }
 
+raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", rev = "f4d29236260f8a9dd9ac434045ecaec773909554" }
+
 # local dependencies
 sidechain-runtime = { path = "runtime" }
 pallet-block-rewards = { path = "pallets/block-rewards", default-features = false }

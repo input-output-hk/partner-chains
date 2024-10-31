@@ -11,16 +11,20 @@ use ogmios_client::{
 	types::OgmiosValue,
 };
 
+pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: LanguageKind) -> [u8; 28] {
+	// Before hashing the script, we need to prepend with byte denoting the language.
+	let mut buf: Vec<u8> = vec![language_kind_to_u8(language)];
+	buf.extend(script_bytes);
+	sidechain_domain::crypto::blake2b(buf.as_slice())
+}
+
 /// Builds an CSL `Address` for plutus script from the data obtained from smart contracts.
 pub fn plutus_script_address(
 	script_bytes: &[u8],
 	network: NetworkIdKind,
 	language: LanguageKind,
 ) -> Address {
-	// Before hashing the script, we need to prepend with byte 0x02, because this is PlutusV2 script
-	let mut buf: Vec<u8> = vec![language_kind_to_u8(language)];
-	buf.extend(script_bytes);
-	let script_hash = sidechain_domain::crypto::blake2b(buf.as_slice());
+	let script_hash = plutus_script_hash(script_bytes, language);
 	EnterpriseAddress::new(
 		network_id_kind_to_u8(network),
 		&Credential::from_scripthash(&script_hash.into()),
@@ -83,7 +87,7 @@ fn ratio_to_unit_interval(ratio: &fraction::Ratio<u64>) -> UnitInterval {
 /// Coverts ogmios value to CSL value.
 /// It could fail if the input contains negative values, for example ogmios values representing burn.
 pub(crate) fn convert_value(value: &OgmiosValue) -> Result<Value, JsError> {
-	if value.native_tokens.len() > 0 {
+	if !value.native_tokens.is_empty() {
 		let mut multiasset = MultiAsset::new();
 		for (policy_id, assets) in value.native_tokens.iter() {
 			let mut csl_assets = Assets::new();

@@ -6479,10 +6479,12 @@ dependencies = [
  "pallas-addresses 0.30.2 (git+https://github.com/txpipe/pallas.git?tag=v0.30.2)",
  "pallas-primitives 0.30.2 (git+https://github.com/txpipe/pallas.git?tag=v0.30.2)",
  "plutus",
+ "raw-scripts",
  "secp256k1 0.28.2",
  "serde",
  "serde_json",
  "sidechain-domain",
+ "tokio",
  "uplc",
 ]
 
@@ -7639,6 +7641,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb9ee317cfe3fbd54b36a511efc1edd42e216903c9cd575e686dd68a2ba90d8d"
 dependencies = [
  "bitflags 2.6.0",
+]
+
+[[package]]
+name = "raw-scripts"
+version = "6.2.1"
+source = "git+https://github.com/input-output-hk/partner-chains-smart-contracts.git?rev=f4d29236260f8a9dd9ac434045ecaec773909554#f4d29236260f8a9dd9ac434045ecaec773909554"
+dependencies = [
+ "hex-literal",
 ]
 
 [[package]]
