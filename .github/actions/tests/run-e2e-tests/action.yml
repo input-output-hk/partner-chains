@@ -101,7 +101,7 @@ runs:
           eval "$pytest_cmd"
         fi
     - name: Copy .report.json if run with docker exec
-      if: ${{ inputs.local-environment }} == 'true'
+      if: ${{ inputs.local-environment == 'true' }}
       run: |
         echo "Copy test results from docker container"
         mkdir -p e2e-tests
