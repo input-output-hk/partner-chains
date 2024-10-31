@@ -238,6 +238,7 @@ jobs:
           env: staging
           decrypt: true
           markers: "not active_flow and not passive_flow and (CD or rpc)"
+          threads: 1
 
   run-all-tests:
     permissions:
@@ -265,6 +266,7 @@ jobs:
           decrypt: true
           markers: "not active_flow and not passive_flow"
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
+          threads: 1
 
   wait-for-n1-epoch:
     permissions:
@@ -326,6 +328,7 @@ jobs:
           latest_mc_epoch: true
           markers: "not active_flow and not passive_flow"
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
+          threads: 1
 
   wait-for-n2-epoch:
     permissions:
@@ -387,6 +390,7 @@ jobs:
           latest_mc_epoch: true
           markers: "not active_flow and not passive_flow"
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
+          threads: 1
 
   publish:
     permissions:
