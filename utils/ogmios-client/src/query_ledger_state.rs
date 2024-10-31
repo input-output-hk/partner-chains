@@ -6,16 +6,28 @@ use crate::{
 };
 use serde::Deserialize;
 
-pub trait QueryLedgerState: OgmiosClient {
+pub trait QueryLedgerState {
 	#[allow(async_fn_in_trait)]
+	async fn era_summaries(&self) -> Result<Vec<EraSummary>, OgmiosClientError>;
+
+	#[allow(async_fn_in_trait)]
+	/// Parameters:
+	/// - `addresses`: bech32 address to query
+	async fn query_utxos(&self, addresses: &[String])
+		-> Result<Vec<OgmiosUtxo>, OgmiosClientError>;
+
+	#[allow(async_fn_in_trait)]
+	async fn query_protocol_parameters(
+		&self,
+	) -> Result<ProtocolParametersResponse, OgmiosClientError>;
+}
+
+impl<T: OgmiosClient> QueryLedgerState for T {
 	async fn era_summaries(&self) -> Result<Vec<EraSummary>, OgmiosClientError> {
 		self.request("queryLedgerState/eraSummaries", OgmiosParams::empty_positional())
 			.await
 	}
 
-	#[allow(async_fn_in_trait)]
-	/// Parameters:
-	/// - `addresses`: bech32 address to query
 	async fn query_utxos(
 		&self,
 		addresses: &[String],
@@ -24,7 +36,6 @@ pub trait QueryLedgerState: OgmiosClient {
 		self.request("queryLedgerState/utxo", params).await
 	}
 
-	#[allow(async_fn_in_trait)]
 	async fn query_protocol_parameters(
 		&self,
 	) -> Result<ProtocolParametersResponse, OgmiosClientError> {
@@ -33,9 +44,7 @@ pub trait QueryLedgerState: OgmiosClient {
 	}
 }
 
-impl<T: OgmiosClient> QueryLedgerState for T {}
-
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct EraSummary {
 	pub start: EpochBoundary,
@@ -43,14 +52,14 @@ pub struct EraSummary {
 	pub parameters: EpochParameters,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
 pub struct EpochBoundary {
 	pub time: TimeSeconds,
 	pub slot: u64,
 	pub epoch: u32,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct EpochParameters {
 	pub epoch_length: u32,
@@ -58,7 +67,7 @@ pub struct EpochParameters {
 	pub safe_zone: u32,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ProtocolParametersResponse {
 	pub min_fee_coefficient: u32,
@@ -72,7 +81,7 @@ pub struct ProtocolParametersResponse {
 	pub plutus_cost_models: PlutusCostModels,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
 pub struct ScriptExecutionPrices {
 	#[serde(deserialize_with = "crate::types::parse_fraction_ratio_u64")]
 	pub memory: fraction::Ratio<u64>,
@@ -80,7 +89,7 @@ pub struct ScriptExecutionPrices {
 	pub cpu: fraction::Ratio<u64>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
 pub struct PlutusCostModels {
 	#[serde(rename = "plutus:v1")]
 	pub plutus_v1: Vec<i128>,

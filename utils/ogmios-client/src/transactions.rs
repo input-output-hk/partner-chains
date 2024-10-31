@@ -3,7 +3,7 @@
 use crate::{types::OgmiosTx, ByNameParamsBuilder, OgmiosClient, OgmiosClientError};
 use serde::Deserialize;
 
-pub trait Transactions: OgmiosClient {
+pub trait Transactions {
 	/// Evaluates a transaction.
 	///
 	/// Does not support additional UTXO inputs yet.
@@ -11,6 +11,23 @@ pub trait Transactions: OgmiosClient {
 	/// Parameters:
 	/// - `tx_bytes: &[u8]` - CBOR-serialized transaction
 	#[allow(async_fn_in_trait)]
+	async fn evaluate_transaction(
+		&self,
+		tx_bytes: &[u8],
+	) -> Result<Vec<OgmiosEvaluateTransactionResponse>, OgmiosClientError>;
+
+	/// Submits a signed transaction.
+	///
+	/// Parameters:
+	/// - `tx_bytes: &[u8]` - CBOR-serialized signed transaction
+	#[allow(async_fn_in_trait)]
+	async fn submit_transaction(
+		&self,
+		tx_bytes: &[u8],
+	) -> Result<SubmitTransactionResponse, OgmiosClientError>;
+}
+
+impl<T: OgmiosClient> Transactions for T {
 	async fn evaluate_transaction(
 		&self,
 		tx_bytes: &[u8],
@@ -22,11 +39,6 @@ pub trait Transactions: OgmiosClient {
 		self.request("evaluateTransaction", params).await
 	}
 
-	/// Submits a signed transaction.
-	///
-	/// Parameters:
-	/// - `tx_bytes: &[u8]` - CBOR-serialized signed transaction
-	#[allow(async_fn_in_trait)]
 	async fn submit_transaction(
 		&self,
 		tx_bytes: &[u8],
@@ -37,8 +49,6 @@ pub trait Transactions: OgmiosClient {
 		self.request("submitTransaction", params).await
 	}
 }
-
-impl<T: OgmiosClient> Transactions for T {}
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
