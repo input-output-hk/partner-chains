@@ -7645,8 +7645,8 @@ dependencies = [
 
 [[package]]
 name = "raw-scripts"
-version = "6.2.1"
-source = "git+https://github.com/input-output-hk/partner-chains-smart-contracts.git?rev=f4d29236260f8a9dd9ac434045ecaec773909554#f4d29236260f8a9dd9ac434045ecaec773909554"
+version = "6.2.2"
+source = "git+https://github.com/input-output-hk/partner-chains-smart-contracts.git?tag=v6.2.2#87a1d421fc77198c1af24d07c3e3d9aa1c2f410d"
 dependencies = [
  "hex-literal",
 ]

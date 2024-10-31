@@ -41,6 +41,13 @@ pub fn payment_address(key_bytes: &[u8], network: NetworkIdKind) -> Address {
 	.to_address()
 }
 
+pub fn ogmios_network_to_csl(network: ogmios_client::query_network::Network) -> NetworkIdKind {
+	match network {
+		ogmios_client::query_network::Network::Mainnet => NetworkIdKind::Mainnet,
+		ogmios_client::query_network::Network::Testnet => NetworkIdKind::Testnet,
+	}
+}
+
 fn network_id_kind_to_u8(network: NetworkIdKind) -> u8 {
 	match network {
 		NetworkIdKind::Mainnet => 1,

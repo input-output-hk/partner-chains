@@ -44,7 +44,7 @@ impl<T: OgmiosClient> QueryLedgerState for T {
 	}
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct EraSummary {
 	pub start: EpochBoundary,
@@ -52,14 +52,14 @@ pub struct EraSummary {
 	pub parameters: EpochParameters,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 pub struct EpochBoundary {
 	pub time: TimeSeconds,
 	pub slot: u64,
 	pub epoch: u32,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct EpochParameters {
 	pub epoch_length: u32,
@@ -67,7 +67,7 @@ pub struct EpochParameters {
 	pub safe_zone: u32,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ProtocolParametersResponse {
 	pub min_fee_coefficient: u32,
@@ -81,7 +81,7 @@ pub struct ProtocolParametersResponse {
 	pub plutus_cost_models: PlutusCostModels,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 pub struct ScriptExecutionPrices {
 	#[serde(deserialize_with = "crate::types::parse_fraction_ratio_u64")]
 	pub memory: fraction::Ratio<u64>,
@@ -89,7 +89,7 @@ pub struct ScriptExecutionPrices {
 	pub cpu: fraction::Ratio<u64>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 pub struct PlutusCostModels {
 	#[serde(rename = "plutus:v1")]
 	pub plutus_v1: Vec<i128>,

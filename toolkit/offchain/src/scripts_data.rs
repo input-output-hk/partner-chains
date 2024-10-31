@@ -1,10 +1,12 @@
 use crate::{
-	csl::{plutus_script_address, plutus_script_hash},
+	csl::{ogmios_network_to_csl, plutus_script_address, plutus_script_hash},
 	untyped_plutus::{apply_params_to_script, csl_plutus_data_to_uplc, datum_to_uplc_plutus_data},
+	OffchainError,
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{LanguageKind, NetworkIdKind, PlutusData as CSLPlutusData};
 use chain_params::SidechainParams;
+use ogmios_client::query_network::QueryNetwork;
 use plutus::ToDatum;
 use serde::Serialize;
 use sidechain_domain::{MainchainAddressHash, PolicyId};
@@ -12,7 +14,7 @@ use uplc::PlutusData;
 
 /// Provides convenient access to the addresses and hashes of the partner chain smart contracts.
 /// Data in this struct is derived from the smart contracts, applied parameters and the network.
-#[derive(Debug, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ScriptsData {
 	pub addresses: Addresses,
@@ -21,7 +23,7 @@ pub struct ScriptsData {
 }
 
 /// Bech32 address of applied validators in partner-chains smart contracts.
-#[derive(Debug, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub struct Addresses {
 	pub committee_candidate_validator: String,
@@ -33,7 +35,7 @@ pub struct Addresses {
 }
 
 /// Hashes of applied validators in partner-chains smart contracts.
-#[derive(Debug, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
 pub struct ValidatorHashes {
 	pub committee_candidate_validator: MainchainAddressHash,
 	pub d_parameter_validator: MainchainAddressHash,
@@ -44,7 +46,7 @@ pub struct ValidatorHashes {
 }
 
 /// Policy IDs of applied scripts in partner-chains smart contracts.
-#[derive(Debug, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
 pub struct PolicyIds {
 	pub d_parameter: PolicyId,
 	pub init_token: PolicyId,
@@ -56,8 +58,32 @@ pub struct PolicyIds {
 
 type ScriptBytes = Vec<u8>;
 
-/// For the given `pc_params` it returns the addresses, hashes and policy ids of the partner chain smart contracts.
-pub fn get_scripts_data(
+pub trait GetScriptsData {
+	#[allow(async_fn_in_trait)]
+	/// For the given `pc_params` it returns the addresses, hashes and policy ids of the partner chain smart contracts.
+	async fn get_scripts_data(
+		&self,
+		pc_params: SidechainParams,
+	) -> Result<ScriptsData, OffchainError>;
+}
+
+impl<T: QueryNetwork> GetScriptsData for T {
+	async fn get_scripts_data(
+		&self,
+		pc_params: SidechainParams,
+	) -> Result<ScriptsData, OffchainError> {
+		let network = ogmios_network_to_csl(
+			self.shelley_genesis_configuration()
+				.await
+				.map_err(|e| OffchainError::OgmiosError(e.to_string()))?
+				.network,
+		);
+		get_scripts_data(pc_params, network)
+			.map_err(|e| OffchainError::InternalError(e.to_string()))
+	}
+}
+
+fn get_scripts_data(
 	pc_params: SidechainParams,
 	network: NetworkIdKind,
 ) -> anyhow::Result<ScriptsData> {

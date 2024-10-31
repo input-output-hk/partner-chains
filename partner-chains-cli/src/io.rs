@@ -1,5 +1,8 @@
+use crate::config::ServiceConfig;
 use crate::ogmios::{ogmios_request, OgmiosRequest, OgmiosResponse};
 use anyhow::{anyhow, Context};
+use jsonrpsee::http_client::HttpClient;
+use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
 use sp_core::offchain::Timestamp;
 use std::path::PathBuf;
 use std::{
@@ -10,6 +13,9 @@ use std::{
 use tempfile::{TempDir, TempPath};
 
 pub trait IOContext {
+	/// [`Offchain`] should implement all the required traits for offchain operations
+	type Offchain: GetScriptsData;
+
 	fn run_command(&self, cmd: &str) -> anyhow::Result<String>;
 	fn print(&self, msg: &str);
 	fn eprint(&self, msg: &str);
@@ -28,11 +34,15 @@ pub trait IOContext {
 	fn set_env_var(&self, key: &str, value: &str);
 	fn current_timestamp(&self) -> Timestamp;
 	fn ogmios_rpc(&self, addr: &str, req: OgmiosRequest) -> anyhow::Result<OgmiosResponse>;
+	fn offchain_impl(&self, ogmios_config: &ServiceConfig) -> anyhow::Result<Self::Offchain>;
 }
 
 pub struct DefaultCmdRunContext;
 
 impl IOContext for DefaultCmdRunContext {
+	// Currently HttpClient implements Ogmios traits, that implement all required Offchain traits
+	type Offchain = HttpClient;
+
 	fn run_command(&self, cmd: &str) -> anyhow::Result<String> {
 		eprintln!("running external command: {cmd}");
 
@@ -159,6 +169,13 @@ impl IOContext for DefaultCmdRunContext {
 
 	fn ogmios_rpc(&self, addr: &str, req: OgmiosRequest) -> anyhow::Result<OgmiosResponse> {
 		ogmios_request(addr, req)
+	}
+
+	fn offchain_impl(&self, ogmios_config: &ServiceConfig) -> anyhow::Result<Self::Offchain> {
+		let ogmios_address = ogmios_config.to_string();
+		HttpClient::builder().build(&ogmios_address).map_err(|_| {
+			anyhow!(format!("Couldn't open connection to Ogmios at {}", ogmios_address))
+		})
 	}
 }
 

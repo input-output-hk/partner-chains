@@ -16,7 +16,7 @@ use sidechain_domain::{MainchainAddressHash, UtxoId};
 /// Reference chain V1 parameters. Please do not depend on this structure, but rather implement your own.
 /// Library code in this repository does not depend on this structure.
 #[derive(
-	Default, Debug, Clone, PartialEq, Eq, TypeInfo, Encode, Decode, ToDatum, MaxEncodedLen,
+	Default, Debug, Clone, PartialEq, Eq, TypeInfo, Encode, Decode, ToDatum, MaxEncodedLen, Hash,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]

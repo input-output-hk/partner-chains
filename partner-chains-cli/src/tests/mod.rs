@@ -1,5 +1,8 @@
 use crate::io::IOContext;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse};
+use chain_params::SidechainParams;
+use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData};
+use partner_chains_cardano_offchain::OffchainError;
 use pretty_assertions::assert_eq;
 use sp_core::offchain::Timestamp;
 use std::collections::HashMap;
@@ -168,11 +171,16 @@ impl MockIO {
 pub struct MockIOContext {
 	pub expected_io: Arc<Mutex<Vec<MockIO>>>,
 	pub files: Arc<Mutex<HashMap<String, String>>>,
+	pub offchain_mocks: OffchainMocks,
 }
 
 impl MockIOContext {
 	pub fn new() -> Self {
-		Self { expected_io: Default::default(), files: Arc::new(Mutex::new(HashMap::default())) }
+		Self {
+			expected_io: Default::default(),
+			files: Arc::new(Mutex::new(HashMap::default())),
+			offchain_mocks: Default::default(),
+		}
 	}
 	pub fn with_file(self, path: &str, content: &str) -> Self {
 		self.files.lock().unwrap().insert(path.into(), content.into());
@@ -185,7 +193,11 @@ impl MockIOContext {
 	pub fn with_expected_io(self, mut expected_commands: Vec<MockIO>) -> Self {
 		expected_commands.reverse();
 		let expected_commands = Arc::new(Mutex::new(expected_commands.into()));
-		Self { expected_io: expected_commands, files: self.files.clone() }
+		Self {
+			expected_io: expected_commands,
+			files: self.files.clone(),
+			offchain_mocks: self.offchain_mocks.clone(),
+		}
 	}
 	pub fn pop_next_action(&self, description: &str) -> MockIO {
 		let next = self.expected_io.lock().unwrap().pop();
@@ -198,6 +210,62 @@ impl MockIOContext {
 			Some(other) => other,
 			None => panic!("No more IO expected, but {description} called"),
 		}
+	}
+
+	pub fn with_offchain_mocks(self, mocks: OffchainMocks) -> Self {
+		Self {
+			offchain_mocks: mocks,
+			files: self.files.clone(),
+			expected_io: self.expected_io.clone(),
+		}
+	}
+}
+
+// The only external dependnecy of Offchain is Ogmios. This key is Ogmios address.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub(crate) struct OffchainMockKey {
+	ogmios_addr: String,
+}
+
+impl From<&str> for OffchainMockKey {
+	fn from(value: &str) -> Self {
+		Self { ogmios_addr: value.into() }
+	}
+}
+
+#[derive(Default, Clone)]
+pub(crate) struct OffchainMocks {
+	mocks: HashMap<OffchainMockKey, OffchainMock>,
+}
+
+impl OffchainMocks {
+	pub(crate) fn new_with_mock(addr: &str, mock: OffchainMock) -> Self {
+		Self { mocks: vec![(addr.into(), mock)].into_iter().collect() }
+	}
+}
+
+#[derive(Default, Clone)]
+pub struct OffchainMock {
+	pub scripts_data: HashMap<SidechainParams, Result<ScriptsData, OffchainError>>,
+}
+
+impl OffchainMock {
+	pub(crate) fn new_with_scripts_data(
+		pc_params: SidechainParams,
+		scripts_data: Result<ScriptsData, OffchainError>,
+	) -> Self {
+		Self { scripts_data: vec![(pc_params, scripts_data)].into_iter().collect() }
+	}
+}
+
+impl GetScriptsData for OffchainMock {
+	async fn get_scripts_data(
+		&self,
+		pc_params: SidechainParams,
+	) -> Result<ScriptsData, OffchainError> {
+		self.scripts_data.get(&pc_params).cloned().unwrap_or_else(|| {
+			Err(OffchainError::InternalError("No mock for shelley_genesis_configuration".into()))
+		})
 	}
 }
 
@@ -214,6 +282,8 @@ impl Drop for MockIOContext {
 }
 
 impl IOContext for MockIOContext {
+	type Offchain = OffchainMock;
+
 	fn run_command(&self, cmd: &str) -> anyhow::Result<String> {
 		let next = self.pop_next_action(&format!("run_command({cmd})"));
 		next.print_mock_location_on_panic(|next| match next {
@@ -459,6 +529,17 @@ impl IOContext for MockIOContext {
 			},
 			other => panic!("Unexpected Ogmios RPC request, expected: {other:?}"),
 		})
+	}
+
+	fn offchain_impl(
+		&self,
+		ogmios_config: &crate::config::ServiceConfig,
+	) -> anyhow::Result<Self::Offchain> {
+		let addr: &str = &ogmios_config.to_string();
+		let mock = self.offchain_mocks.mocks.get(&addr.into()).ok_or_else(|| {
+			anyhow::anyhow!("No mock for Offchain implementation for {:?}", ogmios_config)
+		})?;
+		Ok(mock.clone())
 	}
 }
 

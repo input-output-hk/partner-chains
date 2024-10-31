@@ -316,7 +316,18 @@ pub struct EpochNonce(pub Vec<u8>);
 
 /// Identifies UTxO by transaction hash, and the index of output.
 #[derive(
-	Default, Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen,
+	Default,
+	Debug,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	ToDatum,
+	TypeInfo,
+	MaxEncodedLen,
+	Hash,
 )]
 pub struct UtxoId {
 	pub tx_hash: McTxHash,
@@ -392,6 +403,7 @@ impl Display for UtxoId {
 	ToDatum,
 	TypeInfo,
 	MaxEncodedLen,
+	Hash,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct UtxoIndex(pub u16);
