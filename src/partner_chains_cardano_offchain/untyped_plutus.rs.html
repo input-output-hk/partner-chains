@@ -75,10 +75,33 @@
 <a href="#75" id="75">75</a>
 <a href="#76" id="76">76</a>
 <a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(dead_code)]
 
 </span><span class="kw">use </span>anyhow::anyhow;
-<span class="kw">use </span>pallas_primitives::conway::PlutusData;
 <span class="kw">use </span>plutus::ToDatum;
 <span class="kw">use </span>uplc::ast::{DeBruijn, Program};
 <span class="kw">use </span>uplc::plutus_data;
@@ -87,31 +110,56 @@
 /// Currently there is no other known option to apply parameters to plutus script in Rust.
 ///
 /// Parameters:
-/// * `params` - parameters to apply to the script
+/// * `param` - single PlutusData parameter to apply to the script
 /// * `plutus_script_raw` - raw plutus script in CBOR format, like in `RawScripts.purs` in smart-contracts repository
-</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>apply_params_to_script&lt;T: ToDatum&gt;(
-	params: <span class="kw-2">&amp;</span>T,
+</span><span class="kw">pub fn </span>apply_param_to_script&lt;T: ToDatum&gt;(
+	param: <span class="kw-2">&amp;</span>T,
 	plutus_script_raw: <span class="kw-2">&amp;</span>[u8],
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, anyhow::Error&gt; {
-	<span class="kw">let </span>params: uplc::PlutusData =
-		plutus_data(<span class="kw-2">&amp;</span>minicbor::to_vec(params.to_datum()).expect(<span class="string">"to_vec is Infallible"</span>))
-			.expect(<span class="string">"trasformation from PC Datum to pallas PlutusData can't fail"</span>);
+	<span class="kw">let </span>param = datum_to_uplc_plutus_data(param);
+	apply_params_to_script(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>param], plutus_script_raw)
+}
 
+<span class="doccomment">/// Parameters:
+/// * `params` - list of PlutusData parameters to apply to the script, not necessarily the "partner-chain params"
+/// * `plutus_script_raw` - raw plutus script in CBOR format, like in `RawScripts.purs` in smart-contracts repository
+</span><span class="kw">pub fn </span>apply_params_to_script(
+	params: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>uplc::PlutusData],
+	plutus_script_raw: <span class="kw-2">&amp;</span>[u8],
+) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, anyhow::Error&gt; {
 	<span class="comment">// RawScripts.purs in smart-contracts have a single layer of CBOR wrapping, so we have to unwrap it.
 	</span><span class="kw">let </span>plutus_script = unwrap_one_layer_of_cbor(plutus_script_raw)<span class="question-mark">?</span>;
 
 	<span class="kw">let </span><span class="kw-2">mut </span>buffer = Vec::new();
-	Program::&lt;DeBruijn&gt;::from_cbor(<span class="kw-2">&amp;</span>plutus_script, <span class="kw-2">&amp;mut </span>buffer)
-		.map_err(|e| <span class="macro">anyhow!</span>(e.to_string()))<span class="question-mark">?
-		</span>.apply_data(params)
+	<span class="kw">let </span><span class="kw-2">mut </span>program = Program::&lt;DeBruijn&gt;::from_cbor(<span class="kw-2">&amp;</span>plutus_script, <span class="kw-2">&amp;mut </span>buffer)
+		.map_err(|e| <span class="macro">anyhow!</span>(e.to_string()))<span class="question-mark">?</span>;
+	<span class="kw">for </span>param <span class="kw">in </span>params {
+		program = program.apply_data((<span class="kw-2">*</span>param).clone());
+	}
+	program
 		.to_cbor()
 		.map_err(|<span class="kw">_</span>| <span class="macro">anyhow!</span>(<span class="string">"Couldn't encode resulting script as CBOR."</span>))
 }
 
-<span class="kw">fn </span>unwrap_one_layer_of_cbor(plutus_script_raw: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, anyhow::Error&gt; {
-	<span class="kw">let </span>plutus_script_bytes: PlutusData = minicbor::decode(plutus_script_raw)<span class="question-mark">?</span>;
+<span class="kw">pub fn </span>datum_to_uplc_plutus_data&lt;T: ToDatum&gt;(datum: <span class="kw-2">&amp;</span>T) -&gt; uplc::PlutusData {
+	plutus_data(<span class="kw-2">&amp;</span>minicbor::to_vec(datum.to_datum()).expect(<span class="string">"to_vec is Infallible"</span>))
+		.expect(<span class="string">"trasformation from PC Datum to pallas PlutusData can't fail"</span>)
+}
+
+<span class="doccomment">/// Map from `cardano_serialization_lib::PlutusData` to `uplc::PlutusData` via CBOR bytes.
+</span><span class="kw">pub fn </span>csl_plutus_data_to_uplc(
+	d: <span class="kw-2">&amp;</span>cardano_serialization_lib::PlutusData,
+) -&gt; anyhow::Result&lt;uplc::PlutusData&gt; {
+	<span class="kw">let </span><span class="kw-2">mut </span>se = cbor_event::se::Serializer::new_vec();
+	cbor_event::se::Serialize::serialize(d, <span class="kw-2">&amp;mut </span>se).map_err(|e| <span class="macro">anyhow!</span>(e))<span class="question-mark">?</span>;
+	<span class="kw">let </span>bytes = se.finalize();
+	minicbor::decode(<span class="kw-2">&amp;</span>bytes).map_err(|e| <span class="macro">anyhow!</span>(e.to_string()))
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>unwrap_one_layer_of_cbor(plutus_script_raw: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, anyhow::Error&gt; {
+	<span class="kw">let </span>plutus_script_bytes: uplc::PlutusData = minicbor::decode(plutus_script_raw)<span class="question-mark">?</span>;
 	<span class="kw">let </span>plutus_script_bytes = <span class="kw">match </span>plutus_script_bytes {
-		PlutusData::BoundedBytes(bb) =&gt; <span class="prelude-val">Ok</span>(bb),
+		uplc::PlutusData::BoundedBytes(bb) =&gt; <span class="prelude-val">Ok</span>(bb),
 		<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"expected validator raw to be BoundedBytes"</span>)),
 	}<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(plutus_script_bytes.into())
@@ -147,7 +195,7 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>apply_parameters_to_deregister() {
 		<span class="kw">let </span>applied =
-			<span class="kw">crate</span>::untyped_plutus::apply_params_to_script(<span class="kw-2">&amp;</span>TEST_PARAMS, <span class="kw-2">&amp;</span>CANDIDATES_SCRIPT_RAW)
+			<span class="kw">crate</span>::untyped_plutus::apply_param_to_script(<span class="kw-2">&amp;</span>TEST_PARAMS, <span class="kw-2">&amp;</span>CANDIDATES_SCRIPT_RAW)
 				.unwrap();
 		<span class="macro">assert_eq!</span>(hex::encode(applied), hex::encode(CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS));
 	}

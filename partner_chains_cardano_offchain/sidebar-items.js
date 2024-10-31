@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["csl","untyped_plutus"]};
+window.SIDEBAR_ITEMS = {"mod":["csl","scripts_data","untyped_plutus"]};

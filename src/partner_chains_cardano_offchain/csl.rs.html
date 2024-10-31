@@ -276,6 +276,10 @@
 <a href="#276" id="276">276</a>
 <a href="#277" id="277">277</a>
 <a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(dead_code)]
 
 </span><span class="kw">use </span>cardano_serialization_lib::{
@@ -289,16 +293,20 @@
 	types::OgmiosValue,
 };
 
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>plutus_script_hash(script_bytes: <span class="kw-2">&amp;</span>[u8], language: LanguageKind) -&gt; [u8; <span class="number">28</span>] {
+	<span class="comment">// Before hashing the script, we need to prepend with byte denoting the language.
+	</span><span class="kw">let </span><span class="kw-2">mut </span>buf: Vec&lt;u8&gt; = <span class="macro">vec!</span>[language_kind_to_u8(language)];
+	buf.extend(script_bytes);
+	sidechain_domain::crypto::blake2b(buf.as_slice())
+}
+
 <span class="doccomment">/// Builds an CSL `Address` for plutus script from the data obtained from smart contracts.
 </span><span class="kw">pub fn </span>plutus_script_address(
 	script_bytes: <span class="kw-2">&amp;</span>[u8],
 	network: NetworkIdKind,
 	language: LanguageKind,
 ) -&gt; Address {
-	<span class="comment">// Before hashing the script, we need to prepend with byte 0x02, because this is PlutusV2 script
-	</span><span class="kw">let </span><span class="kw-2">mut </span>buf: Vec&lt;u8&gt; = <span class="macro">vec!</span>[language_kind_to_u8(language)];
-	buf.extend(script_bytes);
-	<span class="kw">let </span>script_hash = sidechain_domain::crypto::blake2b(buf.as_slice());
+	<span class="kw">let </span>script_hash = plutus_script_hash(script_bytes, language);
 	EnterpriseAddress::new(
 		network_id_kind_to_u8(network),
 		<span class="kw-2">&amp;</span>Credential::from_scripthash(<span class="kw-2">&amp;</span>script_hash.into()),
@@ -361,7 +369,7 @@
 <span class="doccomment">/// Coverts ogmios value to CSL value.
 /// It could fail if the input contains negative values, for example ogmios values representing burn.
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>convert_value(value: <span class="kw-2">&amp;</span>OgmiosValue) -&gt; <span class="prelude-ty">Result</span>&lt;Value, JsError&gt; {
-	<span class="kw">if </span>value.native_tokens.len() &gt; <span class="number">0 </span>{
+	<span class="kw">if </span>!value.native_tokens.is_empty() {
 		<span class="kw">let </span><span class="kw-2">mut </span>multiasset = MultiAsset::new();
 		<span class="kw">for </span>(policy_id, assets) <span class="kw">in </span>value.native_tokens.iter() {
 			<span class="kw">let </span><span class="kw-2">mut </span>csl_assets = Assets::new();
