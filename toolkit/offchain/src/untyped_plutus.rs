@@ -11,18 +11,18 @@ use uplc::plutus_data;
 /// Parameters:
 /// * `param` - single PlutusData parameter to apply to the script
 /// * `plutus_script_raw` - raw plutus script in CBOR format, like in `RawScripts.purs` in smart-contracts repository
-pub fn apply_params_to_script<T: ToDatum>(
+pub fn apply_param_to_script<T: ToDatum>(
 	param: &T,
 	plutus_script_raw: &[u8],
 ) -> Result<Vec<u8>, anyhow::Error> {
 	let param = datum_to_uplc_plutus_data(param);
-	apply_uplc_params_to_script(&[&param], plutus_script_raw)
+	apply_params_to_script(&[&param], plutus_script_raw)
 }
 
 /// Parameters:
 /// * `params` - list of PlutusData parameters to apply to the script, not necessarily the "partner-chain params"
 /// * `plutus_script_raw` - raw plutus script in CBOR format, like in `RawScripts.purs` in smart-contracts repository
-pub fn apply_uplc_params_to_script(
+pub fn apply_params_to_script(
 	params: &[&uplc::PlutusData],
 	plutus_script_raw: &[u8],
 ) -> Result<Vec<u8>, anyhow::Error> {
@@ -94,7 +94,7 @@ pub(crate) mod tests {
 	#[test]
 	fn apply_parameters_to_deregister() {
 		let applied =
-			crate::untyped_plutus::apply_params_to_script(&TEST_PARAMS, &CANDIDATES_SCRIPT_RAW)
+			crate::untyped_plutus::apply_param_to_script(&TEST_PARAMS, &CANDIDATES_SCRIPT_RAW)
 				.unwrap();
 		assert_eq!(hex::encode(applied), hex::encode(CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS));
 	}

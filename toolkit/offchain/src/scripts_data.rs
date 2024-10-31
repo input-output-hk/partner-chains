@@ -1,8 +1,6 @@
 use crate::{
 	csl::{plutus_script_address, plutus_script_hash},
-	untyped_plutus::{
-		apply_uplc_params_to_script, csl_plutus_data_to_uplc, datum_to_uplc_plutus_data,
-	},
+	untyped_plutus::{apply_params_to_script, csl_plutus_data_to_uplc, datum_to_uplc_plutus_data},
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{LanguageKind, NetworkIdKind, PlutusData as CSLPlutusData};
@@ -68,24 +66,18 @@ pub fn get_scripts_data(
 	let (version_oracle_validator, version_oracle_policy, version_oracle_policy_data) =
 		version_oracle(&pc_params_data, network)?;
 
-	let committee_candidate_validator = apply_uplc_params_to_script(
-		&[&pc_params_data],
-		raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR,
-	)?;
+	let committee_candidate_validator =
+		apply_params_to_script(&[&pc_params_data], raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR)?;
 	let d_parameter_validator =
-		apply_uplc_params_to_script(&[&pc_params_data], raw_scripts::D_PARAMETER_VALIDATOR)?;
-	let illiquid_circulation_supply_validator = apply_uplc_params_to_script(
+		apply_params_to_script(&[&pc_params_data], raw_scripts::D_PARAMETER_VALIDATOR)?;
+	let illiquid_circulation_supply_validator = apply_params_to_script(
 		&[&version_oracle_policy_data],
 		raw_scripts::ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
 	)?;
-	let permissioned_candidates_validator = apply_uplc_params_to_script(
-		&[&pc_params_data],
-		raw_scripts::PERMISSIONED_CANDIDATES_VALIDATOR,
-	)?;
-	let reserve_validator = apply_uplc_params_to_script(
-		&[&version_oracle_policy_data],
-		raw_scripts::RESERVE_VALIDATOR,
-	)?;
+	let permissioned_candidates_validator =
+		apply_params_to_script(&[&pc_params_data], raw_scripts::PERMISSIONED_CANDIDATES_VALIDATOR)?;
+	let reserve_validator =
+		apply_params_to_script(&[&version_oracle_policy_data], raw_scripts::RESERVE_VALIDATOR)?;
 
 	Ok(ScriptsData {
 		addresses: Addresses {
@@ -149,9 +141,9 @@ fn version_oracle(
 	]);
 
 	let validator =
-		apply_uplc_params_to_script(&[pc_params_data], raw_scripts::VERSION_ORACLE_VALIDATOR)?;
+		apply_params_to_script(&[pc_params_data], raw_scripts::VERSION_ORACLE_VALIDATOR)?;
 	let validator_address = plutus_script_address(&validator, network, LanguageKind::PlutusV2);
-	let policy_script = apply_uplc_params_to_script(
+	let policy_script = apply_params_to_script(
 		&[
 			pc_params_data,
 			&init_token_asset_data,
@@ -166,7 +158,7 @@ fn version_oracle(
 
 // Applies parameters to the script and returns its hash.
 fn get_script_policy_id(policy_bytes: &[u8], params: &[&PlutusData]) -> anyhow::Result<PolicyId> {
-	let policy_script = apply_uplc_params_to_script(params, policy_bytes)?;
+	let policy_script = apply_params_to_script(params, policy_bytes)?;
 	Ok(PolicyId(plutus_script_hash(&policy_script, LanguageKind::PlutusV2)))
 }
 
@@ -287,9 +279,9 @@ mod tests {
 
 	// Expected values are the ones obtained from pc-contracts-cli for the TEST_PARAMS.
 	#[test]
-	fn test_get_scripts_data0() {
+	fn test_get_scripts_data() {
 		let actual =
-			crate::scripts_data::get_scripts_data0(TEST_PARAMS, NetworkIdKind::Testnet).unwrap();
+			crate::scripts_data::get_scripts_data(TEST_PARAMS, NetworkIdKind::Testnet).unwrap();
 		assert_eq!(scripts_data_test_vector(), actual);
 	}
 }
