@@ -48,12 +48,12 @@ pub struct ValidatorHashes {
 /// Policy IDs of applied scripts in partner-chains smart contracts.
 #[derive(Debug, Serialize, PartialEq, Eq)]
 pub struct PolicyIds {
-	pub d_parameter_policy: PolicyId,
-	pub init_token_policy: PolicyId,
-	pub governance_policy: PolicyId,
-	pub permissioned_candidates_policy: PolicyId,
-	pub reserve_auth_policy: PolicyId,
-	pub version_oracle_policy: PolicyId,
+	pub d_parameter: PolicyId,
+	pub init_token: PolicyId,
+	pub governance: PolicyId,
+	pub permissioned_candidates: PolicyId,
+	pub reserve_auth: PolicyId,
+	pub version_oracle: PolicyId,
 }
 
 type ScriptBytes = Vec<u8>;
@@ -111,30 +111,27 @@ pub fn get_scripts_data(
 			version_oracle_validator: mc_hash(&version_oracle_validator),
 		},
 		policy_ids: PolicyIds {
-			d_parameter_policy: get_script_policy_id(
+			d_parameter: get_script_policy_id(
 				raw_scripts::D_PARAMETER_POLICY,
 				&[&pc_params_data, &plutus_script_to_data(&d_parameter_validator, network)?],
 			)?,
-			init_token_policy: get_script_policy_id(
-				raw_scripts::INIT_TOKEN_POLICY,
-				&[&pc_params_data],
-			)?,
-			governance_policy: get_script_policy_id(
+			init_token: get_script_policy_id(raw_scripts::INIT_TOKEN_POLICY, &[&pc_params_data])?,
+			governance: get_script_policy_id(
 				raw_scripts::MULTI_SIG_POLICY,
 				&[&multisig_governance_policy_configuration(pc_params)],
 			)?,
-			permissioned_candidates_policy: get_script_policy_id(
+			permissioned_candidates: get_script_policy_id(
 				raw_scripts::PERMISSIONED_CANDIDATES_POLICY,
 				&[
 					&pc_params_data,
 					&plutus_script_to_data(&permissioned_candidates_validator, network)?,
 				],
 			)?,
-			reserve_auth_policy: get_script_policy_id(
+			reserve_auth: get_script_policy_id(
 				raw_scripts::RESERVE_AUTH_POLICY,
 				&[&version_oracle_policy_data],
 			)?,
-			version_oracle_policy,
+			version_oracle: version_oracle_policy,
 		},
 	})
 }
@@ -229,12 +226,8 @@ mod tests {
 		)),
 	};
 
-	// Expected values are the ones obtained from pc-contracts-cli for the TEST_PARAMS.
-	#[test]
-	fn test_addresses() {
-		let actual =
-			crate::scripts_data::get_scripts_data(TEST_PARAMS, NetworkIdKind::Testnet).unwrap();
-		let expected = ScriptsData {
+	pub(crate) fn scripts_data_test_vector() -> ScriptsData {
+		ScriptsData {
 			addresses: Addresses {
 				committee_candidate_validator:
 					"addr_test1wq8vwhqkfyrz0qu3sf89qdvaj8slrjlwwhlyzw9ayv0rj5qz3ne4t".into(),
@@ -270,26 +263,33 @@ mod tests {
 				)),
 			},
 			policy_ids: PolicyIds {
-				d_parameter_policy: PolicyId(hex!(
+				d_parameter: PolicyId(hex!(
 					"88b9d9798dde404b4ff488be62de3d7744a2e282934b5bd1687d8cbe"
 				)),
-				init_token_policy: PolicyId(hex!(
+				init_token: PolicyId(hex!(
 					"ae91bce3634bbf0d2748cb2c9b5a4cd547da3fabb99d33e762c87704"
 				)),
-				governance_policy: PolicyId(hex!(
+				governance: PolicyId(hex!(
 					"7d55e8e2f8f0637d6ab99975d8ab9b6112976eec1e778d3f770fe102"
 				)),
-				permissioned_candidates_policy: PolicyId(hex!(
+				permissioned_candidates: PolicyId(hex!(
 					"f7449038957139c2782d81fc72bc889898fd24d20059535a681b3774"
 				)),
-				reserve_auth_policy: PolicyId(hex!(
+				reserve_auth: PolicyId(hex!(
 					"22dc2777f1d73504a2d9db99067b82ffe4abddc31ed1f9f6d97ca7d7"
 				)),
-				version_oracle_policy: PolicyId(hex!(
+				version_oracle: PolicyId(hex!(
 					"4d982fae61319220e75e29054bad955484faa24dba65046136b8e6cb"
 				)),
 			},
-		};
-		assert_eq!(expected, actual);
+		}
+	}
+
+	// Expected values are the ones obtained from pc-contracts-cli for the TEST_PARAMS.
+	#[test]
+	fn test_get_scripts_data0() {
+		let actual =
+			crate::scripts_data::get_scripts_data0(TEST_PARAMS, NetworkIdKind::Testnet).unwrap();
+		assert_eq!(scripts_data_test_vector(), actual);
 	}
 }
