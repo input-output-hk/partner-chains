@@ -84,7 +84,7 @@ runs:
 
         # Wait for the Partner Chain node to be ready or until max restarts or epoch 2 is reached
         while ! docker exec partner-chains-node-1 [ -e /shared/partner-chains-node-1.ready ]; do
-          epoch=$(docker exec cardano-node-1 cardano-cli query tip --testnet-magic 42 | jq -r .epoch)
+          epoch=$(docker exec cardano-node-1 cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
           echo "Epoch: $epoch"
           container_status=$(docker inspect -f '{{.State.Status}}' partner-chains-node-1)
           echo "Container status: $container_status"

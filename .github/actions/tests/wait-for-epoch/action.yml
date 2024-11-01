@@ -22,11 +22,11 @@ runs:
       shell: bash
       run: |
         if [ "${{ inputs.deployment }}" == "docker" ]; then
-          epoch=$(docker exec ${{ inputs.node }} cardano-cli query tip --testnet-magic 42 | jq -r .epoch)
+          epoch=$(docker exec ${{ inputs.node }} cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
           while [ $epoch -lt ${{ inputs.epoch }} ]; do
             echo "Epoch: $epoch"
             sleep 10
-            epoch=$(docker exec ${{ inputs.node }} cardano-cli query tip --testnet-magic 42 | jq -r .epoch)
+            epoch=$(docker exec ${{ inputs.node }} cardano-cli latest query tip --testnet-magic 42 | jq -r .epoch)
           done
           echo "Epoch: $epoch"
 
@@ -40,11 +40,11 @@ runs:
             exit 1
           fi
 
-          epoch=$(kubectl exec ${{ inputs.node }} -c cardano-node -n ${{ inputs.environment }} -- cardano-cli query tip --testnet-magic $testnet_magic | jq -r .epoch)
+          epoch=$(kubectl exec ${{ inputs.node }} -c cardano-node -n ${{ inputs.environment }} -- cardano-cli latest query tip --testnet-magic $testnet_magic | jq -r .epoch)
           while [ $epoch -lt ${{ inputs.epoch }} ]; do
             echo "Epoch: $epoch"
             sleep 10
-            epoch=$(kubectl exec ${{ inputs.node }} -c cardano-node -n ${{ inputs.environment }} -- cardano-cli query tip --testnet-magic $testnet_magic | jq -r .epoch)
+            epoch=$(kubectl exec ${{ inputs.node }} -c cardano-node -n ${{ inputs.environment }} -- cardano-cli latest query tip --testnet-magic $testnet_magic | jq -r .epoch)
           done
           echo "Epoch: $epoch"
 
