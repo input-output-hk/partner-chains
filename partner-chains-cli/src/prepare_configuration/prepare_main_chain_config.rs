@@ -45,14 +45,22 @@ fn set_up_cardano_addresses<C: IOContext>(
 		.block_on(offchain_impl.get_scripts_data(params))
 		.map_err(|e| anyhow::anyhow!("Offchain call failed: {e:?}!"))?;
 
-	COMMITTEE_CANDIDATES_ADDRESS
-		.save_to_file(&scripts_data.addresses.committee_candidate_validator, context);
-	D_PARAMETER_POLICY_ID
-		.save_to_file(&hex::encode(scripts_data.policy_ids.d_parameter.0), context);
-	PERMISSIONED_CANDIDATES_POLICY_ID
-		.save_to_file(&hex::encode(scripts_data.policy_ids.permissioned_candidates.0), context);
-	ILLIQUID_SUPPLY_ADDRESS
-		.save_to_file(&scripts_data.addresses.illiquid_circulation_supply_validator, context);
+	let committee_candidate_validator_addr = scripts_data.addresses.committee_candidate_validator;
+	let d_parameter_policy_id = hex::encode(scripts_data.policy_ids.d_parameter.0);
+	let permissioned_candidates_policy_id =
+		hex::encode(scripts_data.policy_ids.permissioned_candidates.0);
+	let illiquid_supply_addr = scripts_data.addresses.illiquid_circulation_supply_validator;
+	COMMITTEE_CANDIDATES_ADDRESS.save_to_file(&committee_candidate_validator_addr, context);
+	D_PARAMETER_POLICY_ID.save_to_file(&d_parameter_policy_id, context);
+	PERMISSIONED_CANDIDATES_POLICY_ID.save_to_file(&permissioned_candidates_policy_id, context);
+	ILLIQUID_SUPPLY_ADDRESS.save_to_file(&illiquid_supply_addr, context);
+	context.print(&format!(
+		"Cardano addresses have been set up:
+- Committee Candidates Address: {committee_candidate_validator_addr}
+- D Parameter Policy ID: {d_parameter_policy_id}
+- Permissioned Candidates Policy ID: {permissioned_candidates_policy_id}
+- Illiquid Supply Address: {illiquid_supply_addr}"
+	));
 	Ok(())
 }
 
@@ -224,6 +232,7 @@ mod tests {
 					TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
 				),
 				save_to_existing_file(ILLIQUID_SUPPLY_ADDRESS, TEST_ILLIQUID_SUPPLY_ADDRESS),
+				print_addresses_io(),
 				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				MockIO::file_write_json(
@@ -276,11 +285,22 @@ mod tests {
 					TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
 				),
 				save_to_existing_file(ILLIQUID_SUPPLY_ADDRESS, TEST_ILLIQUID_SUPPLY_ADDRESS),
+				print_addresses_io(),
 				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				scenarios::prompt_and_save_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
 			]);
 		prepare_main_chain_config(&mock_context, test_sidechain_params()).expect("should succeed");
+	}
+
+	fn print_addresses_io() -> MockIO {
+		MockIO::print(&format!(
+			"Cardano addresses have been set up:
+- Committee Candidates Address: {TEST_COMMITTEE_CANDIDATES_ADDRESS}
+- D Parameter Policy ID: {TEST_D_PARAMETER_POLICY_ID}
+- Permissioned Candidates Policy ID: {TEST_PERMISSIONED_CANDIDATES_POLICY_ID}
+- Illiquid Supply Address: {TEST_ILLIQUID_SUPPLY_ADDRESS}",
+		))
 	}
 
 	fn test_sidechain_params() -> SidechainParams {

@@ -191,7 +191,7 @@ impl<'a, T> ConfigFieldDefinition<'a, T> {
 	}
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct ServiceConfig {
 	pub protocol: NetworkProtocol,
 	pub hostname: String,
