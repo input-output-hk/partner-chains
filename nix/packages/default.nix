@@ -23,7 +23,7 @@
   in {
     packages = {
       inherit (smartContractsPkgs) pc-contracts-cli;
-      inherit (cardanoPackages) cardano-node cardano-cli latest cardano-testnet;
+      inherit (cardanoPackages) cardano-node cardano-cli cardano-testnet;
       inherit (dbSyncPackages) "cardano-db-sync:exe:cardano-db-sync";
       kupo = pkgs.callPackage ./kupo.nix { version = kupoVersion; };
       ogmios = pkgs.callPackage ./ogmios.nix { version = ogmiosVersion; };
