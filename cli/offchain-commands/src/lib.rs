@@ -1,3 +1,5 @@
+mod reserve;
+
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
 pub enum OffchainCmd {
@@ -12,7 +14,7 @@ pub enum OffchainCmd {
 	/// Set or update permissioned candidates list
 	UpdatePermissionedCandidates,
 	/// Create a new token reserve
-	ReserveCreate,
+	ReserveCreate(reserve::ReserveCreateCmd),
 	/// Deposit assets to existing reserve
 	ReserveDeposit,
 	/// Empty and remove an existing reserve
@@ -37,6 +39,7 @@ pub struct CommonArguments<SidechainParams: clap::Args> {
 impl OffchainCmd {
 	pub fn execute(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 		match self {
+			Self::ReserveCreate(cmd) => cmd.execute(),
 			_ => Err(format!("Command {self:?} is not yet implemented").into()),
 		}
 	}

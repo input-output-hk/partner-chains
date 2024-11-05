@@ -2,6 +2,7 @@
 pub mod csl;
 pub mod dereg;
 pub mod dparam;
+pub mod reserve;
 /// Provides synthetized scripts data
 pub mod scripts_data;
 pub mod tx;
