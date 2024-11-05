@@ -1,4 +1,4 @@
-name: CD 
+name: CD
 
 on:
   workflow_dispatch:
@@ -12,7 +12,17 @@ on:
         required: true
         type: string
       no-release:
-        description: "Deploy and test only (skip Release and GHCR steps)"
+        description: "Skip Release and GHCR steps"
+        required: false
+        type: boolean
+        default: false
+      no-deploy:
+        description: "Skip deploy steps"
+        required: false
+        type: boolean
+        default: false
+      no-tests:
+        description: "Skip test steps"
         required: false
         type: boolean
         default: false
@@ -55,7 +65,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.sha }} 
+          ref: ${{ inputs.sha }}
       - name: Build and Upload for macOS x86_64
         uses: ./.github/actions/artifacts/build-pc-artifacts
         with:
@@ -79,6 +89,7 @@ jobs:
           os: macos-arm64
 
   build-and-publish-ecr:
+    if: ${{ github.event.inputs.no-release != 'true' }}
     permissions:
       id-token: write
       contents: write
@@ -99,16 +110,19 @@ jobs:
           SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
 
   create-draft-release:
+    if: ${{ github.event.inputs.no-release != 'true' }}
     permissions:
       id-token: write
       contents: write
-    needs: [build-linux, build-macos-x86_64, build-macos-arm64]
+    needs:
+      - build-linux
+      - build-macos-x86_64
+      - build-macos-arm64
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Create Draft Release
-        if: ${{ github.event.inputs.no-release == 'false' }}
         uses: ./.github/actions/release/create-draft-release
         with:
           tag: ${{ inputs.tag }}
@@ -148,10 +162,13 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   deploy-staging-preview:
+    if: ${{ github.event.inputs.no-deploy != 'true' }}
     permissions:
       id-token: write
       contents: write
-    needs: [build-and-publish-ecr, upload-chain-specs]
+    needs:
+      - build-and-publish-ecr
+      - upload-chain-specs
     runs-on: eks
     steps:
       - name: Checkout
@@ -172,6 +189,7 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   partner-chain-ready:
+    if: ${{ github.event.inputs.no-deploy != 'true' }}
     runs-on: eks
     needs: deploy-staging-preview
     outputs:
@@ -215,7 +233,8 @@ jobs:
           echo "Blocks are being finalized. Finalized Block Number: $FINALIZED_NUMBER"
         shell: bash
 
-  run-smoke-tests: 
+  run-smoke-tests:
+    if: ${{ github.event.inputs.no-tests != 'true' && github.event.inputs.no-deploy != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -241,6 +260,7 @@ jobs:
           threads: 1
 
   run-all-tests:
+    if: ${{ github.event.inputs.no-tests != 'true' && github.event.inputs.no-deploy != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -259,7 +279,7 @@ jobs:
       - name: Run all tests (some skipped due to new deployment)
         uses: ./.github/actions/tests/run-e2e-tests
         env:
-          DEPLOYMENT_MC_EPOCH: ${{needs.partner-chain-ready.outputs.deployment_mc_epoch}}
+          DEPLOYMENT_MC_EPOCH: ${{ needs.partner-chain-ready.outputs.deployment_mc_epoch }}
         with:
           blockchain: substrate
           env: staging
@@ -269,6 +289,7 @@ jobs:
           threads: 1
 
   wait-for-n1-epoch:
+    if: ${{ github.event.inputs.no-tests != 'true' && github.event.inputs.no-deploy != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -287,7 +308,7 @@ jobs:
       - name: Set MC epoch to wait for
         id: increment-epoch
         env:
-          DEPLOYMENT_MC_EPOCH: ${{needs.partner-chain-ready.outputs.deployment_mc_epoch}}
+          DEPLOYMENT_MC_EPOCH: ${{ needs.partner-chain-ready.outputs.deployment_mc_epoch }}
         run: |
           echo "Current epoch: $DEPLOYMENT_MC_EPOCH"
           incremented_epoch=$((DEPLOYMENT_MC_EPOCH + 1))
@@ -302,6 +323,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n1-epoch:
+    if: ${{ github.event.inputs.no-tests != 'true' && github.event.inputs.no-deploy != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -320,7 +342,7 @@ jobs:
       - name: Run all tests (some skipped due to new deployment)
         uses: ./.github/actions/tests/run-e2e-tests
         env:
-          DEPLOYMENT_MC_EPOCH: ${{needs.partner-chain-ready.outputs.deployment_mc_epoch}}
+          DEPLOYMENT_MC_EPOCH: ${{ needs.partner-chain-ready.outputs.deployment_mc_epoch }}
         with:
           blockchain: substrate
           env: staging
@@ -331,10 +353,13 @@ jobs:
           threads: 1
 
   wait-for-n2-epoch:
+    if: ${{ github.event.inputs.no-tests != 'true' && github.event.inputs.no-deploy != 'true' }}
     permissions:
       id-token: write
       contents: read
-    needs: [partner-chain-ready, wait-for-n1-epoch]
+    needs:
+      - partner-chain-ready
+      - wait-for-n1-epoch
     runs-on: eks
     timeout-minutes: 1450
     steps:
@@ -349,7 +374,7 @@ jobs:
       - name: Set MC epoch to wait for
         id: increment-epoch
         env:
-          DEPLOYMENT_MC_EPOCH: ${{needs.partner-chain-ready.outputs.deployment_mc_epoch}}
+          DEPLOYMENT_MC_EPOCH: ${{ needs.partner-chain-ready.outputs.deployment_mc_epoch }}
         run: |
           echo "Current epoch: $DEPLOYMENT_MC_EPOCH"
           incremented_epoch=$((DEPLOYMENT_MC_EPOCH + 2))
@@ -364,6 +389,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n2-epoch:
+    if: ${{ github.event.inputs.no-tests != 'true' && github.event.inputs.no-deploy != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -382,7 +408,7 @@ jobs:
       - name: Run all tests (no skipped tests)
         uses: ./.github/actions/tests/run-e2e-tests
         env:
-          DEPLOYMENT_MC_EPOCH: ${{needs.partner-chain-ready.outputs.deployment_mc_epoch}}
+          DEPLOYMENT_MC_EPOCH: ${{ needs.partner-chain-ready.outputs.deployment_mc_epoch }}
         with:
           blockchain: substrate
           env: staging
@@ -393,15 +419,19 @@ jobs:
           threads: 1
 
   publish:
+    if: ${{ github.event.inputs.no-release != 'true' && (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success' || needs.run-all-tests-on-n2-epoch.result == 'skipped') }}
     permissions:
       id-token: write
       contents: write
       packages: write
-    needs: run-all-tests-on-n2-epoch
+    needs:
+      - build-linux
+      - build-macos-x86_64
+      - build-macos-arm64
+      - run-all-tests-on-n2-epoch
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Publish Workflow
-        if: ${{ github.event.inputs.no-release == 'false' }}
         run: |
           curl -X POST \
             -H "Authorization: token ${{ secrets.ACTIONS_PAT }}" \
@@ -410,6 +440,7 @@ jobs:
             -d '{"ref": "main", "inputs": {"sha": "${{ github.sha }}", "tag": "${{ github.ref }}"}}'
 
 #  deploy-staging-preprod:
+#    if: ${{ github.event.inputs.no-deploy != 'true' }}
 #    permissions:
 #      id-token: write
 #      contents: write
@@ -433,7 +464,8 @@ jobs:
 #          K8S_SERVER: ${{ secrets.K8S_SERVER }}
 #          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 #
-#  staging-preprod-tests: 
+#  staging-preprod-tests:
+#    if: ${{ github.event.inputs.no-tests != 'true' && github.event.inputs.no-deploy != 'true' }}
 #    permissions:
 #      id-token: write
 #      contents: write
