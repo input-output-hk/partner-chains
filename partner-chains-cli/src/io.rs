@@ -13,7 +13,7 @@ use std::{
 use tempfile::{TempDir, TempPath};
 
 pub trait IOContext {
-	/// [`Offchain`] should implement all the required traits for offchain operations
+	/// It should implement all the required traits for offchain operations
 	type Offchain: GetScriptsData;
 
 	fn run_command(&self, cmd: &str) -> anyhow::Result<String>;

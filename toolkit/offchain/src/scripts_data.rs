@@ -7,7 +7,6 @@ use anyhow::anyhow;
 use cardano_serialization_lib::{LanguageKind, NetworkIdKind, PlutusData as CSLPlutusData};
 use chain_params::SidechainParams;
 use ogmios_client::query_network::QueryNetwork;
-use plutus::ToDatum;
 use serde::Serialize;
 use sidechain_domain::{MainchainAddressHash, PolicyId};
 use uplc::PlutusData;
@@ -87,7 +86,7 @@ fn get_scripts_data(
 	pc_params: SidechainParams,
 	network: NetworkIdKind,
 ) -> anyhow::Result<ScriptsData> {
-	let pc_params_data = datum_to_uplc_plutus_data(&pc_params.to_datum());
+	let pc_params_data = datum_to_uplc_plutus_data(&pc_params);
 
 	let (version_oracle_validator, version_oracle_policy, version_oracle_policy_data) =
 		version_oracle(&pc_params_data, network)?;
