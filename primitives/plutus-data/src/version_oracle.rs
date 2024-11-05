@@ -1,5 +1,5 @@
 use crate::{DataDecodingError, DecodingResult, PlutusDataExtensions};
-use cardano_serialization_lib::PlutusData;
+use cardano_serialization_lib::{BigInt, PlutusData, PlutusList};
 
 /// Datum attached to 'VersionOraclePolicy' tokens stored on the 'VersionOracleValidator' script.
 /// This datum is not versioned intentionally, as it is not subject to observation.
@@ -42,6 +42,17 @@ impl TryFrom<PlutusData> for VersionOracleDatum {
 	}
 }
 
+impl From<VersionOracleDatum> for PlutusData {
+	fn from(datum: VersionOracleDatum) -> Self {
+		PlutusData::new_list(&{
+			let mut list = PlutusList::new();
+			list.add(&PlutusData::new_integer(&BigInt::from(datum.version_oracle)));
+			list.add(&PlutusData::new_bytes(datum.currency_symbol));
+			list
+		})
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -63,5 +74,21 @@ mod tests {
 		};
 
 		assert_eq!(VersionOracleDatum::try_from(plutus_data).unwrap(), expected_datum)
+	}
+
+	#[test]
+	fn encoding() {
+		let datum = VersionOracleDatum {
+			version_oracle: 32,
+			currency_symbol: hex!("e50a076eed80e645499abc26a5b33b61bef32f8cb1ab29b1ffcc1b88")
+				.into(),
+		};
+
+		let expected_plutus_data = test_plutus_data!({"list": [
+			{"int": 32},
+			{"bytes": "e50a076eed80e645499abc26a5b33b61bef32f8cb1ab29b1ffcc1b88"}
+		]});
+
+		assert_eq!(PlutusData::from(datum), expected_plutus_data)
 	}
 }
