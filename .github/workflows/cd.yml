@@ -406,6 +406,7 @@ jobs:
           threads: 1
 
   publish:
+    if: ${{ github.event.inputs.no-release == 'false' && (needs.run-all-tests-on-n2-epoch.result == 'success' || needs.run-all-tests-on-n2-epoch.result == 'skipped') }}
     permissions:
       id-token: write
       contents: write
@@ -414,13 +415,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Publish Workflow
-        if: ${{ github.event.inputs.no-release == 'false' }}
         run: |
           curl -X POST \
             -H "Authorization: token ${{ secrets.ACTIONS_PAT }}" \
             -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/repos/${{ github.repository }}/actions/workflows/publish.yml/dispatches \
             -d '{"ref": "main", "inputs": {"sha": "${{ github.sha }}", "tag": "${{ github.ref }}"}}'
+
 
 #  deploy-staging-preprod:
 #    if: ${{ github.event.inputs.no-deploy != 'true' }}
