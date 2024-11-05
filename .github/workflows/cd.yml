@@ -16,6 +16,11 @@ on:
         required: false
         type: boolean
         default: false
+      no-deploy:
+        description: "Build and Release only (skip deploy and test steps)"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   id-token: write
@@ -148,6 +153,7 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   deploy-staging-preview:
+    if: ${{ github.event.inputs.no-deploy != 'true' }}
     permissions:
       id-token: write
       contents: write
@@ -172,6 +178,7 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   partner-chain-ready:
+    if: ${{ github.event.inputs.no-deploy != 'true' }}
     runs-on: eks
     needs: deploy-staging-preview
     outputs:
@@ -216,6 +223,7 @@ jobs:
         shell: bash
 
   run-smoke-tests: 
+    if: ${{ github.event.inputs.no-deploy != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -241,6 +249,7 @@ jobs:
           threads: 1
 
   run-all-tests:
+    if: ${{ github.event.inputs.no-deploy != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -269,6 +278,7 @@ jobs:
           threads: 1
 
   wait-for-n1-epoch:
+    if: ${{ github.event.inputs.no-deploy != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -302,6 +312,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n1-epoch:
+    if: ${{ github.event.inputs.no-deploy != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -331,6 +342,7 @@ jobs:
           threads: 1
 
   wait-for-n2-epoch:
+    if: ${{ github.event.inputs.no-deploy != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -364,6 +376,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n2-epoch:
+    if: ${{ github.event.inputs.no-deploy != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -393,6 +406,7 @@ jobs:
           threads: 1
 
   publish:
+    if: ${{ github.event.inputs.no-release == 'false' && (needs.run-all-tests-on-n2-epoch.result == 'success' || needs.run-all-tests-on-n2-epoch.result == 'skipped') }}
     permissions:
       id-token: write
       contents: write
@@ -401,7 +415,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Publish Workflow
-        if: ${{ github.event.inputs.no-release == 'false' }}
         run: |
           curl -X POST \
             -H "Authorization: token ${{ secrets.ACTIONS_PAT }}" \
@@ -409,7 +422,9 @@ jobs:
             https://api.github.com/repos/${{ github.repository }}/actions/workflows/publish.yml/dispatches \
             -d '{"ref": "main", "inputs": {"sha": "${{ github.sha }}", "tag": "${{ github.ref }}"}}'
 
+
 #  deploy-staging-preprod:
+#    if: ${{ github.event.inputs.no-deploy != 'true' }}
 #    permissions:
 #      id-token: write
 #      contents: write
@@ -434,6 +449,7 @@ jobs:
 #          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 #
 #  staging-preprod-tests: 
+#    if: ${{ github.event.inputs.no-deploy != 'true' }}
 #    permissions:
 #      id-token: write
 #      contents: write
