@@ -1,5 +1,7 @@
 //! Off-chain code for Partner Chains Smart Contracts and general purpose utilities related to Cardano
 
+/// Collateral selection algorithm
+pub mod collateral_selection;
 /// General purpose code for interacting with cardano-serialization-lib
 pub mod csl;
 /// Provides synthetized scripts data
