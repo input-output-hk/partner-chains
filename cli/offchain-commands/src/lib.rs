@@ -7,10 +7,8 @@ pub enum OffchainCmd {
 	Register,
 	/// Deregister a committee candidate
 	Deregister,
-	/// Insert new D parameter
-	InsertDParameter,
-	/// Update a D parameter
-	UpdateDParameter,
+	/// Insert or update D parameter
+	UpsertDParameter,
 	/// Set or update permissioned candidates list
 	UpdatePermissionedCandidates,
 	/// Create a new token reserve
