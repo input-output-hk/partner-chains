@@ -14,23 +14,18 @@ pub fn largest_first(
 	if amount_available < amount_required {
 		return Err("InputValueInsufficientError");
 	}
-	let mut inputs_available_descending = inputs_available.iter().collect::<Vec<_>>();
-	inputs_available_descending
-		.sort_by(|utxo_a, utxo_b| utxo_a.value.lovelace.cmp(&utxo_b.value.lovelace).reverse());
+	let mut inputs_available_sorted = inputs_available.iter().collect::<Vec<_>>();
+	inputs_available_sorted
+		.sort_by(|utxo_a, utxo_b| utxo_a.value.lovelace.cmp(&utxo_b.value.lovelace));
 
-	let inputs_selected = inputs_available_descending
-		.iter()
-		.scan((0, false), |(sum, is_enough), utxo| {
-			*sum += utxo.value.lovelace;
-			if *is_enough {
-				return None;
-			}
-			if *sum >= amount_required {
-				*is_enough = true;
-			}
-			Some(*utxo)
-		})
-		.collect::<Vec<_>>();
+	let mut inputs_selected = Vec::new();
+	let mut sum = 0;
+	while sum < amount_required {
+		if let Some(utxo) = inputs_available_sorted.pop() {
+			sum += utxo.value.lovelace;
+			inputs_selected.push(utxo);
+		}
+	}
 
 	if inputs_selected.len() as u32 > max_collateral_inputs {
 		return Err("InputLimitExceededError");
