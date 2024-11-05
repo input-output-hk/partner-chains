@@ -1,10 +1,5 @@
-use crate::{
-	csl::{ogmios_network_to_csl, plutus_script_address, plutus_script_hash},
-	untyped_plutus::{apply_params_to_script, csl_plutus_data_to_uplc, datum_to_uplc_plutus_data},
-	OffchainError,
-};
-use anyhow::anyhow;
-use cardano_serialization_lib::{LanguageKind, NetworkIdKind, PlutusData as CSLPlutusData};
+use crate::{csl::ogmios_network_to_csl, plutus_script::PlutusScript, OffchainError};
+use cardano_serialization_lib::{LanguageKind::PlutusV2, NetworkIdKind};
 use chain_params::SidechainParams;
 use ogmios_client::query_network::QueryNetwork;
 use serde::Serialize;
@@ -55,8 +50,6 @@ pub struct PolicyIds {
 	pub version_oracle: PolicyId,
 }
 
-type ScriptBytes = Vec<u8>;
-
 pub trait GetScriptsData {
 	#[allow(async_fn_in_trait)]
 	/// For the given `pc_params` it returns the addresses, hashes and policy ids of the partner chain smart contracts.
@@ -82,72 +75,78 @@ impl<T: QueryNetwork> GetScriptsData for T {
 	}
 }
 
-fn get_scripts_data(
+/// For the given `pc_params` it returns the addresses, hashes and policy ids of the partner chain smart contracts.
+pub fn get_scripts_data(
 	pc_params: SidechainParams,
 	network: NetworkIdKind,
 ) -> anyhow::Result<ScriptsData> {
-	let pc_params_data = datum_to_uplc_plutus_data(&pc_params);
-
 	let (version_oracle_validator, version_oracle_policy, version_oracle_policy_data) =
-		version_oracle(&pc_params_data, network)?;
+		version_oracle(pc_params.clone(), network)?;
 
 	let committee_candidate_validator =
-		apply_params_to_script(&[&pc_params_data], raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR)?;
+		PlutusScript::from_wrapped_cbor(raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR, PlutusV2)?
+			.apply_data(pc_params.clone())?;
 	let d_parameter_validator =
-		apply_params_to_script(&[&pc_params_data], raw_scripts::D_PARAMETER_VALIDATOR)?;
-	let illiquid_circulation_supply_validator = apply_params_to_script(
-		&[&version_oracle_policy_data],
+		PlutusScript::from_wrapped_cbor(raw_scripts::D_PARAMETER_VALIDATOR, PlutusV2)?
+			.apply_data(pc_params.clone())?;
+	let illiquid_circulation_supply_validator = PlutusScript::from_wrapped_cbor(
 		raw_scripts::ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
-	)?;
+		PlutusV2,
+	)?
+	.apply_uplc_data(version_oracle_policy_data.clone())?;
 	let permissioned_candidates_validator =
-		apply_params_to_script(&[&pc_params_data], raw_scripts::PERMISSIONED_CANDIDATES_VALIDATOR)?;
+		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_VALIDATOR, PlutusV2)?
+			.apply_data(pc_params.clone())?;
 	let reserve_validator =
-		apply_params_to_script(&[&version_oracle_policy_data], raw_scripts::RESERVE_VALIDATOR)?;
+		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, PlutusV2)?
+			.apply_uplc_data(version_oracle_policy_data.clone())?;
+
+	let d_parameter_policy =
+		PlutusScript::from_wrapped_cbor(raw_scripts::D_PARAMETER_POLICY, PlutusV2)?
+			.apply_data(pc_params.clone())?
+			.apply_uplc_data(d_parameter_validator.plutus_address_data(network)?)?;
+	let permissioned_candidates_policy =
+		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_POLICY, PlutusV2)?
+			.apply_data(pc_params.clone())?
+			.apply_uplc_data(permissioned_candidates_validator.plutus_address_data(network)?)?;
+	let governance_policy =
+		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, PlutusV2)?
+			.apply_uplc_data(multisig_governance_policy_configuration(pc_params.clone()))?;
+	let init_token_policy =
+		PlutusScript::from_wrapped_cbor(raw_scripts::INIT_TOKEN_POLICY, PlutusV2)?
+			.apply_data(pc_params.clone())?;
+	let reserve_auth_policy =
+		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_AUTH_POLICY, PlutusV2)?
+			.apply_uplc_data(version_oracle_policy_data)?;
 
 	Ok(ScriptsData {
 		addresses: Addresses {
-			committee_candidate_validator: to_bech32(&committee_candidate_validator, network)?,
-			d_parameter_validator: to_bech32(&d_parameter_validator, network)?,
-			illiquid_circulation_supply_validator: to_bech32(
-				&illiquid_circulation_supply_validator,
-				network,
-			)?,
-			permissioned_candidates_validator: to_bech32(
-				&permissioned_candidates_validator,
-				network,
-			)?,
-			reserve_validator: to_bech32(&reserve_validator, network)?,
-			version_oracle_validator: to_bech32(&version_oracle_validator, network)?,
+			committee_candidate_validator: committee_candidate_validator
+				.plutus_address_bech32(network)?,
+			d_parameter_validator: d_parameter_validator.plutus_address_bech32(network)?,
+			illiquid_circulation_supply_validator: illiquid_circulation_supply_validator
+				.plutus_address_bech32(network)?,
+			permissioned_candidates_validator: permissioned_candidates_validator
+				.plutus_address_bech32(network)?,
+			reserve_validator: reserve_validator.plutus_address_bech32(network)?,
+			version_oracle_validator: version_oracle_validator.plutus_address_bech32(network)?,
 		},
 		validator_hashes: ValidatorHashes {
-			committee_candidate_validator: mc_hash(&committee_candidate_validator),
-			d_parameter_validator: mc_hash(&d_parameter_validator),
-			illiquid_circulation_supply_validator: mc_hash(&illiquid_circulation_supply_validator),
-			permissioned_candidates_validator: mc_hash(&permissioned_candidates_validator),
-			reserve_validator: mc_hash(&reserve_validator),
-			version_oracle_validator: mc_hash(&version_oracle_validator),
+			committee_candidate_validator: committee_candidate_validator.script_plutus_address(),
+			d_parameter_validator: d_parameter_validator.script_plutus_address(),
+			illiquid_circulation_supply_validator: illiquid_circulation_supply_validator
+				.script_plutus_address(),
+			permissioned_candidates_validator: permissioned_candidates_validator
+				.script_plutus_address(),
+			reserve_validator: reserve_validator.script_plutus_address(),
+			version_oracle_validator: version_oracle_validator.script_plutus_address(),
 		},
 		policy_ids: PolicyIds {
-			d_parameter: get_script_policy_id(
-				raw_scripts::D_PARAMETER_POLICY,
-				&[&pc_params_data, &plutus_script_to_data(&d_parameter_validator, network)?],
-			)?,
-			init_token: get_script_policy_id(raw_scripts::INIT_TOKEN_POLICY, &[&pc_params_data])?,
-			governance: get_script_policy_id(
-				raw_scripts::MULTI_SIG_POLICY,
-				&[&multisig_governance_policy_configuration(pc_params)],
-			)?,
-			permissioned_candidates: get_script_policy_id(
-				raw_scripts::PERMISSIONED_CANDIDATES_POLICY,
-				&[
-					&pc_params_data,
-					&plutus_script_to_data(&permissioned_candidates_validator, network)?,
-				],
-			)?,
-			reserve_auth: get_script_policy_id(
-				raw_scripts::RESERVE_AUTH_POLICY,
-				&[&version_oracle_policy_data],
-			)?,
+			d_parameter: d_parameter_policy.plutus_policy_id(),
+			init_token: init_token_policy.plutus_policy_id(),
+			governance: governance_policy.plutus_policy_id(),
+			permissioned_candidates: permissioned_candidates_policy.plutus_policy_id(),
+			reserve_auth: reserve_auth_policy.plutus_policy_id(),
 			version_oracle: version_oracle_policy,
 		},
 	})
@@ -155,47 +154,30 @@ fn get_scripts_data(
 
 // Returns version oracle script, policy and PlutusData required by other scripts.
 fn version_oracle(
-	pc_params_data: &PlutusData,
+	pc_params: SidechainParams,
 	network: NetworkIdKind,
-) -> Result<(ScriptBytes, PolicyId, PlutusData), anyhow::Error> {
+) -> Result<(PlutusScript, PolicyId, PlutusData), anyhow::Error> {
 	let init_token_policy =
-		get_script_policy_id(raw_scripts::INIT_TOKEN_POLICY, &[pc_params_data])?;
+		PlutusScript::from_wrapped_cbor(raw_scripts::INIT_TOKEN_POLICY, PlutusV2)?
+			.apply_data(pc_params.clone())?
+			.plutus_policy_id();
+
 	let init_token_asset_data = PlutusData::Array(vec![
 		PlutusData::BoundedBytes(init_token_policy.0.to_vec().into()),
 		PlutusData::BoundedBytes(b"Version oracle InitToken".to_vec().into()),
 	]);
 
 	let validator =
-		apply_params_to_script(&[pc_params_data], raw_scripts::VERSION_ORACLE_VALIDATOR)?;
-	let validator_address = plutus_script_address(&validator, network, LanguageKind::PlutusV2);
-	let policy_script = apply_params_to_script(
-		&[
-			pc_params_data,
-			&init_token_asset_data,
-			&csl_plutus_data_to_uplc(&CSLPlutusData::from_address(&validator_address)?)?,
-		],
-		raw_scripts::VERSION_ORACLE_POLICY,
-	)?;
-	let policy = PolicyId(plutus_script_hash(&policy_script, LanguageKind::PlutusV2));
+		PlutusScript::from_wrapped_cbor(raw_scripts::VERSION_ORACLE_VALIDATOR, PlutusV2)?
+			.apply_data(pc_params.clone())?;
+	let policy_script =
+		PlutusScript::from_wrapped_cbor(raw_scripts::VERSION_ORACLE_POLICY, PlutusV2)?
+			.apply_data(pc_params.clone())?
+			.apply_uplc_data(init_token_asset_data)?
+			.apply_uplc_data(validator.plutus_address_data(network)?)?;
+	let policy = policy_script.plutus_policy_id();
 	let policy_data = PlutusData::BoundedBytes(policy.0.to_vec().into());
 	Ok((validator, policy, policy_data))
-}
-
-// Applies parameters to the script and returns its hash.
-fn get_script_policy_id(policy_bytes: &[u8], params: &[&PlutusData]) -> anyhow::Result<PolicyId> {
-	let policy_script = apply_params_to_script(params, policy_bytes)?;
-	Ok(PolicyId(plutus_script_hash(&policy_script, LanguageKind::PlutusV2)))
-}
-
-// Returns PlutusData representation of the given script. It is done in the same way as on-chain code expects.
-// First, the Address is created, then it is converted to PlutusData.
-fn plutus_script_to_data(
-	script_bytes: &[u8],
-	network: NetworkIdKind,
-) -> anyhow::Result<PlutusData> {
-	let validator_address = plutus_script_address(script_bytes, network, LanguageKind::PlutusV2);
-	// Address is CSL, it has to be converted to UPLC, in order to apply it to the script.
-	csl_plutus_data_to_uplc(&CSLPlutusData::from_address(&validator_address)?)
 }
 
 // Returns the simplest MultiSig policy configuration plutus data:
@@ -209,23 +191,13 @@ fn multisig_governance_policy_configuration(params: SidechainParams) -> PlutusDa
 	])
 }
 
-// Returns bech32 address of the given PlutusV2 script
-fn to_bech32(script_bytes: &[u8], network: NetworkIdKind) -> anyhow::Result<String> {
-	let address = plutus_script_address(script_bytes, network, LanguageKind::PlutusV2);
-	address.to_bech32(None).map_err(|e| anyhow!(e))
-}
-
-fn mc_hash(script_bytes: &[u8]) -> MainchainAddressHash {
-	let bytes = plutus_script_hash(script_bytes, LanguageKind::PlutusV2);
-	MainchainAddressHash(bytes)
-}
-
 #[cfg(test)]
 mod tests {
 	use crate::scripts_data::{Addresses, PolicyIds, ScriptsData, ValidatorHashes};
 	use cardano_serialization_lib::NetworkIdKind;
 	use chain_params::SidechainParams;
 	use hex_literal::hex;
+	use pretty_assertions::assert_eq;
 	use sidechain_domain::{MainchainAddressHash, McTxHash, PolicyId, UtxoId};
 
 	pub(crate) const TEST_PARAMS: SidechainParams = SidechainParams {

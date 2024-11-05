@@ -127,8 +127,10 @@ pub(crate) fn convert_ex_units(v: &OgmiosBudget) -> ExUnits {
 
 #[cfg(test)]
 mod tests {
-	use crate::csl::plutus_script_address;
-	use cardano_serialization_lib::{AssetName, Language, LanguageKind, NetworkIdKind};
+	use super::payment_address;
+	use crate::plutus_script::PlutusScript;
+	use cardano_serialization_lib::LanguageKind::PlutusV2;
+	use cardano_serialization_lib::{AssetName, Language, NetworkIdKind};
 	use hex_literal::hex;
 	use ogmios_client::{
 		query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, ScriptExecutionPrices},
@@ -136,15 +138,13 @@ mod tests {
 		types::{Asset, OgmiosBytesSize, OgmiosValue},
 	};
 
-	use super::payment_address;
-
 	#[test]
 	fn candidates_script_address_test() {
-		let address = plutus_script_address(
+		let address = PlutusScript::from_cbor(
 			&crate::untyped_plutus::tests::CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS,
-			NetworkIdKind::Testnet,
-			LanguageKind::PlutusV2,
-		);
+			PlutusV2,
+		)
+		.plutus_address(NetworkIdKind::Testnet);
 		assert_eq!(
 			address.to_bech32(None).unwrap(),
 			"addr_test1wq7vcwawqa29a5a2z7q8qs6k0cuvp6z2puvd8xx7vasuajq86paxz"

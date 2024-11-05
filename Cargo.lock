@@ -6479,6 +6479,7 @@ dependencies = [
  "pallas-addresses 0.30.2 (git+https://github.com/txpipe/pallas.git?tag=v0.30.2)",
  "pallas-primitives 0.30.2 (git+https://github.com/txpipe/pallas.git?tag=v0.30.2)",
  "plutus",
+ "pretty_assertions",
  "raw-scripts",
  "secp256k1 0.28.2",
  "serde",
