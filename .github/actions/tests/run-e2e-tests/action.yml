@@ -94,13 +94,13 @@ runs:
         if [[ "${{ inputs.local-environment }}" == "true" ]]; then
           echo "Running tests via docker exec"
           docker exec tests bash -c "
-            cd /e2e-tests &&
+            cd ../../../../E2E-tests &&
             source venv/bin/activate &&
             $pytest_cmd
           "
         else
           echo "Running tests locally"
-          cd e2e-tests
+          cd ../../../../E2E-tests
           source venv/bin/activate
           eval "$pytest_cmd"
         fi
@@ -115,7 +115,7 @@ runs:
       uses: actions/upload-artifact@v4
       with:
         name: test-results
-        path: e2e-tests/.report.json
+        path: /E2E-tests.report.json
         overwrite: true
         if-no-files-found: error
         include-hidden-files: true
