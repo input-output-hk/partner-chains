@@ -47,19 +47,6 @@ inputs:
 
 runs:
   using: composite
-  steps:
-    - name: Print Folder Contents
-      shell: bash
-      run: |
-        echo "Print folder contents"
-        ls -la
-        echo "Print one level up"
-        cd ..
-        ls -la
-        echo "Print another level up"
-        cd ..
-        ls -la
-
     - name: Run tests
       id: run-tests
       continue-on-error: true
@@ -106,13 +93,13 @@ runs:
         if [[ "${{ inputs.local-environment }}" == "true" ]]; then
           echo "Running tests via docker exec"
           docker exec tests bash -c "
-            cd ../../../../E2E-tests &&
+            cd E2E-tests &&
             source venv/bin/activate &&
             $pytest_cmd
           "
         else
           echo "Running tests locally"
-          cd ../../../../E2E-tests
+          cd E2E-tests
           source venv/bin/activate
           eval "$pytest_cmd"
         fi
