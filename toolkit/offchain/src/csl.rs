@@ -19,7 +19,7 @@ pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: LanguageKind) ->
 }
 
 /// Builds an CSL `Address` for plutus script from the data obtained from smart contracts.
-pub fn plutus_script_address(
+pub fn script_address(
 	script_bytes: &[u8],
 	network: NetworkIdKind,
 	language: LanguageKind,
@@ -144,7 +144,7 @@ mod tests {
 			&crate::untyped_plutus::tests::CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS,
 			PlutusV2,
 		)
-		.plutus_address(NetworkIdKind::Testnet);
+		.address(NetworkIdKind::Testnet);
 		assert_eq!(
 			address.to_bech32(None).unwrap(),
 			"addr_test1wq7vcwawqa29a5a2z7q8qs6k0cuvp6z2puvd8xx7vasuajq86paxz"

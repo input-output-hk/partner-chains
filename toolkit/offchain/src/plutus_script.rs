@@ -37,32 +37,32 @@ impl PlutusScript {
 	}
 
 	/// Builds an CSL `Address` for plutus script from the data obtained from smart contracts.
-	pub fn plutus_address(&self, network: NetworkIdKind) -> Address {
-		plutus_script_address(&self.bytes, network, self.language)
+	pub fn address(&self, network: NetworkIdKind) -> Address {
+		script_address(&self.bytes, network, self.language)
 	}
 
 	// Returns PlutusData representation of the given script. It is done in the same way as on-chain code expects.
 	// First, the Address is created, then it is converted to PlutusData.
-	pub fn plutus_address_data(&self, network: NetworkIdKind) -> anyhow::Result<uplc::PlutusData> {
-		csl_plutus_data_to_uplc(&PlutusData::from_address(&self.plutus_address(network))?)
+	pub fn address_data(&self, network: NetworkIdKind) -> anyhow::Result<uplc::PlutusData> {
+		csl_plutus_data_to_uplc(&PlutusData::from_address(&self.address(network))?)
 	}
 
 	/// Returns bech32 address of the given PlutusV2 script
-	pub fn plutus_address_bech32(&self, network: NetworkIdKind) -> anyhow::Result<String> {
-		self.plutus_address(network)
+	pub fn address_bech32(&self, network: NetworkIdKind) -> anyhow::Result<String> {
+		self.address(network)
 			.to_bech32(None)
 			.context("Converting script address to bech32")
 	}
 
-	pub fn script_plutus_hash(&self) -> [u8; 28] {
+	pub fn script_hash(&self) -> [u8; 28] {
 		plutus_script_hash(&self.bytes, self.language)
 	}
 
-	pub fn script_plutus_address(&self) -> MainchainAddressHash {
-		MainchainAddressHash(self.script_plutus_hash())
+	pub fn script_address(&self) -> MainchainAddressHash {
+		MainchainAddressHash(self.script_hash())
 	}
 
-	pub fn plutus_policy_id(&self) -> PolicyId {
-		PolicyId(self.script_plutus_hash())
+	pub fn policy_id(&self) -> PolicyId {
+		PolicyId(self.script_hash())
 	}
 }

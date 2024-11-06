@@ -104,11 +104,11 @@ pub fn get_scripts_data(
 	let d_parameter_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::D_PARAMETER_POLICY, PlutusV2)?
 			.apply_data(pc_params.clone())?
-			.apply_uplc_data(d_parameter_validator.plutus_address_data(network)?)?;
+			.apply_uplc_data(d_parameter_validator.address_data(network)?)?;
 	let permissioned_candidates_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_POLICY, PlutusV2)?
 			.apply_data(pc_params.clone())?
-			.apply_uplc_data(permissioned_candidates_validator.plutus_address_data(network)?)?;
+			.apply_uplc_data(permissioned_candidates_validator.address_data(network)?)?;
 	let governance_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, PlutusV2)?
 			.apply_uplc_data(multisig_governance_policy_configuration(pc_params.clone()))?;
@@ -121,32 +121,30 @@ pub fn get_scripts_data(
 
 	Ok(ScriptsData {
 		addresses: Addresses {
-			committee_candidate_validator: committee_candidate_validator
-				.plutus_address_bech32(network)?,
-			d_parameter_validator: d_parameter_validator.plutus_address_bech32(network)?,
+			committee_candidate_validator: committee_candidate_validator.address_bech32(network)?,
+			d_parameter_validator: d_parameter_validator.address_bech32(network)?,
 			illiquid_circulation_supply_validator: illiquid_circulation_supply_validator
-				.plutus_address_bech32(network)?,
+				.address_bech32(network)?,
 			permissioned_candidates_validator: permissioned_candidates_validator
-				.plutus_address_bech32(network)?,
-			reserve_validator: reserve_validator.plutus_address_bech32(network)?,
-			version_oracle_validator: version_oracle_validator.plutus_address_bech32(network)?,
+				.address_bech32(network)?,
+			reserve_validator: reserve_validator.address_bech32(network)?,
+			version_oracle_validator: version_oracle_validator.address_bech32(network)?,
 		},
 		validator_hashes: ValidatorHashes {
-			committee_candidate_validator: committee_candidate_validator.script_plutus_address(),
-			d_parameter_validator: d_parameter_validator.script_plutus_address(),
+			committee_candidate_validator: committee_candidate_validator.script_address(),
+			d_parameter_validator: d_parameter_validator.script_address(),
 			illiquid_circulation_supply_validator: illiquid_circulation_supply_validator
-				.script_plutus_address(),
-			permissioned_candidates_validator: permissioned_candidates_validator
-				.script_plutus_address(),
-			reserve_validator: reserve_validator.script_plutus_address(),
-			version_oracle_validator: version_oracle_validator.script_plutus_address(),
+				.script_address(),
+			permissioned_candidates_validator: permissioned_candidates_validator.script_address(),
+			reserve_validator: reserve_validator.script_address(),
+			version_oracle_validator: version_oracle_validator.script_address(),
 		},
 		policy_ids: PolicyIds {
-			d_parameter: d_parameter_policy.plutus_policy_id(),
-			init_token: init_token_policy.plutus_policy_id(),
-			governance: governance_policy.plutus_policy_id(),
-			permissioned_candidates: permissioned_candidates_policy.plutus_policy_id(),
-			reserve_auth: reserve_auth_policy.plutus_policy_id(),
+			d_parameter: d_parameter_policy.policy_id(),
+			init_token: init_token_policy.policy_id(),
+			governance: governance_policy.policy_id(),
+			permissioned_candidates: permissioned_candidates_policy.policy_id(),
+			reserve_auth: reserve_auth_policy.policy_id(),
 			version_oracle: version_oracle_policy,
 		},
 	})
@@ -160,7 +158,7 @@ fn version_oracle(
 	let init_token_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::INIT_TOKEN_POLICY, PlutusV2)?
 			.apply_data(pc_params.clone())?
-			.plutus_policy_id();
+			.policy_id();
 
 	let init_token_asset_data = PlutusData::Array(vec![
 		PlutusData::BoundedBytes(init_token_policy.0.to_vec().into()),
@@ -174,8 +172,8 @@ fn version_oracle(
 		PlutusScript::from_wrapped_cbor(raw_scripts::VERSION_ORACLE_POLICY, PlutusV2)?
 			.apply_data(pc_params.clone())?
 			.apply_uplc_data(init_token_asset_data)?
-			.apply_uplc_data(validator.plutus_address_data(network)?)?;
-	let policy = policy_script.plutus_policy_id();
+			.apply_uplc_data(validator.address_data(network)?)?;
+	let policy = policy_script.policy_id();
 	let policy_data = PlutusData::BoundedBytes(policy.0.to_vec().into());
 	Ok((validator, policy, policy_data))
 }
