@@ -8,11 +8,11 @@ pub fn largest_first(
 	amount_required: u64,
 	max_collateral_inputs: u32,
 	min_required_collateral: u64,
-) -> Result<Vec<&OgmiosUtxo>, &str> {
+) -> Result<Vec<&OgmiosUtxo>, String> {
 	let amount_required = amount_required.max(min_required_collateral);
 	let amount_available: u64 = inputs_available.iter().map(|utxo| utxo.value.lovelace).sum();
 	if amount_available < amount_required {
-		return Err("InputValueInsufficientError");
+		return Err(format!("The available amount ({amount_available}) is less than the required amount ({amount_required})"));
 	}
 	let mut inputs_available_sorted = inputs_available.iter().collect::<Vec<_>>();
 	inputs_available_sorted
@@ -28,7 +28,7 @@ pub fn largest_first(
 	}
 
 	if inputs_selected.len() as u32 > max_collateral_inputs {
-		return Err("InputLimitExceededError");
+		return Err(format!("Could not find required amount ({amount_required}) of lovelace in the maximum allowed inputs ({max_collateral_inputs})"));
 	}
 	Ok(inputs_selected)
 }
@@ -39,12 +39,15 @@ mod tests {
 
 	#[test]
 	fn fails_if_not_enough_utxos() {
-		assert_eq!(largest_first(&utxos(), 111, 3, 10), Err("InputValueInsufficientError"));
+		assert_eq!(
+			largest_first(&utxos(), 111, 3, 10),
+			Err("The available amount (110) is less than the required amount (111)".to_string())
+		);
 	}
 
 	#[test]
 	fn fails_if_too_many_selected() {
-		assert_eq!(largest_first(&utxos(), 109, 3, 10), Err("InputLimitExceededError"));
+		assert_eq!(largest_first(&utxos(), 109, 3, 10), Err("Could not find required amount (109) of lovelace in the maximum allowed inputs (3)".to_string()));
 	}
 
 	#[test]
