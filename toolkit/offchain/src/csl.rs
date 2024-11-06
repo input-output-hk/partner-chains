@@ -141,7 +141,7 @@ mod tests {
 	#[test]
 	fn candidates_script_address_test() {
 		let address = PlutusScript::from_cbor(
-			&crate::untyped_plutus::tests::CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS,
+			&crate::plutus_script::tests::CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS,
 			PlutusV2,
 		)
 		.address(NetworkIdKind::Testnet);
