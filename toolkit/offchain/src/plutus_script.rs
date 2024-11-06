@@ -16,6 +16,10 @@ impl PlutusScript {
 	pub fn from_cbor(cbor: &[u8], language: LanguageKind) -> Self {
 		Self { bytes: cbor.into(), language }
 	}
+
+	// This function is needed to create [PlutusScript] from scripts in [raw_scripts],
+	// which are encoded as a cibor byte string containing the cbor of the script
+	// itself. This function removes this layer of wrapping.
 	pub fn from_wrapped_cbor(cbor: &[u8], language: LanguageKind) -> anyhow::Result<Self> {
 		Ok(Self::from_cbor(&unwrap_one_layer_of_cbor(cbor)?, language))
 	}
