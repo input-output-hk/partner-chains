@@ -96,7 +96,7 @@
         pkgs = [
           {
             name = "cardano-cli";
-            help = "CLI v9.2.1 that is used in partner-chains dependency stack";
+            help = "CLI v10.1.2 that is used in partner-chains dependency stack";
             # This command has some eval because of IFD
             command = "${self'.packages.cardano-cli}/bin/cardano-cli latest $@";
           }

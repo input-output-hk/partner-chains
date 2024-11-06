@@ -7,7 +7,7 @@ Before you begin, some software must be installed.
 ## Order of Operations
 
 1. Install dependencies
-    1. Cardano node v9.2.1
+    1. Cardano node v10.1.2
         1. DB Sync v13.5.0.2 (PostgreSQL v15.3)
 2. Download the partner chain node v1.1.0
 3. Run the generate-keys wizard
@@ -26,7 +26,7 @@ This guide is currently aimed at the **preview testnet only**. In most `cardano-
 
 To run the partner chains stack, several dependencies need to be installed on the Cardano node.
 
-### 1.1 Cardano node v9.2.1
+### 1.1 Cardano node v10.1.2
 
 A passive Cardano node is required to validate a partner chain. The installation of `cardano-node` is out of the scope of this guide. Refer to the [Cardano course handbook](https://cardano-course.gitbook.io/cardano-course/handbook) for documentation and video instruction.
 
@@ -39,7 +39,7 @@ The partner chain needs DB Sync on a `cardano-node` to observe Cardano's state.
 #### A critical note on Cardano DB Sync!
 
 > Before starting the partner chain node, and during normal operations, it is essential that the DB Sync component is fully synchronized.
-> Running the node with lagging or not fully synced DB Sync will result in consensus errors, decreased peer reputation, and possibly a temporary ban by network peers. 
+> Running the node with lagging or not fully synced DB Sync will result in consensus errors, decreased peer reputation, and possibly a temporary ban by network peers.
 > Sync time depends on hardware and network conditions, but here are approximate estimations for each network:
 
 #### Sync time required
@@ -47,7 +47,7 @@ The partner chain needs DB Sync on a `cardano-node` to observe Cardano's state.
 - Preview: About 10 hours
 - Pre-production: usually ranges from several hours to a day
 - Mainnet: two or more days.
-  
+
 Typical error message if db-sync is behind:
 ```
 💔 Verification failed for block 0x151ed479f5766f8dc56fa3626329baa77292d5a692cf7fb9d24e743ae57fe71c received from (12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp): "Main chain state e04eea9347162cd773a3505692d0aaee3d49b2c61f21a5b8a95f3d5711a63961 referenced in imported block at slot 286497345 with timestamp 1718984070000 not found"
@@ -75,15 +75,15 @@ Verify user is created and has role permissions: `\du`
 
 Create database: `CREATE DATABASE cexplorer;`
 
-Verify the database is created: `\l` 
+Verify the database is created: `\l`
 
 Sample correct return:
 ```
 List of databases
-   Name    |  Owner   | Encoding | Collate |  Ctype  |   Access privileges   
+   Name    |  Owner   | Encoding | Collate |  Ctype  |   Access privileges
 -----------+----------+----------+---------+---------+-----------------------
- cexplorer | postgres | UTF8     | C.UTF-8 | C.UTF-8 | 
- postgres  | postgres | UTF8     | C.UTF-8 | C.UTF-8 | 
+ cexplorer | postgres | UTF8     | C.UTF-8 | C.UTF-8 |
+ postgres  | postgres | UTF8     | C.UTF-8 | C.UTF-8 |
  template0 | postgres | UTF8     | C.UTF-8 | C.UTF-8 | =c/postgres          +
            |          |          |         |         | postgres=CTc/postgres
  template1 | postgres | UTF8     | C.UTF-8 | C.UTF-8 | =c/postgres          +
