@@ -47,6 +47,7 @@ inputs:
 
 runs:
   using: composite
+  steps:
     - name: Run tests
       id: run-tests
       continue-on-error: true
