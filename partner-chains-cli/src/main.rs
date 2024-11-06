@@ -1,3 +1,6 @@
+//! Provides wizard style CLI for Partner Chains setup and user operations.
+//! Interacts with Smart Contracts using [`partner_chains_cardano_offchain`] crate.
+
 pub(crate) mod cardano_key;
 pub mod config;
 pub mod create_chain_spec;

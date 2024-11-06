@@ -6,16 +6,28 @@ use crate::{
 };
 use serde::Deserialize;
 
-pub trait QueryLedgerState: OgmiosClient {
+pub trait QueryLedgerState {
 	#[allow(async_fn_in_trait)]
+	async fn era_summaries(&self) -> Result<Vec<EraSummary>, OgmiosClientError>;
+
+	#[allow(async_fn_in_trait)]
+	/// Parameters:
+	/// - `addresses`: bech32 address to query
+	async fn query_utxos(&self, addresses: &[String])
+		-> Result<Vec<OgmiosUtxo>, OgmiosClientError>;
+
+	#[allow(async_fn_in_trait)]
+	async fn query_protocol_parameters(
+		&self,
+	) -> Result<ProtocolParametersResponse, OgmiosClientError>;
+}
+
+impl<T: OgmiosClient> QueryLedgerState for T {
 	async fn era_summaries(&self) -> Result<Vec<EraSummary>, OgmiosClientError> {
 		self.request("queryLedgerState/eraSummaries", OgmiosParams::empty_positional())
 			.await
 	}
 
-	#[allow(async_fn_in_trait)]
-	/// Parameters:
-	/// - `addresses`: bech32 address to query
 	async fn query_utxos(
 		&self,
 		addresses: &[String],
@@ -24,7 +36,6 @@ pub trait QueryLedgerState: OgmiosClient {
 		self.request("queryLedgerState/utxo", params).await
 	}
 
-	#[allow(async_fn_in_trait)]
 	async fn query_protocol_parameters(
 		&self,
 	) -> Result<ProtocolParametersResponse, OgmiosClientError> {
@@ -32,8 +43,6 @@ pub trait QueryLedgerState: OgmiosClient {
 			.await
 	}
 }
-
-impl<T: OgmiosClient> QueryLedgerState for T {}
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]

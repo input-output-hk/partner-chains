@@ -6,7 +6,7 @@ use jsonrpsee::{
 	types::{ErrorCode, ErrorObject},
 };
 use ogmios_client::{
-	query_network::{QueryNetwork, ShelleyGenesisConfigurationResponse},
+	query_network::{Network, QueryNetwork, ShelleyGenesisConfigurationResponse},
 	types::SlotLength,
 };
 use serde_json::{json, Value};
@@ -50,6 +50,7 @@ async fn shelley_genesis_configuration() {
 		genesis_configuration,
 		ShelleyGenesisConfigurationResponse {
 			network_magic: 2,
+			network: Network::Testnet,
 			start_time: OffsetDateTime::from_unix_timestamp(1666656000).unwrap(),
 			security_parameter: 432,
 			epoch_length: 86400,

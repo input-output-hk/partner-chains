@@ -6,8 +6,14 @@ use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
 
-pub trait QueryNetwork: OgmiosClient {
+pub trait QueryNetwork {
 	#[allow(async_fn_in_trait)]
+	async fn shelley_genesis_configuration(
+		&self,
+	) -> Result<ShelleyGenesisConfigurationResponse, OgmiosClientError>;
+}
+
+impl<T: OgmiosClient> QueryNetwork for T {
 	async fn shelley_genesis_configuration(
 		&self,
 	) -> Result<ShelleyGenesisConfigurationResponse, OgmiosClientError> {
@@ -18,12 +24,11 @@ pub trait QueryNetwork: OgmiosClient {
 	}
 }
 
-impl<T: OgmiosClient> QueryNetwork for T {}
-
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ShelleyGenesisConfigurationResponse {
 	pub network_magic: u32,
+	pub network: Network,
 	pub security_parameter: u32,
 	#[serde(deserialize_with = "crate::types::parse_fraction_decimal")]
 	pub active_slots_coefficient: Decimal,
@@ -31,4 +36,11 @@ pub struct ShelleyGenesisConfigurationResponse {
 	pub slot_length: SlotLength,
 	#[serde(deserialize_with = "time::serde::iso8601::deserialize")]
 	pub start_time: time::OffsetDateTime,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum Network {
+	Mainnet,
+	Testnet,
 }
