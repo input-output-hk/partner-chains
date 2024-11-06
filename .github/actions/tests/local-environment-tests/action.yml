@@ -47,16 +47,39 @@ runs:
         # Create the target directory
         mkdir -p dev/local-environment/configurations/tests/E2E-tests
         
+        # Debug: Show current directory and E2E-tests contents
+        pwd
+        ls -la E2E-tests/
+        
         # Copy E2E-tests from partner-chains repo to the correct location
         cp -r E2E-tests/* dev/local-environment/configurations/tests/E2E-tests/
+        
+        # Debug: Verify the copy
+        echo "Verifying copied tests:"
+        ls -la dev/local-environment/configurations/tests/E2E-tests/
       shell: bash
     - name: Deploy local environment with overrides
       run: |
         mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli
         mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node
+        
+        # Debug: Check directory structure before running setup
+        echo "Directory structure before setup:"
+        ls -R dev/local-environment/configurations/tests/
+        
         cd dev/local-environment
         bash setup.sh --non-interactive --overrides --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ inputs.image }} --tests
+        
+        # Debug: Check if tests directory is mounted correctly
+        echo "Docker compose config:"
+        docker compose config | grep -A 5 tests
+        
         docker compose up -d
+        
+        # Debug: Check container mounts
+        echo "Container mounts:"
+        docker inspect tests | grep -A 10 Mounts
+        
         cd ../../
       shell: bash
     - name: Wait for partner-chains-node-1 to start
