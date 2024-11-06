@@ -42,6 +42,14 @@ runs:
       with:
         name: partner-chains-node-artifact
         path: dev/local-environment/configurations/pc-contracts-cli/overrides/
+    - name: Setup E2E tests directory
+      run: |
+        # Create the target directory
+        mkdir -p dev/local-environment/configurations/tests/E2E-tests
+        
+        # Copy E2E-tests from partner-chains repo to the correct location
+        cp -r E2E-tests/* dev/local-environment/configurations/tests/E2E-tests/
+      shell: bash
     - name: Deploy local environment with overrides
       run: |
         mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli
