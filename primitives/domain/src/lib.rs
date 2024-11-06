@@ -229,7 +229,7 @@ impl TryFrom<Vec<u8>> for MainchainPublicKey {
 pub const MAINCHAIN_ADDRESS_HASH_LEN: usize = 28;
 
 /// Some hash of MainchainAddress, 28 bytes. Presumably blake2b_224.
-/// Way to get it: cardano-cli address key-hash --payment-verification-key-file FILE
+/// Way to get it: cardano-cli latest address key-hash --payment-verification-key-file FILE
 #[derive(
 	Clone, Copy, Decode, Default, Eq, Encode, Hash, MaxEncodedLen, PartialEq, ToDatum, TypeInfo,
 )]
