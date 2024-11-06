@@ -23,6 +23,20 @@ impl TryFrom<PlutusData> for PermissionedCandidateDatums {
 	}
 }
 
+pub fn permissioned_candidates_to_plutus_data(
+	candidates: &[PermissionedCandidateData],
+) -> PlutusData {
+	let mut list = PlutusList::new();
+	for candidate in candidates {
+		let mut candidate_datum = PlutusList::new();
+		candidate_datum.add(&PlutusData::new_bytes(candidate.sidechain_public_key.0.clone()));
+		candidate_datum.add(&PlutusData::new_bytes(candidate.aura_public_key.0.clone()));
+		candidate_datum.add(&PlutusData::new_bytes(candidate.grandpa_public_key.0.clone()));
+		list.add(&PlutusData::new_list(&candidate_datum));
+	}
+	PlutusData::new_list(&list)
+}
+
 /// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.
 fn decode_legacy_permissioned_candidates_datums(
 	datum: PlutusData,
@@ -111,5 +125,46 @@ mod tests {
 		]);
 
 		assert_eq!(PermissionedCandidateDatums::try_from(plutus_data).unwrap(), expected_datum)
+	}
+
+	#[test]
+	fn permissioned_candidates_to_datum() {
+		let input = vec![
+			PermissionedCandidateData {
+				sidechain_public_key: SidechainPublicKey(
+					hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854").into(),
+				),
+				aura_public_key: AuraPublicKey(
+					hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec").into(),
+				),
+				grandpa_public_key: GrandpaPublicKey(
+					hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d").into(),
+				),
+			},
+			PermissionedCandidateData {
+				sidechain_public_key: SidechainPublicKey(
+					hex!("79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf").into(),
+				),
+				aura_public_key: AuraPublicKey(
+					hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19").into(),
+				),
+				grandpa_public_key: GrandpaPublicKey(
+					hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32").into(),
+				),
+			},
+		];
+		let expected_plutus_data = test_plutus_data!({"list": [
+			{"list": [
+				{"bytes": "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"},
+				{"bytes": "bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"},
+				{"bytes": "9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"}
+			]},
+			{"list": [
+				{"bytes": "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"},
+				{"bytes": "56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"},
+				{"bytes": "7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"}
+			]}
+		]});
+		assert_eq!(permissioned_candidates_to_plutus_data(&input), expected_plutus_data)
 	}
 }
