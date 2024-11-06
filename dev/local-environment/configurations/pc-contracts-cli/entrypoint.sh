@@ -256,7 +256,8 @@ jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities
 
 echo "Configuring Balances..."
 jq '.genesis.runtimeGenesis.config.balances.balances = [
-    ["5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X", 1000000000000000]
+    ["5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X", 1000000000000000],
+    ["5D9eDKbFt4JKaEndQvMmbJYnpX9ENUj8U9UUg1AxSa64FJxE", 1000000000000000]
 ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
 echo "Configuring Epoch Length..."

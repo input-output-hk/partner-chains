@@ -31,7 +31,7 @@ pub struct SidechainParams {
 	pub threshold_numerator: u64,
 	#[cfg_attr(feature = "std", arg(long))]
 	pub threshold_denominator: u64,
-	/// Obtained with cardano-cli address key-hash --payment-verification-key-file <vkey of chosen governance>
+	/// Obtained with cardano-cli latest address key-hash --payment-verification-key-file <vkey of chosen governance>
 	#[cfg_attr(feature = "std", arg(long))]
 	pub governance_authority: MainchainAddressHash,
 }

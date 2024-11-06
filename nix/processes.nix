@@ -49,7 +49,7 @@
         command = ''
           export CARDANO_NODE_SOCKET_PATH=${node-socket}
           while true; do
-            ${self'.packages.cardano-cli}/bin/cardano-cli \
+            ${self'.packages.cardano-cli}/bin/cardano-cli latest \
               query tip ${if network == "mainnet" then "--mainnet" else magic};
             sleep 10
           done
@@ -62,7 +62,7 @@
           exec = {
             command = ''
               export CARDANO_NODE_SOCKET_PATH=${node-socket}
-              ${self'.packages.cardano-cli}/bin/cardano-cli \
+              ${self'.packages.cardano-cli}/bin/cardano-cli latest \
                 query tip ${if network == "mainnet" then "--mainnet" else magic}; \
                 | jq -e '.syncProgress == "100.00" | not' && exit 1 || exit 0
             '';
