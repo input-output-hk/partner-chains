@@ -4,8 +4,8 @@ A registered block producer is a Cardano stake pool operator (SPO) that desires 
 
 ## Order of Operations
 1. Become a Cardano SPO
-2. Install partner chains dependencies 
-    1. Cardano node v9.2.1
+2. Install partner chains dependencies
+    1. Cardano node v10.1.2
         1. Ogmios v6.8.0
         2. Kupo - v2.9.0
         3. Cardano DB Sync v13.5.0.2 (PostgreSQL v15.3)
@@ -138,7 +138,7 @@ The partner chain needs DB Sync on a `cardano-node` to observe Cardano's state.
 #### A critical note on Cardano DB Sync!
 
 > Before starting the partner chain node, and during normal operations, it is essential that the DB Sync component is fully synchronized.
-> Running the node with lagging or not fully synced DB Sync will result in consensus errors, decreased peer reputation, and possibly a temporary ban by network peers. 
+> Running the node with lagging or not fully synced DB Sync will result in consensus errors, decreased peer reputation, and possibly a temporary ban by network peers.
 > Sync time depends on hardware and network conditions, but here are approximate estimations for each network:
 
 #### Sync time required
@@ -182,10 +182,10 @@ Verify the database is created: `\l`
 Sample correct return:
 ```
 List of databases
-   Name    |  Owner   | Encoding | Collate |  Ctype  |   Access privileges   
+   Name    |  Owner   | Encoding | Collate |  Ctype  |   Access privileges
 -----------+----------+----------+---------+---------+-----------------------
- cexplorer | postgres | UTF8     | C.UTF-8 | C.UTF-8 | 
- postgres  | postgres | UTF8     | C.UTF-8 | C.UTF-8 | 
+ cexplorer | postgres | UTF8     | C.UTF-8 | C.UTF-8 |
+ postgres  | postgres | UTF8     | C.UTF-8 | C.UTF-8 |
  template0 | postgres | UTF8     | C.UTF-8 | C.UTF-8 | =c/postgres          +
            |          |          |         |         | postgres=CTc/postgres
  template1 | postgres | UTF8     | C.UTF-8 | C.UTF-8 | =c/postgres          +
@@ -303,7 +303,7 @@ The register-2 wizard obtains signatures for the registration message. It only r
 
 1. Follow the steps when prompted by the wizard
 
-The wizard outputs the final command to be input to the register-3 wizard. 
+The wizard outputs the final command to be input to the register-3 wizard.
 
 #### Register-3 wizard
 

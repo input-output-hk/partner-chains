@@ -4,7 +4,7 @@ Partner Chain builders are organizations that want to build their own blockchain
 
 ## Order of Operations
 1. Install dependencies
-    1. Cardano node v9.2.1
+    1. Cardano node v10.1.2
         1. Ogmios v6.8.0
         2. Kupo - v2.9.0
         3. DB Sync  v13.5.0.2 (PostgreSQLv15.3)
@@ -24,7 +24,7 @@ To run the Partner Chains stack, several dependencies need to be installed on a 
 
 Ogmios, Kupo and DB Sync are essential to enable registration communication with the main chain (Cardano). Ogmios and Kupo are used for submitting transactions to Cardano, and DB Sync is for observation of main chain state.
 
-### 1.1 Cardano node v9.2.1
+### 1.1 Cardano node v10.1.2
 
 Cardano node is required to start a partner chain. The installation of `cardano-node` is out of the scope of this guide. Refer to our [Cardano course handbook](https://cardano-course.gitbook.io/cardano-course/handbook) for documentation and video instruction.
 
@@ -133,7 +133,7 @@ The partner chain needs DB Sync on `cardano-node` to observe Cardano's state.
 #### A critical note on Cardano DB Sync!
 
 > Before starting the partner chain node, and during normal operations, it is essential that the DB Sync component is fully synchronized.
-> Running the node with lagging or not fully synced DB Sync will result in consensus errors, decreased peer reputation, and possibly a temporary ban by network peers. 
+> Running the node with lagging or not fully synced DB Sync will result in consensus errors, decreased peer reputation, and possibly a temporary ban by network peers.
 > Sync time depends on hardware and network conditions, but here are approximate estimations for each network:
 
 #### Sync time required
@@ -141,10 +141,10 @@ The partner chain needs DB Sync on `cardano-node` to observe Cardano's state.
 - Preview: a few hours
 - Pre-production: usually ranges from several hours to a day
 - Mainnet: two or more days.
-  
+
 Typical error message if DB Sync is behind:
 
-``` 
+```
 💔 Verification failed for block 0x151ed479f5766f8dc56fa3626329baa77292d5a692cf7fb9d24e743ae57fe71c received from (12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp): "Main chain state e04eea9347162cd773a3505692d0aaee3d49b2c61f21a5b8a95f3d5711a63961 referenced in imported block at slot 286497345 with timestamp 1718984070000 not found"
 ```
 
@@ -172,16 +172,16 @@ Verify user is created and has role permissions: `\du`
 
 Create database: `CREATE DATABASE cexplorer;`
 
-Verify the database is created: `\l` 
+Verify the database is created: `\l`
 
 Sample correct return:
 
 ```
 List of databases
-   Name    |  Owner   | Encoding | Collate |  Ctype  |   Access privileges   
+   Name    |  Owner   | Encoding | Collate |  Ctype  |   Access privileges
 -----------+----------+----------+---------+---------+-----------------------
- cexplorer | postgres | UTF8     | C.UTF-8 | C.UTF-8 | 
- postgres  | postgres | UTF8     | C.UTF-8 | C.UTF-8 | 
+ cexplorer | postgres | UTF8     | C.UTF-8 | C.UTF-8 |
+ postgres  | postgres | UTF8     | C.UTF-8 | C.UTF-8 |
  template0 | postgres | UTF8     | C.UTF-8 | C.UTF-8 | =c/postgres          +
            |          |          |         |         | postgres=CTc/postgres
  template1 | postgres | UTF8     | C.UTF-8 | C.UTF-8 | =c/postgres          +
@@ -360,20 +360,20 @@ The wizard reads the permissioned candidates list from the chain config file and
 
 Next, the wizard deals with the D parameter. If it is present on the main chain, the wizard displays its value and allows you to update it.
 
-The D parameter has two values: 
+The D parameter has two values:
 
-   - R, the number of registered candidate seats, and 
-   - P, the number of permissioned candidate seats. 
+   - R, the number of registered candidate seats, and
+   - P, the number of permissioned candidate seats.
 
 The default value of R is zero, and the default value of P is the number of entries in the list of permissioned candidates.
 
-The configuration of the chain is stored in the file `partner-chains-cli-chain-config.json`. This file should be present and identical for every node participating in the network. 
+The configuration of the chain is stored in the file `partner-chains-cli-chain-config.json`. This file should be present and identical for every node participating in the network.
 
-Information about the resources used by each node is stored in the file `partner-chain-cli-resources-config.json`. This file should be present for every node participating in the chain, but its contents are specific to each node. 
+Information about the resources used by each node is stored in the file `partner-chain-cli-resources-config.json`. This file should be present for every node participating in the chain, but its contents are specific to each node.
 
 ### 6. Run the partner chain node
 
-The start-node wizard is used to start a partner chain node. Make sure that `cardano-node` is running with DB Sync running and fully synced. You will need to provide a link to a PostgreSQL server running with DB Sync as part of starting the node. 
+The start-node wizard is used to start a partner chain node. Make sure that `cardano-node` is running with DB Sync running and fully synced. You will need to provide a link to a PostgreSQL server running with DB Sync as part of starting the node.
 
 Be sure two main chain (Cardano) epochs have passed since the registration of a new partner chain before running the start-node wizard. On the preview network, this is between 1-2 days.
 
