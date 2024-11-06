@@ -280,6 +280,13 @@
 <a href="#280" id="280">280</a>
 <a href="#281" id="281">281</a>
 <a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(dead_code)]
 
 </span><span class="kw">use </span>cardano_serialization_lib::{
@@ -321,6 +328,13 @@
 		<span class="kw-2">&amp;</span>Credential::from_keyhash(<span class="kw-2">&amp;</span>key_hash.into()),
 	)
 	.to_address()
+}
+
+<span class="kw">pub fn </span>ogmios_network_to_csl(network: ogmios_client::query_network::Network) -&gt; NetworkIdKind {
+	<span class="kw">match </span>network {
+		ogmios_client::query_network::Network::Mainnet =&gt; NetworkIdKind::Mainnet,
+		ogmios_client::query_network::Network::Testnet =&gt; NetworkIdKind::Testnet,
+	}
 }
 
 <span class="kw">fn </span>network_id_kind_to_u8(network: NetworkIdKind) -&gt; u8 {

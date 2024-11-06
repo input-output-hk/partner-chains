@@ -90,7 +90,7 @@
 <span class="doccomment">/// Reference chain V1 parameters. Please do not depend on this structure, but rather implement your own.
 /// Library code in this repository does not depend on this structure.
 </span><span class="attr">#[derive(
-	Default, Debug, Clone, PartialEq, Eq, TypeInfo, Encode, Decode, ToDatum, MaxEncodedLen,
+	Default, Debug, Clone, PartialEq, Eq, TypeInfo, Encode, Decode, ToDatum, MaxEncodedLen, Hash,
 )]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 #[cfg_attr(feature = <span class="string">"serde"</span>, serde(rename_all = <span class="string">"camelCase"</span>))]

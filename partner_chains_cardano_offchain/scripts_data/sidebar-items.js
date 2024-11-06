@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["get_scripts_data"],"struct":["Addresses","PolicyIds","ScriptsData","ValidatorHashes"]};
+window.SIDEBAR_ITEMS = {"struct":["Addresses","PolicyIds","ScriptsData","ValidatorHashes"],"trait":["GetScriptsData"]};

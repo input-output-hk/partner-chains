@@ -89,6 +89,15 @@
 <a href="#89" id="89">89</a>
 <a href="#90" id="90">90</a>
 <a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Queries that start with `queryLedgerState/`.
 
 </span><span class="kw">use crate</span>::{
@@ -97,17 +106,29 @@
 };
 <span class="kw">use </span>serde::Deserialize;
 
-<span class="kw">pub trait </span>QueryLedgerState: OgmiosClient {
+<span class="kw">pub trait </span>QueryLedgerState {
 	<span class="attr">#[allow(async_fn_in_trait)]
-	</span><span class="kw">async fn </span>era_summaries(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;EraSummary&gt;, OgmiosClientError&gt; {
-		<span class="self">self</span>.request(<span class="string">"queryLedgerState/eraSummaries"</span>, OgmiosParams::empty_positional())
-			.<span class="kw">await
-	</span>}
+	</span><span class="kw">async fn </span>era_summaries(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;EraSummary&gt;, OgmiosClientError&gt;;
 
 	<span class="attr">#[allow(async_fn_in_trait)]
 	</span><span class="doccomment">/// Parameters:
 	/// - `addresses`: bech32 address to query
-	</span><span class="kw">async fn </span>query_utxos(
+	</span><span class="kw">async fn </span>query_utxos(<span class="kw-2">&amp;</span><span class="self">self</span>, addresses: <span class="kw-2">&amp;</span>[String])
+		-&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;OgmiosUtxo&gt;, OgmiosClientError&gt;;
+
+	<span class="attr">#[allow(async_fn_in_trait)]
+	</span><span class="kw">async fn </span>query_protocol_parameters(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;ProtocolParametersResponse, OgmiosClientError&gt;;
+}
+
+<span class="kw">impl</span>&lt;T: OgmiosClient&gt; QueryLedgerState <span class="kw">for </span>T {
+	<span class="kw">async fn </span>era_summaries(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;EraSummary&gt;, OgmiosClientError&gt; {
+		<span class="self">self</span>.request(<span class="string">"queryLedgerState/eraSummaries"</span>, OgmiosParams::empty_positional())
+			.<span class="kw">await
+	</span>}
+
+	<span class="kw">async fn </span>query_utxos(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		addresses: <span class="kw-2">&amp;</span>[String],
 	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;OgmiosUtxo&gt;, OgmiosClientError&gt; {
@@ -115,16 +136,13 @@
 		<span class="self">self</span>.request(<span class="string">"queryLedgerState/utxo"</span>, params).<span class="kw">await
 	</span>}
 
-	<span class="attr">#[allow(async_fn_in_trait)]
-	</span><span class="kw">async fn </span>query_protocol_parameters(
+	<span class="kw">async fn </span>query_protocol_parameters(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;ProtocolParametersResponse, OgmiosClientError&gt; {
 		<span class="self">self</span>.request(<span class="string">"queryLedgerState/protocolParameters"</span>, OgmiosParams::empty_by_name())
 			.<span class="kw">await
 	</span>}
 }
-
-<span class="kw">impl</span>&lt;T: OgmiosClient&gt; QueryLedgerState <span class="kw">for </span>T {}
 
 <span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]

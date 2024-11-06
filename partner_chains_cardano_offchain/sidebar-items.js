@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["csl","scripts_data","untyped_plutus"]};
+window.SIDEBAR_ITEMS = {"enum":["OffchainError"],"mod":["csl","scripts_data","untyped_plutus"]};

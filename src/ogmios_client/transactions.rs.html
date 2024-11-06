@@ -63,12 +63,22 @@
 <a href="#63" id="63">63</a>
 <a href="#64" id="64">64</a>
 <a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a>
+<a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Requests to evalute and submit transactions via Ogmios`.
 
 </span><span class="kw">use crate</span>::{types::OgmiosTx, ByNameParamsBuilder, OgmiosClient, OgmiosClientError};
 <span class="kw">use </span>serde::Deserialize;
 
-<span class="kw">pub trait </span>Transactions: OgmiosClient {
+<span class="kw">pub trait </span>Transactions {
 	<span class="doccomment">/// Evaluates a transaction.
 	///
 	/// Does not support additional UTXO inputs yet.
@@ -79,13 +89,7 @@
 	</span><span class="kw">async fn </span>evaluate_transaction(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		tx_bytes: <span class="kw-2">&amp;</span>[u8],
-	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;OgmiosEvaluateTransactionResponse&gt;, OgmiosClientError&gt; {
-		<span class="kw">let </span>params = ByNameParamsBuilder::new()
-			.insert(<span class="string">"transaction"</span>, <span class="macro">serde_json::json!</span>({<span class="string">"cbor"</span>: hex::encode(tx_bytes)}))<span class="question-mark">?
-			</span>.insert(<span class="string">"additionalUtxo"</span>, <span class="macro">serde_json::json!</span>([]))<span class="question-mark">?
-			</span>.build();
-		<span class="self">self</span>.request(<span class="string">"evaluateTransaction"</span>, params).<span class="kw">await
-	</span>}
+	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;OgmiosEvaluateTransactionResponse&gt;, OgmiosClientError&gt;;
 
 	<span class="doccomment">/// Submits a signed transaction.
 	///
@@ -95,6 +99,24 @@
 	</span><span class="kw">async fn </span>submit_transaction(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		tx_bytes: <span class="kw-2">&amp;</span>[u8],
+	) -&gt; <span class="prelude-ty">Result</span>&lt;SubmitTransactionResponse, OgmiosClientError&gt;;
+}
+
+<span class="kw">impl</span>&lt;T: OgmiosClient&gt; Transactions <span class="kw">for </span>T {
+	<span class="kw">async fn </span>evaluate_transaction(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		tx_bytes: <span class="kw-2">&amp;</span>[u8],
+	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;OgmiosEvaluateTransactionResponse&gt;, OgmiosClientError&gt; {
+		<span class="kw">let </span>params = ByNameParamsBuilder::new()
+			.insert(<span class="string">"transaction"</span>, <span class="macro">serde_json::json!</span>({<span class="string">"cbor"</span>: hex::encode(tx_bytes)}))<span class="question-mark">?
+			</span>.insert(<span class="string">"additionalUtxo"</span>, <span class="macro">serde_json::json!</span>([]))<span class="question-mark">?
+			</span>.build();
+		<span class="self">self</span>.request(<span class="string">"evaluateTransaction"</span>, params).<span class="kw">await
+	</span>}
+
+	<span class="kw">async fn </span>submit_transaction(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		tx_bytes: <span class="kw-2">&amp;</span>[u8],
 	) -&gt; <span class="prelude-ty">Result</span>&lt;SubmitTransactionResponse, OgmiosClientError&gt; {
 		<span class="kw">let </span>params = ByNameParamsBuilder::new()
 			.insert(<span class="string">"transaction"</span>, <span class="macro">serde_json::json!</span>({<span class="string">"cbor"</span>: hex::encode(tx_bytes)}))<span class="question-mark">?
@@ -102,8 +124,6 @@
 		<span class="self">self</span>.request(<span class="string">"submitTransaction"</span>, params).<span class="kw">await
 	</span>}
 }
-
-<span class="kw">impl</span>&lt;T: OgmiosClient&gt; Transactions <span class="kw">for </span>T {}
 
 <span class="attr">#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]

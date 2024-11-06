@@ -615,6 +615,18 @@
 <a href="#615" id="615">615</a>
 <a href="#616" id="616">616</a>
 <a href="#617" id="617">617</a>
+<a href="#618" id="618">618</a>
+<a href="#619" id="619">619</a>
+<a href="#620" id="620">620</a>
+<a href="#621" id="621">621</a>
+<a href="#622" id="622">622</a>
+<a href="#623" id="623">623</a>
+<a href="#624" id="624">624</a>
+<a href="#625" id="625">625</a>
+<a href="#626" id="626">626</a>
+<a href="#627" id="627">627</a>
+<a href="#628" id="628">628</a>
+<a href="#629" id="629">629</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -933,7 +945,18 @@
 
 <span class="doccomment">/// Identifies UTxO by transaction hash, and the index of output.
 </span><span class="attr">#[derive(
-	Default, Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen,
+	Default,
+	Debug,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	ToDatum,
+	TypeInfo,
+	MaxEncodedLen,
+	Hash,
 )]
 </span><span class="kw">pub struct </span>UtxoId {
 	<span class="kw">pub </span>tx_hash: McTxHash,
@@ -1009,6 +1032,7 @@
 	ToDatum,
 	TypeInfo,
 	MaxEncodedLen,
+	Hash,
 )]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 </span><span class="kw">pub struct </span>UtxoIndex(<span class="kw">pub </span>u16);

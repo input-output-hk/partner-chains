@@ -166,8 +166,28 @@
 <a href="#166" id="166">166</a>
 <a href="#167" id="167">167</a>
 <a href="#168" id="168">168</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::ogmios::{ogmios_request, OgmiosRequest, OgmiosResponse};
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::ServiceConfig;
+<span class="kw">use </span><span class="kw">crate</span>::ogmios::{ogmios_request, OgmiosRequest, OgmiosResponse};
 <span class="kw">use </span>anyhow::{anyhow, Context};
+<span class="kw">use </span>jsonrpsee::http_client::HttpClient;
+<span class="kw">use </span>partner_chains_cardano_offchain::scripts_data::GetScriptsData;
 <span class="kw">use </span>sp_core::offchain::Timestamp;
 <span class="kw">use </span>std::path::PathBuf;
 <span class="kw">use </span>std::{
@@ -178,6 +198,9 @@
 <span class="kw">use </span>tempfile::{TempDir, TempPath};
 
 <span class="kw">pub trait </span>IOContext {
+	<span class="doccomment">/// It should implement all the required traits for offchain operations
+	</span><span class="kw">type </span>Offchain: GetScriptsData;
+
 	<span class="kw">fn </span>run_command(<span class="kw-2">&amp;</span><span class="self">self</span>, cmd: <span class="kw-2">&amp;</span>str) -&gt; anyhow::Result&lt;String&gt;;
 	<span class="kw">fn </span>print(<span class="kw-2">&amp;</span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>str);
 	<span class="kw">fn </span>eprint(<span class="kw-2">&amp;</span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>str);
@@ -196,11 +219,15 @@
 	<span class="kw">fn </span>set_env_var(<span class="kw-2">&amp;</span><span class="self">self</span>, key: <span class="kw-2">&amp;</span>str, value: <span class="kw-2">&amp;</span>str);
 	<span class="kw">fn </span>current_timestamp(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Timestamp;
 	<span class="kw">fn </span>ogmios_rpc(<span class="kw-2">&amp;</span><span class="self">self</span>, addr: <span class="kw-2">&amp;</span>str, req: OgmiosRequest) -&gt; anyhow::Result&lt;OgmiosResponse&gt;;
+	<span class="kw">fn </span>offchain_impl(<span class="kw-2">&amp;</span><span class="self">self</span>, ogmios_config: <span class="kw-2">&amp;</span>ServiceConfig) -&gt; anyhow::Result&lt;<span class="self">Self</span>::Offchain&gt;;
 }
 
 <span class="kw">pub struct </span>DefaultCmdRunContext;
 
 <span class="kw">impl </span>IOContext <span class="kw">for </span>DefaultCmdRunContext {
+	<span class="comment">// Currently HttpClient implements Ogmios traits, that implement all required Offchain traits
+	</span><span class="kw">type </span>Offchain = HttpClient;
+
 	<span class="kw">fn </span>run_command(<span class="kw-2">&amp;</span><span class="self">self</span>, cmd: <span class="kw-2">&amp;</span>str) -&gt; anyhow::Result&lt;String&gt; {
 		<span class="macro">eprintln!</span>(<span class="string">"running external command: {cmd}"</span>);
 
@@ -327,6 +354,13 @@
 
 	<span class="kw">fn </span>ogmios_rpc(<span class="kw-2">&amp;</span><span class="self">self</span>, addr: <span class="kw-2">&amp;</span>str, req: OgmiosRequest) -&gt; anyhow::Result&lt;OgmiosResponse&gt; {
 		ogmios_request(addr, req)
+	}
+
+	<span class="kw">fn </span>offchain_impl(<span class="kw-2">&amp;</span><span class="self">self</span>, ogmios_config: <span class="kw-2">&amp;</span>ServiceConfig) -&gt; anyhow::Result&lt;<span class="self">Self</span>::Offchain&gt; {
+		<span class="kw">let </span>ogmios_address = ogmios_config.to_string();
+		HttpClient::builder().build(<span class="kw-2">&amp;</span>ogmios_address).map_err(|<span class="kw">_</span>| {
+			<span class="macro">anyhow!</span>(<span class="macro">format!</span>(<span class="string">"Couldn't open connection to Ogmios at {}"</span>, ogmios_address))
+		})
 	}
 }
 

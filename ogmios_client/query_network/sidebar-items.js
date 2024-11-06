@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ShelleyGenesisConfigurationResponse"],"trait":["QueryNetwork"]};
+window.SIDEBAR_ITEMS = {"enum":["Network"],"struct":["ShelleyGenesisConfigurationResponse"],"trait":["QueryNetwork"]};

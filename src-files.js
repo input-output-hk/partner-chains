@@ -2,7 +2,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["authority_selection_inherents",["",[],["ariadne_inherent_data_provider.rs","authority_selection_inputs.rs","filter_invalid_candidates.rs","lib.rs","select_authorities.rs"]]],\
 ["byte_string_derive",["",[],["lib.rs"]]],\
 ["chain_params",["",[],["lib.rs"]]],\
-["cli_commands",["",[],["key_params.rs","lib.rs","output.rs","pc_contracts_cli_params.rs","registration_signatures.rs","signing.rs"]]],\
+["cli_commands",["",[],["key_params.rs","lib.rs","registration_signatures.rs","signing.rs"]]],\
 ["db_sync_follower",["",[["block",[],["mod.rs"]],["candidates",[],["cached.rs","datum.rs","mod.rs"]],["mc_hash",[],["mod.rs"]],["native_token",[],["mod.rs"]],["sidechain_rpc",[],["mod.rs"]]],["data_sources.rs","db_datum.rs","db_model.rs","lib.rs","metrics.rs"]]],\
 ["main_chain_follower_cli",["",[],["main.rs"]]],\
 ["main_chain_follower_mock",["",[],["block.rs","candidate.rs","lib.rs","mc_hash.rs","native_token.rs","sidechain_rpc.rs"]]],\

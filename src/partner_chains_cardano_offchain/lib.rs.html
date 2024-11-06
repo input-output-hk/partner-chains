@@ -4,10 +4,26 @@
 <a href="#4" id="4">4</a>
 <a href="#5" id="5">5</a>
 <a href="#6" id="6">6</a>
-</pre></div><pre class="rust"><code><span class="doccomment">/// General purpose code for interacting with cardano-serialization-lib
+<a href="#7" id="7">7</a>
+<a href="#8" id="8">8</a>
+<a href="#9" id="9">9</a>
+<a href="#10" id="10">10</a>
+<a href="#11" id="11">11</a>
+<a href="#12" id="12">12</a>
+<a href="#13" id="13">13</a>
+<a href="#14" id="14">14</a>
+</pre></div><pre class="rust"><code><span class="doccomment">//! Off-chain code for Partner Chains Smart Contracts and general purpose utilities related to Cardano
+
+/// General purpose code for interacting with cardano-serialization-lib
 </span><span class="kw">pub mod </span>csl;
 <span class="doccomment">/// Provides synthetized scripts data
 </span><span class="kw">pub mod </span>scripts_data;
 <span class="doccomment">/// Module for interaction with the untyped plutus scripts
 </span><span class="kw">pub mod </span>untyped_plutus;
+
+<span class="attr">#[derive(Clone, Debug, PartialEq, Eq)]
+</span><span class="kw">pub enum </span>OffchainError {
+	OgmiosError(String),
+	InternalError(String),
+}
 </code></pre></div></section></main></body></html>

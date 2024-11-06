@@ -285,21 +285,47 @@
 <a href="#285" id="285">285</a>
 <a href="#286" id="286">286</a>
 <a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
-	csl::{plutus_script_address, plutus_script_hash},
+	csl::{ogmios_network_to_csl, plutus_script_address, plutus_script_hash},
 	untyped_plutus::{apply_params_to_script, csl_plutus_data_to_uplc, datum_to_uplc_plutus_data},
+	OffchainError,
 };
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{LanguageKind, NetworkIdKind, PlutusData <span class="kw">as </span>CSLPlutusData};
 <span class="kw">use </span>chain_params::SidechainParams;
-<span class="kw">use </span>plutus::ToDatum;
+<span class="kw">use </span>ogmios_client::query_network::QueryNetwork;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>sidechain_domain::{MainchainAddressHash, PolicyId};
 <span class="kw">use </span>uplc::PlutusData;
 
 <span class="doccomment">/// Provides convenient access to the addresses and hashes of the partner chain smart contracts.
 /// Data in this struct is derived from the smart contracts, applied parameters and the network.
-</span><span class="attr">#[derive(Debug, Serialize, PartialEq, Eq)]
+</span><span class="attr">#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>ScriptsData {
 	<span class="kw">pub </span>addresses: Addresses,
@@ -308,7 +334,7 @@
 }
 
 <span class="doccomment">/// Bech32 address of applied validators in partner-chains smart contracts.
-</span><span class="attr">#[derive(Debug, Serialize, PartialEq, Eq)]
+</span><span class="attr">#[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
 #[serde(rename_all = <span class="string">"PascalCase"</span>)]
 </span><span class="kw">pub struct </span>Addresses {
 	<span class="kw">pub </span>committee_candidate_validator: String,
@@ -320,7 +346,7 @@
 }
 
 <span class="doccomment">/// Hashes of applied validators in partner-chains smart contracts.
-</span><span class="attr">#[derive(Debug, Serialize, PartialEq, Eq)]
+</span><span class="attr">#[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>ValidatorHashes {
 	<span class="kw">pub </span>committee_candidate_validator: MainchainAddressHash,
 	<span class="kw">pub </span>d_parameter_validator: MainchainAddressHash,
@@ -331,7 +357,7 @@
 }
 
 <span class="doccomment">/// Policy IDs of applied scripts in partner-chains smart contracts.
-</span><span class="attr">#[derive(Debug, Serialize, PartialEq, Eq)]
+</span><span class="attr">#[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>PolicyIds {
 	<span class="kw">pub </span>d_parameter: PolicyId,
 	<span class="kw">pub </span>init_token: PolicyId,
@@ -343,12 +369,36 @@
 
 <span class="kw">type </span>ScriptBytes = Vec&lt;u8&gt;;
 
-<span class="doccomment">/// For the given `pc_params` it returns the addresses, hashes and policy ids of the partner chain smart contracts.
-</span><span class="kw">pub fn </span>get_scripts_data(
+<span class="kw">pub trait </span>GetScriptsData {
+	<span class="attr">#[allow(async_fn_in_trait)]
+	</span><span class="doccomment">/// For the given `pc_params` it returns the addresses, hashes and policy ids of the partner chain smart contracts.
+	</span><span class="kw">async fn </span>get_scripts_data(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		pc_params: SidechainParams,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;ScriptsData, OffchainError&gt;;
+}
+
+<span class="kw">impl</span>&lt;T: QueryNetwork&gt; GetScriptsData <span class="kw">for </span>T {
+	<span class="kw">async fn </span>get_scripts_data(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		pc_params: SidechainParams,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;ScriptsData, OffchainError&gt; {
+		<span class="kw">let </span>network = ogmios_network_to_csl(
+			<span class="self">self</span>.shelley_genesis_configuration()
+				.<span class="kw">await
+				</span>.map_err(|e| OffchainError::OgmiosError(e.to_string()))<span class="question-mark">?
+				</span>.network,
+		);
+		get_scripts_data(pc_params, network)
+			.map_err(|e| OffchainError::InternalError(e.to_string()))
+	}
+}
+
+<span class="kw">fn </span>get_scripts_data(
 	pc_params: SidechainParams,
 	network: NetworkIdKind,
 ) -&gt; anyhow::Result&lt;ScriptsData&gt; {
-	<span class="kw">let </span>pc_params_data = datum_to_uplc_plutus_data(<span class="kw-2">&amp;</span>pc_params.to_datum());
+	<span class="kw">let </span>pc_params_data = datum_to_uplc_plutus_data(<span class="kw-2">&amp;</span>pc_params);
 
 	<span class="kw">let </span>(version_oracle_validator, version_oracle_policy, version_oracle_policy_data) =
 		version_oracle(<span class="kw-2">&amp;</span>pc_params_data, network)<span class="question-mark">?</span>;
