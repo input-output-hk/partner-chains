@@ -1,14 +1,16 @@
 #![allow(dead_code)]
 
 use cardano_serialization_lib::{
-	Address, AssetName, Assets, BigNum, CostModel, Costmdls, Credential, EnterpriseAddress,
-	ExUnitPrices, ExUnits, JsError, Language, LanguageKind, LinearFee, MultiAsset, NetworkIdKind,
-	ScriptHash, TransactionBuilderConfig, TransactionBuilderConfigBuilder, UnitInterval, Value,
+	Address, AssetName, Assets, BigNum, CostModel, Costmdls, Credential, Ed25519KeyHash,
+	EnterpriseAddress, ExUnitPrices, ExUnits, JsError, Language, LanguageKind, LinearFee,
+	MultiAsset, NetworkIdKind, ScriptHash, TransactionBuilderConfig,
+	TransactionBuilderConfigBuilder, TransactionHash, TransactionInput, TxInputsBuilder,
+	UnitInterval, Value,
 };
 use ogmios_client::{
 	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse},
 	transactions::OgmiosBudget,
-	types::OgmiosValue,
+	types::{OgmiosUtxo, OgmiosValue},
 };
 
 pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: LanguageKind) -> [u8; 28] {
@@ -39,6 +41,11 @@ pub fn payment_address(key_bytes: &[u8], network: NetworkIdKind) -> Address {
 		&Credential::from_keyhash(&key_hash.into()),
 	)
 	.to_address()
+}
+
+pub fn key_hash_address(pub_key_hash: &Ed25519KeyHash, network: NetworkIdKind) -> Address {
+	EnterpriseAddress::new(network_id_kind_to_u8(network), &Credential::from_keyhash(pub_key_hash))
+		.to_address()
 }
 
 pub fn ogmios_network_to_csl(network: ogmios_client::query_network::Network) -> NetworkIdKind {
@@ -123,6 +130,30 @@ pub(crate) fn convert_cost_models(m: &PlutusCostModels) -> Costmdls {
 /// Conversion of ogmios-client budget to CSL execution units
 pub(crate) fn convert_ex_units(v: &OgmiosBudget) -> ExUnits {
 	ExUnits::new(&v.memory.into(), &v.cpu.into())
+}
+
+pub(crate) fn empty_asset_name() -> AssetName {
+	AssetName::new(vec![]).expect("Hardcoded empty asset name is valid")
+}
+
+/// Conversion of ogmios-client UTXO to CSL transaction input
+pub(crate) fn ogmios_utxo_to_tx_input(utxo: &OgmiosUtxo) -> TransactionInput {
+	TransactionInput::new(&TransactionHash::from(utxo.transaction.id), utxo.index.into())
+}
+
+pub(crate) fn simple_collateral_builder(
+	collaterals: &[OgmiosUtxo],
+	pub_key_hash: &Ed25519KeyHash,
+) -> Result<TxInputsBuilder, JsError> {
+	let mut collateral_builder = TxInputsBuilder::new();
+	for collateral in collaterals.iter() {
+		collateral_builder.add_key_input(
+			pub_key_hash,
+			&ogmios_utxo_to_tx_input(collateral),
+			&Value::new(&convert_value(&collateral.value)?.coin()),
+		);
+	}
+	Ok(collateral_builder)
 }
 
 #[cfg(test)]
