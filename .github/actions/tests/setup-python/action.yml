@@ -18,18 +18,10 @@ runs:
         repository: input-output-hk/sidechains-tests
         token: ${{ env.ACTIONS_PAT }}
         ref: ${{ github.head_ref || github.ref_name }}
-        path: e2e-tests
-    - name: checkout pc-tests master (fallback)
-      if: steps.pc-tests.outcome == 'failure'
-      uses: actions/checkout@v4
-      with:
-        repository: input-output-hk/sidechains-tests
-        token: ${{ env.ACTIONS_PAT }}
-        ref: master
-        path: e2e-tests
+        path: E2E-tests
     - name: Setup python and dependencies
       run: |
-        cd e2e-tests
+        cd E2E-tests
         sudo apt update
         sudo apt install -y software-properties-common
         sudo add-apt-repository ppa:deadsnakes/ppa

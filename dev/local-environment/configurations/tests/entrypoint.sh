@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Verify the e2e-tests directory exists and cd into it
-if [ -d "/e2e-tests" ]; then
-  cd /e2e-tests
+# Verify the E2E-tests directory exists and cd into it
+if [ -d "/E2E-tests" ]; then
+  cd /E2E-tests
 else
-  echo "Error: Directory /e2e-tests does not exist. Ensure e2e-tests directory was copied to ./configuration/tests/e2e-tests/ before bringing up the container"
+  echo "Error: Directory /E2E-tests does not exist. Ensure E2E-tests directory was copied to ./configuration/tests/E2E-tests/ before bringing up the container"
   exit 1
 fi
 

@@ -94,7 +94,7 @@ runs:
         if [[ "${{ inputs.local-environment }}" == "true" ]]; then
           echo "Running tests via docker exec"
           docker exec tests bash -c "
-            cd E2E-tests &&
+            cd /E2E-tests &&
             source venv/bin/activate &&
             $pytest_cmd
           "
@@ -108,14 +108,14 @@ runs:
       if: ${{ inputs.local-environment == 'true' }}
       run: |
         echo "Copy test results from docker container"
-        mkdir -p e2e-tests
-        docker cp tests:/e2e-tests/.report.json e2e-tests/.report.json
+        mkdir -p E2E-tests
+        docker cp tests:/E2E-tests/.report.json ./E2E-tests/.report.json
       shell: bash
     - name: Upload test results
       uses: actions/upload-artifact@v4
       with:
         name: test-results
-        path: /E2E-tests.report.json
+        path: ./E2E-tests/.report.json
         overwrite: true
         if-no-files-found: error
         include-hidden-files: true
