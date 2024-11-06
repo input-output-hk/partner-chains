@@ -49,6 +49,7 @@ runs:
   using: composite
   steps:
     - name: Print Folder Contents
+      shell: bash
       run: |
         echo "Print folder contents"
         ls -la
