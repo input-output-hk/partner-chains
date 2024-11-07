@@ -1,14 +1,14 @@
 #![allow(dead_code)]
 
 use crate::csl::{
-	add_collateral_inputs, convert_cost_models, empty_asset_name, get_builder_config,
-	key_hash_address, plutus_script_address, tx_input_builder_for_ogmios_utxos,
+	add_collateral_inputs, add_tx_inputs, convert_cost_models, empty_asset_name,
+	get_builder_config, key_hash_address, plutus_script_address,
 };
 use cardano_serialization_lib::{
 	Assets, DataCost, Ed25519KeyHash, ExUnits, Int, JsError, LanguageKind, MinOutputAdaCalculator,
 	MintBuilder, MintWitness, MultiAsset, NetworkIdKind, PlutusData, PlutusScript,
 	PlutusScriptSource, Redeemer, RedeemerTag, Transaction, TransactionBuilder,
-	TransactionOutputBuilder,
+	TransactionOutputBuilder, TxInputsBuilder,
 };
 use ogmios_client::{query_ledger_state::ProtocolParametersResponse, types::OgmiosUtxo};
 use partner_chains_plutus_data::d_param::DParamDatum;
@@ -25,9 +25,7 @@ fn mint_token_tx(
 	mint_witness_ex_units: ExUnits,
 ) -> Result<Transaction, JsError> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(protocol_parameters)?);
-	let tx_inputs_builder = tx_input_builder_for_ogmios_utxos(payment_utxos, payment_key_hash)?;
-	tx_builder.set_inputs(&tx_inputs_builder);
-	add_collateral_inputs(&mut tx_builder, collaterals, payment_key_hash)?;
+	// The essence of transaction: mint token and set output with it
 	add_mint_d_param_token(&mut tx_builder, validator, mint_witness_ex_units)?;
 	add_output_with_d_param_datum(
 		&mut tx_builder,
@@ -36,6 +34,11 @@ fn mint_token_tx(
 		validator,
 		protocol_parameters.min_utxo_deposit_coefficient,
 	)?;
+	// Set things required for transaction to succeed
+	let mut tx_inputs_builder = TxInputsBuilder::new();
+	add_tx_inputs(&mut tx_inputs_builder, payment_utxos, payment_key_hash)?;
+	tx_builder.set_inputs(&tx_inputs_builder);
+	add_collateral_inputs(&mut tx_builder, collaterals, payment_key_hash)?;
 	tx_builder
 		.calc_script_data_hash(&convert_cost_models(&protocol_parameters.plutus_cost_models))?;
 	tx_builder.add_required_signer(payment_key_hash);

@@ -141,30 +141,20 @@ pub(crate) fn ogmios_utxo_to_tx_input(utxo: &OgmiosUtxo) -> TransactionInput {
 	TransactionInput::new(&TransactionHash::from(utxo.transaction.id), utxo.index.into())
 }
 
-// Returns tx input builder with Ogmios UTXOs as inputs.
-pub(crate) fn tx_input_builder_for_ogmios_utxos(
+// Adds ogmios inputs to the tx inputs builder.
+pub(crate) fn add_tx_inputs(
+	inputs_builder: &mut TxInputsBuilder,
 	utxos: &[OgmiosUtxo],
 	pub_key_hash: &Ed25519KeyHash,
-) -> Result<TxInputsBuilder, JsError> {
-	let mut tx_inputs_builder = TxInputsBuilder::new();
+) -> Result<(), JsError> {
 	for utxo in utxos.iter() {
-		tx_inputs_builder.add_key_input(
+		inputs_builder.add_key_input(
 			pub_key_hash,
 			&ogmios_utxo_to_tx_input(utxo),
 			&convert_value(&utxo.value)?,
 		);
 	}
-	Ok(tx_inputs_builder)
-}
-
-// Adds ogmios inputs as collateral inputs to the tx builder.
-pub(crate) fn add_tx_inputs(
-	tx_builder: &mut TransactionBuilder,
-	collaterals: &[OgmiosUtxo],
-	pub_key_hash: &Ed25519KeyHash,
-) -> Result<(), JsError> {
-	let collateral_builder = tx_input_builder_for_ogmios_utxos(collaterals, pub_key_hash)?;
-	Ok(tx_builder.set_collateral(&collateral_builder))
+	Ok(())
 }
 
 // Adds ogmios inputs as collateral inputs to the tx builder.
