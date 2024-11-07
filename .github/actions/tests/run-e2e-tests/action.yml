@@ -105,25 +105,10 @@ runs:
           --json-report-summary \
           --junitxml=junit_report.xml"
 
-        if [[ "${{ inputs.local-environment }}" == "true" ]]; then
-          echo "Running tests via docker exec"
-          docker exec tests bash -c "
-            cd /E2E-tests &&
-            source venv/bin/activate &&
-            $pytest_cmd
-          "
-        else
-          echo "Running tests locally"
-          cd E2E-tests
-          source venv/bin/activate
-          eval "$pytest_cmd"
-        fi
-    - name: Copy .report.json if run with docker exec
-      if: ${{ inputs.local-environment == 'true' }}
-      run: |
-        echo "Copy test results from docker container"
-        mkdir -p E2E-tests
-        docker cp tests:/E2E-tests/.report.json ./E2E-tests/.report.json
+        echo "Running tests locally"
+        cd E2E-tests
+        source venv/bin/activate
+        eval "$pytest_cmd"
       shell: bash
     - name: Upload test results
       uses: actions/upload-artifact@v4
