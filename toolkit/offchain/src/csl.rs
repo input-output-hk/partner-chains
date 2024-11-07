@@ -19,7 +19,7 @@ pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: LanguageKind) ->
 }
 
 /// Builds an CSL `Address` for plutus script from the data obtained from smart contracts.
-pub fn plutus_script_address(
+pub fn script_address(
 	script_bytes: &[u8],
 	network: NetworkIdKind,
 	language: LanguageKind,
@@ -127,8 +127,10 @@ pub(crate) fn convert_ex_units(v: &OgmiosBudget) -> ExUnits {
 
 #[cfg(test)]
 mod tests {
-	use crate::csl::plutus_script_address;
-	use cardano_serialization_lib::{AssetName, Language, LanguageKind, NetworkIdKind};
+	use super::payment_address;
+	use crate::plutus_script::PlutusScript;
+	use cardano_serialization_lib::LanguageKind::PlutusV2;
+	use cardano_serialization_lib::{AssetName, Language, NetworkIdKind};
 	use hex_literal::hex;
 	use ogmios_client::{
 		query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, ScriptExecutionPrices},
@@ -136,15 +138,13 @@ mod tests {
 		types::{Asset, OgmiosBytesSize, OgmiosValue},
 	};
 
-	use super::payment_address;
-
 	#[test]
 	fn candidates_script_address_test() {
-		let address = plutus_script_address(
-			&crate::untyped_plutus::tests::CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS,
-			NetworkIdKind::Testnet,
-			LanguageKind::PlutusV2,
-		);
+		let address = PlutusScript::from_cbor(
+			&crate::plutus_script::tests::CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS,
+			PlutusV2,
+		)
+		.address(NetworkIdKind::Testnet);
 		assert_eq!(
 			address.to_bech32(None).unwrap(),
 			"addr_test1wq7vcwawqa29a5a2z7q8qs6k0cuvp6z2puvd8xx7vasuajq86paxz"

@@ -4,6 +4,8 @@
 pub mod collateral_selection;
 /// General purpose code for interacting with cardano-serialization-lib
 pub mod csl;
+/// Utilities for handling Plutus script data
+mod plutus_script;
 /// Provides synthetized scripts data
 pub mod scripts_data;
 /// Module for interaction with the untyped plutus scripts
