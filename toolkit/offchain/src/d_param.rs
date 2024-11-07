@@ -1,14 +1,12 @@
 #![allow(dead_code)]
 
 use crate::csl::{
-	add_collateral_inputs, convert_cost_models, empty_asset_name, get_builder_config,
-	key_hash_address, ogmios_utxos_to_csl, plutus_script_address,
+	add_collateral_inputs, add_mint_script_token, add_output_with_one_script_token,
+	convert_cost_models, get_builder_config, key_hash_address, ogmios_utxos_to_csl,
 };
 use cardano_serialization_lib::{
-	Assets, ChangeConfig, CoinSelectionStrategyCIP2, DataCost, Ed25519KeyHash, ExUnits, Int,
-	JsError, LanguageKind, MinOutputAdaCalculator, MintBuilder, MintWitness, MultiAsset,
-	NetworkIdKind, PlutusData, PlutusScript, PlutusScriptSource, Redeemer, RedeemerTag,
-	Transaction, TransactionBuilder, TransactionOutputBuilder,
+	ChangeConfig, CoinSelectionStrategyCIP2, Ed25519KeyHash, ExUnits, JsError, NetworkIdKind,
+	PlutusData, PlutusScript, Transaction, TransactionBuilder,
 };
 use ogmios_client::{query_ledger_state::ProtocolParametersResponse, types::OgmiosUtxo};
 use partner_chains_plutus_data::d_param::DParamDatum;
@@ -27,12 +25,12 @@ fn mint_token_tx(
 ) -> Result<Transaction, JsError> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(protocol_parameters)?);
 	// The essence of transaction: mint token and set output with it
-	add_mint_d_param_token(&mut tx_builder, validator, mint_witness_ex_units)?;
-	add_output_with_d_param_datum(
+	add_mint_script_token(&mut tx_builder, validator, mint_witness_ex_units)?;
+	add_output_with_one_script_token(
 		&mut tx_builder,
-		d_parameter,
-		network,
 		validator,
+		&d_parameter_to_plutus_data(d_parameter),
+		network,
 		protocol_parameters.min_utxo_deposit_coefficient,
 	)?;
 	// Set things required for transaction to succeed
@@ -47,54 +45,6 @@ fn mint_token_tx(
 		&protocol_parameters.collateral_percentage.into(),
 	)?;
 	tx_builder.build_tx()
-}
-
-fn add_mint_d_param_token(
-	tx_builder: &mut TransactionBuilder,
-	validator: &PlutusScript,
-	mint_witness_ex_units: ExUnits,
-) -> Result<(), JsError> {
-	let mut mint_builder = MintBuilder::new();
-	let validator_source = PlutusScriptSource::new(validator);
-	let mint_witness = MintWitness::new_plutus_script(
-		&validator_source,
-		&Redeemer::new(
-			&RedeemerTag::new_mint(),
-			&0u32.into(),
-			&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
-			&mint_witness_ex_units,
-		),
-	);
-	mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new_i32(1))?;
-	tx_builder.set_mint_builder(&mint_builder);
-	Ok(())
-}
-
-// This creates output on the validator address with datum that has 1 token and keep d-param in datum.
-fn add_output_with_d_param_datum(
-	tx_builder: &mut TransactionBuilder,
-	d_parameter: &DParameter,
-	network: NetworkIdKind,
-	validator: &PlutusScript,
-	min_utxo_deposit_coefficient: u64,
-) -> Result<(), JsError> {
-	let datum = d_parameter_to_plutus_data(d_parameter);
-	let amount_builder = TransactionOutputBuilder::new()
-		.with_address(&plutus_script_address(&validator.bytes(), network, LanguageKind::PlutusV2))
-		.with_plutus_data(&datum)
-		.next()?;
-	let mut ma = MultiAsset::new();
-	let mut assets = Assets::new();
-	assets.insert(&empty_asset_name(), &1u64.into());
-	ma.insert(&validator.hash(), &assets);
-	let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
-	let min_ada = MinOutputAdaCalculator::new(
-		&output,
-		&DataCost::new_coins_per_byte(&min_utxo_deposit_coefficient.into()),
-	)
-	.calculate_ada()?;
-	let output = amount_builder.with_coin_and_asset(&min_ada, &ma).build()?;
-	tx_builder.add_output(&output)
 }
 
 fn d_parameter_to_plutus_data(d_parameter: &DParameter) -> PlutusData {
