@@ -1,0 +1,125 @@
+use anyhow::{anyhow, Context};
+use cardano_serialization_lib::{Address, LanguageKind, NetworkIdKind, PlutusData};
+use plutus::ToDatum;
+use sidechain_domain::{MainchainAddressHash, PolicyId};
+use uplc::ast::{DeBruijn, Program};
+
+use crate::{csl::*, untyped_plutus::*};
+
+/// Wraps a Plutus script cbor
+pub struct PlutusScript {
+	pub bytes: Vec<u8>,
+	pub language: LanguageKind,
+}
+
+impl PlutusScript {
+	pub fn from_cbor(cbor: &[u8], language: LanguageKind) -> Self {
+		Self { bytes: cbor.into(), language }
+	}
+
+	/// This function is needed to create [PlutusScript] from scripts in [raw_scripts],
+	/// which are encoded as a cibor byte string containing the cbor of the script
+	/// itself. This function removes this layer of wrapping.
+	pub fn from_wrapped_cbor(cbor: &[u8], language: LanguageKind) -> anyhow::Result<Self> {
+		Ok(Self::from_cbor(&unwrap_one_layer_of_cbor(cbor)?, language))
+	}
+
+	pub fn apply_data(self, data: impl ToDatum) -> Result<Self, anyhow::Error> {
+		let data = datum_to_uplc_plutus_data(&data.to_datum());
+		self.apply_uplc_data(data)
+	}
+
+	pub fn apply_uplc_data(self, data: uplc::PlutusData) -> Result<Self, anyhow::Error> {
+		let mut buffer = Vec::new();
+		let mut program = Program::<DeBruijn>::from_cbor(&self.bytes, &mut buffer)
+			.map_err(|e| anyhow!(e.to_string()))?;
+		program = program.apply_data(data);
+		let bytes = program
+			.to_cbor()
+			.map_err(|_| anyhow!("Couldn't encode resulting script as CBOR."))?;
+		Ok(Self { bytes: bytes.into(), ..self })
+	}
+
+	/// Builds an CSL `Address` for plutus script from the data obtained from smart contracts.
+	pub fn address(&self, network: NetworkIdKind) -> Address {
+		script_address(&self.bytes, network, self.language)
+	}
+
+	// Returns PlutusData representation of the given script. It is done in the same way as on-chain code expects.
+	// First, the Address is created, then it is converted to PlutusData.
+	pub fn address_data(&self, network: NetworkIdKind) -> anyhow::Result<uplc::PlutusData> {
+		csl_plutus_data_to_uplc(&PlutusData::from_address(&self.address(network))?)
+	}
+
+	/// Returns bech32 address of the given PlutusV2 script
+	pub fn address_bech32(&self, network: NetworkIdKind) -> anyhow::Result<String> {
+		self.address(network)
+			.to_bech32(None)
+			.context("Converting script address to bech32")
+	}
+
+	pub fn script_hash(&self) -> [u8; 28] {
+		plutus_script_hash(&self.bytes, self.language)
+	}
+
+	pub fn script_address(&self) -> MainchainAddressHash {
+		MainchainAddressHash(self.script_hash())
+	}
+
+	pub fn policy_id(&self) -> PolicyId {
+		PolicyId(self.script_hash())
+	}
+
+	pub fn to_csl(&self) -> cardano_serialization_lib::PlutusScript {
+		match self.language {
+			LanguageKind::PlutusV1 => {
+				cardano_serialization_lib::PlutusScript::new(self.bytes.clone())
+			},
+			LanguageKind::PlutusV2 => {
+				cardano_serialization_lib::PlutusScript::new_v2(self.bytes.clone())
+			},
+			LanguageKind::PlutusV3 => {
+				cardano_serialization_lib::PlutusScript::new_v3(self.bytes.clone())
+			},
+		}
+	}
+}
+
+#[cfg(test)]
+pub(crate) mod tests {
+	use super::*;
+	use chain_params::SidechainParams;
+	use hex_literal::hex;
+	use sidechain_domain::{MainchainAddressHash, McTxHash, UtxoId, UtxoIndex};
+
+	pub(crate) const TEST_PARAMS: SidechainParams = SidechainParams {
+		chain_id: 111,
+		threshold_numerator: 2,
+		threshold_denominator: 3,
+		genesis_committee_utxo: UtxoId {
+			tx_hash: McTxHash(hex!(
+				"0000000000000000000000000000000000000000000000000000000000000000"
+			)),
+			index: UtxoIndex(0),
+		},
+		governance_authority: MainchainAddressHash(hex!(
+			"76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"
+		)),
+	};
+
+	// Taken from smart-contracts repository
+	pub(crate) const CANDIDATES_SCRIPT_RAW: [u8; 318] = hex!("59013b590138010000323322323322323232322222533553353232323233012225335001100f2215333573466e3c014dd7001080909802000980798051bac330033530040022200148040dd7198011a980180311000a4010660026a600400644002900019112999ab9a33710002900009805a4810350543600133003001002300f22253350011300b49103505437002215333573466e1d20000041002133005337020089001000919199109198008018011aab9d001300735573c0026ea80044028402440204c01d2401035054350030092233335573e0024016466a0146ae84008c00cd5d100124c6010446666aae7c00480288cd4024d5d080118019aba20024988c98cd5ce00080109000891001091000980191299a800880211099a80280118020008910010910911980080200191918008009119801980100100081");
+
+	/// We know it is correct, because we are able to get the same hash as using code from smart-contract repository
+	pub(crate) const CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS: [u8; 400] = hex!("59018d0100003323322323322323232322222533553353232323233012225335001100f2215333573466e3c014dd7001080909802000980798051bac330033530040022200148040dd7198011a980180311000a4010660026a600400644002900019112999ab9a33710002900009805a490350543600133003001002300f22253350011300b49103505437002215333573466e1d20000041002133005337020089001000919199109198008018011aab9d001300735573c0026ea80044028402440204c01d2401035054350030092233335573e0024016466a0146ae84008c00cd5d100124c6010446666aae7c00480288cd4024d5d080118019aba20024988c98cd5ce00080109000891001091000980191299a800880211099a802801180200089100109109119800802001919180080091198019801001000a60151d8799f186fd8799fd8799f58200000000000000000000000000000000000000000000000000000000000000000ff00ff0203581c76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9ff0001");
+
+	#[test]
+	fn apply_parameters_to_deregister() {
+		let applied =
+			PlutusScript::from_wrapped_cbor(&CANDIDATES_SCRIPT_RAW, LanguageKind::PlutusV2)
+				.unwrap()
+				.apply_data(TEST_PARAMS)
+				.unwrap();
+		assert_eq!(hex::encode(applied.bytes), hex::encode(CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS));
+	}
+}

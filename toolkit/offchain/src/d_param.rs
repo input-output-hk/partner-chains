@@ -4,9 +4,10 @@ use crate::csl::{
 	add_collateral_inputs, add_mint_script_token, add_output_with_one_script_token,
 	convert_cost_models, get_builder_config, key_hash_address, ogmios_utxos_to_csl,
 };
+use crate::plutus_script::PlutusScript;
 use cardano_serialization_lib::{
 	ChangeConfig, CoinSelectionStrategyCIP2, Ed25519KeyHash, ExUnits, JsError, NetworkIdKind,
-	PlutusData, PlutusScript, Transaction, TransactionBuilder,
+	PlutusData, Transaction, TransactionBuilder,
 };
 use ogmios_client::{query_ledger_state::ProtocolParametersResponse, types::OgmiosUtxo};
 use partner_chains_plutus_data::d_param::DParamDatum;
@@ -55,9 +56,9 @@ fn d_parameter_to_plutus_data(d_parameter: &DParameter) -> PlutusData {
 #[cfg(test)]
 mod tests {
 	use super::mint_token_tx;
-	use crate::csl::empty_asset_name;
+	use crate::{csl::empty_asset_name, plutus_script::PlutusScript};
 	use cardano_serialization_lib::{
-		Address, ExUnits, Int, NetworkIdKind, PlutusData, PlutusList, PlutusScript, RedeemerTag,
+		Address, ExUnits, Int, LanguageKind, NetworkIdKind, PlutusData, PlutusList, RedeemerTag,
 		ScriptHash,
 	};
 	use hex_literal::hex;
@@ -83,7 +84,10 @@ mod tests {
 		let ex_units = ExUnits::new(&10000u32.into(), &200u32.into());
 
 		let tx = mint_token_tx(
-			&PlutusScript::new_v2(hex!("4d4c01000022223212001375a009").to_vec()),
+			&PlutusScript {
+				bytes: hex!("4d4c01000022223212001375a009").to_vec(),
+				language: LanguageKind::PlutusV2,
+			},
 			&DParameter { num_registered_candidates: 30, num_permissioned_candidates: 40 },
 			&pub_key_hash,
 			&[collateral],

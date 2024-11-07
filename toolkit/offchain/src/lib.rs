@@ -1,9 +1,13 @@
 //! Off-chain code for Partner Chains Smart Contracts and general purpose utilities related to Cardano
 
+/// Collateral selection algorithm
+pub mod collateral_selection;
 /// General purpose code for interacting with cardano-serialization-lib
 pub mod csl;
 /// Supports D-Parameter upsert
 pub mod d_param;
+/// Utilities for handling Plutus script data
+mod plutus_script;
 /// Provides synthetized scripts data
 pub mod scripts_data;
 /// Module for interaction with the untyped plutus scripts

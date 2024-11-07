@@ -4,7 +4,7 @@ use cardano_serialization_lib::{
 	Address, AssetName, Assets, BigNum, CostModel, Costmdls, Credential, DataCost, Ed25519KeyHash,
 	EnterpriseAddress, ExUnitPrices, ExUnits, Int, JsError, Language, LanguageKind, LinearFee,
 	MinOutputAdaCalculator, MintBuilder, MintWitness, MultiAsset, NetworkIdKind, PlutusData,
-	PlutusScript, PlutusScriptSource, Redeemer, RedeemerTag, ScriptHash, TransactionBuilder,
+	PlutusScriptSource, Redeemer, RedeemerTag, ScriptHash, TransactionBuilder,
 	TransactionBuilderConfig, TransactionBuilderConfigBuilder, TransactionHash, TransactionInput,
 	TransactionOutput, TransactionOutputBuilder, TransactionUnspentOutput,
 	TransactionUnspentOutputs, TxInputsBuilder, UnitInterval, Value,
@@ -15,6 +15,8 @@ use ogmios_client::{
 	types::{OgmiosUtxo, OgmiosValue},
 };
 
+use crate::plutus_script::PlutusScript;
+
 pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: LanguageKind) -> [u8; 28] {
 	// Before hashing the script, we need to prepend with byte denoting the language.
 	let mut buf: Vec<u8> = vec![language_kind_to_u8(language)];
@@ -23,7 +25,7 @@ pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: LanguageKind) ->
 }
 
 /// Builds an CSL `Address` for plutus script from the data obtained from smart contracts.
-pub fn plutus_script_address(
+pub fn script_address(
 	script_bytes: &[u8],
 	network: NetworkIdKind,
 	language: LanguageKind,
@@ -214,13 +216,13 @@ pub(crate) fn add_output_with_one_script_token(
 	min_utxo_deposit_coefficient: u64,
 ) -> Result<(), JsError> {
 	let amount_builder = TransactionOutputBuilder::new()
-		.with_address(&plutus_script_address(&script.bytes(), network, LanguageKind::PlutusV2))
+		.with_address(&script.address(network))
 		.with_plutus_data(&datum)
 		.next()?;
 	let mut ma = MultiAsset::new();
 	let mut assets = Assets::new();
 	assets.insert(&empty_asset_name(), &1u64.into());
-	ma.insert(&script.hash(), &assets);
+	ma.insert(&script.script_hash().into(), &assets);
 	let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
 	let min_ada = MinOutputAdaCalculator::new(
 		&output,
@@ -239,7 +241,7 @@ pub(crate) fn add_mint_script_token(
 	ex_units: ExUnits,
 ) -> Result<(), JsError> {
 	let mut mint_builder = MintBuilder::new();
-	let validator_source = PlutusScriptSource::new(validator);
+	let validator_source = PlutusScriptSource::new(&validator.to_csl());
 	let mint_witness = MintWitness::new_plutus_script(
 		&validator_source,
 		&Redeemer::new(
@@ -256,8 +258,10 @@ pub(crate) fn add_mint_script_token(
 
 #[cfg(test)]
 mod tests {
-	use crate::csl::plutus_script_address;
-	use cardano_serialization_lib::{AssetName, Language, LanguageKind, NetworkIdKind};
+	use super::payment_address;
+	use crate::plutus_script::PlutusScript;
+	use cardano_serialization_lib::LanguageKind::PlutusV2;
+	use cardano_serialization_lib::{AssetName, Language, NetworkIdKind};
 	use hex_literal::hex;
 	use ogmios_client::{
 		query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, ScriptExecutionPrices},
@@ -265,15 +269,13 @@ mod tests {
 		types::{Asset, OgmiosBytesSize, OgmiosValue},
 	};
 
-	use super::payment_address;
-
 	#[test]
 	fn candidates_script_address_test() {
-		let address = plutus_script_address(
-			&crate::untyped_plutus::tests::CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS,
-			NetworkIdKind::Testnet,
-			LanguageKind::PlutusV2,
-		);
+		let address = PlutusScript::from_cbor(
+			&crate::plutus_script::tests::CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS,
+			PlutusV2,
+		)
+		.address(NetworkIdKind::Testnet);
 		assert_eq!(
 			address.to_bech32(None).unwrap(),
 			"addr_test1wq7vcwawqa29a5a2z7q8qs6k0cuvp6z2puvd8xx7vasuajq86paxz"
