@@ -1,14 +1,14 @@
 #![allow(dead_code)]
 
 use crate::csl::{
-	convert_cost_models, empty_asset_name, key_hash_address, ogmios_utxo_to_tx_input,
-	plutus_script_address, simple_collateral_builder,
+	add_collateral_inputs, convert_cost_models, empty_asset_name, get_builder_config,
+	key_hash_address, plutus_script_address, tx_input_builder_for_ogmios_utxos,
 };
 use cardano_serialization_lib::{
-	Assets, BigNum, DataCost, Ed25519KeyHash, ExUnits, Int, JsError, LanguageKind,
-	MinOutputAdaCalculator, MintBuilder, MintWitness, MultiAsset, NetworkIdKind, PlutusData,
-	PlutusScript, PlutusScriptSource, Redeemer, RedeemerTag, Transaction, TransactionBuilder,
-	TransactionOutputBuilder, TxInputsBuilder, Value,
+	Assets, DataCost, Ed25519KeyHash, ExUnits, Int, JsError, LanguageKind, MinOutputAdaCalculator,
+	MintBuilder, MintWitness, MultiAsset, NetworkIdKind, PlutusData, PlutusScript,
+	PlutusScriptSource, Redeemer, RedeemerTag, Transaction, TransactionBuilder,
+	TransactionOutputBuilder,
 };
 use ogmios_client::{query_ledger_state::ProtocolParametersResponse, types::OgmiosUtxo};
 use partner_chains_plutus_data::d_param::DParamDatum;
@@ -24,21 +24,31 @@ fn mint_token_tx(
 	protocol_parameters: &ProtocolParametersResponse,
 	mint_witness_ex_units: ExUnits,
 ) -> Result<Transaction, JsError> {
-	let config = crate::csl::get_builder_config(protocol_parameters)?;
-
-	let mut tx_builder = TransactionBuilder::new(&config);
-
-	let mut tx_inputs_builder = TxInputsBuilder::new();
-	for utxo in payment_utxos.iter() {
-		let amount: BigNum = crate::csl::convert_value(&utxo.value)?.coin();
-		let input = ogmios_utxo_to_tx_input(utxo);
-		tx_inputs_builder.add_key_input(payment_key_hash, &input, &Value::new(&amount));
-	}
+	let mut tx_builder = TransactionBuilder::new(&get_builder_config(protocol_parameters)?);
+	let tx_inputs_builder = tx_input_builder_for_ogmios_utxos(payment_utxos, payment_key_hash)?;
 	tx_builder.set_inputs(&tx_inputs_builder);
+	add_collateral_inputs(&mut tx_builder, collaterals, payment_key_hash)?;
+	add_mint_d_param_token(&mut tx_builder, validator, mint_witness_ex_units)?;
+	add_output_with_d_param_datum(
+		&mut tx_builder,
+		d_parameter,
+		network,
+		validator,
+		protocol_parameters.min_utxo_deposit_coefficient,
+	)?;
+	tx_builder
+		.calc_script_data_hash(&convert_cost_models(&protocol_parameters.plutus_cost_models))?;
+	tx_builder.add_required_signer(payment_key_hash);
+	let change_address = key_hash_address(payment_key_hash, network);
+	tx_builder.add_change_if_needed(&change_address)?;
+	tx_builder.build_tx()
+}
 
-	let collateral_builder = simple_collateral_builder(collaterals, payment_key_hash);
-	tx_builder.set_collateral(&collateral_builder?);
-
+fn add_mint_d_param_token(
+	tx_builder: &mut TransactionBuilder,
+	validator: &PlutusScript,
+	mint_witness_ex_units: ExUnits,
+) -> Result<(), JsError> {
 	let mut mint_builder = MintBuilder::new();
 	let validator_source = PlutusScriptSource::new(&validator);
 	let mint_witness = MintWitness::new_plutus_script(
@@ -51,31 +61,17 @@ fn mint_token_tx(
 		),
 	);
 	mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new_i32(1))?;
-	tx_builder.set_mint_builder(&mint_builder);
-
-	let output = output_with_d_param_datum(
-		d_parameter,
-		network,
-		validator,
-		protocol_parameters.min_utxo_deposit_coefficient,
-	)?;
-	tx_builder.add_output(&output)?;
-
-	tx_builder
-		.calc_script_data_hash(&convert_cost_models(&protocol_parameters.plutus_cost_models))?;
-	tx_builder.add_required_signer(payment_key_hash);
-	let change_address = key_hash_address(payment_key_hash, network);
-	tx_builder.add_change_if_needed(&change_address)?;
-	tx_builder.build_tx()
+	Ok(tx_builder.set_mint_builder(&mint_builder))
 }
 
 // This creates output on the validator address with datum that has 1 token and keep d-param in datum.
-fn output_with_d_param_datum(
+fn add_output_with_d_param_datum(
+	tx_builder: &mut TransactionBuilder,
 	d_parameter: &DParameter,
 	network: NetworkIdKind,
 	validator: &PlutusScript,
 	min_utxo_deposit_coefficient: u64,
-) -> Result<cardano_serialization_lib::TransactionOutput, JsError> {
+) -> Result<(), JsError> {
 	let datum = d_parameter_to_plutus_data(d_parameter);
 	let amount_builder = TransactionOutputBuilder::new()
 		.with_address(&plutus_script_address(&validator.bytes(), network, LanguageKind::PlutusV2))
@@ -92,7 +88,7 @@ fn output_with_d_param_datum(
 	)
 	.calculate_ada()?;
 	let output = amount_builder.with_coin_and_asset(&min_ada, &ma).build()?;
-	Ok(output)
+	tx_builder.add_output(&output)
 }
 
 fn d_parameter_to_plutus_data(d_parameter: &DParameter) -> PlutusData {
