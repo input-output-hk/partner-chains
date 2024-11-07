@@ -44,30 +44,31 @@ runs:
         path: dev/local-environment/configurations/pc-contracts-cli/overrides/
     - name: Setup E2E tests directory
       run: |
-        # Debug: Show current working directory
+        # Debug: Show current working directory and contents
         echo "Current directory:"
         pwd
+        ls -la
         
-        # Debug: Show E2E-tests contents
-        echo "E2E-tests contents:"
-        ls -la E2E-tests/
+        # Debug: Show dev/local-environment contents
+        echo "dev/local-environment contents:"
+        ls -la dev/local-environment
         
-        # Create the target directory with explicit full path
-        FULL_PATH=$(pwd)/dev/local-environment/configurations/tests/E2E-tests
-        echo "Creating directory at: $FULL_PATH"
-        mkdir -p "$FULL_PATH"
+        # Copy E2E tests
+        mkdir -p dev/local-environment/configurations/tests/E2E-tests
+        cp -r E2E-tests/* dev/local-environment/configurations/tests/E2E-tests/
         
-        # Copy with verbose flag to see what's being copied
-        echo "Copying files..."
-        cp -rv E2E-tests/* "$FULL_PATH/"
+        # Debug: Verify docker-compose.yml
+        echo "Looking for docker-compose.yml:"
+        find . -name docker-compose.yml
         
-        # Verify the copy
-        echo "Verifying copied tests:"
-        ls -la "$FULL_PATH"
+        # Start containers using explicit path
+        cd dev/local-environment
+        docker compose -f docker-compose.yml up -d
         
-        # Check permissions
-        echo "Directory permissions:"
-        ls -la $(pwd)/dev/local-environment/configurations/tests/
+        # Debug: Show running containers
+        docker ps
+        
+        cd ../../
       shell: bash
     - name: Deploy local environment with overrides
       run: |
