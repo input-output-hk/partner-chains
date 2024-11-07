@@ -14,6 +14,7 @@ use ogmios_client::{query_ledger_state::ProtocolParametersResponse, types::Ogmio
 use partner_chains_plutus_data::d_param::DParamDatum;
 use sidechain_domain::DParameter;
 
+#[allow(clippy::too_many_arguments)]
 fn mint_token_tx(
 	validator: &PlutusScript,
 	d_parameter: &DParameter,
@@ -53,7 +54,7 @@ fn add_mint_d_param_token(
 	mint_witness_ex_units: ExUnits,
 ) -> Result<(), JsError> {
 	let mut mint_builder = MintBuilder::new();
-	let validator_source = PlutusScriptSource::new(&validator);
+	let validator_source = PlutusScriptSource::new(validator);
 	let mint_witness = MintWitness::new_plutus_script(
 		&validator_source,
 		&Redeemer::new(
@@ -64,7 +65,8 @@ fn add_mint_d_param_token(
 		),
 	);
 	mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new_i32(1))?;
-	Ok(tx_builder.set_mint_builder(&mint_builder))
+	tx_builder.set_mint_builder(&mint_builder);
+	Ok(())
 }
 
 // This creates output on the validator address with datum that has 1 token and keep d-param in datum.

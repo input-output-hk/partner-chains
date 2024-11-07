@@ -171,7 +171,8 @@ pub(crate) fn add_collateral_inputs(
 			&Value::new(&convert_value(&collateral.value)?.coin()),
 		);
 	}
-	Ok(tx_builder.set_collateral(&collateral_builder))
+	tx_builder.set_collateral(&collateral_builder);
+	Ok(())
 }
 
 #[cfg(test)]
