@@ -66,6 +66,8 @@
       flake.lib = import ./nix/lib.nix {inherit (nixpkgs) lib;};
     };
   nixConfig = {
+    allow-import-from-derivation = true;
+    accept-flake-config = true;
     extra-substituters = [
       "https://nix-community.cachix.org"
       "https://cache.iog.io"
