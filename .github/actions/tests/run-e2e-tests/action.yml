@@ -92,6 +92,8 @@ runs:
           --junitxml=junit_report.xml"
 
 
+        echo "Print DIR Contents"
+        ls -la
         echo "Running tests locally"
         cd E2E-tests
         source venv/bin/activate
