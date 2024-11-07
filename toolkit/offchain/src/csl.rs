@@ -106,9 +106,19 @@ pub(crate) fn convert_value(value: &OgmiosValue) -> Result<Value, JsError> {
 		for (policy_id, assets) in value.native_tokens.iter() {
 			let mut csl_assets = Assets::new();
 			for asset in assets.iter() {
-				let amount: u64 =
-					asset.amount.try_into().map_err(|_| JsError::from_str("Amount too large"))?;
-				csl_assets.insert(&AssetName::new(asset.name.clone())?, &amount.into());
+				let amount: u64 = asset.amount.try_into().map_err(|_| {
+					JsError::from_str(&format!(
+						"Could not convert Ogmios UTOX value, asset amount {} too large",
+						asset.amount,
+					))
+				})?;
+				let asset_name = AssetName::new(asset.name.clone()).map_err(|e| {
+					JsError::from_str(&format!(
+						"Could not convert Ogmios UTXO value, asset name is invalid: '{}'",
+						e.to_string()
+					))
+				})?;
+				csl_assets.insert(&asset_name, &amount.into());
 			}
 			multiasset.insert(&ScriptHash::from(*policy_id), &csl_assets);
 		}
