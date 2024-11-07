@@ -190,7 +190,7 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   partner-chain-ready:
-    if: ${{ github.event.inputs.no-deploy != 'true' }}
+    if: ${{ github.event.inputs.no-tests != 'true' }}
     runs-on: eks
     needs: deploy-staging-preview
     outputs:
@@ -235,7 +235,7 @@ jobs:
         shell: bash
 
   run-smoke-tests:
-    if: ${{ github.event.inputs.no-tests != 'true' && github.event.inputs.no-deploy != 'true' }}
+    if: ${{ github.event.inputs.no-tests != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -261,7 +261,7 @@ jobs:
           threads: 1
 
   run-all-tests:
-    if: ${{ github.event.inputs.no-tests != 'true' && github.event.inputs.no-deploy != 'true' }}
+    if: ${{ github.event.inputs.no-tests != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -290,7 +290,7 @@ jobs:
           threads: 1
 
   wait-for-n1-epoch:
-    if: ${{ github.event.inputs.no-tests != 'true' && github.event.inputs.no-deploy != 'true' }}
+    if: ${{ github.event.inputs.no-tests != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -324,7 +324,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n1-epoch:
-    if: ${{ github.event.inputs.no-tests != 'true' && github.event.inputs.no-deploy != 'true' }}
+    if: ${{ github.event.inputs.no-tests != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -354,7 +354,7 @@ jobs:
           threads: 1
 
   wait-for-n2-epoch:
-    if: ${{ github.event.inputs.no-tests != 'true' && github.event.inputs.no-deploy != 'true' }}
+    if: ${{ github.event.inputs.no-tests != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -390,7 +390,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n2-epoch:
-    if: ${{ github.event.inputs.no-tests != 'true' && github.event.inputs.no-deploy != 'true' }}
+    if: ${{ github.event.inputs.no-tests != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -420,7 +420,7 @@ jobs:
           threads: 1
 
   publish:
-    if: ${{ github.event.inputs.no-release != 'true' && (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success' || needs.run-all-tests-on-n2-epoch.result == 'skipped') }}
+    if: ${{ github.event.inputs.no-release != 'true' }}
     permissions:
       id-token: write
       contents: write
@@ -466,7 +466,7 @@ jobs:
 #          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 #
 #  staging-preprod-tests:
-#    if: ${{ github.event.inputs.no-tests != 'true' && github.event.inputs.no-deploy != 'true' }}
+#    if: ${{ github.event.inputs.no-tests != 'true' }}
 #    permissions:
 #      id-token: write
 #      contents: write
