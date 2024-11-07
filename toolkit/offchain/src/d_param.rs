@@ -1,14 +1,14 @@
 #![allow(dead_code)]
 
 use crate::csl::{
-	add_collateral_inputs, add_tx_inputs, convert_cost_models, empty_asset_name,
-	get_builder_config, key_hash_address, plutus_script_address,
+	add_collateral_inputs, convert_cost_models, empty_asset_name, get_builder_config,
+	key_hash_address, ogmios_utxos_to_csl, plutus_script_address,
 };
 use cardano_serialization_lib::{
-	Assets, DataCost, Ed25519KeyHash, ExUnits, Int, JsError, LanguageKind, MinOutputAdaCalculator,
-	MintBuilder, MintWitness, MultiAsset, NetworkIdKind, PlutusData, PlutusScript,
-	PlutusScriptSource, Redeemer, RedeemerTag, Transaction, TransactionBuilder,
-	TransactionOutputBuilder, TxInputsBuilder,
+	Assets, ChangeConfig, CoinSelectionStrategyCIP2, DataCost, Ed25519KeyHash, ExUnits, Int,
+	JsError, LanguageKind, MinOutputAdaCalculator, MintBuilder, MintWitness, MultiAsset,
+	NetworkIdKind, PlutusData, PlutusScript, PlutusScriptSource, Redeemer, RedeemerTag,
+	Transaction, TransactionBuilder, TransactionOutputBuilder,
 };
 use ogmios_client::{query_ledger_state::ProtocolParametersResponse, types::OgmiosUtxo};
 use partner_chains_plutus_data::d_param::DParamDatum;
@@ -36,15 +36,16 @@ fn mint_token_tx(
 		protocol_parameters.min_utxo_deposit_coefficient,
 	)?;
 	// Set things required for transaction to succeed
-	let mut tx_inputs_builder = TxInputsBuilder::new();
-	add_tx_inputs(&mut tx_inputs_builder, payment_utxos, payment_key_hash)?;
-	tx_builder.set_inputs(&tx_inputs_builder);
 	add_collateral_inputs(&mut tx_builder, collaterals, payment_key_hash)?;
 	tx_builder
 		.calc_script_data_hash(&convert_cost_models(&protocol_parameters.plutus_cost_models))?;
 	tx_builder.add_required_signer(payment_key_hash);
-	let change_address = key_hash_address(payment_key_hash, network);
-	tx_builder.add_change_if_needed(&change_address)?;
+	tx_builder.add_inputs_from_and_change_with_collateral_return(
+		&ogmios_utxos_to_csl(payment_utxos)?,
+		CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
+		&ChangeConfig::new(&key_hash_address(payment_key_hash, network)),
+		&protocol_parameters.collateral_percentage.into(),
+	)?;
 	tx_builder.build_tx()
 }
 
@@ -119,14 +120,15 @@ mod tests {
 	#[test]
 	fn mint_token_regression_test() {
 		// We know the expected values were obtained with the correct code
-		let collateral = make_utxo(7u8, 0, 72345678);
-		let payment_utxo = make_utxo(4u8, 1, 4000000);
 		let payment_addr =
 			Address::from_bech32("addr_test1vqp4a7r0zc3pw2qkhw0fz6h2s6grktydxtrj3t2unw2890sfgt0kq")
 				.unwrap();
 		let validator_addr =
 			Address::from_bech32("addr_test1wpha4546lvfcau5jsrwpht9h6350m3au86fev6nwmuqz9gqer2ung")
 				.unwrap();
+		let collateral_value = 7000000;
+		let collateral = make_utxo(7u8, 0, collateral_value, &payment_addr);
+		let payment_utxo = make_utxo(4u8, 1, 4000000, &payment_addr);
 		let pub_key_hash = hex!("035ef86f1622172816bb9e916aea86903b2c8d32c728ad5c9b9472be").into();
 		let ex_units = ExUnits::new(&10000u32.into(), &200u32.into());
 
@@ -177,7 +179,7 @@ mod tests {
 		};
 		assert_eq!(script_output.plutus_data().unwrap(), expected_plutus_data);
 		// This token is minted in the transaction
-		let mint = tx.body().mint().unwrap();
+		let mint = body.mint().unwrap();
 		assert_eq!(
 			mint.get(&token_policy_id)
 				.unwrap()
@@ -200,6 +202,14 @@ mod tests {
 			tx.body().script_data_hash().unwrap().to_hex(),
 			"5b95e874a40a87b017ee7827a7dccf7331d2b647190eddcde7f0edaba4393662"
 		);
+		// Collateral return must be set
+		let collateral_return = body.collateral_return().unwrap();
+		assert_eq!(collateral_return.address(), payment_addr);
+		let total_collateral = body.total_collateral().unwrap();
+		assert_eq!(
+			collateral_return.amount().coin().checked_add(&total_collateral).unwrap(),
+			collateral_value.into()
+		);
 	}
 
 	fn protocol_parameters() -> ProtocolParametersResponse {
@@ -220,14 +230,17 @@ mod tests {
 				plutus_v2: vec![43053543, 10],
 				plutus_v3: vec![-900, 166917843],
 			},
+			max_collateral_inputs: 3,
+			collateral_percentage: 150,
 		}
 	}
 
-	fn make_utxo(id_byte: u8, index: u16, lovelace: u64) -> OgmiosUtxo {
+	fn make_utxo(id_byte: u8, index: u16, lovelace: u64, addr: &Address) -> OgmiosUtxo {
 		OgmiosUtxo {
 			transaction: OgmiosTx { id: [id_byte; 32] },
 			index,
 			value: OgmiosValue::new_lovelace(lovelace),
+			address: addr.to_bech32(None).unwrap(),
 			..Default::default()
 		}
 	}

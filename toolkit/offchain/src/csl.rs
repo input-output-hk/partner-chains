@@ -4,8 +4,8 @@ use cardano_serialization_lib::{
 	Address, AssetName, Assets, BigNum, CostModel, Costmdls, Credential, Ed25519KeyHash,
 	EnterpriseAddress, ExUnitPrices, ExUnits, JsError, Language, LanguageKind, LinearFee,
 	MultiAsset, NetworkIdKind, ScriptHash, TransactionBuilder, TransactionBuilderConfig,
-	TransactionBuilderConfigBuilder, TransactionHash, TransactionInput, TxInputsBuilder,
-	UnitInterval, Value,
+	TransactionBuilderConfigBuilder, TransactionHash, TransactionInput, TransactionOutput,
+	TransactionUnspentOutput, TransactionUnspentOutputs, TxInputsBuilder, UnitInterval, Value,
 };
 use ogmios_client::{
 	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse},
@@ -141,6 +141,29 @@ pub(crate) fn ogmios_utxo_to_tx_input(utxo: &OgmiosUtxo) -> TransactionInput {
 	TransactionInput::new(&TransactionHash::from(utxo.transaction.id), utxo.index.into())
 }
 
+pub(crate) fn ogmios_utxo_to_tx_output(utxo: &OgmiosUtxo) -> Result<TransactionOutput, JsError> {
+	Ok(TransactionOutput::new(
+		&Address::from_bech32(&utxo.address).map_err(|e| {
+			JsError::from_str(&format!("Couldn't convert address from ogmios: '{}'", e))
+		})?,
+		&convert_value(&utxo.value)?,
+	))
+}
+
+/// Conversion of ogmios-client UTXOs to CSL [`TransactionUnspentOutputs`]
+pub(crate) fn ogmios_utxos_to_csl(
+	utxos: &[OgmiosUtxo],
+) -> Result<TransactionUnspentOutputs, JsError> {
+	let mut outputs = TransactionUnspentOutputs::new();
+	for utxo in utxos.iter() {
+		outputs.add(&TransactionUnspentOutput::new(
+			&ogmios_utxo_to_tx_input(utxo),
+			&ogmios_utxo_to_tx_output(utxo)?,
+		));
+	}
+	Ok(outputs)
+}
+
 // Adds ogmios inputs to the tx inputs builder.
 pub(crate) fn add_tx_inputs(
 	inputs_builder: &mut TxInputsBuilder,
@@ -164,13 +187,7 @@ pub(crate) fn add_collateral_inputs(
 	pub_key_hash: &Ed25519KeyHash,
 ) -> Result<(), JsError> {
 	let mut collateral_builder = TxInputsBuilder::new();
-	for collateral in collaterals.iter() {
-		collateral_builder.add_key_input(
-			pub_key_hash,
-			&ogmios_utxo_to_tx_input(collateral),
-			&Value::new(&convert_value(&collateral.value)?.coin()),
-		);
-	}
+	add_tx_inputs(&mut collateral_builder, collaterals, pub_key_hash)?;
 	tx_builder.set_collateral(&collateral_builder);
 	Ok(())
 }
@@ -334,6 +351,8 @@ mod tests {
 				plutus_v2: vec![43053543, 10],
 				plutus_v3: vec![-900, 166917843],
 			},
+			max_collateral_inputs: 3,
+			collateral_percentage: 150,
 		}
 	}
 }
