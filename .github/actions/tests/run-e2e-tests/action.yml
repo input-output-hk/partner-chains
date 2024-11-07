@@ -92,10 +92,10 @@ runs:
           --junitxml=junit_report.xml"
 
 
-        echo "Print DIR Contents"
-        ls -la
         echo "Running tests locally"
         cd E2E-tests
+        echo "Print DIR Contents"
+        ls -la
         source venv/bin/activate
         eval "$pytest_cmd"
     - name: Upload test results
