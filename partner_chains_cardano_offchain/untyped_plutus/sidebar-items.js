@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["apply_param_to_script","apply_params_to_script","csl_plutus_data_to_uplc","datum_to_uplc_plutus_data"]};
+window.SIDEBAR_ITEMS = {"fn":["csl_plutus_data_to_uplc","datum_to_uplc_plutus_data"]};

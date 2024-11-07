@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["ogmios_network_to_csl","payment_address","plutus_script_address"]};
+window.SIDEBAR_ITEMS = {"fn":["ogmios_network_to_csl","payment_address","script_address"]};
