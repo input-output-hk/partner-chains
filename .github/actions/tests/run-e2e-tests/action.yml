@@ -91,12 +91,22 @@ runs:
           --json-report-summary \
           --junitxml=junit_report.xml"
 
-
         echo "Running tests locally"
         cd E2E-tests
         echo "Print DIR Contents"
         ls -la
+        
+        # Set up Python virtual environment
+        echo "Setting up Python virtual environment..."
+        python -m venv venv
         source venv/bin/activate
+        
+        # Install requirements
+        echo "Installing requirements..."
+        pip install -r requirements.txt
+        
+        # Run the tests
+        echo "Running tests..."
         eval "$pytest_cmd"
     - name: Upload test results
       uses: actions/upload-artifact@v4
