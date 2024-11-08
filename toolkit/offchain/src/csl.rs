@@ -1,16 +1,13 @@
 #![allow(dead_code)]
 
+use crate::plutus_script::PlutusScript;
 use cardano_serialization_lib::{
-	Address, AssetName, Assets, BigNum, CostModel, Costmdls, Credential, DataCost, Ed25519KeyHash,
-	EnterpriseAddress, ExUnitPrices, ExUnits, Int, JsError, Language, LanguageKind, LinearFee,
-	MinOutputAdaCalculator, MintBuilder, MintWitness, MultiAsset, NetworkIdKind, PlutusData,
-<<<<<<< HEAD
-	PlutusScript, PlutusScriptSource, Redeemer, RedeemerTag, ScriptHash, TransactionBuilder,
-=======
-	PlutusScriptSource, PlutusWitness, Redeemer, RedeemerTag, ScriptHash, TransactionBuilder,
->>>>>>> 43ce1e96 (Add update D-parameter transaction building)
-	TransactionBuilderConfig, TransactionBuilderConfigBuilder, TransactionHash, TransactionInput,
-	TransactionOutput, TransactionOutputBuilder, TransactionUnspentOutput,
+	Address, AssetName, Assets, BigNum, ChangeConfig, CostModel, Costmdls, Credential, DataCost,
+	Ed25519KeyHash, EnterpriseAddress, ExUnitPrices, ExUnits, Int, JsError, Language, LanguageKind,
+	LinearFee, MinOutputAdaCalculator, MintBuilder, MintWitness, MultiAsset, NetworkIdKind,
+	PlutusData, PlutusScriptSource, PlutusWitness, Redeemer, RedeemerTag, ScriptHash, Transaction,
+	TransactionBuilder, TransactionBuilderConfig, TransactionBuilderConfigBuilder, TransactionHash,
+	TransactionInput, TransactionOutput, TransactionOutputBuilder, TransactionUnspentOutput,
 	TransactionUnspentOutputs, TxInputsBuilder, UnitInterval, Value,
 };
 use ogmios_client::{
@@ -79,8 +76,9 @@ fn language_kind_to_u8(language: LanguageKind) -> u8 {
 /// Creates a CSL [`TransactionBuilderConfig`] for given [`ProtocolParametersResponse`].
 /// This function is not unit-testable because [`TransactionBuilderConfig`] has no public getters.
 pub(crate) fn get_builder_config(
-	protocol_parameters: &ProtocolParametersResponse,
+	protocol_parameters: &TransactionContext,
 ) -> Result<TransactionBuilderConfig, JsError> {
+	let protocol_parameters = &protocol_parameters.protocol_parameters;
 	TransactionBuilderConfigBuilder::new()
 		.fee_algo(&linear_fee(protocol_parameters))
 		.pool_deposit(&convert_value(&protocol_parameters.stake_pool_deposit)?.coin())
@@ -152,133 +150,199 @@ pub(crate) fn empty_asset_name() -> AssetName {
 	AssetName::new(vec![]).expect("Hardcoded empty asset name is valid")
 }
 
-/// Conversion of ogmios-client UTXO to CSL transaction input
-pub(crate) fn ogmios_utxo_to_tx_input(utxo: &OgmiosUtxo) -> TransactionInput {
-	TransactionInput::new(&TransactionHash::from(utxo.transaction.id), utxo.index.into())
+pub(crate) trait OgmiosUtxoExt {
+	fn to_csl_tx_input(&self) -> TransactionInput;
+	fn to_csl_tx_output(&self) -> Result<TransactionOutput, JsError>;
+	fn to_csl(&self) -> Result<TransactionUnspentOutput, JsError>;
 }
 
-pub(crate) fn ogmios_utxo_to_tx_output(utxo: &OgmiosUtxo) -> Result<TransactionOutput, JsError> {
-	Ok(TransactionOutput::new(
-		&Address::from_bech32(&utxo.address).map_err(|e| {
-			JsError::from_str(&format!("Couldn't convert address from ogmios: '{}'", e))
-		})?,
-		&convert_value(&utxo.value)?,
-	))
-}
-
-/// Conversion of ogmios-client UTXOs to CSL [`TransactionUnspentOutputs`]
-pub(crate) fn ogmios_utxos_to_csl(
-	utxos: &[OgmiosUtxo],
-) -> Result<TransactionUnspentOutputs, JsError> {
-	let mut outputs = TransactionUnspentOutputs::new();
-	for utxo in utxos.iter() {
-		outputs.add(&TransactionUnspentOutput::new(
-			&ogmios_utxo_to_tx_input(utxo),
-			&ogmios_utxo_to_tx_output(utxo)?,
-		));
+impl OgmiosUtxoExt for OgmiosUtxo {
+	fn to_csl_tx_input(&self) -> TransactionInput {
+		TransactionInput::new(&TransactionHash::from(self.transaction.id), self.index.into())
 	}
-	Ok(outputs)
+
+	fn to_csl_tx_output(&self) -> Result<TransactionOutput, JsError> {
+		Ok(TransactionOutput::new(
+			&Address::from_bech32(&self.address).map_err(|e| {
+				JsError::from_str(&format!("Couldn't convert address from ogmios: '{}'", e))
+			})?,
+			&convert_value(&self.value)?,
+		))
+	}
+
+	fn to_csl(&self) -> Result<TransactionUnspentOutput, JsError> {
+		Ok(TransactionUnspentOutput::new(&self.to_csl_tx_input(), &self.to_csl_tx_output()?))
+	}
 }
 
-/// Adds ogmios inputs to the tx inputs builder.
-pub(crate) fn add_tx_inputs(
-	inputs_builder: &mut TxInputsBuilder,
-	utxos: &[OgmiosUtxo],
-	pub_key_hash: &Ed25519KeyHash,
-) -> Result<(), JsError> {
-	for utxo in utxos.iter() {
-		inputs_builder.add_key_input(
-			pub_key_hash,
-			&ogmios_utxo_to_tx_input(utxo),
-			&convert_value(&utxo.value)?,
+pub(crate) struct TransactionContext {
+	pub(crate) payment_key_hash: Ed25519KeyHash,
+	pub(crate) collaterals: Vec<OgmiosUtxo>,
+	pub(crate) payment_utxos: Vec<OgmiosUtxo>,
+	pub(crate) network: NetworkIdKind,
+	pub(crate) protocol_parameters: ProtocolParametersResponse,
+}
+
+pub(crate) trait OgmiosUtxosExt {
+	fn to_csl(&self) -> Result<TransactionUnspentOutputs, JsError>;
+}
+
+impl OgmiosUtxosExt for [OgmiosUtxo] {
+	fn to_csl(&self) -> Result<TransactionUnspentOutputs, JsError> {
+		let mut utxos = TransactionUnspentOutputs::new();
+		for utxo in self {
+			utxos.add(&utxo.to_csl()?);
+		}
+		Ok(utxos)
+	}
+}
+
+pub(crate) trait TransactionBuilderExt {
+	/// Creates output on the script address with datum that has 1 token with asset for the script and it has given datum attached.
+	fn add_output_with_one_script_token(
+		&mut self,
+		script: &PlutusScript,
+		datum: &PlutusData,
+		ctx: &TransactionContext,
+	) -> Result<(), JsError>;
+
+	/// Adds ogmios inputs as collateral inputs to the tx builder.
+	fn add_collateral_inputs(&mut self, ctx: &TransactionContext) -> Result<(), JsError>;
+
+	/// Adds minting of 1 token (with empty asset name) for the given script
+	fn add_mint_script_token(
+		&mut self,
+		script: &PlutusScript,
+		ex_units: ExUnits,
+	) -> Result<(), JsError>;
+
+	/// Sets fields required by the most of partner-chains smart contract transactions
+	fn set_required_fields_and_build(
+		&mut self,
+		ctx: &TransactionContext,
+	) -> Result<Transaction, JsError>;
+}
+
+impl TransactionBuilderExt for TransactionBuilder {
+	fn add_output_with_one_script_token(
+		&mut self,
+		script: &PlutusScript,
+		datum: &PlutusData,
+		ctx: &TransactionContext,
+	) -> Result<(), JsError> {
+		let amount_builder = TransactionOutputBuilder::new()
+			.with_address(&script.address(ctx.network))
+			.with_plutus_data(&datum)
+			.next()?;
+		let mut ma = MultiAsset::new();
+		let mut assets = Assets::new();
+		assets.insert(&empty_asset_name(), &1u64.into());
+		ma.insert(&script.script_hash().into(), &assets);
+		let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
+		let min_ada = MinOutputAdaCalculator::new(
+			&output,
+			&DataCost::new_coins_per_byte(
+				&ctx.protocol_parameters.min_utxo_deposit_coefficient.into(),
+			),
+		)
+		.calculate_ada()?;
+		let output = amount_builder.with_coin_and_asset(&min_ada, &ma).build()?;
+		self.add_output(&output)
+	}
+
+	fn add_collateral_inputs(&mut self, ctx: &TransactionContext) -> Result<(), JsError> {
+		let mut collateral_builder = TxInputsBuilder::new();
+		collateral_builder.add_key_inputs(&ctx.collaterals, &ctx.payment_key_hash)?;
+		self.set_collateral(&collateral_builder);
+		Ok(())
+	}
+
+	fn add_mint_script_token(
+		&mut self,
+		script: &PlutusScript,
+		ex_units: ExUnits,
+	) -> Result<(), JsError> {
+		let mut mint_builder = MintBuilder::new();
+		let validator_source = PlutusScriptSource::new(&script.to_csl());
+		let mint_witness = MintWitness::new_plutus_script(
+			&validator_source,
+			&Redeemer::new(
+				&RedeemerTag::new_mint(),
+				&0u32.into(),
+				&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
+				&ex_units,
+			),
 		);
+		mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new_i32(1))?;
+		self.set_mint_builder(&mint_builder);
+		Ok(())
 	}
-	Ok(())
+
+	fn set_required_fields_and_build(
+		&mut self,
+		ctx: &TransactionContext,
+	) -> Result<Transaction, JsError> {
+		self.add_collateral_inputs(ctx)?;
+		self.calc_script_data_hash(&convert_cost_models(
+			&ctx.protocol_parameters.plutus_cost_models,
+		))?;
+		self.add_required_signer(&ctx.payment_key_hash);
+		self.add_inputs_from_and_change_with_collateral_return(
+			&ctx.payment_utxos.to_csl()?,
+			cardano_serialization_lib::CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
+			&ChangeConfig::new(&key_hash_address(&ctx.payment_key_hash, ctx.network)),
+			&ctx.protocol_parameters.collateral_percentage.into(),
+		)?;
+		self.build_tx()
+	}
 }
 
-/// Adds ogmios inputs as collateral inputs to the tx builder.
-pub(crate) fn add_collateral_inputs(
-	tx_builder: &mut TransactionBuilder,
-	collaterals: &[OgmiosUtxo],
-	pub_key_hash: &Ed25519KeyHash,
-) -> Result<(), JsError> {
-	let mut collateral_builder = TxInputsBuilder::new();
-	add_tx_inputs(&mut collateral_builder, collaterals, pub_key_hash)?;
-	tx_builder.set_collateral(&collateral_builder);
-	Ok(())
+pub(crate) trait InputsBuilderExt {
+	fn add_script_utxo_input(
+		&mut self,
+		utxo: &OgmiosUtxo,
+		script: &PlutusScript,
+		ex_units: ExUnits,
+	) -> Result<(), JsError>;
+
+	/// Adds ogmios inputs to the tx inputs builder.
+	fn add_key_inputs(&mut self, utxos: &[OgmiosUtxo], key: &Ed25519KeyHash)
+		-> Result<(), JsError>;
 }
 
-/// This creates output on the script address with datum that has 1 token with asset for the script and it has given datum attached.
-/// This is used for D-parameter and permissioned candidates.
-pub(crate) fn add_output_with_one_script_token(
-	tx_builder: &mut TransactionBuilder,
-	script: &PlutusScript,
-	datum: &PlutusData,
-	network: NetworkIdKind,
-	min_utxo_deposit_coefficient: u64,
-) -> Result<(), JsError> {
-	let amount_builder = TransactionOutputBuilder::new()
-		.with_address(&plutus_script_address(&script.bytes(), network, LanguageKind::PlutusV2))
-		.with_plutus_data(&datum)
-		.next()?;
-	let mut ma = MultiAsset::new();
-	let mut assets = Assets::new();
-	assets.insert(&empty_asset_name(), &1u64.into());
-	ma.insert(&script.hash(), &assets);
-	let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
-	let min_ada = MinOutputAdaCalculator::new(
-		&output,
-		&DataCost::new_coins_per_byte(&min_utxo_deposit_coefficient.into()),
-	)
-	.calculate_ada()?;
-	let output = amount_builder.with_coin_and_asset(&min_ada, &ma).build()?;
-	tx_builder.add_output(&output)
-}
+impl InputsBuilderExt for TxInputsBuilder {
+	fn add_script_utxo_input(
+		&mut self,
+		utxo: &OgmiosUtxo,
+		script: &PlutusScript,
+		ex_units: ExUnits,
+	) -> Result<(), JsError> {
+		let input = utxo.to_csl_tx_input();
+		let amount = convert_value(&utxo.value)?;
+		let witness = PlutusWitness::new_without_datum(
+			&script.to_csl(),
+			&Redeemer::new(
+				&RedeemerTag::new_spend(),
+				// CSL will set redeemer index for the index of script input after sorting transaction inputs
+				&0u32.into(),
+				&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
+				&ex_units,
+			),
+		);
+		self.add_plutus_script_input(&witness, &input, &amount);
+		Ok(())
+	}
 
-/// Add minting of 1 token (with empty asset name) for the given script
-/// This is used for D-parameter and permissioned candidates.
-pub(crate) fn add_mint_script_token(
-	tx_builder: &mut TransactionBuilder,
-	validator: &PlutusScript,
-	ex_units: ExUnits,
-) -> Result<(), JsError> {
-	let mut mint_builder = MintBuilder::new();
-	let validator_source = PlutusScriptSource::new(validator);
-	let mint_witness = MintWitness::new_plutus_script(
-		&validator_source,
-		&Redeemer::new(
-			&RedeemerTag::new_mint(),
-			&0u32.into(),
-			&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
-			&ex_units,
-		),
-	);
-	mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new_i32(1))?;
-	tx_builder.set_mint_builder(&mint_builder);
-	Ok(())
-}
-
-/// Adds UTXO from script address as transaction input
-pub(crate) fn add_script_utxo_input(
-	script_utxo: &OgmiosUtxo,
-	validator: &PlutusScript,
-	ex_units: ExUnits,
-	inputs: &mut TxInputsBuilder,
-) -> Result<(), JsError> {
-	let input = ogmios_utxo_to_tx_input(&script_utxo);
-	let amount = convert_value(&script_utxo.value)?;
-	let witness = PlutusWitness::new_without_datum(
-		&validator.to_csl(),
-		&Redeemer::new(
-			&RedeemerTag::new_spend(),
-			// CSL will set redeemer index for the index of script input after sorting transaction inputs
-			&0u32.into(),
-			&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
-			&ex_units,
-		),
-	);
-	inputs.add_plutus_script_input(&witness, &input, &amount);
-	Ok(())
+	fn add_key_inputs(
+		&mut self,
+		utxos: &[OgmiosUtxo],
+		key: &Ed25519KeyHash,
+	) -> Result<(), JsError> {
+		for utxo in utxos.iter() {
+			self.add_key_input(key, &utxo.to_csl_tx_input(), &convert_value(&utxo.value)?);
+		}
+		Ok(())
+	}
 }
 
 #[cfg(test)]

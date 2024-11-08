@@ -24,26 +24,11 @@ impl From<DParamDatum> for sidechain_domain::DParameter {
 	}
 }
 
-impl From<sidechain_domain::DParameter> for DParamDatum {
-	fn from(d_parameter: sidechain_domain::DParameter) -> Self {
-		Self::V0 {
-			num_permissioned_candidates: d_parameter.num_permissioned_candidates,
-			num_registered_candidates: d_parameter.num_registered_candidates,
-		}
-	}
-}
-
-impl From<DParamDatum> for PlutusData {
-	fn from(datum: DParamDatum) -> Self {
-		match datum {
-			DParamDatum::V0 { num_permissioned_candidates, num_registered_candidates } => {
-				let mut list = PlutusList::new();
-				list.add(&PlutusData::new_integer(&num_permissioned_candidates.into()));
-				list.add(&PlutusData::new_integer(&num_registered_candidates.into()));
-				PlutusData::new_list(&list)
-			},
-		}
-	}
+pub fn d_parameter_to_plutus_data(d_param: &sidechain_domain::DParameter) -> PlutusData {
+	let mut list = PlutusList::new();
+	list.add(&PlutusData::new_integer(&d_param.num_permissioned_candidates.into()));
+	list.add(&PlutusData::new_integer(&d_param.num_registered_candidates.into()));
+	PlutusData::new_list(&list)
 }
 
 /// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.
@@ -73,7 +58,6 @@ fn decode_legacy_d_parameter_datum(datum: PlutusData) -> DecodingResult<DParamDa
 mod tests {
 	use super::*;
 	use crate::test_helpers::*;
-	use cardano_serialization_lib::PlutusData;
 	use pretty_assertions::assert_eq;
 
 	#[test]
@@ -95,6 +79,6 @@ mod tests {
 
 		let expected_plutus_data = test_plutus_data!({"list": [{"int": 1}, {"int": 2}]});
 
-		assert_eq!(PlutusData::from(DParamDatum::from(d_param)), expected_plutus_data)
+		assert_eq!(d_parameter_to_plutus_data(&d_param), expected_plutus_data)
 	}
 }

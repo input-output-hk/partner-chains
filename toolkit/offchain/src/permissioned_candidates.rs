@@ -1,16 +1,11 @@
 #![allow(dead_code)]
 
-use crate::csl::{
-	add_collateral_inputs, add_mint_script_token, add_output_with_one_script_token,
-	add_script_utxo_input, add_tx_inputs, convert_cost_models, get_builder_config,
-	key_hash_address, ogmios_utxos_to_csl,
-};
+use crate::csl::{get_builder_config, InputsBuilderExt, TransactionBuilderExt, TransactionContext};
 use crate::plutus_script::PlutusScript;
 use cardano_serialization_lib::{
-	ChangeConfig, CoinSelectionStrategyCIP2, Ed25519KeyHash, ExUnits, JsError, NetworkIdKind,
-	Transaction, TransactionBuilder, TxInputsBuilder,
+	ExUnits, JsError, Transaction, TransactionBuilder, TxInputsBuilder,
 };
-use ogmios_client::{query_ledger_state::ProtocolParametersResponse, types::OgmiosUtxo};
+use ogmios_client::types::OgmiosUtxo;
 use partner_chains_plutus_data::permissioned_candidates::permissioned_candidates_to_plutus_data;
 use sidechain_domain::PermissionedCandidateData;
 
@@ -18,86 +13,56 @@ use sidechain_domain::PermissionedCandidateData;
 fn mint_permissioned_candidates_token_tx(
 	validator: &PlutusScript,
 	permissioned_candidates: &[PermissionedCandidateData],
-	payment_key_hash: &Ed25519KeyHash,
-	collaterals: &[OgmiosUtxo],
-	payment_utxos: &[OgmiosUtxo],
-	network: NetworkIdKind,
-	protocol_parameters: &ProtocolParametersResponse,
+	ctx: &TransactionContext,
 	mint_witness_ex_units: ExUnits,
 ) -> Result<Transaction, JsError> {
-	let mut tx_builder = TransactionBuilder::new(&get_builder_config(protocol_parameters)?);
+	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	// The essence of transaction: mint token and set output with it
-	add_mint_script_token(&mut tx_builder, validator, mint_witness_ex_units)?;
-	add_output_with_one_script_token(
-		&mut tx_builder,
+	tx_builder.add_mint_script_token(validator, mint_witness_ex_units)?;
+	tx_builder.add_output_with_one_script_token(
 		validator,
 		&permissioned_candidates_to_plutus_data(permissioned_candidates),
-		network,
-		protocol_parameters.min_utxo_deposit_coefficient,
+		ctx,
 	)?;
-	// Set things required for transaction to succeed
-	add_collateral_inputs(&mut tx_builder, collaterals, payment_key_hash)?;
-	tx_builder
-		.calc_script_data_hash(&convert_cost_models(&protocol_parameters.plutus_cost_models))?;
-	tx_builder.add_required_signer(payment_key_hash);
-	tx_builder.add_inputs_from_and_change_with_collateral_return(
-		&ogmios_utxos_to_csl(payment_utxos)?,
-		CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
-		&ChangeConfig::new(&key_hash_address(payment_key_hash, network)),
-		&protocol_parameters.collateral_percentage.into(),
-	)?;
-	tx_builder.build_tx()
+
+	tx_builder.set_required_fields_and_build(ctx)
 }
 
 #[allow(clippy::too_many_arguments)]
 fn update_permissioned_candidates_tx(
 	validator: &PlutusScript,
 	permissioned_candidates: &[PermissionedCandidateData],
-	payment_key_hash: &Ed25519KeyHash,
 	script_utxo: &OgmiosUtxo,
-	collaterals: &[OgmiosUtxo],
-	payment_utxos: &[OgmiosUtxo],
-	network: NetworkIdKind,
-	protocol_parameters: &ProtocolParametersResponse,
+	ctx: &TransactionContext,
 	validator_redeemer_ex_units: ExUnits,
 ) -> Result<Transaction, JsError> {
-	let config = crate::csl::get_builder_config(protocol_parameters)?;
+	let config = crate::csl::get_builder_config(ctx)?;
 	let mut tx_builder = TransactionBuilder::new(&config);
 
 	let mut inputs = TxInputsBuilder::new();
-	add_script_utxo_input(script_utxo, validator, validator_redeemer_ex_units, &mut inputs)?;
-	add_tx_inputs(&mut inputs, payment_utxos, payment_key_hash)?;
+	inputs.add_script_utxo_input(script_utxo, validator, validator_redeemer_ex_units)?;
+	inputs.add_key_inputs(&ctx.payment_utxos, &ctx.payment_key_hash)?;
 	tx_builder.set_inputs(&inputs);
 
-	add_output_with_one_script_token(
-		&mut tx_builder,
+	tx_builder.add_output_with_one_script_token(
 		validator,
 		&permissioned_candidates_to_plutus_data(permissioned_candidates),
-		network,
-		protocol_parameters.min_utxo_deposit_coefficient,
+		ctx,
 	)?;
 
-	// Set things required for transaction to succeed
-	add_collateral_inputs(&mut tx_builder, collaterals, payment_key_hash)?;
-	tx_builder
-		.calc_script_data_hash(&convert_cost_models(&protocol_parameters.plutus_cost_models))?;
-	tx_builder.add_required_signer(payment_key_hash);
-	tx_builder.add_inputs_from_and_change_with_collateral_return(
-		&ogmios_utxos_to_csl(payment_utxos)?,
-		CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
-		&ChangeConfig::new(&key_hash_address(payment_key_hash, network)),
-		&protocol_parameters.collateral_percentage.into(),
-	)?;
-	tx_builder.build_tx()
+	tx_builder.set_required_fields_and_build(ctx)
 }
 
 #[cfg(test)]
 mod tests {
 	use super::{mint_permissioned_candidates_token_tx, update_permissioned_candidates_tx};
-	use crate::{csl::empty_asset_name, plutus_script::PlutusScript};
+	use crate::{
+		csl::{empty_asset_name, TransactionContext},
+		plutus_script::PlutusScript,
+	};
 	use cardano_serialization_lib::{
-		Address, ExUnits, Int, LanguageKind, NetworkIdKind, PlutusData, PlutusList, RedeemerTag,
-		ScriptHash,
+		Address, Ed25519KeyHash, ExUnits, Int, LanguageKind, NetworkIdKind, PlutusData,
+		RedeemerTag, ScriptHash,
 	};
 	use hex_literal::hex;
 	use ogmios_client::{
@@ -110,26 +75,14 @@ mod tests {
 	};
 
 	#[test]
-	fn mint_permissioned_candidaes_token_regression_test() {
+	fn mint_permissioned_canddiates_token_tx_regression_test() {
 		// We know the expected values were obtained with the correct code
-		let collateral_value = 7000000;
-		let payment_value = 4000000;
-		let collateral = make_utxo(7u8, 0, collateral_value, &payment_addr());
-		let payment_utxo = make_utxo(4u8, 1, payment_value, &payment_addr());
-		let pub_key_hash = hex!("035ef86f1622172816bb9e916aea86903b2c8d32c728ad5c9b9472be").into();
 		let ex_units = ExUnits::new(&10000u32.into(), &200u32.into());
 
 		let tx = mint_permissioned_candidates_token_tx(
-			&PlutusScript {
-				bytes: hex!("4d4c01000022223212001375a009").to_vec(),
-				language: LanguageKind::PlutusV2,
-			},
+			&test_script(),
 			&permissioned_candidates(),
-			&pub_key_hash,
-			&[collateral],
-			&[payment_utxo],
-			NetworkIdKind::Testnet,
-			&protocol_parameters(),
+			&test_tx_context(),
 			ex_units.clone(),
 		)
 		.unwrap();
@@ -158,7 +111,7 @@ mod tests {
 			.unwrap()
 			.checked_add(&body.fee())
 			.unwrap();
-		assert_eq!(coins_sum, payment_value.into());
+		assert_eq!(coins_sum, payment_utxo().value.lovelace.into());
 		let token_policy_id =
 			ScriptHash::from(hex!("6fdad2bafb138ef29280dc1bacb7d468fdc7bc3e93966a6edf0022a0"));
 		assert_eq!(
@@ -169,9 +122,7 @@ mod tests {
 				.get_asset(&token_policy_id, &empty_asset_name(),),
 			1u64.into()
 		);
-		let expected_plutus_data =
-			permissioned_candidates_to_plutus_data(&permissioned_candidates());
-		assert_eq!(script_output.plutus_data().unwrap(), expected_plutus_data);
+		assert_eq!(script_output.plutus_data().unwrap(), expected_plutus_data());
 		// This token is minted in the transaction
 		let mint = body.mint().unwrap();
 		assert_eq!(
@@ -202,19 +153,14 @@ mod tests {
 		let total_collateral = body.total_collateral().unwrap();
 		assert_eq!(
 			collateral_return.amount().coin().checked_add(&total_collateral).unwrap(),
-			collateral_value.into()
+			collateral_utxo().value.lovelace.into()
 		);
 	}
 
 	#[test]
 	fn update_d_param_tx_regression_test() {
 		// We know the expected values were obtained with the correct code
-		let collateral_value = 7000000;
-		let payment_value = 4000000;
 		let script_utxo_lovelace = 1060260;
-		let collateral = make_utxo(7u8, 0, collateral_value, &payment_addr());
-		let payment_utxo = make_utxo(4u8, 1, payment_value, &payment_addr());
-
 		let script_utxo = OgmiosUtxo {
 			transaction: OgmiosTx { id: [15; 32] },
 			index: 0,
@@ -231,21 +177,13 @@ mod tests {
 			..Default::default()
 		};
 
-		let pub_key_hash = hex!("035ef86f1622172816bb9e916aea86903b2c8d32c728ad5c9b9472be").into();
 		let ex_units = ExUnits::new(&10000u32.into(), &200u32.into());
 
 		let tx = update_permissioned_candidates_tx(
-			&PlutusScript {
-				bytes: hex!("4d4c01000022223212001375a009").to_vec(),
-				language: LanguageKind::PlutusV2,
-			},
+			&test_script(),
 			&permissioned_candidates(),
-			&pub_key_hash,
 			&script_utxo,
-			&[collateral],
-			&[payment_utxo],
-			NetworkIdKind::Testnet,
-			&protocol_parameters(),
+			&test_tx_context(),
 			ex_units.clone(),
 		)
 		.unwrap();
@@ -279,7 +217,7 @@ mod tests {
 			.unwrap()
 			.checked_add(&body.fee())
 			.unwrap();
-		assert_eq!(coins_sum, (payment_value + script_utxo_lovelace).into());
+		assert_eq!(coins_sum, (payment_utxo().value.lovelace + script_utxo_lovelace).into());
 		assert_eq!(
 			script_output
 				.amount()
@@ -288,9 +226,7 @@ mod tests {
 				.get_asset(&token_policy_id().into(), &empty_asset_name(),),
 			1u64.into()
 		);
-		let expected_plutus_data =
-			permissioned_candidates_to_plutus_data(&permissioned_candidates());
-		assert_eq!(script_output.plutus_data().unwrap(), expected_plutus_data);
+		assert_eq!(script_output.plutus_data().unwrap(), expected_plutus_data());
 		// No token is minted in the transaction
 		assert!(body.mint().is_none());
 		// Spend redeemer is set
@@ -313,8 +249,51 @@ mod tests {
 		let total_collateral = body.total_collateral().unwrap();
 		assert_eq!(
 			collateral_return.amount().coin().checked_add(&total_collateral).unwrap(),
-			collateral_value.into()
+			collateral_utxo().value.lovelace.into()
 		);
+	}
+
+	fn test_tx_context() -> TransactionContext {
+		TransactionContext {
+			payment_key_hash: payment_key_hash(),
+			collaterals: vec![collateral_utxo()],
+			payment_utxos: vec![payment_utxo()],
+			network: NetworkIdKind::Testnet,
+			protocol_parameters: protocol_parameters(),
+		}
+	}
+
+	fn test_script() -> PlutusScript {
+		PlutusScript {
+			bytes: hex!("4d4c01000022223212001375a009").to_vec(),
+			language: LanguageKind::PlutusV2,
+		}
+	}
+
+	fn payment_key_hash() -> Ed25519KeyHash {
+		hex!("035ef86f1622172816bb9e916aea86903b2c8d32c728ad5c9b9472be").into()
+	}
+
+	fn collateral_utxo() -> OgmiosUtxo {
+		make_utxo(7u8, 0, 7000000, &payment_addr())
+	}
+
+	fn payment_utxo() -> OgmiosUtxo {
+		make_utxo(4u8, 1, 4000000, &payment_addr())
+	}
+
+	fn validator_addr() -> Address {
+		Address::from_bech32("addr_test1wpha4546lvfcau5jsrwpht9h6350m3au86fev6nwmuqz9gqer2ung")
+			.unwrap()
+	}
+
+	fn payment_addr() -> Address {
+		Address::from_bech32("addr_test1vqp4a7r0zc3pw2qkhw0fz6h2s6grktydxtrj3t2unw2890sfgt0kq")
+			.unwrap()
+	}
+
+	fn token_policy_id() -> [u8; 28] {
+		hex!("6fdad2bafb138ef29280dc1bacb7d468fdc7bc3e93966a6edf0022a0")
 	}
 
 	fn permissioned_candidates() -> Vec<PermissionedCandidateData> {
@@ -346,18 +325,8 @@ mod tests {
 		]
 	}
 
-	fn validator_addr() -> Address {
-		Address::from_bech32("addr_test1wpha4546lvfcau5jsrwpht9h6350m3au86fev6nwmuqz9gqer2ung")
-			.unwrap()
-	}
-
-	fn payment_addr() -> Address {
-		Address::from_bech32("addr_test1vqp4a7r0zc3pw2qkhw0fz6h2s6grktydxtrj3t2unw2890sfgt0kq")
-			.unwrap()
-	}
-
-	fn token_policy_id() -> [u8; 28] {
-		hex!("6fdad2bafb138ef29280dc1bacb7d468fdc7bc3e93966a6edf0022a0")
+	fn expected_plutus_data() -> PlutusData {
+		permissioned_candidates_to_plutus_data(&permissioned_candidates())
 	}
 
 	fn protocol_parameters() -> ProtocolParametersResponse {
