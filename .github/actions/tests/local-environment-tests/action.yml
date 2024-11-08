@@ -46,6 +46,7 @@ runs:
       run: |
         mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli
         mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node
+        cp E2E-tests/* dev/local-environment/configurations/tests/e2e-tests/
         cd dev/local-environment
         bash setup.sh --non-interactive --overrides --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ inputs.image }} --tests
         docker compose up -d
