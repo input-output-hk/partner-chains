@@ -11,7 +11,7 @@ class CardanoCli:
         self.run_command = RunnerFactory.get_runner(cardano_cli.ssh, cardano_cli.shell)
 
     def query_tip(self) -> int:
-        cmd = f"{self.cli} query tip {self.network}"
+        cmd = f"{self.cli} latest query tip {self.network}"
         result = self.run_command.run(cmd)
         return json.loads(result.stdout)
 
@@ -28,7 +28,7 @@ class CardanoCli:
         return self.query_tip()["syncProgress"]
 
     def get_utxos(self, addr):
-        cmd = f"{self.cli} query utxo --address {addr} {self.network} --out-file /dev/stdout"
+        cmd = f"{self.cli} latest query utxo --address {addr} {self.network} --out-file /dev/stdout"
         result = self.run_command.run(cmd)
         if result.stderr:
             logger.error(result.stderr)
@@ -60,9 +60,9 @@ class CardanoCli:
     def get_stake_pool_id(self, cold_vkey_file, cold_vkey=None):
         logger.info("Getting Stake Pool Id")
         if cold_vkey:
-            cmd = f'{self.cli} stake-pool id --stake-pool-verification-key {cold_vkey} --output-format "hex"'
+            cmd = f'{self.cli} latest stake-pool id --stake-pool-verification-key {cold_vkey} --output-format "hex"'
         else:
-            cmd = f'{self.cli} stake-pool id --cold-verification-key-file {cold_vkey_file} --output-format "hex"'
+            cmd = f'{self.cli} latest stake-pool id --cold-verification-key-file {cold_vkey_file} --output-format "hex"'
         result = self.run_command.run(cmd)
         if result.stderr:
             logger.error(result.stderr)
@@ -72,7 +72,7 @@ class CardanoCli:
 
     def get_stake_snapshot_of_pool(self, pool_id):
         logger.info("Getting pool's stake distribution")
-        cmd = f'{self.cli} query stake-snapshot {self.network} --stake-pool-id {pool_id}'
+        cmd = f'{self.cli} latest query stake-snapshot {self.network} --stake-pool-id {pool_id}'
         result = self.run_command.run(cmd)
         if result.stderr:
             logger.error(result.stderr)
