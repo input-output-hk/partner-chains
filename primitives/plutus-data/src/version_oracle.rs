@@ -19,7 +19,7 @@ use cardano_serialization_lib::{BigInt, PlutusData, PlutusList};
 #[derive(Clone, Debug, PartialEq)]
 pub struct VersionOracleDatum {
 	pub version_oracle: u32,
-	pub currency_symbol: Vec<u8>,
+	pub currency_symbol: [u8; 28],
 }
 
 impl TryFrom<PlutusData> for VersionOracleDatum {
@@ -31,13 +31,13 @@ impl TryFrom<PlutusData> for VersionOracleDatum {
 			.and_then(|items| {
 				Some(VersionOracleDatum {
 					version_oracle: items.get(0).as_u32()?,
-					currency_symbol: items.get(1).as_bytes()?.into(),
+					currency_symbol: items.get(1).as_bytes()?.try_into().ok()?,
 				})
 			})
 			.ok_or_else(|| DataDecodingError {
 				datum: datum.clone(),
 				to: "VersionOracleDatum".into(),
-				msg: "Expected [u32, [u8]]".into(),
+				msg: "Expected [u32, [u8;32]]".into(),
 			})
 	}
 }
@@ -47,7 +47,7 @@ impl From<VersionOracleDatum> for PlutusData {
 		PlutusData::new_list(&{
 			let mut list = PlutusList::new();
 			list.add(&PlutusData::new_integer(&BigInt::from(datum.version_oracle)));
-			list.add(&PlutusData::new_bytes(datum.currency_symbol));
+			list.add(&PlutusData::new_bytes(datum.currency_symbol.to_vec()));
 			list
 		})
 	}
@@ -69,8 +69,7 @@ mod tests {
 
 		let expected_datum = VersionOracleDatum {
 			version_oracle: 32,
-			currency_symbol: hex!("e50a076eed80e645499abc26a5b33b61bef32f8cb1ab29b1ffcc1b88")
-				.into(),
+			currency_symbol: hex!("e50a076eed80e645499abc26a5b33b61bef32f8cb1ab29b1ffcc1b88"),
 		};
 
 		assert_eq!(VersionOracleDatum::try_from(plutus_data).unwrap(), expected_datum)
@@ -80,8 +79,7 @@ mod tests {
 	fn encoding() {
 		let datum = VersionOracleDatum {
 			version_oracle: 32,
-			currency_symbol: hex!("e50a076eed80e645499abc26a5b33b61bef32f8cb1ab29b1ffcc1b88")
-				.into(),
+			currency_symbol: hex!("e50a076eed80e645499abc26a5b33b61bef32f8cb1ab29b1ffcc1b88"),
 		};
 
 		let expected_plutus_data = test_plutus_data!({"list": [
