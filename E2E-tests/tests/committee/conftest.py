@@ -1,8 +1,9 @@
 import logging
 from config.api_config import ApiConfig
 from pytest import fixture, skip
-from sqlalchemy import select, func
+from sqlalchemy import select, func, text
 from sqlalchemy.orm import Session, aliased
+from contextlib import contextmanager
 from src.blockchain_api import BlockchainApi
 from src.db.models import Candidates, PermissionedCandidates, StakeDistributionCommittee
 from src.partner_chain_rpc import DParam
@@ -282,6 +283,15 @@ def get_candidate_participation(update_committee_attendance, db: Session, config
     return _inner
 
 
+@contextmanager
+def db_lock(db: Session, lock_name: str):
+    try:
+        db.execute(text(f"SELECT pg_advisory_lock(hashtext('{lock_name}'))"))
+        yield
+    finally:
+        db.execute(text(f"SELECT pg_advisory_unlock(hashtext('{lock_name}'))"))
+
+
 @fixture
 def update_db_with_active_candidates(db: Session, api: BlockchainApi) -> int:
     """
@@ -290,46 +300,48 @@ def update_db_with_active_candidates(db: Session, api: BlockchainApi) -> int:
     """
 
     def _inner(mc_epoch):
-        logging.debug(f"Updating db with active candidates for MC epoch {mc_epoch}.")
-        query = select(StakeDistributionCommittee).where(StakeDistributionCommittee.mc_epoch == mc_epoch)
-        candidates = db.scalars(query).all()
-        if candidates:
-            # TODO: permissioned are known upfront, but trustless are not so we might need to update them
-            logging.debug(f"Some entries already exist in db for MC epoch {mc_epoch}. Skipping update.")
-            return
+        lock_name = f"update_db_with_active_candidates_{mc_epoch}"
+        with db_lock(db, lock_name):
+            logging.debug(f"Updating db with active candidates for MC epoch {mc_epoch}.")
+            query = select(StakeDistributionCommittee).where(StakeDistributionCommittee.mc_epoch == mc_epoch)
+            candidates = db.scalars(query).all()
+            if candidates:
+                # TODO: permissioned are known upfront, but trustless are not so we might need to update them
+                logging.debug(f"Some entries already exist in db for MC epoch {mc_epoch}. Skipping update.")
+                return
 
-        d_param = api.get_d_param(mc_epoch)
-        permissioned_candidates_number = d_param.permissioned_candidates_number
-        trustless_candidates_number = d_param.trustless_candidates_number
+            d_param = api.get_d_param(mc_epoch)
+            permissioned_candidates_number = d_param.permissioned_candidates_number
+            trustless_candidates_number = d_param.trustless_candidates_number
 
-        if permissioned_candidates_number > 0:
-            permissioned_candidates = api.get_permissioned_candidates(mc_epoch, valid_only=True)
-            for candidate in permissioned_candidates:
-                candidate_db = StakeDistributionCommittee()
-                candidate_db.mc_epoch = mc_epoch
-                candidate_db.mc_vkey = "permissioned"
-                candidate_db.sc_pub_key = candidate["sidechainPublicKey"]
-                candidate_db.pc_pub_key = candidate["sidechainPublicKey"]
-                db.add(candidate_db)
-
-        if trustless_candidates_number > 0:
-            active_candidates = api.get_trustless_candidates(mc_epoch, valid_only=True)
-            for active_candidate in active_candidates:
-                # This will be more than 1 if the same SPO registered multiple PC keys
-                for active_spo in active_candidates[active_candidate]:
+            if permissioned_candidates_number > 0:
+                permissioned_candidates = api.get_permissioned_candidates(mc_epoch, valid_only=True)
+                for candidate in permissioned_candidates:
                     candidate_db = StakeDistributionCommittee()
                     candidate_db.mc_epoch = mc_epoch
-                    candidate_db.mc_vkey = active_candidate[2:]
-                    candidate_db.pool_id = api.cardano_cli.get_stake_pool_id(
-                        cold_vkey_file=None, cold_vkey=active_candidate[2:]
-                    )
-                    candidate_db.stake_delegation = api.cardano_cli.get_stake_snapshot_of_pool(candidate_db.pool_id)[
-                        "pools"
-                    ][candidate_db.pool_id]["stakeGo"]
-                    candidate_db.pc_pub_key = active_spo["sidechainPubKey"]
+                    candidate_db.mc_vkey = "permissioned"
+                    candidate_db.sc_pub_key = candidate["sidechainPublicKey"]
+                    candidate_db.pc_pub_key = candidate["sidechainPublicKey"]
                     db.add(candidate_db)
 
-        db.commit()
+            if trustless_candidates_number > 0:
+                active_candidates = api.get_trustless_candidates(mc_epoch, valid_only=True)
+                for active_candidate in active_candidates:
+                    # This will be more than 1 if the same SPO registered multiple PC keys
+                    for active_spo in active_candidates[active_candidate]:
+                        candidate_db = StakeDistributionCommittee()
+                        candidate_db.mc_epoch = mc_epoch
+                        candidate_db.mc_vkey = active_candidate[2:]
+                        candidate_db.pool_id = api.cardano_cli.get_stake_pool_id(
+                            cold_vkey_file=None, cold_vkey=active_candidate[2:]
+                        )
+                        candidate_db.stake_delegation = api.cardano_cli.get_stake_snapshot_of_pool(
+                            candidate_db.pool_id
+                        )["pools"][candidate_db.pool_id]["stakeGo"]
+                        candidate_db.pc_pub_key = active_spo["sidechainPubKey"]
+                        db.add(candidate_db)
+
+            db.commit()
 
     return _inner
 
