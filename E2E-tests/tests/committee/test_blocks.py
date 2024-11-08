@@ -11,6 +11,7 @@ COMMITTEE_REPETITIONS_IN_PC_EPOCH = 2
 @mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
 @mark.test_key('ETCM-7019')
 @mark.block_reward
+@mark.block_author
 def test_block_beneficiaries_match_committee_seats(
     api: BlockchainApi, config: ApiConfig, get_pc_epoch_committee, pc_epoch, get_pc_epoch_blocks
 ):
@@ -72,6 +73,7 @@ def test_block_beneficiaries_match_committee_seats(
 @mark.skip_on_new_chain
 @mark.test_key('ETCM-7020')
 @mark.committee_rotation
+@mark.block_author
 def test_block_authors_match_committee_seats(
     api: BlockchainApi,
     config: ApiConfig,
