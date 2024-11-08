@@ -145,14 +145,14 @@ chainspecs:
   FROM +setup
   DO +INSTALL
 
-  COPY envs/devnet/.envrc envs/devnet/.envrc
-  COPY envs/devnet/addresses.json envs/devnet/addresses.json
+  COPY dev/envs/devnet/.envrc envs/devnet/.envrc
+  COPY dev/envs/devnet/addresses.json envs/devnet/addresses.json
 
-  COPY envs/staging-preview/.envrc envs/staging-preview/.envrc
-  COPY envs/staging-preview/addresses.json envs/staging-preview/addresses.json
+  COPY dev/envs/staging-preview/.envrc envs/staging-preview/.envrc
+  COPY dev/envs/staging-preview/addresses.json envs/staging-preview/addresses.json
 
-  COPY envs/staging-preprod/.envrc envs/staging-preprod/.envrc
-  COPY envs/staging-preprod/addresses.json envs/staging-preprod/addresses.json
+  COPY dev/envs/staging-preprod/.envrc envs/staging-preprod/.envrc
+  COPY dev/envs/staging-preprod/addresses.json envs/staging-preprod/addresses.json
 
   RUN . ./envs/devnet/.envrc \
       && partner-chains-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
