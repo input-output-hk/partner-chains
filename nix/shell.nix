@@ -120,7 +120,7 @@
               name = "pc-contracts-cli";
               help = "CLI to interact with Partner Chains Smart Contracts";
               command = ''
-                ${self'.packages.pc-contracts-cli}/bin/pc-contracts-cli $@
+                ${self'.packages.pc-contracts-cli}/dist/pc-contracts-cli $@
               '';
             }
           ];
@@ -144,7 +144,7 @@
           name = "pc-contracts-cli";
           help = "CLI to interact with Partner Chains Smart Contracts";
           command = ''
-            ${self'.packages.pc-contracts-cli}/bin/pc-contracts-cli $@
+            ${self'.packages.pc-contracts-cli}/dist/pc-contracts-cli $@
           '';
         }
       ];
