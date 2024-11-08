@@ -14,7 +14,7 @@ use partner_chains_plutus_data::d_param::DParamDatum;
 use sidechain_domain::DParameter;
 
 #[allow(clippy::too_many_arguments)]
-fn mint_token_tx(
+fn mint_d_param_token_tx(
 	validator: &PlutusScript,
 	d_parameter: &DParameter,
 	payment_key_hash: &Ed25519KeyHash,
@@ -55,7 +55,7 @@ fn d_parameter_to_plutus_data(d_parameter: &DParameter) -> PlutusData {
 
 #[cfg(test)]
 mod tests {
-	use super::mint_token_tx;
+	use super::mint_d_param_token_tx;
 	use crate::{csl::empty_asset_name, plutus_script::PlutusScript};
 	use cardano_serialization_lib::{
 		Address, ExUnits, Int, LanguageKind, NetworkIdKind, PlutusData, PlutusList, RedeemerTag,
@@ -69,7 +69,7 @@ mod tests {
 	use sidechain_domain::DParameter;
 
 	#[test]
-	fn mint_token_regression_test() {
+	fn mint_d_param_token_tx_regression_test() {
 		// We know the expected values were obtained with the correct code
 		let payment_addr =
 			Address::from_bech32("addr_test1vqp4a7r0zc3pw2qkhw0fz6h2s6grktydxtrj3t2unw2890sfgt0kq")
@@ -83,7 +83,7 @@ mod tests {
 		let pub_key_hash = hex!("035ef86f1622172816bb9e916aea86903b2c8d32c728ad5c9b9472be").into();
 		let ex_units = ExUnits::new(&10000u32.into(), &200u32.into());
 
-		let tx = mint_token_tx(
+		let tx = mint_d_param_token_tx(
 			&PlutusScript {
 				bytes: hex!("4d4c01000022223212001375a009").to_vec(),
 				language: LanguageKind::PlutusV2,
