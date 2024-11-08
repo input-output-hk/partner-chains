@@ -95,25 +95,28 @@ runs:
           echo "Running tests via docker exec"
           docker exec tests bash -c "
             cd /e2e-tests &&
+            python -m venv venv &&
             source venv/bin/activate &&
+            pip install -r requirements.txt &&
             $pytest_cmd
           "
         else
           echo "Running tests locally"
           cd e2e-tests
+          python -m venv venv
           source venv/bin/activate
+          pip install -r requirements.txt
           eval "$pytest_cmd"
         fi
 
-    - name: Copy .report.json if run with docker exec
+    - name: Copy test results
       if: ${{ inputs.local-environment == 'true' }}
+      shell: bash
       run: |
         echo "Copy test results from docker container"
         mkdir -p e2e-tests
         docker cp tests:/e2e-tests/.report.json e2e-tests/.report.json
-      shell: bash
-        echo "Running tests..."
-        eval "$pytest_cmd"
+
     - name: Upload test results
       uses: actions/upload-artifact@v4
       with:
