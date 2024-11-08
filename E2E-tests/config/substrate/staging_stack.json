@@ -4,7 +4,7 @@
         "ogmios_port": 1337,
         "kupo_host": "staging-preview-services-service.staging-preview.svc.cluster.local",
         "kupo_port": 1442,
-        "tools_host": "10.0.12.108",
+        "tools_host": "10.0.12.126",
         "ssh": {
             "username": "root",
             "host": "${stack_config[tools_host]}",
@@ -18,7 +18,7 @@
                 "ssh": "${stack_config[ssh]}"
             },
             "sidechain_main_cli": {
-                "cli": "/tools/partner-chains-smart-contracts-6.1.0/sidechain-cli",
+                "cli": "/tools/partner-chains-smart-contracts-6.2.2/pc-contracts-cli",
                 "ssh": "${stack_config[ssh]}"
             },
             "generate_signatures_cli": {
