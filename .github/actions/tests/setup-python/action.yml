@@ -12,7 +12,7 @@ runs:
         K8S_SA_TOKEN: ${{ env.K8S_SA_TOKEN }}
     - name: Setup python and dependencies
       run: |
-        cd E2E-tests
+        cd e2e-tests
         sudo apt update
         sudo apt install -y software-properties-common
         sudo add-apt-repository ppa:deadsnakes/ppa
