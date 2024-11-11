@@ -388,9 +388,10 @@ choose_deployment_option() {
     echo "1) Include only Cardano testnet"
     echo "2) Include Cardano testnet with Kupo and Ogmios"
     echo "3) Include Cardano testnet, Kupo, Ogmios, DB-Sync and Postgres"
-    read -p "Enter your choice (1/2/3): " deployment_option
+    echo "4) Deploy a single Partner Chains node with network_mode: "host" for external connections (adjust partner-chains-external-node.txt before running this script)"
+    read -p "Enter your choice (1/2/3/4): " deployment_option
   else
-    deployment_option=4
+    deployment_option=0
   fi
   echo
 }
@@ -424,7 +425,17 @@ create_docker_compose() {
         cat ./modules/db-sync.txt >> docker-compose.yml
         cat ./modules/postgres.txt >> docker-compose.yml
         ;;
-      *)
+      4)
+        echo -e "Including all services with external partner chain node.\n"
+        cat ./modules/cardano.txt >> docker-compose.yml
+        cat ./modules/ogmios.txt >> docker-compose.yml
+        cat ./modules/kupo.txt >> docker-compose.yml
+        cat ./modules/db-sync.txt >> docker-compose.yml
+        cat ./modules/postgres.txt >> docker-compose.yml
+        cat ./modules/partner-chains-external-node.txt >> docker-compose.yml
+        cat ./modules/pc-contracts-cli.txt >> docker-compose.yml
+        ;;
+      0)
         echo -e "Including all services.\n"
         cat ./modules/cardano.txt >> docker-compose.yml
         cat ./modules/ogmios.txt >> docker-compose.yml
@@ -433,6 +444,10 @@ create_docker_compose() {
         cat ./modules/postgres.txt >> docker-compose.yml
         cat ./modules/partner-chains-nodes.txt >> docker-compose.yml
         cat ./modules/pc-contracts-cli.txt >> docker-compose.yml
+        ;;
+      *)
+        echo "Invalid deployment option selected."
+        exit 1
         ;;
     esac
     if [ "$tests_enabled" == "yes" ]; then
@@ -445,12 +460,11 @@ create_docker_compose() {
 
 parse_arguments() {
     non_interactive=0
-    deployment_option=4
+    deployment_option=0
     postgres_password=""
     overrides="no"
-    tests_enabled="no" 
+    tests_enabled="no"
 
-    # Parse arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -n|--non-interactive)
@@ -458,11 +472,11 @@ parse_arguments() {
                 shift
                 ;;
             -d|--deployment-option)
-                if [[ -n "$2" && "$2" =~ ^[123]$ ]]; then
+                if [[ -n "$2" && "$2" =~ ^[1-4]$ ]]; then
                     deployment_option="$2"
                     shift 2
                 else
-                    echo "Error: Invalid deployment option '$2'. Valid options are 1, 2, or 3."
+                    echo "Error: Invalid deployment option '$2'. Valid options are 1, 2, 3, or 4."
                     exit 1
                 fi
                 ;;
@@ -497,7 +511,7 @@ parse_arguments() {
                 echo "Usage: $0 [OPTION]..."
                 echo "Initialize and configure the Docker environment."
                 echo "  -n, --non-interactive     Run with no interactive prompts and accept sensible default configuration settings."
-                echo "  -d, --deployment-option   Specify one of the custom deployment options (1, 2, or 3)."
+                echo "  -d, --deployment-option   Specify one of the custom deployment options (1, 2, 3, or 4)."
                 echo "  -p, --postgres-password   Set a specific password for PostgreSQL (overrides automatic generation)."
                 echo "  -o, --overrides           Enable custom artifact overrides from artifacts in ./configurations/pc-contracts-cli/ (PC and PCSC)."
                 echo "  -i, --node-image          Specify a custom Partner Chains Node image."
@@ -516,15 +530,13 @@ parse_arguments() {
         esac
     done
 
-    # Export variables for use in other functions
     export non_interactive
     export deployment_option
     export postgres_password
     export overrides
     export node_image
-    export tests_enabled 
+    export tests_enabled
 }
-
 
 main() {
     parse_arguments "$@"
@@ -547,7 +559,7 @@ main() {
         configure_artifact_overrides "interactive"
         resource_limits_setup
 
-        if [ "$deployment_option" -eq 4 ]; then
+        if [ "$deployment_option" -eq 0 ]; then
             choose_deployment_option
         fi
 
