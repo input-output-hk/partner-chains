@@ -12,15 +12,17 @@ use sidechain_domain::PermissionedCandidateData;
 #[allow(clippy::too_many_arguments)]
 fn mint_permissioned_candidates_token_tx(
 	validator: &PlutusScript,
+	policy: &PlutusScript,
 	permissioned_candidates: &[PermissionedCandidateData],
 	ctx: &TransactionContext,
 	mint_witness_ex_units: ExUnits,
 ) -> Result<Transaction, JsError> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	// The essence of transaction: mint token and set output with it
-	tx_builder.add_mint_one_script_token(validator, mint_witness_ex_units)?;
+	tx_builder.add_mint_one_script_token(policy, mint_witness_ex_units)?;
 	tx_builder.add_output_with_one_script_token(
 		validator,
+		policy,
 		&permissioned_candidates_to_plutus_data(permissioned_candidates),
 		ctx,
 	)?;
@@ -31,6 +33,7 @@ fn mint_permissioned_candidates_token_tx(
 #[allow(clippy::too_many_arguments)]
 fn update_permissioned_candidates_tx(
 	validator: &PlutusScript,
+	policy: &PlutusScript,
 	permissioned_candidates: &[PermissionedCandidateData],
 	script_utxo: &OgmiosUtxo,
 	ctx: &TransactionContext,
@@ -40,11 +43,12 @@ fn update_permissioned_candidates_tx(
 	let mut tx_builder = TransactionBuilder::new(&config);
 
 	let mut inputs = TxInputsBuilder::new();
-	inputs.add_script_utxo_input(script_utxo, validator, validator_redeemer_ex_units)?;
+	inputs.add_script_utxo_input(script_utxo, policy, validator_redeemer_ex_units)?;
 	tx_builder.set_inputs(&inputs);
 
 	tx_builder.add_output_with_one_script_token(
 		validator,
+		policy,
 		&permissioned_candidates_to_plutus_data(permissioned_candidates),
 		ctx,
 	)?;
@@ -60,7 +64,7 @@ mod tests {
 		test_values::*,
 	};
 	use cardano_serialization_lib::{
-		Address, ExUnits, Int, NetworkIdKind, PlutusData, RedeemerTag, ScriptHash,
+		Address, ExUnits, Int, NetworkIdKind, PlutusData, RedeemerTag,
 	};
 	use hex_literal::hex;
 	use ogmios_client::types::{Asset as OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
@@ -75,7 +79,8 @@ mod tests {
 		let ex_units = ExUnits::new(&10000u32.into(), &200u32.into());
 
 		let tx = mint_permissioned_candidates_token_tx(
-			&test_script(),
+			&test_validator(),
+			&test_policy(),
 			&permissioned_candidates(),
 			&test_tx_context(),
 			ex_units.clone(),
@@ -114,21 +119,19 @@ mod tests {
 			coins_sum,
 			(greater_payment_utxo().value.lovelace + lesser_payment_utxo().value.lovelace).into()
 		);
-		let token_policy_id =
-			ScriptHash::from(hex!("6fdad2bafb138ef29280dc1bacb7d468fdc7bc3e93966a6edf0022a0"));
 		assert_eq!(
 			script_output
 				.amount()
 				.multiasset()
 				.unwrap()
-				.get_asset(&token_policy_id, &empty_asset_name(),),
+				.get_asset(&token_policy_id().into(), &empty_asset_name(),),
 			1u64.into()
 		);
 		assert_eq!(script_output.plutus_data().unwrap(), expected_plutus_data());
 		// This token is minted in the transaction
 		let mint = body.mint().unwrap();
 		assert_eq!(
-			mint.get(&token_policy_id)
+			mint.get(&token_policy_id().into())
 				.unwrap()
 				.get(0)
 				.unwrap()
@@ -182,14 +185,14 @@ mod tests {
 		let ex_units = ExUnits::new(&10000u32.into(), &200u32.into());
 
 		let tx = update_permissioned_candidates_tx(
-			&test_script(),
+			&test_validator(),
+			&test_policy(),
 			&permissioned_candidates(),
 			&script_utxo,
 			&test_tx_context(),
 			ex_units.clone(),
 		)
 		.unwrap();
-
 		let body = tx.body();
 		let inputs = body.inputs();
 		// Script input goes to inputs
@@ -285,7 +288,7 @@ mod tests {
 	}
 
 	fn token_policy_id() -> [u8; 28] {
-		hex!("6fdad2bafb138ef29280dc1bacb7d468fdc7bc3e93966a6edf0022a0")
+		hex!("f14241393964259a53ca546af364e7f5688ca5aaa35f1e0da0f951b2")
 	}
 
 	fn permissioned_candidates() -> Vec<PermissionedCandidateData> {

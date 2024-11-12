@@ -227,7 +227,8 @@ pub(crate) trait TransactionBuilderExt {
 	/// Creates output on the script address with datum that has 1 token with asset for the script and it has given datum attached.
 	fn add_output_with_one_script_token(
 		&mut self,
-		script: &PlutusScript,
+		validator: &PlutusScript,
+		policy: &PlutusScript,
 		datum: &PlutusData,
 		ctx: &TransactionContext,
 	) -> Result<(), JsError>;
@@ -258,18 +259,19 @@ pub(crate) trait TransactionBuilderExt {
 impl TransactionBuilderExt for TransactionBuilder {
 	fn add_output_with_one_script_token(
 		&mut self,
-		script: &PlutusScript,
+		validator: &PlutusScript,
+		policy: &PlutusScript,
 		datum: &PlutusData,
 		ctx: &TransactionContext,
 	) -> Result<(), JsError> {
 		let amount_builder = TransactionOutputBuilder::new()
-			.with_address(&script.address(ctx.network))
+			.with_address(&validator.address(ctx.network))
 			.with_plutus_data(&datum)
 			.next()?;
 		let mut ma = MultiAsset::new();
 		let mut assets = Assets::new();
 		assets.insert(&empty_asset_name(), &1u64.into());
-		ma.insert(&script.script_hash().into(), &assets);
+		ma.insert(&policy.script_hash().into(), &assets);
 		let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
 		let min_ada = MinOutputAdaCalculator::new(
 			&output,
@@ -622,12 +624,17 @@ mod prop_tests {
 		let mut tx_builder = TransactionBuilder::new(&get_builder_config(&ctx).unwrap());
 		tx_builder
 			.add_mint_one_script_token(
-				&test_script(),
+				&test_policy(),
 				ExUnits::new(&BigNum::zero(), &BigNum::zero()),
 			)
 			.unwrap();
 		tx_builder
-			.add_output_with_one_script_token(&test_script(), &test_plutus_data(), &ctx)
+			.add_output_with_one_script_token(
+				&test_validator(),
+				&test_policy(),
+				&test_plutus_data(),
+				&ctx,
+			)
 			.unwrap();
 
 		let tx = tx_builder.balance_update_and_build(&ctx).unwrap();
@@ -718,7 +725,7 @@ mod prop_tests {
 	proptest! {
 		#[test]
 		fn balance_tx_with_minted_token(payment_utxos in arb_payment_utxos(10)
-			.prop_filter("Inputs total lovelace too low", |utxos| sum_lovelace(&utxos) > 3000000)) {
+			.prop_filter("Inputs total lovelace too low", |utxos| sum_lovelace(&utxos) > 4000000)) {
 			multi_asset_transaction_balancing_test(payment_utxos)
 		}
 
