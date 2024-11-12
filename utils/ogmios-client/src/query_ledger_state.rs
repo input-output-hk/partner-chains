@@ -79,6 +79,8 @@ pub struct ProtocolParametersResponse {
 	pub min_utxo_deposit_coefficient: u64,
 	pub script_execution_prices: ScriptExecutionPrices,
 	pub plutus_cost_models: PlutusCostModels,
+	pub max_collateral_inputs: u32,
+	pub collateral_percentage: u32,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]

@@ -69,6 +69,20 @@ impl PlutusScript {
 	pub fn policy_id(&self) -> PolicyId {
 		PolicyId(self.script_hash())
 	}
+
+	pub fn to_csl(&self) -> cardano_serialization_lib::PlutusScript {
+		match self.language {
+			LanguageKind::PlutusV1 => {
+				cardano_serialization_lib::PlutusScript::new(self.bytes.clone())
+			},
+			LanguageKind::PlutusV2 => {
+				cardano_serialization_lib::PlutusScript::new_v2(self.bytes.clone())
+			},
+			LanguageKind::PlutusV3 => {
+				cardano_serialization_lib::PlutusScript::new_v3(self.bytes.clone())
+			},
+		}
+	}
 }
 
 #[cfg(test)]

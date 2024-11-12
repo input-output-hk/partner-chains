@@ -1,5 +1,5 @@
 use crate::{DataDecodingError, DecodingResult, PlutusDataExtensions};
-use cardano_serialization_lib::PlutusData;
+use cardano_serialization_lib::{PlutusData, PlutusList};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum DParamDatum {
@@ -22,6 +22,13 @@ impl From<DParamDatum> for sidechain_domain::DParameter {
 			},
 		}
 	}
+}
+
+pub fn d_parameter_to_plutus_data(d_param: &sidechain_domain::DParameter) -> PlutusData {
+	let mut list = PlutusList::new();
+	list.add(&PlutusData::new_integer(&d_param.num_permissioned_candidates.into()));
+	list.add(&PlutusData::new_integer(&d_param.num_registered_candidates.into()));
+	PlutusData::new_list(&list)
 }
 
 /// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.
@@ -61,5 +68,17 @@ mod tests {
 			DParamDatum::V0 { num_permissioned_candidates: 1, num_registered_candidates: 2 };
 
 		assert_eq!(DParamDatum::try_from(plutus_data).unwrap(), expected_datum)
+	}
+
+	#[test]
+	fn domain_d_param_to_csl() {
+		let d_param = sidechain_domain::DParameter {
+			num_permissioned_candidates: 1,
+			num_registered_candidates: 2,
+		};
+
+		let expected_plutus_data = test_plutus_data!({"list": [{"int": 1}, {"int": 2}]});
+
+		assert_eq!(d_parameter_to_plutus_data(&d_param), expected_plutus_data)
 	}
 }

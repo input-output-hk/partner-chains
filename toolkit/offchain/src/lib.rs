@@ -4,6 +4,10 @@
 pub mod collateral_selection;
 /// General purpose code for interacting with cardano-serialization-lib
 pub mod csl;
+/// Supports D-Parameter upsert
+pub mod d_param;
+/// Supports Permissioned Candidates upsert
+pub mod permissioned_candidates;
 /// Utilities for handling Plutus script data
 mod plutus_script;
 /// Provides synthetized scripts data

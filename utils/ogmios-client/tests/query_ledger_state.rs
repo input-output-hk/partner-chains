@@ -135,6 +135,8 @@ async fn protocol_parameters() {
 			  "lovelace": 500000000
 			}
 		  },
+		  "collateralPercentage": 150,
+		  "maxCollateralInputs": 3,
 		  "minUtxoDepositCoefficient": 4310,
 		  "plutusCostModels": {
 			"plutus:v1": [
@@ -181,6 +183,8 @@ async fn protocol_parameters() {
 				plutus_v2: vec![43053543, 10],
 				plutus_v3: vec![-900, 166917843],
 			},
+			max_collateral_inputs: 3,
+			collateral_percentage: 150,
 		}
 	);
 }
