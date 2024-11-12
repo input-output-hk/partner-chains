@@ -76,9 +76,9 @@ fn language_kind_to_u8(language: LanguageKind) -> u8 {
 /// Creates a CSL [`TransactionBuilderConfig`] for given [`ProtocolParametersResponse`].
 /// This function is not unit-testable because [`TransactionBuilderConfig`] has no public getters.
 pub(crate) fn get_builder_config(
-	protocol_parameters: &TransactionContext,
+	context: &TransactionContext,
 ) -> Result<TransactionBuilderConfig, JsError> {
-	let protocol_parameters = &protocol_parameters.protocol_parameters;
+	let protocol_parameters = &context.protocol_parameters;
 	TransactionBuilderConfigBuilder::new()
 		.fee_algo(&linear_fee(protocol_parameters))
 		.pool_deposit(&convert_value(&protocol_parameters.stake_pool_deposit)?.coin())
@@ -210,7 +210,7 @@ pub(crate) trait TransactionBuilderExt {
 	fn add_collateral_inputs(&mut self, ctx: &TransactionContext) -> Result<(), JsError>;
 
 	/// Adds minting of 1 token (with empty asset name) for the given script
-	fn add_mint_script_token(
+	fn add_mint_one_script_token(
 		&mut self,
 		script: &PlutusScript,
 		ex_units: ExUnits,
@@ -257,7 +257,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 		Ok(())
 	}
 
-	fn add_mint_script_token(
+	fn add_mint_one_script_token(
 		&mut self,
 		script: &PlutusScript,
 		ex_units: ExUnits,

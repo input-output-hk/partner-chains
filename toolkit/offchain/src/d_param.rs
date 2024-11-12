@@ -18,7 +18,7 @@ fn mint_d_param_token_tx(
 ) -> Result<Transaction, JsError> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	// The essence of transaction: mint token and set output with it
-	tx_builder.add_mint_script_token(validator, mint_witness_ex_units)?;
+	tx_builder.add_mint_one_script_token(validator, mint_witness_ex_units)?;
 	tx_builder.add_output_with_one_script_token(
 		validator,
 		&d_parameter_to_plutus_data(d_parameter),
