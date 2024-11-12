@@ -6,6 +6,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* Update ogmios to v6.9.0
+
 ## Removed
 
 ## Fixed
@@ -36,8 +38,6 @@ on how to create these new data sources see `node/src/main_chain_follower.rs` fi
 * `partner-chains-cli` does not use `cardano-cli` to derive address not to query utxos.
 * `partner-chains-cli` does not use `pc-contracts-cli` in `prepare-configuration` wizard, it uses `partner-chains-cardano-offchain` crate instead.
 * Update cardano-node to 10.1.2
-* Bumped `partner-chains-smart-contracts` version to v6.2.2
-* Added d-parameter and permissioned-candidates transaction building (not wired in)
 
 ## Added
 * Added `new_if_pallet_present` factory for the native token inherent data provider,
