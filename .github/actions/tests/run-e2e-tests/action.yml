@@ -95,17 +95,13 @@ runs:
           echo "Running tests via docker exec"
           docker exec tests bash -c "
             cd /e2e-tests &&
-            python -m venv venv &&
             source venv/bin/activate &&
-            pip install -r requirements.txt &&
             $pytest_cmd
           "
         else
           echo "Running tests locally"
           cd e2e-tests
-          python -m venv venv
           source venv/bin/activate
-          pip install -r requirements.txt
           eval "$pytest_cmd"
         fi
 

@@ -40,19 +40,18 @@ build:
 
 test:
   # ATTENTION! +test target saves exit code to a file and returns success even when tests fail.
+  # TODO TRY FINALLY
+  # More info: https://docs.earthly.dev/docs/guides/best-practices#future-saving-an-artifact-even-if-the-build-fails
   FROM +build
   ARG CI_RUN
   IF [ "$CI_RUN" = "true" ]
-    RUN --secret AWS_SECRET_ACCESS_KEY --secret AWS_ACCESS_KEY_ID --secret AWS_SESSION_TOKEN --no-cache --ssh \
-        (eval $pytest_cmd --ci-run; echo $? > .exitcode)
+    RUN --secret AWS_SECRET_ACCESS_KEY --secret AWS_ACCESS_KEY_ID --secret AWS_SESSION_TOKEN --no-cache --ssh eval $pytest_cmd --ci-run || true
   ELSE
-    RUN --mount=type=secret,target=/root/.aws/credentials,id=aws --no-cache --ssh \
-        (eval $pytest_cmd; echo $? > .exitcode)
+    RUN --mount=type=secret,target=/root/.aws/credentials,id=aws --no-cache --ssh eval $pytest_cmd || true
   END
 
 test-artifacts:
   FROM +test
-  SAVE ARTIFACT .exitcode
   SAVE ARTIFACT .report.json
   SAVE ARTIFACT debug.log
   SAVE ARTIFACT junit_report.xml
@@ -60,7 +59,6 @@ test-artifacts:
 
 report:
   FROM alpine:3.19
-  COPY +test-artifacts/.exitcode .
   COPY +test-artifacts/.report.json .
   COPY +test-artifacts/debug.log .
   COPY +test-artifacts/ctrf-report.json .
@@ -110,4 +108,4 @@ report:
     RUN echo ERROR: Unknown error.
   END
   RUN echo $summary
-  
+  RUN exit $exitcode
