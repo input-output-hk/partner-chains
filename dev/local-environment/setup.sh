@@ -4,7 +4,7 @@ PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains
 CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.1.2"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.5.0.2"
 KUPO_IMAGE="cardanosolutions/kupo:v2.9.0"
-OGMIOS_IMAGE="cardanosolutions/ogmios:v6.8.0"
+OGMIOS_IMAGE="cardanosolutions/ogmios:v6.9.0"
 POSTGRES_IMAGE="postgres:15.3"
 SIDECHAIN_MAIN_CLI_IMAGE="node:22-bookworm"
 TESTS_IMAGE="python:3.10-slim"
@@ -448,7 +448,7 @@ parse_arguments() {
     deployment_option=4
     postgres_password=""
     overrides="no"
-    tests_enabled="no" 
+    tests_enabled="no"
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -522,7 +522,7 @@ parse_arguments() {
     export postgres_password
     export overrides
     export node_image
-    export tests_enabled 
+    export tests_enabled
 }
 
 

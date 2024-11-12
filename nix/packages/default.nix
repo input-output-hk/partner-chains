@@ -13,7 +13,7 @@
     ...
   }: let
     kupoVersion = "2.9.0";
-    ogmiosVersion = "6.8.0";
+    ogmiosVersion = "6.9.0";
 
     flake-compat = import inputs.flake-compat;
     cardanoPackages = (flake-compat { src = inputs.cardano-node; }).defaultNix.packages.${system};

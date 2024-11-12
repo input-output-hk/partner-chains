@@ -6,7 +6,7 @@ A registered block producer is a Cardano stake pool operator (SPO) that desires 
 1. Become a Cardano SPO
 2. Install partner chains dependencies
     1. Cardano node v10.1.2
-        1. Ogmios v6.8.0
+        1. Ogmios v6.9.0
         2. Kupo - v2.9.0
         3. Cardano DB Sync v13.5.0.2 (PostgreSQL v15.3)
     2. Download the partner chain node v1.0
@@ -46,7 +46,7 @@ Be mindful of file paths in the instruction sets below. Your `cardano-node` may 
 
 ---
 
-### 2.1.1 Ogmios - v6.8.0
+### 2.1.1 Ogmios - v6.9.0
 
 Ogmios is a lightweight bridge interface for `cardano-node`. It offers a WebSocket API that enables local clients to speak to the main chain via JSON/RPC.
 

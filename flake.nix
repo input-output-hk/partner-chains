@@ -40,7 +40,7 @@
       flake = false;
     };
     ogmios = {
-      url = "github:CardanoSolutions/ogmios/v6.8.0";
+      url = "github:CardanoSolutions/ogmios/v6.9.0";
       flake = false;
     };
     configurations = {
