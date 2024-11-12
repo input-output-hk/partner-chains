@@ -2,7 +2,7 @@
 let
   ogmiosLinux = fetchzip {
     url = "https://github.com/CardanoSolutions/ogmios/releases/download/v${version}/ogmios-v${version}-x86_64-linux.zip";
-    hash = "sha256-PM3tB6YdFsXRxGptDuxOvLke0m/08ySy4oV1WfIu//g=";
+    hash = "sha256-i6J3ybpxdZvd/e7ktIW4Dvf7Crobs60jwEYHfFxnsJw=";
     stripRoot = false;
     version = "${version}";
     name = "ogmios-${version}";
