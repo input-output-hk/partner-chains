@@ -6,6 +6,16 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+## Removed
+
+## Fixed
+
+## Added
+
+# v1.3.0
+
+## Changed
+
 * Added 'deregister' command to partner-chains-cli.
 * Made `MainChainScripts` in the native token pallet optional. If they are not set, the inherent data
 provider will not query the main chain state or produce inherent data at all.
@@ -28,10 +38,6 @@ on how to create these new data sources see `node/src/main_chain_follower.rs` fi
 * Update cardano-node to 10.1.2
 * Bumped `partner-chains-smart-contracts` version to v6.2.2
 * Added d-parameter and permissioned-candidates transaction building (not wired in)
-
-## Removed
-
-## Fixed
 
 ## Added
 * Added `new_if_pallet_present` factory for the native token inherent data provider,
