@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["PermissionedCandidateDatums"],"struct":["PermissionedCandidateDatumV0"]};
+window.SIDEBAR_ITEMS = {"enum":["PermissionedCandidateDatums"],"fn":["permissioned_candidates_to_plutus_data"],"struct":["PermissionedCandidateDatumV0"]};

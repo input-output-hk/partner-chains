@@ -113,6 +113,61 @@
 <a href="#113" id="113">113</a>
 <a href="#114" id="114">114</a>
 <a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>cardano_serialization_lib::{PlutusData, PlutusList};
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 
@@ -136,6 +191,20 @@
 	<span class="kw">fn </span>try_from(datum: PlutusData) -&gt; DecodingResult&lt;<span class="self">Self</span>&gt; {
 		<span class="prelude-val">Ok</span>(PermissionedCandidateDatums::V0(decode_legacy_permissioned_candidates_datums(datum)<span class="question-mark">?</span>))
 	}
+}
+
+<span class="kw">pub fn </span>permissioned_candidates_to_plutus_data(
+	candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
+) -&gt; PlutusData {
+	<span class="kw">let </span><span class="kw-2">mut </span>list = PlutusList::new();
+	<span class="kw">for </span>candidate <span class="kw">in </span>candidates {
+		<span class="kw">let </span><span class="kw-2">mut </span>candidate_datum = PlutusList::new();
+		candidate_datum.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(candidate.sidechain_public_key.<span class="number">0</span>.clone()));
+		candidate_datum.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(candidate.aura_public_key.<span class="number">0</span>.clone()));
+		candidate_datum.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(candidate.grandpa_public_key.<span class="number">0</span>.clone()));
+		list.add(<span class="kw-2">&amp;</span>PlutusData::new_list(<span class="kw-2">&amp;</span>candidate_datum));
+	}
+	PlutusData::new_list(<span class="kw-2">&amp;</span>list)
 }
 
 <span class="doccomment">/// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.
@@ -226,6 +295,47 @@
 		]);
 
 		<span class="macro">assert_eq!</span>(PermissionedCandidateDatums::try_from(plutus_data).unwrap(), expected_datum)
+	}
+
+	<span class="attr">#[test]
+	</span><span class="kw">fn </span>permissioned_candidates_to_datum() {
+		<span class="kw">let </span>input = <span class="macro">vec!</span>[
+			PermissionedCandidateData {
+				sidechain_public_key: SidechainPublicKey(
+					<span class="macro">hex!</span>(<span class="string">"cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"</span>).into(),
+				),
+				aura_public_key: AuraPublicKey(
+					<span class="macro">hex!</span>(<span class="string">"bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"</span>).into(),
+				),
+				grandpa_public_key: GrandpaPublicKey(
+					<span class="macro">hex!</span>(<span class="string">"9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"</span>).into(),
+				),
+			},
+			PermissionedCandidateData {
+				sidechain_public_key: SidechainPublicKey(
+					<span class="macro">hex!</span>(<span class="string">"79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"</span>).into(),
+				),
+				aura_public_key: AuraPublicKey(
+					<span class="macro">hex!</span>(<span class="string">"56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"</span>).into(),
+				),
+				grandpa_public_key: GrandpaPublicKey(
+					<span class="macro">hex!</span>(<span class="string">"7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"</span>).into(),
+				),
+			},
+		];
+		<span class="kw">let </span>expected_plutus_data = <span class="macro">test_plutus_data!</span>({<span class="string">"list"</span>: [
+			{<span class="string">"list"</span>: [
+				{<span class="string">"bytes"</span>: <span class="string">"cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"</span>},
+				{<span class="string">"bytes"</span>: <span class="string">"bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"</span>},
+				{<span class="string">"bytes"</span>: <span class="string">"9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"</span>}
+			]},
+			{<span class="string">"list"</span>: [
+				{<span class="string">"bytes"</span>: <span class="string">"79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"</span>},
+				{<span class="string">"bytes"</span>: <span class="string">"56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"</span>},
+				{<span class="string">"bytes"</span>: <span class="string">"7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"</span>}
+			]}
+		]});
+		<span class="macro">assert_eq!</span>(permissioned_candidates_to_plutus_data(<span class="kw-2">&amp;</span>input), expected_plutus_data)
 	}
 }
 </code></pre></div></section></main></body></html>

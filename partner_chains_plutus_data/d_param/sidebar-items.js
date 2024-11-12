@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["DParamDatum"]};
+window.SIDEBAR_ITEMS = {"enum":["DParamDatum"],"fn":["d_parameter_to_plutus_data"]};

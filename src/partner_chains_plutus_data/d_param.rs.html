@@ -63,8 +63,27 @@
 <a href="#63" id="63">63</a>
 <a href="#64" id="64">64</a>
 <a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a>
+<a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{DataDecodingError, DecodingResult, PlutusDataExtensions};
-<span class="kw">use </span>cardano_serialization_lib::PlutusData;
+<span class="kw">use </span>cardano_serialization_lib::{PlutusData, PlutusList};
 
 <span class="attr">#[derive(Clone, Debug, PartialEq)]
 </span><span class="kw">pub enum </span>DParamDatum {
@@ -87,6 +106,13 @@
 			},
 		}
 	}
+}
+
+<span class="kw">pub fn </span>d_parameter_to_plutus_data(d_param: <span class="kw-2">&amp;</span>sidechain_domain::DParameter) -&gt; PlutusData {
+	<span class="kw">let </span><span class="kw-2">mut </span>list = PlutusList::new();
+	list.add(<span class="kw-2">&amp;</span>PlutusData::new_integer(<span class="kw-2">&amp;</span>d_param.num_permissioned_candidates.into()));
+	list.add(<span class="kw-2">&amp;</span>PlutusData::new_integer(<span class="kw-2">&amp;</span>d_param.num_registered_candidates.into()));
+	PlutusData::new_list(<span class="kw-2">&amp;</span>list)
 }
 
 <span class="doccomment">/// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.
@@ -126,6 +152,18 @@
 			DParamDatum::V0 { num_permissioned_candidates: <span class="number">1</span>, num_registered_candidates: <span class="number">2 </span>};
 
 		<span class="macro">assert_eq!</span>(DParamDatum::try_from(plutus_data).unwrap(), expected_datum)
+	}
+
+	<span class="attr">#[test]
+	</span><span class="kw">fn </span>domain_d_param_to_csl() {
+		<span class="kw">let </span>d_param = sidechain_domain::DParameter {
+			num_permissioned_candidates: <span class="number">1</span>,
+			num_registered_candidates: <span class="number">2</span>,
+		};
+
+		<span class="kw">let </span>expected_plutus_data = <span class="macro">test_plutus_data!</span>({<span class="string">"list"</span>: [{<span class="string">"int"</span>: <span class="number">1</span>}, {<span class="string">"int"</span>: <span class="number">2</span>}]});
+
+		<span class="macro">assert_eq!</span>(d_parameter_to_plutus_data(<span class="kw-2">&amp;</span>d_param), expected_plutus_data)
 	}
 }
 </code></pre></div></section></main></body></html>
