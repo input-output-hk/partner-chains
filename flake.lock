@@ -189,16 +189,16 @@
     "ogmios": {
       "flake": false,
       "locked": {
-        "lastModified": 1725966092,
-        "narHash": "sha256-c+5SikopKEylvxIZfp36qmdgElkTR7n95YCtLUZ78Q4=",
+        "lastModified": 1726935492,
+        "narHash": "sha256-JBKxY0tzd0bilfLE7b6wZX9Cn1tIQGNGHCvy18QLvUA=",
         "owner": "CardanoSolutions",
         "repo": "ogmios",
-        "rev": "9619c8ff017844f6c0f1dcad4f6bcf9f24f12ebd",
+        "rev": "1b137e49cb158684908dd5933e42de8fe5ab853b",
         "type": "github"
       },
       "original": {
         "owner": "CardanoSolutions",
-        "ref": "v6.6.2",
+        "ref": "v6.8.0",
         "repo": "ogmios",
         "type": "github"
       }
@@ -271,16 +271,16 @@
     "smart-contracts": {
       "flake": false,
       "locked": {
-        "lastModified": 1729167752,
-        "narHash": "sha256-CLjah5IoQyaPEhV6bhNlktdmPHFwAe7RbXJYr8eFSOY=",
+        "lastModified": 1730297011,
+        "narHash": "sha256-BjJrzMvkeXYCuqHZhIMRL+IkjcTAFxDaCL9wtlGyghA=",
         "owner": "input-output-hk",
         "repo": "partner-chains-smart-contracts",
-        "rev": "fda17bf3857200ce63f31decd2bda5ceeed50f63",
+        "rev": "87a1d421fc77198c1af24d07c3e3d9aa1c2f410d",
         "type": "github"
       },
       "original": {
         "owner": "input-output-hk",
-        "ref": "v6.2.1",
+        "ref": "v6.2.2",
         "repo": "partner-chains-smart-contracts",
         "type": "github"
       }

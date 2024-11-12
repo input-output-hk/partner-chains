@@ -1,6 +1,6 @@
 [package]
 name = "selection"
-version = "1.2.0"
+version = "1.3.0"
 description = "Selection logic for sidechain validators"
 edition = "2021"
 publish = false

@@ -98,7 +98,7 @@
             name = "cardano-cli";
             help = "CLI v10.1.2 that is used in partner-chains dependency stack";
             # This command has some eval because of IFD
-            command = "${self'.packages.cardano-cli}/bin/cardano-cli latest $@";
+            command = "${self'.packages.cardano-cli}/bin/cardano-cli $@";
           }
         ];
       }
@@ -120,7 +120,7 @@
               name = "pc-contracts-cli";
               help = "CLI to interact with Partner Chains Smart Contracts";
               command = ''
-                ${self'.packages.pc-contracts-cli}/bin/pc-contracts-cli $@
+                ${self'.packages.pc-contracts-cli}/dist/pc-contracts-cli $@
               '';
             }
           ];
@@ -144,7 +144,7 @@
           name = "pc-contracts-cli";
           help = "CLI to interact with Partner Chains Smart Contracts";
           command = ''
-            ${self'.packages.pc-contracts-cli}/bin/pc-contracts-cli $@
+            ${self'.packages.pc-contracts-cli}/dist/pc-contracts-cli $@
           '';
         }
       ];
