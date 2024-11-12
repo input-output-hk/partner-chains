@@ -43,9 +43,11 @@ test:
   FROM +build
   ARG CI_RUN
   IF [ "$CI_RUN" = "true" ]
-    RUN --secret AWS_SECRET_ACCESS_KEY --secret AWS_ACCESS_KEY_ID --secret AWS_SESSION_TOKEN --no-cache --ssh eval $pytest_cmd --ci-run || echo $? > .exitcode
+    RUN --secret AWS_SECRET_ACCESS_KEY --secret AWS_ACCESS_KEY_ID --secret AWS_SESSION_TOKEN --no-cache --ssh \
+        (eval $pytest_cmd --ci-run; echo $? > .exitcode)
   ELSE
-    RUN --mount=type=secret,target=/root/.aws/credentials,id=aws --no-cache --ssh eval $pytest_cmd || echo $? > .exitcode
+    RUN --mount=type=secret,target=/root/.aws/credentials,id=aws --no-cache --ssh \
+        (eval $pytest_cmd; echo $? > .exitcode)
   END
 
 test-artifacts:
