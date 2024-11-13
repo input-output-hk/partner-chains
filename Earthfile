@@ -121,7 +121,7 @@ mock:
   RUN mkdir -p $SRCS \
       && touch $LIBS \
       && for crate in $SRCS; do if [ ! -f $crate/lib.rs ]; then touch $crate/main.rs; fi; done \
-      && touch node/src/lib.rs
+      && touch node/node/src/lib.rs
 
 fetch-deps:
   FROM +mock
