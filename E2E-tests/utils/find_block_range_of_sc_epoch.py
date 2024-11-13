@@ -10,23 +10,23 @@ from config.api_config import ApiConfig
 from src.substrate_api import SubstrateApi
 from pc_block_finder import BlockFinder
 
-STAGING_NODE = 'http://10.0.11.16:9933'  # staging
+STAGING_PREVIEW_NODE = 'http://10.0.11.16:9933'  # staging
 DEVNET_NODE = 'http://10.0.10.13:30023'  # devnet charlie
 LOCAL_NODE = 'http://localhost:9945'  # local alice
 
-STAGING_CONFIG = 'config/substrate/staging_nodes.json'
+STAGING_PREVIEW_CONFIG = 'config/substrate/staging_preview_nodes.json'
 DEVNET_CONFIG = 'config/substrate/devnet_nodes.json'
 LOCAL_CONFIG = 'config/substrate/local_nodes.json'
 
-STAGING_STACK = 'config/substrate/staging_stack.json'
+STAGING_PREVIEW_STACK = 'config/substrate/staging_preview_stack.json'
 DEVNET_STACK = 'config/substrate/devnet_stack.json'
 LOCAL_STACK = 'config/substrate/local_stack.json'
 
-TARGET_ENV = 'staging'
-if TARGET_ENV == 'staging':
-    NODE = STAGING_NODE
-    CONFIG = STAGING_CONFIG
-    STACK = STAGING_STACK
+TARGET_ENV = 'staging-preview'
+if TARGET_ENV == 'staging-preview':
+    NODE = STAGING_PREVIEW_NODE
+    CONFIG = STAGING_PREVIEW_CONFIG
+    STACK = STAGING_PREVIEW_STACK
 elif TARGET_ENV == 'devnet':
     NODE = DEVNET_NODE
     CONFIG = DEVNET_CONFIG
@@ -49,13 +49,17 @@ default_config = OmegaConf.create(config_json)
 nodes_config = OmegaConf.create(nodes_config_json)
 stack_config = OmegaConf.create(stack_config_json)
 schema = OmegaConf.structured(ApiConfig)
-config: ApiConfig = OmegaConf.merge(schema, default_config, nodes_config, stack_config)
+config: ApiConfig = OmegaConf.merge(
+    schema, default_config, nodes_config, stack_config)
 
 
 def main():
 
-    partner_chain_rpc_instance = PartnerChainRpc(NODE)  # Create an instance of PartnerChainRpc
-    current_status = partner_chain_rpc_instance.partner_chain_get_status().result
+    # Create an instance of PartnerChainRpc
+    partner_chain_rpc_instance = PartnerChainRpc(NODE)
+    current_status = (
+        partner_chain_rpc_instance.partner_chain_get_status().result
+    )
     api = SubstrateApi(config, None, None)
     blockCalculator = BlockFinder(api, config)
 

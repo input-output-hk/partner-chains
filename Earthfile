@@ -157,9 +157,9 @@ chainspecs:
   RUN . ./envs/devnet/.envrc \
       && partner-chains-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
   RUN . ./envs/staging-preview/.envrc \
-      && partner-chains-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
+      && partner-chains-node build-spec --chain staging-preview --disable-default-bootnode > staging_preview_chain_spec.json
   RUN . ./envs/staging-preprod/.envrc \
-      && partner-chains-node build-spec --chain staging --disable-default-bootnode > staging_preprod_chain_spec.json
+      && partner-chains-node build-spec --chain staging-preprod --disable-default-bootnode > staging_preprod_chain_spec.json
 
   SAVE ARTIFACT devnet_chain_spec.json AS LOCAL devnet_chain_spec.json
   SAVE ARTIFACT staging_preview_chain_spec.json AS LOCAL staging_preview_chain_spec.json

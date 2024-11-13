@@ -10,7 +10,7 @@
             "host": "${stack_config[tools_host]}",
             "port": 22,
             "host_keys_path": "config/substrate/known_hosts",
-            "private_key_path": "secrets/substrate/staging/keys/ssh-key.yaml.decrypted"
+            "private_key_path": "secrets/substrate/staging-preview/keys/ssh-key.yaml.decrypted"
         },
         "tools": {
             "cardano_cli": {

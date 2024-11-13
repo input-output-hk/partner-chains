@@ -1,4 +1,4 @@
-name: Staging Partner Chains Tests
+name: Staging on Preview Partner Chains Tests
 
 on:
   schedule:
@@ -43,7 +43,7 @@ jobs:
     if: github.event.pull_request.draft == false
 
     env:
-      TEST_ENVIRONMENT: staging
+      TEST_ENVIRONMENT: staging-preview
 
     steps:
     - name: set ssh-agent to binary host
@@ -63,7 +63,7 @@ jobs:
         ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'v1.2.0' }}
 
     - name: Set deployment_version as env variable
-      run: echo "DEPLOYMENT_VERSION=$(jq -r .deployment_version ./config/substrate/staging_nodes.json)" >> $GITHUB_ENV
+      run: echo "DEPLOYMENT_VERSION=$(jq -r .deployment_version ./config/substrate/staging_preview_nodes.json)" >> $GITHUB_ENV
 
     - name: Set XRay variables
       run: |

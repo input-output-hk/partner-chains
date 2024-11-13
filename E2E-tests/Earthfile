@@ -6,8 +6,8 @@ COPY --dir ./config ./secrets ./tests ./src ./requirements.txt ./pytest.ini ./to
 
 ARG AWS_DEFAULT_REGION=eu-central-1
 ARG blockchain=substrate
-ARG env=staging
-ARG stack=staging
+ARG env=staging-preview
+ARG stack=staging-preview
 ARG log_level=info
 ARG keyword=test_
 ARG markers

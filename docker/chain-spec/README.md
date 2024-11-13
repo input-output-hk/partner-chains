@@ -39,7 +39,7 @@ docker run -it \
   -v ${PWD}/target/chain-spec:/build/target \
   -v /tmp/cargo-home:/cargo-home \
   -e CARGO_HOME=/cargo-home \
-  -e CHAIN=staging \
+  -e CHAIN=staging-preview \
   -e CHAIN_ID=12345 \
   -e GOVERNANCE_AUTHORITY=00000000000000000000000000000000000000000000000000000000 \
   -e SPEC_FILE_UID=$(id -u) \
@@ -71,10 +71,10 @@ Cache cargo home for faster builds.
 -e CARGO_HOME=/cargo-home \
 ```
 
-Set an env variable to specify which chain to use. Currently, we only have "local" (devnet) and "staging". These IDs are used in `build-spec` command and pattern matched in `command.rs`, `SubstrateCli impl` `load_spec` function.
+Set an env variable to specify which chain to use. Currently, we only have "local" (devnet), "staging-preview" and "staging-preprod". These IDs are used in `build-spec` command and pattern matched in `command.rs`, `SubstrateCli impl` `load_spec` function.
 Omit, if `--chain` option should not be used for the build-spec command.
 ```
--e CHAIN=staging \
+-e CHAIN=staging-preview \
 ```
 
 Set the genesis utxo and governance authority chain parameters.

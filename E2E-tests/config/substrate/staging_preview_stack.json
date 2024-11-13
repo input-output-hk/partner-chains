@@ -1,0 +1,34 @@
+{
+    "stack_config": {
+        "ogmios_host": "staging-preview-services-service.staging-preview.svc.cluster.local",
+        "ogmios_port": 1337,
+        "kupo_host": "staging-preview-services-service.staging-preview.svc.cluster.local",
+        "kupo_port": 1442,
+        "tools_host": "10.0.12.108",
+        "ssh": {
+            "username": "root",
+            "host": "${stack_config[tools_host]}",
+            "port": 22,
+            "host_keys_path": "config/substrate/known_hosts",
+            "private_key_path": "secrets/substrate/staging-preview/keys/ssh-key.yaml.decrypted"
+        },
+        "tools": {
+            "cardano_cli": {
+                "cli": "export CARDANO_NODE_SOCKET_PATH=/ipc/node.socket && /tools/cardano-cli",
+                "ssh": "${stack_config[ssh]}"
+            },
+            "sidechain_main_cli": {
+                "cli": "/tools/partner-chains-smart-contracts-6.1.0/sidechain-cli",
+                "ssh": "${stack_config[ssh]}"
+            },
+            "generate_signatures_cli": {
+                "cli": "/tools/partner-chains-node",
+                "ssh": "${stack_config[ssh]}"
+            },
+            "bech32": {
+                "cli": "/tools/bech32",
+                "ssh": "${stack_config[ssh]}"
+            }
+        }
+    }
+}
