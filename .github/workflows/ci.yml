@@ -24,7 +24,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2  # Fetch enough history to compare changes
+          fetch-depth: 2
       - name: Determine Modified Files
         id: filter
         run: |
@@ -38,7 +38,6 @@ jobs:
           echo "Modified files:"
           echo "$MODIFIED_FILES"
 
-          # Define the whitelisted paths
           WHITELISTED_PATHS=(
             "dev/*"
             "docs/*"
