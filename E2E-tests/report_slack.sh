@@ -56,6 +56,18 @@ else
     job_status="failed"
 fi
 
+fields="{
+    \"type\": \"mrkdwn\",
+    \"text\": \"<$job_url|CI job>\"
+}"
+
+if [ -n "$xray_id" ]; then
+    fields+=",{
+        \"type\": \"mrkdwn\",
+        \"text\": \"<$xray_exec_url|Xray report>\"
+    }"
+fi
+
 echo Posting slack notification: "$msg"
 json_data="{
     \"username\": \"partner-chains-tests bot\",
@@ -77,14 +89,7 @@ json_data="{
                         \"text\": \"$msg\"
                     },
                     \"fields\": [
-                        {
-                            \"type\": \"mrkdwn\",
-                            \"text\": \"<$job_url|CI job>\"
-                        },
-                        {
-                            \"type\": \"mrkdwn\",
-                            \"text\": \"<$xray_exec_url|Xray report>\"
-                        }
+                        $fields
                     ]
                 }
             ],

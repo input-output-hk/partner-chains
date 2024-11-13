@@ -250,13 +250,10 @@ def load_config(blockchain, nodes_env, stack_env, ci_run, node_host, node_port, 
     # command line arguments that override config values
     if node_host:
         config.nodes_config.node.host = node_host
-
     if node_port:
         config.nodes_config.node.port = node_port
-
     if deployment_mc_epoch:
         config.deployment_mc_epoch = deployment_mc_epoch
-
     if init_timestamp:
         config.main_chain.init_timestamp = init_timestamp
 
