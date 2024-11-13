@@ -16,9 +16,56 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  path-filter:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (github.event.pull_request.merged || github.event.action != 'closed'))
+    outputs:
+      skip_jobs: ${{ steps.filter.outputs.skip_jobs }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Fetch enough history to compare changes
+      - name: Determine Modified Files
+        id: filter
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin ${{ github.base_ref }} --depth=1
+            MODIFIED_FILES=$(git diff --name-only HEAD origin/${{ github.base_ref }})
+          else
+            MODIFIED_FILES=$(git diff --name-only HEAD^ HEAD)
+          fi
+
+          echo "Modified files:"
+          echo "$MODIFIED_FILES"
+
+          # Define the whitelisted paths
+          WHITELISTED_PATHS=(
+            "dev/*"
+            "docs/*"
+          )
+
+          SKIP_JOBS="true"
+
+          for FILE in $MODIFIED_FILES; do
+            MATCHED="false"
+            for PATTERN in "${WHITELISTED_PATHS[@]}"; do
+              if [[ "$FILE" == $PATTERN ]]; then
+                MATCHED="true"
+                break
+              fi
+            done
+            if [[ "$MATCHED" == "false" ]]; then
+              SKIP_JOBS="false"
+              break
+            fi
+          done
+
+          echo "skip_jobs=$SKIP_JOBS" >> $GITHUB_OUTPUT
+
+  build:
+    needs: [path-filter]
+    runs-on: ubuntu-latest
+    if: needs.path-filter.outputs.skip_jobs != 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (github.event.pull_request.merged || github.event.action != 'closed')))
     outputs:
       sha: ${{ steps.get_sha.outputs.sha }}
     steps:
@@ -27,7 +74,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Get current commit SHA
+      - name: Get Current Commit SHA
         id: get_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Setup Earthly
@@ -35,33 +82,33 @@ jobs:
         with:
           ssh_key: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
           config_tar: ${{ secrets.EARTHLY_TAR }}
-      - name: Acquire AWS credentials
+      - name: Acquire AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
           aws-region: ${{ env.AWS_REGION }}
-      - name: Login to container registry
+      - name: Login to Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
-      - name: Build and Artifacts and Push Image
+      - name: Build Artifacts and Push Image
         env:
           EARTHLY_CI: true
           EARTHLY_OUTPUT: true
           EARTHLY_PUSH: true
         run: |
           earthly -P +ci --image=${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node
-      - name: Upload partner-chains-cli artifact
+      - name: Upload partner-chains-cli Artifact
         uses: actions/upload-artifact@v4
         with:
           name: partner-chains-cli-artifact
           path: partner-chains-cli-artifact
-      - name: Upload partner-chains-node artifact
+      - name: Upload partner-chains-node Artifact
         uses: actions/upload-artifact@v4
         with:
           name: partner-chains-node-artifact
           path: partner-chains-node-artifact
-      - name: Upload chain spec artifacts
+      - name: Upload Chain Spec Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: chain-specs
@@ -71,16 +118,16 @@ jobs:
             ./staging_preprod_chain_spec.json
 
   local-environment-tests:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
-    needs: build
+    needs: [path-filter, build]
     runs-on: ubuntu-latest
+    if: needs.path-filter.outputs.skip_jobs != 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false))
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Deploy and test against local environment
+      - name: Deploy and Test Against Local Environment
         uses: ./.github/actions/tests/local-environment-tests
         with:
           tag: CI 
@@ -95,23 +142,23 @@ jobs:
           ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
           ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
           TEST_ENVIRONMENT: local
-  
+
   local-environment-tests-alert:
-    needs: local-environment-tests
-    if: always() && needs.local-environment-tests.result != 'skipped'
+    needs: [path-filter, local-environment-tests]
+    if: always() && needs.path-filter.outputs.skip_jobs != 'true' && needs.local-environment-tests.result != 'skipped'
     runs-on: ubuntu-latest
     steps:
-      - name: checkout pc-tests master
+      - name: Checkout pc-tests Master
         uses: actions/checkout@v4
         with:
           repository: input-output-hk/sidechains-tests
           token: ${{ secrets.ACTIONS_PAT }}
           ref: master
-      - name: Download test report
+      - name: Download Test Report
         uses: actions/download-artifact@v4
         with:
           name: test-results
-      - name: Report to slack
+      - name: Report to Slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           JIRA_URL: ${{ secrets.JIRA_URL }}
@@ -124,11 +171,10 @@ jobs:
           ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
         shell: bash
 
-
   deploy-argocd:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
-    needs: build
+    needs: [path-filter, build]
     runs-on: ubuntu-latest
+    if: needs.path-filter.outputs.skip_jobs != 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false))
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -146,10 +192,10 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   argocd-tests:
-    continue-on-error: true
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
-    needs: [build, deploy-argocd]
+    needs: [path-filter, build, deploy-argocd]
     runs-on: eks
+    continue-on-error: true
+    if: needs.path-filter.outputs.skip_jobs != 'true' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false))
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -174,8 +220,9 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   teardown-argocd:
-    needs: [build, argocd-tests]
+    needs: [path-filter, build, argocd-tests]
     runs-on: ubuntu-latest
+    if: needs.path-filter.outputs.skip_jobs != 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -193,30 +240,31 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   devshell-tests:
-    needs: build
+    needs: [path-filter, build]
     strategy:
       matrix:
         os: [nixos, macos]
     runs-on:
       - self-hosted
       - ${{ matrix.os }}
+    if: needs.path-filter.outputs.skip_jobs != 'true'
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Acquire AWS credentials
+      - name: Acquire AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN_ }}
           aws-region: ${{ env.AWS_REGION }}
-      - name: Add signing key for nix
+      - name: Add Signing Key for Nix
         run: echo "${{ secrets.NIX_SIGNING_KEY }}" > "${{ runner.temp }}/nix-key"
-      - name: Run nixci to build/test all outputs
+      - name: Run nixci to Build/Test All Outputs
         run: |
           nix run github:srid/nixci -- -v build -- --fallback > /tmp/outputs
-      - name: Copy nix scopes to nix cache
+      - name: Copy Nix Scopes to Nix Cache
         run: |
           nix-store --stdin -q --deriver < /tmp/outputs | nix-store --stdin -qR --include-outputs \
           | nix copy --stdin --to \
@@ -224,24 +272,40 @@ jobs:
           && rm /tmp/outputs
 
   pre-merge-checks-complete:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
-    needs: [build, local-environment-tests, deploy-argocd, teardown-argocd, devshell-tests]
+    needs: [path-filter, build, local-environment-tests, deploy-argocd, teardown-argocd, devshell-tests]
     runs-on: ubuntu-latest
+    if: always() && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false))
     steps:
-      - name: Pre Merge Checks Complete
-        run: echo "All pre-merge checks have passed. PR is ready to merge."
+      - name: Pre-Merge Checks Status
+        run: |
+          if [ "${{ needs.path-filter.outputs.skip_jobs }}" == "true" ]; then
+            echo "All pre-merge checks have been skipped due to only /dev/ and /docs/ changes. PR is ready to merge."
+          else
+            BUILD_RESULT="${{ needs.build.result }}"
+            LOCAL_TESTS_RESULT="${{ needs.local-environment-tests.result }}"
+            DEPLOY_ARGOCD_RESULT="${{ needs.deploy-argocd.result }}"
+            TEARDOWN_ARGOCD_RESULT="${{ needs.teardown-argocd.result }}"
+            DEV_SHELL_TESTS_RESULT="${{ needs.devshell-tests.result }}"
+
+            if [ "$BUILD_RESULT" == "success" ] && [ "$LOCAL_TESTS_RESULT" == "success" ] && [ "$DEPLOY_ARGOCD_RESULT" == "success" ] && [ "$TEARDOWN_ARGOCD_RESULT" == "success" ] && [ "$DEV_SHELL_TESTS_RESULT" == "success" ]; then
+              echo "All pre-merge checks have passed. PR is ready to merge."
+            else
+              echo "Some pre-merge checks have failed."
+              exit 1
+            fi
+          fi
 
   upload-chain-specs:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-    needs: build
+    needs: [path-filter, build]
     runs-on: eks
+    if: needs.path-filter.outputs.skip_jobs != 'true' && github.event_name == 'pull_request' && github.event.pull_request.merged == true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Upload chain spec artifacts to Kubernetes
+      - name: Upload Chain Spec Artifacts to Kubernetes
         uses: ./.github/actions/deploy/upload-chain-specs
         with:
           sha: ${{ needs.build.outputs.sha }}
@@ -251,9 +315,9 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   deploy-rustdoc:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-    needs: build
+    needs: [path-filter, build]
     runs-on: ubuntu-latest
+    if: needs.path-filter.outputs.skip_jobs != 'true' && github.event_name == 'pull_request' && github.event.pull_request.merged == true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -269,9 +333,9 @@ jobs:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
 
   local-environment-tests-post-merge:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-    needs: build
+    needs: [path-filter, build]
     runs-on: ubuntu-latest
+    if: needs.path-filter.outputs.skip_jobs != 'true' && github.event_name == 'pull_request' && github.event.pull_request.merged == true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -279,7 +343,7 @@ jobs:
           fetch-depth: 0
           # Use the merge commit SHA for post-merge testing
           ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
-      - name: Deploy and test against local environment
+      - name: Deploy and Test Against Local Environment
         uses: ./.github/actions/tests/local-environment-tests
         with:
           tag: CI 
@@ -296,21 +360,21 @@ jobs:
           TEST_ENVIRONMENT: local
 
   local-environment-tests-post-merge-alert:
-    needs: local-environment-tests-post-merge
-    if: always() && needs.local-environment-tests-post-merge.result != 'skipped'
+    needs: [path-filter, local-environment-tests-post-merge]
     runs-on: ubuntu-latest
+    if: always() && needs.path-filter.outputs.skip_jobs != 'true' && needs.local-environment-tests-post-merge.result != 'skipped'
     steps:
-      - name: checkout pc-tests master
+      - name: Checkout pc-tests Master
         uses: actions/checkout@v4
         with:
           repository: input-output-hk/sidechains-tests
           token: ${{ secrets.ACTIONS_PAT }}
           ref: master
-      - name: Download test report
+      - name: Download Test Report
         uses: actions/download-artifact@v4
         with:
           name: test-results
-      - name: Report to slack
+      - name: Report to Slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           JIRA_URL: ${{ secrets.JIRA_URL }}
@@ -324,9 +388,14 @@ jobs:
         shell: bash
 
   post-merge-actions-complete:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-    needs: [deploy-rustdoc, upload-chain-specs, local-environment-tests-post-merge]
+    needs: [path-filter, deploy-rustdoc, upload-chain-specs, local-environment-tests-post-merge]
     runs-on: ubuntu-latest
+    if: always() && github.event_name == 'pull_request' && github.event.pull_request.merged == true
     steps:
-      - name: Post Merge Actions Complete
-        run: echo "All post-merge actions have been successfully completed."
+      - name: Post-Merge Actions Complete
+        run: |
+          if [ "${{ needs.path-filter.outputs.skip_jobs }}" == "true" ]; then
+            echo "Post-merge actions have been skipped due to only /dev/ and /docs/ changes."
+          else
+            echo "All post-merge actions have been successfully completed."
+          fi
