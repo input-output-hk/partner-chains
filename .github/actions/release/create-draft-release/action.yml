@@ -83,7 +83,7 @@ runs:
         tag="${{ inputs.tag }}"
         release_name="${tag}-rc"
         release_body="### Pre-release candidate for version $tag\n\n"
-        release_body+="This is a draft pre-release candidate for release $tag that is undergoing testing. The current testing status is:\n\n"
+        release_body+="This is a draft pre-release candidate for $tag that is undergoing testing. The current testing status is:\n\n"
         release_body+="- [x] Local environment\n"
         release_body+="- [ ] Staging preview environment\n"
         release_body+="- [ ] Staging preprod environment\n\n"
