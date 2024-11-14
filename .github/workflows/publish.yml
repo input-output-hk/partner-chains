@@ -21,8 +21,10 @@ jobs:
   publish-ghcr:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout the Specified Branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Publish to GHCR
         uses: ./.github/actions/images/publish-to-ghcr
