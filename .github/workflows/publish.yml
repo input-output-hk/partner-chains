@@ -1,4 +1,4 @@
-name: Publish the draft release created by cd.yml, and upload GHCR image
+name: "CD: Publish"
 
 on:
   workflow_dispatch:
@@ -27,7 +27,7 @@ jobs:
           ref: ${{ github.ref }}
 
       - name: Publish to GHCR
-        uses: ./.github/actions/images/publish-to-ghcr
+        uses: ./.github/actions/images/publish-ghcr
         with:
           sha: ${{ github.event.inputs.sha }}
           tag: ${{ github.event.inputs.tag }}
