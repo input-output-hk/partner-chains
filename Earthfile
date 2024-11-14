@@ -62,7 +62,7 @@ test:
 fmt:
   FROM +source
   CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN find runtime/src/weights -type f -name '*.rs' -exec cargo fmt -- {} +
+  RUN find node/runtime/src/weights -type f -name '*.rs' -exec cargo fmt -- {} +
   RUN cargo fmt --check
 
 docker:
@@ -121,7 +121,7 @@ mock:
   RUN mkdir -p $SRCS \
       && touch $LIBS \
       && for crate in $SRCS; do if [ ! -f $crate/lib.rs ]; then touch $crate/main.rs; fi; done \
-      && touch node/src/lib.rs
+      && touch node/node/src/lib.rs
 
 fetch-deps:
   FROM +mock

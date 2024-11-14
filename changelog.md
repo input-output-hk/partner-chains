@@ -7,6 +7,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 ## Changed
 
 * Update ogmios to v6.9.0
+* Organized Rust sources into two directories: toolkit and node.
 
 ## Removed
 
