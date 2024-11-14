@@ -1,16 +1,8 @@
-name: Publish the draft release created by cd.yml, and upload GHCR image
+name: Publish the Draft Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      sha:
-        description: 'The SHA of the commit to build'
-        required: true
-        type: string
-      tag:
-        description: 'The tag for the release'
-        required: true
-        type: string
+  repository_dispatch:
+    types: [publish]
 
 permissions:
   id-token: write
@@ -19,35 +11,32 @@ permissions:
 
 jobs:
   build-and-publish-ghcr:
-    permissions:
-      id-token: write
-      contents: write
-      packages: write
+    if: ${{ github.event.client_payload.skip_release != 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Build and Publish to GHCR
         uses: ./.github/actions/images/build-and-publish-ghcr
         with:
-          sha: ${{ inputs.sha }}
-          tag: ${{ inputs.tag }}
+          sha: ${{ github.event.client_payload.sha }}
+          tag: ${{ github.event.client_payload.tag }}
         env:
           GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-release:
-    permissions:
-      id-token: write
-      contents: write
-      packages: write
+    if: ${{ github.event.client_payload.skip_release != 'true' }}
+    needs: build-and-publish-ghcr
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Publish Release
         uses: ./.github/actions/release/publish-draft-release
         with:
-          tag: ${{ inputs.tag }}
+          tag: ${{ github.event.client_payload.tag }}
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
