@@ -53,6 +53,7 @@ jobs:
       - name: Build and Upload for Linux
         uses: ./.github/actions/artifacts/build-pc-artifacts
         with:
+          sha: ${{ inputs.sha }}
           tag: ${{ inputs.tag }}
           os: linux
 
@@ -70,6 +71,7 @@ jobs:
       - name: Build and Upload for macOS x86_64
         uses: ./.github/actions/artifacts/build-pc-artifacts
         with:
+          sha: ${{ inputs.sha }}
           tag: ${{ inputs.tag }}
           os: macos-x86_64
 
@@ -87,6 +89,7 @@ jobs:
       - name: Build and Upload for macOS arm64
         uses: ./.github/actions/artifacts/build-pc-artifacts
         with:
+          sha: ${{ inputs.sha }}
           tag: ${{ inputs.tag }}
           os: macos-arm64
 
