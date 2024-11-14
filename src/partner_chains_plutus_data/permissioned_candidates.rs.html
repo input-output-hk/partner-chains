@@ -168,10 +168,23 @@
 <a href="#168" id="168">168</a>
 <a href="#169" id="169">169</a>
 <a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>cardano_serialization_lib::{PlutusData, PlutusList};
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 
-<span class="kw">use crate</span>::{DataDecodingError, DecodingResult};
+<span class="kw">use crate</span>::{DataDecodingError, DecodingResult, VersionedDatum};
 
 <span class="attr">#[derive(Clone, Debug, PartialEq)]
 </span><span class="kw">pub enum </span>PermissionedCandidateDatums {
@@ -189,7 +202,7 @@
 <span class="kw">impl </span>TryFrom&lt;PlutusData&gt; <span class="kw">for </span>PermissionedCandidateDatums {
 	<span class="kw">type </span>Error = DataDecodingError;
 	<span class="kw">fn </span>try_from(datum: PlutusData) -&gt; DecodingResult&lt;<span class="self">Self</span>&gt; {
-		<span class="prelude-val">Ok</span>(PermissionedCandidateDatums::V0(decode_legacy_permissioned_candidates_datums(datum)<span class="question-mark">?</span>))
+		<span class="self">Self</span>::decode(<span class="kw-2">&amp;</span>datum)
 	}
 }
 
@@ -207,30 +220,35 @@
 	PlutusData::new_list(<span class="kw-2">&amp;</span>list)
 }
 
-<span class="doccomment">/// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.
-</span><span class="kw">fn </span>decode_legacy_permissioned_candidates_datums(
-	datum: PlutusData,
-) -&gt; DecodingResult&lt;Vec&lt;PermissionedCandidateDatumV0&gt;&gt; {
-	<span class="kw">let </span>list_datums: PlutusList = datum.as_list().ok_or(DataDecodingError {
-		datum: datum.clone(),
-		to: <span class="string">"PermissionedCandidateDatumV0"</span>.to_string(),
-		msg: <span class="string">"Expected a list"</span>.to_string(),
-	})<span class="question-mark">?</span>;
+<span class="kw">impl </span>VersionedDatum <span class="kw">for </span>PermissionedCandidateDatums {
+	<span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>str = <span class="string">"PermissionedCandidateDatums"</span>;
 
-	<span class="kw">let </span>permissioned_candidates: Vec&lt;PermissionedCandidateDatumV0&gt; = list_datums
-		.into_iter()
-		.map(decode_legacy_candidate_datum)
-		.collect::&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;PermissionedCandidateDatumV0&gt;&gt;&gt;()
-		.ok_or_else(|| {
-			<span class="macro">log::error!</span>(<span class="string">"Could not decode {:?} to Permissioned candidates datum. Expected [[ByteString, ByteString, ByteString]]."</span>, datum.clone());
-			DataDecodingError {
-				datum: datum.clone(),
-				to: <span class="string">"PermissionedCandidateDatumV0"</span>.to_string(),
-				msg: <span class="string">"Expected [[ByteString, ByteString, ByteString]]"</span>.to_string()
-			}
-		})<span class="question-mark">?</span>;
+	<span class="doccomment">/// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.
+	</span><span class="kw">fn </span>decode_legacy(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, String&gt; {
+		<span class="kw">let </span>permissioned_candidates = data
+			.as_list()
+			.and_then(|list_datums| {
+				list_datums
+					.into_iter()
+					.map(decode_legacy_candidate_datum)
+					.collect::&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;PermissionedCandidateDatumV0&gt;&gt;&gt;()
+			})
+			.ok_or_else(|| <span class="string">"Expected [[ByteString, ByteString, ByteString]]"</span>)<span class="question-mark">?</span>;
 
-	<span class="prelude-val">Ok</span>(permissioned_candidates)
+		<span class="prelude-val">Ok</span>(<span class="self">Self</span>::V0(permissioned_candidates))
+	}
+
+	<span class="kw">fn </span>decode_versioned(
+		version: u32,
+		_const_data: <span class="kw-2">&amp;</span>PlutusData,
+		mut_data: <span class="kw-2">&amp;</span>PlutusData,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, String&gt; {
+		<span class="kw">match </span>version {
+			<span class="number">0 </span>=&gt; PermissionedCandidateDatums::decode_legacy(mut_data)
+				.map_err(|msg| <span class="macro">format!</span>(<span class="string">"Can not parse mutable part of data: {msg}"</span>)),
+			<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">"Unknown version: {version}"</span>)),
+		}
+	}
 }
 
 <span class="kw">fn </span>decode_legacy_candidate_datum(datum: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Option</span>&lt;PermissionedCandidateDatumV0&gt; {
@@ -298,9 +316,28 @@
 	}
 
 	<span class="attr">#[test]
-	</span><span class="kw">fn </span>permissioned_candidates_to_datum() {
-		<span class="kw">let </span>input = <span class="macro">vec!</span>[
-			PermissionedCandidateData {
+	</span><span class="kw">fn </span>valid_v0_permissioned_candidates() {
+		<span class="kw">let </span>plutus_data = <span class="macro">test_plutus_data!</span>({
+			<span class="string">"list"</span>: [
+				{ <span class="string">"constructor"</span>: <span class="number">0</span>, <span class="string">"fields"</span>: [] },
+				{ <span class="string">"list"</span>: [
+					{<span class="string">"list"</span>: [
+						{<span class="string">"bytes"</span>: <span class="string">"cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"</span>},
+						{<span class="string">"bytes"</span>: <span class="string">"bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"</span>},
+						{<span class="string">"bytes"</span>: <span class="string">"9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"</span>}
+					]},
+					{<span class="string">"list"</span>: [
+						{<span class="string">"bytes"</span>: <span class="string">"79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"</span>},
+						{<span class="string">"bytes"</span>: <span class="string">"56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"</span>},
+						{<span class="string">"bytes"</span>: <span class="string">"7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"</span>}
+					]}
+				]},
+				{ <span class="string">"int"</span>: <span class="number">0 </span>}
+			]
+		});
+
+		<span class="kw">let </span>expected_datum = PermissionedCandidateDatums::V0(<span class="macro">vec!</span>[
+			PermissionedCandidateDatumV0 {
 				sidechain_public_key: SidechainPublicKey(
 					<span class="macro">hex!</span>(<span class="string">"cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"</span>).into(),
 				),
@@ -311,7 +348,7 @@
 					<span class="macro">hex!</span>(<span class="string">"9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"</span>).into(),
 				),
 			},
-			PermissionedCandidateData {
+			PermissionedCandidateDatumV0 {
 				sidechain_public_key: SidechainPublicKey(
 					<span class="macro">hex!</span>(<span class="string">"79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"</span>).into(),
 				),
@@ -322,20 +359,9 @@
 					<span class="macro">hex!</span>(<span class="string">"7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"</span>).into(),
 				),
 			},
-		];
-		<span class="kw">let </span>expected_plutus_data = <span class="macro">test_plutus_data!</span>({<span class="string">"list"</span>: [
-			{<span class="string">"list"</span>: [
-				{<span class="string">"bytes"</span>: <span class="string">"cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"</span>},
-				{<span class="string">"bytes"</span>: <span class="string">"bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec"</span>},
-				{<span class="string">"bytes"</span>: <span class="string">"9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d"</span>}
-			]},
-			{<span class="string">"list"</span>: [
-				{<span class="string">"bytes"</span>: <span class="string">"79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf"</span>},
-				{<span class="string">"bytes"</span>: <span class="string">"56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19"</span>},
-				{<span class="string">"bytes"</span>: <span class="string">"7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32"</span>}
-			]}
-		]});
-		<span class="macro">assert_eq!</span>(permissioned_candidates_to_plutus_data(<span class="kw-2">&amp;</span>input), expected_plutus_data)
+		]);
+
+		<span class="macro">assert_eq!</span>(PermissionedCandidateDatums::try_from(plutus_data).unwrap(), expected_datum)
 	}
 }
 </code></pre></div></section></main></body></html>
