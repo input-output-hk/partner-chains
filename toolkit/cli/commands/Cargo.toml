@@ -23,4 +23,4 @@ serde_json = { workspace = true }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }
-chain-params = { workspace = true, default-features = true }
+

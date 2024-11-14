@@ -1,6 +1,5 @@
 {
-    "genesis_committee_hash_utxo": "67fa24dcda2ef78acf69dee758292d659493b85bf540a95b371cff4b10150359#1",
-    "governance_authority": "0x88965c0bc8902c5056ca285684bc56e6498c77b6e04005cd78019175",
+    "genesis_utxo": "67fa24dcda2ef78acf69dee758292d659493b85bf540a95b371cff4b10150359#1",
     "deployment_mc_epoch": 527,
     "nodes_config": {
         "nodes": {

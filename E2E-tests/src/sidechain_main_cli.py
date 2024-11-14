@@ -50,7 +50,7 @@ class SidechainMainCli:
     ):
         get_signatures_cmd = (
             f"{self.generate_signatures_cli} registration-signatures "
-            f"--genesis-utxo {self.config.genesis_committee_hash_utxo} "
+            f"--genesis-utxo {self.config.genesis_utxo} "
             f"--mainchain-signing-key {spo_signing_key} "
             f"--sidechain-signing-key {sidechain_signing_key} "
             f"--registration-utxo {sidechain_registration_utxo}"
@@ -81,8 +81,7 @@ class SidechainMainCli:
         register_cmd = (
             f"{self.cli} register "
             f"--payment-signing-key-file {payment_key} "
-            f"--sidechain-id {self.config.chain_id} "
-            f"--genesis-utxo {self.config.genesis_committee_hash_utxo} "
+            f"--genesis-utxo {self.config.genesis_utxo} "
             "--ada-based-staking "
             f"--spo-public-key {spo_public_key} "
             f"--sidechain-public-keys {signatures.sidechain_public_keys} "
@@ -109,8 +108,7 @@ class SidechainMainCli:
         deregister_cmd = (
             f"{self.cli} deregister "
             f"--payment-signing-key-file {payment_key} "
-            f"--sidechain-id {self.config.chain_id} "
-            f"--genesis-utxo {self.config.genesis_committee_hash_utxo} "
+            f"--genesis-utxo {self.config.genesis_utxo} "
             "--ada-based-staking "
             f"--spo-public-key {spo_public_key} "
             f"--ogmios-host {self.config.stack_config.ogmios_host} "
@@ -134,8 +132,7 @@ class SidechainMainCli:
             f"{self.cli} burn-v1 "
             f"--recipient {recipient} "
             f"--amount {amount} "
-            f"--sidechain-id {self.config.chain_id} "
-            f"--genesis-utxo {self.config.genesis_committee_hash_utxo} "
+            f"--genesis-utxo {self.config.genesis_utxo} "
             f"--payment-signing-key-file {payment_key} "
             f"--ogmios-host {self.config.stack_config.ogmios_host} "
             f"--ogmios-port {self.config.stack_config.ogmios_port} "

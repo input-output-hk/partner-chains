@@ -1,8 +1,9 @@
-use crate::config::SidechainParams;
+use sidechain_domain::UtxoId;
+
 use crate::pc_contracts_cli_resources::PcContractsCliResources;
 
-pub fn sidechain_params_arguments(sidechain_params: &SidechainParams) -> String {
-	format!("--genesis-utxo {}", sidechain_params.genesis_committee_utxo)
+pub fn sidechain_params_arguments(genesis_utxo: UtxoId) -> String {
+	format!("--genesis-utxo {}", genesis_utxo)
 }
 
 pub fn runtime_config_arguments(

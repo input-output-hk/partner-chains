@@ -1,6 +1,5 @@
 use crate::IOContext;
 use anyhow::anyhow;
-use sidechain_domain::MainchainAddressHash;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -9,14 +8,6 @@ pub(crate) struct CardanoKeyFileContent {
 }
 
 const CBOR_KEY_PREFIX: &str = "5820";
-
-pub(crate) fn get_key_hash_from_file(
-	path: &str,
-	context: &impl IOContext,
-) -> anyhow::Result<MainchainAddressHash> {
-	let bytes: [u8; 32] = get_key_bytes_from_file(path, context)?;
-	Ok(MainchainAddressHash::from_vkey(bytes))
-}
 
 pub(crate) fn get_key_bytes_from_file<const N: usize>(
 	path: &str,

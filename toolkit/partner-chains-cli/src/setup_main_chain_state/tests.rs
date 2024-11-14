@@ -373,7 +373,7 @@ fn test_chain_config_content() -> serde_json::Value {
 
 fn chain_parameters_json() -> serde_json::Value {
 	json!({
-	  "genesis_committee_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0"
+	  "genesis_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0"
 	})
 }
 

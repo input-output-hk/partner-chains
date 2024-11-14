@@ -440,7 +440,11 @@ impl pallet_session_validator_management::Config for Runtime {
 		input: AuthoritySelectionInputs,
 		sidechain_epoch: ScEpochNumber,
 	) -> Option<BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>> {
-		select_authorities(Sidechain::sidechain_params(), input, sidechain_epoch)
+		select_authorities(
+			Sidechain::sidechain_params().genesis_committee_utxo,
+			input,
+			sidechain_epoch,
+		)
 	}
 
 	fn current_epoch_number() -> ScEpochNumber {
@@ -850,7 +854,7 @@ impl_runtime_apis! {
 
 	impl authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi<Block> for Runtime {
 		fn validate_registered_candidate_data(mainchain_pub_key: &MainchainPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError> {
-			authority_selection_inherents::filter_invalid_candidates::validate_registration_data(mainchain_pub_key, registration_data, &Sidechain::sidechain_params()).err()
+			authority_selection_inherents::filter_invalid_candidates::validate_registration_data(mainchain_pub_key, registration_data, Sidechain::sidechain_params().genesis_committee_utxo).err()
 		}
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError> {
 			authority_selection_inherents::filter_invalid_candidates::validate_stake(stake).err()

@@ -1,7 +1,7 @@
 
   partner-chains-node-1:
     container_name: partner-chains-node-1
-    image: ${PARTNER_CHAINS_NODE_IMAGE} 
+    image: ${PARTNER_CHAINS_NODE_IMAGE}
     platform: linux/amd64
     volumes:
       - shared-volume:/shared
@@ -10,9 +10,7 @@
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
       SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000001"
-      CHAIN_ID: "0"
-      GENESIS_COMMITTEE_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
-      GOVERNANCE_AUTHORITY: "e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
+      GENESIS_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"
@@ -34,7 +32,7 @@
 
   partner-chains-node-2:
     container_name: partner-chains-node-2
-    image: ${PARTNER_CHAINS_NODE_IMAGE} 
+    image: ${PARTNER_CHAINS_NODE_IMAGE}
     platform: linux/amd64
     volumes:
       - partner-chains-node-2-data:/data
@@ -43,9 +41,7 @@
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
       SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000002"
-      CHAIN_ID: "0"
-      GENESIS_COMMITTEE_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
-      GOVERNANCE_AUTHORITY: "e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
+      GENESIS_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"
@@ -67,7 +63,7 @@
 
   partner-chains-node-3:
     container_name: partner-chains-node-3
-    image: ${PARTNER_CHAINS_NODE_IMAGE} 
+    image: ${PARTNER_CHAINS_NODE_IMAGE}
     platform: linux/amd64
     volumes:
       - partner-chains-node-3-data:/data
@@ -76,9 +72,7 @@
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
       SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000003"
-      GOVERNANCE_AUTHORITY: "e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
-      CHAIN_ID: "0"
-      GENESIS_COMMITTEE_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
+      GENESIS_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"
@@ -100,7 +94,7 @@
 
   partner-chains-node-4:
     container_name: partner-chains-node-4
-    image: ${PARTNER_CHAINS_NODE_IMAGE} 
+    image: ${PARTNER_CHAINS_NODE_IMAGE}
     platform: linux/amd64
     volumes:
       - partner-chains-node-4-data:/data
@@ -111,9 +105,7 @@
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
       SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000004"
-      GOVERNANCE_AUTHORITY: "e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
-      CHAIN_ID: "0"
-      GENESIS_COMMITTEE_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
+      GENESIS_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"
@@ -135,7 +127,7 @@
 
   partner-chains-node-5:
     container_name: partner-chains-node-5
-    image: ${PARTNER_CHAINS_NODE_IMAGE} 
+    image: ${PARTNER_CHAINS_NODE_IMAGE}
     platform: linux/amd64
     volumes:
       - partner-chains-node-5-data:/data
@@ -146,9 +138,7 @@
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
       SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000005"
-      GOVERNANCE_AUTHORITY: "e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
-      CHAIN_ID: "0"
-      GENESIS_COMMITTEE_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
+      GENESIS_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
       CARDANO_SECURITY_PARAMETER: "5"
       CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
       MC__FIRST_EPOCH_NUMBER: "0"

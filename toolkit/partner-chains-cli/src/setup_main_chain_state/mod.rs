@@ -1,7 +1,7 @@
 use crate::config::config_fields::{CARDANO_PAYMENT_SIGNING_KEY_FILE, POSTGRES_CONNECTION_STRING};
 use crate::config::{
 	config_fields, get_cardano_network_from_file, ChainConfig, ConfigFieldDefinition,
-	SidechainParams, CHAIN_CONFIG_FILE_PATH, PC_CONTRACTS_CLI_PATH,
+	CHAIN_CONFIG_FILE_PATH, PC_CONTRACTS_CLI_PATH,
 };
 use crate::io::IOContext;
 use crate::pc_contracts_cli_resources::establish_pc_contracts_cli_configuration;
@@ -12,7 +12,7 @@ use anyhow::Context;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::mainchain_epoch::MainchainEpochDerivation;
-use sidechain_domain::McEpochNumber;
+use sidechain_domain::{McEpochNumber, UtxoId};
 
 #[cfg(test)]
 mod tests;
@@ -115,7 +115,7 @@ impl CmdRun for SetupMainChainStateCmd {
 				set_candidates_on_main_chain(
 					context,
 					config_initial_authorities,
-					&chain_config.chain_parameters,
+					chain_config.chain_parameters.genesis_utxo,
 					InsertOrUpdate::Update,
 				)?;
 			}
@@ -127,14 +127,14 @@ impl CmdRun for SetupMainChainStateCmd {
 			set_d_parameter_on_main_chain(
 				context,
 				ariadne_parameters.d_parameter,
-				&chain_config.chain_parameters,
+				chain_config.chain_parameters.genesis_utxo,
 				InsertOrUpdate::Update,
 			)?;
 		} else {
 			set_candidates_on_main_chain(
 				context,
 				config_initial_authorities,
-				&chain_config.chain_parameters,
+				chain_config.chain_parameters.genesis_utxo,
 				InsertOrUpdate::Insert,
 			)?;
 			let default_d_parameter =
@@ -142,7 +142,7 @@ impl CmdRun for SetupMainChainStateCmd {
 			set_d_parameter_on_main_chain(
 				context,
 				default_d_parameter,
-				&chain_config.chain_parameters,
+				chain_config.chain_parameters.genesis_utxo,
 				InsertOrUpdate::Insert,
 			)?;
 		}
@@ -247,7 +247,7 @@ fn print_on_chain_and_config_permissioned_candidates<C: IOContext>(
 fn set_candidates_on_main_chain<C: IOContext>(
 	context: &C,
 	candidates: SortedPermissionedCandidates,
-	chain_params: &SidechainParams,
+	genesis_utxo: UtxoId,
 	insert_or_update: InsertOrUpdate,
 ) -> anyhow::Result<()> {
 	let update = context.prompt_yes_no("Do you want to set/update the permissioned candidates on the main chain with values from configuration file?", false);
@@ -271,7 +271,7 @@ fn set_candidates_on_main_chain<C: IOContext>(
 				command,
 				cardano_network.to_network_param(),
 				candidate_keys,
-				smart_contracts::sidechain_params_arguments(chain_params),
+				smart_contracts::sidechain_params_arguments(genesis_utxo),
 				smart_contracts::runtime_config_arguments(
 					&pc_contracts_cli_resources,
 					&payment_signing_key_path
@@ -286,7 +286,7 @@ fn set_candidates_on_main_chain<C: IOContext>(
 fn set_d_parameter_on_main_chain<C: IOContext>(
 	context: &C,
 	default_d_parameter: DParameter,
-	chain_params: &SidechainParams,
+	genesis_utxo: UtxoId,
 	insert: InsertOrUpdate,
 ) -> anyhow::Result<()> {
 	let update = context
@@ -310,7 +310,7 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 		let command = format!(
 			"{PC_CONTRACTS_CLI_PATH} {pc_contracts_cli_command} --network {} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}",
 			cardano_network.to_network_param(),
-			smart_contracts::sidechain_params_arguments(chain_params),
+			smart_contracts::sidechain_params_arguments(genesis_utxo),
 			smart_contracts::runtime_config_arguments(&pc_contracts_cli_resources, &payment_signing_key_path)
 		);
 		context.run_command(&command).context("Setting D-parameter failed")?;

@@ -295,7 +295,7 @@ Example:
 
 ##### Setting the partner chain parameters
 
-The wizard asks for the chain ID, informing you that the pair (governance authority, chain id) identifies a partner chain. It has to be unique, and allowable values are in the range of [0; 65535]. The chain config field `chain_parameters.chain_id` is used as default (and target value). 0 is the default.
+The wizard asks for the genesis utxo that identifies a partner chain.
 
 ##### Storing the main chain configuration
 
