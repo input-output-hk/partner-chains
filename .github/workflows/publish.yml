@@ -12,6 +12,11 @@ on:
         required: true
         type: string
 
+permissions:
+  id-token: write
+  contents: write
+  packages: write
+
 jobs:
   build-and-publish-ghcr:
     permissions:
