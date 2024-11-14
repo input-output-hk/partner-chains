@@ -70,25 +70,6 @@ runs:
         role-to-assume: ${{ env.AWS_ROLE_ARN_ }}
         aws-region: "eu-central-1"
 
-    - name: checkout pc-tests ref_name branch
-      id: pc-tests
-      uses: actions/checkout@v4
-      continue-on-error: true
-      with:
-        repository: input-output-hk/sidechains-tests
-        token: ${{ env.ACTIONS_PAT }}
-        ref: ${{ github.head_ref || github.ref_name }}
-        path: e2e-tests
-
-    - name: checkout pc-tests master (fallback)
-      if: steps.pc-tests.outcome == 'failure'
-      uses: actions/checkout@v4
-      with:
-        repository: input-output-hk/sidechains-tests
-        token: ${{ env.ACTIONS_PAT }}
-        ref: master
-        path: e2e-tests
-
     - name: Setup earthly
       uses: earthly/actions-setup@v1
       with:

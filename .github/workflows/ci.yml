@@ -101,12 +101,6 @@ jobs:
     if: always() && needs.local-environment-tests.result != 'skipped'
     runs-on: ubuntu-latest
     steps:
-      - name: checkout pc-tests master
-        uses: actions/checkout@v4
-        with:
-          repository: input-output-hk/sidechains-tests
-          token: ${{ secrets.ACTIONS_PAT }}
-          ref: master
       - name: Download test report
         uses: actions/download-artifact@v4
         with:
@@ -300,12 +294,6 @@ jobs:
     if: always() && needs.local-environment-tests-post-merge.result != 'skipped'
     runs-on: ubuntu-latest
     steps:
-      - name: checkout pc-tests master
-        uses: actions/checkout@v4
-        with:
-          repository: input-output-hk/sidechains-tests
-          token: ${{ secrets.ACTIONS_PAT }}
-          ref: master
       - name: Download test report
         uses: actions/download-artifact@v4
         with:
