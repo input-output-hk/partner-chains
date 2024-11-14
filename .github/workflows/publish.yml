@@ -18,7 +18,7 @@ permissions:
   packages: write
 
 jobs:
-  build-and-publish-ghcr:
+  publish-ghcr:
     permissions:
       id-token: write
       contents: write
@@ -28,7 +28,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Build and Publish to GHCR
-        uses: ./.github/actions/images/build-and-publish-ghcr
+        uses: ./.github/actions/images/publish-ghcr
         with:
           sha: ${{ inputs.sha }}
           tag: ${{ inputs.tag }}
