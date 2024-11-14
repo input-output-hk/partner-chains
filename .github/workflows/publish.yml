@@ -19,28 +19,23 @@ permissions:
 
 jobs:
   publish-ghcr:
-    permissions:
-      id-token: write
-      contents: write
-      packages: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Build and Publish to GHCR
-        uses: ./.github/actions/images/publish-ghcr
+
+      - name: Publish to GHCR
+        uses: ./.github/actions/images/publish-to-ghcr
         with:
-          sha: ${{ inputs.sha }}
-          tag: ${{ inputs.tag }}
+          sha: ${{ github.event.inputs.sha }}
+          tag: ${{ github.event.inputs.tag }}
         env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ github.token }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
 
   publish-release:
-    permissions:
-      id-token: write
-      contents: write
-      packages: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
