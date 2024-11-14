@@ -47,7 +47,7 @@ runs:
           json_data=$(jq -n \
             --arg name "$tag" \
             --arg body "$updated_body" \
-            '{"draft": false, "name": $name, "body": $body}')
+            '{"draft": false, "prerelease": false, "name": $name, "body": $body}')
           response=$(curl -s -X PATCH -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
             -d "$json_data" \
             "https://api.github.com/repos/${{ github.repository }}/releases/$release_id")
@@ -62,3 +62,4 @@ runs:
           echo "Release does not exist, skipping publish step."
         fi
       shell: bash
+
