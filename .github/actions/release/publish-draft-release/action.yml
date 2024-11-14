@@ -44,7 +44,8 @@ runs:
           updated_body=$(echo "$current_body" | \
             sed 's/- \[ \] Staging preview environment/- [x] Staging preview environment/g' | \
             sed 's/Pre-release candidate for/Release/g' | \
-            sed 's/This is a draft pre-release candidate/This is a tested release/g')
+            sed 's/This is a draft pre-release candidate/This is a tested release/g' | \
+            sed 's/that is undergoing testing/that has passed our automated testing/g')
           json_data=$(jq -n \
             --arg name "$tag" \
             --arg body "$updated_body" \
