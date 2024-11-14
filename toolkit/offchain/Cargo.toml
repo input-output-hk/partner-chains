@@ -16,13 +16,10 @@ cardano-serialization-lib = { workspace = true }
 cbor_event = { workspace = true }
 chain-params = { workspace = true, features = ["std"] }
 db-sync-follower = { workspace = true, features = ["candidate-source"] }
-ed25519 = { workspace = true, features = ["alloc"]}
-ed25519-zebra  = { workspace = true}
 fraction = { workspace = true }
 hex = { workspace = true }
 hex-literal = { workspace = true }
 jsonrpsee = { workspace = true, features = ["client-core", "http-client", "macros"] }
-log = { workspace = true }
 minicbor = { workspace = true }
 ogmios-client = { workspace = true, features = ["jsonrpsee-client"] }
 pallas-addresses = { workspace = true }
