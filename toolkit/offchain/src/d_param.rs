@@ -198,7 +198,7 @@ mod tests {
 			inputs.get(1).to_string(),
 			"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f#0"
 		);
-		// The greater collateral input goes to collaterals
+		// The greater payment input goes to collaterals
 		assert_eq!(
 			body.collateral().unwrap().get(0).to_string(),
 			"0404040404040404040404040404040404040404040404040404040404040404#1"
