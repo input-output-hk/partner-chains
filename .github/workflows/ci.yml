@@ -115,7 +115,7 @@ jobs:
           github_actor_username: ${{ github.actor }}
           env: local-pre-merge
         run: |
-          cd E2E-tests
+          ls -la
           ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
         shell: bash
 
@@ -309,7 +309,7 @@ jobs:
           github_actor_username: ${{ github.actor }}
           env: local-post-merge
         run: |
-          cd E2E-tests
+          ls -la
           ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
         shell: bash
 
