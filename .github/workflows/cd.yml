@@ -435,11 +435,10 @@ jobs:
       - name: Trigger Publish Workflow
         run: |
           curl -X POST \
-            -H "Authorization: token ${{ secrets.ACTIONS_PUBLISH_PAT }}" \
+            -H "Authorization: token ${{ secrets.ACTIONS_PAT }}" \
             -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/repos/${{ github.repository }}/actions/workflows/publish.yml/dispatches \
-            -d '{"ref": "main", "inputs": {"sha": "${{ github.sha }}", "tag": "${{ github.ref }}"}}'
-
+            -d '{"ref": "${{ github.ref_name }}", "inputs": {"sha": "${{ github.sha }}", "tag": "${{ inputs.tag }}"}}'
 
 #  deploy-staging-preprod:
 #    if: ${{ github.event.inputs.no-deploy != 'true' }}
