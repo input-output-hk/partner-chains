@@ -85,7 +85,7 @@ runs:
         JIRA_URL: ${{ env.JIRA_URL }}
         JOB_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
       run: |
-        cd e2e-tests
+        cd E2E-tests
         earthly --secret AWS_SESSION_TOKEN="$AWS_SESSION_TOKEN" \
                 --secret AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
                 --secret AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
