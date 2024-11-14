@@ -61,14 +61,17 @@ runs:
       id: check_release
       run: |
         tag="${{ inputs.tag }}"
+        echo "Checking if release with tag $tag exists..."
         release_response=$(curl -s -H "Authorization: token ${{ env.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag")
 
         if echo "$release_response" | grep -q '"message": "Not Found"'; then
-          echo "release_exists=false" >> $GITHUB_ENV
-          echo "release_id=" >> $GITHUB_ENV
+          echo "Release with tag $tag does not exist. Proceeding to create a new draft release."
+          echo "::set-output name=release_exists::false"
+          echo "::set-output name=release_id::"
         else
-          echo "release_exists=true" >> $GITHUB_ENV
-          echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
+          echo "Release with tag $tag already exists."
+          echo "::set-output name=release_exists::true"
+          echo "::set-output name=release_id::$(echo $release_response | jq -r .id)"
         fi
       shell: bash
 
@@ -76,19 +79,38 @@ runs:
       id: create_release
       if: ${{ steps.check_release.outputs.release_exists == 'false' }}
       run: |
+        echo "Creating a draft release for tag ${{ inputs.tag }}..."
         tag="${{ inputs.tag }}"
         release_name="${tag}-rc"
         release_body="### Pre-release candidate for version $tag\n\n"
-        release_body+="This is a draft pre-release candidate for release $tag that is undergoing testing. The current testing status is:\n\n"
-        release_body+="- [x] Local environment\n"
-        release_body+="- [ ] Staging preview environment\n"
-        release_body+="- [ ] Staging preprod environment\n\n"
-        release_body+="Please note: this release is not yet fully verified and is pending further testing.\n"
-
+        release_body+="Please note: this release is not yet fully verified and is pending further testing.\n\n"
+    
+        release_body+="## Compatibility matrix\n"
+        release_body+="| partner-chains-node | partner-chains-smart-contracts | cardano-node | cardano-db-sync | kupo | ogmios |\n"
+        release_body+="| -------------------- | -------------------------------- | --------------- | ------------------ | ----- | ------- |\n"
+        release_body+="| $tag |  |  |  |  |  |\n\n"
+    
+        release_body+="## Binaries\n\n"
+        release_body+="You can download the archives that contain both \`partner-chains-node\` and \`partner-chains-cli\` from assets attached to this release (available for MacOS and Linux architectures). PC smart contracts CLI can be downloaded from [here](https://github.com/input-output-hk/partner-chains-smart-contracts).\n\n"
+    
+        release_body+="## Docker\n\n"
+        release_body+="You can also pull the Docker image of the \`partner-chains-node\` from GitHub Container Registry:\n\n"
+        release_body+="\`\`\`bash\n"
+        release_body+="docker pull ghcr.io/input-output-hk/partner-chains/partner-chains-node:$tag\n"
+        release_body+="\`\`\`\n\n"
+    
+        release_body+="## How to Use\n\n"
+        release_body+="Refer to the [documentation](https://github.com/input-output-hk/partner-chains/tree/$tag/docs/user-guides) for detailed instructions on using the node and CLI tools.\n\n"
+    
+        release_body+="## Support\n\n"
+        release_body+="You can visit our issues page for support, feature requests, or to report a bug.\n\n"
+    
+        release_body+="Thank you for being a part of our community!\n"
         release_response=$(curl -s -X POST -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
                           -d '{"tag_name": "'$tag'", "name": "'$release_name'", "body": "'"$release_body"'", "draft": true, "generate_release_notes": true, "prerelease": true}' \
                           "https://api.github.com/repos/${{ github.repository }}/releases")
-        echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
+        echo "Draft release created with ID $(echo $release_response | jq -r .id)"
+        echo "::set-output name=release_id::$(echo $release_response | jq -r .id)"
       shell: bash
 
     - name: Upload artifacts to release
@@ -98,6 +120,7 @@ runs:
         if [ -z "$release_id" ]; then
           release_id="${{ steps.check_release.outputs.release_id }}"
         fi
+        echo "Uploading artifacts to release ID $release_id..."
 
         for artifact in "artifact-linux/${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}" \
                         "artifact-linux/${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}" \
@@ -105,6 +128,7 @@ runs:
                         "artifact-macos-x86_64/${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}" \
                         "artifact-macos-arm64/${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}" \
                         "artifact-macos-arm64/${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}"; do
+          echo "Uploading artifact: $(basename $artifact)"
           chmod +x "$artifact"
           curl -s -X POST \
             -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
