@@ -1,4 +1,4 @@
-use super::mock::mock_sidechain_params;
+use super::mock::mock_genesis_utxo;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use chain_params::SidechainParams;
 use sidechain_domain::*;
@@ -56,7 +56,7 @@ impl ProvideRuntimeApi<Block> for TestApi {
 
 sp_api::mock_impl_runtime_apis! {
 	impl GetSidechainParams<Block, SidechainParams> for TestApi {
-		fn sidechain_params() -> SidechainParams { mock_sidechain_params() }
+		fn sidechain_params() -> SidechainParams { mock_genesis_utxo() }
 	}
 
 	impl sp_session_validator_management::SessionValidatorManagementApi<Block, SessionKeys, CrossChainPublic, AuthoritySelectionInputs, ScEpochNumber> for TestApi {

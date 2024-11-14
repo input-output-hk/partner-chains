@@ -67,7 +67,7 @@ impl CliConfiguration for RegistrationStatusCmd {
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
-pub enum PartnerChainsSubcommand<SidechainParams: clap::Args> {
+pub enum PartnerChainsSubcommand {
 	/// Returns sidechain parameters
 	SidechainParams(SidechainParamsCmd),
 
@@ -84,7 +84,7 @@ pub enum PartnerChainsSubcommand<SidechainParams: clap::Args> {
 	AriadneParameters(AriadneParametersCmd),
 
 	/// Generates registration signatures for partner chains committee candidates
-	RegistrationSignatures(RegistrationSignaturesCmd<SidechainParams>),
+	RegistrationSignatures(RegistrationSignaturesCmd),
 }
 
 pub fn run<Cli, SmartContractsParams, Block, CrossChainPublic, SessionKeys, Client>(

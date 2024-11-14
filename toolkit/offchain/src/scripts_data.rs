@@ -1,9 +1,8 @@
 use crate::{csl::ogmios_network_to_csl, plutus_script::PlutusScript, OffchainError};
 use cardano_serialization_lib::{LanguageKind::PlutusV2, NetworkIdKind};
-use chain_params::SidechainParams;
 use ogmios_client::query_network::QueryNetwork;
 use serde::Serialize;
-use sidechain_domain::{MainchainAddressHash, PolicyId};
+use sidechain_domain::{MainchainAddressHash, PolicyId, UtxoId};
 use uplc::PlutusData;
 
 /// Provides convenient access to the addresses and hashes of the partner chain smart contracts.
@@ -43,52 +42,46 @@ pub struct ValidatorHashes {
 #[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
 pub struct PolicyIds {
 	pub d_parameter: PolicyId,
-	pub init_token: PolicyId,
-	pub governance: PolicyId,
 	pub permissioned_candidates: PolicyId,
 	pub reserve_auth: PolicyId,
 	pub version_oracle: PolicyId,
+	pub governance: PolicyId,
 }
 
 pub trait GetScriptsData {
 	#[allow(async_fn_in_trait)]
 	/// For the given `pc_params` it returns the addresses, hashes and policy ids of the partner chain smart contracts.
-	async fn get_scripts_data(
-		&self,
-		pc_params: SidechainParams,
-	) -> Result<ScriptsData, OffchainError>;
+	async fn get_scripts_data(&self, genesis_utxo: UtxoId) -> Result<ScriptsData, OffchainError>;
 }
 
 impl<T: QueryNetwork> GetScriptsData for T {
-	async fn get_scripts_data(
-		&self,
-		pc_params: SidechainParams,
-	) -> Result<ScriptsData, OffchainError> {
+	async fn get_scripts_data(&self, genesis_utxo: UtxoId) -> Result<ScriptsData, OffchainError> {
 		let network = ogmios_network_to_csl(
 			self.shelley_genesis_configuration()
 				.await
 				.map_err(|e| OffchainError::OgmiosError(e.to_string()))?
 				.network,
 		);
-		get_scripts_data(pc_params, network)
+		get_scripts_data(genesis_utxo, network)
 			.map_err(|e| OffchainError::InternalError(e.to_string()))
 	}
 }
 
 /// For the given `pc_params` it returns the addresses, hashes and policy ids of the partner chain smart contracts.
 pub fn get_scripts_data(
-	pc_params: SidechainParams,
+	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
 ) -> anyhow::Result<ScriptsData> {
 	let (version_oracle_validator, version_oracle_policy, version_oracle_policy_data) =
-		version_oracle(pc_params.clone(), network)?;
+		version_oracle(genesis_utxo, network)?;
 
 	let committee_candidate_validator =
 		PlutusScript::from_wrapped_cbor(raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR, PlutusV2)?
-			.apply_data(pc_params.clone())?;
+			.apply_data(genesis_utxo)?;
 	let d_parameter_validator =
 		PlutusScript::from_wrapped_cbor(raw_scripts::D_PARAMETER_VALIDATOR, PlutusV2)?
-			.apply_data(pc_params.clone())?;
+			.apply_data(genesis_utxo)?
+			.apply_data(version_oracle_policy.clone())?;
 	let illiquid_circulation_supply_validator = PlutusScript::from_wrapped_cbor(
 		raw_scripts::ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
 		PlutusV2,
@@ -96,25 +89,26 @@ pub fn get_scripts_data(
 	.apply_uplc_data(version_oracle_policy_data.clone())?;
 	let permissioned_candidates_validator =
 		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_VALIDATOR, PlutusV2)?
-			.apply_data(pc_params.clone())?;
+			.apply_data(genesis_utxo)?
+			.apply_data(version_oracle_policy.clone())?;
 	let reserve_validator =
 		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, PlutusV2)?
 			.apply_uplc_data(version_oracle_policy_data.clone())?;
 
 	let d_parameter_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::D_PARAMETER_POLICY, PlutusV2)?
-			.apply_data(pc_params.clone())?
+			.apply_data(genesis_utxo)?
+			.apply_data(version_oracle_policy.clone())?
 			.apply_uplc_data(d_parameter_validator.address_data(network)?)?;
 	let permissioned_candidates_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_POLICY, PlutusV2)?
-			.apply_data(pc_params.clone())?
+			.apply_data(genesis_utxo)?
+			.apply_data(version_oracle_policy.clone())?
 			.apply_uplc_data(permissioned_candidates_validator.address_data(network)?)?;
 	let governance_policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, PlutusV2)?
-			.apply_uplc_data(multisig_governance_policy_configuration(pc_params.clone()))?;
-	let init_token_policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::INIT_TOKEN_POLICY, PlutusV2)?
-			.apply_data(pc_params.clone())?;
+		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, PlutusV2)?.apply_uplc_data(
+			multisig_governance_policy_configuration(MainchainAddressHash::from_vkey([0u8; 32])),
+		)?;
 	let reserve_auth_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_AUTH_POLICY, PlutusV2)?
 			.apply_uplc_data(version_oracle_policy_data)?;
@@ -141,37 +135,25 @@ pub fn get_scripts_data(
 		},
 		policy_ids: PolicyIds {
 			d_parameter: d_parameter_policy.policy_id(),
-			init_token: init_token_policy.policy_id(),
-			governance: governance_policy.policy_id(),
 			permissioned_candidates: permissioned_candidates_policy.policy_id(),
 			reserve_auth: reserve_auth_policy.policy_id(),
 			version_oracle: version_oracle_policy,
+			governance: governance_policy.policy_id(),
 		},
 	})
 }
 
 // Returns version oracle script, policy and PlutusData required by other scripts.
 fn version_oracle(
-	pc_params: SidechainParams,
+	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
 ) -> Result<(PlutusScript, PolicyId, PlutusData), anyhow::Error> {
-	let init_token_policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::INIT_TOKEN_POLICY, PlutusV2)?
-			.apply_data(pc_params.clone())?
-			.policy_id();
-
-	let init_token_asset_data = PlutusData::Array(vec![
-		PlutusData::BoundedBytes(init_token_policy.0.to_vec().into()),
-		PlutusData::BoundedBytes(b"Version oracle InitToken".to_vec().into()),
-	]);
-
 	let validator =
 		PlutusScript::from_wrapped_cbor(raw_scripts::VERSION_ORACLE_VALIDATOR, PlutusV2)?
-			.apply_data(pc_params.clone())?;
+			.apply_data(genesis_utxo)?;
 	let policy_script =
 		PlutusScript::from_wrapped_cbor(raw_scripts::VERSION_ORACLE_POLICY, PlutusV2)?
-			.apply_data(pc_params.clone())?
-			.apply_uplc_data(init_token_asset_data)?
+			.apply_data(genesis_utxo)?
 			.apply_uplc_data(validator.address_data(network)?)?;
 	let policy = policy_script.policy_id();
 	let policy_data = PlutusData::BoundedBytes(policy.0.to_vec().into());
@@ -180,10 +162,12 @@ fn version_oracle(
 
 // Returns the simplest MultiSig policy configuration plutus data:
 // there is one required authority and it is the governance authority from sidechain params.
-fn multisig_governance_policy_configuration(params: SidechainParams) -> PlutusData {
+fn multisig_governance_policy_configuration(
+	governance_authority: MainchainAddressHash,
+) -> PlutusData {
 	PlutusData::Array(vec![
 		PlutusData::Array(vec![uplc::PlutusData::BoundedBytes(
-			params.governance_authority.0.to_vec().into(),
+			governance_authority.0.to_vec().into(),
 		)]),
 		PlutusData::BigInt(uplc::BigInt::Int(1.into())),
 	])
@@ -193,80 +177,67 @@ fn multisig_governance_policy_configuration(params: SidechainParams) -> PlutusDa
 mod tests {
 	use crate::scripts_data::{Addresses, PolicyIds, ScriptsData, ValidatorHashes};
 	use cardano_serialization_lib::NetworkIdKind;
-	use chain_params::SidechainParams;
 	use hex_literal::hex;
 	use pretty_assertions::assert_eq;
 	use sidechain_domain::{MainchainAddressHash, McTxHash, PolicyId, UtxoId};
 
-	pub(crate) const TEST_PARAMS: SidechainParams = SidechainParams {
-		chain_id: 0,
-		threshold_numerator: 2,
-		threshold_denominator: 3,
-		genesis_committee_utxo: UtxoId {
-			tx_hash: McTxHash(hex!(
-				"0000000000000000000000000000000000000000000000000000000000000000"
-			)),
-			index: sidechain_domain::UtxoIndex(0),
-		},
-		governance_authority: MainchainAddressHash(hex!(
-			"044741127bce1895f93fc8ac7bedb8930066b3c3964db00518bd2ccc"
-		)),
+	pub(crate) const TEST_PARAMS: UtxoId = UtxoId {
+		tx_hash: McTxHash(hex!("8ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861")),
+		index: sidechain_domain::UtxoIndex(0),
 	};
 
 	pub(crate) fn scripts_data_test_vector() -> ScriptsData {
 		ScriptsData {
 			addresses: Addresses {
 				committee_candidate_validator:
-					"addr_test1wq8vwhqkfyrz0qu3sf89qdvaj8slrjlwwhlyzw9ayv0rj5qz3ne4t".into(),
+					"addr_test1wz8z7eaac04rp75u47vqy9k3qgwcxxh92ff3h3hp2xae4kgzwdwp3".into(),
 				d_parameter_validator:
-					"addr_test1wp3cw59x95h6x0mcuaydznhxpagdvnhaj9zsdavrkvjfhxg2rctxe".into(),
-				illiquid_circulation_supply_validator:
-					"addr_test1wp5ahp39vsw03kx7tze2sdzd5f5twfts46tzdkdjrhnj94g9xwsus".into(),
+					"addr_test1wppqfuvptxq3rwv2qwke2dkh8vd0mmc8k4r6a44k86tpckss2zg4v".into(),
 				permissioned_candidates_validator:
-					"addr_test1wqvxznvu7f9u8svs5sa0rxg3ggvcz4us5w8k63r70yztntqpqpwxx".into(),
+					"addr_test1wql3vzrgx0hdqhxt4n2wvv93mhnglphl0fadkd06zuzkglcnyc09n".into(),
+				illiquid_circulation_supply_validator:
+					"addr_test1wq7crkpl5mpdeq9wyqyvr2u7q7gtv02pjxgl3fh8mv5r6ec00zynf".into(),
 				reserve_validator:
-					"addr_test1wzc6vvzqd9x4fvx09xgep4sna20skxj86p6yan9ymv9q99sa8xd97".into(),
+					"addr_test1wqs5y7fn6sns7v7eey94mj2wd7ysadr3zmstjfzhk0frdtgsm8pgk".into(),
 				version_oracle_validator:
-					"addr_test1wzgctwxcrr555ej8rqrdjkjlfmv47ck2vltcp9enz2s0z8qad37fs".into(),
+					"addr_test1wqxm9e576k5ew7g7ctuqx77p9u7zytesnjsx54q2etck00gqplk0l".into(),
 			},
 			validator_hashes: ValidatorHashes {
 				committee_candidate_validator: MainchainAddressHash(hex!(
-					"0ec75c164906278391824e50359d91e1f1cbee75fe4138bd231e3950"
+					"8e2f67bdc3ea30fa9caf980216d1021d831ae552531bc6e151bb9ad9"
 				)),
 				d_parameter_validator: MainchainAddressHash(hex!(
-					"638750a62d2fa33f78e748d14ee60f50d64efd914506f583b3249b99"
+					"4204f181598111b98a03ad9536d73b1afdef07b547aed6b63e961c5a"
 				)),
 				illiquid_circulation_supply_validator: MainchainAddressHash(hex!(
-					"69db8625641cf8d8de58b2a8344da268b72570ae9626d9b21de722d5"
+					"3d81d83fa6c2dc80ae2008c1ab9e0790b63d419191f8a6e7db283d67"
 				)),
 				permissioned_candidates_validator: MainchainAddressHash(hex!(
-					"18614d9cf24bc3c190a43af199114219815790a38f6d447e7904b9ac"
+					"3f16086833eed05ccbacd4e630b1dde68f86ff7a7adb35fa1705647f"
 				)),
 				reserve_validator: MainchainAddressHash(hex!(
-					"b1a63040694d54b0cf299190d613ea9f0b1a47d0744ecca4db0a0296"
+					"21427933d4270f33d9c90b5dc94e6f890eb47116e0b92457b3d236ad"
 				)),
 				version_oracle_validator: MainchainAddressHash(hex!(
-					"9185b8d818e94a66471806d95a5f4ed95f62ca67d780973312a0f11c"
+					"0db2e69ed5a997791ec2f8037bc12f3c222f309ca06a540acaf167bd"
 				)),
 			},
 			policy_ids: PolicyIds {
 				d_parameter: PolicyId(hex!(
-					"88b9d9798dde404b4ff488be62de3d7744a2e282934b5bd1687d8cbe"
-				)),
-				init_token: PolicyId(hex!(
-					"ae91bce3634bbf0d2748cb2c9b5a4cd547da3fabb99d33e762c87704"
-				)),
-				governance: PolicyId(hex!(
-					"7d55e8e2f8f0637d6ab99975d8ab9b6112976eec1e778d3f770fe102"
+					"f30c3f90c342e61b3f34042bcabd7be8f3ec4b7a6857fdfcdb7b7936"
 				)),
 				permissioned_candidates: PolicyId(hex!(
-					"f7449038957139c2782d81fc72bc889898fd24d20059535a681b3774"
+					"8dbf5934f4870570752205fbda4796b5f7df30c9b5a009452dc7df5f"
 				)),
 				reserve_auth: PolicyId(hex!(
-					"22dc2777f1d73504a2d9db99067b82ffe4abddc31ed1f9f6d97ca7d7"
+					"8c2f422162225752e5842fd7ac103d6e679e21c13514c9ef8224452c"
 				)),
 				version_oracle: PolicyId(hex!(
-					"4d982fae61319220e75e29054bad955484faa24dba65046136b8e6cb"
+					"aa7f601aa9f441a26823d872f052d52767229f3301567c86475dfcfb"
+				)),
+				// TODO get correct hash
+				governance: PolicyId(hex!(
+					"9a2738df5cd08458700444b278293f9ba9325c0029ae6d5d36e8678a"
 				)),
 			},
 		}

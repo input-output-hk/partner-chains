@@ -31,7 +31,7 @@ impl CmdRun for Register1Cmd {
 			load_chain_config_field(context, &config_fields::THRESHOLD_DENOMINATOR)?;
 		let governance_authority =
 			load_chain_config_field(context, &config_fields::GOVERNANCE_AUTHORITY)?;
-		let genesis_committee_utxo =
+		let genesis_utxo =
 			load_chain_config_field(context, &config_fields::GENESIS_COMMITTEE_UTXO)?;
 		let cardano_network = config_fields::CARDANO_NETWORK.load_from_file(context).ok_or_else(|| {
             context.eprint("⚠️ Cardano network is not specified in the chain configuration file `partner-chains-cli-chain-config.json`");
@@ -86,22 +86,14 @@ impl CmdRun for Register1Cmd {
 		context.print("Please do not spend this UTXO, it needs to be consumed by the registration transaction.");
 		context.print("");
 
-		let sidechain_params = chain_params::SidechainParams {
-			chain_id,
-			threshold_numerator,
-			threshold_denominator,
-			genesis_committee_utxo,
-			governance_authority,
-		};
-
 		let sidechain_pub_key_typed: SidechainPublicKey =
 			SidechainPublicKey(from_hex(&sidechain_pub_key).map_err(|e| {
 				context.eprint(&format!("⚠️ Failed to decode sidechain public key: {e}"));
 				anyhow!(e)
 			})?);
 
-		let registration_message = RegisterValidatorMessage::<chain_params::SidechainParams> {
-			sidechain_params: sidechain_params.clone(),
+		let registration_message = RegisterValidatorMessage {
+			genesis_utxo,
 			sidechain_pub_key: sidechain_pub_key_typed,
 			input_utxo,
 		};
@@ -119,11 +111,9 @@ impl CmdRun for Register1Cmd {
 		let sidechain_signature =
 			sign_registration_message_with_sidechain_key(registration_message, ecdsa_pair)?;
 
-		let governance_authority: String = governance_authority.to_hex_string();
-
 		context.print("Run the following command to generate signatures on the next step. It has to be executed on the machine with your SPO cold signing key.");
 		context.print("");
-		context.print(&format!("./partner-chains-cli register2 \\\n --chain-id {chain_id} \\\n --threshold-numerator {threshold_numerator} \\\n --threshold-denominator {threshold_denominator} \\\n --governance-authority {governance_authority} \\\n --genesis-committee-utxo {genesis_committee_utxo} \\\n --registration-utxo {input_utxo} \\\n --aura-pub-key {aura_pub_key} \\\n --grandpa-pub-key {grandpa_pub_key} \\\n --sidechain-pub-key {sidechain_pub_key} \\\n --sidechain-signature {sidechain_signature}"));
+		context.print(&format!("./partner-chains-cli register2 \\\n --genesis-utxo {genesis_utxo} \\\n --registration-utxo {input_utxo} \\\n --aura-pub-key {aura_pub_key} \\\n --grandpa-pub-key {grandpa_pub_key} \\\n --sidechain-pub-key {sidechain_pub_key} \\\n --sidechain-signature {sidechain_signature}"));
 
 		Ok(())
 	}
@@ -145,7 +135,7 @@ fn get_ecdsa_pair_from_file<C: IOContext>(
 }
 
 fn sign_registration_message_with_sidechain_key(
-	message: RegisterValidatorMessage<chain_params::SidechainParams>,
+	message: RegisterValidatorMessage,
 	ecdsa_pair: ecdsa::Pair,
 ) -> Result<String, anyhow::Error> {
 	let seed = ecdsa_pair.seed();
@@ -356,11 +346,7 @@ mod tests {
 	fn fail_if_cardano_network_is_not_specified() {
 		let chain_config_without_cardano_network: serde_json::Value = serde_json::json!({
 			"chain_parameters": {
-				"chain_id": 0,
-				"threshold_numerator": 2,
-				"threshold_denominator": 3,
-				"genesis_committee_utxo": "0000000000000000000000000000000000000000000000000000000000000001#0",
-				"governance_authority": "0x00112233445566778899001122334455667788990011223344556677"
+				"genesis_utxo": "0000000000000000000000000000000000000000000000000000000000000001#0",
 			},
 		});
 
@@ -729,7 +715,7 @@ mod tests {
 		vec![
 		MockIO::print("Run the following command to generate signatures on the next step. It has to be executed on the machine with your SPO cold signing key."),
 		MockIO::print(""),
-		MockIO::print("./partner-chains-cli register2 \\\n --chain-id 0 \\\n --threshold-numerator 2 \\\n --threshold-denominator 3 \\\n --governance-authority 0x00112233445566778899001122334455667788990011223344556677 \\\n --genesis-committee-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n --registration-utxo 4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 \\\n --aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n --grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n --sidechain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n --sidechain-signature fd19b89e8549c9299a5711b1146b4c2db53648d886c111280e3c02e01df143c7169a858c7ecbcd961a3407a2f8bd5c308901784d9b1c18528f00bd74fc54aa1c")
+		MockIO::print("./partner-chains-cli register2 \\\n --genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n --registration-utxo 4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 \\\n --aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n --grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n --sidechain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n --sidechain-signature fd19b89e8549c9299a5711b1146b4c2db53648d886c111280e3c02e01df143c7169a858c7ecbcd961a3407a2f8bd5c308901784d9b1c18528f00bd74fc54aa1c")
 		]
 	}
 

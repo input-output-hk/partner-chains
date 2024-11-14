@@ -2,12 +2,7 @@ use crate::config::SidechainParams;
 use crate::pc_contracts_cli_resources::PcContractsCliResources;
 
 pub fn sidechain_params_arguments(sidechain_params: &SidechainParams) -> String {
-	format!("--sidechain-id {} --genesis-committee-hash-utxo {} --threshold-numerator {} --threshold-denominator {} --governance-authority {}",
-			sidechain_params.chain_id,
-			sidechain_params.genesis_committee_utxo,
-			sidechain_params.threshold_numerator,
-			sidechain_params.threshold_denominator,
-			sidechain_params.governance_authority.to_hex_string())
+	format!("--genesis-utxo {}", sidechain_params.genesis_committee_utxo)
 }
 
 pub fn runtime_config_arguments(

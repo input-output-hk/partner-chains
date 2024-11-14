@@ -318,12 +318,7 @@ A sample file:
     "security_parameter": 2160
   },
   "chain_parameters": {
-    "block_stability_margin": 0,
-    "chain_id": 0,
-    "genesis_committee_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0",
-    "governance_authority": "0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9",
-    "threshold_denominator": 3,
-    "threshold_numerator": 2
+    "genesis_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0",
   },
   "initial_permissioned_candidates": [
 		  {

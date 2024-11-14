@@ -88,23 +88,12 @@ impl PlutusScript {
 #[cfg(test)]
 pub(crate) mod tests {
 	use super::*;
-	use chain_params::SidechainParams;
 	use hex_literal::hex;
-	use sidechain_domain::{MainchainAddressHash, McTxHash, UtxoId, UtxoIndex};
+	use sidechain_domain::{McTxHash, UtxoId, UtxoIndex};
 
-	pub(crate) const TEST_PARAMS: SidechainParams = SidechainParams {
-		chain_id: 111,
-		threshold_numerator: 2,
-		threshold_denominator: 3,
-		genesis_committee_utxo: UtxoId {
-			tx_hash: McTxHash(hex!(
-				"0000000000000000000000000000000000000000000000000000000000000000"
-			)),
-			index: UtxoIndex(0),
-		},
-		governance_authority: MainchainAddressHash(hex!(
-			"76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"
-		)),
+	pub(crate) const TEST_PARAMS: UtxoId = UtxoId {
+		tx_hash: McTxHash(hex!("0000000000000000000000000000000000000000000000000000000000000000")),
+		index: UtxoIndex(0),
 	};
 
 	// Taken from smart-contracts repository

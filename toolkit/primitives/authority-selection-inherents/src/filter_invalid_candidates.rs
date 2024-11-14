@@ -14,8 +14,8 @@ use sp_runtime::traits::Verify;
 /// It's ToDatum implementation has to produce datum that has to match main chain structure,
 /// because it will be hashed and signed for signature verification.
 #[derive(Debug, ToDatum)]
-pub struct RegisterValidatorSignedMessage<Params> {
-	pub sidechain_params: Params,
+pub struct RegisterValidatorSignedMessage {
+	pub genesis_utxo: UtxoId,
 	pub sidechain_pub_key: Vec<u8>,
 	/// UTxO that is an input parameter to the registration transaction
 	pub input_utxo: UtxoId,
@@ -381,17 +381,9 @@ mod tests {
 			let mainchain_account = ed25519::Pair::from_seed_slice(&[7u8; 32]).unwrap();
 
 			let signed_message = RegisterValidatorSignedMessage {
-				sidechain_params: SidechainParams {
-					chain_id: 101,
-					genesis_committee_utxo: UtxoId {
-						tx_hash: McTxHash([7u8; TX_HASH_SIZE]),
-						index: UtxoIndex(0),
-					},
-					threshold_numerator: 2,
-					threshold_denominator: 3,
-					governance_authority: MainchainAddressHash(hex!(
-						"00112233445566778899001122334455667788990011223344556677"
-					)),
+				genesis_utxo: UtxoId {
+					tx_hash: McTxHash([7u8; TX_HASH_SIZE]),
+					index: UtxoIndex(0),
 				},
 				sidechain_pub_key: sidechain_pub_key.clone(),
 				input_utxo: UtxoId { tx_hash: McTxHash([7u8; TX_HASH_SIZE]), index: UtxoIndex(0) },

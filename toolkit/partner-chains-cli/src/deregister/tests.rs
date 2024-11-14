@@ -159,7 +159,7 @@ fn read_cold_verification_key() -> MockIO {
 
 fn run_smart_contract_io(output: anyhow::Result<std::string::String>) -> MockIO {
 	MockIO::run_command_with_result(
-		"./pc-contracts-cli deregister --network testnet --ada-based-staking --spo-public-key 1111111111111111111111111111111111111111111111111111111111111111 --sidechain-id 1234 --genesis-committee-hash-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --threshold-numerator 2 --threshold-denominator 3 --governance-authority 0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file my_payment.skey",
+		"./pc-contracts-cli deregister --network testnet --ada-based-staking --spo-public-key 1111111111111111111111111111111111111111111111111111111111111111 --genesis-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file my_payment.skey",
 		output)
 }
 

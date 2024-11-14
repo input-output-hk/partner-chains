@@ -23,19 +23,12 @@ fn registration_message_encoding() {
 		hex!("4f2d6145e1700ad11dc074cad9f4194cc53b0dbab6bd25dfea6c501a");
 	let sidechain_pub_key_bytes =
 		hex!("02dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ec").to_vec();
-	let sample_tx_out_ref =
-		UtxoId { tx_hash: McTxHash(sample_utxo_id_hash_bytes), index: UtxoIndex(4) };
+	let genesis_utxo = UtxoId { tx_hash: McTxHash(sample_utxo_id_hash_bytes), index: UtxoIndex(4) };
 	let msg = RegisterValidatorSignedMessage {
-		sidechain_params: SidechainParams {
-			chain_id: 11,
-			genesis_committee_utxo: sample_tx_out_ref,
-			threshold_numerator: 2,
-			threshold_denominator: 3,
-			governance_authority: MainchainAddressHash(governance_authority_bytes),
-		},
+		genesis_utxo,
 		sidechain_pub_key: sidechain_pub_key_bytes.clone(),
 		// Unfortunately test vector in partner-chains-smart-contracts uses same UTxO in two places.
-		input_utxo: sample_tx_out_ref,
+		input_utxo: genesis_utxo,
 	};
 
 	let expected_sidechain_params_datum = ConstructorDatum {

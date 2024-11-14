@@ -8,17 +8,17 @@ use crate::io::IOContext;
 use crate::pc_contracts_cli_resources::{prompt_ogmios_configuration, OGMIOS_REQUIRED};
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
-use sidechain_domain::PolicyId;
+use sidechain_domain::{PolicyId, UtxoId};
 
 pub fn prepare_main_chain_config<C: IOContext>(
 	context: &C,
-	sidechain_params: SidechainParams,
+	genesis_utxo: UtxoId,
 ) -> anyhow::Result<()> {
 	context.print(OGMIOS_REQUIRED);
 	let ogmios_config = prompt_ogmios_configuration(context)?;
 	let cardano_parameteres = prepare_cardano_params(&ogmios_config, context)?;
 	cardano_parameteres.save(context);
-	set_up_cardano_addresses(context, sidechain_params, &ogmios_config)?;
+	set_up_cardano_addresses(context, genesis_utxo, &ogmios_config)?;
 	if INITIAL_PERMISSIONED_CANDIDATES.load_from_file(context).is_none() {
 		INITIAL_PERMISSIONED_CANDIDATES.save_to_file(&vec![], context)
 	}
@@ -29,20 +29,13 @@ pub fn prepare_main_chain_config<C: IOContext>(
 
 fn set_up_cardano_addresses<C: IOContext>(
 	context: &C,
-	params: SidechainParams,
+	genesis_utxo: UtxoId,
 	ogmios_config: &ServiceConfig,
 ) -> anyhow::Result<()> {
-	let params = chain_params::SidechainParams {
-		chain_id: params.chain_id,
-		genesis_committee_utxo: params.genesis_committee_utxo,
-		threshold_numerator: params.threshold_numerator,
-		threshold_denominator: params.threshold_denominator,
-		governance_authority: params.governance_authority,
-	};
 	let offchain_impl = context.offchain_impl(ogmios_config)?;
 	let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 	let scripts_data = runtime
-		.block_on(offchain_impl.get_scripts_data(params))
+		.block_on(offchain_impl.get_scripts_data(genesis_utxo))
 		.map_err(|e| anyhow::anyhow!("Offchain call failed: {e:?}!"))?;
 
 	let committee_candidate_validator_addr = scripts_data.addresses.committee_candidate_validator;
@@ -242,7 +235,8 @@ mod tests {
 				scenarios::prompt_and_save_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
 			]);
-		prepare_main_chain_config(&mock_context, test_sidechain_params()).expect("should succeed");
+		prepare_main_chain_config(&mock_context, UtxoId::from_str(TEST_GENESIS_UTXO).unwrap())
+			.expect("should succeed");
 	}
 
 	#[test]
@@ -290,7 +284,8 @@ mod tests {
 				scenarios::prompt_and_save_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
 			]);
-		prepare_main_chain_config(&mock_context, test_sidechain_params()).expect("should succeed");
+		prepare_main_chain_config(&mock_context, UtxoId::from_str(TEST_GENESIS_UTXO).unwrap())
+			.expect("should succeed");
 	}
 
 	fn print_addresses_io() -> MockIO {
@@ -303,33 +298,9 @@ mod tests {
 		))
 	}
 
-	fn test_sidechain_params() -> SidechainParams {
-		SidechainParams {
-			chain_id: 0,
-			genesis_committee_utxo: UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
-			threshold_numerator: 2,
-			threshold_denominator: 3,
-			governance_authority: MainchainAddressHash::from_hex_unsafe(
-				"0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9",
-			),
-		}
-	}
-
-	fn expected_mapped_params() -> chain_params::SidechainParams {
-		chain_params::SidechainParams {
-			chain_id: 0,
-			genesis_committee_utxo: UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
-			threshold_numerator: 2,
-			threshold_denominator: 3,
-			governance_authority: MainchainAddressHash::from_hex_unsafe(
-				"0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9",
-			),
-		}
-	}
-
 	fn preprod_offchain_mocks() -> OffchainMocks {
 		let mock = OffchainMock::new_with_scripts_data(
-			expected_mapped_params(),
+			UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
 			Ok(ScriptsData {
 				addresses: Addresses {
 					committee_candidate_validator: TEST_COMMITTEE_CANDIDATES_ADDRESS.to_string(),
