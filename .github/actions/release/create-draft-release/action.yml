@@ -79,6 +79,7 @@ runs:
       if: ${{ steps.check_release.outputs.release_exists == 'false' }}
       run: |
         tag="${{ inputs.tag }}"
+        release_name="${tag}-rc"
         release_body="### Pre-release candidate for version $tag\n\n"
         release_body+="This is a draft pre-release candidate for release $tag that is undergoing testing. The current testing status is:\n\n"
         release_body+="- [x] Local environment\n"
@@ -87,7 +88,7 @@ runs:
         release_body+="Please note: this release is not yet fully verified and is pending further testing.\n"
 
         release_response=$(curl -s -X POST -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
-                          -d '{"tag_name": "'$tag'", "name": "'$tag'", "body": "'"$release_body"'", "draft": true, "generate_release_notes": true, "prerelease": true}' \
+                          -d '{"tag_name": "'$tag'", "name": "'$release_name'", "body": "'"$release_body"'", "draft": true, "generate_release_notes": true, "prerelease": true}' \
                           "https://api.github.com/repos/${{ github.repository }}/releases")
         echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
         echo "::set-output name=release_id::$(echo $release_response | jq -r .id)"
