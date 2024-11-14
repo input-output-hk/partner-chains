@@ -34,7 +34,7 @@ runs:
       uses: docker/login-action@v3
       with:
         registry: ghcr.io
-        username: ${{ github.actor }}
+        username: ${{ env.ACTOR }}
         password: ${{ env.GITHUB_TOKEN }}
 
     - name: Tag Docker Image for GHCR
