@@ -420,7 +420,7 @@ jobs:
           threads: 1
 
   publish:
-    if: ${{ github.event.inputs.no-release != 'true' && (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success') }}
+    if: ${{ always() && github.event.inputs.no-release != 'true' && (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success') }}
     runs-on: ubuntu-latest
     needs:
       - build-linux
