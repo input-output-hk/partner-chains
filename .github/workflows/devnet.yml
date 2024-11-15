@@ -148,9 +148,12 @@ jobs:
 
     - name: Install Ctrf
       if: ${{ !cancelled() }}
-      run: npm install github-actions-ctrf
+      run: |
+        cd E2E-tests
+        npm install github-actions-ctrf
 
     - name: Generate Summary Report
       if: ${{ !cancelled() }}
       run: |
+        cd E2E-tests
         npx github-actions-ctrf ctrf-report.json
