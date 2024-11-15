@@ -1,16 +1,7 @@
 #![allow(dead_code)]
 
 use crate::plutus_script::PlutusScript;
-use cardano_serialization_lib::{
-	Address, AssetName, Assets, BigNum, ChangeConfig, CoinSelectionStrategyCIP2, CostModel,
-	Costmdls, Credential, DataCost, Ed25519KeyHash, EnterpriseAddress, ExUnitPrices, ExUnits, Int,
-	JsError, Language, LanguageKind, LinearFee, MinOutputAdaCalculator, MintBuilder, MintWitness,
-	MultiAsset, NetworkIdKind, PlutusData, PlutusScriptSource, PlutusWitness, PrivateKey, Redeemer,
-	RedeemerTag, ScriptHash, Transaction, TransactionBuilder, TransactionBuilderConfig,
-	TransactionBuilderConfigBuilder, TransactionHash, TransactionInput, TransactionOutput,
-	TransactionOutputBuilder, TransactionUnspentOutput, TransactionUnspentOutputs, TxInputsBuilder,
-	UnitInterval, Value, Vkey, Vkeywitness, Vkeywitnesses,
-};
+use cardano_serialization_lib::*;
 use ogmios_client::{
 	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse},
 	transactions::OgmiosBudget,
@@ -311,60 +302,55 @@ impl TransactionBuilderExt for TransactionBuilder {
 		&mut self,
 		ctx: &TransactionContext,
 	) -> Result<Transaction, JsError> {
-		// Tries if the largest UTXO is enough to cover collateral, if not, adds more UTXOs
-		// starting from the largest remaining.
-		fn select_collateral_inputs(
-			builder: &TransactionBuilder,
+		fn max_possible_collaterals(ctx: &TransactionContext) -> Vec<OgmiosUtxo> {
+			let mut utxos = ctx.payment_utxos.clone();
+			utxos.sort_by(|a, b| b.value.lovelace.cmp(&a.value.lovelace));
+			let max_inputs = ctx.protocol_parameters.max_collateral_inputs;
+			utxos
+				.into_iter()
+				.take(max_inputs.try_into().expect("max_collateral_input fit in usize"))
+				.collect()
+		}
+		// Tries to balance tx with given collateral inputs
+		fn try_balance(
+			builder: &mut TransactionBuilder,
+			collateral_inputs: &Vec<OgmiosUtxo>,
 			ctx: &TransactionContext,
-		) -> Result<Vec<OgmiosUtxo>, JsError> {
-			let max_possible_collaterals: Vec<_> = {
-				let mut utxos = ctx.payment_utxos.clone();
-				utxos.sort_by(|a, b| b.value.lovelace.cmp(&a.value.lovelace));
-				let max_inputs = ctx.protocol_parameters.max_collateral_inputs;
-				utxos
-					.into_iter()
-					.take(max_inputs.try_into().expect("max_collateral_input fit in usize"))
-					.collect()
-			};
-
-			let mut selected = vec![];
-			for input in max_possible_collaterals {
-				selected.push(input);
-				let mut builder = builder.clone();
-				builder.add_collateral_inputs(ctx, &selected)?;
-				// Check if the used inputs are enough
-				let result = builder.add_inputs_from_and_change_with_collateral_return(
+		) -> Result<Transaction, JsError> {
+			builder.add_required_signer(&ctx.payment_key_hash());
+			if collateral_inputs.is_empty() {
+				builder.add_inputs_from_and_change(
+					&ctx.payment_utxos.to_csl()?,
+					CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
+					&ChangeConfig::new(&key_hash_address(&ctx.payment_key_hash(), ctx.network)),
+				)?;
+			} else {
+				builder.add_collateral_inputs(ctx, &collateral_inputs)?;
+				builder.add_inputs_from_and_change_with_collateral_return(
 					&ctx.payment_utxos.to_csl()?,
 					CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
 					&ChangeConfig::new(&key_hash_address(&ctx.payment_key_hash(), ctx.network)),
 					&ctx.protocol_parameters.collateral_percentage.into(),
-				);
-				if result.is_ok() {
-					break;
-				}
+				)?;
+				builder.calc_script_data_hash(&convert_cost_models(
+					&ctx.protocol_parameters.plutus_cost_models,
+				))?;
 			}
-			Ok(selected)
-		}
-
-		fn try_balance(
-			builder: &mut TransactionBuilder,
-			ctx: &TransactionContext,
-		) -> Result<Transaction, JsError> {
-			builder.add_collateral_inputs(ctx, &select_collateral_inputs(builder, ctx)?)?;
-			builder.add_inputs_from_and_change_with_collateral_return(
-				&ctx.payment_utxos.to_csl()?,
-				CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
-				&ChangeConfig::new(&key_hash_address(&ctx.payment_key_hash(), ctx.network)),
-				&ctx.protocol_parameters.collateral_percentage.into(),
-			)?;
-			builder.calc_script_data_hash(&convert_cost_models(
-				&ctx.protocol_parameters.plutus_cost_models,
-			))?;
 			builder.build_tx()
 		}
-
-		self.add_required_signer(&ctx.payment_key_hash());
-		try_balance(self, ctx)
+		// Tries if the largest UTXO is enough to cover collateral, if not, adds more UTXOs
+		// starting from the largest remaining.
+		let mut selected = vec![];
+		for input in max_possible_collaterals(ctx) {
+			let mut builder = self.clone();
+			// Check if the used inputs are enough
+			let result = try_balance(&mut builder, &selected, ctx);
+			if result.is_ok() {
+				return result;
+			}
+			selected.push(input);
+		}
+		try_balance(self, &selected, ctx)
 			.map_err(|e| JsError::from_str(&format!("Could not balance transaction. Usually it means that the payment key does not own UTXO set required to cover transaction outputs and fees or to provide collateral. Cause: {}", e)))
 	}
 }
@@ -588,6 +574,7 @@ mod prop_tests {
 	use crate::test_values::*;
 	use cardano_serialization_lib::{
 		BigNum, ExUnits, NetworkIdKind, Transaction, TransactionBuilder, TransactionInputs,
+		TransactionOutput, Value,
 	};
 	use ogmios_client::types::OgmiosValue;
 	use ogmios_client::types::{OgmiosTx, OgmiosUtxo};
@@ -623,6 +610,25 @@ mod prop_tests {
 
 		used_inputs_lovelace_equals_outputs_and_fee(&tx, &payment_utxos);
 		selected_collateral_inputs_equal_total_collateral_and_collateral_return(&tx, payment_utxos);
+		fee_is_less_than_one_and_half_ada(&tx);
+	}
+
+	fn ada_only_transaction_balancing_test(payment_utxos: Vec<OgmiosUtxo>) {
+		let ctx = TransactionContext {
+			payment_key: payment_key(),
+			payment_utxos: payment_utxos.clone(),
+			network: NetworkIdKind::Testnet,
+			protocol_parameters: protocol_parameters(),
+		};
+		let mut tx_builder = TransactionBuilder::new(&get_builder_config(&ctx).unwrap());
+		tx_builder
+			.add_output(&TransactionOutput::new(&payment_addr(), &Value::new(&1500000u64.into())))
+			.unwrap();
+
+		let tx = tx_builder.balance_update_and_build(&ctx).unwrap();
+
+		used_inputs_lovelace_equals_outputs_and_fee(&tx, &payment_utxos);
+		there_is_no_collateral(&tx);
 		fee_is_less_than_one_and_half_ada(&tx);
 	}
 
@@ -662,6 +668,12 @@ mod prop_tests {
 		assert!(tx.body().fee() <= 1500000u64.into());
 	}
 
+	fn there_is_no_collateral(tx: &Transaction) {
+		assert!(tx.body().total_collateral().is_none());
+		assert!(tx.body().collateral_return().is_none());
+		assert!(tx.body().collateral().is_none())
+	}
+
 	fn match_inputs(inputs: &TransactionInputs, payment_utxos: &[OgmiosUtxo]) -> Vec<OgmiosUtxo> {
 		inputs
 			.into_iter()
@@ -684,6 +696,12 @@ mod prop_tests {
 		fn balance_tx_with_minted_token(payment_utxos in arb_payment_utxos(10)
 			.prop_filter("Inputs total lovelace too low", |utxos| sum_lovelace(&utxos) > 3000000)) {
 			multi_asset_transaction_balancing_test(payment_utxos)
+		}
+
+		#[test]
+		fn balance_tx_with_ada_only_token(payment_utxos in arb_payment_utxos(10)
+			.prop_filter("Inputs total lovelace too low", |utxos| sum_lovelace(&utxos) > 3000000)) {
+			ada_only_transaction_balancing_test(payment_utxos)
 		}
 	}
 

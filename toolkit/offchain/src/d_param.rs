@@ -80,7 +80,7 @@ mod tests {
 
 		let body = tx.body();
 		let inputs = body.inputs();
-		// The both inputs are used to cover transaction
+		// Both inputs are used to cover transaction
 		assert_eq!(
 			inputs.get(0).to_string(),
 			"0101010101010101010101010101010101010101010101010101010101010101#0"
