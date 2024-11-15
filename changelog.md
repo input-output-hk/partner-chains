@@ -8,6 +8,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 * Update ogmios to v6.9.0
 * Organized Rust sources into two directories: toolkit and node.
+* Implemented transaction balancing with CSL in offchain code.
 
 ## Removed
 

@@ -34,5 +34,6 @@ sidechain-domain = { workspace = true, features = ["std"] }
 uplc = { workspace = true }
 
 [dev-dependencies]
+proptest = { workspace = true }
 tokio = { workspace = true }
 pretty_assertions = { workspace = true }

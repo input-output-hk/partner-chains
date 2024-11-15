@@ -1,4 +1,4 @@
-name: CD
+name: "CD"
 
 on:
   workflow_dispatch:
@@ -53,6 +53,7 @@ jobs:
       - name: Build and Upload for Linux
         uses: ./.github/actions/artifacts/build-pc-artifacts
         with:
+          sha: ${{ inputs.sha }}
           tag: ${{ inputs.tag }}
           os: linux
 
@@ -70,6 +71,7 @@ jobs:
       - name: Build and Upload for macOS x86_64
         uses: ./.github/actions/artifacts/build-pc-artifacts
         with:
+          sha: ${{ inputs.sha }}
           tag: ${{ inputs.tag }}
           os: macos-x86_64
 
@@ -87,6 +89,7 @@ jobs:
       - name: Build and Upload for macOS arm64
         uses: ./.github/actions/artifacts/build-pc-artifacts
         with:
+          sha: ${{ inputs.sha }}
           tag: ${{ inputs.tag }}
           os: macos-arm64
 
@@ -108,7 +111,6 @@ jobs:
           AWS_REGION: "eu-central-1"
           ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-          SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
 
   create-draft-release:
     if: ${{ github.event.inputs.no-release != 'true' }}
@@ -420,7 +422,7 @@ jobs:
           threads: 1
 
   publish:
-    if: ${{ github.event.inputs.no-release != 'true' && (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success') }}
+    if: ${{ always() && github.event.inputs.no-release != 'true' && (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success') }}
     permissions:
       id-token: write
       contents: write
@@ -435,10 +437,10 @@ jobs:
       - name: Trigger Publish Workflow
         run: |
           curl -X POST \
-            -H "Authorization: token ${{ secrets.ACTIONS_PAT }}" \
+            -H "Authorization: token ${{ secrets.ACTIONS_PUBLISH_PAT }}" \
             -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/repos/${{ github.repository }}/actions/workflows/publish.yml/dispatches \
-            -d '{"ref": "main", "inputs": {"sha": "${{ github.sha }}", "tag": "${{ github.ref }}"}}'
+            -d '{"ref": "${{ github.ref_name }}", "inputs": {"sha": "${{ inputs.sha }}", "tag": "${{ inputs.tag }}"}}'
 
 #  deploy-staging-preprod:
 #    if: ${{ github.event.inputs.no-deploy != 'true' }}
