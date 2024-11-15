@@ -25,7 +25,7 @@ fn mint_permissioned_candidates_token_tx(
 		ctx,
 	)?;
 
-	tx_builder.set_required_fields_and_build(ctx)
+	tx_builder.balance_update_and_build(ctx)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -41,7 +41,6 @@ fn update_permissioned_candidates_tx(
 
 	let mut inputs = TxInputsBuilder::new();
 	inputs.add_script_utxo_input(script_utxo, validator, validator_redeemer_ex_units)?;
-	inputs.add_key_inputs(&ctx.payment_utxos, &ctx.payment_key_hash)?;
 	tx_builder.set_inputs(&inputs);
 
 	tx_builder.add_output_with_one_script_token(
@@ -50,7 +49,7 @@ fn update_permissioned_candidates_tx(
 		ctx,
 	)?;
 
-	tx_builder.set_required_fields_and_build(ctx)
+	tx_builder.balance_update_and_build(ctx)
 }
 
 #[cfg(test)]
@@ -58,24 +57,20 @@ mod tests {
 	use super::{mint_permissioned_candidates_token_tx, update_permissioned_candidates_tx};
 	use crate::{
 		csl::{empty_asset_name, TransactionContext},
-		plutus_script::PlutusScript,
+		test_values::*,
 	};
 	use cardano_serialization_lib::{
-		Address, Ed25519KeyHash, ExUnits, Int, LanguageKind, NetworkIdKind, PlutusData,
-		RedeemerTag, ScriptHash,
+		Address, ExUnits, Int, NetworkIdKind, PlutusData, RedeemerTag, ScriptHash,
 	};
 	use hex_literal::hex;
-	use ogmios_client::{
-		query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, ScriptExecutionPrices},
-		types::{Asset as OgmiosAsset, OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue},
-	};
+	use ogmios_client::types::{Asset as OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	use partner_chains_plutus_data::permissioned_candidates::permissioned_candidates_to_plutus_data;
 	use sidechain_domain::{
 		AuraPublicKey, GrandpaPublicKey, PermissionedCandidateData, SidechainPublicKey,
 	};
 
 	#[test]
-	fn mint_permissioned_canddiates_token_tx_regression_test() {
+	fn mint_permissioned_candiates_token_tx_regression_test() {
 		// We know the expected values were obtained with the correct code
 		let ex_units = ExUnits::new(&10000u32.into(), &200u32.into());
 
@@ -89,15 +84,19 @@ mod tests {
 
 		let body = tx.body();
 		let inputs = body.inputs();
-		// Payment inputs are script utxo and payment utxo
+		// Both payment utxos are used as inputs
 		assert_eq!(
 			inputs.get(0).to_string(),
 			"0404040404040404040404040404040404040404040404040404040404040404#1"
 		);
-		// Collateral input goes to collaterals
+		assert_eq!(
+			inputs.get(1).to_string(),
+			"0707070707070707070707070707070707070707070707070707070707070707#0"
+		);
+		// The greater payment utxo is used as collateral
 		assert_eq!(
 			body.collateral().unwrap().get(0).to_string(),
-			"0707070707070707070707070707070707070707070707070707070707070707#0"
+			"0404040404040404040404040404040404040404040404040404040404040404#1"
 		);
 		let outputs = body.outputs();
 		// There is a change for payment
@@ -111,7 +110,10 @@ mod tests {
 			.unwrap()
 			.checked_add(&body.fee())
 			.unwrap();
-		assert_eq!(coins_sum, payment_utxo().value.lovelace.into());
+		assert_eq!(
+			coins_sum,
+			(greater_payment_utxo().value.lovelace + lesser_payment_utxo().value.lovelace).into()
+		);
 		let token_policy_id =
 			ScriptHash::from(hex!("6fdad2bafb138ef29280dc1bacb7d468fdc7bc3e93966a6edf0022a0"));
 		assert_eq!(
@@ -153,14 +155,14 @@ mod tests {
 		let total_collateral = body.total_collateral().unwrap();
 		assert_eq!(
 			collateral_return.amount().coin().checked_add(&total_collateral).unwrap(),
-			collateral_utxo().value.lovelace.into()
+			greater_payment_utxo().value.lovelace.into()
 		);
 	}
 
 	#[test]
-	fn update_d_param_tx_regression_test() {
+	fn update_permissioned_candidates_tx_regression_test() {
 		// We know the expected values were obtained with the correct code
-		let script_utxo_lovelace = 1060260;
+		let script_utxo_lovelace = 1952430;
 		let script_utxo = OgmiosUtxo {
 			transaction: OgmiosTx { id: [15; 32] },
 			index: 0,
@@ -200,10 +202,10 @@ mod tests {
 			inputs.get(1).to_string(),
 			"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f#0"
 		);
-		// Collateral input goes to collaterals
+		// The greater payment utxo is used as collateral
 		assert_eq!(
 			body.collateral().unwrap().get(0).to_string(),
-			"0707070707070707070707070707070707070707070707070707070707070707#0"
+			"0404040404040404040404040404040404040404040404040404040404040404#1"
 		);
 		let outputs = body.outputs();
 		// There is a change for payment
@@ -217,7 +219,10 @@ mod tests {
 			.unwrap()
 			.checked_add(&body.fee())
 			.unwrap();
-		assert_eq!(coins_sum, (payment_utxo().value.lovelace + script_utxo_lovelace).into());
+		assert_eq!(
+			coins_sum,
+			(greater_payment_utxo().value.lovelace + script_utxo_lovelace).into()
+		);
 		assert_eq!(
 			script_output
 				.amount()
@@ -249,46 +254,33 @@ mod tests {
 		let total_collateral = body.total_collateral().unwrap();
 		assert_eq!(
 			collateral_return.amount().coin().checked_add(&total_collateral).unwrap(),
-			collateral_utxo().value.lovelace.into()
+			greater_payment_utxo().value.lovelace.into()
 		);
 	}
 
 	fn test_tx_context() -> TransactionContext {
 		TransactionContext {
-			payment_key_hash: payment_key_hash(),
-			collaterals: vec![collateral_utxo()],
-			payment_utxos: vec![payment_utxo()],
+			payment_key: payment_key(),
+			payment_utxos: vec![
+				lesser_payment_utxo(),
+				greater_payment_utxo(),
+				make_utxo(14u8, 0, 400000, &payment_addr()),
+			],
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
 		}
 	}
 
-	fn test_script() -> PlutusScript {
-		PlutusScript {
-			bytes: hex!("4d4c01000022223212001375a009").to_vec(),
-			language: LanguageKind::PlutusV2,
-		}
+	fn lesser_payment_utxo() -> OgmiosUtxo {
+		make_utxo(7u8, 0, 1700000, &payment_addr())
 	}
 
-	fn payment_key_hash() -> Ed25519KeyHash {
-		hex!("035ef86f1622172816bb9e916aea86903b2c8d32c728ad5c9b9472be").into()
-	}
-
-	fn collateral_utxo() -> OgmiosUtxo {
-		make_utxo(7u8, 0, 7000000, &payment_addr())
-	}
-
-	fn payment_utxo() -> OgmiosUtxo {
-		make_utxo(4u8, 1, 4000000, &payment_addr())
+	fn greater_payment_utxo() -> OgmiosUtxo {
+		make_utxo(4u8, 1, 1800000, &payment_addr())
 	}
 
 	fn validator_addr() -> Address {
 		Address::from_bech32("addr_test1wpha4546lvfcau5jsrwpht9h6350m3au86fev6nwmuqz9gqer2ung")
-			.unwrap()
-	}
-
-	fn payment_addr() -> Address {
-		Address::from_bech32("addr_test1vqp4a7r0zc3pw2qkhw0fz6h2s6grktydxtrj3t2unw2890sfgt0kq")
 			.unwrap()
 	}
 
@@ -327,38 +319,5 @@ mod tests {
 
 	fn expected_plutus_data() -> PlutusData {
 		permissioned_candidates_to_plutus_data(&permissioned_candidates())
-	}
-
-	fn protocol_parameters() -> ProtocolParametersResponse {
-		ProtocolParametersResponse {
-			min_fee_coefficient: 44,
-			min_fee_constant: OgmiosValue::new_lovelace(155381),
-			stake_pool_deposit: OgmiosValue::new_lovelace(500000000),
-			stake_credential_deposit: OgmiosValue::new_lovelace(2000000),
-			max_value_size: OgmiosBytesSize { bytes: 5000 },
-			max_transaction_size: OgmiosBytesSize { bytes: 16384 },
-			min_utxo_deposit_coefficient: 4310,
-			script_execution_prices: ScriptExecutionPrices {
-				memory: fraction::Ratio::new_raw(577, 10000),
-				cpu: fraction::Ratio::new_raw(721, 10000000),
-			},
-			plutus_cost_models: PlutusCostModels {
-				plutus_v1: vec![898148, 53384111, 14333],
-				plutus_v2: vec![43053543, 10],
-				plutus_v3: vec![-900, 166917843],
-			},
-			max_collateral_inputs: 3,
-			collateral_percentage: 150,
-		}
-	}
-
-	fn make_utxo(id_byte: u8, index: u16, lovelace: u64, addr: &Address) -> OgmiosUtxo {
-		OgmiosUtxo {
-			transaction: OgmiosTx { id: [id_byte; 32] },
-			index,
-			value: OgmiosValue::new_lovelace(lovelace),
-			address: addr.to_bech32(None).unwrap(),
-			..Default::default()
-		}
 	}
 }
