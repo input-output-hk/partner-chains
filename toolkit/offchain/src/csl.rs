@@ -1,14 +1,11 @@
 #![allow(dead_code)]
 
-use cardano_serialization_lib::{
-	Address, AssetName, Assets, BigNum, CostModel, Costmdls, Credential, EnterpriseAddress,
-	ExUnitPrices, ExUnits, JsError, Language, LanguageKind, LinearFee, MultiAsset, NetworkIdKind,
-	ScriptHash, TransactionBuilderConfig, TransactionBuilderConfigBuilder, UnitInterval, Value,
-};
+use crate::plutus_script::PlutusScript;
+use cardano_serialization_lib::*;
 use ogmios_client::{
 	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse},
 	transactions::OgmiosBudget,
-	types::OgmiosValue,
+	types::{OgmiosUtxo, OgmiosValue},
 };
 
 pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: LanguageKind) -> [u8; 28] {
@@ -41,6 +38,11 @@ pub fn payment_address(key_bytes: &[u8], network: NetworkIdKind) -> Address {
 	.to_address()
 }
 
+pub fn key_hash_address(pub_key_hash: &Ed25519KeyHash, network: NetworkIdKind) -> Address {
+	EnterpriseAddress::new(network_id_kind_to_u8(network), &Credential::from_keyhash(pub_key_hash))
+		.to_address()
+}
+
 pub fn ogmios_network_to_csl(network: ogmios_client::query_network::Network) -> NetworkIdKind {
 	match network {
 		ogmios_client::query_network::Network::Mainnet => NetworkIdKind::Mainnet,
@@ -66,8 +68,9 @@ fn language_kind_to_u8(language: LanguageKind) -> u8 {
 /// Creates a CSL [`TransactionBuilderConfig`] for given [`ProtocolParametersResponse`].
 /// This function is not unit-testable because [`TransactionBuilderConfig`] has no public getters.
 pub(crate) fn get_builder_config(
-	protocol_parameters: &ProtocolParametersResponse,
+	context: &TransactionContext,
 ) -> Result<TransactionBuilderConfig, JsError> {
+	let protocol_parameters = &context.protocol_parameters;
 	TransactionBuilderConfigBuilder::new()
 		.fee_algo(&linear_fee(protocol_parameters))
 		.pool_deposit(&convert_value(&protocol_parameters.stake_pool_deposit)?.coin())
@@ -99,9 +102,19 @@ pub(crate) fn convert_value(value: &OgmiosValue) -> Result<Value, JsError> {
 		for (policy_id, assets) in value.native_tokens.iter() {
 			let mut csl_assets = Assets::new();
 			for asset in assets.iter() {
-				let amount: u64 =
-					asset.amount.try_into().map_err(|_| JsError::from_str("Amount too large"))?;
-				csl_assets.insert(&AssetName::new(asset.name.clone())?, &amount.into());
+				let amount: u64 = asset.amount.try_into().map_err(|_| {
+					JsError::from_str(&format!(
+						"Could not convert Ogmios UTOX value, asset amount {} too large",
+						asset.amount,
+					))
+				})?;
+				let asset_name = AssetName::new(asset.name.clone()).map_err(|e| {
+					JsError::from_str(&format!(
+						"Could not convert Ogmios UTXO value, asset name is invalid: '{}'",
+						e.to_string()
+					))
+				})?;
+				csl_assets.insert(&asset_name, &amount.into());
 			}
 			multiasset.insert(&ScriptHash::from(*policy_id), &csl_assets);
 		}
@@ -123,6 +136,271 @@ pub(crate) fn convert_cost_models(m: &PlutusCostModels) -> Costmdls {
 /// Conversion of ogmios-client budget to CSL execution units
 pub(crate) fn convert_ex_units(v: &OgmiosBudget) -> ExUnits {
 	ExUnits::new(&v.memory.into(), &v.cpu.into())
+}
+
+pub(crate) fn empty_asset_name() -> AssetName {
+	AssetName::new(vec![]).expect("Hardcoded empty asset name is valid")
+}
+
+pub(crate) trait OgmiosUtxoExt {
+	fn to_csl_tx_input(&self) -> TransactionInput;
+	fn to_csl_tx_output(&self) -> Result<TransactionOutput, JsError>;
+	fn to_csl(&self) -> Result<TransactionUnspentOutput, JsError>;
+}
+
+impl OgmiosUtxoExt for OgmiosUtxo {
+	fn to_csl_tx_input(&self) -> TransactionInput {
+		TransactionInput::new(&TransactionHash::from(self.transaction.id), self.index.into())
+	}
+
+	fn to_csl_tx_output(&self) -> Result<TransactionOutput, JsError> {
+		Ok(TransactionOutput::new(
+			&Address::from_bech32(&self.address).map_err(|e| {
+				JsError::from_str(&format!("Couldn't convert address from ogmios: '{}'", e))
+			})?,
+			&convert_value(&self.value)?,
+		))
+	}
+
+	fn to_csl(&self) -> Result<TransactionUnspentOutput, JsError> {
+		Ok(TransactionUnspentOutput::new(&self.to_csl_tx_input(), &self.to_csl_tx_output()?))
+	}
+}
+
+pub(crate) struct TransactionContext {
+	/// This key is added as required signer and used to sign the transaction.
+	pub(crate) payment_key: PrivateKey,
+	/// Used to pay for the transaction fees and uncovered transaction inputs
+	/// and as source of collateral inputs
+	pub(crate) payment_utxos: Vec<OgmiosUtxo>,
+	pub(crate) network: NetworkIdKind,
+	pub(crate) protocol_parameters: ProtocolParametersResponse,
+}
+
+impl TransactionContext {
+	pub(crate) fn payment_key_hash(&self) -> Ed25519KeyHash {
+		self.payment_key.to_public().hash()
+	}
+
+	pub(crate) fn sign(&self, tx: Transaction) -> Transaction {
+		let tx_hash: [u8; 32] = sidechain_domain::crypto::blake2b(tx.body().to_bytes().as_ref());
+		let signature = self.payment_key.sign(&tx_hash);
+		let mut witness_set = tx.witness_set();
+		let mut vkeywitnesses = witness_set.vkeys().unwrap_or_else(Vkeywitnesses::new);
+		vkeywitnesses.add(&Vkeywitness::new(&Vkey::new(&self.payment_key.to_public()), &signature));
+		witness_set.set_vkeys(&vkeywitnesses);
+		Transaction::new(&tx.body(), &witness_set, tx.auxiliary_data())
+	}
+}
+
+pub(crate) trait OgmiosUtxosExt {
+	fn to_csl(&self) -> Result<TransactionUnspentOutputs, JsError>;
+}
+
+impl OgmiosUtxosExt for [OgmiosUtxo] {
+	fn to_csl(&self) -> Result<TransactionUnspentOutputs, JsError> {
+		let mut utxos = TransactionUnspentOutputs::new();
+		for utxo in self {
+			utxos.add(&utxo.to_csl()?);
+		}
+		Ok(utxos)
+	}
+}
+
+pub(crate) trait TransactionBuilderExt {
+	/// Creates output on the script address with datum that has 1 token with asset for the script and it has given datum attached.
+	fn add_output_with_one_script_token(
+		&mut self,
+		script: &PlutusScript,
+		datum: &PlutusData,
+		ctx: &TransactionContext,
+	) -> Result<(), JsError>;
+
+	/// Adds ogmios inputs as collateral inputs to the tx builder.
+	fn add_collateral_inputs(
+		&mut self,
+		ctx: &TransactionContext,
+		inputs: &Vec<OgmiosUtxo>,
+	) -> Result<(), JsError>;
+
+	/// Adds minting of 1 token (with empty asset name) for the given script
+	fn add_mint_one_script_token(
+		&mut self,
+		script: &PlutusScript,
+		ex_units: ExUnits,
+	) -> Result<(), JsError>;
+
+	/// Sets fields required by the most of partner-chains smart contract transactions.
+	/// Uses input from `ctx` to cover already present outputs.
+	/// Adds collateral inputs using quite a simple algorithm.
+	fn balance_update_and_build(
+		&mut self,
+		ctx: &TransactionContext,
+	) -> Result<Transaction, JsError>;
+}
+
+impl TransactionBuilderExt for TransactionBuilder {
+	fn add_output_with_one_script_token(
+		&mut self,
+		script: &PlutusScript,
+		datum: &PlutusData,
+		ctx: &TransactionContext,
+	) -> Result<(), JsError> {
+		let amount_builder = TransactionOutputBuilder::new()
+			.with_address(&script.address(ctx.network))
+			.with_plutus_data(&datum)
+			.next()?;
+		let mut ma = MultiAsset::new();
+		let mut assets = Assets::new();
+		assets.insert(&empty_asset_name(), &1u64.into());
+		ma.insert(&script.script_hash().into(), &assets);
+		let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
+		let min_ada = MinOutputAdaCalculator::new(
+			&output,
+			&DataCost::new_coins_per_byte(
+				&ctx.protocol_parameters.min_utxo_deposit_coefficient.into(),
+			),
+		)
+		.calculate_ada()?;
+		let output = amount_builder.with_coin_and_asset(&min_ada, &ma).build()?;
+		self.add_output(&output)
+	}
+
+	fn add_collateral_inputs(
+		&mut self,
+		ctx: &TransactionContext,
+		inputs: &Vec<OgmiosUtxo>,
+	) -> Result<(), JsError> {
+		let mut collateral_builder = TxInputsBuilder::new();
+		collateral_builder.add_key_inputs(&inputs, &ctx.payment_key_hash())?;
+		self.set_collateral(&collateral_builder);
+		Ok(())
+	}
+
+	fn add_mint_one_script_token(
+		&mut self,
+		script: &PlutusScript,
+		ex_units: ExUnits,
+	) -> Result<(), JsError> {
+		let mut mint_builder = MintBuilder::new();
+		let validator_source = PlutusScriptSource::new(&script.to_csl());
+		let mint_witness = MintWitness::new_plutus_script(
+			&validator_source,
+			&Redeemer::new(
+				&RedeemerTag::new_mint(),
+				&0u32.into(),
+				&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
+				&ex_units,
+			),
+		);
+		mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new_i32(1))?;
+		self.set_mint_builder(&mint_builder);
+		Ok(())
+	}
+
+	fn balance_update_and_build(
+		&mut self,
+		ctx: &TransactionContext,
+	) -> Result<Transaction, JsError> {
+		fn max_possible_collaterals(ctx: &TransactionContext) -> Vec<OgmiosUtxo> {
+			let mut utxos = ctx.payment_utxos.clone();
+			utxos.sort_by(|a, b| b.value.lovelace.cmp(&a.value.lovelace));
+			let max_inputs = ctx.protocol_parameters.max_collateral_inputs;
+			utxos
+				.into_iter()
+				.take(max_inputs.try_into().expect("max_collateral_input fit in usize"))
+				.collect()
+		}
+		// Tries to balance tx with given collateral inputs
+		fn try_balance(
+			builder: &mut TransactionBuilder,
+			collateral_inputs: &Vec<OgmiosUtxo>,
+			ctx: &TransactionContext,
+		) -> Result<Transaction, JsError> {
+			builder.add_required_signer(&ctx.payment_key_hash());
+			if collateral_inputs.is_empty() {
+				builder.add_inputs_from_and_change(
+					&ctx.payment_utxos.to_csl()?,
+					CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
+					&ChangeConfig::new(&key_hash_address(&ctx.payment_key_hash(), ctx.network)),
+				)?;
+			} else {
+				builder.add_collateral_inputs(ctx, &collateral_inputs)?;
+				builder.add_inputs_from_and_change_with_collateral_return(
+					&ctx.payment_utxos.to_csl()?,
+					CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
+					&ChangeConfig::new(&key_hash_address(&ctx.payment_key_hash(), ctx.network)),
+					&ctx.protocol_parameters.collateral_percentage.into(),
+				)?;
+				builder.calc_script_data_hash(&convert_cost_models(
+					&ctx.protocol_parameters.plutus_cost_models,
+				))?;
+			}
+			builder.build_tx()
+		}
+		// Tries if the largest UTXO is enough to cover collateral, if not, adds more UTXOs
+		// starting from the largest remaining.
+		let mut selected = vec![];
+		for input in max_possible_collaterals(ctx) {
+			let mut builder = self.clone();
+			// Check if the used inputs are enough
+			let result = try_balance(&mut builder, &selected, ctx);
+			if result.is_ok() {
+				return result;
+			}
+			selected.push(input);
+		}
+		try_balance(self, &selected, ctx)
+			.map_err(|e| JsError::from_str(&format!("Could not balance transaction. Usually it means that the payment key does not own UTXO set required to cover transaction outputs and fees or to provide collateral. Cause: {}", e)))
+	}
+}
+
+pub(crate) trait InputsBuilderExt {
+	fn add_script_utxo_input(
+		&mut self,
+		utxo: &OgmiosUtxo,
+		script: &PlutusScript,
+		ex_units: ExUnits,
+	) -> Result<(), JsError>;
+
+	/// Adds ogmios inputs to the tx inputs builder.
+	fn add_key_inputs(&mut self, utxos: &[OgmiosUtxo], key: &Ed25519KeyHash)
+		-> Result<(), JsError>;
+}
+
+impl InputsBuilderExt for TxInputsBuilder {
+	fn add_script_utxo_input(
+		&mut self,
+		utxo: &OgmiosUtxo,
+		script: &PlutusScript,
+		ex_units: ExUnits,
+	) -> Result<(), JsError> {
+		let input = utxo.to_csl_tx_input();
+		let amount = convert_value(&utxo.value)?;
+		let witness = PlutusWitness::new_without_datum(
+			&script.to_csl(),
+			&Redeemer::new(
+				&RedeemerTag::new_spend(),
+				// CSL will set redeemer index for the index of script input after sorting transaction inputs
+				&0u32.into(),
+				&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
+				&ex_units,
+			),
+		);
+		self.add_plutus_script_input(&witness, &input, &amount);
+		Ok(())
+	}
+
+	fn add_key_inputs(
+		&mut self,
+		utxos: &[OgmiosUtxo],
+		key: &Ed25519KeyHash,
+	) -> Result<(), JsError> {
+		for utxo in utxos.iter() {
+			self.add_key_input(key, &utxo.to_csl_tx_input(), &convert_value(&utxo.value)?);
+		}
+		Ok(())
+	}
 }
 
 #[cfg(test)]
@@ -284,6 +562,177 @@ mod tests {
 				plutus_v2: vec![43053543, 10],
 				plutus_v3: vec![-900, 166917843],
 			},
+			max_collateral_inputs: 3,
+			collateral_percentage: 150,
+		}
+	}
+}
+
+#[cfg(test)]
+mod prop_tests {
+	use super::{get_builder_config, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext};
+	use crate::test_values::*;
+	use cardano_serialization_lib::{
+		BigNum, ExUnits, NetworkIdKind, Transaction, TransactionBuilder, TransactionInputs,
+		TransactionOutput, Value,
+	};
+	use ogmios_client::types::OgmiosValue;
+	use ogmios_client::types::{OgmiosTx, OgmiosUtxo};
+	use proptest::{
+		array::uniform32,
+		collection::{hash_set, vec},
+		prelude::*,
+	};
+	use sidechain_domain::{McTxHash, UtxoId, UtxoIndex};
+
+	const MIN_UTXO_LOVELACE: u64 = 1000000;
+	const FIVE_ADA: u64 = 5000000;
+
+	fn multi_asset_transaction_balancing_test(payment_utxos: Vec<OgmiosUtxo>) {
+		let ctx = TransactionContext {
+			payment_key: payment_key(),
+			payment_utxos: payment_utxos.clone(),
+			network: NetworkIdKind::Testnet,
+			protocol_parameters: protocol_parameters(),
+		};
+		let mut tx_builder = TransactionBuilder::new(&get_builder_config(&ctx).unwrap());
+		tx_builder
+			.add_mint_one_script_token(
+				&test_script(),
+				ExUnits::new(&BigNum::zero(), &BigNum::zero()),
+			)
+			.unwrap();
+		tx_builder
+			.add_output_with_one_script_token(&test_script(), &test_plutus_data(), &ctx)
+			.unwrap();
+
+		let tx = tx_builder.balance_update_and_build(&ctx).unwrap();
+
+		used_inputs_lovelace_equals_outputs_and_fee(&tx, &payment_utxos);
+		selected_collateral_inputs_equal_total_collateral_and_collateral_return(&tx, payment_utxos);
+		fee_is_less_than_one_and_half_ada(&tx);
+	}
+
+	fn ada_only_transaction_balancing_test(payment_utxos: Vec<OgmiosUtxo>) {
+		let ctx = TransactionContext {
+			payment_key: payment_key(),
+			payment_utxos: payment_utxos.clone(),
+			network: NetworkIdKind::Testnet,
+			protocol_parameters: protocol_parameters(),
+		};
+		let mut tx_builder = TransactionBuilder::new(&get_builder_config(&ctx).unwrap());
+		tx_builder
+			.add_output(&TransactionOutput::new(&payment_addr(), &Value::new(&1500000u64.into())))
+			.unwrap();
+
+		let tx = tx_builder.balance_update_and_build(&ctx).unwrap();
+
+		used_inputs_lovelace_equals_outputs_and_fee(&tx, &payment_utxos);
+		there_is_no_collateral(&tx);
+		fee_is_less_than_one_and_half_ada(&tx);
+	}
+
+	fn used_inputs_lovelace_equals_outputs_and_fee(
+		tx: &Transaction,
+		payment_utxos: &Vec<OgmiosUtxo>,
+	) {
+		let used_inputs: Vec<OgmiosUtxo> = match_inputs(&tx.body().inputs(), payment_utxos);
+		let used_inputs_value: u64 = sum_lovelace(&used_inputs);
+		let outputs_lovelace_sum: u64 = tx
+			.body()
+			.outputs()
+			.into_iter()
+			.map(|output| {
+				let value: u64 = output.amount().coin().into();
+				value
+			})
+			.sum();
+		let fee: u64 = tx.body().fee().into();
+		// Used inputs are qual to the sum of the outputs plus the fee
+		assert_eq!(used_inputs_value, outputs_lovelace_sum + fee);
+	}
+
+	fn selected_collateral_inputs_equal_total_collateral_and_collateral_return(
+		tx: &Transaction,
+		payment_utxos: Vec<OgmiosUtxo>,
+	) {
+		let collateral_inputs_sum: u64 =
+			sum_lovelace(&match_inputs(&tx.body().collateral().unwrap(), &payment_utxos));
+		let collateral_return: u64 = tx.body().collateral_return().unwrap().amount().coin().into();
+		let total_collateral: u64 = tx.body().total_collateral().unwrap().into();
+		assert_eq!(collateral_inputs_sum, collateral_return + total_collateral);
+	}
+
+	// Exact fee depends on inputs and outputs, but it definately is less than 1.5 ADA
+	fn fee_is_less_than_one_and_half_ada(tx: &Transaction) {
+		assert!(tx.body().fee() <= 1500000u64.into());
+	}
+
+	fn there_is_no_collateral(tx: &Transaction) {
+		assert!(tx.body().total_collateral().is_none());
+		assert!(tx.body().collateral_return().is_none());
+		assert!(tx.body().collateral().is_none())
+	}
+
+	fn match_inputs(inputs: &TransactionInputs, payment_utxos: &[OgmiosUtxo]) -> Vec<OgmiosUtxo> {
+		inputs
+			.into_iter()
+			.map(|input| {
+				payment_utxos
+					.iter()
+					.find(|utxo| utxo.to_csl_tx_input() == *input)
+					.unwrap()
+					.clone()
+			})
+			.collect()
+	}
+
+	fn sum_lovelace(utxos: &[OgmiosUtxo]) -> u64 {
+		utxos.iter().map(|utxo| utxo.value.lovelace).sum()
+	}
+
+	proptest! {
+		#[test]
+		fn balance_tx_with_minted_token(payment_utxos in arb_payment_utxos(10)
+			.prop_filter("Inputs total lovelace too low", |utxos| sum_lovelace(&utxos) > 3000000)) {
+			multi_asset_transaction_balancing_test(payment_utxos)
+		}
+
+		#[test]
+		fn balance_tx_with_ada_only_token(payment_utxos in arb_payment_utxos(10)
+			.prop_filter("Inputs total lovelace too low", |utxos| sum_lovelace(&utxos) > 3000000)) {
+			ada_only_transaction_balancing_test(payment_utxos)
+		}
+	}
+
+	prop_compose! {
+		// Set is needed to be used, because we have to avoid UTXOs with the same id.
+		fn arb_payment_utxos(n: usize)
+			(utxo_ids in hash_set(arb_utxo_id(), 1..n))
+			(utxo_ids in Just(utxo_ids.clone()), values in vec(arb_utxo_lovelace(), utxo_ids.len())
+		) -> Vec<OgmiosUtxo> {
+			utxo_ids.into_iter().zip(values.into_iter()).map(|(utxo_id, value)| OgmiosUtxo {
+				transaction: OgmiosTx { id: utxo_id.tx_hash.0 },
+				index: utxo_id.index.0,
+				value,
+				address: payment_addr().to_bech32(None).unwrap(),
+				..Default::default()
+			}).collect()
+		}
+	}
+
+	prop_compose! {
+		fn arb_utxo_lovelace()(value in MIN_UTXO_LOVELACE..FIVE_ADA) -> OgmiosValue {
+			OgmiosValue::new_lovelace(value)
+		}
+	}
+
+	prop_compose! {
+		fn arb_utxo_id()(tx_hash in uniform32(0u8..255u8), index in any::<u16>()) -> UtxoId {
+			UtxoId {
+				tx_hash: McTxHash(tx_hash),
+				index: UtxoIndex(index),
+			}
 		}
 	}
 }

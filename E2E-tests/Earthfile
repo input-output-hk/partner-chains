@@ -109,4 +109,3 @@ report:
   END
   RUN echo $summary
   RUN exit $exitcode
-  

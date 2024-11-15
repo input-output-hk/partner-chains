@@ -1,0 +1,11 @@
+[package]
+name = "plutus-datum-derive"
+version = "1.3.0"
+edition = "2021"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { workspace = true }
+quote = { workspace = true }

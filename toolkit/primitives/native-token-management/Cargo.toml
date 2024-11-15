@@ -1,0 +1,52 @@
+[package]
+name = "sp-native-token-management"
+version = "1.3.0"
+edition = "2021"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+async-trait = { workspace = true, optional = true }
+envy = { workspace = true, optional = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+sidechain-domain = { workspace = true }
+sidechain-mc-hash = { workspace = true, optional = true }
+sp-api = { workspace = true }
+sp-blockchain = { workspace = true, optional = true }
+sp-inherents = { workspace = true }
+sp-runtime = { workspace = true }
+thiserror = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+sp-version = { workspace = true, optional = true }
+derive-new = { workspace = true }
+derive_more = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "async-trait",
+    "parity-scale-codec/std",
+    "scale-info/std",
+    "sidechain-domain/std",
+    "sidechain-mc-hash",
+    "sp-api/std",
+    "sp-blockchain",
+    "sp-inherents/std",
+    "sp-runtime/std",
+    "thiserror",
+    "envy",
+    "sp-version",
+    "sp-version/std",
+    "serde"
+]
+serde = [
+	"dep:serde",
+	"scale-info/serde",
+	"sidechain-domain/serde",
+]
+mock = []

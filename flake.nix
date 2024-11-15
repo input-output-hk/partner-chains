@@ -24,7 +24,7 @@
 
     # Partner Chains deps
     smart-contracts = {
-      url = "github:input-output-hk/partner-chains-smart-contracts/v6.2.1";
+      url = "github:input-output-hk/partner-chains-smart-contracts/v6.2.2";
       flake = false;
     };
     cardano-node = {
@@ -40,7 +40,7 @@
       flake = false;
     };
     ogmios = {
-      url = "github:CardanoSolutions/ogmios/v6.8.0";
+      url = "github:CardanoSolutions/ogmios/v6.9.0";
       flake = false;
     };
     configurations = {
@@ -59,11 +59,11 @@
       imports = [
         inputs.devshell.flakeModule
         inputs.process-compose.flakeModule
-        ./nix/shell.nix
-        ./nix/packages
-        ./nix/processes.nix
+        ./dev/nix/shell.nix
+        ./dev/nix/packages
+        ./dev/nix/processes.nix
       ];
-      flake.lib = import ./nix/lib.nix {inherit (nixpkgs) lib;};
+      flake.lib = import ./dev/nix/lib.nix {inherit (nixpkgs) lib;};
     };
   nixConfig = {
     allow-import-from-derivation = true;

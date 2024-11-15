@@ -1,6 +1,6 @@
 [package]
 name = "partner-chains-cardano-offchain"
-version = "1.2.0"
+version = "1.3.0"
 authors = ["IOG"]
 edition = "2021"
 license = "Apache-2.0"
@@ -24,6 +24,7 @@ minicbor = { workspace = true }
 ogmios-client = { workspace = true, features = ["jsonrpsee-client"] }
 pallas-addresses = { workspace = true }
 pallas-primitives = { workspace = true }
+partner-chains-plutus-data = { workspace = true }
 plutus = { workspace = true }
 raw-scripts = { workspace = true }
 serde = { workspace = true }
@@ -33,5 +34,6 @@ sidechain-domain = { workspace = true, features = ["std"] }
 uplc = { workspace = true }
 
 [dev-dependencies]
+proptest = { workspace = true }
 tokio = { workspace = true }
 pretty_assertions = { workspace = true }

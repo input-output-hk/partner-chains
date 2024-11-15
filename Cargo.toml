@@ -1,45 +1,45 @@
 [workspace]
 members = [
-	"cli/commands",
-	"cli/node-commands",
-	"client/consensus/aura",
-	"node",
-	"pallets/block-rewards",
-	"pallets/pallet-session-runtime-stub",
-	"pallets/partner-chains-session",
-	"pallets/sidechain",
-	"pallets/sidechain/rpc",
-	"pallets/session-validator-management",
-	"pallets/session-validator-management/benchmarking",
-	"pallets/session-validator-management/rpc",
-	"primitives/consensus/aura",
-	"primitives/block-rewards",
-	"primitives/chain-params",
-	"primitives/domain",
-	"primitives/mock-types",
-	"primitives/selection",
-	"primitives/sidechain-block-search",
-	"primitives/sidechain-slots",
-	"primitives/authority-selection-inherents",
-	"mainchain-follower/main-chain-follower-cli",
-	"mainchain-follower/db-sync-follower",
-	"mainchain-follower/mock",
-	"utils/byte-string-derivation",
-	"utils/plutus",
-	"utils/plutus/plutus-datum-derive",
-	"runtime",
-	"utils/ogmios-client",
-	"utils/time-source",
-	"primitives/sidechain-mc-hash",
-	"primitives/session-validator-management",
-	"primitives/session-validator-management/query",
-	"primitives/session-manager",
-	"primitives/sidechain",
-	"partner-chains-cli",
-	"pallets/native-token-management",
-	"primitives/native-token-management",
+	"node/node",
+	"node/runtime",
+	"node/chain-params",
+	"toolkit/cli/commands",
+	"toolkit/cli/node-commands",
+	"toolkit/client/consensus/aura",
+	"toolkit/pallets/block-rewards",
+	"toolkit/pallets/pallet-session-runtime-stub",
+	"toolkit/pallets/partner-chains-session",
+	"toolkit/pallets/sidechain",
+	"toolkit/pallets/sidechain/rpc",
+	"toolkit/pallets/session-validator-management",
+	"toolkit/pallets/session-validator-management/benchmarking",
+	"toolkit/pallets/session-validator-management/rpc",
+	"toolkit/primitives/consensus/aura",
+	"toolkit/primitives/block-rewards",
+	"toolkit/primitives/domain",
+	"toolkit/primitives/mock-types",
+	"toolkit/primitives/selection",
+	"toolkit/primitives/sidechain-block-search",
+	"toolkit/primitives/sidechain-slots",
+	"toolkit/primitives/authority-selection-inherents",
+	"toolkit/mainchain-follower/main-chain-follower-cli",
+	"toolkit/mainchain-follower/db-sync-follower",
+	"toolkit/mainchain-follower/mock",
+	"toolkit/utils/byte-string-derivation",
+	"toolkit/utils/plutus",
+	"toolkit/utils/plutus/plutus-datum-derive",
+	"toolkit/utils/ogmios-client",
+	"toolkit/utils/time-source",
+	"toolkit/primitives/sidechain-mc-hash",
+	"toolkit/primitives/session-validator-management",
+	"toolkit/primitives/session-validator-management/query",
+	"toolkit/primitives/session-manager",
+	"toolkit/primitives/sidechain",
+	"toolkit/partner-chains-cli",
+	"toolkit/pallets/native-token-management",
+	"toolkit/primitives/native-token-management",
 	"toolkit/offchain",
-	"primitives/plutus-data",
+	"toolkit/primitives/plutus-data",
 ]
 resolver = "2"
 
@@ -184,40 +184,40 @@ substrate-wasm-builder = { default-features = false, git = "https://github.com/p
 raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", tag = "v6.2.2" }
 
 # local dependencies
-sidechain-runtime = { path = "runtime" }
-pallet-block-rewards = { path = "pallets/block-rewards", default-features = false }
-pallet-sidechain = { path = "pallets/sidechain", default-features = false }
-pallet-sidechain-rpc = { path = "pallets/sidechain/rpc", default-features = false }
-sp-session-validator-management = { default-features = false, path = "primitives/session-validator-management" }
-sp-session-validator-management-query = { default-features = false, path = "primitives/session-validator-management/query" }
-pallet-session-validator-management = { default-features = false, path = "pallets/session-validator-management" }
-pallet-session-validator-management-benchmarking = { default-features = false, path = "pallets/session-validator-management/benchmarking" }
-pallet-session-validator-management-rpc = { path = "pallets/session-validator-management/rpc" }
-ogmios-client = { path = "utils/ogmios-client", default-features = false }
-sp-block-rewards = { path = "primitives/block-rewards", default-features = false }
-selection = { path = "primitives/selection", default-features = false }
-sidechain-domain = { path = "primitives/domain", default-features = false }
-sidechain-block-search = { path = "primitives/sidechain-block-search", default-features = false }
-db-sync-follower = { path = "mainchain-follower/db-sync-follower" }
-main-chain-follower-mock = { path = "mainchain-follower/mock", default-features = false }
-plutus = { path = "utils/plutus", default-features = false }
-plutus-datum-derive = { default-features = false, path = "utils/plutus/plutus-datum-derive" }
-byte-string-derive = { default-features = false, path = "utils/byte-string-derivation" }
-sidechain-slots = { path = "primitives/sidechain-slots", default-features = false }
-mock-types = { path = "primitives/mock-types", default-features = false }
-cli-commands = { path = "cli/commands" }
-partner-chains-node-commands = { path = "cli/node-commands" }
-time-source = { path = "utils/time-source" }
-sidechain-mc-hash = { path = "primitives/sidechain-mc-hash", default-features = false }
-authority-selection-inherents = { path = "primitives/authority-selection-inherents", default-features = false }
-session-manager = { path = "primitives/session-manager", default-features = false }
-sp-sidechain = { path = "primitives/sidechain", default-features = false }
-chain-params = { path = "primitives/chain-params", default-features = false }
-pallet-native-token-management = { path = "pallets/native-token-management", default-features = false }
-sp-native-token-management = { path = "primitives/native-token-management", default-features = false }
-sc-partner-chains-consensus-aura = { path = "client/consensus/aura", default-features = false }
-sp-partner-chains-consensus-aura = { path = "primitives/consensus/aura", default-features = false }
-pallet-partner-chains-session = { path = "pallets/partner-chains-session", default-features = false }
-pallet-session-runtime-stub = { path = "pallets/pallet-session-runtime-stub", default-features = false }
+sidechain-runtime = { path = "node/runtime" }
+pallet-block-rewards = { path = "toolkit/pallets/block-rewards", default-features = false }
+pallet-sidechain = { path = "toolkit/pallets/sidechain", default-features = false }
+pallet-sidechain-rpc = { path = "toolkit/pallets/sidechain/rpc", default-features = false }
+sp-session-validator-management = { default-features = false, path = "toolkit/primitives/session-validator-management" }
+sp-session-validator-management-query = { default-features = false, path = "toolkit/primitives/session-validator-management/query" }
+pallet-session-validator-management = { default-features = false, path = "toolkit/pallets/session-validator-management" }
+pallet-session-validator-management-benchmarking = { default-features = false, path = "toolkit/pallets/session-validator-management/benchmarking" }
+pallet-session-validator-management-rpc = { path = "toolkit/pallets/session-validator-management/rpc" }
+ogmios-client = { path = "toolkit/utils/ogmios-client", default-features = false }
+sp-block-rewards = { path = "toolkit/primitives/block-rewards", default-features = false }
+selection = { path = "toolkit/primitives/selection", default-features = false }
+sidechain-domain = { path = "toolkit/primitives/domain", default-features = false }
+sidechain-block-search = { path = "toolkit/primitives/sidechain-block-search", default-features = false }
+db-sync-follower = { path = "toolkit/mainchain-follower/db-sync-follower" }
+main-chain-follower-mock = { path = "toolkit/mainchain-follower/mock", default-features = false }
+plutus = { path = "toolkit/utils/plutus", default-features = false }
+plutus-datum-derive = { default-features = false, path = "toolkit/utils/plutus/plutus-datum-derive" }
+byte-string-derive = { default-features = false, path = "toolkit/utils/byte-string-derivation" }
+sidechain-slots = { path = "toolkit/primitives/sidechain-slots", default-features = false }
+mock-types = { path = "toolkit/primitives/mock-types", default-features = false }
+cli-commands = { path = "toolkit/cli/commands" }
+partner-chains-node-commands = { path = "toolkit/cli/node-commands" }
+time-source = { path = "toolkit/utils/time-source" }
+sidechain-mc-hash = { path = "toolkit/primitives/sidechain-mc-hash", default-features = false }
+authority-selection-inherents = { path = "toolkit/primitives/authority-selection-inherents", default-features = false }
+session-manager = { path = "toolkit/primitives/session-manager", default-features = false }
+sp-sidechain = { path = "toolkit/primitives/sidechain", default-features = false }
+chain-params = { path = "node/chain-params", default-features = false }
+pallet-native-token-management = { path = "toolkit/pallets/native-token-management", default-features = false }
+sp-native-token-management = { path = "toolkit/primitives/native-token-management", default-features = false }
+sc-partner-chains-consensus-aura = { path = "toolkit/client/consensus/aura", default-features = false }
+sp-partner-chains-consensus-aura = { path = "toolkit/primitives/consensus/aura", default-features = false }
+pallet-partner-chains-session = { path = "toolkit/pallets/partner-chains-session", default-features = false }
+pallet-session-runtime-stub = { path = "toolkit/pallets/pallet-session-runtime-stub", default-features = false }
 partner-chains-cardano-offchain = { path = "toolkit/offchain", default-features = false }
-partner-chains-plutus-data = { path = "primitives/plutus-data", default-features = false }
+partner-chains-plutus-data = { path = "toolkit/primitives/plutus-data", default-features = false }

@@ -104,13 +104,15 @@ runs:
           source venv/bin/activate
           eval "$pytest_cmd"
         fi
-    - name: Copy .report.json if run with docker exec
+
+    - name: Copy test results
       if: ${{ inputs.local-environment == 'true' }}
+      shell: bash
       run: |
         echo "Copy test results from docker container"
         mkdir -p e2e-tests
         docker cp tests:/e2e-tests/.report.json e2e-tests/.report.json
-      shell: bash
+
     - name: Upload test results
       uses: actions/upload-artifact@v4
       with:

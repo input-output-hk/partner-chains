@@ -17,11 +17,11 @@ runs:
       shell: bash
       run: |
         chmod +x partner-chains-node-${{ inputs.tag }}-x86_64-linux
-        source ./envs/devnet/.envrc
+        source ./dev/envs/devnet/.envrc
         ./partner-chains-node-${{ inputs.tag }}-x86_64-linux build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
-        source ./envs/staging-preview/.envrc
+        source ./dev/envs/staging-preview/.envrc
         ./partner-chains-node-${{ inputs.tag }}-x86_64-linux build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
-        source ./envs/staging-preprod/.envrc
+        source ./dev/envs/staging-preprod/.envrc
         ./partner-chains-node-${{ inputs.tag }}-x86_64-linux build-spec --chain staging --disable-default-bootnode > staging_preprod_chain_spec.json
     - name: Upload Chain Specs
       uses: actions/upload-artifact@v4

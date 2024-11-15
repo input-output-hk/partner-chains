@@ -1,0 +1,22 @@
+[package]
+name = "mock-types"
+version = "1.3.0"
+edition = "2021"
+description = "Shared mock type definitions for reuse in multiple crates"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+frame-support = { workspace = true }
+serde = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+sp-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "frame-support/std",
+    "sp-core/std"
+]

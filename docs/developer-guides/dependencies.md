@@ -24,7 +24,7 @@ If you opt to run images individually, please use this file as reference for ima
 
 To start the dependencies, from the root directory of this project, run:
 ```
-docker-compose -f docker/sidechain-dependencies/docker-compose.yml up -d
+docker-compose -f dev/docker/sidechain-dependencies/docker-compose.yml up -d
 ```
 
 ### Docker settings for Apple Silicon

@@ -61,45 +61,95 @@ runs:
       id: check_release
       run: |
         tag="${{ inputs.tag }}"
+        echo "Checking if release with tag $tag exists..."
         release_response=$(curl -s -H "Authorization: token ${{ env.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/tags/$tag")
 
         if echo "$release_response" | grep -q '"message": "Not Found"'; then
-          echo "release_exists=false" >> $GITHUB_ENV
+          echo "Release with tag $tag does not exist. Proceeding to create a new draft release."
           echo "::set-output name=release_exists::false"
+          echo "::set-output name=release_id::"
         else
-          echo "release_exists=true" >> $GITHUB_ENV
+          echo "Release with tag $tag already exists."
           echo "::set-output name=release_exists::true"
-          echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
           echo "::set-output name=release_id::$(echo $release_response | jq -r .id)"
         fi
       shell: bash
 
+    - name: Extract release notes
+      id: extract_release_notes
+      run: |
+        tag="${{ inputs.tag }}"
+        changelog_file="changelog.md"
+        section_names="Changed|Added"
+    
+        # Extract the "Changed" and "Added" sections from changelog.md for the given tag
+        release_notes=$(awk -v tag="$tag" -v sections="$section_names" 'BEGIN{in_tag=0;in_section=0;section_regex="^## ("sections")$";}/^# /{if($0=="# "tag){in_tag=1;next;}else if(in_tag){exit;}}/^## /{if(in_tag&&match($0,section_regex)){in_section=1;print $0;next;}else if(in_tag){in_section=0;}}{if(in_section&&in_tag)print $0;}' "$changelog_file")
+    
+        # Escape special characters for GitHub Actions output
+        release_notes="${release_notes//'%'/'%25'}"
+        release_notes="${release_notes//$'\n'/'%0A'}"
+        release_notes="${release_notes//$'\r'/'%0D'}"
+    
+        echo "::set-output name=release_notes::$release_notes"
+      shell: bash
+    
     - name: Create draft release
       id: create_release
       if: ${{ steps.check_release.outputs.release_exists == 'false' }}
       run: |
+        echo "Creating a draft release for tag ${{ inputs.tag }}..."
         tag="${{ inputs.tag }}"
+        release_name="${tag}-rc"
+        release_notes="${{ steps.extract_release_notes.outputs.release_notes }}"
+    
+        # Decode the release notes from GitHub Actions encoding
+        release_notes="${release_notes//'%25'/'%'}"
+        release_notes="${release_notes//'%0A'/$'\n'}"
+        release_notes="${release_notes//'%0D'/$'\r'}"
+    
+        # Build the release body
         release_body="### Pre-release candidate for version $tag\n\n"
-        release_body+="This is a draft pre-release candidate for release $tag that is undergoing testing. The current testing status is:\n\n"
+        release_body+="This is a draft pre-release candidate for ${tag} that is undergoing testing. The current testing status is:\n\n"
         release_body+="- [x] Local environment\n"
         release_body+="- [ ] Staging preview environment\n"
         release_body+="- [ ] Staging preprod environment\n\n"
-        release_body+="Please note: this release is not yet fully verified and is pending further testing.\n"
-
-        release_response=$(curl -s -X POST -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
-                          -d '{"tag_name": "'$tag'", "name": "'$tag'", "body": "'"$release_body"'", "draft": true, "generate_release_notes": true, "prerelease": true}' \
-                          "https://api.github.com/repos/${{ github.repository }}/releases")
-        echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
-        echo "::set-output name=release_id::$(echo $release_response | jq -r .id)"
+        release_body+="Please note: this release is not yet fully verified and is pending further testing.\n\n"
+        release_body+="## Release Notes\n\n"
+        release_body+="$release_notes\n\n"
+        release_body+="## Compatibility matrix\n"
+        release_body+="| partner-chains-node | partner-chains-smart-contracts | cardano-node | cardano-db-sync | kupo | ogmios |\n"
+        release_body+="| -------------------- | -------------------------------- | --------------- | ------------------ | ----- | ------- |\n"
+        release_body+="| $tag |  |  |  |  |  |\n\n"
+        release_body+="## Binaries\n\n"
+        release_body+="You can download the archives that contain both \\partner-chains-node\\ and \\partner-chains-cli\\ from assets attached to this release (available for MacOS and Linux architectures). PC smart contracts CLI can be downloaded from [here](https://github.com/input-output-hk/partner-chains-smart-contracts).\n\n"
+        release_body+="## Docker\n\n"
+        release_body+="You can also pull the Docker image of the \\partner-chains-node\\ from GitHub Container Registry:\n\n"
+        release_body+="\\\bash\n"
+        release_body+="docker pull ghcr.io/input-output-hk/partner-chains/partner-chains-node:$tag\n"
+        release_body+="\\\\n\n"
+        release_body+="## How to Use\n\n"
+        release_body+="Refer to the [documentation](https://github.com/input-output-hk/partner-chains/tree/$tag/docs/user-guides) for detailed instructions on using the node and CLI tools.\n\n"
+        release_body+="## Support\n\n"
+        release_body+="You can visit our issues page for support, feature requests, or to report a bug.\n\n"
+        release_body+="Thank you for being a part of our community!\n"
+    
+        # Create the release
+        release_response=$(curl -s -X POST -H "Authorization: token ${{ env.GITHUB_TOKEN }}" -d '{"tag_name": "'"$tag"'", "name": "'"$release_name"'", "body": "'"$release_body"'", "draft": true, "generate_release_notes": false, "prerelease": true}' "https://api.github.com/repos/${{ github.repository }}/releases")
+    
+        release_id=$(echo "$release_response" | jq -r .id)
+        echo "Draft release created with ID $release_id"
+        echo "::set-output name=release_id::$release_id"
       shell: bash
-
+    
     - name: Upload artifacts to release
       if: ${{ steps.check_release.outputs.release_exists == 'true' || steps.create_release.outputs.release_id != '' }}
       run: |
+        # Extract the release ID
         release_id="${{ steps.create_release.outputs.release_id }}"
         if [ -z "$release_id" ]; then
           release_id="${{ steps.check_release.outputs.release_id }}"
         fi
+        echo "Uploading artifacts to release ID $release_id..."
 
         for artifact in "artifact-linux/${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}" \
                         "artifact-linux/${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}" \
@@ -107,6 +157,7 @@ runs:
                         "artifact-macos-x86_64/${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}" \
                         "artifact-macos-arm64/${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}" \
                         "artifact-macos-arm64/${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}"; do
+          echo "Uploading artifact: $(basename $artifact)"
           chmod +x "$artifact"
           curl -s -X POST \
             -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
@@ -115,3 +166,4 @@ runs:
             "https://uploads.github.com/repos/${{ github.repository }}/releases/$release_id/assets?name=$(basename $artifact)"
         done
       shell: bash
+

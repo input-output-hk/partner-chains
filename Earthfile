@@ -62,7 +62,7 @@ test:
 fmt:
   FROM +source
   CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN find runtime/src/weights -type f -name '*.rs' -exec cargo fmt -- {} +
+  RUN find node/runtime/src/weights -type f -name '*.rs' -exec cargo fmt -- {} +
   RUN cargo fmt --check
 
 docker:
@@ -121,7 +121,7 @@ mock:
   RUN mkdir -p $SRCS \
       && touch $LIBS \
       && for crate in $SRCS; do if [ ! -f $crate/lib.rs ]; then touch $crate/main.rs; fi; done \
-      && touch node/src/lib.rs
+      && touch node/node/src/lib.rs
 
 fetch-deps:
   FROM +mock
@@ -145,20 +145,20 @@ chainspecs:
   FROM +setup
   DO +INSTALL
 
-  COPY envs/devnet/.envrc envs/devnet/.envrc
-  COPY envs/devnet/addresses.json envs/devnet/addresses.json
+  COPY dev/envs/devnet/.envrc dev/envs/devnet/.envrc
+  COPY dev/envs/devnet/addresses.json dev/envs/devnet/addresses.json
 
-  COPY envs/staging-preview/.envrc envs/staging-preview/.envrc
-  COPY envs/staging-preview/addresses.json envs/staging-preview/addresses.json
+  COPY dev/envs/staging-preview/.envrc dev/envs/staging-preview/.envrc
+  COPY dev/envs/staging-preview/addresses.json dev/envs/staging-preview/addresses.json
 
-  COPY envs/staging-preprod/.envrc envs/staging-preprod/.envrc
-  COPY envs/staging-preprod/addresses.json envs/staging-preprod/addresses.json
+  COPY dev/envs/staging-preprod/.envrc dev/envs/staging-preprod/.envrc
+  COPY dev/envs/staging-preprod/addresses.json dev/envs/staging-preprod/addresses.json
 
-  RUN . ./envs/devnet/.envrc \
+  RUN . ./dev/envs/devnet/.envrc \
       && partner-chains-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
-  RUN . ./envs/staging-preview/.envrc \
+  RUN . ./dev/envs/staging-preview/.envrc \
       && partner-chains-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
-  RUN . ./envs/staging-preprod/.envrc \
+  RUN . ./dev/envs/staging-preprod/.envrc \
       && partner-chains-node build-spec --chain staging --disable-default-bootnode > staging_preprod_chain_spec.json
 
   SAVE ARTIFACT devnet_chain_spec.json AS LOCAL devnet_chain_spec.json
