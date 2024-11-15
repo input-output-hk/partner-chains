@@ -1,0 +1,56 @@
+
+  partner-chains-node-1:
+    container_name: partner-chains-node-1
+    image: ${PARTNER_CHAINS_NODE_IMAGE} 
+    network_mode: "host"
+    platform: linux/amd64
+    volumes:
+      - shared-volume:/shared
+      - partner-chains-node-1-data:/data
+    environment:
+      DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@127.0.0.1:${POSTGRES_PORT}/cexplorer"
+      SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000001"
+      CHAIN_ID: "0"
+      GENESIS_COMMITTEE_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
+      GOVERNANCE_AUTHORITY: "e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
+      CARDANO_SECURITY_PARAMETER: "5"
+      CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
+      MC__FIRST_EPOCH_NUMBER: "0"
+      MC__FIRST_SLOT_NUMBER: "0"
+      MC__EPOCH_DURATION_MILLIS: "120000"
+      THRESHOLD_NUMERATOR: "2"
+      THRESHOLD_DENOMINATOR: "3"
+      BLOCK_STABILITY_MARGIN: "0"
+      MINIMUM_MC_EPOCH: "0"
+      MC__FIRST_EPOCH_TIMESTAMP_MILLIS: ""
+      COMMITTEE_CANDIDATE_ADDRESS: ""
+      D_PARAMETER_POLICY_ID: ""
+      PERMISSIONED_CANDIDATES_POLICY_ID: ""
+      NATIVE_TOKEN_POLICY_ID: ""
+      NATIVE_TOKEN_ASSET_NAME: ""
+      ILLIQUID_SUPPLY_VALIDATOR_ADDRESS: ""
+    command:
+      - "--alice"
+      - "--chain=/shared/chain-spec.json"
+      - "--node-key=0000000000000000000000000000000000000000000000000000000000000001"
+      - "--bootnodes=/ipv4/<INSERT_IPV4_ADDRESS>/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp"
+      - "--bootnodes=/ipv4/<INSERT_IPV4_ADDRESS>/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp"
+      - "--bootnodes=/ipv4/<INSERT_IPV4_ADDRESS>/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp"
+      - "--base-path=/data"
+      - "--unsafe-rpc-external"
+      - "--rpc-port=9933"
+      - "--rpc-cors=all"
+      - "--prometheus-port=9615"
+      - "--prometheus-external"
+      - "--state-pruning=archive"
+      - "--blocks-pruning=archive"
+    ports:
+      - "30333:30333"
+      - "9933:9933"
+      - "9615:9615"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: ${CPU_PARTNER_CHAINS_NODE:-}
+          memory: ${MEM_PARTNER_CHAINS_NODE:-}
