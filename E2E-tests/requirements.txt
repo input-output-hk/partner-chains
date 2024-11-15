@@ -12,3 +12,4 @@ scalecodec==1.2.8
 paramiko==3.4.0
 pytest-json-ctrf==0.3.5
 numpy==1.26.4
+scp==0.15.0

@@ -11,6 +11,7 @@ from config.api_config import ApiConfig
 @mark.ariadne
 @mark.test_key('ETCM-7017')
 @mark.registration
+@mark.usefixtures("candidate_skey_with_cli")
 def test_register_candidate(candidate: Candidates, api: BlockchainApi, db: Session, config: ApiConfig):
     """Test registration of the trustless (SPO) candidate
 

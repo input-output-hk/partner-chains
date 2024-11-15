@@ -1,10 +1,12 @@
 import io
+import os
 import logging
 import paramiko
 import subprocess
 import yaml
 from abc import ABC, abstractmethod
 from config.api_config import SSH
+from scp import SCPClient
 import time
 
 
@@ -118,7 +120,8 @@ class SSHRunner(Runner):
     def connect(self):
         logging.debug(f"SSH: Connecting to {self.host}:{self.port} as {self.user}")
         try:
-            private_key = paramiko.RSAKey.from_private_key(io.StringIO(self.load_key_from_yaml(self.key_path)))
+            private_key_str = self.load_key_from_yaml(self.key_path)
+            private_key = paramiko.RSAKey.from_private_key(io.StringIO(private_key_str))
             self.client.connect(self.host, self.port, self.user, pkey=private_key)
         except paramiko.AuthenticationException as auth_err:
             logging.error(f"Authentication failed: {auth_err}")
@@ -168,5 +171,15 @@ class SSHRunner(Runner):
         finally:
             self.close()
 
+    def scp(self, path, remote_path):
+        self.connect()
+        logging.debug(f"SCP: '{path}' INTO: {remote_path}")
+        try:
+            with SCPClient(self.client.get_transport()) as scp:
+                scp.put(path, remote_path=remote_path)
+        finally:
+            self.close()
+
     def close(self):
         self.client.close()
+        logging.debug(f"SSH: disconnected from {self.host}:{self.port} as {self.user}")

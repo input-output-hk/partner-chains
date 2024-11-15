@@ -63,7 +63,7 @@
                 "rotation_candidate": true,
                 "cardano_payment_addr": "addr_test1vr88zd5ywcdu07hqpnutd8umqyld34e6rrtzgu7m3rua67gg6clcz",
                 "keys_files": {
-                    "cardano_payment_key": "/secrets/substrate/devnet/keys/eve/payment.skey.json.decrypted",
+                    "cardano_payment_key": "./secrets/substrate/devnet/keys/eve/payment.skey.json.decrypted",
                     "spo_signing_key": "./secrets/substrate/devnet/keys/eve/cold.skey.json.decrypted",
                     "spo_public_key": "./secrets/substrate/devnet/keys/eve/cold.vkey.json.decrypted",
                     "partner_chain_signing_key": "./secrets/substrate/devnet/keys/eve/partner_chain.skey.json.decrypted"
@@ -81,7 +81,7 @@
                 "rotation_candidate": true,
                 "cardano_payment_addr": "addr_test1vrkp4j33xcysqfancc7fttdrwf86ztgpaqhhzu98vahnevqfng7r9",
                 "keys_files": {
-                    "cardano_payment_key": "/secrets/substrate/devnet/keys/ferdie/payment.skey.json.decrypted",
+                    "cardano_payment_key": "./secrets/substrate/devnet/keys/ferdie/payment.skey.json.decrypted",
                     "spo_signing_key": "./secrets/substrate/devnet/keys/ferdie/cold.skey.json.decrypted",
                     "spo_public_key": "./secrets/substrate/devnet/keys/ferdie/cold.vkey.json.decrypted",
                     "partner_chain_signing_key": "./secrets/substrate/devnet/keys/ferdie/partner_chain.skey.json.decrypted"

@@ -18,7 +18,7 @@
                 "rotation_candidate": true,
                 "cardano_payment_addr": "addr_test1vq6ywn0f007x32j47jrk5qy9hy3gknsvszrcpdqkeaye7pshu2w2t",
                 "keys_files": {
-                    "cardano_payment_key": "/secrets/substrate/staging/keys/validator-1/payment.skey.json.decrypted",
+                    "cardano_payment_key": "./secrets/substrate/staging/keys/validator-1/payment.skey.json.decrypted",
                     "spo_signing_key": "./secrets/substrate/staging/keys/validator-1/cold.skey.json.decrypted",
                     "spo_public_key": "./secrets/substrate/staging/keys/validator-1/cold.vkey.json.decrypted",
                     "partner_chain_signing_key": "./secrets/substrate/staging/keys/validator-1/partner_chain.skey.json.decrypted"
@@ -126,7 +126,7 @@
         },
         "governance_authority": {
             "mainchain_address": "addr_test1vq0sjaaupatuvl9x6aefdsd4whlqtfku93068qzkhf3u2rqt9cnuq",
-            "mainchain_key": "/secrets/substrate/staging/keys/governance_authority/init.skey.json.decrypted"
+            "mainchain_key": "./secrets/substrate/staging/keys/governance_authority/init.skey.json.decrypted"
         },
         "selected_node": "validator-4",
         "node": "${nodes_config[nodes][${nodes_config[selected_node]}]}",
