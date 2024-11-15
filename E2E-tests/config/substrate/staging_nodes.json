@@ -1,9 +1,9 @@
 {
     "chain_id": 1,
-    "deployment_mc_epoch": 744,
+    "deployment_mc_epoch": 749,
     "genesis_committee_hash_utxo": "4e65eddc6132c1b9891d43f9d67a4a0a7b6e614b648f59dc97538f3f23eb96bf#1",
     "governance_authority": "0x1f0977bc0f57c67ca6d77296c1b575fe05a6dc2c5fa38056ba63c50c",
-    "deployment_version": "v1.3.0-rc1",
+    "deployment_version": "v1.3.0-rc2",
     "test_environment": "staging",
     "nodes_config": {
         "nodes": {
