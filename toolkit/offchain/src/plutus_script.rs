@@ -7,6 +7,7 @@ use uplc::ast::{DeBruijn, Program};
 use crate::{csl::*, untyped_plutus::*};
 
 /// Wraps a Plutus script cbor
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PlutusScript {
 	pub bytes: Vec<u8>,
 	pub language: LanguageKind,
@@ -121,5 +122,11 @@ pub(crate) mod tests {
 				.apply_data(TEST_PARAMS)
 				.unwrap();
 		assert_eq!(hex::encode(applied.bytes), hex::encode(CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS));
+	}
+}
+
+impl From<PlutusScript> for cardano_serialization_lib::PlutusScript {
+	fn from(script: PlutusScript) -> Self {
+		cardano_serialization_lib::PlutusScript::new_v2(script.bytes.clone())
 	}
 }

@@ -1,6 +1,9 @@
 #![allow(dead_code)]
 
-use crate::csl::{get_builder_config, InputsBuilderExt, TransactionBuilderExt, TransactionContext};
+use crate::csl::{
+	empty_asset_name, get_builder_config, InputsBuilderExt, TransactionBuilderExt,
+	TransactionContext,
+};
 use crate::plutus_script::PlutusScript;
 use cardano_serialization_lib::{
 	ExUnits, JsError, Transaction, TransactionBuilder, TxInputsBuilder,
@@ -22,6 +25,7 @@ fn mint_d_param_token_tx(
 		validator,
 		&d_parameter_to_plutus_data(d_parameter),
 		ctx,
+		&empty_asset_name(),
 	)?;
 
 	tx_builder.balance_update_and_build(ctx)
@@ -45,6 +49,7 @@ fn update_d_param_tx(
 		validator,
 		&d_parameter_to_plutus_data(d_parameter),
 		ctx,
+		&empty_asset_name(),
 	)?;
 
 	tx_builder.balance_update_and_build(ctx)

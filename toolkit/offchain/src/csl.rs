@@ -146,6 +146,10 @@ pub(crate) trait OgmiosUtxoExt {
 	fn to_csl_tx_input(&self) -> TransactionInput;
 	fn to_csl_tx_output(&self) -> Result<TransactionOutput, JsError>;
 	fn to_csl(&self) -> Result<TransactionUnspentOutput, JsError>;
+
+	/// Encodes this UTXO as a nested constructor data format which is used by PC smart contracts
+	fn to_constructor_style_plutus_data(&self) -> uplc::PlutusData;
+	fn to_constructor_style_csl_plutus_data(&self) -> PlutusData;
 }
 
 impl OgmiosUtxoExt for OgmiosUtxo {
@@ -164,6 +168,26 @@ impl OgmiosUtxoExt for OgmiosUtxo {
 
 	fn to_csl(&self) -> Result<TransactionUnspentOutput, JsError> {
 		Ok(TransactionUnspentOutput::new(&self.to_csl_tx_input(), &self.to_csl_tx_output()?))
+	}
+
+	fn to_constructor_style_csl_plutus_data(&self) -> PlutusData {
+		PlutusData::new_constr_plutus_data(&cardano_serialization_lib::ConstrPlutusData::new(
+			&0u64.into(),
+			&{
+				let mut list = cardano_serialization_lib::PlutusList::new();
+				list.add(&PlutusData::new_single_value_constr_plutus_data(
+					&0u64.into(),
+					&PlutusData::new_bytes(self.transaction.id.to_vec()),
+				));
+				list.add(&PlutusData::new_integer(&(self.index as u64).into()));
+				list
+			},
+		))
+	}
+
+	fn to_constructor_style_plutus_data(&self) -> uplc::PlutusData {
+		crate::untyped_plutus::csl_plutus_data_to_uplc(&self.to_constructor_style_csl_plutus_data())
+			.unwrap()
 	}
 }
 
@@ -214,6 +238,7 @@ pub(crate) trait TransactionBuilderExt {
 		script: &PlutusScript,
 		datum: &PlutusData,
 		ctx: &TransactionContext,
+		asset_name: &AssetName,
 	) -> Result<(), JsError>;
 
 	/// Adds ogmios inputs as collateral inputs to the tx builder.
@@ -245,6 +270,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 		script: &PlutusScript,
 		datum: &PlutusData,
 		ctx: &TransactionContext,
+		asset_name: &AssetName,
 	) -> Result<(), JsError> {
 		let amount_builder = TransactionOutputBuilder::new()
 			.with_address(&script.address(ctx.network))
@@ -252,7 +278,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 			.next()?;
 		let mut ma = MultiAsset::new();
 		let mut assets = Assets::new();
-		assets.insert(&empty_asset_name(), &1u64.into());
+		assets.insert(asset_name, &1u64.into());
 		ma.insert(&script.script_hash().into(), &assets);
 		let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
 		let min_ada = MinOutputAdaCalculator::new(
@@ -404,7 +430,7 @@ impl InputsBuilderExt for TxInputsBuilder {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
 	use super::payment_address;
 	use crate::plutus_script::PlutusScript;
 	use cardano_serialization_lib::LanguageKind::PlutusV2;
@@ -544,7 +570,7 @@ mod tests {
 		assert_eq!(ex_units.steps(), 2000u64.into());
 	}
 
-	fn test_protocol_parameters() -> ProtocolParametersResponse {
+	pub fn test_protocol_parameters() -> ProtocolParametersResponse {
 		ProtocolParametersResponse {
 			min_fee_coefficient: 44,
 			min_fee_constant: OgmiosValue::new_lovelace(155381),
@@ -570,7 +596,10 @@ mod tests {
 
 #[cfg(test)]
 mod prop_tests {
-	use super::{get_builder_config, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext};
+	use super::{
+		empty_asset_name, get_builder_config, OgmiosUtxoExt, TransactionBuilderExt,
+		TransactionContext,
+	};
 	use crate::test_values::*;
 	use cardano_serialization_lib::{
 		BigNum, ExUnits, NetworkIdKind, Transaction, TransactionBuilder, TransactionInputs,
@@ -603,7 +632,12 @@ mod prop_tests {
 			)
 			.unwrap();
 		tx_builder
-			.add_output_with_one_script_token(&test_script(), &test_plutus_data(), &ctx)
+			.add_output_with_one_script_token(
+				&test_script(),
+				&test_plutus_data(),
+				&ctx,
+				&empty_asset_name(),
+			)
 			.unwrap();
 
 		let tx = tx_builder.balance_update_and_build(&ctx).unwrap();

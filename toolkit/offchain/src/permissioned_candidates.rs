@@ -1,6 +1,9 @@
 #![allow(dead_code)]
 
-use crate::csl::{get_builder_config, InputsBuilderExt, TransactionBuilderExt, TransactionContext};
+use crate::csl::{
+	empty_asset_name, get_builder_config, InputsBuilderExt, TransactionBuilderExt,
+	TransactionContext,
+};
 use crate::plutus_script::PlutusScript;
 use cardano_serialization_lib::{
 	ExUnits, JsError, Transaction, TransactionBuilder, TxInputsBuilder,
@@ -23,6 +26,7 @@ fn mint_permissioned_candidates_token_tx(
 		validator,
 		&permissioned_candidates_to_plutus_data(permissioned_candidates),
 		ctx,
+		&empty_asset_name(),
 	)?;
 
 	tx_builder.balance_update_and_build(ctx)
@@ -47,6 +51,7 @@ fn update_permissioned_candidates_tx(
 		validator,
 		&permissioned_candidates_to_plutus_data(permissioned_candidates),
 		ctx,
+		&empty_asset_name(),
 	)?;
 
 	tx_builder.balance_update_and_build(ctx)
