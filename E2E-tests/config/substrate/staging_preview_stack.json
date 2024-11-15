@@ -4,13 +4,13 @@
         "ogmios_port": 1337,
         "kupo_host": "staging-preview-services-service.staging-preview.svc.cluster.local",
         "kupo_port": 1442,
-        "tools_host": "10.0.12.108",
+        "tools_host": "10.0.12.126",
         "ssh": {
             "username": "root",
             "host": "${stack_config[tools_host]}",
             "port": 22,
             "host_keys_path": "config/substrate/known_hosts",
-            "private_key_path": "secrets/substrate/staging-preview/keys/ssh-key.yaml.decrypted"
+            "private_key_path": "secrets/substrate/staging_preview/keys/ssh-key.yaml.decrypted"
         },
         "tools": {
             "cardano_cli": {

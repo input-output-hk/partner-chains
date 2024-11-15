@@ -4,12 +4,12 @@
     "genesis_committee_hash_utxo": "94698fa385b9a2681d0ad3e90d5643961870ed2d371e06b4a6bfa49abc4a89fc#1",
     "governance_authority": "0x1f0977bc0f57c67ca6d77296c1b575fe05a6dc2c5fa38056ba63c50c",
     "deployment_version": "6787f58c2d63aee031bcaad00a9d185336da45bf",
-    "test_environment": "staging-preprod",
+    "test_environment": "staging_preprod",
     "nodes_config": {
         "nodes": {
             "validator-1": {
                 "host": "10.0.10.90",
-                "port": "30301",
+                "port": "30521",
                 "aura_ss58_address": "5GHLr2zBDNPXno9XdKgh541uRSiTxnZyzFcr4jK6HUbHMpit",
                 "pool_id": "da74fc8256d15c7ab3370a6ca28398986cb97c32e9ef66026ac61e99",
                 "public_key": "0x03b827f4da9711bab7292e5695576a841a4d20af9a07b1ba7a230168d2a78e9df4",
@@ -18,16 +18,16 @@
                 "rotation_candidate": true,
                 "cardano_payment_addr": "addr_test1vq6ywn0f007x32j47jrk5qy9hy3gknsvszrcpdqkeaye7pshu2w2t",
                 "keys_files": {
-                    "cardano_payment_key": "./secrets/substrate/staging-preprod/keys/validator-1/payment.skey.json.decrypted",
-                    "spo_signing_key": "./secrets/substrate/staging-preprod/keys/validator-1/cold.skey.json.decrypted",
-                    "spo_public_key": "./secrets/substrate/staging-preprod/keys/validator-1/cold.vkey.json.decrypted",
-                    "partner_chain_signing_key": "./secrets/substrate/staging-preprod/keys/validator-1/partner_chain.skey.json.decrypted"
+                    "cardano_payment_key": "./secrets/substrate/staging_preprod/keys/validator-1/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/staging_preprod/keys/validator-1/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/staging_preprod/keys/validator-1/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/staging_preprod/keys/validator-1/partner_chain.skey.json.decrypted"
                 },
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000201"
             },
             "validator-2": {
                 "host": "10.0.10.90",
-                "port": "30302",
+                "port": "30522",
                 "aura_ss58_address": "5DHbxU687f1Y3x8yBCWMtqSiJ5qt2yrxQPXNXZNNDaFtmXKv",
                 "pool_id": "eaed153a8b046770cfd094ee72d080ea682188e63ac11937e3f7f827",
                 "public_key": "0x02ef5bcd94d54a18ad199559782cd72ac3ccd850976aaaafbca8f9d2625afbf7c4",
@@ -36,16 +36,16 @@
                 "rotation_candidate": true,
                 "cardano_payment_addr": "addr_test1vz80jkz5d2kdaykfrqlqryr6lt46tunk4ldfjqv88hevrpsrdfmm5",
                 "keys_files": {
-                    "cardano_payment_key": "./secrets/substrate/staging-preprod/keys/validator-2/payment.skey.json.decrypted",
-                    "spo_signing_key": "./secrets/substrate/staging-preprod/keys/validator-2/cold.skey.json.decrypted",
-                    "spo_public_key": "./secrets/substrate/staging-preprod/keys/validator-2/cold.vkey.json.decrypted",
-                    "partner_chain_signing_key": "./secrets/substrate/staging-preprod/keys/validator-2/partner_chain.skey.json.decrypted"
+                    "cardano_payment_key": "./secrets/substrate/staging_preprod/keys/validator-2/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/staging_preprod/keys/validator-2/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/staging_preprod/keys/validator-2/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/staging_preprod/keys/validator-2/partner_chain.skey.json.decrypted"
                 },
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000202"
             },
             "validator-3": {
                 "host": "10.0.10.90",
-                "port": "30303",
+                "port": "30523",
                 "aura_ss58_address": "5FYtL6HccYhk6KZeFP7hNnkMaXrAwVpTHJWsfnNJcu8AM6in",
                 "pool_id": "7dfba85597a867fffa59037df7f6adcd50e745dcceac2b48eda94b20",
                 "public_key": "0x02f2762ab6e1a125dc03908a7b738f8023d13763f28a11d7633c6c8bc463478430",
@@ -54,16 +54,16 @@
                 "permissioned_candidate": true,
                 "cardano_payment_addr": "addr_test1vrxc6wvtmqrqx4n9e89sqf9u0w0jcp8a96s7gkddfsr0ppcdvzcf6",
                 "keys_files": {
-                    "cardano_payment_key": "./secrets/substrate/staging-preprod/keys/validator-3/payment.skey.json.decrypted",
-                    "spo_signing_key": "./secrets/substrate/staging-preprod/keys/validator-3/cold.skey.json.decrypted",
-                    "spo_public_key": "./secrets/substrate/staging-preprod/keys/validator-3/cold.vkey.json.decrypted",
-                    "partner_chain_signing_key": "./secrets/substrate/staging-preprod/keys/validator-3/partner_chain.skey.json.decrypted"
+                    "cardano_payment_key": "./secrets/substrate/staging_preprod/keys/validator-3/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/staging_preprod/keys/validator-3/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/staging_preprod/keys/validator-3/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/staging_preprod/keys/validator-3/partner_chain.skey.json.decrypted"
                 },
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000203"
             },
             "validator-4": {
                 "host": "10.0.10.90",
-                "port": "30304",
+                "port": "30524",
                 "aura_ss58_address": "5GVpqdtqjxqUjuVKMkmh8ehSwcs2nXjpvzHqjouZXMJAyC4b",
                 "pool_id": "2a3f5dd02da1310e081f2367412e02b72baad3e2a5045f62df2c78c5",
                 "public_key": "0x025e19f82c5e2bac5e8869d49ff26359e442628bc5cfa38eeb5275f43d04015da8",
@@ -72,16 +72,16 @@
                 "permissioned_candidate": true,
                 "cardano_payment_addr": "addr_test1vq65mgmcpd6rq6ndy22kwxzdc9u0tmrpr7s30037qdhlalg3f5ax0",
                 "keys_files": {
-                    "cardano_payment_key": "./secrets/substrate/staging-preprod/keys/validator-4/payment.skey.json.decrypted",
-                    "spo_signing_key": "./secrets/substrate/staging-preprod/keys/validator-4/cold.skey.json.decrypted",
-                    "spo_public_key": "./secrets/substrate/staging-preprod/keys/validator-4/cold.vkey.json.decrypted",
-                    "partner_chain_signing_key": "./secrets/substrate/staging-preprod/keys/validator-4/partner_chain.skey.json.decrypted"
+                    "cardano_payment_key": "./secrets/substrate/staging_preprod/keys/validator-4/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/staging_preprod/keys/validator-4/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/staging_preprod/keys/validator-4/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/staging_preprod/keys/validator-4/partner_chain.skey.json.decrypted"
                 },
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000204"
             },
             "validator-5": {
                 "host": "10.0.10.90",
-                "port": "30305",
+                "port": "30525",
                 "aura_ss58_address": "5DsfhT7HJe6i5LYeKBzefrXijW5UgPsn2Cuyw5WMa4uEktTn",
                 "pool_id": "ae81beee7a6c3fa13bba811f91f63ebdd7eb25dd8a62476d4996de10",
                 "public_key": "0x03f38a062a4b372c045c1dddc4fe98a2c9cb1d6eec8bf02f973fd29b1096cd8155",
@@ -89,46 +89,46 @@
                 "grandpa_public_key": "0xa04d74c1539550876d04e4d2de4e0531087c3b6810ce96ddc16d78ccf4ac4f11",
                 "cardano_payment_addr": "addr_test1vqqm36dcg5xeeqgc29r8gu6wujlmr4fyrdrvuzq4qnem2vs7g2kvj",
                 "keys_files": {
-                    "cardano_payment_key": "./secrets/substrate/staging-preprod/keys/validator-5/payment.skey.json.decrypted",
-                    "spo_signing_key": "./secrets/substrate/staging-preprod/keys/validator-5/cold.skey.json.decrypted",
-                    "spo_public_key": "./secrets/substrate/staging-preprod/keys/validator-5/cold.vkey.json.decrypted",
-                    "partner_chain_signing_key": "./secrets/substrate/staging-preprod/keys/validator-5/partner_chain.skey.json.decrypted"
+                    "cardano_payment_key": "./secrets/substrate/staging_preprod/keys/validator-5/payment.skey.json.decrypted",
+                    "spo_signing_key": "./secrets/substrate/staging_preprod/keys/validator-5/cold.skey.json.decrypted",
+                    "spo_public_key": "./secrets/substrate/staging_preprod/keys/validator-5/cold.vkey.json.decrypted",
+                    "partner_chain_signing_key": "./secrets/substrate/staging_preprod/keys/validator-5/partner_chain.skey.json.decrypted"
                 },
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000205"
             }
         },
         "passive_transfer_account": {
             "partner_chain_address": "5D4UdLBfePonjFvS1brdNA7sh2zpPvTh6PSEVihx6kPciPXD",
-            "partner_chain_key": "./secrets/substrate/staging-preprod/keys/transfer_account_passive/partner_chain.skey.json.decrypted",
+            "partner_chain_key": "./secrets/substrate/staging_preprod/keys/transfer_account_passive/partner_chain.skey.json.decrypted",
             "mainchain_address": "addr_test1vzl3ya6ffdxvezm0dvtdr45td986vsvkrx5pyx9fw3emdhsearcjj",
-            "mainchain_key": "./secrets/substrate/staging-preprod/keys/transfer_account_passive/mainchain.skey.json.decrypted"
+            "mainchain_key": "./secrets/substrate/staging_preprod/keys/transfer_account_passive/mainchain.skey.json.decrypted"
         },
         "active_transfer_account": {
             "partner_chain_address": "5HgahNbxK7syB2M2VB9iUJ6dcuHidCuP2jx2pJVidxRrKSng",
             "partner_chain_key": "",
             "mainchain_address": "addr_test1vzcghuzz3hk70eqsagr0ep9gqkgkrg7cf485heu0tgwdwwg4jfjg8",
             "mainchain_address_bech32": "605f7fad2d0b682219db7b2e70a2a61fe18fa5c6ff5c66d484ef93d911",
-            "mainchain_key": "./secrets/substrate/staging-preprod/keys/transfer_account_active/mainchain.skey.json.decrypted"
+            "mainchain_key": "./secrets/substrate/staging_preprod/keys/transfer_account_active/mainchain.skey.json.decrypted"
         },
         "negative_test_transfer_account": {
             "partner_chain_address": "5F1N52dZx48UpXNLtcCzSMHZEroqQDuYKfidg46Tp37SjPcE",
-            "partner_chain_key": "./secrets/substrate/staging-preprod/keys/transfer_account_negative/partner_chain.skey.json.decrypted",
+            "partner_chain_key": "./secrets/substrate/staging_preprod/keys/transfer_account_negative/partner_chain.skey.json.decrypted",
             "mainchain_address": "",
             "mainchain_key": ""
         },
         "random_mc_account": {
             "mainchain_address": "addr_test1vzgk8hw98hy3zege2655fllq5lqrjcjxqgx5ufyul6hnvrcgl5tpl",
-            "mainchain_key": "./secrets/substrate/staging-preprod/keys/random_mc_account/random.skey.json.decrypted"
+            "mainchain_key": "./secrets/substrate/staging_preprod/keys/random_mc_account/random.skey.json.decrypted"
         },
         "invalid_mc_skey": {
             "mainchain_address": "addr_test1vzgk8hw98hy3zege2655fllq5lqrjcjxqgx5ufyul6hnvrcgl5tpl",
-            "mainchain_key": "./secrets/substrate/staging-preprod/keys/invalid_mc_skey/random.skey.json.decrypted"
+            "mainchain_key": "./secrets/substrate/staging_preprod/keys/invalid_mc_skey/random.skey.json.decrypted"
         },
         "governance_authority": {
             "mainchain_address": "addr_test1vq0sjaaupatuvl9x6aefdsd4whlqtfku93068qzkhf3u2rqt9cnuq",
-            "mainchain_key": "./secrets/substrate/staging-preprod/keys/governance_authority/init.skey.json.decrypted"
+            "mainchain_key": "./secrets/substrate/staging_preprod/keys/governance_authority/init.skey.json.decrypted"
         },
-        "selected_node": "validator-4",
+        "selected_node": "validator-1",
         "node": "${nodes_config[nodes][${nodes_config[selected_node]}]}",
         "token_conversion_rate": 9,
         "block_duration": 6,

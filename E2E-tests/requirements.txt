@@ -4,7 +4,7 @@ pytest-xdist==3.3.1
 substrate-interface==1.7.8
 web3==6.17.0
 sqlalchemy==2.0.19
-psycopg2-binary==2.9.6
+psycopg2-binary==2.9.10
 filelock==3.12.3
 pytest-json-report==1.5.0
 pydantic==2.5.3
