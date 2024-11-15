@@ -292,49 +292,6 @@
 <a href="#292" id="292">292</a>
 <a href="#293" id="293">293</a>
 <a href="#294" id="294">294</a>
-<a href="#295" id="295">295</a>
-<a href="#296" id="296">296</a>
-<a href="#297" id="297">297</a>
-<a href="#298" id="298">298</a>
-<a href="#299" id="299">299</a>
-<a href="#300" id="300">300</a>
-<a href="#301" id="301">301</a>
-<a href="#302" id="302">302</a>
-<a href="#303" id="303">303</a>
-<a href="#304" id="304">304</a>
-<a href="#305" id="305">305</a>
-<a href="#306" id="306">306</a>
-<a href="#307" id="307">307</a>
-<a href="#308" id="308">308</a>
-<a href="#309" id="309">309</a>
-<a href="#310" id="310">310</a>
-<a href="#311" id="311">311</a>
-<a href="#312" id="312">312</a>
-<a href="#313" id="313">313</a>
-<a href="#314" id="314">314</a>
-<a href="#315" id="315">315</a>
-<a href="#316" id="316">316</a>
-<a href="#317" id="317">317</a>
-<a href="#318" id="318">318</a>
-<a href="#319" id="319">319</a>
-<a href="#320" id="320">320</a>
-<a href="#321" id="321">321</a>
-<a href="#322" id="322">322</a>
-<a href="#323" id="323">323</a>
-<a href="#324" id="324">324</a>
-<a href="#325" id="325">325</a>
-<a href="#326" id="326">326</a>
-<a href="#327" id="327">327</a>
-<a href="#328" id="328">328</a>
-<a href="#329" id="329">329</a>
-<a href="#330" id="330">330</a>
-<a href="#331" id="331">331</a>
-<a href="#332" id="332">332</a>
-<a href="#333" id="333">333</a>
-<a href="#334" id="334">334</a>
-<a href="#335" id="335">335</a>
-<a href="#336" id="336">336</a>
-<a href="#337" id="337">337</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(dead_code)]
 
 </span><span class="kw">use </span><span class="kw">crate</span>::csl::{get_builder_config, InputsBuilderExt, TransactionBuilderExt, TransactionContext};
@@ -346,8 +303,7 @@
 <span class="kw">use </span>partner_chains_plutus_data::d_param::d_parameter_to_plutus_data;
 <span class="kw">use </span>sidechain_domain::DParameter;
 
-<span class="attr">#[allow(clippy::too_many_arguments)]
-</span><span class="kw">fn </span>mint_d_param_token_tx(
+<span class="kw">fn </span>mint_d_param_token_tx(
 	validator: <span class="kw-2">&amp;</span>PlutusScript,
 	d_parameter: <span class="kw-2">&amp;</span>DParameter,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
@@ -362,11 +318,10 @@
 		ctx,
 	)<span class="question-mark">?</span>;
 
-	tx_builder.set_required_fields_and_build(ctx)
+	tx_builder.balance_update_and_build(ctx)
 }
 
-<span class="attr">#[allow(clippy::too_many_arguments)]
-</span><span class="kw">fn </span>update_d_param_tx(
+<span class="kw">fn </span>update_d_param_tx(
 	validator: <span class="kw-2">&amp;</span>PlutusScript,
 	d_parameter: <span class="kw-2">&amp;</span>DParameter,
 	script_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
@@ -378,7 +333,6 @@
 
 	<span class="kw">let </span><span class="kw-2">mut </span>inputs = TxInputsBuilder::new();
 	inputs.add_script_utxo_input(script_utxo, validator, validator_redeemer_ex_units)<span class="question-mark">?</span>;
-	inputs.add_key_inputs(<span class="kw-2">&amp;</span>ctx.payment_utxos, <span class="kw-2">&amp;</span>ctx.payment_key_hash)<span class="question-mark">?</span>;
 	tx_builder.set_inputs(<span class="kw-2">&amp;</span>inputs);
 
 	tx_builder.add_output_with_one_script_token(
@@ -387,7 +341,7 @@
 		ctx,
 	)<span class="question-mark">?</span>;
 
-	tx_builder.set_required_fields_and_build(ctx)
+	tx_builder.balance_update_and_build(ctx)
 }
 
 <span class="attr">#[cfg(test)]
@@ -395,17 +349,13 @@
 	<span class="kw">use super</span>::{mint_d_param_token_tx, update_d_param_tx};
 	<span class="kw">use crate</span>::{
 		csl::{empty_asset_name, TransactionContext},
-		plutus_script::PlutusScript,
+		test_values::<span class="kw-2">*</span>,
 	};
 	<span class="kw">use </span>cardano_serialization_lib::{
-		Address, Ed25519KeyHash, ExUnits, Int, LanguageKind, NetworkIdKind, PlutusData,
-		RedeemerTag, ScriptHash,
+		Address, ExUnits, Int, NetworkIdKind, PlutusData, RedeemerTag, ScriptHash,
 	};
 	<span class="kw">use </span>hex_literal::hex;
-	<span class="kw">use </span>ogmios_client::{
-		query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, ScriptExecutionPrices},
-		types::{Asset <span class="kw">as </span>OgmiosAsset, OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue},
-	};
+	<span class="kw">use </span>ogmios_client::types::{Asset <span class="kw">as </span>OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	<span class="kw">use </span>partner_chains_plutus_data::d_param::d_parameter_to_plutus_data;
 	<span class="kw">use </span>sidechain_domain::DParameter;
 
@@ -424,15 +374,19 @@
 
 		<span class="kw">let </span>body = tx.body();
 		<span class="kw">let </span>inputs = body.inputs();
-		<span class="comment">// Payment inputs are script utxo and payment utxo
+		<span class="comment">// Both inputs are used to cover transaction
 		</span><span class="macro">assert_eq!</span>(
 			inputs.get(<span class="number">0</span>).to_string(),
+			<span class="string">"0101010101010101010101010101010101010101010101010101010101010101#0"
+		</span>);
+		<span class="macro">assert_eq!</span>(
+			inputs.get(<span class="number">1</span>).to_string(),
 			<span class="string">"0404040404040404040404040404040404040404040404040404040404040404#1"
 		</span>);
-		<span class="comment">// Collateral input goes to collaterals
+		<span class="comment">// The greater input is selected as collateral
 		</span><span class="macro">assert_eq!</span>(
 			body.collateral().unwrap().get(<span class="number">0</span>).to_string(),
-			<span class="string">"0707070707070707070707070707070707070707070707070707070707070707#0"
+			<span class="string">"0404040404040404040404040404040404040404040404040404040404040404#1"
 		</span>);
 		<span class="kw">let </span>outputs = body.outputs();
 		<span class="comment">// There is a change for payment
@@ -446,7 +400,10 @@
 			.unwrap()
 			.checked_add(<span class="kw-2">&amp;</span>body.fee())
 			.unwrap();
-		<span class="macro">assert_eq!</span>(coins_sum, payment_utxo().value.lovelace.into());
+		<span class="macro">assert_eq!</span>(
+			coins_sum,
+			(greater_payment_utxo().value.lovelace + lesser_payment_utxo().value.lovelace).into()
+		);
 		<span class="kw">let </span>token_policy_id =
 			ScriptHash::from(<span class="macro">hex!</span>(<span class="string">"6fdad2bafb138ef29280dc1bacb7d468fdc7bc3e93966a6edf0022a0"</span>));
 		<span class="macro">assert_eq!</span>(
@@ -488,7 +445,7 @@
 		<span class="kw">let </span>total_collateral = body.total_collateral().unwrap();
 		<span class="macro">assert_eq!</span>(
 			collateral_return.amount().coin().checked_add(<span class="kw-2">&amp;</span>total_collateral).unwrap(),
-			collateral_utxo().value.lovelace.into()
+			greater_payment_utxo().value.lovelace.into()
 		);
 	}
 
@@ -525,20 +482,20 @@
 
 		<span class="kw">let </span>body = tx.body();
 		<span class="kw">let </span>inputs = body.inputs();
-		<span class="comment">// Script input goes to inputs
+		<span class="comment">// The greater payment input goes to inputs, the lesser one is not used, because script_utxo already covers some part of outputs
 		</span><span class="macro">assert_eq!</span>(
 			inputs.get(<span class="number">0</span>).to_string(),
 			<span class="string">"0404040404040404040404040404040404040404040404040404040404040404#1"
 		</span>);
-		<span class="comment">// Payment input goes to inputs
+		<span class="comment">// Script input goes to inputs
 		</span><span class="macro">assert_eq!</span>(
 			inputs.get(<span class="number">1</span>).to_string(),
 			<span class="string">"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f#0"
 		</span>);
-		<span class="comment">// Collateral input goes to collaterals
+		<span class="comment">// The greater payment input goes to collaterals
 		</span><span class="macro">assert_eq!</span>(
 			body.collateral().unwrap().get(<span class="number">0</span>).to_string(),
-			<span class="string">"0707070707070707070707070707070707070707070707070707070707070707#0"
+			<span class="string">"0404040404040404040404040404040404040404040404040404040404040404#1"
 		</span>);
 		<span class="kw">let </span>outputs = body.outputs();
 		<span class="comment">// There is a change for payment
@@ -552,7 +509,10 @@
 			.unwrap()
 			.checked_add(<span class="kw-2">&amp;</span>body.fee())
 			.unwrap();
-		<span class="macro">assert_eq!</span>(coins_sum, (payment_utxo().value.lovelace + script_utxo_lovelace).into());
+		<span class="macro">assert_eq!</span>(
+			coins_sum,
+			(greater_payment_utxo().value.lovelace + script_utxo_lovelace).into()
+		);
 		<span class="macro">assert_eq!</span>(
 			script_output
 				.amount()
@@ -584,46 +544,33 @@
 		<span class="kw">let </span>total_collateral = body.total_collateral().unwrap();
 		<span class="macro">assert_eq!</span>(
 			collateral_return.amount().coin().checked_add(<span class="kw-2">&amp;</span>total_collateral).unwrap(),
-			collateral_utxo().value.lovelace.into()
+			greater_payment_utxo().value.lovelace.into()
 		);
 	}
 
 	<span class="kw">fn </span>test_tx_context() -&gt; TransactionContext {
 		TransactionContext {
-			payment_key_hash: payment_key_hash(),
-			collaterals: <span class="macro">vec!</span>[collateral_utxo()],
-			payment_utxos: <span class="macro">vec!</span>[payment_utxo()],
+			payment_key: payment_key(),
+			payment_utxos: <span class="macro">vec!</span>[
+				lesser_payment_utxo(),
+				greater_payment_utxo(),
+				make_utxo(<span class="number">11u8</span>, <span class="number">0</span>, <span class="number">100000</span>, <span class="kw-2">&amp;</span>payment_addr()),
+			],
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
 		}
 	}
 
-	<span class="kw">fn </span>test_script() -&gt; PlutusScript {
-		PlutusScript {
-			bytes: <span class="macro">hex!</span>(<span class="string">"4d4c01000022223212001375a009"</span>).to_vec(),
-			language: LanguageKind::PlutusV2,
-		}
+	<span class="kw">fn </span>lesser_payment_utxo() -&gt; OgmiosUtxo {
+		make_utxo(<span class="number">1u8</span>, <span class="number">0</span>, <span class="number">1200000</span>, <span class="kw-2">&amp;</span>payment_addr())
 	}
 
-	<span class="kw">fn </span>payment_key_hash() -&gt; Ed25519KeyHash {
-		<span class="macro">hex!</span>(<span class="string">"035ef86f1622172816bb9e916aea86903b2c8d32c728ad5c9b9472be"</span>).into()
-	}
-
-	<span class="kw">fn </span>collateral_utxo() -&gt; OgmiosUtxo {
-		make_utxo(<span class="number">7u8</span>, <span class="number">0</span>, <span class="number">7000000</span>, <span class="kw-2">&amp;</span>payment_addr())
-	}
-
-	<span class="kw">fn </span>payment_utxo() -&gt; OgmiosUtxo {
-		make_utxo(<span class="number">4u8</span>, <span class="number">1</span>, <span class="number">4000000</span>, <span class="kw-2">&amp;</span>payment_addr())
+	<span class="kw">fn </span>greater_payment_utxo() -&gt; OgmiosUtxo {
+		make_utxo(<span class="number">4u8</span>, <span class="number">1</span>, <span class="number">1200001</span>, <span class="kw-2">&amp;</span>payment_addr())
 	}
 
 	<span class="kw">fn </span>validator_addr() -&gt; Address {
 		Address::from_bech32(<span class="string">"addr_test1wpha4546lvfcau5jsrwpht9h6350m3au86fev6nwmuqz9gqer2ung"</span>)
-			.unwrap()
-	}
-
-	<span class="kw">fn </span>payment_addr() -&gt; Address {
-		Address::from_bech32(<span class="string">"addr_test1vqp4a7r0zc3pw2qkhw0fz6h2s6grktydxtrj3t2unw2890sfgt0kq"</span>)
 			.unwrap()
 	}
 
@@ -637,39 +584,6 @@
 
 	<span class="kw">fn </span>expected_plutus_data() -&gt; PlutusData {
 		d_parameter_to_plutus_data(<span class="kw-2">&amp;</span>input_d_param())
-	}
-
-	<span class="kw">fn </span>protocol_parameters() -&gt; ProtocolParametersResponse {
-		ProtocolParametersResponse {
-			min_fee_coefficient: <span class="number">44</span>,
-			min_fee_constant: OgmiosValue::new_lovelace(<span class="number">155381</span>),
-			stake_pool_deposit: OgmiosValue::new_lovelace(<span class="number">500000000</span>),
-			stake_credential_deposit: OgmiosValue::new_lovelace(<span class="number">2000000</span>),
-			max_value_size: OgmiosBytesSize { bytes: <span class="number">5000 </span>},
-			max_transaction_size: OgmiosBytesSize { bytes: <span class="number">16384 </span>},
-			min_utxo_deposit_coefficient: <span class="number">4310</span>,
-			script_execution_prices: ScriptExecutionPrices {
-				memory: fraction::Ratio::new_raw(<span class="number">577</span>, <span class="number">10000</span>),
-				cpu: fraction::Ratio::new_raw(<span class="number">721</span>, <span class="number">10000000</span>),
-			},
-			plutus_cost_models: PlutusCostModels {
-				plutus_v1: <span class="macro">vec!</span>[<span class="number">898148</span>, <span class="number">53384111</span>, <span class="number">14333</span>],
-				plutus_v2: <span class="macro">vec!</span>[<span class="number">43053543</span>, <span class="number">10</span>],
-				plutus_v3: <span class="macro">vec!</span>[-<span class="number">900</span>, <span class="number">166917843</span>],
-			},
-			max_collateral_inputs: <span class="number">3</span>,
-			collateral_percentage: <span class="number">150</span>,
-		}
-	}
-
-	<span class="kw">fn </span>make_utxo(id_byte: u8, index: u16, lovelace: u64, addr: <span class="kw-2">&amp;</span>Address) -&gt; OgmiosUtxo {
-		OgmiosUtxo {
-			transaction: OgmiosTx { id: [id_byte; <span class="number">32</span>] },
-			index,
-			value: OgmiosValue::new_lovelace(lovelace),
-			address: addr.to_bech32(<span class="prelude-val">None</span>).unwrap(),
-			..Default::default()
-		}
 	}
 }
 </code></pre></div></section></main></body></html>
