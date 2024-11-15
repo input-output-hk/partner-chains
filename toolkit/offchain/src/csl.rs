@@ -430,7 +430,7 @@ impl InputsBuilderExt for TxInputsBuilder {
 }
 
 #[cfg(test)]
-pub(crate) mod tests {
+mod tests {
 	use super::payment_address;
 	use crate::plutus_script::PlutusScript;
 	use cardano_serialization_lib::LanguageKind::PlutusV2;

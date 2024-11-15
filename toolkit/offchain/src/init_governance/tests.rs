@@ -1,6 +1,6 @@
 use super::transaction::*;
-use crate::csl::tests::test_protocol_parameters;
 use crate::csl::TransactionContext;
+use crate::test_values::protocol_parameters;
 use cardano_serialization_lib::{Address, ExUnits, NetworkIdKind, PrivateKey};
 use hex_literal::*;
 use ogmios_client::types::*;
@@ -164,7 +164,7 @@ fn tx_context() -> TransactionContext {
 		payment_key: payment_key(),
 		payment_utxos: vec![payment_utxo()],
 		network: NetworkIdKind::Testnet,
-		protocol_parameters: test_protocol_parameters(),
+		protocol_parameters: protocol_parameters(),
 	}
 }
 
