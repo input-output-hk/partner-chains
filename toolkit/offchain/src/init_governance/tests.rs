@@ -42,14 +42,14 @@ fn expected_transaction() -> serde_json::Value {
 				{
 					"address": "addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw",
 					"amount": {
-						"coin": "9919232322",
+						"coin": "9919230782",
 						"multiasset": null
 					},
 					"plutus_data": null,
 					"script_ref": null
 				}
 			],
-			"fee": "404915",
+			"fee": "406455",
 			"ttl": null,
 			"certs": null,
 			"withdrawals": null,
@@ -76,13 +76,13 @@ fn expected_transaction() -> serde_json::Value {
 			"collateral_return": {
 				"address": "addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw",
 				"amount": {
-					"coin": "9922338564",
+					"coin": "9922336254",
 					"multiasset": null
 				},
 				"plutus_data": null,
 				"script_ref": null
 			},
-			"total_collateral": "607373",
+			"total_collateral": "609683",
 			"reference_inputs": null,
 			"required_signers": [
 				"76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"

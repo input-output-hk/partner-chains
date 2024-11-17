@@ -288,7 +288,13 @@ impl TransactionBuilderExt for TransactionBuilder {
 		inputs: &Vec<OgmiosUtxo>,
 	) -> Result<(), JsError> {
 		let mut collateral_builder = TxInputsBuilder::new();
-		collateral_builder.add_key_inputs(&inputs, &ctx.payment_key_hash())?;
+		for utxo in inputs.iter() {
+			collateral_builder.add_regular_input(
+				&key_hash_address(&ctx.payment_key_hash(), ctx.network),
+				&utxo.to_csl_tx_input(),
+				&convert_value(&utxo.value)?,
+			)?;
+		}
 		self.set_collateral(&collateral_builder);
 		Ok(())
 	}
@@ -342,6 +348,8 @@ impl TransactionBuilderExt for TransactionBuilder {
 				)?;
 			} else {
 				builder.add_collateral_inputs(ctx, &collateral_inputs)?;
+				builder.set_script_data_hash(&[0u8; 32].into());
+				// Fake script script data hash is required for proper fee computation
 				builder.add_inputs_from_and_change_with_collateral_return(
 					&ctx.payment_utxos.to_csl()?,
 					CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
