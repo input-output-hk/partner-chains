@@ -585,6 +585,8 @@ def candidate_skey_with_cli(config: ApiConfig, candidate: Candidates):
         config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key = f"{temp_dir}/{filename}"
         yield
         runner.run(f"rm -rf {temp_dir}")
+    else:
+        yield
 
 
 @fixture
@@ -613,3 +615,5 @@ def governance_skey_with_cli(config: ApiConfig):
         config.nodes_config.governance_authority.mainchain_key = f"{temp_dir}/{filename}"
         yield
         runner.run(f"rm -rf {temp_dir}")
+    else:
+        yield
