@@ -123,6 +123,7 @@
 <a href="#123" id="123">123</a>
 <a href="#124" id="124">124</a>
 <a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>anyhow::{anyhow, Context};
 <span class="kw">use </span>cardano_serialization_lib::{Address, LanguageKind, NetworkIdKind, PlutusData};
 <span class="kw">use </span>plutus::ToDatum;
@@ -132,6 +133,7 @@
 <span class="kw">use crate</span>::{csl::<span class="kw-2">*</span>, untyped_plutus::<span class="kw-2">*</span>};
 
 <span class="doccomment">/// Wraps a Plutus script cbor
+</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>PlutusScript {
 	<span class="kw">pub </span>bytes: Vec&lt;u8&gt;,
 	<span class="kw">pub </span>language: LanguageKind,

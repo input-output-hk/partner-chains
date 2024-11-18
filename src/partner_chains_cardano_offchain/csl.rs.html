@@ -736,9 +736,25 @@
 <a href="#736" id="736">736</a>
 <a href="#737" id="737">737</a>
 <a href="#738" id="738">738</a>
+<a href="#739" id="739">739</a>
+<a href="#740" id="740">740</a>
+<a href="#741" id="741">741</a>
+<a href="#742" id="742">742</a>
+<a href="#743" id="743">743</a>
+<a href="#744" id="744">744</a>
+<a href="#745" id="745">745</a>
+<a href="#746" id="746">746</a>
+<a href="#747" id="747">747</a>
+<a href="#748" id="748">748</a>
+<a href="#749" id="749">749</a>
+<a href="#750" id="750">750</a>
+<a href="#751" id="751">751</a>
+<a href="#752" id="752">752</a>
+<a href="#753" id="753">753</a>
+<a href="#754" id="754">754</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(dead_code)]
 
-</span><span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
+</span><span class="kw">use crate</span>::{plutus_script::PlutusScript, untyped_plutus::datum_to_uplc_plutus_data};
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse},
@@ -884,6 +900,11 @@
 	<span class="kw">fn </span>to_csl_tx_input(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; TransactionInput;
 	<span class="kw">fn </span>to_csl_tx_output(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;TransactionOutput, JsError&gt;;
 	<span class="kw">fn </span>to_csl(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;TransactionUnspentOutput, JsError&gt;;
+
+	<span class="kw">fn </span>to_domain(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; sidechain_domain::UtxoId;
+
+	<span class="doccomment">/// Encodes this UTXO as a nested constructor data format which is used by PC smart contracts
+	</span><span class="kw">fn </span>to_uplc_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; uplc::PlutusData;
 }
 
 <span class="kw">impl </span>OgmiosUtxoExt <span class="kw">for </span>OgmiosUtxo {
@@ -902,6 +923,17 @@
 
 	<span class="kw">fn </span>to_csl(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;TransactionUnspentOutput, JsError&gt; {
 		<span class="prelude-val">Ok</span>(TransactionUnspentOutput::new(<span class="kw-2">&amp;</span><span class="self">self</span>.to_csl_tx_input(), <span class="kw-2">&amp;</span><span class="self">self</span>.to_csl_tx_output()<span class="question-mark">?</span>))
+	}
+
+	<span class="kw">fn </span>to_domain(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; sidechain_domain::UtxoId {
+		sidechain_domain::UtxoId {
+			tx_hash: sidechain_domain::McTxHash(<span class="self">self</span>.transaction.id),
+			index: sidechain_domain::UtxoIndex(<span class="self">self</span>.index),
+		}
+	}
+
+	<span class="kw">fn </span>to_uplc_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; uplc::PlutusData {
+		datum_to_uplc_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>.to_domain())
 	}
 }
 
