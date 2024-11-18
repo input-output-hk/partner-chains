@@ -1,29 +1,22 @@
 name: "Build and Upload PC Artifacts"
 description: "Build and upload partner-chains artifacts for Linux, macOS x86_64, and macOS arm64"
 inputs:
-  tag:
-    description: "partner-chains release tag to append to artifact name"
-    required: true
-  sha:
-    description: "Commit SHA to checkout"
-    required: true
   os:
-    description: "Operating system for the build (linux, macos-x86_64, macos-arm64)"
+    description: "Operating system for the build (linux-x86_64, linux-arm64, macos-x86_64, macos-arm64)"
     required: true
 
 runs:
   using: "composite"
   steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ inputs.sha }} 
     - name: Set filename variables
       shell: bash
       run: |
-        if [[ "${{ inputs.os }}" == "linux" ]]; then
+        if [[ "${{ inputs.os }}" == "linux-x86_64" ]]; then
           echo "PARTNER_CHAINS_CLI=partner-chains-cli-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
           echo "PARTNER_CHAINS_NODE=partner-chains-node-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
+        elif [[ "${{ inputs.os }}" == "linux-arm64" ]]; then
+          echo "PARTNER_CHAINS_CLI=partner-chains-cli-${{ inputs.tag }}-aarch64-linux" >> $GITHUB_ENV
+          echo "PARTNER_CHAINS_NODE=partner-chains-node-${{ inputs.tag }}-aarch64-linux" >> $GITHUB_ENV
         elif [[ "${{ inputs.os }}" == "macos-x86_64" ]]; then
           echo "PARTNER_CHAINS_CLI=partner-chains-cli-${{ inputs.tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
           echo "PARTNER_CHAINS_NODE=partner-chains-node-${{ inputs.tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
@@ -36,7 +29,7 @@ runs:
       shell: bash
       run: |
         cd $GITHUB_WORKSPACE
-        if [[ "${{ inputs.os }}" == "linux" ]]; then
+        if [[ "${{ inputs.os }}" == "linux-x86_64" || "${{ inputs.os }}" == "linux-arm64" ]]; then
           sudo apt-get install -y protobuf-compiler
         elif [[ "${{ inputs.os }}" == "macos-x86_64" ]]; then
           curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v21.3/protoc-21.3-osx-x86_64.zip
@@ -52,10 +45,15 @@ runs:
       shell: bash
       run: |
         cd $GITHUB_WORKSPACE
-        if [[ "${{ inputs.os }}" == "linux" ]]; then
+        if [[ "${{ inputs.os }}" == "linux-x86_64" ]]; then
           rustup target add x86_64-unknown-linux-gnu
           cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
           cp target/x86_64-unknown-linux-gnu/release/partner-chains-node $PARTNER_CHAINS_NODE
+          chmod +x $PARTNER_CHAINS_NODE
+        elif [[ "${{ inputs.os }}" == "linux-arm64" ]]; then
+          rustup target add aarch64-unknown-linux-gnu
+          cargo build -p partner-chains-node --locked --release --target aarch64-unknown-linux-gnu
+          cp target/aarch64-unknown-linux-gnu/release/partner-chains-node $PARTNER_CHAINS_NODE
           chmod +x $PARTNER_CHAINS_NODE
         elif [[ "${{ inputs.os }}" == "macos-x86_64" ]]; then
           rustup target add x86_64-apple-darwin
@@ -73,10 +71,15 @@ runs:
       shell: bash
       run: |
         cd $GITHUB_WORKSPACE
-        if [[ "${{ inputs.os }}" == "linux" ]]; then
+        if [[ "${{ inputs.os }}" == "linux-x86_64" ]]; then
           rustup target add x86_64-unknown-linux-gnu
           cargo build -p partner-chains-cli --locked --release --target x86_64-unknown-linux-gnu
           cp target/x86_64-unknown-linux-gnu/release/partner-chains-cli $PARTNER_CHAINS_CLI
+          chmod +x $PARTNER_CHAINS_CLI
+        elif [[ "${{ inputs.os }}" == "linux-arm64" ]]; then
+          rustup target add aarch64-unknown-linux-gnu
+          cargo build -p partner-chains-cli --locked --release --target aarch64-unknown-linux-gnu
+          cp target/aarch64-unknown-linux-gnu/release/partner-chains-cli $PARTNER_CHAINS_CLI
           chmod +x $PARTNER_CHAINS_CLI
         elif [[ "${{ inputs.os }}" == "macos-x86_64" ]]; then
           rustup target add x86_64-apple-darwin

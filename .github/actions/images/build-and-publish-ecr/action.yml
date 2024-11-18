@@ -13,10 +13,10 @@ outputs: {}
 runs:
   using: "composite"
   steps:
-    - name: Download partner-chains-node-linux-artifact
+    - name: Download partner-chains-node-linux-x86_64-artifact
       uses: actions/download-artifact@v4
       with:
-        name: partner-chains-node-linux-artifact
+        name: partner-chains-node-linux-x86_64-artifact
 
     - name: Write Dockerfile
       run: |

@@ -15,23 +15,37 @@ runs:
       run: |
         echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
         echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
+        echo "PARTNER_CHAINS_CLI_ARM64_LINUX=partner-chains-cli-${{ inputs.tag }}-aarch64-linux" >> $GITHUB_ENV
+        echo "PARTNER_CHAINS_NODE_ARM64_LINUX=partner-chains-node-${{ inputs.tag }}-aarch64-linux" >> $GITHUB_ENV
         echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ inputs.tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
         echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ inputs.tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
         echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ inputs.tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
         echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ inputs.tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
       shell: bash
 
-    - name: Download partner-chains-cli-linux-artifact
+    - name: Download partner-chains-cli-linux-x86_64-artifact
       uses: actions/download-artifact@v4
       with:
-        name: partner-chains-cli-linux-artifact
-        path: artifact-linux/
+        name: partner-chains-cli-linux-x86_64-artifact
+        path: artifact-linux-x86_64/
 
-    - name: Download partner-chains-node-linux-artifact
+    - name: Download partner-chains-node-linux-x86_64-artifact
       uses: actions/download-artifact@v4
       with:
-        name: partner-chains-node-linux-artifact
-        path: artifact-linux/
+        name: partner-chains-node-linux-x86_64-artifact
+        path: artifact-linux-x86_64/
+
+    - name: Download partner-chains-cli-linux-arm64-artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: partner-chains-cli-linux-arm64-artifact
+        path: artifact-linux-arm64/
+
+    - name: Download partner-chains-node-linux-arm64-artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: partner-chains-node-linux-arm64-artifact
+        path: artifact-linux-arm64/
 
     - name: Download partner-chains-cli-macos-x86_64-artifact
       uses: actions/download-artifact@v4
@@ -151,8 +165,10 @@ runs:
         fi
         echo "Uploading artifacts to release ID $release_id..."
 
-        for artifact in "artifact-linux/${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}" \
-                        "artifact-linux/${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}" \
+        for artifact in "artifact-linux-x86_64/${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}" \
+                        "artifact-linux-x86_64/${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}" \
+                        "artifact-linux-arm64/${{ env.PARTNER_CHAINS_CLI_ARM64_LINUX }}" \
+                        "artifact-linux-arm64/${{ env.PARTNER_CHAINS_NODE_ARM64_LINUX }}" \
                         "artifact-macos-x86_64/${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}" \
                         "artifact-macos-x86_64/${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}" \
                         "artifact-macos-arm64/${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}" \
