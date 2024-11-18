@@ -301,13 +301,13 @@ mod tests {
 		let registration_data = RegistrationData {
 			consumed_input: input_utxo,
 			sidechain_signature: SidechainSignature(
-				hex!("f31f26ea682a5721cd07cb337a3a7ca134d3909f6afcd09c74a67dda35f28aa20983e396cb444ba87d146ab3bf9ecf2c129572decfde7db9cfb2580e429d8744").to_vec()
+				hex!("f3622ed6e121836765f684068ecf3cf13eb3eb7d2fc7edcabdb41cad940434ca7b9edf45ce8b6d8d2b2a842fb8265856a3f950d72d42499c72ad28dc46b5dc90").to_vec()
 			),
 			mainchain_signature: MainchainSignature(
-				hex!("1ff8cd26c9132bed8b54acb13d4210cc38fb6577c548222d3a976e1cbf6cdc3dff94922aa3aad6b06a87ce8e15fd254fac14f6654ced49dc8758a6095f347604").to_vec()
+				hex!("2e5e39928409aa9ef5ab955da1cd3819ebd2e7461e766d685305280b6986929e3df2bf4cc5a2ed355c20a0dfb44f2e6ef1f36b6da3bbae3ff0c040705b412e07").to_vec()
 			),
 			cross_chain_signature: CrossChainSignature(
-				hex!("4b3a74688573be4a3b68f0dd8f9ef699a5bae594d8f5f915394afacf259ecada2f5d85dc2a54550ce17efa26c0e2937be188666a9fb25ab6d467d52751144bf1").to_vec()
+				hex!("f3622ed6e121836765f684068ecf3cf13eb3eb7d2fc7edcabdb41cad940434ca7b9edf45ce8b6d8d2b2a842fb8265856a3f950d72d42499c72ad28dc46b5dc90").to_vec()
 			),
 			sidechain_pub_key: SidechainPublicKey(
 				hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec()

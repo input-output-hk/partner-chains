@@ -152,6 +152,11 @@ mod tests {
 			.with_json_file("payment.vkey", test_vkey_file_json())
 			.with_expected_io(vec![
 				scenarios::show_intro(),
+				MockIO::print("This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service"),
+				prompt_ogmios_configuration_io(
+					&default_ogmios_service_config(),
+					&default_ogmios_service_config(),
+				),
 				prompt_and_save_to_existing_file(
 					CARDANO_PAYMENT_VERIFICATION_KEY_FILE,
 					"payment.vkey",
@@ -166,15 +171,5 @@ mod tests {
 		let result = prepare_chain_params(&mock_context);
 
 		result.expect("should succeed");
-	}
-
-	fn do_not_remove_but_use_it_establish_ogmios_configuration_io() -> MockIO {
-		MockIO::Group(vec![
-			MockIO::print("ojoj"),
-			prompt_ogmios_configuration_io(
-				&default_ogmios_service_config(),
-				&default_ogmios_service_config(),
-			),
-		])
 	}
 }
