@@ -6,7 +6,7 @@ use crate::{config::config_fields, CmdRun};
 use anyhow::{anyhow, Context};
 use serde::de::DeserializeOwned;
 use serde_json::Value as JValue;
-use sidechain_domain::{UtxoId};
+use sidechain_domain::UtxoId;
 
 #[cfg(test)]
 mod tests;

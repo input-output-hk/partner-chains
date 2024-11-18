@@ -407,7 +407,7 @@ pub fn get_cardano_network_from_file(context: &impl IOContext) -> anyhow::Result
 
 pub mod config_fields {
 	use super::*;
-	use sidechain_domain::{UtxoId};
+	use sidechain_domain::UtxoId;
 
 	pub const NATIVE_TOKEN_POLICY: ConfigFieldDefinition<'static, String> = ConfigFieldDefinition {
 		config_file: CHAIN_CONFIG_FILE_PATH,

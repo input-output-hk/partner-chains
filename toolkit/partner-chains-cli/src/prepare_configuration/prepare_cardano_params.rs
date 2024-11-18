@@ -22,7 +22,7 @@ fn get_eras_summaries<C: IOContext>(addr: &str, context: &C) -> anyhow::Result<V
 	}
 }
 
-fn get_shelley_config<C: IOContext>(
+pub(crate) fn get_shelley_config<C: IOContext>(
 	addr: &str,
 	context: &C,
 ) -> anyhow::Result<ShelleyGenesisConfiguration> {
@@ -51,6 +51,7 @@ fn caradano_parameters(
 			.checked_add(first_epoch_era.start.time_seconds)
 			.and_then(|seconds| seconds.checked_mul(1000))
 			.ok_or_else(|| anyhow::anyhow!("First epoch timestamp overflow"))?,
+		// This is a bug, we should not use network magic here
 		network: CardanoNetwork(shelley_config.network_magic),
 	})
 }

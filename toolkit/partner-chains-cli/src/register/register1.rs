@@ -136,20 +136,20 @@ fn sign_registration_message_with_sidechain_key(
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct GeneratedKeysFileContent {
-	sidechain_pub_key: String,
-	aura_pub_key: String,
-	grandpa_pub_key: String,
+pub struct GeneratedKeysFileContent {
+	pub sidechain_pub_key: String,
+	pub aura_pub_key: String,
+	pub grandpa_pub_key: String,
 }
 
-fn read_generated_keys<C: IOContext>(context: &C) -> anyhow::Result<GeneratedKeysFileContent> {
+pub fn read_generated_keys<C: IOContext>(context: &C) -> anyhow::Result<GeneratedKeysFileContent> {
 	let keys_file_content = context
 		.read_file(KEYS_FILE_PATH)
 		.ok_or_else(|| anyhow::anyhow!("failed to read keys file"))?;
 	Ok(serde_json::from_str(&keys_file_content)?)
 }
 
-fn load_chain_config_field<C: IOContext, T>(
+pub fn load_chain_config_field<C: IOContext, T>(
 	context: &C,
 	field: &config::ConfigFieldDefinition<T>,
 ) -> Result<T, anyhow::Error>
@@ -177,13 +177,13 @@ fn derive_address<C: IOContext>(
 }
 
 #[derive(Debug, PartialEq)]
-struct ValidUtxo {
-	utxo_id: UtxoId,
-	lovelace: u64,
+pub struct ValidUtxo {
+	pub utxo_id: UtxoId,
+	pub lovelace: u64,
 }
 
 impl ValidUtxo {
-	fn to_display_string(&self) -> String {
+	pub fn to_display_string(&self) -> String {
 		format!("{0} ({1} lovelace)", self.utxo_id, self.lovelace)
 	}
 }

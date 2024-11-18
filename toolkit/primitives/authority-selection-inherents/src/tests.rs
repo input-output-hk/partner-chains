@@ -158,12 +158,11 @@ fn ariadne_all_permissioned_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee =
-		select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
-			UtxoId::default(),
-			authority_selection_inputs,
-			ScEpochNumber::zero(),
-		);
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
+		UtxoId::default(),
+		authority_selection_inputs,
+		ScEpochNumber::zero(),
+	);
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
@@ -187,12 +186,11 @@ fn ariadne_only_permissioned_candidates_are_present_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee =
-		select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
-			UtxoId::default(),
-			authority_selection_inputs,
-			ScEpochNumber::zero(),
-		);
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
+		UtxoId::default(),
+		authority_selection_inputs,
+		ScEpochNumber::zero(),
+	);
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
@@ -216,12 +214,11 @@ fn ariadne_3_to_2_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee =
-		select_authorities::<AccountId, AccountKeys,  ConstU32<32>>(
-			UtxoId::default(),
-			authority_selection_inputs,
-			ScEpochNumber::zero(),
-		);
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
+		UtxoId::default(),
+		authority_selection_inputs,
+		ScEpochNumber::zero(),
+	);
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
@@ -245,12 +242,11 @@ fn ariadne_3_to_2_with_more_available_candidates_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee =
-		select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
-			UtxoId::default(),
-			authority_selection_inputs,
-			ScEpochNumber::zero(),
-		);
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
+		UtxoId::default(),
+		authority_selection_inputs,
+		ScEpochNumber::zero(),
+	);
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
@@ -274,12 +270,11 @@ fn ariadne_4_to_7_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee =
-		select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
-			UtxoId::default(),
-			authority_selection_inputs,
-			ScEpochNumber::zero(),
-		);
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
+		UtxoId::default(),
+		authority_selection_inputs,
+		ScEpochNumber::zero(),
+	);
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
@@ -306,12 +301,11 @@ fn ariadne_selection_statistics_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee =
-		select_authorities::<AccountId, AccountKeys, ConstU32<30000>>(
-			UtxoId::default(),
-			authority_selection_inputs,
-			ScEpochNumber::zero(),
-		);
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<30000>>(
+		UtxoId::default(),
+		authority_selection_inputs,
+		ScEpochNumber::zero(),
+	);
 	let committee = calculated_committee.unwrap();
 	let mut map = HashMap::new();
 	for (id, _) in &committee {
@@ -336,12 +330,11 @@ fn ariadne_does_not_return_empty_committee() {
 		&[],
 		DParameter { num_permissioned_candidates: 1, num_registered_candidates: 1 },
 	);
-	let calculated_committee =
-		select_authorities::<AccountId, AccountKeys, ConstU32<10>>(
-			UtxoId::default(),
-			authority_selection_inputs,
-			ScEpochNumber::zero(),
-		);
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<10>>(
+		UtxoId::default(),
+		authority_selection_inputs,
+		ScEpochNumber::zero(),
+	);
 	assert_eq!(calculated_committee, None);
 }
 

@@ -22,6 +22,7 @@ pub trait IOContext {
 	fn enewline(&self);
 	fn prompt(&self, prompt: &str, default: Option<&str>) -> String;
 	fn prompt_yes_no(&self, prompt: &str, default: bool) -> bool;
+	// TODO: 	fn prompt_multi_option<T: ToString>(&self, msg: &str, options: Vec<T>) -> T;
 	fn prompt_multi_option(&self, msg: &str, options: Vec<String>) -> String;
 	fn write_file(&self, path: &str, content: &str);
 	fn new_tmp_file(&self, content: &str) -> TempPath;
