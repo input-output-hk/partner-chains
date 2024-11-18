@@ -1,6 +1,8 @@
 # Partner Chains Local Environment
 
-This stack is designed to run a 5 x Partner Chains node local environment for a partnerchain. It is based on the custom IO Substrate image.
+This stack is designed to run a 5 x Partner Chains node local environment for a partner chain. It is based on the custom IO Substrate image.
+
+![alt text](pc-local-env.png)
 
 The local environment includes:
 
@@ -14,15 +16,13 @@ The local environment includes:
 
 The stack `setup.sh` script will create a docker-compose.yml stack configuration files, and populate an .env file with environment values. The stack can be deployed with `docker-compose up -d`. 
 
-When first run, all images will be pulled from public repositories. This stage may take some time. The stack will then be built and run.
+## Local env - step by step
 
-When the stack is running, the 3 Cardano nodes will peer and being block production. This is a private testnet and will not connect to the public Cardano network, but rather from a pre-configured genesis file. 
-
-Once the Cardano chain is synced, Ogmios, Kupo and DB-Sync will in turn connect to the Cardano node node.socket and begin syncing the chain. 
-
-The pc-contracts-cli will insert D parameter values and register Partner Chains Node keys with the Cardano chain.
-
-Once Postgres is populated with the required data, the Partner Chains nodes will begin syncing the chain and will begin block production after 2 main chain epochs.
+- When first run, all images will be pulled from public repositories. This stage may take some time. The stack will then be built and run.
+- When the stack is running, the 3 Cardano nodes will peer and being block production. This is a private testnet and will not connect to the public Cardano network, but rather from a pre-configured genesis file. 
+- Once the Cardano chain is synced, Ogmios, Kupo and DB-Sync will in turn connect to the Cardano node node.socket and begin syncing the chain. 
+- The pc-contracts-cli will insert D parameter values and register Partner Chains Node keys with the Cardano chain.
+- Once Postgres is populated with the required data, the Partner Chains nodes will begin syncing the chain and will begin block production after 2 main chain epochs.
 
 ## Configuring the environment
 
