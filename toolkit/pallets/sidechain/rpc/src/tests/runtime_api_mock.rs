@@ -1,12 +1,13 @@
 use super::*;
 use mock::*;
 use rpc_mock::*;
+use sidechain_domain::UtxoId;
 use sidechain_slots::{ScSlotConfig, SlotsPerEpoch};
-use sp_sidechain::{GetSidechainParams, SidechainStatus};
+use sp_sidechain::{GetGenesisUtxo, SidechainStatus};
 
 sp_api::mock_impl_runtime_apis! {
-	impl GetSidechainParams<Block, TestSidechainParams> for TestRuntimeApi {
-		fn sidechain_params() -> TestSidechainParams { mock_sidechain_params() }
+	impl GetGenesisUtxo<Block> for TestRuntimeApi {
+		fn genesis_utxo() -> UtxoId { mock_utxo_id() }
 	}
 
 	impl SlotApi<Block> for TestRuntimeApi {

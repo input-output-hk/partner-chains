@@ -192,6 +192,7 @@ pub mod tests {
 	pub(crate) fn preprod_shelley_config() -> ShelleyGenesisConfiguration {
 		ShelleyGenesisConfiguration {
 			network_magic: 1,
+			network: CardanoNetwork(1),
 			security_parameter: 2160,
 			active_slots_coefficient: 0.05,
 			epoch_length: 432000,
@@ -236,6 +237,7 @@ pub mod tests {
 	pub(crate) fn preview_shelley_config() -> ShelleyGenesisConfiguration {
 		ShelleyGenesisConfiguration {
 			network_magic: 2,
+			network: CardanoNetwork(1),
 			security_parameter: 432,
 			active_slots_coefficient: 0.05,
 			epoch_length: 86400,

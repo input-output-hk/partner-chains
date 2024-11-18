@@ -6,15 +6,11 @@ use frame_support::{
 	},
 	*,
 };
-use hex_literal::hex;
-use sidechain_domain::{ScSlotNumber, UtxoId};
+use sidechain_domain::{McTxHash, ScSlotNumber, UtxoId, UtxoIndex};
 use sidechain_slots::SlotsPerEpoch;
 use sp_core::*;
 
-pub const MOCK_GENESIS_UTXO: UtxoId = UtxoId {
-	tx_hash: hex!("0000000000000000000000000000000000000000000000000000000000000000"),
-	index: 0,
-};
+pub const MOCK_GENESIS_UTXO: UtxoId = UtxoId { tx_hash: McTxHash([0u8; 32]), index: UtxoIndex(0) };
 pub const MOCK_SLOTS_PER_EPOCH: SlotsPerEpoch = SlotsPerEpoch(10);
 
 #[frame_support::pallet]

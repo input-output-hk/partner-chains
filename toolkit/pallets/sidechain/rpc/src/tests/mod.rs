@@ -15,6 +15,7 @@ mod get_status_tests {
 	use sidechain_domain::*;
 	use sp_consensus_slots::SlotDuration;
 	use sp_core::offchain::Timestamp;
+	use sp_sidechain::query::Output;
 
 	#[tokio::test]
 	async fn should_return_correct_status() {
@@ -100,7 +101,7 @@ mod get_status_tests {
 
 		assert_eq!(
 			response.expect("Response should not be an error"),
-			crate::tests::mock::mock_sidechain_params(),
+			Output { genesis_utxo: crate::tests::mock::mock_utxo_id() },
 		)
 	}
 }

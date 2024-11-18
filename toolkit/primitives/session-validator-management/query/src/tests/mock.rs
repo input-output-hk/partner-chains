@@ -1,34 +1,30 @@
 use authority_selection_inherents::filter_invalid_candidates::RegisterValidatorSignedMessage;
-use parity_scale_codec::Decode;
-use plutus::{Datum, ToDatum};
-use plutus_datum_derive::ToDatum;
+use plutus::ToDatum;
 use sidechain_domain::*;
 use sp_core::{ecdsa, ed25519, Pair};
 
-#[derive(Clone, Copy, Debug, Decode, PartialEq, ToDatum)]
-pub(crate) struct TestSidechainParams(u64);
-
-pub(crate) const TEST_SIDECHAIN_PARAMS: TestSidechainParams = TestSidechainParams(42);
+pub(crate) const TEST_UTXO_ID: UtxoId =
+	UtxoId { tx_hash: McTxHash([0u8; 32]), index: UtxoIndex(0) };
 
 pub fn create_candidates(
 	seeds: Vec<[u8; 32]>,
-	sidechain_params: TestSidechainParams,
+	genesis_utxo: UtxoId,
 ) -> Vec<CandidateRegistrations> {
 	seeds
 		.into_iter()
-		.map(|s| create_valid_candidate_registrations_from_seed(s, sidechain_params))
+		.map(|s| create_valid_candidate_registrations_from_seed(s, genesis_utxo))
 		.collect()
 }
 
 pub fn create_valid_candidate_registrations_from_seed(
 	seed: [u8; 32],
-	sidechain_params: TestSidechainParams,
+	genesis_utxo: UtxoId,
 ) -> CandidateRegistrations {
 	let mainchain_account = ed25519::Pair::from_seed_slice(&seed).unwrap();
 	let sidechain_account = ecdsa::Pair::from_seed_slice(&seed).unwrap();
 
 	let registration_data =
-		create_valid_registration_data(mainchain_account, sidechain_account, sidechain_params);
+		create_valid_registration_data(mainchain_account, sidechain_account, genesis_utxo);
 
 	CandidateRegistrations {
 		mainchain_pub_key: MainchainPublicKey(mainchain_account.public().0),
@@ -40,10 +36,10 @@ pub fn create_valid_candidate_registrations_from_seed(
 pub fn create_valid_registration_data(
 	mainchain_account: ed25519::Pair,
 	sidechain_account: ecdsa::Pair,
-	sidechain_params: TestSidechainParams,
+	genesis_utxo: UtxoId,
 ) -> RegistrationData {
 	let signed_message = RegisterValidatorSignedMessage {
-		sidechain_params,
+		genesis_utxo,
 		sidechain_pub_key: sidechain_account.public().0.to_vec(),
 		input_utxo: UtxoId { tx_hash: McTxHash([7u8; TX_HASH_SIZE]), index: UtxoIndex(0) },
 	};

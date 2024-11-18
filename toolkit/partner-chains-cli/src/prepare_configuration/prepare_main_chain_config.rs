@@ -98,9 +98,8 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 mod tests {
 	use super::*;
 	use crate::config::config_fields::{GENESIS_UTXO, KUPO_PROTOCOL, OGMIOS_PROTOCOL};
+	use crate::config::NetworkProtocol;
 	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
-	use crate::pc_contracts_cli_resources::tests::prompt_ogmios_configuration_io;
-	use crate::pc_contracts_cli_resources::{default_ogmios_service_config, OGMIOS_REQUIRED};
 	use crate::prepare_configuration::prepare_cardano_params::tests::{
 		preprod_eras_summaries, preprod_shelley_config, PREPROD_CARDANO_PARAMS,
 	};
@@ -123,6 +122,14 @@ mod tests {
 		"13db1ba564b3b264f45974fece44b2beb0a2326b10e65a0f7f300dfb";
 	const TEST_ILLIQUID_SUPPLY_ADDRESS: &str =
 		"addr_test1wqn2pkvvmesmxtfa4tz7w8gh8vumr52lpkrhcs4dkg30uqq77h5z4";
+
+	fn ogmios_config() -> ServiceConfig {
+		ServiceConfig {
+			hostname: "localhost".to_string(),
+			port: 1337,
+			protocol: NetworkProtocol::Http,
+		}
+	}
 
 	pub mod scenarios {
 		use super::*;
@@ -201,7 +208,6 @@ mod tests {
 			.with_json_file(OGMIOS_PROTOCOL.config_file, serde_json::json!({}))
 			.with_offchain_mocks(preprod_offchain_mocks())
 			.with_expected_io(vec![
-				establish_ogmios_configuration_io(),
 				MockIO::ogmios_request(
 					"http://localhost:1337",
 					OgmiosRequest::QueryLedgerStateEraSummaries,
@@ -233,8 +239,12 @@ mod tests {
 				scenarios::prompt_and_save_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
 			]);
-		prepare_main_chain_config(&mock_context, UtxoId::from_str(TEST_GENESIS_UTXO).unwrap())
-			.expect("should succeed");
+		prepare_main_chain_config(
+			&mock_context,
+			&ogmios_config(),
+			UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
+		)
+		.expect("should succeed");
 	}
 
 	#[test]
@@ -255,7 +265,6 @@ mod tests {
 			.with_json_file(KUPO_PROTOCOL.config_file, serde_json::json!({}))
 			.with_offchain_mocks(preprod_offchain_mocks())
 			.with_expected_io(vec![
-				establish_ogmios_configuration_io(),
 				MockIO::ogmios_request(
 					"http://localhost:1337",
 					OgmiosRequest::QueryLedgerStateEraSummaries,
@@ -282,8 +291,12 @@ mod tests {
 				scenarios::prompt_and_save_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
 			]);
-		prepare_main_chain_config(&mock_context, UtxoId::from_str(TEST_GENESIS_UTXO).unwrap())
-			.expect("should succeed");
+		prepare_main_chain_config(
+			&mock_context,
+			&ogmios_config(),
+			UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
+		)
+		.expect("should succeed");
 	}
 
 	fn print_addresses_io() -> MockIO {
@@ -339,15 +352,5 @@ mod tests {
 			},
 			"initial_permissioned_candidates": []
 		})
-	}
-
-	fn establish_ogmios_configuration_io() -> MockIO {
-		MockIO::Group(vec![
-			MockIO::print(OGMIOS_REQUIRED),
-			prompt_ogmios_configuration_io(
-				&default_ogmios_service_config(),
-				&default_ogmios_service_config(),
-			),
-		])
 	}
 }

@@ -122,6 +122,8 @@ const INTRO: &str = "Now, let's set up the genesis utxo. It identifies a partner
 mod tests {
 	use crate::config::config_fields::{CARDANO_PAYMENT_VERIFICATION_KEY_FILE, GENESIS_UTXO};
 	use crate::config::RESOURCES_CONFIG_FILE_PATH;
+	use crate::pc_contracts_cli_resources::default_ogmios_service_config;
+	use crate::pc_contracts_cli_resources::tests::prompt_ogmios_configuration_io;
 	use crate::prepare_configuration::prepare_chain_params::prepare_chain_params;
 	use crate::prepare_configuration::tests::prompt_and_save_to_existing_file;
 	use crate::tests::{MockIO, MockIOContext};
@@ -164,5 +166,15 @@ mod tests {
 		let result = prepare_chain_params(&mock_context);
 
 		result.expect("should succeed");
+	}
+
+	fn do_not_remove_but_use_it_establish_ogmios_configuration_io() -> MockIO {
+		MockIO::Group(vec![
+			MockIO::print("ojoj"),
+			prompt_ogmios_configuration_io(
+				&default_ogmios_service_config(),
+				&default_ogmios_service_config(),
+			),
+		])
 	}
 }

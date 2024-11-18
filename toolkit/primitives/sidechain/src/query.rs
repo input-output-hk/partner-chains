@@ -20,7 +20,7 @@ where
 	Ok(output)
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
 pub struct Output {
 	pub genesis_utxo: UtxoId,
 }

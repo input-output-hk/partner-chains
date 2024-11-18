@@ -70,17 +70,17 @@ sp_api::mock_impl_runtime_apis! {
 		}
 	}
 
-	impl GetSidechainParams<Block, TestSidechainParams> for TestRuntimeApi {
+	impl GetGenesisUtxo<Block> for TestRuntimeApi {
 		#[advanced]
-		fn sidechain_params(at: <Block as BlockT>::Hash) -> Result<TestSidechainParams, sp_api::ApiError> {
+		fn genesis_utxo(at: <Block as BlockT>::Hash) -> Result<UtxoId, sp_api::ApiError> {
 			self.check_using_same_instance_for_same_block(at.encode())?;
-			Ok(TEST_SIDECHAIN_PARAMS)
+			Ok(TEST_UTXO_ID)
 		}
 	}
 
 	impl CandidateValidationApi<Block> for TestRuntimeApi {
 		fn validate_registered_candidate_data(mainchain_pub_key: &MainchainPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError> {
-			validate_registration_data(mainchain_pub_key, registration_data, &TEST_SIDECHAIN_PARAMS).err()
+			validate_registration_data(mainchain_pub_key, registration_data, TEST_UTXO_ID).err()
 		}
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError> {
 			authority_selection_inherents::filter_invalid_candidates::validate_stake(stake).err()

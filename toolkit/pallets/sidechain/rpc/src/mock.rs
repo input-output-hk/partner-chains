@@ -1,8 +1,8 @@
 use crate::SidechainRpcDataSource;
 use derive_new::new;
 use jsonrpsee::core::async_trait;
-use parity_scale_codec::Decode;
-use sidechain_domain::MainchainBlock;
+use sidechain_domain::{MainchainBlock, UtxoId};
+use std::str::FromStr;
 
 // The build.rs file of `substrate_test_runtime` is throwing an error. So a `Block` is being manually defined
 pub type Block = sp_runtime::generic::Block<
@@ -10,12 +10,9 @@ pub type Block = sp_runtime::generic::Block<
 	sp_runtime::OpaqueExtrinsic,
 >;
 
-#[derive(Clone, PartialEq, Decode, Debug)]
-pub(crate) struct TestSidechainParams(String);
-
 #[allow(unused)]
-pub(crate) fn mock_sidechain_params() -> TestSidechainParams {
-	TestSidechainParams("test".to_string())
+pub(crate) fn mock_utxo_id() -> UtxoId {
+	UtxoId::from_str("0000000000000000000000000000000000000000000000000000000000000000#0").unwrap()
 }
 
 #[derive(new)]
