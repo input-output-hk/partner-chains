@@ -13,6 +13,7 @@ from pytest import mark
 @mark.test_key('ETCM-7015')
 @mark.registration
 @mark.xdist_group(name="governance_action")
+@mark.usefixtures("governance_skey_with_cli")
 def test_add_permissioned_candidate(permissioned_candidate: PermissionedCandidates, api: BlockchainApi, db: Session):
     """Test addition of the permissioned candidate
 
@@ -65,6 +66,7 @@ def test_add_permissioned_candidate(permissioned_candidate: PermissionedCandidat
 @mark.test_key('ETCM-7016')
 @mark.registration
 @mark.xdist_group(name="governance_action")
+@mark.usefixtures("governance_skey_with_cli")
 def test_remove_permissioned_candidate(permissioned_candidate: PermissionedCandidates, api: BlockchainApi, db: Session):
     """Test removal of the permissioned candidate
 
