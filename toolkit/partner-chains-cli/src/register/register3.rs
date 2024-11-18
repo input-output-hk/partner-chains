@@ -40,7 +40,7 @@ impl CmdRun for Register3Cmd {
 		context.print("⚙️ Register as a committee candidate (step 3/3)");
 		context.print("This command will submit the registration message to the mainchain.");
 
-		config_fields::GOVERNANCE_AUTHORITY.load_from_file(context).ok_or_else(|| {
+		config_fields::GENESIS_UTXO.load_from_file(context).ok_or_else(|| {
 			context.eprint(&format!("⚠️ The chain configuration file `{CHAIN_CONFIG_FILE_PATH}` is missing or invalid.\n"));
 			context.eprint("⚠️ If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n");
 			context.eprint("⚠️ If you are a validator, you can obtain the chain configuration file from the governance authority.\n");
@@ -52,8 +52,7 @@ impl CmdRun for Register3Cmd {
 		let cardano_payment_signing_key_path =
 			context.prompt("Path to mainchain payment signing key file", Some("payment.skey"));
 
-		let sidechain_param_arg =
-			smart_contracts::sidechain_params_arguments(&self.sidechain_params);
+		let sidechain_param_arg = smart_contracts::sidechain_params_arguments(self.genesis_utxo);
 
 		let pc_contracts_cli_resources = establish_pc_contracts_cli_configuration(context)?;
 		let runtime_config_arguments = smart_contracts::runtime_config_arguments(
@@ -299,7 +298,7 @@ mod tests {
 	fn run_registration_command_io() -> Vec<MockIO> {
 		vec![
 			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
-			MockIO::run_command("./pc-contracts-cli register --network mainnet --sidechain-id 0 --genesis-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey", "{\"endpoint\":\"CommitteeCandidateReg\",\"transactionId\":\"1ab93b52d20ce114bfdb48a256ac48f3d8d46d00aec585c38a904b672a70e3a3\"}"),
+			MockIO::run_command("./pc-contracts-cli register --network mainnet --genesis-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey", "{\"endpoint\":\"CommitteeCandidateReg\",\"transactionId\":\"1ab93b52d20ce114bfdb48a256ac48f3d8d46d00aec585c38a904b672a70e3a3\"}"),
         ]
 	}
 
@@ -307,7 +306,7 @@ mod tests {
 		vec![
 			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 			MockIO::run_command_with_result(
-				"./pc-contracts-cli register --network mainnet --sidechain-id 0 --genesis-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey",
+				"./pc-contracts-cli register --network mainnet --genesis-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey",
 				Err(anyhow::anyhow!("TxRefNotFound"))),
         ]
 	}

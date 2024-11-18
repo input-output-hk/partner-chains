@@ -9,7 +9,7 @@ use frame_support::BoundedVec;
 use log::{info, warn};
 use plutus::*;
 use selection::{Weight, WeightedRandomSelectionConfig};
-use sidechain_domain::{DParameter, ScEpochNumber};
+use sidechain_domain::{DParameter, ScEpochNumber, UtxoId};
 use sp_core::{ecdsa, ed25519, sr25519, Get};
 
 type CandidateWithWeight<A, B> = (Candidate<A, B>, Weight);
@@ -35,18 +35,16 @@ type CandidateWithWeight<A, B> = (Candidate<A, B>, Weight);
 pub fn select_authorities<
 	TAccountId: Clone + Ord + TryFrom<sidechain_domain::SidechainPublicKey> + From<ecdsa::Public>,
 	TAccountKeys: Clone + From<(sr25519::Public, ed25519::Public)>,
-	Params: Clone + ToDatum,
 	MaxValidators: Get<u32>,
 >(
-	sidechain_params: Params,
+	genesis_utxo: UtxoId,
 	input: AuthoritySelectionInputs,
 	sidechain_epoch: ScEpochNumber,
 ) -> Option<BoundedVec<(TAccountId, TAccountKeys), MaxValidators>> {
 	let valid_trustless_candidates = filter_trustless_candidates_registrations::<
 		TAccountId,
 		TAccountKeys,
-		Params,
-	>(input.registered_candidates, sidechain_params);
+	>(input.registered_candidates, genesis_utxo);
 	let valid_permissioned_candidates =
 		filter_invalid_permissioned_candidates(input.permissioned_candidates);
 

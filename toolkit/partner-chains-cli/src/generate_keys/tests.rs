@@ -133,16 +133,9 @@ pub mod scenarios {
 
 	pub fn set_dummy_env() -> MockIO {
 		MockIO::Group(vec![
-			MockIO::set_env_var("CHAIN_ID", "0"),
-			MockIO::set_env_var("THRESHOLD_NUMERATOR", "0"),
-			MockIO::set_env_var("THRESHOLD_DENOMINATOR", "0"),
 			MockIO::set_env_var(
-				"GENESIS_COMMITTEE_UTXO",
+				"GENESIS_UTXO",
 				"0000000000000000000000000000000000000000000000000000000000000000#0",
-			),
-			MockIO::set_env_var(
-				"GOVERNANCE_AUTHORITY",
-				"00000000000000000000000000000000000000000000000000000000",
 			),
 			MockIO::set_env_var("COMMITTEE_CANDIDATE_ADDRESS", "addr_10000"),
 			MockIO::set_env_var(

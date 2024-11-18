@@ -3,7 +3,7 @@ use crate::config::config_fields::{
 	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
 	PERMISSIONED_CANDIDATES_POLICY_ID,
 };
-use crate::config::{ServiceConfig, SidechainParams};
+use crate::config::ServiceConfig;
 use crate::io::IOContext;
 use crate::pc_contracts_cli_resources::{prompt_ogmios_configuration, OGMIOS_REQUIRED};
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
@@ -99,7 +99,7 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::config::config_fields::{GOVERNANCE_AUTHORITY, KUPO_PROTOCOL, OGMIOS_PROTOCOL};
+	use crate::config::config_fields::{GENESIS_UTXO, KUPO_PROTOCOL, OGMIOS_PROTOCOL};
 	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 	use crate::pc_contracts_cli_resources::tests::prompt_ogmios_configuration_io;
 	use crate::pc_contracts_cli_resources::{default_ogmios_service_config, OGMIOS_REQUIRED};
@@ -112,7 +112,7 @@ mod tests {
 		Addresses, PolicyIds, ScriptsData, ValidatorHashes,
 	};
 	use serde_json::Value;
-	use sidechain_domain::{MainchainAddressHash, UtxoId};
+	use sidechain_domain::UtxoId;
 	use std::str::FromStr;
 
 	const TEST_GENESIS_UTXO: &str =
@@ -199,7 +199,7 @@ mod tests {
 	#[test]
 	fn happy_path() {
 		let mock_context = MockIOContext::new()
-			.with_json_file(GOVERNANCE_AUTHORITY.config_file, serde_json::json!({}))
+			.with_json_file(GENESIS_UTXO.config_file, serde_json::json!({}))
 			.with_json_file(OGMIOS_PROTOCOL.config_file, serde_json::json!({}))
 			.with_offchain_mocks(preprod_offchain_mocks())
 			.with_expected_io(vec![

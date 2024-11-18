@@ -84,7 +84,7 @@ echo "Generating addresses.json file..."
     --kupo-host kupo --kupo-port $KUPO_PORT \
     --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
     --payment-signing-key-file /keys/funded_address.skey \
-    --genesis-utxo $GENESIS_COMMITTEE_UTXO \
+    --genesis-utxo $GENESIS_UTXO \
     --version 1 \
 > addresses.json
 
@@ -111,8 +111,7 @@ echo "Inserting D parameter..."
     --network testnet \
     --kupo-host kupo --kupo-port $KUPO_PORT \
     --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
-    --genesis-committee-hash-utxo $GENESIS_COMMITTEE_UTXO \
-    --governance-authority $GOVERNANCE_AUTHORITY \
+    --genesis-utxo $GENESIS_UTXO \
     --d-parameter-permissioned-candidates-count 3 \
     --d-parameter-registered-candidates-count 2 \
     --payment-signing-key-file /keys/funded_address.skey
@@ -154,7 +153,7 @@ dave_sidechain_signing_key=$(cat /partner-chains-nodes/partner-chains-node-4/key
 
 # Process registration signatures for Dave
 dave_output=$(./partner-chains-node registration-signatures \
-    --genesis-utxo $GENESIS_COMMITTEE_UTXO \
+    --genesis-utxo $GENESIS_UTXO \
     --mainchain-signing-key $dave_mainchain_signing_key \
     --sidechain-signing-key $dave_sidechain_signing_key \
     --registration-utxo $dave_utxo)
@@ -250,7 +249,7 @@ echo "Configuring Epoch Length..."
 jq '.genesis.runtimeGenesis.config.sidechain.slotsPerEpoch = 5' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
 echo "Copying chain-spec.json file to /shared/chain-spec.json..."
-cp chain-spec.json /shared/chain-spec.json 
+cp chain-spec.json /shared/chain-spec.json
 echo "chain-spec.json generation complete."
 
 echo "Partnerchain configuration is complete, and will be able to start after two mainchain epochs."

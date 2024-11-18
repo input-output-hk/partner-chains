@@ -9,7 +9,7 @@
 * [partner-chains-node](https://github.com/input-output-hk/partner-chains) and [pc-contracts-cli](https://github.com/input-output-hk/partner-chains-smart-contracts) (running locally OR on the remote tools host)
 * cardano-cli (from a local cardano-node OR on the remote tools host)
 
-**NOTE:** 
+**NOTE:**
 
 - `<env>` is a placeholder for a your environment name
 - `<node>` is a placeholder for partner chain node name
@@ -38,11 +38,9 @@ Add payment signing key of the governance authority as `init.skey` to `secrets/<
 
 #### `<env>_nodes.json` structure:
 
-- `chain_id` - partner chain id from `sidechain_getParams()`
 - `deployment_mc_epoch` - mainchain epoch when partner chain was deployed
 - `initial_pc_epoch` - first partner chain epoch number
-- `governance_authority` - governance authority key from `sidechain_getParams()`
-- `genesis_committee_hash_utxo` - genesis committee utxo from `sidechain_getParams()`
+- `genesis_utxo` - genesis utxo from `sidechain_getParams()`
 - `deployment_version` - release version of partner chains
 - `test_environment` - name of your environment
 - `nodes_config` - list of node configurations for partner chain
@@ -89,8 +87,7 @@ E.g. for Cardano Preview it will be:
 ```
 {
     "deployment_mc_epoch": <INT>,
-    "genesis_committee_hash_utxo": <STRING>,
-    "governance_authority": <STRING>,
+    "genesis_utxo": <STRING>,
     "committee_participation_tolerance": <INT>,
     "main_chain": {
         "network": <STRING>,

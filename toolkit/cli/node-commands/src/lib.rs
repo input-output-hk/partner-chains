@@ -1,14 +1,13 @@
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
-use clap::{Args, Parser};
+use clap::Parser;
 use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use frame_support::sp_runtime::traits::NumberFor;
-use frame_support::Serialize;
 use parity_scale_codec::{Decode, Encode};
-use plutus::ToDatum;
 use sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 use sc_service::TaskManager;
+use sidechain_domain::UtxoId;
 use sidechain_domain::{MainchainPublicKey, McEpochNumber, ScEpochNumber};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
@@ -87,7 +86,7 @@ pub enum PartnerChainsSubcommand {
 	RegistrationSignatures(RegistrationSignaturesCmd),
 }
 
-pub fn run<Cli, SmartContractsParams, Block, CrossChainPublic, SessionKeys, Client>(
+pub fn run<Cli, Block, CrossChainPublic, SessionKeys, Client>(
 	cli: &Cli,
 	get_deps: impl FnOnce(
 		sc_service::Configuration,
@@ -95,13 +94,13 @@ pub fn run<Cli, SmartContractsParams, Block, CrossChainPublic, SessionKeys, Clie
 		(Arc<Client>, TaskManager, Arc<dyn AuthoritySelectionDataSource + Send + Sync>),
 		sc_service::error::Error,
 	>,
-	cmd: PartnerChainsSubcommand<SmartContractsParams>,
+	cmd: PartnerChainsSubcommand,
 ) -> sc_cli::Result<()>
 where
 	Cli: SubstrateCli,
-	SmartContractsParams: Args + ToDatum + Clone + Decode + Serialize + Send + Sync + 'static,
 	Client: ProvideRuntimeApi<Block> + HeaderBackend<Block> + 'static,
-	Client::Api: GetSidechainParams<Block, SmartContractsParams>
+	Client::Api: GetSidechainParams<Block, TODO>
+		//sp_sidechain::GetSidechainParams<Block, SidechainParams> is provided but we need to have sp_sidechain::GetSidechainParams<Block, UtxoId> or some other type that wraps only UtxoId
 		+ GetSidechainStatus<Block>
 		+ SessionValidatorManagementApi<
 			Block,

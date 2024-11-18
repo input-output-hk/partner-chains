@@ -1,4 +1,3 @@
-use chain_params::SidechainParams;
 use clap::command;
 use partner_chains_node_commands::PartnerChainsSubcommand;
 use sc_cli::RunCmd;
@@ -19,7 +18,7 @@ pub enum Subcommand {
 	Key(sc_cli::KeySubcommand),
 
 	#[clap(flatten)]
-	PartnerChains(PartnerChainsSubcommand<SidechainParams>),
+	PartnerChains(PartnerChainsSubcommand),
 
 	/// Build a chain specification.
 	BuildSpec(sc_cli::BuildSpecCmd),

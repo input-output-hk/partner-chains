@@ -12,7 +12,6 @@
     },
     "selected_node": "faucet",
     "node_url": "${nodes[${selected_node}][url]}",
-    "chain_id": 78,
     "token_conversion_rate": 18,
     "block_duration": 5
 }

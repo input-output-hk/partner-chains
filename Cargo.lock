@@ -1286,7 +1286,6 @@ version = "1.3.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
- "chain-params",
  "clap",
  "ed25519",
  "ed25519-zebra",
@@ -6468,7 +6467,6 @@ dependencies = [
  "anyhow",
  "cardano-serialization-lib",
  "cbor_event",
- "chain-params",
  "db-sync-follower",
  "fraction",
  "hex",
@@ -6496,7 +6494,6 @@ version = "1.3.0"
 dependencies = [
  "anyhow",
  "cardano-serialization-lib",
- "chain-params",
  "clap",
  "cli-commands",
  "colored",

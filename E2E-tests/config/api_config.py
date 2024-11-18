@@ -140,9 +140,7 @@ class StackApiConfig:
 
 @dataclass
 class ApiConfig:
-    chain_id: int = MISSING
     genesis_utxo: str = MISSING
-    governance_authority: str = MISSING
     atms_kind: str = MISSING
     committee_epoch_slippage: int = MISSING
     committee_participation_tolerance: float = MISSING

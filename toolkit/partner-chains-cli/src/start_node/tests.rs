@@ -255,7 +255,7 @@ mod load_chain_config {
 			.with_expected_io(vec![
                 MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
                 MockIO::eprint(&format!(
-                    "⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} is invalid: missing field `cardano` at line 12 column 1. Run prepare-configuration wizard or fix errors manually."
+                    "⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} is invalid: missing field `cardano` at line 8 column 1. Run prepare-configuration wizard or fix errors manually."
                 ))
             ]);
 
