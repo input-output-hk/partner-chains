@@ -148,8 +148,8 @@ pub(crate) trait OgmiosUtxoExt {
 	fn to_csl(&self) -> Result<TransactionUnspentOutput, JsError>;
 
 	/// Encodes this UTXO as a nested constructor data format which is used by PC smart contracts
-	fn to_constructor_style_plutus_data(&self) -> uplc::PlutusData;
-	fn to_constructor_style_csl_plutus_data(&self) -> PlutusData;
+	fn to_uplc_plutus_data(&self) -> uplc::PlutusData;
+	fn to_csl_plutus_data(&self) -> PlutusData;
 }
 
 impl OgmiosUtxoExt for OgmiosUtxo {
@@ -170,7 +170,7 @@ impl OgmiosUtxoExt for OgmiosUtxo {
 		Ok(TransactionUnspentOutput::new(&self.to_csl_tx_input(), &self.to_csl_tx_output()?))
 	}
 
-	fn to_constructor_style_csl_plutus_data(&self) -> PlutusData {
+	fn to_csl_plutus_data(&self) -> PlutusData {
 		PlutusData::new_constr_plutus_data(&cardano_serialization_lib::ConstrPlutusData::new(
 			&0u64.into(),
 			&{
@@ -185,9 +185,8 @@ impl OgmiosUtxoExt for OgmiosUtxo {
 		))
 	}
 
-	fn to_constructor_style_plutus_data(&self) -> uplc::PlutusData {
-		crate::untyped_plutus::csl_plutus_data_to_uplc(&self.to_constructor_style_csl_plutus_data())
-			.unwrap()
+	fn to_uplc_plutus_data(&self) -> uplc::PlutusData {
+		crate::untyped_plutus::csl_plutus_data_to_uplc(&self.to_csl_plutus_data()).unwrap()
 	}
 }
 

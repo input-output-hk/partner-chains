@@ -22,10 +22,10 @@ pub(crate) fn init_governance_transaction(
 			.apply_uplc_data(multisig_governance_policy_configuration(governance_authority))?;
 	let version_oracle_validator =
 		PlutusScript::from_wrapped_cbor(version_oracle_validator, LanguageKind::PlutusV2)?
-			.apply_uplc_data(genesis_utxo.to_constructor_style_plutus_data())?;
+			.apply_uplc_data(genesis_utxo.to_uplc_plutus_data())?;
 	let version_oracle_policy =
 		PlutusScript::from_wrapped_cbor(version_oracle_policy, LanguageKind::PlutusV2)?
-			.apply_uplc_data(genesis_utxo.to_constructor_style_plutus_data())?
+			.apply_uplc_data(genesis_utxo.to_uplc_plutus_data())?
 			.apply_uplc_data(version_oracle_validator.address_data(tx_context.network)?)?;
 	let config = crate::csl::get_builder_config(&tx_context)?;
 	let mut tx_builder = TransactionBuilder::new(&config);
