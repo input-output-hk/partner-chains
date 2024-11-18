@@ -124,9 +124,3 @@ pub(crate) mod tests {
 		assert_eq!(hex::encode(applied.bytes), hex::encode(CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS));
 	}
 }
-
-impl From<PlutusScript> for cardano_serialization_lib::PlutusScript {
-	fn from(script: PlutusScript) -> Self {
-		cardano_serialization_lib::PlutusScript::new_v2(script.bytes.clone())
-	}
-}

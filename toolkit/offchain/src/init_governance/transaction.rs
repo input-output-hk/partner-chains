@@ -104,7 +104,7 @@ fn version_oracle_datum_output(
 	let amount_builder = TransactionOutputBuilder::new()
 		.with_address(&version_oracle_validator.address(network))
 		.with_plutus_data(&datum)
-		.with_script_ref(&ScriptRef::new_plutus_script(&multi_sig_policy.into()))
+		.with_script_ref(&ScriptRef::new_plutus_script(&multi_sig_policy.to_csl()))
 		.next()?;
 	let mut ma = MultiAsset::new();
 	let mut assets = Assets::new();
