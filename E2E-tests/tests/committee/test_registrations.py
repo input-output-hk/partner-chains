@@ -61,6 +61,7 @@ def test_register_candidate(candidate: Candidates, api: BlockchainApi, db: Sessi
 @mark.ariadne
 @mark.test_key('ETCM-7018')
 @mark.registration
+@mark.usefixtures("candidate_skey_with_cli")
 def test_deregister_candidate(candidate: Candidates, api: BlockchainApi, db: Session, config: ApiConfig):
     """Test deregistration of the trustless (SPO) candidate
 
