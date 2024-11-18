@@ -7,6 +7,7 @@ use uplc::ast::{DeBruijn, Program};
 use crate::{csl::*, untyped_plutus::*};
 
 /// Wraps a Plutus script cbor
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PlutusScript {
 	pub bytes: Vec<u8>,
 	pub language: LanguageKind,
