@@ -569,7 +569,7 @@ mod tests {
 		assert_eq!(ex_units.steps(), 2000u64.into());
 	}
 
-	pub fn test_protocol_parameters() -> ProtocolParametersResponse {
+	fn test_protocol_parameters() -> ProtocolParametersResponse {
 		ProtocolParametersResponse {
 			min_fee_coefficient: 44,
 			min_fee_constant: OgmiosValue::new_lovelace(155381),
