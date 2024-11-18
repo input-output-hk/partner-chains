@@ -4,7 +4,8 @@ use ogmios_client::types::OgmiosUtxo;
 use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 use sidechain_domain::MainchainAddressHash;
 
-// script it in the script cache
+// Script ID of the governance script in the script cache.
+// TODO: Use a proper value of raw_scripts::ScripId once we upgrade to a version that has it.
 const SCRIPT_ID: u32 = 32;
 
 #[allow(dead_code)]
