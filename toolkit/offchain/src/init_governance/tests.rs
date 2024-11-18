@@ -142,7 +142,6 @@ fn genesis_utxo() -> OgmiosUtxo {
 	OgmiosUtxo {
 		transaction: OgmiosTx {
 			id: hex!("992a24e743a522eb3adf0bc39820a9a52093525f91ed6205b72fd4087c13b4ac"),
-			..Default::default()
 		},
 		index: 1,
 		value: OgmiosValue::new_lovelace(10000),
