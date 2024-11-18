@@ -24,8 +24,8 @@ pub struct PrepareConfigurationCmd {}
 impl CmdRun for PrepareConfigurationCmd {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		establish_bootnodes(context)?;
-		let chain_params = prepare_chain_params(context)?;
-		prepare_main_chain_config(context, chain_params)?;
+		let (chain_params, ogmios_config) = prepare_chain_params(context)?;
+		prepare_main_chain_config(context, &ogmios_config, chain_params)?;
 		context.eprint("🚀 All done!");
 		Ok(())
 	}

@@ -2,7 +2,6 @@
 members = [
 	"node/node",
 	"node/runtime",
-	"node/chain-params",
 	"toolkit/cli/commands",
 	"toolkit/cli/node-commands",
 	"toolkit/client/consensus/aura",
@@ -212,7 +211,6 @@ sidechain-mc-hash = { path = "toolkit/primitives/sidechain-mc-hash", default-fea
 authority-selection-inherents = { path = "toolkit/primitives/authority-selection-inherents", default-features = false }
 session-manager = { path = "toolkit/primitives/session-manager", default-features = false }
 sp-sidechain = { path = "toolkit/primitives/sidechain", default-features = false }
-chain-params = { path = "node/chain-params", default-features = false }
 pallet-native-token-management = { path = "toolkit/pallets/native-token-management", default-features = false }
 sp-native-token-management = { path = "toolkit/primitives/native-token-management", default-features = false }
 sc-partner-chains-consensus-aura = { path = "toolkit/client/consensus/aura", default-features = false }

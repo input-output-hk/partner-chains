@@ -7,7 +7,6 @@ use frame_support::sp_runtime::traits::NumberFor;
 use parity_scale_codec::{Decode, Encode};
 use sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 use sc_service::TaskManager;
-use sidechain_domain::UtxoId;
 use sidechain_domain::{MainchainPublicKey, McEpochNumber, ScEpochNumber};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
@@ -15,7 +14,8 @@ use sp_runtime::traits::Block as BlockT;
 use sp_session_validator_management::SessionValidatorManagementApi;
 use sp_session_validator_management_query::commands::*;
 use sp_session_validator_management_query::SessionValidatorManagementQuery;
-use sp_sidechain::{GetSidechainParams, GetSidechainStatus};
+use sp_sidechain::GetGenesisUtxo;
+use sp_sidechain::GetSidechainStatus;
 use std::future::Future;
 use std::sync::Arc;
 
@@ -99,8 +99,7 @@ pub fn run<Cli, Block, CrossChainPublic, SessionKeys, Client>(
 where
 	Cli: SubstrateCli,
 	Client: ProvideRuntimeApi<Block> + HeaderBackend<Block> + 'static,
-	Client::Api: GetSidechainParams<Block, TODO>
-		//sp_sidechain::GetSidechainParams<Block, SidechainParams> is provided but we need to have sp_sidechain::GetSidechainParams<Block, UtxoId> or some other type that wraps only UtxoId
+	Client::Api: GetGenesisUtxo<Block>
 		+ GetSidechainStatus<Block>
 		+ SessionValidatorManagementApi<
 			Block,
@@ -119,7 +118,7 @@ where
 			let runner = cli.create_runner(&cmd)?;
 			runner.async_run(|config| {
 				let (client, task_manager, _) = get_deps(config)?;
-				Ok((print_result(sp_sidechain::query::get_sidechain_params(client)), task_manager))
+				Ok((print_result(sp_sidechain::query::get_genesis_utxo(client)), task_manager))
 			})
 		},
 		PartnerChainsSubcommand::RegistrationStatus(cmd) => {

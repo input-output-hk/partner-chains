@@ -13,7 +13,7 @@ use sidechain_domain::{McTxHash, UtxoId};
 
 use super::prepare_cardano_params::get_shelley_config;
 
-pub fn prepare_chain_params<C: IOContext>(context: &C) -> anyhow::Result<UtxoId> {
+pub fn prepare_chain_params<C: IOContext>(context: &C) -> anyhow::Result<(UtxoId, ServiceConfig)> {
 	context.eprint(INTRO);
 	context.print("This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service");
 	let ogmios_configuration = pc_contracts_cli_resources::prompt_ogmios_configuration(context)?;
@@ -50,7 +50,7 @@ pub fn prepare_chain_params<C: IOContext>(context: &C) -> anyhow::Result<UtxoId>
 	context.print("");
 
 	save_if_missing(GENESIS_UTXO, genesis_utxo, context);
-	Ok(genesis_utxo)
+	Ok((genesis_utxo, ogmios_configuration))
 }
 
 fn save_if_missing<T, C: IOContext>(field: ConfigFieldDefinition<'_, T>, new_value: T, context: &C)

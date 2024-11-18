@@ -29,7 +29,6 @@ serde = { workspace = true, optional = true }
 sp-consensus-slots = { workspace = true }
 
 [dev-dependencies]
-chain-params = { workspace = true }
 hex = { workspace = true }
 hex-literal = { workspace = true }
 mock-types = { workspace = true, features = ["std"] }

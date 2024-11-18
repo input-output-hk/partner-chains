@@ -14,7 +14,6 @@ use authority_selection_inherents::filter_invalid_candidates::{
 	StakeError,
 };
 use authority_selection_inherents::select_authorities::select_authorities;
-use chain_params::SidechainParams;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::traits::fungible::Balanced;
 use frame_support::traits::tokens::Precision;
@@ -40,6 +39,7 @@ pub use pallet_session_validator_management;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use session_manager::ValidatorManagementSessionManager;
+use sidechain_domain::UtxoId;
 use sidechain_domain::{
 	MainchainPublicKey, NativeTokenAmount, PermissionedCandidateData, RegistrationData,
 	ScEpochNumber, ScSlotNumber, StakeDelegation,
@@ -440,11 +440,7 @@ impl pallet_session_validator_management::Config for Runtime {
 		input: AuthoritySelectionInputs,
 		sidechain_epoch: ScEpochNumber,
 	) -> Option<BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>> {
-		select_authorities(
-			Sidechain::sidechain_params().genesis_committee_utxo,
-			input,
-			sidechain_epoch,
-		)
+		select_authorities(Sidechain::genesis_utxo(), input, sidechain_epoch)
 	}
 
 	fn current_epoch_number() -> ScEpochNumber {
@@ -474,8 +470,6 @@ impl pallet_sidechain::Config for Runtime {
 		ScSlotNumber(*pallet_aura::CurrentSlot::<Self>::get())
 	}
 	type OnNewEpoch = LogBeneficiaries;
-
-	type SidechainParams = chain_params::SidechainParams;
 }
 
 pub type BeneficiaryId = sidechain_domain::byte_string::SizedByteString<32>;
@@ -809,9 +803,9 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl sp_sidechain::GetSidechainParams<Block, SidechainParams> for Runtime {
-		fn sidechain_params() -> SidechainParams {
-			Sidechain::sidechain_params()
+	impl sp_sidechain::GetGenesisUtxo<Block> for Runtime {
+		fn genesis_utxo() -> UtxoId {
+			Sidechain::genesis_utxo()
 		}
 	}
 
@@ -854,7 +848,7 @@ impl_runtime_apis! {
 
 	impl authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi<Block> for Runtime {
 		fn validate_registered_candidate_data(mainchain_pub_key: &MainchainPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError> {
-			authority_selection_inherents::filter_invalid_candidates::validate_registration_data(mainchain_pub_key, registration_data, Sidechain::sidechain_params().genesis_committee_utxo).err()
+			authority_selection_inherents::filter_invalid_candidates::validate_registration_data(mainchain_pub_key, registration_data, Sidechain::genesis_utxo()).err()
 		}
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError> {
 			authority_selection_inherents::filter_invalid_candidates::validate_stake(stake).err()

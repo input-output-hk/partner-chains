@@ -28,9 +28,9 @@ fn on_new_epoch_is_not_triggered_without_epoch_change() {
 }
 
 #[test]
-fn read_sidechain_params() {
+fn read_genesis_utxo() {
 	new_test_ext().execute_with(|| {
-		let params = Sidechain::sidechain_params();
-		assert_eq!(params, crate::mock::MOCK_SIDECHAIN_PARAMS);
+		let params = Sidechain::genesis_utxo();
+		assert_eq!(params, crate::mock::MOCK_GENESIS_UTXO);
 	})
 }

@@ -2,7 +2,6 @@
 
 use crate::inherent_data::CreateInherentDataConfig;
 use crate::tests::runtime_api_mock::TestApi;
-use chain_params::SidechainParams;
 use hex_literal::hex;
 use sc_consensus_aura::SlotDuration;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;

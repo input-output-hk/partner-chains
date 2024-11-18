@@ -5,20 +5,18 @@ use crate::config::config_fields::{
 };
 use crate::config::ServiceConfig;
 use crate::io::IOContext;
-use crate::pc_contracts_cli_resources::{prompt_ogmios_configuration, OGMIOS_REQUIRED};
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
 use sidechain_domain::{PolicyId, UtxoId};
 
 pub fn prepare_main_chain_config<C: IOContext>(
 	context: &C,
+	ogmios_config: &ServiceConfig,
 	genesis_utxo: UtxoId,
 ) -> anyhow::Result<()> {
-	context.print(OGMIOS_REQUIRED);
-	let ogmios_config = prompt_ogmios_configuration(context)?;
-	let cardano_parameteres = prepare_cardano_params(&ogmios_config, context)?;
+	let cardano_parameteres = prepare_cardano_params(ogmios_config, context)?;
 	cardano_parameteres.save(context);
-	set_up_cardano_addresses(context, genesis_utxo, &ogmios_config)?;
+	set_up_cardano_addresses(context, genesis_utxo, ogmios_config)?;
 	if INITIAL_PERMISSIONED_CANDIDATES.load_from_file(context).is_none() {
 		INITIAL_PERMISSIONED_CANDIDATES.save_to_file(&vec![], context)
 	}

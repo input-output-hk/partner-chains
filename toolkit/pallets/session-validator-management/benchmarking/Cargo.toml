@@ -26,7 +26,6 @@ pallet-sidechain = { workspace = true }
 pallet-session-validator-management = { workspace = true }
 
 [dev-dependencies]
-chain-params = { workspace = true }
 sp-io = { workspace = true }
 serde = { workspace = true }
 mock-types = { workspace = true }

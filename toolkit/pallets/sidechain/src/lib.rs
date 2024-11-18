@@ -11,6 +11,7 @@ pub use pallet::*;
 pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::BlockNumberFor;
+	use sidechain_domain::UtxoId;
 	use sidechain_domain::{ScEpochNumber, ScSlotNumber};
 	use sp_sidechain::OnNewEpoch;
 
@@ -21,14 +22,6 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		fn current_slot_number() -> ScSlotNumber;
 		type OnNewEpoch: OnNewEpoch;
-
-		/// Set of parameters that configure and identify the chain.
-		type SidechainParams: Member
-			+ Parameter
-			+ MaybeSerializeDeserialize
-			+ MaxEncodedLen
-			+ Clone
-			+ Default;
 	}
 
 	#[pallet::storage]
@@ -39,11 +32,11 @@ pub mod pallet {
 		StorageValue<_, sidechain_slots::SlotsPerEpoch, ValueQuery>;
 
 	#[pallet::storage]
-	pub(super) type SidechainParams<T: Config> = StorageValue<_, T::SidechainParams, ValueQuery>;
+	pub(super) type GenesisUtxo<T: Config> = StorageValue<_, UtxoId, ValueQuery>;
 
 	impl<T: Config> Pallet<T> {
-		pub fn sidechain_params() -> T::SidechainParams {
-			SidechainParams::<T>::get()
+		pub fn genesis_utxo() -> UtxoId {
+			GenesisUtxo::<T>::get()
 		}
 
 		pub fn current_epoch_number() -> ScEpochNumber {
@@ -60,7 +53,7 @@ pub mod pallet {
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
-		pub params: T::SidechainParams,
+		pub genesis_utxo: UtxoId,
 		pub slots_per_epoch: sidechain_slots::SlotsPerEpoch,
 		#[serde(skip)]
 		pub _config: sp_std::marker::PhantomData<T>,
@@ -69,7 +62,7 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
-			SidechainParams::<T>::put(self.params.clone());
+			GenesisUtxo::<T>::put(self.genesis_utxo);
 			SlotsPerEpoch::<T>::put(self.slots_per_epoch);
 		}
 	}

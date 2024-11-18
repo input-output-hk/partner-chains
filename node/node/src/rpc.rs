@@ -8,7 +8,6 @@
 use crate::main_chain_follower::DataSources;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
-use chain_params::SidechainParams;
 use jsonrpsee::RpcModule;
 use pallet_session_validator_management_rpc::*;
 use pallet_sidechain_rpc::*;
@@ -74,7 +73,7 @@ where
 	C::Api: BlockBuilder<Block>,
 	C::Api: sp_consensus_aura::AuraApi<Block, sp_consensus_aura::sr25519::AuthorityId>,
 	C::Api: sidechain_slots::SlotApi<Block>,
-	C::Api: sp_sidechain::GetSidechainParams<Block, SidechainParams>,
+	C::Api: sp_sidechain::GetGenesisUtxo<Block>,
 	C::Api: sp_sidechain::GetSidechainStatus<Block>,
 	C::Api: sp_session_validator_management::SessionValidatorManagementApi<
 		Block,

@@ -3,7 +3,7 @@
 use frame_support::pallet_prelude::Weight;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
-use sidechain_domain::{ScEpochNumber, ScSlotNumber};
+use sidechain_domain::{ScEpochNumber, ScSlotNumber, UtxoId};
 #[cfg(feature = "std")]
 use sp_runtime::traits::Block as BlockT;
 
@@ -49,8 +49,8 @@ on_new_epoch_tuple_impl!(A, B, C);
 on_new_epoch_tuple_impl!(A, B, C, D);
 
 sp_api::decl_runtime_apis! {
-	pub trait GetSidechainParams<P: parity_scale_codec::Decode> {
-		fn sidechain_params() -> P;
+	pub trait GetGenesisUtxo {
+		fn genesis_utxo() -> UtxoId;
 	}
 	pub trait GetSidechainStatus {
 		fn get_sidechain_status() -> SidechainStatus;
@@ -58,16 +58,22 @@ sp_api::decl_runtime_apis! {
 }
 
 #[cfg(feature = "std")]
-pub trait SidechainApi<Block: BlockT, P: parity_scale_codec::Decode>:
-	GetSidechainStatus<Block> + GetSidechainParams<Block, P>
+pub trait SidechainApi<Block: BlockT>: GetSidechainStatus<Block> + GetGenesisUtxo<Block> {}
+
+#[cfg(feature = "std")]
+impl<Block: BlockT, T: GetGenesisUtxo<Block> + GetSidechainStatus<Block>> SidechainApi<Block>
+	for T
 {
 }
 
 #[cfg(feature = "std")]
-impl<
-		Block: BlockT,
-		P: parity_scale_codec::Decode,
-		T: GetSidechainParams<Block, P> + GetSidechainStatus<Block>,
-	> SidechainApi<Block, P> for T
-{
+pub fn read_genesis_utxo_from_env_with_defaults() -> Result<UtxoId, envy::Error> {
+	/// This structure is needed to read sidechain params from the environment variables because the main
+	/// type uses `rename_all = "camelCase"` serde option
+	#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+	struct GenesisUtxoEnvConfiguration {
+		pub genesis_utxo: UtxoId,
+	}
+	let raw = envy::from_env::<GenesisUtxoEnvConfiguration>()?;
+	Ok(raw.genesis_utxo)
 }

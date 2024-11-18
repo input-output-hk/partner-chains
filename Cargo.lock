@@ -565,7 +565,6 @@ name = "authority-selection-inherents"
 version = "1.3.0"
 dependencies = [
  "async-trait",
- "chain-params",
  "frame-support",
  "hex",
  "hex-literal",
@@ -1142,21 +1141,6 @@ dependencies = [
  "cipher 0.4.4",
  "poly1305",
  "zeroize",
-]
-
-[[package]]
-name = "chain-params"
-version = "1.3.0"
-dependencies = [
- "clap",
- "envy",
- "hex-literal",
- "parity-scale-codec",
- "plutus",
- "plutus-datum-derive",
- "scale-info",
- "serde",
- "sidechain-domain",
 ]
 
 [[package]]
@@ -6181,7 +6165,6 @@ dependencies = [
 name = "pallet-session-validator-management-benchmarking"
 version = "1.3.0"
 dependencies = [
- "chain-params",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6219,6 +6202,7 @@ version = "1.3.0"
 dependencies = [
  "frame-support",
  "frame-system",
+ "hex-literal",
  "log",
  "parity-scale-codec",
  "scale-info",
@@ -6524,7 +6508,6 @@ dependencies = [
  "assert_cmd",
  "async-trait",
  "authority-selection-inherents",
- "chain-params",
  "clap",
  "cli-commands",
  "db-sync-follower",
@@ -9867,7 +9850,6 @@ name = "sidechain-runtime"
 version = "1.3.0"
 dependencies = [
  "authority-selection-inherents",
- "chain-params",
  "derive-new",
  "frame-benchmarking",
  "frame-executive",
@@ -10666,9 +10648,11 @@ dependencies = [
 name = "sp-sidechain"
 version = "1.3.0"
 dependencies = [
+ "envy",
  "frame-support",
  "parity-scale-codec",
  "scale-info",
+ "serde",
  "serde_json",
  "sidechain-domain",
  "sp-api",
