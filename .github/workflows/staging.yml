@@ -72,7 +72,7 @@ jobs:
         elif [ ! -z "${{ inputs.execution }}" ]; then
           echo "TEST_EXECUTION=${{ inputs.execution }}" >> $GITHUB_ENV
         else
-          echo "TEST_PLAN=ETCM-8916" >> $GITHUB_ENV
+          echo "TEST_PLAN=ETCM-8562" >> $GITHUB_ENV
         fi
 
     - name: set report_to_xray env variable
@@ -131,6 +131,13 @@ jobs:
           --report_to_xray=$REPORT_TO_XRAY \
           --decrypt=true \
           --markers="$MARKERS"
+
+    - name: Add Line Numbers and Timestamps to debug.log
+      if: always()
+      run: |
+        awk '{print strftime("[%Y-%m-%d %H:%M:%S]"), $0}' debug.log > debug_with_timestamps.log
+        nl -ba -s '  ' -w 8 debug_with_timestamps.log > debug_with_timestamps_and_line_numbers.log
+        mv debug_with_timestamps_and_line_numbers.log debug.log
 
     - name: Archive Debug Log
       if: always()

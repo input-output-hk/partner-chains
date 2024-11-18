@@ -1,5 +1,4 @@
 import io
-import os
 import logging
 import paramiko
 import subprocess
