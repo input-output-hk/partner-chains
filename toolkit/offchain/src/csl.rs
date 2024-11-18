@@ -237,7 +237,6 @@ pub(crate) trait TransactionBuilderExt {
 		script: &PlutusScript,
 		datum: &PlutusData,
 		ctx: &TransactionContext,
-		asset_name: &AssetName,
 	) -> Result<(), JsError>;
 
 	/// Adds ogmios inputs as collateral inputs to the tx builder.
@@ -269,7 +268,6 @@ impl TransactionBuilderExt for TransactionBuilder {
 		script: &PlutusScript,
 		datum: &PlutusData,
 		ctx: &TransactionContext,
-		asset_name: &AssetName,
 	) -> Result<(), JsError> {
 		let amount_builder = TransactionOutputBuilder::new()
 			.with_address(&script.address(ctx.network))
@@ -277,7 +275,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 			.next()?;
 		let mut ma = MultiAsset::new();
 		let mut assets = Assets::new();
-		assets.insert(asset_name, &1u64.into());
+		assets.insert(&empty_asset_name(), &1u64.into());
 		ma.insert(&script.script_hash().into(), &assets);
 		let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
 		let min_ada = MinOutputAdaCalculator::new(
@@ -595,10 +593,7 @@ mod tests {
 
 #[cfg(test)]
 mod prop_tests {
-	use super::{
-		empty_asset_name, get_builder_config, OgmiosUtxoExt, TransactionBuilderExt,
-		TransactionContext,
-	};
+	use super::{get_builder_config, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext};
 	use crate::test_values::*;
 	use cardano_serialization_lib::{
 		BigNum, ExUnits, NetworkIdKind, Transaction, TransactionBuilder, TransactionInputs,
@@ -631,12 +626,7 @@ mod prop_tests {
 			)
 			.unwrap();
 		tx_builder
-			.add_output_with_one_script_token(
-				&test_script(),
-				&test_plutus_data(),
-				&ctx,
-				&empty_asset_name(),
-			)
+			.add_output_with_one_script_token(&test_script(), &test_plutus_data(), &ctx)
 			.unwrap();
 
 		let tx = tx_builder.balance_update_and_build(&ctx).unwrap();
