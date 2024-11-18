@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::plutus_script::PlutusScript;
+use crate::{plutus_script::PlutusScript, untyped_plutus::datum_to_uplc_plutus_data};
 use cardano_serialization_lib::*;
 use ogmios_client::{
 	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse},
@@ -147,9 +147,10 @@ pub(crate) trait OgmiosUtxoExt {
 	fn to_csl_tx_output(&self) -> Result<TransactionOutput, JsError>;
 	fn to_csl(&self) -> Result<TransactionUnspentOutput, JsError>;
 
+	fn to_domain(&self) -> sidechain_domain::UtxoId;
+
 	/// Encodes this UTXO as a nested constructor data format which is used by PC smart contracts
 	fn to_uplc_plutus_data(&self) -> uplc::PlutusData;
-	fn to_csl_plutus_data(&self) -> PlutusData;
 }
 
 impl OgmiosUtxoExt for OgmiosUtxo {
@@ -170,23 +171,15 @@ impl OgmiosUtxoExt for OgmiosUtxo {
 		Ok(TransactionUnspentOutput::new(&self.to_csl_tx_input(), &self.to_csl_tx_output()?))
 	}
 
-	fn to_csl_plutus_data(&self) -> PlutusData {
-		PlutusData::new_constr_plutus_data(&cardano_serialization_lib::ConstrPlutusData::new(
-			&0u64.into(),
-			&{
-				let mut list = cardano_serialization_lib::PlutusList::new();
-				list.add(&PlutusData::new_single_value_constr_plutus_data(
-					&0u64.into(),
-					&PlutusData::new_bytes(self.transaction.id.to_vec()),
-				));
-				list.add(&PlutusData::new_integer(&(self.index as u64).into()));
-				list
-			},
-		))
+	fn to_domain(&self) -> sidechain_domain::UtxoId {
+		sidechain_domain::UtxoId {
+			tx_hash: sidechain_domain::McTxHash(self.transaction.id),
+			index: sidechain_domain::UtxoIndex(self.index),
+		}
 	}
 
 	fn to_uplc_plutus_data(&self) -> uplc::PlutusData {
-		crate::untyped_plutus::csl_plutus_data_to_uplc(&self.to_csl_plutus_data()).unwrap()
+		datum_to_uplc_plutus_data(&self.to_domain())
 	}
 }
 
