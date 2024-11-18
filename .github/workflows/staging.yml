@@ -63,7 +63,7 @@ jobs:
         ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
     - name: Set deployment_version as env variable
-      run: echo "DEPLOYMENT_VERSION=$(jq -r .deployment_version ./config/substrate/staging_nodes.json)" >> $GITHUB_ENV
+      run: echo "DEPLOYMENT_VERSION=$(jq -r .deployment_version ./E2E-tests/config/substrate/staging_nodes.json)" >> $GITHUB_ENV
 
     - name: Set XRay variables
       run: |
@@ -90,7 +90,7 @@ jobs:
       env:
         EARTHLY_BUILD_ARGS: "CI_RUN=true"
         FORCE_COLOR: 1
-        SLACK_REF_NAME: ${{ github.event_name == 'schedule' && format('{0}/v{1}', env.TEST_ENVIRONMENT, env.DEPLOYMENT_VERSION) || github.ref_name }}
+        SLACK_REF_NAME: ${{ github.event_name == 'schedule' && format('{0}/{1}', env.TEST_ENVIRONMENT, env.DEPLOYMENT_VERSION) || github.ref_name }}
         LOG_LEVEL: ${{ inputs.log_level }}
         KEYWORD: ${{ inputs.keyword }}
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
