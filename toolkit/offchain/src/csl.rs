@@ -381,7 +381,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 	}
 }
 
-pub(crate) trait InputsBuilderExt {
+pub(crate) trait InputsBuilderExt: Sized {
 	fn add_script_utxo_input(
 		&mut self,
 		utxo: &OgmiosUtxo,
@@ -392,6 +392,8 @@ pub(crate) trait InputsBuilderExt {
 	/// Adds ogmios inputs to the tx inputs builder.
 	fn add_key_inputs(&mut self, utxos: &[OgmiosUtxo], key: &Ed25519KeyHash)
 		-> Result<(), JsError>;
+
+	fn with_key_inputs(utxos: &[OgmiosUtxo], key: &Ed25519KeyHash) -> Result<Self, JsError>;
 }
 
 impl InputsBuilderExt for TxInputsBuilder {
@@ -426,6 +428,12 @@ impl InputsBuilderExt for TxInputsBuilder {
 			self.add_key_input(key, &utxo.to_csl_tx_input(), &convert_value(&utxo.value)?);
 		}
 		Ok(())
+	}
+
+	fn with_key_inputs(utxos: &[OgmiosUtxo], key: &Ed25519KeyHash) -> Result<Self, JsError> {
+		let mut tx_input_builder = Self::new();
+		tx_input_builder.add_key_inputs(utxos, &key)?;
+		Ok(tx_input_builder)
 	}
 }
 
