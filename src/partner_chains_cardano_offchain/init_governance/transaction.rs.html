@@ -128,13 +128,6 @@
 <a href="#128" id="128">128</a>
 <a href="#129" id="129">129</a>
 <a href="#130" id="130">130</a>
-<a href="#131" id="131">131</a>
-<a href="#132" id="132">132</a>
-<a href="#133" id="133">133</a>
-<a href="#134" id="134">134</a>
-<a href="#135" id="135">135</a>
-<a href="#136" id="136">136</a>
-<a href="#137" id="137">137</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{csl::<span class="kw-2">*</span>, plutus_script::PlutusScript};
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>ogmios_client::types::OgmiosUtxo;
@@ -188,15 +181,8 @@
 	)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
 	tx_builder.set_inputs(<span class="kw-2">&amp;</span>{
-		<span class="kw">let </span><span class="kw-2">mut </span>tx_input_builder = TxInputsBuilder::new();
-		tx_input_builder.add_key_input(
-			<span class="kw-2">&amp;</span>tx_context.payment_key_hash(),
-			<span class="kw-2">&amp;</span>genesis_utxo.to_csl_tx_input(),
-			<span class="kw-2">&amp;</span>Value::new(<span class="kw-2">&amp;</span>Coin::from(genesis_utxo.value.lovelace)),
-		);
-
-		tx_input_builder
-	});
+		TxInputsBuilder::with_key_inputs(<span class="kw-2">&amp;</span>[genesis_utxo], <span class="kw-2">&amp;</span>tx_context.payment_key_hash())<span class="question-mark">?
+	</span>});
 
 	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(<span class="kw-2">&amp;</span>tx_context)<span class="question-mark">?</span>)
 }

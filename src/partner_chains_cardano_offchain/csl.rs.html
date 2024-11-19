@@ -767,6 +767,14 @@
 <a href="#767" id="767">767</a>
 <a href="#768" id="768">768</a>
 <a href="#769" id="769">769</a>
+<a href="#770" id="770">770</a>
+<a href="#771" id="771">771</a>
+<a href="#772" id="772">772</a>
+<a href="#773" id="773">773</a>
+<a href="#774" id="774">774</a>
+<a href="#775" id="775">775</a>
+<a href="#776" id="776">776</a>
+<a href="#777" id="777">777</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(dead_code)]
 
 </span><span class="kw">use crate</span>::{plutus_script::PlutusScript, untyped_plutus::datum_to_uplc_plutus_data};
@@ -1150,7 +1158,7 @@
 	}
 }
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">trait </span>InputsBuilderExt {
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">trait </span>InputsBuilderExt: Sized {
 	<span class="kw">fn </span>add_script_utxo_input(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
 		utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
@@ -1161,6 +1169,8 @@
 	<span class="doccomment">/// Adds ogmios inputs to the tx inputs builder.
 	</span><span class="kw">fn </span>add_key_inputs(<span class="kw-2">&amp;mut </span><span class="self">self</span>, utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo], key: <span class="kw-2">&amp;</span>Ed25519KeyHash)
 		-&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt;;
+
+	<span class="kw">fn </span>with_key_inputs(utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo], key: <span class="kw-2">&amp;</span>Ed25519KeyHash) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, JsError&gt;;
 }
 
 <span class="kw">impl </span>InputsBuilderExt <span class="kw">for </span>TxInputsBuilder {
@@ -1195,6 +1205,12 @@
 			<span class="self">self</span>.add_key_input(key, <span class="kw-2">&amp;</span>utxo.to_csl_tx_input(), <span class="kw-2">&amp;</span>convert_value(<span class="kw-2">&amp;</span>utxo.value)<span class="question-mark">?</span>);
 		}
 		<span class="prelude-val">Ok</span>(())
+	}
+
+	<span class="kw">fn </span>with_key_inputs(utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo], key: <span class="kw-2">&amp;</span>Ed25519KeyHash) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, JsError&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>tx_input_builder = <span class="self">Self</span>::new();
+		tx_input_builder.add_key_inputs(utxos, <span class="kw-2">&amp;</span>key)<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(tx_input_builder)
 	}
 }
 
