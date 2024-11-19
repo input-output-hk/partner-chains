@@ -2,6 +2,7 @@
 
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::str::FromStr;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -163,10 +164,16 @@ impl TryFrom<serde_json::Value> for OgmiosValue {
 	}
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Default, Deserialize, Eq, PartialEq)]
 pub struct OgmiosTx {
 	#[serde(deserialize_with = "parse_bytes_array")]
 	pub id: [u8; 32],
+}
+
+impl Debug for OgmiosTx {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("OgmiosTx").field("id", &hex::encode(&self.id)).finish()
+	}
 }
 
 pub(crate) fn parse_bytes<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>

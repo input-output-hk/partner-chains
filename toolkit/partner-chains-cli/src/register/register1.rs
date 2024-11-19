@@ -609,7 +609,7 @@ mod tests {
 				"governance_authority": "0x00112233445566778899001122334455667788990011223344556677",
 			},
 			"cardano": {
-				"network": 2
+				"network": "testnet"
 			}
 		})
 	}

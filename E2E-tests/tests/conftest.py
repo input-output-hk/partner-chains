@@ -104,6 +104,15 @@ def pytest_configure(config: Config):
     partner_chain_rpc_api = PartnerChainRpc(_config.nodes_config.node.rpc_url)
     partner_chain_epoch_calc = PartnerChainEpochCalculator(_config)
 
+    logger = logging.getLogger()
+    logger.addFilter(TimestampFilter())
+
+
+class TimestampFilter(logging.Filter):
+    def filter(self, record):
+        record.asctime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(record.created))
+        return True
+
 
 def pytest_generate_tests(metafunc: Metafunc):
     if "mc_epoch" in metafunc.fixturenames or "pc_epoch" in metafunc.fixturenames:
