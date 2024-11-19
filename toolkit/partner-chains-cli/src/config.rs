@@ -261,16 +261,26 @@ impl SelectOptions for NetworkProtocol {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-pub struct CardanoNetwork(pub u32);
+#[serde(rename_all = "lowercase")]
+pub enum CardanoNetwork {
+	Mainnet,
+	Testnet,
+}
 
 impl CardanoNetwork {
-	pub fn to_id(&self) -> u32 {
-		self.0
-	}
 	pub fn to_network_param(&self) -> String {
 		match self {
-			CardanoNetwork(0) => "mainnet".into(),
-			_ => "testnet".into(),
+			CardanoNetwork::Mainnet => "mainnet".into(),
+			CardanoNetwork::Testnet => "testnet".into(),
+		}
+	}
+}
+
+impl From<ogmios_client::query_network::Network> for CardanoNetwork {
+	fn from(network: ogmios_client::query_network::Network) -> CardanoNetwork {
+		match network {
+			ogmios_client::query_network::Network::Mainnet => CardanoNetwork::Mainnet,
+			ogmios_client::query_network::Network::Testnet => CardanoNetwork::Testnet,
 		}
 	}
 }
@@ -278,8 +288,8 @@ impl CardanoNetwork {
 impl From<CardanoNetwork> for cardano_serialization_lib::NetworkIdKind {
 	fn from(network: CardanoNetwork) -> cardano_serialization_lib::NetworkIdKind {
 		match network {
-			CardanoNetwork(0) => cardano_serialization_lib::NetworkIdKind::Mainnet,
-			_ => cardano_serialization_lib::NetworkIdKind::Testnet,
+			CardanoNetwork::Mainnet => cardano_serialization_lib::NetworkIdKind::Mainnet,
+			CardanoNetwork::Testnet => cardano_serialization_lib::NetworkIdKind::Testnet,
 		}
 	}
 }
@@ -287,10 +297,8 @@ impl From<CardanoNetwork> for cardano_serialization_lib::NetworkIdKind {
 impl std::fmt::Display for CardanoNetwork {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		match self {
-			CardanoNetwork(0) => write!(f, "mainnet"),
-			CardanoNetwork(1) => write!(f, "preprod"),
-			CardanoNetwork(2) => write!(f, "preview"),
-			CardanoNetwork(n) => write!(f, "custom({})", n),
+			CardanoNetwork::Mainnet => write!(f, "mainnet"),
+			CardanoNetwork::Testnet => write!(f, "testnet"),
 		}
 	}
 }
@@ -494,7 +502,7 @@ pub mod config_fields {
 			config_file: CHAIN_CONFIG_FILE_PATH,
 			path: &["cardano", "network"],
 			name: "cardano network",
-			default: Some("0"),
+			default: None,
 			_marker: PhantomData,
 		};
 
@@ -751,9 +759,7 @@ mod tests {
 
 	#[test]
 	fn test_from_network_id() {
-		assert_eq!(NetworkIdKind::from(CardanoNetwork(0)), NetworkIdKind::Mainnet);
-		assert_eq!(NetworkIdKind::from(CardanoNetwork(1)), NetworkIdKind::Testnet);
-		assert_eq!(NetworkIdKind::from(CardanoNetwork(2)), NetworkIdKind::Testnet);
-		assert_eq!(NetworkIdKind::from(CardanoNetwork(42)), NetworkIdKind::Testnet);
+		assert_eq!(NetworkIdKind::from(CardanoNetwork::Mainnet), NetworkIdKind::Mainnet);
+		assert_eq!(NetworkIdKind::from(CardanoNetwork::Testnet), NetworkIdKind::Testnet);
 	}
 }
