@@ -198,10 +198,6 @@ impl TransactionContext {
 		self.payment_key.to_public().hash()
 	}
 
-	pub(crate) fn payment_address(&self) -> Address {
-		key_hash_address(&self.payment_key.to_public().hash(), self.network)
-	}
-
 	pub(crate) fn sign(&self, tx: Transaction) -> Transaction {
 		let tx_hash: [u8; 32] = sidechain_domain::crypto::blake2b(tx.body().to_bytes().as_ref());
 		let signature = self.payment_key.sign(&tx_hash);
