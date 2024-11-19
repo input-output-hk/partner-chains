@@ -66,11 +66,11 @@ mod tests {
 	use crate::pc_contracts_cli_resources::default_ogmios_service_config;
 	use crate::pc_contracts_cli_resources::tests::prompt_ogmios_configuration_io;
 	use crate::prepare_configuration::prepare_cardano_params::tests::preview_shelley_config;
-	use crate::prepare_configuration::prepare_chain_params::{prepare_chain_params, INTRO};
+	use crate::prepare_configuration::prepare_chain_params::{
+		prepare_chain_params, CAUTION, INTRO,
+	};
 	use crate::select_utxo::tests::{mock_5_valid_utxos_rows, mock_result_5_valid, query_utxos_io};
 	use crate::tests::{MockIO, MockIOContext};
-
-	use super::CAUTION;
 
 	fn test_vkey_file_json() -> serde_json::Value {
 		serde_json::json!({

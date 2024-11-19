@@ -351,9 +351,8 @@ mod tests {
 	}
 
 	mod is_registration_data_valid_tests {
-		use core::str::FromStr;
-
 		use super::*;
+		use core::str::FromStr;
 		use sidechain_domain::{
 			CrossChainPublicKey, McTxHash, SidechainPublicKey, SidechainSignature,
 		};

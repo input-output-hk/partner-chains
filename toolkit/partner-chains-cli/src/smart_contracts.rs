@@ -1,6 +1,5 @@
-use sidechain_domain::UtxoId;
-
 use crate::pc_contracts_cli_resources::PcContractsCliResources;
+use sidechain_domain::UtxoId;
 
 pub fn sidechain_params_arguments(genesis_utxo: UtxoId) -> String {
 	format!("--genesis-utxo {}", genesis_utxo)
