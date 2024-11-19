@@ -17,11 +17,15 @@ pub(crate) fn payment_addr() -> Address {
 	Address::from_bech32("addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy").unwrap()
 }
 
-pub(crate) fn test_script() -> PlutusScript {
+pub(crate) fn test_validator() -> PlutusScript {
 	PlutusScript {
 		bytes: hex!("4d4c01000022223212001375a009").to_vec(),
 		language: LanguageKind::PlutusV2,
 	}
+}
+
+pub(crate) fn test_policy() -> PlutusScript {
+	PlutusScript { bytes: hex!("49480100002221200101").to_vec(), language: LanguageKind::PlutusV2 }
 }
 
 pub(crate) fn test_plutus_data() -> PlutusData {

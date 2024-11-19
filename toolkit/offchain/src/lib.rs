@@ -15,7 +15,7 @@ mod plutus_script;
 /// Provides synthetized scripts data
 pub mod scripts_data;
 #[cfg(test)]
-mod test_values;
+pub mod test_values;
 /// Module for interaction with the untyped plutus scripts
 pub mod untyped_plutus;
 

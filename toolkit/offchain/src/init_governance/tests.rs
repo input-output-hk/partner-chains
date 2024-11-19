@@ -42,14 +42,18 @@ fn expected_transaction() -> serde_json::Value {
 				{
 					"address": "addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw",
 					"amount": {
-						"coin": "9919232322",
-						"multiasset": null
+						"coin": "9919227878",
+						"multiasset": {
+							"01010101010101010101010101010101010101010101010101010101": {
+								"": "1"
+							}
+						}
 					},
 					"plutus_data": null,
 					"script_ref": null
 				}
 			],
-			"fee": "404915",
+			"fee": "409359",
 			"ttl": null,
 			"certs": null,
 			"withdrawals": null,
@@ -76,13 +80,17 @@ fn expected_transaction() -> serde_json::Value {
 			"collateral_return": {
 				"address": "addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw",
 				"amount": {
-					"coin": "9922338564",
-					"multiasset": null
+					"coin": "9922331898",
+					"multiasset": {
+						"01010101010101010101010101010101010101010101010101010101": {
+							"": "1"
+						}
+					}
 				},
 				"plutus_data": null,
 				"script_ref": null
 			},
-			"total_collateral": "607373",
+			"total_collateral": "614039",
 			"reference_inputs": null,
 			"required_signers": [
 				"76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"
@@ -177,7 +185,10 @@ fn payment_utxo() -> OgmiosUtxo {
 			id: hex!("23249849e52ee17143509baf7a5abcbd76f9b589947d73e7bbc03ca9142f9535"),
 		},
 		index: 1,
-		value: OgmiosValue::new_lovelace(9922945937),
+		value: OgmiosValue {
+			lovelace: 9922945937,
+			native_tokens: [([1; 28], vec![Asset { name: vec![], amount: 1 }])].into(),
+		},
 		address: test_address().to_bech32(None).unwrap(),
 
 		..OgmiosUtxo::default()
