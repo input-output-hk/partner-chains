@@ -39,7 +39,7 @@ case "$ACCOUNT" in
   bob)
     /usr/local/bin/partner-chains-node \
       --bob \
-      --chain=/shared/chain-spec.json \
+      --chain=/chain-spec.json \
       --node-key=0000000000000000000000000000000000000000000000000000000000000002 \
       --bootnodes="/ip4/3.70.234.116/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp" \
       --base-path=/data \
@@ -54,7 +54,7 @@ case "$ACCOUNT" in
   charlie)
     /usr/local/bin/partner-chains-node \
       --charlie \
-      --chain=/shared/chain-spec.json \
+      --chain=/chain-spec.json \
       --node-key=0000000000000000000000000000000000000000000000000000000000000003 \
       --bootnodes="/ip4/3.70.234.116/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp" \
       --base-path=/data \
@@ -68,7 +68,7 @@ case "$ACCOUNT" in
     ;;
   dave)
     /usr/local/bin/partner-chains-node \
-      --chain=/shared/chain-spec.json \
+      --chain=/chain-spec.json \
       --validator \
       --node-key=0000000000000000000000000000000000000000000000000000000000000004 \
       --bootnodes="/ip4/3.70.234.116/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp" \
@@ -84,7 +84,7 @@ case "$ACCOUNT" in
     ;;
   eve)
     /usr/local/bin/partner-chains-node \
-      --chain=/shared/chain-spec.json \
+      --chain=/chain-spec.json \
       --validator \
       --node-key=0000000000000000000000000000000000000000000000000000000000000005 \
       --bootnodes="/ip4/3.70.234.116/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp" \
@@ -100,7 +100,7 @@ case "$ACCOUNT" in
     ;;
   ferdie)
     /usr/local/bin/partner-chains-node \
-      --chain=/shared/chain-spec.json \
+      --chain=/chain-spec.json \
       --validator \
       --node-key=0000000000000000000000000000000000000000000000000000000000000006 \
       --bootnodes="/ip4/3.70.234.116/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp" \
