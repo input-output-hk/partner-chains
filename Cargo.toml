@@ -70,25 +70,39 @@ futures = { version = "0.3.30", features = ["thread-pool"] }
 hex = { version = "0.4.3", features = ["alloc"], default-features = false }
 hex-literal = "0.4.1"
 itertools = "0.13.0"
-jsonrpsee = { version = "0.24.3", features = ["client-core", "server", "macros" ] }
+jsonrpsee = { version = "0.24.3", features = [
+	"client-core",
+	"server",
+	"macros",
+] }
 libp2p-identity = "0.2.9"
 log = { version = "0.4.22", default-features = false }
 minicbor = { version = "0.20", features = ["alloc"] }
 num-bigint = { version = "0.4.3", default-features = false }
 num-traits = { version = "0.2.17", default-features = false }
-parity-scale-codec = { package = "parity-scale-codec", version = "3.6.12", default-features = false, features = ["derive", "max-encoded-len"] }
+parity-scale-codec = { package = "parity-scale-codec", version = "3.6.12", default-features = false, features = [
+	"derive",
+	"max-encoded-len",
+] }
 quickcheck = { version = "1.0.3" }
 pallas-addresses = { git = "https://github.com/txpipe/pallas.git", tag = "v0.30.2" }
 pallas-primitives = { git = "https://github.com/txpipe/pallas.git", tag = "v0.30.2" }
 proptest = { version = "1.5.0" }
-scale-info = { version = "2.11.1", default-features = false, features = ["derive"] }
+scale-info = { version = "2.11.1", default-features = false, features = [
+	"derive",
+] }
 quickcheck_macros = { version = "1" }
 quote = "1.0"
 rand_chacha = { version = "0.3.1", default-features = false }
 rand = { version = "0.8.5", default-features = false }
 secp256k1 = { version = "0.28.2", default-features = false }
-serde = { version = "1.0.209", default-features = false, features = ["derive", "alloc"] }
-serde_json = { version = '1.0.132', default-features = false, features = ["alloc"] }
+serde = { version = "1.0.209", default-features = false, features = [
+	"derive",
+	"alloc",
+] }
+serde_json = { version = '1.0.132', default-features = false, features = [
+	"alloc",
+] }
 syn = "2.0.65"
 tempfile = "3.10.1"
 thiserror = { version = "1.0.48" }
@@ -180,7 +194,7 @@ substrate-prometheus-endpoint = { package = "substrate-prometheus-endpoint", git
 substrate-test-runtime-client = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409" }
 substrate-wasm-builder = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409" }
 
-raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", tag = "v7.0.0" }
+raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", tag = "v7.0.1" }
 
 # local dependencies
 sidechain-runtime = { path = "node/runtime" }

@@ -271,16 +271,16 @@
     "smart-contracts": {
       "flake": false,
       "locked": {
-        "lastModified": 1730986561,
-        "narHash": "sha256-ox5G+FEjn2Lc+C1hjmBfQpuNyGm+dMe7DTcK/2bWMyc=",
+        "lastModified": 1731596108,
+        "narHash": "sha256-MKmABReJpvrWvArccmHwsNtPhYvDkZMkQeVJjKG+3SU=",
         "owner": "input-output-hk",
         "repo": "partner-chains-smart-contracts",
-        "rev": "a27f7b71b5cf76d611db80d6db064eee6c9c2b06",
+        "rev": "5f96807760b8e93eaf9661d72cef236700b3b616",
         "type": "github"
       },
       "original": {
         "owner": "input-output-hk",
-        "ref": "v7.0.0",
+        "ref": "v7.0.1",
         "repo": "partner-chains-smart-contracts",
         "type": "github"
       }
