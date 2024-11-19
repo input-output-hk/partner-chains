@@ -23,6 +23,7 @@
       THRESHOLD_DENOMINATOR: "3"
       BLOCK_STABILITY_MARGIN: "0"
       MINIMUM_MC_EPOCH: "0"
+      ACCOUNT: ${ACCOUNT} 
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
     ports:
       - "30333:30333"
