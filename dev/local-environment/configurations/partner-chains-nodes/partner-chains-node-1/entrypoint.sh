@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo 'Waiting for Cardano chain to sync and pc-contracts-cli configuraton to complete...'
+echo 'Waiting for Cardano chain to sync and pc-contracts-cli configuration to complete...'
 
 while true; do
     if [ -f "/shared/pc-contracts-cli.ready" ]; then

@@ -77,6 +77,24 @@ echo "Beginning configuration..."
 
 chmod 644 /shared/shelley/genesis-utxo.skey
 
+echo "Initializing governance authority ..."
+
+export GENESIS_UTXO=$(cat /shared/genesis.utxo)
+
+./pc-contracts-cli init-governance \
+    --network testnet \
+    --kupo-host kupo --kupo-port $KUPO_PORT \
+    --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
+    --genesis-utxo $GENESIS_UTXO \
+    --payment-signing-key-file /keys/funded_address.skey \
+    --governance-authority $GOVERNANCE_AUTHORITY
+
+if [ $? -eq 0 ]; then
+   echo "Successfully initialized governance authority!"
+else
+    echo "Failed to initialize governance authority!"
+fi
+
 echo "Generating addresses.json file..."
 
 ./pc-contracts-cli addresses \
@@ -85,7 +103,6 @@ echo "Generating addresses.json file..."
     --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
     --payment-signing-key-file /keys/funded_address.skey \
     --genesis-utxo $GENESIS_UTXO \
-    --version 1 \
 > addresses.json
 
 export COMMITTEE_CANDIDATE_ADDRESS=$(jq -r '.addresses.CommitteeCandidateValidator' addresses.json)
