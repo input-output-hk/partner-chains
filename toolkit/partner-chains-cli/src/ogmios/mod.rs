@@ -2,9 +2,7 @@ use crate::config::CardanoNetwork;
 use anyhow::anyhow;
 use jsonrpsee::http_client::HttpClient;
 use ogmios_client::{
-	query_ledger_state::QueryLedgerState,
-	query_network::QueryNetwork,
-	types::OgmiosUtxo,
+	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, types::OgmiosUtxo,
 };
 
 #[derive(Debug, Eq, PartialEq)]

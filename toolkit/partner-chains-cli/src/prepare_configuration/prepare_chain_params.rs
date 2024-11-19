@@ -1,26 +1,20 @@
-use std::str::FromStr;
-
 use crate::config::config_fields::{self, GENESIS_UTXO};
 use crate::config::{CardanoNetwork, ConfigFieldDefinition, ServiceConfig};
 use crate::io::IOContext;
-use crate::ogmios::{OgmiosRequest, OgmiosResponse};
-use crate::register::register1::ValidUtxo;
+use crate::select_utxo::{filter_utxos, query_utxos, select_from_utxos, ValidUtxo};
 use crate::{cardano_key, pc_contracts_cli_resources};
 use anyhow::anyhow;
-use ogmios_client::types::OgmiosUtxo;
 use serde::de::DeserializeOwned;
-use sidechain_domain::{McTxHash, UtxoId};
+use sidechain_domain::UtxoId;
 
 use super::prepare_cardano_params::get_shelley_config;
 
 pub fn prepare_chain_params<C: IOContext>(context: &C) -> anyhow::Result<(UtxoId, ServiceConfig)> {
 	context.eprint(INTRO);
-	context.print("This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service");
 	let ogmios_configuration = pc_contracts_cli_resources::prompt_ogmios_configuration(context)?;
 	let shelley_config = get_shelley_config(&ogmios_configuration.to_string(), context)?;
 	let address = derive_address(context, shelley_config.network)?;
 	let utxo_query_result = query_utxos(context, &ogmios_configuration, &address)?;
-
 	let valid_utxos: Vec<ValidUtxo> = filter_utxos(utxo_query_result);
 
 	if valid_utxos.is_empty() {
@@ -28,26 +22,10 @@ pub fn prepare_chain_params<C: IOContext>(context: &C) -> anyhow::Result<(UtxoId
 		context.eprint("There has to be at least one UTXO in the governance authority wallet.");
 		return Err(anyhow::anyhow!("No UTXOs found"));
 	};
-	let utxo_display_options: Vec<String> =
-		valid_utxos.iter().map(|utxo| utxo.to_display_string()).collect();
-	let selected_utxo_display_string = context
-		.prompt_multi_option("Select an UTXO to use as the genesis UTXO", utxo_display_options);
+	let genesis_utxo =
+		select_from_utxos(context, "Select an UTXO to use as the genesis UTXO", valid_utxos)?;
 
-	let selected_utxo = valid_utxos
-		.iter()
-		.find(|utxo| utxo.to_display_string() == selected_utxo_display_string)
-		.map(|utxo| utxo.utxo_id.to_string())
-		.ok_or_else(|| anyhow!("⚠️ Failed to find selected UTXO"))?;
-
-	let genesis_utxo: UtxoId = UtxoId::from_str(&selected_utxo).map_err(|e| {
-		context.eprint(&format!("⚠️ Failed to parse selected UTXO: {e}"));
-		anyhow!(e)
-	})?;
-
-	context.print(
-		"Please do not spend this UTXO, it needs to be consumed by the governance initialization.",
-	);
-	context.print("");
+	context.print(CAUTION);
 
 	save_if_missing(GENESIS_UTXO, genesis_utxo, context);
 	Ok((genesis_utxo, ogmios_configuration))
@@ -59,24 +37,6 @@ where
 {
 	if field.load_from_file_and_print(context).is_none() {
 		field.save_to_file(&new_value, context);
-	}
-}
-
-fn query_utxos<C: IOContext>(
-	context: &C,
-	ogmios_config: &ServiceConfig,
-	address: &str,
-) -> Result<Vec<OgmiosUtxo>, anyhow::Error> {
-	let ogmios_addr = ogmios_config.to_string();
-	context.print(&format!("⚙️ Querying UTXOs of {address} from Ogmios at {ogmios_addr}..."));
-	let response = context
-		.ogmios_rpc(&ogmios_addr, OgmiosRequest::QueryUtxo { address: address.into() })
-		.map_err(|e| anyhow!(e))?;
-	match response {
-		OgmiosResponse::QueryUtxo(utxos) => Ok(utxos),
-		other => Err(anyhow::anyhow!(format!(
-			"Unexpected response from Ogmios when querying for utxos: {other:?}"
-		))),
 	}
 }
 
@@ -94,39 +54,23 @@ fn derive_address<C: IOContext>(
 	address.to_bech32(None).map_err(|e| anyhow!(e.to_string()))
 }
 
-// Take only the UTXOs without multi-asset tokens
-fn filter_utxos(utxos: Vec<OgmiosUtxo>) -> Vec<ValidUtxo> {
-	let mut utxos: Vec<ValidUtxo> = utxos
-		.into_iter()
-		.filter_map(|utxo| {
-			if utxo.value.native_tokens.is_empty() {
-				Some(ValidUtxo {
-					utxo_id: UtxoId {
-						tx_hash: McTxHash(utxo.transaction.id),
-						index: sidechain_domain::UtxoIndex(utxo.index),
-					},
-					lovelace: utxo.value.lovelace,
-				})
-			} else {
-				None
-			}
-		})
-		.collect();
-
-	utxos.sort_by_key(|utxo| std::cmp::Reverse(utxo.lovelace));
-	utxos
-}
-const INTRO: &str = "Now, let's set up the genesis utxo. It identifies a partner chain.";
+const INTRO: &str = "Now, let's set up the genesis utxo. It identifies a partner chain. This wizard will query Ogmios for your UTXOs using address derived from the payment verification key. Please provide required data.";
+const CAUTION: &str =
+	"Please do not spend this UTXO, it needs to be consumed by the governance initialization.\n";
 
 #[cfg(test)]
 mod tests {
-	use crate::config::config_fields::{CARDANO_PAYMENT_VERIFICATION_KEY_FILE, GENESIS_UTXO};
+	use crate::config::config_fields::GENESIS_UTXO;
 	use crate::config::RESOURCES_CONFIG_FILE_PATH;
+	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 	use crate::pc_contracts_cli_resources::default_ogmios_service_config;
 	use crate::pc_contracts_cli_resources::tests::prompt_ogmios_configuration_io;
-	use crate::prepare_configuration::prepare_chain_params::prepare_chain_params;
-	use crate::prepare_configuration::tests::prompt_and_save_to_existing_file;
+	use crate::prepare_configuration::prepare_cardano_params::tests::preview_shelley_config;
+	use crate::prepare_configuration::prepare_chain_params::{prepare_chain_params, INTRO};
+	use crate::select_utxo::tests::{mock_5_valid_utxos_rows, mock_result_5_valid, query_utxos_io};
 	use crate::tests::{MockIO, MockIOContext};
+
+	use super::CAUTION;
 
 	fn test_vkey_file_json() -> serde_json::Value {
 		serde_json::json!({
@@ -136,40 +80,67 @@ mod tests {
 		})
 	}
 
-	mod scenarios {
-		use crate::prepare_configuration::prepare_chain_params::INTRO;
-		use crate::tests::MockIO;
-
-		pub fn show_intro() -> MockIO {
-			MockIO::Group(vec![MockIO::eprint(INTRO)])
-		}
-	}
-
 	#[test]
 	fn happy_path() {
 		let mock_context = MockIOContext::new()
 			.with_file(RESOURCES_CONFIG_FILE_PATH, "{}")
 			.with_json_file("payment.vkey", test_vkey_file_json())
 			.with_expected_io(vec![
-				scenarios::show_intro(),
-				MockIO::print("This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service"),
-				prompt_ogmios_configuration_io(
-					&default_ogmios_service_config(),
-					&default_ogmios_service_config(),
+				MockIO::eprint(INTRO),
+				read_shelly_config_to_get_network(),
+				prompt_payment_vkey_and_read_it_to_derive_address(),
+				query_utxos_io(
+					"addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw",
+					"http://localhost:1337",
+					mock_result_5_valid(),
 				),
-				prompt_and_save_to_existing_file(
-					CARDANO_PAYMENT_VERIFICATION_KEY_FILE,
-					"payment.vkey",
+				MockIO::prompt_multi_option(
+					"Select an UTXO to use as the genesis UTXO",
+				 	mock_5_valid_utxos_rows(),
+					 "4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"
 				),
+				MockIO::print(CAUTION),
 				MockIO::file_write_json_contains(
 					GENESIS_UTXO.config_file,
 					&GENESIS_UTXO.json_pointer(),
-					"0000000000000000000000000000000000000000000000000000000000000000#0",
+					"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93",
 				),
 			]);
 
 		let result = prepare_chain_params(&mock_context);
 
 		result.expect("should succeed");
+	}
+
+	fn read_shelly_config_to_get_network() -> MockIO {
+		MockIO::Group(vec![
+			prompt_ogmios_configuration_io(
+				&default_ogmios_service_config(),
+				&default_ogmios_service_config(),
+			),
+			MockIO::ogmios_request(
+				"http://localhost:1337",
+				OgmiosRequest::QueryNetworkShelleyGenesis,
+				Ok(OgmiosResponse::QueryNetworkShelleyGenesis(preview_shelley_config())),
+			),
+		])
+	}
+
+	fn prompt_payment_vkey_and_read_it_to_derive_address() -> MockIO {
+		MockIO::Group(vec![
+			MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
+			MockIO::prompt(
+				"path to the payment verification file",
+				Some("payment.vkey"),
+				"payment.vkey",
+			),
+			MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
+			MockIO::file_write_json_contains(
+				RESOURCES_CONFIG_FILE_PATH,
+				"/cardano_payment_verification_key_file",
+				"payment.vkey",
+			),
+			MockIO::file_read("payment.vkey"),
+		])
 	}
 }

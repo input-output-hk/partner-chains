@@ -14,6 +14,7 @@ pub(crate) mod pc_contracts_cli_resources;
 pub(crate) mod permissioned_candidates;
 mod prepare_configuration;
 pub mod register;
+pub(crate) mod select_utxo;
 mod setup_main_chain_state;
 pub(crate) mod smart_contracts;
 pub mod start_node;
