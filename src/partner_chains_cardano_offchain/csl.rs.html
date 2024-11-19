@@ -760,6 +760,13 @@
 <a href="#760" id="760">760</a>
 <a href="#761" id="761">761</a>
 <a href="#762" id="762">762</a>
+<a href="#763" id="763">763</a>
+<a href="#764" id="764">764</a>
+<a href="#765" id="765">765</a>
+<a href="#766" id="766">766</a>
+<a href="#767" id="767">767</a>
+<a href="#768" id="768">768</a>
+<a href="#769" id="769">769</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(dead_code)]
 
 </span><span class="kw">use crate</span>::{plutus_script::PlutusScript, untyped_plutus::datum_to_uplc_plutus_data};
@@ -989,7 +996,8 @@
 	<span class="doccomment">/// Creates output on the script address with datum that has 1 token with asset for the script and it has given datum attached.
 	</span><span class="kw">fn </span>add_output_with_one_script_token(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		script: <span class="kw-2">&amp;</span>PlutusScript,
+		validator: <span class="kw-2">&amp;</span>PlutusScript,
+		policy: <span class="kw-2">&amp;</span>PlutusScript,
 		datum: <span class="kw-2">&amp;</span>PlutusData,
 		ctx: <span class="kw-2">&amp;</span>TransactionContext,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt;;
@@ -1020,18 +1028,19 @@
 <span class="kw">impl </span>TransactionBuilderExt <span class="kw">for </span>TransactionBuilder {
 	<span class="kw">fn </span>add_output_with_one_script_token(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		script: <span class="kw-2">&amp;</span>PlutusScript,
+		validator: <span class="kw-2">&amp;</span>PlutusScript,
+		policy: <span class="kw-2">&amp;</span>PlutusScript,
 		datum: <span class="kw-2">&amp;</span>PlutusData,
 		ctx: <span class="kw-2">&amp;</span>TransactionContext,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt; {
 		<span class="kw">let </span>amount_builder = TransactionOutputBuilder::new()
-			.with_address(<span class="kw-2">&amp;</span>script.address(ctx.network))
+			.with_address(<span class="kw-2">&amp;</span>validator.address(ctx.network))
 			.with_plutus_data(<span class="kw-2">&amp;</span>datum)
 			.next()<span class="question-mark">?</span>;
 		<span class="kw">let </span><span class="kw-2">mut </span>ma = MultiAsset::new();
 		<span class="kw">let </span><span class="kw-2">mut </span>assets = Assets::new();
 		assets.insert(<span class="kw-2">&amp;</span>empty_asset_name(), <span class="kw-2">&amp;</span><span class="number">1u64</span>.into());
-		ma.insert(<span class="kw-2">&amp;</span>script.script_hash().into(), <span class="kw-2">&amp;</span>assets);
+		ma.insert(<span class="kw-2">&amp;</span>policy.script_hash().into(), <span class="kw-2">&amp;</span>assets);
 		<span class="kw">let </span>output = amount_builder.with_coin_and_asset(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span>ma).build()<span class="question-mark">?</span>;
 		<span class="kw">let </span>min_ada = MinOutputAdaCalculator::new(
 			<span class="kw-2">&amp;</span>output,
@@ -1384,12 +1393,17 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(<span class="kw-2">&amp;</span>ctx).unwrap());
 		tx_builder
 			.add_mint_one_script_token(
-				<span class="kw-2">&amp;</span>test_script(),
+				<span class="kw-2">&amp;</span>test_policy(),
 				ExUnits::new(<span class="kw-2">&amp;</span>BigNum::zero(), <span class="kw-2">&amp;</span>BigNum::zero()),
 			)
 			.unwrap();
 		tx_builder
-			.add_output_with_one_script_token(<span class="kw-2">&amp;</span>test_script(), <span class="kw-2">&amp;</span>test_plutus_data(), <span class="kw-2">&amp;</span>ctx)
+			.add_output_with_one_script_token(
+				<span class="kw-2">&amp;</span>test_validator(),
+				<span class="kw-2">&amp;</span>test_policy(),
+				<span class="kw-2">&amp;</span>test_plutus_data(),
+				<span class="kw-2">&amp;</span>ctx,
+			)
 			.unwrap();
 
 		<span class="kw">let </span>tx = tx_builder.balance_update_and_build(<span class="kw-2">&amp;</span>ctx).unwrap();
@@ -1480,7 +1494,7 @@
 	<span class="macro">proptest!</span> {
 		<span class="attr">#[test]
 		</span><span class="kw">fn </span>balance_tx_with_minted_token(payment_utxos <span class="kw">in </span>arb_payment_utxos(<span class="number">10</span>)
-			.prop_filter(<span class="string">"Inputs total lovelace too low"</span>, |utxos| sum_lovelace(<span class="kw-2">&amp;</span>utxos) &gt; <span class="number">3000000</span>)) {
+			.prop_filter(<span class="string">"Inputs total lovelace too low"</span>, |utxos| sum_lovelace(<span class="kw-2">&amp;</span>utxos) &gt; <span class="number">4000000</span>)) {
 			multi_asset_transaction_balancing_test(payment_utxos)
 		}
 
