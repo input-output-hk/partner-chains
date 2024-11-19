@@ -51,14 +51,7 @@ pub(crate) fn init_governance_transaction(
 	)?)?;
 
 	tx_builder.set_inputs(&{
-		let mut tx_input_builder = TxInputsBuilder::new();
-		tx_input_builder.add_key_input(
-			&tx_context.payment_key_hash(),
-			&genesis_utxo.to_csl_tx_input(),
-			&Value::new(&Coin::from(genesis_utxo.value.lovelace)),
-		);
-
-		tx_input_builder
+		TxInputsBuilder::with_key_inputs(&[genesis_utxo], &tx_context.payment_key_hash())?
 	});
 
 	Ok(tx_builder.balance_update_and_build(&tx_context)?)
