@@ -46,10 +46,6 @@ Custom options:
                         Overrides node port
   --init-timestamp=INIT_TIMESTAMP
                         Initial timestamp of the mainchain.
-  --qa-db-password=QA_DB_PASSWORD
-                        Password override for test database.
-  --db-sync-password=DB_SYNC_PASSWORD
-                        Password for db sync database
   --latest-mc-epoch     Parametrize committee tests to verify whole last MC epoch. Transforms sc_epoch param to range of SC epochs for last MC epoch.
   --mc-epoch=MC_EPOCH   MC epoch that parametrizes committee tests to verify the whole given MC epoch. Translates sc_epoch param to range of SC epochs for given MC epoch.
   --sc-epoch=SC_EPOCH   SC epoch that parametrizes committee tests, default: <last_sc_epoch>.

@@ -76,7 +76,7 @@ pub fn staging_endowed_accounts() -> Vec<AccountId> {
 		AccountId::from_str("0x22c9f9d51022b7ad2204131e6268ab079c84bcdb44a4c6907affed5779da9c7b")
 			.unwrap(),
 		staging_sudo_key(),
-		// SDETs test accounts, keys are in https://github.com/input-output-hk/sidechains-tests/tree/master/secrets
+		// SDETs test accounts, keys are in E2E-tests/secrets
 		// negative-test
 		AccountId::from_str("5F1N52dZx48UpXNLtcCzSMHZEroqQDuYKfidg46Tp37SjPcE").unwrap(),
 		// faucet-0

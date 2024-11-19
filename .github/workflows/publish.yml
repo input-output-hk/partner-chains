@@ -1,4 +1,4 @@
-name: Publish the draft release created by cd.yml, and upload GHCR image
+name: "CD: Publish"
 
 on:
   workflow_dispatch:
@@ -12,30 +12,33 @@ on:
         required: true
         type: string
 
+permissions:
+  id-token: write
+  contents: write
+  packages: write
+
 jobs:
-  build-and-publish-ghcr:
-    permissions:
-      id-token: write
-      contents: write
-      packages: write
+  publish-ghcr:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout the Specified Branch
         uses: actions/checkout@v4
-      - name: Build and Publish to GHCR
-        uses: ./.github/actions/images/build-and-publish-ghcr
         with:
-          sha: ${{ inputs.sha }}
-          tag: ${{ inputs.tag }}
+          ref: ${{ github.ref }}
+
+      - name: Publish to GHCR
+        uses: ./.github/actions/images/publish-ghcr
+        with:
+          sha: ${{ github.event.inputs.sha }}
+          tag: ${{ github.event.inputs.tag }}
         env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ github.token }}
+          AWS_REGION: "eu-central-1"
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-release:
-    permissions:
-      id-token: write
-      contents: write
-      packages: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

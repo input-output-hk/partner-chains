@@ -6462,6 +6462,7 @@ dependencies = [
  "partner-chains-plutus-data",
  "plutus",
  "pretty_assertions",
+ "proptest",
  "raw-scripts",
  "secp256k1 0.28.2",
  "serde",

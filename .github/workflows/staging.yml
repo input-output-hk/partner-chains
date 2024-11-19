@@ -63,7 +63,7 @@ jobs:
         ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
     - name: Set deployment_version as env variable
-      run: echo "DEPLOYMENT_VERSION=$(jq -r .deployment_version ./config/substrate/staging_nodes.json)" >> $GITHUB_ENV
+      run: echo "DEPLOYMENT_VERSION=$(jq -r .deployment_version ./E2E-tests/config/substrate/staging_nodes.json)" >> $GITHUB_ENV
 
     - name: Set XRay variables
       run: |
@@ -72,7 +72,7 @@ jobs:
         elif [ ! -z "${{ inputs.execution }}" ]; then
           echo "TEST_EXECUTION=${{ inputs.execution }}" >> $GITHUB_ENV
         else
-          echo "TEST_PLAN=ETCM-8452" >> $GITHUB_ENV
+          echo "TEST_PLAN=ETCM-8562" >> $GITHUB_ENV
         fi
 
     - name: set report_to_xray env variable
@@ -90,7 +90,7 @@ jobs:
       env:
         EARTHLY_BUILD_ARGS: "CI_RUN=true"
         FORCE_COLOR: 1
-        SLACK_REF_NAME: ${{ github.event_name == 'schedule' && format('{0}/v{1}', env.TEST_ENVIRONMENT, env.DEPLOYMENT_VERSION) || github.ref_name }}
+        SLACK_REF_NAME: ${{ github.event_name == 'schedule' && format('{0}/{1}', env.TEST_ENVIRONMENT, env.DEPLOYMENT_VERSION) || github.ref_name }}
         LOG_LEVEL: ${{ inputs.log_level }}
         KEYWORD: ${{ inputs.keyword }}
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -132,6 +132,14 @@ jobs:
           --decrypt=true \
           --markers="$MARKERS"
 
+    - name: Add Line Numbers and Timestamps to debug.log
+      if: always()
+      run: |
+        cd E2E-tests
+        awk '{print strftime("[%Y-%m-%d %H:%M:%S]"), $0}' debug.log > debug_with_timestamps.log
+        nl -ba -s '  ' -w 8 debug_with_timestamps.log > debug_with_timestamps_and_line_numbers.log
+        mv debug_with_timestamps_and_line_numbers.log debug.log
+
     - name: Archive Debug Log
       if: always()
       uses: actions/upload-artifact@v4
@@ -139,7 +147,7 @@ jobs:
         name: debug_log
         retention-days: 15
         overwrite: true
-        path: debug.log
+        path: E2E-tests/debug.log
 
     - name: Setup Node
       uses: actions/setup-node@v4
@@ -149,9 +157,12 @@ jobs:
 
     - name: Install Ctrf
       if: ${{ !cancelled() }}
-      run: npm install github-actions-ctrf
+      run: |
+        cd E2E-tests
+        npm install github-actions-ctrf
 
     - name: Generate Summary Report
       if: ${{ !cancelled() }}
       run: |
+        cd E2E-tests
         npx github-actions-ctrf ctrf-report.json

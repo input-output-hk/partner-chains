@@ -54,7 +54,7 @@ pub fn development_config() -> Result<ChainSpec, envy::Error> {
 					"0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
 				)
 				.unwrap(),
-				// SDETs test accounts, keys are in https://github.com/input-output-hk/sidechains-tests/tree/master/secrets
+				// SDETs test accounts, keys are in E2E-tests/secrets
 				// negative-test
 				AccountId::from_str("5F1N52dZx48UpXNLtcCzSMHZEroqQDuYKfidg46Tp37SjPcE").unwrap(),
 			],
@@ -129,7 +129,7 @@ pub fn testnet_endowed_accounts() -> Vec<AccountId> {
 		AccountId::from_str("0x9cedc9f7b926191f64d68ee77dd90c834f0e73c0f53855d77d3b0517041d5640")
 			.unwrap(),
 		testnet_sudo_key(),
-		// SDETs test accounts, keys are in https://github.com/input-output-hk/sidechains-tests/tree/master/secrets
+		// SDETs test accounts, keys are in E2E-tests/secrets
 		// negative-test
 		AccountId::from_str("5F1N52dZx48UpXNLtcCzSMHZEroqQDuYKfidg46Tp37SjPcE").unwrap(),
 	]
