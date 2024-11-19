@@ -337,6 +337,8 @@ class TestCommitteeMembers:
         """Test that the configured d-parameter has at least one trustless candidate"""
         if api.get_d_param(current_mc_epoch).trustless_candidates_number == 0:
             skip("T==0, test is irrelevant")
+        if current_mc_epoch < 3:
+            skip("Stake pool is not yet initialized")
         assert len(api.get_trustless_candidates(current_mc_epoch, valid_only=True)) > 0
 
     @mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")

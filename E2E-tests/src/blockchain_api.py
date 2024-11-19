@@ -251,7 +251,7 @@ class BlockchainApi(ABC):
 
         Arguments:
             mc_epoch {int}
-            valid_only {bool} -- if True, returns only valid candidates
+            valid_only {bool} -- if True returns only valid registrations for an SPO.
 
         Return: A dict of SPOs. Example response:
         ```
