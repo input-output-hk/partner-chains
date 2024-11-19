@@ -1,4 +1,4 @@
-use crate::config::{CardanoNetwork, CardanoParameters, ServiceConfig};
+use crate::config::{CardanoParameters, ServiceConfig};
 use crate::io::IOContext;
 use crate::ogmios::{EraSummary, OgmiosRequest, OgmiosResponse, ShelleyGenesisConfiguration};
 
@@ -52,7 +52,7 @@ fn caradano_parameters(
 			.and_then(|seconds| seconds.checked_mul(1000))
 			.ok_or_else(|| anyhow::anyhow!("First epoch timestamp overflow"))?,
 		// This is a bug, we should not use network magic here
-		network: CardanoNetwork(shelley_config.network_magic),
+		network: shelley_config.network.into(),
 	})
 }
 
@@ -80,7 +80,7 @@ fn get_first_epoch_era(eras_summaries: Vec<EraSummary>) -> Result<EraSummary, an
 #[cfg(test)]
 pub mod tests {
 	use super::*;
-	use crate::config::{NetworkProtocol, CHAIN_CONFIG_FILE_PATH};
+	use crate::config::{CardanoNetwork, NetworkProtocol, CHAIN_CONFIG_FILE_PATH};
 	use crate::ogmios::{EpochBoundary, EpochParameters, EraSummary};
 	use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 	use crate::tests::{MockIO, MockIOContext};
@@ -92,7 +92,7 @@ pub mod tests {
 		first_slot_number: 86400,
 		epoch_duration_millis: 432000000,
 		first_epoch_timestamp_millis: 1655769600000,
-		network: CardanoNetwork(1),
+		network: CardanoNetwork::Testnet,
 	};
 
 	pub(crate) const PREVIEW_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
@@ -102,7 +102,7 @@ pub mod tests {
 		first_slot_number: 0,
 		epoch_duration_millis: 86400000,
 		first_epoch_timestamp_millis: 1666656000000,
-		network: CardanoNetwork(2),
+		network: CardanoNetwork::Testnet,
 	};
 
 	#[test]
@@ -191,8 +191,7 @@ pub mod tests {
 
 	pub(crate) fn preprod_shelley_config() -> ShelleyGenesisConfiguration {
 		ShelleyGenesisConfiguration {
-			network_magic: 1,
-			network: CardanoNetwork(1),
+			network: CardanoNetwork::Testnet,
 			security_parameter: 2160,
 			active_slots_coefficient: 0.05,
 			epoch_length: 432000,
@@ -236,8 +235,7 @@ pub mod tests {
 
 	pub(crate) fn preview_shelley_config() -> ShelleyGenesisConfiguration {
 		ShelleyGenesisConfiguration {
-			network_magic: 2,
-			network: CardanoNetwork(1),
+			network: CardanoNetwork::Testnet,
 			security_parameter: 432,
 			active_slots_coefficient: 0.05,
 			epoch_length: 86400,
