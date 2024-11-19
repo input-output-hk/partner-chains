@@ -494,7 +494,7 @@ pub mod config_fields {
 			config_file: CHAIN_CONFIG_FILE_PATH,
 			path: &["cardano", "network"],
 			name: "cardano network",
-			default: Some("0"),
+			default: None,
 			_marker: PhantomData,
 		};
 

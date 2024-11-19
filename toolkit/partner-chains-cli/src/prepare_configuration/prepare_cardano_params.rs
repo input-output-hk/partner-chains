@@ -51,7 +51,6 @@ fn caradano_parameters(
 			.checked_add(first_epoch_era.start.time_seconds)
 			.and_then(|seconds| seconds.checked_mul(1000))
 			.ok_or_else(|| anyhow::anyhow!("First epoch timestamp overflow"))?,
-		// This is a bug, we should not use network magic here
 		network: shelley_config.network.into(),
 	})
 }

@@ -1,4 +1,4 @@
-from pytest import mark
+from pytest import mark, skip
 from src.blockchain_api import BlockchainApi
 from config.api_config import ApiConfig
 
@@ -120,8 +120,10 @@ class TestRpc:
         registrations = api.get_registrations(mc_epoch, mainchain_key)
 
         assert isinstance(registrations, list)
-        if registrations:
+        if len(registrations) > 0:
             check_registration_data(registrations)
+        else:
+            skip("No registrations found for {mc_epoch} epoch")
 
     @mark.test_key('ETCM-7443')
     @mark.active_flow

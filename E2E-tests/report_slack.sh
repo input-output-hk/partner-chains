@@ -61,7 +61,7 @@ fields="{
     \"text\": \"<$job_url|CI job>\"
 }"
 
-if [ -n "$xray_id" ]; then
+if [[ "$jira_url" == *"https://"* ]] && [ -n "$xray_id" ] && [ "$xray_id" != "null" ]; then
     fields+=",{
         \"type\": \"mrkdwn\",
         \"text\": \"<$xray_exec_url|Xray report>\"

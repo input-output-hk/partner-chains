@@ -9,10 +9,13 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * Update ogmios to v6.9.0
 * Organized Rust sources into two directories: toolkit and node.
 * Implemented transaction balancing with CSL in offchain code.
+* Update offchain code dependencies: pallas, ulpc and cardano-serialization-lib.
 
 ## Removed
 
 ## Fixed
+
+* CardanoNetwork bug in `partner-chains-cli`, that would cause the CLI to fail with the mainnet.
 
 ## Added
 
