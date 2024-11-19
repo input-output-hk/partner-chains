@@ -752,6 +752,14 @@
 <a href="#752" id="752">752</a>
 <a href="#753" id="753">753</a>
 <a href="#754" id="754">754</a>
+<a href="#755" id="755">755</a>
+<a href="#756" id="756">756</a>
+<a href="#757" id="757">757</a>
+<a href="#758" id="758">758</a>
+<a href="#759" id="759">759</a>
+<a href="#760" id="760">760</a>
+<a href="#761" id="761">761</a>
+<a href="#762" id="762">762</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(dead_code)]
 
 </span><span class="kw">use crate</span>::{plutus_script::PlutusScript, untyped_plutus::datum_to_uplc_plutus_data};
@@ -1042,7 +1050,13 @@
 		inputs: <span class="kw-2">&amp;</span>Vec&lt;OgmiosUtxo&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt; {
 		<span class="kw">let </span><span class="kw-2">mut </span>collateral_builder = TxInputsBuilder::new();
-		collateral_builder.add_key_inputs(<span class="kw-2">&amp;</span>inputs, <span class="kw-2">&amp;</span>ctx.payment_key_hash())<span class="question-mark">?</span>;
+		<span class="kw">for </span>utxo <span class="kw">in </span>inputs.iter() {
+			collateral_builder.add_regular_input(
+				<span class="kw-2">&amp;</span>key_hash_address(<span class="kw-2">&amp;</span>ctx.payment_key_hash(), ctx.network),
+				<span class="kw-2">&amp;</span>utxo.to_csl_tx_input(),
+				<span class="kw-2">&amp;</span>convert_value(<span class="kw-2">&amp;</span>utxo.value)<span class="question-mark">?</span>,
+			)<span class="question-mark">?</span>;
+		}
 		<span class="self">self</span>.set_collateral(<span class="kw-2">&amp;</span>collateral_builder);
 		<span class="prelude-val">Ok</span>(())
 	}
@@ -1096,7 +1110,9 @@
 				)<span class="question-mark">?</span>;
 			} <span class="kw">else </span>{
 				builder.add_collateral_inputs(ctx, <span class="kw-2">&amp;</span>collateral_inputs)<span class="question-mark">?</span>;
-				builder.add_inputs_from_and_change_with_collateral_return(
+				builder.set_script_data_hash(<span class="kw-2">&amp;</span>[<span class="number">0u8</span>; <span class="number">32</span>].into());
+				<span class="comment">// Fake script script data hash is required for proper fee computation
+				</span>builder.add_inputs_from_and_change_with_collateral_return(
 					<span class="kw-2">&amp;</span>ctx.payment_utxos.to_csl()<span class="question-mark">?</span>,
 					CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
 					<span class="kw-2">&amp;</span>ChangeConfig::new(<span class="kw-2">&amp;</span>key_hash_address(<span class="kw-2">&amp;</span>ctx.payment_key_hash(), ctx.network)),
