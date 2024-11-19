@@ -434,6 +434,8 @@ create_docker_compose() {
         cat ./modules/postgres.txt >> docker-compose.yml
         cat ./modules/partner-chains-external-node.txt >> docker-compose.yml
         cat ./modules/pc-contracts-cli.txt >> docker-compose.yml
+        echo -e "Setting ACCOUNT to alice in .env, change before starting if needed.\n"
+        echo "ACCOUNT=alice" >> .env
         ;;
       0)
         echo -e "Including all services.\n"
