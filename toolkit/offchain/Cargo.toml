@@ -15,15 +15,16 @@ anyhow = { workspace = true }
 cardano-serialization-lib = { workspace = true }
 cbor_event = { workspace = true }
 db-sync-follower = { workspace = true, features = ["candidate-source"] }
+partner-chains-plutus-data = { workspace = true }
 fraction = { workspace = true }
 hex = { workspace = true }
 hex-literal = { workspace = true }
 jsonrpsee = { workspace = true, features = ["client-core", "http-client", "macros"] }
+log = { workspace = true }
 minicbor = { workspace = true }
 ogmios-client = { workspace = true, features = ["jsonrpsee-client"] }
 pallas-addresses = { workspace = true }
 pallas-primitives = { workspace = true }
-partner-chains-plutus-data = { workspace = true }
 plutus = { workspace = true }
 raw-scripts = { workspace = true }
 serde = { workspace = true }
@@ -31,8 +32,8 @@ serde_json = { workspace = true, features = ["std"] }
 secp256k1 = { workspace = true, features = ["std"] }
 sidechain-domain = { workspace = true, features = ["std"] }
 uplc = { workspace = true }
+tokio = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }
-tokio = { workspace = true }
 pretty_assertions = { workspace = true }

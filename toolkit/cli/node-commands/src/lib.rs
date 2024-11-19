@@ -5,6 +5,7 @@ use clap::Parser;
 use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use frame_support::sp_runtime::traits::NumberFor;
 use parity_scale_codec::{Decode, Encode};
+use partner_chains_smart_contracts_commands::SmartContractsCmd;
 use sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 use sc_service::TaskManager;
 use sidechain_domain::{MainchainPublicKey, McEpochNumber, ScEpochNumber};
@@ -84,6 +85,10 @@ pub enum PartnerChainsSubcommand {
 
 	/// Generates registration signatures for partner chains committee candidates
 	RegistrationSignatures(RegistrationSignaturesCmd),
+
+	/// Commands for interacting with Partner Chain smart contracts on Cardano
+	#[command(subcommand)]
+	SmartContracts(SmartContractsCmd),
 }
 
 pub fn run<Cli, Block, CrossChainPublic, SessionKeys, Client>(
@@ -148,6 +153,7 @@ where
 			})
 		},
 		PartnerChainsSubcommand::RegistrationSignatures(cmd) => Ok(println!("{}", cmd.execute())),
+		PartnerChainsSubcommand::SmartContracts(cmd) => Ok(cmd.execute_blocking()?),
 	}
 }
 
