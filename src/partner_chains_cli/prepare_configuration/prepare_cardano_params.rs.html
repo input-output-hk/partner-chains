@@ -243,7 +243,7 @@
 <a href="#243" id="243">243</a>
 <a href="#244" id="244">244</a>
 <a href="#245" id="245">245</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::{CardanoNetwork, CardanoParameters, ServiceConfig};
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::{CardanoParameters, ServiceConfig};
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::ogmios::{EraSummary, OgmiosRequest, OgmiosResponse, ShelleyGenesisConfiguration};
 
@@ -296,7 +296,7 @@
 			.checked_add(first_epoch_era.start.time_seconds)
 			.and_then(|seconds| seconds.checked_mul(<span class="number">1000</span>))
 			.ok_or_else(|| <span class="macro">anyhow::anyhow!</span>(<span class="string">"First epoch timestamp overflow"</span>))<span class="question-mark">?</span>,
-		network: CardanoNetwork(shelley_config.network_magic),
+		network: shelley_config.network.into(),
 	})
 }
 
@@ -324,7 +324,7 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">pub mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use </span><span class="kw">crate</span>::config::{NetworkProtocol, CHAIN_CONFIG_FILE_PATH};
+	<span class="kw">use </span><span class="kw">crate</span>::config::{CardanoNetwork, NetworkProtocol, CHAIN_CONFIG_FILE_PATH};
 	<span class="kw">use </span><span class="kw">crate</span>::ogmios::{EpochBoundary, EpochParameters, EraSummary};
 	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 	<span class="kw">use </span><span class="kw">crate</span>::tests::{MockIO, MockIOContext};
@@ -336,7 +336,7 @@
 		first_slot_number: <span class="number">86400</span>,
 		epoch_duration_millis: <span class="number">432000000</span>,
 		first_epoch_timestamp_millis: <span class="number">1655769600000</span>,
-		network: CardanoNetwork(<span class="number">1</span>),
+		network: CardanoNetwork::Testnet,
 	};
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>PREVIEW_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
@@ -346,7 +346,7 @@
 		first_slot_number: <span class="number">0</span>,
 		epoch_duration_millis: <span class="number">86400000</span>,
 		first_epoch_timestamp_millis: <span class="number">1666656000000</span>,
-		network: CardanoNetwork(<span class="number">2</span>),
+		network: CardanoNetwork::Testnet,
 	};
 
 	<span class="attr">#[test]
@@ -435,7 +435,7 @@
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>preprod_shelley_config() -&gt; ShelleyGenesisConfiguration {
 		ShelleyGenesisConfiguration {
-			network_magic: <span class="number">1</span>,
+			network: CardanoNetwork::Testnet,
 			security_parameter: <span class="number">2160</span>,
 			active_slots_coefficient: <span class="number">0.05</span>,
 			epoch_length: <span class="number">432000</span>,
@@ -479,7 +479,7 @@
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>preview_shelley_config() -&gt; ShelleyGenesisConfiguration {
 		ShelleyGenesisConfiguration {
-			network_magic: <span class="number">2</span>,
+			network: CardanoNetwork::Testnet,
 			security_parameter: <span class="number">432</span>,
 			active_slots_coefficient: <span class="number">0.05</span>,
 			epoch_length: <span class="number">86400</span>,

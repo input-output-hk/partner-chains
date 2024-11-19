@@ -379,9 +379,6 @@
 <a href="#379" id="379">379</a>
 <a href="#380" id="380">380</a>
 <a href="#381" id="381">381</a>
-<a href="#382" id="382">382</a>
-<a href="#383" id="383">383</a>
-<a href="#384" id="384">384</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
 	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
@@ -523,10 +520,7 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 
 		<span class="kw">pub fn </span>save_cardano_params() -&gt; MockIO {
 			MockIO::Group(<span class="macro">vec!</span>[
-				save_to_existing_file(
-					CARDANO_NETWORK,
-					<span class="kw-2">&amp;</span>PREPROD_CARDANO_PARAMS.network.<span class="number">0</span>.to_string(),
-				),
+				save_to_existing_file(CARDANO_NETWORK, <span class="kw-2">&amp;</span>PREPROD_CARDANO_PARAMS.network.to_string()),
 				save_to_existing_file(
 					CARDANO_SECURITY_PARAMETER,
 					<span class="kw-2">&amp;</span>PREPROD_CARDANO_PARAMS.security_parameter.to_string(),
@@ -736,7 +730,7 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 	<span class="kw">fn </span>test_chain_config() -&gt; Value {
 		<span class="macro">serde_json::json!</span>({
 			<span class="string">"cardano"</span>: {
-				<span class="string">"network"</span>: <span class="number">1</span>,
+				<span class="string">"network"</span>: <span class="string">"testnet"</span>,
 				<span class="string">"security_parameter"</span>: PREPROD_CARDANO_PARAMS.security_parameter,
 				<span class="string">"active_slots_coeff"</span>: PREPROD_CARDANO_PARAMS.active_slots_coeff,
 				<span class="string">"first_epoch_number"</span>: PREPROD_CARDANO_PARAMS.first_epoch_number,

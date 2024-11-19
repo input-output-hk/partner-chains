@@ -138,7 +138,9 @@
 <a href="#138" id="138">138</a>
 <a href="#139" id="139">139</a>
 <a href="#140" id="140">140</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>anyhow::anyhow;
+<a href="#141" id="141">141</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::CardanoNetwork;
+<span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>jsonrpsee::http_client::HttpClient;
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, types::OgmiosUtxo,
@@ -179,7 +181,7 @@
 
 <span class="attr">#[derive(Clone, Debug, PartialEq)]
 </span><span class="kw">pub struct </span>ShelleyGenesisConfiguration {
-	<span class="kw">pub </span>network_magic: u32,
+	<span class="kw">pub </span>network: CardanoNetwork,
 	<span class="kw">pub </span>security_parameter: u32,
 	<span class="kw">pub </span>active_slots_coefficient: f64,
 	<span class="kw">pub </span>epoch_length: u32,
@@ -269,7 +271,7 @@
 		<span class="kw">let </span>active_slots_coefficient = TryFrom::try_from(shelley_genesis.active_slots_coefficient)
 			.map_err(|<span class="kw">_</span>| <span class="macro">anyhow!</span>(<span class="string">"Cannot convert active_slots_coefficient"</span>))<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-			network_magic: shelley_genesis.network_magic,
+			network: shelley_genesis.network.into(),
 			security_parameter: shelley_genesis.security_parameter,
 			active_slots_coefficient,
 			epoch_length: shelley_genesis.epoch_length,
