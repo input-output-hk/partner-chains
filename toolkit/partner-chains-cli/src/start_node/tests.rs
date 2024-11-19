@@ -47,7 +47,7 @@ fn default_chain_config() -> serde_json::Value {
 			"/ip4/127.0.0.1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp"
 		],
 		"cardano": {
-			"network": 1,
+			"network": "testnet",
 			"security_parameter": SECURITY_PARAMETER,
 			"active_slots_coeff": ACTIVE_SLOTS_COEFF,
 			"first_epoch_number": FIRST_EPOCH_NUMBER,

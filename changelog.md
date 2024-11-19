@@ -14,6 +14,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Fixed
 
+* CardanoNetwork bug in `partner-chains-cli`, that would cause the CLI to fail with the mainnet.
+
 ## Added
 
 # v1.3.0

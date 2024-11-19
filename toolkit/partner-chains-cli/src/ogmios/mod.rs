@@ -1,3 +1,4 @@
+use crate::config::CardanoNetwork;
 use anyhow::anyhow;
 use jsonrpsee::http_client::HttpClient;
 use ogmios_client::{
@@ -39,7 +40,7 @@ pub struct EpochParameters {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ShelleyGenesisConfiguration {
-	pub network_magic: u32,
+	pub network: CardanoNetwork,
 	pub security_parameter: u32,
 	pub active_slots_coefficient: f64,
 	pub epoch_length: u32,
@@ -129,7 +130,7 @@ impl TryFrom<ogmios_client::query_network::ShelleyGenesisConfigurationResponse>
 		let active_slots_coefficient = TryFrom::try_from(shelley_genesis.active_slots_coefficient)
 			.map_err(|_| anyhow!("Cannot convert active_slots_coefficient"))?;
 		Ok(Self {
-			network_magic: shelley_genesis.network_magic,
+			network: shelley_genesis.network.into(),
 			security_parameter: shelley_genesis.security_parameter,
 			active_slots_coefficient,
 			epoch_length: shelley_genesis.epoch_length,

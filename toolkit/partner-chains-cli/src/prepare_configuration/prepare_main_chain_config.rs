@@ -139,10 +139,7 @@ mod tests {
 
 		pub fn save_cardano_params() -> MockIO {
 			MockIO::Group(vec![
-				save_to_existing_file(
-					CARDANO_NETWORK,
-					&PREPROD_CARDANO_PARAMS.network.0.to_string(),
-				),
+				save_to_existing_file(CARDANO_NETWORK, &PREPROD_CARDANO_PARAMS.network.to_string()),
 				save_to_existing_file(
 					CARDANO_SECURITY_PARAMETER,
 					&PREPROD_CARDANO_PARAMS.security_parameter.to_string(),
@@ -352,7 +349,7 @@ mod tests {
 	fn test_chain_config() -> Value {
 		serde_json::json!({
 			"cardano": {
-				"network": 1,
+				"network": "testnet",
 				"security_parameter": PREPROD_CARDANO_PARAMS.security_parameter,
 				"active_slots_coeff": PREPROD_CARDANO_PARAMS.active_slots_coeff,
 				"first_epoch_number": PREPROD_CARDANO_PARAMS.first_epoch_number,

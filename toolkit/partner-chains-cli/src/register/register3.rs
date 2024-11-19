@@ -349,7 +349,7 @@ mod tests {
 				"epoch_duration_millis": 86400000,
 				"first_epoch_number": 1,
 				"first_slot_number": 4320,
-				"network": 0
+				"network": "mainnet"
 			},
 			"cardano_addresses": {
 				"committee_candidates_address": "addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc",
