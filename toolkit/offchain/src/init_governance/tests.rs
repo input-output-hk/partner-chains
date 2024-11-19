@@ -1,12 +1,16 @@
-use super::transaction::*;
-use crate::csl::TransactionContext;
+use super::{run_init_governance, transaction::*};
+use crate::csl::OgmiosUtxoExt;
 use crate::test_values::protocol_parameters;
+use crate::{csl::TransactionContext, ogmios_mock::MockOgmiosClient};
 use cardano_serialization_lib::{Address, ExUnits, NetworkIdKind, PrivateKey};
 use hex_literal::*;
+use ogmios_client::transactions::{
+	OgmiosBudget, OgmiosEvaluateTransactionResponse, SubmitTransactionResponse,
+};
 use ogmios_client::types::*;
 use pretty_assertions::assert_eq;
 use serde_json::json;
-use sidechain_domain::MainchainAddressHash;
+use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey};
 
 fn expected_transaction() -> serde_json::Value {
 	json!({
@@ -146,6 +150,32 @@ fn transaction_creation() {
 	assert_eq!(transaction, expected_transaction())
 }
 
+#[tokio::test]
+async fn transaction_run() {
+	let transaction_id = [2; 32];
+	let transaction = OgmiosTx { id: transaction_id.clone() };
+	let budget = OgmiosBudget { memory: 100, cpu: 200 };
+	let mock_client = MockOgmiosClient::new()
+		.with_protocol_parameters(protocol_parameters())
+		.with_utxos(&test_address_bech32(), vec![genesis_utxo(), payment_utxo()])
+		.with_evaluate_result(vec![OgmiosEvaluateTransactionResponse {
+			budget,
+			..Default::default()
+		}])
+		.with_submit_result(SubmitTransactionResponse { transaction });
+
+	let result = run_init_governance(
+		governance_authority(),
+		payment_key_domain(),
+		Some(genesis_utxo().to_domain()),
+		mock_client,
+	)
+	.await
+	.expect("Should succeed");
+
+	assert_eq!(result.id, transaction_id);
+}
+
 fn genesis_utxo() -> OgmiosUtxo {
 	OgmiosUtxo {
 		transaction: OgmiosTx {
@@ -159,11 +189,12 @@ fn genesis_utxo() -> OgmiosUtxo {
 	}
 }
 
+fn payment_key_domain() -> MainchainPrivateKey {
+	MainchainPrivateKey(hex!("94f7531c9639654b77fa7e10650702b6937e05cd868f419f54bcb8368e413f04"))
+}
+
 fn payment_key() -> PrivateKey {
-	PrivateKey::from_normal_bytes(&hex!(
-		"94f7531c9639654b77fa7e10650702b6937e05cd868f419f54bcb8368e413f04"
-	))
-	.unwrap()
+	PrivateKey::from_normal_bytes(&payment_key_domain().0).unwrap()
 }
 
 fn tx_context() -> TransactionContext {
@@ -196,7 +227,10 @@ fn payment_utxo() -> OgmiosUtxo {
 }
 
 fn test_address() -> Address {
-	Address::from_bech32("addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw").unwrap()
+	Address::from_bech32(&test_address_bech32()).unwrap()
+}
+fn test_address_bech32() -> String {
+	"addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw".into()
 }
 
 pub const MULTI_SIG_POLICY: &[u8] = &hex!("5901ae5901ab010000323322323232323322323232222323232532323355333573466e20cc8c8c88c008004c058894cd4004400c884cc018008c010004c04488004c04088008c01000400840304034403c4c02d2410350543500300d37586ae84008dd69aba1357440026eb0014c040894cd400440448c884c8cd40514cd4c00cc04cc030dd6198009a9803998009a980380411000a40004400290080a400429000180300119112999ab9a33710002900009807a490350543600133003001002301522253350011300f49103505437002215333573466e1d20000041002133005337020089001000980991299a8008806910a999ab9a3371e00a6eb800840404c0100048c8cc8848cc00400c008d55ce80098031aab9e00137540026016446666aae7c00480348cd4030d5d080118019aba2002498c02888cccd55cf8009006119a8059aba100230033574400493119319ab9c00100512200212200130062233335573e0024010466a00e6eb8d5d080118019aba20020031200123300122337000040029000180191299a800880211099a8028011802000891001091091198008020019191800800911980198010010009");

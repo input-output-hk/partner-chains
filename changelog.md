@@ -24,6 +24,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Added
 
+* Added `smart-contracts` command to the node with first command `init-governance`.
+
 # v1.3.0
 
 ## Changed

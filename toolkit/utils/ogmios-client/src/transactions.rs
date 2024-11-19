@@ -50,26 +50,26 @@ impl<T: OgmiosClient> Transactions for T {
 	}
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct OgmiosEvaluateTransactionResponse {
 	pub validator: OgmiosValidatorIndex,
 	pub budget: OgmiosBudget,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Default)]
 pub struct OgmiosValidatorIndex {
 	pub index: u32,
 	pub purpose: String,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Default)]
 pub struct OgmiosBudget {
 	pub memory: u64,
 	pub cpu: u64,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Default)]
 pub struct SubmitTransactionResponse {
 	pub transaction: OgmiosTx,
 }

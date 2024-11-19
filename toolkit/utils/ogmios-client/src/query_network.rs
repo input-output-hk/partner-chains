@@ -38,3 +38,17 @@ pub struct ShelleyGenesisConfigurationResponse {
 	#[serde(deserialize_with = "time::serde::iso8601::deserialize")]
 	pub start_time: time::OffsetDateTime,
 }
+
+impl Default for ShelleyGenesisConfigurationResponse {
+	fn default() -> Self {
+		Self {
+			network_magic: Default::default(),
+			network: Default::default(),
+			security_parameter: Default::default(),
+			active_slots_coefficient: Default::default(),
+			epoch_length: Default::default(),
+			slot_length: Default::default(),
+			start_time: time::OffsetDateTime::from_unix_timestamp(0).unwrap(),
+		}
+	}
+}

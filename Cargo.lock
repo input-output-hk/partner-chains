@@ -6488,6 +6488,7 @@ dependencies = [
  "hex",
  "hex-literal",
  "jsonrpsee",
+ "log",
  "minicbor 0.20.0",
  "ogmios-client",
  "pallas-addresses 0.31.0",
@@ -6622,6 +6623,7 @@ dependencies = [
  "cli-commands",
  "frame-support",
  "parity-scale-codec",
+ "partner-chains-smart-contracts-commands",
  "plutus",
  "sc-cli",
  "sc-service",
@@ -6646,6 +6648,20 @@ dependencies = [
  "serde_json",
  "sidechain-domain",
  "thiserror",
+]
+
+[[package]]
+name = "partner-chains-smart-contracts-commands"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "hex",
+ "jsonrpsee",
+ "partner-chains-cardano-offchain",
+ "serde",
+ "serde_json",
+ "sidechain-domain",
+ "tokio",
 ]
 
 [[package]]

@@ -205,6 +205,18 @@ const MAINCHAIN_PUBLIC_KEY_LEN: usize = 32;
 #[byte_string(debug, hex_serialize, hex_deserialize)]
 pub struct MainchainPublicKey(pub [u8; MAINCHAIN_PUBLIC_KEY_LEN]);
 
+const MAINCHAIN_PRIVATE_KEY_LEN: usize = 32;
+
+#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
+#[byte_string(hex_serialize, hex_deserialize)]
+pub struct MainchainPrivateKey(pub [u8; MAINCHAIN_PRIVATE_KEY_LEN]);
+
+impl core::fmt::Debug for MainchainPrivateKey {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+		write!(f, "***")
+	}
+}
+
 #[cfg(feature = "serde")]
 impl FromStr for MainchainPublicKey {
 	type Err = &'static str;
@@ -476,11 +488,12 @@ impl UtxoInfo {
 	}
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
 pub enum NetworkType {
 	Mainnet,
+	#[default]
 	Testnet,
 }
 

@@ -67,7 +67,7 @@ pub struct EpochParameters {
 	pub safe_zone: u32,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ProtocolParametersResponse {
 	pub min_fee_coefficient: u32,
@@ -83,7 +83,7 @@ pub struct ProtocolParametersResponse {
 	pub collateral_percentage: u32,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Default)]
 pub struct ScriptExecutionPrices {
 	#[serde(deserialize_with = "crate::types::parse_fraction_ratio_u64")]
 	pub memory: fraction::Ratio<u64>,
@@ -91,7 +91,7 @@ pub struct ScriptExecutionPrices {
 	pub cpu: fraction::Ratio<u64>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Default)]
 pub struct PlutusCostModels {
 	#[serde(rename = "plutus:v1")]
 	pub plutus_v1: Vec<i128>,

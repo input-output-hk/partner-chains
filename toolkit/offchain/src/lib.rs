@@ -8,6 +8,8 @@ pub mod csl;
 pub mod d_param;
 /// Supports governance initialization
 pub mod init_governance;
+#[cfg(test)]
+pub mod ogmios_mock;
 /// Supports Permissioned Candidates upsert
 pub mod permissioned_candidates;
 /// Utilities for handling Plutus script data

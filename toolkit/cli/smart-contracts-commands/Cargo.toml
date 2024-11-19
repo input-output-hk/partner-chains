@@ -1,0 +1,14 @@
+[package]
+name = "partner-chains-smart-contracts-commands"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { workspace = true }
+sidechain-domain = { workspace = true }
+partner-chains-cardano-offchain = { workspace = true }
+hex = { workspace = true }
+jsonrpsee = { workspace = true, features = ["client-core", "http-client", "macros"] }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
