@@ -8,7 +8,6 @@
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - PGDATA=/pgdata
-      - POSTGRES_HOST_AUTH_METHOD=trust
       - POSTGRES_MULTIPLE_DATABASES=cexplorer,qa_demo
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
