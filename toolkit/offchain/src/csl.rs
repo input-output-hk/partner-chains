@@ -7,6 +7,7 @@ use ogmios_client::{
 	transactions::OgmiosBudget,
 	types::{OgmiosUtxo, OgmiosValue},
 };
+use sidechain_domain::NetworkType;
 
 pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: LanguageKind) -> [u8; 28] {
 	// Before hashing the script, we need to prepend with byte denoting the language.
@@ -43,10 +44,15 @@ pub fn key_hash_address(pub_key_hash: &Ed25519KeyHash, network: NetworkIdKind) -
 		.to_address()
 }
 
-pub fn ogmios_network_to_csl(network: ogmios_client::query_network::Network) -> NetworkIdKind {
-	match network {
-		ogmios_client::query_network::Network::Mainnet => NetworkIdKind::Mainnet,
-		ogmios_client::query_network::Network::Testnet => NetworkIdKind::Testnet,
+pub trait NetworkTypeExt {
+	fn to_csl(&self) -> NetworkIdKind;
+}
+impl NetworkTypeExt for NetworkType {
+	fn to_csl(&self) -> NetworkIdKind {
+		match self {
+			Self::Mainnet => NetworkIdKind::Mainnet,
+			Self::Testnet => NetworkIdKind::Testnet,
+		}
 	}
 }
 

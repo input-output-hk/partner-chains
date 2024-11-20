@@ -476,6 +476,25 @@ impl UtxoInfo {
 	}
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
+pub enum NetworkType {
+	Mainnet,
+	Testnet,
+}
+
+#[cfg(feature = "std")]
+impl std::fmt::Display for NetworkType {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		let str = match self {
+			Self::Mainnet => "mainnet",
+			Self::Testnet => "testnet",
+		};
+		write!(f, "{}", str)
+	}
+}
+
 #[derive(Default, Clone, PartialEq, Eq, Encode, Decode)]
 #[byte_string(debug, hex_serialize, hex_deserialize)]
 pub struct CommitteeHash(pub Vec<u8>);

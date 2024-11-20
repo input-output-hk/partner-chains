@@ -65,7 +65,7 @@ impl CmdRun for Register3Cmd {
 
 		let command = format!(
 			"{PC_CONTRACTS_CLI_PATH} register --network {} {} --registration-utxo {} --sidechain-public-keys {}:{}:{} --sidechain-signature {} --spo-public-key {} --spo-signature {} --ada-based-staking {}",
-			cardano_network.to_network_param(),
+			cardano_network,
 			sidechain_param_arg,
 			self.registration_utxo,
 			self.sidechain_pub_key,

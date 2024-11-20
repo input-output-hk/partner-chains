@@ -1,9 +1,9 @@
-use crate::config::CardanoNetwork;
 use anyhow::anyhow;
 use jsonrpsee::http_client::HttpClient;
 use ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, types::OgmiosUtxo,
 };
+use sidechain_domain::NetworkType;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum OgmiosRequest {
@@ -40,7 +40,7 @@ pub struct EpochParameters {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ShelleyGenesisConfiguration {
-	pub network: CardanoNetwork,
+	pub network: NetworkType,
 	pub security_parameter: u32,
 	pub active_slots_coefficient: f64,
 	pub epoch_length: u32,

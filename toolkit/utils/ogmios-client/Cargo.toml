@@ -14,6 +14,7 @@ serde = { workspace = true }
 serde_json = { workspace = true, features = ["raw_value", "arbitrary_precision"] }
 thiserror = { workspace = true }
 time = { workspace = true, features = ["std", "serde", "parsing"] }
+sidechain-domain = { workspace = true, features = ["std"] }
 
 [dev-dependencies]
 anyhow = { workspace = true }
