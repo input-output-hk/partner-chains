@@ -323,17 +323,6 @@ pub struct TokenTransferHandler;
 
 impl pallet_native_token_management::TokenTransferHandler for TokenTransferHandler {
 	fn handle_token_transfer(token_amount: NativeTokenAmount) -> DispatchResult {
-		// Mint the "transfered" tokens into a dummy address.
-		// This is done for visibility in tests only.
-		// Despite using the `Balances` pallet to do the transfer here, the account balance
-		// is stored (and can be observed) in the `System` pallet's storage.
-		let _ = Balances::deposit(
-			&AccountId::from(hex!(
-				"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-			)),
-			token_amount.0,
-			Precision::Exact,
-		)?;
 		log::info!("💸 Registered transfer of {} native tokens", token_amount.0);
 		Ok(())
 	}
