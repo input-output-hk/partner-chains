@@ -1034,17 +1034,6 @@
 <a href="#1034" id="1034">1034</a>
 <a href="#1035" id="1035">1035</a>
 <a href="#1036" id="1036">1036</a>
-<a href="#1037" id="1037">1037</a>
-<a href="#1038" id="1038">1038</a>
-<a href="#1039" id="1039">1039</a>
-<a href="#1040" id="1040">1040</a>
-<a href="#1041" id="1041">1041</a>
-<a href="#1042" id="1042">1042</a>
-<a href="#1043" id="1043">1043</a>
-<a href="#1044" id="1044">1044</a>
-<a href="#1045" id="1045">1045</a>
-<a href="#1046" id="1046">1046</a>
-<a href="#1047" id="1047">1047</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attr">#![recursion_limit = <span class="string">"256"</span>]
@@ -1370,17 +1359,6 @@
 
 <span class="kw">impl </span>pallet_native_token_management::TokenTransferHandler <span class="kw">for </span>TokenTransferHandler {
 	<span class="kw">fn </span>handle_token_transfer(token_amount: NativeTokenAmount) -&gt; DispatchResult {
-		<span class="comment">// Mint the "transfered" tokens into a dummy address.
-		// This is done for visibility in tests only.
-		// Despite using the `Balances` pallet to do the transfer here, the account balance
-		// is stored (and can be observed) in the `System` pallet's storage.
-		</span><span class="kw">let _ </span>= Balances::deposit(
-			<span class="kw-2">&amp;</span>AccountId::from(<span class="macro">hex!</span>(
-				<span class="string">"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-			</span>)),
-			token_amount.<span class="number">0</span>,
-			Precision::Exact,
-		)<span class="question-mark">?</span>;
 		<span class="macro">log::info!</span>(<span class="string">"💸 Registered transfer of {} native tokens"</span>, token_amount.<span class="number">0</span>);
 		<span class="prelude-val">Ok</span>(())
 	}
