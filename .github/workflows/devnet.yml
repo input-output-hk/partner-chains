@@ -59,7 +59,7 @@ jobs:
     - name: checkout code
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'v1.3.0' }}
+        ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'v1.3.0-test' }}
 
     - name: Set deployment_version as env variable
       run: echo "DEPLOYMENT_VERSION=$(jq -r .deployment_version ./E2E-tests/config/substrate/devnet_nodes.json)" >> $GITHUB_ENV
