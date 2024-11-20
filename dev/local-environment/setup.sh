@@ -436,6 +436,14 @@ create_docker_compose() {
         cat ./modules/pc-contracts-cli.txt >> docker-compose.yml
         echo -e "Setting ACCOUNT to alice in .env, change before starting if needed.\n"
         echo "ACCOUNT=alice" >> .env
+        echo "ALICE_IP=127.0.0.1" >> .env
+      5)
+        echo -e "Including only external partner chain node.\n"
+        cat ./modules/partner-chains-external-node.txt >> docker-compose.yml
+        echo -e "Setting ACCOUNT to bob in .env, change before starting and populate ALICE_IP with IPv4 address.\n"
+        echo "ACCOUNT=bob" >> .env
+        echo "ALICE_IP=" >> .env
+        ;;
         ;;
       0)
         echo -e "Including all services.\n"
@@ -474,11 +482,11 @@ parse_arguments() {
                 shift
                 ;;
             -d|--deployment-option)
-                if [[ -n "$2" && "$2" =~ ^[1-4]$ ]]; then
+                if [[ -n "$2" && "$2" =~ ^[1-5]$ ]]; then
                     deployment_option="$2"
                     shift 2
                 else
-                    echo "Error: Invalid deployment option '$2'. Valid options are 1, 2, 3, or 4."
+                    echo "Error: Invalid deployment option '$2'. Valid options are 1, 2, 3, 4 or 5."
                     exit 1
                 fi
                 ;;
@@ -513,7 +521,7 @@ parse_arguments() {
                 echo "Usage: $0 [OPTION]..."
                 echo "Initialize and configure the Docker environment."
                 echo "  -n, --non-interactive     Run with no interactive prompts and accept sensible default configuration settings."
-                echo "  -d, --deployment-option   Specify one of the custom deployment options (1, 2, 3, or 4)."
+                echo "  -d, --deployment-option   Specify one of the custom deployment options (1, 2, 3, 4 or 5)."
                 echo "  -p, --postgres-password   Set a specific password for PostgreSQL (overrides automatic generation)."
                 echo "  -o, --overrides           Enable custom artifact overrides from artifacts in ./configurations/pc-contracts-cli/ (PC and PCSC)."
                 echo "  -i, --node-image          Specify a custom Partner Chains Node image."
