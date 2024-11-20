@@ -306,7 +306,7 @@ impl ScEpochNumber {
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo)]
+#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, PartialOrd, Ord)]
 #[byte_string(debug, hex_serialize, hex_deserialize, as_ref)]
 pub struct SidechainPublicKey(pub Vec<u8>);
 
@@ -598,7 +598,7 @@ impl SidechainPublicKeysSorted {
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
+#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord)]
 #[byte_string(debug, hex_serialize, hex_deserialize)]
 pub struct AuraPublicKey(pub Vec<u8>);
 impl AuraPublicKey {
@@ -607,7 +607,7 @@ impl AuraPublicKey {
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
+#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord)]
 #[byte_string(debug, hex_serialize, hex_deserialize)]
 pub struct GrandpaPublicKey(pub Vec<u8>);
 impl GrandpaPublicKey {
@@ -623,7 +623,7 @@ pub struct DParameter {
 	pub num_registered_candidates: u16,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo)]
+#[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord)]
 pub struct PermissionedCandidateData {
 	pub sidechain_public_key: SidechainPublicKey,
 	pub aura_public_key: AuraPublicKey,

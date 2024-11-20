@@ -84,19 +84,13 @@ pub fn get_scripts_data(
 		PlutusV2,
 	)?
 	.apply_uplc_data(version_oracle_policy_data.clone())?;
-	let permissioned_candidates_validator =
-		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_VALIDATOR, PlutusV2)?
-			.apply_data(genesis_utxo)?
-			.apply_data(version_oracle_policy.clone())?;
+	let (permissioned_candidates_validator, permissioned_candidates_policy) =
+		permissioned_candidates_scripts(genesis_utxo, network)?;
+
 	let reserve_validator =
 		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, PlutusV2)?
 			.apply_uplc_data(version_oracle_policy_data.clone())?;
 
-	let permissioned_candidates_policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_POLICY, PlutusV2)?
-			.apply_data(genesis_utxo)?
-			.apply_data(version_oracle_policy.clone())?
-			.apply_uplc_data(permissioned_candidates_validator.address_data(network)?)?;
 	let governance_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, PlutusV2)?.apply_uplc_data(
 			multisig_governance_policy_configuration(MainchainAddressHash::from_vkey([0u8; 32])),
@@ -167,6 +161,23 @@ pub(crate) fn d_parameter_scripts(
 			.apply_data(version_oracle_policy.clone())?
 			.apply_uplc_data(d_parameter_validator.address_data(network)?)?;
 	Ok((d_parameter_validator, d_parameter_policy))
+}
+
+pub(crate) fn permissioned_candidates_scripts(
+	genesis_utxo: UtxoId,
+	network: NetworkIdKind,
+) -> Result<(PlutusScript, PlutusScript), anyhow::Error> {
+	let (_, version_oracle_policy, _) = version_oracle(genesis_utxo, network)?;
+	let validator =
+		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_VALIDATOR, PlutusV2)?
+			.apply_data(genesis_utxo)?
+			.apply_data(version_oracle_policy.clone())?;
+	let policy =
+		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_POLICY, PlutusV2)?
+			.apply_data(genesis_utxo)?
+			.apply_data(version_oracle_policy.clone())?
+			.apply_uplc_data(validator.address_data(network)?)?;
+	Ok((validator, policy))
 }
 
 // Returns the simplest MultiSig policy configuration plutus data:

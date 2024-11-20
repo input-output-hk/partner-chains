@@ -108,12 +108,12 @@ where
 	Ok(McTxHash(res.transaction.id))
 }
 
-fn get_mint_ex_units(response: Vec<OgmiosEvaluateTransactionResponse>) -> anyhow::Result<ExUnits> {
+fn get_mint_ex_units(validators_budgets: Vec<OgmiosEvaluateTransactionResponse>) -> anyhow::Result<ExUnits> {
 	// For mint transaction we know there is a single item to evaluate, so matching is trivial.
-	let validator_and_budget = response
+	let validator_budget = validators_budgets
 		.first()
 		.ok_or_else(|| anyhow!("Internal error: cannot use evaluateTransaction response"))?;
-	Ok(convert_ex_units(&validator_and_budget.budget))
+	Ok(convert_ex_units(&validator_budget.budget))
 }
 
 async fn update_d_param<C>(
@@ -152,12 +152,12 @@ where
 	Ok(McTxHash(res.transaction.id))
 }
 
-fn get_spend_ex_units(costs: Vec<OgmiosEvaluateTransactionResponse>) -> anyhow::Result<ExUnits> {
+fn get_spend_ex_units(validators_budgets: Vec<OgmiosEvaluateTransactionResponse>) -> anyhow::Result<ExUnits> {
 	// For spend transaction we know there is a single item to evaluate, so matching is trivial.
-	let cost = costs
+	let validator_budget = validators_budgets
 		.first()
 		.ok_or_else(|| anyhow!("Internal error: cannot use evaluateTransaction response"))?;
-	Ok(convert_ex_units(&cost.budget))
+	Ok(convert_ex_units(&validator_budget.budget))
 }
 
 fn mint_d_param_token_tx(
