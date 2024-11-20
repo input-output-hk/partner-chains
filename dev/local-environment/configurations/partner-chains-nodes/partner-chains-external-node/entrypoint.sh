@@ -123,6 +123,4 @@ case "$ACCOUNT" in
     ;;
 esac
 
-touch /shared/partner-chains-node-1.ready
-
 wait
