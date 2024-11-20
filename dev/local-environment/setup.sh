@@ -437,13 +437,13 @@ create_docker_compose() {
         echo -e "Setting ACCOUNT to alice in .env, change before starting if needed.\n"
         echo "ACCOUNT=alice" >> .env
         echo "ALICE_IP=127.0.0.1" >> .env
+        ;;
       5)
         echo -e "Including only external partner chain node.\n"
         cat ./modules/partner-chains-external-node.txt >> docker-compose.yml
         echo -e "Setting ACCOUNT to bob in .env, change before starting and populate ALICE_IP with IPv4 address.\n"
         echo "ACCOUNT=bob" >> .env
         echo "ALICE_IP=" >> .env
-        ;;
         ;;
       0)
         echo -e "Including all services.\n"
