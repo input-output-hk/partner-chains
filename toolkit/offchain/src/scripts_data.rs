@@ -78,10 +78,7 @@ pub fn get_scripts_data(
 	let committee_candidate_validator =
 		PlutusScript::from_wrapped_cbor(raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR, PlutusV2)?
 			.apply_data(genesis_utxo)?;
-	let d_parameter_validator =
-		PlutusScript::from_wrapped_cbor(raw_scripts::D_PARAMETER_VALIDATOR, PlutusV2)?
-			.apply_data(genesis_utxo)?
-			.apply_data(version_oracle_policy.clone())?;
+	let (d_parameter_validator, d_parameter_policy) = d_parameter_scripts(genesis_utxo, network)?;
 	let illiquid_circulation_supply_validator = PlutusScript::from_wrapped_cbor(
 		raw_scripts::ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
 		PlutusV2,
@@ -95,11 +92,6 @@ pub fn get_scripts_data(
 		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, PlutusV2)?
 			.apply_uplc_data(version_oracle_policy_data.clone())?;
 
-	let d_parameter_policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::D_PARAMETER_POLICY, PlutusV2)?
-			.apply_data(genesis_utxo)?
-			.apply_data(version_oracle_policy.clone())?
-			.apply_uplc_data(d_parameter_validator.address_data(network)?)?;
 	let permissioned_candidates_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_POLICY, PlutusV2)?
 			.apply_data(genesis_utxo)?
@@ -144,7 +136,7 @@ pub fn get_scripts_data(
 }
 
 // Returns version oracle script, policy and PlutusData required by other scripts.
-fn version_oracle(
+pub(crate) fn version_oracle(
 	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
 ) -> Result<(PlutusScript, PolicyId, PlutusData), anyhow::Error> {
@@ -158,6 +150,23 @@ fn version_oracle(
 	let policy = policy_script.policy_id();
 	let policy_data = PlutusData::BoundedBytes(policy.0.to_vec().into());
 	Ok((validator, policy, policy_data))
+}
+
+pub(crate) fn d_parameter_scripts(
+	genesis_utxo: UtxoId,
+	network: NetworkIdKind,
+) -> Result<(PlutusScript, PlutusScript), anyhow::Error> {
+	let (_, version_oracle_policy, _) = version_oracle(genesis_utxo, network)?;
+	let d_parameter_validator =
+		PlutusScript::from_wrapped_cbor(raw_scripts::D_PARAMETER_VALIDATOR, PlutusV2)?
+			.apply_data(genesis_utxo)?
+			.apply_data(version_oracle_policy.clone())?;
+	let d_parameter_policy =
+		PlutusScript::from_wrapped_cbor(raw_scripts::D_PARAMETER_POLICY, PlutusV2)?
+			.apply_data(genesis_utxo)?
+			.apply_data(version_oracle_policy.clone())?
+			.apply_uplc_data(d_parameter_validator.address_data(network)?)?;
+	Ok((d_parameter_validator, d_parameter_policy))
 }
 
 // Returns the simplest MultiSig policy configuration plutus data:

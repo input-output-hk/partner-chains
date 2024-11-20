@@ -76,7 +76,7 @@ pub async fn run_init_governance(
 		genesis_utxo,
 		cost,
 	)?;
-	let signed_transaction = tx_context.sign(unsigned_transaction);
+	let signed_transaction = tx_context.sign(&unsigned_transaction);
 
 	let result = client.submit_transaction(&signed_transaction.to_bytes()).await?;
 

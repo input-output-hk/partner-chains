@@ -3,7 +3,8 @@
 use crate::{plutus_script::PlutusScript, untyped_plutus::datum_to_uplc_plutus_data};
 use cardano_serialization_lib::*;
 use ogmios_client::{
-	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse},
+	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, QueryLedgerState},
+	query_network::QueryNetwork,
 	transactions::OgmiosBudget,
 	types::{OgmiosUtxo, OgmiosValue},
 };
@@ -200,6 +201,20 @@ pub(crate) struct TransactionContext {
 }
 
 impl TransactionContext {
+	/// Gets `TransactionContext`, having UTXOs for the given payment key and the network configuration,
+	/// required to perform most of the partner-chains smart contract operations.
+	pub(crate) async fn for_payment_key<C: QueryLedgerState + QueryNetwork>(
+		payment_signing_key: [u8; 32],
+		client: &C,
+	) -> Result<TransactionContext, anyhow::Error> {
+		let payment_key = PrivateKey::from_normal_bytes(&payment_signing_key)?;
+		let network = client.shelley_genesis_configuration().await?.network.to_csl();
+		let protocol_parameters = client.query_protocol_parameters().await?;
+		let payment_address = key_hash_address(&payment_key.to_public().hash(), network);
+		let payment_utxos = client.query_utxos(&[payment_address.to_bech32(None)?]).await?;
+		Ok(TransactionContext { payment_key, payment_utxos, network, protocol_parameters })
+	}
+
 	pub(crate) fn payment_key_hash(&self) -> Ed25519KeyHash {
 		self.payment_key.to_public().hash()
 	}
@@ -208,7 +223,7 @@ impl TransactionContext {
 		key_hash_address(&self.payment_key.to_public().hash(), self.network)
 	}
 
-	pub(crate) fn sign(&self, tx: Transaction) -> Transaction {
+	pub(crate) fn sign(&self, tx: &Transaction) -> Transaction {
 		let tx_hash: [u8; 32] = sidechain_domain::crypto::blake2b(tx.body().to_bytes().as_ref());
 		let signature = self.payment_key.sign(&tx_hash);
 		let mut witness_set = tx.witness_set();
@@ -451,13 +466,12 @@ impl InputsBuilderExt for TxInputsBuilder {
 mod tests {
 	use super::payment_address;
 	use crate::plutus_script::PlutusScript;
-	use cardano_serialization_lib::LanguageKind::PlutusV2;
-	use cardano_serialization_lib::{AssetName, Language, NetworkIdKind};
+	use crate::test_values::protocol_parameters;
+	use cardano_serialization_lib::{AssetName, Language, LanguageKind::PlutusV2, NetworkIdKind};
 	use hex_literal::hex;
 	use ogmios_client::{
-		query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, ScriptExecutionPrices},
 		transactions::OgmiosBudget,
-		types::{Asset, OgmiosBytesSize, OgmiosValue},
+		types::{Asset, OgmiosValue},
 	};
 
 	#[test]
@@ -487,7 +501,7 @@ mod tests {
 
 	#[test]
 	fn linear_fee_test() {
-		let fee = super::linear_fee(&test_protocol_parameters());
+		let fee = super::linear_fee(&protocol_parameters());
 		assert_eq!(fee.constant(), 155381u32.into());
 		assert_eq!(fee.coefficient(), 44u32.into());
 	}
@@ -546,8 +560,7 @@ mod tests {
 
 	#[test]
 	fn convert_cost_models_test() {
-		let cost_models =
-			super::convert_cost_models(&test_protocol_parameters().plutus_cost_models);
+		let cost_models = super::convert_cost_models(&protocol_parameters().plutus_cost_models);
 		assert_eq!(cost_models.keys().len(), 3);
 		assert_eq!(
 			cost_models
@@ -586,29 +599,6 @@ mod tests {
 		let ex_units = super::convert_ex_units(&OgmiosBudget { memory: 1000, cpu: 2000 });
 		assert_eq!(ex_units.mem(), 1000u64.into());
 		assert_eq!(ex_units.steps(), 2000u64.into());
-	}
-
-	fn test_protocol_parameters() -> ProtocolParametersResponse {
-		ProtocolParametersResponse {
-			min_fee_coefficient: 44,
-			min_fee_constant: OgmiosValue::new_lovelace(155381),
-			stake_pool_deposit: OgmiosValue::new_lovelace(500000000),
-			stake_credential_deposit: OgmiosValue::new_lovelace(2000000),
-			max_value_size: OgmiosBytesSize { bytes: 5000 },
-			max_transaction_size: OgmiosBytesSize { bytes: 16384 },
-			min_utxo_deposit_coefficient: 4310,
-			script_execution_prices: ScriptExecutionPrices {
-				memory: fraction::Ratio::new_raw(577, 10000),
-				cpu: fraction::Ratio::new_raw(721, 10000000),
-			},
-			plutus_cost_models: PlutusCostModels {
-				plutus_v1: vec![898148, 53384111, 14333],
-				plutus_v2: vec![43053543, 10],
-				plutus_v3: vec![-900, 166917843],
-			},
-			max_collateral_inputs: 3,
-			collateral_percentage: 150,
-		}
 	}
 }
 

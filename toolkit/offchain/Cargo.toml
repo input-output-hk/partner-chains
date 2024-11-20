@@ -19,7 +19,11 @@ partner-chains-plutus-data = { workspace = true }
 fraction = { workspace = true }
 hex = { workspace = true }
 hex-literal = { workspace = true }
-jsonrpsee = { workspace = true, features = ["client-core", "http-client", "macros"] }
+jsonrpsee = { workspace = true, features = [
+	"client-core",
+	"http-client",
+	"macros",
+] }
 log = { workspace = true }
 minicbor = { workspace = true }
 ogmios-client = { workspace = true, features = ["jsonrpsee-client"] }
@@ -35,5 +39,10 @@ uplc = { workspace = true }
 tokio = { workspace = true }
 
 [dev-dependencies]
+fraction = { workspace = true, features = [
+	"with-decimal",
+	"with-serde-support",
+] }
 proptest = { workspace = true }
+time = { workspace = true, features = ["std", "serde", "parsing"] }
 pretty_assertions = { workspace = true }

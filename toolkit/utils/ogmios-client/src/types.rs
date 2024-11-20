@@ -176,6 +176,12 @@ pub struct OgmiosTx {
 	pub id: [u8; 32],
 }
 
+impl From<[u8; 32]> for OgmiosTx {
+	fn from(id: [u8; 32]) -> Self {
+		Self { id }
+	}
+}
+
 impl Debug for OgmiosTx {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		f.debug_struct("OgmiosTx").field("id", &hex::encode(&self.id)).finish()

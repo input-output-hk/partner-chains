@@ -1,13 +1,158 @@
 #![allow(dead_code)]
 
-use crate::csl::{get_builder_config, InputsBuilderExt, TransactionBuilderExt, TransactionContext};
-use crate::plutus_script::PlutusScript;
-use cardano_serialization_lib::{
-	ExUnits, JsError, Transaction, TransactionBuilder, TxInputsBuilder,
+use crate::csl::{
+	convert_ex_units, get_builder_config, InputsBuilderExt, TransactionBuilderExt,
+	TransactionContext,
 };
-use ogmios_client::types::OgmiosUtxo;
-use partner_chains_plutus_data::d_param::d_parameter_to_plutus_data;
-use sidechain_domain::DParameter;
+use crate::plutus_script::PlutusScript;
+use anyhow::anyhow;
+use cardano_serialization_lib::{
+	ExUnits, JsError, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
+};
+use ogmios_client::{
+	query_ledger_state::QueryLedgerState, query_network::QueryNetwork,
+	transactions::OgmiosEvaluateTransactionResponse, transactions::Transactions, types::OgmiosUtxo,
+};
+use partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
+use sidechain_domain::{DParameter, McTxHash, UtxoId};
+
+pub async fn upsert_d_param<C: QueryLedgerState + QueryNetwork + Transactions>(
+	genesis_utxo: UtxoId,
+	d_parameter: &DParameter,
+	payment_signing_key: [u8; 32],
+	ogmios_client: &C,
+) -> anyhow::Result<Option<McTxHash>> {
+	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
+	let (validator, policy) = crate::scripts_data::d_parameter_scripts(genesis_utxo, ctx.network)?;
+	let validator_address = validator.address_bech32(ctx.network)?;
+	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
+
+	match get_current_d_parameter(validator_utxos)? {
+		Some((_, current_d_param)) if current_d_param == *d_parameter => {
+			log::info!("Current D-parameter value is equal to the one to be set.");
+			Ok(None)
+		},
+		Some((current_utxo, _)) => {
+			log::info!("Current D-parameter is different to the one to be set. Updating.");
+			Ok(Some(
+				update_d_param(&validator, &policy, d_parameter, &current_utxo, ctx, ogmios_client)
+					.await?,
+			))
+		},
+		None => {
+			log::info!("There is no D-parameter set. Inserting new one.");
+			Ok(Some(insert_d_param(&validator, &policy, d_parameter, ctx, ogmios_client).await?))
+		},
+	}
+}
+
+fn get_current_d_parameter(
+	validator_utxos: Vec<OgmiosUtxo>,
+) -> Result<Option<(OgmiosUtxo, DParameter)>, anyhow::Error> {
+	if let Some(utxo) = validator_utxos.first() {
+		let datum = utxo.datum.clone().ok_or_else(|| {
+			anyhow!("Invalid state: an UTXO at the validator script address does not have a datum")
+		})?;
+		let datum_plutus_data = PlutusData::from_bytes(datum.bytes).map_err(|e| {
+			anyhow!("Internal error: could not decode datum of D-parameter validator script: {}", e)
+		})?;
+		let current_d_param: DParameter =
+			DParamDatum::try_from(datum_plutus_data)
+				.map_err(|e| {
+					anyhow!("Internal error: could not decode datum of D-parameter validator script: {}", e)
+				})?
+				.into();
+		Ok(Some((utxo.clone(), current_d_param)))
+	} else {
+		Ok(None)
+	}
+}
+
+async fn insert_d_param<C>(
+	validator: &PlutusScript,
+	policy: &PlutusScript,
+	d_parameter: &DParameter,
+	ctx: TransactionContext,
+	client: &C,
+) -> anyhow::Result<McTxHash>
+where
+	C: Transactions,
+{
+	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
+	let tx = mint_d_param_token_tx(validator, policy, d_parameter, &ctx, zero_ex_units)?;
+	let evaluate_response = client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
+		anyhow!(
+			"Evaluate insert D-parameter transaction request failed: {}, bytes: {}",
+			e,
+			hex::encode(tx.to_bytes())
+		)
+	})?;
+	let mint_witness_ex_units = get_mint_ex_units(evaluate_response)?;
+	let tx = mint_d_param_token_tx(validator, policy, d_parameter, &ctx, mint_witness_ex_units)?;
+	let signed_tx = ctx.sign(&tx).to_bytes();
+	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
+		anyhow!(
+			"Submit insert D-parameter transaction request failed: {}, bytes: {}",
+			e,
+			hex::encode(tx.to_bytes())
+		)
+	})?;
+	log::info!("Transaction submitted: {}", hex::encode(res.transaction.id));
+	// TODO: await for the transaction output to be visible in validator wallet
+	Ok(McTxHash(res.transaction.id))
+}
+
+fn get_mint_ex_units(response: Vec<OgmiosEvaluateTransactionResponse>) -> anyhow::Result<ExUnits> {
+	// For mint transaction we know there is a single item to evaluate, so matching is trivial.
+	let validator_and_budget = response
+		.first()
+		.ok_or_else(|| anyhow!("Internal error: cannot use evaluateTransaction response"))?;
+	Ok(convert_ex_units(&validator_and_budget.budget))
+}
+
+async fn update_d_param<C>(
+	validator: &PlutusScript,
+	policy: &PlutusScript,
+	d_parameter: &DParameter,
+	current_utxo: &OgmiosUtxo,
+	ctx: TransactionContext,
+	client: &C,
+) -> anyhow::Result<McTxHash>
+where
+	C: Transactions,
+{
+	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
+	let tx = update_d_param_tx(validator, policy, d_parameter, current_utxo, &ctx, zero_ex_units)?;
+	let evaluate_response = client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
+		anyhow!(
+			"Evaluate update D-parameter transaction request failed: {}, bytes: {}",
+			e,
+			hex::encode(tx.to_bytes())
+		)
+	})?;
+	let spend_ex_units = get_spend_ex_units(evaluate_response)?;
+
+	let tx = update_d_param_tx(validator, policy, d_parameter, current_utxo, &ctx, spend_ex_units)?;
+	let signed_tx = ctx.sign(&tx).to_bytes();
+	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
+		anyhow!(
+			"Submit D-parameter update transaction request failed: {}, bytes: {}",
+			e,
+			hex::encode(tx.to_bytes())
+		)
+	})?;
+	log::info!("Update D-parameter transaction submitted: {}", hex::encode(res.transaction.id));
+	// TODO: await for the transaction output to be visible in validator wallet
+	Ok(McTxHash(res.transaction.id))
+}
+
+fn get_spend_ex_units(costs: Vec<OgmiosEvaluateTransactionResponse>) -> anyhow::Result<ExUnits> {
+	// For spend transaction we know there is a single item to evaluate, so matching is trivial.
+	let cost = costs
+		.first()
+		.ok_or_else(|| anyhow!("Internal error: cannot use evaluateTransaction response"))?;
+	Ok(convert_ex_units(&cost.budget))
+}
 
 fn mint_d_param_token_tx(
 	validator: &PlutusScript,
@@ -59,15 +204,27 @@ mod tests {
 	use super::{mint_d_param_token_tx, update_d_param_tx};
 	use crate::{
 		csl::{empty_asset_name, TransactionContext},
+		d_param::upsert_d_param,
+		scripts_data::get_scripts_data,
 		test_values::*,
 	};
 	use cardano_serialization_lib::{
 		Address, ExUnits, Int, NetworkIdKind, PlutusData, RedeemerTag,
 	};
 	use hex_literal::hex;
-	use ogmios_client::types::{Asset as OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
+	use ogmios_client::{
+		query_ledger_state::{EraSummary, ProtocolParametersResponse, QueryLedgerState},
+		query_network::{QueryNetwork, ShelleyGenesisConfigurationResponse},
+		transactions::{
+			OgmiosBudget, OgmiosEvaluateTransactionResponse, OgmiosValidatorIndex,
+			SubmitTransactionResponse, Transactions,
+		},
+		types::{Asset as OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue},
+		OgmiosClientError,
+	};
 	use partner_chains_plutus_data::d_param::d_parameter_to_plutus_data;
-	use sidechain_domain::DParameter;
+	use sidechain_domain::{DParameter, McTxHash, UtxoId};
+	use std::str::FromStr;
 
 	#[test]
 	fn mint_d_param_token_tx_regression_test() {
@@ -160,7 +317,6 @@ mod tests {
 
 	#[test]
 	fn update_d_param_tx_regression_test() {
-		// We know the expected values were obtained with the correct code
 		let script_utxo_lovelace = 1060260;
 		let script_utxo = OgmiosUtxo {
 			transaction: OgmiosTx { id: [15; 32] },
@@ -177,7 +333,6 @@ mod tests {
 			address: validator_addr().to_bech32(None).unwrap(),
 			..Default::default()
 		};
-
 		let ex_units = ExUnits::new(&10000u32.into(), &200u32.into());
 
 		let tx = update_d_param_tx(
@@ -288,11 +443,168 @@ mod tests {
 		hex!("f14241393964259a53ca546af364e7f5688ca5aaa35f1e0da0f951b2")
 	}
 
+	fn existing_d_param() -> DParameter {
+		DParameter { num_registered_candidates: 15, num_permissioned_candidates: 10 }
+	}
+
 	fn input_d_param() -> DParameter {
 		DParameter { num_registered_candidates: 30, num_permissioned_candidates: 40 }
 	}
 
 	fn expected_plutus_data() -> PlutusData {
 		d_parameter_to_plutus_data(&input_d_param())
+	}
+
+	#[tokio::test]
+	async fn upsert_inserts_when_there_is_no_d_parameter_on_chain() {
+		let client = OgmiosClientMock {
+			d_parameter: None,
+			evaluate_response: vec![OgmiosEvaluateTransactionResponse {
+				validator: OgmiosValidatorIndex { index: 0, purpose: "mint".into() },
+				budget: OgmiosBudget { memory: 519278, cpu: 155707522 },
+			}],
+		};
+		let tx = upsert_d_param(
+			test_genesis_utxo(),
+			&input_d_param(),
+			payment_key().as_bytes().try_into().unwrap(),
+			&client,
+		)
+		.await
+		.unwrap();
+		assert_eq!(tx, Some(McTxHash(test_upsert_tx_hash())))
+	}
+
+	#[tokio::test]
+	async fn upsert_does_nothing_if_existing_d_param_is_equal_to_requested() {
+		let client =
+			OgmiosClientMock { d_parameter: Some(existing_d_param()), evaluate_response: vec![] };
+		let tx = upsert_d_param(
+			test_genesis_utxo(),
+			&existing_d_param(),
+			payment_key().as_bytes().try_into().unwrap(),
+			&client,
+		)
+		.await
+		.unwrap();
+		assert_eq!(tx, None)
+	}
+
+	#[tokio::test]
+	async fn upsert_updates_d_param_when_requested_is_different_to_existing() {
+		let client = OgmiosClientMock {
+			d_parameter: Some(existing_d_param()),
+			evaluate_response: vec![OgmiosEvaluateTransactionResponse {
+				validator: OgmiosValidatorIndex { index: 0, purpose: "spend".into() },
+				budget: OgmiosBudget { memory: 519278, cpu: 155707522 },
+			}],
+		};
+		let tx = upsert_d_param(
+			test_genesis_utxo(),
+			&input_d_param(),
+			payment_key().as_bytes().try_into().unwrap(),
+			&client,
+		)
+		.await
+		.unwrap();
+		assert_eq!(tx, Some(McTxHash(test_upsert_tx_hash())))
+	}
+
+	// Creates an UTXO that has proper multi-asset and datum
+	fn script_utxo(d_parameter: &DParameter) -> OgmiosUtxo {
+		let plutus_data = d_parameter_to_plutus_data(d_parameter);
+		let policy =
+			crate::scripts_data::get_scripts_data(test_genesis_utxo(), NetworkIdKind::Testnet)
+				.unwrap()
+				.policy_ids
+				.d_parameter;
+
+		OgmiosUtxo {
+			transaction: OgmiosTx { id: [15; 32] },
+			index: 0,
+			value: OgmiosValue {
+				lovelace: 10000000,
+				native_tokens: vec![(policy.0, vec![OgmiosAsset { name: vec![], amount: 1 }])]
+					.into_iter()
+					.collect(),
+			},
+			address: validator_addr().to_bech32(None).unwrap(),
+			datum: Some(ogmios_client::types::Datum { bytes: plutus_data.to_bytes() }),
+			..Default::default()
+		}
+	}
+
+	fn test_upsert_tx_hash() -> [u8; 32] {
+		hex!("aabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabb")
+	}
+
+	fn test_genesis_utxo() -> UtxoId {
+		UtxoId::from_str("c389187c6cabf1cd2ca64cf8c76bf57288eb9c02ced6781935b810a1d0e7fbb4#1")
+			.unwrap()
+	}
+
+	struct OgmiosClientMock {
+		d_parameter: Option<DParameter>,
+		evaluate_response: Vec<OgmiosEvaluateTransactionResponse>,
+	}
+
+	impl Transactions for OgmiosClientMock {
+		async fn evaluate_transaction(
+			&self,
+			_tx_bytes: &[u8],
+		) -> Result<Vec<OgmiosEvaluateTransactionResponse>, OgmiosClientError> {
+			Ok(self.evaluate_response.clone())
+		}
+
+		async fn submit_transaction(
+			&self,
+			_tx_bytes: &[u8],
+		) -> Result<SubmitTransactionResponse, OgmiosClientError> {
+			Ok(SubmitTransactionResponse { transaction: test_upsert_tx_hash().into() })
+		}
+	}
+
+	impl QueryLedgerState for OgmiosClientMock {
+		async fn era_summaries(&self) -> Result<Vec<EraSummary>, OgmiosClientError> {
+			Err(OgmiosClientError::RequestError("era_summaries not implemented".to_string()))
+		}
+
+		async fn query_utxos(
+			&self,
+			addresses: &[String],
+		) -> Result<Vec<OgmiosUtxo>, OgmiosClientError> {
+			let expected_payment_key_address = payment_addr().to_bech32(None).unwrap();
+			let expected_validator_address =
+				get_scripts_data(test_genesis_utxo(), NetworkIdKind::Testnet)
+					.unwrap()
+					.addresses
+					.d_parameter_validator;
+			if addresses.contains(&expected_payment_key_address.to_string()) {
+				Ok(vec![make_utxo(1u8, 0, 15000000, &payment_addr())])
+			} else if addresses.contains(&expected_validator_address.to_string()) {
+				if let Some(d_param) = &self.d_parameter {
+					Ok(vec![script_utxo(d_param)])
+				} else {
+					Ok(vec![])
+				}
+			} else {
+				let addresses = addresses.join(", ");
+				panic!("unexpected addresses: [{addresses}] in query_utxos.")
+			}
+		}
+
+		async fn query_protocol_parameters(
+			&self,
+		) -> Result<ProtocolParametersResponse, OgmiosClientError> {
+			Ok(protocol_parameters())
+		}
+	}
+
+	impl QueryNetwork for OgmiosClientMock {
+		async fn shelley_genesis_configuration(
+			&self,
+		) -> Result<ShelleyGenesisConfigurationResponse, OgmiosClientError> {
+			Ok(shelley_config())
+		}
 	}
 }

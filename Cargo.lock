@@ -6502,6 +6502,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sidechain-domain",
+ "time",
  "tokio",
  "uplc",
 ]
