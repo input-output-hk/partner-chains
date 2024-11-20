@@ -460,6 +460,7 @@ class SubstrateApi(BlockchainApi):
             registrations = {
                 spo: [candidate for candidate in candidates if candidate["isValid"]]
                 for spo, candidates in registrations.items()
+                if any(candidate["isValid"] for candidate in candidates)
             }
         return registrations
 
