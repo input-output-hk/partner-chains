@@ -9861,7 +9861,6 @@ version = "1.3.0"
 dependencies = [
  "blake2b_simd",
  "byte-string-derive",
- "clap",
  "derive_more",
  "figment",
  "hex",
