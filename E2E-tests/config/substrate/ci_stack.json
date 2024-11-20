@@ -17,7 +17,7 @@
                 "cli": "export CARDANO_NODE_SOCKET_PATH=/ipc/node.socket && /tools/cardano-cli",
                 "ssh": "${stack_config[ssh]}"
             },
-            "sidechain_main_cli": {
+            "pc_contracts_cli": {
                 "cli": "/tools/partner-chains-smart-contracts-6.1.0/sidechain-cli",
                 "ssh": "${stack_config[ssh]}"
             },

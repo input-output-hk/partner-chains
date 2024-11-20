@@ -175,8 +175,8 @@ E.g. for Cardano Preview it will be:
             "cardano_cli": {
                 "cli": <STRING>, // path to cardano-cli binary
             },
-            "sidechain_main_cli": {
-                "cli": <STRING> // path to sidechain-main-cli binary
+            "pc_contracts_cli": {
+                "cli": <STRING> // path to pc-contracts-cli binary
             },
             "generate_signatures_cli": {
                 "cli": <STRING> // path to partner-chains-node binary

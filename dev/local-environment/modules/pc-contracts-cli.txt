@@ -1,7 +1,7 @@
 
   pc-contracts-cli:
     container_name: pc-contracts-cli
-    image: ${SIDECHAIN_MAIN_CLI_IMAGE}
+    image: ${PC_CONTRACTS_CLI_IMAGE} 
     platform: linux/amd64
     volumes:
       - shared-volume:/shared

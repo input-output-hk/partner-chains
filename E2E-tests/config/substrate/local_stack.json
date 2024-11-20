@@ -10,7 +10,7 @@
                 "cli": "cardano-cli",
                 "shell": "docker exec cardano-node-1 bash -c"
             },
-            "sidechain_main_cli": {
+            "pc_contracts_cli": {
                 "cli": "./pc-contracts-cli",
                 "shell": "docker exec pc-contracts-cli bash -c"
             },

@@ -13,7 +13,7 @@ import hashlib
 import logging as logger
 from .run_command import RunnerFactory
 from .cardano_cli import CardanoCli
-from .sidechain_main_cli import SidechainMainCli
+from .pc_contracts_cli import PCContractsCli
 from .partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, PartnerChainRpcException, DParam
 import string
 import time
@@ -65,7 +65,7 @@ class SubstrateApi(BlockchainApi):
         self._substrate = None
         self.run_command = RunnerFactory.get_runner(config.stack_config.ssh, config.stack_config.tools_shell)
         self.cardano_cli = CardanoCli(config.main_chain, config.stack_config.tools["cardano_cli"])
-        self.sidechain_main_cli = SidechainMainCli(config, self.cardano_cli)
+        self.pc_contracts_cli = PCContractsCli(config, self.cardano_cli)
         self.partner_chain_rpc = PartnerChainRpc(config.nodes_config.node.rpc_url)
         self.partner_chain_epoch_calculator = PartnerChainEpochCalculator(config)
         self.compact_encoder = RuntimeConfiguration().create_scale_object('Compact')
@@ -309,7 +309,7 @@ class SubstrateApi(BlockchainApi):
         registration_utxo = next(filter(lambda utxo: utxos_json[utxo]["value"]["lovelace"] > 2500000, utxos_json), None)
         assert registration_utxo is not None, "ERROR: Could not find a well funded utxo for registration"
 
-        signatures = self.sidechain_main_cli.get_signatures(
+        signatures = self.pc_contracts_cli.get_signatures(
             registration_utxo,
             self._read_cardano_key_file(keys_files.spo_signing_key),
             self._read_json_file(keys_files.partner_chain_signing_key)['skey'],
@@ -317,7 +317,7 @@ class SubstrateApi(BlockchainApi):
             self.config.nodes_config.nodes[candidate_name].grandpa_public_key,
         )
 
-        txId, next_status_epoch = self.sidechain_main_cli.register_candidate(
+        txId, next_status_epoch = self.pc_contracts_cli.register_candidate(
             signatures,
             keys_files.cardano_payment_key,
             self._read_cardano_key_file(keys_files.spo_public_key),
@@ -335,7 +335,7 @@ class SubstrateApi(BlockchainApi):
 
     def deregister_candidate(self, candidate_name):
         keys_files = self.config.nodes_config.nodes[candidate_name].keys_files
-        txId, next_status_epoch = self.sidechain_main_cli.deregister_candidate(
+        txId, next_status_epoch = self.pc_contracts_cli.deregister_candidate(
             keys_files.cardano_payment_key,
             self._read_cardano_key_file(keys_files.spo_public_key),
         )
@@ -376,7 +376,7 @@ class SubstrateApi(BlockchainApi):
         return self.burn_tokens_for_hex_address(recipient_hex, amount, payment_key)
 
     def burn_tokens_for_hex_address(self, recipient_hex, amount, payment_key):
-        txHash = self.sidechain_main_cli.burn_tokens(recipient_hex, amount, payment_key)
+        txHash = self.pc_contracts_cli.burn_tokens(recipient_hex, amount, payment_key)
         if txHash:
             tx_block_no = self.get_mc_block_no_by_tx_hash(txHash)
             mc_stable_block = tx_block_no + self.config.main_chain.security_param
@@ -451,7 +451,7 @@ class SubstrateApi(BlockchainApi):
         return response
 
     def claim_tokens(self, mc_private_key_file, combined_proof, distributed_set_utxo=None) -> bool:
-        return self.sidechain_main_cli.claim_tokens(
+        return self.pc_contracts_cli.claim_tokens(
             mc_private_key_file, combined_proof, distributed_set_utxo=distributed_set_utxo
         )
 
@@ -603,7 +603,7 @@ class SubstrateApi(BlockchainApi):
 
     def add_permissioned_candidate(self, candidate_name: str):
         candidate = PermissionedCandidate(self.config.nodes_config.nodes[candidate_name])
-        txId, next_status_epoch = self.sidechain_main_cli.update_permissioned_candidates(
+        txId, next_status_epoch = self.pc_contracts_cli.update_permissioned_candidates(
             self.config.nodes_config.governance_authority.mainchain_key, [candidate], []
         )
 
@@ -618,7 +618,7 @@ class SubstrateApi(BlockchainApi):
 
     def remove_permissioned_candidate(self, candidate_name: str):
         candidate = PermissionedCandidate(self.config.nodes_config.nodes[candidate_name])
-        txId, next_status_epoch = self.sidechain_main_cli.update_permissioned_candidates(
+        txId, next_status_epoch = self.pc_contracts_cli.update_permissioned_candidates(
             self.config.nodes_config.governance_authority.mainchain_key, [], [candidate]
         )
 
