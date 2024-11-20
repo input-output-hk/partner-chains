@@ -72,15 +72,43 @@ impl VersionedDatum for RegisterValidatorDatum {
 
 	fn decode_versioned(
 		version: u32,
-		_const_data: &PlutusData,
+		const_data: &PlutusData,
 		mut_data: &PlutusData,
 	) -> Result<Self, String> {
 		match version {
-			0 => Self::decode_legacy(mut_data)
-				.map_err(|msg| format!("Can not parse mutable part of data: {msg}")),
+			0 => decode_v0_register_validator_datum(const_data, mut_data)
+				.ok_or_else(|| format!("Can not parse mutable part of data")),
 			_ => Err(format!("Unknown version: {version}")),
 		}
 	}
+}
+
+fn decode_v0_register_validator_datum(
+	const_data: &PlutusData,
+	mut_data: &PlutusData,
+) -> Option<RegisterValidatorDatum> {
+	let fields = mut_data
+		.as_constr_plutus_data()
+		.filter(|datum| datum.alternative().is_zero())
+		.filter(|datum| datum.data().len() >= 6)?
+		.data();
+	let stake_ownership = decode_ada_based_staking_datum(fields.get(0))?;
+	let sidechain_pub_key = fields.get(1).as_bytes().map(SidechainPublicKey)?;
+	let sidechain_signature = fields.get(2).as_bytes().map(SidechainSignature)?;
+	let consumed_input = decode_utxo_id_datum(fields.get(3))?;
+	let aura_pub_key = fields.get(4).as_bytes().map(AuraPublicKey)?;
+	let grandpa_pub_key = fields.get(5).as_bytes().map(GrandpaPublicKey)?;
+
+	let own_pkh = MainchainAddressHash(const_data.as_bytes()?.try_into().ok()?);
+	Some(RegisterValidatorDatum::V0 {
+		stake_ownership,
+		sidechain_pub_key,
+		sidechain_signature,
+		consumed_input,
+		own_pkh,
+		aura_pub_key,
+		grandpa_pub_key,
+	})
 }
 
 /// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.
@@ -199,7 +227,7 @@ mod tests {
 	fn valid_v0_registration() {
 		let plutus_data = test_plutus_data!({
 			"list": [
-				{ "constructor": 0, "fields": [ { "bytes": "aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00" } ] },
+				{ "bytes": "aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00" },
 				{
 					"constructor": 0,
 					"fields": [
@@ -222,7 +250,6 @@ mod tests {
 							],
 							"constructor": 0
 						},
-						{ "bytes": "aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00" },
 						{ "bytes": "d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d" },
 						{ "bytes": "88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee" }
 					]
