@@ -16,6 +16,7 @@
     environment:
       - CARDANO_NODE_SOCKET_PATH=/data/node.socket
       - GENESIS_UTXO=781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0
+      - GOVERNANCE_AUTHORITY=e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b
       - COMMITTEE_CANDIDATE_ADDRESS=addr_test1wprv57gwyty4v6xa9dju0ezudwqxekwdjdkjg2ytpkye9xcf8lw2p
       - KUPO_PORT=${KUPO_PORT}
       - OGMIOS_PORT=${OGMIOS_PORT}
