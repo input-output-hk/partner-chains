@@ -1,4 +1,4 @@
-use crate::{csl::ogmios_network_to_csl, plutus_script::PlutusScript, OffchainError};
+use crate::{csl::NetworkTypeExt, plutus_script::PlutusScript, OffchainError};
 use cardano_serialization_lib::{LanguageKind::PlutusV2, NetworkIdKind};
 use chain_params::SidechainParams;
 use ogmios_client::query_network::QueryNetwork;
@@ -64,12 +64,12 @@ impl<T: QueryNetwork> GetScriptsData for T {
 		&self,
 		pc_params: SidechainParams,
 	) -> Result<ScriptsData, OffchainError> {
-		let network = ogmios_network_to_csl(
-			self.shelley_genesis_configuration()
-				.await
-				.map_err(|e| OffchainError::OgmiosError(e.to_string()))?
-				.network,
-		);
+		let network = self
+			.shelley_genesis_configuration()
+			.await
+			.map_err(|e| OffchainError::OgmiosError(e.to_string()))?
+			.network
+			.to_csl();
 		get_scripts_data(pc_params, network)
 			.map_err(|e| OffchainError::InternalError(e.to_string()))
 	}

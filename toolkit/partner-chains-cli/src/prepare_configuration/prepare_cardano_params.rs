@@ -78,8 +78,10 @@ fn get_first_epoch_era(eras_summaries: Vec<EraSummary>) -> Result<EraSummary, an
 
 #[cfg(test)]
 pub mod tests {
+	use sidechain_domain::NetworkType;
+
 	use super::*;
-	use crate::config::{CardanoNetwork, NetworkProtocol, CHAIN_CONFIG_FILE_PATH};
+	use crate::config::{NetworkProtocol, CHAIN_CONFIG_FILE_PATH};
 	use crate::ogmios::{EpochBoundary, EpochParameters, EraSummary};
 	use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 	use crate::tests::{MockIO, MockIOContext};
@@ -91,7 +93,7 @@ pub mod tests {
 		first_slot_number: 86400,
 		epoch_duration_millis: 432000000,
 		first_epoch_timestamp_millis: 1655769600000,
-		network: CardanoNetwork::Testnet,
+		network: NetworkType::Testnet,
 	};
 
 	pub(crate) const PREVIEW_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
@@ -101,7 +103,7 @@ pub mod tests {
 		first_slot_number: 0,
 		epoch_duration_millis: 86400000,
 		first_epoch_timestamp_millis: 1666656000000,
-		network: CardanoNetwork::Testnet,
+		network: NetworkType::Testnet,
 	};
 
 	#[test]
@@ -190,7 +192,7 @@ pub mod tests {
 
 	pub(crate) fn preprod_shelley_config() -> ShelleyGenesisConfiguration {
 		ShelleyGenesisConfiguration {
-			network: CardanoNetwork::Testnet,
+			network: NetworkType::Testnet,
 			security_parameter: 2160,
 			active_slots_coefficient: 0.05,
 			epoch_length: 432000,
@@ -234,7 +236,7 @@ pub mod tests {
 
 	pub(crate) fn preview_shelley_config() -> ShelleyGenesisConfiguration {
 		ShelleyGenesisConfiguration {
-			network: CardanoNetwork::Testnet,
+			network: NetworkType::Testnet,
 			security_parameter: 432,
 			active_slots_coefficient: 0.05,
 			epoch_length: 86400,

@@ -5,8 +5,7 @@ use crate::config::config_fields::{
 	CARDANO_COLD_VERIFICATION_KEY_FILE, CARDANO_PAYMENT_SIGNING_KEY_FILE,
 };
 use crate::config::{
-	get_cardano_network_from_file, CardanoNetwork, ChainConfig, CHAIN_CONFIG_FILE_PATH,
-	PC_CONTRACTS_CLI_PATH,
+	get_cardano_network_from_file, ChainConfig, CHAIN_CONFIG_FILE_PATH, PC_CONTRACTS_CLI_PATH,
 };
 use crate::io::IOContext;
 use crate::pc_contracts_cli_resources::{
@@ -14,6 +13,7 @@ use crate::pc_contracts_cli_resources::{
 };
 use crate::{smart_contracts, CmdRun};
 use anyhow::{anyhow, Context};
+use sidechain_domain::NetworkType;
 
 #[derive(Debug, clap::Parser)]
 pub struct DeregisterCmd;
@@ -43,7 +43,7 @@ impl CmdRun for DeregisterCmd {
 
 fn read_chain_config_file<C: IOContext>(
 	context: &C,
-) -> Result<(crate::config::ChainConfig, crate::config::CardanoNetwork), anyhow::Error> {
+) -> Result<(crate::config::ChainConfig, NetworkType), anyhow::Error> {
 	let chain_config = crate::config::load_chain_config(context);
 	let cardano_network = get_cardano_network_from_file(context);
 	chain_config.and_then(|chain_config| cardano_network.map(|cardano_network| (chain_config, cardano_network)))
@@ -81,7 +81,7 @@ fn get_mainchain_key_hex<C: IOContext>(
 }
 
 fn build_command(
-	cardano_network: CardanoNetwork,
+	cardano_network: NetworkType,
 	cold_vkey: String,
 	chain_config: ChainConfig,
 	pc_contracts_cli_resources: PcContractsCliResources,
@@ -89,7 +89,7 @@ fn build_command(
 ) -> String {
 	format!(
         "{PC_CONTRACTS_CLI_PATH} deregister --network {} --ada-based-staking --spo-public-key {} {} {}",
-        cardano_network.to_network_param(),
+        cardano_network,
         cold_vkey,
         smart_contracts::sidechain_params_arguments(&chain_config.chain_parameters),
         smart_contracts::runtime_config_arguments(
