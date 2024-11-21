@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::str::FromStr;
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Default)]
 pub struct SlotLength {
 	pub milliseconds: u32,
 }
@@ -15,7 +15,7 @@ pub struct TimeSeconds {
 	pub seconds: u64,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Default)]
 pub struct OgmiosBytesSize {
 	pub bytes: u32,
 }
@@ -31,6 +31,12 @@ pub struct OgmiosUtxo {
 	pub datum: Option<Datum>,
 	pub datum_hash: Option<DatumHash>,
 	pub script: Option<OgmiosScript>,
+}
+
+impl core::fmt::Display for OgmiosUtxo {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(f, "{}#{}", hex::encode(self.transaction.id), self.index)
+	}
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
