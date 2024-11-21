@@ -48,9 +48,9 @@ case "$ACCOUNT" in
       --bootnodes="/ip4/$ALICE_IP/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp" \
       --base-path=/data \
       --unsafe-rpc-external \
-      --rpc-port=9934 \
+      --rpc-port=9933 \
       --rpc-cors=all \
-      --prometheus-port=9616 \
+      --prometheus-port=9615 \
       --prometheus-external \
       --state-pruning=archive \
       --blocks-pruning=archive &
@@ -71,9 +71,9 @@ case "$ACCOUNT" in
       --bootnodes="/ip4/$ALICE_IP/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp" \
       --base-path=/data \
       --unsafe-rpc-external \
-      --rpc-port=9935 \
+      --rpc-port=9933 \
       --rpc-cors=all \
-      --prometheus-port=9617 \
+      --prometheus-port=9615 \
       --prometheus-external \
       --state-pruning=archive \
       --blocks-pruning=archive &
@@ -93,11 +93,10 @@ case "$ACCOUNT" in
       --node-key=0000000000000000000000000000000000000000000000000000000000000004 \
       --bootnodes="/ip4/$ALICE_IP/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp" \
       --base-path=/data \
-      --keystore-path=/keystore \
       --unsafe-rpc-external \
-      --rpc-port=9936 \
+      --rpc-port=9933 \
       --rpc-cors=all \
-      --prometheus-port=9618 \
+      --prometheus-port=9615 \
       --prometheus-external \
       --state-pruning=archive \
       --blocks-pruning=archive &
@@ -119,9 +118,9 @@ case "$ACCOUNT" in
       --base-path=/data \
       --keystore-path=/keystore \
       --unsafe-rpc-external \
-      --rpc-port=9937 \
+      --rpc-port=9933 \
       --rpc-cors=all \
-      --prometheus-port=9619 \
+      --prometheus-port=9615 \
       --prometheus-external \
       --state-pruning=archive \
       --blocks-pruning=archive &
@@ -143,9 +142,9 @@ case "$ACCOUNT" in
       --base-path=/data \
       --keystore-path=/keystore \
       --unsafe-rpc-external \
-      --rpc-port=9937 \
+      --rpc-port=9933 \
       --rpc-cors=all \
-      --prometheus-port=9619 \
+      --prometheus-port=9615 \
       --prometheus-external \
       --state-pruning=archive \
       --blocks-pruning=archive &
