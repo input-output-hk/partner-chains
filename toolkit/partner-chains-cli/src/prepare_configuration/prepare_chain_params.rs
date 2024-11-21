@@ -1,11 +1,12 @@
 use crate::config::config_fields::{self, GENESIS_UTXO};
-use crate::config::{CardanoNetwork, ConfigFieldDefinition, ServiceConfig};
+use crate::config::{ConfigFieldDefinition, ServiceConfig};
 use crate::io::IOContext;
 use crate::select_utxo::{filter_utxos, query_utxos, select_from_utxos, ValidUtxo};
 use crate::{cardano_key, pc_contracts_cli_resources};
 use anyhow::anyhow;
+use partner_chains_cardano_offchain::csl::NetworkTypeExt;
 use serde::de::DeserializeOwned;
-use sidechain_domain::UtxoId;
+use sidechain_domain::{NetworkType, UtxoId};
 
 use super::prepare_cardano_params::get_shelley_config;
 
@@ -42,7 +43,7 @@ where
 
 fn derive_address<C: IOContext>(
 	context: &C,
-	cardano_network: CardanoNetwork,
+	cardano_network: NetworkType,
 ) -> Result<String, anyhow::Error> {
 	let cardano_payment_verification_key_file =
 		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
@@ -50,7 +51,7 @@ fn derive_address<C: IOContext>(
 	let key_bytes: [u8; 32] =
 		cardano_key::get_key_bytes_from_file(&cardano_payment_verification_key_file, context)?;
 	let address =
-		partner_chains_cardano_offchain::csl::payment_address(&key_bytes, cardano_network.into());
+		partner_chains_cardano_offchain::csl::payment_address(&key_bytes, cardano_network.to_csl());
 	address.to_bech32(None).map_err(|e| anyhow!(e.to_string()))
 }
 

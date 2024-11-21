@@ -269,7 +269,7 @@ fn set_candidates_on_main_chain<C: IOContext>(
 			.run_command(&format!(
 				"{PC_CONTRACTS_CLI_PATH} {} --network {} {} {} {}",
 				command,
-				cardano_network.to_network_param(),
+				cardano_network.to_string(),
 				candidate_keys,
 				smart_contracts::sidechain_params_arguments(genesis_utxo),
 				smart_contracts::runtime_config_arguments(
@@ -309,7 +309,7 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 		let cardano_network = get_cardano_network_from_file(context)?;
 		let command = format!(
 			"{PC_CONTRACTS_CLI_PATH} {pc_contracts_cli_command} --network {} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}",
-			cardano_network.to_network_param(),
+			cardano_network,
 			smart_contracts::sidechain_params_arguments(genesis_utxo),
 			smart_contracts::runtime_config_arguments(&pc_contracts_cli_resources, &payment_signing_key_path)
 		);

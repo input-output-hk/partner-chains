@@ -5770,6 +5770,7 @@ dependencies = [
  "jsonrpsee",
  "serde",
  "serde_json",
+ "sidechain-domain",
  "thiserror",
  "time",
  "tokio",

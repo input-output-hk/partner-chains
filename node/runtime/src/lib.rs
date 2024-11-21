@@ -15,8 +15,6 @@ use authority_selection_inherents::filter_invalid_candidates::{
 };
 use authority_selection_inherents::select_authorities::select_authorities;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
-use frame_support::traits::fungible::Balanced;
-use frame_support::traits::tokens::Precision;
 use frame_support::BoundedVec;
 pub use frame_support::{
 	construct_runtime, parameter_types,
@@ -31,7 +29,6 @@ pub use frame_support::{
 	PalletId, StorageValue,
 };
 pub use frame_system::Call as SystemCall;
-use hex_literal::hex;
 use opaque::SessionKeys;
 pub use pallet_balances::Call as BalancesCall;
 use pallet_grandpa::AuthorityId as GrandpaId;

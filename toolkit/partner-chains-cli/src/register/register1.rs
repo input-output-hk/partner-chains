@@ -7,11 +7,11 @@ use crate::{config::config_fields, *};
 use anyhow::anyhow;
 use cli_commands::registration_signatures::RegisterValidatorMessage;
 use cli_commands::signing::sc_public_key_and_signature_for_datum;
-use config::CardanoNetwork;
+use partner_chains_cardano_offchain::csl::NetworkTypeExt;
 use select_utxo::{filter_utxos, query_utxos, select_from_utxos, ValidUtxo};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use sidechain_domain::{SidechainPublicKey, UtxoId};
+use sidechain_domain::{NetworkType, SidechainPublicKey, UtxoId};
 use sp_core::bytes::from_hex;
 use sp_core::{ecdsa, Pair};
 
@@ -148,7 +148,7 @@ where
 
 fn derive_address<C: IOContext>(
 	context: &C,
-	cardano_network: CardanoNetwork,
+	cardano_network: NetworkType,
 ) -> Result<String, anyhow::Error> {
 	let cardano_payment_verification_key_file =
 		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
@@ -156,7 +156,7 @@ fn derive_address<C: IOContext>(
 	let key_bytes: [u8; 32] =
 		cardano_key::get_key_bytes_from_file(&cardano_payment_verification_key_file, context)?;
 	let address =
-		partner_chains_cardano_offchain::csl::payment_address(&key_bytes, cardano_network.into());
+		partner_chains_cardano_offchain::csl::payment_address(&key_bytes, cardano_network.to_csl());
 	address.to_bech32(None).map_err(|e| anyhow!(e.to_string()))
 }
 

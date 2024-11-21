@@ -7,7 +7,7 @@ use crate::io::IOContext;
 use anyhow::anyhow;
 use clap::{arg, Parser};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use sidechain_domain::UtxoId;
+use sidechain_domain::{NetworkType, UtxoId};
 use sp_core::offchain::{Duration, Timestamp};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
@@ -260,49 +260,6 @@ impl SelectOptions for NetworkProtocol {
 	}
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum CardanoNetwork {
-	Mainnet,
-	Testnet,
-}
-
-impl CardanoNetwork {
-	pub fn to_network_param(&self) -> String {
-		match self {
-			CardanoNetwork::Mainnet => "mainnet".into(),
-			CardanoNetwork::Testnet => "testnet".into(),
-		}
-	}
-}
-
-impl From<ogmios_client::query_network::Network> for CardanoNetwork {
-	fn from(network: ogmios_client::query_network::Network) -> CardanoNetwork {
-		match network {
-			ogmios_client::query_network::Network::Mainnet => CardanoNetwork::Mainnet,
-			ogmios_client::query_network::Network::Testnet => CardanoNetwork::Testnet,
-		}
-	}
-}
-
-impl From<CardanoNetwork> for cardano_serialization_lib::NetworkIdKind {
-	fn from(network: CardanoNetwork) -> cardano_serialization_lib::NetworkIdKind {
-		match network {
-			CardanoNetwork::Mainnet => cardano_serialization_lib::NetworkIdKind::Mainnet,
-			CardanoNetwork::Testnet => cardano_serialization_lib::NetworkIdKind::Testnet,
-		}
-	}
-}
-
-impl std::fmt::Display for CardanoNetwork {
-	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		match self {
-			CardanoNetwork::Mainnet => write!(f, "mainnet"),
-			CardanoNetwork::Testnet => write!(f, "testnet"),
-		}
-	}
-}
-
 #[derive(Deserialize)]
 pub struct MainChainAddresses {
 	pub committee_candidates_address: String,
@@ -318,7 +275,7 @@ pub struct CardanoParameters {
 	pub first_slot_number: u64,
 	pub epoch_duration_millis: u64,
 	pub first_epoch_timestamp_millis: u64,
-	pub network: CardanoNetwork,
+	pub network: NetworkType,
 }
 
 impl CardanoParameters {
@@ -407,7 +364,7 @@ pub fn load_chain_config(context: &impl IOContext) -> anyhow::Result<ChainConfig
 	}
 }
 
-pub fn get_cardano_network_from_file(context: &impl IOContext) -> anyhow::Result<CardanoNetwork> {
+pub fn get_cardano_network_from_file(context: &impl IOContext) -> anyhow::Result<NetworkType> {
 	CARDANO_NETWORK.load_from_file(context).ok_or(anyhow!(
 		"Cardano network not configured. Please run prepare-main-chain-config command first."
 	))
@@ -489,7 +446,7 @@ pub mod config_fields {
 			_marker: PhantomData,
 		};
 
-	pub const CARDANO_NETWORK: ConfigFieldDefinition<'static, CardanoNetwork> =
+	pub const CARDANO_NETWORK: ConfigFieldDefinition<'static, NetworkType> =
 		ConfigFieldDefinition {
 			config_file: CHAIN_CONFIG_FILE_PATH,
 			path: &["cardano", "network"],
@@ -685,16 +642,4 @@ pub mod config_fields {
 
 pub mod config_values {
 	pub const DEFAULT_CHAIN_NAME: &str = "partner_chains_template";
-}
-
-#[cfg(test)]
-mod tests {
-	use crate::config::CardanoNetwork;
-	use cardano_serialization_lib::NetworkIdKind;
-
-	#[test]
-	fn test_from_network_id() {
-		assert_eq!(NetworkIdKind::from(CardanoNetwork::Mainnet), NetworkIdKind::Mainnet);
-		assert_eq!(NetworkIdKind::from(CardanoNetwork::Testnet), NetworkIdKind::Testnet);
-	}
 }
