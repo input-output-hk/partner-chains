@@ -5,7 +5,7 @@ case "$ACCOUNT" in
   alice)
     echo 'Waiting for Cardano chain to sync and pc-contracts-cli configuration to complete...'
     while true; do
-        if [ -f "/shared/pc-contracts-cli.ready" ]; then
+        if [ -f "/shared/2-epochs.ready" ]; then
             break
         else
             sleep 10
