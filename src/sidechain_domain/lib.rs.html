@@ -646,6 +646,19 @@
 <a href="#646" id="646">646</a>
 <a href="#647" id="647">647</a>
 <a href="#648" id="648">648</a>
+<a href="#649" id="649">649</a>
+<a href="#650" id="650">650</a>
+<a href="#651" id="651">651</a>
+<a href="#652" id="652">652</a>
+<a href="#653" id="653">653</a>
+<a href="#654" id="654">654</a>
+<a href="#655" id="655">655</a>
+<a href="#656" id="656">656</a>
+<a href="#657" id="657">657</a>
+<a href="#658" id="658">658</a>
+<a href="#659" id="659">659</a>
+<a href="#660" id="660">660</a>
+<a href="#661" id="661">661</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -852,6 +865,18 @@
 <span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize)]
 </span><span class="kw">pub struct </span>MainchainPublicKey(<span class="kw">pub </span>[u8; MAINCHAIN_PUBLIC_KEY_LEN]);
+
+<span class="kw">const </span>MAINCHAIN_PRIVATE_KEY_LEN: usize = <span class="number">32</span>;
+
+<span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
+#[byte_string(hex_serialize, hex_deserialize)]
+</span><span class="kw">pub struct </span>MainchainPrivateKey(<span class="kw">pub </span>[u8; MAINCHAIN_PRIVATE_KEY_LEN]);
+
+<span class="kw">impl </span>core::fmt::Debug <span class="kw">for </span>MainchainPrivateKey {
+	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; core::fmt::Result {
+		<span class="macro">write!</span>(f, <span class="string">"***"</span>)
+	}
+}
 
 <span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
 </span><span class="kw">impl </span>FromStr <span class="kw">for </span>MainchainPublicKey {
@@ -1124,12 +1149,13 @@
 	}
 }
 
-<span class="attr">#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+<span class="attr">#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize, Deserialize))]
 #[cfg_attr(feature = <span class="string">"serde"</span>, serde(rename_all = <span class="string">"lowercase"</span>))]
 </span><span class="kw">pub enum </span>NetworkType {
 	Mainnet,
-	Testnet,
+	<span class="attr">#[default]
+	</span>Testnet,
 }
 
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]

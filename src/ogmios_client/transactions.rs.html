@@ -125,26 +125,26 @@
 	</span>}
 }
 
-<span class="attr">#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+<span class="attr">#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>OgmiosEvaluateTransactionResponse {
 	<span class="kw">pub </span>validator: OgmiosValidatorIndex,
 	<span class="kw">pub </span>budget: OgmiosBudget,
 }
 
-<span class="attr">#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+<span class="attr">#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Default)]
 </span><span class="kw">pub struct </span>OgmiosValidatorIndex {
 	<span class="kw">pub </span>index: u32,
 	<span class="kw">pub </span>purpose: String,
 }
 
-<span class="attr">#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+<span class="attr">#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Default)]
 </span><span class="kw">pub struct </span>OgmiosBudget {
 	<span class="kw">pub </span>memory: u64,
 	<span class="kw">pub </span>cpu: u64,
 }
 
-<span class="attr">#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+<span class="attr">#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Default)]
 </span><span class="kw">pub struct </span>SubmitTransactionResponse {
 	<span class="kw">pub </span>transaction: OgmiosTx,
 }

@@ -169,7 +169,7 @@
 	<span class="kw">pub </span>safe_zone: u32,
 }
 
-<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Default)]
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>ProtocolParametersResponse {
 	<span class="kw">pub </span>min_fee_coefficient: u32,
@@ -185,7 +185,7 @@
 	<span class="kw">pub </span>collateral_percentage: u32,
 }
 
-<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Default)]
 </span><span class="kw">pub struct </span>ScriptExecutionPrices {
 	<span class="attr">#[serde(deserialize_with = <span class="string">"crate::types::parse_fraction_ratio_u64"</span>)]
 	</span><span class="kw">pub </span>memory: fraction::Ratio&lt;u64&gt;,
@@ -193,7 +193,7 @@
 	</span><span class="kw">pub </span>cpu: fraction::Ratio&lt;u64&gt;,
 }
 
-<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Default)]
 </span><span class="kw">pub struct </span>PlutusCostModels {
 	<span class="attr">#[serde(rename = <span class="string">"plutus:v1"</span>)]
 	</span><span class="kw">pub </span>plutus_v1: Vec&lt;i128&gt;,

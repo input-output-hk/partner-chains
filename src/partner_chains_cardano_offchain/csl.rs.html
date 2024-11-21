@@ -781,6 +781,10 @@
 <a href="#781" id="781">781</a>
 <a href="#782" id="782">782</a>
 <a href="#783" id="783">783</a>
+<a href="#784" id="784">784</a>
+<a href="#785" id="785">785</a>
+<a href="#786" id="786">786</a>
+<a href="#787" id="787">787</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(dead_code)]
 
 </span><span class="kw">use crate</span>::{plutus_script::PlutusScript, untyped_plutus::datum_to_uplc_plutus_data};
@@ -985,6 +989,10 @@
 <span class="kw">impl </span>TransactionContext {
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>payment_key_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Ed25519KeyHash {
 		<span class="self">self</span>.payment_key.to_public().hash()
+	}
+
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>payment_address(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Address {
+		key_hash_address(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key.to_public().hash(), <span class="self">self</span>.network)
 	}
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>sign(<span class="kw-2">&amp;</span><span class="self">self</span>, tx: Transaction) -&gt; Transaction {

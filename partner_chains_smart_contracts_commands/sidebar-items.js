@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["SmartContractsCmd"],"mod":["init_governance"],"struct":["CommonArguments"]};

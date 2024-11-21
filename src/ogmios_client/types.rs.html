@@ -369,6 +369,12 @@
 <a href="#369" id="369">369</a>
 <a href="#370" id="370">370</a>
 <a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Common types used in the Ogmios API.
 
 </span><span class="kw">use </span>serde::{Deserialize, Deserializer};
@@ -376,7 +382,7 @@
 <span class="kw">use </span>std::fmt::Debug;
 <span class="kw">use </span>std::str::FromStr;
 
-<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Default)]
 </span><span class="kw">pub struct </span>SlotLength {
 	<span class="kw">pub </span>milliseconds: u32,
 }
@@ -386,7 +392,7 @@
 	<span class="kw">pub </span>seconds: u64,
 }
 
-<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Default)]
 </span><span class="kw">pub struct </span>OgmiosBytesSize {
 	<span class="kw">pub </span>bytes: u32,
 }
@@ -402,6 +408,12 @@
 	<span class="kw">pub </span>datum: <span class="prelude-ty">Option</span>&lt;Datum&gt;,
 	<span class="kw">pub </span>datum_hash: <span class="prelude-ty">Option</span>&lt;DatumHash&gt;,
 	<span class="kw">pub </span>script: <span class="prelude-ty">Option</span>&lt;OgmiosScript&gt;,
+}
+
+<span class="kw">impl </span>core::fmt::Display <span class="kw">for </span>OgmiosUtxo {
+	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>std::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; std::fmt::Result {
+		<span class="macro">write!</span>(f, <span class="string">"{}#{}"</span>, hex::encode(<span class="self">self</span>.transaction.id), <span class="self">self</span>.index)
+	}
 }
 
 <span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]

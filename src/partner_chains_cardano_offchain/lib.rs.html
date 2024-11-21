@@ -24,6 +24,8 @@
 <a href="#24" id="24">24</a>
 <a href="#25" id="25">25</a>
 <a href="#26" id="26">26</a>
+<a href="#27" id="27">27</a>
+<a href="#28" id="28">28</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Off-chain code for Partner Chains Smart Contracts and general purpose utilities related to Cardano
 
 /// Collateral selection algorithm
@@ -34,6 +36,8 @@
 </span><span class="kw">pub mod </span>d_param;
 <span class="doccomment">/// Supports governance initialization
 </span><span class="kw">pub mod </span>init_governance;
+<span class="attr">#[cfg(test)]
+</span><span class="kw">pub mod </span>ogmios_mock;
 <span class="doccomment">/// Supports Permissioned Candidates upsert
 </span><span class="kw">pub mod </span>permissioned_candidates;
 <span class="doccomment">/// Utilities for handling Plutus script data
