@@ -105,8 +105,7 @@
 	CARDANO_COLD_VERIFICATION_KEY_FILE, CARDANO_PAYMENT_SIGNING_KEY_FILE,
 };
 <span class="kw">use </span><span class="kw">crate</span>::config::{
-	get_cardano_network_from_file, CardanoNetwork, ChainConfig, CHAIN_CONFIG_FILE_PATH,
-	PC_CONTRACTS_CLI_PATH,
+	get_cardano_network_from_file, ChainConfig, CHAIN_CONFIG_FILE_PATH, PC_CONTRACTS_CLI_PATH,
 };
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::{
@@ -114,6 +113,7 @@
 };
 <span class="kw">use crate</span>::{smart_contracts, CmdRun};
 <span class="kw">use </span>anyhow::{anyhow, Context};
+<span class="kw">use </span>sidechain_domain::NetworkType;
 
 <span class="attr">#[derive(Debug, clap::Parser)]
 </span><span class="kw">pub struct </span>DeregisterCmd;
@@ -143,7 +143,7 @@
 
 <span class="kw">fn </span>read_chain_config_file&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
-) -&gt; <span class="prelude-ty">Result</span>&lt;(<span class="kw">crate</span>::config::ChainConfig, <span class="kw">crate</span>::config::CardanoNetwork), anyhow::Error&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;(<span class="kw">crate</span>::config::ChainConfig, NetworkType), anyhow::Error&gt; {
 	<span class="kw">let </span>chain_config = <span class="kw">crate</span>::config::load_chain_config(context);
 	<span class="kw">let </span>cardano_network = get_cardano_network_from_file(context);
 	chain_config.and_then(|chain_config| cardano_network.map(|cardano_network| (chain_config, cardano_network)))
@@ -181,7 +181,7 @@
 }
 
 <span class="kw">fn </span>build_command(
-	cardano_network: CardanoNetwork,
+	cardano_network: NetworkType,
 	cold_vkey: String,
 	chain_config: ChainConfig,
 	pc_contracts_cli_resources: PcContractsCliResources,
@@ -189,7 +189,7 @@
 ) -&gt; String {
 	<span class="macro">format!</span>(
         <span class="string">"{PC_CONTRACTS_CLI_PATH} deregister --network {} --ada-based-staking --spo-public-key {} {} {}"</span>,
-        cardano_network.to_network_param(),
+        cardano_network,
         cold_vkey,
         smart_contracts::sidechain_params_arguments(<span class="kw-2">&amp;</span>chain_config.chain_parameters),
         smart_contracts::runtime_config_arguments(

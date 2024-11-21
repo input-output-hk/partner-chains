@@ -139,12 +139,12 @@
 <a href="#139" id="139">139</a>
 <a href="#140" id="140">140</a>
 <a href="#141" id="141">141</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::CardanoNetwork;
-<span class="kw">use </span>anyhow::anyhow;
+</pre></div><pre class="rust"><code><span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>jsonrpsee::http_client::HttpClient;
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, types::OgmiosUtxo,
 };
+<span class="kw">use </span>sidechain_domain::NetworkType;
 
 <span class="attr">#[derive(Debug, Eq, PartialEq)]
 </span><span class="kw">pub enum </span>OgmiosRequest {
@@ -181,7 +181,7 @@
 
 <span class="attr">#[derive(Clone, Debug, PartialEq)]
 </span><span class="kw">pub struct </span>ShelleyGenesisConfiguration {
-	<span class="kw">pub </span>network: CardanoNetwork,
+	<span class="kw">pub </span>network: NetworkType,
 	<span class="kw">pub </span>security_parameter: u32,
 	<span class="kw">pub </span>active_slots_coefficient: f64,
 	<span class="kw">pub </span>epoch_length: u32,

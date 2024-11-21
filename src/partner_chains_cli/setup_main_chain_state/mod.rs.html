@@ -599,7 +599,7 @@
 			.run_command(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
 				<span class="string">"{PC_CONTRACTS_CLI_PATH} {} --network {} {} {} {}"</span>,
 				command,
-				cardano_network.to_network_param(),
+				cardano_network.to_string(),
 				candidate_keys,
 				smart_contracts::sidechain_params_arguments(chain_params),
 				smart_contracts::runtime_config_arguments(
@@ -639,7 +639,7 @@
 		<span class="kw">let </span>cardano_network = get_cardano_network_from_file(context)<span class="question-mark">?</span>;
 		<span class="kw">let </span>command = <span class="macro">format!</span>(
 			<span class="string">"{PC_CONTRACTS_CLI_PATH} {pc_contracts_cli_command} --network {} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}"</span>,
-			cardano_network.to_network_param(),
+			cardano_network,
 			smart_contracts::sidechain_params_arguments(chain_params),
 			smart_contracts::runtime_config_arguments(<span class="kw-2">&amp;</span>pc_contracts_cli_resources, <span class="kw-2">&amp;</span>payment_signing_key_path)
 		);

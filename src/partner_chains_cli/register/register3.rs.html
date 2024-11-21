@@ -467,7 +467,7 @@
 
 		<span class="kw">let </span>command = <span class="macro">format!</span>(
 			<span class="string">"{PC_CONTRACTS_CLI_PATH} register --network {} {} --registration-utxo {} --sidechain-public-keys {}:{}:{} --sidechain-signature {} --spo-public-key {} --spo-signature {} --ada-based-staking {}"</span>,
-			cardano_network.to_network_param(),
+			cardano_network,
 			sidechain_param_arg,
 			<span class="self">self</span>.registration_utxo,
 			<span class="self">self</span>.sidechain_pub_key,

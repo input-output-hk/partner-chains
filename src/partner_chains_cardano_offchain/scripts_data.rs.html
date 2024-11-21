@@ -280,7 +280,7 @@
 <a href="#280" id="280">280</a>
 <a href="#281" id="281">281</a>
 <a href="#282" id="282">282</a>
-</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{csl::ogmios_network_to_csl, plutus_script::PlutusScript, OffchainError};
+</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{csl::NetworkTypeExt, plutus_script::PlutusScript, OffchainError};
 <span class="kw">use </span>cardano_serialization_lib::{LanguageKind::PlutusV2, NetworkIdKind};
 <span class="kw">use </span>chain_params::SidechainParams;
 <span class="kw">use </span>ogmios_client::query_network::QueryNetwork;
@@ -346,12 +346,12 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		pc_params: SidechainParams,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;ScriptsData, OffchainError&gt; {
-		<span class="kw">let </span>network = ogmios_network_to_csl(
-			<span class="self">self</span>.shelley_genesis_configuration()
-				.<span class="kw">await
-				</span>.map_err(|e| OffchainError::OgmiosError(e.to_string()))<span class="question-mark">?
-				</span>.network,
-		);
+		<span class="kw">let </span>network = <span class="self">self
+			</span>.shelley_genesis_configuration()
+			.<span class="kw">await
+			</span>.map_err(|e| OffchainError::OgmiosError(e.to_string()))<span class="question-mark">?
+			</span>.network
+			.to_csl();
 		get_scripts_data(pc_params, network)
 			.map_err(|e| OffchainError::InternalError(e.to_string()))
 	}
