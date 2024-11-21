@@ -1,4 +1,4 @@
-use cardano_serialization_lib::PlutusData;
+use cardano_serialization_lib::{PlutusData, PlutusList};
 
 pub mod d_param;
 pub mod permissioned_candidates;
@@ -81,6 +81,22 @@ pub(crate) trait VersionedDatum: Sized {
 	}
 }
 
+pub struct VersionedDatumShape {
+	pub datum: PlutusData,
+	pub generic_data: PlutusData,
+	pub version: u64,
+}
+
+impl From<VersionedDatumShape> for PlutusData {
+	fn from(value: VersionedDatumShape) -> Self {
+		let mut list = PlutusList::new();
+		list.add(&value.datum);
+		list.add(&value.generic_data);
+		list.add(&PlutusData::new_integer(&value.version.into()));
+		PlutusData::new_list(&list)
+	}
+}
+
 #[cfg(test)]
 pub(crate) mod test_helpers {
 	macro_rules! test_plutus_data {
@@ -93,4 +109,24 @@ pub(crate) mod test_helpers {
 		};
 	}
 	pub(crate) use test_plutus_data;
+
+	pub(crate) fn json_to_plutus_data(
+		json: serde_json::Value,
+	) -> cardano_serialization_lib::PlutusData {
+		cardano_serialization_lib::encode_json_value_to_plutus_datum(
+			json,
+			cardano_serialization_lib::PlutusDatumSchema::DetailedSchema,
+		)
+		.expect("test data is valid")
+	}
+
+	pub(crate) fn plutus_data_to_json(
+		data: cardano_serialization_lib::PlutusData,
+	) -> serde_json::Value {
+		cardano_serialization_lib::decode_plutus_datum_to_json_value(
+			&data,
+			cardano_serialization_lib::PlutusDatumSchema::DetailedSchema,
+		)
+		.expect("test data is valid")
+	}
 }
