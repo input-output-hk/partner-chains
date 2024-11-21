@@ -173,17 +173,13 @@
 <a href="#173" id="173">173</a>
 <a href="#174" id="174">174</a>
 <a href="#175" id="175">175</a>
-<a href="#176" id="176">176</a>
-<a href="#177" id="177">177</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
-<span class="kw">use </span>clap::{Args, Parser};
+<span class="kw">use </span>clap::Parser;
 <span class="kw">use </span>cli_commands::registration_signatures::RegistrationSignaturesCmd;
 <span class="kw">use </span>frame_support::sp_runtime::traits::NumberFor;
-<span class="kw">use </span>frame_support::Serialize;
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode};
-<span class="kw">use </span>plutus::ToDatum;
 <span class="kw">use </span>sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 <span class="kw">use </span>sc_service::TaskManager;
 <span class="kw">use </span>sidechain_domain::{MainchainPublicKey, McEpochNumber, ScEpochNumber};
@@ -193,7 +189,8 @@
 <span class="kw">use </span>sp_session_validator_management::SessionValidatorManagementApi;
 <span class="kw">use </span>sp_session_validator_management_query::commands::<span class="kw-2">*</span>;
 <span class="kw">use </span>sp_session_validator_management_query::SessionValidatorManagementQuery;
-<span class="kw">use </span>sp_sidechain::{GetSidechainParams, GetSidechainStatus};
+<span class="kw">use </span>sp_sidechain::GetGenesisUtxo;
+<span class="kw">use </span>sp_sidechain::GetSidechainStatus;
 <span class="kw">use </span>std::future::Future;
 <span class="kw">use </span>std::sync::Arc;
 
@@ -244,7 +241,7 @@
 
 <span class="attr">#[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
-</span><span class="kw">pub enum </span>PartnerChainsSubcommand&lt;SidechainParams: clap::Args&gt; {
+</span><span class="kw">pub enum </span>PartnerChainsSubcommand {
 	<span class="doccomment">/// Returns sidechain parameters
 	</span>SidechainParams(SidechainParamsCmd),
 
@@ -261,10 +258,10 @@
 	</span>AriadneParameters(AriadneParametersCmd),
 
 	<span class="doccomment">/// Generates registration signatures for partner chains committee candidates
-	</span>RegistrationSignatures(RegistrationSignaturesCmd&lt;SidechainParams&gt;),
+	</span>RegistrationSignatures(RegistrationSignaturesCmd),
 }
 
-<span class="kw">pub fn </span>run&lt;Cli, SmartContractsParams, Block, CrossChainPublic, SessionKeys, Client&gt;(
+<span class="kw">pub fn </span>run&lt;Cli, Block, CrossChainPublic, SessionKeys, Client&gt;(
 	cli: <span class="kw-2">&amp;</span>Cli,
 	get_deps: <span class="kw">impl </span>FnOnce(
 		sc_service::Configuration,
@@ -272,13 +269,12 @@
 		(Arc&lt;Client&gt;, TaskManager, Arc&lt;<span class="kw">dyn </span>AuthoritySelectionDataSource + Send + Sync&gt;),
 		sc_service::error::Error,
 	&gt;,
-	cmd: PartnerChainsSubcommand&lt;SmartContractsParams&gt;,
+	cmd: PartnerChainsSubcommand,
 ) -&gt; sc_cli::Result&lt;()&gt;
 <span class="kw">where
 	</span>Cli: SubstrateCli,
-	SmartContractsParams: Args + ToDatum + Clone + Decode + Serialize + Send + Sync + <span class="lifetime">'static</span>,
 	Client: ProvideRuntimeApi&lt;Block&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">'static</span>,
-	Client::Api: GetSidechainParams&lt;Block, SmartContractsParams&gt;
+	Client::Api: GetGenesisUtxo&lt;Block&gt;
 		+ GetSidechainStatus&lt;Block&gt;
 		+ SessionValidatorManagementApi&lt;
 			Block,
@@ -297,7 +293,7 @@
 			<span class="kw">let </span>runner = cli.create_runner(<span class="kw-2">&amp;</span>cmd)<span class="question-mark">?</span>;
 			runner.async_run(|config| {
 				<span class="kw">let </span>(client, task_manager, <span class="kw">_</span>) = get_deps(config)<span class="question-mark">?</span>;
-				<span class="prelude-val">Ok</span>((print_result(sp_sidechain::query::get_sidechain_params(client)), task_manager))
+				<span class="prelude-val">Ok</span>((print_result(sp_sidechain::query::get_genesis_utxo(client)), task_manager))
 			})
 		},
 		PartnerChainsSubcommand::RegistrationStatus(cmd) =&gt; {

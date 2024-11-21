@@ -18,24 +18,36 @@
 <a href="#18" id="18">18</a>
 <a href="#19" id="19">19</a>
 <a href="#20" id="20">20</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::GetSidechainParams;
+<a href="#21" id="21">21</a>
+<a href="#22" id="22">22</a>
+<a href="#23" id="23">23</a>
+<a href="#24" id="24">24</a>
+<a href="#25" id="25">25</a>
+<a href="#26" id="26">26</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::GetGenesisUtxo;
+<span class="kw">use </span>sidechain_domain::UtxoId;
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="kw">use </span>std::sync::Arc;
 
-<span class="kw">pub async fn </span>get_sidechain_params&lt;B, C, P&gt;(client: Arc&lt;C&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;String, String&gt;
+<span class="kw">pub async fn </span>get_genesis_utxo&lt;B, C&gt;(client: Arc&lt;C&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;String, String&gt;
 <span class="kw">where
 	</span>B: BlockT,
 	C: ProvideRuntimeApi&lt;B&gt; + Send + Sync + <span class="lifetime">'static</span>,
-	C::Api: GetSidechainParams&lt;B, P&gt;,
+	C::Api: GetGenesisUtxo&lt;B&gt;,
 	C: HeaderBackend&lt;B&gt;,
-	P: parity_scale_codec::Decode + frame_support::Serialize,
 {
 	<span class="kw">let </span>api = client.runtime_api();
 	<span class="kw">let </span>best_block = client.info().best_hash;
-	<span class="kw">let </span>sidechain_params = api.sidechain_params(best_block).map_err(|err| err.to_string())<span class="question-mark">?</span>;
-	<span class="kw">let </span>output = serde_json::to_string_pretty(<span class="kw-2">&amp;</span>sidechain_params).map_err(|err| err.to_string())<span class="question-mark">?</span>;
+	<span class="kw">let </span>genesis_utxo = api.genesis_utxo(best_block).map_err(|err| err.to_string())<span class="question-mark">?</span>;
+	<span class="kw">let </span>output =
+		serde_json::to_string_pretty(<span class="kw-2">&amp;</span>Output { genesis_utxo }).map_err(|err| err.to_string())<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(output)
+}
+
+<span class="attr">#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
+</span><span class="kw">pub struct </span>Output {
+	<span class="kw">pub </span>genesis_utxo: UtxoId,
 }
 </code></pre></div></section></main></body></html>

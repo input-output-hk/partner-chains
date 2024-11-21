@@ -155,10 +155,8 @@
 <a href="#155" id="155">155</a>
 <a href="#156" id="156">156</a>
 <a href="#157" id="157">157</a>
-<a href="#158" id="158">158</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::chain_spec::get_account_id_from_seed;
 <span class="kw">use </span><span class="kw">crate</span>::chain_spec::<span class="kw-2">*</span>;
-<span class="kw">use </span>chain_params::SidechainParams;
 <span class="kw">use </span>sc_service::ChainType;
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 <span class="kw">use </span>sidechain_runtime::{
@@ -295,7 +293,7 @@
 				.collect(),
 		},
 		sidechain: SidechainConfig {
-			params: SidechainParams::read_from_env_with_defaults()<span class="question-mark">?</span>,
+			genesis_utxo: sp_sidechain::read_genesis_utxo_from_env_with_defaults()<span class="question-mark">?</span>,
 			..Default::default()
 		},
 		pallet_session: Default::default(),

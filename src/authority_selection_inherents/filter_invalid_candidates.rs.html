@@ -579,55 +579,6 @@
 <a href="#579" id="579">579</a>
 <a href="#580" id="580">580</a>
 <a href="#581" id="581">581</a>
-<a href="#582" id="582">582</a>
-<a href="#583" id="583">583</a>
-<a href="#584" id="584">584</a>
-<a href="#585" id="585">585</a>
-<a href="#586" id="586">586</a>
-<a href="#587" id="587">587</a>
-<a href="#588" id="588">588</a>
-<a href="#589" id="589">589</a>
-<a href="#590" id="590">590</a>
-<a href="#591" id="591">591</a>
-<a href="#592" id="592">592</a>
-<a href="#593" id="593">593</a>
-<a href="#594" id="594">594</a>
-<a href="#595" id="595">595</a>
-<a href="#596" id="596">596</a>
-<a href="#597" id="597">597</a>
-<a href="#598" id="598">598</a>
-<a href="#599" id="599">599</a>
-<a href="#600" id="600">600</a>
-<a href="#601" id="601">601</a>
-<a href="#602" id="602">602</a>
-<a href="#603" id="603">603</a>
-<a href="#604" id="604">604</a>
-<a href="#605" id="605">605</a>
-<a href="#606" id="606">606</a>
-<a href="#607" id="607">607</a>
-<a href="#608" id="608">608</a>
-<a href="#609" id="609">609</a>
-<a href="#610" id="610">610</a>
-<a href="#611" id="611">611</a>
-<a href="#612" id="612">612</a>
-<a href="#613" id="613">613</a>
-<a href="#614" id="614">614</a>
-<a href="#615" id="615">615</a>
-<a href="#616" id="616">616</a>
-<a href="#617" id="617">617</a>
-<a href="#618" id="618">618</a>
-<a href="#619" id="619">619</a>
-<a href="#620" id="620">620</a>
-<a href="#621" id="621">621</a>
-<a href="#622" id="622">622</a>
-<a href="#623" id="623">623</a>
-<a href="#624" id="624">624</a>
-<a href="#625" id="625">625</a>
-<a href="#626" id="626">626</a>
-<a href="#627" id="627">627</a>
-<a href="#628" id="628">628</a>
-<a href="#629" id="629">629</a>
-<a href="#630" id="630">630</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Functionality related to filtering invalid candidates from the candidates
 
 </span><span class="kw">use </span>frame_support::pallet_prelude::TypeInfo;
@@ -644,8 +595,8 @@
 /// It's ToDatum implementation has to produce datum that has to match main chain structure,
 /// because it will be hashed and signed for signature verification.
 </span><span class="attr">#[derive(Debug, ToDatum)]
-</span><span class="kw">pub struct </span>RegisterValidatorSignedMessage&lt;Params&gt; {
-	<span class="kw">pub </span>sidechain_params: Params,
+</span><span class="kw">pub struct </span>RegisterValidatorSignedMessage {
+	<span class="kw">pub </span>genesis_utxo: UtxoId,
 	<span class="kw">pub </span>sidechain_pub_key: Vec&lt;u8&gt;,
 	<span class="doccomment">/// UTxO that is an input parameter to the registration transaction
 	</span><span class="kw">pub </span>input_utxo: UtxoId,
@@ -665,13 +616,9 @@
 }
 
 <span class="doccomment">/// Get the valid trustless candidates from the registrations from inherent data
-</span><span class="kw">pub fn </span>filter_trustless_candidates_registrations&lt;
-	TAccountId,
-	TAccountKeys,
-	Params: ToDatum + Clone,
-&gt;(
+</span><span class="kw">pub fn </span>filter_trustless_candidates_registrations&lt;TAccountId, TAccountKeys&gt;(
 	candidate_registrations: Vec&lt;CandidateRegistrations&gt;,
-	sidechain_params: Params,
+	genesis_utxo: UtxoId,
 ) -&gt; Vec&lt;CandidateWithStake&lt;TAccountId, TAccountKeys&gt;&gt;
 <span class="kw">where
 	</span>TAccountKeys: From&lt;(sr25519::Public, ed25519::Public)&gt;,
@@ -680,7 +627,7 @@
 	candidate_registrations
 		.into_iter()
 		.flat_map(|candidate_registrations| {
-			select_latest_valid_candidate(candidate_registrations, <span class="kw-2">&amp;</span>sidechain_params)
+			select_latest_valid_candidate(candidate_registrations, genesis_utxo)
 		})
 		.collect()
 }
@@ -703,9 +650,9 @@
 		.collect()
 }
 
-<span class="kw">fn </span>select_latest_valid_candidate&lt;TAccountId, TAccountKeys, Params: ToDatum + Clone&gt;(
+<span class="kw">fn </span>select_latest_valid_candidate&lt;TAccountId, TAccountKeys&gt;(
 	candidate_registrations: CandidateRegistrations,
-	sidechain_params: <span class="kw-2">&amp;</span>Params,
+	genesis_utxo: UtxoId,
 ) -&gt; <span class="prelude-ty">Option</span>&lt;CandidateWithStake&lt;TAccountId, TAccountKeys&gt;&gt;
 <span class="kw">where
 	</span>TAccountId: From&lt;ecdsa::Public&gt;,
@@ -718,11 +665,7 @@
 		.registrations
 		.into_iter()
 		.filter_map(|registration_data| {
-			<span class="kw">match </span>validate_registration_data(
-				<span class="kw-2">&amp;</span>mainchain_pub_key,
-				<span class="kw-2">&amp;</span>registration_data,
-				sidechain_params,
-			) {
+			<span class="kw">match </span>validate_registration_data(<span class="kw-2">&amp;</span>mainchain_pub_key, <span class="kw-2">&amp;</span>registration_data, genesis_utxo) {
 				<span class="prelude-val">Ok</span>(candidate) =&gt; <span class="prelude-val">Some</span>((candidate, registration_data.utxo_info)),
 				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">None</span>,
 			}
@@ -804,10 +747,10 @@
 }
 
 <span class="doccomment">/// Is the registration data provided by the authority candidate valid?
-</span><span class="kw">pub fn </span>validate_registration_data&lt;Params: ToDatum + Clone&gt;(
+</span><span class="kw">pub fn </span>validate_registration_data(
 	mainchain_pub_key: <span class="kw-2">&amp;</span>MainchainPublicKey,
 	registration_data: <span class="kw-2">&amp;</span>RegistrationData,
-	sidechain_params: <span class="kw-2">&amp;</span>Params,
+	genesis_utxo: UtxoId,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Candidate&lt;ecdsa::Public, (sr25519::Public, ed25519::Public)&gt;, RegistrationDataError&gt; {
 	<span class="kw">let </span>aura_pub_key = registration_data
 		.aura_pub_key
@@ -823,7 +766,7 @@
 	);
 
 	<span class="kw">let </span>signed_message = RegisterValidatorSignedMessage {
-		sidechain_params: sidechain_params.clone(),
+		genesis_utxo,
 		sidechain_pub_key: registration_data.sidechain_pub_key.<span class="number">0</span>.clone(),
 		input_utxo: registration_data.consumed_input,
 	};
@@ -924,12 +867,11 @@
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span><span class="kw">crate</span>::tests::{AccountId, AccountKeys};
-	<span class="kw">use </span>chain_params::SidechainParams;
 	<span class="kw">use </span>hex_literal::hex;
 	<span class="kw">use </span>sp_core::Pair;
 
 	<span class="doccomment">/// Get Valid Parameters of the `is_registration_data_valid()` function
-	</span><span class="kw">fn </span>create_valid_parameters() -&gt; (MainchainPublicKey, RegistrationData, SidechainParams) {
+	</span><span class="kw">fn </span>create_valid_parameters() -&gt; (MainchainPublicKey, RegistrationData, UtxoId) {
 		<span class="kw">let </span>input_utxo = UtxoId {
 			tx_hash: McTxHash(<span class="macro">hex!</span>(
 				<span class="string">"d260a76b267e27fdf79c217ec61b776d6436dc78eefeac8f3c615486a71f38eb"
@@ -940,13 +882,13 @@
 		<span class="kw">let </span>registration_data = RegistrationData {
 			consumed_input: input_utxo,
 			sidechain_signature: SidechainSignature(
-				<span class="macro">hex!</span>(<span class="string">"f31f26ea682a5721cd07cb337a3a7ca134d3909f6afcd09c74a67dda35f28aa20983e396cb444ba87d146ab3bf9ecf2c129572decfde7db9cfb2580e429d8744"</span>).to_vec()
+				<span class="macro">hex!</span>(<span class="string">"f3622ed6e121836765f684068ecf3cf13eb3eb7d2fc7edcabdb41cad940434ca7b9edf45ce8b6d8d2b2a842fb8265856a3f950d72d42499c72ad28dc46b5dc90"</span>).to_vec()
 			),
 			mainchain_signature: MainchainSignature(
-				<span class="macro">hex!</span>(<span class="string">"1ff8cd26c9132bed8b54acb13d4210cc38fb6577c548222d3a976e1cbf6cdc3dff94922aa3aad6b06a87ce8e15fd254fac14f6654ced49dc8758a6095f347604"</span>).to_vec()
+				<span class="macro">hex!</span>(<span class="string">"2e5e39928409aa9ef5ab955da1cd3819ebd2e7461e766d685305280b6986929e3df2bf4cc5a2ed355c20a0dfb44f2e6ef1f36b6da3bbae3ff0c040705b412e07"</span>).to_vec()
 			),
 			cross_chain_signature: CrossChainSignature(
-				<span class="macro">hex!</span>(<span class="string">"4b3a74688573be4a3b68f0dd8f9ef699a5bae594d8f5f915394afacf259ecada2f5d85dc2a54550ce17efa26c0e2937be188666a9fb25ab6d467d52751144bf1"</span>).to_vec()
+				<span class="macro">hex!</span>(<span class="string">"f3622ed6e121836765f684068ecf3cf13eb3eb7d2fc7edcabdb41cad940434ca7b9edf45ce8b6d8d2b2a842fb8265856a3f950d72d42499c72ad28dc46b5dc90"</span>).to_vec()
 			),
 			sidechain_pub_key: SidechainPublicKey(
 				<span class="macro">hex!</span>(<span class="string">"020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"</span>).to_vec()
@@ -973,19 +915,11 @@
 			tx_inputs: <span class="macro">vec!</span>[input_utxo],
 		};
 
-		<span class="kw">let </span>sidechain_params = SidechainParams {
-			chain_id: <span class="number">0</span>,
-			genesis_committee_utxo: UtxoId {
-				tx_hash: McTxHash(<span class="macro">hex!</span>(
-					<span class="string">"f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e"
-				</span>)),
-				index: UtxoIndex(<span class="number">0</span>),
-			},
-			threshold_numerator: <span class="number">2</span>,
-			threshold_denominator: <span class="number">3</span>,
-			governance_authority: MainchainAddressHash(<span class="macro">hex!</span>(
-				<span class="string">"00112233445566778899001122334455667788990011223344556677"
+		<span class="kw">let </span>genesis_utxo = UtxoId {
+			tx_hash: McTxHash(<span class="macro">hex!</span>(
+				<span class="string">"f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e"
 			</span>)),
+			index: UtxoIndex(<span class="number">0</span>),
 		};
 
 		(
@@ -993,12 +927,13 @@
 				<span class="string">"fb335cabe7d3dd77d0177cd332e9a44998d9d5085b811650853b7bb0752a8bef"
 			</span>)),
 			registration_data,
-			sidechain_params,
+			genesis_utxo,
 		)
 	}
 
 	<span class="kw">mod </span>is_registration_data_valid_tests {
 		<span class="kw">use super</span>::<span class="kw-2">*</span>;
+		<span class="kw">use </span>core::str::FromStr;
 		<span class="kw">use </span>sidechain_domain::{
 			CrossChainPublicKey, McTxHash, SidechainPublicKey, SidechainSignature,
 		};
@@ -1007,24 +942,14 @@
 		<span class="kw">fn </span>create_parameters(
 			signing_sidechain_account: ecdsa::Pair,
 			sidechain_pub_key: Vec&lt;u8&gt;,
-		) -&gt; (MainchainPublicKey, RegistrationData, SidechainParams) {
+		) -&gt; (MainchainPublicKey, RegistrationData, UtxoId) {
 			<span class="kw">let </span>mainchain_account = ed25519::Pair::from_seed_slice(<span class="kw-2">&amp;</span>[<span class="number">7u8</span>; <span class="number">32</span>]).unwrap();
-
+			<span class="kw">let </span>genesis_utxo =
+				UtxoId { tx_hash: McTxHash([<span class="number">7u8</span>; TX_HASH_SIZE]), index: UtxoIndex(<span class="number">0</span>) };
 			<span class="kw">let </span>signed_message = RegisterValidatorSignedMessage {
-				sidechain_params: SidechainParams {
-					chain_id: <span class="number">101</span>,
-					genesis_committee_utxo: UtxoId {
-						tx_hash: McTxHash([<span class="number">7u8</span>; TX_HASH_SIZE]),
-						index: UtxoIndex(<span class="number">0</span>),
-					},
-					threshold_numerator: <span class="number">2</span>,
-					threshold_denominator: <span class="number">3</span>,
-					governance_authority: MainchainAddressHash(<span class="macro">hex!</span>(
-						<span class="string">"00112233445566778899001122334455667788990011223344556677"
-					</span>)),
-				},
+				genesis_utxo,
 				sidechain_pub_key: sidechain_pub_key.clone(),
-				input_utxo: UtxoId { tx_hash: McTxHash([<span class="number">7u8</span>; TX_HASH_SIZE]), index: UtxoIndex(<span class="number">0</span>) },
+				input_utxo: genesis_utxo,
 			};
 
 			<span class="kw">let </span>signed_message_encoded = minicbor::to_vec(signed_message.to_datum()).unwrap();
@@ -1053,29 +978,23 @@
 				tx_inputs: <span class="macro">vec!</span>[signed_message.input_utxo],
 			};
 
-			(
-				MainchainPublicKey(mainchain_account.public().<span class="number">0</span>),
-				registration_data,
-				signed_message.sidechain_params,
-			)
+			(MainchainPublicKey(mainchain_account.public().<span class="number">0</span>), registration_data, genesis_utxo)
 		}
 
 		<span class="attr">#[test]
 		</span><span class="kw">fn </span>should_work() {
-			<span class="kw">let </span>(mainchain_pub_key, registration_data, sidechain_params) =
-				create_valid_parameters();
+			<span class="kw">let </span>(mainchain_pub_key, registration_data, genesis_utxo) = create_valid_parameters();
 			<span class="macro">assert!</span>(validate_registration_data(
 				<span class="kw-2">&amp;</span>mainchain_pub_key,
 				<span class="kw-2">&amp;</span>registration_data,
-				<span class="kw-2">&amp;</span>sidechain_params,
+				genesis_utxo,
 			)
 			.is_ok());
 		}
 
 		<span class="attr">#[test]
 		</span><span class="kw">fn </span>should_not_work_if_mainchain_pub_key_is_different() {
-			<span class="kw">let </span>(mainchain_pub_key, registration_data, sidechain_params) =
-				create_valid_parameters();
+			<span class="kw">let </span>(mainchain_pub_key, registration_data, genesis_utxo) = create_valid_parameters();
 			<span class="kw">let </span>different_mainchain_pub_key =
 				MainchainPublicKey(ed25519::Pair::from_seed_slice(<span class="kw-2">&amp;</span>[<span class="number">0u8</span>; <span class="number">32</span>]).unwrap().public().<span class="number">0</span>);
 			<span class="macro">assert_ne!</span>(mainchain_pub_key, different_mainchain_pub_key);
@@ -1083,7 +1002,7 @@
 				validate_registration_data(
 					<span class="kw-2">&amp;</span>different_mainchain_pub_key,
 					<span class="kw-2">&amp;</span>registration_data,
-					<span class="kw-2">&amp;</span>sidechain_params,
+					genesis_utxo,
 				),
 				<span class="prelude-val">Err</span>(RegistrationDataError::InvalidMainchainSignature)
 			);
@@ -1094,14 +1013,10 @@
 			<span class="kw">let </span>signing_sidechain_account = ecdsa::Pair::from_seed_slice(<span class="kw-2">&amp;</span>[<span class="number">77u8</span>; <span class="number">32</span>]).unwrap();
 			<span class="kw">let </span>sidechain_pub_key =
 				ecdsa::Pair::from_seed_slice(<span class="kw-2">&amp;</span>[<span class="number">123u8</span>; <span class="number">32</span>]).unwrap().public().<span class="number">0</span>.to_vec();
-			<span class="kw">let </span>(mainchain_pub_key, registration_data, sidechain_params) =
+			<span class="kw">let </span>(mainchain_pub_key, registration_data, genesis_utxo) =
 				create_parameters(signing_sidechain_account, sidechain_pub_key);
 			<span class="macro">assert_eq!</span>(
-				validate_registration_data(
-					<span class="kw-2">&amp;</span>mainchain_pub_key,
-					<span class="kw-2">&amp;</span>registration_data,
-					<span class="kw-2">&amp;</span>sidechain_params,
-				),
+				validate_registration_data(<span class="kw-2">&amp;</span>mainchain_pub_key, <span class="kw-2">&amp;</span>registration_data, genesis_utxo,),
 				<span class="prelude-val">Err</span>(RegistrationDataError::InvalidSidechainSignature)
 			);
 		}
@@ -1111,15 +1026,11 @@
 			<span class="kw">let </span>signing_sidechain_account = ecdsa::Pair::from_seed_slice(<span class="kw-2">&amp;</span>[<span class="number">77u8</span>; <span class="number">32</span>]).unwrap();
 			<span class="kw">let </span>sidechain_pub_key =
 				ecdsa::Pair::from_seed_slice(<span class="kw-2">&amp;</span>[<span class="number">123u8</span>; <span class="number">32</span>]).unwrap().public().<span class="number">0</span>.to_vec();
-			<span class="kw">let </span>(mainchain_pub_key, <span class="kw-2">mut </span>registration_data, sidechain_params) =
+			<span class="kw">let </span>(mainchain_pub_key, <span class="kw-2">mut </span>registration_data, genesis_utxo) =
 				create_parameters(signing_sidechain_account, sidechain_pub_key);
 			registration_data.grandpa_pub_key = GrandpaPublicKey(<span class="macro">vec!</span>[<span class="number">3</span>; <span class="number">4</span>]);
 			<span class="macro">assert_eq!</span>(
-				validate_registration_data(
-					<span class="kw-2">&amp;</span>mainchain_pub_key,
-					<span class="kw-2">&amp;</span>registration_data,
-					<span class="kw-2">&amp;</span>sidechain_params,
-				),
+				validate_registration_data(<span class="kw-2">&amp;</span>mainchain_pub_key, <span class="kw-2">&amp;</span>registration_data, genesis_utxo,),
 				<span class="prelude-val">Err</span>(RegistrationDataError::InvalidGrandpaKey)
 			);
 		}
@@ -1129,47 +1040,38 @@
 			<span class="kw">let </span>signing_sidechain_account = ecdsa::Pair::from_seed_slice(<span class="kw-2">&amp;</span>[<span class="number">77u8</span>; <span class="number">32</span>]).unwrap();
 			<span class="kw">let </span>sidechain_pub_key =
 				ecdsa::Pair::from_seed_slice(<span class="kw-2">&amp;</span>[<span class="number">123u8</span>; <span class="number">32</span>]).unwrap().public().<span class="number">0</span>.to_vec();
-			<span class="kw">let </span>(mainchain_pub_key, <span class="kw-2">mut </span>registration_data, sidechain_params) =
+			<span class="kw">let </span>(mainchain_pub_key, <span class="kw-2">mut </span>registration_data, genesis_utxo) =
 				create_parameters(signing_sidechain_account, sidechain_pub_key);
 			registration_data.aura_pub_key = AuraPublicKey(<span class="macro">vec!</span>[<span class="number">3</span>; <span class="number">4</span>]);
 			<span class="macro">assert_eq!</span>(
-				validate_registration_data(
-					<span class="kw-2">&amp;</span>mainchain_pub_key,
-					<span class="kw-2">&amp;</span>registration_data,
-					<span class="kw-2">&amp;</span>sidechain_params,
-				),
+				validate_registration_data(<span class="kw-2">&amp;</span>mainchain_pub_key, <span class="kw-2">&amp;</span>registration_data, genesis_utxo),
 				<span class="prelude-val">Err</span>(RegistrationDataError::InvalidAuraKey)
 			);
 		}
 
 		<span class="attr">#[test]
 		</span><span class="kw">fn </span>should_not_work_if_sidechain_params_is_different() {
-			<span class="kw">let </span>(mainchain_pub_key, registration_data, sidechain_params) =
-				create_valid_parameters();
-			<span class="kw">let </span>different_sidechain_params = SidechainParams {
-				chain_id: sidechain_params.chain_id + <span class="number">1</span>,
-				..sidechain_params.clone()
-			};
-			<span class="macro">assert_ne!</span>(different_sidechain_params, sidechain_params);
+			<span class="kw">let </span>(mainchain_pub_key, registration_data, genesis_utxo) = create_valid_parameters();
+			<span class="kw">let </span>different_genesis_utxo = UtxoId::from_str(
+				<span class="string">"ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00#7"</span>,
+			)
+			.unwrap();
+			<span class="macro">assert_ne!</span>(different_genesis_utxo, genesis_utxo);
 			<span class="macro">assert!</span>(validate_registration_data(
 				<span class="kw-2">&amp;</span>mainchain_pub_key,
 				<span class="kw-2">&amp;</span>registration_data,
-				<span class="kw-2">&amp;</span>different_sidechain_params,
+				different_genesis_utxo,
 			)
 			.is_err());
 		}
 
 		<span class="attr">#[test]
 		</span><span class="kw">fn </span>should_not_work_if_tx_input_is_invalid() {
-			<span class="kw">let </span>(mainchain_pub_key, <span class="kw-2">mut </span>registration_data, sidechain_params) =
+			<span class="kw">let </span>(mainchain_pub_key, <span class="kw-2">mut </span>registration_data, genesis_utxo) =
 				create_valid_parameters();
 			registration_data.tx_inputs = <span class="macro">vec!</span>[];
 			<span class="macro">assert_eq!</span>(
-				validate_registration_data(
-					<span class="kw-2">&amp;</span>mainchain_pub_key,
-					<span class="kw-2">&amp;</span>registration_data,
-					<span class="kw-2">&amp;</span>sidechain_params,
-				),
+				validate_registration_data(<span class="kw-2">&amp;</span>mainchain_pub_key, <span class="kw-2">&amp;</span>registration_data, genesis_utxo,),
 				<span class="prelude-val">Err</span>(RegistrationDataError::InvalidTxInput)
 			);
 		}
@@ -1177,7 +1079,7 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>should_filter_out_candidates_with_invalid_stake() {
-		<span class="kw">let </span>(mc_pub_key, registration_data, sidechain_params) = create_valid_parameters();
+		<span class="kw">let </span>(mc_pub_key, registration_data, genesis_utxo) = create_valid_parameters();
 		<span class="kw">let </span>candidate_registrations = <span class="macro">vec!</span>[
 			CandidateRegistrations {
 				mainchain_pub_key: mc_pub_key.clone(),
@@ -1201,9 +1103,9 @@
 			},
 		];
 
-		<span class="kw">let </span>valid_candidates = filter_trustless_candidates_registrations::&lt;AccountId, AccountKeys, <span class="kw">_</span>&gt;(
+		<span class="kw">let </span>valid_candidates = filter_trustless_candidates_registrations::&lt;AccountId, AccountKeys&gt;(
 			candidate_registrations,
-			sidechain_params,
+			genesis_utxo,
 		);
 
 		<span class="macro">assert_eq!</span>(valid_candidates.len(), <span class="number">2</span>);

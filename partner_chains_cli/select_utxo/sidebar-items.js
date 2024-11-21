@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["filter_utxos","query_utxos","select_from_utxos"],"struct":["ValidUtxo"]};

@@ -209,9 +209,6 @@
 <a href="#209" id="209">209</a>
 <a href="#210" id="210">210</a>
 <a href="#211" id="211">211</a>
-<a href="#212" id="212">212</a>
-<a href="#213" id="213">213</a>
-<a href="#214" id="214">214</a>
 </pre></div><pre class="rust"><code><span class="kw">pub mod </span>commands;
 <span class="kw">pub mod </span>get_registrations;
 <span class="kw">pub mod </span>types;
@@ -222,7 +219,6 @@
 };
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 <span class="kw">use </span>derive_new::new;
-<span class="kw">use </span>plutus::ToDatum;
 <span class="kw">use </span>sidechain_block_search::{predicates::AnyBlockInEpoch, FindSidechainBlock, SidechainInfo};
 <span class="kw">use </span>sidechain_domain::{MainchainPublicKey, McEpochNumber, ScEpochNumber};
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
@@ -231,7 +227,7 @@
 <span class="kw">use </span>sp_runtime::traits::NumberFor;
 <span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, Zero};
 <span class="kw">use </span>sp_session_validator_management::SessionValidatorManagementApi;
-<span class="kw">use </span>sp_sidechain::{GetSidechainParams, GetSidechainStatus};
+<span class="kw">use </span>sp_sidechain::{GetGenesisUtxo, GetSidechainStatus};
 <span class="kw">use </span>std::sync::Arc;
 <span class="kw">use </span>types::<span class="kw-2">*</span>;
 
@@ -268,11 +264,10 @@
 	Block,
 	SessionKeys: parity_scale_codec::Decode,
 	CrossChainPublic,
-	SidechainParams: parity_scale_codec::Decode + ToDatum + Clone + Send + Sync + <span class="lifetime">'static</span>,
 &gt; {
 	client: Arc&lt;C&gt;,
 	candidate_data_source: Arc&lt;<span class="kw">dyn </span>AuthoritySelectionDataSource + Send + Sync&gt;,
-	_marker: std::marker::PhantomData&lt;(Block, SessionKeys, CrossChainPublic, SidechainParams)&gt;,
+	_marker: std::marker::PhantomData&lt;(Block, SessionKeys, CrossChainPublic)&gt;,
 }
 
 <span class="attr">#[async_trait]
@@ -280,7 +275,6 @@
 		C,
 		Block,
 		SessionKeys: parity_scale_codec::Decode + Send + Sync + <span class="lifetime">'static</span>,
-		SidechainParams: parity_scale_codec::Decode + ToDatum + Clone + Send + Sync + <span class="lifetime">'static</span>,
 		CrossChainPublic: parity_scale_codec::Decode
 			+ parity_scale_codec::Encode
 			+ AsRef&lt;[u8]&gt;
@@ -288,7 +282,7 @@
 			+ Sync
 			+ <span class="lifetime">'static</span>,
 	&gt; SessionValidatorManagementQueryApi
-	<span class="kw">for </span>SessionValidatorManagementQuery&lt;C, Block, SessionKeys, CrossChainPublic, SidechainParams&gt;
+	<span class="kw">for </span>SessionValidatorManagementQuery&lt;C, Block, SessionKeys, CrossChainPublic&gt;
 <span class="kw">where
 	</span>Block: BlockT,
 	NumberFor&lt;Block&gt;: From&lt;u32&gt; + Into&lt;u32&gt;,
@@ -304,7 +298,7 @@
 		AuthoritySelectionInputs,
 		ScEpochNumber,
 	&gt;,
-	C::Api: GetSidechainParams&lt;Block, SidechainParams&gt;,
+	C::Api: GetGenesisUtxo&lt;Block&gt;,
 	C::Api: CandidateValidationApi&lt;Block&gt;,
 {
 	<span class="kw">fn </span>get_epoch_committee(<span class="kw-2">&amp;</span><span class="self">self</span>, epoch_number: u64) -&gt; QueryResult&lt;GetCommitteeResponse&gt; {

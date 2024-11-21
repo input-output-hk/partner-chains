@@ -51,9 +51,7 @@
 <a href="#51" id="51">51</a>
 <a href="#52" id="52">52</a>
 <a href="#53" id="53">53</a>
-<a href="#54" id="54">54</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::chain_spec::<span class="kw-2">*</span>;
-<span class="kw">use </span>chain_params::SidechainParams;
 <span class="kw">use </span>sc_service::ChainType;
 <span class="kw">use </span>sidechain_runtime::{
 	AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig, RuntimeGenesisConfig,
@@ -83,7 +81,7 @@
 			</span>initial_validators: <span class="macro">vec!</span>[],
 		},
 		sidechain: SidechainConfig {
-			params: SidechainParams::read_from_env_with_defaults()<span class="question-mark">?</span>,
+			genesis_utxo: sp_sidechain::read_genesis_utxo_from_env_with_defaults()<span class="question-mark">?</span>,
 			..Default::default()
 		},
 		pallet_session: Default::default(),

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["get_sidechain_params"]};
+window.SIDEBAR_ITEMS = {"fn":["get_genesis_utxo"],"struct":["Output"]};

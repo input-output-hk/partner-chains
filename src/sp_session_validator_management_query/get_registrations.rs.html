@@ -120,32 +120,28 @@
 <a href="#120" id="120">120</a>
 <a href="#121" id="121">121</a>
 <a href="#122" id="122">122</a>
-<a href="#123" id="123">123</a>
-<a href="#124" id="124">124</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::<span class="kw-2">*</span>;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::RegistrationDataError;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::{
 	CandidateValidationApi, StakeError,
 };
-<span class="kw">use </span>plutus::ToDatum;
 <span class="kw">use </span>sidechain_domain::{
 	CandidateRegistrations, MainchainAddress, McEpochNumber, RegistrationData, StakeDelegation,
 };
 <span class="kw">use </span>sp_core::bytes::to_hex;
-<span class="kw">use </span>sp_sidechain::GetSidechainParams;
+<span class="kw">use </span>sp_sidechain::GetGenesisUtxo;
 
 <span class="kw">impl</span>&lt;
 		C,
 		Block,
 		SessionKeys: parity_scale_codec::Decode + Send + Sync + <span class="lifetime">'static</span>,
 		CrossChainPublic,
-		SidechainParams: parity_scale_codec::Decode + Send + Sync + ToDatum + Clone,
-	&gt; SessionValidatorManagementQuery&lt;C, Block, SessionKeys, CrossChainPublic, SidechainParams&gt;
+	&gt; SessionValidatorManagementQuery&lt;C, Block, SessionKeys, CrossChainPublic&gt;
 <span class="kw">where
 	</span>Block: BlockT,
 	C: HeaderBackend&lt;Block&gt;,
 	C: <span class="lifetime">'static </span>+ ProvideRuntimeApi&lt;Block&gt; + Send + Sync,
-	C::Api: GetSidechainParams&lt;Block, SidechainParams&gt;,
+	C::Api: GetGenesisUtxo&lt;Block&gt;,
 	C::Api: CandidateValidationApi&lt;Block&gt;,
 {
 	<span class="kw">async fn </span>registrations_to_rpc_response(

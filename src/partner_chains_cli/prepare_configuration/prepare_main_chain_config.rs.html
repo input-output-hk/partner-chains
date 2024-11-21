@@ -351,55 +351,25 @@
 <a href="#351" id="351">351</a>
 <a href="#352" id="352">352</a>
 <a href="#353" id="353">353</a>
-<a href="#354" id="354">354</a>
-<a href="#355" id="355">355</a>
-<a href="#356" id="356">356</a>
-<a href="#357" id="357">357</a>
-<a href="#358" id="358">358</a>
-<a href="#359" id="359">359</a>
-<a href="#360" id="360">360</a>
-<a href="#361" id="361">361</a>
-<a href="#362" id="362">362</a>
-<a href="#363" id="363">363</a>
-<a href="#364" id="364">364</a>
-<a href="#365" id="365">365</a>
-<a href="#366" id="366">366</a>
-<a href="#367" id="367">367</a>
-<a href="#368" id="368">368</a>
-<a href="#369" id="369">369</a>
-<a href="#370" id="370">370</a>
-<a href="#371" id="371">371</a>
-<a href="#372" id="372">372</a>
-<a href="#373" id="373">373</a>
-<a href="#374" id="374">374</a>
-<a href="#375" id="375">375</a>
-<a href="#376" id="376">376</a>
-<a href="#377" id="377">377</a>
-<a href="#378" id="378">378</a>
-<a href="#379" id="379">379</a>
-<a href="#380" id="380">380</a>
-<a href="#381" id="381">381</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
 	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
 	PERMISSIONED_CANDIDATES_POLICY_ID,
 };
-<span class="kw">use </span><span class="kw">crate</span>::config::{ServiceConfig, SidechainParams};
+<span class="kw">use </span><span class="kw">crate</span>::config::ServiceConfig;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
-<span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::{prompt_ogmios_configuration, OGMIOS_REQUIRED};
 <span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 <span class="kw">use </span>partner_chains_cardano_offchain::scripts_data::GetScriptsData;
-<span class="kw">use </span>sidechain_domain::PolicyId;
+<span class="kw">use </span>sidechain_domain::{PolicyId, UtxoId};
 
 <span class="kw">pub fn </span>prepare_main_chain_config&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
-	sidechain_params: SidechainParams,
+	ogmios_config: <span class="kw-2">&amp;</span>ServiceConfig,
+	genesis_utxo: UtxoId,
 ) -&gt; anyhow::Result&lt;()&gt; {
-	context.print(OGMIOS_REQUIRED);
-	<span class="kw">let </span>ogmios_config = prompt_ogmios_configuration(context)<span class="question-mark">?</span>;
-	<span class="kw">let </span>cardano_parameteres = prepare_cardano_params(<span class="kw-2">&amp;</span>ogmios_config, context)<span class="question-mark">?</span>;
+	<span class="kw">let </span>cardano_parameteres = prepare_cardano_params(ogmios_config, context)<span class="question-mark">?</span>;
 	cardano_parameteres.save(context);
-	set_up_cardano_addresses(context, sidechain_params, <span class="kw-2">&amp;</span>ogmios_config)<span class="question-mark">?</span>;
+	set_up_cardano_addresses(context, genesis_utxo, ogmios_config)<span class="question-mark">?</span>;
 	<span class="kw">if </span>INITIAL_PERMISSIONED_CANDIDATES.load_from_file(context).is_none() {
 		INITIAL_PERMISSIONED_CANDIDATES.save_to_file(<span class="kw-2">&amp;</span><span class="macro">vec!</span>[], context)
 	}
@@ -410,20 +380,13 @@
 
 <span class="kw">fn </span>set_up_cardano_addresses&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
-	params: SidechainParams,
+	genesis_utxo: UtxoId,
 	ogmios_config: <span class="kw-2">&amp;</span>ServiceConfig,
 ) -&gt; anyhow::Result&lt;()&gt; {
-	<span class="kw">let </span>params = chain_params::SidechainParams {
-		chain_id: params.chain_id,
-		genesis_committee_utxo: params.genesis_committee_utxo,
-		threshold_numerator: params.threshold_numerator,
-		threshold_denominator: params.threshold_denominator,
-		governance_authority: params.governance_authority,
-	};
 	<span class="kw">let </span>offchain_impl = context.offchain_impl(ogmios_config)<span class="question-mark">?</span>;
 	<span class="kw">let </span>runtime = tokio::runtime::Runtime::new().map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
 	<span class="kw">let </span>scripts_data = runtime
-		.block_on(offchain_impl.get_scripts_data(params))
+		.block_on(offchain_impl.get_scripts_data(genesis_utxo))
 		.map_err(|e| <span class="macro">anyhow::anyhow!</span>(<span class="string">"Offchain call failed: {e:?}!"</span>))<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>committee_candidate_validator_addr = scripts_data.addresses.committee_candidate_validator;
@@ -487,10 +450,9 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{GOVERNANCE_AUTHORITY, KUPO_PROTOCOL, OGMIOS_PROTOCOL};
+	<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{GENESIS_UTXO, KUPO_PROTOCOL, OGMIOS_PROTOCOL};
+	<span class="kw">use </span><span class="kw">crate</span>::config::NetworkProtocol;
 	<span class="kw">use </span><span class="kw">crate</span>::ogmios::{OgmiosRequest, OgmiosResponse};
-	<span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::tests::prompt_ogmios_configuration_io;
-	<span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::{default_ogmios_service_config, OGMIOS_REQUIRED};
 	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::tests::{
 		preprod_eras_summaries, preprod_shelley_config, PREPROD_CARDANO_PARAMS,
 	};
@@ -500,7 +462,7 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 		Addresses, PolicyIds, ScriptsData, ValidatorHashes,
 	};
 	<span class="kw">use </span>serde_json::Value;
-	<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, UtxoId};
+	<span class="kw">use </span>sidechain_domain::UtxoId;
 	<span class="kw">use </span>std::str::FromStr;
 
 	<span class="kw">const </span>TEST_GENESIS_UTXO: <span class="kw-2">&amp;</span>str =
@@ -513,6 +475,14 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 		<span class="string">"13db1ba564b3b264f45974fece44b2beb0a2326b10e65a0f7f300dfb"</span>;
 	<span class="kw">const </span>TEST_ILLIQUID_SUPPLY_ADDRESS: <span class="kw-2">&amp;</span>str =
 		<span class="string">"addr_test1wqn2pkvvmesmxtfa4tz7w8gh8vumr52lpkrhcs4dkg30uqq77h5z4"</span>;
+
+	<span class="kw">fn </span>ogmios_config() -&gt; ServiceConfig {
+		ServiceConfig {
+			hostname: <span class="string">"localhost"</span>.to_string(),
+			port: <span class="number">1337</span>,
+			protocol: NetworkProtocol::Http,
+		}
+	}
 
 	<span class="kw">pub mod </span>scenarios {
 		<span class="kw">use super</span>::<span class="kw-2">*</span>;
@@ -584,11 +554,10 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>happy_path() {
 		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_json_file(GOVERNANCE_AUTHORITY.config_file, <span class="macro">serde_json::json!</span>({}))
+			.with_json_file(GENESIS_UTXO.config_file, <span class="macro">serde_json::json!</span>({}))
 			.with_json_file(OGMIOS_PROTOCOL.config_file, <span class="macro">serde_json::json!</span>({}))
 			.with_offchain_mocks(preprod_offchain_mocks())
 			.with_expected_io(<span class="macro">vec!</span>[
-				establish_ogmios_configuration_io(),
 				MockIO::ogmios_request(
 					<span class="string">"http://localhost:1337"</span>,
 					OgmiosRequest::QueryLedgerStateEraSummaries,
@@ -620,7 +589,12 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 				scenarios::prompt_and_save_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
 			]);
-		prepare_main_chain_config(<span class="kw-2">&amp;</span>mock_context, test_sidechain_params()).expect(<span class="string">"should succeed"</span>);
+		prepare_main_chain_config(
+			<span class="kw-2">&amp;</span>mock_context,
+			<span class="kw-2">&amp;</span>ogmios_config(),
+			UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
+		)
+		.expect(<span class="string">"should succeed"</span>);
 	}
 
 	<span class="attr">#[test]
@@ -641,7 +615,6 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 			.with_json_file(KUPO_PROTOCOL.config_file, <span class="macro">serde_json::json!</span>({}))
 			.with_offchain_mocks(preprod_offchain_mocks())
 			.with_expected_io(<span class="macro">vec!</span>[
-				establish_ogmios_configuration_io(),
 				MockIO::ogmios_request(
 					<span class="string">"http://localhost:1337"</span>,
 					OgmiosRequest::QueryLedgerStateEraSummaries,
@@ -668,7 +641,12 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 				scenarios::prompt_and_save_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
 			]);
-		prepare_main_chain_config(<span class="kw-2">&amp;</span>mock_context, test_sidechain_params()).expect(<span class="string">"should succeed"</span>);
+		prepare_main_chain_config(
+			<span class="kw-2">&amp;</span>mock_context,
+			<span class="kw-2">&amp;</span>ogmios_config(),
+			UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
+		)
+		.expect(<span class="string">"should succeed"</span>);
 	}
 
 	<span class="kw">fn </span>print_addresses_io() -&gt; MockIO {
@@ -681,33 +659,9 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 		))
 	}
 
-	<span class="kw">fn </span>test_sidechain_params() -&gt; SidechainParams {
-		SidechainParams {
-			chain_id: <span class="number">0</span>,
-			genesis_committee_utxo: UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
-			threshold_numerator: <span class="number">2</span>,
-			threshold_denominator: <span class="number">3</span>,
-			governance_authority: MainchainAddressHash::from_hex_unsafe(
-				<span class="string">"0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"</span>,
-			),
-		}
-	}
-
-	<span class="kw">fn </span>expected_mapped_params() -&gt; chain_params::SidechainParams {
-		chain_params::SidechainParams {
-			chain_id: <span class="number">0</span>,
-			genesis_committee_utxo: UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
-			threshold_numerator: <span class="number">2</span>,
-			threshold_denominator: <span class="number">3</span>,
-			governance_authority: MainchainAddressHash::from_hex_unsafe(
-				<span class="string">"0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"</span>,
-			),
-		}
-	}
-
 	<span class="kw">fn </span>preprod_offchain_mocks() -&gt; OffchainMocks {
 		<span class="kw">let </span>mock = OffchainMock::new_with_scripts_data(
-			expected_mapped_params(),
+			UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
 			<span class="prelude-val">Ok</span>(ScriptsData {
 				addresses: Addresses {
 					committee_candidate_validator: TEST_COMMITTEE_CANDIDATES_ADDRESS.to_string(),
@@ -748,16 +702,6 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 			},
 			<span class="string">"initial_permissioned_candidates"</span>: []
 		})
-	}
-
-	<span class="kw">fn </span>establish_ogmios_configuration_io() -&gt; MockIO {
-		MockIO::Group(<span class="macro">vec!</span>[
-			MockIO::print(OGMIOS_REQUIRED),
-			prompt_ogmios_configuration_io(
-				<span class="kw-2">&amp;</span>default_ogmios_service_config(),
-				<span class="kw-2">&amp;</span>default_ogmios_service_config(),
-			),
-		])
 	}
 }
 </code></pre></div></section></main></body></html>

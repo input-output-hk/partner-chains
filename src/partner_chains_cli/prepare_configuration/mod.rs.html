@@ -514,7 +514,6 @@
 <a href="#514" id="514">514</a>
 <a href="#515" id="515">515</a>
 <a href="#516" id="516">516</a>
-<a href="#517" id="517">517</a>
 </pre></div><pre class="rust"><code><span class="kw">mod </span>prepare_cardano_params;
 <span class="kw">mod </span>prepare_chain_params;
 <span class="kw">mod </span>prepare_main_chain_config;
@@ -541,8 +540,8 @@
 <span class="kw">impl </span>CmdRun <span class="kw">for </span>PrepareConfigurationCmd {
 	<span class="kw">fn </span>run&lt;C: IOContext&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;()&gt; {
 		establish_bootnodes(context)<span class="question-mark">?</span>;
-		<span class="kw">let </span>chain_params = prepare_chain_params(context)<span class="question-mark">?</span>;
-		prepare_main_chain_config(context, chain_params)<span class="question-mark">?</span>;
+		<span class="kw">let </span>(chain_params, ogmios_config) = prepare_chain_params(context)<span class="question-mark">?</span>;
+		prepare_main_chain_config(context, <span class="kw-2">&amp;</span>ogmios_config, chain_params)<span class="question-mark">?</span>;
 		context.eprint(<span class="string">"🚀 All done!"</span>);
 		<span class="prelude-val">Ok</span>(())
 	}
@@ -714,7 +713,6 @@
 	<span class="kw">const </span>KEY: <span class="kw-2">&amp;</span>str = <span class="string">"962515971a22aa95706c2109ba6e9502c7f39b33bdf63024f46f77894424f1fe"</span>;
 	<span class="kw">pub const </span>CHAIN_NAME: <span class="kw-2">&amp;</span>str = <span class="string">"partner_chains_template"</span>;
 	<span class="kw">pub const </span>DATA_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"/path/to/data"</span>;
-	<span class="kw">pub const </span>CHAIN_CONFIG_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"partner-chains-cli-chain-config.json"</span>;
 
 	<span class="kw">fn </span>network_key_file() -&gt; String {
 		<span class="macro">format!</span>(<span class="string">"{DATA_PATH}/chains/{CHAIN_NAME}/network/secret_ed25519"</span>)

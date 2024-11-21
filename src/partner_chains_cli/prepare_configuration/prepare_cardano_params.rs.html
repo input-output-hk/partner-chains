@@ -269,7 +269,7 @@
 	}
 }
 
-<span class="kw">fn </span>get_shelley_config&lt;C: IOContext&gt;(
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_shelley_config&lt;C: IOContext&gt;(
 	addr: <span class="kw-2">&amp;</span>str,
 	context: <span class="kw-2">&amp;</span>C,
 ) -&gt; anyhow::Result&lt;ShelleyGenesisConfiguration&gt; {

@@ -117,25 +117,9 @@
 <a href="#117" id="117">117</a>
 <a href="#118" id="118">118</a>
 <a href="#119" id="119">119</a>
-<a href="#120" id="120">120</a>
-<a href="#121" id="121">121</a>
-<a href="#122" id="122">122</a>
-<a href="#123" id="123">123</a>
-<a href="#124" id="124">124</a>
-<a href="#125" id="125">125</a>
-<a href="#126" id="126">126</a>
-<a href="#127" id="127">127</a>
-<a href="#128" id="128">128</a>
-<a href="#129" id="129">129</a>
-<a href="#130" id="130">130</a>
-<a href="#131" id="131">131</a>
-<a href="#132" id="132">132</a>
-<a href="#133" id="133">133</a>
-<a href="#134" id="134">134</a>
-<a href="#135" id="135">135</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::key_params::{MainchainSigningKeyParam, SidechainSigningKeyParam};
 <span class="kw">use </span><span class="kw">crate</span>::signing::{mainchain_public_key_and_signature, sc_public_key_and_signature_for_datum};
-<span class="kw">use </span>clap::{Args, Parser};
+<span class="kw">use </span>clap::Parser;
 <span class="kw">use </span>plutus::{Datum, ToDatum};
 <span class="kw">use </span>plutus_datum_derive::<span class="kw-2">*</span>;
 <span class="kw">use </span>secp256k1::SecretKey;
@@ -148,9 +132,9 @@
 
 <span class="attr">#[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = <span class="prelude-val">None</span>)]
-</span><span class="kw">pub struct </span>RegistrationSignaturesCmd&lt;SP: Args&gt; {
-	<span class="attr">#[clap(flatten)]
-	</span><span class="kw">pub </span>sidechain_params: SP,
+</span><span class="kw">pub struct </span>RegistrationSignaturesCmd {
+	<span class="attr">#[arg(long)]
+	</span><span class="kw">pub </span>genesis_utxo: UtxoId,
 	<span class="attr">#[arg(long)]
 	</span><span class="kw">pub </span>mainchain_signing_key: MainchainSigningKeyParam,
 	<span class="attr">#[arg(long)]
@@ -159,20 +143,17 @@
 	</span><span class="kw">pub </span>registration_utxo: UtxoId,
 }
 
-<span class="kw">impl</span>&lt;SP: Args + ToDatum + Clone&gt; RegistrationSignaturesCmd&lt;SP&gt; {
-	<span class="kw">pub fn </span>to_register_validator_message(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		sidechain_params: SP,
-	) -&gt; RegisterValidatorMessage&lt;SP&gt; {
+<span class="kw">impl </span>RegistrationSignaturesCmd {
+	<span class="kw">pub fn </span>to_register_validator_message(<span class="kw-2">&amp;</span><span class="self">self</span>, genesis_utxo: UtxoId) -&gt; RegisterValidatorMessage {
 		RegisterValidatorMessage::new(
-			sidechain_params,
+			genesis_utxo,
 			<span class="self">self</span>.sidechain_signing_key.to_pub_key(),
 			<span class="self">self</span>.registration_utxo,
 		)
 	}
 
 	<span class="kw">pub fn </span>execute(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RegistrationCmdOutput {
-		<span class="self">self</span>.to_register_validator_message(<span class="self">self</span>.sidechain_params.clone())
+		<span class="self">self</span>.to_register_validator_message(<span class="self">self</span>.genesis_utxo)
 			.sign_and_prepare_registration_cmd_output(
 				<span class="self">self</span>.mainchain_signing_key.<span class="number">0</span>,
 				<span class="self">self</span>.sidechain_signing_key.<span class="number">0</span>,
@@ -198,20 +179,16 @@
 }
 
 <span class="attr">#[derive(Clone, Debug, ToDatum)]
-</span><span class="kw">pub struct </span>RegisterValidatorMessage&lt;SidechainParams&gt; {
-	<span class="kw">pub </span>sidechain_params: SidechainParams,
+</span><span class="kw">pub struct </span>RegisterValidatorMessage {
+	<span class="kw">pub </span>genesis_utxo: UtxoId,
 	<span class="kw">pub </span>sidechain_pub_key: SidechainPublicKey,
 	<span class="kw">pub </span>input_utxo: UtxoId,
 }
 
-<span class="kw">impl</span>&lt;SidechainParams: ToDatum + Clone&gt; RegisterValidatorMessage&lt;SidechainParams&gt; {
-	<span class="kw">pub fn </span>new(
-		sidechain_params: SidechainParams,
-		pub_key: secp256k1::PublicKey,
-		input_utxo: UtxoId,
-	) -&gt; <span class="self">Self </span>{
+<span class="kw">impl </span>RegisterValidatorMessage {
+	<span class="kw">pub fn </span>new(genesis_utxo: UtxoId, pub_key: secp256k1::PublicKey, input_utxo: UtxoId) -&gt; <span class="self">Self </span>{
 		RegisterValidatorMessage {
-			sidechain_params,
+			genesis_utxo,
 			sidechain_pub_key: SidechainPublicKey(pub_key.serialize().to_vec()),
 			input_utxo,
 		}
@@ -238,10 +215,9 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use </span><span class="kw">crate</span>::registration_signatures::RegisterValidatorMessage;
-	<span class="kw">use </span>chain_params::SidechainParams;
 	<span class="kw">use </span>plutus::to_datum_cbor_bytes;
 	<span class="kw">use </span>secp256k1::PublicKey;
-	<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, UtxoId};
+	<span class="kw">use </span>sidechain_domain::UtxoId;
 	<span class="kw">use </span>std::str::FromStr;
 
 	<span class="attr">#[test]
@@ -250,22 +226,14 @@
 			<span class="string">"02dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ec"</span>,
 		)
 		.unwrap();
-		<span class="kw">let </span>sidechain_params = SidechainParams {
-			chain_id: <span class="number">11</span>,
-			genesis_committee_utxo: UtxoId::from_str(
-				<span class="string">"e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efa#4"</span>,
-			)
-			.unwrap(),
-			threshold_numerator: <span class="number">2</span>,
-			threshold_denominator: <span class="number">3</span>,
-			governance_authority: MainchainAddressHash::from_hex_unsafe(
-				<span class="string">"4f2d6145e1700ad11dc074cad9f4194cc53b0dbab6bd25dfea6c501a"</span>,
-			),
-		};
-		<span class="kw">let </span>input_utxo = sidechain_params.genesis_committee_utxo;
-		<span class="kw">let </span>message =
-			RegisterValidatorMessage::new(sidechain_params, sidechain_pub_key, input_utxo);
-		<span class="macro">assert_eq!</span>(hex::encode(to_datum_cbor_bytes(message)), <span class="string">"d8799fd8799f0bd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ff0203581c4f2d6145e1700ad11dc074cad9f4194cc53b0dbab6bd25dfea6c501aff582102dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ecd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ffff"</span>)
+		<span class="kw">let </span>genesis_utxo =
+			UtxoId::from_str(<span class="string">"e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efa#4"</span>)
+				.unwrap();
+		<span class="kw">let </span>input_utxo =
+			UtxoId::from_str(<span class="string">"8ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861#4"</span>)
+				.unwrap();
+		<span class="kw">let </span>message = RegisterValidatorMessage::new(genesis_utxo, sidechain_pub_key, input_utxo);
+		<span class="macro">assert_eq!</span>(hex::encode(to_datum_cbor_bytes(message)), <span class="string">"d8799fd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ff582102dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ecd8799fd8799f58208ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861ff04ffff"</span>)
 	}
 }
 </code></pre></div></section></main></body></html>

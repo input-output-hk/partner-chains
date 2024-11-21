@@ -117,7 +117,6 @@
 <a href="#117" id="117">117</a>
 <a href="#118" id="118">118</a>
 <a href="#119" id="119">119</a>
-<a href="#120" id="120">120</a>
 </pre></div><pre class="rust"><code><span class="kw">pub mod </span>types;
 
 <span class="kw">use </span>derive_new::new;
@@ -132,7 +131,7 @@
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_core::offchain::Timestamp;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
-<span class="kw">use </span>sp_sidechain::{GetSidechainParams, GetSidechainStatus};
+<span class="kw">use </span>sp_sidechain::{GetGenesisUtxo, GetSidechainStatus};
 <span class="kw">use </span>std::sync::Arc;
 <span class="kw">use </span>time_source::<span class="kw-2">*</span>;
 <span class="kw">use </span>types::<span class="kw-2">*</span>;
@@ -144,9 +143,9 @@
 </span><span class="kw">pub mod </span>mock;
 
 <span class="attr">#[rpc(client, server, namespace = <span class="string">"sidechain"</span>)]
-</span><span class="kw">pub trait </span>SidechainRpcApi&lt;SidechainParams&gt; {
+</span><span class="kw">pub trait </span>SidechainRpcApi {
 	<span class="attr">#[method(name = <span class="string">"getParams"</span>)]
-	</span><span class="kw">fn </span>get_params(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;SidechainParams&gt;;
+	</span><span class="kw">fn </span>get_params(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;sp_sidechain::query::Output&gt;;
 
 	<span class="doccomment">/// Returns data related to the status of both the main chain and the sidechain, like their epochs or the timestamp associated to the next epoch.
 	</span><span class="attr">#[method(name = <span class="string">"getStatus"</span>)]
@@ -176,22 +175,21 @@
 }
 
 <span class="attr">#[async_trait]
-</span><span class="kw">impl</span>&lt;C, Block, SidechainParams&gt; SidechainRpcApiServer&lt;SidechainParams&gt; <span class="kw">for </span>SidechainRpc&lt;C, Block&gt;
+</span><span class="kw">impl</span>&lt;C, Block&gt; SidechainRpcApiServer <span class="kw">for </span>SidechainRpc&lt;C, Block&gt;
 <span class="kw">where
 	</span>Block: BlockT,
-	SidechainParams: parity_scale_codec::Decode,
 	C: Send + Sync + <span class="lifetime">'static</span>,
 	C: ProvideRuntimeApi&lt;Block&gt;,
 	C: GetBestHash&lt;Block&gt;,
-	C::Api: SlotApi&lt;Block&gt; + GetSidechainParams&lt;Block, SidechainParams&gt; + GetSidechainStatus&lt;Block&gt;,
+	C::Api: SlotApi&lt;Block&gt; + GetGenesisUtxo&lt;Block&gt; + GetSidechainStatus&lt;Block&gt;,
 {
-	<span class="kw">fn </span>get_params(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;SidechainParams&gt; {
+	<span class="kw">fn </span>get_params(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;sp_sidechain::query::Output&gt; {
 		<span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
 		<span class="kw">let </span>best_block = <span class="self">self</span>.client.best_hash();
 
-		<span class="kw">let </span>sidechain_params = api.sidechain_params(best_block).map_err(error_object_from)<span class="question-mark">?</span>;
+		<span class="kw">let </span>genesis_utxo = api.genesis_utxo(best_block).map_err(error_object_from)<span class="question-mark">?</span>;
 
-		<span class="prelude-val">Ok</span>(sidechain_params)
+		<span class="prelude-val">Ok</span>(sp_sidechain::query::Output { genesis_utxo })
 	}
 
 	<span class="kw">async fn </span>get_status(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;GetStatusResponse&gt; {

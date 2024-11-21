@@ -251,41 +251,11 @@
 <a href="#251" id="251">251</a>
 <a href="#252" id="252">252</a>
 <a href="#253" id="253">253</a>
-<a href="#254" id="254">254</a>
-<a href="#255" id="255">255</a>
-<a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a>
-<a href="#258" id="258">258</a>
-<a href="#259" id="259">259</a>
-<a href="#260" id="260">260</a>
-<a href="#261" id="261">261</a>
-<a href="#262" id="262">262</a>
-<a href="#263" id="263">263</a>
-<a href="#264" id="264">264</a>
-<a href="#265" id="265">265</a>
-<a href="#266" id="266">266</a>
-<a href="#267" id="267">267</a>
-<a href="#268" id="268">268</a>
-<a href="#269" id="269">269</a>
-<a href="#270" id="270">270</a>
-<a href="#271" id="271">271</a>
-<a href="#272" id="272">272</a>
-<a href="#273" id="273">273</a>
-<a href="#274" id="274">274</a>
-<a href="#275" id="275">275</a>
-<a href="#276" id="276">276</a>
-<a href="#277" id="277">277</a>
-<a href="#278" id="278">278</a>
-<a href="#279" id="279">279</a>
-<a href="#280" id="280">280</a>
-<a href="#281" id="281">281</a>
-<a href="#282" id="282">282</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{csl::NetworkTypeExt, plutus_script::PlutusScript, OffchainError};
 <span class="kw">use </span>cardano_serialization_lib::{LanguageKind::PlutusV2, NetworkIdKind};
-<span class="kw">use </span>chain_params::SidechainParams;
 <span class="kw">use </span>ogmios_client::query_network::QueryNetwork;
 <span class="kw">use </span>serde::Serialize;
-<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, PolicyId};
+<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, PolicyId, UtxoId};
 <span class="kw">use </span>uplc::PlutusData;
 
 <span class="doccomment">/// Provides convenient access to the addresses and hashes of the partner chain smart contracts.
@@ -325,52 +295,46 @@
 </span><span class="attr">#[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>PolicyIds {
 	<span class="kw">pub </span>d_parameter: PolicyId,
-	<span class="kw">pub </span>init_token: PolicyId,
-	<span class="kw">pub </span>governance: PolicyId,
 	<span class="kw">pub </span>permissioned_candidates: PolicyId,
 	<span class="kw">pub </span>reserve_auth: PolicyId,
 	<span class="kw">pub </span>version_oracle: PolicyId,
+	<span class="kw">pub </span>governance: PolicyId,
 }
 
 <span class="kw">pub trait </span>GetScriptsData {
 	<span class="attr">#[allow(async_fn_in_trait)]
 	</span><span class="doccomment">/// For the given `pc_params` it returns the addresses, hashes and policy ids of the partner chain smart contracts.
-	</span><span class="kw">async fn </span>get_scripts_data(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		pc_params: SidechainParams,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;ScriptsData, OffchainError&gt;;
+	</span><span class="kw">async fn </span>get_scripts_data(<span class="kw-2">&amp;</span><span class="self">self</span>, genesis_utxo: UtxoId) -&gt; <span class="prelude-ty">Result</span>&lt;ScriptsData, OffchainError&gt;;
 }
 
 <span class="kw">impl</span>&lt;T: QueryNetwork&gt; GetScriptsData <span class="kw">for </span>T {
-	<span class="kw">async fn </span>get_scripts_data(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		pc_params: SidechainParams,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;ScriptsData, OffchainError&gt; {
+	<span class="kw">async fn </span>get_scripts_data(<span class="kw-2">&amp;</span><span class="self">self</span>, genesis_utxo: UtxoId) -&gt; <span class="prelude-ty">Result</span>&lt;ScriptsData, OffchainError&gt; {
 		<span class="kw">let </span>network = <span class="self">self
 			</span>.shelley_genesis_configuration()
 			.<span class="kw">await
 			</span>.map_err(|e| OffchainError::OgmiosError(e.to_string()))<span class="question-mark">?
 			</span>.network
 			.to_csl();
-		get_scripts_data(pc_params, network)
+		get_scripts_data(genesis_utxo, network)
 			.map_err(|e| OffchainError::InternalError(e.to_string()))
 	}
 }
 
 <span class="doccomment">/// For the given `pc_params` it returns the addresses, hashes and policy ids of the partner chain smart contracts.
 </span><span class="kw">pub fn </span>get_scripts_data(
-	pc_params: SidechainParams,
+	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
 ) -&gt; anyhow::Result&lt;ScriptsData&gt; {
 	<span class="kw">let </span>(version_oracle_validator, version_oracle_policy, version_oracle_policy_data) =
-		version_oracle(pc_params.clone(), network)<span class="question-mark">?</span>;
+		version_oracle(genesis_utxo, network)<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>committee_candidate_validator =
 		PlutusScript::from_wrapped_cbor(raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(pc_params.clone())<span class="question-mark">?</span>;
+			</span>.apply_data(genesis_utxo)<span class="question-mark">?</span>;
 	<span class="kw">let </span>d_parameter_validator =
 		PlutusScript::from_wrapped_cbor(raw_scripts::D_PARAMETER_VALIDATOR, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(pc_params.clone())<span class="question-mark">?</span>;
+			</span>.apply_data(genesis_utxo)<span class="question-mark">?
+			</span>.apply_data(version_oracle_policy.clone())<span class="question-mark">?</span>;
 	<span class="kw">let </span>illiquid_circulation_supply_validator = PlutusScript::from_wrapped_cbor(
 		raw_scripts::ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
 		PlutusV2,
@@ -378,25 +342,26 @@
 	</span>.apply_uplc_data(version_oracle_policy_data.clone())<span class="question-mark">?</span>;
 	<span class="kw">let </span>permissioned_candidates_validator =
 		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_VALIDATOR, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(pc_params.clone())<span class="question-mark">?</span>;
+			</span>.apply_data(genesis_utxo)<span class="question-mark">?
+			</span>.apply_data(version_oracle_policy.clone())<span class="question-mark">?</span>;
 	<span class="kw">let </span>reserve_validator =
 		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, PlutusV2)<span class="question-mark">?
 			</span>.apply_uplc_data(version_oracle_policy_data.clone())<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>d_parameter_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::D_PARAMETER_POLICY, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(pc_params.clone())<span class="question-mark">?
+			</span>.apply_data(genesis_utxo)<span class="question-mark">?
+			</span>.apply_data(version_oracle_policy.clone())<span class="question-mark">?
 			</span>.apply_uplc_data(d_parameter_validator.address_data(network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 	<span class="kw">let </span>permissioned_candidates_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_POLICY, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(pc_params.clone())<span class="question-mark">?
+			</span>.apply_data(genesis_utxo)<span class="question-mark">?
+			</span>.apply_data(version_oracle_policy.clone())<span class="question-mark">?
 			</span>.apply_uplc_data(permissioned_candidates_validator.address_data(network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 	<span class="kw">let </span>governance_policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, PlutusV2)<span class="question-mark">?
-			</span>.apply_uplc_data(multisig_governance_policy_configuration(pc_params.clone()))<span class="question-mark">?</span>;
-	<span class="kw">let </span>init_token_policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::INIT_TOKEN_POLICY, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(pc_params.clone())<span class="question-mark">?</span>;
+		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, PlutusV2)<span class="question-mark">?</span>.apply_uplc_data(
+			multisig_governance_policy_configuration(MainchainAddressHash::from_vkey([<span class="number">0u8</span>; <span class="number">32</span>])),
+		)<span class="question-mark">?</span>;
 	<span class="kw">let </span>reserve_auth_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_AUTH_POLICY, PlutusV2)<span class="question-mark">?
 			</span>.apply_uplc_data(version_oracle_policy_data)<span class="question-mark">?</span>;
@@ -423,37 +388,25 @@
 		},
 		policy_ids: PolicyIds {
 			d_parameter: d_parameter_policy.policy_id(),
-			init_token: init_token_policy.policy_id(),
-			governance: governance_policy.policy_id(),
 			permissioned_candidates: permissioned_candidates_policy.policy_id(),
 			reserve_auth: reserve_auth_policy.policy_id(),
 			version_oracle: version_oracle_policy,
+			governance: governance_policy.policy_id(),
 		},
 	})
 }
 
 <span class="comment">// Returns version oracle script, policy and PlutusData required by other scripts.
 </span><span class="kw">fn </span>version_oracle(
-	pc_params: SidechainParams,
+	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(PlutusScript, PolicyId, PlutusData), anyhow::Error&gt; {
-	<span class="kw">let </span>init_token_policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::INIT_TOKEN_POLICY, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(pc_params.clone())<span class="question-mark">?
-			</span>.policy_id();
-
-	<span class="kw">let </span>init_token_asset_data = PlutusData::Array(<span class="macro">vec!</span>[
-		PlutusData::BoundedBytes(init_token_policy.<span class="number">0</span>.to_vec().into()),
-		PlutusData::BoundedBytes(<span class="string">b"Version oracle InitToken"</span>.to_vec().into()),
-	]);
-
 	<span class="kw">let </span>validator =
 		PlutusScript::from_wrapped_cbor(raw_scripts::VERSION_ORACLE_VALIDATOR, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(pc_params.clone())<span class="question-mark">?</span>;
+			</span>.apply_data(genesis_utxo)<span class="question-mark">?</span>;
 	<span class="kw">let </span>policy_script =
 		PlutusScript::from_wrapped_cbor(raw_scripts::VERSION_ORACLE_POLICY, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(pc_params.clone())<span class="question-mark">?
-			</span>.apply_uplc_data(init_token_asset_data)<span class="question-mark">?
+			</span>.apply_data(genesis_utxo)<span class="question-mark">?
 			</span>.apply_uplc_data(validator.address_data(network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 	<span class="kw">let </span>policy = policy_script.policy_id();
 	<span class="kw">let </span>policy_data = PlutusData::BoundedBytes(policy.<span class="number">0</span>.to_vec().into());
@@ -462,10 +415,12 @@
 
 <span class="comment">// Returns the simplest MultiSig policy configuration plutus data:
 // there is one required authority and it is the governance authority from sidechain params.
-</span><span class="kw">fn </span>multisig_governance_policy_configuration(params: SidechainParams) -&gt; PlutusData {
+</span><span class="kw">fn </span>multisig_governance_policy_configuration(
+	governance_authority: MainchainAddressHash,
+) -&gt; PlutusData {
 	PlutusData::Array(<span class="macro">vec!</span>[
 		PlutusData::Array(<span class="macro">vec!</span>[uplc::PlutusData::BoundedBytes(
-			params.governance_authority.<span class="number">0</span>.to_vec().into(),
+			governance_authority.<span class="number">0</span>.to_vec().into(),
 		)]),
 		PlutusData::BigInt(uplc::BigInt::Int(<span class="number">1</span>.into())),
 	])
@@ -475,80 +430,67 @@
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use </span><span class="kw">crate</span>::scripts_data::{Addresses, PolicyIds, ScriptsData, ValidatorHashes};
 	<span class="kw">use </span>cardano_serialization_lib::NetworkIdKind;
-	<span class="kw">use </span>chain_params::SidechainParams;
 	<span class="kw">use </span>hex_literal::hex;
 	<span class="kw">use </span>pretty_assertions::assert_eq;
 	<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, McTxHash, PolicyId, UtxoId};
 
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>TEST_PARAMS: SidechainParams = SidechainParams {
-		chain_id: <span class="number">0</span>,
-		threshold_numerator: <span class="number">2</span>,
-		threshold_denominator: <span class="number">3</span>,
-		genesis_committee_utxo: UtxoId {
-			tx_hash: McTxHash(<span class="macro">hex!</span>(
-				<span class="string">"0000000000000000000000000000000000000000000000000000000000000000"
-			</span>)),
-			index: sidechain_domain::UtxoIndex(<span class="number">0</span>),
-		},
-		governance_authority: MainchainAddressHash(<span class="macro">hex!</span>(
-			<span class="string">"044741127bce1895f93fc8ac7bedb8930066b3c3964db00518bd2ccc"
-		</span>)),
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>TEST_PARAMS: UtxoId = UtxoId {
+		tx_hash: McTxHash(<span class="macro">hex!</span>(<span class="string">"8ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861"</span>)),
+		index: sidechain_domain::UtxoIndex(<span class="number">0</span>),
 	};
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>scripts_data_test_vector() -&gt; ScriptsData {
 		ScriptsData {
 			addresses: Addresses {
 				committee_candidate_validator:
-					<span class="string">"addr_test1wq8vwhqkfyrz0qu3sf89qdvaj8slrjlwwhlyzw9ayv0rj5qz3ne4t"</span>.into(),
+					<span class="string">"addr_test1wz8z7eaac04rp75u47vqy9k3qgwcxxh92ff3h3hp2xae4kgzwdwp3"</span>.into(),
 				d_parameter_validator:
-					<span class="string">"addr_test1wp3cw59x95h6x0mcuaydznhxpagdvnhaj9zsdavrkvjfhxg2rctxe"</span>.into(),
-				illiquid_circulation_supply_validator:
-					<span class="string">"addr_test1wp5ahp39vsw03kx7tze2sdzd5f5twfts46tzdkdjrhnj94g9xwsus"</span>.into(),
+					<span class="string">"addr_test1wppqfuvptxq3rwv2qwke2dkh8vd0mmc8k4r6a44k86tpckss2zg4v"</span>.into(),
 				permissioned_candidates_validator:
-					<span class="string">"addr_test1wqvxznvu7f9u8svs5sa0rxg3ggvcz4us5w8k63r70yztntqpqpwxx"</span>.into(),
+					<span class="string">"addr_test1wql3vzrgx0hdqhxt4n2wvv93mhnglphl0fadkd06zuzkglcnyc09n"</span>.into(),
+				illiquid_circulation_supply_validator:
+					<span class="string">"addr_test1wq7crkpl5mpdeq9wyqyvr2u7q7gtv02pjxgl3fh8mv5r6ec00zynf"</span>.into(),
 				reserve_validator:
-					<span class="string">"addr_test1wzc6vvzqd9x4fvx09xgep4sna20skxj86p6yan9ymv9q99sa8xd97"</span>.into(),
+					<span class="string">"addr_test1wqs5y7fn6sns7v7eey94mj2wd7ysadr3zmstjfzhk0frdtgsm8pgk"</span>.into(),
 				version_oracle_validator:
-					<span class="string">"addr_test1wzgctwxcrr555ej8rqrdjkjlfmv47ck2vltcp9enz2s0z8qad37fs"</span>.into(),
+					<span class="string">"addr_test1wqxm9e576k5ew7g7ctuqx77p9u7zytesnjsx54q2etck00gqplk0l"</span>.into(),
 			},
 			validator_hashes: ValidatorHashes {
 				committee_candidate_validator: MainchainAddressHash(<span class="macro">hex!</span>(
-					<span class="string">"0ec75c164906278391824e50359d91e1f1cbee75fe4138bd231e3950"
+					<span class="string">"8e2f67bdc3ea30fa9caf980216d1021d831ae552531bc6e151bb9ad9"
 				</span>)),
 				d_parameter_validator: MainchainAddressHash(<span class="macro">hex!</span>(
-					<span class="string">"638750a62d2fa33f78e748d14ee60f50d64efd914506f583b3249b99"
+					<span class="string">"4204f181598111b98a03ad9536d73b1afdef07b547aed6b63e961c5a"
 				</span>)),
 				illiquid_circulation_supply_validator: MainchainAddressHash(<span class="macro">hex!</span>(
-					<span class="string">"69db8625641cf8d8de58b2a8344da268b72570ae9626d9b21de722d5"
+					<span class="string">"3d81d83fa6c2dc80ae2008c1ab9e0790b63d419191f8a6e7db283d67"
 				</span>)),
 				permissioned_candidates_validator: MainchainAddressHash(<span class="macro">hex!</span>(
-					<span class="string">"18614d9cf24bc3c190a43af199114219815790a38f6d447e7904b9ac"
+					<span class="string">"3f16086833eed05ccbacd4e630b1dde68f86ff7a7adb35fa1705647f"
 				</span>)),
 				reserve_validator: MainchainAddressHash(<span class="macro">hex!</span>(
-					<span class="string">"b1a63040694d54b0cf299190d613ea9f0b1a47d0744ecca4db0a0296"
+					<span class="string">"21427933d4270f33d9c90b5dc94e6f890eb47116e0b92457b3d236ad"
 				</span>)),
 				version_oracle_validator: MainchainAddressHash(<span class="macro">hex!</span>(
-					<span class="string">"9185b8d818e94a66471806d95a5f4ed95f62ca67d780973312a0f11c"
+					<span class="string">"0db2e69ed5a997791ec2f8037bc12f3c222f309ca06a540acaf167bd"
 				</span>)),
 			},
 			policy_ids: PolicyIds {
 				d_parameter: PolicyId(<span class="macro">hex!</span>(
-					<span class="string">"88b9d9798dde404b4ff488be62de3d7744a2e282934b5bd1687d8cbe"
-				</span>)),
-				init_token: PolicyId(<span class="macro">hex!</span>(
-					<span class="string">"ae91bce3634bbf0d2748cb2c9b5a4cd547da3fabb99d33e762c87704"
-				</span>)),
-				governance: PolicyId(<span class="macro">hex!</span>(
-					<span class="string">"7d55e8e2f8f0637d6ab99975d8ab9b6112976eec1e778d3f770fe102"
+					<span class="string">"f30c3f90c342e61b3f34042bcabd7be8f3ec4b7a6857fdfcdb7b7936"
 				</span>)),
 				permissioned_candidates: PolicyId(<span class="macro">hex!</span>(
-					<span class="string">"f7449038957139c2782d81fc72bc889898fd24d20059535a681b3774"
+					<span class="string">"8dbf5934f4870570752205fbda4796b5f7df30c9b5a009452dc7df5f"
 				</span>)),
 				reserve_auth: PolicyId(<span class="macro">hex!</span>(
-					<span class="string">"22dc2777f1d73504a2d9db99067b82ffe4abddc31ed1f9f6d97ca7d7"
+					<span class="string">"8c2f422162225752e5842fd7ac103d6e679e21c13514c9ef8224452c"
 				</span>)),
 				version_oracle: PolicyId(<span class="macro">hex!</span>(
-					<span class="string">"4d982fae61319220e75e29054bad955484faa24dba65046136b8e6cb"
+					<span class="string">"aa7f601aa9f441a26823d872f052d52767229f3301567c86475dfcfb"
+				</span>)),
+				<span class="comment">// TODO get correct hash
+				</span>governance: PolicyId(<span class="macro">hex!</span>(
+					<span class="string">"9a2738df5cd08458700444b278293f9ba9325c0029ae6d5d36e8678a"
 				</span>)),
 			},
 		}

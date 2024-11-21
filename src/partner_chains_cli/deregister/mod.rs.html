@@ -191,7 +191,7 @@
         <span class="string">"{PC_CONTRACTS_CLI_PATH} deregister --network {} --ada-based-staking --spo-public-key {} {} {}"</span>,
         cardano_network,
         cold_vkey,
-        smart_contracts::sidechain_params_arguments(<span class="kw-2">&amp;</span>chain_config.chain_parameters),
+        smart_contracts::sidechain_params_arguments(chain_config.chain_parameters.genesis_utxo),
         smart_contracts::runtime_config_arguments(
             <span class="kw-2">&amp;</span>pc_contracts_cli_resources,
             <span class="kw-2">&amp;</span>payment_signing_key_path

@@ -111,19 +111,6 @@
 <a href="#111" id="111">111</a>
 <a href="#112" id="112">112</a>
 <a href="#113" id="113">113</a>
-<a href="#114" id="114">114</a>
-<a href="#115" id="115">115</a>
-<a href="#116" id="116">116</a>
-<a href="#117" id="117">117</a>
-<a href="#118" id="118">118</a>
-<a href="#119" id="119">119</a>
-<a href="#120" id="120">120</a>
-<a href="#121" id="121">121</a>
-<a href="#122" id="122">122</a>
-<a href="#123" id="123">123</a>
-<a href="#124" id="124">124</a>
-<a href="#125" id="125">125</a>
-<a href="#126" id="126">126</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>anyhow::{anyhow, Context};
 <span class="kw">use </span>cardano_serialization_lib::{Address, LanguageKind, NetworkIdKind, PlutusData};
 <span class="kw">use </span>plutus::ToDatum;
@@ -215,37 +202,24 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use </span>chain_params::SidechainParams;
 	<span class="kw">use </span>hex_literal::hex;
-	<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, McTxHash, UtxoId, UtxoIndex};
+	<span class="kw">use </span>sidechain_domain::{McTxHash, UtxoId, UtxoIndex};
 
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>TEST_PARAMS: SidechainParams = SidechainParams {
-		chain_id: <span class="number">111</span>,
-		threshold_numerator: <span class="number">2</span>,
-		threshold_denominator: <span class="number">3</span>,
-		genesis_committee_utxo: UtxoId {
-			tx_hash: McTxHash(<span class="macro">hex!</span>(
-				<span class="string">"0000000000000000000000000000000000000000000000000000000000000000"
-			</span>)),
-			index: UtxoIndex(<span class="number">0</span>),
-		},
-		governance_authority: MainchainAddressHash(<span class="macro">hex!</span>(
-			<span class="string">"76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"
-		</span>)),
-	};
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>TEST_GENESIS_UTXO: UtxoId =
+		UtxoId { tx_hash: McTxHash([<span class="number">0u8</span>; <span class="number">32</span>]), index: UtxoIndex(<span class="number">0</span>) };
 
 	<span class="comment">// Taken from smart-contracts repository
 	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>CANDIDATES_SCRIPT_RAW: [u8; <span class="number">318</span>] = <span class="macro">hex!</span>(<span class="string">"59013b590138010000323322323322323232322222533553353232323233012225335001100f2215333573466e3c014dd7001080909802000980798051bac330033530040022200148040dd7198011a980180311000a4010660026a600400644002900019112999ab9a33710002900009805a4810350543600133003001002300f22253350011300b49103505437002215333573466e1d20000041002133005337020089001000919199109198008018011aab9d001300735573c0026ea80044028402440204c01d2401035054350030092233335573e0024016466a0146ae84008c00cd5d100124c6010446666aae7c00480288cd4024d5d080118019aba20024988c98cd5ce00080109000891001091000980191299a800880211099a80280118020008910010910911980080200191918008009119801980100100081"</span>);
 
 	<span class="doccomment">/// We know it is correct, because we are able to get the same hash as using code from smart-contract repository
-	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS: [u8; <span class="number">400</span>] = <span class="macro">hex!</span>(<span class="string">"59018d0100003323322323322323232322222533553353232323233012225335001100f2215333573466e3c014dd7001080909802000980798051bac330033530040022200148040dd7198011a980180311000a4010660026a600400644002900019112999ab9a33710002900009805a490350543600133003001002300f22253350011300b49103505437002215333573466e1d20000041002133005337020089001000919199109198008018011aab9d001300735573c0026ea80044028402440204c01d2401035054350030092233335573e0024016466a0146ae84008c00cd5d100124c6010446666aae7c00480288cd4024d5d080118019aba20024988c98cd5ce00080109000891001091000980191299a800880211099a802801180200089100109109119800802001919180080091198019801001000a60151d8799f186fd8799fd8799f58200000000000000000000000000000000000000000000000000000000000000000ff00ff0203581c76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9ff0001"</span>);
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS: [u8; <span class="number">362</span>] = <span class="macro">hex!</span>(<span class="string">"5901670100003323322323322323232322222533553353232323233012225335001100f2215333573466e3c014dd7001080909802000980798051bac330033530040022200148040dd7198011a980180311000a4010660026a600400644002900019112999ab9a33710002900009805a490350543600133003001002300f22253350011300b49103505437002215333573466e1d20000041002133005337020089001000919199109198008018011aab9d001300735573c0026ea80044028402440204c01d2401035054350030092233335573e0024016466a0146ae84008c00cd5d100124c6010446666aae7c00480288cd4024d5d080118019aba20024988c98cd5ce00080109000891001091000980191299a800880211099a802801180200089100109109119800802001919180080091198019801001000a6012bd8799fd8799f58200000000000000000000000000000000000000000000000000000000000000000ff00ff0001"</span>);
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>apply_parameters_to_deregister() {
 		<span class="kw">let </span>applied =
 			PlutusScript::from_wrapped_cbor(<span class="kw-2">&amp;</span>CANDIDATES_SCRIPT_RAW, LanguageKind::PlutusV2)
 				.unwrap()
-				.apply_data(TEST_PARAMS)
+				.apply_data(TEST_GENESIS_UTXO)
 				.unwrap();
 		<span class="macro">assert_eq!</span>(hex::encode(applied.bytes), hex::encode(CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS));
 	}

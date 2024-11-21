@@ -331,7 +331,7 @@
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{CARDANO_PAYMENT_SIGNING_KEY_FILE, POSTGRES_CONNECTION_STRING};
 <span class="kw">use </span><span class="kw">crate</span>::config::{
 	config_fields, get_cardano_network_from_file, ChainConfig, ConfigFieldDefinition,
-	SidechainParams, CHAIN_CONFIG_FILE_PATH, PC_CONTRACTS_CLI_PATH,
+	CHAIN_CONFIG_FILE_PATH, PC_CONTRACTS_CLI_PATH,
 };
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::establish_pc_contracts_cli_configuration;
@@ -342,7 +342,7 @@
 <span class="kw">use </span>serde::de::DeserializeOwned;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochDerivation;
-<span class="kw">use </span>sidechain_domain::McEpochNumber;
+<span class="kw">use </span>sidechain_domain::{McEpochNumber, UtxoId};
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
@@ -445,7 +445,7 @@
 				set_candidates_on_main_chain(
 					context,
 					config_initial_authorities,
-					<span class="kw-2">&amp;</span>chain_config.chain_parameters,
+					chain_config.chain_parameters.genesis_utxo,
 					InsertOrUpdate::Update,
 				)<span class="question-mark">?</span>;
 			}
@@ -457,14 +457,14 @@
 			set_d_parameter_on_main_chain(
 				context,
 				ariadne_parameters.d_parameter,
-				<span class="kw-2">&amp;</span>chain_config.chain_parameters,
+				chain_config.chain_parameters.genesis_utxo,
 				InsertOrUpdate::Update,
 			)<span class="question-mark">?</span>;
 		} <span class="kw">else </span>{
 			set_candidates_on_main_chain(
 				context,
 				config_initial_authorities,
-				<span class="kw-2">&amp;</span>chain_config.chain_parameters,
+				chain_config.chain_parameters.genesis_utxo,
 				InsertOrUpdate::Insert,
 			)<span class="question-mark">?</span>;
 			<span class="kw">let </span>default_d_parameter =
@@ -472,7 +472,7 @@
 			set_d_parameter_on_main_chain(
 				context,
 				default_d_parameter,
-				<span class="kw-2">&amp;</span>chain_config.chain_parameters,
+				chain_config.chain_parameters.genesis_utxo,
 				InsertOrUpdate::Insert,
 			)<span class="question-mark">?</span>;
 		}
@@ -577,7 +577,7 @@
 <span class="kw">fn </span>set_candidates_on_main_chain&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
 	candidates: SortedPermissionedCandidates,
-	chain_params: <span class="kw-2">&amp;</span>SidechainParams,
+	genesis_utxo: UtxoId,
 	insert_or_update: InsertOrUpdate,
 ) -&gt; anyhow::Result&lt;()&gt; {
 	<span class="kw">let </span>update = context.prompt_yes_no(<span class="string">"Do you want to set/update the permissioned candidates on the main chain with values from configuration file?"</span>, <span class="bool-val">false</span>);
@@ -601,7 +601,7 @@
 				command,
 				cardano_network.to_string(),
 				candidate_keys,
-				smart_contracts::sidechain_params_arguments(chain_params),
+				smart_contracts::sidechain_params_arguments(genesis_utxo),
 				smart_contracts::runtime_config_arguments(
 					<span class="kw-2">&amp;</span>pc_contracts_cli_resources,
 					<span class="kw-2">&amp;</span>payment_signing_key_path
@@ -616,7 +616,7 @@
 <span class="kw">fn </span>set_d_parameter_on_main_chain&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
 	default_d_parameter: DParameter,
-	chain_params: <span class="kw-2">&amp;</span>SidechainParams,
+	genesis_utxo: UtxoId,
 	insert: InsertOrUpdate,
 ) -&gt; anyhow::Result&lt;()&gt; {
 	<span class="kw">let </span>update = context
@@ -640,7 +640,7 @@
 		<span class="kw">let </span>command = <span class="macro">format!</span>(
 			<span class="string">"{PC_CONTRACTS_CLI_PATH} {pc_contracts_cli_command} --network {} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}"</span>,
 			cardano_network,
-			smart_contracts::sidechain_params_arguments(chain_params),
+			smart_contracts::sidechain_params_arguments(genesis_utxo),
 			smart_contracts::runtime_config_arguments(<span class="kw-2">&amp;</span>pc_contracts_cli_resources, <span class="kw-2">&amp;</span>payment_signing_key_path)
 		);
 		context.run_command(<span class="kw-2">&amp;</span>command).context(<span class="string">"Setting D-parameter failed"</span>)<span class="question-mark">?</span>;

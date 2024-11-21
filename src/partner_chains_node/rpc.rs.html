@@ -138,7 +138,6 @@
 <a href="#138" id="138">138</a>
 <a href="#139" id="139">139</a>
 <a href="#140" id="140">140</a>
-<a href="#141" id="141">141</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! A collection of node-specific RPC methods.
 //! Substrate provides the `sc-rpc` crate, which defines the core RPC layer
 //! used by Substrate nodes. This file extends those RPC definitions with
@@ -149,7 +148,6 @@
 </span><span class="kw">use </span><span class="kw">crate</span>::main_chain_follower::DataSources;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
-<span class="kw">use </span>chain_params::SidechainParams;
 <span class="kw">use </span>jsonrpsee::RpcModule;
 <span class="kw">use </span>pallet_session_validator_management_rpc::<span class="kw-2">*</span>;
 <span class="kw">use </span>pallet_sidechain_rpc::<span class="kw-2">*</span>;
@@ -215,7 +213,7 @@
 	C::Api: BlockBuilder&lt;Block&gt;,
 	C::Api: sp_consensus_aura::AuraApi&lt;Block, sp_consensus_aura::sr25519::AuthorityId&gt;,
 	C::Api: sidechain_slots::SlotApi&lt;Block&gt;,
-	C::Api: sp_sidechain::GetSidechainParams&lt;Block, SidechainParams&gt;,
+	C::Api: sp_sidechain::GetGenesisUtxo&lt;Block&gt;,
 	C::Api: sp_sidechain::GetSidechainStatus&lt;Block&gt;,
 	C::Api: sp_session_validator_management::SessionValidatorManagementApi&lt;
 		Block,

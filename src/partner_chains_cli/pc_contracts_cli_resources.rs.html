@@ -124,9 +124,6 @@
 <a href="#124" id="124">124</a>
 <a href="#125" id="125">125</a>
 <a href="#126" id="126">126</a>
-<a href="#127" id="127">127</a>
-<a href="#128" id="128">128</a>
-<a href="#129" id="129">129</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::config::{NetworkProtocol, ServiceConfig};
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
@@ -166,9 +163,6 @@
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>KUPO_AND_OGMIOS_REQUIRED: <span class="kw-2">&amp;</span>str = <span class="string">"Partner Chains Smart Contracts require access to Kupo and Ogmios. Please provide their configuration."</span>;
-
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>OGMIOS_REQUIRED: <span class="kw-2">&amp;</span>str =
-	<span class="string">"Partner Chains Smart Contracts require access to Ogmios. Please provide its configuration."</span>;
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>establish_pc_contracts_cli_configuration&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
