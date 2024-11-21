@@ -90,20 +90,19 @@ runs:
           sleep 10
         done
       shell: bash
-    - name: Collect and zip Docker logs
+    - name: Collect Docker logs
       run: |
         mkdir -p local-environment-logs-initial
         docker ps -a --format '{{.Names}}' | while read line; do
           echo "Collecting logs for container $line"
           docker logs "$line" > "local-environment-logs-initial/$line.log" 2>&1 || true
         done
-        zip -r local-environment-logs-initial.zip local-environment-logs-initial/
       shell: bash
     - name: Upload Docker logs artifact
       uses: actions/upload-artifact@v4
       with:
         name: local-environment-logs-initial
-        path: local-environment-logs-initial.zip
+        path: local-environment-logs-initial/
     - name: Fail the job
       if: ${{ steps.wait-pc-node.outcome == 'failure' }}
       run: exit 1
@@ -176,7 +175,7 @@ runs:
           exit 1
         fi
       shell: bash
-    - name: Collect and zip container logs
+    - name: Collect container logs
       if: always()
       run: |
         mkdir -p local-environment-logs-full
@@ -184,14 +183,13 @@ runs:
           echo "Collecting logs for container $line"
           docker logs "$line" > "local-environment-logs-full/$line.log" 2>&1 || true
         done
-        zip -r local-environment-logs-full.zip local-environment-logs-full/
       shell: bash
     - name: Upload container logs
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: local-environment-logs-full
-        path: local-environment-logs-full.zip
+        path: local-environment-logs-full/
     - name: Stop partner-chains-demo
       run: |
         cd dev/local-environment
