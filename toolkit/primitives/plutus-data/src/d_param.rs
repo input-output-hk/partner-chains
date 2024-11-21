@@ -1,4 +1,7 @@
-use crate::{DataDecodingError, DecodingResult, PlutusDataExtensions, VersionedDatum};
+use crate::{
+	DataDecodingError, DecodingResult, PlutusDataExtensions, VersionedDatum,
+	VersionedGenericDatumShape,
+};
 use cardano_serialization_lib::{PlutusData, PlutusList};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -28,7 +31,13 @@ pub fn d_parameter_to_plutus_data(d_param: &sidechain_domain::DParameter) -> Plu
 	let mut list = PlutusList::new();
 	list.add(&PlutusData::new_integer(&d_param.num_permissioned_candidates.into()));
 	list.add(&PlutusData::new_integer(&d_param.num_registered_candidates.into()));
-	PlutusData::new_list(&list)
+	let generic_data = PlutusData::new_list(&list);
+	VersionedGenericDatumShape {
+		datum: PlutusData::new_empty_constr_plutus_data(&0u64.into()),
+		generic_data,
+		version: 0,
+	}
+	.into()
 }
 
 impl VersionedDatum for DParamDatum {
@@ -81,17 +90,17 @@ mod tests {
 	#[test]
 	fn domain_d_param_to_csl() {
 		let d_param = sidechain_domain::DParameter {
-			num_permissioned_candidates: 1,
-			num_registered_candidates: 2,
+			num_permissioned_candidates: 17,
+			num_registered_candidates: 42,
 		};
 
-		let expected_plutus_data = test_plutus_data!({"list": [{"int": 1}, {"int": 2}]});
+		let expected_plutus_data = json_to_plutus_data(v0_datum_json());
 
 		assert_eq!(d_parameter_to_plutus_data(&d_param), expected_plutus_data)
 	}
-	#[test]
-	fn valid_v0_d_param() {
-		let plutus_data = test_plutus_data!({
+
+	fn v0_datum_json() -> serde_json::Value {
+		serde_json::json!({
 			"list": [
 				{ "constructor": 0, "fields": [] },
 				{ "list": [
@@ -100,7 +109,12 @@ mod tests {
 				] },
 				{ "int": 0 }
 			]
-		});
+		})
+	}
+
+	#[test]
+	fn valid_v0_d_param() {
+		let plutus_data = json_to_plutus_data(v0_datum_json());
 
 		let expected_datum =
 			DParamDatum::V0 { num_permissioned_candidates: 17, num_registered_candidates: 42 };

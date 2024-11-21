@@ -1,7 +1,7 @@
-use cardano_serialization_lib::{PlutusData, PlutusList};
+use cardano_serialization_lib::{BigNum, PlutusData, PlutusList};
 use sidechain_domain::*;
 
-use crate::{DataDecodingError, DecodingResult, VersionedDatum};
+use crate::{DataDecodingError, DecodingResult, VersionedDatum, VersionedGenericDatumShape};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum PermissionedCandidateDatums {
@@ -34,7 +34,13 @@ pub fn permissioned_candidates_to_plutus_data(
 		candidate_datum.add(&PlutusData::new_bytes(candidate.grandpa_public_key.0.clone()));
 		list.add(&PlutusData::new_list(&candidate_datum));
 	}
-	PlutusData::new_list(&list)
+	let generic_data = PlutusData::new_list(&list);
+	VersionedGenericDatumShape {
+		datum: PlutusData::new_empty_constr_plutus_data(&BigNum::zero()),
+		generic_data,
+		version: 0,
+	}
+	.into()
 }
 
 impl VersionedDatum for PermissionedCandidateDatums {
@@ -132,9 +138,8 @@ mod tests {
 		assert_eq!(PermissionedCandidateDatums::try_from(plutus_data).unwrap(), expected_datum)
 	}
 
-	#[test]
-	fn valid_v0_permissioned_candidates() {
-		let plutus_data = test_plutus_data!({
+	fn v0_datum_json() -> serde_json::Value {
+		serde_json::json!({
 			"list": [
 				{ "constructor": 0, "fields": [] },
 				{ "list": [
@@ -151,7 +156,49 @@ mod tests {
 				]},
 				{ "int": 0 }
 			]
-		});
+		})
+	}
+
+	#[test]
+	fn test_permissioned_candidates_to_plutus_data() {
+		let expected_plutus_data = json_to_plutus_data(v0_datum_json());
+
+		let domain_data = vec![
+			PermissionedCandidateData {
+				sidechain_public_key: SidechainPublicKey(
+					hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854")
+						.to_vec(),
+				),
+				aura_public_key: AuraPublicKey(
+					hex!("bf20afa1c1a72af3341fa7a447e3f9eada9f3d054a7408fb9e49ad4d6e6559ec")
+						.to_vec(),
+				),
+				grandpa_public_key: GrandpaPublicKey(
+					hex!("9042a40b0b1baa9adcead024432a923eac706be5e1a89d7f2f2d58bfa8f3c26d")
+						.to_vec(),
+				),
+			},
+			PermissionedCandidateData {
+				sidechain_public_key: SidechainPublicKey(
+					hex!("79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf")
+						.to_vec(),
+				),
+				aura_public_key: AuraPublicKey(
+					hex!("56d1da82e56e4cb35b13de25f69a3e9db917f3e13d6f786321f4b0a9dc153b19")
+						.to_vec(),
+				),
+				grandpa_public_key: GrandpaPublicKey(
+					hex!("7392f3ea668aa2be7997d82c07bcfbec3ee4a9a4e01e3216d92b8f0d0a086c32")
+						.to_vec(),
+				),
+			},
+		];
+		assert_eq!(permissioned_candidates_to_plutus_data(&domain_data), expected_plutus_data)
+	}
+
+	#[test]
+	fn valid_v0_permissioned_candidates() {
+		let plutus_data = json_to_plutus_data(v0_datum_json());
 
 		let expected_datum = PermissionedCandidateDatums::V0(vec![
 			PermissionedCandidateDatumV0 {
