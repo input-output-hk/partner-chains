@@ -7,7 +7,7 @@ use crate::io::IOContext;
 use anyhow::anyhow;
 use clap::{arg, Parser};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use sidechain_domain::{MainchainAddressHash, NetworkType, UtxoId};
+use sidechain_domain::{NetworkType, UtxoId};
 use sp_core::offchain::{Duration, Timestamp};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
@@ -320,15 +320,7 @@ impl From<CardanoParameters> for sidechain_domain::mainchain_epoch::MainchainEpo
 #[derive(Deserialize, Serialize, Parser, Clone, Debug)]
 pub struct SidechainParams {
 	#[arg(long)]
-	pub chain_id: u16,
-	#[arg(long)]
-	pub genesis_committee_utxo: UtxoId,
-	#[arg(long)]
-	pub threshold_numerator: u64,
-	#[arg(long)]
-	pub threshold_denominator: u64,
-	#[arg(long)]
-	pub governance_authority: MainchainAddressHash,
+	pub genesis_utxo: UtxoId,
 }
 
 impl Display for SidechainParams {
@@ -380,7 +372,7 @@ pub fn get_cardano_network_from_file(context: &impl IOContext) -> anyhow::Result
 
 pub mod config_fields {
 	use super::*;
-	use sidechain_domain::{MainchainAddressHash, UtxoId};
+	use sidechain_domain::UtxoId;
 
 	pub const NATIVE_TOKEN_POLICY: ConfigFieldDefinition<'static, String> = ConfigFieldDefinition {
 		config_file: CHAIN_CONFIG_FILE_PATH,
@@ -463,47 +455,13 @@ pub mod config_fields {
 			_marker: PhantomData,
 		};
 
-	pub const CHAIN_ID: ConfigFieldDefinition<'static, u16> = ConfigFieldDefinition {
+	pub const GENESIS_UTXO: ConfigFieldDefinition<'static, UtxoId> = ConfigFieldDefinition {
 		config_file: CHAIN_CONFIG_FILE_PATH,
-		path: &["chain_parameters", "chain_id"],
-		name: "partner chain id",
-		default: Some("0"),
+		path: &["chain_parameters", "genesis_utxo"],
+		name: "genesis utxo",
+		default: None,
 		_marker: PhantomData,
 	};
-
-	pub const THRESHOLD_NUMERATOR: ConfigFieldDefinition<'static, u64> = ConfigFieldDefinition {
-		config_file: CHAIN_CONFIG_FILE_PATH,
-		path: &["chain_parameters", "threshold_numerator"],
-		name: "threshold numerator",
-		default: Some("2"),
-		_marker: PhantomData,
-	};
-
-	pub const THRESHOLD_DENOMINATOR: ConfigFieldDefinition<'static, u64> = ConfigFieldDefinition {
-		config_file: CHAIN_CONFIG_FILE_PATH,
-		path: &["chain_parameters", "threshold_denominator"],
-		name: "threshold denominator",
-		default: Some("3"),
-		_marker: PhantomData,
-	};
-
-	pub const GOVERNANCE_AUTHORITY: ConfigFieldDefinition<'static, MainchainAddressHash> =
-		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
-			path: &["chain_parameters", "governance_authority"],
-			name: "governance authority",
-			default: None,
-			_marker: PhantomData,
-		};
-
-	pub const GENESIS_COMMITTEE_UTXO: ConfigFieldDefinition<'static, UtxoId> =
-		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
-			path: &["chain_parameters", "genesis_committee_utxo"],
-			name: "genesis committee utxo",
-			default: Some("0000000000000000000000000000000000000000000000000000000000000000#0"),
-			_marker: PhantomData,
-		};
 
 	pub const BOOTNODES: ConfigFieldDefinition<'static, Vec<String>> = ConfigFieldDefinition {
 		config_file: CHAIN_CONFIG_FILE_PATH,
@@ -684,32 +642,4 @@ pub mod config_fields {
 
 pub mod config_values {
 	pub const DEFAULT_CHAIN_NAME: &str = "partner_chains_template";
-}
-
-#[cfg(test)]
-mod tests {
-	use crate::config::config_fields::GOVERNANCE_AUTHORITY;
-	use sidechain_domain::MainchainAddressHash;
-
-	#[test]
-	fn governance_authority_without_leading_0x() {
-		let parsed = GOVERNANCE_AUTHORITY.extract_from_json_object(&serde_json::json!({"chain_parameters":{"governance_authority":"000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"}}));
-		assert_eq!(
-			parsed,
-			Some(MainchainAddressHash::from_hex_unsafe(
-				"000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"
-			))
-		);
-	}
-
-	#[test]
-	fn governance_authority_with_leading_0x() {
-		let parsed = GOVERNANCE_AUTHORITY.extract_from_json_object(&serde_json::json!({"chain_parameters":{"governance_authority":"0x000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"}}));
-		assert_eq!(
-			parsed,
-			Some(MainchainAddressHash::from_hex_unsafe(
-				"000000b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"
-			))
-		);
-	}
 }

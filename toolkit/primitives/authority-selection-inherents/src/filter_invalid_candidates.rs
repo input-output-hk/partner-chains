@@ -14,8 +14,8 @@ use sp_runtime::traits::Verify;
 /// It's ToDatum implementation has to produce datum that has to match main chain structure,
 /// because it will be hashed and signed for signature verification.
 #[derive(Debug, ToDatum)]
-pub struct RegisterValidatorSignedMessage<Params> {
-	pub sidechain_params: Params,
+pub struct RegisterValidatorSignedMessage {
+	pub genesis_utxo: UtxoId,
 	pub sidechain_pub_key: Vec<u8>,
 	/// UTxO that is an input parameter to the registration transaction
 	pub input_utxo: UtxoId,
@@ -35,13 +35,9 @@ pub struct Candidate<TAccountId, TAccountKeys> {
 }
 
 /// Get the valid trustless candidates from the registrations from inherent data
-pub fn filter_trustless_candidates_registrations<
-	TAccountId,
-	TAccountKeys,
-	Params: ToDatum + Clone,
->(
+pub fn filter_trustless_candidates_registrations<TAccountId, TAccountKeys>(
 	candidate_registrations: Vec<CandidateRegistrations>,
-	sidechain_params: Params,
+	genesis_utxo: UtxoId,
 ) -> Vec<CandidateWithStake<TAccountId, TAccountKeys>>
 where
 	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
@@ -50,7 +46,7 @@ where
 	candidate_registrations
 		.into_iter()
 		.flat_map(|candidate_registrations| {
-			select_latest_valid_candidate(candidate_registrations, &sidechain_params)
+			select_latest_valid_candidate(candidate_registrations, genesis_utxo)
 		})
 		.collect()
 }
@@ -73,9 +69,9 @@ where
 		.collect()
 }
 
-fn select_latest_valid_candidate<TAccountId, TAccountKeys, Params: ToDatum + Clone>(
+fn select_latest_valid_candidate<TAccountId, TAccountKeys>(
 	candidate_registrations: CandidateRegistrations,
-	sidechain_params: &Params,
+	genesis_utxo: UtxoId,
 ) -> Option<CandidateWithStake<TAccountId, TAccountKeys>>
 where
 	TAccountId: From<ecdsa::Public>,
@@ -88,11 +84,7 @@ where
 		.registrations
 		.into_iter()
 		.filter_map(|registration_data| {
-			match validate_registration_data(
-				&mainchain_pub_key,
-				&registration_data,
-				sidechain_params,
-			) {
+			match validate_registration_data(&mainchain_pub_key, &registration_data, genesis_utxo) {
 				Ok(candidate) => Some((candidate, registration_data.utxo_info)),
 				Err(_) => None,
 			}
@@ -174,10 +166,10 @@ pub fn validate_permissioned_candidate_data<AccountId: TryFrom<SidechainPublicKe
 }
 
 /// Is the registration data provided by the authority candidate valid?
-pub fn validate_registration_data<Params: ToDatum + Clone>(
+pub fn validate_registration_data(
 	mainchain_pub_key: &MainchainPublicKey,
 	registration_data: &RegistrationData,
-	sidechain_params: &Params,
+	genesis_utxo: UtxoId,
 ) -> Result<Candidate<ecdsa::Public, (sr25519::Public, ed25519::Public)>, RegistrationDataError> {
 	let aura_pub_key = registration_data
 		.aura_pub_key
@@ -193,7 +185,7 @@ pub fn validate_registration_data<Params: ToDatum + Clone>(
 	);
 
 	let signed_message = RegisterValidatorSignedMessage {
-		sidechain_params: sidechain_params.clone(),
+		genesis_utxo,
 		sidechain_pub_key: registration_data.sidechain_pub_key.0.clone(),
 		input_utxo: registration_data.consumed_input,
 	};
@@ -294,12 +286,11 @@ sp_api::decl_runtime_apis! {
 mod tests {
 	use super::*;
 	use crate::tests::{AccountId, AccountKeys};
-	use chain_params::SidechainParams;
 	use hex_literal::hex;
 	use sp_core::Pair;
 
 	/// Get Valid Parameters of the `is_registration_data_valid()` function
-	fn create_valid_parameters() -> (MainchainPublicKey, RegistrationData, SidechainParams) {
+	fn create_valid_parameters() -> (MainchainPublicKey, RegistrationData, UtxoId) {
 		let input_utxo = UtxoId {
 			tx_hash: McTxHash(hex!(
 				"d260a76b267e27fdf79c217ec61b776d6436dc78eefeac8f3c615486a71f38eb"
@@ -310,13 +301,13 @@ mod tests {
 		let registration_data = RegistrationData {
 			consumed_input: input_utxo,
 			sidechain_signature: SidechainSignature(
-				hex!("f31f26ea682a5721cd07cb337a3a7ca134d3909f6afcd09c74a67dda35f28aa20983e396cb444ba87d146ab3bf9ecf2c129572decfde7db9cfb2580e429d8744").to_vec()
+				hex!("f3622ed6e121836765f684068ecf3cf13eb3eb7d2fc7edcabdb41cad940434ca7b9edf45ce8b6d8d2b2a842fb8265856a3f950d72d42499c72ad28dc46b5dc90").to_vec()
 			),
 			mainchain_signature: MainchainSignature(
-				hex!("1ff8cd26c9132bed8b54acb13d4210cc38fb6577c548222d3a976e1cbf6cdc3dff94922aa3aad6b06a87ce8e15fd254fac14f6654ced49dc8758a6095f347604").to_vec()
+				hex!("2e5e39928409aa9ef5ab955da1cd3819ebd2e7461e766d685305280b6986929e3df2bf4cc5a2ed355c20a0dfb44f2e6ef1f36b6da3bbae3ff0c040705b412e07").to_vec()
 			),
 			cross_chain_signature: CrossChainSignature(
-				hex!("4b3a74688573be4a3b68f0dd8f9ef699a5bae594d8f5f915394afacf259ecada2f5d85dc2a54550ce17efa26c0e2937be188666a9fb25ab6d467d52751144bf1").to_vec()
+				hex!("f3622ed6e121836765f684068ecf3cf13eb3eb7d2fc7edcabdb41cad940434ca7b9edf45ce8b6d8d2b2a842fb8265856a3f950d72d42499c72ad28dc46b5dc90").to_vec()
 			),
 			sidechain_pub_key: SidechainPublicKey(
 				hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec()
@@ -343,19 +334,11 @@ mod tests {
 			tx_inputs: vec![input_utxo],
 		};
 
-		let sidechain_params = SidechainParams {
-			chain_id: 0,
-			genesis_committee_utxo: UtxoId {
-				tx_hash: McTxHash(hex!(
-					"f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e"
-				)),
-				index: UtxoIndex(0),
-			},
-			threshold_numerator: 2,
-			threshold_denominator: 3,
-			governance_authority: MainchainAddressHash(hex!(
-				"00112233445566778899001122334455667788990011223344556677"
+		let genesis_utxo = UtxoId {
+			tx_hash: McTxHash(hex!(
+				"f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e"
 			)),
+			index: UtxoIndex(0),
 		};
 
 		(
@@ -363,12 +346,13 @@ mod tests {
 				"fb335cabe7d3dd77d0177cd332e9a44998d9d5085b811650853b7bb0752a8bef"
 			)),
 			registration_data,
-			sidechain_params,
+			genesis_utxo,
 		)
 	}
 
 	mod is_registration_data_valid_tests {
 		use super::*;
+		use core::str::FromStr;
 		use sidechain_domain::{
 			CrossChainPublicKey, McTxHash, SidechainPublicKey, SidechainSignature,
 		};
@@ -377,24 +361,14 @@ mod tests {
 		fn create_parameters(
 			signing_sidechain_account: ecdsa::Pair,
 			sidechain_pub_key: Vec<u8>,
-		) -> (MainchainPublicKey, RegistrationData, SidechainParams) {
+		) -> (MainchainPublicKey, RegistrationData, UtxoId) {
 			let mainchain_account = ed25519::Pair::from_seed_slice(&[7u8; 32]).unwrap();
-
+			let genesis_utxo =
+				UtxoId { tx_hash: McTxHash([7u8; TX_HASH_SIZE]), index: UtxoIndex(0) };
 			let signed_message = RegisterValidatorSignedMessage {
-				sidechain_params: SidechainParams {
-					chain_id: 101,
-					genesis_committee_utxo: UtxoId {
-						tx_hash: McTxHash([7u8; TX_HASH_SIZE]),
-						index: UtxoIndex(0),
-					},
-					threshold_numerator: 2,
-					threshold_denominator: 3,
-					governance_authority: MainchainAddressHash(hex!(
-						"00112233445566778899001122334455667788990011223344556677"
-					)),
-				},
+				genesis_utxo,
 				sidechain_pub_key: sidechain_pub_key.clone(),
-				input_utxo: UtxoId { tx_hash: McTxHash([7u8; TX_HASH_SIZE]), index: UtxoIndex(0) },
+				input_utxo: genesis_utxo,
 			};
 
 			let signed_message_encoded = minicbor::to_vec(signed_message.to_datum()).unwrap();
@@ -423,29 +397,23 @@ mod tests {
 				tx_inputs: vec![signed_message.input_utxo],
 			};
 
-			(
-				MainchainPublicKey(mainchain_account.public().0),
-				registration_data,
-				signed_message.sidechain_params,
-			)
+			(MainchainPublicKey(mainchain_account.public().0), registration_data, genesis_utxo)
 		}
 
 		#[test]
 		fn should_work() {
-			let (mainchain_pub_key, registration_data, sidechain_params) =
-				create_valid_parameters();
+			let (mainchain_pub_key, registration_data, genesis_utxo) = create_valid_parameters();
 			assert!(validate_registration_data(
 				&mainchain_pub_key,
 				&registration_data,
-				&sidechain_params,
+				genesis_utxo,
 			)
 			.is_ok());
 		}
 
 		#[test]
 		fn should_not_work_if_mainchain_pub_key_is_different() {
-			let (mainchain_pub_key, registration_data, sidechain_params) =
-				create_valid_parameters();
+			let (mainchain_pub_key, registration_data, genesis_utxo) = create_valid_parameters();
 			let different_mainchain_pub_key =
 				MainchainPublicKey(ed25519::Pair::from_seed_slice(&[0u8; 32]).unwrap().public().0);
 			assert_ne!(mainchain_pub_key, different_mainchain_pub_key);
@@ -453,7 +421,7 @@ mod tests {
 				validate_registration_data(
 					&different_mainchain_pub_key,
 					&registration_data,
-					&sidechain_params,
+					genesis_utxo,
 				),
 				Err(RegistrationDataError::InvalidMainchainSignature)
 			);
@@ -464,14 +432,10 @@ mod tests {
 			let signing_sidechain_account = ecdsa::Pair::from_seed_slice(&[77u8; 32]).unwrap();
 			let sidechain_pub_key =
 				ecdsa::Pair::from_seed_slice(&[123u8; 32]).unwrap().public().0.to_vec();
-			let (mainchain_pub_key, registration_data, sidechain_params) =
+			let (mainchain_pub_key, registration_data, genesis_utxo) =
 				create_parameters(signing_sidechain_account, sidechain_pub_key);
 			assert_eq!(
-				validate_registration_data(
-					&mainchain_pub_key,
-					&registration_data,
-					&sidechain_params,
-				),
+				validate_registration_data(&mainchain_pub_key, &registration_data, genesis_utxo,),
 				Err(RegistrationDataError::InvalidSidechainSignature)
 			);
 		}
@@ -481,15 +445,11 @@ mod tests {
 			let signing_sidechain_account = ecdsa::Pair::from_seed_slice(&[77u8; 32]).unwrap();
 			let sidechain_pub_key =
 				ecdsa::Pair::from_seed_slice(&[123u8; 32]).unwrap().public().0.to_vec();
-			let (mainchain_pub_key, mut registration_data, sidechain_params) =
+			let (mainchain_pub_key, mut registration_data, genesis_utxo) =
 				create_parameters(signing_sidechain_account, sidechain_pub_key);
 			registration_data.grandpa_pub_key = GrandpaPublicKey(vec![3; 4]);
 			assert_eq!(
-				validate_registration_data(
-					&mainchain_pub_key,
-					&registration_data,
-					&sidechain_params,
-				),
+				validate_registration_data(&mainchain_pub_key, &registration_data, genesis_utxo,),
 				Err(RegistrationDataError::InvalidGrandpaKey)
 			);
 		}
@@ -499,47 +459,38 @@ mod tests {
 			let signing_sidechain_account = ecdsa::Pair::from_seed_slice(&[77u8; 32]).unwrap();
 			let sidechain_pub_key =
 				ecdsa::Pair::from_seed_slice(&[123u8; 32]).unwrap().public().0.to_vec();
-			let (mainchain_pub_key, mut registration_data, sidechain_params) =
+			let (mainchain_pub_key, mut registration_data, genesis_utxo) =
 				create_parameters(signing_sidechain_account, sidechain_pub_key);
 			registration_data.aura_pub_key = AuraPublicKey(vec![3; 4]);
 			assert_eq!(
-				validate_registration_data(
-					&mainchain_pub_key,
-					&registration_data,
-					&sidechain_params,
-				),
+				validate_registration_data(&mainchain_pub_key, &registration_data, genesis_utxo),
 				Err(RegistrationDataError::InvalidAuraKey)
 			);
 		}
 
 		#[test]
 		fn should_not_work_if_sidechain_params_is_different() {
-			let (mainchain_pub_key, registration_data, sidechain_params) =
-				create_valid_parameters();
-			let different_sidechain_params = SidechainParams {
-				chain_id: sidechain_params.chain_id + 1,
-				..sidechain_params.clone()
-			};
-			assert_ne!(different_sidechain_params, sidechain_params);
+			let (mainchain_pub_key, registration_data, genesis_utxo) = create_valid_parameters();
+			let different_genesis_utxo = UtxoId::from_str(
+				"ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00#7",
+			)
+			.unwrap();
+			assert_ne!(different_genesis_utxo, genesis_utxo);
 			assert!(validate_registration_data(
 				&mainchain_pub_key,
 				&registration_data,
-				&different_sidechain_params,
+				different_genesis_utxo,
 			)
 			.is_err());
 		}
 
 		#[test]
 		fn should_not_work_if_tx_input_is_invalid() {
-			let (mainchain_pub_key, mut registration_data, sidechain_params) =
+			let (mainchain_pub_key, mut registration_data, genesis_utxo) =
 				create_valid_parameters();
 			registration_data.tx_inputs = vec![];
 			assert_eq!(
-				validate_registration_data(
-					&mainchain_pub_key,
-					&registration_data,
-					&sidechain_params,
-				),
+				validate_registration_data(&mainchain_pub_key, &registration_data, genesis_utxo,),
 				Err(RegistrationDataError::InvalidTxInput)
 			);
 		}
@@ -547,7 +498,7 @@ mod tests {
 
 	#[test]
 	fn should_filter_out_candidates_with_invalid_stake() {
-		let (mc_pub_key, registration_data, sidechain_params) = create_valid_parameters();
+		let (mc_pub_key, registration_data, genesis_utxo) = create_valid_parameters();
 		let candidate_registrations = vec![
 			CandidateRegistrations {
 				mainchain_pub_key: mc_pub_key.clone(),
@@ -571,9 +522,9 @@ mod tests {
 			},
 		];
 
-		let valid_candidates = filter_trustless_candidates_registrations::<AccountId, AccountKeys, _>(
+		let valid_candidates = filter_trustless_candidates_registrations::<AccountId, AccountKeys>(
 			candidate_registrations,
-			sidechain_params,
+			genesis_utxo,
 		);
 
 		assert_eq!(valid_candidates.len(), 2);

@@ -24,8 +24,8 @@ pub struct PrepareConfigurationCmd {}
 impl CmdRun for PrepareConfigurationCmd {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		establish_bootnodes(context)?;
-		let chain_params = prepare_chain_params(context)?;
-		prepare_main_chain_config(context, chain_params)?;
+		let (chain_params, ogmios_config) = prepare_chain_params(context)?;
+		prepare_main_chain_config(context, &ogmios_config, chain_params)?;
 		context.eprint("🚀 All done!");
 		Ok(())
 	}
@@ -197,7 +197,6 @@ pub mod tests {
 	const KEY: &str = "962515971a22aa95706c2109ba6e9502c7f39b33bdf63024f46f77894424f1fe";
 	pub const CHAIN_NAME: &str = "partner_chains_template";
 	pub const DATA_PATH: &str = "/path/to/data";
-	pub const CHAIN_CONFIG_PATH: &str = "partner-chains-cli-chain-config.json";
 
 	fn network_key_file() -> String {
 		format!("{DATA_PATH}/chains/{CHAIN_NAME}/network/secret_ed25519")

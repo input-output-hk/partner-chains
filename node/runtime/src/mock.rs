@@ -138,7 +138,6 @@ impl pallet_sidechain::Config for Test {
 		ScSlotNumber(*pallet_aura::CurrentSlot::<Test>::get())
 	}
 	type OnNewEpoch = ();
-	type SidechainParams = chain_params::SidechainParams;
 }
 
 impl pallet_session_validator_management::Config for Test {
@@ -156,7 +155,7 @@ impl pallet_session_validator_management::Config for Test {
 	) -> Option<BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>> {
 		let candidates: Vec<_> = filter_trustless_candidates_registrations(
 			input.registered_candidates,
-			Sidechain::sidechain_params(),
+			Sidechain::genesis_utxo(),
 		)
 		.into_iter()
 		.map(|c| (c.candidate.account_id, c.candidate.account_keys))
@@ -227,18 +226,10 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		.unwrap();
 
 	pallet_sidechain::GenesisConfig::<Test> {
-		params: chain_params::SidechainParams {
-			chain_id: 0,
-			threshold_numerator: 2,
-			threshold_denominator: 3,
-			genesis_committee_utxo: UtxoId::new(
-				hex!("abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"),
-				0,
-			),
-			governance_authority: MainchainAddressHash(hex!(
-				"00112233445566778899001122334455667788990011223344556677"
-			)),
-		},
+		genesis_utxo: UtxoId::new(
+			hex!("abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"),
+			0,
+		),
 		slots_per_epoch: SlotsPerEpoch(SLOTS_PER_EPOCH),
 		..Default::default()
 	}
@@ -319,7 +310,7 @@ pub fn for_next_n_blocks_after_finalizing(n: u32, f: &dyn Fn()) {
 pub fn create_inherent_data_struct(
 	expected_authorities: &[TestKeys],
 ) -> AriadneInherentDataProvider {
-	let sidechain_params = pallet_sidechain::Pallet::<Test>::sidechain_params();
+	let genesis_utxo = pallet_sidechain::Pallet::<Test>::genesis_utxo();
 
 	let candidates: Vec<CandidateRegistrations> = expected_authorities
 		.iter()
@@ -329,7 +320,7 @@ pub fn create_inherent_data_struct(
 			let mainchain_pub_key_seed: [u8; 32] = validator_pub_key.blake2_256();
 			let dummy_mainchain_pub_key: ed25519::Pair = Pair::from_seed(&mainchain_pub_key_seed);
 			let signed_message = RegisterValidatorSignedMessage {
-				sidechain_params: sidechain_params.clone(),
+				genesis_utxo,
 				sidechain_pub_key: validator.cross_chain.public().into_inner().0.to_vec(),
 				input_utxo: UtxoId::default(),
 			};

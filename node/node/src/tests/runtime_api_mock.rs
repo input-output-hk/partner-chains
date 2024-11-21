@@ -1,6 +1,5 @@
-use super::mock::mock_sidechain_params;
+use super::mock::mock_genesis_utxo;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
-use chain_params::SidechainParams;
 use sidechain_domain::*;
 use sidechain_mc_hash::McHashInherentDigest;
 use sidechain_runtime::opaque::SessionKeys;
@@ -10,7 +9,7 @@ use sp_blockchain::HeaderBackend;
 use sp_core::ecdsa;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, NumberFor, Zero};
 use sp_runtime::Digest;
-use sp_sidechain::GetSidechainParams;
+use sp_sidechain::GetGenesisUtxo;
 use std::collections::HashMap;
 
 type Hash = <Block as BlockT>::Hash;
@@ -55,8 +54,8 @@ impl ProvideRuntimeApi<Block> for TestApi {
 }
 
 sp_api::mock_impl_runtime_apis! {
-	impl GetSidechainParams<Block, SidechainParams> for TestApi {
-		fn sidechain_params() -> SidechainParams { mock_sidechain_params() }
+	impl GetGenesisUtxo<Block> for TestApi {
+		fn genesis_utxo() -> UtxoId { mock_genesis_utxo() }
 	}
 
 	impl sp_session_validator_management::SessionValidatorManagementApi<Block, SessionKeys, CrossChainPublic, AuthoritySelectionInputs, ScEpochNumber> for TestApi {

@@ -3,25 +3,23 @@ use authority_selection_inherents::filter_invalid_candidates::RegistrationDataEr
 use authority_selection_inherents::filter_invalid_candidates::{
 	CandidateValidationApi, StakeError,
 };
-use plutus::ToDatum;
 use sidechain_domain::{
 	CandidateRegistrations, MainchainAddress, McEpochNumber, RegistrationData, StakeDelegation,
 };
 use sp_core::bytes::to_hex;
-use sp_sidechain::GetSidechainParams;
+use sp_sidechain::GetGenesisUtxo;
 
 impl<
 		C,
 		Block,
 		SessionKeys: parity_scale_codec::Decode + Send + Sync + 'static,
 		CrossChainPublic,
-		SidechainParams: parity_scale_codec::Decode + Send + Sync + ToDatum + Clone,
-	> SessionValidatorManagementQuery<C, Block, SessionKeys, CrossChainPublic, SidechainParams>
+	> SessionValidatorManagementQuery<C, Block, SessionKeys, CrossChainPublic>
 where
 	Block: BlockT,
 	C: HeaderBackend<Block>,
 	C: 'static + ProvideRuntimeApi<Block> + Send + Sync,
-	C::Api: GetSidechainParams<Block, SidechainParams>,
+	C::Api: GetGenesisUtxo<Block>,
 	C::Api: CandidateValidationApi<Block>,
 {
 	async fn registrations_to_rpc_response(

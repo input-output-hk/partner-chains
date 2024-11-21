@@ -40,8 +40,6 @@ docker run -it \
   -v /tmp/cargo-home:/cargo-home \
   -e CARGO_HOME=/cargo-home \
   -e CHAIN=staging \
-  -e CHAIN_ID=12345 \
-  -e GOVERNANCE_AUTHORITY=00000000000000000000000000000000000000000000000000000000 \
   -e SPEC_FILE_UID=$(id -u) \
   -e SPEC_FILE_GID=$(id -g) \
   chain-spec:latest
@@ -80,8 +78,7 @@ Omit, if `--chain` option should not be used for the build-spec command.
 Set the genesis utxo and governance authority chain parameters.
 See entrypoint.sh file for legacy parameters defaults.
 ```
--e GENESIS_COMMITTEE_UTXO="0000000000000000000000000000000000000000000000000000000000000000#0" \
--e GOVERNANCE_AUTHORITY=00000000000000000000000000000000000000000000000000000000 \
+-e GENESIS_UTXO="0000000000000000000000000000000000000000000000000000000000000000#0" \
 ```
 
 Build chain spec in raw format, it's optional, omit if you want to build without `--raw` flag.

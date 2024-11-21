@@ -77,6 +77,24 @@ echo "Beginning configuration..."
 
 chmod 644 /shared/shelley/genesis-utxo.skey
 
+echo "Initializing governance authority ..."
+
+export GENESIS_UTXO=$(cat /shared/genesis.utxo)
+
+./pc-contracts-cli init-governance \
+    --network testnet \
+    --kupo-host kupo --kupo-port $KUPO_PORT \
+    --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
+    --genesis-utxo $GENESIS_UTXO \
+    --payment-signing-key-file /keys/funded_address.skey \
+    --governance-authority $GOVERNANCE_AUTHORITY
+
+if [ $? -eq 0 ]; then
+   echo "Successfully initialized governance authority!"
+else
+    echo "Failed to initialize governance authority!"
+fi
+
 echo "Generating addresses.json file..."
 
 ./pc-contracts-cli addresses \
@@ -84,10 +102,7 @@ echo "Generating addresses.json file..."
     --kupo-host kupo --kupo-port $KUPO_PORT \
     --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
     --payment-signing-key-file /keys/funded_address.skey \
-    --genesis-committee-hash-utxo $GENESIS_COMMITTEE_UTXO \
-    --sidechain-id $CHAIN_ID --threshold-numerator $THRESHOLD_NUMERATOR --threshold-denominator $THRESHOLD_DENOMINATOR \
-    --governance-authority $GOVERNANCE_AUTHORITY \
-    --version 1 \
+    --genesis-utxo $GENESIS_UTXO \
 > addresses.json
 
 export COMMITTEE_CANDIDATE_ADDRESS=$(jq -r '.addresses.CommitteeCandidateValidator' addresses.json)
@@ -113,9 +128,7 @@ echo "Inserting D parameter..."
     --network testnet \
     --kupo-host kupo --kupo-port $KUPO_PORT \
     --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
-    --genesis-committee-hash-utxo $GENESIS_COMMITTEE_UTXO \
-    --sidechain-id $CHAIN_ID --threshold-numerator $THRESHOLD_NUMERATOR --threshold-denominator $THRESHOLD_DENOMINATOR \
-    --governance-authority $GOVERNANCE_AUTHORITY \
+    --genesis-utxo $GENESIS_UTXO \
     --d-parameter-permissioned-candidates-count 3 \
     --d-parameter-registered-candidates-count 2 \
     --payment-signing-key-file /keys/funded_address.skey
@@ -139,11 +152,7 @@ bob_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/grandpa.
     --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
     --add-candidate $alice_sidechain_vkey:$alice_aura_vkey:$alice_grandpa_vkey \
     --add-candidate $bob_sidechain_vkey:$bob_aura_vkey:$bob_grandpa_vkey \
-    --genesis-committee-hash-utxo $GENESIS_COMMITTEE_UTXO \
-    --governance-authority $GOVERNANCE_AUTHORITY \
-    --threshold-numerator $THRESHOLD_NUMERATOR \
-    --threshold-denominator $THRESHOLD_DENOMINATOR \
-    --sidechain-id 0 \
+    --genesis-utxo $GENESIS_UTXO \
     --payment-signing-key-file /keys/funded_address.skey
 
 if [ $? -eq 0 ]; then
@@ -161,13 +170,10 @@ dave_sidechain_signing_key=$(cat /partner-chains-nodes/partner-chains-node-4/key
 
 # Process registration signatures for Dave
 dave_output=$(./partner-chains-node registration-signatures \
-    --chain-id 0 \
-    --genesis-committee-utxo $GENESIS_COMMITTEE_UTXO \
-    --governance-authority $GOVERNANCE_AUTHORITY \
+    --genesis-utxo $GENESIS_UTXO \
     --mainchain-signing-key $dave_mainchain_signing_key \
     --sidechain-signing-key $dave_sidechain_signing_key \
-    --registration-utxo $dave_utxo \
-    --threshold-numerator 2 --threshold-denominator 3)
+    --registration-utxo $dave_utxo)
 
 # Extract signatures and keys from Dave output
 dave_spo_public_key=$(echo "$dave_output" | jq -r ".spo_public_key")
@@ -182,11 +188,7 @@ dave_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/grandpa
     --network testnet \
     --kupo-host kupo --kupo-port $KUPO_PORT \
     --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
-    --sidechain-id 0 \
-    --genesis-committee-hash-utxo $GENESIS_COMMITTEE_UTXO \
-    --governance-authority $GOVERNANCE_AUTHORITY \
-    --threshold-numerator 2 \
-    --threshold-denominator 3 \
+    --genesis-utxo $GENESIS_UTXO \
     --spo-public-key $dave_spo_public_key \
     --spo-signature $dave_spo_signature \
     --sidechain-public-keys $dave_sidechain_public_key:$dave_aura_vkey:$dave_grandpa_vkey \
@@ -264,7 +266,7 @@ echo "Configuring Epoch Length..."
 jq '.genesis.runtimeGenesis.config.sidechain.slotsPerEpoch = 5' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
 echo "Copying chain-spec.json file to /shared/chain-spec.json..."
-cp chain-spec.json /shared/chain-spec.json 
+cp chain-spec.json /shared/chain-spec.json
 echo "chain-spec.json generation complete."
 
 echo "Partnerchain configuration is complete, and will be able to start after two mainchain epochs."

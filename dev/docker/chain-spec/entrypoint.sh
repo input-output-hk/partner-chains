@@ -1,19 +1,12 @@
 #!/bin/bash
 
-export GENESIS_COMMITTEE_UTXO="${GENESIS_COMMITTEE_UTXO:-0000000000000000000000000000000000000000000000000000000000000000#0}"
-export THRESHOLD_NUMERATOR="${THRESHOLD_NUMERATOR:-2}"
-export THRESHOLD_DENOMINATOR="${THRESHOLD_DENOMINATOR:-3}"
+export GENESIS_UTXO="${GENESIS_UTXO:-0000000000000000000000000000000000000000000000000000000000000000#0}"
 
 cargo build --locked --release
 
 echo "Building chain-spec with parameters:"
 echo "  Essential parameters:"
-echo "      chain id: $CHAIN_ID"
-echo "      governance authority: $GOVERNANCE_AUTHORITY"
-echo "  Legacy genesis parameters:"
-echo "      genesis utxo: $GENESIS_COMMITTEE_UTXO"
-echo "      threshold numerator: $THRESHOLD_NUMERATOR"
-echo "      threshold denominator: $THRESHOLD_DENOMINATOR"
+echo "      genesis utxo: $GENESIS_UTXO"
 echo "  SessionValidatorManagement main chain configuration:"
 echo "      committee_candidate_address: $COMMITTEE_CANDIDATE_ADDRESS"
 echo "      d_parameter_policy_id: $D_PARAMETER_POLICY_ID"

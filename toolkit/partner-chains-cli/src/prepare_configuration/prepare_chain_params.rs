@@ -1,65 +1,35 @@
-use crate::cardano_key::get_key_hash_from_file;
-use crate::config::config_fields::{
-	CHAIN_ID, GENESIS_COMMITTEE_UTXO, GOVERNANCE_AUTHORITY, THRESHOLD_DENOMINATOR,
-	THRESHOLD_NUMERATOR,
-};
-use crate::config::{config_fields, ConfigFieldDefinition, SidechainParams};
+use crate::config::config_fields::{self, GENESIS_UTXO};
+use crate::config::{ConfigFieldDefinition, ServiceConfig};
 use crate::io::IOContext;
-use anyhow::{anyhow, Context};
+use crate::select_utxo::{filter_utxos, query_utxos, select_from_utxos, ValidUtxo};
+use crate::{cardano_key, pc_contracts_cli_resources};
+use anyhow::anyhow;
+use partner_chains_cardano_offchain::csl::NetworkTypeExt;
 use serde::de::DeserializeOwned;
-use sidechain_domain::{MainchainAddressHash, UtxoId};
+use sidechain_domain::{NetworkType, UtxoId};
 
-pub fn prepare_chain_params<C: IOContext>(context: &C) -> anyhow::Result<SidechainParams> {
+use super::prepare_cardano_params::get_shelley_config;
+
+pub fn prepare_chain_params<C: IOContext>(context: &C) -> anyhow::Result<(UtxoId, ServiceConfig)> {
 	context.eprint(INTRO);
-	let governance_authority = match GOVERNANCE_AUTHORITY.load_from_file_and_print(context) {
-		Some(ga) => {
-			if !context.prompt_yes_no(&is_gov_auth_valid_prompt(), true) {
-				establish_governance_authority(context)?
-			} else {
-				ga
-			}
-		},
-		None => establish_governance_authority(context)?,
+	let ogmios_configuration = pc_contracts_cli_resources::prompt_ogmios_configuration(context)?;
+	let shelley_config = get_shelley_config(&ogmios_configuration.to_string(), context)?;
+	let address = derive_address(context, shelley_config.network)?;
+	let utxo_query_result = query_utxos(context, &ogmios_configuration, &address)?;
+	let valid_utxos: Vec<ValidUtxo> = filter_utxos(utxo_query_result);
+
+	if valid_utxos.is_empty() {
+		context.eprint("⚠️ No UTXOs found for the given address");
+		context.eprint("There has to be at least one UTXO in the governance authority wallet.");
+		return Err(anyhow::anyhow!("No UTXOs found"));
 	};
-	context.eprint(CHAIN_ID_PROMPT);
-	let chain_id = CHAIN_ID.prompt_with_default_from_file_parse_and_save(context)?;
-	let (genesis_committee_utxo, threshold_numerator, threshold_denominator) =
-		silently_fill_legacy_chain_params(context)?;
-	Ok(SidechainParams {
-		chain_id,
-		genesis_committee_utxo,
-		threshold_numerator,
-		threshold_denominator,
-		governance_authority,
-	})
-}
+	let genesis_utxo =
+		select_from_utxos(context, "Select an UTXO to use as the genesis UTXO", valid_utxos)?;
 
-fn silently_fill_legacy_chain_params(
-	context: &impl IOContext,
-) -> anyhow::Result<(UtxoId, u64, u64)> {
-	let genesis_committee_utxo = GENESIS_COMMITTEE_UTXO
-		.default
-		.ok_or(anyhow!("Genesis committee utxo should have a default value"))?
-		.parse()
-		.map_err(anyhow::Error::msg)
-		.context("Genesis committee utxo should have a valid default value")?;
-	let threshold_numerator = THRESHOLD_NUMERATOR
-		.default
-		.ok_or(anyhow!("Threshold numerator should have a default value"))?
-		.parse()
-		.map_err(anyhow::Error::msg)
-		.context("Threshold numerator default should be a number")?;
-	let threshold_denominator = THRESHOLD_DENOMINATOR
-		.default
-		.ok_or(anyhow!("Threshold denominator should have a default value"))?
-		.parse()
-		.map_err(anyhow::Error::msg)
-		.context("Threshold denominator default should be a number")?;
+	context.print(CAUTION);
 
-	save_if_missing(GENESIS_COMMITTEE_UTXO, genesis_committee_utxo, context);
-	save_if_missing(THRESHOLD_NUMERATOR, threshold_numerator, context);
-	save_if_missing(THRESHOLD_DENOMINATOR, threshold_denominator, context);
-	Ok((genesis_committee_utxo, threshold_numerator, threshold_denominator))
+	save_if_missing(GENESIS_UTXO, genesis_utxo, context);
+	Ok((genesis_utxo, ogmios_configuration))
 }
 
 fn save_if_missing<T, C: IOContext>(field: ConfigFieldDefinition<'_, T>, new_value: T, context: &C)
@@ -71,51 +41,37 @@ where
 	}
 }
 
-fn establish_governance_authority(
-	context: &impl IOContext,
-) -> anyhow::Result<MainchainAddressHash> {
+fn derive_address<C: IOContext>(
+	context: &C,
+	cardano_network: NetworkType,
+) -> Result<String, anyhow::Error> {
 	let cardano_payment_verification_key_file =
 		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
 			.prompt_with_default_from_file_and_save(context);
-
-	let governance_authority =
-		get_key_hash_from_file(&cardano_payment_verification_key_file, context)?;
-
-	GOVERNANCE_AUTHORITY.save_to_file(&governance_authority, context);
-	context.eprint(&format!("Governance authority has been set to {}", governance_authority));
-	Ok(governance_authority)
+	let key_bytes: [u8; 32] =
+		cardano_key::get_key_bytes_from_file(&cardano_payment_verification_key_file, context)?;
+	let address =
+		partner_chains_cardano_offchain::csl::payment_address(&key_bytes, cardano_network.to_csl());
+	address.to_bech32(None).map_err(|e| anyhow!(e.to_string()))
 }
 
-const INTRO: &str = "Now, let's set up the chain parameters: chain id and governance authority. The Pair `(governance authority, chain id)` identifies a partner chain, thus it has to be unique.";
-const CHAIN_ID_PROMPT: &str = "Now, let's set up chain id. It has to fall in range 0-65535";
-
-fn is_gov_auth_valid_prompt() -> String {
-	format!("Is the {} displayed above correct?", GOVERNANCE_AUTHORITY.name)
-}
+const INTRO: &str = "Now, let's set up the genesis utxo. It identifies a partner chain. This wizard will query Ogmios for your UTXOs using address derived from the payment verification key. Please provide required data.";
+const CAUTION: &str =
+	"Please do not spend this UTXO, it needs to be consumed by the governance initialization.\n";
 
 #[cfg(test)]
 mod tests {
-	use crate::config::config_fields::{
-		CARDANO_PAYMENT_VERIFICATION_KEY_FILE, CHAIN_ID, GENESIS_COMMITTEE_UTXO,
-		GOVERNANCE_AUTHORITY as GOVERNANCE_AUTHORITY_FIELD, THRESHOLD_DENOMINATOR,
-		THRESHOLD_NUMERATOR,
-	};
+	use crate::config::config_fields::GENESIS_UTXO;
 	use crate::config::RESOURCES_CONFIG_FILE_PATH;
-	use crate::prepare_configuration::prepare_chain_params::tests::scenarios::silently_fill_legacy_chain_params;
+	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
+	use crate::pc_contracts_cli_resources::default_ogmios_service_config;
+	use crate::pc_contracts_cli_resources::tests::prompt_ogmios_configuration_io;
+	use crate::prepare_configuration::prepare_cardano_params::tests::preview_shelley_config;
 	use crate::prepare_configuration::prepare_chain_params::{
-		is_gov_auth_valid_prompt, prepare_chain_params, CHAIN_ID_PROMPT,
+		prepare_chain_params, CAUTION, INTRO,
 	};
-	use crate::prepare_configuration::tests::{
-		prompt_and_save_to_existing_file, prompt_with_default_and_save_to_existing_file,
-		save_to_existing_file, save_to_new_file, CHAIN_CONFIG_PATH,
-	};
-
+	use crate::select_utxo::tests::{mock_5_valid_utxos_rows, mock_result_5_valid, query_utxos_io};
 	use crate::tests::{MockIO, MockIOContext};
-	use serde_json::Value;
-	use sidechain_domain::{MainchainAddressHash, UtxoId};
-	use std::str::FromStr;
-
-	const GOVERNANCE_AUTHORITY: &str = "0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9";
 
 	fn test_vkey_file_json() -> serde_json::Value {
 		serde_json::json!({
@@ -125,46 +81,31 @@ mod tests {
 		})
 	}
 
-	mod scenarios {
-		use super::*;
-		use crate::prepare_configuration::prepare_chain_params::INTRO;
-		use crate::tests::MockIO;
-
-		pub fn show_intro() -> MockIO {
-			MockIO::Group(vec![MockIO::eprint(INTRO)])
-		}
-
-		pub fn silently_fill_legacy_chain_params(final_chain_config: Value) -> MockIO {
-			MockIO::Group(vec![
-				MockIO::file_read(GENESIS_COMMITTEE_UTXO.config_file),
-				save_to_existing_file(
-					GENESIS_COMMITTEE_UTXO,
-					GENESIS_COMMITTEE_UTXO.default.unwrap(),
-				),
-				MockIO::file_read(THRESHOLD_NUMERATOR.config_file),
-				save_to_existing_file(THRESHOLD_NUMERATOR, THRESHOLD_NUMERATOR.default.unwrap()),
-				MockIO::file_read(THRESHOLD_DENOMINATOR.config_file),
-				MockIO::file_read(THRESHOLD_DENOMINATOR.config_file),
-				MockIO::file_write_json(THRESHOLD_DENOMINATOR.config_file, final_chain_config),
-			])
-		}
-	}
-
 	#[test]
 	fn happy_path() {
-		let final_chain_config = test_chain_config();
 		let mock_context = MockIOContext::new()
 			.with_file(RESOURCES_CONFIG_FILE_PATH, "{}")
 			.with_json_file("payment.vkey", test_vkey_file_json())
 			.with_expected_io(vec![
-				scenarios::show_intro(),
-				prompt_and_save_to_existing_file(CARDANO_PAYMENT_VERIFICATION_KEY_FILE, "payment.vkey"),
-				MockIO::file_read("payment.vkey"),
-				save_to_new_file(GOVERNANCE_AUTHORITY_FIELD, GOVERNANCE_AUTHORITY),
-				MockIO::eprint("Governance authority has been set to 0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"),
-				MockIO::eprint(CHAIN_ID_PROMPT),
-				prompt_and_save_to_existing_file(CHAIN_ID, "0"),
-				silently_fill_legacy_chain_params(final_chain_config),
+				MockIO::eprint(INTRO),
+				read_shelly_config_to_get_network(),
+				prompt_payment_vkey_and_read_it_to_derive_address(),
+				query_utxos_io(
+					"addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw",
+					"http://localhost:1337",
+					mock_result_5_valid(),
+				),
+				MockIO::prompt_multi_option(
+					"Select an UTXO to use as the genesis UTXO",
+				 	mock_5_valid_utxos_rows(),
+					 "4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"
+				),
+				MockIO::print(CAUTION),
+				MockIO::file_write_json_contains(
+					GENESIS_UTXO.config_file,
+					&GENESIS_UTXO.json_pointer(),
+					"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93",
+				),
 			]);
 
 		let result = prepare_chain_params(&mock_context);
@@ -172,170 +113,35 @@ mod tests {
 		result.expect("should succeed");
 	}
 
-	#[test]
-	fn happy_path_with_overwriting_governance_authority() {
-		let final_chain_config = test_chain_config();
-
-		let initial_chain_config = serde_json::json!({
-			"chain_parameters": {
-				"governance_authority": GOVERNANCE_AUTHORITY,
-			}
-		});
-
-		let mock_context = MockIOContext::new()
-			.with_file(RESOURCES_CONFIG_FILE_PATH, "{}")
-			.with_json_file("payment.vkey", test_vkey_file_json())
-			.with_json_file(CHAIN_CONFIG_PATH, initial_chain_config).with_expected_io(vec![
-				scenarios::show_intro(),
-				MockIO::file_read(GOVERNANCE_AUTHORITY_FIELD.config_file),
-				MockIO::eprint(&GOVERNANCE_AUTHORITY_FIELD.loaded_from_config_msg(&MainchainAddressHash::from_hex_unsafe(GOVERNANCE_AUTHORITY))),
-				MockIO::prompt_yes_no(&is_gov_auth_valid_prompt(), true, false),
-				prompt_and_save_to_existing_file(CARDANO_PAYMENT_VERIFICATION_KEY_FILE, "payment.vkey"),
-				MockIO::file_read("payment.vkey"),
-				save_to_existing_file(GOVERNANCE_AUTHORITY_FIELD, GOVERNANCE_AUTHORITY),
-				MockIO::eprint("Governance authority has been set to 0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"),
-				MockIO::eprint(CHAIN_ID_PROMPT),
-				prompt_and_save_to_existing_file(CHAIN_ID, "0"),
-				silently_fill_legacy_chain_params(final_chain_config),
-			]);
-
-		let result = prepare_chain_params(&mock_context);
-
-		result.expect("should succeed");
+	fn read_shelly_config_to_get_network() -> MockIO {
+		MockIO::Group(vec![
+			prompt_ogmios_configuration_io(
+				&default_ogmios_service_config(),
+				&default_ogmios_service_config(),
+			),
+			MockIO::ogmios_request(
+				"http://localhost:1337",
+				OgmiosRequest::QueryNetworkShelleyGenesis,
+				Ok(OgmiosResponse::QueryNetworkShelleyGenesis(preview_shelley_config())),
+			),
+		])
 	}
 
-	#[test]
-	fn happy_path_without_overwriting_governance_authority() {
-		let mut final_chain_config = test_chain_config();
-		if let Some(gov_auth) =
-			final_chain_config.pointer_mut(&GOVERNANCE_AUTHORITY_FIELD.json_pointer())
-		{
-			*gov_auth = "76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9".into();
-		}
-
-		let initial_chain_config = serde_json::json!({
-			"chain_parameters": {
-				"governance_authority": "76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9",
-			}
-		});
-
-		let mock_context = MockIOContext::new()
-			.with_json_file("payment.vkey", test_vkey_file_json())
-			.with_file(RESOURCES_CONFIG_FILE_PATH, "{}")
-			.with_json_file(CHAIN_CONFIG_PATH, initial_chain_config)
-			.with_expected_io(vec![
-				scenarios::show_intro(),
-				MockIO::file_read(GOVERNANCE_AUTHORITY_FIELD.config_file),
-				MockIO::eprint(&GOVERNANCE_AUTHORITY_FIELD.loaded_from_config_msg(
-					&MainchainAddressHash::from_hex_unsafe(GOVERNANCE_AUTHORITY),
-				)),
-				MockIO::prompt_yes_no(&is_gov_auth_valid_prompt(), true, true),
-				MockIO::eprint(CHAIN_ID_PROMPT),
-				prompt_and_save_to_existing_file(CHAIN_ID, "0"),
-				silently_fill_legacy_chain_params(final_chain_config),
-			]);
-
-		let result = prepare_chain_params(&mock_context);
-
-		result.expect("should succeed");
-	}
-
-	#[test]
-	fn happy_path_with_default_from_config() {
-		let mut final_chain_config = test_chain_config();
-		if let Some(chain_id) = final_chain_config.pointer_mut(&CHAIN_ID.json_pointer()) {
-			*chain_id = 2.into();
-		}
-
-		let initial_chain_config = serde_json::json!({
-			"chain_parameters": {
-				"chain_id": 1,
-			}
-		});
-
-		let mock_context = MockIOContext::new()
-			.with_json_file("payment.vkey", test_vkey_file_json())
-			.with_file(RESOURCES_CONFIG_FILE_PATH, "{}")
-			.with_json_file(CHAIN_ID.config_file, initial_chain_config).with_expected_io(vec![
-				scenarios::show_intro(),
-				MockIO::file_read(GOVERNANCE_AUTHORITY_FIELD.config_file),
-				prompt_and_save_to_existing_file(CARDANO_PAYMENT_VERIFICATION_KEY_FILE, "payment.vkey"),
-				MockIO::file_read("payment.vkey"),
-				save_to_existing_file(GOVERNANCE_AUTHORITY_FIELD, GOVERNANCE_AUTHORITY),
-				MockIO::eprint("Governance authority has been set to 0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"),
-				MockIO::eprint(CHAIN_ID_PROMPT),
-				prompt_with_default_and_save_to_existing_file(CHAIN_ID, Some("1"),"2"),
-				silently_fill_legacy_chain_params(final_chain_config),
-			]);
-
-		let result = prepare_chain_params(&mock_context);
-
-		result.expect("should succeed");
-	}
-
-	#[test]
-	fn keep_legacy_params_if_present_in_config() {
-		let genesis_committee_utxo =
-			"0000000000000000000000000000000000000000000000000000000000000000#1";
-		let threshold_numerator: u64 = 4;
-		let threshold_denominator: u64 = 5;
-
-		let final_chain_config = serde_json::json!({
-			"chain_parameters": {
-				"governance_authority": "0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9",
-				"chain_id": 0,
-				"genesis_committee_utxo": genesis_committee_utxo,
-				"threshold_numerator": threshold_numerator,
-				"threshold_denominator": threshold_denominator,
-			}
-		});
-
-		let initial_chain_config = serde_json::json!({
-			"chain_parameters": {
-				"genesis_committee_utxo": genesis_committee_utxo,
-				"threshold_numerator": threshold_numerator,
-				"threshold_denominator": threshold_denominator,
-			}
-		});
-
-		let mock_context = MockIOContext::new()
-			.with_file(RESOURCES_CONFIG_FILE_PATH, "{}")
-			.with_json_file(GENESIS_COMMITTEE_UTXO.config_file ,initial_chain_config)
-			.with_json_file("payment.vkey", test_vkey_file_json())
-			.with_expected_io(vec![
-				scenarios::show_intro(),
-				MockIO::file_read(GOVERNANCE_AUTHORITY_FIELD.config_file),
-				prompt_and_save_to_existing_file(CARDANO_PAYMENT_VERIFICATION_KEY_FILE, "payment.vkey"),
-				MockIO::file_read("payment.vkey"),
-				save_to_existing_file(GOVERNANCE_AUTHORITY_FIELD, GOVERNANCE_AUTHORITY),
-				MockIO::eprint("Governance authority has been set to 0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"),
-				MockIO::eprint(CHAIN_ID_PROMPT),
-				MockIO::file_read(CHAIN_ID.config_file),
-				MockIO::prompt(CHAIN_ID.name, CHAIN_ID.default, "0"),
-				MockIO::file_read(CHAIN_ID.config_file),
-				MockIO::file_write_json(CHAIN_ID.config_file, final_chain_config),
-				MockIO::file_read(GENESIS_COMMITTEE_UTXO.config_file),
-				MockIO::eprint(&GENESIS_COMMITTEE_UTXO.loaded_from_config_msg(&UtxoId::from_str(genesis_committee_utxo).unwrap())),
-				MockIO::file_read(THRESHOLD_NUMERATOR.config_file),
-				MockIO::eprint(&THRESHOLD_NUMERATOR.loaded_from_config_msg(&threshold_numerator)),
-				MockIO::file_read(THRESHOLD_DENOMINATOR.config_file),
-				MockIO::eprint(&THRESHOLD_DENOMINATOR.loaded_from_config_msg(&threshold_denominator)),
-			]);
-
-		let result = prepare_chain_params(&mock_context);
-
-		result.expect("should succeed");
-	}
-
-	fn test_chain_config() -> Value {
-		serde_json::json!({
-			"chain_parameters": {
-				"governance_authority": "0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9",
-				"chain_id": 0,
-				"genesis_committee_utxo": GENESIS_COMMITTEE_UTXO.default.unwrap(),
-				"threshold_numerator": 2,
-				"threshold_denominator": 3
-			}
-		})
+	fn prompt_payment_vkey_and_read_it_to_derive_address() -> MockIO {
+		MockIO::Group(vec![
+			MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
+			MockIO::prompt(
+				"path to the payment verification file",
+				Some("payment.vkey"),
+				"payment.vkey",
+			),
+			MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
+			MockIO::file_write_json_contains(
+				RESOURCES_CONFIG_FILE_PATH,
+				"/cardano_payment_verification_key_file",
+				"payment.vkey",
+			),
+			MockIO::file_read("payment.vkey"),
+		])
 	}
 }

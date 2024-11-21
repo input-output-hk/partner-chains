@@ -131,7 +131,7 @@ mod get_registration_tests {
 		let candidate_data_source_mock = MockAuthoritySelectionDataSource::default()
 			.with_candidates_per_epoch(vec![
 				vec![],
-				create_candidates(vec![SEED, SEED2], TEST_SIDECHAIN_PARAMS),
+				create_candidates(vec![SEED, SEED2], TEST_UTXO_ID),
 			]);
 		let response = candidate_data_source_mock
 			.get_candidates(McEpochNumber(1), MainchainAddress::default())
@@ -207,10 +207,7 @@ mod get_registration_tests {
 	) {
 		let supported_epoch = McEpochNumber(1);
 		let mut candidate_data_source_mock = MockAuthoritySelectionDataSource::default()
-			.with_candidates_per_epoch(vec![
-				vec![],
-				create_candidates(vec![SEED], TEST_SIDECHAIN_PARAMS),
-			]);
+			.with_candidates_per_epoch(vec![vec![], create_candidates(vec![SEED], TEST_UTXO_ID)]);
 		let candidate = candidate_data_source_mock.candidates[1][0].borrow_mut();
 		let mainchain_pub_key_clone = candidate.mainchain_pub_key().clone();
 		let registration = candidate.registrations[0].borrow_mut();
@@ -241,7 +238,7 @@ mod get_registration_tests {
 			let valid_registration_data = create_valid_registration_data(
 				mainchain_account,
 				sidechain_account.clone(),
-				TEST_SIDECHAIN_PARAMS,
+				TEST_UTXO_ID,
 			);
 
 			let mut registrations: Vec<RegistrationData> = (0u32..5)
@@ -331,7 +328,7 @@ mod get_registration_tests {
 	#[tokio::test]
 	async fn return_correct_ariadne_parameters() {
 		let permissioned_candidates = vec![valid_permissioned_candidate()];
-		let candidate_registrations = create_candidates(vec![SEED], TEST_SIDECHAIN_PARAMS);
+		let candidate_registrations = create_candidates(vec![SEED], TEST_UTXO_ID);
 		let candidate_data_source_mock = MockAuthoritySelectionDataSource::default()
 			.with_candidates_per_epoch(vec![vec![], candidate_registrations.clone()])
 			.with_permissioned_candidates(vec![None, Some(permissioned_candidates.clone())]);

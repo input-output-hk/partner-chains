@@ -40,7 +40,6 @@ class PartnerChainEvmApi(BlockchainApi):
             "gas": 100000,
             "to": tx.recipient,
             "value": tx.value,
-            "chainId": int(self.config.chain_id),
         }
         logger.debug(f"Transaction built {tx._unsigned}")
         return tx

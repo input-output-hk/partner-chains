@@ -91,7 +91,7 @@ fn build_command(
         "{PC_CONTRACTS_CLI_PATH} deregister --network {} --ada-based-staking --spo-public-key {} {} {}",
         cardano_network,
         cold_vkey,
-        smart_contracts::sidechain_params_arguments(&chain_config.chain_parameters),
+        smart_contracts::sidechain_params_arguments(chain_config.chain_parameters.genesis_utxo),
         smart_contracts::runtime_config_arguments(
             &pc_contracts_cli_resources,
             &payment_signing_key_path

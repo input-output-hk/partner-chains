@@ -54,7 +54,6 @@ frame-system = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 sp-block-rewards = { workspace = true }
 sidechain-domain = { workspace = true }
-chain-params = { workspace = true }
 sidechain-slots = { workspace = true }
 sp-sidechain = { workspace = true }
 pallet-sidechain-rpc = { workspace = true }
@@ -108,7 +107,7 @@ pallet-sidechain-rpc = { workspace = true, features = ["mock"] }
 authority-selection-inherents = { workspace = true, features = ["mock"] }
 
 [features]
-default = ["sidechain-domain/std", "chain-params/std"]
+default = ["sidechain-domain/std"]
 # Dependencies that are only required if runtime benchmarking should be build.
 runtime-benchmarks = [
 	"sidechain-runtime/runtime-benchmarks",

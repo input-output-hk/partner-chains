@@ -1,4 +1,3 @@
-use chain_params::SidechainParams;
 use clap::command;
 use partner_chains_node_commands::PartnerChainsSubcommand;
 use sc_cli::RunCmd;
@@ -19,7 +18,7 @@ pub enum Subcommand {
 	Key(sc_cli::KeySubcommand),
 
 	#[clap(flatten)]
-	PartnerChains(PartnerChainsSubcommand<SidechainParams>),
+	PartnerChains(PartnerChainsSubcommand),
 
 	/// Build a chain specification.
 	BuildSpec(sc_cli::BuildSpecCmd),
@@ -64,19 +63,15 @@ mod registration_signatures_tests {
 			output_json,
 			serde_json::json!({
 				"spo_public_key": "0xfb335cabe7d3dd77d0177cd332e9a44998d9d5085b811650853b7bb0752a8bef",
-				"spo_signature": "0x1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07",
+				"spo_signature": "0x359bca8b2196f5618c14635419a523d22625253069e3963342af980542dcd49b737a9725f0a3970974d0566b44c6e069bcd89265d1f0fdc1c629b6eaa73b130d",
 				"sidechain_public_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
-				"sidechain_signature": "0x676094d8ae924afd157ebcd5b52852648502906d0739929a976dd371ca0e37c40839946255b35bb1ceb377e502a163bcc108aed1b2ee5e03165e7edd1b37c658"
+				"sidechain_signature": "0xce7696304946a9eaec3c2c8be1aa49023f0fe01b08c7097c8493d733424f22fe45153632876785143fe4db8f362b2b1dfcede2c755d11c6a1b78a2f4b7f1b87d"
 			})
 		)
 	}
 
 	const REGISTRATION_SIGS_CMD: &str = "registration-signatures \
-      --genesis-committee-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 \
-      --chain-id 0 \
-      --threshold-numerator 2 \
-      --threshold-denominator 3 \
-      --governance-authority 00112233445566778899001122334455667788990011223344556677 \
+      --genesis-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 \
       --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 \
       --mainchain-signing-key 0x79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf \
       --sidechain-signing-key cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854";

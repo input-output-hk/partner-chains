@@ -66,7 +66,6 @@ pallet-session-validator-management = { workspace = true }
 sp-session-validator-management = { workspace = true, features = ["serde"] }
 pallet-session-validator-management-benchmarking = { workspace = true, optional = true }
 sidechain-domain = { workspace = true, features = ["serde"] }
-chain-params = { workspace = true, features = ["serde"] }
 sidechain-slots = { workspace = true }
 session-manager = { workspace = true }
 pallet-native-token-management = { workspace = true }
@@ -140,7 +139,6 @@ std = [
 	"sidechain-slots/std",
 	"sidechain-domain/std",
 	"sp-inherents/std",
-	"chain-params/std",
 	"pallet-native-token-management/std",
 	"sp-native-token-management/std",
 	"pallet-session-runtime-stub/std",

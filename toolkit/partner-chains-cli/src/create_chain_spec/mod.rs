@@ -6,7 +6,7 @@ use crate::{config::config_fields, CmdRun};
 use anyhow::{anyhow, Context};
 use serde::de::DeserializeOwned;
 use serde_json::Value as JValue;
-use sidechain_domain::{MainchainAddressHash, UtxoId};
+use sidechain_domain::UtxoId;
 
 #[cfg(test)]
 mod tests;
@@ -43,20 +43,7 @@ impl CmdRun for CreateChainSpecCmd {
 impl CreateChainSpecCmd {
 	fn print_config<C: IOContext>(context: &C, config: &CreateChainSpecConfig) {
 		context.print("Chain parameters:");
-		context.print(format!("- Chain ID: {}", config.chain_id).as_str());
-		context.print(
-			format!("- Governance authority: {}", config.governance_authority.to_hex_string())
-				.as_str(),
-		);
-		context.print(
-			"Legacy parameters (keep defaults as long as you are not sure to do otherwise):",
-		);
-		context.print(format!("- Threshold numerator: {}", config.threshold_numerator).as_str());
-		context
-			.print(format!("- Threshold denominator: {}", config.threshold_denominator).as_str());
-		context.print(
-			format!("- Genesis committee hash UTXO: {}", config.genesis_committee_utxo).as_str(),
-		);
+		context.print(format!("- Genesis UTXO: {}", config.genesis_utxo).as_str());
 		context.print("SessionValidatorManagement Main Chain Configuration:");
 		context.print(
 			format!("- committee_candidate_address: {}", config.committee_candidate_address)
@@ -95,11 +82,7 @@ impl CreateChainSpecCmd {
 	) -> anyhow::Result<String> {
 		let node_executable =
 			NODE_EXECUTABLE.save_if_empty(NODE_EXECUTABLE_DEFAULT.to_string(), context);
-		context.set_env_var("CHAIN_ID", &config.chain_id.to_string());
-		context.set_env_var("GOVERNANCE_AUTHORITY", &config.governance_authority.to_string());
-		context.set_env_var("THRESHOLD_NUMERATOR", &config.threshold_numerator.to_string());
-		context.set_env_var("THRESHOLD_DENOMINATOR", &config.threshold_denominator.to_string());
-		context.set_env_var("GENESIS_COMMITTEE_UTXO", &config.genesis_committee_utxo.to_string());
+		context.set_env_var("GENESIS_UTXO", &config.genesis_utxo.to_string());
 		context.set_env_var(
 			"COMMITTEE_CANDIDATE_ADDRESS",
 			&config.committee_candidate_address.to_string(),
@@ -169,11 +152,7 @@ impl CreateChainSpecCmd {
 
 #[derive(Debug)]
 struct CreateChainSpecConfig {
-	chain_id: u16,
-	governance_authority: MainchainAddressHash,
-	threshold_numerator: u64,
-	threshold_denominator: u64,
-	genesis_committee_utxo: UtxoId,
+	genesis_utxo: UtxoId,
 	initial_permissioned_candidates_raw: Vec<PermissionedCandidateKeys>,
 	initial_permissioned_candidates_parsed: Vec<ParsedPermissionedCandidatesKeys>,
 	committee_candidate_address: String,
@@ -194,11 +173,7 @@ impl CreateChainSpecConfig {
 				.map(TryFrom::try_from)
 				.collect::<Result<Vec<ParsedPermissionedCandidatesKeys>, anyhow::Error>>()?;
 		Ok(Self {
-			chain_id: load_config_field(c, &config_fields::CHAIN_ID)?,
-			governance_authority: load_config_field(c, &config_fields::GOVERNANCE_AUTHORITY)?,
-			threshold_numerator: load_config_field(c, &config_fields::THRESHOLD_NUMERATOR)?,
-			threshold_denominator: load_config_field(c, &config_fields::THRESHOLD_DENOMINATOR)?,
-			genesis_committee_utxo: load_config_field(c, &config_fields::GENESIS_COMMITTEE_UTXO)?,
+			genesis_utxo: load_config_field(c, &config_fields::GENESIS_UTXO)?,
 			initial_permissioned_candidates_raw,
 			initial_permissioned_candidates_parsed,
 			committee_candidate_address: load_config_field(

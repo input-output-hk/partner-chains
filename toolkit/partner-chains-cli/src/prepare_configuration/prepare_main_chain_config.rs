@@ -3,22 +3,20 @@ use crate::config::config_fields::{
 	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
 	PERMISSIONED_CANDIDATES_POLICY_ID,
 };
-use crate::config::{ServiceConfig, SidechainParams};
+use crate::config::ServiceConfig;
 use crate::io::IOContext;
-use crate::pc_contracts_cli_resources::{prompt_ogmios_configuration, OGMIOS_REQUIRED};
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
-use sidechain_domain::PolicyId;
+use sidechain_domain::{PolicyId, UtxoId};
 
 pub fn prepare_main_chain_config<C: IOContext>(
 	context: &C,
-	sidechain_params: SidechainParams,
+	ogmios_config: &ServiceConfig,
+	genesis_utxo: UtxoId,
 ) -> anyhow::Result<()> {
-	context.print(OGMIOS_REQUIRED);
-	let ogmios_config = prompt_ogmios_configuration(context)?;
-	let cardano_parameteres = prepare_cardano_params(&ogmios_config, context)?;
+	let cardano_parameteres = prepare_cardano_params(ogmios_config, context)?;
 	cardano_parameteres.save(context);
-	set_up_cardano_addresses(context, sidechain_params, &ogmios_config)?;
+	set_up_cardano_addresses(context, genesis_utxo, ogmios_config)?;
 	if INITIAL_PERMISSIONED_CANDIDATES.load_from_file(context).is_none() {
 		INITIAL_PERMISSIONED_CANDIDATES.save_to_file(&vec![], context)
 	}
@@ -29,20 +27,13 @@ pub fn prepare_main_chain_config<C: IOContext>(
 
 fn set_up_cardano_addresses<C: IOContext>(
 	context: &C,
-	params: SidechainParams,
+	genesis_utxo: UtxoId,
 	ogmios_config: &ServiceConfig,
 ) -> anyhow::Result<()> {
-	let params = chain_params::SidechainParams {
-		chain_id: params.chain_id,
-		genesis_committee_utxo: params.genesis_committee_utxo,
-		threshold_numerator: params.threshold_numerator,
-		threshold_denominator: params.threshold_denominator,
-		governance_authority: params.governance_authority,
-	};
 	let offchain_impl = context.offchain_impl(ogmios_config)?;
 	let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 	let scripts_data = runtime
-		.block_on(offchain_impl.get_scripts_data(params))
+		.block_on(offchain_impl.get_scripts_data(genesis_utxo))
 		.map_err(|e| anyhow::anyhow!("Offchain call failed: {e:?}!"))?;
 
 	let committee_candidate_validator_addr = scripts_data.addresses.committee_candidate_validator;
@@ -106,10 +97,9 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::config::config_fields::{GOVERNANCE_AUTHORITY, KUPO_PROTOCOL, OGMIOS_PROTOCOL};
+	use crate::config::config_fields::{GENESIS_UTXO, KUPO_PROTOCOL, OGMIOS_PROTOCOL};
+	use crate::config::NetworkProtocol;
 	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
-	use crate::pc_contracts_cli_resources::tests::prompt_ogmios_configuration_io;
-	use crate::pc_contracts_cli_resources::{default_ogmios_service_config, OGMIOS_REQUIRED};
 	use crate::prepare_configuration::prepare_cardano_params::tests::{
 		preprod_eras_summaries, preprod_shelley_config, PREPROD_CARDANO_PARAMS,
 	};
@@ -119,7 +109,7 @@ mod tests {
 		Addresses, PolicyIds, ScriptsData, ValidatorHashes,
 	};
 	use serde_json::Value;
-	use sidechain_domain::{MainchainAddressHash, UtxoId};
+	use sidechain_domain::UtxoId;
 	use std::str::FromStr;
 
 	const TEST_GENESIS_UTXO: &str =
@@ -132,6 +122,14 @@ mod tests {
 		"13db1ba564b3b264f45974fece44b2beb0a2326b10e65a0f7f300dfb";
 	const TEST_ILLIQUID_SUPPLY_ADDRESS: &str =
 		"addr_test1wqn2pkvvmesmxtfa4tz7w8gh8vumr52lpkrhcs4dkg30uqq77h5z4";
+
+	fn ogmios_config() -> ServiceConfig {
+		ServiceConfig {
+			hostname: "localhost".to_string(),
+			port: 1337,
+			protocol: NetworkProtocol::Http,
+		}
+	}
 
 	pub mod scenarios {
 		use super::*;
@@ -203,11 +201,10 @@ mod tests {
 	#[test]
 	fn happy_path() {
 		let mock_context = MockIOContext::new()
-			.with_json_file(GOVERNANCE_AUTHORITY.config_file, serde_json::json!({}))
+			.with_json_file(GENESIS_UTXO.config_file, serde_json::json!({}))
 			.with_json_file(OGMIOS_PROTOCOL.config_file, serde_json::json!({}))
 			.with_offchain_mocks(preprod_offchain_mocks())
 			.with_expected_io(vec![
-				establish_ogmios_configuration_io(),
 				MockIO::ogmios_request(
 					"http://localhost:1337",
 					OgmiosRequest::QueryLedgerStateEraSummaries,
@@ -239,7 +236,12 @@ mod tests {
 				scenarios::prompt_and_save_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
 			]);
-		prepare_main_chain_config(&mock_context, test_sidechain_params()).expect("should succeed");
+		prepare_main_chain_config(
+			&mock_context,
+			&ogmios_config(),
+			UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
+		)
+		.expect("should succeed");
 	}
 
 	#[test]
@@ -260,7 +262,6 @@ mod tests {
 			.with_json_file(KUPO_PROTOCOL.config_file, serde_json::json!({}))
 			.with_offchain_mocks(preprod_offchain_mocks())
 			.with_expected_io(vec![
-				establish_ogmios_configuration_io(),
 				MockIO::ogmios_request(
 					"http://localhost:1337",
 					OgmiosRequest::QueryLedgerStateEraSummaries,
@@ -287,7 +288,12 @@ mod tests {
 				scenarios::prompt_and_save_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
 			]);
-		prepare_main_chain_config(&mock_context, test_sidechain_params()).expect("should succeed");
+		prepare_main_chain_config(
+			&mock_context,
+			&ogmios_config(),
+			UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
+		)
+		.expect("should succeed");
 	}
 
 	fn print_addresses_io() -> MockIO {
@@ -300,33 +306,9 @@ mod tests {
 		))
 	}
 
-	fn test_sidechain_params() -> SidechainParams {
-		SidechainParams {
-			chain_id: 0,
-			genesis_committee_utxo: UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
-			threshold_numerator: 2,
-			threshold_denominator: 3,
-			governance_authority: MainchainAddressHash::from_hex_unsafe(
-				"0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9",
-			),
-		}
-	}
-
-	fn expected_mapped_params() -> chain_params::SidechainParams {
-		chain_params::SidechainParams {
-			chain_id: 0,
-			genesis_committee_utxo: UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
-			threshold_numerator: 2,
-			threshold_denominator: 3,
-			governance_authority: MainchainAddressHash::from_hex_unsafe(
-				"0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9",
-			),
-		}
-	}
-
 	fn preprod_offchain_mocks() -> OffchainMocks {
 		let mock = OffchainMock::new_with_scripts_data(
-			expected_mapped_params(),
+			UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
 			Ok(ScriptsData {
 				addresses: Addresses {
 					committee_candidate_validator: TEST_COMMITTEE_CANDIDATES_ADDRESS.to_string(),
@@ -367,15 +349,5 @@ mod tests {
 			},
 			"initial_permissioned_candidates": []
 		})
-	}
-
-	fn establish_ogmios_configuration_io() -> MockIO {
-		MockIO::Group(vec![
-			MockIO::print(OGMIOS_REQUIRED),
-			prompt_ogmios_configuration_io(
-				&default_ogmios_service_config(),
-				&default_ogmios_service_config(),
-			),
-		])
 	}
 }

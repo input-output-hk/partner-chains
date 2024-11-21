@@ -1,7 +1,6 @@
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use crate::filter_invalid_candidates::RegisterValidatorSignedMessage;
 use crate::select_authorities::select_authorities;
-use chain_params::SidechainParams;
 use hex_literal::hex;
 use num_bigint::BigInt;
 use plutus::Datum::{ByteStringDatum, ConstructorDatum, IntegerDatum};
@@ -19,44 +18,16 @@ fn registration_message_encoding() {
 
 	let sample_utxo_id_hash_bytes: [u8; 32] =
 		hex!("e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efa");
-	let governance_authority_bytes: [u8; 28] =
-		hex!("4f2d6145e1700ad11dc074cad9f4194cc53b0dbab6bd25dfea6c501a");
 	let sidechain_pub_key_bytes =
 		hex!("02dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ec").to_vec();
-	let sample_tx_out_ref =
-		UtxoId { tx_hash: McTxHash(sample_utxo_id_hash_bytes), index: UtxoIndex(4) };
+	let genesis_utxo = UtxoId { tx_hash: McTxHash(sample_utxo_id_hash_bytes), index: UtxoIndex(4) };
 	let msg = RegisterValidatorSignedMessage {
-		sidechain_params: SidechainParams {
-			chain_id: 11,
-			genesis_committee_utxo: sample_tx_out_ref,
-			threshold_numerator: 2,
-			threshold_denominator: 3,
-			governance_authority: MainchainAddressHash(governance_authority_bytes),
-		},
+		genesis_utxo,
 		sidechain_pub_key: sidechain_pub_key_bytes.clone(),
 		// Unfortunately test vector in partner-chains-smart-contracts uses same UTxO in two places.
-		input_utxo: sample_tx_out_ref,
+		input_utxo: genesis_utxo,
 	};
 
-	let expected_sidechain_params_datum = ConstructorDatum {
-		constructor: 0,
-		fields: vec![
-			IntegerDatum(BigInt::from(11)),
-			ConstructorDatum {
-				constructor: 0,
-				fields: vec![
-					ConstructorDatum {
-						constructor: 0,
-						fields: vec![ByteStringDatum(sample_utxo_id_hash_bytes.to_vec())],
-					},
-					IntegerDatum(BigInt::from(4)),
-				],
-			},
-			IntegerDatum(BigInt::from(2)),
-			IntegerDatum(BigInt::from(3)),
-			ByteStringDatum(governance_authority_bytes.to_vec()),
-		],
-	};
 	let pub_key_datum = ByteStringDatum(sidechain_pub_key_bytes);
 	let utxo_datum = ConstructorDatum {
 		constructor: 0,
@@ -70,13 +41,13 @@ fn registration_message_encoding() {
 	};
 	let expected = ConstructorDatum {
 		constructor: 0,
-		fields: vec![expected_sidechain_params_datum, pub_key_datum, utxo_datum],
+		fields: vec![utxo_datum.clone(), pub_key_datum, utxo_datum],
 	};
 	assert_eq!(msg.to_datum(), expected);
 
 	let cbor_bytes = minicbor::to_vec(msg.to_datum()).unwrap();
 	// https://github.com/input-output-hk/partner-chains-smart-contracts/blob/6e6aca0edeb09cecd3a93913020e9ceaa1ce1d25/onchain/test/golden/BlockProducerRegistrationMsg-cbor.golden#L1
-	let expected_hex = "d8799fd8799f0bd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ff0203581c4f2d6145e1700ad11dc074cad9f4194cc53b0dbab6bd25dfea6c501aff582102dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ecd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ffff";
+	let expected_hex = "d8799fd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ff582102dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ecd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ffff";
 	assert_eq!(hex::encode(cbor_bytes), expected_hex);
 }
 
@@ -187,12 +158,11 @@ fn ariadne_all_permissioned_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee =
-		select_authorities::<AccountId, AccountKeys, SidechainParams, ConstU32<32>>(
-			SidechainParams::default(),
-			authority_selection_inputs,
-			ScEpochNumber::zero(),
-		);
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
+		UtxoId::default(),
+		authority_selection_inputs,
+		ScEpochNumber::zero(),
+	);
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
@@ -216,12 +186,11 @@ fn ariadne_only_permissioned_candidates_are_present_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee =
-		select_authorities::<AccountId, AccountKeys, SidechainParams, ConstU32<32>>(
-			SidechainParams::default(),
-			authority_selection_inputs,
-			ScEpochNumber::zero(),
-		);
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
+		UtxoId::default(),
+		authority_selection_inputs,
+		ScEpochNumber::zero(),
+	);
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
@@ -245,12 +214,11 @@ fn ariadne_3_to_2_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee =
-		select_authorities::<AccountId, AccountKeys, SidechainParams, ConstU32<32>>(
-			SidechainParams::default(),
-			authority_selection_inputs,
-			ScEpochNumber::zero(),
-		);
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
+		UtxoId::default(),
+		authority_selection_inputs,
+		ScEpochNumber::zero(),
+	);
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
@@ -274,12 +242,11 @@ fn ariadne_3_to_2_with_more_available_candidates_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee =
-		select_authorities::<AccountId, AccountKeys, SidechainParams, ConstU32<32>>(
-			SidechainParams::default(),
-			authority_selection_inputs,
-			ScEpochNumber::zero(),
-		);
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
+		UtxoId::default(),
+		authority_selection_inputs,
+		ScEpochNumber::zero(),
+	);
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
@@ -303,12 +270,11 @@ fn ariadne_4_to_7_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee =
-		select_authorities::<AccountId, AccountKeys, SidechainParams, ConstU32<32>>(
-			SidechainParams::default(),
-			authority_selection_inputs,
-			ScEpochNumber::zero(),
-		);
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
+		UtxoId::default(),
+		authority_selection_inputs,
+		ScEpochNumber::zero(),
+	);
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
@@ -335,12 +301,11 @@ fn ariadne_selection_statistics_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee =
-		select_authorities::<AccountId, AccountKeys, SidechainParams, ConstU32<30000>>(
-			SidechainParams::default(),
-			authority_selection_inputs,
-			ScEpochNumber::zero(),
-		);
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<30000>>(
+		UtxoId::default(),
+		authority_selection_inputs,
+		ScEpochNumber::zero(),
+	);
 	let committee = calculated_committee.unwrap();
 	let mut map = HashMap::new();
 	for (id, _) in &committee {
@@ -365,12 +330,11 @@ fn ariadne_does_not_return_empty_committee() {
 		&[],
 		DParameter { num_permissioned_candidates: 1, num_registered_candidates: 1 },
 	);
-	let calculated_committee =
-		select_authorities::<AccountId, AccountKeys, SidechainParams, ConstU32<10>>(
-			SidechainParams::default(),
-			authority_selection_inputs,
-			ScEpochNumber::zero(),
-		);
+	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<10>>(
+		UtxoId::default(),
+		authority_selection_inputs,
+		ScEpochNumber::zero(),
+	);
 	assert_eq!(calculated_committee, None);
 }
 
@@ -385,7 +349,7 @@ fn create_epoch_candidates_idp(validators: &[MockValidator]) -> Vec<CandidateReg
 		.iter()
 		.map(|validator| {
 			let signed_message = RegisterValidatorSignedMessage {
-				sidechain_params: SidechainParams::default(),
+				genesis_utxo: UtxoId::default(),
 				sidechain_pub_key: validator.sidechain_pub_key().0,
 				input_utxo: UtxoId::default(),
 			};

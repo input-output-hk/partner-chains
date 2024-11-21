@@ -2,7 +2,6 @@
 
 use crate::inherent_data::CreateInherentDataConfig;
 use crate::tests::runtime_api_mock::TestApi;
-use chain_params::SidechainParams;
 use hex_literal::hex;
 use sc_consensus_aura::SlotDuration;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
@@ -11,20 +10,10 @@ use sidechain_slots::{ScSlotConfig, SlotsPerEpoch};
 use sp_core::offchain::{Duration, Timestamp};
 use std::sync::Arc;
 
-pub fn mock_sidechain_params() -> SidechainParams {
-	SidechainParams {
-		chain_id: 0,
-		genesis_committee_utxo: UtxoId {
-			tx_hash: McTxHash(hex!(
-				"f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e"
-			)),
-			index: UtxoIndex(0),
-		},
-		threshold_numerator: 2,
-		threshold_denominator: 3,
-		governance_authority: MainchainAddressHash(hex!(
-			"00112233445566778899001122334455667788990011223344556677"
-		)),
+pub fn mock_genesis_utxo() -> UtxoId {
+	UtxoId {
+		tx_hash: McTxHash(hex!("f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e")),
+		index: UtxoIndex(0),
 	}
 }
 

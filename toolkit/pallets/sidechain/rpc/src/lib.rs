@@ -12,7 +12,7 @@ use sidechain_slots::SlotApi;
 use sp_api::ProvideRuntimeApi;
 use sp_core::offchain::Timestamp;
 use sp_runtime::traits::Block as BlockT;
-use sp_sidechain::{GetSidechainParams, GetSidechainStatus};
+use sp_sidechain::{GetGenesisUtxo, GetSidechainStatus};
 use std::sync::Arc;
 use time_source::*;
 use types::*;
@@ -24,9 +24,9 @@ mod tests;
 pub mod mock;
 
 #[rpc(client, server, namespace = "sidechain")]
-pub trait SidechainRpcApi<SidechainParams> {
+pub trait SidechainRpcApi {
 	#[method(name = "getParams")]
-	fn get_params(&self) -> RpcResult<SidechainParams>;
+	fn get_params(&self) -> RpcResult<sp_sidechain::query::Output>;
 
 	/// Returns data related to the status of both the main chain and the sidechain, like their epochs or the timestamp associated to the next epoch.
 	#[method(name = "getStatus")]
@@ -56,22 +56,21 @@ impl<C, B> SidechainRpc<C, B> {
 }
 
 #[async_trait]
-impl<C, Block, SidechainParams> SidechainRpcApiServer<SidechainParams> for SidechainRpc<C, Block>
+impl<C, Block> SidechainRpcApiServer for SidechainRpc<C, Block>
 where
 	Block: BlockT,
-	SidechainParams: parity_scale_codec::Decode,
 	C: Send + Sync + 'static,
 	C: ProvideRuntimeApi<Block>,
 	C: GetBestHash<Block>,
-	C::Api: SlotApi<Block> + GetSidechainParams<Block, SidechainParams> + GetSidechainStatus<Block>,
+	C::Api: SlotApi<Block> + GetGenesisUtxo<Block> + GetSidechainStatus<Block>,
 {
-	fn get_params(&self) -> RpcResult<SidechainParams> {
+	fn get_params(&self) -> RpcResult<sp_sidechain::query::Output> {
 		let api = self.client.runtime_api();
 		let best_block = self.client.best_hash();
 
-		let sidechain_params = api.sidechain_params(best_block).map_err(error_object_from)?;
+		let genesis_utxo = api.genesis_utxo(best_block).map_err(error_object_from)?;
 
-		Ok(sidechain_params)
+		Ok(sp_sidechain::query::Output { genesis_utxo })
 	}
 
 	async fn get_status(&self) -> RpcResult<GetStatusResponse> {

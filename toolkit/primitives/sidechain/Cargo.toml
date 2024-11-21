@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+envy = { workspace = true, optional = true}
 frame-support = { workspace = true }
 sidechain-domain = { workspace = true }
 parity-scale-codec = { workspace = true }
@@ -13,11 +14,13 @@ scale-info = { workspace = true }
 sp-api = { workspace = true }
 sp-runtime = { workspace = true }
 sp-blockchain = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
 std = [
+    "envy",
 	"sp-api/std",
     "frame-support/std",
     "parity-scale-codec/std",
@@ -25,6 +28,7 @@ std = [
 	"sidechain-domain/std",
     "sp-api/std",
     "sp-runtime/std",
+	"serde",
 	"serde_json",
 	"sp-blockchain"
 ]

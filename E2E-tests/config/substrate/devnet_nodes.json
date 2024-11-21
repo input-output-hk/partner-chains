@@ -1,9 +1,7 @@
 {
-    "chain_id": 1,
     "deployment_mc_epoch": 755,
     "initial_pc_epoch": 4810931,
-    "genesis_committee_hash_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0",
-    "governance_authority": "0x76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9",
+    "genesis_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0",
     "deployment_version": "1.3.0",
     "test_environment": "devnet",
     "committee_participation_tolerance": 0.21,

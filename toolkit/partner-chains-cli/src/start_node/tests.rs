@@ -56,11 +56,7 @@ fn default_chain_config() -> serde_json::Value {
 			"first_epoch_timestamp_millis": FIRST_EPOCH_TIMESTAMP_MILLIS
 		},
 		"chain_parameters": {
-			"chain_id": 0,
-			"governance_authority": "00000000000000000000000000000000000000000000000000000000",
-			"genesis_committee_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0",
-			"threshold_numerator": 2,
-			"threshold_denominator": 3
+			"genesis_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0",
 		}
 	})
 }
@@ -259,7 +255,7 @@ mod load_chain_config {
 			.with_expected_io(vec![
                 MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
                 MockIO::eprint(&format!(
-                    "⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} is invalid: missing field `cardano` at line 12 column 1. Run prepare-configuration wizard or fix errors manually."
+                    "⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} is invalid: missing field `cardano` at line 8 column 1. Run prepare-configuration wizard or fix errors manually."
                 ))
             ]);
 

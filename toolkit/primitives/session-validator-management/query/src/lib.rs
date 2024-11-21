@@ -8,7 +8,6 @@ use authority_selection_inherents::authority_selection_inputs::{
 };
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use derive_new::new;
-use plutus::ToDatum;
 use sidechain_block_search::{predicates::AnyBlockInEpoch, FindSidechainBlock, SidechainInfo};
 use sidechain_domain::{MainchainPublicKey, McEpochNumber, ScEpochNumber};
 use sp_api::ProvideRuntimeApi;
@@ -17,7 +16,7 @@ use sp_core::bytes::to_hex;
 use sp_runtime::traits::NumberFor;
 use sp_runtime::traits::{Block as BlockT, Zero};
 use sp_session_validator_management::SessionValidatorManagementApi;
-use sp_sidechain::{GetSidechainParams, GetSidechainStatus};
+use sp_sidechain::{GetGenesisUtxo, GetSidechainStatus};
 use std::sync::Arc;
 use types::*;
 
@@ -54,11 +53,10 @@ pub struct SessionValidatorManagementQuery<
 	Block,
 	SessionKeys: parity_scale_codec::Decode,
 	CrossChainPublic,
-	SidechainParams: parity_scale_codec::Decode + ToDatum + Clone + Send + Sync + 'static,
 > {
 	client: Arc<C>,
 	candidate_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
-	_marker: std::marker::PhantomData<(Block, SessionKeys, CrossChainPublic, SidechainParams)>,
+	_marker: std::marker::PhantomData<(Block, SessionKeys, CrossChainPublic)>,
 }
 
 #[async_trait]
@@ -66,7 +64,6 @@ impl<
 		C,
 		Block,
 		SessionKeys: parity_scale_codec::Decode + Send + Sync + 'static,
-		SidechainParams: parity_scale_codec::Decode + ToDatum + Clone + Send + Sync + 'static,
 		CrossChainPublic: parity_scale_codec::Decode
 			+ parity_scale_codec::Encode
 			+ AsRef<[u8]>
@@ -74,7 +71,7 @@ impl<
 			+ Sync
 			+ 'static,
 	> SessionValidatorManagementQueryApi
-	for SessionValidatorManagementQuery<C, Block, SessionKeys, CrossChainPublic, SidechainParams>
+	for SessionValidatorManagementQuery<C, Block, SessionKeys, CrossChainPublic>
 where
 	Block: BlockT,
 	NumberFor<Block>: From<u32> + Into<u32>,
@@ -90,7 +87,7 @@ where
 		AuthoritySelectionInputs,
 		ScEpochNumber,
 	>,
-	C::Api: GetSidechainParams<Block, SidechainParams>,
+	C::Api: GetGenesisUtxo<Block>,
 	C::Api: CandidateValidationApi<Block>,
 {
 	fn get_epoch_committee(&self, epoch_number: u64) -> QueryResult<GetCommitteeResponse> {

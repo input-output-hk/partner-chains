@@ -6,11 +6,11 @@ use frame_support::{
 	},
 	*,
 };
-use sidechain_domain::ScSlotNumber;
+use sidechain_domain::{McTxHash, ScSlotNumber, UtxoId, UtxoIndex};
 use sidechain_slots::SlotsPerEpoch;
 use sp_core::*;
 
-pub const MOCK_SIDECHAIN_PARAMS: u64 = 42;
+pub const MOCK_GENESIS_UTXO: UtxoId = UtxoId { tx_hash: McTxHash([0u8; 32]), index: UtxoIndex(0) };
 pub const MOCK_SLOTS_PER_EPOCH: SlotsPerEpoch = SlotsPerEpoch(10);
 
 #[frame_support::pallet]
@@ -97,13 +97,12 @@ impl pallet::Config for Test {
 		mock_pallet::CurrentSlot::<Test>::get()
 	}
 	type OnNewEpoch = Mock;
-	type SidechainParams = u64;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	pallet::GenesisConfig::<Test> {
-		params: MOCK_SIDECHAIN_PARAMS,
+		genesis_utxo: MOCK_GENESIS_UTXO,
 		slots_per_epoch: MOCK_SLOTS_PER_EPOCH,
 		_config: Default::default(),
 	}

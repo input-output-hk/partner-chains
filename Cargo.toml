@@ -2,7 +2,6 @@
 members = [
 	"node/node",
 	"node/runtime",
-	"node/chain-params",
 	"toolkit/cli/commands",
 	"toolkit/cli/node-commands",
 	"toolkit/client/consensus/aura",
@@ -181,7 +180,7 @@ substrate-prometheus-endpoint = { package = "substrate-prometheus-endpoint", git
 substrate-test-runtime-client = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409" }
 substrate-wasm-builder = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409" }
 
-raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", tag = "v6.2.2" }
+raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", tag = "v7.0.1" }
 
 # local dependencies
 sidechain-runtime = { path = "node/runtime" }
@@ -212,7 +211,6 @@ sidechain-mc-hash = { path = "toolkit/primitives/sidechain-mc-hash", default-fea
 authority-selection-inherents = { path = "toolkit/primitives/authority-selection-inherents", default-features = false }
 session-manager = { path = "toolkit/primitives/session-manager", default-features = false }
 sp-sidechain = { path = "toolkit/primitives/sidechain", default-features = false }
-chain-params = { path = "node/chain-params", default-features = false }
 pallet-native-token-management = { path = "toolkit/pallets/native-token-management", default-features = false }
 sp-native-token-management = { path = "toolkit/primitives/native-token-management", default-features = false }
 sc-partner-chains-consensus-aura = { path = "toolkit/client/consensus/aura", default-features = false }

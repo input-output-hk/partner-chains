@@ -22,7 +22,7 @@ fn get_eras_summaries<C: IOContext>(addr: &str, context: &C) -> anyhow::Result<V
 	}
 }
 
-fn get_shelley_config<C: IOContext>(
+pub(crate) fn get_shelley_config<C: IOContext>(
 	addr: &str,
 	context: &C,
 ) -> anyhow::Result<ShelleyGenesisConfiguration> {

@@ -1,6 +1,6 @@
 use crate::key_params::{MainchainSigningKeyParam, SidechainSigningKeyParam};
 use crate::signing::{mainchain_public_key_and_signature, sc_public_key_and_signature_for_datum};
-use clap::{Args, Parser};
+use clap::Parser;
 use plutus::{Datum, ToDatum};
 use plutus_datum_derive::*;
 use secp256k1::SecretKey;
@@ -13,9 +13,9 @@ use std::fmt::{Display, Formatter};
 
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
-pub struct RegistrationSignaturesCmd<SP: Args> {
-	#[clap(flatten)]
-	pub sidechain_params: SP,
+pub struct RegistrationSignaturesCmd {
+	#[arg(long)]
+	pub genesis_utxo: UtxoId,
 	#[arg(long)]
 	pub mainchain_signing_key: MainchainSigningKeyParam,
 	#[arg(long)]
@@ -24,20 +24,17 @@ pub struct RegistrationSignaturesCmd<SP: Args> {
 	pub registration_utxo: UtxoId,
 }
 
-impl<SP: Args + ToDatum + Clone> RegistrationSignaturesCmd<SP> {
-	pub fn to_register_validator_message(
-		&self,
-		sidechain_params: SP,
-	) -> RegisterValidatorMessage<SP> {
+impl RegistrationSignaturesCmd {
+	pub fn to_register_validator_message(&self, genesis_utxo: UtxoId) -> RegisterValidatorMessage {
 		RegisterValidatorMessage::new(
-			sidechain_params,
+			genesis_utxo,
 			self.sidechain_signing_key.to_pub_key(),
 			self.registration_utxo,
 		)
 	}
 
 	pub fn execute(&self) -> RegistrationCmdOutput {
-		self.to_register_validator_message(self.sidechain_params.clone())
+		self.to_register_validator_message(self.genesis_utxo)
 			.sign_and_prepare_registration_cmd_output(
 				self.mainchain_signing_key.0,
 				self.sidechain_signing_key.0,
@@ -63,20 +60,16 @@ impl Display for RegistrationCmdOutput {
 }
 
 #[derive(Clone, Debug, ToDatum)]
-pub struct RegisterValidatorMessage<SidechainParams> {
-	pub sidechain_params: SidechainParams,
+pub struct RegisterValidatorMessage {
+	pub genesis_utxo: UtxoId,
 	pub sidechain_pub_key: SidechainPublicKey,
 	pub input_utxo: UtxoId,
 }
 
-impl<SidechainParams: ToDatum + Clone> RegisterValidatorMessage<SidechainParams> {
-	pub fn new(
-		sidechain_params: SidechainParams,
-		pub_key: secp256k1::PublicKey,
-		input_utxo: UtxoId,
-	) -> Self {
+impl RegisterValidatorMessage {
+	pub fn new(genesis_utxo: UtxoId, pub_key: secp256k1::PublicKey, input_utxo: UtxoId) -> Self {
 		RegisterValidatorMessage {
-			sidechain_params,
+			genesis_utxo,
 			sidechain_pub_key: SidechainPublicKey(pub_key.serialize().to_vec()),
 			input_utxo,
 		}
@@ -103,10 +96,9 @@ impl<SidechainParams: ToDatum + Clone> RegisterValidatorMessage<SidechainParams>
 #[cfg(test)]
 mod tests {
 	use crate::registration_signatures::RegisterValidatorMessage;
-	use chain_params::SidechainParams;
 	use plutus::to_datum_cbor_bytes;
 	use secp256k1::PublicKey;
-	use sidechain_domain::{MainchainAddressHash, UtxoId};
+	use sidechain_domain::UtxoId;
 	use std::str::FromStr;
 
 	#[test]
@@ -115,21 +107,13 @@ mod tests {
 			"02dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ec",
 		)
 		.unwrap();
-		let sidechain_params = SidechainParams {
-			chain_id: 11,
-			genesis_committee_utxo: UtxoId::from_str(
-				"e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efa#4",
-			)
-			.unwrap(),
-			threshold_numerator: 2,
-			threshold_denominator: 3,
-			governance_authority: MainchainAddressHash::from_hex_unsafe(
-				"4f2d6145e1700ad11dc074cad9f4194cc53b0dbab6bd25dfea6c501a",
-			),
-		};
-		let input_utxo = sidechain_params.genesis_committee_utxo;
-		let message =
-			RegisterValidatorMessage::new(sidechain_params, sidechain_pub_key, input_utxo);
-		assert_eq!(hex::encode(to_datum_cbor_bytes(message)), "d8799fd8799f0bd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ff0203581c4f2d6145e1700ad11dc074cad9f4194cc53b0dbab6bd25dfea6c501aff582102dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ecd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ffff")
+		let genesis_utxo =
+			UtxoId::from_str("e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efa#4")
+				.unwrap();
+		let input_utxo =
+			UtxoId::from_str("8ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861#4")
+				.unwrap();
+		let message = RegisterValidatorMessage::new(genesis_utxo, sidechain_pub_key, input_utxo);
+		assert_eq!(hex::encode(to_datum_cbor_bytes(message)), "d8799fd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ff582102dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ecd8799fd8799f58208ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861ff04ffff")
 	}
 }

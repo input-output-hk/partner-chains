@@ -8,7 +8,7 @@ OGMIOS_IMAGE="cardanosolutions/ogmios:v6.9.0"
 POSTGRES_IMAGE="postgres:15.3"
 SIDECHAIN_MAIN_CLI_IMAGE="node:22-bookworm"
 TESTS_IMAGE="python:3.10-slim"
-PC_CONTRACTS_CLI_ZIP_URL="https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/v6.2.2/pc-contracts-cli-v6.2.2.zip"
+PC_CONTRACTS_CLI_ZIP_URL="https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/v7.0.1/pc-contracts-cli-v7.0.1.zip"
 PARTNER_CHAINS_NODE_URL="https://github.com/input-output-hk/partner-chains/releases/download/v1.3.0/partner-chains-node-v1.3.0-x86_64-linux"
 PARTNER_CHAINS_CLI_URL="https://github.com/input-output-hk/partner-chains/releases/download/v1.3.0/partner-chains-cli-v1.3.0-x86_64-linux"
 

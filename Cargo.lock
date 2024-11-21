@@ -565,7 +565,6 @@ name = "authority-selection-inherents"
 version = "1.3.0"
 dependencies = [
  "async-trait",
- "chain-params",
  "frame-support",
  "hex",
  "hex-literal",
@@ -1145,21 +1144,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "chain-params"
-version = "1.3.0"
-dependencies = [
- "clap",
- "envy",
- "hex-literal",
- "parity-scale-codec",
- "plutus",
- "plutus-datum-derive",
- "scale-info",
- "serde",
- "sidechain-domain",
-]
-
-[[package]]
 name = "chrono"
 version = "0.4.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1286,7 +1270,6 @@ version = "1.3.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
- "chain-params",
  "clap",
  "ed25519",
  "ed25519-zebra",
@@ -6215,7 +6198,6 @@ dependencies = [
 name = "pallet-session-validator-management-benchmarking"
 version = "1.3.0"
 dependencies = [
- "chain-params",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6501,7 +6483,6 @@ dependencies = [
  "anyhow",
  "cardano-serialization-lib",
  "cbor_event",
- "chain-params",
  "db-sync-follower",
  "fraction",
  "hex",
@@ -6530,7 +6511,6 @@ version = "1.3.0"
 dependencies = [
  "anyhow",
  "cardano-serialization-lib",
- "chain-params",
  "clap",
  "cli-commands",
  "colored",
@@ -6561,7 +6541,6 @@ dependencies = [
  "assert_cmd",
  "async-trait",
  "authority-selection-inherents",
- "chain-params",
  "clap",
  "cli-commands",
  "db-sync-follower",
@@ -7681,8 +7660,8 @@ dependencies = [
 
 [[package]]
 name = "raw-scripts"
-version = "6.2.2"
-source = "git+https://github.com/input-output-hk/partner-chains-smart-contracts.git?tag=v6.2.2#87a1d421fc77198c1af24d07c3e3d9aa1c2f410d"
+version = "7.0.1"
+source = "git+https://github.com/input-output-hk/partner-chains-smart-contracts.git?tag=v7.0.1#5f96807760b8e93eaf9661d72cef236700b3b616"
 dependencies = [
  "hex-literal",
 ]
@@ -9904,7 +9883,6 @@ name = "sidechain-runtime"
 version = "1.3.0"
 dependencies = [
  "authority-selection-inherents",
- "chain-params",
  "derive-new",
  "frame-benchmarking",
  "frame-executive",
@@ -10703,9 +10681,11 @@ dependencies = [
 name = "sp-sidechain"
 version = "1.3.0"
 dependencies = [
+ "envy",
  "frame-support",
  "parity-scale-codec",
  "scale-info",
+ "serde",
  "serde_json",
  "sidechain-domain",
  "sp-api",

@@ -12,8 +12,8 @@ use sidechain_domain::UtxoId;
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct Register2Cmd {
-	#[clap(flatten)]
-	pub sidechain_params: chain_params::SidechainParams,
+	#[arg(long)]
+	pub genesis_utxo: UtxoId,
 	#[arg(long)]
 	pub registration_utxo: UtxoId,
 	#[arg(long)]
@@ -39,8 +39,8 @@ impl CmdRun for Register2Cmd {
 			get_mainchain_cold_skey(context, &mainchain_signing_key_path)
 				.inspect_err(|_| context.eprint("Unable to read mainchain signing key file"))?;
 
-		let registration_message = RegisterValidatorMessage::<chain_params::SidechainParams> {
-			sidechain_params: self.sidechain_params.clone(),
+		let registration_message = RegisterValidatorMessage {
+			genesis_utxo: self.genesis_utxo.clone(),
 			sidechain_pub_key: self.sidechain_pub_key.0.clone(),
 			input_utxo: self.registration_utxo,
 		};
@@ -50,12 +50,11 @@ impl CmdRun for Register2Cmd {
 
 		let spo_public_key = hex::encode(verification_key);
 		let spo_signature = hex::encode(mc_signature.to_vec());
-		let governance_authority = self.sidechain_params.governance_authority.to_hex_string();
 
 		context.print("To finish the registration process, run the following command on the machine with the partner chain dependencies running:\n");
 		context.print(&format!(
-			"./partner-chains-cli register3 \\\n--chain-id {} \\\n--threshold-numerator {} \\\n--threshold-denominator {} \\\n--governance-authority {} \\\n--genesis-committee-utxo {} \\\n--registration-utxo {} \\\n--aura-pub-key {} \\\n--grandpa-pub-key {} \\\n--sidechain-pub-key {} \\\n--sidechain-signature {} \\\n--spo-public-key {} \\\n--spo-signature {}",
-			self.sidechain_params.chain_id, self.sidechain_params.threshold_numerator, self.sidechain_params.threshold_denominator, governance_authority, self.sidechain_params.genesis_committee_utxo, self.registration_utxo, self.aura_pub_key, self.grandpa_pub_key, self.sidechain_pub_key, self.sidechain_signature, spo_public_key, spo_signature));
+			"./partner-chains-cli register3 \\\n--genesis-utxo {} \\\n--registration-utxo {} \\\n--aura-pub-key {} \\\n--grandpa-pub-key {} \\\n--sidechain-pub-key {} \\\n--sidechain-signature {} \\\n--spo-public-key {} \\\n--spo-signature {}",
+			self.genesis_utxo, self.registration_utxo, self.aura_pub_key, self.grandpa_pub_key, self.sidechain_pub_key, self.sidechain_signature, spo_public_key, spo_signature));
 		Ok(())
 	}
 }
@@ -125,19 +124,13 @@ mod tests {
 	fn output_result_io() -> Vec<MockIO> {
 		vec![
             MockIO::print("To finish the registration process, run the following command on the machine with the partner chain dependencies running:\n"),
-            MockIO::print("./partner-chains-cli register3 \\\n--chain-id 0 \\\n--threshold-numerator 2 \\\n--threshold-denominator 3 \\\n--governance-authority 0x00112233445566778899001122334455667788990011223344556677 \\\n--genesis-committee-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n--registration-utxo 7e9ebd0950ae1bec5606f0cd7ac88b3c60b1103d7feb6ffa36402edae4d1b617#0 \\\n--aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n--grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n--sidechain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n--sidechain-signature 7a7e3e585a5dc248d4a2772814e1b58c90313443dd99369f994e960ecc4931442a08305743db7ab42ab9b8672e00250e1cc7c08bc018b0630a8197c4f95528a301 \\\n--spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 \\\n--spo-signature 448ddd2592a681ee3235aa68356290c3ec93cc1b8b757bf4713a0b6629a3b75028e984a06cd275a99f861f8303dba1778c36feef084ea4a5379775ca13043202"),
+            MockIO::print("./partner-chains-cli register3 \\\n--genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n--registration-utxo 7e9ebd0950ae1bec5606f0cd7ac88b3c60b1103d7feb6ffa36402edae4d1b617#0 \\\n--aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n--grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n--sidechain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n--sidechain-signature 7a7e3e585a5dc248d4a2772814e1b58c90313443dd99369f994e960ecc4931442a08305743db7ab42ab9b8672e00250e1cc7c08bc018b0630a8197c4f95528a301 \\\n--spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 \\\n--spo-signature aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801"),
         ]
 	}
-
+	// non 0 genesis utxo 8ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861
 	fn mock_register2_cmd() -> Register2Cmd {
 		Register2Cmd {
-            sidechain_params: chain_params::SidechainParams {
-                chain_id: 0,
-                threshold_numerator: 2,
-                threshold_denominator: 3,
-                genesis_committee_utxo: "0000000000000000000000000000000000000000000000000000000000000001#0".parse().unwrap(),
-                governance_authority: "0x00112233445566778899001122334455667788990011223344556677".parse().unwrap(),
-            },
+            genesis_utxo: "0000000000000000000000000000000000000000000000000000000000000001#0".parse().unwrap(),
             registration_utxo: "7e9ebd0950ae1bec5606f0cd7ac88b3c60b1103d7feb6ffa36402edae4d1b617#0".parse().unwrap(),
             sidechain_pub_key: "0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6".parse().unwrap(),
             aura_pub_key: "0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777".parse().unwrap(),

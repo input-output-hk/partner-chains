@@ -1,5 +1,4 @@
 use crate::chain_spec::*;
-use chain_params::SidechainParams;
 use sc_service::ChainType;
 use sidechain_domain::*;
 use sidechain_runtime::{
@@ -188,7 +187,7 @@ pub fn testnet_genesis(
 				.collect(),
 		},
 		sidechain: SidechainConfig {
-			params: SidechainParams::read_from_env_with_defaults()?,
+			genesis_utxo: sp_sidechain::read_genesis_utxo_from_env_with_defaults()?,
 			slots_per_epoch: SlotsPerEpoch::read_from_env()?,
 			..Default::default()
 		},

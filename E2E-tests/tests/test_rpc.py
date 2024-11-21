@@ -136,9 +136,7 @@ class TestRpc:
         current_epoch = api.get_pc_epoch()
         params = api.get_epoch_signatures(current_epoch - 1).result["params"]
 
-        assert params["chainId"] == config.chain_id, "Chain ID mismatch"
-        assert params["genesisCommitteeUtxo"] == config.genesis_committee_hash_utxo, "Genesis committee hash mismatch"
-        assert params["governanceAuthority"] == config.governance_authority, "Governance authority mismatch"
+        assert params["genesisUtxo"] == config.genesis_utxo, "Genesis UTXO mismatch"
 
 
 def check_registration_data(registrations):

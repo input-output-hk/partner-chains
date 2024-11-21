@@ -7,16 +7,13 @@ use crate::{config::config_fields, *};
 use anyhow::anyhow;
 use cli_commands::registration_signatures::RegisterValidatorMessage;
 use cli_commands::signing::sc_public_key_and_signature_for_datum;
-use config::ServiceConfig;
-use ogmios::{OgmiosRequest, OgmiosResponse};
-use ogmios_client::types::OgmiosUtxo;
 use partner_chains_cardano_offchain::csl::NetworkTypeExt;
+use select_utxo::{filter_utxos, query_utxos, select_from_utxos, ValidUtxo};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use sidechain_domain::{McTxHash, NetworkType, SidechainPublicKey, UtxoId};
+use sidechain_domain::{NetworkType, SidechainPublicKey, UtxoId};
 use sp_core::bytes::from_hex;
 use sp_core::{ecdsa, Pair};
-use std::str::FromStr;
 
 #[derive(Debug, clap::Parser)]
 pub struct Register1Cmd {}
@@ -24,16 +21,7 @@ pub struct Register1Cmd {}
 impl CmdRun for Register1Cmd {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		context.print("⚙️ Registering as a committee candidate (step 1/3)");
-
-		let chain_id = load_chain_config_field(context, &config_fields::CHAIN_ID)?;
-		let threshold_numerator =
-			load_chain_config_field(context, &config_fields::THRESHOLD_NUMERATOR)?;
-		let threshold_denominator =
-			load_chain_config_field(context, &config_fields::THRESHOLD_DENOMINATOR)?;
-		let governance_authority =
-			load_chain_config_field(context, &config_fields::GOVERNANCE_AUTHORITY)?;
-		let genesis_committee_utxo =
-			load_chain_config_field(context, &config_fields::GENESIS_COMMITTEE_UTXO)?;
+		let genesis_utxo = load_chain_config_field(context, &config_fields::GENESIS_UTXO)?;
 		let cardano_network = config_fields::CARDANO_NETWORK.load_from_file(context).ok_or_else(|| {
             context.eprint("⚠️ Cardano network is not specified in the chain configuration file `partner-chains-cli-chain-config.json`");
             anyhow!("failed to read cardano network")
@@ -67,33 +55,11 @@ impl CmdRun for Register1Cmd {
 			return Err(anyhow::anyhow!("No UTXOs found"));
 		};
 
-		let utxo_display_options: Vec<String> =
-			valid_utxos.iter().map(|utxo| utxo.to_display_string()).collect();
-
-		let selected_utxo_display_string = context
-			.prompt_multi_option("Select UTXO to use for registration", utxo_display_options);
-
-		let selected_utxo = valid_utxos
-			.iter()
-			.find(|utxo| utxo.to_display_string() == selected_utxo_display_string)
-			.map(|utxo| utxo.utxo_id.to_string())
-			.ok_or_else(|| anyhow!("⚠️ Failed to find selected UTXO"))?;
-
-		let input_utxo: UtxoId = UtxoId::from_str(&selected_utxo).map_err(|e| {
-			context.eprint(&format!("⚠️ Failed to parse selected UTXO: {e}"));
-			anyhow!(e)
-		})?;
+		let input_utxo: UtxoId =
+			select_from_utxos(context, "Select UTXO to use for registration", valid_utxos)?;
 
 		context.print("Please do not spend this UTXO, it needs to be consumed by the registration transaction.");
 		context.print("");
-
-		let sidechain_params = chain_params::SidechainParams {
-			chain_id,
-			threshold_numerator,
-			threshold_denominator,
-			genesis_committee_utxo,
-			governance_authority,
-		};
 
 		let sidechain_pub_key_typed: SidechainPublicKey =
 			SidechainPublicKey(from_hex(&sidechain_pub_key).map_err(|e| {
@@ -101,8 +67,8 @@ impl CmdRun for Register1Cmd {
 				anyhow!(e)
 			})?);
 
-		let registration_message = RegisterValidatorMessage::<chain_params::SidechainParams> {
-			sidechain_params: sidechain_params.clone(),
+		let registration_message = RegisterValidatorMessage {
+			genesis_utxo,
 			sidechain_pub_key: sidechain_pub_key_typed,
 			input_utxo,
 		};
@@ -120,11 +86,9 @@ impl CmdRun for Register1Cmd {
 		let sidechain_signature =
 			sign_registration_message_with_sidechain_key(registration_message, ecdsa_pair)?;
 
-		let governance_authority: String = governance_authority.to_hex_string();
-
 		context.print("Run the following command to generate signatures on the next step. It has to be executed on the machine with your SPO cold signing key.");
 		context.print("");
-		context.print(&format!("./partner-chains-cli register2 \\\n --chain-id {chain_id} \\\n --threshold-numerator {threshold_numerator} \\\n --threshold-denominator {threshold_denominator} \\\n --governance-authority {governance_authority} \\\n --genesis-committee-utxo {genesis_committee_utxo} \\\n --registration-utxo {input_utxo} \\\n --aura-pub-key {aura_pub_key} \\\n --grandpa-pub-key {grandpa_pub_key} \\\n --sidechain-pub-key {sidechain_pub_key} \\\n --sidechain-signature {sidechain_signature}"));
+		context.print(&format!("./partner-chains-cli register2 \\\n --genesis-utxo {genesis_utxo} \\\n --registration-utxo {input_utxo} \\\n --aura-pub-key {aura_pub_key} \\\n --grandpa-pub-key {grandpa_pub_key} \\\n --sidechain-pub-key {sidechain_pub_key} \\\n --sidechain-signature {sidechain_signature}"));
 
 		Ok(())
 	}
@@ -146,7 +110,7 @@ fn get_ecdsa_pair_from_file<C: IOContext>(
 }
 
 fn sign_registration_message_with_sidechain_key(
-	message: RegisterValidatorMessage<chain_params::SidechainParams>,
+	message: RegisterValidatorMessage,
 	ecdsa_pair: ecdsa::Pair,
 ) -> Result<String, anyhow::Error> {
 	let seed = ecdsa_pair.seed();
@@ -156,20 +120,20 @@ fn sign_registration_message_with_sidechain_key(
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct GeneratedKeysFileContent {
-	sidechain_pub_key: String,
-	aura_pub_key: String,
-	grandpa_pub_key: String,
+pub struct GeneratedKeysFileContent {
+	pub sidechain_pub_key: String,
+	pub aura_pub_key: String,
+	pub grandpa_pub_key: String,
 }
 
-fn read_generated_keys<C: IOContext>(context: &C) -> anyhow::Result<GeneratedKeysFileContent> {
+pub fn read_generated_keys<C: IOContext>(context: &C) -> anyhow::Result<GeneratedKeysFileContent> {
 	let keys_file_content = context
 		.read_file(KEYS_FILE_PATH)
 		.ok_or_else(|| anyhow::anyhow!("failed to read keys file"))?;
 	Ok(serde_json::from_str(&keys_file_content)?)
 }
 
-fn load_chain_config_field<C: IOContext, T>(
+pub fn load_chain_config_field<C: IOContext, T>(
 	context: &C,
 	field: &config::ConfigFieldDefinition<T>,
 ) -> Result<T, anyhow::Error>
@@ -196,68 +160,14 @@ fn derive_address<C: IOContext>(
 	address.to_bech32(None).map_err(|e| anyhow!(e.to_string()))
 }
 
-#[derive(Debug, PartialEq)]
-struct ValidUtxo {
-	utxo_id: UtxoId,
-	lovelace: u64,
-}
-
-impl ValidUtxo {
-	fn to_display_string(&self) -> String {
-		format!("{0} ({1} lovelace)", self.utxo_id, self.lovelace)
-	}
-}
-
-fn query_utxos<C: IOContext>(
-	context: &C,
-	ogmios_config: &ServiceConfig,
-	address: &str,
-) -> Result<Vec<OgmiosUtxo>, anyhow::Error> {
-	let ogmios_addr = ogmios_config.to_string();
-	context.print(&format!("⚙️ Querying UTXOs of {address} from Ogmios at {ogmios_addr}..."));
-	let response = context
-		.ogmios_rpc(&ogmios_addr, OgmiosRequest::QueryUtxo { address: address.into() })
-		.map_err(|e| anyhow!(e))?;
-	match response {
-		OgmiosResponse::QueryUtxo(utxos) => Ok(utxos),
-		other => Err(anyhow::anyhow!(format!(
-			"Unexpected response from Ogmios when querying for utxos: {other:?}"
-		))),
-	}
-}
-
-// Take only the UTXOs without multi-asset tokens
-fn filter_utxos(utxos: Vec<OgmiosUtxo>) -> Vec<ValidUtxo> {
-	let mut utxos: Vec<ValidUtxo> = utxos
-		.into_iter()
-		.filter_map(|utxo| {
-			if utxo.value.native_tokens.is_empty() {
-				Some(ValidUtxo {
-					utxo_id: UtxoId {
-						tx_hash: McTxHash(utxo.transaction.id),
-						index: sidechain_domain::UtxoIndex(utxo.index),
-					},
-					lovelace: utxo.value.lovelace,
-				})
-			} else {
-				None
-			}
-		})
-		.collect();
-
-	utxos.sort_by_key(|utxo| std::cmp::Reverse(utxo.lovelace));
-	utxos
-}
-
 #[cfg(test)]
 mod tests {
 	use super::*;
 	use crate::tests::{MockIO, MockIOContext};
-	use hex_literal::hex;
-	use ogmios_client::types::{Asset, OgmiosTx, OgmiosValue};
+	use ogmios::OgmiosRequest;
 	use pc_contracts_cli_resources::default_ogmios_service_config;
 	use pc_contracts_cli_resources::tests::prompt_ogmios_configuration_io;
-	use std::collections::HashMap;
+	use select_utxo::tests::{mock_5_valid_utxos_rows, mock_result_5_valid};
 
 	const PAYMENT_VKEY_PATH: &str = "payment.vkey";
 
@@ -357,11 +267,7 @@ mod tests {
 	fn fail_if_cardano_network_is_not_specified() {
 		let chain_config_without_cardano_network: serde_json::Value = serde_json::json!({
 			"chain_parameters": {
-				"chain_id": 0,
-				"threshold_numerator": 2,
-				"threshold_denominator": 3,
-				"genesis_committee_utxo": "0000000000000000000000000000000000000000000000000000000000000001#0",
-				"governance_authority": "0x00112233445566778899001122334455667788990011223344556677"
+				"genesis_utxo": "0000000000000000000000000000000000000000000000000000000000000001#0",
 			},
 		});
 
@@ -533,81 +439,13 @@ mod tests {
 		assert!(result.is_err());
 	}
 
-	#[test]
-	fn test_parse_utxo_query_output() {
-		{
-			let utxos = filter_utxos(mock_result_5_valid());
-
-			assert_eq!(utxos.len(), 5);
-			assert_eq!(
-				utxos[0],
-				ValidUtxo {
-					utxo_id: UtxoId::from_str(
-						"f5f58c0d5ab357a3562ca043a4dd67567a8399da77968cef59fb271d72db57bd#0"
-					)
-					.unwrap(),
-					lovelace: 1700000,
-				}
-			);
-			assert_eq!(
-				utxos[1],
-				ValidUtxo {
-					utxo_id: UtxoId::from_str(
-						"b031cda9c257fed6eed781596ab5ca9495ae88a860e807763b2cd67c72c4cc1e#0"
-					)
-					.unwrap(),
-					lovelace: 1500000,
-				}
-			);
-			assert_eq!(
-				utxos[2],
-				ValidUtxo {
-					utxo_id: UtxoId::from_str(
-						"917e3dba3ed5faee7855d99b4a797859ac7b1941b381aef36080d767127bdaba#0"
-					)
-					.unwrap(),
-					lovelace: 1400000,
-				}
-			);
-			assert_eq!(
-				utxos[3],
-				ValidUtxo {
-					utxo_id: UtxoId::from_str(
-						"76ddb0a474eb893e6e17de4cc692bce12e57271351cccb4c0e7e2ad864347b64#0"
-					)
-					.unwrap(),
-					lovelace: 1200000,
-				}
-			);
-			assert_eq!(
-				utxos[4],
-				ValidUtxo {
-					utxo_id: UtxoId::from_str(
-						"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93"
-					)
-					.unwrap(),
-					lovelace: 1100000,
-				}
-			);
-		}
-
-		{
-			let utxos = filter_utxos(mock_result_0_valid());
-			assert_eq!(utxos.len(), 0);
-		}
-	}
-
 	const CHAIN_CONFIG_PATH: &str = "partner-chains-cli-chain-config.json";
 	const RESOURCE_CONFIG_PATH: &str = "partner-chains-cli-resources-config.json";
 
 	fn chain_config_content() -> serde_json::Value {
 		serde_json::json!({
 			"chain_parameters": {
-				"chain_id": 0,
-				"threshold_numerator": 2,
-				"threshold_denominator": 3,
-				"genesis_committee_utxo": "0000000000000000000000000000000000000000000000000000000000000001#0",
-				"governance_authority": "0x00112233445566778899001122334455667788990011223344556677",
+				"genesis_utxo": "0000000000000000000000000000000000000000000000000000000000000001#0",
 			},
 			"cardano": {
 				"network": "testnet"
@@ -646,11 +484,7 @@ mod tests {
 	}
 	fn read_chain_config_io() -> Vec<MockIO> {
 		vec![
-			MockIO::file_read(CHAIN_CONFIG_PATH), // chain id
-			MockIO::file_read(CHAIN_CONFIG_PATH), // threshold numerator
-			MockIO::file_read(CHAIN_CONFIG_PATH), // threshold threshold_denominator
-			MockIO::file_read(CHAIN_CONFIG_PATH), // governance authority
-			MockIO::file_read(CHAIN_CONFIG_PATH), // genesis committee utxo
+			MockIO::file_read(CHAIN_CONFIG_PATH), // genesis utxo
 			MockIO::file_read(CHAIN_CONFIG_PATH), // cardano network
 		]
 	}
@@ -698,28 +532,21 @@ mod tests {
 
 	fn query_utxos_io() -> Vec<MockIO> {
 		vec![
-			prompt_ogmios_configuration_io(&default_ogmios_service_config(), &default_ogmios_service_config()),
-			MockIO::print("⚙️ Querying UTXOs of addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy from Ogmios at http://localhost:1337..."),
-			MockIO::ogmios_request(
+			prompt_ogmios_configuration_io(
+				&default_ogmios_service_config(),
+				&default_ogmios_service_config(),
+			),
+			crate::select_utxo::tests::query_utxos_io(
+				"addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy",
 				"http://localhost:1337",
-				OgmiosRequest::QueryUtxo {
-					address: "addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy"
-						.into(),
-				},
-				Ok(OgmiosResponse::QueryUtxo(mock_result_5_valid())),
+				mock_result_5_valid(),
 			),
 		]
 	}
 
 	fn select_utxo_io() -> Vec<MockIO> {
 		vec![
-		MockIO::prompt_multi_option("Select UTXO to use for registration", vec![
-			"f5f58c0d5ab357a3562ca043a4dd67567a8399da77968cef59fb271d72db57bd#0 (1700000 lovelace)".to_string(),
-			"b031cda9c257fed6eed781596ab5ca9495ae88a860e807763b2cd67c72c4cc1e#0 (1500000 lovelace)".to_string(),
-			"917e3dba3ed5faee7855d99b4a797859ac7b1941b381aef36080d767127bdaba#0 (1400000 lovelace)".to_string(),
-			"76ddb0a474eb893e6e17de4cc692bce12e57271351cccb4c0e7e2ad864347b64#0 (1200000 lovelace)".to_string(),
-			"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)".to_string(),
-		], "4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"),
+		MockIO::prompt_multi_option("Select UTXO to use for registration", mock_5_valid_utxos_rows(), "4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"),
 
 		MockIO::print("Please do not spend this UTXO, it needs to be consumed by the registration transaction."),
 		MockIO::print(""),
@@ -730,7 +557,7 @@ mod tests {
 		vec![
 		MockIO::print("Run the following command to generate signatures on the next step. It has to be executed on the machine with your SPO cold signing key."),
 		MockIO::print(""),
-		MockIO::print("./partner-chains-cli register2 \\\n --chain-id 0 \\\n --threshold-numerator 2 \\\n --threshold-denominator 3 \\\n --governance-authority 0x00112233445566778899001122334455667788990011223344556677 \\\n --genesis-committee-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n --registration-utxo 4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 \\\n --aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n --grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n --sidechain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n --sidechain-signature fd19b89e8549c9299a5711b1146b4c2db53648d886c111280e3c02e01df143c7169a858c7ecbcd961a3407a2f8bd5c308901784d9b1c18528f00bd74fc54aa1c")
+		MockIO::print("./partner-chains-cli register2 \\\n --genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n --registration-utxo 4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 \\\n --aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n --grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n --sidechain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n --sidechain-signature 6e295e36a6b11d8b1c5ec01ac8a639b466fbfbdda94b39ea82b0992e303d58543341345fc705e09c7838786ba0bc746d9038036f66a36d1127d924c4a0228bec")
 		]
 	}
 
@@ -742,101 +569,5 @@ mod tests {
 
 	fn invalid_chain_config_io() -> Vec<MockIO> {
 		vec![MockIO::eprint("⚠️ The chain configuration file `partner-chains-cli-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority.")]
-	}
-
-	fn mock_result_5_valid() -> Vec<OgmiosUtxo> {
-		vec![
-			OgmiosUtxo {
-				transaction: OgmiosTx {
-					id: hex!("4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02"),
-				},
-				index: 93,
-				value: OgmiosValue::new_lovelace(1100000),
-				..Default::default()
-			},
-			OgmiosUtxo {
-				transaction: OgmiosTx {
-					id: hex!("76ddb0a474eb893e6e17de4cc692bce12e57271351cccb4c0e7e2ad864347b64"),
-				},
-				index: 0,
-				value: OgmiosValue::new_lovelace(1200000),
-				..Default::default()
-			},
-			OgmiosUtxo {
-				transaction: OgmiosTx {
-					id: hex!("b9da3bfe0c7c177d494aeea0937ce4da9827c8dfc80bedb5825cd08887cbedb8"),
-				},
-				index: 0,
-				value: OgmiosValue {
-					lovelace: 1300000,
-					native_tokens: HashMap::from([(
-						hex!("244d83c5418732113e891db15ede8f0d15df75b705a1542d86937875"),
-						vec![Asset {
-							name: hex!("4c757854657374546f6b656e54727932").to_vec(),
-							amount: 1,
-						}],
-					)]),
-				},
-				..Default::default()
-			},
-			OgmiosUtxo {
-				transaction: OgmiosTx {
-					id: hex!("917e3dba3ed5faee7855d99b4a797859ac7b1941b381aef36080d767127bdaba"),
-				},
-				index: 0,
-				value: OgmiosValue::new_lovelace(1400000),
-				..Default::default()
-			},
-			OgmiosUtxo {
-				transaction: OgmiosTx {
-					id: hex!("b031cda9c257fed6eed781596ab5ca9495ae88a860e807763b2cd67c72c4cc1e"),
-				},
-				index: 0,
-				value: OgmiosValue::new_lovelace(1500000),
-				..Default::default()
-			},
-			OgmiosUtxo {
-				transaction: OgmiosTx {
-					id: hex!("b9da3bfe0c7c177d494aeea0937ce4da9827c8dfc80bedb5825cd08887cbedb8"),
-				},
-				index: 0,
-				value: OgmiosValue {
-					lovelace: 1600000,
-					native_tokens: HashMap::from([(
-						hex!("7726c67e096e60ff24757de0ec0a78c659ce73c9b12e98df7d2fda2c"),
-						vec![Asset { name: vec![], amount: 1 }],
-					)]),
-				},
-				..Default::default()
-			},
-			OgmiosUtxo {
-				transaction: OgmiosTx {
-					id: hex!("f5f58c0d5ab357a3562ca043a4dd67567a8399da77968cef59fb271d72db57bd"),
-				},
-				index: 0,
-				value: OgmiosValue::new_lovelace(1700000),
-				..Default::default()
-			},
-		]
-	}
-
-	fn mock_result_0_valid() -> Vec<OgmiosUtxo> {
-		vec![OgmiosUtxo {
-			transaction: OgmiosTx {
-				id: hex!("8a0d3e5644b3e84a775556b44e6407971d01b8bfa3f339294b7228ac18ddb29c"),
-			},
-			index: 0,
-			value: OgmiosValue {
-				lovelace: 10000000,
-				native_tokens: HashMap::from([(
-					hex!("244d83c5418732113e891db15ede8f0d15df75b705a1542d86937875"),
-					vec![Asset {
-						name: hex!("4c757854657374546f6b656e54727932").to_vec(),
-						amount: 1,
-					}],
-				)]),
-			},
-			..Default::default()
-		}]
 	}
 }

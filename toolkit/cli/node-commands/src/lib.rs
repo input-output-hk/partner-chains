@@ -1,12 +1,10 @@
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
-use clap::{Args, Parser};
+use clap::Parser;
 use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use frame_support::sp_runtime::traits::NumberFor;
-use frame_support::Serialize;
 use parity_scale_codec::{Decode, Encode};
-use plutus::ToDatum;
 use sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 use sc_service::TaskManager;
 use sidechain_domain::{MainchainPublicKey, McEpochNumber, ScEpochNumber};
@@ -16,7 +14,8 @@ use sp_runtime::traits::Block as BlockT;
 use sp_session_validator_management::SessionValidatorManagementApi;
 use sp_session_validator_management_query::commands::*;
 use sp_session_validator_management_query::SessionValidatorManagementQuery;
-use sp_sidechain::{GetSidechainParams, GetSidechainStatus};
+use sp_sidechain::GetGenesisUtxo;
+use sp_sidechain::GetSidechainStatus;
 use std::future::Future;
 use std::sync::Arc;
 
@@ -67,7 +66,7 @@ impl CliConfiguration for RegistrationStatusCmd {
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
-pub enum PartnerChainsSubcommand<SidechainParams: clap::Args> {
+pub enum PartnerChainsSubcommand {
 	/// Returns sidechain parameters
 	SidechainParams(SidechainParamsCmd),
 
@@ -84,10 +83,10 @@ pub enum PartnerChainsSubcommand<SidechainParams: clap::Args> {
 	AriadneParameters(AriadneParametersCmd),
 
 	/// Generates registration signatures for partner chains committee candidates
-	RegistrationSignatures(RegistrationSignaturesCmd<SidechainParams>),
+	RegistrationSignatures(RegistrationSignaturesCmd),
 }
 
-pub fn run<Cli, SmartContractsParams, Block, CrossChainPublic, SessionKeys, Client>(
+pub fn run<Cli, Block, CrossChainPublic, SessionKeys, Client>(
 	cli: &Cli,
 	get_deps: impl FnOnce(
 		sc_service::Configuration,
@@ -95,13 +94,12 @@ pub fn run<Cli, SmartContractsParams, Block, CrossChainPublic, SessionKeys, Clie
 		(Arc<Client>, TaskManager, Arc<dyn AuthoritySelectionDataSource + Send + Sync>),
 		sc_service::error::Error,
 	>,
-	cmd: PartnerChainsSubcommand<SmartContractsParams>,
+	cmd: PartnerChainsSubcommand,
 ) -> sc_cli::Result<()>
 where
 	Cli: SubstrateCli,
-	SmartContractsParams: Args + ToDatum + Clone + Decode + Serialize + Send + Sync + 'static,
 	Client: ProvideRuntimeApi<Block> + HeaderBackend<Block> + 'static,
-	Client::Api: GetSidechainParams<Block, SmartContractsParams>
+	Client::Api: GetGenesisUtxo<Block>
 		+ GetSidechainStatus<Block>
 		+ SessionValidatorManagementApi<
 			Block,
@@ -120,7 +118,7 @@ where
 			let runner = cli.create_runner(&cmd)?;
 			runner.async_run(|config| {
 				let (client, task_manager, _) = get_deps(config)?;
-				Ok((print_result(sp_sidechain::query::get_sidechain_params(client)), task_manager))
+				Ok((print_result(sp_sidechain::query::get_genesis_utxo(client)), task_manager))
 			})
 		},
 		PartnerChainsSubcommand::RegistrationStatus(cmd) => {

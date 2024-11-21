@@ -1,9 +1,9 @@
 use crate::io::IOContext;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse};
-use chain_params::SidechainParams;
 use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData};
 use partner_chains_cardano_offchain::OffchainError;
 use pretty_assertions::assert_eq;
+use sidechain_domain::UtxoId;
 use sp_core::offchain::Timestamp;
 use std::collections::HashMap;
 use std::panic::{catch_unwind, resume_unwind, UnwindSafe};
@@ -246,24 +246,21 @@ impl OffchainMocks {
 
 #[derive(Default, Clone)]
 pub struct OffchainMock {
-	pub scripts_data: HashMap<SidechainParams, Result<ScriptsData, OffchainError>>,
+	pub scripts_data: HashMap<UtxoId, Result<ScriptsData, OffchainError>>,
 }
 
 impl OffchainMock {
 	pub(crate) fn new_with_scripts_data(
-		pc_params: SidechainParams,
+		genesis_utxo: UtxoId,
 		scripts_data: Result<ScriptsData, OffchainError>,
 	) -> Self {
-		Self { scripts_data: vec![(pc_params, scripts_data)].into_iter().collect() }
+		Self { scripts_data: vec![(genesis_utxo, scripts_data)].into_iter().collect() }
 	}
 }
 
 impl GetScriptsData for OffchainMock {
-	async fn get_scripts_data(
-		&self,
-		pc_params: SidechainParams,
-	) -> Result<ScriptsData, OffchainError> {
-		self.scripts_data.get(&pc_params).cloned().unwrap_or_else(|| {
+	async fn get_scripts_data(&self, genesis_utxo: UtxoId) -> Result<ScriptsData, OffchainError> {
+		self.scripts_data.get(&genesis_utxo).cloned().unwrap_or_else(|| {
 			Err(OffchainError::InternalError("No mock for shelley_genesis_configuration".into()))
 		})
 	}

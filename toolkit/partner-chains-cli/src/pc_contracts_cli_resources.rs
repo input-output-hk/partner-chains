@@ -38,9 +38,6 @@ pub(crate) fn default_ogmios_service_config() -> ServiceConfig {
 
 pub(crate) const KUPO_AND_OGMIOS_REQUIRED: &str = "Partner Chains Smart Contracts require access to Kupo and Ogmios. Please provide their configuration.";
 
-pub(crate) const OGMIOS_REQUIRED: &str =
-	"Partner Chains Smart Contracts require access to Ogmios. Please provide its configuration.";
-
 pub(crate) fn establish_pc_contracts_cli_configuration<C: IOContext>(
 	context: &C,
 ) -> anyhow::Result<PcContractsCliResources> {

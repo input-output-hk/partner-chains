@@ -1,6 +1,5 @@
 use crate::chain_spec::get_account_id_from_seed;
 use crate::chain_spec::*;
-use chain_params::SidechainParams;
 use sc_service::ChainType;
 use sidechain_domain::*;
 use sidechain_runtime::{
@@ -137,7 +136,7 @@ pub fn staging_genesis(
 				.collect(),
 		},
 		sidechain: SidechainConfig {
-			params: SidechainParams::read_from_env_with_defaults()?,
+			genesis_utxo: sp_sidechain::read_genesis_utxo_from_env_with_defaults()?,
 			..Default::default()
 		},
 		pallet_session: Default::default(),
