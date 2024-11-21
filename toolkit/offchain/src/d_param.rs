@@ -205,6 +205,7 @@ mod tests {
 	use crate::{
 		csl::{empty_asset_name, TransactionContext},
 		d_param::upsert_d_param,
+		ogmios_mock::MockOgmiosClient,
 		scripts_data::get_scripts_data,
 		test_values::*,
 	};
@@ -213,14 +214,11 @@ mod tests {
 	};
 	use hex_literal::hex;
 	use ogmios_client::{
-		query_ledger_state::{EraSummary, ProtocolParametersResponse, QueryLedgerState},
-		query_network::{QueryNetwork, ShelleyGenesisConfigurationResponse},
 		transactions::{
 			OgmiosBudget, OgmiosEvaluateTransactionResponse, OgmiosValidatorIndex,
-			SubmitTransactionResponse, Transactions,
+			SubmitTransactionResponse,
 		},
 		types::{Asset as OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue},
-		OgmiosClientError,
 	};
 	use partner_chains_plutus_data::d_param::d_parameter_to_plutus_data;
 	use sidechain_domain::{DParameter, McTxHash, UtxoId};
@@ -457,13 +455,14 @@ mod tests {
 
 	#[tokio::test]
 	async fn upsert_inserts_when_there_is_no_d_parameter_on_chain() {
-		let client = OgmiosClientMock {
-			d_parameter: None,
-			evaluate_response: vec![OgmiosEvaluateTransactionResponse {
+		let client = mock_client(
+			vec![OgmiosEvaluateTransactionResponse {
 				validator: OgmiosValidatorIndex { index: 0, purpose: "mint".into() },
 				budget: OgmiosBudget { memory: 519278, cpu: 155707522 },
 			}],
-		};
+			vec![],
+		);
+
 		let tx = upsert_d_param(
 			test_genesis_utxo(),
 			&input_d_param(),
@@ -477,8 +476,8 @@ mod tests {
 
 	#[tokio::test]
 	async fn upsert_does_nothing_if_existing_d_param_is_equal_to_requested() {
-		let client =
-			OgmiosClientMock { d_parameter: Some(existing_d_param()), evaluate_response: vec![] };
+		let client = mock_client(vec![], vec![script_utxo(&existing_d_param())]);
+
 		let tx = upsert_d_param(
 			test_genesis_utxo(),
 			&existing_d_param(),
@@ -492,13 +491,13 @@ mod tests {
 
 	#[tokio::test]
 	async fn upsert_updates_d_param_when_requested_is_different_to_existing() {
-		let client = OgmiosClientMock {
-			d_parameter: Some(existing_d_param()),
-			evaluate_response: vec![OgmiosEvaluateTransactionResponse {
+		let client = mock_client(
+			vec![OgmiosEvaluateTransactionResponse {
 				validator: OgmiosValidatorIndex { index: 0, purpose: "spend".into() },
 				budget: OgmiosBudget { memory: 519278, cpu: 155707522 },
 			}],
-		};
+			vec![script_utxo(&existing_d_param())],
+		);
 		let tx = upsert_d_param(
 			test_genesis_utxo(),
 			&input_d_param(),
@@ -543,68 +542,23 @@ mod tests {
 			.unwrap()
 	}
 
-	struct OgmiosClientMock {
-		d_parameter: Option<DParameter>,
+	fn mock_client(
 		evaluate_response: Vec<OgmiosEvaluateTransactionResponse>,
-	}
-
-	impl Transactions for OgmiosClientMock {
-		async fn evaluate_transaction(
-			&self,
-			_tx_bytes: &[u8],
-		) -> Result<Vec<OgmiosEvaluateTransactionResponse>, OgmiosClientError> {
-			Ok(self.evaluate_response.clone())
-		}
-
-		async fn submit_transaction(
-			&self,
-			_tx_bytes: &[u8],
-		) -> Result<SubmitTransactionResponse, OgmiosClientError> {
-			Ok(SubmitTransactionResponse { transaction: test_upsert_tx_hash().into() })
-		}
-	}
-
-	impl QueryLedgerState for OgmiosClientMock {
-		async fn era_summaries(&self) -> Result<Vec<EraSummary>, OgmiosClientError> {
-			Err(OgmiosClientError::RequestError("era_summaries not implemented".to_string()))
-		}
-
-		async fn query_utxos(
-			&self,
-			addresses: &[String],
-		) -> Result<Vec<OgmiosUtxo>, OgmiosClientError> {
-			let expected_payment_key_address = payment_addr().to_bech32(None).unwrap();
-			let expected_validator_address =
-				get_scripts_data(test_genesis_utxo(), NetworkIdKind::Testnet)
-					.unwrap()
-					.addresses
-					.d_parameter_validator;
-			if addresses.contains(&expected_payment_key_address.to_string()) {
-				Ok(vec![make_utxo(1u8, 0, 15000000, &payment_addr())])
-			} else if addresses.contains(&expected_validator_address.to_string()) {
-				if let Some(d_param) = &self.d_parameter {
-					Ok(vec![script_utxo(d_param)])
-				} else {
-					Ok(vec![])
-				}
-			} else {
-				let addresses = addresses.join(", ");
-				panic!("unexpected addresses: [{addresses}] in query_utxos.")
-			}
-		}
-
-		async fn query_protocol_parameters(
-			&self,
-		) -> Result<ProtocolParametersResponse, OgmiosClientError> {
-			Ok(protocol_parameters())
-		}
-	}
-
-	impl QueryNetwork for OgmiosClientMock {
-		async fn shelley_genesis_configuration(
-			&self,
-		) -> Result<ShelleyGenesisConfigurationResponse, OgmiosClientError> {
-			Ok(shelley_config())
-		}
+		validator_utxos: Vec<OgmiosUtxo>,
+	) -> MockOgmiosClient {
+		let payment_key_address = payment_addr().to_bech32(None).unwrap();
+		let validator_address = get_scripts_data(test_genesis_utxo(), NetworkIdKind::Testnet)
+			.unwrap()
+			.addresses
+			.d_parameter_validator;
+		MockOgmiosClient::new()
+			.with_evaluate_result(evaluate_response)
+			.with_submit_result(SubmitTransactionResponse {
+				transaction: test_upsert_tx_hash().into(),
+			})
+			.with_utxos(&payment_key_address, vec![make_utxo(1u8, 0, 15000000, &payment_addr())])
+			.with_utxos(&validator_address, validator_utxos)
+			.with_protocol_parameters(protocol_parameters())
+			.with_shelley_config(shelley_config())
 	}
 }
