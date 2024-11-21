@@ -233,7 +233,7 @@
         "ogmios": "ogmios",
         "process-compose": "process-compose",
         "services-flake": "services-flake",
-        "smart-contracts": "smart-contracts",
+        "smart-contracts": "smart-contracts"
       }
     },
     "rust-analyzer-src": {
@@ -284,7 +284,7 @@
         "repo": "partner-chains-smart-contracts",
         "type": "github"
       }
-    },
+    }
   },
   "root": "root",
   "version": 7

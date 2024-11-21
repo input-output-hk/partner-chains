@@ -1,4 +1,4 @@
-use crate::{PlutusDataExtensions, VersionedDatum, VersionedDatumShape};
+use crate::{PlutusDataExtensions, VersionedDatum, VersionedGenericDatumShape};
 use cardano_serialization_lib::*;
 use sidechain_domain::*;
 
@@ -187,7 +187,7 @@ impl From<RegisterValidatorDatum> for PlutusData {
 				generic_data_fields.add(&PlutusData::new_bytes(aura_pub_key.0));
 				generic_data_fields.add(&PlutusData::new_bytes(grandpa_pub_key.0));
 				let generic_data = ConstrPlutusData::new(&BigNum::zero(), &generic_data_fields);
-				VersionedDatumShape {
+				VersionedGenericDatumShape {
 					datum: PlutusData::new_bytes(own_pkh.0.to_vec()),
 					generic_data: PlutusData::new_constr_plutus_data(&generic_data),
 					version: 0,

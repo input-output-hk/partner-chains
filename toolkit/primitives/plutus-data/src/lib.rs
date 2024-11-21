@@ -81,14 +81,17 @@ pub(crate) trait VersionedDatum: Sized {
 	}
 }
 
-pub struct VersionedDatumShape {
+/// This struct has the same shape as `VersionedGenericDatum` from smart-contracts.
+/// It is used to help implementing a proper `From` trait for `PlutusData` for
+/// datum types.
+pub(crate) struct VersionedGenericDatumShape {
 	pub datum: PlutusData,
 	pub generic_data: PlutusData,
 	pub version: u64,
 }
 
-impl From<VersionedDatumShape> for PlutusData {
-	fn from(value: VersionedDatumShape) -> Self {
+impl From<VersionedGenericDatumShape> for PlutusData {
+	fn from(value: VersionedGenericDatumShape) -> Self {
 		let mut list = PlutusList::new();
 		list.add(&value.datum);
 		list.add(&value.generic_data);
