@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Check ACCOUNT and execute the corresponding command
 case "$ACCOUNT" in
