@@ -277,7 +277,52 @@
 <a href="#277" id="277">277</a>
 <a href="#278" id="278">278</a>
 <a href="#279" id="279">279</a>
-</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{PlutusDataExtensions, VersionedDatum};
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{PlutusDataExtensions, VersionedDatum, VersionedGenericDatumShape};
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 
@@ -446,12 +491,81 @@
 	<span class="prelude-val">Some</span>(McTxHash(TryFrom::try_from(bytes).ok()<span class="question-mark">?</span>))
 }
 
+<span class="kw">impl </span>From&lt;RegisterValidatorDatum&gt; <span class="kw">for </span>PlutusData {
+	<span class="kw">fn </span>from(value: RegisterValidatorDatum) -&gt; <span class="self">Self </span>{
+		<span class="kw">match </span>value {
+			RegisterValidatorDatum::V0 {
+				stake_ownership,
+				sidechain_pub_key,
+				sidechain_signature,
+				consumed_input,
+				own_pkh,
+				aura_pub_key,
+				grandpa_pub_key,
+			} =&gt; {
+				<span class="kw">let </span><span class="kw-2">mut </span>generic_data_fields = PlutusList::new();
+				generic_data_fields.add(<span class="kw-2">&amp;</span>stake_ownership_to_plutus_data(stake_ownership));
+				generic_data_fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(sidechain_pub_key.<span class="number">0</span>));
+				generic_data_fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(sidechain_signature.<span class="number">0</span>));
+				generic_data_fields.add(<span class="kw-2">&amp;</span>utxo_id_to_plutus_data(consumed_input));
+				generic_data_fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(aura_pub_key.<span class="number">0</span>));
+				generic_data_fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(grandpa_pub_key.<span class="number">0</span>));
+				<span class="kw">let </span>generic_data = ConstrPlutusData::new(<span class="kw-2">&amp;</span>BigNum::zero(), <span class="kw-2">&amp;</span>generic_data_fields);
+				VersionedGenericDatumShape {
+					datum: PlutusData::new_bytes(own_pkh.<span class="number">0</span>.to_vec()),
+					generic_data: PlutusData::new_constr_plutus_data(<span class="kw-2">&amp;</span>generic_data),
+					version: <span class="number">0</span>,
+				}
+				.into()
+			},
+		}
+	}
+}
+
+<span class="kw">fn </span>stake_ownership_to_plutus_data(v: AdaBasedStaking) -&gt; PlutusData {
+	<span class="kw">let </span><span class="kw-2">mut </span>fields = PlutusList::new();
+	fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(v.pub_key.<span class="number">0</span>.to_vec()));
+	fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(v.signature.<span class="number">0</span>.to_vec()));
+	PlutusData::new_constr_plutus_data(<span class="kw-2">&amp;</span>ConstrPlutusData::new(<span class="kw-2">&amp;</span>BigNum::zero(), <span class="kw-2">&amp;</span>fields))
+}
+
+<span class="kw">fn </span>utxo_id_to_plutus_data(v: UtxoId) -&gt; PlutusData {
+	<span class="kw">let </span><span class="kw-2">mut </span>fields = PlutusList::new();
+	fields.add(<span class="kw-2">&amp;</span>tx_hash_to_plutus_data(v.tx_hash));
+	fields.add(<span class="kw-2">&amp;</span>PlutusData::new_integer(<span class="kw-2">&amp;</span>v.index.<span class="number">0</span>.into()));
+	PlutusData::new_constr_plutus_data(<span class="kw-2">&amp;</span>ConstrPlutusData::new(<span class="kw-2">&amp;</span>BigNum::zero(), <span class="kw-2">&amp;</span>fields))
+}
+
+<span class="kw">fn </span>tx_hash_to_plutus_data(v: McTxHash) -&gt; PlutusData {
+	<span class="kw">let </span><span class="kw-2">mut </span>fields = PlutusList::new();
+	fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(v.<span class="number">0</span>.to_vec()));
+	PlutusData::new_constr_plutus_data(<span class="kw-2">&amp;</span>ConstrPlutusData::new(<span class="kw-2">&amp;</span>BigNum::zero(), <span class="kw-2">&amp;</span>fields))
+}
+
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span><span class="kw">crate</span>::test_helpers::<span class="kw-2">*</span>;
 	<span class="kw">use </span>hex_literal::hex;
 	<span class="kw">use </span>pretty_assertions::assert_eq;
+
+	<span class="kw">fn </span>test_datum_v0() -&gt; RegisterValidatorDatum {
+		RegisterValidatorDatum::V0 {
+			stake_ownership: AdaBasedStaking {
+				pub_key: MainchainPublicKey(<span class="macro">hex!</span>(<span class="string">"bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d"</span>)),
+				signature: MainchainSignature(<span class="macro">hex!</span>(<span class="string">"28d1c3b7df297a60d24a3f88bc53d7029a8af35e8dd876764fd9e7a24203a3482a98263cc8ba2ddc7dc8e7faea31c2e7bad1f00e28c43bc863503e3172dc6b0a"</span>).into()),
+			},
+			sidechain_pub_key: SidechainPublicKey(<span class="macro">hex!</span>(<span class="string">"02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af"</span>).into()),
+			sidechain_signature: SidechainSignature(<span class="macro">hex!</span>(<span class="string">"f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e"</span>).into()),
+			consumed_input: UtxoId {
+				tx_hash: McTxHash(<span class="macro">hex!</span>(<span class="string">"cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"</span>)),
+				index: UtxoIndex(<span class="number">1</span>),
+			},
+			own_pkh: MainchainAddressHash(<span class="macro">hex!</span>(<span class="string">"aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00"</span>)),
+			aura_pub_key: AuraPublicKey(<span class="macro">hex!</span>(<span class="string">"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"</span>).into()),
+			grandpa_pub_key: GrandpaPublicKey(<span class="macro">hex!</span>(<span class="string">"88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"</span>).into()),
+		}
+	}
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>valid_legacy_registration() {
@@ -482,29 +596,11 @@
 				{ <span class="string">"bytes"</span>: <span class="string">"88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee" </span>}
 			]
 		});
-
-		<span class="kw">let </span>expected_datum = RegisterValidatorDatum::V0 {
-			stake_ownership: AdaBasedStaking {
-				pub_key: MainchainPublicKey(<span class="macro">hex!</span>(<span class="string">"bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d"</span>)),
-				signature: MainchainSignature(<span class="macro">hex!</span>(<span class="string">"28d1c3b7df297a60d24a3f88bc53d7029a8af35e8dd876764fd9e7a24203a3482a98263cc8ba2ddc7dc8e7faea31c2e7bad1f00e28c43bc863503e3172dc6b0a"</span>).into()),
-			},
-			sidechain_pub_key: SidechainPublicKey(<span class="macro">hex!</span>(<span class="string">"02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af"</span>).into()),
-			sidechain_signature: SidechainSignature(<span class="macro">hex!</span>(<span class="string">"f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e"</span>).into()),
-			consumed_input: UtxoId {
-				tx_hash: McTxHash(<span class="macro">hex!</span>(<span class="string">"cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"</span>)),
-				index: UtxoIndex(<span class="number">1</span>),
-			},
-			own_pkh: MainchainAddressHash(<span class="macro">hex!</span>(<span class="string">"aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00"</span>)),
-			aura_pub_key: AuraPublicKey(<span class="macro">hex!</span>(<span class="string">"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"</span>).into()),
-			grandpa_pub_key: GrandpaPublicKey(<span class="macro">hex!</span>(<span class="string">"88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"</span>).into()),
-		};
-
-		<span class="macro">assert_eq!</span>(RegisterValidatorDatum::try_from(plutus_data).unwrap(), expected_datum)
+		<span class="macro">assert_eq!</span>(RegisterValidatorDatum::try_from(plutus_data).unwrap(), test_datum_v0())
 	}
 
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>valid_v0_registration() {
-		<span class="kw">let </span>plutus_data = <span class="macro">test_plutus_data!</span>({
+	<span class="kw">fn </span>test_versioned_datum_json() -&gt; serde_json::Value {
+		<span class="macro">serde_json::json!</span>({
 			<span class="string">"list"</span>: [
 				{ <span class="string">"bytes"</span>: <span class="string">"aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00" </span>},
 				{
@@ -535,25 +631,19 @@
 				},
 				{ <span class="string">"int"</span>: <span class="number">0 </span>}
 			]
-		});
+		})
+	}
 
-		<span class="kw">let </span>expected_datum = RegisterValidatorDatum::V0 {
-			stake_ownership: AdaBasedStaking {
-				pub_key: MainchainPublicKey(<span class="macro">hex!</span>(<span class="string">"bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d"</span>)),
-				signature: MainchainSignature(<span class="macro">hex!</span>(<span class="string">"28d1c3b7df297a60d24a3f88bc53d7029a8af35e8dd876764fd9e7a24203a3482a98263cc8ba2ddc7dc8e7faea31c2e7bad1f00e28c43bc863503e3172dc6b0a"</span>).into()),
-			},
-			sidechain_pub_key: SidechainPublicKey(<span class="macro">hex!</span>(<span class="string">"02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af"</span>).into()),
-			sidechain_signature: SidechainSignature(<span class="macro">hex!</span>(<span class="string">"f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e"</span>).into()),
-			consumed_input: UtxoId {
-				tx_hash: McTxHash(<span class="macro">hex!</span>(<span class="string">"cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"</span>)),
-				index: UtxoIndex(<span class="number">1</span>),
-			},
-			own_pkh: MainchainAddressHash(<span class="macro">hex!</span>(<span class="string">"aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00"</span>)),
-			aura_pub_key: AuraPublicKey(<span class="macro">hex!</span>(<span class="string">"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"</span>).into()),
-			grandpa_pub_key: GrandpaPublicKey(<span class="macro">hex!</span>(<span class="string">"88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"</span>).into()),
-		};
+	<span class="attr">#[test]
+	</span><span class="kw">fn </span>valid_v0_registration_from_plutus_data() {
+		<span class="kw">let </span>plutus_data = json_to_plutus_data(test_versioned_datum_json());
+		<span class="macro">assert_eq!</span>(RegisterValidatorDatum::try_from(plutus_data).unwrap(), test_datum_v0())
+	}
 
-		<span class="macro">assert_eq!</span>(RegisterValidatorDatum::try_from(plutus_data).unwrap(), expected_datum)
+	<span class="attr">#[test]
+	</span><span class="kw">fn </span>v0_registration_to_plutus_data() {
+		<span class="kw">let </span>plutus_data: PlutusData = test_datum_v0().into();
+		<span class="macro">assert_eq!</span>(plutus_data_to_json(plutus_data), test_versioned_datum_json())
 	}
 }
 </code></pre></div></section></main></body></html>

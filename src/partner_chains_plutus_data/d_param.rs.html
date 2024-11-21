@@ -108,7 +108,24 @@
 <a href="#108" id="108">108</a>
 <a href="#109" id="109">109</a>
 <a href="#110" id="110">110</a>
-</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{DataDecodingError, DecodingResult, PlutusDataExtensions, VersionedDatum};
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
+	DataDecodingError, DecodingResult, PlutusDataExtensions, VersionedDatum,
+	VersionedGenericDatumShape,
+};
 <span class="kw">use </span>cardano_serialization_lib::{PlutusData, PlutusList};
 
 <span class="attr">#[derive(Clone, Debug, PartialEq)]
@@ -138,7 +155,13 @@
 	<span class="kw">let </span><span class="kw-2">mut </span>list = PlutusList::new();
 	list.add(<span class="kw-2">&amp;</span>PlutusData::new_integer(<span class="kw-2">&amp;</span>d_param.num_permissioned_candidates.into()));
 	list.add(<span class="kw-2">&amp;</span>PlutusData::new_integer(<span class="kw-2">&amp;</span>d_param.num_registered_candidates.into()));
-	PlutusData::new_list(<span class="kw-2">&amp;</span>list)
+	<span class="kw">let </span>generic_data = PlutusData::new_list(<span class="kw-2">&amp;</span>list);
+	VersionedGenericDatumShape {
+		datum: PlutusData::new_empty_constr_plutus_data(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into()),
+		generic_data,
+		version: <span class="number">0</span>,
+	}
+	.into()
 }
 
 <span class="kw">impl </span>VersionedDatum <span class="kw">for </span>DParamDatum {
@@ -191,17 +214,17 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>domain_d_param_to_csl() {
 		<span class="kw">let </span>d_param = sidechain_domain::DParameter {
-			num_permissioned_candidates: <span class="number">1</span>,
-			num_registered_candidates: <span class="number">2</span>,
+			num_permissioned_candidates: <span class="number">17</span>,
+			num_registered_candidates: <span class="number">42</span>,
 		};
 
-		<span class="kw">let </span>expected_plutus_data = <span class="macro">test_plutus_data!</span>({<span class="string">"list"</span>: [{<span class="string">"int"</span>: <span class="number">1</span>}, {<span class="string">"int"</span>: <span class="number">2</span>}]});
+		<span class="kw">let </span>expected_plutus_data = json_to_plutus_data(v0_datum_json());
 
 		<span class="macro">assert_eq!</span>(d_parameter_to_plutus_data(<span class="kw-2">&amp;</span>d_param), expected_plutus_data)
 	}
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>valid_v0_d_param() {
-		<span class="kw">let </span>plutus_data = <span class="macro">test_plutus_data!</span>({
+
+	<span class="kw">fn </span>v0_datum_json() -&gt; serde_json::Value {
+		<span class="macro">serde_json::json!</span>({
 			<span class="string">"list"</span>: [
 				{ <span class="string">"constructor"</span>: <span class="number">0</span>, <span class="string">"fields"</span>: [] },
 				{ <span class="string">"list"</span>: [
@@ -210,7 +233,12 @@
 				] },
 				{ <span class="string">"int"</span>: <span class="number">0 </span>}
 			]
-		});
+		})
+	}
+
+	<span class="attr">#[test]
+	</span><span class="kw">fn </span>valid_v0_d_param() {
+		<span class="kw">let </span>plutus_data = json_to_plutus_data(v0_datum_json());
 
 		<span class="kw">let </span>expected_datum =
 			DParamDatum::V0 { num_permissioned_candidates: <span class="number">17</span>, num_registered_candidates: <span class="number">42 </span>};
