@@ -225,12 +225,21 @@ jobs:
           && rm /tmp/outputs
 
   pre-merge-checks-complete:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
-    needs: [build, local-environment-tests, deploy-argocd, teardown-argocd, devshell-tests]
+    if: ${{ always() && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)) }}
+    needs: [build, local-environment-tests, argocd-tests, devshell-tests]
     runs-on: ubuntu-latest
     steps:
-      - name: Pre Merge Checks Complete
-        run: echo "All pre-merge checks have passed. PR is ready to merge."
+      - name: Check if any needed job failed
+        run: |
+          if [[ "${{ needs.build.result }}" != "success" || 
+                "${{ needs.local-environment-tests.result }}" != "success" || 
+                "${{ needs.argocd-tests.result }}" != "success" || 
+                "${{ needs.devshell-tests.result }}" != "success" ]]; then
+            echo "One or more needed jobs failed."
+            exit 1
+          else
+            echo "All needed jobs passed."
+          fi
 
   upload-chain-specs:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
@@ -325,9 +334,17 @@ jobs:
         shell: bash
 
   post-merge-actions-complete:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    if: ${{ always() && (github.event_name == 'pull_request' && github.event.pull_request.merged == true) }}
     needs: [deploy-rustdoc, upload-chain-specs, local-environment-tests-post-merge]
     runs-on: ubuntu-latest
     steps:
-      - name: Post Merge Actions Complete
-        run: echo "All post-merge actions have been successfully completed."
+      - name: Check if any needed job failed
+        run: |
+          if [[ "${{ needs.deploy-rustdoc.result }}" != "success" || 
+                "${{ needs.upload-chain-specs.result }}" != "success" || 
+                "${{ needs.local-environment-tests-post-merge.result }}" != "success" ]]; then
+            echo "One or more needed jobs failed."
+            exit 1
+          else
+            echo "All needed jobs passed."
+          fi
