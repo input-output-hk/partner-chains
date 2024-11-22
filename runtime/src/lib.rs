@@ -472,6 +472,12 @@ impl pallet_sidechain::Config for Runtime {
 	type OnNewEpoch = LogBeneficiaries;
 
 	type SidechainParams = chain_params::SidechainParams;
+
+	type MainChainScripts = sp_session_validator_management::MainChainScripts;
+
+	fn set_main_chain_scripts(scripts: Self::MainChainScripts) {
+		pallet_session_validator_management::MainChainScriptsConfiguration::<Runtime>::set(scripts);
+	}
 }
 
 pub type BeneficiaryId = sidechain_domain::byte_string::SizedByteString<32>;
