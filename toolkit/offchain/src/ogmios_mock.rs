@@ -39,6 +39,10 @@ impl MockOgmiosClient {
 	pub fn with_submit_result(self, submit_result: SubmitTransactionResponse) -> Self {
 		Self { submit_result: Some(submit_result), ..self }
 	}
+
+	pub fn with_shelley_config(self, shelley_config: ShelleyGenesisConfigurationResponse) -> Self {
+		Self { shelley_config, ..self }
+	}
 }
 
 impl QueryNetwork for MockOgmiosClient {

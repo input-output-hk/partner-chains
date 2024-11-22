@@ -46,7 +46,7 @@ pub async fn run_init_governance(
 
 	let tx_context = crate::csl::TransactionContext {
 		payment_key,
-		payment_utxos: own_utxos,
+		payment_key_utxos: own_utxos,
 		network: network.to_csl(),
 		protocol_parameters,
 	};
@@ -76,7 +76,7 @@ pub async fn run_init_governance(
 		genesis_utxo,
 		cost,
 	)?;
-	let signed_transaction = tx_context.sign(unsigned_transaction);
+	let signed_transaction = tx_context.sign(&unsigned_transaction);
 
 	let result = client.submit_transaction(&signed_transaction.to_bytes()).await?;
 

@@ -35,5 +35,7 @@ uplc = { workspace = true }
 tokio = { workspace = true }
 
 [dev-dependencies]
+fraction = { workspace = true, features = [	"with-decimal",	"with-serde-support"] }
 proptest = { workspace = true }
+time = { workspace = true, features = ["std", "serde", "parsing"] }
 pretty_assertions = { workspace = true }

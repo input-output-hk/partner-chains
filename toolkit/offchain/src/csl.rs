@@ -3,7 +3,8 @@
 use crate::{plutus_script::PlutusScript, untyped_plutus::datum_to_uplc_plutus_data};
 use cardano_serialization_lib::*;
 use ogmios_client::{
-	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse},
+	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, QueryLedgerState},
+	query_network::QueryNetwork,
 	transactions::OgmiosBudget,
 	types::{OgmiosUtxo, OgmiosValue},
 };
@@ -194,12 +195,26 @@ pub(crate) struct TransactionContext {
 	pub(crate) payment_key: PrivateKey,
 	/// Used to pay for the transaction fees and uncovered transaction inputs
 	/// and as source of collateral inputs
-	pub(crate) payment_utxos: Vec<OgmiosUtxo>,
+	pub(crate) payment_key_utxos: Vec<OgmiosUtxo>,
 	pub(crate) network: NetworkIdKind,
 	pub(crate) protocol_parameters: ProtocolParametersResponse,
 }
 
 impl TransactionContext {
+	/// Gets `TransactionContext`, having UTXOs for the given payment key and the network configuration,
+	/// required to perform most of the partner-chains smart contract operations.
+	pub(crate) async fn for_payment_key<C: QueryLedgerState + QueryNetwork>(
+		payment_signing_key: [u8; 32],
+		client: &C,
+	) -> Result<TransactionContext, anyhow::Error> {
+		let payment_key = PrivateKey::from_normal_bytes(&payment_signing_key)?;
+		let network = client.shelley_genesis_configuration().await?.network.to_csl();
+		let protocol_parameters = client.query_protocol_parameters().await?;
+		let payment_address = key_hash_address(&payment_key.to_public().hash(), network);
+		let payment_key_utxos = client.query_utxos(&[payment_address.to_bech32(None)?]).await?;
+		Ok(TransactionContext { payment_key, payment_key_utxos, network, protocol_parameters })
+	}
+
 	pub(crate) fn payment_key_hash(&self) -> Ed25519KeyHash {
 		self.payment_key.to_public().hash()
 	}
@@ -208,7 +223,7 @@ impl TransactionContext {
 		key_hash_address(&self.payment_key.to_public().hash(), self.network)
 	}
 
-	pub(crate) fn sign(&self, tx: Transaction) -> Transaction {
+	pub(crate) fn sign(&self, tx: &Transaction) -> Transaction {
 		let tx_hash: [u8; 32] = sidechain_domain::crypto::blake2b(tx.body().to_bytes().as_ref());
 		let signature = self.payment_key.sign(&tx_hash);
 		let mut witness_set = tx.witness_set();
@@ -337,7 +352,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 		ctx: &TransactionContext,
 	) -> Result<Transaction, JsError> {
 		fn max_possible_collaterals(ctx: &TransactionContext) -> Vec<OgmiosUtxo> {
-			let mut utxos = ctx.payment_utxos.clone();
+			let mut utxos = ctx.payment_key_utxos.clone();
 			utxos.sort_by(|a, b| b.value.lovelace.cmp(&a.value.lovelace));
 			let max_inputs = ctx.protocol_parameters.max_collateral_inputs;
 			utxos
@@ -354,7 +369,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 			builder.add_required_signer(&ctx.payment_key_hash());
 			if collateral_inputs.is_empty() {
 				builder.add_inputs_from_and_change(
-					&ctx.payment_utxos.to_csl()?,
+					&ctx.payment_key_utxos.to_csl()?,
 					CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
 					&ChangeConfig::new(&key_hash_address(&ctx.payment_key_hash(), ctx.network)),
 				)?;
@@ -363,7 +378,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 				builder.set_script_data_hash(&[0u8; 32].into());
 				// Fake script script data hash is required for proper fee computation
 				builder.add_inputs_from_and_change_with_collateral_return(
-					&ctx.payment_utxos.to_csl()?,
+					&ctx.payment_key_utxos.to_csl()?,
 					CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
 					&ChangeConfig::new(&key_hash_address(&ctx.payment_key_hash(), ctx.network)),
 					&ctx.protocol_parameters.collateral_percentage.into(),
@@ -451,13 +466,12 @@ impl InputsBuilderExt for TxInputsBuilder {
 mod tests {
 	use super::payment_address;
 	use crate::plutus_script::PlutusScript;
-	use cardano_serialization_lib::LanguageKind::PlutusV2;
-	use cardano_serialization_lib::{AssetName, Language, NetworkIdKind};
+	use crate::test_values::protocol_parameters;
+	use cardano_serialization_lib::{AssetName, Language, LanguageKind::PlutusV2, NetworkIdKind};
 	use hex_literal::hex;
 	use ogmios_client::{
-		query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, ScriptExecutionPrices},
 		transactions::OgmiosBudget,
-		types::{Asset, OgmiosBytesSize, OgmiosValue},
+		types::{Asset, OgmiosValue},
 	};
 
 	#[test]
@@ -487,7 +501,7 @@ mod tests {
 
 	#[test]
 	fn linear_fee_test() {
-		let fee = super::linear_fee(&test_protocol_parameters());
+		let fee = super::linear_fee(&protocol_parameters());
 		assert_eq!(fee.constant(), 155381u32.into());
 		assert_eq!(fee.coefficient(), 44u32.into());
 	}
@@ -546,8 +560,7 @@ mod tests {
 
 	#[test]
 	fn convert_cost_models_test() {
-		let cost_models =
-			super::convert_cost_models(&test_protocol_parameters().plutus_cost_models);
+		let cost_models = super::convert_cost_models(&protocol_parameters().plutus_cost_models);
 		assert_eq!(cost_models.keys().len(), 3);
 		assert_eq!(
 			cost_models
@@ -587,29 +600,6 @@ mod tests {
 		assert_eq!(ex_units.mem(), 1000u64.into());
 		assert_eq!(ex_units.steps(), 2000u64.into());
 	}
-
-	fn test_protocol_parameters() -> ProtocolParametersResponse {
-		ProtocolParametersResponse {
-			min_fee_coefficient: 44,
-			min_fee_constant: OgmiosValue::new_lovelace(155381),
-			stake_pool_deposit: OgmiosValue::new_lovelace(500000000),
-			stake_credential_deposit: OgmiosValue::new_lovelace(2000000),
-			max_value_size: OgmiosBytesSize { bytes: 5000 },
-			max_transaction_size: OgmiosBytesSize { bytes: 16384 },
-			min_utxo_deposit_coefficient: 4310,
-			script_execution_prices: ScriptExecutionPrices {
-				memory: fraction::Ratio::new_raw(577, 10000),
-				cpu: fraction::Ratio::new_raw(721, 10000000),
-			},
-			plutus_cost_models: PlutusCostModels {
-				plutus_v1: vec![898148, 53384111, 14333],
-				plutus_v2: vec![43053543, 10],
-				plutus_v3: vec![-900, 166917843],
-			},
-			max_collateral_inputs: 3,
-			collateral_percentage: 150,
-		}
-	}
 }
 
 #[cfg(test)]
@@ -635,7 +625,7 @@ mod prop_tests {
 	fn multi_asset_transaction_balancing_test(payment_utxos: Vec<OgmiosUtxo>) {
 		let ctx = TransactionContext {
 			payment_key: payment_key(),
-			payment_utxos: payment_utxos.clone(),
+			payment_key_utxos: payment_utxos.clone(),
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
 		};
@@ -665,7 +655,7 @@ mod prop_tests {
 	fn ada_only_transaction_balancing_test(payment_utxos: Vec<OgmiosUtxo>) {
 		let ctx = TransactionContext {
 			payment_key: payment_key(),
-			payment_utxos: payment_utxos.clone(),
+			payment_key_utxos: payment_utxos.clone(),
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
 		};
