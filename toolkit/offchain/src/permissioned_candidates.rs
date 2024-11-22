@@ -264,7 +264,7 @@ mod tests {
 	fn test_tx_context() -> TransactionContext {
 		TransactionContext {
 			payment_key: payment_key(),
-			payment_utxos: vec![
+			payment_key_utxos: vec![
 				lesser_payment_utxo(),
 				greater_payment_utxo(),
 				make_utxo(14u8, 0, 400000, &payment_addr()),

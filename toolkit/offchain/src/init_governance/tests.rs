@@ -200,7 +200,7 @@ fn payment_key() -> PrivateKey {
 fn tx_context() -> TransactionContext {
 	TransactionContext {
 		payment_key: payment_key(),
-		payment_utxos: vec![payment_utxo()],
+		payment_key_utxos: vec![payment_utxo()],
 		network: NetworkIdKind::Testnet,
 		protocol_parameters: protocol_parameters(),
 	}

@@ -1,4 +1,10 @@
 #![allow(dead_code)]
+//!
+//! D-parameter is stored on chain in an UTXO at the D-parameter validator address.
+//! There should be at most one UTXO at the validator address and it should contain the D-parameter.
+//! This UTXO should have 1 token of the D-parameter policy with an empty asset name.
+//! The datum encodes D-parameter using VersionedGenericDatum envelope with the D-parameter being
+//! `datum` field being `[num_permissioned_candidates, num_registered_candidates]`.
 
 use crate::csl::{
 	convert_ex_units, get_builder_config, InputsBuilderExt, TransactionBuilderExt,
@@ -414,7 +420,7 @@ mod tests {
 	fn test_tx_context() -> TransactionContext {
 		TransactionContext {
 			payment_key: payment_key(),
-			payment_utxos: vec![
+			payment_key_utxos: vec![
 				lesser_payment_utxo(),
 				greater_payment_utxo(),
 				make_utxo(11u8, 0, 100000, &payment_addr()),
@@ -527,7 +533,10 @@ mod tests {
 					.into_iter()
 					.collect(),
 			},
-			address: validator_addr().to_bech32(None).unwrap(),
+			address: get_scripts_data(test_genesis_utxo(), NetworkIdKind::Testnet)
+				.unwrap()
+				.addresses
+				.d_parameter_validator,
 			datum: Some(ogmios_client::types::Datum { bytes: plutus_data.to_bytes() }),
 			..Default::default()
 		}
@@ -546,18 +555,13 @@ mod tests {
 		evaluate_response: Vec<OgmiosEvaluateTransactionResponse>,
 		validator_utxos: Vec<OgmiosUtxo>,
 	) -> MockOgmiosClient {
-		let payment_key_address = payment_addr().to_bech32(None).unwrap();
-		let validator_address = get_scripts_data(test_genesis_utxo(), NetworkIdKind::Testnet)
-			.unwrap()
-			.addresses
-			.d_parameter_validator;
 		MockOgmiosClient::new()
 			.with_evaluate_result(evaluate_response)
 			.with_submit_result(SubmitTransactionResponse {
 				transaction: test_upsert_tx_hash().into(),
 			})
-			.with_utxos(&payment_key_address, vec![make_utxo(1u8, 0, 15000000, &payment_addr())])
-			.with_utxos(&validator_address, validator_utxos)
+			.with_utxos(vec![make_utxo(1u8, 0, 15000000, &payment_addr())])
+			.with_utxos(validator_utxos)
 			.with_protocol_parameters(protocol_parameters())
 			.with_shelley_config(shelley_config())
 	}

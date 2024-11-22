@@ -195,7 +195,7 @@ pub(crate) struct TransactionContext {
 	pub(crate) payment_key: PrivateKey,
 	/// Used to pay for the transaction fees and uncovered transaction inputs
 	/// and as source of collateral inputs
-	pub(crate) payment_utxos: Vec<OgmiosUtxo>,
+	pub(crate) payment_key_utxos: Vec<OgmiosUtxo>,
 	pub(crate) network: NetworkIdKind,
 	pub(crate) protocol_parameters: ProtocolParametersResponse,
 }
@@ -211,8 +211,8 @@ impl TransactionContext {
 		let network = client.shelley_genesis_configuration().await?.network.to_csl();
 		let protocol_parameters = client.query_protocol_parameters().await?;
 		let payment_address = key_hash_address(&payment_key.to_public().hash(), network);
-		let payment_utxos = client.query_utxos(&[payment_address.to_bech32(None)?]).await?;
-		Ok(TransactionContext { payment_key, payment_utxos, network, protocol_parameters })
+		let payment_key_utxos = client.query_utxos(&[payment_address.to_bech32(None)?]).await?;
+		Ok(TransactionContext { payment_key, payment_key_utxos, network, protocol_parameters })
 	}
 
 	pub(crate) fn payment_key_hash(&self) -> Ed25519KeyHash {
@@ -352,7 +352,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 		ctx: &TransactionContext,
 	) -> Result<Transaction, JsError> {
 		fn max_possible_collaterals(ctx: &TransactionContext) -> Vec<OgmiosUtxo> {
-			let mut utxos = ctx.payment_utxos.clone();
+			let mut utxos = ctx.payment_key_utxos.clone();
 			utxos.sort_by(|a, b| b.value.lovelace.cmp(&a.value.lovelace));
 			let max_inputs = ctx.protocol_parameters.max_collateral_inputs;
 			utxos
@@ -369,7 +369,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 			builder.add_required_signer(&ctx.payment_key_hash());
 			if collateral_inputs.is_empty() {
 				builder.add_inputs_from_and_change(
-					&ctx.payment_utxos.to_csl()?,
+					&ctx.payment_key_utxos.to_csl()?,
 					CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
 					&ChangeConfig::new(&key_hash_address(&ctx.payment_key_hash(), ctx.network)),
 				)?;
@@ -378,7 +378,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 				builder.set_script_data_hash(&[0u8; 32].into());
 				// Fake script script data hash is required for proper fee computation
 				builder.add_inputs_from_and_change_with_collateral_return(
-					&ctx.payment_utxos.to_csl()?,
+					&ctx.payment_key_utxos.to_csl()?,
 					CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
 					&ChangeConfig::new(&key_hash_address(&ctx.payment_key_hash(), ctx.network)),
 					&ctx.protocol_parameters.collateral_percentage.into(),
@@ -625,7 +625,7 @@ mod prop_tests {
 	fn multi_asset_transaction_balancing_test(payment_utxos: Vec<OgmiosUtxo>) {
 		let ctx = TransactionContext {
 			payment_key: payment_key(),
-			payment_utxos: payment_utxos.clone(),
+			payment_key_utxos: payment_utxos.clone(),
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
 		};
@@ -655,7 +655,7 @@ mod prop_tests {
 	fn ada_only_transaction_balancing_test(payment_utxos: Vec<OgmiosUtxo>) {
 		let ctx = TransactionContext {
 			payment_key: payment_key(),
-			payment_utxos: payment_utxos.clone(),
+			payment_key_utxos: payment_utxos.clone(),
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
 		};
