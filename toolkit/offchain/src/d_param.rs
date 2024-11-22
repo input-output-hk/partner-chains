@@ -7,7 +7,7 @@
 //! `datum` field being `[num_permissioned_candidates, num_registered_candidates]`.
 
 use crate::csl::{
-	convert_ex_units, get_builder_config, InputsBuilderExt, TransactionBuilderExt,
+	get_builder_config, get_first_validator_budget, InputsBuilderExt, TransactionBuilderExt,
 	TransactionContext,
 };
 use crate::plutus_script::PlutusScript;
@@ -16,8 +16,8 @@ use cardano_serialization_lib::{
 	ExUnits, JsError, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
 };
 use ogmios_client::{
-	query_ledger_state::QueryLedgerState, query_network::QueryNetwork,
-	transactions::OgmiosEvaluateTransactionResponse, transactions::Transactions, types::OgmiosUtxo,
+	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
+	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
 use sidechain_domain::{DParameter, McTxHash, UtxoId};
@@ -93,7 +93,7 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	let mint_witness_ex_units = get_mint_ex_units(evaluate_response)?;
+	let mint_witness_ex_units = get_first_validator_budget(evaluate_response)?;
 	let tx = mint_d_param_token_tx(validator, policy, d_parameter, &ctx, mint_witness_ex_units)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
@@ -106,14 +106,6 @@ where
 	log::info!("Transaction submitted: {}", hex::encode(res.transaction.id));
 	// TODO: await for the transaction output to be visible in validator wallet
 	Ok(McTxHash(res.transaction.id))
-}
-
-fn get_mint_ex_units(validators_budgets: Vec<OgmiosEvaluateTransactionResponse>) -> anyhow::Result<ExUnits> {
-	// For mint transaction we know there is a single item to evaluate, so matching is trivial.
-	let validator_budget = validators_budgets
-		.first()
-		.ok_or_else(|| anyhow!("Internal error: cannot use evaluateTransaction response"))?;
-	Ok(convert_ex_units(&validator_budget.budget))
 }
 
 async fn update_d_param<C>(
@@ -136,7 +128,7 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	let spend_ex_units = get_spend_ex_units(evaluate_response)?;
+	let spend_ex_units = get_first_validator_budget(evaluate_response)?;
 
 	let tx = update_d_param_tx(validator, policy, d_parameter, current_utxo, &ctx, spend_ex_units)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
@@ -150,14 +142,6 @@ where
 	log::info!("Update D-parameter transaction submitted: {}", hex::encode(res.transaction.id));
 	// TODO: await for the transaction output to be visible in validator wallet
 	Ok(McTxHash(res.transaction.id))
-}
-
-fn get_spend_ex_units(validators_budgets: Vec<OgmiosEvaluateTransactionResponse>) -> anyhow::Result<ExUnits> {
-	// For spend transaction we know there is a single item to evaluate, so matching is trivial.
-	let validator_budget = validators_budgets
-		.first()
-		.ok_or_else(|| anyhow!("Internal error: cannot use evaluateTransaction response"))?;
-	Ok(convert_ex_units(&validator_budget.budget))
 }
 
 fn mint_d_param_token_tx(

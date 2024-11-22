@@ -8,7 +8,7 @@
 //! `[sidechain_public_key, aura_public_key, grandpa_publicKey]`.
 
 use crate::csl::{
-	convert_ex_units, get_builder_config, InputsBuilderExt, TransactionBuilderExt,
+	get_builder_config, get_first_validator_budget, InputsBuilderExt, TransactionBuilderExt,
 	TransactionContext,
 };
 use crate::plutus_script::PlutusScript;
@@ -18,7 +18,7 @@ use cardano_serialization_lib::{
 };
 use ogmios_client::query_ledger_state::QueryLedgerState;
 use ogmios_client::query_network::QueryNetwork;
-use ogmios_client::transactions::{OgmiosEvaluateTransactionResponse, Transactions};
+use ogmios_client::transactions::Transactions;
 use ogmios_client::types::OgmiosUtxo;
 use partner_chains_plutus_data::permissioned_candidates::{
 	permissioned_candidates_to_plutus_data, PermissionedCandidateDatums,
@@ -51,13 +51,29 @@ pub async fn upsert_permissioned_candidates<C: QueryLedgerState + QueryNetwork +
 				"Current permissioned candidates are different to the one to be set. Updating."
 			);
 			Ok(Some(
-				update_permissioned_candidates(&validator, &policy, &candidates, &current_utxo, ctx, ogmios_client)
-					.await?,
+				update_permissioned_candidates(
+					&validator,
+					&policy,
+					&candidates,
+					&current_utxo,
+					ctx,
+					ogmios_client,
+				)
+				.await?,
 			))
 		},
 		None => {
 			log::info!("There are permissioned candidates. Inserting new ones.");
-			Ok(Some(insert_permissioned_candidates(&validator, &policy, &candidates, ctx, ogmios_client).await?))
+			Ok(Some(
+				insert_permissioned_candidates(
+					&validator,
+					&policy,
+					&candidates,
+					ctx,
+					ogmios_client,
+				)
+				.await?,
+			))
 		},
 	}
 }
@@ -105,7 +121,7 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	let mint_witness_ex_units = get_mint_ex_units(evaluate_response)?;
+	let mint_witness_ex_units = get_first_validator_budget(evaluate_response)?;
 	let tx = mint_permissioned_candidates_token_tx(
 		validator,
 		policy,
@@ -123,14 +139,6 @@ where
 	})?;
 	log::info!("Transaction submitted: {}", hex::encode(res.transaction.id));
 	Ok(McTxHash(res.transaction.id))
-}
-
-fn get_mint_ex_units(validators_budgets: Vec<OgmiosEvaluateTransactionResponse>) -> anyhow::Result<ExUnits> {
-	// For mint transaction we know there is a single item to evaluate, so matching is trivial.
-	let validator_budget = validators_budgets
-		.first()
-		.ok_or_else(|| anyhow!("Internal error: cannot use evaluateTransaction response"))?;
-	Ok(convert_ex_units(&validator_budget.budget))
 }
 
 async fn update_permissioned_candidates<C>(
@@ -160,7 +168,7 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	let spend_ex_units = get_spend_ex_units(evaluate_response)?;
+	let spend_ex_units = get_first_validator_budget(evaluate_response)?;
 
 	let tx = update_permissioned_candidates_tx(
 		validator,
@@ -178,16 +186,11 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	log::info!("Update permissioned candidates transaction submitted: {}", hex::encode(res.transaction.id));
+	log::info!(
+		"Update permissioned candidates transaction submitted: {}",
+		hex::encode(res.transaction.id)
+	);
 	Ok(McTxHash(res.transaction.id))
-}
-
-fn get_spend_ex_units(validators_budgets: Vec<OgmiosEvaluateTransactionResponse>) -> anyhow::Result<ExUnits> {
-	// For spend transaction we know there is a single item to evaluate, so matching is trivial.
-	let validator_budget = validators_budgets
-		.first()
-		.ok_or_else(|| anyhow!("Internal error: cannot use evaluateTransaction response"))?;
-	Ok(convert_ex_units(&validator_budget.budget))
 }
 
 fn mint_permissioned_candidates_token_tx(
@@ -239,7 +242,11 @@ fn update_permissioned_candidates_tx(
 mod tests {
 	use super::{mint_permissioned_candidates_token_tx, update_permissioned_candidates_tx};
 	use crate::{
-		csl::{empty_asset_name, TransactionContext}, ogmios_mock::MockOgmiosClient, permissioned_candidates::upsert_permissioned_candidates, scripts_data::get_scripts_data, test_values::*
+		csl::{empty_asset_name, TransactionContext},
+		ogmios_mock::MockOgmiosClient,
+		permissioned_candidates::upsert_permissioned_candidates,
+		scripts_data::get_scripts_data,
+		test_values::*,
 	};
 	use cardano_serialization_lib::{
 		Address, ExUnits, Int, NetworkIdKind, PlutusData, RedeemerTag,
@@ -508,19 +515,23 @@ mod tests {
 
 	fn existing_candidates() -> Vec<PermissionedCandidateData> {
 		// Unordered for testing purposes
-		vec![PermissionedCandidateData {
-			sidechain_public_key: SidechainPublicKey(
-				hex!("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd").into(),
-			),
-			aura_public_key: AuraPublicKey(
-				hex!("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee").into(),
-			),
-			grandpa_public_key: GrandpaPublicKey(
-				hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").into(),
-			)},
+		vec![
 			PermissionedCandidateData {
 				sidechain_public_key: SidechainPublicKey(
-					hex!("cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc").into(),
+					hex!("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
+						.into(),
+				),
+				aura_public_key: AuraPublicKey(
+					hex!("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee").into(),
+				),
+				grandpa_public_key: GrandpaPublicKey(
+					hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").into(),
+				),
+			},
+			PermissionedCandidateData {
+				sidechain_public_key: SidechainPublicKey(
+					hex!("cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc")
+						.into(),
 				),
 				aura_public_key: AuraPublicKey(
 					hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").into(),
@@ -531,7 +542,8 @@ mod tests {
 			},
 			PermissionedCandidateData {
 				sidechain_public_key: SidechainPublicKey(
-					hex!("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee").into(),
+					hex!("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+						.into(),
 				),
 				aura_public_key: AuraPublicKey(
 					hex!("1111111111111111111111111111111111111111111111111111111111111111").into(),
@@ -539,7 +551,7 @@ mod tests {
 				grandpa_public_key: GrandpaPublicKey(
 					hex!("2222222222222222222222222222222222222222222222222222222222222222").into(),
 				),
-			}
+			},
 		]
 	}
 
