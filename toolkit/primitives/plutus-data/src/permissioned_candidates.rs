@@ -23,6 +23,24 @@ impl TryFrom<PlutusData> for PermissionedCandidateDatums {
 	}
 }
 
+impl From<PermissionedCandidateDatumV0> for PermissionedCandidateData {
+	fn from(value: PermissionedCandidateDatumV0) -> Self {
+		Self {
+			sidechain_public_key: value.sidechain_public_key,
+			aura_public_key: value.aura_public_key,
+			grandpa_public_key: value.grandpa_public_key,
+		}
+	}
+}
+
+impl From<PermissionedCandidateDatums> for Vec<PermissionedCandidateData> {
+	fn from(value: PermissionedCandidateDatums) -> Self {
+		match value {
+			PermissionedCandidateDatums::V0(v) => v.into_iter().map(|d| d.into()).collect(),
+		}
+	}
+}
+
 pub fn permissioned_candidates_to_plutus_data(
 	candidates: &[PermissionedCandidateData],
 ) -> PlutusData {

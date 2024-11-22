@@ -1,4 +1,4 @@
-use crate::csl::{key_hash_address, NetworkTypeExt};
+use crate::csl::{get_first_validator_budget, key_hash_address, NetworkTypeExt};
 use anyhow::anyhow;
 use cardano_serialization_lib::*;
 use ogmios_client::{
@@ -65,7 +65,7 @@ pub async fn run_init_governance(
 	println!("{}", unsigned_transaction.to_json()?);
 
 	let all_costs = client.evaluate_transaction(&unsigned_transaction.to_bytes()).await?;
-	let cost = crate::csl::convert_ex_units(&all_costs.first().unwrap().budget);
+	let cost = get_first_validator_budget(all_costs)?;
 
 	let unsigned_transaction = transaction::init_governance_transaction(
 		raw_scripts::MULTI_SIG_POLICY,
