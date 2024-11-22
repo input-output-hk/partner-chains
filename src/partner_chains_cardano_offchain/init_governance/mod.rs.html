@@ -132,7 +132,7 @@
 
 	<span class="kw">let </span>tx_context = <span class="kw">crate</span>::csl::TransactionContext {
 		payment_key,
-		payment_utxos: own_utxos,
+		payment_key_utxos: own_utxos,
 		network: network.to_csl(),
 		protocol_parameters,
 	};
@@ -162,7 +162,7 @@
 		genesis_utxo,
 		cost,
 	)<span class="question-mark">?</span>;
-	<span class="kw">let </span>signed_transaction = tx_context.sign(unsigned_transaction);
+	<span class="kw">let </span>signed_transaction = tx_context.sign(<span class="kw-2">&amp;</span>unsigned_transaction);
 
 	<span class="kw">let </span>result = client.submit_transaction(<span class="kw-2">&amp;</span>signed_transaction.to_bytes()).<span class="kw">await</span><span class="question-mark">?</span>;
 

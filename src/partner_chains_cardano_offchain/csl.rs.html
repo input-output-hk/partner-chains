@@ -775,22 +775,13 @@
 <a href="#775" id="775">775</a>
 <a href="#776" id="776">776</a>
 <a href="#777" id="777">777</a>
-<a href="#778" id="778">778</a>
-<a href="#779" id="779">779</a>
-<a href="#780" id="780">780</a>
-<a href="#781" id="781">781</a>
-<a href="#782" id="782">782</a>
-<a href="#783" id="783">783</a>
-<a href="#784" id="784">784</a>
-<a href="#785" id="785">785</a>
-<a href="#786" id="786">786</a>
-<a href="#787" id="787">787</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(dead_code)]
 
 </span><span class="kw">use crate</span>::{plutus_script::PlutusScript, untyped_plutus::datum_to_uplc_plutus_data};
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>ogmios_client::{
-	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse},
+	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, QueryLedgerState},
+	query_network::QueryNetwork,
 	transactions::OgmiosBudget,
 	types::{OgmiosUtxo, OgmiosValue},
 };
@@ -981,12 +972,26 @@
 	</span><span class="kw">pub</span>(<span class="kw">crate</span>) payment_key: PrivateKey,
 	<span class="doccomment">/// Used to pay for the transaction fees and uncovered transaction inputs
 	/// and as source of collateral inputs
-	</span><span class="kw">pub</span>(<span class="kw">crate</span>) payment_utxos: Vec&lt;OgmiosUtxo&gt;,
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) payment_key_utxos: Vec&lt;OgmiosUtxo&gt;,
 	<span class="kw">pub</span>(<span class="kw">crate</span>) network: NetworkIdKind,
 	<span class="kw">pub</span>(<span class="kw">crate</span>) protocol_parameters: ProtocolParametersResponse,
 }
 
 <span class="kw">impl </span>TransactionContext {
+	<span class="doccomment">/// Gets `TransactionContext`, having UTXOs for the given payment key and the network configuration,
+	/// required to perform most of the partner-chains smart contract operations.
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>for_payment_key&lt;C: QueryLedgerState + QueryNetwork&gt;(
+		payment_signing_key: [u8; <span class="number">32</span>],
+		client: <span class="kw-2">&amp;</span>C,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;TransactionContext, anyhow::Error&gt; {
+		<span class="kw">let </span>payment_key = PrivateKey::from_normal_bytes(<span class="kw-2">&amp;</span>payment_signing_key)<span class="question-mark">?</span>;
+		<span class="kw">let </span>network = client.shelley_genesis_configuration().<span class="kw">await</span><span class="question-mark">?</span>.network.to_csl();
+		<span class="kw">let </span>protocol_parameters = client.query_protocol_parameters().<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let </span>payment_address = key_hash_address(<span class="kw-2">&amp;</span>payment_key.to_public().hash(), network);
+		<span class="kw">let </span>payment_key_utxos = client.query_utxos(<span class="kw-2">&amp;</span>[payment_address.to_bech32(<span class="prelude-val">None</span>)<span class="question-mark">?</span>]).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(TransactionContext { payment_key, payment_key_utxos, network, protocol_parameters })
+	}
+
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>payment_key_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Ed25519KeyHash {
 		<span class="self">self</span>.payment_key.to_public().hash()
 	}
@@ -995,7 +1000,7 @@
 		key_hash_address(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key.to_public().hash(), <span class="self">self</span>.network)
 	}
 
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>sign(<span class="kw-2">&amp;</span><span class="self">self</span>, tx: Transaction) -&gt; Transaction {
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>sign(<span class="kw-2">&amp;</span><span class="self">self</span>, tx: <span class="kw-2">&amp;</span>Transaction) -&gt; Transaction {
 		<span class="kw">let </span>tx_hash: [u8; <span class="number">32</span>] = sidechain_domain::crypto::blake2b(tx.body().to_bytes().as_ref());
 		<span class="kw">let </span>signature = <span class="self">self</span>.payment_key.sign(<span class="kw-2">&amp;</span>tx_hash);
 		<span class="kw">let </span><span class="kw-2">mut </span>witness_set = tx.witness_set();
@@ -1124,7 +1129,7 @@
 		ctx: <span class="kw-2">&amp;</span>TransactionContext,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;Transaction, JsError&gt; {
 		<span class="kw">fn </span>max_possible_collaterals(ctx: <span class="kw-2">&amp;</span>TransactionContext) -&gt; Vec&lt;OgmiosUtxo&gt; {
-			<span class="kw">let </span><span class="kw-2">mut </span>utxos = ctx.payment_utxos.clone();
+			<span class="kw">let </span><span class="kw-2">mut </span>utxos = ctx.payment_key_utxos.clone();
 			utxos.sort_by(|a, b| b.value.lovelace.cmp(<span class="kw-2">&amp;</span>a.value.lovelace));
 			<span class="kw">let </span>max_inputs = ctx.protocol_parameters.max_collateral_inputs;
 			utxos
@@ -1141,7 +1146,7 @@
 			builder.add_required_signer(<span class="kw-2">&amp;</span>ctx.payment_key_hash());
 			<span class="kw">if </span>collateral_inputs.is_empty() {
 				builder.add_inputs_from_and_change(
-					<span class="kw-2">&amp;</span>ctx.payment_utxos.to_csl()<span class="question-mark">?</span>,
+					<span class="kw-2">&amp;</span>ctx.payment_key_utxos.to_csl()<span class="question-mark">?</span>,
 					CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
 					<span class="kw-2">&amp;</span>ChangeConfig::new(<span class="kw-2">&amp;</span>key_hash_address(<span class="kw-2">&amp;</span>ctx.payment_key_hash(), ctx.network)),
 				)<span class="question-mark">?</span>;
@@ -1150,7 +1155,7 @@
 				builder.set_script_data_hash(<span class="kw-2">&amp;</span>[<span class="number">0u8</span>; <span class="number">32</span>].into());
 				<span class="comment">// Fake script script data hash is required for proper fee computation
 				</span>builder.add_inputs_from_and_change_with_collateral_return(
-					<span class="kw-2">&amp;</span>ctx.payment_utxos.to_csl()<span class="question-mark">?</span>,
+					<span class="kw-2">&amp;</span>ctx.payment_key_utxos.to_csl()<span class="question-mark">?</span>,
 					CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
 					<span class="kw-2">&amp;</span>ChangeConfig::new(<span class="kw-2">&amp;</span>key_hash_address(<span class="kw-2">&amp;</span>ctx.payment_key_hash(), ctx.network)),
 					<span class="kw-2">&amp;</span>ctx.protocol_parameters.collateral_percentage.into(),
@@ -1238,13 +1243,12 @@
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use </span><span class="kw">super</span>::payment_address;
 	<span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
-	<span class="kw">use </span>cardano_serialization_lib::LanguageKind::PlutusV2;
-	<span class="kw">use </span>cardano_serialization_lib::{AssetName, Language, NetworkIdKind};
+	<span class="kw">use </span><span class="kw">crate</span>::test_values::protocol_parameters;
+	<span class="kw">use </span>cardano_serialization_lib::{AssetName, Language, LanguageKind::PlutusV2, NetworkIdKind};
 	<span class="kw">use </span>hex_literal::hex;
 	<span class="kw">use </span>ogmios_client::{
-		query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, ScriptExecutionPrices},
 		transactions::OgmiosBudget,
-		types::{Asset, OgmiosBytesSize, OgmiosValue},
+		types::{Asset, OgmiosValue},
 	};
 
 	<span class="attr">#[test]
@@ -1274,7 +1278,7 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>linear_fee_test() {
-		<span class="kw">let </span>fee = <span class="kw">super</span>::linear_fee(<span class="kw-2">&amp;</span>test_protocol_parameters());
+		<span class="kw">let </span>fee = <span class="kw">super</span>::linear_fee(<span class="kw-2">&amp;</span>protocol_parameters());
 		<span class="macro">assert_eq!</span>(fee.constant(), <span class="number">155381u32</span>.into());
 		<span class="macro">assert_eq!</span>(fee.coefficient(), <span class="number">44u32</span>.into());
 	}
@@ -1333,8 +1337,7 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>convert_cost_models_test() {
-		<span class="kw">let </span>cost_models =
-			<span class="kw">super</span>::convert_cost_models(<span class="kw-2">&amp;</span>test_protocol_parameters().plutus_cost_models);
+		<span class="kw">let </span>cost_models = <span class="kw">super</span>::convert_cost_models(<span class="kw-2">&amp;</span>protocol_parameters().plutus_cost_models);
 		<span class="macro">assert_eq!</span>(cost_models.keys().len(), <span class="number">3</span>);
 		<span class="macro">assert_eq!</span>(
 			cost_models
@@ -1374,29 +1377,6 @@
 		<span class="macro">assert_eq!</span>(ex_units.mem(), <span class="number">1000u64</span>.into());
 		<span class="macro">assert_eq!</span>(ex_units.steps(), <span class="number">2000u64</span>.into());
 	}
-
-	<span class="kw">fn </span>test_protocol_parameters() -&gt; ProtocolParametersResponse {
-		ProtocolParametersResponse {
-			min_fee_coefficient: <span class="number">44</span>,
-			min_fee_constant: OgmiosValue::new_lovelace(<span class="number">155381</span>),
-			stake_pool_deposit: OgmiosValue::new_lovelace(<span class="number">500000000</span>),
-			stake_credential_deposit: OgmiosValue::new_lovelace(<span class="number">2000000</span>),
-			max_value_size: OgmiosBytesSize { bytes: <span class="number">5000 </span>},
-			max_transaction_size: OgmiosBytesSize { bytes: <span class="number">16384 </span>},
-			min_utxo_deposit_coefficient: <span class="number">4310</span>,
-			script_execution_prices: ScriptExecutionPrices {
-				memory: fraction::Ratio::new_raw(<span class="number">577</span>, <span class="number">10000</span>),
-				cpu: fraction::Ratio::new_raw(<span class="number">721</span>, <span class="number">10000000</span>),
-			},
-			plutus_cost_models: PlutusCostModels {
-				plutus_v1: <span class="macro">vec!</span>[<span class="number">898148</span>, <span class="number">53384111</span>, <span class="number">14333</span>],
-				plutus_v2: <span class="macro">vec!</span>[<span class="number">43053543</span>, <span class="number">10</span>],
-				plutus_v3: <span class="macro">vec!</span>[-<span class="number">900</span>, <span class="number">166917843</span>],
-			},
-			max_collateral_inputs: <span class="number">3</span>,
-			collateral_percentage: <span class="number">150</span>,
-		}
-	}
 }
 
 <span class="attr">#[cfg(test)]
@@ -1422,7 +1402,7 @@
 	<span class="kw">fn </span>multi_asset_transaction_balancing_test(payment_utxos: Vec&lt;OgmiosUtxo&gt;) {
 		<span class="kw">let </span>ctx = TransactionContext {
 			payment_key: payment_key(),
-			payment_utxos: payment_utxos.clone(),
+			payment_key_utxos: payment_utxos.clone(),
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
 		};
@@ -1452,7 +1432,7 @@
 	<span class="kw">fn </span>ada_only_transaction_balancing_test(payment_utxos: Vec&lt;OgmiosUtxo&gt;) {
 		<span class="kw">let </span>ctx = TransactionContext {
 			payment_key: payment_key(),
-			payment_utxos: payment_utxos.clone(),
+			payment_key_utxos: payment_utxos.clone(),
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
 		};
