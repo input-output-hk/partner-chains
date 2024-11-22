@@ -2,7 +2,7 @@ use super::{run_init_governance, transaction::*};
 use crate::csl::OgmiosUtxoExt;
 use crate::test_values::protocol_parameters;
 use crate::{csl::TransactionContext, ogmios_mock::MockOgmiosClient};
-use cardano_serialization_lib::{Address, ExUnits, NetworkIdKind, PrivateKey};
+use cardano_serialization_lib::{ExUnits, NetworkIdKind, PrivateKey};
 use hex_literal::*;
 use ogmios_client::transactions::{
 	OgmiosBudget, OgmiosEvaluateTransactionResponse, SubmitTransactionResponse,
@@ -157,7 +157,7 @@ async fn transaction_run() {
 	let budget = OgmiosBudget { memory: 100, cpu: 200 };
 	let mock_client = MockOgmiosClient::new()
 		.with_protocol_parameters(protocol_parameters())
-		.with_utxos(&test_address_bech32(), vec![genesis_utxo(), payment_utxo()])
+		.with_utxos(vec![genesis_utxo(), payment_utxo()])
 		.with_evaluate_result(vec![OgmiosEvaluateTransactionResponse {
 			budget,
 			..Default::default()
@@ -183,7 +183,7 @@ fn genesis_utxo() -> OgmiosUtxo {
 		},
 		index: 1,
 		value: OgmiosValue::new_lovelace(10000),
-		address: test_address().to_bech32(None).unwrap(),
+		address: test_address_bech32(),
 
 		..Default::default()
 	}
@@ -220,15 +220,12 @@ fn payment_utxo() -> OgmiosUtxo {
 			lovelace: 9922945937,
 			native_tokens: [([1; 28], vec![Asset { name: vec![], amount: 1 }])].into(),
 		},
-		address: test_address().to_bech32(None).unwrap(),
+		address: test_address_bech32(),
 
 		..OgmiosUtxo::default()
 	}
 }
 
-fn test_address() -> Address {
-	Address::from_bech32(&test_address_bech32()).unwrap()
-}
 fn test_address_bech32() -> String {
 	"addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw".into()
 }

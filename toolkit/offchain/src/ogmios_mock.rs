@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use ogmios_client::{
 	query_ledger_state::{ProtocolParametersResponse, QueryLedgerState},
 	query_network::{QueryNetwork, ShelleyGenesisConfigurationResponse},
@@ -10,7 +8,7 @@ use ogmios_client::{
 #[derive(Clone, Default, Debug)]
 pub struct MockOgmiosClient {
 	shelley_config: ShelleyGenesisConfigurationResponse,
-	utxos: HashMap<String, Vec<OgmiosUtxo>>,
+	utxos: Vec<OgmiosUtxo>,
 	protocol_parameters: ProtocolParametersResponse,
 	evaluate_result: Option<Vec<OgmiosEvaluateTransactionResponse>>,
 	submit_result: Option<SubmitTransactionResponse>,
@@ -21,9 +19,10 @@ impl MockOgmiosClient {
 		Self::default()
 	}
 
-	pub fn with_utxos(mut self, address: &str, utxos: Vec<OgmiosUtxo>) -> Self {
-		self.utxos.insert(address.to_string(), utxos);
-		self
+	pub fn with_utxos(self, utxos: Vec<OgmiosUtxo>) -> Self {
+		let mut current_utxos = self.utxos;
+		current_utxos.extend(utxos);
+		Self { utxos: current_utxos, ..self }
 	}
 
 	pub fn with_protocol_parameters(self, protocol_parameters: ProtocolParametersResponse) -> Self {
@@ -84,10 +83,11 @@ impl QueryLedgerState for MockOgmiosClient {
 		&self,
 		addresses: &[String],
 	) -> Result<Vec<ogmios_client::types::OgmiosUtxo>, ogmios_client::OgmiosClientError> {
-		Ok(addresses
+		Ok(self
+			.utxos
 			.iter()
-			.flat_map(|address| self.utxos.get(address).cloned())
-			.flatten()
+			.filter(|utxo| addresses.contains(&utxo.address))
+			.cloned()
 			.collect())
 	}
 
