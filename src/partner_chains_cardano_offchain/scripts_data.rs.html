@@ -260,6 +260,17 @@
 <a href="#260" id="260">260</a>
 <a href="#261" id="261">261</a>
 <a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{csl::NetworkTypeExt, plutus_script::PlutusScript, OffchainError};
 <span class="kw">use </span>cardano_serialization_lib::{LanguageKind::PlutusV2, NetworkIdKind};
 <span class="kw">use </span>ogmios_client::query_network::QueryNetwork;
@@ -346,19 +357,13 @@
 		PlutusV2,
 	)<span class="question-mark">?
 	</span>.apply_uplc_data(version_oracle_policy_data.clone())<span class="question-mark">?</span>;
-	<span class="kw">let </span>permissioned_candidates_validator =
-		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_VALIDATOR, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(genesis_utxo)<span class="question-mark">?
-			</span>.apply_data(version_oracle_policy.clone())<span class="question-mark">?</span>;
+	<span class="kw">let </span>(permissioned_candidates_validator, permissioned_candidates_policy) =
+		permissioned_candidates_scripts(genesis_utxo, network)<span class="question-mark">?</span>;
+
 	<span class="kw">let </span>reserve_validator =
 		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, PlutusV2)<span class="question-mark">?
 			</span>.apply_uplc_data(version_oracle_policy_data.clone())<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>permissioned_candidates_policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_POLICY, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(genesis_utxo)<span class="question-mark">?
-			</span>.apply_data(version_oracle_policy.clone())<span class="question-mark">?
-			</span>.apply_uplc_data(permissioned_candidates_validator.address_data(network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 	<span class="kw">let </span>governance_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, PlutusV2)<span class="question-mark">?</span>.apply_uplc_data(
 			multisig_governance_policy_configuration(MainchainAddressHash::from_vkey([<span class="number">0u8</span>; <span class="number">32</span>])),
@@ -429,6 +434,23 @@
 			</span>.apply_data(version_oracle_policy.clone())<span class="question-mark">?
 			</span>.apply_uplc_data(d_parameter_validator.address_data(network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>((d_parameter_validator, d_parameter_policy))
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>permissioned_candidates_scripts(
+	genesis_utxo: UtxoId,
+	network: NetworkIdKind,
+) -&gt; <span class="prelude-ty">Result</span>&lt;(PlutusScript, PlutusScript), anyhow::Error&gt; {
+	<span class="kw">let </span>(<span class="kw">_</span>, version_oracle_policy, <span class="kw">_</span>) = version_oracle(genesis_utxo, network)<span class="question-mark">?</span>;
+	<span class="kw">let </span>validator =
+		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_VALIDATOR, PlutusV2)<span class="question-mark">?
+			</span>.apply_data(genesis_utxo)<span class="question-mark">?
+			</span>.apply_data(version_oracle_policy.clone())<span class="question-mark">?</span>;
+	<span class="kw">let </span>policy =
+		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_POLICY, PlutusV2)<span class="question-mark">?
+			</span>.apply_data(genesis_utxo)<span class="question-mark">?
+			</span>.apply_data(version_oracle_policy.clone())<span class="question-mark">?
+			</span>.apply_uplc_data(validator.address_data(network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>((validator, policy))
 }
 
 <span class="comment">// Returns the simplest MultiSig policy configuration plutus data:

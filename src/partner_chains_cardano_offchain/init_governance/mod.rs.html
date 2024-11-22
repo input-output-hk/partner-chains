@@ -84,7 +84,7 @@
 <a href="#84" id="84">84</a>
 <a href="#85" id="85">85</a>
 <a href="#86" id="86">86</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::{key_hash_address, NetworkTypeExt};
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::{get_first_validator_budget, key_hash_address, NetworkTypeExt};
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>ogmios_client::{
@@ -151,7 +151,7 @@
 	<span class="macro">println!</span>(<span class="string">"{}"</span>, unsigned_transaction.to_json()<span class="question-mark">?</span>);
 
 	<span class="kw">let </span>all_costs = client.evaluate_transaction(<span class="kw-2">&amp;</span>unsigned_transaction.to_bytes()).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="kw">let </span>cost = <span class="kw">crate</span>::csl::convert_ex_units(<span class="kw-2">&amp;</span>all_costs.first().unwrap().budget);
+	<span class="kw">let </span>cost = get_first_validator_budget(all_costs)<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>unsigned_transaction = transaction::init_governance_transaction(
 		raw_scripts::MULTI_SIG_POLICY,

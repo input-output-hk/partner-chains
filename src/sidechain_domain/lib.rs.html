@@ -967,7 +967,7 @@
 	}
 }
 
-<span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo)]
+<span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, PartialOrd, Ord)]
 #[byte_string(debug, hex_serialize, hex_deserialize, as_ref)]
 </span><span class="kw">pub struct </span>SidechainPublicKey(<span class="kw">pub </span>Vec&lt;u8&gt;);
 
@@ -1259,7 +1259,7 @@
 	}
 }
 
-<span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
+<span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord)]
 #[byte_string(debug, hex_serialize, hex_deserialize)]
 </span><span class="kw">pub struct </span>AuraPublicKey(<span class="kw">pub </span>Vec&lt;u8&gt;);
 <span class="kw">impl </span>AuraPublicKey {
@@ -1268,7 +1268,7 @@
 	}
 }
 
-<span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
+<span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord)]
 #[byte_string(debug, hex_serialize, hex_deserialize)]
 </span><span class="kw">pub struct </span>GrandpaPublicKey(<span class="kw">pub </span>Vec&lt;u8&gt;);
 <span class="kw">impl </span>GrandpaPublicKey {
@@ -1284,7 +1284,7 @@
 	<span class="kw">pub </span>num_registered_candidates: u16,
 }
 
-<span class="attr">#[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo)]
+<span class="attr">#[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord)]
 </span><span class="kw">pub struct </span>PermissionedCandidateData {
 	<span class="kw">pub </span>sidechain_public_key: SidechainPublicKey,
 	<span class="kw">pub </span>aura_public_key: AuraPublicKey,

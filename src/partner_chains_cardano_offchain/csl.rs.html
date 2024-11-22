@@ -775,6 +775,16 @@
 <a href="#775" id="775">775</a>
 <a href="#776" id="776">776</a>
 <a href="#777" id="777">777</a>
+<a href="#778" id="778">778</a>
+<a href="#779" id="779">779</a>
+<a href="#780" id="780">780</a>
+<a href="#781" id="781">781</a>
+<a href="#782" id="782">782</a>
+<a href="#783" id="783">783</a>
+<a href="#784" id="784">784</a>
+<a href="#785" id="785">785</a>
+<a href="#786" id="786">786</a>
+<a href="#787" id="787">787</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(dead_code)]
 
 </span><span class="kw">use crate</span>::{plutus_script::PlutusScript, untyped_plutus::datum_to_uplc_plutus_data};
@@ -782,7 +792,7 @@
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, QueryLedgerState},
 	query_network::QueryNetwork,
-	transactions::OgmiosBudget,
+	transactions::{OgmiosBudget, OgmiosEvaluateTransactionResponse},
 	types::{OgmiosUtxo, OgmiosValue},
 };
 <span class="kw">use </span>sidechain_domain::NetworkType;
@@ -915,6 +925,16 @@
 	mdls.insert(<span class="kw-2">&amp;</span>Language::new_plutus_v2(), <span class="kw-2">&amp;</span>CostModel::from(m.plutus_v2.to_owned()));
 	mdls.insert(<span class="kw-2">&amp;</span>Language::new_plutus_v3(), <span class="kw-2">&amp;</span>CostModel::from(m.plutus_v3.to_owned()));
 	mdls
+}
+
+<span class="doccomment">/// Returns the budget of the first validator as [`ExUnits`]
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_first_validator_budget(
+	validators_budgets: Vec&lt;OgmiosEvaluateTransactionResponse&gt;,
+) -&gt; <span class="prelude-ty">Result</span>&lt;ExUnits, JsError&gt; {
+	<span class="kw">let </span>validator_budget = validators_budgets.first().ok_or_else(|| {
+		JsError::from_str(<span class="string">"Internal error: cannot use evaluateTransaction response"</span>)
+	})<span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>(convert_ex_units(<span class="kw-2">&amp;</span>validator_budget.budget))
 }
 
 <span class="doccomment">/// Conversion of ogmios-client budget to CSL execution units

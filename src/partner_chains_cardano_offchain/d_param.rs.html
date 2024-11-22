@@ -550,22 +550,6 @@
 <a href="#550" id="550">550</a>
 <a href="#551" id="551">551</a>
 <a href="#552" id="552">552</a>
-<a href="#553" id="553">553</a>
-<a href="#554" id="554">554</a>
-<a href="#555" id="555">555</a>
-<a href="#556" id="556">556</a>
-<a href="#557" id="557">557</a>
-<a href="#558" id="558">558</a>
-<a href="#559" id="559">559</a>
-<a href="#560" id="560">560</a>
-<a href="#561" id="561">561</a>
-<a href="#562" id="562">562</a>
-<a href="#563" id="563">563</a>
-<a href="#564" id="564">564</a>
-<a href="#565" id="565">565</a>
-<a href="#566" id="566">566</a>
-<a href="#567" id="567">567</a>
-<a href="#568" id="568">568</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(dead_code)]
 </span><span class="doccomment">//!
 //! D-parameter is stored on chain in an UTXO at the D-parameter validator address.
@@ -575,7 +559,7 @@
 //! `datum` field being `[num_permissioned_candidates, num_registered_candidates]`.
 
 </span><span class="kw">use </span><span class="kw">crate</span>::csl::{
-	convert_ex_units, get_builder_config, InputsBuilderExt, TransactionBuilderExt,
+	get_builder_config, get_first_validator_budget, InputsBuilderExt, TransactionBuilderExt,
 	TransactionContext,
 };
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
@@ -584,8 +568,8 @@
 	ExUnits, JsError, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
 };
 <span class="kw">use </span>ogmios_client::{
-	query_ledger_state::QueryLedgerState, query_network::QueryNetwork,
-	transactions::OgmiosEvaluateTransactionResponse, transactions::Transactions, types::OgmiosUtxo,
+	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
+	types::OgmiosUtxo,
 };
 <span class="kw">use </span>partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
 <span class="kw">use </span>sidechain_domain::{DParameter, McTxHash, UtxoId};
@@ -661,7 +645,7 @@
 			hex::encode(tx.to_bytes())
 		)
 	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>mint_witness_ex_units = get_mint_ex_units(evaluate_response)<span class="question-mark">?</span>;
+	<span class="kw">let </span>mint_witness_ex_units = get_first_validator_budget(evaluate_response)<span class="question-mark">?</span>;
 	<span class="kw">let </span>tx = mint_d_param_token_tx(validator, policy, d_parameter, <span class="kw-2">&amp;</span>ctx, mint_witness_ex_units)<span class="question-mark">?</span>;
 	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
 	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
@@ -674,14 +658,6 @@
 	<span class="macro">log::info!</span>(<span class="string">"Transaction submitted: {}"</span>, hex::encode(res.transaction.id));
 	<span class="comment">// TODO: await for the transaction output to be visible in validator wallet
 	</span><span class="prelude-val">Ok</span>(McTxHash(res.transaction.id))
-}
-
-<span class="kw">fn </span>get_mint_ex_units(response: Vec&lt;OgmiosEvaluateTransactionResponse&gt;) -&gt; anyhow::Result&lt;ExUnits&gt; {
-	<span class="comment">// For mint transaction we know there is a single item to evaluate, so matching is trivial.
-	</span><span class="kw">let </span>validator_and_budget = response
-		.first()
-		.ok_or_else(|| <span class="macro">anyhow!</span>(<span class="string">"Internal error: cannot use evaluateTransaction response"</span>))<span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(convert_ex_units(<span class="kw-2">&amp;</span>validator_and_budget.budget))
 }
 
 <span class="kw">async fn </span>update_d_param&lt;C&gt;(
@@ -704,7 +680,7 @@
 			hex::encode(tx.to_bytes())
 		)
 	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>spend_ex_units = get_spend_ex_units(evaluate_response)<span class="question-mark">?</span>;
+	<span class="kw">let </span>spend_ex_units = get_first_validator_budget(evaluate_response)<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>tx = update_d_param_tx(validator, policy, d_parameter, current_utxo, <span class="kw-2">&amp;</span>ctx, spend_ex_units)<span class="question-mark">?</span>;
 	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
@@ -718,14 +694,6 @@
 	<span class="macro">log::info!</span>(<span class="string">"Update D-parameter transaction submitted: {}"</span>, hex::encode(res.transaction.id));
 	<span class="comment">// TODO: await for the transaction output to be visible in validator wallet
 	</span><span class="prelude-val">Ok</span>(McTxHash(res.transaction.id))
-}
-
-<span class="kw">fn </span>get_spend_ex_units(costs: Vec&lt;OgmiosEvaluateTransactionResponse&gt;) -&gt; anyhow::Result&lt;ExUnits&gt; {
-	<span class="comment">// For spend transaction we know there is a single item to evaluate, so matching is trivial.
-	</span><span class="kw">let </span>cost = costs
-		.first()
-		.ok_or_else(|| <span class="macro">anyhow!</span>(<span class="string">"Internal error: cannot use evaluateTransaction response"</span>))<span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(convert_ex_units(<span class="kw-2">&amp;</span>cost.budget))
 }
 
 <span class="kw">fn </span>mint_d_param_token_tx(
