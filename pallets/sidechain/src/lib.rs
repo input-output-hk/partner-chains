@@ -104,7 +104,12 @@ pub mod pallet {
 		}
 	}
 
-	/// Priviledged extrinsic to atomically upgrade runtime code and vital sidechain parameters
+	/// Priviledged extrinsic to atomically upgrade runtime code and vital sidechain parameters.
+	///
+	/// Parameters:
+	/// - `code`: WASM of the new runtime
+	/// - `genesis_utxo`: genesis utxo burned by the `init-governance` transaction
+	/// - `main_chain_scripts`: policies and addresses obtained from the `addresses` for the `genesis_utxo`
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(1)]
@@ -113,13 +118,13 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			code: sp_std::vec::Vec<u8>,
 			genesis_utxo: UtxoId,
-			selection_main_chain_scripts: T::MainChainScripts,
+			main_chain_scripts: T::MainChainScripts,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin.clone())?;
 
 			GenesisUtxo::<T>::set(genesis_utxo);
 
-			T::set_main_chain_scripts(selection_main_chain_scripts);
+			T::set_main_chain_scripts(main_chain_scripts);
 
 			// Runtime upgrade must be last because it consumes the rest of the block time
 			frame_system::Pallet::<T>::set_code(origin, code)
