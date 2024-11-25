@@ -7,7 +7,10 @@ use crate::config::ServiceConfig;
 use crate::io::IOContext;
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
-use sidechain_domain::{PolicyId, UtxoId};
+use sidechain_domain::{MainchainPrivateKey, MainchainAddressHash, PolicyId, UtxoId};
+use partner_chains_cardano_offchain::init_governance::run_init_governance;
+use crate::{config::config_fields, *};
+use cardano_serialization_lib::*;
 
 pub fn prepare_main_chain_config<C: IOContext>(
 	context: &C,
@@ -17,6 +20,17 @@ pub fn prepare_main_chain_config<C: IOContext>(
 	let cardano_parameteres = prepare_cardano_params(ogmios_config, context)?;
 	cardano_parameteres.save(context);
 	set_up_cardano_addresses(context, genesis_utxo, ogmios_config)?;
+	
+	println!("{}", ogmios_config.hostname.clone());
+	let ogmios_url = format!("http://{}:{}", ogmios_config.hostname, ogmios_config.port );
+	let client = jsonrpsee::http_client::HttpClient::builder().build(ogmios_url)?;
+	let (payment_key, governance_authority) = get_private_key_and_key_hash(context)?;
+
+	let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
+	runtime
+		.block_on(run_init_governance(governance_authority, payment_key, Some(genesis_utxo), client))
+		.map_err(|e| anyhow::anyhow!("Offchain call failed: {e:?}!"))?;
+
 	if INITIAL_PERMISSIONED_CANDIDATES.load_from_file(context).is_none() {
 		INITIAL_PERMISSIONED_CANDIDATES.save_to_file(&vec![], context)
 	}
@@ -24,6 +38,34 @@ pub fn prepare_main_chain_config<C: IOContext>(
 	context.eprint(OUTRO);
 	Ok(())
 }
+
+fn get_private_key_and_key_hash<C: IOContext>(context: &C) -> Result<(MainchainPrivateKey, MainchainAddressHash), anyhow::Error> {
+	let cardano_payment_verification_key_file =
+		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
+			.prompt_with_default_from_file_and_save(context);
+	let bytes = cardano_key::get_key_bytes_from_file(&cardano_payment_verification_key_file, context)?;
+
+	let csl_private_key = PrivateKey::from_normal_bytes(&bytes)?;
+	let csl_public_key_hash = csl_private_key.to_public().hash().to_bytes().try_into().expect("aaa");
+	
+
+	Ok((MainchainPrivateKey(bytes), MainchainAddressHash(csl_public_key_hash)))
+}
+
+fn derive_address<C: IOContext>(
+	context: &C,
+	cardano_network: NetworkType,
+) -> Result<String, anyhow::Error> {
+	let cardano_payment_verification_key_file =
+		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
+			.prompt_with_default_from_file_and_save(context);
+	let key_bytes: [u8; 32] =
+		cardano_key::get_key_bytes_from_file(&cardano_payment_verification_key_file, context)?;
+	let address =
+		partner_chains_cardano_offchain::csl::payment_address(&key_bytes, cardano_network.to_csl());
+	address.to_bech32(None).map_err(|e| anyhow!(e.to_string()))
+}
+
 
 fn set_up_cardano_addresses<C: IOContext>(
 	context: &C,
