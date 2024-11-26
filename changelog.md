@@ -12,6 +12,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Added
 
+* Added `upgrade_and_set_addresses` extrinsic that atomically upgrades runtime and changes chain configuration.
+
 # v1.3.0
 
 ## Changed

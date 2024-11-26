@@ -10,8 +10,9 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::BlockNumberFor;
-	use sidechain_domain::{ScEpochNumber, ScSlotNumber};
+	use frame_system::ensure_root;
+	use frame_system::pallet_prelude::*;
+	use sidechain_domain::{ScEpochNumber, ScSlotNumber, UtxoId};
 	use sp_sidechain::OnNewEpoch;
 
 	#[pallet::pallet]
@@ -29,6 +30,10 @@ pub mod pallet {
 			+ MaxEncodedLen
 			+ Clone
 			+ Default;
+
+		type MainChainScripts: Member + Parameter + MaybeSerializeDeserialize + MaxEncodedLen;
+
+		fn set_main_chain_scripts(scripts: Self::MainChainScripts);
 	}
 
 	#[pallet::storage]
@@ -40,6 +45,9 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub(super) type SidechainParams<T: Config> = StorageValue<_, T::SidechainParams, ValueQuery>;
+
+	#[pallet::storage]
+	pub(super) type GenesisUtxo<T: Config> = StorageValue<_, UtxoId, ValueQuery>;
 
 	impl<T: Config> Pallet<T> {
 		pub fn sidechain_params() -> T::SidechainParams {
@@ -93,6 +101,33 @@ pub mod pallet {
 				},
 				_ => T::DbWeight::get().reads_writes(2, 0),
 			}
+		}
+	}
+
+	/// Priviledged extrinsic to atomically upgrade runtime code and vital sidechain parameters.
+	///
+	/// Parameters:
+	/// - `code`: WASM of the new runtime
+	/// - `genesis_utxo`: genesis utxo burned by the `init-governance` transaction
+	/// - `main_chain_scripts`: policies and addresses obtained from the `addresses` for the `genesis_utxo`
+	#[pallet::call]
+	impl<T: Config> Pallet<T> {
+		#[pallet::call_index(1)]
+		#[pallet::weight((0, DispatchClass::Normal))]
+		pub fn upgrade_and_set_addresses(
+			origin: OriginFor<T>,
+			code: sp_std::vec::Vec<u8>,
+			genesis_utxo: UtxoId,
+			main_chain_scripts: T::MainChainScripts,
+		) -> DispatchResultWithPostInfo {
+			ensure_root(origin.clone())?;
+
+			GenesisUtxo::<T>::set(genesis_utxo);
+
+			T::set_main_chain_scripts(main_chain_scripts);
+
+			// Runtime upgrade must be last because it consumes the rest of the block time
+			frame_system::Pallet::<T>::set_code(origin, code)
 		}
 	}
 }

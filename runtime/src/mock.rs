@@ -139,6 +139,10 @@ impl pallet_sidechain::Config for Test {
 	}
 	type OnNewEpoch = ();
 	type SidechainParams = chain_params::SidechainParams;
+
+	type MainChainScripts = ();
+
+	fn set_main_chain_scripts(scripts: Self::MainChainScripts) {}
 }
 
 impl pallet_session_validator_management::Config for Test {

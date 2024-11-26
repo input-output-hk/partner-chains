@@ -98,6 +98,10 @@ impl pallet::Config for Test {
 	}
 	type OnNewEpoch = Mock;
 	type SidechainParams = u64;
+
+	type MainChainScripts = ();
+
+	fn set_main_chain_scripts(scripts: Self::MainChainScripts) {}
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

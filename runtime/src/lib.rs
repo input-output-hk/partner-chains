@@ -200,7 +200,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 116,
+	spec_version: 117,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -472,6 +472,12 @@ impl pallet_sidechain::Config for Runtime {
 	type OnNewEpoch = LogBeneficiaries;
 
 	type SidechainParams = chain_params::SidechainParams;
+
+	type MainChainScripts = sp_session_validator_management::MainChainScripts;
+
+	fn set_main_chain_scripts(scripts: Self::MainChainScripts) {
+		pallet_session_validator_management::MainChainScriptsConfiguration::<Runtime>::set(scripts);
+	}
 }
 
 pub type BeneficiaryId = sidechain_domain::byte_string::SizedByteString<32>;
