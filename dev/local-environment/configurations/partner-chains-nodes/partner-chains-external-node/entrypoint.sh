@@ -25,7 +25,7 @@ case "$ACCOUNT" in
     echo "NATIVE_TOKEN_ASSET_NAME=$NATIVE_TOKEN_ASSET_NAME"
     export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS=$(cat /shared/ILLIQUID_SUPPLY_VALIDATOR_ADDRESS)
     echo "ILLIQUID_SUPPLY_VALIDATOR_ADDRESS=$ILLIQUID_SUPPLY_VALIDATOR_ADDRESS"
-    echo "pc-contracts-cli configuration complete. Starting node..."
+    echo "pc-contracts-cli configuration complete. Starting node as Alice..."
     /usr/local/bin/partner-chains-node \
       --alice \
       --chain=/shared/chain-spec.json \
@@ -48,7 +48,7 @@ case "$ACCOUNT" in
     export NATIVE_TOKEN_ASSET_NAME="5043546f6b656e44656d6f"
     export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
     export SIDECHAIN_BLOCK_BENEFICIARY="0000000000000000000000000000000000000000000000000000000000000002"
-    echo "Starting node..."
+    echo "Starting node as Bob..."
     /usr/local/bin/partner-chains-node \
       --bob \
       --chain=/chain-spec.json \
@@ -72,7 +72,7 @@ case "$ACCOUNT" in
     export NATIVE_TOKEN_ASSET_NAME="5043546f6b656e44656d6f"
     export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
     export SIDECHAIN_BLOCK_BENEFICIARY="0000000000000000000000000000000000000000000000000000000000000003"
-    echo "Starting node..."
+    echo "Starting node as Charlie..."
     /usr/local/bin/partner-chains-node \
       --charlie \
       --chain=/chain-spec.json \
@@ -96,7 +96,7 @@ case "$ACCOUNT" in
     export NATIVE_TOKEN_ASSET_NAME="5043546f6b656e44656d6f"
     export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
     export SIDECHAIN_BLOCK_BENEFICIARY="0000000000000000000000000000000000000000000000000000000000000004"
-    echo "Starting node..."
+    echo "Starting node as Dave..."
     /usr/local/bin/partner-chains-node \
       --chain=/chain-spec.json \
       --dave \
@@ -120,10 +120,10 @@ case "$ACCOUNT" in
     export NATIVE_TOKEN_ASSET_NAME="5043546f6b656e44656d6f"
     export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
     export SIDECHAIN_BLOCK_BENEFICIARY="0000000000000000000000000000000000000000000000000000000000000005"
-    echo "Starting node..."
+    echo "Starting node as Eve..."
     /usr/local/bin/partner-chains-node \
       --chain=/chain-spec.json \
-      --validator \
+      --eve \
       --node-key=0000000000000000000000000000000000000000000000000000000000000005 \
       --bootnodes="/ip4/$ALICE_IP/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp" \
       --base-path=/data \
@@ -145,10 +145,10 @@ case "$ACCOUNT" in
     export NATIVE_TOKEN_ASSET_NAME="5043546f6b656e44656d6f"
     export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
     export SIDECHAIN_BLOCK_BENEFICIARY="0000000000000000000000000000000000000000000000000000000000000006"
-    echo "Starting node..."
+    echo "Starting node as Ferdie..."
     /usr/local/bin/partner-chains-node \
       --chain=/chain-spec.json \
-      --validator \
+      --ferdie \
       --node-key=0000000000000000000000000000000000000000000000000000000000000006 \
       --bootnodes="/ip4/$ALICE_IP/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp" \
       --base-path=/data \
