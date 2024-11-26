@@ -47,6 +47,7 @@ case "$ACCOUNT" in
     export NATIVE_TOKEN_POLICY_ID="ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"
     export NATIVE_TOKEN_ASSET_NAME="5043546f6b656e44656d6f"
     export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
+    export SIDECHAIN_BLOCK_BENEFICIARY="0000000000000000000000000000000000000000000000000000000000000002"
     echo "Starting node..."
     /usr/local/bin/partner-chains-node \
       --bob \
@@ -70,6 +71,7 @@ case "$ACCOUNT" in
     export NATIVE_TOKEN_POLICY_ID="ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"
     export NATIVE_TOKEN_ASSET_NAME="5043546f6b656e44656d6f"
     export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
+    export SIDECHAIN_BLOCK_BENEFICIARY="0000000000000000000000000000000000000000000000000000000000000003"
     echo "Starting node..."
     /usr/local/bin/partner-chains-node \
       --charlie \
@@ -93,6 +95,7 @@ case "$ACCOUNT" in
     export NATIVE_TOKEN_POLICY_ID="ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"
     export NATIVE_TOKEN_ASSET_NAME="5043546f6b656e44656d6f"
     export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
+    export SIDECHAIN_BLOCK_BENEFICIARY="0000000000000000000000000000000000000000000000000000000000000004"
     echo "Starting node..."
     /usr/local/bin/partner-chains-node \
       --chain=/chain-spec.json \
@@ -116,6 +119,7 @@ case "$ACCOUNT" in
     export NATIVE_TOKEN_POLICY_ID="ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"
     export NATIVE_TOKEN_ASSET_NAME="5043546f6b656e44656d6f"
     export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
+    export SIDECHAIN_BLOCK_BENEFICIARY="0000000000000000000000000000000000000000000000000000000000000005"
     echo "Starting node..."
     /usr/local/bin/partner-chains-node \
       --chain=/chain-spec.json \
@@ -140,6 +144,7 @@ case "$ACCOUNT" in
     export NATIVE_TOKEN_POLICY_ID="ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"
     export NATIVE_TOKEN_ASSET_NAME="5043546f6b656e44656d6f"
     export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
+    export SIDECHAIN_BLOCK_BENEFICIARY="0000000000000000000000000000000000000000000000000000000000000006"
     echo "Starting node..."
     /usr/local/bin/partner-chains-node \
       --chain=/chain-spec.json \
