@@ -388,8 +388,8 @@ choose_deployment_option() {
     echo "1) Include only Cardano testnet"
     echo "2) Include Cardano testnet with Kupo and Ogmios"
     echo "3) Include Cardano testnet, Kupo, Ogmios, DB-Sync and Postgres"
-    echo "4) Deploy a single Partner Chains node with network_mode: "host" for external connections + full MC stack"
-    echo "5) Deploy only a single Partner Chains node with network_mode: "host" for external connections with no MC stack (will use ALICE_IP for postgres connection)"
+    echo "4) Deploy Partner Chains node on host networking configured with full MC stack"
+    echo "5) Deploy single Partner Chains node with no MC stack"
     read -p "Enter your choice (1/2/3/4): " deployment_option
   else
     deployment_option=0
