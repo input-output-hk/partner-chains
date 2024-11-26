@@ -20,7 +20,7 @@ pub fn prepare_main_chain_config<C: IOContext>(
 	let cardano_parameteres = prepare_cardano_params(ogmios_config, context)?;
 	cardano_parameteres.save(context);
 	set_up_cardano_addresses(context, genesis_utxo, ogmios_config)?;
-	
+
 	println!("{}", ogmios_config.hostname.clone());
 	let ogmios_url = format!("http://{}:{}", ogmios_config.hostname, ogmios_config.port );
 	let client = jsonrpsee::http_client::HttpClient::builder().build(ogmios_url)?;
@@ -40,32 +40,16 @@ pub fn prepare_main_chain_config<C: IOContext>(
 }
 
 fn get_private_key_and_key_hash<C: IOContext>(context: &C) -> Result<(MainchainPrivateKey, MainchainAddressHash), anyhow::Error> {
-	let cardano_payment_verification_key_file =
-		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
+	let cardano_signig_key_file =
+		config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
 			.prompt_with_default_from_file_and_save(context);
-	let bytes = cardano_key::get_key_bytes_from_file(&cardano_payment_verification_key_file, context)?;
+	let bytes = cardano_key::get_key_bytes_from_file(&cardano_signig_key_file, context)?;
 
 	let csl_private_key = PrivateKey::from_normal_bytes(&bytes)?;
 	let csl_public_key_hash = csl_private_key.to_public().hash().to_bytes().try_into().expect("aaa");
-	
 
 	Ok((MainchainPrivateKey(bytes), MainchainAddressHash(csl_public_key_hash)))
 }
-
-fn derive_address<C: IOContext>(
-	context: &C,
-	cardano_network: NetworkType,
-) -> Result<String, anyhow::Error> {
-	let cardano_payment_verification_key_file =
-		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
-			.prompt_with_default_from_file_and_save(context);
-	let key_bytes: [u8; 32] =
-		cardano_key::get_key_bytes_from_file(&cardano_payment_verification_key_file, context)?;
-	let address =
-		partner_chains_cardano_offchain::csl::payment_address(&key_bytes, cardano_network.to_csl());
-	address.to_bech32(None).map_err(|e| anyhow!(e.to_string()))
-}
-
 
 fn set_up_cardano_addresses<C: IOContext>(
 	context: &C,
