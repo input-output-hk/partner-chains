@@ -6,6 +6,7 @@ license = "Apache-2.0"
 
 [dependencies]
 clap = { workspace = true }
+env_logger = { workspace = true }
 sidechain-domain = { workspace = true }
 partner-chains-cardano-offchain = { workspace = true }
 hex = { workspace = true }

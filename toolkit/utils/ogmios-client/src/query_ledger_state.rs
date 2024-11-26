@@ -1,7 +1,7 @@
 //! Queries that start with `queryLedgerState/`.
 
 use crate::{
-	types::{OgmiosBytesSize, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
+	types::{OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
 	ByNameParamsBuilder, OgmiosClient, OgmiosClientError, OgmiosParams,
 };
 use serde::Deserialize;
@@ -20,6 +20,20 @@ pub trait QueryLedgerState {
 	async fn query_protocol_parameters(
 		&self,
 	) -> Result<ProtocolParametersResponse, OgmiosClientError>;
+}
+
+pub trait QueryUtxoByUtxoId {
+	#[allow(async_fn_in_trait)]
+	/// Query for a single UTXO by transaction hash and output index.
+	/// Warning: it does not return datum, datumHash, nor script fields.
+	/// Parameters:
+	/// - `tx`: query for output of this transaction
+	/// - `index`: query for output with this index
+	async fn query_utxo_by_id(
+		&self,
+		tx: OgmiosTx,
+		index: u16,
+	) -> Result<Option<OgmiosUtxo>, OgmiosClientError>;
 }
 
 impl<T: OgmiosClient> QueryLedgerState for T {
@@ -41,6 +55,24 @@ impl<T: OgmiosClient> QueryLedgerState for T {
 	) -> Result<ProtocolParametersResponse, OgmiosClientError> {
 		self.request("queryLedgerState/protocolParameters", OgmiosParams::empty_by_name())
 			.await
+	}
+}
+
+impl<T: OgmiosClient> QueryUtxoByUtxoId for T {
+	async fn query_utxo_by_id(
+		&self,
+		tx: OgmiosTx,
+		index: u16,
+	) -> Result<Option<OgmiosUtxo>, OgmiosClientError> {
+		let reference = serde_json::json!({
+			"transaction": {"id": hex::encode(tx.id)},
+			"index": index,
+		});
+		let params =
+			ByNameParamsBuilder::new().insert("outputReferences", vec![reference])?.build();
+		// Expect at most one output, because it is a single output reference query.
+		let utxos: Vec<OgmiosUtxo> = self.request("queryLedgerState/utxo", params).await?;
+		Ok(utxos.first().cloned())
 	}
 }
 

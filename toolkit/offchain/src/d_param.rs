@@ -103,9 +103,9 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	log::info!("Transaction submitted: {}", hex::encode(res.transaction.id));
-	// TODO: await for the transaction output to be visible in validator wallet
-	Ok(McTxHash(res.transaction.id))
+	let tx_id = McTxHash(res.transaction.id);
+	log::info!("Transaction submitted: {}", hex::encode(tx_id.0));
+	Ok(tx_id)
 }
 
 async fn update_d_param<C>(
@@ -139,9 +139,9 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	log::info!("Update D-parameter transaction submitted: {}", hex::encode(res.transaction.id));
-	// TODO: await for the transaction output to be visible in validator wallet
-	Ok(McTxHash(res.transaction.id))
+	let tx_id = McTxHash(res.transaction.id);
+	log::info!("Update D-parameter transaction submitted: {}", hex::encode(tx_id.0));
+	Ok(tx_id)
 }
 
 fn mint_d_param_token_tx(

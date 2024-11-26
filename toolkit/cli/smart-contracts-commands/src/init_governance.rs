@@ -1,5 +1,7 @@
 use jsonrpsee::http_client::HttpClient;
-use partner_chains_cardano_offchain::init_governance::run_init_governance;
+use partner_chains_cardano_offchain::{
+	await_tx::FixedDelayRetries, init_governance::run_init_governance,
+};
 use sidechain_domain::{MainchainAddressHash, UtxoId};
 
 use crate::read_private_key_from_file;
@@ -21,9 +23,14 @@ impl InitGovernanceCmd {
 		let payment_key = read_private_key_from_file(&self.payment_key_file)?;
 		let client = HttpClient::builder().build(self.common_arguments.ogmios_host)?;
 
-		run_init_governance(self.governance_authority, payment_key, self.genesis_utxo, &client)
-			.await?;
-
+		run_init_governance(
+			self.governance_authority,
+			payment_key,
+			self.genesis_utxo,
+			&client,
+			FixedDelayRetries::two_minutes(),
+		)
+		.await?;
 		Ok(())
 	}
 }

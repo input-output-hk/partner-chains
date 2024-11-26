@@ -137,8 +137,9 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	log::info!("Transaction submitted: {}", hex::encode(res.transaction.id));
-	Ok(McTxHash(res.transaction.id))
+	let tx_id = McTxHash(res.transaction.id);
+	log::info!("Transaction submitted: {}", hex::encode(tx_id.0));
+	Ok(tx_id)
 }
 
 async fn update_permissioned_candidates<C>(
@@ -186,11 +187,9 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	log::info!(
-		"Update permissioned candidates transaction submitted: {}",
-		hex::encode(res.transaction.id)
-	);
-	Ok(McTxHash(res.transaction.id))
+	let tx_id = McTxHash(res.transaction.id);
+	log::info!("Update permissioned candidates transaction submitted: {}", hex::encode(tx_id.0));
+	Ok(tx_id)
 }
 
 fn mint_permissioned_candidates_token_tx(

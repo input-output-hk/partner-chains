@@ -1,5 +1,7 @@
-use super::{run_init_governance, transaction::*};
+use super::transaction::*;
+use crate::await_tx::mock::ImmediateSuccess;
 use crate::csl::OgmiosUtxoExt;
+use crate::init_governance::run_init_governance;
 use crate::test_values::protocol_parameters;
 use crate::{csl::TransactionContext, ogmios_mock::MockOgmiosClient};
 use cardano_serialization_lib::{ExUnits, NetworkIdKind, PrivateKey};
@@ -169,6 +171,7 @@ async fn transaction_run() {
 		payment_key_domain(),
 		Some(genesis_utxo().to_domain()),
 		&mock_client,
+		ImmediateSuccess,
 	)
 	.await
 	.expect("Should succeed");

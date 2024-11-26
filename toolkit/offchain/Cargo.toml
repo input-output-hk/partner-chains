@@ -33,8 +33,10 @@ secp256k1 = { workspace = true, features = ["std"] }
 sidechain-domain = { workspace = true, features = ["std"] }
 uplc = { workspace = true }
 tokio = { workspace = true }
+tokio-retry = { workspace = true }
 
 [dev-dependencies]
+env_logger = { workspace = true }
 fraction = { workspace = true, features = ["with-decimal", "with-serde-support"] }
 proptest = { workspace = true }
 time = { workspace = true, features = ["std", "serde", "parsing"] }
