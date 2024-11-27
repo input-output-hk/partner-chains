@@ -437,7 +437,9 @@ create_docker_compose() {
         cat ./modules/pc-contracts-cli.txt >> docker-compose.yml
         echo -e "Setting ACCOUNT to alice in .env, change before starting if needed.\n"
         echo "ACCOUNT=alice" >> .env
-        echo "ALICE_IP=127.0.0.1" >> .env
+        echo "ALICE_IP=127.0.0
+        echo "MC__FIRST_EPOCH_TIMESTAMP_MILLIS=" >> .env
+1" >> .env
         ;;
       5)
         echo -e "Including only external partner chain node.\n"
