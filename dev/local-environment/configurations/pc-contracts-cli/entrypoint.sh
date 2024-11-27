@@ -226,6 +226,34 @@ jq '.genesis.runtimeGenesis.config.session.initialValidators = [
              "aura": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
              "grandpa": "5DbKjhNLpqX3zqZdNBc9BGb4fHU1cRBaDhJUskrvkwfraDi6"
          }
+     ],
+     [
+         "5CtLD1M83vbXs42XPYyvygkUg6BxxMRBAiNqg1XD5qe7iW8g",
+         {
+             "aura": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
+             "grandpa": "5ECTwv6cZ5nJQPk6tWfaTrEk8YH2L7X1VT4EL5Tx2ikfFwb7"
+         }
+     ],
+     [
+         "5GCnMRtSQq8i2fShXieQThcRyLakPyVPcTLm65Bcii4NAp5n",
+         {
+             "aura": "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMawC",
+             "grandpa": "5Ck2miBfCe1JQ4cY3NDsXyBaD6EcsgiVmEFTWwqNSs25XDEq"
+         }
+     ],
+     [
+         "5HkJ124K2dtXW3EFE8oUw9bkgiJMrSh4E9gNiiSCU2TpEjTS",
+         {
+             "aura": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
+             "grandpa": "5E2BmpVFzYGd386XRCZ76cDePMB3sfbZp5ZKGUsrG1m6gomN"
+         }
+     ],
+     [
+         "5FNCx8ADL1CMooRiF6HTWDAVQXwL82bBR5hhWSftxm92vXUX",
+         {
+             "aura": "5D4oNr3wasgzxt7KdoHBjnxUthfoM93kWMav63aoYmPHfkBW",
+             "grandpa": "5HiqMVXd4GKStFri5WbcwvVCen8gkpkropifh2oRVQhnLnBi"
+         }
      ]
  ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
@@ -250,6 +278,34 @@ jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities
          {
              "aura": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
              "grandpa": "5DbKjhNLpqX3zqZdNBc9BGb4fHU1cRBaDhJUskrvkwfraDi6"
+         }
+     ],
+     [
+         "5CtLD1M83vbXs42XPYyvygkUg6BxxMRBAiNqg1XD5qe7iW8g",
+         {
+             "aura": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
+             "grandpa": "5ECTwv6cZ5nJQPk6tWfaTrEk8YH2L7X1VT4EL5Tx2ikfFwb7"
+         }
+     ],
+     [
+         "5GCnMRtSQq8i2fShXieQThcRyLakPyVPcTLm65Bcii4NAp5n",
+         {
+             "aura": "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMawC",
+             "grandpa": "5Ck2miBfCe1JQ4cY3NDsXyBaD6EcsgiVmEFTWwqNSs25XDEq"
+         }
+     ],
+     [
+         "5HkJ124K2dtXW3EFE8oUw9bkgiJMrSh4E9gNiiSCU2TpEjTS",
+         {
+             "aura": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
+             "grandpa": "5E2BmpVFzYGd386XRCZ76cDePMB3sfbZp5ZKGUsrG1m6gomN"
+         }
+     ],
+     [
+         "5FNCx8ADL1CMooRiF6HTWDAVQXwL82bBR5hhWSftxm92vXUX",
+         {
+             "aura": "5D4oNr3wasgzxt7KdoHBjnxUthfoM93kWMav63aoYmPHfkBW",
+             "grandpa": "5HiqMVXd4GKStFri5WbcwvVCen8gkpkropifh2oRVQhnLnBi"
          }
      ]
  ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json

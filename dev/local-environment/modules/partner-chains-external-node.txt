@@ -25,6 +25,7 @@
       MINIMUM_MC_EPOCH: "0"
       ACCOUNT: ${ACCOUNT} 
       ALICE_IP: ${ALICE_IP}
+      MC__FIRST_EPOCH_TIMESTAMP_MILLIS: ${MC__FIRST_EPOCH_TIMESTAMP_MILLIS}
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
     ports:
       - "30333:30333"
