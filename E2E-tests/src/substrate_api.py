@@ -283,8 +283,25 @@ class SubstrateApi(BlockchainApi):
             logger.error(f"Could not parse cardano key file: {e}")
         return key.strip()
 
-    #################
+    def update_d_param(self, permissioned_candidates_count, registered_candidates_count):
+        signing_key = self.config.nodes_config.governance_authority.mainchain_key
 
+        result = self.sidechain_main_cli.update_d_param(
+            permissioned_candidates_count,
+            registered_candidates_count,
+            signing_key,
+        )
+
+        if result:
+            logger.info(
+                f"Update of D Param of P: {permissioned_candidates_count} and R: {registered_candidates_count} "
+                f" was successful and will take effect in 2 epochs "
+            )
+            return True, result
+        else:
+            return False, None
+
+    #################
     def register_candidate(self, candidate_name):
         keys_files = self.config.nodes_config.nodes[candidate_name].keys_files
         # Get a UTxO from payment account
