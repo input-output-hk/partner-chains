@@ -442,7 +442,8 @@ create_docker_compose() {
       5)
         echo -e "Including only external partner chain node.\n"
         cat ./modules/partner-chains-external-node.txt >> docker-compose.yml
-        echo -e "Setting ACCOUNT to bob in .env, change before starting and populate ALICE_IP and MC__FIRST_EPOCH_TIMESTAMP_MILLIS\n"
+        echo -e "Setting ACCOUNT to bob in .env, change before starting, and populate ALICE_IP and MC__FIRST_EPOCH_TIMESTAMP_MILLIS\n"
+        echo -e "Ensure the latest chain-spec.json has been copied into local directory from Alice node\n"
         echo "ACCOUNT=bob" >> .env
         echo "ALICE_IP=" >> .env
         echo "MC__FIRST_EPOCH_TIMESTAMP_MILLIS=" >> .env
