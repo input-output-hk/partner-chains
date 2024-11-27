@@ -133,12 +133,38 @@ bob_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/sidech
 bob_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/aura.vkey)
 bob_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/grandpa.vkey)
 
+charlie_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-3/keys/sidechain.vkey)
+charlie_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-3/keys/aura.vkey)
+charlie_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-3/keys/grandpa.vkey)
+
+dave_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/sidechain.vkey)
+dave_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/aura.vkey)
+dave_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/grandpa.vkey)
+
+eve_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/sidechain.vkey)
+eve_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/aura.vkey)
+eve_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-5/keys/grandpa.vkey)
+
+# Have removed 0x prepend from these to match the above 
+ferdie_sidechain_vkey="0291f1217d5a04cb83312ee3d88a6e6b33284e053e6ccfc3a90339a0299d12967c"
+ferdie_aura_vkey="1cbd2d43530a44705ad088af313e18f80b53ef16b36177cd4b77b846f2a5f07c"
+ferdie_grandpa_vkey="568cb4a574c6d178feb39c27dfc8b3f789e5f5423e19c71633c748b9acf086b5"
+
+greg_sidechain_vkey="02dacce90fca29ca80404d9b4e8ff3d9dabd03def6a82e412acb2ad04dd734dbfc"
+greg_aura_vkey="2c4ed1038f6e4131c21b6b89885ed232c5b81bae09009376e9079cc8aa518a1c"
+greg_grandpa_vkey="fa41bacb202b0529288b05af1b324f85fe561091c2d29d9df1df37c3aa687c23"
+
 ./pc-contracts-cli update-permissioned-candidates \
     --network testnet \
     --kupo-host kupo --kupo-port $KUPO_PORT \
     --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
     --add-candidate $alice_sidechain_vkey:$alice_aura_vkey:$alice_grandpa_vkey \
     --add-candidate $bob_sidechain_vkey:$bob_aura_vkey:$bob_grandpa_vkey \
+    --add-candidate $charlie_sidechain_vkey:$charlie_aura_vkey:$charlie_grandpa_vkey \
+    --add-candidate $dave_sidechain_vkey:$dave_aura_vkey:$dave_grandpa_vkey \
+    --add-candidate $eve_sidechain_vkey:$eve_aura_vkey:$eve_grandpa_vkey \
+    --add-candidate $ferdie_sidechain_vkey:$ferdie_aura_vkey:$ferdie_grandpa_vkey \
+    --add-candidate $greg_sidechain_vkey:$greg_aura_vkey:$greg_grandpa_vkey \
     --genesis-committee-hash-utxo $GENESIS_COMMITTEE_UTXO \
     --governance-authority $GOVERNANCE_AUTHORITY \
     --threshold-numerator $THRESHOLD_NUMERATOR \
