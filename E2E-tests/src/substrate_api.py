@@ -286,7 +286,7 @@ class SubstrateApi(BlockchainApi):
     def update_d_param(self, permissioned_candidates_count, registered_candidates_count):
         signing_key = self.config.nodes_config.governance_authority.mainchain_key
 
-        result = self.sidechain_main_cli.update_d_param(
+        result = self.pc_contracts_cli.update_d_param(
             permissioned_candidates_count,
             registered_candidates_count,
             signing_key,
