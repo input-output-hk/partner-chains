@@ -77,6 +77,31 @@ class SidechainMainCli:
             raise e
         return signatures
 
+    def update_d_param(
+        self,
+        permissioned_candidates_count,
+        registered_candidates_count,
+        payment_key,
+    ):
+        update_d_param_cmd = (
+            f"{self.cli} update-d-parameter "
+            f"--genesis-utxo {self.config.genesis_utxo} "
+            f"--d-parameter-permissioned-candidates-count {permissioned_candidates_count} "
+            f"--d-parameter-registered-candidates-count {registered_candidates_count} "
+            f"--payment-signing-key-file {payment_key} "
+            f"--ogmios-host {self.config.stack_config.ogmios_host} "
+            f"--ogmios-port {self.config.stack_config.ogmios_port} "
+            f"--kupo-host {self.config.stack_config.kupo_host} "
+            f"--kupo-port {self.config.stack_config.kupo_port} "
+            f"--network {self.config.nodes_config.network}"
+        )
+
+        result = self.run_command.run(update_d_param_cmd)
+
+        response = self.handle_response(result)
+
+        return response
+
     def register_candidate(self, signatures: RegistrationSignatures, payment_key, spo_public_key, registration_utxo):
         register_cmd = (
             f"{self.cli} register "
