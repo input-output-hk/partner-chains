@@ -3,7 +3,7 @@ import pytest
 from src.blockchain_api import BlockchainApi
 from src.db.models import PermissionedCandidates
 from sqlalchemy.orm import Session
-from src.sidechain_main_cli import SidechainMainCliException
+from src.pc_contracts_cli import PCContractsCliException
 from pytest import mark
 
 
@@ -24,7 +24,7 @@ def test_add_permissioned_candidate(permissioned_candidate: PermissionedCandidat
     logging.info(f"Adding permissioned candidate {permissioned_candidate.name}")
     try:
         result, next_status_epoch = api.add_permissioned_candidate(permissioned_candidate.name)
-    except SidechainMainCliException as e:
+    except PCContractsCliException as e:
         if 'InvalidCLIParams "New candidates list is the same as the currently stored list."' in str(e):
             pytest.skip("Skipping test because the candidate is already in the list")
         else:

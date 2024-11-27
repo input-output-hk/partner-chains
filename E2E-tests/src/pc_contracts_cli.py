@@ -5,8 +5,8 @@ import json
 import logging as logger
 
 
-class SidechainMainCliException(Exception):
-    def __init__(self, message="Sidechain Main CLI error occurred", status_code=None):
+class PCContractsCliException(Exception):
+    def __init__(self, message="PC Contracts CLI error occurred", status_code=None):
         self.message = message
         self.status_code = status_code
         super().__init__(self.message)
@@ -31,18 +31,17 @@ class RegistrationSignatures:
         self.sidechain_signature = sidechain_signature
 
 
-class SidechainMainCli:
+class PCContractsCli:
     def __init__(self, config: ApiConfig, cardano_cli: CardanoCli):
-        sidechain_main_cli_config = config.stack_config.tools["sidechain_main_cli"]
-        self.cli = sidechain_main_cli_config.cli
-        self.generate_signatures_cli = config.stack_config.tools["generate_signatures_cli"].cli
+        pc_contracts_cli_config = config.stack_config.tools["pc_contracts_cli"]
+        self.cli = pc_contracts_cli_config.cli
         self.cardano_cli = cardano_cli
         self.config = config
-        self.run_command = RunnerFactory.get_runner(sidechain_main_cli_config.ssh, sidechain_main_cli_config.shell)
+        self.run_command = RunnerFactory.get_runner(pc_contracts_cli_config.ssh, pc_contracts_cli_config.shell)
 
     def get_signatures(
         self,
-        sidechain_registration_utxo,
+        partner_chain_registration_utxo,
         spo_signing_key,
         sidechain_signing_key,
         aura_verification_key,
@@ -53,7 +52,7 @@ class SidechainMainCli:
             f"--genesis-utxo {self.config.genesis_utxo} "
             f"--mainchain-signing-key {spo_signing_key} "
             f"--sidechain-signing-key {sidechain_signing_key} "
-            f"--registration-utxo {sidechain_registration_utxo}"
+            f"--registration-utxo {partner_chain_registration_utxo}"
         )
 
         result = self.run_command.run(get_signatures_cmd)
@@ -250,7 +249,7 @@ class SidechainMainCli:
     def handle_response(self, result):
         if result.stderr and not result.stdout:
             logger.error(f"Error during command: {result.stderr}")
-            raise SidechainMainCliException(result.stderr)
+            raise PCContractsCliException(result.stderr)
 
         try:
             json_part = self._get_json_string(result.stdout)
@@ -258,7 +257,7 @@ class SidechainMainCli:
             return response
         except json.JSONDecodeError:
             logger.error(f"Could not parse response of command: {result}")
-            raise SidechainMainCliException(result.stdout)
+            raise PCContractsCliException(result.stdout)
 
     def _get_json_string(self, s):
         start = s.find('{')

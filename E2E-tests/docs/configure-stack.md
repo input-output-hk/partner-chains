@@ -14,7 +14,7 @@ As a user, you can choose where to place those services and binaries: on the tes
 In case of the test runner machine (and local execution), you will need to update the binaries path in `stack_config.tools` for `<env>-stack.json` file in the `config/<blockchain>/<env>` folder:
 
 - `cardano_cli`
-- `sidechain_main_cli`
+- `pc_contracts_cli`
 - `generate_signatures_cli`
 
 ## Set up stack on remote host
@@ -30,7 +30,7 @@ To configure the stack, you will need to do the following:
    3. Set `stack_config.ssh.host_keys_path` to the file added at step 3
    4. Set `stack_config.ssh.private_key_path` to the file added at step 4
 6. Set `tools.cardano_cli.cli` to the path to the cardano-cli binary. Do not forget about exposing CARDANO_NODE_SOCKET_PATH. E.g. `export CARDANO_NODE_SOCKET_PATH=/ipc/node.socket && /cardano-cli`
-7. Set `tools.sidechain_main_cli` to the path to the `partner-chains-smart-contracts` binary
+7. Set `tools.pc_contracts_cli` to the path to the `partner-chains-smart-contracts` binary
 8. Set `tools.generate_signatures_cli` to the path to the `partner-chains-node` binary
 
 ### `<env>-stack.json` template:
@@ -52,7 +52,7 @@ To configure the stack, you will need to do the following:
                 "cli": <STRING>,
                 "ssh": "${stack_config[ssh]}"
             },
-            "sidechain_main_cli": {
+            "pc_contracts_cli": {
                 "cli": <STRING>,
                 "ssh": "${stack_config[ssh]}"
             },
