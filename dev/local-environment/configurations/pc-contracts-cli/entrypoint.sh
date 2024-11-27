@@ -281,28 +281,28 @@ jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities
          }
      ],
      [
-         "5CtLD1M83vbXs42XPYyvygkUg6BxxMRBAiNqg1XD5qe7iW8g",
+         "KWCycezxoy7MWTTqA5JDKxJbqVMiNfqThKFhb5dTfsbNaGbrW",
          {
              "aura": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
              "grandpa": "5ECTwv6cZ5nJQPk6tWfaTrEk8YH2L7X1VT4EL5Tx2ikfFwb7"
          }
      ],
      [
-         "5GCnMRtSQq8i2fShXieQThcRyLakPyVPcTLm65Bcii4NAp5n",
+         "KW9NRAHXUXhBnu3j1AGzUXs2AuiEPCSjYe8oGan44nwvH5qKp",
          {
              "aura": "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMawC",
              "grandpa": "5Ck2miBfCe1JQ4cY3NDsXyBaD6EcsgiVmEFTWwqNSs25XDEq"
          }
      ],
      [
-         "5HkJ124K2dtXW3EFE8oUw9bkgiJMrSh4E9gNiiSCU2TpEjTS",
+         "KW6E1KGr5pqJ9Trgt7eAuA7d7mgpJPydiEDKc2h1aGTEEzYC1",
          {
              "aura": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
              "grandpa": "5E2BmpVFzYGd386XRCZ76cDePMB3sfbZp5ZKGUsrG1m6gomN"
          }
      ],
      [
-         "5FNCx8ADL1CMooRiF6HTWDAVQXwL82bBR5hhWSftxm92vXUX",
+         "KW7sY3xKHgGjYniWEMUXS4Ai3PPUKy6aBtRVfcCewCbMYtfCL",
          {
              "aura": "5D4oNr3wasgzxt7KdoHBjnxUthfoM93kWMav63aoYmPHfkBW",
              "grandpa": "5HiqMVXd4GKStFri5WbcwvVCen8gkpkropifh2oRVQhnLnBi"
