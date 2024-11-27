@@ -123,7 +123,7 @@ echo "Inserting D parameter..."
 echo "Successfully inserted D-parameter (P = 3, R = 2)!"
 
 # sidechain.vkey:aura.vkey:grandpa.vkey
-echo "Inserting permissioned candidates for Alice and Bob..."
+echo "Inserting permissioned candidates..."
 
 alice_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/sidechain.vkey)
 alice_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-1/keys/aura.vkey)
@@ -173,9 +173,9 @@ greg_grandpa_vkey="fa41bacb202b0529288b05af1b324f85fe561091c2d29d9df1df37c3aa687
     --payment-signing-key-file /keys/funded_address.skey
 
 if [ $? -eq 0 ]; then
-   echo "Permissioned candidates Alice and Bob inserted successfully!"
+   echo "Permissioned candidates inserted successfully!"
 else
-    echo "Permission candidates Alice and Bob failed to be added..."
+    echo "Permission candidates failed to be added..."
 fi
 
 echo "Inserting registered candidate Dave..."
