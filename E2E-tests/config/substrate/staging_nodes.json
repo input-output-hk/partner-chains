@@ -141,14 +141,6 @@
                 "lock": 817414141,
                 "send": 298945143
             }
-        },
-        "d_param_min": {
-            "permissioned_candidates_number": 6,
-            "trustless_candidates_number": 4
-        },
-        "d_param_max": {
-            "permissioned_candidates_number": 6,
-            "trustless_candidates_number": 4
         }
     }
 }

@@ -121,18 +121,6 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def update_d_param(self, permissioned_candidates_count: int, trustless_candidates_count: int) -> dict:
-        """
-        Update D parameter configuration for the sidechain
-        Arguments:
-            permissioned_candidates_count {int} -- Number of permissioned candidates
-            trustless_candidates_count {int} -- Number of trustless candidates
-        Returns:
-            (bool, json response) - True/False, and a json response from the sidechain main cli
-        """
-        pass
-
-    @abstractmethod
     def register_candidate(self, candidate_name: str) -> (bool, int):
         """
         Registers candidate to participate in a partner chain consensus protocol
