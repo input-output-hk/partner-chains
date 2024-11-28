@@ -8,7 +8,7 @@ use anyhow::anyhow;
 use cli_commands::registration_signatures::RegisterValidatorMessage;
 use cli_commands::signing::sc_public_key_and_signature_for_datum;
 use partner_chains_cardano_offchain::csl::NetworkTypeExt;
-use select_utxo::{filter_utxos, query_utxos, select_from_utxos, ValidUtxo};
+use select_utxo::{query_utxos, select_from_utxos};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::{NetworkType, SidechainPublicKey, UtxoId};
@@ -45,9 +45,7 @@ impl CmdRun for Register1Cmd {
 			pc_contracts_cli_resources::prompt_ogmios_configuration(context)?;
 		let utxo_query_result = query_utxos(context, &ogmios_configuration, &address)?;
 
-		let valid_utxos: Vec<ValidUtxo> = filter_utxos(utxo_query_result);
-
-		if valid_utxos.is_empty() {
+		if utxo_query_result.is_empty() {
 			context.eprint("⚠️ No UTXOs found for the given address");
 			context.eprint(
 				"The registering transaction requires at least one UTXO to be present at the address.",
@@ -56,7 +54,7 @@ impl CmdRun for Register1Cmd {
 		};
 
 		let input_utxo: UtxoId =
-			select_from_utxos(context, "Select UTXO to use for registration", valid_utxos)?;
+			select_from_utxos(context, "Select UTXO to use for registration", utxo_query_result)?;
 
 		context.print("Please do not spend this UTXO, it needs to be consumed by the registration transaction.");
 		context.print("");
