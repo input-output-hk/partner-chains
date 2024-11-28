@@ -27,7 +27,7 @@ pub fn prepare_main_chain_config<C: IOContext>(
 	let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 	runtime
 		.block_on(offchain.init_governance(governance_authority, payment_key, genesis_utxo))
-		.map_err(|e| anyhow::anyhow!("Offchain call failed: {e:?}!"))?;
+		.map_err(|e| anyhow::anyhow!("Governance initalization failed: {e:?}!"))?;
 
 	if INITIAL_PERMISSIONED_CANDIDATES.load_from_file(context).is_none() {
 		INITIAL_PERMISSIONED_CANDIDATES.save_to_file(&vec![], context)
