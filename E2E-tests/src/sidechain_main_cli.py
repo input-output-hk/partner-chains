@@ -152,58 +152,9 @@ class SidechainMainCli:
             logger.error(f"Wrong response format from deregister command: {response}")
             return None, None
 
-    def burn_tokens(self, recipient, amount, payment_key):
-        burn_cmd = (
-            f"{self.cli} burn-v1 "
-            f"--recipient {recipient} "
-            f"--amount {amount} "
-            f"--genesis-utxo {self.config.genesis_utxo} "
-            f"--payment-signing-key-file {payment_key} "
-            f"--ogmios-host {self.config.stack_config.ogmios_host} "
-            f"--ogmios-port {self.config.stack_config.ogmios_port} "
-            f"--kupo-host {self.config.stack_config.kupo_host} "
-            f"--kupo-port {self.config.stack_config.kupo_port} "
-            f"--network {self.config.nodes_config.network}"
-        )
-
-        result = self.run_command.run(burn_cmd, timeout=self.config.timeouts.burn_cmd)
-        response = self.handle_response(result)
-
-        if "endpoint" in response and "transactionId" in response and response["endpoint"] == "BurnActV1":
-            return response['transactionId']
-        else:
-            logger.error(f"Wrong response format from burn command: {response}")
-            return None
-
     def _calculate_registration_epoch(self):
         """Calculates main chain epoch in which a (de)registration will be processed by the sidechain module"""
         return self.cardano_cli.get_epoch() + 2
-
-    def claim_tokens(self, payment_key, combined_proof, distributed_set_utxo=None):
-        claim_cmd = (
-            f"{self.cli} claim-v1 "
-            f"--payment-signing-key-file {payment_key} "
-            f"--genesis-utxo {self.config.genesis_utxo} "
-            f"--ogmios-host {self.config.stack_config.ogmios_host} "
-            f"--ogmios-port {self.config.stack_config.ogmios_port} "
-            f"--kupo-host {self.config.stack_config.kupo_host} "
-            f"--kupo-port {self.config.stack_config.kupo_port} "
-            f"--combined-proof {combined_proof} "
-            f"--network {self.config.nodes_config.network}"
-        )
-
-        if distributed_set_utxo:
-            # Note the space in the beginning of the string
-            claim_cmd += f" --distributed-set-utxo {distributed_set_utxo}"
-
-        result = self.run_command.run(claim_cmd, timeout=self.config.timeouts.claim_cmd)
-        response = self.handle_response(result)
-
-        if "endpoint" in response and "transactionId" in response and response["endpoint"] == "ClaimActV1":
-            return True
-        else:
-            logger.error(f"Wrong response format from claim command: {response}")
-            return False
 
     def update_permissioned_candidates(self, governance_key, add_candidates_list, remove_candidates_list):
         update_candidates_cmd = (
