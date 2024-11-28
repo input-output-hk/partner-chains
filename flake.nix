@@ -23,10 +23,6 @@
     services-flake.url = "github:juspay/services-flake";
 
     # Partner Chains deps
-    smart-contracts = {
-      url = "github:input-output-hk/partner-chains-smart-contracts/v7.0.1";
-      flake = false;
-    };
     cardano-node = {
       url = "github:IntersectMBO/cardano-node/10.1.2";
       flake = false;

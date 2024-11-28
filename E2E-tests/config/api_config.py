@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from omegaconf import MISSING, SI
 from typing import Optional
+from src.partner_chain_rpc import DParam
 
 
 @dataclass
@@ -116,6 +117,8 @@ class NodesApiConfig:
     selected_node: str = MISSING
     node: Node = MISSING
     token_policy_id: str = MISSING
+    d_param_min: Optional[DParam] = None
+    d_param_max: Optional[DParam] = None
     active_transfer_account: TransferAccount = MISSING
     passive_transfer_account: TransferAccount = MISSING
     negative_test_transfer_account: TransferAccount = MISSING

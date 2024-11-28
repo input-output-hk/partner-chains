@@ -96,6 +96,14 @@
                 "lock": 817414140,
                 "send": 298945143
             }
+        },
+        "d_param_min": {
+            "permissioned_candidates_number": 2,
+            "trustless_candidates_number": 2
+        },
+        "d_param_max": {
+            "permissioned_candidates_number": 5,
+            "trustless_candidates_number": 5
         }
     },
     "block_encoding_suffix_grandpa": "3903",

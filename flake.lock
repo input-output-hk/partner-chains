@@ -232,8 +232,7 @@
         "nixpkgs": "nixpkgs",
         "ogmios": "ogmios",
         "process-compose": "process-compose",
-        "services-flake": "services-flake",
-        "smart-contracts": "smart-contracts"
+        "services-flake": "services-flake"
       }
     },
     "rust-analyzer-src": {
@@ -265,23 +264,6 @@
       "original": {
         "owner": "juspay",
         "repo": "services-flake",
-        "type": "github"
-      }
-    },
-    "smart-contracts": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1731596108,
-        "narHash": "sha256-MKmABReJpvrWvArccmHwsNtPhYvDkZMkQeVJjKG+3SU=",
-        "owner": "input-output-hk",
-        "repo": "partner-chains-smart-contracts",
-        "rev": "5f96807760b8e93eaf9661d72cef236700b3b616",
-        "type": "github"
-      },
-      "original": {
-        "owner": "input-output-hk",
-        "ref": "v7.0.1",
-        "repo": "partner-chains-smart-contracts",
         "type": "github"
       }
     }
