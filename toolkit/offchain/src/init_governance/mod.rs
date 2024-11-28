@@ -34,8 +34,8 @@ impl <T> InitGovernance for T where T: QueryLedgerState + Transactions + QueryNe
 	) -> Result<OgmiosTx, OffchainError> {
 		run_init_governance(governance_authority, payment_key, Some(genesis_utxo_id), self)
 			.await
-			.map_err(|_| {
-				OffchainError::InternalError("Init governance failed".into())
+			.map_err(|e| {
+				OffchainError::InternalError(e.to_string())
 		})
 	}
 }
