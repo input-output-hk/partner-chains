@@ -1,7 +1,7 @@
 
   partner-chains-node-1:
     container_name: partner-chains-node-1
-    image: ${PARTNER_CHAINS_NODE_IMAGE} 
+    image: ${PARTNER_CHAINS_NODE_IMAGE}
     network_mode: "host"
     platform: linux/amd64
     volumes:
@@ -14,7 +14,7 @@
       GENESIS_COMMITTEE_UTXO: "781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
       GOVERNANCE_AUTHORITY: "e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
       CARDANO_SECURITY_PARAMETER: "5"
-      CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
+      CARDANO_ACTIVE_SLOTS_COEFF: "0.8"
       MC__FIRST_EPOCH_NUMBER: "0"
       MC__FIRST_SLOT_NUMBER: "0"
       MC__EPOCH_DURATION_MILLIS: "120000"
