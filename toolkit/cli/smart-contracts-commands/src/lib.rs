@@ -6,6 +6,7 @@ use sidechain_domain::MainchainPrivateKey;
 
 pub mod get_scripts;
 pub mod init_governance;
+pub mod upsert_d_param;
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -14,6 +15,8 @@ pub enum SmartContractsCmd {
 	GetScripts(get_scripts::GetScripts),
 	/// Initialize Partner Chain governance
 	InitGovernance(init_governance::InitGovernanceCmd),
+	/// Insert or update the D-Param
+	UpsertDParam(upsert_d_param::UpsertDParam),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -30,6 +33,7 @@ impl SmartContractsCmd {
 		match self {
 			Self::InitGovernance(cmd) => cmd.execute().await,
 			Self::GetScripts(cmd) => cmd.execute().await,
+			Self::UpsertDParam(cmd) => cmd.execute().await,
 		}
 	}
 

@@ -1,8 +1,7 @@
 use jsonrpsee::http_client::HttpClient;
+use crate::read_private_key_from_file;
 use partner_chains_cardano_offchain::init_governance::run_init_governance;
 use sidechain_domain::{MainchainAddressHash, UtxoId};
-
-use crate::read_private_key_from_file;
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct InitGovernanceCmd {
