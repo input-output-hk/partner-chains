@@ -11,10 +11,11 @@ use std::{
 	process::Stdio,
 };
 use tempfile::{TempDir, TempPath};
+use partner_chains_cardano_offchain::init_governance::InitGovernance;
 
 pub trait IOContext {
 	/// It should implement all the required traits for offchain operations
-	type Offchain: GetScriptsData;
+	type Offchain: GetScriptsData + InitGovernance;
 
 	fn run_command(&self, cmd: &str) -> anyhow::Result<String>;
 	fn print(&self, msg: &str);

@@ -1,4 +1,4 @@
-use crate::csl::{get_first_validator_budget, key_hash_address, NetworkTypeExt};
+use crate::{csl::{get_first_validator_budget, key_hash_address, NetworkTypeExt}, OffchainError};
 use anyhow::anyhow;
 use cardano_serialization_lib::*;
 use ogmios_client::{
@@ -12,11 +12,39 @@ mod tests;
 
 pub(crate) mod transaction;
 
-pub async fn run_init_governance(
+
+pub trait InitGovernance {
+
+	#[allow(async_fn_in_trait)]
+	async fn init_governance(
+		&self,
+		governance_authority: MainchainAddressHash,
+		payment_key: MainchainPrivateKey,
+		genesis_utxo_id: UtxoId,
+	) -> Result<OgmiosTx, OffchainError>;
+}
+
+
+impl <T> InitGovernance for T where T: QueryLedgerState + Transactions + QueryNetwork {
+	async fn init_governance(
+		&self,
+		governance_authority: MainchainAddressHash,
+		payment_key: MainchainPrivateKey,
+		genesis_utxo_id: UtxoId,
+	) -> Result<OgmiosTx, OffchainError> {
+		run_init_governance(governance_authority, payment_key, Some(genesis_utxo_id), self)
+			.await
+			.map_err(|_| {
+				OffchainError::InternalError("Init governance failed".into())
+		})
+	}
+}
+
+pub async fn run_init_governance<T: QueryLedgerState + Transactions + QueryNetwork>(
 	governance_authority: MainchainAddressHash,
 	payment_key: MainchainPrivateKey,
 	genesis_utxo_id: Option<UtxoId>,
-	client: impl QueryLedgerState + Transactions + QueryNetwork,
+	client: &T,
 ) -> anyhow::Result<OgmiosTx> {
 	let payment_key = PrivateKey::from_normal_bytes(&payment_key.0)
 		.expect("MainchainPrivateKey is a valid PrivateKey");

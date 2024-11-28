@@ -1,9 +1,11 @@
+use ogmios_client::types::OgmiosTx;
+use partner_chains_cardano_offchain::init_governance::InitGovernance;
 use crate::io::IOContext;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData};
 use partner_chains_cardano_offchain::OffchainError;
 use pretty_assertions::assert_eq;
-use sidechain_domain::UtxoId;
+use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, UtxoId};
 use sp_core::offchain::Timestamp;
 use std::collections::HashMap;
 use std::panic::{catch_unwind, resume_unwind, UnwindSafe};
@@ -247,15 +249,36 @@ impl OffchainMocks {
 #[derive(Default, Clone)]
 pub struct OffchainMock {
 	pub scripts_data: HashMap<UtxoId, Result<ScriptsData, OffchainError>>,
+	pub init_governance: HashMap<(UtxoId, MainchainAddressHash, MainchainPrivateKey), Result<OgmiosTx, OffchainError>>,
 }
 
 impl OffchainMock {
-	pub(crate) fn new_with_scripts_data(
+	pub fn new() -> Self {
+		Self::default()
+	}
+
+	pub(crate) fn with_scripts_data(
+		self,
 		genesis_utxo: UtxoId,
 		scripts_data: Result<ScriptsData, OffchainError>,
 	) -> Self {
-		Self { scripts_data: vec![(genesis_utxo, scripts_data)].into_iter().collect() }
+		Self { scripts_data: vec![(genesis_utxo, scripts_data)].into_iter().collect(), ..self }
 	}
+
+	pub(crate) fn with_init_governance(
+		self,
+		genesis_utxo: UtxoId,
+		governance: MainchainAddressHash,
+		payment_key: MainchainPrivateKey,
+		result: Result<OgmiosTx, OffchainError>,
+	) -> Self {
+		Self {
+			init_governance: vec![((genesis_utxo, governance, payment_key), result)].into_iter().collect(),
+			..self
+		}
+	}
+
+
 }
 
 impl GetScriptsData for OffchainMock {
@@ -263,6 +286,22 @@ impl GetScriptsData for OffchainMock {
 		self.scripts_data.get(&genesis_utxo).cloned().unwrap_or_else(|| {
 			Err(OffchainError::InternalError("No mock for shelley_genesis_configuration".into()))
 		})
+	}
+}
+
+impl InitGovernance for OffchainMock {
+	async fn init_governance(
+		&self,
+		governance_authority: MainchainAddressHash,
+		payment_key: MainchainPrivateKey,
+		genesis_utxo_id: UtxoId,
+	) -> Result<OgmiosTx, OffchainError> {
+		self.init_governance
+			.get(&(genesis_utxo_id, governance_authority, payment_key))
+			.cloned()
+			.unwrap_or_else(|| {
+				Err(OffchainError::InternalError("No mock for init_governance".into()))
+			})
 	}
 }
 
