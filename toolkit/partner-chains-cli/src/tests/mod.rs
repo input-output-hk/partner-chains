@@ -1,7 +1,7 @@
-use ogmios_client::types::OgmiosTx;
-use partner_chains_cardano_offchain::init_governance::InitGovernance;
 use crate::io::IOContext;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse};
+use ogmios_client::types::OgmiosTx;
+use partner_chains_cardano_offchain::init_governance::InitGovernance;
 use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData};
 use partner_chains_cardano_offchain::OffchainError;
 use pretty_assertions::assert_eq;
@@ -249,7 +249,10 @@ impl OffchainMocks {
 #[derive(Default, Clone)]
 pub struct OffchainMock {
 	pub scripts_data: HashMap<UtxoId, Result<ScriptsData, OffchainError>>,
-	pub init_governance: HashMap<(UtxoId, MainchainAddressHash, MainchainPrivateKey), Result<OgmiosTx, OffchainError>>,
+	pub init_governance: HashMap<
+		(UtxoId, MainchainAddressHash, MainchainPrivateKey),
+		Result<OgmiosTx, OffchainError>,
+	>,
 }
 
 impl OffchainMock {
@@ -273,12 +276,12 @@ impl OffchainMock {
 		result: Result<OgmiosTx, OffchainError>,
 	) -> Self {
 		Self {
-			init_governance: vec![((genesis_utxo, governance, payment_key), result)].into_iter().collect(),
+			init_governance: vec![((genesis_utxo, governance, payment_key), result)]
+				.into_iter()
+				.collect(),
 			..self
 		}
 	}
-
-
 }
 
 impl GetScriptsData for OffchainMock {

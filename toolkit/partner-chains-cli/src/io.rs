@@ -2,6 +2,7 @@ use crate::config::ServiceConfig;
 use crate::ogmios::{ogmios_request, OgmiosRequest, OgmiosResponse};
 use anyhow::{anyhow, Context};
 use jsonrpsee::http_client::HttpClient;
+use partner_chains_cardano_offchain::init_governance::InitGovernance;
 use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
 use sp_core::offchain::Timestamp;
 use std::path::PathBuf;
@@ -11,7 +12,6 @@ use std::{
 	process::Stdio,
 };
 use tempfile::{TempDir, TempPath};
-use partner_chains_cardano_offchain::init_governance::InitGovernance;
 
 pub trait IOContext {
 	/// It should implement all the required traits for offchain operations

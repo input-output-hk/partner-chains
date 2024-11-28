@@ -1,4 +1,7 @@
-use crate::{csl::{get_first_validator_budget, key_hash_address, NetworkTypeExt}, OffchainError};
+use crate::{
+	csl::{get_first_validator_budget, key_hash_address, NetworkTypeExt},
+	OffchainError,
+};
 use anyhow::anyhow;
 use cardano_serialization_lib::*;
 use ogmios_client::{
@@ -12,9 +15,7 @@ mod tests;
 
 pub(crate) mod transaction;
 
-
 pub trait InitGovernance {
-
 	#[allow(async_fn_in_trait)]
 	async fn init_governance(
 		&self,
@@ -24,8 +25,10 @@ pub trait InitGovernance {
 	) -> Result<OgmiosTx, OffchainError>;
 }
 
-
-impl <T> InitGovernance for T where T: QueryLedgerState + Transactions + QueryNetwork {
+impl<T> InitGovernance for T
+where
+	T: QueryLedgerState + Transactions + QueryNetwork,
+{
 	async fn init_governance(
 		&self,
 		governance_authority: MainchainAddressHash,
@@ -34,9 +37,7 @@ impl <T> InitGovernance for T where T: QueryLedgerState + Transactions + QueryNe
 	) -> Result<OgmiosTx, OffchainError> {
 		run_init_governance(governance_authority, payment_key, Some(genesis_utxo_id), self)
 			.await
-			.map_err(|e| {
-				OffchainError::InternalError(e.to_string())
-		})
+			.map_err(|e| OffchainError::InternalError(e.to_string()))
 	}
 }
 
