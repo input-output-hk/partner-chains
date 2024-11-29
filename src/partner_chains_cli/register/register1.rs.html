@@ -569,8 +569,6 @@
 <a href="#569" id="569">569</a>
 <a href="#570" id="570">570</a>
 <a href="#571" id="571">571</a>
-<a href="#572" id="572">572</a>
-<a href="#573" id="573">573</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_values::DEFAULT_CHAIN_NAME;
 <span class="kw">use </span><span class="kw">crate</span>::config::KEYS_FILE_PATH;
 <span class="kw">use </span><span class="kw">crate</span>::generate_keys::keystore_path;
@@ -581,7 +579,7 @@
 <span class="kw">use </span>cli_commands::registration_signatures::RegisterValidatorMessage;
 <span class="kw">use </span>cli_commands::signing::sc_public_key_and_signature_for_datum;
 <span class="kw">use </span>partner_chains_cardano_offchain::csl::NetworkTypeExt;
-<span class="kw">use </span>select_utxo::{filter_utxos, query_utxos, select_from_utxos, ValidUtxo};
+<span class="kw">use </span>select_utxo::{query_utxos, select_from_utxos};
 <span class="kw">use </span>serde::de::DeserializeOwned;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>sidechain_domain::{NetworkType, SidechainPublicKey, UtxoId};
@@ -618,9 +616,7 @@
 			pc_contracts_cli_resources::prompt_ogmios_configuration(context)<span class="question-mark">?</span>;
 		<span class="kw">let </span>utxo_query_result = query_utxos(context, <span class="kw-2">&amp;</span>ogmios_configuration, <span class="kw-2">&amp;</span>address)<span class="question-mark">?</span>;
 
-		<span class="kw">let </span>valid_utxos: Vec&lt;ValidUtxo&gt; = filter_utxos(utxo_query_result);
-
-		<span class="kw">if </span>valid_utxos.is_empty() {
+		<span class="kw">if </span>utxo_query_result.is_empty() {
 			context.eprint(<span class="string">"⚠️ No UTXOs found for the given address"</span>);
 			context.eprint(
 				<span class="string">"The registering transaction requires at least one UTXO to be present at the address."</span>,
@@ -629,7 +625,7 @@
 		};
 
 		<span class="kw">let </span>input_utxo: UtxoId =
-			select_from_utxos(context, <span class="string">"Select UTXO to use for registration"</span>, valid_utxos)<span class="question-mark">?</span>;
+			select_from_utxos(context, <span class="string">"Select UTXO to use for registration"</span>, utxo_query_result)<span class="question-mark">?</span>;
 
 		context.print(<span class="string">"Please do not spend this UTXO, it needs to be consumed by the registration transaction."</span>);
 		context.print(<span class="string">""</span>);
@@ -740,7 +736,7 @@
 	<span class="kw">use </span>ogmios::OgmiosRequest;
 	<span class="kw">use </span>pc_contracts_cli_resources::default_ogmios_service_config;
 	<span class="kw">use </span>pc_contracts_cli_resources::tests::prompt_ogmios_configuration_io;
-	<span class="kw">use </span>select_utxo::tests::{mock_5_valid_utxos_rows, mock_result_5_valid};
+	<span class="kw">use </span>select_utxo::tests::{mock_7_valid_utxos_rows, mock_result_7_valid};
 
 	<span class="kw">const </span>PAYMENT_VKEY_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"payment.vkey"</span>;
 
@@ -1112,14 +1108,14 @@
 			<span class="kw">crate</span>::select_utxo::tests::query_utxos_io(
 				<span class="string">"addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy"</span>,
 				<span class="string">"http://localhost:1337"</span>,
-				mock_result_5_valid(),
+				mock_result_7_valid(),
 			),
 		]
 	}
 
 	<span class="kw">fn </span>select_utxo_io() -&gt; Vec&lt;MockIO&gt; {
 		<span class="macro">vec!</span>[
-		MockIO::prompt_multi_option(<span class="string">"Select UTXO to use for registration"</span>, mock_5_valid_utxos_rows(), <span class="string">"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"</span>),
+		MockIO::prompt_multi_option(<span class="string">"Select UTXO to use for registration"</span>, mock_7_valid_utxos_rows(), <span class="string">"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"</span>),
 
 		MockIO::print(<span class="string">"Please do not spend this UTXO, it needs to be consumed by the registration transaction."</span>),
 		MockIO::print(<span class="string">""</span>),

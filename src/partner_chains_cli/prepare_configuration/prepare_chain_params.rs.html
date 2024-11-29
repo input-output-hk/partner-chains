@@ -144,11 +144,10 @@
 <a href="#144" id="144">144</a>
 <a href="#145" id="145">145</a>
 <a href="#146" id="146">146</a>
-<a href="#147" id="147">147</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{<span class="self">self</span>, GENESIS_UTXO};
 <span class="kw">use </span><span class="kw">crate</span>::config::{ConfigFieldDefinition, ServiceConfig};
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
-<span class="kw">use </span><span class="kw">crate</span>::select_utxo::{filter_utxos, query_utxos, select_from_utxos, ValidUtxo};
+<span class="kw">use </span><span class="kw">crate</span>::select_utxo::{query_utxos, select_from_utxos};
 <span class="kw">use crate</span>::{cardano_key, pc_contracts_cli_resources};
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>partner_chains_cardano_offchain::csl::NetworkTypeExt;
@@ -163,15 +162,14 @@
 	<span class="kw">let </span>shelley_config = get_shelley_config(<span class="kw-2">&amp;</span>ogmios_configuration.to_string(), context)<span class="question-mark">?</span>;
 	<span class="kw">let </span>address = derive_address(context, shelley_config.network)<span class="question-mark">?</span>;
 	<span class="kw">let </span>utxo_query_result = query_utxos(context, <span class="kw-2">&amp;</span>ogmios_configuration, <span class="kw-2">&amp;</span>address)<span class="question-mark">?</span>;
-	<span class="kw">let </span>valid_utxos: Vec&lt;ValidUtxo&gt; = filter_utxos(utxo_query_result);
 
-	<span class="kw">if </span>valid_utxos.is_empty() {
+	<span class="kw">if </span>utxo_query_result.is_empty() {
 		context.eprint(<span class="string">"⚠️ No UTXOs found for the given address"</span>);
 		context.eprint(<span class="string">"There has to be at least one UTXO in the governance authority wallet."</span>);
 		<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow::anyhow!</span>(<span class="string">"No UTXOs found"</span>));
 	};
 	<span class="kw">let </span>genesis_utxo =
-		select_from_utxos(context, <span class="string">"Select an UTXO to use as the genesis UTXO"</span>, valid_utxos)<span class="question-mark">?</span>;
+		select_from_utxos(context, <span class="string">"Select an UTXO to use as the genesis UTXO"</span>, utxo_query_result)<span class="question-mark">?</span>;
 
 	context.print(CAUTION);
 
@@ -217,7 +215,7 @@
 	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_chain_params::{
 		prepare_chain_params, CAUTION, INTRO,
 	};
-	<span class="kw">use </span><span class="kw">crate</span>::select_utxo::tests::{mock_5_valid_utxos_rows, mock_result_5_valid, query_utxos_io};
+	<span class="kw">use </span><span class="kw">crate</span>::select_utxo::tests::{mock_7_valid_utxos_rows, mock_result_7_valid, query_utxos_io};
 	<span class="kw">use </span><span class="kw">crate</span>::tests::{MockIO, MockIOContext};
 
 	<span class="kw">fn </span>test_vkey_file_json() -&gt; serde_json::Value {
@@ -240,11 +238,11 @@
 				query_utxos_io(
 					<span class="string">"addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw"</span>,
 					<span class="string">"http://localhost:1337"</span>,
-					mock_result_5_valid(),
+					mock_result_7_valid(),
 				),
 				MockIO::prompt_multi_option(
 					<span class="string">"Select an UTXO to use as the genesis UTXO"</span>,
-				 	mock_5_valid_utxos_rows(),
+				 	mock_7_valid_utxos_rows(),
 					 <span class="string">"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"
 				</span>),
 				MockIO::print(CAUTION),

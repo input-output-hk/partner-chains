@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["filter_utxos","query_utxos","select_from_utxos"],"struct":["ValidUtxo"]};
+window.SIDEBAR_ITEMS = {"fn":["query_utxos","select_from_utxos","to_display_string","utxo_id"]};
