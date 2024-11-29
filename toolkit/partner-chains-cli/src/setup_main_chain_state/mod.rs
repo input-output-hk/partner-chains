@@ -269,7 +269,7 @@ fn set_candidates_on_main_chain<C: IOContext>(
 			.run_command(&format!(
 				"{PC_CONTRACTS_CLI_PATH} {} --network {} {} {} {}",
 				command,
-				cardano_network.to_string(),
+				cardano_network,
 				candidate_keys,
 				smart_contracts::sidechain_params_arguments(genesis_utxo),
 				smart_contracts::runtime_config_arguments(

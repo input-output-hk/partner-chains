@@ -184,7 +184,7 @@ impl From<[u8; 32]> for OgmiosTx {
 
 impl Debug for OgmiosTx {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		f.debug_struct("OgmiosTx").field("id", &hex::encode(&self.id)).finish()
+		f.debug_struct("OgmiosTx").field("id", &hex::encode(self.id)).finish()
 	}
 }
 

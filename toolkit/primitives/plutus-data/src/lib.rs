@@ -16,15 +16,15 @@ pub struct DataDecodingError {
 type DecodingResult<T> = std::result::Result<T, DataDecodingError>;
 
 pub trait PlutusDataExtensions {
-	fn as_u32(self) -> Option<u32>;
-	fn as_u16(self) -> Option<u16>;
+	fn as_u32(&self) -> Option<u32>;
+	fn as_u16(&self) -> Option<u16>;
 }
 
 impl PlutusDataExtensions for cardano_serialization_lib::PlutusData {
-	fn as_u32(self) -> Option<u32> {
+	fn as_u32(&self) -> Option<u32> {
 		u32::try_from(self.as_integer()?.as_u64()?).ok()
 	}
-	fn as_u16(self) -> Option<u16> {
+	fn as_u16(&self) -> Option<u16> {
 		u16::try_from(self.as_u32()?).ok()
 	}
 }

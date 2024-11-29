@@ -38,7 +38,7 @@ impl PlutusScript {
 		let bytes = program
 			.to_cbor()
 			.map_err(|_| anyhow!("Couldn't encode resulting script as CBOR."))?;
-		Ok(Self { bytes: bytes.into(), ..self })
+		Ok(Self { bytes, ..self })
 	}
 
 	/// Builds an CSL `Address` for plutus script from the data obtained from smart contracts.
