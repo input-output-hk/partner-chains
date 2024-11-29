@@ -6,6 +6,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* `genesis_utxo` and `registration_utxo` no longer have to have no native tokens.
 * Update ogmios to v6.9.0
 * Organized Rust sources into two directories: toolkit and node.
 * Implemented transaction balancing with CSL in offchain code.
