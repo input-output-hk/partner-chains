@@ -99,7 +99,7 @@ impl McHashInherentDataProvider {
 		let mc_block = data_source
 			.get_latest_stable_block_for(slot_start_timestamp)
 			.await
-			.map_err(|err| McHashInherentError::DataSourceError(err))?
+			.map_err(McHashInherentError::DataSourceError)?
 			.ok_or(StableBlockNotFound(slot_start_timestamp))?;
 
 		Ok(Self { mc_block })
@@ -172,7 +172,7 @@ async fn get_mc_state_reference(
 	data_source
 		.get_stable_block_for(verified_block_mc_hash.clone(), timestamp)
 		.await
-		.map_err(|err| McHashInherentError::DataSourceError(err))?
+		.map_err(McHashInherentError::DataSourceError)?
 		.ok_or(McHashInherentError::McStateReferenceInvalid(
 			verified_block_mc_hash,
 			verified_block_slot,

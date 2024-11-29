@@ -130,7 +130,7 @@ impl TryFrom<ogmios_client::query_network::ShelleyGenesisConfigurationResponse>
 		let active_slots_coefficient = TryFrom::try_from(shelley_genesis.active_slots_coefficient)
 			.map_err(|_| anyhow!("Cannot convert active_slots_coefficient"))?;
 		Ok(Self {
-			network: shelley_genesis.network.into(),
+			network: shelley_genesis.network,
 			security_parameter: shelley_genesis.security_parameter,
 			active_slots_coefficient,
 			epoch_length: shelley_genesis.epoch_length,

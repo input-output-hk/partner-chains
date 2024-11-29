@@ -1,7 +1,7 @@
 use crate::config::config_fields::{
-	CARDANO_PAYMENT_SIGNING_KEY_FILE, COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID,
-	ILLIQUID_SUPPLY_ADDRESS, INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME,
-	NATIVE_TOKEN_POLICY, PERMISSIONED_CANDIDATES_POLICY_ID,
+	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
+	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
+	PERMISSIONED_CANDIDATES_POLICY_ID,
 };
 use crate::config::ServiceConfig;
 use crate::io::IOContext;
@@ -135,6 +135,7 @@ mod tests {
 	};
 	use crate::prepare_configuration::tests::save_to_existing_file;
 	use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
+	use config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
 	use hex_literal::hex;
 	use ogmios_client::types::OgmiosTx;
 	use partner_chains_cardano_offchain::scripts_data::{

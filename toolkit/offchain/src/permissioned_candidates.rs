@@ -27,7 +27,7 @@ use sidechain_domain::{McTxHash, PermissionedCandidateData, UtxoId};
 
 pub async fn upsert_permissioned_candidates<C: QueryLedgerState + QueryNetwork + Transactions>(
 	genesis_utxo: UtxoId,
-	candidates: &Vec<PermissionedCandidateData>,
+	candidates: &[PermissionedCandidateData],
 	payment_signing_key: [u8; 32],
 	ogmios_client: &C,
 ) -> anyhow::Result<Option<McTxHash>> {
@@ -36,7 +36,7 @@ pub async fn upsert_permissioned_candidates<C: QueryLedgerState + QueryNetwork +
 		crate::scripts_data::permissioned_candidates_scripts(genesis_utxo, ctx.network)?;
 	let validator_address = validator.address_bech32(ctx.network)?;
 	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
-	let mut candidates = candidates.clone();
+	let mut candidates = candidates.to_owned();
 	candidates.sort();
 
 	match get_current_permissioned_candidates(validator_utxos)? {
@@ -104,7 +104,7 @@ fn get_current_permissioned_candidates(
 async fn insert_permissioned_candidates<C>(
 	validator: &PlutusScript,
 	policy: &PlutusScript,
-	candidates: &Vec<PermissionedCandidateData>,
+	candidates: &[PermissionedCandidateData],
 	ctx: TransactionContext,
 	client: &C,
 ) -> anyhow::Result<McTxHash>
@@ -144,7 +144,7 @@ where
 async fn update_permissioned_candidates<C>(
 	validator: &PlutusScript,
 	policy: &PlutusScript,
-	candidates: &Vec<PermissionedCandidateData>,
+	candidates: &[PermissionedCandidateData],
 	current_utxo: &OgmiosUtxo,
 	ctx: TransactionContext,
 	client: &C,

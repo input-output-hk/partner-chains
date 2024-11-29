@@ -74,7 +74,7 @@ impl VersionedDatum for PermissionedCandidateDatums {
 					.map(decode_legacy_candidate_datum)
 					.collect::<Option<Vec<PermissionedCandidateDatumV0>>>()
 			})
-			.ok_or_else(|| "Expected [[ByteString, ByteString, ByteString]]")?;
+			.ok_or("Expected [[ByteString, ByteString, ByteString]]")?;
 
 		Ok(Self::V0(permissioned_candidates))
 	}

@@ -118,7 +118,7 @@ pub(crate) fn convert_value(value: &OgmiosValue) -> Result<Value, JsError> {
 				let asset_name = AssetName::new(asset.name.clone()).map_err(|e| {
 					JsError::from_str(&format!(
 						"Could not convert Ogmios UTXO value, asset name is invalid: '{}'",
-						e.to_string()
+						e
 					))
 				})?;
 				csl_assets.insert(&asset_name, &amount.into());
@@ -272,7 +272,7 @@ pub(crate) trait TransactionBuilderExt {
 	fn add_collateral_inputs(
 		&mut self,
 		ctx: &TransactionContext,
-		inputs: &Vec<OgmiosUtxo>,
+		inputs: &[OgmiosUtxo],
 	) -> Result<(), JsError>;
 
 	/// Adds minting of 1 token (with empty asset name) for the given script
@@ -301,7 +301,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 	) -> Result<(), JsError> {
 		let amount_builder = TransactionOutputBuilder::new()
 			.with_address(&validator.address(ctx.network))
-			.with_plutus_data(&datum)
+			.with_plutus_data(datum)
 			.next()?;
 		let mut ma = MultiAsset::new();
 		let mut assets = Assets::new();
@@ -322,7 +322,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 	fn add_collateral_inputs(
 		&mut self,
 		ctx: &TransactionContext,
-		inputs: &Vec<OgmiosUtxo>,
+		inputs: &[OgmiosUtxo],
 	) -> Result<(), JsError> {
 		let mut collateral_builder = TxInputsBuilder::new();
 		for utxo in inputs.iter() {
@@ -373,7 +373,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 		// Tries to balance tx with given collateral inputs
 		fn try_balance(
 			builder: &mut TransactionBuilder,
-			collateral_inputs: &Vec<OgmiosUtxo>,
+			collateral_inputs: &[OgmiosUtxo],
 			ctx: &TransactionContext,
 		) -> Result<Transaction, JsError> {
 			builder.add_required_signer(&ctx.payment_key_hash());
@@ -384,7 +384,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 					&ChangeConfig::new(&key_hash_address(&ctx.payment_key_hash(), ctx.network)),
 				)?;
 			} else {
-				builder.add_collateral_inputs(ctx, &collateral_inputs)?;
+				builder.add_collateral_inputs(ctx, collateral_inputs)?;
 				builder.set_script_data_hash(&[0u8; 32].into());
 				// Fake script script data hash is required for proper fee computation
 				builder.add_inputs_from_and_change_with_collateral_return(
@@ -467,7 +467,7 @@ impl InputsBuilderExt for TxInputsBuilder {
 
 	fn with_key_inputs(utxos: &[OgmiosUtxo], key: &Ed25519KeyHash) -> Result<Self, JsError> {
 		let mut tx_input_builder = Self::new();
-		tx_input_builder.add_key_inputs(utxos, &key)?;
+		tx_input_builder.add_key_inputs(utxos, key)?;
 		Ok(tx_input_builder)
 	}
 }

@@ -40,7 +40,7 @@ pub(crate) fn read_private_key_from_file(path: &str) -> CmdResult<MainchainPriva
 	let file_content_str = String::from_utf8(std::fs::read(path)?)?;
 	let file_content = serde_json::from_str::<CardanoKeyFileContent>(&file_content_str)?;
 	let key_hex = (file_content.cbor_hex.strip_prefix("5820"))
-		.ok_or(format!("CBOR prefix missing in payment key"))?;
+		.ok_or("CBOR prefix missing in payment key".to_string())?;
 	let key_bytes = (hex::decode(key_hex)?.try_into())
 		.map_err(|_| format!("{} is not the valid lengh of 32", key_hex))?;
 	Ok(MainchainPrivateKey(key_bytes))

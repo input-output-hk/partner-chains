@@ -53,7 +53,7 @@ impl VersionedDatum for DParamDatum {
 					num_registered_candidates: items.get(1).as_u16()?,
 				})
 			})
-			.ok_or_else(|| "Expected [u16, u16]")?;
+			.ok_or("Expected [u16, u16]")?;
 
 		Ok(d_parameter)
 	}
