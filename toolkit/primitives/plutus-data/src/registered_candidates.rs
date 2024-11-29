@@ -47,14 +47,6 @@ pub enum RegisterValidatorDatum {
 	},
 }
 
-/// AdaBasedStaking is a variant of Plutus type StakeOwnership.
-/// The other variant, TokenBasedStaking, is not supported
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct AdaBasedStaking {
-	pub pub_key: MainchainPublicKey,
-	pub signature: MainchainSignature,
-}
-
 impl TryFrom<PlutusData> for RegisterValidatorDatum {
 	type Error = DataDecodingError;
 
@@ -81,6 +73,21 @@ impl VersionedDatum for RegisterValidatorDatum {
 			_ => Err(format!("Unknown version: {version}")),
 		}
 	}
+}
+
+pub fn block_producer_registration_to_plutus_data(
+	block_producer_registration: &sidechain_domain::BlockProducerRegistration,
+) -> PlutusData {
+	RegisterValidatorDatum::V0 {
+		stake_ownership: block_producer_registration.stake_ownership.clone(),
+		sidechain_pub_key: block_producer_registration.sidechain_pub_key.clone(),
+		sidechain_signature: block_producer_registration.sidechain_signature.clone(),
+		consumed_input: block_producer_registration.consumed_input,
+		own_pkh: block_producer_registration.own_pkh,
+		aura_pub_key: block_producer_registration.aura_pub_key.clone(),
+		grandpa_pub_key: block_producer_registration.grandpa_pub_key.clone(),
+	}
+	.into()
 }
 
 fn decode_v0_register_validator_datum(
@@ -167,6 +174,7 @@ fn decode_tx_hash_datum(datum: PlutusData) -> Option<McTxHash> {
 	Some(McTxHash(TryFrom::try_from(bytes).ok()?))
 }
 
+//
 impl From<RegisterValidatorDatum> for PlutusData {
 	fn from(value: RegisterValidatorDatum) -> Self {
 		match value {

@@ -630,6 +630,25 @@ pub struct PermissionedCandidateData {
 	pub grandpa_public_key: GrandpaPublicKey,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BlockProducerRegistration {
+	pub stake_ownership: AdaBasedStaking,
+	pub sidechain_pub_key: SidechainPublicKey,
+	pub sidechain_signature: SidechainSignature,
+	pub consumed_input: UtxoId,
+	pub own_pkh: MainchainAddressHash,
+	pub aura_pub_key: AuraPublicKey,
+	pub grandpa_pub_key: GrandpaPublicKey,
+}
+
+/// AdaBasedStaking is a variant of Plutus type StakeOwnership.
+/// The other variant, TokenBasedStaking, is not supported
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AdaBasedStaking {
+	pub pub_key: MainchainPublicKey,
+	pub signature: MainchainSignature,
+}
+
 #[cfg(test)]
 mod tests {
 	use super::MainchainAddress;
