@@ -50,7 +50,7 @@
 		<span class="kw">let </span>payment_key = read_private_key_from_file(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key_file)<span class="question-mark">?</span>;
 		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_host)<span class="question-mark">?</span>;
 
-		run_init_governance(<span class="self">self</span>.governance_authority, payment_key, <span class="self">self</span>.genesis_utxo, client)
+		run_init_governance(<span class="self">self</span>.governance_authority, payment_key, <span class="self">self</span>.genesis_utxo, <span class="kw-2">&amp;</span>client)
 			.<span class="kw">await</span><span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(())
