@@ -165,7 +165,7 @@ mod tests {
 	use ogmios::OgmiosRequest;
 	use pc_contracts_cli_resources::default_ogmios_service_config;
 	use pc_contracts_cli_resources::tests::prompt_ogmios_configuration_io;
-	use select_utxo::tests::{mock_5_valid_utxos_rows, mock_result_5_valid};
+	use select_utxo::tests::{mock_7_valid_utxos_rows, mock_result_7_valid};
 
 	const PAYMENT_VKEY_PATH: &str = "payment.vkey";
 
@@ -537,14 +537,14 @@ mod tests {
 			crate::select_utxo::tests::query_utxos_io(
 				"addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy",
 				"http://localhost:1337",
-				mock_result_5_valid(),
+				mock_result_7_valid(),
 			),
 		]
 	}
 
 	fn select_utxo_io() -> Vec<MockIO> {
 		vec![
-		MockIO::prompt_multi_option("Select UTXO to use for registration", mock_5_valid_utxos_rows(), "4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"),
+		MockIO::prompt_multi_option("Select UTXO to use for registration", mock_7_valid_utxos_rows(), "4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"),
 
 		MockIO::print("Please do not spend this UTXO, it needs to be consumed by the registration transaction."),
 		MockIO::print(""),

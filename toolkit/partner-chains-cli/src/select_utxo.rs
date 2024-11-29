@@ -66,7 +66,7 @@ pub(crate) mod tests {
 	use ogmios_client::types::{Asset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	use std::collections::HashMap;
 
-	pub(crate) fn mock_result_5_valid() -> Vec<OgmiosUtxo> {
+	pub(crate) fn mock_result_7_valid() -> Vec<OgmiosUtxo> {
 		vec![
 			OgmiosUtxo {
 				transaction: OgmiosTx {
@@ -142,7 +142,7 @@ pub(crate) mod tests {
 		]
 	}
 
-	pub(crate) fn mock_5_valid_utxos_rows() -> Vec<String> {
+	pub(crate) fn mock_7_valid_utxos_rows() -> Vec<String> {
 		vec![
 			"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)".to_string(),
 			"76ddb0a474eb893e6e17de4cc692bce12e57271351cccb4c0e7e2ad864347b64#0 (1200000 lovelace)".to_string(),

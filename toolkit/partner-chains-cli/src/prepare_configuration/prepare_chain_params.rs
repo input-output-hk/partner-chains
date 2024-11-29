@@ -69,7 +69,7 @@ mod tests {
 	use crate::prepare_configuration::prepare_chain_params::{
 		prepare_chain_params, CAUTION, INTRO,
 	};
-	use crate::select_utxo::tests::{mock_5_valid_utxos_rows, mock_result_5_valid, query_utxos_io};
+	use crate::select_utxo::tests::{mock_7_valid_utxos_rows, mock_result_7_valid, query_utxos_io};
 	use crate::tests::{MockIO, MockIOContext};
 
 	fn test_vkey_file_json() -> serde_json::Value {
@@ -92,11 +92,11 @@ mod tests {
 				query_utxos_io(
 					"addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw",
 					"http://localhost:1337",
-					mock_result_5_valid(),
+					mock_result_7_valid(),
 				),
 				MockIO::prompt_multi_option(
 					"Select an UTXO to use as the genesis UTXO",
-				 	mock_5_valid_utxos_rows(),
+				 	mock_7_valid_utxos_rows(),
 					 "4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"
 				),
 				MockIO::print(CAUTION),
