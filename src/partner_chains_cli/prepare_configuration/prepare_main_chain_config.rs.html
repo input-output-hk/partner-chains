@@ -439,10 +439,11 @@
 <a href="#439" id="439">439</a>
 <a href="#440" id="440">440</a>
 <a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
-	CARDANO_PAYMENT_SIGNING_KEY_FILE, COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID,
-	ILLIQUID_SUPPLY_ADDRESS, INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME,
-	NATIVE_TOKEN_POLICY, PERMISSIONED_CANDIDATES_POLICY_ID,
+	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
+	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
+	PERMISSIONED_CANDIDATES_POLICY_ID,
 };
 <span class="kw">use </span><span class="kw">crate</span>::config::ServiceConfig;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
@@ -576,6 +577,7 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 	};
 	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::tests::save_to_existing_file;
 	<span class="kw">use </span><span class="kw">crate</span>::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
+	<span class="kw">use </span>config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
 	<span class="kw">use </span>hex_literal::hex;
 	<span class="kw">use </span>ogmios_client::types::OgmiosTx;
 	<span class="kw">use </span>partner_chains_cardano_offchain::scripts_data::{

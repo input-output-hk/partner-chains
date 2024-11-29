@@ -158,7 +158,7 @@
 		PlutusScript::from_wrapped_cbor(version_oracle_policy, LanguageKind::PlutusV2)<span class="question-mark">?
 			</span>.apply_uplc_data(genesis_utxo.to_uplc_plutus_data())<span class="question-mark">?
 			</span>.apply_uplc_data(version_oracle_validator.address_data(tx_context.network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
-	<span class="kw">let </span>config = <span class="kw">crate</span>::csl::get_builder_config(<span class="kw-2">&amp;</span>tx_context)<span class="question-mark">?</span>;
+	<span class="kw">let </span>config = <span class="kw">crate</span>::csl::get_builder_config(tx_context)<span class="question-mark">?</span>;
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>config);
 
 	tx_builder.set_mint_builder(<span class="kw-2">&amp;</span>{
@@ -177,14 +177,14 @@
 		version_oracle_policy.clone(),
 		multi_sig_policy,
 		tx_context.network,
-		<span class="kw-2">&amp;</span>tx_context,
+		tx_context,
 	)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
 	tx_builder.set_inputs(<span class="kw-2">&amp;</span>{
 		TxInputsBuilder::with_key_inputs(<span class="kw-2">&amp;</span>[genesis_utxo], <span class="kw-2">&amp;</span>tx_context.payment_key_hash())<span class="question-mark">?
 	</span>});
 
-	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(<span class="kw-2">&amp;</span>tx_context)<span class="question-mark">?</span>)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(tx_context)<span class="question-mark">?</span>)
 }
 
 <span class="kw">fn </span>version_oracle_asset_name() -&gt; AssetName {
@@ -207,7 +207,7 @@
 				list.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(multi_sig_policy.script_hash().to_vec()));
 				list
 			})),
-			<span class="kw-2">&amp;</span>ex_units,
+			ex_units,
 		),
 	))
 }
@@ -221,7 +221,7 @@
 ) -&gt; anyhow::Result&lt;cardano_serialization_lib::TransactionOutput&gt; {
 	<span class="kw">let </span>datum: PlutusData = VersionOracleDatum {
 		version_oracle: SCRIPT_ID,
-		currency_symbol: version_oracle_policy.policy_id().<span class="number">0</span>.into(),
+		currency_symbol: version_oracle_policy.policy_id().<span class="number">0</span>,
 	}
 	.into();
 

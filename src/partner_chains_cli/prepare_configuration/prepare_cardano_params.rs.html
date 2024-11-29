@@ -298,7 +298,7 @@
 			.checked_add(first_epoch_era.start.time_seconds)
 			.and_then(|seconds| seconds.checked_mul(<span class="number">1000</span>))
 			.ok_or_else(|| <span class="macro">anyhow::anyhow!</span>(<span class="string">"First epoch timestamp overflow"</span>))<span class="question-mark">?</span>,
-		network: shelley_config.network.into(),
+		network: shelley_config.network,
 	})
 }
 

@@ -905,7 +905,7 @@
 				<span class="kw">let </span>asset_name = AssetName::new(asset.name.clone()).map_err(|e| {
 					JsError::from_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
 						<span class="string">"Could not convert Ogmios UTXO value, asset name is invalid: '{}'"</span>,
-						e.to_string()
+						e
 					))
 				})<span class="question-mark">?</span>;
 				csl_assets.insert(<span class="kw-2">&amp;</span>asset_name, <span class="kw-2">&amp;</span>amount.into());
@@ -1059,7 +1059,7 @@
 	</span><span class="kw">fn </span>add_collateral_inputs(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
 		ctx: <span class="kw-2">&amp;</span>TransactionContext,
-		inputs: <span class="kw-2">&amp;</span>Vec&lt;OgmiosUtxo&gt;,
+		inputs: <span class="kw-2">&amp;</span>[OgmiosUtxo],
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt;;
 
 	<span class="doccomment">/// Adds minting of 1 token (with empty asset name) for the given script
@@ -1088,7 +1088,7 @@
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt; {
 		<span class="kw">let </span>amount_builder = TransactionOutputBuilder::new()
 			.with_address(<span class="kw-2">&amp;</span>validator.address(ctx.network))
-			.with_plutus_data(<span class="kw-2">&amp;</span>datum)
+			.with_plutus_data(datum)
 			.next()<span class="question-mark">?</span>;
 		<span class="kw">let </span><span class="kw-2">mut </span>ma = MultiAsset::new();
 		<span class="kw">let </span><span class="kw-2">mut </span>assets = Assets::new();
@@ -1109,7 +1109,7 @@
 	<span class="kw">fn </span>add_collateral_inputs(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
 		ctx: <span class="kw-2">&amp;</span>TransactionContext,
-		inputs: <span class="kw-2">&amp;</span>Vec&lt;OgmiosUtxo&gt;,
+		inputs: <span class="kw-2">&amp;</span>[OgmiosUtxo],
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt; {
 		<span class="kw">let </span><span class="kw-2">mut </span>collateral_builder = TxInputsBuilder::new();
 		<span class="kw">for </span>utxo <span class="kw">in </span>inputs.iter() {
@@ -1160,7 +1160,7 @@
 		<span class="comment">// Tries to balance tx with given collateral inputs
 		</span><span class="kw">fn </span>try_balance(
 			builder: <span class="kw-2">&amp;mut </span>TransactionBuilder,
-			collateral_inputs: <span class="kw-2">&amp;</span>Vec&lt;OgmiosUtxo&gt;,
+			collateral_inputs: <span class="kw-2">&amp;</span>[OgmiosUtxo],
 			ctx: <span class="kw-2">&amp;</span>TransactionContext,
 		) -&gt; <span class="prelude-ty">Result</span>&lt;Transaction, JsError&gt; {
 			builder.add_required_signer(<span class="kw-2">&amp;</span>ctx.payment_key_hash());
@@ -1171,7 +1171,7 @@
 					<span class="kw-2">&amp;</span>ChangeConfig::new(<span class="kw-2">&amp;</span>key_hash_address(<span class="kw-2">&amp;</span>ctx.payment_key_hash(), ctx.network)),
 				)<span class="question-mark">?</span>;
 			} <span class="kw">else </span>{
-				builder.add_collateral_inputs(ctx, <span class="kw-2">&amp;</span>collateral_inputs)<span class="question-mark">?</span>;
+				builder.add_collateral_inputs(ctx, collateral_inputs)<span class="question-mark">?</span>;
 				builder.set_script_data_hash(<span class="kw-2">&amp;</span>[<span class="number">0u8</span>; <span class="number">32</span>].into());
 				<span class="comment">// Fake script script data hash is required for proper fee computation
 				</span>builder.add_inputs_from_and_change_with_collateral_return(
@@ -1254,7 +1254,7 @@
 
 	<span class="kw">fn </span>with_key_inputs(utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo], key: <span class="kw-2">&amp;</span>Ed25519KeyHash) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, JsError&gt; {
 		<span class="kw">let </span><span class="kw-2">mut </span>tx_input_builder = <span class="self">Self</span>::new();
-		tx_input_builder.add_key_inputs(utxos, <span class="kw-2">&amp;</span>key)<span class="question-mark">?</span>;
+		tx_input_builder.add_key_inputs(utxos, key)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(tx_input_builder)
 	}
 }

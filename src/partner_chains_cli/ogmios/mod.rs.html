@@ -271,7 +271,7 @@
 		<span class="kw">let </span>active_slots_coefficient = TryFrom::try_from(shelley_genesis.active_slots_coefficient)
 			.map_err(|<span class="kw">_</span>| <span class="macro">anyhow!</span>(<span class="string">"Cannot convert active_slots_coefficient"</span>))<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-			network: shelley_genesis.network.into(),
+			network: shelley_genesis.network,
 			security_parameter: shelley_genesis.security_parameter,
 			active_slots_coefficient,
 			epoch_length: shelley_genesis.epoch_length,

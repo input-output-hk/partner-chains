@@ -151,15 +151,15 @@
 <span class="kw">type </span>DecodingResult&lt;T&gt; = std::result::Result&lt;T, DataDecodingError&gt;;
 
 <span class="kw">pub trait </span>PlutusDataExtensions {
-	<span class="kw">fn </span>as_u32(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u32&gt;;
-	<span class="kw">fn </span>as_u16(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u16&gt;;
+	<span class="kw">fn </span>as_u32(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u32&gt;;
+	<span class="kw">fn </span>as_u16(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u16&gt;;
 }
 
 <span class="kw">impl </span>PlutusDataExtensions <span class="kw">for </span>cardano_serialization_lib::PlutusData {
-	<span class="kw">fn </span>as_u32(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u32&gt; {
+	<span class="kw">fn </span>as_u32(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u32&gt; {
 		u32::try_from(<span class="self">self</span>.as_integer()<span class="question-mark">?</span>.as_u64()<span class="question-mark">?</span>).ok()
 	}
-	<span class="kw">fn </span>as_u16(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u16&gt; {
+	<span class="kw">fn </span>as_u16(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u16&gt; {
 		u16::try_from(<span class="self">self</span>.as_u32()<span class="question-mark">?</span>).ok()
 	}
 }

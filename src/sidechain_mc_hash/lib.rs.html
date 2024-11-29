@@ -429,7 +429,7 @@
 		<span class="kw">let </span>mc_block = data_source
 			.get_latest_stable_block_for(slot_start_timestamp)
 			.<span class="kw">await
-			</span>.map_err(|err| McHashInherentError::DataSourceError(err))<span class="question-mark">?
+			</span>.map_err(McHashInherentError::DataSourceError)<span class="question-mark">?
 			</span>.ok_or(StableBlockNotFound(slot_start_timestamp))<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ mc_block })
@@ -502,7 +502,7 @@
 	data_source
 		.get_stable_block_for(verified_block_mc_hash.clone(), timestamp)
 		.<span class="kw">await
-		</span>.map_err(|err| McHashInherentError::DataSourceError(err))<span class="question-mark">?
+		</span>.map_err(McHashInherentError::DataSourceError)<span class="question-mark">?
 		</span>.ok_or(McHashInherentError::McStateReferenceInvalid(
 			verified_block_mc_hash,
 			verified_block_slot,

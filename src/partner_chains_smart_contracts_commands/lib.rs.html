@@ -87,7 +87,7 @@
 	<span class="kw">let </span>file_content_str = String::from_utf8(std::fs::read(path)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 	<span class="kw">let </span>file_content = serde_json::from_str::&lt;CardanoKeyFileContent&gt;(<span class="kw-2">&amp;</span>file_content_str)<span class="question-mark">?</span>;
 	<span class="kw">let </span>key_hex = (file_content.cbor_hex.strip_prefix(<span class="string">"5820"</span>))
-		.ok_or(<span class="macro">format!</span>(<span class="string">"CBOR prefix missing in payment key"</span>))<span class="question-mark">?</span>;
+		.ok_or(<span class="string">"CBOR prefix missing in payment key"</span>.to_string())<span class="question-mark">?</span>;
 	<span class="kw">let </span>key_bytes = (hex::decode(key_hex)<span class="question-mark">?</span>.try_into())
 		.map_err(|<span class="kw">_</span>| <span class="macro">format!</span>(<span class="string">"{} is not the valid lengh of 32"</span>, key_hex))<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(MainchainPrivateKey(key_bytes))

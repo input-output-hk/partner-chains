@@ -696,7 +696,7 @@
 
 <span class="kw">pub async fn </span>upsert_permissioned_candidates&lt;C: QueryLedgerState + QueryNetwork + Transactions&gt;(
 	genesis_utxo: UtxoId,
-	candidates: <span class="kw-2">&amp;</span>Vec&lt;PermissionedCandidateData&gt;,
+	candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
 	payment_signing_key: [u8; <span class="number">32</span>],
 	ogmios_client: <span class="kw-2">&amp;</span>C,
 ) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
@@ -705,7 +705,7 @@
 		<span class="kw">crate</span>::scripts_data::permissioned_candidates_scripts(genesis_utxo, ctx.network)<span class="question-mark">?</span>;
 	<span class="kw">let </span>validator_address = validator.address_bech32(ctx.network)<span class="question-mark">?</span>;
 	<span class="kw">let </span>validator_utxos = ogmios_client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="kw">let </span><span class="kw-2">mut </span>candidates = candidates.clone();
+	<span class="kw">let </span><span class="kw-2">mut </span>candidates = candidates.to_owned();
 	candidates.sort();
 
 	<span class="kw">match </span>get_current_permissioned_candidates(validator_utxos)<span class="question-mark">? </span>{
@@ -773,7 +773,7 @@
 <span class="kw">async fn </span>insert_permissioned_candidates&lt;C&gt;(
 	validator: <span class="kw-2">&amp;</span>PlutusScript,
 	policy: <span class="kw-2">&amp;</span>PlutusScript,
-	candidates: <span class="kw-2">&amp;</span>Vec&lt;PermissionedCandidateData&gt;,
+	candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
 	ctx: TransactionContext,
 	client: <span class="kw-2">&amp;</span>C,
 ) -&gt; anyhow::Result&lt;McTxHash&gt;
@@ -813,7 +813,7 @@
 <span class="kw">async fn </span>update_permissioned_candidates&lt;C&gt;(
 	validator: <span class="kw-2">&amp;</span>PlutusScript,
 	policy: <span class="kw-2">&amp;</span>PlutusScript,
-	candidates: <span class="kw-2">&amp;</span>Vec&lt;PermissionedCandidateData&gt;,
+	candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
 	current_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
 	ctx: TransactionContext,
 	client: <span class="kw-2">&amp;</span>C,

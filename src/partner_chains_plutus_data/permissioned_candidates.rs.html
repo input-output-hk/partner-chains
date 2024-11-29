@@ -322,7 +322,7 @@
 					.map(decode_legacy_candidate_datum)
 					.collect::&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;PermissionedCandidateDatumV0&gt;&gt;&gt;()
 			})
-			.ok_or_else(|| <span class="string">"Expected [[ByteString, ByteString, ByteString]]"</span>)<span class="question-mark">?</span>;
+			.ok_or(<span class="string">"Expected [[ByteString, ByteString, ByteString]]"</span>)<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(<span class="self">Self</span>::V0(permissioned_candidates))
 	}

@@ -177,7 +177,7 @@
 					num_registered_candidates: items.get(<span class="number">1</span>).as_u16()<span class="question-mark">?</span>,
 				})
 			})
-			.ok_or_else(|| <span class="string">"Expected [u16, u16]"</span>)<span class="question-mark">?</span>;
+			.ok_or(<span class="string">"Expected [u16, u16]"</span>)<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(d_parameter)
 	}

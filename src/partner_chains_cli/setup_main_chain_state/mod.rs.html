@@ -599,7 +599,7 @@
 			.run_command(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
 				<span class="string">"{PC_CONTRACTS_CLI_PATH} {} --network {} {} {} {}"</span>,
 				command,
-				cardano_network.to_string(),
+				cardano_network,
 				candidate_keys,
 				smart_contracts::sidechain_params_arguments(genesis_utxo),
 				smart_contracts::runtime_config_arguments(
