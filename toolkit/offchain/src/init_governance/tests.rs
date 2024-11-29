@@ -168,7 +168,7 @@ async fn transaction_run() {
 		governance_authority(),
 		payment_key_domain(),
 		Some(genesis_utxo().to_domain()),
-		mock_client,
+		&mock_client,
 	)
 	.await
 	.expect("Should succeed");

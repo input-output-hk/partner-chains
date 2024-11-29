@@ -272,7 +272,7 @@ Before running this wizard, be sure that `cardano-cli` is available and has an e
 3. Set the partner-chains parameters
 4. Store the main chain configuration
 
-This wizard will result in a `partner-chains-cli-chain-config.json` file. After it has been generated, it should be updated with your keys and the keys of other *permissioned* candidates in the `initial_permissioned_candidates` array.
+This wizard will submit a governance initialisation transaction, that spends the genesis utxo. It will also result in a `partner-chains-cli-chain-config.json` file. After it has been generated, it should be updated with your keys and the keys of other *permissioned* candidates in the `initial_permissioned_candidates` array.
 
 Example:
 

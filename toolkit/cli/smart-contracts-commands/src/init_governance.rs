@@ -21,7 +21,7 @@ impl InitGovernanceCmd {
 		let payment_key = read_private_key_from_file(&self.payment_key_file)?;
 		let client = HttpClient::builder().build(self.common_arguments.ogmios_host)?;
 
-		run_init_governance(self.governance_authority, payment_key, self.genesis_utxo, client)
+		run_init_governance(self.governance_authority, payment_key, self.genesis_utxo, &client)
 			.await?;
 
 		Ok(())
