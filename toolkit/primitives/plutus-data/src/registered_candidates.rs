@@ -77,7 +77,7 @@ impl VersionedDatum for RegisterValidatorDatum {
 	) -> Result<Self, String> {
 		match version {
 			0 => decode_v0_register_validator_datum(const_data, mut_data)
-				.ok_or_else(|| format!("Can not parse mutable part of data")),
+				.ok_or("Can not parse mutable part of data".to_string()),
 			_ => Err(format!("Unknown version: {version}")),
 		}
 	}

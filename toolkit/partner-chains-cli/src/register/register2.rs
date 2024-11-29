@@ -40,7 +40,7 @@ impl CmdRun for Register2Cmd {
 				.inspect_err(|_| context.eprint("Unable to read mainchain signing key file"))?;
 
 		let registration_message = RegisterValidatorMessage {
-			genesis_utxo: self.genesis_utxo.clone(),
+			genesis_utxo: self.genesis_utxo,
 			sidechain_pub_key: self.sidechain_pub_key.0.clone(),
 			input_utxo: self.registration_utxo,
 		};
