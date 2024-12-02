@@ -22,7 +22,7 @@ pub enum OgmiosClientError {
 
 pub trait OgmiosClient {
 	#[allow(async_fn_in_trait)]
-	async fn request<T: DeserializeOwned>(
+	async fn request<T: DeserializeOwned + std::fmt::Debug>(
 		&self,
 		method: &str,
 		params: OgmiosParams,
