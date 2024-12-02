@@ -562,7 +562,7 @@ dependencies = [
 
 [[package]]
 name = "authority-selection-inherents"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "async-trait",
  "chain-params",
@@ -937,7 +937,7 @@ checksum = "c3ac9f8b63eca6fd385229b3675f6cc0dc5c8a5c8a54a59d4f52ffd670d87b0c"
 
 [[package]]
 name = "byte-string-derive"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "hex",
  "quote",
@@ -1146,7 +1146,7 @@ dependencies = [
 
 [[package]]
 name = "chain-params"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "clap",
  "envy",
@@ -1282,7 +1282,7 @@ dependencies = [
 
 [[package]]
 name = "cli-commands"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -1875,7 +1875,7 @@ dependencies = [
 
 [[package]]
 name = "db-sync-follower"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "async-trait",
  "authority-selection-inherents",
@@ -4949,7 +4949,7 @@ dependencies = [
 
 [[package]]
 name = "main-chain-follower-cli"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "authority-selection-inherents",
  "clap",
@@ -4965,7 +4965,7 @@ dependencies = [
 
 [[package]]
 name = "main-chain-follower-mock"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "async-trait",
  "authority-selection-inherents",
@@ -5198,7 +5198,7 @@ dependencies = [
 
 [[package]]
 name = "mock-types"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -5747,7 +5747,7 @@ dependencies = [
 
 [[package]]
 name = "ogmios-client"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "anyhow",
  "fraction",
@@ -6062,7 +6062,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-block-rewards"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6100,7 +6100,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-native-token-management"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6114,7 +6114,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-partner-chains-session"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6152,7 +6152,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-session-runtime-stub"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "pallet-partner-chains-session",
  "pallet-session",
@@ -6163,7 +6163,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-session-validator-management"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6180,7 +6180,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-session-validator-management-benchmarking"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "chain-params",
  "frame-benchmarking",
@@ -6206,7 +6206,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-session-validator-management-rpc"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "derive-new",
  "jsonrpsee",
@@ -6216,7 +6216,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-sidechain"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6234,7 +6234,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-sidechain-rpc"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "derive-new",
  "hex",
@@ -6463,7 +6463,7 @@ checksum = "7924d1d0ad836f665c9065e26d016c673ece3993f30d340068b16f282afc1156"
 
 [[package]]
 name = "partner-chains-cardano-offchain"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "anyhow",
  "cardano-serialization-lib",
@@ -6492,7 +6492,7 @@ dependencies = [
 
 [[package]]
 name = "partner-chains-cli"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "anyhow",
  "cardano-serialization-lib",
@@ -6522,7 +6522,7 @@ dependencies = [
 
 [[package]]
 name = "partner-chains-node"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "assert_cmd",
  "async-trait",
@@ -6602,7 +6602,7 @@ dependencies = [
 
 [[package]]
 name = "partner-chains-node-commands"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "authority-selection-inherents",
  "clap",
@@ -6624,7 +6624,7 @@ dependencies = [
 
 [[package]]
 name = "partner-chains-plutus-data"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "cardano-serialization-lib",
  "hex-literal",
@@ -6858,7 +6858,7 @@ checksum = "d231b230927b5e4ad203db57bbcbee2802f6bce620b1e4a9024a07d94e2907ec"
 
 [[package]]
 name = "plutus"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "hex",
  "minicbor",
@@ -6870,7 +6870,7 @@ dependencies = [
 
 [[package]]
 name = "plutus-datum-derive"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "quote",
  "syn 2.0.71",
@@ -8913,7 +8913,7 @@ dependencies = [
 
 [[package]]
 name = "sc-partner-chains-consensus-aura"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "async-trait",
  "futures",
@@ -9544,7 +9544,7 @@ dependencies = [
 
 [[package]]
 name = "selection"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "parity-scale-codec",
  "quickcheck",
@@ -9704,7 +9704,7 @@ dependencies = [
 
 [[package]]
 name = "session-manager"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "derive-new",
  "frame-system",
@@ -9803,7 +9803,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "sidechain-block-search"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "hex",
  "hex-literal",
@@ -9823,7 +9823,7 @@ dependencies = [
 
 [[package]]
 name = "sidechain-domain"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "blake2b_simd",
  "byte-string-derive",
@@ -9848,7 +9848,7 @@ dependencies = [
 
 [[package]]
 name = "sidechain-mc-hash"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "async-trait",
  "derive-new",
@@ -9867,7 +9867,7 @@ dependencies = [
 
 [[package]]
 name = "sidechain-runtime"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "authority-selection-inherents",
  "chain-params",
@@ -9934,7 +9934,7 @@ dependencies = [
 
 [[package]]
 name = "sidechain-slots"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "envy",
  "parity-scale-codec",
@@ -10177,7 +10177,7 @@ dependencies = [
 
 [[package]]
 name = "sp-block-rewards"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "async-trait",
  "parity-scale-codec",
@@ -10486,7 +10486,7 @@ dependencies = [
 
 [[package]]
 name = "sp-native-token-management"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "async-trait",
  "derive-new",
@@ -10528,7 +10528,7 @@ dependencies = [
 
 [[package]]
 name = "sp-partner-chains-consensus-aura"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "futures",
  "sp-blockchain",
@@ -10622,7 +10622,7 @@ dependencies = [
 
 [[package]]
 name = "sp-session-validator-management"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "envy",
  "parity-scale-codec",
@@ -10639,7 +10639,7 @@ dependencies = [
 
 [[package]]
 name = "sp-session-validator-management-query"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "async-trait",
  "authority-selection-inherents",
@@ -10667,7 +10667,7 @@ dependencies = [
 
 [[package]]
 name = "sp-sidechain"
-version = "1.3.0"
+version = "1.3.1"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -11674,7 +11674,7 @@ dependencies = [
 
 [[package]]
 name = "time-source"
-version = "1.3.0"
+version = "1.3.1"
 
 [[package]]
 name = "tiny-keccak"

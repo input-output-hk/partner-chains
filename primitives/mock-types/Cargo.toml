@@ -1,6 +1,6 @@
 [package]
 name = "mock-types"
-version = "1.3.0"
+version = "1.3.1"
 edition = "2021"
 description = "Shared mock type definitions for reuse in multiple crates"
 
