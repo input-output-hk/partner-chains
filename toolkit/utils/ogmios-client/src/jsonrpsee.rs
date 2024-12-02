@@ -5,8 +5,12 @@ use std::io::Write;
 
 use crate::{OgmiosClient, OgmiosClientError, OgmiosParams};
 use jsonrpsee::{
-	core::client::ClientT,
-	core::params::{ArrayParams, ObjectParams},
+	core::{
+		client::ClientT,
+		params::{ArrayParams, ObjectParams},
+		traits::ToRpcParams,
+		ClientError,
+	},
 	http_client::HttpClient,
 };
 use serde::de::DeserializeOwned;
@@ -15,7 +19,7 @@ const CONTRACTLOG_FILE: &str = "contractlog.json";
 
 macro_rules! contractlog {
 	($($arg:tt)*) => {
-		add_to_contractlog(&format!($($arg)*))
+		add_to_contractlog(&format!("{}\n", format!($($arg)*)))
 	};
 }
 
@@ -39,8 +43,24 @@ pub fn add_to_contractlog(msg: &str) {
 	};
 }
 
+fn request_to_json(req: impl ToRpcParams) -> Result<String, OgmiosClientError> {
+	let json_str = match req.to_rpc_params().expect("Parameters are correct") {
+		None => "{}".to_string(),
+		Some(req) => serde_json::to_string(&req).expect("Request params are valid json"),
+	};
+	Ok(json_str)
+}
+
+fn response_to_json(resp: &Result<serde_json::Value, ClientError>) -> String {
+	match &resp {
+		Ok(resp) => serde_json::to_string(&resp).unwrap(),
+		Err(jsonrpsee::core::ClientError::Call(err)) => serde_json::to_string(&err).unwrap(),
+		Err(err) => err.to_string(),
+	}
+}
+
 impl OgmiosClient for HttpClient {
-	async fn request<T: DeserializeOwned + std::fmt::Debug>(
+	async fn request<T: DeserializeOwned>(
 		&self,
 		method: &str,
 		params: OgmiosParams,
@@ -51,22 +71,23 @@ impl OgmiosClient for HttpClient {
 				map.into_iter()
 					.try_for_each(|(k, v)| object_params.insert(k, v))
 					.map_err(serde_error_to_parameters_error)?;
-				contractlog!("request: {object_params:?}");
-				Ok(ClientT::request(self, method, object_params).await?)
+				contractlog!("request: {}", request_to_json(object_params.clone())?);
+				ClientT::request::<serde_json::Value, _>(self, method, object_params).await
 			},
 			OgmiosParams::Positional(v) => {
 				let mut array_params = ArrayParams::new();
 				v.into_iter()
 					.try_for_each(|v| array_params.insert(v))
 					.map_err(serde_error_to_parameters_error)?;
-				contractlog!("request: {array_params:?}");
-				Ok(ClientT::request(self, method, array_params).await?)
+				contractlog!("request: {}", request_to_json(array_params.clone())?);
+				ClientT::request::<serde_json::Value, _>(self, method, array_params).await
 			},
 		};
 
-		contractlog!("response: {response:?}");
+		contractlog!("response: {}", response_to_json(&response));
 
-		response
+		serde_json::from_value(response?)
+			.map_err(|err| OgmiosClientError::ResponseError(err.to_string()))
 	}
 }
 
