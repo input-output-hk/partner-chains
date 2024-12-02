@@ -100,32 +100,14 @@
             # This command has some eval because of IFD
             command = "${self'.packages.cardano-cli}/bin/cardano-cli latest $@";
           }
+          {
+            name = "pc-contracts-cli";
+            help = "CLI to interact with Partner Chains Smart Contracts";
+            command = "${self'.packages.pc-contracts-cli}/bin/pc-contracts-cli $@";
+          }
         ];
       }
     ];
-    extraCommands =
-      commands
-      ++ self.lib.categorize [
-        {
-          category = "Partner Chains";
-          pkgs = [
-            {
-              name = "partnerchains-stack";
-              help = "Run a containerless stack of all of the dependencies. Use -n <network> to specify networks";
-              command = ''
-                ${self'.packages.partnerchains-stack}/bin/partnerchains-stack $@
-              '';
-            }
-            {
-              name = "pc-contracts-cli";
-              help = "CLI to interact with Partner Chains Smart Contracts";
-              command = ''
-                ${self'.packages.pc-contracts-cli}/bin/pc-contracts-cli $@
-              '';
-            }
-          ];
-        }
-      ];
   in {
     devshells.default = {
       inherit packages env commands;
@@ -133,22 +115,17 @@
     };
     devshells.process-compose = {
       inherit packages env;
-      commands = extraCommands;
-      name = "Partner Chains Substrate Node Devshell with whole stack";
-    };
-    devshells.smart-contracts = {
-      inherit packages env;
       commands = commands ++ [
         {
+          name = "partnerchains-stack";
           category = "Partner Chains";
-          name = "pc-contracts-cli";
-          help = "CLI to interact with Partner Chains Smart Contracts";
+          help = "Run a containerless stack of all of the dependencies. Use -n <network> to specify networks";
           command = ''
-            ${self'.packages.pc-contracts-cli}/bin/pc-contracts-cli $@
+            ${self'.packages.partnerchains-stack}/bin/partnerchains-stack $@
           '';
         }
       ];
-      name = "Partner Chains Substrate Node Devshell with Smart Contracts CLI";
+      name = "Partner Chains Substrate Node Devshell with whole stack";
     };
   };
 }

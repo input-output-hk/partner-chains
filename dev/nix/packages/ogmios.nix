@@ -1,5 +1,6 @@
-{ fetchzip, stdenv, version, ... }:
+{ fetchzip, stdenv, ... }:
 let
+  version = "6.9.0";
   ogmiosLinux = fetchzip {
     url = "https://github.com/CardanoSolutions/ogmios/releases/download/v${version}/ogmios-v${version}-x86_64-linux.zip";
     hash = "sha256-i6J3ybpxdZvd/e7ktIW4Dvf7Crobs60jwEYHfFxnsJw=";
