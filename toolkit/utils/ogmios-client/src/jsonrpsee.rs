@@ -5,12 +5,7 @@ use std::io::Write;
 
 use crate::{OgmiosClient, OgmiosClientError, OgmiosParams};
 use jsonrpsee::{
-	core::{
-		client::ClientT,
-		params::{ArrayParams, ObjectParams},
-		traits::ToRpcParams,
-		ClientError,
-	},
+	core::{client::ClientT, traits::ToRpcParams, ClientError},
 	http_client::HttpClient,
 };
 use serde::de::DeserializeOwned;
@@ -65,24 +60,8 @@ impl OgmiosClient for HttpClient {
 		method: &str,
 		params: OgmiosParams,
 	) -> Result<T, OgmiosClientError> {
-		let response = match params {
-			OgmiosParams::ByName(map) => {
-				let mut object_params = ObjectParams::new();
-				map.into_iter()
-					.try_for_each(|(k, v)| object_params.insert(k, v))
-					.map_err(serde_error_to_parameters_error)?;
-				contractlog!("request: {}", request_to_json(object_params.clone())?);
-				ClientT::request::<serde_json::Value, _>(self, method, object_params).await
-			},
-			OgmiosParams::Positional(v) => {
-				let mut array_params = ArrayParams::new();
-				v.into_iter()
-					.try_for_each(|v| array_params.insert(v))
-					.map_err(serde_error_to_parameters_error)?;
-				contractlog!("request: {}", request_to_json(array_params.clone())?);
-				ClientT::request::<serde_json::Value, _>(self, method, array_params).await
-			},
-		};
+		contractlog!("request: {}", request_to_json(params.clone())?);
+		let response = ClientT::request::<serde_json::Value, _>(self, method, params).await;
 
 		contractlog!("response: {}", response_to_json(&response));
 
@@ -100,8 +79,4 @@ impl From<jsonrpsee::core::ClientError> for OgmiosClientError {
 			e => OgmiosClientError::RequestError(e.to_string()),
 		}
 	}
-}
-
-fn serde_error_to_parameters_error(e: serde_json::Error) -> OgmiosClientError {
-	OgmiosClientError::ParametersError(e.to_string())
 }
