@@ -53,17 +53,17 @@ pub async fn run_init_governance<T: QueryLedgerState + Transactions + QueryNetwo
 	let network = client.shelley_genesis_configuration().await?.network;
 
 	let own_address = key_hash_address(&payment_key.to_public().hash(), network.to_csl());
-	println!("✉️ Submitter address: {}", own_address.to_bech32(None).unwrap());
+	log::info!("✉️ Submitter address: {}", own_address.to_bech32(None).unwrap());
 
 	let own_utxos = client.query_utxos(&[own_address.to_bech32(None)?]).await?;
-	println!("💱 {} UTXOs available", own_utxos.len());
+	log::info!("💱 {} UTXOs available", own_utxos.len());
 	let protocol_parameters = client.query_protocol_parameters().await?;
 
 	let genesis_utxo = match genesis_utxo_id {
 		None => {
-			println!("⚙️ No genesis UTXO provided, will select one automatically...");
+			log::info!("⚙️ No genesis UTXO provided, will select one automatically...");
 			let utxo = own_utxos.first().ok_or(anyhow!("No UTXOs to choose from"))?.clone();
-			println!("☑️ UTXO selected: {}", utxo);
+			log::info!("☑️ UTXO selected: {}", utxo);
 			utxo
 		},
 		Some(utxo_id) => own_utxos
@@ -90,8 +90,7 @@ pub async fn run_init_governance<T: QueryLedgerState + Transactions + QueryNetwo
 		ExUnits::new(&0u64.into(), &0u64.into()),
 	)?;
 
-	println!("📨 Submitting transaction:");
-	println!("{}", unsigned_transaction.to_json()?);
+	log::info!("📨 Submitting transaction..");
 
 	let all_costs = client.evaluate_transaction(&unsigned_transaction.to_bytes()).await?;
 	let cost = get_first_validator_budget(all_costs)?;
@@ -109,7 +108,7 @@ pub async fn run_init_governance<T: QueryLedgerState + Transactions + QueryNetwo
 
 	let result = client.submit_transaction(&signed_transaction.to_bytes()).await?;
 
-	println!("✅ Transaction submited. ID: {}", hex::encode(result.transaction.id));
+	log::info!("✅ Transaction submited. ID: {}", hex::encode(result.transaction.id));
 
 	Ok(result.transaction)
 }
