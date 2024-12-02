@@ -1,7 +1,7 @@
 use crate::config::config_fields::{self, GENESIS_UTXO};
 use crate::config::{ConfigFieldDefinition, ServiceConfig};
 use crate::io::IOContext;
-use crate::select_utxo::{filter_utxos, query_utxos, select_from_utxos, ValidUtxo};
+use crate::select_utxo::{query_utxos, select_from_utxos};
 use crate::{cardano_key, pc_contracts_cli_resources};
 use anyhow::anyhow;
 use partner_chains_cardano_offchain::csl::NetworkTypeExt;
@@ -16,15 +16,14 @@ pub fn prepare_chain_params<C: IOContext>(context: &C) -> anyhow::Result<(UtxoId
 	let shelley_config = get_shelley_config(&ogmios_configuration.to_string(), context)?;
 	let address = derive_address(context, shelley_config.network)?;
 	let utxo_query_result = query_utxos(context, &ogmios_configuration, &address)?;
-	let valid_utxos: Vec<ValidUtxo> = filter_utxos(utxo_query_result);
 
-	if valid_utxos.is_empty() {
+	if utxo_query_result.is_empty() {
 		context.eprint("⚠️ No UTXOs found for the given address");
 		context.eprint("There has to be at least one UTXO in the governance authority wallet.");
 		return Err(anyhow::anyhow!("No UTXOs found"));
 	};
 	let genesis_utxo =
-		select_from_utxos(context, "Select an UTXO to use as the genesis UTXO", valid_utxos)?;
+		select_from_utxos(context, "Select an UTXO to use as the genesis UTXO", utxo_query_result)?;
 
 	context.print(CAUTION);
 
@@ -70,7 +69,7 @@ mod tests {
 	use crate::prepare_configuration::prepare_chain_params::{
 		prepare_chain_params, CAUTION, INTRO,
 	};
-	use crate::select_utxo::tests::{mock_5_valid_utxos_rows, mock_result_5_valid, query_utxos_io};
+	use crate::select_utxo::tests::{mock_7_valid_utxos_rows, mock_result_7_valid, query_utxos_io};
 	use crate::tests::{MockIO, MockIOContext};
 
 	fn test_vkey_file_json() -> serde_json::Value {
@@ -93,11 +92,11 @@ mod tests {
 				query_utxos_io(
 					"addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw",
 					"http://localhost:1337",
-					mock_result_5_valid(),
+					mock_result_7_valid(),
 				),
 				MockIO::prompt_multi_option(
 					"Select an UTXO to use as the genesis UTXO",
-				 	mock_5_valid_utxos_rows(),
+				 	mock_7_valid_utxos_rows(),
 					 "4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"
 				),
 				MockIO::print(CAUTION),

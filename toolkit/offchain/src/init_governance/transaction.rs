@@ -28,7 +28,7 @@ pub(crate) fn init_governance_transaction(
 		PlutusScript::from_wrapped_cbor(version_oracle_policy, LanguageKind::PlutusV2)?
 			.apply_uplc_data(genesis_utxo.to_uplc_plutus_data())?
 			.apply_uplc_data(version_oracle_validator.address_data(tx_context.network)?)?;
-	let config = crate::csl::get_builder_config(&tx_context)?;
+	let config = crate::csl::get_builder_config(tx_context)?;
 	let mut tx_builder = TransactionBuilder::new(&config);
 
 	tx_builder.set_mint_builder(&{
@@ -47,14 +47,14 @@ pub(crate) fn init_governance_transaction(
 		version_oracle_policy.clone(),
 		multi_sig_policy,
 		tx_context.network,
-		&tx_context,
+		tx_context,
 	)?)?;
 
 	tx_builder.set_inputs(&{
 		TxInputsBuilder::with_key_inputs(&[genesis_utxo], &tx_context.payment_key_hash())?
 	});
 
-	Ok(tx_builder.balance_update_and_build(&tx_context)?)
+	Ok(tx_builder.balance_update_and_build(tx_context)?)
 }
 
 fn version_oracle_asset_name() -> AssetName {
@@ -77,7 +77,7 @@ fn mint_witness(
 				list.add(&PlutusData::new_bytes(multi_sig_policy.script_hash().to_vec()));
 				list
 			})),
-			&ex_units,
+			ex_units,
 		),
 	))
 }
@@ -91,7 +91,7 @@ fn version_oracle_datum_output(
 ) -> anyhow::Result<cardano_serialization_lib::TransactionOutput> {
 	let datum: PlutusData = VersionOracleDatum {
 		version_oracle: SCRIPT_ID,
-		currency_symbol: version_oracle_policy.policy_id().0.into(),
+		currency_symbol: version_oracle_policy.policy_id().0,
 	}
 	.into();
 
