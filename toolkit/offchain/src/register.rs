@@ -10,7 +10,7 @@ use ogmios_client::types::OgmiosUtxo;
 use partner_chains_plutus_data::registered_candidates::block_producer_registration_to_plutus_data;
 use sidechain_domain::BlockProducerRegistration;
 
-pub fn register_tx(
+fn register_tx(
 	validator: &PlutusScript,
 	block_producer_registration: &BlockProducerRegistration,
 	input_utxo: &OgmiosUtxo,
@@ -32,21 +32,6 @@ pub fn register_tx(
 		}
 		inputs.add_key_inputs(&[input_utxo.clone()], &ctx.payment_key_hash())?;
 		tx_builder.set_inputs(&inputs);
-	}
-
-	{
-		let amount_builder =
-			TransactionOutputBuilder::new().with_address(&ctx.payment_address()).next()?;
-		let output = amount_builder.with_coin(&BigNum::zero()).build()?;
-		let min_ada = MinOutputAdaCalculator::new(
-			&output,
-			&DataCost::new_coins_per_byte(
-				&ctx.protocol_parameters.min_utxo_deposit_coefficient.into(),
-			),
-		)
-		.calculate_ada()?;
-		let output = amount_builder.with_coin(&min_ada).build()?;
-		tx_builder.add_output(&output)?;
 	}
 
 	{
@@ -100,11 +85,7 @@ mod tests {
 	const MIN_UTXO_LOVELACE: u64 = 1000000;
 	const FIVE_ADA: u64 = 5000000;
 
-	fn utxo() -> UtxoId {
-		UtxoId { tx_hash: McTxHash([0; 32]), index: UtxoIndex(0) }
-	}
-
-	fn block_producer_registration() -> BlockProducerRegistration {
+	fn block_producer_registration(consumed_input: UtxoId) -> BlockProducerRegistration {
 		BlockProducerRegistration {
 			stake_ownership: AdaBasedStaking {
 				pub_key: test_values::mainchain_pub_key(),
@@ -112,7 +93,7 @@ mod tests {
 			},
 			sidechain_pub_key: SidechainPublicKey(Vec::new()),
 			sidechain_signature: SidechainSignature(Vec::new()),
-			consumed_input: utxo(),
+			consumed_input,
 			own_pkh: MainchainAddressHash([0; 28]),
 			aura_pub_key: AuraPublicKey(Vec::new()),
 			grandpa_pub_key: GrandpaPublicKey(Vec::new()),
@@ -127,6 +108,10 @@ mod tests {
 		make_utxo(4u8, 1, 1200001, &payment_addr())
 	}
 
+	fn input_utxo() -> OgmiosUtxo {
+		make_utxo(11u8, 0, 1000000, &payment_addr())
+	}
+
 	fn validator_addr() -> Address {
 		Address::from_bech32("addr_test1wpha4546lvfcau5jsrwpht9h6350m3au86fev6nwmuqz9gqer2ung")
 			.unwrap()
@@ -135,23 +120,21 @@ mod tests {
 	#[test]
 	fn register_tx_regression_test() {
 		let ex_units = ExUnits::new(&0u32.into(), &0u32.into());
-		let payment_key_utxos = vec![
-			lesser_payment_utxo(),
-			greater_payment_utxo(),
-			make_utxo(11u8, 0, 100000, &payment_addr()),
-		];
+		let payment_key_utxos = vec![lesser_payment_utxo(), greater_payment_utxo(), input_utxo()];
 		let ctx = TransactionContext {
 			payment_key: payment_key(),
 			payment_key_utxos: payment_key_utxos.clone(),
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
 		};
-		let input_utxo = test_values::make_utxo(1, 0, 1000000, &payment_addr());
+		let own_registration_utxos = vec![payment_key_utxos.get(1).unwrap().clone()];
+		let input_utxo = payment_key_utxos.first().unwrap();
+		let block_producer_registration = block_producer_registration(input_utxo.to_domain());
 		let tx = register_tx(
 			&test_values::test_validator(),
-			&block_producer_registration(),
-			&input_utxo,
-			&Vec::new(),
+			&block_producer_registration,
+			input_utxo,
+			&own_registration_utxos,
 			&ctx,
 			ex_units,
 		)
@@ -169,49 +152,54 @@ mod tests {
 			"0404040404040404040404040404040404040404040404040404040404040404#1"
 		);
 		let outputs = body.outputs();
-		// There is a change for payment
-		let change_output = outputs.into_iter().find(|o| o.address() == payment_addr()).unwrap();
-		// There is 1 d-param token in the validator address output
+
 		let script_output = outputs.into_iter().find(|o| o.address() == validator_addr()).unwrap();
-		let coins_sum = change_output
-			.amount()
-			.coin()
-			.checked_add(&script_output.amount().coin())
-			.unwrap()
-			.checked_add(&body.fee())
-			.unwrap();
+		let coins_sum = script_output.amount().coin().checked_add(&body.fee()).unwrap();
 		assert_eq!(
 			coins_sum,
-			payment_key_utxos.clone().iter().map(|u| u.value.lovelace).sum::<u64>().into()
+			(greater_payment_utxo().value.lovelace + lesser_payment_utxo().value.lovelace).into()
 		);
 		assert_eq!(
 			script_output.plutus_data().unwrap(),
-			block_producer_registration_to_plutus_data(&block_producer_registration())
+			block_producer_registration_to_plutus_data(&block_producer_registration)
 		);
 	}
 
-	fn multi_asset_transaction_balancing_test(payment_utxos: Vec<OgmiosUtxo>) {
-		let input_utxo = test_values::make_utxo(1, 0, 1000000, &payment_addr());
-		let mut payment_key_utxos = payment_utxos.clone();
-		payment_key_utxos.push(input_utxo.clone());
+	fn register_transaction_balancing_test(payment_utxos: Vec<OgmiosUtxo>) {
+		let payment_key_utxos = payment_utxos.clone();
 		let ctx = TransactionContext {
 			payment_key: payment_key(),
 			payment_key_utxos: payment_key_utxos.clone(),
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
 		};
+		let input_utxo = payment_key_utxos.first().unwrap();
+		let block_producer_registration = block_producer_registration(input_utxo.to_domain());
+		let own_registration_utxos = if payment_utxos.len() >= 2 {
+			vec![payment_utxos.get(1).unwrap().clone()]
+		} else {
+			Vec::new()
+		};
 		let tx = register_tx(
 			&test_values::test_validator(),
-			&block_producer_registration(),
-			&input_utxo,
-			&Vec::new(),
+			&block_producer_registration,
+			input_utxo,
+			&own_registration_utxos,
 			&ctx,
 			ExUnits::new(&BigNum::zero(), &BigNum::zero()),
 		)
 		.unwrap();
 
+		let validator_address = &test_values::test_validator().address(ctx.network);
+
 		used_inputs_lovelace_equals_outputs_and_fee(&tx, &payment_key_utxos.clone());
 		fee_is_less_than_one_and_half_ada(&tx);
+		output_at_validator_has_register_candidate_datum(
+			&tx,
+			&block_producer_registration,
+			validator_address,
+		);
+		spends_own_registration_utxos(&tx, &own_registration_utxos);
 	}
 
 	fn match_inputs(inputs: &TransactionInputs, payment_utxos: &[OgmiosUtxo]) -> Vec<OgmiosUtxo> {
@@ -227,10 +215,7 @@ mod tests {
 			.collect()
 	}
 
-	fn used_inputs_lovelace_equals_outputs_and_fee(
-		tx: &Transaction,
-		payment_utxos: &Vec<OgmiosUtxo>,
-	) {
+	fn used_inputs_lovelace_equals_outputs_and_fee(tx: &Transaction, payment_utxos: &[OgmiosUtxo]) {
 		let used_inputs: Vec<OgmiosUtxo> = match_inputs(&tx.body().inputs(), payment_utxos);
 		let used_inputs_value: u64 = sum_lovelace(&used_inputs);
 		let outputs_lovelace_sum: u64 = tx
@@ -252,11 +237,32 @@ mod tests {
 		assert!(tx.body().fee() <= 1500000u64.into());
 	}
 
+	fn output_at_validator_has_register_candidate_datum(
+		tx: &Transaction,
+		block_producer_registration: &BlockProducerRegistration,
+		validator_address: &Address,
+	) {
+		let outputs = tx.body().outputs();
+		let validator_output =
+			outputs.into_iter().find(|o| o.address() == *validator_address).unwrap();
+		assert_eq!(
+			validator_output.plutus_data().unwrap(),
+			block_producer_registration_to_plutus_data(block_producer_registration)
+		);
+	}
+
+	fn spends_own_registration_utxos(tx: &Transaction, own_registration_utxos: &[OgmiosUtxo]) {
+		let inputs = tx.body().inputs();
+		assert!(own_registration_utxos
+			.iter()
+			.all(|p| inputs.into_iter().any(|i| *i == p.to_csl_tx_input())));
+	}
+
 	proptest! {
 		#[test]
 		fn spends_input_utxo_and_outputs_to_validator_address(payment_utxos in arb_payment_utxos(10)
-			.prop_filter("Inputs total lovelace too low", |utxos| sum_lovelace(&utxos) > 4000000)) {
-			multi_asset_transaction_balancing_test(payment_utxos)
+			.prop_filter("Inputs total lovelace too low", |utxos| sum_lovelace(utxos) > 4000000)) {
+			register_transaction_balancing_test(payment_utxos)
 		}
 	}
 

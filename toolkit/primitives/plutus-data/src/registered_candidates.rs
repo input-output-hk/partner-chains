@@ -174,7 +174,6 @@ fn decode_tx_hash_datum(datum: PlutusData) -> Option<McTxHash> {
 	Some(McTxHash(TryFrom::try_from(bytes).ok()?))
 }
 
-//
 impl From<RegisterValidatorDatum> for PlutusData {
 	fn from(value: RegisterValidatorDatum) -> Self {
 		match value {
