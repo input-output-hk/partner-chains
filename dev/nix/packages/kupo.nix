@@ -1,7 +1,7 @@
-{ fetchzip, stdenv, version, ... }:
+{ fetchzip, stdenv, ... }:
 
 let
-
+  version = "2.9.0";
   kupoLinux = fetchzip {
     url = "https://github.com/CardanoSolutions/kupo/releases/download/v2.9/kupo-v${version}-x86_64-linux.zip";
     hash = "sha256:sEfaFPph1qBuPrxQzFeTKU/9i9w0KF/v7GpxxmorPWQ=";

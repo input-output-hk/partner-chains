@@ -31,14 +31,8 @@
       url = "github:IntersectMBO/cardano-db-sync/13.5.0.2";
       flake = false;
     };
-    kupo = {
-      url = "github:CardanoSolutions/kupo/v2.9.0";
-      flake = false;
-    };
-    ogmios = {
-      url = "github:CardanoSolutions/ogmios/v6.9.0";
-      flake = false;
-    };
+    # ... kupo and ogmios are defined in dev/nix/packages
+
     configurations = {
       url = "github:input-output-hk/cardano-configurations";
       flake = false;

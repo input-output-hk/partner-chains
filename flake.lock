@@ -141,23 +141,6 @@
         "type": "github"
       }
     },
-    "kupo": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1721405349,
-        "narHash": "sha256-s6NVXrtjyoeSQpT5BEiM/Dkal9IXhdQJYFLyPQLWiPA=",
-        "owner": "CardanoSolutions",
-        "repo": "kupo",
-        "rev": "61ad7e47f40d577b741cd1689dc08db7ea8d2c79",
-        "type": "github"
-      },
-      "original": {
-        "owner": "CardanoSolutions",
-        "ref": "v2.9.0",
-        "repo": "kupo",
-        "type": "github"
-      }
-    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1724479785,
@@ -186,23 +169,6 @@
         "url": "https://github.com/NixOS/nixpkgs/archive/a5d394176e64ab29c852d03346c1fc9b0b7d33eb.tar.gz"
       }
     },
-    "ogmios": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1731081092,
-        "narHash": "sha256-17P/K8+uVPL8kufgVbVfNsrT98ps7avp8QVzd4QWet0=",
-        "owner": "CardanoSolutions",
-        "repo": "ogmios",
-        "rev": "a07c154eca6e4bf25ad1b3d50849f077aa628183",
-        "type": "github"
-      },
-      "original": {
-        "owner": "CardanoSolutions",
-        "ref": "v6.9.0",
-        "repo": "ogmios",
-        "type": "github"
-      }
-    },
     "process-compose": {
       "locked": {
         "lastModified": 1724606023,
@@ -228,9 +194,7 @@
         "fenix": "fenix",
         "flake-compat": "flake-compat",
         "flake-parts": "flake-parts",
-        "kupo": "kupo",
         "nixpkgs": "nixpkgs",
-        "ogmios": "ogmios",
         "process-compose": "process-compose",
         "services-flake": "services-flake"
       }
