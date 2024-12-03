@@ -3,6 +3,7 @@ name = "partner-chains-plutus-data"
 version = "1.3.0"
 edition = "2021"
 description = "Parsing and serialization of Plutus data schemas used by Partner Chains smart contracts."
+license = "Apache-2.0"
 
 [dependencies]
 log = { workspace = true }

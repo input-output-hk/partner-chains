@@ -2,7 +2,7 @@
 name = "partner-chains-node-commands"
 version = "1.3.0"
 edition = "2021"
-license = "GPLv3 with a classpath exception"
+license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 
 [dependencies]
 authority-selection-inherents = { workspace = true }

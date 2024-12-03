@@ -31,6 +31,7 @@
         gnumake
         gawk
         cargo-edit
+        cargo-license
         perl
       ]
       ++ (
