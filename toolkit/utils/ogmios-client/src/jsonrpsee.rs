@@ -7,13 +7,20 @@ use jsonrpsee::{
 	http_client::HttpClient,
 };
 use serde::de::DeserializeOwned;
+use serde_json::json;
 
-fn request_to_json(req: impl ToRpcParams) -> Result<String, OgmiosClientError> {
-	let json_str = match req.to_rpc_params().expect("Parameters are correct") {
-		None => "{}".to_string(),
-		Some(req) => serde_json::to_string(&req).expect("Request params are valid json"),
-	};
-	Ok(json_str)
+fn request_to_json(method: &str, params: impl ToRpcParams) -> Result<String, OgmiosClientError> {
+	let params = params
+		.to_rpc_params()
+		.map_err(|err| OgmiosClientError::ParametersError(err.to_string()))?
+		.unwrap_or_default();
+
+	let req = json!({
+		"method": method,
+		"params": params
+	});
+
+	serde_json::to_string(&req).map_err(|err| OgmiosClientError::ParametersError(err.to_string()))
 }
 
 fn response_to_json(resp: &Result<serde_json::Value, ClientError>) -> String {
@@ -30,7 +37,7 @@ impl OgmiosClient for HttpClient {
 		method: &str,
 		params: OgmiosParams,
 	) -> Result<T, OgmiosClientError> {
-		log::debug!("request: {}", request_to_json(params.clone())?);
+		log::debug!("request: {}", request_to_json(method, params.clone())?);
 		let response = ClientT::request::<serde_json::Value, _>(self, method, params).await;
 
 		log::debug!("response: {}", response_to_json(&response));
