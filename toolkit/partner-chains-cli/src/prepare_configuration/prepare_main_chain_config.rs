@@ -7,7 +7,6 @@ use crate::config::ServiceConfig;
 use crate::io::IOContext;
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 use crate::{config::config_fields, *};
-use cardano_serialization_lib::*;
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
 use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
 use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, PolicyId, UtxoId};
@@ -42,17 +41,10 @@ fn get_private_key_and_key_hash<C: IOContext>(
 ) -> Result<(MainchainPrivateKey, MainchainAddressHash), anyhow::Error> {
 	let cardano_signig_key_file = config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
 		.prompt_with_default_from_file_and_save(context);
-	let bytes = cardano_key::get_key_bytes_from_file(&cardano_signig_key_file, context)?;
+	let pkey = cardano_key::get_mc_pkey_from_file(&cardano_signig_key_file, context)?;
+	let addr_hash = cardano_key::get_mc_address_hash_from_pkey(&pkey);
 
-	let csl_private_key = PrivateKey::from_normal_bytes(&bytes)?;
-	let csl_public_key_hash = csl_private_key
-		.to_public()
-		.hash()
-		.to_bytes()
-		.try_into()
-		.expect("Bytes represent correct public key hash");
-
-	Ok((MainchainPrivateKey(bytes), MainchainAddressHash(csl_public_key_hash)))
+	Ok((pkey, addr_hash))
 }
 
 fn set_up_cardano_addresses<C: IOContext>(
