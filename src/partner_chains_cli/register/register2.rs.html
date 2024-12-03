@@ -191,7 +191,7 @@
 		<span class="kw">let </span>registration_message = RegisterValidatorMessage {
 			genesis_utxo: <span class="self">self</span>.genesis_utxo,
 			sidechain_pub_key: <span class="self">self</span>.sidechain_pub_key.<span class="number">0</span>.clone(),
-			input_utxo: <span class="self">self</span>.registration_utxo,
+			registration_utxo: <span class="self">self</span>.registration_utxo,
 		};
 
 		<span class="kw">let </span>(verification_key, mc_signature) =

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["RegisterValidatorDatum"],"struct":["AdaBasedStaking"]};
+window.SIDEBAR_ITEMS = {"enum":["RegisterValidatorDatum"],"fn":["block_producer_registration_to_plutus_data"]};

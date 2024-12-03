@@ -322,6 +322,13 @@
 <a href="#322" id="322">322</a>
 <a href="#323" id="323">323</a>
 <a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{PlutusDataExtensions, VersionedDatum, VersionedGenericDatumShape};
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
@@ -363,20 +370,12 @@
 		stake_ownership: AdaBasedStaking,
 		sidechain_pub_key: SidechainPublicKey,
 		sidechain_signature: SidechainSignature,
-		consumed_input: UtxoId,
+		registration_utxo: UtxoId,
 		<span class="comment">//own_pkh is used by offchain code to find the registration UTXO when re-registering or deregistering
 		</span>own_pkh: MainchainAddressHash,
 		aura_pub_key: AuraPublicKey,
 		grandpa_pub_key: GrandpaPublicKey,
 	},
-}
-
-<span class="doccomment">/// AdaBasedStaking is a variant of Plutus type StakeOwnership.
-/// The other variant, TokenBasedStaking, is not supported
-</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>AdaBasedStaking {
-	<span class="kw">pub </span>pub_key: MainchainPublicKey,
-	<span class="kw">pub </span>signature: MainchainSignature,
 }
 
 <span class="kw">impl </span>TryFrom&lt;PlutusData&gt; <span class="kw">for </span>RegisterValidatorDatum {
@@ -407,6 +406,21 @@
 	}
 }
 
+<span class="kw">pub fn </span>block_producer_registration_to_plutus_data(
+	block_producer_registration: <span class="kw-2">&amp;</span>sidechain_domain::BlockProducerRegistration,
+) -&gt; PlutusData {
+	RegisterValidatorDatum::V0 {
+		stake_ownership: block_producer_registration.stake_ownership.clone(),
+		sidechain_pub_key: block_producer_registration.sidechain_pub_key.clone(),
+		sidechain_signature: block_producer_registration.sidechain_signature.clone(),
+		registration_utxo: block_producer_registration.registration_utxo,
+		own_pkh: block_producer_registration.own_pkh,
+		aura_pub_key: block_producer_registration.aura_pub_key.clone(),
+		grandpa_pub_key: block_producer_registration.grandpa_pub_key.clone(),
+	}
+	.into()
+}
+
 <span class="kw">fn </span>decode_v0_register_validator_datum(
 	const_data: <span class="kw-2">&amp;</span>PlutusData,
 	mut_data: <span class="kw-2">&amp;</span>PlutusData,
@@ -419,7 +433,7 @@
 	<span class="kw">let </span>stake_ownership = decode_ada_based_staking_datum(fields.get(<span class="number">0</span>))<span class="question-mark">?</span>;
 	<span class="kw">let </span>sidechain_pub_key = fields.get(<span class="number">1</span>).as_bytes().map(SidechainPublicKey)<span class="question-mark">?</span>;
 	<span class="kw">let </span>sidechain_signature = fields.get(<span class="number">2</span>).as_bytes().map(SidechainSignature)<span class="question-mark">?</span>;
-	<span class="kw">let </span>consumed_input = decode_utxo_id_datum(fields.get(<span class="number">3</span>))<span class="question-mark">?</span>;
+	<span class="kw">let </span>registration_utxo = decode_utxo_id_datum(fields.get(<span class="number">3</span>))<span class="question-mark">?</span>;
 	<span class="kw">let </span>aura_pub_key = fields.get(<span class="number">4</span>).as_bytes().map(AuraPublicKey)<span class="question-mark">?</span>;
 	<span class="kw">let </span>grandpa_pub_key = fields.get(<span class="number">5</span>).as_bytes().map(GrandpaPublicKey)<span class="question-mark">?</span>;
 
@@ -428,7 +442,7 @@
 		stake_ownership,
 		sidechain_pub_key,
 		sidechain_signature,
-		consumed_input,
+		registration_utxo,
 		own_pkh,
 		aura_pub_key,
 		grandpa_pub_key,
@@ -445,7 +459,7 @@
 	<span class="kw">let </span>stake_ownership = decode_ada_based_staking_datum(fields.get(<span class="number">0</span>))<span class="question-mark">?</span>;
 	<span class="kw">let </span>sidechain_pub_key = fields.get(<span class="number">1</span>).as_bytes().map(SidechainPublicKey)<span class="question-mark">?</span>;
 	<span class="kw">let </span>sidechain_signature = fields.get(<span class="number">2</span>).as_bytes().map(SidechainSignature)<span class="question-mark">?</span>;
-	<span class="kw">let </span>consumed_input = decode_utxo_id_datum(fields.get(<span class="number">3</span>))<span class="question-mark">?</span>;
+	<span class="kw">let </span>registration_utxo = decode_utxo_id_datum(fields.get(<span class="number">3</span>))<span class="question-mark">?</span>;
 	<span class="kw">let </span>own_pkh = MainchainAddressHash(fields.get(<span class="number">4</span>).as_bytes()<span class="question-mark">?</span>.try_into().ok()<span class="question-mark">?</span>);
 	<span class="kw">let </span>aura_pub_key = fields.get(<span class="number">5</span>).as_bytes().map(AuraPublicKey)<span class="question-mark">?</span>;
 	<span class="kw">let </span>grandpa_pub_key = fields.get(<span class="number">6</span>).as_bytes().map(GrandpaPublicKey)<span class="question-mark">?</span>;
@@ -453,7 +467,7 @@
 		stake_ownership,
 		sidechain_pub_key,
 		sidechain_signature,
-		consumed_input,
+		registration_utxo,
 		own_pkh,
 		aura_pub_key,
 		grandpa_pub_key,
@@ -498,7 +512,7 @@
 				stake_ownership,
 				sidechain_pub_key,
 				sidechain_signature,
-				consumed_input,
+				registration_utxo,
 				own_pkh,
 				aura_pub_key,
 				grandpa_pub_key,
@@ -507,7 +521,7 @@
 				generic_data_fields.add(<span class="kw-2">&amp;</span>stake_ownership_to_plutus_data(stake_ownership));
 				generic_data_fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(sidechain_pub_key.<span class="number">0</span>));
 				generic_data_fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(sidechain_signature.<span class="number">0</span>));
-				generic_data_fields.add(<span class="kw-2">&amp;</span>utxo_id_to_plutus_data(consumed_input));
+				generic_data_fields.add(<span class="kw-2">&amp;</span>utxo_id_to_plutus_data(registration_utxo));
 				generic_data_fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(aura_pub_key.<span class="number">0</span>));
 				generic_data_fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(grandpa_pub_key.<span class="number">0</span>));
 				<span class="kw">let </span>generic_data = ConstrPlutusData::new(<span class="kw-2">&amp;</span>BigNum::zero(), <span class="kw-2">&amp;</span>generic_data_fields);
@@ -557,7 +571,7 @@
 			},
 			sidechain_pub_key: SidechainPublicKey(<span class="macro">hex!</span>(<span class="string">"02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af"</span>).into()),
 			sidechain_signature: SidechainSignature(<span class="macro">hex!</span>(<span class="string">"f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e"</span>).into()),
-			consumed_input: UtxoId {
+			registration_utxo: UtxoId {
 				tx_hash: McTxHash(<span class="macro">hex!</span>(<span class="string">"cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"</span>)),
 				index: UtxoIndex(<span class="number">1</span>),
 			},

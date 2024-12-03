@@ -117,6 +117,11 @@
 <a href="#117" id="117">117</a>
 <a href="#118" id="118">118</a>
 <a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::key_params::{MainchainSigningKeyParam, SidechainSigningKeyParam};
 <span class="kw">use </span><span class="kw">crate</span>::signing::{mainchain_public_key_and_signature, sc_public_key_and_signature_for_datum};
 <span class="kw">use </span>clap::Parser;
@@ -182,15 +187,19 @@
 </span><span class="kw">pub struct </span>RegisterValidatorMessage {
 	<span class="kw">pub </span>genesis_utxo: UtxoId,
 	<span class="kw">pub </span>sidechain_pub_key: SidechainPublicKey,
-	<span class="kw">pub </span>input_utxo: UtxoId,
+	<span class="kw">pub </span>registration_utxo: UtxoId,
 }
 
 <span class="kw">impl </span>RegisterValidatorMessage {
-	<span class="kw">pub fn </span>new(genesis_utxo: UtxoId, pub_key: secp256k1::PublicKey, input_utxo: UtxoId) -&gt; <span class="self">Self </span>{
+	<span class="kw">pub fn </span>new(
+		genesis_utxo: UtxoId,
+		pub_key: secp256k1::PublicKey,
+		registration_utxo: UtxoId,
+	) -&gt; <span class="self">Self </span>{
 		RegisterValidatorMessage {
 			genesis_utxo,
 			sidechain_pub_key: SidechainPublicKey(pub_key.serialize().to_vec()),
-			input_utxo,
+			registration_utxo,
 		}
 	}
 
@@ -229,10 +238,11 @@
 		<span class="kw">let </span>genesis_utxo =
 			UtxoId::from_str(<span class="string">"e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efa#4"</span>)
 				.unwrap();
-		<span class="kw">let </span>input_utxo =
+		<span class="kw">let </span>registration_utxo =
 			UtxoId::from_str(<span class="string">"8ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861#4"</span>)
 				.unwrap();
-		<span class="kw">let </span>message = RegisterValidatorMessage::new(genesis_utxo, sidechain_pub_key, input_utxo);
+		<span class="kw">let </span>message =
+			RegisterValidatorMessage::new(genesis_utxo, sidechain_pub_key, registration_utxo);
 		<span class="macro">assert_eq!</span>(hex::encode(to_datum_cbor_bytes(message)), <span class="string">"d8799fd8799fd8799f5820e41c9b57841e582c207bb68d5e9736fb48c7af5f1ec29ade00692fa5e0e47efaff04ff582102dbfc8b66c22f931a6647fd86db2fc073dd564b99837226a1bdfe7a99578854ecd8799fd8799f58208ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861ff04ffff"</span>)
 	}
 }

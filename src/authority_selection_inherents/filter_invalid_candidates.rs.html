@@ -599,7 +599,7 @@
 	<span class="kw">pub </span>genesis_utxo: UtxoId,
 	<span class="kw">pub </span>sidechain_pub_key: Vec&lt;u8&gt;,
 	<span class="doccomment">/// UTxO that is an input parameter to the registration transaction
-	</span><span class="kw">pub </span>input_utxo: UtxoId,
+	</span><span class="kw">pub </span>registration_utxo: UtxoId,
 }
 
 <span class="attr">#[derive(Clone, Debug, Encode, Decode)]
@@ -768,7 +768,7 @@
 	<span class="kw">let </span>signed_message = RegisterValidatorSignedMessage {
 		genesis_utxo,
 		sidechain_pub_key: registration_data.sidechain_pub_key.<span class="number">0</span>.clone(),
-		input_utxo: registration_data.consumed_input,
+		registration_utxo: registration_data.registration_utxo,
 	};
 
 	<span class="kw">let </span>signed_message_encoded = minicbor::to_vec(signed_message.to_datum())
@@ -847,7 +847,7 @@
 }
 
 <span class="kw">fn </span>verify_tx_inputs(registration_data: <span class="kw-2">&amp;</span>RegistrationData) -&gt; <span class="prelude-ty">Result</span>&lt;(), RegistrationDataError&gt; {
-	<span class="kw">if </span>registration_data.tx_inputs.contains(<span class="kw-2">&amp;</span>registration_data.consumed_input) {
+	<span class="kw">if </span>registration_data.tx_inputs.contains(<span class="kw-2">&amp;</span>registration_data.registration_utxo) {
 		<span class="prelude-val">Ok</span>(())
 	} <span class="kw">else </span>{
 		<span class="prelude-val">Err</span>(RegistrationDataError::InvalidTxInput)
@@ -872,7 +872,7 @@
 
 	<span class="doccomment">/// Get Valid Parameters of the `is_registration_data_valid()` function
 	</span><span class="kw">fn </span>create_valid_parameters() -&gt; (MainchainPublicKey, RegistrationData, UtxoId) {
-		<span class="kw">let </span>input_utxo = UtxoId {
+		<span class="kw">let </span>registration_utxo = UtxoId {
 			tx_hash: McTxHash(<span class="macro">hex!</span>(
 				<span class="string">"d260a76b267e27fdf79c217ec61b776d6436dc78eefeac8f3c615486a71f38eb"
 			</span>)),
@@ -880,7 +880,7 @@
 		};
 
 		<span class="kw">let </span>registration_data = RegistrationData {
-			consumed_input: input_utxo,
+			registration_utxo,
 			sidechain_signature: SidechainSignature(
 				<span class="macro">hex!</span>(<span class="string">"f3622ed6e121836765f684068ecf3cf13eb3eb7d2fc7edcabdb41cad940434ca7b9edf45ce8b6d8d2b2a842fb8265856a3f950d72d42499c72ad28dc46b5dc90"</span>).to_vec()
 			),
@@ -912,7 +912,7 @@
 				slot_number: McSlotNumber(<span class="number">21450270</span>),
 				tx_index_within_block: McTxIndexInBlock(<span class="number">2</span>),
 			},
-			tx_inputs: <span class="macro">vec!</span>[input_utxo],
+			tx_inputs: <span class="macro">vec!</span>[registration_utxo],
 		};
 
 		<span class="kw">let </span>genesis_utxo = UtxoId {
@@ -949,7 +949,7 @@
 			<span class="kw">let </span>signed_message = RegisterValidatorSignedMessage {
 				genesis_utxo,
 				sidechain_pub_key: sidechain_pub_key.clone(),
-				input_utxo: genesis_utxo,
+				registration_utxo: genesis_utxo,
 			};
 
 			<span class="kw">let </span>signed_message_encoded = minicbor::to_vec(signed_message.to_datum()).unwrap();
@@ -960,7 +960,7 @@
 					.to_vec();
 
 			<span class="kw">let </span>registration_data = RegistrationData {
-				consumed_input: signed_message.input_utxo,
+				registration_utxo: signed_message.registration_utxo,
 				sidechain_signature: SidechainSignature(sidechain_signature),
 				mainchain_signature: MainchainSignature(mainchain_signature.<span class="number">0</span>.to_vec()),
 				cross_chain_signature: CrossChainSignature(<span class="macro">vec!</span>[]),
@@ -975,7 +975,7 @@
 					slot_number: McSlotNumber(<span class="number">7</span>),
 					tx_index_within_block: McTxIndexInBlock(<span class="number">7</span>),
 				},
-				tx_inputs: <span class="macro">vec!</span>[signed_message.input_utxo],
+				tx_inputs: <span class="macro">vec!</span>[signed_message.registration_utxo],
 			};
 
 			(MainchainPublicKey(mainchain_account.public().<span class="number">0</span>), registration_data, genesis_utxo)
