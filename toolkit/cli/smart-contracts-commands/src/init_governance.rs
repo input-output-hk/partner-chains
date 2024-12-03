@@ -8,11 +8,11 @@ use crate::read_private_key_from_file;
 pub struct InitGovernanceCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
-	#[arg(long)]
+	#[arg(long, short = 'g')]
 	governance_authority: MainchainAddressHash,
-	#[arg(long)]
+	#[arg(long, short = 'k')]
 	payment_key_file: String,
-	#[arg(long)]
+	#[arg(long, short = 'c')]
 	genesis_utxo: Option<UtxoId>,
 }
 
