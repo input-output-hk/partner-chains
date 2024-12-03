@@ -88,7 +88,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: input-output-hk/sidechains-infra-priv
-          token: ${{ env.ACTIONS_PAT }}
+          token: ${{ secrets.ACTIONS_PAT }}
           path: sidechains-infra-priv
 
       - name: Install kubectl, kubernetes-helm and awscli
@@ -143,7 +143,7 @@ jobs:
       - name: Deploy with chain-spec and image override
         if: env.deployment_type == 1
         run: |
-          cd ./dev/helm/partner-chains-node-chart/
+          cd sidechains-infra-priv/src/kube/substrate-poc/environments/helm/substrate-node-stack-chart/
           helm upgrade --install alice . -f values/chains/devnet.yaml -f values/nodes/devnet/alice.yaml --set images.substrateNode="${{ github.event.inputs.substrate-node-image }}" --set chain.chainspec_secretName="${{ github.event.inputs.chain-spec-secret-name }}"
           helm upgrade --install bob . -f values/chains/devnet.yaml -f values/nodes/devnet/bob.yaml --set images.substrateNode="${{ github.event.inputs.substrate-node-image }}" --set chain.chainspec_secretName="${{ github.event.inputs.chain-spec-secret-name }}"
           helm upgrade --install charlie . -f values/chains/devnet.yaml -f values/nodes/devnet/charlie.yaml --set images.substrateNode="${{ github.event.inputs.substrate-node-image }}" --set chain.chainspec_secretName="${{ github.event.inputs.chain-spec-secret-name }}"
@@ -156,7 +156,7 @@ jobs:
       - name: Deploy with image override
         if: env.deployment_type == 2
         run: |
-          cd ./dev/helm/partner-chains-node-chart/
+          cd sidechains-infra-priv/src/kube/substrate-poc/environments/helm/substrate-node-stack-chart/
           helm upgrade --install alice . -f values/chains/devnet.yaml -f values/nodes/devnet/alice.yaml --set images.substrateNode="${{ github.event.inputs.substrate-node-image }}"
           helm upgrade --install bob . -f values/chains/devnet.yaml -f values/nodes/devnet/bob.yaml --set images.substrateNode="${{ github.event.inputs.substrate-node-image }}"
           helm upgrade --install charlie . -f values/chains/devnet.yaml -f values/nodes/devnet/charlie.yaml --set images.substrateNode="${{ github.event.inputs.substrate-node-image }}"
@@ -169,7 +169,7 @@ jobs:
       - name: Deploy from master with no value overrides
         if: env.deployment_type == 3
         run: |
-          cd ./dev/helm/partner-chains-node-chart/
+          cd sidechains-infra-priv/src/kube/substrate-poc/environments/helm/substrate-node-stack-chart/
           helm upgrade --install alice . -f values/chains/devnet.yaml -f values/nodes/devnet/alice.yaml
           helm upgrade --install bob . -f values/chains/devnet.yaml -f values/nodes/devnet/bob.yaml
           helm upgrade --install charlie . -f values/chains/devnet.yaml -f values/nodes/devnet/charlie.yaml
