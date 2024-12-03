@@ -616,7 +616,7 @@ impl GrandpaPublicKey {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq, Decode, Encode, MaxEncodedLen, TypeInfo, Eq)]
+#[derive(Debug, Clone, PartialEq, Decode, Encode, MaxEncodedLen, TypeInfo, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct DParameter {
 	pub num_permissioned_candidates: u16,
