@@ -105,8 +105,8 @@ new_address=$(cardano-cli latest address build \
 
 echo "New address created: $new_address"
 
-dave_address="addr_test1vphpcf32drhhznv6rqmrmgpuwq06kug0lkg22ux777rtlqst2er0r"
-eve_address="addr_test1vzzt5pwz3pum9xdgxalxyy52m3aqur0n43pcl727l37ggscl8h7v8"
+dave_address="addr_test1vp8qlt7xdpe9wfhp4mntj3yq5jh6usde5nts7d3hpavpductyruv5"
+eve_address="addr_test1vr88zd5ywcdu07hqpnutd8umqyld34e6rrtzgu7m3rua67gg6clcz"
 
 # Define the UTXO details and amounts
 tx_in1="781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"

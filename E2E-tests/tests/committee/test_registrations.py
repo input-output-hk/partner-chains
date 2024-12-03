@@ -36,6 +36,9 @@ def test_register_candidate(candidate: Candidates, api: BlockchainApi, db: Sessi
     candidate_registrations = api.get_trustless_candidates(next_status_epoch, valid_only=False)
     spo_public_key = config.nodes_config.nodes[candidate.name].keys_files.spo_public_key
     registered_mc_pub_key = f"0x{api._read_cardano_key_file(spo_public_key)}"
+    assert (
+        registered_mc_pub_key in candidate_registrations.keys()
+    ), f"Could not find MC pubKey {registered_mc_pub_key} registration in MC epoch {next_status_epoch}"
     # FIXME: ETCM-7370 handle multiple registrations for a single spo
     registration = candidate_registrations[registered_mc_pub_key][0]
     registered_pc_pub_key = config.nodes_config.nodes[candidate.name].public_key

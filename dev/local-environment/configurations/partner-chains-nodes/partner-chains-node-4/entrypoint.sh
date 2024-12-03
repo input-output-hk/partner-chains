@@ -39,12 +39,12 @@ export NATIVE_TOKEN_ASSET_NAME=$(cat /shared/NATIVE_TOKEN_ASSET_NAME)
 export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS==$(cat /shared/ILLIQUID_SUPPLY_VALIDATOR_ADDRESS)
 
 /usr/local/bin/partner-chains-node \
+  --dave \
   --chain=/shared/chain-spec.json \
   --validator \
   --node-key=0000000000000000000000000000000000000000000000000000000000000004 \
   --bootnodes="/dns/partner-chains-node-1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp" \
   --base-path=/data \
-  --keystore-path=/keystore \
   --unsafe-rpc-external \
   --rpc-port=9936 \
   --rpc-cors=all \

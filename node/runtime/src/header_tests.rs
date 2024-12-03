@@ -12,7 +12,7 @@ mod header_verification {
 	#[test]
 	fn test_header_hashing() {
 		let json_header = "{
-            \"parentHash\": \"0x3daf82d4a574425dd416d6ca1644d582f875a41f7578cc6cb60ba66abdff4f01\",
+            \"parentHash\": \"0x9e089c53a8a57dbd7c7ee2681fa7948ec76a2e60511310c2da654f16047b0fe9\",
             \"number\": \"0x5b1\",
             \"stateRoot\": \"0x291edbe5a31b3a8844df818d8ebff2e37ce2a80f3fd3a311a60f92cd0bee0858\",
             \"extrinsicsRoot\": \"0x61956e6d49c23796b0b3031482d9feacfa9d4cfd0a7b14810a440523e77723fc\",

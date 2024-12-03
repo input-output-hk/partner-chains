@@ -1,6 +1,6 @@
 {
     "deployment_mc_epoch": 2,
-    "genesis_utxo": "c389187c6cabf1cd2ca64cf8c76bf57288eb9c02ced6781935b810a1d0e7fbb4#0",
+    "genesis_utxo": "ab70b04c38fe14f77bcdc0b790f55b268e3521ecf8437afcc82f07e2f29d2ceb#0",
     "main_chain": {
         "network": "--testnet-magic 42",
         "epoch_length": 120,
@@ -45,35 +45,35 @@
             "dave": {
                 "host": "127.0.0.1",
                 "port": "9936",
-                "public_key": "0x039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180",
-                "aura_public_key": "0xe85534c93315d60f808568d1dce5cb9e8ba6ed0b204209c5cc8f3bec56c10b73",
-                "grandpa_public_key": "0xcdf3e5b33f53c8b541bbaea383225c45654f24de38c585725f3cff25b2802f55",
+                "public_key": "0x03bc9d0ca094bd5b8b3225d7651eac5d18c1c04bf8ae8f8b263eebca4e1410ed0c",
+                "aura_public_key": "0x306721211d5404bd9da88e0204360a1a9ab8b87c66c1bc2fcdd37f3c2222cc20",
+                "grandpa_public_key": "0x5e639b43e0052c47447dac87d6fd2b6ec50bdd4d0f614e4299c665249bbd09d9",
                 "rotation_candidate": true,
-                "cardano_payment_addr": "addr_test1vphpcf32drhhznv6rqmrmgpuwq06kug0lkg22ux777rtlqst2er0r",
-                "aura_ss58_address": "5HKLH5ErLMNHReWGFGtrDPRdNqdKP56ArQA6DFmgANzunK7A",
+                "cardano_payment_addr": "addr_test1vp8qlt7xdpe9wfhp4mntj3yq5jh6usde5nts7d3hpavpductyruv5",
+                "aura_ss58_address": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000004",
                 "keys_files": {
                     "cardano_payment_key": "/partner-chains-nodes/partner-chains-node-4/keys/payment.skey",
-                    "spo_signing_key": "./secrets/substrate/local/keys/dave/cold.skey",
-                    "spo_public_key": "./secrets/substrate/local/keys/dave/cold.vkey",
-                    "partner_chain_signing_key": "./secrets/substrate/local/keys/dave/sidechain.skey"
+                    "spo_signing_key": "../dev/local-environment/configurations/partner-chains-nodes/partner-chains-node-4/keys/cold.skey",
+                    "spo_public_key": "../dev/local-environment/configurations/partner-chains-nodes/partner-chains-node-4/keys/cold.vkey",
+                    "partner_chain_signing_key": "../dev/local-environment/configurations/partner-chains-nodes/partner-chains-node-4/keys/sidechain.skey"
                 }
             },
             "eve": {
                 "host": "127.0.0.1",
                 "port": "9937",
-                "public_key": "0x0364b1f01f6e803be10abc6dd6fe08ced61cf3eaaef2dbdc72b4e774c4b6a564af",
-                "aura_ss58_address": "5G4gFEZJaCDQfXjef24P8oR6hpD7FKi3GNaHwtRL7hmTBxPC",
-                "aura_public_key": "0xb0eb82cbdf9f92c384d88ea14de34aa38f7d05b0131b7b9bc21bb3f395920c22",
-                "grandpa_public_key": "0x83c5eea08f80a64d7abf4c15a8a19d9f186aa62fc14389a7c6d6042bcc971daf",
+                "public_key": "0x031d10105e323c4afce225208f71a6441ee327a65b9e646e772500c74d31f669aa",
+                "aura_ss58_address": "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw",
+                "aura_public_key": "0xe659a7a1628cdd93febc04a4e0646ea20e9f5f0ce097d9a05290d4a9e054df4e",
+                "grandpa_public_key": "0x1dfe3e22cc0d45c70779c1095f7489a8ef3cf52d62fbd8c2fa38c9f1723502b5",
                 "rotation_candidate": true,
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000005",
-                "cardano_payment_addr": "addr_test1vzzt5pwz3pum9xdgxalxyy52m3aqur0n43pcl727l37ggscl8h7v8",
+                "cardano_payment_addr": "addr_test1vr88zd5ywcdu07hqpnutd8umqyld34e6rrtzgu7m3rua67gg6clcz",
                 "keys_files": {
                     "cardano_payment_key": "/partner-chains-nodes/partner-chains-node-5/keys/payment.skey",
-                    "spo_signing_key": "./secrets/substrate/local/keys/eve/cold.skey",
-                    "spo_public_key": "./secrets/substrate/local/keys/eve/cold.vkey",
-                    "partner_chain_signing_key": "./secrets/substrate/local/keys/eve/sidechain.skey"
+                    "spo_signing_key": "../dev/local-environment/configurations/partner-chains-nodes/partner-chains-node-5/keys/cold.skey",
+                    "spo_public_key": "../dev/local-environment/configurations/partner-chains-nodes/partner-chains-node-5/keys/cold.vkey",
+                    "partner_chain_signing_key": "../dev/local-environment/configurations/partner-chains-nodes/partner-chains-node-5/keys/sidechain.skey"
                 }
             }
         },
@@ -98,12 +98,12 @@
             }
         },
         "d_param_min": {
-            "permissioned_candidates_number": 2,
-            "trustless_candidates_number": 2
+            "permissioned_candidates_number": 1,
+            "trustless_candidates_number": 1
         },
         "d_param_max": {
-            "permissioned_candidates_number": 5,
-            "trustless_candidates_number": 5
+            "permissioned_candidates_number": 3,
+            "trustless_candidates_number": 2
         }
     },
     "block_encoding_suffix_grandpa": "3903",

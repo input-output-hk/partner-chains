@@ -100,8 +100,6 @@
       - partner-chains-node-4-data:/data
       - shared-volume:/shared
       - ./configurations/partner-chains-nodes/partner-chains-node-4/entrypoint.sh:/entrypoint.sh
-      - ./configurations/partner-chains-nodes/partner-chains-node-4/keystore:/keystore
-      - ./configurations/partner-chains-nodes/partner-chains-node-4/network:/network
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
       SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000004"
@@ -133,8 +131,6 @@
       - partner-chains-node-5-data:/data
       - shared-volume:/shared
       - ./configurations/partner-chains-nodes/partner-chains-node-5/entrypoint.sh:/entrypoint.sh
-      - ./configurations/partner-chains-nodes/partner-chains-node-5/keystore:/keystore
-      - ./configurations/partner-chains-nodes/partner-chains-node-5/network:/network
     environment:
       DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
       SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000005"

@@ -270,6 +270,11 @@ class SubstrateApi(BlockchainApi):
 
     #########
 
+    def _read_plain_text_file(self, filepath):
+        with open(filepath, "r") as file:
+            content = file.read().strip()
+        return content
+
     def _read_json_file(self, filepath):
         with open(filepath, "r") as file:
             content = json.load(file)
@@ -312,7 +317,7 @@ class SubstrateApi(BlockchainApi):
         signatures = self.sidechain_main_cli.get_signatures(
             registration_utxo,
             self._read_cardano_key_file(keys_files.spo_signing_key),
-            self._read_json_file(keys_files.partner_chain_signing_key)['skey'],
+            self._read_plain_text_file(keys_files.partner_chain_signing_key),
             self.config.nodes_config.nodes[candidate_name].aura_public_key,
             self.config.nodes_config.nodes[candidate_name].grandpa_public_key,
         )
