@@ -1,6 +1,7 @@
-{ fetchzip, stdenv, version, ... }:
-
-fetchzip {
+{ fetchzip, stdenv, ... }:
+let
+  version = "7.0.1";
+in fetchzip {
   url = "https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/v${version}/pc-contracts-cli-v${version}.zip";
   hash = "sha256-Sp94vyyjI1lfRar6TJX1YRD/eOYkbK/t7dplLZx7+iA=";
   stripRoot = false;
