@@ -7,7 +7,7 @@ use ogmios_client::{
 	query_network::ShelleyGenesisConfigurationResponse,
 	types::{OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue, SlotLength},
 };
-use sidechain_domain::NetworkType;
+use sidechain_domain::{MainchainPublicKey, NetworkType};
 use time::OffsetDateTime;
 
 pub(crate) fn payment_key() -> PrivateKey {
@@ -19,6 +19,10 @@ pub(crate) fn payment_key() -> PrivateKey {
 
 pub(crate) fn payment_addr() -> Address {
 	Address::from_bech32("addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy").unwrap()
+}
+
+pub(crate) fn mainchain_pub_key() -> MainchainPublicKey {
+	MainchainPublicKey(hex!("bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d"))
 }
 
 pub(crate) fn test_validator() -> PlutusScript {

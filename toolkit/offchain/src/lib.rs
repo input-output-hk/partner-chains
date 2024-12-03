@@ -14,6 +14,8 @@ pub mod ogmios_mock;
 pub mod permissioned_candidates;
 /// Utilities for handling Plutus script data
 mod plutus_script;
+/// Supports candidate registration
+mod register;
 /// Provides synthetized scripts data
 pub mod scripts_data;
 #[cfg(test)]
