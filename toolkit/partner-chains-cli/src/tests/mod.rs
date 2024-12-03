@@ -285,6 +285,16 @@ impl OffchainMock {
 			..self
 		}
 	}
+
+	pub(crate) fn with_upsert_d_param(
+		self,
+		genesis_utxo: UtxoId,
+		d_param: DParameter,
+		payment_key: MainchainPrivateKey,
+		result: Result<Option<McTxHash>, String>,
+	) -> Self {
+		Self { upsert_d_param: [((genesis_utxo, d_param, payment_key.0), result)].into(), ..self }
+	}
 }
 
 impl GetScriptsData for OffchainMock {
@@ -321,7 +331,9 @@ impl UpsertDParam for OffchainMock {
 		self.upsert_d_param
 			.get(&(genesis_utxo, d_parameter.clone(), payment_signing_key))
 			.cloned()
-			.unwrap_or_else(|| Err("No mock for upsert_d_param".into()))
+			.unwrap_or_else(|| {
+				Err(format!("No mock for upsert_d_param({genesis_utxo}, {d_parameter:?}, {payment_signing_key:?})"))
+			})
 			.map_err(|err| anyhow!("{err}"))
 	}
 }
