@@ -623,6 +623,12 @@ pub struct DParameter {
 	pub num_registered_candidates: u16,
 }
 
+impl DParameter {
+	pub fn new(num_permissioned_candidates: u16, num_registered_candidates: u16) -> Self {
+		Self { num_permissioned_candidates, num_registered_candidates }
+	}
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord)]
 pub struct PermissionedCandidateData {
 	pub sidechain_public_key: SidechainPublicKey,

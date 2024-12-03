@@ -1,15 +1,19 @@
 use crate::config::config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
 use crate::config::{config_fields, PC_CONTRACTS_CLI_PATH};
 use crate::config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
-use crate::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io;
-use crate::pc_contracts_cli_resources::PcContractsCliResources;
+use crate::pc_contracts_cli_resources::tests::{
+	establish_pc_contracts_cli_configuration_io, prompt_ogmios_configuration_io,
+};
+use crate::pc_contracts_cli_resources::{default_ogmios_service_config, PcContractsCliResources};
 use crate::prepare_configuration::tests::{
 	prompt_and_save_to_existing_file, prompt_with_default_and_save_to_existing_file,
 };
 use crate::setup_main_chain_state::SetupMainChainStateCmd;
-use crate::tests::{MockIO, MockIOContext};
+use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
 use crate::CmdRun;
+use hex_literal::hex;
 use serde_json::json;
+use sidechain_domain::{DParameter, MainchainPrivateKey, McTxHash, UtxoId};
 use sp_core::offchain::Timestamp;
 
 #[test]
@@ -35,10 +39,18 @@ fn no_ariadne_parameters_on_main_chain_no_updates() {
 
 #[test]
 fn no_ariadne_parameters_on_main_chain_do_updates() {
+	let offchain_mock = OffchainMock::new().with_upsert_d_param(
+		UtxoId::default(),
+		new_d_parameter(),
+		payment_signing_key(),
+		Ok(Some(McTxHash::default())),
+	);
 	let mock_context = MockIOContext::new()
 		.with_file(PC_CONTRACTS_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
+		.with_json_file("payment.skey", valid_payment_signing_key_content())
+		.with_offchain_mocks(OffchainMocks::new_with_mock("http://localhost:1337", offchain_mock))
 		.with_expected_io(vec![
 			read_chain_config_io(),
 			print_info_io(),
@@ -78,10 +90,18 @@ fn ariadne_parameters_are_on_main_chain_no_updates() {
 
 #[test]
 fn ariadne_parameters_are_on_main_chain_do_update() {
+	let offchain_mock = OffchainMock::new().with_upsert_d_param(
+		UtxoId::default(),
+		new_d_parameter(),
+		payment_signing_key(),
+		Ok(Some(McTxHash::default())),
+	);
 	let mock_context = MockIOContext::new()
 		.with_file(PC_CONTRACTS_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
+		.with_json_file("payment.skey", valid_payment_signing_key_content())
+		.with_offchain_mocks(OffchainMocks::new_with_mock("http://localhost:1337", offchain_mock))
 		.with_expected_io(vec![
 			read_chain_config_io(),
 			print_info_io(),
@@ -258,8 +278,16 @@ fn establish_pc_contracts_cli_config_io() -> MockIO {
 	])
 }
 
+fn new_d_parameter() -> DParameter {
+	DParameter::new(4, 7)
+}
+
 fn insert_d_parameter_io() -> MockIO {
 	MockIO::Group(vec![
+		prompt_ogmios_configuration_io(
+			&default_ogmios_service_config(),
+			&default_ogmios_service_config(),
+		),
 		MockIO::prompt(
 			"Enter P, the number of permissioned candidates seats, as a non-negative integer.",
 			Some("0"),
@@ -270,12 +298,12 @@ fn insert_d_parameter_io() -> MockIO {
 			Some("0"),
 			"7",
 		),
-		establish_pc_contracts_cli_config_io(),
-		MockIO::file_read("partner-chains-cli-chain-config.json"),
-		MockIO::run_command(
-			"./pc-contracts-cli insert-d-parameter --network testnet --d-parameter-permissioned-candidates-count 4 --d-parameter-registered-candidates-count 7 --genesis-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file payment.skey",
-			"{\"endpoint\":\"UpdateDParameter\",\"transactionId\":\"d7127c3b728501a80c27e513d7eadb2c713f10a540441f98dbca45a323118a65\"}"
+		prompt_with_default_and_save_to_existing_file(
+			CARDANO_PAYMENT_SIGNING_KEY_FILE,
+			Some("payment.skey"),
+			"payment.skey",
 		),
+		MockIO::file_read("payment.skey"),
 		MockIO::print(
 			"D-parameter updated to (4, 7). The change will be effective in two main chain epochs.",
 		),
@@ -284,6 +312,10 @@ fn insert_d_parameter_io() -> MockIO {
 
 fn update_d_parameter_io() -> MockIO {
 	MockIO::Group(vec![
+		prompt_ogmios_configuration_io(
+			&default_ogmios_service_config(),
+			&default_ogmios_service_config(),
+		),
 		MockIO::prompt(
 			"Enter P, the number of permissioned candidates seats, as a non-negative integer.",
 			Some("6"),
@@ -294,12 +326,12 @@ fn update_d_parameter_io() -> MockIO {
 			Some("4"),
 			"7",
 		),
-		establish_pc_contracts_cli_config_io(),
-		MockIO::file_read("partner-chains-cli-chain-config.json"),
-		MockIO::run_command(
-			"./pc-contracts-cli update-d-parameter --network testnet --d-parameter-permissioned-candidates-count 4 --d-parameter-registered-candidates-count 7 --genesis-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file payment.skey",
-			"{\"endpoint\":\"UpdateDParameter\",\"transactionId\":\"d7127c3b728501a80c27e513d7eadb2c713f10a540441f98dbca45a323118a65\"}"
+		prompt_with_default_and_save_to_existing_file(
+			CARDANO_PAYMENT_SIGNING_KEY_FILE,
+			Some("payment.skey"),
+			"payment.skey",
 		),
+		MockIO::file_read("payment.skey"),
 		MockIO::print(
 			"D-parameter updated to (4, 7). The change will be effective in two main chain epochs.",
 		),
@@ -445,4 +477,17 @@ fn ariadne_parameters_same_as_in_config_response() -> serde_json::Value {
 		"candidateRegistrations": {}
 	}
 		)
+}
+
+fn valid_payment_signing_key_content() -> serde_json::Value {
+	json!(
+		{
+		"type": "PaymentSigningKeyShelley_ed25519",
+		"description": "Payment Signing Key",
+		"cborHex": "58200000000000000000000000000000000000000000000000000000000000000001"
+	})
+}
+
+fn payment_signing_key() -> MainchainPrivateKey {
+	MainchainPrivateKey(hex!("0000000000000000000000000000000000000000000000000000000000000001"))
 }
