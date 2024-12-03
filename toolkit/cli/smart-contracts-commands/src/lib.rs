@@ -58,7 +58,7 @@ pub(crate) fn read_private_key_from_file(path: &str) -> CmdResult<MainchainPriva
 
 pub fn setup_logging() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	let stdout = ConsoleAppender::builder().build();
-	let ogmios_log = FileAppender::builder().build("ogmios_log.json")?;
+	let ogmios_log = FileAppender::builder().build("ogmios_client.log")?;
 
 	let log_config = log4rs::config::Config::builder()
 		.appender(Appender::builder().build("stdout", Box::new(stdout)))
