@@ -7,6 +7,10 @@ inputs:
   sha:
     description: "Git SHA"
     required: true
+  no-wipe:
+    description: "Skip PVC wipe step"
+    required: false
+    default: false
 
 outputs: {}
 
@@ -66,6 +70,7 @@ runs:
 
     - name: Delete substrate PVCs
       continue-on-error: true
+      if: inputs.no-wipe != 'true'
       run: |
         kubectl delete pvc staging-preprod-validator-1-claim-substrate-node-data -n staging-preprod
         kubectl delete pvc staging-preprod-validator-2-claim-substrate-node-data -n staging-preprod
