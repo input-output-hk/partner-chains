@@ -6,6 +6,16 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+## Removed
+
+## Fixed
+
+## Added
+
+# v1.4.0
+
+## Changed
+
 * `genesis_utxo` and `registration_utxo` no longer have to have no native tokens.
 * Update ogmios to v6.9.0
 * Organized Rust sources into two directories: toolkit and node.
@@ -16,8 +26,6 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * * partner-chains-cli is changed, so prepare-config wizard sets `genesis_utxo` and does not set sidechain parameters
 * * pallets are not generic on SidechainParams anymore, they use UtxoId (genesis_utxo) instead
 * * migration of pallet_sidechain storage is not present in this update, it has to be done before v1.4, so as for now it is a very breaking change
-
-## Removed
 
 ## Fixed
 
