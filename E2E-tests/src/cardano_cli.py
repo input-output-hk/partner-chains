@@ -10,8 +10,12 @@ class CardanoCli:
         self.network = config.network
         self.run_command = RunnerFactory.get_runner(cardano_cli.ssh, cardano_cli.shell)
 
-    def query_tip(self) -> int:
-        cmd = f"{self.cli} latest query tip {self.network}"
+    def query_tip(self, node_num=None) -> int:
+        base_cmd = f"{self.cli} query tip {self.network}"
+        if node_num:
+            cmd = f"docker exec cardano-node-{node_num} cardano-cli {self.network}"
+        else:
+            cmd = base_cmd
         result = self.run_command.run(cmd)
         return json.loads(result.stdout)
 

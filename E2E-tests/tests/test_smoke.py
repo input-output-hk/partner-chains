@@ -3,10 +3,37 @@ from pytest import mark
 from src.blockchain_api import BlockchainApi, Wallet, Transaction
 from config.api_config import ApiConfig
 import logging as logger
+import json
 
 
 @mark.CD
 class TestSmoke:
+    @mark.substrate
+    def test_cardano_nodes_are_in_sync(self, api: BlockchainApi):
+        """Test that all Cardano nodes are in sync with each other
+
+        * query tip from each Cardano node (1-3)
+        * compare block heights
+        * verify nodes are within acceptable range of each other
+        """
+        # Maximum allowed difference in block heights between nodes
+        MAX_BLOCK_DIFF = 5
+
+        # Get tips from all three nodes
+        tips = []
+        for node_num in range(1, 4):
+            tip_data = api.cardano_cli.query_tip(node_num)
+            tips.append(tip_data)
+            logger.info(f"Node {node_num} tip: {tip_data}")
+
+        # Compare block heights between all nodes
+        for i in range(len(tips)):
+            for j in range(i + 1, len(tips)):
+                block_diff = abs(tips[i]["block"] - tips[j]["block"])
+                logger.info(f"Block difference between node {i+1} and {j+1}: {block_diff}")
+                assert block_diff <= MAX_BLOCK_DIFF, \
+                    f"Nodes {i+1} and {j+1} are out of sync. Block difference: {block_diff}"
+
     @mark.ariadne
     @mark.substrate
     @mark.test_key('ETCM-6992')
