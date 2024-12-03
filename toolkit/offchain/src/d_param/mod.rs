@@ -24,6 +24,27 @@ use sidechain_domain::{DParameter, McTxHash, UtxoId};
 #[cfg(test)]
 mod tests;
 
+pub trait UpsertDParam {
+	#[allow(async_fn_in_trait)]
+	async fn upsert_d_param(
+		&self,
+		genesis_utxo: UtxoId,
+		d_parameter: &DParameter,
+		payment_signing_key: [u8; 32],
+	) -> anyhow::Result<Option<McTxHash>>;
+}
+
+impl<C: QueryLedgerState + QueryNetwork + Transactions> UpsertDParam for C {
+	async fn upsert_d_param(
+		&self,
+		genesis_utxo: UtxoId,
+		d_parameter: &DParameter,
+		payment_signing_key: [u8; 32],
+	) -> anyhow::Result<Option<McTxHash>> {
+		upsert_d_param(genesis_utxo, d_parameter, payment_signing_key, self).await
+	}
+}
+
 pub async fn upsert_d_param<C: QueryLedgerState + QueryNetwork + Transactions>(
 	genesis_utxo: UtxoId,
 	d_parameter: &DParameter,
