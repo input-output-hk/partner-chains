@@ -1,4 +1,0 @@
-apiVersion: v2
-name: substrate-node-stack
-version: 0.1.0
-description: A Helm chart for deploying substrate nodes

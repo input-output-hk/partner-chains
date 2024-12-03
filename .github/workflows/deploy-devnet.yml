@@ -84,8 +84,12 @@ jobs:
             exit 1
           fi
 
-      - name: Checkout repo
+      - name: Checkout sidechains-infra-priv repo
         uses: actions/checkout@v4
+        with:
+          repository: input-output-hk/sidechains-infra-priv
+          token: ${{ env.ACTIONS_PAT }}
+          path: sidechains-infra-priv
 
       - name: Install kubectl, kubernetes-helm and awscli
         run: |

@@ -13,8 +13,12 @@ outputs: {}
 runs:
   using: "composite"
   steps:
-    - name: Checkout repo
+    - name: Checkout sidechains-infra-priv repo
       uses: actions/checkout@v4
+      with:
+        repository: input-output-hk/sidechains-infra-priv
+        token: ${{ env.ACTIONS_PAT }}
+        path: sidechains-infra-priv
 
     - name: Acquire AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -74,7 +78,7 @@ runs:
 
     - name: Deploy with chain-spec and image override
       run: |
-        cd ./dev/helm/partner-chains-node-chart/
+        cd sidechains-infra-priv/src/kube/substrate-poc/environments/helm/substrate-node-stack-chart/
         helm upgrade --install staging-preprod-validator-1 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-1 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="staging-preprod-chain-spec-${{ inputs.sha }}"
         helm upgrade --install staging-preprod-validator-2 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-2 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="staging-preprod-chain-spec-${{ inputs.sha }}"
         helm upgrade --install staging-preprod-validator-3 . -f values/chains/staging-preprod.yaml -f values/nodes/staging-preprod/validator/staging-preprod-validator-3 --set images.substrateNode="${{ inputs.image }}" --set chain.chainspec_secretName="staging-preprod-chain-spec-${{ inputs.sha }}"
