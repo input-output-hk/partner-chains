@@ -11,13 +11,26 @@ class CardanoCli:
         self.run_command = RunnerFactory.get_runner(cardano_cli.ssh, cardano_cli.shell)
 
     def query_tip(self, node_num=None) -> int:
-        base_cmd = f"{self.cli} query tip {self.network}"
         if node_num:
-            cmd = f"docker exec cardano-node-{node_num} cardano-cli {self.network}"
+            socket_path = f"/ipc/node-{node_num}.socket"
         else:
-            cmd = base_cmd
+            socket_path = "/ipc/node.socket"
+
+        cmd = f"export CARDANO_NODE_SOCKET_PATH={socket_path} && /tools/cardano-cli query tip {self.network}"
+
         result = self.run_command.run(cmd)
-        return json.loads(result.stdout)
+        if result.stderr:
+            logger.error(f"Error querying tip: {result.stderr}")
+        if not result.stdout:
+            logger.error("Empty response from query tip command")
+            raise ValueError(f"No output from command: {cmd}")
+
+        try:
+            return json.loads(result.stdout)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON response: '{result.stdout}'")
+            logger.error(f"Command used: {cmd}")
+            raise
 
     def get_epoch(self) -> int:
         return self.query_tip()["epoch"]
