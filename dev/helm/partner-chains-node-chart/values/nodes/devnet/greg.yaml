@@ -1,0 +1,16 @@
+pods:
+  greg:
+    infrastructure:
+      zone: eu-central-1b
+    service:
+      nodePorts:
+        p2p: 30007
+        rpc: 30027
+    pod:
+      namespace: sc
+      containers:
+        substrateNode:
+          nodeKey: "0000000000000000000000000000000000000000000000000000000000000007"
+          bootNodes: "/dns/alice-service.sc.svc.cluster.local/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp"
+          validator: true
+          keystore_secret_name: devnet-greg-keystore

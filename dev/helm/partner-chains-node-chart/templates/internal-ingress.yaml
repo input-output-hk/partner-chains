@@ -1,0 +1,23 @@
+{{- $root := . -}}
+{{- range $podName, $podValues := .Values.pods }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $podName }}-ingress
+  namespace: {{ $podValues.pod.namespace }}
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host: {{ $podName }}.eks.internal
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: {{ $podName }}-service
+            port:
+              number: 30333
+{{- end }}

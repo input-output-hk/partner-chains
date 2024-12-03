@@ -1,0 +1,11 @@
+chain:
+  cardano_network: "preview"
+  keystore_network: "local_testnet"
+  block_stability_margin: "0"
+  chainspec_secretName: "devnet-chain-spec-v-1-2-0"
+  chainspec_filename: "devnet_chain_spec.json"
+images:
+  cardanoNode: "ghcr.io/intersectmbo/cardano-node:10.1.2"
+  postgres: "postgres:15.3"
+  dbSync: "ghcr.io/intersectmbo/cardano-db-sync:13.5.0.2"
+  substrateNode: "689191102645.dkr.ecr.eu-central-1.amazonaws.com/substrate-node:31b57d6f12901c686a99affb7307efa2f1d93f70"

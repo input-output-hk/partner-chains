@@ -1,0 +1,15 @@
+pods:
+  passive-5:
+    infrastructure:
+      zone: eu-central-1b
+    service:
+      nodePorts:
+        p2p: 30105
+        rpc: 30125
+    pod:
+      namespace: staging
+      containers:
+        substrateNode:
+          nodeKey: "0000000000000000000000000000000000000000000000000000000000000105"
+          bootNodes: "/dns/validator-1-service.staging.svc.cluster.local/tcp/30333/p2p/12D3KooWNjP19oTaVjgyw2WGfNVcNyKMYeDfw84y9BZpxDLjyb6v"
+          validator: false

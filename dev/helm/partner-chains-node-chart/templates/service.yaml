@@ -1,0 +1,33 @@
+{{- $root := . -}}
+{{- range $podName, $podValues := .Values.pods }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $podName }}-service
+  namespace: {{ $podValues.pod.namespace }}
+spec:
+  type: NodePort
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/path: '/metrics'
+    prometheus.io/port: '9615'
+  selector:
+    app: sidechains-substrate-poc
+    node: {{ $podName }}
+  ports:
+    - name: p2p-port
+      port: 30333
+      targetPort: 30333
+      nodePort: {{ $podValues.service.nodePorts.p2p }}
+    - name: rpc-port
+      port: 9933
+      targetPort: 9933
+      nodePort: {{ $podValues.service.nodePorts.rpc }} 
+    - name: substrate-node-metrics
+      port: 9615
+      targetPort: 9615
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+{{- end }}

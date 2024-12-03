@@ -1,0 +1,16 @@
+pods:
+  staging-preprod-validator-6:
+    infrastructure:
+      zone: eu-central-1c
+    service:
+      nodePorts:
+        p2p: 30506
+        rpc: 30526
+    pod:
+      namespace: staging-preprod
+      containers:
+        substrateNode:
+          nodeKey: "0000000000000000000000000000000000000000000000000000000000000206"
+          bootNodes: "/dns/staging-preprod-validator-1-service.staging-preprod.svc.cluster.local/tcp/30333/p2p/12D3KooWNjP19oTaVjgyw2WGfNVcNyKMYeDfw84y9BZpxDLjyb6v"
+          validator: true
+          keystore_secret_name: staging-preprod-validator-6-keystore

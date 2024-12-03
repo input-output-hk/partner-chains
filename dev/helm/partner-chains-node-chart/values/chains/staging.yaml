@@ -1,0 +1,11 @@
+chain:
+  cardano_network: "preview"
+  keystore_network: "staging"
+  block_stability_margin: "0"
+  chainspec_secretName: "staging-chain-spec-202408211019-538c8959e8b5b1097b51b70e41838b2dbb91bcdf"
+  chainspec_filename: "staging_chain_spec.json"
+images:
+  cardanoNode: "ghcr.io/intersectmbo/cardano-node:10.1.2"
+  postgres: "postgres:15.3"
+  dbSync: "ghcr.io/intersectmbo/cardano-db-sync:13.3.0.0"
+  substrateNode: "ghcr.io/input-output-hk/partner-chains/partner-chains-node:v1.1.0-rc2"

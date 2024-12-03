@@ -1,0 +1,59 @@
+{{- $root := . -}}
+{{- range $podName, $podValues := .Values.pods }}
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ $podName }}-cardano-node-data-storageclass
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp2
+  fsType: ext4
+allowedTopologies:
+- matchLabelExpressions:
+  - key: topology.kubernetes.io/zone
+    values:
+    - {{ $podValues.infrastructure.zone }}
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ $podName }}-postgres-data-storageclass
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp2
+  fsType: ext4
+allowedTopologies:
+- matchLabelExpressions:
+  - key: topology.kubernetes.io/zone
+    values:
+    - {{ $podValues.infrastructure.zone }}  
+#---
+#apiVersion: storage.k8s.io/v1
+#kind: StorageClass
+#metadata:
+#  name: {{ $podName }}-substrate-node-data-storageclass
+#provisioner: ebs.csi.aws.com
+#parameters:
+#  type: gp2
+#  fsType: ext4
+#allowedTopologies:
+#- matchLabelExpressions:
+#  - key: topology.kubernetes.io/zone
+#    values:
+#    - {{ $podValues.infrastructure.zone }}  
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ $podName }}-db-sync-state-dir-storageclass
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp2
+  fsType: ext4
+allowedTopologies:
+- matchLabelExpressions:
+  - key: topology.kubernetes.io/zone
+    values:
+    - {{ $podValues.infrastructure.zone }}  
+{{- end }}

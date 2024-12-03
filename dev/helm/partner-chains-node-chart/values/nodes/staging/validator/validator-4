@@ -1,0 +1,16 @@
+pods:
+  validator-4:
+    infrastructure:
+      zone: eu-central-1a
+    service:
+      nodePorts:
+        p2p: 30204
+        rpc: 30224
+    pod:
+      namespace: staging
+      containers:
+        substrateNode:
+          nodeKey: "0000000000000000000000000000000000000000000000000000000000000204"
+          bootNodes: "/dns/validator-1-service.staging.svc.cluster.local/tcp/30333/p2p/12D3KooWNjP19oTaVjgyw2WGfNVcNyKMYeDfw84y9BZpxDLjyb6v"
+          validator: true
+          keystore_secret_name: staging-validator-4-keystore
