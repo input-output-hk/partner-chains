@@ -125,43 +125,36 @@ kubectl describe node -n sc          # nodes
 kubectl logs alice -c cardano-node -n sc
 kubectl logs alice -c db-sync -n sc
 kubectl logs alice -c postgres -n sc
-kubectl logs alice -c bridge-backend -n sc
 kubectl logs alice -c substrate-node -n sc
 
 kubectl logs bob -c cardano-node -n sc
 kubectl logs bob -c db-sync -n sc
 kubectl logs bob -c postgres -n sc
-kubectl logs bob -c bridge-backend -n sc
 kubectl logs bob -c substrate-node -n sc
 
 kubectl logs charlie -c cardano-node -n sc
 kubectl logs charlie -c db-sync -n sc
 kubectl logs charlie -c postgres -n sc
-kubectl logs charlie -c bridge-backend -n sc
 kubectl logs charlie -c substrate-node -n sc
 
 kubectl logs dave -c cardano-node -n sc
 kubectl logs dave -c db-sync -n sc
 kubectl logs dave -c postgres -n sc
-kubectl logs dave -c bridge-backend -n sc
 kubectl logs dave -c substrate-node -n sc
 
 kubectl logs eve -c cardano-node -n sc
 kubectl logs eve -c db-sync -n sc
 kubectl logs eve -c postgres -n sc
-kubectl logs eve -c bridge-backend -n sc
 kubectl logs eve -c substrate-node -n sc
 
 kubectl logs ferdie -c cardano-node -n sc
 kubectl logs ferdie -c db-sync -n sc
 kubectl logs ferdie -c postgres -n sc
-kubectl logs ferdie -c bridge-backend -n sc
 kubectl logs ferdie -c substrate-node -n sc
 
 kubectl logs greg -c cardano-node -n sc
 kubectl logs greg -c db-sync -n sc
 kubectl logs greg -c postgres -n sc
-kubectl logs greg -c bridge-backend -n sc
 kubectl logs greg -c substrate-node -n sc
 ```
 
@@ -171,43 +164,36 @@ kubectl logs greg -c substrate-node -n sc
 kubectl exec alice -it -c cardano-node -n sc -- sh
 kubectl exec alice -it -c db-sync -n sc -- sh
 kubectl exec alice -it -c postgres -n sc -- sh
-kubectl exec alice -it -c bridge-backend -n sc -- sh
 kubectl exec alice -it -c substrate-node -n sc -- sh
 
 kubectl exec bob -it -c cardano-node -n sc -- sh
 kubectl exec bob -it -c db-sync -n sc -- sh
 kubectl exec bob -it -c postgres -n sc -- sh
-kubectl exec bob -it -c bridge-backend -n sc -- sh
 kubectl exec bob -it -c substrate-node -n sc -- sh
 
 kubectl exec charlie -it -c cardano-node -n sc -- sh
 kubectl exec charlie -it -c db-sync -n sc -- sh
 kubectl exec charlie -it -c postgres -n sc -- sh
-kubectl exec charlie -it -c bridge-backend -n sc -- sh
 kubectl exec charlie -it -c substrate-node -n sc -- sh
 
 kubectl exec dave -it -c cardano-node -n sc -- sh
 kubectl exec dave -it -c db-sync -n sc -- sh
 kubectl exec dave -it -c postgres -n sc -- sh
-kubectl exec dave -it -c bridge-backend -n sc -- sh
 kubectl exec dave -it -c substrate-node -n sc -- sh
 
 kubectl exec eve -it -c cardano-node -n sc -- sh
 kubectl exec eve -it -c db-sync -n sc -- sh
 kubectl exec eve -it -c postgres -n sc -- sh
-kubectl exec eve -it -c bridge-backend -n sc -- sh
 kubectl exec eve -it -c substrate-node -n sc -- sh
 
 kubectl exec ferdie -it -c cardano-node -n sc -- sh
 kubectl exec ferdie -it -c db-sync -n sc -- sh
 kubectl exec ferdie -it -c postgres -n sc -- sh
-kubectl exec ferdie -it -c bridge-backend -n sc -- sh
 kubectl exec ferdie -it -c substrate-node -n sc -- sh
 
 kubectl exec greg -it -c cardano-node -n sc -- sh
 kubectl exec greg -it -c db-sync -n sc -- sh
 kubectl exec greg -it -c postgres -n sc -- sh
-kubectl exec greg -it -c bridge-backend -n sc -- sh
 kubectl exec greg -it -c substrate-node -n sc -- sh
 ```
 
