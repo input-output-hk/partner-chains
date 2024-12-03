@@ -37,11 +37,11 @@
 </span><span class="kw">pub struct </span>InitGovernanceCmd {
 	<span class="attr">#[clap(flatten)]
 	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
-	<span class="attr">#[arg(long)]
+	<span class="attr">#[arg(long, short = <span class="string">'g'</span>)]
 	</span>governance_authority: MainchainAddressHash,
-	<span class="attr">#[arg(long)]
+	<span class="attr">#[arg(long, short = <span class="string">'k'</span>)]
 	</span>payment_key_file: String,
-	<span class="attr">#[arg(long)]
+	<span class="attr">#[arg(long, short = <span class="string">'c'</span>)]
 	</span>genesis_utxo: <span class="prelude-ty">Option</span>&lt;UtxoId&gt;,
 }
 

@@ -271,6 +271,14 @@
 <a href="#271" id="271">271</a>
 <a href="#272" id="272">272</a>
 <a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{csl::NetworkTypeExt, plutus_script::PlutusScript, OffchainError};
 <span class="kw">use </span>cardano_serialization_lib::{LanguageKind::PlutusV2, NetworkIdKind};
 <span class="kw">use </span>ogmios_client::query_network::QueryNetwork;
@@ -400,6 +408,14 @@
 			governance: governance_policy.policy_id(),
 		},
 	})
+}
+
+<span class="kw">pub async fn </span>get_scripts_data_with_ogmios(
+	genesis_utxo: UtxoId,
+	client: <span class="kw">impl </span>QueryNetwork,
+) -&gt; anyhow::Result&lt;ScriptsData&gt; {
+	<span class="kw">let </span>network = client.shelley_genesis_configuration().<span class="kw">await</span><span class="question-mark">?</span>.network.to_csl();
+	get_scripts_data(genesis_utxo, network)
 }
 
 <span class="comment">// Returns version oracle script, policy and PlutusData required by other scripts.

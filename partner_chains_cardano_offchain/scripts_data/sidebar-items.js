@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["get_scripts_data"],"struct":["Addresses","PolicyIds","ScriptsData","ValidatorHashes"],"trait":["GetScriptsData"]};
+window.SIDEBAR_ITEMS = {"fn":["get_scripts_data","get_scripts_data_with_ogmios"],"struct":["Addresses","PolicyIds","ScriptsData","ValidatorHashes"],"trait":["GetScriptsData"]};
