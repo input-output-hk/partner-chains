@@ -42,7 +42,7 @@ impl CmdRun for Register2Cmd {
 		let registration_message = RegisterValidatorMessage {
 			genesis_utxo: self.genesis_utxo,
 			sidechain_pub_key: self.sidechain_pub_key.0.clone(),
-			input_utxo: self.registration_utxo,
+			registration_utxo: self.registration_utxo,
 		};
 
 		let (verification_key, mc_signature) =

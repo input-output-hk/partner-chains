@@ -13,7 +13,7 @@ use sidechain_domain::BlockProducerRegistration;
 fn register_tx(
 	validator: &PlutusScript,
 	block_producer_registration: &BlockProducerRegistration,
-	input_utxo: &OgmiosUtxo,
+	registration_utxo: &OgmiosUtxo,
 	own_registration_utxos: &[OgmiosUtxo],
 	ctx: &TransactionContext,
 	validator_redeemer_ex_units: ExUnits,
@@ -30,7 +30,7 @@ fn register_tx(
 				validator_redeemer_ex_units.clone(),
 			)?;
 		}
-		inputs.add_key_inputs(&[input_utxo.clone()], &ctx.payment_key_hash())?;
+		inputs.add_key_inputs(&[registration_utxo.clone()], &ctx.payment_key_hash())?;
 		tx_builder.set_inputs(&inputs);
 	}
 
@@ -85,7 +85,7 @@ mod tests {
 	const MIN_UTXO_LOVELACE: u64 = 1000000;
 	const FIVE_ADA: u64 = 5000000;
 
-	fn block_producer_registration(consumed_input: UtxoId) -> BlockProducerRegistration {
+	fn block_producer_registration(registration_utxo: UtxoId) -> BlockProducerRegistration {
 		BlockProducerRegistration {
 			stake_ownership: AdaBasedStaking {
 				pub_key: test_values::mainchain_pub_key(),
@@ -93,7 +93,7 @@ mod tests {
 			},
 			sidechain_pub_key: SidechainPublicKey(Vec::new()),
 			sidechain_signature: SidechainSignature(Vec::new()),
-			consumed_input,
+			registration_utxo,
 			own_pkh: MainchainAddressHash([0; 28]),
 			aura_pub_key: AuraPublicKey(Vec::new()),
 			grandpa_pub_key: GrandpaPublicKey(Vec::new()),
@@ -108,7 +108,7 @@ mod tests {
 		make_utxo(4u8, 1, 1200001, &payment_addr())
 	}
 
-	fn input_utxo() -> OgmiosUtxo {
+	fn registration_utxo() -> OgmiosUtxo {
 		make_utxo(11u8, 0, 1000000, &payment_addr())
 	}
 
@@ -120,7 +120,8 @@ mod tests {
 	#[test]
 	fn register_tx_regression_test() {
 		let ex_units = ExUnits::new(&0u32.into(), &0u32.into());
-		let payment_key_utxos = vec![lesser_payment_utxo(), greater_payment_utxo(), input_utxo()];
+		let payment_key_utxos =
+			vec![lesser_payment_utxo(), greater_payment_utxo(), registration_utxo()];
 		let ctx = TransactionContext {
 			payment_key: payment_key(),
 			payment_key_utxos: payment_key_utxos.clone(),
@@ -128,12 +129,13 @@ mod tests {
 			protocol_parameters: protocol_parameters(),
 		};
 		let own_registration_utxos = vec![payment_key_utxos.get(1).unwrap().clone()];
-		let input_utxo = payment_key_utxos.first().unwrap();
-		let block_producer_registration = block_producer_registration(input_utxo.to_domain());
+		let registration_utxo = payment_key_utxos.first().unwrap();
+		let block_producer_registration =
+			block_producer_registration(registration_utxo.to_domain());
 		let tx = register_tx(
 			&test_values::test_validator(),
 			&block_producer_registration,
-			input_utxo,
+			registration_utxo,
 			&own_registration_utxos,
 			&ctx,
 			ex_units,
@@ -173,8 +175,9 @@ mod tests {
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
 		};
-		let input_utxo = payment_key_utxos.first().unwrap();
-		let block_producer_registration = block_producer_registration(input_utxo.to_domain());
+		let registration_utxo = payment_key_utxos.first().unwrap();
+		let block_producer_registration =
+			block_producer_registration(registration_utxo.to_domain());
 		let own_registration_utxos = if payment_utxos.len() >= 2 {
 			vec![payment_utxos.get(1).unwrap().clone()]
 		} else {
@@ -183,7 +186,7 @@ mod tests {
 		let tx = register_tx(
 			&test_values::test_validator(),
 			&block_producer_registration,
-			input_utxo,
+			registration_utxo,
 			&own_registration_utxos,
 			&ctx,
 			ExUnits::new(&BigNum::zero(), &BigNum::zero()),

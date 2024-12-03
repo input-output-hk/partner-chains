@@ -322,7 +322,7 @@ pub fn create_inherent_data_struct(
 			let signed_message = RegisterValidatorSignedMessage {
 				genesis_utxo,
 				sidechain_pub_key: validator.cross_chain.public().into_inner().0.to_vec(),
-				input_utxo: UtxoId::default(),
+				registration_utxo: UtxoId::default(),
 			};
 
 			let signed_message_encoded = minicbor::to_vec(signed_message.to_datum()).unwrap();
@@ -331,7 +331,7 @@ pub fn create_inherent_data_struct(
 			let sidechain_signature = validator.cross_chain.sign(&signed_message_encoded[..]);
 
 			let registration_data = RegistrationData {
-				consumed_input: signed_message.input_utxo,
+				registration_utxo: signed_message.registration_utxo,
 				sidechain_signature: SidechainSignature(
 					sidechain_signature.into_inner().0[..64].to_vec(),
 				),
@@ -344,7 +344,7 @@ pub fn create_inherent_data_struct(
 				aura_pub_key: AuraPublicKey(validator.aura.public().as_slice().into()),
 				grandpa_pub_key: GrandpaPublicKey(validator.grandpa.public().as_slice().into()),
 				utxo_info: UtxoInfo::default(),
-				tx_inputs: vec![signed_message.input_utxo],
+				tx_inputs: vec![signed_message.registration_utxo],
 			};
 
 			CandidateRegistrations {
