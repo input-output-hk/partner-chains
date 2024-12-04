@@ -98,12 +98,12 @@
             }
         },
         "d_param_min": {
-            "permissioned_candidates_number": 2,
-            "trustless_candidates_number": 2
+            "permissioned_candidates_number": 1,
+            "trustless_candidates_number": 1
         },
         "d_param_max": {
-            "permissioned_candidates_number": 5,
-            "trustless_candidates_number": 5
+            "permissioned_candidates_number": 3,
+            "trustless_candidates_number": 2
         }
     },
     "block_encoding_suffix_grandpa": "3903",
