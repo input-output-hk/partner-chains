@@ -58,6 +58,7 @@ the runtime in version v1.4.0.
 for required changes.
 3. Release a new version of your node. This step depends on your release process.
 4. Upgrade nodes running the chain to the newly released version. This step depends on your deployment process.
+Irrespective of the deployment details, the nodes should be run with the same keystores as previously.
 
 After this step, the network should be composed of nodes v1.4.0 but the runtime would remain at v1.3.1, and be ready for the matching
 runtime upgrade to v1.4.0.
