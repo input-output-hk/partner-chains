@@ -72,6 +72,7 @@ def test_block_beneficiaries_match_committee_seats(
 @mark.skip_on_new_chain
 @mark.test_key('ETCM-7020')
 @mark.committee_rotation
+@mark.xfail(reason="ETCM-8983: block header encoding issue, we can't verify author.")
 def test_block_authors_match_committee_seats(
     api: BlockchainApi,
     config: ApiConfig,
