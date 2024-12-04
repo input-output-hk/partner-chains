@@ -90,6 +90,30 @@ pub fn block_producer_registration_to_plutus_data(
 	.into()
 }
 
+impl From<RegisterValidatorDatum> for BlockProducerRegistration {
+	fn from(value: RegisterValidatorDatum) -> Self {
+		match value {
+			RegisterValidatorDatum::V0 {
+				stake_ownership,
+				sidechain_pub_key,
+				sidechain_signature,
+				registration_utxo,
+				own_pkh,
+				aura_pub_key,
+				grandpa_pub_key,
+			} => BlockProducerRegistration {
+				stake_ownership,
+				sidechain_pub_key,
+				sidechain_signature,
+				registration_utxo,
+				own_pkh,
+				aura_pub_key,
+				grandpa_pub_key,
+			},
+		}
+	}
+}
+
 fn decode_v0_register_validator_datum(
 	const_data: &PlutusData,
 	mut_data: &PlutusData,
