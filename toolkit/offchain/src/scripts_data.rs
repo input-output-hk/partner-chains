@@ -129,6 +129,14 @@ pub fn get_scripts_data(
 	})
 }
 
+pub async fn get_scripts_data_with_ogmios(
+	genesis_utxo: UtxoId,
+	client: impl QueryNetwork,
+) -> anyhow::Result<ScriptsData> {
+	let network = client.shelley_genesis_configuration().await?.network.to_csl();
+	get_scripts_data(genesis_utxo, network)
+}
+
 // Returns version oracle script, policy and PlutusData required by other scripts.
 pub(crate) fn version_oracle(
 	genesis_utxo: UtxoId,

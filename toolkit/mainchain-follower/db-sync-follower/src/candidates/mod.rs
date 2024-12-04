@@ -33,7 +33,7 @@ struct ParsedCandidate {
 #[derive(Debug)]
 struct RegisteredCandidate {
 	mainchain_pub_key: MainchainPublicKey,
-	consumed_input: UtxoId,
+	registration_utxo: UtxoId,
 	tx_inputs: Vec<UtxoId>,
 	sidechain_signature: SidechainSignature,
 	mainchain_signature: MainchainSignature,
@@ -166,7 +166,7 @@ impl CandidatesDataSourceImpl {
 
 	fn make_registration_data(c: RegisteredCandidate) -> RegistrationData {
 		RegistrationData {
-			consumed_input: c.consumed_input,
+			registration_utxo: c.registration_utxo,
 			sidechain_signature: c.sidechain_signature,
 			mainchain_signature: c.mainchain_signature,
 			cross_chain_signature: c.cross_chain_signature,
@@ -216,7 +216,7 @@ impl CandidatesDataSourceImpl {
 					stake_ownership,
 					sidechain_pub_key,
 					sidechain_signature,
-					consumed_input,
+					registration_utxo,
 					own_pkh: _own_pkh,
 					aura_pub_key,
 					grandpa_pub_key,
@@ -231,7 +231,7 @@ impl CandidatesDataSourceImpl {
 					sidechain_pub_key,
 					aura_pub_key,
 					grandpa_pub_key,
-					consumed_input,
+					registration_utxo,
 					tx_inputs: c.tx_inputs,
 					utxo_info: c.utxo_info,
 				})

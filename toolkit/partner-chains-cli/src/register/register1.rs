@@ -53,7 +53,7 @@ impl CmdRun for Register1Cmd {
 			return Err(anyhow::anyhow!("No UTXOs found"));
 		};
 
-		let input_utxo: UtxoId =
+		let registration_utxo: UtxoId =
 			select_from_utxos(context, "Select UTXO to use for registration", utxo_query_result)?;
 
 		context.print("Please do not spend this UTXO, it needs to be consumed by the registration transaction.");
@@ -68,7 +68,7 @@ impl CmdRun for Register1Cmd {
 		let registration_message = RegisterValidatorMessage {
 			genesis_utxo,
 			sidechain_pub_key: sidechain_pub_key_typed,
-			input_utxo,
+			registration_utxo,
 		};
 
 		let ecdsa_pair = get_ecdsa_pair_from_file(
@@ -86,7 +86,7 @@ impl CmdRun for Register1Cmd {
 
 		context.print("Run the following command to generate signatures on the next step. It has to be executed on the machine with your SPO cold signing key.");
 		context.print("");
-		context.print(&format!("./partner-chains-cli register2 \\\n --genesis-utxo {genesis_utxo} \\\n --registration-utxo {input_utxo} \\\n --aura-pub-key {aura_pub_key} \\\n --grandpa-pub-key {grandpa_pub_key} \\\n --sidechain-pub-key {sidechain_pub_key} \\\n --sidechain-signature {sidechain_signature}"));
+		context.print(&format!("./partner-chains-cli register2 \\\n --genesis-utxo {genesis_utxo} \\\n --registration-utxo {registration_utxo} \\\n --aura-pub-key {aura_pub_key} \\\n --grandpa-pub-key {grandpa_pub_key} \\\n --sidechain-pub-key {sidechain_pub_key} \\\n --sidechain-signature {sidechain_signature}"));
 
 		Ok(())
 	}

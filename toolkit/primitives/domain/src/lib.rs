@@ -519,7 +519,7 @@ pub struct CommitteeHash(pub Vec<u8>);
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct RegistrationData {
 	/// UTXO that is an input parameter to the registration transaction
-	pub consumed_input: UtxoId,
+	pub registration_utxo: UtxoId,
 	pub sidechain_signature: SidechainSignature,
 	pub mainchain_signature: MainchainSignature,
 	pub cross_chain_signature: CrossChainSignature,
@@ -628,6 +628,25 @@ pub struct PermissionedCandidateData {
 	pub sidechain_public_key: SidechainPublicKey,
 	pub aura_public_key: AuraPublicKey,
 	pub grandpa_public_key: GrandpaPublicKey,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BlockProducerRegistration {
+	pub stake_ownership: AdaBasedStaking,
+	pub sidechain_pub_key: SidechainPublicKey,
+	pub sidechain_signature: SidechainSignature,
+	pub registration_utxo: UtxoId,
+	pub own_pkh: MainchainAddressHash,
+	pub aura_pub_key: AuraPublicKey,
+	pub grandpa_pub_key: GrandpaPublicKey,
+}
+
+/// AdaBasedStaking is a variant of Plutus type StakeOwnership.
+/// The other variant, TokenBasedStaking, is not supported
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AdaBasedStaking {
+	pub pub_key: MainchainPublicKey,
+	pub signature: MainchainSignature,
 }
 
 #[cfg(test)]

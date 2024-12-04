@@ -39,20 +39,12 @@ pub enum RegisterValidatorDatum {
 		stake_ownership: AdaBasedStaking,
 		sidechain_pub_key: SidechainPublicKey,
 		sidechain_signature: SidechainSignature,
-		consumed_input: UtxoId,
+		registration_utxo: UtxoId,
 		//own_pkh is used by offchain code to find the registration UTXO when re-registering or deregistering
 		own_pkh: MainchainAddressHash,
 		aura_pub_key: AuraPublicKey,
 		grandpa_pub_key: GrandpaPublicKey,
 	},
-}
-
-/// AdaBasedStaking is a variant of Plutus type StakeOwnership.
-/// The other variant, TokenBasedStaking, is not supported
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct AdaBasedStaking {
-	pub pub_key: MainchainPublicKey,
-	pub signature: MainchainSignature,
 }
 
 impl TryFrom<PlutusData> for RegisterValidatorDatum {
@@ -83,6 +75,21 @@ impl VersionedDatum for RegisterValidatorDatum {
 	}
 }
 
+pub fn block_producer_registration_to_plutus_data(
+	block_producer_registration: &sidechain_domain::BlockProducerRegistration,
+) -> PlutusData {
+	RegisterValidatorDatum::V0 {
+		stake_ownership: block_producer_registration.stake_ownership.clone(),
+		sidechain_pub_key: block_producer_registration.sidechain_pub_key.clone(),
+		sidechain_signature: block_producer_registration.sidechain_signature.clone(),
+		registration_utxo: block_producer_registration.registration_utxo,
+		own_pkh: block_producer_registration.own_pkh,
+		aura_pub_key: block_producer_registration.aura_pub_key.clone(),
+		grandpa_pub_key: block_producer_registration.grandpa_pub_key.clone(),
+	}
+	.into()
+}
+
 fn decode_v0_register_validator_datum(
 	const_data: &PlutusData,
 	mut_data: &PlutusData,
@@ -95,7 +102,7 @@ fn decode_v0_register_validator_datum(
 	let stake_ownership = decode_ada_based_staking_datum(fields.get(0))?;
 	let sidechain_pub_key = fields.get(1).as_bytes().map(SidechainPublicKey)?;
 	let sidechain_signature = fields.get(2).as_bytes().map(SidechainSignature)?;
-	let consumed_input = decode_utxo_id_datum(fields.get(3))?;
+	let registration_utxo = decode_utxo_id_datum(fields.get(3))?;
 	let aura_pub_key = fields.get(4).as_bytes().map(AuraPublicKey)?;
 	let grandpa_pub_key = fields.get(5).as_bytes().map(GrandpaPublicKey)?;
 
@@ -104,7 +111,7 @@ fn decode_v0_register_validator_datum(
 		stake_ownership,
 		sidechain_pub_key,
 		sidechain_signature,
-		consumed_input,
+		registration_utxo,
 		own_pkh,
 		aura_pub_key,
 		grandpa_pub_key,
@@ -121,7 +128,7 @@ fn decode_legacy_register_validator_datum(datum: &PlutusData) -> Option<Register
 	let stake_ownership = decode_ada_based_staking_datum(fields.get(0))?;
 	let sidechain_pub_key = fields.get(1).as_bytes().map(SidechainPublicKey)?;
 	let sidechain_signature = fields.get(2).as_bytes().map(SidechainSignature)?;
-	let consumed_input = decode_utxo_id_datum(fields.get(3))?;
+	let registration_utxo = decode_utxo_id_datum(fields.get(3))?;
 	let own_pkh = MainchainAddressHash(fields.get(4).as_bytes()?.try_into().ok()?);
 	let aura_pub_key = fields.get(5).as_bytes().map(AuraPublicKey)?;
 	let grandpa_pub_key = fields.get(6).as_bytes().map(GrandpaPublicKey)?;
@@ -129,7 +136,7 @@ fn decode_legacy_register_validator_datum(datum: &PlutusData) -> Option<Register
 		stake_ownership,
 		sidechain_pub_key,
 		sidechain_signature,
-		consumed_input,
+		registration_utxo,
 		own_pkh,
 		aura_pub_key,
 		grandpa_pub_key,
@@ -174,7 +181,7 @@ impl From<RegisterValidatorDatum> for PlutusData {
 				stake_ownership,
 				sidechain_pub_key,
 				sidechain_signature,
-				consumed_input,
+				registration_utxo,
 				own_pkh,
 				aura_pub_key,
 				grandpa_pub_key,
@@ -183,7 +190,7 @@ impl From<RegisterValidatorDatum> for PlutusData {
 				generic_data_fields.add(&stake_ownership_to_plutus_data(stake_ownership));
 				generic_data_fields.add(&PlutusData::new_bytes(sidechain_pub_key.0));
 				generic_data_fields.add(&PlutusData::new_bytes(sidechain_signature.0));
-				generic_data_fields.add(&utxo_id_to_plutus_data(consumed_input));
+				generic_data_fields.add(&utxo_id_to_plutus_data(registration_utxo));
 				generic_data_fields.add(&PlutusData::new_bytes(aura_pub_key.0));
 				generic_data_fields.add(&PlutusData::new_bytes(grandpa_pub_key.0));
 				let generic_data = ConstrPlutusData::new(&BigNum::zero(), &generic_data_fields);
@@ -233,7 +240,7 @@ mod tests {
 			},
 			sidechain_pub_key: SidechainPublicKey(hex!("02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af").into()),
 			sidechain_signature: SidechainSignature(hex!("f8ec6c7f935d387aaa1693b3bf338cbb8f53013da8a5a234f9c488bacac01af259297e69aee0df27f553c0a1164df827d016125c16af93c99be2c19f36d2f66e").into()),
-			consumed_input: UtxoId {
+			registration_utxo: UtxoId {
 				tx_hash: McTxHash(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13")),
 				index: UtxoIndex(1),
 			},

@@ -25,7 +25,7 @@ fn registration_message_encoding() {
 		genesis_utxo,
 		sidechain_pub_key: sidechain_pub_key_bytes.clone(),
 		// Unfortunately test vector in partner-chains-smart-contracts uses same UTxO in two places.
-		input_utxo: genesis_utxo,
+		registration_utxo: genesis_utxo,
 	};
 
 	let pub_key_datum = ByteStringDatum(sidechain_pub_key_bytes);
@@ -351,7 +351,7 @@ fn create_epoch_candidates_idp(validators: &[MockValidator]) -> Vec<CandidateReg
 			let signed_message = RegisterValidatorSignedMessage {
 				genesis_utxo: UtxoId::default(),
 				sidechain_pub_key: validator.sidechain_pub_key().0,
-				input_utxo: UtxoId::default(),
+				registration_utxo: UtxoId::default(),
 			};
 
 			let signed_message_encoded = minicbor::to_vec(signed_message.to_datum()).unwrap();
@@ -361,7 +361,7 @@ fn create_epoch_candidates_idp(validators: &[MockValidator]) -> Vec<CandidateReg
 			let sidechain_signature_bytes_no_recovery = sidechain_signature.0[..64].to_vec();
 
 			let registration_data = RegistrationData {
-				consumed_input: signed_message.input_utxo,
+				registration_utxo: signed_message.registration_utxo,
 				sidechain_signature: SidechainSignature(
 					sidechain_signature_bytes_no_recovery.clone(),
 				),
@@ -372,7 +372,7 @@ fn create_epoch_candidates_idp(validators: &[MockValidator]) -> Vec<CandidateReg
 				grandpa_pub_key: validator.grandpa_pub_key(),
 				cross_chain_pub_key: CrossChainPublicKey(validator.sidechain_pub_key().0),
 				utxo_info: UtxoInfo::default(),
-				tx_inputs: vec![signed_message.input_utxo],
+				tx_inputs: vec![signed_message.registration_utxo],
 			};
 
 			CandidateRegistrations {

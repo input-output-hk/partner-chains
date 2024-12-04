@@ -15,7 +15,7 @@ pub struct MockRegistration {
 	pub mainchain_pub_key: ByteString,
 	pub mainchain_signature: ByteString,
 	pub sidechain_signature: ByteString,
-	pub input_utxo: UtxoId,
+	pub registration_utxo: UtxoId,
 	pub status: MockRegistrationStatus,
 	pub aura_pub_key: ByteString,
 	pub grandpa_pub_key: ByteString,
@@ -46,7 +46,7 @@ impl From<MockRegistration> for CandidateRegistrations {
 			"Invalid mock configuration. 'mainchain_pub_key' public key should be 32 bytes.",
 		));
 		let registrations = vec![RegistrationData {
-			consumed_input: mock.input_utxo,
+			registration_utxo: mock.registration_utxo,
 			sidechain_signature: SidechainSignature(mock.sidechain_signature.0.clone()),
 			mainchain_signature: MainchainSignature(mock.mainchain_signature.0),
 			cross_chain_signature: CrossChainSignature(mock.sidechain_signature.0.clone()),
@@ -64,7 +64,7 @@ impl From<MockRegistration> for CandidateRegistrations {
 				slot_number: McSlotNumber(123456),
 				tx_index_within_block: McTxIndexInBlock(12),
 			},
-			tx_inputs: vec![mock.input_utxo],
+			tx_inputs: vec![mock.registration_utxo],
 			aura_pub_key: AuraPublicKey(mock.aura_pub_key.0),
 			grandpa_pub_key: GrandpaPublicKey(mock.grandpa_pub_key.0),
 		}];

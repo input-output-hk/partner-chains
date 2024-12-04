@@ -407,7 +407,7 @@ mod tests {
 			payment_key_utxos: vec![
 				lesser_payment_utxo(),
 				greater_payment_utxo(),
-				make_utxo(11u8, 0, 100000, &payment_addr()),
+				make_utxo(11u8, 0, 1000000, &payment_addr()),
 			],
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),

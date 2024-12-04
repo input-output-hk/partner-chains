@@ -18,7 +18,7 @@ pub struct RegisterValidatorSignedMessage {
 	pub genesis_utxo: UtxoId,
 	pub sidechain_pub_key: Vec<u8>,
 	/// UTxO that is an input parameter to the registration transaction
-	pub input_utxo: UtxoId,
+	pub registration_utxo: UtxoId,
 }
 
 #[derive(Clone, Debug, Encode, Decode)]
@@ -187,7 +187,7 @@ pub fn validate_registration_data(
 	let signed_message = RegisterValidatorSignedMessage {
 		genesis_utxo,
 		sidechain_pub_key: registration_data.sidechain_pub_key.0.clone(),
-		input_utxo: registration_data.consumed_input,
+		registration_utxo: registration_data.registration_utxo,
 	};
 
 	let signed_message_encoded = minicbor::to_vec(signed_message.to_datum())
@@ -266,7 +266,7 @@ fn verify_sidechain_signature(
 }
 
 fn verify_tx_inputs(registration_data: &RegistrationData) -> Result<(), RegistrationDataError> {
-	if registration_data.tx_inputs.contains(&registration_data.consumed_input) {
+	if registration_data.tx_inputs.contains(&registration_data.registration_utxo) {
 		Ok(())
 	} else {
 		Err(RegistrationDataError::InvalidTxInput)
@@ -291,7 +291,7 @@ mod tests {
 
 	/// Get Valid Parameters of the `is_registration_data_valid()` function
 	fn create_valid_parameters() -> (MainchainPublicKey, RegistrationData, UtxoId) {
-		let input_utxo = UtxoId {
+		let registration_utxo = UtxoId {
 			tx_hash: McTxHash(hex!(
 				"d260a76b267e27fdf79c217ec61b776d6436dc78eefeac8f3c615486a71f38eb"
 			)),
@@ -299,7 +299,7 @@ mod tests {
 		};
 
 		let registration_data = RegistrationData {
-			consumed_input: input_utxo,
+			registration_utxo,
 			sidechain_signature: SidechainSignature(
 				hex!("f3622ed6e121836765f684068ecf3cf13eb3eb7d2fc7edcabdb41cad940434ca7b9edf45ce8b6d8d2b2a842fb8265856a3f950d72d42499c72ad28dc46b5dc90").to_vec()
 			),
@@ -331,7 +331,7 @@ mod tests {
 				slot_number: McSlotNumber(21450270),
 				tx_index_within_block: McTxIndexInBlock(2),
 			},
-			tx_inputs: vec![input_utxo],
+			tx_inputs: vec![registration_utxo],
 		};
 
 		let genesis_utxo = UtxoId {
@@ -368,7 +368,7 @@ mod tests {
 			let signed_message = RegisterValidatorSignedMessage {
 				genesis_utxo,
 				sidechain_pub_key: sidechain_pub_key.clone(),
-				input_utxo: genesis_utxo,
+				registration_utxo: genesis_utxo,
 			};
 
 			let signed_message_encoded = minicbor::to_vec(signed_message.to_datum()).unwrap();
@@ -379,7 +379,7 @@ mod tests {
 					.to_vec();
 
 			let registration_data = RegistrationData {
-				consumed_input: signed_message.input_utxo,
+				registration_utxo: signed_message.registration_utxo,
 				sidechain_signature: SidechainSignature(sidechain_signature),
 				mainchain_signature: MainchainSignature(mainchain_signature.0.to_vec()),
 				cross_chain_signature: CrossChainSignature(vec![]),
@@ -394,7 +394,7 @@ mod tests {
 					slot_number: McSlotNumber(7),
 					tx_index_within_block: McTxIndexInBlock(7),
 				},
-				tx_inputs: vec![signed_message.input_utxo],
+				tx_inputs: vec![signed_message.registration_utxo],
 			};
 
 			(MainchainPublicKey(mainchain_account.public().0), registration_data, genesis_utxo)

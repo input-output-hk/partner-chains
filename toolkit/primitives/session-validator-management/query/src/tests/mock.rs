@@ -41,7 +41,7 @@ pub fn create_valid_registration_data(
 	let signed_message = RegisterValidatorSignedMessage {
 		genesis_utxo,
 		sidechain_pub_key: sidechain_account.public().0.to_vec(),
-		input_utxo: UtxoId { tx_hash: McTxHash([7u8; TX_HASH_SIZE]), index: UtxoIndex(0) },
+		registration_utxo: UtxoId { tx_hash: McTxHash([7u8; TX_HASH_SIZE]), index: UtxoIndex(0) },
 	};
 
 	let signed_message_encoded = minicbor::to_vec(signed_message.to_datum()).unwrap();
@@ -50,7 +50,7 @@ pub fn create_valid_registration_data(
 	let sidechain_signature = sidechain_account.sign(&signed_message_encoded[..]);
 
 	RegistrationData {
-		consumed_input: signed_message.input_utxo,
+		registration_utxo: signed_message.registration_utxo,
 		// Specification requires the signature length to be 64 instead of 65
 		sidechain_signature: SidechainSignature(sidechain_signature.0[0..64].to_vec()),
 		mainchain_signature: MainchainSignature(mainchain_signature.0.to_vec()),
@@ -66,6 +66,6 @@ pub fn create_valid_registration_data(
 			slot_number: McSlotNumber(7),
 			tx_index_within_block: McTxIndexInBlock(7),
 		},
-		tx_inputs: vec![signed_message.input_utxo],
+		tx_inputs: vec![signed_message.registration_utxo],
 	}
 }
