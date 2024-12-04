@@ -404,7 +404,14 @@ create_docker_compose() {
         echo "Creating docker-compose.yml manifest file with service configurations."
     fi
 
-    echo "services:" > docker-compose.yml
+    cat > docker-compose.yml<< EOF
+networks:
+  info:
+    name: info
+    driver: bridge
+
+services:
+EOF
 
     case $deployment_option in
       1)
