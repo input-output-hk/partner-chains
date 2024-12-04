@@ -25,7 +25,10 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * * chain-params crate that provided SidechainParam is removed, because there are no SidechainParams anymore
 * * partner-chains-cli is changed, so prepare-config wizard sets `genesis_utxo` and does not set sidechain parameters
 * * pallets are not generic on SidechainParams anymore, they use UtxoId (genesis_utxo) instead
-* * migration of pallet_sidechain storage is not present in this update, it has to be done before v1.4, so as for now it is a very breaking change
+* * This change requires manual migration, because automatic migration of storage in this case is impossible.
+Please refer to the migration guide at `docs/developer-guides/migration-guide-1.4.0.md` for detailed
+instructions on how to manually upgrade a running chain to 1.4.0.
+Do **NOT** perform a normal runtime upgrade, it will break your chain.
 
 ## Fixed
 
