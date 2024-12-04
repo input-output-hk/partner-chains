@@ -1,14 +1,134 @@
 #![allow(dead_code)]
 
-use crate::csl::{InputsBuilderExt, TransactionBuilderExt, TransactionContext};
-use crate::plutus_script::PlutusScript;
-use cardano_serialization_lib::{
-	BigNum, DataCost, ExUnits, JsError, MinOutputAdaCalculator, Transaction, TransactionBuilder,
-	TransactionOutputBuilder, TxInputsBuilder,
+use crate::csl::{
+	get_first_validator_budget, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
+	TransactionContext,
 };
-use ogmios_client::types::OgmiosUtxo;
-use partner_chains_plutus_data::registered_candidates::block_producer_registration_to_plutus_data;
-use sidechain_domain::BlockProducerRegistration;
+use crate::plutus_script::PlutusScript;
+use anyhow::anyhow;
+use cardano_serialization_lib::{
+	BigNum, DataCost, Ed25519KeyHash, ExUnits, JsError, MinOutputAdaCalculator, PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder, TxInputsBuilder
+};
+use ogmios_client::{
+	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
+	types::OgmiosUtxo,
+};
+use partner_chains_plutus_data::registered_candidates::{
+	block_producer_registration_to_plutus_data, RegisterValidatorDatum,
+};
+use sidechain_domain::{
+	BlockProducerRegistration, MainchainAddressHash, MainchainPublicKey, McTxHash, UtxoId,
+};
+
+pub async fn register<C: QueryLedgerState + QueryNetwork + Transactions>(
+	genesis_utxo: UtxoId,
+	block_producer_registration: &BlockProducerRegistration,
+	input_utxo: UtxoId,
+	payment_signing_key: [u8; 32],
+	ogmios_client: &C,
+) -> anyhow::Result<McTxHash> {
+	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
+	let validator = crate::scripts_data::registered_candidates_scripts(genesis_utxo)?;
+	let validator_address = validator.address_bech32(ctx.network)?;
+	let input_utxo = ctx
+		.payment_key_utxos
+		.iter()
+		.find(|u| u.to_domain() == input_utxo)
+		.ok_or(anyhow!("input utxo not found at payment address"))?;
+	let all_registration_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
+	let own_registrations = get_own_registrations(
+		ed25519_key_hash_to_mainchain_address_hash(ctx.payment_key_hash()),
+		block_producer_registration.stake_ownership.pub_key.clone(),
+		&all_registration_utxos,
+	)?;
+	let own_registration_utxos = own_registrations.iter().map(|r| r.0.clone()).collect::<Vec<_>>();
+
+	if own_registrations.iter().any(|(_, existing_registration)| {
+		block_producer_registration.matches_keys(existing_registration)
+	}) {
+		return Err(anyhow!("BlockProducer with given set of keys is already registered"));
+	}
+
+	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
+	let tx = register_tx(
+		&validator,
+		block_producer_registration,
+		input_utxo,
+		&own_registration_utxos,
+		&ctx,
+		zero_ex_units,
+	)?;
+
+	let evaluate_response =
+		ogmios_client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
+			anyhow!(
+				"Evaluate insert D-parameter transaction request failed: {}, bytes: {}",
+				e,
+				hex::encode(tx.to_bytes())
+			)
+		})?;
+	let validator_redeemer_ex_units = get_first_validator_budget(evaluate_response)?;
+	let tx = register_tx(
+		&validator,
+		block_producer_registration,
+		input_utxo,
+		&own_registration_utxos,
+		&ctx,
+		validator_redeemer_ex_units,
+	)?;
+	let signed_tx = ctx.sign(&tx).to_bytes();
+	let res = ogmios_client.submit_transaction(&signed_tx).await.map_err(|e| {
+		anyhow!(
+			"Submit insert D-parameter transaction request failed: {}, bytes: {}",
+			e,
+			hex::encode(tx.to_bytes())
+		)
+	})?;
+	log::info!("Transaction submitted: {}", hex::encode(res.transaction.id));
+	// TODO: await for the transaction output to be visible in validator wallet
+	Ok(McTxHash(res.transaction.id))
+}
+
+
+	fn ed25519_key_hash_to_mainchain_address_hash(value: Ed25519KeyHash) -> MainchainAddressHash {
+		// Ed25519KeyHash is represented as [u8;28], same as MainchainAddressHash,
+		// but it is private and can only be accessed as Vec<u8> so we need to do this
+		MainchainAddressHash(
+			value
+				.to_bytes()
+				.as_slice()
+				.try_into()
+				.expect("impossible: Ed25519KeyHash failed to convert to MainchainAddressHash"),
+		)
+	}
+
+fn get_own_registrations(
+	own_pkh: MainchainAddressHash,
+	spo_pub_key: MainchainPublicKey,
+	validator_utxos: &[OgmiosUtxo],
+) -> Result<Vec<(OgmiosUtxo, BlockProducerRegistration)>, anyhow::Error> {
+	let mut own_registrations = Vec::new();
+	for validator_utxo in validator_utxos {
+		let datum = validator_utxo.datum.clone().ok_or_else(|| {
+			anyhow!("Invalid state: an UTXO at the validator script address does not have a datum")
+		})?;
+		let datum_plutus_data = PlutusData::from_bytes(datum.bytes).map_err(|e| {
+			anyhow!("Internal error: could not decode datum of validator script: {}", e)
+		})?;
+		let block_producer_registration: BlockProducerRegistration =
+			RegisterValidatorDatum::try_from(datum_plutus_data)
+				.map_err(|e| {
+					anyhow!("Internal error: could not decode datum of validator script: {}", e)
+				})?
+				.into();
+		if block_producer_registration.stake_ownership.pub_key == spo_pub_key
+			&& block_producer_registration.own_pkh == own_pkh
+		{
+			own_registrations.push((validator_utxo.clone(), block_producer_registration))
+		}
+	}
+	Ok(own_registrations)
+}
 
 fn register_tx(
 	validator: &PlutusScript,
