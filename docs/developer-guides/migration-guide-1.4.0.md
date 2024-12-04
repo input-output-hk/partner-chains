@@ -87,8 +87,20 @@ by running the `register1`, `register2`, `register3` commands of `partner-chains
 
 After this step the SPO should be ready to be included in post-migration committee selection.
 
-*Important:* the `chain-spec.json` file is only used for registrations and should **not** be used to run the nodes.
+*Important:*
+* the `chain-spec.json` file is only used for registrations and should **not** be used to run the nodes.
 The SPOs should discard it after this section.
+* The register commands require the `partner-chains-cli-keys.json` file to be present in the run directory. If the SPO
+used `partner-chains-cli` for the previous registration, they should re-use the file generated then.
+If the SPO no longer has the file, it can be manually created based on the following schema:
+```json
+{
+  "sidechain_pub_key": "<pub key>",
+  "aura_pub_key": "<pub key>",
+  "grandpa_pub_key": "<pub key>"
+}
+```
+New SPOs should run the `generate-keys` command instead.
 
 ### Upgrade the runtime to v1.4.0
 
