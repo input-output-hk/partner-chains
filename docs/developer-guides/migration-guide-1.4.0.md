@@ -58,6 +58,7 @@ the runtime in version v1.4.0.
 for required changes.
 3. Release a new version of your node. This step depends on your release process.
 4. Upgrade nodes running the chain to the newly released version. This step depends on your deployment process.
+Irrespective of the deployment details, the nodes should be run with the same keystores as previously.
 
 After this step, the network should be composed of nodes v1.4.0 but the runtime would remain at v1.3.1, and be ready for the matching
 runtime upgrade to v1.4.0.
@@ -67,13 +68,25 @@ runtime upgrade to v1.4.0.
 Because of the changes to the smart contracts and their on-chain data, a completely new set
 of main chain data needs to be set up on Cardano.
 
+**Important:**
+The commands in this section should either be run in the same directory used for setting up the previous Partner Chain
+(containing the base data directory containing the keystore and the `partner-chains-cli-keys.json` file),
+or in a new directory that has been prepared by running the `generate-keys` commands.
+
 1. Pick the initial governance authority.
-This can be a newly generated or already existing main chain key set controlled by the Partner Chain authority.
+This can be a newly generated or already existing main chain key set (including the current governance authority of the Partner Chain being upgraded)
+controlled by the Partner Chain authority.
+The address associated with the keys should have enough ADA to cover transaction costs (10 or more ADA is advised).
 2. Run the `prepare-configuration` command of `partner-chains-cli` (v1.4.0) in a fresh directory.
 This step will involve selecting the _genesis UTXO_ to be spent intializing the governance mechanism.
 Save the `partner-chains-cli-chain-config.json` file produced by this step.
 3. Run the `create-chain-spec` command of `partner-chains-cli`. Save the `chain-spec.json` file produced by this step.
-4. Run the `setup-main-chain-state` command of `partner-chains-cli`, setting up the D-param and permissioned candidates.
+4. Add the permissioned candidates in the `partner-chains-cli-chain-config.json` file. These can be copied from the chain config file
+used when setting up the Partner Chain previously, or obtained by querying the `sidechain_getAriadneParameters` jsonRPC method:
+```sh
+curl "<PC node>" -X POST -H "Content-Type: application/json" -d '{"jsonrpc": "2.0", "id":0, "method":"sidechain_getAriadneParameters","params":[<epoch>] }' | jq '.result.permissionedCandidates'
+```
+5. Run the `setup-main-chain-state` command of `partner-chains-cli`, setting up the D-param and permissioned candidates.
 
 After these steps, the new Partner Chain will be initialized on Cardano.
 
@@ -87,8 +100,20 @@ by running the `register1`, `register2`, `register3` commands of `partner-chains
 
 After this step the SPO should be ready to be included in post-migration committee selection.
 
-*Important:* the `chain-spec.json` file is only used for registrations and should **not** be used to run the nodes.
+*Important:*
+* the `chain-spec.json` file is only used for registrations and should **not** be used to run the nodes.
 The SPOs should discard it after this section.
+* The register commands require the `partner-chains-cli-keys.json` file to be present in the run directory. If the SPO
+used `partner-chains-cli` for the previous registration, they should re-use the file generated then.
+If the SPO no longer has the file, it can be manually created based on the following schema:
+```json
+{
+  "sidechain_pub_key": "<pub key>",
+  "aura_pub_key": "<pub key>",
+  "grandpa_pub_key": "<pub key>"
+}
+```
+New SPOs should run the `generate-keys` command instead.
 
 ### Upgrade the runtime to v1.4.0
 
