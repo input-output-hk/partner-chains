@@ -71,11 +71,13 @@ of main chain data needs to be set up on Cardano.
 This can be a newly generated or already existing main chain key set (including the current governance authority of the Partner Chain being upgraded)
 controlled by the Partner Chain authority.
 The address associated with the keys should have enough ADA to cover transaction costs (10 or more ADA is advised).
-2. Run the `prepare-configuration` command of `partner-chains-cli` (v1.4.0) in a fresh directory.
+2. Run the `generate-keys` command of `partner-chains-cli` (v1.4.0). The generated keys and keystore are
+required by other commands and can be discarded when finished.
+3. Run the `prepare-configuration` command of `partner-chains-cli` (v1.4.0) in a fresh directory.
 This step will involve selecting the _genesis UTXO_ to be spent intializing the governance mechanism.
 Save the `partner-chains-cli-chain-config.json` file produced by this step.
-3. Run the `create-chain-spec` command of `partner-chains-cli`. Save the `chain-spec.json` file produced by this step.
-4. Run the `setup-main-chain-state` command of `partner-chains-cli`, setting up the D-param and permissioned candidates.
+4. Run the `create-chain-spec` command of `partner-chains-cli`. Save the `chain-spec.json` file produced by this step.
+5. Run the `setup-main-chain-state` command of `partner-chains-cli`, setting up the D-param and permissioned candidates.
 
 After these steps, the new Partner Chain will be initialized on Cardano.
 
