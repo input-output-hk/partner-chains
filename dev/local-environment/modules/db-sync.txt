@@ -1,6 +1,6 @@
 
   db-sync-1:
-    container_name: db-sync
+    container_name: db-sync-1
     image: ${DBSYNC_IMAGE}
     platform: linux/amd64
     volumes:
@@ -27,7 +27,7 @@
           memory: ${MEM_DBSYNC:-}
 
   db-sync-2:
-    container_name: db-sync
+    container_name: db-sync-2
     image: ${DBSYNC_IMAGE}
     platform: linux/amd64
     volumes:
@@ -54,7 +54,7 @@
           memory: ${MEM_DBSYNC:-}
 
   db-sync-3:
-    container_name: db-sync
+    container_name: db-sync-3
     image: ${DBSYNC_IMAGE}
     platform: linux/amd64
     volumes:
