@@ -11,10 +11,7 @@ class CardanoCli:
         self.run_command = RunnerFactory.get_runner(cardano_cli.ssh, cardano_cli.shell)
 
     def query_tip(self, node_num=None) -> int:
-        if node_num:
-            socket_path = f"/ipc/node-{node_num}.socket"
-        else:
-            socket_path = "/ipc/node.socket"
+        socket_path = "/ipc/node.socket"
 
         cmd = f"export CARDANO_NODE_SOCKET_PATH={socket_path} && /tools/cardano-cli query tip {self.network}"
 
