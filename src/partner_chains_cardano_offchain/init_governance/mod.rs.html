@@ -112,7 +112,6 @@
 <a href="#112" id="112">112</a>
 <a href="#113" id="113">113</a>
 <a href="#114" id="114">114</a>
-<a href="#115" id="115">115</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
 	csl::{get_first_validator_budget, key_hash_address, NetworkTypeExt},
 	OffchainError,
@@ -168,17 +167,17 @@
 	<span class="kw">let </span>network = client.shelley_genesis_configuration().<span class="kw">await</span><span class="question-mark">?</span>.network;
 
 	<span class="kw">let </span>own_address = key_hash_address(<span class="kw-2">&amp;</span>payment_key.to_public().hash(), network.to_csl());
-	<span class="macro">println!</span>(<span class="string">"✉️ Submitter address: {}"</span>, own_address.to_bech32(<span class="prelude-val">None</span>).unwrap());
+	<span class="macro">log::info!</span>(<span class="string">"✉️ Submitter address: {}"</span>, own_address.to_bech32(<span class="prelude-val">None</span>).unwrap());
 
 	<span class="kw">let </span>own_utxos = client.query_utxos(<span class="kw-2">&amp;</span>[own_address.to_bech32(<span class="prelude-val">None</span>)<span class="question-mark">?</span>]).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="macro">println!</span>(<span class="string">"💱 {} UTXOs available"</span>, own_utxos.len());
+	<span class="macro">log::info!</span>(<span class="string">"💱 {} UTXOs available"</span>, own_utxos.len());
 	<span class="kw">let </span>protocol_parameters = client.query_protocol_parameters().<span class="kw">await</span><span class="question-mark">?</span>;
 
 	<span class="kw">let </span>genesis_utxo = <span class="kw">match </span>genesis_utxo_id {
 		<span class="prelude-val">None </span>=&gt; {
-			<span class="macro">println!</span>(<span class="string">"⚙️ No genesis UTXO provided, will select one automatically..."</span>);
+			<span class="macro">log::info!</span>(<span class="string">"⚙️ No genesis UTXO provided, will select one automatically..."</span>);
 			<span class="kw">let </span>utxo = own_utxos.first().ok_or(<span class="macro">anyhow!</span>(<span class="string">"No UTXOs to choose from"</span>))<span class="question-mark">?</span>.clone();
-			<span class="macro">println!</span>(<span class="string">"☑️ UTXO selected: {}"</span>, utxo);
+			<span class="macro">log::info!</span>(<span class="string">"☑️ UTXO selected: {}"</span>, utxo);
 			utxo
 		},
 		<span class="prelude-val">Some</span>(utxo_id) =&gt; own_utxos
@@ -205,8 +204,7 @@
 		ExUnits::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span><span class="number">0u64</span>.into()),
 	)<span class="question-mark">?</span>;
 
-	<span class="macro">println!</span>(<span class="string">"📨 Submitting transaction:"</span>);
-	<span class="macro">println!</span>(<span class="string">"{}"</span>, unsigned_transaction.to_json()<span class="question-mark">?</span>);
+	<span class="macro">log::info!</span>(<span class="string">"📨 Submitting transaction.."</span>);
 
 	<span class="kw">let </span>all_costs = client.evaluate_transaction(<span class="kw-2">&amp;</span>unsigned_transaction.to_bytes()).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>cost = get_first_validator_budget(all_costs)<span class="question-mark">?</span>;
@@ -224,7 +222,7 @@
 
 	<span class="kw">let </span>result = client.submit_transaction(<span class="kw-2">&amp;</span>signed_transaction.to_bytes()).<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="macro">println!</span>(<span class="string">"✅ Transaction submited. ID: {}"</span>, hex::encode(result.transaction.id));
+	<span class="macro">log::info!</span>(<span class="string">"✅ Transaction submited. ID: {}"</span>, hex::encode(result.transaction.id));
 
 	<span class="prelude-val">Ok</span>(result.transaction)
 }

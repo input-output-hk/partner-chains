@@ -75,6 +75,28 @@
 <a href="#75" id="75">75</a>
 <a href="#76" id="76">76</a>
 <a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! This module provides a high-level API for interacting with the Ogmios JSON-RPC API.
 
 </span><span class="attr">#[cfg(feature = <span class="string">"jsonrpsee-client"</span>)]
@@ -84,6 +106,10 @@
 <span class="kw">pub mod </span>transactions;
 <span class="kw">pub mod </span>types;
 
+<span class="kw">use </span>::jsonrpsee::core::{
+	params::{ArrayParams, ObjectParams},
+	traits::ToRpcParams,
+};
 <span class="kw">use </span>serde::de::DeserializeOwned;
 <span class="kw">use </span>std::collections::HashMap;
 
@@ -106,7 +132,8 @@
 	) -&gt; <span class="prelude-ty">Result</span>&lt;T, OgmiosClientError&gt;;
 }
 
-<span class="kw">pub enum </span>OgmiosParams {
+<span class="attr">#[derive(Clone)]
+</span><span class="kw">pub enum </span>OgmiosParams {
 	Positional(Vec&lt;serde_json::Value&gt;),
 	ByName(HashMap&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str, serde_json::Value&gt;),
 }
@@ -118,6 +145,23 @@
 
 	<span class="kw">pub fn </span>empty_by_name() -&gt; <span class="self">Self </span>{
 		OgmiosParams::ByName(HashMap::new())
+	}
+}
+
+<span class="kw">impl </span>ToRpcParams <span class="kw">for </span>OgmiosParams {
+	<span class="kw">fn </span>to_rpc_params(<span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Box&lt;serde_json::value::RawValue&gt;&gt;, serde_json::Error&gt; {
+		<span class="kw">match </span><span class="self">self </span>{
+			OgmiosParams::ByName(map) =&gt; {
+				<span class="kw">let </span><span class="kw-2">mut </span>object_params = ObjectParams::new();
+				map.into_iter().try_for_each(|(k, v)| object_params.insert(k, v))<span class="question-mark">?</span>;
+				object_params.to_rpc_params()
+			},
+			OgmiosParams::Positional(v) =&gt; {
+				<span class="kw">let </span><span class="kw-2">mut </span>array_params = ArrayParams::new();
+				v.into_iter().try_for_each(|v| array_params.insert(v))<span class="question-mark">?</span>;
+				array_params.to_rpc_params()
+			},
+		}
 	}
 }
 

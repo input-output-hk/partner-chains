@@ -113,6 +113,25 @@
 <a href="#113" id="113">113</a>
 <a href="#114" id="114">114</a>
 <a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Provides wizard style CLI for Partner Chains setup and user operations.
 //! Interacts with Smart Contracts using [`partner_chains_cardano_offchain`] crate.
 
@@ -139,6 +158,10 @@
 
 <span class="kw">use </span>clap::Parser;
 <span class="kw">use </span>io::<span class="kw-2">*</span>;
+<span class="kw">use </span>log4rs::{
+	append::{console::ConsoleAppender, file::FileAppender},
+	config::Appender,
+};
 
 <span class="attr">#[derive(Debug, Parser)]
 #[command(
@@ -173,6 +196,21 @@
 }
 
 <span class="kw">fn </span>main() -&gt; anyhow::Result&lt;()&gt; {
+	<span class="kw">let </span>log_config = log4rs::config::Config::builder()
+		.appender(Appender::builder().build(<span class="string">"stdout"</span>, Box::new(ConsoleAppender::builder().build())))
+		.appender(
+			Appender::builder()
+				.build(<span class="string">"ogmios-log"</span>, Box::new(FileAppender::builder().build(<span class="string">"ogmios_client.log"</span>)<span class="question-mark">?</span>)),
+		)
+		.logger(
+			log4rs::config::Logger::builder()
+				.appender(<span class="string">"ogmios-log"</span>)
+				.additive(<span class="bool-val">false</span>)
+				.build(<span class="string">"ogmios_client::jsonrpsee"</span>, log::LevelFilter::Debug),
+		)
+		.build(log4rs::config::Root::builder().appender(<span class="string">"stdout"</span>).build(log::LevelFilter::Info))<span class="question-mark">?</span>;
+
+	log4rs::init_config(log_config)<span class="question-mark">?</span>;
 	<span class="kw">let </span>args = Command::parse();
 	<span class="kw">match </span>args {
 		Command::GenerateKeys(cmd) =&gt; cmd.run(<span class="kw-2">&amp;</span>DefaultCmdRunContext)<span class="question-mark">?</span>,
