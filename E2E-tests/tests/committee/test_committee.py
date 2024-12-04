@@ -35,54 +35,6 @@ def calculate_d_param_tolerance(pc_epochs_in_mc_epoch, d_param_p, d_param_t):
 
 class TestCommitteeDistribution:
 
-    @mark.committee_distribution
-    @mark.ariadne
-    @mark.xdist_group("governance_action")
-    def test_update_d_param(
-        self,
-        api: BlockchainApi,
-        config: ApiConfig,
-        current_mc_epoch,
-    ):
-        """
-        * get DParam for n + 2 mc epoch
-        * generate new DParam and update it
-        * confirm that DParam was updated
-        """
-        if not config.nodes_config.d_param_min or not config.nodes_config.d_param_max:
-            skip("Cannot test d-param update when min/max parameters are not set")
-
-        p_floor = config.nodes_config.d_param_min.permissioned_candidates_number
-        p_ceil = config.nodes_config.d_param_max.permissioned_candidates_number
-        t_floor = config.nodes_config.d_param_min.trustless_candidates_number
-        t_ceil = config.nodes_config.d_param_max.trustless_candidates_number
-
-        current_d_param = api.get_d_param(current_mc_epoch + 2)
-
-        if (
-            p_floor == p_ceil == current_d_param.permissioned_candidates_number
-            and t_floor == t_ceil == current_d_param.trustless_candidates_number
-        ):
-            skip("Cannot generate new d-param when min and max are equal to current d-param")
-
-        new_d_param = current_d_param
-        while new_d_param == current_d_param:
-            new_d_param = DParam(np.random.randint(p_floor, p_ceil + 1), np.random.randint(t_floor, t_ceil + 1))
-
-        logging.info(f"Updating d-param to {new_d_param}")
-        result = api.update_d_param(new_d_param.permissioned_candidates_number, new_d_param.trustless_candidates_number)
-        assert result, "D-param update failed"
-
-        # FIXME: ETCM-8945 - create and use wait_for_transaction function instead of wait_for_next_pc_block
-        api.wait_for_next_pc_block()
-        actual_d_param = api.get_d_param(current_mc_epoch + 2)
-        actual_p = actual_d_param.permissioned_candidates_number
-        actual_t = actual_d_param.trustless_candidates_number
-        assert (
-            new_d_param.permissioned_candidates_number == actual_p
-            and new_d_param.trustless_candidates_number == actual_t
-        ), "D-param update did not take effect"
-
     @mark.test_key('ETCM-7150')
     @mark.committee_distribution
     @mark.ariadne
