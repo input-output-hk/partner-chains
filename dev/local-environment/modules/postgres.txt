@@ -8,7 +8,7 @@
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - PGDATA=/pgdata
-      - POSTGRES_MULTIPLE_DATABASES=cexplorer1,cexplorer2,cexplorer3,qa_demo
+      - POSTGRES_MULTIPLE_DATABASES=cexplorer,cexplorer2,cexplorer3,qa_demo
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:

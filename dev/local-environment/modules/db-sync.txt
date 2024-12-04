@@ -16,7 +16,7 @@
     environment:
       - POSTGRES_HOST=postgres
       - POSTGRES_USER=postgres
-      - POSTGRES_DB=cexplorer1
+      - POSTGRES_DB=cexplorer
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_PORT=${POSTGRES_PORT}
     restart: always
