@@ -10,15 +10,10 @@
 
     # Nix helpers
     flake-parts.url = "github:hercules-ci/flake-parts";
-    devshell = {
-      url = "github:numtide/devshell";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     flake-compat = {
       url = "github:input-output-hk/flake-compat/fixes";
       flake = false;
     };
-    blank.url = "github:input-output-hk/empty-flake";
     process-compose.url = "github:Platonic-Systems/process-compose-flake";
     services-flake.url = "github:juspay/services-flake";
 
@@ -47,13 +42,11 @@
     flake-parts.lib.mkFlake {inherit inputs;} {
       systems = ["x86_64-linux" "aarch64-darwin"];
       imports = [
-        inputs.devshell.flakeModule
         inputs.process-compose.flakeModule
         ./dev/nix/shell.nix
         ./dev/nix/packages
         ./dev/nix/processes.nix
       ];
-      flake.lib = import ./dev/nix/lib.nix {inherit (nixpkgs) lib;};
     };
   nixConfig = {
     allow-import-from-derivation = true;
