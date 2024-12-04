@@ -68,7 +68,9 @@ Because of the changes to the smart contracts and their on-chain data, a complet
 of main chain data needs to be set up on Cardano.
 
 1. Pick the initial governance authority.
-This can be a newly generated or already existing main chain key set controlled by the Partner Chain authority.
+This can be a newly generated or already existing main chain key set (including the current governance authority of the Partner Chain being upgraded)
+controlled by the Partner Chain authority.
+The address associated with the keys should have enough ADA to cover transaction costs (10 or more ADA is advised).
 2. Run the `prepare-configuration` command of `partner-chains-cli` (v1.4.0) in a fresh directory.
 This step will involve selecting the _genesis UTXO_ to be spent intializing the governance mechanism.
 Save the `partner-chains-cli-chain-config.json` file produced by this step.
