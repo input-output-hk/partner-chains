@@ -7,6 +7,10 @@ pub mod query_network;
 pub mod transactions;
 pub mod types;
 
+use ::jsonrpsee::core::{
+	params::{ArrayParams, ObjectParams},
+	traits::ToRpcParams,
+};
 use serde::de::DeserializeOwned;
 use std::collections::HashMap;
 
@@ -29,6 +33,7 @@ pub trait OgmiosClient {
 	) -> Result<T, OgmiosClientError>;
 }
 
+#[derive(Clone)]
 pub enum OgmiosParams {
 	Positional(Vec<serde_json::Value>),
 	ByName(HashMap<&'static str, serde_json::Value>),
@@ -41,6 +46,23 @@ impl OgmiosParams {
 
 	pub fn empty_by_name() -> Self {
 		OgmiosParams::ByName(HashMap::new())
+	}
+}
+
+impl ToRpcParams for OgmiosParams {
+	fn to_rpc_params(self) -> Result<Option<Box<serde_json::value::RawValue>>, serde_json::Error> {
+		match self {
+			OgmiosParams::ByName(map) => {
+				let mut object_params = ObjectParams::new();
+				map.into_iter().try_for_each(|(k, v)| object_params.insert(k, v))?;
+				object_params.to_rpc_params()
+			},
+			OgmiosParams::Positional(v) => {
+				let mut array_params = ArrayParams::new();
+				v.into_iter().try_for_each(|v| array_params.insert(v))?;
+				array_params.to_rpc_params()
+			},
+		}
 	}
 }
 

@@ -24,6 +24,10 @@ mod tests;
 
 use clap::Parser;
 use io::*;
+use log4rs::{
+	append::{console::ConsoleAppender, file::FileAppender},
+	config::Appender,
+};
 
 #[derive(Debug, Parser)]
 #[command(
@@ -58,6 +62,21 @@ pub trait CmdRun {
 }
 
 fn main() -> anyhow::Result<()> {
+	let log_config = log4rs::config::Config::builder()
+		.appender(Appender::builder().build("stdout", Box::new(ConsoleAppender::builder().build())))
+		.appender(
+			Appender::builder()
+				.build("ogmios-log", Box::new(FileAppender::builder().build("ogmios_client.log")?)),
+		)
+		.logger(
+			log4rs::config::Logger::builder()
+				.appender("ogmios-log")
+				.additive(false)
+				.build("ogmios_client::jsonrpsee", log::LevelFilter::Debug),
+		)
+		.build(log4rs::config::Root::builder().appender("stdout").build(log::LevelFilter::Info))?;
+
+	log4rs::init_config(log_config)?;
 	let args = Command::parse();
 	match args {
 		Command::GenerateKeys(cmd) => cmd.run(&DefaultCmdRunContext)?,

@@ -16,6 +16,7 @@ serde_json = { workspace = true, features = ["raw_value", "arbitrary_precision"]
 thiserror = { workspace = true }
 time = { workspace = true, features = ["std", "serde", "parsing"] }
 sidechain-domain = { workspace = true, features = ["std"] }
+log = { workspace = true, optional = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
@@ -24,4 +25,4 @@ tokio = { workspace = true }
 
 [features]
 default = ["jsonrpsee-client"]
-jsonrpsee-client = ["jsonrpsee"]
+jsonrpsee-client = ["jsonrpsee", "log"]
