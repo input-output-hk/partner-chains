@@ -6580,6 +6580,8 @@ dependencies = [
  "inquire",
  "jsonrpsee",
  "libp2p-identity",
+ "log",
+ "log4rs",
  "ogmios-client",
  "partner-chains-cardano-offchain",
  "pretty_assertions",
