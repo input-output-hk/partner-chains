@@ -5,8 +5,8 @@
         "network": "--testnet-magic 42",
         "epoch_length": 120,
         "slot_length": 1,
-        "active_slots_coeff": 0.8,
-        "security_param": 5,
+        "active_slots_coeff": 0.25,
+        "security_param": 12,
         "init_timestamp": 1730141520,
         "block_stability_margin": 0
     },
