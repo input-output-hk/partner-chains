@@ -114,6 +114,7 @@ runs:
         keyword: "test_get_status or test_get_params"
         blockchain: substrate
         local-environment: "true"
+        log_level: debug
     - name: Wait for epoch 2
       uses: ./.github/actions/tests/wait-for-epoch
       with:
@@ -133,6 +134,7 @@ runs:
         blockchain: substrate
         markers: "not active_flow and not passive_flow and not probability and not rpc"
         local-environment: "true"
+        log_level: debug
     - name: Wait for epoch 3
       if: ${{ inputs.tests == 'postmerge' }}
       uses: ./.github/actions/tests/wait-for-epoch
@@ -149,6 +151,7 @@ runs:
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
         local-environment: "true"
+        log_level: debug
     - name: Wait for epoch 4
       if: ${{ inputs.tests == 'postmerge' }}
       uses: ./.github/actions/tests/wait-for-epoch
@@ -166,6 +169,7 @@ runs:
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
         local-environment: "true"
+        log_level: debug
     - name: Check if no skipped tests
       if: ${{ inputs.tests == 'postmerge' }}
       run: |
