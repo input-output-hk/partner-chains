@@ -71,8 +71,6 @@ pub struct EpochParameters {
 #[serde(rename_all = "camelCase")]
 pub struct ReferenceScriptsCosts {
 	pub base: f32,
-	pub range: u32,
-	pub multiplier: f32,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Default)]

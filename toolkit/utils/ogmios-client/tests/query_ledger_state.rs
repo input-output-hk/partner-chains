@@ -192,8 +192,6 @@ async fn protocol_parameters() {
 			collateral_percentage: 150,
 			min_fee_reference_scripts: ReferenceScriptsCosts {
 				base: 10.0,
-				range: 0,
-				multiplier: 2.0
 			}
 		}
 	);
