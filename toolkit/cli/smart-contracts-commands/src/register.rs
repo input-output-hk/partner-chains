@@ -1,5 +1,5 @@
 use jsonrpsee::http_client::HttpClient;
-use partner_chains_cardano_offchain::register::run_register;
+use partner_chains_cardano_offchain::{await_tx::FixedDelayRetries, register::run_register};
 use sidechain_domain::{
 	AdaBasedStaking, AuraPublicKey, BlockProducerRegistration, GrandpaPublicKey,
 	MainchainPublicKey, MainchainSignature, SidechainPublicKey, SidechainSignature, UtxoId,
@@ -51,6 +51,7 @@ impl RegisterCmd {
 			self.registration_utxo,
 			payment_key,
 			&client,
+			FixedDelayRetries::two_minutes(),
 		)
 		.await?;
 
