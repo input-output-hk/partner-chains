@@ -89,7 +89,6 @@ runs:
           ${decrypt_switch} \
           --json-report \
           --json-report-summary \
-          --json-report-detailed \
           --tb=short \
           --junitxml=junit_report.xml"
 
