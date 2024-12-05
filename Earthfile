@@ -5,6 +5,7 @@ ARG --global FEATURES
 ci:
   BUILD +build
   BUILD +test
+  BUILD +licenses
   BUILD +fmt
   BUILD +chainspecs
   ARG image=sidechains-substrate-node
@@ -58,6 +59,13 @@ test:
   WITH DOCKER
     RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
   END
+
+licenses:
+    FROM +source
+    COPY scripts/validate_workspace_licenses.py validate_workspace_licenses.py
+    RUN pip install toml
+    RUN cargo install --locked cargo-license
+    RUN python3 validate_workspace_licenses.py
 
 fmt:
   FROM +source
