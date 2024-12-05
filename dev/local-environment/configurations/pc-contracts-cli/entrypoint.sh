@@ -81,6 +81,8 @@ echo "Initializing governance authority ..."
 
 export GENESIS_UTXO=$(cat /shared/genesis.utxo)
 
+echo "Genesis UTXO: $GENESIS_UTXO"
+
 ./pc-contracts-cli init-governance \
     --network testnet \
     --kupo-host kupo --kupo-port $KUPO_PORT \
