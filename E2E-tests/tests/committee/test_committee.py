@@ -38,6 +38,7 @@ class TestCommitteeDistribution:
     @mark.committee_distribution
     @mark.ariadne
     @mark.xdist_group("governance_action")
+    @mark.usefixtures("governance_skey_with_cli")
     def test_update_d_param(
         self,
         api: BlockchainApi,
