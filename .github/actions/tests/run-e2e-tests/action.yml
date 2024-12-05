@@ -115,12 +115,14 @@ runs:
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
+      continue-on-error: true
       with:
         name: test-results
         path: e2e-tests/.report.json
         overwrite: true
         if-no-files-found: error
         include-hidden-files: true
+        
     - name: Fail the job
       if: ${{ steps.run-tests.outcome == 'failure' }}
       run: exit 1
