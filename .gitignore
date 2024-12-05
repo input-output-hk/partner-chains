@@ -32,3 +32,5 @@ dev/local-environment/.env
 dev/local-environment/docker-compose.yml
 dev/local-environment/configurations/tests/e2e-tests
 dev/local-environment/configurations/pc-contracts-cli/overrides
+
+ogmios_client.log
