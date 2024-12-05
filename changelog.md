@@ -36,7 +36,8 @@ Do **NOT** perform a normal runtime upgrade, it will break your chain.
 
 ## Added
 
-* Added `smart-contracts` command to the node with sub-commands `init-governance` and `get-scripts`.
+* Added `smart-contracts` command to the node with sub-commands `init-governance`, `get-scripts` and
+`upsert-d-parameter`.
 
 # v1.3.0
 
