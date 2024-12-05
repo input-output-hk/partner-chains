@@ -15,6 +15,7 @@
       - ./configurations/partner-chains-nodes/:/partner-chains-nodes/
     environment:
       - CARDANO_NODE_SOCKET_PATH=/data/node.socket
+      - GOVERNANCE_AUTHORITY=e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b
       - KUPO_PORT=${KUPO_PORT}
       - OGMIOS_PORT=${OGMIOS_PORT}
       - ARTIFACT_OVERRIDE=${ARTIFACT_OVERRIDE}
