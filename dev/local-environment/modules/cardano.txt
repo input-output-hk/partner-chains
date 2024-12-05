@@ -8,17 +8,15 @@
       - shared-volume:/shared
       - ./configurations/busybox:/busybox
       - ./configurations/pc-contracts-cli:/pc-contracts-cli
-      - ./configurations/cardano/cardano-node-1/entrypoint.sh:/entrypoint.sh
-      - ./configurations/cardano/cardano-node-1/topology-pool1.json:/shared/node-1-topology.json
-      - ./configurations/cardano/cardano-node-1/keys/cold.vkey:/keys/cold.vkey
-      - ./configurations/cardano/cardano-node-1/keys/kes.skey:/keys/kes.skey
-      - ./configurations/cardano/cardano-node-1/keys/vrf.skey:/keys/vrf.skey
-      - ./configurations/cardano/cardano-node-1/keys/funded_address.skey:/keys/funded_address.skey
-      - ./configurations/cardano/cardano-node-1/keys/funded_address.vkey:/keys/funded_address.vkey
-      - ./configurations/cardano/cardano-node-1/keys/op.cert:/keys/node.cert
-      - ./configurations/cardano/cardano-node-1/config-pool1.json:/shared/node-1-config.json.base
-      - ./configurations/cardano/cardano-node-2/config-pool2.json:/shared/node-2-config.json.base
-      - ./configurations/cardano/cardano-node-3/config-pool3.json:/shared/node-3-config.json.base
+      - ./configurations/cardano/entrypoint.sh:/entrypoint.sh
+      - ./configurations/cardano/topology-pool1.json:/shared/node-1-topology.json
+      - ./configurations/cardano/keys/cold.vkey:/keys/cold.vkey
+      - ./configurations/cardano/keys/kes.skey:/keys/kes.skey
+      - ./configurations/cardano/keys/vrf.skey:/keys/vrf.skey
+      - ./configurations/cardano/keys/funded_address.skey:/keys/funded_address.skey
+      - ./configurations/cardano/keys/funded_address.vkey:/keys/funded_address.vkey
+      - ./configurations/cardano/keys/op.cert:/keys/node.cert
+      - ./configurations/cardano/config-pool1.json:/shared/node-1-config.json.base
       - ./configurations/db-sync/config.json:/shared/db-sync-config.json.base
       - ./configurations/genesis/byron/genesis.json:/shared/byron/genesis.json.base
       - ./configurations/genesis/shelley/genesis.json:/shared/shelley/genesis.json.base
@@ -32,43 +30,3 @@
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
     ports:
       - "32000:32000"
-
-  cardano-node-2:
-    container_name: cardano-node-2
-    image: ${CARDANO_IMAGE}
-    platform: linux/amd64
-    volumes:
-      - cardano-node-2-data:/data
-      - shared-volume:/shared
-      - ./configurations/busybox:/busybox
-      - ./configurations/cardano/cardano-node-2/entrypoint.sh:/entrypoint.sh
-      - ./configurations/cardano/cardano-node-2/topology-pool2.json:/shared/node-2-topology.json
-      - ./configurations/cardano/cardano-node-2/keys/cold.vkey:/keys/cold.vkey
-      - ./configurations/cardano/cardano-node-2/keys/kes.skey:/keys/kes.skey
-      - ./configurations/cardano/cardano-node-2/keys/vrf.skey:/keys/vrf.skey
-      - ./configurations/cardano/cardano-node-2/keys/op.cert:/keys/node.cert
-    environment:
-      - CARDANO_NODE_SOCKET_PATH=/data/node.socket
-    entrypoint: ["/bin/bash", "/entrypoint.sh"]
-    ports:
-      - "32005:32005"
-
-  cardano-node-3:
-    container_name: cardano-node-3
-    image: ${CARDANO_IMAGE}
-    platform: linux/amd64
-    volumes:
-      - cardano-node-3-data:/data
-      - shared-volume:/shared
-      - ./configurations/busybox:/busybox
-      - ./configurations/cardano/cardano-node-3/entrypoint.sh:/entrypoint.sh
-      - ./configurations/cardano/cardano-node-3/topology-pool3.json:/shared/node-3-topology.json
-      - ./configurations/cardano/cardano-node-3/keys/cold.vkey:/keys/cold.vkey
-      - ./configurations/cardano/cardano-node-3/keys/kes.skey:/keys/kes.skey
-      - ./configurations/cardano/cardano-node-3/keys/vrf.skey:/keys/vrf.skey
-      - ./configurations/cardano/cardano-node-3/keys/op.cert:/keys/node.cert
-    environment:
-      - CARDANO_NODE_SOCKET_PATH=/data/node.socket
-    entrypoint: ["/bin/bash", "/entrypoint.sh"]
-    ports:
-      - "32010:32010"
