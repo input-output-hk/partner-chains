@@ -26,6 +26,11 @@ on:
         required: false
         type: boolean
         default: false
+      no-wipe:
+        description: "Skip chain wipe"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   id-token: write
@@ -181,6 +186,7 @@ jobs:
         with:
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
           sha: ${{ github.sha }}
+          no-wipe: ${{ github.event.inputs.no-wipe || 'false' }}
         env:
           AWS_REGION: "eu-central-1"
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -457,6 +463,7 @@ jobs:
 #        with:
 #          image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
 #          chain-spec-secret: ${{ inputs.chain-spec-secret }}
+#          no-wipe: ${{ github.event.inputs.no-wipe || 'false' }}
 #        env:
 #          AWS_REGION: "eu-central-1"
 #          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
