@@ -67,7 +67,13 @@ pub struct EpochParameters {
 	pub safe_zone: u32,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Default)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ReferenceScriptsCosts {
+	pub base: f32,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ProtocolParametersResponse {
 	pub min_fee_coefficient: u32,
@@ -81,6 +87,7 @@ pub struct ProtocolParametersResponse {
 	pub plutus_cost_models: PlutusCostModels,
 	pub max_collateral_inputs: u32,
 	pub collateral_percentage: u32,
+	pub min_fee_reference_scripts: ReferenceScriptsCosts,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Default)]
