@@ -1,14 +1,17 @@
 use crate::{
+	await_tx::{AwaitTx, FixedDelayRetries},
 	csl::{get_first_validator_budget, key_hash_address, NetworkTypeExt},
 	OffchainError,
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::*;
 use ogmios_client::{
-	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
+	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
+	query_network::QueryNetwork,
+	transactions::Transactions,
 	types::OgmiosTx,
 };
-use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, UtxoId};
+use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, McTxHash, UtxoId, UtxoIndex};
 
 #[cfg(test)]
 mod tests;
@@ -27,7 +30,7 @@ pub trait InitGovernance {
 
 impl<T> InitGovernance for T
 where
-	T: QueryLedgerState + Transactions + QueryNetwork,
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 {
 	async fn init_governance(
 		&self,
@@ -35,17 +38,27 @@ where
 		payment_key: MainchainPrivateKey,
 		genesis_utxo_id: UtxoId,
 	) -> Result<OgmiosTx, OffchainError> {
-		run_init_governance(governance_authority, payment_key, Some(genesis_utxo_id), self)
-			.await
-			.map_err(|e| OffchainError::InternalError(e.to_string()))
+		run_init_governance(
+			governance_authority,
+			payment_key,
+			Some(genesis_utxo_id),
+			self,
+			FixedDelayRetries::two_minutes(),
+		)
+		.await
+		.map_err(|e| OffchainError::InternalError(e.to_string()))
 	}
 }
 
-pub async fn run_init_governance<T: QueryLedgerState + Transactions + QueryNetwork>(
+pub async fn run_init_governance<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
 	governance_authority: MainchainAddressHash,
 	payment_key: MainchainPrivateKey,
 	genesis_utxo_id: Option<UtxoId>,
 	client: &T,
+	await_tx: A,
 ) -> anyhow::Result<OgmiosTx> {
 	let payment_key = PrivateKey::from_normal_bytes(&payment_key.0)
 		.expect("MainchainPrivateKey is a valid PrivateKey");
@@ -107,8 +120,11 @@ pub async fn run_init_governance<T: QueryLedgerState + Transactions + QueryNetwo
 	let signed_transaction = tx_context.sign(&unsigned_transaction);
 
 	let result = client.submit_transaction(&signed_transaction.to_bytes()).await?;
-
+	let tx_id = result.transaction.id;
 	log::info!("✅ Transaction submited. ID: {}", hex::encode(result.transaction.id));
+	await_tx
+		.await_tx_output(client, UtxoId { tx_hash: McTxHash(tx_id), index: UtxoIndex(0) })
+		.await?;
 
 	Ok(result.transaction)
 }

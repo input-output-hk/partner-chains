@@ -5,7 +5,7 @@ use jsonrpsee::http_client::HttpClient;
 use ogmios_client::{
 	query_ledger_state::{
 		EpochBoundary, EpochParameters, EraSummary, PlutusCostModels, ProtocolParametersResponse,
-		QueryLedgerState, ReferenceScriptsCosts, ScriptExecutionPrices,
+		QueryLedgerState, QueryUtxoByUtxoId, ReferenceScriptsCosts, ScriptExecutionPrices,
 	},
 	types::{Asset, OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
 };
@@ -190,9 +190,7 @@ async fn protocol_parameters() {
 			},
 			max_collateral_inputs: 3,
 			collateral_percentage: 150,
-			min_fee_reference_scripts: ReferenceScriptsCosts {
-				base: 10.0,
-			}
+			min_fee_reference_scripts: ReferenceScriptsCosts { base: 10.0 }
 		}
 	);
 }
@@ -267,6 +265,68 @@ async fn query_utxos() {
 				},
 			},
 			datum: Some(hex!("d8799fff").to_vec().into()),
+			datum_hash: None,
+			script: None
+		}
+	)
+}
+
+#[tokio::test]
+async fn query_utxos_by_tx_hash() {
+	let address = server::for_single_test("queryLedgerState/utxo", |_| {
+		Ok(json!([
+		  {
+			"transaction": {
+			  "id": "106b0d7d1544c97941777041699412fb7c8b94855210987327199620c0599580"
+			},
+			"index": 1,
+			"address": "addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy",
+			"value": {
+			  "ada": {
+				"lovelace": 1356118
+			  },
+			  "e0d4479b3dbb53b1aecd48f7ef524a9cf166585923d91d9c72ed02cb": {
+					  "707070": 18446744073709551615i128
+			  }
+			}
+		  }
+		]))
+	})
+	.await
+	.unwrap();
+	let client = HttpClient::builder().build(format!("http://{address}")).unwrap();
+	let utxo = client
+		.query_utxo_by_id(
+			hex!("106b0d7d1544c97941777041699412fb7c8b94855210987327199620c0599580").into(),
+			1,
+		)
+		.await
+		.unwrap();
+	assert_eq!(
+		utxo.unwrap().clone(),
+		OgmiosUtxo {
+			transaction: OgmiosTx {
+				id: hex!("106b0d7d1544c97941777041699412fb7c8b94855210987327199620c0599580")
+					.try_into()
+					.unwrap()
+			},
+			index: 1,
+			address: "addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy".into(),
+			value: OgmiosValue {
+				lovelace: 1356118,
+				native_tokens: {
+					let mut map = std::collections::HashMap::new();
+					map.insert(
+						hex!("e0d4479b3dbb53b1aecd48f7ef524a9cf166585923d91d9c72ed02cb"),
+						vec![Asset {
+							name: hex!("707070").to_vec(),
+							amount: 18446744073709551615i128,
+						}],
+					);
+					map
+				},
+			},
+			datum: None,
 			datum_hash: None,
 			script: None
 		}
