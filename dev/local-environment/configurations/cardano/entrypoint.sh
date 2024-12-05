@@ -6,6 +6,11 @@ chmod 777 /shared
 
 echo "Calculating target time for synchronised chain start..."
 
+remaining_seconds=$((60 - $(date +'%-S')))
+if [ $remaining_seconds -le 20 ]; then
+    sleep $remaining_seconds
+fi
+
 target_time=$(( ($(date +%s) / 60 + 1) * 60 ))
 echo "$target_time" > /shared/cardano.start
 byron_startTime=$target_time
@@ -136,8 +141,8 @@ cardano-cli latest transaction submit \
   --tx-file /data/tx.signed \
   --testnet-magic 42
 
-echo "Transaction submitted to fund registered candidates and governance authority. Waiting 20 seconds for transaction to process..."
-sleep 20
+echo "Transaction submitted to fund registered candidates and governance authority. Waiting 40 seconds for transaction to process..."
+sleep 40
 echo "Balance:"
 
 # Query UTXOs at new_address, dave_address, and eve_address
