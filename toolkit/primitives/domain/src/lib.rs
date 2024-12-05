@@ -267,6 +267,16 @@ impl MainchainAddressHash {
 #[byte_string(debug, hex_serialize)]
 pub struct MainchainSignature(pub Vec<u8>);
 
+impl FromStr for MainchainSignature {
+	type Err = &'static str;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		let bytes_vec =
+			from_hex(s).map_err(|_| "Mainchain Signature must be a valid hex string")?;
+		Ok(MainchainSignature(bytes_vec))
+	}
+}
+
 #[derive(
 	Clone,
 	Copy,
@@ -313,6 +323,16 @@ pub struct SidechainPublicKey(pub Vec<u8>);
 #[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
 #[byte_string(debug, hex_serialize, hex_deserialize)]
 pub struct SidechainSignature(pub Vec<u8>);
+
+impl FromStr for SidechainSignature {
+	type Err = &'static str;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		let bytes_vec =
+			from_hex(s).map_err(|_| "Mainchain Signature must be a valid hex string")?;
+		Ok(SidechainSignature(bytes_vec))
+	}
+}
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[byte_string(debug, hex_serialize)]
@@ -642,7 +662,7 @@ pub struct BlockProducerRegistration {
 	pub sidechain_pub_key: SidechainPublicKey,
 	pub sidechain_signature: SidechainSignature,
 	pub registration_utxo: UtxoId,
-	pub own_pkh: MainchainAddressHash,
+	// pub own_pkh: MainchainAddressHash,
 	pub aura_pub_key: AuraPublicKey,
 	pub grandpa_pub_key: GrandpaPublicKey,
 }
