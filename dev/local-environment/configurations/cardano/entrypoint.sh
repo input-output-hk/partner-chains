@@ -6,7 +6,7 @@ chmod 777 /shared
 
 echo "Calculating target time for synchronised chain start..."
 
-target_time=$(( ($(date +%s) / 30 + 1) * 30 ))
+target_time=$(( ($(date +%s) / 60 + 1) * 60 ))
 echo "$target_time" > /shared/cardano.start
 byron_startTime=$target_time
 shelley_systemStart=$(date --utc +"%Y-%m-%dT%H:%M:%SZ" --date="@$target_time")
