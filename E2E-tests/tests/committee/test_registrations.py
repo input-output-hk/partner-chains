@@ -19,41 +19,70 @@ def test_register_candidate(candidate: Candidates, api: BlockchainApi, db: Sessi
     * wait for next partner chain block
     * check that registered candidate appeared in the partner_chain_getAriadneParameters() response
     """
-    logging.info(f"Registering {candidate}")
-    result, next_status_epoch = api.register_candidate(candidate.name)
-    assert result, f"Registration of candidate {candidate.name} failed."
+    logging.info("Starting test: test_register_candidate")
+    logging.info(f"Candidate: {candidate}, API: {api}, DB: {db}, Config: {config}")
 
-    registered_candidate = Candidates()
-    registered_candidate.name = candidate.name
-    registered_candidate.next_status = "active"
-    registered_candidate.next_status_epoch = next_status_epoch
-    db.add(registered_candidate)
-    db.commit()
+    try:
+        # Step 1: Register the candidate
+        logging.info(f"Registering candidate {candidate.name}")
+        result, next_status_epoch = api.register_candidate(candidate.name)
+        logging.info(f"Registration result: {result}, next status epoch: {next_status_epoch}")
+        assert result, f"Registration of candidate {candidate.name} failed."
 
-    # TODO: split into separate test
-    # Get registration status from RPC
-    api.wait_for_next_pc_block()
-    candidate_registrations = api.get_trustless_candidates(next_status_epoch, valid_only=False)
-    spo_public_key = config.nodes_config.nodes[candidate.name].keys_files.spo_public_key
-    registered_mc_pub_key = f"0x{api._read_cardano_key_file(spo_public_key)}"
-    # FIXME: ETCM-7370 handle multiple registrations for a single spo
-    registration = candidate_registrations[registered_mc_pub_key][0]
-    registered_pc_pub_key = config.nodes_config.nodes[candidate.name].public_key
-    registered_aura_pub_key = config.nodes_config.nodes[candidate.name].aura_public_key
-    registered_grandpa_pub_key = config.nodes_config.nodes[candidate.name].grandpa_public_key
-    assert (
-        registered_pc_pub_key == registration["sidechainPubKey"]
-    ), f"Could not find SC public key {registered_pc_pub_key} registered for MC epoch {next_status_epoch}"
-    assert (
-        registered_mc_pub_key == registration["mainchainPubKey"]
-    ), f"Could not find MC public key {registered_mc_pub_key} registered for MC epoch {next_status_epoch}"
-    assert (
-        registered_aura_pub_key == registration["auraPubKey"]
-    ), f"Could not find Aura public key {registered_aura_pub_key} registered for MC epoch {next_status_epoch}"
-    assert (
-        registered_grandpa_pub_key == registration["grandpaPubKey"]
-    ), f"Could not find Grandpa public key {registered_grandpa_pub_key} registered for MC epoch {next_status_epoch}"
-    assert registration["isValid"], f"Registered candidate {candidate.name} is not valid"
+        # Step 2: Commit the registration to the database
+        logging.info("Committing candidate registration to the database.")
+        registered_candidate = Candidates()
+        registered_candidate.name = candidate.name
+        registered_candidate.next_status = "active"
+        registered_candidate.next_status_epoch = next_status_epoch
+        db.add(registered_candidate)
+        db.commit()
+        logging.info("Candidate successfully committed to the database.")
+
+        # Step 3: Wait for the next partner chain block
+        logging.info("Waiting for the next partner chain block.")
+        api.wait_for_next_pc_block()
+
+        # Step 4: Get registration status from RPC
+        logging.info(f"Fetching trustless candidates for epoch {next_status_epoch}")
+        candidate_registrations = api.get_trustless_candidates(next_status_epoch, valid_only=False)
+        spo_public_key = config.nodes_config.nodes[candidate.name].keys_files.spo_public_key
+        registered_mc_pub_key = f"0x{api._read_cardano_key_file(spo_public_key)}"
+        logging.info(f"MC public key: {registered_mc_pub_key}")
+        
+        # FIXME: ETCM-7370 handle multiple registrations for a single SPO
+        registration = candidate_registrations[registered_mc_pub_key][0]
+        logging.info(f"Fetched registration: {registration}")
+
+        registered_pc_pub_key = config.nodes_config.nodes[candidate.name].public_key
+        registered_aura_pub_key = config.nodes_config.nodes[candidate.name].aura_public_key
+        registered_grandpa_pub_key = config.nodes_config.nodes[candidate.name].grandpa_public_key
+
+        # Step 5: Validate keys and status
+        logging.info("Validating registration keys and status.")
+        assert (
+            registered_pc_pub_key == registration["sidechainPubKey"]
+        ), f"Could not find SC public key {registered_pc_pub_key} registered for MC epoch {next_status_epoch}"
+        assert (
+            registered_mc_pub_key == registration["mainchainPubKey"]
+        ), f"Could not find MC public key {registered_mc_pub_key} registered for MC epoch {next_status_epoch}"
+        assert (
+            registered_aura_pub_key == registration["auraPubKey"]
+        ), f"Could not find Aura public key {registered_aura_pub_key} registered for MC epoch {next_status_epoch}"
+        assert (
+            registered_grandpa_pub_key == registration["grandpaPubKey"]
+        ), f"Could not find Grandpa public key {registered_grandpa_pub_key} registered for MC epoch {next_status_epoch}"
+        assert registration["isValid"], f"Registered candidate {candidate.name} is not valid"
+
+        logging.info("Test completed successfully: test_register_candidate")
+    except AssertionError as e:
+        logging.error(f"Test failed: {e}")
+        raise
+    except Exception as e:
+        logging.error(f"Unexpected error during test: {e}")
+        raise
+    finally:
+        logging.info("Test execution finished: test_register_candidate")
 
 
 @mark.skip_blockchain("pc_evm", reason="not implemented yet")
