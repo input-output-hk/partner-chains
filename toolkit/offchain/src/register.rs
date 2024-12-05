@@ -4,15 +4,21 @@ use crate::csl::{
 	get_first_validator_budget, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
 	TransactionContext,
 };
-use crate::plutus_script::PlutusScript;
-use crate::OffchainError;
+use crate::{
+	await_tx::{AwaitTx, FixedDelayRetries},
+	plutus_script::PlutusScript,
+	OffchainError,
+};
 use anyhow::anyhow;
 use cardano_serialization_lib::{
 	BigNum, DataCost, Ed25519KeyHash, ExUnits, JsError, MinOutputAdaCalculator, PlutusData,
 	Transaction, TransactionBuilder, TransactionOutputBuilder, TxInputsBuilder,
 };
 use ogmios_client::{
-	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
+	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
+	query_network::QueryNetwork,
+	transactions::Transactions,
+	types::OgmiosTx,
 	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::registered_candidates::{
@@ -20,7 +26,7 @@ use partner_chains_plutus_data::registered_candidates::{
 };
 use sidechain_domain::{
 	BlockProducerRegistration, MainchainAddressHash, MainchainPrivateKey, MainchainPublicKey,
-	McTxHash, UtxoId,
+	McTxHash, UtxoId, UtxoIndex,
 };
 
 pub trait Register {
@@ -31,12 +37,12 @@ pub trait Register {
 		block_producer_registration: &BlockProducerRegistration,
 		registration_utxo: UtxoId,
 		payment_signing_key: MainchainPrivateKey,
-	) -> Result<McTxHash, OffchainError>;
+	) -> Result<OgmiosTx, OffchainError>;
 }
 
 impl<T> Register for T
 where
-	T: QueryLedgerState + Transactions + QueryNetwork,
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 {
 	async fn register(
 		&self,
@@ -44,26 +50,31 @@ where
 		block_producer_registration: &BlockProducerRegistration,
 		registration_utxo: UtxoId,
 		payment_signing_key: MainchainPrivateKey,
-	) -> Result<McTxHash, OffchainError> {
+	) -> Result<OgmiosTx, OffchainError> {
 		run_register(
 			genesis_utxo,
 			block_producer_registration,
 			registration_utxo,
 			payment_signing_key,
 			self,
+			FixedDelayRetries::two_minutes(),
 		)
 		.await
 		.map_err(|e| OffchainError::InternalError(e.to_string()))
 	}
 }
 
-pub async fn run_register<C: QueryLedgerState + QueryNetwork + Transactions>(
+pub async fn run_register<
+	C: QueryLedgerState + QueryNetwork + QueryUtxoByUtxoId + Transactions,
+	A: AwaitTx,
+>(
 	genesis_utxo: UtxoId,
 	block_producer_registration: &BlockProducerRegistration,
 	registration_utxo: UtxoId,
 	payment_signing_key: MainchainPrivateKey,
 	ogmios_client: &C,
-) -> anyhow::Result<McTxHash> {
+	await_tx: A,
+) -> anyhow::Result<OgmiosTx> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key.0, ogmios_client).await?;
 	let own_pkh = ed25519_key_hash_to_mainchain_address_hash(ctx.payment_key_hash());
 	let validator = crate::scripts_data::registered_candidates_scripts(genesis_utxo)?;
@@ -101,7 +112,7 @@ pub async fn run_register<C: QueryLedgerState + QueryNetwork + Transactions>(
 	let evaluate_response =
 		ogmios_client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
 			anyhow!(
-				"Evaluate insert D-parameter transaction request failed: {}, bytes: {}",
+				"Evaluate candidate registration transaction request failed: {}, bytes: {}",
 				e,
 				hex::encode(tx.to_bytes())
 			)
@@ -117,16 +128,20 @@ pub async fn run_register<C: QueryLedgerState + QueryNetwork + Transactions>(
 		validator_redeemer_ex_units,
 	)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
-	let res = ogmios_client.submit_transaction(&signed_tx).await.map_err(|e| {
+	let result = ogmios_client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow!(
-			"Submit insert D-parameter transaction request failed: {}, bytes: {}",
+			"Submit candidate registration transaction request failed: {}, bytes: {}",
 			e,
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	log::info!("Transaction submitted: {}", hex::encode(res.transaction.id));
-	// TODO: await for the transaction output to be visible in validator wallet
-	Ok(McTxHash(res.transaction.id))
+	let tx_id = result.transaction.id;
+	log::info!("✅ Transaction submited. ID: {}", hex::encode(result.transaction.id));
+	await_tx
+		.await_tx_output(ogmios_client, UtxoId { tx_hash: McTxHash(tx_id), index: UtxoIndex(0) })
+		.await?;
+
+	Ok(result.transaction)
 }
 
 fn ed25519_key_hash_to_mainchain_address_hash(value: Ed25519KeyHash) -> MainchainAddressHash {
