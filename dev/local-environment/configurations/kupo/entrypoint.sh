@@ -6,7 +6,7 @@ while true; do
     if [ -f "/shared/cardano.ready" ]; then
         break
     else
-        sleep 1
+        sleep 10
     fi
 done
 
