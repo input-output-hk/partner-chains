@@ -5,7 +5,7 @@ use jsonrpsee::http_client::HttpClient;
 use ogmios_client::{
 	query_ledger_state::{
 		EpochBoundary, EpochParameters, EraSummary, PlutusCostModels, ProtocolParametersResponse,
-		QueryLedgerState, ScriptExecutionPrices,
+		QueryLedgerState, ReferenceScriptsCosts, ScriptExecutionPrices,
 	},
 	types::{Asset, OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
 };
@@ -157,6 +157,11 @@ async fn protocol_parameters() {
 			"memory": "577/10000",
 			"cpu": "721/10000000"
 		  },
+		  "minFeeReferenceScripts": {
+			"base": 10.0,
+			"range": 0,
+			"multiplier": 2.0
+		  }
 		}))
 	})
 	.await
@@ -185,6 +190,11 @@ async fn protocol_parameters() {
 			},
 			max_collateral_inputs: 3,
 			collateral_percentage: 150,
+			min_fee_reference_scripts: ReferenceScriptsCosts {
+				base: 10.0,
+				range: 0,
+				multiplier: 2.0
+			}
 		}
 	);
 }
