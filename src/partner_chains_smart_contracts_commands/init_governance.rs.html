@@ -27,8 +27,17 @@
 <a href="#27" id="27">27</a>
 <a href="#28" id="28">28</a>
 <a href="#29" id="29">29</a>
+<a href="#30" id="30">30</a>
+<a href="#31" id="31">31</a>
+<a href="#32" id="32">32</a>
+<a href="#33" id="33">33</a>
+<a href="#34" id="34">34</a>
+<a href="#35" id="35">35</a>
+<a href="#36" id="36">36</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>jsonrpsee::http_client::HttpClient;
-<span class="kw">use </span>partner_chains_cardano_offchain::init_governance::run_init_governance;
+<span class="kw">use </span>partner_chains_cardano_offchain::{
+	await_tx::FixedDelayRetries, init_governance::run_init_governance,
+};
 <span class="kw">use </span>sidechain_domain::{MainchainAddressHash, UtxoId};
 
 <span class="kw">use </span><span class="kw">crate</span>::read_private_key_from_file;
@@ -50,9 +59,14 @@
 		<span class="kw">let </span>payment_key = read_private_key_from_file(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key_file)<span class="question-mark">?</span>;
 		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_host)<span class="question-mark">?</span>;
 
-		run_init_governance(<span class="self">self</span>.governance_authority, payment_key, <span class="self">self</span>.genesis_utxo, <span class="kw-2">&amp;</span>client)
-			.<span class="kw">await</span><span class="question-mark">?</span>;
-
+		run_init_governance(
+			<span class="self">self</span>.governance_authority,
+			payment_key,
+			<span class="self">self</span>.genesis_utxo,
+			<span class="kw-2">&amp;</span>client,
+			FixedDelayRetries::two_minutes(),
+		)
+		.<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}
 }

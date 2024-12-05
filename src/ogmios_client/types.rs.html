@@ -381,9 +381,17 @@
 <a href="#381" id="381">381</a>
 <a href="#382" id="382">382</a>
 <a href="#383" id="383">383</a>
+<a href="#384" id="384">384</a>
+<a href="#385" id="385">385</a>
+<a href="#386" id="386">386</a>
+<a href="#387" id="387">387</a>
+<a href="#388" id="388">388</a>
+<a href="#389" id="389">389</a>
+<a href="#390" id="390">390</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Common types used in the Ogmios API.
 
 </span><span class="kw">use </span>serde::{Deserialize, Deserializer};
+<span class="kw">use </span>sidechain_domain::McTxHash;
 <span class="kw">use </span>std::collections::HashMap;
 <span class="kw">use </span>std::fmt::Debug;
 <span class="kw">use </span>std::str::FromStr;
@@ -557,6 +565,12 @@
 </span><span class="kw">pub struct </span>OgmiosTx {
 	<span class="attr">#[serde(deserialize_with = <span class="string">"parse_bytes_array"</span>)]
 	</span><span class="kw">pub </span>id: [u8; <span class="number">32</span>],
+}
+
+<span class="kw">impl </span>From&lt;McTxHash&gt; <span class="kw">for </span>OgmiosTx {
+	<span class="kw">fn </span>from(id: McTxHash) -&gt; <span class="self">Self </span>{
+		<span class="self">Self </span>{ id: id.<span class="number">0 </span>}
+	}
 }
 
 <span class="kw">impl </span>From&lt;[u8; <span class="number">32</span>]&gt; <span class="kw">for </span>OgmiosTx {

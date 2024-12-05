@@ -655,9 +655,9 @@
 			hex::encode(tx.to_bytes())
 		)
 	})<span class="question-mark">?</span>;
-	<span class="macro">log::info!</span>(<span class="string">"Transaction submitted: {}"</span>, hex::encode(res.transaction.id));
-	<span class="comment">// TODO: await for the transaction output to be visible in validator wallet
-	</span><span class="prelude-val">Ok</span>(McTxHash(res.transaction.id))
+	<span class="kw">let </span>tx_id = McTxHash(res.transaction.id);
+	<span class="macro">log::info!</span>(<span class="string">"Transaction submitted: {}"</span>, hex::encode(tx_id.<span class="number">0</span>));
+	<span class="prelude-val">Ok</span>(tx_id)
 }
 
 <span class="kw">async fn </span>update_d_param&lt;C&gt;(
@@ -691,9 +691,9 @@
 			hex::encode(tx.to_bytes())
 		)
 	})<span class="question-mark">?</span>;
-	<span class="macro">log::info!</span>(<span class="string">"Update D-parameter transaction submitted: {}"</span>, hex::encode(res.transaction.id));
-	<span class="comment">// TODO: await for the transaction output to be visible in validator wallet
-	</span><span class="prelude-val">Ok</span>(McTxHash(res.transaction.id))
+	<span class="kw">let </span>tx_id = McTxHash(res.transaction.id);
+	<span class="macro">log::info!</span>(<span class="string">"Update D-parameter transaction submitted: {}"</span>, hex::encode(tx_id.<span class="number">0</span>));
+	<span class="prelude-val">Ok</span>(tx_id)
 }
 
 <span class="kw">fn </span>mint_d_param_token_tx(

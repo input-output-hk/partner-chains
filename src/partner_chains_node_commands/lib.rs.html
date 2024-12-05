@@ -179,6 +179,7 @@
 <a href="#179" id="179">179</a>
 <a href="#180" id="180">180</a>
 <a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
@@ -299,6 +300,7 @@
 	SessionKeys: Decode + Send + Sync + <span class="lifetime">'static</span>,
 	CrossChainPublic: Decode + Encode + AsRef&lt;[u8]&gt; + Send + Sync + <span class="lifetime">'static</span>,
 {
+	env_logger::init();
 	<span class="kw">match </span>cmd {
 		PartnerChainsSubcommand::SidechainParams(cmd) =&gt; {
 			<span class="kw">let </span>runner = cli.create_runner(<span class="kw-2">&amp;</span>cmd)<span class="question-mark">?</span>;

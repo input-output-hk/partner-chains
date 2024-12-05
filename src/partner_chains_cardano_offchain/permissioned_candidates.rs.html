@@ -666,7 +666,6 @@
 <a href="#666" id="666">666</a>
 <a href="#667" id="667">667</a>
 <a href="#668" id="668">668</a>
-<a href="#669" id="669">669</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(dead_code)]
 </span><span class="doccomment">//!
 //! Permissioned candidates are stored on chain in an UTXO at the Permissioned Candidates Validator address.
@@ -806,8 +805,9 @@
 			hex::encode(tx.to_bytes())
 		)
 	})<span class="question-mark">?</span>;
-	<span class="macro">log::info!</span>(<span class="string">"Transaction submitted: {}"</span>, hex::encode(res.transaction.id));
-	<span class="prelude-val">Ok</span>(McTxHash(res.transaction.id))
+	<span class="kw">let </span>tx_id = McTxHash(res.transaction.id);
+	<span class="macro">log::info!</span>(<span class="string">"Transaction submitted: {}"</span>, hex::encode(tx_id.<span class="number">0</span>));
+	<span class="prelude-val">Ok</span>(tx_id)
 }
 
 <span class="kw">async fn </span>update_permissioned_candidates&lt;C&gt;(
@@ -855,11 +855,9 @@
 			hex::encode(tx.to_bytes())
 		)
 	})<span class="question-mark">?</span>;
-	<span class="macro">log::info!</span>(
-		<span class="string">"Update permissioned candidates transaction submitted: {}"</span>,
-		hex::encode(res.transaction.id)
-	);
-	<span class="prelude-val">Ok</span>(McTxHash(res.transaction.id))
+	<span class="kw">let </span>tx_id = McTxHash(res.transaction.id);
+	<span class="macro">log::info!</span>(<span class="string">"Update permissioned candidates transaction submitted: {}"</span>, hex::encode(tx_id.<span class="number">0</span>));
+	<span class="prelude-val">Ok</span>(tx_id)
 }
 
 <span class="kw">fn </span>mint_permissioned_candidates_token_tx(

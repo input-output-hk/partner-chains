@@ -112,17 +112,36 @@
 <a href="#112" id="112">112</a>
 <a href="#113" id="113">113</a>
 <a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
+	await_tx::{AwaitTx, FixedDelayRetries},
 	csl::{get_first_validator_budget, key_hash_address, NetworkTypeExt},
 	OffchainError,
 };
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>ogmios_client::{
-	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
+	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
+	query_network::QueryNetwork,
+	transactions::Transactions,
 	types::OgmiosTx,
 };
-<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, UtxoId};
+<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, McTxHash, UtxoId, UtxoIndex};
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
@@ -141,7 +160,7 @@
 
 <span class="kw">impl</span>&lt;T&gt; InitGovernance <span class="kw">for </span>T
 <span class="kw">where
-	</span>T: QueryLedgerState + Transactions + QueryNetwork,
+	</span>T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 {
 	<span class="kw">async fn </span>init_governance(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
@@ -149,17 +168,27 @@
 		payment_key: MainchainPrivateKey,
 		genesis_utxo_id: UtxoId,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;OgmiosTx, OffchainError&gt; {
-		run_init_governance(governance_authority, payment_key, <span class="prelude-val">Some</span>(genesis_utxo_id), <span class="self">self</span>)
-			.<span class="kw">await
-			</span>.map_err(|e| OffchainError::InternalError(e.to_string()))
+		run_init_governance(
+			governance_authority,
+			payment_key,
+			<span class="prelude-val">Some</span>(genesis_utxo_id),
+			<span class="self">self</span>,
+			FixedDelayRetries::two_minutes(),
+		)
+		.<span class="kw">await
+		</span>.map_err(|e| OffchainError::InternalError(e.to_string()))
 	}
 }
 
-<span class="kw">pub async fn </span>run_init_governance&lt;T: QueryLedgerState + Transactions + QueryNetwork&gt;(
+<span class="kw">pub async fn </span>run_init_governance&lt;
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	A: AwaitTx,
+&gt;(
 	governance_authority: MainchainAddressHash,
 	payment_key: MainchainPrivateKey,
 	genesis_utxo_id: <span class="prelude-ty">Option</span>&lt;UtxoId&gt;,
 	client: <span class="kw-2">&amp;</span>T,
+	await_tx: A,
 ) -&gt; anyhow::Result&lt;OgmiosTx&gt; {
 	<span class="kw">let </span>payment_key = PrivateKey::from_normal_bytes(<span class="kw-2">&amp;</span>payment_key.<span class="number">0</span>)
 		.expect(<span class="string">"MainchainPrivateKey is a valid PrivateKey"</span>);
@@ -221,8 +250,11 @@
 	<span class="kw">let </span>signed_transaction = tx_context.sign(<span class="kw-2">&amp;</span>unsigned_transaction);
 
 	<span class="kw">let </span>result = client.submit_transaction(<span class="kw-2">&amp;</span>signed_transaction.to_bytes()).<span class="kw">await</span><span class="question-mark">?</span>;
-
+	<span class="kw">let </span>tx_id = result.transaction.id;
 	<span class="macro">log::info!</span>(<span class="string">"✅ Transaction submited. ID: {}"</span>, hex::encode(result.transaction.id));
+	await_tx
+		.await_tx_output(client, UtxoId { tx_hash: McTxHash(tx_id), index: UtxoIndex(<span class="number">0</span>) })
+		.<span class="kw">await</span><span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(result.transaction)
 }

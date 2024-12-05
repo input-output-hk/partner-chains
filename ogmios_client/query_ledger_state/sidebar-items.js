@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["EpochBoundary","EpochParameters","EraSummary","PlutusCostModels","ProtocolParametersResponse","ReferenceScriptsCosts","ScriptExecutionPrices"],"trait":["QueryLedgerState"]};
+window.SIDEBAR_ITEMS = {"struct":["EpochBoundary","EpochParameters","EraSummary","PlutusCostModels","ProtocolParametersResponse","ReferenceScriptsCosts","ScriptExecutionPrices"],"trait":["QueryLedgerState","QueryUtxoByUtxoId"]};

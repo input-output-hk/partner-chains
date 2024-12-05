@@ -107,10 +107,42 @@
 <a href="#107" id="107">107</a>
 <a href="#108" id="108">108</a>
 <a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Queries that start with `queryLedgerState/`.
 
 </span><span class="kw">use crate</span>::{
-	types::{OgmiosBytesSize, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
+	types::{OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
 	ByNameParamsBuilder, OgmiosClient, OgmiosClientError, OgmiosParams,
 };
 <span class="kw">use </span>serde::Deserialize;
@@ -129,6 +161,20 @@
 	</span><span class="kw">async fn </span>query_protocol_parameters(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;ProtocolParametersResponse, OgmiosClientError&gt;;
+}
+
+<span class="kw">pub trait </span>QueryUtxoByUtxoId {
+	<span class="attr">#[allow(async_fn_in_trait)]
+	</span><span class="doccomment">/// Query for a single UTXO by transaction hash and output index.
+	/// Warning: it does not return datum, datumHash, nor script fields.
+	/// Parameters:
+	/// - `tx`: query for output of this transaction
+	/// - `index`: query for output with this index
+	</span><span class="kw">async fn </span>query_utxo_by_id(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		tx: OgmiosTx,
+		index: u16,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;OgmiosUtxo&gt;, OgmiosClientError&gt;;
 }
 
 <span class="kw">impl</span>&lt;T: OgmiosClient&gt; QueryLedgerState <span class="kw">for </span>T {
@@ -151,6 +197,24 @@
 		<span class="self">self</span>.request(<span class="string">"queryLedgerState/protocolParameters"</span>, OgmiosParams::empty_by_name())
 			.<span class="kw">await
 	</span>}
+}
+
+<span class="kw">impl</span>&lt;T: OgmiosClient&gt; QueryUtxoByUtxoId <span class="kw">for </span>T {
+	<span class="kw">async fn </span>query_utxo_by_id(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		tx: OgmiosTx,
+		index: u16,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;OgmiosUtxo&gt;, OgmiosClientError&gt; {
+		<span class="kw">let </span>reference = <span class="macro">serde_json::json!</span>({
+			<span class="string">"transaction"</span>: {<span class="string">"id"</span>: hex::encode(tx.id)},
+			<span class="string">"index"</span>: index,
+		});
+		<span class="kw">let </span>params =
+			ByNameParamsBuilder::new().insert(<span class="string">"outputReferences"</span>, <span class="macro">vec!</span>[reference])<span class="question-mark">?</span>.build();
+		<span class="comment">// Expect at most one output, because it is a single output reference query.
+		</span><span class="kw">let </span>utxos: Vec&lt;OgmiosUtxo&gt; = <span class="self">self</span>.request(<span class="string">"queryLedgerState/utxo"</span>, params).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(utxos.first().cloned())
+	}
 }
 
 <span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
