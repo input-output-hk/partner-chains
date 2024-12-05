@@ -6,12 +6,7 @@ chmod 777 /shared
 
 echo "Calculating target time for synchronised chain start..."
 
-remaining_seconds=$((60 - $(date +'%-S')))
-if [ $remaining_seconds -le 20 ]; then
-    sleep $remaining_seconds
-fi
-
-target_time=$(( ($(date +%s) / 60 + 1) * 60 ))
+target_time=$(( ($(date +%s) / 30 + 1) * 30 ))
 echo "$target_time" > /shared/cardano.start
 byron_startTime=$target_time
 shelley_systemStart=$(date --utc +"%Y-%m-%dT%H:%M:%SZ" --date="@$target_time")
@@ -77,7 +72,15 @@ cardano-node run \
   --shelley-vrf-key /keys/vrf.skey \
   --shelley-operational-certificate /keys/node.cert &
 
-touch /shared/cardano-node-1.ready
+echo "Waiting for node.socket..."
+
+while true; do
+    if [ -e "/data/node.socket" ]; then
+        break
+    else
+        sleep 1
+    fi
+done
 
 echo "Generating new address and funding it with 2 UTXOs from the genesis address"
 
