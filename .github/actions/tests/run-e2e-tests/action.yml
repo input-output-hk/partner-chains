@@ -90,7 +90,7 @@ runs:
           --json-report \
           --json-report-summary \
           --json-report-detailed \
-          --tb=short" \
+          --tb=short \
           --junitxml=junit_report.xml"
 
         if [[ "${{ inputs.local-environment }}" == "true" ]]; then
