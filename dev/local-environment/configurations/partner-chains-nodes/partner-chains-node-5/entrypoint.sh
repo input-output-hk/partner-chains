@@ -31,12 +31,6 @@ while true; do
 done
 
 export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP_MILLIS)
-export COMMITTEE_CANDIDATE_ADDRESS=$(cat /shared/COMMITTEE_CANDIDATE_ADDRESS)
-export D_PARAMETER_POLICY_ID=$(cat /shared/D_PARAMETER_POLICY_ID)
-export PERMISSIONED_CANDIDATES_POLICY_ID=$(cat /shared/PERMISSIONED_CANDIDATES_POLICY_ID)
-export NATIVE_TOKEN_POLICY_ID=$(cat /shared/NATIVE_TOKEN_POLICY_ID)
-export NATIVE_TOKEN_ASSET_NAME=$(cat /shared/NATIVE_TOKEN_ASSET_NAME)
-export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS==$(cat /shared/ILLIQUID_SUPPLY_VALIDATOR_ADDRESS)
 
 /usr/local/bin/partner-chains-node \
   --chain=/shared/chain-spec.json \
@@ -53,6 +47,6 @@ export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS==$(cat /shared/ILLIQUID_SUPPLY_VALIDATO
   --state-pruning=archive \
   --blocks-pruning=archive &
 
-  touch /shared/partner-chains-node-5.ready 
+  touch /shared/partner-chains-node-5.ready
 
   wait

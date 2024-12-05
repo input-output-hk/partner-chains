@@ -179,11 +179,6 @@ echo "Querying and saving the first UTXO details for new address to /shared/gene
 cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk 'NR>2 { print $1 "#" $2; exit }' > /shared/genesis.utxo
 cat /shared/genesis.utxo
 
-echo "Saving placeholder values for NATIVE_TOKEN_POLICY_ID, NATIVE_TOKEN_ASSET_NAME, and ILLIQUID_SUPPLY_VALIDATOR_ADDRESS to /shared:"
-echo 'ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4' > /shared/NATIVE_TOKEN_POLICY_ID
-echo '5043546f6b656e44656d6f' > /shared/NATIVE_TOKEN_ASSET_NAME
-echo 'addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz' > /shared/ILLIQUID_SUPPLY_VALIDATOR_ADDRESS
-
 touch /shared/cardano.ready
 
 wait
