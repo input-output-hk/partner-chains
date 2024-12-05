@@ -62,9 +62,7 @@ pub(crate) fn protocol_parameters() -> ProtocolParametersResponse {
 		},
 		max_collateral_inputs: 3,
 		collateral_percentage: 150,
-		min_fee_reference_scripts: ReferenceScriptsCosts {
-			base: 15.0,
-		},
+		min_fee_reference_scripts: ReferenceScriptsCosts { base: 15.0 },
 	}
 }
 

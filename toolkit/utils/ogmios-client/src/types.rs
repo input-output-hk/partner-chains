@@ -1,6 +1,7 @@
 //! Common types used in the Ogmios API.
 
 use serde::{Deserialize, Deserializer};
+use sidechain_domain::McTxHash;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::str::FromStr;
@@ -174,6 +175,12 @@ impl TryFrom<serde_json::Value> for OgmiosValue {
 pub struct OgmiosTx {
 	#[serde(deserialize_with = "parse_bytes_array")]
 	pub id: [u8; 32],
+}
+
+impl From<McTxHash> for OgmiosTx {
+	fn from(id: McTxHash) -> Self {
+		Self { id: id.0 }
+	}
 }
 
 impl From<[u8; 32]> for OgmiosTx {
