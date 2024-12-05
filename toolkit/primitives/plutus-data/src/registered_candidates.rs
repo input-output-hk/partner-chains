@@ -76,6 +76,7 @@ impl VersionedDatum for RegisterValidatorDatum {
 }
 
 pub fn block_producer_registration_to_plutus_data(
+	own_pkh: MainchainAddressHash,
 	block_producer_registration: &sidechain_domain::BlockProducerRegistration,
 ) -> PlutusData {
 	RegisterValidatorDatum::V0 {
@@ -83,14 +84,14 @@ pub fn block_producer_registration_to_plutus_data(
 		sidechain_pub_key: block_producer_registration.sidechain_pub_key.clone(),
 		sidechain_signature: block_producer_registration.sidechain_signature.clone(),
 		registration_utxo: block_producer_registration.registration_utxo,
-		own_pkh: block_producer_registration.own_pkh,
+		own_pkh,
 		aura_pub_key: block_producer_registration.aura_pub_key.clone(),
 		grandpa_pub_key: block_producer_registration.grandpa_pub_key.clone(),
 	}
 	.into()
 }
 
-impl From<RegisterValidatorDatum> for BlockProducerRegistration {
+impl From<RegisterValidatorDatum> for (MainchainAddressHash, BlockProducerRegistration) {
 	fn from(value: RegisterValidatorDatum) -> Self {
 		match value {
 			RegisterValidatorDatum::V0 {
@@ -101,15 +102,17 @@ impl From<RegisterValidatorDatum> for BlockProducerRegistration {
 				own_pkh,
 				aura_pub_key,
 				grandpa_pub_key,
-			} => BlockProducerRegistration {
-				stake_ownership,
-				sidechain_pub_key,
-				sidechain_signature,
-				registration_utxo,
+			} => (
 				own_pkh,
-				aura_pub_key,
-				grandpa_pub_key,
-			},
+				BlockProducerRegistration {
+					stake_ownership,
+					sidechain_pub_key,
+					sidechain_signature,
+					registration_utxo,
+					aura_pub_key,
+					grandpa_pub_key,
+				},
+			),
 		}
 	}
 }
