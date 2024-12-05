@@ -2,6 +2,8 @@
 
 use crate::{plutus_script::PlutusScript, untyped_plutus::datum_to_uplc_plutus_data};
 use cardano_serialization_lib::*;
+use fraction::Ratio;
+use ogmios_client::query_ledger_state::ReferenceScriptsCosts;
 use ogmios_client::{
 	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, QueryLedgerState},
 	query_network::QueryNetwork,
@@ -89,6 +91,9 @@ pub(crate) fn get_builder_config(
 			&ratio_to_unit_interval(&protocol_parameters.script_execution_prices.cpu),
 		))
 		.coins_per_utxo_byte(&protocol_parameters.min_utxo_deposit_coefficient.into())
+		.ref_script_coins_per_byte(&convert_reference_script_costs(
+			&protocol_parameters.min_fee_reference_scripts.clone(),
+		)?)
 		.build()
 }
 
@@ -140,6 +145,17 @@ pub(crate) fn convert_cost_models(m: &PlutusCostModels) -> Costmdls {
 	mdls
 }
 
+pub(crate) fn convert_reference_script_costs(
+	costs: &ReferenceScriptsCosts,
+) -> Result<UnitInterval, JsError> {
+	let r = Ratio::from_float(costs.base).unwrap();
+	let numerator = BigNum::from_str(r.numer().to_string().as_str())
+		.map_err(|e| JsError::from_str(&e.to_string().as_str()))?;
+	let denominator = BigNum::from_str(r.denom().to_string().as_str())
+		.map_err(|e| JsError::from_str(&e.to_string().as_str()))?;
+	Ok(UnitInterval::new(&numerator, &denominator))
+}
+
 /// Returns the budget of the first validator as [`ExUnits`]
 pub(crate) fn get_first_validator_budget(
 	validators_budgets: Vec<OgmiosEvaluateTransactionResponse>,
@@ -148,6 +164,38 @@ pub(crate) fn get_first_validator_budget(
 		JsError::from_str("Internal error: cannot use evaluateTransaction response")
 	})?;
 	Ok(convert_ex_units(&validator_budget.budget))
+}
+
+#[derive(Debug, Clone)]
+pub struct ScriptExUnits {
+	pub mint_ex_units: Vec<ExUnits>,
+	pub spend_ex_units: Vec<ExUnits>,
+}
+
+impl ScriptExUnits {
+	fn new() -> Self {
+		ScriptExUnits { mint_ex_units: Vec::new(), spend_ex_units: Vec::new() }
+	}
+}
+
+pub(crate) fn get_validator_budgets(
+	responses: Vec<OgmiosEvaluateTransactionResponse>,
+) -> Result<ScriptExUnits, JsError> {
+	let mut ex_units = ScriptExUnits::new();
+	let mut mint_ex_units = vec![];
+	let mut spend_ex_units = vec![];
+	for response in responses.iter() {
+		if response.validator.purpose == "mint" {
+			mint_ex_units.push((convert_ex_units(&response.budget), response.validator.index));
+		} else {
+			spend_ex_units.push((convert_ex_units(&response.budget), response.validator.index));
+		}
+	}
+	mint_ex_units.sort_by(|a, b| a.1.cmp(&b.1));
+	spend_ex_units.sort_by(|a, b| a.1.cmp(&b.1));
+	ex_units.mint_ex_units = mint_ex_units.into_iter().map(|(ex_units, _)| ex_units).collect();
+	ex_units.spend_ex_units = spend_ex_units.into_iter().map(|(ex_units, _)| ex_units).collect();
+	Ok(ex_units)
 }
 
 /// Conversion of ogmios-client budget to CSL execution units
@@ -282,6 +330,15 @@ pub(crate) trait TransactionBuilderExt {
 		ex_units: ExUnits,
 	) -> Result<(), JsError>;
 
+	/// Adds minting of 1 token (with empty asset name) for the given script using reference script
+	fn add_mint_one_script_token_using_reference_script(
+		&mut self,
+		script_hash: &ScriptHash,
+		ref_input: &TransactionInput,
+		script_size: usize,
+		ex_units: ExUnits,
+	) -> Result<(), JsError>;
+
 	/// Sets fields required by the most of partner-chains smart contract transactions.
 	/// Uses input from `ctx` to cover already present outputs.
 	/// Adds collateral inputs using quite a simple algorithm.
@@ -341,8 +398,38 @@ impl TransactionBuilderExt for TransactionBuilder {
 		script: &PlutusScript,
 		ex_units: ExUnits,
 	) -> Result<(), JsError> {
-		let mut mint_builder = MintBuilder::new();
+		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
+
 		let validator_source = PlutusScriptSource::new(&script.to_csl());
+		let mint_witness = MintWitness::new_plutus_script(
+			&validator_source,
+			&Redeemer::new(
+				&RedeemerTag::new_mint(),
+				&0u32.into(),
+				&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
+				&ex_units,
+			),
+		);
+		mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new_i32(1))?;
+		self.set_mint_builder(&mint_builder);
+		Ok(())
+	}
+
+	fn add_mint_one_script_token_using_reference_script(
+		&mut self,
+		script_hash: &ScriptHash,
+		ref_input: &TransactionInput,
+		script_size: usize,
+		ex_units: ExUnits,
+	) -> Result<(), JsError> {
+		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
+
+		let validator_source = PlutusScriptSource::new_ref_input(
+			script_hash,
+			ref_input,
+			&Language::new_plutus_v2(),
+			script_size,
+		);
 		let mint_witness = MintWitness::new_plutus_script(
 			&validator_source,
 			&Redeemer::new(
