@@ -39,20 +39,12 @@ alonzo_hash=$(/bin/cardano-cli latest genesis hash --genesis /shared/shelley/gen
 conway_hash=$(/bin/cardano-cli latest genesis hash --genesis /shared/conway/genesis.conway.json)
 
 /busybox sed "s/\"ByronGenesisHash\": \"[^\"]*\"/\"ByronGenesisHash\": \"$byron_hash\"/" /shared/node-1-config.json.base > /shared/node-1-config.json.base.byron
-/busybox sed "s/\"ByronGenesisHash\": \"[^\"]*\"/\"ByronGenesisHash\": \"$byron_hash\"/" /shared/node-2-config.json.base > /shared/node-2-config.json.base.byron
-/busybox sed "s/\"ByronGenesisHash\": \"[^\"]*\"/\"ByronGenesisHash\": \"$byron_hash\"/" /shared/node-3-config.json.base > /shared/node-3-config.json.base.byron
 /busybox sed "s/\"ByronGenesisHash\": \"[^\"]*\"/\"ByronGenesisHash\": \"$byron_hash\"/" /shared/db-sync-config.json.base > /shared/db-sync-config.json.base.byron
 /busybox sed "s/\"ShelleyGenesisHash\": \"[^\"]*\"/\"ShelleyGenesisHash\": \"$shelley_hash\"/" /shared/node-1-config.json.base.byron > /shared/node-1-config.base.shelley
-/busybox sed "s/\"ShelleyGenesisHash\": \"[^\"]*\"/\"ShelleyGenesisHash\": \"$shelley_hash\"/" /shared/node-2-config.json.base.byron > /shared/node-2-config.base.shelley
-/busybox sed "s/\"ShelleyGenesisHash\": \"[^\"]*\"/\"ShelleyGenesisHash\": \"$shelley_hash\"/" /shared/node-3-config.json.base.byron > /shared/node-3-config.base.shelley
 /busybox sed "s/\"ShelleyGenesisHash\": \"[^\"]*\"/\"ShelleyGenesisHash\": \"$shelley_hash\"/" /shared/db-sync-config.json.base.byron > /shared/db-sync-config.base.shelley
 /busybox sed "s/\"AlonzoGenesisHash\": \"[^\"]*\"/\"AlonzoGenesisHash\": \"$alonzo_hash\"/" /shared/node-1-config.base.shelley > /shared/node-1-config.json.base.conway
-/busybox sed "s/\"AlonzoGenesisHash\": \"[^\"]*\"/\"AlonzoGenesisHash\": \"$alonzo_hash\"/" /shared/node-2-config.base.shelley > /shared/node-2-config.json.base.conway
-/busybox sed "s/\"AlonzoGenesisHash\": \"[^\"]*\"/\"AlonzoGenesisHash\": \"$alonzo_hash\"/" /shared/node-3-config.base.shelley > /shared/node-3-config.json.base.conway
 /busybox sed "s/\"AlonzoGenesisHash\": \"[^\"]*\"/\"AlonzoGenesisHash\": \"$alonzo_hash\"/" /shared/db-sync-config.base.shelley > /shared/db-sync-config.json.base.conway
 /busybox sed "s/\"ConwayGenesisHash\": \"[^\"]*\"/\"ConwayGenesisHash\": \"$conway_hash\"/" /shared/node-1-config.json.base.conway > /shared/node-1-config.json
-/busybox sed "s/\"ConwayGenesisHash\": \"[^\"]*\"/\"ConwayGenesisHash\": \"$conway_hash\"/" /shared/node-2-config.json.base.conway > /shared/node-2-config.json
-/busybox sed "s/\"ConwayGenesisHash\": \"[^\"]*\"/\"ConwayGenesisHash\": \"$conway_hash\"/" /shared/node-3-config.json.base.conway > /shared/node-3-config.json
 /busybox sed "s/\"ConwayGenesisHash\": \"[^\"]*\"/\"ConwayGenesisHash\": \"$conway_hash\"/" /shared/db-sync-config.json.base.conway > /shared/db-sync-config.json
 
 echo "Updated ByronGenesisHash value in config files to: $byron_hash"
@@ -85,15 +77,13 @@ cardano-node run \
   --shelley-vrf-key /keys/vrf.skey \
   --shelley-operational-certificate /keys/node.cert &
 
-touch /shared/cardano-node-1.ready
-
-echo "Waiting for node 2 and node 3 to start..."
+echo "Waiting for node.socket..."
 
 while true; do
-    if [ -f "/shared/cardano-node-2.ready" ] && [ -f "/shared/cardano-node-3.ready" ]; then
+    if [ -e "/data/node.socket" ]; then
         break
     else
-        sleep 10
+        sleep 1
     fi
 done
 
@@ -146,9 +136,6 @@ cardano-cli latest transaction sign \
 
 cat /data/tx.signed
 
-echo "Transaction prepared, waiting 20 seconds for other nodes to start..."
-sleep 20
-
 echo "Submitting transaction..."
 cardano-cli latest transaction submit \
   --tx-file /data/tx.signed \
@@ -191,11 +178,6 @@ cat /shared/eve.utxo
 echo "Querying and saving the first UTXO details for new address to /shared/genesis.utxo:"
 cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk 'NR>2 { print $1 "#" $2; exit }' > /shared/genesis.utxo
 cat /shared/genesis.utxo
-
-echo "Saving placeholder values for NATIVE_TOKEN_POLICY_ID, NATIVE_TOKEN_ASSET_NAME, and ILLIQUID_SUPPLY_VALIDATOR_ADDRESS to /shared:"
-echo 'ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4' > /shared/NATIVE_TOKEN_POLICY_ID
-echo '5043546f6b656e44656d6f' > /shared/NATIVE_TOKEN_ASSET_NAME
-echo 'addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz' > /shared/ILLIQUID_SUPPLY_VALIDATOR_ADDRESS 
 
 touch /shared/cardano.ready
 

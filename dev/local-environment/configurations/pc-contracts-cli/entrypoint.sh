@@ -107,20 +107,17 @@ echo "Generating addresses.json file..."
 
 export COMMITTEE_CANDIDATE_ADDRESS=$(jq -r '.addresses.CommitteeCandidateValidator' addresses.json)
 echo "Committee candidate address: $COMMITTEE_CANDIDATE_ADDRESS"
-echo COMMITTEE_CANDIDATE_ADDRESS=$COMMITTEE_CANDIDATE_ADDRESS > /shared/COMMITTEE_CANDIDATE_ADDRESS
 
 export D_PARAMETER_POLICY_ID=$(jq -r '.mintingPolicies.DParameterPolicy' addresses.json)
 echo "D parameter policy ID: $D_PARAMETER_POLICY_ID"
-echo D_PARAMETER_POLICY_ID=$D_PARAMETER_POLICY_ID > /shared/D_PARAMETER_POLICY_ID
 
 export PERMISSIONED_CANDIDATES_POLICY_ID=$(jq -r '.mintingPolicies.PermissionedCandidatesPolicy' addresses.json)
 echo "Permissioned candidates policy ID: $PERMISSIONED_CANDIDATES_POLICY_ID"
-echo PERMISSIONED_CANDIDATES_POLICY_ID=$PERMISSIONED_CANDIDATES_POLICY_ID > /shared/PERMISSIONED_CANDIDATES_POLICY_ID
 
-echo "Importing environment variables from shared files..."
-export NATIVE_TOKEN_POLICY_ID=$(cat /shared/NATIVE_TOKEN_POLICY_ID)
-export NATIVE_TOKEN_ASSET_NAME=$(cat /shared/NATIVE_TOKEN_ASSET_NAME)
-export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS=$(cat /shared/ILLIQUID_SUPPLY_VALIDATOR_ADDRESS)
+echo "Setting placeholder values for NATIVE_TOKEN_POLICY_ID, NATIVE_TOKEN_ASSET_NAME, and ILLIQUID_SUPPLY_VALIDATOR_ADDRESS for chain-spec creation"
+export NATIVE_TOKEN_POLICY_ID="ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"
+export NATIVE_TOKEN_ASSET_NAME="5043546f6b656e44656d6f"
+export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
 
 echo "Inserting D parameter..."
 
