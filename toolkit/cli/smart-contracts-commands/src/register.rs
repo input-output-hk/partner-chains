@@ -1,8 +1,8 @@
 use jsonrpsee::http_client::HttpClient;
 use partner_chains_cardano_offchain::{await_tx::FixedDelayRetries, register::run_register};
 use sidechain_domain::{
-	AdaBasedStaking, AuraPublicKey, BlockProducerRegistration, GrandpaPublicKey,
-	MainchainPublicKey, MainchainSignature, SidechainPublicKey, SidechainSignature, UtxoId,
+	AdaBasedStaking, AuraPublicKey, CandidateRegistration, GrandpaPublicKey, MainchainPublicKey,
+	MainchainSignature, SidechainPublicKey, SidechainSignature, UtxoId,
 };
 
 use crate::{parse_sidechain_public_keys, read_private_key_from_file};
@@ -31,7 +31,7 @@ impl RegisterCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_key = read_private_key_from_file(&self.payment_key_file)?;
 		let client = HttpClient::builder().build(self.common_arguments.ogmios_host)?;
-		let block_producer_registration = BlockProducerRegistration {
+		let candidate_registration = CandidateRegistration {
 			stake_ownership: AdaBasedStaking {
 				pub_key: self.spo_public_key,
 				signature: self.spo_signature,
@@ -46,7 +46,7 @@ impl RegisterCmd {
 
 		run_register(
 			self.genesis_utxo,
-			&block_producer_registration,
+			&candidate_registration,
 			payment_key,
 			&client,
 			FixedDelayRetries::two_minutes(),
