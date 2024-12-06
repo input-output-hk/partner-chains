@@ -1,6 +1,8 @@
 
   cardano-node-1:
     container_name: cardano-node-1
+    networks:
+      - info
     image: ${CARDANO_IMAGE}
     platform: linux/amd64
     volumes:
@@ -35,6 +37,8 @@
 
   cardano-node-2:
     container_name: cardano-node-2
+    networks:
+      - info
     image: ${CARDANO_IMAGE}
     platform: linux/amd64
     volumes:
@@ -55,6 +59,8 @@
 
   cardano-node-3:
     container_name: cardano-node-3
+    networks:
+      - info
     image: ${CARDANO_IMAGE}
     platform: linux/amd64
     volumes:

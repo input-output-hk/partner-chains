@@ -1,0 +1,120 @@
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:45:01.00 UTC] Chain extended, new tip: 88c3a09f8a851dc58a878ae9cc1a031a9b88d9aadc82c6965f1a68559e8707ed at slot 1
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:45:04.00 UTC] Chain extended, new tip: 755a3d072eef28af80ff5b283383ca8bd995a1eb739d9d737d367d73dd6e276e at slot 4
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:45:07.00 UTC] Switched to a fork, new tip: 04e676c6ac1cf50d17c7e78c2fc034529dfc24f948924f583bfc4a454a1feaa7 at slot 7
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:45:13.00 UTC] Chain extended, new tip: 6804640cd29d6749ba87a14ac796c7c7cac1e659de26038eda3a7c5860119a23 at slot 13
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:45:18.00 UTC] Switched to a fork, new tip: 5882a5363fbcb5405b18098209c74cb5eba3c8d1e7fa756c26e109de03e5d0e9 at slot 18
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:45:23.00 UTC] Chain extended, new tip: d0e9592f1495337b71a70fc9c12bb4c66c39edccd8dd4e42ee15a15c6532dbcf at slot 23
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:45:32.00 UTC] Chain extended, new tip: b0d9bf65cb0459953847bea663b6e128a97614058e77b413d6c0d8a255fbb2fa at slot 32
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:45:40.00 UTC] Chain extended, new tip: 25bc43737368723bc5d38bea3a8f3156bdac86bc93adbdf28096c372b5081ab9 at slot 40
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:45:49.00 UTC] Chain extended, new tip: 42338fe068fca7832d92ec13c721f9c60eebf82ac2e98b4a48190611cb25f6b2 at slot 49
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:45:52.01 UTC] Switched to a fork, new tip: f0a7dd6f9506d2d43a3a1459e2ffd8507e95d62fc9623f904a569a09a7c81fa2 at slot 52
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:45:53.00 UTC] Chain extended, new tip: ab74f5d96326e15c80d9b904cd1e79bd421182cbe76ec03942366d73b01bdae6 at slot 53
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:45:57.00 UTC] Chain extended, new tip: 7931f8739558d78aa9e2f95f866c6dc651e26d73f2bfdec15da670b2f04a83c4 at slot 57
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:46:04.00 UTC] Chain extended, new tip: 445009b96e7be261ec08e6ba36c33090539709c0c4ebb84ac925180fd216f9cc at slot 64
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:46:18.00 UTC] Chain extended, new tip: e77a27019ffeacb91fdbed8ad7cb6ce9badd30eef791e48499f8823b61d7654e at slot 78
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:46:38.00 UTC] Chain extended, new tip: 7d855ff011df7308bd8ed542cb5ecd6d6e6750cc4ecef14d9e5374afc87398a1 at slot 98
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:46:38.02 UTC] Switched to a fork, new tip: 99910af1d9869a20891b847717a4138dc13000d0674c8994fa7627f514648f66 at slot 98
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:46:40.00 UTC] Chain extended, new tip: cad2d7071884502e4fa7ac6d4f8c611e4f376ca35c82adf0b53476abdeacd91e at slot 100
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:46:51.00 UTC] Switched to a fork, new tip: 8f1ee430e096bd7a1dde63dd54c04fb4b2e2b76264f5040fe505f82503fd73df at slot 111
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:46:52.00 UTC] Chain extended, new tip: ce8387347922cd1d1ec42856d2be2910fee10d7e94e61c8791a0340fddeb18cd at slot 112
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:47:01.00 UTC] Switched to a fork, new tip: 5d2f4dddc858f08aa2e201fcd88cb6fa5aae33d17a38d5e22d8d88d792f298a0 at slot 121
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:47:07.00 UTC] Chain extended, new tip: c62755591d3693d80b3f3f128bfd9ca183d86df57d6d2f8a59994b019fc0667f at slot 127
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:47:09.00 UTC] Chain extended, new tip: 4abb80418efa4f97b685b516657696cab7eff0d238f7e5d42744195eadb42074 at slot 129
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:47:26.00 UTC] Switched to a fork, new tip: 8c3ee9dfc581087fbb1b135d1e3db30db3daf75a913dce97b8c2cfcfd9bdb6bd at slot 146
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:47:28.00 UTC] Chain extended, new tip: 0f3732ef2f3b9d816536aa764bc7fe8002ad36bc28dfa86e18e846eea67e98c4 at slot 148
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:47:30.00 UTC] Chain extended, new tip: dc34becd348d4f6dedea54eec94f43990ae5ebdee98ccfee7f0057323347697e at slot 150
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:47:32.00 UTC] Chain extended, new tip: 9ed5cec95fa55179532c80f24762b48edf9b8151811c14f80c4282d7424f190a at slot 152
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:47:40.00 UTC] Chain extended, new tip: 6611de23c44b474370b924f5d4bbee8088747631de9e02fe60efa4adb5ae79a7 at slot 160
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:47:43.00 UTC] Chain extended, new tip: f8aabb853e7ef7870c74e38ca39d10f71de81ace63e61c220b4fbce5d3946b1e at slot 163
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:47:46.00 UTC] Chain extended, new tip: 82a4e62f04e4248cd102adc71e62ed1c44c620e1e4e371c6e19091c056f9955c at slot 166
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:47:48.00 UTC] Chain extended, new tip: 25bc3df119b7d21091d5ea2e2754662b90838262a286f30cf67bb0ec97ee2fb9 at slot 168
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:47:55.00 UTC] Chain extended, new tip: fc04b5a97a98661286aa46d16f2a379841839fcb73bc177680dff093eb4b0dd4 at slot 175
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:48:31.00 UTC] Chain extended, new tip: af40e1f2b0b9040d5753010a634325113103672ac6c0faf123f7afe5c0295b54 at slot 211
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:48:32.00 UTC] Chain extended, new tip: 48140a77a1b6dfa29b0eda0c0839e110fd70dae79ce1989d51a6a4a18b5d5bb7 at slot 212
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:48:39.00 UTC] Chain extended, new tip: 7d08e798a3481631f2977dc130ff23959bfb2755abf40602a64524674da38185 at slot 219
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:48:42.00 UTC] Chain extended, new tip: 7ba683478df251ed182c6b34eb32b533a3742eeb36fb482d5c6a22732c3276cf at slot 222
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:48:48.01 UTC] Switched to a fork, new tip: 16c573cf8e027e60cd74ac04d2a1f6490cb16b9c412e8fe2714175982ebf638d at slot 228
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:48:56.00 UTC] Chain extended, new tip: 3487ec332ad0f8548cbfe3c635b9f927040d56b550a2a2fc1663ae9b0b3dcb55 at slot 236
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:48:59.00 UTC] Chain extended, new tip: d4371c4c1771411a0d9131fb5dd3ad46e1b98a1a93bcb37bd971753d6d65177d at slot 239
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:49:05.00 UTC] Chain extended, new tip: 8d3acab2d338ca92a75ead7cbb47f0d34139317964fb36d19ca62fa2371828c7 at slot 245
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:49:11.00 UTC] Chain extended, new tip: 5b4f3004232f5201815dec100dde320c09121e67c3ebf7c133312cd21b8c2197 at slot 251
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:49:20.00 UTC] Chain extended, new tip: 57c132d60375206a8722811d77cfba63b81f9416bcb16585371f840ecff226a4 at slot 260
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:49:43.00 UTC] Chain extended, new tip: c06491dd9e9f8399761afceae95041b1ad90ee37ad157dff52c88ebc24cbc0fe at slot 283
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:49:57.00 UTC] Chain extended, new tip: 544b1ef23146deab3d43901c11e64d80e01e4c0bb693011fa3e9bbcac1530b72 at slot 297
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:50:17.01 UTC] Switched to a fork, new tip: 8b8c8a1663df9f6fc2e1d26d7d98f6d167b67b9517630c2520663fb084846edb at slot 317
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:50:20.00 UTC] Chain extended, new tip: 963a8a4c50194f0f4a134c00ac4b4971dbd670ba6d31c311d9964e14045ad195 at slot 320
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:50:23.00 UTC] Chain extended, new tip: a584cca68945495bfcd3c1a2c1a089ab7ed0a1f6ec7ab427dc74703aedc1b319 at slot 323
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:50:49.00 UTC] Switched to a fork, new tip: c706b5371a9c4b9df145f3b95da5a863b38bbc1e7d0ad9cdc785a4e335137005 at slot 349
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:50:56.00 UTC] Chain extended, new tip: 0aa4f3bc517fc715a3ee6d748ae069c4f0825ec767906ba84cb4bbdc2c251329 at slot 356
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:51:01.00 UTC] Chain extended, new tip: 72cac17769611809accbc620558e62538e5358f035869871505c8ec495e8901c at slot 361
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:51:03.00 UTC] Chain extended, new tip: c998aa1596611e3d47523f9869c7ecbf8e6fd4eaffe6900c2393d02020b5eb58 at slot 363
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:51:13.00 UTC] Switched to a fork, new tip: a9fa752858268f9c04721ba2347c82b21f746d8ea07d114ab74842fad292d09a at slot 373
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:51:15.00 UTC] Chain extended, new tip: db41bf646c7916dd902c4f5b32e873dd272a0b0150c2179cec5c82175962febd at slot 375
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:51:19.00 UTC] Chain extended, new tip: 00cdb0223dae5a50ebcd632a3084657e5838254114f6e9b801665960693830f2 at slot 379
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:51:21.00 UTC] Chain extended, new tip: d70ebab43c6d0768e0ef0e973bd7dea7e199f5f7ee2bd2be10ed777425b46a94 at slot 381
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:51:23.00 UTC] Chain extended, new tip: 5a256d4c071b87357d20220b8af2981589d9984d8a34de3b5de8528e48c98a15 at slot 383
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:51:33.00 UTC] Chain extended, new tip: b1eef78efb70ee2559349c7d9a5266ae9660dc51af2e5f1b4e96ffde0d3c037b at slot 393
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:51:38.01 UTC] Switched to a fork, new tip: 86d9db0162899902b2f66e8db120d7defbf1ba1306363ee78304a5905de814a2 at slot 398
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:51:43.00 UTC] Chain extended, new tip: 89f668fc114ba27aab689c48db8ca7134b979a42a9b4c3d2b7f2cb2873aa19fb at slot 403
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:51:45.00 UTC] Switched to a fork, new tip: fdff44f51fd4a9d3908d40362d2d004cc6e974a533fb8230e9f44a1bdbc5bebf at slot 405
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:51:48.00 UTC] Chain extended, new tip: 59cc81720f794670cc19821dec14690bbc0187c38a303c9050a35978e0afc198 at slot 408
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:51:53.00 UTC] Switched to a fork, new tip: e234db4c11e8f466afde8007b06336809ebd1f9447898e4c75a25ac636288a1a at slot 413
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:51:59.00 UTC] Chain extended, new tip: 269b0a646ed581053f6967020b50ec32b0ba201bd0b85bcaa6d73c45eb141edf at slot 419
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:52:09.00 UTC] Chain extended, new tip: 33682356165797ac8c6deeca84cc7b559e637e2b7a44a50c16d09e116c9ea485 at slot 429
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:52:10.00 UTC] Chain extended, new tip: 88eab0fc812764a3327cc14825a47395392b851b17f502fb8d21ceaf419c4b25 at slot 430
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:52:12.00 UTC] Chain extended, new tip: 43bb33ad96b0632aa976c7fd3dac1f2cf31048f26330f335a70a38483cfc17b5 at slot 432
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:52:14.00 UTC] Chain extended, new tip: bbfcc4ab3babee7a297fc3642174d3968f40baa95a3f28d26e43a6feef20cf54 at slot 434
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:52:21.00 UTC] Chain extended, new tip: d233e6173b1341b1ffcb0fb8db2d6bab8b23e79d603ddb2d79707825deb4efd4 at slot 441
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:52:23.00 UTC] Switched to a fork, new tip: 9b263d7dd3fcb9a121cafa90c8308472d9c355408e2e58f15ea3e11b6fab2e65 at slot 443
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:52:28.00 UTC] Chain extended, new tip: 39504430e897c8d5929337a44fb5dd6a79406c8a30da01bc8744593c90cdfe2d at slot 448
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:52:32.00 UTC] Chain extended, new tip: 9ae634d1fc4896e59d4feda8fb0cb92436dcb409ebb97bb34bc16e7b1300dfe4 at slot 452
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:52:49.00 UTC] Switched to a fork, new tip: e441059c1a2d118ff8f50f2dc71b65c393dcc34a2465d1d680ea093d39f11bc2 at slot 469
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:52:52.00 UTC] Chain extended, new tip: e5e883f866a1bc6d5df32015f62efc1bc8c1dea60f41f8088142448c956aa16f at slot 472
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:52:55.00 UTC] Chain extended, new tip: 8e2cbd91ad8954d4df4c4d68b707f5f410be4469899000b26b21c610f86229a1 at slot 475
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:52:58.00 UTC] Chain extended, new tip: 805f546af0899c7ca99c3bc6bc023b70a9b668233098ef24edc772dd9248b0fe at slot 478
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:53:00.00 UTC] Chain extended, new tip: b7a72129830743fe5459dd9d60e34b871447616bef54bbbdb46d86ddf10d9de3 at slot 480
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:53:12.00 UTC] Chain extended, new tip: e561228aab6120e11fc37503eabfbbc56fe4752b01a2530d79cdf4545d4b4cb9 at slot 492
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:53:18.00 UTC] Chain extended, new tip: a15a21fe0b1d0ba37b27beb96edcb338e06a4a3f70ac12dd2eac8cdd5507d24b at slot 498
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:53:25.01 UTC] Switched to a fork, new tip: c8ba6b6f3a2c5279d7a63716bad97774f79110c5cb7a9203449752491b675cee at slot 505
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:53:32.00 UTC] Chain extended, new tip: 84f0c428a932e871d35d0b2079369a646a5097d8b0bd8aceaccec83aca6cee11 at slot 512
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:53:33.00 UTC] Switched to a fork, new tip: 9335a521088dcdac62e16e12cff5422d3564617139cf3e7a01771f96ae303f4a at slot 513
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:53:34.00 UTC] Chain extended, new tip: 495f2dbbeef049d1784d4fe9f13f8428ad66e504f9001ebaec3855010e0238e3 at slot 514
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:53:40.00 UTC] Chain extended, new tip: 2547064c1ef0de5cac95e66232a06758bcf45190b6e88b6823a74adb5a73a0f2 at slot 520
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:53:43.00 UTC] Chain extended, new tip: aa2a996355bc7e2a6169429485dc7ff62372a845d67d88b84019246da6be4136 at slot 523
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:53:46.00 UTC] Chain extended, new tip: 848f35d419845228699ccc3cb6df48e52d4087ff9ffe21765a4e731ca9ce95c7 at slot 526
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:54:04.00 UTC] Switched to a fork, new tip: 204c71ee0782b65bd6ed0e8dc5f67ec4ed0531806ed2486d00d8b475a25643ff at slot 544
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:54:07.00 UTC] Chain extended, new tip: 15a26f9f79aade7b57170f2f25b25c0d0252a93bdf5b2f3fdfa9765afdf67b48 at slot 547
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:54:10.00 UTC] Chain extended, new tip: ca09116eb0ceadaea399c2dbbc5ad6d494a24e5ba7b201642cedf749c4f25502 at slot 550
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:54:13.00 UTC] Chain extended, new tip: 73df8ae84a51ad164e77cd47f7a5ec469d0f388bb6d5bd8f825d2ae2f5d6a5db at slot 553
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:54:18.00 UTC] Chain extended, new tip: 3abdc80682245aa4b41d11e5e2280cd5ad47a18cd472510282c0896ce3bfdd94 at slot 558
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:54:27.00 UTC] Switched to a fork, new tip: 780300caacd88ee8a64d11fa0887a3a24803a5f9be8cca259e93d645fe29f6d8 at slot 567
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:54:28.00 UTC] Chain extended, new tip: f108887e0ac4159f7e2d71397d367bd3c42287b2b8305d597f8e90255f7dc2c4 at slot 568
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:54:30.00 UTC] Switched to a fork, new tip: bbb7380f6f9bc3c10544994cb22441680fb6fe1db2d7d8041e76bf06a868e466 at slot 570
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:54:35.00 UTC] Chain extended, new tip: 9944d909aaff06e972ab0ded94043b07842c1307e2fa8df03fb75e758a8f31e1 at slot 575
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:54:39.00 UTC] Chain extended, new tip: 1ca5f22a32eefcca9b557053d5501f89f3352fc3a1596ec9e784761f75af9d00 at slot 579
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:54:42.00 UTC] Chain extended, new tip: 2ba26e14e9d04df59922f75b0d5782d6d388ac25e0099b1d9455a9b1d0b32e32 at slot 582
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:54:42.01 UTC] Switched to a fork, new tip: 0bbd9a16dd828c2eacfabea73671922925784731a514a60cc1279257d6479da2 at slot 582
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:54:48.00 UTC] Chain extended, new tip: 1ccd0a5cd561d42097a254bb6d5d513e946aa276fc7e75927b5ce9f1b2c25851 at slot 588
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:54:50.00 UTC] Chain extended, new tip: ba59190e9843e027668756d94f8e65ff5dfb64bb8565d2b5aa023029a3149fee at slot 590
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:54:52.00 UTC] Chain extended, new tip: 47721623a331ad909a18a1a97053ce053ddb137380c7dc4124ac5f126054b33c at slot 592
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:54:57.00 UTC] Chain extended, new tip: 2b9207b050bd213cf3e72564df5f33ec0e9097e858e3aaa9e9f06ef10ec3e2bb at slot 597
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:55:07.00 UTC] Chain extended, new tip: 028e9cce6513a57b69852ac535504155ecd06080e428c7fd69449bdd091da218 at slot 607
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:55:08.00 UTC] Switched to a fork, new tip: f02d1c8222b928fd98e7ca0aa4105bc6bc15330c553b2d558dfd9f0d434b5256 at slot 608
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:55:15.00 UTC] Chain extended, new tip: 50541c95514e5fcfe897fe7ac96500c3ba1ebf0450777010e92d266576dfeff4 at slot 615
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:55:22.00 UTC] Chain extended, new tip: d7841bf5289ec386b05e4363dc65d448941743bab6ae5ae9cfde739e50fb2b44 at slot 622
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:55:31.00 UTC] Chain extended, new tip: 44da23df2a4fa3ab0794b534d5800a0761ed9ebe2f13e4abbddbf3db1529bd52 at slot 631
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:55:36.00 UTC] Chain extended, new tip: 1e199dec21810cbecfc506ebf59b72a8aaae524190905d71c4b98f20d999bf35 at slot 636
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:55:37.00 UTC] Chain extended, new tip: d62671dd9bba5a423a45a876f4c4bbc40c447c7d09fa63b37380ab399f2b5e84 at slot 637
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:56:01.00 UTC] Chain extended, new tip: 53cc5ae3d0ee5d32339797a38e6a5472b63b0a94cc0b79f2b2cb116bcb47ff7e at slot 661
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:56:08.00 UTC] Chain extended, new tip: b7f6049effa264cd9f949cc6bf6fa11c1854b67faa17277223eda718f830b890 at slot 668
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:56:21.00 UTC] Chain extended, new tip: 9e1512406e47289c0f4429f450bfdff30d8ca6a0b0f6c13727d70ef153c04c18 at slot 681
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:56:23.01 UTC] Switched to a fork, new tip: ed495904b7bec2da2dcd3bd23c8991d410e2bb6c6d2c804310c5f561c4b62aeb at slot 683
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:56:24.00 UTC] Chain extended, new tip: 789a3afadf37d23da87bdfc60a592dedda7a9083d6962b42e3529d4625ba7b02 at slot 684
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:56:24.00 UTC] Switched to a fork, new tip: c1b5bbe5c52649d8b57a5a3e9ff961762033dd6e95da55f84152dacdbb75956f at slot 684
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:56:34.00 UTC] Chain extended, new tip: 780300ff27a725a7599f62c65946c7bd7a092f3f66ca3e0c461c7cb68a6b05de at slot 694
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:56:36.00 UTC] Chain extended, new tip: c3e1531bb8469f1818a97df9f0aa1b17293548272d9741a64348dee6319760d8 at slot 696
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:56:46.00 UTC] Chain extended, new tip: a3979b8a17869505bd8d1f88235d5b21514d4ebc14340238c9d8b05c4fc4ef74 at slot 706
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:57:04.00 UTC] Chain extended, new tip: ca30a7361ee5dbf4858591b7875b2941e1173c80a2ddf7b1a32406211d6cbb28 at slot 724
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:57:06.00 UTC] Chain extended, new tip: 852cdd8627eac4dbd84f8e48bbefd02c467754098206ecde1ab8db62e6e4ac57 at slot 726
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:57:06.00 UTC] Switched to a fork, new tip: 4a736fa18d4a5b462bafc8fb933a03a321a49898682c587f42fbfc7f926f6436 at slot 726
+[35m[aca9fbab:cardano.node.ChainDB:Notice:33][0m [2024-12-04 11:57:08.00 UTC] Chain extended, new tip: 24113aa6206167b17bcae17dc0a009f8cf5343254a9615704799011a6ef54459 at slot 728

@@ -1,28 +1,25 @@
 {
-    "localRoots": [
+  "localRoots": [
+    {
+      "accessPoints": [
         {
-            "accessPoints": [
-                {
-                    "address": "cardano-node-1.partner-chains-demo_default",
-                    "port": 32000
-                }
-            ],
-            "valency": 1
+          "address": "cardano-node-1.info",
+          "port": 32000
         },
         {
-            "accessPoints": [
-                {
-                    "address": "cardano-node-2.partner-chains-demo_default",
-                    "port": 32005
-                }
-            ],
-            "valency": 1
+          "address": "cardano-node-2.info",
+          "port": 32005
         }
-    ],
-    "publicRoots": [
-        {
-            "accessPoints": [],
-            "advertise": false
-        }
-    ]
+      ],
+      "advertise": false,
+      "trustable": true,
+      "hotValency": 1
+    }
+  ],
+  "publicRoots": [
+    {
+      "accessPoints": [],
+      "advertise": false
+    }
+  ]
 }
