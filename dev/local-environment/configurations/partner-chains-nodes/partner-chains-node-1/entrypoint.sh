@@ -6,7 +6,7 @@ while true; do
     if [ -f "/shared/pc-contracts-cli.ready" ]; then
         break
     else
-        sleep 10
+        sleep 1
     fi
 done
 
