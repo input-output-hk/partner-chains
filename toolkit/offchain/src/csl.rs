@@ -704,7 +704,7 @@ mod tests {
 				budget: OgmiosBudget::new(11, 21),
 			},
 			OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex::new(0, "not mint"),
+				validator: OgmiosValidatorIndex::new(0, "spend"),
 				budget: OgmiosBudget::new(10, 20),
 			},
 			OgmiosEvaluateTransactionResponse {
@@ -712,7 +712,7 @@ mod tests {
 				budget: OgmiosBudget::new(13, 23),
 			},
 			OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex::new(2, "not mint"),
+				validator: OgmiosValidatorIndex::new(2, "spend"),
 				budget: OgmiosBudget::new(12, 22),
 			},
 		])
