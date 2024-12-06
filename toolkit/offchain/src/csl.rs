@@ -166,7 +166,7 @@ pub(crate) fn get_first_validator_budget(
 	Ok(convert_ex_units(&validator_budget.budget))
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ScriptExUnits {
 	pub mint_ex_units: Vec<ExUnits>,
 	pub spend_ex_units: Vec<ExUnits>,
@@ -561,15 +561,16 @@ impl InputsBuilderExt for TxInputsBuilder {
 
 #[cfg(test)]
 mod tests {
-	use super::payment_address;
+	use super::*;
 	use crate::plutus_script::PlutusScript;
 	use crate::test_values::protocol_parameters;
 	use cardano_serialization_lib::{AssetName, Language, LanguageKind::PlutusV2, NetworkIdKind};
 	use hex_literal::hex;
 	use ogmios_client::{
-		transactions::OgmiosBudget,
+		transactions::{OgmiosBudget, OgmiosValidatorIndex},
 		types::{Asset, OgmiosValue},
 	};
+	use pretty_assertions::assert_eq;
 
 	#[test]
 	fn candidates_script_address_test() {
@@ -696,6 +697,42 @@ mod tests {
 		let ex_units = super::convert_ex_units(&OgmiosBudget { memory: 1000, cpu: 2000 });
 		assert_eq!(ex_units.mem(), 1000u64.into());
 		assert_eq!(ex_units.steps(), 2000u64.into());
+	}
+
+	#[test]
+	fn get_validator_budgets_works() {
+		let result = get_validator_budgets(vec![
+			OgmiosEvaluateTransactionResponse {
+				validator: OgmiosValidatorIndex::new(1, "mint"),
+				budget: OgmiosBudget::new(11, 21),
+			},
+			OgmiosEvaluateTransactionResponse {
+				validator: OgmiosValidatorIndex::new(0, "not mint"),
+				budget: OgmiosBudget::new(10, 20),
+			},
+			OgmiosEvaluateTransactionResponse {
+				validator: OgmiosValidatorIndex::new(3, "mint"),
+				budget: OgmiosBudget::new(13, 23),
+			},
+			OgmiosEvaluateTransactionResponse {
+				validator: OgmiosValidatorIndex::new(2, "not mint"),
+				budget: OgmiosBudget::new(12, 22),
+			},
+		])
+		.expect("Should succeed");
+
+		let expected = ScriptExUnits {
+			mint_ex_units: vec![
+				ExUnits::new(&11u64.into(), &21u64.into()),
+				ExUnits::new(&13u64.into(), &23u64.into()),
+			],
+			spend_ex_units: vec![
+				ExUnits::new(&10u64.into(), &20u64.into()),
+				ExUnits::new(&12u64.into(), &22u64.into()),
+			],
+		};
+
+		assert_eq!(result, expected);
 	}
 }
 
