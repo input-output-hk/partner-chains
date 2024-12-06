@@ -265,14 +265,17 @@ Now the wizard will output `partner-chains-public-keys.json` containing three ke
 
 ### 3. Run the prepare-configuration wizard
 
-Before running this wizard, be sure that `cardano-cli` is available and has an exposed socket to a running `cardano-node`.
+Before running this wizard, be sure that `ogmios` is available by host and port.
 
 1. Start the wizard:`./partner-chains-cli prepare-configuration`
 2. Update the bootnodes array and provide public ip or hostname
-3. Set the partner-chains parameters
-4. Store the main chain configuration
+3. Provide genesis utxo and required payment keys to initialize the chain
+4. Configure initial native token supply address (optional)
+5. Store the main chain configuration
 
-This wizard will submit a governance initialisation transaction, that spends the genesis utxo. It will also result in a `partner-chains-cli-chain-config.json` file. After it has been generated, it should be updated with your keys and the keys of other *permissioned* candidates in the `initial_permissioned_candidates` array.
+This wizard will submit a governance initialization transaction, that spends the genesis utxo. It will also result in a `partner-chains-cli-chain-config.json` file. The wizard also adds required cardano addresses and policy ids to the configuration file.
+
+After chain-config file has been generated, it should be updated with your keys and the keys of other *permissioned* candidates in the `initial_permissioned_candidates` array.
 
 Example:
 
@@ -316,6 +319,18 @@ A sample file:
     "first_slot_number": 4492800,
     "network": 0,
     "security_parameter": 2160
+  },
+  "cardano_addresses": {
+    "committee_candidates_address": "addr_...",
+    "d_parameter_policy_id": "bd292a4e...",
+    "native_token": {
+      "asset": {
+        "asset_name": "0x",
+        "policy_id": "0x00000000000000000000000000000000000000000000000000000000"
+      },
+      "illiquid_supply_address": "addr_..."
+    },
+    "permissioned_candidates_policy_id": "63ecb396..."
   },
   "chain_parameters": {
     "genesis_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0",
