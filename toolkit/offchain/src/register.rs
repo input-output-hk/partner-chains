@@ -81,7 +81,7 @@ pub async fn run_register<
 		candidate_registration.own_pkh,
 		candidate_registration.stake_ownership.pub_key.clone(),
 		&all_registration_utxos,
-	)?;
+	);
 	let own_registration_utxos = own_registrations.iter().map(|r| r.0.clone()).collect::<Vec<_>>();
 
 	if own_registrations
@@ -140,28 +140,38 @@ fn get_own_registrations(
 	own_pkh: MainchainAddressHash,
 	spo_pub_key: MainchainPublicKey,
 	validator_utxos: &[OgmiosUtxo],
-) -> Result<Vec<(OgmiosUtxo, CandidateRegistration)>, anyhow::Error> {
-	let mut own_registrations = Vec::new();
-	for validator_utxo in validator_utxos {
-		let datum = validator_utxo.datum.clone().ok_or_else(|| {
-			anyhow!("Invalid state: an UTXO at the validator script address does not have a datum")
-		})?;
-		let datum_plutus_data = PlutusData::from_bytes(datum.bytes).map_err(|e| {
-			anyhow!("Internal error: could not decode datum of validator script: {}", e)
-		})?;
-		let candidate_registration: CandidateRegistration =
-			RegisterValidatorDatum::try_from(datum_plutus_data)
-				.map_err(|e| {
-					anyhow!("Internal error: could not decode datum of validator script: {}", e)
-				})?
-				.into();
-		if candidate_registration.stake_ownership.pub_key == spo_pub_key
-			&& candidate_registration.own_pkh == own_pkh
-		{
-			own_registrations.push((validator_utxo.clone(), candidate_registration))
-		}
-	}
-	Ok(own_registrations)
+) -> Vec<(OgmiosUtxo, CandidateRegistration)> {
+	validator_utxos
+		.iter()
+		.filter_map(|validator_utxo| {
+			validator_utxo
+				.datum
+				.clone()
+				.ok_or_else(|| {
+					anyhow!("A UTXO at the validator script address does not have a datum")
+				})
+				.and_then(|datum| {
+					PlutusData::from_bytes(datum.bytes)
+						.map_err(|e| anyhow!("Could not decode datum of validator script: {}", e))
+				})
+				.and_then(|datum_plutus_data| {
+					RegisterValidatorDatum::try_from(datum_plutus_data)
+						.map_err(|e| anyhow!("Could not decode datum of validator script: {}", e))
+				})
+				.inspect_err(|e| log::warn!("{}", e))
+				.ok()
+				.map(CandidateRegistration::from)
+				.and_then(|candidate_registration| {
+					if candidate_registration.stake_ownership.pub_key == spo_pub_key
+						&& candidate_registration.own_pkh == own_pkh
+					{
+						Some((validator_utxo.clone(), candidate_registration.clone()))
+					} else {
+						None
+					}
+				})
+		})
+		.collect()
 }
 
 fn register_tx(
