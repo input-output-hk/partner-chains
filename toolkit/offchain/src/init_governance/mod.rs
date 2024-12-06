@@ -1,3 +1,4 @@
+use crate::scripts_data;
 use crate::{
 	await_tx::{AwaitTx, FixedDelayRetries},
 	csl::{get_first_validator_budget, key_hash_address, NetworkTypeExt},
@@ -9,8 +10,9 @@ use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
-	types::OgmiosTx,
+	types::{OgmiosTx, OgmiosUtxo},
 };
+use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, McTxHash, UtxoId, UtxoIndex};
 
 #[cfg(test)]
@@ -127,4 +129,39 @@ pub async fn run_init_governance<
 		.await?;
 
 	Ok(result.transaction)
+}
+
+pub async fn get_governance_utxo<T: QueryLedgerState + Transactions + QueryNetwork>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> anyhow::Result<OgmiosUtxo> {
+	let network = client.shelley_genesis_configuration().await?.network;
+
+	let (_, version_oracle_policy, validator_address) =
+		scripts_data::version_scripts_and_address(genesis_utxo, network.to_csl())?;
+
+	let utxos = client.query_utxos(&[validator_address]).await?;
+
+	let governance_utxo = utxos
+		.into_iter()
+		.find(|utxo| {
+			let correct_datum = utxo
+				.datum
+				.as_ref()
+				.and_then(|datum| {
+					PlutusData::from_bytes(datum.bytes.clone()).ok().and_then(|plutus_data| {
+						VersionOracleDatum::try_from(plutus_data)
+							.ok()
+							.map(|data| data.version_oracle == 32)
+					})
+				})
+				.unwrap_or(false);
+
+			let contains_version_oracle_token =
+				utxo.value.native_tokens.contains_key(&version_oracle_policy.script_hash());
+			correct_datum && contains_version_oracle_token
+		})
+		.ok_or_else(|| anyhow!("Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using `init-governance` command."))?;
+
+	Ok(governance_utxo)
 }

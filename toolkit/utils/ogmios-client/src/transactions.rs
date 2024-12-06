@@ -63,10 +63,22 @@ pub struct OgmiosValidatorIndex {
 	pub purpose: String,
 }
 
+impl OgmiosValidatorIndex {
+	pub fn new(index: u32, purpose: &str) -> Self {
+		Self { index, purpose: purpose.into() }
+	}
+}
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Default)]
 pub struct OgmiosBudget {
 	pub memory: u64,
 	pub cpu: u64,
+}
+
+impl OgmiosBudget {
+	pub fn new(memory: u64, cpu: u64) -> Self {
+		Self { memory, cpu }
+	}
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Default)]
