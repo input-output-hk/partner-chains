@@ -26,7 +26,6 @@ use sp_core::{bounded::BoundedVec, ed25519, sr25519, ConstU32};
 use {
 	derive_more::FromStr,
 	serde::{Deserialize, Deserializer, Serialize, Serializer},
-	sp_core::bytes::from_hex,
 };
 
 /// A main chain epoch number. In range [0, 2^31-1].
@@ -202,7 +201,7 @@ pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
 const MAINCHAIN_PUBLIC_KEY_LEN: usize = 32;
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
-#[byte_string(debug, hex_serialize, hex_deserialize)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct MainchainPublicKey(pub [u8; MAINCHAIN_PUBLIC_KEY_LEN]);
 
 const MAINCHAIN_PRIVATE_KEY_LEN: usize = 32;
@@ -214,17 +213,6 @@ pub struct MainchainPrivateKey(pub [u8; MAINCHAIN_PRIVATE_KEY_LEN]);
 impl core::fmt::Debug for MainchainPrivateKey {
 	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
 		write!(f, "***")
-	}
-}
-
-#[cfg(feature = "serde")]
-impl FromStr for MainchainPublicKey {
-	type Err = &'static str;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let bytes_vec =
-			from_hex(s).map_err(|_| "Mainchain Public Key must be a valid hex string")?;
-		bytes_vec.try_into()
 	}
 }
 
@@ -264,18 +252,8 @@ impl MainchainAddressHash {
 }
 
 #[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
-#[byte_string(debug, hex_serialize)]
+#[byte_string(debug, hex_serialize, decode_hex)]
 pub struct MainchainSignature(pub Vec<u8>);
-
-impl FromStr for MainchainSignature {
-	type Err = &'static str;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let bytes_vec =
-			from_hex(s).map_err(|_| "Mainchain Signature must be a valid hex string")?;
-		Ok(MainchainSignature(bytes_vec))
-	}
-}
 
 #[derive(
 	Clone,
@@ -321,18 +299,8 @@ impl ScEpochNumber {
 pub struct SidechainPublicKey(pub Vec<u8>);
 
 #[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
-#[byte_string(debug, hex_serialize, hex_deserialize)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct SidechainSignature(pub Vec<u8>);
-
-impl FromStr for SidechainSignature {
-	type Err = &'static str;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let bytes_vec =
-			from_hex(s).map_err(|_| "Mainchain Signature must be a valid hex string")?;
-		Ok(SidechainSignature(bytes_vec))
-	}
-}
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[byte_string(debug, hex_serialize)]
