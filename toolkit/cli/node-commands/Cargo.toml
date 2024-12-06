@@ -8,6 +8,7 @@ license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 authority-selection-inherents = { workspace = true }
 clap = { workspace = true }
 cli-commands = { workspace = true }
+env_logger = { workspace = true }
 frame-support = { workspace = true }
 parity-scale-codec = { workspace = true }
 partner-chains-smart-contracts-commands = { workspace = true }

@@ -118,6 +118,7 @@ where
 	SessionKeys: Decode + Send + Sync + 'static,
 	CrossChainPublic: Decode + Encode + AsRef<[u8]> + Send + Sync + 'static,
 {
+	env_logger::init();
 	match cmd {
 		PartnerChainsSubcommand::SidechainParams(cmd) => {
 			let runner = cli.create_runner(&cmd)?;

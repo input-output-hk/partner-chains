@@ -17,6 +17,8 @@ thiserror = { workspace = true }
 time = { workspace = true, features = ["std", "serde", "parsing"] }
 sidechain-domain = { workspace = true, features = ["std"] }
 log = { workspace = true, optional = true }
+cardano-serialization-lib = { workspace = true }
+anyhow = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }

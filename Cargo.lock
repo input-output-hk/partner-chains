@@ -5813,6 +5813,7 @@ name = "ogmios-client"
 version = "1.4.0"
 dependencies = [
  "anyhow",
+ "cardano-serialization-lib",
  "fraction",
  "hex",
  "hex-literal",
@@ -6543,6 +6544,7 @@ dependencies = [
  "cardano-serialization-lib",
  "cbor_event",
  "db-sync-follower",
+ "env_logger 0.11.3",
  "fraction",
  "hex",
  "hex-literal",
@@ -6563,6 +6565,7 @@ dependencies = [
  "sidechain-domain",
  "time",
  "tokio",
+ "tokio-retry",
  "uplc",
 ]
 
@@ -6683,6 +6686,7 @@ dependencies = [
  "authority-selection-inherents",
  "clap",
  "cli-commands",
+ "env_logger 0.11.3",
  "frame-support",
  "parity-scale-codec",
  "partner-chains-smart-contracts-commands",
@@ -6717,6 +6721,7 @@ name = "partner-chains-smart-contracts-commands"
 version = "1.4.0"
 dependencies = [
  "clap",
+ "env_logger 0.11.3",
  "hex",
  "jsonrpsee",
  "log",
@@ -11855,6 +11860,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.71",
+]
+
+[[package]]
+name = "tokio-retry"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f57eb36ecbe0fc510036adff84824dd3c24bb781e21bfa67b69d556aa85214f"
+dependencies = [
+ "pin-project",
+ "rand",
+ "tokio",
 ]
 
 [[package]]

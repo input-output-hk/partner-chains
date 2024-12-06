@@ -3,7 +3,9 @@ use cardano_serialization_lib::{Address, LanguageKind, PlutusData, PrivateKey};
 use fraction::{Decimal, Fraction};
 use hex_literal::hex;
 use ogmios_client::{
-	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, ScriptExecutionPrices},
+	query_ledger_state::{
+		PlutusCostModels, ProtocolParametersResponse, ReferenceScriptsCosts, ScriptExecutionPrices,
+	},
 	query_network::ShelleyGenesisConfigurationResponse,
 	types::{OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue, SlotLength},
 };
@@ -60,6 +62,7 @@ pub(crate) fn protocol_parameters() -> ProtocolParametersResponse {
 		},
 		max_collateral_inputs: 3,
 		collateral_percentage: 150,
+		min_fee_reference_scripts: ReferenceScriptsCosts { base: 15.0 },
 	}
 }
 

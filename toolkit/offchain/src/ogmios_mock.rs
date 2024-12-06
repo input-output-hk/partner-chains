@@ -1,8 +1,8 @@
 use ogmios_client::{
-	query_ledger_state::{ProtocolParametersResponse, QueryLedgerState},
+	query_ledger_state::{ProtocolParametersResponse, QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::{QueryNetwork, ShelleyGenesisConfigurationResponse},
 	transactions::{OgmiosEvaluateTransactionResponse, SubmitTransactionResponse, Transactions},
-	types::OgmiosUtxo,
+	types::{OgmiosTx, OgmiosUtxo},
 };
 
 #[derive(Clone, Default, Debug)]
@@ -102,5 +102,19 @@ impl QueryLedgerState for MockOgmiosClient {
 		ogmios_client::OgmiosClientError,
 	> {
 		Ok(self.protocol_parameters.clone())
+	}
+}
+
+impl QueryUtxoByUtxoId for MockOgmiosClient {
+	async fn query_utxo_by_id(
+		&self,
+		tx: OgmiosTx,
+		index: u16,
+	) -> Result<Option<OgmiosUtxo>, ogmios_client::OgmiosClientError> {
+		Ok(self
+			.utxos
+			.iter()
+			.find(|utxo| utxo.transaction == tx && utxo.index == index)
+			.cloned())
 	}
 }
