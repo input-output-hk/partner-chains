@@ -329,7 +329,7 @@ pub(crate) trait TransactionBuilderExt {
 		ex_units: ExUnits,
 	) -> Result<(), JsError>;
 
-	/// Adds minting of 1 token (with empty asset name) for the given script using reference script
+	/// Adds minting of 1 token (with empty asset name) for the given script using reference input
 	fn add_mint_one_script_token_using_reference_script(
 		&mut self,
 		script_hash: &ScriptHash,
