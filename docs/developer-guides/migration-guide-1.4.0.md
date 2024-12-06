@@ -28,18 +28,19 @@ scripts to observe.
 
 1. Update Partner Chains SDK dependencies in your `Cargo.toml` to `v1.3.1`
 2. Add the following configuration to your runtime configuration:
-```rust
-impl pallet_sidechain::Config for Runtime {
-    // ... other parameters
-	type MainChainScripts = sp_session_validator_management::MainChainScripts;
+    ```rust
+    impl pallet_sidechain::Config for Runtime {
+        // ... other parameters
+      type MainChainScripts = sp_session_validator_management::MainChainScripts;
 
-	fn set_main_chain_scripts(scripts: Self::MainChainScripts) {
-		pallet_session_validator_management::MainChainScriptsConfiguration::<Runtime>::set(scripts);
-	}
-}
-```
-This will allow the `upgrade_and_set_addresses` extrinsic to update configuration of the SessionValidatorManagement
-pallet together with the Runtime code.
+      fn set_main_chain_scripts(scripts: Self::MainChainScripts) {
+        pallet_session_validator_management::MainChainScriptsConfiguration::<Runtime>::set(scripts);
+      }
+    }
+    ```
+    This will allow the `upgrade_and_set_addresses` extrinsic to update configuration of the SessionValidatorManagement
+    pallet together with the Runtime code.
+
 3. Increment the `spec_version` in your runtime configuration.
 4. Build the new Runtime WASM (you can do it by running `cargo build --release`)
 5. Upgrade the runtime of the chain using the newly built WASM (it can be found in `$CARGO_TARGET_DIR/release/wbuild/<runtime name>/<runtime name>.compressed.wasm`) and the
