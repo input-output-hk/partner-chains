@@ -81,8 +81,6 @@ echo "Initializing governance authority ..."
 
 export GENESIS_UTXO=$(cat /shared/genesis.utxo)
 
-echo "Genesis UTXO: $GENESIS_UTXO"
-
 ./pc-contracts-cli init-governance \
     --network testnet \
     --kupo-host kupo --kupo-port $KUPO_PORT \
@@ -201,8 +199,6 @@ if [ $? -eq 0 ]; then
 else
     echo "Registration for Dave failed."
 fi
-
-echo $(env)
 
 echo "Generating chain-spec.json file for Parterchain Nodes..."
 ./partner-chains-node build-spec --disable-default-bootnode > chain-spec.json
