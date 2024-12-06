@@ -17,8 +17,6 @@ pub struct RegisterCmd {
 	registration_utxo: UtxoId,
 	#[arg(long)]
 	payment_key_file: String,
-	#[arg(long)]
-	stake_signing_key_file: String,
 	#[arg(long, value_name = "SIDECHAIN_KEY:AURA_KEY:GRANDPA_KEY", value_parser = parse_sidechain_public_keys)]
 	sidechain_public_keys: (SidechainPublicKey, AuraPublicKey, GrandpaPublicKey),
 	#[arg(long)]
