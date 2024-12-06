@@ -11,8 +11,8 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	BigNum, DataCost, Ed25519KeyHash, ExUnits, JsError, MinOutputAdaCalculator, PlutusData,
-	Transaction, TransactionBuilder, TransactionOutputBuilder, TxInputsBuilder,
+	BigNum, DataCost, ExUnits, JsError, MinOutputAdaCalculator, PlutusData, Transaction,
+	TransactionBuilder, TransactionOutputBuilder, TxInputsBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -24,10 +24,7 @@ use ogmios_client::{
 use partner_chains_plutus_data::registered_candidates::{
 	block_producer_registration_to_plutus_data, RegisterValidatorDatum,
 };
-use sidechain_domain::{
-	BlockProducerRegistration, MainchainAddressHash, MainchainPrivateKey, MainchainPublicKey,
-	McTxHash, UtxoId, UtxoIndex,
-};
+use sidechain_domain::*;
 
 pub trait Register {
 	#[allow(async_fn_in_trait)]
@@ -35,7 +32,6 @@ pub trait Register {
 		&self,
 		genesis_utxo: UtxoId,
 		block_producer_registration: &BlockProducerRegistration,
-		registration_utxo: UtxoId,
 		payment_signing_key: MainchainPrivateKey,
 	) -> Result<Option<OgmiosTx>, OffchainError>;
 }
@@ -48,13 +44,11 @@ where
 		&self,
 		genesis_utxo: UtxoId,
 		block_producer_registration: &BlockProducerRegistration,
-		registration_utxo: UtxoId,
 		payment_signing_key: MainchainPrivateKey,
 	) -> Result<Option<OgmiosTx>, OffchainError> {
 		run_register(
 			genesis_utxo,
 			block_producer_registration,
-			registration_utxo,
 			payment_signing_key,
 			self,
 			FixedDelayRetries::two_minutes(),
@@ -70,23 +64,21 @@ pub async fn run_register<
 >(
 	genesis_utxo: UtxoId,
 	block_producer_registration: &BlockProducerRegistration,
-	registration_utxo: UtxoId,
 	payment_signing_key: MainchainPrivateKey,
 	ogmios_client: &C,
 	await_tx: A,
 ) -> anyhow::Result<Option<OgmiosTx>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key.0, ogmios_client).await?;
-	let own_pkh = ed25519_key_hash_to_mainchain_address_hash(ctx.payment_key_hash());
 	let validator = crate::scripts_data::registered_candidates_scripts(genesis_utxo)?;
 	let validator_address = validator.address_bech32(ctx.network)?;
 	let registration_utxo = ctx
 		.payment_key_utxos
 		.iter()
-		.find(|u| u.to_domain() == registration_utxo)
+		.find(|u| u.to_domain() == block_producer_registration.registration_utxo)
 		.ok_or(anyhow!("registration utxo not found at payment address"))?;
 	let all_registration_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
 	let own_registrations = get_own_registrations(
-		own_pkh,
+		block_producer_registration.own_pkh,
 		block_producer_registration.stake_ownership.pub_key.clone(),
 		&all_registration_utxos,
 	)?;
@@ -103,7 +95,6 @@ pub async fn run_register<
 	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
 	let tx = register_tx(
 		&validator,
-		own_pkh,
 		block_producer_registration,
 		registration_utxo,
 		&own_registration_utxos,
@@ -122,7 +113,6 @@ pub async fn run_register<
 	let validator_redeemer_ex_units = get_first_validator_budget(evaluate_response)?;
 	let tx = register_tx(
 		&validator,
-		own_pkh,
 		block_producer_registration,
 		registration_utxo,
 		&own_registration_utxos,
@@ -146,18 +136,6 @@ pub async fn run_register<
 	Ok(Some(result.transaction))
 }
 
-fn ed25519_key_hash_to_mainchain_address_hash(value: Ed25519KeyHash) -> MainchainAddressHash {
-	// Ed25519KeyHash is represented as [u8;28], same as MainchainAddressHash,
-	// but it is private and can only be accessed as Vec<u8> so we need to do this
-	MainchainAddressHash(
-		value
-			.to_bytes()
-			.as_slice()
-			.try_into()
-			.expect("impossible: Ed25519KeyHash failed to convert to MainchainAddressHash"),
-	)
-}
-
 fn get_own_registrations(
 	own_pkh: MainchainAddressHash,
 	spo_pub_key: MainchainPublicKey,
@@ -171,16 +149,14 @@ fn get_own_registrations(
 		let datum_plutus_data = PlutusData::from_bytes(datum.bytes).map_err(|e| {
 			anyhow!("Internal error: could not decode datum of validator script: {}", e)
 		})?;
-		let (own_pkh_from_datum, block_producer_registration): (
-			MainchainAddressHash,
-			BlockProducerRegistration,
-		) = RegisterValidatorDatum::try_from(datum_plutus_data)
-			.map_err(|e| {
-				anyhow!("Internal error: could not decode datum of validator script: {}", e)
-			})?
-			.into();
+		let block_producer_registration: BlockProducerRegistration =
+			RegisterValidatorDatum::try_from(datum_plutus_data)
+				.map_err(|e| {
+					anyhow!("Internal error: could not decode datum of validator script: {}", e)
+				})?
+				.into();
 		if block_producer_registration.stake_ownership.pub_key == spo_pub_key
-			&& own_pkh_from_datum == own_pkh
+			&& block_producer_registration.own_pkh == own_pkh
 		{
 			own_registrations.push((validator_utxo.clone(), block_producer_registration))
 		}
@@ -190,7 +166,6 @@ fn get_own_registrations(
 
 fn register_tx(
 	validator: &PlutusScript,
-	own_pkh: MainchainAddressHash,
 	block_producer_registration: &BlockProducerRegistration,
 	registration_utxo: &OgmiosUtxo,
 	own_registration_utxos: &[OgmiosUtxo],
@@ -214,8 +189,7 @@ fn register_tx(
 	}
 
 	{
-		let datum =
-			block_producer_registration_to_plutus_data(own_pkh, block_producer_registration);
+		let datum = block_producer_registration_to_plutus_data(block_producer_registration);
 		let amount_builder = TransactionOutputBuilder::new()
 			.with_address(&validator.address(ctx.network))
 			.with_plutus_data(&datum)
@@ -268,7 +242,6 @@ mod tests {
 	fn own_pkh() -> MainchainAddressHash {
 		MainchainAddressHash([0; 28])
 	}
-
 	fn block_producer_registration(registration_utxo: UtxoId) -> BlockProducerRegistration {
 		BlockProducerRegistration {
 			stake_ownership: AdaBasedStaking {
@@ -278,6 +251,7 @@ mod tests {
 			sidechain_pub_key: SidechainPublicKey(Vec::new()),
 			sidechain_signature: SidechainSignature(Vec::new()),
 			registration_utxo,
+			own_pkh: own_pkh(),
 			aura_pub_key: AuraPublicKey(Vec::new()),
 			grandpa_pub_key: GrandpaPublicKey(Vec::new()),
 		}
@@ -317,7 +291,6 @@ mod tests {
 			block_producer_registration(registration_utxo.to_domain());
 		let tx = register_tx(
 			&test_values::test_validator(),
-			own_pkh(),
 			&block_producer_registration,
 			registration_utxo,
 			&own_registration_utxos,
@@ -347,7 +320,7 @@ mod tests {
 		);
 		assert_eq!(
 			script_output.plutus_data().unwrap(),
-			block_producer_registration_to_plutus_data(own_pkh(), &block_producer_registration)
+			block_producer_registration_to_plutus_data(&block_producer_registration)
 		);
 	}
 
@@ -369,7 +342,6 @@ mod tests {
 		};
 		let tx = register_tx(
 			&test_values::test_validator(),
-			own_pkh(),
 			&block_producer_registration,
 			registration_utxo,
 			&own_registration_utxos,
@@ -384,7 +356,6 @@ mod tests {
 		fee_is_less_than_one_and_half_ada(&tx);
 		output_at_validator_has_register_candidate_datum(
 			&tx,
-			own_pkh(),
 			&block_producer_registration,
 			validator_address,
 		);
@@ -428,7 +399,6 @@ mod tests {
 
 	fn output_at_validator_has_register_candidate_datum(
 		tx: &Transaction,
-		own_pkh: MainchainAddressHash,
 		block_producer_registration: &BlockProducerRegistration,
 		validator_address: &Address,
 	) {
@@ -437,7 +407,7 @@ mod tests {
 			outputs.into_iter().find(|o| o.address() == *validator_address).unwrap();
 		assert_eq!(
 			validator_output.plutus_data().unwrap(),
-			block_producer_registration_to_plutus_data(own_pkh, block_producer_registration)
+			block_producer_registration_to_plutus_data(block_producer_registration)
 		);
 	}
 

@@ -16,3 +16,4 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
 log4rs = { workspace = true }
+cardano-serialization-lib = { workspace = true }
