@@ -37,7 +37,7 @@ pub trait Register {
 		block_producer_registration: &BlockProducerRegistration,
 		registration_utxo: UtxoId,
 		payment_signing_key: MainchainPrivateKey,
-	) -> Result<OgmiosTx, OffchainError>;
+	) -> Result<Option<OgmiosTx>, OffchainError>;
 }
 
 impl<T> Register for T
@@ -50,7 +50,7 @@ where
 		block_producer_registration: &BlockProducerRegistration,
 		registration_utxo: UtxoId,
 		payment_signing_key: MainchainPrivateKey,
-	) -> Result<OgmiosTx, OffchainError> {
+	) -> Result<Option<OgmiosTx>, OffchainError> {
 		run_register(
 			genesis_utxo,
 			block_producer_registration,
@@ -74,7 +74,7 @@ pub async fn run_register<
 	payment_signing_key: MainchainPrivateKey,
 	ogmios_client: &C,
 	await_tx: A,
-) -> anyhow::Result<OgmiosTx> {
+) -> anyhow::Result<Option<OgmiosTx>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key.0, ogmios_client).await?;
 	let own_pkh = ed25519_key_hash_to_mainchain_address_hash(ctx.payment_key_hash());
 	let validator = crate::scripts_data::registered_candidates_scripts(genesis_utxo)?;
@@ -92,10 +92,12 @@ pub async fn run_register<
 	)?;
 	let own_registration_utxos = own_registrations.iter().map(|r| r.0.clone()).collect::<Vec<_>>();
 
-	if own_registrations.iter().any(|(_, existing_registration)| {
-		block_producer_registration.matches_keys(existing_registration)
-	}) {
-		return Err(anyhow!("BlockProducer with given set of keys is already registered"));
+	if own_registrations
+		.iter()
+		.any(|(_, existing_registration)| block_producer_registration == existing_registration)
+	{
+		log::info!("✅ Block producer already registered with same keys.");
+		return Ok(None);
 	}
 
 	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
@@ -141,7 +143,7 @@ pub async fn run_register<
 		.await_tx_output(ogmios_client, UtxoId { tx_hash: McTxHash(tx_id), index: UtxoIndex(0) })
 		.await?;
 
-	Ok(result.transaction)
+	Ok(Some(result.transaction))
 }
 
 fn ed25519_key_hash_to_mainchain_address_hash(value: Ed25519KeyHash) -> MainchainAddressHash {
