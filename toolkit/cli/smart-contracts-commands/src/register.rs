@@ -38,6 +38,7 @@ impl RegisterCmd {
 			},
 			sidechain_pub_key: self.sidechain_public_keys.0,
 			sidechain_signature: self.sidechain_signature,
+			own_pkh: crate::payment_signing_key_to_mainchain_address_hash(payment_key.clone())?,
 			registration_utxo: self.registration_utxo,
 			aura_pub_key: self.sidechain_public_keys.1,
 			grandpa_pub_key: self.sidechain_public_keys.2,
@@ -46,7 +47,6 @@ impl RegisterCmd {
 		run_register(
 			self.genesis_utxo,
 			&block_producer_registration,
-			self.registration_utxo,
 			payment_key,
 			&client,
 			FixedDelayRetries::two_minutes(),

@@ -2,7 +2,7 @@ use log4rs::{
 	append::{console::ConsoleAppender, file::FileAppender},
 	config::Appender,
 };
-use sidechain_domain::{AuraPublicKey, GrandpaPublicKey, MainchainPrivateKey, SidechainPublicKey};
+use sidechain_domain::*;
 
 pub mod get_scripts;
 pub mod d_parameter;
@@ -99,4 +99,16 @@ pub(crate) fn parse_sidechain_public_keys(
 	} else {
 		Err("Failed to parse sidechain public keys.".into())
 	}
+}
+
+fn payment_signing_key_to_mainchain_address_hash(
+	payment_signing_key: MainchainPrivateKey,
+) -> CmdResult<MainchainAddressHash> {
+	Ok(cardano_serialization_lib::PrivateKey::from_normal_bytes(&payment_signing_key.0)?
+		.to_public()
+		.hash()
+		.to_bytes()
+		.as_slice()
+		.try_into()
+		.map(MainchainAddressHash)?)
 }
