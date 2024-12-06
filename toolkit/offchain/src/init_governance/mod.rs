@@ -143,7 +143,7 @@ pub async fn get_governance_utxo<T: QueryLedgerState + Transactions + QueryNetwo
 	let utxos = client.query_utxos(&[validator_address]).await?;
 
 	let governance_utxo = utxos
-		.iter()
+		.into_iter()
 		.find(|utxo| {
 			let correct_datum = utxo
 				.datum
@@ -163,5 +163,5 @@ pub async fn get_governance_utxo<T: QueryLedgerState + Transactions + QueryNetwo
 		})
 		.ok_or_else(|| anyhow!("Could not find governance versioning UTXO"))?;
 
-	Ok(governance_utxo.clone())
+	Ok(governance_utxo)
 }
