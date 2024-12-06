@@ -662,7 +662,6 @@ pub struct BlockProducerRegistration {
 	pub sidechain_pub_key: SidechainPublicKey,
 	pub sidechain_signature: SidechainSignature,
 	pub registration_utxo: UtxoId,
-	// pub own_pkh: MainchainAddressHash,
 	pub aura_pub_key: AuraPublicKey,
 	pub grandpa_pub_key: GrandpaPublicKey,
 }
