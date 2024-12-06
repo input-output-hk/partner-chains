@@ -2,7 +2,7 @@
 
 use crate::{plutus_script::PlutusScript, untyped_plutus::datum_to_uplc_plutus_data};
 use cardano_serialization_lib::*;
-use fraction::Ratio;
+use fraction::{FromPrimitive, Ratio};
 use ogmios_client::query_ledger_state::ReferenceScriptsCosts;
 use ogmios_client::{
 	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, QueryLedgerState},
@@ -148,11 +148,11 @@ pub(crate) fn convert_cost_models(m: &PlutusCostModels) -> Costmdls {
 pub(crate) fn convert_reference_script_costs(
 	costs: &ReferenceScriptsCosts,
 ) -> Result<UnitInterval, JsError> {
-	let r = Ratio::from_float(costs.base).unwrap();
-	let numerator = BigNum::from_str(r.numer().to_string().as_str())
-		.map_err(|e| JsError::from_str(&e.to_string().as_str()))?;
-	let denominator = BigNum::from_str(r.denom().to_string().as_str())
-		.map_err(|e| JsError::from_str(&e.to_string().as_str()))?;
+	let r = Ratio::<u64>::from_f64(costs.base).ok_or_else(|| {
+		JsError::from_str(&format!("Failed to decode cost base {} as a u64 ratio", costs.base))
+	})?;
+	let numerator = BigNum::from(*r.numer());
+	let denominator = BigNum::from(*r.denom());
 	Ok(UnitInterval::new(&numerator, &denominator))
 }
 
