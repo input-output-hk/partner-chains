@@ -332,9 +332,8 @@ pub(crate) trait TransactionBuilderExt {
 	/// Adds minting of 1 token (with empty asset name) for the given script using reference input
 	fn add_mint_one_script_token_using_reference_script(
 		&mut self,
-		script_hash: &ScriptHash,
+		script: &PlutusScript,
 		ref_input: &TransactionInput,
-		script_size: usize,
 		ex_units: ExUnits,
 	) -> Result<(), JsError>;
 
@@ -416,18 +415,17 @@ impl TransactionBuilderExt for TransactionBuilder {
 
 	fn add_mint_one_script_token_using_reference_script(
 		&mut self,
-		script_hash: &ScriptHash,
+		script: &PlutusScript,
 		ref_input: &TransactionInput,
-		script_size: usize,
 		ex_units: ExUnits,
 	) -> Result<(), JsError> {
 		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
 
 		let validator_source = PlutusScriptSource::new_ref_input(
-			script_hash,
+			&script.csl_script_hash(),
 			ref_input,
 			&Language::new_plutus_v2(),
-			script_size,
+			script.bytes.len(),
 		);
 		let mint_witness = MintWitness::new_plutus_script(
 			&validator_source,
