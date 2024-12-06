@@ -1,6 +1,7 @@
 //! Requests to evalute and submit transactions via Ogmios`.
 
 use crate::{types::OgmiosTx, ByNameParamsBuilder, OgmiosClient, OgmiosClientError};
+use cardano_serialization_lib::ExUnits;
 use serde::Deserialize;
 
 pub trait Transactions {
@@ -57,6 +58,12 @@ pub struct OgmiosEvaluateTransactionResponse {
 	pub budget: OgmiosBudget,
 }
 
+impl From<OgmiosEvaluateTransactionResponse> for ExUnits {
+	fn from(resp: OgmiosEvaluateTransactionResponse) -> Self {
+		resp.budget.into()
+	}
+}
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Default)]
 pub struct OgmiosValidatorIndex {
 	pub index: u32,
@@ -78,6 +85,12 @@ pub struct OgmiosBudget {
 impl OgmiosBudget {
 	pub fn new(memory: u64, cpu: u64) -> Self {
 		Self { memory, cpu }
+	}
+}
+
+impl From<OgmiosBudget> for ExUnits {
+	fn from(v: OgmiosBudget) -> Self {
+		ExUnits::new(&v.memory.into(), &v.cpu.into())
 	}
 }
 

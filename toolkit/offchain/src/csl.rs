@@ -179,23 +179,16 @@ impl ScriptExUnits {
 }
 
 pub(crate) fn get_validator_budgets(
-	responses: Vec<OgmiosEvaluateTransactionResponse>,
+	mut responses: Vec<OgmiosEvaluateTransactionResponse>,
 ) -> Result<ScriptExUnits, JsError> {
-	let mut ex_units = ScriptExUnits::new();
-	let mut mint_ex_units = vec![];
-	let mut spend_ex_units = vec![];
-	for response in responses.iter() {
-		if response.validator.purpose == "mint" {
-			mint_ex_units.push((convert_ex_units(&response.budget), response.validator.index));
-		} else {
-			spend_ex_units.push((convert_ex_units(&response.budget), response.validator.index));
-		}
-	}
-	mint_ex_units.sort_by(|a, b| a.1.cmp(&b.1));
-	spend_ex_units.sort_by(|a, b| a.1.cmp(&b.1));
-	ex_units.mint_ex_units = mint_ex_units.into_iter().map(|(ex_units, _)| ex_units).collect();
-	ex_units.spend_ex_units = spend_ex_units.into_iter().map(|(ex_units, _)| ex_units).collect();
-	Ok(ex_units)
+	responses.sort_unstable_by_key(|r| r.validator.index);
+	let (mint_ex_units, spend_ex_units) = responses
+		.into_iter()
+		.partition::<Vec<_>, _>(|response| response.validator.purpose == "mint");
+	Ok(ScriptExUnits {
+		mint_ex_units: mint_ex_units.into_iter().map(Into::into).collect(),
+		spend_ex_units: spend_ex_units.into_iter().map(Into::into).collect(),
+	})
 }
 
 /// Conversion of ogmios-client budget to CSL execution units
