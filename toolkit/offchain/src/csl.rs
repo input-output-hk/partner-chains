@@ -173,8 +173,14 @@ pub struct ScriptExUnits {
 }
 
 impl ScriptExUnits {
-	fn new() -> Self {
+	pub fn new() -> Self {
 		ScriptExUnits { mint_ex_units: Vec::new(), spend_ex_units: Vec::new() }
+	}
+	pub fn with_mint_ex_units(self, mint_ex_units: Vec<ExUnits>) -> Self {
+		Self { mint_ex_units, ..self }
+	}
+	pub fn with_spend_ex_units(self, spend_ex_units: Vec<ExUnits>) -> Self {
+		Self { spend_ex_units, ..self }
 	}
 }
 

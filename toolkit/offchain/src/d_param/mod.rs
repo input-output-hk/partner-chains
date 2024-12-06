@@ -24,6 +24,9 @@ use ogmios_client::{
 use partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
 use sidechain_domain::{DParameter, McTxHash, UtxoId};
 
+#[cfg(test)]
+mod tests;
+
 pub async fn upsert_d_param<C: QueryLedgerState + QueryNetwork + Transactions>(
 	genesis_utxo: UtxoId,
 	d_parameter: &DParameter,
