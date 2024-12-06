@@ -143,7 +143,7 @@ pub async fn get_governance_utxo<T: QueryLedgerState + Transactions + QueryNetwo
 	let utxos = client.query_utxos(&[validator_address]).await?;
 
 	let governance_utxo = utxos
-		.iter()
+		.into_iter()
 		.find(|utxo| {
 			let correct_datum = utxo
 				.datum
@@ -161,7 +161,7 @@ pub async fn get_governance_utxo<T: QueryLedgerState + Transactions + QueryNetwo
 				utxo.value.native_tokens.contains_key(&version_oracle_policy.script_hash());
 			correct_datum && contains_version_oracle_token
 		})
-		.ok_or_else(|| anyhow!("Could not find governance versioning UTXO"))?;
+		.ok_or_else(|| anyhow!("Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using `init-governance` command."))?;
 
-	Ok(governance_utxo.clone())
+	Ok(governance_utxo)
 }

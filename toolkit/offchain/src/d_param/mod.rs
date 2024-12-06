@@ -15,7 +15,7 @@ use anyhow::anyhow;
 use cardano_serialization_lib::{
 	ExUnits, JsError, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
 };
-use cardano_serialization_lib::{LanguageKind, ScriptHash, TransactionHash, TransactionInput};
+use cardano_serialization_lib::{LanguageKind, TransactionHash, TransactionInput};
 use ogmios_client::types::OgmiosScript::Plutus;
 use ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
@@ -245,9 +245,8 @@ fn mint_d_param_token_tx(
 		gov_utxo.index.into(),
 	);
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&ScriptHash::from_bytes(gov_policy.script_hash().to_vec())?,
+		&gov_policy,
 		&gov_tx_input,
-		gov_policy.bytes.len(),
 		ex_units
 			.mint_ex_units
 			.pop()
@@ -301,9 +300,8 @@ fn update_d_param_tx(
 		gov_utxo.index.into(),
 	);
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&ScriptHash::from_bytes(gov_policy.script_hash().to_vec())?,
+		&gov_policy,
 		&gov_tx_input,
-		gov_policy.bytes.len(),
 		ex_units
 			.mint_ex_units
 			.pop()

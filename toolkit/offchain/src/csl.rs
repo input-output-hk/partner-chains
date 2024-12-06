@@ -191,10 +191,14 @@ pub(crate) fn get_validator_budgets(
 	let (mint_ex_units, spend_ex_units) = responses
 		.into_iter()
 		.partition::<Vec<_>, _>(|response| response.validator.purpose == "mint");
-	Ok(ScriptExUnits {
-		mint_ex_units: mint_ex_units.iter().map(|resp| convert_ex_units(&resp.budget)).collect(),
-		spend_ex_units: spend_ex_units.iter().map(|resp| convert_ex_units(&resp.budget)).collect(),
-	})
+	let mint_ex_units = mint_ex_units.into_iter().map(ex_units_from_response).collect();
+	let spend_ex_units = spend_ex_units.into_iter().map(ex_units_from_response).collect();
+
+	Ok(ScriptExUnits { mint_ex_units, spend_ex_units })
+}
+
+fn ex_units_from_response(resp: OgmiosEvaluateTransactionResponse) -> ExUnits {
+	ExUnits::new(&resp.budget.memory.into(), &resp.budget.cpu.into())
 }
 
 /// Conversion of ogmios-client budget to CSL execution units
@@ -329,12 +333,11 @@ pub(crate) trait TransactionBuilderExt {
 		ex_units: ExUnits,
 	) -> Result<(), JsError>;
 
-	/// Adds minting of 1 token (with empty asset name) for the given script using reference script
+	/// Adds minting of 1 token (with empty asset name) for the given script using reference input
 	fn add_mint_one_script_token_using_reference_script(
 		&mut self,
-		script_hash: &ScriptHash,
+		script: &PlutusScript,
 		ref_input: &TransactionInput,
-		script_size: usize,
 		ex_units: ExUnits,
 	) -> Result<(), JsError>;
 
@@ -416,18 +419,17 @@ impl TransactionBuilderExt for TransactionBuilder {
 
 	fn add_mint_one_script_token_using_reference_script(
 		&mut self,
-		script_hash: &ScriptHash,
+		script: &PlutusScript,
 		ref_input: &TransactionInput,
-		script_size: usize,
 		ex_units: ExUnits,
 	) -> Result<(), JsError> {
 		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
 
 		let validator_source = PlutusScriptSource::new_ref_input(
-			script_hash,
+			&script.csl_script_hash(),
 			ref_input,
 			&Language::new_plutus_v2(),
-			script_size,
+			script.bytes.len(),
 		);
 		let mint_witness = MintWitness::new_plutus_script(
 			&validator_source,
@@ -706,7 +708,7 @@ mod tests {
 				budget: OgmiosBudget::new(11, 21),
 			},
 			OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex::new(0, "not mint"),
+				validator: OgmiosValidatorIndex::new(0, "spend"),
 				budget: OgmiosBudget::new(10, 20),
 			},
 			OgmiosEvaluateTransactionResponse {
@@ -714,7 +716,7 @@ mod tests {
 				budget: OgmiosBudget::new(13, 23),
 			},
 			OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex::new(2, "not mint"),
+				validator: OgmiosValidatorIndex::new(2, "spend"),
 				budget: OgmiosBudget::new(12, 22),
 			},
 		])
