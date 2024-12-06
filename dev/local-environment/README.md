@@ -7,20 +7,20 @@ This stack is designed to run a 5 x Partner Chains node local environment for a 
 The local environment includes:
 
 - 5 x Partner Chains Nodes (3 x permissioned, 2 x registered)
-- 3 x Cardano Nodes running private testnet with pre-configured genesis files (2 minutes epochs)
+- 1 x Cardano Node running private testnet with pre-configured genesis files (2 minutes epochs)
 - 1 x PostgreSQL database
 - 1 x Db-sync
 - 1 x Ogmios
 - 1 x Kupo
 - 1 x Ubuntu / NodeJS image for running pc-contracts-cli
 
-The stack `setup.sh` script will create a docker-compose.yml stack configuration files, and populate an .env file with environment values. The stack can be deployed with `docker-compose up -d`. 
+The stack `setup.sh` script will create a docker-compose.yml stack configuration files, and populate an .env file with environment values. The stack can be deployed with `docker-compose up -d`.
 
 ## Local env - step by step
 
 - When first run, all images will be pulled from public repositories. This stage may take some time. The stack will then be built and run.
-- When the stack is running, the 3 Cardano nodes will peer and being block production. This is a private testnet and will not connect to the public Cardano network, but rather from a pre-configured genesis file. 
-- Once the Cardano chain is synced, Ogmios, Kupo and DB-Sync will in turn connect to the Cardano node node.socket and begin syncing the chain. 
+- When the stack is running, the Cardano node begins block production. This is a private testnet and will not connect to the public Cardano network, but rather from a pre-configured genesis file.
+- Once the Cardano chain is synced, Ogmios, Kupo and DB-Sync will in turn connect to the Cardano node node.socket and begin syncing the chain.
 - The pc-contracts-cli will insert D parameter values and register Partner Chains Node keys with the Cardano chain.
 - Once Postgres is populated with the required data, the Partner Chains nodes will begin syncing the chain and will begin block production after 2 main chain epochs.
 
@@ -45,7 +45,7 @@ We recommend using a visual Docker UI tool such as [lazydocker](https://github.c
 
 ## Stopping the environment
 
-When stopping the stack, it is mandatory to also wipe all volumes. The environment does not yet support persistent state. To tear down the environment and remove all volumes, use the following: 
+When stopping the stack, it is mandatory to also wipe all volumes. The environment does not yet support persistent state. To tear down the environment and remove all volumes, use the following:
 
 ```
 docker compose down --volumes
@@ -71,7 +71,7 @@ bash setup.sh --non-interactive --overrides --node-image ${{ inputs.image }}
 ## Custom Deployment Options
 
 The `setup.sh` script supports argument `--deployment-option X` with the below possible options:
- 
+
 1. Include only Cardano testnet
 2. Include Cardano testnet with Kupo and Ogmios
 3. Include Cardano testnet, Kupo, Ogmios, DB-Sync and Postgres

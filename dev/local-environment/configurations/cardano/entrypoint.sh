@@ -6,12 +6,7 @@ chmod 777 /shared
 
 echo "Calculating target time for synchronised chain start..."
 
-remaining_seconds=$((60 - $(date +'%-S')))
-if [ $remaining_seconds -le 20 ]; then
-    sleep $remaining_seconds
-fi
-
-target_time=$(( ($(date +%s) / 60 + 1) * 60 ))
+target_time=$(( ($(date +%s) / 10 + 1) * 10 ))
 echo "$target_time" > /shared/cardano.start
 byron_startTime=$target_time
 shelley_systemStart=$(date --utc +"%Y-%m-%dT%H:%M:%SZ" --date="@$target_time")
@@ -55,17 +50,8 @@ byron_startTimeMillis=$(($byron_startTime * 1000))
 echo $byron_startTimeMillis > /shared/MC__FIRST_EPOCH_TIMESTAMP_MILLIS
 echo "Created /shared/MC__FIRST_EPOCH_TIMESTAMP_MILLIS with value: $byron_startTimeMillis"
 
-adjusted_target_time=$((target_time - 10))
-current_epoch=$(date +%s%3N)
-sleep_milliseconds=$((adjusted_target_time * 1000 - current_epoch))
-sleep_seconds=$((sleep_milliseconds / 1000))
-remaining_milliseconds=$((sleep_milliseconds % 1000))
-total_sleep_time=$(printf "%.3f" "$(echo "$sleep_milliseconds / 1000" | /busybox bc)")
-echo "Waiting for $total_sleep_time seconds until 10 seconds before the target time..."
-sleep $total_sleep_time
 echo "Current time is now: $(date +"%H:%M:%S.%3N"). Starting node..."
 
-echo "Starting node..."
 cardano-node run \
   --topology /shared/node-1-topology.json \
   --database-path /data/db \
@@ -141,8 +127,8 @@ cardano-cli latest transaction submit \
   --tx-file /data/tx.signed \
   --testnet-magic 42
 
-echo "Transaction submitted to fund registered candidates and governance authority. Waiting 40 seconds for transaction to process..."
-sleep 40
+echo "Transaction submitted to fund registered candidates and governance authority. Waiting 20 seconds for transaction to process..."
+sleep 20
 echo "Balance:"
 
 # Query UTXOs at new_address, dave_address, and eve_address

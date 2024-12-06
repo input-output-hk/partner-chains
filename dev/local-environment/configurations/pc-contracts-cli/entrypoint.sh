@@ -69,7 +69,7 @@ while true; do
     if nc -z kupo $KUPO_PORT && nc -z ogmios $OGMIOS_PORT; then
         break
     else
-        sleep 10
+        sleep 1
     fi
 done
 

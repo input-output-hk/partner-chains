@@ -6,7 +6,7 @@ while true; do
     if [ -f "/shared/pc-contracts-cli.ready" ]; then
         break
     else
-        sleep 10
+        sleep 1
     fi
 done
 
@@ -16,7 +16,7 @@ while true; do
     if [ -f "/shared/2-epochs.ready" ]; then
         break
     else
-        sleep 10
+        sleep 1
     fi
 done
 
@@ -26,7 +26,7 @@ while true; do
     if [ -f "/shared/partner-chains-node-1.ready" ] && [ -f "/shared/partner-chains-node-2.ready" ] && [ -f "/shared/partner-chains-node-3.ready" ] && [ -f "/shared/partner-chains-node-4.ready" ]; then
         break
     else
-        sleep 10
+        sleep 1
     fi
 done
 
