@@ -154,6 +154,20 @@ pub(crate) fn version_oracle(
 	Ok((validator, policy, policy_data))
 }
 
+pub(crate) fn version_scripts_and_address(
+	genesis_utxo: UtxoId,
+	network: NetworkIdKind,
+) -> Result<(PlutusScript, PlutusScript, String), anyhow::Error> {
+	let validator =
+		PlutusScript::from_wrapped_cbor(raw_scripts::VERSION_ORACLE_VALIDATOR, PlutusV2)?
+			.apply_data(genesis_utxo)?;
+	let policy = PlutusScript::from_wrapped_cbor(raw_scripts::VERSION_ORACLE_POLICY, PlutusV2)?
+		.apply_data(genesis_utxo)?
+		.apply_uplc_data(validator.address_data(network)?)?;
+	let address = validator.address_bech32(network)?;
+	Ok((validator, policy, address))
+}
+
 pub(crate) fn d_parameter_scripts(
 	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
