@@ -191,10 +191,14 @@ pub(crate) fn get_validator_budgets(
 	let (mint_ex_units, spend_ex_units) = responses
 		.into_iter()
 		.partition::<Vec<_>, _>(|response| response.validator.purpose == "mint");
-	Ok(ScriptExUnits {
-		mint_ex_units: mint_ex_units.into_iter().map(Into::into).collect(),
-		spend_ex_units: spend_ex_units.into_iter().map(Into::into).collect(),
-	})
+	let mint_ex_units = mint_ex_units.into_iter().map(ex_units_from_response).collect();
+	let spend_ex_units = spend_ex_units.into_iter().map(ex_units_from_response).collect();
+
+	Ok(ScriptExUnits { mint_ex_units, spend_ex_units })
+}
+
+fn ex_units_from_response(resp: OgmiosEvaluateTransactionResponse) -> ExUnits {
+	ExUnits::new(&resp.budget.memory.into(), &resp.budget.cpu.into())
 }
 
 /// Conversion of ogmios-client budget to CSL execution units
