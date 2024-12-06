@@ -19,7 +19,7 @@ The stack `setup.sh` script will create a docker-compose.yml stack configuration
 ## Local env - step by step
 
 - When first run, all images will be pulled from public repositories. This stage may take some time. The stack will then be built and run.
-- When the stack is running, the Cardano node beings block production. This is a private testnet and will not connect to the public Cardano network, but rather from a pre-configured genesis file.
+- When the stack is running, the Cardano node begins block production. This is a private testnet and will not connect to the public Cardano network, but rather from a pre-configured genesis file.
 - Once the Cardano chain is synced, Ogmios, Kupo and DB-Sync will in turn connect to the Cardano node node.socket and begin syncing the chain.
 - The pc-contracts-cli will insert D parameter values and register Partner Chains Node keys with the Cardano chain.
 - Once Postgres is populated with the required data, the Partner Chains nodes will begin syncing the chain and will begin block production after 2 main chain epochs.
