@@ -22,7 +22,7 @@ use ogmios_client::{
 	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::registered_candidates::{
-	block_producer_registration_to_plutus_data, RegisterValidatorDatum,
+	candidate_registration_to_plutus_data, RegisterValidatorDatum,
 };
 use sidechain_domain::*;
 
@@ -31,7 +31,7 @@ pub trait Register {
 	async fn register(
 		&self,
 		genesis_utxo: UtxoId,
-		block_producer_registration: &BlockProducerRegistration,
+		candidate_registration: &CandidateRegistration,
 		payment_signing_key: MainchainPrivateKey,
 	) -> Result<Option<OgmiosTx>, OffchainError>;
 }
@@ -43,12 +43,12 @@ where
 	async fn register(
 		&self,
 		genesis_utxo: UtxoId,
-		block_producer_registration: &BlockProducerRegistration,
+		candidate_registration: &CandidateRegistration,
 		payment_signing_key: MainchainPrivateKey,
 	) -> Result<Option<OgmiosTx>, OffchainError> {
 		run_register(
 			genesis_utxo,
-			block_producer_registration,
+			candidate_registration,
 			payment_signing_key,
 			self,
 			FixedDelayRetries::two_minutes(),
@@ -63,7 +63,7 @@ pub async fn run_register<
 	A: AwaitTx,
 >(
 	genesis_utxo: UtxoId,
-	block_producer_registration: &BlockProducerRegistration,
+	candidate_registration: &CandidateRegistration,
 	payment_signing_key: MainchainPrivateKey,
 	ogmios_client: &C,
 	await_tx: A,
@@ -74,28 +74,28 @@ pub async fn run_register<
 	let registration_utxo = ctx
 		.payment_key_utxos
 		.iter()
-		.find(|u| u.to_domain() == block_producer_registration.registration_utxo)
+		.find(|u| u.to_domain() == candidate_registration.registration_utxo)
 		.ok_or(anyhow!("registration utxo not found at payment address"))?;
 	let all_registration_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
 	let own_registrations = get_own_registrations(
-		block_producer_registration.own_pkh,
-		block_producer_registration.stake_ownership.pub_key.clone(),
+		candidate_registration.own_pkh,
+		candidate_registration.stake_ownership.pub_key.clone(),
 		&all_registration_utxos,
 	)?;
 	let own_registration_utxos = own_registrations.iter().map(|r| r.0.clone()).collect::<Vec<_>>();
 
 	if own_registrations
 		.iter()
-		.any(|(_, existing_registration)| block_producer_registration == existing_registration)
+		.any(|(_, existing_registration)| candidate_registration == existing_registration)
 	{
-		log::info!("✅ Block producer already registered with same keys.");
+		log::info!("✅ Candidate already registered with same keys.");
 		return Ok(None);
 	}
 
 	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
 	let tx = register_tx(
 		&validator,
-		block_producer_registration,
+		candidate_registration,
 		registration_utxo,
 		&own_registration_utxos,
 		&ctx,
@@ -113,7 +113,7 @@ pub async fn run_register<
 	let validator_redeemer_ex_units = get_first_validator_budget(evaluate_response)?;
 	let tx = register_tx(
 		&validator,
-		block_producer_registration,
+		candidate_registration,
 		registration_utxo,
 		&own_registration_utxos,
 		&ctx,
@@ -140,7 +140,7 @@ fn get_own_registrations(
 	own_pkh: MainchainAddressHash,
 	spo_pub_key: MainchainPublicKey,
 	validator_utxos: &[OgmiosUtxo],
-) -> Result<Vec<(OgmiosUtxo, BlockProducerRegistration)>, anyhow::Error> {
+) -> Result<Vec<(OgmiosUtxo, CandidateRegistration)>, anyhow::Error> {
 	let mut own_registrations = Vec::new();
 	for validator_utxo in validator_utxos {
 		let datum = validator_utxo.datum.clone().ok_or_else(|| {
@@ -149,16 +149,16 @@ fn get_own_registrations(
 		let datum_plutus_data = PlutusData::from_bytes(datum.bytes).map_err(|e| {
 			anyhow!("Internal error: could not decode datum of validator script: {}", e)
 		})?;
-		let block_producer_registration: BlockProducerRegistration =
+		let candidate_registration: CandidateRegistration =
 			RegisterValidatorDatum::try_from(datum_plutus_data)
 				.map_err(|e| {
 					anyhow!("Internal error: could not decode datum of validator script: {}", e)
 				})?
 				.into();
-		if block_producer_registration.stake_ownership.pub_key == spo_pub_key
-			&& block_producer_registration.own_pkh == own_pkh
+		if candidate_registration.stake_ownership.pub_key == spo_pub_key
+			&& candidate_registration.own_pkh == own_pkh
 		{
-			own_registrations.push((validator_utxo.clone(), block_producer_registration))
+			own_registrations.push((validator_utxo.clone(), candidate_registration))
 		}
 	}
 	Ok(own_registrations)
@@ -166,7 +166,7 @@ fn get_own_registrations(
 
 fn register_tx(
 	validator: &PlutusScript,
-	block_producer_registration: &BlockProducerRegistration,
+	candidate_registration: &CandidateRegistration,
 	registration_utxo: &OgmiosUtxo,
 	own_registration_utxos: &[OgmiosUtxo],
 	ctx: &TransactionContext,
@@ -189,7 +189,7 @@ fn register_tx(
 	}
 
 	{
-		let datum = block_producer_registration_to_plutus_data(block_producer_registration);
+		let datum = candidate_registration_to_plutus_data(candidate_registration);
 		let amount_builder = TransactionOutputBuilder::new()
 			.with_address(&validator.address(ctx.network))
 			.with_plutus_data(&datum)
@@ -219,7 +219,7 @@ mod tests {
 	};
 	use ogmios_client::types::OgmiosValue;
 	use ogmios_client::types::{OgmiosTx, OgmiosUtxo};
-	use partner_chains_plutus_data::registered_candidates::block_producer_registration_to_plutus_data;
+	use partner_chains_plutus_data::registered_candidates::candidate_registration_to_plutus_data;
 	use proptest::{
 		array::uniform32,
 		collection::{hash_set, vec},
@@ -227,7 +227,7 @@ mod tests {
 	};
 
 	use sidechain_domain::{
-		AdaBasedStaking, AuraPublicKey, BlockProducerRegistration, GrandpaPublicKey,
+		AdaBasedStaking, AuraPublicKey, CandidateRegistration, GrandpaPublicKey,
 		MainchainAddressHash, MainchainSignature, McTxHash, SidechainPublicKey, SidechainSignature,
 		UtxoId, UtxoIndex,
 	};
@@ -242,8 +242,8 @@ mod tests {
 	fn own_pkh() -> MainchainAddressHash {
 		MainchainAddressHash([0; 28])
 	}
-	fn block_producer_registration(registration_utxo: UtxoId) -> BlockProducerRegistration {
-		BlockProducerRegistration {
+	fn candidate_registration(registration_utxo: UtxoId) -> CandidateRegistration {
+		CandidateRegistration {
 			stake_ownership: AdaBasedStaking {
 				pub_key: test_values::mainchain_pub_key(),
 				signature: MainchainSignature(Vec::new()),
@@ -287,11 +287,10 @@ mod tests {
 		};
 		let own_registration_utxos = vec![payment_key_utxos.get(1).unwrap().clone()];
 		let registration_utxo = payment_key_utxos.first().unwrap();
-		let block_producer_registration =
-			block_producer_registration(registration_utxo.to_domain());
+		let candidate_registration = candidate_registration(registration_utxo.to_domain());
 		let tx = register_tx(
 			&test_values::test_validator(),
-			&block_producer_registration,
+			&candidate_registration,
 			registration_utxo,
 			&own_registration_utxos,
 			&ctx,
@@ -320,7 +319,7 @@ mod tests {
 		);
 		assert_eq!(
 			script_output.plutus_data().unwrap(),
-			block_producer_registration_to_plutus_data(&block_producer_registration)
+			candidate_registration_to_plutus_data(&candidate_registration)
 		);
 	}
 
@@ -333,8 +332,7 @@ mod tests {
 			protocol_parameters: protocol_parameters(),
 		};
 		let registration_utxo = payment_key_utxos.first().unwrap();
-		let block_producer_registration =
-			block_producer_registration(registration_utxo.to_domain());
+		let candidate_registration = candidate_registration(registration_utxo.to_domain());
 		let own_registration_utxos = if payment_utxos.len() >= 2 {
 			vec![payment_utxos.get(1).unwrap().clone()]
 		} else {
@@ -342,7 +340,7 @@ mod tests {
 		};
 		let tx = register_tx(
 			&test_values::test_validator(),
-			&block_producer_registration,
+			&candidate_registration,
 			registration_utxo,
 			&own_registration_utxos,
 			&ctx,
@@ -356,7 +354,7 @@ mod tests {
 		fee_is_less_than_one_and_half_ada(&tx);
 		output_at_validator_has_register_candidate_datum(
 			&tx,
-			&block_producer_registration,
+			&candidate_registration,
 			validator_address,
 		);
 		spends_own_registration_utxos(&tx, &own_registration_utxos);
@@ -399,7 +397,7 @@ mod tests {
 
 	fn output_at_validator_has_register_candidate_datum(
 		tx: &Transaction,
-		block_producer_registration: &BlockProducerRegistration,
+		candidate_registration: &CandidateRegistration,
 		validator_address: &Address,
 	) {
 		let outputs = tx.body().outputs();
@@ -407,7 +405,7 @@ mod tests {
 			outputs.into_iter().find(|o| o.address() == *validator_address).unwrap();
 		assert_eq!(
 			validator_output.plutus_data().unwrap(),
-			block_producer_registration_to_plutus_data(block_producer_registration)
+			candidate_registration_to_plutus_data(candidate_registration)
 		);
 	}
 

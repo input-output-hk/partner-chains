@@ -619,7 +619,7 @@ pub struct PermissionedCandidateData {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BlockProducerRegistration {
+pub struct CandidateRegistration {
 	pub stake_ownership: AdaBasedStaking,
 	pub sidechain_pub_key: SidechainPublicKey,
 	pub sidechain_signature: SidechainSignature,
