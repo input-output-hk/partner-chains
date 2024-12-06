@@ -113,7 +113,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(1)]
-		#[pallet::weight((0, DispatchClass::Normal))]
+		#[pallet::weight((0, DispatchClass::Operational))]
 		pub fn upgrade_and_set_addresses(
 			origin: OriginFor<T>,
 			code: sp_std::vec::Vec<u8>,
