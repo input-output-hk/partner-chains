@@ -141,37 +141,29 @@ fn get_own_registrations(
 	spo_pub_key: MainchainPublicKey,
 	validator_utxos: &[OgmiosUtxo],
 ) -> Vec<(OgmiosUtxo, CandidateRegistration)> {
-	validator_utxos
-		.iter()
-		.filter_map(|validator_utxo| {
-			validator_utxo
-				.datum
-				.clone()
-				.ok_or_else(|| {
-					anyhow!("A UTXO at the validator script address does not have a datum")
-				})
-				.and_then(|datum| {
-					PlutusData::from_bytes(datum.bytes)
-						.map_err(|e| anyhow!("Could not decode datum of validator script: {}", e))
-				})
-				.and_then(|datum_plutus_data| {
-					RegisterValidatorDatum::try_from(datum_plutus_data)
-						.map_err(|e| anyhow!("Could not decode datum of validator script: {}", e))
-				})
-				.inspect_err(|e| log::warn!("{}", e))
-				.ok()
-				.map(CandidateRegistration::from)
-				.and_then(|candidate_registration| {
-					if candidate_registration.stake_ownership.pub_key == spo_pub_key
-						&& candidate_registration.own_pkh == own_pkh
-					{
-						Some((validator_utxo.clone(), candidate_registration.clone()))
-					} else {
-						None
-					}
-				})
-		})
-		.collect()
+	let mut own_registrations = Vec::new();
+	for validator_utxo in validator_utxos {
+		match get_candidate_registration(validator_utxo.clone()) {
+			Ok(candidate_registration) => {
+				if candidate_registration.stake_ownership.pub_key == spo_pub_key
+					&& candidate_registration.own_pkh == own_pkh
+				{
+					own_registrations.push((validator_utxo.clone(), candidate_registration.clone()))
+				}
+			},
+			Err(e) => log::warn!("Found invalid UTXO at validator address: {}", e),
+		}
+	}
+	own_registrations
+}
+
+fn get_candidate_registration(validator_utxo: OgmiosUtxo) -> anyhow::Result<CandidateRegistration> {
+	let datum = validator_utxo.datum.ok_or_else(|| anyhow!("UTXO does not have a datum"))?;
+	let datum_plutus_data = PlutusData::from_bytes(datum.bytes)
+		.map_err(|e| anyhow!("Could not decode datum of validator script: {}", e))?;
+	let register_validator_datum = RegisterValidatorDatum::try_from(datum_plutus_data)
+		.map_err(|e| anyhow!("Could not decode datum of validator script: {}", e))?;
+	Ok(register_validator_datum.into())
 }
 
 fn register_tx(
