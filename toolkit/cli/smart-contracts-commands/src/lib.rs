@@ -2,10 +2,11 @@ use log4rs::{
 	append::{console::ConsoleAppender, file::FileAppender},
 	config::Appender,
 };
-use sidechain_domain::MainchainPrivateKey;
+use sidechain_domain::*;
 
 pub mod get_scripts;
 pub mod init_governance;
+pub mod register;
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -14,6 +15,8 @@ pub enum SmartContractsCmd {
 	GetScripts(get_scripts::GetScripts),
 	/// Initialize Partner Chain governance
 	InitGovernance(init_governance::InitGovernanceCmd),
+	/// Register candidate
+	Register(register::RegisterCmd),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -30,6 +33,7 @@ impl SmartContractsCmd {
 		match self {
 			Self::InitGovernance(cmd) => cmd.execute().await,
 			Self::GetScripts(cmd) => cmd.execute().await,
+			Self::Register(cmd) => cmd.execute().await,
 		}
 	}
 
@@ -74,4 +78,33 @@ pub fn setup_logging() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	log4rs::init_config(log_config)?;
 
 	Ok(())
+}
+
+// Parses public keys in formatted as SIDECHAIN_KEY:AURA_KEY:GRANDPA_KEY
+pub(crate) fn parse_sidechain_public_keys(
+	sidechain_public_keys: &str,
+) -> CmdResult<(SidechainPublicKey, AuraPublicKey, GrandpaPublicKey)> {
+	if let [sidechain_pub_key, aura_pub_key, grandpa_pub_key] =
+		sidechain_public_keys.split(":").collect::<Vec<_>>()[..]
+	{
+		Ok((
+			SidechainPublicKey(hex::decode(sidechain_pub_key)?),
+			AuraPublicKey(hex::decode(aura_pub_key)?),
+			GrandpaPublicKey(hex::decode(grandpa_pub_key)?),
+		))
+	} else {
+		Err("Failed to parse sidechain public keys.".into())
+	}
+}
+
+fn payment_signing_key_to_mainchain_address_hash(
+	payment_signing_key: MainchainPrivateKey,
+) -> CmdResult<MainchainAddressHash> {
+	Ok(cardano_serialization_lib::PrivateKey::from_normal_bytes(&payment_signing_key.0)?
+		.to_public()
+		.hash()
+		.to_bytes()
+		.as_slice()
+		.try_into()
+		.map(MainchainAddressHash)?)
 }
