@@ -14,10 +14,9 @@ use cardano_serialization_lib::{
 	ExUnits, JsError, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
 };
 use cardano_serialization_lib::{LanguageKind, TransactionHash, TransactionInput};
-use ogmios_client::types::OgmiosScript::Plutus;
 use ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
-	types::OgmiosUtxo,
+	types::OgmiosScript::Plutus, types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
 use sidechain_domain::{DParameter, McTxHash, UtxoId};
