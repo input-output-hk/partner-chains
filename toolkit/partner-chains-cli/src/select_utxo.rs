@@ -154,26 +154,6 @@ pub(crate) mod tests {
 			]
 	}
 
-	pub(crate) fn mock_result_0_valid() -> Vec<OgmiosUtxo> {
-		vec![OgmiosUtxo {
-			transaction: OgmiosTx {
-				id: hex!("8a0d3e5644b3e84a775556b44e6407971d01b8bfa3f339294b7228ac18ddb29c"),
-			},
-			index: 0,
-			value: OgmiosValue {
-				lovelace: 10000000,
-				native_tokens: HashMap::from([(
-					hex!("244d83c5418732113e891db15ede8f0d15df75b705a1542d86937875"),
-					vec![Asset {
-						name: hex!("4c757854657374546f6b656e54727932").to_vec(),
-						amount: 1,
-					}],
-				)]),
-			},
-			..Default::default()
-		}]
-	}
-
 	pub(crate) fn query_utxos_io(
 		cardano_addr: &str,
 		ogmios_addr: &'static str,
