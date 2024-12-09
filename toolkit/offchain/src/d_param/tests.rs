@@ -2,22 +2,16 @@ use super::{mint_d_param_token_tx, update_d_param_tx};
 use crate::d_param::ScriptExUnits;
 use crate::{
 	csl::{empty_asset_name, TransactionContext},
-	ogmios_mock::MockOgmiosClient,
-	scripts_data::get_scripts_data,
 	test_values::*,
 };
 use cardano_serialization_lib::{
 	Address, ExUnits, Int, LanguageKind, NetworkIdKind, PlutusData, RedeemerTag, ScriptHash,
 };
 use hex_literal::hex;
+use ogmios_client::types::{Asset as OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 use ogmios_client::types::{OgmiosScript, PlutusScript};
-use ogmios_client::{
-	transactions::{OgmiosEvaluateTransactionResponse, SubmitTransactionResponse},
-	types::{Asset as OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue},
-};
 use partner_chains_plutus_data::d_param::d_parameter_to_plutus_data;
-use sidechain_domain::{DParameter, UtxoId};
-use std::str::FromStr;
+use sidechain_domain::DParameter;
 
 mod mint_tx {
 	use super::*;
@@ -355,61 +349,10 @@ fn token_policy_id() -> [u8; 28] {
 	hex!("f14241393964259a53ca546af364e7f5688ca5aaa35f1e0da0f951b2")
 }
 
-fn existing_d_param() -> DParameter {
-	DParameter { num_registered_candidates: 15, num_permissioned_candidates: 10 }
-}
-
 fn input_d_param() -> DParameter {
 	DParameter { num_registered_candidates: 30, num_permissioned_candidates: 40 }
 }
 
 fn expected_plutus_data() -> PlutusData {
 	d_parameter_to_plutus_data(&input_d_param())
-}
-
-// Creates an UTXO that has proper multi-asset and datum
-fn script_utxo(d_parameter: &DParameter) -> OgmiosUtxo {
-	let plutus_data = d_parameter_to_plutus_data(d_parameter);
-	let policy = crate::scripts_data::get_scripts_data(test_genesis_utxo(), NetworkIdKind::Testnet)
-		.unwrap()
-		.policy_ids
-		.d_parameter;
-
-	OgmiosUtxo {
-		transaction: OgmiosTx { id: [15; 32] },
-		index: 0,
-		value: OgmiosValue {
-			lovelace: 10000000,
-			native_tokens: vec![(policy.0, vec![OgmiosAsset { name: vec![], amount: 1 }])]
-				.into_iter()
-				.collect(),
-		},
-		address: get_scripts_data(test_genesis_utxo(), NetworkIdKind::Testnet)
-			.unwrap()
-			.addresses
-			.d_parameter_validator,
-		datum: Some(ogmios_client::types::Datum { bytes: plutus_data.to_bytes() }),
-		..Default::default()
-	}
-}
-
-fn test_upsert_tx_hash() -> [u8; 32] {
-	hex!("aabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabb")
-}
-
-fn test_genesis_utxo() -> UtxoId {
-	UtxoId::from_str("c389187c6cabf1cd2ca64cf8c76bf57288eb9c02ced6781935b810a1d0e7fbb4#1").unwrap()
-}
-
-fn mock_client(
-	evaluate_response: Vec<OgmiosEvaluateTransactionResponse>,
-	validator_utxos: Vec<OgmiosUtxo>,
-) -> MockOgmiosClient {
-	MockOgmiosClient::new()
-		.with_evaluate_result(evaluate_response)
-		.with_submit_result(SubmitTransactionResponse { transaction: test_upsert_tx_hash().into() })
-		.with_utxos(vec![make_utxo(1u8, 0, 15000000, &payment_addr())])
-		.with_utxos(validator_utxos)
-		.with_protocol_parameters(protocol_parameters())
-		.with_shelley_config(shelley_config())
 }
