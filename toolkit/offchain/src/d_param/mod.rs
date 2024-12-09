@@ -217,7 +217,7 @@ fn mint_d_param_token_tx(
 	gov_utxo: OgmiosUtxo,
 ) -> Result<Transaction, JsError> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
-	// The essence of transaction: mint token and set output with it
+	// The essence of transaction: mint a governance token, then mint tokena D-Param and set output with it
 	tx_builder.add_mint_one_script_token(
 		policy,
 		ex_units
