@@ -194,7 +194,6 @@ The configuration of the chain is stored in the file `partner-chains-cli-chain-c
 
 ---
 
----
 **NOTE**
 
 Information about the resources used by each node is stored in the file `partner-chain-cli-resources-config.json`. This file should be present on every node in the network, but its contents are specific to each node.
