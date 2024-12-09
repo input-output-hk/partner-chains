@@ -102,7 +102,7 @@ pub struct EpochParameters {
 #[derive(Clone, Debug, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ReferenceScriptsCosts {
-	pub base: f32,
+	pub base: f64,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Default)]

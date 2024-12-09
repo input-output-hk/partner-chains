@@ -2,6 +2,8 @@
 
 use crate::{plutus_script::PlutusScript, untyped_plutus::datum_to_uplc_plutus_data};
 use cardano_serialization_lib::*;
+use fraction::{FromPrimitive, Ratio};
+use ogmios_client::query_ledger_state::ReferenceScriptsCosts;
 use ogmios_client::{
 	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, QueryLedgerState},
 	query_network::QueryNetwork,
@@ -89,6 +91,9 @@ pub(crate) fn get_builder_config(
 			&ratio_to_unit_interval(&protocol_parameters.script_execution_prices.cpu),
 		))
 		.coins_per_utxo_byte(&protocol_parameters.min_utxo_deposit_coefficient.into())
+		.ref_script_coins_per_byte(&convert_reference_script_costs(
+			&protocol_parameters.min_fee_reference_scripts.clone(),
+		)?)
 		.build()
 }
 
@@ -140,6 +145,17 @@ pub(crate) fn convert_cost_models(m: &PlutusCostModels) -> Costmdls {
 	mdls
 }
 
+pub(crate) fn convert_reference_script_costs(
+	costs: &ReferenceScriptsCosts,
+) -> Result<UnitInterval, JsError> {
+	let r = Ratio::<u64>::from_f64(costs.base).ok_or_else(|| {
+		JsError::from_str(&format!("Failed to decode cost base {} as a u64 ratio", costs.base))
+	})?;
+	let numerator = BigNum::from(*r.numer());
+	let denominator = BigNum::from(*r.denom());
+	Ok(UnitInterval::new(&numerator, &denominator))
+}
+
 /// Returns the budget of the first validator as [`ExUnits`]
 pub(crate) fn get_first_validator_budget(
 	validators_budgets: Vec<OgmiosEvaluateTransactionResponse>,
@@ -148,6 +164,41 @@ pub(crate) fn get_first_validator_budget(
 		JsError::from_str("Internal error: cannot use evaluateTransaction response")
 	})?;
 	Ok(convert_ex_units(&validator_budget.budget))
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ScriptExUnits {
+	pub mint_ex_units: Vec<ExUnits>,
+	pub spend_ex_units: Vec<ExUnits>,
+}
+
+impl ScriptExUnits {
+	pub fn new() -> Self {
+		ScriptExUnits { mint_ex_units: Vec::new(), spend_ex_units: Vec::new() }
+	}
+	pub fn with_mint_ex_units(self, mint_ex_units: Vec<ExUnits>) -> Self {
+		Self { mint_ex_units, ..self }
+	}
+	pub fn with_spend_ex_units(self, spend_ex_units: Vec<ExUnits>) -> Self {
+		Self { spend_ex_units, ..self }
+	}
+}
+
+pub(crate) fn get_validator_budgets(
+	mut responses: Vec<OgmiosEvaluateTransactionResponse>,
+) -> Result<ScriptExUnits, JsError> {
+	responses.sort_unstable_by_key(|r| r.validator.index);
+	let (mint_ex_units, spend_ex_units) = responses
+		.into_iter()
+		.partition::<Vec<_>, _>(|response| response.validator.purpose == "mint");
+	let mint_ex_units = mint_ex_units.into_iter().map(ex_units_from_response).collect();
+	let spend_ex_units = spend_ex_units.into_iter().map(ex_units_from_response).collect();
+
+	Ok(ScriptExUnits { mint_ex_units, spend_ex_units })
+}
+
+fn ex_units_from_response(resp: OgmiosEvaluateTransactionResponse) -> ExUnits {
+	ExUnits::new(&resp.budget.memory.into(), &resp.budget.cpu.into())
 }
 
 /// Conversion of ogmios-client budget to CSL execution units
@@ -282,6 +333,14 @@ pub(crate) trait TransactionBuilderExt {
 		ex_units: ExUnits,
 	) -> Result<(), JsError>;
 
+	/// Adds minting of 1 token (with empty asset name) for the given script using reference input
+	fn add_mint_one_script_token_using_reference_script(
+		&mut self,
+		script: &PlutusScript,
+		ref_input: &TransactionInput,
+		ex_units: ExUnits,
+	) -> Result<(), JsError>;
+
 	/// Sets fields required by the most of partner-chains smart contract transactions.
 	/// Uses input from `ctx` to cover already present outputs.
 	/// Adds collateral inputs using quite a simple algorithm.
@@ -341,8 +400,37 @@ impl TransactionBuilderExt for TransactionBuilder {
 		script: &PlutusScript,
 		ex_units: ExUnits,
 	) -> Result<(), JsError> {
-		let mut mint_builder = MintBuilder::new();
+		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
+
 		let validator_source = PlutusScriptSource::new(&script.to_csl());
+		let mint_witness = MintWitness::new_plutus_script(
+			&validator_source,
+			&Redeemer::new(
+				&RedeemerTag::new_mint(),
+				&0u32.into(),
+				&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
+				&ex_units,
+			),
+		);
+		mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new_i32(1))?;
+		self.set_mint_builder(&mint_builder);
+		Ok(())
+	}
+
+	fn add_mint_one_script_token_using_reference_script(
+		&mut self,
+		script: &PlutusScript,
+		ref_input: &TransactionInput,
+		ex_units: ExUnits,
+	) -> Result<(), JsError> {
+		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
+
+		let validator_source = PlutusScriptSource::new_ref_input(
+			&script.csl_script_hash(),
+			ref_input,
+			&Language::new_plutus_v2(),
+			script.bytes.len(),
+		);
 		let mint_witness = MintWitness::new_plutus_script(
 			&validator_source,
 			&Redeemer::new(
@@ -474,15 +562,16 @@ impl InputsBuilderExt for TxInputsBuilder {
 
 #[cfg(test)]
 mod tests {
-	use super::payment_address;
+	use super::*;
 	use crate::plutus_script::PlutusScript;
 	use crate::test_values::protocol_parameters;
 	use cardano_serialization_lib::{AssetName, Language, LanguageKind::PlutusV2, NetworkIdKind};
 	use hex_literal::hex;
 	use ogmios_client::{
-		transactions::OgmiosBudget,
+		transactions::{OgmiosBudget, OgmiosValidatorIndex},
 		types::{Asset, OgmiosValue},
 	};
+	use pretty_assertions::assert_eq;
 
 	#[test]
 	fn candidates_script_address_test() {
@@ -609,6 +698,42 @@ mod tests {
 		let ex_units = super::convert_ex_units(&OgmiosBudget { memory: 1000, cpu: 2000 });
 		assert_eq!(ex_units.mem(), 1000u64.into());
 		assert_eq!(ex_units.steps(), 2000u64.into());
+	}
+
+	#[test]
+	fn get_validator_budgets_works() {
+		let result = get_validator_budgets(vec![
+			OgmiosEvaluateTransactionResponse {
+				validator: OgmiosValidatorIndex::new(1, "mint"),
+				budget: OgmiosBudget::new(11, 21),
+			},
+			OgmiosEvaluateTransactionResponse {
+				validator: OgmiosValidatorIndex::new(0, "spend"),
+				budget: OgmiosBudget::new(10, 20),
+			},
+			OgmiosEvaluateTransactionResponse {
+				validator: OgmiosValidatorIndex::new(3, "mint"),
+				budget: OgmiosBudget::new(13, 23),
+			},
+			OgmiosEvaluateTransactionResponse {
+				validator: OgmiosValidatorIndex::new(2, "spend"),
+				budget: OgmiosBudget::new(12, 22),
+			},
+		])
+		.expect("Should succeed");
+
+		let expected = ScriptExUnits {
+			mint_ex_units: vec![
+				ExUnits::new(&11u64.into(), &21u64.into()),
+				ExUnits::new(&13u64.into(), &23u64.into()),
+			],
+			spend_ex_units: vec![
+				ExUnits::new(&10u64.into(), &20u64.into()),
+				ExUnits::new(&12u64.into(), &22u64.into()),
+			],
+		};
+
+		assert_eq!(result, expected);
 	}
 }
 

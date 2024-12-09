@@ -5813,7 +5813,6 @@ name = "ogmios-client"
 version = "1.4.0"
 dependencies = [
  "anyhow",
- "cardano-serialization-lib",
  "fraction",
  "hex",
  "hex-literal",
