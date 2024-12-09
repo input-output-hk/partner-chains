@@ -1099,7 +1099,7 @@
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_validator_budgets(
 	<span class="kw-2">mut </span>responses: Vec&lt;OgmiosEvaluateTransactionResponse&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;ScriptExUnits, JsError&gt; {
-	responses.sort_unstable_by_key(|r| r.validator.index);
+	responses.sort_by_key(|r| r.validator.index);
 	<span class="kw">let </span>(mint_ex_units, spend_ex_units) = responses
 		.into_iter()
 		.partition::&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;(|response| response.validator.purpose == <span class="string">"mint"</span>);

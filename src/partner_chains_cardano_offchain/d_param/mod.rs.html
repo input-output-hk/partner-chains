@@ -311,6 +311,7 @@
 <a href="#311" id="311">311</a>
 <a href="#312" id="312">312</a>
 <a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! D-parameter is stored on chain in an UTXO at the D-parameter validator address.
 //! There should be at most one UTXO at the validator address and it should contain the D-parameter.
 //! This UTXO should have 1 token of the D-parameter policy with an empty asset name.
@@ -438,7 +439,8 @@
 			hex::encode(tx.to_bytes())
 		)
 	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>mint_witness_ex_units = get_validator_budgets(evaluate_response)<span class="question-mark">?</span>;
+	<span class="kw">let </span><span class="kw-2">mut </span>mint_witness_ex_units = get_validator_budgets(evaluate_response)<span class="question-mark">?</span>;
+	mint_witness_ex_units.mint_ex_units.reverse();
 	<span class="kw">let </span>tx = mint_d_param_token_tx(
 		validator,
 		policy,
