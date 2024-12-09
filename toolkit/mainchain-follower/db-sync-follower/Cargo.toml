@@ -8,7 +8,6 @@ license = "Apache-2.0"
 [dependencies]
 sqlx = { version = "0.7.4", default-features = false, features = ["runtime-tokio-rustls", "postgres", "macros", "chrono", "migrate", "bigdecimal"]}
 tokio = { workspace = true, features = ["full"]}
-testcontainers-modules = { version = "0.1.3", features = ["postgres"] }
 futures = { workspace = true }
 chrono = "0.4.31"
 hex = { workspace = true }
@@ -39,6 +38,7 @@ partner-chains-plutus-data = { workspace = true }
 [dev-dependencies]
 tokio-test = "0.4.3"
 ctor = "0.2.5"
+testcontainers-modules = { version = "0.1.3", features = ["postgres"] }
 
 [features]
 default = []
