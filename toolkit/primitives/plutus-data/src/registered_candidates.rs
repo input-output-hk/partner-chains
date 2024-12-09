@@ -75,19 +75,43 @@ impl VersionedDatum for RegisterValidatorDatum {
 	}
 }
 
-pub fn block_producer_registration_to_plutus_data(
-	block_producer_registration: &sidechain_domain::BlockProducerRegistration,
+pub fn candidate_registration_to_plutus_data(
+	candidate_registration: &sidechain_domain::CandidateRegistration,
 ) -> PlutusData {
 	RegisterValidatorDatum::V0 {
-		stake_ownership: block_producer_registration.stake_ownership.clone(),
-		sidechain_pub_key: block_producer_registration.sidechain_pub_key.clone(),
-		sidechain_signature: block_producer_registration.sidechain_signature.clone(),
-		registration_utxo: block_producer_registration.registration_utxo,
-		own_pkh: block_producer_registration.own_pkh,
-		aura_pub_key: block_producer_registration.aura_pub_key.clone(),
-		grandpa_pub_key: block_producer_registration.grandpa_pub_key.clone(),
+		stake_ownership: candidate_registration.stake_ownership.clone(),
+		sidechain_pub_key: candidate_registration.partnerchain_pub_key.clone(),
+		sidechain_signature: candidate_registration.partnerchain_signature.clone(),
+		registration_utxo: candidate_registration.registration_utxo,
+		own_pkh: candidate_registration.own_pkh,
+		aura_pub_key: candidate_registration.aura_pub_key.clone(),
+		grandpa_pub_key: candidate_registration.grandpa_pub_key.clone(),
 	}
 	.into()
+}
+
+impl From<RegisterValidatorDatum> for CandidateRegistration {
+	fn from(value: RegisterValidatorDatum) -> Self {
+		match value {
+			RegisterValidatorDatum::V0 {
+				stake_ownership,
+				sidechain_pub_key,
+				sidechain_signature,
+				registration_utxo,
+				own_pkh,
+				aura_pub_key,
+				grandpa_pub_key,
+			} => CandidateRegistration {
+				stake_ownership,
+				partnerchain_pub_key: sidechain_pub_key,
+				partnerchain_signature: sidechain_signature,
+				registration_utxo,
+				own_pkh,
+				aura_pub_key,
+				grandpa_pub_key,
+			},
+		}
+	}
 }
 
 fn decode_v0_register_validator_datum(
