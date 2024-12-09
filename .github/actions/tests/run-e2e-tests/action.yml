@@ -105,6 +105,23 @@ runs:
           eval "$pytest_cmd"
         fi
 
+    - name: Add Line Numbers and Timestamps to debug.log
+      if: always()
+      run: |
+        cd e2e-tests
+        awk '{print strftime("[%Y-%m-%d %H:%M:%S]"), $0}' debug.log > debug_with_timestamps.log
+        nl -ba -s '  ' -w 8 debug_with_timestamps.log > debug_with_timestamps_and_line_numbers.log
+        mv debug_with_timestamps_and_line_numbers.log debug.log
+
+    - name: Archive Debug Log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: debug_log
+        retention-days: 15
+        overwrite: true
+        path: e2e-tests/debug.log
+
     - name: Copy test results
       if: ${{ inputs.local-environment == 'true' }}
       shell: bash
