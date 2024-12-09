@@ -4,11 +4,14 @@ use crate::config::{
 	CHAIN_CONFIG_FILE_PATH, PC_CONTRACTS_CLI_PATH,
 };
 use crate::io::IOContext;
-use crate::pc_contracts_cli_resources::establish_pc_contracts_cli_configuration;
+use crate::pc_contracts_cli_resources::{
+	establish_pc_contracts_cli_configuration, prompt_ogmios_configuration,
+};
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
-use crate::{smart_contracts, CmdRun};
+use crate::{cardano_key, smart_contracts, CmdRun};
 use anyhow::anyhow;
 use anyhow::Context;
+use partner_chains_cardano_offchain::d_param::UpsertDParam;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::mainchain_epoch::MainchainEpochDerivation;
@@ -50,13 +53,6 @@ enum InsertOrUpdate {
 }
 
 impl InsertOrUpdate {
-	fn d_parameter_command(&self) -> &'static str {
-		match self {
-			InsertOrUpdate::Insert => "insert-d-parameter",
-			InsertOrUpdate::Update => "update-d-parameter",
-		}
-	}
-
 	fn permissioned_candidates_command(&self) -> &'static str {
 		"update-permissioned-candidates --remove-all-candidates"
 	}
@@ -92,6 +88,13 @@ impl SortedPermissionedCandidates {
 
 impl CmdRun for SetupMainChainStateCmd {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
+		let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
+		runtime.block_on(self.run_async(context))
+	}
+}
+
+impl SetupMainChainStateCmd {
+	async fn run_async<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		let chain_config = crate::config::load_chain_config(context)?;
 		context.print(
 			"This wizard will set or update D-Parameter and Permissioned Candidates on the main chain. Setting either of these costs ADA!",
@@ -128,8 +131,8 @@ impl CmdRun for SetupMainChainStateCmd {
 				context,
 				ariadne_parameters.d_parameter,
 				chain_config.chain_parameters.genesis_utxo,
-				InsertOrUpdate::Update,
-			)?;
+			)
+			.await?;
 		} else {
 			set_candidates_on_main_chain(
 				context,
@@ -143,8 +146,8 @@ impl CmdRun for SetupMainChainStateCmd {
 				context,
 				default_d_parameter,
 				chain_config.chain_parameters.genesis_utxo,
-				InsertOrUpdate::Insert,
-			)?;
+			)
+			.await?;
 		}
 		context.print("Done. Main chain state is set. Please remember that any changes can be observed immediately, but from the Partner Chain point of view they will be effective in two main chain epochs.");
 		Ok(())
@@ -283,37 +286,35 @@ fn set_candidates_on_main_chain<C: IOContext>(
 	Ok(())
 }
 
-fn set_d_parameter_on_main_chain<C: IOContext>(
+async fn set_d_parameter_on_main_chain<C: IOContext>(
 	context: &C,
 	default_d_parameter: DParameter,
 	genesis_utxo: UtxoId,
-	insert: InsertOrUpdate,
 ) -> anyhow::Result<()> {
 	let update = context
 		.prompt_yes_no("Do you want to set/update the D-parameter on the main chain?", false);
 	if update {
+		let ogmios_config = prompt_ogmios_configuration(context)?;
 		let p = context.prompt(
 			"Enter P, the number of permissioned candidates seats, as a non-negative integer.",
 			Some(&default_d_parameter.num_permissioned_candidates.to_string()),
 		);
-		let p: u64 = p.parse()?;
+		let num_permissioned_candidates: u16 = p.parse()?;
 		let r = context.prompt(
 			"Enter R, the number of registered candidates seats, as a non-negative integer.",
 			Some(&default_d_parameter.num_registered_candidates.to_string()),
 		);
-		let r: u64 = r.parse()?;
-		let pc_contracts_cli_resources = establish_pc_contracts_cli_configuration(context)?;
+		let num_registered_candidates: u16 = r.parse()?;
 		let payment_signing_key_path =
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
-		let pc_contracts_cli_command = insert.d_parameter_command();
-		let cardano_network = get_cardano_network_from_file(context)?;
-		let command = format!(
-			"{PC_CONTRACTS_CLI_PATH} {pc_contracts_cli_command} --network {} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}",
-			cardano_network,
-			smart_contracts::sidechain_params_arguments(genesis_utxo),
-			smart_contracts::runtime_config_arguments(&pc_contracts_cli_resources, &payment_signing_key_path)
-		);
-		context.run_command(&command).context("Setting D-parameter failed")?;
+		let payment_signing_key =
+			cardano_key::get_mc_pkey_from_file(&payment_signing_key_path, context)?;
+		let d_parameter =
+			sidechain_domain::DParameter { num_permissioned_candidates, num_registered_candidates };
+		context
+			.offchain_impl(&ogmios_config)?
+			.upsert_d_param(genesis_utxo, &d_parameter, payment_signing_key.0)
+			.await?;
 		context.print(&format!("D-parameter updated to ({}, {}). The change will be effective in two main chain epochs.", p, r));
 	}
 	Ok(())

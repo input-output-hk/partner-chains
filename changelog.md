@@ -6,6 +6,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* `setup-main-chain-state` command now uses native Rust to insert the D-Parameter
+
 ## Removed
 
 ## Fixed

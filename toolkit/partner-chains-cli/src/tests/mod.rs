@@ -1,11 +1,13 @@
 use crate::io::IOContext;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse};
+use anyhow::anyhow;
 use ogmios_client::types::OgmiosTx;
+use partner_chains_cardano_offchain::d_param::UpsertDParam;
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
 use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData};
 use partner_chains_cardano_offchain::OffchainError;
 use pretty_assertions::assert_eq;
-use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, UtxoId};
+use sidechain_domain::{DParameter, MainchainAddressHash, MainchainPrivateKey, McTxHash, UtxoId};
 use sp_core::offchain::Timestamp;
 use std::collections::HashMap;
 use std::panic::{catch_unwind, resume_unwind, UnwindSafe};
@@ -253,6 +255,7 @@ pub struct OffchainMock {
 		(UtxoId, MainchainAddressHash, MainchainPrivateKey),
 		Result<OgmiosTx, OffchainError>,
 	>,
+	pub upsert_d_param: HashMap<(UtxoId, DParameter, [u8; 32]), Result<Option<McTxHash>, String>>,
 }
 
 impl OffchainMock {
@@ -282,6 +285,16 @@ impl OffchainMock {
 			..self
 		}
 	}
+
+	pub(crate) fn with_upsert_d_param(
+		self,
+		genesis_utxo: UtxoId,
+		d_param: DParameter,
+		payment_key: MainchainPrivateKey,
+		result: Result<Option<McTxHash>, String>,
+	) -> Self {
+		Self { upsert_d_param: [((genesis_utxo, d_param, payment_key.0), result)].into(), ..self }
+	}
 }
 
 impl GetScriptsData for OffchainMock {
@@ -305,6 +318,23 @@ impl InitGovernance for OffchainMock {
 			.unwrap_or_else(|| {
 				Err(OffchainError::InternalError("No mock for init_governance".into()))
 			})
+	}
+}
+
+impl UpsertDParam for OffchainMock {
+	async fn upsert_d_param(
+		&self,
+		genesis_utxo: UtxoId,
+		d_parameter: &DParameter,
+		payment_signing_key: [u8; 32],
+	) -> anyhow::Result<Option<McTxHash>> {
+		self.upsert_d_param
+			.get(&(genesis_utxo, d_parameter.clone(), payment_signing_key))
+			.cloned()
+			.unwrap_or_else(|| {
+				Err(format!("No mock for upsert_d_param({genesis_utxo}, {d_parameter:?}, {payment_signing_key:?})"))
+			})
+			.map_err(|err| anyhow!("{err}"))
 	}
 }
 
