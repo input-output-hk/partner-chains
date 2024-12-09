@@ -192,8 +192,8 @@ pub(crate) fn get_validator_budgets(
 		.into_iter()
 		.partition::<Vec<_>, _>(|response| response.validator.purpose == "mint");
 	Ok(ScriptExUnits {
-		mint_ex_units: mint_ex_units.into_iter().map(Into::into).collect(),
-		spend_ex_units: spend_ex_units.into_iter().map(Into::into).collect(),
+		mint_ex_units: mint_ex_units.iter().map(|resp| convert_ex_units(&resp.budget)).collect(),
+		spend_ex_units: spend_ex_units.iter().map(|resp| convert_ex_units(&resp.budget)).collect(),
 	})
 }
 
