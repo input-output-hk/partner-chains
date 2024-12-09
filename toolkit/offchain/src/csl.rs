@@ -187,7 +187,7 @@ impl ScriptExUnits {
 pub(crate) fn get_validator_budgets(
 	mut responses: Vec<OgmiosEvaluateTransactionResponse>,
 ) -> Result<ScriptExUnits, JsError> {
-	responses.sort_unstable_by_key(|r| r.validator.index);
+	responses.sort_by_key(|r| r.validator.index);
 	let (mint_ex_units, spend_ex_units) = responses
 		.into_iter()
 		.partition::<Vec<_>, _>(|response| response.validator.purpose == "mint");

@@ -125,7 +125,8 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	let mint_witness_ex_units = get_validator_budgets(evaluate_response)?;
+	let mut mint_witness_ex_units = get_validator_budgets(evaluate_response)?;
+	mint_witness_ex_units.mint_ex_units.reverse();
 	let tx = mint_d_param_token_tx(
 		validator,
 		policy,
