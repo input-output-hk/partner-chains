@@ -107,7 +107,12 @@ runs:
 
     - name: Add Line Numbers and Timestamps to debug.log
       if: always()
+      shell: bash
       run: |
+        if [[ "${{ inputs.local-environment }}" == "true" ]]; then
+          echo "Copy debug log from docker container"
+          docker cp tests:/e2e-tests/debug.log e2e-tests/debug.log
+        fi
         cd e2e-tests
         awk '{print strftime("[%Y-%m-%d %H:%M:%S]"), $0}' debug.log > debug_with_timestamps.log
         nl -ba -s '  ' -w 8 debug_with_timestamps.log > debug_with_timestamps_and_line_numbers.log
@@ -117,7 +122,7 @@ runs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: debug_log
+        name: debug_log_${{ steps.run-tests.outcome }}
         retention-days: 15
         overwrite: true
         path: e2e-tests/debug.log
