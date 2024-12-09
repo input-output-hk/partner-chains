@@ -105,15 +105,22 @@ runs:
           eval "$pytest_cmd"
         fi
 
-    - name: Add Line Numbers and Timestamps to debug.log
+    - name: Handle Debug Logs
       if: always()
       shell: bash
       run: |
         if [[ "${{ inputs.local-environment }}" == "true" ]]; then
           echo "Copy debug log from docker container"
-          docker cp tests:/e2e-tests/debug.log e2e-tests/debug.log
+          # Create directory if it doesn't exist
+          mkdir -p E2E-tests
+          # Copy from the container's E2E-tests path
+          docker cp tests:/e2e-tests/debug.log E2E-tests/debug.log || docker cp tests:/E2E-tests/debug.log E2E-tests/debug.log
+          cd E2E-tests
+        else
+          cd e2e-tests
         fi
-        cd e2e-tests
+
+        # Process the log file
         awk '{print strftime("[%Y-%m-%d %H:%M:%S]"), $0}' debug.log > debug_with_timestamps.log
         nl -ba -s '  ' -w 8 debug_with_timestamps.log > debug_with_timestamps_and_line_numbers.log
         mv debug_with_timestamps_and_line_numbers.log debug.log
@@ -125,7 +132,8 @@ runs:
         name: debug_log_${{ steps.run-tests.outcome }}
         retention-days: 15
         overwrite: true
-        path: e2e-tests/debug.log
+        path: E2E-tests/debug.log
+        if-no-files-found: error
 
     - name: Copy test results
       if: ${{ inputs.local-environment == 'true' }}
