@@ -80,8 +80,8 @@ pub fn candidate_registration_to_plutus_data(
 ) -> PlutusData {
 	RegisterValidatorDatum::V0 {
 		stake_ownership: candidate_registration.stake_ownership.clone(),
-		sidechain_pub_key: candidate_registration.sidechain_pub_key.clone(),
-		sidechain_signature: candidate_registration.sidechain_signature.clone(),
+		sidechain_pub_key: candidate_registration.partnerchain_pub_key.clone(),
+		sidechain_signature: candidate_registration.partnerchain_signature.clone(),
 		registration_utxo: candidate_registration.registration_utxo,
 		own_pkh: candidate_registration.own_pkh,
 		aura_pub_key: candidate_registration.aura_pub_key.clone(),
@@ -103,8 +103,8 @@ impl From<RegisterValidatorDatum> for CandidateRegistration {
 				grandpa_pub_key,
 			} => CandidateRegistration {
 				stake_ownership,
-				sidechain_pub_key,
-				sidechain_signature,
+				partnerchain_pub_key: sidechain_pub_key,
+				partnerchain_signature: sidechain_signature,
 				registration_utxo,
 				own_pkh,
 				aura_pub_key,

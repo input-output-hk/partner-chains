@@ -18,8 +18,7 @@ use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
-	types::OgmiosTx,
-	types::OgmiosUtxo,
+	types::{OgmiosTx, OgmiosUtxo},
 };
 use partner_chains_plutus_data::registered_candidates::{
 	candidate_registration_to_plutus_data, RegisterValidatorDatum,
@@ -82,7 +81,6 @@ pub async fn run_register<
 		candidate_registration.stake_ownership.pub_key.clone(),
 		&all_registration_utxos,
 	);
-	let own_registration_utxos = own_registrations.iter().map(|r| r.0.clone()).collect::<Vec<_>>();
 
 	if own_registrations
 		.iter()
@@ -91,6 +89,7 @@ pub async fn run_register<
 		log::info!("✅ Candidate already registered with same keys.");
 		return Ok(None);
 	}
+	let own_registration_utxos = own_registrations.iter().map(|r| r.0.clone()).collect::<Vec<_>>();
 
 	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
 	let tx = register_tx(
@@ -129,9 +128,7 @@ pub async fn run_register<
 	})?;
 	let tx_id = result.transaction.id;
 	log::info!("✅ Transaction submited. ID: {}", hex::encode(result.transaction.id));
-	await_tx
-		.await_tx_output(ogmios_client, UtxoId { tx_hash: McTxHash(tx_id), index: UtxoIndex(0) })
-		.await?;
+	await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_id, 0)).await?;
 
 	Ok(Some(result.transaction))
 }
@@ -151,7 +148,7 @@ fn get_own_registrations(
 					own_registrations.push((validator_utxo.clone(), candidate_registration.clone()))
 				}
 			},
-			Err(e) => log::warn!("Found invalid UTXO at validator address: {}", e),
+			Err(e) => log::debug!("Found invalid UTXO at validator address: {}", e),
 		}
 	}
 	own_registrations
@@ -250,8 +247,8 @@ mod tests {
 				pub_key: test_values::mainchain_pub_key(),
 				signature: MainchainSignature(Vec::new()),
 			},
-			sidechain_pub_key: SidechainPublicKey(Vec::new()),
-			sidechain_signature: SidechainSignature(Vec::new()),
+			partnerchain_pub_key: SidechainPublicKey(Vec::new()),
+			partnerchain_signature: SidechainSignature(Vec::new()),
 			registration_utxo,
 			own_pkh: own_pkh(),
 			aura_pub_key: AuraPublicKey(Vec::new()),
