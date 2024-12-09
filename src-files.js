@@ -16,7 +16,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["pallet_session_validator_management_rpc",["",[],["lib.rs"]]],\
 ["pallet_sidechain",["",[],["lib.rs"]]],\
 ["pallet_sidechain_rpc",["",[["types",[],["mod.rs","sidechain.rs"]]],["lib.rs"]]],\
-["partner_chains_cardano_offchain",["",[["init_governance",[],["mod.rs","transaction.rs"]]],["await_tx.rs","collateral_selection.rs","csl.rs","d_param.rs","lib.rs","permissioned_candidates.rs","plutus_script.rs","register.rs","scripts_data.rs","untyped_plutus.rs"]]],\
+["partner_chains_cardano_offchain",["",[["d_param",[],["mod.rs"]],["init_governance",[],["mod.rs","transaction.rs"]]],["await_tx.rs","collateral_selection.rs","csl.rs","lib.rs","permissioned_candidates.rs","plutus_script.rs","register.rs","scripts_data.rs","untyped_plutus.rs"]]],\
 ["partner_chains_cli",["",[["create_chain_spec",[],["mod.rs"]],["deregister",[],["mod.rs"]],["generate_keys",[],["mod.rs"]],["ogmios",[],["mod.rs"]],["prepare_configuration",[],["mod.rs","prepare_cardano_params.rs","prepare_chain_params.rs","prepare_main_chain_config.rs"]],["register",[],["mod.rs","register1.rs","register2.rs","register3.rs"]],["setup_main_chain_state",[],["mod.rs"]],["start_node",[],["mod.rs"]]],["cardano_key.rs","config.rs","io.rs","keystore.rs","main.rs","main_chain_follower.rs","pc_contracts_cli_resources.rs","permissioned_candidates.rs","select_utxo.rs","smart_contracts.rs"]]],\
 ["partner_chains_node",["",[],["chain_spec.rs","inherent_data.rs","lib.rs","main_chain_follower.rs","rpc.rs","service.rs","staging.rs","template_chain_spec.rs","testnet.rs"]]],\
 ["partner_chains_node_commands",["",[],["lib.rs"]]],\

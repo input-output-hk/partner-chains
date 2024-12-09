@@ -128,7 +128,45 @@
 <a href="#128" id="128">128</a>
 <a href="#129" id="129">129</a>
 <a href="#130" id="130">130</a>
-</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::scripts_data;
+<span class="kw">use crate</span>::{
 	await_tx::{AwaitTx, FixedDelayRetries},
 	csl::{get_first_validator_budget, key_hash_address, NetworkTypeExt},
 	OffchainError,
@@ -139,8 +177,9 @@
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
-	types::OgmiosTx,
+	types::{OgmiosTx, OgmiosUtxo},
 };
+<span class="kw">use </span>partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 <span class="kw">use </span>sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, McTxHash, UtxoId, UtxoIndex};
 
 <span class="attr">#[cfg(test)]
@@ -257,5 +296,40 @@
 		.<span class="kw">await</span><span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(result.transaction)
+}
+
+<span class="kw">pub async fn </span>get_governance_utxo&lt;T: QueryLedgerState + Transactions + QueryNetwork&gt;(
+	genesis_utxo: UtxoId,
+	client: <span class="kw-2">&amp;</span>T,
+) -&gt; anyhow::Result&lt;OgmiosUtxo&gt; {
+	<span class="kw">let </span>network = client.shelley_genesis_configuration().<span class="kw">await</span><span class="question-mark">?</span>.network;
+
+	<span class="kw">let </span>(<span class="kw">_</span>, version_oracle_policy, validator_address) =
+		scripts_data::version_scripts_and_address(genesis_utxo, network.to_csl())<span class="question-mark">?</span>;
+
+	<span class="kw">let </span>utxos = client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
+
+	<span class="kw">let </span>governance_utxo = utxos
+		.into_iter()
+		.find(|utxo| {
+			<span class="kw">let </span>correct_datum = utxo
+				.datum
+				.as_ref()
+				.and_then(|datum| {
+					PlutusData::from_bytes(datum.bytes.clone()).ok().and_then(|plutus_data| {
+						VersionOracleDatum::try_from(plutus_data)
+							.ok()
+							.map(|data| data.version_oracle == <span class="number">32</span>)
+					})
+				})
+				.unwrap_or(<span class="bool-val">false</span>);
+
+			<span class="kw">let </span>contains_version_oracle_token =
+				utxo.value.native_tokens.contains_key(<span class="kw-2">&amp;</span>version_oracle_policy.script_hash());
+			correct_datum &amp;&amp; contains_version_oracle_token
+		})
+		.ok_or_else(|| <span class="macro">anyhow!</span>(<span class="string">"Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using `init-governance` command."</span>))<span class="question-mark">?</span>;
+
+	<span class="prelude-val">Ok</span>(governance_utxo)
 }
 </code></pre></div></section></main></body></html>

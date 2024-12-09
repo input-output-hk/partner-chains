@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["key_hash_address","payment_address","script_address"],"trait":["NetworkTypeExt"]};
+window.SIDEBAR_ITEMS = {"fn":["key_hash_address","payment_address","script_address"],"struct":["ScriptExUnits"],"trait":["NetworkTypeExt"]};

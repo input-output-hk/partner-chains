@@ -279,6 +279,20 @@
 <a href="#279" id="279">279</a>
 <a href="#280" id="280">280</a>
 <a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{csl::NetworkTypeExt, plutus_script::PlutusScript, OffchainError};
 <span class="kw">use </span>cardano_serialization_lib::{LanguageKind::PlutusV2, NetworkIdKind};
 <span class="kw">use </span>ogmios_client::query_network::QueryNetwork;
@@ -433,6 +447,20 @@
 	<span class="kw">let </span>policy = policy_script.policy_id();
 	<span class="kw">let </span>policy_data = PlutusData::BoundedBytes(policy.<span class="number">0</span>.to_vec().into());
 	<span class="prelude-val">Ok</span>((validator, policy, policy_data))
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>version_scripts_and_address(
+	genesis_utxo: UtxoId,
+	network: NetworkIdKind,
+) -&gt; <span class="prelude-ty">Result</span>&lt;(PlutusScript, PlutusScript, String), anyhow::Error&gt; {
+	<span class="kw">let </span>validator =
+		PlutusScript::from_wrapped_cbor(raw_scripts::VERSION_ORACLE_VALIDATOR, PlutusV2)<span class="question-mark">?
+			</span>.apply_data(genesis_utxo)<span class="question-mark">?</span>;
+	<span class="kw">let </span>policy = PlutusScript::from_wrapped_cbor(raw_scripts::VERSION_ORACLE_POLICY, PlutusV2)<span class="question-mark">?
+		</span>.apply_data(genesis_utxo)<span class="question-mark">?
+		</span>.apply_uplc_data(validator.address_data(network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+	<span class="kw">let </span>address = validator.address_bech32(network)<span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>((validator, policy, address))
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>d_parameter_scripts(
