@@ -1,11 +1,11 @@
 use jsonrpsee::http_client::HttpClient;
 use partner_chains_cardano_offchain::{await_tx::FixedDelayRetries, register::run_register};
 use sidechain_domain::{
-	AdaBasedStaking, AuraPublicKey, CandidateRegistration, GrandpaPublicKey, MainchainPublicKey,
-	MainchainSignature, SidechainPublicKey, SidechainSignature, UtxoId,
+	AdaBasedStaking, CandidateRegistration, MainchainPublicKey, MainchainSignature,
+	PermissionedCandidateData, SidechainSignature, UtxoId,
 };
 
-use crate::{parse_sidechain_public_keys, read_private_key_from_file};
+use crate::{parse_partnerchain_public_keys, read_private_key_from_file};
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct RegisterCmd {
@@ -17,10 +17,15 @@ pub struct RegisterCmd {
 	registration_utxo: UtxoId,
 	#[arg(long)]
 	payment_key_file: String,
-	#[arg(long, value_name = "SIDECHAIN_KEY:AURA_KEY:GRANDPA_KEY", value_parser = parse_sidechain_public_keys)]
-	sidechain_public_keys: (SidechainPublicKey, AuraPublicKey, GrandpaPublicKey),
-	#[arg(long)]
-	sidechain_signature: SidechainSignature,
+	#[arg(
+		long,
+		value_name = "PARTNERCHAIN_KEY:AURA_KEY:GRANDPA_KEY",
+		alias = "sidechain-public-keys",
+		value_parser=parse_partnerchain_public_keys
+	)]
+	partnerchain_public_keys: PermissionedCandidateData,
+	#[arg(long, alias = "sidechain-signature")]
+	partnerchain_signature: SidechainSignature,
 	#[arg(long)]
 	spo_public_key: MainchainPublicKey,
 	#[arg(long)]
@@ -36,12 +41,12 @@ impl RegisterCmd {
 				pub_key: self.spo_public_key,
 				signature: self.spo_signature,
 			},
-			sidechain_pub_key: self.sidechain_public_keys.0,
-			sidechain_signature: self.sidechain_signature,
+			partnerchain_pub_key: self.partnerchain_public_keys.sidechain_public_key,
+			partnerchain_signature: self.partnerchain_signature,
 			own_pkh: crate::payment_signing_key_to_mainchain_address_hash(payment_key.clone())?,
 			registration_utxo: self.registration_utxo,
-			aura_pub_key: self.sidechain_public_keys.1,
-			grandpa_pub_key: self.sidechain_public_keys.2,
+			aura_pub_key: self.partnerchain_public_keys.aura_public_key,
+			grandpa_pub_key: self.partnerchain_public_keys.grandpa_public_key,
 		};
 
 		run_register(
