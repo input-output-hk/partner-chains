@@ -97,12 +97,12 @@ The address associated with the keys should have enough ADA to cover transaction
 2. Run the `prepare-configuration` command of `partner-chains-cli` (v1.4.0) in a fresh directory.
 This step will involve selecting the _genesis UTXO_ to be spent intializing the governance mechanism.
 Save the `partner-chains-cli-chain-config.json` file produced by this step.
-3. Run the `create-chain-spec` command of `partner-chains-cli`. Save the `chain-spec.json` file produced by this step.
-4. Add the permissioned candidates in the `partner-chains-cli-chain-config.json` file. These can be copied from the chain config file
+3. Add the permissioned candidates in the `partner-chains-cli-chain-config.json` file. These can be copied from the chain config file
 used when setting up the Partner Chain previously, or obtained by querying the `sidechain_getAriadneParameters` jsonRPC method:
 ```sh
 curl "<PC node>" -X POST -H "Content-Type: application/json" -d '{"jsonrpc": "2.0", "id":0, "method":"sidechain_getAriadneParameters","params":[<epoch>] }' | jq '.result.permissionedCandidates'
 ```
+4. Run the `create-chain-spec` command of `partner-chains-cli`. Save the `chain-spec.json` file produced by this step.
 5. Run the `setup-main-chain-state` command of `partner-chains-cli`, setting up the D-param and permissioned candidates.
 
 After these steps, the new Partner Chain will be initialized on Cardano.
