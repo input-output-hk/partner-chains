@@ -103,7 +103,7 @@ After this step the SPO should be ready to be included in post-migration committ
 *Important:*
 * the `chain-spec.json` file is only used for registrations and should **not** be used to run the nodes.
 The SPOs should discard it after this section.
-* The register commands require the `partner-chains-cli-keys.json` file to be present in the run directory. If the SPO
+* The register commands require the `partner-chains-public-keys.json` file to be present in the run directory. If the SPO
 used `partner-chains-cli` for the previous registration, they should re-use the file generated then.
 If the SPO no longer has the file, it can be manually created based on the following schema:
 ```json
