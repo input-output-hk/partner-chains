@@ -202,6 +202,15 @@ pub(crate) fn permissioned_candidates_scripts(
 	Ok((validator, policy))
 }
 
+pub(crate) fn registered_candidates_scripts(
+	genesis_utxo: UtxoId,
+) -> Result<PlutusScript, anyhow::Error> {
+	let validator =
+		PlutusScript::from_wrapped_cbor(raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR, PlutusV2)?
+			.apply_data(genesis_utxo)?;
+	Ok(validator)
+}
+
 // Returns the simplest MultiSig policy configuration plutus data:
 // there is one required authority and it is the governance authority from sidechain params.
 fn multisig_governance_policy_configuration(

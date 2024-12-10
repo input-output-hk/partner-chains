@@ -123,7 +123,7 @@ pub async fn run_init_governance<
 
 	let result = client.submit_transaction(&signed_transaction.to_bytes()).await?;
 	let tx_id = result.transaction.id;
-	log::info!("✅ Transaction submited. ID: {}", hex::encode(result.transaction.id));
+	log::info!("✅ Transaction submitted. ID: {}", hex::encode(result.transaction.id));
 	await_tx
 		.await_tx_output(client, UtxoId { tx_hash: McTxHash(tx_id), index: UtxoIndex(0) })
 		.await?;
