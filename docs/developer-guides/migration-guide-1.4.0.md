@@ -23,9 +23,9 @@ The migration requires multiple detailed steps but to follow them successfuly it
 The 1.4.0 version introduces some backwards-incompatible data schemas. This means that a simple runtime upgrade
 using `system/setCode` extrinsic would leave the chain in an inconsistent state and unable to produce blocks.
 To avoid this issue, the migration involves the following general steps:
-1. Upgrade to a transitory version of the runtime 1.3.1, which only introduces a special helper extrinsic `upgrade_and_set_addresses`.
+1. Upgrade to a transitory version of the runtime 1.3.1, which only introduces a special helper extrinsic `sidechain/upgrade_and_set_addresses`.
 2. Establish a brand new Partner Chain on Cardano using the new 1.4.0 version.
-3. Use the `upgrade_and_set_addresses` to atomically upgrade the runtime to version 1.4.0 and switch the addresses
+3. Use the `sidechain/upgrade_and_set_addresses` to atomically upgrade the runtime to version 1.4.0 and switch the addresses
 observed for committee selection to the new Partner Chain.
 
 ## Migration Steps
@@ -39,7 +39,7 @@ and observing configuration and registrations created using smart contracts of v
 
 ### Runtime upgrade to v1.3.1
 
-This patch version extends the Sidechain pallet with a new extrinsic `upgrade_and_set_addresses`
+This patch version extends the Sidechain pallet with a new extrinsic `sidechain/upgrade_and_set_addresses`
 which allows the on-chain governance to atomically upgrade the runtime and set the genesis utxo and new main chain
 scripts to observe.
 
@@ -55,7 +55,7 @@ impl pallet_sidechain::Config for Runtime {
 	}
 }
 ```
-This will allow the `upgrade_and_set_addresses` extrinsic to update configuration of the SessionValidatorManagement
+This will allow the `sidechain/upgrade_and_set_addresses` extrinsic to update configuration of the SessionValidatorManagement
 pallet together with the Runtime code.
 3. Increment the `spec_version` in your runtime configuration.
 4. Build the new Runtime WASM (you can do it by running `cargo build --release`)
