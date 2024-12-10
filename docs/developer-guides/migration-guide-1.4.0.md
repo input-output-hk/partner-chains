@@ -17,6 +17,17 @@ version v7.0.1, which:
 - removes "sidechain params" as part of the definition of a Partner Chain, replacing them with the
 genesis utxo (which is the utxo burned when establishing a governance)
 
+## Overview of the migration
+
+The migration requires multiple detailed steps but to follow them successfuly it's good to understand the big picture first:
+The 1.4.0 version introduces some backwards-incompatible data schemas. This means that a simple runtime upgrade
+using `system/setCode` extrinsic would leave the chain in an inconsistent state and unable to produce blocks.
+To avoid this issue, the migration involves the following general steps:
+1. Upgrade to a transitory version of the runtime 1.3.1, which only introduces a special helper extrinsic `upgrade_and_set_addresses`.
+2. Establish a brand new Partner Chain on Cardano using the new 1.4.0 version.
+3. Use the `upgrade_and_set_addresses` to atomically upgrade the runtime to version 1.4.0 and switch the addresses
+observed for committee selection to the new Partner Chain.
+
 ## Migration Steps
 
 ### Prerequisites
