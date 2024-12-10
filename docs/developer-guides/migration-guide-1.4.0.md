@@ -1,5 +1,11 @@
 # v1.4.0 Migration guide
 
+**Important:**
+- Please read the whole document before attempting to perform any actions.
+- Whenever the guide requires running the `partner-chains-cli` binary, make sure the `pc-contracts-cli`
+of the version specified in the compatibility matrix is present in your active directory. In case of the
+1.4.0 release it should be v7.0.1.
+
 ## Context
 
 This guide describes the process of migrating from Partner Chains SDK v1.3.0 to v1.4.0 for an already
