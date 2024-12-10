@@ -34,6 +34,9 @@
 <a href="#34" id="34">34</a>
 <a href="#35" id="35">35</a>
 <a href="#36" id="36">36</a>
+<a href="#37" id="37">37</a>
+<a href="#38" id="38">38</a>
+<a href="#39" id="39">39</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>jsonrpsee::http_client::HttpClient;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries, init_governance::run_init_governance,
@@ -46,18 +49,21 @@
 </span><span class="kw">pub struct </span>InitGovernanceCmd {
 	<span class="attr">#[clap(flatten)]
 	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
-	<span class="attr">#[arg(long, short = <span class="string">'g'</span>)]
+	<span class="doccomment">/// Governance authority hash to be set.
+	</span><span class="attr">#[arg(long, short = <span class="string">'g'</span>)]
 	</span>governance_authority: MainchainAddressHash,
-	<span class="attr">#[arg(long, short = <span class="string">'k'</span>)]
+	<span class="doccomment">/// Path to the Cardano Payment Key file.
+	</span><span class="attr">#[arg(long, short = <span class="string">'k'</span>)]
 	</span>payment_key_file: String,
-	<span class="attr">#[arg(long, short = <span class="string">'c'</span>)]
+	<span class="doccomment">/// Genesis UTXO of the new chain, it will be spent durning initialization. If not set, then one will be selected from UTXOs of the payment key.
+	</span><span class="attr">#[arg(long, short = <span class="string">'c'</span>)]
 	</span>genesis_utxo: <span class="prelude-ty">Option</span>&lt;UtxoId&gt;,
 }
 
 <span class="kw">impl </span>InitGovernanceCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
 		<span class="kw">let </span>payment_key = read_private_key_from_file(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key_file)<span class="question-mark">?</span>;
-		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_host)<span class="question-mark">?</span>;
+		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_url)<span class="question-mark">?</span>;
 
 		run_init_governance(
 			<span class="self">self</span>.governance_authority,

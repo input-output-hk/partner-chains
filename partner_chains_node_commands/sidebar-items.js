@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["PartnerChainsSubcommand"],"fn":["run"],"struct":["AriadneParametersCmd","RegistrationStatusCmd","SidechainParamsCmd"]};
+window.SIDEBAR_ITEMS = {"enum":["PartnerChainsSubcommand"],"fn":["run","setup_log4rs"],"struct":["AriadneParametersCmd","RegistrationStatusCmd","SidechainParamsCmd"]};

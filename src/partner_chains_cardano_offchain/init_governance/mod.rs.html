@@ -165,7 +165,12 @@
 <a href="#165" id="165">165</a>
 <a href="#166" id="166">166</a>
 <a href="#167" id="167">167</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::scripts_data;
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::OgmiosUtxoExt;
+<span class="kw">use </span><span class="kw">crate</span>::scripts_data;
 <span class="kw">use crate</span>::{
 	await_tx::{AwaitTx, FixedDelayRetries},
 	csl::{get_first_validator_budget, key_hash_address, NetworkTypeExt},
@@ -188,7 +193,9 @@
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>transaction;
 
 <span class="kw">pub trait </span>InitGovernance {
-	<span class="attr">#[allow(async_fn_in_trait)]
+	<span class="doccomment">/// Initializes goveranance mechanism with the authority being `governance_authority`,
+	/// for the chain identified by `genesis_utxo_id`.
+	</span><span class="attr">#[allow(async_fn_in_trait)]
 	</span><span class="kw">async fn </span>init_governance(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		governance_authority: MainchainAddressHash,
@@ -215,7 +222,8 @@
 			FixedDelayRetries::two_minutes(),
 		)
 		.<span class="kw">await
-		</span>.map_err(|e| OffchainError::InternalError(e.to_string()))
+		</span>.map(|(<span class="kw">_</span>, tx)| tx)
+		.map_err(|e| OffchainError::InternalError(e.to_string()))
 	}
 }
 
@@ -228,7 +236,7 @@
 	genesis_utxo_id: <span class="prelude-ty">Option</span>&lt;UtxoId&gt;,
 	client: <span class="kw-2">&amp;</span>T,
 	await_tx: A,
-) -&gt; anyhow::Result&lt;OgmiosTx&gt; {
+) -&gt; anyhow::Result&lt;(UtxoId, OgmiosTx)&gt; {
 	<span class="kw">let </span>payment_key = PrivateKey::from_normal_bytes(<span class="kw-2">&amp;</span>payment_key.<span class="number">0</span>)
 		.expect(<span class="string">"MainchainPrivateKey is a valid PrivateKey"</span>);
 
@@ -283,7 +291,7 @@
 		raw_scripts::VERSION_ORACLE_POLICY,
 		governance_authority,
 		<span class="kw-2">&amp;</span>tx_context,
-		genesis_utxo,
+		genesis_utxo.clone(),
 		cost,
 	)<span class="question-mark">?</span>;
 	<span class="kw">let </span>signed_transaction = tx_context.sign(<span class="kw-2">&amp;</span>unsigned_transaction);
@@ -295,7 +303,7 @@
 		.await_tx_output(client, UtxoId { tx_hash: McTxHash(tx_id), index: UtxoIndex(<span class="number">0</span>) })
 		.<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="prelude-val">Ok</span>(result.transaction)
+	<span class="prelude-val">Ok</span>((genesis_utxo.to_domain(), result.transaction))
 }
 
 <span class="kw">pub async fn </span>get_governance_utxo&lt;T: QueryLedgerState + Transactions + QueryNetwork&gt;(

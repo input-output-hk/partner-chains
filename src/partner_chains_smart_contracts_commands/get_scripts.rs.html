@@ -22,6 +22,7 @@
 <a href="#22" id="22">22</a>
 <a href="#23" id="23">23</a>
 <a href="#24" id="24">24</a>
+<a href="#25" id="25">25</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>jsonrpsee::http_client::HttpClient;
 <span class="kw">use </span>partner_chains_cardano_offchain::scripts_data::get_scripts_data_with_ogmios;
 <span class="kw">use </span>sidechain_domain::UtxoId;
@@ -30,13 +31,14 @@
 </span><span class="kw">pub struct </span>GetScripts {
 	<span class="attr">#[clap(flatten)]
 	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
-	<span class="attr">#[arg(long, short = <span class="string">'c'</span>)]
+	<span class="doccomment">/// Genesis UTXO that identifies the partner chain.
+	</span><span class="attr">#[arg(long, short = <span class="string">'c'</span>)]
 	</span>genesis_utxo: UtxoId,
 }
 
 <span class="kw">impl </span>GetScripts {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
-		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_host)<span class="question-mark">?</span>;
+		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_url)<span class="question-mark">?</span>;
 		<span class="kw">let </span>scripts_data = get_scripts_data_with_ogmios(<span class="self">self</span>.genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
 		<span class="kw">let </span>json = serde_json::to_string_pretty(<span class="kw-2">&amp;</span>scripts_data)<span class="question-mark">?</span>;

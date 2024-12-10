@@ -388,10 +388,16 @@
 <a href="#388" id="388">388</a>
 <a href="#389" id="389">389</a>
 <a href="#390" id="390">390</a>
+<a href="#391" id="391">391</a>
+<a href="#392" id="392">392</a>
+<a href="#393" id="393">393</a>
+<a href="#394" id="394">394</a>
+<a href="#395" id="395">395</a>
+<a href="#396" id="396">396</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Common types used in the Ogmios API.
 
 </span><span class="kw">use </span>serde::{Deserialize, Deserializer};
-<span class="kw">use </span>sidechain_domain::McTxHash;
+<span class="kw">use </span>sidechain_domain::{McTxHash, UtxoId};
 <span class="kw">use </span>std::collections::HashMap;
 <span class="kw">use </span>std::fmt::Debug;
 <span class="kw">use </span>std::str::FromStr;
@@ -422,6 +428,12 @@
 	<span class="kw">pub </span>datum: <span class="prelude-ty">Option</span>&lt;Datum&gt;,
 	<span class="kw">pub </span>datum_hash: <span class="prelude-ty">Option</span>&lt;DatumHash&gt;,
 	<span class="kw">pub </span>script: <span class="prelude-ty">Option</span>&lt;OgmiosScript&gt;,
+}
+
+<span class="kw">impl </span>OgmiosUtxo {
+	<span class="kw">pub fn </span>utxo_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; UtxoId {
+		UtxoId::new(<span class="self">self</span>.transaction.id, <span class="self">self</span>.index)
+	}
 }
 
 <span class="kw">impl </span>core::fmt::Display <span class="kw">for </span>OgmiosUtxo {

@@ -98,7 +98,7 @@
 <span class="kw">impl </span>RegisterCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
 		<span class="kw">let </span>payment_key = read_private_key_from_file(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key_file)<span class="question-mark">?</span>;
-		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_host)<span class="question-mark">?</span>;
+		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_url)<span class="question-mark">?</span>;
 		<span class="kw">let </span>candidate_registration = CandidateRegistration {
 			stake_ownership: AdaBasedStaking {
 				pub_key: <span class="self">self</span>.spo_public_key,

@@ -180,6 +180,27 @@
 <a href="#180" id="180">180</a>
 <a href="#181" id="181">181</a>
 <a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
@@ -300,7 +321,6 @@
 	SessionKeys: Decode + Send + Sync + <span class="lifetime">'static</span>,
 	CrossChainPublic: Decode + Encode + AsRef&lt;[u8]&gt; + Send + Sync + <span class="lifetime">'static</span>,
 {
-	env_logger::init();
 	<span class="kw">match </span>cmd {
 		PartnerChainsSubcommand::SidechainParams(cmd) =&gt; {
 			<span class="kw">let </span>runner = cli.create_runner(<span class="kw-2">&amp;</span>cmd)<span class="question-mark">?</span>;
@@ -338,6 +358,28 @@
 		PartnerChainsSubcommand::RegistrationSignatures(cmd) =&gt; <span class="prelude-val">Ok</span>(<span class="macro">println!</span>(<span class="string">"{}"</span>, cmd.execute())),
 		PartnerChainsSubcommand::SmartContracts(cmd) =&gt; <span class="prelude-val">Ok</span>(cmd.execute_blocking()<span class="question-mark">?</span>),
 	}
+}
+
+<span class="doccomment">/// This sets logging in a very opinionated way.
+/// Because Rust env_logger clashes with log4rs, this is exposed to be invoked by users of smart-contracts commands.
+</span><span class="kw">pub fn </span>setup_log4rs() -&gt; <span class="prelude-ty">Result</span>&lt;(), Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
+	<span class="kw">let </span>stdout = log4rs::append::console::ConsoleAppender::builder().build();
+	<span class="kw">let </span>ogmios_log = log4rs::append::file::FileAppender::builder().build(<span class="string">"ogmios_client.log"</span>)<span class="question-mark">?</span>;
+
+	<span class="kw">let </span>log_config = log4rs::config::Config::builder()
+		.appender(log4rs::config::Appender::builder().build(<span class="string">"stdout"</span>, Box::new(stdout)))
+		.appender(log4rs::config::Appender::builder().build(<span class="string">"ogmios-log"</span>, Box::new(ogmios_log)))
+		.logger(
+			log4rs::config::Logger::builder()
+				.appender(<span class="string">"ogmios-log"</span>)
+				.additive(<span class="bool-val">false</span>)
+				.build(<span class="string">"ogmios_client::jsonrpsee"</span>, log::LevelFilter::Debug),
+		)
+		.build(log4rs::config::Root::builder().appender(<span class="string">"stdout"</span>).build(log::LevelFilter::Info))<span class="question-mark">?</span>;
+
+	log4rs::init_config(log_config)<span class="question-mark">?</span>;
+
+	<span class="prelude-val">Ok</span>(())
 }
 
 <span class="kw">async fn </span>print_result&lt;FIn&gt;(command_future: FIn) -&gt; <span class="prelude-ty">Result</span>&lt;(), sc_cli::Error&gt;

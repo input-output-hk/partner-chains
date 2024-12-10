@@ -86,40 +86,10 @@
 <a href="#86" id="86">86</a>
 <a href="#87" id="87">87</a>
 <a href="#88" id="88">88</a>
-<a href="#89" id="89">89</a>
-<a href="#90" id="90">90</a>
-<a href="#91" id="91">91</a>
-<a href="#92" id="92">92</a>
-<a href="#93" id="93">93</a>
-<a href="#94" id="94">94</a>
-<a href="#95" id="95">95</a>
-<a href="#96" id="96">96</a>
-<a href="#97" id="97">97</a>
-<a href="#98" id="98">98</a>
-<a href="#99" id="99">99</a>
-<a href="#100" id="100">100</a>
-<a href="#101" id="101">101</a>
-<a href="#102" id="102">102</a>
-<a href="#103" id="103">103</a>
-<a href="#104" id="104">104</a>
-<a href="#105" id="105">105</a>
-<a href="#106" id="106">106</a>
-<a href="#107" id="107">107</a>
-<a href="#108" id="108">108</a>
-<a href="#109" id="109">109</a>
-<a href="#110" id="110">110</a>
-<a href="#111" id="111">111</a>
-<a href="#112" id="112">112</a>
-<a href="#113" id="113">113</a>
-<a href="#114" id="114">114</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>log4rs::{
-	append::{console::ConsoleAppender, file::FileAppender},
-	config::Appender,
-};
-<span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
+</pre></div><pre class="rust"><code><span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 
-<span class="kw">pub mod </span>get_scripts;
 <span class="kw">pub mod </span>d_parameter;
+<span class="kw">pub mod </span>get_scripts;
 <span class="kw">pub mod </span>init_governance;
 <span class="kw">pub mod </span>register;
 
@@ -140,7 +110,7 @@
 #[command(author, version, about, long_about = <span class="prelude-val">None</span>)]
 </span><span class="kw">pub struct </span>CommonArguments {
 	<span class="attr">#[arg(default_value = <span class="string">"http://localhost:1337"</span>, long, short = <span class="string">'O'</span>)]
-	</span>ogmios_host: String,
+	</span>ogmios_url: String,
 }
 
 <span class="kw">type </span>CmdResult&lt;T&gt; = <span class="prelude-ty">Result</span>&lt;T, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;;
@@ -156,8 +126,6 @@
 	}
 
 	<span class="kw">pub fn </span>execute_blocking(<span class="self">self</span>) -&gt; CmdResult&lt;()&gt; {
-		setup_logging()<span class="question-mark">?</span>;
-
 		tokio::runtime::Runtime::new()<span class="question-mark">?</span>.block_on(<span class="self">self</span>.execute())
 	}
 }
@@ -176,26 +144,6 @@
 	<span class="kw">let </span>key_bytes = (hex::decode(key_hex)<span class="question-mark">?</span>.try_into())
 		.map_err(|<span class="kw">_</span>| <span class="macro">format!</span>(<span class="string">"{} is not the valid lengh of 32"</span>, key_hex))<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(MainchainPrivateKey(key_bytes))
-}
-
-<span class="kw">pub fn </span>setup_logging() -&gt; <span class="prelude-ty">Result</span>&lt;(), Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
-	<span class="kw">let </span>stdout = ConsoleAppender::builder().build();
-	<span class="kw">let </span>ogmios_log = FileAppender::builder().build(<span class="string">"ogmios_client.log"</span>)<span class="question-mark">?</span>;
-
-	<span class="kw">let </span>log_config = log4rs::config::Config::builder()
-		.appender(Appender::builder().build(<span class="string">"stdout"</span>, Box::new(stdout)))
-		.appender(Appender::builder().build(<span class="string">"ogmios-log"</span>, Box::new(ogmios_log)))
-		.logger(
-			log4rs::config::Logger::builder()
-				.appender(<span class="string">"ogmios-log"</span>)
-				.additive(<span class="bool-val">false</span>)
-				.build(<span class="string">"ogmios_client::jsonrpsee"</span>, log::LevelFilter::Debug),
-		)
-		.build(log4rs::config::Root::builder().appender(<span class="string">"stdout"</span>).build(log::LevelFilter::Info))<span class="question-mark">?</span>;
-
-	log4rs::init_config(log_config)<span class="question-mark">?</span>;
-
-	<span class="prelude-val">Ok</span>(())
 }
 
 <span class="comment">// Parses public keys in formatted as SIDECHAIN_KEY:AURA_KEY:GRANDPA_KEY

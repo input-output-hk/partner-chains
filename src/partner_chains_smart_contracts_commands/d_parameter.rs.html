@@ -61,7 +61,7 @@
 			num_permissioned_candidates: <span class="self">self</span>.permissioned_candidates_count,
 			num_registered_candidates: <span class="self">self</span>.registered_candidates_count,
 		};
-		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_host)<span class="question-mark">?</span>;
+		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_url)<span class="question-mark">?</span>;
 
 		upsert_d_param(<span class="self">self</span>.genesis_utxo, <span class="kw-2">&amp;</span>d_param, payment_key.<span class="number">0</span>, <span class="kw-2">&amp;</span>client).<span class="kw">await</span><span class="question-mark">?</span>;
 
