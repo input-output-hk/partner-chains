@@ -16,6 +16,8 @@ pub enum SmartContractsCmd {
 	UpsertDParameter(d_parameter::UpsertDParameterCmd),
 	/// Register candidate
 	Register(register::RegisterCmd),
+	/// Deregister candidate
+	Deregister(register::DeregisterCmd),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -34,6 +36,7 @@ impl SmartContractsCmd {
 			Self::GetScripts(cmd) => cmd.execute().await,
 			Self::UpsertDParameter(cmd) => cmd.execute().await,
 			Self::Register(cmd) => cmd.execute().await,
+			Self::Deregister(cmd) => cmd.execute().await,
 		}
 	}
 
