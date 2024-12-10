@@ -3,19 +3,9 @@
 # Initialize flags
 PC_NODE_READY=0
 PC_CLI_READY=0
-PC_CONTRACTS_CLI_READY=0
 
 if [ "$ARTIFACT_OVERRIDE" == "yes" ]; then
   echo "Artifact override is enabled. Checking for local artifacts..."
-
-  # Check and set flags for existing artifacts, and copy if found
-  if [ -f "/overrides/pc-contracts-cli" ] && [ -d "/overrides/node_modules" ]; then
-    echo "pc-contracts-cli and node_modules found in /overrides/. Using local artifacts."
-    cp /overrides/pc-contracts-cli ./pc-contracts-cli
-    cp -r /overrides/node_modules ./node_modules
-    echo "pc-contracts-cli and node_modules copied."
-    PC_CONTRACTS_CLI_READY=1
-  fi
 
   if [ -f "/overrides/partner-chains-node" ]; then
     echo "partner-chains-node found in /overrides/. Using local artifact."
@@ -36,12 +26,6 @@ else
 fi
 
 # Check which artifacts need to be downloaded
-if [ "$PC_CONTRACTS_CLI_READY" -eq 0 ]; then
-  echo "Downloading pc-contracts-cli and node_modules..."
-  wget -q -O ./pc-contracts-cli.zip "$PC_CONTRACTS_CLI_ZIP_URL"
-  unzip -o ./pc-contracts-cli.zip > /dev/null
-fi
-
 if [ "$PC_NODE_READY" -eq 0 ]; then
   echo "Downloading partner-chains-node..."
   wget -q -O ./partner-chains-node "$PARTNER_CHAINS_NODE_URL"
@@ -55,7 +39,6 @@ fi
 # Set executable permissions
 chmod +x ./partner-chains-node
 chmod +x ./partner-chains-cli
-chmod +x ./pc-contracts-cli
 
 # Install jq
 apt -qq update &> /dev/null
@@ -66,7 +49,7 @@ echo "Dependencies downloaded and binaries made executable."
 echo "Waiting for the Cardano network to sync and for Kupo and Ogmios to start..."
 
 while true; do
-    if nc -z kupo $KUPO_PORT && nc -z ogmios $OGMIOS_PORT; then
+    if nc -z ogmios $OGMIOS_PORT; then
         break
     else
         sleep 1
@@ -81,12 +64,10 @@ echo "Initializing governance authority ..."
 
 export GENESIS_UTXO=$(cat /shared/genesis.utxo)
 
-./pc-contracts-cli init-governance \
-    --network testnet \
-    --kupo-host kupo --kupo-port $KUPO_PORT \
-    --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
+./partner-chains-node smart-contracts init-governance \
+    --ogmios-url http://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
-    --payment-signing-key-file /keys/funded_address.skey \
+    --payment-key-file /keys/funded_address.skey \
     --governance-authority $GOVERNANCE_AUTHORITY
 
 if [ $? -eq 0 ]; then
@@ -97,21 +78,18 @@ fi
 
 echo "Generating addresses.json file..."
 
-./pc-contracts-cli addresses \
-    --network testnet \
-    --kupo-host kupo --kupo-port $KUPO_PORT \
-    --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
-    --payment-signing-key-file /keys/funded_address.skey \
+./partner-chains-node smart-contracts get-scripts \
+    --ogmios-url http://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
 > addresses.json
 
 export COMMITTEE_CANDIDATE_ADDRESS=$(jq -r '.addresses.CommitteeCandidateValidator' addresses.json)
 echo "Committee candidate address: $COMMITTEE_CANDIDATE_ADDRESS"
 
-export D_PARAMETER_POLICY_ID=$(jq -r '.mintingPolicies.DParameterPolicy' addresses.json)
+export D_PARAMETER_POLICY_ID=$(jq -r '.policyIds.DParameter' addresses.json)
 echo "D parameter policy ID: $D_PARAMETER_POLICY_ID"
 
-export PERMISSIONED_CANDIDATES_POLICY_ID=$(jq -r '.mintingPolicies.PermissionedCandidatesPolicy' addresses.json)
+export PERMISSIONED_CANDIDATES_POLICY_ID=$(jq -r '.policyIds.PermissionedCandidates' addresses.json)
 echo "Permissioned candidates policy ID: $PERMISSIONED_CANDIDATES_POLICY_ID"
 
 echo "Setting placeholder values for NATIVE_TOKEN_POLICY_ID, NATIVE_TOKEN_ASSET_NAME, and ILLIQUID_SUPPLY_VALIDATOR_ADDRESS for chain-spec creation"
@@ -121,16 +99,18 @@ export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3
 
 echo "Inserting D parameter..."
 
-./pc-contracts-cli insert-d-parameter \
-    --network testnet \
-    --kupo-host kupo --kupo-port $KUPO_PORT \
-    --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
+./partner-chains-node smart-contracts upsert-d-parameter \
+    --ogmios-url http://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
-    --d-parameter-permissioned-candidates-count 3 \
-    --d-parameter-registered-candidates-count 2 \
+    --permissioned-candidates-count 3 \
+    --registered-candidates-count 2 \
     --payment-signing-key-file /keys/funded_address.skey
 
-echo "Successfully inserted D-parameter (P = 3, R = 2)!"
+if [ $? -eq 0 ]; then
+    echo "Successfully inserted D-parameter (P = 3, R = 2)!"
+else
+    echo "Couldn't insert D-parameter..."
+fi
 
 # sidechain.vkey:aura.vkey:grandpa.vkey
 echo "Inserting permissioned candidates for Alice and Bob..."
@@ -143,17 +123,15 @@ bob_sidechain_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/sidech
 bob_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/aura.vkey)
 bob_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-2/keys/grandpa.vkey)
 
-./pc-contracts-cli update-permissioned-candidates \
-    --network testnet \
-    --kupo-host kupo --kupo-port $KUPO_PORT \
-    --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
-    --add-candidate $alice_sidechain_vkey:$alice_aura_vkey:$alice_grandpa_vkey \
-    --add-candidate $bob_sidechain_vkey:$bob_aura_vkey:$bob_grandpa_vkey \
+./partner-chains-node smart-contracts upsert-permissioned-candidates \
+    --ogmios-url http://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
+    --candidate $alice_sidechain_vkey:$alice_aura_vkey:$alice_grandpa_vkey \
+    --candidate $bob_sidechain_vkey:$bob_aura_vkey:$bob_grandpa_vkey \
     --payment-signing-key-file /keys/funded_address.skey
 
 if [ $? -eq 0 ]; then
-   echo "Permissioned candidates Alice and Bob inserted successfully!"
+    echo "Permissioned candidates Alice and Bob inserted successfully!"
 else
     echo "Permission candidates Alice and Bob failed to be added..."
 fi
@@ -181,18 +159,15 @@ dave_aura_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/aura.vkey)
 dave_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/grandpa.vkey)
 
 # Register Dave
-./pc-contracts-cli register \
-    --network testnet \
-    --kupo-host kupo --kupo-port $KUPO_PORT \
-    --ogmios-host ogmios --ogmios-port $OGMIOS_PORT \
+./partner-chains-node smart-contracts register \
+    --ogmios-url http://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
     --spo-public-key $dave_spo_public_key \
     --spo-signature $dave_spo_signature \
     --sidechain-public-keys $dave_sidechain_public_key:$dave_aura_vkey:$dave_grandpa_vkey \
     --sidechain-signature $dave_sidechain_signature \
-    --ada-based-staking \
     --registration-utxo $dave_utxo \
-    --payment-signing-key-file /partner-chains-nodes/partner-chains-node-4/keys/payment.skey
+    --payment-key-file /partner-chains-nodes/partner-chains-node-4/keys/payment.skey
 
 if [ $? -eq 0 ]; then
     echo "Registered candidate Dave inserted successfully!"
@@ -267,11 +242,11 @@ cp chain-spec.json /shared/chain-spec.json
 echo "chain-spec.json generation complete."
 
 echo "Partnerchain configuration is complete, and will be able to start after two mainchain epochs."
-touch /shared/pc-contracts-cli.ready
+touch /shared/smart-contracts-setup.ready
 
 echo -e "\n===== Partnerchain Configuration Complete =====\n"
-echo -e "Container will now idle, but will remain available for accessing the pc-contracts-cli utility as follows:\n"
-echo "docker exec pc-contracts-cli /pc-contracts-cli/pc-contracts-cli --help"
+echo -e "Container will now idle, but will remain available for accessing the partner-chains-node commands as follows:\n"
+echo "docker exec smart-contracts-setup partner-chains-node --help"
 
 echo "Waiting 2 epochs for DParam to become active..."
 epoch=$(curl -s --request POST \
