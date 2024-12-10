@@ -32,6 +32,6 @@ jobs:
           context: toolkit/offchain/tests/docker/
           file: toolkit/offchain/tests/docker/Dockerfile
           push: true
-          tags: 
+          tags: |
             ghcr.io/partner-chains/smart-contracts-tests-cardano-node-ogmios:${{ inputs.tag }}
             ghcr.io/partner-chains/smart-contracts-tests-cardano-node-ogmios:latest
