@@ -132,14 +132,6 @@ jobs:
           --decrypt=true \
           --markers="$MARKERS"
 
-    - name: Add Line Numbers and Timestamps to debug.log
-      if: always()
-      run: |
-        cd E2E-tests
-        awk '{print strftime("[%Y-%m-%d %H:%M:%S]"), $0}' debug.log > debug_with_timestamps.log
-        nl -ba -s '  ' -w 8 debug_with_timestamps.log > debug_with_timestamps_and_line_numbers.log
-        mv debug_with_timestamps_and_line_numbers.log debug.log
-
     - name: Archive Debug Log
       if: always()
       uses: actions/upload-artifact@v4
