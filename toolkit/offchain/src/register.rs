@@ -127,7 +127,7 @@ pub async fn run_register<
 		)
 	})?;
 	let tx_id = result.transaction.id;
-	log::info!("✅ Transaction submited. ID: {}", hex::encode(result.transaction.id));
+	log::info!("✅ Transaction submitted. ID: {}", hex::encode(result.transaction.id));
 	await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_id, 0)).await?;
 
 	Ok(Some(result.transaction))
