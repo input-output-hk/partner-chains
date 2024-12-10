@@ -50,16 +50,6 @@ impl ParsedPermissionedCandidatesKeys {
 	pub fn account_id_32(&self) -> AccountId32 {
 		sp_runtime::MultiSigner::from(self.sidechain).into_account()
 	}
-
-	/// Outputs smart contracts format of keys: triple of hex strings without 0x prefix and separated by colons
-	pub fn to_smart_contracts_args_triple(&self) -> String {
-		format!(
-			"{}:{}:{}",
-			hex::encode(self.sidechain.0),
-			hex::encode(self.aura.0),
-			hex::encode(self.grandpa.0)
-		)
-	}
 }
 
 impl TryFrom<&PermissionedCandidateKeys> for ParsedPermissionedCandidatesKeys {
