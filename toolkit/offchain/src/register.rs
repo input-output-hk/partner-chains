@@ -135,6 +135,95 @@ pub async fn run_register<
 	Ok(Some(result.transaction))
 }
 
+pub trait Deregister {
+	#[allow(async_fn_in_trait)]
+	async fn deregister(
+		&self,
+		genesis_utxo: UtxoId,
+		payment_signing_key: MainchainPrivateKey,
+		own_pkh: MainchainAddressHash,
+		stake_ownership_pub_key: MainchainPublicKey,
+	) -> Result<Option<OgmiosTx>, OffchainError>;
+}
+
+impl<T> Deregister for T
+where
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+{
+	async fn deregister(
+		&self,
+		genesis_utxo: UtxoId,
+		payment_signing_key: MainchainPrivateKey,
+		own_pkh: MainchainAddressHash,
+		stake_ownership_pub_key: MainchainPublicKey,
+	) -> Result<Option<OgmiosTx>, OffchainError> {
+		run_deregister(
+			genesis_utxo,
+			payment_signing_key,
+			own_pkh,
+			stake_ownership_pub_key,
+			self,
+			FixedDelayRetries::two_minutes(),
+		)
+		.await
+		.map_err(|e| OffchainError::InternalError(e.to_string()))
+	}
+}
+
+pub async fn run_deregister<
+	C: QueryLedgerState + QueryNetwork + QueryUtxoByUtxoId + Transactions,
+	A: AwaitTx,
+>(
+	genesis_utxo: UtxoId,
+	payment_signing_key: MainchainPrivateKey,
+	own_pkh: MainchainAddressHash,
+	stake_ownership_pub_key: MainchainPublicKey,
+	ogmios_client: &C,
+	await_tx: A,
+) -> anyhow::Result<Option<OgmiosTx>> {
+	let ctx = TransactionContext::for_payment_key(payment_signing_key.0, ogmios_client).await?;
+	let validator = crate::scripts_data::registered_candidates_scripts(genesis_utxo)?;
+	let validator_address = validator.address_bech32(ctx.network)?;
+	let all_registration_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
+	let own_registrations =
+		get_own_registrations(own_pkh, stake_ownership_pub_key.clone(), &all_registration_utxos);
+
+	if own_registrations.is_empty() {
+		log::info!("✅ Candidate is not registered.");
+		return Ok(None);
+	}
+
+	let own_registration_utxos = own_registrations.iter().map(|r| r.0.clone()).collect::<Vec<_>>();
+	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
+	let tx = deregister_tx(&validator, &own_registration_utxos, &ctx, zero_ex_units)?;
+
+	let evaluate_response =
+		ogmios_client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
+			anyhow!(
+				"Evaluate candidate unregistration transaction request failed: {}, bytes: {}",
+				e,
+				hex::encode(tx.to_bytes())
+			)
+		})?;
+	let validator_redeemer_ex_units = get_first_validator_budget(evaluate_response)?;
+	let tx = deregister_tx(&validator, &own_registration_utxos, &ctx, validator_redeemer_ex_units)?;
+	let signed_tx = ctx.sign(&tx).to_bytes();
+	let result = ogmios_client.submit_transaction(&signed_tx).await.map_err(|e| {
+		anyhow!(
+			"Submit candidate unregistration transaction request failed: {}, bytes: {}",
+			e,
+			hex::encode(tx.to_bytes())
+		)
+	})?;
+	let tx_id = result.transaction.id;
+	log::info!("✅ Transaction submitted. ID: {}", hex::encode(result.transaction.id));
+	await_tx
+		.await_tx_output(ogmios_client, UtxoId { tx_hash: McTxHash(tx_id), index: UtxoIndex(0) })
+		.await?;
+
+	Ok(Some(result.transaction))
+}
+
 fn get_own_registrations(
 	own_pkh: MainchainAddressHash,
 	spo_pub_key: MainchainPublicKey,
@@ -205,6 +294,30 @@ fn register_tx(
 		.calculate_ada()?;
 		let output = amount_builder.with_coin(&min_ada).build()?;
 		tx_builder.add_output(&output)?;
+	}
+
+	tx_builder.balance_update_and_build(ctx)
+}
+
+fn deregister_tx(
+	validator: &PlutusScript,
+	own_registration_utxos: &[OgmiosUtxo],
+	ctx: &TransactionContext,
+	validator_redeemer_ex_units: ExUnits,
+) -> Result<Transaction, JsError> {
+	let config = crate::csl::get_builder_config(ctx)?;
+	let mut tx_builder = TransactionBuilder::new(&config);
+
+	{
+		let mut inputs = TxInputsBuilder::new();
+		for own_registration_utxo in own_registration_utxos {
+			inputs.add_script_utxo_input(
+				own_registration_utxo,
+				validator,
+				validator_redeemer_ex_units.clone(),
+			)?;
+		}
+		tx_builder.set_inputs(&inputs);
 	}
 
 	tx_builder.balance_update_and_build(ctx)
