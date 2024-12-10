@@ -10,7 +10,12 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Removed
 
+* Separate binary partner-chains-smart-contracts-commands.
+
 ## Fixed
+
+* Crash of parnter-chain-node smart-contracts command. Logging is now set independently.
+* Renamed of argument 'ogmios-host' to 'ogmios-url' in smart-contracts subcommands.
 
 ## Added
 

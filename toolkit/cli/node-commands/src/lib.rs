@@ -118,7 +118,6 @@ where
 	SessionKeys: Decode + Send + Sync + 'static,
 	CrossChainPublic: Decode + Encode + AsRef<[u8]> + Send + Sync + 'static,
 {
-	env_logger::init();
 	match cmd {
 		PartnerChainsSubcommand::SidechainParams(cmd) => {
 			let runner = cli.create_runner(&cmd)?;
@@ -156,6 +155,28 @@ where
 		PartnerChainsSubcommand::RegistrationSignatures(cmd) => Ok(println!("{}", cmd.execute())),
 		PartnerChainsSubcommand::SmartContracts(cmd) => Ok(cmd.execute_blocking()?),
 	}
+}
+
+/// This sets logging in a very opinionated way.
+/// Because Rust env_logger clashes with log4rs, this is exposed to be invoked by users of smart-contracts commands.
+pub fn setup_log4rs() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+	let stdout = log4rs::append::console::ConsoleAppender::builder().build();
+	let ogmios_log = log4rs::append::file::FileAppender::builder().build("ogmios_client.log")?;
+
+	let log_config = log4rs::config::Config::builder()
+		.appender(log4rs::config::Appender::builder().build("stdout", Box::new(stdout)))
+		.appender(log4rs::config::Appender::builder().build("ogmios-log", Box::new(ogmios_log)))
+		.logger(
+			log4rs::config::Logger::builder()
+				.appender("ogmios-log")
+				.additive(false)
+				.build("ogmios_client::jsonrpsee", log::LevelFilter::Debug),
+		)
+		.build(log4rs::config::Root::builder().appender("stdout").build(log::LevelFilter::Info))?;
+
+	log4rs::init_config(log_config)?;
+
+	Ok(())
 }
 
 async fn print_result<FIn>(command_future: FIn) -> Result<(), sc_cli::Error>
