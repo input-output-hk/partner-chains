@@ -1,0 +1,37 @@
+name: Build and Push smart-contracts-tests-cardano-node-ogmios image to GHCR
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag for GHCR image"
+        required: true
+        type: string
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          logout: true
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: toolkit/offchain/tests/docker/
+          file: toolkit/offchain/tests/docker/Dockerfile
+          push: true
+          tags: 
+            ghcr.io/partner-chains/smart-contracts-tests-cardano-node-ogmios:${{ inputs.tag }}
+            ghcr.io/partner-chains/smart-contracts-tests-cardano-node-ogmios:latest

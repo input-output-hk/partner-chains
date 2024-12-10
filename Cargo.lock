@@ -6542,7 +6542,6 @@ dependencies = [
  "anyhow",
  "cardano-serialization-lib",
  "cbor_event",
- "db-sync-follower",
  "env_logger 0.11.3",
  "fraction",
  "hex",
