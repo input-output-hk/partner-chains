@@ -53,7 +53,9 @@ def test_register_candidate(candidate: Candidates, api: BlockchainApi, db: Sessi
     assert (
         registered_grandpa_pub_key == registration["grandpaPubKey"]
     ), f"Could not find Grandpa public key {registered_grandpa_pub_key} registered for MC epoch {next_status_epoch}"
-    assert registration["isValid"], f"Registered candidate {candidate.name} is not valid"
+    assert registration[
+        "isValid"
+    ], f"Registered candidate {candidate.name} is not valid. Invalidity reason: {registration['invalidReasons']}."
 
 
 @mark.skip_blockchain("pc_evm", reason="not implemented yet")
