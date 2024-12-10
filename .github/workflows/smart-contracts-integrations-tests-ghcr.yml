@@ -33,6 +33,6 @@ jobs:
           file: toolkit/offchain/tests/docker/Dockerfile
           push: true
           tags: |
-            ghcr.io/input-output-hk/partner-chains/smart-contracts-tests-cardano-node-ogmios:${{ inputs.tag }}
-            ghcr.io/input-output-hk/partner-chains/smart-contracts-tests-cardano-node-ogmios:latest
+            ghcr.io/${{ github.repository_owner }}/smart-contracts-tests-cardano-node-ogmios:${{ inputs.tag }}
+            ghcr.io/${{ github.repository_owner }}/smart-contracts-tests-cardano-node-ogmios:latest
 
