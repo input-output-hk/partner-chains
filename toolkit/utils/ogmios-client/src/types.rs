@@ -1,7 +1,7 @@
 //! Common types used in the Ogmios API.
 
 use serde::{Deserialize, Deserializer};
-use sidechain_domain::McTxHash;
+use sidechain_domain::{McTxHash, UtxoId};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::str::FromStr;
@@ -32,6 +32,12 @@ pub struct OgmiosUtxo {
 	pub datum: Option<Datum>,
 	pub datum_hash: Option<DatumHash>,
 	pub script: Option<OgmiosScript>,
+}
+
+impl OgmiosUtxo {
+	pub fn utxo_id(&self) -> UtxoId {
+		UtxoId::new(self.transaction.id, self.index)
+	}
 }
 
 impl core::fmt::Display for OgmiosUtxo {
