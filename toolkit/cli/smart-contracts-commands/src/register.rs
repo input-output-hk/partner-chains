@@ -35,7 +35,7 @@ pub struct RegisterCmd {
 impl RegisterCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_key = read_private_key_from_file(&self.payment_key_file)?;
-		let client = HttpClient::builder().build(self.common_arguments.ogmios_host)?;
+		let client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
 		let candidate_registration = CandidateRegistration {
 			stake_ownership: AdaBasedStaking {
 				pub_key: self.spo_public_key,

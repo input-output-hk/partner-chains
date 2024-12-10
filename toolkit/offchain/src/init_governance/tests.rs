@@ -166,17 +166,19 @@ async fn transaction_run() {
 		}])
 		.with_submit_result(SubmitTransactionResponse { transaction });
 
-	let result = run_init_governance(
+	let genesis_utxo = genesis_utxo().to_domain();
+	let (result_genesis_utxo, result_tx) = run_init_governance(
 		governance_authority(),
 		payment_key_domain(),
-		Some(genesis_utxo().to_domain()),
+		Some(genesis_utxo),
 		&mock_client,
 		ImmediateSuccess,
 	)
 	.await
 	.expect("Should succeed");
 
-	assert_eq!(result.id, transaction_id);
+	assert_eq!(result_tx.id, transaction_id);
+	assert_eq!(result_genesis_utxo, genesis_utxo);
 }
 
 fn genesis_utxo() -> OgmiosUtxo {

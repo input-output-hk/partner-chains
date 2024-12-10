@@ -26,7 +26,7 @@ impl UpsertDParameterCmd {
 			num_permissioned_candidates: self.permissioned_candidates_count,
 			num_registered_candidates: self.registered_candidates_count,
 		};
-		let client = HttpClient::builder().build(self.common_arguments.ogmios_host)?;
+		let client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
 
 		upsert_d_param(self.genesis_utxo, &d_param, payment_key.0, &client).await?;
 

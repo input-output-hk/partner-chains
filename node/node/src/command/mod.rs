@@ -66,6 +66,7 @@ pub fn run() -> sc_cli::Result<()> {
 	match &cli.subcommand {
 		Some(Subcommand::Key(cmd)) => cmd.run(&cli),
 		Some(Subcommand::PartnerChains(cmd)) => {
+			partner_chains_node_commands::setup_log4rs()?;
 			let make_dependencies = |config| {
 				let components = service::new_partial(&config)?;
 				Ok((

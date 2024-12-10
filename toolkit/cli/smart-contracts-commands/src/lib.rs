@@ -1,11 +1,7 @@
-use log4rs::{
-	append::{console::ConsoleAppender, file::FileAppender},
-	config::Appender,
-};
 use sidechain_domain::*;
 
-pub mod get_scripts;
 pub mod d_parameter;
+pub mod get_scripts;
 pub mod init_governance;
 pub mod register;
 
@@ -26,7 +22,7 @@ pub enum SmartContractsCmd {
 #[command(author, version, about, long_about = None)]
 pub struct CommonArguments {
 	#[arg(default_value = "http://localhost:1337", long, short = 'O')]
-	ogmios_host: String,
+	ogmios_url: String,
 }
 
 type CmdResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
@@ -42,8 +38,6 @@ impl SmartContractsCmd {
 	}
 
 	pub fn execute_blocking(self) -> CmdResult<()> {
-		setup_logging()?;
-
 		tokio::runtime::Runtime::new()?.block_on(self.execute())
 	}
 }
@@ -62,26 +56,6 @@ pub(crate) fn read_private_key_from_file(path: &str) -> CmdResult<MainchainPriva
 	let key_bytes = (hex::decode(key_hex)?.try_into())
 		.map_err(|_| format!("{} is not the valid lengh of 32", key_hex))?;
 	Ok(MainchainPrivateKey(key_bytes))
-}
-
-pub fn setup_logging() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-	let stdout = ConsoleAppender::builder().build();
-	let ogmios_log = FileAppender::builder().build("ogmios_client.log")?;
-
-	let log_config = log4rs::config::Config::builder()
-		.appender(Appender::builder().build("stdout", Box::new(stdout)))
-		.appender(Appender::builder().build("ogmios-log", Box::new(ogmios_log)))
-		.logger(
-			log4rs::config::Logger::builder()
-				.appender("ogmios-log")
-				.additive(false)
-				.build("ogmios_client::jsonrpsee", log::LevelFilter::Debug),
-		)
-		.build(log4rs::config::Root::builder().appender("stdout").build(log::LevelFilter::Info))?;
-
-	log4rs::init_config(log_config)?;
-
-	Ok(())
 }
 
 // Parses public keys in formatted as SIDECHAIN_KEY:AURA_KEY:GRANDPA_KEY
