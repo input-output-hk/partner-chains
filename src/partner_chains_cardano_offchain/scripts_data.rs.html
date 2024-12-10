@@ -293,6 +293,15 @@
 <a href="#293" id="293">293</a>
 <a href="#294" id="294">294</a>
 <a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{csl::NetworkTypeExt, plutus_script::PlutusScript, OffchainError};
 <span class="kw">use </span>cardano_serialization_lib::{LanguageKind::PlutusV2, NetworkIdKind};
 <span class="kw">use </span>ogmios_client::query_network::QueryNetwork;
@@ -495,6 +504,15 @@
 			</span>.apply_data(version_oracle_policy.clone())<span class="question-mark">?
 			</span>.apply_uplc_data(validator.address_data(network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>((validator, policy))
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>registered_candidates_scripts(
+	genesis_utxo: UtxoId,
+) -&gt; <span class="prelude-ty">Result</span>&lt;PlutusScript, anyhow::Error&gt; {
+	<span class="kw">let </span>validator =
+		PlutusScript::from_wrapped_cbor(raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR, PlutusV2)<span class="question-mark">?
+			</span>.apply_data(genesis_utxo)<span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>(validator)
 }
 
 <span class="comment">// Returns the simplest MultiSig policy configuration plutus data:

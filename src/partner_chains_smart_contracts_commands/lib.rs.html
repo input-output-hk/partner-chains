@@ -79,15 +79,49 @@
 <a href="#79" id="79">79</a>
 <a href="#80" id="80">80</a>
 <a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>log4rs::{
 	append::{console::ConsoleAppender, file::FileAppender},
 	config::Appender,
 };
-<span class="kw">use </span>sidechain_domain::MainchainPrivateKey;
+<span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 
 <span class="kw">pub mod </span>get_scripts;
 <span class="kw">pub mod </span>d_parameter;
 <span class="kw">pub mod </span>init_governance;
+<span class="kw">pub mod </span>register;
 
 <span class="attr">#[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -98,6 +132,8 @@
 	</span>InitGovernance(init_governance::InitGovernanceCmd),
 	<span class="doccomment">/// Upsert DParameter
 	</span>UpsertDParameter(d_parameter::UpsertDParameterCmd),
+	<span class="doccomment">/// Register candidate
+	</span>Register(register::RegisterCmd),
 }
 
 <span class="attr">#[derive(Clone, Debug, clap::Parser)]
@@ -115,6 +151,7 @@
 			<span class="self">Self</span>::InitGovernance(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::GetScripts(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::UpsertDParameter(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
+			<span class="self">Self</span>::Register(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 		}
 	}
 
@@ -159,5 +196,34 @@
 	log4rs::init_config(log_config)<span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(())
+}
+
+<span class="comment">// Parses public keys in formatted as SIDECHAIN_KEY:AURA_KEY:GRANDPA_KEY
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>parse_partnerchain_public_keys(
+	partner_chain_public_keys: <span class="kw-2">&amp;</span>str,
+) -&gt; CmdResult&lt;PermissionedCandidateData&gt; {
+	<span class="kw">if let </span>[sidechain_pub_key, aura_pub_key, grandpa_pub_key] =
+		partner_chain_public_keys.split(<span class="string">":"</span>).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()[..]
+	{
+		<span class="prelude-val">Ok</span>(PermissionedCandidateData {
+			sidechain_public_key: SidechainPublicKey(hex::decode(sidechain_pub_key)<span class="question-mark">?</span>),
+			aura_public_key: AuraPublicKey(hex::decode(aura_pub_key)<span class="question-mark">?</span>),
+			grandpa_public_key: GrandpaPublicKey(hex::decode(grandpa_pub_key)<span class="question-mark">?</span>),
+		})
+	} <span class="kw">else </span>{
+		<span class="prelude-val">Err</span>(<span class="string">"Failed to parse partner chain public keys."</span>.into())
+	}
+}
+
+<span class="kw">fn </span>payment_signing_key_to_mainchain_address_hash(
+	payment_signing_key: MainchainPrivateKey,
+) -&gt; CmdResult&lt;MainchainAddressHash&gt; {
+	<span class="prelude-val">Ok</span>(cardano_serialization_lib::PrivateKey::from_normal_bytes(<span class="kw-2">&amp;</span>payment_signing_key.<span class="number">0</span>)<span class="question-mark">?
+		</span>.to_public()
+		.hash()
+		.to_bytes()
+		.as_slice()
+		.try_into()
+		.map(MainchainAddressHash)<span class="question-mark">?</span>)
 }
 </code></pre></div></section></main></body></html>

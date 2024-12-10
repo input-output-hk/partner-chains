@@ -672,18 +672,6 @@
 <a href="#672" id="672">672</a>
 <a href="#673" id="673">673</a>
 <a href="#674" id="674">674</a>
-<a href="#675" id="675">675</a>
-<a href="#676" id="676">676</a>
-<a href="#677" id="677">677</a>
-<a href="#678" id="678">678</a>
-<a href="#679" id="679">679</a>
-<a href="#680" id="680">680</a>
-<a href="#681" id="681">681</a>
-<a href="#682" id="682">682</a>
-<a href="#683" id="683">683</a>
-<a href="#684" id="684">684</a>
-<a href="#685" id="685">685</a>
-<a href="#686" id="686">686</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -712,7 +700,6 @@
 </span><span class="kw">use </span>{
 	derive_more::FromStr,
 	serde::{Deserialize, Deserializer, Serialize, Serializer},
-	sp_core::bytes::from_hex,
 };
 
 <span class="doccomment">/// A main chain epoch number. In range [0, 2^31-1].
@@ -888,7 +875,7 @@
 <span class="kw">const </span>MAINCHAIN_PUBLIC_KEY_LEN: usize = <span class="number">32</span>;
 
 <span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
-#[byte_string(debug, hex_serialize, hex_deserialize)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 </span><span class="kw">pub struct </span>MainchainPublicKey(<span class="kw">pub </span>[u8; MAINCHAIN_PUBLIC_KEY_LEN]);
 
 <span class="kw">const </span>MAINCHAIN_PRIVATE_KEY_LEN: usize = <span class="number">32</span>;
@@ -900,17 +887,6 @@
 <span class="kw">impl </span>core::fmt::Debug <span class="kw">for </span>MainchainPrivateKey {
 	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; core::fmt::Result {
 		<span class="macro">write!</span>(f, <span class="string">"***"</span>)
-	}
-}
-
-<span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
-</span><span class="kw">impl </span>FromStr <span class="kw">for </span>MainchainPublicKey {
-	<span class="kw">type </span><span class="prelude-val">Err </span>= <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str;
-
-	<span class="kw">fn </span>from_str(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Err&gt; {
-		<span class="kw">let </span>bytes_vec =
-			from_hex(s).map_err(|<span class="kw">_</span>| <span class="string">"Mainchain Public Key must be a valid hex string"</span>)<span class="question-mark">?</span>;
-		bytes_vec.try_into()
 	}
 }
 
@@ -950,7 +926,7 @@
 }
 
 <span class="attr">#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
-#[byte_string(debug, hex_serialize)]
+#[byte_string(debug, hex_serialize, decode_hex)]
 </span><span class="kw">pub struct </span>MainchainSignature(<span class="kw">pub </span>Vec&lt;u8&gt;);
 
 <span class="attr">#[derive(
@@ -997,7 +973,7 @@
 </span><span class="kw">pub struct </span>SidechainPublicKey(<span class="kw">pub </span>Vec&lt;u8&gt;);
 
 <span class="attr">#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
-#[byte_string(debug, hex_serialize, hex_deserialize)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 </span><span class="kw">pub struct </span>SidechainSignature(<span class="kw">pub </span>Vec&lt;u8&gt;);
 
 <span class="attr">#[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
@@ -1323,12 +1299,12 @@
 }
 
 <span class="attr">#[derive(Clone, Debug, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>BlockProducerRegistration {
+</span><span class="kw">pub struct </span>CandidateRegistration {
 	<span class="kw">pub </span>stake_ownership: AdaBasedStaking,
-	<span class="kw">pub </span>sidechain_pub_key: SidechainPublicKey,
-	<span class="kw">pub </span>sidechain_signature: SidechainSignature,
-	<span class="kw">pub </span>registration_utxo: UtxoId,
+	<span class="kw">pub </span>partnerchain_pub_key: SidechainPublicKey,
+	<span class="kw">pub </span>partnerchain_signature: SidechainSignature,
 	<span class="kw">pub </span>own_pkh: MainchainAddressHash,
+	<span class="kw">pub </span>registration_utxo: UtxoId,
 	<span class="kw">pub </span>aura_pub_key: AuraPublicKey,
 	<span class="kw">pub </span>grandpa_pub_key: GrandpaPublicKey,
 }

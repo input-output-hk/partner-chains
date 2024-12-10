@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["RegisterValidatorDatum"],"fn":["block_producer_registration_to_plutus_data"]};
+window.SIDEBAR_ITEMS = {"enum":["RegisterValidatorDatum"],"fn":["candidate_registration_to_plutus_data"]};
