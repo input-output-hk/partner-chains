@@ -328,17 +328,21 @@
 <a href="#328" id="328">328</a>
 <a href="#329" id="329">329</a>
 <a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{CARDANO_PAYMENT_SIGNING_KEY_FILE, POSTGRES_CONNECTION_STRING};
 <span class="kw">use </span><span class="kw">crate</span>::config::{
 	config_fields, get_cardano_network_from_file, ChainConfig, ConfigFieldDefinition,
 	CHAIN_CONFIG_FILE_PATH, PC_CONTRACTS_CLI_PATH,
 };
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
-<span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::establish_pc_contracts_cli_configuration;
+<span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::{
+	establish_pc_contracts_cli_configuration, prompt_ogmios_configuration,
+};
 <span class="kw">use </span><span class="kw">crate</span>::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
-<span class="kw">use crate</span>::{smart_contracts, CmdRun};
+<span class="kw">use crate</span>::{cardano_key, smart_contracts, CmdRun};
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>anyhow::Context;
+<span class="kw">use </span>partner_chains_cardano_offchain::d_param::UpsertDParam;
 <span class="kw">use </span>serde::de::DeserializeOwned;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochDerivation;
@@ -380,13 +384,6 @@
 }
 
 <span class="kw">impl </span>InsertOrUpdate {
-	<span class="kw">fn </span>d_parameter_command(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
-		<span class="kw">match </span><span class="self">self </span>{
-			InsertOrUpdate::Insert =&gt; <span class="string">"insert-d-parameter"</span>,
-			InsertOrUpdate::Update =&gt; <span class="string">"update-d-parameter"</span>,
-		}
-	}
-
 	<span class="kw">fn </span>permissioned_candidates_command(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
 		<span class="string">"update-permissioned-candidates --remove-all-candidates"
 	</span>}
@@ -422,6 +419,13 @@
 
 <span class="kw">impl </span>CmdRun <span class="kw">for </span>SetupMainChainStateCmd {
 	<span class="kw">fn </span>run&lt;C: IOContext&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;()&gt; {
+		<span class="kw">let </span>runtime = tokio::runtime::Runtime::new().map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
+		runtime.block_on(<span class="self">self</span>.run_async(context))
+	}
+}
+
+<span class="kw">impl </span>SetupMainChainStateCmd {
+	<span class="kw">async fn </span>run_async&lt;C: IOContext&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;()&gt; {
 		<span class="kw">let </span>chain_config = <span class="kw">crate</span>::config::load_chain_config(context)<span class="question-mark">?</span>;
 		context.print(
 			<span class="string">"This wizard will set or update D-Parameter and Permissioned Candidates on the main chain. Setting either of these costs ADA!"</span>,
@@ -458,8 +462,8 @@
 				context,
 				ariadne_parameters.d_parameter,
 				chain_config.chain_parameters.genesis_utxo,
-				InsertOrUpdate::Update,
-			)<span class="question-mark">?</span>;
+			)
+			.<span class="kw">await</span><span class="question-mark">?</span>;
 		} <span class="kw">else </span>{
 			set_candidates_on_main_chain(
 				context,
@@ -473,8 +477,8 @@
 				context,
 				default_d_parameter,
 				chain_config.chain_parameters.genesis_utxo,
-				InsertOrUpdate::Insert,
-			)<span class="question-mark">?</span>;
+			)
+			.<span class="kw">await</span><span class="question-mark">?</span>;
 		}
 		context.print(<span class="string">"Done. Main chain state is set. Please remember that any changes can be observed immediately, but from the Partner Chain point of view they will be effective in two main chain epochs."</span>);
 		<span class="prelude-val">Ok</span>(())
@@ -613,37 +617,35 @@
 	<span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">fn </span>set_d_parameter_on_main_chain&lt;C: IOContext&gt;(
+<span class="kw">async fn </span>set_d_parameter_on_main_chain&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
 	default_d_parameter: DParameter,
 	genesis_utxo: UtxoId,
-	insert: InsertOrUpdate,
 ) -&gt; anyhow::Result&lt;()&gt; {
 	<span class="kw">let </span>update = context
 		.prompt_yes_no(<span class="string">"Do you want to set/update the D-parameter on the main chain?"</span>, <span class="bool-val">false</span>);
 	<span class="kw">if </span>update {
+		<span class="kw">let </span>ogmios_config = prompt_ogmios_configuration(context)<span class="question-mark">?</span>;
 		<span class="kw">let </span>p = context.prompt(
 			<span class="string">"Enter P, the number of permissioned candidates seats, as a non-negative integer."</span>,
 			<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>default_d_parameter.num_permissioned_candidates.to_string()),
 		);
-		<span class="kw">let </span>p: u64 = p.parse()<span class="question-mark">?</span>;
+		<span class="kw">let </span>num_permissioned_candidates: u16 = p.parse()<span class="question-mark">?</span>;
 		<span class="kw">let </span>r = context.prompt(
 			<span class="string">"Enter R, the number of registered candidates seats, as a non-negative integer."</span>,
 			<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>default_d_parameter.num_registered_candidates.to_string()),
 		);
-		<span class="kw">let </span>r: u64 = r.parse()<span class="question-mark">?</span>;
-		<span class="kw">let </span>pc_contracts_cli_resources = establish_pc_contracts_cli_configuration(context)<span class="question-mark">?</span>;
+		<span class="kw">let </span>num_registered_candidates: u16 = r.parse()<span class="question-mark">?</span>;
 		<span class="kw">let </span>payment_signing_key_path =
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
-		<span class="kw">let </span>pc_contracts_cli_command = insert.d_parameter_command();
-		<span class="kw">let </span>cardano_network = get_cardano_network_from_file(context)<span class="question-mark">?</span>;
-		<span class="kw">let </span>command = <span class="macro">format!</span>(
-			<span class="string">"{PC_CONTRACTS_CLI_PATH} {pc_contracts_cli_command} --network {} --d-parameter-permissioned-candidates-count {p} --d-parameter-registered-candidates-count {r} {} {}"</span>,
-			cardano_network,
-			smart_contracts::sidechain_params_arguments(genesis_utxo),
-			smart_contracts::runtime_config_arguments(<span class="kw-2">&amp;</span>pc_contracts_cli_resources, <span class="kw-2">&amp;</span>payment_signing_key_path)
-		);
-		context.run_command(<span class="kw-2">&amp;</span>command).context(<span class="string">"Setting D-parameter failed"</span>)<span class="question-mark">?</span>;
+		<span class="kw">let </span>payment_signing_key =
+			cardano_key::get_mc_pkey_from_file(<span class="kw-2">&amp;</span>payment_signing_key_path, context)<span class="question-mark">?</span>;
+		<span class="kw">let </span>d_parameter =
+			sidechain_domain::DParameter { num_permissioned_candidates, num_registered_candidates };
+		context
+			.offchain_impl(<span class="kw-2">&amp;</span>ogmios_config)<span class="question-mark">?
+			</span>.upsert_d_param(genesis_utxo, <span class="kw-2">&amp;</span>d_parameter, payment_signing_key.<span class="number">0</span>)
+			.<span class="kw">await</span><span class="question-mark">?</span>;
 		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"D-parameter updated to ({}, {}). The change will be effective in two main chain epochs."</span>, p, r));
 	}
 	<span class="prelude-val">Ok</span>(())

@@ -312,6 +312,27 @@
 <a href="#312" id="312">312</a>
 <a href="#313" id="313">313</a>
 <a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! D-parameter is stored on chain in an UTXO at the D-parameter validator address.
 //! There should be at most one UTXO at the validator address and it should contain the D-parameter.
 //! This UTXO should have 1 token of the D-parameter policy with an empty asset name.
@@ -337,6 +358,27 @@
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
+
+<span class="kw">pub trait </span>UpsertDParam {
+	<span class="attr">#[allow(async_fn_in_trait)]
+	</span><span class="kw">async fn </span>upsert_d_param(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		genesis_utxo: UtxoId,
+		d_parameter: <span class="kw-2">&amp;</span>DParameter,
+		payment_signing_key: [u8; <span class="number">32</span>],
+	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt;;
+}
+
+<span class="kw">impl</span>&lt;C: QueryLedgerState + QueryNetwork + Transactions&gt; UpsertDParam <span class="kw">for </span>C {
+	<span class="kw">async fn </span>upsert_d_param(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		genesis_utxo: UtxoId,
+		d_parameter: <span class="kw-2">&amp;</span>DParameter,
+		payment_signing_key: [u8; <span class="number">32</span>],
+	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
+		upsert_d_param(genesis_utxo, d_parameter, payment_signing_key, <span class="self">self</span>).<span class="kw">await
+	</span>}
+}
 
 <span class="kw">pub async fn </span>upsert_d_param&lt;C: QueryLedgerState + QueryNetwork + Transactions&gt;(
 	genesis_utxo: UtxoId,

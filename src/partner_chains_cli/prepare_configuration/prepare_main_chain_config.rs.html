@@ -432,14 +432,6 @@
 <a href="#432" id="432">432</a>
 <a href="#433" id="433">433</a>
 <a href="#434" id="434">434</a>
-<a href="#435" id="435">435</a>
-<a href="#436" id="436">436</a>
-<a href="#437" id="437">437</a>
-<a href="#438" id="438">438</a>
-<a href="#439" id="439">439</a>
-<a href="#440" id="440">440</a>
-<a href="#441" id="441">441</a>
-<a href="#442" id="442">442</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
 	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
@@ -449,7 +441,6 @@
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 <span class="kw">use crate</span>::{config::config_fields, <span class="kw-2">*</span>};
-<span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>partner_chains_cardano_offchain::init_governance::InitGovernance;
 <span class="kw">use </span>partner_chains_cardano_offchain::scripts_data::GetScriptsData;
 <span class="kw">use </span>sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, PolicyId, UtxoId};
@@ -484,17 +475,10 @@
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(MainchainPrivateKey, MainchainAddressHash), anyhow::Error&gt; {
 	<span class="kw">let </span>cardano_signig_key_file = config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
 		.prompt_with_default_from_file_and_save(context);
-	<span class="kw">let </span>bytes = cardano_key::get_key_bytes_from_file(<span class="kw-2">&amp;</span>cardano_signig_key_file, context)<span class="question-mark">?</span>;
+	<span class="kw">let </span>pkey = cardano_key::get_mc_pkey_from_file(<span class="kw-2">&amp;</span>cardano_signig_key_file, context)<span class="question-mark">?</span>;
+	<span class="kw">let </span>addr_hash = cardano_key::get_mc_address_hash_from_pkey(<span class="kw-2">&amp;</span>pkey);
 
-	<span class="kw">let </span>csl_private_key = PrivateKey::from_normal_bytes(<span class="kw-2">&amp;</span>bytes)<span class="question-mark">?</span>;
-	<span class="kw">let </span>csl_public_key_hash = csl_private_key
-		.to_public()
-		.hash()
-		.to_bytes()
-		.try_into()
-		.expect(<span class="string">"Bytes represent correct public key hash"</span>);
-
-	<span class="prelude-val">Ok</span>((MainchainPrivateKey(bytes), MainchainAddressHash(csl_public_key_hash)))
+	<span class="prelude-val">Ok</span>((pkey, addr_hash))
 }
 
 <span class="kw">fn </span>set_up_cardano_addresses&lt;C: IOContext&gt;(

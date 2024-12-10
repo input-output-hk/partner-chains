@@ -185,10 +185,12 @@
 <a href="#185" id="185">185</a>
 <a href="#186" id="186">186</a>
 <a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::ServiceConfig;
 <span class="kw">use </span><span class="kw">crate</span>::ogmios::{ogmios_request, OgmiosRequest, OgmiosResponse};
 <span class="kw">use </span>anyhow::{anyhow, Context};
 <span class="kw">use </span>jsonrpsee::http_client::HttpClient;
+<span class="kw">use </span>partner_chains_cardano_offchain::d_param::UpsertDParam;
 <span class="kw">use </span>partner_chains_cardano_offchain::init_governance::InitGovernance;
 <span class="kw">use </span>partner_chains_cardano_offchain::scripts_data::GetScriptsData;
 <span class="kw">use </span>sp_core::offchain::Timestamp;
@@ -202,7 +204,7 @@
 
 <span class="kw">pub trait </span>IOContext {
 	<span class="doccomment">/// It should implement all the required traits for offchain operations
-	</span><span class="kw">type </span>Offchain: GetScriptsData + InitGovernance;
+	</span><span class="kw">type </span>Offchain: GetScriptsData + InitGovernance + UpsertDParam;
 
 	<span class="kw">fn </span>run_command(<span class="kw-2">&amp;</span><span class="self">self</span>, cmd: <span class="kw-2">&amp;</span>str) -&gt; anyhow::Result&lt;String&gt;;
 	<span class="kw">fn </span>print(<span class="kw-2">&amp;</span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>str);

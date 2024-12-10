@@ -678,6 +678,12 @@
 <a href="#678" id="678">678</a>
 <a href="#679" id="679">679</a>
 <a href="#680" id="680">680</a>
+<a href="#681" id="681">681</a>
+<a href="#682" id="682">682</a>
+<a href="#683" id="683">683</a>
+<a href="#684" id="684">684</a>
+<a href="#685" id="685">685</a>
+<a href="#686" id="686">686</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -1296,11 +1302,17 @@
 	}
 }
 
-<span class="attr">#[derive(Debug, Clone, PartialEq, Decode, Encode, MaxEncodedLen, TypeInfo, Eq)]
+<span class="attr">#[derive(Debug, Clone, PartialEq, Decode, Encode, MaxEncodedLen, TypeInfo, Eq, Hash)]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize))]
 </span><span class="kw">pub struct </span>DParameter {
 	<span class="kw">pub </span>num_permissioned_candidates: u16,
 	<span class="kw">pub </span>num_registered_candidates: u16,
+}
+
+<span class="kw">impl </span>DParameter {
+	<span class="kw">pub fn </span>new(num_permissioned_candidates: u16, num_registered_candidates: u16) -&gt; <span class="self">Self </span>{
+		<span class="self">Self </span>{ num_permissioned_candidates, num_registered_candidates }
+	}
 }
 
 <span class="attr">#[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord)]

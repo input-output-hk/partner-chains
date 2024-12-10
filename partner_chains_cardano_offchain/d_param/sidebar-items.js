@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["upsert_d_param"]};
+window.SIDEBAR_ITEMS = {"fn":["upsert_d_param"],"trait":["UpsertDParam"]};
