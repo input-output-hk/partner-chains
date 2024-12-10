@@ -6561,6 +6561,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sidechain-domain",
+ "testcontainers",
  "time",
  "tokio",
  "tokio-retry",

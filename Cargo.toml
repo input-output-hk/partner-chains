@@ -83,6 +83,7 @@ pallas-addresses = { git = "https://github.com/txpipe/pallas.git", tag = "v0.31.
 pallas-primitives = { git = "https://github.com/txpipe/pallas.git", tag = "v0.31.0" }
 proptest = { version = "1.5.0" }
 scale-info = { version = "2.11.1", default-features = false, features = ["derive"] }
+testcontainers = { version = "0.15.0" }
 quickcheck_macros = { version = "1" }
 quote = "1.0"
 rand_chacha = { version = "0.3.1", default-features = false }
