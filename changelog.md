@@ -6,6 +6,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* `setup-main-chain-state` command now uses native Rust to insert the D-Parameter
+
 ## Removed
 
 ## Fixed
@@ -36,7 +38,8 @@ Do **NOT** perform a normal runtime upgrade, it will break your chain.
 
 ## Added
 
-* Added `smart-contracts` command to the node with sub-commands `init-governance` and `get-scripts`.
+* Added `smart-contracts` command to the node with sub-commands `init-governance`, `get-scripts` and
+`upsert-d-parameter`.
 
 # v1.3.0
 

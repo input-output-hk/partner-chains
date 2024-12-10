@@ -5,6 +5,7 @@ use log4rs::{
 use sidechain_domain::MainchainPrivateKey;
 
 pub mod get_scripts;
+pub mod d_parameter;
 pub mod init_governance;
 
 #[derive(Clone, Debug, clap::Subcommand)]
@@ -14,6 +15,8 @@ pub enum SmartContractsCmd {
 	GetScripts(get_scripts::GetScripts),
 	/// Initialize Partner Chain governance
 	InitGovernance(init_governance::InitGovernanceCmd),
+	/// Upsert DParameter
+	UpsertDParameter(d_parameter::UpsertDParameterCmd),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -30,6 +33,7 @@ impl SmartContractsCmd {
 		match self {
 			Self::InitGovernance(cmd) => cmd.execute().await,
 			Self::GetScripts(cmd) => cmd.execute().await,
+			Self::UpsertDParameter(cmd) => cmd.execute().await,
 		}
 	}
 
