@@ -105,6 +105,49 @@ runs:
           eval "$pytest_cmd"
         fi
 
+    - name: Handle Debug Logs
+      if: always()
+      shell: bash
+      run: |
+        # Determine test phase based on keyword
+        if [[ "${{ inputs.keyword }}" == "test_get_status or test_get_params" ]]; then
+          TEST_PHASE="smoke"
+        elif [[ "${{ inputs.tests }}" == "postmerge" ]]; then
+          if [[ "${{ inputs.mc_epoch }}" == "3" ]]; then
+            TEST_PHASE="postmerge-final"
+          else
+            TEST_PHASE="postmerge-epoch${{ inputs.mc_epoch }}"
+          fi
+        else
+          TEST_PHASE="premerge"
+        fi
+
+        echo "TEST_PHASE=${TEST_PHASE}" >> $GITHUB_ENV
+
+        if [[ "${{ inputs.local-environment }}" == "true" ]]; then
+          echo "Copy debug log from docker container"
+          mkdir -p E2E-tests
+          docker cp tests:/e2e-tests/debug.log E2E-tests/debug_${TEST_PHASE}.log || docker cp tests:/E2E-tests/debug.log E2E-tests/debug_${TEST_PHASE}.log
+          cd E2E-tests
+        else
+          cd e2e-tests
+        fi
+
+        # Process the log file
+        awk '{print strftime("[%Y-%m-%d %H:%M:%S]"), $0}' debug_${TEST_PHASE}.log > debug_with_timestamps.log
+        nl -ba -s '  ' -w 8 debug_with_timestamps.log > debug_with_timestamps_and_line_numbers.log
+        mv debug_with_timestamps_and_line_numbers.log debug_${TEST_PHASE}.log
+
+    - name: Archive Debug Log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: debug_log_${{ env.TEST_PHASE }}
+        retention-days: 15
+        overwrite: true
+        path: E2E-tests/debug_${{ env.TEST_PHASE }}.log
+        if-no-files-found: error
+
     - name: Copy test results
       if: ${{ inputs.local-environment == 'true' }}
       shell: bash
