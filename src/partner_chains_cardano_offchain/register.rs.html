@@ -454,6 +454,8 @@
 <a href="#454" id="454">454</a>
 <a href="#455" id="455">455</a>
 <a href="#456" id="456">456</a>
+<a href="#457" id="457">457</a>
+<a href="#458" id="458">458</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(dead_code)]
 
 </span><span class="kw">use </span><span class="kw">crate</span>::csl::{
@@ -538,17 +540,16 @@
 		<span class="kw-2">&amp;</span>all_registration_utxos,
 	);
 
-	<span class="kw">if </span>own_registrations
-		.iter()
-		.any(|(<span class="kw">_</span>, existing_registration)| candidate_registration == existing_registration)
-	{
+	<span class="kw">if </span>own_registrations.iter().any(|(<span class="kw">_</span>, existing_registration)| {
+		candidate_registration.matches_keys(existing_registration)
+	}) {
 		<span class="macro">log::info!</span>(<span class="string">"✅ Candidate already registered with same keys."</span>);
 		<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
 	}
 	<span class="kw">let </span>own_registration_utxos = own_registrations.iter().map(|r| r.<span class="number">0</span>.clone()).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
 
 	<span class="kw">let </span>zero_ex_units = ExUnits::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span><span class="number">0u64</span>.into());
-	<span class="kw">let </span>tx = register_tx(
+	<span class="kw">let </span><span class="kw-2">mut </span>tx = register_tx(
 		<span class="kw-2">&amp;</span>validator,
 		candidate_registration,
 		registration_utxo,
@@ -557,23 +558,26 @@
 		zero_ex_units,
 	)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>evaluate_response =
-		ogmios_client.evaluate_transaction(<span class="kw-2">&amp;</span>tx.to_bytes()).<span class="kw">await</span>.map_err(|e| {
-			<span class="macro">anyhow!</span>(
-				<span class="string">"Evaluate candidate registration transaction request failed: {}, bytes: {}"</span>,
-				e,
-				hex::encode(tx.to_bytes())
-			)
-		})<span class="question-mark">?</span>;
-	<span class="kw">let </span>validator_redeemer_ex_units = get_first_validator_budget(evaluate_response)<span class="question-mark">?</span>;
-	<span class="kw">let </span>tx = register_tx(
-		<span class="kw-2">&amp;</span>validator,
-		candidate_registration,
-		registration_utxo,
-		<span class="kw-2">&amp;</span>own_registration_utxos,
-		<span class="kw-2">&amp;</span>ctx,
-		validator_redeemer_ex_units,
-	)<span class="question-mark">?</span>;
+	<span class="kw">if </span>!own_registration_utxos.is_empty() {
+		<span class="kw">let </span>evaluate_response =
+			ogmios_client.evaluate_transaction(<span class="kw-2">&amp;</span>tx.to_bytes()).<span class="kw">await</span>.map_err(|e| {
+				<span class="macro">anyhow!</span>(
+					<span class="string">"Evaluate candidate registration transaction request failed: {}, bytes: {}"</span>,
+					e,
+					hex::encode(tx.to_bytes())
+				)
+			})<span class="question-mark">?</span>;
+		<span class="kw">let </span>validator_redeemer_ex_units = get_first_validator_budget(evaluate_response)<span class="question-mark">?</span>;
+		tx = register_tx(
+			<span class="kw-2">&amp;</span>validator,
+			candidate_registration,
+			registration_utxo,
+			<span class="kw-2">&amp;</span>own_registration_utxos,
+			<span class="kw-2">&amp;</span>ctx,
+			validator_redeemer_ex_units,
+		)<span class="question-mark">?</span>;
+	}
+
 	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
 	<span class="kw">let </span>result = ogmios_client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
 		<span class="macro">anyhow!</span>(

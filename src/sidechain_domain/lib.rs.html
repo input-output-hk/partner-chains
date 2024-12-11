@@ -672,6 +672,16 @@
 <a href="#672" id="672">672</a>
 <a href="#673" id="673">673</a>
 <a href="#674" id="674">674</a>
+<a href="#675" id="675">675</a>
+<a href="#676" id="676">676</a>
+<a href="#677" id="677">677</a>
+<a href="#678" id="678">678</a>
+<a href="#679" id="679">679</a>
+<a href="#680" id="680">680</a>
+<a href="#681" id="681">681</a>
+<a href="#682" id="682">682</a>
+<a href="#683" id="683">683</a>
+<a href="#684" id="684">684</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -1307,6 +1317,16 @@
 	<span class="kw">pub </span>registration_utxo: UtxoId,
 	<span class="kw">pub </span>aura_pub_key: AuraPublicKey,
 	<span class="kw">pub </span>grandpa_pub_key: GrandpaPublicKey,
+}
+
+<span class="kw">impl </span>CandidateRegistration {
+	<span class="kw">pub fn </span>matches_keys(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+		<span class="self">self</span>.stake_ownership == other.stake_ownership
+			&amp;&amp; <span class="self">self</span>.partnerchain_pub_key == other.partnerchain_pub_key
+			&amp;&amp; <span class="self">self</span>.partnerchain_signature == other.partnerchain_signature
+			&amp;&amp; <span class="self">self</span>.aura_pub_key == other.aura_pub_key
+			&amp;&amp; <span class="self">self</span>.grandpa_pub_key == other.grandpa_pub_key
+	}
 }
 
 <span class="doccomment">/// AdaBasedStaking is a variant of Plutus type StakeOwnership.
