@@ -14,7 +14,7 @@ use ogmios_client::{
 	types::{OgmiosTx, OgmiosUtxo},
 };
 use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
-use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, McTxHash, UtxoId, UtxoIndex};
+use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, UtxoId};
 
 #[cfg(test)]
 mod tests;
@@ -128,9 +128,7 @@ pub async fn run_init_governance<
 	let result = client.submit_transaction(&signed_transaction.to_bytes()).await?;
 	let tx_id = result.transaction.id;
 	log::info!("✅ Transaction submitted. ID: {}", hex::encode(result.transaction.id));
-	await_tx
-		.await_tx_output(client, UtxoId { tx_hash: McTxHash(tx_id), index: UtxoIndex(0) })
-		.await?;
+	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
 
 	Ok((genesis_utxo.to_domain(), result.transaction))
 }
