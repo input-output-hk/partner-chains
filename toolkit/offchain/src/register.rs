@@ -18,7 +18,7 @@ use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
-	types::{OgmiosTx, OgmiosUtxo},
+	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::registered_candidates::{
 	candidate_registration_to_plutus_data, RegisterValidatorDatum,
@@ -32,7 +32,7 @@ pub trait Register {
 		genesis_utxo: UtxoId,
 		candidate_registration: &CandidateRegistration,
 		payment_signing_key: MainchainPrivateKey,
-	) -> Result<Option<OgmiosTx>, OffchainError>;
+	) -> Result<Option<McTxHash>, OffchainError>;
 }
 
 impl<T> Register for T
@@ -44,7 +44,7 @@ where
 		genesis_utxo: UtxoId,
 		candidate_registration: &CandidateRegistration,
 		payment_signing_key: MainchainPrivateKey,
-	) -> Result<Option<OgmiosTx>, OffchainError> {
+	) -> Result<Option<McTxHash>, OffchainError> {
 		run_register(
 			genesis_utxo,
 			candidate_registration,
@@ -66,7 +66,7 @@ pub async fn run_register<
 	payment_signing_key: MainchainPrivateKey,
 	ogmios_client: &C,
 	await_tx: A,
-) -> anyhow::Result<Option<OgmiosTx>> {
+) -> anyhow::Result<Option<McTxHash>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key.0, ogmios_client).await?;
 	let validator = crate::scripts_data::registered_candidates_scripts(genesis_utxo)?;
 	let validator_address = validator.address_bech32(ctx.network)?;
@@ -132,7 +132,7 @@ pub async fn run_register<
 	log::info!("✅ Transaction submitted. ID: {}", hex::encode(result.transaction.id));
 	await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_id, 0)).await?;
 
-	Ok(Some(result.transaction))
+	Ok(Some(McTxHash(result.transaction.id)))
 }
 
 pub trait Deregister {
@@ -143,7 +143,7 @@ pub trait Deregister {
 		payment_signing_key: MainchainPrivateKey,
 		own_pkh: MainchainAddressHash,
 		stake_ownership_pub_key: MainchainPublicKey,
-	) -> Result<Option<OgmiosTx>, OffchainError>;
+	) -> Result<Option<McTxHash>, OffchainError>;
 }
 
 impl<T> Deregister for T
@@ -156,7 +156,7 @@ where
 		payment_signing_key: MainchainPrivateKey,
 		own_pkh: MainchainAddressHash,
 		stake_ownership_pub_key: MainchainPublicKey,
-	) -> Result<Option<OgmiosTx>, OffchainError> {
+	) -> Result<Option<McTxHash>, OffchainError> {
 		run_deregister(
 			genesis_utxo,
 			payment_signing_key,
@@ -180,7 +180,7 @@ pub async fn run_deregister<
 	stake_ownership_pub_key: MainchainPublicKey,
 	ogmios_client: &C,
 	await_tx: A,
-) -> anyhow::Result<Option<OgmiosTx>> {
+) -> anyhow::Result<Option<McTxHash>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key.0, ogmios_client).await?;
 	let validator = crate::scripts_data::registered_candidates_scripts(genesis_utxo)?;
 	let validator_address = validator.address_bech32(ctx.network)?;
@@ -217,11 +217,9 @@ pub async fn run_deregister<
 	})?;
 	let tx_id = result.transaction.id;
 	log::info!("✅ Transaction submitted. ID: {}", hex::encode(result.transaction.id));
-	await_tx
-		.await_tx_output(ogmios_client, UtxoId { tx_hash: McTxHash(tx_id), index: UtxoIndex(0) })
-		.await?;
+	await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_id, 0)).await?;
 
-	Ok(Some(result.transaction))
+	Ok(Some(McTxHash(result.transaction.id)))
 }
 
 fn get_own_registrations(
