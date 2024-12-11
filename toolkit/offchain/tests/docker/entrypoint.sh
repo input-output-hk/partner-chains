@@ -1,5 +1,8 @@
 #! /bin/bash
 
+chmod 400 /config/keys/kes.skey
+chmod 400 /config/keys/vrf.skey
+
 byron_startTime=$(( $(date +%s) + 1 ))
 shelley_systemStart=$(date --utc +"%Y-%m-%dT%H:%M:%SZ" --date="@$byron_startTime")
 
