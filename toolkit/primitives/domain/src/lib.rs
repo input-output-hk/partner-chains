@@ -635,6 +635,16 @@ pub struct CandidateRegistration {
 	pub grandpa_pub_key: GrandpaPublicKey,
 }
 
+impl CandidateRegistration {
+	pub fn matches_keys(&self, other: &Self) -> bool {
+		self.stake_ownership == other.stake_ownership
+			&& self.partnerchain_pub_key == other.partnerchain_pub_key
+			&& self.partnerchain_signature == other.partnerchain_signature
+			&& self.aura_pub_key == other.aura_pub_key
+			&& self.grandpa_pub_key == other.grandpa_pub_key
+	}
+}
+
 /// AdaBasedStaking is a variant of Plutus type StakeOwnership.
 /// The other variant, TokenBasedStaking, is not supported
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -82,17 +82,16 @@ pub async fn run_register<
 		&all_registration_utxos,
 	);
 
-	if own_registrations
-		.iter()
-		.any(|(_, existing_registration)| candidate_registration == existing_registration)
-	{
+	if own_registrations.iter().any(|(_, existing_registration)| {
+		candidate_registration.matches_keys(existing_registration)
+	}) {
 		log::info!("✅ Candidate already registered with same keys.");
 		return Ok(None);
 	}
 	let own_registration_utxos = own_registrations.iter().map(|r| r.0.clone()).collect::<Vec<_>>();
 
 	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
-	let tx = register_tx(
+	let mut tx = register_tx(
 		&validator,
 		candidate_registration,
 		registration_utxo,
@@ -101,23 +100,26 @@ pub async fn run_register<
 		zero_ex_units,
 	)?;
 
-	let evaluate_response =
-		ogmios_client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
-			anyhow!(
-				"Evaluate candidate registration transaction request failed: {}, bytes: {}",
-				e,
-				hex::encode(tx.to_bytes())
-			)
-		})?;
-	let validator_redeemer_ex_units = get_first_validator_budget(evaluate_response)?;
-	let tx = register_tx(
-		&validator,
-		candidate_registration,
-		registration_utxo,
-		&own_registration_utxos,
-		&ctx,
-		validator_redeemer_ex_units,
-	)?;
+	if !own_registration_utxos.is_empty() {
+		let evaluate_response =
+			ogmios_client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
+				anyhow!(
+					"Evaluate candidate registration transaction request failed: {}, bytes: {}",
+					e,
+					hex::encode(tx.to_bytes())
+				)
+			})?;
+		let validator_redeemer_ex_units = get_first_validator_budget(evaluate_response)?;
+		tx = register_tx(
+			&validator,
+			candidate_registration,
+			registration_utxo,
+			&own_registration_utxos,
+			&ctx,
+			validator_redeemer_ex_units,
+		)?;
+	}
+
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let result = ogmios_client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow!(
