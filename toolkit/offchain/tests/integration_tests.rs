@@ -76,7 +76,6 @@ async fn upsert_d_param() {
 	assert!(run_upsert_d_param(genesis_utxo, 1, 1, &client).await.is_some())
 }
 
-#[ignore = "Internal error: cannot use evaluateTransaction response"]
 #[tokio::test]
 async fn register() {
 	let _ = env_logger::builder().is_test(true).try_init();
