@@ -1,0 +1,33 @@
+sequenceDiagram
+    participant Mainchain as Cardano Node
+    participant Follower as Main Chain Follower
+    participant Inherent as Inherent Data Provider
+    participant Session as Session Manager
+    participant Aura as Aura
+    participant Grandpa as Grandpa
+
+    loop Runs forever asynchronously
+        Mainchain-)Follower: Get New Block
+        Follower-)Follower: Update internal ledger state
+    end
+    
+    opt Epoch Start
+        Session->>Session: Rotate Committee
+        Session->>Aura: Rotate Committee
+        Session->>Grandpa: Rotate Committee
+    end
+    Session->>Inherent: Get next PC epoch with unknown committee
+    Inherent->>Inherent: Convert PC epoch to MC epoch
+
+    rect rgb(230,230,230)
+        Note over Follower,Inherent: Committee Selection Inputs
+        Follower->>Inherent: Get D-Parameter for the MC epoch
+        Follower->>Inherent: Get Permissioned Committee Candidates for the MC epoch
+        Follower->>Inherent: Get Registered Committee Candidates for the MC epoch
+        Follower->>Inherent: Get nonce for the MC epoch
+    end
+
+    opt Committee for next epoch is unknown
+        Inherent->>Session: Get Committee Selection Inputs<br>for next PC epoch
+        Session->>Session: Calculate and set committee for next PC epoch
+    end
