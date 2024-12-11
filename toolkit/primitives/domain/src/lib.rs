@@ -21,7 +21,7 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use plutus::{Datum, ToDatum};
 use plutus_datum_derive::*;
 use scale_info::TypeInfo;
-use sp_core::{bounded::BoundedVec, ed25519, sr25519, ConstU32};
+use sp_core::{bounded::BoundedVec, ecdsa, ed25519, sr25519, ConstU32};
 #[cfg(feature = "serde")]
 use {
 	derive_more::FromStr,
@@ -294,9 +294,15 @@ impl ScEpochNumber {
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, PartialOrd, Ord)]
+#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, PartialOrd, Ord, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize, as_ref)]
 pub struct SidechainPublicKey(pub Vec<u8>);
+
+impl From<ecdsa::Public> for SidechainPublicKey {
+	fn from(value: ecdsa::Public) -> Self {
+		Self(value.0.to_vec())
+	}
+}
 
 #[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
@@ -586,7 +592,7 @@ impl SidechainPublicKeysSorted {
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord)]
+#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize)]
 pub struct AuraPublicKey(pub Vec<u8>);
 impl AuraPublicKey {
@@ -595,12 +601,24 @@ impl AuraPublicKey {
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord)]
+impl From<sr25519::Public> for AuraPublicKey {
+	fn from(value: sr25519::Public) -> Self {
+		Self(value.0.to_vec())
+	}
+}
+
+#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize)]
 pub struct GrandpaPublicKey(pub Vec<u8>);
 impl GrandpaPublicKey {
 	pub fn try_into_ed25519(&self) -> Option<ed25519::Public> {
 		Some(ed25519::Public::from_raw(self.0.clone().try_into().ok()?))
+	}
+}
+
+impl From<ed25519::Public> for GrandpaPublicKey {
+	fn from(value: ed25519::Public) -> Self {
+		Self(value.0.to_vec())
 	}
 }
 
@@ -617,7 +635,7 @@ impl DParameter {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord, Hash)]
 pub struct PermissionedCandidateData {
 	pub sidechain_public_key: SidechainPublicKey,
 	pub aura_public_key: AuraPublicKey,
