@@ -47,13 +47,13 @@ fn no_ariadne_parameters_on_main_chain_do_updates() {
 			UtxoId::default(),
 			new_d_parameter(),
 			payment_signing_key(),
-			Ok(Some(McTxHash::default())),
+			Ok(Some(McTxHash([1; 32]))),
 		)
 		.with_upsert_permissioned_candidates(
 			genesis_utxo(),
 			&initial_permissioned_candidates(),
 			payment_signing_key(),
-			Ok(Some(McTxHash::default())),
+			Ok(Some(McTxHash([2; 32]))),
 		);
 	let mock_context = MockIOContext::new()
 		.with_file(PC_CONTRACTS_CLI_PATH, "<mock executable>")
@@ -105,13 +105,13 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 			UtxoId::default(),
 			new_d_parameter(),
 			payment_signing_key(),
-			Ok(Some(McTxHash::default())),
+			Ok(Some(McTxHash([1; 32]))),
 		)
 		.with_upsert_permissioned_candidates(
 			genesis_utxo(),
 			&initial_permissioned_candidates(),
 			payment_signing_key(),
-			Ok(Some(McTxHash::default())),
+			Ok(Some(McTxHash([2; 32]))),
 		);
 	let mock_context = MockIOContext::new()
 		.with_file(PC_CONTRACTS_CLI_PATH, "<mock executable>")
