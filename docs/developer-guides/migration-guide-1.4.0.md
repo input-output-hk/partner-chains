@@ -1,5 +1,11 @@
 # v1.4.0 Migration guide
 
+**Important:**
+- Please read the whole document before attempting to perform any actions.
+- Whenever the guide requires running the `partner-chains-cli` binary, make sure the `pc-contracts-cli`
+of the version specified in the compatibility matrix is present in your active directory. In case of the
+1.4.0 release it should be v7.0.1.
+
 ## Context
 
 This guide describes the process of migrating from Partner Chains SDK v1.3.0 to v1.4.0 for an already
@@ -10,6 +16,17 @@ version v7.0.1, which:
 - introduces a new governance mechanism which needs to be set up
 - removes "sidechain params" as part of the definition of a Partner Chain, replacing them with the
 genesis utxo (which is the utxo burned when establishing a governance)
+
+## Overview of the migration
+
+The migration requires multiple detailed steps but to follow them successfuly it's good to understand the big picture first:
+The 1.4.0 version introduces some backwards-incompatible data schemas. This means that a simple runtime upgrade
+using `system/setCode` extrinsic would leave the chain in an inconsistent state and unable to produce blocks.
+To avoid this issue, the migration involves the following general steps:
+1. Upgrade to a transitory version of the runtime 1.3.1, which only introduces a special helper extrinsic `sidechain/upgrade_and_set_addresses`.
+2. Establish a brand new Partner Chain on Cardano using the new 1.4.0 version.
+3. Use the `sidechain/upgrade_and_set_addresses` to atomically upgrade the runtime to version 1.4.0 and switch the addresses
+observed for committee selection to the new Partner Chain.
 
 ## Migration Steps
 
@@ -22,7 +39,7 @@ and observing configuration and registrations created using smart contracts of v
 
 ### Runtime upgrade to v1.3.1
 
-This patch version extends the Sidechain pallet with a new extrinsic `upgrade_and_set_addresses`
+This patch version extends the Sidechain pallet with a new extrinsic `sidechain/upgrade_and_set_addresses`
 which allows the on-chain governance to atomically upgrade the runtime and set the genesis utxo and new main chain
 scripts to observe.
 
@@ -38,7 +55,7 @@ impl pallet_sidechain::Config for Runtime {
 	}
 }
 ```
-This will allow the `upgrade_and_set_addresses` extrinsic to update configuration of the SessionValidatorManagement
+This will allow the `sidechain/upgrade_and_set_addresses` extrinsic to update configuration of the SessionValidatorManagement
 pallet together with the Runtime code.
 3. Increment the `spec_version` in your runtime configuration.
 4. Build the new Runtime WASM (you can do it by running `cargo build --release`)
@@ -80,12 +97,12 @@ The address associated with the keys should have enough ADA to cover transaction
 2. Run the `prepare-configuration` command of `partner-chains-cli` (v1.4.0) in a fresh directory.
 This step will involve selecting the _genesis UTXO_ to be spent intializing the governance mechanism.
 Save the `partner-chains-cli-chain-config.json` file produced by this step.
-3. Run the `create-chain-spec` command of `partner-chains-cli`. Save the `chain-spec.json` file produced by this step.
-4. Add the permissioned candidates in the `partner-chains-cli-chain-config.json` file. These can be copied from the chain config file
+3. Add the permissioned candidates in the `partner-chains-cli-chain-config.json` file. These can be copied from the chain config file
 used when setting up the Partner Chain previously, or obtained by querying the `sidechain_getAriadneParameters` jsonRPC method:
 ```sh
 curl "<PC node>" -X POST -H "Content-Type: application/json" -d '{"jsonrpc": "2.0", "id":0, "method":"sidechain_getAriadneParameters","params":[<epoch>] }' | jq '.result.permissionedCandidates'
 ```
+4. Run the `create-chain-spec` command of `partner-chains-cli`. Save the `chain-spec.json` file produced by this step.
 5. Run the `setup-main-chain-state` command of `partner-chains-cli`, setting up the D-param and permissioned candidates.
 
 After these steps, the new Partner Chain will be initialized on Cardano.
@@ -103,16 +120,10 @@ After this step the SPO should be ready to be included in post-migration committ
 *Important:*
 * the `chain-spec.json` file is only used for registrations and should **not** be used to run the nodes.
 The SPOs should discard it after this section.
-* The register commands require the `partner-chains-cli-keys.json` file to be present in the run directory. If the SPO
-used `partner-chains-cli` for the previous registration, they should re-use the file generated then.
-If the SPO no longer has the file, it can be manually created based on the following schema:
-```json
-{
-  "sidechain_pub_key": "<pub key>",
-  "aura_pub_key": "<pub key>",
-  "grandpa_pub_key": "<pub key>"
-}
-```
+* For the register commands to be run correctly, the `partner-chains-public-keys.json` file needs to be present
+in the run directory and the base path configured in `partner-chains-cli-resources.json` should point to a valid
+directory containing the keystore with the private keys.
+If the SPO used `partner-chains-cli` for the previous registration, they should re-use the keys generated then.
 New SPOs should run the `generate-keys` command instead.
 
 ### Upgrade the runtime to v1.4.0
