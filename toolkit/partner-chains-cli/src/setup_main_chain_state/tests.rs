@@ -286,17 +286,6 @@ fn upsert_permissioned_candidates_failed_io() -> MockIO {
 	])
 }
 
-fn establish_pc_contracts_cli_config_io() -> MockIO {
-	MockIO::Group(vec![
-		establish_pc_contracts_cli_configuration_io(None, PcContractsCliResources::default()),
-		prompt_with_default_and_save_to_existing_file(
-			CARDANO_PAYMENT_SIGNING_KEY_FILE,
-			Some("payment.skey"),
-			"payment.skey",
-		),
-	])
-}
-
 fn new_d_parameter() -> DParameter {
 	DParameter::new(4, 7)
 }
