@@ -54,7 +54,7 @@ pub fn permissioned_candidates_to_plutus_data(
 	}
 	let generic_data = PlutusData::new_list(&list);
 	VersionedGenericDatumShape {
-		datum: PlutusData::new_empty_constr_plutus_data(&BigNum::zero()),
+		datum: PlutusData::new_empty_constr_plutus_data(&0u64.into()),
 		generic_data,
 		version: 0,
 	}

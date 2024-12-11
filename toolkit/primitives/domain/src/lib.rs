@@ -617,7 +617,8 @@ impl DParameter {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PermissionedCandidateData {
 	pub sidechain_public_key: SidechainPublicKey,
 	pub aura_public_key: AuraPublicKey,

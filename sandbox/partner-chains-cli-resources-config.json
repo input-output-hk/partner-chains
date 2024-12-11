@@ -1,0 +1,4 @@
+{
+  "substrate_node_base_path": "./data",
+  "substrate_node_executable_path": "../target/debug/partner-chains-node"
+}

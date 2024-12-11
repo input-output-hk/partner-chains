@@ -8,7 +8,7 @@
 //! `[sidechain_public_key, aura_public_key, grandpa_publicKey]`.
 
 use crate::csl::{
-	get_builder_config, get_first_validator_budget, InputsBuilderExt, TransactionBuilderExt,
+	get_builder_config, get_validator_budgets, InputsBuilderExt, TransactionBuilderExt,
 	TransactionContext,
 };
 use crate::plutus_script::PlutusScript;
@@ -16,10 +16,13 @@ use anyhow::anyhow;
 use cardano_serialization_lib::{
 	ExUnits, JsError, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
 };
+use cardano_serialization_lib::{LanguageKind, TransactionHash, TransactionInput};
 use ogmios_client::query_ledger_state::QueryLedgerState;
 use ogmios_client::query_network::QueryNetwork;
 use ogmios_client::transactions::Transactions;
 use ogmios_client::types::OgmiosUtxo;
+use crate::csl::ScriptExUnits;
+use ogmios_client::types::OgmiosScript::Plutus;
 use partner_chains_plutus_data::permissioned_candidates::{
 	permissioned_candidates_to_plutus_data, PermissionedCandidateDatums,
 };
@@ -57,19 +60,21 @@ pub async fn upsert_permissioned_candidates<C: QueryLedgerState + QueryNetwork +
 					&candidates,
 					&current_utxo,
 					ctx,
+					genesis_utxo,
 					ogmios_client,
 				)
 				.await?,
 			))
 		},
 		None => {
-			log::info!("There are permissioned candidates. Inserting new ones.");
+			log::info!("There are no permissioned candidates. Inserting new ones.");
 			Ok(Some(
 				insert_permissioned_candidates(
 					&validator,
 					&policy,
 					&candidates,
 					ctx,
+					genesis_utxo,
 					ogmios_client,
 				)
 				.await?,
@@ -101,19 +106,32 @@ fn get_current_permissioned_candidates(
 	}
 }
 
-async fn insert_permissioned_candidates<C>(
+async fn insert_permissioned_candidates<C: QueryLedgerState + QueryNetwork + Transactions>(
 	validator: &PlutusScript,
 	policy: &PlutusScript,
 	candidates: &[PermissionedCandidateData],
 	ctx: TransactionContext,
+	genesis_utxo: UtxoId,
 	client: &C,
 ) -> anyhow::Result<McTxHash>
 where
 	C: Transactions,
 {
-	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
+	let zero_ex_units = ScriptExUnits {
+		mint_ex_units: vec![
+			ExUnits::new(&0u64.into(), &0u64.into()),
+			ExUnits::new(&0u64.into(), &0u64.into()),
+		],
+		spend_ex_units: vec![],
+	};
+
+	let gov_utxo = crate::init_governance::get_governance_utxo(genesis_utxo, client)
+		.await
+		.map_err(|e| JsError::from_str(e.to_string().as_str()))?;
+
 	let tx =
-		mint_permissioned_candidates_token_tx(validator, policy, candidates, &ctx, zero_ex_units)?;
+		mint_permissioned_candidates_token_tx(validator, policy, candidates, &ctx, zero_ex_units, gov_utxo.clone())?;
+
 	let evaluate_response = client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
 		anyhow!(
 			"Evaluate insert permissioned candidates transaction request failed: {}, bytes: {}",
@@ -121,20 +139,21 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	let mint_witness_ex_units = get_first_validator_budget(evaluate_response)?;
+	let ex_units = get_validator_budgets(evaluate_response)?;
 	let tx = mint_permissioned_candidates_token_tx(
 		validator,
 		policy,
 		candidates,
 		&ctx,
-		mint_witness_ex_units,
+		ex_units,
+		gov_utxo,
 	)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow!(
 			"Submit insert permissioned candidates transaction request failed: {}, bytes: {}",
 			e,
-			hex::encode(tx.to_bytes())
+			hex::encode(signed_tx)
 		)
 	})?;
 	let tx_id = McTxHash(res.transaction.id);
@@ -142,18 +161,27 @@ where
 	Ok(tx_id)
 }
 
-async fn update_permissioned_candidates<C>(
+async fn update_permissioned_candidates<C: QueryLedgerState + Transactions + QueryNetwork>(
 	validator: &PlutusScript,
 	policy: &PlutusScript,
 	candidates: &[PermissionedCandidateData],
 	current_utxo: &OgmiosUtxo,
 	ctx: TransactionContext,
+	genesis_utxo: UtxoId,
 	client: &C,
 ) -> anyhow::Result<McTxHash>
 where
 	C: Transactions,
 {
-	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
+	let zero_ex_units = ScriptExUnits {
+		mint_ex_units: vec![ExUnits::new(&0u64.into(), &0u64.into())],
+		spend_ex_units: vec![ExUnits::new(&0u64.into(), &0u64.into())],
+	};
+
+	let gov_utxo = crate::init_governance::get_governance_utxo(genesis_utxo, client)
+		.await
+		.map_err(|e| JsError::from_str(e.to_string().as_str()))?;
+
 	let tx = update_permissioned_candidates_tx(
 		validator,
 		policy,
@@ -161,6 +189,7 @@ where
 		current_utxo,
 		&ctx,
 		zero_ex_units,
+		gov_utxo.clone(),
 	)?;
 	let evaluate_response = client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
 		anyhow!(
@@ -169,7 +198,7 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	let spend_ex_units = get_first_validator_budget(evaluate_response)?;
+	let ex_units = get_validator_budgets(evaluate_response)?;
 
 	let tx = update_permissioned_candidates_tx(
 		validator,
@@ -177,14 +206,15 @@ where
 		candidates,
 		current_utxo,
 		&ctx,
-		spend_ex_units,
+		ex_units,
+		gov_utxo.clone(),
 	)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow!(
 			"Submit update permissioned candidates transaction request failed: {}, bytes: {}",
 			e,
-			hex::encode(tx.to_bytes())
+			hex::encode(signed_tx)
 		)
 	})?;
 	let tx_id = McTxHash(res.transaction.id);
@@ -197,11 +227,18 @@ fn mint_permissioned_candidates_token_tx(
 	policy: &PlutusScript,
 	permissioned_candidates: &[PermissionedCandidateData],
 	ctx: &TransactionContext,
-	mint_witness_ex_units: ExUnits,
+	mut ex_units: ScriptExUnits,
+	gov_utxo: OgmiosUtxo,
 ) -> Result<Transaction, JsError> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	// The essence of transaction: mint token and set output with it
-	tx_builder.add_mint_one_script_token(policy, mint_witness_ex_units)?;
+	tx_builder.add_mint_one_script_token(
+		policy,
+		ex_units
+			.mint_ex_units
+			.pop()
+			.unwrap_or_else(|| panic!("Mint ex units not found")),
+	)?;
 	tx_builder.add_output_with_one_script_token(
 		validator,
 		policy,
@@ -209,6 +246,28 @@ fn mint_permissioned_candidates_token_tx(
 		ctx,
 	)?;
 
+	let gov_policy = match gov_utxo.script {
+		Some(Plutus(ps)) => PlutusScript::from_cbor(&ps.cbor, LanguageKind::PlutusV2),
+		_ => return Err(JsError::from_str("Governance UTXO script is not PlutusScript")),
+	};
+
+	let gov_tx_input = TransactionInput::new(
+		&TransactionHash::from_bytes(gov_utxo.transaction.id.into())?,
+		gov_utxo.index.into(),
+	);
+	tx_builder.add_mint_one_script_token_using_reference_script(
+		&gov_policy,
+		&gov_tx_input,
+		ex_units
+			.mint_ex_units
+			.pop()
+			.unwrap_or_else(|| panic!("Mint ex units not found")),
+	)?;
+
+	let tx_hash = TransactionHash::from_bytes(gov_utxo.transaction.id.into())?;
+	let gov_tx_input = TransactionInput::new(&tx_hash, gov_utxo.index.into());
+	tx_builder.add_script_reference_input(&gov_tx_input, gov_policy.bytes.len());
+	tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
 }
 
@@ -218,13 +277,21 @@ fn update_permissioned_candidates_tx(
 	permissioned_candidates: &[PermissionedCandidateData],
 	script_utxo: &OgmiosUtxo,
 	ctx: &TransactionContext,
-	validator_redeemer_ex_units: ExUnits,
+	mut ex_units: ScriptExUnits,
+	gov_utxo: OgmiosUtxo,
 ) -> Result<Transaction, JsError> {
 	let config = crate::csl::get_builder_config(ctx)?;
 	let mut tx_builder = TransactionBuilder::new(&config);
 
 	let mut inputs = TxInputsBuilder::new();
-	inputs.add_script_utxo_input(script_utxo, policy, validator_redeemer_ex_units)?;
+	inputs.add_script_utxo_input(
+		script_utxo,
+		validator,
+		ex_units
+			.spend_ex_units
+			.pop()
+			.unwrap_or_else(|| panic!("Spend ex units not found")),
+	)?;
 	tx_builder.set_inputs(&inputs);
 
 	tx_builder.add_output_with_one_script_token(
@@ -233,6 +300,30 @@ fn update_permissioned_candidates_tx(
 		&permissioned_candidates_to_plutus_data(permissioned_candidates),
 		ctx,
 	)?;
+
+
+	let gov_policy = match gov_utxo.script {
+		Some(Plutus(ps)) => PlutusScript::from_cbor(&ps.cbor, LanguageKind::PlutusV2),
+		_ => return Err(JsError::from_str("Governance UTXO script is not PlutusScript")),
+	};
+
+	let gov_tx_input = TransactionInput::new(
+		&TransactionHash::from_bytes(gov_utxo.transaction.id.into())?,
+		gov_utxo.index.into(),
+	);
+	tx_builder.add_mint_one_script_token_using_reference_script(
+		&gov_policy,
+		&gov_tx_input,
+		ex_units
+			.mint_ex_units
+			.pop()
+			.unwrap_or_else(|| panic!("Mint ex units not found")),
+	)?;
+
+	let tx_hash = TransactionHash::from_bytes(gov_utxo.transaction.id.into())?;
+	let gov_tx_input = TransactionInput::new(&tx_hash, gov_utxo.index.into());
+	tx_builder.add_script_reference_input(&gov_tx_input, gov_policy.bytes.len());
+	tx_builder.add_required_signer(&ctx.payment_key_hash());
 
 	tx_builder.balance_update_and_build(ctx)
 }

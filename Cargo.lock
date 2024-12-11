@@ -6725,6 +6725,8 @@ dependencies = [
  "env_logger 0.11.3",
  "hex",
  "jsonrpsee",
+ "log",
+ "log4rs",
  "partner-chains-cardano-offchain",
  "serde",
  "serde_json",

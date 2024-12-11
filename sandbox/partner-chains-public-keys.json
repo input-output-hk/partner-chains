@@ -1,0 +1,5 @@
+{
+  "sidechain_pub_key": "0x037b0cb6184ec851506337e2a5079ce2e13df4dcf5f34965180ece96ca3a63e9d1",
+  "aura_pub_key": "0x24015b732c94dda8af20a2c4c69e7050d0cdb4813fe06ba2c52ad56e317faa78",
+  "grandpa_pub_key": "0x8a6c57bce1c8df86b6a20fc85e83e16a45e70d3fa9d713adcd7a5de9872dcd95"
+}
