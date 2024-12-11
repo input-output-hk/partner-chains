@@ -6725,6 +6725,7 @@ dependencies = [
  "clap",
  "env_logger 0.11.3",
  "hex",
+ "hex-literal",
  "jsonrpsee",
  "partner-chains-cardano-offchain",
  "serde",
