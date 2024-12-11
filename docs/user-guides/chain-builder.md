@@ -269,7 +269,7 @@ Before running this wizard, be sure that `ogmios` is available by host and port.
 
 1. Start the wizard:`./partner-chains-cli prepare-configuration`
 2. Update the bootnodes array and provide public ip or hostname
-3. Provide genesis utxo and required payment keys to initialize the chain
+3. Provide required payment keys and select genesis utxo to initialize the chain
 4. Configure initial native token supply address (optional)
 5. Store the main chain configuration
 
