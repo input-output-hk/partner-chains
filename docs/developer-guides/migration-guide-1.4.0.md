@@ -77,8 +77,10 @@ for required changes.
 4. Upgrade nodes running the chain to the newly released version. This step depends on your deployment process.
 Irrespective of the deployment details, the nodes should be run with the same keystores as previously.
 
-After this step, the network should be composed of nodes v1.4.0 but the runtime would remain at v1.3.1, and be ready for the matching
-runtime upgrade to v1.4.0.
+After this step, the network should be composed of nodes v1.4.0 but the runtime would remain at v1.3.1,
+and be ready for the matching runtime upgrade to v1.4.0.
+*Note*: After the nodes have been upgraded, some of the exposed RPC methods will not work until the runtime
+is updated to v1.4.0.
 
 ### New main chain state setup
 
