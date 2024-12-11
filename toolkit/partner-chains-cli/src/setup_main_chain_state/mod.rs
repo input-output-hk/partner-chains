@@ -1,8 +1,5 @@
 use crate::config::config_fields::{CARDANO_PAYMENT_SIGNING_KEY_FILE, POSTGRES_CONNECTION_STRING};
-use crate::config::{
-	config_fields, ChainConfig, ConfigFieldDefinition, CHAIN_CONFIG_FILE_PATH,
-	PC_CONTRACTS_CLI_PATH,
-};
+use crate::config::{config_fields, ChainConfig, ConfigFieldDefinition, CHAIN_CONFIG_FILE_PATH};
 use crate::io::IOContext;
 use crate::pc_contracts_cli_resources::prompt_ogmios_configuration;
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
@@ -98,11 +95,6 @@ impl SetupMainChainStateCmd {
 		context.print(
 			"This wizard will set or update D-Parameter and Permissioned Candidates on the main chain. Setting either of these costs ADA!",
 		);
-		if !context.file_exists(PC_CONTRACTS_CLI_PATH) {
-			return Err(anyhow!(
-				"Partner Chains Smart Contracts executable file ({PC_CONTRACTS_CLI_PATH}) is missing",
-			));
-		}
 		let config_initial_authorities =
 			initial_permissioned_candidates_from_chain_config(context)?;
 		if let Some(ariadne_parameters) = get_ariadne_parameters(context, &chain_config)? {
