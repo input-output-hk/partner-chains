@@ -16,6 +16,7 @@ pub mod permissioned_candidates;
 mod plutus_script;
 /// Supports candidate registration
 pub mod register;
+pub mod reserve;
 /// Provides synthetized scripts data
 pub mod scripts_data;
 #[cfg(test)]
