@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context};
 use cardano_serialization_lib::{Address, LanguageKind, NetworkIdKind, PlutusData, ScriptHash};
 use plutus::ToDatum;
-use sidechain_domain::{MainchainAddressHash, PolicyId};
+use sidechain_domain::PolicyId;
 use uplc::ast::{DeBruijn, Program};
 
 use crate::{csl::*, untyped_plutus::*};
@@ -65,10 +65,6 @@ impl PlutusScript {
 
 	pub fn csl_script_hash(&self) -> ScriptHash {
 		ScriptHash::from(self.script_hash())
-	}
-
-	pub fn script_address(&self) -> MainchainAddressHash {
-		MainchainAddressHash(self.script_hash())
 	}
 
 	pub fn policy_id(&self) -> PolicyId {
