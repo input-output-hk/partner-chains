@@ -29,6 +29,8 @@ result
 
 # Local environment
 dev/local-environment/.env
+dev/local-environment/.env.bak
 dev/local-environment/docker-compose.yml
+dev/local-environment/docker-compose.yml.bak
 dev/local-environment/configurations/tests/e2e-tests
 dev/local-environment/configurations/pc-contracts-cli/overrides
