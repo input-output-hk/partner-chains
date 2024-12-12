@@ -11,7 +11,6 @@ use uplc::PlutusData;
 #[serde(rename_all = "camelCase")]
 pub struct ScriptsData {
 	pub addresses: Addresses,
-	pub validator_hashes: ValidatorHashes,
 	pub policy_ids: PolicyIds,
 }
 
@@ -27,19 +26,9 @@ pub struct Addresses {
 	pub version_oracle_validator: String,
 }
 
-/// Hashes of applied validators in partner-chains smart contracts.
-#[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
-pub struct ValidatorHashes {
-	pub committee_candidate_validator: MainchainAddressHash,
-	pub d_parameter_validator: MainchainAddressHash,
-	pub illiquid_circulation_supply_validator: MainchainAddressHash,
-	pub permissioned_candidates_validator: MainchainAddressHash,
-	pub reserve_validator: MainchainAddressHash,
-	pub version_oracle_validator: MainchainAddressHash,
-}
-
 /// Policy IDs of applied scripts in partner-chains smart contracts.
 #[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "PascalCase")]
 pub struct PolicyIds {
 	pub d_parameter: PolicyId,
 	pub permissioned_candidates: PolicyId,
@@ -109,15 +98,6 @@ pub fn get_scripts_data(
 				.address_bech32(network)?,
 			reserve_validator: reserve_validator.address_bech32(network)?,
 			version_oracle_validator: version_oracle_validator.address_bech32(network)?,
-		},
-		validator_hashes: ValidatorHashes {
-			committee_candidate_validator: committee_candidate_validator.script_address(),
-			d_parameter_validator: d_parameter_validator.script_address(),
-			illiquid_circulation_supply_validator: illiquid_circulation_supply_validator
-				.script_address(),
-			permissioned_candidates_validator: permissioned_candidates_validator.script_address(),
-			reserve_validator: reserve_validator.script_address(),
-			version_oracle_validator: version_oracle_validator.script_address(),
 		},
 		policy_ids: PolicyIds {
 			d_parameter: d_parameter_policy.policy_id(),
@@ -226,11 +206,11 @@ fn multisig_governance_policy_configuration(
 
 #[cfg(test)]
 mod tests {
-	use crate::scripts_data::{Addresses, PolicyIds, ScriptsData, ValidatorHashes};
+	use crate::scripts_data::{Addresses, PolicyIds, ScriptsData};
 	use cardano_serialization_lib::NetworkIdKind;
 	use hex_literal::hex;
 	use pretty_assertions::assert_eq;
-	use sidechain_domain::{MainchainAddressHash, McTxHash, PolicyId, UtxoId};
+	use sidechain_domain::{McTxHash, PolicyId, UtxoId};
 
 	pub(crate) const TEST_PARAMS: UtxoId = UtxoId {
 		tx_hash: McTxHash(hex!("8ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861")),
@@ -252,26 +232,6 @@ mod tests {
 					"addr_test1wqs5y7fn6sns7v7eey94mj2wd7ysadr3zmstjfzhk0frdtgsm8pgk".into(),
 				version_oracle_validator:
 					"addr_test1wqxm9e576k5ew7g7ctuqx77p9u7zytesnjsx54q2etck00gqplk0l".into(),
-			},
-			validator_hashes: ValidatorHashes {
-				committee_candidate_validator: MainchainAddressHash(hex!(
-					"8e2f67bdc3ea30fa9caf980216d1021d831ae552531bc6e151bb9ad9"
-				)),
-				d_parameter_validator: MainchainAddressHash(hex!(
-					"4204f181598111b98a03ad9536d73b1afdef07b547aed6b63e961c5a"
-				)),
-				illiquid_circulation_supply_validator: MainchainAddressHash(hex!(
-					"3d81d83fa6c2dc80ae2008c1ab9e0790b63d419191f8a6e7db283d67"
-				)),
-				permissioned_candidates_validator: MainchainAddressHash(hex!(
-					"3f16086833eed05ccbacd4e630b1dde68f86ff7a7adb35fa1705647f"
-				)),
-				reserve_validator: MainchainAddressHash(hex!(
-					"21427933d4270f33d9c90b5dc94e6f890eb47116e0b92457b3d236ad"
-				)),
-				version_oracle_validator: MainchainAddressHash(hex!(
-					"0db2e69ed5a997791ec2f8037bc12f3c222f309ca06a540acaf167bd"
-				)),
 			},
 			policy_ids: PolicyIds {
 				d_parameter: PolicyId(hex!(

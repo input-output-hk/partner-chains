@@ -344,7 +344,7 @@ To deregister from the list of block producer candidates, you need to run the de
 
 The configuration of the chain is stored in the file `partner-chains-cli-chain-config.json`. This file needs to remain identical with other nodes in the network.
 
----
+
 ---
 
 **NOTE**
