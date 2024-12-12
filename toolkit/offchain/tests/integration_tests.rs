@@ -12,7 +12,6 @@ use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
-	types::OgmiosTx,
 	OgmiosClientError,
 };
 use partner_chains_cardano_offchain::{
@@ -194,8 +193,8 @@ async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryU
 					pub_key: EVE_PUBLIC_KEY,
 					signature: MainchainSignature(vec![19u8; 32]),
 				},
-				partnerchain_pub_key: SidechainPublicKey([20u8; 32].to_vec()),
-				partnerchain_signature,
+				partner_chain_pub_key: SidechainPublicKey([20u8; 32].to_vec()),
+				partner_chain_signature: partnerchain_signature,
 				own_pkh: EVE_PUBLIC_KEY_HASH,
 				registration_utxo,
 				aura_pub_key: AuraPublicKey([22u8; 32].to_vec()),
