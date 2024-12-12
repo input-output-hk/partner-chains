@@ -8,7 +8,6 @@ use sidechain_domain::MainchainAddressHash;
 // TODO: Use a proper value of raw_scripts::ScripId once we upgrade to a version that has it.
 const SCRIPT_ID: u32 = 32;
 
-#[allow(dead_code)]
 pub(crate) fn init_governance_transaction(
 	multi_sig_policy: &[u8],
 	version_oracle_validator: &[u8],

@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::{plutus_script::PlutusScript, untyped_plutus::datum_to_uplc_plutus_data};
 use cardano_serialization_lib::*;
 use fraction::{FromPrimitive, Ratio};
