@@ -20,6 +20,7 @@ use ogmios_client::{
 };
 use partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
 use sidechain_domain::{DParameter, McTxHash, UtxoId};
+use std::collections::HashMap;
 
 #[cfg(test)]
 mod tests;
@@ -120,11 +121,11 @@ where
 	C: Transactions,
 {
 	let zero_ex_units = ScriptExUnits {
-		mint_ex_units: vec![
-			ExUnits::new(&0u64.into(), &0u64.into()),
-			ExUnits::new(&0u64.into(), &0u64.into()),
-		],
-		spend_ex_units: vec![],
+		mint_ex_units: HashMap::from([
+			(0, ExUnits::new(&0u64.into(), &0u64.into())),
+			(1, ExUnits::new(&0u64.into(), &0u64.into())),
+		]),
+		spend_ex_units: HashMap::new(),
 	};
 
 	let gov_utxo = crate::init_governance::get_governance_utxo(genesis_utxo, client)
@@ -146,14 +147,13 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	let mut mint_witness_ex_units = get_validator_budgets(evaluate_response)?;
-	mint_witness_ex_units.mint_ex_units.reverse();
+	let ex_units = get_validator_budgets(evaluate_response)?;
 	let tx = mint_d_param_token_tx(
 		validator,
 		policy,
 		d_parameter,
 		&ctx,
-		mint_witness_ex_units,
+		ex_units,
 		gov_utxo,
 	)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
@@ -182,8 +182,8 @@ where
 	C: Transactions,
 {
 	let zero_ex_units = ScriptExUnits {
-		mint_ex_units: vec![ExUnits::new(&0u64.into(), &0u64.into())],
-		spend_ex_units: vec![ExUnits::new(&0u64.into(), &0u64.into())],
+		mint_ex_units: HashMap::from([(0, ExUnits::new(&0u64.into(), &0u64.into()))]),
+		spend_ex_units: HashMap::from([(0, ExUnits::new(&0u64.into(), &0u64.into()))]),
 	};
 
 	let gov_utxo = crate::init_governance::get_governance_utxo(genesis_utxo, client)
@@ -206,7 +206,7 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	let spend_ex_units = get_validator_budgets(evaluate_response)?;
+	let ex_units = get_validator_budgets(evaluate_response)?;
 
 	let tx = update_d_param_tx(
 		validator,
@@ -214,7 +214,7 @@ where
 		d_parameter,
 		current_utxo,
 		&ctx,
-		spend_ex_units,
+		ex_units,
 		gov_utxo.clone(),
 	)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
@@ -235,7 +235,7 @@ fn mint_d_param_token_tx(
 	policy: &PlutusScript,
 	d_parameter: &DParameter,
 	ctx: &TransactionContext,
-	mut ex_units: ScriptExUnits,
+	ex_units: ScriptExUnits,
 	gov_utxo: OgmiosUtxo,
 ) -> Result<Transaction, JsError> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
@@ -244,8 +244,10 @@ fn mint_d_param_token_tx(
 		policy,
 		ex_units
 			.mint_ex_units
-			.pop()
-			.unwrap_or_else(|| panic!("Mint ex units not found")),
+			.get(&0)
+			.unwrap_or_else(|| panic!("Mint ex units not found"))
+			.clone(),
+		0,
 	)?;
 	tx_builder.add_output_with_one_script_token(
 		validator,
@@ -268,8 +270,10 @@ fn mint_d_param_token_tx(
 		&gov_tx_input,
 		ex_units
 			.mint_ex_units
-			.pop()
-			.unwrap_or_else(|| panic!("Mint ex units not found")),
+			.get(&1)
+			.unwrap_or_else(|| panic!("Mint ex units not found"))
+			.clone(),
+		1,
 	)?;
 
 	let tx_hash = TransactionHash::from_bytes(gov_utxo.transaction.id.into())?;
@@ -285,7 +289,7 @@ fn update_d_param_tx(
 	d_parameter: &DParameter,
 	script_utxo: &OgmiosUtxo,
 	ctx: &TransactionContext,
-	mut ex_units: ScriptExUnits,
+	ex_units: ScriptExUnits,
 	gov_utxo: OgmiosUtxo,
 ) -> Result<Transaction, JsError> {
 	let config = crate::csl::get_builder_config(ctx)?;
@@ -297,8 +301,10 @@ fn update_d_param_tx(
 		validator,
 		ex_units
 			.spend_ex_units
-			.pop()
-			.unwrap_or_else(|| panic!("Spend ex units not found")),
+			.get(&0)
+			.unwrap_or_else(|| panic!("Spend ex units not found"))
+			.clone(),
+		0,
 	)?;
 	tx_builder.set_inputs(&inputs);
 
@@ -323,8 +329,10 @@ fn update_d_param_tx(
 		&gov_tx_input,
 		ex_units
 			.mint_ex_units
-			.pop()
-			.unwrap_or_else(|| panic!("Mint ex units not found")),
+			.get(&0)
+			.unwrap_or_else(|| panic!("Mint ex units not found"))
+			.clone(),
+		0,
 	)?;
 
 	let tx_hash = TransactionHash::from_bytes(gov_utxo.transaction.id.into())?;

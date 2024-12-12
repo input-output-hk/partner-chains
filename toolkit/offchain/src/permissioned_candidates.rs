@@ -8,7 +8,7 @@
 //! `[sidechain_public_key, aura_public_key, grandpa_publicKey]`.
 
 use crate::csl::{
-	get_builder_config, get_first_validator_budget, InputsBuilderExt, TransactionBuilderExt,
+	get_builder_config, get_validator_budgets, InputsBuilderExt, TransactionBuilderExt,
 	TransactionContext,
 };
 use crate::plutus_script::PlutusScript;
@@ -24,6 +24,8 @@ use partner_chains_plutus_data::permissioned_candidates::{
 	permissioned_candidates_to_plutus_data, PermissionedCandidateDatums,
 };
 use sidechain_domain::{McTxHash, PermissionedCandidateData, UtxoId};
+use std::collections::HashMap;
+use crate::csl::ScriptExUnits;
 
 pub async fn upsert_permissioned_candidates<C: QueryLedgerState + QueryNetwork + Transactions>(
 	genesis_utxo: UtxoId,
@@ -111,7 +113,14 @@ async fn insert_permissioned_candidates<C>(
 where
 	C: Transactions,
 {
-	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
+	let zero_ex_units = ScriptExUnits {
+		mint_ex_units: HashMap::from([
+			(0, ExUnits::new(&0u64.into(), &0u64.into())),
+			(1, ExUnits::new(&0u64.into(), &0u64.into())),
+		]),
+		spend_ex_units: HashMap::new(),
+	};
+
 	let tx =
 		mint_permissioned_candidates_token_tx(validator, policy, candidates, &ctx, zero_ex_units)?;
 	let evaluate_response = client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
@@ -121,13 +130,13 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	let mint_witness_ex_units = get_first_validator_budget(evaluate_response)?;
+	let ex_units = get_validator_budgets(evaluate_response)?;
 	let tx = mint_permissioned_candidates_token_tx(
 		validator,
 		policy,
 		candidates,
 		&ctx,
-		mint_witness_ex_units,
+		ex_units,
 	)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
@@ -153,7 +162,10 @@ async fn update_permissioned_candidates<C>(
 where
 	C: Transactions,
 {
-	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
+	let zero_ex_units = ScriptExUnits {
+		mint_ex_units: HashMap::from([(0, ExUnits::new(&0u64.into(), &0u64.into()))]),
+		spend_ex_units: HashMap::from([(0, ExUnits::new(&0u64.into(), &0u64.into()))]),
+	};
 	let tx = update_permissioned_candidates_tx(
 		validator,
 		policy,
@@ -169,7 +181,7 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	let spend_ex_units = get_first_validator_budget(evaluate_response)?;
+	let ex_units = get_validator_budgets(evaluate_response)?;
 
 	let tx = update_permissioned_candidates_tx(
 		validator,
@@ -177,7 +189,7 @@ where
 		candidates,
 		current_utxo,
 		&ctx,
-		spend_ex_units,
+		ex_units,
 	)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
@@ -197,11 +209,18 @@ fn mint_permissioned_candidates_token_tx(
 	policy: &PlutusScript,
 	permissioned_candidates: &[PermissionedCandidateData],
 	ctx: &TransactionContext,
-	mint_witness_ex_units: ExUnits,
+	ex_units: ScriptExUnits,
 ) -> Result<Transaction, JsError> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	// The essence of transaction: mint token and set output with it
-	tx_builder.add_mint_one_script_token(policy, mint_witness_ex_units)?;
+	tx_builder.add_mint_one_script_token(
+		policy,
+		ex_units.mint_ex_units
+			.get(&0)
+			.unwrap_or_else(|| panic!("Mint ex units not found"))
+			.clone(),
+		0,
+	)?;
 	tx_builder.add_output_with_one_script_token(
 		validator,
 		policy,
@@ -218,13 +237,20 @@ fn update_permissioned_candidates_tx(
 	permissioned_candidates: &[PermissionedCandidateData],
 	script_utxo: &OgmiosUtxo,
 	ctx: &TransactionContext,
-	validator_redeemer_ex_units: ExUnits,
+	ex_units: ScriptExUnits,
 ) -> Result<Transaction, JsError> {
 	let config = crate::csl::get_builder_config(ctx)?;
 	let mut tx_builder = TransactionBuilder::new(&config);
 
 	let mut inputs = TxInputsBuilder::new();
-	inputs.add_script_utxo_input(script_utxo, policy, validator_redeemer_ex_units)?;
+	inputs.add_script_utxo_input(
+		script_utxo, policy,
+		ex_units.spend_ex_units
+			.get(&0)
+			.unwrap_or_else(|| panic!("Mint ex units not found"))
+			.clone(),
+		0,
+	)?;
 	tx_builder.set_inputs(&inputs);
 
 	tx_builder.add_output_with_one_script_token(
@@ -264,11 +290,15 @@ mod tests {
 		UtxoId,
 	};
 	use std::str::FromStr;
+	use crate::permissioned_candidates::{ScriptExUnits, HashMap};
 
 	#[test]
 	fn mint_permissioned_candiates_token_tx_regression_test() {
 		// We know the expected values were obtained with the correct code
-		let ex_units = ExUnits::new(&10000u32.into(), &200u32.into());
+		let ex_units = ScriptExUnits {
+			mint_ex_units: HashMap::from([(0, ExUnits::new(&10000u32.into(), &200u32.into()))]),
+			spend_ex_units: HashMap::new(),
+		};
 
 		let tx = mint_permissioned_candidates_token_tx(
 			&test_validator(),
@@ -338,7 +368,7 @@ mod tests {
 		assert_eq!(redeemer.tag(), RedeemerTag::new_mint());
 		assert_eq!(redeemer.index(), 0u64.into());
 		assert_eq!(redeemer.data(), PlutusData::new_empty_constr_plutus_data(&0u64.into()));
-		assert_eq!(redeemer.ex_units(), ex_units);
+		assert_eq!(redeemer.ex_units(), ex_units.mint_ex_units.get(&0).unwrap().clone());
 		// script_data_hash check
 		assert_eq!(
 			tx.body().script_data_hash().unwrap().to_hex(),
@@ -374,7 +404,10 @@ mod tests {
 			..Default::default()
 		};
 
-		let ex_units = ExUnits::new(&10000u32.into(), &200u32.into());
+		let ex_units = ScriptExUnits {
+			mint_ex_units: HashMap::from([(0, ExUnits::new(&10000u32.into(), &200u32.into()))]),
+			spend_ex_units: HashMap::from([(0, ExUnits::new(&10000u32.into(), &200u32.into()))]),
+		};
 
 		let tx = update_permissioned_candidates_tx(
 			&test_validator(),
@@ -437,7 +470,7 @@ mod tests {
 		// Index is 1 because the script input is the 2nd input, if it was the 3rd input it would be 2, etc.
 		assert_eq!(redeemer.index(), 1u64.into());
 		assert_eq!(redeemer.data(), PlutusData::new_empty_constr_plutus_data(&0u64.into()));
-		assert_eq!(redeemer.ex_units(), ex_units);
+		assert_eq!(redeemer.ex_units(), ex_units.spend_ex_units.get(&0).unwrap().clone());
 		// script_data_hash check
 		assert_eq!(
 			tx.body().script_data_hash().unwrap().to_hex(),

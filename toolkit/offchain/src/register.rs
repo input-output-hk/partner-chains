@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use crate::csl::{
-	get_first_validator_budget, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
+	get_validator_budgets, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
 	TransactionContext,
 };
 use crate::{
@@ -24,6 +24,9 @@ use partner_chains_plutus_data::registered_candidates::{
 	candidate_registration_to_plutus_data, RegisterValidatorDatum,
 };
 use sidechain_domain::*;
+use crate::csl::ScriptExUnits;
+use std::collections::HashMap;
+
 
 pub trait Register {
 	#[allow(async_fn_in_trait)]
@@ -90,7 +93,20 @@ pub async fn run_register<
 	}
 	let own_registration_utxos = own_registrations.iter().map(|r| r.0.clone()).collect::<Vec<_>>();
 
-	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
+	let spend_ex_units = own_registration_utxos
+		.iter()
+		.enumerate()
+		.map(|(index, _)| (index as u32, ExUnits::new(&0u32.into(), &0u32.into())))
+		.collect::<HashMap<_, _>>();
+
+	let zero_ex_units = ScriptExUnits {
+		mint_ex_units: HashMap::new(),
+		spend_ex_units,
+	};
+
+
+
+
 	let mut tx = register_tx(
 		&validator,
 		candidate_registration,
@@ -109,14 +125,14 @@ pub async fn run_register<
 					hex::encode(tx.to_bytes())
 				)
 			})?;
-		let validator_redeemer_ex_units = get_first_validator_budget(evaluate_response)?;
+		let ex_units = get_validator_budgets(evaluate_response)?;
 		tx = register_tx(
 			&validator,
 			candidate_registration,
 			registration_utxo,
 			&own_registration_utxos,
 			&ctx,
-			validator_redeemer_ex_units,
+			ex_units,
 		)?;
 	}
 
@@ -171,18 +187,22 @@ fn register_tx(
 	registration_utxo: &OgmiosUtxo,
 	own_registration_utxos: &[OgmiosUtxo],
 	ctx: &TransactionContext,
-	validator_redeemer_ex_units: ExUnits,
+	ex_units: ScriptExUnits,
 ) -> Result<Transaction, JsError> {
 	let config = crate::csl::get_builder_config(ctx)?;
 	let mut tx_builder = TransactionBuilder::new(&config);
 
 	{
 		let mut inputs = TxInputsBuilder::new();
-		for own_registration_utxo in own_registration_utxos {
+		for (index, own_registration_utxo) in own_registration_utxos.into_iter().enumerate() {
 			inputs.add_script_utxo_input(
 				own_registration_utxo,
 				validator,
-				validator_redeemer_ex_units.clone(),
+				ex_units.spend_ex_units
+					.get(&(index as u32))
+					.unwrap_or_else(|| panic!("Spend ex units not found"))
+					.clone(),
+				index as u32,
 			)?;
 		}
 		inputs.add_key_inputs(&[registration_utxo.clone()], &ctx.payment_key_hash())?;
@@ -216,7 +236,7 @@ mod tests {
 	use crate::csl::{OgmiosUtxoExt, TransactionContext};
 	use crate::test_values::{self, *};
 	use cardano_serialization_lib::{
-		Address, BigNum, ExUnits, NetworkIdKind, Transaction, TransactionInputs,
+		Address, ExUnits, NetworkIdKind, Transaction, TransactionInputs,
 	};
 	use ogmios_client::types::OgmiosValue;
 	use ogmios_client::types::{OgmiosTx, OgmiosUtxo};
@@ -226,6 +246,7 @@ mod tests {
 		collection::{hash_set, vec},
 		prelude::*,
 	};
+	use crate::register::{ScriptExUnits, HashMap};
 
 	use sidechain_domain::{
 		AdaBasedStaking, AuraPublicKey, CandidateRegistration, GrandpaPublicKey,
@@ -277,7 +298,10 @@ mod tests {
 
 	#[test]
 	fn register_tx_regression_test() {
-		let ex_units = ExUnits::new(&0u32.into(), &0u32.into());
+		let ex_units = ScriptExUnits {
+			mint_ex_units: HashMap::new(),
+			spend_ex_units: HashMap::from([(0, ExUnits::new(&0u32.into(), &0u32.into()))]),
+		};
 		let payment_key_utxos =
 			vec![lesser_payment_utxo(), greater_payment_utxo(), registration_utxo()];
 		let ctx = TransactionContext {
@@ -339,13 +363,18 @@ mod tests {
 		} else {
 			Vec::new()
 		};
+
+		let ex_units = ScriptExUnits::new().with_spend_ex_units(
+				HashMap::from([(0, ExUnits::new(&0u32.into(), &0u32.into()))])
+		);
+
 		let tx = register_tx(
 			&test_values::test_validator(),
 			&candidate_registration,
 			registration_utxo,
 			&own_registration_utxos,
 			&ctx,
-			ExUnits::new(&BigNum::zero(), &BigNum::zero()),
+			ex_units,
 		)
 		.unwrap();
 

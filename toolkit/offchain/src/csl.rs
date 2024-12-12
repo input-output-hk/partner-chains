@@ -11,6 +11,7 @@ use ogmios_client::{
 	types::{OgmiosUtxo, OgmiosValue},
 };
 use sidechain_domain::NetworkType;
+use std::collections::HashMap;
 
 pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: LanguageKind) -> [u8; 28] {
 	// Before hashing the script, we need to prepend with byte denoting the language.
@@ -168,31 +169,38 @@ pub(crate) fn get_first_validator_budget(
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ScriptExUnits {
-	pub mint_ex_units: Vec<ExUnits>,
-	pub spend_ex_units: Vec<ExUnits>,
+	pub mint_ex_units: HashMap<u32, ExUnits>,
+	pub spend_ex_units: HashMap<u32, ExUnits>,
 }
 
 impl ScriptExUnits {
 	pub fn new() -> Self {
-		ScriptExUnits { mint_ex_units: Vec::new(), spend_ex_units: Vec::new() }
+		ScriptExUnits { mint_ex_units: HashMap::new(), spend_ex_units: HashMap::new() }
 	}
-	pub fn with_mint_ex_units(self, mint_ex_units: Vec<ExUnits>) -> Self {
+	pub fn with_mint_ex_units(self, mint_ex_units: HashMap<u32, ExUnits>) -> Self {
 		Self { mint_ex_units, ..self }
 	}
-	pub fn with_spend_ex_units(self, spend_ex_units: Vec<ExUnits>) -> Self {
+	pub fn with_spend_ex_units(self, spend_ex_units: HashMap<u32, ExUnits>) -> Self {
 		Self { spend_ex_units, ..self }
 	}
 }
 
 pub(crate) fn get_validator_budgets(
-	mut responses: Vec<OgmiosEvaluateTransactionResponse>,
+	responses: Vec<OgmiosEvaluateTransactionResponse>,
 ) -> Result<ScriptExUnits, JsError> {
-	responses.sort_by_key(|r| r.validator.index);
-	let (mint_ex_units, spend_ex_units) = responses
-		.into_iter()
-		.partition::<Vec<_>, _>(|response| response.validator.purpose == "mint");
-	let mint_ex_units = mint_ex_units.into_iter().map(ex_units_from_response).collect();
-	let spend_ex_units = spend_ex_units.into_iter().map(ex_units_from_response).collect();
+	let mut spend_ex_units = HashMap::new();
+	let mut mint_ex_units = HashMap::new();
+	for r in responses {
+		println!("Validator: {:?}", r);
+		match r.validator.purpose.as_str() {
+			"mint" => mint_ex_units.insert(r.validator.index, ex_units_from_response(r)),
+			"spend" => spend_ex_units.insert(r.validator.index, ex_units_from_response(r)),
+			_ => return Err(JsError::from_str(&format!(
+				"Internal error: unexpected validator purpose '{}'",
+				r.validator.purpose
+			))),
+		};
+	};
 
 	Ok(ScriptExUnits { mint_ex_units, spend_ex_units })
 }
@@ -331,6 +339,7 @@ pub(crate) trait TransactionBuilderExt {
 		&mut self,
 		script: &PlutusScript,
 		ex_units: ExUnits,
+		script_index: u32,
 	) -> Result<(), JsError>;
 
 	/// Adds minting of 1 token (with empty asset name) for the given script using reference input
@@ -339,6 +348,7 @@ pub(crate) trait TransactionBuilderExt {
 		script: &PlutusScript,
 		ref_input: &TransactionInput,
 		ex_units: ExUnits,
+		script_index: u32,
 	) -> Result<(), JsError>;
 
 	/// Sets fields required by the most of partner-chains smart contract transactions.
@@ -399,6 +409,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 		&mut self,
 		script: &PlutusScript,
 		ex_units: ExUnits,
+		script_index: u32,
 	) -> Result<(), JsError> {
 		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
 
@@ -407,7 +418,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 			&validator_source,
 			&Redeemer::new(
 				&RedeemerTag::new_mint(),
-				&0u32.into(),
+				&script_index.into(),
 				&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
 				&ex_units,
 			),
@@ -422,6 +433,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 		script: &PlutusScript,
 		ref_input: &TransactionInput,
 		ex_units: ExUnits,
+		script_index: u32,
 	) -> Result<(), JsError> {
 		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
 
@@ -435,7 +447,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 			&validator_source,
 			&Redeemer::new(
 				&RedeemerTag::new_mint(),
-				&0u32.into(),
+				&script_index.into(),
 				&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
 				&ex_units,
 			),
@@ -510,6 +522,7 @@ pub(crate) trait InputsBuilderExt: Sized {
 		utxo: &OgmiosUtxo,
 		script: &PlutusScript,
 		ex_units: ExUnits,
+		script_index: u32,
 	) -> Result<(), JsError>;
 
 	/// Adds ogmios inputs to the tx inputs builder.
@@ -525,6 +538,7 @@ impl InputsBuilderExt for TxInputsBuilder {
 		utxo: &OgmiosUtxo,
 		script: &PlutusScript,
 		ex_units: ExUnits,
+		script_index: u32,
 	) -> Result<(), JsError> {
 		let input = utxo.to_csl_tx_input();
 		let amount = convert_value(&utxo.value)?;
@@ -533,7 +547,7 @@ impl InputsBuilderExt for TxInputsBuilder {
 			&Redeemer::new(
 				&RedeemerTag::new_spend(),
 				// CSL will set redeemer index for the index of script input after sorting transaction inputs
-				&0u32.into(),
+				&script_index.into(),
 				&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
 				&ex_units,
 			),
@@ -704,33 +718,33 @@ mod tests {
 	fn get_validator_budgets_works() {
 		let result = get_validator_budgets(vec![
 			OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex::new(1, "mint"),
+				validator: OgmiosValidatorIndex::new(0, "mint"),
 				budget: OgmiosBudget::new(11, 21),
 			},
 			OgmiosEvaluateTransactionResponse {
 				validator: OgmiosValidatorIndex::new(0, "spend"),
-				budget: OgmiosBudget::new(10, 20),
+				budget: OgmiosBudget::new(12, 22),
 			},
 			OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex::new(3, "mint"),
+				validator: OgmiosValidatorIndex::new(1, "mint"),
 				budget: OgmiosBudget::new(13, 23),
 			},
 			OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex::new(2, "spend"),
-				budget: OgmiosBudget::new(12, 22),
+				validator: OgmiosValidatorIndex::new(1, "spend"),
+				budget: OgmiosBudget::new(14, 24),
 			},
 		])
 		.expect("Should succeed");
 
 		let expected = ScriptExUnits {
-			mint_ex_units: vec![
-				ExUnits::new(&11u64.into(), &21u64.into()),
-				ExUnits::new(&13u64.into(), &23u64.into()),
-			],
-			spend_ex_units: vec![
-				ExUnits::new(&10u64.into(), &20u64.into()),
-				ExUnits::new(&12u64.into(), &22u64.into()),
-			],
+			mint_ex_units: HashMap::from([
+				(0, ExUnits::new(&11u64.into(), &21u64.into())),
+				(1, ExUnits::new(&13u64.into(), &23u64.into())),
+			]),
+			spend_ex_units: HashMap::from([
+				(0, ExUnits::new(&12u64.into(), &22u64.into())),
+				(1, ExUnits::new(&14u64.into(), &24u64.into())),
+			]),
 		};
 
 		assert_eq!(result, expected);
@@ -769,6 +783,7 @@ mod prop_tests {
 			.add_mint_one_script_token(
 				&test_policy(),
 				ExUnits::new(&BigNum::zero(), &BigNum::zero()),
+				0,
 			)
 			.unwrap();
 		tx_builder
