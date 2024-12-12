@@ -22,7 +22,7 @@
                 "ssh": "${stack_config[ssh]}"
             },
             "generate_signatures_cli": {
-                "cli": "/tools/v1.3.0-rc1/partner-chains-node",
+                "cli": "/tools/partner-chains-node",
                 "ssh": "${stack_config[ssh]}"
             },
             "bech32": {
