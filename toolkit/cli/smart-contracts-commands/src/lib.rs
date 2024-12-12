@@ -79,18 +79,6 @@ pub(crate) fn parse_partnerchain_public_keys(
 	}
 }
 
-fn payment_signing_key_to_mainchain_address_hash(
-	payment_signing_key: MainchainPrivateKey,
-) -> CmdResult<MainchainAddressHash> {
-	Ok(cardano_serialization_lib::PrivateKey::from_normal_bytes(&payment_signing_key.0)?
-		.to_public()
-		.hash()
-		.to_bytes()
-		.as_slice()
-		.try_into()
-		.map(MainchainAddressHash)?)
-}
-
 #[cfg(test)]
 mod test {
 	use crate::parse_partnerchain_public_keys;

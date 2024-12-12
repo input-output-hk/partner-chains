@@ -141,7 +141,6 @@ pub trait Deregister {
 		&self,
 		genesis_utxo: UtxoId,
 		payment_signing_key: MainchainPrivateKey,
-		own_pkh: MainchainAddressHash,
 		stake_ownership_pub_key: MainchainPublicKey,
 	) -> Result<Option<McTxHash>, OffchainError>;
 }
@@ -154,13 +153,11 @@ where
 		&self,
 		genesis_utxo: UtxoId,
 		payment_signing_key: MainchainPrivateKey,
-		own_pkh: MainchainAddressHash,
 		stake_ownership_pub_key: MainchainPublicKey,
 	) -> Result<Option<McTxHash>, OffchainError> {
 		run_deregister(
 			genesis_utxo,
 			payment_signing_key,
-			own_pkh,
 			stake_ownership_pub_key,
 			self,
 			FixedDelayRetries::two_minutes(),
@@ -176,7 +173,6 @@ pub async fn run_deregister<
 >(
 	genesis_utxo: UtxoId,
 	payment_signing_key: MainchainPrivateKey,
-	own_pkh: MainchainAddressHash,
 	stake_ownership_pub_key: MainchainPublicKey,
 	ogmios_client: &C,
 	await_tx: A,
@@ -186,7 +182,7 @@ pub async fn run_deregister<
 	let validator_address = validator.address_bech32(ctx.network)?;
 	let all_registration_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
 	let own_registrations =
-		get_own_registrations(own_pkh, stake_ownership_pub_key.clone(), &all_registration_utxos);
+		get_own_registrations(payment_signing_key.to_pub_key_hash(), stake_ownership_pub_key.clone(), &all_registration_utxos);
 
 	if own_registrations.is_empty() {
 		log::info!("✅ Candidate is not registered.");
@@ -200,7 +196,7 @@ pub async fn run_deregister<
 	let evaluate_response =
 		ogmios_client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
 			anyhow!(
-				"Evaluate candidate unregistration transaction request failed: {}, bytes: {}",
+				"Evaluate candidate deregistration transaction request failed: {}, bytes: {}",
 				e,
 				hex::encode(tx.to_bytes())
 			)
@@ -210,7 +206,7 @@ pub async fn run_deregister<
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let result = ogmios_client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow!(
-			"Submit candidate unregistration transaction request failed: {}, bytes: {}",
+			"Submit candidate deregistration transaction request failed: {}, bytes: {}",
 			e,
 			hex::encode(tx.to_bytes())
 		)

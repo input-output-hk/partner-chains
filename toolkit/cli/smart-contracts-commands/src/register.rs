@@ -46,7 +46,7 @@ impl RegisterCmd {
 			},
 			partnerchain_pub_key: self.partnerchain_public_keys.sidechain_public_key,
 			partnerchain_signature: self.partnerchain_signature,
-			own_pkh: crate::payment_signing_key_to_mainchain_address_hash(payment_key.clone())?,
+			own_pkh: payment_key.to_pub_key_hash(),
 			registration_utxo: self.registration_utxo,
 			aura_pub_key: self.partnerchain_public_keys.aura_public_key,
 			grandpa_pub_key: self.partnerchain_public_keys.grandpa_public_key,
@@ -81,13 +81,10 @@ impl DeregisterCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_signing_key = read_private_key_from_file(&self.payment_key_file)?;
 		let client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
-		let own_pkh =
-			crate::payment_signing_key_to_mainchain_address_hash(payment_signing_key.clone())?;
 
 		run_deregister(
 			self.genesis_utxo,
 			payment_signing_key,
-			own_pkh,
 			self.spo_public_key,
 			&client,
 			FixedDelayRetries::two_minutes(),

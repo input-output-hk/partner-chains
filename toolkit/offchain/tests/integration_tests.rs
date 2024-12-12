@@ -183,7 +183,7 @@ async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryU
 	genesis_utxo: UtxoId,
 	partnerchain_signature: SidechainSignature,
 	client: &T,
-) -> Option<OgmiosTx> {
+) -> Option<McTxHash> {
 	let eve_utxos = client.query_utxos(&[EVE_ADDRESS.to_string()]).await.unwrap();
 	let registration_utxo = eve_utxos.first().unwrap().utxo_id();
 	client
