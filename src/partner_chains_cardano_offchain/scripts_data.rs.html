@@ -262,46 +262,6 @@
 <a href="#262" id="262">262</a>
 <a href="#263" id="263">263</a>
 <a href="#264" id="264">264</a>
-<a href="#265" id="265">265</a>
-<a href="#266" id="266">266</a>
-<a href="#267" id="267">267</a>
-<a href="#268" id="268">268</a>
-<a href="#269" id="269">269</a>
-<a href="#270" id="270">270</a>
-<a href="#271" id="271">271</a>
-<a href="#272" id="272">272</a>
-<a href="#273" id="273">273</a>
-<a href="#274" id="274">274</a>
-<a href="#275" id="275">275</a>
-<a href="#276" id="276">276</a>
-<a href="#277" id="277">277</a>
-<a href="#278" id="278">278</a>
-<a href="#279" id="279">279</a>
-<a href="#280" id="280">280</a>
-<a href="#281" id="281">281</a>
-<a href="#282" id="282">282</a>
-<a href="#283" id="283">283</a>
-<a href="#284" id="284">284</a>
-<a href="#285" id="285">285</a>
-<a href="#286" id="286">286</a>
-<a href="#287" id="287">287</a>
-<a href="#288" id="288">288</a>
-<a href="#289" id="289">289</a>
-<a href="#290" id="290">290</a>
-<a href="#291" id="291">291</a>
-<a href="#292" id="292">292</a>
-<a href="#293" id="293">293</a>
-<a href="#294" id="294">294</a>
-<a href="#295" id="295">295</a>
-<a href="#296" id="296">296</a>
-<a href="#297" id="297">297</a>
-<a href="#298" id="298">298</a>
-<a href="#299" id="299">299</a>
-<a href="#300" id="300">300</a>
-<a href="#301" id="301">301</a>
-<a href="#302" id="302">302</a>
-<a href="#303" id="303">303</a>
-<a href="#304" id="304">304</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{csl::NetworkTypeExt, plutus_script::PlutusScript, OffchainError};
 <span class="kw">use </span>cardano_serialization_lib::{LanguageKind::PlutusV2, NetworkIdKind};
 <span class="kw">use </span>ogmios_client::query_network::QueryNetwork;
@@ -315,7 +275,6 @@
 #[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>ScriptsData {
 	<span class="kw">pub </span>addresses: Addresses,
-	<span class="kw">pub </span>validator_hashes: ValidatorHashes,
 	<span class="kw">pub </span>policy_ids: PolicyIds,
 }
 
@@ -331,19 +290,9 @@
 	<span class="kw">pub </span>version_oracle_validator: String,
 }
 
-<span class="doccomment">/// Hashes of applied validators in partner-chains smart contracts.
-</span><span class="attr">#[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>ValidatorHashes {
-	<span class="kw">pub </span>committee_candidate_validator: MainchainAddressHash,
-	<span class="kw">pub </span>d_parameter_validator: MainchainAddressHash,
-	<span class="kw">pub </span>illiquid_circulation_supply_validator: MainchainAddressHash,
-	<span class="kw">pub </span>permissioned_candidates_validator: MainchainAddressHash,
-	<span class="kw">pub </span>reserve_validator: MainchainAddressHash,
-	<span class="kw">pub </span>version_oracle_validator: MainchainAddressHash,
-}
-
 <span class="doccomment">/// Policy IDs of applied scripts in partner-chains smart contracts.
 </span><span class="attr">#[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = <span class="string">"PascalCase"</span>)]
 </span><span class="kw">pub struct </span>PolicyIds {
 	<span class="kw">pub </span>d_parameter: PolicyId,
 	<span class="kw">pub </span>permissioned_candidates: PolicyId,
@@ -413,15 +362,6 @@
 				.address_bech32(network)<span class="question-mark">?</span>,
 			reserve_validator: reserve_validator.address_bech32(network)<span class="question-mark">?</span>,
 			version_oracle_validator: version_oracle_validator.address_bech32(network)<span class="question-mark">?</span>,
-		},
-		validator_hashes: ValidatorHashes {
-			committee_candidate_validator: committee_candidate_validator.script_address(),
-			d_parameter_validator: d_parameter_validator.script_address(),
-			illiquid_circulation_supply_validator: illiquid_circulation_supply_validator
-				.script_address(),
-			permissioned_candidates_validator: permissioned_candidates_validator.script_address(),
-			reserve_validator: reserve_validator.script_address(),
-			version_oracle_validator: version_oracle_validator.script_address(),
 		},
 		policy_ids: PolicyIds {
 			d_parameter: d_parameter_policy.policy_id(),
@@ -530,11 +470,11 @@
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
-	<span class="kw">use </span><span class="kw">crate</span>::scripts_data::{Addresses, PolicyIds, ScriptsData, ValidatorHashes};
+	<span class="kw">use </span><span class="kw">crate</span>::scripts_data::{Addresses, PolicyIds, ScriptsData};
 	<span class="kw">use </span>cardano_serialization_lib::NetworkIdKind;
 	<span class="kw">use </span>hex_literal::hex;
 	<span class="kw">use </span>pretty_assertions::assert_eq;
-	<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, McTxHash, PolicyId, UtxoId};
+	<span class="kw">use </span>sidechain_domain::{McTxHash, PolicyId, UtxoId};
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>TEST_PARAMS: UtxoId = UtxoId {
 		tx_hash: McTxHash(<span class="macro">hex!</span>(<span class="string">"8ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861"</span>)),
@@ -556,26 +496,6 @@
 					<span class="string">"addr_test1wqs5y7fn6sns7v7eey94mj2wd7ysadr3zmstjfzhk0frdtgsm8pgk"</span>.into(),
 				version_oracle_validator:
 					<span class="string">"addr_test1wqxm9e576k5ew7g7ctuqx77p9u7zytesnjsx54q2etck00gqplk0l"</span>.into(),
-			},
-			validator_hashes: ValidatorHashes {
-				committee_candidate_validator: MainchainAddressHash(<span class="macro">hex!</span>(
-					<span class="string">"8e2f67bdc3ea30fa9caf980216d1021d831ae552531bc6e151bb9ad9"
-				</span>)),
-				d_parameter_validator: MainchainAddressHash(<span class="macro">hex!</span>(
-					<span class="string">"4204f181598111b98a03ad9536d73b1afdef07b547aed6b63e961c5a"
-				</span>)),
-				illiquid_circulation_supply_validator: MainchainAddressHash(<span class="macro">hex!</span>(
-					<span class="string">"3d81d83fa6c2dc80ae2008c1ab9e0790b63d419191f8a6e7db283d67"
-				</span>)),
-				permissioned_candidates_validator: MainchainAddressHash(<span class="macro">hex!</span>(
-					<span class="string">"3f16086833eed05ccbacd4e630b1dde68f86ff7a7adb35fa1705647f"
-				</span>)),
-				reserve_validator: MainchainAddressHash(<span class="macro">hex!</span>(
-					<span class="string">"21427933d4270f33d9c90b5dc94e6f890eb47116e0b92457b3d236ad"
-				</span>)),
-				version_oracle_validator: MainchainAddressHash(<span class="macro">hex!</span>(
-					<span class="string">"0db2e69ed5a997791ec2f8037bc12f3c222f309ca06a540acaf167bd"
-				</span>)),
 			},
 			policy_ids: PolicyIds {
 				d_parameter: PolicyId(<span class="macro">hex!</span>(
