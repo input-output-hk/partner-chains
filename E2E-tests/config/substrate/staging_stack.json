@@ -18,11 +18,11 @@
                 "ssh": "${stack_config[ssh]}"
             },
             "sidechain_main_cli": {
-                "cli": "/tools/partner-chains-smart-contracts-6.2.2/pc-contracts-cli",
+                "cli": "/tools/partner-chains-smart-contracts-7.0.1/pc-contracts-cli",
                 "ssh": "${stack_config[ssh]}"
             },
             "generate_signatures_cli": {
-                "cli": "/tools/v1.3.0-rc1/partner-chains-node",
+                "cli": "/tools/partner-chains-node",
                 "ssh": "${stack_config[ssh]}"
             },
             "bech32": {
