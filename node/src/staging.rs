@@ -149,7 +149,7 @@ pub fn staging_genesis(
 			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()?,
 		},
 		native_token_management: NativeTokenManagementConfig {
-			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()?,
+			main_chain_scripts: None,
 			..Default::default()
 		},
 	};

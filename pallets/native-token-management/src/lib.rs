@@ -66,14 +66,16 @@ pub mod pallet {
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
-		pub main_chain_scripts: sp_native_token_management::MainChainScripts,
+		pub main_chain_scripts: Option<sp_native_token_management::MainChainScripts>,
 		pub _marker: PhantomData<T>,
 	}
 
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
-			MainChainScriptsConfiguration::<T>::put(self.main_chain_scripts.clone());
+			if let Some(main_chain_scripts) = self.main_chain_scripts.clone() {
+				MainChainScriptsConfiguration::<T>::put(main_chain_scripts);
+			}
 		}
 	}
 
