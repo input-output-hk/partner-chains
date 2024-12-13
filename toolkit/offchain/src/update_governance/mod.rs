@@ -10,7 +10,7 @@ use crate::{
 	plutus_script::PlutusScript,
 };
 use cardano_serialization_lib::{
-	Coin, ExUnits, LanguageKind, PlutusData, Transaction, TransactionBuilder,
+	Coin, ExUnits, LanguageKind, MultiAsset, PlutusData, Transaction, TransactionBuilder,
 	TransactionOutputBuilder, TxInputsBuilder,
 };
 use ogmios_client::{
@@ -64,15 +64,15 @@ fn update_governance_tx(
 	let config = crate::csl::get_builder_config(tx_context)?;
 	let mut tx_builder = TransactionBuilder::new(&config);
 
-	// tx_builder.add_mint_one_script_token(&version_oracle_policy, mint_ex_units)?;
+	tx_builder.add_mint_one_script_token(&multi_sig_policy, mint_ex_units)?;
 
-	// tx_builder.add_output(&version_oracle_datum_output(
-	// 	version_oracle_validator.clone(),
-	// 	version_oracle_policy.clone(),
-	// 	multi_sig_policy,
-	// 	tx_context.network,
-	// 	tx_context,
-	// )?)?;
+	tx_builder.add_output(&version_oracle_datum_output(
+		version_oracle_validator.clone(),
+		version_oracle_policy.clone(),
+		multi_sig_policy,
+		tx_context.network,
+		tx_context,
+	)?)?;
 
 	// tx_builder.add_output(&{
 	// 	TransactionOutputBuilder::new()
@@ -85,7 +85,10 @@ fn update_governance_tx(
 	// 			.into(),
 	// 		)
 	// 		.next()?
-	// 		.with_coin(coin)
+	//         .with_coin_and_asset(&{
+	//             let ma = MultiAsset::new();
+
+	//         }, multiasset)
 	// 		.build()?
 	// })?;
 
@@ -198,7 +201,9 @@ mod test {
 				test_values::VERSION_ORACLE_POLICY,
 				genesis_utxo(),
 				governance_utxo(),
-				MainchainAddressHash::default(),
+				MainchainAddressHash(hex_literal::hex!(
+					"76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"
+				)),
 				&tx_context(),
 				ExUnits::new(&0u64.into(), &0u64.into()),
 			)
