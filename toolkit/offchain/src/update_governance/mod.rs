@@ -2,10 +2,10 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
 use crate::{
-	await_tx::AwaitTx,
+	await_tx::{self, AwaitTx},
 	csl::{
-		convert_value, empty_asset_name, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
-		TransactionContext,
+		convert_ex_units, convert_value, empty_asset_name, InputsBuilderExt, OgmiosUtxoExt,
+		TransactionBuilderExt, TransactionContext,
 	},
 	init_governance::transaction::{
 		multisig_governance_policy_configuration, version_oracle_datum_output,
@@ -27,7 +27,7 @@ use ogmios_client::{
 };
 use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 use sidechain_domain::{
-	byte_string::ByteString, MainchainAddressHash, MainchainPrivateKey, UtxoId,
+	byte_string::ByteString, MainchainAddressHash, MainchainPrivateKey, McTxHash, UtxoId, UtxoIndex,
 };
 
 #[cfg(test)]
@@ -41,7 +41,7 @@ pub async fn run_update_governance<
 	payment_key: MainchainPrivateKey,
 	genesis_utxo_id: UtxoId,
 	client: &T,
-	_await_tx: A,
+	await_tx: A,
 ) -> anyhow::Result<OgmiosTx> {
 	let tx_context = TransactionContext::for_payment_key(payment_key.0, client).await?;
 	let (version_validator, version_policy, version_validator_address) =
@@ -77,18 +77,44 @@ pub async fn run_update_governance<
 		raw_scripts::VERSION_ORACLE_VALIDATOR,
 		raw_scripts::VERSION_ORACLE_POLICY,
 		genesis_utxo_id,
-		governance_utxo,
+		governance_utxo.clone(),
 		new_governance_authority,
 		&tx_context,
 		ExUnits::new(&0u64.into(), &0u64.into()),
 		ExUnits::new(&0u64.into(), &0u64.into()),
 	)?;
 
-	let costs = client.evaluate_transaction(&tx.to_bytes()).await?;
+	let mut costs = client.evaluate_transaction(&tx.to_bytes()).await?;
+	costs.sort_by_key(|cost| cost.validator.index);
 
-	println!("{costs:?}");
+	let [mint_cost, spend_cost] = costs.as_slice() else {
+		return Err(anyhow!("Error retrieving witness costs: expected 2 entries."));
+	};
 
-	Ok(OgmiosTx::default())
+	let tx = update_governance_tx(
+		raw_scripts::MULTI_SIG_POLICY,
+		raw_scripts::VERSION_ORACLE_VALIDATOR,
+		raw_scripts::VERSION_ORACLE_POLICY,
+		genesis_utxo_id,
+		governance_utxo,
+		new_governance_authority,
+		&tx_context,
+		convert_ex_units(&mint_cost.budget),
+		convert_ex_units(&spend_cost.budget),
+	)?;
+	let signed_tx = tx_context.sign(&tx);
+
+	let response = client.submit_transaction(&signed_tx.to_bytes()).await?;
+	println!("Submitted transaction: {}", hex::encode(response.transaction.id));
+
+	await_tx
+		.await_tx_output(
+			client,
+			UtxoId { tx_hash: McTxHash(response.transaction.id), index: UtxoIndex(0) },
+		)
+		.await?;
+
+	Ok(response.transaction)
 }
 
 fn update_governance_tx(
