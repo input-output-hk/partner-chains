@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //!
 //! Permissioned candidates are stored on chain in an UTXO at the Permissioned Candidates Validator address.
 //! There should be at most one UTXO at the validator address and it should contain the permissioned candidates list.

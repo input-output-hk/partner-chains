@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::csl::{
 	get_first_validator_budget, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
 	TransactionContext,

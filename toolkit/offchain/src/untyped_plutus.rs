@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use anyhow::anyhow;
 use plutus::ToDatum;
 use uplc::plutus_data;
