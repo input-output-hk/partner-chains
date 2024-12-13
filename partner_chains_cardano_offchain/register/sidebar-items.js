@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["run_register"],"trait":["Register"]};
+window.SIDEBAR_ITEMS = {"fn":["run_deregister","run_register"],"trait":["Deregister","Register"]};

@@ -473,7 +473,7 @@
 	<span class="kw">let </span>cardano_signig_key_file = config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
 		.prompt_with_default_from_file_and_save(context);
 	<span class="kw">let </span>pkey = cardano_key::get_mc_pkey_from_file(<span class="kw-2">&amp;</span>cardano_signig_key_file, context)<span class="question-mark">?</span>;
-	<span class="kw">let </span>addr_hash = cardano_key::get_mc_address_hash_from_pkey(<span class="kw-2">&amp;</span>pkey);
+	<span class="kw">let </span>addr_hash = pkey.to_pub_key_hash();
 
 	<span class="prelude-val">Ok</span>((pkey, addr_hash))
 }

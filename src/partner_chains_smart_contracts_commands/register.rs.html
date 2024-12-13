@@ -61,8 +61,44 @@
 <a href="#61" id="61">61</a>
 <a href="#62" id="62">62</a>
 <a href="#63" id="63">63</a>
+<a href="#64" id="64">64</a>
+<a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a>
+<a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>jsonrpsee::http_client::HttpClient;
-<span class="kw">use </span>partner_chains_cardano_offchain::{await_tx::FixedDelayRetries, register::run_register};
+<span class="kw">use </span>partner_chains_cardano_offchain::{
+	await_tx::FixedDelayRetries,
+	register::{run_deregister, run_register},
+};
 <span class="kw">use </span>sidechain_domain::{
 	AdaBasedStaking, CandidateRegistration, MainchainPublicKey, MainchainSignature,
 	PermissionedCandidateData, SidechainSignature, UtxoId,
@@ -84,7 +120,7 @@
 		long,
 		value_name = <span class="string">"PARTNERCHAIN_KEY:AURA_KEY:GRANDPA_KEY"</span>,
 		alias = <span class="string">"sidechain-public-keys"</span>,
-		value_parser=parse_partnerchain_public_keys
+		value_parser = parse_partnerchain_public_keys
 	)]
 	</span>partnerchain_public_keys: PermissionedCandidateData,
 	<span class="attr">#[arg(long, alias = <span class="string">"sidechain-signature"</span>)]
@@ -106,7 +142,7 @@
 			},
 			partnerchain_pub_key: <span class="self">self</span>.partnerchain_public_keys.sidechain_public_key,
 			partnerchain_signature: <span class="self">self</span>.partnerchain_signature,
-			own_pkh: <span class="kw">crate</span>::payment_signing_key_to_mainchain_address_hash(payment_key.clone())<span class="question-mark">?</span>,
+			own_pkh: payment_key.to_pub_key_hash(),
 			registration_utxo: <span class="self">self</span>.registration_utxo,
 			aura_pub_key: <span class="self">self</span>.partnerchain_public_keys.aura_public_key,
 			grandpa_pub_key: <span class="self">self</span>.partnerchain_public_keys.grandpa_public_key,
@@ -116,6 +152,36 @@
 			<span class="self">self</span>.genesis_utxo,
 			<span class="kw-2">&amp;</span>candidate_registration,
 			payment_key,
+			<span class="kw-2">&amp;</span>client,
+			FixedDelayRetries::two_minutes(),
+		)
+		.<span class="kw">await</span><span class="question-mark">?</span>;
+
+		<span class="prelude-val">Ok</span>(())
+	}
+}
+
+<span class="attr">#[derive(Clone, Debug, clap::Parser)]
+</span><span class="kw">pub struct </span>DeregisterCmd {
+	<span class="attr">#[clap(flatten)]
+	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
+	<span class="attr">#[arg(long)]
+	</span>genesis_utxo: UtxoId,
+	<span class="attr">#[arg(long)]
+	</span>payment_key_file: String,
+	<span class="attr">#[arg(long)]
+	</span>spo_public_key: MainchainPublicKey,
+}
+
+<span class="kw">impl </span>DeregisterCmd {
+	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
+		<span class="kw">let </span>payment_signing_key = read_private_key_from_file(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key_file)<span class="question-mark">?</span>;
+		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_url)<span class="question-mark">?</span>;
+
+		run_deregister(
+			<span class="self">self</span>.genesis_utxo,
+			payment_signing_key,
+			<span class="self">self</span>.spo_public_key,
 			<span class="kw-2">&amp;</span>client,
 			FixedDelayRetries::two_minutes(),
 		)

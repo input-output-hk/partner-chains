@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["RegisterCmd"]};
+window.SIDEBAR_ITEMS = {"struct":["DeregisterCmd","RegisterCmd"]};

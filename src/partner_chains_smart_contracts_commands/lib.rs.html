@@ -113,15 +113,6 @@
 <a href="#113" id="113">113</a>
 <a href="#114" id="114">114</a>
 <a href="#115" id="115">115</a>
-<a href="#116" id="116">116</a>
-<a href="#117" id="117">117</a>
-<a href="#118" id="118">118</a>
-<a href="#119" id="119">119</a>
-<a href="#120" id="120">120</a>
-<a href="#121" id="121">121</a>
-<a href="#122" id="122">122</a>
-<a href="#123" id="123">123</a>
-<a href="#124" id="124">124</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 
 <span class="kw">pub mod </span>d_parameter;
@@ -140,6 +131,8 @@
 	</span>UpsertDParameter(d_parameter::UpsertDParameterCmd),
 	<span class="doccomment">/// Register candidate
 	</span>Register(register::RegisterCmd),
+	<span class="doccomment">/// Deregister candidate
+	</span>Deregister(register::DeregisterCmd),
 }
 
 <span class="attr">#[derive(Clone, Debug, clap::Parser)]
@@ -158,6 +151,7 @@
 			<span class="self">Self</span>::GetScripts(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::UpsertDParameter(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::Register(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
+			<span class="self">Self</span>::Deregister(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 		}
 	}
 
@@ -198,18 +192,6 @@
 	} <span class="kw">else </span>{
 		<span class="prelude-val">Err</span>(<span class="string">"Failed to parse partner chain public keys."</span>.into())
 	}
-}
-
-<span class="kw">fn </span>payment_signing_key_to_mainchain_address_hash(
-	payment_signing_key: MainchainPrivateKey,
-) -&gt; CmdResult&lt;MainchainAddressHash&gt; {
-	<span class="prelude-val">Ok</span>(cardano_serialization_lib::PrivateKey::from_normal_bytes(<span class="kw-2">&amp;</span>payment_signing_key.<span class="number">0</span>)<span class="question-mark">?
-		</span>.to_public()
-		.hash()
-		.to_bytes()
-		.as_slice()
-		.try_into()
-		.map(MainchainAddressHash)<span class="question-mark">?</span>)
 }
 
 <span class="attr">#[cfg(test)]
