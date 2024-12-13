@@ -74,35 +74,6 @@ fn update_governance_tx(
 		tx_context,
 	)?)?;
 
-	// tx_builder.add_output(&{
-	// 	TransactionOutputBuilder::new()
-	// 		.with_address(&version_oracle_validator.address(tx_context.network))
-	// 		.with_plutus_data(
-	// 			&VersionOracleDatum {
-	// 				version_oracle: 32,
-	// 				currency_symbol: version_oracle_policy.script_hash(),
-	// 			}
-	// 			.into(),
-	// 		)
-	// 		.next()?
-	//         .with_coin_and_asset(&{
-	//             let ma = MultiAsset::new();
-
-	//         }, multiasset)
-	// 		.build()?
-	// })?;
-
-	// tx_builder.add_output_with_one_script_token(
-	// 	&version_oracle_validator,
-	// 	&version_oracle_policy,
-	// 	&VersionOracleDatum {
-	// 		version_oracle: 32,
-	// 		currency_symbol: version_oracle_policy.script_hash(),
-	// 	}
-	// 	.into(),
-	// 	&tx_context,
-	// )?;
-
 	tx_builder.set_inputs(&{
 		TxInputsBuilder::with_key_inputs(&[governance_utxo], &tx_context.payment_key_hash())?
 	});
