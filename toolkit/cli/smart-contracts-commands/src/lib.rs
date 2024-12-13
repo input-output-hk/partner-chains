@@ -4,6 +4,7 @@ pub mod d_parameter;
 pub mod get_scripts;
 pub mod init_governance;
 pub mod register;
+pub mod update_governance;
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
