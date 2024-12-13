@@ -4,7 +4,7 @@
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
-		empty_asset_name, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
+		convert_value, empty_asset_name, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
 		TransactionContext,
 	},
 	init_governance::transaction::{
@@ -15,9 +15,9 @@ use crate::{
 };
 use anyhow::{anyhow, Context};
 use cardano_serialization_lib::{
-	Coin, ExUnits, Int, LanguageKind, MintBuilder, MintWitness, MultiAsset, PlutusData,
-	PlutusScriptSource, Redeemer, RedeemerTag, Transaction, TransactionBuilder,
-	TransactionOutputBuilder, TxInputsBuilder,
+	Coin, DatumSource, ExUnits, Int, LanguageKind, MintBuilder, MintWitness, MultiAsset,
+	PlutusData, PlutusScriptSource, PlutusWitness, Redeemer, RedeemerTag, Transaction,
+	TransactionBuilder, TransactionOutputBuilder, TxInputsBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -84,6 +84,10 @@ pub async fn run_update_governance<
 		ExUnits::new(&0u64.into(), &0u64.into()),
 	)?;
 
+	let costs = client.evaluate_transaction(&tx.to_bytes()).await?;
+
+	println!("{costs:?}");
+
 	Ok(OgmiosTx::default())
 }
 
@@ -124,7 +128,11 @@ fn update_governance_tx(
 
 	tx_builder.set_inputs(&{
 		let mut inputs = TxInputsBuilder::new();
-		inputs.add_script_utxo_input(&governance_utxo, &multi_sig_policy, spend_ex_units)?;
+		inputs.add_script_utxo_input(
+			&governance_utxo,
+			&version_oracle_validator,
+			spend_ex_units,
+		)?;
 
 		inputs
 	});
