@@ -3,14 +3,18 @@
 #![allow(dead_code)]
 use crate::{
 	await_tx::AwaitTx,
-	csl::{InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext},
+	csl::{
+		empty_asset_name, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
+		TransactionContext,
+	},
 	init_governance::transaction::{
 		multisig_governance_policy_configuration, version_oracle_datum_output,
 	},
 	plutus_script::PlutusScript,
 };
 use cardano_serialization_lib::{
-	Coin, ExUnits, LanguageKind, MultiAsset, PlutusData, Transaction, TransactionBuilder,
+	Coin, ExUnits, Int, LanguageKind, MintBuilder, MintWitness, MultiAsset, PlutusData,
+	PlutusScriptSource, Redeemer, RedeemerTag, Transaction, TransactionBuilder,
 	TransactionOutputBuilder, TxInputsBuilder,
 };
 use ogmios_client::{
@@ -49,6 +53,7 @@ fn update_governance_tx(
 	new_governance_authority: MainchainAddressHash,
 	tx_context: &TransactionContext,
 	mint_ex_units: ExUnits,
+	spend_ex_units: ExUnits,
 ) -> anyhow::Result<Transaction> {
 	let multi_sig_policy =
 		PlutusScript::from_wrapped_cbor(multi_sig_policy, LanguageKind::PlutusV2)?
@@ -69,13 +74,16 @@ fn update_governance_tx(
 	tx_builder.add_output(&version_oracle_datum_output(
 		version_oracle_validator.clone(),
 		version_oracle_policy.clone(),
-		multi_sig_policy,
+		multi_sig_policy.clone(),
 		tx_context.network,
 		tx_context,
 	)?)?;
 
 	tx_builder.set_inputs(&{
-		TxInputsBuilder::with_key_inputs(&[governance_utxo], &tx_context.payment_key_hash())?
+		let mut inputs = TxInputsBuilder::new();
+		inputs.add_script_utxo_input(&governance_utxo, &multi_sig_policy, spend_ex_units)?;
+
+		inputs
 	});
 
 	Ok(tx_builder.balance_update_and_build(tx_context)?)
@@ -176,6 +184,7 @@ mod test {
 					"76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"
 				)),
 				&tx_context(),
+				ExUnits::new(&0u64.into(), &0u64.into()),
 				ExUnits::new(&0u64.into(), &0u64.into()),
 			)
 			.unwrap()
