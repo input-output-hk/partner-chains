@@ -897,22 +897,7 @@
 <a href="#897" id="897">897</a>
 <a href="#898" id="898">898</a>
 <a href="#899" id="899">899</a>
-<a href="#900" id="900">900</a>
-<a href="#901" id="901">901</a>
-<a href="#902" id="902">902</a>
-<a href="#903" id="903">903</a>
-<a href="#904" id="904">904</a>
-<a href="#905" id="905">905</a>
-<a href="#906" id="906">906</a>
-<a href="#907" id="907">907</a>
-<a href="#908" id="908">908</a>
-<a href="#909" id="909">909</a>
-<a href="#910" id="910">910</a>
-<a href="#911" id="911">911</a>
-<a href="#912" id="912">912</a>
-</pre></div><pre class="rust"><code><span class="attr">#![allow(dead_code)]
-
-</span><span class="kw">use crate</span>::{plutus_script::PlutusScript, untyped_plutus::datum_to_uplc_plutus_data};
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>fraction::{FromPrimitive, Ratio};
 <span class="kw">use </span>ogmios_client::query_ledger_state::ReferenceScriptsCosts;
@@ -1128,9 +1113,6 @@
 	<span class="kw">fn </span>to_csl(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;TransactionUnspentOutput, JsError&gt;;
 
 	<span class="kw">fn </span>to_domain(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; sidechain_domain::UtxoId;
-
-	<span class="doccomment">/// Encodes this UTXO as a nested constructor data format which is used by PC smart contracts
-	</span><span class="kw">fn </span>to_uplc_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; uplc::PlutusData;
 }
 
 <span class="kw">impl </span>OgmiosUtxoExt <span class="kw">for </span>OgmiosUtxo {
@@ -1156,10 +1138,6 @@
 			tx_hash: sidechain_domain::McTxHash(<span class="self">self</span>.transaction.id),
 			index: sidechain_domain::UtxoIndex(<span class="self">self</span>.index),
 		}
-	}
-
-	<span class="kw">fn </span>to_uplc_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; uplc::PlutusData {
-		datum_to_uplc_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>.to_domain())
 	}
 }
 
@@ -1190,10 +1168,6 @@
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>payment_key_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Ed25519KeyHash {
 		<span class="self">self</span>.payment_key.to_public().hash()
-	}
-
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>payment_address(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Address {
-		key_hash_address(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key.to_public().hash(), <span class="self">self</span>.network)
 	}
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>sign(<span class="kw-2">&amp;</span><span class="self">self</span>, tx: <span class="kw-2">&amp;</span>Transaction) -&gt; Transaction {

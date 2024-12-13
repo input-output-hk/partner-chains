@@ -167,6 +167,25 @@
 <a href="#167" id="167">167</a>
 <a href="#168" id="168">168</a>
 <a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::OgmiosUtxoExt;
 <span class="kw">use </span><span class="kw">crate</span>::scripts_data;
 <span class="kw">use crate</span>::{
@@ -176,6 +195,7 @@
 };
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
+<span class="kw">use </span>ogmios_client::types::OgmiosScript;
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
@@ -269,9 +289,6 @@
 	};
 
 	<span class="kw">let </span>unsigned_transaction = transaction::init_governance_transaction(
-		raw_scripts::MULTI_SIG_POLICY,
-		raw_scripts::VERSION_ORACLE_VALIDATOR,
-		raw_scripts::VERSION_ORACLE_POLICY,
 		governance_authority,
 		<span class="kw-2">&amp;</span>tx_context,
 		genesis_utxo.clone(),
@@ -284,9 +301,6 @@
 	<span class="kw">let </span>cost = get_first_validator_budget(all_costs)<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>unsigned_transaction = transaction::init_governance_transaction(
-		raw_scripts::MULTI_SIG_POLICY,
-		raw_scripts::VERSION_ORACLE_VALIDATOR,
-		raw_scripts::VERSION_ORACLE_POLICY,
 		governance_authority,
 		<span class="kw-2">&amp;</span>tx_context,
 		genesis_utxo.clone(),
@@ -335,5 +349,29 @@
 		.ok_or_else(|| <span class="macro">anyhow!</span>(<span class="string">"Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using `init-governance` command."</span>))<span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(governance_utxo)
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>GovernanceData {
+	policy_script: PlutusScript,
+	utxo_id: UtxoId,
+}
+
+<span class="kw">impl </span>GovernanceData {
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>policy_script_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ScriptHash {
+		<span class="self">self</span>.policy_script.hash()
+	}
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_governance_data&lt;T: QueryLedgerState + Transactions + QueryNetwork&gt;(
+	genesis_utxo: UtxoId,
+	client: <span class="kw-2">&amp;</span>T,
+) -&gt; anyhow::Result&lt;GovernanceData&gt; {
+	<span class="kw">let </span>utxo = get_governance_utxo(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>utxo_id = utxo.to_domain();
+	<span class="kw">if let </span><span class="prelude-val">Some</span>(OgmiosScript::Plutus(ps)) = utxo.script.clone() {
+		<span class="prelude-val">Ok</span>(GovernanceData { policy_script: PlutusScript::new_v2(ps.cbor), utxo_id })
+	} <span class="kw">else </span>{
+		<span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Programmatic Error: Governance UTXO script is not PlutusScript"</span>))
+	}
 }
 </code></pre></div></section></main></body></html>
