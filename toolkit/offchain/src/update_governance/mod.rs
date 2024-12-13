@@ -64,7 +64,8 @@ fn update_governance_tx(
 	let config = crate::csl::get_builder_config(tx_context)?;
 	let mut tx_builder = TransactionBuilder::new(&config);
 
-	tx_builder.add_mint_one_script_token(&version_oracle_policy, mint_ex_units)?;
+	// tx_builder.add_mint_one_script_token(&version_oracle_policy, mint_ex_units)?;
+
 	// tx_builder.add_output(&version_oracle_datum_output(
 	// 	version_oracle_validator.clone(),
 	// 	version_oracle_policy.clone(),
@@ -73,20 +74,31 @@ fn update_governance_tx(
 	// 	tx_context,
 	// )?)?;
 
-	tx_builder.add_output(&{
-		TransactionOutputBuilder::new()
-			.with_address(&version_oracle_validator.address(tx_context.network))
-			.with_plutus_data(
-				&VersionOracleDatum {
-					version_oracle: 32,
-					currency_symbol: version_oracle_policy.script_hash(),
-				}
-				.into(),
-			)
-			.next()?
-			.with_coin(&Coin::zero())
-			.build()?
-	})?;
+	// tx_builder.add_output(&{
+	// 	TransactionOutputBuilder::new()
+	// 		.with_address(&version_oracle_validator.address(tx_context.network))
+	// 		.with_plutus_data(
+	// 			&VersionOracleDatum {
+	// 				version_oracle: 32,
+	// 				currency_symbol: version_oracle_policy.script_hash(),
+	// 			}
+	// 			.into(),
+	// 		)
+	// 		.next()?
+	// 		.with_coin(coin)
+	// 		.build()?
+	// })?;
+
+	// tx_builder.add_output_with_one_script_token(
+	// 	&version_oracle_validator,
+	// 	&version_oracle_policy,
+	// 	&VersionOracleDatum {
+	// 		version_oracle: 32,
+	// 		currency_symbol: version_oracle_policy.script_hash(),
+	// 	}
+	// 	.into(),
+	// 	&tx_context,
+	// )?;
 
 	tx_builder.set_inputs(&{
 		TxInputsBuilder::with_key_inputs(&[governance_utxo], &tx_context.payment_key_hash())?
@@ -142,7 +154,7 @@ mod test {
 				// native_tokens: [].into(),
 				native_tokens: [(
 					hex!("c11dee532646a9b226aac75f77ea7ae5fba9270674327c882794701e"),
-					vec![Asset { name: vec![], amount: 1 }],
+					vec![Asset { name: hex!("56657273696f6e206f7261636c65").to_vec(), amount: 1 }],
 				)]
 				.into(),
 			},
@@ -167,7 +179,7 @@ mod test {
 	fn genesis_utxo() -> OgmiosUtxo {
 		OgmiosUtxo {
 			transaction: OgmiosTx {
-				id: hex!("992a24e743a522eb3adf0bc39820a9a52093525f91ed6205b72fd4087c13b4ac"),
+				id: hex!("071ce86f4b21214f35df5e7f2931a10b67f4a11360e56c1e2bcd7978980adca5"),
 			},
 			index: 1,
 			value: OgmiosValue::new_lovelace(10000),
