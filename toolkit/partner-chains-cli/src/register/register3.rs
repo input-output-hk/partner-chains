@@ -189,7 +189,7 @@ mod tests {
 						None,
 						PcContractsCliResources::default(),
 					)],
-					vec![MockIO::file_read("/path/to/payment.skey")],
+					run_registration_io(),
 					prompt_for_registration_status_y(),
 					show_registration_status_io(),
 				]
@@ -208,7 +208,7 @@ mod tests {
 			genesis_utxo(),
 			new_candidate_registration(),
 			payment_signing_key(),
-			Err(OffchainError::InternalError("".to_string())),
+			Err(OffchainError::InternalError("test error".to_string())),
 		);
 		let mock_context = MockIOContext::new()
 			.with_json_file("/path/to/payment.skey", payment_skey_content())
@@ -226,8 +226,7 @@ mod tests {
 						None,
 						PcContractsCliResources::default(),
 					)],
-					vec![MockIO::file_read("/path/to/payment.skey")],
-					// run_registration_command_fail_io(),
+					run_registration_fail_io(),
 				]
 				.into_iter()
 				.flatten()
@@ -262,7 +261,7 @@ mod tests {
 						None,
 						PcContractsCliResources::default(),
 					)],
-					vec![MockIO::file_read("/path/to/payment.skey")],
+					run_registration_io(),
 					prompt_for_registration_status_n(),
 				]
 				.into_iter()
@@ -325,6 +324,14 @@ mod tests {
         MockIO::print("Registration status:"),
         MockIO::print("{\"epoch\":1,\"validators\":[{\"public_key\":\"cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7\",\"status\":\"Registered\"}]}"),
 		]
+	}
+
+	fn run_registration_io() -> Vec<MockIO> {
+		vec![MockIO::file_read("/path/to/payment.skey")]
+	}
+
+	fn run_registration_fail_io() -> Vec<MockIO> {
+		vec![MockIO::file_read("/path/to/payment.skey")]
 	}
 
 	fn mock_register3_cmd() -> Register3Cmd {
