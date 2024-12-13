@@ -181,8 +181,11 @@ pub async fn run_deregister<
 	let validator = crate::scripts_data::registered_candidates_scripts(genesis_utxo)?;
 	let validator_address = validator.address_bech32(ctx.network)?;
 	let all_registration_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
-	let own_registrations =
-		get_own_registrations(payment_signing_key.to_pub_key_hash(), stake_ownership_pub_key.clone(), &all_registration_utxos);
+	let own_registrations = get_own_registrations(
+		payment_signing_key.to_pub_key_hash(),
+		stake_ownership_pub_key.clone(),
+		&all_registration_utxos,
+	);
 
 	if own_registrations.is_empty() {
 		log::info!("✅ Candidate is not registered.");
