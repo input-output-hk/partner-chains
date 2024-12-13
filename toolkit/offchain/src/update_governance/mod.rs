@@ -37,7 +37,7 @@ pub async fn run_update_governance<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 >(
-	_new_governance_authority: MainchainAddressHash,
+	new_governance_authority: MainchainAddressHash,
 	payment_key: MainchainPrivateKey,
 	genesis_utxo_id: UtxoId,
 	client: &T,
@@ -72,11 +72,17 @@ pub async fn run_update_governance<
 		governance_utxo.index,
 	);
 
-	let genesis_utxo = client.query_utxo_details(genesis_utxo_id).await.with_context(|| {
-		format!("Failed to fetch utxo data from Ogmios for utxo {governance_utxo:?}.")
-	})?;
-
-	log::info!("Genesis utxo found in Ogmios");
+	// let tx = update_governance_tx(
+	// 	raw_scripts::MULTI_SIG_POLICY,
+	// 	raw_scripts::VERSION_ORACLE_VALIDATOR,
+	// 	raw_scripts::VERSION_ORACLE_POLICY,
+	// 	genesis_utxo_id.into(),
+	// 	governance_utxo,
+	// 	new_governance_authority,
+	// 	&tx_context,
+	// 	ExUnits::new(&0u64.into(), &0u64.into()),
+	// 	ExUnits::new(&0u64.into(), &0u64.into()),
+	// )?;
 
 	Ok(OgmiosTx::default())
 }
