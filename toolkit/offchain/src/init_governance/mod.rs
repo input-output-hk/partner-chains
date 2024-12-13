@@ -7,6 +7,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::*;
+use ogmios_client::types::OgmiosScript;
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
@@ -100,9 +101,6 @@ pub async fn run_init_governance<
 	};
 
 	let unsigned_transaction = transaction::init_governance_transaction(
-		raw_scripts::MULTI_SIG_POLICY,
-		raw_scripts::VERSION_ORACLE_VALIDATOR,
-		raw_scripts::VERSION_ORACLE_POLICY,
 		governance_authority,
 		&tx_context,
 		genesis_utxo.clone(),
@@ -115,9 +113,6 @@ pub async fn run_init_governance<
 	let cost = get_first_validator_budget(all_costs)?;
 
 	let unsigned_transaction = transaction::init_governance_transaction(
-		raw_scripts::MULTI_SIG_POLICY,
-		raw_scripts::VERSION_ORACLE_VALIDATOR,
-		raw_scripts::VERSION_ORACLE_POLICY,
 		governance_authority,
 		&tx_context,
 		genesis_utxo.clone(),
@@ -166,4 +161,28 @@ pub async fn get_governance_utxo<T: QueryLedgerState + Transactions + QueryNetwo
 		.ok_or_else(|| anyhow!("Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using `init-governance` command."))?;
 
 	Ok(governance_utxo)
+}
+
+pub(crate) struct GovernanceData {
+	policy_script: PlutusScript,
+	utxo_id: UtxoId,
+}
+
+impl GovernanceData {
+	pub(crate) fn policy_script_hash(&self) -> ScriptHash {
+		self.policy_script.hash()
+	}
+}
+
+pub(crate) async fn get_governance_data<T: QueryLedgerState + Transactions + QueryNetwork>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> anyhow::Result<GovernanceData> {
+	let utxo = get_governance_utxo(genesis_utxo, client).await?;
+	let utxo_id = utxo.to_domain();
+	if let Some(OgmiosScript::Plutus(ps)) = utxo.script.clone() {
+		Ok(GovernanceData { policy_script: PlutusScript::new_v2(ps.cbor), utxo_id })
+	} else {
+		Err(anyhow!("Governance UTXO script is not PlutusScript"))
+	}
 }

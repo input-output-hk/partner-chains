@@ -1,4 +1,8 @@
-use crate::{csl::*, plutus_script::PlutusScript};
+use crate::{
+	csl::*,
+	plutus_script::PlutusScript,
+	scripts_data::{multisig_governance_policy_configuration, version_oracle},
+};
 use cardano_serialization_lib::*;
 use ogmios_client::types::OgmiosUtxo;
 use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
@@ -9,24 +13,15 @@ use sidechain_domain::MainchainAddressHash;
 const SCRIPT_ID: u32 = 32;
 
 pub(crate) fn init_governance_transaction(
-	multi_sig_policy: &[u8],
-	version_oracle_validator: &[u8],
-	version_oracle_policy: &[u8],
 	governance_authority: MainchainAddressHash,
 	tx_context: &TransactionContext,
 	genesis_utxo: OgmiosUtxo,
 	ex_units: ExUnits,
 ) -> anyhow::Result<Transaction> {
 	let multi_sig_policy =
-		PlutusScript::from_wrapped_cbor(multi_sig_policy, LanguageKind::PlutusV2)?
+		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, LanguageKind::PlutusV2)?
 			.apply_uplc_data(multisig_governance_policy_configuration(governance_authority))?;
-	let version_oracle_validator =
-		PlutusScript::from_wrapped_cbor(version_oracle_validator, LanguageKind::PlutusV2)?
-			.apply_uplc_data(genesis_utxo.to_uplc_plutus_data())?;
-	let version_oracle_policy =
-		PlutusScript::from_wrapped_cbor(version_oracle_policy, LanguageKind::PlutusV2)?
-			.apply_uplc_data(genesis_utxo.to_uplc_plutus_data())?
-			.apply_uplc_data(version_oracle_validator.address_data(tx_context.network)?)?;
+	let version_oracle = version_oracle(genesis_utxo.to_domain(), tx_context.network)?;
 	let config = crate::csl::get_builder_config(tx_context)?;
 	let mut tx_builder = TransactionBuilder::new(&config);
 
@@ -34,7 +29,7 @@ pub(crate) fn init_governance_transaction(
 		let mut mint_builder = MintBuilder::new();
 
 		mint_builder.add_asset(
-			&mint_witness(&version_oracle_policy, &multi_sig_policy, &ex_units)?,
+			&mint_witness(&version_oracle.policy, &multi_sig_policy, &ex_units)?,
 			&version_oracle_asset_name(),
 			&Int::new_i32(1),
 		)?;
@@ -42,8 +37,8 @@ pub(crate) fn init_governance_transaction(
 	});
 
 	tx_builder.add_output(&version_oracle_datum_output(
-		version_oracle_validator.clone(),
-		version_oracle_policy.clone(),
+		version_oracle.validator.clone(),
+		version_oracle.policy.clone(),
 		multi_sig_policy,
 		tx_context.network,
 		tx_context,
@@ -113,17 +108,4 @@ fn version_oracle_datum_output(
 	.calculate_ada()?;
 	let output = amount_builder.with_coin_and_asset(&min_ada, &ma).build()?;
 	Ok(output)
-}
-
-// Returns the simplest MultiSig policy configuration plutus data:
-// there is one required authority and it is the governance authority from sidechain params.
-pub fn multisig_governance_policy_configuration(
-	governance_authority: MainchainAddressHash,
-) -> uplc::PlutusData {
-	uplc::PlutusData::Array(vec![
-		uplc::PlutusData::Array(vec![uplc::PlutusData::BoundedBytes(
-			governance_authority.0.to_vec().into(),
-		)]),
-		uplc::PlutusData::BigInt(uplc::BigInt::Int(1.into())),
-	])
 }
