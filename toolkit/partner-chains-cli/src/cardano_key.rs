@@ -1,6 +1,6 @@
 use crate::IOContext;
 use anyhow::anyhow;
-use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey};
+use sidechain_domain::MainchainPrivateKey;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -44,16 +44,4 @@ pub(crate) fn get_mc_pkey_from_file(
 	context: &impl IOContext,
 ) -> anyhow::Result<MainchainPrivateKey> {
 	Ok(MainchainPrivateKey(get_key_bytes_from_file(path, context)?))
-}
-
-pub(crate) fn get_mc_address_hash_from_pkey(pkey: &MainchainPrivateKey) -> MainchainAddressHash {
-	let csl_private_key = cardano_serialization_lib::PrivateKey::from_normal_bytes(&pkey.0)
-		.expect("Conversion is infallible");
-	let csl_public_key_hash = csl_private_key
-		.to_public()
-		.hash()
-		.to_bytes()
-		.try_into()
-		.expect("Bytes represent correct public key hash");
-	MainchainAddressHash(csl_public_key_hash)
 }

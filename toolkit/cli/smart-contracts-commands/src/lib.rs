@@ -16,6 +16,8 @@ pub enum SmartContractsCmd {
 	UpsertDParameter(d_parameter::UpsertDParameterCmd),
 	/// Register candidate
 	Register(register::RegisterCmd),
+	/// Deregister candidate
+	Deregister(register::DeregisterCmd),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -34,6 +36,7 @@ impl SmartContractsCmd {
 			Self::GetScripts(cmd) => cmd.execute().await,
 			Self::UpsertDParameter(cmd) => cmd.execute().await,
 			Self::Register(cmd) => cmd.execute().await,
+			Self::Deregister(cmd) => cmd.execute().await,
 		}
 	}
 
@@ -74,18 +77,6 @@ pub(crate) fn parse_partnerchain_public_keys(
 	} else {
 		Err("Failed to parse partner chain public keys.".into())
 	}
-}
-
-fn payment_signing_key_to_mainchain_address_hash(
-	payment_signing_key: MainchainPrivateKey,
-) -> CmdResult<MainchainAddressHash> {
-	Ok(cardano_serialization_lib::PrivateKey::from_normal_bytes(&payment_signing_key.0)?
-		.to_public()
-		.hash()
-		.to_bytes()
-		.as_slice()
-		.try_into()
-		.map(MainchainAddressHash)?)
 }
 
 #[cfg(test)]

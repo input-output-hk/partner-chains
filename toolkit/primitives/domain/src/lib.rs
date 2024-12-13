@@ -216,6 +216,21 @@ impl core::fmt::Debug for MainchainPrivateKey {
 	}
 }
 
+impl MainchainPrivateKey {
+	#[cfg(feature = "std")]
+	pub fn to_pub_key_hash(&self) -> MainchainAddressHash {
+		cardano_serialization_lib::PrivateKey::from_normal_bytes(&self.0)
+			.expect("Conversion cannot fail on valid MainchainPrivateKey values")
+			.to_public()
+			.hash()
+			.to_bytes()
+			.as_slice()
+			.try_into()
+			.map(MainchainAddressHash)
+			.expect("Conversion cannot fail as representation is the same")
+	}
+}
+
 impl TryFrom<Vec<u8>> for MainchainPublicKey {
 	type Error = &'static str;
 
