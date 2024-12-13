@@ -183,6 +183,6 @@ pub(crate) async fn get_governance_data<T: QueryLedgerState + Transactions + Que
 	if let Some(OgmiosScript::Plutus(ps)) = utxo.script.clone() {
 		Ok(GovernanceData { policy_script: PlutusScript::new_v2(ps.cbor), utxo_id })
 	} else {
-		Err(anyhow!("Governance UTXO script is not PlutusScript"))
+		Err(anyhow!("Programmatic Error: Governance UTXO script is not PlutusScript"))
 	}
 }

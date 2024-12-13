@@ -70,17 +70,17 @@ pub fn get_scripts_data(
 		raw_scripts::ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
 		PlutusV2,
 	)?
-	.apply_uplc_data(version_oracle_data.policy_as_plutus_data())?;
+	.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())?;
 	let (permissioned_candidates_validator, permissioned_candidates_policy) =
 		permissioned_candidates_scripts(genesis_utxo, network)?;
 
 	let reserve_validator =
 		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, PlutusV2)?
-			.apply_uplc_data(version_oracle_data.policy_as_plutus_data())?;
+			.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())?;
 
 	let reserve_auth_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_AUTH_POLICY, PlutusV2)?
-			.apply_uplc_data(version_oracle_data.policy_as_plutus_data())?;
+			.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())?;
 
 	Ok(ScriptsData {
 		addresses: Addresses {
@@ -120,7 +120,7 @@ impl VersionOracleData {
 		self.policy.policy_id()
 	}
 
-	pub(crate) fn policy_as_plutus_data(&self) -> PlutusData {
+	pub(crate) fn policy_id_as_plutus_data(&self) -> PlutusData {
 		PlutusData::BoundedBytes(self.policy_id().0.to_vec().into())
 	}
 }
