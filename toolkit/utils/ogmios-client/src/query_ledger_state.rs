@@ -34,6 +34,14 @@ pub trait QueryUtxoByUtxoId {
 		tx: OgmiosTx,
 		index: u16,
 	) -> Result<Option<OgmiosUtxo>, OgmiosClientError>;
+
+	#[allow(async_fn_in_trait)]
+	async fn query_utxo_details(
+		&self,
+		utxo: sidechain_domain::UtxoId,
+	) -> Result<Option<OgmiosUtxo>, OgmiosClientError> {
+		self.query_utxo_by_id(OgmiosTx { id: utxo.tx_hash.0 }, utxo.index.0).await
+	}
 }
 
 impl<T: OgmiosClient> QueryLedgerState for T {

@@ -331,7 +331,11 @@ fn governance_script_hash() -> ScriptHash {
 }
 
 fn governance_data() -> GovernanceData {
-	GovernanceData { policy_script: governance_script(), utxo_id: UtxoId::new([15; 32], 0) }
+	GovernanceData {
+		policy_script: governance_script(),
+		utxo_id: UtxoId::new([15; 32], 0),
+		utxo: Default::default(),
+	}
 }
 
 fn lesser_payment_utxo() -> OgmiosUtxo {

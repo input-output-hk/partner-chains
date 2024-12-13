@@ -180,6 +180,7 @@ pub(crate) async fn get_governance_utxo<T: QueryLedgerState + Transactions + Que
 pub(crate) struct GovernanceData {
 	pub(crate) policy_script: plutus_script::PlutusScript,
 	pub(crate) utxo_id: UtxoId,
+	pub(crate) utxo: OgmiosUtxo,
 }
 
 impl GovernanceData {
@@ -202,7 +203,7 @@ pub(crate) async fn get_governance_data<T: QueryLedgerState + Transactions + Que
 	let utxo = get_governance_utxo(genesis_utxo, client).await?;
 	let policy_script = read_policy(&utxo)?;
 	let utxo_id = utxo.to_domain();
-	Ok(GovernanceData { policy_script, utxo_id })
+	Ok(GovernanceData { policy_script, utxo_id, utxo })
 }
 
 pub(crate) fn read_policy(

@@ -552,6 +552,7 @@ mod tests {
 		GovernanceData {
 			policy_script: test_goveranance_policy(),
 			utxo_id: test_goveranance_utxo_id(),
+			utxo: Default::default(),
 		}
 	}
 

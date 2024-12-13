@@ -530,6 +530,13 @@ pub(crate) trait InputsBuilderExt: Sized {
 		script: &PlutusScript,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError>;
+	fn add_script_utxo_input_with_data(
+		&mut self,
+		utxo: &OgmiosUtxo,
+		script: &PlutusScript,
+		data: &PlutusData,
+		ex_units: &ExUnits,
+	) -> Result<(), JsError>;
 
 	/// Adds ogmios inputs to the tx inputs builder.
 	fn add_key_inputs(&mut self, utxos: &[OgmiosUtxo], key: &Ed25519KeyHash)
@@ -545,6 +552,21 @@ impl InputsBuilderExt for TxInputsBuilder {
 		script: &PlutusScript,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError> {
+		self.add_script_utxo_input_with_data(
+			utxo,
+			script,
+			&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
+			ex_units,
+		)
+	}
+
+	fn add_script_utxo_input_with_data(
+		&mut self,
+		utxo: &OgmiosUtxo,
+		script: &PlutusScript,
+		data: &PlutusData,
+		ex_units: &ExUnits,
+	) -> Result<(), JsError> {
 		let input = utxo.to_csl_tx_input();
 		let amount = convert_value(&utxo.value)?;
 		let witness = PlutusWitness::new_without_datum(
@@ -553,7 +575,7 @@ impl InputsBuilderExt for TxInputsBuilder {
 				&RedeemerTag::new_spend(),
 				// CSL will set redeemer index for the index of script input after sorting transaction inputs
 				&0u32.into(),
-				&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
+				&data,
 				ex_units,
 			),
 		);

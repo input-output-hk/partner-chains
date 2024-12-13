@@ -513,7 +513,11 @@ mod tests {
 	}
 
 	fn test_governance_data() -> GovernanceData {
-		GovernanceData { policy_script: test_governance_script(), utxo_id: test_governance_input() }
+		GovernanceData {
+			policy_script: test_governance_script(),
+			utxo_id: test_governance_input(),
+			utxo: Default::default(),
+		}
 	}
 
 	fn version_oracle_data() -> VersionOracleData {
