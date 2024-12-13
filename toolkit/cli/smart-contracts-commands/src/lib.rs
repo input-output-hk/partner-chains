@@ -13,6 +13,8 @@ pub enum SmartContractsCmd {
 	GetScripts(get_scripts::GetScripts),
 	/// Initialize Partner Chain governance
 	InitGovernance(init_governance::InitGovernanceCmd),
+	/// Update Partner Chain governance
+	UpdateGovernance(update_governance::UpdateGovernanceCmd),
 	/// Upsert DParameter
 	UpsertDParameter(d_parameter::UpsertDParameterCmd),
 	/// Register candidate
@@ -34,6 +36,7 @@ impl SmartContractsCmd {
 	pub async fn execute(self) -> CmdResult<()> {
 		match self {
 			Self::InitGovernance(cmd) => cmd.execute().await,
+			Self::UpdateGovernance(cmd) => cmd.execute().await,
 			Self::GetScripts(cmd) => cmd.execute().await,
 			Self::UpsertDParameter(cmd) => cmd.execute().await,
 			Self::Register(cmd) => cmd.execute().await,

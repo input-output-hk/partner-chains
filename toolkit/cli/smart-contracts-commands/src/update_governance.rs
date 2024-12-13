@@ -7,7 +7,7 @@ use sidechain_domain::{MainchainAddressHash, UtxoId};
 use crate::read_private_key_from_file;
 
 #[derive(Clone, Debug, clap::Parser)]
-pub struct InitGovernanceCmd {
+pub struct UpdateGovernanceCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
 	/// Governance authority hash to be set.
@@ -21,7 +21,7 @@ pub struct InitGovernanceCmd {
 	genesis_utxo: UtxoId,
 }
 
-impl InitGovernanceCmd {
+impl UpdateGovernanceCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_key = read_private_key_from_file(&self.payment_key_file)?;
 		let client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;

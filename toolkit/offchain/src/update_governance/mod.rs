@@ -11,7 +11,9 @@ use crate::{
 		multisig_governance_policy_configuration, version_oracle_datum_output,
 	},
 	plutus_script::PlutusScript,
+	scripts_data::version_scripts_and_address,
 };
+use anyhow::{anyhow, Context};
 use cardano_serialization_lib::{
 	Coin, ExUnits, Int, LanguageKind, MintBuilder, MintWitness, MultiAsset, PlutusData,
 	PlutusScriptSource, Redeemer, RedeemerTag, Transaction, TransactionBuilder,
@@ -24,7 +26,9 @@ use ogmios_client::{
 	types::{OgmiosTx, OgmiosUtxo},
 };
 use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
-use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, UtxoId};
+use sidechain_domain::{
+	byte_string::ByteString, MainchainAddressHash, MainchainPrivateKey, UtxoId,
+};
 
 #[cfg(test)]
 mod test_values;
@@ -34,13 +38,46 @@ pub async fn run_update_governance<
 	A: AwaitTx,
 >(
 	_new_governance_authority: MainchainAddressHash,
-	_payment_key: MainchainPrivateKey,
-	_genesis_utxo_id: UtxoId,
-	_client: &T,
+	payment_key: MainchainPrivateKey,
+	genesis_utxo_id: UtxoId,
+	client: &T,
 	_await_tx: A,
 ) -> anyhow::Result<OgmiosTx> {
+	let tx_context = TransactionContext::for_payment_key(payment_key.0, client).await?;
+	let (version_validator, version_policy, version_validator_address) =
+		version_scripts_and_address(genesis_utxo_id, tx_context.network)?;
+
+	log::info!(
+		"Querying version oracle validator address ({version_validator_address}) for utxos..."
+	);
+	let version_utxos = client.query_utxos(&[version_validator_address.clone()]).await?;
+
 	// 1. find the utxo with the {VersionOracle, 32} datum under the VersionOracleValidator address
 	//    (it also contains the 1 governance token)
+	let governance_utxo = version_utxos
+		.iter()
+		.find(|utxo| {
+			utxo.value.native_tokens.iter().any(|(policy, multiasset)| {
+				*policy == version_policy.script_hash()
+					&& multiasset.iter().any(|asset| asset.name == "Version oracle".as_bytes())
+			})
+		})
+		.ok_or_else(|| {
+			anyhow!("Failed to find the governance utxo at validator address {version_validator_address}")
+		})?;
+
+	log::info!(
+		"Governance utxo found: {}#{}",
+		ByteString(governance_utxo.transaction.id.to_vec()).to_hex_string(),
+		governance_utxo.index,
+	);
+
+	let genesis_utxo = client.query_utxo_details(genesis_utxo_id).await.with_context(|| {
+		format!("Failed to fetch utxo data from Ogmios for utxo {governance_utxo:?}.")
+	})?;
+
+	log::info!("Genesis utxo found in Ogmios");
+
 	Ok(OgmiosTx::default())
 }
 
