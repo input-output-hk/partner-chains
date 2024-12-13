@@ -97,12 +97,7 @@ pub(crate) fn test_update_governance_tx() -> serde_json::Value {
 			"current_treasury_value": null
 		},
 		"witness_set": {
-			"vkeys": [
-				{
-					"vkey": "ed25519_pk129kfw86h6hdsvvtpkvjqm754ehvqxqjzmkr4d3dqqwtcksgn0zxqnwv9rd",
-					"signature": "d56e8861dd680ca0c4d4e0fa56184a8ce27b73a120bd5d23878b2fa62a7919656bd6af20c41d93ffaa4adc322831535c8759f901f9b596b3b012180c7e41420b"
-				}
-			],
+			"vkeys": null,
 			"native_scripts": null,
 			"bootstraps": null,
 			"plutus_scripts": [
@@ -115,8 +110,8 @@ pub(crate) fn test_update_governance_tx() -> serde_json::Value {
 					"index": "1",
 					"data": "{\"int\":32}",
 					"ex_units": {
-						"mem": "14000",
-						"steps": "2224100"
+						"mem": "0",
+						"steps": "0"
 					}
 				},
 				{
@@ -124,8 +119,8 @@ pub(crate) fn test_update_governance_tx() -> serde_json::Value {
 					"index": "0",
 					"data": "{\"constructor\":0,\"fields\":[]}",
 					"ex_units": {
-						"mem": "172590",
-						"steps": "36213136"
+						"mem": "0",
+						"steps": "0"
 					}
 				}
 			]
