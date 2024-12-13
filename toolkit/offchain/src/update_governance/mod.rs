@@ -55,7 +55,7 @@ pub async fn run_update_governance<
 	// 1. find the utxo with the {VersionOracle, 32} datum under the VersionOracleValidator address
 	//    (it also contains the 1 governance token)
 	let governance_utxo = version_utxos
-		.iter()
+		.into_iter()
 		.find(|utxo| {
 			utxo.value.native_tokens.iter().any(|(policy, multiasset)| {
 				*policy == version_policy.script_hash()
@@ -72,17 +72,17 @@ pub async fn run_update_governance<
 		governance_utxo.index,
 	);
 
-	// let tx = update_governance_tx(
-	// 	raw_scripts::MULTI_SIG_POLICY,
-	// 	raw_scripts::VERSION_ORACLE_VALIDATOR,
-	// 	raw_scripts::VERSION_ORACLE_POLICY,
-	// 	genesis_utxo_id.into(),
-	// 	governance_utxo,
-	// 	new_governance_authority,
-	// 	&tx_context,
-	// 	ExUnits::new(&0u64.into(), &0u64.into()),
-	// 	ExUnits::new(&0u64.into(), &0u64.into()),
-	// )?;
+	let tx = update_governance_tx(
+		raw_scripts::MULTI_SIG_POLICY,
+		raw_scripts::VERSION_ORACLE_VALIDATOR,
+		raw_scripts::VERSION_ORACLE_POLICY,
+		genesis_utxo_id,
+		governance_utxo,
+		new_governance_authority,
+		&tx_context,
+		ExUnits::new(&0u64.into(), &0u64.into()),
+		ExUnits::new(&0u64.into(), &0u64.into()),
+	)?;
 
 	Ok(OgmiosTx::default())
 }
@@ -91,7 +91,7 @@ fn update_governance_tx(
 	multi_sig_policy: &[u8],
 	version_oracle_validator: &[u8],
 	version_oracle_policy: &[u8],
-	genesis_utxo: OgmiosUtxo,
+	genesis_utxo: UtxoId,
 	governance_utxo: OgmiosUtxo,
 	new_governance_authority: MainchainAddressHash,
 	tx_context: &TransactionContext,
@@ -103,10 +103,10 @@ fn update_governance_tx(
 			.apply_uplc_data(multisig_governance_policy_configuration(new_governance_authority))?;
 	let version_oracle_validator =
 		PlutusScript::from_wrapped_cbor(version_oracle_validator, LanguageKind::PlutusV2)?
-			.apply_uplc_data(genesis_utxo.to_uplc_plutus_data())?;
+			.apply_data(genesis_utxo)?;
 	let version_oracle_policy =
 		PlutusScript::from_wrapped_cbor(version_oracle_policy, LanguageKind::PlutusV2)?
-			.apply_uplc_data(genesis_utxo.to_uplc_plutus_data())?
+			.apply_data(genesis_utxo)?
 			.apply_uplc_data(version_oracle_validator.address_data(tx_context.network)?)?;
 
 	let config = crate::csl::get_builder_config(tx_context)?;
@@ -221,7 +221,7 @@ mod test {
 				test_values::MULTI_SIG_POLICY,
 				test_values::VERSION_ORACLE_VALIDATOR,
 				test_values::VERSION_ORACLE_POLICY,
-				genesis_utxo(),
+				genesis_utxo().to_domain(),
 				governance_utxo(),
 				MainchainAddressHash(hex_literal::hex!(
 					"76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"
