@@ -324,14 +324,14 @@
 <span class="attr">#[derive(Encode, Debug, PartialEq)]
 #[cfg_attr(feature = <span class="string">"std"</span>, derive(Decode, thiserror::Error))]
 </span><span class="kw">pub enum </span>InherentError {
-	<span class="attr">#[cfg_attr(feature = <span class="string">"std"</span>, error(<span class="string">"Inherent missing for token transfer of {}"</span>, <span class="number">0.0</span>))]
+	<span class="attr">#[cfg_attr(feature = <span class="string">"std"</span>, error(<span class="string">"Inherent missing for token transfer of {0} tokens"</span>))]
 	</span>TokenTransferNotHandled(NativeTokenAmount),
 	<span class="attr">#[cfg_attr(
 		feature = <span class="string">"std"</span>,
-		error(<span class="string">"Incorrect token transfer amount: expected {}, got {}"</span>, <span class="number">0.0</span>, <span class="number">1.0</span>)
+		error(<span class="string">"Incorrect token transfer amount: expected {0}, got {1} tokens"</span>)
 	)]
 	</span>IncorrectTokenNumberTransfered(NativeTokenAmount, NativeTokenAmount),
-	<span class="attr">#[cfg_attr(feature = <span class="string">"std"</span>, error(<span class="string">"Unexpected transfer of {} tokens"</span>, <span class="number">0.0</span>))]
+	<span class="attr">#[cfg_attr(feature = <span class="string">"std"</span>, error(<span class="string">"Unexpected transfer of {0} tokens"</span>))]
 	</span>UnexpectedTokenTransferInherent(NativeTokenAmount),
 }
 
