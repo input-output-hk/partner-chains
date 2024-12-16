@@ -72,14 +72,14 @@ pub struct TokenTransferData {
 #[derive(Encode, Debug, PartialEq)]
 #[cfg_attr(feature = "std", derive(Decode, thiserror::Error))]
 pub enum InherentError {
-	#[cfg_attr(feature = "std", error("Inherent missing for token transfer of {}", 0.0))]
+	#[cfg_attr(feature = "std", error("Inherent missing for token transfer of {0} tokens"))]
 	TokenTransferNotHandled(NativeTokenAmount),
 	#[cfg_attr(
 		feature = "std",
-		error("Incorrect token transfer amount: expected {}, got {}", 0.0, 1.0)
+		error("Incorrect token transfer amount: expected {0}, got {1} tokens")
 	)]
 	IncorrectTokenNumberTransfered(NativeTokenAmount, NativeTokenAmount),
-	#[cfg_attr(feature = "std", error("Unexpected transfer of {} tokens", 0.0))]
+	#[cfg_attr(feature = "std", error("Unexpected transfer of {0} tokens"))]
 	UnexpectedTokenTransferInherent(NativeTokenAmount),
 }
 
