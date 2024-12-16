@@ -14,6 +14,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Fixed
 
+* Cache returning invalid results when native token MainChainScripts has changed.
 * Crash of parnter-chain-node smart-contracts command. Logging is now set independently.
 * Renamed of argument 'ogmios-host' to 'ogmios-url' in smart-contracts subcommands.
 

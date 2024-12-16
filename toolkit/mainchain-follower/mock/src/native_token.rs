@@ -1,7 +1,7 @@
 use crate::Result;
 use async_trait::async_trait;
 use sidechain_domain::*;
-use sp_native_token_management::NativeTokenManagementDataSource;
+use sp_native_token_management::{MainChainScripts, NativeTokenManagementDataSource};
 
 pub struct NativeTokenDataSourceMock;
 
@@ -23,9 +23,7 @@ impl NativeTokenManagementDataSource for NativeTokenDataSourceMock {
 		&self,
 		_after_block: Option<McBlockHash>,
 		_to_block: McBlockHash,
-		_native_token_policy_id: PolicyId,
-		_native_token_asset_name: AssetName,
-		_illiquid_supply_address: MainchainAddress,
+		_scripts: MainChainScripts,
 	) -> Result<NativeTokenAmount> {
 		Ok(NativeTokenAmount(1000))
 	}
