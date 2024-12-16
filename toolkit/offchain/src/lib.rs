@@ -2,8 +2,6 @@
 
 /// Primitives used for awaiting for tx being observed on the blockchain
 pub mod await_tx;
-/// Collateral selection algorithm
-pub mod collateral_selection;
 /// General purpose code for interacting with cardano-serialization-lib
 pub mod csl;
 /// Supports D-Parameter upsert
@@ -17,7 +15,7 @@ pub mod permissioned_candidates;
 /// Utilities for handling Plutus script data
 mod plutus_script;
 /// Supports candidate registration
-mod register;
+pub mod register;
 /// Provides synthetized scripts data
 pub mod scripts_data;
 #[cfg(test)]

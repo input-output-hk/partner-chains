@@ -26,7 +26,6 @@ use sp_core::{bounded::BoundedVec, ed25519, sr25519, ConstU32};
 use {
 	derive_more::FromStr,
 	serde::{Deserialize, Deserializer, Serialize, Serializer},
-	sp_core::bytes::from_hex,
 };
 
 /// A main chain epoch number. In range [0, 2^31-1].
@@ -202,7 +201,7 @@ pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
 const MAINCHAIN_PUBLIC_KEY_LEN: usize = 32;
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
-#[byte_string(debug, hex_serialize, hex_deserialize)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct MainchainPublicKey(pub [u8; MAINCHAIN_PUBLIC_KEY_LEN]);
 
 const MAINCHAIN_PRIVATE_KEY_LEN: usize = 32;
@@ -217,14 +216,18 @@ impl core::fmt::Debug for MainchainPrivateKey {
 	}
 }
 
-#[cfg(feature = "serde")]
-impl FromStr for MainchainPublicKey {
-	type Err = &'static str;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let bytes_vec =
-			from_hex(s).map_err(|_| "Mainchain Public Key must be a valid hex string")?;
-		bytes_vec.try_into()
+impl MainchainPrivateKey {
+	#[cfg(feature = "std")]
+	pub fn to_pub_key_hash(&self) -> MainchainAddressHash {
+		cardano_serialization_lib::PrivateKey::from_normal_bytes(&self.0)
+			.expect("Conversion cannot fail on valid MainchainPrivateKey values")
+			.to_public()
+			.hash()
+			.to_bytes()
+			.as_slice()
+			.try_into()
+			.map(MainchainAddressHash)
+			.expect("Conversion cannot fail as representation is the same")
 	}
 }
 
@@ -264,7 +267,7 @@ impl MainchainAddressHash {
 }
 
 #[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
-#[byte_string(debug, hex_serialize)]
+#[byte_string(debug, hex_serialize, decode_hex)]
 pub struct MainchainSignature(pub Vec<u8>);
 
 #[derive(
@@ -311,7 +314,7 @@ impl ScEpochNumber {
 pub struct SidechainPublicKey(pub Vec<u8>);
 
 #[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
-#[byte_string(debug, hex_serialize, hex_deserialize)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct SidechainSignature(pub Vec<u8>);
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
@@ -637,14 +640,24 @@ pub struct PermissionedCandidateData {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BlockProducerRegistration {
+pub struct CandidateRegistration {
 	pub stake_ownership: AdaBasedStaking,
-	pub sidechain_pub_key: SidechainPublicKey,
-	pub sidechain_signature: SidechainSignature,
-	pub registration_utxo: UtxoId,
+	pub partnerchain_pub_key: SidechainPublicKey,
+	pub partnerchain_signature: SidechainSignature,
 	pub own_pkh: MainchainAddressHash,
+	pub registration_utxo: UtxoId,
 	pub aura_pub_key: AuraPublicKey,
 	pub grandpa_pub_key: GrandpaPublicKey,
+}
+
+impl CandidateRegistration {
+	pub fn matches_keys(&self, other: &Self) -> bool {
+		self.stake_ownership == other.stake_ownership
+			&& self.partnerchain_pub_key == other.partnerchain_pub_key
+			&& self.partnerchain_signature == other.partnerchain_signature
+			&& self.aura_pub_key == other.aura_pub_key
+			&& self.grandpa_pub_key == other.grandpa_pub_key
+	}
 }
 
 /// AdaBasedStaking is a variant of Plutus type StakeOwnership.

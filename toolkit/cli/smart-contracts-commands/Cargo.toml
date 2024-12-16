@@ -14,5 +14,7 @@ jsonrpsee = { workspace = true, features = ["client-core", "http-client", "macro
 tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-log = { workspace = true }
-log4rs = { workspace = true }
+cardano-serialization-lib = { workspace = true }
+
+[dev-dependencies]
+hex-literal = { workspace = true }

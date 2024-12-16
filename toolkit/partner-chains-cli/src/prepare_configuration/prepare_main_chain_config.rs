@@ -42,7 +42,7 @@ fn get_private_key_and_key_hash<C: IOContext>(
 	let cardano_signig_key_file = config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
 		.prompt_with_default_from_file_and_save(context);
 	let pkey = cardano_key::get_mc_pkey_from_file(&cardano_signig_key_file, context)?;
-	let addr_hash = cardano_key::get_mc_address_hash_from_pkey(&pkey);
+	let addr_hash = pkey.to_pub_key_hash();
 
 	Ok((pkey, addr_hash))
 }
@@ -130,9 +130,7 @@ mod tests {
 	use config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
 	use hex_literal::hex;
 	use ogmios_client::types::OgmiosTx;
-	use partner_chains_cardano_offchain::scripts_data::{
-		Addresses, PolicyIds, ScriptsData, ValidatorHashes,
-	};
+	use partner_chains_cardano_offchain::scripts_data::{Addresses, PolicyIds, ScriptsData};
 	use serde_json::json;
 	use serde_json::Value;
 	use sidechain_domain::UtxoId;
@@ -378,7 +376,6 @@ mod tests {
 							.to_string(),
 						..Default::default()
 					},
-					validator_hashes: ValidatorHashes::default(),
 					policy_ids: PolicyIds {
 						permissioned_candidates: PolicyId::from_hex_unsafe(
 							TEST_PERMISSIONED_CANDIDATES_POLICY_ID,

@@ -1,18 +1,257 @@
-#![allow(dead_code)]
-
-use crate::csl::{InputsBuilderExt, TransactionBuilderExt, TransactionContext};
-use crate::plutus_script::PlutusScript;
-use cardano_serialization_lib::{
-	BigNum, DataCost, ExUnits, JsError, MinOutputAdaCalculator, Transaction, TransactionBuilder,
-	TransactionOutputBuilder, TxInputsBuilder,
+use crate::csl::{
+	get_first_validator_budget, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
+	TransactionContext,
 };
-use ogmios_client::types::OgmiosUtxo;
-use partner_chains_plutus_data::registered_candidates::block_producer_registration_to_plutus_data;
-use sidechain_domain::BlockProducerRegistration;
+use crate::{
+	await_tx::{AwaitTx, FixedDelayRetries},
+	plutus_script::PlutusScript,
+	OffchainError,
+};
+use anyhow::anyhow;
+use cardano_serialization_lib::{
+	BigNum, DataCost, ExUnits, JsError, MinOutputAdaCalculator, PlutusData, Transaction,
+	TransactionBuilder, TransactionOutputBuilder, TxInputsBuilder,
+};
+use ogmios_client::{
+	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
+	query_network::QueryNetwork,
+	transactions::Transactions,
+	types::OgmiosUtxo,
+};
+use partner_chains_plutus_data::registered_candidates::{
+	candidate_registration_to_plutus_data, RegisterValidatorDatum,
+};
+use sidechain_domain::*;
+
+pub trait Register {
+	#[allow(async_fn_in_trait)]
+	async fn register(
+		&self,
+		genesis_utxo: UtxoId,
+		candidate_registration: &CandidateRegistration,
+		payment_signing_key: MainchainPrivateKey,
+	) -> Result<Option<McTxHash>, OffchainError>;
+}
+
+impl<T> Register for T
+where
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+{
+	async fn register(
+		&self,
+		genesis_utxo: UtxoId,
+		candidate_registration: &CandidateRegistration,
+		payment_signing_key: MainchainPrivateKey,
+	) -> Result<Option<McTxHash>, OffchainError> {
+		run_register(
+			genesis_utxo,
+			candidate_registration,
+			payment_signing_key,
+			self,
+			FixedDelayRetries::two_minutes(),
+		)
+		.await
+		.map_err(|e| OffchainError::InternalError(e.to_string()))
+	}
+}
+
+pub async fn run_register<
+	C: QueryLedgerState + QueryNetwork + QueryUtxoByUtxoId + Transactions,
+	A: AwaitTx,
+>(
+	genesis_utxo: UtxoId,
+	candidate_registration: &CandidateRegistration,
+	payment_signing_key: MainchainPrivateKey,
+	ogmios_client: &C,
+	await_tx: A,
+) -> anyhow::Result<Option<McTxHash>> {
+	let ctx = TransactionContext::for_payment_key(payment_signing_key.0, ogmios_client).await?;
+	let validator = crate::scripts_data::registered_candidates_scripts(genesis_utxo)?;
+	let validator_address = validator.address_bech32(ctx.network)?;
+	let registration_utxo = ctx
+		.payment_key_utxos
+		.iter()
+		.find(|u| u.to_domain() == candidate_registration.registration_utxo)
+		.ok_or(anyhow!("registration utxo not found at payment address"))?;
+	let all_registration_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
+	let own_registrations = get_own_registrations(
+		candidate_registration.own_pkh,
+		candidate_registration.stake_ownership.pub_key.clone(),
+		&all_registration_utxos,
+	);
+
+	if own_registrations.iter().any(|(_, existing_registration)| {
+		candidate_registration.matches_keys(existing_registration)
+	}) {
+		log::info!("✅ Candidate already registered with same keys.");
+		return Ok(None);
+	}
+	let own_registration_utxos = own_registrations.iter().map(|r| r.0.clone()).collect::<Vec<_>>();
+
+	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
+	let mut tx = register_tx(
+		&validator,
+		candidate_registration,
+		registration_utxo,
+		&own_registration_utxos,
+		&ctx,
+		zero_ex_units,
+	)?;
+
+	if !own_registration_utxos.is_empty() {
+		let evaluate_response =
+			ogmios_client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
+				anyhow!(
+					"Evaluate candidate registration transaction request failed: {}, bytes: {}",
+					e,
+					hex::encode(tx.to_bytes())
+				)
+			})?;
+		let validator_redeemer_ex_units = get_first_validator_budget(evaluate_response)?;
+		tx = register_tx(
+			&validator,
+			candidate_registration,
+			registration_utxo,
+			&own_registration_utxos,
+			&ctx,
+			validator_redeemer_ex_units,
+		)?;
+	}
+
+	let signed_tx = ctx.sign(&tx).to_bytes();
+	let result = ogmios_client.submit_transaction(&signed_tx).await.map_err(|e| {
+		anyhow!(
+			"Submit candidate registration transaction request failed: {}, bytes: {}",
+			e,
+			hex::encode(tx.to_bytes())
+		)
+	})?;
+	let tx_id = result.transaction.id;
+	log::info!("✅ Transaction submitted. ID: {}", hex::encode(result.transaction.id));
+	await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_id, 0)).await?;
+
+	Ok(Some(McTxHash(result.transaction.id)))
+}
+
+pub trait Deregister {
+	#[allow(async_fn_in_trait)]
+	async fn deregister(
+		&self,
+		genesis_utxo: UtxoId,
+		payment_signing_key: MainchainPrivateKey,
+		stake_ownership_pub_key: MainchainPublicKey,
+	) -> Result<Option<McTxHash>, OffchainError>;
+}
+
+impl<T> Deregister for T
+where
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+{
+	async fn deregister(
+		&self,
+		genesis_utxo: UtxoId,
+		payment_signing_key: MainchainPrivateKey,
+		stake_ownership_pub_key: MainchainPublicKey,
+	) -> Result<Option<McTxHash>, OffchainError> {
+		run_deregister(
+			genesis_utxo,
+			payment_signing_key,
+			stake_ownership_pub_key,
+			self,
+			FixedDelayRetries::two_minutes(),
+		)
+		.await
+		.map_err(|e| OffchainError::InternalError(e.to_string()))
+	}
+}
+
+pub async fn run_deregister<
+	C: QueryLedgerState + QueryNetwork + QueryUtxoByUtxoId + Transactions,
+	A: AwaitTx,
+>(
+	genesis_utxo: UtxoId,
+	payment_signing_key: MainchainPrivateKey,
+	stake_ownership_pub_key: MainchainPublicKey,
+	ogmios_client: &C,
+	await_tx: A,
+) -> anyhow::Result<Option<McTxHash>> {
+	let ctx = TransactionContext::for_payment_key(payment_signing_key.0, ogmios_client).await?;
+	let validator = crate::scripts_data::registered_candidates_scripts(genesis_utxo)?;
+	let validator_address = validator.address_bech32(ctx.network)?;
+	let all_registration_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
+	let own_registrations = get_own_registrations(
+		payment_signing_key.to_pub_key_hash(),
+		stake_ownership_pub_key.clone(),
+		&all_registration_utxos,
+	);
+
+	if own_registrations.is_empty() {
+		log::info!("✅ Candidate is not registered.");
+		return Ok(None);
+	}
+
+	let own_registration_utxos = own_registrations.iter().map(|r| r.0.clone()).collect::<Vec<_>>();
+	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
+	let tx = deregister_tx(&validator, &own_registration_utxos, &ctx, zero_ex_units)?;
+
+	let evaluate_response =
+		ogmios_client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
+			anyhow!(
+				"Evaluate candidate deregistration transaction request failed: {}, bytes: {}",
+				e,
+				hex::encode(tx.to_bytes())
+			)
+		})?;
+	let validator_redeemer_ex_units = get_first_validator_budget(evaluate_response)?;
+	let tx = deregister_tx(&validator, &own_registration_utxos, &ctx, validator_redeemer_ex_units)?;
+	let signed_tx = ctx.sign(&tx).to_bytes();
+	let result = ogmios_client.submit_transaction(&signed_tx).await.map_err(|e| {
+		anyhow!(
+			"Submit candidate deregistration transaction request failed: {}, bytes: {}",
+			e,
+			hex::encode(tx.to_bytes())
+		)
+	})?;
+	let tx_id = result.transaction.id;
+	log::info!("✅ Transaction submitted. ID: {}", hex::encode(result.transaction.id));
+	await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_id, 0)).await?;
+
+	Ok(Some(McTxHash(result.transaction.id)))
+}
+
+fn get_own_registrations(
+	own_pkh: MainchainAddressHash,
+	spo_pub_key: MainchainPublicKey,
+	validator_utxos: &[OgmiosUtxo],
+) -> Vec<(OgmiosUtxo, CandidateRegistration)> {
+	let mut own_registrations = Vec::new();
+	for validator_utxo in validator_utxos {
+		match get_candidate_registration(validator_utxo.clone()) {
+			Ok(candidate_registration) => {
+				if candidate_registration.stake_ownership.pub_key == spo_pub_key
+					&& candidate_registration.own_pkh == own_pkh
+				{
+					own_registrations.push((validator_utxo.clone(), candidate_registration.clone()))
+				}
+			},
+			Err(e) => log::debug!("Found invalid UTXO at validator address: {}", e),
+		}
+	}
+	own_registrations
+}
+
+fn get_candidate_registration(validator_utxo: OgmiosUtxo) -> anyhow::Result<CandidateRegistration> {
+	let datum = validator_utxo.datum.ok_or_else(|| anyhow!("UTXO does not have a datum"))?;
+	let datum_plutus_data = PlutusData::from_bytes(datum.bytes)
+		.map_err(|e| anyhow!("Could not decode datum of validator script: {}", e))?;
+	let register_validator_datum = RegisterValidatorDatum::try_from(datum_plutus_data)
+		.map_err(|e| anyhow!("Could not decode datum of validator script: {}", e))?;
+	Ok(register_validator_datum.into())
+}
 
 fn register_tx(
 	validator: &PlutusScript,
-	block_producer_registration: &BlockProducerRegistration,
+	candidate_registration: &CandidateRegistration,
 	registration_utxo: &OgmiosUtxo,
 	own_registration_utxos: &[OgmiosUtxo],
 	ctx: &TransactionContext,
@@ -35,7 +274,7 @@ fn register_tx(
 	}
 
 	{
-		let datum = block_producer_registration_to_plutus_data(block_producer_registration);
+		let datum = candidate_registration_to_plutus_data(candidate_registration);
 		let amount_builder = TransactionOutputBuilder::new()
 			.with_address(&validator.address(ctx.network))
 			.with_plutus_data(&datum)
@@ -55,6 +294,30 @@ fn register_tx(
 	tx_builder.balance_update_and_build(ctx)
 }
 
+fn deregister_tx(
+	validator: &PlutusScript,
+	own_registration_utxos: &[OgmiosUtxo],
+	ctx: &TransactionContext,
+	validator_redeemer_ex_units: ExUnits,
+) -> Result<Transaction, JsError> {
+	let config = crate::csl::get_builder_config(ctx)?;
+	let mut tx_builder = TransactionBuilder::new(&config);
+
+	{
+		let mut inputs = TxInputsBuilder::new();
+		for own_registration_utxo in own_registration_utxos {
+			inputs.add_script_utxo_input(
+				own_registration_utxo,
+				validator,
+				validator_redeemer_ex_units.clone(),
+			)?;
+		}
+		tx_builder.set_inputs(&inputs);
+	}
+
+	tx_builder.balance_update_and_build(ctx)
+}
+
 #[cfg(test)]
 mod tests {
 	use super::register_tx;
@@ -65,7 +328,7 @@ mod tests {
 	};
 	use ogmios_client::types::OgmiosValue;
 	use ogmios_client::types::{OgmiosTx, OgmiosUtxo};
-	use partner_chains_plutus_data::registered_candidates::block_producer_registration_to_plutus_data;
+	use partner_chains_plutus_data::registered_candidates::candidate_registration_to_plutus_data;
 	use proptest::{
 		array::uniform32,
 		collection::{hash_set, vec},
@@ -73,7 +336,7 @@ mod tests {
 	};
 
 	use sidechain_domain::{
-		AdaBasedStaking, AuraPublicKey, BlockProducerRegistration, GrandpaPublicKey,
+		AdaBasedStaking, AuraPublicKey, CandidateRegistration, GrandpaPublicKey,
 		MainchainAddressHash, MainchainSignature, McTxHash, SidechainPublicKey, SidechainSignature,
 		UtxoId, UtxoIndex,
 	};
@@ -85,16 +348,19 @@ mod tests {
 	const MIN_UTXO_LOVELACE: u64 = 1000000;
 	const FIVE_ADA: u64 = 5000000;
 
-	fn block_producer_registration(registration_utxo: UtxoId) -> BlockProducerRegistration {
-		BlockProducerRegistration {
+	fn own_pkh() -> MainchainAddressHash {
+		MainchainAddressHash([0; 28])
+	}
+	fn candidate_registration(registration_utxo: UtxoId) -> CandidateRegistration {
+		CandidateRegistration {
 			stake_ownership: AdaBasedStaking {
 				pub_key: test_values::mainchain_pub_key(),
 				signature: MainchainSignature(Vec::new()),
 			},
-			sidechain_pub_key: SidechainPublicKey(Vec::new()),
-			sidechain_signature: SidechainSignature(Vec::new()),
+			partnerchain_pub_key: SidechainPublicKey(Vec::new()),
+			partnerchain_signature: SidechainSignature(Vec::new()),
 			registration_utxo,
-			own_pkh: MainchainAddressHash([0; 28]),
+			own_pkh: own_pkh(),
 			aura_pub_key: AuraPublicKey(Vec::new()),
 			grandpa_pub_key: GrandpaPublicKey(Vec::new()),
 		}
@@ -130,11 +396,10 @@ mod tests {
 		};
 		let own_registration_utxos = vec![payment_key_utxos.get(1).unwrap().clone()];
 		let registration_utxo = payment_key_utxos.first().unwrap();
-		let block_producer_registration =
-			block_producer_registration(registration_utxo.to_domain());
+		let candidate_registration = candidate_registration(registration_utxo.to_domain());
 		let tx = register_tx(
 			&test_values::test_validator(),
-			&block_producer_registration,
+			&candidate_registration,
 			registration_utxo,
 			&own_registration_utxos,
 			&ctx,
@@ -163,7 +428,7 @@ mod tests {
 		);
 		assert_eq!(
 			script_output.plutus_data().unwrap(),
-			block_producer_registration_to_plutus_data(&block_producer_registration)
+			candidate_registration_to_plutus_data(&candidate_registration)
 		);
 	}
 
@@ -176,8 +441,7 @@ mod tests {
 			protocol_parameters: protocol_parameters(),
 		};
 		let registration_utxo = payment_key_utxos.first().unwrap();
-		let block_producer_registration =
-			block_producer_registration(registration_utxo.to_domain());
+		let candidate_registration = candidate_registration(registration_utxo.to_domain());
 		let own_registration_utxos = if payment_utxos.len() >= 2 {
 			vec![payment_utxos.get(1).unwrap().clone()]
 		} else {
@@ -185,7 +449,7 @@ mod tests {
 		};
 		let tx = register_tx(
 			&test_values::test_validator(),
-			&block_producer_registration,
+			&candidate_registration,
 			registration_utxo,
 			&own_registration_utxos,
 			&ctx,
@@ -199,7 +463,7 @@ mod tests {
 		fee_is_less_than_one_and_half_ada(&tx);
 		output_at_validator_has_register_candidate_datum(
 			&tx,
-			&block_producer_registration,
+			&candidate_registration,
 			validator_address,
 		);
 		spends_own_registration_utxos(&tx, &own_registration_utxos);
@@ -242,7 +506,7 @@ mod tests {
 
 	fn output_at_validator_has_register_candidate_datum(
 		tx: &Transaction,
-		block_producer_registration: &BlockProducerRegistration,
+		candidate_registration: &CandidateRegistration,
 		validator_address: &Address,
 	) {
 		let outputs = tx.body().outputs();
@@ -250,7 +514,7 @@ mod tests {
 			outputs.into_iter().find(|o| o.address() == *validator_address).unwrap();
 		assert_eq!(
 			validator_output.plutus_data().unwrap(),
-			block_producer_registration_to_plutus_data(block_producer_registration)
+			candidate_registration_to_plutus_data(candidate_registration)
 		);
 	}
 
