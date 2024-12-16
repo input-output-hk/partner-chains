@@ -202,7 +202,7 @@
 
 		context.print(<span class="string">"To finish the registration process, run the following command on the machine with the partner chain dependencies running:\n"</span>);
 		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-			<span class="string">"./partner-chains-cli register3 \\\n--genesis-utxo {} \\\n--registration-utxo {} \\\n--aura-pub-key {} \\\n--grandpa-pub-key {} \\\n--sidechain-pub-key {} \\\n--sidechain-signature {} \\\n--spo-public-key {} \\\n--spo-signature {}"</span>,
+			<span class="string">"./partner-chains-cli register3 \\\n--genesis-utxo {} \\\n--registration-utxo {} \\\n--aura-pub-key {} \\\n--grandpa-pub-key {} \\\n--partner-chain-pub-key {} \\\n--partner-chain-signature {} \\\n--spo-public-key {} \\\n--spo-signature {}"</span>,
 			<span class="self">self</span>.genesis_utxo, <span class="self">self</span>.registration_utxo, <span class="self">self</span>.aura_pub_key, <span class="self">self</span>.grandpa_pub_key, <span class="self">self</span>.sidechain_pub_key, <span class="self">self</span>.sidechain_signature, spo_public_key, spo_signature));
 		<span class="prelude-val">Ok</span>(())
 	}
@@ -273,7 +273,7 @@
 	<span class="kw">fn </span>output_result_io() -&gt; Vec&lt;MockIO&gt; {
 		<span class="macro">vec!</span>[
             MockIO::print(<span class="string">"To finish the registration process, run the following command on the machine with the partner chain dependencies running:\n"</span>),
-            MockIO::print(<span class="string">"./partner-chains-cli register3 \\\n--genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n--registration-utxo 7e9ebd0950ae1bec5606f0cd7ac88b3c60b1103d7feb6ffa36402edae4d1b617#0 \\\n--aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n--grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n--sidechain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n--sidechain-signature 7a7e3e585a5dc248d4a2772814e1b58c90313443dd99369f994e960ecc4931442a08305743db7ab42ab9b8672e00250e1cc7c08bc018b0630a8197c4f95528a301 \\\n--spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 \\\n--spo-signature aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801"</span>),
+            MockIO::print(<span class="string">"./partner-chains-cli register3 \\\n--genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n--registration-utxo 7e9ebd0950ae1bec5606f0cd7ac88b3c60b1103d7feb6ffa36402edae4d1b617#0 \\\n--aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n--grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n--partner-chain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n--partner-chain-signature 7a7e3e585a5dc248d4a2772814e1b58c90313443dd99369f994e960ecc4931442a08305743db7ab42ab9b8672e00250e1cc7c08bc018b0630a8197c4f95528a301 \\\n--spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 \\\n--spo-signature aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801"</span>),
         ]
 	}
 	<span class="comment">// non 0 genesis utxo 8ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861

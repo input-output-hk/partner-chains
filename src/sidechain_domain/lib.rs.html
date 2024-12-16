@@ -703,6 +703,7 @@
 <a href="#703" id="703">703</a>
 <a href="#704" id="704">704</a>
 <a href="#705" id="705">705</a>
+<a href="#706" id="706">706</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -912,6 +913,7 @@
 <span class="kw">const </span>MAINCHAIN_PUBLIC_KEY_LEN: usize = <span class="number">32</span>;
 
 <span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
+#[cfg_attr(feature = <span class="string">"std"</span>, byte_string(to_hex_string))]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 </span><span class="kw">pub struct </span>MainchainPublicKey(<span class="kw">pub </span>[u8; MAINCHAIN_PUBLIC_KEY_LEN]);
 
@@ -977,7 +979,7 @@
 	}
 }
 
-<span class="attr">#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
+<span class="attr">#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, decode_hex)]
 </span><span class="kw">pub struct </span>MainchainSignature(<span class="kw">pub </span>Vec&lt;u8&gt;);
 
@@ -1020,11 +1022,11 @@
 	}
 }
 
-<span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, PartialOrd, Ord)]
-#[byte_string(debug, hex_serialize, hex_deserialize, as_ref)]
+<span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, PartialOrd, Ord, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex, as_ref)]
 </span><span class="kw">pub struct </span>SidechainPublicKey(<span class="kw">pub </span>Vec&lt;u8&gt;);
 
-<span class="attr">#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
+<span class="attr">#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 </span><span class="kw">pub struct </span>SidechainSignature(<span class="kw">pub </span>Vec&lt;u8&gt;);
 
@@ -1312,8 +1314,8 @@
 	}
 }
 
-<span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord)]
-#[byte_string(debug, hex_serialize, hex_deserialize)]
+<span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 </span><span class="kw">pub struct </span>AuraPublicKey(<span class="kw">pub </span>Vec&lt;u8&gt;);
 <span class="kw">impl </span>AuraPublicKey {
 	<span class="kw">pub fn </span>try_into_sr25519(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;sr25519::Public&gt; {
@@ -1321,8 +1323,8 @@
 	}
 }
 
-<span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord)]
-#[byte_string(debug, hex_serialize, hex_deserialize)]
+<span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 </span><span class="kw">pub struct </span>GrandpaPublicKey(<span class="kw">pub </span>Vec&lt;u8&gt;);
 <span class="kw">impl </span>GrandpaPublicKey {
 	<span class="kw">pub fn </span>try_into_ed25519(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;ed25519::Public&gt; {
@@ -1350,11 +1352,11 @@
 	<span class="kw">pub </span>grandpa_public_key: GrandpaPublicKey,
 }
 
-<span class="attr">#[derive(Clone, Debug, PartialEq, Eq)]
+<span class="attr">#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 </span><span class="kw">pub struct </span>CandidateRegistration {
 	<span class="kw">pub </span>stake_ownership: AdaBasedStaking,
-	<span class="kw">pub </span>partnerchain_pub_key: SidechainPublicKey,
-	<span class="kw">pub </span>partnerchain_signature: SidechainSignature,
+	<span class="kw">pub </span>partner_chain_pub_key: SidechainPublicKey,
+	<span class="kw">pub </span>partner_chain_signature: SidechainSignature,
 	<span class="kw">pub </span>own_pkh: MainchainAddressHash,
 	<span class="kw">pub </span>registration_utxo: UtxoId,
 	<span class="kw">pub </span>aura_pub_key: AuraPublicKey,
@@ -1364,8 +1366,8 @@
 <span class="kw">impl </span>CandidateRegistration {
 	<span class="kw">pub fn </span>matches_keys(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
 		<span class="self">self</span>.stake_ownership == other.stake_ownership
-			&amp;&amp; <span class="self">self</span>.partnerchain_pub_key == other.partnerchain_pub_key
-			&amp;&amp; <span class="self">self</span>.partnerchain_signature == other.partnerchain_signature
+			&amp;&amp; <span class="self">self</span>.partner_chain_pub_key == other.partner_chain_pub_key
+			&amp;&amp; <span class="self">self</span>.partner_chain_signature == other.partner_chain_signature
 			&amp;&amp; <span class="self">self</span>.aura_pub_key == other.aura_pub_key
 			&amp;&amp; <span class="self">self</span>.grandpa_pub_key == other.grandpa_pub_key
 	}
@@ -1373,7 +1375,7 @@
 
 <span class="doccomment">/// AdaBasedStaking is a variant of Plutus type StakeOwnership.
 /// The other variant, TokenBasedStaking, is not supported
-</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq)]
+</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 </span><span class="kw">pub struct </span>AdaBasedStaking {
 	<span class="kw">pub </span>pub_key: MainchainPublicKey,
 	<span class="kw">pub </span>signature: MainchainSignature,

@@ -122,9 +122,9 @@
 		alias = <span class="string">"sidechain-public-keys"</span>,
 		value_parser = parse_partnerchain_public_keys
 	)]
-	</span>partnerchain_public_keys: PermissionedCandidateData,
+	</span>partner_chain_public_keys: PermissionedCandidateData,
 	<span class="attr">#[arg(long, alias = <span class="string">"sidechain-signature"</span>)]
-	</span>partnerchain_signature: SidechainSignature,
+	</span>partner_chain_signature: SidechainSignature,
 	<span class="attr">#[arg(long)]
 	</span>spo_public_key: MainchainPublicKey,
 	<span class="attr">#[arg(long)]
@@ -140,12 +140,12 @@
 				pub_key: <span class="self">self</span>.spo_public_key,
 				signature: <span class="self">self</span>.spo_signature,
 			},
-			partnerchain_pub_key: <span class="self">self</span>.partnerchain_public_keys.sidechain_public_key,
-			partnerchain_signature: <span class="self">self</span>.partnerchain_signature,
+			partner_chain_pub_key: <span class="self">self</span>.partner_chain_public_keys.sidechain_public_key,
+			partner_chain_signature: <span class="self">self</span>.partner_chain_signature,
 			own_pkh: payment_key.to_pub_key_hash(),
 			registration_utxo: <span class="self">self</span>.registration_utxo,
-			aura_pub_key: <span class="self">self</span>.partnerchain_public_keys.aura_public_key,
-			grandpa_pub_key: <span class="self">self</span>.partnerchain_public_keys.grandpa_public_key,
+			aura_pub_key: <span class="self">self</span>.partner_chain_public_keys.aura_public_key,
+			grandpa_pub_key: <span class="self">self</span>.partner_chain_public_keys.grandpa_public_key,
 		};
 
 		run_register(

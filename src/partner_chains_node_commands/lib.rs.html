@@ -201,6 +201,9 @@
 <a href="#201" id="201">201</a>
 <a href="#202" id="202">202</a>
 <a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
@@ -356,7 +359,10 @@
 			})
 		},
 		PartnerChainsSubcommand::RegistrationSignatures(cmd) =&gt; <span class="prelude-val">Ok</span>(<span class="macro">println!</span>(<span class="string">"{}"</span>, cmd.execute())),
-		PartnerChainsSubcommand::SmartContracts(cmd) =&gt; <span class="prelude-val">Ok</span>(cmd.execute_blocking()<span class="question-mark">?</span>),
+		PartnerChainsSubcommand::SmartContracts(cmd) =&gt; {
+			<span class="kw">crate</span>::setup_log4rs()<span class="question-mark">?</span>;
+			<span class="prelude-val">Ok</span>(cmd.execute_blocking()<span class="question-mark">?</span>)
+		},
 	}
 }
 
