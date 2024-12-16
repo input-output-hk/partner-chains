@@ -74,6 +74,12 @@ impl StakeDelegation {
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NativeTokenAmount(pub u128);
 
+impl Display for NativeTokenAmount {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+		u128::fmt(&self.0, f)
+	}
+}
+
 /// A main chain block number. In range [0, 2^31-1].
 #[derive(
 	Default,
