@@ -14,6 +14,17 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 # v1.3.1
 
+## Changed
+
+## Removed
+
+## Fixed
+
+* Cache returning invalid results when native token MainChainScripts has changed.
+* CardanoNetwork bug in `partner-chains-cli`, that would cause the CLI to fail with the mainnet.
+
+## Added
+
 * Added `upgrade_and_set_addresses` extrinsic that atomically upgrades runtime and changes chain configuration.
 
 # v1.3.0

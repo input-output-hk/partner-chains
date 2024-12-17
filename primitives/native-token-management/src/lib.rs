@@ -105,9 +105,7 @@ mod inherent_provider {
 			&self,
 			after_block: Option<McBlockHash>,
 			to_block: McBlockHash,
-			native_token_policy_id: PolicyId,
-			native_token_asset_name: AssetName,
-			illiquid_supply_address: MainchainAddress,
+			scripts: MainChainScripts,
 		) -> Result<NativeTokenAmount, Box<dyn std::error::Error + Send + Sync>>;
 	}
 
@@ -178,13 +176,7 @@ mod inherent_provider {
 				None
 			};
 			let token_amount = data_source
-				.get_total_native_token_transfer(
-					parent_mc_hash,
-					mc_hash,
-					scripts.native_token_policy_id,
-					scripts.native_token_asset_name,
-					scripts.illiquid_supply_validator_address,
-				)
+				.get_total_native_token_transfer(parent_mc_hash, mc_hash, scripts)
 				.await
 				.map_err(IDPCreationError::DataSourceError)?;
 
@@ -224,7 +216,7 @@ mod inherent_provider {
 
 	#[cfg(any(test, feature = "mock"))]
 	pub mod mock {
-		use crate::NativeTokenManagementDataSource;
+		use crate::{MainChainScripts, NativeTokenManagementDataSource};
 		use async_trait::async_trait;
 		use derive_new::new;
 		use sidechain_domain::*;
@@ -241,9 +233,7 @@ mod inherent_provider {
 				&self,
 				after_block: Option<McBlockHash>,
 				to_block: McBlockHash,
-				_native_token_policy_id: PolicyId,
-				_native_token_asset_name: AssetName,
-				_illiquid_supply_address: MainchainAddress,
+				_scripts: MainChainScripts,
 			) -> Result<NativeTokenAmount, Box<dyn std::error::Error + Send + Sync>> {
 				Ok(self.transfers.get(&(after_block, to_block)).cloned().unwrap_or_default())
 			}
