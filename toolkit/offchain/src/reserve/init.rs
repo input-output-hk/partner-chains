@@ -36,7 +36,9 @@ use ogmios_client::{
 	query_network::QueryNetwork,
 	transactions::{OgmiosEvaluateTransactionResponse, Transactions},
 };
-use raw_scripts::{ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, RESERVE_AUTH_POLICY, RESERVE_VALIDATOR};
+use raw_scripts::{
+	ScriptId, ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, RESERVE_AUTH_POLICY, RESERVE_VALIDATOR,
+};
 use sidechain_domain::{McTxHash, UtxoId};
 use std::collections::HashMap;
 
@@ -49,14 +51,20 @@ pub async fn init_reserve_management<
 	client: &T,
 	await_tx: &A,
 ) -> anyhow::Result<Vec<McTxHash>> {
-	let reserve_validator =
-		ScriptData::new("Reserve Management Validator", RESERVE_VALIDATOR.to_vec(), 28);
-	let reserve_policy =
-		ScriptData::new("Reserve Management Policy", RESERVE_AUTH_POLICY.to_vec(), 29);
+	let reserve_validator = ScriptData::new(
+		"Reserve Management Validator",
+		RESERVE_VALIDATOR.to_vec(),
+		ScriptId::ReserveValidator,
+	);
+	let reserve_policy = ScriptData::new(
+		"Reserve Management Policy",
+		RESERVE_AUTH_POLICY.to_vec(),
+		ScriptId::ReserveAuthPolicy,
+	);
 	let ics_validator = ScriptData::new(
 		"Illiquid Circulation Validator",
 		ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR.to_vec(),
-		30,
+		ScriptId::IlliquidCirculationSupplyValidator,
 	);
 	Ok(vec![
 		initialize_script(reserve_validator, genesis_utxo, payment_key, client, await_tx).await?,
@@ -75,10 +83,10 @@ struct ScriptData {
 }
 
 impl ScriptData {
-	fn new(name: &str, raw_bytes: Vec<u8>, id: u16) -> Self {
+	fn new(name: &str, raw_bytes: Vec<u8>, id: ScriptId) -> Self {
 		let plutus_script = PlutusScript::from_wrapped_cbor(&raw_bytes, LanguageKind::PlutusV2)
 			.expect("Plutus script should be valid");
-		Self { name: name.to_string(), plutus_script, id }
+		Self { name: name.to_string(), plutus_script, id: id as u16 }
 	}
 
 	fn applied_plutus_script(

@@ -710,8 +710,7 @@ mod tests {
 				validator: OgmiosValidatorIndex::new(2, "spend"),
 				budget: OgmiosBudget::new(12, 22),
 			},
-		])
-		.expect("Should succeed");
+		]);
 
 		let expected = ScriptExUnits {
 			mint_ex_units: vec![
