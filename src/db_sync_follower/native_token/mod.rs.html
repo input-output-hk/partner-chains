@@ -219,6 +219,7 @@
 <a href="#219" id="219">219</a>
 <a href="#220" id="220">220</a>
 <a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::db_model::{Block, BlockNumber};
 <span class="kw">use </span><span class="kw">crate</span>::metrics::McFollowerMetrics;
 <span class="kw">use </span><span class="kw">crate</span>::observed_async_trait;
@@ -226,7 +227,7 @@
 <span class="kw">use </span>derive_new::new;
 <span class="kw">use </span>itertools::Itertools;
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
-<span class="kw">use </span>sp_native_token_management::NativeTokenManagementDataSource;
+<span class="kw">use </span>sp_native_token_management::{MainChainScripts, NativeTokenManagementDataSource};
 <span class="kw">use </span>sqlx::PgPool;
 <span class="kw">use </span>std::sync::{Arc, Mutex};
 
@@ -251,14 +252,12 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		after_block: <span class="prelude-ty">Option</span>&lt;McBlockHash&gt;,
 		to_block: McBlockHash,
-		policy_id: PolicyId,
-		asset_name: AssetName,
-		address: MainchainAddress,
+		scripts: MainChainScripts,
 	) -&gt; std::result::Result&lt;NativeTokenAmount, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(after_block) = after_block {
 			<span class="kw">if </span>after_block == to_block {
 				<span class="prelude-val">Ok</span>(NativeTokenAmount(<span class="number">0</span>))
-			} <span class="kw">else if let </span><span class="prelude-val">Some</span>(amount) = <span class="self">self</span>.get_from_cache(<span class="kw-2">&amp;</span>after_block, <span class="kw-2">&amp;</span>to_block) {
+			} <span class="kw">else if let </span><span class="prelude-val">Some</span>(amount) = <span class="self">self</span>.get_from_cache(<span class="kw-2">&amp;</span>after_block, <span class="kw-2">&amp;</span>to_block, <span class="kw-2">&amp;</span>scripts) {
 				<span class="macro">log::debug!</span>(
 					<span class="string">"Illiquid supply transfers sum from cache after block '{:?}' to block '{:?}' is {}"</span>,
 					after_block, to_block, amount.<span class="number">0
@@ -267,7 +266,7 @@
 			} <span class="kw">else </span>{
 				<span class="macro">log::debug!</span>(<span class="string">"Illiquid supply transfers after block '{:?}' to block '{:?}' not found in cache."</span>, after_block, to_block);
 				<span class="kw">let </span>block_to_amount = <span class="self">self
-					</span>.get_data_to_cache(<span class="kw-2">&amp;</span>after_block, <span class="kw-2">&amp;</span>to_block, <span class="kw-2">&amp;</span>policy_id, <span class="kw-2">&amp;</span>asset_name, <span class="kw-2">&amp;</span>address)
+					</span>.get_data_to_cache(<span class="kw-2">&amp;</span>after_block, <span class="kw-2">&amp;</span>to_block, <span class="kw-2">&amp;</span>scripts)
 					.<span class="kw">await</span><span class="question-mark">?</span>;
 				<span class="macro">log::debug!</span>(<span class="string">"Caching illiquid supply transfers from {} blocks"</span>, block_to_amount.len());
 
@@ -280,13 +279,13 @@
 				<span class="macro">log::debug!</span>(<span class="string">"Amount of illiquid supply transfers is {}"</span>, amount);
 
 				<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="kw-2">mut </span>cache) = <span class="self">self</span>.cache.lock() {
-					cache.update(block_to_amount)
+					cache.update(block_to_amount, scripts)
 				}
 				<span class="prelude-val">Ok</span>(NativeTokenAmount(amount))
 			}
 		} <span class="kw">else </span>{
 			<span class="kw">let </span>amount = <span class="self">self
-				</span>.query_transfers_from_genesis(<span class="kw-2">&amp;</span>to_block, <span class="kw-2">&amp;</span>policy_id, <span class="kw-2">&amp;</span>asset_name, <span class="kw-2">&amp;</span>address)
+				</span>.query_transfers_from_genesis(<span class="kw-2">&amp;</span>to_block, <span class="kw-2">&amp;</span>scripts)
 				.<span class="kw">await</span><span class="question-mark">?</span>;
 			<span class="macro">log::debug!</span>(<span class="string">"Amount of illiquid supply transfers from genesis to {} is {}"</span>, to_block, amount.<span class="number">0</span>);
 			<span class="prelude-val">Ok</span>(amount)
@@ -316,9 +315,14 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		after_block: <span class="kw-2">&amp;</span>McBlockHash,
 		to_block: <span class="kw-2">&amp;</span>McBlockHash,
+		scripts: <span class="kw-2">&amp;</span>MainChainScripts,
 	) -&gt; <span class="prelude-ty">Option</span>&lt;NativeTokenAmount&gt; {
 		<span class="kw">let </span>cache = <span class="self">self</span>.cache.lock().ok()<span class="question-mark">?</span>;
-		cache.get_sum_in_range(after_block, to_block).map(NativeTokenAmount)
+		<span class="kw">if </span>cache.scripts.as_ref() == <span class="prelude-val">Some</span>(scripts) {
+			cache.get_sum_in_range(after_block, to_block).map(NativeTokenAmount)
+		} <span class="kw">else </span>{
+			<span class="prelude-val">None
+		</span>}
 	}
 
 	<span class="comment">// invariant: to_block is always a stable block
@@ -327,9 +331,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		from_block: <span class="kw-2">&amp;</span>McBlockHash,
 		to_block: <span class="kw-2">&amp;</span>McBlockHash,
-		policy_id: <span class="kw-2">&amp;</span>PolicyId,
-		asset_name: <span class="kw-2">&amp;</span>AssetName,
-		address: <span class="kw-2">&amp;</span>MainchainAddress,
+		scripts: <span class="kw-2">&amp;</span>MainChainScripts,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;(McBlockHash, u128)&gt;&gt; {
 		<span class="kw">let </span>(from_block_no, to_block_no, latest_block) = <span class="macro">futures::try_join!</span>(
 			get_from_block_no(from_block, <span class="kw-2">&amp;</span><span class="self">self</span>.pool),
@@ -345,9 +347,7 @@
 			std::cmp::max(to_block_no.<span class="number">0</span>, from_block_no.<span class="number">0</span>.saturating_add(<span class="self">self</span>.cache_size.into())),
 		));
 		<span class="comment">// transfers starts with block having hash equal to after_block or genesis
-		</span><span class="kw">let </span>transfers = <span class="self">self
-			</span>.query_db(from_block_no, cache_to_block_no, policy_id, asset_name, address)
-			.<span class="kw">await</span><span class="question-mark">?</span>;
+		</span><span class="kw">let </span>transfers = <span class="self">self</span>.query_db(from_block_no, cache_to_block_no, scripts).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(transfers.iter().map(|t| (McBlockHash(t.block_hash), t.amount.<span class="number">0</span>)).collect())
 	}
 
@@ -355,12 +355,10 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		from_block: BlockNumber,
 		to_block: BlockNumber,
-		native_token_policy_id: <span class="kw-2">&amp;</span>PolicyId,
-		native_token_asset_name: <span class="kw-2">&amp;</span>AssetName,
-		illiquid_supply_address: <span class="kw-2">&amp;</span>MainchainAddress,
+		scripts: <span class="kw-2">&amp;</span>MainChainScripts,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">crate</span>::db_model::BlockTokenAmount&gt;&gt; {
-		<span class="kw">let </span>address = illiquid_supply_address.clone().into();
-		<span class="kw">let </span>asset = to_db_asset(native_token_policy_id, native_token_asset_name);
+		<span class="kw">let </span>address = scripts.illiquid_supply_validator_address.clone().into();
+		<span class="kw">let </span>asset = to_db_asset(scripts);
 		<span class="prelude-val">Ok</span>(<span class="kw">crate</span>::db_model::get_native_token_transfers(
 			<span class="kw-2">&amp;</span><span class="self">self</span>.pool, from_block, to_block, asset, address,
 		)
@@ -370,26 +368,24 @@
 	<span class="kw">async fn </span>query_transfers_from_genesis(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		to_block: <span class="kw-2">&amp;</span>McBlockHash,
-		policy_id: <span class="kw-2">&amp;</span>PolicyId,
-		asset_name: <span class="kw-2">&amp;</span>AssetName,
-		address: <span class="kw-2">&amp;</span>MainchainAddress,
+		scripts: <span class="kw-2">&amp;</span>MainChainScripts,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;NativeTokenAmount&gt; {
 		<span class="kw">let </span>to_block = get_to_block_no(to_block, <span class="kw-2">&amp;</span><span class="self">self</span>.pool).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(<span class="kw">crate</span>::db_model::get_total_native_tokens_transfered(
 			<span class="kw-2">&amp;</span><span class="self">self</span>.pool,
 			to_block,
-			to_db_asset(policy_id, asset_name),
-			address.clone().into(),
+			to_db_asset(scripts),
+			scripts.illiquid_supply_validator_address.clone().into(),
 		)
 		.<span class="kw">await</span><span class="question-mark">?
 		</span>.into())
 	}
 }
 
-<span class="kw">fn </span>to_db_asset(policy_id: <span class="kw-2">&amp;</span>PolicyId, asset_name: <span class="kw-2">&amp;</span>AssetName) -&gt; <span class="kw">crate</span>::db_model::Asset {
+<span class="kw">fn </span>to_db_asset(scripts: <span class="kw-2">&amp;</span>MainChainScripts) -&gt; <span class="kw">crate</span>::db_model::Asset {
 	<span class="kw">crate</span>::db_model::Asset {
-		policy_id: policy_id.clone().into(),
-		asset_name: asset_name.clone().into(),
+		policy_id: scripts.native_token_policy_id.clone().into(),
+		asset_name: scripts.native_token_asset_name.clone().into(),
 	}
 }
 
@@ -423,6 +419,7 @@
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>Cache {
 	<span class="doccomment">/// Continous blocks with their respective total native token transfer amount
 	</span>block_hash_to_amount: Vec&lt;(McBlockHash, u128)&gt;,
+	<span class="kw">pub</span>(<span class="kw">crate</span>) scripts: <span class="prelude-ty">Option</span>&lt;MainChainScripts&gt;,
 }
 
 <span class="kw">impl </span>Cache {
@@ -436,8 +433,13 @@
 		<span class="prelude-val">Some</span>(after_to.iter().map(|(<span class="kw">_</span>, amount)| amount).sum())
 	}
 
-	<span class="kw">pub fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, block_hash_to_amount: Vec&lt;(McBlockHash, u128)&gt;) {
+	<span class="kw">pub fn </span>update(
+		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
+		block_hash_to_amount: Vec&lt;(McBlockHash, u128)&gt;,
+		scripts: MainChainScripts,
+	) {
 		<span class="self">self</span>.block_hash_to_amount = block_hash_to_amount;
+		<span class="self">self</span>.scripts = <span class="prelude-val">Some</span>(scripts);
 	}
 }
 </code></pre></div></section></main></body></html>
