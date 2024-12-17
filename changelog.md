@@ -32,6 +32,7 @@ Do **NOT** perform a normal runtime upgrade, it will break your chain.
 
 ## Fixed
 
+* Cache returning invalid results when native token MainChainScripts has changed.
 * CardanoNetwork bug in `partner-chains-cli`, that would cause the CLI to fail with the mainnet.
 
 ## Added

@@ -5,7 +5,7 @@ use crate::{DataSourceError, Result};
 use derive_new::new;
 use itertools::Itertools;
 use sidechain_domain::*;
-use sp_native_token_management::NativeTokenManagementDataSource;
+use sp_native_token_management::{MainChainScripts, NativeTokenManagementDataSource};
 use sqlx::PgPool;
 use std::sync::{Arc, Mutex};
 
@@ -30,14 +30,12 @@ impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
 		&self,
 		after_block: Option<McBlockHash>,
 		to_block: McBlockHash,
-		policy_id: PolicyId,
-		asset_name: AssetName,
-		address: MainchainAddress,
+		scripts: MainChainScripts,
 	) -> std::result::Result<NativeTokenAmount, Box<dyn std::error::Error + Send + Sync>> {
 		if let Some(after_block) = after_block {
 			if after_block == to_block {
 				Ok(NativeTokenAmount(0))
-			} else if let Some(amount) = self.get_from_cache(&after_block, &to_block) {
+			} else if let Some(amount) = self.get_from_cache(&after_block, &to_block, &scripts) {
 				log::debug!(
 					"Illiquid supply transfers sum from cache after block '{:?}' to block '{:?}' is {}",
 					after_block, to_block, amount.0
@@ -46,7 +44,7 @@ impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
 			} else {
 				log::debug!("Illiquid supply transfers after block '{:?}' to block '{:?}' not found in cache.", after_block, to_block);
 				let block_to_amount = self
-					.get_data_to_cache(&after_block, &to_block, &policy_id, &asset_name, &address)
+					.get_data_to_cache(&after_block, &to_block, &scripts)
 					.await?;
 				log::debug!("Caching illiquid supply transfers from {} blocks", block_to_amount.len());
 
@@ -59,13 +57,13 @@ impl NativeTokenManagementDataSource for NativeTokenManagementDataSourceImpl {
 				log::debug!("Amount of illiquid supply transfers is {}", amount);
 
 				if let Ok(mut cache) = self.cache.lock() {
-					cache.update(block_to_amount)
+					cache.update(block_to_amount, scripts)
 				}
 				Ok(NativeTokenAmount(amount))
 			}
 		} else {
 			let amount = self
-				.query_transfers_from_genesis(&to_block, &policy_id, &asset_name, &address)
+				.query_transfers_from_genesis(&to_block, &scripts)
 				.await?;
 			log::debug!("Amount of illiquid supply transfers from genesis to {} is {}", to_block, amount.0);
 			Ok(amount)
@@ -95,9 +93,14 @@ impl NativeTokenManagementDataSourceImpl {
 		&self,
 		after_block: &McBlockHash,
 		to_block: &McBlockHash,
+		scripts: &MainChainScripts,
 	) -> Option<NativeTokenAmount> {
 		let cache = self.cache.lock().ok()?;
-		cache.get_sum_in_range(after_block, to_block).map(NativeTokenAmount)
+		if cache.scripts.as_ref() == Some(scripts) {
+			cache.get_sum_in_range(after_block, to_block).map(NativeTokenAmount)
+		} else {
+			None
+		}
 	}
 
 	// invariant: to_block is always a stable block
@@ -106,9 +109,7 @@ impl NativeTokenManagementDataSourceImpl {
 		&self,
 		from_block: &McBlockHash,
 		to_block: &McBlockHash,
-		policy_id: &PolicyId,
-		asset_name: &AssetName,
-		address: &MainchainAddress,
+		scripts: &MainChainScripts,
 	) -> Result<Vec<(McBlockHash, u128)>> {
 		let (from_block_no, to_block_no, latest_block) = futures::try_join!(
 			get_from_block_no(from_block, &self.pool),
@@ -124,9 +125,7 @@ impl NativeTokenManagementDataSourceImpl {
 			std::cmp::max(to_block_no.0, from_block_no.0.saturating_add(self.cache_size.into())),
 		));
 		// transfers starts with block having hash equal to after_block or genesis
-		let transfers = self
-			.query_db(from_block_no, cache_to_block_no, policy_id, asset_name, address)
-			.await?;
+		let transfers = self.query_db(from_block_no, cache_to_block_no, scripts).await?;
 		Ok(transfers.iter().map(|t| (McBlockHash(t.block_hash), t.amount.0)).collect())
 	}
 
@@ -134,12 +133,10 @@ impl NativeTokenManagementDataSourceImpl {
 		&self,
 		from_block: BlockNumber,
 		to_block: BlockNumber,
-		native_token_policy_id: &PolicyId,
-		native_token_asset_name: &AssetName,
-		illiquid_supply_address: &MainchainAddress,
+		scripts: &MainChainScripts,
 	) -> Result<Vec<crate::db_model::BlockTokenAmount>> {
-		let address = illiquid_supply_address.clone().into();
-		let asset = to_db_asset(native_token_policy_id, native_token_asset_name);
+		let address = scripts.illiquid_supply_validator_address.clone().into();
+		let asset = to_db_asset(scripts);
 		Ok(crate::db_model::get_native_token_transfers(
 			&self.pool, from_block, to_block, asset, address,
 		)
@@ -149,26 +146,24 @@ impl NativeTokenManagementDataSourceImpl {
 	async fn query_transfers_from_genesis(
 		&self,
 		to_block: &McBlockHash,
-		policy_id: &PolicyId,
-		asset_name: &AssetName,
-		address: &MainchainAddress,
+		scripts: &MainChainScripts,
 	) -> Result<NativeTokenAmount> {
 		let to_block = get_to_block_no(to_block, &self.pool).await?;
 		Ok(crate::db_model::get_total_native_tokens_transfered(
 			&self.pool,
 			to_block,
-			to_db_asset(policy_id, asset_name),
-			address.clone().into(),
+			to_db_asset(scripts),
+			scripts.illiquid_supply_validator_address.clone().into(),
 		)
 		.await?
 		.into())
 	}
 }
 
-fn to_db_asset(policy_id: &PolicyId, asset_name: &AssetName) -> crate::db_model::Asset {
+fn to_db_asset(scripts: &MainChainScripts) -> crate::db_model::Asset {
 	crate::db_model::Asset {
-		policy_id: policy_id.clone().into(),
-		asset_name: asset_name.clone().into(),
+		policy_id: scripts.native_token_policy_id.clone().into(),
+		asset_name: scripts.native_token_asset_name.clone().into(),
 	}
 }
 
@@ -202,6 +197,7 @@ async fn get_latest_block(pool: &PgPool) -> Result<Block> {
 pub(crate) struct Cache {
 	/// Continous blocks with their respective total native token transfer amount
 	block_hash_to_amount: Vec<(McBlockHash, u128)>,
+	pub(crate) scripts: Option<MainChainScripts>,
 }
 
 impl Cache {
@@ -215,7 +211,12 @@ impl Cache {
 		Some(after_to.iter().map(|(_, amount)| amount).sum())
 	}
 
-	pub fn update(&mut self, block_hash_to_amount: Vec<(McBlockHash, u128)>) {
+	pub fn update(
+		&mut self,
+		block_hash_to_amount: Vec<(McBlockHash, u128)>,
+		scripts: MainChainScripts,
+	) {
 		self.block_hash_to_amount = block_hash_to_amount;
+		self.scripts = Some(scripts);
 	}
 }
