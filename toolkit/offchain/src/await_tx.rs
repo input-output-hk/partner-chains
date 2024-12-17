@@ -3,7 +3,7 @@ use ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
 use sidechain_domain::UtxoId;
 use std::time::Duration;
 use tokio_retry::{strategy::FixedInterval, Retry};
-
+// test ci
 pub trait AwaitTx {
 	#[allow(async_fn_in_trait)]
 	async fn await_tx_output<Q: QueryUtxoByUtxoId>(
