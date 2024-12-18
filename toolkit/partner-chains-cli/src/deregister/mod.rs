@@ -23,7 +23,7 @@ impl CmdRun for DeregisterCmd {
           &chain_config.chain_parameters,
           &chain_config.cardano_addresses.committee_candidates_address)
     	);
-		context.print("Payment signing key and verification key of cold key used for registration are required to deregister.");
+		context.print("Payment signing key and cold verification key used for registration are required to deregister.");
 		let payment_signing_key_path =
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
 		let payment_signing_key = get_mc_pkey_from_file(&payment_signing_key_path, context)?;
@@ -40,7 +40,7 @@ impl CmdRun for DeregisterCmd {
 				payment_signing_key,
 				stake_ownership_pub_key,
 			))
-			.map_err(|e| anyhow::anyhow!("Candidate registration failed: {e:?}!"))?;
+			.map_err(|e| anyhow::anyhow!("Candidate deregistration failed: {e:?}!"))?;
 
 		Ok(())
 	}
