@@ -55,147 +55,61 @@
 <a href="#55" id="55">55</a>
 <a href="#56" id="56">56</a>
 <a href="#57" id="57">57</a>
-<a href="#58" id="58">58</a>
-<a href="#59" id="59">59</a>
-<a href="#60" id="60">60</a>
-<a href="#61" id="61">61</a>
-<a href="#62" id="62">62</a>
-<a href="#63" id="63">63</a>
-<a href="#64" id="64">64</a>
-<a href="#65" id="65">65</a>
-<a href="#66" id="66">66</a>
-<a href="#67" id="67">67</a>
-<a href="#68" id="68">68</a>
-<a href="#69" id="69">69</a>
-<a href="#70" id="70">70</a>
-<a href="#71" id="71">71</a>
-<a href="#72" id="72">72</a>
-<a href="#73" id="73">73</a>
-<a href="#74" id="74">74</a>
-<a href="#75" id="75">75</a>
-<a href="#76" id="76">76</a>
-<a href="#77" id="77">77</a>
-<a href="#78" id="78">78</a>
-<a href="#79" id="79">79</a>
-<a href="#80" id="80">80</a>
-<a href="#81" id="81">81</a>
-<a href="#82" id="82">82</a>
-<a href="#83" id="83">83</a>
-<a href="#84" id="84">84</a>
-<a href="#85" id="85">85</a>
-<a href="#86" id="86">86</a>
-<a href="#87" id="87">87</a>
-<a href="#88" id="88">88</a>
-<a href="#89" id="89">89</a>
-<a href="#90" id="90">90</a>
-<a href="#91" id="91">91</a>
-<a href="#92" id="92">92</a>
-<a href="#93" id="93">93</a>
-<a href="#94" id="94">94</a>
-<a href="#95" id="95">95</a>
-<a href="#96" id="96">96</a>
-<a href="#97" id="97">97</a>
-<a href="#98" id="98">98</a>
-<a href="#99" id="99">99</a>
-<a href="#100" id="100">100</a>
 </pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
 
+<span class="kw">use </span><span class="kw">crate</span>::cardano_key::{get_mc_pkey_from_file, get_mc_pubkey_from_file};
 <span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	CARDANO_COLD_VERIFICATION_KEY_FILE, CARDANO_PAYMENT_SIGNING_KEY_FILE,
 };
-<span class="kw">use </span><span class="kw">crate</span>::config::{
-	get_cardano_network_from_file, ChainConfig, CHAIN_CONFIG_FILE_PATH, PC_CONTRACTS_CLI_PATH,
-};
+<span class="kw">use </span><span class="kw">crate</span>::config::CHAIN_CONFIG_FILE_PATH;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
-<span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::{
-	establish_pc_contracts_cli_configuration, PcContractsCliResources,
-};
-<span class="kw">use crate</span>::{smart_contracts, CmdRun};
-<span class="kw">use </span>anyhow::{anyhow, Context};
-<span class="kw">use </span>sidechain_domain::NetworkType;
+<span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::establish_pc_contracts_cli_configuration;
+<span class="kw">use </span><span class="kw">crate</span>::CmdRun;
+<span class="kw">use </span>anyhow::anyhow;
+<span class="kw">use </span>partner_chains_cardano_offchain::register::Deregister;
 
 <span class="attr">#[derive(Debug, clap::Parser)]
 </span><span class="kw">pub struct </span>DeregisterCmd;
 
 <span class="kw">impl </span>CmdRun <span class="kw">for </span>DeregisterCmd {
 	<span class="kw">fn </span>run&lt;C: IOContext&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;()&gt; {
-		<span class="kw">let </span>(chain_config, cardano_network) = read_chain_config_file(context)<span class="question-mark">?</span>;
+		<span class="kw">let </span>chain_config = read_chain_config_file(context)<span class="question-mark">?</span>;
 		context.print(
 		  <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"This wizard will remove the specified candidate from the committee candidates based on the following chain parameters:\n{}.\nCommittee Candidate Validator Address is '{}'\n"</span>,
           <span class="kw-2">&amp;</span>chain_config.chain_parameters,
           <span class="kw-2">&amp;</span>chain_config.cardano_addresses.committee_candidates_address)
     	);
-		<span class="kw">let </span>(payment_signing_key_path, cold_vkey) = get_cardano_keys(context)<span class="question-mark">?</span>;
+		context.print(<span class="string">"Payment signing key and cold verification key used for registration are required to deregister."</span>);
+		<span class="kw">let </span>payment_signing_key_path =
+			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
+		<span class="kw">let </span>payment_signing_key = get_mc_pkey_from_file(<span class="kw-2">&amp;</span>payment_signing_key_path, context)<span class="question-mark">?</span>;
+		<span class="kw">let </span>cold_vkey_path =
+			CARDANO_COLD_VERIFICATION_KEY_FILE.prompt_with_default_from_file_and_save(context);
+		<span class="kw">let </span>stake_ownership_pub_key = get_mc_pubkey_from_file(<span class="kw-2">&amp;</span>cold_vkey_path, context)<span class="question-mark">?</span>;
 		<span class="kw">let </span>pc_contracts_cli_resources = establish_pc_contracts_cli_configuration(context)<span class="question-mark">?</span>;
+		<span class="kw">let </span>offchain = context.offchain_impl(<span class="kw-2">&amp;</span>pc_contracts_cli_resources.ogmios)<span class="question-mark">?</span>;
 
-		<span class="kw">let </span>command = build_command(
-			cardano_network,
-			cold_vkey,
-			chain_config,
-			pc_contracts_cli_resources,
-			payment_signing_key_path,
-		);
-		<span class="kw">let </span>output = context.run_command(<span class="kw-2">&amp;</span>command).context(<span class="string">"Deregistration failed"</span>)<span class="question-mark">?</span>;
-		<span class="prelude-val">Ok</span>(context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"Deregistration successful: {}"</span>, output)))
+		<span class="kw">let </span>runtime = tokio::runtime::Runtime::new().map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
+		runtime
+			.block_on(offchain.deregister(
+				chain_config.chain_parameters.genesis_utxo,
+				payment_signing_key,
+				stake_ownership_pub_key,
+			))
+			.map_err(|e| <span class="macro">anyhow::anyhow!</span>(<span class="string">"Candidate deregistration failed: {e:?}!"</span>))<span class="question-mark">?</span>;
+
+		<span class="prelude-val">Ok</span>(())
 	}
 }
 
 <span class="kw">fn </span>read_chain_config_file&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
-) -&gt; <span class="prelude-ty">Result</span>&lt;(<span class="kw">crate</span>::config::ChainConfig, NetworkType), anyhow::Error&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw">crate</span>::config::ChainConfig, anyhow::Error&gt; {
 	<span class="kw">let </span>chain_config = <span class="kw">crate</span>::config::load_chain_config(context);
-	<span class="kw">let </span>cardano_network = get_cardano_network_from_file(context);
-	chain_config.and_then(|chain_config| cardano_network.map(|cardano_network| (chain_config, cardano_network)))
-		    .map_err(|<span class="kw">_</span>|<span class="macro">anyhow!</span>(
-		        <span class="string">"Couldn't parse chain configuration file {}. The chain configuration file that was used for registration is required in the working directory."</span>,
-		        CHAIN_CONFIG_FILE_PATH))
-}
-
-<span class="kw">fn </span>get_cardano_keys&lt;C: IOContext&gt;(context: <span class="kw-2">&amp;</span>C) -&gt; <span class="prelude-ty">Result</span>&lt;(String, String), anyhow::Error&gt; {
-	context.print(<span class="string">"Payment signing key and verification key of cold key used for registration are required to deregister."</span>);
-	<span class="kw">let </span>payment_signing_key_path =
-		CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
-	<span class="kw">let _ </span>= get_mainchain_key_hex(context, <span class="kw-2">&amp;</span>payment_signing_key_path)<span class="question-mark">?</span>;
-	<span class="kw">let </span>cold_vkey_path =
-		CARDANO_COLD_VERIFICATION_KEY_FILE.prompt_with_default_from_file_and_save(context);
-	<span class="kw">let </span>cold_vkey = get_mainchain_key_hex(context, <span class="kw-2">&amp;</span>cold_vkey_path)<span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>((payment_signing_key_path, cold_vkey))
-}
-
-<span class="kw">fn </span>get_mainchain_key_hex&lt;C: IOContext&gt;(
-	context: <span class="kw-2">&amp;</span>C,
-	key_path: <span class="kw-2">&amp;</span>str,
-) -&gt; <span class="prelude-ty">Result</span>&lt;String, anyhow::Error&gt; {
-	<span class="kw">let </span>cold_key = context
-		.read_file(key_path)
-		.ok_or_else(|| <span class="macro">anyhow::anyhow!</span>(<span class="string">"Unable to read Cardano key file: {}"</span>, key_path))<span class="question-mark">?</span>;
-	<span class="kw">let </span>json = serde_json::from_str::&lt;serde_json::Value&gt;(<span class="kw-2">&amp;</span>cold_key)
-		.map_err(|e| <span class="macro">anyhow!</span>(<span class="string">"{} is not a valid Cardano key file: {}"</span>, key_path, e))<span class="question-mark">?</span>;
-	<span class="kw">let </span>key = <span class="kw-2">&amp;</span>json
-		.pointer(<span class="string">"/cborHex"</span>)
-		.ok_or(<span class="macro">anyhow!</span>(<span class="string">"{} is not a valid Cardano key file"</span>, key_path))<span class="question-mark">?
-		</span>.as_str()
-		.ok_or(<span class="macro">anyhow!</span>(<span class="string">"{} is not a valid Cardano key file"</span>, key_path))<span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(key[<span class="number">4</span>..].to_string())
-}
-
-<span class="kw">fn </span>build_command(
-	cardano_network: NetworkType,
-	cold_vkey: String,
-	chain_config: ChainConfig,
-	pc_contracts_cli_resources: PcContractsCliResources,
-	payment_signing_key_path: String,
-) -&gt; String {
-	<span class="macro">format!</span>(
-        <span class="string">"{PC_CONTRACTS_CLI_PATH} deregister --network {} --ada-based-staking --spo-public-key {} {} {}"</span>,
-        cardano_network,
-        cold_vkey,
-        smart_contracts::sidechain_params_arguments(chain_config.chain_parameters.genesis_utxo),
-        smart_contracts::runtime_config_arguments(
-            <span class="kw-2">&amp;</span>pc_contracts_cli_resources,
-            <span class="kw-2">&amp;</span>payment_signing_key_path
-        )
-	)
+	chain_config
+		.map_err(|<span class="kw">_</span>|<span class="macro">anyhow!</span>(
+			<span class="string">"Couldn't parse chain configuration file {}. The chain configuration file that was used for registration is required in the working directory."</span>,
+			CHAIN_CONFIG_FILE_PATH))
 }
 </code></pre></div></section></main></body></html>

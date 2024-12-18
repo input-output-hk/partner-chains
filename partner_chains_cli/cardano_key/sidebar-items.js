@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["CBOR_KEY_PREFIX"],"fn":["get_key_bytes_from_file","get_mc_pkey_from_file"],"struct":["CardanoKeyFileContent"]};
+window.SIDEBAR_ITEMS = {"constant":["CBOR_KEY_PREFIX"],"fn":["get_key_bytes_from_file","get_mc_pkey_from_file","get_mc_pubkey_from_file"],"struct":["CardanoKeyFileContent"]};
