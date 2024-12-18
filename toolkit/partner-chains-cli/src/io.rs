@@ -4,6 +4,7 @@ use anyhow::{anyhow, Context};
 use jsonrpsee::http_client::HttpClient;
 use partner_chains_cardano_offchain::d_param::UpsertDParam;
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
+use partner_chains_cardano_offchain::register::{Deregister, Register};
 use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
 use sp_core::offchain::Timestamp;
 use std::path::PathBuf;
@@ -16,7 +17,7 @@ use tempfile::{TempDir, TempPath};
 
 pub trait IOContext {
 	/// It should implement all the required traits for offchain operations
-	type Offchain: GetScriptsData + InitGovernance + UpsertDParam;
+	type Offchain: GetScriptsData + InitGovernance + UpsertDParam + Register + Deregister;
 
 	fn run_command(&self, cmd: &str) -> anyhow::Result<String>;
 	fn print(&self, msg: &str);

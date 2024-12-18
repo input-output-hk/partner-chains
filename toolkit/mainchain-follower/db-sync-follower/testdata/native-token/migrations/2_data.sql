@@ -2,8 +2,14 @@ do $$
 declare
     policy_id integer := 1001;
     policy hash28type := decode('6c969320597b755454ff3653ad09725d590c570827a129aeb4385526', 'hex');
-    policy_name asset32type :=  '\x546573744275647a507265766965775f3335';
+    asset_name asset32type := '\x546573744275647a507265766965775f3335';
     validator_addr text := 'addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz';
+
+    policy2_id integer := 1002;
+    policy2 hash28type := decode('aaaabbaa597b755454ff3653ad09725d590c570827a129aeb438ffff', 'hex');
+    asset2_name asset32type := '\x656565';
+    validator2_addr text := 'addr_test1aaaabbaaf0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9ffff';
+
 
     genesis_hash hash32type := decode('b000000000000000000000000000000000000000000000000000000000000000','hex');
     block_hash_1 hash32type := decode('b000000000000000000000000000000000000000000000000000000000000001','hex');
@@ -18,12 +24,14 @@ declare
     irrelevant_tx_id integer := 3;
     transfer_tx_id_3 integer := 4;
     transfer_tx_id_4 integer := 5;
+    token2_transfer_tx_id integer := 6;
 
     transfer_tx_hash_1 hash32type := decode('f000000000000000000000000000000000000000000000000000000000000001','hex');
     transfer_tx_hash_2 hash32type := decode('f000000000000000000000000000000000000000000000000000000000000002','hex');
     irrelevant_tx_hash hash32type := decode('f000000000000000000000000000000000000000000000000000000000000003','hex');
     transfer_tx_hash_3 hash32type := decode('f000000000000000000000000000000000000000000000000000000000000004','hex');
     transfer_tx_hash_4 hash32type := decode('f000000000000000000000000000000000000000000000000000000000000005','hex');
+    token2_transer_tx_hash hash32type := decode('f000000000000000000000000000000000000000000000000000000000000006','hex');
 
     transfer_utxo_id_1   integer := 0;
     transfer_utxo_id_2   integer := 1;
@@ -31,14 +39,16 @@ declare
     irrelevant_utxo_id_2 integer := 3;
     transfer_utxo_id_3   integer := 4;
     transfer_utxo_id_4   integer := 5;
+    token2_transfer_utxo_id integer := 6;
 begin
 
 insert into multi_asset
-(id       , policy,                                                      "name",                                   fingerprint)
-values
-(0        , '\xbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad01', '\xbadbadbadbadbadbadbadbadbadbadbad001', 'asset1thisassetshouldbeignoredbythequeries01'),
-(policy_id, policy                                                      , policy_name                             , 'asset1yedvsfmkxu27zaaa37lw44pa8ql9favqlyclnm'),
-(2        , '\xbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad02', '\xbadbadbadbadbadbadbadbadbadbadbad002', 'asset1thisassetshouldbeignoredbythequeries02')
+(id        , policy                                                      , "name"                                  , fingerprint)
+VALUES
+(0         , '\xbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad01', '\xbadbadbadbadbadbadbadbadbadbadbad001', 'asset1thisassetshouldbeignoredbythequeries01'),
+(policy_id , policy                                                      , asset_name                              , 'asset1yedvsfmkxu27zaaa37lw44pa8ql9favqlyclnm'),
+(2         , '\xbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbadbad02', '\xbadbadbadbadbadbadbadbadbadbadbad002', 'asset1thisassetshouldbeignoredbythequeries02'),
+(policy2_id, policy2                                                     , asset2_name                             , 'asset1aaaabbaaxu27zaaa37lw44pa8ql9favqlyffff')
 ;
 
 -- the integration test assume a securityParameter of 1
@@ -63,34 +73,37 @@ VALUES
 
 
 INSERT INTO tx
-( id               , hash               , block_id, block_index, out_sum, fee, deposit, size, invalid_before, invalid_hereafter, valid_contract, script_size )
+( id                    , hash                    , block_id, block_index, out_sum, fee, deposit, size, invalid_before, invalid_hereafter, valid_contract, script_size )
 VALUES
-( transfer_tx_id_1 , transfer_tx_hash_1 , 1       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        ),
-( transfer_tx_id_2 , transfer_tx_hash_2 , 3       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        ),
-( irrelevant_tx_id , irrelevant_tx_hash , 3       , 1          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        ),
-( transfer_tx_id_3 , transfer_tx_hash_3 , 5       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        ),
-( transfer_tx_id_4 , transfer_tx_hash_4 , 5       , 1          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
+( transfer_tx_id_1      , transfer_tx_hash_1      , 1       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        ),
+( transfer_tx_id_2      , transfer_tx_hash_2      , 3       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        ),
+( irrelevant_tx_id      , irrelevant_tx_hash      , 3       , 1          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        ),
+( transfer_tx_id_3      , transfer_tx_hash_3      , 5       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        ),
+( transfer_tx_id_4      , transfer_tx_hash_4      , 5       , 1          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        ),
+( token2_transfer_tx_id , token2_transer_tx_hash  , 5       , 2          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
 ;
 
 INSERT INTO tx_out
-( id                   , tx_id           , index, address        , address_raw, address_has_script, payment_cred, stake_address_id, value, data_hash )
+( id                      , tx_id                 , index, address         , address_raw, address_has_script, payment_cred, stake_address_id, value, data_hash )
 VALUES
-( transfer_utxo_id_1   , transfer_tx_id_1, 0    , validator_addr , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
-( transfer_utxo_id_2   , transfer_tx_id_2, 1    , validator_addr , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
-( irrelevant_utxo_id_1 , irrelevant_tx_id, 0    , 'other_addr'   , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
-( irrelevant_utxo_id_2 , irrelevant_tx_id, 1    , 'another_addr' , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
-( transfer_utxo_id_3   , transfer_tx_id_3, 2    , validator_addr , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
-( transfer_utxo_id_4   , transfer_tx_id_4, 0    , validator_addr , ''         , TRUE              , NULL        , NULL            , 0    , NULL      )
+( transfer_utxo_id_1      , transfer_tx_id_1      , 0    , validator_addr  , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
+( transfer_utxo_id_2      , transfer_tx_id_2      , 1    , validator_addr  , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
+( irrelevant_utxo_id_1    , irrelevant_tx_id      , 0    , 'other_addr'    , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
+( irrelevant_utxo_id_2    , irrelevant_tx_id      , 1    , 'another_addr'  , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
+( transfer_utxo_id_3      , transfer_tx_id_3      , 2    , validator_addr  , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
+( transfer_utxo_id_4      , transfer_tx_id_4      , 0    , validator_addr  , ''         , TRUE              , NULL        , NULL            , 0    , NULL      ),
+( token2_transfer_utxo_id , token2_transfer_tx_id , 0    , validator2_addr , ''         , TRUE              , NULL        , NULL            , 0    , NULL      )
 ;
 
 INSERT INTO ma_tx_out
-(id   , quantity , tx_out_id , ident)
+(id   , quantity , tx_out_id               , ident)
 VALUES
 (3001 , 11       , transfer_utxo_id_1      ,  policy_id),
 (3002 , 12       , transfer_utxo_id_2      ,  policy_id),
 (3003 , 13       , transfer_utxo_id_3      ,  policy_id),
 (3004 , 14       , transfer_utxo_id_4      ,  policy_id),
-(3005 , 100      , irrelevant_utxo_id_1    ,  0)
+(3005 , 100      , irrelevant_utxo_id_1    ,  0),
+(3006 , 37       , token2_transfer_utxo_id ,  policy2_id)
 ;
 
 end $$;

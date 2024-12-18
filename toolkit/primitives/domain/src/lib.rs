@@ -207,6 +207,7 @@ pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
 const MAINCHAIN_PUBLIC_KEY_LEN: usize = 32;
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
+#[cfg_attr(feature = "std", byte_string(to_hex_string))]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct MainchainPublicKey(pub [u8; MAINCHAIN_PUBLIC_KEY_LEN]);
 
@@ -272,7 +273,7 @@ impl MainchainAddressHash {
 	}
 }
 
-#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
+#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, decode_hex)]
 pub struct MainchainSignature(pub Vec<u8>);
 
@@ -315,11 +316,11 @@ impl ScEpochNumber {
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, PartialOrd, Ord)]
-#[byte_string(debug, hex_serialize, hex_deserialize, as_ref)]
+#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, PartialOrd, Ord, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex, as_ref)]
 pub struct SidechainPublicKey(pub Vec<u8>);
 
-#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
+#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct SidechainSignature(pub Vec<u8>);
 
@@ -607,8 +608,8 @@ impl SidechainPublicKeysSorted {
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord)]
-#[byte_string(debug, hex_serialize, hex_deserialize)]
+#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct AuraPublicKey(pub Vec<u8>);
 impl AuraPublicKey {
 	pub fn try_into_sr25519(&self) -> Option<sr25519::Public> {
@@ -616,8 +617,8 @@ impl AuraPublicKey {
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord)]
-#[byte_string(debug, hex_serialize, hex_deserialize)]
+#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct GrandpaPublicKey(pub Vec<u8>);
 impl GrandpaPublicKey {
 	pub fn try_into_ed25519(&self) -> Option<ed25519::Public> {
@@ -645,11 +646,11 @@ pub struct PermissionedCandidateData {
 	pub grandpa_public_key: GrandpaPublicKey,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct CandidateRegistration {
 	pub stake_ownership: AdaBasedStaking,
-	pub partnerchain_pub_key: SidechainPublicKey,
-	pub partnerchain_signature: SidechainSignature,
+	pub partner_chain_pub_key: SidechainPublicKey,
+	pub partner_chain_signature: SidechainSignature,
 	pub own_pkh: MainchainAddressHash,
 	pub registration_utxo: UtxoId,
 	pub aura_pub_key: AuraPublicKey,
@@ -659,8 +660,8 @@ pub struct CandidateRegistration {
 impl CandidateRegistration {
 	pub fn matches_keys(&self, other: &Self) -> bool {
 		self.stake_ownership == other.stake_ownership
-			&& self.partnerchain_pub_key == other.partnerchain_pub_key
-			&& self.partnerchain_signature == other.partnerchain_signature
+			&& self.partner_chain_pub_key == other.partner_chain_pub_key
+			&& self.partner_chain_signature == other.partner_chain_signature
 			&& self.aura_pub_key == other.aura_pub_key
 			&& self.grandpa_pub_key == other.grandpa_pub_key
 	}
@@ -668,7 +669,7 @@ impl CandidateRegistration {
 
 /// AdaBasedStaking is a variant of Plutus type StakeOwnership.
 /// The other variant, TokenBasedStaking, is not supported
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct AdaBasedStaking {
 	pub pub_key: MainchainPublicKey,
 	pub signature: MainchainSignature,
