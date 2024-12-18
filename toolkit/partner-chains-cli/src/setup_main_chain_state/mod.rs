@@ -1,7 +1,7 @@
 use crate::config::config_fields::{CARDANO_PAYMENT_SIGNING_KEY_FILE, POSTGRES_CONNECTION_STRING};
 use crate::config::{config_fields, ChainConfig, ConfigFieldDefinition, CHAIN_CONFIG_FILE_PATH};
 use crate::io::IOContext;
-use crate::pc_contracts_cli_resources::prompt_ogmios_configuration;
+use crate::ogmios::config::prompt_ogmios_configuration;
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
 use crate::{cardano_key, CmdRun};
 use anyhow::anyhow;

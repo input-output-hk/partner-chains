@@ -1,18 +1,18 @@
+use crate::cardano_key;
 use crate::config::config_fields::{self, GENESIS_UTXO};
 use crate::config::{ConfigFieldDefinition, ServiceConfig};
 use crate::io::IOContext;
+use crate::ogmios::config::prompt_ogmios_configuration;
+use crate::ogmios::get_shelley_config;
 use crate::select_utxo::{query_utxos, select_from_utxos};
-use crate::{cardano_key, pc_contracts_cli_resources};
 use anyhow::anyhow;
 use partner_chains_cardano_offchain::csl::NetworkTypeExt;
 use serde::de::DeserializeOwned;
 use sidechain_domain::{NetworkType, UtxoId};
 
-use super::prepare_cardano_params::get_shelley_config;
-
 pub fn prepare_chain_params<C: IOContext>(context: &C) -> anyhow::Result<(UtxoId, ServiceConfig)> {
 	context.eprint(INTRO);
-	let ogmios_configuration = pc_contracts_cli_resources::prompt_ogmios_configuration(context)?;
+	let ogmios_configuration = prompt_ogmios_configuration(context)?;
 	let shelley_config = get_shelley_config(&ogmios_configuration.to_string(), context)?;
 	let address = derive_address(context, shelley_config.network)?;
 	let utxo_query_result = query_utxos(context, &ogmios_configuration, &address)?;
@@ -62,10 +62,11 @@ const CAUTION: &str =
 mod tests {
 	use crate::config::config_fields::GENESIS_UTXO;
 	use crate::config::RESOURCES_CONFIG_FILE_PATH;
+	use crate::ogmios::config::tests::{
+		default_ogmios_service_config, prompt_ogmios_configuration_io,
+	};
+	use crate::ogmios::test_values::preview_shelley_config;
 	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
-	use crate::pc_contracts_cli_resources::default_ogmios_service_config;
-	use crate::pc_contracts_cli_resources::tests::prompt_ogmios_configuration_io;
-	use crate::prepare_configuration::prepare_cardano_params::tests::preview_shelley_config;
 	use crate::prepare_configuration::prepare_chain_params::{
 		prepare_chain_params, CAUTION, INTRO,
 	};

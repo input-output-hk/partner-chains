@@ -7,6 +7,8 @@ use crate::{config::config_fields, *};
 use anyhow::anyhow;
 use cli_commands::registration_signatures::RegisterValidatorMessage;
 use cli_commands::signing::sc_public_key_and_signature_for_datum;
+use ogmios::config::prompt_ogmios_configuration;
+use ogmios::get_shelley_config;
 use partner_chains_cardano_offchain::csl::NetworkTypeExt;
 use select_utxo::{query_utxos, select_from_utxos};
 use serde::de::DeserializeOwned;
@@ -22,10 +24,6 @@ impl CmdRun for Register1Cmd {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		context.print("⚙️ Registering as a committee candidate (step 1/3)");
 		let genesis_utxo = load_chain_config_field(context, &config_fields::GENESIS_UTXO)?;
-		let cardano_network = config_fields::CARDANO_NETWORK.load_from_file(context).ok_or_else(|| {
-            context.eprint("⚠️ Cardano network is not specified in the chain configuration file `partner-chains-cli-chain-config.json`");
-            anyhow!("failed to read cardano network")
-        })?;
 
 		let node_data_base_path = config_fields::SUBSTRATE_NODE_DATA_BASE_PATH
 			.load_from_file(context)
@@ -40,9 +38,10 @@ impl CmdRun for Register1Cmd {
 			})?;
 
 		context.print("This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service");
-		let address = derive_address(context, cardano_network)?;
-		let ogmios_configuration =
-			pc_contracts_cli_resources::prompt_ogmios_configuration(context)?;
+		let ogmios_configuration = prompt_ogmios_configuration(context)?;
+		let shelley_genesis_config =
+			get_shelley_config(&format!("{ogmios_configuration}"), context)?;
+		let address = derive_address(context, shelley_genesis_config.network)?;
 		let utxo_query_result = query_utxos(context, &ogmios_configuration, &address)?;
 
 		if utxo_query_result.is_empty() {
@@ -162,9 +161,11 @@ fn derive_address<C: IOContext>(
 mod tests {
 	use super::*;
 	use crate::tests::{MockIO, MockIOContext};
-	use ogmios::OgmiosRequest;
-	use pc_contracts_cli_resources::default_ogmios_service_config;
-	use pc_contracts_cli_resources::tests::prompt_ogmios_configuration_io;
+	use ogmios::{
+		config::tests::{default_ogmios_service_config, prompt_ogmios_configuration_io},
+		test_values::preview_shelley_config,
+		OgmiosRequest,
+	};
 	use select_utxo::tests::{mock_7_valid_utxos_rows, mock_result_7_valid};
 
 	const PAYMENT_VKEY_PATH: &str = "payment.vkey";
@@ -262,35 +263,6 @@ mod tests {
 	}
 
 	#[test]
-	fn fail_if_cardano_network_is_not_specified() {
-		let chain_config_without_cardano_network: serde_json::Value = serde_json::json!({
-			"chain_parameters": {
-				"genesis_utxo": "0000000000000000000000000000000000000000000000000000000000000001#0",
-			},
-		});
-
-		let mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_without_cardano_network)
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
-			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
-			.with_expected_io(
-				vec![
-					intro_msg_io(),
-					read_chain_config_io(),
-					vec![
-						MockIO::eprint("⚠️ Cardano network is not specified in the chain configuration file `partner-chains-cli-chain-config.json`"),
-					]
-				]
-				.into_iter()
-				.flatten()
-				.collect::<Vec<MockIO>>(),
-			);
-
-		let result = Register1Cmd {}.run(&mock_context);
-		assert!(result.is_err());
-	}
-
-	#[test]
 	fn report_error_if_payment_file_is_invalid() {
 		let mock_context = MockIOContext::new()
 			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
@@ -329,11 +301,9 @@ mod tests {
 					intro_msg_io(),
 					read_chain_config_io(),
 					read_resource_config_io(),
+					derive_address_io(),
 					vec![
-    					address_and_utxo_msg_io(),
-    					prompt_cardano_payment_verification_key_file_io(),
-    					read_payment_verification_key_file_io(),
-    					prompt_ogmios_configuration_io(&default_ogmios_service_config(), &default_ogmios_service_config()),
+
     					MockIO::print("⚙️ Querying UTXOs of addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy from Ogmios at http://localhost:1337..."),
     					MockIO::ogmios_request(
     						"http://localhost:1337",
@@ -483,7 +453,6 @@ mod tests {
 	fn read_chain_config_io() -> Vec<MockIO> {
 		vec![
 			MockIO::file_read(CHAIN_CONFIG_PATH), // genesis utxo
-			MockIO::file_read(CHAIN_CONFIG_PATH), // cardano network
 		]
 	}
 
@@ -500,6 +469,14 @@ mod tests {
 		])
 	}
 
+	fn ogmios_network_request_io() -> MockIO {
+		MockIO::ogmios_request(
+			"http://localhost:1337",
+			OgmiosRequest::QueryNetworkShelleyGenesis,
+			Ok(ogmios::OgmiosResponse::QueryNetworkShelleyGenesis(preview_shelley_config())),
+		)
+	}
+
 	fn prompt_cardano_payment_verification_key_file_io() -> MockIO {
 		MockIO::Group(vec![
 			MockIO::file_read(RESOURCE_CONFIG_PATH),
@@ -511,7 +488,15 @@ mod tests {
 			MockIO::file_read(RESOURCE_CONFIG_PATH),
 			MockIO::file_write_json(
 				RESOURCE_CONFIG_PATH,
-				serde_json::json!({"substrate_node_base_path": "/path/to/data", "cardano_payment_verification_key_file": PAYMENT_VKEY_PATH}),
+				serde_json::json!({
+					"substrate_node_base_path": "/path/to/data",
+					"cardano_payment_verification_key_file": PAYMENT_VKEY_PATH,
+					"ogmios": {
+						"hostname": "localhost",
+						"port": 1337,
+						"protocol": "http"
+					}
+				}),
 			),
 		])
 	}
@@ -523,23 +508,22 @@ mod tests {
 	fn derive_address_io() -> Vec<MockIO> {
 		vec![
 			address_and_utxo_msg_io(),
+			prompt_ogmios_configuration_io(
+				&default_ogmios_service_config(),
+				&default_ogmios_service_config(),
+			),
+			ogmios_network_request_io(),
 			prompt_cardano_payment_verification_key_file_io(),
 			read_payment_verification_key_file_io(),
 		]
 	}
 
 	fn query_utxos_io() -> Vec<MockIO> {
-		vec![
-			prompt_ogmios_configuration_io(
-				&default_ogmios_service_config(),
-				&default_ogmios_service_config(),
-			),
-			crate::select_utxo::tests::query_utxos_io(
-				"addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy",
-				"http://localhost:1337",
-				mock_result_7_valid(),
-			),
-		]
+		vec![crate::select_utxo::tests::query_utxos_io(
+			"addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy",
+			"http://localhost:1337",
+			mock_result_7_valid(),
+		)]
 	}
 
 	fn select_utxo_io() -> Vec<MockIO> {
