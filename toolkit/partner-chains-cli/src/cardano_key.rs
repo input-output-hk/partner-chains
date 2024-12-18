@@ -1,6 +1,6 @@
 use crate::IOContext;
 use anyhow::anyhow;
-use sidechain_domain::MainchainPrivateKey;
+use sidechain_domain::{MainchainPrivateKey, MainchainPublicKey};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -44,4 +44,11 @@ pub(crate) fn get_mc_pkey_from_file(
 	context: &impl IOContext,
 ) -> anyhow::Result<MainchainPrivateKey> {
 	Ok(MainchainPrivateKey(get_key_bytes_from_file(path, context)?))
+}
+
+pub(crate) fn get_mc_pubkey_from_file(
+	path: &str,
+	context: &impl IOContext,
+) -> anyhow::Result<MainchainPublicKey> {
+	Ok(MainchainPublicKey(get_key_bytes_from_file(path, context)?))
 }
