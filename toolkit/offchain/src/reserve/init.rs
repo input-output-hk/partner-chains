@@ -79,14 +79,14 @@ pub async fn init_reserve_management<
 struct ScriptData {
 	name: String,
 	plutus_script: PlutusScript,
-	id: u16,
+	id: u32,
 }
 
 impl ScriptData {
 	fn new(name: &str, raw_bytes: Vec<u8>, id: ScriptId) -> Self {
 		let plutus_script = PlutusScript::from_wrapped_cbor(&raw_bytes, LanguageKind::PlutusV2)
 			.expect("Plutus script should be valid");
-		Self { name: name.to_string(), plutus_script, id: id as u16 }
+		Self { name: name.to_string(), plutus_script, id: id as u32 }
 	}
 
 	fn applied_plutus_script(
@@ -230,7 +230,7 @@ fn version_oracle_asset_name() -> AssetName {
 	AssetName::new(b"Version oracle".to_vec()).unwrap()
 }
 
-fn version_oracle_plutus_list(script_id: u16, script_hash: &[u8]) -> PlutusList {
+fn version_oracle_plutus_list(script_id: u32, script_hash: &[u8]) -> PlutusList {
 	let mut list = PlutusList::new();
 	list.add(&PlutusData::new_integer(&script_id.into()));
 	list.add(&PlutusData::new_bytes(script_hash.to_vec()));
