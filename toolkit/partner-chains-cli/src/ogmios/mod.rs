@@ -1,9 +1,12 @@
+use crate::IOContext;
 use anyhow::anyhow;
 use jsonrpsee::http_client::HttpClient;
 use ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, types::OgmiosUtxo,
 };
 use sidechain_domain::NetworkType;
+
+pub(crate) mod config;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum OgmiosRequest {
@@ -137,5 +140,117 @@ impl TryFrom<ogmios_client::query_network::ShelleyGenesisConfigurationResponse>
 			slot_length_millis: shelley_genesis.slot_length.milliseconds.into(),
 			start_time: shelley_genesis.start_time.unix_timestamp().try_into()?,
 		})
+	}
+}
+
+pub(crate) fn get_shelley_config<C: IOContext>(
+	addr: &str,
+	context: &C,
+) -> anyhow::Result<ShelleyGenesisConfiguration> {
+	let response = context.ogmios_rpc(addr, OgmiosRequest::QueryNetworkShelleyGenesis)?;
+	match response {
+        OgmiosResponse::QueryNetworkShelleyGenesis(shelley_config) => Ok(shelley_config),
+        other => Err(anyhow::anyhow!(format!("Unexpected response from Ogmios when quering for shelley genesis configuration: {other:?}"))),
+    }
+}
+
+#[cfg(test)]
+pub(crate) mod test_values {
+	use crate::ogmios::EpochParameters;
+
+	use super::ShelleyGenesisConfiguration;
+	use super::{EpochBoundary, EraSummary};
+	use sidechain_domain::NetworkType;
+
+	pub(crate) fn preprod_eras_summaries() -> Vec<EraSummary> {
+		vec![
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 21600, slot_length_millis: 20000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 1728000, slot: 86400, epoch: 4 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 2160000, slot: 518400, epoch: 5 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 2592000, slot: 950400, epoch: 6 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 3024000, slot: 1382400, epoch: 7 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 5184000, slot: 3542400, epoch: 12 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 5184000, slot: 3542400, epoch: 12 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 70416000, slot: 68774400, epoch: 163 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+		]
+	}
+
+	pub(crate) fn preprod_shelley_config() -> ShelleyGenesisConfiguration {
+		ShelleyGenesisConfiguration {
+			security_parameter: 2160,
+			active_slots_coefficient: 0.05,
+			epoch_length: 432000,
+			slot_length_millis: 1000,
+			start_time: 1654041600,
+			network: NetworkType::Testnet,
+		}
+	}
+
+	pub(crate) fn preview_eras_summaries() -> Vec<EraSummary> {
+		vec![
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 4320, slot_length_millis: 20000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 259200, slot: 259200, epoch: 3 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 55814400, slot: 55814400, epoch: 646 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+		]
+	}
+
+	pub(crate) fn preview_shelley_config() -> ShelleyGenesisConfiguration {
+		ShelleyGenesisConfiguration {
+			security_parameter: 432,
+			active_slots_coefficient: 0.05,
+			epoch_length: 86400,
+			slot_length_millis: 1000,
+			start_time: 1666656000,
+			network: NetworkType::Testnet,
+		}
 	}
 }

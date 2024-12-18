@@ -1,7 +1,8 @@
 use crate::config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
 use crate::deregister::DeregisterCmd;
-use crate::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io;
-use crate::pc_contracts_cli_resources::PcContractsCliResources;
+use crate::ogmios::config::tests::{
+	default_ogmios_service_config, establish_ogmios_configuration_io,
+};
 use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
 use crate::CmdRun;
 use hex_literal::hex;
@@ -32,7 +33,7 @@ fn happy_path() {
 			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 			print_info_io(),
 			read_keys_io(),
-			establish_pc_contracts_cli_configuration_io(None, PcContractsCliResources::default()),
+			establish_ogmios_configuration_io(None, default_ogmios_service_config()),
 		]);
 	let result = DeregisterCmd.run(&mock_context);
 	assert!(result.is_ok());
@@ -56,7 +57,7 @@ fn errors_if_smart_contracts_dont_output_transaction_id() {
 			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 			print_info_io(),
 			read_keys_io(),
-			establish_pc_contracts_cli_configuration_io(None, PcContractsCliResources::default()),
+			establish_ogmios_configuration_io(None, default_ogmios_service_config()),
 		]);
 	let result = DeregisterCmd.run(&mock_context);
 	assert_eq!(

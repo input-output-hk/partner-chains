@@ -1,6 +1,8 @@
 use crate::config::{CardanoParameters, ServiceConfig};
 use crate::io::IOContext;
-use crate::ogmios::{EraSummary, OgmiosRequest, OgmiosResponse, ShelleyGenesisConfiguration};
+use crate::ogmios::{
+	get_shelley_config, EraSummary, OgmiosRequest, OgmiosResponse, ShelleyGenesisConfiguration,
+};
 
 pub fn prepare_cardano_params<C: IOContext>(
 	ogmios_config: &ServiceConfig,
@@ -22,17 +24,6 @@ fn get_eras_summaries<C: IOContext>(addr: &str, context: &C) -> anyhow::Result<V
 	}
 }
 
-pub(crate) fn get_shelley_config<C: IOContext>(
-	addr: &str,
-	context: &C,
-) -> anyhow::Result<ShelleyGenesisConfiguration> {
-	let response = context.ogmios_rpc(addr, OgmiosRequest::QueryNetworkShelleyGenesis)?;
-	match response {
-        OgmiosResponse::QueryNetworkShelleyGenesis(shelley_config) => Ok(shelley_config),
-        other => Err(anyhow::anyhow!(format!("Unexpected response from Ogmios when quering for shelley genesis configuration: {other:?}"))),
-    }
-}
-
 fn caradano_parameters(
 	eras_summaries: Vec<EraSummary>,
 	shelley_config: ShelleyGenesisConfiguration,
@@ -51,7 +42,6 @@ fn caradano_parameters(
 			.checked_add(first_epoch_era.start.time_seconds)
 			.and_then(|seconds| seconds.checked_mul(1000))
 			.ok_or_else(|| anyhow::anyhow!("First epoch timestamp overflow"))?,
-		network: shelley_config.network,
 	})
 }
 
@@ -78,11 +68,14 @@ fn get_first_epoch_era(eras_summaries: Vec<EraSummary>) -> Result<EraSummary, an
 
 #[cfg(test)]
 pub mod tests {
-	use sidechain_domain::NetworkType;
 
 	use super::*;
 	use crate::config::{NetworkProtocol, CHAIN_CONFIG_FILE_PATH};
-	use crate::ogmios::{EpochBoundary, EpochParameters, EraSummary};
+	use crate::ogmios::test_values::{
+		preprod_eras_summaries, preprod_shelley_config, preview_eras_summaries,
+		preview_shelley_config,
+	};
+	use crate::ogmios::EraSummary;
 	use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 	use crate::tests::{MockIO, MockIOContext};
 
@@ -93,7 +86,6 @@ pub mod tests {
 		first_slot_number: 86400,
 		epoch_duration_millis: 432000000,
 		first_epoch_timestamp_millis: 1655769600000,
-		network: NetworkType::Testnet,
 	};
 
 	pub(crate) const PREVIEW_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
@@ -103,7 +95,6 @@ pub mod tests {
 		first_slot_number: 0,
 		epoch_duration_millis: 86400000,
 		first_epoch_timestamp_millis: 1666656000000,
-		network: NetworkType::Testnet,
 	};
 
 	#[test]
@@ -151,97 +142,5 @@ pub mod tests {
 		let result = prepare_cardano_params(&ogmios_config, &mock_context);
 		let params = result.expect("should succeed");
 		assert_eq!(params, expected_cardano_parameters);
-	}
-
-	pub(crate) fn preprod_eras_summaries() -> Vec<EraSummary> {
-		vec![
-			EraSummary {
-				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
-				parameters: EpochParameters { epoch_length: 21600, slot_length_millis: 20000 },
-			},
-			EraSummary {
-				start: EpochBoundary { time_seconds: 1728000, slot: 86400, epoch: 4 },
-				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
-			},
-			EraSummary {
-				start: EpochBoundary { time_seconds: 2160000, slot: 518400, epoch: 5 },
-				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
-			},
-			EraSummary {
-				start: EpochBoundary { time_seconds: 2592000, slot: 950400, epoch: 6 },
-				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
-			},
-			EraSummary {
-				start: EpochBoundary { time_seconds: 3024000, slot: 1382400, epoch: 7 },
-				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
-			},
-			EraSummary {
-				start: EpochBoundary { time_seconds: 5184000, slot: 3542400, epoch: 12 },
-				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
-			},
-			EraSummary {
-				start: EpochBoundary { time_seconds: 5184000, slot: 3542400, epoch: 12 },
-				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
-			},
-			EraSummary {
-				start: EpochBoundary { time_seconds: 70416000, slot: 68774400, epoch: 163 },
-				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
-			},
-		]
-	}
-
-	pub(crate) fn preprod_shelley_config() -> ShelleyGenesisConfiguration {
-		ShelleyGenesisConfiguration {
-			network: NetworkType::Testnet,
-			security_parameter: 2160,
-			active_slots_coefficient: 0.05,
-			epoch_length: 432000,
-			slot_length_millis: 1000,
-			start_time: 1654041600,
-		}
-	}
-
-	pub(crate) fn preview_eras_summaries() -> Vec<EraSummary> {
-		vec![
-			EraSummary {
-				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
-				parameters: EpochParameters { epoch_length: 4320, slot_length_millis: 20000 },
-			},
-			EraSummary {
-				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
-				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
-			},
-			EraSummary {
-				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
-				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
-			},
-			EraSummary {
-				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
-				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
-			},
-			EraSummary {
-				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
-				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
-			},
-			EraSummary {
-				start: EpochBoundary { time_seconds: 259200, slot: 259200, epoch: 3 },
-				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
-			},
-			EraSummary {
-				start: EpochBoundary { time_seconds: 55814400, slot: 55814400, epoch: 646 },
-				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
-			},
-		]
-	}
-
-	pub(crate) fn preview_shelley_config() -> ShelleyGenesisConfiguration {
-		ShelleyGenesisConfiguration {
-			network: NetworkType::Testnet,
-			security_parameter: 432,
-			active_slots_coefficient: 0.05,
-			epoch_length: 86400,
-			slot_length_millis: 1000,
-			start_time: 1666656000,
-		}
 	}
 }

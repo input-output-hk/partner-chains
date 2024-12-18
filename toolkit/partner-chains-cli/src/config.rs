@@ -1,13 +1,11 @@
 use crate::config::config_fields::{
 	CARDANO_ACTIVE_SLOTS_COEFF, CARDANO_EPOCH_DURATION_MILLIS, CARDANO_FIRST_EPOCH_NUMBER,
-	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_NETWORK,
-	CARDANO_SECURITY_PARAMETER,
+	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_SECURITY_PARAMETER,
 };
 use crate::io::IOContext;
-use anyhow::anyhow;
 use clap::{arg, Parser};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use sidechain_domain::{NetworkType, UtxoId};
+use sidechain_domain::UtxoId;
 use sp_core::offchain::{Duration, Timestamp};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
@@ -275,12 +273,10 @@ pub struct CardanoParameters {
 	pub first_slot_number: u64,
 	pub epoch_duration_millis: u64,
 	pub first_epoch_timestamp_millis: u64,
-	pub network: NetworkType,
 }
 
 impl CardanoParameters {
 	pub fn save(&self, context: &impl IOContext) {
-		CARDANO_NETWORK.save_to_file(&self.network, context);
 		CARDANO_SECURITY_PARAMETER.save_to_file(&self.security_parameter, context);
 		CARDANO_ACTIVE_SLOTS_COEFF.save_to_file(&self.active_slots_coeff, context);
 		CARDANO_FIRST_EPOCH_NUMBER.save_to_file(&self.first_epoch_number, context);
@@ -299,7 +295,6 @@ impl CardanoParameters {
 			epoch_duration_millis: CARDANO_EPOCH_DURATION_MILLIS.load_from_file(context)?,
 			first_epoch_timestamp_millis: CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS
 				.load_from_file(context)?,
-			network: CARDANO_NETWORK.load_from_file(context)?,
 		})
 	}
 }
@@ -353,7 +348,6 @@ pub const KEYS_FILE_PATH: &str = "partner-chains-public-keys.json";
 pub const CHAIN_CONFIG_FILE_PATH: &str = "partner-chains-cli-chain-config.json";
 pub const RESOURCES_CONFIG_FILE_PATH: &str = "partner-chains-cli-resources-config.json";
 pub const CHAIN_SPEC_PATH: &str = "chain-spec.json";
-pub const PC_CONTRACTS_CLI_PATH: &str = "./pc-contracts-cli";
 
 pub fn load_chain_config(context: &impl IOContext) -> anyhow::Result<ChainConfig> {
 	if let Some(chain_config_file) = context.read_file(CHAIN_CONFIG_FILE_PATH) {
@@ -362,12 +356,6 @@ pub fn load_chain_config(context: &impl IOContext) -> anyhow::Result<ChainConfig
 	} else {
 		Err(anyhow::anyhow!(format!("⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} does not exists. Run prepare-configuration wizard first.")))
 	}
-}
-
-pub fn get_cardano_network_from_file(context: &impl IOContext) -> anyhow::Result<NetworkType> {
-	CARDANO_NETWORK.load_from_file(context).ok_or(anyhow!(
-		"Cardano network not configured. Please run prepare-main-chain-config command first."
-	))
 }
 
 pub mod config_fields {
@@ -446,15 +434,6 @@ pub mod config_fields {
 			_marker: PhantomData,
 		};
 
-	pub const CARDANO_NETWORK: ConfigFieldDefinition<'static, NetworkType> =
-		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
-			path: &["cardano", "network"],
-			name: "cardano network",
-			default: None,
-			_marker: PhantomData,
-		};
-
 	pub const GENESIS_UTXO: ConfigFieldDefinition<'static, UtxoId> = ConfigFieldDefinition {
 		config_file: CHAIN_CONFIG_FILE_PATH,
 		path: &["chain_parameters", "genesis_utxo"],
@@ -490,31 +469,6 @@ pub mod config_fields {
 			default: Some("postgresql://postgres-user:postgres-password@localhost:5432/cexplorer"),
 			_marker: PhantomData,
 		};
-
-	pub const KUPO_PROTOCOL: ConfigFieldDefinition<'static, NetworkProtocol> =
-		ConfigFieldDefinition {
-			config_file: RESOURCES_CONFIG_FILE_PATH,
-			path: &["kupo", "protocol"],
-			name: "Kupo protocol (http/https)",
-			default: Some("http"),
-			_marker: PhantomData,
-		};
-
-	pub const KUPO_HOSTNAME: ConfigFieldDefinition<'static, String> = ConfigFieldDefinition {
-		config_file: RESOURCES_CONFIG_FILE_PATH,
-		path: &["kupo", "hostname"],
-		name: "Kupo hostname",
-		default: Some("localhost"),
-		_marker: PhantomData,
-	};
-
-	pub const KUPO_PORT: ConfigFieldDefinition<'static, u16> = ConfigFieldDefinition {
-		config_file: RESOURCES_CONFIG_FILE_PATH,
-		path: &["kupo", "port"],
-		name: "Kupo port",
-		default: Some("1442"),
-		_marker: PhantomData,
-	};
 
 	pub const OGMIOS_PROTOCOL: ConfigFieldDefinition<'static, NetworkProtocol> =
 		ConfigFieldDefinition {
