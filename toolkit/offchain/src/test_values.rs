@@ -16,8 +16,11 @@ pub(crate) fn payment_key() -> PrivateKey {
 	.unwrap()
 }
 
+pub(crate) const PAYMENT_ADDR: &str =
+	"addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy";
+
 pub(crate) fn payment_addr() -> Address {
-	Address::from_bech32("addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy").unwrap()
+	Address::from_bech32(PAYMENT_ADDR).unwrap()
 }
 
 pub(crate) fn mainchain_pub_key() -> MainchainPublicKey {

@@ -5,13 +5,13 @@
 //! Transaction for each of these scripts should have:
 //! * an output to Version Oracle Validator address that should:
 //! * * have script reference with the script being initialized attached, script should be applied with Version Oracle Policy Id
-//! * * contain 1 of token Version Oracle Policy with "Version oracle" asset name, minted in this transaction
-//! * * * mint redeemer should be Constr(1, [Int: SCRIPT_ID, Bytes: Applied Script Bytes])
+//! * * contain 1 token of Version Oracle Policy with "Version oracle" asset name, minted in this transaction
+//! * * * mint redeemer should be Constr(1, [Int: SCRIPT_ID, Bytes: Applied Script Hash])
 //! * * have Plutus Data that is [Int: SCRIPT_ID, Bytes: Version Oracle Policy Id]
-//! * an output to the current governance that should:
+//! * an output to the current governance (holder of governance token) that should:
 //! * * contain a new Goveranance Policy token, minted in this transaction,
 //! * * * mint redeemer should be empty contructor Plutus Data
-//! * a script reference rnput of the current Goveranance UTXO
+//! * a script reference input of the current Goveranance UTXO
 //! * signature of the current goveranance
 
 use crate::{
@@ -93,10 +93,9 @@ impl ScriptData {
 		&self,
 		version_oracle: &VersionOracleData,
 	) -> Result<PlutusScript, JsError> {
-		let policy = version_oracle.policy.script_hash();
 		self.plutus_script
 			.clone()
-			.apply_uplc_data(uplc::PlutusData::BoundedBytes(policy.to_vec().into()))
+			.apply_uplc_data(version_oracle.policy_id_as_plutus_data())
 			.map_err(|e| JsError::from_str(&e.to_string()))
 	}
 }
@@ -173,7 +172,6 @@ fn init_script_tx(
 	ctx: &TransactionContext,
 ) -> Result<Transaction, JsError> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
-
 	let applied_script = script.applied_plutus_script(version_oracle)?;
 	{
 		let mut mint_builder = tx_builder.get_mint_builder().unwrap_or(MintBuilder::new());
@@ -198,14 +196,14 @@ fn init_script_tx(
 			.with_address(&version_oracle.validator.address(ctx.network))
 			.with_plutus_data(&PlutusData::new_list(&version_oracle_plutus_list(
 				script.id,
-				&version_oracle.policy_id().0,
+				&version_oracle.policy.script_hash(),
 			)))
 			.with_script_ref(&script_ref)
 			.next()?;
 		let mut ma = MultiAsset::new();
 		let mut assets = Assets::new();
 		assets.insert(&version_oracle_asset_name(), &1u64.into());
-		ma.insert(&version_oracle.policy_id().0.into(), &assets);
+		ma.insert(&version_oracle.policy.csl_script_hash(), &assets);
 		let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
 		let min_ada = MinOutputAdaCalculator::new(
 			&output,
@@ -295,7 +293,7 @@ async fn script_is_initialized<
 			.and_then(decode_version_oracle_validator_datum)
 			.filter(|datum| {
 				datum.script_id == script.id
-					&& datum.version_oracle_policy_id == version_oracle.policy_id().0
+					&& datum.version_oracle_policy_id == version_oracle.policy.script_hash()
 			})
 			.is_some()
 	}))
@@ -313,4 +311,220 @@ fn decode_version_oracle_validator_datum(data: PlutusData) -> Option<VersionOrac
 	let script_id: u32 = script_id.as_u64()?.try_into().ok()?;
 	let version_oracle_policy_id: [u8; 28] = list_iter.next()?.as_bytes()?.try_into().ok()?;
 	Some(VersionOracleValidatorDatum { script_id, version_oracle_policy_id })
+}
+
+#[cfg(test)]
+mod tests {
+	use super::{init_script_tx, ScriptData};
+	use crate::{
+		csl::{TransactionContext, UtxoIdExt},
+		init_governance::GovernanceData,
+		plutus_script::PlutusScript,
+		scripts_data::{self, VersionOracleData},
+		test_values::{make_utxo, payment_addr, payment_key, protocol_parameters},
+	};
+	use cardano_serialization_lib::{
+		AssetName, BigNum, ConstrPlutusData, ExUnits, Int, LanguageKind, NetworkIdKind, PlutusData,
+		PlutusList, RedeemerTag, ScriptHash, Transaction,
+	};
+	use hex_literal::hex;
+	use raw_scripts::ScriptId;
+	use sidechain_domain::UtxoId;
+
+	#[test]
+	fn init_script_tx_version_oracle_output_test() {
+		let outputs = make_init_script_tx().body().outputs();
+		let voo = outputs
+			.into_iter()
+			.find(|o| o.address() == version_oracle_validator_address())
+			.expect("Init Script Transaction should have output to Version Oracle Validator");
+		let voo_script_ref = voo
+			.script_ref()
+			.expect("Version Oracle Validator output should have script reference");
+		let voo_plutus_script = voo_script_ref
+			.plutus_script()
+			.expect("Script reference should be Plutus script");
+		assert_eq!(
+			voo_plutus_script,
+			test_initialized_script()
+				.applied_plutus_script(&version_oracle_data())
+				.unwrap()
+				.to_csl()
+		);
+		let amount = voo
+			.amount()
+			.multiasset()
+			.and_then(|ma| ma.get(&version_oracle_policy_csl_script_hash()))
+			.and_then(|vo_ma| vo_ma.get(&AssetName::new(b"Version oracle".to_vec()).unwrap()))
+			.expect("Version Oracle Validator output has a token of Version Oracle Policy");
+
+		assert_eq!(amount, 1u64.into());
+
+		let voo_plutus_data = voo
+			.plutus_data()
+			.and_then(|pd| pd.as_list())
+			.expect("Version Oracle Validator output should have Plutus Data of List type");
+		assert_eq!(
+			voo_plutus_data.get(0),
+			PlutusData::new_integer(&test_initialized_script().id.into())
+		);
+		assert_eq!(
+			voo_plutus_data.get(1),
+			PlutusData::new_bytes(version_oracle_data().policy.script_hash().to_vec())
+		);
+	}
+
+	#[test]
+	fn init_script_tx_change_output_test() {
+		let outputs = make_init_script_tx().body().outputs();
+		let change_output = outputs
+			.into_iter()
+			.find(|o| o.address() == payment_addr())
+			.expect("Change output has to present to keep governance token")
+			.clone();
+		let gov_token_amount = change_output
+			.amount()
+			.multiasset()
+			.and_then(|ma| ma.get(&test_governance_data().policy_script_hash()))
+			.and_then(|gov_ma| gov_ma.get(&AssetName::new(vec![]).unwrap()))
+			.unwrap();
+		assert_eq!(gov_token_amount, BigNum::one(), "Change contains one goverenance token");
+	}
+
+	#[test]
+	fn init_script_tx_reference_input() {
+		// a script reference input of the current Goveranance UTXO
+		let ref_input = make_init_script_tx()
+			.body()
+			.reference_inputs()
+			.expect("Init transaction should have reference input")
+			.get(0);
+		assert_eq!(ref_input, test_governance_input().to_csl());
+	}
+
+	#[test]
+	fn init_script_tx_mints() {
+		let tx = make_init_script_tx();
+		let vo_mint = tx
+			.body()
+			.mint()
+			.and_then(|mint| mint.get(&version_oracle_policy_csl_script_hash()))
+			.and_then(|assets| assets.get(0))
+			.and_then(|assets| assets.get(&AssetName::new(b"Version oracle".to_vec()).unwrap()))
+			.expect("Transaction should have a mint of Version Oracle Policy token");
+		assert_eq!(vo_mint, Int::new_i32(1));
+
+		let gov_mint = tx
+			.body()
+			.mint()
+			.and_then(|mint| mint.get(&test_governance_data().policy_script_hash()))
+			.and_then(|assets| assets.get(0))
+			.and_then(|assets| assets.get(&AssetName::new(vec![]).unwrap()))
+			.expect("Transaction should have a mint of Governance Policy token");
+		assert_eq!(gov_mint, Int::new_i32(1));
+	}
+
+	#[test]
+	fn init_script_tx_redeemers() {
+		// This is so cumbersome, because of the CSL interface for Redeemers
+		let ws = make_init_script_tx()
+			.witness_set()
+			.redeemers()
+			.expect("Transaction has two redeemers");
+		let redeemers = vec![ws.get(0), ws.get(1)];
+
+		let expected_vo_redeemer_data = {
+			let mut list = PlutusList::new();
+			let script_id: u64 = test_initialized_script().id.into();
+			list.add(&PlutusData::new_integer(&script_id.into()));
+			list.add(&PlutusData::new_bytes(
+				test_initialized_script()
+					.applied_plutus_script(&version_oracle_data())
+					.unwrap()
+					.script_hash()
+					.to_vec(),
+			));
+			let constr_plutus_data = ConstrPlutusData::new(&BigNum::one(), &list);
+			PlutusData::new_constr_plutus_data(&constr_plutus_data)
+		};
+
+		let _ = redeemers
+			.clone()
+			.into_iter()
+			.find(|r| {
+				r.tag() == RedeemerTag::new_mint()
+					&& r.data() == expected_vo_redeemer_data
+					&& r.ex_units() == versioning_script_cost()
+			})
+			.expect("Transaction should have a mint redeemer for Version Oracle Policy");
+		let _ = redeemers
+			.into_iter()
+			.find(|r| {
+				r.tag() == RedeemerTag::new_mint()
+					&& r.data() == PlutusData::new_empty_constr_plutus_data(&BigNum::zero())
+					&& r.ex_units() == governance_script_cost()
+			})
+			.expect("Transaction should have a mint redeemer for Governance Policy");
+	}
+
+	fn make_init_script_tx() -> Transaction {
+		init_script_tx(
+			&test_initialized_script(),
+			&test_governance_data(),
+			governance_script_cost(),
+			&version_oracle_data(),
+			versioning_script_cost(),
+			&test_transaction_context(),
+		)
+		.unwrap()
+	}
+
+	fn test_initialized_script() -> ScriptData {
+		ScriptData::new(
+			"Test Script",
+			raw_scripts::RESERVE_VALIDATOR.to_vec(),
+			ScriptId::ReserveValidator,
+		)
+	}
+
+	fn test_governance_script() -> PlutusScript {
+		PlutusScript { bytes: hex!("112233").to_vec(), language: LanguageKind::PlutusV2 }
+	}
+
+	fn test_governance_input() -> UtxoId {
+		UtxoId::new([16u8; 32], 0)
+	}
+
+	fn test_governance_data() -> GovernanceData {
+		GovernanceData { policy_script: test_governance_script(), utxo_id: test_governance_input() }
+	}
+
+	fn version_oracle_data() -> VersionOracleData {
+		scripts_data::version_oracle(UtxoId::new([255u8; 32], 0), NetworkIdKind::Testnet).unwrap()
+	}
+
+	fn version_oracle_validator_address() -> cardano_serialization_lib::Address {
+		version_oracle_data().validator.address(NetworkIdKind::Testnet)
+	}
+
+	fn version_oracle_policy_csl_script_hash() -> ScriptHash {
+		version_oracle_data().policy.csl_script_hash()
+	}
+
+	fn test_transaction_context() -> TransactionContext {
+		TransactionContext {
+			payment_key: payment_key(),
+			payment_key_utxos: vec![make_utxo(121u8, 3, 996272387, &payment_addr())],
+			network: NetworkIdKind::Testnet,
+			protocol_parameters: protocol_parameters(),
+		}
+	}
+
+	fn governance_script_cost() -> ExUnits {
+		ExUnits::new(&100u64.into(), &200u64.into())
+	}
+
+	fn versioning_script_cost() -> ExUnits {
+		ExUnits::new(&300u64.into(), &400u64.into())
+	}
 }
