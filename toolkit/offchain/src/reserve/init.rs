@@ -173,7 +173,6 @@ fn init_script_tx(
 	ctx: &TransactionContext,
 ) -> Result<Transaction, JsError> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
-
 	let applied_script = script.applied_plutus_script(version_oracle)?;
 	{
 		let mut mint_builder = tx_builder.get_mint_builder().unwrap_or(MintBuilder::new());
@@ -225,6 +224,7 @@ fn init_script_tx(
 		&governance_script_cost,
 	)?;
 
+	println!("output: {:?}", tx_builder.get_total_output().unwrap());
 	tx_builder.add_script_reference_input(&gov_tx_input, governance.policy_script.bytes.len());
 	tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
@@ -313,4 +313,71 @@ fn decode_version_oracle_validator_datum(data: PlutusData) -> Option<VersionOrac
 	let script_id: u32 = script_id.as_u64()?.try_into().ok()?;
 	let version_oracle_policy_id: [u8; 28] = list_iter.next()?.as_bytes()?.try_into().ok()?;
 	Some(VersionOracleValidatorDatum { script_id, version_oracle_policy_id })
+}
+
+#[cfg(test)]
+mod tests {
+	use super::{init_script_tx, ScriptData};
+	use crate::{
+		csl::TransactionContext,
+		init_governance::GovernanceData,
+		plutus_script::PlutusScript,
+		scripts_data::VersionOracleData,
+		test_values::{
+			make_utxo, payment_addr, payment_key, protocol_parameters, test_policy, test_validator,
+			PAYMENT_ADDR,
+		},
+	};
+	use cardano_serialization_lib::{ExUnits, LanguageKind, NetworkIdKind};
+	use hex_literal::hex;
+	use ogmios_client::types::{OgmiosTx, OgmiosUtxo, OgmiosValue};
+	use raw_scripts::ScriptId;
+	use sidechain_domain::UtxoId;
+
+	fn test_script() -> ScriptData {
+		ScriptData::new(
+			"Test Script",
+			raw_scripts::RESERVE_VALIDATOR.to_vec(),
+			ScriptId::ReserveValidator,
+		)
+	}
+
+	fn test_governance_script() -> PlutusScript {
+		PlutusScript { bytes: hex!("112233").to_vec(), language: LanguageKind::PlutusV2 }
+	}
+
+	fn test_governance_data() -> GovernanceData {
+		GovernanceData {
+			policy_script: test_governance_script(),
+			utxo_id: UtxoId::new([17u8; 32], 0),
+		}
+	}
+
+	fn test_version_oracle_data() -> VersionOracleData {
+		VersionOracleData { validator: test_validator(), policy: test_policy() }
+	}
+
+	fn test_transaction_context() -> TransactionContext {
+		TransactionContext {
+			payment_key: payment_key(),
+			payment_key_utxos: vec![make_utxo(121u8, 3, 996272387, &payment_addr())],
+			network: NetworkIdKind::Testnet,
+			protocol_parameters: protocol_parameters(),
+		}
+	}
+
+	#[test]
+	fn test_init_script_tx() {
+		let tx = init_script_tx(
+			&test_script(),
+			&test_governance_data(),
+			ExUnits::new(&100u64.into(), &200u64.into()),
+			&test_version_oracle_data(),
+			ExUnits::new(&3000u64.into(), &4000u64.into()),
+			&test_transaction_context(),
+		)
+		.unwrap();
+		assert_eq!(1,0,"Write assertions about transaction: expected mints, expected script reference and other");
+		assert_eq!(tx.body().inputs().len(), 1);
+	}
 }

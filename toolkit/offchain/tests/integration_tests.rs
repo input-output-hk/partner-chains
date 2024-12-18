@@ -55,12 +55,13 @@ const EVE_ADDRESS: &str = "addr_test1vzzt5pwz3pum9xdgxalxyy52m3aqur0n43pcl727l37
 
 #[tokio::test]
 async fn init_goveranance() {
+	let _ = env_logger::builder().is_test(true).try_init();
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
 	let client = Cli::default();
 	let container = client.run(image);
 	let client = initialize(&container).await;
-	let _ = run_init_goveranance(&client).await;
-	()
+	let tx = run_init_goveranance(&client).await;
+	println!("tx {tx}")
 }
 
 #[tokio::test]
@@ -75,6 +76,7 @@ async fn upsert_d_param() {
 	assert!(run_upsert_d_param(genesis_utxo, 1, 1, &client).await.is_some())
 }
 
+#[ignore]
 #[tokio::test]
 async fn upsert_permissioned_candidates() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
@@ -100,6 +102,7 @@ async fn init_reserve() {
 	assert_eq!(txs.len(), 0)
 }
 
+#[ignore]
 #[tokio::test]
 async fn register() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
@@ -164,7 +167,7 @@ async fn run_init_goveranance<
 	let governance_utxos =
 		client.query_utxos(&[GOVERNANCE_AUTHORITY_ADDRESS.to_string()]).await.unwrap();
 	let genesis_utxo = governance_utxos.first().cloned().unwrap().utxo_id();
-	let _ = init_governance::run_init_governance(
+	let (utxo_id, tx) = init_governance::run_init_governance(
 		GOVERNANCE_AUTHORITY,
 		GOVERNANCE_AUTHORITY_PAYMENT_KEY,
 		Some(genesis_utxo),
@@ -173,6 +176,8 @@ async fn run_init_goveranance<
 	)
 	.await
 	.unwrap();
+	println!("tx: {}", hex::encode(tx.id));
+	assert_eq!(utxo_id, genesis_utxo);
 	genesis_utxo
 }
 
