@@ -5,6 +5,7 @@
 - Whenever the guide requires running the `partner-chains-cli` binary, make sure the `pc-contracts-cli`
 of the version specified in the compatibility matrix is present in your active directory. In case of the
 1.4.0 release it should be v7.0.1.
+- It is recommended to test migration on a testnet environment first.
 
 ## Context
 
@@ -95,7 +96,7 @@ or in a new directory that has been prepared by running the `generate-keys` comm
 This can be a newly generated or already existing main chain key set (including the current governance authority of the Partner Chain being upgraded)
 controlled by the Partner Chain authority.
 The address associated with the keys should have enough ADA to cover transaction costs (10 or more ADA is advised).
-2. Run the `prepare-configuration` command of `partner-chains-cli` (v1.4.0) in a fresh directory.
+2. Run the `prepare-configuration` command of `partner-chains-cli` (v1.4.0).
 This step will involve selecting the _genesis UTXO_ to be spent intializing the governance mechanism.
 Save the `partner-chains-cli-chain-config.json` file produced by this step.
 3. Add the permissioned candidates in the `partner-chains-cli-chain-config.json` file. These can be copied from the chain config file
