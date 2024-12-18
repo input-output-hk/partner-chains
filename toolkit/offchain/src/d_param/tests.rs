@@ -12,6 +12,7 @@ use ogmios_client::types::{Asset as OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosVal
 use ogmios_client::types::{OgmiosScript, PlutusScript};
 use partner_chains_plutus_data::d_param::d_parameter_to_plutus_data;
 use sidechain_domain::DParameter;
+use std::collections::HashMap;
 
 mod mint_tx {
 	use super::*;
@@ -21,7 +22,7 @@ mod mint_tx {
 		ExUnits::new(&10000u32.into(), &200u32.into())
 	}
 	fn ex_units() -> ScriptExUnits {
-		ScriptExUnits::new().with_mint_ex_units(vec![mint_ex_units(), mint_ex_units()])
+		ScriptExUnits::new().with_mint_ex_units(HashMap::from([(0, mint_ex_units()), (1, mint_ex_units())]))
 	}
 	fn mint_d_param_tx() -> Transaction {
 		mint_d_param_token_tx(
@@ -185,8 +186,8 @@ mod update_d_parameter {
 	}
 	fn ex_units() -> ScriptExUnits {
 		ScriptExUnits::new()
-			.with_spend_ex_units(vec![spend_ex_units()])
-			.with_mint_ex_units(vec![mint_ex_units()])
+			.with_spend_ex_units(HashMap::from([(0, spend_ex_units())]))
+			.with_mint_ex_units(HashMap::from([(0, mint_ex_units())]))
 	}
 
 	fn update_d_param_tx() -> Transaction {
