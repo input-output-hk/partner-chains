@@ -2,27 +2,37 @@ use crate::config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
 use crate::deregister::DeregisterCmd;
 use crate::pc_contracts_cli_resources::tests::establish_pc_contracts_cli_configuration_io;
 use crate::pc_contracts_cli_resources::PcContractsCliResources;
-use crate::tests::{MockIO, MockIOContext};
+use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
 use crate::CmdRun;
+use hex_literal::hex;
+use partner_chains_cardano_offchain::OffchainError;
 use serde_json::json;
+use sidechain_domain::*;
 
 const MY_PAYMEMENT_SKEY: &str = "my_payment.skey";
 const MY_COLD_VKEY: &str = "my_cold.vkey";
 
 #[test]
 fn happy_path() {
+	let offchain_mock = OffchainMock::new().with_deregister(
+		genesis_utxo(),
+		payment_signing_key(),
+		stake_ownership_pub_key(),
+		Ok(Some(McTxHash(hex!(
+			"9aebb6d1d7f92f773f7d3025dd2fca67804ad6aea4a84a7696cd5ad15a4ee432"
+		)))),
+	);
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_json_file(MY_PAYMEMENT_SKEY, valid_payment_signing_key_content())
 		.with_json_file(MY_COLD_VKEY, valid_cold_verification_key_content())
+		.with_offchain_mocks(OffchainMocks::new_with_mock("http://localhost:1337", offchain_mock))
 		.with_expected_io(vec![
-			read_config_twice_io(),
+			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 			print_info_io(),
 			read_keys_io(),
 			establish_pc_contracts_cli_configuration_io(None, PcContractsCliResources::default()),
-			run_smart_contract_io(Ok(r#"{"endpoint":"CommitteeCandidateDereg","transactionId":"9aebb6d1d7f92f773f7d3025dd2fca67804ad6aea4a84a7696cd5ad15a4ee432"}"#.to_owned())),
-			MockIO::print(r#"Deregistration successful: {"endpoint":"CommitteeCandidateDereg","transactionId":"9aebb6d1d7f92f773f7d3025dd2fca67804ad6aea4a84a7696cd5ad15a4ee432"}"#),
 		]);
 	let result = DeregisterCmd.run(&mock_context);
 	assert!(result.is_ok());
@@ -30,29 +40,36 @@ fn happy_path() {
 
 #[test]
 fn errors_if_smart_contracts_dont_output_transaction_id() {
+	let offchain_mock = OffchainMock::new().with_deregister(
+		genesis_utxo(),
+		payment_signing_key(),
+		stake_ownership_pub_key(),
+		Err(OffchainError::InternalError("test error".to_string())),
+	);
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_json_file(MY_PAYMEMENT_SKEY, valid_payment_signing_key_content())
 		.with_json_file(MY_COLD_VKEY, valid_cold_verification_key_content())
+		.with_offchain_mocks(OffchainMocks::new_with_mock("http://localhost:1337", offchain_mock))
 		.with_expected_io(vec![
-			read_config_twice_io(),
+			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 			print_info_io(),
 			read_keys_io(),
 			establish_pc_contracts_cli_configuration_io(None, PcContractsCliResources::default()),
-			run_smart_contract_io(Err(anyhow::anyhow!(
-				r#"(NotFoundInputUtxo "Couldn't find registration UTxO")"#
-			))),
 		]);
 	let result = DeregisterCmd.run(&mock_context);
-	assert_eq!(result.err().unwrap().to_string(), r#"Deregistration failed"#);
+	assert_eq!(
+		result.err().unwrap().to_string(),
+		r#"Candidate deregistration failed: InternalError("test error")!"#
+	);
 }
 
 #[test]
 fn fails_when_chain_config_is_not_valid() {
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, invalid_chain_config_content())
-		.with_expected_io(vec![read_config_twice_io()]);
+		.with_expected_io(vec![MockIO::file_read(CHAIN_CONFIG_FILE_PATH)]);
 	let result = DeregisterCmd.run(&mock_context);
 	assert_eq!(
 	    result.err().unwrap().to_string(),
@@ -67,15 +84,15 @@ fn fails_when_payment_signing_key_is_not_valid() {
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_file(MY_PAYMEMENT_SKEY, "not a proper Cardano key json")
 		.with_expected_io(vec![
-            read_config_twice_io(),
+            MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 			print_info_io(),
-            MockIO::print("Payment signing key and verification key of cold key used for registration are required to deregister."),
+            MockIO::print("Payment signing key and cold verification key used for registration are required to deregister."),
             read_payment_signing_key()
 		]);
 	let result = DeregisterCmd.run(&mock_context);
 	assert_eq!(
 		result.err().unwrap().to_string(),
-		"my_payment.skey is not a valid Cardano key file: expected ident at line 1 column 2"
+		r#"Failed to parse Cardano key file my_payment.skey: Error("expected ident", line: 1, column: 2)"#
 	);
 }
 
@@ -86,20 +103,16 @@ fn fails_when_cold_key_is_not_valid() {
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_json_file(MY_PAYMEMENT_SKEY, valid_payment_signing_key_content())
 		.with_file(MY_COLD_VKEY, "not a proper Cardano key json")
-		.with_expected_io(vec![read_config_twice_io(), print_info_io(), read_keys_io()]);
+		.with_expected_io(vec![
+			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
+			print_info_io(),
+			read_keys_io(),
+		]);
 	let result = DeregisterCmd.run(&mock_context);
 	assert_eq!(
 		result.err().unwrap().to_string(),
-		"my_cold.vkey is not a valid Cardano key file: expected ident at line 1 column 2"
+		r#"Failed to parse Cardano key file my_cold.vkey: Error("expected ident", line: 1, column: 2)"#
 	);
-}
-
-/// Read the chain configuration file twice, because for some reason cardano network is not present in ChainConfig.
-fn read_config_twice_io() -> MockIO {
-	MockIO::Group(vec![
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
-	])
 }
 
 fn print_info_io() -> MockIO {
@@ -115,7 +128,7 @@ Committee Candidate Validator Address is 'addr_test1wz5qc7fk2pat0058w4zwvkw35ytp
 
 fn read_keys_io() -> MockIO {
 	MockIO::Group(vec![
-        MockIO::print("Payment signing key and verification key of cold key used for registration are required to deregister."),
+        MockIO::print("Payment signing key and cold verification key used for registration are required to deregister."),
         read_payment_signing_key(),
         read_cold_verification_key(),
 	])
@@ -151,12 +164,6 @@ fn read_cold_verification_key() -> MockIO {
 		),
 		MockIO::file_read(MY_COLD_VKEY),
 	])
-}
-
-fn run_smart_contract_io(output: anyhow::Result<std::string::String>) -> MockIO {
-	MockIO::run_command_with_result(
-		"./pc-contracts-cli deregister --network testnet --ada-based-staking --spo-public-key 1111111111111111111111111111111111111111111111111111111111111111 --genesis-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file my_payment.skey",
-		output)
 }
 
 fn test_chain_config_content() -> serde_json::Value {
@@ -231,4 +238,18 @@ fn valid_cold_verification_key_content() -> serde_json::Value {
 			"cborHex": "58201111111111111111111111111111111111111111111111111111111111111111"
 		}
 	)
+}
+
+fn genesis_utxo() -> UtxoId {
+	"0000000000000000000000000000000000000000000000000000000000000000#0"
+		.parse()
+		.unwrap()
+}
+
+fn payment_signing_key() -> MainchainPrivateKey {
+	MainchainPrivateKey(hex!("0000000000000000000000000000000000000000000000000000000000000001"))
+}
+
+fn stake_ownership_pub_key() -> MainchainPublicKey {
+	MainchainPublicKey(hex!("1111111111111111111111111111111111111111111111111111111111111111"))
 }
