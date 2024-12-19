@@ -17,11 +17,8 @@ mod mint_tx {
 	use super::*;
 	use cardano_serialization_lib::Transaction;
 
-	fn mint_ex_units() -> ExUnits {
+	fn ex_units() -> ExUnits {
 		ExUnits::new(&10000u32.into(), &200u32.into())
-	}
-	fn ex_units() -> ScriptExUnits {
-		ScriptExUnits::new().with_mint_ex_units(vec![mint_ex_units(), mint_ex_units()])
 	}
 	fn mint_d_param_tx() -> Transaction {
 		mint_d_param_token_tx(
@@ -29,6 +26,7 @@ mod mint_tx {
 			&test_policy(),
 			&input_d_param(),
 			&test_tx_context(),
+			ex_units(),
 			ex_units(),
 			governance_utxo(),
 		)
@@ -64,7 +62,7 @@ mod mint_tx {
 		assert_eq!(redeemer.tag(), RedeemerTag::new_mint());
 		assert_eq!(redeemer.index(), 0u64.into());
 		assert_eq!(redeemer.data(), PlutusData::new_empty_constr_plutus_data(&0u64.into()));
-		assert_eq!(redeemer.ex_units(), mint_ex_units());
+		assert_eq!(redeemer.ex_units(), ex_units());
 	}
 
 	#[test]
