@@ -60,9 +60,9 @@ class CardanoCli:
     def get_stake_pool_id(self, cold_vkey_file, cold_vkey=None):
         logger.info("Getting Stake Pool Id")
         if cold_vkey:
-            cmd = f'{self.cli} stake-pool id --stake-pool-verification-key {cold_vkey} --output-format "hex"'
+            cmd = f'{self.cli} latest stake-pool id --stake-pool-verification-key {cold_vkey} --output-format "hex"'
         else:
-            cmd = f'{self.cli} stake-pool id --cold-verification-key-file {cold_vkey_file} --output-format "hex"'
+            cmd = f'{self.cli} latest stake-pool id --cold-verification-key-file {cold_vkey_file} --output-format "hex"'
         result = self.run_command.run(cmd)
         if result.stderr:
             logger.error(result.stderr)
