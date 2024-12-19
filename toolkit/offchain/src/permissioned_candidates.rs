@@ -24,6 +24,27 @@ use partner_chains_plutus_data::permissioned_candidates::{
 };
 use sidechain_domain::{McTxHash, PermissionedCandidateData, UtxoId};
 
+pub trait UpsertPermissionedCandidates {
+	#[allow(async_fn_in_trait)]
+	async fn upsert_permissioned_candidates(
+		&self,
+		genesis_utxo: UtxoId,
+		candidates: &[PermissionedCandidateData],
+		payment_signing_key: [u8; 32],
+	) -> anyhow::Result<Option<McTxHash>>;
+}
+
+impl<C: QueryLedgerState + QueryNetwork + Transactions> UpsertPermissionedCandidates for C {
+	async fn upsert_permissioned_candidates(
+		&self,
+		genesis_utxo: UtxoId,
+		candidates: &[PermissionedCandidateData],
+		payment_signing_key: [u8; 32],
+	) -> anyhow::Result<Option<McTxHash>> {
+		upsert_permissioned_candidates(genesis_utxo, candidates, payment_signing_key, self).await
+	}
+}
+
 pub async fn upsert_permissioned_candidates<C: QueryLedgerState + QueryNetwork + Transactions>(
 	genesis_utxo: UtxoId,
 	candidates: &[PermissionedCandidateData],
