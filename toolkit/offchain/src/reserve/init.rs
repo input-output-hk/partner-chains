@@ -116,6 +116,11 @@ async fn initialize_script<
 	let governance = get_governance_data(genesis_utxo, client).await?;
 	let version_oracle = scripts_data::version_oracle(genesis_utxo, ctx.network)?;
 
+	if script_is_initialized(&script, &version_oracle, &ctx, client).await? {
+		log::info!("Script '{}' is already initialized", script.name);
+		return Ok(None);
+	}
+
 	let tx_to_evaluate = init_script_tx(
 		&script,
 		&governance,
@@ -270,4 +275,45 @@ fn match_costs(
 	} else {
 		Err(anyhow!("Could not build transaction to submit, evaluate response has wrong number of mint keys."))
 	}
+}
+
+// There exist UTXO at Version Oracle Validator with Datum that contains
+// * script id of the script being initialized
+// * Version Oracle Policy Id
+async fn script_is_initialized<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	script: &ScriptData,
+	version_oracle: &VersionOracleData,
+	ctx: &TransactionContext,
+	client: &T,
+) -> Result<bool, anyhow::Error> {
+	let validator_address = version_oracle.validator.address(ctx.network).to_bech32(None)?;
+	let validator_utxos = client.query_utxos(&[validator_address]).await?;
+	// Decode datum from utxos and check if it contains script id
+	Ok(validator_utxos.into_iter().any(|utxo| {
+		utxo.datum
+			.map(|d| d.bytes)
+			.and_then(|bytes| PlutusData::from_bytes(bytes).ok())
+			.and_then(decode_version_oracle_validator_datum)
+			.filter(|datum| {
+				datum.script_id == script.id
+					&& datum.version_oracle_policy_id == version_oracle.policy_id().0
+			})
+			.is_some()
+	}))
+}
+
+pub(crate) struct VersionOracleValidatorDatum {
+	pub(crate) script_id: u32,
+	pub(crate) version_oracle_policy_id: [u8; 28],
+}
+
+fn decode_version_oracle_validator_datum(data: PlutusData) -> Option<VersionOracleValidatorDatum> {
+	let list = data.as_list()?;
+	let mut list_iter = list.into_iter();
+	let script_id = list_iter.next()?.as_integer()?;
+	let script_id: u32 = script_id.as_u64()?.try_into().ok()?;
+	let version_oracle_policy_id: [u8; 28] = list_iter.next()?.as_bytes()?.try_into().ok()?;
+	Some(VersionOracleValidatorDatum { script_id, version_oracle_policy_id })
 }

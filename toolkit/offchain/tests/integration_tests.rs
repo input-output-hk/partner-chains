@@ -83,26 +83,10 @@ async fn init_reserve() {
 	let container = client.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
-	let txs = reserve::init::init_reserve_management(
-		genesis_utxo,
-		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
-		&client,
-		&FixedDelayRetries::new(Duration::from_millis(500), 100),
-	)
-	.await
-	.unwrap();
+	let txs = run_init_reserve_management(genesis_utxo, &client).await;
 	assert_eq!(txs.len(), 3);
-
-	// TODO: Implement idempotency in the following PR
-	// let txs = reserve::init::init_reserve_management(
-	// 	genesis_utxo,
-	// 	GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
-	// 	&client,
-	// 	&FixedDelayRetries::new(Duration::from_millis(500), 100),
-	// )
-	// .await
-	// .unwrap();
-	// assert_eq!(txs.len(), 0)
+	let txs = run_init_reserve_management(genesis_utxo, &client).await;
+	assert_eq!(txs.len(), 0)
 }
 
 #[tokio::test]
@@ -206,6 +190,22 @@ async fn run_upsert_d_param<
 		None => (),
 	};
 	tx_hash
+}
+
+async fn run_init_reserve_management<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> Vec<McTxHash> {
+	reserve::init::init_reserve_management(
+		genesis_utxo,
+		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		client,
+		&FixedDelayRetries::new(Duration::from_millis(500), 100),
+	)
+	.await
+	.unwrap()
 }
 
 async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
