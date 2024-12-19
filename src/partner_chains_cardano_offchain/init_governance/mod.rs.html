@@ -186,7 +186,19 @@
 <a href="#186" id="186">186</a>
 <a href="#187" id="187">187</a>
 <a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::OgmiosUtxoExt;
+<span class="kw">use </span><span class="kw">crate</span>::plutus_script;
 <span class="kw">use </span><span class="kw">crate</span>::scripts_data;
 <span class="kw">use crate</span>::{
 	await_tx::{AwaitTx, FixedDelayRetries},
@@ -352,13 +364,20 @@
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>GovernanceData {
-	policy_script: PlutusScript,
-	utxo_id: UtxoId,
+	<span class="kw">pub</span>(<span class="kw">crate</span>) policy_script: plutus_script::PlutusScript,
+	<span class="kw">pub</span>(<span class="kw">crate</span>) utxo_id: UtxoId,
 }
 
 <span class="kw">impl </span>GovernanceData {
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>policy_script_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ScriptHash {
-		<span class="self">self</span>.policy_script.hash()
+		<span class="self">self</span>.policy_script.csl_script_hash()
+	}
+
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>utxo_id_as_tx_input(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; TransactionInput {
+		TransactionInput::new(
+			<span class="kw-2">&amp;</span>TransactionHash::from_bytes(<span class="self">self</span>.utxo_id.tx_hash.<span class="number">0</span>.to_vec()).unwrap(),
+			<span class="self">self</span>.utxo_id.index.<span class="number">0</span>.into(),
+		)
 	}
 }
 
@@ -369,7 +388,10 @@
 	<span class="kw">let </span>utxo = get_governance_utxo(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>utxo_id = utxo.to_domain();
 	<span class="kw">if let </span><span class="prelude-val">Some</span>(OgmiosScript::Plutus(ps)) = utxo.script.clone() {
-		<span class="prelude-val">Ok</span>(GovernanceData { policy_script: PlutusScript::new_v2(ps.cbor), utxo_id })
+		<span class="prelude-val">Ok</span>(GovernanceData {
+			policy_script: plutus_script::PlutusScript::from_cbor(<span class="kw-2">&amp;</span>ps.cbor, LanguageKind::PlutusV2),
+			utxo_id,
+		})
 	} <span class="kw">else </span>{
 		<span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Programmatic Error: Governance UTXO script is not PlutusScript"</span>))
 	}

@@ -897,6 +897,9 @@
 <a href="#897" id="897">897</a>
 <a href="#898" id="898">898</a>
 <a href="#899" id="899">899</a>
+<a href="#900" id="900">900</a>
+<a href="#901" id="901">901</a>
+<a href="#902" id="902">902</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>fraction::{FromPrimitive, Ratio};
@@ -1083,7 +1086,7 @@
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_validator_budgets(
 	<span class="kw-2">mut </span>responses: Vec&lt;OgmiosEvaluateTransactionResponse&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;ScriptExUnits, JsError&gt; {
+) -&gt; ScriptExUnits {
 	responses.sort_by_key(|r| r.validator.index);
 	<span class="kw">let </span>(mint_ex_units, spend_ex_units) = responses
 		.into_iter()
@@ -1091,7 +1094,7 @@
 	<span class="kw">let </span>mint_ex_units = mint_ex_units.into_iter().map(ex_units_from_response).collect();
 	<span class="kw">let </span>spend_ex_units = spend_ex_units.into_iter().map(ex_units_from_response).collect();
 
-	<span class="prelude-val">Ok</span>(ScriptExUnits { mint_ex_units, spend_ex_units })
+	ScriptExUnits { mint_ex_units, spend_ex_units }
 }
 
 <span class="kw">fn </span>ex_units_from_response(resp: OgmiosEvaluateTransactionResponse) -&gt; ExUnits {
@@ -1105,6 +1108,10 @@
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>empty_asset_name() -&gt; AssetName {
 	AssetName::new(<span class="macro">vec!</span>[]).expect(<span class="string">"Hardcoded empty asset name is valid"</span>)
+}
+
+<span class="kw">pub fn </span>zero_ex_units() -&gt; ExUnits {
+	ExUnits::new(<span class="kw-2">&amp;</span>BigNum::zero(), <span class="kw-2">&amp;</span>BigNum::zero())
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">trait </span>OgmiosUtxoExt {
@@ -1605,8 +1612,7 @@
 				validator: OgmiosValidatorIndex::new(<span class="number">2</span>, <span class="string">"spend"</span>),
 				budget: OgmiosBudget::new(<span class="number">12</span>, <span class="number">22</span>),
 			},
-		])
-		.expect(<span class="string">"Should succeed"</span>);
+		]);
 
 		<span class="kw">let </span>expected = ScriptExUnits {
 			mint_ex_units: <span class="macro">vec!</span>[

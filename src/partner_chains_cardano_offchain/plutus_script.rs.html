@@ -132,7 +132,7 @@
 	}
 
 	<span class="doccomment">/// This function is needed to create [PlutusScript] from scripts in [raw_scripts],
-	/// which are encoded as a cibor byte string containing the cbor of the script
+	/// which are encoded as a cbor byte string containing the cbor of the script
 	/// itself. This function removes this layer of wrapping.
 	</span><span class="kw">pub fn </span>from_wrapped_cbor(cbor: <span class="kw-2">&amp;</span>[u8], language: LanguageKind) -&gt; anyhow::Result&lt;<span class="self">Self</span>&gt; {
 		<span class="prelude-val">Ok</span>(<span class="self">Self</span>::from_cbor(<span class="kw-2">&amp;</span>unwrap_one_layer_of_cbor(cbor)<span class="question-mark">?</span>, language))

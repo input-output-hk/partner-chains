@@ -329,10 +329,6 @@
 <a href="#329" id="329">329</a>
 <a href="#330" id="330">330</a>
 <a href="#331" id="331">331</a>
-<a href="#332" id="332">332</a>
-<a href="#333" id="333">333</a>
-<a href="#334" id="334">334</a>
-<a href="#335" id="335">335</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! D-parameter is stored on chain in an UTXO at the D-parameter validator address.
 //! There should be at most one UTXO at the validator address and it should contain the D-parameter.
 //! This UTXO should have 1 token of the D-parameter policy with an empty asset name.
@@ -481,7 +477,7 @@
 			hex::encode(tx.to_bytes())
 		)
 	})<span class="question-mark">?</span>;
-	<span class="kw">let </span><span class="kw-2">mut </span>mint_witness_ex_units = get_validator_budgets(evaluate_response)<span class="question-mark">?</span>;
+	<span class="kw">let </span><span class="kw-2">mut </span>mint_witness_ex_units = get_validator_budgets(evaluate_response);
 	mint_witness_ex_units.mint_ex_units.reverse();
 	<span class="kw">let </span>tx = mint_d_param_token_tx(
 		validator,
@@ -541,7 +537,7 @@
 			hex::encode(tx.to_bytes())
 		)
 	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>spend_ex_units = get_validator_budgets(evaluate_response)<span class="question-mark">?</span>;
+	<span class="kw">let </span>spend_ex_units = get_validator_budgets(evaluate_response);
 
 	<span class="kw">let </span>tx = update_d_param_tx(
 		validator,
@@ -607,8 +603,6 @@
 			.unwrap_or_else(|| <span class="macro">panic!</span>(<span class="string">"Mint ex units not found"</span>)),
 	)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>tx_hash = TransactionHash::from_bytes(gov_utxo.transaction.id.into())<span class="question-mark">?</span>;
-	<span class="kw">let </span>gov_tx_input = TransactionInput::new(<span class="kw-2">&amp;</span>tx_hash, gov_utxo.index.into());
 	tx_builder.add_script_reference_input(<span class="kw-2">&amp;</span>gov_tx_input, gov_policy.bytes.len());
 	tx_builder.add_required_signer(<span class="kw-2">&amp;</span>ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
@@ -662,8 +656,6 @@
 			.unwrap_or_else(|| <span class="macro">panic!</span>(<span class="string">"Mint ex units not found"</span>)),
 	)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>tx_hash = TransactionHash::from_bytes(gov_utxo.transaction.id.into())<span class="question-mark">?</span>;
-	<span class="kw">let </span>gov_tx_input = TransactionInput::new(<span class="kw-2">&amp;</span>tx_hash, gov_utxo.index.into());
 	tx_builder.add_script_reference_input(<span class="kw-2">&amp;</span>gov_tx_input, gov_policy.bytes.len());
 	tx_builder.add_required_signer(<span class="kw-2">&amp;</span>ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
