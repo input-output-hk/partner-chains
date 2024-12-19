@@ -184,7 +184,7 @@ impl ScriptExUnits {
 
 pub(crate) fn get_validator_budgets(
 	mut responses: Vec<OgmiosEvaluateTransactionResponse>,
-) -> Result<ScriptExUnits, JsError> {
+) -> ScriptExUnits {
 	responses.sort_by_key(|r| r.validator.index);
 	let (mint_ex_units, spend_ex_units) = responses
 		.into_iter()
@@ -192,7 +192,7 @@ pub(crate) fn get_validator_budgets(
 	let mint_ex_units = mint_ex_units.into_iter().map(ex_units_from_response).collect();
 	let spend_ex_units = spend_ex_units.into_iter().map(ex_units_from_response).collect();
 
-	Ok(ScriptExUnits { mint_ex_units, spend_ex_units })
+	ScriptExUnits { mint_ex_units, spend_ex_units }
 }
 
 fn ex_units_from_response(resp: OgmiosEvaluateTransactionResponse) -> ExUnits {
@@ -206,6 +206,10 @@ pub(crate) fn convert_ex_units(v: &OgmiosBudget) -> ExUnits {
 
 pub(crate) fn empty_asset_name() -> AssetName {
 	AssetName::new(vec![]).expect("Hardcoded empty asset name is valid")
+}
+
+pub fn zero_ex_units() -> ExUnits {
+	ExUnits::new(&BigNum::zero(), &BigNum::zero())
 }
 
 pub(crate) trait OgmiosUtxoExt {
@@ -706,8 +710,7 @@ mod tests {
 				validator: OgmiosValidatorIndex::new(2, "spend"),
 				budget: OgmiosBudget::new(12, 22),
 			},
-		])
-		.expect("Should succeed");
+		]);
 
 		let expected = ScriptExUnits {
 			mint_ex_units: vec![

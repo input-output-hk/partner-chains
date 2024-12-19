@@ -1,4 +1,5 @@
 use crate::csl::OgmiosUtxoExt;
+use crate::plutus_script;
 use crate::scripts_data;
 use crate::{
 	await_tx::{AwaitTx, FixedDelayRetries},
@@ -164,13 +165,20 @@ pub async fn get_governance_utxo<T: QueryLedgerState + Transactions + QueryNetwo
 }
 
 pub(crate) struct GovernanceData {
-	policy_script: PlutusScript,
-	utxo_id: UtxoId,
+	pub(crate) policy_script: plutus_script::PlutusScript,
+	pub(crate) utxo_id: UtxoId,
 }
 
 impl GovernanceData {
 	pub(crate) fn policy_script_hash(&self) -> ScriptHash {
-		self.policy_script.hash()
+		self.policy_script.csl_script_hash()
+	}
+
+	pub(crate) fn utxo_id_as_tx_input(&self) -> TransactionInput {
+		TransactionInput::new(
+			&TransactionHash::from_bytes(self.utxo_id.tx_hash.0.to_vec()).unwrap(),
+			self.utxo_id.index.0.into(),
+		)
 	}
 }
 
@@ -181,7 +189,10 @@ pub(crate) async fn get_governance_data<T: QueryLedgerState + Transactions + Que
 	let utxo = get_governance_utxo(genesis_utxo, client).await?;
 	let utxo_id = utxo.to_domain();
 	if let Some(OgmiosScript::Plutus(ps)) = utxo.script.clone() {
-		Ok(GovernanceData { policy_script: PlutusScript::new_v2(ps.cbor), utxo_id })
+		Ok(GovernanceData {
+			policy_script: plutus_script::PlutusScript::from_cbor(&ps.cbor, LanguageKind::PlutusV2),
+			utxo_id,
+		})
 	} else {
 		Err(anyhow!("Programmatic Error: Governance UTXO script is not PlutusScript"))
 	}

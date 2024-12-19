@@ -18,6 +18,7 @@ use partner_chains_cardano_offchain::{
 	await_tx::{AwaitTx, FixedDelayRetries},
 	d_param, init_governance,
 	register::Register,
+	reserve,
 };
 use sidechain_domain::{
 	AdaBasedStaking, AuraPublicKey, CandidateRegistration, DParameter, GrandpaPublicKey,
@@ -73,6 +74,36 @@ async fn upsert_d_param() {
 	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &client).await.is_some());
 	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &client).await.is_none());
 	assert!(run_upsert_d_param(genesis_utxo, 1, 1, &client).await.is_some())
+}
+
+#[tokio::test]
+async fn init_reserve() {
+	let _ = env_logger::builder().is_test(true).try_init();
+	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
+	let client = Cli::default();
+	let container = client.run(image);
+	let client = initialize(&container).await;
+	let genesis_utxo = run_init_goveranance(&client).await;
+	let txs = reserve::init::init_reserve_management(
+		genesis_utxo,
+		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		&client,
+		&FixedDelayRetries::new(Duration::from_millis(500), 100),
+	)
+	.await
+	.unwrap();
+	assert_eq!(txs.len(), 3);
+
+	// TODO: Implement idempotency in the following PR
+	// let txs = reserve::init::init_reserve_management(
+	// 	genesis_utxo,
+	// 	GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+	// 	&client,
+	// 	&FixedDelayRetries::new(Duration::from_millis(500), 100),
+	// )
+	// .await
+	// .unwrap();
+	// assert_eq!(txs.len(), 0)
 }
 
 #[tokio::test]

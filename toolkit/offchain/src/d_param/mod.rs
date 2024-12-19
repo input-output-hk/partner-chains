@@ -146,7 +146,7 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	let mut mint_witness_ex_units = get_validator_budgets(evaluate_response)?;
+	let mut mint_witness_ex_units = get_validator_budgets(evaluate_response);
 	mint_witness_ex_units.mint_ex_units.reverse();
 	let tx = mint_d_param_token_tx(
 		validator,
@@ -206,7 +206,7 @@ where
 			hex::encode(tx.to_bytes())
 		)
 	})?;
-	let spend_ex_units = get_validator_budgets(evaluate_response)?;
+	let spend_ex_units = get_validator_budgets(evaluate_response);
 
 	let tx = update_d_param_tx(
 		validator,
@@ -272,8 +272,6 @@ fn mint_d_param_token_tx(
 			.unwrap_or_else(|| panic!("Mint ex units not found")),
 	)?;
 
-	let tx_hash = TransactionHash::from_bytes(gov_utxo.transaction.id.into())?;
-	let gov_tx_input = TransactionInput::new(&tx_hash, gov_utxo.index.into());
 	tx_builder.add_script_reference_input(&gov_tx_input, gov_policy.bytes.len());
 	tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
@@ -327,8 +325,6 @@ fn update_d_param_tx(
 			.unwrap_or_else(|| panic!("Mint ex units not found")),
 	)?;
 
-	let tx_hash = TransactionHash::from_bytes(gov_utxo.transaction.id.into())?;
-	let gov_tx_input = TransactionInput::new(&tx_hash, gov_utxo.index.into());
 	tx_builder.add_script_reference_input(&gov_tx_input, gov_policy.bytes.len());
 	tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
