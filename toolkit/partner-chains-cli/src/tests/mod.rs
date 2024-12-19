@@ -4,6 +4,7 @@ use anyhow::anyhow;
 use ogmios_client::types::OgmiosTx;
 use partner_chains_cardano_offchain::d_param::UpsertDParam;
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
+use partner_chains_cardano_offchain::permissioned_candidates::UpsertPermissionedCandidates;
 use partner_chains_cardano_offchain::register::{Deregister, Register};
 use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData};
 use partner_chains_cardano_offchain::OffchainError;
@@ -260,6 +261,10 @@ pub struct OffchainMock {
 		Result<OgmiosTx, OffchainError>,
 	>,
 	pub upsert_d_param: HashMap<(UtxoId, DParameter, [u8; 32]), Result<Option<McTxHash>, String>>,
+	pub upsert_permissioned_candidates: HashMap<
+		(UtxoId, Vec<sidechain_domain::PermissionedCandidateData>, [u8; 32]),
+		Result<Option<McTxHash>, String>,
+	>,
 	pub register: HashMap<
 		(UtxoId, CandidateRegistration, MainchainPrivateKey),
 		Result<Option<McTxHash>, OffchainError>,
@@ -331,6 +336,23 @@ impl OffchainMock {
 		Self {
 			deregister: [((genesis_utxo, payment_signing_key, stake_ownership_pub_key), result)]
 				.into(),
+			..self
+		}
+	}
+
+	pub(crate) fn with_upsert_permissioned_candidates(
+		self,
+		genesis_utxo: UtxoId,
+		candidates: &[sidechain_domain::PermissionedCandidateData],
+		payment_key: MainchainPrivateKey,
+		result: Result<Option<McTxHash>, String>,
+	) -> Self {
+		Self {
+			upsert_permissioned_candidates: [(
+				(genesis_utxo, candidates.to_vec(), payment_key.0),
+				result,
+			)]
+			.into(),
 			..self
 		}
 	}
@@ -406,6 +428,23 @@ impl Deregister for OffchainMock {
 			.unwrap_or_else(|| {
 				Err(OffchainError::InternalError(format!("No mock for deregister({genesis_utxo}, {payment_signing_key:?}, {stake_ownership_pub_key:?})")))
 			})
+	}
+}
+
+impl UpsertPermissionedCandidates for OffchainMock {
+	async fn upsert_permissioned_candidates(
+		&self,
+		genesis_utxo: UtxoId,
+		candidates: &[sidechain_domain::PermissionedCandidateData],
+		payment_signing_key: [u8; 32],
+	) -> anyhow::Result<Option<McTxHash>> {
+		self.upsert_permissioned_candidates
+			.get(&(genesis_utxo, candidates.to_vec(), payment_signing_key))
+			.cloned()
+			.unwrap_or_else(|| {
+				Err(format!("No mock for upsert_permissioned_candidates({genesis_utxo:?}, {candidates:?}, {payment_signing_key:?})\n defined mocks:{:?}", self.upsert_permissioned_candidates))
+			})
+			.map_err(|err| anyhow!("{err}"))
 	}
 }
 

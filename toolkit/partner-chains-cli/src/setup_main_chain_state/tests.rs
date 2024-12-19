@@ -1,10 +1,7 @@
+use crate::config::config_fields;
 use crate::config::config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
-use crate::config::{config_fields, PC_CONTRACTS_CLI_PATH};
 use crate::config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
-use crate::pc_contracts_cli_resources::tests::{
-	establish_pc_contracts_cli_configuration_io, prompt_ogmios_configuration_io,
-};
-use crate::pc_contracts_cli_resources::{default_ogmios_service_config, PcContractsCliResources};
+use crate::ogmios::config::tests::{default_ogmios_service_config, prompt_ogmios_configuration_io};
 use crate::prepare_configuration::tests::{
 	prompt_and_save_to_existing_file, prompt_with_default_and_save_to_existing_file,
 };
@@ -13,13 +10,15 @@ use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
 use crate::CmdRun;
 use hex_literal::hex;
 use serde_json::json;
-use sidechain_domain::{DParameter, MainchainPrivateKey, McTxHash, UtxoId};
+use sidechain_domain::{
+	AuraPublicKey, DParameter, GrandpaPublicKey, MainchainPrivateKey, McTxHash, SidechainPublicKey,
+	UtxoId,
+};
 use sp_core::offchain::Timestamp;
 
 #[test]
 fn no_ariadne_parameters_on_main_chain_no_updates() {
 	let mock_context = MockIOContext::new()
-		.with_file(PC_CONTRACTS_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
@@ -39,14 +38,20 @@ fn no_ariadne_parameters_on_main_chain_no_updates() {
 
 #[test]
 fn no_ariadne_parameters_on_main_chain_do_updates() {
-	let offchain_mock = OffchainMock::new().with_upsert_d_param(
-		UtxoId::default(),
-		new_d_parameter(),
-		payment_signing_key(),
-		Ok(Some(McTxHash::default())),
-	);
+	let offchain_mock = OffchainMock::new()
+		.with_upsert_d_param(
+			UtxoId::default(),
+			new_d_parameter(),
+			payment_signing_key(),
+			Ok(Some(McTxHash([1; 32]))),
+		)
+		.with_upsert_permissioned_candidates(
+			genesis_utxo(),
+			&initial_permissioned_candidates(),
+			payment_signing_key(),
+			Ok(Some(McTxHash([2; 32]))),
+		);
 	let mock_context = MockIOContext::new()
-		.with_file(PC_CONTRACTS_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_json_file("payment.skey", valid_payment_signing_key_content())
@@ -58,7 +63,7 @@ fn no_ariadne_parameters_on_main_chain_do_updates() {
 			get_ariadne_parameters_io(ariadne_parameters_not_found_response()),
 			print_ariadne_parameters_not_found_io(),
 			prompt_permissioned_candidates_update_io(true),
-			insert_permissioned_candidates_io(),
+			upsert_permissioned_candidates_io(),
 			prompt_d_parameter_update_io(true),
 			insert_d_parameter_io(),
 			print_post_update_info_io(),
@@ -70,7 +75,6 @@ fn no_ariadne_parameters_on_main_chain_do_updates() {
 #[test]
 fn ariadne_parameters_are_on_main_chain_no_updates() {
 	let mock_context = MockIOContext::new()
-		.with_file(PC_CONTRACTS_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
@@ -90,14 +94,20 @@ fn ariadne_parameters_are_on_main_chain_no_updates() {
 
 #[test]
 fn ariadne_parameters_are_on_main_chain_do_update() {
-	let offchain_mock = OffchainMock::new().with_upsert_d_param(
-		UtxoId::default(),
-		new_d_parameter(),
-		payment_signing_key(),
-		Ok(Some(McTxHash::default())),
-	);
+	let offchain_mock = OffchainMock::new()
+		.with_upsert_d_param(
+			UtxoId::default(),
+			new_d_parameter(),
+			payment_signing_key(),
+			Ok(Some(McTxHash([1; 32]))),
+		)
+		.with_upsert_permissioned_candidates(
+			genesis_utxo(),
+			&initial_permissioned_candidates(),
+			payment_signing_key(),
+			Ok(Some(McTxHash([2; 32]))),
+		);
 	let mock_context = MockIOContext::new()
-		.with_file(PC_CONTRACTS_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_json_file("payment.skey", valid_payment_signing_key_content())
@@ -109,7 +119,7 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 			get_ariadne_parameters_io(ariadne_parameters_found_response()),
 			print_main_chain_and_configuration_candidates_difference_io(),
 			prompt_permissioned_candidates_update_io(true),
-			update_permissioned_candidates_io(),
+			upsert_permissioned_candidates_io(),
 			print_d_param_from_main_chain_io(),
 			prompt_d_parameter_update_io(true),
 			update_d_parameter_io(),
@@ -121,8 +131,14 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 
 #[test]
 fn fails_if_update_permissioned_candidates_fail() {
+	let offchain_mock = OffchainMock::new().with_upsert_permissioned_candidates(
+		genesis_utxo(),
+		&initial_permissioned_candidates(),
+		payment_signing_key(),
+		Err("something went wrong".into()),
+	);
 	let mock_context = MockIOContext::new()
-		.with_file(PC_CONTRACTS_CLI_PATH, "<mock executable>")
+		.with_offchain_mocks(OffchainMocks::new_with_mock("http://localhost:1337", offchain_mock))
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
@@ -132,7 +148,7 @@ fn fails_if_update_permissioned_candidates_fail() {
 			get_ariadne_parameters_io(ariadne_parameters_found_response()),
 			print_main_chain_and_configuration_candidates_difference_io(),
 			prompt_permissioned_candidates_update_io(true),
-			update_permissioned_candidates_failed_io(),
+			upsert_permissioned_candidates_failed_io(),
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
 	result.expect_err("should return error");
@@ -141,7 +157,6 @@ fn fails_if_update_permissioned_candidates_fail() {
 #[test]
 fn candidates_on_main_chain_are_same_as_in_config_no_updates() {
 	let mock_context = MockIOContext::new()
-		.with_file(PC_CONTRACTS_CLI_PATH, "<mock executable>")
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
@@ -156,19 +171,6 @@ fn candidates_on_main_chain_are_same_as_in_config_no_updates() {
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
 	result.expect("should succeed");
-}
-
-#[test]
-fn should_return_error_message_if_pc_cli_missing() {
-	let mock_context = MockIOContext::new()
-		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
-		.with_expected_io(vec![read_chain_config_io(), print_info_io()]);
-	let result = SetupMainChainStateCmd.run(&mock_context);
-	let err = result.expect_err("should return error");
-	assert_eq!(
-		err.to_string(),
-		"Partner Chains Smart Contracts executable file (./pc-contracts-cli) is missing"
-	);
 }
 
 fn read_chain_config_io() -> MockIO {
@@ -230,51 +232,35 @@ fn prompt_permissioned_candidates_update_io(choice: bool) -> MockIO {
 	MockIO::prompt_yes_no("Do you want to set/update the permissioned candidates on the main chain with values from configuration file?", false, choice)
 }
 
-fn insert_permissioned_candidates_io() -> MockIO {
+fn upsert_permissioned_candidates_io() -> MockIO {
 	MockIO::Group(vec![
-		establish_pc_contracts_cli_config_io(),
-		MockIO::file_read("partner-chains-cli-chain-config.json"),
-		MockIO::run_command(
-			"./pc-contracts-cli update-permissioned-candidates --remove-all-candidates --network testnet --add-candidate 020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d:88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee --add-candidate 0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27:8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48:d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69 --genesis-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file payment.skey",
-			"{\"endpoint\":\"UpdatePermissionedCandidates\",\"transactionId\":\"bbb5ab1232fde32884678333b44aa4f92a2229d7ba7a65d9eae4cb8b8c87d735\"}"
+		prompt_ogmios_configuration_io(
+			&default_ogmios_service_config(),
+			&default_ogmios_service_config(),
 		),
-		MockIO::print(
-			"Permissioned candidates updated. The change will be effective in two main chain epochs.",
-		)])
-}
-
-fn update_permissioned_candidates_io() -> MockIO {
-	MockIO::Group(vec![
-		establish_pc_contracts_cli_config_io(),
-		MockIO::file_read("partner-chains-cli-chain-config.json"),
-		MockIO::run_command(
-			"./pc-contracts-cli update-permissioned-candidates --remove-all-candidates --network testnet --add-candidate 020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d:88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee --add-candidate 0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27:8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48:d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69 --genesis-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file payment.skey",
-			"{\"endpoint\":\"UpdatePermissionedCandidates\",\"transactionId\":\"bbb5ab1232fde32884678333b44aa4f92a2229d7ba7a65d9eae4cb8b8c87d735\"}"
-		),
-		MockIO::print(
-		"Permissioned candidates updated. The change will be effective in two main chain epochs.",
-	)])
-}
-
-fn update_permissioned_candidates_failed_io() -> MockIO {
-	MockIO::Group(vec![
-		establish_pc_contracts_cli_config_io(),
-		MockIO::file_read("partner-chains-cli-chain-config.json"),
-		MockIO::run_command_with_result(
-			"./pc-contracts-cli update-permissioned-candidates --remove-all-candidates --network testnet --add-candidate 020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d:88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee --add-candidate 0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27:8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48:d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69 --genesis-utxo 0000000000000000000000000000000000000000000000000000000000000000#0 --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file payment.skey",
-			Err(anyhow::anyhow!("Something went wrong"))
-		),
-	])
-}
-
-fn establish_pc_contracts_cli_config_io() -> MockIO {
-	MockIO::Group(vec![
-		establish_pc_contracts_cli_configuration_io(None, PcContractsCliResources::default()),
 		prompt_with_default_and_save_to_existing_file(
 			CARDANO_PAYMENT_SIGNING_KEY_FILE,
 			Some("payment.skey"),
 			"payment.skey",
 		),
+		MockIO::file_read("payment.skey"),
+		MockIO::print(
+			"Permissioned candidates updated. The change will be effective in two main chain epochs.",
+		)])
+}
+
+fn upsert_permissioned_candidates_failed_io() -> MockIO {
+	MockIO::Group(vec![
+		prompt_ogmios_configuration_io(
+			&default_ogmios_service_config(),
+			&default_ogmios_service_config(),
+		),
+		prompt_with_default_and_save_to_existing_file(
+			CARDANO_PAYMENT_SIGNING_KEY_FILE,
+			Some("payment.skey"),
+			"payment.skey",
+		),
+		MockIO::file_read("payment.skey"),
 	])
 }
 
@@ -401,6 +387,37 @@ fn test_chain_config_content() -> serde_json::Value {
 			}
 		],
 	})
+}
+
+fn initial_permissioned_candidates() -> Vec<sidechain_domain::PermissionedCandidateData> {
+	vec![
+		sidechain_domain::PermissionedCandidateData {
+			sidechain_public_key: SidechainPublicKey(
+				hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec(),
+			),
+			aura_public_key: AuraPublicKey(
+				hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").to_vec(),
+			),
+			grandpa_public_key: GrandpaPublicKey(
+				hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee").to_vec(),
+			),
+		},
+		sidechain_domain::PermissionedCandidateData {
+			sidechain_public_key: SidechainPublicKey(
+				hex!("0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27").to_vec(),
+			),
+			aura_public_key: AuraPublicKey(
+				hex!("8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48").to_vec(),
+			),
+			grandpa_public_key: GrandpaPublicKey(
+				hex!("d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69").to_vec(),
+			),
+		},
+	]
+}
+
+fn genesis_utxo() -> UtxoId {
+	UtxoId::new(hex!("0000000000000000000000000000000000000000000000000000000000000000"), 0)
 }
 
 fn chain_parameters_json() -> serde_json::Value {

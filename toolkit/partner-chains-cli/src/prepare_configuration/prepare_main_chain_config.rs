@@ -119,16 +119,15 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::config::config_fields::{GENESIS_UTXO, KUPO_PROTOCOL, OGMIOS_PROTOCOL};
+	use crate::config::config_fields::{GENESIS_UTXO, OGMIOS_PROTOCOL};
 	use crate::config::NetworkProtocol;
 	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
-	use crate::prepare_configuration::prepare_cardano_params::tests::{
-		preprod_eras_summaries, preprod_shelley_config, PREPROD_CARDANO_PARAMS,
-	};
+	use crate::prepare_configuration::prepare_cardano_params::tests::PREPROD_CARDANO_PARAMS;
 	use crate::prepare_configuration::tests::save_to_existing_file;
 	use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
 	use config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
 	use hex_literal::hex;
+	use ogmios::test_values::{preprod_eras_summaries, preprod_shelley_config};
 	use ogmios_client::types::OgmiosTx;
 	use partner_chains_cardano_offchain::scripts_data::{Addresses, PolicyIds, ScriptsData};
 	use serde_json::json;
@@ -161,7 +160,6 @@ mod tests {
 
 		pub fn save_cardano_params() -> MockIO {
 			MockIO::Group(vec![
-				save_to_existing_file(CARDANO_NETWORK, &PREPROD_CARDANO_PARAMS.network.to_string()),
 				save_to_existing_file(
 					CARDANO_SECURITY_PARAMETER,
 					&PREPROD_CARDANO_PARAMS.security_parameter.to_string(),
@@ -305,7 +303,7 @@ mod tests {
 				}),
 			)
 			.with_json_file("payment.skey", payment_key_content())
-			.with_json_file(KUPO_PROTOCOL.config_file, serde_json::json!({}))
+			.with_json_file(OGMIOS_PROTOCOL.config_file, serde_json::json!({}))
 			.with_offchain_mocks(preprod_offchain_mocks())
 			.with_expected_io(vec![
 				MockIO::ogmios_request(
@@ -409,7 +407,6 @@ mod tests {
 	fn test_chain_config() -> Value {
 		serde_json::json!({
 			"cardano": {
-				"network": "testnet",
 				"security_parameter": PREPROD_CARDANO_PARAMS.security_parameter,
 				"active_slots_coeff": PREPROD_CARDANO_PARAMS.active_slots_coeff,
 				"first_epoch_number": PREPROD_CARDANO_PARAMS.first_epoch_number,
