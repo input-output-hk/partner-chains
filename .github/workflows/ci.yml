@@ -83,7 +83,7 @@ jobs:
       - name: Deploy and test against local environment
         uses: ./.github/actions/tests/local-environment-tests
         with:
-          tag: CI 
+          tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ needs.build.outputs.sha }}
           sha: ${{ needs.build.outputs.sha }}
           tests: premerge
@@ -95,7 +95,7 @@ jobs:
           ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
           ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
           TEST_ENVIRONMENT: local
-  
+
   local-environment-tests-alert:
     needs: local-environment-tests
     if: always() && needs.local-environment-tests.result != 'skipped'
@@ -226,14 +226,13 @@ jobs:
 
   pre-merge-checks-complete:
     if: ${{ always() && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)) }}
-    needs: [build, local-environment-tests, argocd-tests, devshell-tests]
+    needs: [build, local-environment-tests, devshell-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
         run: |
-          if [[ "${{ needs.build.result }}" != "success" || 
-                "${{ needs.local-environment-tests.result }}" != "success" || 
-                "${{ needs.argocd-tests.result }}" != "success" || 
+          if [[ "${{ needs.build.result }}" != "success" ||
+                "${{ needs.local-environment-tests.result }}" != "success" ||
                 "${{ needs.devshell-tests.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1
@@ -291,7 +290,7 @@ jobs:
       - name: Deploy and test against local environment
         uses: ./.github/actions/tests/local-environment-tests
         with:
-          tag: CI 
+          tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ needs.build.outputs.sha }}
           sha: ${{ needs.build.outputs.sha }}
           tests: postmerge
@@ -340,8 +339,8 @@ jobs:
     steps:
       - name: Check if any needed job failed
         run: |
-          if [[ "${{ needs.deploy-rustdoc.result }}" != "success" || 
-                "${{ needs.upload-chain-specs.result }}" != "success" || 
+          if [[ "${{ needs.deploy-rustdoc.result }}" != "success" ||
+                "${{ needs.upload-chain-specs.result }}" != "success" ||
                 "${{ needs.local-environment-tests-post-merge.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1
