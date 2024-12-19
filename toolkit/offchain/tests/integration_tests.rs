@@ -63,7 +63,6 @@ async fn init_goveranance() {
 	()
 }
 
-#[ignore = "awaiting fix for matching evaluation costs of redeemers"]
 #[tokio::test]
 async fn upsert_d_param() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
