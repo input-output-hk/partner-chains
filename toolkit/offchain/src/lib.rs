@@ -23,6 +23,8 @@ pub mod scripts_data;
 pub mod test_values;
 /// Module for interaction with the untyped plutus scripts
 pub mod untyped_plutus;
+/// Supports governance updates
+pub mod update_governance;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum OffchainError {
