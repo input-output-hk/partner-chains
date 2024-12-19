@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Context};
 use cardano_serialization_lib::{Address, LanguageKind, NetworkIdKind, PlutusData, ScriptHash};
+use ogmios_client::types::{OgmiosScript, OgmiosScript::Plutus};
 use plutus::ToDatum;
 use sidechain_domain::PolicyId;
 use uplc::ast::{DeBruijn, Program};
@@ -16,6 +17,22 @@ pub struct PlutusScript {
 impl PlutusScript {
 	pub fn from_cbor(cbor: &[u8], language: LanguageKind) -> Self {
 		Self { bytes: cbor.into(), language }
+	}
+
+	pub fn from_ogmios(ogmios_script: OgmiosScript) -> anyhow::Result<Self> {
+		if let Plutus(script) = ogmios_script {
+			let language_kind = match script.language.as_str() {
+				"plutus:v1" => LanguageKind::PlutusV1,
+				"plutus:v2" => LanguageKind::PlutusV2,
+				"plutus:v3" => LanguageKind::PlutusV3,
+				_ => {
+					return Err(anyhow!("Unsupported Plutus language version: {}", script.language));
+				},
+			};
+			Ok(Self { bytes: script.cbor, language: language_kind })
+		} else {
+			Err(anyhow!("Expected Plutus script, got something else."))
+		}
 	}
 
 	/// This function is needed to create [PlutusScript] from scripts in [raw_scripts],
