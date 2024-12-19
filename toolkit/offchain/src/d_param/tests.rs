@@ -20,6 +20,11 @@ mod mint_tx {
 	fn ex_units() -> ExUnits {
 		ExUnits::new(&10000u32.into(), &200u32.into())
 	}
+
+	fn ex_units_2() -> ExUnits {
+		ExUnits::new(&20000u32.into(), &400u32.into())
+	}
+
 	fn mint_d_param_tx() -> Transaction {
 		mint_d_param_token_tx(
 			&test_validator(),
@@ -27,7 +32,7 @@ mod mint_tx {
 			&input_d_param(),
 			&test_tx_context(),
 			ex_units(),
-			ex_units(),
+			ex_units_2(),
 			governance_utxo(),
 		)
 		.expect("Test transaction should be constructed without error")
@@ -62,7 +67,13 @@ mod mint_tx {
 		assert_eq!(redeemer.tag(), RedeemerTag::new_mint());
 		assert_eq!(redeemer.index(), 0u64.into());
 		assert_eq!(redeemer.data(), PlutusData::new_empty_constr_plutus_data(&0u64.into()));
-		assert_eq!(redeemer.ex_units(), ex_units());
+		assert_eq!(redeemer.ex_units(), ex_units_2());
+
+		let redeemer_2 = redeemers.get(1);
+		assert_eq!(redeemer_2.tag(), RedeemerTag::new_mint());
+		assert_eq!(redeemer_2.index(), 1u64.into());
+		assert_eq!(redeemer_2.data(), PlutusData::new_empty_constr_plutus_data(&0u64.into()));
+		assert_eq!(redeemer_2.ex_units(), ex_units());
 	}
 
 	#[test]

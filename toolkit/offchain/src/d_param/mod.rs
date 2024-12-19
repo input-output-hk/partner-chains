@@ -153,8 +153,8 @@ where
 	let mint_ex_units = get_validator_budgets(evaluate_response).mint_ex_units;
 	let policy_idx = script_to_index.get(&policy.csl_script_hash()).unwrap().clone();
 	let gov_policy_idx = script_to_index.get(&gov_policy.csl_script_hash()).unwrap().clone();
-	let policy_ex_units = mint_ex_units.get(policy_idx).unwrap();
-	let gov_policy_ex_units = mint_ex_units.get(gov_policy_idx).unwrap();
+	let policy_ex_units = mint_ex_units.get(policy_idx).expect("Ogmios response should have entry for d_param policy");
+	let gov_policy_ex_units = mint_ex_units.get(gov_policy_idx).expect("Ogmios response should have entry for gov policy");
 
 	let tx = mint_d_param_token_tx(
 		validator,

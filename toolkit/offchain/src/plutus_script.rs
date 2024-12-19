@@ -26,12 +26,12 @@ impl PlutusScript {
 				"plutus:v2" => LanguageKind::PlutusV2,
 				"plutus:v3" => LanguageKind::PlutusV3,
 				_ => {
-					return Err(anyhow!("Unsupported Plutus language version: {}", script.language))
+					return Err(anyhow!("Unsupported Plutus language version: {}", script.language));
 				},
 			};
-			return Ok(Self { bytes: script.cbor, language: language_kind });
+			Ok(Self { bytes: script.cbor, language: language_kind })
 		} else {
-			return Err(anyhow!("Expected Plutus script, got something else."));
+			Err(anyhow!("Expected Plutus script, got something else."))
 		}
 	}
 
