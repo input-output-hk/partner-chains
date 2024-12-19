@@ -104,6 +104,16 @@ where
 				"SIDECHAIN_BLOCK_BENEFICIARY",
 			)?;
 
+		// Mock runtime provided by Substrate doesn't implement Runtime version API used by `new_if_pallet_present`
+		#[cfg(not(test))]
+		let native_token = NativeTokenIDP::new_if_pallet_present(
+			client.clone(),
+			native_token_data_source.as_ref(),
+			mc_hash.mc_hash(),
+			parent_hash,
+		)
+		.await?;
+		#[cfg(test)]
 		let native_token = NativeTokenIDP::new(
 			client.clone(),
 			native_token_data_source.as_ref(),
@@ -191,6 +201,15 @@ where
 		)
 		.await?;
 
+		#[cfg(not(test))]
+		let native_token = NativeTokenIDP::new_if_pallet_present(
+			client.clone(),
+			native_token_data_source.as_ref(),
+			mc_hash,
+			parent_hash,
+		)
+		.await?;
+		#[cfg(test)]
 		let native_token = NativeTokenIDP::new(
 			client.clone(),
 			native_token_data_source.as_ref(),
