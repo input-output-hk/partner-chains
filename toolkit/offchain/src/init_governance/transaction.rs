@@ -76,7 +76,7 @@ fn mint_witness(
 	))
 }
 
-fn version_oracle_datum_output(
+pub(crate) fn version_oracle_datum_output(
 	version_oracle_validator: PlutusScript,
 	version_oracle_policy: PlutusScript,
 	multi_sig_policy: PlutusScript,
