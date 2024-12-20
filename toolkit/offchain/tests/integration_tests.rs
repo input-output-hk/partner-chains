@@ -16,14 +16,14 @@ use ogmios_client::{
 };
 use partner_chains_cardano_offchain::{
 	await_tx::{AwaitTx, FixedDelayRetries},
-	d_param, init_governance,
+	d_param, init_governance, permissioned_candidates,
 	register::Register,
 	reserve,
 };
 use sidechain_domain::{
 	AdaBasedStaking, AuraPublicKey, CandidateRegistration, DParameter, GrandpaPublicKey,
 	MainchainAddressHash, MainchainPrivateKey, MainchainPublicKey, MainchainSignature, McTxHash,
-	SidechainPublicKey, SidechainSignature, UtxoId,
+	PermissionedCandidateData, SidechainPublicKey, SidechainSignature, UtxoId,
 };
 use std::time::Duration;
 use testcontainers::{clients::Cli, Container, GenericImage};
@@ -76,8 +76,19 @@ async fn upsert_d_param() {
 }
 
 #[tokio::test]
+async fn upsert_permissioned_candidates() {
+	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
+	let client = Cli::default();
+	let container = client.run(image);
+	let client = initialize(&container).await;
+	let genesis_utxo = run_init_goveranance(&client).await;
+	assert!(run_upsert_permissioned_candidates(genesis_utxo, 77, &client).await.is_some());
+	assert!(run_upsert_permissioned_candidates(genesis_utxo, 77, &client).await.is_none());
+	assert!(run_upsert_permissioned_candidates(genesis_utxo, 231, &client).await.is_some())
+}
+
+#[tokio::test]
 async fn init_reserve() {
-	let _ = env_logger::builder().is_test(true).try_init();
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
 	let client = Cli::default();
 	let container = client.run(image);
@@ -91,7 +102,6 @@ async fn init_reserve() {
 
 #[tokio::test]
 async fn register() {
-	let _ = env_logger::builder().is_test(true).try_init();
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
 	let client = Cli::default();
 	let container = client.run(image);
@@ -177,6 +187,36 @@ async fn run_upsert_d_param<
 	let tx_hash = d_param::upsert_d_param(
 		genesis_utxo,
 		&DParameter { num_permissioned_candidates, num_registered_candidates },
+		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		client,
+	)
+	.await
+	.unwrap();
+	match tx_hash {
+		Some(tx_hash) => FixedDelayRetries::new(Duration::from_millis(500), 100)
+			.await_tx_output(client, UtxoId::new(tx_hash.0, 0))
+			.await
+			.unwrap(),
+		None => (),
+	};
+	tx_hash
+}
+
+async fn run_upsert_permissioned_candidates<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	genesis_utxo: UtxoId,
+	candidate: u8,
+	client: &T,
+) -> Option<McTxHash> {
+	let candidates = vec![PermissionedCandidateData {
+		sidechain_public_key: SidechainPublicKey([candidate; 33].to_vec()),
+		aura_public_key: AuraPublicKey([candidate; 32].to_vec()),
+		grandpa_public_key: GrandpaPublicKey([candidate; 32].to_vec()),
+	}];
+	let tx_hash = permissioned_candidates::upsert_permissioned_candidates(
+		genesis_utxo,
+		&candidates,
 		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
 		client,
 	)

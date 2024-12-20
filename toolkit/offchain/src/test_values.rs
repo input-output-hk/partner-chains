@@ -1,16 +1,13 @@
 use crate::plutus_script::PlutusScript;
 use cardano_serialization_lib::{Address, LanguageKind, PlutusData, PrivateKey};
-use fraction::{Decimal, Fraction};
 use hex_literal::hex;
 use ogmios_client::{
 	query_ledger_state::{
 		PlutusCostModels, ProtocolParametersResponse, ReferenceScriptsCosts, ScriptExecutionPrices,
 	},
-	query_network::ShelleyGenesisConfigurationResponse,
-	types::{OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue, SlotLength},
+	types::{OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue},
 };
-use sidechain_domain::{MainchainPublicKey, NetworkType};
-use time::OffsetDateTime;
+use sidechain_domain::MainchainPublicKey;
 
 pub(crate) fn payment_key() -> PrivateKey {
 	PrivateKey::from_normal_bytes(&hex!(
@@ -63,18 +60,6 @@ pub(crate) fn protocol_parameters() -> ProtocolParametersResponse {
 		max_collateral_inputs: 3,
 		collateral_percentage: 150,
 		min_fee_reference_scripts: ReferenceScriptsCosts { base: 15.0 },
-	}
-}
-
-pub(crate) fn shelley_config() -> ShelleyGenesisConfigurationResponse {
-	ShelleyGenesisConfigurationResponse {
-		network_magic: 2,
-		network: NetworkType::Testnet,
-		start_time: OffsetDateTime::from_unix_timestamp(1666656000).unwrap(),
-		security_parameter: 432,
-		epoch_length: 86400,
-		active_slots_coefficient: Decimal::from_fraction(Fraction::new(1u64, 20u64)),
-		slot_length: SlotLength { milliseconds: 1000 },
 	}
 }
 
