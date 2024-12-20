@@ -10,7 +10,7 @@ use partner_chains_cardano_offchain::csl::NetworkTypeExt;
 use serde::de::DeserializeOwned;
 use sidechain_domain::{NetworkType, UtxoId};
 
-pub fn prepare_chain_params<C: IOContext>(context: &C) -> anyhow::Result<(UtxoId, ServiceConfig)> {
+pub fn prepare_genesis_utxo<C: IOContext>(context: &C) -> anyhow::Result<(UtxoId, ServiceConfig)> {
 	context.eprint(INTRO);
 	let ogmios_configuration = prompt_ogmios_configuration(context)?;
 	let shelley_config = get_shelley_config(&ogmios_configuration.to_string(), context)?;
@@ -24,8 +24,6 @@ pub fn prepare_chain_params<C: IOContext>(context: &C) -> anyhow::Result<(UtxoId
 	};
 	let genesis_utxo =
 		select_from_utxos(context, "Select an UTXO to use as the genesis UTXO", utxo_query_result)?;
-
-	context.print(CAUTION);
 
 	save_if_missing(GENESIS_UTXO, genesis_utxo, context);
 	Ok((genesis_utxo, ogmios_configuration))
@@ -55,8 +53,6 @@ fn derive_address<C: IOContext>(
 }
 
 const INTRO: &str = "Now, let's set up the genesis utxo. It identifies a partner chain. This wizard will query Ogmios for your UTXOs using address derived from the payment verification key. Please provide required data.";
-const CAUTION: &str =
-	"Please do not spend this UTXO, it needs to be consumed by the governance initialization.\n";
 
 #[cfg(test)]
 mod tests {
@@ -67,9 +63,7 @@ mod tests {
 	};
 	use crate::ogmios::test_values::preview_shelley_config;
 	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
-	use crate::prepare_configuration::prepare_chain_params::{
-		prepare_chain_params, CAUTION, INTRO,
-	};
+	use crate::prepare_configuration::prepare_chain_params::{prepare_genesis_utxo, INTRO};
 	use crate::select_utxo::tests::{mock_7_valid_utxos_rows, mock_result_7_valid, query_utxos_io};
 	use crate::tests::{MockIO, MockIOContext};
 
@@ -100,7 +94,6 @@ mod tests {
 				 	mock_7_valid_utxos_rows(),
 					 "4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"
 				),
-				MockIO::print(CAUTION),
 				MockIO::file_write_json_contains(
 					GENESIS_UTXO.config_file,
 					&GENESIS_UTXO.json_pointer(),
@@ -108,7 +101,7 @@ mod tests {
 				),
 			]);
 
-		let result = prepare_chain_params(&mock_context);
+		let result = prepare_genesis_utxo(&mock_context);
 
 		result.expect("should succeed");
 	}
