@@ -1,5 +1,6 @@
 use super::{mint_d_param_token_tx, update_d_param_tx};
 use crate::d_param::ScriptExUnits;
+use crate::init_governance::GovernanceData;
 use crate::{
 	csl::{empty_asset_name, TransactionContext},
 	test_values::*,
@@ -9,19 +10,18 @@ use cardano_serialization_lib::{
 };
 use hex_literal::hex;
 use ogmios_client::types::{Asset as OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
-use ogmios_client::types::{OgmiosScript, PlutusScript};
 use partner_chains_plutus_data::d_param::d_parameter_to_plutus_data;
-use sidechain_domain::DParameter;
+use sidechain_domain::{DParameter, UtxoId};
 
 mod mint_tx {
 	use super::*;
 	use cardano_serialization_lib::Transaction;
 
-	fn ex_units() -> ExUnits {
+	fn policy_ex_units() -> ExUnits {
 		ExUnits::new(&10000u32.into(), &200u32.into())
 	}
 
-	fn ex_units_2() -> ExUnits {
+	fn goveranance_ex_units() -> ExUnits {
 		ExUnits::new(&20000u32.into(), &400u32.into())
 	}
 
@@ -30,10 +30,10 @@ mod mint_tx {
 			&test_validator(),
 			&test_policy(),
 			&input_d_param(),
+			&governance_data(),
 			&test_tx_context(),
-			ex_units(),
-			ex_units_2(),
-			governance_utxo(),
+			&policy_ex_units(),
+			&goveranance_ex_units(),
 		)
 		.expect("Test transaction should be constructed without error")
 	}
@@ -67,13 +67,13 @@ mod mint_tx {
 		assert_eq!(redeemer.tag(), RedeemerTag::new_mint());
 		assert_eq!(redeemer.index(), 0u64.into());
 		assert_eq!(redeemer.data(), PlutusData::new_empty_constr_plutus_data(&0u64.into()));
-		assert_eq!(redeemer.ex_units(), ex_units_2());
+		assert_eq!(redeemer.ex_units(), goveranance_ex_units());
 
 		let redeemer_2 = redeemers.get(1);
 		assert_eq!(redeemer_2.tag(), RedeemerTag::new_mint());
 		assert_eq!(redeemer_2.index(), 1u64.into());
 		assert_eq!(redeemer_2.data(), PlutusData::new_empty_constr_plutus_data(&0u64.into()));
-		assert_eq!(redeemer_2.ex_units(), ex_units());
+		assert_eq!(redeemer_2.ex_units(), policy_ex_units());
 	}
 
 	#[test]
@@ -204,9 +204,9 @@ mod update_d_parameter {
 			&test_policy(),
 			&input_d_param(),
 			&script_utxo(),
+			&governance_data(),
 			&test_tx_context(),
 			ex_units(),
-			governance_utxo(),
 		)
 		.unwrap()
 	}
@@ -322,24 +322,16 @@ fn test_tx_context() -> TransactionContext {
 	}
 }
 
-fn governance_script() -> PlutusScript {
-	PlutusScript { language: "PlutusV2".to_string(), cbor: vec![] }
-}
-fn governance_script_hash() -> ScriptHash {
-	crate::plutus_script::PlutusScript::from_cbor(&governance_script().cbor, LanguageKind::PlutusV2)
-		.to_csl()
-		.hash()
+fn governance_script() -> crate::plutus_script::PlutusScript {
+	crate::plutus_script::PlutusScript { language: LanguageKind::PlutusV2, bytes: vec![] }
 }
 
-fn governance_utxo() -> OgmiosUtxo {
-	OgmiosUtxo {
-		transaction: OgmiosTx { id: [15; 32] },
-		index: 0,
-		value: OgmiosValue::new_lovelace(1000000),
-		address: payment_addr().to_bech32(None).unwrap(),
-		script: Some(OgmiosScript::Plutus(governance_script())),
-		..Default::default()
-	}
+fn governance_script_hash() -> ScriptHash {
+	governance_script().csl_script_hash()
+}
+
+fn governance_data() -> GovernanceData {
+	GovernanceData { policy_script: governance_script(), utxo_id: UtxoId::new([15; 32], 0) }
 }
 
 fn lesser_payment_utxo() -> OgmiosUtxo {

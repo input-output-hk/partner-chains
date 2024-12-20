@@ -195,7 +195,6 @@ pub fn start_node<C: IOContext>(
 				first_slot_number,
 				epoch_duration_millis,
 				first_epoch_timestamp_millis,
-				network: _network,
 			},
 		bootnodes,
 	}: StartNodeChainConfig,

@@ -266,7 +266,7 @@ fn register_tx(
 			inputs.add_script_utxo_input(
 				own_registration_utxo,
 				validator,
-				validator_redeemer_ex_units.clone(),
+				&validator_redeemer_ex_units,
 			)?;
 		}
 		inputs.add_key_inputs(&[registration_utxo.clone()], &ctx.payment_key_hash())?;
@@ -309,7 +309,7 @@ fn deregister_tx(
 			inputs.add_script_utxo_input(
 				own_registration_utxo,
 				validator,
-				validator_redeemer_ex_units.clone(),
+				&validator_redeemer_ex_units.clone(),
 			)?;
 		}
 		tx_builder.set_inputs(&inputs);

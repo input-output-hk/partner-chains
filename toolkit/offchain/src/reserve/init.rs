@@ -101,7 +101,6 @@ impl ScriptData {
 	}
 }
 
-/// TODO: make it idempotent is the next step
 async fn initialize_script<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
@@ -223,7 +222,7 @@ fn init_script_tx(
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&governance.policy_script,
 		&gov_tx_input,
-		governance_script_cost,
+		&governance_script_cost,
 	)?;
 
 	tx_builder.add_script_reference_input(&gov_tx_input, governance.policy_script.bytes.len());
@@ -257,18 +256,16 @@ fn match_costs(
 		vec![(mint_keys.get(0), 0), (mint_keys.get(1), 1)].into_iter().collect();
 	let mint_ex_units = get_validator_budgets(evaluate_response).mint_ex_units;
 	if mint_ex_units.len() == 2 {
-		let version_policy_idx = script_to_index
+		let version_policy_idx = *script_to_index
 			.get(version_oracle_policy)
-			.expect("Version Oracle Policy script is present in transaction mints")
-			.clone();
+			.expect("Version Oracle Policy script is present in transaction mints");
 		let version_oracle_ex_units = mint_ex_units
 			.get(version_policy_idx)
 			.expect("mint_ex_units have two items")
 			.clone();
-		let gov_policy_idx = script_to_index
+		let gov_policy_idx = *script_to_index
 			.get(governance_policy)
-			.expect("Governance Policy script is present in transaction mints")
-			.clone();
+			.expect("Governance Policy script is present in transaction mints");
 		let governance_ex_units =
 			mint_ex_units.get(gov_policy_idx).expect("mint_ex_units have two items").clone();
 		Ok((version_oracle_ex_units, governance_ex_units))

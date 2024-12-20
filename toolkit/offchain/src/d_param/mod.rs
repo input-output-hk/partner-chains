@@ -5,18 +5,18 @@
 //! `datum` field being `[num_permissioned_candidates, num_registered_candidates]`.
 
 use crate::csl::{
-	get_builder_config, get_validator_budgets, InputsBuilderExt, ScriptExUnits,
+	get_builder_config, get_validator_budgets, zero_ex_units, InputsBuilderExt, ScriptExUnits,
 	TransactionBuilderExt, TransactionContext,
 };
+use crate::init_governance::{self, GovernanceData};
 use crate::plutus_script::PlutusScript;
 use anyhow::anyhow;
 use cardano_serialization_lib::{
 	ExUnits, JsError, PlutusData, ScriptHash, Transaction, TransactionBuilder, TxInputsBuilder,
 };
-use cardano_serialization_lib::{LanguageKind, TransactionHash, TransactionInput};
 use ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
-	types::OgmiosScript::Plutus, types::OgmiosUtxo,
+	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
 use sidechain_domain::{DParameter, McTxHash, UtxoId};
@@ -116,24 +116,17 @@ async fn insert_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
 	client: &C,
-) -> anyhow::Result<McTxHash>
-where
-	C: Transactions,
-{
-	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
-
-	let gov_utxo = crate::init_governance::get_governance_utxo(genesis_utxo, client)
-		.await
-		.map_err(|e| JsError::from_str(e.to_string().as_str()))?;
+) -> anyhow::Result<McTxHash> {
+	let gov_data = init_governance::get_governance_data(genesis_utxo, client).await?;
 
 	let tx = mint_d_param_token_tx(
 		validator,
 		policy,
 		d_parameter,
+		&gov_data,
 		&ctx,
-		zero_ex_units.clone(),
-		zero_ex_units,
-		gov_utxo.clone(),
+		&zero_ex_units(),
+		&zero_ex_units(),
 	)?;
 
 	let evaluate_response = client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
@@ -144,26 +137,27 @@ where
 		)
 	})?;
 
-	let ogmios_gov_script =
-		gov_utxo.clone().script.expect("Gov UTXO should have a reference script");
-	let gov_policy = PlutusScript::from_ogmios(ogmios_gov_script)?;
 	let mint_keys = tx.body().mint().expect("insert D parameter transaction has two mints").keys();
 	let script_to_index: HashMap<ScriptHash, usize> =
 		vec![(mint_keys.get(0), 0), (mint_keys.get(1), 1)].into_iter().collect();
 	let mint_ex_units = get_validator_budgets(evaluate_response).mint_ex_units;
-	let policy_idx = script_to_index.get(&policy.csl_script_hash()).unwrap().clone();
-	let gov_policy_idx = script_to_index.get(&gov_policy.csl_script_hash()).unwrap().clone();
-	let policy_ex_units = mint_ex_units.get(policy_idx).expect("Ogmios response should have entry for d_param policy");
-	let gov_policy_ex_units = mint_ex_units.get(gov_policy_idx).expect("Ogmios response should have entry for gov policy");
+	let policy_idx = *script_to_index.get(&policy.csl_script_hash()).unwrap();
+	let gov_policy_idx = *script_to_index.get(&gov_data.policy_script.csl_script_hash()).unwrap();
+	let policy_ex_units = mint_ex_units
+		.get(policy_idx)
+		.expect("Evaluate transaction response should have entry for d_param policy");
+	let gov_policy_ex_units = mint_ex_units
+		.get(gov_policy_idx)
+		.expect("Evaluate transaction response should have entry for governance policy");
 
 	let tx = mint_d_param_token_tx(
 		validator,
 		policy,
 		d_parameter,
+		&gov_data,
 		&ctx,
-		policy_ex_units.clone(),
-		gov_policy_ex_units.clone(),
-		gov_utxo,
+		policy_ex_units,
+		gov_policy_ex_units,
 	)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
@@ -186,27 +180,22 @@ async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
 	client: &C,
-) -> anyhow::Result<McTxHash>
-where
-	C: Transactions,
-{
+) -> anyhow::Result<McTxHash> {
 	let zero_ex_units = ScriptExUnits {
-		mint_ex_units: vec![ExUnits::new(&0u64.into(), &0u64.into())],
-		spend_ex_units: vec![ExUnits::new(&0u64.into(), &0u64.into())],
+		mint_ex_units: vec![zero_ex_units()],
+		spend_ex_units: vec![zero_ex_units()],
 	};
 
-	let gov_utxo = crate::init_governance::get_governance_utxo(genesis_utxo, client)
-		.await
-		.map_err(|e| JsError::from_str(e.to_string().as_str()))?;
+	let governance_data = init_governance::get_governance_data(genesis_utxo, client).await?;
 
 	let tx = update_d_param_tx(
 		validator,
 		policy,
 		d_parameter,
 		current_utxo,
+		&governance_data,
 		&ctx,
 		zero_ex_units,
-		gov_utxo.clone(),
 	)?;
 	let evaluate_response = client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
 		anyhow!(
@@ -222,9 +211,9 @@ where
 		policy,
 		d_parameter,
 		current_utxo,
+		&governance_data,
 		&ctx,
 		spend_ex_units,
-		gov_utxo.clone(),
 	)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
@@ -243,13 +232,13 @@ fn mint_d_param_token_tx(
 	validator: &PlutusScript,
 	policy: &PlutusScript,
 	d_parameter: &DParameter,
+	governance_data: &GovernanceData,
 	ctx: &TransactionContext,
-	d_param_policy_ex_units: ExUnits,
-	gov_policy_ex_units: ExUnits,
-	gov_utxo: OgmiosUtxo,
+	d_param_policy_ex_units: &ExUnits,
+	gov_policy_ex_units: &ExUnits,
 ) -> Result<Transaction, JsError> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
-	// The essence of transaction: mint a governance token, then mint tokena D-Param and set output with it
+	// The essence of transaction: mint D-Param token and set output with it, mint a governance token.
 	tx_builder.add_mint_one_script_token(policy, d_param_policy_ex_units)?;
 	tx_builder.add_output_with_one_script_token(
 		validator,
@@ -258,23 +247,15 @@ fn mint_d_param_token_tx(
 		ctx,
 	)?;
 
-	let gov_policy = match gov_utxo.script {
-		Some(Plutus(ps)) => PlutusScript::from_cbor(&ps.cbor, LanguageKind::PlutusV2),
-		_ => return Err(JsError::from_str("Governance UTXO script is not PlutusScript")),
-	};
-
-	let gov_tx_input = TransactionInput::new(
-		&TransactionHash::from_bytes(gov_utxo.transaction.id.into())?,
-		gov_utxo.index.into(),
-	);
+	let gov_tx_input = governance_data.utxo_id_as_tx_input();
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&gov_policy,
+		&governance_data.policy_script,
 		&gov_tx_input,
 		gov_policy_ex_units,
 	)?;
 
-	tx_builder.add_script_reference_input(&gov_tx_input, gov_policy.bytes.len());
-	tx_builder.add_required_signer(&ctx.payment_key_hash());
+	tx_builder.add_script_reference_input(&gov_tx_input, governance_data.policy_script.bytes.len());
+	//tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
 }
 
@@ -283,12 +264,11 @@ fn update_d_param_tx(
 	policy: &PlutusScript,
 	d_parameter: &DParameter,
 	script_utxo: &OgmiosUtxo,
+	governance_data: &GovernanceData,
 	ctx: &TransactionContext,
-	mut ex_units: ScriptExUnits,
-	gov_utxo: OgmiosUtxo,
+	ex_units: ScriptExUnits,
 ) -> Result<Transaction, JsError> {
-	let config = crate::csl::get_builder_config(ctx)?;
-	let mut tx_builder = TransactionBuilder::new(&config);
+	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
 	let mut inputs = TxInputsBuilder::new();
 	inputs.add_script_utxo_input(
@@ -296,8 +276,8 @@ fn update_d_param_tx(
 		validator,
 		ex_units
 			.spend_ex_units
-			.pop()
-			.unwrap_or_else(|| panic!("Spend ex units not found")),
+			.first()
+			.ok_or_else(|| JsError::from_str("Spend ex units not found"))?,
 	)?;
 	tx_builder.set_inputs(&inputs);
 
@@ -308,25 +288,17 @@ fn update_d_param_tx(
 		ctx,
 	)?;
 
-	let gov_policy = match gov_utxo.script {
-		Some(Plutus(ps)) => PlutusScript::from_cbor(&ps.cbor, LanguageKind::PlutusV2),
-		_ => return Err(JsError::from_str("Governance UTXO script is not PlutusScript")),
-	};
-
-	let gov_tx_input = TransactionInput::new(
-		&TransactionHash::from_bytes(gov_utxo.transaction.id.into())?,
-		gov_utxo.index.into(),
-	);
+	let gov_tx_input = governance_data.utxo_id_as_tx_input();
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&gov_policy,
+		&governance_data.policy_script,
 		&gov_tx_input,
 		ex_units
 			.mint_ex_units
-			.pop()
-			.unwrap_or_else(|| panic!("Mint ex units not found")),
+			.first()
+			.ok_or_else(|| JsError::from_str("MInt ex units not found"))?,
 	)?;
 
-	tx_builder.add_script_reference_input(&gov_tx_input, gov_policy.bytes.len());
+	tx_builder.add_script_reference_input(&gov_tx_input, governance_data.policy_script.bytes.len());
 	tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
 }

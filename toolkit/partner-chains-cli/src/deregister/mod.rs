@@ -7,7 +7,7 @@ use crate::config::config_fields::{
 };
 use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::io::IOContext;
-use crate::pc_contracts_cli_resources::establish_pc_contracts_cli_configuration;
+use crate::ogmios::config::establish_ogmios_configuration;
 use crate::CmdRun;
 use anyhow::anyhow;
 use partner_chains_cardano_offchain::register::Deregister;
@@ -30,8 +30,8 @@ impl CmdRun for DeregisterCmd {
 		let cold_vkey_path =
 			CARDANO_COLD_VERIFICATION_KEY_FILE.prompt_with_default_from_file_and_save(context);
 		let stake_ownership_pub_key = get_mc_pubkey_from_file(&cold_vkey_path, context)?;
-		let pc_contracts_cli_resources = establish_pc_contracts_cli_configuration(context)?;
-		let offchain = context.offchain_impl(&pc_contracts_cli_resources.ogmios)?;
+		let ogmios_config = establish_ogmios_configuration(context)?;
+		let offchain = context.offchain_impl(&ogmios_config)?;
 
 		let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 		runtime
