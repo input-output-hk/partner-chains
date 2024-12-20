@@ -704,6 +704,24 @@
 <a href="#704" id="704">704</a>
 <a href="#705" id="705">705</a>
 <a href="#706" id="706">706</a>
+<a href="#707" id="707">707</a>
+<a href="#708" id="708">708</a>
+<a href="#709" id="709">709</a>
+<a href="#710" id="710">710</a>
+<a href="#711" id="711">711</a>
+<a href="#712" id="712">712</a>
+<a href="#713" id="713">713</a>
+<a href="#714" id="714">714</a>
+<a href="#715" id="715">715</a>
+<a href="#716" id="716">716</a>
+<a href="#717" id="717">717</a>
+<a href="#718" id="718">718</a>
+<a href="#719" id="719">719</a>
+<a href="#720" id="720">720</a>
+<a href="#721" id="721">721</a>
+<a href="#722" id="722">722</a>
+<a href="#723" id="723">723</a>
+<a href="#724" id="724">724</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -727,7 +745,7 @@
 <span class="kw">use </span>plutus::{Datum, ToDatum};
 <span class="kw">use </span>plutus_datum_derive::<span class="kw-2">*</span>;
 <span class="kw">use </span>scale_info::TypeInfo;
-<span class="kw">use </span>sp_core::{bounded::BoundedVec, ed25519, sr25519, ConstU32};
+<span class="kw">use </span>sp_core::{bounded::BoundedVec, ecdsa, ed25519, sr25519, ConstU32};
 <span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
 </span><span class="kw">use </span>{
 	derive_more::FromStr,
@@ -1026,6 +1044,12 @@
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex, as_ref)]
 </span><span class="kw">pub struct </span>SidechainPublicKey(<span class="kw">pub </span>Vec&lt;u8&gt;);
 
+<span class="kw">impl </span>From&lt;ecdsa::Public&gt; <span class="kw">for </span>SidechainPublicKey {
+	<span class="kw">fn </span>from(value: ecdsa::Public) -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>(value.<span class="number">0</span>.to_vec())
+	}
+}
+
 <span class="attr">#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 </span><span class="kw">pub struct </span>SidechainSignature(<span class="kw">pub </span>Vec&lt;u8&gt;);
@@ -1323,12 +1347,24 @@
 	}
 }
 
+<span class="kw">impl </span>From&lt;sr25519::Public&gt; <span class="kw">for </span>AuraPublicKey {
+	<span class="kw">fn </span>from(value: sr25519::Public) -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>(value.<span class="number">0</span>.to_vec())
+	}
+}
+
 <span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 </span><span class="kw">pub struct </span>GrandpaPublicKey(<span class="kw">pub </span>Vec&lt;u8&gt;);
 <span class="kw">impl </span>GrandpaPublicKey {
 	<span class="kw">pub fn </span>try_into_ed25519(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;ed25519::Public&gt; {
 		<span class="prelude-val">Some</span>(ed25519::Public::from_raw(<span class="self">self</span>.<span class="number">0</span>.clone().try_into().ok()<span class="question-mark">?</span>))
+	}
+}
+
+<span class="kw">impl </span>From&lt;ed25519::Public&gt; <span class="kw">for </span>GrandpaPublicKey {
+	<span class="kw">fn </span>from(value: ed25519::Public) -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>(value.<span class="number">0</span>.to_vec())
 	}
 }
 
@@ -1345,7 +1381,7 @@
 	}
 }
 
-<span class="attr">#[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord)]
+<span class="attr">#[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord, Hash)]
 </span><span class="kw">pub struct </span>PermissionedCandidateData {
 	<span class="kw">pub </span>sidechain_public_key: SidechainPublicKey,
 	<span class="kw">pub </span>aura_public_key: AuraPublicKey,

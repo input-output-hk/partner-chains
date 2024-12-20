@@ -430,22 +430,13 @@
 <a href="#430" id="430">430</a>
 <a href="#431" id="431">431</a>
 <a href="#432" id="432">432</a>
-<a href="#433" id="433">433</a>
-<a href="#434" id="434">434</a>
-<a href="#435" id="435">435</a>
-<a href="#436" id="436">436</a>
-<a href="#437" id="437">437</a>
-<a href="#438" id="438">438</a>
-<a href="#439" id="439">439</a>
-<a href="#440" id="440">440</a>
-<a href="#441" id="441">441</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_key::get_mc_pkey_from_file;
 <span class="kw">use </span><span class="kw">crate</span>::config;
 <span class="kw">use </span><span class="kw">crate</span>::config::config_fields;
 <span class="kw">use </span><span class="kw">crate</span>::config::CHAIN_CONFIG_FILE_PATH;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::main_chain_follower::set_main_chain_follower_env;
-<span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::establish_pc_contracts_cli_configuration;
+<span class="kw">use </span><span class="kw">crate</span>::ogmios::config::establish_ogmios_configuration;
 <span class="kw">use </span><span class="kw">crate</span>::CmdRun;
 <span class="kw">use </span>clap::Parser;
 <span class="kw">use </span>partner_chains_cardano_offchain::register::Register;
@@ -490,10 +481,9 @@
 		<span class="kw">let </span>cardano_payment_signing_key_path =
 			context.prompt(<span class="string">"Path to mainchain payment signing key file"</span>, <span class="prelude-val">Some</span>(<span class="string">"payment.skey"</span>));
 
-		<span class="kw">let </span>pc_contracts_cli_resources = establish_pc_contracts_cli_configuration(context)<span class="question-mark">?</span>;
 		<span class="kw">let </span>payment_signing_key =
 			get_mc_pkey_from_file(<span class="kw-2">&amp;</span>cardano_payment_signing_key_path, context)<span class="question-mark">?</span>;
-
+		<span class="kw">let </span>ogmios_configuration = establish_ogmios_configuration(context)<span class="question-mark">?</span>;
 		<span class="kw">let </span>candidate_registration = CandidateRegistration {
 			stake_ownership: AdaBasedStaking {
 				pub_key: <span class="self">self</span>.spo_public_key.clone(),
@@ -506,7 +496,7 @@
 			aura_pub_key: <span class="self">self</span>.aura_pub_key.clone(),
 			grandpa_pub_key: <span class="self">self</span>.grandpa_pub_key.clone(),
 		};
-		<span class="kw">let </span>offchain = context.offchain_impl(<span class="kw-2">&amp;</span>pc_contracts_cli_resources.ogmios)<span class="question-mark">?</span>;
+		<span class="kw">let </span>offchain = context.offchain_impl(<span class="kw-2">&amp;</span>ogmios_configuration)<span class="question-mark">?</span>;
 
 		<span class="kw">let </span>runtime = tokio::runtime::Runtime::new().map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
 		runtime
@@ -595,9 +585,7 @@
 			config_fields::POSTGRES_CONNECTION_STRING, CHAIN_CONFIG_FILE_PATH,
 			RESOURCES_CONFIG_FILE_PATH,
 		},
-		pc_contracts_cli_resources::{
-			tests::establish_pc_contracts_cli_configuration_io, PcContractsCliResources,
-		},
+		ogmios::config::tests::{default_ogmios_service_config, establish_ogmios_configuration_io},
 		tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks},
 	};
 	<span class="kw">use </span>hex_literal::hex;
@@ -626,11 +614,8 @@
 				<span class="macro">vec!</span>[
 					intro_msg_io(),
 					prompt_mc_payment_key_path_io(),
-					<span class="macro">vec!</span>[establish_pc_contracts_cli_configuration_io(
-						<span class="prelude-val">None</span>,
-						PcContractsCliResources::default(),
-					)],
-					run_registration_io(),
+					read_payment_skey(),
+					get_ogmios_config(),
 					prompt_for_registration_status_y(),
 					show_registration_status_io(),
 				]
@@ -663,11 +648,8 @@
 				<span class="macro">vec!</span>[
 					intro_msg_io(),
 					prompt_mc_payment_key_path_io(),
-					<span class="macro">vec!</span>[establish_pc_contracts_cli_configuration_io(
-						<span class="prelude-val">None</span>,
-						PcContractsCliResources::default(),
-					)],
-					run_registration_fail_io(),
+					read_payment_skey(),
+					get_ogmios_config(),
 				]
 				.into_iter()
 				.flatten()
@@ -698,11 +680,8 @@
 				<span class="macro">vec!</span>[
 					intro_msg_io(),
 					prompt_mc_payment_key_path_io(),
-					<span class="macro">vec!</span>[establish_pc_contracts_cli_configuration_io(
-						<span class="prelude-val">None</span>,
-						PcContractsCliResources::default(),
-					)],
-					run_registration_io(),
+					read_payment_skey(),
+					get_ogmios_config(),
 					prompt_for_registration_status_n(),
 				]
 				.into_iter()
@@ -728,6 +707,13 @@
 			<span class="string">"Path to mainchain payment signing key file"</span>,
 			<span class="prelude-val">Some</span>(<span class="string">"payment.skey"</span>),
 			<span class="string">"/path/to/payment.skey"</span>,
+		)]
+	}
+
+	<span class="kw">fn </span>get_ogmios_config() -&gt; Vec&lt;MockIO&gt; {
+		<span class="macro">vec!</span>[establish_ogmios_configuration_io(
+			<span class="prelude-val">Some</span>(default_ogmios_service_config()),
+			default_ogmios_service_config(),
 		)]
 	}
 
@@ -767,11 +753,7 @@
 		]
 	}
 
-	<span class="kw">fn </span>run_registration_io() -&gt; Vec&lt;MockIO&gt; {
-		<span class="macro">vec!</span>[MockIO::file_read(<span class="string">"/path/to/payment.skey"</span>)]
-	}
-
-	<span class="kw">fn </span>run_registration_fail_io() -&gt; Vec&lt;MockIO&gt; {
+	<span class="kw">fn </span>read_payment_skey() -&gt; Vec&lt;MockIO&gt; {
 		<span class="macro">vec!</span>[MockIO::file_read(<span class="string">"/path/to/payment.skey"</span>)]
 	}
 

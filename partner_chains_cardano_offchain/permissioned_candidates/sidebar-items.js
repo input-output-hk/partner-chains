@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["upsert_permissioned_candidates"]};
+window.SIDEBAR_ITEMS = {"fn":["upsert_permissioned_candidates"],"trait":["UpsertPermissionedCandidates"]};

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["runtime_config_arguments","sidechain_params_arguments"]};

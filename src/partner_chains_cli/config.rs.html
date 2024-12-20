@@ -597,62 +597,14 @@
 <a href="#597" id="597">597</a>
 <a href="#598" id="598">598</a>
 <a href="#599" id="599">599</a>
-<a href="#600" id="600">600</a>
-<a href="#601" id="601">601</a>
-<a href="#602" id="602">602</a>
-<a href="#603" id="603">603</a>
-<a href="#604" id="604">604</a>
-<a href="#605" id="605">605</a>
-<a href="#606" id="606">606</a>
-<a href="#607" id="607">607</a>
-<a href="#608" id="608">608</a>
-<a href="#609" id="609">609</a>
-<a href="#610" id="610">610</a>
-<a href="#611" id="611">611</a>
-<a href="#612" id="612">612</a>
-<a href="#613" id="613">613</a>
-<a href="#614" id="614">614</a>
-<a href="#615" id="615">615</a>
-<a href="#616" id="616">616</a>
-<a href="#617" id="617">617</a>
-<a href="#618" id="618">618</a>
-<a href="#619" id="619">619</a>
-<a href="#620" id="620">620</a>
-<a href="#621" id="621">621</a>
-<a href="#622" id="622">622</a>
-<a href="#623" id="623">623</a>
-<a href="#624" id="624">624</a>
-<a href="#625" id="625">625</a>
-<a href="#626" id="626">626</a>
-<a href="#627" id="627">627</a>
-<a href="#628" id="628">628</a>
-<a href="#629" id="629">629</a>
-<a href="#630" id="630">630</a>
-<a href="#631" id="631">631</a>
-<a href="#632" id="632">632</a>
-<a href="#633" id="633">633</a>
-<a href="#634" id="634">634</a>
-<a href="#635" id="635">635</a>
-<a href="#636" id="636">636</a>
-<a href="#637" id="637">637</a>
-<a href="#638" id="638">638</a>
-<a href="#639" id="639">639</a>
-<a href="#640" id="640">640</a>
-<a href="#641" id="641">641</a>
-<a href="#642" id="642">642</a>
-<a href="#643" id="643">643</a>
-<a href="#644" id="644">644</a>
-<a href="#645" id="645">645</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	CARDANO_ACTIVE_SLOTS_COEFF, CARDANO_EPOCH_DURATION_MILLIS, CARDANO_FIRST_EPOCH_NUMBER,
-	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_NETWORK,
-	CARDANO_SECURITY_PARAMETER,
+	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_SECURITY_PARAMETER,
 };
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
-<span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>clap::{arg, Parser};
 <span class="kw">use </span>serde::{de::DeserializeOwned, Deserialize, Serialize};
-<span class="kw">use </span>sidechain_domain::{NetworkType, UtxoId};
+<span class="kw">use </span>sidechain_domain::UtxoId;
 <span class="kw">use </span>sp_core::offchain::{Duration, Timestamp};
 <span class="kw">use </span>std::fmt::{Display, Formatter};
 <span class="kw">use </span>std::str::FromStr;
@@ -920,12 +872,10 @@
 	<span class="kw">pub </span>first_slot_number: u64,
 	<span class="kw">pub </span>epoch_duration_millis: u64,
 	<span class="kw">pub </span>first_epoch_timestamp_millis: u64,
-	<span class="kw">pub </span>network: NetworkType,
 }
 
 <span class="kw">impl </span>CardanoParameters {
 	<span class="kw">pub fn </span>save(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span><span class="kw">impl </span>IOContext) {
-		CARDANO_NETWORK.save_to_file(<span class="kw-2">&amp;</span><span class="self">self</span>.network, context);
 		CARDANO_SECURITY_PARAMETER.save_to_file(<span class="kw-2">&amp;</span><span class="self">self</span>.security_parameter, context);
 		CARDANO_ACTIVE_SLOTS_COEFF.save_to_file(<span class="kw-2">&amp;</span><span class="self">self</span>.active_slots_coeff, context);
 		CARDANO_FIRST_EPOCH_NUMBER.save_to_file(<span class="kw-2">&amp;</span><span class="self">self</span>.first_epoch_number, context);
@@ -944,7 +894,6 @@
 			epoch_duration_millis: CARDANO_EPOCH_DURATION_MILLIS.load_from_file(context)<span class="question-mark">?</span>,
 			first_epoch_timestamp_millis: CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS
 				.load_from_file(context)<span class="question-mark">?</span>,
-			network: CARDANO_NETWORK.load_from_file(context)<span class="question-mark">?</span>,
 		})
 	}
 }
@@ -998,7 +947,6 @@
 <span class="kw">pub const </span>CHAIN_CONFIG_FILE_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"partner-chains-cli-chain-config.json"</span>;
 <span class="kw">pub const </span>RESOURCES_CONFIG_FILE_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"partner-chains-cli-resources-config.json"</span>;
 <span class="kw">pub const </span>CHAIN_SPEC_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"chain-spec.json"</span>;
-<span class="kw">pub const </span>PC_CONTRACTS_CLI_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"./pc-contracts-cli"</span>;
 
 <span class="kw">pub fn </span>load_chain_config(context: <span class="kw-2">&amp;</span><span class="kw">impl </span>IOContext) -&gt; anyhow::Result&lt;ChainConfig&gt; {
 	<span class="kw">if let </span><span class="prelude-val">Some</span>(chain_config_file) = context.read_file(CHAIN_CONFIG_FILE_PATH) {
@@ -1007,12 +955,6 @@
 	} <span class="kw">else </span>{
 		<span class="prelude-val">Err</span>(<span class="macro">anyhow::anyhow!</span>(<span class="macro">format!</span>(<span class="string">"⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} does not exists. Run prepare-configuration wizard first."</span>)))
 	}
-}
-
-<span class="kw">pub fn </span>get_cardano_network_from_file(context: <span class="kw-2">&amp;</span><span class="kw">impl </span>IOContext) -&gt; anyhow::Result&lt;NetworkType&gt; {
-	CARDANO_NETWORK.load_from_file(context).ok_or(<span class="macro">anyhow!</span>(
-		<span class="string">"Cardano network not configured. Please run prepare-main-chain-config command first."
-	</span>))
 }
 
 <span class="kw">pub mod </span>config_fields {
@@ -1091,15 +1033,6 @@
 			_marker: PhantomData,
 		};
 
-	<span class="kw">pub const </span>CARDANO_NETWORK: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, NetworkType&gt; =
-		ConfigFieldDefinition {
-			config_file: CHAIN_CONFIG_FILE_PATH,
-			path: <span class="kw-2">&amp;</span>[<span class="string">"cardano"</span>, <span class="string">"network"</span>],
-			name: <span class="string">"cardano network"</span>,
-			default: <span class="prelude-val">None</span>,
-			_marker: PhantomData,
-		};
-
 	<span class="kw">pub const </span>GENESIS_UTXO: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, UtxoId&gt; = ConfigFieldDefinition {
 		config_file: CHAIN_CONFIG_FILE_PATH,
 		path: <span class="kw-2">&amp;</span>[<span class="string">"chain_parameters"</span>, <span class="string">"genesis_utxo"</span>],
@@ -1135,31 +1068,6 @@
 			default: <span class="prelude-val">Some</span>(<span class="string">"postgresql://postgres-user:postgres-password@localhost:5432/cexplorer"</span>),
 			_marker: PhantomData,
 		};
-
-	<span class="kw">pub const </span>KUPO_PROTOCOL: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, NetworkProtocol&gt; =
-		ConfigFieldDefinition {
-			config_file: RESOURCES_CONFIG_FILE_PATH,
-			path: <span class="kw-2">&amp;</span>[<span class="string">"kupo"</span>, <span class="string">"protocol"</span>],
-			name: <span class="string">"Kupo protocol (http/https)"</span>,
-			default: <span class="prelude-val">Some</span>(<span class="string">"http"</span>),
-			_marker: PhantomData,
-		};
-
-	<span class="kw">pub const </span>KUPO_HOSTNAME: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; = ConfigFieldDefinition {
-		config_file: RESOURCES_CONFIG_FILE_PATH,
-		path: <span class="kw-2">&amp;</span>[<span class="string">"kupo"</span>, <span class="string">"hostname"</span>],
-		name: <span class="string">"Kupo hostname"</span>,
-		default: <span class="prelude-val">Some</span>(<span class="string">"localhost"</span>),
-		_marker: PhantomData,
-	};
-
-	<span class="kw">pub const </span>KUPO_PORT: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u16&gt; = ConfigFieldDefinition {
-		config_file: RESOURCES_CONFIG_FILE_PATH,
-		path: <span class="kw-2">&amp;</span>[<span class="string">"kupo"</span>, <span class="string">"port"</span>],
-		name: <span class="string">"Kupo port"</span>,
-		default: <span class="prelude-val">Some</span>(<span class="string">"1442"</span>),
-		_marker: PhantomData,
-	};
 
 	<span class="kw">pub const </span>OGMIOS_PROTOCOL: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, NetworkProtocol&gt; =
 		ConfigFieldDefinition {

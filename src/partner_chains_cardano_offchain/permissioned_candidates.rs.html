@@ -618,53 +618,6 @@
 <a href="#618" id="618">618</a>
 <a href="#619" id="619">619</a>
 <a href="#620" id="620">620</a>
-<a href="#621" id="621">621</a>
-<a href="#622" id="622">622</a>
-<a href="#623" id="623">623</a>
-<a href="#624" id="624">624</a>
-<a href="#625" id="625">625</a>
-<a href="#626" id="626">626</a>
-<a href="#627" id="627">627</a>
-<a href="#628" id="628">628</a>
-<a href="#629" id="629">629</a>
-<a href="#630" id="630">630</a>
-<a href="#631" id="631">631</a>
-<a href="#632" id="632">632</a>
-<a href="#633" id="633">633</a>
-<a href="#634" id="634">634</a>
-<a href="#635" id="635">635</a>
-<a href="#636" id="636">636</a>
-<a href="#637" id="637">637</a>
-<a href="#638" id="638">638</a>
-<a href="#639" id="639">639</a>
-<a href="#640" id="640">640</a>
-<a href="#641" id="641">641</a>
-<a href="#642" id="642">642</a>
-<a href="#643" id="643">643</a>
-<a href="#644" id="644">644</a>
-<a href="#645" id="645">645</a>
-<a href="#646" id="646">646</a>
-<a href="#647" id="647">647</a>
-<a href="#648" id="648">648</a>
-<a href="#649" id="649">649</a>
-<a href="#650" id="650">650</a>
-<a href="#651" id="651">651</a>
-<a href="#652" id="652">652</a>
-<a href="#653" id="653">653</a>
-<a href="#654" id="654">654</a>
-<a href="#655" id="655">655</a>
-<a href="#656" id="656">656</a>
-<a href="#657" id="657">657</a>
-<a href="#658" id="658">658</a>
-<a href="#659" id="659">659</a>
-<a href="#660" id="660">660</a>
-<a href="#661" id="661">661</a>
-<a href="#662" id="662">662</a>
-<a href="#663" id="663">663</a>
-<a href="#664" id="664">664</a>
-<a href="#665" id="665">665</a>
-<a href="#666" id="666">666</a>
-<a href="#667" id="667">667</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Permissioned candidates are stored on chain in an UTXO at the Permissioned Candidates Validator address.
 //! There should be at most one UTXO at the validator address and it should contain the permissioned candidates list.
@@ -673,14 +626,20 @@
 //! in the `datum` field of it. Field should contain list of list, where each inner list is a triple of byte strings
 //! `[sidechain_public_key, aura_public_key, grandpa_publicKey]`.
 
-</span><span class="kw">use </span><span class="kw">crate</span>::csl::{
-	get_builder_config, get_first_validator_budget, InputsBuilderExt, TransactionBuilderExt,
-	TransactionContext,
+</span><span class="kw">use </span>std::collections::HashMap;
+
+<span class="kw">use </span><span class="kw">crate</span>::csl::{
+	convert_value, empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units,
+	OgmiosUtxoExt, TransactionBuilderExt, TransactionContext,
 };
+<span class="kw">use </span><span class="kw">crate</span>::init_governance::{<span class="self">self</span>, GovernanceData};
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
+<span class="kw">use </span><span class="kw">crate</span>::scripts_data;
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
-	ExUnits, JsError, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
+	BigInt, ExUnits, Int, JsError, MintBuilder, MintWitness, PlutusData, PlutusScriptSource,
+	PlutusWitness, Redeemer, RedeemerTag, ScriptHash, Transaction, TransactionBuilder,
+	TxInputsBuilder,
 };
 <span class="kw">use </span>ogmios_client::query_ledger_state::QueryLedgerState;
 <span class="kw">use </span>ogmios_client::query_network::QueryNetwork;
@@ -691,6 +650,27 @@
 };
 <span class="kw">use </span>sidechain_domain::{McTxHash, PermissionedCandidateData, UtxoId};
 
+<span class="kw">pub trait </span>UpsertPermissionedCandidates {
+	<span class="attr">#[allow(async_fn_in_trait)]
+	</span><span class="kw">async fn </span>upsert_permissioned_candidates(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		genesis_utxo: UtxoId,
+		candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
+		payment_signing_key: [u8; <span class="number">32</span>],
+	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt;;
+}
+
+<span class="kw">impl</span>&lt;C: QueryLedgerState + QueryNetwork + Transactions&gt; UpsertPermissionedCandidates <span class="kw">for </span>C {
+	<span class="kw">async fn </span>upsert_permissioned_candidates(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		genesis_utxo: UtxoId,
+		candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
+		payment_signing_key: [u8; <span class="number">32</span>],
+	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
+		upsert_permissioned_candidates(genesis_utxo, candidates, payment_signing_key, <span class="self">self</span>).<span class="kw">await
+	</span>}
+}
+
 <span class="kw">pub async fn </span>upsert_permissioned_candidates&lt;C: QueryLedgerState + QueryNetwork + Transactions&gt;(
 	genesis_utxo: UtxoId,
 	candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
@@ -699,7 +679,8 @@
 ) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
 	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>(validator, policy) =
-		<span class="kw">crate</span>::scripts_data::permissioned_candidates_scripts(genesis_utxo, ctx.network)<span class="question-mark">?</span>;
+		scripts_data::permissioned_candidates_scripts(genesis_utxo, ctx.network)<span class="question-mark">?</span>;
+	<span class="kw">let </span>governance_data = init_governance::get_governance_data(genesis_utxo, ogmios_client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>validator_address = validator.address_bech32(ctx.network)<span class="question-mark">?</span>;
 	<span class="kw">let </span>validator_utxos = ogmios_client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span><span class="kw-2">mut </span>candidates = candidates.to_owned();
@@ -722,6 +703,7 @@
 					<span class="kw-2">&amp;</span>policy,
 					<span class="kw-2">&amp;</span>candidates,
 					<span class="kw-2">&amp;</span>current_utxo,
+					<span class="kw-2">&amp;</span>governance_data,
 					ctx,
 					ogmios_client,
 				)
@@ -735,6 +717,7 @@
 					<span class="kw-2">&amp;</span>validator,
 					<span class="kw-2">&amp;</span>policy,
 					<span class="kw-2">&amp;</span>candidates,
+					<span class="kw-2">&amp;</span>governance_data,
 					ctx,
 					ogmios_client,
 				)
@@ -771,15 +754,23 @@
 	validator: <span class="kw-2">&amp;</span>PlutusScript,
 	policy: <span class="kw-2">&amp;</span>PlutusScript,
 	candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
+	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
 	ctx: TransactionContext,
 	client: <span class="kw-2">&amp;</span>C,
 ) -&gt; anyhow::Result&lt;McTxHash&gt;
 <span class="kw">where
-	</span>C: Transactions,
+	</span>C: Transactions + QueryLedgerState + QueryNetwork,
 {
-	<span class="kw">let </span>zero_ex_units = ExUnits::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span><span class="number">0u64</span>.into());
-	<span class="kw">let </span>tx =
-		mint_permissioned_candidates_token_tx(validator, policy, candidates, <span class="kw-2">&amp;</span>ctx, zero_ex_units)<span class="question-mark">?</span>;
+	<span class="kw">let </span>tx = mint_permissioned_candidates_token_tx(
+		validator,
+		policy,
+		candidates,
+		governance_data,
+		<span class="kw-2">&amp;</span>ctx,
+		<span class="kw-2">&amp;</span>zero_ex_units(),
+		<span class="kw-2">&amp;</span>zero_ex_units(),
+	)<span class="question-mark">?</span>;
+
 	<span class="kw">let </span>evaluate_response = client.evaluate_transaction(<span class="kw-2">&amp;</span>tx.to_bytes()).<span class="kw">await</span>.map_err(|e| {
 		<span class="macro">anyhow!</span>(
 			<span class="string">"Evaluate insert permissioned candidates transaction request failed: {}, bytes: {}"</span>,
@@ -787,13 +778,29 @@
 			hex::encode(tx.to_bytes())
 		)
 	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>mint_witness_ex_units = get_first_validator_budget(evaluate_response)<span class="question-mark">?</span>;
+
+	<span class="kw">let </span>mint_keys = tx.body().mint().expect(<span class="string">"insert D parameter transaction has two mints"</span>).keys();
+	<span class="kw">let </span>script_to_index: HashMap&lt;ScriptHash, usize&gt; =
+		<span class="macro">vec!</span>[(mint_keys.get(<span class="number">0</span>), <span class="number">0</span>), (mint_keys.get(<span class="number">1</span>), <span class="number">1</span>)].into_iter().collect();
+	<span class="kw">let </span>mint_ex_units = get_validator_budgets(evaluate_response).mint_ex_units;
+	<span class="kw">let </span>policy_idx = <span class="kw-2">*</span>script_to_index.get(<span class="kw-2">&amp;</span>policy.csl_script_hash()).unwrap();
+	<span class="kw">let </span>gov_policy_idx =
+		<span class="kw-2">*</span>script_to_index.get(<span class="kw-2">&amp;</span>governance_data.policy_script.csl_script_hash()).unwrap();
+	<span class="kw">let </span>policy_ex_units = mint_ex_units
+		.get(policy_idx)
+		.expect(<span class="string">"Evaluate transaction response should have entry for d_param policy"</span>);
+	<span class="kw">let </span>gov_policy_ex_units = mint_ex_units
+		.get(gov_policy_idx)
+		.expect(<span class="string">"Evaluate transaction response should have entry for governance policy"</span>);
+
 	<span class="kw">let </span>tx = mint_permissioned_candidates_token_tx(
 		validator,
 		policy,
 		candidates,
+		governance_data,
 		<span class="kw-2">&amp;</span>ctx,
-		mint_witness_ex_units,
+		policy_ex_units,
+		gov_policy_ex_units,
 	)<span class="question-mark">?</span>;
 	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
 	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
@@ -813,20 +820,22 @@
 	policy: <span class="kw-2">&amp;</span>PlutusScript,
 	candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
 	current_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
+	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
 	ctx: TransactionContext,
 	client: <span class="kw-2">&amp;</span>C,
 ) -&gt; anyhow::Result&lt;McTxHash&gt;
 <span class="kw">where
-	</span>C: Transactions,
+	</span>C: Transactions + QueryNetwork + QueryLedgerState,
 {
-	<span class="kw">let </span>zero_ex_units = ExUnits::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span><span class="number">0u64</span>.into());
 	<span class="kw">let </span>tx = update_permissioned_candidates_tx(
 		validator,
 		policy,
 		candidates,
 		current_utxo,
+		governance_data,
 		<span class="kw-2">&amp;</span>ctx,
-		zero_ex_units,
+		<span class="kw-2">&amp;</span>zero_ex_units(),
+		<span class="kw-2">&amp;</span>zero_ex_units(),
 	)<span class="question-mark">?</span>;
 	<span class="kw">let </span>evaluate_response = client.evaluate_transaction(<span class="kw-2">&amp;</span>tx.to_bytes()).<span class="kw">await</span>.map_err(|e| {
 		<span class="macro">anyhow!</span>(
@@ -835,15 +844,24 @@
 			hex::encode(tx.to_bytes())
 		)
 	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>spend_ex_units = get_first_validator_budget(evaluate_response)<span class="question-mark">?</span>;
+	<span class="kw">let </span>spend_ex_units = get_validator_budgets(evaluate_response);
+	<span class="kw">let </span>permissioned_candidates_spend_ex_units = spend_ex_units
+		.spend_ex_units
+		.first()
+		.ok_or_else(|| JsError::from_str(<span class="string">"Spend ex units for Permissioned Candidates Policy are missing in Evaluate Response"</span>))<span class="question-mark">?</span>;
+	<span class="kw">let </span>governance_mint_ex_units = spend_ex_units.spend_ex_units.first().ok_or_else(|| {
+		JsError::from_str(<span class="string">"Mint ex units for Governance Policy are missing in Evaluate Response"</span>)
+	})<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>tx = update_permissioned_candidates_tx(
 		validator,
 		policy,
 		candidates,
 		current_utxo,
+		governance_data,
 		<span class="kw-2">&amp;</span>ctx,
-		spend_ex_units,
+		permissioned_candidates_spend_ex_units,
+		governance_mint_ex_units,
 	)<span class="question-mark">?</span>;
 	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
 	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
@@ -858,16 +876,34 @@
 	<span class="prelude-val">Ok</span>(tx_id)
 }
 
-<span class="kw">fn </span>mint_permissioned_candidates_token_tx(
+<span class="doccomment">/// Builds a transaction that mints a Permissioned Candidates token and also mint governance token
+</span><span class="kw">fn </span>mint_permissioned_candidates_token_tx(
 	validator: <span class="kw-2">&amp;</span>PlutusScript,
 	policy: <span class="kw-2">&amp;</span>PlutusScript,
 	permissioned_candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
+	governance_data: <span class="kw-2">&amp;</span>init_governance::GovernanceData,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
-	mint_witness_ex_units: ExUnits,
+	permissioned_candidates_ex_units: <span class="kw-2">&amp;</span>ExUnits,
+	governance_ex_units: <span class="kw-2">&amp;</span>ExUnits,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Transaction, JsError&gt; {
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
-	<span class="comment">// The essence of transaction: mint token and set output with it
-	</span>tx_builder.add_mint_one_script_token(policy, mint_witness_ex_units)<span class="question-mark">?</span>;
+	<span class="comment">// The essence of transaction: mint permissioned candidates token and set output with it, mint a governance token.
+	</span>{
+		<span class="comment">// Can use `add_mint_one_script_token` here because plutus data is different for unknown reason. There is an issue ETCM-9109 to explain it.
+		</span><span class="kw">let </span><span class="kw-2">mut </span>mint_builder = MintBuilder::new();
+		<span class="kw">let </span>validator_source = PlutusScriptSource::new(<span class="kw-2">&amp;</span>policy.to_csl());
+		<span class="kw">let </span>mint_witness = MintWitness::new_plutus_script(
+			<span class="kw-2">&amp;</span>validator_source,
+			<span class="kw-2">&amp;</span>Redeemer::new(
+				<span class="kw-2">&amp;</span>RedeemerTag::new_mint(),
+				<span class="kw-2">&amp;</span><span class="number">0u32</span>.into(),
+				<span class="kw-2">&amp;</span>PlutusData::new_integer(<span class="kw-2">&amp;</span>BigInt::zero()),
+				permissioned_candidates_ex_units,
+			),
+		);
+		mint_builder.add_asset(<span class="kw-2">&amp;</span>mint_witness, <span class="kw-2">&amp;</span>empty_asset_name(), <span class="kw-2">&amp;</span>Int::new_i32(<span class="number">1</span>))<span class="question-mark">?</span>;
+		tx_builder.set_mint_builder(<span class="kw-2">&amp;</span>mint_builder);
+	}
 	tx_builder.add_output_with_one_script_token(
 		validator,
 		policy,
@@ -875,7 +911,16 @@
 		ctx,
 	)<span class="question-mark">?</span>;
 
-	tx_builder.balance_update_and_build(ctx)
+	<span class="kw">let </span>gov_tx_input = governance_data.utxo_id_as_tx_input();
+	tx_builder.add_mint_one_script_token_using_reference_script(
+		<span class="kw-2">&amp;</span>governance_data.policy_script,
+		<span class="kw-2">&amp;</span>gov_tx_input,
+		governance_ex_units,
+	)<span class="question-mark">?</span>;
+
+	tx_builder.add_script_reference_input(<span class="kw-2">&amp;</span>gov_tx_input, governance_data.policy_script.bytes.len());
+	<span class="comment">//tx_builder.add_required_signer(&amp;ctx.payment_key_hash());
+	</span>tx_builder.balance_update_and_build(ctx)
 }
 
 <span class="kw">fn </span>update_permissioned_candidates_tx(
@@ -883,15 +928,32 @@
 	policy: <span class="kw-2">&amp;</span>PlutusScript,
 	permissioned_candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
 	script_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
+	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
-	validator_redeemer_ex_units: ExUnits,
+	permissioned_candidates_ex_units: <span class="kw-2">&amp;</span>ExUnits,
+	governance_ex_units: <span class="kw-2">&amp;</span>ExUnits,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Transaction, JsError&gt; {
-	<span class="kw">let </span>config = <span class="kw">crate</span>::csl::get_builder_config(ctx)<span class="question-mark">?</span>;
-	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>config);
+	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
 
-	<span class="kw">let </span><span class="kw-2">mut </span>inputs = TxInputsBuilder::new();
-	inputs.add_script_utxo_input(script_utxo, policy, validator_redeemer_ex_units)<span class="question-mark">?</span>;
-	tx_builder.set_inputs(<span class="kw-2">&amp;</span>inputs);
+	<span class="comment">// Cannot use `add_script_utxo_input` because of different redeemer plutus data, ETCM-9109
+	// Also the index isn't really always 0.
+	</span>{
+		<span class="kw">let </span><span class="kw-2">mut </span>inputs = TxInputsBuilder::new();
+		<span class="kw">let </span>input = script_utxo.to_csl_tx_input();
+		<span class="kw">let </span>amount = convert_value(<span class="kw-2">&amp;</span>script_utxo.value)<span class="question-mark">?</span>;
+		<span class="kw">let </span>witness = PlutusWitness::new_without_datum(
+			<span class="kw-2">&amp;</span>validator.to_csl(),
+			<span class="kw-2">&amp;</span>Redeemer::new(
+				<span class="kw-2">&amp;</span>RedeemerTag::new_spend(),
+				<span class="comment">// CSL will set redeemer index for the index of script input after sorting transaction inputs
+				</span><span class="kw-2">&amp;</span><span class="number">0u32</span>.into(),
+				<span class="kw-2">&amp;</span>PlutusData::new_integer(<span class="kw-2">&amp;</span>BigInt::zero()),
+				permissioned_candidates_ex_units,
+			),
+		);
+		inputs.add_plutus_script_input(<span class="kw-2">&amp;</span>witness, <span class="kw-2">&amp;</span>input, <span class="kw-2">&amp;</span>amount);
+		tx_builder.set_inputs(<span class="kw-2">&amp;</span>inputs);
+	}
 
 	tx_builder.add_output_with_one_script_token(
 		validator,
@@ -900,6 +962,15 @@
 		ctx,
 	)<span class="question-mark">?</span>;
 
+	<span class="kw">let </span>gov_tx_input = governance_data.utxo_id_as_tx_input();
+	tx_builder.add_mint_one_script_token_using_reference_script(
+		<span class="kw-2">&amp;</span>governance_data.policy_script,
+		<span class="kw-2">&amp;</span>gov_tx_input,
+		governance_ex_units,
+	)<span class="question-mark">?</span>;
+
+	tx_builder.add_script_reference_input(<span class="kw-2">&amp;</span>gov_tx_input, governance_data.policy_script.bytes.len());
+	tx_builder.add_required_signer(<span class="kw-2">&amp;</span>ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
 }
 
@@ -908,40 +979,28 @@
 	<span class="kw">use super</span>::{mint_permissioned_candidates_token_tx, update_permissioned_candidates_tx};
 	<span class="kw">use crate</span>::{
 		csl::{empty_asset_name, TransactionContext},
-		ogmios_mock::MockOgmiosClient,
-		permissioned_candidates::upsert_permissioned_candidates,
-		scripts_data::get_scripts_data,
+		init_governance::GovernanceData,
+		plutus_script::PlutusScript,
 		test_values::<span class="kw-2">*</span>,
 	};
-	<span class="kw">use </span>cardano_serialization_lib::{
-		Address, ExUnits, Int, NetworkIdKind, PlutusData, RedeemerTag,
-	};
+	<span class="kw">use </span>cardano_serialization_lib::{Address, ExUnits, Int, NetworkIdKind, PlutusData};
 	<span class="kw">use </span>hex_literal::hex;
-	<span class="kw">use </span>ogmios_client::{
-		transactions::{
-			OgmiosBudget, OgmiosEvaluateTransactionResponse, OgmiosValidatorIndex,
-			SubmitTransactionResponse,
-		},
-		types::{Asset <span class="kw">as </span>OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue},
-	};
+	<span class="kw">use </span>ogmios_client::types::{Asset <span class="kw">as </span>OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	<span class="kw">use </span>partner_chains_plutus_data::permissioned_candidates::permissioned_candidates_to_plutus_data;
 	<span class="kw">use </span>sidechain_domain::{
-		AuraPublicKey, GrandpaPublicKey, McTxHash, PermissionedCandidateData, SidechainPublicKey,
-		UtxoId,
+		AuraPublicKey, GrandpaPublicKey, PermissionedCandidateData, SidechainPublicKey, UtxoId,
 	};
-	<span class="kw">use </span>std::str::FromStr;
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>mint_permissioned_candiates_token_tx_regression_test() {
-		<span class="comment">// We know the expected values were obtained with the correct code
-		</span><span class="kw">let </span>ex_units = ExUnits::new(<span class="kw-2">&amp;</span><span class="number">10000u32</span>.into(), <span class="kw-2">&amp;</span><span class="number">200u32</span>.into());
-
 		<span class="kw">let </span>tx = mint_permissioned_candidates_token_tx(
 			<span class="kw-2">&amp;</span>test_validator(),
 			<span class="kw-2">&amp;</span>test_policy(),
 			<span class="kw-2">&amp;</span>input_candidates(),
+			<span class="kw-2">&amp;</span>test_governance_data(),
 			<span class="kw-2">&amp;</span>test_tx_context(),
-			ex_units.clone(),
+			<span class="kw-2">&amp;</span>permissioned_candidates_ex_units(),
+			<span class="kw-2">&amp;</span>governance_ex_units(),
 		)
 		.unwrap();
 
@@ -997,19 +1056,7 @@
 				.unwrap(),
 			Int::new_i32(<span class="number">1</span>)
 		);
-		<span class="comment">// Redeemer is set
-		</span><span class="kw">let </span>redeemers = tx.witness_set().redeemers().unwrap();
-		<span class="macro">assert_eq!</span>(redeemers.len(), <span class="number">1</span>);
-		<span class="kw">let </span>redeemer = redeemers.get(<span class="number">0</span>);
-		<span class="macro">assert_eq!</span>(redeemer.tag(), RedeemerTag::new_mint());
-		<span class="macro">assert_eq!</span>(redeemer.index(), <span class="number">0u64</span>.into());
-		<span class="macro">assert_eq!</span>(redeemer.data(), PlutusData::new_empty_constr_plutus_data(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into()));
-		<span class="macro">assert_eq!</span>(redeemer.ex_units(), ex_units);
-		<span class="comment">// script_data_hash check
-		</span><span class="macro">assert_eq!</span>(
-			tx.body().script_data_hash().unwrap().to_hex(),
-			<span class="string">"5b95e874a40a87b017ee7827a7dccf7331d2b647190eddcde7f0edaba4393662"
-		</span>);
+
 		<span class="comment">// Collateral return must be set
 		</span><span class="kw">let </span>collateral_return = body.collateral_return().unwrap();
 		<span class="macro">assert_eq!</span>(collateral_return.address(), payment_addr());
@@ -1022,8 +1069,7 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>update_permissioned_candidates_tx_regression_test() {
-		<span class="comment">// We know the expected values were obtained with the correct code
-		</span><span class="kw">let </span>script_utxo_lovelace = <span class="number">1952430</span>;
+		<span class="kw">let </span>script_utxo_lovelace = <span class="number">1952430</span>;
 		<span class="kw">let </span>script_utxo = OgmiosUtxo {
 			transaction: OgmiosTx { id: [<span class="number">15</span>; <span class="number">32</span>] },
 			index: <span class="number">0</span>,
@@ -1040,15 +1086,15 @@
 			..Default::default()
 		};
 
-		<span class="kw">let </span>ex_units = ExUnits::new(<span class="kw-2">&amp;</span><span class="number">10000u32</span>.into(), <span class="kw-2">&amp;</span><span class="number">200u32</span>.into());
-
 		<span class="kw">let </span>tx = update_permissioned_candidates_tx(
 			<span class="kw-2">&amp;</span>test_validator(),
 			<span class="kw-2">&amp;</span>test_policy(),
 			<span class="kw-2">&amp;</span>input_candidates(),
 			<span class="kw-2">&amp;</span>script_utxo,
+			<span class="kw-2">&amp;</span>test_governance_data(),
 			<span class="kw-2">&amp;</span>test_tx_context(),
-			ex_units.clone(),
+			<span class="kw-2">&amp;</span>permissioned_candidates_ex_units(),
+			<span class="kw-2">&amp;</span>governance_ex_units(),
 		)
 		.unwrap();
 		<span class="kw">let </span>body = tx.body();
@@ -1093,22 +1139,7 @@
 			<span class="number">1u64</span>.into()
 		);
 		<span class="macro">assert_eq!</span>(script_output.plutus_data().unwrap(), expected_plutus_data());
-		<span class="comment">// No token is minted in the transaction
-		</span><span class="macro">assert!</span>(body.mint().is_none());
-		<span class="comment">// Spend redeemer is set
-		</span><span class="kw">let </span>redeemers = tx.witness_set().redeemers().unwrap();
-		<span class="macro">assert_eq!</span>(redeemers.len(), <span class="number">1</span>);
-		<span class="kw">let </span>redeemer = redeemers.get(<span class="number">0</span>);
-		<span class="macro">assert_eq!</span>(redeemer.tag(), RedeemerTag::new_spend());
-		<span class="comment">// Index is 1 because the script input is the 2nd input, if it was the 3rd input it would be 2, etc.
-		</span><span class="macro">assert_eq!</span>(redeemer.index(), <span class="number">1u64</span>.into());
-		<span class="macro">assert_eq!</span>(redeemer.data(), PlutusData::new_empty_constr_plutus_data(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into()));
-		<span class="macro">assert_eq!</span>(redeemer.ex_units(), ex_units);
-		<span class="comment">// script_data_hash check
-		</span><span class="macro">assert_eq!</span>(
-			tx.body().script_data_hash().unwrap().to_hex(),
-			<span class="string">"1b80a34a767a594124163993ee6206fdfa83fc5cb22b267e70e9173fc24b663f"
-		</span>);
+
 		<span class="comment">// Collateral return must be set
 		</span><span class="kw">let </span>collateral_return = body.collateral_return().unwrap();
 		<span class="macro">assert_eq!</span>(collateral_return.address(), payment_addr());
@@ -1117,6 +1148,31 @@
 			collateral_return.amount().coin().checked_add(<span class="kw-2">&amp;</span>total_collateral).unwrap(),
 			greater_payment_utxo().value.lovelace.into()
 		);
+	}
+
+	<span class="kw">fn </span>permissioned_candidates_ex_units() -&gt; ExUnits {
+		ExUnits::new(<span class="kw-2">&amp;</span><span class="number">10000u32</span>.into(), <span class="kw-2">&amp;</span><span class="number">200u32</span>.into())
+	}
+	<span class="kw">fn </span>governance_ex_units() -&gt; ExUnits {
+		ExUnits::new(<span class="kw-2">&amp;</span><span class="number">99999u32</span>.into(), <span class="kw-2">&amp;</span><span class="number">999u32</span>.into())
+	}
+
+	<span class="kw">fn </span>test_goveranance_policy() -&gt; PlutusScript {
+		PlutusScript {
+			bytes: <span class="macro">hex!</span>(<span class="string">"88991122"</span>).into(),
+			language: cardano_serialization_lib::LanguageKind::PlutusV2,
+		}
+	}
+
+	<span class="kw">fn </span>test_goveranance_utxo_id() -&gt; UtxoId {
+		UtxoId::new([<span class="number">123u8</span>; <span class="number">32</span>], <span class="number">17</span>)
+	}
+
+	<span class="kw">fn </span>test_governance_data() -&gt; GovernanceData {
+		GovernanceData {
+			policy_script: test_goveranance_policy(),
+			utxo_id: test_goveranance_utxo_id(),
+		}
 	}
 
 	<span class="kw">fn </span>test_tx_context() -&gt; TransactionContext {
@@ -1178,158 +1234,8 @@
 		]
 	}
 
-	<span class="kw">fn </span>existing_candidates() -&gt; Vec&lt;PermissionedCandidateData&gt; {
-		<span class="comment">// Unordered for testing purposes
-		</span><span class="macro">vec!</span>[
-			PermissionedCandidateData {
-				sidechain_public_key: SidechainPublicKey(
-					<span class="macro">hex!</span>(<span class="string">"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"</span>)
-						.into(),
-				),
-				aura_public_key: AuraPublicKey(
-					<span class="macro">hex!</span>(<span class="string">"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"</span>).into(),
-				),
-				grandpa_public_key: GrandpaPublicKey(
-					<span class="macro">hex!</span>(<span class="string">"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"</span>).into(),
-				),
-			},
-			PermissionedCandidateData {
-				sidechain_public_key: SidechainPublicKey(
-					<span class="macro">hex!</span>(<span class="string">"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"</span>)
-						.into(),
-				),
-				aura_public_key: AuraPublicKey(
-					<span class="macro">hex!</span>(<span class="string">"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"</span>).into(),
-				),
-				grandpa_public_key: GrandpaPublicKey(
-					<span class="macro">hex!</span>(<span class="string">"0000000000000000000000000000000000000000000000000000000000000000"</span>).into(),
-				),
-			},
-			PermissionedCandidateData {
-				sidechain_public_key: SidechainPublicKey(
-					<span class="macro">hex!</span>(<span class="string">"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"</span>)
-						.into(),
-				),
-				aura_public_key: AuraPublicKey(
-					<span class="macro">hex!</span>(<span class="string">"1111111111111111111111111111111111111111111111111111111111111111"</span>).into(),
-				),
-				grandpa_public_key: GrandpaPublicKey(
-					<span class="macro">hex!</span>(<span class="string">"2222222222222222222222222222222222222222222222222222222222222222"</span>).into(),
-				),
-			},
-		]
-	}
-
 	<span class="kw">fn </span>expected_plutus_data() -&gt; PlutusData {
 		permissioned_candidates_to_plutus_data(<span class="kw-2">&amp;</span>input_candidates())
-	}
-
-	<span class="attr">#[tokio::test]
-	</span><span class="kw">async fn </span>upsert_inserts_when_there_are_no_candidates_on_chain() {
-		<span class="kw">let </span>client = mock_client(
-			<span class="macro">vec!</span>[OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex { index: <span class="number">0</span>, purpose: <span class="string">"mint"</span>.into() },
-				budget: OgmiosBudget { memory: <span class="number">519278</span>, cpu: <span class="number">155707522 </span>},
-			}],
-			<span class="macro">vec!</span>[],
-		);
-		<span class="kw">let </span>tx = upsert_permissioned_candidates(
-			test_genesis_utxo(),
-			<span class="kw-2">&amp;</span>input_candidates(),
-			payment_key().as_bytes().try_into().unwrap(),
-			<span class="kw-2">&amp;</span>client,
-		)
-		.<span class="kw">await
-		</span>.unwrap();
-		<span class="macro">assert_eq!</span>(tx, <span class="prelude-val">Some</span>(McTxHash(test_upsert_tx_hash())))
-	}
-
-	<span class="attr">#[tokio::test]
-	</span><span class="kw">async fn </span>upsert_does_nothing_if_existing_candidates_are_equal_to_requested() {
-		<span class="kw">let </span><span class="kw-2">mut </span>existing_candidates_in_different_order = existing_candidates();
-		existing_candidates_in_different_order.reverse();
-		<span class="kw">let </span>client = mock_client(<span class="macro">vec!</span>[], <span class="macro">vec!</span>[script_utxo(<span class="kw-2">&amp;</span>existing_candidates())]);
-
-		<span class="kw">let </span>tx = upsert_permissioned_candidates(
-			test_genesis_utxo(),
-			<span class="kw-2">&amp;</span>existing_candidates_in_different_order,
-			payment_key().as_bytes().try_into().unwrap(),
-			<span class="kw-2">&amp;</span>client,
-		)
-		.<span class="kw">await
-		</span>.unwrap();
-		<span class="macro">assert_eq!</span>(tx, <span class="prelude-val">None</span>)
-	}
-
-	<span class="attr">#[tokio::test]
-	</span><span class="kw">async fn </span>upsert_updates_candidates_when_requested_are_different_to_existing() {
-		<span class="kw">let </span>client = mock_client(
-			<span class="macro">vec!</span>[OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex { index: <span class="number">0</span>, purpose: <span class="string">"spend"</span>.into() },
-				budget: OgmiosBudget { memory: <span class="number">519278</span>, cpu: <span class="number">155707522 </span>},
-			}],
-			<span class="macro">vec!</span>[script_utxo(<span class="kw-2">&amp;</span>existing_candidates())],
-		);
-		<span class="kw">let </span>tx = upsert_permissioned_candidates(
-			test_genesis_utxo(),
-			<span class="kw-2">&amp;</span>input_candidates(),
-			payment_key().as_bytes().try_into().unwrap(),
-			<span class="kw-2">&amp;</span>client,
-		)
-		.<span class="kw">await
-		</span>.unwrap();
-		<span class="macro">assert_eq!</span>(tx, <span class="prelude-val">Some</span>(McTxHash(test_upsert_tx_hash())))
-	}
-
-	<span class="comment">// Creates an UTXO that has proper multi-asset and datum
-	</span><span class="kw">fn </span>script_utxo(permissioned_candidates: <span class="kw-2">&amp;</span>Vec&lt;PermissionedCandidateData&gt;) -&gt; OgmiosUtxo {
-		<span class="kw">let </span>plutus_data = permissioned_candidates_to_plutus_data(permissioned_candidates);
-		<span class="kw">let </span>policy =
-			<span class="kw">crate</span>::scripts_data::get_scripts_data(test_genesis_utxo(), NetworkIdKind::Testnet)
-				.unwrap()
-				.policy_ids
-				.permissioned_candidates;
-
-		OgmiosUtxo {
-			transaction: OgmiosTx { id: [<span class="number">15</span>; <span class="number">32</span>] },
-			index: <span class="number">0</span>,
-			value: OgmiosValue {
-				lovelace: <span class="number">10000000</span>,
-				native_tokens: <span class="macro">vec!</span>[(policy.<span class="number">0</span>, <span class="macro">vec!</span>[OgmiosAsset { name: <span class="macro">vec!</span>[], amount: <span class="number">1 </span>}])]
-					.into_iter()
-					.collect(),
-			},
-			address: get_scripts_data(test_genesis_utxo(), NetworkIdKind::Testnet)
-				.unwrap()
-				.addresses
-				.permissioned_candidates_validator,
-			datum: <span class="prelude-val">Some</span>(ogmios_client::types::Datum { bytes: plutus_data.to_bytes() }),
-			..Default::default()
-		}
-	}
-
-	<span class="kw">fn </span>test_upsert_tx_hash() -&gt; [u8; <span class="number">32</span>] {
-		<span class="macro">hex!</span>(<span class="string">"aabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabbaabb"</span>)
-	}
-
-	<span class="kw">fn </span>test_genesis_utxo() -&gt; UtxoId {
-		UtxoId::from_str(<span class="string">"c389187c6cabf1cd2ca64cf8c76bf57288eb9c02ced6781935b810a1d0e7fbb4#1"</span>)
-			.unwrap()
-	}
-
-	<span class="kw">fn </span>mock_client(
-		evaluate_response: Vec&lt;OgmiosEvaluateTransactionResponse&gt;,
-		validator_utxos: Vec&lt;OgmiosUtxo&gt;,
-	) -&gt; MockOgmiosClient {
-		MockOgmiosClient::new()
-			.with_evaluate_result(evaluate_response)
-			.with_submit_result(SubmitTransactionResponse {
-				transaction: test_upsert_tx_hash().into(),
-			})
-			.with_utxos(<span class="macro">vec!</span>[make_utxo(<span class="number">1u8</span>, <span class="number">0</span>, <span class="number">15000000</span>, <span class="kw-2">&amp;</span>payment_addr())])
-			.with_utxos(validator_utxos)
-			.with_protocol_parameters(protocol_parameters())
-			.with_shelley_config(shelley_config())
 	}
 }
 </code></pre></div></section></main></body></html>

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["OgmiosRequest","OgmiosResponse"],"fn":["ogmios_request"],"struct":["EpochBoundary","EpochParameters","EraSummary","ShelleyGenesisConfiguration","Utxo","UtxoValue"],"type":["AssetName","PolicyId"]};
+window.SIDEBAR_ITEMS = {"enum":["OgmiosRequest","OgmiosResponse"],"fn":["get_shelley_config","ogmios_request"],"mod":["config"],"struct":["EpochBoundary","EpochParameters","EraSummary","ShelleyGenesisConfiguration","Utxo","UtxoValue"],"type":["AssetName","PolicyId"]};

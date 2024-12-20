@@ -314,9 +314,6 @@
 <a href="#314" id="314">314</a>
 <a href="#315" id="315">315</a>
 <a href="#316" id="316">316</a>
-<a href="#317" id="317">317</a>
-<a href="#318" id="318">318</a>
-<a href="#319" id="319">319</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Initialization of the reserve management is execution of three similar transaction to
 //! initialize three scripts: Rerserve Management Validator, Reserve Management Policy and
 //! Illiquid Circulation Supply Validator.
@@ -420,8 +417,7 @@
 	}
 }
 
-<span class="doccomment">/// TODO: make it idempotent is the next step
-</span><span class="kw">async fn </span>initialize_script&lt;
+<span class="kw">async fn </span>initialize_script&lt;
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 &gt;(
@@ -542,7 +538,7 @@
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		<span class="kw-2">&amp;</span>governance.policy_script,
 		<span class="kw-2">&amp;</span>gov_tx_input,
-		governance_script_cost,
+		<span class="kw-2">&amp;</span>governance_script_cost,
 	)<span class="question-mark">?</span>;
 
 	tx_builder.add_script_reference_input(<span class="kw-2">&amp;</span>gov_tx_input, governance.policy_script.bytes.len());
@@ -576,18 +572,16 @@
 		<span class="macro">vec!</span>[(mint_keys.get(<span class="number">0</span>), <span class="number">0</span>), (mint_keys.get(<span class="number">1</span>), <span class="number">1</span>)].into_iter().collect();
 	<span class="kw">let </span>mint_ex_units = get_validator_budgets(evaluate_response).mint_ex_units;
 	<span class="kw">if </span>mint_ex_units.len() == <span class="number">2 </span>{
-		<span class="kw">let </span>version_policy_idx = script_to_index
+		<span class="kw">let </span>version_policy_idx = <span class="kw-2">*</span>script_to_index
 			.get(version_oracle_policy)
-			.expect(<span class="string">"Version Oracle Policy script is present in transaction mints"</span>)
-			.clone();
+			.expect(<span class="string">"Version Oracle Policy script is present in transaction mints"</span>);
 		<span class="kw">let </span>version_oracle_ex_units = mint_ex_units
 			.get(version_policy_idx)
 			.expect(<span class="string">"mint_ex_units have two items"</span>)
 			.clone();
-		<span class="kw">let </span>gov_policy_idx = script_to_index
+		<span class="kw">let </span>gov_policy_idx = <span class="kw-2">*</span>script_to_index
 			.get(governance_policy)
-			.expect(<span class="string">"Governance Policy script is present in transaction mints"</span>)
-			.clone();
+			.expect(<span class="string">"Governance Policy script is present in transaction mints"</span>);
 		<span class="kw">let </span>governance_ex_units =
 			mint_ex_units.get(gov_policy_idx).expect(<span class="string">"mint_ex_units have two items"</span>).clone();
 		<span class="prelude-val">Ok</span>((version_oracle_ex_units, governance_ex_units))

@@ -128,6 +128,9 @@
 <a href="#128" id="128">128</a>
 <a href="#129" id="129">129</a>
 <a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>anyhow::{anyhow, Context};
 <span class="kw">use </span>cardano_serialization_lib::{Address, LanguageKind, NetworkIdKind, PlutusData, ScriptHash};
 <span class="kw">use </span>ogmios_client::types::{OgmiosScript, OgmiosScript::Plutus};
@@ -156,7 +159,10 @@
 				<span class="string">"plutus:v2" </span>=&gt; LanguageKind::PlutusV2,
 				<span class="string">"plutus:v3" </span>=&gt; LanguageKind::PlutusV3,
 				<span class="kw">_ </span>=&gt; {
-					<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Unsupported Plutus language version: {}"</span>, script.language));
+					<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(
+						<span class="string">"Unsupported Plutus language version: {}"</span>,
+						script.language
+					));
 				},
 			};
 			<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ bytes: script.cbor, language: language_kind })

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["get_governance_utxo","run_init_governance"],"trait":["InitGovernance"]};
+window.SIDEBAR_ITEMS = {"fn":["run_init_governance"],"trait":["InitGovernance"]};

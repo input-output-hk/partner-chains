@@ -197,6 +197,29 @@
 <a href="#197" id="197">197</a>
 <a href="#198" id="198">198</a>
 <a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::OgmiosUtxoExt;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script;
 <span class="kw">use </span><span class="kw">crate</span>::scripts_data;
@@ -207,7 +230,6 @@
 };
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
-<span class="kw">use </span>ogmios_client::types::OgmiosScript;
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
@@ -328,18 +350,34 @@
 	<span class="prelude-val">Ok</span>((genesis_utxo.to_domain(), result.transaction))
 }
 
-<span class="kw">pub async fn </span>get_governance_utxo&lt;T: QueryLedgerState + Transactions + QueryNetwork&gt;(
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_governance_utxo&lt;T: QueryLedgerState + Transactions + QueryNetwork&gt;(
 	genesis_utxo: UtxoId,
 	client: <span class="kw-2">&amp;</span>T,
-) -&gt; anyhow::Result&lt;OgmiosUtxo&gt; {
-	<span class="kw">let </span>network = client.shelley_genesis_configuration().<span class="kw">await</span><span class="question-mark">?</span>.network;
+) -&gt; <span class="prelude-ty">Result</span>&lt;OgmiosUtxo, JsError&gt; {
+	<span class="kw">let </span>network = client
+		.shelley_genesis_configuration()
+		.<span class="kw">await
+		</span>.map_err(|e| {
+			JsError::from_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"Could not get Shelley Genesis Configuration: {}"</span>, e))
+		})<span class="question-mark">?
+		</span>.network;
 
 	<span class="kw">let </span>(<span class="kw">_</span>, version_oracle_policy, validator_address) =
-		scripts_data::version_scripts_and_address(genesis_utxo, network.to_csl())<span class="question-mark">?</span>;
+		scripts_data::version_scripts_and_address(genesis_utxo, network.to_csl()).map_err(|e| {
+			JsError::from_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
+				<span class="string">"Could not get Version Oracle Script Data for: {}, {}"</span>,
+				genesis_utxo, e
+			))
+		})<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>utxos = client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>utxos = client.query_utxos(<span class="kw-2">&amp;</span>[validator_address.clone()]).<span class="kw">await</span>.map_err(|e| {
+		JsError::from_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
+			<span class="string">"Could not query UTXOs Governance Validator at {}: {}"</span>,
+			validator_address, e
+		))
+	})<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>governance_utxo = utxos
+	utxos
 		.into_iter()
 		.find(|utxo| {
 			<span class="kw">let </span>correct_datum = utxo
@@ -358,9 +396,7 @@
 				utxo.value.native_tokens.contains_key(<span class="kw-2">&amp;</span>version_oracle_policy.script_hash());
 			correct_datum &amp;&amp; contains_version_oracle_token
 		})
-		.ok_or_else(|| <span class="macro">anyhow!</span>(<span class="string">"Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using `init-governance` command."</span>))<span class="question-mark">?</span>;
-
-	<span class="prelude-val">Ok</span>(governance_utxo)
+		.ok_or_else(|| JsError::from_str(<span class="string">"Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using `init-governance` command."</span>))
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>GovernanceData {
@@ -384,16 +420,26 @@
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_governance_data&lt;T: QueryLedgerState + Transactions + QueryNetwork&gt;(
 	genesis_utxo: UtxoId,
 	client: <span class="kw-2">&amp;</span>T,
-) -&gt; anyhow::Result&lt;GovernanceData&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;GovernanceData, JsError&gt; {
 	<span class="kw">let </span>utxo = get_governance_utxo(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>policy_script = read_policy(<span class="kw-2">&amp;</span>utxo)<span class="question-mark">?</span>;
 	<span class="kw">let </span>utxo_id = utxo.to_domain();
-	<span class="kw">if let </span><span class="prelude-val">Some</span>(OgmiosScript::Plutus(ps)) = utxo.script.clone() {
-		<span class="prelude-val">Ok</span>(GovernanceData {
-			policy_script: plutus_script::PlutusScript::from_cbor(<span class="kw-2">&amp;</span>ps.cbor, LanguageKind::PlutusV2),
-			utxo_id,
-		})
-	} <span class="kw">else </span>{
-		<span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Programmatic Error: Governance UTXO script is not PlutusScript"</span>))
-	}
+	<span class="prelude-val">Ok</span>(GovernanceData { policy_script, utxo_id })
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>read_policy(
+	governance_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
+) -&gt; <span class="prelude-ty">Result</span>&lt;plutus_script::PlutusScript, JsError&gt; {
+	<span class="kw">let </span>script = governance_utxo
+		.script
+		.clone()
+		.ok_or_else(|| JsError::from_str(<span class="string">"No 'script' in governance UTXO"</span>))<span class="question-mark">?</span>;
+	plutus_script::PlutusScript::from_ogmios(script).map_err(|e| {
+		JsError::from_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
+			<span class="string">"Cannot convert script from UTXO {}: {}"</span>,
+			governance_utxo.to_domain(),
+			e
+		))
+	})
 }
 </code></pre></div></section></main></body></html>

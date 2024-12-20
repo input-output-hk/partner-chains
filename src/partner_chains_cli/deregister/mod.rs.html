@@ -64,7 +64,7 @@
 };
 <span class="kw">use </span><span class="kw">crate</span>::config::CHAIN_CONFIG_FILE_PATH;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
-<span class="kw">use </span><span class="kw">crate</span>::pc_contracts_cli_resources::establish_pc_contracts_cli_configuration;
+<span class="kw">use </span><span class="kw">crate</span>::ogmios::config::establish_ogmios_configuration;
 <span class="kw">use </span><span class="kw">crate</span>::CmdRun;
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>partner_chains_cardano_offchain::register::Deregister;
@@ -87,8 +87,8 @@
 		<span class="kw">let </span>cold_vkey_path =
 			CARDANO_COLD_VERIFICATION_KEY_FILE.prompt_with_default_from_file_and_save(context);
 		<span class="kw">let </span>stake_ownership_pub_key = get_mc_pubkey_from_file(<span class="kw-2">&amp;</span>cold_vkey_path, context)<span class="question-mark">?</span>;
-		<span class="kw">let </span>pc_contracts_cli_resources = establish_pc_contracts_cli_configuration(context)<span class="question-mark">?</span>;
-		<span class="kw">let </span>offchain = context.offchain_impl(<span class="kw-2">&amp;</span>pc_contracts_cli_resources.ogmios)<span class="question-mark">?</span>;
+		<span class="kw">let </span>ogmios_config = establish_ogmios_configuration(context)<span class="question-mark">?</span>;
+		<span class="kw">let </span>offchain = context.offchain_impl(<span class="kw-2">&amp;</span>ogmios_config)<span class="question-mark">?</span>;
 
 		<span class="kw">let </span>runtime = tokio::runtime::Runtime::new().map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
 		runtime

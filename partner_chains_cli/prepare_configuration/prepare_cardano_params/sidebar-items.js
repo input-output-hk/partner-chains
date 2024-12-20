@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["caradano_parameters","get_eras_summaries","get_first_epoch_era","get_shelley_config","prepare_cardano_params"]};
+window.SIDEBAR_ITEMS = {"fn":["caradano_parameters","get_eras_summaries","get_first_epoch_era","prepare_cardano_params"]};
