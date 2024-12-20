@@ -363,7 +363,7 @@ pub struct UtxoId {
 }
 
 impl UtxoId {
-	pub fn new(hash: [u8; TX_HASH_SIZE], index: u16) -> UtxoId {
+	pub const fn new(hash: [u8; TX_HASH_SIZE], index: u16) -> UtxoId {
 		UtxoId { tx_hash: McTxHash(hash), index: UtxoIndex(index) }
 	}
 }
