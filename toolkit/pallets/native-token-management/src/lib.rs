@@ -52,6 +52,7 @@ pub mod pallet {
 	}
 
 	#[pallet::event]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		TokensTransfered(NativeTokenAmount),
 	}
@@ -151,6 +152,9 @@ pub mod pallet {
 				}
 				true
 			});
+
+			Self::deposit_event(Event::TokensTransfered(token_amount));
+
 			T::TokenTransferHandler::handle_token_transfer(token_amount)
 		}
 
