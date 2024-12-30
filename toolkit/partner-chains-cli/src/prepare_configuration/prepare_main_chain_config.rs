@@ -9,7 +9,7 @@ use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params
 use crate::{config::config_fields, *};
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
 use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
-use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, PolicyId, UtxoId};
+use sidechain_domain::{MainchainKeyHash, MainchainPrivateKey, PolicyId, UtxoId};
 
 pub fn prepare_main_chain_config<C: IOContext>(
 	context: &C,
@@ -38,7 +38,7 @@ pub fn prepare_main_chain_config<C: IOContext>(
 
 fn get_private_key_and_key_hash<C: IOContext>(
 	context: &C,
-) -> Result<(MainchainPrivateKey, MainchainAddressHash), anyhow::Error> {
+) -> Result<(MainchainPrivateKey, MainchainKeyHash), anyhow::Error> {
 	let cardano_signig_key_file = config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
 		.prompt_with_default_from_file_and_save(context);
 	let pkey = cardano_key::get_mc_pkey_from_file(&cardano_signig_key_file, context)?;
@@ -385,9 +385,7 @@ mod tests {
 			)
 			.with_init_governance(
 				UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
-				MainchainAddressHash(hex!(
-					"e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
-				)),
+				MainchainKeyHash(hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b")),
 				MainchainPrivateKey(hex!(
 					"d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
 				)),

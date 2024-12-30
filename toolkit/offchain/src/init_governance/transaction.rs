@@ -6,14 +6,14 @@ use crate::{
 use cardano_serialization_lib::*;
 use ogmios_client::types::OgmiosUtxo;
 use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
-use sidechain_domain::MainchainAddressHash;
+use sidechain_domain::MainchainKeyHash;
 
 // Script ID of the governance script in the script cache.
 // TODO: Use a proper value of raw_scripts::ScripId once we upgrade to a version that has it.
 const SCRIPT_ID: u32 = 32;
 
 pub(crate) fn init_governance_transaction(
-	governance_authority: MainchainAddressHash,
+	governance_authority: MainchainKeyHash,
 	tx_context: &TransactionContext,
 	genesis_utxo: OgmiosUtxo,
 	ex_units: ExUnits,

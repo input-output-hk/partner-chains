@@ -22,7 +22,7 @@ use partner_chains_cardano_offchain::{
 };
 use sidechain_domain::{
 	AdaBasedStaking, AuraPublicKey, CandidateRegistration, DParameter, GrandpaPublicKey,
-	MainchainAddressHash, MainchainPrivateKey, MainchainPublicKey, MainchainSignature, McTxHash,
+	MainchainKeyHash, MainchainPrivateKey, MainchainPublicKey, MainchainSignature, McTxHash,
 	PermissionedCandidateData, SidechainPublicKey, SidechainSignature, UtxoId,
 };
 use std::time::Duration;
@@ -33,8 +33,8 @@ const TEST_IMAGE: &str = "ghcr.io/input-output-hk/smart-contracts-tests-cardano-
 
 const TEST_IMAGE_TAG: &str = "v10.2.1-v6.9.0";
 
-const GOVERNANCE_AUTHORITY: MainchainAddressHash =
-	MainchainAddressHash(hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"));
+const GOVERNANCE_AUTHORITY: MainchainKeyHash =
+	MainchainKeyHash(hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"));
 
 const GOVERNANCE_AUTHORITY_PAYMENT_KEY: MainchainPrivateKey =
 	MainchainPrivateKey(hex!("d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"));
@@ -48,8 +48,8 @@ const EVE_PAYMENT_KEY: MainchainPrivateKey =
 const EVE_PUBLIC_KEY: MainchainPublicKey =
 	MainchainPublicKey(hex!("a5ab6e82531cac3480cf7ff360f38a0beeea93cabfdd1ed0495e0423f7875c57"));
 
-const EVE_PUBLIC_KEY_HASH: MainchainAddressHash =
-	MainchainAddressHash(hex!("84ba05c28879b299a8377e62128adc7a0e0df3ac438ff95efc7c8443"));
+const EVE_PUBLIC_KEY_HASH: MainchainKeyHash =
+	MainchainKeyHash(hex!("84ba05c28879b299a8377e62128adc7a0e0df3ac438ff95efc7c8443"));
 
 const EVE_ADDRESS: &str = "addr_test1vzzt5pwz3pum9xdgxalxyy52m3aqur0n43pcl727l37ggscl8h7v8";
 

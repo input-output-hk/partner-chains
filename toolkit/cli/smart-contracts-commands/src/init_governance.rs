@@ -2,7 +2,7 @@ use jsonrpsee::http_client::HttpClient;
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries, init_governance::run_init_governance,
 };
-use sidechain_domain::{MainchainAddressHash, UtxoId};
+use sidechain_domain::{MainchainKeyHash, UtxoId};
 
 use crate::read_private_key_from_file;
 
@@ -12,7 +12,7 @@ pub struct InitGovernanceCmd {
 	common_arguments: crate::CommonArguments,
 	/// Governance authority hash to be set.
 	#[arg(long, short = 'g')]
-	governance_authority: MainchainAddressHash,
+	governance_authority: MainchainKeyHash,
 	/// Path to the Cardano Payment Key file.
 	#[arg(long, short = 'k')]
 	payment_key_file: String,

@@ -12,7 +12,7 @@ use ogmios_client::transactions::{
 use ogmios_client::types::*;
 use pretty_assertions::assert_eq;
 use serde_json::json;
-use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey};
+use sidechain_domain::{MainchainKeyHash, MainchainPrivateKey};
 
 fn expected_transaction() -> serde_json::Value {
 	json!({
@@ -208,8 +208,8 @@ fn tx_context() -> TransactionContext {
 	}
 }
 
-fn governance_authority() -> MainchainAddressHash {
-	MainchainAddressHash(hex!("76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"))
+fn governance_authority() -> MainchainKeyHash {
+	MainchainKeyHash(hex!("76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"))
 }
 
 fn payment_utxo() -> OgmiosUtxo {

@@ -220,7 +220,7 @@ pub async fn run_deregister<
 }
 
 fn get_own_registrations(
-	own_pkh: MainchainAddressHash,
+	own_pkh: MainchainKeyHash,
 	spo_pub_key: MainchainPublicKey,
 	validator_utxos: &[OgmiosUtxo],
 ) -> Vec<(OgmiosUtxo, CandidateRegistration)> {
@@ -336,9 +336,8 @@ mod tests {
 	};
 
 	use sidechain_domain::{
-		AdaBasedStaking, AuraPublicKey, CandidateRegistration, GrandpaPublicKey,
-		MainchainAddressHash, MainchainSignature, McTxHash, SidechainPublicKey, SidechainSignature,
-		UtxoId, UtxoIndex,
+		AdaBasedStaking, AuraPublicKey, CandidateRegistration, GrandpaPublicKey, MainchainKeyHash,
+		MainchainSignature, McTxHash, SidechainPublicKey, SidechainSignature, UtxoId, UtxoIndex,
 	};
 
 	fn sum_lovelace(utxos: &[OgmiosUtxo]) -> u64 {
@@ -348,8 +347,8 @@ mod tests {
 	const MIN_UTXO_LOVELACE: u64 = 1000000;
 	const FIVE_ADA: u64 = 5000000;
 
-	fn own_pkh() -> MainchainAddressHash {
-		MainchainAddressHash([0; 28])
+	fn own_pkh() -> MainchainKeyHash {
+		MainchainKeyHash([0; 28])
 	}
 	fn candidate_registration(registration_utxo: UtxoId) -> CandidateRegistration {
 		CandidateRegistration {

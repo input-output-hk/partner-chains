@@ -10,8 +10,8 @@ use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData}
 use partner_chains_cardano_offchain::OffchainError;
 use pretty_assertions::assert_eq;
 use sidechain_domain::{
-	CandidateRegistration, DParameter, MainchainAddressHash, MainchainPrivateKey,
-	MainchainPublicKey, McTxHash, UtxoId,
+	CandidateRegistration, DParameter, MainchainKeyHash, MainchainPrivateKey, MainchainPublicKey,
+	McTxHash, UtxoId,
 };
 use sp_core::offchain::Timestamp;
 use std::collections::HashMap;
@@ -256,10 +256,8 @@ impl OffchainMocks {
 #[derive(Default, Clone)]
 pub struct OffchainMock {
 	pub scripts_data: HashMap<UtxoId, Result<ScriptsData, OffchainError>>,
-	pub init_governance: HashMap<
-		(UtxoId, MainchainAddressHash, MainchainPrivateKey),
-		Result<OgmiosTx, OffchainError>,
-	>,
+	pub init_governance:
+		HashMap<(UtxoId, MainchainKeyHash, MainchainPrivateKey), Result<OgmiosTx, OffchainError>>,
 	pub upsert_d_param: HashMap<(UtxoId, DParameter, [u8; 32]), Result<Option<McTxHash>, String>>,
 	pub upsert_permissioned_candidates: HashMap<
 		(UtxoId, Vec<sidechain_domain::PermissionedCandidateData>, [u8; 32]),
@@ -291,7 +289,7 @@ impl OffchainMock {
 	pub(crate) fn with_init_governance(
 		self,
 		genesis_utxo: UtxoId,
-		governance: MainchainAddressHash,
+		governance: MainchainKeyHash,
 		payment_key: MainchainPrivateKey,
 		result: Result<OgmiosTx, OffchainError>,
 	) -> Self {
@@ -369,7 +367,7 @@ impl GetScriptsData for OffchainMock {
 impl InitGovernance for OffchainMock {
 	async fn init_governance(
 		&self,
-		governance_authority: MainchainAddressHash,
+		governance_authority: MainchainKeyHash,
 		payment_key: MainchainPrivateKey,
 		genesis_utxo_id: UtxoId,
 	) -> Result<OgmiosTx, OffchainError> {

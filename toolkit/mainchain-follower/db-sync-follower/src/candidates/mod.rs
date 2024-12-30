@@ -181,15 +181,15 @@ impl CandidatesDataSourceImpl {
 
 	fn make_stake_map(
 		stake_pool_entries: Vec<StakePoolEntry>,
-	) -> HashMap<MainchainAddressHash, StakeDelegation> {
+	) -> HashMap<MainchainKeyHash, StakeDelegation> {
 		stake_pool_entries
 			.into_iter()
-			.map(|e| (MainchainAddressHash(e.pool_hash), StakeDelegation(e.stake.0)))
+			.map(|e| (MainchainKeyHash(e.pool_hash), StakeDelegation(e.stake.0)))
 			.collect()
 	}
 
 	fn get_stake_delegation(
-		stake_map: &HashMap<MainchainAddressHash, StakeDelegation>,
+		stake_map: &HashMap<MainchainKeyHash, StakeDelegation>,
 		mainchain_pub_key: &MainchainPublicKey,
 	) -> Option<StakeDelegation> {
 		if stake_map.is_empty() {
@@ -197,7 +197,7 @@ impl CandidatesDataSourceImpl {
 		} else {
 			Some(
 				stake_map
-					.get(&MainchainAddressHash::from_vkey(mainchain_pub_key.0))
+					.get(&MainchainKeyHash::from_vkey(mainchain_pub_key.0))
 					.cloned()
 					.unwrap_or(StakeDelegation(0)),
 			)

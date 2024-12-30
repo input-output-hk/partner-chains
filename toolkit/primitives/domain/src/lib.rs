@@ -225,7 +225,7 @@ impl core::fmt::Debug for MainchainPrivateKey {
 
 impl MainchainPrivateKey {
 	#[cfg(feature = "std")]
-	pub fn to_pub_key_hash(&self) -> MainchainAddressHash {
+	pub fn to_pub_key_hash(&self) -> MainchainKeyHash {
 		cardano_serialization_lib::PrivateKey::from_normal_bytes(&self.0)
 			.expect("Conversion cannot fail on valid MainchainPrivateKey values")
 			.to_public()
@@ -233,7 +233,7 @@ impl MainchainPrivateKey {
 			.to_bytes()
 			.as_slice()
 			.try_into()
-			.map(MainchainAddressHash)
+			.map(MainchainKeyHash)
 			.expect("Conversion cannot fail as representation is the same")
 	}
 }
@@ -250,24 +250,22 @@ impl TryFrom<Vec<u8>> for MainchainPublicKey {
 
 pub const MAINCHAIN_ADDRESS_HASH_LEN: usize = 28;
 
-/// Some hash of MainchainAddress, 28 bytes. Presumably blake2b_224.
-/// Way to get it: cardano-cli latest address key-hash --payment-verification-key-file FILE
 #[derive(
 	Clone, Copy, Decode, Default, Eq, Encode, Hash, MaxEncodedLen, PartialEq, ToDatum, TypeInfo,
 )]
 #[byte_string(debug)]
 #[cfg_attr(feature = "std", byte_string(to_hex_string, decode_hex))]
 #[cfg_attr(feature = "serde", byte_string(hex_serialize, hex_deserialize))]
-pub struct MainchainAddressHash(pub [u8; MAINCHAIN_ADDRESS_HASH_LEN]);
+pub struct MainchainKeyHash(pub [u8; MAINCHAIN_ADDRESS_HASH_LEN]);
 
-impl Display for MainchainAddressHash {
+impl Display for MainchainKeyHash {
 	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
 		let hash = sp_core::hexdisplay::HexDisplay::from(&self.0);
 		write!(f, "0x{}", hash)
 	}
 }
 
-impl MainchainAddressHash {
+impl MainchainKeyHash {
 	pub fn from_vkey(vkey: [u8; 32]) -> Self {
 		Self(blake2b(&vkey))
 	}
@@ -669,7 +667,7 @@ pub struct CandidateRegistration {
 	pub stake_ownership: AdaBasedStaking,
 	pub partner_chain_pub_key: SidechainPublicKey,
 	pub partner_chain_signature: SidechainSignature,
-	pub own_pkh: MainchainAddressHash,
+	pub own_pkh: MainchainKeyHash,
 	pub registration_utxo: UtxoId,
 	pub aura_pub_key: AuraPublicKey,
 	pub grandpa_pub_key: GrandpaPublicKey,
