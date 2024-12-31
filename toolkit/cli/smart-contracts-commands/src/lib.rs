@@ -4,6 +4,7 @@ pub mod d_parameter;
 pub mod get_scripts;
 pub mod init_governance;
 pub mod register;
+pub mod reserve;
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -18,6 +19,9 @@ pub enum SmartContractsCmd {
 	Register(register::RegisterCmd),
 	/// Deregister candidate
 	Deregister(register::DeregisterCmd),
+	/// Commands for management of rewards reserve
+	#[command(subcommand)]
+	Reserve(reserve::ReserveCmd),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -37,6 +41,7 @@ impl SmartContractsCmd {
 			Self::UpsertDParameter(cmd) => cmd.execute().await,
 			Self::Register(cmd) => cmd.execute().await,
 			Self::Deregister(cmd) => cmd.execute().await,
+			Self::Reserve(cmd) => cmd.execute().await,
 		}
 	}
 
@@ -52,13 +57,18 @@ pub(crate) struct CardanoKeyFileContent {
 }
 
 pub(crate) fn read_private_key_from_file(path: &str) -> CmdResult<MainchainPrivateKey> {
-	let file_content_str = String::from_utf8(std::fs::read(path)?)?;
-	let file_content = serde_json::from_str::<CardanoKeyFileContent>(&file_content_str)?;
-	let key_hex = (file_content.cbor_hex.strip_prefix("5820"))
-		.ok_or("CBOR prefix missing in payment key".to_string())?;
-	let key_bytes = (hex::decode(key_hex)?.try_into())
-		.map_err(|_| format!("{} is not the valid lengh of 32", key_hex))?;
-	Ok(MainchainPrivateKey(key_bytes))
+	fn read_and_parse(path: &str) -> CmdResult<MainchainPrivateKey> {
+		let file_content_str = String::from_utf8(std::fs::read(path)?)?;
+		let file_content = serde_json::from_str::<CardanoKeyFileContent>(&file_content_str)?;
+		let key_hex = (file_content.cbor_hex.strip_prefix("5820"))
+			.ok_or("CBOR prefix missing in payment key".to_string())?;
+		let key_bytes = (hex::decode(key_hex)?.try_into())
+			.map_err(|_| format!("{} is not the valid lengh of 32", key_hex))?;
+		Ok(MainchainPrivateKey(key_bytes))
+	}
+	let key = read_and_parse(path)
+		.map_err(|e| format!("Could not read private key file. Reason: {}", e))?;
+	Ok(key)
 }
 
 // Parses public keys in formatted as SIDECHAIN_KEY:AURA_KEY:GRANDPA_KEY
