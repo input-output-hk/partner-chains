@@ -380,7 +380,7 @@ mod tests {
 		let change_output = outputs
 			.into_iter()
 			.find(|o| o.address() == payment_addr())
-			.expect("Change output has to present to keep governance token")
+			.expect("Change output has to be present to keep governance token")
 			.clone();
 		let gov_token_amount = change_output
 			.amount()
@@ -449,8 +449,7 @@ mod tests {
 		};
 
 		let _ = redeemers
-			.clone()
-			.into_iter()
+			.iter()
 			.find(|r| {
 				r.tag() == RedeemerTag::new_mint()
 					&& r.data() == expected_vo_redeemer_data
@@ -458,7 +457,7 @@ mod tests {
 			})
 			.expect("Transaction should have a mint redeemer for Version Oracle Policy");
 		let _ = redeemers
-			.into_iter()
+			.iter()
 			.find(|r| {
 				r.tag() == RedeemerTag::new_mint()
 					&& r.data() == PlutusData::new_empty_constr_plutus_data(&BigNum::zero())
