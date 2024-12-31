@@ -426,6 +426,7 @@
 <a href="#426" id="426">426</a>
 <a href="#427" id="427">427</a>
 <a href="#428" id="428">428</a>
+<a href="#429" id="429">429</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
 	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
@@ -435,6 +436,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 <span class="kw">use crate</span>::{config::config_fields, <span class="kw-2">*</span>};
+<span class="kw">use </span>partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
 <span class="kw">use </span>partner_chains_cardano_offchain::init_governance::InitGovernance;
 <span class="kw">use </span>partner_chains_cardano_offchain::scripts_data::GetScriptsData;
 <span class="kw">use </span>sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, PolicyId, UtxoId};

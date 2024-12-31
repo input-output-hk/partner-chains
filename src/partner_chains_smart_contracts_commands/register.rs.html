@@ -94,7 +94,9 @@
 <a href="#94" id="94">94</a>
 <a href="#95" id="95">95</a>
 <a href="#96" id="96">96</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>jsonrpsee::http_client::HttpClient;
+</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{parse_partnerchain_public_keys, read_private_key_from_file};
+<span class="kw">use </span>jsonrpsee::http_client::HttpClient;
+<span class="kw">use </span>partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	register::{run_deregister, run_register},
@@ -103,8 +105,6 @@
 	AdaBasedStaking, CandidateRegistration, MainchainPublicKey, MainchainSignature,
 	PermissionedCandidateData, SidechainSignature, UtxoId,
 };
-
-<span class="kw">use crate</span>::{parse_partnerchain_public_keys, read_private_key_from_file};
 
 <span class="attr">#[derive(Clone, Debug, clap::Parser)]
 </span><span class="kw">pub struct </span>RegisterCmd {

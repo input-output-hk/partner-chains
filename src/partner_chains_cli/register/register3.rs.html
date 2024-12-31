@@ -430,6 +430,7 @@
 <a href="#430" id="430">430</a>
 <a href="#431" id="431">431</a>
 <a href="#432" id="432">432</a>
+<a href="#433" id="433">433</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_key::get_mc_pkey_from_file;
 <span class="kw">use </span><span class="kw">crate</span>::config;
 <span class="kw">use </span><span class="kw">crate</span>::config::config_fields;
@@ -439,6 +440,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::ogmios::config::establish_ogmios_configuration;
 <span class="kw">use </span><span class="kw">crate</span>::CmdRun;
 <span class="kw">use </span>clap::Parser;
+<span class="kw">use </span>partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
 <span class="kw">use </span>partner_chains_cardano_offchain::register::Register;
 <span class="kw">use </span>sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
