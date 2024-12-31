@@ -24,7 +24,6 @@ lazy_static = { workspace = true }
 blake2b_simd = { workspace = true }
 figment = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
-cardano-serialization-lib = { workspace = true, optional = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }
@@ -39,7 +38,6 @@ std = [
 	"num-bigint/std",
 	"figment",
 	"thiserror",
-	"cardano-serialization-lib",
 ]
 serde = [
 	"dep:serde",

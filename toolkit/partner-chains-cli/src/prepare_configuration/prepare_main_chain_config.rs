@@ -7,6 +7,7 @@ use crate::config::ServiceConfig;
 use crate::io::IOContext;
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 use crate::{config::config_fields, *};
+use partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
 use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
 use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, PolicyId, UtxoId};

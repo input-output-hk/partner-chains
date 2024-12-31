@@ -9949,7 +9949,6 @@ version = "1.4.0"
 dependencies = [
  "blake2b_simd",
  "byte-string-derive",
- "cardano-serialization-lib",
  "derive_more",
  "figment",
  "hex",
