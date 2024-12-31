@@ -8,7 +8,7 @@ use ogmios_client::{
 	transactions::{OgmiosBudget, OgmiosEvaluateTransactionResponse},
 	types::{OgmiosUtxo, OgmiosValue},
 };
-use sidechain_domain::{NetworkType, UtxoId};
+use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, NetworkType, UtxoId};
 
 pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: LanguageKind) -> [u8; 28] {
 	// Before hashing the script, we need to prepend with byte denoting the language.
@@ -253,6 +253,24 @@ pub trait UtxoIdExt {
 impl UtxoIdExt for UtxoId {
 	fn to_csl(&self) -> TransactionInput {
 		TransactionInput::new(&TransactionHash::from(self.tx_hash.0), self.index.0.into())
+	}
+}
+
+pub trait MainchainPrivateKeyExt {
+	fn to_pub_key_hash(&self) -> MainchainAddressHash;
+}
+
+impl MainchainPrivateKeyExt for MainchainPrivateKey {
+	fn to_pub_key_hash(&self) -> MainchainAddressHash {
+		cardano_serialization_lib::PrivateKey::from_normal_bytes(&self.0)
+			.expect("Conversion cannot fail on valid MainchainPrivateKey values")
+			.to_public()
+			.hash()
+			.to_bytes()
+			.as_slice()
+			.try_into()
+			.map(MainchainAddressHash)
+			.expect("Conversion cannot fail as representation is the same")
 	}
 }
 
