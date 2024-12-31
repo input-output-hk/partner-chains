@@ -1109,7 +1109,7 @@
 				transaction: OgmiosTx { id: utxo_id.tx_hash.<span class="number">0 </span>},
 				index: utxo_id.index.<span class="number">0</span>,
 				value,
-				address: payment_addr().to_bech32(<span class="prelude-val">None</span>).unwrap(),
+				address: PAYMENT_ADDR.into(),
 				..Default::default()
 			}).collect()
 		}
