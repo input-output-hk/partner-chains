@@ -1,0 +1,280 @@
+//! Transaction that creates a new reserve.
+//!
+//! Specification:
+//! 1. The transaction should mint two tokens:
+//!   * 1 Reserve Auth Policy Token (using refernce script)
+//!   * 1 Governance Policy Token (using refernce script)
+//! 2. The transaction should have two outputs:
+//!   * Reserve Validator output that:
+//!   * * has Reward Tokens (or ada)
+//!   * * has Plutus Data (in our "versioned format"): `[[[Int(t0), <Encoded Token>], [Bytes(v_function_hash), Int(initial_incentive)], [Int(0)]], Constr(0, []), Int(0)]`,
+//!where `<Encoded Token>` is `Constr(0, [Bytes(policy_id), Bytes(asset_name)])`.
+//!   * Change output that keeps the Governance Token and change of other tokens
+//! 3. The transaction should have three script reference inputs:
+//!   * Reserve Auth Version Utxo
+//!   * Reserve Validator Version Utxo
+//!   * Governance Policy Script
+
+use super::init::find_script_utxo;
+use crate::{
+	await_tx::AwaitTx,
+	csl::{
+		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units,
+		TransactionBuilderExt, TransactionContext, UtxoIdExt,
+	},
+	init_governance::{get_governance_data, GovernanceData},
+	reserve::ReserveToken,
+	scripts_data::{self, ReserveScripts},
+};
+use anyhow::anyhow;
+use cardano_serialization_lib::{
+	Assets, BigInt, BigNum, ConstrPlutusData, DataCost, ExUnits, JsError, MinOutputAdaCalculator,
+	MultiAsset, PlutusData, PlutusList, Transaction, TransactionBuilder, TransactionOutput,
+	TransactionOutputBuilder,
+};
+use ogmios_client::{
+	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
+	query_network::QueryNetwork,
+	transactions::{OgmiosEvaluateTransactionResponse, Transactions},
+};
+use sidechain_domain::{AssetName, McTxHash, PolicyId, UtxoId};
+use std::collections::HashMap;
+
+pub async fn create_reserve_utxo<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
+	parameters: ReserveParameters,
+	genesis_utxo: UtxoId,
+	payment_key: [u8; 32],
+	client: &T,
+	await_tx: &A,
+) -> anyhow::Result<Option<McTxHash>> {
+	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
+	let governance = get_governance_data(genesis_utxo, client).await?;
+	let reserve = get_reserve_data(genesis_utxo, &ctx, client).await?;
+
+	let tx_to_evaluate = create_reserve_tx(
+		&parameters,
+		&reserve,
+		&governance,
+		zero_ex_units(),
+		zero_ex_units(),
+		&ctx,
+	)?;
+	let evaluate_response = client.evaluate_transaction(&tx_to_evaluate.to_bytes()).await?;
+
+	let (reserve_auth_ex_units, governance_ex_units) = match_costs(
+		&tx_to_evaluate,
+		&reserve.scripts.auth_policy.csl_script_hash(),
+		&governance.policy_script_hash(),
+		evaluate_response,
+	)?;
+
+	let tx = create_reserve_tx(
+		&parameters,
+		&reserve,
+		&governance,
+		governance_ex_units,
+		reserve_auth_ex_units,
+		&ctx,
+	)?;
+	let signed_tx = ctx.sign(&tx).to_bytes();
+	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
+		anyhow::anyhow!(
+			"Create Reserve transaction request failed: {}, tx bytes: {}",
+			e,
+			hex::encode(signed_tx)
+		)
+	})?;
+	let tx_id = res.transaction.id;
+	log::info!("Create Reserve transaction submitted: {}", hex::encode(tx_id));
+	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
+	Ok(Some(McTxHash(tx_id)))
+}
+
+pub type AssetId = (PolicyId, AssetName);
+
+pub struct ReserveParameters {
+	pub initial_incentive: u64,
+	pub total_accrued_function_script_hash: PolicyId,
+	pub t0: u64,
+	pub token: ReserveToken,
+	pub initial_deposit: u64,
+}
+
+impl ReserveParameters {
+	fn reserve_utxo_versioned_datum(&self) -> PlutusData {
+		let mut t0_and_token = PlutusList::new();
+		t0_and_token.add(&PlutusData::new_integer(&BigInt::from(self.t0)));
+		let (policy_id_bytes, asset_name_bytes) = match self.token.clone() {
+			ReserveToken::Ada => (vec![], vec![]),
+			ReserveToken::AssetId { policy_id, asset_name } => {
+				(policy_id.0.to_vec(), asset_name.0.to_vec())
+			},
+		};
+		let token_data: PlutusData = {
+			let mut asset_data = PlutusList::new();
+			asset_data.add(&PlutusData::new_bytes(policy_id_bytes));
+			asset_data.add(&PlutusData::new_bytes(asset_name_bytes));
+			PlutusData::new_constr_plutus_data(&ConstrPlutusData::new(&BigNum::zero(), &asset_data))
+		};
+		t0_and_token.add(&token_data);
+
+		let mut v_function_hash_and_initial_incentive = PlutusList::new();
+		v_function_hash_and_initial_incentive
+			.add(&PlutusData::new_bytes(self.total_accrued_function_script_hash.0.to_vec()));
+		v_function_hash_and_initial_incentive
+			.add(&PlutusData::new_integer(&BigInt::from(self.initial_incentive)));
+
+		let mut parameters = PlutusList::new();
+		parameters.add(&PlutusData::new_list(&t0_and_token));
+		parameters.add(&PlutusData::new_list(&v_function_hash_and_initial_incentive));
+		parameters.add(&PlutusData::new_integer(&BigInt::zero()));
+		let parameters_for_onchain = PlutusData::new_list(&parameters);
+
+		let version = PlutusData::new_integer(&BigInt::zero());
+		let empty_constr_for_offchain = PlutusData::new_empty_constr_plutus_data(&BigNum::zero());
+		let mut versioned_datum = PlutusList::new();
+		versioned_datum.add(&parameters_for_onchain);
+		versioned_datum.add(&empty_constr_for_offchain);
+		versioned_datum.add(&version);
+		PlutusData::new_list(&versioned_datum)
+	}
+}
+
+struct ReserveData {
+	scripts: ReserveScripts,
+	auth_policy_version_utxo: UtxoId,
+	validator_version_utxo: UtxoId,
+}
+
+async fn get_reserve_data<T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
+	genesis_utxo: UtxoId,
+	ctx: &TransactionContext,
+	client: &T,
+) -> Result<ReserveData, anyhow::Error> {
+	let version_oracle = scripts_data::version_oracle(genesis_utxo, ctx.network)?;
+	let auth_policy_version_utxo = find_script_utxo(
+		raw_scripts::ScriptId::ReserveAuthPolicy as u32,
+		&version_oracle,
+		&ctx,
+		client,
+	)
+	.await?
+	.ok_or_else(|| {
+		anyhow!("Reserve Auth Version Utxo not found, is the Reserve Token Management initialized?")
+	})?;
+	let validator_version_utxo = find_script_utxo(
+		raw_scripts::ScriptId::ReserveValidator as u32,
+		&version_oracle,
+		&ctx,
+		client,
+	)
+	.await?
+	.ok_or_else(|| {
+		anyhow!("Reserve Validator Version Utxo not found, is the Reserve Token Management initialized?")
+	})?;
+	let scripts = scripts_data::reserve_scripts(genesis_utxo, ctx.network)?;
+	Ok(ReserveData { scripts, auth_policy_version_utxo, validator_version_utxo })
+}
+
+fn create_reserve_tx(
+	parameters: &ReserveParameters,
+	reserve: &ReserveData,
+	governance: &GovernanceData,
+	governance_script_cost: ExUnits,
+	reserve_auth_script_cost: ExUnits,
+	ctx: &TransactionContext,
+) -> Result<Transaction, JsError> {
+	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
+
+	tx_builder.add_mint_one_script_token_using_reference_script(
+		&reserve.scripts.auth_policy,
+		&reserve.auth_policy_version_utxo.to_csl(),
+		&reserve_auth_script_cost,
+	)?;
+	tx_builder.add_output(&reserve_validator_output(parameters, &reserve.scripts, ctx)?)?;
+
+	let gov_tx_input = governance.utxo_id_as_tx_input();
+	tx_builder.add_mint_one_script_token_using_reference_script(
+		&governance.policy_script,
+		&gov_tx_input,
+		&governance_script_cost,
+	)?;
+	tx_builder.add_script_reference_input(
+		&reserve.validator_version_utxo.to_csl(),
+		reserve.scripts.validator.bytes.len(),
+	);
+	tx_builder.add_required_signer(&ctx.payment_key_hash());
+	tx_builder.balance_update_and_build(ctx)
+}
+
+fn match_costs(
+	evaluated_transaction: &Transaction,
+	reserve_auth_policy: &cardano_serialization_lib::ScriptHash,
+	governance_policy: &cardano_serialization_lib::ScriptHash,
+	evaluate_response: Vec<OgmiosEvaluateTransactionResponse>,
+) -> Result<(ExUnits, ExUnits), anyhow::Error> {
+	let mint_keys = evaluated_transaction
+		.body()
+		.mint()
+		.expect("Every Create Reserve transaction should have two mints")
+		.keys();
+	let script_to_index: HashMap<cardano_serialization_lib::ScriptHash, usize> =
+		vec![(mint_keys.get(0), 0), (mint_keys.get(1), 1)].into_iter().collect();
+	let mint_ex_units = get_validator_budgets(evaluate_response).mint_ex_units;
+	if mint_ex_units.len() == 2 {
+		let reserve_auth_policy_idx = *script_to_index
+			.get(reserve_auth_policy)
+			.expect("Reserve Auth Policy Token is present in transaction mints");
+		let reserve_auth_ex_units = mint_ex_units
+			.get(reserve_auth_policy_idx)
+			.expect("mint_ex_units have two items")
+			.clone();
+		let gov_policy_idx = *script_to_index
+			.get(governance_policy)
+			.expect("Governance Policy Token is present in transaction mints");
+		let governance_ex_units =
+			mint_ex_units.get(gov_policy_idx).expect("mint_ex_units have two items").clone();
+		Ok((reserve_auth_ex_units, governance_ex_units))
+	} else {
+		Err(anyhow!("Could not build transaction to submit, evaluate response has wrong number of mint keys."))
+	}
+}
+
+// Creates output with reserve token and the initial deposit
+fn reserve_validator_output(
+	parameters: &ReserveParameters,
+	scripts: &ReserveScripts,
+	ctx: &TransactionContext,
+) -> Result<TransactionOutput, JsError> {
+	let amount_builder = TransactionOutputBuilder::new()
+		.with_address(&scripts.validator.address(ctx.network))
+		.with_plutus_data(&parameters.reserve_utxo_versioned_datum())
+		.next()?;
+	let mut ma = MultiAsset::new();
+	let mut assets = Assets::new();
+	assets.insert(&empty_asset_name(), &1u64.into());
+	ma.insert(&scripts.auth_policy.csl_script_hash(), &assets);
+	match parameters.token.clone() {
+		ReserveToken::AssetId { policy_id, asset_name } => {
+			let mut assets = Assets::new();
+			assets.insert(
+				&cardano_serialization_lib::AssetName::new(asset_name.0.to_vec())
+					.expect("AssetName has a valid length"),
+				&parameters.initial_deposit.into(),
+			);
+			ma.insert(&policy_id.0.into(), &assets);
+		},
+		_ => (),
+	};
+
+	let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
+	let min_ada = MinOutputAdaCalculator::new(
+		&output,
+		&DataCost::new_coins_per_byte(&ctx.protocol_parameters.min_utxo_deposit_coefficient.into()),
+	)
+	.calculate_ada()?;
+	amount_builder.with_coin_and_asset(&min_ada, &ma).build()
+}

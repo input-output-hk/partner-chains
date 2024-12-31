@@ -18,12 +18,12 @@ use partner_chains_cardano_offchain::{
 	await_tx::{AwaitTx, FixedDelayRetries},
 	d_param, init_governance, permissioned_candidates,
 	register::Register,
-	reserve,
+	reserve::{self, ReserveToken},
 };
 use sidechain_domain::{
-	AdaBasedStaking, AuraPublicKey, CandidateRegistration, DParameter, GrandpaPublicKey,
+	AdaBasedStaking, AssetName, AuraPublicKey, CandidateRegistration, DParameter, GrandpaPublicKey,
 	MainchainAddressHash, MainchainPrivateKey, MainchainPublicKey, MainchainSignature, McTxHash,
-	PermissionedCandidateData, SidechainPublicKey, SidechainSignature, UtxoId,
+	PermissionedCandidateData, PolicyId, SidechainPublicKey, SidechainSignature, UtxoId,
 };
 use std::time::Duration;
 use testcontainers::{clients::Cli, Container, GenericImage};
@@ -52,6 +52,11 @@ const EVE_PUBLIC_KEY_HASH: MainchainAddressHash =
 	MainchainAddressHash(hex!("84ba05c28879b299a8377e62128adc7a0e0df3ac438ff95efc7c8443"));
 
 const EVE_ADDRESS: &str = "addr_test1vzzt5pwz3pum9xdgxalxyy52m3aqur0n43pcl727l37ggscl8h7v8";
+
+const REWARDS_TOKEN_POLICY_ID: PolicyId =
+	PolicyId(hex!("1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2b"));
+
+const REWARDS_TOKEN_ASSET_NAME_STR: &str = "5043526f636b73";
 
 #[tokio::test]
 async fn init_goveranance() {
@@ -88,7 +93,7 @@ async fn upsert_permissioned_candidates() {
 }
 
 #[tokio::test]
-async fn init_reserve() {
+async fn reserve_management_scenario() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
 	let client = Cli::default();
 	let container = client.run(image);
@@ -97,7 +102,8 @@ async fn init_reserve() {
 	let txs = run_init_reserve_management(genesis_utxo, &client).await;
 	assert_eq!(txs.len(), 3);
 	let txs = run_init_reserve_management(genesis_utxo, &client).await;
-	assert_eq!(txs.len(), 0)
+	assert_eq!(txs.len(), 0);
+	run_create_reserve_management(genesis_utxo, &client).await;
 }
 
 #[tokio::test]
@@ -136,14 +142,15 @@ async fn await_ogmios<T: QueryNetwork>(client: &T) -> Result<(), OgmiosClientErr
 }
 
 /// initial transaction was obtained with cardano-cli and it sends funds to:
-/// * goveranance authority: addr_test1vr5vxqpnpl3325cu4zw55tnapjqzzx78pdrnk8k5j7wl72c6y08nd (2 x UTXO)
+/// * governance authority: addr_test1vr5vxqpnpl3325cu4zw55tnapjqzzx78pdrnk8k5j7wl72c6y08nd (2 x UTXO)
+/// * governance authority: 1000000 REWARDS_TOKEN
 /// * "dave" address: addr_test1vphpcf32drhhznv6rqmrmgpuwq06kug0lkg22ux777rtlqst2er0r
 /// * "eve" address: addr_test1vzzt5pwz3pum9xdgxalxyy52m3aqur0n43pcl727l37ggscl8h7v8
 /// Its hash is 0xc389187c6cabf1cd2ca64cf8c76bf57288eb9c02ced6781935b810a1d0e7fbb4
 async fn initial_transaction<T: Transactions + QueryUtxoByUtxoId>(
 	client: &T,
 ) -> Result<McTxHash, ()> {
-	let signed_tx_bytes  = hex!("84a300d9010281825820781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d800018582581d60e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b1a3b9aca0082581d60e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b1a3b9aca0082581d606e1c262a68ef714d9a18363da03c701fab710ffd90a570def786bf821a3b9aca0082581d6084ba05c28879b299a8377e62128adc7a0e0df3ac438ff95efc7c84431a3b9aca0082581d60e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b1b006a8e81e074b5c0021a000f4240a100d9010281825820e6ceac21f27c463f9065fafdc62883d7e52f6a376b498b8838ba513e44c74eca58406d60019f2589001024a15c300e034de74998a5b7bc995a8d0f21c2fdfc0cd7c9106d77e6507d5b708434d0616a7b1a53ec0341dffc553e2ab8c9be15197d0503f5f6");
+	let signed_tx_bytes  = hex!("84a400d9010281825820781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d800018682581d60e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b1a3b9aca0082581d60e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b1a3b9aca0082581d606e1c262a68ef714d9a18363da03c701fab710ffd90a570def786bf821a3b9aca0082581d6084ba05c28879b299a8377e62128adc7a0e0df3ac438ff95efc7c84431a3b9aca0082581d60e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b1b006a8e81dfdc1f4082581d60e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b821a00989680a1581c1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2ba1475043526f636b731a000f4240021a000f424009a1581c1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2ba1475043526f636b731a000f4240a200d9010282825820e6ceac21f27c463f9065fafdc62883d7e52f6a376b498b8838ba513e44c74eca5840c1fbdbb6710bfceb40644b1177627d3938a8645301a53b418a489874f59f6cf5d5ff791d7bc50d0d53177eb1b52f174bf4a2ced4bb2c2ddd0c9d2b62196f6500825820fc014cb5f071f5d6a36cb5a7e5f168c86555989445a23d4abec33d280f71aca458409054d37928f13dc0c9d7739fc3ac2fb4b8ec94a655858813bd3b2e450d2b15be368eea9fcb47d1eadb337c1d5512ff160c662220a1f55e3fd2b54065d2f6170c01d90102818200581ce8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2bf5f6");
 	let tx_hash = client
 		.submit_transaction(&signed_tx_bytes)
 		.await
@@ -246,6 +253,32 @@ async fn run_init_reserve_management<
 	)
 	.await
 	.unwrap()
+}
+
+async fn run_create_reserve_management<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> () {
+	reserve::create::create_reserve_utxo(
+		reserve::create::ReserveParameters {
+			initial_incentive: 100,
+			total_accrued_function_script_hash: PolicyId([233u8; 28]),
+			t0: 1735689600,
+			token: ReserveToken::AssetId {
+				policy_id: REWARDS_TOKEN_POLICY_ID,
+				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
+			},
+			initial_deposit: 1000000,
+		},
+		genesis_utxo,
+		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		client,
+		&FixedDelayRetries::new(Duration::from_millis(500), 100),
+	)
+	.await
+	.unwrap();
 }
 
 async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
