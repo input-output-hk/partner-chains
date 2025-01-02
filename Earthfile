@@ -36,16 +36,18 @@ source:
 build-deps:
   FROM +fetch-deps
   CACHE --sharing shared --id cargo $CARGO_HOME
+  ENV RUSTC_BOOTSTRAP=1
   RUN cargo --locked chef prepare
-  RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES
+  RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES -Z checksum-freshness
   SAVE ARTIFACT target
 
 build:
   FROM +source
   LET WASM_BUILD_STD=0
   CACHE --sharing shared --id cargo $CARGO_HOME
+  ENV RUSTC_BOOTSTRAP=1
   ARG EARTHLY_GIT_HASH
-  RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
+  RUN cargo build --locked --profile=$PROFILE --features=$FEATURES -Z checksum-freshness
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node-artifact
   SAVE ARTIFACT target/*/partner-chains-cli AS LOCAL partner-chains-cli-artifact
@@ -55,9 +57,10 @@ test:
   LET WASM_BUILD_STD=0
   DO github.com/earthly/lib:3.0.2+INSTALL_DIND
   CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
+  ENV RUSTC_BOOTSTRAP=1
+  RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks -Z checksum-freshness
   WITH DOCKER
-    RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
+    RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks -Z checksum-freshness
   END
 
 licenses:
