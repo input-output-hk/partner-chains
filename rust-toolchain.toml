@@ -1,5 +1,7 @@
 [toolchain]
-channel = "1.83.0"
+# channel = "1.81.0"
+# channel = "1.83.0"
+channel = "nightly-2023-12-01"
 components = [
     "cargo",
     "clippy",
