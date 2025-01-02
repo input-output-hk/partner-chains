@@ -37,8 +37,9 @@ build-deps:
   FROM +fetch-deps
   CACHE --sharing shared --id cargo $CARGO_HOME
   ENV RUSTC_BOOTSTRAP=1
+  ENV RUSTFLAGS="-Z checksum-freshness"
   RUN cargo --locked chef prepare
-  RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES -Z checksum-freshness
+  RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES
   SAVE ARTIFACT target
 
 build:
@@ -46,8 +47,9 @@ build:
   LET WASM_BUILD_STD=0
   CACHE --sharing shared --id cargo $CARGO_HOME
   ENV RUSTC_BOOTSTRAP=1
+  ENV RUSTFLAGS="-Z checksum-freshness"
   ARG EARTHLY_GIT_HASH
-  RUN cargo build --locked --profile=$PROFILE --features=$FEATURES -Z checksum-freshness
+  RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node-artifact
   SAVE ARTIFACT target/*/partner-chains-cli AS LOCAL partner-chains-cli-artifact
