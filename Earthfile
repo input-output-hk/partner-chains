@@ -37,9 +37,10 @@ build-deps:
   FROM +fetch-deps
   CACHE --sharing shared --id cargo $CARGO_HOME
   ENV RUSTC_BOOTSTRAP=1
-  ENV RUSTFLAGS="-Z checksum-freshness"
+  # Do not use RUSTFLAGS here to avoid issues with cargo-chef
   RUN cargo --locked chef prepare
-  RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES
+  # Set RUSTFLAGS only for the cook step
+  RUN RUSTFLAGS="-Z checksum-freshness" cargo --locked chef cook --profile=$PROFILE --features=$FEATURES
   SAVE ARTIFACT target
 
 build:
