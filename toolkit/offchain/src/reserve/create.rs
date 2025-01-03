@@ -2,13 +2,13 @@
 //!
 //! Specification:
 //! 1. The transaction should mint two tokens:
-//!   * 1 Reserve Auth Policy Token (using refernce script)
-//!   * 1 Governance Policy Token (using refernce script)
+//!   * 1 Reserve Auth Policy Token (using reference script)
+//!   * 1 Governance Policy Token (using reference script)
 //! 2. The transaction should have two outputs:
 //!   * Reserve Validator output that:
 //!   * * has Reward Tokens (or ada)
 //!   * * has Plutus Data (in our "versioned format"): `[[[Int(t0), <Encoded Token>], [Bytes(v_function_hash), Int(initial_incentive)], [Int(0)]], Constr(0, []), Int(0)]`,
-//!where `<Encoded Token>` is `Constr(0, [Bytes(policy_id), Bytes(asset_name)])`.
+//!       where `<Encoded Token>` is `Constr(0, [Bytes(policy_id), Bytes(asset_name)])`.
 //!   * Change output that keeps the Governance Token and change of other tokens
 //! 3. The transaction should have three script reference inputs:
 //!   * Reserve Auth Version Utxo
@@ -23,21 +23,22 @@ use crate::{
 		TransactionBuilderExt, TransactionContext, UtxoIdExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
-	reserve::ReserveToken,
 	scripts_data::{self, ReserveScripts},
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	Assets, BigInt, BigNum, ConstrPlutusData, DataCost, ExUnits, JsError, MinOutputAdaCalculator,
-	MultiAsset, PlutusData, PlutusList, Transaction, TransactionBuilder, TransactionOutput,
-	TransactionOutputBuilder,
+	Assets, DataCost, ExUnits, JsError, MinOutputAdaCalculator, MultiAsset, Transaction,
+	TransactionBuilder, TransactionOutput, TransactionOutputBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::{OgmiosEvaluateTransactionResponse, Transactions},
 };
-use sidechain_domain::{AssetName, McTxHash, PolicyId, UtxoId};
+use partner_chains_plutus_data::reserve::{
+	ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats,
+};
+use sidechain_domain::{McTxHash, PolicyId, TokenId, UtxoId};
 use std::collections::HashMap;
 
 pub async fn create_reserve_utxo<
@@ -93,53 +94,29 @@ pub async fn create_reserve_utxo<
 	Ok(Some(McTxHash(tx_id)))
 }
 
-pub type AssetId = (PolicyId, AssetName);
-
 pub struct ReserveParameters {
 	pub initial_incentive: u64,
 	pub total_accrued_function_script_hash: PolicyId,
 	pub t0: u64,
-	pub token: ReserveToken,
+	pub token: TokenId,
 	pub initial_deposit: u64,
 }
 
-impl ReserveParameters {
-	fn reserve_utxo_versioned_datum(&self) -> PlutusData {
-		let mut t0_and_token = PlutusList::new();
-		t0_and_token.add(&PlutusData::new_integer(&BigInt::from(self.t0)));
-		let (policy_id_bytes, asset_name_bytes) = match self.token.clone() {
-			ReserveToken::Ada => (vec![], vec![]),
-			ReserveToken::AssetId { policy_id, asset_name } => {
-				(policy_id.0.to_vec(), asset_name.0.to_vec())
+impl From<&ReserveParameters> for ReserveDatum {
+	fn from(value: &ReserveParameters) -> Self {
+		ReserveDatum {
+			immutable_settings: ReserveImmutableSettings {
+				t0: value.t0,
+				token: value.token.clone(),
 			},
-		};
-		let token_data: PlutusData = {
-			let mut asset_data = PlutusList::new();
-			asset_data.add(&PlutusData::new_bytes(policy_id_bytes));
-			asset_data.add(&PlutusData::new_bytes(asset_name_bytes));
-			PlutusData::new_constr_plutus_data(&ConstrPlutusData::new(&BigNum::zero(), &asset_data))
-		};
-		t0_and_token.add(&token_data);
-
-		let mut v_function_hash_and_initial_incentive = PlutusList::new();
-		v_function_hash_and_initial_incentive
-			.add(&PlutusData::new_bytes(self.total_accrued_function_script_hash.0.to_vec()));
-		v_function_hash_and_initial_incentive
-			.add(&PlutusData::new_integer(&BigInt::from(self.initial_incentive)));
-
-		let mut parameters = PlutusList::new();
-		parameters.add(&PlutusData::new_list(&t0_and_token));
-		parameters.add(&PlutusData::new_list(&v_function_hash_and_initial_incentive));
-		parameters.add(&PlutusData::new_integer(&BigInt::zero()));
-		let parameters_for_onchain = PlutusData::new_list(&parameters);
-
-		let version = PlutusData::new_integer(&BigInt::zero());
-		let empty_constr_for_offchain = PlutusData::new_empty_constr_plutus_data(&BigNum::zero());
-		let mut versioned_datum = PlutusList::new();
-		versioned_datum.add(&parameters_for_onchain);
-		versioned_datum.add(&empty_constr_for_offchain);
-		versioned_datum.add(&version);
-		PlutusData::new_list(&versioned_datum)
+			mutable_settings: ReserveMutableSettings {
+				total_accrued_function_script_hash: value
+					.total_accrued_function_script_hash
+					.clone(),
+				initial_incentive: value.initial_incentive,
+			},
+			stats: ReserveStats { token_total_amount_transferred: 0 },
+		}
 	}
 }
 
@@ -251,25 +228,21 @@ fn reserve_validator_output(
 ) -> Result<TransactionOutput, JsError> {
 	let amount_builder = TransactionOutputBuilder::new()
 		.with_address(&scripts.validator.address(ctx.network))
-		.with_plutus_data(&parameters.reserve_utxo_versioned_datum())
+		.with_plutus_data(&ReserveDatum::from(parameters).into())
 		.next()?;
 	let mut ma = MultiAsset::new();
 	let mut assets = Assets::new();
 	assets.insert(&empty_asset_name(), &1u64.into());
 	ma.insert(&scripts.auth_policy.csl_script_hash(), &assets);
-	match parameters.token.clone() {
-		ReserveToken::AssetId { policy_id, asset_name } => {
-			let mut assets = Assets::new();
-			assets.insert(
-				&cardano_serialization_lib::AssetName::new(asset_name.0.to_vec())
-					.expect("AssetName has a valid length"),
-				&parameters.initial_deposit.into(),
-			);
-			ma.insert(&policy_id.0.into(), &assets);
-		},
-		_ => (),
+	if let TokenId::AssetId { policy_id, asset_name } = parameters.token.clone() {
+		let mut assets = Assets::new();
+		assets.insert(
+			&cardano_serialization_lib::AssetName::new(asset_name.0.to_vec())
+				.expect("AssetName has a valid length"),
+			&parameters.initial_deposit.into(),
+		);
+		ma.insert(&policy_id.0.into(), &assets);
 	};
-
 	let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
 	let min_ada = MinOutputAdaCalculator::new(
 		&output,

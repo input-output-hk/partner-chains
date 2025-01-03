@@ -204,6 +204,12 @@ pub const MAX_ASSET_NAME_LEN: u32 = 32;
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TokenId {
+	Ada,
+	AssetId { policy_id: PolicyId, asset_name: AssetName },
+}
+
 const MAINCHAIN_PUBLIC_KEY_LEN: usize = 32;
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
