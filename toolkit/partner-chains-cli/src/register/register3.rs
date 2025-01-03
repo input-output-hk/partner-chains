@@ -7,6 +7,7 @@ use crate::main_chain_follower::set_main_chain_follower_env;
 use crate::ogmios::config::establish_ogmios_configuration;
 use crate::CmdRun;
 use clap::Parser;
+use partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
 use partner_chains_cardano_offchain::register::Register;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_domain::*;

@@ -15,10 +15,15 @@ runs:
   steps:
     - name: Install kubectl and awscli
       run: |
+        # Install kubectl
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
         chmod +x ./kubectl
         sudo mv ./kubectl /usr/local/bin/kubectl
-        sudo apt update && sudo apt install -y awscli
+  
+        # Install or update AWS CLI v2
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip -o awscliv2.zip
+        sudo ./aws/install --update
       shell: bash
     - name: Configure kubectl
       run: |

@@ -1,3 +1,4 @@
+use crate::csl::MainchainPrivateKeyExt;
 use crate::csl::{
 	get_first_validator_budget, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
 	TransactionContext,
@@ -543,7 +544,7 @@ mod tests {
 				transaction: OgmiosTx { id: utxo_id.tx_hash.0 },
 				index: utxo_id.index.0,
 				value,
-				address: payment_addr().to_bech32(None).unwrap(),
+				address: PAYMENT_ADDR.into(),
 				..Default::default()
 			}).collect()
 		}

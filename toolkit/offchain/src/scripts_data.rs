@@ -121,7 +121,7 @@ impl VersionOracleData {
 	}
 
 	pub(crate) fn policy_id_as_plutus_data(&self) -> PlutusData {
-		PlutusData::BoundedBytes(self.policy_id().0.to_vec().into())
+		PlutusData::BoundedBytes(self.policy.script_hash().to_vec().into())
 	}
 }
 

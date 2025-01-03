@@ -1,4 +1,6 @@
+use crate::{parse_partnerchain_public_keys, read_private_key_from_file};
 use jsonrpsee::http_client::HttpClient;
+use partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	register::{run_deregister, run_register},
@@ -7,8 +9,6 @@ use sidechain_domain::{
 	AdaBasedStaking, CandidateRegistration, MainchainPublicKey, MainchainSignature,
 	PermissionedCandidateData, SidechainSignature, UtxoId,
 };
-
-use crate::{parse_partnerchain_public_keys, read_private_key_from_file};
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct RegisterCmd {
