@@ -10,7 +10,7 @@ use partner_chains_cardano_offchain::csl::NetworkTypeExt;
 use serde::de::DeserializeOwned;
 use sidechain_domain::{NetworkType, UtxoId};
 
-pub fn prepare_genesis_utxo<C: IOContext>(context: &C) -> anyhow::Result<(UtxoId, ServiceConfig)> {
+pub fn select_genesis_utxo<C: IOContext>(context: &C) -> anyhow::Result<(UtxoId, ServiceConfig)> {
 	context.eprint(INTRO);
 	let ogmios_configuration = prompt_ogmios_configuration(context)?;
 	let shelley_config = get_shelley_config(&ogmios_configuration.to_string(), context)?;
@@ -63,7 +63,7 @@ mod tests {
 	};
 	use crate::ogmios::test_values::preview_shelley_config;
 	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
-	use crate::prepare_configuration::prepare_chain_params::{prepare_genesis_utxo, INTRO};
+	use crate::prepare_configuration::select_genesis_utxo::{select_genesis_utxo, INTRO};
 	use crate::select_utxo::tests::{mock_7_valid_utxos_rows, mock_result_7_valid, query_utxos_io};
 	use crate::tests::{MockIO, MockIOContext};
 
@@ -101,7 +101,7 @@ mod tests {
 				),
 			]);
 
-		let result = prepare_genesis_utxo(&mock_context);
+		let result = select_genesis_utxo(&mock_context);
 
 		result.expect("should succeed");
 	}

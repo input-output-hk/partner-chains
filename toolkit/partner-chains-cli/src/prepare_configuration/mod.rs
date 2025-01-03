@@ -1,14 +1,14 @@
 mod init_governance;
 mod prepare_cardano_params;
-mod prepare_chain_params;
 mod prepare_main_chain_config;
+mod select_genesis_utxo;
 
 use crate::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
 use crate::config::config_values::DEFAULT_CHAIN_NAME;
 use crate::generate_keys::network_key_path;
 use crate::io::IOContext;
-use crate::prepare_configuration::prepare_chain_params::prepare_genesis_utxo;
 use crate::prepare_configuration::prepare_main_chain_config::prepare_main_chain_config;
+use crate::prepare_configuration::select_genesis_utxo::select_genesis_utxo;
 use crate::prepare_configuration::PrepareConfigurationError::NetworkKeyNotFoundError;
 use crate::CmdRun;
 use anyhow::Context;
@@ -24,7 +24,7 @@ pub struct PrepareConfigurationCmd {}
 impl CmdRun for PrepareConfigurationCmd {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		establish_bootnodes(context)?;
-		let (genesis_utxo, ogmios_config) = prepare_genesis_utxo(context)?;
+		let (genesis_utxo, ogmios_config) = select_genesis_utxo(context)?;
 		let _ = init_governance::run_init_governance(genesis_utxo, &ogmios_config, context)?;
 		prepare_main_chain_config(context, &ogmios_config, genesis_utxo)?;
 		context.eprint("🚀 All done!");
