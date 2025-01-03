@@ -23,7 +23,7 @@ pub(crate) fn run_init_governance<C: IOContext>(
 fn get_private_key_and_key_hash<C: IOContext>(
 	context: &C,
 ) -> Result<(MainchainPrivateKey, MainchainAddressHash), anyhow::Error> {
-	let cardano_signig_key_file = config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
+	let cardano_signing_key_file = config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
 		.prompt_with_default_from_file_and_save(context);
 	let pkey = cardano_key::get_mc_pkey_from_file(&cardano_signig_key_file, context)?;
 	let addr_hash = pkey.to_pub_key_hash();
