@@ -6,11 +6,8 @@ use crate::config::config_fields::{
 use crate::config::ServiceConfig;
 use crate::io::IOContext;
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
-use crate::{config::config_fields, *};
-use partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
-use partner_chains_cardano_offchain::init_governance::InitGovernance;
 use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
-use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, PolicyId, UtxoId};
+use sidechain_domain::{PolicyId, UtxoId};
 
 pub fn prepare_main_chain_config<C: IOContext>(
 	context: &C,
@@ -21,31 +18,12 @@ pub fn prepare_main_chain_config<C: IOContext>(
 	cardano_parameteres.save(context);
 	set_up_cardano_addresses(context, genesis_utxo, ogmios_config)?;
 
-	let offchain = context.offchain_impl(ogmios_config)?;
-	let (payment_key, governance_authority) = get_private_key_and_key_hash(context)?;
-
-	let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
-	runtime
-		.block_on(offchain.init_governance(governance_authority, payment_key, genesis_utxo))
-		.map_err(|e| anyhow::anyhow!("Governance initalization failed: {e:?}!"))?;
-
 	if INITIAL_PERMISSIONED_CANDIDATES.load_from_file(context).is_none() {
 		INITIAL_PERMISSIONED_CANDIDATES.save_to_file(&vec![], context)
 	}
 	prepare_native_token(context)?;
 	context.eprint(OUTRO);
 	Ok(())
-}
-
-fn get_private_key_and_key_hash<C: IOContext>(
-	context: &C,
-) -> Result<(MainchainPrivateKey, MainchainAddressHash), anyhow::Error> {
-	let cardano_signig_key_file = config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
-		.prompt_with_default_from_file_and_save(context);
-	let pkey = cardano_key::get_mc_pkey_from_file(&cardano_signig_key_file, context)?;
-	let addr_hash = pkey.to_pub_key_hash();
-
-	Ok((pkey, addr_hash))
 }
 
 fn set_up_cardano_addresses<C: IOContext>(
@@ -122,14 +100,11 @@ mod tests {
 	use super::*;
 	use crate::config::config_fields::{GENESIS_UTXO, OGMIOS_PROTOCOL};
 	use crate::config::NetworkProtocol;
+	use crate::ogmios::test_values::{preprod_eras_summaries, preprod_shelley_config};
 	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 	use crate::prepare_configuration::prepare_cardano_params::tests::PREPROD_CARDANO_PARAMS;
 	use crate::prepare_configuration::tests::save_to_existing_file;
 	use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
-	use config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
-	use hex_literal::hex;
-	use ogmios::test_values::{preprod_eras_summaries, preprod_shelley_config};
-	use ogmios_client::types::OgmiosTx;
 	use partner_chains_cardano_offchain::scripts_data::{Addresses, PolicyIds, ScriptsData};
 	use serde_json::json;
 	use serde_json::Value;
@@ -259,18 +234,6 @@ mod tests {
 				),
 				save_to_existing_file(ILLIQUID_SUPPLY_ADDRESS, TEST_ILLIQUID_SUPPLY_ADDRESS),
 				print_addresses_io(),
-				MockIO::file_read(CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file),
-				MockIO::prompt(
-					"path to the payment signing key file",
-					Some("payment.skey"),
-					"payment.skey",
-				),
-				MockIO::file_read(CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file),
-				MockIO::file_write_json(
-					CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file,
-					test_resources_config(),
-				),
-				MockIO::file_read("payment.skey"),
 				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				MockIO::file_write_json(
@@ -329,18 +292,6 @@ mod tests {
 				),
 				save_to_existing_file(ILLIQUID_SUPPLY_ADDRESS, TEST_ILLIQUID_SUPPLY_ADDRESS),
 				print_addresses_io(),
-				MockIO::file_read(CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file),
-				MockIO::prompt(
-					"path to the payment signing key file",
-					Some("payment.skey"),
-					"payment.skey",
-				),
-				MockIO::file_read(CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file),
-				MockIO::file_write_json(
-					CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file,
-					test_resources_config(),
-				),
-				MockIO::file_read("payment.skey"),
 				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				scenarios::prompt_and_save_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
@@ -364,45 +315,24 @@ mod tests {
 	}
 
 	fn preprod_offchain_mocks() -> OffchainMocks {
-		let mock = OffchainMock::new()
-			.with_scripts_data(
-				UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
-				Ok(ScriptsData {
-					addresses: Addresses {
-						committee_candidate_validator: TEST_COMMITTEE_CANDIDATES_ADDRESS
-							.to_string(),
-						illiquid_circulation_supply_validator: TEST_ILLIQUID_SUPPLY_ADDRESS
-							.to_string(),
-						..Default::default()
-					},
-					policy_ids: PolicyIds {
-						permissioned_candidates: PolicyId::from_hex_unsafe(
-							TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
-						),
-						d_parameter: PolicyId::from_hex_unsafe(TEST_D_PARAMETER_POLICY_ID),
-						..Default::default()
-					},
-				}),
-			)
-			.with_init_governance(
-				UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
-				MainchainAddressHash(hex!(
-					"e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
-				)),
-				MainchainPrivateKey(hex!(
-					"d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
-				)),
-				Ok(OgmiosTx {
-					id: hex!("0000000000000000000000000000000000000000000000000000000000000000"),
-				}),
-			);
+		let mock = OffchainMock::new().with_scripts_data(
+			UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
+			Ok(ScriptsData {
+				addresses: Addresses {
+					committee_candidate_validator: TEST_COMMITTEE_CANDIDATES_ADDRESS.to_string(),
+					illiquid_circulation_supply_validator: TEST_ILLIQUID_SUPPLY_ADDRESS.to_string(),
+					..Default::default()
+				},
+				policy_ids: PolicyIds {
+					permissioned_candidates: PolicyId::from_hex_unsafe(
+						TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
+					),
+					d_parameter: PolicyId::from_hex_unsafe(TEST_D_PARAMETER_POLICY_ID),
+					..Default::default()
+				},
+			}),
+		);
 		OffchainMocks::new_with_mock("http://localhost:1337", mock)
-	}
-
-	fn test_resources_config() -> Value {
-		serde_json::json!({
-				"cardano_payment_signing_key_file": "payment.skey",
-		})
 	}
 
 	fn test_chain_config() -> Value {
