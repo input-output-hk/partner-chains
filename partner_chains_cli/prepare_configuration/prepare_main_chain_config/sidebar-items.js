@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["OUTRO"],"fn":["get_private_key_and_key_hash","prepare_main_chain_config","prepare_native_token","set_up_cardano_addresses"]};
+window.SIDEBAR_ITEMS = {"constant":["OUTRO"],"fn":["prepare_main_chain_config","prepare_native_token","set_up_cardano_addresses"]};

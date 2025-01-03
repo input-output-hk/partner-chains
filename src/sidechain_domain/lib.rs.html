@@ -1057,7 +1057,7 @@
 }
 
 <span class="kw">impl </span>UtxoId {
-	<span class="kw">pub fn </span>new(hash: [u8; TX_HASH_SIZE], index: u16) -&gt; UtxoId {
+	<span class="kw">pub const fn </span>new(hash: [u8; TX_HASH_SIZE], index: u16) -&gt; UtxoId {
 		UtxoId { tx_hash: McTxHash(hash), index: UtxoIndex(index) }
 	}
 }

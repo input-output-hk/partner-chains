@@ -357,76 +357,6 @@
 <a href="#357" id="357">357</a>
 <a href="#358" id="358">358</a>
 <a href="#359" id="359">359</a>
-<a href="#360" id="360">360</a>
-<a href="#361" id="361">361</a>
-<a href="#362" id="362">362</a>
-<a href="#363" id="363">363</a>
-<a href="#364" id="364">364</a>
-<a href="#365" id="365">365</a>
-<a href="#366" id="366">366</a>
-<a href="#367" id="367">367</a>
-<a href="#368" id="368">368</a>
-<a href="#369" id="369">369</a>
-<a href="#370" id="370">370</a>
-<a href="#371" id="371">371</a>
-<a href="#372" id="372">372</a>
-<a href="#373" id="373">373</a>
-<a href="#374" id="374">374</a>
-<a href="#375" id="375">375</a>
-<a href="#376" id="376">376</a>
-<a href="#377" id="377">377</a>
-<a href="#378" id="378">378</a>
-<a href="#379" id="379">379</a>
-<a href="#380" id="380">380</a>
-<a href="#381" id="381">381</a>
-<a href="#382" id="382">382</a>
-<a href="#383" id="383">383</a>
-<a href="#384" id="384">384</a>
-<a href="#385" id="385">385</a>
-<a href="#386" id="386">386</a>
-<a href="#387" id="387">387</a>
-<a href="#388" id="388">388</a>
-<a href="#389" id="389">389</a>
-<a href="#390" id="390">390</a>
-<a href="#391" id="391">391</a>
-<a href="#392" id="392">392</a>
-<a href="#393" id="393">393</a>
-<a href="#394" id="394">394</a>
-<a href="#395" id="395">395</a>
-<a href="#396" id="396">396</a>
-<a href="#397" id="397">397</a>
-<a href="#398" id="398">398</a>
-<a href="#399" id="399">399</a>
-<a href="#400" id="400">400</a>
-<a href="#401" id="401">401</a>
-<a href="#402" id="402">402</a>
-<a href="#403" id="403">403</a>
-<a href="#404" id="404">404</a>
-<a href="#405" id="405">405</a>
-<a href="#406" id="406">406</a>
-<a href="#407" id="407">407</a>
-<a href="#408" id="408">408</a>
-<a href="#409" id="409">409</a>
-<a href="#410" id="410">410</a>
-<a href="#411" id="411">411</a>
-<a href="#412" id="412">412</a>
-<a href="#413" id="413">413</a>
-<a href="#414" id="414">414</a>
-<a href="#415" id="415">415</a>
-<a href="#416" id="416">416</a>
-<a href="#417" id="417">417</a>
-<a href="#418" id="418">418</a>
-<a href="#419" id="419">419</a>
-<a href="#420" id="420">420</a>
-<a href="#421" id="421">421</a>
-<a href="#422" id="422">422</a>
-<a href="#423" id="423">423</a>
-<a href="#424" id="424">424</a>
-<a href="#425" id="425">425</a>
-<a href="#426" id="426">426</a>
-<a href="#427" id="427">427</a>
-<a href="#428" id="428">428</a>
-<a href="#429" id="429">429</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
 	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
@@ -435,11 +365,8 @@
 <span class="kw">use </span><span class="kw">crate</span>::config::ServiceConfig;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
-<span class="kw">use crate</span>::{config::config_fields, <span class="kw-2">*</span>};
-<span class="kw">use </span>partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
-<span class="kw">use </span>partner_chains_cardano_offchain::init_governance::InitGovernance;
 <span class="kw">use </span>partner_chains_cardano_offchain::scripts_data::GetScriptsData;
-<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, PolicyId, UtxoId};
+<span class="kw">use </span>sidechain_domain::{PolicyId, UtxoId};
 
 <span class="kw">pub fn </span>prepare_main_chain_config&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
@@ -450,31 +377,12 @@
 	cardano_parameteres.save(context);
 	set_up_cardano_addresses(context, genesis_utxo, ogmios_config)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>offchain = context.offchain_impl(ogmios_config)<span class="question-mark">?</span>;
-	<span class="kw">let </span>(payment_key, governance_authority) = get_private_key_and_key_hash(context)<span class="question-mark">?</span>;
-
-	<span class="kw">let </span>runtime = tokio::runtime::Runtime::new().map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
-	runtime
-		.block_on(offchain.init_governance(governance_authority, payment_key, genesis_utxo))
-		.map_err(|e| <span class="macro">anyhow::anyhow!</span>(<span class="string">"Governance initalization failed: {e:?}!"</span>))<span class="question-mark">?</span>;
-
 	<span class="kw">if </span>INITIAL_PERMISSIONED_CANDIDATES.load_from_file(context).is_none() {
 		INITIAL_PERMISSIONED_CANDIDATES.save_to_file(<span class="kw-2">&amp;</span><span class="macro">vec!</span>[], context)
 	}
 	prepare_native_token(context)<span class="question-mark">?</span>;
 	context.eprint(OUTRO);
 	<span class="prelude-val">Ok</span>(())
-}
-
-<span class="kw">fn </span>get_private_key_and_key_hash&lt;C: IOContext&gt;(
-	context: <span class="kw-2">&amp;</span>C,
-) -&gt; <span class="prelude-ty">Result</span>&lt;(MainchainPrivateKey, MainchainAddressHash), anyhow::Error&gt; {
-	<span class="kw">let </span>cardano_signig_key_file = config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
-		.prompt_with_default_from_file_and_save(context);
-	<span class="kw">let </span>pkey = cardano_key::get_mc_pkey_from_file(<span class="kw-2">&amp;</span>cardano_signig_key_file, context)<span class="question-mark">?</span>;
-	<span class="kw">let </span>addr_hash = pkey.to_pub_key_hash();
-
-	<span class="prelude-val">Ok</span>((pkey, addr_hash))
 }
 
 <span class="kw">fn </span>set_up_cardano_addresses&lt;C: IOContext&gt;(
@@ -551,14 +459,11 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{GENESIS_UTXO, OGMIOS_PROTOCOL};
 	<span class="kw">use </span><span class="kw">crate</span>::config::NetworkProtocol;
+	<span class="kw">use </span><span class="kw">crate</span>::ogmios::test_values::{preprod_eras_summaries, preprod_shelley_config};
 	<span class="kw">use </span><span class="kw">crate</span>::ogmios::{OgmiosRequest, OgmiosResponse};
 	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::tests::PREPROD_CARDANO_PARAMS;
 	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::tests::save_to_existing_file;
 	<span class="kw">use </span><span class="kw">crate</span>::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
-	<span class="kw">use </span>config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
-	<span class="kw">use </span>hex_literal::hex;
-	<span class="kw">use </span>ogmios::test_values::{preprod_eras_summaries, preprod_shelley_config};
-	<span class="kw">use </span>ogmios_client::types::OgmiosTx;
 	<span class="kw">use </span>partner_chains_cardano_offchain::scripts_data::{Addresses, PolicyIds, ScriptsData};
 	<span class="kw">use </span>serde_json::json;
 	<span class="kw">use </span>serde_json::Value;
@@ -688,18 +593,6 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 				),
 				save_to_existing_file(ILLIQUID_SUPPLY_ADDRESS, TEST_ILLIQUID_SUPPLY_ADDRESS),
 				print_addresses_io(),
-				MockIO::file_read(CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file),
-				MockIO::prompt(
-					<span class="string">"path to the payment signing key file"</span>,
-					<span class="prelude-val">Some</span>(<span class="string">"payment.skey"</span>),
-					<span class="string">"payment.skey"</span>,
-				),
-				MockIO::file_read(CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file),
-				MockIO::file_write_json(
-					CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file,
-					test_resources_config(),
-				),
-				MockIO::file_read(<span class="string">"payment.skey"</span>),
 				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				MockIO::file_write_json(
@@ -758,18 +651,6 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 				),
 				save_to_existing_file(ILLIQUID_SUPPLY_ADDRESS, TEST_ILLIQUID_SUPPLY_ADDRESS),
 				print_addresses_io(),
-				MockIO::file_read(CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file),
-				MockIO::prompt(
-					<span class="string">"path to the payment signing key file"</span>,
-					<span class="prelude-val">Some</span>(<span class="string">"payment.skey"</span>),
-					<span class="string">"payment.skey"</span>,
-				),
-				MockIO::file_read(CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file),
-				MockIO::file_write_json(
-					CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file,
-					test_resources_config(),
-				),
-				MockIO::file_read(<span class="string">"payment.skey"</span>),
 				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				scenarios::prompt_and_save_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
@@ -793,45 +674,24 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 	}
 
 	<span class="kw">fn </span>preprod_offchain_mocks() -&gt; OffchainMocks {
-		<span class="kw">let </span>mock = OffchainMock::new()
-			.with_scripts_data(
-				UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
-				<span class="prelude-val">Ok</span>(ScriptsData {
-					addresses: Addresses {
-						committee_candidate_validator: TEST_COMMITTEE_CANDIDATES_ADDRESS
-							.to_string(),
-						illiquid_circulation_supply_validator: TEST_ILLIQUID_SUPPLY_ADDRESS
-							.to_string(),
-						..Default::default()
-					},
-					policy_ids: PolicyIds {
-						permissioned_candidates: PolicyId::from_hex_unsafe(
-							TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
-						),
-						d_parameter: PolicyId::from_hex_unsafe(TEST_D_PARAMETER_POLICY_ID),
-						..Default::default()
-					},
-				}),
-			)
-			.with_init_governance(
-				UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
-				MainchainAddressHash(<span class="macro">hex!</span>(
-					<span class="string">"e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
-				</span>)),
-				MainchainPrivateKey(<span class="macro">hex!</span>(
-					<span class="string">"d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
-				</span>)),
-				<span class="prelude-val">Ok</span>(OgmiosTx {
-					id: <span class="macro">hex!</span>(<span class="string">"0000000000000000000000000000000000000000000000000000000000000000"</span>),
-				}),
-			);
+		<span class="kw">let </span>mock = OffchainMock::new().with_scripts_data(
+			UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
+			<span class="prelude-val">Ok</span>(ScriptsData {
+				addresses: Addresses {
+					committee_candidate_validator: TEST_COMMITTEE_CANDIDATES_ADDRESS.to_string(),
+					illiquid_circulation_supply_validator: TEST_ILLIQUID_SUPPLY_ADDRESS.to_string(),
+					..Default::default()
+				},
+				policy_ids: PolicyIds {
+					permissioned_candidates: PolicyId::from_hex_unsafe(
+						TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
+					),
+					d_parameter: PolicyId::from_hex_unsafe(TEST_D_PARAMETER_POLICY_ID),
+					..Default::default()
+				},
+			}),
+		);
 		OffchainMocks::new_with_mock(<span class="string">"http://localhost:1337"</span>, mock)
-	}
-
-	<span class="kw">fn </span>test_resources_config() -&gt; Value {
-		<span class="macro">serde_json::json!</span>({
-				<span class="string">"cardano_payment_signing_key_file"</span>: <span class="string">"payment.skey"</span>,
-		})
 	}
 
 	<span class="kw">fn </span>test_chain_config() -&gt; Value {

@@ -514,17 +514,18 @@
 <a href="#514" id="514">514</a>
 <a href="#515" id="515">515</a>
 <a href="#516" id="516">516</a>
-</pre></div><pre class="rust"><code><span class="kw">mod </span>prepare_cardano_params;
-<span class="kw">mod </span>prepare_chain_params;
+<a href="#517" id="517">517</a>
+</pre></div><pre class="rust"><code><span class="kw">mod </span>init_governance;
+<span class="kw">mod </span>prepare_cardano_params;
 <span class="kw">mod </span>prepare_main_chain_config;
+<span class="kw">mod </span>select_genesis_utxo;
 
-<span class="kw">use </span><span class="kw">crate</span>::config::config_fields;
-<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::BOOTNODES;
+<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
 <span class="kw">use </span><span class="kw">crate</span>::config::config_values::DEFAULT_CHAIN_NAME;
 <span class="kw">use </span><span class="kw">crate</span>::generate_keys::network_key_path;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
-<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_chain_params::prepare_chain_params;
 <span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_main_chain_config::prepare_main_chain_config;
+<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::select_genesis_utxo::select_genesis_utxo;
 <span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::PrepareConfigurationError::NetworkKeyNotFoundError;
 <span class="kw">use </span><span class="kw">crate</span>::CmdRun;
 <span class="kw">use </span>anyhow::Context;
@@ -540,8 +541,9 @@
 <span class="kw">impl </span>CmdRun <span class="kw">for </span>PrepareConfigurationCmd {
 	<span class="kw">fn </span>run&lt;C: IOContext&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;()&gt; {
 		establish_bootnodes(context)<span class="question-mark">?</span>;
-		<span class="kw">let </span>(chain_params, ogmios_config) = prepare_chain_params(context)<span class="question-mark">?</span>;
-		prepare_main_chain_config(context, <span class="kw-2">&amp;</span>ogmios_config, chain_params)<span class="question-mark">?</span>;
+		<span class="kw">let </span>(genesis_utxo, ogmios_config) = select_genesis_utxo(context)<span class="question-mark">?</span>;
+		<span class="kw">let _ </span>= init_governance::run_init_governance(genesis_utxo, <span class="kw-2">&amp;</span>ogmios_config, context)<span class="question-mark">?</span>;
+		prepare_main_chain_config(context, <span class="kw-2">&amp;</span>ogmios_config, genesis_utxo)<span class="question-mark">?</span>;
 		context.eprint(<span class="string">"🚀 All done!"</span>);
 		<span class="prelude-val">Ok</span>(())
 	}
@@ -618,8 +620,8 @@
 <span class="kw">fn </span>peer_id_from_config(context: <span class="kw-2">&amp;</span><span class="kw">impl </span>IOContext) -&gt; anyhow::Result&lt;String&gt; {
 	<span class="kw">let </span>chain_name: String = DEFAULT_CHAIN_NAME.into();
 
-	<span class="kw">let </span>substrate_node_base_path = config_fields::SUBSTRATE_NODE_DATA_BASE_PATH
-		.prompt_with_default_from_file_and_save(context);
+	<span class="kw">let </span>substrate_node_base_path =
+		SUBSTRATE_NODE_DATA_BASE_PATH.prompt_with_default_from_file_and_save(context);
 
 	<span class="kw">let </span>network_key_path = network_key_path(<span class="kw-2">&amp;</span>substrate_node_base_path, <span class="kw-2">&amp;</span>chain_name);
 
@@ -704,7 +706,7 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">pub mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::SUBSTRATE_NODE_DATA_BASE_PATH;
+	<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
 	<span class="kw">use </span><span class="kw">crate</span>::config::{ConfigFieldDefinition, SelectOptions, RESOURCES_CONFIG_FILE_PATH};
 	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::PrepareConfigurationError::NetworkKeyNotFoundError;
 	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::Protocol::{Dns, Ipv4};

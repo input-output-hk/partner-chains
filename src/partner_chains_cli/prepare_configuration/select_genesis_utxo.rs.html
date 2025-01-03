@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `toolkit/partner-chains-cli/src/prepare_configuration/prepare_chain_params.rs`."><title>prepare_chain_params.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="partner_chains_cli" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `toolkit/partner-chains-cli/src/prepare_configuration/select_genesis_utxo.rs`."><title>select_genesis_utxo.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="partner_chains_cli" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -138,13 +138,6 @@
 <a href="#138" id="138">138</a>
 <a href="#139" id="139">139</a>
 <a href="#140" id="140">140</a>
-<a href="#141" id="141">141</a>
-<a href="#142" id="142">142</a>
-<a href="#143" id="143">143</a>
-<a href="#144" id="144">144</a>
-<a href="#145" id="145">145</a>
-<a href="#146" id="146">146</a>
-<a href="#147" id="147">147</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_key;
 <span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{<span class="self">self</span>, GENESIS_UTXO};
 <span class="kw">use </span><span class="kw">crate</span>::config::{ConfigFieldDefinition, ServiceConfig};
@@ -157,7 +150,7 @@
 <span class="kw">use </span>serde::de::DeserializeOwned;
 <span class="kw">use </span>sidechain_domain::{NetworkType, UtxoId};
 
-<span class="kw">pub fn </span>prepare_chain_params&lt;C: IOContext&gt;(context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;(UtxoId, ServiceConfig)&gt; {
+<span class="kw">pub fn </span>select_genesis_utxo&lt;C: IOContext&gt;(context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;(UtxoId, ServiceConfig)&gt; {
 	context.eprint(INTRO);
 	<span class="kw">let </span>ogmios_configuration = prompt_ogmios_configuration(context)<span class="question-mark">?</span>;
 	<span class="kw">let </span>shelley_config = get_shelley_config(<span class="kw-2">&amp;</span>ogmios_configuration.to_string(), context)<span class="question-mark">?</span>;
@@ -171,8 +164,6 @@
 	};
 	<span class="kw">let </span>genesis_utxo =
 		select_from_utxos(context, <span class="string">"Select an UTXO to use as the genesis UTXO"</span>, utxo_query_result)<span class="question-mark">?</span>;
-
-	context.print(CAUTION);
 
 	save_if_missing(GENESIS_UTXO, genesis_utxo, context);
 	<span class="prelude-val">Ok</span>((genesis_utxo, ogmios_configuration))
@@ -202,8 +193,6 @@
 }
 
 <span class="kw">const </span>INTRO: <span class="kw-2">&amp;</span>str = <span class="string">"Now, let's set up the genesis utxo. It identifies a partner chain. This wizard will query Ogmios for your UTXOs using address derived from the payment verification key. Please provide required data."</span>;
-<span class="kw">const </span>CAUTION: <span class="kw-2">&amp;</span>str =
-	<span class="string">"Please do not spend this UTXO, it needs to be consumed by the governance initialization.\n"</span>;
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
@@ -214,9 +203,7 @@
 	};
 	<span class="kw">use </span><span class="kw">crate</span>::ogmios::test_values::preview_shelley_config;
 	<span class="kw">use </span><span class="kw">crate</span>::ogmios::{OgmiosRequest, OgmiosResponse};
-	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_chain_params::{
-		prepare_chain_params, CAUTION, INTRO,
-	};
+	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::select_genesis_utxo::{select_genesis_utxo, INTRO};
 	<span class="kw">use </span><span class="kw">crate</span>::select_utxo::tests::{mock_7_valid_utxos_rows, mock_result_7_valid, query_utxos_io};
 	<span class="kw">use </span><span class="kw">crate</span>::tests::{MockIO, MockIOContext};
 
@@ -247,7 +234,6 @@
 				 	mock_7_valid_utxos_rows(),
 					 <span class="string">"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"
 				</span>),
-				MockIO::print(CAUTION),
 				MockIO::file_write_json_contains(
 					GENESIS_UTXO.config_file,
 					<span class="kw-2">&amp;</span>GENESIS_UTXO.json_pointer(),
@@ -255,7 +241,7 @@
 				),
 			]);
 
-		<span class="kw">let </span>result = prepare_chain_params(<span class="kw-2">&amp;</span>mock_context);
+		<span class="kw">let </span>result = select_genesis_utxo(<span class="kw-2">&amp;</span>mock_context);
 
 		result.expect(<span class="string">"should succeed"</span>);
 	}

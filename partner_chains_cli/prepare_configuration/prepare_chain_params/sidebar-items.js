@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["CAUTION","INTRO"],"fn":["derive_address","prepare_chain_params","save_if_missing"]};
