@@ -60,10 +60,13 @@ runs:
           tar -xvf glibc-$GLIBC_VERSION.tar.gz
           mkdir glibc-build
           cd glibc-build
-          ../glibc-$GLIBC_VERSION/configure --prefix=/opt/glibc-$GLIBC_VERSION
+          ../glibc-$GLIBC_VERSION/configure --prefix=/opt/glibc-$GLIBC_VERSION CFLAGS="-Wno-error"
           make -j$(nproc)
           make install
-          cd ..   
+          cd ..
+          export LD_LIBRARY_PATH=/opt/glibc-$GLIBC_VERSION/lib:$LD_LIBRARY_PATH
+          
+          # Build partner-chains-node with statically linked glibc
           rustup target add x86_64-unknown-linux-gnu
           RUSTFLAGS="-C target-feature=+crt-static -C link-arg=-L/opt/glibc-$GLIBC_VERSION/lib -C link-arg=-static" \
           cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
