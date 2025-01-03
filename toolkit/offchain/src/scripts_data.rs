@@ -73,14 +73,7 @@ pub fn get_scripts_data(
 	.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())?;
 	let (permissioned_candidates_validator, permissioned_candidates_policy) =
 		permissioned_candidates_scripts(genesis_utxo, network)?;
-
-	let reserve_validator =
-		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, PlutusV2)?
-			.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())?;
-
-	let reserve_auth_policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_AUTH_POLICY, PlutusV2)?
-			.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())?;
+	let reserve = reserve_scripts(genesis_utxo, network)?;
 
 	Ok(ScriptsData {
 		addresses: Addresses {
@@ -90,13 +83,13 @@ pub fn get_scripts_data(
 				.address_bech32(network)?,
 			permissioned_candidates_validator: permissioned_candidates_validator
 				.address_bech32(network)?,
-			reserve_validator: reserve_validator.address_bech32(network)?,
+			reserve_validator: reserve.validator.address_bech32(network)?,
 			version_oracle_validator: version_oracle_data.validator.address_bech32(network)?,
 		},
 		policy_ids: PolicyIds {
 			d_parameter: d_parameter_policy.policy_id(),
 			permissioned_candidates: permissioned_candidates_policy.policy_id(),
-			reserve_auth: reserve_auth_policy.policy_id(),
+			reserve_auth: reserve.auth_policy.policy_id(),
 			version_oracle: version_oracle_data.policy_id(),
 		},
 	})
@@ -195,6 +188,23 @@ pub(crate) fn registered_candidates_scripts(
 		PlutusScript::from_wrapped_cbor(raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR, PlutusV2)?
 			.apply_data(genesis_utxo)?;
 	Ok(validator)
+}
+
+pub(crate) struct ReserveScripts {
+	pub(crate) validator: PlutusScript,
+	pub(crate) auth_policy: PlutusScript,
+}
+
+pub(crate) fn reserve_scripts(
+	genesis_utxo: UtxoId,
+	network: NetworkIdKind,
+) -> Result<ReserveScripts, anyhow::Error> {
+	let version_oracle_data = version_oracle(genesis_utxo, network)?;
+	let validator = PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, PlutusV2)?
+		.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())?;
+	let auth_policy = PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_AUTH_POLICY, PlutusV2)?
+		.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())?;
+	Ok(ReserveScripts { validator, auth_policy })
 }
 
 // Returns the simplest MultiSig policy configuration plutus data:
