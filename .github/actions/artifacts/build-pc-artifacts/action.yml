@@ -54,8 +54,19 @@ runs:
       run: |
         cd $GITHUB_WORKSPACE
         if [[ "${{ inputs.os }}" == "linux" ]]; then
+          # Install the specific version of glibc
+          GLIBC_VERSION=2.38
+          wget http://ftp.gnu.org/gnu/libc/glibc-$GLIBC_VERSION.tar.gz
+          tar -xvf glibc-$GLIBC_VERSION.tar.gz
+          mkdir glibc-build
+          cd glibc-build
+          ../glibc-$GLIBC_VERSION/configure --prefix=/opt/glibc-$GLIBC_VERSION
+          make -j$(nproc)
+          make install
+          cd ..   
           rustup target add x86_64-unknown-linux-gnu
-          RUSTFLAGS="$RUSTFLAGS" cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
+          RUSTFLAGS="-C target-feature=+crt-static -C link-arg=-L/opt/glibc-$GLIBC_VERSION/lib -C link-arg=-static" \
+          cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
           cp target/x86_64-unknown-linux-gnu/release/partner-chains-node $PARTNER_CHAINS_NODE
           chmod +x $PARTNER_CHAINS_NODE
         elif [[ "${{ inputs.os }}" == "macos-x86_64" ]]; then
