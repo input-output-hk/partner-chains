@@ -73,7 +73,12 @@ while true; do
     fi
 done
 
-echo "Generating new address and funding it with 2 UTXOs from the genesis address"
+echo "Preparing native token owned by 'funded_address.skey'"
+# Policy requires that mints are signed by the funded_address.skey (key hash is e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b)
+reward_token_policy_id=$(cardano-cli latest transaction policyid --script-file ./shared/reward_token_policy.script)
+# hex of "Reward token"
+reward_token_asset_name="52657761726420746f6b656e"
+echo "Generating new address and funding it with 2x1000 Ada and 10 Ada + 1000000 reward token ($reward_token_policy_id.$reward_token_asset_name)"
 
 new_address=$(cardano-cli latest address build \
   --payment-verification-key-file /keys/funded_address.vkey \
@@ -93,9 +98,11 @@ tx_out1=1000000000 # new_address utxo 1
 tx_out2=1000000000 # new_address utxo 2
 tx_out3=1000000000 # partner-chains-node-4 (dave)
 tx_out4=1000000000 # partner-chains-node-5 (eve)
+tx_out5_lovelace=10000000
+tx_out5_reward_token="1000000 $reward_token_policy_id.$reward_token_asset_name"
 
 # Total output without fee
-total_output=$((tx_out1 + tx_out2 + tx_out3 + tx_out4))
+total_output=$((tx_out1 + tx_out2 + tx_out3 + tx_out4 + tx_out5_lovelace))
 
 fee=1000000
 
@@ -110,6 +117,9 @@ cardano-cli latest transaction build-raw \
   --tx-out "$dave_address+$tx_out3" \
   --tx-out "$eve_address+$tx_out4" \
   --tx-out "$new_address+$change" \
+  --tx-out "$new_address+$tx_out5_lovelace+$tx_out5_reward_token" \
+  --minting-script-file /shared/reward_token_policy.script \
+  --mint "$tx_out5_reward_token" \
   --fee $fee \
   --out-file /data/tx.raw
 
@@ -117,6 +127,7 @@ cardano-cli latest transaction build-raw \
 cardano-cli latest transaction sign \
   --tx-body-file /data/tx.raw \
   --signing-key-file /shared/shelley/genesis-utxo.skey \
+  --signing-key-file /keys/funded_address.skey \
   --testnet-magic 42 \
   --out-file /data/tx.signed
 
