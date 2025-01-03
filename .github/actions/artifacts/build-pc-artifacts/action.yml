@@ -49,34 +49,64 @@ runs:
           sudo mv $HOME/protoc/bin/protoc /usr/local/bin/protoc
         fi
 
+    - name: Install and Build glibc
+      shell: bash
+      run: |
+        cd $GITHUB_WORKSPACE
+        GLIBC_VERSION=2.38
+    
+        # Ensure necessary build tools are installed
+        sudo apt-get update
+        sudo apt-get install -y build-essential gawk manpages-dev wget
+    
+        # Download and extract glibc
+        wget http://ftp.gnu.org/gnu/libc/glibc-$GLIBC_VERSION.tar.gz
+        tar -xvf glibc-$GLIBC_VERSION.tar.gz
+    
+        # Create and enter the build directory
+        rm -rf glibc-build
+        mkdir glibc-build
+        cd glibc-build
+    
+        # Configure glibc for static build
+        ../glibc-$GLIBC_VERSION/configure \
+          --prefix=/opt/glibc-$GLIBC_VERSION \
+          --disable-werror \
+          --enable-static-nss \
+          CFLAGS="-O2 -static"
+    
+        # Build and install glibc
+        make -j$(nproc)
+        sudo make install
+        
     - name: Build partner-chains-node
       shell: bash
       run: |
         cd $GITHUB_WORKSPACE
         if [[ "${{ inputs.os }}" == "linux" ]]; then
-          # Install the specific version of glibc
           GLIBC_VERSION=2.38
-          wget http://ftp.gnu.org/gnu/libc/glibc-$GLIBC_VERSION.tar.gz
-          tar -xvf glibc-$GLIBC_VERSION.tar.gz
-          mkdir glibc-build
-          cd glibc-build
-          ../glibc-$GLIBC_VERSION/configure --prefix=/opt/glibc-$GLIBC_VERSION CFLAGS="-Wno-error"
-          make -j$(nproc)
-          make install
-          cd ..
+    
+          # Ensure glibc is properly set up
+          export LIBRARY_PATH=/opt/glibc-$GLIBC_VERSION/lib
+          export C_INCLUDE_PATH=/opt/glibc-$GLIBC_VERSION/include
+          export CPLUS_INCLUDE_PATH=/opt/glibc-$GLIBC_VERSION/include
           export LD_LIBRARY_PATH=/opt/glibc-$GLIBC_VERSION/lib:$LD_LIBRARY_PATH
-          
+    
           # Build partner-chains-node with statically linked glibc
           rustup target add x86_64-unknown-linux-gnu
           RUSTFLAGS="-C target-feature=+crt-static -C link-arg=-L/opt/glibc-$GLIBC_VERSION/lib -C link-arg=-static" \
           cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
+    
+          # Copy and prepare the binary
           cp target/x86_64-unknown-linux-gnu/release/partner-chains-node $PARTNER_CHAINS_NODE
           chmod +x $PARTNER_CHAINS_NODE
+          
         elif [[ "${{ inputs.os }}" == "macos-x86_64" ]]; then
           rustup target add x86_64-apple-darwin
           cargo build -p partner-chains-node --locked --release --target x86_64-apple-darwin
           cp target/x86_64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE
           chmod +x $PARTNER_CHAINS_NODE
+          
         elif [[ "${{ inputs.os }}" == "macos-arm64" ]]; then
           rustup target add aarch64-apple-darwin
           cargo build -p partner-chains-node --locked --release --target aarch64-apple-darwin
