@@ -24,6 +24,7 @@ runs:
         if [[ "${{ inputs.os }}" == "linux" ]]; then
           echo "PARTNER_CHAINS_CLI=partner-chains-cli-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
           echo "PARTNER_CHAINS_NODE=partner-chains-node-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
+          echo "RUSTFLAGS=-C target-feature=+crt-static" >> $GITHUB_ENV
         elif [[ "${{ inputs.os }}" == "macos-x86_64" ]]; then
           echo "PARTNER_CHAINS_CLI=partner-chains-cli-${{ inputs.tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
           echo "PARTNER_CHAINS_NODE=partner-chains-node-${{ inputs.tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
@@ -54,7 +55,7 @@ runs:
         cd $GITHUB_WORKSPACE
         if [[ "${{ inputs.os }}" == "linux" ]]; then
           rustup target add x86_64-unknown-linux-gnu
-          cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
+          RUSTFLAGS="$RUSTFLAGS" cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
           cp target/x86_64-unknown-linux-gnu/release/partner-chains-node $PARTNER_CHAINS_NODE
           chmod +x $PARTNER_CHAINS_NODE
         elif [[ "${{ inputs.os }}" == "macos-x86_64" ]]; then
@@ -75,7 +76,7 @@ runs:
         cd $GITHUB_WORKSPACE
         if [[ "${{ inputs.os }}" == "linux" ]]; then
           rustup target add x86_64-unknown-linux-gnu
-          cargo build -p partner-chains-cli --locked --release --target x86_64-unknown-linux-gnu
+          RUSTFLAGS="$RUSTFLAGS" cargo build -p partner-chains-cli --locked --release --target x86_64-unknown-linux-gnu
           cp target/x86_64-unknown-linux-gnu/release/partner-chains-cli $PARTNER_CHAINS_CLI
           chmod +x $PARTNER_CHAINS_CLI
         elif [[ "${{ inputs.os }}" == "macos-x86_64" ]]; then
