@@ -30,7 +30,7 @@ pub(crate) async fn get_reserve_data<
 	let auth_policy_version_utxo = find_script_utxo(
 		raw_scripts::ScriptId::ReserveAuthPolicy as u32,
 		&version_oracle,
-		&ctx,
+		ctx,
 		client,
 	)
 	.await?
@@ -40,7 +40,7 @@ pub(crate) async fn get_reserve_data<
 	let validator_version_utxo = find_script_utxo(
 		raw_scripts::ScriptId::ReserveValidator as u32,
 		&version_oracle,
-		&ctx,
+		ctx,
 		client,
 	)
 	.await?
