@@ -527,6 +527,24 @@
 <a href="#527" id="527">527</a>
 <a href="#528" id="528">528</a>
 <a href="#529" id="529">529</a>
+<a href="#530" id="530">530</a>
+<a href="#531" id="531">531</a>
+<a href="#532" id="532">532</a>
+<a href="#533" id="533">533</a>
+<a href="#534" id="534">534</a>
+<a href="#535" id="535">535</a>
+<a href="#536" id="536">536</a>
+<a href="#537" id="537">537</a>
+<a href="#538" id="538">538</a>
+<a href="#539" id="539">539</a>
+<a href="#540" id="540">540</a>
+<a href="#541" id="541">541</a>
+<a href="#542" id="542">542</a>
+<a href="#543" id="543">543</a>
+<a href="#544" id="544">544</a>
+<a href="#545" id="545">545</a>
+<a href="#546" id="546">546</a>
+<a href="#547" id="547">547</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Initialization of the reserve management is execution of three similar transaction to
 //! initialize three scripts: Rerserve Management Validator, Reserve Management Policy and
 //! Illiquid Circulation Supply Validator.
@@ -546,8 +564,8 @@
 </span><span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
 	csl::{
-		get_builder_config, get_validator_budgets, zero_ex_units, TransactionBuilderExt,
-		TransactionContext,
+		get_builder_config, get_validator_budgets, zero_ex_units, OgmiosUtxoExt,
+		TransactionBuilderExt, TransactionContext,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	plutus_script::PlutusScript,
@@ -812,20 +830,38 @@
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
 	client: <span class="kw-2">&amp;</span>T,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;bool, anyhow::Error&gt; {
+	<span class="prelude-val">Ok</span>(find_script_utxo(script.id, version_oracle, ctx, client).<span class="kw">await</span><span class="question-mark">?</span>.is_some())
+}
+
+<span class="comment">// Finds an UTXO at Version Oracle Validator with Datum that contains
+// * script id of the script being initialized
+// * Version Oracle Policy Id
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>find_script_utxo&lt;
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+&gt;(
+	script_id: u32,
+	version_oracle: <span class="kw-2">&amp;</span>VersionOracleData,
+	ctx: <span class="kw-2">&amp;</span>TransactionContext,
+	client: <span class="kw-2">&amp;</span>T,
+) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;UtxoId&gt;, anyhow::Error&gt; {
 	<span class="kw">let </span>validator_address = version_oracle.validator.address(ctx.network).to_bech32(<span class="prelude-val">None</span>)<span class="question-mark">?</span>;
 	<span class="kw">let </span>validator_utxos = client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="comment">// Decode datum from utxos and check if it contains script id
-	</span><span class="prelude-val">Ok</span>(validator_utxos.into_iter().any(|utxo| {
-		utxo.datum
-			.map(|d| d.bytes)
-			.and_then(|bytes| PlutusData::from_bytes(bytes).ok())
-			.and_then(decode_version_oracle_validator_datum)
-			.filter(|datum| {
-				datum.script_id == script.id
-					&amp;&amp; datum.version_oracle_policy_id == version_oracle.policy.script_hash()
-			})
-			.is_some()
-	}))
+	</span><span class="prelude-val">Ok</span>(validator_utxos
+		.into_iter()
+		.find(|utxo| {
+			utxo.clone()
+				.datum
+				.map(|d| d.bytes)
+				.and_then(|bytes| PlutusData::from_bytes(bytes).ok())
+				.and_then(decode_version_oracle_validator_datum)
+				.filter(|datum| {
+					datum.script_id == script_id
+						&amp;&amp; datum.version_oracle_policy_id == version_oracle.policy.script_hash()
+				})
+				.is_some()
+		})
+		.map(|utxo| utxo.to_domain()))
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>VersionOracleValidatorDatum {

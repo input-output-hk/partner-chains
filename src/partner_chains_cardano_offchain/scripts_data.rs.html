@@ -264,6 +264,16 @@
 <a href="#264" id="264">264</a>
 <a href="#265" id="265">265</a>
 <a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{csl::NetworkTypeExt, plutus_script::PlutusScript, OffchainError};
 <span class="kw">use </span>cardano_serialization_lib::{LanguageKind::PlutusV2, NetworkIdKind};
 <span class="kw">use </span>ogmios_client::query_network::QueryNetwork;
@@ -339,14 +349,7 @@
 	</span>.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())<span class="question-mark">?</span>;
 	<span class="kw">let </span>(permissioned_candidates_validator, permissioned_candidates_policy) =
 		permissioned_candidates_scripts(genesis_utxo, network)<span class="question-mark">?</span>;
-
-	<span class="kw">let </span>reserve_validator =
-		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, PlutusV2)<span class="question-mark">?
-			</span>.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())<span class="question-mark">?</span>;
-
-	<span class="kw">let </span>reserve_auth_policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_AUTH_POLICY, PlutusV2)<span class="question-mark">?
-			</span>.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())<span class="question-mark">?</span>;
+	<span class="kw">let </span>reserve = reserve_scripts(genesis_utxo, network)<span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(ScriptsData {
 		addresses: Addresses {
@@ -356,13 +359,13 @@
 				.address_bech32(network)<span class="question-mark">?</span>,
 			permissioned_candidates_validator: permissioned_candidates_validator
 				.address_bech32(network)<span class="question-mark">?</span>,
-			reserve_validator: reserve_validator.address_bech32(network)<span class="question-mark">?</span>,
+			reserve_validator: reserve.validator.address_bech32(network)<span class="question-mark">?</span>,
 			version_oracle_validator: version_oracle_data.validator.address_bech32(network)<span class="question-mark">?</span>,
 		},
 		policy_ids: PolicyIds {
 			d_parameter: d_parameter_policy.policy_id(),
 			permissioned_candidates: permissioned_candidates_policy.policy_id(),
-			reserve_auth: reserve_auth_policy.policy_id(),
+			reserve_auth: reserve.auth_policy.policy_id(),
 			version_oracle: version_oracle_data.policy_id(),
 		},
 	})
@@ -461,6 +464,23 @@
 		PlutusScript::from_wrapped_cbor(raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR, PlutusV2)<span class="question-mark">?
 			</span>.apply_data(genesis_utxo)<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(validator)
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>ReserveScripts {
+	<span class="kw">pub</span>(<span class="kw">crate</span>) validator: PlutusScript,
+	<span class="kw">pub</span>(<span class="kw">crate</span>) auth_policy: PlutusScript,
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>reserve_scripts(
+	genesis_utxo: UtxoId,
+	network: NetworkIdKind,
+) -&gt; <span class="prelude-ty">Result</span>&lt;ReserveScripts, anyhow::Error&gt; {
+	<span class="kw">let </span>version_oracle_data = version_oracle(genesis_utxo, network)<span class="question-mark">?</span>;
+	<span class="kw">let </span>validator = PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, PlutusV2)<span class="question-mark">?
+		</span>.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())<span class="question-mark">?</span>;
+	<span class="kw">let </span>auth_policy = PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_AUTH_POLICY, PlutusV2)<span class="question-mark">?
+		</span>.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())<span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>(ReserveScripts { validator, auth_policy })
 }
 
 <span class="comment">// Returns the simplest MultiSig policy configuration plutus data:
