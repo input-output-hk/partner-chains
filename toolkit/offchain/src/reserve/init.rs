@@ -17,8 +17,8 @@
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
-		get_builder_config, get_validator_budgets, zero_ex_units, TransactionBuilderExt,
-		TransactionContext,
+		get_builder_config, get_validator_budgets, zero_ex_units, OgmiosUtxoExt,
+		TransactionBuilderExt, TransactionContext,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	plutus_script::PlutusScript,
@@ -283,20 +283,38 @@ async fn script_is_initialized<
 	ctx: &TransactionContext,
 	client: &T,
 ) -> Result<bool, anyhow::Error> {
+	Ok(find_script_utxo(script.id, version_oracle, ctx, client).await?.is_some())
+}
+
+// Finds an UTXO at Version Oracle Validator with Datum that contains
+// * script id of the script being initialized
+// * Version Oracle Policy Id
+pub(crate) async fn find_script_utxo<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	script_id: u32,
+	version_oracle: &VersionOracleData,
+	ctx: &TransactionContext,
+	client: &T,
+) -> Result<Option<UtxoId>, anyhow::Error> {
 	let validator_address = version_oracle.validator.address(ctx.network).to_bech32(None)?;
 	let validator_utxos = client.query_utxos(&[validator_address]).await?;
 	// Decode datum from utxos and check if it contains script id
-	Ok(validator_utxos.into_iter().any(|utxo| {
-		utxo.datum
-			.map(|d| d.bytes)
-			.and_then(|bytes| PlutusData::from_bytes(bytes).ok())
-			.and_then(decode_version_oracle_validator_datum)
-			.filter(|datum| {
-				datum.script_id == script.id
-					&& datum.version_oracle_policy_id == version_oracle.policy.script_hash()
-			})
-			.is_some()
-	}))
+	Ok(validator_utxos
+		.into_iter()
+		.find(|utxo| {
+			utxo.clone()
+				.datum
+				.map(|d| d.bytes)
+				.and_then(|bytes| PlutusData::from_bytes(bytes).ok())
+				.and_then(decode_version_oracle_validator_datum)
+				.filter(|datum| {
+					datum.script_id == script_id
+						&& datum.version_oracle_policy_id == version_oracle.policy.script_hash()
+				})
+				.is_some()
+		})
+		.map(|utxo| utxo.to_domain()))
 }
 
 pub(crate) struct VersionOracleValidatorDatum {
