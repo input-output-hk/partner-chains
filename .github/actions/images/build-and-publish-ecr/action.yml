@@ -23,7 +23,7 @@ runs:
         cat > Dockerfile <<EOF
         FROM alpine:latest
         RUN apk add --no-cache ca-certificates
-        RUN adduser -D -u 1000 substrate && \
+        RUN adduser -D -u 1000 -s /bin/sh substrate && \
             mkdir -p /data /substrate/.local/share/partner-chains-node && \
             chown -R substrate:substrate /data /substrate && \
             ln -s /data /substrate/.local/share/partner-chains-node
