@@ -32,30 +32,14 @@ runs:
           echo "PARTNER_CHAINS_NODE=partner-chains-node-${{ inputs.tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
         fi
 
-    - name: Install protoc
-      shell: bash
-      run: |
-        cd $GITHUB_WORKSPACE
-        if [[ "${{ inputs.os }}" == "linux" ]]; then
-          sudo apt-get install -y protobuf-compiler
-        elif [[ "${{ inputs.os }}" == "macos-x86_64" ]]; then
-          curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v21.3/protoc-21.3-osx-x86_64.zip
-          unzip protoc-21.3-osx-x86_64.zip -d $HOME/protoc
-          sudo mv $HOME/protoc/bin/protoc /usr/local/bin/protoc
-        elif [[ "${{ inputs.os }}" == "macos-arm64" ]]; then
-          curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v21.3/protoc-21.3-osx-aarch_64.zip
-          unzip protoc-21.3-osx-aarch_64.zip -d $HOME/protoc
-          sudo mv $HOME/protoc/bin/protoc /usr/local/bin/protoc
-        fi
-
     - name: Build partner-chains-node
       shell: bash
       run: |
         cd $GITHUB_WORKSPACE
         if [[ "${{ inputs.os }}" == "linux" ]]; then
           rustup target add x86_64-unknown-linux-musl
-          sudo apt-get install -y musl-tools
-          CC=musl-gcc cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-musl
+          sudo apt-get update && sudo apt-get install -y musl-tools
+          CC=musl-gcc CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc RUSTFLAGS='-C target-feature=+crt-static' cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-musl
           cp target/x86_64-unknown-linux-musl/release/partner-chains-node $PARTNER_CHAINS_NODE
           chmod +x $PARTNER_CHAINS_NODE
         elif [[ "${{ inputs.os }}" == "macos-x86_64" ]]; then
