@@ -53,9 +53,10 @@ runs:
       run: |
         cd $GITHUB_WORKSPACE
         if [[ "${{ inputs.os }}" == "linux" ]]; then
-          rustup target add x86_64-unknown-linux-gnu
-          cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
-          cp target/x86_64-unknown-linux-gnu/release/partner-chains-node $PARTNER_CHAINS_NODE
+          rustup target add x86_64-unknown-linux-musl
+          sudo apt-get install -y musl-tools
+          CC=musl-gcc cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-musl
+          cp target/x86_64-unknown-linux-musl/release/partner-chains-node $PARTNER_CHAINS_NODE
           chmod +x $PARTNER_CHAINS_NODE
         elif [[ "${{ inputs.os }}" == "macos-x86_64" ]]; then
           rustup target add x86_64-apple-darwin
