@@ -51,7 +51,7 @@ pub async fn create_reserve_utxo<
 	payment_key: [u8; 32],
 	client: &T,
 	await_tx: &A,
-) -> anyhow::Result<Option<McTxHash>> {
+) -> anyhow::Result<McTxHash> {
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance = get_governance_data(genesis_utxo, client).await?;
 	let reserve = get_reserve_data(genesis_utxo, &ctx, client).await?;
@@ -92,7 +92,7 @@ pub async fn create_reserve_utxo<
 	let tx_id = res.transaction.id;
 	log::info!("Create Reserve transaction submitted: {}", hex::encode(tx_id));
 	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
-	Ok(Some(McTxHash(tx_id)))
+	Ok(McTxHash(tx_id))
 }
 
 pub struct ReserveParameters {

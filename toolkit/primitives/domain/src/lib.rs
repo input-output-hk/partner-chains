@@ -198,6 +198,8 @@ const POLICY_ID_LEN: usize = 28;
 #[cfg_attr(feature = "std", byte_string(to_hex_string))]
 pub struct PolicyId(pub [u8; POLICY_ID_LEN]);
 
+pub type ScriptHash = PolicyId;
+
 pub const MAX_ASSET_NAME_LEN: u32 = 32;
 
 #[derive(Clone, Default, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen)]
@@ -208,6 +210,29 @@ pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
 pub enum TokenId {
 	Ada,
 	AssetId { policy_id: PolicyId, asset_name: AssetName },
+}
+
+#[cfg(feature = "std")]
+impl FromStr for TokenId {
+	type Err = String;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		if s.to_lowercase() == "ada" {
+			Ok(Self::Ada)
+		} else {
+			match s.split_once(".") {
+				Some((policy_id, asset_name)) => {
+					let policy_id = PolicyId::from_str(policy_id)
+						.map_err(|e| format!("{} is invalid Policy ID: {}", policy_id, e))?;
+					let asset_name = AssetName::from_str(asset_name)
+						.map_err(|e| format!("{} is invalid Asset Name: {}", asset_name, e))?;
+					Ok(Self::AssetId { policy_id, asset_name })
+				},
+				None => Err("AssetID should be <hex encoded Policy ID>.<hex encoded Asset Name>"
+					.to_string()),
+			}
+		}
+	}
 }
 
 const MAINCHAIN_PUBLIC_KEY_LEN: usize = 32;
