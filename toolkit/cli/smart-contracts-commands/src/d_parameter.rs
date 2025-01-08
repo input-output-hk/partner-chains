@@ -1,9 +1,8 @@
+use crate::PaymentFilePath;
 use jsonrpsee::http_client::HttpClient;
 use partner_chains_cardano_offchain::d_param::upsert_d_param;
 use sidechain_domain::DParameter;
 use sidechain_domain::UtxoId;
-
-use crate::read_private_key_from_file;
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct UpsertDParameterCmd {
@@ -13,15 +12,15 @@ pub struct UpsertDParameterCmd {
 	permissioned_candidates_count: u16,
 	#[arg(long)]
 	registered_candidates_count: u16,
-	#[arg(long, short('k'))]
-	payment_key_file: String,
+	#[clap(flatten)]
+	payment_key_file: PaymentFilePath,
 	#[arg(long, short('c'))]
 	genesis_utxo: UtxoId,
 }
 
 impl UpsertDParameterCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
-		let payment_key = read_private_key_from_file(&self.payment_key_file)?;
+		let payment_key = self.payment_key_file.read_key()?;
 		let d_param = DParameter {
 			num_permissioned_candidates: self.permissioned_candidates_count,
 			num_registered_candidates: self.registered_candidates_count,
