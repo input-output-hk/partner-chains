@@ -21,27 +21,31 @@ runs:
     - name: Write Dockerfile
       run: |
         cat > Dockerfile <<EOF
-        FROM debian:bookworm-slim
-        RUN apt-get update && apt-get install -y \\
-            ca-certificates \\
-            libgcc-s1 \\
-            libstdc++6 \\
-            libc6 \\
-            libssl3 \\
-            zlib1g \\
-            libgomp1 \\
+        
+        FROM ubuntu:22.04
+        RUN apt-get update && apt-get install -y \
+            ca-certificates \
+            libgcc-s1 \
+            libstdc++6 \
+            libc6 \
+            libssl3 \
+            zlib1g \
+            libgomp1 \
             && rm -rf /var/lib/apt/lists/*
-        RUN useradd -m -u 1000 -U -s /bin/sh -d /substrate substrate \\
-            && mkdir -p /data /substrate/.local/share/partner-chains-node \\
-            && chown -R substrate:substrate /data /substrate \\
+        
+        RUN useradd -m -u 1000 -U -s /bin/sh -d /substrate substrate \
+            && mkdir -p /data /substrate/.local/share/partner-chains-node \
+            && chown -R substrate:substrate /data /substrate \
             && ln -s /data /substrate/.local/share/partner-chains-node
-        COPY ./partner-chains-node-${{ inputs.tag }}-x86_64-linux /usr/local/bin/partner-chains-node
-        RUN chown substrate:substrate /usr/local/bin/partner-chains-node \\
-            && chmod +x /usr/local/bin/partner-chains-node
+        
+        COPY ./partner-chains-node-${TAG}-x86_64-linux /usr/local/bin/partner-chains-node
+        RUN chown substrate:substrate /usr/local/bin/partner-chains-node && chmod +x /usr/local/bin/partner-chains-node
+        
         USER substrate
         EXPOSE 30333 9615 9933 9944
         VOLUME ["/data"]
         ENTRYPOINT ["/usr/local/bin/partner-chains-node"]
+
         EOF
       shell: bash
 
