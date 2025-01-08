@@ -51,52 +51,31 @@ jobs:
       contents: write
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.sha }}
-      - name: Build and Upload for Linux
-        uses: ./.github/actions/artifacts/build-pc-artifacts
-        with:
-          sha: ${{ inputs.sha }}
-          tag: ${{ inputs.tag }}
-          os: linux
+      - name: just testing
+        run: echo "success"
+        shell: bash
 
   build-macos-x86_64:
     if: ${{ github.event.inputs.no-release != 'true' }}
     permissions:
       id-token: write
       contents: write
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.sha }}
-      - name: Build and Upload for macOS x86_64
-        uses: ./.github/actions/artifacts/build-pc-artifacts
-        with:
-          sha: ${{ inputs.sha }}
-          tag: ${{ inputs.tag }}
-          os: macos-x86_64
+      - name: just testing
+        run: echo "success"
+        shell: bash
 
   build-macos-arm64:
     if: ${{ github.event.inputs.no-release != 'true' }}
     permissions:
       id-token: write
       contents: write
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.sha }}
-      - name: Build and Upload for macOS arm64
-        uses: ./.github/actions/artifacts/build-pc-artifacts
-        with:
-          sha: ${{ inputs.sha }}
-          tag: ${{ inputs.tag }}
-          os: macos-arm64
+      - name: just testing
+        run: echo "success"
+        shell: bash
 
   build-and-publish-ecr:
     permissions:
@@ -105,17 +84,9 @@ jobs:
     needs: build-linux
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build and Publish to ECR
-        uses: ./.github/actions/images/build-and-publish-ecr
-        with:
-          sha: ${{ inputs.sha }}
-          tag: ${{ inputs.tag }}
-        env:
-          AWS_REGION: "eu-central-1"
-          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+      - name: just testing
+        run: echo "success"
+        shell: bash
 
   create-draft-release:
     if: ${{ github.event.inputs.no-release != 'true' }}
@@ -128,14 +99,9 @@ jobs:
       - build-macos-arm64
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Create Draft Release
-        uses: ./.github/actions/release/create-draft-release
-        with:
-          tag: ${{ inputs.tag }}
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: just testing
+        run: echo "success"
+        shell: bash
 
   generate-chain-specs:
     permissions:
@@ -156,18 +122,11 @@ jobs:
       id-token: write
       contents: write
     needs: generate-chain-specs
-    runs-on: eks
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Upload chain spec artifacts to Kubernetes
-        uses: ./.github/actions/deploy/upload-chain-specs
-        with:
-          sha: ${{ github.sha }}
-        env:
-          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+      - name: just testing
+        run: echo "success"
+        shell: bash
 
   deploy-staging-preview:
     if: ${{ github.event.inputs.no-deploy != 'true' }}
@@ -441,13 +400,9 @@ jobs:
       - run-all-tests-on-n2-epoch
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Publish Workflow
-        run: |
-          curl -X POST \
-            -H "Authorization: token ${{ secrets.ACTIONS_PUBLISH_PAT }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/publish.yml/dispatches \
-            -d '{"ref": "${{ github.ref_name }}", "inputs": {"sha": "${{ inputs.sha }}", "tag": "${{ inputs.tag }}"}}'
+      - name: just testing
+        run: echo "success"
+        shell: bash
 
 #  deploy-staging-preprod:
 #    if: ${{ github.event.inputs.no-deploy != 'true' }}
