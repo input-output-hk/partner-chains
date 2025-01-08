@@ -634,6 +634,7 @@
 <a href="#634" id="634">634</a>
 <a href="#635" id="635">635</a>
 <a href="#636" id="636">636</a>
+<a href="#637" id="637">637</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::db_datum::DbDatum;
 <span class="kw">use </span><span class="kw">crate</span>::SqlxError;
 <span class="kw">use </span>cardano_serialization_lib::PlutusData;
@@ -1189,6 +1190,7 @@ LIMIT 1"</span>;
 	<span class="kw">let </span>sql = <span class="string">"CREATE INDEX IF NOT EXISTS idx_ma_tx_out_ident ON ma_tx_out(ident)"</span>;
 	<span class="macro">info!</span>(<span class="string">"Executing '{}', this might take a while"</span>, sql);
 	sqlx::query(sql).execute(pool).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="macro">info!</span>(<span class="string">"Index 'idx_ma_tx_out_ident' is created"</span>);
 	<span class="prelude-val">Ok</span>(())
 }
 
