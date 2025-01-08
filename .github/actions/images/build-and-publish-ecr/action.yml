@@ -38,7 +38,7 @@ runs:
             && chown -R substrate:substrate /data /substrate \
             && ln -s /data /substrate/.local/share/partner-chains-node
         
-        COPY ./partner-chains-node-${TAG}-x86_64-linux /usr/local/bin/partner-chains-node
+        COPY ./partner-chains-node-${{ inputs.tag }}-x86_64-linux /usr/local/bin/partner-chains-node
         RUN chown substrate:substrate /usr/local/bin/partner-chains-node && chmod +x /usr/local/bin/partner-chains-node
         
         USER substrate
