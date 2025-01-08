@@ -17,7 +17,7 @@ runs:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        ref: ${{ inputs.sha }} 
+        ref: ${{ inputs.sha }}
     - name: Set filename variables
       shell: bash
       run: |
@@ -38,8 +38,10 @@ runs:
         cd $GITHUB_WORKSPACE
         if [[ "${{ inputs.os }}" == "linux" ]]; then
           rustup target add x86_64-unknown-linux-musl
-          sudo apt-get update && sudo apt-get install -y musl-tools
+          sudo apt-get update && sudo apt-get install -y musl-tools protobuf-compiler
+          sudo ln -s /bin/g++ /bin/musl-g++
           CC=musl-gcc CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc RUSTFLAGS='-C target-feature=+crt-static' cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-musl
+          ldd target/x86_64-unknown-linux-musl/release/partner-chains-node
           cp target/x86_64-unknown-linux-musl/release/partner-chains-node $PARTNER_CHAINS_NODE
           chmod +x $PARTNER_CHAINS_NODE
         elif [[ "${{ inputs.os }}" == "macos-x86_64" ]]; then
