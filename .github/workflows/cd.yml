@@ -398,7 +398,6 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n2-epoch:
-    if: ${{ github.event.inputs.no-tests != 'true' }}
     permissions:
       id-token: write
       contents: read
@@ -408,6 +407,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup tests
+        if: ${{ github.event.inputs.no-tests != 'true' }}
         uses: ./.github/actions/tests/setup-python
         env:
           ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
@@ -415,6 +415,7 @@ jobs:
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
       - name: Run all tests (no skipped tests)
+        if: ${{ github.event.inputs.no-tests != 'true' }}
         uses: ./.github/actions/tests/run-e2e-tests
         env:
           DEPLOYMENT_MC_EPOCH: ${{ needs.partner-chain-ready.outputs.deployment_mc_epoch }}
