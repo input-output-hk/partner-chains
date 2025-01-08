@@ -553,6 +553,7 @@ pub(crate) async fn create_idx_ma_tx_out_ident(pool: &Pool<Postgres>) -> Result<
 	let sql = "CREATE INDEX IF NOT EXISTS idx_ma_tx_out_ident ON ma_tx_out(ident)";
 	info!("Executing '{}', this might take a while", sql);
 	sqlx::query(sql).execute(pool).await?;
+	info!("Index 'idx_ma_tx_out_ident' is created");
 	Ok(())
 }
 
