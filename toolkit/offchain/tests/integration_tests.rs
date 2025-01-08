@@ -19,6 +19,7 @@ use partner_chains_cardano_offchain::{
 	d_param, init_governance, permissioned_candidates,
 	register::Register,
 	reserve::{self},
+	update_governance,
 };
 use sidechain_domain::{
 	AdaBasedStaking, AssetName, AuraPublicKey, CandidateRegistration, DParameter, GrandpaPublicKey,
@@ -67,6 +68,16 @@ async fn init_goveranance() {
 	let client = initialize(&container).await;
 	let _ = run_init_goveranance(&client).await;
 	()
+}
+
+#[tokio::test]
+async fn update_governance() {
+	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
+	let client = Cli::default();
+	let container = client.run(image);
+	let client = initialize(&container).await;
+	let genesis_utxo = run_init_goveranance(&client).await;
+	let _ = run_update_goveranance(&client, genesis_utxo).await;
 }
 
 #[tokio::test]
@@ -182,6 +193,23 @@ async fn run_init_goveranance<
 	.await
 	.unwrap();
 	genesis_utxo
+}
+
+async fn run_update_goveranance<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	client: &T,
+	genesis_utxo: UtxoId,
+) -> () {
+	let _ = update_governance::run_update_governance(
+		GOVERNANCE_AUTHORITY,
+		GOVERNANCE_AUTHORITY_PAYMENT_KEY,
+		genesis_utxo,
+		client,
+		FixedDelayRetries::new(Duration::from_millis(500), 100),
+	)
+	.await
+	.unwrap();
 }
 
 async fn run_upsert_d_param<
