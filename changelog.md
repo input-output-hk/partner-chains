@@ -22,6 +22,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 * Command `smart-contracts reserve init`
 * Command `smart-contracts reserve create`
+* Command `smart-contracts update-governance`
 
 # v1.4.0
 
