@@ -80,7 +80,7 @@ pub async fn run_update_governance<
 	let signed_tx = tx_context.sign(&tx);
 
 	let response = client.submit_transaction(&signed_tx.to_bytes()).await?;
-	println!("Submitted transaction: {}", hex::encode(response.transaction.id));
+	log::info!("Submitted transaction: {}", hex::encode(response.transaction.id));
 
 	await_tx
 		.await_tx_output(
