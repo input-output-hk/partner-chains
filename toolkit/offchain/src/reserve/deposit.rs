@@ -62,7 +62,7 @@ pub async fn deposit_to_reserve<
 	let reserve = get_reserve_data(genesis_utxo, &ctx, client).await?;
 
 	let utxo = get_utxo_with_tokens(&reserve.scripts, &parameters.token, &ctx, client).await?
-		.ok_or_else(||anyhow!("There are not UTXOs in the Reserve Validator address that contain token Reserve Auth Policy Token. Have Reserve been created already?"))?;
+		.ok_or_else(||anyhow!("There are no UTXOs in the Reserve Validator address that contain token Reserve Auth Policy Token. Has Reserve been created already?"))?;
 	let current_amount = get_token_amount(&utxo, &parameters.token);
 	let _token_amount =
 		TokenAmount { token: parameters.token, amount: current_amount + parameters.amount };
@@ -85,12 +85,11 @@ async fn get_utxo_with_tokens<T: QueryLedgerState>(
 				&& utxo
 					.datum
 					.clone()
-					.and_then(|datum| {
-						decode_reserve_datum(datum.bytes).filter(|reserve_datum| {
+					.is_some_and(|datum| {
+						decode_reserve_datum(datum.bytes).is_some_and(|reserve_datum| {
 							reserve_datum.immutable_settings.token == *token_id
 						})
 					})
-					.is_some()
 		})
 		.clone())
 }
