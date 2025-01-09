@@ -1,3 +1,10 @@
+//! Building and submitting of the transaction that changes the current governance authority
+//!
+//! The transaction:
+//! 1. Burns the previous governance UTXO from the version oracle validator address
+//! 2. Mints exactly 1 multi-sig policy token as authentication
+//! 3. Produces a new governance UTXO at the version oracle validator address with a version oracle
+//!    Plutus datum attached that contains the script ID (32) and policy hash.
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
