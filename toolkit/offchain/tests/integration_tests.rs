@@ -6,6 +6,7 @@
 //! In case of change to the supported cardano-node or ogmios,
 //! it should be updated accordingly and pushed to the registry.
 
+use cardano_serialization_lib::NetworkIdKind;
 use hex_literal::hex;
 use jsonrpsee::http_client::HttpClient;
 use ogmios_client::{
@@ -18,8 +19,7 @@ use partner_chains_cardano_offchain::{
 	await_tx::{AwaitTx, FixedDelayRetries},
 	d_param, init_governance, permissioned_candidates,
 	register::Register,
-	reserve::{self},
-	update_governance,
+	reserve, scripts_data, update_governance,
 };
 use sidechain_domain::{
 	AdaBasedStaking, AssetName, AuraPublicKey, CandidateRegistration, DParameter, GrandpaPublicKey,
@@ -59,6 +59,9 @@ const REWARDS_TOKEN_POLICY_ID: PolicyId =
 
 // Reward token
 const REWARDS_TOKEN_ASSET_NAME_STR: &str = "52657761726420746f6b656e";
+
+const INITIAL_DEPOSIT_AMOUNT: u64 = 500000;
+const DEPOSIT_AMOUNT: u64 = 100000;
 
 #[tokio::test]
 async fn governance_flow() {
@@ -112,7 +115,10 @@ async fn reserve_management_scenario() {
 	assert_eq!(txs.len(), 3);
 	let txs = run_init_reserve_management(genesis_utxo, &client).await;
 	assert_eq!(txs.len(), 0);
-	run_create_reserve_management(genesis_utxo, &client).await;
+	let _ = run_create_reserve_management(genesis_utxo, &client).await;
+	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
+	run_deposit_to_reserve(genesis_utxo, &client).await;
+	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT + DEPOSIT_AMOUNT, &client).await;
 }
 
 #[tokio::test]
@@ -289,7 +295,7 @@ async fn run_create_reserve_management<
 >(
 	genesis_utxo: UtxoId,
 	client: &T,
-) -> () {
+) -> McTxHash {
 	reserve::create::create_reserve_utxo(
 		reserve::create::ReserveParameters {
 			initial_incentive: 100,
@@ -298,7 +304,30 @@ async fn run_create_reserve_management<
 				policy_id: REWARDS_TOKEN_POLICY_ID,
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
 			},
-			initial_deposit: 500000,
+			initial_deposit: INITIAL_DEPOSIT_AMOUNT,
+		},
+		genesis_utxo,
+		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		client,
+		&FixedDelayRetries::new(Duration::from_millis(500), 100),
+	)
+	.await
+	.unwrap()
+}
+
+async fn run_deposit_to_reserve<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> () {
+	reserve::deposit::deposit_to_reserve(
+		reserve::deposit::TokenAmount {
+			token: TokenId::AssetId {
+				policy_id: REWARDS_TOKEN_POLICY_ID,
+				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
+			},
+			amount: 100000,
 		},
 		genesis_utxo,
 		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
@@ -335,4 +364,44 @@ async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryU
 		)
 		.await
 		.unwrap()
+}
+
+async fn assert_token_amount_eq<T: QueryLedgerState>(
+	address: &str,
+	token_policy_id: &PolicyId,
+	token_asset_name: &AssetName,
+	expected_amount: u64,
+	client: &T,
+) {
+	let utxos = client.query_utxos(&[address.to_string()]).await.unwrap();
+	assert!(
+		utxos.into_iter().any(|utxo| {
+			utxo.value
+				.native_tokens
+				.get(&token_policy_id.0)
+				.and_then(|assets| assets.iter().find(|a| a.name == token_asset_name.0.to_vec()))
+				.is_some_and(|asset| asset.amount == expected_amount.into())
+		}),
+		"Expected to find UTXO with {} of {}.{} at {}",
+		expected_amount,
+		hex::encode(&token_policy_id.0),
+		hex::encode(&token_asset_name.0),
+		address,
+	);
+}
+
+async fn assert_reserve_deposited<T: QueryLedgerState>(
+	genesis_utxo: UtxoId,
+	amount: u64,
+	client: &T,
+) {
+	let data = scripts_data::get_scripts_data(genesis_utxo, NetworkIdKind::Testnet).unwrap();
+	assert_token_amount_eq(
+		&data.addresses.reserve_validator,
+		&REWARDS_TOKEN_POLICY_ID,
+		&AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
+		amount,
+		client,
+	)
+	.await;
 }

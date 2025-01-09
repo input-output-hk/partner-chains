@@ -1,6 +1,6 @@
 use crate::{
-	decoding_error_and_log, DataDecodingError, DecodingResult, VersionedDatum,
-	VersionedGenericDatumShape,
+	decoding_error_and_log, plutus_data_version_and_payload, DataDecodingError, DecodingResult,
+	VersionedDatum, VersionedGenericDatumShape,
 };
 use cardano_serialization_lib::{BigInt, BigNum, ConstrPlutusData, PlutusData, PlutusList};
 use sidechain_domain::{AssetName, PolicyId, TokenId};
@@ -127,8 +127,11 @@ impl VersionedDatum for ReserveDatum {
 	const NAME: &str = "ReserveDatum";
 
 	fn decode(datum: &PlutusData) -> DecodingResult<Self> {
-		decode_v0_reserve_datum(datum)
-			.ok_or_else(|| decoding_error_and_log(datum, "ReserveDatum", "invalid data"))
+		match plutus_data_version_and_payload(datum) {
+			Some((0, datum, _)) => decode_v0_reserve_datum(&datum)
+				.ok_or_else(|| decoding_error_and_log(&datum, "ReserveDatum", "invalid data")),
+			_ => Err(decoding_error_and_log(datum, "ReserveDatum", "invalid data")),
+		}
 	}
 }
 
