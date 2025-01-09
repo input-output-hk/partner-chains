@@ -368,7 +368,7 @@ mod tests {
 	use ogmios_client::types::{Asset as OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	use partner_chains_plutus_data::permissioned_candidates::permissioned_candidates_to_plutus_data;
 	use sidechain_domain::{
-		AuraPublicKey, GrandpaPublicKey, PermissionedCandidateData, SidechainPublicKey, UtxoId,
+		AuraPublicKey, GrandpaPublicKey, PermissionedCandidateData, SidechainPublicKey,
 	};
 
 	#[test]
@@ -544,15 +544,14 @@ mod tests {
 		}
 	}
 
-	fn test_goveranance_utxo_id() -> UtxoId {
-		UtxoId::new([123u8; 32], 17)
+	fn test_goveranance_utxo_id() -> OgmiosUtxo {
+		OgmiosUtxo { transaction: OgmiosTx { id: [123; 32] }, index: 17, ..Default::default() }
 	}
 
 	fn test_governance_data() -> GovernanceData {
 		GovernanceData {
 			policy_script: test_goveranance_policy(),
-			utxo_id: test_goveranance_utxo_id(),
-			utxo: Default::default(),
+			utxo: test_goveranance_utxo_id(),
 		}
 	}
 

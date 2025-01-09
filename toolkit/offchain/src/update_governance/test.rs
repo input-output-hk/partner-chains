@@ -92,11 +92,7 @@ fn governance_script() -> crate::plutus_script::PlutusScript {
 }
 
 fn governance_data() -> GovernanceData {
-	GovernanceData {
-		policy_script: governance_script(),
-		utxo_id: governance_utxo().to_domain(),
-		utxo: governance_utxo(),
-	}
+	GovernanceData { policy_script: governance_script(), utxo: governance_utxo() }
 }
 
 fn new_governance_authority() -> MainchainAddressHash {

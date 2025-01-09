@@ -179,8 +179,13 @@ pub(crate) async fn get_governance_utxo<T: QueryLedgerState + Transactions + Que
 
 pub(crate) struct GovernanceData {
 	pub(crate) policy_script: plutus_script::PlutusScript,
-	pub(crate) utxo_id: UtxoId,
 	pub(crate) utxo: OgmiosUtxo,
+}
+
+impl GovernanceData {
+	pub fn utxo_id(&self) -> sidechain_domain::UtxoId {
+		self.utxo.utxo_id()
+	}
 }
 
 impl GovernanceData {
@@ -190,8 +195,8 @@ impl GovernanceData {
 
 	pub(crate) fn utxo_id_as_tx_input(&self) -> TransactionInput {
 		TransactionInput::new(
-			&TransactionHash::from_bytes(self.utxo_id.tx_hash.0.to_vec()).unwrap(),
-			self.utxo_id.index.0.into(),
+			&TransactionHash::from_bytes(self.utxo_id().tx_hash.0.to_vec()).unwrap(),
+			self.utxo_id().index.0.into(),
 		)
 	}
 }
@@ -202,8 +207,7 @@ pub(crate) async fn get_governance_data<T: QueryLedgerState + Transactions + Que
 ) -> Result<GovernanceData, JsError> {
 	let utxo = get_governance_utxo(genesis_utxo, client).await?;
 	let policy_script = read_policy(&utxo)?;
-	let utxo_id = utxo.to_domain();
-	Ok(GovernanceData { policy_script, utxo_id, utxo })
+	Ok(GovernanceData { policy_script, utxo })
 }
 
 pub(crate) fn read_policy(
