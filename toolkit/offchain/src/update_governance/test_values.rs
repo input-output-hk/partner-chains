@@ -42,7 +42,7 @@ pub(crate) fn test_update_governance_tx() -> serde_json::Value {
 					// change returned
 					"address": "addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw",
 					"amount": {
-						"coin": "9922488741",
+						"coin": "9922268377",
 						// minted governance token
 						"multiasset": {
 							"f298532e5be52f55bb60602ada0e4b7038569ec728fbe03c7254d2b9": {
@@ -84,7 +84,7 @@ pub(crate) fn test_update_governance_tx() -> serde_json::Value {
 			"collateral_return": {
 				"address": "addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw",
 				"amount": {
-					"coin": "9922489176",
+					"coin": "9922488741",
 					"multiasset": null
 				},
 				"plutus_data": null,

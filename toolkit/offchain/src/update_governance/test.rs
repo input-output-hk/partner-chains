@@ -30,6 +30,14 @@ fn payment_utxo() -> OgmiosUtxo {
 	}
 }
 
+fn version_oracle_validator_hash() -> [u8; 28] {
+	hex!("c11dee532646a9b226aac75f77ea7ae5fba9270674327c882794701e")
+}
+
+fn version_oracle_token_name() -> Vec<u8> {
+	hex!("56657273696f6e206f7261636c65").to_vec()
+}
+
 fn governance_utxo() -> OgmiosUtxo {
 	OgmiosUtxo {
 		transaction: OgmiosTx {
@@ -38,18 +46,14 @@ fn governance_utxo() -> OgmiosUtxo {
 		index: 0,
 		value: OgmiosValue {
 			lovelace: 2945937,
-			// native_tokens: [].into(),
 			native_tokens: [(
-				hex!("c11dee532646a9b226aac75f77ea7ae5fba9270674327c882794701e"),
-				vec![Asset { name: hex!("56657273696f6e206f7261636c65").to_vec(), amount: 1 }],
+				version_oracle_validator_hash(),
+				vec![Asset { name: version_oracle_token_name(), amount: 1 }],
 			)]
 			.into(),
 		},
 		address: "addr_test1wqrlc9gqxnyyzwyzgtvrf77famec87zme6zfxgq2sq4up8gccxfnc".to_string(),
-		datum: Some(Datum {
-			bytes: hex!("9f1820581cc11dee532646a9b226aac75f77ea7ae5fba9270674327c882794701eff")
-				.to_vec(),
-		}),
+		datum: Some(Datum { bytes: version_oracle_validator_hash().to_vec() }),
 		..OgmiosUtxo::default()
 	}
 }
@@ -161,9 +165,7 @@ fn output_contains_version_oracle_plutus_data() {
 		PlutusData::new_list(&{
 			let mut list = PlutusList::new();
 			list.add(&PlutusData::new_integer(&32u64.into()));
-			list.add(&PlutusData::new_bytes(
-				hex!("c11dee532646a9b226aac75f77ea7ae5fba9270674327c882794701e").to_vec(),
-			));
+			list.add(&PlutusData::new_bytes(version_oracle_validator_hash().to_vec()));
 			list
 		})
 	);
