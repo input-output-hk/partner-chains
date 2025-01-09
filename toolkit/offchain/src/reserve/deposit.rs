@@ -15,27 +15,16 @@
 //! - Reserve Validator script
 //! - Illiquid Supply Validator script
 
-use super::ReserveData;
 use crate::{
-	await_tx::AwaitTx,
-	csl::{
-		convert_value, empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units,
-		OgmiosUtxoExt, TransactionBuilderExt, TransactionContext, UtxoIdExt,
-	},
-	init_governance::{get_governance_data, GovernanceData},
-	reserve::get_reserve_data,
-	scripts_data::ReserveScripts,
+	await_tx::AwaitTx, csl::TransactionContext, init_governance::get_governance_data,
+	reserve::get_reserve_data, scripts_data::ReserveScripts,
 };
 use anyhow::anyhow;
-use cardano_serialization_lib::{
-	Assets, BigInt, ConstrPlutusData, DataCost, ExUnits, JsError, Language, MinOutputAdaCalculator,
-	MultiAsset, PlutusData, PlutusList, PlutusScriptSource, PlutusWitness, Redeemer, RedeemerTag,
-	Transaction, TransactionBuilder, TransactionOutput, TransactionOutputBuilder, TxInputsBuilder,
-};
+use cardano_serialization_lib::PlutusData;
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
-	transactions::{OgmiosEvaluateTransactionResponse, Transactions},
+	transactions::Transactions,
 	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::reserve::ReserveDatum;
@@ -82,20 +71,17 @@ async fn get_utxo_with_tokens<T: QueryLedgerState>(
 		.into_iter()
 		.find(|utxo| {
 			utxo.value.native_tokens.contains_key(&reward_scripts.auth_policy.script_hash())
-				&& utxo
-					.datum
-					.clone()
-					.is_some_and(|datum| {
-						decode_reserve_datum(datum.bytes).is_some_and(|reserve_datum| {
-							reserve_datum.immutable_settings.token == *token_id
-						})
+				&& utxo.datum.clone().is_some_and(|datum| {
+					decode_reserve_datum(datum).is_some_and(|reserve_datum| {
+						reserve_datum.immutable_settings.token == *token_id
 					})
+				})
 		})
 		.clone())
 }
 
-fn decode_reserve_datum(datum_bytes: Vec<u8>) -> Option<ReserveDatum> {
-	PlutusData::from_bytes(datum_bytes)
+fn decode_reserve_datum(datum: ogmios_client::types::Datum) -> Option<ReserveDatum> {
+	PlutusData::from_bytes(datum.bytes)
 		.ok()
 		.and_then(|plutus_data| ReserveDatum::try_from(plutus_data).ok())
 }
