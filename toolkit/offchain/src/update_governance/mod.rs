@@ -6,7 +6,7 @@ use crate::{
 	},
 	init_governance::{self, transaction::version_oracle_datum_output, GovernanceData},
 	plutus_script::PlutusScript,
-	scripts_data::{multisig_governance_policy_configuration, version_scripts_and_address},
+	scripts_data::multisig_governance_policy_configuration,
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
@@ -36,12 +36,6 @@ pub async fn run_update_governance<
 	await_tx: A,
 ) -> anyhow::Result<OgmiosTx> {
 	let tx_context = TransactionContext::for_payment_key(payment_key.0, client).await?;
-	let (_, _, version_validator_address) =
-		version_scripts_and_address(genesis_utxo_id, tx_context.network)?;
-
-	log::info!(
-		"Querying version oracle validator address ({version_validator_address}) for utxos..."
-	);
 
 	let governance_data = init_governance::get_governance_data(genesis_utxo_id, client).await?;
 
