@@ -544,15 +544,12 @@ mod tests {
 		}
 	}
 
-	fn test_goveranance_utxo_id() -> OgmiosUtxo {
+	fn test_goveranance_utxo() -> OgmiosUtxo {
 		OgmiosUtxo { transaction: OgmiosTx { id: [123; 32] }, index: 17, ..Default::default() }
 	}
 
 	fn test_governance_data() -> GovernanceData {
-		GovernanceData {
-			policy_script: test_goveranance_policy(),
-			utxo: test_goveranance_utxo_id(),
-		}
+		GovernanceData { policy_script: test_goveranance_policy(), utxo: test_goveranance_utxo() }
 	}
 
 	fn test_tx_context() -> TransactionContext {
