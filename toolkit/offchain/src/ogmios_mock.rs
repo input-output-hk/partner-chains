@@ -110,13 +110,6 @@ impl QueryUtxoByUtxoId for MockOgmiosClient {
 		&self,
 		queried_utxo: sidechain_domain::UtxoId,
 	) -> Result<Option<OgmiosUtxo>, ogmios_client::OgmiosClientError> {
-		Ok(self
-			.utxos
-			.iter()
-			.find(|utxo| {
-				utxo.transaction == queried_utxo.tx_hash.0.into()
-					&& utxo.index == queried_utxo.index.0
-			})
-			.cloned())
+		Ok(self.utxos.iter().find(|utxo| utxo.utxo_id() == queried_utxo).cloned())
 	}
 }
