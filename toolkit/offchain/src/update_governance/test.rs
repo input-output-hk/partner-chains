@@ -38,6 +38,10 @@ fn version_oracle_token_name() -> Vec<u8> {
 	hex!("56657273696f6e206f7261636c65").to_vec()
 }
 
+fn governance_script_id() -> BigInt {
+	32u64.into()
+}
+
 fn governance_utxo() -> OgmiosUtxo {
 	OgmiosUtxo {
 		transaction: OgmiosTx {
@@ -164,7 +168,7 @@ fn output_contains_version_oracle_plutus_data() {
 		plutus_data,
 		PlutusData::new_list(&{
 			let mut list = PlutusList::new();
-			list.add(&PlutusData::new_integer(&32u64.into()));
+			list.add(&PlutusData::new_integer(&governance_script_id()));
 			list.add(&PlutusData::new_bytes(version_oracle_validator_hash().to_vec()));
 			list
 		})
