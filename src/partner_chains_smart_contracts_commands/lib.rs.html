@@ -123,11 +123,12 @@
 <a href="#123" id="123">123</a>
 <a href="#124" id="124">124</a>
 <a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 
 <span class="kw">pub mod </span>d_parameter;
 <span class="kw">pub mod </span>get_scripts;
-<span class="kw">pub mod </span>init_governance;
+<span class="kw">pub mod </span>governance;
 <span class="kw">pub mod </span>register;
 <span class="kw">pub mod </span>reserve;
 
@@ -136,8 +137,6 @@
 </span><span class="kw">pub enum </span>SmartContractsCmd {
 	<span class="doccomment">/// Print validator addresses and policy IDs of Partner Chain smart contracts
 	</span>GetScripts(get_scripts::GetScripts),
-	<span class="doccomment">/// Initialize Partner Chain governance
-	</span>InitGovernance(init_governance::InitGovernanceCmd),
 	<span class="doccomment">/// Upsert DParameter
 	</span>UpsertDParameter(d_parameter::UpsertDParameterCmd),
 	<span class="doccomment">/// Register candidate
@@ -147,6 +146,9 @@
 	<span class="doccomment">/// Commands for management of rewards reserve
 	</span><span class="attr">#[command(subcommand)]
 	</span>Reserve(reserve::ReserveCmd),
+	<span class="doccomment">/// Commands for management of on-chain governance
+	</span><span class="attr">#[command(subcommand)]
+	</span>Governance(governance::GovernanceCmd),
 }
 
 <span class="attr">#[derive(Clone, Debug, clap::Parser)]
@@ -161,7 +163,7 @@
 <span class="kw">impl </span>SmartContractsCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; CmdResult&lt;()&gt; {
 		<span class="kw">match </span><span class="self">self </span>{
-			<span class="self">Self</span>::InitGovernance(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
+			<span class="self">Self</span>::Governance(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::GetScripts(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::UpsertDParameter(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::Register(cmd) =&gt; cmd.execute().<span class="kw">await</span>,

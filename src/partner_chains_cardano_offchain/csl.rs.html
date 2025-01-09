@@ -924,6 +924,29 @@
 <a href="#924" id="924">924</a>
 <a href="#925" id="925">925</a>
 <a href="#926" id="926">926</a>
+<a href="#927" id="927">927</a>
+<a href="#928" id="928">928</a>
+<a href="#929" id="929">929</a>
+<a href="#930" id="930">930</a>
+<a href="#931" id="931">931</a>
+<a href="#932" id="932">932</a>
+<a href="#933" id="933">933</a>
+<a href="#934" id="934">934</a>
+<a href="#935" id="935">935</a>
+<a href="#936" id="936">936</a>
+<a href="#937" id="937">937</a>
+<a href="#938" id="938">938</a>
+<a href="#939" id="939">939</a>
+<a href="#940" id="940">940</a>
+<a href="#941" id="941">941</a>
+<a href="#942" id="942">942</a>
+<a href="#943" id="943">943</a>
+<a href="#944" id="944">944</a>
+<a href="#945" id="945">945</a>
+<a href="#946" id="946">946</a>
+<a href="#947" id="947">947</a>
+<a href="#948" id="948">948</a>
+<a href="#949" id="949">949</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>fraction::{FromPrimitive, Ratio};
@@ -1457,6 +1480,14 @@
 		ex_units: <span class="kw-2">&amp;</span>ExUnits,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt;;
 
+	<span class="kw">fn </span>add_script_utxo_input_with_data(
+		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
+		utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
+		script: <span class="kw-2">&amp;</span>PlutusScript,
+		data: <span class="kw-2">&amp;</span>PlutusData,
+		ex_units: <span class="kw-2">&amp;</span>ExUnits,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt;;
+
 	<span class="doccomment">/// Adds ogmios inputs to the tx inputs builder.
 	</span><span class="kw">fn </span>add_key_inputs(<span class="kw-2">&amp;mut </span><span class="self">self</span>, utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo], key: <span class="kw-2">&amp;</span>Ed25519KeyHash)
 		-&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt;;
@@ -1471,6 +1502,21 @@
 		script: <span class="kw-2">&amp;</span>PlutusScript,
 		ex_units: <span class="kw-2">&amp;</span>ExUnits,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt; {
+		<span class="self">self</span>.add_script_utxo_input_with_data(
+			utxo,
+			script,
+			<span class="kw-2">&amp;</span>PlutusData::new_empty_constr_plutus_data(<span class="kw-2">&amp;</span><span class="number">0u32</span>.into()),
+			ex_units,
+		)
+	}
+
+	<span class="kw">fn </span>add_script_utxo_input_with_data(
+		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
+		utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
+		script: <span class="kw-2">&amp;</span>PlutusScript,
+		data: <span class="kw-2">&amp;</span>PlutusData,
+		ex_units: <span class="kw-2">&amp;</span>ExUnits,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt; {
 		<span class="kw">let </span>input = utxo.to_csl_tx_input();
 		<span class="kw">let </span>amount = convert_value(<span class="kw-2">&amp;</span>utxo.value)<span class="question-mark">?</span>;
 		<span class="kw">let </span>witness = PlutusWitness::new_without_datum(
@@ -1479,7 +1525,7 @@
 				<span class="kw-2">&amp;</span>RedeemerTag::new_spend(),
 				<span class="comment">// CSL will set redeemer index for the index of script input after sorting transaction inputs
 				</span><span class="kw-2">&amp;</span><span class="number">0u32</span>.into(),
-				<span class="kw-2">&amp;</span>PlutusData::new_empty_constr_plutus_data(<span class="kw-2">&amp;</span><span class="number">0u32</span>.into()),
+				<span class="kw-2">&amp;</span>data,
 				ex_units,
 			),
 		);

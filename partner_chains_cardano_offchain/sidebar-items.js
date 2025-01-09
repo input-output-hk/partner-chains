@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["OffchainError"],"mod":["await_tx","csl","d_param","init_governance","permissioned_candidates","register","reserve","scripts_data","untyped_plutus"]};
+window.SIDEBAR_ITEMS = {"enum":["OffchainError"],"mod":["await_tx","csl","d_param","init_governance","permissioned_candidates","register","reserve","scripts_data","untyped_plutus","update_governance"]};

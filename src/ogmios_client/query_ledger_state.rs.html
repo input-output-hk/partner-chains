@@ -137,12 +137,10 @@
 <a href="#137" id="137">137</a>
 <a href="#138" id="138">138</a>
 <a href="#139" id="139">139</a>
-<a href="#140" id="140">140</a>
-<a href="#141" id="141">141</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Queries that start with `queryLedgerState/`.
 
 </span><span class="kw">use crate</span>::{
-	types::{OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
+	types::{OgmiosBytesSize, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
 	ByNameParamsBuilder, OgmiosClient, OgmiosClientError, OgmiosParams,
 };
 <span class="kw">use </span>serde::Deserialize;
@@ -172,8 +170,7 @@
 	/// - `index`: query for output with this index
 	</span><span class="kw">async fn </span>query_utxo_by_id(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		tx: OgmiosTx,
-		index: u16,
+		utxo: sidechain_domain::UtxoId,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;OgmiosUtxo&gt;, OgmiosClientError&gt;;
 }
 
@@ -202,12 +199,11 @@
 <span class="kw">impl</span>&lt;T: OgmiosClient&gt; QueryUtxoByUtxoId <span class="kw">for </span>T {
 	<span class="kw">async fn </span>query_utxo_by_id(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		tx: OgmiosTx,
-		index: u16,
+		utxo: sidechain_domain::UtxoId,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;OgmiosUtxo&gt;, OgmiosClientError&gt; {
 		<span class="kw">let </span>reference = <span class="macro">serde_json::json!</span>({
-			<span class="string">"transaction"</span>: {<span class="string">"id"</span>: hex::encode(tx.id)},
-			<span class="string">"index"</span>: index,
+			<span class="string">"transaction"</span>: {<span class="string">"id"</span>: hex::encode(utxo.tx_hash.<span class="number">0</span>)},
+			<span class="string">"index"</span>: utxo.index.<span class="number">0</span>,
 		});
 		<span class="kw">let </span>params =
 			ByNameParamsBuilder::new().insert(<span class="string">"outputReferences"</span>, <span class="macro">vec!</span>[reference])<span class="question-mark">?</span>.build();

@@ -220,6 +220,11 @@
 <a href="#220" id="220">220</a>
 <a href="#221" id="221">221</a>
 <a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::OgmiosUtxoExt;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script;
 <span class="kw">use </span><span class="kw">crate</span>::scripts_data;
@@ -401,7 +406,13 @@
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>GovernanceData {
 	<span class="kw">pub</span>(<span class="kw">crate</span>) policy_script: plutus_script::PlutusScript,
-	<span class="kw">pub</span>(<span class="kw">crate</span>) utxo_id: UtxoId,
+	<span class="kw">pub</span>(<span class="kw">crate</span>) utxo: OgmiosUtxo,
+}
+
+<span class="kw">impl </span>GovernanceData {
+	<span class="kw">pub fn </span>utxo_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; sidechain_domain::UtxoId {
+		<span class="self">self</span>.utxo.utxo_id()
+	}
 }
 
 <span class="kw">impl </span>GovernanceData {
@@ -411,8 +422,8 @@
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>utxo_id_as_tx_input(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; TransactionInput {
 		TransactionInput::new(
-			<span class="kw-2">&amp;</span>TransactionHash::from_bytes(<span class="self">self</span>.utxo_id.tx_hash.<span class="number">0</span>.to_vec()).unwrap(),
-			<span class="self">self</span>.utxo_id.index.<span class="number">0</span>.into(),
+			<span class="kw-2">&amp;</span>TransactionHash::from_bytes(<span class="self">self</span>.utxo_id().tx_hash.<span class="number">0</span>.to_vec()).unwrap(),
+			<span class="self">self</span>.utxo_id().index.<span class="number">0</span>.into(),
 		)
 	}
 }
@@ -423,8 +434,7 @@
 ) -&gt; <span class="prelude-ty">Result</span>&lt;GovernanceData, JsError&gt; {
 	<span class="kw">let </span>utxo = get_governance_utxo(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>policy_script = read_policy(<span class="kw-2">&amp;</span>utxo)<span class="question-mark">?</span>;
-	<span class="kw">let </span>utxo_id = utxo.to_domain();
-	<span class="prelude-val">Ok</span>(GovernanceData { policy_script, utxo_id })
+	<span class="prelude-val">Ok</span>(GovernanceData { policy_script, utxo })
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>read_policy(

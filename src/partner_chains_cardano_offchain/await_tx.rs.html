@@ -152,12 +152,6 @@
 <a href="#152" id="152">152</a>
 <a href="#153" id="153">153</a>
 <a href="#154" id="154">154</a>
-<a href="#155" id="155">155</a>
-<a href="#156" id="156">156</a>
-<a href="#157" id="157">157</a>
-<a href="#158" id="158">158</a>
-<a href="#159" id="159">159</a>
-<a href="#160" id="160">160</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
 <span class="kw">use </span>sidechain_domain::UtxoId;
@@ -197,10 +191,7 @@
 		<span class="kw">let </span>strategy = FixedInterval::new(<span class="self">self</span>.delay).take(<span class="self">self</span>.retries);
 		<span class="kw">let _ </span>= Retry::spawn(strategy, || <span class="kw">async </span>{
 			<span class="macro">log::info!</span>(<span class="string">"Probing for transaction output '{}'"</span>, utxo_id);
-			<span class="kw">let </span>utxo = query
-				.query_utxo_by_id(utxo_id.tx_hash.into(), utxo_id.index.<span class="number">0</span>)
-				.<span class="kw">await
-				</span>.map_err(|<span class="kw">_</span>| ())<span class="question-mark">?</span>;
+			<span class="kw">let </span>utxo = query.query_utxo_by_id(utxo_id).<span class="kw">await</span>.map_err(|<span class="kw">_</span>| ())<span class="question-mark">?</span>;
 			utxo.ok_or(())
 		})
 		.<span class="kw">await
@@ -297,12 +288,9 @@
 	<span class="kw">impl </span>QueryUtxoByUtxoId <span class="kw">for </span>MockQueryUtxoByUtxoId {
 		<span class="kw">async fn </span>query_utxo_by_id(
 			<span class="kw-2">&amp;</span><span class="self">self</span>,
-			tx: OgmiosTx,
-			index: u16,
+			utxo: sidechain_domain::UtxoId,
 		) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;OgmiosUtxo&gt;, OgmiosClientError&gt; {
-			<span class="kw">let </span>UtxoId { tx_hash: McTxHash(awaited_id), index: UtxoIndex(awaited_index) } =
-				awaited_utxo_id();
-			<span class="kw">if </span>tx.id == awaited_id &amp;&amp; index == awaited_index {
+			<span class="kw">if </span>utxo == awaited_utxo_id() {
 				<span class="self">self</span>.responses.borrow_mut().pop().unwrap()
 			} <span class="kw">else </span>{
 				<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)

@@ -29,6 +29,8 @@
 <a href="#29" id="29">29</a>
 <a href="#30" id="30">30</a>
 <a href="#31" id="31">31</a>
+<a href="#32" id="32">32</a>
+<a href="#33" id="33">33</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Off-chain code for Partner Chains Smart Contracts and general purpose utilities related to Cardano
 
 /// Primitives used for awaiting for tx being observed on the blockchain
@@ -54,6 +56,8 @@
 </span><span class="kw">pub mod </span>test_values;
 <span class="doccomment">/// Module for interaction with the untyped plutus scripts
 </span><span class="kw">pub mod </span>untyped_plutus;
+<span class="doccomment">/// Supports governance updates
+</span><span class="kw">pub mod </span>update_governance;
 
 <span class="attr">#[derive(Clone, Debug, PartialEq, Eq)]
 </span><span class="kw">pub enum </span>OffchainError {
