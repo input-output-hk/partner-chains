@@ -95,11 +95,11 @@ fn new_governance_authority() -> MainchainAddressHash {
 }
 
 fn mint_ex_units() -> ExUnits {
-	ExUnits::new(&0u64.into(), &0u64.into())
+	ExUnits::new(&333u64.into(), &555u64.into())
 }
 
 fn spend_ex_units() -> ExUnits {
-	ExUnits::new(&0u64.into(), &0u64.into())
+	ExUnits::new(&111u64.into(), &222u64.into())
 }
 
 fn multisig_policy_hash() -> [u8; 28] {
@@ -188,7 +188,7 @@ fn contains_correct_redeemers() {
 	assert_eq!(spend_redeemer.tag(), RedeemerTag::new_spend());
 	assert_eq!(spend_redeemer.index(), 1u64.into());
 	assert_eq!(spend_redeemer.data(), PlutusData::new_integer(&32u64.into()));
-	assert_eq!(spend_redeemer.ex_units(), mint_ex_units());
+	assert_eq!(spend_redeemer.ex_units(), spend_ex_units());
 
 	let mint_redeemer = redeemers.get(1);
 	assert_eq!(mint_redeemer.tag(), RedeemerTag::new_mint());

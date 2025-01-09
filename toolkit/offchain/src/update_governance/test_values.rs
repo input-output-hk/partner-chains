@@ -42,7 +42,7 @@ pub(crate) fn test_update_governance_tx() -> serde_json::Value {
 					// change returned
 					"address": "addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw",
 					"amount": {
-						"coin": "9922268667",
+						"coin": "9922488741",
 						// minted governance token
 						"multiasset": {
 							"f298532e5be52f55bb60602ada0e4b7038569ec728fbe03c7254d2b9": {
@@ -54,7 +54,7 @@ pub(crate) fn test_update_governance_tx() -> serde_json::Value {
 					"script_ref": null
 				}
 			],
-			"fee": "304507",
+			"fee": "304797",
 			"ttl": null,
 			"certs": null,
 			"withdrawals": null,
@@ -70,7 +70,7 @@ pub(crate) fn test_update_governance_tx() -> serde_json::Value {
 					}
 				]
 			],
-			"script_data_hash": "bebd889f9ae27f0e9760cbc29ac3ef43693f1fc0abad8bacf1b11285110417a2",
+			"script_data_hash": "584e5a3ce181103e1cd93cee6d36d5e947bf66b1c7d11ba75dc75a4872793ec7",
 			"collateral": [
 				{
 					"transaction_id": "1bc6eeebd308616860384b9748801d586a93a7291faedb464e73e9f6355e392b",
@@ -90,7 +90,7 @@ pub(crate) fn test_update_governance_tx() -> serde_json::Value {
 				"plutus_data": null,
 				"script_ref": null
 			},
-			"total_collateral": "456761",
+			"total_collateral": "457196",
 			"reference_inputs": null,
 			"voting_procedures": null,
 			"voting_proposals": null,
@@ -111,8 +111,8 @@ pub(crate) fn test_update_governance_tx() -> serde_json::Value {
 					"index": "1",
 					"data": "{\"int\":32}",
 					"ex_units": {
-						"mem": "0",
-						"steps": "0"
+						"mem": "111",
+						"steps": "222"
 					}
 				},
 				{
@@ -120,8 +120,8 @@ pub(crate) fn test_update_governance_tx() -> serde_json::Value {
 					"index": "0",
 					"data": "{\"constructor\":0,\"fields\":[]}",
 					"ex_units": {
-						"mem": "0",
-						"steps": "0"
+						"mem": "333",
+						"steps": "555"
 					}
 				}
 			]
