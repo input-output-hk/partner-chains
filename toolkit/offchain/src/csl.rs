@@ -530,6 +530,7 @@ pub(crate) trait InputsBuilderExt: Sized {
 		script: &PlutusScript,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError>;
+
 	fn add_script_utxo_input_with_data(
 		&mut self,
 		utxo: &OgmiosUtxo,
