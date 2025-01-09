@@ -70,27 +70,116 @@
 <a href="#70" id="70">70</a>
 <a href="#71" id="71">71</a>
 <a href="#72" id="72">72</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::VersionedGenericDatumShape;
+<a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{DataDecodingError, DecodingResult, VersionedDatum, VersionedGenericDatumShape};
 <span class="kw">use </span>cardano_serialization_lib::{BigInt, BigNum, ConstrPlutusData, PlutusData, PlutusList};
-<span class="kw">use </span>sidechain_domain::{PolicyId, TokenId};
+<span class="kw">use </span>sidechain_domain::{AssetName, PolicyId, TokenId};
 
-<span class="kw">pub struct </span>ReserveDatum {
+<span class="attr">#[derive(Debug, Clone)]
+</span><span class="kw">pub struct </span>ReserveDatum {
 	<span class="kw">pub </span>immutable_settings: ReserveImmutableSettings,
 	<span class="kw">pub </span>mutable_settings: ReserveMutableSettings,
 	<span class="kw">pub </span>stats: ReserveStats,
 }
 
-<span class="kw">pub struct </span>ReserveImmutableSettings {
+<span class="attr">#[derive(Debug, Clone)]
+</span><span class="kw">pub struct </span>ReserveImmutableSettings {
 	<span class="kw">pub </span>t0: u64,
 	<span class="kw">pub </span>token: TokenId,
 }
 
-<span class="kw">pub struct </span>ReserveMutableSettings {
+<span class="attr">#[derive(Debug, Clone)]
+</span><span class="kw">pub struct </span>ReserveMutableSettings {
 	<span class="kw">pub </span>total_accrued_function_script_hash: PolicyId,
 	<span class="kw">pub </span>initial_incentive: u64,
 }
 
-<span class="kw">pub struct </span>ReserveStats {
+<span class="attr">#[derive(Debug, Clone)]
+</span><span class="kw">pub struct </span>ReserveStats {
 	<span class="kw">pub </span>token_total_amount_transferred: u64,
 }
 
@@ -140,6 +229,87 @@
 			version: <span class="number">0</span>,
 		}
 		.into()
+	}
+}
+
+<span class="kw">impl </span>TryFrom&lt;PlutusData&gt; <span class="kw">for </span>ReserveDatum {
+	<span class="kw">type </span>Error = DataDecodingError;
+
+	<span class="kw">fn </span>try_from(datum: PlutusData) -&gt; DecodingResult&lt;<span class="self">Self</span>&gt; {
+		<span class="self">Self</span>::decode(<span class="kw-2">&amp;</span>datum)
+	}
+}
+
+<span class="kw">impl </span>VersionedDatum <span class="kw">for </span>ReserveDatum {
+	<span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>str = <span class="string">"ReserveDatum"</span>;
+
+	<span class="kw">fn </span>decode_legacy(<span class="kw">_</span>: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, String&gt; {
+		<span class="prelude-val">Err</span>(<span class="string">"ReserveDatum supports only versioned format"</span>.into())
+	}
+
+	<span class="kw">fn </span>decode_versioned(version: u32, datum: <span class="kw-2">&amp;</span>PlutusData, <span class="kw">_</span>: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, String&gt; {
+		<span class="kw">match </span>version {
+			<span class="number">0 </span>=&gt; decode_v0_reserve_datum(datum).ok_or(<span class="string">"Can not parse ReserveDatum"</span>.to_string()),
+			<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">"Unknown version: {version}"</span>)),
+		}
+	}
+}
+
+<span class="kw">fn </span>decode_v0_reserve_datum(datum: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Option</span>&lt;ReserveDatum&gt; {
+	<span class="kw">let </span>outer_list = datum.as_list()<span class="question-mark">?</span>;
+	<span class="kw">let </span><span class="kw-2">mut </span>outer_iter = outer_list.into_iter();
+
+	<span class="kw">let </span>immutable_settings_list = outer_iter.next()<span class="question-mark">?</span>.as_list()<span class="question-mark">?</span>;
+	<span class="kw">let </span><span class="kw-2">mut </span>immutable_settings_iter = immutable_settings_list.into_iter();
+	<span class="kw">let </span>t0: u64 = immutable_settings_iter.next()<span class="question-mark">?</span>.as_integer()<span class="question-mark">?</span>.as_u64()<span class="question-mark">?</span>.into();
+	<span class="kw">let </span>token = decode_token_id_datum(immutable_settings_iter.next()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+
+	<span class="kw">let </span>v_function_hash_and_initial_incentive_list = outer_iter.next()<span class="question-mark">?</span>.as_list()<span class="question-mark">?</span>;
+	<span class="kw">let </span><span class="kw-2">mut </span>v_function_hash_and_initial_incentive_iter =
+		v_function_hash_and_initial_incentive_list.into_iter();
+	<span class="kw">let </span>total_accrued_function_script_hash = PolicyId(
+		v_function_hash_and_initial_incentive_iter
+			.next()<span class="question-mark">?
+			</span>.as_bytes()<span class="question-mark">?
+			</span>.to_vec()
+			.try_into()
+			.ok()<span class="question-mark">?</span>,
+	);
+	<span class="kw">let </span>initial_incentive = v_function_hash_and_initial_incentive_iter
+		.next()<span class="question-mark">?
+		</span>.as_integer()<span class="question-mark">?
+		</span>.as_u64()<span class="question-mark">?
+		</span>.into();
+
+	<span class="kw">let </span>stats = ReserveStats {
+		token_total_amount_transferred: outer_iter.next()<span class="question-mark">?</span>.as_integer()<span class="question-mark">?</span>.as_u64()<span class="question-mark">?</span>.into(),
+	};
+
+	<span class="prelude-val">Some</span>(ReserveDatum {
+		immutable_settings: ReserveImmutableSettings { t0, token },
+		mutable_settings: ReserveMutableSettings {
+			total_accrued_function_script_hash,
+			initial_incentive,
+		},
+		stats,
+	})
+}
+
+<span class="kw">fn </span>decode_token_id_datum(pd: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Option</span>&lt;TokenId&gt; {
+	<span class="kw">let </span>token_id_list = pd
+		.as_constr_plutus_data()
+		.filter(|constr| constr.alternative() == BigNum::zero())
+		.map(|constr| constr.data())<span class="question-mark">?</span>;
+	<span class="kw">let </span><span class="kw-2">mut </span>token_id_list_iter = token_id_list.into_iter();
+	<span class="kw">let </span>policy_id = token_id_list_iter.next()<span class="question-mark">?</span>.as_bytes()<span class="question-mark">?</span>.to_vec();
+	<span class="kw">let </span>asset_name = token_id_list_iter.next()<span class="question-mark">?</span>.as_bytes()<span class="question-mark">?</span>.to_vec();
+	<span class="kw">if </span>policy_id.is_empty() &amp;&amp; asset_name.is_empty() {
+		<span class="prelude-val">Some</span>(TokenId::Ada)
+	} <span class="kw">else </span>{
+		<span class="prelude-val">Some</span>(TokenId::AssetId {
+			policy_id: PolicyId(policy_id.try_into().ok()<span class="question-mark">?</span>),
+			asset_name: AssetName(asset_name.try_into().ok()<span class="question-mark">?</span>),
+		})
 	}
 }
 </code></pre></div></section></main></body></html>

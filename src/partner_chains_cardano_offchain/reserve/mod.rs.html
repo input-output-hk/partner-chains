@@ -50,6 +50,23 @@
 <a href="#50" id="50">50</a>
 <a href="#51" id="51">51</a>
 <a href="#52" id="52">52</a>
+<a href="#53" id="53">53</a>
+<a href="#54" id="54">54</a>
+<a href="#55" id="55">55</a>
+<a href="#56" id="56">56</a>
+<a href="#57" id="57">57</a>
+<a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
+<a href="#62" id="62">62</a>
+<a href="#63" id="63">63</a>
+<a href="#64" id="64">64</a>
+<a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a>
+<a href="#69" id="69">69</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! All smart-contracts related to Rewards Token Reserve Management
 
 </span><span class="kw">use crate</span>::{csl::TransactionContext, scripts_data};
@@ -63,12 +80,14 @@
 <span class="kw">use </span>sidechain_domain::UtxoId;
 
 <span class="kw">pub mod </span>create;
+<span class="kw">pub mod </span>deposit;
 <span class="kw">pub mod </span>init;
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>ReserveData {
 	<span class="kw">pub</span>(<span class="kw">crate</span>) scripts: scripts_data::ReserveScripts,
 	<span class="kw">pub</span>(<span class="kw">crate</span>) auth_policy_version_utxo: UtxoId,
 	<span class="kw">pub</span>(<span class="kw">crate</span>) validator_version_utxo: UtxoId,
+	<span class="kw">pub</span>(<span class="kw">crate</span>) illiquid_circulation_supply_validator_version_utxo: UtxoId,
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_reserve_data&lt;
@@ -99,7 +118,22 @@
 	</span>.ok_or_else(|| {
 		<span class="macro">anyhow!</span>(<span class="string">"Reserve Validator Version Utxo not found, is the Reserve Token Management initialized?"</span>)
 	})<span class="question-mark">?</span>;
+	<span class="kw">let </span>illiquid_circulation_supply_validator_version_utxo = find_script_utxo(
+		raw_scripts::ScriptId::IlliquidCirculationSupplyValidator <span class="kw">as </span>u32,
+		<span class="kw-2">&amp;</span>version_oracle,
+		ctx,
+		client,
+	)
+	.<span class="kw">await</span><span class="question-mark">?
+	</span>.ok_or_else(|| {
+		<span class="macro">anyhow!</span>(<span class="string">"Reserve Validator Version Utxo not found, is the Reserve Token Management initialized?"</span>)
+	})<span class="question-mark">?</span>;
 	<span class="kw">let </span>scripts = scripts_data::reserve_scripts(genesis_utxo, ctx.network)<span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(ReserveData { scripts, auth_policy_version_utxo, validator_version_utxo })
+	<span class="prelude-val">Ok</span>(ReserveData {
+		scripts,
+		auth_policy_version_utxo,
+		validator_version_utxo,
+		illiquid_circulation_supply_validator_version_utxo,
+	})
 }
 </code></pre></div></section></main></body></html>

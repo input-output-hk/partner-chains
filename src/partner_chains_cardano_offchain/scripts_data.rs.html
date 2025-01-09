@@ -274,6 +274,12 @@
 <a href="#274" id="274">274</a>
 <a href="#275" id="275">275</a>
 <a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{csl::NetworkTypeExt, plutus_script::PlutusScript, OffchainError};
 <span class="kw">use </span>cardano_serialization_lib::{LanguageKind::PlutusV2, NetworkIdKind};
 <span class="kw">use </span>ogmios_client::query_network::QueryNetwork;
@@ -469,6 +475,7 @@
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>ReserveScripts {
 	<span class="kw">pub</span>(<span class="kw">crate</span>) validator: PlutusScript,
 	<span class="kw">pub</span>(<span class="kw">crate</span>) auth_policy: PlutusScript,
+	<span class="kw">pub</span>(<span class="kw">crate</span>) illiquid_circulation_supply_validator: PlutusScript,
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>reserve_scripts(
@@ -480,7 +487,12 @@
 		</span>.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())<span class="question-mark">?</span>;
 	<span class="kw">let </span>auth_policy = PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_AUTH_POLICY, PlutusV2)<span class="question-mark">?
 		</span>.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())<span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(ReserveScripts { validator, auth_policy })
+	<span class="kw">let </span>illiquid_circulation_supply_validator = PlutusScript::from_wrapped_cbor(
+		raw_scripts::ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
+		PlutusV2,
+	)<span class="question-mark">?
+	</span>.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())<span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>(ReserveScripts { validator, auth_policy, illiquid_circulation_supply_validator })
 }
 
 <span class="comment">// Returns the simplest MultiSig policy configuration plutus data:
