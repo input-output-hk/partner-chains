@@ -11,12 +11,14 @@ use ogmios_client::{
 use sidechain_domain::UtxoId;
 
 pub mod create;
+pub mod deposit;
 pub mod init;
 
 pub(crate) struct ReserveData {
 	pub(crate) scripts: scripts_data::ReserveScripts,
 	pub(crate) auth_policy_version_utxo: UtxoId,
 	pub(crate) validator_version_utxo: UtxoId,
+	pub(crate) illiquid_circulation_supply_validator_version_utxo: UtxoId,
 }
 
 pub(crate) async fn get_reserve_data<
@@ -47,6 +49,21 @@ pub(crate) async fn get_reserve_data<
 	.ok_or_else(|| {
 		anyhow!("Reserve Validator Version Utxo not found, is the Reserve Token Management initialized?")
 	})?;
+	let illiquid_circulation_supply_validator_version_utxo = find_script_utxo(
+		raw_scripts::ScriptId::IlliquidCirculationSupplyValidator as u32,
+		&version_oracle,
+		ctx,
+		client,
+	)
+	.await?
+	.ok_or_else(|| {
+		anyhow!("Reserve Validator Version Utxo not found, is the Reserve Token Management initialized?")
+	})?;
 	let scripts = scripts_data::reserve_scripts(genesis_utxo, ctx.network)?;
-	Ok(ReserveData { scripts, auth_policy_version_utxo, validator_version_utxo })
+	Ok(ReserveData {
+		scripts,
+		auth_policy_version_utxo,
+		validator_version_utxo,
+		illiquid_circulation_supply_validator_version_utxo,
+	})
 }

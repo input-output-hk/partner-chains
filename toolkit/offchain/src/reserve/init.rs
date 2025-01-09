@@ -287,7 +287,7 @@ async fn script_is_initialized<
 }
 
 // Finds an UTXO at Version Oracle Validator with Datum that contains
-// * script id of the script being initialized
+// * given script id
 // * Version Oracle Policy Id
 pub(crate) async fn find_script_utxo<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,

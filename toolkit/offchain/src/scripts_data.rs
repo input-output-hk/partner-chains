@@ -193,6 +193,7 @@ pub(crate) fn registered_candidates_scripts(
 pub(crate) struct ReserveScripts {
 	pub(crate) validator: PlutusScript,
 	pub(crate) auth_policy: PlutusScript,
+	pub(crate) illiquid_circulation_supply_validator: PlutusScript,
 }
 
 pub(crate) fn reserve_scripts(
@@ -204,7 +205,12 @@ pub(crate) fn reserve_scripts(
 		.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())?;
 	let auth_policy = PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_AUTH_POLICY, PlutusV2)?
 		.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())?;
-	Ok(ReserveScripts { validator, auth_policy })
+	let illiquid_circulation_supply_validator = PlutusScript::from_wrapped_cbor(
+		raw_scripts::ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
+		PlutusV2,
+	)?
+	.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())?;
+	Ok(ReserveScripts { validator, auth_policy, illiquid_circulation_supply_validator })
 }
 
 // Returns the simplest MultiSig policy configuration plutus data:
