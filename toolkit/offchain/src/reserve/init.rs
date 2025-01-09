@@ -335,7 +335,7 @@ fn decode_version_oracle_validator_datum(data: PlutusData) -> Option<VersionOrac
 mod tests {
 	use super::{init_script_tx, ScriptData};
 	use crate::{
-		csl::{OgmiosUtxoExt, TransactionContext, UtxoIdExt},
+		csl::{OgmiosUtxoExt, TransactionContext},
 		init_governance::GovernanceData,
 		plutus_script::PlutusScript,
 		scripts_data::{self, VersionOracleData},
@@ -418,7 +418,7 @@ mod tests {
 			.reference_inputs()
 			.expect("Init transaction should have reference input")
 			.get(0);
-		assert_eq!(ref_input, test_governance_input().to_domain().to_csl());
+		assert_eq!(ref_input, test_governance_input().to_csl_tx_input());
 	}
 
 	#[test]
