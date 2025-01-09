@@ -2,7 +2,7 @@ use ogmios_client::{
 	query_ledger_state::{ProtocolParametersResponse, QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::{QueryNetwork, ShelleyGenesisConfigurationResponse},
 	transactions::{OgmiosEvaluateTransactionResponse, SubmitTransactionResponse, Transactions},
-	types::{OgmiosTx, OgmiosUtxo},
+	types::OgmiosUtxo,
 };
 
 #[derive(Clone, Default, Debug)]

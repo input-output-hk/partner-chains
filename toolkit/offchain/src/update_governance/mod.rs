@@ -1,6 +1,9 @@
 use crate::{
 	await_tx::AwaitTx,
-	csl::{convert_ex_units, InputsBuilderExt, TransactionBuilderExt, TransactionContext},
+	csl::{
+		get_validator_budgets, InputsBuilderExt, ScriptExUnits, TransactionBuilderExt,
+		TransactionContext,
+	},
 	init_governance::{self, transaction::version_oracle_datum_output, GovernanceData},
 	plutus_script::PlutusScript,
 	scripts_data::{multisig_governance_policy_configuration, version_scripts_and_address},
@@ -55,14 +58,13 @@ pub async fn run_update_governance<
 	)?;
 
 	let costs = client.evaluate_transaction(&tx.to_bytes()).await?;
-	if costs.len() != 2 {
-		return Err(anyhow!("Error retrieving witness costs: expected 2 entries."));
-	};
 
-	let Some(mint_cost) = costs.iter().find(|cost| cost.validator.purpose == "mint") else {
+	let ScriptExUnits { mint_ex_units, spend_ex_units } = get_validator_budgets(costs);
+
+	let [mint_cost] = &mint_ex_units[..] else {
 		return Err(anyhow!("Error retrieving witness costs: mint cost data missing."));
 	};
-	let Some(spend_cost) = costs.iter().find(|cost| cost.validator.purpose == "spend") else {
+	let [spend_cost] = &spend_ex_units[..] else {
 		return Err(anyhow!("Error retrieving witness costs: spend cost data missing."));
 	};
 
@@ -74,8 +76,8 @@ pub async fn run_update_governance<
 		new_governance_authority,
 		&tx_context,
 		&governance_data,
-		convert_ex_units(&mint_cost.budget),
-		convert_ex_units(&spend_cost.budget),
+		mint_cost.clone(),
+		spend_cost.clone(),
 	)?;
 	let signed_tx = tx_context.sign(&tx);
 
