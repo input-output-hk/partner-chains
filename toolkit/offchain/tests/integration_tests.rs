@@ -223,6 +223,7 @@ async fn run_upsert_d_param<
 		&DParameter { num_permissioned_candidates, num_registered_candidates },
 		pkey.0,
 		client,
+		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
 	.unwrap();
@@ -253,6 +254,7 @@ async fn run_upsert_permissioned_candidates<
 		&candidates,
 		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
 		client,
+		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
 	.unwrap();

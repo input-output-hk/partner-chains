@@ -1,5 +1,6 @@
 use crate::PaymentFilePath;
 use jsonrpsee::http_client::HttpClient;
+use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 use partner_chains_cardano_offchain::d_param::upsert_d_param;
 use sidechain_domain::DParameter;
 use sidechain_domain::UtxoId;
@@ -27,7 +28,14 @@ impl UpsertDParameterCmd {
 		};
 		let client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
 
-		upsert_d_param(self.genesis_utxo, &d_param, payment_key.0, &client).await?;
+		upsert_d_param(
+			self.genesis_utxo,
+			&d_param,
+			payment_key.0,
+			&client,
+			&FixedDelayRetries::two_minutes(),
+		)
+		.await?;
 
 		Ok(())
 	}

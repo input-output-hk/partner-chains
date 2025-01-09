@@ -8,6 +8,7 @@
 
 use std::collections::HashMap;
 
+use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::csl::{
 	convert_value, empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units,
 	OgmiosUtxoExt, TransactionBuilderExt, TransactionContext,
@@ -21,7 +22,7 @@ use cardano_serialization_lib::{
 	PlutusWitness, Redeemer, RedeemerTag, ScriptHash, Transaction, TransactionBuilder,
 	TxInputsBuilder,
 };
-use ogmios_client::query_ledger_state::QueryLedgerState;
+use ogmios_client::query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId};
 use ogmios_client::query_network::QueryNetwork;
 use ogmios_client::transactions::Transactions;
 use ogmios_client::types::OgmiosUtxo;
@@ -40,22 +41,35 @@ pub trait UpsertPermissionedCandidates {
 	) -> anyhow::Result<Option<McTxHash>>;
 }
 
-impl<C: QueryLedgerState + QueryNetwork + Transactions> UpsertPermissionedCandidates for C {
+impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>
+	UpsertPermissionedCandidates for C
+{
 	async fn upsert_permissioned_candidates(
 		&self,
 		genesis_utxo: UtxoId,
 		candidates: &[PermissionedCandidateData],
 		payment_signing_key: [u8; 32],
 	) -> anyhow::Result<Option<McTxHash>> {
-		upsert_permissioned_candidates(genesis_utxo, candidates, payment_signing_key, self).await
+		upsert_permissioned_candidates(
+			genesis_utxo,
+			candidates,
+			payment_signing_key,
+			self,
+			&FixedDelayRetries::two_minutes(),
+		)
+		.await
 	}
 }
 
-pub async fn upsert_permissioned_candidates<C: QueryLedgerState + QueryNetwork + Transactions>(
+pub async fn upsert_permissioned_candidates<
+	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
 	genesis_utxo: UtxoId,
 	candidates: &[PermissionedCandidateData],
 	payment_signing_key: [u8; 32],
 	ogmios_client: &C,
+	await_tx: &A,
 ) -> anyhow::Result<Option<McTxHash>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
 	let (validator, policy) =
@@ -66,18 +80,18 @@ pub async fn upsert_permissioned_candidates<C: QueryLedgerState + QueryNetwork +
 	let mut candidates = candidates.to_owned();
 	candidates.sort();
 
-	match get_current_permissioned_candidates(validator_utxos)? {
+	let tx_hash_opt = match get_current_permissioned_candidates(validator_utxos)? {
 		Some((_, current_permissioned_candidates))
 			if current_permissioned_candidates == *candidates =>
 		{
 			log::info!("Current permissioned candidates are equal to the one to be set.");
-			Ok(None)
+			None
 		},
 		Some((current_utxo, _)) => {
 			log::info!(
 				"Current permissioned candidates are different to the one to be set. Updating."
 			);
-			Ok(Some(
+			Some(
 				update_permissioned_candidates(
 					&validator,
 					&policy,
@@ -88,11 +102,11 @@ pub async fn upsert_permissioned_candidates<C: QueryLedgerState + QueryNetwork +
 					ogmios_client,
 				)
 				.await?,
-			))
+			)
 		},
 		None => {
 			log::info!("There are permissioned candidates. Inserting new ones.");
-			Ok(Some(
+			Some(
 				insert_permissioned_candidates(
 					&validator,
 					&policy,
@@ -102,9 +116,13 @@ pub async fn upsert_permissioned_candidates<C: QueryLedgerState + QueryNetwork +
 					ogmios_client,
 				)
 				.await?,
-			))
+			)
 		},
+	};
+	if let Some(tx_hash) = tx_hash_opt {
+		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
 	}
+	Ok(tx_hash_opt)
 }
 
 fn get_current_permissioned_candidates(
