@@ -108,13 +108,15 @@ impl QueryLedgerState for MockOgmiosClient {
 impl QueryUtxoByUtxoId for MockOgmiosClient {
 	async fn query_utxo_by_id(
 		&self,
-		tx: OgmiosTx,
-		index: u16,
+		queried_utxo: sidechain_domain::UtxoId,
 	) -> Result<Option<OgmiosUtxo>, ogmios_client::OgmiosClientError> {
 		Ok(self
 			.utxos
 			.iter()
-			.find(|utxo| utxo.transaction == tx && utxo.index == index)
+			.find(|utxo| {
+				utxo.transaction == queried_utxo.tx_hash.0.into()
+					&& utxo.index == queried_utxo.index.0
+			})
 			.cloned())
 	}
 }

@@ -37,10 +37,7 @@ impl AwaitTx for FixedDelayRetries {
 		let strategy = FixedInterval::new(self.delay).take(self.retries);
 		let _ = Retry::spawn(strategy, || async {
 			log::info!("Probing for transaction output '{}'", utxo_id);
-			let utxo = query
-				.query_utxo_by_id(utxo_id.tx_hash.into(), utxo_id.index.0)
-				.await
-				.map_err(|_| ())?;
+			let utxo = query.query_utxo_by_id(utxo_id).await.map_err(|_| ())?;
 			utxo.ok_or(())
 		})
 		.await
@@ -137,12 +134,10 @@ mod tests {
 	impl QueryUtxoByUtxoId for MockQueryUtxoByUtxoId {
 		async fn query_utxo_by_id(
 			&self,
-			tx: OgmiosTx,
-			index: u16,
+			utxo: sidechain_domain::UtxoId,
 		) -> Result<Option<OgmiosUtxo>, OgmiosClientError> {
-			let UtxoId { tx_hash: McTxHash(awaited_id), index: UtxoIndex(awaited_index) } =
-				awaited_utxo_id();
-			if tx.id == awaited_id && index == awaited_index {
+			let UtxoId { tx_hash: awaited_id, index: awaited_index } = awaited_utxo_id();
+			if utxo.tx_hash == awaited_id && utxo.index == awaited_index {
 				self.responses.borrow_mut().pop().unwrap()
 			} else {
 				Ok(None)
