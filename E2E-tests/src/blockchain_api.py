@@ -473,14 +473,14 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def extract_block_author(self, block, candidates_pub_keys) -> str:
-        """
-        Searches for the author of a block in the provided candidate list. If not found returns False.
+    def get_block_author(self, block_number: int) -> str:
+        """Gets the author of a block.
 
-        Arguments: Block (dict), List of candidates public keys
+        Arguments:
+            block_number {int} -- block number
 
         Returns:
-            (string/False) - The public key of the author of the block
+            str -- block author public key
         """
         pass
 
