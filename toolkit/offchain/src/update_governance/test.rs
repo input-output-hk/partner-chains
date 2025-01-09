@@ -97,7 +97,7 @@ fn governance_data() -> GovernanceData {
 
 fn new_governance_authority() -> MainchainAddressHash {
 	MainchainAddressHash(hex_literal::hex!(
-		"76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"
+		"84ba05c28879b299a8377e62128adc7a0e0df3ac438ff95efc7c8443"
 	))
 }
 
@@ -110,7 +110,8 @@ fn spend_ex_units() -> ExUnits {
 }
 
 fn multisig_policy_hash() -> [u8; 28] {
-	hex!("f298532e5be52f55bb60602ada0e4b7038569ec728fbe03c7254d2b9")
+	// important: this is the hash of the multisig policy parametrized with the *old* authority
+	hex!("a646474b8f5431261506b6c273d307c7569a4eb6c96b42dd4a29520a")
 }
 
 fn version_oracle_validator_address() -> Address {

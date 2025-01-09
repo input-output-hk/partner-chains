@@ -61,23 +61,14 @@ const REWARDS_TOKEN_POLICY_ID: PolicyId =
 const REWARDS_TOKEN_ASSET_NAME_STR: &str = "52657761726420746f6b656e";
 
 #[tokio::test]
-async fn init_goveranance() {
-	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
-	let client = initialize(&container).await;
-	let _ = run_init_goveranance(&client).await;
-	()
-}
-
-#[tokio::test]
-async fn update_governance() {
+async fn governance_flow() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
 	let client = Cli::default();
 	let container = client.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
 	let _ = run_update_goveranance(&client, genesis_utxo).await;
+	assert!(run_upsert_d_param(genesis_utxo, 0, 1, EVE_PAYMENT_KEY, &client).await.is_some());
 }
 
 #[tokio::test]
@@ -87,9 +78,15 @@ async fn upsert_d_param() {
 	let container = client.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
-	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &client).await.is_some());
-	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &client).await.is_none());
-	assert!(run_upsert_d_param(genesis_utxo, 1, 1, &client).await.is_some())
+	assert!(run_upsert_d_param(genesis_utxo, 0, 1, GOVERNANCE_AUTHORITY_PAYMENT_KEY, &client)
+		.await
+		.is_some());
+	assert!(run_upsert_d_param(genesis_utxo, 0, 1, GOVERNANCE_AUTHORITY_PAYMENT_KEY, &client)
+		.await
+		.is_none());
+	assert!(run_upsert_d_param(genesis_utxo, 1, 1, GOVERNANCE_AUTHORITY_PAYMENT_KEY, &client)
+		.await
+		.is_some())
 }
 
 #[tokio::test]
@@ -202,7 +199,7 @@ async fn run_update_goveranance<
 	genesis_utxo: UtxoId,
 ) -> () {
 	let _ = update_governance::run_update_governance(
-		GOVERNANCE_AUTHORITY,
+		EVE_PUBLIC_KEY_HASH,
 		GOVERNANCE_AUTHORITY_PAYMENT_KEY,
 		genesis_utxo,
 		client,
@@ -218,12 +215,13 @@ async fn run_upsert_d_param<
 	genesis_utxo: UtxoId,
 	num_permissioned_candidates: u16,
 	num_registered_candidates: u16,
+	pkey: MainchainPrivateKey,
 	client: &T,
 ) -> Option<McTxHash> {
 	let tx_hash = d_param::upsert_d_param(
 		genesis_utxo,
 		&DParameter { num_permissioned_candidates, num_registered_candidates },
-		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		pkey.0,
 		client,
 	)
 	.await

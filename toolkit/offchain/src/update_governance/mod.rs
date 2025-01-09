@@ -114,7 +114,7 @@ fn update_governance_tx(
 	let mut tx_builder = TransactionBuilder::new(&config);
 
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&multi_sig_policy,
+		&governance_data.policy_script,
 		&governance_data.utxo_id_as_tx_input(),
 		&mint_ex_units,
 	)?;
