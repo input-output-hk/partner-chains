@@ -1,32 +1,21 @@
-#![allow(unused_imports)]
-#![allow(unused_variables)]
-#![allow(dead_code)]
 use crate::{
-	await_tx::{self, AwaitTx},
-	csl::{
-		convert_ex_units, convert_value, empty_asset_name, InputsBuilderExt, OgmiosUtxoExt,
-		TransactionBuilderExt, TransactionContext,
-	},
+	await_tx::AwaitTx,
+	csl::{convert_ex_units, InputsBuilderExt, TransactionBuilderExt, TransactionContext},
 	init_governance::{self, transaction::version_oracle_datum_output, GovernanceData},
 	plutus_script::PlutusScript,
 	scripts_data::{multisig_governance_policy_configuration, version_scripts_and_address},
 };
-use anyhow::{anyhow, Context};
+use anyhow::anyhow;
 use cardano_serialization_lib::{
-	Coin, DatumSource, ExUnits, Int, LanguageKind, MintBuilder, MintWitness, MultiAsset,
-	PlutusData, PlutusScriptSource, PlutusWitness, Redeemer, RedeemerTag, Transaction,
-	TransactionBuilder, TransactionOutputBuilder, TxInputsBuilder,
+	ExUnits, LanguageKind, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
-	types::{OgmiosTx, OgmiosUtxo},
+	types::OgmiosTx,
 };
-use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
-use sidechain_domain::{
-	byte_string::ByteString, MainchainAddressHash, MainchainPrivateKey, McTxHash, UtxoId, UtxoIndex,
-};
+use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, McTxHash, UtxoId, UtxoIndex};
 
 #[cfg(test)]
 mod test;
@@ -44,13 +33,12 @@ pub async fn run_update_governance<
 	await_tx: A,
 ) -> anyhow::Result<OgmiosTx> {
 	let tx_context = TransactionContext::for_payment_key(payment_key.0, client).await?;
-	let (version_validator, version_policy, version_validator_address) =
+	let (_, _, version_validator_address) =
 		version_scripts_and_address(genesis_utxo_id, tx_context.network)?;
 
 	log::info!(
 		"Querying version oracle validator address ({version_validator_address}) for utxos..."
 	);
-	let version_utxos = client.query_utxos(&[version_validator_address.clone()]).await?;
 
 	let governance_data = init_governance::get_governance_data(genesis_utxo_id, client).await?;
 
