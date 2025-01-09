@@ -7,6 +7,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 ## Changed
 
 * `setup-main-chain-state` command now uses native Rust to upsert the D-Parameter and upsert permissioned candidates
+* Changed the `smart-contracts init-governance` command to `smart-contracts governance init`
 
 ## Removed
 
@@ -22,6 +23,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 * Command `smart-contracts reserve init`
 * Command `smart-contracts reserve create`
+* Command `smart-contracts governance update`
 
 # v1.4.0
 

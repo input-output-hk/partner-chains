@@ -335,7 +335,7 @@ fn decode_version_oracle_validator_datum(data: PlutusData) -> Option<VersionOrac
 mod tests {
 	use super::{init_script_tx, ScriptData};
 	use crate::{
-		csl::{TransactionContext, UtxoIdExt},
+		csl::{OgmiosUtxoExt, TransactionContext},
 		init_governance::GovernanceData,
 		plutus_script::PlutusScript,
 		scripts_data::{self, VersionOracleData},
@@ -346,6 +346,7 @@ mod tests {
 		PlutusList, RedeemerTag, ScriptHash, Transaction,
 	};
 	use hex_literal::hex;
+	use ogmios_client::types::{OgmiosTx, OgmiosUtxo};
 	use raw_scripts::ScriptId;
 	use sidechain_domain::UtxoId;
 
@@ -417,7 +418,7 @@ mod tests {
 			.reference_inputs()
 			.expect("Init transaction should have reference input")
 			.get(0);
-		assert_eq!(ref_input, test_governance_input().to_csl());
+		assert_eq!(ref_input, test_governance_input().to_csl_tx_input());
 	}
 
 	#[test]
@@ -508,12 +509,12 @@ mod tests {
 		PlutusScript { bytes: hex!("112233").to_vec(), language: LanguageKind::PlutusV2 }
 	}
 
-	fn test_governance_input() -> UtxoId {
-		UtxoId::new([16u8; 32], 0)
+	fn test_governance_input() -> OgmiosUtxo {
+		OgmiosUtxo { transaction: OgmiosTx { id: [16; 32] }, index: 0, ..Default::default() }
 	}
 
 	fn test_governance_data() -> GovernanceData {
-		GovernanceData { policy_script: test_governance_script(), utxo_id: test_governance_input() }
+		GovernanceData { policy_script: test_governance_script(), utxo: test_governance_input() }
 	}
 
 	fn version_oracle_data() -> VersionOracleData {

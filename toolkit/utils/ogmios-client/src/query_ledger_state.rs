@@ -1,7 +1,7 @@
 //! Queries that start with `queryLedgerState/`.
 
 use crate::{
-	types::{OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
+	types::{OgmiosBytesSize, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
 	ByNameParamsBuilder, OgmiosClient, OgmiosClientError, OgmiosParams,
 };
 use serde::Deserialize;
@@ -31,8 +31,7 @@ pub trait QueryUtxoByUtxoId {
 	/// - `index`: query for output with this index
 	async fn query_utxo_by_id(
 		&self,
-		tx: OgmiosTx,
-		index: u16,
+		utxo: sidechain_domain::UtxoId,
 	) -> Result<Option<OgmiosUtxo>, OgmiosClientError>;
 }
 
@@ -61,12 +60,11 @@ impl<T: OgmiosClient> QueryLedgerState for T {
 impl<T: OgmiosClient> QueryUtxoByUtxoId for T {
 	async fn query_utxo_by_id(
 		&self,
-		tx: OgmiosTx,
-		index: u16,
+		utxo: sidechain_domain::UtxoId,
 	) -> Result<Option<OgmiosUtxo>, OgmiosClientError> {
 		let reference = serde_json::json!({
-			"transaction": {"id": hex::encode(tx.id)},
-			"index": index,
+			"transaction": {"id": hex::encode(utxo.tx_hash.0)},
+			"index": utxo.index.0,
 		});
 		let params =
 			ByNameParamsBuilder::new().insert("outputReferences", vec![reference])?.build();

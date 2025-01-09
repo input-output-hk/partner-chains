@@ -2,7 +2,7 @@ use sidechain_domain::*;
 
 pub mod d_parameter;
 pub mod get_scripts;
-pub mod init_governance;
+pub mod governance;
 pub mod register;
 pub mod reserve;
 
@@ -11,8 +11,6 @@ pub mod reserve;
 pub enum SmartContractsCmd {
 	/// Print validator addresses and policy IDs of Partner Chain smart contracts
 	GetScripts(get_scripts::GetScripts),
-	/// Initialize Partner Chain governance
-	InitGovernance(init_governance::InitGovernanceCmd),
 	/// Upsert DParameter
 	UpsertDParameter(d_parameter::UpsertDParameterCmd),
 	/// Register candidate
@@ -22,6 +20,9 @@ pub enum SmartContractsCmd {
 	/// Commands for management of rewards reserve
 	#[command(subcommand)]
 	Reserve(reserve::ReserveCmd),
+	/// Commands for management of on-chain governance
+	#[command(subcommand)]
+	Governance(governance::GovernanceCmd),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -36,7 +37,7 @@ type CmdResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 impl SmartContractsCmd {
 	pub async fn execute(self) -> CmdResult<()> {
 		match self {
-			Self::InitGovernance(cmd) => cmd.execute().await,
+			Self::Governance(cmd) => cmd.execute().await,
 			Self::GetScripts(cmd) => cmd.execute().await,
 			Self::UpsertDParameter(cmd) => cmd.execute().await,
 			Self::Register(cmd) => cmd.execute().await,
