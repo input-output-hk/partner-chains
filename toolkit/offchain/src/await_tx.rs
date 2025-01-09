@@ -136,8 +136,7 @@ mod tests {
 			&self,
 			utxo: sidechain_domain::UtxoId,
 		) -> Result<Option<OgmiosUtxo>, OgmiosClientError> {
-			let UtxoId { tx_hash: awaited_id, index: awaited_index } = awaited_utxo_id();
-			if utxo.tx_hash == awaited_id && utxo.index == awaited_index {
+			if utxo == awaited_utxo_id() {
 				self.responses.borrow_mut().pop().unwrap()
 			} else {
 				Ok(None)
