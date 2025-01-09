@@ -25,6 +25,8 @@ mod test;
 #[cfg(test)]
 mod test_values;
 
+const SCRIPT_ID: u32 = 32;
+
 pub async fn run_update_governance<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
@@ -132,7 +134,7 @@ fn update_governance_tx(
 		inputs.add_script_utxo_input_with_data(
 			&governance_data.utxo,
 			&version_oracle_validator,
-			&PlutusData::new_integer(&32u32.into()),
+			&PlutusData::new_integer(&SCRIPT_ID.into()),
 			&spend_ex_units,
 		)?;
 
