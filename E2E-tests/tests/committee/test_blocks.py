@@ -97,16 +97,10 @@ def test_block_authors_match_committee_seats(
     for member in committee:
         committee_block_auth_pub_keys.append(get_block_authorship_keys_dict[member["sidechainPubKey"]])
 
-    all_candidates_block_authoring_pub_keys = []
-    for candidate in config.nodes_config.nodes:
-        all_candidates_block_authoring_pub_keys.append(config.nodes_config.nodes[candidate].aura_public_key)
-
     block_authors = []
     for block_no in get_pc_epoch_blocks(pc_epoch)["range"]:
-        block_author = api.extract_block_author(
-            get_pc_epoch_blocks(pc_epoch)[block_no], all_candidates_block_authoring_pub_keys
-        )
-        assert block_author, f"Could not get author of block {block_no}. Please check decoder."
+        block_author = api.get_block_author(block_number=block_no)
+        assert block_author, f"Could not get author of block {block_no}."
         assert (
             block_author in committee_block_auth_pub_keys
         ), f"Block {block_no} was authored by non-committee member {block_author}"

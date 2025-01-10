@@ -24,7 +24,7 @@ calc = PartnerChainEpochCalculator(config)
 def mc_2_pc(mc_epoch: int):
     epochs_range = calc.find_pc_epochs(mc_epoch)
     print(
-        f"PC epochs range is {calc.range_in_math_notation(epochs_range)}, both included."
+        f"PC epochs range is {calc.range_in_math_notation(epochs_range)}, both included. "
         f"It's {len(epochs_range)} epochs."
     )
     return epochs_range
@@ -46,7 +46,7 @@ def main():
     mode = int(input("Which mode you want to enter? Type: (1) MC->PC, or (2) PC->MC\n"))
     if mode == 1:
         mc_epoch = int(input("Enter MC epoch: "))
-        mc_2_pc(mc_epoch, config)
+        mc_2_pc(mc_epoch)
     elif mode == 2:
         pc_epoch = int(input("Enter PC epoch: "))
         current_mc_epoch = int(input("Enter current MC epoch: "))
