@@ -1,3 +1,4 @@
+use crate::csl::MainchainPrivateKeyExt;
 use crate::csl::{
 	get_first_validator_budget, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
 	TransactionContext,
@@ -266,7 +267,7 @@ fn register_tx(
 			inputs.add_script_utxo_input(
 				own_registration_utxo,
 				validator,
-				validator_redeemer_ex_units.clone(),
+				&validator_redeemer_ex_units,
 			)?;
 		}
 		inputs.add_key_inputs(&[registration_utxo.clone()], &ctx.payment_key_hash())?;
@@ -309,7 +310,7 @@ fn deregister_tx(
 			inputs.add_script_utxo_input(
 				own_registration_utxo,
 				validator,
-				validator_redeemer_ex_units.clone(),
+				&validator_redeemer_ex_units.clone(),
 			)?;
 		}
 		tx_builder.set_inputs(&inputs);
@@ -543,7 +544,7 @@ mod tests {
 				transaction: OgmiosTx { id: utxo_id.tx_hash.0 },
 				index: utxo_id.index.0,
 				value,
-				address: payment_addr().to_bech32(None).unwrap(),
+				address: PAYMENT_ADDR.into(),
 				..Default::default()
 			}).collect()
 		}

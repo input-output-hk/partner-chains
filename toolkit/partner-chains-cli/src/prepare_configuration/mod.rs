@@ -1,14 +1,14 @@
+mod init_governance;
 mod prepare_cardano_params;
-mod prepare_chain_params;
 mod prepare_main_chain_config;
+mod select_genesis_utxo;
 
-use crate::config::config_fields;
-use crate::config::config_fields::BOOTNODES;
+use crate::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
 use crate::config::config_values::DEFAULT_CHAIN_NAME;
 use crate::generate_keys::network_key_path;
 use crate::io::IOContext;
-use crate::prepare_configuration::prepare_chain_params::prepare_chain_params;
 use crate::prepare_configuration::prepare_main_chain_config::prepare_main_chain_config;
+use crate::prepare_configuration::select_genesis_utxo::select_genesis_utxo;
 use crate::prepare_configuration::PrepareConfigurationError::NetworkKeyNotFoundError;
 use crate::CmdRun;
 use anyhow::Context;
@@ -24,8 +24,9 @@ pub struct PrepareConfigurationCmd {}
 impl CmdRun for PrepareConfigurationCmd {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		establish_bootnodes(context)?;
-		let (chain_params, ogmios_config) = prepare_chain_params(context)?;
-		prepare_main_chain_config(context, &ogmios_config, chain_params)?;
+		let (genesis_utxo, ogmios_config) = select_genesis_utxo(context)?;
+		let _ = init_governance::run_init_governance(genesis_utxo, &ogmios_config, context)?;
+		prepare_main_chain_config(context, &ogmios_config, genesis_utxo)?;
 		context.eprint("🚀 All done!");
 		Ok(())
 	}
@@ -102,8 +103,8 @@ fn deconstruct_bootnode(bootnode_opt: Option<String>) -> Option<(Protocol, Strin
 fn peer_id_from_config(context: &impl IOContext) -> anyhow::Result<String> {
 	let chain_name: String = DEFAULT_CHAIN_NAME.into();
 
-	let substrate_node_base_path = config_fields::SUBSTRATE_NODE_DATA_BASE_PATH
-		.prompt_with_default_from_file_and_save(context);
+	let substrate_node_base_path =
+		SUBSTRATE_NODE_DATA_BASE_PATH.prompt_with_default_from_file_and_save(context);
 
 	let network_key_path = network_key_path(&substrate_node_base_path, &chain_name);
 
@@ -188,7 +189,7 @@ fn peer_id_from_network_key(key_str: &str) -> anyhow::Result<String> {
 #[cfg(test)]
 pub mod tests {
 	use super::*;
-	use crate::config::config_fields::SUBSTRATE_NODE_DATA_BASE_PATH;
+	use crate::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
 	use crate::config::{ConfigFieldDefinition, SelectOptions, RESOURCES_CONFIG_FILE_PATH};
 	use crate::prepare_configuration::PrepareConfigurationError::NetworkKeyNotFoundError;
 	use crate::prepare_configuration::Protocol::{Dns, Ipv4};

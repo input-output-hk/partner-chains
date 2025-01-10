@@ -10,6 +10,7 @@ use ogmios_client::{
 	types::{Asset, OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
 };
 use serde_json::json;
+use sidechain_domain::UtxoId;
 
 mod server;
 
@@ -296,10 +297,10 @@ async fn query_utxos_by_tx_hash() {
 	.unwrap();
 	let client = HttpClient::builder().build(format!("http://{address}")).unwrap();
 	let utxo = client
-		.query_utxo_by_id(
-			hex!("106b0d7d1544c97941777041699412fb7c8b94855210987327199620c0599580").into(),
+		.query_utxo_by_id(UtxoId::new(
+			hex!("106b0d7d1544c97941777041699412fb7c8b94855210987327199620c0599580"),
 			1,
-		)
+		))
 		.await
 		.unwrap();
 	assert_eq!(

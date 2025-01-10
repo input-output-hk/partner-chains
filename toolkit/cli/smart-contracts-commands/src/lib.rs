@@ -2,22 +2,27 @@ use sidechain_domain::*;
 
 pub mod d_parameter;
 pub mod get_scripts;
-pub mod init_governance;
+pub mod governance;
 pub mod register;
+pub mod reserve;
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
 pub enum SmartContractsCmd {
 	/// Print validator addresses and policy IDs of Partner Chain smart contracts
 	GetScripts(get_scripts::GetScripts),
-	/// Initialize Partner Chain governance
-	InitGovernance(init_governance::InitGovernanceCmd),
 	/// Upsert DParameter
 	UpsertDParameter(d_parameter::UpsertDParameterCmd),
 	/// Register candidate
 	Register(register::RegisterCmd),
 	/// Deregister candidate
 	Deregister(register::DeregisterCmd),
+	/// Commands for management of rewards reserve
+	#[command(subcommand)]
+	Reserve(reserve::ReserveCmd),
+	/// Commands for management of on-chain governance
+	#[command(subcommand)]
+	Governance(governance::GovernanceCmd),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -32,11 +37,12 @@ type CmdResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
 impl SmartContractsCmd {
 	pub async fn execute(self) -> CmdResult<()> {
 		match self {
-			Self::InitGovernance(cmd) => cmd.execute().await,
+			Self::Governance(cmd) => cmd.execute().await,
 			Self::GetScripts(cmd) => cmd.execute().await,
 			Self::UpsertDParameter(cmd) => cmd.execute().await,
 			Self::Register(cmd) => cmd.execute().await,
 			Self::Deregister(cmd) => cmd.execute().await,
+			Self::Reserve(cmd) => cmd.execute().await,
 		}
 	}
 
@@ -48,17 +54,38 @@ impl SmartContractsCmd {
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CardanoKeyFileContent {
+	r#type: String,
 	cbor_hex: String,
 }
 
-pub(crate) fn read_private_key_from_file(path: &str) -> CmdResult<MainchainPrivateKey> {
-	let file_content_str = String::from_utf8(std::fs::read(path)?)?;
-	let file_content = serde_json::from_str::<CardanoKeyFileContent>(&file_content_str)?;
-	let key_hex = (file_content.cbor_hex.strip_prefix("5820"))
-		.ok_or("CBOR prefix missing in payment key".to_string())?;
-	let key_bytes = (hex::decode(key_hex)?.try_into())
-		.map_err(|_| format!("{} is not the valid lengh of 32", key_hex))?;
-	Ok(MainchainPrivateKey(key_bytes))
+#[derive(Clone, Debug, clap::Parser)]
+pub(crate) struct PaymentFilePath {
+	/// Path to the Cardano Signing Key file used sign transaction(s) and pay for them
+	#[arg(long, short = 'k')]
+	payment_key_file: String,
+}
+
+impl PaymentFilePath {
+	pub(crate) fn read_key(&self) -> CmdResult<MainchainPrivateKey> {
+		let key = Self::read_and_parse(&self.payment_key_file)
+			.map_err(|e| format!("Could not read private key file. Reason: {}", e))?;
+		Ok(key)
+	}
+	fn read_and_parse(path: &str) -> CmdResult<MainchainPrivateKey> {
+		let file_content_str = String::from_utf8(std::fs::read(path)?)?;
+		let file_content = serde_json::from_str::<CardanoKeyFileContent>(&file_content_str)?;
+		let key_type = file_content.r#type;
+		if !key_type.contains("SigningKey") {
+			return Err(
+				format!("Unsupported key type: {}. Expected a signing key", key_type).into()
+			);
+		}
+		let key_hex = (file_content.cbor_hex.strip_prefix("5820"))
+			.ok_or("CBOR prefix missing in payment key".to_string())?;
+		let key_bytes = (hex::decode(key_hex)?.try_into())
+			.map_err(|_| format!("{} is not the valid lengh of 32", key_hex))?;
+		Ok(MainchainPrivateKey(key_bytes))
+	}
 }
 
 // Parses public keys in formatted as SIDECHAIN_KEY:AURA_KEY:GRANDPA_KEY

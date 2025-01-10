@@ -1,4 +1,6 @@
+use crate::{parse_partnerchain_public_keys, PaymentFilePath};
 use jsonrpsee::http_client::HttpClient;
+use partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	register::{run_deregister, run_register},
@@ -8,36 +10,40 @@ use sidechain_domain::{
 	PermissionedCandidateData, SidechainSignature, UtxoId,
 };
 
-use crate::{parse_partnerchain_public_keys, read_private_key_from_file};
-
 #[derive(Clone, Debug, clap::Parser)]
 pub struct RegisterCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
+	/// Genesis UTXO of the partner-chain
 	#[arg(long)]
 	genesis_utxo: UtxoId,
+	/// UTXO that will be spend when executing registration transaction, part of the registration message
 	#[arg(long)]
 	registration_utxo: UtxoId,
-	#[arg(long)]
-	payment_key_file: String,
+	#[clap(flatten)]
+	payment_key_file: PaymentFilePath,
 	#[arg(
 		long,
 		value_name = "PARTNERCHAIN_KEY:AURA_KEY:GRANDPA_KEY",
 		alias = "sidechain-public-keys",
 		value_parser = parse_partnerchain_public_keys
 	)]
+	/// Colon separated hex strings representing bytes of the Sidechain, Aura and Grandpa public keys
 	partner_chain_public_keys: PermissionedCandidateData,
+	/// Hex string of bytes of the registration message signature by partner-chain key, obtained by 'registration-signatures' command
 	#[arg(long, alias = "sidechain-signature")]
 	partner_chain_signature: SidechainSignature,
+	/// Hex string representing bytes of the Stake Pool Verification Key
 	#[arg(long)]
 	spo_public_key: MainchainPublicKey,
+	/// Hex string of bytes of the registration message signature by main chain key, obtained by 'registration-signatures' command
 	#[arg(long)]
 	spo_signature: MainchainSignature,
 }
 
 impl RegisterCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
-		let payment_key = read_private_key_from_file(&self.payment_key_file)?;
+		let payment_key = self.payment_key_file.read_key()?;
 		let client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
 		let candidate_registration = CandidateRegistration {
 			stake_ownership: AdaBasedStaking {
@@ -69,17 +75,19 @@ impl RegisterCmd {
 pub struct DeregisterCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
+	/// Genesis UTXO of the partner-chain
 	#[arg(long)]
 	genesis_utxo: UtxoId,
-	#[arg(long)]
-	payment_key_file: String,
+	#[clap(flatten)]
+	payment_key_file: PaymentFilePath,
+	/// Hex string representing bytes of the Stake Pool Verification Key
 	#[arg(long)]
 	spo_public_key: MainchainPublicKey,
 }
 
 impl DeregisterCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
-		let payment_signing_key = read_private_key_from_file(&self.payment_key_file)?;
+		let payment_signing_key = self.payment_key_file.read_key()?;
 		let client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
 
 		run_deregister(

@@ -4,9 +4,10 @@ use crate::config::config_fields;
 use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::io::IOContext;
 use crate::main_chain_follower::set_main_chain_follower_env;
-use crate::pc_contracts_cli_resources::establish_pc_contracts_cli_configuration;
+use crate::ogmios::config::establish_ogmios_configuration;
 use crate::CmdRun;
 use clap::Parser;
+use partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
 use partner_chains_cardano_offchain::register::Register;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_domain::*;
@@ -49,10 +50,9 @@ impl CmdRun for Register3Cmd {
 		let cardano_payment_signing_key_path =
 			context.prompt("Path to mainchain payment signing key file", Some("payment.skey"));
 
-		let pc_contracts_cli_resources = establish_pc_contracts_cli_configuration(context)?;
 		let payment_signing_key =
 			get_mc_pkey_from_file(&cardano_payment_signing_key_path, context)?;
-
+		let ogmios_configuration = establish_ogmios_configuration(context)?;
 		let candidate_registration = CandidateRegistration {
 			stake_ownership: AdaBasedStaking {
 				pub_key: self.spo_public_key.clone(),
@@ -65,7 +65,7 @@ impl CmdRun for Register3Cmd {
 			aura_pub_key: self.aura_pub_key.clone(),
 			grandpa_pub_key: self.grandpa_pub_key.clone(),
 		};
-		let offchain = context.offchain_impl(&pc_contracts_cli_resources.ogmios)?;
+		let offchain = context.offchain_impl(&ogmios_configuration)?;
 
 		let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 		runtime
@@ -154,9 +154,7 @@ mod tests {
 			config_fields::POSTGRES_CONNECTION_STRING, CHAIN_CONFIG_FILE_PATH,
 			RESOURCES_CONFIG_FILE_PATH,
 		},
-		pc_contracts_cli_resources::{
-			tests::establish_pc_contracts_cli_configuration_io, PcContractsCliResources,
-		},
+		ogmios::config::tests::{default_ogmios_service_config, establish_ogmios_configuration_io},
 		tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks},
 	};
 	use hex_literal::hex;
@@ -185,11 +183,8 @@ mod tests {
 				vec![
 					intro_msg_io(),
 					prompt_mc_payment_key_path_io(),
-					vec![establish_pc_contracts_cli_configuration_io(
-						None,
-						PcContractsCliResources::default(),
-					)],
-					run_registration_io(),
+					read_payment_skey(),
+					get_ogmios_config(),
 					prompt_for_registration_status_y(),
 					show_registration_status_io(),
 				]
@@ -222,11 +217,8 @@ mod tests {
 				vec![
 					intro_msg_io(),
 					prompt_mc_payment_key_path_io(),
-					vec![establish_pc_contracts_cli_configuration_io(
-						None,
-						PcContractsCliResources::default(),
-					)],
-					run_registration_fail_io(),
+					read_payment_skey(),
+					get_ogmios_config(),
 				]
 				.into_iter()
 				.flatten()
@@ -257,11 +249,8 @@ mod tests {
 				vec![
 					intro_msg_io(),
 					prompt_mc_payment_key_path_io(),
-					vec![establish_pc_contracts_cli_configuration_io(
-						None,
-						PcContractsCliResources::default(),
-					)],
-					run_registration_io(),
+					read_payment_skey(),
+					get_ogmios_config(),
 					prompt_for_registration_status_n(),
 				]
 				.into_iter()
@@ -287,6 +276,13 @@ mod tests {
 			"Path to mainchain payment signing key file",
 			Some("payment.skey"),
 			"/path/to/payment.skey",
+		)]
+	}
+
+	fn get_ogmios_config() -> Vec<MockIO> {
+		vec![establish_ogmios_configuration_io(
+			Some(default_ogmios_service_config()),
+			default_ogmios_service_config(),
 		)]
 	}
 
@@ -326,11 +322,7 @@ mod tests {
 		]
 	}
 
-	fn run_registration_io() -> Vec<MockIO> {
-		vec![MockIO::file_read("/path/to/payment.skey")]
-	}
-
-	fn run_registration_fail_io() -> Vec<MockIO> {
+	fn read_payment_skey() -> Vec<MockIO> {
 		vec![MockIO::file_read("/path/to/payment.skey")]
 	}
 

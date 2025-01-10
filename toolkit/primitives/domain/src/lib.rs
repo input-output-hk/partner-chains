@@ -21,7 +21,7 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use plutus::{Datum, ToDatum};
 use plutus_datum_derive::*;
 use scale_info::TypeInfo;
-use sp_core::{bounded::BoundedVec, ed25519, sr25519, ConstU32};
+use sp_core::{bounded::BoundedVec, ecdsa, ed25519, sr25519, ConstU32};
 #[cfg(feature = "serde")]
 use {
 	derive_more::FromStr,
@@ -198,11 +198,42 @@ const POLICY_ID_LEN: usize = 28;
 #[cfg_attr(feature = "std", byte_string(to_hex_string))]
 pub struct PolicyId(pub [u8; POLICY_ID_LEN]);
 
+pub type ScriptHash = PolicyId;
+
 pub const MAX_ASSET_NAME_LEN: u32 = 32;
 
 #[derive(Clone, Default, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TokenId {
+	Ada,
+	AssetId { policy_id: PolicyId, asset_name: AssetName },
+}
+
+#[cfg(feature = "std")]
+impl FromStr for TokenId {
+	type Err = String;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		if s.to_lowercase() == "ada" {
+			Ok(Self::Ada)
+		} else {
+			match s.split_once(".") {
+				Some((policy_id, asset_name)) => {
+					let policy_id = PolicyId::from_str(policy_id)
+						.map_err(|e| format!("{} is invalid Policy ID: {}", policy_id, e))?;
+					let asset_name = AssetName::from_str(asset_name)
+						.map_err(|e| format!("{} is invalid Asset Name: {}", asset_name, e))?;
+					Ok(Self::AssetId { policy_id, asset_name })
+				},
+				None => Err("AssetID should be <hex encoded Policy ID>.<hex encoded Asset Name>"
+					.to_string()),
+			}
+		}
+	}
+}
 
 const MAINCHAIN_PUBLIC_KEY_LEN: usize = 32;
 
@@ -220,21 +251,6 @@ pub struct MainchainPrivateKey(pub [u8; MAINCHAIN_PRIVATE_KEY_LEN]);
 impl core::fmt::Debug for MainchainPrivateKey {
 	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
 		write!(f, "***")
-	}
-}
-
-impl MainchainPrivateKey {
-	#[cfg(feature = "std")]
-	pub fn to_pub_key_hash(&self) -> MainchainAddressHash {
-		cardano_serialization_lib::PrivateKey::from_normal_bytes(&self.0)
-			.expect("Conversion cannot fail on valid MainchainPrivateKey values")
-			.to_public()
-			.hash()
-			.to_bytes()
-			.as_slice()
-			.try_into()
-			.map(MainchainAddressHash)
-			.expect("Conversion cannot fail as representation is the same")
 	}
 }
 
@@ -320,6 +336,12 @@ impl ScEpochNumber {
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex, as_ref)]
 pub struct SidechainPublicKey(pub Vec<u8>);
 
+impl From<ecdsa::Public> for SidechainPublicKey {
+	fn from(value: ecdsa::Public) -> Self {
+		Self(value.0.to_vec())
+	}
+}
+
 #[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct SidechainSignature(pub Vec<u8>);
@@ -357,7 +379,7 @@ pub struct UtxoId {
 }
 
 impl UtxoId {
-	pub fn new(hash: [u8; TX_HASH_SIZE], index: u16) -> UtxoId {
+	pub const fn new(hash: [u8; TX_HASH_SIZE], index: u16) -> UtxoId {
 		UtxoId { tx_hash: McTxHash(hash), index: UtxoIndex(index) }
 	}
 }
@@ -617,12 +639,24 @@ impl AuraPublicKey {
 	}
 }
 
+impl From<sr25519::Public> for AuraPublicKey {
+	fn from(value: sr25519::Public) -> Self {
+		Self(value.0.to_vec())
+	}
+}
+
 #[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct GrandpaPublicKey(pub Vec<u8>);
 impl GrandpaPublicKey {
 	pub fn try_into_ed25519(&self) -> Option<ed25519::Public> {
 		Some(ed25519::Public::from_raw(self.0.clone().try_into().ok()?))
+	}
+}
+
+impl From<ed25519::Public> for GrandpaPublicKey {
+	fn from(value: ed25519::Public) -> Self {
+		Self(value.0.to_vec())
 	}
 }
 
@@ -639,7 +673,7 @@ impl DParameter {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord, Hash)]
 pub struct PermissionedCandidateData {
 	pub sidechain_public_key: SidechainPublicKey,
 	pub aura_public_key: AuraPublicKey,
