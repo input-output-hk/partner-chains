@@ -9,7 +9,7 @@ of the version specified in the compatibility matrix is present in your active d
 
 ## Context
 
-This guide describes the process of migrating from Partner Chains SDK v1.3.0 to v1.4.0 for an already
+This guide describes the process of migrating from Partner Chains SDK v1.3.1 to v1.4.0 for an already
 established chain, avoiding a chain reset.
 
 The biggest change in version v1.4.0 which requires special handling is the update to smart contracts
@@ -24,9 +24,8 @@ The migration requires multiple detailed steps but to follow them successfuly it
 The 1.4.0 version introduces some backwards-incompatible data schemas. This means that a simple runtime upgrade
 using `system/setCode` extrinsic would leave the chain in an inconsistent state and unable to produce blocks.
 To avoid this issue, the migration involves the following general steps:
-1. Upgrade to a transitory version of the runtime 1.3.1, which only introduces a special helper extrinsic `sidechain/upgrade_and_set_addresses`.
-2. Establish a brand new Partner Chain on Cardano using the new 1.4.0 version.
-3. Use the `sidechain/upgrade_and_set_addresses` to atomically upgrade the runtime to version 1.4.0 and switch the addresses
+1. Establish a brand new Partner Chain on Cardano using the new 1.4.0 version.
+2. Use the `sidechain/upgrade_and_set_addresses` to atomically upgrade the runtime to version 1.4.0 and switch the addresses
 observed for committee selection to the new Partner Chain.
 
 ## Migration Steps
@@ -34,49 +33,18 @@ observed for committee selection to the new Partner Chain.
 ### Prerequisites
 
 This guide assumes the following:
-1. An already running Partner Chain is present running nodes and runtime of version v1.3.0
+1. An already running Partner Chain is present running nodes and runtime build with the Partner Chains SDK v1.3.1
 and observing configuration and registrations created using smart contracts of version v6.2.2.
 2. The Partner Chain's original chain spec file is available.
-
-### Runtime upgrade to v1.3.1
-
-This patch version extends the Sidechain pallet with a new extrinsic `sidechain/upgrade_and_set_addresses`
-which allows the on-chain governance to atomically upgrade the runtime and set the genesis utxo and new main chain
-scripts to observe.
-
-1. Update Partner Chains SDK dependencies in your `Cargo.toml` to `v1.3.1`
-2. Add the following configuration to your runtime configuration:
-    ```rust
-    impl pallet_sidechain::Config for Runtime {
-        // ... other parameters
-      type MainChainScripts = sp_session_validator_management::MainChainScripts;
-
-      fn set_main_chain_scripts(scripts: Self::MainChainScripts) {
-        pallet_session_validator_management::MainChainScriptsConfiguration::<Runtime>::set(scripts);
-      }
-    }
-    ```
-    This will allow the `upgrade_and_set_addresses` extrinsic to update configuration of the SessionValidatorManagement
-    pallet together with the Runtime code.
-
-3. Increment the `spec_version` in your runtime configuration.
-4. Build the new Runtime WASM (you can do it by running `cargo build --release`)
-5. Upgrade the runtime of the chain using the newly built WASM (it can be found in `$CARGO_TARGET_DIR/release/wbuild/<runtime name>/<runtime name>.compressed.wasm`) and the
-extrinsic `system/setCode`.
-
-After these steps the chain should be running the runtime using Partner Chains SDK v1.3.1. This version is
-fully backwards-compatible and is a preparatory step towards v1.4.0
 
 ### Release new version using PC-SDK v1.4.0
 
 This version of the node is backwards-compatible with the runtime in versions 1.3.x. and is needed to support
 the runtime in version v1.4.0.
 
-1. Update all Partner Chains SDK dependencies in your `Cargo.toml` file to `v1.4.0`
-2. Modify your runtime and node code to be compatible with PC-SDK version v1.4.0. Consult the release notes for v1.4.0
-for required changes.
-3. Release a new version of your node. This step depends on your release process.
-4. Upgrade nodes running the chain to the newly released version. This step depends on your deployment process.
+1. Follow [this guide](./sdk-update-v1.3.1-to-v1.4.0.md) to update the code of your project.
+2. Release a new version of your node. This step depends on your release process.
+3. Upgrade nodes running the chain to the newly released version. This step depends on your deployment process.
 Irrespective of the deployment details, the nodes should be run with the same keystores as previously.
 
 After this step, the network should be composed of nodes v1.4.0 but the runtime would remain at v1.3.1, and be ready for the matching
