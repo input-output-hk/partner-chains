@@ -1,4 +1,4 @@
-use crate::read_private_key_from_file;
+use crate::PaymentFilePath;
 use jsonrpsee::http_client::HttpClient;
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries, init_governance::run_init_governance,
@@ -31,9 +31,8 @@ pub struct InitGovernanceCmd {
 	/// Governance authority hash to be set.
 	#[arg(long, short = 'g')]
 	governance_authority: MainchainAddressHash,
-	/// Path to the Cardano Payment Key file.
-	#[arg(long, short = 'k')]
-	payment_key_file: String,
+	#[clap(flatten)]
+	payment_key_file: PaymentFilePath,
 	/// Genesis UTXO of the new chain, it will be spent durning initialization. If not set, then one will be selected from UTXOs of the payment key.
 	#[arg(long, short = 'c')]
 	genesis_utxo: Option<UtxoId>,
@@ -41,7 +40,7 @@ pub struct InitGovernanceCmd {
 
 impl InitGovernanceCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
-		let payment_key = read_private_key_from_file(&self.payment_key_file)?;
+		let payment_key = self.payment_key_file.read_key()?;
 		let client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
 
 		run_init_governance(
@@ -63,9 +62,8 @@ pub struct UpdateGovernanceCmd {
 	/// Governance authority hash to be set.
 	#[arg(long, short = 'g')]
 	new_governance_authority: MainchainAddressHash,
-	/// Path to the Cardano Payment Key file.
-	#[arg(long, short = 'k')]
-	payment_key_file: String,
+	#[clap(flatten)]
+	payment_key_file: PaymentFilePath,
 	/// Genesis UTXO of the chain
 	#[arg(long, short = 'c')]
 	genesis_utxo: UtxoId,
@@ -73,7 +71,7 @@ pub struct UpdateGovernanceCmd {
 
 impl UpdateGovernanceCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
-		let payment_key = read_private_key_from_file(&self.payment_key_file)?;
+		let payment_key = self.payment_key_file.read_key()?;
 		let client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
 
 		run_update_governance(
