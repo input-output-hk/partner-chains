@@ -4,6 +4,7 @@
 //! The datum encodes D-parameter using VersionedGenericDatum envelope with the D-parameter being
 //! `datum` field being `[num_permissioned_candidates, num_registered_candidates]`.
 
+use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::csl::{
 	get_builder_config, get_validator_budgets, zero_ex_units, InputsBuilderExt, ScriptExUnits,
 	TransactionBuilderExt, TransactionContext,
@@ -14,6 +15,7 @@ use anyhow::anyhow;
 use cardano_serialization_lib::{
 	ExUnits, JsError, PlutusData, ScriptHash, Transaction, TransactionBuilder, TxInputsBuilder,
 };
+use ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
 use ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
 	types::OgmiosUtxo,
@@ -35,36 +37,47 @@ pub trait UpsertDParam {
 	) -> anyhow::Result<Option<McTxHash>>;
 }
 
-impl<C: QueryLedgerState + QueryNetwork + Transactions> UpsertDParam for C {
+impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> UpsertDParam for C {
 	async fn upsert_d_param(
 		&self,
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: [u8; 32],
 	) -> anyhow::Result<Option<McTxHash>> {
-		upsert_d_param(genesis_utxo, d_parameter, payment_signing_key, self).await
+		upsert_d_param(
+			genesis_utxo,
+			d_parameter,
+			payment_signing_key,
+			self,
+			&FixedDelayRetries::two_minutes(),
+		)
+		.await
 	}
 }
 
-pub async fn upsert_d_param<C: QueryLedgerState + QueryNetwork + Transactions>(
+pub async fn upsert_d_param<
+	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
 	genesis_utxo: UtxoId,
 	d_parameter: &DParameter,
 	payment_signing_key: [u8; 32],
 	ogmios_client: &C,
+	await_tx: &A,
 ) -> anyhow::Result<Option<McTxHash>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
 	let (validator, policy) = crate::scripts_data::d_parameter_scripts(genesis_utxo, ctx.network)?;
 	let validator_address = validator.address_bech32(ctx.network)?;
 	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
 
-	match get_current_d_parameter(validator_utxos)? {
+	let tx_hash_opt = match get_current_d_parameter(validator_utxos)? {
 		Some((_, current_d_param)) if current_d_param == *d_parameter => {
 			log::info!("Current D-parameter value is equal to the one to be set.");
-			Ok(None)
+			None
 		},
 		Some((current_utxo, _)) => {
 			log::info!("Current D-parameter is different to the one to be set. Updating.");
-			Ok(Some(
+			Some(
 				update_d_param(
 					&validator,
 					&policy,
@@ -75,16 +88,20 @@ pub async fn upsert_d_param<C: QueryLedgerState + QueryNetwork + Transactions>(
 					ogmios_client,
 				)
 				.await?,
-			))
+			)
 		},
 		None => {
 			log::info!("There is no D-parameter set. Inserting new one.");
-			Ok(Some(
+			Some(
 				insert_d_param(&validator, &policy, d_parameter, ctx, genesis_utxo, ogmios_client)
 					.await?,
-			))
+			)
 		},
+	};
+	if let Some(tx_hash) = tx_hash_opt {
+		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
 	}
+	Ok(tx_hash_opt)
 }
 
 fn get_current_d_parameter(
