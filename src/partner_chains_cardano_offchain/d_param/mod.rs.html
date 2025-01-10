@@ -302,13 +302,31 @@
 <a href="#302" id="302">302</a>
 <a href="#303" id="303">303</a>
 <a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! D-parameter is stored on chain in an UTXO at the D-parameter validator address.
 //! There should be at most one UTXO at the validator address and it should contain the D-parameter.
 //! This UTXO should have 1 token of the D-parameter policy with an empty asset name.
 //! The datum encodes D-parameter using VersionedGenericDatum envelope with the D-parameter being
 //! `datum` field being `[num_permissioned_candidates, num_registered_candidates]`.
 
-</span><span class="kw">use </span><span class="kw">crate</span>::csl::{
+</span><span class="kw">use </span><span class="kw">crate</span>::await_tx::{AwaitTx, FixedDelayRetries};
+<span class="kw">use </span><span class="kw">crate</span>::csl::{
 	get_builder_config, get_validator_budgets, zero_ex_units, InputsBuilderExt, ScriptExUnits,
 	TransactionBuilderExt, TransactionContext,
 };
@@ -318,6 +336,7 @@
 <span class="kw">use </span>cardano_serialization_lib::{
 	ExUnits, JsError, PlutusData, ScriptHash, Transaction, TransactionBuilder, TxInputsBuilder,
 };
+<span class="kw">use </span>ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
 	types::OgmiosUtxo,
@@ -339,36 +358,47 @@
 	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt;;
 }
 
-<span class="kw">impl</span>&lt;C: QueryLedgerState + QueryNetwork + Transactions&gt; UpsertDParam <span class="kw">for </span>C {
+<span class="kw">impl</span>&lt;C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId&gt; UpsertDParam <span class="kw">for </span>C {
 	<span class="kw">async fn </span>upsert_d_param(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		genesis_utxo: UtxoId,
 		d_parameter: <span class="kw-2">&amp;</span>DParameter,
 		payment_signing_key: [u8; <span class="number">32</span>],
 	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
-		upsert_d_param(genesis_utxo, d_parameter, payment_signing_key, <span class="self">self</span>).<span class="kw">await
+		upsert_d_param(
+			genesis_utxo,
+			d_parameter,
+			payment_signing_key,
+			<span class="self">self</span>,
+			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
+		)
+		.<span class="kw">await
 	</span>}
 }
 
-<span class="kw">pub async fn </span>upsert_d_param&lt;C: QueryLedgerState + QueryNetwork + Transactions&gt;(
+<span class="kw">pub async fn </span>upsert_d_param&lt;
+	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
+	A: AwaitTx,
+&gt;(
 	genesis_utxo: UtxoId,
 	d_parameter: <span class="kw-2">&amp;</span>DParameter,
 	payment_signing_key: [u8; <span class="number">32</span>],
 	ogmios_client: <span class="kw-2">&amp;</span>C,
+	await_tx: <span class="kw-2">&amp;</span>A,
 ) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
 	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>(validator, policy) = <span class="kw">crate</span>::scripts_data::d_parameter_scripts(genesis_utxo, ctx.network)<span class="question-mark">?</span>;
 	<span class="kw">let </span>validator_address = validator.address_bech32(ctx.network)<span class="question-mark">?</span>;
 	<span class="kw">let </span>validator_utxos = ogmios_client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">match </span>get_current_d_parameter(validator_utxos)<span class="question-mark">? </span>{
+	<span class="kw">let </span>tx_hash_opt = <span class="kw">match </span>get_current_d_parameter(validator_utxos)<span class="question-mark">? </span>{
 		<span class="prelude-val">Some</span>((<span class="kw">_</span>, current_d_param)) <span class="kw">if </span>current_d_param == <span class="kw-2">*</span>d_parameter =&gt; {
 			<span class="macro">log::info!</span>(<span class="string">"Current D-parameter value is equal to the one to be set."</span>);
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
-		},
+			<span class="prelude-val">None
+		</span>},
 		<span class="prelude-val">Some</span>((current_utxo, <span class="kw">_</span>)) =&gt; {
 			<span class="macro">log::info!</span>(<span class="string">"Current D-parameter is different to the one to be set. Updating."</span>);
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(
+			<span class="prelude-val">Some</span>(
 				update_d_param(
 					<span class="kw-2">&amp;</span>validator,
 					<span class="kw-2">&amp;</span>policy,
@@ -379,16 +409,20 @@
 					ogmios_client,
 				)
 				.<span class="kw">await</span><span class="question-mark">?</span>,
-			))
+			)
 		},
 		<span class="prelude-val">None </span>=&gt; {
 			<span class="macro">log::info!</span>(<span class="string">"There is no D-parameter set. Inserting new one."</span>);
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(
+			<span class="prelude-val">Some</span>(
 				insert_d_param(<span class="kw-2">&amp;</span>validator, <span class="kw-2">&amp;</span>policy, d_parameter, ctx, genesis_utxo, ogmios_client)
 					.<span class="kw">await</span><span class="question-mark">?</span>,
-			))
+			)
 		},
+	};
+	<span class="kw">if let </span><span class="prelude-val">Some</span>(tx_hash) = tx_hash_opt {
+		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.<span class="number">0</span>, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
 	}
+	<span class="prelude-val">Ok</span>(tx_hash_opt)
 }
 
 <span class="kw">fn </span>get_current_d_parameter(
