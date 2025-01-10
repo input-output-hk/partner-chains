@@ -7,12 +7,11 @@
 //! it should be updated accordingly and pushed to the registry.
 
 use hex_literal::hex;
-use jsonrpsee::http_client::HttpClient;
 use ogmios_client::{
+	jsonrpsee::{client_for_url, OgmiosClients},
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
-	OgmiosClientError,
 };
 use partner_chains_cardano_offchain::{
 	await_tx::{AwaitTx, FixedDelayRetries},
@@ -63,8 +62,8 @@ const REWARDS_TOKEN_ASSET_NAME_STR: &str = "52657761726420746f6b656e";
 #[tokio::test]
 async fn governance_flow() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let cli = Cli::default();
+	let container = cli.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
 	let _ = run_update_goveranance(&client, genesis_utxo).await;
@@ -129,23 +128,23 @@ async fn register() {
 	assert!(run_register(genesis_utxo, other_signature, &client).await.is_some());
 }
 
-async fn initialize<'a>(container: &Container<'a, GenericImage>) -> HttpClient {
+async fn initialize<'a>(container: &Container<'a, GenericImage>) -> OgmiosClients {
 	let ogmios_port = container.get_host_port_ipv4(1337);
 	println!("Ogmios port: {}", ogmios_port);
-	let client = HttpClient::builder()
-		.build(format!("http://localhost:{}", ogmios_port))
-		.unwrap();
 
-	await_ogmios(&client).await.unwrap();
+	let client = await_ogmios(ogmios_port).await.unwrap();
 	println!("Ogmios is up");
 	let _ = initial_transaction(&client).await.unwrap();
 	println!("Initial transaction confirmed");
 	client
 }
 
-async fn await_ogmios<T: QueryNetwork>(client: &T) -> Result<(), OgmiosClientError> {
+async fn await_ogmios(ogmios_port: u16) -> Result<OgmiosClients, String> {
+	let url = format!("ws://localhost:{}", ogmios_port);
 	Retry::spawn(FixedInterval::new(Duration::from_millis(100)).take(1000), || async {
-		client.shelley_genesis_configuration().await.map(|_| ())
+		let client = client_for_url(&url).await?;
+		let _ = client.shelley_genesis_configuration().await.map_err(|e| e.to_string())?;
+		Ok(client)
 	})
 	.await
 }

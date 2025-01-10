@@ -1,8 +1,9 @@
 #![cfg(feature = "jsonrpsee-client")]
 
 use hex_literal::hex;
-use jsonrpsee::{http_client::HttpClient, types::ErrorCode};
+use jsonrpsee::types::ErrorCode;
 use ogmios_client::{
+	jsonrpsee::client_for_url,
 	transactions::{
 		OgmiosBudget, OgmiosEvaluateTransactionResponse, OgmiosValidatorIndex,
 		SubmitTransactionResponse, Transactions,
@@ -35,7 +36,7 @@ async fn evaluate_transaction() {
 	})
 	.await
 	.unwrap();
-	let client = HttpClient::builder().build(format!("http://{address}")).unwrap();
+	let client = client_for_url(&format!("http://{address}")).await.unwrap();
 	let response = client.evaluate_transaction(&hex!("aabbccdd")).await.unwrap();
 	assert_eq!(
 		response[0],
@@ -59,7 +60,7 @@ async fn submit_transaction() {
 	})
 	.await
 	.unwrap();
-	let client = HttpClient::builder().build(format!("http://{address}")).unwrap();
+	let client = client_for_url(&format!("http://{address}")).await.unwrap();
 	let response = client.submit_transaction(&hex!("aabbccdd")).await.unwrap();
 	assert_eq!(
 		response,
