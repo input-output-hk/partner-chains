@@ -17,7 +17,7 @@ from .sidechain_main_cli import SidechainMainCli
 from .partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, PartnerChainRpcException, DParam
 import string
 import time
-from scalecodec.base import RuntimeConfiguration
+from scalecodec.base import RuntimeConfiguration, ScaleBytes
 
 
 def _keypair_type_to_name(type):
@@ -650,73 +650,38 @@ class SubstrateApi(BlockchainApi):
         block_hash = self.substrate.get_block_hash(block_no)
         return self.substrate.get_block(block_hash)
 
-    def _block_header_encoder_and_signature_extractor(self, header: dict):
-        signature = False
-        header_encoded = bytes.fromhex(header["parentHash"][2:]).hex()
-        # Convert block number to compact
-        header["number"] = self.compact_encoder.encode(header["number"]).to_hex()
-        header_encoded += bytes.fromhex(header["number"][2:]).hex()
-        header_encoded += bytes.fromhex(header["stateRoot"][2:]).hex()
-        header_encoded += bytes.fromhex(header["extrinsicsRoot"][2:]).hex()
-        logs_encoded = ""
-        consensus_cnt = 0
-        consensus_encoded = ""
-        for log in header["digest"]["logs"]:
-            log = log.value_serialized
-            if "Seal" in log.keys():
-                # Do not include the signature in the encoded header.
-                # We want to hash the header and sign to get this signature
-                signature = log["Seal"][1]
-            elif "PreRuntime" in log.keys():
-                if is_hex(log["PreRuntime"][0]):
-                    prefix = str(log["PreRuntime"][0])[2:]
-                else:
-                    logger.error(f"PreRuntime key is not hex: {log['PreRuntime'][0]}")
-                    return None, None
-                if is_hex(log["PreRuntime"][1]):
-                    suffix = str(log["PreRuntime"][1])[2:]
-                else:
-                    suffix = str(log["PreRuntime"][1]).encode("utf-8").hex()
-                suffix_length = str(hex(2 * len(suffix)))[2:]
-                logs_encoded += "06" + prefix + suffix_length + suffix
-            elif "Consensus" in log.keys():
-                consensus_cnt += 1
-                prefix = str(log["Consensus"][0])[2:]
-                suffix = str(log["Consensus"][1])[2:]
-                if "0100000000000000" in suffix:  # Grandpa committee keys
-                    suffix_prepend = self.config.block_encoding_suffix_grandpa
-                else:  # Aura committee keys
-                    suffix_prepend = self.config.block_encoding_suffix_aura
-                consensus_encoded += "04" + prefix + suffix_prepend + suffix
-            # Keep adding key to decode as the are added to the block header
-        if consensus_cnt == 0:
-            logs_prefix = "08"
-        elif consensus_cnt == 1:
-            logs_prefix = "0c"
-        elif consensus_cnt == 2:
-            logs_prefix = "10"
-        else:
-            logger.debug("New block type detected with more than 2 consensus logs. Please update encoder")
-            return False, False
-        header_encoded += logs_prefix + logs_encoded + consensus_encoded
-        return header_encoded, signature
+    def get_block_author(self, block_number):
+        """Custom implementation of substrate.get_block(include_author=True) to get block author.
+        py-substrate-interface does not work because it calls "Validators" function from "Session" pallet,
+        which in our node is disabled and returns empty list. Here we use "ValidatorsAndKeys".
+        The function then iterates over "PreRuntime" logs and once it finds aura engine, it gets the slot
+        number and uses the result of modulo to get the author by index from the validator set.
+        Note: py-substrate-interface was also breaking at this point because we have another "PreRuntime" log
+        for mcsh engine (main chain hash) which is not supported by py-substrate-interface.
+        """
+        block_data = self.get_block(block_number)
+        validator_set = self.substrate.query(
+            "Session", "ValidatorsAndKeys", block_hash=block_data["header"]["parentHash"]
+        )
+        for log_data in block_data["header"]["digest"]["logs"]:
+            engine = bytes(log_data[1][0])
+            if "PreRuntime" in log_data and engine == b'aura':
+                aura_predigest = self.substrate.runtime_config.create_scale_object(
+                    type_string='RawAuraPreDigest', data=ScaleBytes(bytes(log_data[1][1]))
+                )
 
-    def extract_block_author(self, block, candidates_pub_keys):
-        block_header = block["header"]
-        scale_header, signature = self._block_header_encoder_and_signature_extractor(block_header)
-        if not scale_header or not signature:
-            raise Exception(f'Could not encode header of block {block_header["number"]}')
-        header_hash = hashlib.blake2b(bytes.fromhex(scale_header), digest_size=32).hexdigest()
+                aura_predigest.decode(check_remaining=self.config.get("strict_scale_decode"))
 
-        for pub_key in candidates_pub_keys:
-            keypair_public = Keypair(
-                ss58_address=self.substrate.ss58_encode(pub_key),
-                crypto_type=KeypairType.SR25519,  # For our substrate implementation SR25519 is block authorship type
-            )
-            is_author = keypair_public.verify(bytes.fromhex(header_hash), bytes.fromhex(signature[2:]))
-            if is_author:
-                return pub_key
-        return None
+                rank_validator = aura_predigest.value["slot_number"] % len(validator_set)
+
+                block_author = validator_set[rank_validator]
+                block_data["author"] = block_author.value[1]["aura"]
+                break
+
+        if "author" not in block_data:
+            logger.error(f"Could not find author for block {block_number}. No PreRuntime log found with aura engine.")
+            return None
+        return block_data["author"]
 
     def get_mc_hash_from_pc_block_header(self, block):
         mc_hash_key = "0x6d637368"
