@@ -5,6 +5,7 @@ use partner_chains_cardano_offchain::{
 	reserve::{
 		create::{create_reserve_utxo, ReserveParameters},
 		init::init_reserve_management,
+		release::release_reserve_funds,
 	},
 };
 use sidechain_domain::{ScriptHash, TokenId, UtxoId};
@@ -15,6 +16,7 @@ pub enum ReserveCmd {
 	/// Initialize the reserve management system for your chain
 	Init(InitReserveCmd),
 	Create(CreateReserveCmd),
+	Release(ReleaseReserveCmd),
 }
 
 impl ReserveCmd {
@@ -22,6 +24,7 @@ impl ReserveCmd {
 		match self {
 			Self::Init(cmd) => cmd.execute().await,
 			Self::Create(cmd) => cmd.execute().await,
+			Self::Release(cmd) => cmd.execute().await,
 		}
 	}
 }
@@ -90,6 +93,32 @@ impl CreateReserveCmd {
 				token: self.token,
 				initial_deposit: self.initial_deposit_amount,
 			},
+			self.genesis_utxo,
+			payment_key.0,
+			&ogmios_client,
+			&FixedDelayRetries::two_minutes(),
+		)
+		.await?;
+		Ok(())
+	}
+}
+
+#[derive(Clone, Debug, clap::Parser)]
+pub struct ReleaseReserveCmd {
+	#[clap(flatten)]
+	common_arguments: crate::CommonArguments,
+	#[clap(flatten)]
+	payment_key_file: PaymentFilePath,
+	/// Genesis UTXO of the partner-chain.
+	#[arg(long, short('c'))]
+	genesis_utxo: UtxoId,
+}
+
+impl ReleaseReserveCmd {
+	pub async fn execute(self) -> crate::CmdResult<()> {
+		let payment_key = self.payment_key_file.read_key()?;
+		let ogmios_client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
+		let _ = release_reserve_funds(
 			self.genesis_utxo,
 			payment_key.0,
 			&ogmios_client,

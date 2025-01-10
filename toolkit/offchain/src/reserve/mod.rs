@@ -13,6 +13,7 @@ use sidechain_domain::UtxoId;
 pub mod create;
 pub mod deposit;
 pub mod init;
+pub mod release;
 
 pub(crate) struct ReserveData {
 	pub(crate) scripts: scripts_data::ReserveScripts,
