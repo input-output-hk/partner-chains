@@ -32,13 +32,11 @@
 <a href="#32" id="32">32</a>
 <a href="#33" id="33">33</a>
 <a href="#34" id="34">34</a>
-<a href="#35" id="35">35</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>jsonrpsee::http_client::HttpClient;
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::PaymentFilePath;
+<span class="kw">use </span>jsonrpsee::http_client::HttpClient;
 <span class="kw">use </span>partner_chains_cardano_offchain::d_param::upsert_d_param;
 <span class="kw">use </span>sidechain_domain::DParameter;
 <span class="kw">use </span>sidechain_domain::UtxoId;
-
-<span class="kw">use </span><span class="kw">crate</span>::read_private_key_from_file;
 
 <span class="attr">#[derive(Clone, Debug, clap::Parser)]
 </span><span class="kw">pub struct </span>UpsertDParameterCmd {
@@ -48,15 +46,15 @@
 	</span>permissioned_candidates_count: u16,
 	<span class="attr">#[arg(long)]
 	</span>registered_candidates_count: u16,
-	<span class="attr">#[arg(long, short(<span class="string">'k'</span>))]
-	</span>payment_key_file: String,
+	<span class="attr">#[clap(flatten)]
+	</span>payment_key_file: PaymentFilePath,
 	<span class="attr">#[arg(long, short(<span class="string">'c'</span>))]
 	</span>genesis_utxo: UtxoId,
 }
 
 <span class="kw">impl </span>UpsertDParameterCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
-		<span class="kw">let </span>payment_key = read_private_key_from_file(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key_file)<span class="question-mark">?</span>;
+		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
 		<span class="kw">let </span>d_param = DParameter {
 			num_permissioned_candidates: <span class="self">self</span>.permissioned_candidates_count,
 			num_registered_candidates: <span class="self">self</span>.registered_candidates_count,

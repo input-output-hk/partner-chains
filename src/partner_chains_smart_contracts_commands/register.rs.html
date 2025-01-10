@@ -94,7 +94,15 @@
 <a href="#94" id="94">94</a>
 <a href="#95" id="95">95</a>
 <a href="#96" id="96">96</a>
-</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{parse_partnerchain_public_keys, read_private_key_from_file};
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{parse_partnerchain_public_keys, PaymentFilePath};
 <span class="kw">use </span>jsonrpsee::http_client::HttpClient;
 <span class="kw">use </span>partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
@@ -110,30 +118,36 @@
 </span><span class="kw">pub struct </span>RegisterCmd {
 	<span class="attr">#[clap(flatten)]
 	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
-	<span class="attr">#[arg(long)]
+	<span class="doccomment">/// Genesis UTXO of the partner-chain
+	</span><span class="attr">#[arg(long)]
 	</span>genesis_utxo: UtxoId,
-	<span class="attr">#[arg(long)]
+	<span class="doccomment">/// UTXO that will be spend when executing registration transaction, part of the registration message
+	</span><span class="attr">#[arg(long)]
 	</span>registration_utxo: UtxoId,
-	<span class="attr">#[arg(long)]
-	</span>payment_key_file: String,
+	<span class="attr">#[clap(flatten)]
+	</span>payment_key_file: PaymentFilePath,
 	<span class="attr">#[arg(
 		long,
 		value_name = <span class="string">"PARTNERCHAIN_KEY:AURA_KEY:GRANDPA_KEY"</span>,
 		alias = <span class="string">"sidechain-public-keys"</span>,
 		value_parser = parse_partnerchain_public_keys
 	)]
+	</span><span class="doccomment">/// Colon separated hex strings representing bytes of the Sidechain, Aura and Grandpa public keys
 	</span>partner_chain_public_keys: PermissionedCandidateData,
-	<span class="attr">#[arg(long, alias = <span class="string">"sidechain-signature"</span>)]
+	<span class="doccomment">/// Hex string of bytes of the registration message signature by partner-chain key, obtained by 'registration-signatures' command
+	</span><span class="attr">#[arg(long, alias = <span class="string">"sidechain-signature"</span>)]
 	</span>partner_chain_signature: SidechainSignature,
-	<span class="attr">#[arg(long)]
+	<span class="doccomment">/// Hex string representing bytes of the Stake Pool Verification Key
+	</span><span class="attr">#[arg(long)]
 	</span>spo_public_key: MainchainPublicKey,
-	<span class="attr">#[arg(long)]
+	<span class="doccomment">/// Hex string of bytes of the registration message signature by main chain key, obtained by 'registration-signatures' command
+	</span><span class="attr">#[arg(long)]
 	</span>spo_signature: MainchainSignature,
 }
 
 <span class="kw">impl </span>RegisterCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
-		<span class="kw">let </span>payment_key = read_private_key_from_file(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key_file)<span class="question-mark">?</span>;
+		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
 		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_url)<span class="question-mark">?</span>;
 		<span class="kw">let </span>candidate_registration = CandidateRegistration {
 			stake_ownership: AdaBasedStaking {
@@ -165,17 +179,19 @@
 </span><span class="kw">pub struct </span>DeregisterCmd {
 	<span class="attr">#[clap(flatten)]
 	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
-	<span class="attr">#[arg(long)]
+	<span class="doccomment">/// Genesis UTXO of the partner-chain
+	</span><span class="attr">#[arg(long)]
 	</span>genesis_utxo: UtxoId,
-	<span class="attr">#[arg(long)]
-	</span>payment_key_file: String,
-	<span class="attr">#[arg(long)]
+	<span class="attr">#[clap(flatten)]
+	</span>payment_key_file: PaymentFilePath,
+	<span class="doccomment">/// Hex string representing bytes of the Stake Pool Verification Key
+	</span><span class="attr">#[arg(long)]
 	</span>spo_public_key: MainchainPublicKey,
 }
 
 <span class="kw">impl </span>DeregisterCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
-		<span class="kw">let </span>payment_signing_key = read_private_key_from_file(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key_file)<span class="question-mark">?</span>;
+		<span class="kw">let </span>payment_signing_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
 		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_url)<span class="question-mark">?</span>;
 
 		run_deregister(

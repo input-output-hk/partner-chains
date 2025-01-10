@@ -86,9 +86,7 @@
 <a href="#86" id="86">86</a>
 <a href="#87" id="87">87</a>
 <a href="#88" id="88">88</a>
-<a href="#89" id="89">89</a>
-<a href="#90" id="90">90</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::read_private_key_from_file;
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::PaymentFilePath;
 <span class="kw">use </span>jsonrpsee::http_client::HttpClient;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries, init_governance::run_init_governance,
@@ -121,9 +119,8 @@
 	<span class="doccomment">/// Governance authority hash to be set.
 	</span><span class="attr">#[arg(long, short = <span class="string">'g'</span>)]
 	</span>governance_authority: MainchainAddressHash,
-	<span class="doccomment">/// Path to the Cardano Payment Key file.
-	</span><span class="attr">#[arg(long, short = <span class="string">'k'</span>)]
-	</span>payment_key_file: String,
+	<span class="attr">#[clap(flatten)]
+	</span>payment_key_file: PaymentFilePath,
 	<span class="doccomment">/// Genesis UTXO of the new chain, it will be spent durning initialization. If not set, then one will be selected from UTXOs of the payment key.
 	</span><span class="attr">#[arg(long, short = <span class="string">'c'</span>)]
 	</span>genesis_utxo: <span class="prelude-ty">Option</span>&lt;UtxoId&gt;,
@@ -131,7 +128,7 @@
 
 <span class="kw">impl </span>InitGovernanceCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
-		<span class="kw">let </span>payment_key = read_private_key_from_file(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key_file)<span class="question-mark">?</span>;
+		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
 		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_url)<span class="question-mark">?</span>;
 
 		run_init_governance(
@@ -153,9 +150,8 @@
 	<span class="doccomment">/// Governance authority hash to be set.
 	</span><span class="attr">#[arg(long, short = <span class="string">'g'</span>)]
 	</span>new_governance_authority: MainchainAddressHash,
-	<span class="doccomment">/// Path to the Cardano Payment Key file.
-	</span><span class="attr">#[arg(long, short = <span class="string">'k'</span>)]
-	</span>payment_key_file: String,
+	<span class="attr">#[clap(flatten)]
+	</span>payment_key_file: PaymentFilePath,
 	<span class="doccomment">/// Genesis UTXO of the chain
 	</span><span class="attr">#[arg(long, short = <span class="string">'c'</span>)]
 	</span>genesis_utxo: UtxoId,
@@ -163,7 +159,7 @@
 
 <span class="kw">impl </span>UpdateGovernanceCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
-		<span class="kw">let </span>payment_key = read_private_key_from_file(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key_file)<span class="question-mark">?</span>;
+		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
 		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_url)<span class="question-mark">?</span>;
 
 		run_update_governance(
