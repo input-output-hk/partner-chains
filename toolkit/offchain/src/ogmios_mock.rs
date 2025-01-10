@@ -1,8 +1,11 @@
 use ogmios_client::{
-	query_ledger_state::{ProtocolParametersResponse, QueryLedgerState, QueryUtxoByUtxoId},
+	query_ledger_state::{
+		OgmiosTip, ProtocolParametersResponse, QueryLedgerState, QueryUtxoByUtxoId,
+	},
 	query_network::{QueryNetwork, ShelleyGenesisConfigurationResponse},
 	transactions::{OgmiosEvaluateTransactionResponse, SubmitTransactionResponse, Transactions},
 	types::OgmiosUtxo,
+	OgmiosClientError,
 };
 
 #[derive(Clone, Default, Debug)]
@@ -76,6 +79,10 @@ impl Transactions for MockOgmiosClient {
 }
 
 impl QueryLedgerState for MockOgmiosClient {
+	async fn get_tip(&self) -> Result<OgmiosTip, OgmiosClientError> {
+		unimplemented!()
+	}
+
 	async fn era_summaries(
 		&self,
 	) -> Result<Vec<ogmios_client::query_ledger_state::EraSummary>, ogmios_client::OgmiosClientError>

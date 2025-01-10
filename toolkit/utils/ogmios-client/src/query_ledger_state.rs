@@ -8,6 +8,9 @@ use serde::Deserialize;
 
 pub trait QueryLedgerState {
 	#[allow(async_fn_in_trait)]
+	async fn get_tip(&self) -> Result<OgmiosTip, OgmiosClientError>;
+
+	#[allow(async_fn_in_trait)]
 	async fn era_summaries(&self) -> Result<Vec<EraSummary>, OgmiosClientError>;
 
 	#[allow(async_fn_in_trait)]
@@ -36,6 +39,10 @@ pub trait QueryUtxoByUtxoId {
 }
 
 impl<T: OgmiosClient> QueryLedgerState for T {
+	async fn get_tip(&self) -> Result<OgmiosTip, OgmiosClientError> {
+		self.request("queryLedgerState/tip", OgmiosParams::empty_positional()).await
+	}
+
 	async fn era_summaries(&self) -> Result<Vec<EraSummary>, OgmiosClientError> {
 		self.request("queryLedgerState/eraSummaries", OgmiosParams::empty_positional())
 			.await
@@ -136,4 +143,9 @@ pub struct PlutusCostModels {
 	pub plutus_v2: Vec<i128>,
 	#[serde(rename = "plutus:v3")]
 	pub plutus_v3: Vec<i128>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Default)]
+pub struct OgmiosTip {
+	pub slot: u64,
 }
