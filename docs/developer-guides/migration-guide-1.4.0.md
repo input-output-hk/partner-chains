@@ -4,7 +4,7 @@
 - Please read the whole document before attempting to perform any actions.
 - Whenever the guide requires running the `partner-chains-cli` binary, make sure the `pc-contracts-cli`
 of the version specified in the compatibility matrix is present in your active directory. In case of the
-1.4.0 release it should be v7.0.1.
+1.4.0 release it should be v7.0.2.
 - It is recommended to test migration on a testnet environment first.
 
 ## Context
@@ -13,7 +13,7 @@ This guide describes the process of migrating from Partner Chains SDK v1.3.1 to 
 established chain, avoiding a chain reset.
 
 The biggest change in version v1.4.0 which requires special handling is the update to smart contracts
-version v7.0.1, which:
+version v7.0.2, which:
 - introduces a new governance mechanism which needs to be set up
 - removes "sidechain params" as part of the definition of a Partner Chain, replacing them with the
 genesis utxo (which is the utxo burned when establishing a governance)
