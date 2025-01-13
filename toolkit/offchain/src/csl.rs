@@ -373,7 +373,7 @@ pub(crate) trait TransactionBuilderExt {
 		&mut self,
 		script: &PlutusScript,
 		ref_input: &TransactionInput,
-		amount: &BigNum,
+		amount: &Int,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError>;
 
@@ -383,7 +383,12 @@ pub(crate) trait TransactionBuilderExt {
 		ref_input: &TransactionInput,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError> {
-		self.add_mint_script_token_using_reference_script(script, ref_input, &1u64.into(), ex_units)
+		self.add_mint_script_token_using_reference_script(
+			script,
+			ref_input,
+			&Int::new_i32(1),
+			ex_units,
+		)
 	}
 
 	/// Sets fields required by the most of partner-chains smart contract transactions.
@@ -459,7 +464,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 		&mut self,
 		script: &PlutusScript,
 		ref_input: &TransactionInput,
-		amount: &BigNum,
+		amount: &Int,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError> {
 		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
@@ -474,7 +479,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 			&validator_source,
 			&Redeemer::new(&RedeemerTag::new_mint(), &0u32.into(), &unit_plutus_data(), ex_units),
 		);
-		mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new(amount))?;
+		mint_builder.add_asset(&mint_witness, &empty_asset_name(), &amount)?;
 		self.set_mint_builder(&mint_builder);
 		Ok(())
 	}

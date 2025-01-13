@@ -22,9 +22,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Added
 
-* Command `smart-contracts reserve init`
-* Command `smart-contracts reserve create`
-* Command `smart-contracts reserve deposit`
+* Command `smart-contracts reserve init`, `create`, `deposit`, `handover` and `update-settings`
 * Command `smart-contracts governance update`
 * Ogmios client backed by jsonrpsee `WsClient`
 

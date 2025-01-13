@@ -132,6 +132,9 @@ async fn reserve_management_scenario() {
 	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT + DEPOSIT_AMOUNT, &client).await;
 	let _ = run_update_reserve_settings_management(genesis_utxo, &client).await;
 	assert_mutable_settings_eq(genesis_utxo, UPDATED_MUTABLE_SETTINGS, &client).await;
+	run_handover_reserve(genesis_utxo, &client).await.unwrap();
+	assert_reserve_handed_over(genesis_utxo, INITIAL_DEPOSIT_AMOUNT + DEPOSIT_AMOUNT, &client)
+		.await;
 }
 
 #[tokio::test]
@@ -367,6 +370,21 @@ async fn run_deposit_to_reserve<
 	.unwrap();
 }
 
+async fn run_handover_reserve<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> Result<McTxHash, anyhow::Error> {
+	reserve::handover::handover_reserve(
+		genesis_utxo,
+		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		client,
+		&FixedDelayRetries::new(Duration::from_millis(500), 100),
+	)
+	.await
+}
+
 async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
 	genesis_utxo: UtxoId,
 	partnerchain_signature: SidechainSignature,
@@ -480,4 +498,20 @@ async fn get_reserve_utxo<
 				.map(|d| (utxo, d))
 		})
 		.unwrap()
+}
+
+async fn assert_reserve_handed_over<T: QueryLedgerState>(
+	genesis_utxo: UtxoId,
+	amount: u64,
+	client: &T,
+) {
+	let data = scripts_data::get_scripts_data(genesis_utxo, NetworkIdKind::Testnet).unwrap();
+	assert_token_amount_eq(
+		&data.addresses.illiquid_circulation_supply_validator,
+		&REWARDS_TOKEN_POLICY_ID,
+		&AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
+		amount,
+		client,
+	)
+	.await;
 }
