@@ -12,7 +12,7 @@
     system,
     ...
   }: let
-    pcContractsCliVersion = "7.0.1";
+    pcContractsCliVersion = "7.0.2";
     flake-compat = import inputs.flake-compat;
     cardanoPackages = (flake-compat { src = inputs.cardano-node; }).defaultNix.packages.${system};
     dbSyncPackages = (flake-compat { src = inputs.cardano-dbsync; }).defaultNix.packages.${system};
