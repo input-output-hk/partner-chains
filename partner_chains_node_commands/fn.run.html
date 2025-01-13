@@ -5,7 +5,7 @@
 ) -&gt; Result&lt;<a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.unit.html">()</a>&gt;<div class="where">where
     Cli: SubstrateCli,
     Client: ProvideRuntimeApi&lt;Block&gt; + HeaderBackend&lt;Block&gt; + 'static,
-    Client::Api: GetGenesisUtxo&lt;Block&gt; + GetSidechainStatus&lt;Block&gt; + SessionValidatorManagementApi&lt;Block, SessionKeys, CrossChainPublic, AuthoritySelectionInputs, ScEpochNumber&gt; + CandidateValidationApi&lt;Block&gt;,
+    Client::Api: GetGenesisUtxo&lt;Block&gt; + GetSidechainStatus&lt;Block&gt; + SessionValidatorManagementApi&lt;Block, SessionKeys, CrossChainPublic, AuthoritySelectionInputs, <a class="struct" href="../sidechain_domain/struct.ScEpochNumber.html" title="struct sidechain_domain::ScEpochNumber">ScEpochNumber</a>&gt; + CandidateValidationApi&lt;Block&gt;,
     Block: BlockT,
     NumberFor&lt;Block&gt;: <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.u32.html">u32</a>&gt; + <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/convert/trait.Into.html" title="trait core::convert::Into">Into</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.81.0/std/primitive.u32.html">u32</a>&gt;,
     SessionKeys: Decode + <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Sync.html" title="trait core::marker::Sync">Sync</a> + 'static,
