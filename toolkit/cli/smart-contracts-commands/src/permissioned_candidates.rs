@@ -26,12 +26,16 @@ impl UpsertPermissionedCandidatesCmd {
 
 		let mut permissioned_candidates = Vec::new();
 
-		for line in read_to_string(&self.permissioned_candidates_file).expect("Permissioned candidates file with each line representing one candidate").lines() {
+		for line in read_to_string(&self.permissioned_candidates_file)
+			.expect("Permissioned candidates file with each line representing one candidate")
+			.lines()
+		{
 			if line.is_empty() {
-                continue;
-            }
-            let permissioned_candidate = parse_partnerchain_public_keys(line)
-				.map_err(|e| format!("Failed to parse permissioned candidate: '{}', because of {}", line, e))?;
+				continue;
+			}
+			let permissioned_candidate = parse_partnerchain_public_keys(line).map_err(|e| {
+				format!("Failed to parse permissioned candidate: '{}', because of {}", line, e)
+			})?;
 			permissioned_candidates.push(permissioned_candidate);
 		}
 

@@ -473,7 +473,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 		let validator_source = PlutusScriptSource::new_ref_input(
 			&script.csl_script_hash(),
 			ref_input,
-			&Language::new_plutus_v2(),
+			&script.language,
 			script.bytes.len(),
 		);
 		let mint_witness = MintWitness::new_plutus_script(
