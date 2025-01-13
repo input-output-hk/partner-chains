@@ -246,10 +246,16 @@
 <a href="#246" id="246">246</a>
 <a href="#247" id="247">247</a>
 <a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>cardano_serialization_lib::{BigNum, PlutusData, PlutusList};
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 
-<span class="kw">use crate</span>::{DataDecodingError, DecodingResult, VersionedDatum, VersionedGenericDatumShape};
+<span class="kw">use crate</span>::{
+	DataDecodingError, DecodingResult, VersionedDatum, VersionedDatumWithLegacy,
+	VersionedGenericDatumShape,
+};
 
 <span class="attr">#[derive(Clone, Debug, PartialEq)]
 </span><span class="kw">pub enum </span>PermissionedCandidateDatums {
@@ -309,7 +315,7 @@
 	.into()
 }
 
-<span class="kw">impl </span>VersionedDatum <span class="kw">for </span>PermissionedCandidateDatums {
+<span class="kw">impl </span>VersionedDatumWithLegacy <span class="kw">for </span>PermissionedCandidateDatums {
 	<span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>str = <span class="string">"PermissionedCandidateDatums"</span>;
 
 	<span class="doccomment">/// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.

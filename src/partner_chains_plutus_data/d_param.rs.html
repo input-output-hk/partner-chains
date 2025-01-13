@@ -124,7 +124,7 @@
 <a href="#124" id="124">124</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
 	DataDecodingError, DecodingResult, PlutusDataExtensions, VersionedDatum,
-	VersionedGenericDatumShape,
+	VersionedDatumWithLegacy, VersionedGenericDatumShape,
 };
 <span class="kw">use </span>cardano_serialization_lib::{PlutusData, PlutusList};
 
@@ -164,7 +164,7 @@
 	.into()
 }
 
-<span class="kw">impl </span>VersionedDatum <span class="kw">for </span>DParamDatum {
+<span class="kw">impl </span>VersionedDatumWithLegacy <span class="kw">for </span>DParamDatum {
 	<span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>str = <span class="string">"DParamDatum"</span>;
 
 	<span class="kw">fn </span>decode_legacy(data: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, String&gt; {
