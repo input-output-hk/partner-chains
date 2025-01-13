@@ -231,13 +231,21 @@ jobs:
     steps:
       - name: Check if any needed job failed
         run: |
+          # if [[ "${{ needs.build.result }}" != "success" ||
+          #       "${{ needs.local-environment-tests.result }}" != "success" ||
+          #       "${{ needs.devshell-tests.result }}" != "success" ]]; then
+          #   echo "One or more needed jobs failed."
+          #   exit 1
+          # else
+          #   echo "All needed jobs passed."
+          # fi
+
           if [[ "${{ needs.build.result }}" != "success" ||
-                "${{ needs.local-environment-tests.result }}" != "success" ||
-#                "${{ needs.devshell-tests.result }}" != "success" ]]; then
-            echo "One or more needed jobs failed."
+                "${{ needs.local-environment-tests.result }}" != "success" ]]; then
+            echo "Build or local-environment-tests failed."
             exit 1
           else
-            echo "All needed jobs passed."
+            echo "All required jobs passed."
           fi
 
   upload-chain-specs:
