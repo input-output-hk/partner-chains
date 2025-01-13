@@ -1,4 +1,6 @@
-use crate::{PlutusDataExtensions, VersionedDatum, VersionedGenericDatumShape};
+use crate::{
+	PlutusDataExtensions, VersionedDatum, VersionedDatumWithLegacy, VersionedGenericDatumShape,
+};
 use cardano_serialization_lib::*;
 use sidechain_domain::*;
 
@@ -55,7 +57,7 @@ impl TryFrom<PlutusData> for RegisterValidatorDatum {
 	}
 }
 
-impl VersionedDatum for RegisterValidatorDatum {
+impl VersionedDatumWithLegacy for RegisterValidatorDatum {
 	const NAME: &str = "RegisterValidatorDatum";
 
 	fn decode_legacy(data: &PlutusData) -> Result<Self, String> {

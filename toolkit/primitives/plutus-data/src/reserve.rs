@@ -1,4 +1,7 @@
-use crate::{DataDecodingError, DecodingResult, VersionedDatum, VersionedGenericDatumShape};
+use crate::{
+	decoding_error_and_log, DataDecodingError, DecodingResult, VersionedDatum,
+	VersionedGenericDatumShape,
+};
 use cardano_serialization_lib::{BigInt, BigNum, ConstrPlutusData, PlutusData, PlutusList};
 use sidechain_domain::{AssetName, PolicyId, TokenId};
 
@@ -86,15 +89,9 @@ impl TryFrom<PlutusData> for ReserveDatum {
 impl VersionedDatum for ReserveDatum {
 	const NAME: &str = "ReserveDatum";
 
-	fn decode_legacy(_: &PlutusData) -> Result<Self, String> {
-		Err("ReserveDatum supports only versioned format".into())
-	}
-
-	fn decode_versioned(version: u32, datum: &PlutusData, _: &PlutusData) -> Result<Self, String> {
-		match version {
-			0 => decode_v0_reserve_datum(datum).ok_or("Can not parse ReserveDatum".to_string()),
-			_ => Err(format!("Unknown version: {version}")),
-		}
+	fn decode(datum: &PlutusData) -> DecodingResult<Self> {
+		decode_v0_reserve_datum(datum)
+			.ok_or_else(|| decoding_error_and_log(datum, "ReserveDatum", "invalid data"))
 	}
 }
 

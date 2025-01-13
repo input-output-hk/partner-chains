@@ -47,6 +47,16 @@ impl PlutusDataExtensions for cardano_serialization_lib::PlutusData {
 pub(crate) trait VersionedDatum: Sized {
 	const NAME: &str;
 
+	/// Parses versioned plutus data.
+	fn decode(data: &PlutusData) -> DecodingResult<Self>;
+}
+
+/// Trait that provides decoding of verioned generic plutus data with a legacy schema support.
+///
+/// It is assumed that versions 0 and legacy are equivalent.
+pub(crate) trait VersionedDatumWithLegacy: Sized {
+	const NAME: &str;
+
 	/// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.
 	fn decode_legacy(data: &PlutusData) -> Result<Self, String>;
 
@@ -61,25 +71,31 @@ pub(crate) trait VersionedDatum: Sized {
 		const_data: &PlutusData,
 		mut_data: &PlutusData,
 	) -> Result<Self, String>;
+}
 
-	fn plutus_data_version_and_payload(data: &PlutusData) -> Option<(u32, PlutusData, PlutusData)> {
-		let fields = data.as_list().filter(|outer_list| outer_list.len() == 3)?;
-
-		Some((fields.get(2).as_u32()?, fields.get(0), fields.get(1)))
-	}
+impl<T: VersionedDatumWithLegacy> VersionedDatum for T {
+	const NAME: &str = <Self as VersionedDatumWithLegacy>::NAME;
 
 	fn decode(data: &PlutusData) -> DecodingResult<Self> {
-		(match Self::plutus_data_version_and_payload(data) {
+		(match plutus_data_version_and_payload(data) {
 			None => Self::decode_legacy(data),
 			Some((version, const_payload, mut_payload)) => {
 				Self::decode_versioned(version, &const_payload, &mut_payload)
 			},
 		})
-		.map_err(|msg| {
-			log::error!("Could not decode {data:?} to {}: {msg}", Self::NAME);
-			DataDecodingError { datum: data.clone(), to: Self::NAME.to_string(), msg }
-		})
+		.map_err(|msg| decoding_error_and_log(data, Self::NAME, &msg))
 	}
+}
+
+fn plutus_data_version_and_payload(data: &PlutusData) -> Option<(u32, PlutusData, PlutusData)> {
+	let fields = data.as_list().filter(|outer_list| outer_list.len() == 3)?;
+
+	Some((fields.get(2).as_u32()?, fields.get(0), fields.get(1)))
+}
+
+fn decoding_error_and_log(data: &PlutusData, to: &str, msg: &str) -> DataDecodingError {
+	log::error!("Could not decode {data:?} to {to}: {msg}");
+	DataDecodingError { datum: data.clone(), to: to.to_string(), msg: msg.to_string() }
 }
 
 /// This struct has the same shape as `VersionedGenericDatum` from smart-contracts.
