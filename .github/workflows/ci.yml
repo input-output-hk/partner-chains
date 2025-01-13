@@ -193,36 +193,36 @@ jobs:
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
-  #devshell-tests:
-  #  needs: build
-  #  strategy:
-  #    matrix:
-  #      os: [nixos, macos]
-  #  runs-on:
-  #    - self-hosted
-  #    - ${{ matrix.os }}
-  #  steps:
-  #    - name: Checkout code
-  #      uses: actions/checkout@v4
-  #      with:
-  #        fetch-depth: 0
-  #        ref: ${{ github.event.pull_request.head.sha || github.sha }}
-  #    - name: Acquire AWS credentials
-  #      uses: aws-actions/configure-aws-credentials@v4
-  #      with:
-  #        role-to-assume: ${{ secrets.AWS_ROLE_ARN_ }}
-  #        aws-region: ${{ env.AWS_REGION }}
-  #    - name: Add signing key for nix
-  #      run: echo "${{ secrets.NIX_SIGNING_KEY }}" > "${{ runner.temp }}/nix-key"
-  #    - name: Run nixci to build/test all outputs
-  #      run: |
-  #        nix run github:srid/nixci -- -v build -- --fallback > /tmp/outputs
-  #    - name: Copy nix scopes to nix cache
-  #      run: |
-  #        nix-store --stdin -q --deriver < /tmp/outputs | nix-store --stdin -qR --include-outputs \
-  #        | nix copy --stdin --to \
-  #        "s3://cache.sc.iog.io?secret-key=${{ runner.temp }}/nix-key&region=$AWS_DEFAULT_REGION" \
-  #        && rm /tmp/outputs
+  devshell-tests:
+    needs: build
+    strategy:
+      matrix:
+        os: [nixos, macos]
+    runs-on:
+      - self-hosted
+      - ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Acquire AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_ }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Add signing key for nix
+        run: echo "${{ secrets.NIX_SIGNING_KEY }}" > "${{ runner.temp }}/nix-key"
+      - name: Run nixci to build/test all outputs
+        run: |
+          nix run github:srid/nixci -- -v build -- --fallback > /tmp/outputs
+      - name: Copy nix scopes to nix cache
+        run: |
+          nix-store --stdin -q --deriver < /tmp/outputs | nix-store --stdin -qR --include-outputs \
+          | nix copy --stdin --to \
+          "s3://cache.sc.iog.io?secret-key=${{ runner.temp }}/nix-key&region=$AWS_DEFAULT_REGION" \
+          && rm /tmp/outputs
 
   pre-merge-checks-complete:
     if: ${{ always() && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)) }}
