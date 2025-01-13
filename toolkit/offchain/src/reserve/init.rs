@@ -17,8 +17,8 @@
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
-		get_builder_config, get_validator_budgets, zero_ex_units, OgmiosUtxoExt,
-		TransactionBuilderExt, TransactionContext,
+		get_builder_config, get_validator_budgets, zero_ex_units, TransactionBuilderExt,
+		TransactionContext,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	plutus_script::PlutusScript,
@@ -26,7 +26,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	AssetName, Assets, BigNum, ConstrPlutusData, DataCost, ExUnits, Int, JsError, LanguageKind,
+	AssetName, Assets, BigNum, ConstrPlutusData, DataCost, ExUnits, Int, JsError, Language,
 	MinOutputAdaCalculator, MintBuilder, MintWitness, MultiAsset, PlutusData, PlutusList,
 	PlutusScriptSource, Redeemer, RedeemerTag, ScriptHash, ScriptRef, Transaction,
 	TransactionBuilder, TransactionOutputBuilder,
@@ -35,6 +35,7 @@ use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::{OgmiosEvaluateTransactionResponse, Transactions},
+	types::OgmiosUtxo,
 };
 use raw_scripts::{
 	ScriptId, ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, RESERVE_AUTH_POLICY, RESERVE_VALIDATOR,
@@ -84,7 +85,7 @@ struct ScriptData {
 
 impl ScriptData {
 	fn new(name: &str, raw_bytes: Vec<u8>, id: ScriptId) -> Self {
-		let plutus_script = PlutusScript::from_wrapped_cbor(&raw_bytes, LanguageKind::PlutusV2)
+		let plutus_script = PlutusScript::from_wrapped_cbor(&raw_bytes, Language::new_plutus_v2())
 			.expect("Plutus script should be valid");
 		Self { name: name.to_string(), plutus_script, id: id as u32 }
 	}
@@ -296,25 +297,21 @@ pub(crate) async fn find_script_utxo<
 	version_oracle: &VersionOracleData,
 	ctx: &TransactionContext,
 	client: &T,
-) -> Result<Option<UtxoId>, anyhow::Error> {
+) -> Result<Option<OgmiosUtxo>, anyhow::Error> {
 	let validator_address = version_oracle.validator.address(ctx.network).to_bech32(None)?;
 	let validator_utxos = client.query_utxos(&[validator_address]).await?;
 	// Decode datum from utxos and check if it contains script id
-	Ok(validator_utxos
-		.into_iter()
-		.find(|utxo| {
-			utxo.clone()
-				.datum
-				.map(|d| d.bytes)
-				.and_then(|bytes| PlutusData::from_bytes(bytes).ok())
-				.and_then(decode_version_oracle_validator_datum)
-				.filter(|datum| {
-					datum.script_id == script_id
-						&& datum.version_oracle_policy_id == version_oracle.policy.script_hash()
-				})
-				.is_some()
-		})
-		.map(|utxo| utxo.to_domain()))
+	Ok(validator_utxos.into_iter().find(|utxo| {
+		utxo.clone()
+			.datum
+			.map(|d| d.bytes)
+			.and_then(|bytes| PlutusData::from_bytes(bytes).ok())
+			.and_then(decode_version_oracle_validator_datum)
+			.is_some_and(|datum| {
+				datum.script_id == script_id
+					&& datum.version_oracle_policy_id == version_oracle.policy.script_hash()
+			})
+	}))
 }
 
 pub(crate) struct VersionOracleValidatorDatum {
@@ -342,7 +339,7 @@ mod tests {
 		test_values::{make_utxo, payment_addr, payment_key, protocol_parameters},
 	};
 	use cardano_serialization_lib::{
-		AssetName, BigNum, ConstrPlutusData, ExUnits, Int, LanguageKind, NetworkIdKind, PlutusData,
+		AssetName, BigNum, ConstrPlutusData, ExUnits, Int, Language, NetworkIdKind, PlutusData,
 		PlutusList, RedeemerTag, ScriptHash, Transaction,
 	};
 	use hex_literal::hex;
@@ -506,7 +503,7 @@ mod tests {
 	}
 
 	fn test_governance_script() -> PlutusScript {
-		PlutusScript { bytes: hex!("112233").to_vec(), language: LanguageKind::PlutusV2 }
+		PlutusScript { bytes: hex!("112233").to_vec(), language: Language::new_plutus_v2() }
 	}
 
 	fn test_governance_input() -> OgmiosUtxo {

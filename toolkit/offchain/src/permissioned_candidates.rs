@@ -10,8 +10,8 @@ use std::collections::HashMap;
 
 use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::csl::{
-	convert_value, empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units,
-	OgmiosUtxoExt, TransactionBuilderExt, TransactionContext,
+	empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, OgmiosUtxoExt,
+	OgmiosValueExt, TransactionBuilderExt, TransactionContext,
 };
 use crate::init_governance::{self, GovernanceData};
 use crate::plutus_script::PlutusScript;
@@ -338,7 +338,7 @@ fn update_permissioned_candidates_tx(
 	{
 		let mut inputs = TxInputsBuilder::new();
 		let input = script_utxo.to_csl_tx_input();
-		let amount = convert_value(&script_utxo.value)?;
+		let amount = &script_utxo.value.to_csl()?;
 		let witness = PlutusWitness::new_without_datum(
 			&validator.to_csl(),
 			&Redeemer::new(
@@ -381,7 +381,7 @@ mod tests {
 		plutus_script::PlutusScript,
 		test_values::*,
 	};
-	use cardano_serialization_lib::{Address, ExUnits, Int, NetworkIdKind, PlutusData};
+	use cardano_serialization_lib::{Address, ExUnits, Int, Language, NetworkIdKind, PlutusData};
 	use hex_literal::hex;
 	use ogmios_client::types::{Asset as OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	use partner_chains_plutus_data::permissioned_candidates::permissioned_candidates_to_plutus_data;
@@ -556,10 +556,7 @@ mod tests {
 	}
 
 	fn test_goveranance_policy() -> PlutusScript {
-		PlutusScript {
-			bytes: hex!("88991122").into(),
-			language: cardano_serialization_lib::LanguageKind::PlutusV2,
-		}
+		PlutusScript { bytes: hex!("88991122").into(), language: Language::new_plutus_v2() }
 	}
 
 	fn test_goveranance_utxo() -> OgmiosUtxo {

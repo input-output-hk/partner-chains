@@ -1,5 +1,5 @@
 use crate::plutus_script::PlutusScript;
-use cardano_serialization_lib::{Address, LanguageKind, PlutusData, PrivateKey};
+use cardano_serialization_lib::{Address, Language, PlutusData, PrivateKey};
 use hex_literal::hex;
 use ogmios_client::{
 	query_ledger_state::{
@@ -30,12 +30,15 @@ pub(crate) fn mainchain_pub_key() -> MainchainPublicKey {
 pub(crate) fn test_validator() -> PlutusScript {
 	PlutusScript {
 		bytes: hex!("4d4c01000022223212001375a009").to_vec(),
-		language: LanguageKind::PlutusV2,
+		language: Language::new_plutus_v2(),
 	}
 }
 
 pub(crate) fn test_policy() -> PlutusScript {
-	PlutusScript { bytes: hex!("49480100002221200101").to_vec(), language: LanguageKind::PlutusV2 }
+	PlutusScript {
+		bytes: hex!("49480100002221200101").to_vec(),
+		language: Language::new_plutus_v2(),
+	}
 }
 
 pub(crate) fn test_plutus_data() -> PlutusData {

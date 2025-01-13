@@ -19,7 +19,7 @@ use super::ReserveData;
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
-		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units,
+		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, OgmiosUtxoExt,
 		TransactionBuilderExt, TransactionContext, UtxoIdExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
@@ -133,7 +133,7 @@ fn create_reserve_tx(
 
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&reserve.scripts.auth_policy,
-		&reserve.auth_policy_version_utxo.to_csl(),
+		&reserve.auth_policy_version_utxo.to_csl_tx_input(),
 		&reserve_auth_script_cost,
 	)?;
 	tx_builder.add_output(&reserve_validator_output(parameters, &reserve.scripts, ctx)?)?;
@@ -145,7 +145,7 @@ fn create_reserve_tx(
 		&governance_script_cost,
 	)?;
 	tx_builder.add_script_reference_input(
-		&reserve.validator_version_utxo.to_csl(),
+		&reserve.validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.validator.bytes.len(),
 	);
 	tx_builder.add_required_signer(&ctx.payment_key_hash());
