@@ -226,27 +226,18 @@ jobs:
 
   pre-merge-checks-complete:
     if: ${{ always() && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)) }}
-#    needs: [build, local-environment-tests, devshell-tests]
-    needs: [build, local-environment-tests]
+    needs: [build, local-environment-tests, devshell-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
         run: |
-          # if [[ "${{ needs.build.result }}" != "success" ||
-          #       "${{ needs.local-environment-tests.result }}" != "success" ||
-          #       "${{ needs.devshell-tests.result }}" != "success" ]]; then
-          #   echo "One or more needed jobs failed."
-          #   exit 1
-          # else
-          #   echo "All needed jobs passed."
-          # fi
-
           if [[ "${{ needs.build.result }}" != "success" ||
-                "${{ needs.local-environment-tests.result }}" != "success" ]]; then
-            echo "Build or local-environment-tests failed."
+                "${{ needs.local-environment-tests.result }}" != "success" ||
+                "${{ needs.devshell-tests.result }}" != "success" ]]; then
+            echo "One or more needed jobs failed."
             exit 1
           else
-            echo "All required jobs passed."
+            echo "All needed jobs passed."
           fi
 
   upload-chain-specs:
