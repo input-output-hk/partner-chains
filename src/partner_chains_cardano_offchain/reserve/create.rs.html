@@ -237,7 +237,7 @@
 <span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
 	csl::{
-		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units,
+		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, OgmiosUtxoExt,
 		TransactionBuilderExt, TransactionContext, UtxoIdExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
@@ -351,7 +351,7 @@
 
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		<span class="kw-2">&amp;</span>reserve.scripts.auth_policy,
-		<span class="kw-2">&amp;</span>reserve.auth_policy_version_utxo.to_csl(),
+		<span class="kw-2">&amp;</span>reserve.auth_policy_version_utxo.to_csl_tx_input(),
 		<span class="kw-2">&amp;</span>reserve_auth_script_cost,
 	)<span class="question-mark">?</span>;
 	tx_builder.add_output(<span class="kw-2">&amp;</span>reserve_validator_output(parameters, <span class="kw-2">&amp;</span>reserve.scripts, ctx)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
@@ -363,7 +363,7 @@
 		<span class="kw-2">&amp;</span>governance_script_cost,
 	)<span class="question-mark">?</span>;
 	tx_builder.add_script_reference_input(
-		<span class="kw-2">&amp;</span>reserve.validator_version_utxo.to_csl(),
+		<span class="kw-2">&amp;</span>reserve.validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.validator.bytes.len(),
 	);
 	tx_builder.add_required_signer(<span class="kw-2">&amp;</span>ctx.payment_key_hash());

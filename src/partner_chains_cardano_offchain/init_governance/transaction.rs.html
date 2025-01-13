@@ -130,7 +130,7 @@
 	ex_units: ExUnits,
 ) -&gt; anyhow::Result&lt;Transaction&gt; {
 	<span class="kw">let </span>multi_sig_policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, LanguageKind::PlutusV2)<span class="question-mark">?
+		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, Language::new_plutus_v2())<span class="question-mark">?
 			</span>.apply_uplc_data(multisig_governance_policy_configuration(governance_authority))<span class="question-mark">?</span>;
 	<span class="kw">let </span>version_oracle = version_oracle(genesis_utxo.to_domain(), tx_context.network)<span class="question-mark">?</span>;
 	<span class="kw">let </span>config = <span class="kw">crate</span>::csl::get_builder_config(tx_context)<span class="question-mark">?</span>;

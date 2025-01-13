@@ -946,7 +946,6 @@
 <a href="#946" id="946">946</a>
 <a href="#947" id="947">947</a>
 <a href="#948" id="948">948</a>
-<a href="#949" id="949">949</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>fraction::{FromPrimitive, Ratio};
@@ -959,19 +958,15 @@
 };
 <span class="kw">use </span>sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, NetworkType, UtxoId};
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>plutus_script_hash(script_bytes: <span class="kw-2">&amp;</span>[u8], language: LanguageKind) -&gt; [u8; <span class="number">28</span>] {
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>plutus_script_hash(script_bytes: <span class="kw-2">&amp;</span>[u8], language: Language) -&gt; [u8; <span class="number">28</span>] {
 	<span class="comment">// Before hashing the script, we need to prepend with byte denoting the language.
-	</span><span class="kw">let </span><span class="kw-2">mut </span>buf: Vec&lt;u8&gt; = <span class="macro">vec!</span>[language_kind_to_u8(language)];
+	</span><span class="kw">let </span><span class="kw-2">mut </span>buf: Vec&lt;u8&gt; = <span class="macro">vec!</span>[language_to_u8(language)];
 	buf.extend(script_bytes);
 	sidechain_domain::crypto::blake2b(buf.as_slice())
 }
 
 <span class="doccomment">/// Builds an CSL `Address` for plutus script from the data obtained from smart contracts.
-</span><span class="kw">pub fn </span>script_address(
-	script_bytes: <span class="kw-2">&amp;</span>[u8],
-	network: NetworkIdKind,
-	language: LanguageKind,
-) -&gt; Address {
+</span><span class="kw">pub fn </span>script_address(script_bytes: <span class="kw-2">&amp;</span>[u8], network: NetworkIdKind, language: Language) -&gt; Address {
 	<span class="kw">let </span>script_hash = plutus_script_hash(script_bytes, language);
 	EnterpriseAddress::new(
 		network_id_kind_to_u8(network),
@@ -1013,8 +1008,8 @@
 	}
 }
 
-<span class="kw">fn </span>language_kind_to_u8(language: LanguageKind) -&gt; u8 {
-	<span class="kw">match </span>language {
+<span class="kw">fn </span>language_to_u8(language: Language) -&gt; u8 {
+	<span class="kw">match </span>language.kind() {
 		LanguageKind::PlutusV1 =&gt; <span class="number">1</span>,
 		LanguageKind::PlutusV2 =&gt; <span class="number">2</span>,
 		LanguageKind::PlutusV3 =&gt; <span class="number">3</span>,
@@ -1029,8 +1024,8 @@
 	<span class="kw">let </span>protocol_parameters = <span class="kw-2">&amp;</span>context.protocol_parameters;
 	TransactionBuilderConfigBuilder::new()
 		.fee_algo(<span class="kw-2">&amp;</span>linear_fee(protocol_parameters))
-		.pool_deposit(<span class="kw-2">&amp;</span>convert_value(<span class="kw-2">&amp;</span>protocol_parameters.stake_pool_deposit)<span class="question-mark">?</span>.coin())
-		.key_deposit(<span class="kw-2">&amp;</span>convert_value(<span class="kw-2">&amp;</span>protocol_parameters.stake_credential_deposit)<span class="question-mark">?</span>.coin())
+		.pool_deposit(<span class="kw-2">&amp;</span>protocol_parameters.stake_pool_deposit.to_csl()<span class="question-mark">?</span>.coin())
+		.key_deposit(<span class="kw-2">&amp;</span>protocol_parameters.stake_credential_deposit.to_csl()<span class="question-mark">?</span>.coin())
 		.max_value_size(protocol_parameters.max_value_size.bytes)
 		.max_tx_size(protocol_parameters.max_transaction_size.bytes)
 		.ex_unit_prices(<span class="kw-2">&amp;</span>ExUnitPrices::new(
@@ -1053,33 +1048,39 @@
 	UnitInterval::new(<span class="kw-2">&amp;</span>(<span class="kw-2">*</span>ratio.numer()).into(), <span class="kw-2">&amp;</span>(<span class="kw-2">*</span>ratio.denom()).into())
 }
 
-<span class="doccomment">/// Coverts ogmios value to CSL value.
-/// It could fail if the input contains negative values, for example ogmios values representing burn.
-</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>convert_value(value: <span class="kw-2">&amp;</span>OgmiosValue) -&gt; <span class="prelude-ty">Result</span>&lt;Value, JsError&gt; {
-	<span class="kw">if </span>!value.native_tokens.is_empty() {
-		<span class="kw">let </span><span class="kw-2">mut </span>multiasset = MultiAsset::new();
-		<span class="kw">for </span>(policy_id, assets) <span class="kw">in </span>value.native_tokens.iter() {
-			<span class="kw">let </span><span class="kw-2">mut </span>csl_assets = Assets::new();
-			<span class="kw">for </span>asset <span class="kw">in </span>assets.iter() {
-				<span class="kw">let </span>amount: u64 = asset.amount.try_into().map_err(|<span class="kw">_</span>| {
-					JsError::from_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-						<span class="string">"Could not convert Ogmios UTOX value, asset amount {} too large"</span>,
-						asset.amount,
-					))
-				})<span class="question-mark">?</span>;
-				<span class="kw">let </span>asset_name = AssetName::new(asset.name.clone()).map_err(|e| {
-					JsError::from_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-						<span class="string">"Could not convert Ogmios UTXO value, asset name is invalid: '{}'"</span>,
-						e
-					))
-				})<span class="question-mark">?</span>;
-				csl_assets.insert(<span class="kw-2">&amp;</span>asset_name, <span class="kw-2">&amp;</span>amount.into());
+<span class="kw">pub trait </span>OgmiosValueExt {
+	<span class="kw">fn </span>to_csl(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Value, JsError&gt;;
+}
+
+<span class="kw">impl </span>OgmiosValueExt <span class="kw">for </span>OgmiosValue {
+	<span class="doccomment">/// Coverts ogmios value to CSL value.
+	/// It could fail if the input contains negative values, for example ogmios values representing burn.
+	</span><span class="kw">fn </span>to_csl(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Value, JsError&gt; {
+		<span class="kw">if </span>!<span class="self">self</span>.native_tokens.is_empty() {
+			<span class="kw">let </span><span class="kw-2">mut </span>multiasset = MultiAsset::new();
+			<span class="kw">for </span>(policy_id, assets) <span class="kw">in </span><span class="self">self</span>.native_tokens.iter() {
+				<span class="kw">let </span><span class="kw-2">mut </span>csl_assets = Assets::new();
+				<span class="kw">for </span>asset <span class="kw">in </span>assets.iter() {
+					<span class="kw">let </span>amount: u64 = asset.amount.try_into().map_err(|<span class="kw">_</span>| {
+						JsError::from_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
+							<span class="string">"Could not convert Ogmios UTOX value, asset amount {} too large"</span>,
+							asset.amount,
+						))
+					})<span class="question-mark">?</span>;
+					<span class="kw">let </span>asset_name = AssetName::new(asset.name.clone()).map_err(|e| {
+						JsError::from_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
+							<span class="string">"Could not convert Ogmios UTXO value, asset name is invalid: '{}'"</span>,
+							e
+						))
+					})<span class="question-mark">?</span>;
+					csl_assets.insert(<span class="kw-2">&amp;</span>asset_name, <span class="kw-2">&amp;</span>amount.into());
+				}
+				multiasset.insert(<span class="kw-2">&amp;</span>ScriptHash::from(<span class="kw-2">*</span>policy_id), <span class="kw-2">&amp;</span>csl_assets);
 			}
-			multiasset.insert(<span class="kw-2">&amp;</span>ScriptHash::from(<span class="kw-2">*</span>policy_id), <span class="kw-2">&amp;</span>csl_assets);
+			<span class="prelude-val">Ok</span>(Value::new_with_assets(<span class="kw-2">&amp;</span><span class="self">self</span>.lovelace.into(), <span class="kw-2">&amp;</span>multiasset))
+		} <span class="kw">else </span>{
+			<span class="prelude-val">Ok</span>(Value::new(<span class="kw-2">&amp;</span><span class="self">self</span>.lovelace.into()))
 		}
-		<span class="prelude-val">Ok</span>(Value::new_with_assets(<span class="kw-2">&amp;</span>value.lovelace.into(), <span class="kw-2">&amp;</span>multiasset))
-	} <span class="kw">else </span>{
-		<span class="prelude-val">Ok</span>(Value::new(<span class="kw-2">&amp;</span>value.lovelace.into()))
 	}
 }
 
@@ -1179,7 +1180,7 @@
 			<span class="kw-2">&amp;</span>Address::from_bech32(<span class="kw-2">&amp;</span><span class="self">self</span>.address).map_err(|e| {
 				JsError::from_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"Couldn't convert address from ogmios: '{}'"</span>, e))
 			})<span class="question-mark">?</span>,
-			<span class="kw-2">&amp;</span>convert_value(<span class="kw-2">&amp;</span><span class="self">self</span>.value)<span class="question-mark">?</span>,
+			<span class="kw-2">&amp;</span><span class="self">self</span>.value.to_csl()<span class="question-mark">?</span>,
 		))
 	}
 
@@ -1356,7 +1357,7 @@
 			collateral_builder.add_regular_input(
 				<span class="kw-2">&amp;</span>key_hash_address(<span class="kw-2">&amp;</span>ctx.payment_key_hash(), ctx.network),
 				<span class="kw-2">&amp;</span>utxo.to_csl_tx_input(),
-				<span class="kw-2">&amp;</span>convert_value(<span class="kw-2">&amp;</span>utxo.value)<span class="question-mark">?</span>,
+				<span class="kw-2">&amp;</span>utxo.value.to_csl()<span class="question-mark">?</span>,
 			)<span class="question-mark">?</span>;
 		}
 		<span class="self">self</span>.set_collateral(<span class="kw-2">&amp;</span>collateral_builder);
@@ -1518,18 +1519,18 @@
 		ex_units: <span class="kw-2">&amp;</span>ExUnits,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt; {
 		<span class="kw">let </span>input = utxo.to_csl_tx_input();
-		<span class="kw">let </span>amount = convert_value(<span class="kw-2">&amp;</span>utxo.value)<span class="question-mark">?</span>;
+		<span class="kw">let </span>amount = <span class="kw-2">&amp;</span>utxo.value.to_csl()<span class="question-mark">?</span>;
 		<span class="kw">let </span>witness = PlutusWitness::new_without_datum(
 			<span class="kw-2">&amp;</span>script.to_csl(),
 			<span class="kw-2">&amp;</span>Redeemer::new(
 				<span class="kw-2">&amp;</span>RedeemerTag::new_spend(),
 				<span class="comment">// CSL will set redeemer index for the index of script input after sorting transaction inputs
 				</span><span class="kw-2">&amp;</span><span class="number">0u32</span>.into(),
-				<span class="kw-2">&amp;</span>data,
+				data,
 				ex_units,
 			),
 		);
-		<span class="self">self</span>.add_plutus_script_input(<span class="kw-2">&amp;</span>witness, <span class="kw-2">&amp;</span>input, <span class="kw-2">&amp;</span>amount);
+		<span class="self">self</span>.add_plutus_script_input(<span class="kw-2">&amp;</span>witness, <span class="kw-2">&amp;</span>input, amount);
 		<span class="prelude-val">Ok</span>(())
 	}
 
@@ -1539,7 +1540,7 @@
 		key: <span class="kw-2">&amp;</span>Ed25519KeyHash,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt; {
 		<span class="kw">for </span>utxo <span class="kw">in </span>utxos.iter() {
-			<span class="self">self</span>.add_key_input(key, <span class="kw-2">&amp;</span>utxo.to_csl_tx_input(), <span class="kw-2">&amp;</span>convert_value(<span class="kw-2">&amp;</span>utxo.value)<span class="question-mark">?</span>);
+			<span class="self">self</span>.add_key_input(key, <span class="kw-2">&amp;</span>utxo.to_csl_tx_input(), <span class="kw-2">&amp;</span>utxo.value.to_csl()<span class="question-mark">?</span>);
 		}
 		<span class="prelude-val">Ok</span>(())
 	}
@@ -1556,7 +1557,7 @@
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 	<span class="kw">use </span><span class="kw">crate</span>::test_values::protocol_parameters;
-	<span class="kw">use </span>cardano_serialization_lib::{AssetName, Language, LanguageKind::PlutusV2, NetworkIdKind};
+	<span class="kw">use </span>cardano_serialization_lib::{AssetName, Language, NetworkIdKind};
 	<span class="kw">use </span>hex_literal::hex;
 	<span class="kw">use </span>ogmios_client::{
 		transactions::{OgmiosBudget, OgmiosValidatorIndex},
@@ -1568,7 +1569,7 @@
 	</span><span class="kw">fn </span>candidates_script_address_test() {
 		<span class="kw">let </span>address = PlutusScript::from_cbor(
 			<span class="kw-2">&amp;</span><span class="kw">crate</span>::plutus_script::tests::CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS,
-			PlutusV2,
+			Language::new_plutus_v2(),
 		)
 		.address(NetworkIdKind::Testnet);
 		<span class="macro">assert_eq!</span>(
@@ -1607,7 +1608,7 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>convert_value_without_multi_asset_test() {
 		<span class="kw">let </span>ogmios_value = OgmiosValue::new_lovelace(<span class="number">1234567</span>);
-		<span class="kw">let </span>value = <span class="kw">super</span>::convert_value(<span class="kw-2">&amp;</span>ogmios_value).unwrap();
+		<span class="kw">let </span>value = <span class="kw-2">&amp;</span>ogmios_value.to_csl().unwrap();
 		<span class="macro">assert_eq!</span>(value.coin(), <span class="number">1234567u64</span>.into());
 		<span class="macro">assert_eq!</span>(value.multiasset(), <span class="prelude-val">None</span>);
 	}
@@ -1629,7 +1630,7 @@
 			.into_iter()
 			.collect(),
 		};
-		<span class="kw">let </span>value = <span class="kw">super</span>::convert_value(<span class="kw-2">&amp;</span>ogmios_value).unwrap();
+		<span class="kw">let </span>value = <span class="kw-2">&amp;</span>ogmios_value.to_csl().unwrap();
 		<span class="macro">assert_eq!</span>(value.coin(), <span class="number">1234567u64</span>.into());
 		<span class="kw">let </span>multiasset = value.multiasset().unwrap();
 		<span class="macro">assert_eq!</span>(
@@ -1792,10 +1793,7 @@
 		fee_is_less_than_one_and_half_ada(<span class="kw-2">&amp;</span>tx);
 	}
 
-	<span class="kw">fn </span>used_inputs_lovelace_equals_outputs_and_fee(
-		tx: <span class="kw-2">&amp;</span>Transaction,
-		payment_utxos: <span class="kw-2">&amp;</span>Vec&lt;OgmiosUtxo&gt;,
-	) {
+	<span class="kw">fn </span>used_inputs_lovelace_equals_outputs_and_fee(tx: <span class="kw-2">&amp;</span>Transaction, payment_utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo]) {
 		<span class="kw">let </span>used_inputs: Vec&lt;OgmiosUtxo&gt; = match_inputs(<span class="kw-2">&amp;</span>tx.body().inputs(), payment_utxos);
 		<span class="kw">let </span>used_inputs_value: u64 = sum_lovelace(<span class="kw-2">&amp;</span>used_inputs);
 		<span class="kw">let </span>outputs_lovelace_sum: u64 = tx
@@ -1854,13 +1852,13 @@
 	<span class="macro">proptest!</span> {
 		<span class="attr">#[test]
 		</span><span class="kw">fn </span>balance_tx_with_minted_token(payment_utxos <span class="kw">in </span>arb_payment_utxos(<span class="number">10</span>)
-			.prop_filter(<span class="string">"Inputs total lovelace too low"</span>, |utxos| sum_lovelace(<span class="kw-2">&amp;</span>utxos) &gt; <span class="number">4000000</span>)) {
+			.prop_filter(<span class="string">"Inputs total lovelace too low"</span>, |utxos| sum_lovelace(utxos) &gt; <span class="number">4000000</span>)) {
 			multi_asset_transaction_balancing_test(payment_utxos)
 		}
 
 		<span class="attr">#[test]
 		</span><span class="kw">fn </span>balance_tx_with_ada_only_token(payment_utxos <span class="kw">in </span>arb_payment_utxos(<span class="number">10</span>)
-			.prop_filter(<span class="string">"Inputs total lovelace too low"</span>, |utxos| sum_lovelace(<span class="kw-2">&amp;</span>utxos) &gt; <span class="number">3000000</span>)) {
+			.prop_filter(<span class="string">"Inputs total lovelace too low"</span>, |utxos| sum_lovelace(utxos) &gt; <span class="number">3000000</span>)) {
 			ada_only_transaction_balancing_test(payment_utxos)
 		}
 	}

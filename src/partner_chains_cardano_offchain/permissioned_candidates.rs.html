@@ -630,9 +630,6 @@
 <a href="#630" id="630">630</a>
 <a href="#631" id="631">631</a>
 <a href="#632" id="632">632</a>
-<a href="#633" id="633">633</a>
-<a href="#634" id="634">634</a>
-<a href="#635" id="635">635</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Permissioned candidates are stored on chain in an UTXO at the Permissioned Candidates Validator address.
 //! There should be at most one UTXO at the validator address and it should contain the permissioned candidates list.
@@ -645,8 +642,8 @@
 
 <span class="kw">use </span><span class="kw">crate</span>::await_tx::{AwaitTx, FixedDelayRetries};
 <span class="kw">use </span><span class="kw">crate</span>::csl::{
-	convert_value, empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units,
-	OgmiosUtxoExt, TransactionBuilderExt, TransactionContext,
+	empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, OgmiosUtxoExt,
+	OgmiosValueExt, TransactionBuilderExt, TransactionContext,
 };
 <span class="kw">use </span><span class="kw">crate</span>::init_governance::{<span class="self">self</span>, GovernanceData};
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
@@ -973,7 +970,7 @@
 	</span>{
 		<span class="kw">let </span><span class="kw-2">mut </span>inputs = TxInputsBuilder::new();
 		<span class="kw">let </span>input = script_utxo.to_csl_tx_input();
-		<span class="kw">let </span>amount = convert_value(<span class="kw-2">&amp;</span>script_utxo.value)<span class="question-mark">?</span>;
+		<span class="kw">let </span>amount = <span class="kw-2">&amp;</span>script_utxo.value.to_csl()<span class="question-mark">?</span>;
 		<span class="kw">let </span>witness = PlutusWitness::new_without_datum(
 			<span class="kw-2">&amp;</span>validator.to_csl(),
 			<span class="kw-2">&amp;</span>Redeemer::new(
@@ -1016,7 +1013,7 @@
 		plutus_script::PlutusScript,
 		test_values::<span class="kw-2">*</span>,
 	};
-	<span class="kw">use </span>cardano_serialization_lib::{Address, ExUnits, Int, NetworkIdKind, PlutusData};
+	<span class="kw">use </span>cardano_serialization_lib::{Address, ExUnits, Int, Language, NetworkIdKind, PlutusData};
 	<span class="kw">use </span>hex_literal::hex;
 	<span class="kw">use </span>ogmios_client::types::{Asset <span class="kw">as </span>OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	<span class="kw">use </span>partner_chains_plutus_data::permissioned_candidates::permissioned_candidates_to_plutus_data;
@@ -1191,10 +1188,7 @@
 	}
 
 	<span class="kw">fn </span>test_goveranance_policy() -&gt; PlutusScript {
-		PlutusScript {
-			bytes: <span class="macro">hex!</span>(<span class="string">"88991122"</span>).into(),
-			language: cardano_serialization_lib::LanguageKind::PlutusV2,
-		}
+		PlutusScript { bytes: <span class="macro">hex!</span>(<span class="string">"88991122"</span>).into(), language: Language::new_plutus_v2() }
 	}
 
 	<span class="kw">fn </span>test_goveranance_utxo() -&gt; OgmiosUtxo {

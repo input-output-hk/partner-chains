@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ReserveDatum","ReserveImmutableSettings","ReserveMutableSettings","ReserveStats"]};
+window.SIDEBAR_ITEMS = {"enum":["ReserveRedeemer"],"struct":["ReserveDatum","ReserveImmutableSettings","ReserveMutableSettings","ReserveStats"]};

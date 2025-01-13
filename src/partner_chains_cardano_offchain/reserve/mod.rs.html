@@ -67,6 +67,7 @@
 <a href="#67" id="67">67</a>
 <a href="#68" id="68">68</a>
 <a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! All smart-contracts related to Rewards Token Reserve Management
 
 </span><span class="kw">use crate</span>::{csl::TransactionContext, scripts_data};
@@ -76,6 +77,7 @@
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
+	types::OgmiosUtxo,
 };
 <span class="kw">use </span>sidechain_domain::UtxoId;
 
@@ -85,9 +87,9 @@
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>ReserveData {
 	<span class="kw">pub</span>(<span class="kw">crate</span>) scripts: scripts_data::ReserveScripts,
-	<span class="kw">pub</span>(<span class="kw">crate</span>) auth_policy_version_utxo: UtxoId,
-	<span class="kw">pub</span>(<span class="kw">crate</span>) validator_version_utxo: UtxoId,
-	<span class="kw">pub</span>(<span class="kw">crate</span>) illiquid_circulation_supply_validator_version_utxo: UtxoId,
+	<span class="kw">pub</span>(<span class="kw">crate</span>) auth_policy_version_utxo: OgmiosUtxo,
+	<span class="kw">pub</span>(<span class="kw">crate</span>) validator_version_utxo: OgmiosUtxo,
+	<span class="kw">pub</span>(<span class="kw">crate</span>) illiquid_circulation_supply_validator_version_utxo: OgmiosUtxo,
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_reserve_data&lt;
@@ -126,7 +128,7 @@
 	)
 	.<span class="kw">await</span><span class="question-mark">?
 	</span>.ok_or_else(|| {
-		<span class="macro">anyhow!</span>(<span class="string">"Reserve Validator Version Utxo not found, is the Reserve Token Management initialized?"</span>)
+		<span class="macro">anyhow!</span>(<span class="string">"Illiquid Circulation Supply Validator Version Utxo not found, is the Reserve Token Management initialized?"</span>)
 	})<span class="question-mark">?</span>;
 	<span class="kw">let </span>scripts = scripts_data::reserve_scripts(genesis_utxo, ctx.network)<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(ReserveData {

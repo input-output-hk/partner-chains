@@ -280,8 +280,33 @@
 <a href="#280" id="280">280</a>
 <a href="#281" id="281">281</a>
 <a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{csl::NetworkTypeExt, plutus_script::PlutusScript, OffchainError};
-<span class="kw">use </span>cardano_serialization_lib::{LanguageKind::PlutusV2, NetworkIdKind};
+<span class="kw">use </span>cardano_serialization_lib::{Language, NetworkIdKind};
 <span class="kw">use </span>ogmios_client::query_network::QueryNetwork;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>sidechain_domain::{MainchainAddressHash, PolicyId, UtxoId};
@@ -344,13 +369,15 @@
 ) -&gt; anyhow::Result&lt;ScriptsData&gt; {
 	<span class="kw">let </span>version_oracle_data = version_oracle(genesis_utxo, network)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>committee_candidate_validator =
-		PlutusScript::from_wrapped_cbor(raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(genesis_utxo)<span class="question-mark">?</span>;
+	<span class="kw">let </span>committee_candidate_validator = PlutusScript::from_wrapped_cbor(
+		raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR,
+		Language::new_plutus_v2(),
+	)<span class="question-mark">?
+	</span>.apply_data(genesis_utxo)<span class="question-mark">?</span>;
 	<span class="kw">let </span>(d_parameter_validator, d_parameter_policy) = d_parameter_scripts(genesis_utxo, network)<span class="question-mark">?</span>;
 	<span class="kw">let </span>illiquid_circulation_supply_validator = PlutusScript::from_wrapped_cbor(
 		raw_scripts::ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
-		PlutusV2,
+		Language::new_plutus_v2(),
 	)<span class="question-mark">?
 	</span>.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())<span class="question-mark">?</span>;
 	<span class="kw">let </span>(permissioned_candidates_validator, permissioned_candidates_policy) =
@@ -405,13 +432,17 @@
 	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;VersionOracleData, anyhow::Error&gt; {
-	<span class="kw">let </span>validator =
-		PlutusScript::from_wrapped_cbor(raw_scripts::VERSION_ORACLE_VALIDATOR, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(genesis_utxo)<span class="question-mark">?</span>;
-	<span class="kw">let </span>policy_script =
-		PlutusScript::from_wrapped_cbor(raw_scripts::VERSION_ORACLE_POLICY, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(genesis_utxo)<span class="question-mark">?
-			</span>.apply_uplc_data(validator.address_data(network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+	<span class="kw">let </span>validator = PlutusScript::from_wrapped_cbor(
+		raw_scripts::VERSION_ORACLE_VALIDATOR,
+		Language::new_plutus_v2(),
+	)<span class="question-mark">?
+	</span>.apply_data(genesis_utxo)<span class="question-mark">?</span>;
+	<span class="kw">let </span>policy_script = PlutusScript::from_wrapped_cbor(
+		raw_scripts::VERSION_ORACLE_POLICY,
+		Language::new_plutus_v2(),
+	)<span class="question-mark">?
+	</span>.apply_data(genesis_utxo)<span class="question-mark">?
+	</span>.apply_uplc_data(validator.address_data(network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(VersionOracleData { validator, policy: policy_script })
 }
 
@@ -419,12 +450,17 @@
 	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(PlutusScript, PlutusScript, String), anyhow::Error&gt; {
-	<span class="kw">let </span>validator =
-		PlutusScript::from_wrapped_cbor(raw_scripts::VERSION_ORACLE_VALIDATOR, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(genesis_utxo)<span class="question-mark">?</span>;
-	<span class="kw">let </span>policy = PlutusScript::from_wrapped_cbor(raw_scripts::VERSION_ORACLE_POLICY, PlutusV2)<span class="question-mark">?
-		</span>.apply_data(genesis_utxo)<span class="question-mark">?
-		</span>.apply_uplc_data(validator.address_data(network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+	<span class="kw">let </span>validator = PlutusScript::from_wrapped_cbor(
+		raw_scripts::VERSION_ORACLE_VALIDATOR,
+		Language::new_plutus_v2(),
+	)<span class="question-mark">?
+	</span>.apply_data(genesis_utxo)<span class="question-mark">?</span>;
+	<span class="kw">let </span>policy = PlutusScript::from_wrapped_cbor(
+		raw_scripts::VERSION_ORACLE_POLICY,
+		Language::new_plutus_v2(),
+	)<span class="question-mark">?
+	</span>.apply_data(genesis_utxo)<span class="question-mark">?
+	</span>.apply_uplc_data(validator.address_data(network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 	<span class="kw">let </span>address = validator.address_bech32(network)<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>((validator, policy, address))
 }
@@ -434,15 +470,19 @@
 	network: NetworkIdKind,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(PlutusScript, PlutusScript), anyhow::Error&gt; {
 	<span class="kw">let </span>version_oracle_data = version_oracle(genesis_utxo, network)<span class="question-mark">?</span>;
-	<span class="kw">let </span>d_parameter_validator =
-		PlutusScript::from_wrapped_cbor(raw_scripts::D_PARAMETER_VALIDATOR, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(genesis_utxo)<span class="question-mark">?
-			</span>.apply_data(version_oracle_data.policy_id())<span class="question-mark">?</span>;
-	<span class="kw">let </span>d_parameter_policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::D_PARAMETER_POLICY, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(genesis_utxo)<span class="question-mark">?
-			</span>.apply_data(version_oracle_data.policy_id())<span class="question-mark">?
-			</span>.apply_uplc_data(d_parameter_validator.address_data(network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+	<span class="kw">let </span>d_parameter_validator = PlutusScript::from_wrapped_cbor(
+		raw_scripts::D_PARAMETER_VALIDATOR,
+		Language::new_plutus_v2(),
+	)<span class="question-mark">?
+	</span>.apply_data(genesis_utxo)<span class="question-mark">?
+	</span>.apply_data(version_oracle_data.policy_id())<span class="question-mark">?</span>;
+	<span class="kw">let </span>d_parameter_policy = PlutusScript::from_wrapped_cbor(
+		raw_scripts::D_PARAMETER_POLICY,
+		Language::new_plutus_v2(),
+	)<span class="question-mark">?
+	</span>.apply_data(genesis_utxo)<span class="question-mark">?
+	</span>.apply_data(version_oracle_data.policy_id())<span class="question-mark">?
+	</span>.apply_uplc_data(d_parameter_validator.address_data(network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>((d_parameter_validator, d_parameter_policy))
 }
 
@@ -451,24 +491,30 @@
 	network: NetworkIdKind,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(PlutusScript, PlutusScript), anyhow::Error&gt; {
 	<span class="kw">let </span>version_oracle_data = version_oracle(genesis_utxo, network)<span class="question-mark">?</span>;
-	<span class="kw">let </span>validator =
-		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_VALIDATOR, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(genesis_utxo)<span class="question-mark">?
-			</span>.apply_data(version_oracle_data.policy_id())<span class="question-mark">?</span>;
-	<span class="kw">let </span>policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::PERMISSIONED_CANDIDATES_POLICY, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(genesis_utxo)<span class="question-mark">?
-			</span>.apply_data(version_oracle_data.policy_id())<span class="question-mark">?
-			</span>.apply_uplc_data(validator.address_data(network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+	<span class="kw">let </span>validator = PlutusScript::from_wrapped_cbor(
+		raw_scripts::PERMISSIONED_CANDIDATES_VALIDATOR,
+		Language::new_plutus_v2(),
+	)<span class="question-mark">?
+	</span>.apply_data(genesis_utxo)<span class="question-mark">?
+	</span>.apply_data(version_oracle_data.policy_id())<span class="question-mark">?</span>;
+	<span class="kw">let </span>policy = PlutusScript::from_wrapped_cbor(
+		raw_scripts::PERMISSIONED_CANDIDATES_POLICY,
+		Language::new_plutus_v2(),
+	)<span class="question-mark">?
+	</span>.apply_data(genesis_utxo)<span class="question-mark">?
+	</span>.apply_data(version_oracle_data.policy_id())<span class="question-mark">?
+	</span>.apply_uplc_data(validator.address_data(network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>((validator, policy))
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>registered_candidates_scripts(
 	genesis_utxo: UtxoId,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;PlutusScript, anyhow::Error&gt; {
-	<span class="kw">let </span>validator =
-		PlutusScript::from_wrapped_cbor(raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR, PlutusV2)<span class="question-mark">?
-			</span>.apply_data(genesis_utxo)<span class="question-mark">?</span>;
+	<span class="kw">let </span>validator = PlutusScript::from_wrapped_cbor(
+		raw_scripts::COMMITTEE_CANDIDATE_VALIDATOR,
+		Language::new_plutus_v2(),
+	)<span class="question-mark">?
+	</span>.apply_data(genesis_utxo)<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(validator)
 }
 
@@ -483,13 +529,17 @@
 	network: NetworkIdKind,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;ReserveScripts, anyhow::Error&gt; {
 	<span class="kw">let </span>version_oracle_data = version_oracle(genesis_utxo, network)<span class="question-mark">?</span>;
-	<span class="kw">let </span>validator = PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, PlutusV2)<span class="question-mark">?
-		</span>.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())<span class="question-mark">?</span>;
-	<span class="kw">let </span>auth_policy = PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_AUTH_POLICY, PlutusV2)<span class="question-mark">?
-		</span>.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())<span class="question-mark">?</span>;
+	<span class="kw">let </span>validator =
+		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, Language::new_plutus_v2())<span class="question-mark">?
+			</span>.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())<span class="question-mark">?</span>;
+	<span class="kw">let </span>auth_policy = PlutusScript::from_wrapped_cbor(
+		raw_scripts::RESERVE_AUTH_POLICY,
+		Language::new_plutus_v2(),
+	)<span class="question-mark">?
+	</span>.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())<span class="question-mark">?</span>;
 	<span class="kw">let </span>illiquid_circulation_supply_validator = PlutusScript::from_wrapped_cbor(
 		raw_scripts::ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR,
-		PlutusV2,
+		Language::new_plutus_v2(),
 	)<span class="question-mark">?
 	</span>.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(ReserveScripts { validator, auth_policy, illiquid_circulation_supply_validator })

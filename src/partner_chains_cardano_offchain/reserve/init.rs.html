@@ -543,9 +543,6 @@
 <a href="#543" id="543">543</a>
 <a href="#544" id="544">544</a>
 <a href="#545" id="545">545</a>
-<a href="#546" id="546">546</a>
-<a href="#547" id="547">547</a>
-<a href="#548" id="548">548</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Initialization of the reserve management is execution of three similar transaction to
 //! initialize three scripts: Rerserve Management Validator, Reserve Management Policy and
 //! Illiquid Circulation Supply Validator.
@@ -565,8 +562,8 @@
 </span><span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
 	csl::{
-		get_builder_config, get_validator_budgets, zero_ex_units, OgmiosUtxoExt,
-		TransactionBuilderExt, TransactionContext,
+		get_builder_config, get_validator_budgets, zero_ex_units, TransactionBuilderExt,
+		TransactionContext,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	plutus_script::PlutusScript,
@@ -574,7 +571,7 @@
 };
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
-	AssetName, Assets, BigNum, ConstrPlutusData, DataCost, ExUnits, Int, JsError, LanguageKind,
+	AssetName, Assets, BigNum, ConstrPlutusData, DataCost, ExUnits, Int, JsError, Language,
 	MinOutputAdaCalculator, MintBuilder, MintWitness, MultiAsset, PlutusData, PlutusList,
 	PlutusScriptSource, Redeemer, RedeemerTag, ScriptHash, ScriptRef, Transaction,
 	TransactionBuilder, TransactionOutputBuilder,
@@ -583,6 +580,7 @@
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::{OgmiosEvaluateTransactionResponse, Transactions},
+	types::OgmiosUtxo,
 };
 <span class="kw">use </span>raw_scripts::{
 	ScriptId, ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, RESERVE_AUTH_POLICY, RESERVE_VALIDATOR,
@@ -632,7 +630,7 @@
 
 <span class="kw">impl </span>ScriptData {
 	<span class="kw">fn </span>new(name: <span class="kw-2">&amp;</span>str, raw_bytes: Vec&lt;u8&gt;, id: ScriptId) -&gt; <span class="self">Self </span>{
-		<span class="kw">let </span>plutus_script = PlutusScript::from_wrapped_cbor(<span class="kw-2">&amp;</span>raw_bytes, LanguageKind::PlutusV2)
+		<span class="kw">let </span>plutus_script = PlutusScript::from_wrapped_cbor(<span class="kw-2">&amp;</span>raw_bytes, Language::new_plutus_v2())
 			.expect(<span class="string">"Plutus script should be valid"</span>);
 		<span class="self">Self </span>{ name: name.to_string(), plutus_script, id: id <span class="kw">as </span>u32 }
 	}
@@ -844,25 +842,21 @@
 	version_oracle: <span class="kw-2">&amp;</span>VersionOracleData,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
 	client: <span class="kw-2">&amp;</span>T,
-) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;UtxoId&gt;, anyhow::Error&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;OgmiosUtxo&gt;, anyhow::Error&gt; {
 	<span class="kw">let </span>validator_address = version_oracle.validator.address(ctx.network).to_bech32(<span class="prelude-val">None</span>)<span class="question-mark">?</span>;
 	<span class="kw">let </span>validator_utxos = client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="comment">// Decode datum from utxos and check if it contains script id
-	</span><span class="prelude-val">Ok</span>(validator_utxos
-		.into_iter()
-		.find(|utxo| {
-			utxo.clone()
-				.datum
-				.map(|d| d.bytes)
-				.and_then(|bytes| PlutusData::from_bytes(bytes).ok())
-				.and_then(decode_version_oracle_validator_datum)
-				.filter(|datum| {
-					datum.script_id == script_id
-						&amp;&amp; datum.version_oracle_policy_id == version_oracle.policy.script_hash()
-				})
-				.is_some()
-		})
-		.map(|utxo| utxo.to_domain()))
+	</span><span class="prelude-val">Ok</span>(validator_utxos.into_iter().find(|utxo| {
+		utxo.clone()
+			.datum
+			.map(|d| d.bytes)
+			.and_then(|bytes| PlutusData::from_bytes(bytes).ok())
+			.and_then(decode_version_oracle_validator_datum)
+			.is_some_and(|datum| {
+				datum.script_id == script_id
+					&amp;&amp; datum.version_oracle_policy_id == version_oracle.policy.script_hash()
+			})
+	}))
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>VersionOracleValidatorDatum {
@@ -890,7 +884,7 @@
 		test_values::{make_utxo, payment_addr, payment_key, protocol_parameters},
 	};
 	<span class="kw">use </span>cardano_serialization_lib::{
-		AssetName, BigNum, ConstrPlutusData, ExUnits, Int, LanguageKind, NetworkIdKind, PlutusData,
+		AssetName, BigNum, ConstrPlutusData, ExUnits, Int, Language, NetworkIdKind, PlutusData,
 		PlutusList, RedeemerTag, ScriptHash, Transaction,
 	};
 	<span class="kw">use </span>hex_literal::hex;
@@ -1054,7 +1048,7 @@
 	}
 
 	<span class="kw">fn </span>test_governance_script() -&gt; PlutusScript {
-		PlutusScript { bytes: <span class="macro">hex!</span>(<span class="string">"112233"</span>).to_vec(), language: LanguageKind::PlutusV2 }
+		PlutusScript { bytes: <span class="macro">hex!</span>(<span class="string">"112233"</span>).to_vec(), language: Language::new_plutus_v2() }
 	}
 
 	<span class="kw">fn </span>test_governance_input() -&gt; OgmiosUtxo {

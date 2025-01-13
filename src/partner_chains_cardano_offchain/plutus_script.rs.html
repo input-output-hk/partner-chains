@@ -131,8 +131,12 @@
 <a href="#131" id="131">131</a>
 <a href="#132" id="132">132</a>
 <a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>anyhow::{anyhow, Context};
-<span class="kw">use </span>cardano_serialization_lib::{Address, LanguageKind, NetworkIdKind, PlutusData, ScriptHash};
+<span class="kw">use </span>cardano_serialization_lib::{
+	Address, Language, LanguageKind, NetworkIdKind, PlutusData, ScriptHash,
+};
 <span class="kw">use </span>ogmios_client::types::{OgmiosScript, OgmiosScript::Plutus};
 <span class="kw">use </span>plutus::ToDatum;
 <span class="kw">use </span>sidechain_domain::PolicyId;
@@ -144,20 +148,20 @@
 </span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>PlutusScript {
 	<span class="kw">pub </span>bytes: Vec&lt;u8&gt;,
-	<span class="kw">pub </span>language: LanguageKind,
+	<span class="kw">pub </span>language: Language,
 }
 
 <span class="kw">impl </span>PlutusScript {
-	<span class="kw">pub fn </span>from_cbor(cbor: <span class="kw-2">&amp;</span>[u8], language: LanguageKind) -&gt; <span class="self">Self </span>{
+	<span class="kw">pub fn </span>from_cbor(cbor: <span class="kw-2">&amp;</span>[u8], language: Language) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{ bytes: cbor.into(), language }
 	}
 
 	<span class="kw">pub fn </span>from_ogmios(ogmios_script: OgmiosScript) -&gt; anyhow::Result&lt;<span class="self">Self</span>&gt; {
 		<span class="kw">if let </span>Plutus(script) = ogmios_script {
 			<span class="kw">let </span>language_kind = <span class="kw">match </span>script.language.as_str() {
-				<span class="string">"plutus:v1" </span>=&gt; LanguageKind::PlutusV1,
-				<span class="string">"plutus:v2" </span>=&gt; LanguageKind::PlutusV2,
-				<span class="string">"plutus:v3" </span>=&gt; LanguageKind::PlutusV3,
+				<span class="string">"plutus:v1" </span>=&gt; Language::new_plutus_v1(),
+				<span class="string">"plutus:v2" </span>=&gt; Language::new_plutus_v2(),
+				<span class="string">"plutus:v3" </span>=&gt; Language::new_plutus_v3(),
 				<span class="kw">_ </span>=&gt; {
 					<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(
 						<span class="string">"Unsupported Plutus language version: {}"</span>,
@@ -174,7 +178,7 @@
 	<span class="doccomment">/// This function is needed to create [PlutusScript] from scripts in [raw_scripts],
 	/// which are encoded as a cbor byte string containing the cbor of the script
 	/// itself. This function removes this layer of wrapping.
-	</span><span class="kw">pub fn </span>from_wrapped_cbor(cbor: <span class="kw-2">&amp;</span>[u8], language: LanguageKind) -&gt; anyhow::Result&lt;<span class="self">Self</span>&gt; {
+	</span><span class="kw">pub fn </span>from_wrapped_cbor(cbor: <span class="kw-2">&amp;</span>[u8], language: Language) -&gt; anyhow::Result&lt;<span class="self">Self</span>&gt; {
 		<span class="prelude-val">Ok</span>(<span class="self">Self</span>::from_cbor(<span class="kw-2">&amp;</span>unwrap_one_layer_of_cbor(cbor)<span class="question-mark">?</span>, language))
 	}
 
@@ -225,7 +229,7 @@
 	}
 
 	<span class="kw">pub fn </span>to_csl(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; cardano_serialization_lib::PlutusScript {
-		<span class="kw">match </span><span class="self">self</span>.language {
+		<span class="kw">match </span><span class="self">self</span>.language.kind() {
 			LanguageKind::PlutusV1 =&gt; {
 				cardano_serialization_lib::PlutusScript::new(<span class="self">self</span>.bytes.clone())
 			},
@@ -257,7 +261,7 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>apply_parameters_to_deregister() {
 		<span class="kw">let </span>applied =
-			PlutusScript::from_wrapped_cbor(<span class="kw-2">&amp;</span>CANDIDATES_SCRIPT_RAW, LanguageKind::PlutusV2)
+			PlutusScript::from_wrapped_cbor(<span class="kw-2">&amp;</span>CANDIDATES_SCRIPT_RAW, Language::new_plutus_v2())
 				.unwrap()
 				.apply_data(TEST_GENESIS_UTXO)
 				.unwrap();
