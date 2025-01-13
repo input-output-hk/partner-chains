@@ -98,7 +98,6 @@ pub async fn create_reserve_utxo<
 pub struct ReserveParameters {
 	pub initial_incentive: u64,
 	pub total_accrued_function_script_hash: PolicyId,
-	pub t0: u64,
 	pub token: TokenId,
 	pub initial_deposit: u64,
 }
@@ -106,10 +105,7 @@ pub struct ReserveParameters {
 impl From<&ReserveParameters> for ReserveDatum {
 	fn from(value: &ReserveParameters) -> Self {
 		ReserveDatum {
-			immutable_settings: ReserveImmutableSettings {
-				t0: value.t0,
-				token: value.token.clone(),
-			},
+			immutable_settings: ReserveImmutableSettings { token: value.token.clone() },
 			mutable_settings: ReserveMutableSettings {
 				total_accrued_function_script_hash: value
 					.total_accrued_function_script_hash
