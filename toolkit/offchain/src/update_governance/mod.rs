@@ -17,7 +17,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	ExUnits, LanguageKind, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
+	ExUnits, Language, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -109,13 +109,13 @@ fn update_governance_tx(
 	spend_ex_units: ExUnits,
 ) -> anyhow::Result<Transaction> {
 	let multi_sig_policy =
-		PlutusScript::from_wrapped_cbor(multi_sig_policy, LanguageKind::PlutusV2)?
+		PlutusScript::from_wrapped_cbor(multi_sig_policy, Language::new_plutus_v2())?
 			.apply_uplc_data(multisig_governance_policy_configuration(new_governance_authority))?;
 	let version_oracle_validator =
-		PlutusScript::from_wrapped_cbor(version_oracle_validator, LanguageKind::PlutusV2)?
+		PlutusScript::from_wrapped_cbor(version_oracle_validator, Language::new_plutus_v2())?
 			.apply_data(genesis_utxo)?;
 	let version_oracle_policy =
-		PlutusScript::from_wrapped_cbor(version_oracle_policy, LanguageKind::PlutusV2)?
+		PlutusScript::from_wrapped_cbor(version_oracle_policy, Language::new_plutus_v2())?
 			.apply_data(genesis_utxo)?
 			.apply_uplc_data(version_oracle_validator.address_data(tx_context.network)?)?;
 

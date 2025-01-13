@@ -6,6 +6,14 @@ use cardano_serialization_lib::{BigInt, BigNum, ConstrPlutusData, PlutusData, Pl
 use sidechain_domain::{AssetName, PolicyId, TokenId};
 
 #[derive(Debug, Clone)]
+pub enum ReserveRedeemer {
+	DepositToReserve { governance_version: u64 },
+	TransferToIlliquidCirculationSupply,
+	UpdateReserve { governance_version: u64 },
+	Handover { governance_version: u64 },
+}
+
+#[derive(Debug, Clone)]
 pub struct ReserveDatum {
 	pub immutable_settings: ReserveImmutableSettings,
 	pub mutable_settings: ReserveMutableSettings,
@@ -27,6 +35,33 @@ pub struct ReserveMutableSettings {
 #[derive(Debug, Clone)]
 pub struct ReserveStats {
 	pub token_total_amount_transferred: u64,
+}
+
+impl From<ReserveRedeemer> for PlutusData {
+	fn from(value: ReserveRedeemer) -> Self {
+		use ReserveRedeemer::*;
+		match value {
+			DepositToReserve { governance_version } => {
+				PlutusData::new_single_value_constr_plutus_data(
+					&BigNum::from(0_u64),
+					&PlutusData::new_integer(&BigInt::from(governance_version)),
+				)
+			},
+			TransferToIlliquidCirculationSupply => {
+				PlutusData::new_empty_constr_plutus_data(&BigNum::from(1_u64))
+			},
+			UpdateReserve { governance_version } => {
+				PlutusData::new_single_value_constr_plutus_data(
+					&BigNum::from(2_u64),
+					&PlutusData::new_integer(&BigInt::from(governance_version)),
+				)
+			},
+			Handover { governance_version } => PlutusData::new_single_value_constr_plutus_data(
+				&BigNum::from(3_u64),
+				&PlutusData::new_integer(&BigInt::from(governance_version)),
+			),
+		}
+	}
 }
 
 impl From<ReserveDatum> for PlutusData {

@@ -7,6 +7,7 @@ use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
+	types::OgmiosUtxo,
 };
 use sidechain_domain::UtxoId;
 
@@ -16,9 +17,9 @@ pub mod init;
 
 pub(crate) struct ReserveData {
 	pub(crate) scripts: scripts_data::ReserveScripts,
-	pub(crate) auth_policy_version_utxo: UtxoId,
-	pub(crate) validator_version_utxo: UtxoId,
-	pub(crate) illiquid_circulation_supply_validator_version_utxo: UtxoId,
+	pub(crate) auth_policy_version_utxo: OgmiosUtxo,
+	pub(crate) validator_version_utxo: OgmiosUtxo,
+	pub(crate) illiquid_circulation_supply_validator_version_utxo: OgmiosUtxo,
 }
 
 pub(crate) async fn get_reserve_data<
@@ -57,7 +58,7 @@ pub(crate) async fn get_reserve_data<
 	)
 	.await?
 	.ok_or_else(|| {
-		anyhow!("Reserve Validator Version Utxo not found, is the Reserve Token Management initialized?")
+		anyhow!("Illiquid Circulation Supply Validator Version Utxo not found, is the Reserve Token Management initialized?")
 	})?;
 	let scripts = scripts_data::reserve_scripts(genesis_utxo, ctx.network)?;
 	Ok(ReserveData {

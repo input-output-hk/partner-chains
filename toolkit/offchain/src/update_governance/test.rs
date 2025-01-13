@@ -88,7 +88,7 @@ fn genesis_utxo() -> OgmiosUtxo {
 }
 
 fn governance_script() -> crate::plutus_script::PlutusScript {
-	crate::plutus_script::PlutusScript { language: LanguageKind::PlutusV2, bytes: vec![] }
+	crate::plutus_script::PlutusScript { language: Language::new_plutus_v2(), bytes: vec![] }
 }
 
 fn governance_data() -> GovernanceData {

@@ -19,7 +19,7 @@ pub(crate) fn init_governance_transaction(
 	ex_units: ExUnits,
 ) -> anyhow::Result<Transaction> {
 	let multi_sig_policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, LanguageKind::PlutusV2)?
+		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, Language::new_plutus_v2())?
 			.apply_uplc_data(multisig_governance_policy_configuration(governance_authority))?;
 	let version_oracle = version_oracle(genesis_utxo.to_domain(), tx_context.network)?;
 	let config = crate::csl::get_builder_config(tx_context)?;
