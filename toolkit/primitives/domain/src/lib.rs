@@ -170,6 +170,12 @@ const MAX_MAINCHAIN_ADDRESS_BYTES: u32 = 120;
 #[cfg_attr(feature = "serde", byte_string(hex_serialize, hex_deserialize))]
 pub struct MainchainAddress(BoundedVec<u8, ConstU32<MAX_MAINCHAIN_ADDRESS_BYTES>>);
 
+impl MainchainAddress {
+	pub fn bytes(&self) -> Vec<u8> {
+		self.0.to_vec()
+	}
+}
+
 #[cfg(feature = "serde")]
 impl FromStr for MainchainAddress {
 	type Err = &'static str;

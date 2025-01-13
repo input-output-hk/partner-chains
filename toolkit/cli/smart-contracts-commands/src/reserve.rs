@@ -6,9 +6,10 @@ use partner_chains_cardano_offchain::{
 		create::{create_reserve_utxo, ReserveParameters},
 		init::init_reserve_management,
 		release::release_reserve_funds,
+		v_function_utxo::create_v_function_utxo,
 	},
 };
-use sidechain_domain::{ScriptHash, TokenId, UtxoId};
+use sidechain_domain::{MainchainAddress, ScriptHash, TokenId, UtxoId};
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -17,6 +18,8 @@ pub enum ReserveCmd {
 	Init(InitReserveCmd),
 	Create(CreateReserveCmd),
 	Release(ReleaseReserveCmd),
+	/// Create a V-Function reference script UTXO
+	VFunctionUtxo(VFunctionUtxoCmd),
 }
 
 impl ReserveCmd {
@@ -25,6 +28,7 @@ impl ReserveCmd {
 			Self::Init(cmd) => cmd.execute().await,
 			Self::Create(cmd) => cmd.execute().await,
 			Self::Release(cmd) => cmd.execute().await,
+			Self::VFunctionUtxo(cmd) => cmd.execute().await,
 		}
 	}
 }
@@ -120,6 +124,35 @@ impl ReleaseReserveCmd {
 		let ogmios_client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
 		let _ = release_reserve_funds(
 			self.genesis_utxo,
+			payment_key.0,
+			&ogmios_client,
+			&FixedDelayRetries::two_minutes(),
+		)
+		.await?;
+		Ok(())
+	}
+}
+
+#[derive(Clone, Debug, clap::Parser)]
+pub struct VFunctionUtxoCmd {
+	#[clap(flatten)]
+	common_arguments: crate::CommonArguments,
+	#[clap(flatten)]
+	payment_key_file: PaymentFilePath,
+	/// Address under which the UTXO will be created
+	#[arg(long, short('a'))]
+	target_address: MainchainAddress,
+	/// Unix time start time of release
+	unix_time_start: u128,
+}
+
+impl VFunctionUtxoCmd {
+	pub async fn execute(self) -> crate::CmdResult<()> {
+		let payment_key = self.payment_key_file.read_key()?;
+		let ogmios_client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
+		let _ = create_v_function_utxo(
+			self.target_address,
+			self.unix_time_start,
 			payment_key.0,
 			&ogmios_client,
 			&FixedDelayRetries::two_minutes(),

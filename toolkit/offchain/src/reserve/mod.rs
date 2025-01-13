@@ -14,6 +14,7 @@ pub mod create;
 pub mod deposit;
 pub mod init;
 pub mod release;
+pub mod v_function_utxo;
 
 pub(crate) struct ReserveData {
 	pub(crate) scripts: scripts_data::ReserveScripts,
