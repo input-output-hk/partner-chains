@@ -15,6 +15,7 @@ pub mod create;
 pub mod deposit;
 pub mod init;
 
+#[derive(Clone, Debug)]
 pub(crate) struct ReserveData {
 	pub(crate) scripts: scripts_data::ReserveScripts,
 	pub(crate) auth_policy_version_utxo: OgmiosUtxo,

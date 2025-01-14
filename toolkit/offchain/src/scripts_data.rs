@@ -211,6 +211,7 @@ pub(crate) fn registered_candidates_scripts(
 	Ok(validator)
 }
 
+#[derive(Clone, Debug)]
 pub(crate) struct ReserveScripts {
 	pub(crate) validator: PlutusScript,
 	pub(crate) auth_policy: PlutusScript,

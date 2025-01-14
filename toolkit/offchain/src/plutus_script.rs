@@ -10,10 +10,19 @@ use uplc::ast::{DeBruijn, Program};
 use crate::{csl::*, untyped_plutus::*};
 
 /// Wraps a Plutus script cbor
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct PlutusScript {
 	pub bytes: Vec<u8>,
 	pub language: Language,
+}
+
+impl std::fmt::Debug for PlutusScript {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("PlutusScript")
+			.field("bytes", &hex::encode(&self.bytes))
+			.field("language", &self.language.kind())
+			.finish()
+	}
 }
 
 impl PlutusScript {
