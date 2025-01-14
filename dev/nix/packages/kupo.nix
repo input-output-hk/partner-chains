@@ -13,7 +13,7 @@ let
 
   kupoDarwin = fetchzip {
     url = "https://github.com/CardanoSolutions/kupo/releases/download/v2.10/kupo-v${version}-aarch64-macos.zip";
-    hash = "sha256:1d18mpvmjiafy56pjljf46r1nh7ma44k29jzwk3bpr22ra9dvi0x";
+    hash = "sha256:7WJWgLWz5xe3oO9rpFpcGMBUXa5fpqXjp5KaKY3EWk0=";
     stripRoot = false;
     version = "${version}";
     name = "kupo-${version}";
