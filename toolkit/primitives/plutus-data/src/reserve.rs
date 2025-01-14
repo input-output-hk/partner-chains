@@ -13,25 +13,25 @@ pub enum ReserveRedeemer {
 	Handover { governance_version: u64 },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ReserveDatum {
 	pub immutable_settings: ReserveImmutableSettings,
 	pub mutable_settings: ReserveMutableSettings,
 	pub stats: ReserveStats,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ReserveImmutableSettings {
 	pub token: TokenId,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ReserveMutableSettings {
 	pub total_accrued_function_script_hash: PolicyId,
 	pub initial_incentive: u64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ReserveStats {
 	pub token_total_amount_transferred: u64,
 }
@@ -190,5 +190,63 @@ fn decode_token_id_datum(pd: &PlutusData) -> Option<TokenId> {
 			policy_id: PolicyId(policy_id.try_into().ok()?),
 			asset_name: AssetName(asset_name.try_into().ok()?),
 		})
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use cardano_serialization_lib::PlutusData;
+	use pretty_assertions::assert_eq;
+	use sidechain_domain::{AssetName, PolicyId};
+
+	use crate::test_helpers::test_plutus_data;
+
+	use super::{ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats};
+
+	fn test_datum() -> ReserveDatum {
+		ReserveDatum {
+			immutable_settings: ReserveImmutableSettings {
+				token: sidechain_domain::TokenId::AssetId {
+					policy_id: PolicyId([0; 28]),
+					asset_name: AssetName::from_hex_unsafe("aabbcc"),
+				},
+			},
+			mutable_settings: ReserveMutableSettings {
+				total_accrued_function_script_hash: PolicyId([2; 28]),
+				initial_incentive: 10,
+			},
+			stats: ReserveStats { token_total_amount_transferred: 1000 },
+		}
+	}
+
+	fn test_datum_plutus_data() -> PlutusData {
+		test_plutus_data!({"list":[
+			{"list":[
+				{"list":[
+					{"int": 0},
+					{"constructor":0,
+					 "fields":[
+						{"bytes": "00000000000000000000000000000000000000000000000000000000"},
+						{"bytes": "aabbcc"}]}
+				]},
+				{"list":[
+					{"bytes": "02020202020202020202020202020202020202020202020202020202"},
+					{"int": 10}
+				]},
+				{"int": 1000}
+			]},
+			{"constructor":0,"fields":[]},
+			{"int":0}
+		]})
+	}
+
+	#[test]
+	fn encode() {
+		assert_eq!(PlutusData::from(test_datum()), test_datum_plutus_data())
+	}
+
+	#[test]
+	fn decode() {
+		assert_eq!(ReserveDatum::try_from(test_datum_plutus_data()).unwrap(), test_datum())
 	}
 }
