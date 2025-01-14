@@ -88,6 +88,8 @@ echo "New address created: $new_address"
 
 dave_address="addr_test1vphpcf32drhhznv6rqmrmgpuwq06kug0lkg22ux777rtlqst2er0r"
 eve_address="addr_test1vzzt5pwz3pum9xdgxalxyy52m3aqur0n43pcl727l37ggscl8h7v8"
+# An address that will keep an UTXO with script of a test V-function, related to the SPO rewards. See v-function.script file.
+vfunction_address="addr_test1vzuasm5nqzh7n909f7wang7apjprpg29l2f9sk6shlt84rqep6nyc"
 
 # Define the UTXO details and amounts
 tx_in1="781cb948a37c7c38b43872af9b1e22135a94826eafd3740260a6db0a303885d8#0"
@@ -100,9 +102,10 @@ tx_out3=1000000000 # partner-chains-node-4 (dave)
 tx_out4=1000000000 # partner-chains-node-5 (eve)
 tx_out5_lovelace=10000000
 tx_out5_reward_token="1000000 $reward_token_policy_id.$reward_token_asset_name"
+tx_out6=10000000
 
 # Total output without fee
-total_output=$((tx_out1 + tx_out2 + tx_out3 + tx_out4 + tx_out5_lovelace))
+total_output=$((tx_out1 + tx_out2 + tx_out3 + tx_out4 + tx_out5_lovelace + tx_out6))
 
 fee=1000000
 
@@ -118,6 +121,8 @@ cardano-cli latest transaction build-raw \
   --tx-out "$eve_address+$tx_out4" \
   --tx-out "$new_address+$change" \
   --tx-out "$new_address+$tx_out5_lovelace+$tx_out5_reward_token" \
+  --tx-out "$vfunction_address+$tx_out6" \
+  --tx-out-reference-script-file /shared/v-function.script \
   --minting-script-file /shared/reward_token_policy.script \
   --mint "$tx_out5_reward_token" \
   --fee $fee \
