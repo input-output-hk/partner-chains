@@ -119,7 +119,7 @@ pub struct DepositReserveCmd {
 impl DepositReserveCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_key = self.payment_key_file.read_key()?;
-		let ogmios_client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
+		let ogmios_client = client_for_url(&self.common_arguments.ogmios_url).await?;
 		let _ = deposit_to_reserve(
 			TokenAmount { token: self.token, amount: self.amount },
 			self.genesis_utxo,
