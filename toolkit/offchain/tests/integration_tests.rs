@@ -32,7 +32,7 @@ use tokio_retry::{strategy::FixedInterval, Retry};
 
 const TEST_IMAGE: &str = "ghcr.io/input-output-hk/smart-contracts-tests-cardano-node-ogmios";
 
-const TEST_IMAGE_TAG: &str = "v10.2.1-v6.9.0";
+const TEST_IMAGE_TAG: &str = "v10.1.4-v6.11.0";
 
 const GOVERNANCE_AUTHORITY: MainchainAddressHash =
 	MainchainAddressHash(hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"));
