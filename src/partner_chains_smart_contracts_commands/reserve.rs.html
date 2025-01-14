@@ -95,12 +95,49 @@
 <a href="#95" id="95">95</a>
 <a href="#96" id="96">96</a>
 <a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::PaymentFilePath;
 <span class="kw">use </span>ogmios_client::jsonrpsee::client_for_url;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	reserve::{
 		create::{create_reserve_utxo, ReserveParameters},
+		deposit::{deposit_to_reserve, TokenAmount},
 		init::init_reserve_management,
 	},
 };
@@ -112,6 +149,7 @@
 	<span class="doccomment">/// Initialize the reserve management system for your chain
 	</span>Init(InitReserveCmd),
 	Create(CreateReserveCmd),
+	Deposit(DepositReserveCmd),
 }
 
 <span class="kw">impl </span>ReserveCmd {
@@ -119,6 +157,7 @@
 		<span class="kw">match </span><span class="self">self </span>{
 			<span class="self">Self</span>::Init(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::Create(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
+			<span class="self">Self</span>::Deposit(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 		}
 	}
 }
@@ -183,6 +222,39 @@
 				token: <span class="self">self</span>.token,
 				initial_deposit: <span class="self">self</span>.initial_deposit_amount,
 			},
+			<span class="self">self</span>.genesis_utxo,
+			payment_key.<span class="number">0</span>,
+			<span class="kw-2">&amp;</span>ogmios_client,
+			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
+		)
+		.<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(())
+	}
+}
+
+<span class="attr">#[derive(Clone, Debug, clap::Parser)]
+</span><span class="kw">pub struct </span>DepositReserveCmd {
+	<span class="attr">#[clap(flatten)]
+	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
+	<span class="attr">#[clap(flatten)]
+	</span>payment_key_file: PaymentFilePath,
+	<span class="doccomment">/// Genesis UTXO of the partner-chain.
+	</span><span class="attr">#[arg(long, short(<span class="string">'c'</span>))]
+	</span>genesis_utxo: UtxoId,
+	<span class="doccomment">/// Use either "Ada" or encoded asset id in form &lt;policy_id_hex&gt;.&lt;asset_name_hex&gt;.
+	</span><span class="attr">#[arg(long)]
+	</span>token: TokenId,
+	<span class="doccomment">/// Amount of tokens to deposit. They must be present in the payment wallet.
+	</span><span class="attr">#[arg(long)]
+	</span>amount: u64,
+}
+
+<span class="kw">impl </span>DepositReserveCmd {
+	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
+		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
+		<span class="kw">let </span>ogmios_client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let _ </span>= deposit_to_reserve(
+			TokenAmount { token: <span class="self">self</span>.token, amount: <span class="self">self</span>.amount },
 			<span class="self">self</span>.genesis_utxo,
 			payment_key.<span class="number">0</span>,
 			<span class="kw-2">&amp;</span>ogmios_client,
