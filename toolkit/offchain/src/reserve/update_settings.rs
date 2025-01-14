@@ -16,17 +16,13 @@
 //!   * Reserve Validator Version Utxo
 //!   * Governance Policy Script
 
-use crate::{
-	csl::*,
-	init_governance::GovernanceData,
-};
+use super::ReserveData;
+use crate::{csl::*, init_governance::GovernanceData};
 use cardano_serialization_lib::*;
 use partner_chains_plutus_data::reserve::{ReserveDatum, ReserveRedeemer};
 
-use super::{create::ReserveParameters, ReserveData};
-
 fn update_reserve_settings_tx(
-	parameters: &ReserveParameters,
+	datum: &ReserveDatum,
 	reserve: &ReserveData,
 	governance: &GovernanceData,
 	governance_script_cost: ExUnits,
@@ -65,7 +61,7 @@ fn update_reserve_settings_tx(
 	{
 		let amount_builder = TransactionOutputBuilder::new()
 			.with_address(&reserve.scripts.validator.address(ctx.network))
-			.with_plutus_data(&ReserveDatum::from(parameters).into())
+			.with_plutus_data(&(datum.clone().into()))
 			.with_script_ref(&ScriptRef::new_plutus_script(&reserve.scripts.validator.to_csl()))
 			.next()?;
 		let mut val = reserve.validator_version_utxo.value.to_csl()?;
@@ -145,7 +141,7 @@ mod tests {
 			illiquid_circulation_supply_validator_version_utxo: test_ics_validator_version_utxo(),
 		};
 		let tx = update_reserve_settings_tx(
-			&parameters,
+			&(&parameters).into(),
 			&reserve,
 			&test_governance_data(),
 			governance_script_cost(),
@@ -168,8 +164,8 @@ mod tests {
 			"7474747474747474747474747474747474747474747474747474747474747474#3"
 		);
 		assert_eq!(
-			outputs.get(0).address().to_hex(),
-			"7090fa373007141632b49a920ccccc5bf14d8ed0d2cce51a2354dd423a"
+			outputs.get(0).address(),
+			test_validator_script().address(cardano_serialization_lib::NetworkIdKind::Testnet)
 		);
 		assert_eq!(
 			outputs.get(1).address().to_hex(),
