@@ -28,7 +28,7 @@
       flake = false;
     };
     cardano-dbsync = {
-      url = "github:IntersectMBO/cardano-db-sync/13.5.0.2";
+      url = "github:IntersectMBO/cardano-db-sync/13.6.0.4";
       flake = false;
     };
     # ... kupo and ogmios are defined in dev/nix/packages
