@@ -12,7 +12,7 @@ let
 
   ogmiosDarwin = fetchzip {
     url = "https://github.com/CardanoSolutions/ogmios/releases/download/v${version}/ogmios-v${version}-aarch64-macos.zip";
-    hash = "sha256-mlrL7D1muYLmcAguUotgFRKJrvKXzPTrEj8uzINkt8s=";
+    hash = "sha256-fZyFClgXyCVe2bvrKX3JKsllwtpbAkL8wMylJVTv85E=";
     stripRoot = false;
     version = "${version}";
     name = "ogmios-${version}";
