@@ -294,7 +294,6 @@ async fn run_create_reserve_management<
 		reserve::create::ReserveParameters {
 			initial_incentive: 100,
 			total_accrued_function_script_hash: PolicyId([233u8; 28]),
-			t0: 1735689600,
 			token: TokenId::AssetId {
 				policy_id: REWARDS_TOKEN_POLICY_ID,
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),

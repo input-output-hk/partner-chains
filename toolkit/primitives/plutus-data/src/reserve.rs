@@ -22,7 +22,6 @@ pub struct ReserveDatum {
 
 #[derive(Debug, Clone)]
 pub struct ReserveImmutableSettings {
-	pub t0: u64,
 	pub token: TokenId,
 }
 
@@ -69,8 +68,11 @@ impl From<ReserveDatum> for PlutusData {
 		VersionedGenericDatumShape {
 			datum: {
 				let mut immutable_settings = PlutusList::new();
-				immutable_settings
-					.add(&PlutusData::new_integer(&BigInt::from(value.immutable_settings.t0)));
+				// `t0` field is not used by on-chain code of partner-chains smart-contracts,
+				// but only gave a possiblity for user to store "t0" for his own V-function.
+				// Not configurable anymore, hardcoded to 0. If users need "t0" for their V-function, they are responsible for storing it somewhere.
+				let t0 = PlutusData::new_integer(&BigInt::zero());
+				immutable_settings.add(&t0);
 				let (policy_id_bytes, asset_name_bytes) =
 					match value.immutable_settings.token.clone() {
 						TokenId::Ada => (vec![], vec![]),
@@ -136,7 +138,7 @@ fn decode_v0_reserve_datum(datum: &PlutusData) -> Option<ReserveDatum> {
 
 	let immutable_settings_list = outer_iter.next()?.as_list()?;
 	let mut immutable_settings_iter = immutable_settings_list.into_iter();
-	let t0: u64 = immutable_settings_iter.next()?.as_integer()?.as_u64()?.into();
+	let _obsolete_t0: u64 = immutable_settings_iter.next()?.as_integer()?.as_u64()?.into();
 	let token = decode_token_id_datum(immutable_settings_iter.next()?)?;
 
 	let v_function_hash_and_initial_incentive_list = outer_iter.next()?.as_list()?;
@@ -161,7 +163,7 @@ fn decode_v0_reserve_datum(datum: &PlutusData) -> Option<ReserveDatum> {
 	};
 
 	Some(ReserveDatum {
-		immutable_settings: ReserveImmutableSettings { t0, token },
+		immutable_settings: ReserveImmutableSettings { token },
 		mutable_settings: ReserveMutableSettings {
 			total_accrued_function_script_hash,
 			initial_incentive,

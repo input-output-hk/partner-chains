@@ -61,9 +61,6 @@ pub struct CreateReserveCmd {
 	/// Genesis UTXO of the partner-chain.
 	#[arg(long, short('c'))]
 	genesis_utxo: UtxoId,
-	/// t0, POSIX time used for calculating how many tokens could be released from the reserve at given moment.
-	#[arg(long)]
-	t0: u64,
 	/// Script hash of the 'total accrued function', also called V-function, that computes how many tokens could be released from the reserve at given moment.
 	#[arg(long)]
 	total_accrued_function_script_hash: ScriptHash,
@@ -86,7 +83,6 @@ impl CreateReserveCmd {
 			ReserveParameters {
 				initial_incentive: self.initial_incentive_amount,
 				total_accrued_function_script_hash: self.total_accrued_function_script_hash,
-				t0: self.t0,
 				token: self.token,
 				initial_deposit: self.initial_deposit_amount,
 			},
