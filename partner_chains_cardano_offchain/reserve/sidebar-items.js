@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["create","deposit","init"]};
+window.SIDEBAR_ITEMS = {"mod":["create","deposit","init","update_settings"]};

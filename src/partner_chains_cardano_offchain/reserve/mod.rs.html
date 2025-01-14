@@ -68,6 +68,7 @@
 <a href="#68" id="68">68</a>
 <a href="#69" id="69">69</a>
 <a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! All smart-contracts related to Rewards Token Reserve Management
 
 </span><span class="kw">use crate</span>::{csl::TransactionContext, scripts_data};
@@ -84,6 +85,7 @@
 <span class="kw">pub mod </span>create;
 <span class="kw">pub mod </span>deposit;
 <span class="kw">pub mod </span>init;
+<span class="kw">pub mod </span>update_settings;
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>ReserveData {
 	<span class="kw">pub</span>(<span class="kw">crate</span>) scripts: scripts_data::ReserveScripts,

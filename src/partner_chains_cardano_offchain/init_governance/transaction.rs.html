@@ -107,8 +107,6 @@
 <a href="#107" id="107">107</a>
 <a href="#108" id="108">108</a>
 <a href="#109" id="109">109</a>
-<a href="#110" id="110">110</a>
-<a href="#111" id="111">111</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
 	csl::<span class="kw-2">*</span>,
 	plutus_script::PlutusScript,
@@ -118,10 +116,6 @@
 <span class="kw">use </span>ogmios_client::types::OgmiosUtxo;
 <span class="kw">use </span>partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 <span class="kw">use </span>sidechain_domain::MainchainAddressHash;
-
-<span class="comment">// Script ID of the governance script in the script cache.
-// TODO: Use a proper value of raw_scripts::ScripId once we upgrade to a version that has it.
-</span><span class="kw">const </span>SCRIPT_ID: u32 = <span class="number">32</span>;
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>init_governance_transaction(
 	governance_authority: MainchainAddressHash,
@@ -178,7 +172,9 @@
 			<span class="kw-2">&amp;</span><span class="number">0u32</span>.into(),
 			<span class="kw-2">&amp;</span>PlutusData::new_constr_plutus_data(<span class="kw-2">&amp;</span>ConstrPlutusData::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span>{
 				<span class="kw">let </span><span class="kw-2">mut </span>list = PlutusList::new();
-				list.add(<span class="kw-2">&amp;</span>PlutusData::new_integer(<span class="kw-2">&amp;</span>SCRIPT_ID.into()));
+				list.add(<span class="kw-2">&amp;</span>PlutusData::new_integer(
+					<span class="kw-2">&amp;</span>(raw_scripts::ScriptId::GovernancePolicy <span class="kw">as </span>u32).into(),
+				));
 				list.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(multi_sig_policy.script_hash().to_vec()));
 				list
 			})),
@@ -195,7 +191,7 @@
 	tx_context: <span class="kw-2">&amp;</span>TransactionContext,
 ) -&gt; anyhow::Result&lt;cardano_serialization_lib::TransactionOutput&gt; {
 	<span class="kw">let </span>datum: PlutusData = VersionOracleDatum {
-		version_oracle: SCRIPT_ID,
+		version_oracle: raw_scripts::ScriptId::GovernancePolicy <span class="kw">as </span>u32,
 		currency_symbol: version_oracle_policy.policy_id().<span class="number">0</span>,
 	}
 	.into();
