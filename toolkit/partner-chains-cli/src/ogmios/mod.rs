@@ -1,8 +1,8 @@
 use crate::IOContext;
 use anyhow::anyhow;
-use jsonrpsee::http_client::HttpClient;
 use ogmios_client::{
-	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, types::OgmiosUtxo,
+	jsonrpsee::client_for_url, query_ledger_state::QueryLedgerState, query_network::QueryNetwork,
+	types::OgmiosUtxo,
 };
 use sidechain_domain::NetworkType;
 
@@ -70,28 +70,26 @@ pub struct UtxoValue {
 
 pub fn ogmios_request(addr: &str, req: OgmiosRequest) -> anyhow::Result<OgmiosResponse> {
 	let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
-	let client = HttpClient::builder().build(addr).map_err(|e| anyhow::anyhow!(e))?;
-	match req {
-		OgmiosRequest::QueryLedgerStateEraSummaries => {
-			let era_summaries =
-				tokio_runtime.block_on(client.era_summaries()).map_err(|e| anyhow::anyhow!(e))?;
-			let era_summaries = era_summaries.into_iter().map(From::from).collect();
-			Ok(OgmiosResponse::QueryLedgerStateEraSummaries(era_summaries))
-		},
-		OgmiosRequest::QueryNetworkShelleyGenesis => {
-			let shelley_genesis = tokio_runtime
-				.block_on(client.shelley_genesis_configuration())
-				.map_err(|e| anyhow::anyhow!(e))?;
-			let shelley_genesis = ShelleyGenesisConfiguration::try_from(shelley_genesis)?;
-			Ok(OgmiosResponse::QueryNetworkShelleyGenesis(shelley_genesis))
-		},
-		OgmiosRequest::QueryUtxo { address } => {
-			let utxos = tokio_runtime
-				.block_on(client.query_utxos(&[address]))
-				.map_err(|e| anyhow::anyhow!(e))?;
-			Ok(OgmiosResponse::QueryUtxo(utxos))
-		},
-	}
+	tokio_runtime.block_on(async {
+		let client = client_for_url(addr).await.map_err(|e| anyhow::anyhow!(e))?;
+		match req {
+			OgmiosRequest::QueryLedgerStateEraSummaries => {
+				let era_summaries = client.era_summaries().await.map_err(|e| anyhow::anyhow!(e))?;
+				let era_summaries = era_summaries.into_iter().map(From::from).collect();
+				Ok(OgmiosResponse::QueryLedgerStateEraSummaries(era_summaries))
+			},
+			OgmiosRequest::QueryNetworkShelleyGenesis => {
+				let shelley_genesis =
+					client.shelley_genesis_configuration().await.map_err(|e| anyhow::anyhow!(e))?;
+				let shelley_genesis = ShelleyGenesisConfiguration::try_from(shelley_genesis)?;
+				Ok(OgmiosResponse::QueryNetworkShelleyGenesis(shelley_genesis))
+			},
+			OgmiosRequest::QueryUtxo { address } => {
+				let utxos = client.query_utxos(&[address]).await.map_err(|e| anyhow::anyhow!(e))?;
+				Ok(OgmiosResponse::QueryUtxo(utxos))
+			},
+		}
+	})
 }
 
 impl From<ogmios_client::query_ledger_state::EraSummary> for EraSummary {

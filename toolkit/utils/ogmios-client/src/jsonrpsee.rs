@@ -4,7 +4,8 @@
 use crate::{OgmiosClient, OgmiosClientError, OgmiosParams};
 use jsonrpsee::{
 	core::{client::ClientT, traits::ToRpcParams, ClientError},
-	http_client::HttpClient,
+	http_client::{HttpClient, HttpClientBuilder},
+	ws_client::{WsClient, WsClientBuilder},
 };
 use serde::de::DeserializeOwned;
 use serde_json::json;
@@ -31,15 +32,45 @@ fn response_to_json(resp: &Result<serde_json::Value, ClientError>) -> String {
 	}
 }
 
-impl OgmiosClient for HttpClient {
+pub enum OgmiosClients {
+	HttpClient(HttpClient),
+	WsClient(WsClient),
+}
+
+/// Returns client that works either with HTTP or WebSockets.
+/// HTTP does not return JSON-RPC error body in case of 400 Bad Request.
+pub async fn client_for_url(addr: &str) -> Result<OgmiosClients, String> {
+	if addr.starts_with("http") || addr.starts_with("https") {
+		let client = HttpClientBuilder::default()
+			.build(addr.to_owned())
+			.map_err(|e| format!("Couldn't create HTTP client: {}", e.to_string()))?;
+		Ok(OgmiosClients::HttpClient(client))
+	} else if addr.starts_with("ws") || addr.starts_with("wss") {
+		let client = WsClientBuilder::default()
+			.build(addr.to_owned())
+			.await
+			.map_err(|e| format!("Couldn't create WebSockets client: {}", e.to_string()))?;
+		Ok(OgmiosClients::WsClient(client))
+	} else {
+		Err(format!("Invalid Schema of URL: '{}'. Expected http, https, ws or wss.", addr))
+	}
+}
+
+impl OgmiosClient for OgmiosClients {
 	async fn request<T: DeserializeOwned>(
 		&self,
 		method: &str,
 		params: OgmiosParams,
 	) -> Result<T, OgmiosClientError> {
 		log::debug!("request: {}", request_to_json(method, params.clone())?);
-		let response = ClientT::request::<serde_json::Value, _>(self, method, params).await;
-
+		let response = match self {
+			OgmiosClients::HttpClient(client) => {
+				ClientT::request::<serde_json::Value, _>(client, method, params).await
+			},
+			OgmiosClients::WsClient(client) => {
+				ClientT::request::<serde_json::Value, _>(client, method, params).await
+			},
+		};
 		log::debug!("response: {}", response_to_json(&response));
 
 		serde_json::from_value(response?)
