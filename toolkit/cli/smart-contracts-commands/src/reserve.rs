@@ -1,5 +1,5 @@
 use crate::PaymentFilePath;
-use jsonrpsee::http_client::HttpClient;
+use ogmios_client::jsonrpsee::client_for_url;
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	reserve::{
@@ -43,7 +43,7 @@ pub struct InitReserveCmd {
 impl InitReserveCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_key = self.payment_key_file.read_key()?;
-		let ogmios_client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
+		let ogmios_client = client_for_url(&self.common_arguments.ogmios_url).await?;
 		let _ = init_reserve_management(
 			self.genesis_utxo,
 			payment_key.0,
@@ -81,7 +81,7 @@ pub struct CreateReserveCmd {
 impl CreateReserveCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_key = self.payment_key_file.read_key()?;
-		let ogmios_client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
+		let ogmios_client = client_for_url(&self.common_arguments.ogmios_url).await?;
 		let _ = create_reserve_utxo(
 			ReserveParameters {
 				initial_incentive: self.initial_incentive_amount,

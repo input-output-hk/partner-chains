@@ -1,11 +1,9 @@
 #![cfg(feature = "jsonrpsee-client")]
 
 use fraction::{Decimal, Fraction};
-use jsonrpsee::{
-	http_client::HttpClient,
-	types::{ErrorCode, ErrorObject},
-};
+use jsonrpsee::types::{ErrorCode, ErrorObject};
 use ogmios_client::{
+	jsonrpsee::client_for_url,
 	query_network::{QueryNetwork, ShelleyGenesisConfigurationResponse},
 	types::SlotLength,
 };
@@ -45,7 +43,7 @@ async fn shelley_genesis_configuration() {
 	})
 	.await
 	.unwrap();
-	let client = HttpClient::builder().build(format!("http://{address}")).unwrap();
+	let client = client_for_url(&format!("http://{address}")).await.unwrap();
 	let genesis_configuration = client.shelley_genesis_configuration().await.unwrap();
 	assert_eq!(
 		genesis_configuration,

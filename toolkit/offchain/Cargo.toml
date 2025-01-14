@@ -18,7 +18,6 @@ partner-chains-plutus-data = { workspace = true }
 fraction = { workspace = true }
 hex = { workspace = true }
 hex-literal = { workspace = true }
-jsonrpsee = { workspace = true, features = ["client-core", "http-client", "macros"] }
 log = { workspace = true }
 minicbor = { workspace = true }
 ogmios-client = { workspace = true, features = ["jsonrpsee-client"] }

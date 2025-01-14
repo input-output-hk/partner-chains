@@ -1,5 +1,5 @@
 use crate::PaymentFilePath;
-use jsonrpsee::http_client::HttpClient;
+use ogmios_client::jsonrpsee::client_for_url;
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries, init_governance::run_init_governance,
 	update_governance::run_update_governance,
@@ -41,7 +41,7 @@ pub struct InitGovernanceCmd {
 impl InitGovernanceCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_key = self.payment_key_file.read_key()?;
-		let client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
+		let client = client_for_url(&self.common_arguments.ogmios_url).await?;
 
 		run_init_governance(
 			self.governance_authority,
@@ -72,7 +72,7 @@ pub struct UpdateGovernanceCmd {
 impl UpdateGovernanceCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_key = self.payment_key_file.read_key()?;
-		let client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
+		let client = client_for_url(&self.common_arguments.ogmios_url).await?;
 
 		run_update_governance(
 			self.new_governance_authority,

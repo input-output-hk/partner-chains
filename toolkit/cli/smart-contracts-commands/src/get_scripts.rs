@@ -1,4 +1,4 @@
-use jsonrpsee::http_client::HttpClient;
+use ogmios_client::jsonrpsee::client_for_url;
 use partner_chains_cardano_offchain::scripts_data::get_scripts_data_with_ogmios;
 use sidechain_domain::UtxoId;
 
@@ -13,7 +13,7 @@ pub struct GetScripts {
 
 impl GetScripts {
 	pub async fn execute(self) -> crate::CmdResult<()> {
-		let client = HttpClient::builder().build(self.common_arguments.ogmios_url)?;
+		let client = client_for_url(&self.common_arguments.ogmios_url).await?;
 		let scripts_data = get_scripts_data_with_ogmios(self.genesis_utxo, client).await?;
 
 		let json = serde_json::to_string_pretty(&scripts_data)?;
