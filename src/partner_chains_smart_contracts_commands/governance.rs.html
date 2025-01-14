@@ -87,7 +87,7 @@
 <a href="#87" id="87">87</a>
 <a href="#88" id="88">88</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::PaymentFilePath;
-<span class="kw">use </span>jsonrpsee::http_client::HttpClient;
+<span class="kw">use </span>ogmios_client::jsonrpsee::client_for_url;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries, init_governance::run_init_governance,
 	update_governance::run_update_governance,
@@ -129,7 +129,7 @@
 <span class="kw">impl </span>InitGovernanceCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
 		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
-		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_url)<span class="question-mark">?</span>;
+		<span class="kw">let </span>client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
 
 		run_init_governance(
 			<span class="self">self</span>.governance_authority,
@@ -160,7 +160,7 @@
 <span class="kw">impl </span>UpdateGovernanceCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
 		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
-		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_url)<span class="question-mark">?</span>;
+		<span class="kw">let </span>client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
 
 		run_update_governance(
 			<span class="self">self</span>.new_governance_authority,

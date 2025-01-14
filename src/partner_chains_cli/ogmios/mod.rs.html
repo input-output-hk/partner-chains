@@ -252,13 +252,11 @@
 <a href="#252" id="252">252</a>
 <a href="#253" id="253">253</a>
 <a href="#254" id="254">254</a>
-<a href="#255" id="255">255</a>
-<a href="#256" id="256">256</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::IOContext;
 <span class="kw">use </span>anyhow::anyhow;
-<span class="kw">use </span>jsonrpsee::http_client::HttpClient;
 <span class="kw">use </span>ogmios_client::{
-	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, types::OgmiosUtxo,
+	jsonrpsee::client_for_url, query_ledger_state::QueryLedgerState, query_network::QueryNetwork,
+	types::OgmiosUtxo,
 };
 <span class="kw">use </span>sidechain_domain::NetworkType;
 
@@ -326,28 +324,26 @@
 
 <span class="kw">pub fn </span>ogmios_request(addr: <span class="kw-2">&amp;</span>str, req: OgmiosRequest) -&gt; anyhow::Result&lt;OgmiosResponse&gt; {
 	<span class="kw">let </span>tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
-	<span class="kw">let </span>client = HttpClient::builder().build(addr).map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
-	<span class="kw">match </span>req {
-		OgmiosRequest::QueryLedgerStateEraSummaries =&gt; {
-			<span class="kw">let </span>era_summaries =
-				tokio_runtime.block_on(client.era_summaries()).map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
-			<span class="kw">let </span>era_summaries = era_summaries.into_iter().map(From::from).collect();
-			<span class="prelude-val">Ok</span>(OgmiosResponse::QueryLedgerStateEraSummaries(era_summaries))
-		},
-		OgmiosRequest::QueryNetworkShelleyGenesis =&gt; {
-			<span class="kw">let </span>shelley_genesis = tokio_runtime
-				.block_on(client.shelley_genesis_configuration())
-				.map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
-			<span class="kw">let </span>shelley_genesis = ShelleyGenesisConfiguration::try_from(shelley_genesis)<span class="question-mark">?</span>;
-			<span class="prelude-val">Ok</span>(OgmiosResponse::QueryNetworkShelleyGenesis(shelley_genesis))
-		},
-		OgmiosRequest::QueryUtxo { address } =&gt; {
-			<span class="kw">let </span>utxos = tokio_runtime
-				.block_on(client.query_utxos(<span class="kw-2">&amp;</span>[address]))
-				.map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
-			<span class="prelude-val">Ok</span>(OgmiosResponse::QueryUtxo(utxos))
-		},
-	}
+	tokio_runtime.block_on(<span class="kw">async </span>{
+		<span class="kw">let </span>client = client_for_url(addr).<span class="kw">await</span>.map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
+		<span class="kw">match </span>req {
+			OgmiosRequest::QueryLedgerStateEraSummaries =&gt; {
+				<span class="kw">let </span>era_summaries = client.era_summaries().<span class="kw">await</span>.map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
+				<span class="kw">let </span>era_summaries = era_summaries.into_iter().map(From::from).collect();
+				<span class="prelude-val">Ok</span>(OgmiosResponse::QueryLedgerStateEraSummaries(era_summaries))
+			},
+			OgmiosRequest::QueryNetworkShelleyGenesis =&gt; {
+				<span class="kw">let </span>shelley_genesis =
+					client.shelley_genesis_configuration().<span class="kw">await</span>.map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
+				<span class="kw">let </span>shelley_genesis = ShelleyGenesisConfiguration::try_from(shelley_genesis)<span class="question-mark">?</span>;
+				<span class="prelude-val">Ok</span>(OgmiosResponse::QueryNetworkShelleyGenesis(shelley_genesis))
+			},
+			OgmiosRequest::QueryUtxo { address } =&gt; {
+				<span class="kw">let </span>utxos = client.query_utxos(<span class="kw-2">&amp;</span>[address]).<span class="kw">await</span>.map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
+				<span class="prelude-val">Ok</span>(OgmiosResponse::QueryUtxo(utxos))
+			},
+		}
+	})
 }
 
 <span class="kw">impl </span>From&lt;ogmios_client::query_ledger_state::EraSummary&gt; <span class="kw">for </span>EraSummary {

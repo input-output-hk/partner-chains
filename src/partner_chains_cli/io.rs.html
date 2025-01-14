@@ -193,10 +193,11 @@
 <a href="#193" id="193">193</a>
 <a href="#194" id="194">194</a>
 <a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::ServiceConfig;
 <span class="kw">use </span><span class="kw">crate</span>::ogmios::{ogmios_request, OgmiosRequest, OgmiosResponse};
 <span class="kw">use </span>anyhow::{anyhow, Context};
-<span class="kw">use </span>jsonrpsee::http_client::HttpClient;
+<span class="kw">use </span>ogmios_client::jsonrpsee::{client_for_url, OgmiosClients};
 <span class="kw">use </span>partner_chains_cardano_offchain::d_param::UpsertDParam;
 <span class="kw">use </span>partner_chains_cardano_offchain::init_governance::InitGovernance;
 <span class="kw">use </span>partner_chains_cardano_offchain::permissioned_candidates::UpsertPermissionedCandidates;
@@ -245,8 +246,8 @@
 <span class="kw">pub struct </span>DefaultCmdRunContext;
 
 <span class="kw">impl </span>IOContext <span class="kw">for </span>DefaultCmdRunContext {
-	<span class="comment">// Currently HttpClient implements Ogmios traits, that implement all required Offchain traits
-	</span><span class="kw">type </span>Offchain = HttpClient;
+	<span class="comment">// Currently WsClient implements Ogmios traits, that implement all required Offchain traits
+	</span><span class="kw">type </span>Offchain = OgmiosClients;
 
 	<span class="kw">fn </span>run_command(<span class="kw-2">&amp;</span><span class="self">self</span>, cmd: <span class="kw-2">&amp;</span>str) -&gt; anyhow::Result&lt;String&gt; {
 		<span class="macro">eprintln!</span>(<span class="string">"running external command: {cmd}"</span>);
@@ -378,7 +379,8 @@
 
 	<span class="kw">fn </span>offchain_impl(<span class="kw-2">&amp;</span><span class="self">self</span>, ogmios_config: <span class="kw-2">&amp;</span>ServiceConfig) -&gt; anyhow::Result&lt;<span class="self">Self</span>::Offchain&gt; {
 		<span class="kw">let </span>ogmios_address = ogmios_config.to_string();
-		HttpClient::builder().build(<span class="kw-2">&amp;</span>ogmios_address).map_err(|<span class="kw">_</span>| {
+		<span class="kw">let </span>tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
+		tokio_runtime.block_on(client_for_url(<span class="kw-2">&amp;</span>ogmios_address)).map_err(|<span class="kw">_</span>| {
 			<span class="macro">anyhow!</span>(<span class="macro">format!</span>(<span class="string">"Couldn't open connection to Ogmios at {}"</span>, ogmios_address))
 		})
 	}

@@ -103,7 +103,7 @@
 <a href="#103" id="103">103</a>
 <a href="#104" id="104">104</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{parse_partnerchain_public_keys, PaymentFilePath};
-<span class="kw">use </span>jsonrpsee::http_client::HttpClient;
+<span class="kw">use </span>ogmios_client::jsonrpsee::client_for_url;
 <span class="kw">use </span>partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
@@ -148,7 +148,7 @@
 <span class="kw">impl </span>RegisterCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
 		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
-		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_url)<span class="question-mark">?</span>;
+		<span class="kw">let </span>client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let </span>candidate_registration = CandidateRegistration {
 			stake_ownership: AdaBasedStaking {
 				pub_key: <span class="self">self</span>.spo_public_key,
@@ -192,7 +192,7 @@
 <span class="kw">impl </span>DeregisterCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
 		<span class="kw">let </span>payment_signing_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
-		<span class="kw">let </span>client = HttpClient::builder().build(<span class="self">self</span>.common_arguments.ogmios_url)<span class="question-mark">?</span>;
+		<span class="kw">let </span>client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
 
 		run_deregister(
 			<span class="self">self</span>.genesis_utxo,
