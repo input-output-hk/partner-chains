@@ -187,6 +187,8 @@
 <a href="#187" id="187">187</a>
 <a href="#188" id="188">188</a>
 <a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
 	decoding_error_and_log, DataDecodingError, DecodingResult, VersionedDatum,
 	VersionedGenericDatumShape,
@@ -211,7 +213,6 @@
 
 <span class="attr">#[derive(Debug, Clone)]
 </span><span class="kw">pub struct </span>ReserveImmutableSettings {
-	<span class="kw">pub </span>t0: u64,
 	<span class="kw">pub </span>token: TokenId,
 }
 
@@ -258,8 +259,11 @@
 		VersionedGenericDatumShape {
 			datum: {
 				<span class="kw">let </span><span class="kw-2">mut </span>immutable_settings = PlutusList::new();
-				immutable_settings
-					.add(<span class="kw-2">&amp;</span>PlutusData::new_integer(<span class="kw-2">&amp;</span>BigInt::from(value.immutable_settings.t0)));
+				<span class="comment">// `t0` field is not used by on-chain code of partner-chains smart-contracts,
+				// but only gave a possiblity for user to store "t0" for his own V-function.
+				// Not configurable anymore, hardcoded to 0. If users need "t0" for their V-function, they are responsible for storing it somewhere.
+				</span><span class="kw">let </span>t0 = PlutusData::new_integer(<span class="kw-2">&amp;</span>BigInt::zero());
+				immutable_settings.add(<span class="kw-2">&amp;</span>t0);
 				<span class="kw">let </span>(policy_id_bytes, asset_name_bytes) =
 					<span class="kw">match </span>value.immutable_settings.token.clone() {
 						TokenId::Ada =&gt; (<span class="macro">vec!</span>[], <span class="macro">vec!</span>[]),
@@ -325,7 +329,7 @@
 
 	<span class="kw">let </span>immutable_settings_list = outer_iter.next()<span class="question-mark">?</span>.as_list()<span class="question-mark">?</span>;
 	<span class="kw">let </span><span class="kw-2">mut </span>immutable_settings_iter = immutable_settings_list.into_iter();
-	<span class="kw">let </span>t0: u64 = immutable_settings_iter.next()<span class="question-mark">?</span>.as_integer()<span class="question-mark">?</span>.as_u64()<span class="question-mark">?</span>.into();
+	<span class="kw">let </span>_obsolete_t0: u64 = immutable_settings_iter.next()<span class="question-mark">?</span>.as_integer()<span class="question-mark">?</span>.as_u64()<span class="question-mark">?</span>.into();
 	<span class="kw">let </span>token = decode_token_id_datum(immutable_settings_iter.next()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>v_function_hash_and_initial_incentive_list = outer_iter.next()<span class="question-mark">?</span>.as_list()<span class="question-mark">?</span>;
@@ -350,7 +354,7 @@
 	};
 
 	<span class="prelude-val">Some</span>(ReserveDatum {
-		immutable_settings: ReserveImmutableSettings { t0, token },
+		immutable_settings: ReserveImmutableSettings { token },
 		mutable_settings: ReserveMutableSettings {
 			total_accrued_function_script_hash,
 			initial_incentive,
