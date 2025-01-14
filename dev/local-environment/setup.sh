@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node:v1.3.0"
-CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.1.3"
+CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.1.4"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.4"
-KUPO_IMAGE="cardanosolutions/kupo:v2.9.0"
-OGMIOS_IMAGE="cardanosolutions/ogmios:v6.9.0"
-POSTGRES_IMAGE="postgres:15.3"
+KUPO_IMAGE="cardanosolutions/kupo:v2.10.0"
+OGMIOS_IMAGE="cardanosolutions/ogmios:v6.11.0"
+POSTGRES_IMAGE="postgres:17.2"
 SIDECHAIN_MAIN_CLI_IMAGE="node:22-bookworm"
 TESTS_IMAGE="python:3.10-slim"
 PC_CONTRACTS_CLI_ZIP_URL="https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/v7.0.2/pc-contracts-cli-v7.0.2.zip"
