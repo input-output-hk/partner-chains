@@ -160,6 +160,7 @@ async fn await_ogmios(ogmios_port: u16) -> Result<OgmiosClients, String> {
 /// * governance authority: 1000000 REWARDS_TOKEN
 /// * "dave" address: addr_test1vphpcf32drhhznv6rqmrmgpuwq06kug0lkg22ux777rtlqst2er0r
 /// * "eve" address: addr_test1vzzt5pwz3pum9xdgxalxyy52m3aqur0n43pcl727l37ggscl8h7v8
+///
 /// Its hash is 0x61ca664e056ce49a9d4fd2fb3aa2b750ea753fe4ad5c9e6167482fd88394cf7d
 async fn initial_transaction<T: Transactions + QueryUtxoByUtxoId>(
 	client: &T,
@@ -202,7 +203,7 @@ async fn run_update_goveranance<
 >(
 	client: &T,
 	genesis_utxo: UtxoId,
-) -> () {
+) {
 	let _ = update_governance::run_update_governance(
 		EVE_PUBLIC_KEY_HASH,
 		GOVERNANCE_AUTHORITY_PAYMENT_KEY,
@@ -232,12 +233,11 @@ async fn run_upsert_d_param<
 	)
 	.await
 	.unwrap();
-	match tx_hash {
-		Some(tx_hash) => FixedDelayRetries::new(Duration::from_millis(500), 100)
+	if let Some(tx_hash) = tx_hash {
+		FixedDelayRetries::new(Duration::from_millis(500), 100)
 			.await_tx_output(client, UtxoId::new(tx_hash.0, 0))
 			.await
-			.unwrap(),
-		None => (),
+			.unwrap()
 	};
 	tx_hash
 }
@@ -263,12 +263,11 @@ async fn run_upsert_permissioned_candidates<
 	)
 	.await
 	.unwrap();
-	match tx_hash {
-		Some(tx_hash) => FixedDelayRetries::new(Duration::from_millis(500), 100)
+	if let Some(tx_hash) = tx_hash {
+		FixedDelayRetries::new(Duration::from_millis(500), 100)
 			.await_tx_output(client, UtxoId::new(tx_hash.0, 0))
 			.await
-			.unwrap(),
-		None => (),
+			.unwrap()
 	};
 	tx_hash
 }
