@@ -305,6 +305,7 @@
 <a href="#305" id="305">305</a>
 <a href="#306" id="306">306</a>
 <a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{csl::NetworkTypeExt, plutus_script::PlutusScript, OffchainError};
 <span class="kw">use </span>cardano_serialization_lib::{Language, NetworkIdKind};
 <span class="kw">use </span>ogmios_client::query_network::QueryNetwork;
@@ -518,7 +519,8 @@
 	<span class="prelude-val">Ok</span>(validator)
 }
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>ReserveScripts {
+<span class="attr">#[derive(Clone, Debug)]
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>ReserveScripts {
 	<span class="kw">pub</span>(<span class="kw">crate</span>) validator: PlutusScript,
 	<span class="kw">pub</span>(<span class="kw">crate</span>) auth_policy: PlutusScript,
 	<span class="kw">pub</span>(<span class="kw">crate</span>) illiquid_circulation_supply_validator: PlutusScript,

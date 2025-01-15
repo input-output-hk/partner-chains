@@ -225,6 +225,7 @@
 <a href="#225" id="225">225</a>
 <a href="#226" id="226">226</a>
 <a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::OgmiosUtxoExt;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script;
 <span class="kw">use </span><span class="kw">crate</span>::scripts_data;
@@ -404,7 +405,8 @@
 		.ok_or_else(|| JsError::from_str(<span class="string">"Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using `init-governance` command."</span>))
 }
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>GovernanceData {
+<span class="attr">#[derive(Clone, Debug)]
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>GovernanceData {
 	<span class="kw">pub</span>(<span class="kw">crate</span>) policy_script: plutus_script::PlutusScript,
 	<span class="kw">pub</span>(<span class="kw">crate</span>) utxo: OgmiosUtxo,
 }
