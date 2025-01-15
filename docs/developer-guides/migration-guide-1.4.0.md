@@ -57,7 +57,7 @@ of main chain data needs to be set up on Cardano.
 
 **Important:**
 The commands in this section should either be run in the same directory used for setting up the previous Partner Chain
-(containing the base data directory containing the keystore and the `partner-chains-cli-keys.json` file),
+(containing the base data directory containing the keystore and the `partner-chains-public-keys.json` file),
 or in a new directory that has been prepared by running the `generate-keys` commands.
 
 1. Pick the initial governance authority.
