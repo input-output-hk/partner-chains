@@ -736,8 +736,6 @@
 <a href="#736" id="736">736</a>
 <a href="#737" id="737">737</a>
 <a href="#738" id="738">738</a>
-<a href="#739" id="739">739</a>
-<a href="#740" id="740">740</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -947,30 +945,28 @@
 </span><span class="kw">pub struct </span>AssetName(<span class="kw">pub </span>BoundedVec&lt;u8, ConstU32&lt;MAX_ASSET_NAME_LEN&gt;&gt;);
 
 <span class="attr">#[derive(Clone, Debug, PartialEq, Eq)]
-</span><span class="kw">pub enum </span>TokenId {
-	Ada,
-	AssetId { policy_id: PolicyId, asset_name: AssetName },
+</span><span class="kw">pub struct </span>AssetId {
+	<span class="kw">pub </span>policy_id: PolicyId,
+	<span class="kw">pub </span>asset_name: AssetName,
 }
 
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
-</span><span class="kw">impl </span>FromStr <span class="kw">for </span>TokenId {
+</span><span class="kw">impl </span>FromStr <span class="kw">for </span>AssetId {
 	<span class="kw">type </span><span class="prelude-val">Err </span>= String;
 
 	<span class="kw">fn </span>from_str(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Err&gt; {
-		<span class="kw">if </span>s.to_lowercase() == <span class="string">"ada" </span>{
-			<span class="prelude-val">Ok</span>(<span class="self">Self</span>::Ada)
-		} <span class="kw">else </span>{
-			<span class="kw">match </span>s.split_once(<span class="string">"."</span>) {
-				<span class="prelude-val">Some</span>((policy_id, asset_name)) =&gt; {
-					<span class="kw">let </span>policy_id = PolicyId::from_str(policy_id)
-						.map_err(|e| <span class="macro">format!</span>(<span class="string">"{} is invalid Policy ID: {}"</span>, policy_id, e))<span class="question-mark">?</span>;
-					<span class="kw">let </span>asset_name = AssetName::from_str(asset_name)
-						.map_err(|e| <span class="macro">format!</span>(<span class="string">"{} is invalid Asset Name: {}"</span>, asset_name, e))<span class="question-mark">?</span>;
-					<span class="prelude-val">Ok</span>(<span class="self">Self</span>::AssetId { policy_id, asset_name })
-				},
-				<span class="prelude-val">None </span>=&gt; <span class="prelude-val">Err</span>(<span class="string">"AssetID should be &lt;hex encoded Policy ID&gt;.&lt;hex encoded Asset Name&gt;"
-					</span>.to_string()),
-			}
+		<span class="kw">match </span>s.split_once(<span class="string">"."</span>) {
+			<span class="prelude-val">Some</span>((policy_id, asset_name)) =&gt; {
+				<span class="kw">let </span>policy_id = PolicyId::from_str(policy_id)
+					.map_err(|e| <span class="macro">format!</span>(<span class="string">"{} is invalid Policy ID: {}"</span>, policy_id, e))<span class="question-mark">?</span>;
+				<span class="kw">let </span>asset_name = AssetName::from_str(asset_name)
+					.map_err(|e| <span class="macro">format!</span>(<span class="string">"{} is invalid Asset Name: {}"</span>, asset_name, e))<span class="question-mark">?</span>;
+				<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ policy_id, asset_name })
+			},
+			<span class="prelude-val">None </span>=&gt; {
+				<span class="prelude-val">Err</span>(<span class="string">"AssetId should be &lt;hex encoded Policy ID&gt;.&lt;hex encoded Asset Name&gt;"
+					</span>.to_string())
+			},
 		}
 	}
 }

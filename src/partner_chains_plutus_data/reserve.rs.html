@@ -243,19 +243,12 @@
 <a href="#243" id="243">243</a>
 <a href="#244" id="244">244</a>
 <a href="#245" id="245">245</a>
-<a href="#246" id="246">246</a>
-<a href="#247" id="247">247</a>
-<a href="#248" id="248">248</a>
-<a href="#249" id="249">249</a>
-<a href="#250" id="250">250</a>
-<a href="#251" id="251">251</a>
-<a href="#252" id="252">252</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
 	decoding_error_and_log, plutus_data_version_and_payload, DataDecodingError, DecodingResult,
 	VersionedDatum, VersionedGenericDatumShape,
 };
 <span class="kw">use </span>cardano_serialization_lib::{BigInt, BigNum, ConstrPlutusData, PlutusData, PlutusList};
-<span class="kw">use </span>sidechain_domain::{AssetName, PolicyId, TokenId};
+<span class="kw">use </span>sidechain_domain::{AssetId, AssetName, PolicyId};
 
 <span class="attr">#[derive(Debug, Clone)]
 </span><span class="kw">pub enum </span>ReserveRedeemer {
@@ -274,7 +267,7 @@
 
 <span class="attr">#[derive(Debug, Clone, PartialEq)]
 </span><span class="kw">pub struct </span>ReserveImmutableSettings {
-	<span class="kw">pub </span>token: TokenId,
+	<span class="kw">pub </span>token: AssetId,
 }
 
 <span class="attr">#[derive(Debug, Clone, PartialEq)]
@@ -325,13 +318,10 @@
 				// Not configurable anymore, hardcoded to 0. If users need "t0" for their V-function, they are responsible for storing it somewhere.
 				</span><span class="kw">let </span>t0 = PlutusData::new_integer(<span class="kw-2">&amp;</span>BigInt::zero());
 				immutable_settings.add(<span class="kw-2">&amp;</span>t0);
-				<span class="kw">let </span>(policy_id_bytes, asset_name_bytes) =
-					<span class="kw">match </span>value.immutable_settings.token.clone() {
-						TokenId::Ada =&gt; (<span class="macro">vec!</span>[], <span class="macro">vec!</span>[]),
-						TokenId::AssetId { policy_id, asset_name } =&gt; {
-							(policy_id.<span class="number">0</span>.to_vec(), asset_name.<span class="number">0</span>.to_vec())
-						},
-					};
+				<span class="kw">let </span>(policy_id_bytes, asset_name_bytes) = {
+					<span class="kw">let </span>AssetId { policy_id, asset_name } = value.immutable_settings.token.clone();
+					(policy_id.<span class="number">0</span>.to_vec(), asset_name.<span class="number">0</span>.to_vec())
+				};
 				<span class="kw">let </span>token_data: PlutusData = {
 					<span class="kw">let </span><span class="kw-2">mut </span>asset_data = PlutusList::new();
 					asset_data.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(policy_id_bytes));
@@ -427,7 +417,7 @@
 	})
 }
 
-<span class="kw">fn </span>decode_token_id_datum(pd: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Option</span>&lt;TokenId&gt; {
+<span class="kw">fn </span>decode_token_id_datum(pd: <span class="kw-2">&amp;</span>PlutusData) -&gt; <span class="prelude-ty">Option</span>&lt;AssetId&gt; {
 	<span class="kw">let </span>token_id_list = pd
 		.as_constr_plutus_data()
 		.filter(|constr| constr.alternative() == BigNum::zero())
@@ -435,14 +425,10 @@
 	<span class="kw">let </span><span class="kw-2">mut </span>token_id_list_iter = token_id_list.into_iter();
 	<span class="kw">let </span>policy_id = token_id_list_iter.next()<span class="question-mark">?</span>.as_bytes()<span class="question-mark">?</span>.to_vec();
 	<span class="kw">let </span>asset_name = token_id_list_iter.next()<span class="question-mark">?</span>.as_bytes()<span class="question-mark">?</span>.to_vec();
-	<span class="kw">if </span>policy_id.is_empty() &amp;&amp; asset_name.is_empty() {
-		<span class="prelude-val">Some</span>(TokenId::Ada)
-	} <span class="kw">else </span>{
-		<span class="prelude-val">Some</span>(TokenId::AssetId {
-			policy_id: PolicyId(policy_id.try_into().ok()<span class="question-mark">?</span>),
-			asset_name: AssetName(asset_name.try_into().ok()<span class="question-mark">?</span>),
-		})
-	}
+	<span class="prelude-val">Some</span>(AssetId {
+		policy_id: PolicyId(policy_id.try_into().ok()<span class="question-mark">?</span>),
+		asset_name: AssetName(asset_name.try_into().ok()<span class="question-mark">?</span>),
+	})
 }
 
 <span class="attr">#[cfg(test)]
@@ -458,7 +444,7 @@
 	<span class="kw">fn </span>test_datum() -&gt; ReserveDatum {
 		ReserveDatum {
 			immutable_settings: ReserveImmutableSettings {
-				token: sidechain_domain::TokenId::AssetId {
+				token: sidechain_domain::AssetId {
 					policy_id: PolicyId([<span class="number">0</span>; <span class="number">28</span>]),
 					asset_name: AssetName::from_hex_unsafe(<span class="string">"aabbcc"</span>),
 				},

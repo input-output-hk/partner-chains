@@ -212,6 +212,7 @@
 <a href="#212" id="212">212</a>
 <a href="#213" id="213">213</a>
 <a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Transaction that creates a new reserve.
 //!
 //! Specification:
@@ -220,7 +221,7 @@
 //!   * 1 Governance Policy Token (using reference script)
 //! 2. The transaction should have two outputs:
 //!   * Reserve Validator output that:
-//!   * * has Reward Tokens (or ada)
+//!   * * has Reward Tokens
 //!   * * has Plutus Data (in our "versioned format"): `[[[Int(t0), &lt;Encoded Token&gt;], [Bytes(v_function_hash), Int(initial_incentive)], [Int(0)]], Constr(0, []), Int(0)]`,
 //!       where `&lt;Encoded Token&gt;` is `Constr(0, [Bytes(policy_id), Bytes(asset_name)])`.
 //!   * Change output that keeps the Governance Token and change of other tokens
@@ -253,7 +254,7 @@
 <span class="kw">use </span>partner_chains_plutus_data::reserve::{
 	ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats,
 };
-<span class="kw">use </span>sidechain_domain::{McTxHash, PolicyId, TokenId, UtxoId};
+<span class="kw">use </span>sidechain_domain::{AssetId, McTxHash, PolicyId, UtxoId};
 <span class="kw">use </span>std::collections::HashMap;
 
 <span class="kw">pub async fn </span>create_reserve_utxo&lt;
@@ -312,7 +313,7 @@
 <span class="kw">pub struct </span>ReserveParameters {
 	<span class="kw">pub </span>initial_incentive: u64,
 	<span class="kw">pub </span>total_accrued_function_script_hash: PolicyId,
-	<span class="kw">pub </span>token: TokenId,
+	<span class="kw">pub </span>token: AssetId,
 	<span class="kw">pub </span>initial_deposit: u64,
 }
 
@@ -409,15 +410,16 @@
 	<span class="kw">let </span><span class="kw-2">mut </span>assets = Assets::new();
 	assets.insert(<span class="kw-2">&amp;</span>empty_asset_name(), <span class="kw-2">&amp;</span><span class="number">1u64</span>.into());
 	ma.insert(<span class="kw-2">&amp;</span>scripts.auth_policy.csl_script_hash(), <span class="kw-2">&amp;</span>assets);
-	<span class="kw">if let </span>TokenId::AssetId { policy_id, asset_name } = parameters.token.clone() {
-		<span class="kw">let </span><span class="kw-2">mut </span>assets = Assets::new();
-		assets.insert(
-			<span class="kw-2">&amp;</span>cardano_serialization_lib::AssetName::new(asset_name.<span class="number">0</span>.to_vec())
-				.expect(<span class="string">"AssetName has a valid length"</span>),
-			<span class="kw-2">&amp;</span>parameters.initial_deposit.into(),
-		);
-		ma.insert(<span class="kw-2">&amp;</span>policy_id.<span class="number">0</span>.into(), <span class="kw-2">&amp;</span>assets);
-	};
+
+	<span class="kw">let </span>AssetId { policy_id, asset_name } = parameters.token.clone();
+	<span class="kw">let </span><span class="kw-2">mut </span>assets = Assets::new();
+	assets.insert(
+		<span class="kw-2">&amp;</span>cardano_serialization_lib::AssetName::new(asset_name.<span class="number">0</span>.to_vec())
+			.expect(<span class="string">"AssetName has a valid length"</span>),
+		<span class="kw-2">&amp;</span>parameters.initial_deposit.into(),
+	);
+	ma.insert(<span class="kw-2">&amp;</span>policy_id.<span class="number">0</span>.into(), <span class="kw-2">&amp;</span>assets);
+
 	<span class="kw">let </span>output = amount_builder.with_coin_and_asset(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span>ma).build()<span class="question-mark">?</span>;
 	<span class="kw">let </span>min_ada = MinOutputAdaCalculator::new(
 		<span class="kw-2">&amp;</span>output,

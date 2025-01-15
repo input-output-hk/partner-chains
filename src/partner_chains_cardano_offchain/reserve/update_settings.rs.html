@@ -329,7 +329,7 @@
 	<span class="kw">use </span>hex_literal::hex;
 	<span class="kw">use </span>ogmios_client::types::{OgmiosTx, OgmiosUtxo};
 	<span class="kw">use </span>partner_chains_plutus_data::reserve::ReserveDatum;
-	<span class="kw">use </span>sidechain_domain::{AssetName, PolicyId, TokenId};
+	<span class="kw">use </span>sidechain_domain::{AssetId, AssetName, PolicyId};
 
 	<span class="kw">use </span><span class="kw">super</span>::update_reserve_settings_tx;
 	<span class="kw">use crate</span>::{
@@ -352,7 +352,7 @@
 		<span class="kw">let </span>parameters = <span class="kw">crate</span>::reserve::create::ReserveParameters {
 			initial_incentive: <span class="number">100</span>,
 			total_accrued_function_script_hash: PolicyId([<span class="number">233u8</span>; <span class="number">28</span>]),
-			token: TokenId::AssetId {
+			token: AssetId {
 				policy_id: REWARDS_TOKEN_POLICY_ID,
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
 			},

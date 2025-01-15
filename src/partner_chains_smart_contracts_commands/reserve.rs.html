@@ -141,7 +141,7 @@
 		init::init_reserve_management,
 	},
 };
-<span class="kw">use </span>sidechain_domain::{ScriptHash, TokenId, UtxoId};
+<span class="kw">use </span>sidechain_domain::{AssetId, ScriptHash, UtxoId};
 
 <span class="attr">#[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -206,9 +206,9 @@
 	<span class="doccomment">/// Initial amount of tokens to deposit. They must be present in the payment wallet.
 	</span><span class="attr">#[arg(long)]
 	</span>initial_deposit_amount: u64,
-	<span class="doccomment">/// Use either "Ada" or encoded asset id in form &lt;policy_id_hex&gt;.&lt;asset_name_hex&gt;.
+	<span class="doccomment">/// Reserve token asset id encoded in form &lt;policy_id_hex&gt;.&lt;asset_name_hex&gt;.
 	</span><span class="attr">#[arg(long)]
-	</span>token: TokenId,
+	</span>token: AssetId,
 }
 
 <span class="kw">impl </span>CreateReserveCmd {
@@ -241,9 +241,9 @@
 	<span class="doccomment">/// Genesis UTXO of the partner-chain.
 	</span><span class="attr">#[arg(long, short(<span class="string">'c'</span>))]
 	</span>genesis_utxo: UtxoId,
-	<span class="doccomment">/// Use either "Ada" or encoded asset id in form &lt;policy_id_hex&gt;.&lt;asset_name_hex&gt;.
+	<span class="doccomment">/// Reserve token asset id encoded in form &lt;policy_id_hex&gt;.&lt;asset_name_hex&gt;.
 	</span><span class="attr">#[arg(long)]
-	</span>token: TokenId,
+	</span>token: AssetId,
 	<span class="doccomment">/// Amount of tokens to deposit. They must be present in the payment wallet.
 	</span><span class="attr">#[arg(long)]
 	</span>amount: u64,

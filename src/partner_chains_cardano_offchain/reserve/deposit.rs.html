@@ -268,16 +268,6 @@
 <a href="#268" id="268">268</a>
 <a href="#269" id="269">269</a>
 <a href="#270" id="270">270</a>
-<a href="#271" id="271">271</a>
-<a href="#272" id="272">272</a>
-<a href="#273" id="273">273</a>
-<a href="#274" id="274">274</a>
-<a href="#275" id="275">275</a>
-<a href="#276" id="276">276</a>
-<a href="#277" id="277">277</a>
-<a href="#278" id="278">278</a>
-<a href="#279" id="279">279</a>
-<a href="#280" id="280">280</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Specification for deposit transaction:
 //!
@@ -319,10 +309,10 @@
 	types::OgmiosUtxo,
 };
 <span class="kw">use </span>partner_chains_plutus_data::reserve::{ReserveDatum, ReserveRedeemer};
-<span class="kw">use </span>sidechain_domain::{McTxHash, TokenId, UtxoId};
+<span class="kw">use </span>sidechain_domain::{AssetId, McTxHash, UtxoId};
 
 <span class="kw">pub struct </span>TokenAmount {
-	<span class="kw">pub </span>token: TokenId,
+	<span class="kw">pub </span>token: AssetId,
 	<span class="kw">pub </span>amount: u64,
 }
 
@@ -386,7 +376,7 @@
 
 <span class="kw">async fn </span>get_utxo_with_tokens&lt;T: QueryLedgerState&gt;(
 	scripts: <span class="kw-2">&amp;</span>ReserveScripts,
-	token_id: <span class="kw-2">&amp;</span>TokenId,
+	token_id: <span class="kw-2">&amp;</span>AssetId,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
 	client: <span class="kw-2">&amp;</span>T,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;OgmiosUtxo&gt;, anyhow::Error&gt; {
@@ -411,19 +401,16 @@
 		.and_then(|plutus_data| ReserveDatum::try_from(plutus_data).ok())
 }
 
-<span class="kw">fn </span>get_token_amount(utxo: <span class="kw-2">&amp;</span>OgmiosUtxo, token_id: <span class="kw-2">&amp;</span>TokenId) -&gt; u64 {
-	<span class="kw">match </span>token_id {
-		TokenId::Ada =&gt; utxo.value.lovelace,
-		TokenId::AssetId { policy_id, asset_name } =&gt; utxo
-			.value
-			.native_tokens
-			.get(<span class="kw-2">&amp;</span>policy_id.<span class="number">0</span>)
-			.and_then(|assets| assets.iter().find(|asset| asset.name == asset_name.<span class="number">0</span>.to_vec()))
-			.map(|asset| asset.amount)
-			.unwrap_or(<span class="number">0</span>) <span class="comment">// Token can be not found if the reserve was created with the initial deposit of 0 tokens
-			</span>.try_into()
-			.expect(<span class="string">"Token amount in an UTXO always fits u64"</span>),
-	}
+<span class="kw">fn </span>get_token_amount(utxo: <span class="kw-2">&amp;</span>OgmiosUtxo, token: <span class="kw-2">&amp;</span>AssetId) -&gt; u64 {
+	<span class="kw">let </span>AssetId { policy_id, asset_name } = token;
+	utxo.value
+		.native_tokens
+		.get(<span class="kw-2">&amp;</span>policy_id.<span class="number">0</span>)
+		.and_then(|assets| assets.iter().find(|asset| asset.name == asset_name.<span class="number">0</span>.to_vec()))
+		.map(|asset| asset.amount)
+		.unwrap_or(<span class="number">0</span>) <span class="comment">// Token can be not found if the reserve was created with the initial deposit of 0 tokens
+		</span>.try_into()
+		.expect(<span class="string">"Token amount in an UTXO always fits u64"</span>)
 }
 
 <span class="kw">fn </span>deposit_to_reserve_tx(
@@ -534,28 +521,21 @@
 	<span class="kw">let </span><span class="kw-2">mut </span>assets = Assets::new();
 	assets.insert(<span class="kw-2">&amp;</span>empty_asset_name(), <span class="kw-2">&amp;</span><span class="number">1u64</span>.into());
 	ma.insert(<span class="kw-2">&amp;</span>scripts.auth_policy.csl_script_hash(), <span class="kw-2">&amp;</span>assets);
-	<span class="kw">if let </span>TokenId::AssetId { policy_id, asset_name } = token_amount.token.clone() {
-		<span class="kw">let </span><span class="kw-2">mut </span>assets = Assets::new();
-		assets.insert(
-			<span class="kw-2">&amp;</span>AssetName::new(asset_name.<span class="number">0</span>.to_vec()).expect(<span class="string">"AssetName has a valid length"</span>),
-			<span class="kw-2">&amp;</span>token_amount.amount.into(),
-		);
-		ma.insert(<span class="kw-2">&amp;</span>policy_id.<span class="number">0</span>.into(), <span class="kw-2">&amp;</span>assets);
-	};
+	<span class="kw">let </span>AssetId { policy_id, asset_name } = token_amount.token.clone();
+	<span class="kw">let </span><span class="kw-2">mut </span>assets = Assets::new();
+	assets.insert(
+		<span class="kw-2">&amp;</span>AssetName::new(asset_name.<span class="number">0</span>.to_vec()).expect(<span class="string">"AssetName has a valid length"</span>),
+		<span class="kw-2">&amp;</span>token_amount.amount.into(),
+	);
+	ma.insert(<span class="kw-2">&amp;</span>policy_id.<span class="number">0</span>.into(), <span class="kw-2">&amp;</span>assets);
 	<span class="kw">let </span>output = amount_builder.with_coin_and_asset(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span>ma).build()<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>current_ada = current_utxo.value.lovelace;
-	<span class="kw">let </span>ada = <span class="kw">if let </span>TokenId::Ada = token_amount.token {
-		(current_ada + token_amount.amount).into()
-	} <span class="kw">else </span>{
-		MinOutputAdaCalculator::new(
-			<span class="kw-2">&amp;</span>output,
-			<span class="kw-2">&amp;</span>DataCost::new_coins_per_byte(
-				<span class="kw-2">&amp;</span>ctx.protocol_parameters.min_utxo_deposit_coefficient.into(),
-			),
-		)
-		.calculate_ada()<span class="question-mark">?
-	</span>};
+	<span class="kw">let </span>ada = MinOutputAdaCalculator::new(
+		<span class="kw-2">&amp;</span>output,
+		<span class="kw-2">&amp;</span>DataCost::new_coins_per_byte(<span class="kw-2">&amp;</span>ctx.protocol_parameters.min_utxo_deposit_coefficient.into()),
+	)
+	.calculate_ada()<span class="question-mark">?</span>;
+
 	amount_builder.with_coin_and_asset(<span class="kw-2">&amp;</span>ada, <span class="kw-2">&amp;</span>ma).build()
 }
 </code></pre></div></section></main></body></html>
