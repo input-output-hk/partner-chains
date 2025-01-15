@@ -8,7 +8,7 @@ use partner_chains_cardano_offchain::{
 		init::init_reserve_management,
 	},
 };
-use sidechain_domain::{ScriptHash, TokenId, UtxoId};
+use sidechain_domain::{AssetId, ScriptHash, UtxoId};
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -73,9 +73,9 @@ pub struct CreateReserveCmd {
 	/// Initial amount of tokens to deposit. They must be present in the payment wallet.
 	#[arg(long)]
 	initial_deposit_amount: u64,
-	/// Use either "Ada" or encoded asset id in form <policy_id_hex>.<asset_name_hex>.
+	/// Reserve token asset id encoded in form <policy_id_hex>.<asset_name_hex>.
 	#[arg(long)]
-	token: TokenId,
+	token: AssetId,
 }
 
 impl CreateReserveCmd {
@@ -108,9 +108,9 @@ pub struct DepositReserveCmd {
 	/// Genesis UTXO of the partner-chain.
 	#[arg(long, short('c'))]
 	genesis_utxo: UtxoId,
-	/// Use either "Ada" or encoded asset id in form <policy_id_hex>.<asset_name_hex>.
+	/// Reserve token asset id encoded in form <policy_id_hex>.<asset_name_hex>.
 	#[arg(long)]
-	token: TokenId,
+	token: AssetId,
 	/// Amount of tokens to deposit. They must be present in the payment wallet.
 	#[arg(long)]
 	amount: u64,

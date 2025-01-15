@@ -100,7 +100,7 @@ mod tests {
 	use hex_literal::hex;
 	use ogmios_client::types::{OgmiosTx, OgmiosUtxo};
 	use partner_chains_plutus_data::reserve::ReserveDatum;
-	use sidechain_domain::{AssetName, PolicyId, TokenId};
+	use sidechain_domain::{AssetId, AssetName, PolicyId};
 
 	use super::update_reserve_settings_tx;
 	use crate::{
@@ -123,7 +123,7 @@ mod tests {
 		let parameters = crate::reserve::create::ReserveParameters {
 			initial_incentive: 100,
 			total_accrued_function_script_hash: PolicyId([233u8; 28]),
-			token: TokenId::AssetId {
+			token: AssetId {
 				policy_id: REWARDS_TOKEN_POLICY_ID,
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
 			},

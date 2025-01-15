@@ -21,9 +21,10 @@ use partner_chains_cardano_offchain::{
 	reserve, scripts_data, update_governance,
 };
 use sidechain_domain::{
-	AdaBasedStaking, AssetName, AuraPublicKey, CandidateRegistration, DParameter, GrandpaPublicKey,
-	MainchainAddressHash, MainchainPrivateKey, MainchainPublicKey, MainchainSignature, McTxHash,
-	PermissionedCandidateData, PolicyId, SidechainPublicKey, SidechainSignature, TokenId, UtxoId,
+	AdaBasedStaking, AssetId, AssetName, AuraPublicKey, CandidateRegistration, DParameter,
+	GrandpaPublicKey, MainchainAddressHash, MainchainPrivateKey, MainchainPublicKey,
+	MainchainSignature, McTxHash, PermissionedCandidateData, PolicyId, SidechainPublicKey,
+	SidechainSignature, UtxoId,
 };
 use std::time::Duration;
 use testcontainers::{clients::Cli, Container, GenericImage};
@@ -298,7 +299,7 @@ async fn run_create_reserve_management<
 		reserve::create::ReserveParameters {
 			initial_incentive: 100,
 			total_accrued_function_script_hash: PolicyId([233u8; 28]),
-			token: TokenId::AssetId {
+			token: AssetId {
 				policy_id: REWARDS_TOKEN_POLICY_ID,
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
 			},
@@ -321,7 +322,7 @@ async fn run_deposit_to_reserve<
 ) -> () {
 	reserve::deposit::deposit_to_reserve(
 		reserve::deposit::TokenAmount {
-			token: TokenId::AssetId {
+			token: AssetId {
 				policy_id: REWARDS_TOKEN_POLICY_ID,
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
 			},
