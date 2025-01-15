@@ -20,7 +20,7 @@ genesis utxo (which is the utxo burned when establishing a governance)
 
 ## Overview of the migration
 
-The migration requires multiple detailed steps but to follow them successfuly it's good to understand the big picture first:
+The migration requires multiple detailed steps but to follow them successfully it's good to understand the big picture first:
 The 1.4.0 version introduces some backwards-incompatible data schemas. This means that a simple runtime upgrade
 using `system/setCode` extrinsic would leave the chain in an inconsistent state and unable to produce blocks.
 To avoid this issue, the migration involves the following general steps:
