@@ -4,7 +4,7 @@
         "ogmios_port": 1337,
         "kupo_host": "devnet-services-service",
         "kupo_port": 1442,
-        "tools_host": "10.0.12.126",
+        "tools_host": "10.0.12.157",
         "ssh": {
             "username": "root",
             "host": "${stack_config[tools_host]}",
