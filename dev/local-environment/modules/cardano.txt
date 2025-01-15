@@ -17,6 +17,7 @@
       - ./configurations/cardano/keys/funded_address.vkey:/keys/funded_address.vkey
       - ./configurations/cardano/keys/op.cert:/keys/node.cert
       - ./configurations/cardano/reward_token_policy.script:/shared/reward_token_policy.script
+      - ./configurations/cardano/v-function.script:/shared/v-function.script
       - ./configurations/cardano/config-pool1.json:/shared/node-1-config.json.base
       - ./configurations/db-sync/config.json:/shared/db-sync-config.json.base
       - ./configurations/genesis/byron/genesis.json:/shared/byron/genesis.json.base
