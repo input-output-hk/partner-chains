@@ -46,7 +46,7 @@ impl core::fmt::Display for OgmiosUtxo {
 	}
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Deserialize, Eq, PartialEq)]
 #[serde(transparent)]
 pub struct Datum {
 	#[serde(deserialize_with = "parse_bytes")]
@@ -59,7 +59,13 @@ impl From<Vec<u8>> for Datum {
 	}
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+impl std::fmt::Debug for Datum {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("Datum").field("bytes", &hex::encode(&self.bytes)).finish()
+	}
+}
+
+#[derive(Clone, Deserialize, Eq, PartialEq)]
 #[serde(transparent)]
 pub struct DatumHash {
 	#[serde(deserialize_with = "parse_bytes_array")]
@@ -72,6 +78,12 @@ impl From<[u8; 32]> for DatumHash {
 	}
 }
 
+impl std::fmt::Debug for DatumHash {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("DatumHash").field("bytes", &hex::encode(&self.bytes)).finish()
+	}
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(untagged)]
 pub enum OgmiosScript {
@@ -79,11 +91,20 @@ pub enum OgmiosScript {
 	Native(NativeScript),
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Deserialize, Eq, PartialEq)]
 pub struct PlutusScript {
 	pub language: String,
 	#[serde(deserialize_with = "parse_bytes")]
 	pub cbor: Vec<u8>,
+}
+
+impl std::fmt::Debug for PlutusScript {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("PlutusScript")
+			.field("language", &self.language)
+			.field("cbor", &hex::encode(&self.cbor))
+			.finish()
+	}
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]

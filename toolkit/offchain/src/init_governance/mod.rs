@@ -177,6 +177,7 @@ pub(crate) async fn get_governance_utxo<T: QueryLedgerState + Transactions + Que
 		.ok_or_else(|| JsError::from_str("Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using `init-governance` command."))
 }
 
+#[derive(Clone, Debug)]
 pub(crate) struct GovernanceData {
 	pub(crate) policy_script: plutus_script::PlutusScript,
 	pub(crate) utxo: OgmiosUtxo,
