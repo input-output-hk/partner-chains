@@ -23,7 +23,7 @@ setup:
 
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
   RUN rustup show
-  RUN cargo install --locked cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
+  RUN cargo install --locked --version 0.1.68 cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
 
 source:
   FROM +setup

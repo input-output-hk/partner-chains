@@ -6,7 +6,9 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
-* `setup-main-chain-state` command now uses native Rust to insert the D-Parameter
+* `setup-main-chain-state` command now uses native Rust to upsert the D-Parameter and upsert permissioned candidates
+* Changed the `smart-contracts init-governance` command to `smart-contracts governance init`
+* smart-contracts commands and offchain tests now use WebSockets implementation of Ogmios client
 
 ## Removed
 
@@ -14,21 +16,28 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Fixed
 
+* Cache returning invalid results when native token MainChainScripts has changed.
 * Crash of parnter-chain-node smart-contracts command. Logging is now set independently.
 * Renamed of argument 'ogmios-host' to 'ogmios-url' in smart-contracts subcommands.
 
 ## Added
+
+* Command `smart-contracts reserve init`
+* Command `smart-contracts reserve create`
+* Command `smart-contracts reserve deposit`
+* Command `smart-contracts governance update`
+* Ogmios client backed by jsonrpsee `WsClient`
 
 # v1.4.0
 
 ## Changed
 
 * `genesis_utxo` and `registration_utxo` no longer have to have no native tokens.
-* Update ogmios to v6.9.0
+* Update dependencies containers to cardano-node 10.1.4, db-sync 13.6.0.4, ogmios 6.11.0 and kupo 2.10.0
 * Organized Rust sources into two directories: toolkit and node.
 * Implemented transaction balancing with CSL in offchain code.
 * Update offchain code dependencies: pallas, ulpc and cardano-serialization-lib.
-* Updated to partner-chains-smart-contracts v7.0.1
+* Updated to partner-chains-smart-contracts v7.0.2
 * * chain-params crate that provided SidechainParam is removed, because there are no SidechainParams anymore
 * * partner-chains-cli is changed, so prepare-config wizard sets `genesis_utxo` and does not set sidechain parameters
 * * pallets are not generic on SidechainParams anymore, they use UtxoId (genesis_utxo) instead

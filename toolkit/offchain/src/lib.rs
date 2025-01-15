@@ -16,12 +16,15 @@ pub mod permissioned_candidates;
 mod plutus_script;
 /// Supports candidate registration
 pub mod register;
+pub mod reserve;
 /// Provides synthetized scripts data
 pub mod scripts_data;
 #[cfg(test)]
 pub mod test_values;
 /// Module for interaction with the untyped plutus scripts
 pub mod untyped_plutus;
+/// Supports governance updates
+pub mod update_governance;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum OffchainError {

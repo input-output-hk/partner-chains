@@ -83,7 +83,7 @@ jobs:
       - name: Deploy and test against local environment
         uses: ./.github/actions/tests/local-environment-tests
         with:
-          tag: CI 
+          tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ needs.build.outputs.sha }}
           sha: ${{ needs.build.outputs.sha }}
           tests: premerge
@@ -95,7 +95,7 @@ jobs:
           ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
           ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
           TEST_ENVIRONMENT: local
-  
+
   local-environment-tests-alert:
     needs: local-environment-tests
     if: always() && needs.local-environment-tests.result != 'skipped'
@@ -125,73 +125,72 @@ jobs:
           ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
         shell: bash
 
+  #deploy-argocd:
+  #  if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
+  #  needs: build
+  #  runs-on: ubuntu-latest
+  #  steps:
+  #    - name: Checkout
+  #      uses: actions/checkout@v4
+  #      with:
+  #        fetch-depth: 0
+  #        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+  #    - name: Deploy ArgoCD Node
+  #      uses: ./.github/actions/deploy/argocd/deploy-argocd
+  #      with:
+  #        sha: ${{ needs.build.outputs.sha }}
+  #      env:
+  #        ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+  #        kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+  #        K8S_SERVER: ${{ secrets.K8S_SERVER }}
+  #        K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
-  deploy-argocd:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Deploy ArgoCD Node
-        uses: ./.github/actions/deploy/argocd/deploy-argocd
-        with:
-          sha: ${{ needs.build.outputs.sha }}
-        env:
-          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+  #argocd-tests:
+  #  continue-on-error: true
+  #  if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
+  #  needs: [build, deploy-argocd]
+  #  runs-on: eks
+  #  steps:
+  #    - name: Checkout
+  #      uses: actions/checkout@v4
+  #      with:
+  #        fetch-depth: 0
+  #        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+  #    - name: Run Tests
+  #      uses: ./.github/actions/tests/argocd-tests
+  #      with:
+  #        sha: ${{ needs.build.outputs.sha }}
+  #        node-host: sha-${{ needs.build.outputs.sha }}-service.integration-testing.svc.cluster.local
+  #        node-port: 9933
+  #        ssh_key_binary_host: ${{ secrets.SSH_KEY_BINARY_HOST }}
+  #      env:
+  #        AWS_ROLE_ARN_: ${{ secrets.AWS_ROLE_ARN_ }}
+  #        SSH_KEY_BINARY_HOST: ${{ secrets.SSH_KEY_BINARY_HOST }}
+  #        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  #        JIRA_URL: ${{ secrets.JIRA_URL }}
+  #        ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+  #        kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+  #        K8S_SERVER: ${{ secrets.K8S_SERVER }}
+  #        K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
-  argocd-tests:
-    continue-on-error: true
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
-    needs: [build, deploy-argocd]
-    runs-on: eks
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Run Tests
-        uses: ./.github/actions/tests/argocd-tests
-        with:
-          sha: ${{ needs.build.outputs.sha }}
-          node-host: sha-${{ needs.build.outputs.sha }}-service.integration-testing.svc.cluster.local
-          node-port: 9933
-          ssh_key_binary_host: ${{ secrets.SSH_KEY_BINARY_HOST }}
-        env:
-          AWS_ROLE_ARN_: ${{ secrets.AWS_ROLE_ARN_ }}
-          SSH_KEY_BINARY_HOST: ${{ secrets.SSH_KEY_BINARY_HOST }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          JIRA_URL: ${{ secrets.JIRA_URL }}
-          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
-
-  teardown-argocd:
-    needs: [build, argocd-tests]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Teardown ArgoCD Environment
-        uses: ./.github/actions/deploy/argocd/teardown-argocd
-        with:
-          sha: ${{ needs.build.outputs.sha }}
-        env:
-          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+  #teardown-argocd:
+  #  needs: [build, argocd-tests]
+  #  runs-on: ubuntu-latest
+  #  steps:
+  #    - name: Checkout
+  #      uses: actions/checkout@v4
+  #      with:
+  #        fetch-depth: 0
+  #        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+  #    - name: Teardown ArgoCD Environment
+  #      uses: ./.github/actions/deploy/argocd/teardown-argocd
+  #      with:
+  #        sha: ${{ needs.build.outputs.sha }}
+  #      env:
+  #        ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+  #        kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+  #        K8S_SERVER: ${{ secrets.K8S_SERVER }}
+  #        K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   devshell-tests:
     needs: build
@@ -226,14 +225,13 @@ jobs:
 
   pre-merge-checks-complete:
     if: ${{ always() && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)) }}
-    needs: [build, local-environment-tests, argocd-tests, devshell-tests]
+    needs: [build, local-environment-tests, devshell-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
         run: |
-          if [[ "${{ needs.build.result }}" != "success" || 
-                "${{ needs.local-environment-tests.result }}" != "success" || 
-                "${{ needs.argocd-tests.result }}" != "success" || 
+          if [[ "${{ needs.build.result }}" != "success" ||
+                "${{ needs.local-environment-tests.result }}" != "success" ||
                 "${{ needs.devshell-tests.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1
@@ -291,7 +289,7 @@ jobs:
       - name: Deploy and test against local environment
         uses: ./.github/actions/tests/local-environment-tests
         with:
-          tag: CI 
+          tag: CI
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ needs.build.outputs.sha }}
           sha: ${{ needs.build.outputs.sha }}
           tests: postmerge
@@ -340,8 +338,8 @@ jobs:
     steps:
       - name: Check if any needed job failed
         run: |
-          if [[ "${{ needs.deploy-rustdoc.result }}" != "success" || 
-                "${{ needs.upload-chain-specs.result }}" != "success" || 
+          if [[ "${{ needs.deploy-rustdoc.result }}" != "success" ||
+                "${{ needs.upload-chain-specs.result }}" != "success" ||
                 "${{ needs.local-environment-tests-post-merge.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1

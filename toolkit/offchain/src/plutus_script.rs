@@ -1,5 +1,8 @@
 use anyhow::{anyhow, Context};
-use cardano_serialization_lib::{Address, LanguageKind, NetworkIdKind, PlutusData, ScriptHash};
+use cardano_serialization_lib::{
+	Address, Language, LanguageKind, NetworkIdKind, PlutusData, ScriptHash,
+};
+use ogmios_client::types::{OgmiosScript, OgmiosScript::Plutus};
 use plutus::ToDatum;
 use sidechain_domain::PolicyId;
 use uplc::ast::{DeBruijn, Program};
@@ -7,21 +10,49 @@ use uplc::ast::{DeBruijn, Program};
 use crate::{csl::*, untyped_plutus::*};
 
 /// Wraps a Plutus script cbor
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct PlutusScript {
 	pub bytes: Vec<u8>,
-	pub language: LanguageKind,
+	pub language: Language,
+}
+
+impl std::fmt::Debug for PlutusScript {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("PlutusScript")
+			.field("bytes", &hex::encode(&self.bytes))
+			.field("language", &self.language.kind())
+			.finish()
+	}
 }
 
 impl PlutusScript {
-	pub fn from_cbor(cbor: &[u8], language: LanguageKind) -> Self {
+	pub fn from_cbor(cbor: &[u8], language: Language) -> Self {
 		Self { bytes: cbor.into(), language }
 	}
 
+	pub fn from_ogmios(ogmios_script: OgmiosScript) -> anyhow::Result<Self> {
+		if let Plutus(script) = ogmios_script {
+			let language_kind = match script.language.as_str() {
+				"plutus:v1" => Language::new_plutus_v1(),
+				"plutus:v2" => Language::new_plutus_v2(),
+				"plutus:v3" => Language::new_plutus_v3(),
+				_ => {
+					return Err(anyhow!(
+						"Unsupported Plutus language version: {}",
+						script.language
+					));
+				},
+			};
+			Ok(Self { bytes: script.cbor, language: language_kind })
+		} else {
+			Err(anyhow!("Expected Plutus script, got something else."))
+		}
+	}
+
 	/// This function is needed to create [PlutusScript] from scripts in [raw_scripts],
-	/// which are encoded as a cibor byte string containing the cbor of the script
+	/// which are encoded as a cbor byte string containing the cbor of the script
 	/// itself. This function removes this layer of wrapping.
-	pub fn from_wrapped_cbor(cbor: &[u8], language: LanguageKind) -> anyhow::Result<Self> {
+	pub fn from_wrapped_cbor(cbor: &[u8], language: Language) -> anyhow::Result<Self> {
 		Ok(Self::from_cbor(&unwrap_one_layer_of_cbor(cbor)?, language))
 	}
 
@@ -72,7 +103,7 @@ impl PlutusScript {
 	}
 
 	pub fn to_csl(&self) -> cardano_serialization_lib::PlutusScript {
-		match self.language {
+		match self.language.kind() {
 			LanguageKind::PlutusV1 => {
 				cardano_serialization_lib::PlutusScript::new(self.bytes.clone())
 			},
@@ -104,7 +135,7 @@ pub(crate) mod tests {
 	#[test]
 	fn apply_parameters_to_deregister() {
 		let applied =
-			PlutusScript::from_wrapped_cbor(&CANDIDATES_SCRIPT_RAW, LanguageKind::PlutusV2)
+			PlutusScript::from_wrapped_cbor(&CANDIDATES_SCRIPT_RAW, Language::new_plutus_v2())
 				.unwrap()
 				.apply_data(TEST_GENESIS_UTXO)
 				.unwrap();

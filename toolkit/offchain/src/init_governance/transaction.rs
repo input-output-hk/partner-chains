@@ -8,10 +8,6 @@ use ogmios_client::types::OgmiosUtxo;
 use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 use sidechain_domain::MainchainAddressHash;
 
-// Script ID of the governance script in the script cache.
-// TODO: Use a proper value of raw_scripts::ScripId once we upgrade to a version that has it.
-const SCRIPT_ID: u32 = 32;
-
 pub(crate) fn init_governance_transaction(
 	governance_authority: MainchainAddressHash,
 	tx_context: &TransactionContext,
@@ -19,7 +15,7 @@ pub(crate) fn init_governance_transaction(
 	ex_units: ExUnits,
 ) -> anyhow::Result<Transaction> {
 	let multi_sig_policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, LanguageKind::PlutusV2)?
+		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, Language::new_plutus_v2())?
 			.apply_uplc_data(multisig_governance_policy_configuration(governance_authority))?;
 	let version_oracle = version_oracle(genesis_utxo.to_domain(), tx_context.network)?;
 	let config = crate::csl::get_builder_config(tx_context)?;
@@ -67,7 +63,9 @@ fn mint_witness(
 			&0u32.into(),
 			&PlutusData::new_constr_plutus_data(&ConstrPlutusData::new(&0u64.into(), &{
 				let mut list = PlutusList::new();
-				list.add(&PlutusData::new_integer(&SCRIPT_ID.into()));
+				list.add(&PlutusData::new_integer(
+					&(raw_scripts::ScriptId::GovernancePolicy as u32).into(),
+				));
 				list.add(&PlutusData::new_bytes(multi_sig_policy.script_hash().to_vec()));
 				list
 			})),
@@ -76,7 +74,7 @@ fn mint_witness(
 	))
 }
 
-fn version_oracle_datum_output(
+pub(crate) fn version_oracle_datum_output(
 	version_oracle_validator: PlutusScript,
 	version_oracle_policy: PlutusScript,
 	multi_sig_policy: PlutusScript,
@@ -84,7 +82,7 @@ fn version_oracle_datum_output(
 	tx_context: &TransactionContext,
 ) -> anyhow::Result<cardano_serialization_lib::TransactionOutput> {
 	let datum: PlutusData = VersionOracleDatum {
-		version_oracle: SCRIPT_ID,
+		version_oracle: raw_scripts::ScriptId::GovernancePolicy as u32,
 		currency_symbol: version_oracle_policy.policy_id().0,
 	}
 	.into();

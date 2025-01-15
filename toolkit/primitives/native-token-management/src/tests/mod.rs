@@ -5,15 +5,32 @@ mod inherent_provider {
 	use super::runtime_api_mock::*;
 	use crate::inherent_provider::mock::*;
 	use crate::inherent_provider::*;
-	use crate::MainChainScripts;
-	use crate::INHERENT_IDENTIFIER;
+	use crate::{InherentError, MainChainScripts, INHERENT_IDENTIFIER};
 	use sidechain_domain::*;
 	use sidechain_mc_hash::MC_HASH_DIGEST_ID;
-	use sp_inherents::InherentData;
-	use sp_inherents::InherentDataProvider;
-	use sp_runtime::testing::Digest;
-	use sp_runtime::testing::DigestItem;
+	use sp_inherents::{InherentData, InherentDataProvider};
+	use sp_runtime::testing::{Digest, DigestItem};
 	use std::sync::Arc;
+
+	#[test]
+	fn error_message_formatting() {
+		assert_eq!(
+			InherentError::TokenTransferNotHandled(NativeTokenAmount(3u128)).to_string(),
+			"Inherent missing for token transfer of 3 tokens"
+		);
+		assert_eq!(
+			InherentError::IncorrectTokenNumberTransfered(
+				NativeTokenAmount(13u128),
+				NativeTokenAmount(7u128)
+			)
+			.to_string(),
+			"Incorrect token transfer amount: expected 13, got 7 tokens"
+		);
+		assert_eq!(
+			InherentError::UnexpectedTokenTransferInherent(NativeTokenAmount(13u128)).to_string(),
+			"Unexpected transfer of 13 tokens"
+		);
+	}
 
 	#[tokio::test]
 	async fn correctly_fetches_total_transfer_between_two_hashes() {

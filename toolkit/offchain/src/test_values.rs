@@ -1,16 +1,13 @@
 use crate::plutus_script::PlutusScript;
-use cardano_serialization_lib::{Address, LanguageKind, PlutusData, PrivateKey};
-use fraction::{Decimal, Fraction};
+use cardano_serialization_lib::{Address, Language, PlutusData, PrivateKey};
 use hex_literal::hex;
 use ogmios_client::{
 	query_ledger_state::{
 		PlutusCostModels, ProtocolParametersResponse, ReferenceScriptsCosts, ScriptExecutionPrices,
 	},
-	query_network::ShelleyGenesisConfigurationResponse,
-	types::{OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue, SlotLength},
+	types::{OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue},
 };
-use sidechain_domain::{MainchainPublicKey, NetworkType};
-use time::OffsetDateTime;
+use sidechain_domain::MainchainPublicKey;
 
 pub(crate) fn payment_key() -> PrivateKey {
 	PrivateKey::from_normal_bytes(&hex!(
@@ -19,8 +16,11 @@ pub(crate) fn payment_key() -> PrivateKey {
 	.unwrap()
 }
 
+pub(crate) const PAYMENT_ADDR: &str =
+	"addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy";
+
 pub(crate) fn payment_addr() -> Address {
-	Address::from_bech32("addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy").unwrap()
+	Address::from_bech32(PAYMENT_ADDR).unwrap()
 }
 
 pub(crate) fn mainchain_pub_key() -> MainchainPublicKey {
@@ -30,12 +30,15 @@ pub(crate) fn mainchain_pub_key() -> MainchainPublicKey {
 pub(crate) fn test_validator() -> PlutusScript {
 	PlutusScript {
 		bytes: hex!("4d4c01000022223212001375a009").to_vec(),
-		language: LanguageKind::PlutusV2,
+		language: Language::new_plutus_v2(),
 	}
 }
 
 pub(crate) fn test_policy() -> PlutusScript {
-	PlutusScript { bytes: hex!("49480100002221200101").to_vec(), language: LanguageKind::PlutusV2 }
+	PlutusScript {
+		bytes: hex!("49480100002221200101").to_vec(),
+		language: Language::new_plutus_v2(),
+	}
 }
 
 pub(crate) fn test_plutus_data() -> PlutusData {
@@ -63,18 +66,6 @@ pub(crate) fn protocol_parameters() -> ProtocolParametersResponse {
 		max_collateral_inputs: 3,
 		collateral_percentage: 150,
 		min_fee_reference_scripts: ReferenceScriptsCosts { base: 15.0 },
-	}
-}
-
-pub(crate) fn shelley_config() -> ShelleyGenesisConfigurationResponse {
-	ShelleyGenesisConfigurationResponse {
-		network_magic: 2,
-		network: NetworkType::Testnet,
-		start_time: OffsetDateTime::from_unix_timestamp(1666656000).unwrap(),
-		security_parameter: 432,
-		epoch_length: 86400,
-		active_slots_coefficient: Decimal::from_fraction(Fraction::new(1u64, 20u64)),
-		slot_length: SlotLength { milliseconds: 1000 },
 	}
 }
 

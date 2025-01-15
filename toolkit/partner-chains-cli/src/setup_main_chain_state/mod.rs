@@ -1,17 +1,13 @@
 use crate::config::config_fields::{CARDANO_PAYMENT_SIGNING_KEY_FILE, POSTGRES_CONNECTION_STRING};
-use crate::config::{
-	config_fields, get_cardano_network_from_file, ChainConfig, ConfigFieldDefinition,
-	CHAIN_CONFIG_FILE_PATH, PC_CONTRACTS_CLI_PATH,
-};
+use crate::config::{config_fields, ChainConfig, ConfigFieldDefinition, CHAIN_CONFIG_FILE_PATH};
 use crate::io::IOContext;
-use crate::pc_contracts_cli_resources::{
-	establish_pc_contracts_cli_configuration, prompt_ogmios_configuration,
-};
+use crate::ogmios::config::prompt_ogmios_configuration;
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
-use crate::{cardano_key, smart_contracts, CmdRun};
+use crate::{cardano_key, CmdRun};
 use anyhow::anyhow;
 use anyhow::Context;
 use partner_chains_cardano_offchain::d_param::UpsertDParam;
+use partner_chains_cardano_offchain::permissioned_candidates::UpsertPermissionedCandidates;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::mainchain_epoch::MainchainEpochDerivation;
@@ -47,17 +43,6 @@ pub struct PermissionedCandidateData {
 	pub is_valid: bool,
 }
 
-enum InsertOrUpdate {
-	Insert,
-	Update,
-}
-
-impl InsertOrUpdate {
-	fn permissioned_candidates_command(&self) -> &'static str {
-		"update-permissioned-candidates --remove-all-candidates"
-	}
-}
-
 impl TryFrom<PermissionedCandidateData> for ParsedPermissionedCandidatesKeys {
 	type Error = anyhow::Error;
 
@@ -84,6 +69,17 @@ impl SortedPermissionedCandidates {
 		keys.sort();
 		Self(keys)
 	}
+
+	pub fn to_candidate_data(&self) -> Vec<sidechain_domain::PermissionedCandidateData> {
+		self.0
+			.iter()
+			.map(|c| sidechain_domain::PermissionedCandidateData {
+				sidechain_public_key: c.sidechain.into(),
+				aura_public_key: c.aura.into(),
+				grandpa_public_key: c.grandpa.into(),
+			})
+			.collect()
+	}
 }
 
 impl CmdRun for SetupMainChainStateCmd {
@@ -99,11 +95,6 @@ impl SetupMainChainStateCmd {
 		context.print(
 			"This wizard will set or update D-Parameter and Permissioned Candidates on the main chain. Setting either of these costs ADA!",
 		);
-		if !context.file_exists(PC_CONTRACTS_CLI_PATH) {
-			return Err(anyhow!(
-				"Partner Chains Smart Contracts executable file ({PC_CONTRACTS_CLI_PATH}) is missing",
-			));
-		}
 		let config_initial_authorities =
 			initial_permissioned_candidates_from_chain_config(context)?;
 		if let Some(ariadne_parameters) = get_ariadne_parameters(context, &chain_config)? {
@@ -119,8 +110,8 @@ impl SetupMainChainStateCmd {
 					context,
 					config_initial_authorities,
 					chain_config.chain_parameters.genesis_utxo,
-					InsertOrUpdate::Update,
-				)?;
+				)
+				.await?;
 			}
 			context.print(&format!(
 				"D-Parameter on the main chain is: (P={}, R={})",
@@ -138,8 +129,8 @@ impl SetupMainChainStateCmd {
 				context,
 				config_initial_authorities,
 				chain_config.chain_parameters.genesis_utxo,
-				InsertOrUpdate::Insert,
-			)?;
+			)
+			.await?;
 			let default_d_parameter =
 				DParameter { num_permissioned_candidates: 0, num_registered_candidates: 0 };
 			set_d_parameter_on_main_chain(
@@ -247,39 +238,22 @@ fn print_on_chain_and_config_permissioned_candidates<C: IOContext>(
 	}
 }
 
-fn set_candidates_on_main_chain<C: IOContext>(
+async fn set_candidates_on_main_chain<C: IOContext>(
 	context: &C,
 	candidates: SortedPermissionedCandidates,
 	genesis_utxo: UtxoId,
-	insert_or_update: InsertOrUpdate,
 ) -> anyhow::Result<()> {
 	let update = context.prompt_yes_no("Do you want to set/update the permissioned candidates on the main chain with values from configuration file?", false);
 	if update {
-		let pc_contracts_cli_resources = establish_pc_contracts_cli_configuration(context)?;
+		let ogmios_config = prompt_ogmios_configuration(context)?;
 		let payment_signing_key_path =
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
-		let command = insert_or_update.permissioned_candidates_command();
-		let candidate_keys = candidates
-			.0
-			.iter()
-			.map(|c| format!("--add-candidate {}", c.to_smart_contracts_args_triple()))
-			.collect::<Vec<_>>()
-			.join(" ");
-
-		let cardano_network = get_cardano_network_from_file(context)?;
+		let pkey = cardano_key::get_mc_pkey_from_file(&payment_signing_key_path, context)?;
 
 		context
-			.run_command(&format!(
-				"{PC_CONTRACTS_CLI_PATH} {} --network {} {} {} {}",
-				command,
-				cardano_network,
-				candidate_keys,
-				smart_contracts::sidechain_params_arguments(genesis_utxo),
-				smart_contracts::runtime_config_arguments(
-					&pc_contracts_cli_resources,
-					&payment_signing_key_path
-				)
-			))
+			.offchain_impl(&ogmios_config)?
+			.upsert_permissioned_candidates(genesis_utxo, &candidates.to_candidate_data(), pkey.0)
+			.await
 			.context("Permissioned candidates update failed")?;
 		context.print("Permissioned candidates updated. The change will be effective in two main chain epochs.");
 	}

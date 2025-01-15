@@ -21,7 +21,7 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use plutus::{Datum, ToDatum};
 use plutus_datum_derive::*;
 use scale_info::TypeInfo;
-use sp_core::{bounded::BoundedVec, ed25519, sr25519, ConstU32};
+use sp_core::{bounded::BoundedVec, ecdsa, ed25519, sr25519, ConstU32};
 #[cfg(feature = "serde")]
 use {
 	derive_more::FromStr,
@@ -73,6 +73,12 @@ impl StakeDelegation {
 )]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NativeTokenAmount(pub u128);
+
+impl Display for NativeTokenAmount {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+		u128::fmt(&self.0, f)
+	}
+}
 
 /// A main chain block number. In range [0, 2^31-1].
 #[derive(
@@ -192,15 +198,47 @@ const POLICY_ID_LEN: usize = 28;
 #[cfg_attr(feature = "std", byte_string(to_hex_string))]
 pub struct PolicyId(pub [u8; POLICY_ID_LEN]);
 
+pub type ScriptHash = PolicyId;
+
 pub const MAX_ASSET_NAME_LEN: u32 = 32;
 
 #[derive(Clone, Default, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TokenId {
+	Ada,
+	AssetId { policy_id: PolicyId, asset_name: AssetName },
+}
+
+#[cfg(feature = "std")]
+impl FromStr for TokenId {
+	type Err = String;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		if s.to_lowercase() == "ada" {
+			Ok(Self::Ada)
+		} else {
+			match s.split_once(".") {
+				Some((policy_id, asset_name)) => {
+					let policy_id = PolicyId::from_str(policy_id)
+						.map_err(|e| format!("{} is invalid Policy ID: {}", policy_id, e))?;
+					let asset_name = AssetName::from_str(asset_name)
+						.map_err(|e| format!("{} is invalid Asset Name: {}", asset_name, e))?;
+					Ok(Self::AssetId { policy_id, asset_name })
+				},
+				None => Err("AssetID should be <hex encoded Policy ID>.<hex encoded Asset Name>"
+					.to_string()),
+			}
+		}
+	}
+}
+
 const MAINCHAIN_PUBLIC_KEY_LEN: usize = 32;
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
+#[cfg_attr(feature = "std", byte_string(to_hex_string))]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct MainchainPublicKey(pub [u8; MAINCHAIN_PUBLIC_KEY_LEN]);
 
@@ -213,21 +251,6 @@ pub struct MainchainPrivateKey(pub [u8; MAINCHAIN_PRIVATE_KEY_LEN]);
 impl core::fmt::Debug for MainchainPrivateKey {
 	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
 		write!(f, "***")
-	}
-}
-
-impl MainchainPrivateKey {
-	#[cfg(feature = "std")]
-	pub fn to_pub_key_hash(&self) -> MainchainAddressHash {
-		cardano_serialization_lib::PrivateKey::from_normal_bytes(&self.0)
-			.expect("Conversion cannot fail on valid MainchainPrivateKey values")
-			.to_public()
-			.hash()
-			.to_bytes()
-			.as_slice()
-			.try_into()
-			.map(MainchainAddressHash)
-			.expect("Conversion cannot fail as representation is the same")
 	}
 }
 
@@ -266,7 +289,7 @@ impl MainchainAddressHash {
 	}
 }
 
-#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
+#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, decode_hex)]
 pub struct MainchainSignature(pub Vec<u8>);
 
@@ -309,11 +332,17 @@ impl ScEpochNumber {
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, PartialOrd, Ord)]
-#[byte_string(debug, hex_serialize, hex_deserialize, as_ref)]
+#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, PartialOrd, Ord, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex, as_ref)]
 pub struct SidechainPublicKey(pub Vec<u8>);
 
-#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq)]
+impl From<ecdsa::Public> for SidechainPublicKey {
+	fn from(value: ecdsa::Public) -> Self {
+		Self(value.0.to_vec())
+	}
+}
+
+#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct SidechainSignature(pub Vec<u8>);
 
@@ -350,7 +379,7 @@ pub struct UtxoId {
 }
 
 impl UtxoId {
-	pub fn new(hash: [u8; TX_HASH_SIZE], index: u16) -> UtxoId {
+	pub const fn new(hash: [u8; TX_HASH_SIZE], index: u16) -> UtxoId {
 		UtxoId { tx_hash: McTxHash(hash), index: UtxoIndex(index) }
 	}
 }
@@ -601,8 +630,8 @@ impl SidechainPublicKeysSorted {
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord)]
-#[byte_string(debug, hex_serialize, hex_deserialize)]
+#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct AuraPublicKey(pub Vec<u8>);
 impl AuraPublicKey {
 	pub fn try_into_sr25519(&self) -> Option<sr25519::Public> {
@@ -610,12 +639,24 @@ impl AuraPublicKey {
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord)]
-#[byte_string(debug, hex_serialize, hex_deserialize)]
+impl From<sr25519::Public> for AuraPublicKey {
+	fn from(value: sr25519::Public) -> Self {
+		Self(value.0.to_vec())
+	}
+}
+
+#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct GrandpaPublicKey(pub Vec<u8>);
 impl GrandpaPublicKey {
 	pub fn try_into_ed25519(&self) -> Option<ed25519::Public> {
 		Some(ed25519::Public::from_raw(self.0.clone().try_into().ok()?))
+	}
+}
+
+impl From<ed25519::Public> for GrandpaPublicKey {
+	fn from(value: ed25519::Public) -> Self {
+		Self(value.0.to_vec())
 	}
 }
 
@@ -632,18 +673,18 @@ impl DParameter {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord, Hash)]
 pub struct PermissionedCandidateData {
 	pub sidechain_public_key: SidechainPublicKey,
 	pub aura_public_key: AuraPublicKey,
 	pub grandpa_public_key: GrandpaPublicKey,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct CandidateRegistration {
 	pub stake_ownership: AdaBasedStaking,
-	pub partnerchain_pub_key: SidechainPublicKey,
-	pub partnerchain_signature: SidechainSignature,
+	pub partner_chain_pub_key: SidechainPublicKey,
+	pub partner_chain_signature: SidechainSignature,
 	pub own_pkh: MainchainAddressHash,
 	pub registration_utxo: UtxoId,
 	pub aura_pub_key: AuraPublicKey,
@@ -653,8 +694,8 @@ pub struct CandidateRegistration {
 impl CandidateRegistration {
 	pub fn matches_keys(&self, other: &Self) -> bool {
 		self.stake_ownership == other.stake_ownership
-			&& self.partnerchain_pub_key == other.partnerchain_pub_key
-			&& self.partnerchain_signature == other.partnerchain_signature
+			&& self.partner_chain_pub_key == other.partner_chain_pub_key
+			&& self.partner_chain_signature == other.partner_chain_signature
 			&& self.aura_pub_key == other.aura_pub_key
 			&& self.grandpa_pub_key == other.grandpa_pub_key
 	}
@@ -662,7 +703,7 @@ impl CandidateRegistration {
 
 /// AdaBasedStaking is a variant of Plutus type StakeOwnership.
 /// The other variant, TokenBasedStaking, is not supported
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct AdaBasedStaking {
 	pub pub_key: MainchainPublicKey,
 	pub signature: MainchainSignature,

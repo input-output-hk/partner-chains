@@ -4,10 +4,15 @@ use anyhow::anyhow;
 use ogmios_client::types::OgmiosTx;
 use partner_chains_cardano_offchain::d_param::UpsertDParam;
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
+use partner_chains_cardano_offchain::permissioned_candidates::UpsertPermissionedCandidates;
+use partner_chains_cardano_offchain::register::{Deregister, Register};
 use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData};
 use partner_chains_cardano_offchain::OffchainError;
 use pretty_assertions::assert_eq;
-use sidechain_domain::{DParameter, MainchainAddressHash, MainchainPrivateKey, McTxHash, UtxoId};
+use sidechain_domain::{
+	CandidateRegistration, DParameter, MainchainAddressHash, MainchainPrivateKey,
+	MainchainPublicKey, McTxHash, UtxoId,
+};
 use sp_core::offchain::Timestamp;
 use std::collections::HashMap;
 use std::panic::{catch_unwind, resume_unwind, UnwindSafe};
@@ -196,7 +201,7 @@ impl MockIOContext {
 	}
 	pub fn with_expected_io(self, mut expected_commands: Vec<MockIO>) -> Self {
 		expected_commands.reverse();
-		let expected_commands = Arc::new(Mutex::new(expected_commands.into()));
+		let expected_commands = Arc::new(Mutex::new(expected_commands));
 		Self {
 			expected_io: expected_commands,
 			files: self.files.clone(),
@@ -256,6 +261,18 @@ pub struct OffchainMock {
 		Result<OgmiosTx, OffchainError>,
 	>,
 	pub upsert_d_param: HashMap<(UtxoId, DParameter, [u8; 32]), Result<Option<McTxHash>, String>>,
+	pub upsert_permissioned_candidates: HashMap<
+		(UtxoId, Vec<sidechain_domain::PermissionedCandidateData>, [u8; 32]),
+		Result<Option<McTxHash>, String>,
+	>,
+	pub register: HashMap<
+		(UtxoId, CandidateRegistration, MainchainPrivateKey),
+		Result<Option<McTxHash>, OffchainError>,
+	>,
+	pub deregister: HashMap<
+		(UtxoId, MainchainPrivateKey, MainchainPublicKey),
+		Result<Option<McTxHash>, OffchainError>,
+	>,
 }
 
 impl OffchainMock {
@@ -295,6 +312,50 @@ impl OffchainMock {
 	) -> Self {
 		Self { upsert_d_param: [((genesis_utxo, d_param, payment_key.0), result)].into(), ..self }
 	}
+
+	pub(crate) fn with_register(
+		self,
+		genesis_utxo: UtxoId,
+		candidate_registration: CandidateRegistration,
+		payment_key: MainchainPrivateKey,
+		result: Result<Option<McTxHash>, OffchainError>,
+	) -> Self {
+		Self {
+			register: [((genesis_utxo, candidate_registration, payment_key), result)].into(),
+			..self
+		}
+	}
+
+	pub(crate) fn with_deregister(
+		self,
+		genesis_utxo: UtxoId,
+		payment_signing_key: MainchainPrivateKey,
+		stake_ownership_pub_key: MainchainPublicKey,
+		result: Result<Option<McTxHash>, OffchainError>,
+	) -> Self {
+		Self {
+			deregister: [((genesis_utxo, payment_signing_key, stake_ownership_pub_key), result)]
+				.into(),
+			..self
+		}
+	}
+
+	pub(crate) fn with_upsert_permissioned_candidates(
+		self,
+		genesis_utxo: UtxoId,
+		candidates: &[sidechain_domain::PermissionedCandidateData],
+		payment_key: MainchainPrivateKey,
+		result: Result<Option<McTxHash>, String>,
+	) -> Self {
+		Self {
+			upsert_permissioned_candidates: [(
+				(genesis_utxo, candidates.to_vec(), payment_key.0),
+				result,
+			)]
+			.into(),
+			..self
+		}
+	}
 }
 
 impl GetScriptsData for OffchainMock {
@@ -333,6 +394,55 @@ impl UpsertDParam for OffchainMock {
 			.cloned()
 			.unwrap_or_else(|| {
 				Err(format!("No mock for upsert_d_param({genesis_utxo}, {d_parameter:?}, {payment_signing_key:?})"))
+			})
+			.map_err(|err| anyhow!("{err}"))
+	}
+}
+
+impl Register for OffchainMock {
+	async fn register(
+		&self,
+		genesis_utxo: UtxoId,
+		candidate_registration: &CandidateRegistration,
+		payment_signing_key: MainchainPrivateKey,
+	) -> Result<Option<McTxHash>, OffchainError> {
+		self.register
+			.get(&(genesis_utxo, candidate_registration.clone(), payment_signing_key.clone()))
+			.cloned()
+			.unwrap_or_else(|| {
+				Err(OffchainError::InternalError(format!("No mock for register({genesis_utxo}, {candidate_registration:?}, {payment_signing_key:?})")))
+			})
+	}
+}
+
+impl Deregister for OffchainMock {
+	async fn deregister(
+		&self,
+		genesis_utxo: UtxoId,
+		payment_signing_key: MainchainPrivateKey,
+		stake_ownership_pub_key: MainchainPublicKey,
+	) -> Result<Option<McTxHash>, OffchainError> {
+		self.deregister
+			.get(&(genesis_utxo, payment_signing_key.clone(), stake_ownership_pub_key.clone()))
+			.cloned()
+			.unwrap_or_else(|| {
+				Err(OffchainError::InternalError(format!("No mock for deregister({genesis_utxo}, {payment_signing_key:?}, {stake_ownership_pub_key:?})")))
+			})
+	}
+}
+
+impl UpsertPermissionedCandidates for OffchainMock {
+	async fn upsert_permissioned_candidates(
+		&self,
+		genesis_utxo: UtxoId,
+		candidates: &[sidechain_domain::PermissionedCandidateData],
+		payment_signing_key: [u8; 32],
+	) -> anyhow::Result<Option<McTxHash>> {
+		self.upsert_permissioned_candidates
+			.get(&(genesis_utxo, candidates.to_vec(), payment_signing_key))
+			.cloned()
+			.unwrap_or_else(|| {
+				Err(format!("No mock for upsert_permissioned_candidates({genesis_utxo:?}, {candidates:?}, {payment_signing_key:?})\n defined mocks:{:?}", self.upsert_permissioned_candidates))
 			})
 			.map_err(|err| anyhow!("{err}"))
 	}
@@ -552,7 +662,7 @@ impl IOContext for MockIOContext {
 	}
 
 	fn current_timestamp(&self) -> Timestamp {
-		let next = self.pop_next_action(&format!("current_timestamp()"));
+		let next = self.pop_next_action("current_timestamp()");
 		next.print_mock_location_on_panic(|next| match next {
 			MockIO::SystemTimeNow(time) => time,
 			other => panic!("Unexpected system time request, expected: {other:?}"),

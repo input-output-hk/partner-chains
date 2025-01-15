@@ -1,7 +1,10 @@
 use cardano_serialization_lib::{BigNum, PlutusData, PlutusList};
 use sidechain_domain::*;
 
-use crate::{DataDecodingError, DecodingResult, VersionedDatum, VersionedGenericDatumShape};
+use crate::{
+	DataDecodingError, DecodingResult, VersionedDatum, VersionedDatumWithLegacy,
+	VersionedGenericDatumShape,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum PermissionedCandidateDatums {
@@ -61,7 +64,7 @@ pub fn permissioned_candidates_to_plutus_data(
 	.into()
 }
 
-impl VersionedDatum for PermissionedCandidateDatums {
+impl VersionedDatumWithLegacy for PermissionedCandidateDatums {
 	const NAME: &str = "PermissionedCandidateDatums";
 
 	/// Parses plutus data schema that was used before datum versioning was added. Kept for backwards compatibility.

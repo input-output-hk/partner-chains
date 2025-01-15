@@ -1,9 +1,9 @@
 { fetchzip, stdenv, ... }:
 let
-  version = "6.9.0";
+  version = "6.11.0";
   ogmiosLinux = fetchzip {
     url = "https://github.com/CardanoSolutions/ogmios/releases/download/v${version}/ogmios-v${version}-x86_64-linux.zip";
-    hash = "sha256-i6J3ybpxdZvd/e7ktIW4Dvf7Crobs60jwEYHfFxnsJw=";
+    hash = "sha256-xwWEQn0yNJjAFm/MRBXXaLs6gpscYn4XRUUQwl/+Wnc=";
     stripRoot = false;
     version = "${version}";
     name = "ogmios-${version}";
@@ -12,7 +12,7 @@ let
 
   ogmiosDarwin = fetchzip {
     url = "https://github.com/CardanoSolutions/ogmios/releases/download/v${version}/ogmios-v${version}-aarch64-macos.zip";
-    hash = "sha256-mlrL7D1muYLmcAguUotgFRKJrvKXzPTrEj8uzINkt8s=";
+    hash = "sha256-fZyFClgXyCVe2bvrKX3JKsllwtpbAkL8wMylJVTv85E=";
     stripRoot = false;
     version = "${version}";
     name = "ogmios-${version}";

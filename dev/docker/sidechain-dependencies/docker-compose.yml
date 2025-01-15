@@ -7,7 +7,7 @@ volumes:
 
 services:
   cardano-node:
-    image: ghcr.io/intersectmbo/cardano-node:10.1.2
+    image: ghcr.io/intersectmbo/cardano-node:10.1.4
     network_mode: "host"
     container_name: sidechains-cardano-node
     environment:
@@ -35,7 +35,7 @@ services:
       retries: 5
 
   db-sync:
-    image: ghcr.io/intersectmbo/cardano-db-sync:13.5.0.2
+    image: ghcr.io/intersectmbo/cardano-db-sync:13.6.0.4
     container_name: sidechains-db-sync
     depends_on:
       postgres:
@@ -52,7 +52,7 @@ services:
       - db-sync-data:/var/lib
 
   ogmios:
-    image: cardanosolutions/ogmios:v6.9.0
+    image: cardanosolutions/ogmios:v6.11.0
     container_name: sidechains-ogmios
     platform: linux/amd64
     command: "--host 0.0.0.0 --node-config /config/preview/config.json --node-socket /ipc/node.socket"
@@ -67,7 +67,7 @@ services:
       - $CARDANO_CONFIG_DIR:/config
 
   kupo:
-    image: cardanosolutions/kupo:v2.9.0
+    image: cardanosolutions/kupo:v2.10.0
     container_name: sidechains-kupo
     command: '--node-socket /ipc/node.socket --node-config /config/preview/config.json --host 0.0.0.0 --workdir /db --match "*" --since origin'
     ports:

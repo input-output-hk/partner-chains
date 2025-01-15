@@ -12,7 +12,7 @@
       },
       "original": {
         "owner": "IntersectMBO",
-        "ref": "13.5.0.2",
+        "ref": "13.6.0.4",
         "repo": "cardano-db-sync",
         "type": "github"
       }

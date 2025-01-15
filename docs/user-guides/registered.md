@@ -5,11 +5,11 @@ A registered block producer is a Cardano stake pool operator (SPO) that desires 
 ## Order of Operations
 1. Become a Cardano SPO
 2. Install partner chains dependencies
-    1. Cardano node v10.1.2
-        1. Ogmios v6.9.0
-        2. Kupo - v2.9.0
-        3. Cardano DB Sync v13.5.0.2 (PostgreSQL v15.3)
-    2. Download the partner chain node v1.0
+    1. Cardano node v10.1.4
+        1. Ogmios v6.11.0
+        2. Kupo - v2.10.0
+        3. Cardano DB Sync v13.6.0.4 (PostgreSQL v15.3+)
+    2. Download the partner chain node v1.4.0
 3. Run the generate-keys wizard
 4. Obtain chain parameters from the chain builder
 5. Register for the partner chain
@@ -46,7 +46,7 @@ Be mindful of file paths in the instruction sets below. Your `cardano-node` may 
 
 ---
 
-### 2.1.1 Ogmios - v6.9.0
+### 2.1.1 Ogmios - v6.11.0
 
 Ogmios is a lightweight bridge interface for `cardano-node`. It offers a WebSocket API that enables local clients to speak to the main chain via JSON/RPC.
 
@@ -89,7 +89,7 @@ journalctl -fu ogmios.service
 
 For further instructions, please see [Ogmios](https://ogmios.dev/getting-started/building/).
 
-### 2.1.2 Kupo - v2.9.0
+### 2.1.2 Kupo - v2.10.0
 
 Kupo is a fast, lightweight and configurable chain indexer for Cardano.
 
@@ -131,7 +131,7 @@ sudo systemctl start kupo.service
 
 Please refer to [Kupo](https://cardanosolutions.github.io/kupo/#section/Overview) for detailed instructions.
 
-### 2.1.3 Cardano DB Sync v13.5.0.2
+### 2.1.3 Cardano DB Sync v13.6.0.4
 
 The partner chain needs DB Sync on a `cardano-node` to observe Cardano's state.
 

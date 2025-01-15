@@ -1,18 +1,16 @@
+use crate::cardano_key::get_mc_pkey_from_file;
 use crate::config;
 use crate::config::config_fields;
-use crate::config::get_cardano_network_from_file;
 use crate::config::CHAIN_CONFIG_FILE_PATH;
-use crate::config::PC_CONTRACTS_CLI_PATH;
 use crate::io::IOContext;
 use crate::main_chain_follower::set_main_chain_follower_env;
-use crate::pc_contracts_cli_resources::establish_pc_contracts_cli_configuration;
-use crate::smart_contracts;
+use crate::ogmios::config::establish_ogmios_configuration;
 use crate::CmdRun;
-use anyhow::Context;
 use clap::Parser;
-use cli_commands::key_params::{PlainPublicKeyParam, SidechainPublicKeyParam};
+use partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
+use partner_chains_cardano_offchain::register::Register;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
-use sidechain_domain::{McEpochNumber, UtxoId};
+use sidechain_domain::*;
 
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
@@ -22,17 +20,17 @@ pub struct Register3Cmd {
 	#[arg(long)]
 	pub registration_utxo: UtxoId,
 	#[arg(long)]
-	pub sidechain_pub_key: SidechainPublicKeyParam,
+	pub partner_chain_pub_key: SidechainPublicKey,
 	#[arg(long)]
-	pub aura_pub_key: PlainPublicKeyParam,
+	pub aura_pub_key: AuraPublicKey,
 	#[arg(long)]
-	pub grandpa_pub_key: PlainPublicKeyParam,
+	pub grandpa_pub_key: GrandpaPublicKey,
 	#[arg(long)]
-	pub sidechain_signature: String,
+	pub partner_chain_signature: SidechainSignature,
 	#[arg(long)]
-	pub spo_public_key: String,
+	pub spo_public_key: MainchainPublicKey,
 	#[arg(long)]
-	pub spo_signature: String,
+	pub spo_signature: MainchainSignature,
 }
 
 impl CmdRun for Register3Cmd {
@@ -52,33 +50,31 @@ impl CmdRun for Register3Cmd {
 		let cardano_payment_signing_key_path =
 			context.prompt("Path to mainchain payment signing key file", Some("payment.skey"));
 
-		let sidechain_param_arg = smart_contracts::sidechain_params_arguments(self.genesis_utxo);
+		let payment_signing_key =
+			get_mc_pkey_from_file(&cardano_payment_signing_key_path, context)?;
+		let ogmios_configuration = establish_ogmios_configuration(context)?;
+		let candidate_registration = CandidateRegistration {
+			stake_ownership: AdaBasedStaking {
+				pub_key: self.spo_public_key.clone(),
+				signature: self.spo_signature.clone(),
+			},
+			partner_chain_pub_key: self.partner_chain_pub_key.clone(),
+			partner_chain_signature: self.partner_chain_signature.clone(),
+			own_pkh: payment_signing_key.to_pub_key_hash(),
+			registration_utxo: self.registration_utxo,
+			aura_pub_key: self.aura_pub_key.clone(),
+			grandpa_pub_key: self.grandpa_pub_key.clone(),
+		};
+		let offchain = context.offchain_impl(&ogmios_configuration)?;
 
-		let pc_contracts_cli_resources = establish_pc_contracts_cli_configuration(context)?;
-		let runtime_config_arguments = smart_contracts::runtime_config_arguments(
-			&pc_contracts_cli_resources,
-			&cardano_payment_signing_key_path,
-		);
-
-		let cardano_network = get_cardano_network_from_file(context)?;
-
-		let command = format!(
-			"{PC_CONTRACTS_CLI_PATH} register --network {} {} --registration-utxo {} --sidechain-public-keys {}:{}:{} --sidechain-signature {} --spo-public-key {} --spo-signature {} --ada-based-staking {}",
-			cardano_network,
-			sidechain_param_arg,
-			self.registration_utxo,
-			self.sidechain_pub_key,
-			self.aura_pub_key,
-			self.grandpa_pub_key,
-			self.sidechain_signature,
-			self.spo_public_key,
-			self.spo_signature,
-			runtime_config_arguments
-		);
-
-		context
-			.run_command(&command)
-			.context("The registration transaction could not be submitted")?;
+		let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
+		runtime
+			.block_on(offchain.register(
+				self.genesis_utxo,
+				&candidate_registration,
+				payment_signing_key,
+			))
+			.map_err(|e| anyhow::anyhow!("Candidate registration failed: {e:?}!"))?;
 
 		if context.prompt_yes_no("Show registration status?", true) {
 			context.print("The registration status will be queried from a db-sync instance for which a valid connection string is required. Please note that this db-sync instance needs to be up and synced with the main chain.");
@@ -111,7 +107,7 @@ fn prepare_mc_follower_env<C: IOContext>(context: &C) -> anyhow::Result<()> {
 fn show_registration_status(
 	context: &impl IOContext,
 	mc_epoch_number: McEpochNumber,
-	mc_public_key: String,
+	mc_public_key: MainchainPublicKey,
 ) -> Result<(), anyhow::Error> {
 	let temp_dir = context.new_tmp_dir();
 	let temp_dir_path = temp_dir
@@ -123,7 +119,7 @@ fn show_registration_status(
 		.ok_or_else(|| anyhow::anyhow!("⚠️ Unable to load node executable"))?;
 	let command = format!(
 		"{} registration-status --mainchain-pub-key {} --mc-epoch-number {} --chain chain-spec.json --base-path {temp_dir_path}",
-		node_executable, mc_public_key, mc_epoch_number
+		node_executable, mc_public_key.to_hex_string(), mc_epoch_number
 	);
 	let output = context.run_command(&command)?;
 	context.print("Registration status:");
@@ -137,9 +133,11 @@ struct McEpochConfigJson {
 }
 
 fn get_current_mainchain_epoch(context: &impl IOContext) -> Result<McEpochNumber, anyhow::Error> {
-	let chain_config_json = context
-		.read_file(config::CHAIN_CONFIG_FILE_PATH)
-		.ok_or_else(|| anyhow::anyhow!("⚠️ The chain configuration file `partner-chains-cli-chain-config.json` is missing or invalid."))?;
+	let chain_config_json = context.read_file(config::CHAIN_CONFIG_FILE_PATH).ok_or_else(|| {
+		anyhow::anyhow!(
+			"⚠️ The chain configuration file `{CHAIN_CONFIG_FILE_PATH}` is missing or invalid."
+		)
+	})?;
 
 	let mc_epoch_config = serde_json::from_str::<McEpochConfigJson>(&chain_config_json)?;
 	mc_epoch_config
@@ -156,29 +154,37 @@ mod tests {
 			config_fields::POSTGRES_CONNECTION_STRING, CHAIN_CONFIG_FILE_PATH,
 			RESOURCES_CONFIG_FILE_PATH,
 		},
-		pc_contracts_cli_resources::{
-			tests::establish_pc_contracts_cli_configuration_io, PcContractsCliResources,
-		},
-		tests::{MockIO, MockIOContext},
+		ogmios::config::tests::{default_ogmios_service_config, establish_ogmios_configuration_io},
+		tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks},
 	};
+	use hex_literal::hex;
+	use partner_chains_cardano_offchain::OffchainError;
 	use serde_json::json;
 	use sp_core::offchain::Timestamp;
 
 	#[test]
 	fn happy_path() {
+		let offchain_mock = OffchainMock::new().with_register(
+			genesis_utxo(),
+			new_candidate_registration(),
+			payment_signing_key(),
+			Ok(Some(McTxHash::default())),
+		);
+
 		let mock_context = MockIOContext::new()
 			.with_json_file("/path/to/payment.skey", payment_skey_content())
 			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
 			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_content())
+			.with_offchain_mocks(OffchainMocks::new_with_mock(
+				"http://localhost:1337",
+				offchain_mock,
+			))
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
 					prompt_mc_payment_key_path_io(),
-					vec![establish_pc_contracts_cli_configuration_io(
-						None,
-						PcContractsCliResources::default(),
-					)],
-					run_registration_command_io(),
+					read_payment_skey(),
+					get_ogmios_config(),
 					prompt_for_registration_status_y(),
 					show_registration_status_io(),
 				]
@@ -193,19 +199,26 @@ mod tests {
 
 	#[test]
 	fn registration_call_fails() {
+		let offchain_mock = OffchainMock::new().with_register(
+			genesis_utxo(),
+			new_candidate_registration(),
+			payment_signing_key(),
+			Err(OffchainError::InternalError("test error".to_string())),
+		);
 		let mock_context = MockIOContext::new()
 			.with_json_file("/path/to/payment.skey", payment_skey_content())
 			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
 			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_content())
+			.with_offchain_mocks(OffchainMocks::new_with_mock(
+				"http://localhost:1337",
+				offchain_mock,
+			))
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
 					prompt_mc_payment_key_path_io(),
-					vec![establish_pc_contracts_cli_configuration_io(
-						None,
-						PcContractsCliResources::default(),
-					)],
-					run_registration_command_fail_io(),
+					read_payment_skey(),
+					get_ogmios_config(),
 				]
 				.into_iter()
 				.flatten()
@@ -218,19 +231,26 @@ mod tests {
 
 	#[test]
 	fn not_show_registration_status() {
+		let offchain_mock = OffchainMock::new().with_register(
+			genesis_utxo(),
+			new_candidate_registration(),
+			payment_signing_key(),
+			Ok(Some(McTxHash::default())),
+		);
 		let mock_context = MockIOContext::new()
 			.with_json_file("/path/to/payment.skey", payment_skey_content())
 			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
 			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_content())
+			.with_offchain_mocks(OffchainMocks::new_with_mock(
+				"http://localhost:1337",
+				offchain_mock,
+			))
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
 					prompt_mc_payment_key_path_io(),
-					vec![establish_pc_contracts_cli_configuration_io(
-						None,
-						PcContractsCliResources::default(),
-					)],
-					run_registration_command_io(),
+					read_payment_skey(),
+					get_ogmios_config(),
 					prompt_for_registration_status_n(),
 				]
 				.into_iter()
@@ -256,6 +276,13 @@ mod tests {
 			"Path to mainchain payment signing key file",
 			Some("payment.skey"),
 			"/path/to/payment.skey",
+		)]
+	}
+
+	fn get_ogmios_config() -> Vec<MockIO> {
+		vec![establish_ogmios_configuration_io(
+			Some(default_ogmios_service_config()),
+			default_ogmios_service_config(),
 		)]
 	}
 
@@ -289,39 +316,33 @@ mod tests {
 		MockIO::print("Registrations status for epoch 25:"),
         MockIO::new_tmp_dir(),
         MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
-        MockIO::run_command("/path/to/node registration-status --mainchain-pub-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --mc-epoch-number 25 --chain chain-spec.json --base-path /tmp/MockIOContext_tmp_dir", "{\"epoch\":1,\"validators\":[{\"public_key\":\"cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7\",\"status\":\"Registered\"}]}"),
+        MockIO::run_command("/path/to/node registration-status --mainchain-pub-key 0xcef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --mc-epoch-number 25 --chain chain-spec.json --base-path /tmp/MockIOContext_tmp_dir", "{\"epoch\":1,\"validators\":[{\"public_key\":\"cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7\",\"status\":\"Registered\"}]}"),
         MockIO::print("Registration status:"),
         MockIO::print("{\"epoch\":1,\"validators\":[{\"public_key\":\"cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7\",\"status\":\"Registered\"}]}"),
 		]
 	}
 
-	fn run_registration_command_io() -> Vec<MockIO> {
-		vec![
-			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
-			MockIO::run_command("./pc-contracts-cli register --network mainnet --genesis-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey", "{\"endpoint\":\"CommitteeCandidateReg\",\"transactionId\":\"1ab93b52d20ce114bfdb48a256ac48f3d8d46d00aec585c38a904b672a70e3a3\"}"),
-        ]
-	}
-
-	fn run_registration_command_fail_io() -> Vec<MockIO> {
-		vec![
-			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
-			MockIO::run_command_with_result(
-				"./pc-contracts-cli register --network mainnet --genesis-utxo f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0 --registration-utxo cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0 --sidechain-public-keys 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1:79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf:1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07 --sidechain-signature cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854 --spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --spo-signature aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801 --ada-based-staking --kupo-host localhost --kupo-port 1442  --ogmios-host localhost --ogmios-port 1337  --payment-signing-key-file /path/to/payment.skey",
-				Err(anyhow::anyhow!("TxRefNotFound"))),
-        ]
+	fn read_payment_skey() -> Vec<MockIO> {
+		vec![MockIO::file_read("/path/to/payment.skey")]
 	}
 
 	fn mock_register3_cmd() -> Register3Cmd {
 		Register3Cmd {
-            genesis_utxo: "f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0".parse().unwrap(),
+            genesis_utxo: genesis_utxo(),
             registration_utxo: "cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0".parse().unwrap(),
-            sidechain_pub_key: "020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1".parse().unwrap(),
+            partner_chain_pub_key: "020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1".parse().unwrap(),
             aura_pub_key: "79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf".parse().unwrap(),
             grandpa_pub_key: "1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07".parse().unwrap(),
-            sidechain_signature: "cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854".to_string(),
-			spo_public_key: "cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7".to_string(),
-			spo_signature: "aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801".to_string(),
+            partner_chain_signature: SidechainSignature(hex_literal::hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854").to_vec()),
+			spo_public_key: MainchainPublicKey(hex_literal::hex!("cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7")),
+			spo_signature: MainchainSignature(hex_literal::hex!("aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801").to_vec()),
         }
+	}
+
+	fn genesis_utxo() -> UtxoId {
+		"f17e6d3aa72095e04489d13d776bf05a66b5a8c49d89397c28b18a1784b9950e#0"
+			.parse()
+			.unwrap()
 	}
 
 	fn payment_skey_content() -> serde_json::Value {
@@ -330,6 +351,12 @@ mod tests {
 			"description": "Payment Signing Key",
 			"cborHex": "5820d75c630516c33a66b11b3444a70b65083aeb21353bd919cc5e3daa02c9732a84"
 		})
+	}
+
+	fn payment_signing_key() -> MainchainPrivateKey {
+		MainchainPrivateKey(hex!(
+			"d75c630516c33a66b11b3444a70b65083aeb21353bd919cc5e3daa02c9732a84"
+		))
 	}
 
 	fn chain_config_content() -> serde_json::Value {
@@ -360,12 +387,12 @@ mod tests {
 				{
 				  "aura_pub_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
 				  "grandpa_pub_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
-				  "sidechain_pub_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
+				  "partner_chain_pub_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
 				},
 				{
 				  "aura_pub_key": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
 				  "grandpa_pub_key": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
-				  "sidechain_pub_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27"
+				  "partner_chain_pub_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27"
 				}
 			],
 		})
@@ -387,5 +414,20 @@ mod tests {
 
 	fn mock_timestamp() -> Timestamp {
 		Timestamp::from_unix_millis(1668658000000u64)
+	}
+
+	fn new_candidate_registration() -> CandidateRegistration {
+		CandidateRegistration {
+			stake_ownership: AdaBasedStaking {
+				pub_key: MainchainPublicKey(hex!("cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7")),
+				signature: MainchainSignature(hex!("aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801").to_vec())
+			},
+			partner_chain_pub_key: SidechainPublicKey(hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec()),
+			partner_chain_signature: SidechainSignature(hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854").to_vec()),
+			own_pkh: MainchainAddressHash(hex!("7fa48bb8fb5d6804fad26237738ce490d849e4567161e38ab8415ff3")),
+			registration_utxo: UtxoId { tx_hash: McTxHash(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13")), index: UtxoIndex(0) },
+			aura_pub_key: AuraPublicKey(hex!("79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf").to_vec()),
+			grandpa_pub_key: GrandpaPublicKey(hex!("1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07").to_vec())
+		}
 	}
 }

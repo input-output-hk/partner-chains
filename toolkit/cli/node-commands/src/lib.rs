@@ -153,7 +153,10 @@ where
 			})
 		},
 		PartnerChainsSubcommand::RegistrationSignatures(cmd) => Ok(println!("{}", cmd.execute())),
-		PartnerChainsSubcommand::SmartContracts(cmd) => Ok(cmd.execute_blocking()?),
+		PartnerChainsSubcommand::SmartContracts(cmd) => {
+			crate::setup_log4rs()?;
+			Ok(cmd.execute_blocking()?)
+		},
 	}
 }
 

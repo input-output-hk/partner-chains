@@ -1,9 +1,12 @@
+use crate::IOContext;
 use anyhow::anyhow;
-use jsonrpsee::http_client::HttpClient;
 use ogmios_client::{
-	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, types::OgmiosUtxo,
+	jsonrpsee::client_for_url, query_ledger_state::QueryLedgerState, query_network::QueryNetwork,
+	types::OgmiosUtxo,
 };
 use sidechain_domain::NetworkType;
+
+pub(crate) mod config;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum OgmiosRequest {
@@ -67,28 +70,26 @@ pub struct UtxoValue {
 
 pub fn ogmios_request(addr: &str, req: OgmiosRequest) -> anyhow::Result<OgmiosResponse> {
 	let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
-	let client = HttpClient::builder().build(addr).map_err(|e| anyhow::anyhow!(e))?;
-	match req {
-		OgmiosRequest::QueryLedgerStateEraSummaries => {
-			let era_summaries =
-				tokio_runtime.block_on(client.era_summaries()).map_err(|e| anyhow::anyhow!(e))?;
-			let era_summaries = era_summaries.into_iter().map(From::from).collect();
-			Ok(OgmiosResponse::QueryLedgerStateEraSummaries(era_summaries))
-		},
-		OgmiosRequest::QueryNetworkShelleyGenesis => {
-			let shelley_genesis = tokio_runtime
-				.block_on(client.shelley_genesis_configuration())
-				.map_err(|e| anyhow::anyhow!(e))?;
-			let shelley_genesis = ShelleyGenesisConfiguration::try_from(shelley_genesis)?;
-			Ok(OgmiosResponse::QueryNetworkShelleyGenesis(shelley_genesis))
-		},
-		OgmiosRequest::QueryUtxo { address } => {
-			let utxos = tokio_runtime
-				.block_on(client.query_utxos(&[address]))
-				.map_err(|e| anyhow::anyhow!(e))?;
-			Ok(OgmiosResponse::QueryUtxo(utxos))
-		},
-	}
+	tokio_runtime.block_on(async {
+		let client = client_for_url(addr).await.map_err(|e| anyhow::anyhow!(e))?;
+		match req {
+			OgmiosRequest::QueryLedgerStateEraSummaries => {
+				let era_summaries = client.era_summaries().await.map_err(|e| anyhow::anyhow!(e))?;
+				let era_summaries = era_summaries.into_iter().map(From::from).collect();
+				Ok(OgmiosResponse::QueryLedgerStateEraSummaries(era_summaries))
+			},
+			OgmiosRequest::QueryNetworkShelleyGenesis => {
+				let shelley_genesis =
+					client.shelley_genesis_configuration().await.map_err(|e| anyhow::anyhow!(e))?;
+				let shelley_genesis = ShelleyGenesisConfiguration::try_from(shelley_genesis)?;
+				Ok(OgmiosResponse::QueryNetworkShelleyGenesis(shelley_genesis))
+			},
+			OgmiosRequest::QueryUtxo { address } => {
+				let utxos = client.query_utxos(&[address]).await.map_err(|e| anyhow::anyhow!(e))?;
+				Ok(OgmiosResponse::QueryUtxo(utxos))
+			},
+		}
+	})
 }
 
 impl From<ogmios_client::query_ledger_state::EraSummary> for EraSummary {
@@ -137,5 +138,117 @@ impl TryFrom<ogmios_client::query_network::ShelleyGenesisConfigurationResponse>
 			slot_length_millis: shelley_genesis.slot_length.milliseconds.into(),
 			start_time: shelley_genesis.start_time.unix_timestamp().try_into()?,
 		})
+	}
+}
+
+pub(crate) fn get_shelley_config<C: IOContext>(
+	addr: &str,
+	context: &C,
+) -> anyhow::Result<ShelleyGenesisConfiguration> {
+	let response = context.ogmios_rpc(addr, OgmiosRequest::QueryNetworkShelleyGenesis)?;
+	match response {
+        OgmiosResponse::QueryNetworkShelleyGenesis(shelley_config) => Ok(shelley_config),
+        other => Err(anyhow::anyhow!(format!("Unexpected response from Ogmios when quering for shelley genesis configuration: {other:?}"))),
+    }
+}
+
+#[cfg(test)]
+pub(crate) mod test_values {
+	use crate::ogmios::EpochParameters;
+
+	use super::ShelleyGenesisConfiguration;
+	use super::{EpochBoundary, EraSummary};
+	use sidechain_domain::NetworkType;
+
+	pub(crate) fn preprod_eras_summaries() -> Vec<EraSummary> {
+		vec![
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 21600, slot_length_millis: 20000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 1728000, slot: 86400, epoch: 4 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 2160000, slot: 518400, epoch: 5 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 2592000, slot: 950400, epoch: 6 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 3024000, slot: 1382400, epoch: 7 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 5184000, slot: 3542400, epoch: 12 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 5184000, slot: 3542400, epoch: 12 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 70416000, slot: 68774400, epoch: 163 },
+				parameters: EpochParameters { epoch_length: 432000, slot_length_millis: 1000 },
+			},
+		]
+	}
+
+	pub(crate) fn preprod_shelley_config() -> ShelleyGenesisConfiguration {
+		ShelleyGenesisConfiguration {
+			security_parameter: 2160,
+			active_slots_coefficient: 0.05,
+			epoch_length: 432000,
+			slot_length_millis: 1000,
+			start_time: 1654041600,
+			network: NetworkType::Testnet,
+		}
+	}
+
+	pub(crate) fn preview_eras_summaries() -> Vec<EraSummary> {
+		vec![
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 4320, slot_length_millis: 20000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 0, slot: 0, epoch: 0 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 259200, slot: 259200, epoch: 3 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+			EraSummary {
+				start: EpochBoundary { time_seconds: 55814400, slot: 55814400, epoch: 646 },
+				parameters: EpochParameters { epoch_length: 86400, slot_length_millis: 1000 },
+			},
+		]
+	}
+
+	pub(crate) fn preview_shelley_config() -> ShelleyGenesisConfiguration {
+		ShelleyGenesisConfiguration {
+			security_parameter: 432,
+			active_slots_coefficient: 0.05,
+			epoch_length: 86400,
+			slot_length_millis: 1000,
+			start_time: 1666656000,
+			network: NetworkType::Testnet,
+		}
 	}
 }

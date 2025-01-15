@@ -1,6 +1,6 @@
 use crate::{
 	DataDecodingError, DecodingResult, PlutusDataExtensions, VersionedDatum,
-	VersionedGenericDatumShape,
+	VersionedDatumWithLegacy, VersionedGenericDatumShape,
 };
 use cardano_serialization_lib::{PlutusData, PlutusList};
 
@@ -40,7 +40,7 @@ pub fn d_parameter_to_plutus_data(d_param: &sidechain_domain::DParameter) -> Plu
 	.into()
 }
 
-impl VersionedDatum for DParamDatum {
+impl VersionedDatumWithLegacy for DParamDatum {
 	const NAME: &str = "DParamDatum";
 
 	fn decode_legacy(data: &PlutusData) -> Result<Self, String> {

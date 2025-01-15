@@ -1,4 +1,5 @@
 use crate::csl::OgmiosUtxoExt;
+use crate::plutus_script;
 use crate::scripts_data;
 use crate::{
 	await_tx::{AwaitTx, FixedDelayRetries},
@@ -7,7 +8,6 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::*;
-use ogmios_client::types::OgmiosScript;
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
@@ -128,18 +128,34 @@ pub async fn run_init_governance<
 	Ok((genesis_utxo.to_domain(), result.transaction))
 }
 
-pub async fn get_governance_utxo<T: QueryLedgerState + Transactions + QueryNetwork>(
+pub(crate) async fn get_governance_utxo<T: QueryLedgerState + Transactions + QueryNetwork>(
 	genesis_utxo: UtxoId,
 	client: &T,
-) -> anyhow::Result<OgmiosUtxo> {
-	let network = client.shelley_genesis_configuration().await?.network;
+) -> Result<OgmiosUtxo, JsError> {
+	let network = client
+		.shelley_genesis_configuration()
+		.await
+		.map_err(|e| {
+			JsError::from_str(&format!("Could not get Shelley Genesis Configuration: {}", e))
+		})?
+		.network;
 
 	let (_, version_oracle_policy, validator_address) =
-		scripts_data::version_scripts_and_address(genesis_utxo, network.to_csl())?;
+		scripts_data::version_scripts_and_address(genesis_utxo, network.to_csl()).map_err(|e| {
+			JsError::from_str(&format!(
+				"Could not get Version Oracle Script Data for: {}, {}",
+				genesis_utxo, e
+			))
+		})?;
 
-	let utxos = client.query_utxos(&[validator_address]).await?;
+	let utxos = client.query_utxos(&[validator_address.clone()]).await.map_err(|e| {
+		JsError::from_str(&format!(
+			"Could not query UTXOs Governance Validator at {}: {}",
+			validator_address, e
+		))
+	})?;
 
-	let governance_utxo = utxos
+	utxos
 		.into_iter()
 		.find(|utxo| {
 			let correct_datum = utxo
@@ -158,31 +174,55 @@ pub async fn get_governance_utxo<T: QueryLedgerState + Transactions + QueryNetwo
 				utxo.value.native_tokens.contains_key(&version_oracle_policy.script_hash());
 			correct_datum && contains_version_oracle_token
 		})
-		.ok_or_else(|| anyhow!("Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using `init-governance` command."))?;
-
-	Ok(governance_utxo)
+		.ok_or_else(|| JsError::from_str("Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using `init-governance` command."))
 }
 
+#[derive(Clone, Debug)]
 pub(crate) struct GovernanceData {
-	policy_script: PlutusScript,
-	utxo_id: UtxoId,
+	pub(crate) policy_script: plutus_script::PlutusScript,
+	pub(crate) utxo: OgmiosUtxo,
+}
+
+impl GovernanceData {
+	pub fn utxo_id(&self) -> sidechain_domain::UtxoId {
+		self.utxo.utxo_id()
+	}
 }
 
 impl GovernanceData {
 	pub(crate) fn policy_script_hash(&self) -> ScriptHash {
-		self.policy_script.hash()
+		self.policy_script.csl_script_hash()
+	}
+
+	pub(crate) fn utxo_id_as_tx_input(&self) -> TransactionInput {
+		TransactionInput::new(
+			&TransactionHash::from_bytes(self.utxo_id().tx_hash.0.to_vec()).unwrap(),
+			self.utxo_id().index.0.into(),
+		)
 	}
 }
 
 pub(crate) async fn get_governance_data<T: QueryLedgerState + Transactions + QueryNetwork>(
 	genesis_utxo: UtxoId,
 	client: &T,
-) -> anyhow::Result<GovernanceData> {
+) -> Result<GovernanceData, JsError> {
 	let utxo = get_governance_utxo(genesis_utxo, client).await?;
-	let utxo_id = utxo.to_domain();
-	if let Some(OgmiosScript::Plutus(ps)) = utxo.script.clone() {
-		Ok(GovernanceData { policy_script: PlutusScript::new_v2(ps.cbor), utxo_id })
-	} else {
-		Err(anyhow!("Programmatic Error: Governance UTXO script is not PlutusScript"))
-	}
+	let policy_script = read_policy(&utxo)?;
+	Ok(GovernanceData { policy_script, utxo })
+}
+
+pub(crate) fn read_policy(
+	governance_utxo: &OgmiosUtxo,
+) -> Result<plutus_script::PlutusScript, JsError> {
+	let script = governance_utxo
+		.script
+		.clone()
+		.ok_or_else(|| JsError::from_str("No 'script' in governance UTXO"))?;
+	plutus_script::PlutusScript::from_ogmios(script).map_err(|e| {
+		JsError::from_str(&format!(
+			"Cannot convert script from UTXO {}: {}",
+			governance_utxo.to_domain(),
+			e
+		))
+	})
 }

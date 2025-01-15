@@ -1,9 +1,11 @@
 use crate::config::ServiceConfig;
 use crate::ogmios::{ogmios_request, OgmiosRequest, OgmiosResponse};
 use anyhow::{anyhow, Context};
-use jsonrpsee::http_client::HttpClient;
+use ogmios_client::jsonrpsee::{client_for_url, OgmiosClients};
 use partner_chains_cardano_offchain::d_param::UpsertDParam;
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
+use partner_chains_cardano_offchain::permissioned_candidates::UpsertPermissionedCandidates;
+use partner_chains_cardano_offchain::register::{Deregister, Register};
 use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
 use sp_core::offchain::Timestamp;
 use std::path::PathBuf;
@@ -16,7 +18,12 @@ use tempfile::{TempDir, TempPath};
 
 pub trait IOContext {
 	/// It should implement all the required traits for offchain operations
-	type Offchain: GetScriptsData + InitGovernance + UpsertDParam;
+	type Offchain: GetScriptsData
+		+ InitGovernance
+		+ UpsertDParam
+		+ Deregister
+		+ Register
+		+ UpsertPermissionedCandidates;
 
 	fn run_command(&self, cmd: &str) -> anyhow::Result<String>;
 	fn print(&self, msg: &str);
@@ -43,8 +50,8 @@ pub trait IOContext {
 pub struct DefaultCmdRunContext;
 
 impl IOContext for DefaultCmdRunContext {
-	// Currently HttpClient implements Ogmios traits, that implement all required Offchain traits
-	type Offchain = HttpClient;
+	// Currently WsClient implements Ogmios traits, that implement all required Offchain traits
+	type Offchain = OgmiosClients;
 
 	fn run_command(&self, cmd: &str) -> anyhow::Result<String> {
 		eprintln!("running external command: {cmd}");
@@ -176,7 +183,8 @@ impl IOContext for DefaultCmdRunContext {
 
 	fn offchain_impl(&self, ogmios_config: &ServiceConfig) -> anyhow::Result<Self::Offchain> {
 		let ogmios_address = ogmios_config.to_string();
-		HttpClient::builder().build(&ogmios_address).map_err(|_| {
+		let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
+		tokio_runtime.block_on(client_for_url(&ogmios_address)).map_err(|_| {
 			anyhow!(format!("Couldn't open connection to Ogmios at {}", ogmios_address))
 		})
 	}
