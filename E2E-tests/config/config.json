@@ -1,8 +1,5 @@
 {
-    "chain_id": 0,
     "atms_kind": "plain-ecdsa-secp256k1",
-    "threshold_numerator": 2,
-    "threshold_denominator": 3,
     "committee_epoch_slippage": 0,
     "committee_participation_tolerance": 0.18,
     "max_validators": 32,
