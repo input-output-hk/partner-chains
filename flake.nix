@@ -24,7 +24,7 @@
 
     # Partner Chains deps
     cardano-node = {
-      url = "github:IntersectMBO/cardano-node/10.1.2";
+      url = "github:IntersectMBO/cardano-node/10.1.4";
       flake = false;
     };
     cardano-dbsync = {
