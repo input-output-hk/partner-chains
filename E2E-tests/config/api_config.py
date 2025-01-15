@@ -143,8 +143,12 @@ class StackApiConfig:
 
 @dataclass
 class ApiConfig:
-    genesis_utxo: str = MISSING
+    chain_id: int = MISSING
+    genesis_committee_hash_utxo: str = MISSING
+    governance_authority: str = MISSING
     atms_kind: str = MISSING
+    threshold_numerator: int = MISSING
+    threshold_denominator: int = MISSING
     committee_epoch_slippage: int = MISSING
     committee_participation_tolerance: float = MISSING
     max_validators: int = MISSING

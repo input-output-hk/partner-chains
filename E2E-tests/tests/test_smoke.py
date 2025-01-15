@@ -96,4 +96,6 @@ class TestSmoke:
         * check that the return data is equal to the config values
         """
         params = api.get_params()
-        assert params["genesis_utxo"] == config.genesis_utxo, "Genesis UTXO mismatch"
+        assert params["chainId"] == config.chain_id, "Chain ID mismatch"
+        assert params["genesisCommitteeUtxo"] == config.genesis_committee_hash_utxo, "Genesis committee hash mismatch"
+        assert params["governanceAuthority"] == config.governance_authority, "Governance authority mismatch"
