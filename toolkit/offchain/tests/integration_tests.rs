@@ -6,20 +6,19 @@
 //! In case of change to the supported cardano-node or ogmios,
 //! it should be updated accordingly and pushed to the registry.
 
+use cardano_serialization_lib::NetworkIdKind;
 use hex_literal::hex;
-use jsonrpsee::http_client::HttpClient;
 use ogmios_client::{
+	jsonrpsee::{client_for_url, OgmiosClients},
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
-	OgmiosClientError,
 };
 use partner_chains_cardano_offchain::{
 	await_tx::{AwaitTx, FixedDelayRetries},
 	d_param, init_governance, permissioned_candidates,
 	register::Register,
-	reserve::{self},
-	update_governance,
+	reserve, scripts_data, update_governance,
 };
 use sidechain_domain::{
 	AdaBasedStaking, AssetName, AuraPublicKey, CandidateRegistration, DParameter, GrandpaPublicKey,
@@ -32,7 +31,7 @@ use tokio_retry::{strategy::FixedInterval, Retry};
 
 const TEST_IMAGE: &str = "ghcr.io/input-output-hk/smart-contracts-tests-cardano-node-ogmios";
 
-const TEST_IMAGE_TAG: &str = "v10.2.1-v6.9.0";
+const TEST_IMAGE_TAG: &str = "v10.1.4-v6.11.0";
 
 const GOVERNANCE_AUTHORITY: MainchainAddressHash =
 	MainchainAddressHash(hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"));
@@ -60,11 +59,14 @@ const REWARDS_TOKEN_POLICY_ID: PolicyId =
 // Reward token
 const REWARDS_TOKEN_ASSET_NAME_STR: &str = "52657761726420746f6b656e";
 
+const INITIAL_DEPOSIT_AMOUNT: u64 = 500000;
+const DEPOSIT_AMOUNT: u64 = 100000;
+
 #[tokio::test]
 async fn governance_flow() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
-	let client = Cli::default();
-	let container = client.run(image);
+	let cli = Cli::default();
+	let container = cli.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
 	let _ = run_update_goveranance(&client, genesis_utxo).await;
@@ -112,7 +114,10 @@ async fn reserve_management_scenario() {
 	assert_eq!(txs.len(), 3);
 	let txs = run_init_reserve_management(genesis_utxo, &client).await;
 	assert_eq!(txs.len(), 0);
-	run_create_reserve_management(genesis_utxo, &client).await;
+	let _ = run_create_reserve_management(genesis_utxo, &client).await;
+	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
+	run_deposit_to_reserve(genesis_utxo, &client).await;
+	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT + DEPOSIT_AMOUNT, &client).await;
 }
 
 #[tokio::test]
@@ -129,23 +134,23 @@ async fn register() {
 	assert!(run_register(genesis_utxo, other_signature, &client).await.is_some());
 }
 
-async fn initialize<'a>(container: &Container<'a, GenericImage>) -> HttpClient {
+async fn initialize<'a>(container: &Container<'a, GenericImage>) -> OgmiosClients {
 	let ogmios_port = container.get_host_port_ipv4(1337);
 	println!("Ogmios port: {}", ogmios_port);
-	let client = HttpClient::builder()
-		.build(format!("http://localhost:{}", ogmios_port))
-		.unwrap();
 
-	await_ogmios(&client).await.unwrap();
+	let client = await_ogmios(ogmios_port).await.unwrap();
 	println!("Ogmios is up");
 	let _ = initial_transaction(&client).await.unwrap();
 	println!("Initial transaction confirmed");
 	client
 }
 
-async fn await_ogmios<T: QueryNetwork>(client: &T) -> Result<(), OgmiosClientError> {
+async fn await_ogmios(ogmios_port: u16) -> Result<OgmiosClients, String> {
+	let url = format!("ws://localhost:{}", ogmios_port);
 	Retry::spawn(FixedInterval::new(Duration::from_millis(100)).take(1000), || async {
-		client.shelley_genesis_configuration().await.map(|_| ())
+		let client = client_for_url(&url).await?;
+		let _ = client.shelley_genesis_configuration().await.map_err(|e| e.to_string())?;
+		Ok(client)
 	})
 	.await
 }
@@ -155,6 +160,7 @@ async fn await_ogmios<T: QueryNetwork>(client: &T) -> Result<(), OgmiosClientErr
 /// * governance authority: 1000000 REWARDS_TOKEN
 /// * "dave" address: addr_test1vphpcf32drhhznv6rqmrmgpuwq06kug0lkg22ux777rtlqst2er0r
 /// * "eve" address: addr_test1vzzt5pwz3pum9xdgxalxyy52m3aqur0n43pcl727l37ggscl8h7v8
+///
 /// Its hash is 0x61ca664e056ce49a9d4fd2fb3aa2b750ea753fe4ad5c9e6167482fd88394cf7d
 async fn initial_transaction<T: Transactions + QueryUtxoByUtxoId>(
 	client: &T,
@@ -197,7 +203,7 @@ async fn run_update_goveranance<
 >(
 	client: &T,
 	genesis_utxo: UtxoId,
-) -> () {
+) {
 	let _ = update_governance::run_update_governance(
 		EVE_PUBLIC_KEY_HASH,
 		GOVERNANCE_AUTHORITY_PAYMENT_KEY,
@@ -227,12 +233,11 @@ async fn run_upsert_d_param<
 	)
 	.await
 	.unwrap();
-	match tx_hash {
-		Some(tx_hash) => FixedDelayRetries::new(Duration::from_millis(500), 100)
+	if let Some(tx_hash) = tx_hash {
+		FixedDelayRetries::new(Duration::from_millis(500), 100)
 			.await_tx_output(client, UtxoId::new(tx_hash.0, 0))
 			.await
-			.unwrap(),
-		None => (),
+			.unwrap()
 	};
 	tx_hash
 }
@@ -258,12 +263,11 @@ async fn run_upsert_permissioned_candidates<
 	)
 	.await
 	.unwrap();
-	match tx_hash {
-		Some(tx_hash) => FixedDelayRetries::new(Duration::from_millis(500), 100)
+	if let Some(tx_hash) = tx_hash {
+		FixedDelayRetries::new(Duration::from_millis(500), 100)
 			.await_tx_output(client, UtxoId::new(tx_hash.0, 0))
 			.await
-			.unwrap(),
-		None => (),
+			.unwrap()
 	};
 	tx_hash
 }
@@ -289,7 +293,7 @@ async fn run_create_reserve_management<
 >(
 	genesis_utxo: UtxoId,
 	client: &T,
-) -> () {
+) -> McTxHash {
 	reserve::create::create_reserve_utxo(
 		reserve::create::ReserveParameters {
 			initial_incentive: 100,
@@ -298,7 +302,30 @@ async fn run_create_reserve_management<
 				policy_id: REWARDS_TOKEN_POLICY_ID,
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
 			},
-			initial_deposit: 500000,
+			initial_deposit: INITIAL_DEPOSIT_AMOUNT,
+		},
+		genesis_utxo,
+		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		client,
+		&FixedDelayRetries::new(Duration::from_millis(500), 100),
+	)
+	.await
+	.unwrap()
+}
+
+async fn run_deposit_to_reserve<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> () {
+	reserve::deposit::deposit_to_reserve(
+		reserve::deposit::TokenAmount {
+			token: TokenId::AssetId {
+				policy_id: REWARDS_TOKEN_POLICY_ID,
+				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
+			},
+			amount: 100000,
 		},
 		genesis_utxo,
 		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
@@ -335,4 +362,44 @@ async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryU
 		)
 		.await
 		.unwrap()
+}
+
+async fn assert_token_amount_eq<T: QueryLedgerState>(
+	address: &str,
+	token_policy_id: &PolicyId,
+	token_asset_name: &AssetName,
+	expected_amount: u64,
+	client: &T,
+) {
+	let utxos = client.query_utxos(&[address.to_string()]).await.unwrap();
+	assert!(
+		utxos.into_iter().any(|utxo| {
+			utxo.value
+				.native_tokens
+				.get(&token_policy_id.0)
+				.and_then(|assets| assets.iter().find(|a| a.name == token_asset_name.0.to_vec()))
+				.is_some_and(|asset| asset.amount == expected_amount.into())
+		}),
+		"Expected to find UTXO with {} of {}.{} at {}",
+		expected_amount,
+		hex::encode(&token_policy_id.0),
+		hex::encode(&token_asset_name.0),
+		address,
+	);
+}
+
+async fn assert_reserve_deposited<T: QueryLedgerState>(
+	genesis_utxo: UtxoId,
+	amount: u64,
+	client: &T,
+) {
+	let data = scripts_data::get_scripts_data(genesis_utxo, NetworkIdKind::Testnet).unwrap();
+	assert_token_amount_eq(
+		&data.addresses.reserve_validator,
+		&REWARDS_TOKEN_POLICY_ID,
+		&AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
+		amount,
+		client,
+	)
+	.await;
 }

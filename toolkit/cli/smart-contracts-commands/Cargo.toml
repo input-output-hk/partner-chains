@@ -10,7 +10,7 @@ env_logger = { workspace = true }
 sidechain-domain = { workspace = true }
 partner-chains-cardano-offchain = { workspace = true }
 hex = { workspace = true }
-jsonrpsee = { workspace = true, features = ["client-core", "http-client", "macros"] }
+ogmios-client = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

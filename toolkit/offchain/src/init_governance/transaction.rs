@@ -8,10 +8,6 @@ use ogmios_client::types::OgmiosUtxo;
 use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 use sidechain_domain::MainchainAddressHash;
 
-// Script ID of the governance script in the script cache.
-// TODO: Use a proper value of raw_scripts::ScripId once we upgrade to a version that has it.
-const SCRIPT_ID: u32 = 32;
-
 pub(crate) fn init_governance_transaction(
 	governance_authority: MainchainAddressHash,
 	tx_context: &TransactionContext,
@@ -67,7 +63,9 @@ fn mint_witness(
 			&0u32.into(),
 			&PlutusData::new_constr_plutus_data(&ConstrPlutusData::new(&0u64.into(), &{
 				let mut list = PlutusList::new();
-				list.add(&PlutusData::new_integer(&SCRIPT_ID.into()));
+				list.add(&PlutusData::new_integer(
+					&(raw_scripts::ScriptId::GovernancePolicy as u32).into(),
+				));
 				list.add(&PlutusData::new_bytes(multi_sig_policy.script_hash().to_vec()));
 				list
 			})),
@@ -84,7 +82,7 @@ pub(crate) fn version_oracle_datum_output(
 	tx_context: &TransactionContext,
 ) -> anyhow::Result<cardano_serialization_lib::TransactionOutput> {
 	let datum: PlutusData = VersionOracleDatum {
-		version_oracle: SCRIPT_ID,
+		version_oracle: raw_scripts::ScriptId::GovernancePolicy as u32,
 		currency_symbol: version_oracle_policy.policy_id().0,
 	}
 	.into();

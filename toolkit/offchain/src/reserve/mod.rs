@@ -14,6 +14,7 @@ use sidechain_domain::UtxoId;
 pub mod create;
 pub mod deposit;
 pub mod init;
+pub mod update_settings;
 
 #[derive(Clone, Debug)]
 pub(crate) struct ReserveData {
