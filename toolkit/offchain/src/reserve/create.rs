@@ -6,7 +6,7 @@
 //!   * 1 Governance Policy Token (using reference script)
 //! 2. The transaction should have two outputs:
 //!   * Reserve Validator output that:
-//!   * * has Reward Tokens (or ada)
+//!   * * has Reward Tokens
 //!   * * has Plutus Data (in our "versioned format"): `[[[Int(t0), <Encoded Token>], [Bytes(v_function_hash), Int(initial_incentive)], [Int(0)]], Constr(0, []), Int(0)]`,
 //!       where `<Encoded Token>` is `Constr(0, [Bytes(policy_id), Bytes(asset_name)])`.
 //!   * Change output that keeps the Governance Token and change of other tokens
@@ -39,7 +39,7 @@ use ogmios_client::{
 use partner_chains_plutus_data::reserve::{
 	ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats,
 };
-use sidechain_domain::{McTxHash, PolicyId, TokenId, UtxoId};
+use sidechain_domain::{AssetId, McTxHash, PolicyId, UtxoId};
 use std::collections::HashMap;
 
 pub async fn create_reserve_utxo<
@@ -98,7 +98,7 @@ pub async fn create_reserve_utxo<
 pub struct ReserveParameters {
 	pub initial_incentive: u64,
 	pub total_accrued_function_script_hash: PolicyId,
-	pub token: TokenId,
+	pub token: AssetId,
 	pub initial_deposit: u64,
 }
 
@@ -195,15 +195,16 @@ fn reserve_validator_output(
 	let mut assets = Assets::new();
 	assets.insert(&empty_asset_name(), &1u64.into());
 	ma.insert(&scripts.auth_policy.csl_script_hash(), &assets);
-	if let TokenId::AssetId { policy_id, asset_name } = parameters.token.clone() {
-		let mut assets = Assets::new();
-		assets.insert(
-			&cardano_serialization_lib::AssetName::new(asset_name.0.to_vec())
-				.expect("AssetName has a valid length"),
-			&parameters.initial_deposit.into(),
-		);
-		ma.insert(&policy_id.0.into(), &assets);
-	};
+
+	let AssetId { policy_id, asset_name } = parameters.token.clone();
+	let mut assets = Assets::new();
+	assets.insert(
+		&cardano_serialization_lib::AssetName::new(asset_name.0.to_vec())
+			.expect("AssetName has a valid length"),
+		&parameters.initial_deposit.into(),
+	);
+	ma.insert(&policy_id.0.into(), &assets);
+
 	let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
 	let min_ada = MinOutputAdaCalculator::new(
 		&output,

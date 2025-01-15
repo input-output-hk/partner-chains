@@ -3,7 +3,7 @@ use crate::{
 	VersionedDatum, VersionedGenericDatumShape,
 };
 use cardano_serialization_lib::{BigInt, BigNum, ConstrPlutusData, PlutusData, PlutusList};
-use sidechain_domain::{AssetName, PolicyId, TokenId};
+use sidechain_domain::{AssetId, AssetName, PolicyId};
 
 #[derive(Debug, Clone)]
 pub enum ReserveRedeemer {
@@ -22,7 +22,7 @@ pub struct ReserveDatum {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReserveImmutableSettings {
-	pub token: TokenId,
+	pub token: AssetId,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -73,13 +73,10 @@ impl From<ReserveDatum> for PlutusData {
 				// Not configurable anymore, hardcoded to 0. If users need "t0" for their V-function, they are responsible for storing it somewhere.
 				let t0 = PlutusData::new_integer(&BigInt::zero());
 				immutable_settings.add(&t0);
-				let (policy_id_bytes, asset_name_bytes) =
-					match value.immutable_settings.token.clone() {
-						TokenId::Ada => (vec![], vec![]),
-						TokenId::AssetId { policy_id, asset_name } => {
-							(policy_id.0.to_vec(), asset_name.0.to_vec())
-						},
-					};
+				let (policy_id_bytes, asset_name_bytes) = {
+					let AssetId { policy_id, asset_name } = value.immutable_settings.token.clone();
+					(policy_id.0.to_vec(), asset_name.0.to_vec())
+				};
 				let token_data: PlutusData = {
 					let mut asset_data = PlutusList::new();
 					asset_data.add(&PlutusData::new_bytes(policy_id_bytes));
@@ -175,7 +172,7 @@ fn decode_v0_reserve_datum(datum: &PlutusData) -> Option<ReserveDatum> {
 	})
 }
 
-fn decode_token_id_datum(pd: &PlutusData) -> Option<TokenId> {
+fn decode_token_id_datum(pd: &PlutusData) -> Option<AssetId> {
 	let token_id_list = pd
 		.as_constr_plutus_data()
 		.filter(|constr| constr.alternative() == BigNum::zero())
@@ -183,14 +180,10 @@ fn decode_token_id_datum(pd: &PlutusData) -> Option<TokenId> {
 	let mut token_id_list_iter = token_id_list.into_iter();
 	let policy_id = token_id_list_iter.next()?.as_bytes()?.to_vec();
 	let asset_name = token_id_list_iter.next()?.as_bytes()?.to_vec();
-	if policy_id.is_empty() && asset_name.is_empty() {
-		Some(TokenId::Ada)
-	} else {
-		Some(TokenId::AssetId {
-			policy_id: PolicyId(policy_id.try_into().ok()?),
-			asset_name: AssetName(asset_name.try_into().ok()?),
-		})
-	}
+	Some(AssetId {
+		policy_id: PolicyId(policy_id.try_into().ok()?),
+		asset_name: AssetName(asset_name.try_into().ok()?),
+	})
 }
 
 #[cfg(test)]
@@ -206,7 +199,7 @@ mod tests {
 	fn test_datum() -> ReserveDatum {
 		ReserveDatum {
 			immutable_settings: ReserveImmutableSettings {
-				token: sidechain_domain::TokenId::AssetId {
+				token: sidechain_domain::AssetId {
 					policy_id: PolicyId([0; 28]),
 					asset_name: AssetName::from_hex_unsafe("aabbcc"),
 				},

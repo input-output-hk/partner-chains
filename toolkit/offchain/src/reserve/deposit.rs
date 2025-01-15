@@ -39,10 +39,10 @@ use ogmios_client::{
 	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::reserve::{ReserveDatum, ReserveRedeemer};
-use sidechain_domain::{McTxHash, TokenId, UtxoId};
+use sidechain_domain::{AssetId, McTxHash, UtxoId};
 
 pub struct TokenAmount {
-	pub token: TokenId,
+	pub token: AssetId,
 	pub amount: u64,
 }
 
@@ -106,7 +106,7 @@ pub async fn deposit_to_reserve<
 
 async fn get_utxo_with_tokens<T: QueryLedgerState>(
 	scripts: &ReserveScripts,
-	token_id: &TokenId,
+	token_id: &AssetId,
 	ctx: &TransactionContext,
 	client: &T,
 ) -> Result<Option<OgmiosUtxo>, anyhow::Error> {
@@ -131,19 +131,16 @@ fn decode_reserve_datum(datum: ogmios_client::types::Datum) -> Option<ReserveDat
 		.and_then(|plutus_data| ReserveDatum::try_from(plutus_data).ok())
 }
 
-fn get_token_amount(utxo: &OgmiosUtxo, token_id: &TokenId) -> u64 {
-	match token_id {
-		TokenId::Ada => utxo.value.lovelace,
-		TokenId::AssetId { policy_id, asset_name } => utxo
-			.value
-			.native_tokens
-			.get(&policy_id.0)
-			.and_then(|assets| assets.iter().find(|asset| asset.name == asset_name.0.to_vec()))
-			.map(|asset| asset.amount)
-			.unwrap_or(0) // Token can be not found if the reserve was created with the initial deposit of 0 tokens
-			.try_into()
-			.expect("Token amount in an UTXO always fits u64"),
-	}
+fn get_token_amount(utxo: &OgmiosUtxo, token: &AssetId) -> u64 {
+	let AssetId { policy_id, asset_name } = token;
+	utxo.value
+		.native_tokens
+		.get(&policy_id.0)
+		.and_then(|assets| assets.iter().find(|asset| asset.name == asset_name.0.to_vec()))
+		.map(|asset| asset.amount)
+		.unwrap_or(0) // Token can be not found if the reserve was created with the initial deposit of 0 tokens
+		.try_into()
+		.expect("Token amount in an UTXO always fits u64")
 }
 
 fn deposit_to_reserve_tx(
@@ -254,27 +251,20 @@ fn validator_output(
 	let mut assets = Assets::new();
 	assets.insert(&empty_asset_name(), &1u64.into());
 	ma.insert(&scripts.auth_policy.csl_script_hash(), &assets);
-	if let TokenId::AssetId { policy_id, asset_name } = token_amount.token.clone() {
-		let mut assets = Assets::new();
-		assets.insert(
-			&AssetName::new(asset_name.0.to_vec()).expect("AssetName has a valid length"),
-			&token_amount.amount.into(),
-		);
-		ma.insert(&policy_id.0.into(), &assets);
-	};
+	let AssetId { policy_id, asset_name } = token_amount.token.clone();
+	let mut assets = Assets::new();
+	assets.insert(
+		&AssetName::new(asset_name.0.to_vec()).expect("AssetName has a valid length"),
+		&token_amount.amount.into(),
+	);
+	ma.insert(&policy_id.0.into(), &assets);
 	let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
 
-	let current_ada = current_utxo.value.lovelace;
-	let ada = if let TokenId::Ada = token_amount.token {
-		(current_ada + token_amount.amount).into()
-	} else {
-		MinOutputAdaCalculator::new(
-			&output,
-			&DataCost::new_coins_per_byte(
-				&ctx.protocol_parameters.min_utxo_deposit_coefficient.into(),
-			),
-		)
-		.calculate_ada()?
-	};
+	let ada = MinOutputAdaCalculator::new(
+		&output,
+		&DataCost::new_coins_per_byte(&ctx.protocol_parameters.min_utxo_deposit_coefficient.into()),
+	)
+	.calculate_ada()?;
+
 	amount_builder.with_coin_and_asset(&ada, &ma).build()
 }
