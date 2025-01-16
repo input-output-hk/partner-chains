@@ -137,7 +137,6 @@ def test_block_authors_match_committee_seats(
 
 @mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
 @mark.test_key('ETCM-7481')
-@mark.xfail(run=False, reason="[ETCM-8543] Fix test to go off specifications")
 @mark.mc_state_reference_block
 def test_block_headers_have_mc_hash(api: BlockchainApi, config: ApiConfig, pc_epoch, get_pc_epoch_blocks):
     """Test block headers have mainchain hash
