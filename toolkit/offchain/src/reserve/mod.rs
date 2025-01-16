@@ -2,6 +2,7 @@
 
 use crate::{csl::TransactionContext, scripts_data};
 use anyhow::anyhow;
+use cardano_serialization_lib::PlutusData;
 use init::find_script_utxo;
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -9,6 +10,7 @@ use ogmios_client::{
 	transactions::Transactions,
 	types::OgmiosUtxo,
 };
+use partner_chains_plutus_data::reserve::ReserveDatum;
 use sidechain_domain::UtxoId;
 
 pub mod create;
@@ -17,14 +19,35 @@ pub mod init;
 pub mod update_settings;
 
 #[derive(Clone, Debug)]
-pub(crate) struct ReserveData {
-	pub(crate) scripts: scripts_data::ReserveScripts,
-	pub(crate) auth_policy_version_utxo: OgmiosUtxo,
-	pub(crate) validator_version_utxo: OgmiosUtxo,
-	pub(crate) illiquid_circulation_supply_validator_version_utxo: OgmiosUtxo,
+pub struct ReserveData {
+	pub scripts: scripts_data::ReserveScripts,
+	pub auth_policy_version_utxo: OgmiosUtxo,
+	pub validator_version_utxo: OgmiosUtxo,
+	pub illiquid_circulation_supply_validator_version_utxo: OgmiosUtxo,
 }
 
-pub(crate) async fn get_reserve_data<
+impl ReserveData {
+	pub async fn get_reserve_settings<
+		T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	>(
+		&self,
+		ctx: &TransactionContext,
+		client: &T,
+	) -> Result<Option<(OgmiosUtxo, ReserveDatum)>, anyhow::Error> {
+		let validator_address = self.scripts.validator.address(ctx.network).to_bech32(None)?;
+		let validator_utxos = client.query_utxos(&[validator_address]).await?;
+
+		Ok(validator_utxos.into_iter().find_map(|utxo| {
+			utxo.clone()
+				.datum
+				.and_then(|d| PlutusData::from_bytes(d.bytes).ok())
+				.and_then(|d| ReserveDatum::try_from(d).ok())
+				.map(|d| (utxo, d))
+		}))
+	}
+}
+
+pub async fn get_reserve_data<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 >(
 	genesis_utxo: UtxoId,

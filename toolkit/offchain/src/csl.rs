@@ -88,6 +88,7 @@ pub(crate) fn get_builder_config(
 		.ref_script_coins_per_byte(&convert_reference_script_costs(
 			&protocol_parameters.min_fee_reference_scripts.clone(),
 		)?)
+		.deduplicate_explicit_ref_inputs_with_regular_inputs(true)
 		.build()
 }
 
@@ -289,7 +290,7 @@ impl MainchainPrivateKeyExt for MainchainPrivateKey {
 	}
 }
 
-pub(crate) struct TransactionContext {
+pub struct TransactionContext {
 	/// This key is added as required signer and used to sign the transaction.
 	pub(crate) payment_key: PrivateKey,
 	/// Used to pay for the transaction fees and uncovered transaction inputs
@@ -302,7 +303,7 @@ pub(crate) struct TransactionContext {
 impl TransactionContext {
 	/// Gets `TransactionContext`, having UTXOs for the given payment key and the network configuration,
 	/// required to perform most of the partner-chains smart contract operations.
-	pub(crate) async fn for_payment_key<C: QueryLedgerState + QueryNetwork>(
+	pub async fn for_payment_key<C: QueryLedgerState + QueryNetwork>(
 		payment_signing_key: [u8; 32],
 		client: &C,
 	) -> Result<TransactionContext, anyhow::Error> {
