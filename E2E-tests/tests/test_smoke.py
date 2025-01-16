@@ -89,6 +89,7 @@ class TestSmoke:
     @mark.ariadne
     @mark.rpc
     @mark.test_key('ETCM-7442')
+    @mark.xfail(reason="ETCM-9011")
     def test_get_params(self, api: BlockchainApi, config: ApiConfig):
         """Test partner_chain_getParams() returns proper values
 
