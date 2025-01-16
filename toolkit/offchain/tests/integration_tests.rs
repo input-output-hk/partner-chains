@@ -54,6 +54,9 @@ const EVE_PUBLIC_KEY_HASH: MainchainAddressHash =
 
 const EVE_ADDRESS: &str = "addr_test1vzzt5pwz3pum9xdgxalxyy52m3aqur0n43pcl727l37ggscl8h7v8";
 
+const V_FUNCTION_HASH: PolicyId =
+	PolicyId(hex!("ef1eb7b85327a8460799025a5affd0a8d8015731e9aacd5d1106a82b"));
+
 const REWARDS_TOKEN_POLICY_ID: PolicyId =
 	PolicyId(hex!("1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2b"));
 
@@ -298,7 +301,7 @@ async fn run_create_reserve_management<
 	reserve::create::create_reserve_utxo(
 		reserve::create::ReserveParameters {
 			initial_incentive: 100,
-			total_accrued_function_script_hash: PolicyId([233u8; 28]),
+			total_accrued_function_script_hash: V_FUNCTION_HASH,
 			token: AssetId {
 				policy_id: REWARDS_TOKEN_POLICY_ID,
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
