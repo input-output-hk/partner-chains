@@ -38,8 +38,8 @@ pub async fn update_reserve_settings<
 >(
 	genesis_utxo: UtxoId,
 	payment_key: [u8; 32],
-	total_accrued_function_script_hash: ScriptHash,
-	reserve_initial_incentive_amount: u64,
+	mut total_accrued_function_script_hash_opt: Option<ScriptHash>,
+	mut reserve_initial_incentive_amount_opt: Option<u64>,
 	client: &T,
 	await_tx: &A,
 ) -> anyhow::Result<McTxHash> {
@@ -51,9 +51,39 @@ pub async fn update_reserve_settings<
 		.await?
 		.expect("reserve utxo must exist");
 
-	reserve_settings.mutable_settings.total_accrued_function_script_hash =
-		total_accrued_function_script_hash;
-	reserve_settings.mutable_settings.initial_incentive = reserve_initial_incentive_amount;
+	if let Some(total_accrued_function_script_hash) = total_accrued_function_script_hash_opt.clone()
+	{
+		if total_accrued_function_script_hash
+			== reserve_settings.mutable_settings.total_accrued_function_script_hash
+		{
+			total_accrued_function_script_hash_opt = None;
+			log::info!(
+				"Reserve V function hash is already set to {:?}.",
+				total_accrued_function_script_hash
+			);
+		} else {
+			reserve_settings.mutable_settings.total_accrued_function_script_hash =
+				total_accrued_function_script_hash.clone();
+		}
+	}
+
+	if let Some(reserve_initial_incentive_amount) = reserve_initial_incentive_amount_opt {
+		if reserve_initial_incentive_amount == reserve_settings.mutable_settings.initial_incentive {
+			reserve_initial_incentive_amount_opt = None;
+			log::info!(
+				"Reserve initial incentive amount is already set to {}.",
+				reserve_initial_incentive_amount
+			);
+		} else {
+			reserve_settings.mutable_settings.initial_incentive = reserve_initial_incentive_amount;
+		}
+	}
+
+	if total_accrued_function_script_hash_opt.is_none()
+		&& reserve_initial_incentive_amount_opt.is_none()
+	{
+		return Err(anyhow::anyhow!("Nothing to update."));
+	}
 
 	let tx_to_evaluate = update_reserve_settings_tx(
 		&reserve_settings,

@@ -6,6 +6,7 @@ use partner_chains_cardano_offchain::{
 		create::{create_reserve_utxo, ReserveParameters},
 		deposit::{deposit_to_reserve, TokenAmount},
 		init::init_reserve_management,
+		update_settings::update_reserve_settings,
 	},
 };
 use sidechain_domain::{AssetId, ScriptHash, UtxoId};
@@ -17,6 +18,8 @@ pub enum ReserveCmd {
 	Init(InitReserveCmd),
 	Create(CreateReserveCmd),
 	Deposit(DepositReserveCmd),
+	/// Update reserve management system settings for your chain
+	UpdateSettings(UpdateReserveSettingsCmd),
 }
 
 impl ReserveCmd {
@@ -25,6 +28,7 @@ impl ReserveCmd {
 			Self::Init(cmd) => cmd.execute().await,
 			Self::Create(cmd) => cmd.execute().await,
 			Self::Deposit(cmd) => cmd.execute().await,
+			Self::UpdateSettings(cmd) => cmd.execute().await,
 		}
 	}
 }
@@ -124,6 +128,40 @@ impl DepositReserveCmd {
 			TokenAmount { token: self.token, amount: self.amount },
 			self.genesis_utxo,
 			payment_key.0,
+			&ogmios_client,
+			&FixedDelayRetries::two_minutes(),
+		)
+		.await?;
+		Ok(())
+	}
+}
+
+#[derive(Clone, Debug, clap::Parser)]
+pub struct UpdateReserveSettingsCmd {
+	#[clap(flatten)]
+	common_arguments: crate::CommonArguments,
+	#[clap(flatten)]
+	payment_key_file: PaymentFilePath,
+	/// Genesis UTXO of the partner-chain.
+	#[arg(long, short('c'))]
+	genesis_utxo: UtxoId,
+	#[arg(long)]
+	/// Script hash of the 'total accrued function', also called V-function, that computes how many tokens could be released from the reserve at given moment.
+	total_accrued_function_script_hash: Option<ScriptHash>,
+	#[arg(long)]
+	/// Incentive amount of tokens.
+	reserve_initial_incentive_amount: Option<u64>,
+}
+
+impl UpdateReserveSettingsCmd {
+	pub async fn execute(self) -> crate::CmdResult<()> {
+		let payment_key = self.payment_key_file.read_key()?;
+		let ogmios_client = client_for_url(&self.common_arguments.ogmios_url).await?;
+		let _ = update_reserve_settings(
+			self.genesis_utxo,
+			payment_key.0,
+			self.total_accrued_function_script_hash,
+			self.reserve_initial_incentive_amount,
 			&ogmios_client,
 			&FixedDelayRetries::two_minutes(),
 		)
