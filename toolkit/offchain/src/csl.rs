@@ -75,6 +75,7 @@ pub(crate) fn get_builder_config(
 ) -> Result<TransactionBuilderConfig, JsError> {
 	let protocol_parameters = &context.protocol_parameters;
 	TransactionBuilderConfigBuilder::new()
+		.prefer_pure_change(true)
 		.fee_algo(&linear_fee(protocol_parameters))
 		.pool_deposit(&protocol_parameters.stake_pool_deposit.to_csl()?.coin())
 		.key_deposit(&protocol_parameters.stake_credential_deposit.to_csl()?.coin())

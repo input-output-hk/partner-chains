@@ -272,7 +272,6 @@ fn mint_d_param_token_tx(
 	)?;
 
 	tx_builder.add_script_reference_input(&gov_tx_input, governance_data.policy_script.bytes.len());
-	//tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
 }
 
@@ -316,6 +315,5 @@ fn update_d_param_tx(
 	)?;
 
 	tx_builder.add_script_reference_input(&gov_tx_input, governance_data.policy_script.bytes.len());
-	tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
 }

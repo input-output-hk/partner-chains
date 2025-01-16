@@ -317,7 +317,6 @@ fn mint_permissioned_candidates_token_tx(
 	)?;
 
 	tx_builder.add_script_reference_input(&gov_tx_input, governance_data.policy_script.bytes.len());
-	//tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
 }
 
@@ -368,7 +367,6 @@ fn update_permissioned_candidates_tx(
 	)?;
 
 	tx_builder.add_script_reference_input(&gov_tx_input, governance_data.policy_script.bytes.len());
-	tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
 }
 

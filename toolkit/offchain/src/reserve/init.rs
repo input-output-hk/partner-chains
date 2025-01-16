@@ -225,7 +225,6 @@ fn init_script_tx(
 	)?;
 
 	tx_builder.add_script_reference_input(&gov_tx_input, governance.policy_script.bytes.len());
-	tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
 }
 

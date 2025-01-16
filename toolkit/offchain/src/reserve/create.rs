@@ -144,7 +144,6 @@ fn create_reserve_tx(
 		&reserve.validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.validator.bytes.len(),
 	);
-	tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
 }
 

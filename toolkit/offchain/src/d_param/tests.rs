@@ -163,7 +163,7 @@ mod mint_tx {
 
 mod update_d_parameter {
 	use super::*;
-	use cardano_serialization_lib::{Redeemer, Transaction};
+	use cardano_serialization_lib::{BigNum, Redeemer, Transaction};
 	use pretty_assertions::assert_eq;
 
 	const SCRIPT_UTXO_LOVELACE: u64 = 1060260;
@@ -234,12 +234,13 @@ mod update_d_parameter {
 		let body = update_d_param_tx().body();
 		let outputs = body.outputs();
 		// There is a change for payment
-		let change_output = outputs.into_iter().find(|o| o.address() == payment_addr()).unwrap();
+		let mut change_output_sum = BigNum::zero();
+		for output in outputs.into_iter().filter(|o| o.address() == payment_addr()) {
+			change_output_sum = change_output_sum.checked_add(&output.amount().coin()).unwrap();
+		}
 		// There is 1 d-param token in the validator address output
 		let script_output = outputs.into_iter().find(|o| o.address() == validator_addr()).unwrap();
-		let coins_sum = change_output
-			.amount()
-			.coin()
+		let coins_sum = change_output_sum
 			.checked_add(&script_output.amount().coin())
 			.unwrap()
 			.checked_add(&body.fee())
