@@ -334,7 +334,7 @@ async fn run_update_reserve_settings_management<
 >(
 	genesis_utxo: UtxoId,
 	client: &T,
-) -> McTxHash {
+) -> Option<McTxHash> {
 	reserve::update_settings::update_reserve_settings(
 		genesis_utxo,
 		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
@@ -446,13 +446,12 @@ async fn assert_mutable_settings_eq<T: QueryLedgerState + ogmios_client::OgmiosC
 	let ctx = TransactionContext::for_payment_key(GOVERNANCE_AUTHORITY_PAYMENT_KEY.0, client)
 		.await
 		.unwrap();
-	let reserve_data = crate::reserve::get_reserve_data(genesis_utxo, &ctx, client).await.unwrap();
+	let reserve_data = crate::reserve::ReserveData::get(genesis_utxo, &ctx, client).await.unwrap();
 	let mutable_settings = reserve_data
-		.get_reserve_settings(&ctx, client)
+		.get_reserve_utxo(&ctx, client)
 		.await
 		.unwrap()
-		.unwrap()
-		.1
+		.reserve_settings
 		.mutable_settings;
 	assert_eq!(
 		mutable_settings.total_accrued_function_script_hash,

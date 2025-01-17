@@ -16,8 +16,8 @@
 //!   * Reserve Validator Version Utxo
 //!   * Governance Policy Script
 
-use super::get_reserve_data;
 use super::ReserveData;
+use crate::reserve::ReserveUtxo;
 use crate::{
 	await_tx::AwaitTx, csl::*, init_governance::get_governance_data,
 	init_governance::GovernanceData,
@@ -42,14 +42,12 @@ pub async fn update_reserve_settings<
 	mut reserve_initial_incentive_amount_opt: Option<u64>,
 	client: &T,
 	await_tx: &A,
-) -> anyhow::Result<McTxHash> {
+) -> anyhow::Result<Option<McTxHash>> {
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance = get_governance_data(genesis_utxo, client).await?;
-	let reserve = get_reserve_data(genesis_utxo, &ctx, client).await?;
-	let (reserve_utxo, mut reserve_settings) = reserve
-		.get_reserve_settings(&ctx, client)
-		.await?
-		.expect("reserve utxo must exist");
+	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
+	let ReserveUtxo { reserve_utxo, mut reserve_settings } =
+		reserve.get_reserve_utxo(&ctx, client).await?;
 
 	if let Some(total_accrued_function_script_hash) = total_accrued_function_script_hash_opt.clone()
 	{
@@ -82,7 +80,8 @@ pub async fn update_reserve_settings<
 	if total_accrued_function_script_hash_opt.is_none()
 		&& reserve_initial_incentive_amount_opt.is_none()
 	{
-		return Err(anyhow::anyhow!("Nothing to update."));
+		log::info!("Nothing to update.");
+		return Ok(None);
 	}
 
 	let tx_to_evaluate = update_reserve_settings_tx(
@@ -129,7 +128,7 @@ pub async fn update_reserve_settings<
 	let tx_id = res.transaction.id;
 	log::info!("Update Reserve Settings transaction submitted: {}", hex::encode(tx_id));
 	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
-	Ok(McTxHash(tx_id))
+	Ok(Some(McTxHash(tx_id)))
 }
 
 fn update_reserve_settings_tx(
@@ -167,12 +166,10 @@ fn update_reserve_settings_tx(
 
 		tx_builder.set_inputs(&inputs);
 	}
-	// mint new settings
 	{
 		let amount_builder = TransactionOutputBuilder::new()
 			.with_address(&reserve.scripts.validator.address(ctx.network))
 			.with_plutus_data(&(datum.clone().into()))
-			.with_script_ref(&ScriptRef::new_plutus_script(&reserve.scripts.validator.to_csl()))
 			.next()?;
 		let mut val = reserve_utxo.value.to_csl()?;
 		let output = amount_builder.with_value(&val).build()?;
@@ -198,17 +195,9 @@ fn update_reserve_settings_tx(
 		&reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.illiquid_circulation_supply_validator.bytes.len(),
 	);
-
 	tx_builder.add_script_reference_input(
 		&reserve.auth_policy_version_utxo.to_csl_tx_input(),
 		reserve.scripts.auth_policy.bytes.len(),
 	);
-	tx_builder.add_script_reference_input(
-		&reserve.validator_version_utxo.to_csl_tx_input(),
-		reserve.scripts.validator.bytes.len(),
-	);
-
-	tx_builder.add_required_signer(&ctx.payment_key_hash());
-
 	tx_builder.balance_update_and_build(ctx)
 }

@@ -88,7 +88,6 @@ pub(crate) fn get_builder_config(
 		.ref_script_coins_per_byte(&convert_reference_script_costs(
 			&protocol_parameters.min_fee_reference_scripts.clone(),
 		)?)
-		.deduplicate_explicit_ref_inputs_with_regular_inputs(true)
 		.build()
 }
 
