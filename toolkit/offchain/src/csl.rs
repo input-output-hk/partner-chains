@@ -249,14 +249,14 @@ impl OgmiosUtxoExt for OgmiosUtxo {
 		}
 	}
 
-	fn get_asset_amount(&self, asset: &AssetId) -> i128 {
+	fn get_asset_amount(&self, asset_id: &AssetId) -> i128 {
 		self.value
 			.native_tokens
-			.get(&asset.policy_id.0)
+			.get(&asset_id.policy_id.0)
 			.cloned()
 			.unwrap_or_default()
 			.iter()
-			.find(|asset2| asset2.name == asset.asset_name.0.to_vec())
+			.find(|asset| asset.name == asset_id.asset_name.0.to_vec())
 			.map_or_else(|| 0, |asset| asset.amount)
 	}
 }
