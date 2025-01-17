@@ -13,7 +13,7 @@ pub mod ogmios_mock;
 /// Supports Permissioned Candidates upsert
 pub mod permissioned_candidates;
 /// Utilities for handling Plutus script data
-pub mod plutus_script;
+mod plutus_script;
 /// Supports candidate registration
 pub mod register;
 pub mod reserve;

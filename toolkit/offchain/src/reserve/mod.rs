@@ -1,5 +1,6 @@
 //! All smart-contracts related to Rewards Token Reserve Management
 
+use crate::csl::OgmiosUtxoExt;
 use crate::{csl::TransactionContext, scripts_data};
 use anyhow::anyhow;
 use cardano_serialization_lib::PlutusData;
@@ -11,7 +12,7 @@ use ogmios_client::{
 	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::reserve::ReserveDatum;
-use sidechain_domain::UtxoId;
+use sidechain_domain::{AssetId, AssetName, UtxoId};
 
 pub mod create;
 pub mod deposit;
@@ -91,18 +92,17 @@ impl ReserveData {
 		let validator_address = self.scripts.validator.address(ctx.network).to_bech32(None)?;
 		let validator_utxos = client.query_utxos(&[validator_address]).await?;
 
+		let auth_token_asset_id = AssetId {
+			policy_id: self.scripts.auth_policy.policy_id(),
+			asset_name: AssetName::from_hex_unsafe(""),
+		};
+
 		let (reserve_utxo, reserve_settings) = validator_utxos
 			.into_iter()
 			.find_map(|utxo| {
-				let reserve_auth_policy_id = self.scripts.auth_policy.policy_id().0;
-				let reserve_auth_asset_name: Vec<u8> = Vec::new();
-				let auth_token =
-					utxo.value.native_tokens.get(&reserve_auth_policy_id).and_then(|assets| {
-						assets.iter().find(|asset| {
-							asset.name == reserve_auth_asset_name && asset.amount == 1i128
-						})
-					});
-				auth_token?;
+				if utxo.get_asset_amount(&auth_token_asset_id) != 1i128 {
+					return None;
+				}
 				utxo.clone()
 					.datum
 					.and_then(|d| PlutusData::from_bytes(d.bytes).ok())
