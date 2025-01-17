@@ -19,8 +19,9 @@ use super::ReserveData;
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
-		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, OgmiosUtxoExt,
-		TransactionBuilderExt, TransactionContext,
+		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, AssetNameExt,
+		OgmiosUtxoExt, TransactionBuilderExt, TransactionContext,
+		TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	reserve::get_reserve_data,
@@ -28,8 +29,8 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	Assets, DataCost, ExUnits, JsError, MinOutputAdaCalculator, MultiAsset, Transaction,
-	TransactionBuilder, TransactionOutput, TransactionOutputBuilder,
+	Assets, ExUnits, JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
+	TransactionOutputBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -199,17 +200,10 @@ fn reserve_validator_output(
 	let AssetId { policy_id, asset_name } = parameters.token.clone();
 	let mut assets = Assets::new();
 	assets.insert(
-		&cardano_serialization_lib::AssetName::new(asset_name.0.to_vec())
-			.expect("AssetName has a valid length"),
+		&asset_name.to_csl().expect("AssetName has a valid length"),
 		&parameters.initial_deposit.into(),
 	);
 	ma.insert(&policy_id.0.into(), &assets);
 
-	let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
-	let min_ada = MinOutputAdaCalculator::new(
-		&output,
-		&DataCost::new_coins_per_byte(&ctx.protocol_parameters.min_utxo_deposit_coefficient.into()),
-	)
-	.calculate_ada()?;
-	amount_builder.with_coin_and_asset(&min_ada, &ma).build()
+	amount_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()
 }

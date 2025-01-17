@@ -18,7 +18,7 @@ use crate::{
 	await_tx::AwaitTx,
 	csl::{
 		get_builder_config, get_validator_budgets, zero_ex_units, TransactionBuilderExt,
-		TransactionContext,
+		TransactionContext, TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	plutus_script::PlutusScript,
@@ -26,10 +26,9 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	AssetName, Assets, BigNum, ConstrPlutusData, DataCost, ExUnits, Int, JsError, Language,
-	MinOutputAdaCalculator, MintBuilder, MintWitness, MultiAsset, PlutusData, PlutusList,
-	PlutusScriptSource, Redeemer, RedeemerTag, ScriptHash, ScriptRef, Transaction,
-	TransactionBuilder, TransactionOutputBuilder,
+	AssetName, Assets, BigNum, ConstrPlutusData, ExUnits, Int, JsError, Language, MintBuilder,
+	MintWitness, MultiAsset, PlutusData, PlutusList, PlutusScriptSource, Redeemer, RedeemerTag,
+	ScriptHash, ScriptRef, Transaction, TransactionBuilder, TransactionOutputBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -205,15 +204,7 @@ fn init_script_tx(
 		let mut assets = Assets::new();
 		assets.insert(&version_oracle_asset_name(), &1u64.into());
 		ma.insert(&version_oracle.policy.csl_script_hash(), &assets);
-		let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
-		let min_ada = MinOutputAdaCalculator::new(
-			&output,
-			&DataCost::new_coins_per_byte(
-				&ctx.protocol_parameters.min_utxo_deposit_coefficient.into(),
-			),
-		)
-		.calculate_ada()?;
-		let output = amount_builder.with_coin_and_asset(&min_ada, &ma).build()?;
+		let output = amount_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()?;
 		tx_builder.add_output(&output)?;
 	}
 	// Mint governance token
