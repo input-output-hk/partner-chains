@@ -212,10 +212,10 @@ pub(crate) fn registered_candidates_scripts(
 }
 
 #[derive(Clone, Debug)]
-pub struct ReserveScripts {
-	pub validator: PlutusScript,
-	pub auth_policy: PlutusScript,
-	pub illiquid_circulation_supply_validator: PlutusScript,
+pub(crate) struct ReserveScripts {
+	pub(crate) validator: PlutusScript,
+	pub(crate) auth_policy: PlutusScript,
+	pub(crate) illiquid_circulation_supply_validator: PlutusScript,
 }
 
 pub(crate) fn reserve_scripts(

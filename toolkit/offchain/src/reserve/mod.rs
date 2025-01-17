@@ -19,21 +19,23 @@ pub mod init;
 pub mod update_settings;
 
 #[derive(Clone, Debug)]
-pub struct ReserveData {
-	pub scripts: scripts_data::ReserveScripts,
-	pub auth_policy_version_utxo: OgmiosUtxo,
-	pub validator_version_utxo: OgmiosUtxo,
-	pub illiquid_circulation_supply_validator_version_utxo: OgmiosUtxo,
+pub(crate) struct ReserveData {
+	pub(crate) scripts: scripts_data::ReserveScripts,
+	pub(crate) auth_policy_version_utxo: OgmiosUtxo,
+	pub(crate) validator_version_utxo: OgmiosUtxo,
+	pub(crate) illiquid_circulation_supply_validator_version_utxo: OgmiosUtxo,
 }
 
 #[derive(Clone, Debug)]
-pub struct ReserveUtxo {
-	pub reserve_utxo: OgmiosUtxo,
-	pub reserve_settings: ReserveDatum,
+pub(crate) struct ReserveUtxo {
+	pub(crate) reserve_utxo: OgmiosUtxo,
+	pub(crate) reserve_settings: ReserveDatum,
 }
 
 impl ReserveData {
-	pub async fn get<T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
+	pub(crate) async fn get<
+		T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	>(
 		genesis_utxo: UtxoId,
 		ctx: &TransactionContext,
 		client: &T,
@@ -79,7 +81,7 @@ impl ReserveData {
 		})
 	}
 
-	pub async fn get_reserve_utxo<
+	pub(crate) async fn get_reserve_utxo<
 		T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	>(
 		&self,

@@ -6,22 +6,24 @@
 //! In case of change to the supported cardano-node or ogmios,
 //! it should be updated accordingly and pushed to the registry.
 
-use cardano_serialization_lib::NetworkIdKind;
+use cardano_serialization_lib::{Language, NetworkIdKind};
 use hex_literal::hex;
 use ogmios_client::{
 	jsonrpsee::{client_for_url, OgmiosClients},
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
+	types::OgmiosUtxo,
 };
 use partner_chains_cardano_offchain::{
 	await_tx::{AwaitTx, FixedDelayRetries},
-	csl::TransactionContext,
+	csl::NetworkTypeExt,
 	d_param, init_governance, permissioned_candidates,
+	plutus_script::PlutusScript,
 	register::Register,
 	reserve, scripts_data, update_governance,
 };
-use partner_chains_plutus_data::reserve::ReserveMutableSettings;
+use partner_chains_plutus_data::reserve::{ReserveDatum, ReserveMutableSettings};
 use sidechain_domain::{
 	AdaBasedStaking, AssetId, AssetName, AuraPublicKey, CandidateRegistration, DParameter,
 	GrandpaPublicKey, MainchainAddressHash, MainchainPrivateKey, MainchainPublicKey,
@@ -443,19 +445,58 @@ async fn assert_mutable_settings_eq<T: QueryLedgerState + ogmios_client::OgmiosC
 	updated_mutable_settings: ReserveMutableSettings,
 	client: &T,
 ) {
-	let ctx = TransactionContext::for_payment_key(GOVERNANCE_AUTHORITY_PAYMENT_KEY.0, client)
-		.await
-		.unwrap();
-	let reserve_data = crate::reserve::ReserveData::get(genesis_utxo, &ctx, client).await.unwrap();
-	let mutable_settings = reserve_data
-		.get_reserve_utxo(&ctx, client)
-		.await
-		.unwrap()
-		.reserve_settings
-		.mutable_settings;
+	let (_reserve_utxo, reserve_settings) = get_reserve_utxo(genesis_utxo, client).await;
+
+	let mutable_settings = reserve_settings.mutable_settings;
 	assert_eq!(
 		mutable_settings.total_accrued_function_script_hash,
 		updated_mutable_settings.total_accrued_function_script_hash
 	);
 	assert_eq!(mutable_settings.initial_incentive, updated_mutable_settings.initial_incentive);
+}
+
+async fn get_reserve_utxo<T: QueryLedgerState + ogmios_client::OgmiosClient>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> (OgmiosUtxo, ReserveDatum) {
+	let network = client.shelley_genesis_configuration().await.unwrap().network.to_csl();
+
+	let validator_script = PlutusScript::from_wrapped_cbor(
+		raw_scripts::VERSION_ORACLE_VALIDATOR,
+		Language::new_plutus_v2(),
+	)
+	.unwrap()
+	.apply_data(genesis_utxo)
+	.unwrap();
+	let policy_script = PlutusScript::from_wrapped_cbor(
+		raw_scripts::VERSION_ORACLE_POLICY,
+		Language::new_plutus_v2(),
+	)
+	.unwrap()
+	.apply_data(genesis_utxo)
+	.unwrap()
+	.apply_uplc_data(validator_script.address_data(network).unwrap())
+	.unwrap();
+
+	let validator =
+		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, Language::new_plutus_v2())
+			.unwrap()
+			.apply_uplc_data(uplc::PlutusData::BoundedBytes(
+				policy_script.script_hash().to_vec().into(),
+			))
+			.unwrap();
+
+	let validator_address = validator.address(network).to_bech32(None).unwrap();
+	let validator_utxos = client.query_utxos(&[validator_address]).await.unwrap();
+
+	validator_utxos
+		.into_iter()
+		.find_map(|utxo| {
+			utxo.clone()
+				.datum
+				.and_then(|d| cardano_serialization_lib::PlutusData::from_bytes(d.bytes).ok())
+				.and_then(|d| ReserveDatum::try_from(d).ok())
+				.map(|d| (utxo, d))
+		})
+		.unwrap()
 }
