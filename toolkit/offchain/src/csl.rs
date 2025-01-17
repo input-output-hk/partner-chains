@@ -8,7 +8,7 @@ use ogmios_client::{
 	transactions::{OgmiosBudget, OgmiosEvaluateTransactionResponse},
 	types::{OgmiosUtxo, OgmiosValue},
 };
-use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, NetworkType, UtxoId};
+use sidechain_domain::{AssetId, MainchainAddressHash, MainchainPrivateKey, NetworkType, UtxoId};
 
 pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: Language) -> [u8; 28] {
 	// Before hashing the script, we need to prepend with byte denoting the language.
@@ -220,6 +220,8 @@ pub(crate) trait OgmiosUtxoExt {
 	fn to_csl(&self) -> Result<TransactionUnspentOutput, JsError>;
 
 	fn to_domain(&self) -> sidechain_domain::UtxoId;
+
+	fn get_asset_amount(&self, asset: &AssetId) -> i128;
 }
 
 impl OgmiosUtxoExt for OgmiosUtxo {
@@ -245,6 +247,17 @@ impl OgmiosUtxoExt for OgmiosUtxo {
 			tx_hash: sidechain_domain::McTxHash(self.transaction.id),
 			index: sidechain_domain::UtxoIndex(self.index),
 		}
+	}
+
+	fn get_asset_amount(&self, asset_id: &AssetId) -> i128 {
+		self.value
+			.native_tokens
+			.get(&asset_id.policy_id.0)
+			.cloned()
+			.unwrap_or_default()
+			.iter()
+			.find(|asset| asset.name == asset_id.asset_name.0.to_vec())
+			.map_or_else(|| 0, |asset| asset.amount)
 	}
 }
 
@@ -355,12 +368,22 @@ pub(crate) trait TransactionBuilderExt {
 	) -> Result<(), JsError>;
 
 	/// Adds minting of 1 token (with empty asset name) for the given script using reference input
+	fn add_mint_script_token_using_reference_script(
+		&mut self,
+		script: &PlutusScript,
+		ref_input: &TransactionInput,
+		amount: &BigNum,
+		ex_units: &ExUnits,
+	) -> Result<(), JsError>;
+
 	fn add_mint_one_script_token_using_reference_script(
 		&mut self,
 		script: &PlutusScript,
 		ref_input: &TransactionInput,
 		ex_units: &ExUnits,
-	) -> Result<(), JsError>;
+	) -> Result<(), JsError> {
+		self.add_mint_script_token_using_reference_script(script, ref_input, &1u64.into(), ex_units)
+	}
 
 	/// Sets fields required by the most of partner-chains smart contract transactions.
 	/// Uses input from `ctx` to cover already present outputs.
@@ -438,10 +461,11 @@ impl TransactionBuilderExt for TransactionBuilder {
 		Ok(())
 	}
 
-	fn add_mint_one_script_token_using_reference_script(
+	fn add_mint_script_token_using_reference_script(
 		&mut self,
 		script: &PlutusScript,
 		ref_input: &TransactionInput,
+		amount: &BigNum,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError> {
 		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
@@ -461,7 +485,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 				ex_units,
 			),
 		);
-		mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new_i32(1))?;
+		mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new(amount))?;
 		self.set_mint_builder(&mint_builder);
 		Ok(())
 	}
@@ -522,6 +546,42 @@ impl TransactionBuilderExt for TransactionBuilder {
 		}
 		try_balance(self, &selected, ctx)
 			.map_err(|e| JsError::from_str(&format!("Could not balance transaction. Usually it means that the payment key does not own UTXO set required to cover transaction outputs and fees or to provide collateral. Cause: {}", e)))
+	}
+}
+
+pub(crate) trait TransactionOutputAmountBuilderExt: Sized {
+	fn get_minimum_ada(&self, ctx: &TransactionContext) -> Result<BigNum, JsError>;
+	fn with_minimum_ada(self, ctx: &TransactionContext) -> Result<Self, JsError>;
+	fn with_minimum_ada_and_asset(
+		self,
+		ma: &MultiAsset,
+		ctx: &TransactionContext,
+	) -> Result<Self, JsError>;
+}
+
+impl TransactionOutputAmountBuilderExt for TransactionOutputAmountBuilder {
+	fn get_minimum_ada(&self, ctx: &TransactionContext) -> Result<BigNum, JsError> {
+		MinOutputAdaCalculator::new(
+			&self.build()?,
+			&DataCost::new_coins_per_byte(
+				&ctx.protocol_parameters.min_utxo_deposit_coefficient.into(),
+			),
+		)
+		.calculate_ada()
+	}
+
+	fn with_minimum_ada(self, ctx: &TransactionContext) -> Result<Self, JsError> {
+		let min_ada = self.with_coin(&0u64.into()).get_minimum_ada(ctx)?;
+		Ok(self.with_coin(&min_ada))
+	}
+
+	fn with_minimum_ada_and_asset(
+		self,
+		ma: &MultiAsset,
+		ctx: &TransactionContext,
+	) -> Result<Self, JsError> {
+		let min_ada = self.with_coin_and_asset(&0u64.into(), ma).get_minimum_ada(ctx)?;
+		Ok(self.with_coin_and_asset(&min_ada, &ma))
 	}
 }
 
@@ -601,6 +661,16 @@ impl InputsBuilderExt for TxInputsBuilder {
 		let mut tx_input_builder = Self::new();
 		tx_input_builder.add_key_inputs(utxos, key)?;
 		Ok(tx_input_builder)
+	}
+}
+
+pub(crate) trait AssetNameExt {
+	fn to_csl(&self) -> Result<cardano_serialization_lib::AssetName, JsError>;
+}
+
+impl AssetNameExt for sidechain_domain::AssetName {
+	fn to_csl(&self) -> Result<cardano_serialization_lib::AssetName, JsError> {
+		cardano_serialization_lib::AssetName::new(self.0.to_vec())
 	}
 }
 

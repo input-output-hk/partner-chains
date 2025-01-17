@@ -21,6 +21,7 @@ use crate::{
 	csl::{
 		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, OgmiosUtxoExt,
 		OgmiosValueExt, TransactionBuilderExt, TransactionContext,
+		TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	reserve::get_reserve_data,
@@ -28,9 +29,9 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	AssetName, Assets, DataCost, ExUnits, JsError, Language, MinOutputAdaCalculator, MultiAsset,
-	PlutusData, PlutusScriptSource, PlutusWitness, Redeemer, RedeemerTag, Transaction,
-	TransactionBuilder, TransactionOutput, TransactionOutputBuilder, TxInputsBuilder,
+	AssetName, Assets, ExUnits, JsError, Language, MultiAsset, PlutusData, PlutusScriptSource,
+	PlutusWitness, Redeemer, RedeemerTag, Transaction, TransactionBuilder, TransactionOutput,
+	TransactionOutputBuilder, TxInputsBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -258,13 +259,6 @@ fn validator_output(
 		&token_amount.amount.into(),
 	);
 	ma.insert(&policy_id.0.into(), &assets);
-	let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
 
-	let ada = MinOutputAdaCalculator::new(
-		&output,
-		&DataCost::new_coins_per_byte(&ctx.protocol_parameters.min_utxo_deposit_coefficient.into()),
-	)
-	.calculate_ada()?;
-
-	amount_builder.with_coin_and_asset(&ada, &ma).build()
+	amount_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()
 }

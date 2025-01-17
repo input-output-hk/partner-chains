@@ -1,8 +1,8 @@
-use crate::csl::MainchainPrivateKeyExt;
 use crate::csl::{
 	get_first_validator_budget, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
 	TransactionContext,
 };
+use crate::csl::{MainchainPrivateKeyExt, TransactionOutputAmountBuilderExt};
 use crate::{
 	await_tx::{AwaitTx, FixedDelayRetries},
 	plutus_script::PlutusScript,
@@ -10,8 +10,8 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	BigNum, DataCost, ExUnits, JsError, MinOutputAdaCalculator, PlutusData, Transaction,
-	TransactionBuilder, TransactionOutputBuilder, TxInputsBuilder,
+	ExUnits, JsError, PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
+	TxInputsBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -280,15 +280,7 @@ fn register_tx(
 			.with_address(&validator.address(ctx.network))
 			.with_plutus_data(&datum)
 			.next()?;
-		let output = amount_builder.with_coin(&BigNum::zero()).build()?;
-		let min_ada = MinOutputAdaCalculator::new(
-			&output,
-			&DataCost::new_coins_per_byte(
-				&ctx.protocol_parameters.min_utxo_deposit_coefficient.into(),
-			),
-		)
-		.calculate_ada()?;
-		let output = amount_builder.with_coin(&min_ada).build()?;
+		let output = amount_builder.with_minimum_ada(ctx)?.build()?;
 		tx_builder.add_output(&output)?;
 	}
 
