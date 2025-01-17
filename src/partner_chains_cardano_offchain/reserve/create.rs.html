@@ -207,12 +207,6 @@
 <a href="#207" id="207">207</a>
 <a href="#208" id="208">208</a>
 <a href="#209" id="209">209</a>
-<a href="#210" id="210">210</a>
-<a href="#211" id="211">211</a>
-<a href="#212" id="212">212</a>
-<a href="#213" id="213">213</a>
-<a href="#214" id="214">214</a>
-<a href="#215" id="215">215</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Transaction that creates a new reserve.
 //!
 //! Specification:
@@ -234,8 +228,9 @@
 <span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
 	csl::{
-		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, OgmiosUtxoExt,
-		TransactionBuilderExt, TransactionContext,
+		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, AssetNameExt,
+		OgmiosUtxoExt, TransactionBuilderExt, TransactionContext,
+		TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	reserve::get_reserve_data,
@@ -243,8 +238,8 @@
 };
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
-	Assets, DataCost, ExUnits, JsError, MinOutputAdaCalculator, MultiAsset, Transaction,
-	TransactionBuilder, TransactionOutput, TransactionOutputBuilder,
+	Assets, ExUnits, JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
+	TransactionOutputBuilder,
 };
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -414,18 +409,11 @@
 	<span class="kw">let </span>AssetId { policy_id, asset_name } = parameters.token.clone();
 	<span class="kw">let </span><span class="kw-2">mut </span>assets = Assets::new();
 	assets.insert(
-		<span class="kw-2">&amp;</span>cardano_serialization_lib::AssetName::new(asset_name.<span class="number">0</span>.to_vec())
-			.expect(<span class="string">"AssetName has a valid length"</span>),
+		<span class="kw-2">&amp;</span>asset_name.to_csl().expect(<span class="string">"AssetName has a valid length"</span>),
 		<span class="kw-2">&amp;</span>parameters.initial_deposit.into(),
 	);
 	ma.insert(<span class="kw-2">&amp;</span>policy_id.<span class="number">0</span>.into(), <span class="kw-2">&amp;</span>assets);
 
-	<span class="kw">let </span>output = amount_builder.with_coin_and_asset(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span>ma).build()<span class="question-mark">?</span>;
-	<span class="kw">let </span>min_ada = MinOutputAdaCalculator::new(
-		<span class="kw-2">&amp;</span>output,
-		<span class="kw-2">&amp;</span>DataCost::new_coins_per_byte(<span class="kw-2">&amp;</span>ctx.protocol_parameters.min_utxo_deposit_coefficient.into()),
-	)
-	.calculate_ada()<span class="question-mark">?</span>;
-	amount_builder.with_coin_and_asset(<span class="kw-2">&amp;</span>min_ada, <span class="kw-2">&amp;</span>ma).build()
+	amount_builder.with_minimum_ada_and_asset(<span class="kw-2">&amp;</span>ma, ctx)<span class="question-mark">?</span>.build()
 }
 </code></pre></div></section></main></body></html>

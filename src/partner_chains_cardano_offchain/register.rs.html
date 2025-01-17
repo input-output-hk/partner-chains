@@ -557,19 +557,11 @@
 <a href="#557" id="557">557</a>
 <a href="#558" id="558">558</a>
 <a href="#559" id="559">559</a>
-<a href="#560" id="560">560</a>
-<a href="#561" id="561">561</a>
-<a href="#562" id="562">562</a>
-<a href="#563" id="563">563</a>
-<a href="#564" id="564">564</a>
-<a href="#565" id="565">565</a>
-<a href="#566" id="566">566</a>
-<a href="#567" id="567">567</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::MainchainPrivateKeyExt;
-<span class="kw">use </span><span class="kw">crate</span>::csl::{
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::{
 	get_first_validator_budget, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
 	TransactionContext,
 };
+<span class="kw">use </span><span class="kw">crate</span>::csl::{MainchainPrivateKeyExt, TransactionOutputAmountBuilderExt};
 <span class="kw">use crate</span>::{
 	await_tx::{AwaitTx, FixedDelayRetries},
 	plutus_script::PlutusScript,
@@ -577,8 +569,8 @@
 };
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
-	BigNum, DataCost, ExUnits, JsError, MinOutputAdaCalculator, PlutusData, Transaction,
-	TransactionBuilder, TransactionOutputBuilder, TxInputsBuilder,
+	ExUnits, JsError, PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
+	TxInputsBuilder,
 };
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -847,15 +839,7 @@
 			.with_address(<span class="kw-2">&amp;</span>validator.address(ctx.network))
 			.with_plutus_data(<span class="kw-2">&amp;</span>datum)
 			.next()<span class="question-mark">?</span>;
-		<span class="kw">let </span>output = amount_builder.with_coin(<span class="kw-2">&amp;</span>BigNum::zero()).build()<span class="question-mark">?</span>;
-		<span class="kw">let </span>min_ada = MinOutputAdaCalculator::new(
-			<span class="kw-2">&amp;</span>output,
-			<span class="kw-2">&amp;</span>DataCost::new_coins_per_byte(
-				<span class="kw-2">&amp;</span>ctx.protocol_parameters.min_utxo_deposit_coefficient.into(),
-			),
-		)
-		.calculate_ada()<span class="question-mark">?</span>;
-		<span class="kw">let </span>output = amount_builder.with_coin(<span class="kw-2">&amp;</span>min_ada).build()<span class="question-mark">?</span>;
+		<span class="kw">let </span>output = amount_builder.with_minimum_ada(ctx)<span class="question-mark">?</span>.build()<span class="question-mark">?</span>;
 		tx_builder.add_output(<span class="kw-2">&amp;</span>output)<span class="question-mark">?</span>;
 	}
 

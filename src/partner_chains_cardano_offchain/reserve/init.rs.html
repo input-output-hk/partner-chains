@@ -534,15 +534,6 @@
 <a href="#534" id="534">534</a>
 <a href="#535" id="535">535</a>
 <a href="#536" id="536">536</a>
-<a href="#537" id="537">537</a>
-<a href="#538" id="538">538</a>
-<a href="#539" id="539">539</a>
-<a href="#540" id="540">540</a>
-<a href="#541" id="541">541</a>
-<a href="#542" id="542">542</a>
-<a href="#543" id="543">543</a>
-<a href="#544" id="544">544</a>
-<a href="#545" id="545">545</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Initialization of the reserve management is execution of three similar transaction to
 //! initialize three scripts: Rerserve Management Validator, Reserve Management Policy and
 //! Illiquid Circulation Supply Validator.
@@ -563,7 +554,7 @@
 	await_tx::AwaitTx,
 	csl::{
 		get_builder_config, get_validator_budgets, zero_ex_units, TransactionBuilderExt,
-		TransactionContext,
+		TransactionContext, TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	plutus_script::PlutusScript,
@@ -571,10 +562,9 @@
 };
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
-	AssetName, Assets, BigNum, ConstrPlutusData, DataCost, ExUnits, Int, JsError, Language,
-	MinOutputAdaCalculator, MintBuilder, MintWitness, MultiAsset, PlutusData, PlutusList,
-	PlutusScriptSource, Redeemer, RedeemerTag, ScriptHash, ScriptRef, Transaction,
-	TransactionBuilder, TransactionOutputBuilder,
+	AssetName, Assets, BigNum, ConstrPlutusData, ExUnits, Int, JsError, Language, MintBuilder,
+	MintWitness, MultiAsset, PlutusData, PlutusList, PlutusScriptSource, Redeemer, RedeemerTag,
+	ScriptHash, ScriptRef, Transaction, TransactionBuilder, TransactionOutputBuilder,
 };
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -750,15 +740,7 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>assets = Assets::new();
 		assets.insert(<span class="kw-2">&amp;</span>version_oracle_asset_name(), <span class="kw-2">&amp;</span><span class="number">1u64</span>.into());
 		ma.insert(<span class="kw-2">&amp;</span>version_oracle.policy.csl_script_hash(), <span class="kw-2">&amp;</span>assets);
-		<span class="kw">let </span>output = amount_builder.with_coin_and_asset(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span>ma).build()<span class="question-mark">?</span>;
-		<span class="kw">let </span>min_ada = MinOutputAdaCalculator::new(
-			<span class="kw-2">&amp;</span>output,
-			<span class="kw-2">&amp;</span>DataCost::new_coins_per_byte(
-				<span class="kw-2">&amp;</span>ctx.protocol_parameters.min_utxo_deposit_coefficient.into(),
-			),
-		)
-		.calculate_ada()<span class="question-mark">?</span>;
-		<span class="kw">let </span>output = amount_builder.with_coin_and_asset(<span class="kw-2">&amp;</span>min_ada, <span class="kw-2">&amp;</span>ma).build()<span class="question-mark">?</span>;
+		<span class="kw">let </span>output = amount_builder.with_minimum_ada_and_asset(<span class="kw-2">&amp;</span>ma, ctx)<span class="question-mark">?</span>.build()<span class="question-mark">?</span>;
 		tx_builder.add_output(<span class="kw-2">&amp;</span>output)<span class="question-mark">?</span>;
 	}
 	<span class="comment">// Mint governance token
