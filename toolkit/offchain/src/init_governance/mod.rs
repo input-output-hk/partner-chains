@@ -174,7 +174,7 @@ pub(crate) async fn get_governance_utxo<T: QueryLedgerState + Transactions + Que
 				utxo.value.native_tokens.contains_key(&version_oracle_policy.script_hash());
 			correct_datum && contains_version_oracle_token
 		})
-		.ok_or_else(|| JsError::from_str("Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using `init-governance` command."))
+		.ok_or_else(|| JsError::from_str("Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using governance init command."))
 }
 
 #[derive(Clone, Debug)]
