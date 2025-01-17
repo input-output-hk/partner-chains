@@ -6,7 +6,7 @@
 //! In case of change to the supported cardano-node or ogmios,
 //! it should be updated accordingly and pushed to the registry.
 
-use cardano_serialization_lib::{Language, NetworkIdKind};
+use cardano_serialization_lib::NetworkIdKind;
 use hex_literal::hex;
 use ogmios_client::{
 	jsonrpsee::{client_for_url, OgmiosClients},
@@ -17,9 +17,7 @@ use ogmios_client::{
 };
 use partner_chains_cardano_offchain::{
 	await_tx::{AwaitTx, FixedDelayRetries},
-	csl::NetworkTypeExt,
 	d_param, init_governance, permissioned_candidates,
-	plutus_script::PlutusScript,
 	register::Register,
 	reserve, scripts_data, update_governance,
 };
@@ -455,43 +453,29 @@ async fn assert_mutable_settings_eq<T: QueryLedgerState + ogmios_client::OgmiosC
 	assert_eq!(mutable_settings.initial_incentive, updated_mutable_settings.initial_incentive);
 }
 
-async fn get_reserve_utxo<T: QueryLedgerState + ogmios_client::OgmiosClient>(
+async fn get_reserve_utxo<
+	T: QueryLedgerState + ogmios_client::OgmiosClient + ogmios_client::query_network::QueryNetwork,
+>(
 	genesis_utxo: UtxoId,
 	client: &T,
 ) -> (OgmiosUtxo, ReserveDatum) {
-	let network = client.shelley_genesis_configuration().await.unwrap().network.to_csl();
-
-	let validator_script = PlutusScript::from_wrapped_cbor(
-		raw_scripts::VERSION_ORACLE_VALIDATOR,
-		Language::new_plutus_v2(),
-	)
-	.unwrap()
-	.apply_data(genesis_utxo)
-	.unwrap();
-	let policy_script = PlutusScript::from_wrapped_cbor(
-		raw_scripts::VERSION_ORACLE_POLICY,
-		Language::new_plutus_v2(),
-	)
-	.unwrap()
-	.apply_data(genesis_utxo)
-	.unwrap()
-	.apply_uplc_data(validator_script.address_data(network).unwrap())
-	.unwrap();
-
-	let validator =
-		PlutusScript::from_wrapped_cbor(raw_scripts::RESERVE_VALIDATOR, Language::new_plutus_v2())
-			.unwrap()
-			.apply_uplc_data(uplc::PlutusData::BoundedBytes(
-				policy_script.script_hash().to_vec().into(),
-			))
-			.unwrap();
-
-	let validator_address = validator.address(network).to_bech32(None).unwrap();
+	let scripts_data =
+		scripts_data::get_scripts_data_with_ogmios(genesis_utxo, client).await.unwrap();
+	let validator_address = scripts_data.addresses.reserve_validator;
 	let validator_utxos = client.query_utxos(&[validator_address]).await.unwrap();
 
 	validator_utxos
 		.into_iter()
 		.find_map(|utxo| {
+			let reserve_auth_policy_id = scripts_data.policy_ids.reserve_auth.0;
+			let reserve_auth_asset_name: Vec<u8> = Vec::new();
+			let auth_token =
+				utxo.value.native_tokens.get(&reserve_auth_policy_id).and_then(|assets| {
+					assets.iter().find(|asset| {
+						asset.name == reserve_auth_asset_name && asset.amount == 1i128
+					})
+				});
+			auth_token?;
 			utxo.clone()
 				.datum
 				.and_then(|d| cardano_serialization_lib::PlutusData::from_bytes(d.bytes).ok())

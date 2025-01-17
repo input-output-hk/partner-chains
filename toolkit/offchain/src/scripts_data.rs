@@ -99,7 +99,7 @@ pub fn get_scripts_data(
 
 pub async fn get_scripts_data_with_ogmios(
 	genesis_utxo: UtxoId,
-	client: impl QueryNetwork,
+	client: &impl QueryNetwork,
 ) -> anyhow::Result<ScriptsData> {
 	let network = client.shelley_genesis_configuration().await?.network.to_csl();
 	get_scripts_data(genesis_utxo, network)

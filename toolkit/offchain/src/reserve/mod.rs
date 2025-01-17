@@ -94,6 +94,15 @@ impl ReserveData {
 		let (reserve_utxo, reserve_settings) = validator_utxos
 			.into_iter()
 			.find_map(|utxo| {
+				let reserve_auth_policy_id = self.scripts.auth_policy.policy_id().0;
+				let reserve_auth_asset_name: Vec<u8> = Vec::new();
+				let auth_token =
+					utxo.value.native_tokens.get(&reserve_auth_policy_id).and_then(|assets| {
+						assets.iter().find(|asset| {
+							asset.name == reserve_auth_asset_name && asset.amount == 1i128
+						})
+					});
+				auth_token?;
 				utxo.clone()
 					.datum
 					.and_then(|d| PlutusData::from_bytes(d.bytes).ok())
