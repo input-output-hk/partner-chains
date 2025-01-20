@@ -402,7 +402,7 @@
 				utxo.value.native_tokens.contains_key(<span class="kw-2">&amp;</span>version_oracle_policy.script_hash());
 			correct_datum &amp;&amp; contains_version_oracle_token
 		})
-		.ok_or_else(|| JsError::from_str(<span class="string">"Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using `init-governance` command."</span>))
+		.ok_or_else(|| JsError::from_str(<span class="string">"Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using governance init command."</span>))
 }
 
 <span class="attr">#[derive(Clone, Debug)]
