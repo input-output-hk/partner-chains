@@ -206,6 +206,7 @@
 <a href="#206" id="206">206</a>
 <a href="#207" id="207">207</a>
 <a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Transaction that creates a new reserve.
 //!
 //! Specification:
@@ -304,7 +305,6 @@
 }
 
 <span class="kw">pub struct </span>ReserveParameters {
-	<span class="kw">pub </span>initial_incentive: u64,
 	<span class="kw">pub </span>total_accrued_function_script_hash: PolicyId,
 	<span class="kw">pub </span>token: AssetId,
 	<span class="kw">pub </span>initial_deposit: u64,
@@ -318,7 +318,9 @@
 				total_accrued_function_script_hash: value
 					.total_accrued_function_script_hash
 					.clone(),
-				initial_incentive: value.initial_incentive,
+				<span class="comment">// this value is hard-coded to zero as a temporary fix because of a vulnerability in the on-chain
+				// contract code that would allow the reserve to be drained for non-zero values
+				</span>initial_incentive: <span class="number">0</span>,
 			},
 			stats: ReserveStats { token_total_amount_transferred: <span class="number">0 </span>},
 		}

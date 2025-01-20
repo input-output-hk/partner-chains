@@ -191,14 +191,6 @@
 <a href="#191" id="191">191</a>
 <a href="#192" id="192">192</a>
 <a href="#193" id="193">193</a>
-<a href="#194" id="194">194</a>
-<a href="#195" id="195">195</a>
-<a href="#196" id="196">196</a>
-<a href="#197" id="197">197</a>
-<a href="#198" id="198">198</a>
-<a href="#199" id="199">199</a>
-<a href="#200" id="200">200</a>
-<a href="#201" id="201">201</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::PaymentFilePath;
 <span class="kw">use </span>ogmios_client::jsonrpsee::client_for_url;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
@@ -276,9 +268,6 @@
 	<span class="doccomment">/// Script hash of the 'total accrued function', also called V-function, that computes how many tokens could be released from the reserve at given moment.
 	</span><span class="attr">#[arg(long)]
 	</span>total_accrued_function_script_hash: ScriptHash,
-	<span class="doccomment">/// Incentive amount of tokens.
-	</span><span class="attr">#[arg(long, default_value = <span class="string">"0"</span>)]
-	</span>initial_incentive_amount: u64,
 	<span class="doccomment">/// Initial amount of tokens to deposit. They must be present in the payment wallet.
 	</span><span class="attr">#[arg(long)]
 	</span>initial_deposit_amount: u64,
@@ -293,7 +282,6 @@
 		<span class="kw">let </span>ogmios_client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let _ </span>= create_reserve_utxo(
 			ReserveParameters {
-				initial_incentive: <span class="self">self</span>.initial_incentive_amount,
 				total_accrued_function_script_hash: <span class="self">self</span>.total_accrued_function_script_hash,
 				token: <span class="self">self</span>.token,
 				initial_deposit: <span class="self">self</span>.initial_deposit_amount,
@@ -353,9 +341,6 @@
 	<span class="attr">#[arg(long)]
 	</span><span class="doccomment">/// Script hash of the 'total accrued function', also called V-function, that computes how many tokens could be released from the reserve at given moment.
 	</span>total_accrued_function_script_hash: <span class="prelude-ty">Option</span>&lt;ScriptHash&gt;,
-	<span class="attr">#[arg(long)]
-	</span><span class="doccomment">/// Incentive amount of tokens.
-	</span>reserve_initial_incentive_amount: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 }
 
 <span class="kw">impl </span>UpdateReserveSettingsCmd {
@@ -366,7 +351,6 @@
 			<span class="self">self</span>.genesis_utxo,
 			payment_key.<span class="number">0</span>,
 			<span class="self">self</span>.total_accrued_function_script_hash,
-			<span class="self">self</span>.reserve_initial_incentive_amount,
 			<span class="kw-2">&amp;</span>ogmios_client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 		)
