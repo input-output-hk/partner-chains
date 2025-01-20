@@ -261,7 +261,6 @@
 <a href="#261" id="261">261</a>
 <a href="#262" id="262">262</a>
 <a href="#263" id="263">263</a>
-<a href="#264" id="264">264</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Specification for deposit transaction:
 //!
@@ -288,7 +287,6 @@
 		TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
-	reserve::get_reserve_data,
 	scripts_data::ReserveScripts,
 };
 <span class="kw">use </span>anyhow::anyhow;
@@ -324,7 +322,7 @@
 ) -&gt; anyhow::Result&lt;McTxHash&gt; {
 	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_key, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>governance = get_governance_data(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="kw">let </span>reserve = get_reserve_data(genesis_utxo, <span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>reserve = ReserveData::get(genesis_utxo, <span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
 	<span class="kw">let </span>utxo = get_utxo_with_tokens(<span class="kw-2">&amp;</span>reserve.scripts, <span class="kw-2">&amp;</span>parameters.token, <span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?
 		</span>.ok_or_else(||<span class="macro">anyhow!</span>(<span class="string">"There are no UTXOs in the Reserve Validator address that contain token Reserve Auth Policy Token. Has Reserve been created already?"</span>))<span class="question-mark">?</span>;

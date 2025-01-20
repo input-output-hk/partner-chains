@@ -407,7 +407,7 @@
 
 <span class="kw">pub async fn </span>get_scripts_data_with_ogmios(
 	genesis_utxo: UtxoId,
-	client: <span class="kw">impl </span>QueryNetwork,
+	client: <span class="kw-2">&amp;</span><span class="kw">impl </span>QueryNetwork,
 ) -&gt; anyhow::Result&lt;ScriptsData&gt; {
 	<span class="kw">let </span>network = client.shelley_genesis_configuration().<span class="kw">await</span><span class="question-mark">?</span>.network.to_csl();
 	get_scripts_data(genesis_utxo, network)

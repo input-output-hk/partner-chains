@@ -131,6 +131,44 @@
 <a href="#131" id="131">131</a>
 <a href="#132" id="132">132</a>
 <a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::PaymentFilePath;
 <span class="kw">use </span>ogmios_client::jsonrpsee::client_for_url;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
@@ -139,6 +177,7 @@
 		create::{create_reserve_utxo, ReserveParameters},
 		deposit::{deposit_to_reserve, TokenAmount},
 		init::init_reserve_management,
+		update_settings::update_reserve_settings,
 	},
 };
 <span class="kw">use </span>sidechain_domain::{AssetId, ScriptHash, UtxoId};
@@ -150,6 +189,8 @@
 	</span>Init(InitReserveCmd),
 	Create(CreateReserveCmd),
 	Deposit(DepositReserveCmd),
+	<span class="doccomment">/// Update reserve management system settings for your chain
+	</span>UpdateSettings(UpdateReserveSettingsCmd),
 }
 
 <span class="kw">impl </span>ReserveCmd {
@@ -158,6 +199,7 @@
 			<span class="self">Self</span>::Init(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::Create(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::Deposit(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
+			<span class="self">Self</span>::UpdateSettings(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 		}
 	}
 }
@@ -257,6 +299,40 @@
 			TokenAmount { token: <span class="self">self</span>.token, amount: <span class="self">self</span>.amount },
 			<span class="self">self</span>.genesis_utxo,
 			payment_key.<span class="number">0</span>,
+			<span class="kw-2">&amp;</span>ogmios_client,
+			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
+		)
+		.<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(())
+	}
+}
+
+<span class="attr">#[derive(Clone, Debug, clap::Parser)]
+</span><span class="kw">pub struct </span>UpdateReserveSettingsCmd {
+	<span class="attr">#[clap(flatten)]
+	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
+	<span class="attr">#[clap(flatten)]
+	</span>payment_key_file: PaymentFilePath,
+	<span class="doccomment">/// Genesis UTXO of the partner-chain.
+	</span><span class="attr">#[arg(long, short(<span class="string">'c'</span>))]
+	</span>genesis_utxo: UtxoId,
+	<span class="attr">#[arg(long)]
+	</span><span class="doccomment">/// Script hash of the 'total accrued function', also called V-function, that computes how many tokens could be released from the reserve at given moment.
+	</span>total_accrued_function_script_hash: <span class="prelude-ty">Option</span>&lt;ScriptHash&gt;,
+	<span class="attr">#[arg(long)]
+	</span><span class="doccomment">/// Incentive amount of tokens.
+	</span>reserve_initial_incentive_amount: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+}
+
+<span class="kw">impl </span>UpdateReserveSettingsCmd {
+	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
+		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
+		<span class="kw">let </span>ogmios_client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let _ </span>= update_reserve_settings(
+			<span class="self">self</span>.genesis_utxo,
+			payment_key.<span class="number">0</span>,
+			<span class="self">self</span>.total_accrued_function_script_hash,
+			<span class="self">self</span>.reserve_initial_incentive_amount,
 			<span class="kw-2">&amp;</span>ogmios_client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 		)

@@ -70,10 +70,58 @@
 <a href="#70" id="70">70</a>
 <a href="#71" id="71">71</a>
 <a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! All smart-contracts related to Rewards Token Reserve Management
 
-</span><span class="kw">use crate</span>::{csl::TransactionContext, scripts_data};
+</span><span class="kw">use </span><span class="kw">crate</span>::csl::OgmiosUtxoExt;
+<span class="kw">use crate</span>::{csl::TransactionContext, scripts_data};
 <span class="kw">use </span>anyhow::anyhow;
+<span class="kw">use </span>cardano_serialization_lib::PlutusData;
 <span class="kw">use </span>init::find_script_utxo;
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -81,7 +129,8 @@
 	transactions::Transactions,
 	types::OgmiosUtxo,
 };
-<span class="kw">use </span>sidechain_domain::UtxoId;
+<span class="kw">use </span>partner_chains_plutus_data::reserve::ReserveDatum;
+<span class="kw">use </span>sidechain_domain::{AssetId, AssetName, UtxoId};
 
 <span class="kw">pub mod </span>create;
 <span class="kw">pub mod </span>deposit;
@@ -96,50 +145,93 @@
 	<span class="kw">pub</span>(<span class="kw">crate</span>) illiquid_circulation_supply_validator_version_utxo: OgmiosUtxo,
 }
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_reserve_data&lt;
-	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
-&gt;(
-	genesis_utxo: UtxoId,
-	ctx: <span class="kw-2">&amp;</span>TransactionContext,
-	client: <span class="kw-2">&amp;</span>T,
-) -&gt; <span class="prelude-ty">Result</span>&lt;ReserveData, anyhow::Error&gt; {
-	<span class="kw">let </span>version_oracle = scripts_data::version_oracle(genesis_utxo, ctx.network)<span class="question-mark">?</span>;
-	<span class="kw">let </span>auth_policy_version_utxo = find_script_utxo(
-		raw_scripts::ScriptId::ReserveAuthPolicy <span class="kw">as </span>u32,
-		<span class="kw-2">&amp;</span>version_oracle,
-		ctx,
-		client,
-	)
-	.<span class="kw">await</span><span class="question-mark">?
-	</span>.ok_or_else(|| {
-		<span class="macro">anyhow!</span>(<span class="string">"Reserve Auth Version Utxo not found, is the Reserve Token Management initialized?"</span>)
-	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>validator_version_utxo = find_script_utxo(
-		raw_scripts::ScriptId::ReserveValidator <span class="kw">as </span>u32,
-		<span class="kw-2">&amp;</span>version_oracle,
-		ctx,
-		client,
-	)
-	.<span class="kw">await</span><span class="question-mark">?
-	</span>.ok_or_else(|| {
-		<span class="macro">anyhow!</span>(<span class="string">"Reserve Validator Version Utxo not found, is the Reserve Token Management initialized?"</span>)
-	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>illiquid_circulation_supply_validator_version_utxo = find_script_utxo(
-		raw_scripts::ScriptId::IlliquidCirculationSupplyValidator <span class="kw">as </span>u32,
-		<span class="kw-2">&amp;</span>version_oracle,
-		ctx,
-		client,
-	)
-	.<span class="kw">await</span><span class="question-mark">?
-	</span>.ok_or_else(|| {
-		<span class="macro">anyhow!</span>(<span class="string">"Illiquid Circulation Supply Validator Version Utxo not found, is the Reserve Token Management initialized?"</span>)
-	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>scripts = scripts_data::reserve_scripts(genesis_utxo, ctx.network)<span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(ReserveData {
-		scripts,
-		auth_policy_version_utxo,
-		validator_version_utxo,
-		illiquid_circulation_supply_validator_version_utxo,
-	})
+<span class="attr">#[derive(Clone, Debug)]
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>ReserveUtxo {
+	<span class="kw">pub</span>(<span class="kw">crate</span>) reserve_utxo: OgmiosUtxo,
+	<span class="kw">pub</span>(<span class="kw">crate</span>) reserve_settings: ReserveDatum,
+}
+
+<span class="kw">impl </span>ReserveData {
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get&lt;
+		T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	&gt;(
+		genesis_utxo: UtxoId,
+		ctx: <span class="kw-2">&amp;</span>TransactionContext,
+		client: <span class="kw-2">&amp;</span>T,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, anyhow::Error&gt; {
+		<span class="kw">let </span>version_oracle = scripts_data::version_oracle(genesis_utxo, ctx.network)<span class="question-mark">?</span>;
+		<span class="kw">let </span>auth_policy_version_utxo =
+			find_script_utxo(
+				raw_scripts::ScriptId::ReserveAuthPolicy <span class="kw">as </span>u32,
+				<span class="kw-2">&amp;</span>version_oracle,
+				ctx,
+				client,
+			)
+			.<span class="kw">await</span><span class="question-mark">?
+			</span>.ok_or_else(|| {
+				<span class="macro">anyhow!</span>(<span class="string">"Reserve Auth Version Utxo not found, is the Reserve Token Management initialized?"</span>)
+			})<span class="question-mark">?</span>;
+		<span class="kw">let </span>validator_version_utxo = find_script_utxo(
+			raw_scripts::ScriptId::ReserveValidator <span class="kw">as </span>u32,
+			<span class="kw-2">&amp;</span>version_oracle,
+			ctx,
+			client,
+		)
+		.<span class="kw">await</span><span class="question-mark">?
+		</span>.ok_or_else(|| {
+			<span class="macro">anyhow!</span>(<span class="string">"Reserve Validator Version Utxo not found, is the Reserve Token Management initialized?"</span>)
+		})<span class="question-mark">?</span>;
+		<span class="kw">let </span>illiquid_circulation_supply_validator_version_utxo = find_script_utxo(
+			raw_scripts::ScriptId::IlliquidCirculationSupplyValidator <span class="kw">as </span>u32,
+			<span class="kw-2">&amp;</span>version_oracle,
+			ctx,
+			client,
+		)
+		.<span class="kw">await</span><span class="question-mark">?
+		</span>.ok_or_else(|| {
+			<span class="macro">anyhow!</span>(<span class="string">"Illiquid Circulation Supply Validator Version Utxo not found, is the Reserve Token Management initialized?"</span>)
+		})<span class="question-mark">?</span>;
+		<span class="kw">let </span>scripts = scripts_data::reserve_scripts(genesis_utxo, ctx.network)<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(ReserveData {
+			scripts,
+			auth_policy_version_utxo,
+			validator_version_utxo,
+			illiquid_circulation_supply_validator_version_utxo,
+		})
+	}
+
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_reserve_utxo&lt;
+		T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	&gt;(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		ctx: <span class="kw-2">&amp;</span>TransactionContext,
+		client: <span class="kw-2">&amp;</span>T,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;ReserveUtxo, anyhow::Error&gt; {
+		<span class="kw">let </span>validator_address = <span class="self">self</span>.scripts.validator.address(ctx.network).to_bech32(<span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+		<span class="kw">let </span>validator_utxos = client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
+
+		<span class="kw">let </span>auth_token_asset_id = AssetId {
+			policy_id: <span class="self">self</span>.scripts.auth_policy.policy_id(),
+			asset_name: AssetName::from_hex_unsafe(<span class="string">""</span>),
+		};
+
+		<span class="kw">let </span>(reserve_utxo, reserve_settings) = validator_utxos
+			.into_iter()
+			.find_map(|utxo| {
+				<span class="kw">if </span>utxo.get_asset_amount(<span class="kw-2">&amp;</span>auth_token_asset_id) != <span class="number">1i128 </span>{
+					<span class="kw">return </span><span class="prelude-val">None</span>;
+				}
+				utxo.clone()
+					.datum
+					.and_then(|d| PlutusData::from_bytes(d.bytes).ok())
+					.and_then(|d| ReserveDatum::try_from(d).ok())
+					.map(|d| (utxo, d))
+			})
+			.ok_or_else(|| {
+				<span class="macro">anyhow!</span>(<span class="string">"Reserve Utxo not found, is the Reserve Token Management initialized?"</span>)
+			})<span class="question-mark">?</span>;
+
+		<span class="prelude-val">Ok</span>(ReserveUtxo { reserve_utxo, reserve_settings })
+	}
 }
 </code></pre></div></section></main></body></html>

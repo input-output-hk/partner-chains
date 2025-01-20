@@ -39,7 +39,7 @@
 <span class="kw">impl </span>GetScripts {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
 		<span class="kw">let </span>client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
-		<span class="kw">let </span>scripts_data = get_scripts_data_with_ogmios(<span class="self">self</span>.genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let </span>scripts_data = get_scripts_data_with_ogmios(<span class="self">self</span>.genesis_utxo, <span class="kw-2">&amp;</span>client).<span class="kw">await</span><span class="question-mark">?</span>;
 
 		<span class="kw">let </span>json = serde_json::to_string_pretty(<span class="kw-2">&amp;</span>scripts_data)<span class="question-mark">?</span>;
 

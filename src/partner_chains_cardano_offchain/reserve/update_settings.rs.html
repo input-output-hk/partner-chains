@@ -201,32 +201,6 @@
 <a href="#201" id="201">201</a>
 <a href="#202" id="202">202</a>
 <a href="#203" id="203">203</a>
-<a href="#204" id="204">204</a>
-<a href="#205" id="205">205</a>
-<a href="#206" id="206">206</a>
-<a href="#207" id="207">207</a>
-<a href="#208" id="208">208</a>
-<a href="#209" id="209">209</a>
-<a href="#210" id="210">210</a>
-<a href="#211" id="211">211</a>
-<a href="#212" id="212">212</a>
-<a href="#213" id="213">213</a>
-<a href="#214" id="214">214</a>
-<a href="#215" id="215">215</a>
-<a href="#216" id="216">216</a>
-<a href="#217" id="217">217</a>
-<a href="#218" id="218">218</a>
-<a href="#219" id="219">219</a>
-<a href="#220" id="220">220</a>
-<a href="#221" id="221">221</a>
-<a href="#222" id="222">222</a>
-<a href="#223" id="223">223</a>
-<a href="#224" id="224">224</a>
-<a href="#225" id="225">225</a>
-<a href="#226" id="226">226</a>
-<a href="#227" id="227">227</a>
-<a href="#228" id="228">228</a>
-<a href="#229" id="229">229</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Transaction that updates reserve settings.
 //!
 //! Specification:
@@ -246,16 +220,127 @@
 //!   * Governance Policy Script
 
 </span><span class="kw">use </span><span class="kw">super</span>::ReserveData;
-<span class="kw">use crate</span>::{csl::<span class="kw-2">*</span>, init_governance::GovernanceData};
+<span class="kw">use </span><span class="kw">crate</span>::reserve::ReserveUtxo;
+<span class="kw">use crate</span>::{
+	await_tx::AwaitTx, csl::<span class="kw-2">*</span>, init_governance::get_governance_data,
+	init_governance::GovernanceData,
+};
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
+<span class="kw">use </span>ogmios_client::types::OgmiosUtxo;
+<span class="kw">use </span>ogmios_client::{
+	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
+	query_network::QueryNetwork,
+	transactions::Transactions,
+};
 <span class="kw">use </span>partner_chains_plutus_data::reserve::{ReserveDatum, ReserveRedeemer};
+<span class="kw">use </span>sidechain_domain::{McTxHash, ScriptHash, UtxoId};
+
+<span class="kw">pub async fn </span>update_reserve_settings&lt;
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	A: AwaitTx,
+&gt;(
+	genesis_utxo: UtxoId,
+	payment_key: [u8; <span class="number">32</span>],
+	<span class="kw-2">mut </span>total_accrued_function_script_hash_opt: <span class="prelude-ty">Option</span>&lt;ScriptHash&gt;,
+	<span class="kw-2">mut </span>reserve_initial_incentive_amount_opt: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+	client: <span class="kw-2">&amp;</span>T,
+	await_tx: <span class="kw-2">&amp;</span>A,
+) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
+	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_key, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>governance = get_governance_data(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>reserve = ReserveData::get(genesis_utxo, <span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>ReserveUtxo { reserve_utxo, <span class="kw-2">mut </span>reserve_settings } =
+		reserve.get_reserve_utxo(<span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
+
+	<span class="kw">if let </span><span class="prelude-val">Some</span>(total_accrued_function_script_hash) = total_accrued_function_script_hash_opt.clone()
+	{
+		<span class="kw">if </span>total_accrued_function_script_hash
+			== reserve_settings.mutable_settings.total_accrued_function_script_hash
+		{
+			total_accrued_function_script_hash_opt = <span class="prelude-val">None</span>;
+			<span class="macro">log::info!</span>(
+				<span class="string">"Reserve V function hash is already set to {:?}."</span>,
+				total_accrued_function_script_hash
+			);
+		} <span class="kw">else </span>{
+			reserve_settings.mutable_settings.total_accrued_function_script_hash =
+				total_accrued_function_script_hash.clone();
+		}
+	}
+
+	<span class="kw">if let </span><span class="prelude-val">Some</span>(reserve_initial_incentive_amount) = reserve_initial_incentive_amount_opt {
+		<span class="kw">if </span>reserve_initial_incentive_amount == reserve_settings.mutable_settings.initial_incentive {
+			reserve_initial_incentive_amount_opt = <span class="prelude-val">None</span>;
+			<span class="macro">log::info!</span>(
+				<span class="string">"Reserve initial incentive amount is already set to {}."</span>,
+				reserve_initial_incentive_amount
+			);
+		} <span class="kw">else </span>{
+			reserve_settings.mutable_settings.initial_incentive = reserve_initial_incentive_amount;
+		}
+	}
+
+	<span class="kw">if </span>total_accrued_function_script_hash_opt.is_none()
+		&amp;&amp; reserve_initial_incentive_amount_opt.is_none()
+	{
+		<span class="macro">log::info!</span>(<span class="string">"Nothing to update."</span>);
+		<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+	}
+
+	<span class="kw">let </span>tx_to_evaluate = update_reserve_settings_tx(
+		<span class="kw-2">&amp;</span>reserve_settings,
+		<span class="kw-2">&amp;</span>reserve,
+		<span class="kw-2">&amp;</span>governance,
+		<span class="kw-2">&amp;</span>zero_ex_units(),
+		<span class="kw-2">&amp;</span>reserve_utxo,
+		<span class="kw-2">&amp;</span>zero_ex_units(),
+		<span class="kw-2">&amp;</span>ctx,
+	)<span class="question-mark">?</span>;
+
+	<span class="kw">let </span>evaluate_response = client.evaluate_transaction(<span class="kw-2">&amp;</span>tx_to_evaluate.to_bytes()).<span class="kw">await</span><span class="question-mark">?</span>;
+
+	<span class="kw">let </span>budgets = get_validator_budgets(evaluate_response);
+	<span class="kw">let </span>gov_cost = budgets
+		.mint_ex_units
+		.first()
+		.expect(<span class="string">"Every Update Reserve Settings transaction should have one mint"</span>)
+		.clone();
+	<span class="kw">let </span>reserve_cost = budgets
+		.spend_ex_units
+		.first()
+		.expect(<span class="string">"Every Update Reserve Settings transaction should have one spend"</span>)
+		.clone();
+
+	<span class="kw">let </span>tx = update_reserve_settings_tx(
+		<span class="kw-2">&amp;</span>reserve_settings,
+		<span class="kw-2">&amp;</span>reserve,
+		<span class="kw-2">&amp;</span>governance,
+		<span class="kw-2">&amp;</span>gov_cost,
+		<span class="kw-2">&amp;</span>reserve_utxo,
+		<span class="kw-2">&amp;</span>reserve_cost,
+		<span class="kw-2">&amp;</span>ctx,
+	)<span class="question-mark">?</span>;
+	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
+	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
+		<span class="macro">anyhow::anyhow!</span>(
+			<span class="string">"Update Reserve Settings transaction request failed: {}, tx bytes: {}"</span>,
+			e,
+			hex::encode(signed_tx)
+		)
+	})<span class="question-mark">?</span>;
+	<span class="kw">let </span>tx_id = res.transaction.id;
+	<span class="macro">log::info!</span>(<span class="string">"Update Reserve Settings transaction submitted: {}"</span>, hex::encode(tx_id));
+	await_tx.await_tx_output(client, UtxoId::new(tx_id, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(McTxHash(tx_id)))
+}
 
 <span class="kw">fn </span>update_reserve_settings_tx(
 	datum: <span class="kw-2">&amp;</span>ReserveDatum,
 	reserve: <span class="kw-2">&amp;</span>ReserveData,
 	governance: <span class="kw-2">&amp;</span>GovernanceData,
-	governance_script_cost: ExUnits,
-	redeemer_script_cost: ExUnits,
+	governance_script_cost: <span class="kw-2">&amp;</span>ExUnits,
+	reserve_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
+	reserve_script_cost: <span class="kw-2">&amp;</span>ExUnits,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Transaction, JsError&gt; {
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
@@ -264,9 +349,6 @@
 	</span>{
 		<span class="kw">let </span><span class="kw-2">mut </span>inputs = TxInputsBuilder::new();
 
-		<span class="kw">let </span>utxo = <span class="kw-2">&amp;</span>reserve.validator_version_utxo;
-		<span class="kw">let </span>input = utxo.to_csl_tx_input();
-		<span class="kw">let </span>amount = <span class="kw-2">&amp;</span>utxo.value.to_csl()<span class="question-mark">?</span>;
 		<span class="kw">let </span>witness = PlutusWitness::new_with_ref_without_datum(
 			<span class="kw-2">&amp;</span>PlutusScriptSource::new_ref_input(
 				<span class="kw-2">&amp;</span>reserve.scripts.validator.csl_script_hash(),
@@ -279,21 +361,20 @@
 				<span class="comment">// CSL will set redeemer index for the index of script input after sorting transaction inputs
 				</span><span class="kw-2">&amp;</span><span class="number">0u32</span>.into(),
 				<span class="kw-2">&amp;</span>ReserveRedeemer::UpdateReserve { governance_version: <span class="number">1u64 </span>}.into(),
-				<span class="kw-2">&amp;</span>redeemer_script_cost,
+				reserve_script_cost,
 			),
 		);
-		inputs.add_plutus_script_input(<span class="kw-2">&amp;</span>witness, <span class="kw-2">&amp;</span>input, amount);
+		<span class="kw">let </span>amount = reserve_utxo.value.to_csl()<span class="question-mark">?</span>;
+		inputs.add_plutus_script_input(<span class="kw-2">&amp;</span>witness, <span class="kw-2">&amp;</span>reserve_utxo.to_csl_tx_input(), <span class="kw-2">&amp;</span>amount);
 
 		tx_builder.set_inputs(<span class="kw-2">&amp;</span>inputs);
 	}
-	<span class="comment">// mint new settings
-	</span>{
+	{
 		<span class="kw">let </span>amount_builder = TransactionOutputBuilder::new()
 			.with_address(<span class="kw-2">&amp;</span>reserve.scripts.validator.address(ctx.network))
 			.with_plutus_data(<span class="kw-2">&amp;</span>(datum.clone().into()))
-			.with_script_ref(<span class="kw-2">&amp;</span>ScriptRef::new_plutus_script(<span class="kw-2">&amp;</span>reserve.scripts.validator.to_csl()))
 			.next()<span class="question-mark">?</span>;
-		<span class="kw">let </span><span class="kw-2">mut </span>val = reserve.validator_version_utxo.value.to_csl()<span class="question-mark">?</span>;
+		<span class="kw">let </span><span class="kw-2">mut </span>val = reserve_utxo.value.to_csl()<span class="question-mark">?</span>;
 		<span class="kw">let </span>output = amount_builder.with_value(<span class="kw-2">&amp;</span>val).build()<span class="question-mark">?</span>;
 		<span class="kw">let </span>min_ada = MinOutputAdaCalculator::new(
 			<span class="kw-2">&amp;</span>output,
@@ -311,149 +392,16 @@
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		<span class="kw-2">&amp;</span>governance.policy_script,
 		<span class="kw-2">&amp;</span>gov_tx_input,
-		<span class="kw-2">&amp;</span>governance_script_cost,
+		governance_script_cost,
 	)<span class="question-mark">?</span>;
 	tx_builder.add_script_reference_input(
 		<span class="kw-2">&amp;</span>reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.illiquid_circulation_supply_validator.bytes.len(),
 	);
-	tx_builder.add_required_signer(<span class="kw-2">&amp;</span>ctx.payment_key_hash());
-
+	tx_builder.add_script_reference_input(
+		<span class="kw-2">&amp;</span>reserve.auth_policy_version_utxo.to_csl_tx_input(),
+		reserve.scripts.auth_policy.bytes.len(),
+	);
 	tx_builder.balance_update_and_build(ctx)
-}
-
-<span class="attr">#[cfg(test)]
-</span><span class="kw">mod </span>tests {
-
-	<span class="kw">use </span>cardano_serialization_lib::{ExUnits, Language, NetworkIdKind};
-	<span class="kw">use </span>hex_literal::hex;
-	<span class="kw">use </span>ogmios_client::types::{OgmiosTx, OgmiosUtxo};
-	<span class="kw">use </span>partner_chains_plutus_data::reserve::ReserveDatum;
-	<span class="kw">use </span>sidechain_domain::{AssetId, AssetName, PolicyId};
-
-	<span class="kw">use </span><span class="kw">super</span>::update_reserve_settings_tx;
-	<span class="kw">use crate</span>::{
-		csl::TransactionContext,
-		init_governance::GovernanceData,
-		plutus_script::PlutusScript,
-		reserve::ReserveData,
-		scripts_data::ReserveScripts,
-		test_values::{make_utxo, payment_addr, payment_key, protocol_parameters},
-	};
-
-	<span class="kw">const </span>REWARDS_TOKEN_POLICY_ID: PolicyId =
-		PolicyId(<span class="macro">hex!</span>(<span class="string">"1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2b"</span>));
-
-	<span class="comment">// Reward token
-	</span><span class="kw">const </span>REWARDS_TOKEN_ASSET_NAME_STR: <span class="kw-2">&amp;</span>str = <span class="string">"52657761726420746f6b656e"</span>;
-
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>update_reserve_settings_tx_test() {
-		<span class="kw">let </span>parameters = <span class="kw">crate</span>::reserve::create::ReserveParameters {
-			initial_incentive: <span class="number">100</span>,
-			total_accrued_function_script_hash: PolicyId([<span class="number">233u8</span>; <span class="number">28</span>]),
-			token: AssetId {
-				policy_id: REWARDS_TOKEN_POLICY_ID,
-				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
-			},
-			initial_deposit: <span class="number">500000</span>,
-		};
-
-		<span class="kw">let </span>reserve: ReserveData = ReserveData {
-			scripts: ReserveScripts {
-				validator: test_validator_script(),
-				auth_policy: test_auth_policy_script(),
-				illiquid_circulation_supply_validator: test_ics_validator_script(),
-			},
-			auth_policy_version_utxo: test_auth_policy_version_utxo(),
-			validator_version_utxo: test_validator_version_utxo(),
-			illiquid_circulation_supply_validator_version_utxo: test_ics_validator_version_utxo(),
-		};
-		<span class="kw">let </span>tx = update_reserve_settings_tx(
-			<span class="kw-2">&amp;</span>(<span class="kw-2">&amp;</span>parameters).into(),
-			<span class="kw-2">&amp;</span>reserve,
-			<span class="kw-2">&amp;</span>test_governance_data(),
-			governance_script_cost(),
-			redeemer_script_cost(),
-			<span class="kw-2">&amp;</span>test_transaction_context(),
-		)
-		.unwrap();
-
-		<span class="kw">let </span>body = tx.body();
-		<span class="kw">let </span>inputs = body.inputs();
-		<span class="kw">let </span>outputs = body.outputs();
-
-		<span class="comment">// Both inputs are used to cover transaction
-		</span><span class="macro">assert_eq!</span>(
-			inputs.get(<span class="number">0</span>).to_string(),
-			<span class="string">"1212121212121212121212121212121212121212121212121212121212121212#0"
-		</span>);
-		<span class="macro">assert_eq!</span>(
-			inputs.get(<span class="number">1</span>).to_string(),
-			<span class="string">"7474747474747474747474747474747474747474747474747474747474747474#3"
-		</span>);
-		<span class="macro">assert_eq!</span>(
-			outputs.get(<span class="number">0</span>).address(),
-			test_validator_script().address(cardano_serialization_lib::NetworkIdKind::Testnet)
-		);
-		<span class="macro">assert_eq!</span>(
-			outputs.get(<span class="number">1</span>).address().to_hex(),
-			<span class="string">"6032230eeaaae0ff7a97e7f088e65874bd79c0fe2a99399f795e84543a"
-		</span>);
-		<span class="macro">assert_eq!</span>(outputs.get(<span class="number">0</span>).plutus_data().unwrap(), ReserveDatum::from(<span class="kw-2">&amp;</span>parameters).into());
-	}
-
-	<span class="kw">fn </span>test_transaction_context() -&gt; TransactionContext {
-		TransactionContext {
-			payment_key: payment_key(),
-			payment_key_utxos: <span class="macro">vec!</span>[make_utxo(<span class="number">116u8</span>, <span class="number">3</span>, <span class="number">996272387</span>, <span class="kw-2">&amp;</span>payment_addr())],
-			network: NetworkIdKind::Testnet,
-			protocol_parameters: protocol_parameters(),
-		}
-	}
-
-	<span class="kw">fn </span>test_validator_script() -&gt; PlutusScript {
-		PlutusScript { bytes: <span class="macro">hex!</span>(<span class="string">"445566"</span>).to_vec(), language: Language::new_plutus_v2() }
-	}
-
-	<span class="kw">fn </span>test_auth_policy_script() -&gt; PlutusScript {
-		PlutusScript { bytes: <span class="macro">hex!</span>(<span class="string">"556677"</span>).to_vec(), language: Language::new_plutus_v2() }
-	}
-
-	<span class="kw">fn </span>test_ics_validator_script() -&gt; PlutusScript {
-		PlutusScript { bytes: <span class="macro">hex!</span>(<span class="string">"667788"</span>).to_vec(), language: Language::new_plutus_v2() }
-	}
-
-	<span class="kw">fn </span>test_governance_script() -&gt; PlutusScript {
-		PlutusScript { bytes: <span class="macro">hex!</span>(<span class="string">"112233"</span>).to_vec(), language: Language::new_plutus_v2() }
-	}
-
-	<span class="kw">fn </span>test_governance_input() -&gt; OgmiosUtxo {
-		OgmiosUtxo { transaction: OgmiosTx { id: [<span class="number">16</span>; <span class="number">32</span>] }, index: <span class="number">0</span>, ..Default::default() }
-	}
-
-	<span class="kw">fn </span>test_auth_policy_version_utxo() -&gt; OgmiosUtxo {
-		OgmiosUtxo { transaction: OgmiosTx { id: [<span class="number">17</span>; <span class="number">32</span>] }, index: <span class="number">0</span>, ..Default::default() }
-	}
-
-	<span class="kw">fn </span>test_validator_version_utxo() -&gt; OgmiosUtxo {
-		OgmiosUtxo { transaction: OgmiosTx { id: [<span class="number">18</span>; <span class="number">32</span>] }, index: <span class="number">0</span>, ..Default::default() }
-	}
-
-	<span class="kw">fn </span>test_ics_validator_version_utxo() -&gt; OgmiosUtxo {
-		OgmiosUtxo { transaction: OgmiosTx { id: [<span class="number">19</span>; <span class="number">32</span>] }, index: <span class="number">0</span>, ..Default::default() }
-	}
-
-	<span class="kw">fn </span>test_governance_data() -&gt; GovernanceData {
-		GovernanceData { policy_script: test_governance_script(), utxo: test_governance_input() }
-	}
-
-	<span class="kw">fn </span>governance_script_cost() -&gt; ExUnits {
-		ExUnits::new(<span class="kw-2">&amp;</span><span class="number">100u64</span>.into(), <span class="kw-2">&amp;</span><span class="number">200u64</span>.into())
-	}
-
-	<span class="kw">fn </span>redeemer_script_cost() -&gt; ExUnits {
-		ExUnits::new(<span class="kw-2">&amp;</span><span class="number">300u64</span>.into(), <span class="kw-2">&amp;</span><span class="number">400u64</span>.into())
-	}
 }
 </code></pre></div></section></main></body></html>
