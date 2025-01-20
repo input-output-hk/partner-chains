@@ -170,6 +170,12 @@ const MAX_MAINCHAIN_ADDRESS_BYTES: u32 = 120;
 #[cfg_attr(feature = "serde", byte_string(hex_serialize, hex_deserialize))]
 pub struct MainchainAddress(BoundedVec<u8, ConstU32<MAX_MAINCHAIN_ADDRESS_BYTES>>);
 
+impl MainchainAddress {
+	pub fn bytes(&self) -> Vec<u8> {
+		self.0.to_vec()
+	}
+}
+
 #[cfg(feature = "serde")]
 impl FromStr for MainchainAddress {
 	type Err = &'static str;
@@ -205,6 +211,12 @@ pub const MAX_ASSET_NAME_LEN: u32 = 32;
 #[derive(Clone, Default, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
+
+impl AssetName {
+	pub fn empty() -> Self {
+		Self(BoundedVec::new())
+	}
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AssetId {
