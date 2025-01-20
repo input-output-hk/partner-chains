@@ -109,6 +109,8 @@ impl From<&ReserveParameters> for ReserveDatum {
 				total_accrued_function_script_hash: value
 					.total_accrued_function_script_hash
 					.clone(),
+				// this value is hard-coded to zero as a temporary fix because of a vulnerability in the on-chain
+				// contract code that would allow the reserve to be drained for non-zero values
 				initial_incentive: 0,
 			},
 			stats: ReserveStats { token_total_amount_transferred: 0 },
