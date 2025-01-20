@@ -39,7 +39,6 @@ pub async fn update_reserve_settings<
 	genesis_utxo: UtxoId,
 	payment_key: [u8; 32],
 	mut total_accrued_function_script_hash_opt: Option<ScriptHash>,
-	mut reserve_initial_incentive_amount_opt: Option<u64>,
 	client: &T,
 	await_tx: &A,
 ) -> anyhow::Result<Option<McTxHash>> {
@@ -65,21 +64,7 @@ pub async fn update_reserve_settings<
 		}
 	}
 
-	if let Some(reserve_initial_incentive_amount) = reserve_initial_incentive_amount_opt {
-		if reserve_initial_incentive_amount == reserve_settings.mutable_settings.initial_incentive {
-			reserve_initial_incentive_amount_opt = None;
-			log::info!(
-				"Reserve initial incentive amount is already set to {}.",
-				reserve_initial_incentive_amount
-			);
-		} else {
-			reserve_settings.mutable_settings.initial_incentive = reserve_initial_incentive_amount;
-		}
-	}
-
-	if total_accrued_function_script_hash_opt.is_none()
-		&& reserve_initial_incentive_amount_opt.is_none()
-	{
+	if total_accrued_function_script_hash_opt.is_none() {
 		log::info!("Nothing to update.");
 		return Ok(None);
 	}

@@ -69,10 +69,9 @@ const INITIAL_DEPOSIT_AMOUNT: u64 = 500000;
 const DEPOSIT_AMOUNT: u64 = 100000;
 
 const UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH: PolicyId = PolicyId([234u8; 28]);
-const UPDATED_INITIAL_INCENTIVE: u64 = 101;
 const UPDATED_MUTABLE_SETTINGS: ReserveMutableSettings = ReserveMutableSettings {
 	total_accrued_function_script_hash: UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH,
-	initial_incentive: UPDATED_INITIAL_INCENTIVE,
+	initial_incentive: 0,
 };
 
 #[tokio::test]
@@ -312,7 +311,6 @@ async fn run_create_reserve_management<
 ) -> McTxHash {
 	reserve::create::create_reserve_utxo(
 		reserve::create::ReserveParameters {
-			initial_incentive: 100,
 			total_accrued_function_script_hash: V_FUNCTION_HASH,
 			token: AssetId {
 				policy_id: REWARDS_TOKEN_POLICY_ID,
@@ -339,7 +337,6 @@ async fn run_update_reserve_settings_management<
 		genesis_utxo,
 		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
 		Some(UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH),
-		Some(UPDATED_INITIAL_INCENTIVE),
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
