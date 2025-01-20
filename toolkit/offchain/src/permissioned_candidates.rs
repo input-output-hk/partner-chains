@@ -266,7 +266,7 @@ where
 		anyhow!(
 			"Submit update permissioned candidates transaction request failed: {}, bytes: {}",
 			e,
-			hex::encode(tx.to_bytes())
+			hex::encode(&signed_tx)
 		)
 	})?;
 	let tx_id = McTxHash(res.transaction.id);
