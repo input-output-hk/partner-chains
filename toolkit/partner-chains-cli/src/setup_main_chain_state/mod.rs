@@ -84,13 +84,6 @@ impl SortedPermissionedCandidates {
 
 impl CmdRun for SetupMainChainStateCmd {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
-		let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
-		runtime.block_on(self.run_async(context))
-	}
-}
-
-impl SetupMainChainStateCmd {
-	async fn run_async<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		let chain_config = crate::config::load_chain_config(context)?;
 		context.print(
 			"This wizard will set or update D-Parameter and Permissioned Candidates on the main chain. Setting either of these costs ADA!",
@@ -110,8 +103,7 @@ impl SetupMainChainStateCmd {
 					context,
 					config_initial_authorities,
 					chain_config.chain_parameters.genesis_utxo,
-				)
-				.await?;
+				)?;
 			}
 			context.print(&format!(
 				"D-Parameter on the main chain is: (P={}, R={})",
@@ -122,23 +114,20 @@ impl SetupMainChainStateCmd {
 				context,
 				ariadne_parameters.d_parameter,
 				chain_config.chain_parameters.genesis_utxo,
-			)
-			.await?;
+			)?;
 		} else {
 			set_candidates_on_main_chain(
 				context,
 				config_initial_authorities,
 				chain_config.chain_parameters.genesis_utxo,
-			)
-			.await?;
+			)?;
 			let default_d_parameter =
 				DParameter { num_permissioned_candidates: 0, num_registered_candidates: 0 };
 			set_d_parameter_on_main_chain(
 				context,
 				default_d_parameter,
 				chain_config.chain_parameters.genesis_utxo,
-			)
-			.await?;
+			)?;
 		}
 		context.print("Done. Main chain state is set. Please remember that any changes can be observed immediately, but from the Partner Chain point of view they will be effective in two main chain epochs.");
 		Ok(())
@@ -238,7 +227,7 @@ fn print_on_chain_and_config_permissioned_candidates<C: IOContext>(
 	}
 }
 
-async fn set_candidates_on_main_chain<C: IOContext>(
+fn set_candidates_on_main_chain<C: IOContext>(
 	context: &C,
 	candidates: SortedPermissionedCandidates,
 	genesis_utxo: UtxoId,
@@ -249,18 +238,21 @@ async fn set_candidates_on_main_chain<C: IOContext>(
 		let payment_signing_key_path =
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
 		let pkey = cardano_key::get_mc_pkey_from_file(&payment_signing_key_path, context)?;
-
-		context
-			.offchain_impl(&ogmios_config)?
-			.upsert_permissioned_candidates(genesis_utxo, &candidates.to_candidate_data(), pkey.0)
-			.await
+		let offchain = context.offchain_impl(&ogmios_config)?;
+		let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
+		tokio_runtime
+			.block_on(offchain.upsert_permissioned_candidates(
+				genesis_utxo,
+				&candidates.to_candidate_data(),
+				pkey.0,
+			))
 			.context("Permissioned candidates update failed")?;
 		context.print("Permissioned candidates updated. The change will be effective in two main chain epochs.");
 	}
 	Ok(())
 }
 
-async fn set_d_parameter_on_main_chain<C: IOContext>(
+fn set_d_parameter_on_main_chain<C: IOContext>(
 	context: &C,
 	default_d_parameter: DParameter,
 	genesis_utxo: UtxoId,
@@ -285,10 +277,13 @@ async fn set_d_parameter_on_main_chain<C: IOContext>(
 			cardano_key::get_mc_pkey_from_file(&payment_signing_key_path, context)?;
 		let d_parameter =
 			sidechain_domain::DParameter { num_permissioned_candidates, num_registered_candidates };
-		context
-			.offchain_impl(&ogmios_config)?
-			.upsert_d_param(genesis_utxo, &d_parameter, payment_signing_key.0)
-			.await?;
+		let offchain = context.offchain_impl(&ogmios_config)?;
+		let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
+		tokio_runtime.block_on(offchain.upsert_d_param(
+			genesis_utxo,
+			&d_parameter,
+			payment_signing_key.0,
+		))?;
 		context.print(&format!("D-parameter updated to ({}, {}). The change will be effective in two main chain epochs.", p, r));
 	}
 	Ok(())
