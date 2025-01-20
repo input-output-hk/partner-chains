@@ -96,7 +96,6 @@ pub async fn create_reserve_utxo<
 }
 
 pub struct ReserveParameters {
-	pub initial_incentive: u64,
 	pub total_accrued_function_script_hash: PolicyId,
 	pub token: AssetId,
 	pub initial_deposit: u64,
@@ -110,7 +109,7 @@ impl From<&ReserveParameters> for ReserveDatum {
 				total_accrued_function_script_hash: value
 					.total_accrued_function_script_hash
 					.clone(),
-				initial_incentive: value.initial_incentive,
+				initial_incentive: 0,
 			},
 			stats: ReserveStats { token_total_amount_transferred: 0 },
 		}

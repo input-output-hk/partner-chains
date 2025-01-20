@@ -206,7 +206,7 @@ mod tests {
 			},
 			mutable_settings: ReserveMutableSettings {
 				total_accrued_function_script_hash: PolicyId([2; 28]),
-				initial_incentive: 10,
+				initial_incentive: 0,
 			},
 			stats: ReserveStats { token_total_amount_transferred: 1000 },
 		}
