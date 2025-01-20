@@ -22,7 +22,7 @@ runs:
       run: |
         cat > Dockerfile <<EOF
         
-        FROM ubuntu:22.04
+        FROM ubuntu:24.04
         RUN apt-get update && apt-get install -y \
             ca-certificates \
             libgcc-s1 \
@@ -33,7 +33,7 @@ runs:
             libgomp1 \
             && rm -rf /var/lib/apt/lists/*
         
-        RUN useradd -m -u 1000 -U -s /bin/sh -d /substrate substrate \
+        RUN useradd -m -u 1010 -U -s /bin/sh -d /substrate substrate \
             && mkdir -p /data /substrate/.local/share/partner-chains-node \
             && chown -R substrate:substrate /data /substrate \
             && ln -s /data /substrate/.local/share/partner-chains-node
