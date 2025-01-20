@@ -16,6 +16,7 @@ use sidechain_domain::{AssetId, AssetName, UtxoId};
 
 pub mod create;
 pub mod deposit;
+pub mod handover;
 pub mod init;
 pub mod update_settings;
 
@@ -115,4 +116,9 @@ impl ReserveData {
 
 		Ok(ReserveUtxo { reserve_utxo, reserve_settings })
 	}
+}
+
+pub struct TokenAmount {
+	pub token: AssetId,
+	pub amount: u64,
 }

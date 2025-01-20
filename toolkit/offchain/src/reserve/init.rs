@@ -155,7 +155,7 @@ async fn initialize_script<
 	})?;
 	let tx_id = res.transaction.id;
 	log::info!(
-		"Initialized Versioned '{}' transaction submitted: {}",
+		"Initialize Versioned '{}' transaction submitted: {}",
 		script.name,
 		hex::encode(tx_id)
 	);

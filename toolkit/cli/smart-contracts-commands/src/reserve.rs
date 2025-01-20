@@ -4,9 +4,11 @@ use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	reserve::{
 		create::{create_reserve_utxo, ReserveParameters},
-		deposit::{deposit_to_reserve, TokenAmount},
+		deposit::deposit_to_reserve,
+		handover::handover_reserve,
 		init::init_reserve_management,
 		update_settings::update_reserve_settings,
+		TokenAmount,
 	},
 };
 use sidechain_domain::{AssetId, ScriptHash, UtxoId};
@@ -20,6 +22,7 @@ pub enum ReserveCmd {
 	Deposit(DepositReserveCmd),
 	/// Update reserve management system settings for your chain
 	UpdateSettings(UpdateReserveSettingsCmd),
+	Handover(HandoverReserveCmd),
 }
 
 impl ReserveCmd {
@@ -29,6 +32,7 @@ impl ReserveCmd {
 			Self::Create(cmd) => cmd.execute().await,
 			Self::Deposit(cmd) => cmd.execute().await,
 			Self::UpdateSettings(cmd) => cmd.execute().await,
+			Self::Handover(cmd) => cmd.execute().await,
 		}
 	}
 }
@@ -162,6 +166,32 @@ impl UpdateReserveSettingsCmd {
 			payment_key.0,
 			self.total_accrued_function_script_hash,
 			self.reserve_initial_incentive_amount,
+			&ogmios_client,
+			&FixedDelayRetries::two_minutes(),
+		)
+		.await?;
+		Ok(())
+	}
+}
+
+#[derive(Clone, Debug, clap::Parser)]
+pub struct HandoverReserveCmd {
+	#[clap(flatten)]
+	common_arguments: crate::CommonArguments,
+	#[clap(flatten)]
+	payment_key_file: PaymentFilePath,
+	/// Genesis UTXO of the partner-chain.
+	#[arg(long, short('c'))]
+	genesis_utxo: UtxoId,
+}
+
+impl HandoverReserveCmd {
+	pub async fn execute(self) -> crate::CmdResult<()> {
+		let payment_key = self.payment_key_file.read_key()?;
+		let ogmios_client = client_for_url(&self.common_arguments.ogmios_url).await?;
+		let _ = handover_reserve(
+			self.genesis_utxo,
+			payment_key.0,
 			&ogmios_client,
 			&FixedDelayRetries::two_minutes(),
 		)

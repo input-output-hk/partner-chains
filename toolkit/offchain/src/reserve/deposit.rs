@@ -15,7 +15,7 @@
 //! - Reserve Validator script
 //! - Illiquid Supply Validator script
 
-use super::ReserveData;
+use super::{ReserveData, TokenAmount};
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
@@ -40,11 +40,6 @@ use ogmios_client::{
 };
 use partner_chains_plutus_data::reserve::{ReserveDatum, ReserveRedeemer};
 use sidechain_domain::{AssetId, McTxHash, UtxoId};
-
-pub struct TokenAmount {
-	pub token: AssetId,
-	pub amount: u64,
-}
 
 /// Spends current UTXO at validator address and creates a new UTXO with increased token amount
 pub async fn deposit_to_reserve<

@@ -6,7 +6,7 @@
 //!   * 1 Governance Policy Token (using reference script)
 //! 2. The transaction should have two outputs:
 //!   * Reserve Validator output that:
-//!   * * has Reward Tokens
+//!   * * has Reward Tokens and minted Reserve Auth Policy Token
 //!   * * has Plutus Data (in our "versioned format"): `[[[Int(t0), <Encoded Token>], [Bytes(v_function_hash), Int(initial_incentive)], [Int(0)]], Constr(0, []), Int(0)]`,
 //!       where `<Encoded Token>` is `Constr(0, [Bytes(policy_id), Bytes(asset_name)])`.
 //!   * Change output that keeps the Governance Token and change of other tokens
