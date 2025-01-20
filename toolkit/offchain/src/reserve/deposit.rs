@@ -24,7 +24,6 @@ use crate::{
 		TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
-	reserve::get_reserve_data,
 	scripts_data::ReserveScripts,
 };
 use anyhow::anyhow;
@@ -60,7 +59,7 @@ pub async fn deposit_to_reserve<
 ) -> anyhow::Result<McTxHash> {
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance = get_governance_data(genesis_utxo, client).await?;
-	let reserve = get_reserve_data(genesis_utxo, &ctx, client).await?;
+	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
 
 	let utxo = get_utxo_with_tokens(&reserve.scripts, &parameters.token, &ctx, client).await?
 		.ok_or_else(||anyhow!("There are no UTXOs in the Reserve Validator address that contain token Reserve Auth Policy Token. Has Reserve been created already?"))?;

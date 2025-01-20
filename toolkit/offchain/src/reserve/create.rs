@@ -24,7 +24,6 @@ use crate::{
 		TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
-	reserve::get_reserve_data,
 	scripts_data::ReserveScripts,
 };
 use anyhow::anyhow;
@@ -55,7 +54,7 @@ pub async fn create_reserve_utxo<
 ) -> anyhow::Result<McTxHash> {
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance = get_governance_data(genesis_utxo, client).await?;
-	let reserve = get_reserve_data(genesis_utxo, &ctx, client).await?;
+	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
 
 	let tx_to_evaluate = create_reserve_tx(
 		&parameters,

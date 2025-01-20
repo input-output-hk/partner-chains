@@ -13,6 +13,7 @@ use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
+	types::OgmiosUtxo,
 };
 use partner_chains_cardano_offchain::{
 	await_tx::{AwaitTx, FixedDelayRetries},
@@ -20,6 +21,7 @@ use partner_chains_cardano_offchain::{
 	register::Register,
 	reserve, scripts_data, update_governance,
 };
+use partner_chains_plutus_data::reserve::{ReserveDatum, ReserveMutableSettings};
 use sidechain_domain::{
 	AdaBasedStaking, AssetId, AssetName, AuraPublicKey, CandidateRegistration, DParameter,
 	GrandpaPublicKey, MainchainAddressHash, MainchainPrivateKey, MainchainPublicKey,
@@ -65,6 +67,13 @@ const REWARDS_TOKEN_ASSET_NAME_STR: &str = "52657761726420746f6b656e";
 
 const INITIAL_DEPOSIT_AMOUNT: u64 = 500000;
 const DEPOSIT_AMOUNT: u64 = 100000;
+
+const UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH: PolicyId = PolicyId([234u8; 28]);
+const UPDATED_INITIAL_INCENTIVE: u64 = 101;
+const UPDATED_MUTABLE_SETTINGS: ReserveMutableSettings = ReserveMutableSettings {
+	total_accrued_function_script_hash: UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH,
+	initial_incentive: UPDATED_INITIAL_INCENTIVE,
+};
 
 #[tokio::test]
 async fn governance_flow() {
@@ -122,6 +131,8 @@ async fn reserve_management_scenario() {
 	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
 	run_deposit_to_reserve(genesis_utxo, &client).await;
 	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT + DEPOSIT_AMOUNT, &client).await;
+	let _ = run_update_reserve_settings_management(genesis_utxo, &client).await;
+	assert_mutable_settings_eq(genesis_utxo, UPDATED_MUTABLE_SETTINGS, &client).await;
 }
 
 #[tokio::test]
@@ -165,6 +176,7 @@ async fn await_ogmios(ogmios_port: u16) -> Result<OgmiosClients, String> {
 /// * "dave" address: addr_test1vphpcf32drhhznv6rqmrmgpuwq06kug0lkg22ux777rtlqst2er0r
 /// * "eve" address: addr_test1vzzt5pwz3pum9xdgxalxyy52m3aqur0n43pcl727l37ggscl8h7v8
 /// * addr_test1vzuasm5nqzh7n909f7wang7apjprpg29l2f9sk6shlt84rqep6nyc - has attached V-function script
+///
 /// Its hash is 0xf8fbe7316561e57de9ecd1c86ee8f8b512a314ba86499ba9a584bfa8fe2edc8d
 async fn initial_transaction<T: Transactions + QueryUtxoByUtxoId>(
 	client: &T,
@@ -317,12 +329,30 @@ async fn run_create_reserve_management<
 	.unwrap()
 }
 
+async fn run_update_reserve_settings_management<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> Option<McTxHash> {
+	reserve::update_settings::update_reserve_settings(
+		genesis_utxo,
+		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		Some(UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH),
+		Some(UPDATED_INITIAL_INCENTIVE),
+		client,
+		&FixedDelayRetries::new(Duration::from_millis(500), 100),
+	)
+	.await
+	.unwrap()
+}
+
 async fn run_deposit_to_reserve<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 >(
 	genesis_utxo: UtxoId,
 	client: &T,
-) -> () {
+) {
 	reserve::deposit::deposit_to_reserve(
 		reserve::deposit::TokenAmount {
 			token: AssetId {
@@ -386,7 +416,7 @@ async fn assert_token_amount_eq<T: QueryLedgerState>(
 		}),
 		"Expected to find UTXO with {} of {}.{} at {}",
 		expected_amount,
-		hex::encode(&token_policy_id.0),
+		hex::encode(token_policy_id.0),
 		hex::encode(&token_asset_name.0),
 		address,
 	);
@@ -406,4 +436,51 @@ async fn assert_reserve_deposited<T: QueryLedgerState>(
 		client,
 	)
 	.await;
+}
+
+async fn assert_mutable_settings_eq<T: QueryLedgerState + ogmios_client::OgmiosClient>(
+	genesis_utxo: UtxoId,
+	updated_mutable_settings: ReserveMutableSettings,
+	client: &T,
+) {
+	let (_reserve_utxo, reserve_settings) = get_reserve_utxo(genesis_utxo, client).await;
+
+	let mutable_settings = reserve_settings.mutable_settings;
+	assert_eq!(
+		mutable_settings.total_accrued_function_script_hash,
+		updated_mutable_settings.total_accrued_function_script_hash
+	);
+	assert_eq!(mutable_settings.initial_incentive, updated_mutable_settings.initial_incentive);
+}
+
+async fn get_reserve_utxo<
+	T: QueryLedgerState + ogmios_client::OgmiosClient + ogmios_client::query_network::QueryNetwork,
+>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> (OgmiosUtxo, ReserveDatum) {
+	let scripts_data =
+		scripts_data::get_scripts_data_with_ogmios(genesis_utxo, client).await.unwrap();
+	let validator_address = scripts_data.addresses.reserve_validator;
+	let validator_utxos = client.query_utxos(&[validator_address]).await.unwrap();
+
+	validator_utxos
+		.into_iter()
+		.find_map(|utxo| {
+			let reserve_auth_policy_id = scripts_data.policy_ids.reserve_auth.0;
+			let reserve_auth_asset_name: Vec<u8> = Vec::new();
+			let auth_token =
+				utxo.value.native_tokens.get(&reserve_auth_policy_id).and_then(|assets| {
+					assets.iter().find(|asset| {
+						asset.name == reserve_auth_asset_name && asset.amount == 1i128
+					})
+				});
+			auth_token?;
+			utxo.clone()
+				.datum
+				.and_then(|d| cardano_serialization_lib::PlutusData::from_bytes(d.bytes).ok())
+				.and_then(|d| ReserveDatum::try_from(d).ok())
+				.map(|d| (utxo, d))
+		})
+		.unwrap()
 }
