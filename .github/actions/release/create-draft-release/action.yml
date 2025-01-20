@@ -97,48 +97,21 @@ runs:
       id: create_release
       if: ${{ steps.check_release.outputs.release_exists == 'false' }}
       run: |
-        echo "Creating a draft release for tag ${{ inputs.tag }}..."
         tag="${{ inputs.tag }}"
-        release_name="${tag}-rc"
-        release_notes="${{ steps.extract_release_notes.outputs.release_notes }}"
     
-        # Decode the release notes from GitHub Actions encoding
-        release_notes="${release_notes//'%25'/'%'}"
-        release_notes="${release_notes//'%0A'/$'\n'}"
-        release_notes="${release_notes//'%0D'/$'\r'}"
-    
-        # Build the release body
         release_body="### Pre-release candidate for version $tag\n\n"
-        release_body+="This is a draft pre-release candidate for ${tag} that is undergoing testing. The current testing status is:\n\n"
+        release_body+="This is a draft pre-release candidate for release $tag that is undergoing testing. The current testing status is:\n\n"
         release_body+="- [x] Local environment\n"
         release_body+="- [ ] Staging preview environment\n"
         release_body+="- [ ] Staging preprod environment\n\n"
-        release_body+="Please note: this release is not yet fully verified and is pending further testing.\n\n"
-        release_body+="## Release Notes\n\n"
-        release_body+="$release_notes\n\n"
-        release_body+="## Compatibility matrix\n"
-        release_body+="| partner-chains-node | partner-chains-smart-contracts | cardano-node | cardano-db-sync | kupo | ogmios |\n"
-        release_body+="| -------------------- | -------------------------------- | --------------- | ------------------ | ----- | ------- |\n"
-        release_body+="| $tag |  |  |  |  |  |\n\n"
-        release_body+="## Binaries\n\n"
-        release_body+="You can download the archives that contain both \\partner-chains-node\\ and \\partner-chains-cli\\ from assets attached to this release (available for MacOS and Linux architectures). PC smart contracts CLI can be downloaded from [here](https://github.com/input-output-hk/partner-chains-smart-contracts).\n\n"
-        release_body+="## Docker\n\n"
-        release_body+="You can also pull the Docker image of the \\partner-chains-node\\ from GitHub Container Registry:\n\n"
-        release_body+="\\\bash\n"
-        release_body+="docker pull ghcr.io/input-output-hk/partner-chains/partner-chains-node:$tag\n"
-        release_body+="\\\\n\n"
-        release_body+="## How to Use\n\n"
-        release_body+="Refer to the [documentation](https://github.com/input-output-hk/partner-chains/tree/$tag/docs/user-guides) for detailed instructions on using the node and CLI tools.\n\n"
-        release_body+="## Support\n\n"
-        release_body+="You can visit our issues page for support, feature requests, or to report a bug.\n\n"
-        release_body+="Thank you for being a part of our community!\n"
+        release_body+="Please note: this release is not yet fully verified and is pending further testing.\n"
     
-        # Create the release
-        release_response=$(curl -s -X POST -H "Authorization: token ${{ env.GITHUB_TOKEN }}" -d '{"tag_name": "'"$tag"'", "name": "'"$release_name"'", "body": "'"$release_body"'", "draft": true, "generate_release_notes": false, "prerelease": true}' "https://api.github.com/repos/${{ github.repository }}/releases")
-    
-        release_id=$(echo "$release_response" | jq -r .id)
-        echo "Draft release created with ID $release_id"
-        echo "::set-output name=release_id::$release_id"
+        release_response=$(curl -s -X POST -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
+                          -d '{"tag_name": "'$tag'", "name": "'$tag'", "body": "'"$release_body"'", "draft": true, "generate_release_notes": true, "prerelease": true}' \
+                          "https://api.github.com/repos/${{ github.repository }}/releases")
+        
+        echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
+        echo "::set-output name=release_id::$(echo $release_response | jq -r .id)"
       shell: bash
     
     - name: Upload artifacts to release
