@@ -140,11 +140,16 @@
 <a href="#140" id="140">140</a>
 <a href="#141" id="141">141</a>
 <a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 
 <span class="kw">pub mod </span>d_parameter;
 <span class="kw">pub mod </span>get_scripts;
 <span class="kw">pub mod </span>governance;
+<span class="kw">pub mod </span>permissioned_candidates;
 <span class="kw">pub mod </span>register;
 <span class="kw">pub mod </span>reserve;
 
@@ -155,6 +160,8 @@
 	</span>GetScripts(get_scripts::GetScripts),
 	<span class="doccomment">/// Upsert DParameter
 	</span>UpsertDParameter(d_parameter::UpsertDParameterCmd),
+	<span class="doccomment">/// Upsert Permissioned Candidates
+	</span>UpsertPermissionedCandidates(permissioned_candidates::UpsertPermissionedCandidatesCmd),
 	<span class="doccomment">/// Register candidate
 	</span>Register(register::RegisterCmd),
 	<span class="doccomment">/// Deregister candidate
@@ -182,6 +189,7 @@
 			<span class="self">Self</span>::Governance(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::GetScripts(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::UpsertDParameter(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
+			<span class="self">Self</span>::UpsertPermissionedCandidates(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::Register(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::Deregister(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::Reserve(cmd) =&gt; cmd.execute().<span class="kw">await</span>,

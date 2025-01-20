@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["SmartContractsCmd"],"mod":["d_parameter","get_scripts","governance","register","reserve"],"struct":["CommonArguments"]};
+window.SIDEBAR_ITEMS = {"enum":["SmartContractsCmd"],"mod":["d_parameter","get_scripts","governance","permissioned_candidates","register","reserve"],"struct":["CommonArguments"]};
