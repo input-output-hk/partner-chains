@@ -169,15 +169,47 @@
 <a href="#169" id="169">169</a>
 <a href="#170" id="170">170</a>
 <a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::PaymentFilePath;
 <span class="kw">use </span>ogmios_client::jsonrpsee::client_for_url;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	reserve::{
 		create::{create_reserve_utxo, ReserveParameters},
-		deposit::{deposit_to_reserve, TokenAmount},
+		deposit::deposit_to_reserve,
+		handover::handover_reserve,
 		init::init_reserve_management,
 		update_settings::update_reserve_settings,
+		TokenAmount,
 	},
 };
 <span class="kw">use </span>sidechain_domain::{AssetId, ScriptHash, UtxoId};
@@ -191,6 +223,7 @@
 	Deposit(DepositReserveCmd),
 	<span class="doccomment">/// Update reserve management system settings for your chain
 	</span>UpdateSettings(UpdateReserveSettingsCmd),
+	Handover(HandoverReserveCmd),
 }
 
 <span class="kw">impl </span>ReserveCmd {
@@ -200,6 +233,7 @@
 			<span class="self">Self</span>::Create(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::Deposit(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::UpdateSettings(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
+			<span class="self">Self</span>::Handover(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 		}
 	}
 }
@@ -333,6 +367,32 @@
 			payment_key.<span class="number">0</span>,
 			<span class="self">self</span>.total_accrued_function_script_hash,
 			<span class="self">self</span>.reserve_initial_incentive_amount,
+			<span class="kw-2">&amp;</span>ogmios_client,
+			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
+		)
+		.<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(())
+	}
+}
+
+<span class="attr">#[derive(Clone, Debug, clap::Parser)]
+</span><span class="kw">pub struct </span>HandoverReserveCmd {
+	<span class="attr">#[clap(flatten)]
+	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
+	<span class="attr">#[clap(flatten)]
+	</span>payment_key_file: PaymentFilePath,
+	<span class="doccomment">/// Genesis UTXO of the partner-chain.
+	</span><span class="attr">#[arg(long, short(<span class="string">'c'</span>))]
+	</span>genesis_utxo: UtxoId,
+}
+
+<span class="kw">impl </span>HandoverReserveCmd {
+	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
+		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
+		<span class="kw">let </span>ogmios_client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let _ </span>= handover_reserve(
+			<span class="self">self</span>.genesis_utxo,
+			payment_key.<span class="number">0</span>,
 			<span class="kw-2">&amp;</span>ogmios_client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 		)

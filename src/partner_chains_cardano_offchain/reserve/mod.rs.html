@@ -116,6 +116,12 @@
 <a href="#116" id="116">116</a>
 <a href="#117" id="117">117</a>
 <a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! All smart-contracts related to Rewards Token Reserve Management
 
 </span><span class="kw">use </span><span class="kw">crate</span>::csl::OgmiosUtxoExt;
@@ -134,6 +140,7 @@
 
 <span class="kw">pub mod </span>create;
 <span class="kw">pub mod </span>deposit;
+<span class="kw">pub mod </span>handover;
 <span class="kw">pub mod </span>init;
 <span class="kw">pub mod </span>update_settings;
 
@@ -233,5 +240,10 @@
 
 		<span class="prelude-val">Ok</span>(ReserveUtxo { reserve_utxo, reserve_settings })
 	}
+}
+
+<span class="kw">pub struct </span>TokenAmount {
+	<span class="kw">pub </span>token: AssetId,
+	<span class="kw">pub </span>amount: u64,
 }
 </code></pre></div></section></main></body></html>

@@ -256,11 +256,6 @@
 <a href="#256" id="256">256</a>
 <a href="#257" id="257">257</a>
 <a href="#258" id="258">258</a>
-<a href="#259" id="259">259</a>
-<a href="#260" id="260">260</a>
-<a href="#261" id="261">261</a>
-<a href="#262" id="262">262</a>
-<a href="#263" id="263">263</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Specification for deposit transaction:
 //!
@@ -278,7 +273,7 @@
 //! - Reserve Validator script
 //! - Illiquid Supply Validator script
 
-</span><span class="kw">use </span><span class="kw">super</span>::ReserveData;
+</span><span class="kw">use super</span>::{ReserveData, TokenAmount};
 <span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
 	csl::{
@@ -303,11 +298,6 @@
 };
 <span class="kw">use </span>partner_chains_plutus_data::reserve::{ReserveDatum, ReserveRedeemer};
 <span class="kw">use </span>sidechain_domain::{AssetId, McTxHash, UtxoId};
-
-<span class="kw">pub struct </span>TokenAmount {
-	<span class="kw">pub </span>token: AssetId,
-	<span class="kw">pub </span>amount: u64,
-}
 
 <span class="doccomment">/// Spends current UTXO at validator address and creates a new UTXO with increased token amount
 </span><span class="kw">pub async fn </span>deposit_to_reserve&lt;

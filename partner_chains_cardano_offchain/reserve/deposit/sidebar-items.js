@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["deposit_to_reserve"],"struct":["TokenAmount"]};
+window.SIDEBAR_ITEMS = {"fn":["deposit_to_reserve"]};

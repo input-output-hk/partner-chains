@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["create","deposit","init","update_settings"]};
+window.SIDEBAR_ITEMS = {"mod":["create","deposit","handover","init","update_settings"],"struct":["TokenAmount"]};

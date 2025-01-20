@@ -1491,7 +1491,7 @@
 		<span class="kw">let </span>validator_source = PlutusScriptSource::new_ref_input(
 			<span class="kw-2">&amp;</span>script.csl_script_hash(),
 			ref_input,
-			<span class="kw-2">&amp;</span>Language::new_plutus_v2(),
+			<span class="kw-2">&amp;</span>script.language,
 			script.bytes.len(),
 		);
 		<span class="kw">let </span>mint_witness = MintWitness::new_plutus_script(
