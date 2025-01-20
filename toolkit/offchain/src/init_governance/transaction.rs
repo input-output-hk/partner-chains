@@ -96,14 +96,6 @@ pub(crate) fn version_oracle_datum_output(
 	let mut assets = Assets::new();
 	assets.insert(&version_oracle_asset_name(), &1u64.into());
 	ma.insert(&version_oracle_policy.policy_id().0.into(), &assets);
-	let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
-	let min_ada = MinOutputAdaCalculator::new(
-		&output,
-		&DataCost::new_coins_per_byte(
-			&tx_context.protocol_parameters.min_utxo_deposit_coefficient.into(),
-		),
-	)
-	.calculate_ada()?;
-	let output = amount_builder.with_coin_and_asset(&min_ada, &ma).build()?;
+	let output = amount_builder.with_minimum_ada_and_asset(&ma, tx_context)?.build()?;
 	Ok(output)
 }

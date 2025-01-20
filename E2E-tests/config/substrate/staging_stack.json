@@ -4,7 +4,7 @@
         "ogmios_port": 1337,
         "kupo_host": "staging-preview-services-service.staging-preview.svc.cluster.local",
         "kupo_port": 1442,
-        "tools_host": "10.0.12.126",
+        "tools_host": "10.0.12.157",
         "ssh": {
             "username": "root",
             "host": "${stack_config[tools_host]}",
@@ -22,7 +22,7 @@
                 "ssh": "${stack_config[ssh]}"
             },
             "generate_signatures_cli": {
-                "cli": "/tools/partner-chains-node-8123fa66d943cd73531f5d8f539e0c4547519ee5",
+                "cli": "/tools/partner-chains-node",
                 "ssh": "${stack_config[ssh]}"
             },
             "bech32": {
