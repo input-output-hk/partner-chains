@@ -36,6 +36,11 @@ on:
         required: false
         type: boolean
         default: false
+      no-build:
+        description: "Skip build and use previously built artifacts in S3"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   id-token: write
@@ -51,6 +56,7 @@ env:
 
 jobs:
   build-linux:
+    if: ${{ github.event.inputs.no-build != 'true' }}
     permissions:
       id-token: write
       contents: write
@@ -68,7 +74,7 @@ jobs:
           os: linux
 
   build-macos-x86_64:
-    if: ${{ github.event.inputs.no-release != 'true' }}
+    if: ${{ github.event.inputs.no-build != 'true' }}
     permissions:
       id-token: write
       contents: write
@@ -86,7 +92,7 @@ jobs:
           os: macos-x86_64
 
   build-macos-arm64:
-    if: ${{ github.event.inputs.no-release != 'true' }}
+    if: ${{ github.event.inputs.no-build != 'true' }}
     permissions:
       id-token: write
       contents: write
@@ -104,6 +110,7 @@ jobs:
           os: macos-arm64
 
   upload-to-s3:
+    if: ${{ github.event.inputs.no-build != 'true' }}
     needs:
       - build-linux
       - build-macos-x86_64
@@ -119,6 +126,23 @@ jobs:
           ref: ${{ inputs.sha }}
       - name: Upload Artifacts to S3
         uses: ./.github/actions/artifacts/upload-to-s3
+        with:
+          sha: ${{ inputs.sha }}
+          bucket-name: "TODO"
+
+  download-from-s3:
+    if: ${{ github.event.inputs.no-build == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
+      - name: Download Artifacts from S3
+        uses: ./.github/actions/artifacts/download-from-s3
         with:
           sha: ${{ inputs.sha }}
           bucket-name: "TODO"
