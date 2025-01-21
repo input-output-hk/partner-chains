@@ -19,8 +19,8 @@ use super::{ReserveData, TokenAmount};
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
-		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, MultiAssetExt,
-		OgmiosUtxoExt, OgmiosValueExt, TransactionBuilderExt, TransactionContext,
+		get_builder_config, get_validator_budgets, zero_ex_units, MultiAssetExt, OgmiosUtxoExt,
+		OgmiosValueExt, TransactionBuilderExt, TransactionContext,
 		TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
@@ -28,8 +28,8 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	AssetName, Assets, ExUnits, JsError, Language, MultiAsset, PlutusData, PlutusScriptSource,
-	PlutusWitness, Redeemer, RedeemerTag, Transaction, TransactionBuilder, TransactionOutput,
+	ExUnits, JsError, Language, MultiAsset, PlutusData, PlutusScriptSource, PlutusWitness,
+	Redeemer, RedeemerTag, Transaction, TransactionBuilder, TransactionOutput,
 	TransactionOutputBuilder, TxInputsBuilder,
 };
 use ogmios_client::{
@@ -173,7 +173,6 @@ fn deposit_to_reserve_tx(
 		&reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.illiquid_circulation_supply_validator.bytes.len(),
 	);
-	tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
 }
 
