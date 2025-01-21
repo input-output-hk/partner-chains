@@ -142,13 +142,45 @@
 <a href="#142" id="142">142</a>
 <a href="#143" id="143">143</a>
 <a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>anyhow::{anyhow, Context};
 <span class="kw">use </span>cardano_serialization_lib::{
 	Address, Language, LanguageKind, NetworkIdKind, PlutusData, ScriptHash,
 };
 <span class="kw">use </span>ogmios_client::types::{OgmiosScript, OgmiosScript::Plutus};
 <span class="kw">use </span>plutus::ToDatum;
-<span class="kw">use </span>sidechain_domain::PolicyId;
+<span class="kw">use </span>sidechain_domain::{AssetId, AssetName, PolicyId};
 <span class="kw">use </span>uplc::ast::{DeBruijn, Program};
 
 <span class="kw">use crate</span>::{csl::<span class="kw-2">*</span>, untyped_plutus::<span class="kw-2">*</span>};
@@ -246,6 +278,10 @@
 		PolicyId(<span class="self">self</span>.script_hash())
 	}
 
+	<span class="kw">pub fn </span>empty_name_asset(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; AssetId {
+		AssetId { policy_id: <span class="self">self</span>.policy_id(), asset_name: AssetName::empty() }
+	}
+
 	<span class="kw">pub fn </span>to_csl(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; cardano_serialization_lib::PlutusScript {
 		<span class="kw">match </span><span class="self">self</span>.language.kind() {
 			LanguageKind::PlutusV1 =&gt; {
@@ -257,6 +293,34 @@
 			LanguageKind::PlutusV3 =&gt; {
 				cardano_serialization_lib::PlutusScript::new_v3(<span class="self">self</span>.bytes.clone())
 			},
+		}
+	}
+}
+
+<span class="kw">impl </span>TryFrom&lt;ogmios_client::types::PlutusScript&gt; <span class="kw">for </span>PlutusScript {
+	<span class="kw">type </span>Error = ogmios_client::types::PlutusScript;
+
+	<span class="kw">fn </span>try_from(script: ogmios_client::types::PlutusScript) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
+		<span class="kw">let </span>language = <span class="kw">match </span>script.language.as_str() {
+			<span class="string">"plutus:v1" </span>=&gt; Language::new_plutus_v1(),
+			<span class="string">"plutus:v2" </span>=&gt; Language::new_plutus_v2(),
+			<span class="string">"plutus:v3" </span>=&gt; Language::new_plutus_v3(),
+			<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(script),
+		};
+		<span class="prelude-val">Ok</span>(<span class="self">Self</span>::from_cbor(<span class="kw-2">&amp;</span>script.cbor, language))
+	}
+}
+
+<span class="kw">impl </span>Into&lt;ogmios_client::types::PlutusScript&gt; <span class="kw">for </span>PlutusScript {
+	<span class="kw">fn </span>into(<span class="self">self</span>) -&gt; ogmios_client::types::PlutusScript {
+		ogmios_client::types::PlutusScript {
+			language: <span class="kw">match </span><span class="self">self</span>.language.kind() {
+				LanguageKind::PlutusV1 =&gt; <span class="string">"plutus:v1"</span>,
+				LanguageKind::PlutusV2 =&gt; <span class="string">"plutus:v2"</span>,
+				LanguageKind::PlutusV3 =&gt; <span class="string">"plutus:v3"</span>,
+			}
+			.to_string(),
+			cbor: <span class="self">self</span>.bytes,
 		}
 	}
 }

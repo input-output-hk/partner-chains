@@ -736,6 +736,18 @@
 <a href="#736" id="736">736</a>
 <a href="#737" id="737">737</a>
 <a href="#738" id="738">738</a>
+<a href="#739" id="739">739</a>
+<a href="#740" id="740">740</a>
+<a href="#741" id="741">741</a>
+<a href="#742" id="742">742</a>
+<a href="#743" id="743">743</a>
+<a href="#744" id="744">744</a>
+<a href="#745" id="745">745</a>
+<a href="#746" id="746">746</a>
+<a href="#747" id="747">747</a>
+<a href="#748" id="748">748</a>
+<a href="#749" id="749">749</a>
+<a href="#750" id="750">750</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -908,6 +920,12 @@
 #[cfg_attr(feature = <span class="string">"serde"</span>, byte_string(hex_serialize, hex_deserialize))]
 </span><span class="kw">pub struct </span>MainchainAddress(BoundedVec&lt;u8, ConstU32&lt;MAX_MAINCHAIN_ADDRESS_BYTES&gt;&gt;);
 
+<span class="kw">impl </span>MainchainAddress {
+	<span class="kw">pub fn </span>bytes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;u8&gt; {
+		<span class="self">self</span>.<span class="number">0</span>.to_vec()
+	}
+}
+
 <span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
 </span><span class="kw">impl </span>FromStr <span class="kw">for </span>MainchainAddress {
 	<span class="kw">type </span><span class="prelude-val">Err </span>= <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str;
@@ -943,6 +961,12 @@
 <span class="attr">#[derive(Clone, Default, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 </span><span class="kw">pub struct </span>AssetName(<span class="kw">pub </span>BoundedVec&lt;u8, ConstU32&lt;MAX_ASSET_NAME_LEN&gt;&gt;);
+
+<span class="kw">impl </span>AssetName {
+	<span class="kw">pub fn </span>empty() -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>(BoundedVec::new())
+	}
+}
 
 <span class="attr">#[derive(Clone, Debug, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>AssetId {

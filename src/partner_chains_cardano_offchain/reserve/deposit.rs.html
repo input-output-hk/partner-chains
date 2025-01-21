@@ -248,14 +248,6 @@
 <a href="#248" id="248">248</a>
 <a href="#249" id="249">249</a>
 <a href="#250" id="250">250</a>
-<a href="#251" id="251">251</a>
-<a href="#252" id="252">252</a>
-<a href="#253" id="253">253</a>
-<a href="#254" id="254">254</a>
-<a href="#255" id="255">255</a>
-<a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a>
-<a href="#258" id="258">258</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Specification for deposit transaction:
 //!
@@ -277,8 +269,8 @@
 <span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
 	csl::{
-		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, OgmiosUtxoExt,
-		OgmiosValueExt, TransactionBuilderExt, TransactionContext,
+		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, MultiAssetExt,
+		OgmiosUtxoExt, OgmiosValueExt, TransactionBuilderExt, TransactionContext,
 		TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
@@ -500,17 +492,9 @@
 			.unwrap(),
 		)
 		.next()<span class="question-mark">?</span>;
-	<span class="kw">let </span><span class="kw-2">mut </span>ma = MultiAsset::new();
-	<span class="kw">let </span><span class="kw-2">mut </span>assets = Assets::new();
-	assets.insert(<span class="kw-2">&amp;</span>empty_asset_name(), <span class="kw-2">&amp;</span><span class="number">1u64</span>.into());
-	ma.insert(<span class="kw-2">&amp;</span>scripts.auth_policy.csl_script_hash(), <span class="kw-2">&amp;</span>assets);
-	<span class="kw">let </span>AssetId { policy_id, asset_name } = token_amount.token.clone();
-	<span class="kw">let </span><span class="kw-2">mut </span>assets = Assets::new();
-	assets.insert(
-		<span class="kw-2">&amp;</span>AssetName::new(asset_name.<span class="number">0</span>.to_vec()).expect(<span class="string">"AssetName has a valid length"</span>),
-		<span class="kw-2">&amp;</span>token_amount.amount.into(),
-	);
-	ma.insert(<span class="kw-2">&amp;</span>policy_id.<span class="number">0</span>.into(), <span class="kw-2">&amp;</span>assets);
+	<span class="kw">let </span>ma = MultiAsset::new()
+		.with_asset_amount(<span class="kw-2">&amp;</span>token_amount.token, token_amount.amount)<span class="question-mark">?
+		</span>.with_asset_amount(<span class="kw-2">&amp;</span>scripts.auth_policy.empty_name_asset(), <span class="number">1u64</span>)<span class="question-mark">?</span>;
 
 	amount_builder.with_minimum_ada_and_asset(<span class="kw-2">&amp;</span>ma, ctx)<span class="question-mark">?</span>.build()
 }
