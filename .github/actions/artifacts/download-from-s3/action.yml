@@ -1,0 +1,44 @@
+name: "Download Artifacts from S3"
+description: "Download built artifacts from an S3 bucket using SHA for lookup"
+inputs:
+  sha:
+    description: "Commit SHA for locating artifacts in S3"
+    required: true
+  bucket-name:
+    description: "S3 bucket name"
+    required: true
+outputs: {}
+runs:
+  using: "composite"
+  steps:
+    - name: Install AWS CLI
+      shell: bash
+      run: |
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip awscliv2.zip
+        sudo ./aws/install
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Download Artifacts from S3
+      shell: bash
+      run: |
+        S3_BUCKET_NAME="${{ inputs.bucket-name }}"
+        S3_PATH="artifacts/${{ inputs.sha }}"
+        OUTPUT_DIR="artifacts"
+
+        echo "Checking if artifacts exist in S3..."
+        aws s3 ls "s3://$S3_BUCKET_NAME/$S3_PATH/" || {
+          echo "Artifacts for SHA ${{ inputs.sha }} not found in S3."
+          exit 1
+        }
+
+        echo "Downloading artifacts from S3..."
+        mkdir -p $OUTPUT_DIR
+        aws s3 cp --recursive "s3://$S3_BUCKET_NAME/$S3_PATH/" $OUTPUT_DIR
+        echo "Artifacts downloaded successfully to $OUTPUT_DIR."
