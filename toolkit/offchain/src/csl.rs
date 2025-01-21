@@ -406,10 +406,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 			.with_address(&validator.address(ctx.network))
 			.with_plutus_data(datum)
 			.next()?;
-		let mut ma = MultiAsset::new();
-		let mut assets = Assets::new();
-		assets.insert(&empty_asset_name(), &1u64.into());
-		ma.insert(&policy.script_hash().into(), &assets);
+		let ma = MultiAsset::new().with_asset_amount(&policy.empty_name_asset(), 1u64)?;
 		let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
 		let min_ada = MinOutputAdaCalculator::new(
 			&output,
@@ -671,6 +668,52 @@ pub(crate) trait AssetNameExt {
 impl AssetNameExt for sidechain_domain::AssetName {
 	fn to_csl(&self) -> Result<cardano_serialization_lib::AssetName, JsError> {
 		cardano_serialization_lib::AssetName::new(self.0.to_vec())
+	}
+}
+
+pub(crate) trait AssetIdExt {
+	fn to_multi_asset(&self, amount: impl Into<BigNum>) -> Result<MultiAsset, JsError>;
+}
+impl AssetIdExt for AssetId {
+	fn to_multi_asset(&self, amount: impl Into<BigNum>) -> Result<MultiAsset, JsError> {
+		let mut ma = MultiAsset::new();
+		let mut assets = Assets::new();
+		assets.insert(&self.asset_name.to_csl()?, &amount.into());
+		ma.insert(&self.policy_id.0.into(), &assets);
+		Ok(ma)
+	}
+}
+pub(crate) trait MultiAssetExt: Sized {
+	fn from_ogmios_utxo(utxo: &OgmiosUtxo) -> Result<Self, JsError>;
+	fn with_asset_amount(self, asset: &AssetId, amount: impl Into<BigNum>)
+		-> Result<Self, JsError>;
+}
+
+impl MultiAssetExt for MultiAsset {
+	fn from_ogmios_utxo(utxo: &OgmiosUtxo) -> Result<Self, JsError> {
+		let mut ma = MultiAsset::new();
+		for (policy, policy_assets) in utxo.value.native_tokens.iter() {
+			let mut assets = Assets::new();
+			for asset in policy_assets {
+				assets.insert(
+					&cardano_serialization_lib::AssetName::new(asset.name.clone())?,
+					&(asset.amount as u64).into(),
+				);
+			}
+			ma.insert(&PolicyID::from(*policy), &assets);
+		}
+		Ok(ma)
+	}
+	fn with_asset_amount(
+		mut self,
+		asset: &AssetId,
+		amount: impl Into<BigNum>,
+	) -> Result<Self, JsError> {
+		self.set_asset(&asset.policy_id.0.into(), &asset.asset_name.to_csl()?, &0u64.into());
+		let mut assets = Assets::new();
+		assets.insert(&asset.asset_name.to_csl()?, &amount.into());
+		self.insert(&asset.policy_id.0.into(), &assets);
+		Ok(self)
 	}
 }
 

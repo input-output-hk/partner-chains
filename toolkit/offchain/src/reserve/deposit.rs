@@ -19,8 +19,8 @@ use super::{ReserveData, TokenAmount};
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
-		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, OgmiosUtxoExt,
-		OgmiosValueExt, TransactionBuilderExt, TransactionContext,
+		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, MultiAssetExt,
+		OgmiosUtxoExt, OgmiosValueExt, TransactionBuilderExt, TransactionContext,
 		TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
@@ -242,17 +242,9 @@ fn validator_output(
 			.unwrap(),
 		)
 		.next()?;
-	let mut ma = MultiAsset::new();
-	let mut assets = Assets::new();
-	assets.insert(&empty_asset_name(), &1u64.into());
-	ma.insert(&scripts.auth_policy.csl_script_hash(), &assets);
-	let AssetId { policy_id, asset_name } = token_amount.token.clone();
-	let mut assets = Assets::new();
-	assets.insert(
-		&AssetName::new(asset_name.0.to_vec()).expect("AssetName has a valid length"),
-		&token_amount.amount.into(),
-	);
-	ma.insert(&policy_id.0.into(), &assets);
+	let ma = MultiAsset::new()
+		.with_asset_amount(&token_amount.token, token_amount.amount)?
+		.with_asset_amount(&scripts.auth_policy.empty_name_asset(), 1u64)?;
 
 	amount_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()
 }

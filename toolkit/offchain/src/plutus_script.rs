@@ -4,7 +4,7 @@ use cardano_serialization_lib::{
 };
 use ogmios_client::types::{OgmiosScript, OgmiosScript::Plutus};
 use plutus::ToDatum;
-use sidechain_domain::PolicyId;
+use sidechain_domain::{AssetId, AssetName, PolicyId};
 use uplc::ast::{DeBruijn, Program};
 
 use crate::{csl::*, untyped_plutus::*};
@@ -102,6 +102,10 @@ impl PlutusScript {
 		PolicyId(self.script_hash())
 	}
 
+	pub fn empty_name_asset(&self) -> AssetId {
+		AssetId { policy_id: self.policy_id(), asset_name: AssetName::empty() }
+	}
+
 	pub fn to_csl(&self) -> cardano_serialization_lib::PlutusScript {
 		match self.language.kind() {
 			LanguageKind::PlutusV1 => {
@@ -113,6 +117,34 @@ impl PlutusScript {
 			LanguageKind::PlutusV3 => {
 				cardano_serialization_lib::PlutusScript::new_v3(self.bytes.clone())
 			},
+		}
+	}
+}
+
+impl TryFrom<ogmios_client::types::PlutusScript> for PlutusScript {
+	type Error = ogmios_client::types::PlutusScript;
+
+	fn try_from(script: ogmios_client::types::PlutusScript) -> Result<Self, Self::Error> {
+		let language = match script.language.as_str() {
+			"plutus:v1" => Language::new_plutus_v1(),
+			"plutus:v2" => Language::new_plutus_v2(),
+			"plutus:v3" => Language::new_plutus_v3(),
+			_ => return Err(script),
+		};
+		Ok(Self::from_cbor(&script.cbor, language))
+	}
+}
+
+impl Into<ogmios_client::types::PlutusScript> for PlutusScript {
+	fn into(self) -> ogmios_client::types::PlutusScript {
+		ogmios_client::types::PlutusScript {
+			language: match self.language.kind() {
+				LanguageKind::PlutusV1 => "plutus:v1",
+				LanguageKind::PlutusV2 => "plutus:v2",
+				LanguageKind::PlutusV3 => "plutus:v3",
+			}
+			.to_string(),
+			cbor: self.bytes,
 		}
 	}
 }

@@ -20,7 +20,7 @@ use crate::{
 	await_tx::AwaitTx,
 	csl::{
 		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, AssetNameExt,
-		OgmiosUtxoExt, TransactionBuilderExt, TransactionContext,
+		MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext,
 		TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
@@ -192,18 +192,9 @@ fn reserve_validator_output(
 		.with_address(&scripts.validator.address(ctx.network))
 		.with_plutus_data(&ReserveDatum::from(parameters).into())
 		.next()?;
-	let mut ma = MultiAsset::new();
-	let mut assets = Assets::new();
-	assets.insert(&empty_asset_name(), &1u64.into());
-	ma.insert(&scripts.auth_policy.csl_script_hash(), &assets);
-
-	let AssetId { policy_id, asset_name } = parameters.token.clone();
-	let mut assets = Assets::new();
-	assets.insert(
-		&asset_name.to_csl().expect("AssetName has a valid length"),
-		&parameters.initial_deposit.into(),
-	);
-	ma.insert(&policy_id.0.into(), &assets);
+	let ma = MultiAsset::new()
+		.with_asset_amount(&scripts.auth_policy.empty_name_asset(), 1u64)?
+		.with_asset_amount(&parameters.token, parameters.initial_deposit)?;
 
 	amount_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()
 }
