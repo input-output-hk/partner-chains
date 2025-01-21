@@ -7,6 +7,7 @@ use partner_chains_cardano_offchain::{
 		deposit::deposit_to_reserve,
 		handover::handover_reserve,
 		init::init_reserve_management,
+		release::release_reserve_funds,
 		update_settings::update_reserve_settings,
 		TokenAmount,
 	},
@@ -23,6 +24,8 @@ pub enum ReserveCmd {
 	/// Update reserve management system settings for your chain
 	UpdateSettings(UpdateReserveSettingsCmd),
 	Handover(HandoverReserveCmd),
+	/// Releases funds from the reserve to the illiquid supply
+	Release(ReleaseReserveCmd),
 }
 
 impl ReserveCmd {
@@ -33,6 +36,7 @@ impl ReserveCmd {
 			Self::Deposit(cmd) => cmd.execute().await,
 			Self::UpdateSettings(cmd) => cmd.execute().await,
 			Self::Handover(cmd) => cmd.execute().await,
+			Self::Release(cmd) => cmd.execute().await,
 		}
 	}
 }
@@ -183,6 +187,43 @@ impl HandoverReserveCmd {
 		let ogmios_client = client_for_url(&self.common_arguments.ogmios_url).await?;
 		let _ = handover_reserve(
 			self.genesis_utxo,
+			payment_key.0,
+			&ogmios_client,
+			&FixedDelayRetries::two_minutes(),
+		)
+		.await?;
+		Ok(())
+	}
+}
+
+#[derive(Clone, Debug, clap::Parser)]
+pub struct ReleaseReserveCmd {
+	#[clap(flatten)]
+	common_arguments: crate::CommonArguments,
+	#[clap(flatten)]
+	payment_key_file: PaymentFilePath,
+	/// Genesis UTXO of the partner-chain.
+	#[arg(long, short('c'))]
+	genesis_utxo: UtxoId,
+	/// Reference UTXO containing the V-Function script
+	#[arg(long, short('r'))]
+	reference_utxo: UtxoId,
+	/// Encoded asset id in form <policy_id_hex>.<asset_name_hex>.
+	#[arg(long)]
+	token: AssetId,
+	/// Current value of the V-Function
+	#[arg(long)]
+	amount: u64,
+}
+
+impl ReleaseReserveCmd {
+	pub async fn execute(self) -> crate::CmdResult<()> {
+		let payment_key = self.payment_key_file.read_key()?;
+		let ogmios_client = client_for_url(&self.common_arguments.ogmios_url).await?;
+		let _ = release_reserve_funds(
+			TokenAmount { token: self.token, amount: self.amount },
+			self.genesis_utxo,
+			self.reference_utxo,
 			payment_key.0,
 			&ogmios_client,
 			&FixedDelayRetries::two_minutes(),

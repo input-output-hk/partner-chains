@@ -19,14 +19,15 @@ use partner_chains_cardano_offchain::{
 	await_tx::{AwaitTx, FixedDelayRetries},
 	d_param, init_governance, permissioned_candidates,
 	register::Register,
-	reserve, scripts_data, update_governance,
+	reserve::{self, release::release_reserve_funds, TokenAmount},
+	scripts_data, update_governance,
 };
-use partner_chains_plutus_data::reserve::{ReserveDatum, ReserveMutableSettings};
+use partner_chains_plutus_data::reserve::ReserveDatum;
 use sidechain_domain::{
 	AdaBasedStaking, AssetId, AssetName, AuraPublicKey, CandidateRegistration, DParameter,
 	GrandpaPublicKey, MainchainAddressHash, MainchainPrivateKey, MainchainPublicKey,
 	MainchainSignature, McTxHash, PermissionedCandidateData, PolicyId, SidechainPublicKey,
-	SidechainSignature, UtxoId,
+	SidechainSignature, UtxoId, UtxoIndex,
 };
 use std::time::Duration;
 use testcontainers::{clients::Cli, Container, GenericImage};
@@ -58,6 +59,10 @@ const EVE_ADDRESS: &str = "addr_test1vzzt5pwz3pum9xdgxalxyy52m3aqur0n43pcl727l37
 
 const V_FUNCTION_HASH: PolicyId =
 	PolicyId(hex!("ef1eb7b85327a8460799025a5affd0a8d8015731e9aacd5d1106a82b"));
+const V_FUNCTION_UTXO: UtxoId = UtxoId {
+	tx_hash: McTxHash(hex!("f8fbe7316561e57de9ecd1c86ee8f8b512a314ba86499ba9a584bfa8fe2edc8d")),
+	index: UtxoIndex(6),
+};
 
 const REWARDS_TOKEN_POLICY_ID: PolicyId =
 	PolicyId(hex!("1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2b"));
@@ -67,12 +72,9 @@ const REWARDS_TOKEN_ASSET_NAME_STR: &str = "52657761726420746f6b656e";
 
 const INITIAL_DEPOSIT_AMOUNT: u64 = 500000;
 const DEPOSIT_AMOUNT: u64 = 100000;
+const RELEASE_AMOUNT: u64 = 90;
 
 const UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH: PolicyId = PolicyId([234u8; 28]);
-const UPDATED_MUTABLE_SETTINGS: ReserveMutableSettings = ReserveMutableSettings {
-	total_accrued_function_script_hash: UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH,
-	initial_incentive: 0,
-};
 
 #[tokio::test]
 async fn governance_flow() {
@@ -126,12 +128,26 @@ async fn reserve_management_scenario() {
 	assert_eq!(txs.len(), 3);
 	let txs = run_init_reserve_management(genesis_utxo, &client).await;
 	assert_eq!(txs.len(), 0);
-	let _ = run_create_reserve_management(genesis_utxo, &client).await;
+	let _ = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
 	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
 	run_deposit_to_reserve(genesis_utxo, &client).await;
 	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT + DEPOSIT_AMOUNT, &client).await;
-	let _ = run_update_reserve_settings_management(genesis_utxo, &client).await;
-	assert_mutable_settings_eq(genesis_utxo, UPDATED_MUTABLE_SETTINGS, &client).await;
+	run_release_reserve_funds(genesis_utxo, RELEASE_AMOUNT, V_FUNCTION_UTXO, &client).await;
+	assert_reserve_deposited(
+		genesis_utxo,
+		INITIAL_DEPOSIT_AMOUNT + DEPOSIT_AMOUNT - RELEASE_AMOUNT,
+		&client,
+	)
+	.await;
+	assert_illiquid_supply(genesis_utxo, RELEASE_AMOUNT, &client).await;
+	run_update_reserve_settings_management(
+		genesis_utxo,
+		UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH,
+		&client,
+	)
+	.await;
+	assert_mutable_settings_eq(genesis_utxo, UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH, &client)
+		.await;
 	run_handover_reserve(genesis_utxo, &client).await.unwrap();
 	assert_reserve_handed_over(genesis_utxo, INITIAL_DEPOSIT_AMOUNT + DEPOSIT_AMOUNT, &client)
 		.await;
@@ -310,11 +326,12 @@ async fn run_create_reserve_management<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 >(
 	genesis_utxo: UtxoId,
+	v_function_hash: PolicyId,
 	client: &T,
 ) -> McTxHash {
 	reserve::create::create_reserve_utxo(
 		reserve::create::ReserveParameters {
-			total_accrued_function_script_hash: V_FUNCTION_HASH,
+			total_accrued_function_script_hash: v_function_hash,
 			token: AssetId {
 				policy_id: REWARDS_TOKEN_POLICY_ID,
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
@@ -334,12 +351,13 @@ async fn run_update_reserve_settings_management<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 >(
 	genesis_utxo: UtxoId,
+	updated_total_accrued_function_script_hash: PolicyId,
 	client: &T,
 ) -> Option<McTxHash> {
 	reserve::update_settings::update_reserve_settings(
 		genesis_utxo,
 		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
-		Some(UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH),
+		Some(updated_total_accrued_function_script_hash),
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
@@ -354,12 +372,12 @@ async fn run_deposit_to_reserve<
 	client: &T,
 ) {
 	reserve::deposit::deposit_to_reserve(
-		reserve::TokenAmount {
+		TokenAmount {
 			token: AssetId {
 				policy_id: REWARDS_TOKEN_POLICY_ID,
 				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
 			},
-			amount: 100000,
+			amount: DEPOSIT_AMOUNT,
 		},
 		genesis_utxo,
 		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
@@ -383,6 +401,32 @@ async fn run_handover_reserve<
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
+}
+
+async fn run_release_reserve_funds<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	genesis_utxo: UtxoId,
+	release_amount: u64,
+	reference_utxo: UtxoId,
+	client: &T,
+) -> () {
+	release_reserve_funds(
+		TokenAmount {
+			token: AssetId {
+				policy_id: REWARDS_TOKEN_POLICY_ID,
+				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
+			},
+			amount: release_amount,
+		},
+		genesis_utxo,
+		reference_utxo,
+		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		client,
+		&FixedDelayRetries::new(Duration::from_millis(500), 100),
+	)
+	.await
+	.unwrap();
 }
 
 async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
@@ -421,16 +465,20 @@ async fn assert_token_amount_eq<T: QueryLedgerState>(
 	client: &T,
 ) {
 	let utxos = client.query_utxos(&[address.to_string()]).await.unwrap();
-	assert!(
-		utxos.into_iter().any(|utxo| {
+	let token_amount_at_illiquid_supply = utxos
+		.into_iter()
+		.flat_map(|utxo| {
 			utxo.value
 				.native_tokens
 				.get(&token_policy_id.0)
 				.and_then(|assets| assets.iter().find(|a| a.name == token_asset_name.0.to_vec()))
-				.is_some_and(|asset| asset.amount == expected_amount.into())
-		}),
-		"Expected to find UTXO with {} of {}.{} at {}",
+				.map(|asset| asset.amount as u64)
+		})
+		.sum::<u64>();
+	assert_eq!(
+		token_amount_at_illiquid_supply,
 		expected_amount,
+		"Expected {expected_amount} of {}.{} at {}, found {token_amount_at_illiquid_supply}",
 		hex::encode(token_policy_id.0),
 		hex::encode(&token_asset_name.0),
 		address,
@@ -455,7 +503,8 @@ async fn assert_reserve_deposited<T: QueryLedgerState>(
 
 async fn assert_mutable_settings_eq<T: QueryLedgerState + ogmios_client::OgmiosClient>(
 	genesis_utxo: UtxoId,
-	updated_mutable_settings: ReserveMutableSettings,
+
+	updated_total_accrued_function_script_hash: PolicyId,
 	client: &T,
 ) {
 	let (_reserve_utxo, reserve_settings) = get_reserve_utxo(genesis_utxo, client).await;
@@ -463,9 +512,9 @@ async fn assert_mutable_settings_eq<T: QueryLedgerState + ogmios_client::OgmiosC
 	let mutable_settings = reserve_settings.mutable_settings;
 	assert_eq!(
 		mutable_settings.total_accrued_function_script_hash,
-		updated_mutable_settings.total_accrued_function_script_hash
+		updated_total_accrued_function_script_hash
 	);
-	assert_eq!(mutable_settings.initial_incentive, updated_mutable_settings.initial_incentive);
+	assert_eq!(mutable_settings.initial_incentive, 0);
 }
 
 async fn get_reserve_utxo<
@@ -501,6 +550,22 @@ async fn get_reserve_utxo<
 }
 
 async fn assert_reserve_handed_over<T: QueryLedgerState>(
+	genesis_utxo: UtxoId,
+	amount: u64,
+	client: &T,
+) {
+	let data = scripts_data::get_scripts_data(genesis_utxo, NetworkIdKind::Testnet).unwrap();
+	assert_token_amount_eq(
+		&data.addresses.illiquid_circulation_supply_validator,
+		&REWARDS_TOKEN_POLICY_ID,
+		&AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
+		amount,
+		client,
+	)
+	.await;
+}
+
+async fn assert_illiquid_supply<T: QueryLedgerState>(
 	genesis_utxo: UtxoId,
 	amount: u64,
 	client: &T,

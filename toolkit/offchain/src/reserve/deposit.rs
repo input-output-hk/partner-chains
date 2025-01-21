@@ -151,7 +151,12 @@ fn deposit_to_reserve_tx(
 
 	tx_builder.add_output(&validator_output(parameters, current_utxo, &reserve.scripts, ctx)?)?;
 
-	let inputs = input_with_script_reference(current_utxo, reserve, reserve_auth_script_cost)?;
+	let inputs = input_with_script_reference(
+		current_utxo,
+		reserve,
+		ReserveRedeemer::DepositToReserve { governance_version: 1 },
+		reserve_auth_script_cost,
+	)?;
 	tx_builder.set_inputs(&inputs);
 
 	let gov_tx_input = governance.utxo_id_as_tx_input();
@@ -176,16 +181,16 @@ fn deposit_to_reserve_tx(
 	tx_builder.balance_update_and_build(ctx)
 }
 
-fn input_with_script_reference(
+pub(crate) fn input_with_script_reference(
 	consumed_utxo: &OgmiosUtxo,
 	reserve: &ReserveData,
+	redeemer: ReserveRedeemer,
 	cost: ExUnits,
 ) -> Result<TxInputsBuilder, JsError> {
 	let mut inputs = TxInputsBuilder::new();
 	let input = consumed_utxo.to_csl_tx_input();
 	let amount = consumed_utxo.value.to_csl()?;
 	let script = &reserve.scripts.auth_policy;
-	let redeemer_data = ReserveRedeemer::DepositToReserve { governance_version: 1 }.into();
 	let witness = PlutusWitness::new_with_ref_without_datum(
 		&PlutusScriptSource::new_ref_input(
 			&script.csl_script_hash(),
@@ -193,7 +198,7 @@ fn input_with_script_reference(
 			&Language::new_plutus_v2(),
 			script.bytes.len(),
 		),
-		&Redeemer::new(&RedeemerTag::new_spend(), &0u32.into(), &redeemer_data, &cost),
+		&Redeemer::new(&RedeemerTag::new_spend(), &0u32.into(), &redeemer.into(), &cost),
 	);
 	inputs.add_plutus_script_input(&witness, &input, &amount);
 	Ok(inputs)

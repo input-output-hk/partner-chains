@@ -18,6 +18,7 @@ pub mod create;
 pub mod deposit;
 pub mod handover;
 pub mod init;
+pub mod release;
 pub mod update_settings;
 
 #[derive(Clone, Debug)]

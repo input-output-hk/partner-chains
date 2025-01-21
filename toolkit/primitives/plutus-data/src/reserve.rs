@@ -8,7 +8,7 @@ use sidechain_domain::{AssetId, AssetName, PolicyId};
 #[derive(Debug, Clone)]
 pub enum ReserveRedeemer {
 	DepositToReserve { governance_version: u64 },
-	TransferToIlliquidCirculationSupply,
+	ReleaseFromReserve,
 	UpdateReserve { governance_version: u64 },
 	Handover { governance_version: u64 },
 }
@@ -46,9 +46,7 @@ impl From<ReserveRedeemer> for PlutusData {
 					&PlutusData::new_integer(&BigInt::from(governance_version)),
 				)
 			},
-			TransferToIlliquidCirculationSupply => {
-				PlutusData::new_empty_constr_plutus_data(&BigNum::from(1_u64))
-			},
+			ReleaseFromReserve => PlutusData::new_empty_constr_plutus_data(&BigNum::from(1_u64)),
 			UpdateReserve { governance_version } => {
 				PlutusData::new_single_value_constr_plutus_data(
 					&BigNum::from(2_u64),
@@ -127,7 +125,18 @@ impl VersionedDatum for ReserveDatum {
 		match plutus_data_version_and_payload(datum) {
 			Some((0, datum, _)) => decode_v0_reserve_datum(&datum)
 				.ok_or_else(|| decoding_error_and_log(&datum, "ReserveDatum", "invalid data")),
-			_ => Err(decoding_error_and_log(datum, "ReserveDatum", "invalid data")),
+			_ => Err(decoding_error_and_log(datum, "ReserveDatum", "unversioned datum")),
+		}
+	}
+}
+
+impl ReserveDatum {
+	pub fn after_withdrawal(self, amount: u64) -> Self {
+		Self {
+			stats: ReserveStats {
+				token_total_amount_transferred: self.stats.token_total_amount_transferred + amount,
+			},
+			..self
 		}
 	}
 }
