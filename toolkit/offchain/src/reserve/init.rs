@@ -322,7 +322,7 @@ fn decode_version_oracle_validator_datum(data: PlutusData) -> Option<VersionOrac
 mod tests {
 	use super::{init_script_tx, ScriptData};
 	use crate::{
-		csl::{OgmiosUtxoExt, TransactionContext},
+		csl::{unit_plutus_data, OgmiosUtxoExt, TransactionContext},
 		init_governance::GovernanceData,
 		plutus_script::PlutusScript,
 		scripts_data::{self, VersionOracleData},
@@ -466,7 +466,7 @@ mod tests {
 			.iter()
 			.find(|r| {
 				r.tag() == RedeemerTag::new_mint()
-					&& r.data() == PlutusData::new_empty_constr_plutus_data(&BigNum::zero())
+					&& r.data() == unit_plutus_data()
 					&& r.ex_units() == governance_script_cost()
 			})
 			.expect("Transaction should have a mint redeemer for Governance Policy");

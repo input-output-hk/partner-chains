@@ -1,6 +1,6 @@
 use crate::csl::{
-	get_first_validator_budget, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
-	TransactionContext,
+	get_first_validator_budget, unit_plutus_data, InputsBuilderExt, OgmiosUtxoExt,
+	TransactionBuilderExt, TransactionContext,
 };
 use crate::csl::{MainchainPrivateKeyExt, TransactionOutputAmountBuilderExt};
 use crate::{
@@ -314,7 +314,7 @@ fn deregister_tx(
 }
 
 fn register_redeemer_data() -> PlutusData {
-	PlutusData::new_empty_constr_plutus_data(&0u32.into())
+	unit_plutus_data()
 }
 
 #[cfg(test)]
