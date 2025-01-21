@@ -19,7 +19,7 @@
       };
   in {
     devShells = {
-      default = pkgs.mkShell {
+      default = pkgs.mkShell.override { stdenv = pkgs.clangStdenv; } {
         # envs needed for rust toochain
         RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
         LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
@@ -28,9 +28,9 @@
         # envs needed in order to construct some of the rust crates
         ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
         OPENSSL_NO_VENDOR = 1;
-        OPENSSL_DIR = "${pkgs.openssl.dev}";
-        OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
-        OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
+        OPENSSL_DIR = "${pkgs.pkgsStatic.openssl.dev}";
+        OPENSSL_INCLUDE_DIR = "${pkgs.pkgsStatic.openssl.dev}/include";
+        OPENSSL_LIB_DIR = "${pkgs.pkgsStatic.openssl.out}/lib";
         packages = with pkgs; [
           # core tooling to share across linux/macos
           coreutils
@@ -62,7 +62,7 @@
           if isDarwin
           then
             [ pkgs.darwin.apple_sdk.frameworks.SystemConfiguration ]
-          else [ pkgs.clang ]
+          else [ pkgs.clang pkgs.mold ]
         );
       };
       process-compose = pkgs.mkShell {
