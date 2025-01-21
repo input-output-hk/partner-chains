@@ -31,6 +31,11 @@ on:
         required: false
         type: boolean
         default: false
+      no-public:
+        description: "Skip the final publish step"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   id-token: write
@@ -428,7 +433,7 @@ jobs:
           threads: 1
 
   publish:
-    if: ${{ always() && github.event.inputs.no-release != 'true' && (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success') }}
+    if: ${{ always() && github.event.inputs.no-release != 'true' && github.event.inputs.no-public != 'true' && (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success') }}
     permissions:
       id-token: write
       contents: write
