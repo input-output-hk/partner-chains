@@ -373,6 +373,8 @@ Objective: Update native token configuration if migration has already happened.
 
 ### Steps
 
+Note that these steps need to be run by the governance authority from the sudo account in the Polkadot UI. 
+
 1. Run `set_main_chain_scripts` extrinsic on the nativeTokenManagement pallet via the Polkadot UI portal to set the native token `policy ID`, `asset name`, and `illiquid supply validator address`. 
 
 ![Polkadot UI portal](Polkadot-UI-portal-native-token-mgt.png)
@@ -394,3 +396,13 @@ Example native token configuration:
 # Notes
 
 * The partner chains node follows any token movements on the illiquid supply validator address once the block becomes stable on Cardano (it is based on the `securityParam` of Cardano).
+
+   - The `securityParam` of Cardano specifies that the blockchain is considered to be final after 2160 blocks for mainnet. See [CIPs/CIP-0009/README.md at master · cardano-foundation/CIPs](https://github.com/cardano-foundation/CIPs/blob/master/CIP-0009/README.md#non-updatable-parameters). 
+
+      - 2.5h for preview
+
+      - ~12h for mainnet
+
+* The `reserve-deposit` command can be executed only by the governance authority -- the one who created the reserve.
+
+* One native token is expected to be in the reserve at a time. The governance authority can create another reserve with another token for a single genesis UTXO. However, it is recommended to move all tokens from `ReserveValidator` address to `IlliquidSupplyValidator` address (using `release-handover`) before starting to manage a second token. 
