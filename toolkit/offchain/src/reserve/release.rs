@@ -19,7 +19,7 @@
 //!       including the ones released in this transaction*. Ie. if N tokens were already released
 //!       and M tokens are being released, the transaction should mint N+M V-Function tokens.
 //!       These tokens are worthless and don't serve any purpose after the transaction is done.
-use super::{deposit::input_with_script_reference, ReserveData, TokenAmount};
+use super::{reserve_utxo_input_with_validator_script_reference, ReserveData, TokenAmount};
 use crate::{await_tx::AwaitTx, csl::*, plutus_script::PlutusScript, reserve::ReserveUtxo};
 use anyhow::anyhow;
 use cardano_serialization_lib::{
@@ -133,10 +133,6 @@ fn reserve_release_tx(
 		reserve_data.scripts.auth_policy.bytes.len(),
 	);
 	tx_builder.add_script_reference_input(
-		&reserve_data.validator_version_utxo.to_csl_tx_input(),
-		reserve_data.scripts.validator.bytes.len(),
-	);
-	tx_builder.add_script_reference_input(
 		&reserve_data
 			.illiquid_circulation_supply_validator_version_utxo
 			.to_csl_tx_input(),
@@ -153,11 +149,11 @@ fn reserve_release_tx(
 	)?;
 
 	// Remove tokens from the reserve
-	tx_builder.set_inputs(&input_with_script_reference(
+	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
 		&previous_reserve_utxo,
 		&reserve_data,
 		ReserveRedeemer::ReleaseFromReserve,
-		reserve_auth_script_cost,
+		&reserve_auth_script_cost,
 	)?);
 
 	// Transfer released tokens to the illiquid supply

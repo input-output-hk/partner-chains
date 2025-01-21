@@ -1,9 +1,14 @@
 //! All smart-contracts related to Rewards Token Reserve Management
 
-use crate::csl::OgmiosUtxoExt;
-use crate::{csl::TransactionContext, scripts_data};
+use crate::{
+	csl::{OgmiosUtxoExt, OgmiosValueExt, TransactionContext},
+	scripts_data,
+};
 use anyhow::anyhow;
-use cardano_serialization_lib::PlutusData;
+use cardano_serialization_lib::{
+	ExUnits, JsError, PlutusData, PlutusScriptSource, PlutusWitness, Redeemer, RedeemerTag,
+	TxInputsBuilder,
+};
 use init::find_script_utxo;
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -11,7 +16,7 @@ use ogmios_client::{
 	transactions::Transactions,
 	types::OgmiosUtxo,
 };
-use partner_chains_plutus_data::reserve::ReserveDatum;
+use partner_chains_plutus_data::reserve::{ReserveDatum, ReserveRedeemer};
 use sidechain_domain::{AssetId, AssetName, UtxoId};
 
 pub mod create;
@@ -96,7 +101,7 @@ impl ReserveData {
 
 		let auth_token_asset_id = AssetId {
 			policy_id: self.scripts.auth_policy.policy_id(),
-			asset_name: AssetName::from_hex_unsafe(""),
+			asset_name: AssetName::empty(),
 		};
 
 		let (reserve_utxo, reserve_settings) = validator_utxos
@@ -122,4 +127,27 @@ impl ReserveData {
 pub struct TokenAmount {
 	pub token: AssetId,
 	pub amount: u64,
+}
+
+pub(crate) fn reserve_utxo_input_with_validator_script_reference(
+	reserve_utxo: &OgmiosUtxo,
+	reserve: &ReserveData,
+	redeemer: ReserveRedeemer,
+	cost: &ExUnits,
+) -> Result<TxInputsBuilder, JsError> {
+	let mut inputs = TxInputsBuilder::new();
+	let input = reserve_utxo.to_csl_tx_input();
+	let amount = reserve_utxo.value.to_csl()?;
+	let script = &reserve.scripts.validator;
+	let witness = PlutusWitness::new_with_ref_without_datum(
+		&PlutusScriptSource::new_ref_input(
+			&script.csl_script_hash(),
+			&reserve.validator_version_utxo.to_csl_tx_input(),
+			&script.language,
+			script.bytes.len(),
+		),
+		&Redeemer::new(&RedeemerTag::new_spend(), &0u32.into(), &redeemer.into(), cost),
+	);
+	inputs.add_plutus_script_input(&witness, &input, &amount);
+	Ok(inputs)
 }
