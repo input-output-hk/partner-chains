@@ -19,16 +19,15 @@ use super::ReserveData;
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
-		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, AssetNameExt,
-		MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext,
-		TransactionOutputAmountBuilderExt,
+		get_builder_config, get_validator_budgets, zero_ex_units, MultiAssetExt, OgmiosUtxoExt,
+		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	scripts_data::ReserveScripts,
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	Assets, ExUnits, JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
+	ExUnits, JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
 	TransactionOutputBuilder,
 };
 use ogmios_client::{

@@ -19,8 +19,8 @@ use super::{ReserveData, TokenAmount};
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
-		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, MultiAssetExt,
-		OgmiosUtxoExt, OgmiosValueExt, TransactionBuilderExt, TransactionContext,
+		get_builder_config, get_validator_budgets, zero_ex_units, MultiAssetExt, OgmiosUtxoExt,
+		OgmiosValueExt, TransactionBuilderExt, TransactionContext,
 		TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
@@ -28,8 +28,8 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	AssetName, Assets, ExUnits, JsError, Language, MultiAsset, PlutusData, PlutusScriptSource,
-	PlutusWitness, Redeemer, RedeemerTag, Transaction, TransactionBuilder, TransactionOutput,
+	ExUnits, JsError, Language, MultiAsset, PlutusData, PlutusScriptSource, PlutusWitness,
+	Redeemer, RedeemerTag, Transaction, TransactionBuilder, TransactionOutput,
 	TransactionOutputBuilder, TxInputsBuilder,
 };
 use ogmios_client::{
