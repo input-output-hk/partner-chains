@@ -8,7 +8,7 @@ use sidechain_domain::{AssetId, AssetName, PolicyId};
 #[derive(Debug, Clone)]
 pub enum ReserveRedeemer {
 	DepositToReserve { governance_version: u64 },
-	FreeFromReserve,
+	ReleaseFromReserve,
 	UpdateReserve { governance_version: u64 },
 	Handover { governance_version: u64 },
 }
@@ -46,7 +46,7 @@ impl From<ReserveRedeemer> for PlutusData {
 					&PlutusData::new_integer(&BigInt::from(governance_version)),
 				)
 			},
-			FreeFromReserve => PlutusData::new_empty_constr_plutus_data(&BigNum::from(1_u64)),
+			ReleaseFromReserve => PlutusData::new_empty_constr_plutus_data(&BigNum::from(1_u64)),
 			UpdateReserve { governance_version } => {
 				PlutusData::new_single_value_constr_plutus_data(
 					&BigNum::from(2_u64),

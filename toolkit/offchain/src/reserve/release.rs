@@ -156,7 +156,7 @@ fn reserve_release_tx(
 	tx_builder.set_inputs(&input_with_script_reference(
 		&previous_reserve_utxo,
 		&reserve_data,
-		ReserveRedeemer::FreeFromReserve,
+		ReserveRedeemer::ReleaseFromReserve,
 		reserve_auth_script_cost,
 	)?);
 
