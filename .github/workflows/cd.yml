@@ -129,6 +129,9 @@ jobs:
         with:
           sha: ${{ inputs.sha }}
           bucket-name: "TODO"
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
 
   download-from-s3:
     if: ${{ github.event.inputs.no-build == 'true' }}
@@ -146,6 +149,9 @@ jobs:
         with:
           sha: ${{ inputs.sha }}
           bucket-name: "TODO"
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
 
   build-and-publish-ecr:
     permissions:
