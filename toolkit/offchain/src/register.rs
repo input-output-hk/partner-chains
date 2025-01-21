@@ -267,6 +267,7 @@ fn register_tx(
 			inputs.add_script_utxo_input(
 				own_registration_utxo,
 				validator,
+				&register_redeemer_data(),
 				&validator_redeemer_ex_units,
 			)?;
 		}
@@ -302,6 +303,7 @@ fn deregister_tx(
 			inputs.add_script_utxo_input(
 				own_registration_utxo,
 				validator,
+				&register_redeemer_data(),
 				&validator_redeemer_ex_units.clone(),
 			)?;
 		}
@@ -309,6 +311,10 @@ fn deregister_tx(
 	}
 
 	tx_builder.balance_update_and_build(ctx)
+}
+
+fn register_redeemer_data() -> PlutusData {
+	PlutusData::new_empty_constr_plutus_data(&0u32.into())
 }
 
 #[cfg(test)]

@@ -364,10 +364,11 @@ pub(crate) trait TransactionBuilderExt {
 	fn add_mint_one_script_token(
 		&mut self,
 		script: &PlutusScript,
+		redeemer_data: &PlutusData,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError>;
 
-	/// Adds minting of 1 token (with empty asset name) for the given script using reference input
+	/// Adds minting of tokens (with empty asset name) for the given script using reference input
 	fn add_mint_script_token_using_reference_script(
 		&mut self,
 		script: &PlutusScript,
@@ -439,6 +440,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 	fn add_mint_one_script_token(
 		&mut self,
 		script: &PlutusScript,
+		redeemer_data: &PlutusData,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError> {
 		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
@@ -446,12 +448,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 		let validator_source = PlutusScriptSource::new(&script.to_csl());
 		let mint_witness = MintWitness::new_plutus_script(
 			&validator_source,
-			&Redeemer::new(
-				&RedeemerTag::new_mint(),
-				&0u32.into(),
-				&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
-				ex_units,
-			),
+			&Redeemer::new(&RedeemerTag::new_mint(), &0u32.into(), redeemer_data, ex_units),
 		);
 		mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new_i32(1))?;
 		self.set_mint_builder(&mint_builder);
@@ -587,13 +584,6 @@ pub(crate) trait InputsBuilderExt: Sized {
 		&mut self,
 		utxo: &OgmiosUtxo,
 		script: &PlutusScript,
-		ex_units: &ExUnits,
-	) -> Result<(), JsError>;
-
-	fn add_script_utxo_input_with_data(
-		&mut self,
-		utxo: &OgmiosUtxo,
-		script: &PlutusScript,
 		data: &PlutusData,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError>;
@@ -607,20 +597,6 @@ pub(crate) trait InputsBuilderExt: Sized {
 
 impl InputsBuilderExt for TxInputsBuilder {
 	fn add_script_utxo_input(
-		&mut self,
-		utxo: &OgmiosUtxo,
-		script: &PlutusScript,
-		ex_units: &ExUnits,
-	) -> Result<(), JsError> {
-		self.add_script_utxo_input_with_data(
-			utxo,
-			script,
-			&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
-			ex_units,
-		)
-	}
-
-	fn add_script_utxo_input_with_data(
 		&mut self,
 		utxo: &OgmiosUtxo,
 		script: &PlutusScript,
@@ -900,7 +876,8 @@ mod prop_tests {
 	};
 	use crate::test_values::*;
 	use cardano_serialization_lib::{
-		NetworkIdKind, Transaction, TransactionBuilder, TransactionInputs, TransactionOutput, Value,
+		NetworkIdKind, PlutusData, Transaction, TransactionBuilder, TransactionInputs,
+		TransactionOutput, Value,
 	};
 	use ogmios_client::types::OgmiosValue;
 	use ogmios_client::types::{OgmiosTx, OgmiosUtxo};
@@ -922,7 +899,13 @@ mod prop_tests {
 			protocol_parameters: protocol_parameters(),
 		};
 		let mut tx_builder = TransactionBuilder::new(&get_builder_config(&ctx).unwrap());
-		tx_builder.add_mint_one_script_token(&test_policy(), &zero_ex_units()).unwrap();
+		tx_builder
+			.add_mint_one_script_token(
+				&test_policy(),
+				&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
+				&zero_ex_units(),
+			)
+			.unwrap();
 		tx_builder
 			.add_output_with_one_script_token(
 				&test_validator(),

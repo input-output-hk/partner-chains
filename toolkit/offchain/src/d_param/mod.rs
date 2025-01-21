@@ -13,7 +13,8 @@ use crate::init_governance::{self, GovernanceData};
 use crate::plutus_script::PlutusScript;
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	ExUnits, JsError, PlutusData, ScriptHash, Transaction, TransactionBuilder, TxInputsBuilder,
+	BigNum, ExUnits, JsError, PlutusData, ScriptHash, Transaction, TransactionBuilder,
+	TxInputsBuilder,
 };
 use ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
 use ogmios_client::{
@@ -256,7 +257,11 @@ fn mint_d_param_token_tx(
 ) -> Result<Transaction, JsError> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	// The essence of transaction: mint D-Param token and set output with it, mint a governance token.
-	tx_builder.add_mint_one_script_token(policy, d_param_policy_ex_units)?;
+	tx_builder.add_mint_one_script_token(
+		policy,
+		&d_param_redeemer_data(),
+		d_param_policy_ex_units,
+	)?;
 	tx_builder.add_output_with_one_script_token(
 		validator,
 		policy,
@@ -271,8 +276,6 @@ fn mint_d_param_token_tx(
 		gov_policy_ex_units,
 	)?;
 
-	tx_builder.add_script_reference_input(&gov_tx_input, governance_data.policy_script.bytes.len());
-	//tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
 }
 
@@ -291,6 +294,7 @@ fn update_d_param_tx(
 	inputs.add_script_utxo_input(
 		script_utxo,
 		validator,
+		&d_param_redeemer_data(),
 		ex_units
 			.spend_ex_units
 			.first()
@@ -312,10 +316,13 @@ fn update_d_param_tx(
 		ex_units
 			.mint_ex_units
 			.first()
-			.ok_or_else(|| JsError::from_str("MInt ex units not found"))?,
+			.ok_or_else(|| JsError::from_str("Mint ex units not found"))?,
 	)?;
 
-	tx_builder.add_script_reference_input(&gov_tx_input, governance_data.policy_script.bytes.len());
-	tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
+}
+
+/// D-param policy accepts any redeemer data.
+fn d_param_redeemer_data() -> PlutusData {
+	PlutusData::new_empty_constr_plutus_data(&BigNum::zero())
 }

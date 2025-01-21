@@ -10,16 +10,15 @@ use std::collections::HashMap;
 
 use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::csl::{
-	empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, OgmiosUtxoExt,
-	OgmiosValueExt, TransactionBuilderExt, TransactionContext,
+	get_builder_config, get_validator_budgets, zero_ex_units, InputsBuilderExt,
+	TransactionBuilderExt, TransactionContext,
 };
 use crate::init_governance::{self, GovernanceData};
 use crate::plutus_script::PlutusScript;
 use crate::scripts_data;
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	BigInt, ExUnits, Int, JsError, MintBuilder, MintWitness, PlutusData, PlutusScriptSource,
-	PlutusWitness, Redeemer, RedeemerTag, ScriptHash, Transaction, TransactionBuilder,
+	BigInt, ExUnits, JsError, PlutusData, ScriptHash, Transaction, TransactionBuilder,
 	TxInputsBuilder,
 };
 use ogmios_client::query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId};
@@ -287,20 +286,11 @@ fn mint_permissioned_candidates_token_tx(
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	// The essence of transaction: mint permissioned candidates token and set output with it, mint a governance token.
 	{
-		// Can use `add_mint_one_script_token` here because plutus data is different for unknown reason. There is an issue ETCM-9109 to explain it.
-		let mut mint_builder = MintBuilder::new();
-		let validator_source = PlutusScriptSource::new(&policy.to_csl());
-		let mint_witness = MintWitness::new_plutus_script(
-			&validator_source,
-			&Redeemer::new(
-				&RedeemerTag::new_mint(),
-				&0u32.into(),
-				&PlutusData::new_integer(&BigInt::zero()),
-				permissioned_candidates_ex_units,
-			),
-		);
-		mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new_i32(1))?;
-		tx_builder.set_mint_builder(&mint_builder);
+		tx_builder.add_mint_one_script_token(
+			&policy,
+			&permissioned_candidates_policy_redeemer_data(),
+			permissioned_candidates_ex_units,
+		)?;
 	}
 	tx_builder.add_output_with_one_script_token(
 		validator,
@@ -316,8 +306,6 @@ fn mint_permissioned_candidates_token_tx(
 		governance_ex_units,
 	)?;
 
-	tx_builder.add_script_reference_input(&gov_tx_input, governance_data.policy_script.bytes.len());
-	//tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
 }
 
@@ -333,23 +321,14 @@ fn update_permissioned_candidates_tx(
 ) -> Result<Transaction, JsError> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
-	// Cannot use `add_script_utxo_input` because of different redeemer plutus data, ETCM-9109
-	// Also the index isn't really always 0.
 	{
 		let mut inputs = TxInputsBuilder::new();
-		let input = script_utxo.to_csl_tx_input();
-		let amount = &script_utxo.value.to_csl()?;
-		let witness = PlutusWitness::new_without_datum(
-			&validator.to_csl(),
-			&Redeemer::new(
-				&RedeemerTag::new_spend(),
-				// CSL will set redeemer index for the index of script input after sorting transaction inputs
-				&0u32.into(),
-				&PlutusData::new_integer(&BigInt::zero()),
-				permissioned_candidates_ex_units,
-			),
-		);
-		inputs.add_plutus_script_input(&witness, &input, &amount);
+		inputs.add_script_utxo_input(
+			script_utxo,
+			validator,
+			&permissioned_candidates_policy_redeemer_data(),
+			permissioned_candidates_ex_units,
+		)?;
 		tx_builder.set_inputs(&inputs);
 	}
 
@@ -367,9 +346,11 @@ fn update_permissioned_candidates_tx(
 		governance_ex_units,
 	)?;
 
-	tx_builder.add_script_reference_input(&gov_tx_input, governance_data.policy_script.bytes.len());
-	tx_builder.add_required_signer(&ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
+}
+
+fn permissioned_candidates_policy_redeemer_data() -> PlutusData {
+	PlutusData::new_integer(&BigInt::zero())
 }
 
 #[cfg(test)]
