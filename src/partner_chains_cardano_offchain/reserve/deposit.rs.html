@@ -247,6 +247,11 @@
 <a href="#247" id="247">247</a>
 <a href="#248" id="248">248</a>
 <a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Specification for deposit transaction:
 //!
@@ -400,7 +405,12 @@
 
 	tx_builder.add_output(<span class="kw-2">&amp;</span>validator_output(parameters, current_utxo, <span class="kw-2">&amp;</span>reserve.scripts, ctx)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>inputs = input_with_script_reference(current_utxo, reserve, reserve_auth_script_cost)<span class="question-mark">?</span>;
+	<span class="kw">let </span>inputs = input_with_script_reference(
+		current_utxo,
+		reserve,
+		ReserveRedeemer::DepositToReserve { governance_version: <span class="number">1 </span>},
+		reserve_auth_script_cost,
+	)<span class="question-mark">?</span>;
 	tx_builder.set_inputs(<span class="kw-2">&amp;</span>inputs);
 
 	<span class="kw">let </span>gov_tx_input = governance.utxo_id_as_tx_input();
@@ -425,16 +435,16 @@
 	tx_builder.balance_update_and_build(ctx)
 }
 
-<span class="kw">fn </span>input_with_script_reference(
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>input_with_script_reference(
 	consumed_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
 	reserve: <span class="kw-2">&amp;</span>ReserveData,
+	redeemer: ReserveRedeemer,
 	cost: ExUnits,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;TxInputsBuilder, JsError&gt; {
 	<span class="kw">let </span><span class="kw-2">mut </span>inputs = TxInputsBuilder::new();
 	<span class="kw">let </span>input = consumed_utxo.to_csl_tx_input();
 	<span class="kw">let </span>amount = consumed_utxo.value.to_csl()<span class="question-mark">?</span>;
 	<span class="kw">let </span>script = <span class="kw-2">&amp;</span>reserve.scripts.auth_policy;
-	<span class="kw">let </span>redeemer_data = ReserveRedeemer::DepositToReserve { governance_version: <span class="number">1 </span>}.into();
 	<span class="kw">let </span>witness = PlutusWitness::new_with_ref_without_datum(
 		<span class="kw-2">&amp;</span>PlutusScriptSource::new_ref_input(
 			<span class="kw-2">&amp;</span>script.csl_script_hash(),
@@ -442,7 +452,7 @@
 			<span class="kw-2">&amp;</span>Language::new_plutus_v2(),
 			script.bytes.len(),
 		),
-		<span class="kw-2">&amp;</span>Redeemer::new(<span class="kw-2">&amp;</span>RedeemerTag::new_spend(), <span class="kw-2">&amp;</span><span class="number">0u32</span>.into(), <span class="kw-2">&amp;</span>redeemer_data, <span class="kw-2">&amp;</span>cost),
+		<span class="kw-2">&amp;</span>Redeemer::new(<span class="kw-2">&amp;</span>RedeemerTag::new_spend(), <span class="kw-2">&amp;</span><span class="number">0u32</span>.into(), <span class="kw-2">&amp;</span>redeemer.into(), <span class="kw-2">&amp;</span>cost),
 	);
 	inputs.add_plutus_script_input(<span class="kw-2">&amp;</span>witness, <span class="kw-2">&amp;</span>input, <span class="kw-2">&amp;</span>amount);
 	<span class="prelude-val">Ok</span>(inputs)

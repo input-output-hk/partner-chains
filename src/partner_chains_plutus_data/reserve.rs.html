@@ -243,6 +243,15 @@
 <a href="#243" id="243">243</a>
 <a href="#244" id="244">244</a>
 <a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
 	decoding_error_and_log, plutus_data_version_and_payload, DataDecodingError, DecodingResult,
 	VersionedDatum, VersionedGenericDatumShape,
@@ -253,7 +262,7 @@
 <span class="attr">#[derive(Debug, Clone)]
 </span><span class="kw">pub enum </span>ReserveRedeemer {
 	DepositToReserve { governance_version: u64 },
-	TransferToIlliquidCirculationSupply,
+	ReleaseFromReserve,
 	UpdateReserve { governance_version: u64 },
 	Handover { governance_version: u64 },
 }
@@ -291,9 +300,7 @@
 					<span class="kw-2">&amp;</span>PlutusData::new_integer(<span class="kw-2">&amp;</span>BigInt::from(governance_version)),
 				)
 			},
-			TransferToIlliquidCirculationSupply =&gt; {
-				PlutusData::new_empty_constr_plutus_data(<span class="kw-2">&amp;</span>BigNum::from(<span class="number">1_u64</span>))
-			},
+			ReleaseFromReserve =&gt; PlutusData::new_empty_constr_plutus_data(<span class="kw-2">&amp;</span>BigNum::from(<span class="number">1_u64</span>)),
 			UpdateReserve { governance_version } =&gt; {
 				PlutusData::new_single_value_constr_plutus_data(
 					<span class="kw-2">&amp;</span>BigNum::from(<span class="number">2_u64</span>),
@@ -372,8 +379,19 @@
 		<span class="kw">match </span>plutus_data_version_and_payload(datum) {
 			<span class="prelude-val">Some</span>((<span class="number">0</span>, datum, <span class="kw">_</span>)) =&gt; decode_v0_reserve_datum(<span class="kw-2">&amp;</span>datum)
 				.ok_or_else(|| decoding_error_and_log(<span class="kw-2">&amp;</span>datum, <span class="string">"ReserveDatum"</span>, <span class="string">"invalid data"</span>)),
-			<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(decoding_error_and_log(datum, <span class="string">"ReserveDatum"</span>, <span class="string">"invalid data"</span>)),
+			<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(decoding_error_and_log(datum, <span class="string">"ReserveDatum"</span>, <span class="string">"unversioned datum"</span>)),
 		}
+	}
+}
+
+<span class="kw">impl </span>ReserveDatum {
+	<span class="kw">pub fn </span>after_withdrawal(<span class="self">self</span>, amount: u64) -&gt; <span class="self">Self </span>{
+		<span class="self">Self </span>{
+			stats: ReserveStats {
+				token_total_amount_transferred: <span class="self">self</span>.stats.token_total_amount_transferred + amount,
+			},
+			..<span class="self">self
+		</span>}
 	}
 }
 

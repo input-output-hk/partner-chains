@@ -191,6 +191,47 @@
 <a href="#191" id="191">191</a>
 <a href="#192" id="192">192</a>
 <a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::PaymentFilePath;
 <span class="kw">use </span>ogmios_client::jsonrpsee::client_for_url;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
@@ -200,6 +241,7 @@
 		deposit::deposit_to_reserve,
 		handover::handover_reserve,
 		init::init_reserve_management,
+		release::release_reserve_funds,
 		update_settings::update_reserve_settings,
 		TokenAmount,
 	},
@@ -216,6 +258,8 @@
 	<span class="doccomment">/// Update reserve management system settings for your chain
 	</span>UpdateSettings(UpdateReserveSettingsCmd),
 	Handover(HandoverReserveCmd),
+	<span class="doccomment">/// Releases funds from the reserve to the illiquid supply
+	</span>Release(ReleaseReserveCmd),
 }
 
 <span class="kw">impl </span>ReserveCmd {
@@ -226,6 +270,7 @@
 			<span class="self">Self</span>::Deposit(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::UpdateSettings(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::Handover(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
+			<span class="self">Self</span>::Release(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 		}
 	}
 }
@@ -376,6 +421,43 @@
 		<span class="kw">let </span>ogmios_client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let _ </span>= handover_reserve(
 			<span class="self">self</span>.genesis_utxo,
+			payment_key.<span class="number">0</span>,
+			<span class="kw-2">&amp;</span>ogmios_client,
+			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
+		)
+		.<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(())
+	}
+}
+
+<span class="attr">#[derive(Clone, Debug, clap::Parser)]
+</span><span class="kw">pub struct </span>ReleaseReserveCmd {
+	<span class="attr">#[clap(flatten)]
+	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
+	<span class="attr">#[clap(flatten)]
+	</span>payment_key_file: PaymentFilePath,
+	<span class="doccomment">/// Genesis UTXO of the partner-chain.
+	</span><span class="attr">#[arg(long, short(<span class="string">'c'</span>))]
+	</span>genesis_utxo: UtxoId,
+	<span class="doccomment">/// Reference UTXO containing the V-Function script
+	</span><span class="attr">#[arg(long, short(<span class="string">'r'</span>))]
+	</span>reference_utxo: UtxoId,
+	<span class="doccomment">/// Encoded asset id in form &lt;policy_id_hex&gt;.&lt;asset_name_hex&gt;.
+	</span><span class="attr">#[arg(long)]
+	</span>token: AssetId,
+	<span class="doccomment">/// Current value of the V-Function
+	</span><span class="attr">#[arg(long)]
+	</span>amount: u64,
+}
+
+<span class="kw">impl </span>ReleaseReserveCmd {
+	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
+		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
+		<span class="kw">let </span>ogmios_client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let _ </span>= release_reserve_funds(
+			TokenAmount { token: <span class="self">self</span>.token, amount: <span class="self">self</span>.amount },
+			<span class="self">self</span>.genesis_utxo,
+			<span class="self">self</span>.reference_utxo,
 			payment_key.<span class="number">0</span>,
 			<span class="kw-2">&amp;</span>ogmios_client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),

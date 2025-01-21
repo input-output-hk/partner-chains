@@ -137,6 +137,18 @@
 <a href="#137" id="137">137</a>
 <a href="#138" id="138">138</a>
 <a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Queries that start with `queryLedgerState/`.
 
 </span><span class="kw">use crate</span>::{
@@ -146,6 +158,9 @@
 <span class="kw">use </span>serde::Deserialize;
 
 <span class="kw">pub trait </span>QueryLedgerState {
+	<span class="attr">#[allow(async_fn_in_trait)]
+	</span><span class="kw">async fn </span>get_tip(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;OgmiosTip, OgmiosClientError&gt;;
+
 	<span class="attr">#[allow(async_fn_in_trait)]
 	</span><span class="kw">async fn </span>era_summaries(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;EraSummary&gt;, OgmiosClientError&gt;;
 
@@ -175,6 +190,10 @@
 }
 
 <span class="kw">impl</span>&lt;T: OgmiosClient&gt; QueryLedgerState <span class="kw">for </span>T {
+	<span class="kw">async fn </span>get_tip(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;OgmiosTip, OgmiosClientError&gt; {
+		<span class="self">self</span>.request(<span class="string">"queryLedgerState/tip"</span>, OgmiosParams::empty_positional()).<span class="kw">await
+	</span>}
+
 	<span class="kw">async fn </span>era_summaries(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;EraSummary&gt;, OgmiosClientError&gt; {
 		<span class="self">self</span>.request(<span class="string">"queryLedgerState/eraSummaries"</span>, OgmiosParams::empty_positional())
 			.<span class="kw">await
@@ -275,5 +294,10 @@
 	</span><span class="kw">pub </span>plutus_v2: Vec&lt;i128&gt;,
 	<span class="attr">#[serde(rename = <span class="string">"plutus:v3"</span>)]
 	</span><span class="kw">pub </span>plutus_v3: Vec&lt;i128&gt;,
+}
+
+<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Default)]
+</span><span class="kw">pub struct </span>OgmiosTip {
+	<span class="kw">pub </span>slot: u64,
 }
 </code></pre></div></section></main></body></html>
