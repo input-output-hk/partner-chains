@@ -7,17 +7,11 @@ This guide presents the step-by-step process involving interactions with both th
 
 # Prerequisites
 
-- **Cardano Node Setup:** A running Cardano node to interact with the Cardano blockchain
+- **Cardano Node Setup:** A running Cardano node, including Ogmios and Kupo, to interact with the Cardano blockchain.
 
-- **Partner Chain Node Setup:** Access to a partner chain node, including Ogmios and Kupo.
+- **Partner Chain Node Setup:** Access to a partner chain node.
 
 - **Development Environment:** Haskell and related tools installed for running scripts.
-
-- **Access to Repositories:** Clone the following repositories:
-
-   - [Partner Chains](https://github.com/input-output-hk/partner-chains)
-
-   - [Partner Chains Smart Contracts](https://github.com/input-output-hk/partner-chains-smart-contracts)
 
 - **Native Token Creation Knowledge:** Familiarity with creating Cardano native tokens.
 
@@ -192,7 +186,7 @@ Command template:
 
 * `--reserve-initial-deposit-amount`: The initial amount of tokens to deposit into the reserve.
 
-* `--payment-signing-key-file`: Your payment signing key file for transaction signing.
+* `--payment-signing-key-file`: Your payment signing key file for transaction signing. This key has to have `reserve-initial-deposit-amount` in its wallet. 
 
 ### Steps
 
