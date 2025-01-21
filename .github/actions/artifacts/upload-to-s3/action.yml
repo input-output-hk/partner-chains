@@ -11,19 +11,11 @@ outputs: {}
 runs:
   using: "composite"
   steps:
-    - name: Install AWS CLI
-      shell: bash
-      run: |
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-        unzip awscliv2.zip
-        sudo ./aws/install
-
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v3
+    - name: Acquire AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+        aws-region: eu-central-1
 
     - name: Download Artifacts
       uses: actions/download-artifact@v4
@@ -37,6 +29,8 @@ runs:
         S3_BUCKET_NAME="${{ inputs.bucket-name }}"
         S3_UPLOAD_PATH="artifacts/${{ inputs.sha }}"
 
+        echo "Uploading artifacts to S3 at path: s3://$S3_BUCKET_NAME/$S3_UPLOAD_PATH/"
         for artifact in $ARTIFACTS_DIR/*; do
           aws s3 cp "$artifact" "s3://$S3_BUCKET_NAME/$S3_UPLOAD_PATH/$(basename "$artifact")"
+          echo "Uploaded $artifact to s3://$S3_BUCKET_NAME/$S3_UPLOAD_PATH/"
         done
