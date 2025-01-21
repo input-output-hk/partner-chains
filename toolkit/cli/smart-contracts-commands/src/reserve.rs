@@ -208,7 +208,7 @@ pub struct ReleaseReserveCmd {
 	/// Reference UTXO containing the V-Function script
 	#[arg(long, short('r'))]
 	reference_utxo: UtxoId,
-	/// Use either "Ada" or encoded asset id in form <policy_id_hex>.<asset_name_hex>.
+	/// Encoded asset id in form <policy_id_hex>.<asset_name_hex>.
 	#[arg(long)]
 	token: AssetId,
 	/// Current value of the V-Function. This is the cumulative number of tokens to be released.
