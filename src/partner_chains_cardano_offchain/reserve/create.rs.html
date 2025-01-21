@@ -196,8 +196,6 @@
 <a href="#196" id="196">196</a>
 <a href="#197" id="197">197</a>
 <a href="#198" id="198">198</a>
-<a href="#199" id="199">199</a>
-<a href="#200" id="200">200</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Transaction that creates a new reserve.
 //!
 //! Specification:
@@ -219,16 +217,15 @@
 <span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
 	csl::{
-		empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, AssetNameExt,
-		MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext,
-		TransactionOutputAmountBuilderExt,
+		get_builder_config, get_validator_budgets, zero_ex_units, MultiAssetExt, OgmiosUtxoExt,
+		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	scripts_data::ReserveScripts,
 };
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
-	Assets, ExUnits, JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
+	ExUnits, JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
 	TransactionOutputBuilder,
 };
 <span class="kw">use </span>ogmios_client::{
@@ -345,7 +342,6 @@
 		<span class="kw-2">&amp;</span>reserve.validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.validator.bytes.len(),
 	);
-	tx_builder.add_required_signer(<span class="kw-2">&amp;</span>ctx.payment_key_hash());
 	tx_builder.balance_update_and_build(ctx)
 }
 

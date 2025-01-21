@@ -557,9 +557,15 @@
 <a href="#557" id="557">557</a>
 <a href="#558" id="558">558</a>
 <a href="#559" id="559">559</a>
+<a href="#560" id="560">560</a>
+<a href="#561" id="561">561</a>
+<a href="#562" id="562">562</a>
+<a href="#563" id="563">563</a>
+<a href="#564" id="564">564</a>
+<a href="#565" id="565">565</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::{
-	get_first_validator_budget, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
-	TransactionContext,
+	get_first_validator_budget, unit_plutus_data, InputsBuilderExt, OgmiosUtxoExt,
+	TransactionBuilderExt, TransactionContext,
 };
 <span class="kw">use </span><span class="kw">crate</span>::csl::{MainchainPrivateKeyExt, TransactionOutputAmountBuilderExt};
 <span class="kw">use crate</span>::{
@@ -826,6 +832,7 @@
 			inputs.add_script_utxo_input(
 				own_registration_utxo,
 				validator,
+				<span class="kw-2">&amp;</span>register_redeemer_data(),
 				<span class="kw-2">&amp;</span>validator_redeemer_ex_units,
 			)<span class="question-mark">?</span>;
 		}
@@ -861,6 +868,7 @@
 			inputs.add_script_utxo_input(
 				own_registration_utxo,
 				validator,
+				<span class="kw-2">&amp;</span>register_redeemer_data(),
 				<span class="kw-2">&amp;</span>validator_redeemer_ex_units.clone(),
 			)<span class="question-mark">?</span>;
 		}
@@ -868,6 +876,10 @@
 	}
 
 	tx_builder.balance_update_and_build(ctx)
+}
+
+<span class="kw">fn </span>register_redeemer_data() -&gt; PlutusData {
+	unit_plutus_data()
 }
 
 <span class="attr">#[cfg(test)]

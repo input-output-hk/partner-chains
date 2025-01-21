@@ -286,7 +286,7 @@
 
 	tx_builder.set_inputs(<span class="kw-2">&amp;</span>{
 		<span class="kw">let </span><span class="kw-2">mut </span>inputs = TxInputsBuilder::new();
-		inputs.add_script_utxo_input_with_data(
+		inputs.add_script_utxo_input(
 			<span class="kw-2">&amp;</span>governance_data.utxo,
 			<span class="kw-2">&amp;</span>version_oracle_validator,
 			<span class="kw-2">&amp;</span>PlutusData::new_integer(<span class="kw-2">&amp;</span>(raw_scripts::ScriptId::GovernancePolicy <span class="kw">as </span>u32).into()),
