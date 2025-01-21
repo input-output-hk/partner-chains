@@ -1040,6 +1040,11 @@
 <a href="#1040" id="1040">1040</a>
 <a href="#1041" id="1041">1041</a>
 <a href="#1042" id="1042">1042</a>
+<a href="#1043" id="1043">1043</a>
+<a href="#1044" id="1044">1044</a>
+<a href="#1045" id="1045">1045</a>
+<a href="#1046" id="1046">1046</a>
+<a href="#1047" id="1047">1047</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>fraction::{FromPrimitive, Ratio};
@@ -1415,7 +1420,7 @@
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
 		script: <span class="kw-2">&amp;</span>PlutusScript,
 		ref_input: <span class="kw-2">&amp;</span>TransactionInput,
-		amount: <span class="kw-2">&amp;</span>BigNum,
+		amount: <span class="kw-2">&amp;</span>Int,
 		ex_units: <span class="kw-2">&amp;</span>ExUnits,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt;;
 
@@ -1425,7 +1430,12 @@
 		ref_input: <span class="kw-2">&amp;</span>TransactionInput,
 		ex_units: <span class="kw-2">&amp;</span>ExUnits,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt; {
-		<span class="self">self</span>.add_mint_script_token_using_reference_script(script, ref_input, <span class="kw-2">&amp;</span><span class="number">1u64</span>.into(), ex_units)
+		<span class="self">self</span>.add_mint_script_token_using_reference_script(
+			script,
+			ref_input,
+			<span class="kw-2">&amp;</span>Int::new_i32(<span class="number">1</span>),
+			ex_units,
+		)
 	}
 
 	<span class="doccomment">/// Sets fields required by the most of partner-chains smart contract transactions.
@@ -1501,7 +1511,7 @@
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
 		script: <span class="kw-2">&amp;</span>PlutusScript,
 		ref_input: <span class="kw-2">&amp;</span>TransactionInput,
-		amount: <span class="kw-2">&amp;</span>BigNum,
+		amount: <span class="kw-2">&amp;</span>Int,
 		ex_units: <span class="kw-2">&amp;</span>ExUnits,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt; {
 		<span class="kw">let </span><span class="kw-2">mut </span>mint_builder = <span class="self">self</span>.get_mint_builder().unwrap_or(MintBuilder::new());
@@ -1516,7 +1526,7 @@
 			<span class="kw-2">&amp;</span>validator_source,
 			<span class="kw-2">&amp;</span>Redeemer::new(<span class="kw-2">&amp;</span>RedeemerTag::new_mint(), <span class="kw-2">&amp;</span><span class="number">0u32</span>.into(), <span class="kw-2">&amp;</span>unit_plutus_data(), ex_units),
 		);
-		mint_builder.add_asset(<span class="kw-2">&amp;</span>mint_witness, <span class="kw-2">&amp;</span>empty_asset_name(), <span class="kw-2">&amp;</span>Int::new(amount))<span class="question-mark">?</span>;
+		mint_builder.add_asset(<span class="kw-2">&amp;</span>mint_witness, <span class="kw-2">&amp;</span>empty_asset_name(), <span class="kw-2">&amp;</span>amount)<span class="question-mark">?</span>;
 		<span class="self">self</span>.set_mint_builder(<span class="kw-2">&amp;</span>mint_builder);
 		<span class="prelude-val">Ok</span>(())
 	}
