@@ -211,7 +211,7 @@ pub struct ReleaseReserveCmd {
 	/// Encoded asset id in form <policy_id_hex>.<asset_name_hex>.
 	#[arg(long)]
 	token: AssetId,
-	/// Current value of the V-Function. This is the cumulative number of tokens to be released.
+	/// Current value of the V-Function
 	#[arg(long)]
 	amount: u64,
 }
