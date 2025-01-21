@@ -128,7 +128,7 @@ jobs:
         uses: ./.github/actions/artifacts/upload-to-s3
         with:
           sha: ${{ inputs.sha }}
-          bucket-name: "TODO"
+          bucket-name: ${{ secrets.AWS_CD_ARTIFACT_S3_BUCKET }}
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
@@ -148,7 +148,7 @@ jobs:
         uses: ./.github/actions/artifacts/download-from-s3
         with:
           sha: ${{ inputs.sha }}
-          bucket-name: "TODO"
+          bucket-name: ${{ secrets.AWS_CD_ARTIFACT_S3_BUCKET }}
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
