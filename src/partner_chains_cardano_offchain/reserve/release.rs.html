@@ -491,10 +491,6 @@
 <a href="#491" id="491">491</a>
 <a href="#492" id="492">492</a>
 <a href="#493" id="493">493</a>
-<a href="#494" id="494">494</a>
-<a href="#495" id="495">495</a>
-<a href="#496" id="496">496</a>
-<a href="#497" id="497">497</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! This transaction releases some funds to the illiquid supply.
 //! Inputs:
 //!     - previous utxo at the *reserve validator*, containing the reserve tokens and the
@@ -516,7 +512,7 @@
 //!       including the ones released in this transaction*. Ie. if N tokens were already released
 //!       and M tokens are being released, the transaction should mint N+M V-Function tokens.
 //!       These tokens are worthless and don't serve any purpose after the transaction is done.
-</span><span class="kw">use super</span>::{deposit::input_with_script_reference, ReserveData, TokenAmount};
+</span><span class="kw">use super</span>::{reserve_utxo_input_with_validator_script_reference, ReserveData, TokenAmount};
 <span class="kw">use crate</span>::{await_tx::AwaitTx, csl::<span class="kw-2">*</span>, plutus_script::PlutusScript, reserve::ReserveUtxo};
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
@@ -630,10 +626,6 @@
 		reserve_data.scripts.auth_policy.bytes.len(),
 	);
 	tx_builder.add_script_reference_input(
-		<span class="kw-2">&amp;</span>reserve_data.validator_version_utxo.to_csl_tx_input(),
-		reserve_data.scripts.validator.bytes.len(),
-	);
-	tx_builder.add_script_reference_input(
 		<span class="kw-2">&amp;</span>reserve_data
 			.illiquid_circulation_supply_validator_version_utxo
 			.to_csl_tx_input(),
@@ -650,11 +642,11 @@
 	)<span class="question-mark">?</span>;
 
 	<span class="comment">// Remove tokens from the reserve
-	</span>tx_builder.set_inputs(<span class="kw-2">&amp;</span>input_with_script_reference(
+	</span>tx_builder.set_inputs(<span class="kw-2">&amp;</span>reserve_utxo_input_with_validator_script_reference(
 		<span class="kw-2">&amp;</span>previous_reserve_utxo,
 		<span class="kw-2">&amp;</span>reserve_data,
 		ReserveRedeemer::ReleaseFromReserve,
-		reserve_auth_script_cost,
+		<span class="kw-2">&amp;</span>reserve_auth_script_cost,
 	)<span class="question-mark">?</span>);
 
 	<span class="comment">// Transfer released tokens to the illiquid supply

@@ -123,12 +123,45 @@
 <a href="#123" id="123">123</a>
 <a href="#124" id="124">124</a>
 <a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! All smart-contracts related to Rewards Token Reserve Management
 
-</span><span class="kw">use </span><span class="kw">crate</span>::csl::OgmiosUtxoExt;
-<span class="kw">use crate</span>::{csl::TransactionContext, scripts_data};
+</span><span class="kw">use crate</span>::{
+	csl::{OgmiosUtxoExt, OgmiosValueExt, TransactionContext},
+	scripts_data,
+};
 <span class="kw">use </span>anyhow::anyhow;
-<span class="kw">use </span>cardano_serialization_lib::PlutusData;
+<span class="kw">use </span>cardano_serialization_lib::{
+	ExUnits, JsError, PlutusData, PlutusScriptSource, PlutusWitness, Redeemer, RedeemerTag,
+	TxInputsBuilder,
+};
 <span class="kw">use </span>init::find_script_utxo;
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -136,7 +169,7 @@
 	transactions::Transactions,
 	types::OgmiosUtxo,
 };
-<span class="kw">use </span>partner_chains_plutus_data::reserve::ReserveDatum;
+<span class="kw">use </span>partner_chains_plutus_data::reserve::{ReserveDatum, ReserveRedeemer};
 <span class="kw">use </span>sidechain_domain::{AssetId, AssetName, UtxoId};
 
 <span class="kw">pub mod </span>create;
@@ -221,7 +254,7 @@
 
 		<span class="kw">let </span>auth_token_asset_id = AssetId {
 			policy_id: <span class="self">self</span>.scripts.auth_policy.policy_id(),
-			asset_name: AssetName::from_hex_unsafe(<span class="string">""</span>),
+			asset_name: AssetName::empty(),
 		};
 
 		<span class="kw">let </span>(reserve_utxo, reserve_settings) = validator_utxos
@@ -247,5 +280,28 @@
 <span class="kw">pub struct </span>TokenAmount {
 	<span class="kw">pub </span>token: AssetId,
 	<span class="kw">pub </span>amount: u64,
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>reserve_utxo_input_with_validator_script_reference(
+	reserve_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
+	reserve: <span class="kw-2">&amp;</span>ReserveData,
+	redeemer: ReserveRedeemer,
+	cost: <span class="kw-2">&amp;</span>ExUnits,
+) -&gt; <span class="prelude-ty">Result</span>&lt;TxInputsBuilder, JsError&gt; {
+	<span class="kw">let </span><span class="kw-2">mut </span>inputs = TxInputsBuilder::new();
+	<span class="kw">let </span>input = reserve_utxo.to_csl_tx_input();
+	<span class="kw">let </span>amount = reserve_utxo.value.to_csl()<span class="question-mark">?</span>;
+	<span class="kw">let </span>script = <span class="kw-2">&amp;</span>reserve.scripts.validator;
+	<span class="kw">let </span>witness = PlutusWitness::new_with_ref_without_datum(
+		<span class="kw-2">&amp;</span>PlutusScriptSource::new_ref_input(
+			<span class="kw-2">&amp;</span>script.csl_script_hash(),
+			<span class="kw-2">&amp;</span>reserve.validator_version_utxo.to_csl_tx_input(),
+			<span class="kw-2">&amp;</span>script.language,
+			script.bytes.len(),
+		),
+		<span class="kw-2">&amp;</span>Redeemer::new(<span class="kw-2">&amp;</span>RedeemerTag::new_spend(), <span class="kw-2">&amp;</span><span class="number">0u32</span>.into(), <span class="kw-2">&amp;</span>redeemer.into(), cost),
+	);
+	inputs.add_plutus_script_input(<span class="kw-2">&amp;</span>witness, <span class="kw-2">&amp;</span>input, <span class="kw-2">&amp;</span>amount);
+	<span class="prelude-val">Ok</span>(inputs)
 }
 </code></pre></div></section></main></body></html>

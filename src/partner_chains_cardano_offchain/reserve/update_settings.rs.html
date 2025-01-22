@@ -168,24 +168,6 @@
 <a href="#168" id="168">168</a>
 <a href="#169" id="169">169</a>
 <a href="#170" id="170">170</a>
-<a href="#171" id="171">171</a>
-<a href="#172" id="172">172</a>
-<a href="#173" id="173">173</a>
-<a href="#174" id="174">174</a>
-<a href="#175" id="175">175</a>
-<a href="#176" id="176">176</a>
-<a href="#177" id="177">177</a>
-<a href="#178" id="178">178</a>
-<a href="#179" id="179">179</a>
-<a href="#180" id="180">180</a>
-<a href="#181" id="181">181</a>
-<a href="#182" id="182">182</a>
-<a href="#183" id="183">183</a>
-<a href="#184" id="184">184</a>
-<a href="#185" id="185">185</a>
-<a href="#186" id="186">186</a>
-<a href="#187" id="187">187</a>
-<a href="#188" id="188">188</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Transaction that updates reserve settings.
 //!
 //! Specification:
@@ -204,7 +186,7 @@
 //!   * Reserve Validator Version Utxo
 //!   * Governance Policy Script
 
-</span><span class="kw">use </span><span class="kw">super</span>::ReserveData;
+</span><span class="kw">use super</span>::{reserve_utxo_input_with_validator_script_reference, ReserveData};
 <span class="kw">use </span><span class="kw">crate</span>::reserve::ReserveUtxo;
 <span class="kw">use crate</span>::{
 	await_tx::AwaitTx, csl::<span class="kw-2">*</span>, init_governance::get_governance_data,
@@ -316,29 +298,12 @@
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
 
 	<span class="comment">// spend old settings
-	</span>{
-		<span class="kw">let </span><span class="kw-2">mut </span>inputs = TxInputsBuilder::new();
-
-		<span class="kw">let </span>witness = PlutusWitness::new_with_ref_without_datum(
-			<span class="kw-2">&amp;</span>PlutusScriptSource::new_ref_input(
-				<span class="kw-2">&amp;</span>reserve.scripts.validator.csl_script_hash(),
-				<span class="kw-2">&amp;</span>reserve.validator_version_utxo.to_csl_tx_input(),
-				<span class="kw-2">&amp;</span>reserve.scripts.validator.language,
-				reserve.scripts.validator.bytes.len(),
-			),
-			<span class="kw-2">&amp;</span>Redeemer::new(
-				<span class="kw-2">&amp;</span>RedeemerTag::new_spend(),
-				<span class="comment">// CSL will set redeemer index for the index of script input after sorting transaction inputs
-				</span><span class="kw-2">&amp;</span><span class="number">0u32</span>.into(),
-				<span class="kw-2">&amp;</span>ReserveRedeemer::UpdateReserve { governance_version: <span class="number">1u64 </span>}.into(),
-				reserve_script_cost,
-			),
-		);
-		<span class="kw">let </span>amount = reserve_utxo.value.to_csl()<span class="question-mark">?</span>;
-		inputs.add_plutus_script_input(<span class="kw-2">&amp;</span>witness, <span class="kw-2">&amp;</span>reserve_utxo.to_csl_tx_input(), <span class="kw-2">&amp;</span>amount);
-
-		tx_builder.set_inputs(<span class="kw-2">&amp;</span>inputs);
-	}
+	</span>tx_builder.set_inputs(<span class="kw-2">&amp;</span>reserve_utxo_input_with_validator_script_reference(
+		<span class="kw-2">&amp;</span>reserve_utxo,
+		<span class="kw-2">&amp;</span>reserve,
+		ReserveRedeemer::UpdateReserve { governance_version: <span class="number">1u64 </span>},
+		<span class="kw-2">&amp;</span>reserve_script_cost,
+	)<span class="question-mark">?</span>);
 	{
 		<span class="kw">let </span>amount_builder = TransactionOutputBuilder::new()
 			.with_address(<span class="kw-2">&amp;</span>reserve.scripts.validator.address(ctx.network))
@@ -358,10 +323,9 @@
 		tx_builder.add_output(<span class="kw-2">&amp;</span>a)<span class="question-mark">?</span>;
 	}
 
-	<span class="kw">let </span>gov_tx_input = governance.utxo_id_as_tx_input();
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		<span class="kw-2">&amp;</span>governance.policy_script,
-		<span class="kw-2">&amp;</span>gov_tx_input,
+		<span class="kw-2">&amp;</span>governance.utxo_id_as_tx_input(),
 		governance_script_cost,
 	)<span class="question-mark">?</span>;
 	tx_builder.add_script_reference_input(
