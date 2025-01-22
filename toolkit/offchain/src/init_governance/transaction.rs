@@ -21,16 +21,12 @@ pub(crate) fn init_governance_transaction(
 	let config = crate::csl::get_builder_config(tx_context)?;
 	let mut tx_builder = TransactionBuilder::new(&config);
 
-	tx_builder.set_mint_builder(&{
-		let mut mint_builder = MintBuilder::new();
-
-		mint_builder.add_asset(
-			&mint_witness(&version_oracle.policy, &multi_sig_policy, &ex_units)?,
-			&version_oracle_asset_name(),
-			&Int::new_i32(1),
-		)?;
-		mint_builder
-	});
+	tx_builder.add_mint_one_script_token(
+		&version_oracle.policy,
+		&version_oracle_asset_name(),
+		&mint_redeemer(&multi_sig_policy),
+		&ex_units,
+	)?;
 
 	tx_builder.add_output(&version_oracle_datum_output(
 		version_oracle.validator.clone(),
@@ -51,27 +47,15 @@ fn version_oracle_asset_name() -> AssetName {
 	AssetName::new(b"Version oracle".to_vec()).expect("Constant asset name should work")
 }
 
-fn mint_witness(
-	version_oracle_policy: &PlutusScript,
-	multi_sig_policy: &PlutusScript,
-	ex_units: &ExUnits,
-) -> anyhow::Result<MintWitness> {
-	Ok(MintWitness::new_plutus_script(
-		&PlutusScriptSource::new(&version_oracle_policy.to_csl()),
-		&Redeemer::new(
-			&RedeemerTag::new_mint(),
-			&0u32.into(),
-			&PlutusData::new_constr_plutus_data(&ConstrPlutusData::new(&0u64.into(), &{
-				let mut list = PlutusList::new();
-				list.add(&PlutusData::new_integer(
-					&(raw_scripts::ScriptId::GovernancePolicy as u32).into(),
-				));
-				list.add(&PlutusData::new_bytes(multi_sig_policy.script_hash().to_vec()));
-				list
-			})),
-			ex_units,
-		),
-	))
+fn mint_redeemer(multi_sig_policy: &PlutusScript) -> PlutusData {
+	PlutusData::new_constr_plutus_data(&ConstrPlutusData::new(&0u64.into(), &{
+		let mut list = PlutusList::new();
+		list.add(&PlutusData::new_integer(
+			&(raw_scripts::ScriptId::GovernancePolicy as u32).into(),
+		));
+		list.add(&PlutusData::new_bytes(multi_sig_policy.script_hash().to_vec()));
+		list
+	}))
 }
 
 pub(crate) fn version_oracle_datum_output(

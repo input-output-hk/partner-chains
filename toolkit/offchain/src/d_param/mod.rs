@@ -6,8 +6,8 @@
 
 use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::csl::{
-	get_builder_config, get_validator_budgets, unit_plutus_data, zero_ex_units, InputsBuilderExt,
-	ScriptExUnits, TransactionBuilderExt, TransactionContext,
+	empty_asset_name, get_builder_config, get_validator_budgets, unit_plutus_data, zero_ex_units,
+	InputsBuilderExt, ScriptExUnits, TransactionBuilderExt, TransactionContext,
 };
 use crate::init_governance::{self, GovernanceData};
 use crate::plutus_script::PlutusScript;
@@ -256,7 +256,12 @@ fn mint_d_param_token_tx(
 ) -> Result<Transaction, JsError> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	// The essence of transaction: mint D-Param token and set output with it, mint a governance token.
-	tx_builder.add_mint_one_script_token(policy, &unit_plutus_data(), d_param_policy_ex_units)?;
+	tx_builder.add_mint_one_script_token(
+		policy,
+		&empty_asset_name(),
+		&unit_plutus_data(),
+		d_param_policy_ex_units,
+	)?;
 	tx_builder.add_output_with_one_script_token(
 		validator,
 		policy,

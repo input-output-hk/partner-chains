@@ -26,9 +26,8 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	AssetName, BigNum, ConstrPlutusData, ExUnits, Int, JsError, Language, MintBuilder, MintWitness,
-	MultiAsset, PlutusData, PlutusList, PlutusScriptSource, Redeemer, RedeemerTag, ScriptHash,
-	ScriptRef, Transaction, TransactionBuilder, TransactionOutputBuilder,
+	AssetName, BigNum, ConstrPlutusData, ExUnits, JsError, Language, MultiAsset, PlutusData,
+	PlutusList, ScriptHash, ScriptRef, Transaction, TransactionBuilder, TransactionOutputBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -174,21 +173,16 @@ fn init_script_tx(
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	let applied_script = script.applied_plutus_script(version_oracle)?;
 	{
-		let mut mint_builder = tx_builder.get_mint_builder().unwrap_or(MintBuilder::new());
-		let mint_witness = MintWitness::new_plutus_script(
-			&PlutusScriptSource::new(&version_oracle.policy.to_csl()),
-			&Redeemer::new(
-				&RedeemerTag::new_mint(),
-				&0u32.into(),
-				&PlutusData::new_constr_plutus_data(&ConstrPlutusData::new(
-					&BigNum::one(),
-					&version_oracle_plutus_list(script.id, &applied_script.script_hash()),
-				)),
-				&versioning_script_cost,
-			),
-		);
-		mint_builder.add_asset(&mint_witness, &version_oracle_asset_name(), &Int::new_i32(1))?;
-		tx_builder.set_mint_builder(&mint_builder);
+		let witness = PlutusData::new_constr_plutus_data(&ConstrPlutusData::new(
+			&BigNum::one(),
+			&version_oracle_plutus_list(script.id, &applied_script.script_hash()),
+		));
+		tx_builder.add_mint_one_script_token(
+			&version_oracle.policy,
+			&version_oracle_asset_name(),
+			&witness,
+			&versioning_script_cost,
+		)?;
 	}
 	{
 		let script_ref = ScriptRef::new_plutus_script(&applied_script.to_csl());

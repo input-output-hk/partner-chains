@@ -372,6 +372,7 @@ pub(crate) trait TransactionBuilderExt {
 	fn add_mint_one_script_token(
 		&mut self,
 		script: &PlutusScript,
+		asset_name: &AssetName,
 		redeemer_data: &PlutusData,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError>;
@@ -453,6 +454,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 	fn add_mint_one_script_token(
 		&mut self,
 		script: &PlutusScript,
+		asset_name: &AssetName,
 		redeemer_data: &PlutusData,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError> {
@@ -463,7 +465,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 			&validator_source,
 			&Redeemer::new(&RedeemerTag::new_mint(), &0u32.into(), redeemer_data, ex_units),
 		);
-		mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new_i32(1))?;
+		mint_builder.add_asset(&mint_witness, asset_name, &Int::new_i32(1))?;
 		self.set_mint_builder(&mint_builder);
 		Ok(())
 	}
@@ -907,8 +909,8 @@ mod tests {
 #[cfg(test)]
 mod prop_tests {
 	use super::{
-		get_builder_config, unit_plutus_data, zero_ex_units, OgmiosUtxoExt, TransactionBuilderExt,
-		TransactionContext,
+		empty_asset_name, get_builder_config, unit_plutus_data, zero_ex_units, OgmiosUtxoExt,
+		TransactionBuilderExt, TransactionContext,
 	};
 	use crate::test_values::*;
 	use cardano_serialization_lib::{
@@ -935,7 +937,12 @@ mod prop_tests {
 		};
 		let mut tx_builder = TransactionBuilder::new(&get_builder_config(&ctx).unwrap());
 		tx_builder
-			.add_mint_one_script_token(&test_policy(), &unit_plutus_data(), &zero_ex_units())
+			.add_mint_one_script_token(
+				&test_policy(),
+				&empty_asset_name(),
+				&unit_plutus_data(),
+				&zero_ex_units(),
+			)
 			.unwrap();
 		tx_builder
 			.add_output_with_one_script_token(
