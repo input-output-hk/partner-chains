@@ -129,10 +129,10 @@ fn update_reserve_settings_tx(
 
 	// spend old settings
 	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
-		&reserve_utxo,
-		&reserve,
-		ReserveRedeemer::UpdateReserve { governance_version: 1u64 },
-		&reserve_script_cost,
+		reserve_utxo,
+		reserve,
+		ReserveRedeemer::UpdateReserve,
+		reserve_script_cost,
 	)?);
 	{
 		let amount_builder = TransactionOutputBuilder::new()

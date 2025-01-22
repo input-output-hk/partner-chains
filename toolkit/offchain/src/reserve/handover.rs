@@ -109,7 +109,7 @@ fn build_tx(
 	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
 		reserve_utxo,
 		reserve,
-		ReserveRedeemer::Handover { governance_version: 1 },
+		ReserveRedeemer::Handover,
 		&reserve_auth_policy_spend_cost,
 	)?);
 

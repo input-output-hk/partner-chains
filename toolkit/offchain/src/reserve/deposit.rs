@@ -121,9 +121,9 @@ fn deposit_to_reserve_tx(
 	tx_builder.add_output(&validator_output(parameters, current_utxo, &reserve.scripts, ctx)?)?;
 
 	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
-		&current_utxo,
-		&reserve,
-		ReserveRedeemer::DepositToReserve { governance_version: 1 },
+		current_utxo,
+		reserve,
+		ReserveRedeemer::DepositToReserve,
 		&spend_reserve_auth_token_cost,
 	)?);
 
