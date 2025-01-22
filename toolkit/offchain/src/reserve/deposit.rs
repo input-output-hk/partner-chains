@@ -19,21 +19,20 @@ use super::{reserve_utxo_input_with_validator_script_reference, ReserveData, Tok
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
-		get_builder_config, get_validator_budgets, zero_ex_units, MultiAssetExt, OgmiosUtxoExt,
-		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
+		get_builder_config, CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt,
+		TransactionContext, TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	scripts_data::ReserveScripts,
 };
-use anyhow::anyhow;
 use cardano_serialization_lib::{
-	ExUnits, JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
+	JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
 	TransactionOutputBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
-	transactions::{OgmiosEvaluateTransactionResponse, Transactions},
+	transactions::Transactions,
 	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::reserve::ReserveRedeemer;
@@ -58,29 +57,12 @@ pub async fn deposit_to_reserve<
 	let token_amount =
 		TokenAmount { token: parameters.token, amount: current_amount + parameters.amount };
 
-	let tx_to_evaluate = deposit_to_reserve_tx(
-		&token_amount,
-		&utxo,
-		&reserve,
-		&governance,
-		zero_ex_units(),
-		zero_ex_units(),
-		&ctx,
-	)?;
-	let evaluate_response = client.evaluate_transaction(&tx_to_evaluate.to_bytes()).await?;
+	let tx = Costs::calculate_costs(
+		|costs| deposit_to_reserve_tx(&token_amount, &utxo, &reserve, &governance, costs, &ctx),
+		client,
+	)
+	.await?;
 
-	let spend_ex_units = get_spend_cost(evaluate_response.clone())?;
-	let governance_ex_units = get_governance_script_cost(evaluate_response)?;
-
-	let tx = deposit_to_reserve_tx(
-		&token_amount,
-		&utxo,
-		&reserve,
-		&governance,
-		governance_ex_units,
-		spend_ex_units,
-		&ctx,
-	)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow::anyhow!(
@@ -112,10 +94,9 @@ fn deposit_to_reserve_tx(
 	current_utxo: &OgmiosUtxo,
 	reserve: &ReserveData,
 	governance: &GovernanceData,
-	governance_script_cost: ExUnits,
-	spend_reserve_auth_token_cost: ExUnits,
+	costs: Costs,
 	ctx: &TransactionContext,
-) -> Result<Transaction, JsError> {
+) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
 	tx_builder.add_output(&validator_output(parameters, current_utxo, &reserve.scripts, ctx)?)?;
@@ -124,13 +105,13 @@ fn deposit_to_reserve_tx(
 		current_utxo,
 		reserve,
 		ReserveRedeemer::DepositToReserve,
-		&spend_reserve_auth_token_cost,
+		&costs.get_one_spend(),
 	)?);
 
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&governance.policy_script,
 		&governance.utxo_id_as_tx_input(),
-		&governance_script_cost,
+		&costs.get_mint(&governance.policy_script),
 	)?;
 
 	tx_builder.add_script_reference_input(
@@ -141,29 +122,7 @@ fn deposit_to_reserve_tx(
 		&reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.illiquid_circulation_supply_validator.bytes.len(),
 	);
-	tx_builder.balance_update_and_build(ctx)
-}
-
-// governance token is the only minted token
-fn get_governance_script_cost(
-	response: Vec<OgmiosEvaluateTransactionResponse>,
-) -> Result<ExUnits, anyhow::Error> {
-	Ok(get_validator_budgets(response)
-		.mint_ex_units
-		.first()
-		.ok_or_else(|| anyhow!("Mint cost is missing in evaluate response"))?
-		.clone())
-}
-
-// Auth policy token is the only spent token is the transaction
-fn get_spend_cost(
-	response: Vec<OgmiosEvaluateTransactionResponse>,
-) -> Result<ExUnits, anyhow::Error> {
-	Ok(get_validator_budgets(response)
-		.spend_ex_units
-		.first()
-		.ok_or_else(|| anyhow!("Spend cost is missing in evaluate response"))?
-		.clone())
+	Ok(tx_builder.balance_update_and_build(ctx)?)
 }
 
 // Creates output with reserve token and updated deposit

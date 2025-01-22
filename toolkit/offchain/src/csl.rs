@@ -256,12 +256,19 @@ impl CostStore for Costs {
 }
 
 impl Costs {
+	pub fn new(
+		mints: HashMap<cardano_serialization_lib::ScriptHash, ExUnits>,
+		spends: HashMap<u32, ExUnits>,
+	) -> Costs {
+		Costs::Costs(CostLookup { mints, spends })
+	}
+
 	pub async fn calculate_costs<T: Transactions, F>(
 		make_tx: F,
 		client: &T,
 	) -> anyhow::Result<Transaction>
 	where
-		F: Fn(Costs) -> Result<Transaction, JsError>,
+		F: Fn(Costs) -> anyhow::Result<Transaction>,
 	{
 		let tx = make_tx(Costs::ZeroCosts)?;
 		// stage 1
@@ -271,7 +278,7 @@ impl Costs {
 		// stage 2
 		let costs = Self::from_ogmios(&tx, client).await?;
 
-		Ok(make_tx(costs)?)
+		make_tx(costs)
 	}
 
 	async fn from_ogmios<T: Transactions>(tx: &Transaction, client: &T) -> anyhow::Result<Costs> {

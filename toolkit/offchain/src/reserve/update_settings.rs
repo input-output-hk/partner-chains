@@ -69,39 +69,21 @@ pub async fn update_reserve_settings<
 		return Ok(None);
 	}
 
-	let tx_to_evaluate = update_reserve_settings_tx(
-		&reserve_settings,
-		&reserve,
-		&governance,
-		&zero_ex_units(),
-		&reserve_utxo,
-		&zero_ex_units(),
-		&ctx,
-	)?;
+	let tx = Costs::calculate_costs(
+		|costs| {
+			update_reserve_settings_tx(
+				&reserve_settings,
+				&reserve,
+				&governance,
+				&reserve_utxo,
+				costs,
+				&ctx,
+			)
+		},
+		client,
+	)
+	.await?;
 
-	let evaluate_response = client.evaluate_transaction(&tx_to_evaluate.to_bytes()).await?;
-
-	let budgets = get_validator_budgets(evaluate_response);
-	let gov_cost = budgets
-		.mint_ex_units
-		.first()
-		.expect("Every Update Reserve Settings transaction should have one mint")
-		.clone();
-	let reserve_cost = budgets
-		.spend_ex_units
-		.first()
-		.expect("Every Update Reserve Settings transaction should have one spend")
-		.clone();
-
-	let tx = update_reserve_settings_tx(
-		&reserve_settings,
-		&reserve,
-		&governance,
-		&gov_cost,
-		&reserve_utxo,
-		&reserve_cost,
-		&ctx,
-	)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow::anyhow!(
@@ -120,11 +102,10 @@ fn update_reserve_settings_tx(
 	datum: &ReserveDatum,
 	reserve: &ReserveData,
 	governance: &GovernanceData,
-	governance_script_cost: &ExUnits,
 	reserve_utxo: &OgmiosUtxo,
-	reserve_script_cost: &ExUnits,
+	costs: Costs,
 	ctx: &TransactionContext,
-) -> Result<Transaction, JsError> {
+) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
 	// spend old settings
@@ -132,7 +113,7 @@ fn update_reserve_settings_tx(
 		reserve_utxo,
 		reserve,
 		ReserveRedeemer::UpdateReserve,
-		reserve_script_cost,
+		&costs.get_one_spend(),
 	)?);
 	{
 		let amount_builder = TransactionOutputBuilder::new()
@@ -156,7 +137,7 @@ fn update_reserve_settings_tx(
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&governance.policy_script,
 		&governance.utxo_id_as_tx_input(),
-		governance_script_cost,
+		&costs.get_mint(&governance.policy_script),
 	)?;
 	tx_builder.add_script_reference_input(
 		&reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
@@ -166,5 +147,5 @@ fn update_reserve_settings_tx(
 		&reserve.auth_policy_version_utxo.to_csl_tx_input(),
 		reserve.scripts.auth_policy.bytes.len(),
 	);
-	tx_builder.balance_update_and_build(ctx)
+	Ok(tx_builder.balance_update_and_build(ctx)?)
 }

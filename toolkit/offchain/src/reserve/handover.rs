@@ -91,7 +91,7 @@ fn build_tx(
 	governance: &GovernanceData,
 	costs: Costs,
 	ctx: &TransactionContext,
-) -> Result<Transaction, JsError> {
+) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
 	let reserve_auth_policy_spend_cost = costs.get_one_spend();
@@ -130,7 +130,7 @@ fn build_tx(
 		&reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.illiquid_circulation_supply_validator.bytes.len(),
 	);
-	tx_builder.balance_update_and_build(ctx)
+	Ok(tx_builder.balance_update_and_build(ctx)?)
 }
 
 // Creates output with reserve token and updated deposit
