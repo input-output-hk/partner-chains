@@ -214,26 +214,30 @@ pub enum Costs {
 }
 
 pub trait CostStore {
-	fn get_mint(&self, script_hash: &cardano_serialization_lib::ScriptHash) -> ExUnits;
+	fn get_mint(&self, script: &PlutusScript) -> ExUnits;
 	fn get_spend(&self, spend_ix: u32) -> ExUnits;
 	fn get_one_spend(&self) -> ExUnits;
 }
 
 impl CostStore for Costs {
-	fn get_mint(&self, script_hash: &cardano_serialization_lib::ScriptHash) -> ExUnits {
+	fn get_mint(&self, script: &PlutusScript) -> ExUnits {
 		match self {
 			Costs::ZeroCosts => zero_ex_units(),
-			Costs::Costs(cost_lookup) => {
-				cost_lookup.mints.get(script_hash).expect("mint address is present").clone()
-			},
+			Costs::Costs(cost_lookup) => cost_lookup
+				.mints
+				.get(&script.csl_script_hash())
+				.expect("should not be called with an unknown script")
+				.clone(),
 		}
 	}
 	fn get_spend(&self, spend_ix: u32) -> ExUnits {
 		match self {
 			Costs::ZeroCosts => zero_ex_units(),
-			Costs::Costs(cost_lookup) => {
-				cost_lookup.spends.get(&spend_ix).expect("spend index is present").clone()
-			},
+			Costs::Costs(cost_lookup) => cost_lookup
+				.spends
+				.get(&spend_ix)
+				.expect("should not be called with an unknown script")
+				.clone(),
 		}
 	}
 	fn get_one_spend(&self) -> ExUnits {
@@ -242,7 +246,9 @@ impl CostStore for Costs {
 			Costs::Costs(cost_lookup) => {
 				match cost_lookup.spends.values().collect::<Vec<_>>()[..] {
 					[x] => x.clone(),
-					_ => panic!("not exactly one spend present"),
+					_ => panic!(
+						"should only be called when exacly one spend is expected to be present"
+					),
 				}
 			},
 		}
@@ -268,10 +274,7 @@ impl Costs {
 		Ok(make_tx(costs)?)
 	}
 
-	async fn from_ogmios<T: Transactions>(
-		tx: &Transaction,
-		client: &T,
-	) -> anyhow::Result<Costs> {
+	async fn from_ogmios<T: Transactions>(tx: &Transaction, client: &T) -> anyhow::Result<Costs> {
 		let evaluate_response = client.evaluate_transaction(&tx.to_bytes()).await?;
 
 		let mut mints = HashMap::new();
@@ -282,7 +285,7 @@ impl Costs {
 					mints.insert(
 						tx.body()
 							.mint()
-							.expect("tx.body.mint() is not empty")
+							.expect("tx.body.mint() should not be empty if we received a 'mint' response from Ogmios")
 							.keys()
 							.get(er.validator.index as usize),
 						ex_units_from_response(er),
