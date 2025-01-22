@@ -60,7 +60,7 @@ codegen-units = 1
 anyhow = "1.0.81"
 async-trait = "0.1"
 assert_cmd = "2.0.14"
-cardano-serialization-lib = { default-features = false, version = "13.2.0" }
+cardano-serialization-lib = { default-features = false, version = "13.2.1" }
 cbor_event = { version = "2.4.0" }
 clap = { version = "4.5.10", features = ["derive"] }
 ed25519-zebra = { version = "4.0.3" }
