@@ -16,7 +16,7 @@
 //!   * Reserve Validator Version Utxo
 //!   * Governance Policy Script
 
-use super::ReserveData;
+use super::{reserve_utxo_input_with_validator_script_reference, ReserveData};
 use crate::reserve::ReserveUtxo;
 use crate::{
 	await_tx::AwaitTx, csl::*, init_governance::get_governance_data,
@@ -128,29 +128,12 @@ fn update_reserve_settings_tx(
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
 	// spend old settings
-	{
-		let mut inputs = TxInputsBuilder::new();
-
-		let witness = PlutusWitness::new_with_ref_without_datum(
-			&PlutusScriptSource::new_ref_input(
-				&reserve.scripts.validator.csl_script_hash(),
-				&reserve.validator_version_utxo.to_csl_tx_input(),
-				&reserve.scripts.validator.language,
-				reserve.scripts.validator.bytes.len(),
-			),
-			&Redeemer::new(
-				&RedeemerTag::new_spend(),
-				// CSL will set redeemer index for the index of script input after sorting transaction inputs
-				&0u32.into(),
-				&ReserveRedeemer::UpdateReserve { governance_version: 1u64 }.into(),
-				reserve_script_cost,
-			),
-		);
-		let amount = reserve_utxo.value.to_csl()?;
-		inputs.add_plutus_script_input(&witness, &reserve_utxo.to_csl_tx_input(), &amount);
-
-		tx_builder.set_inputs(&inputs);
-	}
+	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
+		&reserve_utxo,
+		&reserve,
+		ReserveRedeemer::UpdateReserve { governance_version: 1u64 },
+		&reserve_script_cost,
+	)?);
 	{
 		let amount_builder = TransactionOutputBuilder::new()
 			.with_address(&reserve.scripts.validator.address(ctx.network))
@@ -170,10 +153,9 @@ fn update_reserve_settings_tx(
 		tx_builder.add_output(&a)?;
 	}
 
-	let gov_tx_input = governance.utxo_id_as_tx_input();
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&governance.policy_script,
-		&gov_tx_input,
+		&governance.utxo_id_as_tx_input(),
 		governance_script_cost,
 	)?;
 	tx_builder.add_script_reference_input(
