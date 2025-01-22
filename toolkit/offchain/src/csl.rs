@@ -2,6 +2,7 @@ use crate::plutus_script::PlutusScript;
 use cardano_serialization_lib::*;
 use fraction::{FromPrimitive, Ratio};
 use ogmios_client::query_ledger_state::ReferenceScriptsCosts;
+use ogmios_client::transactions::Transactions;
 use ogmios_client::{
 	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, QueryLedgerState},
 	query_network::QueryNetwork,
@@ -9,6 +10,7 @@ use ogmios_client::{
 	types::{OgmiosUtxo, OgmiosValue},
 };
 use sidechain_domain::{AssetId, MainchainAddressHash, MainchainPrivateKey, NetworkType, UtxoId};
+use std::collections::HashMap;
 
 pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: Language) -> [u8; 28] {
 	// Before hashing the script, we need to prepend with byte denoting the language.
@@ -199,6 +201,102 @@ pub(crate) fn get_validator_budgets(
 
 fn ex_units_from_response(resp: OgmiosEvaluateTransactionResponse) -> ExUnits {
 	ExUnits::new(&resp.budget.memory.into(), &resp.budget.cpu.into())
+}
+
+pub struct CostLookup {
+	mints: HashMap<cardano_serialization_lib::ScriptHash, ExUnits>,
+	spends: HashMap<u32, ExUnits>,
+}
+
+pub enum Costs {
+	Costs(CostLookup),
+	ZeroCosts,
+}
+
+pub trait CostStore {
+	fn get_mint(&self, script_hash: &cardano_serialization_lib::ScriptHash) -> ExUnits;
+	fn get_spend(&self, spend_ix: u32) -> ExUnits;
+	fn get_one_spend(&self) -> ExUnits;
+}
+
+impl CostStore for Costs {
+	fn get_mint(&self, script_hash: &cardano_serialization_lib::ScriptHash) -> ExUnits {
+		match self {
+			Costs::ZeroCosts => zero_ex_units(),
+			Costs::Costs(cost_lookup) => {
+				cost_lookup.mints.get(script_hash).expect("mint address is present").clone()
+			},
+		}
+	}
+	fn get_spend(&self, spend_ix: u32) -> ExUnits {
+		match self {
+			Costs::ZeroCosts => zero_ex_units(),
+			Costs::Costs(cost_lookup) => {
+				cost_lookup.spends.get(&spend_ix).expect("spend index is present").clone()
+			},
+		}
+	}
+	fn get_one_spend(&self) -> ExUnits {
+		match self {
+			Costs::ZeroCosts => zero_ex_units(),
+			Costs::Costs(cost_lookup) => {
+				match cost_lookup.spends.values().collect::<Vec<_>>()[..] {
+					[x] => x.clone(),
+					_ => panic!("not exactly one spend present"),
+				}
+			},
+		}
+	}
+}
+
+impl Costs {
+	pub async fn calculate_costs<T: Transactions, F>(
+		make_tx: F,
+		client: &T,
+	) -> anyhow::Result<Transaction>
+	where
+		F: Fn(Costs) -> Result<Transaction, JsError>,
+	{
+		let tx = make_tx(Costs::ZeroCosts)?;
+		// stage 1
+		let costs = Self::from_ogmios(&tx, client).await?;
+
+		let tx = make_tx(costs)?;
+		// stage 2
+		let costs = Self::from_ogmios(&tx, client).await?;
+
+		Ok(make_tx(costs)?)
+	}
+
+	async fn from_ogmios<T: Transactions>(
+		tx: &Transaction,
+		client: &T,
+	) -> anyhow::Result<Costs> {
+		let evaluate_response = client.evaluate_transaction(&tx.to_bytes()).await?;
+
+		let mut mints = HashMap::new();
+		let mut spends = HashMap::new();
+		for er in evaluate_response {
+			match er.validator.purpose.as_str() {
+				"mint" => {
+					mints.insert(
+						tx.body()
+							.mint()
+							.expect("tx.body.mint() is not empty")
+							.keys()
+							.get(er.validator.index as usize),
+						ex_units_from_response(er),
+					);
+				},
+				"spend" => {
+					spends.insert(er.validator.index, ex_units_from_response(er));
+				},
+				_ => {},
+			}
+		}
+
+		Ok(Costs::Costs(CostLookup { mints, spends }))
+	}
 }
 
 /// Conversion of ogmios-client budget to CSL execution units
@@ -489,7 +587,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 			&validator_source,
 			&Redeemer::new(&RedeemerTag::new_mint(), &0u32.into(), &unit_plutus_data(), ex_units),
 		);
-		mint_builder.add_asset(&mint_witness, &empty_asset_name(), &amount)?;
+		mint_builder.add_asset(&mint_witness, &empty_asset_name(), amount)?;
 		self.set_mint_builder(&mint_builder);
 		Ok(())
 	}
@@ -598,7 +696,7 @@ impl TransactionOutputAmountBuilderExt for TransactionOutputAmountBuilder {
 		ctx: &TransactionContext,
 	) -> Result<Self, JsError> {
 		let min_ada = self.with_coin_and_asset(&0u64.into(), ma).get_minimum_ada(ctx)?;
-		Ok(self.with_coin_and_asset(&min_ada, &ma))
+		Ok(self.with_coin_and_asset(&min_ada, ma))
 	}
 }
 
