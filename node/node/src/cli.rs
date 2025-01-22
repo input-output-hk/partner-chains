@@ -55,7 +55,7 @@ mod registration_signatures_tests {
 
 	#[test]
 	fn registration_signatures() {
-		let mut cmd = Command::cargo_bin("partner-chains-node").unwrap();
+		let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
 		let cmd_result = cmd.args(REGISTRATION_SIGS_CMD.split(' ')).assert().success();
 		let output = std::str::from_utf8(&cmd_result.get_output().stdout).unwrap();
 		let output_json: serde_json::Value = serde_json::from_str(output).unwrap();
