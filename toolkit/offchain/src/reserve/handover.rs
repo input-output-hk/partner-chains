@@ -18,12 +18,12 @@
 //! - Reserve Validator script
 //! - Illiquid Supply Validator script
 
-use super::{ReserveUtxo, TokenAmount};
+use super::{reserve_utxo_input_with_validator_script_reference, ReserveUtxo, TokenAmount};
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
-		get_builder_config, get_validator_budgets, zero_ex_units, AssetIdExt, OgmiosUtxoExt,
-		OgmiosValueExt, ScriptExUnits, TransactionBuilderExt, TransactionContext,
+		get_builder_config, get_validator_budgets, zero_ex_units, AssetIdExt,
+		OgmiosUtxoExt, ScriptExUnits, TransactionBuilderExt, TransactionContext,
 		TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
@@ -117,8 +117,13 @@ fn build_tx(
 		&costs.governance_mint,
 	)?;
 
-	let inputs = reserve_token_input(reserve_utxo, reserve, costs.reserve_auth_policy_spend)?;
-	tx_builder.set_inputs(&inputs);
+	// Spends UTXO with Reserve Auth Policy Token and Reserve (Reward) tokens
+	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
+		&reserve_utxo,
+		&reserve,
+		ReserveRedeemer::Handover { governance_version: 1 },
+		&costs.reserve_auth_policy_spend,
+	)?);
 
 	// burn reserve auth policy token
 	tx_builder.add_mint_script_token_using_reference_script(
@@ -138,34 +143,6 @@ fn build_tx(
 		reserve.scripts.illiquid_circulation_supply_validator.bytes.len(),
 	);
 	tx_builder.balance_update_and_build(ctx)
-}
-
-/// Spends UTXO with Reserve Auth Policy Token and Reserve (Reward) tokens
-fn reserve_token_input(
-	reserve_auth_token_utxo: &OgmiosUtxo,
-	reserve: &ReserveData,
-	cost: ExUnits,
-) -> Result<TxInputsBuilder, JsError> {
-	let mut inputs = TxInputsBuilder::new();
-	let input = reserve_auth_token_utxo.to_csl_tx_input();
-	let amount = reserve_auth_token_utxo.value.to_csl()?;
-
-	let validator_version_utxo_id = reserve.validator_version_utxo.to_csl_tx_input();
-	let validator = &reserve.scripts.validator;
-
-	let redeemer_data = ReserveRedeemer::Handover { governance_version: 1 }.into();
-	let witness = PlutusWitness::new_with_ref_without_datum(
-		&PlutusScriptSource::new_ref_input(
-			&validator.csl_script_hash(),
-			&validator_version_utxo_id,
-			&validator.language,
-			validator.bytes.len(),
-		),
-		&Redeemer::new(&RedeemerTag::new_spend(), &0u32.into(), &redeemer_data, &cost),
-	);
-	inputs.add_plutus_script_input(&witness, &input, &amount);
-
-	Ok(inputs)
 }
 
 // Creates output with reserve token and updated deposit
