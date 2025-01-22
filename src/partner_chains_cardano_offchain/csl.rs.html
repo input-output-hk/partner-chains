@@ -1045,6 +1045,19 @@
 <a href="#1045" id="1045">1045</a>
 <a href="#1046" id="1046">1046</a>
 <a href="#1047" id="1047">1047</a>
+<a href="#1048" id="1048">1048</a>
+<a href="#1049" id="1049">1049</a>
+<a href="#1050" id="1050">1050</a>
+<a href="#1051" id="1051">1051</a>
+<a href="#1052" id="1052">1052</a>
+<a href="#1053" id="1053">1053</a>
+<a href="#1054" id="1054">1054</a>
+<a href="#1055" id="1055">1055</a>
+<a href="#1056" id="1056">1056</a>
+<a href="#1057" id="1057">1057</a>
+<a href="#1058" id="1058">1058</a>
+<a href="#1059" id="1059">1059</a>
+<a href="#1060" id="1060">1060</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>fraction::{FromPrimitive, Ratio};
@@ -1585,8 +1598,21 @@
 			}
 			selected.push(input);
 		}
+
+		<span class="kw">let </span>balanced_transaction =
 		try_balance(<span class="self">self</span>, <span class="kw-2">&amp;</span>selected, ctx)
-			.map_err(|e| JsError::from_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"Could not balance transaction. Usually it means that the payment key does not own UTXO set required to cover transaction outputs and fees or to provide collateral. Cause: {}"</span>, e)))
+			.map_err(|e| JsError::from_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"Could not balance transaction. Usually it means that the payment key does not own UTXO set required to cover transaction outputs and fees or to provide collateral. Cause: {}"</span>, e)))<span class="question-mark">?</span>;
+
+		<span class="macro">debug_assert!</span>(
+			balanced_transaction.body().collateral().is_some(),
+			<span class="string">"BUG: Balanced transaction should have collateral set."
+		</span>);
+		<span class="macro">debug_assert!</span>(
+			balanced_transaction.body().collateral_return().is_some(),
+			<span class="string">"BUG: Balanced transaction should have collateral returned."
+		</span>);
+
+		<span class="prelude-val">Ok</span>(balanced_transaction)
 	}
 }
 
