@@ -10,7 +10,7 @@ use std::collections::HashMap;
 
 use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::csl::{
-	get_builder_config, get_validator_budgets, zero_ex_units, InputsBuilderExt,
+	empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, InputsBuilderExt,
 	TransactionBuilderExt, TransactionContext,
 };
 use crate::init_governance::{self, GovernanceData};
@@ -288,6 +288,7 @@ fn mint_permissioned_candidates_token_tx(
 	{
 		tx_builder.add_mint_one_script_token(
 			&policy,
+			&empty_asset_name(),
 			&permissioned_candidates_policy_redeemer_data(),
 			permissioned_candidates_ex_units,
 		)?;

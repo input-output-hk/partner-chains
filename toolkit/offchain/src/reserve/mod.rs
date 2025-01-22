@@ -6,8 +6,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	ExUnits, JsError, PlutusData, PlutusScriptSource, PlutusWitness, Redeemer, RedeemerTag,
-	TxInputsBuilder,
+	ExUnits, JsError, PlutusScriptSource, PlutusWitness, Redeemer, RedeemerTag, TxInputsBuilder,
 };
 use init::find_script_utxo;
 use ogmios_client::{
@@ -110,9 +109,7 @@ impl ReserveData {
 				if utxo.get_asset_amount(&auth_token_asset_id) != 1i128 {
 					return None;
 				}
-				utxo.clone()
-					.datum
-					.and_then(|d| PlutusData::from_bytes(d.bytes).ok())
+				utxo.get_plutus_data()
 					.and_then(|d| ReserveDatum::try_from(d).ok())
 					.map(|d| (utxo, d))
 			})

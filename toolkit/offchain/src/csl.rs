@@ -222,6 +222,8 @@ pub(crate) trait OgmiosUtxoExt {
 	fn to_domain(&self) -> sidechain_domain::UtxoId;
 
 	fn get_asset_amount(&self, asset: &AssetId) -> i128;
+
+	fn get_plutus_data(&self) -> Option<PlutusData>;
 }
 
 impl OgmiosUtxoExt for OgmiosUtxo {
@@ -258,6 +260,12 @@ impl OgmiosUtxoExt for OgmiosUtxo {
 			.iter()
 			.find(|asset| asset.name == asset_id.asset_name.0.to_vec())
 			.map_or_else(|| 0, |asset| asset.amount)
+	}
+
+	fn get_plutus_data(&self) -> Option<PlutusData> {
+		(self.datum.as_ref())
+			.map(|datum| datum.bytes.clone())
+			.and_then(|bytes| PlutusData::from_bytes(bytes).ok())
 	}
 }
 
@@ -364,6 +372,7 @@ pub(crate) trait TransactionBuilderExt {
 	fn add_mint_one_script_token(
 		&mut self,
 		script: &PlutusScript,
+		asset_name: &AssetName,
 		redeemer_data: &PlutusData,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError>;
@@ -445,6 +454,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 	fn add_mint_one_script_token(
 		&mut self,
 		script: &PlutusScript,
+		asset_name: &AssetName,
 		redeemer_data: &PlutusData,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError> {
@@ -455,7 +465,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 			&validator_source,
 			&Redeemer::new(&RedeemerTag::new_mint(), &0u32.into(), redeemer_data, ex_units),
 		);
-		mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new_i32(1))?;
+		mint_builder.add_asset(&mint_witness, asset_name, &Int::new_i32(1))?;
 		self.set_mint_builder(&mint_builder);
 		Ok(())
 	}
@@ -650,13 +660,20 @@ impl InputsBuilderExt for TxInputsBuilder {
 	}
 }
 
-pub(crate) trait AssetNameExt {
+pub(crate) trait AssetNameExt: Sized {
 	fn to_csl(&self) -> Result<cardano_serialization_lib::AssetName, JsError>;
+	fn from_csl(asset_name: cardano_serialization_lib::AssetName) -> Result<Self, JsError>;
 }
 
 impl AssetNameExt for sidechain_domain::AssetName {
 	fn to_csl(&self) -> Result<cardano_serialization_lib::AssetName, JsError> {
 		cardano_serialization_lib::AssetName::new(self.0.to_vec())
+	}
+	fn from_csl(asset_name: cardano_serialization_lib::AssetName) -> Result<Self, JsError> {
+		let name = asset_name.name().try_into().map_err(|err| {
+			JsError::from_str(&format!("Failed to cast CSL asset name to domain: {err:?}"))
+		})?;
+		Ok(Self(name))
 	}
 }
 
@@ -892,8 +909,8 @@ mod tests {
 #[cfg(test)]
 mod prop_tests {
 	use super::{
-		get_builder_config, unit_plutus_data, zero_ex_units, OgmiosUtxoExt, TransactionBuilderExt,
-		TransactionContext,
+		empty_asset_name, get_builder_config, unit_plutus_data, zero_ex_units, OgmiosUtxoExt,
+		TransactionBuilderExt, TransactionContext,
 	};
 	use crate::test_values::*;
 	use cardano_serialization_lib::{
@@ -920,7 +937,12 @@ mod prop_tests {
 		};
 		let mut tx_builder = TransactionBuilder::new(&get_builder_config(&ctx).unwrap());
 		tx_builder
-			.add_mint_one_script_token(&test_policy(), &unit_plutus_data(), &zero_ex_units())
+			.add_mint_one_script_token(
+				&test_policy(),
+				&empty_asset_name(),
+				&unit_plutus_data(),
+				&zero_ex_units(),
+			)
 			.unwrap();
 		tx_builder
 			.add_output_with_one_script_token(
