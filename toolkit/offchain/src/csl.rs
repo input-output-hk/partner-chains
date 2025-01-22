@@ -222,6 +222,8 @@ pub(crate) trait OgmiosUtxoExt {
 	fn to_domain(&self) -> sidechain_domain::UtxoId;
 
 	fn get_asset_amount(&self, asset: &AssetId) -> i128;
+
+	fn get_plutus_data(&self) -> Option<PlutusData>;
 }
 
 impl OgmiosUtxoExt for OgmiosUtxo {
@@ -258,6 +260,12 @@ impl OgmiosUtxoExt for OgmiosUtxo {
 			.iter()
 			.find(|asset| asset.name == asset_id.asset_name.0.to_vec())
 			.map_or_else(|| 0, |asset| asset.amount)
+	}
+
+	fn get_plutus_data(&self) -> Option<PlutusData> {
+		(self.datum.as_ref())
+			.map(|datum| datum.bytes.clone())
+			.and_then(|bytes| PlutusData::from_bytes(bytes).ok())
 	}
 }
 

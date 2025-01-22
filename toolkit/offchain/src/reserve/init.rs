@@ -17,8 +17,8 @@
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
-		get_builder_config, get_validator_budgets, zero_ex_units, TransactionBuilderExt,
-		TransactionContext, TransactionOutputAmountBuilderExt,
+		get_builder_config, get_validator_budgets, zero_ex_units, OgmiosUtxoExt,
+		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	plutus_script::PlutusScript,
@@ -292,10 +292,7 @@ pub(crate) async fn find_script_utxo<
 	let validator_utxos = client.query_utxos(&[validator_address]).await?;
 	// Decode datum from utxos and check if it contains script id
 	Ok(validator_utxos.into_iter().find(|utxo| {
-		utxo.clone()
-			.datum
-			.map(|d| d.bytes)
-			.and_then(|bytes| PlutusData::from_bytes(bytes).ok())
+		utxo.get_plutus_data()
 			.and_then(decode_version_oracle_validator_datum)
 			.is_some_and(|datum| {
 				datum.script_id == script_id

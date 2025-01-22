@@ -27,7 +27,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	ExUnits, JsError, MultiAsset, PlutusData, Transaction, TransactionBuilder, TransactionOutput,
+	ExUnits, JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
 	TransactionOutputBuilder,
 };
 use ogmios_client::{
@@ -176,14 +176,9 @@ fn validator_output(
 	let amount_builder = TransactionOutputBuilder::new()
 		.with_address(&scripts.validator.address(ctx.network))
 		.with_plutus_data(
-			&PlutusData::from_bytes(
-				current_utxo
-					.datum
-					.clone()
-					.expect("Current UTXO datum was parsed hence it exists")
-					.bytes,
-			)
-			.unwrap(),
+			&current_utxo
+				.get_plutus_data()
+				.expect("Current UTXO datum was parsed hence it exists"),
 		)
 		.next()?;
 	let ma = MultiAsset::new()
