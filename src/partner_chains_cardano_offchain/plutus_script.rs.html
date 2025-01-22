@@ -174,9 +174,16 @@
 <a href="#174" id="174">174</a>
 <a href="#175" id="175">175</a>
 <a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>anyhow::{anyhow, Context};
 <span class="kw">use </span>cardano_serialization_lib::{
-	Address, Language, LanguageKind, NetworkIdKind, PlutusData, ScriptHash,
+	Address, JsError, Language, LanguageKind, NetworkIdKind, PlutusData, ScriptHash,
 };
 <span class="kw">use </span>ogmios_client::types::{OgmiosScript, OgmiosScript::Plutus};
 <span class="kw">use </span>plutus::ToDatum;
@@ -280,6 +287,13 @@
 
 	<span class="kw">pub fn </span>empty_name_asset(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; AssetId {
 		AssetId { policy_id: <span class="self">self</span>.policy_id(), asset_name: AssetName::empty() }
+	}
+
+	<span class="kw">pub fn </span>asset(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		asset_name: cardano_serialization_lib::AssetName,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;AssetId, JsError&gt; {
+		<span class="prelude-val">Ok</span>(AssetId { policy_id: <span class="self">self</span>.policy_id(), asset_name: AssetName::from_csl(asset_name)<span class="question-mark">? </span>})
 	}
 
 	<span class="kw">pub fn </span>to_csl(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; cardano_serialization_lib::PlutusScript {

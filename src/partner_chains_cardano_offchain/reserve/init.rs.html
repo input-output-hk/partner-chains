@@ -522,17 +522,6 @@
 <a href="#522" id="522">522</a>
 <a href="#523" id="523">523</a>
 <a href="#524" id="524">524</a>
-<a href="#525" id="525">525</a>
-<a href="#526" id="526">526</a>
-<a href="#527" id="527">527</a>
-<a href="#528" id="528">528</a>
-<a href="#529" id="529">529</a>
-<a href="#530" id="530">530</a>
-<a href="#531" id="531">531</a>
-<a href="#532" id="532">532</a>
-<a href="#533" id="533">533</a>
-<a href="#534" id="534">534</a>
-<a href="#535" id="535">535</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Initialization of the reserve management is execution of three similar transaction to
 //! initialize three scripts: Rerserve Management Validator, Reserve Management Policy and
 //! Illiquid Circulation Supply Validator.
@@ -552,8 +541,8 @@
 </span><span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
 	csl::{
-		get_builder_config, get_validator_budgets, zero_ex_units, TransactionBuilderExt,
-		TransactionContext, TransactionOutputAmountBuilderExt,
+		get_builder_config, get_validator_budgets, zero_ex_units, MultiAssetExt, OgmiosUtxoExt,
+		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	plutus_script::PlutusScript,
@@ -561,9 +550,8 @@
 };
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
-	AssetName, Assets, BigNum, ConstrPlutusData, ExUnits, Int, JsError, Language, MintBuilder,
-	MintWitness, MultiAsset, PlutusData, PlutusList, PlutusScriptSource, Redeemer, RedeemerTag,
-	ScriptHash, ScriptRef, Transaction, TransactionBuilder, TransactionOutputBuilder,
+	AssetName, BigNum, ConstrPlutusData, ExUnits, JsError, Language, MultiAsset, PlutusData,
+	PlutusList, ScriptHash, ScriptRef, Transaction, TransactionBuilder, TransactionOutputBuilder,
 };
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -709,21 +697,16 @@
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
 	<span class="kw">let </span>applied_script = script.applied_plutus_script(version_oracle)<span class="question-mark">?</span>;
 	{
-		<span class="kw">let </span><span class="kw-2">mut </span>mint_builder = tx_builder.get_mint_builder().unwrap_or(MintBuilder::new());
-		<span class="kw">let </span>mint_witness = MintWitness::new_plutus_script(
-			<span class="kw-2">&amp;</span>PlutusScriptSource::new(<span class="kw-2">&amp;</span>version_oracle.policy.to_csl()),
-			<span class="kw-2">&amp;</span>Redeemer::new(
-				<span class="kw-2">&amp;</span>RedeemerTag::new_mint(),
-				<span class="kw-2">&amp;</span><span class="number">0u32</span>.into(),
-				<span class="kw-2">&amp;</span>PlutusData::new_constr_plutus_data(<span class="kw-2">&amp;</span>ConstrPlutusData::new(
-					<span class="kw-2">&amp;</span>BigNum::one(),
-					<span class="kw-2">&amp;</span>version_oracle_plutus_list(script.id, <span class="kw-2">&amp;</span>applied_script.script_hash()),
-				)),
-				<span class="kw-2">&amp;</span>versioning_script_cost,
-			),
-		);
-		mint_builder.add_asset(<span class="kw-2">&amp;</span>mint_witness, <span class="kw-2">&amp;</span>version_oracle_asset_name(), <span class="kw-2">&amp;</span>Int::new_i32(<span class="number">1</span>))<span class="question-mark">?</span>;
-		tx_builder.set_mint_builder(<span class="kw-2">&amp;</span>mint_builder);
+		<span class="kw">let </span>witness = PlutusData::new_constr_plutus_data(<span class="kw-2">&amp;</span>ConstrPlutusData::new(
+			<span class="kw-2">&amp;</span>BigNum::one(),
+			<span class="kw-2">&amp;</span>version_oracle_plutus_list(script.id, <span class="kw-2">&amp;</span>applied_script.script_hash()),
+		));
+		tx_builder.add_mint_one_script_token(
+			<span class="kw-2">&amp;</span>version_oracle.policy,
+			<span class="kw-2">&amp;</span>version_oracle_asset_name(),
+			<span class="kw-2">&amp;</span>witness,
+			<span class="kw-2">&amp;</span>versioning_script_cost,
+		)<span class="question-mark">?</span>;
 	}
 	{
 		<span class="kw">let </span>script_ref = ScriptRef::new_plutus_script(<span class="kw-2">&amp;</span>applied_script.to_csl());
@@ -735,10 +718,8 @@
 			)))
 			.with_script_ref(<span class="kw-2">&amp;</span>script_ref)
 			.next()<span class="question-mark">?</span>;
-		<span class="kw">let </span><span class="kw-2">mut </span>ma = MultiAsset::new();
-		<span class="kw">let </span><span class="kw-2">mut </span>assets = Assets::new();
-		assets.insert(<span class="kw-2">&amp;</span>version_oracle_asset_name(), <span class="kw-2">&amp;</span><span class="number">1u64</span>.into());
-		ma.insert(<span class="kw-2">&amp;</span>version_oracle.policy.csl_script_hash(), <span class="kw-2">&amp;</span>assets);
+		<span class="kw">let </span>ma = MultiAsset::new()
+			.with_asset_amount(<span class="kw-2">&amp;</span>version_oracle.policy.asset(version_oracle_asset_name())<span class="question-mark">?</span>, <span class="number">1u64</span>)<span class="question-mark">?</span>;
 		<span class="kw">let </span>output = amount_builder.with_minimum_ada_and_asset(<span class="kw-2">&amp;</span>ma, ctx)<span class="question-mark">?</span>.build()<span class="question-mark">?</span>;
 		tx_builder.add_output(<span class="kw-2">&amp;</span>output)<span class="question-mark">?</span>;
 	}
@@ -827,10 +808,7 @@
 	<span class="kw">let </span>validator_utxos = client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="comment">// Decode datum from utxos and check if it contains script id
 	</span><span class="prelude-val">Ok</span>(validator_utxos.into_iter().find(|utxo| {
-		utxo.clone()
-			.datum
-			.map(|d| d.bytes)
-			.and_then(|bytes| PlutusData::from_bytes(bytes).ok())
+		utxo.get_plutus_data()
 			.and_then(decode_version_oracle_validator_datum)
 			.is_some_and(|datum| {
 				datum.script_id == script_id

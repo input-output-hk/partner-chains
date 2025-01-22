@@ -187,11 +187,6 @@
 <a href="#187" id="187">187</a>
 <a href="#188" id="188">188</a>
 <a href="#189" id="189">189</a>
-<a href="#190" id="190">190</a>
-<a href="#191" id="191">191</a>
-<a href="#192" id="192">192</a>
-<a href="#193" id="193">193</a>
-<a href="#194" id="194">194</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Specification for deposit transaction:
 //!
@@ -221,7 +216,7 @@
 };
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
-	ExUnits, JsError, MultiAsset, PlutusData, Transaction, TransactionBuilder, TransactionOutput,
+	ExUnits, JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
 	TransactionOutputBuilder,
 };
 <span class="kw">use </span>ogmios_client::{
@@ -370,14 +365,9 @@
 	<span class="kw">let </span>amount_builder = TransactionOutputBuilder::new()
 		.with_address(<span class="kw-2">&amp;</span>scripts.validator.address(ctx.network))
 		.with_plutus_data(
-			<span class="kw-2">&amp;</span>PlutusData::from_bytes(
-				current_utxo
-					.datum
-					.clone()
-					.expect(<span class="string">"Current UTXO datum was parsed hence it exists"</span>)
-					.bytes,
-			)
-			.unwrap(),
+			<span class="kw-2">&amp;</span>current_utxo
+				.get_plutus_data()
+				.expect(<span class="string">"Current UTXO datum was parsed hence it exists"</span>),
 		)
 		.next()<span class="question-mark">?</span>;
 	<span class="kw">let </span>ma = MultiAsset::new()

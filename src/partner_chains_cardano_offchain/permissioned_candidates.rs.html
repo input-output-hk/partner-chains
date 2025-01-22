@@ -611,6 +611,7 @@
 <a href="#611" id="611">611</a>
 <a href="#612" id="612">612</a>
 <a href="#613" id="613">613</a>
+<a href="#614" id="614">614</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Permissioned candidates are stored on chain in an UTXO at the Permissioned Candidates Validator address.
 //! There should be at most one UTXO at the validator address and it should contain the permissioned candidates list.
@@ -623,7 +624,7 @@
 
 <span class="kw">use </span><span class="kw">crate</span>::await_tx::{AwaitTx, FixedDelayRetries};
 <span class="kw">use </span><span class="kw">crate</span>::csl::{
-	get_builder_config, get_validator_budgets, zero_ex_units, InputsBuilderExt,
+	empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, InputsBuilderExt,
 	TransactionBuilderExt, TransactionContext,
 };
 <span class="kw">use </span><span class="kw">crate</span>::init_governance::{<span class="self">self</span>, GovernanceData};
@@ -901,6 +902,7 @@
 	</span>{
 		tx_builder.add_mint_one_script_token(
 			<span class="kw-2">&amp;</span>policy,
+			<span class="kw-2">&amp;</span>empty_asset_name(),
 			<span class="kw-2">&amp;</span>permissioned_candidates_policy_redeemer_data(),
 			permissioned_candidates_ex_units,
 		)<span class="question-mark">?</span>;

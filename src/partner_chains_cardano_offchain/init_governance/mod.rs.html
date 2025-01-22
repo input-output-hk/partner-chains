@@ -220,12 +220,6 @@
 <a href="#220" id="220">220</a>
 <a href="#221" id="221">221</a>
 <a href="#222" id="222">222</a>
-<a href="#223" id="223">223</a>
-<a href="#224" id="224">224</a>
-<a href="#225" id="225">225</a>
-<a href="#226" id="226">226</a>
-<a href="#227" id="227">227</a>
-<a href="#228" id="228">228</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::OgmiosUtxoExt;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script;
 <span class="kw">use </span><span class="kw">crate</span>::scripts_data;
@@ -386,17 +380,11 @@
 	utxos
 		.into_iter()
 		.find(|utxo| {
-			<span class="kw">let </span>correct_datum = utxo
-				.datum
-				.as_ref()
-				.and_then(|datum| {
-					PlutusData::from_bytes(datum.bytes.clone()).ok().and_then(|plutus_data| {
-						VersionOracleDatum::try_from(plutus_data)
-							.ok()
-							.map(|data| data.version_oracle == <span class="number">32</span>)
-					})
-				})
-				.unwrap_or(<span class="bool-val">false</span>);
+			<span class="kw">let </span>correct_datum =
+				utxo.get_plutus_data()
+					.and_then(|plutus_data| VersionOracleDatum::try_from(plutus_data).ok())
+					.map(|data| data.version_oracle == <span class="number">32</span>)
+					.unwrap_or(<span class="bool-val">false</span>);
 
 			<span class="kw">let </span>contains_version_oracle_token =
 				utxo.value.native_tokens.contains_key(<span class="kw-2">&amp;</span>version_oracle_policy.script_hash());

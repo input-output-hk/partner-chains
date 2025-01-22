@@ -83,22 +83,6 @@
 <a href="#83" id="83">83</a>
 <a href="#84" id="84">84</a>
 <a href="#85" id="85">85</a>
-<a href="#86" id="86">86</a>
-<a href="#87" id="87">87</a>
-<a href="#88" id="88">88</a>
-<a href="#89" id="89">89</a>
-<a href="#90" id="90">90</a>
-<a href="#91" id="91">91</a>
-<a href="#92" id="92">92</a>
-<a href="#93" id="93">93</a>
-<a href="#94" id="94">94</a>
-<a href="#95" id="95">95</a>
-<a href="#96" id="96">96</a>
-<a href="#97" id="97">97</a>
-<a href="#98" id="98">98</a>
-<a href="#99" id="99">99</a>
-<a href="#100" id="100">100</a>
-<a href="#101" id="101">101</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
 	csl::<span class="kw-2">*</span>,
 	plutus_script::PlutusScript,
@@ -122,16 +106,12 @@
 	<span class="kw">let </span>config = <span class="kw">crate</span>::csl::get_builder_config(tx_context)<span class="question-mark">?</span>;
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>config);
 
-	tx_builder.set_mint_builder(<span class="kw-2">&amp;</span>{
-		<span class="kw">let </span><span class="kw-2">mut </span>mint_builder = MintBuilder::new();
-
-		mint_builder.add_asset(
-			<span class="kw-2">&amp;</span>mint_witness(<span class="kw-2">&amp;</span>version_oracle.policy, <span class="kw-2">&amp;</span>multi_sig_policy, <span class="kw-2">&amp;</span>ex_units)<span class="question-mark">?</span>,
-			<span class="kw-2">&amp;</span>version_oracle_asset_name(),
-			<span class="kw-2">&amp;</span>Int::new_i32(<span class="number">1</span>),
-		)<span class="question-mark">?</span>;
-		mint_builder
-	});
+	tx_builder.add_mint_one_script_token(
+		<span class="kw-2">&amp;</span>version_oracle.policy,
+		<span class="kw-2">&amp;</span>version_oracle_asset_name(),
+		<span class="kw-2">&amp;</span>mint_redeemer(<span class="kw-2">&amp;</span>multi_sig_policy),
+		<span class="kw-2">&amp;</span>ex_units,
+	)<span class="question-mark">?</span>;
 
 	tx_builder.add_output(<span class="kw-2">&amp;</span>version_oracle_datum_output(
 		version_oracle.validator.clone(),
@@ -152,27 +132,15 @@
 	AssetName::new(<span class="string">b"Version oracle"</span>.to_vec()).expect(<span class="string">"Constant asset name should work"</span>)
 }
 
-<span class="kw">fn </span>mint_witness(
-	version_oracle_policy: <span class="kw-2">&amp;</span>PlutusScript,
-	multi_sig_policy: <span class="kw-2">&amp;</span>PlutusScript,
-	ex_units: <span class="kw-2">&amp;</span>ExUnits,
-) -&gt; anyhow::Result&lt;MintWitness&gt; {
-	<span class="prelude-val">Ok</span>(MintWitness::new_plutus_script(
-		<span class="kw-2">&amp;</span>PlutusScriptSource::new(<span class="kw-2">&amp;</span>version_oracle_policy.to_csl()),
-		<span class="kw-2">&amp;</span>Redeemer::new(
-			<span class="kw-2">&amp;</span>RedeemerTag::new_mint(),
-			<span class="kw-2">&amp;</span><span class="number">0u32</span>.into(),
-			<span class="kw-2">&amp;</span>PlutusData::new_constr_plutus_data(<span class="kw-2">&amp;</span>ConstrPlutusData::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span>{
-				<span class="kw">let </span><span class="kw-2">mut </span>list = PlutusList::new();
-				list.add(<span class="kw-2">&amp;</span>PlutusData::new_integer(
-					<span class="kw-2">&amp;</span>(raw_scripts::ScriptId::GovernancePolicy <span class="kw">as </span>u32).into(),
-				));
-				list.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(multi_sig_policy.script_hash().to_vec()));
-				list
-			})),
-			ex_units,
-		),
-	))
+<span class="kw">fn </span>mint_redeemer(multi_sig_policy: <span class="kw-2">&amp;</span>PlutusScript) -&gt; PlutusData {
+	PlutusData::new_constr_plutus_data(<span class="kw-2">&amp;</span>ConstrPlutusData::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span>{
+		<span class="kw">let </span><span class="kw-2">mut </span>list = PlutusList::new();
+		list.add(<span class="kw-2">&amp;</span>PlutusData::new_integer(
+			<span class="kw-2">&amp;</span>(raw_scripts::ScriptId::GovernancePolicy <span class="kw">as </span>u32).into(),
+		));
+		list.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(multi_sig_policy.script_hash().to_vec()));
+		list
+	}))
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>version_oracle_datum_output(
@@ -193,10 +161,10 @@
 		.with_plutus_data(<span class="kw-2">&amp;</span>datum)
 		.with_script_ref(<span class="kw-2">&amp;</span>ScriptRef::new_plutus_script(<span class="kw-2">&amp;</span>multi_sig_policy.to_csl()))
 		.next()<span class="question-mark">?</span>;
-	<span class="kw">let </span><span class="kw-2">mut </span>ma = MultiAsset::new();
-	<span class="kw">let </span><span class="kw-2">mut </span>assets = Assets::new();
-	assets.insert(<span class="kw-2">&amp;</span>version_oracle_asset_name(), <span class="kw-2">&amp;</span><span class="number">1u64</span>.into());
-	ma.insert(<span class="kw-2">&amp;</span>version_oracle_policy.policy_id().<span class="number">0</span>.into(), <span class="kw-2">&amp;</span>assets);
+
+	<span class="kw">let </span>ma = MultiAsset::new()
+		.with_asset_amount(<span class="kw-2">&amp;</span>version_oracle_policy.asset(version_oracle_asset_name())<span class="question-mark">?</span>, <span class="number">1u64</span>)<span class="question-mark">?</span>;
+
 	<span class="kw">let </span>output = amount_builder.with_minimum_ada_and_asset(<span class="kw-2">&amp;</span>ma, tx_context)<span class="question-mark">?</span>.build()<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(output)
 }

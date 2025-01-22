@@ -316,6 +316,11 @@
 <a href="#316" id="316">316</a>
 <a href="#317" id="317">317</a>
 <a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! D-parameter is stored on chain in an UTXO at the D-parameter validator address.
 //! There should be at most one UTXO at the validator address and it should contain the D-parameter.
 //! This UTXO should have 1 token of the D-parameter policy with an empty asset name.
@@ -324,8 +329,8 @@
 
 </span><span class="kw">use </span><span class="kw">crate</span>::await_tx::{AwaitTx, FixedDelayRetries};
 <span class="kw">use </span><span class="kw">crate</span>::csl::{
-	get_builder_config, get_validator_budgets, unit_plutus_data, zero_ex_units, InputsBuilderExt,
-	ScriptExUnits, TransactionBuilderExt, TransactionContext,
+	empty_asset_name, get_builder_config, get_validator_budgets, unit_plutus_data, zero_ex_units,
+	InputsBuilderExt, ScriptExUnits, TransactionBuilderExt, TransactionContext,
 };
 <span class="kw">use </span><span class="kw">crate</span>::init_governance::{<span class="self">self</span>, GovernanceData};
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
@@ -574,7 +579,12 @@
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Transaction, JsError&gt; {
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
 	<span class="comment">// The essence of transaction: mint D-Param token and set output with it, mint a governance token.
-	</span>tx_builder.add_mint_one_script_token(policy, <span class="kw-2">&amp;</span>unit_plutus_data(), d_param_policy_ex_units)<span class="question-mark">?</span>;
+	</span>tx_builder.add_mint_one_script_token(
+		policy,
+		<span class="kw-2">&amp;</span>empty_asset_name(),
+		<span class="kw-2">&amp;</span>unit_plutus_data(),
+		d_param_policy_ex_units,
+	)<span class="question-mark">?</span>;
 	tx_builder.add_output_with_one_script_token(
 		validator,
 		policy,

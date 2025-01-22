@@ -148,9 +148,6 @@
 <a href="#148" id="148">148</a>
 <a href="#149" id="149">149</a>
 <a href="#150" id="150">150</a>
-<a href="#151" id="151">151</a>
-<a href="#152" id="152">152</a>
-<a href="#153" id="153">153</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! All smart-contracts related to Rewards Token Reserve Management
 
 </span><span class="kw">use crate</span>::{
@@ -159,8 +156,7 @@
 };
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
-	ExUnits, JsError, PlutusData, PlutusScriptSource, PlutusWitness, Redeemer, RedeemerTag,
-	TxInputsBuilder,
+	ExUnits, JsError, PlutusScriptSource, PlutusWitness, Redeemer, RedeemerTag, TxInputsBuilder,
 };
 <span class="kw">use </span>init::find_script_utxo;
 <span class="kw">use </span>ogmios_client::{
@@ -263,9 +259,7 @@
 				<span class="kw">if </span>utxo.get_asset_amount(<span class="kw-2">&amp;</span>auth_token_asset_id) != <span class="number">1i128 </span>{
 					<span class="kw">return </span><span class="prelude-val">None</span>;
 				}
-				utxo.clone()
-					.datum
-					.and_then(|d| PlutusData::from_bytes(d.bytes).ok())
+				utxo.get_plutus_data()
 					.and_then(|d| ReserveDatum::try_from(d).ok())
 					.map(|d| (utxo, d))
 			})

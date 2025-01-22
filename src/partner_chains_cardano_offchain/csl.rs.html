@@ -1058,6 +1058,28 @@
 <a href="#1058" id="1058">1058</a>
 <a href="#1059" id="1059">1059</a>
 <a href="#1060" id="1060">1060</a>
+<a href="#1061" id="1061">1061</a>
+<a href="#1062" id="1062">1062</a>
+<a href="#1063" id="1063">1063</a>
+<a href="#1064" id="1064">1064</a>
+<a href="#1065" id="1065">1065</a>
+<a href="#1066" id="1066">1066</a>
+<a href="#1067" id="1067">1067</a>
+<a href="#1068" id="1068">1068</a>
+<a href="#1069" id="1069">1069</a>
+<a href="#1070" id="1070">1070</a>
+<a href="#1071" id="1071">1071</a>
+<a href="#1072" id="1072">1072</a>
+<a href="#1073" id="1073">1073</a>
+<a href="#1074" id="1074">1074</a>
+<a href="#1075" id="1075">1075</a>
+<a href="#1076" id="1076">1076</a>
+<a href="#1077" id="1077">1077</a>
+<a href="#1078" id="1078">1078</a>
+<a href="#1079" id="1079">1079</a>
+<a href="#1080" id="1080">1080</a>
+<a href="#1081" id="1081">1081</a>
+<a href="#1082" id="1082">1082</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>fraction::{FromPrimitive, Ratio};
@@ -1282,6 +1304,8 @@
 	<span class="kw">fn </span>to_domain(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; sidechain_domain::UtxoId;
 
 	<span class="kw">fn </span>get_asset_amount(<span class="kw-2">&amp;</span><span class="self">self</span>, asset: <span class="kw-2">&amp;</span>AssetId) -&gt; i128;
+
+	<span class="kw">fn </span>get_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;PlutusData&gt;;
 }
 
 <span class="kw">impl </span>OgmiosUtxoExt <span class="kw">for </span>OgmiosUtxo {
@@ -1318,6 +1342,12 @@
 			.iter()
 			.find(|asset| asset.name == asset_id.asset_name.<span class="number">0</span>.to_vec())
 			.map_or_else(|| <span class="number">0</span>, |asset| asset.amount)
+	}
+
+	<span class="kw">fn </span>get_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;PlutusData&gt; {
+		(<span class="self">self</span>.datum.as_ref())
+			.map(|datum| datum.bytes.clone())
+			.and_then(|bytes| PlutusData::from_bytes(bytes).ok())
 	}
 }
 
@@ -1424,6 +1454,7 @@
 	</span><span class="kw">fn </span>add_mint_one_script_token(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
 		script: <span class="kw-2">&amp;</span>PlutusScript,
+		asset_name: <span class="kw-2">&amp;</span>AssetName,
 		redeemer_data: <span class="kw-2">&amp;</span>PlutusData,
 		ex_units: <span class="kw-2">&amp;</span>ExUnits,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt;;
@@ -1505,6 +1536,7 @@
 	<span class="kw">fn </span>add_mint_one_script_token(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
 		script: <span class="kw-2">&amp;</span>PlutusScript,
+		asset_name: <span class="kw-2">&amp;</span>AssetName,
 		redeemer_data: <span class="kw-2">&amp;</span>PlutusData,
 		ex_units: <span class="kw-2">&amp;</span>ExUnits,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), JsError&gt; {
@@ -1515,7 +1547,7 @@
 			<span class="kw-2">&amp;</span>validator_source,
 			<span class="kw-2">&amp;</span>Redeemer::new(<span class="kw-2">&amp;</span>RedeemerTag::new_mint(), <span class="kw-2">&amp;</span><span class="number">0u32</span>.into(), redeemer_data, ex_units),
 		);
-		mint_builder.add_asset(<span class="kw-2">&amp;</span>mint_witness, <span class="kw-2">&amp;</span>empty_asset_name(), <span class="kw-2">&amp;</span>Int::new_i32(<span class="number">1</span>))<span class="question-mark">?</span>;
+		mint_builder.add_asset(<span class="kw-2">&amp;</span>mint_witness, asset_name, <span class="kw-2">&amp;</span>Int::new_i32(<span class="number">1</span>))<span class="question-mark">?</span>;
 		<span class="self">self</span>.set_mint_builder(<span class="kw-2">&amp;</span>mint_builder);
 		<span class="prelude-val">Ok</span>(())
 	}
@@ -1710,13 +1742,20 @@
 	}
 }
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">trait </span>AssetNameExt {
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">trait </span>AssetNameExt: Sized {
 	<span class="kw">fn </span>to_csl(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;cardano_serialization_lib::AssetName, JsError&gt;;
+	<span class="kw">fn </span>from_csl(asset_name: cardano_serialization_lib::AssetName) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, JsError&gt;;
 }
 
 <span class="kw">impl </span>AssetNameExt <span class="kw">for </span>sidechain_domain::AssetName {
 	<span class="kw">fn </span>to_csl(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;cardano_serialization_lib::AssetName, JsError&gt; {
 		cardano_serialization_lib::AssetName::new(<span class="self">self</span>.<span class="number">0</span>.to_vec())
+	}
+	<span class="kw">fn </span>from_csl(asset_name: cardano_serialization_lib::AssetName) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, JsError&gt; {
+		<span class="kw">let </span>name = asset_name.name().try_into().map_err(|err| {
+			JsError::from_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"Failed to cast CSL asset name to domain: {err:?}"</span>))
+		})<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(<span class="self">Self</span>(name))
 	}
 }
 
@@ -1952,8 +1991,8 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>prop_tests {
 	<span class="kw">use super</span>::{
-		get_builder_config, unit_plutus_data, zero_ex_units, OgmiosUtxoExt, TransactionBuilderExt,
-		TransactionContext,
+		empty_asset_name, get_builder_config, unit_plutus_data, zero_ex_units, OgmiosUtxoExt,
+		TransactionBuilderExt, TransactionContext,
 	};
 	<span class="kw">use </span><span class="kw">crate</span>::test_values::<span class="kw-2">*</span>;
 	<span class="kw">use </span>cardano_serialization_lib::{
@@ -1980,7 +2019,12 @@
 		};
 		<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(<span class="kw-2">&amp;</span>ctx).unwrap());
 		tx_builder
-			.add_mint_one_script_token(<span class="kw-2">&amp;</span>test_policy(), <span class="kw-2">&amp;</span>unit_plutus_data(), <span class="kw-2">&amp;</span>zero_ex_units())
+			.add_mint_one_script_token(
+				<span class="kw-2">&amp;</span>test_policy(),
+				<span class="kw-2">&amp;</span>empty_asset_name(),
+				<span class="kw-2">&amp;</span>unit_plutus_data(),
+				<span class="kw-2">&amp;</span>zero_ex_units(),
+			)
 			.unwrap();
 		tx_builder
 			.add_output_with_one_script_token(
