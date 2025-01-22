@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context};
 use cardano_serialization_lib::{
-	Address, Language, LanguageKind, NetworkIdKind, PlutusData, ScriptHash,
+	Address, JsError, Language, LanguageKind, NetworkIdKind, PlutusData, ScriptHash,
 };
 use ogmios_client::types::{OgmiosScript, OgmiosScript::Plutus};
 use plutus::ToDatum;
@@ -104,6 +104,13 @@ impl PlutusScript {
 
 	pub fn empty_name_asset(&self) -> AssetId {
 		AssetId { policy_id: self.policy_id(), asset_name: AssetName::empty() }
+	}
+
+	pub fn asset(
+		&self,
+		asset_name: cardano_serialization_lib::AssetName,
+	) -> Result<AssetId, JsError> {
+		Ok(AssetId { policy_id: self.policy_id(), asset_name: AssetName::from_csl(asset_name)? })
 	}
 
 	pub fn to_csl(&self) -> cardano_serialization_lib::PlutusScript {

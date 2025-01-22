@@ -17,7 +17,7 @@
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
-		get_builder_config, get_validator_budgets, zero_ex_units, OgmiosUtxoExt,
+		get_builder_config, get_validator_budgets, zero_ex_units, MultiAssetExt, OgmiosUtxoExt,
 		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
@@ -26,9 +26,9 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	AssetName, Assets, BigNum, ConstrPlutusData, ExUnits, Int, JsError, Language, MintBuilder,
-	MintWitness, MultiAsset, PlutusData, PlutusList, PlutusScriptSource, Redeemer, RedeemerTag,
-	ScriptHash, ScriptRef, Transaction, TransactionBuilder, TransactionOutputBuilder,
+	AssetName, BigNum, ConstrPlutusData, ExUnits, Int, JsError, Language, MintBuilder, MintWitness,
+	MultiAsset, PlutusData, PlutusList, PlutusScriptSource, Redeemer, RedeemerTag, ScriptHash,
+	ScriptRef, Transaction, TransactionBuilder, TransactionOutputBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -200,10 +200,8 @@ fn init_script_tx(
 			)))
 			.with_script_ref(&script_ref)
 			.next()?;
-		let mut ma = MultiAsset::new();
-		let mut assets = Assets::new();
-		assets.insert(&version_oracle_asset_name(), &1u64.into());
-		ma.insert(&version_oracle.policy.csl_script_hash(), &assets);
+		let ma = MultiAsset::new()
+			.with_asset_amount(&version_oracle.policy.asset(version_oracle_asset_name())?, 1u64)?;
 		let output = amount_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()?;
 		tx_builder.add_output(&output)?;
 	}

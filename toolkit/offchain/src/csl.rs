@@ -658,13 +658,20 @@ impl InputsBuilderExt for TxInputsBuilder {
 	}
 }
 
-pub(crate) trait AssetNameExt {
+pub(crate) trait AssetNameExt: Sized {
 	fn to_csl(&self) -> Result<cardano_serialization_lib::AssetName, JsError>;
+	fn from_csl(asset_name: cardano_serialization_lib::AssetName) -> Result<Self, JsError>;
 }
 
 impl AssetNameExt for sidechain_domain::AssetName {
 	fn to_csl(&self) -> Result<cardano_serialization_lib::AssetName, JsError> {
 		cardano_serialization_lib::AssetName::new(self.0.to_vec())
+	}
+	fn from_csl(asset_name: cardano_serialization_lib::AssetName) -> Result<Self, JsError> {
+		let name = asset_name.name().try_into().map_err(|err| {
+			JsError::from_str(&format!("Failed to cast CSL asset name to domain: {err:?}"))
+		})?;
+		Ok(Self(name))
 	}
 }
 

@@ -92,10 +92,10 @@ pub(crate) fn version_oracle_datum_output(
 		.with_plutus_data(&datum)
 		.with_script_ref(&ScriptRef::new_plutus_script(&multi_sig_policy.to_csl()))
 		.next()?;
-	let mut ma = MultiAsset::new();
-	let mut assets = Assets::new();
-	assets.insert(&version_oracle_asset_name(), &1u64.into());
-	ma.insert(&version_oracle_policy.policy_id().0.into(), &assets);
+
+	let ma = MultiAsset::new()
+		.with_asset_amount(&version_oracle_policy.asset(version_oracle_asset_name())?, 1u64)?;
+
 	let output = amount_builder.with_minimum_ada_and_asset(&ma, tx_context)?.build()?;
 	Ok(output)
 }
