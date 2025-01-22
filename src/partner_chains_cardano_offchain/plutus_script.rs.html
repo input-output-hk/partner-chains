@@ -170,18 +170,7 @@
 <a href="#170" id="170">170</a>
 <a href="#171" id="171">171</a>
 <a href="#172" id="172">172</a>
-<a href="#173" id="173">173</a>
-<a href="#174" id="174">174</a>
-<a href="#175" id="175">175</a>
-<a href="#176" id="176">176</a>
-<a href="#177" id="177">177</a>
-<a href="#178" id="178">178</a>
-<a href="#179" id="179">179</a>
-<a href="#180" id="180">180</a>
-<a href="#181" id="181">181</a>
-<a href="#182" id="182">182</a>
-<a href="#183" id="183">183</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>anyhow::{anyhow, Context};
+</pre></div><pre class="rust"><code><span class="kw">use </span>anyhow::{anyhow, Context, Error};
 <span class="kw">use </span>cardano_serialization_lib::{
 	Address, JsError, Language, LanguageKind, NetworkIdKind, PlutusData, ScriptHash,
 };
@@ -215,18 +204,7 @@
 
 	<span class="kw">pub fn </span>from_ogmios(ogmios_script: OgmiosScript) -&gt; anyhow::Result&lt;<span class="self">Self</span>&gt; {
 		<span class="kw">if let </span>Plutus(script) = ogmios_script {
-			<span class="kw">let </span>language_kind = <span class="kw">match </span>script.language.as_str() {
-				<span class="string">"plutus:v1" </span>=&gt; Language::new_plutus_v1(),
-				<span class="string">"plutus:v2" </span>=&gt; Language::new_plutus_v2(),
-				<span class="string">"plutus:v3" </span>=&gt; Language::new_plutus_v3(),
-				<span class="kw">_ </span>=&gt; {
-					<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(
-						<span class="string">"Unsupported Plutus language version: {}"</span>,
-						script.language
-					));
-				},
-			};
-			<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ bytes: script.cbor, language: language_kind })
+			script.try_into()
 		} <span class="kw">else </span>{
 			<span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Expected Plutus script, got something else."</span>))
 		}
@@ -312,29 +290,29 @@
 }
 
 <span class="kw">impl </span>TryFrom&lt;ogmios_client::types::PlutusScript&gt; <span class="kw">for </span>PlutusScript {
-	<span class="kw">type </span>Error = ogmios_client::types::PlutusScript;
+	<span class="kw">type </span>Error = Error;
 
 	<span class="kw">fn </span>try_from(script: ogmios_client::types::PlutusScript) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
 		<span class="kw">let </span>language = <span class="kw">match </span>script.language.as_str() {
 			<span class="string">"plutus:v1" </span>=&gt; Language::new_plutus_v1(),
 			<span class="string">"plutus:v2" </span>=&gt; Language::new_plutus_v2(),
 			<span class="string">"plutus:v3" </span>=&gt; Language::new_plutus_v3(),
-			<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(script),
+			<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Unsupported Plutus language version: {}"</span>, script.language)),
 		};
 		<span class="prelude-val">Ok</span>(<span class="self">Self</span>::from_cbor(<span class="kw-2">&amp;</span>script.cbor, language))
 	}
 }
 
-<span class="kw">impl </span>Into&lt;ogmios_client::types::PlutusScript&gt; <span class="kw">for </span>PlutusScript {
-	<span class="kw">fn </span>into(<span class="self">self</span>) -&gt; ogmios_client::types::PlutusScript {
+<span class="kw">impl </span>From&lt;PlutusScript&gt; <span class="kw">for </span>ogmios_client::types::PlutusScript {
+	<span class="kw">fn </span>from(val: PlutusScript) -&gt; <span class="self">Self </span>{
 		ogmios_client::types::PlutusScript {
-			language: <span class="kw">match </span><span class="self">self</span>.language.kind() {
+			language: <span class="kw">match </span>val.language.kind() {
 				LanguageKind::PlutusV1 =&gt; <span class="string">"plutus:v1"</span>,
 				LanguageKind::PlutusV2 =&gt; <span class="string">"plutus:v2"</span>,
 				LanguageKind::PlutusV3 =&gt; <span class="string">"plutus:v3"</span>,
 			}
 			.to_string(),
-			cbor: <span class="self">self</span>.bytes,
+			cbor: val.bytes,
 		}
 	}
 }
