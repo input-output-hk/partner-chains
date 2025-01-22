@@ -538,8 +538,21 @@ impl TransactionBuilderExt for TransactionBuilder {
 			}
 			selected.push(input);
 		}
+
+		let balanced_transaction =
 		try_balance(self, &selected, ctx)
-			.map_err(|e| JsError::from_str(&format!("Could not balance transaction. Usually it means that the payment key does not own UTXO set required to cover transaction outputs and fees or to provide collateral. Cause: {}", e)))
+			.map_err(|e| JsError::from_str(&format!("Could not balance transaction. Usually it means that the payment key does not own UTXO set required to cover transaction outputs and fees or to provide collateral. Cause: {}", e)))?;
+
+		debug_assert!(
+			balanced_transaction.body().collateral().is_some(),
+			"BUG: Balanced transaction should have collateral set."
+		);
+		debug_assert!(
+			balanced_transaction.body().collateral_return().is_some(),
+			"BUG: Balanced transaction should have collateral returned."
+		);
+
+		Ok(balanced_transaction)
 	}
 }
 
