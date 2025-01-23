@@ -64,8 +64,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.sha }}
       - name: Build and Upload for Linux
         uses: ./.github/actions/artifacts/build-pc-artifacts
         with:
@@ -82,8 +80,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.sha }}
       - name: Build and Upload for macOS x86_64
         uses: ./.github/actions/artifacts/build-pc-artifacts
         with:
@@ -100,8 +96,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.sha }}
       - name: Build and Upload for macOS arm64
         uses: ./.github/actions/artifacts/build-pc-artifacts
         with:
@@ -122,8 +116,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.sha }}
       - name: Upload Artifacts to S3
         uses: ./.github/actions/artifacts/upload-to-s3
         with:
@@ -142,8 +134,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.sha }}
       - name: Download Artifacts from S3
         uses: ./.github/actions/artifacts/download-from-s3
         with:
