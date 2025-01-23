@@ -11,33 +11,33 @@ on:
         description: "partner-chains release tag"
         required: true
         type: string
-      no-release:
-        description: "Skip Release and GHCR steps"
-        required: false
-        type: boolean
-        default: false
-      no-deploy:
-        description: "Skip deploy steps"
-        required: false
-        type: boolean
-        default: false
-      no-tests:
-        description: "Skip test steps"
-        required: false
-        type: boolean
-        default: false
-      no-wipe:
-        description: "Skip chain wipe"
+      no-build:
+        description: "Skip build and use previously artifacts built in a past run"
         required: false
         type: boolean
         default: false
       no-public:
-        description: "Skip the final publish step"
+        description: "Skip steps to publish public release and public GHCR image"
+        required: false
+        type: boolean
+        default: true
+      no-release:
+        description: "Skip creating draft release page"
         required: false
         type: boolean
         default: false
-      no-build:
-        description: "Skip build and use previously built artifacts in S3"
+      no-deploy:
+        description: "Skip deployment to staging environment"
+        required: false
+        type: boolean
+        default: false
+      no-wipe:
+        description: "Skip staging environment chain wipe and keep volumes"
+        required: false
+        type: boolean
+        default: false
+      no-tests:
+        description: "Skip all test steps against staging environment"
         required: false
         type: boolean
         default: false
