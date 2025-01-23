@@ -166,6 +166,7 @@ jobs:
           fi
 
   build-and-publish-ecr:
+    if: ${{ github.event.inputs.no-build != 'true' }}
     permissions:
       id-token: write
       contents: write
@@ -239,8 +240,8 @@ jobs:
       id-token: write
       contents: write
     needs:
-      - build-and-publish-ecr
       - upload-chain-specs
+      - build-and-publish-ecr
     runs-on: eks
     steps:
       - name: Checkout
