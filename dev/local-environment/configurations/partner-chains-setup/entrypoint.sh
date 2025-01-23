@@ -33,6 +33,7 @@ if [ $? -eq 0 ]; then
    echo "Successfully initialized governance authority!"
 else
     echo "Failed to initialize governance authority!"
+    exit 1
 fi
 
 echo "Generating addresses.json file..."
@@ -69,6 +70,7 @@ if [ $? -eq 0 ]; then
     echo "Successfully inserted D-parameter (P = 3, R = 2)!"
 else
     echo "Couldn't insert D-parameter..."
+    exit 1
 fi
 
 # sidechain.vkey:aura.vkey:grandpa.vkey
@@ -97,6 +99,7 @@ if [ $? -eq 0 ]; then
     echo "Permissioned candidates Alice and Bob inserted successfully!"
 else
     echo "Permission candidates Alice and Bob failed to be added..."
+    exit 1
 fi
 
 echo "Inserting registered candidate Dave..."
@@ -136,6 +139,7 @@ if [ $? -eq 0 ]; then
     echo "Registered candidate Dave inserted successfully!"
 else
     echo "Registration for Dave failed."
+    exit 1
 fi
 
 echo "Generating chain-spec.json file for Partnerchain Nodes..."
@@ -230,4 +234,3 @@ echo "DParam is now active!"
 touch /shared/2-epochs.ready
 
 tail -f /dev/null
-'
