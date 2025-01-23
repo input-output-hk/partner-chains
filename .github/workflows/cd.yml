@@ -151,7 +151,9 @@ jobs:
     permissions:
       id-token: write
       contents: write
-    if: ${{ needs.upload-to-s3.result == 'success' || needs.download-from-s3.result == 'success' }}
+    if: >
+      (needs.upload-to-s3.result == 'success' || needs.upload-to-s3.result == 'skipped') &&
+      (needs.download-from-s3.result == 'success' || needs.download-from-s3.result == 'skipped')
     steps:
       - name: Artifacts Ready
         run: |
