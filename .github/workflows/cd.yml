@@ -123,7 +123,7 @@ jobs:
           bucket-name: ${{ secrets.AWS_CD_ARTIFACT_S3_BUCKET }}
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
-          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_S3_ROLE_ARN_SECRET }}
 
   download-from-s3:
     if: ${{ github.event.inputs.no-build == 'true' }}
@@ -141,7 +141,7 @@ jobs:
           bucket-name: ${{ secrets.AWS_CD_ARTIFACT_S3_BUCKET }}
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
-          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_S3_ROLE_ARN_SECRET }}
 
   artifacts-ready:
     needs:
