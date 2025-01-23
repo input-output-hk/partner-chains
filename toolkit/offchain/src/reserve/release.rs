@@ -23,7 +23,7 @@ use super::{reserve_utxo_input_with_validator_script_reference, ReserveData, Tok
 use crate::{await_tx::AwaitTx, csl::*, plutus_script::PlutusScript, reserve::ReserveUtxo};
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	ExUnits, Int, MultiAsset, PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
+	Int, MultiAsset, PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::*,
@@ -57,37 +57,23 @@ pub async fn release_reserve_funds<
 	let ReserveUtxo { reserve_utxo, reserve_settings } =
 		reserve_data.get_reserve_utxo(&ctx, client).await?;
 
-	let tx = reserve_release_tx(
-		&ctx,
-		&reserve_data,
-		&reserve_utxo,
-		&reserve_settings,
-		&reference_utxo,
-		token.amount,
-		tip.slot,
-		ExUnits::new(&0u64.into(), &0u64.into()),
-		ExUnits::new(&0u64.into(), &0u64.into()),
-	)?;
-	let costs = client.evaluate_transaction(&tx.to_bytes()).await?;
-	let ScriptExUnits { mint_ex_units, spend_ex_units } = get_validator_budgets(costs);
-	let [mint_cost] = &mint_ex_units[..] else {
-		return Err(anyhow!("Error retrieving witness costs: mint cost data missing."));
-	};
-	let [spend_cost] = &spend_ex_units[..] else {
-		return Err(anyhow!("Error retrieving witness costs: spend cost data missing."));
-	};
+	let tx = Costs::calculate_costs(
+		|costs| {
+			reserve_release_tx(
+				&ctx,
+				&reserve_data,
+				&reserve_utxo,
+				&reserve_settings,
+				&reference_utxo,
+				token.amount,
+				tip.slot,
+				costs,
+			)
+		},
+		client,
+	)
+	.await?;
 
-	let tx = reserve_release_tx(
-		&ctx,
-		&reserve_data,
-		&reserve_utxo,
-		&reserve_settings,
-		&reference_utxo,
-		token.amount,
-		tip.slot,
-		mint_cost.clone(),
-		spend_cost.clone(),
-	)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
 
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
@@ -112,8 +98,7 @@ fn reserve_release_tx(
 	reference_utxo: &OgmiosUtxo,
 	cumulative_total_transfer: u64,
 	latest_slot: u64,
-	mint_cost: ExUnits,
-	reserve_auth_script_cost: ExUnits,
+	costs: Costs,
 ) -> anyhow::Result<Transaction> {
 	let token = previous_reserve_datum.immutable_settings.token.clone();
 	let stats = previous_reserve_datum.stats.clone();
@@ -141,19 +126,20 @@ fn reserve_release_tx(
 
 	// Mint v-function tokens in the number equal to the *total* number of tokens transfered.
 	// This serves as a validation of the v-function value.
+	let v_function = v_function_from_utxo(reference_utxo)?;
 	tx_builder.add_mint_script_token_using_reference_script(
-		&v_function_from_utxo(reference_utxo)?,
+		&v_function,
 		&reference_utxo.to_csl_tx_input(),
 		&Int::new(&cumulative_total_transfer.into()),
-		&mint_cost,
+		&costs.get_mint(&v_function),
 	)?;
 
 	// Remove tokens from the reserve
 	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
-		&previous_reserve_utxo,
-		&reserve_data,
+		previous_reserve_utxo,
+		reserve_data,
 		ReserveRedeemer::ReleaseFromReserve,
-		&reserve_auth_script_cost,
+		&costs.get_one_spend(),
 	)?);
 
 	// Transfer released tokens to the illiquid supply
@@ -164,7 +150,7 @@ fn reserve_release_tx(
 			)
 			.with_plutus_data(&PlutusData::new_empty_constr_plutus_data(&0u64.into()))
 			.next()?
-			.with_minimum_ada_and_asset(&token.to_multi_asset(amount_to_transfer)?, &ctx)?
+			.with_minimum_ada_and_asset(&token.to_multi_asset(amount_to_transfer)?, ctx)?
 			.build()?
 	})?;
 
@@ -179,7 +165,7 @@ fn reserve_release_tx(
 			.with_minimum_ada_and_asset(
 				&MultiAsset::from_ogmios_utxo(previous_reserve_utxo)?
 					.with_asset_amount(&token, left_in_reserve)?,
-				&ctx,
+				ctx,
 			)?
 			.build()?
 	})?;
@@ -201,7 +187,7 @@ fn v_function_from_utxo(utxo: &OgmiosUtxo) -> anyhow::Result<PlutusScript> {
 
 #[cfg(test)]
 mod tests {
-	use super::{empty_asset_name, reserve_release_tx, AssetNameExt, TransactionContext};
+	use super::{empty_asset_name, reserve_release_tx, AssetNameExt, Costs, TransactionContext};
 	use crate::{
 		plutus_script::PlutusScript,
 		reserve::{release::OgmiosUtxoExt, ReserveData},
@@ -209,7 +195,7 @@ mod tests {
 		test_values::protocol_parameters,
 	};
 	use cardano_serialization_lib::{
-		ExUnits, Int, Language, NetworkIdKind, PolicyID, PrivateKey, Transaction,
+		Int, Language, NetworkIdKind, PolicyID, PrivateKey, Transaction,
 	};
 	use hex_literal::hex;
 	use ogmios_client::types::{Asset, OgmiosScript, OgmiosTx, OgmiosUtxo, OgmiosValue};
@@ -404,8 +390,7 @@ mod tests {
 			&reference_utxo(),
 			20,
 			0,
-			ExUnits::new(&0u64.into(), &0u64.into()),
-			ExUnits::new(&0u64.into(), &0u64.into()),
+			Costs::ZeroCosts,
 		)
 		.unwrap()
 	}

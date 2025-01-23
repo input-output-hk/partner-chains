@@ -17,8 +17,8 @@
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
-		get_builder_config, get_validator_budgets, zero_ex_units, MultiAssetExt, OgmiosUtxoExt,
-		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
+		get_builder_config, CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt,
+		TransactionContext, TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	plutus_script::PlutusScript,
@@ -26,20 +26,19 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	AssetName, BigNum, ConstrPlutusData, ExUnits, JsError, Language, MultiAsset, PlutusData,
-	PlutusList, ScriptHash, ScriptRef, Transaction, TransactionBuilder, TransactionOutputBuilder,
+	AssetName, BigNum, ConstrPlutusData, JsError, Language, MultiAsset, PlutusData, PlutusList,
+	ScriptRef, Transaction, TransactionBuilder, TransactionOutputBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
-	transactions::{OgmiosEvaluateTransactionResponse, Transactions},
+	transactions::Transactions,
 	types::OgmiosUtxo,
 };
 use raw_scripts::{
 	ScriptId, ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, RESERVE_AUTH_POLICY, RESERVE_VALIDATOR,
 };
 use sidechain_domain::{McTxHash, UtxoId};
-use std::collections::HashMap;
 
 pub async fn init_reserve_management<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
@@ -118,31 +117,12 @@ async fn initialize_script<
 		return Ok(None);
 	}
 
-	let tx_to_evaluate = init_script_tx(
-		&script,
-		&governance,
-		zero_ex_units(),
-		&version_oracle,
-		zero_ex_units(),
-		&ctx,
-	)?;
-	let evaluate_response = client.evaluate_transaction(&tx_to_evaluate.to_bytes()).await?;
+	let tx = Costs::calculate_costs(
+		|costs| init_script_tx(&script, &governance, &version_oracle, costs, &ctx),
+		client,
+	)
+	.await?;
 
-	let (version_oracle_ex_units, governance_ex_units) = match_costs(
-		&tx_to_evaluate,
-		&version_oracle.policy.csl_script_hash(),
-		&governance.policy_script_hash(),
-		evaluate_response,
-	)?;
-
-	let tx = init_script_tx(
-		&script,
-		&governance,
-		governance_ex_units,
-		&version_oracle,
-		version_oracle_ex_units,
-		&ctx,
-	)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow!(
@@ -165,11 +145,10 @@ async fn initialize_script<
 fn init_script_tx(
 	script: &ScriptData,
 	governance: &GovernanceData,
-	governance_script_cost: ExUnits,
 	version_oracle: &VersionOracleData,
-	versioning_script_cost: ExUnits,
+	costs: Costs,
 	ctx: &TransactionContext,
-) -> Result<Transaction, JsError> {
+) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	let applied_script = script.applied_plutus_script(version_oracle)?;
 	{
@@ -181,7 +160,7 @@ fn init_script_tx(
 			&version_oracle.policy,
 			&version_oracle_asset_name(),
 			&witness,
-			&versioning_script_cost,
+			&costs.get_mint(&version_oracle.policy),
 		)?;
 	}
 	{
@@ -204,11 +183,11 @@ fn init_script_tx(
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&governance.policy_script,
 		&gov_tx_input,
-		&governance_script_cost,
+		&costs.get_mint(&governance.policy_script),
 	)?;
 
 	tx_builder.add_script_reference_input(&gov_tx_input, governance.policy_script.bytes.len());
-	tx_builder.balance_update_and_build(ctx)
+	Ok(tx_builder.balance_update_and_build(ctx)?)
 }
 
 fn version_oracle_asset_name() -> AssetName {
@@ -220,39 +199,6 @@ fn version_oracle_plutus_list(script_id: u32, script_hash: &[u8]) -> PlutusList 
 	list.add(&PlutusData::new_integer(&script_id.into()));
 	list.add(&PlutusData::new_bytes(script_hash.to_vec()));
 	list
-}
-
-fn match_costs(
-	evaluated_transaction: &Transaction,
-	version_oracle_policy: &ScriptHash,
-	governance_policy: &ScriptHash,
-	evaluate_response: Vec<OgmiosEvaluateTransactionResponse>,
-) -> Result<(ExUnits, ExUnits), anyhow::Error> {
-	let mint_keys = evaluated_transaction
-		.body()
-		.mint()
-		.expect("Every Init Reserve Management transaction should have two mints")
-		.keys();
-	let script_to_index: HashMap<ScriptHash, usize> =
-		vec![(mint_keys.get(0), 0), (mint_keys.get(1), 1)].into_iter().collect();
-	let mint_ex_units = get_validator_budgets(evaluate_response).mint_ex_units;
-	if mint_ex_units.len() == 2 {
-		let version_policy_idx = *script_to_index
-			.get(version_oracle_policy)
-			.expect("Version Oracle Policy script is present in transaction mints");
-		let version_oracle_ex_units = mint_ex_units
-			.get(version_policy_idx)
-			.expect("mint_ex_units have two items")
-			.clone();
-		let gov_policy_idx = *script_to_index
-			.get(governance_policy)
-			.expect("Governance Policy script is present in transaction mints");
-		let governance_ex_units =
-			mint_ex_units.get(gov_policy_idx).expect("mint_ex_units have two items").clone();
-		Ok((version_oracle_ex_units, governance_ex_units))
-	} else {
-		Err(anyhow!("Could not build transaction to submit, evaluate response has wrong number of mint keys."))
-	}
 }
 
 // There exist UTXO at Version Oracle Validator with Datum that contains
@@ -311,7 +257,7 @@ fn decode_version_oracle_validator_datum(data: PlutusData) -> Option<VersionOrac
 mod tests {
 	use super::{init_script_tx, ScriptData};
 	use crate::{
-		csl::{unit_plutus_data, OgmiosUtxoExt, TransactionContext},
+		csl::{unit_plutus_data, Costs, OgmiosUtxoExt, TransactionContext},
 		init_governance::GovernanceData,
 		plutus_script::PlutusScript,
 		scripts_data::{self, VersionOracleData},
@@ -465,9 +411,8 @@ mod tests {
 		init_script_tx(
 			&test_initialized_script(),
 			&test_governance_data(),
-			governance_script_cost(),
 			&version_oracle_data(),
-			versioning_script_cost(),
+			test_costs(),
 			&test_transaction_context(),
 		)
 		.unwrap()
@@ -520,5 +465,17 @@ mod tests {
 
 	fn versioning_script_cost() -> ExUnits {
 		ExUnits::new(&300u64.into(), &400u64.into())
+	}
+
+	fn test_costs() -> Costs {
+		Costs::new(
+			vec![
+				(test_governance_script().csl_script_hash(), governance_script_cost()),
+				(version_oracle_policy_csl_script_hash(), versioning_script_cost()),
+			]
+			.into_iter()
+			.collect(),
+			std::collections::HashMap::new(),
+		)
 	}
 }
