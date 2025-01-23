@@ -6728,6 +6728,7 @@ dependencies = [
  "log",
  "log4rs",
  "parity-scale-codec",
+ "partner-chains-cli",
  "partner-chains-smart-contracts-commands",
  "plutus",
  "sc-cli",

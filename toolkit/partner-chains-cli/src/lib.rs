@@ -27,11 +27,10 @@ use log4rs::{
 	config::Appender,
 };
 
-#[derive(Debug, Parser)]
+#[derive(Clone, Debug, Parser)]
 #[command(
     after_long_help = HELP_EXAMPLES,
 )]
-
 pub enum Command {
 	/// This wizard generates the keys required for operating a partner-chains node, stores them in the keystore directory, and prints the public keys and keystore location.
 	GenerateKeys(generate_keys::GenerateKeysCmd),
@@ -59,7 +58,7 @@ pub trait CmdRun {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()>;
 }
 
-fn main() -> anyhow::Result<()> {
+pub fn run(command: Command) -> anyhow::Result<()> {
 	let log_config = log4rs::config::Config::builder()
 		.appender(Appender::builder().build("stdout", Box::new(ConsoleAppender::builder().build())))
 		.appender(
@@ -73,10 +72,8 @@ fn main() -> anyhow::Result<()> {
 				.build("ogmios_client::jsonrpsee", log::LevelFilter::Debug),
 		)
 		.build(log4rs::config::Root::builder().appender("stdout").build(log::LevelFilter::Info))?;
-
 	log4rs::init_config(log_config)?;
-	let args = Command::parse();
-	match args {
+	match command {
 		Command::GenerateKeys(cmd) => cmd.run(&DefaultCmdRunContext)?,
 		Command::PrepareConfiguration(cmd) => cmd.run(&DefaultCmdRunContext)?,
 		Command::CreateChainSpec(cmd) => cmd.run(&DefaultCmdRunContext)?,

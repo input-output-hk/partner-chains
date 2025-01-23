@@ -222,5 +222,6 @@ sp-partner-chains-consensus-aura = { path = "toolkit/primitives/consensus/aura",
 pallet-partner-chains-session = { path = "toolkit/pallets/partner-chains-session", default-features = false }
 pallet-session-runtime-stub = { path = "toolkit/pallets/pallet-session-runtime-stub", default-features = false }
 partner-chains-cardano-offchain = { path = "toolkit/offchain", default-features = false }
+partner-chains-cli = { path = "toolkit/partner-chains-cli", default-features = false }
 partner-chains-plutus-data = { path = "toolkit/primitives/plutus-data", default-features = false }
 partner-chains-smart-contracts-commands = { path = "toolkit/cli/smart-contracts-commands", default-features = false }

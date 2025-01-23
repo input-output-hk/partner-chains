@@ -11,25 +11,20 @@ use sp_core::{ed25519, Pair};
 #[cfg(test)]
 mod tests;
 
-#[derive(Debug, clap::Parser)]
+#[derive(Clone, Debug, clap::Parser)]
 pub struct GenerateKeysCmd {}
 
 #[derive(Debug)]
 pub struct GenerateKeysConfig {
 	pub chain_name: String,
 	pub substrate_node_base_path: String,
-	pub node_executable: String,
 }
 impl GenerateKeysConfig {
 	pub fn load<C: IOContext>(context: &C) -> Self {
-		// ETCM-7825: hardcoded node executable
-		let node_executable = config_fields::NODE_EXECUTABLE
-			.save_if_empty(config_fields::NODE_EXECUTABLE_DEFAULT.to_string(), context);
 		Self {
 			chain_name: DEFAULT_CHAIN_NAME.into(),
 			substrate_node_base_path: config_fields::SUBSTRATE_NODE_DATA_BASE_PATH
 				.load_or_prompt_and_save(context),
-			node_executable,
 		}
 	}
 	fn keystore_path(&self) -> String {
@@ -74,16 +69,6 @@ impl CmdRun for GenerateKeysCmd {
 
 		Ok(())
 	}
-}
-
-pub fn verify_executable<C: IOContext>(
-	GenerateKeysConfig { node_executable, .. }: &GenerateKeysConfig,
-	context: &C,
-) -> anyhow::Result<()> {
-	if !context.file_exists(node_executable) {
-		return Err(anyhow!("Partner Chains Node executable file ({node_executable}) is missing"));
-	}
-	Ok(())
 }
 
 pub fn set_dummy_env_vars<C: IOContext>(context: &C) {
@@ -177,9 +162,10 @@ pub fn generate_network_key<C: IOContext>(
 }
 
 fn run_generate_network_key<C: IOContext>(
-	GenerateKeysConfig { substrate_node_base_path, node_executable, .. }: &GenerateKeysConfig,
+	GenerateKeysConfig { substrate_node_base_path, .. }: &GenerateKeysConfig,
 	context: &C,
 ) -> anyhow::Result<()> {
+	let node_executable = context.current_executable()?;
 	context.run_command(&format!(
 		"{node_executable} key generate-node-key --base-path {substrate_node_base_path}"
 	))?;
@@ -214,10 +200,11 @@ pub fn generate_keys<C: IOContext>(
 
 pub fn store_keys<C: IOContext>(
 	context: &C,
-	GenerateKeysConfig { chain_name, substrate_node_base_path: base_path, node_executable }: &GenerateKeysConfig,
+	GenerateKeysConfig { chain_name, substrate_node_base_path: base_path }: &GenerateKeysConfig,
 	key_def: &KeyDefinition,
 	KeyGenerationOutput { secret_phrase, public_key }: &KeyGenerationOutput,
 ) -> anyhow::Result<()> {
+	let node_executable = context.current_executable()?;
 	let KeyDefinition { scheme, key_type, name } = key_def;
 	context.eprint(&format!("💾 Inserting {name} ({scheme}) key"));
 	let cmd = format!("{node_executable} key insert --base-path {base_path} --scheme {scheme} --key-type {key_type} --suri '{secret_phrase}'");
@@ -233,7 +220,7 @@ pub fn generate_or_load_key<C: IOContext>(
 	context: &C,
 	key_def: &KeyDefinition,
 ) -> anyhow::Result<String> {
-	let GenerateKeysConfig { node_executable, .. } = config;
+	let node_executable = context.current_executable()?;
 	let keystore_path = config.keystore_path();
 	let existing_keys = context.list_directory(&keystore_path)?.unwrap_or_default();
 
@@ -242,7 +229,7 @@ pub fn generate_or_load_key<C: IOContext>(
 			&format!("A {} key already exists in store: {key} - overwrite it?", key_def.name),
 			false,
 		) {
-			let new_key = generate_keys(context, node_executable, key_def)?;
+			let new_key = generate_keys(context, &node_executable, key_def)?;
 			store_keys(context, config, key_def, &new_key)?;
 
 			let old_key_path = format!("{keystore_path}/{}{key}", key_def.key_type_hex());
@@ -255,7 +242,7 @@ pub fn generate_or_load_key<C: IOContext>(
 			Ok(format!("0x{key}"))
 		}
 	} else {
-		let new_key = generate_keys(context, node_executable, key_def)?;
+		let new_key = generate_keys(context, &node_executable, key_def)?;
 		store_keys(context, config, key_def, &new_key)?;
 
 		Ok(new_key.public_key)

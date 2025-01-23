@@ -17,7 +17,7 @@ use sidechain_domain::{NetworkType, SidechainPublicKey, UtxoId};
 use sp_core::bytes::from_hex;
 use sp_core::{ecdsa, Pair};
 
-#[derive(Debug, clap::Parser)]
+#[derive(Clone, Debug, clap::Parser)]
 pub struct Register1Cmd {}
 
 impl CmdRun for Register1Cmd {

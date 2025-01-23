@@ -1,4 +1,3 @@
-use crate::config::config_fields::{NODE_EXECUTABLE, NODE_EXECUTABLE_DEFAULT};
 use crate::config::ConfigFieldDefinition;
 use crate::io::IOContext;
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
@@ -11,7 +10,7 @@ use sidechain_domain::UtxoId;
 #[cfg(test)]
 mod tests;
 
-#[derive(Debug, clap::Parser)]
+#[derive(Clone, Debug, clap::Parser)]
 pub struct CreateChainSpecCmd;
 
 const SESSION_INITIAL_VALIDATORS_PATH: &str =
@@ -80,8 +79,7 @@ impl CreateChainSpecCmd {
 		context: &C,
 		config: &CreateChainSpecConfig,
 	) -> anyhow::Result<String> {
-		let node_executable =
-			NODE_EXECUTABLE.save_if_empty(NODE_EXECUTABLE_DEFAULT.to_string(), context);
+		let node_executable = context.current_executable()?;
 		context.set_env_var("GENESIS_UTXO", &config.genesis_utxo.to_string());
 		context.set_env_var(
 			"COMMITTEE_CANDIDATE_ADDRESS",

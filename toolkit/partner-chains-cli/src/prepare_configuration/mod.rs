@@ -18,7 +18,7 @@ use std::str::FromStr;
 use std::vec;
 use thiserror::Error;
 
-#[derive(Debug, clap::Parser)]
+#[derive(Clone, Debug, clap::Parser)]
 pub struct PrepareConfigurationCmd {}
 
 impl CmdRun for PrepareConfigurationCmd {
