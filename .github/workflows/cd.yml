@@ -153,8 +153,13 @@ jobs:
       contents: write
     if: ${{ needs.upload-to-s3.result == 'success' || needs.download-from-s3.result == 'success' }}
     steps:
-      - name: Artifacts are Ready
-        run: echo "Artifacts are ready for use."
+      - name: Artifacts Ready
+        run: |
+          if [[ "${{ needs.upload-to-s3.result }}" == "success" ]]; then
+            echo "Artifacts have been compiled and uploaded to S3"
+          elif [[ "${{ needs.download-from-s3.result }}" == "success" ]]; then
+            echo "Previously built artifacts were downloaded from S3."
+          fi
 
   build-and-publish-ecr:
     permissions:
