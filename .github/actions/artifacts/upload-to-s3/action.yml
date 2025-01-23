@@ -28,9 +28,8 @@ runs:
         ARTIFACTS_DIR="artifacts"
         S3_BUCKET_NAME="${{ inputs.bucket-name }}"
         S3_UPLOAD_PATH="artifacts/${{ inputs.sha }}"
-
+    
         echo "Uploading artifacts to S3 at path: s3://$S3_BUCKET_NAME/$S3_UPLOAD_PATH/"
-        for artifact in $ARTIFACTS_DIR/*; do
-          aws s3 cp "$artifact" "s3://$S3_BUCKET_NAME/$S3_UPLOAD_PATH/$(basename "$artifact")"
-          echo "Uploaded $artifact to s3://$S3_BUCKET_NAME/$S3_UPLOAD_PATH/"
-        done
+        aws s3 sync "$ARTIFACTS_DIR" "s3://$S3_BUCKET_NAME/$S3_UPLOAD_PATH/"
+        echo "Artifacts successfully uploaded to s3://$S3_BUCKET_NAME/$S3_UPLOAD_PATH/"
+
