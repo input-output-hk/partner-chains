@@ -1181,6 +1181,13 @@
 <a href="#1181" id="1181">1181</a>
 <a href="#1182" id="1182">1182</a>
 <a href="#1183" id="1183">1183</a>
+<a href="#1184" id="1184">1184</a>
+<a href="#1185" id="1185">1185</a>
+<a href="#1186" id="1186">1186</a>
+<a href="#1187" id="1187">1187</a>
+<a href="#1188" id="1188">1188</a>
+<a href="#1189" id="1189">1189</a>
+<a href="#1190" id="1190">1190</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>fraction::{FromPrimitive, Ratio};
@@ -1439,12 +1446,19 @@
 }
 
 <span class="kw">impl </span>Costs {
+	<span class="kw">pub fn </span>new(
+		mints: HashMap&lt;cardano_serialization_lib::ScriptHash, ExUnits&gt;,
+		spends: HashMap&lt;u32, ExUnits&gt;,
+	) -&gt; Costs {
+		Costs::Costs(CostLookup { mints, spends })
+	}
+
 	<span class="kw">pub async fn </span>calculate_costs&lt;T: Transactions, F&gt;(
 		make_tx: F,
 		client: <span class="kw-2">&amp;</span>T,
 	) -&gt; anyhow::Result&lt;Transaction&gt;
 	<span class="kw">where
-		</span>F: Fn(Costs) -&gt; <span class="prelude-ty">Result</span>&lt;Transaction, JsError&gt;,
+		</span>F: Fn(Costs) -&gt; anyhow::Result&lt;Transaction&gt;,
 	{
 		<span class="kw">let </span>tx = make_tx(Costs::ZeroCosts)<span class="question-mark">?</span>;
 		<span class="comment">// stage 1
@@ -1454,7 +1468,7 @@
 		<span class="comment">// stage 2
 		</span><span class="kw">let </span>costs = <span class="self">Self</span>::from_ogmios(<span class="kw-2">&amp;</span>tx, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
-		<span class="prelude-val">Ok</span>(make_tx(costs)<span class="question-mark">?</span>)
+		make_tx(costs)
 	}
 
 	<span class="kw">async fn </span>from_ogmios&lt;T: Transactions&gt;(tx: <span class="kw-2">&amp;</span>Transaction, client: <span class="kw-2">&amp;</span>T) -&gt; anyhow::Result&lt;Costs&gt; {

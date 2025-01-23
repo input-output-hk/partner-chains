@@ -141,61 +141,6 @@
 <a href="#141" id="141">141</a>
 <a href="#142" id="142">142</a>
 <a href="#143" id="143">143</a>
-<a href="#144" id="144">144</a>
-<a href="#145" id="145">145</a>
-<a href="#146" id="146">146</a>
-<a href="#147" id="147">147</a>
-<a href="#148" id="148">148</a>
-<a href="#149" id="149">149</a>
-<a href="#150" id="150">150</a>
-<a href="#151" id="151">151</a>
-<a href="#152" id="152">152</a>
-<a href="#153" id="153">153</a>
-<a href="#154" id="154">154</a>
-<a href="#155" id="155">155</a>
-<a href="#156" id="156">156</a>
-<a href="#157" id="157">157</a>
-<a href="#158" id="158">158</a>
-<a href="#159" id="159">159</a>
-<a href="#160" id="160">160</a>
-<a href="#161" id="161">161</a>
-<a href="#162" id="162">162</a>
-<a href="#163" id="163">163</a>
-<a href="#164" id="164">164</a>
-<a href="#165" id="165">165</a>
-<a href="#166" id="166">166</a>
-<a href="#167" id="167">167</a>
-<a href="#168" id="168">168</a>
-<a href="#169" id="169">169</a>
-<a href="#170" id="170">170</a>
-<a href="#171" id="171">171</a>
-<a href="#172" id="172">172</a>
-<a href="#173" id="173">173</a>
-<a href="#174" id="174">174</a>
-<a href="#175" id="175">175</a>
-<a href="#176" id="176">176</a>
-<a href="#177" id="177">177</a>
-<a href="#178" id="178">178</a>
-<a href="#179" id="179">179</a>
-<a href="#180" id="180">180</a>
-<a href="#181" id="181">181</a>
-<a href="#182" id="182">182</a>
-<a href="#183" id="183">183</a>
-<a href="#184" id="184">184</a>
-<a href="#185" id="185">185</a>
-<a href="#186" id="186">186</a>
-<a href="#187" id="187">187</a>
-<a href="#188" id="188">188</a>
-<a href="#189" id="189">189</a>
-<a href="#190" id="190">190</a>
-<a href="#191" id="191">191</a>
-<a href="#192" id="192">192</a>
-<a href="#193" id="193">193</a>
-<a href="#194" id="194">194</a>
-<a href="#195" id="195">195</a>
-<a href="#196" id="196">196</a>
-<a href="#197" id="197">197</a>
-<a href="#198" id="198">198</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Transaction that creates a new reserve.
 //!
 //! Specification:
@@ -217,27 +162,25 @@
 <span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
 	csl::{
-		get_builder_config, get_validator_budgets, zero_ex_units, MultiAssetExt, OgmiosUtxoExt,
-		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
+		get_builder_config, CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt,
+		TransactionContext, TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	scripts_data::ReserveScripts,
 };
-<span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
-	ExUnits, JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
+	JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
 	TransactionOutputBuilder,
 };
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
-	transactions::{OgmiosEvaluateTransactionResponse, Transactions},
+	transactions::Transactions,
 };
 <span class="kw">use </span>partner_chains_plutus_data::reserve::{
 	ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats,
 };
 <span class="kw">use </span>sidechain_domain::{AssetId, McTxHash, PolicyId, UtxoId};
-<span class="kw">use </span>std::collections::HashMap;
 
 <span class="kw">pub async fn </span>create_reserve_utxo&lt;
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
@@ -253,31 +196,12 @@
 	<span class="kw">let </span>governance = get_governance_data(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>reserve = ReserveData::get(genesis_utxo, <span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>tx_to_evaluate = create_reserve_tx(
-		<span class="kw-2">&amp;</span>parameters,
-		<span class="kw-2">&amp;</span>reserve,
-		<span class="kw-2">&amp;</span>governance,
-		zero_ex_units(),
-		zero_ex_units(),
-		<span class="kw-2">&amp;</span>ctx,
-	)<span class="question-mark">?</span>;
-	<span class="kw">let </span>evaluate_response = client.evaluate_transaction(<span class="kw-2">&amp;</span>tx_to_evaluate.to_bytes()).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>tx = Costs::calculate_costs(
+		|costs| create_reserve_tx(<span class="kw-2">&amp;</span>parameters, <span class="kw-2">&amp;</span>reserve, <span class="kw-2">&amp;</span>governance, costs, <span class="kw-2">&amp;</span>ctx),
+		client,
+	)
+	.<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>(reserve_auth_ex_units, governance_ex_units) = match_costs(
-		<span class="kw-2">&amp;</span>tx_to_evaluate,
-		<span class="kw-2">&amp;</span>reserve.scripts.auth_policy.csl_script_hash(),
-		<span class="kw-2">&amp;</span>governance.policy_script_hash(),
-		evaluate_response,
-	)<span class="question-mark">?</span>;
-
-	<span class="kw">let </span>tx = create_reserve_tx(
-		<span class="kw-2">&amp;</span>parameters,
-		<span class="kw-2">&amp;</span>reserve,
-		<span class="kw-2">&amp;</span>governance,
-		governance_ex_units,
-		reserve_auth_ex_units,
-		<span class="kw-2">&amp;</span>ctx,
-	)<span class="question-mark">?</span>;
 	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
 	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
 		<span class="macro">anyhow::anyhow!</span>(
@@ -319,16 +243,15 @@
 	parameters: <span class="kw-2">&amp;</span>ReserveParameters,
 	reserve: <span class="kw-2">&amp;</span>ReserveData,
 	governance: <span class="kw-2">&amp;</span>GovernanceData,
-	governance_script_cost: ExUnits,
-	reserve_auth_script_cost: ExUnits,
+	costs: Costs,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Transaction, JsError&gt; {
+) -&gt; anyhow::Result&lt;Transaction&gt; {
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
 
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		<span class="kw-2">&amp;</span>reserve.scripts.auth_policy,
 		<span class="kw-2">&amp;</span>reserve.auth_policy_version_utxo.to_csl_tx_input(),
-		<span class="kw-2">&amp;</span>reserve_auth_script_cost,
+		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>reserve.scripts.auth_policy),
 	)<span class="question-mark">?</span>;
 	tx_builder.add_output(<span class="kw-2">&amp;</span>reserve_validator_output(parameters, <span class="kw-2">&amp;</span>reserve.scripts, ctx)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
@@ -336,46 +259,13 @@
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		<span class="kw-2">&amp;</span>governance.policy_script,
 		<span class="kw-2">&amp;</span>gov_tx_input,
-		<span class="kw-2">&amp;</span>governance_script_cost,
+		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>governance.policy_script),
 	)<span class="question-mark">?</span>;
 	tx_builder.add_script_reference_input(
 		<span class="kw-2">&amp;</span>reserve.validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.validator.bytes.len(),
 	);
-	tx_builder.balance_update_and_build(ctx)
-}
-
-<span class="kw">fn </span>match_costs(
-	evaluated_transaction: <span class="kw-2">&amp;</span>Transaction,
-	reserve_auth_policy: <span class="kw-2">&amp;</span>cardano_serialization_lib::ScriptHash,
-	governance_policy: <span class="kw-2">&amp;</span>cardano_serialization_lib::ScriptHash,
-	evaluate_response: Vec&lt;OgmiosEvaluateTransactionResponse&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;(ExUnits, ExUnits), anyhow::Error&gt; {
-	<span class="kw">let </span>mint_keys = evaluated_transaction
-		.body()
-		.mint()
-		.expect(<span class="string">"Every Create Reserve transaction should have two mints"</span>)
-		.keys();
-	<span class="kw">let </span>script_to_index: HashMap&lt;cardano_serialization_lib::ScriptHash, usize&gt; =
-		<span class="macro">vec!</span>[(mint_keys.get(<span class="number">0</span>), <span class="number">0</span>), (mint_keys.get(<span class="number">1</span>), <span class="number">1</span>)].into_iter().collect();
-	<span class="kw">let </span>mint_ex_units = get_validator_budgets(evaluate_response).mint_ex_units;
-	<span class="kw">if </span>mint_ex_units.len() == <span class="number">2 </span>{
-		<span class="kw">let </span>reserve_auth_policy_idx = <span class="kw-2">*</span>script_to_index
-			.get(reserve_auth_policy)
-			.expect(<span class="string">"Reserve Auth Policy Token is present in transaction mints"</span>);
-		<span class="kw">let </span>reserve_auth_ex_units = mint_ex_units
-			.get(reserve_auth_policy_idx)
-			.expect(<span class="string">"mint_ex_units have two items"</span>)
-			.clone();
-		<span class="kw">let </span>gov_policy_idx = <span class="kw-2">*</span>script_to_index
-			.get(governance_policy)
-			.expect(<span class="string">"Governance Policy Token is present in transaction mints"</span>);
-		<span class="kw">let </span>governance_ex_units =
-			mint_ex_units.get(gov_policy_idx).expect(<span class="string">"mint_ex_units have two items"</span>).clone();
-		<span class="prelude-val">Ok</span>((reserve_auth_ex_units, governance_ex_units))
-	} <span class="kw">else </span>{
-		<span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Could not build transaction to submit, evaluate response has wrong number of mint keys."</span>))
-	}
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
 }
 
 <span class="comment">// Creates output with reserve token and the initial deposit

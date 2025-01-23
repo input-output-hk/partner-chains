@@ -476,21 +476,6 @@
 <a href="#476" id="476">476</a>
 <a href="#477" id="477">477</a>
 <a href="#478" id="478">478</a>
-<a href="#479" id="479">479</a>
-<a href="#480" id="480">480</a>
-<a href="#481" id="481">481</a>
-<a href="#482" id="482">482</a>
-<a href="#483" id="483">483</a>
-<a href="#484" id="484">484</a>
-<a href="#485" id="485">485</a>
-<a href="#486" id="486">486</a>
-<a href="#487" id="487">487</a>
-<a href="#488" id="488">488</a>
-<a href="#489" id="489">489</a>
-<a href="#490" id="490">490</a>
-<a href="#491" id="491">491</a>
-<a href="#492" id="492">492</a>
-<a href="#493" id="493">493</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! This transaction releases some funds to the illiquid supply.
 //! Inputs:
 //!     - previous utxo at the *reserve validator*, containing the reserve tokens and the
@@ -516,7 +501,7 @@
 <span class="kw">use crate</span>::{await_tx::AwaitTx, csl::<span class="kw-2">*</span>, plutus_script::PlutusScript, reserve::ReserveUtxo};
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
-	ExUnits, Int, MultiAsset, PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
+	Int, MultiAsset, PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
 };
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::<span class="kw-2">*</span>,
@@ -550,37 +535,23 @@
 	<span class="kw">let </span>ReserveUtxo { reserve_utxo, reserve_settings } =
 		reserve_data.get_reserve_utxo(<span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>tx = reserve_release_tx(
-		<span class="kw-2">&amp;</span>ctx,
-		<span class="kw-2">&amp;</span>reserve_data,
-		<span class="kw-2">&amp;</span>reserve_utxo,
-		<span class="kw-2">&amp;</span>reserve_settings,
-		<span class="kw-2">&amp;</span>reference_utxo,
-		token.amount,
-		tip.slot,
-		ExUnits::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span><span class="number">0u64</span>.into()),
-		ExUnits::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span><span class="number">0u64</span>.into()),
-	)<span class="question-mark">?</span>;
-	<span class="kw">let </span>costs = client.evaluate_transaction(<span class="kw-2">&amp;</span>tx.to_bytes()).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="kw">let </span>ScriptExUnits { mint_ex_units, spend_ex_units } = get_validator_budgets(costs);
-	<span class="kw">let </span>[mint_cost] = <span class="kw-2">&amp;</span>mint_ex_units[..] <span class="kw">else </span>{
-		<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Error retrieving witness costs: mint cost data missing."</span>));
-	};
-	<span class="kw">let </span>[spend_cost] = <span class="kw-2">&amp;</span>spend_ex_units[..] <span class="kw">else </span>{
-		<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Error retrieving witness costs: spend cost data missing."</span>));
-	};
+	<span class="kw">let </span>tx = Costs::calculate_costs(
+		|costs| {
+			reserve_release_tx(
+				<span class="kw-2">&amp;</span>ctx,
+				<span class="kw-2">&amp;</span>reserve_data,
+				<span class="kw-2">&amp;</span>reserve_utxo,
+				<span class="kw-2">&amp;</span>reserve_settings,
+				<span class="kw-2">&amp;</span>reference_utxo,
+				token.amount,
+				tip.slot,
+				costs,
+			)
+		},
+		client,
+	)
+	.<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>tx = reserve_release_tx(
-		<span class="kw-2">&amp;</span>ctx,
-		<span class="kw-2">&amp;</span>reserve_data,
-		<span class="kw-2">&amp;</span>reserve_utxo,
-		<span class="kw-2">&amp;</span>reserve_settings,
-		<span class="kw-2">&amp;</span>reference_utxo,
-		token.amount,
-		tip.slot,
-		mint_cost.clone(),
-		spend_cost.clone(),
-	)<span class="question-mark">?</span>;
 	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
 
 	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
@@ -605,8 +576,7 @@
 	reference_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
 	cumulative_total_transfer: u64,
 	latest_slot: u64,
-	mint_cost: ExUnits,
-	reserve_auth_script_cost: ExUnits,
+	costs: Costs,
 ) -&gt; anyhow::Result&lt;Transaction&gt; {
 	<span class="kw">let </span>token = previous_reserve_datum.immutable_settings.token.clone();
 	<span class="kw">let </span>stats = previous_reserve_datum.stats.clone();
@@ -634,19 +604,20 @@
 
 	<span class="comment">// Mint v-function tokens in the number equal to the *total* number of tokens transfered.
 	// This serves as a validation of the v-function value.
-	</span>tx_builder.add_mint_script_token_using_reference_script(
-		<span class="kw-2">&amp;</span>v_function_from_utxo(reference_utxo)<span class="question-mark">?</span>,
+	</span><span class="kw">let </span>v_function = v_function_from_utxo(reference_utxo)<span class="question-mark">?</span>;
+	tx_builder.add_mint_script_token_using_reference_script(
+		<span class="kw-2">&amp;</span>v_function,
 		<span class="kw-2">&amp;</span>reference_utxo.to_csl_tx_input(),
 		<span class="kw-2">&amp;</span>Int::new(<span class="kw-2">&amp;</span>cumulative_total_transfer.into()),
-		<span class="kw-2">&amp;</span>mint_cost,
+		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>v_function),
 	)<span class="question-mark">?</span>;
 
 	<span class="comment">// Remove tokens from the reserve
 	</span>tx_builder.set_inputs(<span class="kw-2">&amp;</span>reserve_utxo_input_with_validator_script_reference(
-		<span class="kw-2">&amp;</span>previous_reserve_utxo,
-		<span class="kw-2">&amp;</span>reserve_data,
+		previous_reserve_utxo,
+		reserve_data,
 		ReserveRedeemer::ReleaseFromReserve,
-		<span class="kw-2">&amp;</span>reserve_auth_script_cost,
+		<span class="kw-2">&amp;</span>costs.get_one_spend(),
 	)<span class="question-mark">?</span>);
 
 	<span class="comment">// Transfer released tokens to the illiquid supply
@@ -657,7 +628,7 @@
 			)
 			.with_plutus_data(<span class="kw-2">&amp;</span>PlutusData::new_empty_constr_plutus_data(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into()))
 			.next()<span class="question-mark">?
-			</span>.with_minimum_ada_and_asset(<span class="kw-2">&amp;</span>token.to_multi_asset(amount_to_transfer)<span class="question-mark">?</span>, <span class="kw-2">&amp;</span>ctx)<span class="question-mark">?
+			</span>.with_minimum_ada_and_asset(<span class="kw-2">&amp;</span>token.to_multi_asset(amount_to_transfer)<span class="question-mark">?</span>, ctx)<span class="question-mark">?
 			</span>.build()<span class="question-mark">?
 	</span>})<span class="question-mark">?</span>;
 
@@ -672,7 +643,7 @@
 			</span>.with_minimum_ada_and_asset(
 				<span class="kw-2">&amp;</span>MultiAsset::from_ogmios_utxo(previous_reserve_utxo)<span class="question-mark">?
 					</span>.with_asset_amount(<span class="kw-2">&amp;</span>token, left_in_reserve)<span class="question-mark">?</span>,
-				<span class="kw-2">&amp;</span>ctx,
+				ctx,
 			)<span class="question-mark">?
 			</span>.build()<span class="question-mark">?
 	</span>})<span class="question-mark">?</span>;
@@ -694,7 +665,7 @@
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
-	<span class="kw">use super</span>::{empty_asset_name, reserve_release_tx, AssetNameExt, TransactionContext};
+	<span class="kw">use super</span>::{empty_asset_name, reserve_release_tx, AssetNameExt, Costs, TransactionContext};
 	<span class="kw">use crate</span>::{
 		plutus_script::PlutusScript,
 		reserve::{release::OgmiosUtxoExt, ReserveData},
@@ -702,7 +673,7 @@
 		test_values::protocol_parameters,
 	};
 	<span class="kw">use </span>cardano_serialization_lib::{
-		ExUnits, Int, Language, NetworkIdKind, PolicyID, PrivateKey, Transaction,
+		Int, Language, NetworkIdKind, PolicyID, PrivateKey, Transaction,
 	};
 	<span class="kw">use </span>hex_literal::hex;
 	<span class="kw">use </span>ogmios_client::types::{Asset, OgmiosScript, OgmiosTx, OgmiosUtxo, OgmiosValue};
@@ -897,8 +868,7 @@
 			<span class="kw-2">&amp;</span>reference_utxo(),
 			<span class="number">20</span>,
 			<span class="number">0</span>,
-			ExUnits::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span><span class="number">0u64</span>.into()),
-			ExUnits::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span><span class="number">0u64</span>.into()),
+			Costs::ZeroCosts,
 		)
 		.unwrap()
 	}

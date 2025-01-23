@@ -243,7 +243,7 @@
 	governance: <span class="kw-2">&amp;</span>GovernanceData,
 	costs: Costs,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Transaction, JsError&gt; {
+) -&gt; anyhow::Result&lt;Transaction&gt; {
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
 
 	<span class="kw">let </span>reserve_auth_policy_spend_cost = costs.get_one_spend();
@@ -261,7 +261,7 @@
 	</span>tx_builder.set_inputs(<span class="kw-2">&amp;</span>reserve_utxo_input_with_validator_script_reference(
 		reserve_utxo,
 		reserve,
-		ReserveRedeemer::Handover { governance_version: <span class="number">1 </span>},
+		ReserveRedeemer::Handover,
 		<span class="kw-2">&amp;</span>reserve_auth_policy_spend_cost,
 	)<span class="question-mark">?</span>);
 
@@ -282,7 +282,7 @@
 		<span class="kw-2">&amp;</span>reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.illiquid_circulation_supply_validator.bytes.len(),
 	);
-	tx_builder.balance_update_and_build(ctx)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
 }
 
 <span class="comment">// Creates output with reserve token and updated deposit

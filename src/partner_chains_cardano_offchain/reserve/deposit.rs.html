@@ -146,47 +146,6 @@
 <a href="#146" id="146">146</a>
 <a href="#147" id="147">147</a>
 <a href="#148" id="148">148</a>
-<a href="#149" id="149">149</a>
-<a href="#150" id="150">150</a>
-<a href="#151" id="151">151</a>
-<a href="#152" id="152">152</a>
-<a href="#153" id="153">153</a>
-<a href="#154" id="154">154</a>
-<a href="#155" id="155">155</a>
-<a href="#156" id="156">156</a>
-<a href="#157" id="157">157</a>
-<a href="#158" id="158">158</a>
-<a href="#159" id="159">159</a>
-<a href="#160" id="160">160</a>
-<a href="#161" id="161">161</a>
-<a href="#162" id="162">162</a>
-<a href="#163" id="163">163</a>
-<a href="#164" id="164">164</a>
-<a href="#165" id="165">165</a>
-<a href="#166" id="166">166</a>
-<a href="#167" id="167">167</a>
-<a href="#168" id="168">168</a>
-<a href="#169" id="169">169</a>
-<a href="#170" id="170">170</a>
-<a href="#171" id="171">171</a>
-<a href="#172" id="172">172</a>
-<a href="#173" id="173">173</a>
-<a href="#174" id="174">174</a>
-<a href="#175" id="175">175</a>
-<a href="#176" id="176">176</a>
-<a href="#177" id="177">177</a>
-<a href="#178" id="178">178</a>
-<a href="#179" id="179">179</a>
-<a href="#180" id="180">180</a>
-<a href="#181" id="181">181</a>
-<a href="#182" id="182">182</a>
-<a href="#183" id="183">183</a>
-<a href="#184" id="184">184</a>
-<a href="#185" id="185">185</a>
-<a href="#186" id="186">186</a>
-<a href="#187" id="187">187</a>
-<a href="#188" id="188">188</a>
-<a href="#189" id="189">189</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Specification for deposit transaction:
 //!
@@ -208,21 +167,20 @@
 <span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
 	csl::{
-		get_builder_config, get_validator_budgets, zero_ex_units, MultiAssetExt, OgmiosUtxoExt,
-		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
+		get_builder_config, CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt,
+		TransactionContext, TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	scripts_data::ReserveScripts,
 };
-<span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
-	ExUnits, JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
+	JsError, MultiAsset, Transaction, TransactionBuilder, TransactionOutput,
 	TransactionOutputBuilder,
 };
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
-	transactions::{OgmiosEvaluateTransactionResponse, Transactions},
+	transactions::Transactions,
 	types::OgmiosUtxo,
 };
 <span class="kw">use </span>partner_chains_plutus_data::reserve::ReserveRedeemer;
@@ -247,29 +205,12 @@
 	<span class="kw">let </span>token_amount =
 		TokenAmount { token: parameters.token, amount: current_amount + parameters.amount };
 
-	<span class="kw">let </span>tx_to_evaluate = deposit_to_reserve_tx(
-		<span class="kw-2">&amp;</span>token_amount,
-		<span class="kw-2">&amp;</span>utxo,
-		<span class="kw-2">&amp;</span>reserve,
-		<span class="kw-2">&amp;</span>governance,
-		zero_ex_units(),
-		zero_ex_units(),
-		<span class="kw-2">&amp;</span>ctx,
-	)<span class="question-mark">?</span>;
-	<span class="kw">let </span>evaluate_response = client.evaluate_transaction(<span class="kw-2">&amp;</span>tx_to_evaluate.to_bytes()).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>tx = Costs::calculate_costs(
+		|costs| deposit_to_reserve_tx(<span class="kw-2">&amp;</span>token_amount, <span class="kw-2">&amp;</span>utxo, <span class="kw-2">&amp;</span>reserve, <span class="kw-2">&amp;</span>governance, costs, <span class="kw-2">&amp;</span>ctx),
+		client,
+	)
+	.<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>spend_ex_units = get_spend_cost(evaluate_response.clone())<span class="question-mark">?</span>;
-	<span class="kw">let </span>governance_ex_units = get_governance_script_cost(evaluate_response)<span class="question-mark">?</span>;
-
-	<span class="kw">let </span>tx = deposit_to_reserve_tx(
-		<span class="kw-2">&amp;</span>token_amount,
-		<span class="kw-2">&amp;</span>utxo,
-		<span class="kw-2">&amp;</span>reserve,
-		<span class="kw-2">&amp;</span>governance,
-		governance_ex_units,
-		spend_ex_units,
-		<span class="kw-2">&amp;</span>ctx,
-	)<span class="question-mark">?</span>;
 	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
 	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
 		<span class="macro">anyhow::anyhow!</span>(
@@ -301,25 +242,24 @@
 	current_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
 	reserve: <span class="kw-2">&amp;</span>ReserveData,
 	governance: <span class="kw-2">&amp;</span>GovernanceData,
-	governance_script_cost: ExUnits,
-	spend_reserve_auth_token_cost: ExUnits,
+	costs: Costs,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Transaction, JsError&gt; {
+) -&gt; anyhow::Result&lt;Transaction&gt; {
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
 
 	tx_builder.add_output(<span class="kw-2">&amp;</span>validator_output(parameters, current_utxo, <span class="kw-2">&amp;</span>reserve.scripts, ctx)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
 	tx_builder.set_inputs(<span class="kw-2">&amp;</span>reserve_utxo_input_with_validator_script_reference(
-		<span class="kw-2">&amp;</span>current_utxo,
-		<span class="kw-2">&amp;</span>reserve,
-		ReserveRedeemer::DepositToReserve { governance_version: <span class="number">1 </span>},
-		<span class="kw-2">&amp;</span>spend_reserve_auth_token_cost,
+		current_utxo,
+		reserve,
+		ReserveRedeemer::DepositToReserve,
+		<span class="kw-2">&amp;</span>costs.get_one_spend(),
 	)<span class="question-mark">?</span>);
 
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		<span class="kw-2">&amp;</span>governance.policy_script,
 		<span class="kw-2">&amp;</span>governance.utxo_id_as_tx_input(),
-		<span class="kw-2">&amp;</span>governance_script_cost,
+		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>governance.policy_script),
 	)<span class="question-mark">?</span>;
 
 	tx_builder.add_script_reference_input(
@@ -330,29 +270,7 @@
 		<span class="kw-2">&amp;</span>reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.illiquid_circulation_supply_validator.bytes.len(),
 	);
-	tx_builder.balance_update_and_build(ctx)
-}
-
-<span class="comment">// governance token is the only minted token
-</span><span class="kw">fn </span>get_governance_script_cost(
-	response: Vec&lt;OgmiosEvaluateTransactionResponse&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;ExUnits, anyhow::Error&gt; {
-	<span class="prelude-val">Ok</span>(get_validator_budgets(response)
-		.mint_ex_units
-		.first()
-		.ok_or_else(|| <span class="macro">anyhow!</span>(<span class="string">"Mint cost is missing in evaluate response"</span>))<span class="question-mark">?
-		</span>.clone())
-}
-
-<span class="comment">// Auth policy token is the only spent token is the transaction
-</span><span class="kw">fn </span>get_spend_cost(
-	response: Vec&lt;OgmiosEvaluateTransactionResponse&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;ExUnits, anyhow::Error&gt; {
-	<span class="prelude-val">Ok</span>(get_validator_budgets(response)
-		.spend_ex_units
-		.first()
-		.ok_or_else(|| <span class="macro">anyhow!</span>(<span class="string">"Spend cost is missing in evaluate response"</span>))<span class="question-mark">?
-		</span>.clone())
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
 }
 
 <span class="comment">// Creates output with reserve token and updated deposit
