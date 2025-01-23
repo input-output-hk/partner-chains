@@ -82,10 +82,10 @@ impl CmdRun for Register1Cmd {
 
 		let sidechain_signature =
 			sign_registration_message_with_sidechain_key(registration_message, ecdsa_pair)?;
-
+		let executable = context.current_executable()?;
 		context.print("Run the following command to generate signatures on the next step. It has to be executed on the machine with your SPO cold signing key.");
 		context.print("");
-		context.print(&format!("./partner-chains-cli register2 \\\n --genesis-utxo {genesis_utxo} \\\n --registration-utxo {registration_utxo} \\\n --aura-pub-key {aura_pub_key} \\\n --grandpa-pub-key {grandpa_pub_key} \\\n --sidechain-pub-key {sidechain_pub_key} \\\n --sidechain-signature {sidechain_signature}"));
+		context.print(&format!("{executable} wizards register2 \\\n --genesis-utxo {genesis_utxo} \\\n --registration-utxo {registration_utxo} \\\n --aura-pub-key {aura_pub_key} \\\n --grandpa-pub-key {grandpa_pub_key} \\\n --sidechain-pub-key {sidechain_pub_key} \\\n --sidechain-signature {sidechain_signature}"));
 
 		Ok(())
 	}
@@ -539,7 +539,7 @@ mod tests {
 		vec![
 		MockIO::print("Run the following command to generate signatures on the next step. It has to be executed on the machine with your SPO cold signing key."),
 		MockIO::print(""),
-		MockIO::print("./partner-chains-cli register2 \\\n --genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n --registration-utxo 4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 \\\n --aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n --grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n --sidechain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n --sidechain-signature 6e295e36a6b11d8b1c5ec01ac8a639b466fbfbdda94b39ea82b0992e303d58543341345fc705e09c7838786ba0bc746d9038036f66a36d1127d924c4a0228bec")
+		MockIO::print("<mock executable> wizards register2 \\\n --genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n --registration-utxo 4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 \\\n --aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n --grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n --sidechain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n --sidechain-signature 6e295e36a6b11d8b1c5ec01ac8a639b466fbfbdda94b39ea82b0992e303d58543341345fc705e09c7838786ba0bc746d9038036f66a36d1127d924c4a0228bec")
 		]
 	}
 
