@@ -2,7 +2,6 @@
 
 # Initialize flags
 PC_NODE_READY=0
-PC_CLI_READY=0
 PC_CONTRACTS_CLI_READY=0
 
 if [ "$ARTIFACT_OVERRIDE" == "yes" ]; then
@@ -24,13 +23,6 @@ if [ "$ARTIFACT_OVERRIDE" == "yes" ]; then
     PC_NODE_READY=1
   fi
 
-  if [ -f "/overrides/partner-chains-cli" ]; then
-    echo "partner-chains-cli found in /overrides/. Using local artifact."
-    cp /overrides/partner-chains-cli ./partner-chains-cli
-    echo "partner-chains-cli copied."
-    PC_CLI_READY=1
-  fi
-
 else
   echo "Artifact override is not enabled. Defaulting to downloading all artifacts..."
 fi
@@ -47,14 +39,9 @@ if [ "$PC_NODE_READY" -eq 0 ]; then
   wget -q -O ./partner-chains-node "$PARTNER_CHAINS_NODE_URL"
 fi
 
-if [ "$PC_CLI_READY" -eq 0 ]; then
-  echo "Downloading partner-chains-cli..."
-  wget -q -O ./partner-chains-cli "$PARTNER_CHAINS_CLI_URL"
-fi
 
 # Set executable permissions
 chmod +x ./partner-chains-node
-chmod +x ./partner-chains-cli
 chmod +x ./pc-contracts-cli
 
 # Install jq

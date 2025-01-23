@@ -64,7 +64,6 @@ Alternatively artifact URLs can be overriden from local files with the `--overri
 
 ```
 cd dev/local-environment
-cp /path/to/artifact ./configurations/pc-contracts-cli/overrides/partner-chains-cli
 cp /path/to/artifact ./configurations/pc-contracts-cli/overrides/partner-chains-node
 bash setup.sh --non-interactive --overrides --node-image ${{ inputs.image }}
 ```
