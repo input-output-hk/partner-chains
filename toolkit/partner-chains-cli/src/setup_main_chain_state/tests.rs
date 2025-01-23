@@ -1,6 +1,6 @@
-use crate::config::{config_fields, RESOURCES_CONFIG_FILE_PATH};
 use crate::config::config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
 use crate::config::CHAIN_CONFIG_FILE_PATH;
+use crate::config::{config_fields, RESOURCES_CONFIG_FILE_PATH};
 use crate::ogmios::config::tests::{default_ogmios_service_config, prompt_ogmios_configuration_io};
 use crate::prepare_configuration::tests::{
 	prompt_and_save_to_existing_file, prompt_with_default_and_save_to_existing_file,

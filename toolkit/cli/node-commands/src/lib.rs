@@ -5,9 +5,9 @@ use clap::Parser;
 use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use frame_support::sp_runtime::traits::NumberFor;
 use parity_scale_codec::{Decode, Encode};
+use partner_chains_cli::io::DefaultCmdRunContext;
 use partner_chains_smart_contracts_commands::SmartContractsCmd;
 use sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
-use sc_service::Configuration;
 use sc_service::TaskManager;
 use sidechain_domain::{MainchainPublicKey, McEpochNumber, ScEpochNumber};
 use sp_api::ProvideRuntimeApi;
@@ -163,7 +163,8 @@ where
 			Ok(cmd.execute_blocking()?)
 		},
 		PartnerChainsSubcommand::Wizards(cmd) => {
-			Ok(partner_chains_cli::run(cmd).map_err(|e| sc_cli::Error::Application(e.into()))?)
+			setup_log4rs()?;
+			Ok(cmd.run(&DefaultCmdRunContext).map_err(|e| sc_cli::Error::Application(e.into()))?)
 		},
 	}
 }

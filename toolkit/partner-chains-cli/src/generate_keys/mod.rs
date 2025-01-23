@@ -187,9 +187,9 @@ pub struct KeyGenerationOutput {
 
 pub fn generate_keys<C: IOContext>(
 	context: &C,
-	executable: &str,
 	KeyDefinition { scheme, name, .. }: &KeyDefinition,
 ) -> anyhow::Result<KeyGenerationOutput> {
+	let executable = context.current_executable()?;
 	context.eprint(&format!("⚙️ Generating {name} ({scheme}) key"));
 	let output = context
 		.run_command(&format!("{executable} key generate --scheme {scheme} --output-type json"))?;
@@ -220,7 +220,6 @@ pub fn generate_or_load_key<C: IOContext>(
 	context: &C,
 	key_def: &KeyDefinition,
 ) -> anyhow::Result<String> {
-	let node_executable = context.current_executable()?;
 	let keystore_path = config.keystore_path();
 	let existing_keys = context.list_directory(&keystore_path)?.unwrap_or_default();
 
@@ -229,7 +228,7 @@ pub fn generate_or_load_key<C: IOContext>(
 			&format!("A {} key already exists in store: {key} - overwrite it?", key_def.name),
 			false,
 		) {
-			let new_key = generate_keys(context, &node_executable, key_def)?;
+			let new_key = generate_keys(context, key_def)?;
 			store_keys(context, config, key_def, &new_key)?;
 
 			let old_key_path = format!("{keystore_path}/{}{key}", key_def.key_type_hex());
@@ -242,7 +241,7 @@ pub fn generate_or_load_key<C: IOContext>(
 			Ok(format!("0x{key}"))
 		}
 	} else {
-		let new_key = generate_keys(context, &node_executable, key_def)?;
+		let new_key = generate_keys(context, key_def)?;
 		store_keys(context, config, key_def, &new_key)?;
 
 		Ok(new_key.public_key)

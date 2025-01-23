@@ -22,10 +22,6 @@ mod tests;
 
 use clap::Parser;
 use io::*;
-use log4rs::{
-	append::{console::ConsoleAppender, file::FileAppender},
-	config::Appender,
-};
 
 #[derive(Clone, Debug, Parser)]
 #[command(
@@ -54,37 +50,24 @@ pub enum Command {
 	Deregister(deregister::DeregisterCmd),
 }
 
-pub trait CmdRun {
-	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()>;
+impl Command {
+	pub fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
+		match self {
+			Command::GenerateKeys(cmd) => cmd.run(context),
+			Command::PrepareConfiguration(cmd) => cmd.run(context),
+			Command::CreateChainSpec(cmd) => cmd.run(context),
+			Command::SetupMainChainState(cmd) => cmd.run(context),
+			Command::StartNode(cmd) => cmd.run(context),
+			Command::Register1(cmd) => cmd.run(context),
+			Command::Register2(cmd) => cmd.run(context),
+			Command::Register3(cmd) => cmd.run(context),
+			Command::Deregister(cmd) => cmd.run(context),
+		}
+	}
 }
 
-pub fn run(command: Command) -> anyhow::Result<()> {
-	let log_config = log4rs::config::Config::builder()
-		.appender(Appender::builder().build("stdout", Box::new(ConsoleAppender::builder().build())))
-		.appender(
-			Appender::builder()
-				.build("ogmios-log", Box::new(FileAppender::builder().build("ogmios_client.log")?)),
-		)
-		.logger(
-			log4rs::config::Logger::builder()
-				.appender("ogmios-log")
-				.additive(false)
-				.build("ogmios_client::jsonrpsee", log::LevelFilter::Debug),
-		)
-		.build(log4rs::config::Root::builder().appender("stdout").build(log::LevelFilter::Info))?;
-	log4rs::init_config(log_config)?;
-	match command {
-		Command::GenerateKeys(cmd) => cmd.run(&DefaultCmdRunContext)?,
-		Command::PrepareConfiguration(cmd) => cmd.run(&DefaultCmdRunContext)?,
-		Command::CreateChainSpec(cmd) => cmd.run(&DefaultCmdRunContext)?,
-		Command::SetupMainChainState(cmd) => cmd.run(&DefaultCmdRunContext)?,
-		Command::StartNode(cmd) => cmd.run(&DefaultCmdRunContext)?,
-		Command::Register1(cmd) => cmd.run(&DefaultCmdRunContext)?,
-		Command::Register2(cmd) => cmd.run(&DefaultCmdRunContext)?,
-		Command::Register3(cmd) => cmd.run(&DefaultCmdRunContext)?,
-		Command::Deregister(cmd) => cmd.run(&DefaultCmdRunContext)?,
-	}
-	Ok(())
+pub trait CmdRun {
+	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()>;
 }
 
 const HELP_EXAMPLES: &str = r#"
