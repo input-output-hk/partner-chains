@@ -7,10 +7,10 @@ use sidechain_domain::{AssetId, AssetName, PolicyId};
 
 #[derive(Debug, Clone)]
 pub enum ReserveRedeemer {
-	DepositToReserve { governance_version: u64 },
-	ReleaseFromReserve,
-	UpdateReserve { governance_version: u64 },
-	Handover { governance_version: u64 },
+	DepositToReserve = 0,
+	ReleaseFromReserve = 1,
+	UpdateReserve = 2,
+	Handover = 3,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -38,26 +38,7 @@ pub struct ReserveStats {
 
 impl From<ReserveRedeemer> for PlutusData {
 	fn from(value: ReserveRedeemer) -> Self {
-		use ReserveRedeemer::*;
-		match value {
-			DepositToReserve { governance_version } => {
-				PlutusData::new_single_value_constr_plutus_data(
-					&BigNum::from(0_u64),
-					&PlutusData::new_integer(&BigInt::from(governance_version)),
-				)
-			},
-			ReleaseFromReserve => PlutusData::new_empty_constr_plutus_data(&BigNum::from(1_u64)),
-			UpdateReserve { governance_version } => {
-				PlutusData::new_single_value_constr_plutus_data(
-					&BigNum::from(2_u64),
-					&PlutusData::new_integer(&BigInt::from(governance_version)),
-				)
-			},
-			Handover { governance_version } => PlutusData::new_single_value_constr_plutus_data(
-				&BigNum::from(3_u64),
-				&PlutusData::new_integer(&BigInt::from(governance_version)),
-			),
-		}
+		PlutusData::new_empty_constr_plutus_data(&BigNum::from(value as u64))
 	}
 }
 
