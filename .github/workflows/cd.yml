@@ -153,11 +153,24 @@ jobs:
           AWS_REGION: ${{ env.AWS_REGION }}
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
 
+  artifacts-ready:
+    needs:
+      - upload-to-s3
+      - download-from-s3
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    if: ${{ needs.upload-to-s3.result == 'success' || needs.download-from-s3.result == 'success' }}
+    steps:
+      - name: Artifacts are Ready
+        run: echo "Artifacts are ready for use."
+
   build-and-publish-ecr:
     permissions:
       id-token: write
       contents: write
-    needs: build-linux
+    needs: artifacts-ready
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -177,10 +190,7 @@ jobs:
     permissions:
       id-token: write
       contents: write
-    needs:
-      - build-linux
-      - build-macos-x86_64
-      - build-macos-arm64
+    needs: artifacts-ready
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -196,7 +206,7 @@ jobs:
     permissions:
       id-token: write
       contents: write
-    needs: build-linux
+    needs: artifacts-ready
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -489,9 +499,7 @@ jobs:
       contents: write
       packages: write
     needs:
-      - build-linux
-      - build-macos-x86_64
-      - build-macos-arm64
+      - artifacts-ready
       - run-all-tests-on-n2-epoch
     runs-on: ubuntu-latest
     steps:
