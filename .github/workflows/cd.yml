@@ -16,13 +16,18 @@ on:
         required: false
         type: boolean
         default: false
-      no-public:
-        description: "Skip steps to publish public release and public GHCR image"
+      no-public-release:
+        description: "Skip steps to publish public release"
         required: false
         type: boolean
         default: true
       no-release:
         description: "Skip creating draft release page"
+        required: false
+        type: boolean
+        default: false
+      no-ghcr:
+        description: "Skip publishing GHCR image"
         required: false
         type: boolean
         default: false
@@ -488,8 +493,27 @@ jobs:
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
           threads: 1
 
-  publish:
-    if: ${{ always() && github.event.inputs.no-release != 'true' && github.event.inputs.no-public != 'true' && (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success') }}
+  publish-ghcr:
+    if: ${{ always() && github.event.inputs.no-ghcr != 'true' && (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success') }}
+    permissions:
+      id-token: write
+      contents: write
+      packages: write
+    needs:
+      - artifacts-ready
+      - run-all-tests-on-n2-epoch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Publish Workflow
+        run: |
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.ACTIONS_PUBLISH_PAT }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/publish.yml/dispatches \
+            -d '{"ref": "${{ github.ref_name }}", "inputs": {"sha": "${{ inputs.sha }}", "tag": "${{ inputs.tag }}"}}'
+
+  publish-draft-release:
+    if: ${{ always() && github.event.inputs.no-release != 'true' && github.event.inputs.no-public-release != 'true' && (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success') }}
     permissions:
       id-token: write
       contents: write
