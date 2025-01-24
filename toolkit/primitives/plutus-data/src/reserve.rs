@@ -1,6 +1,6 @@
 use crate::{
 	decoding_error_and_log, plutus_data_version_and_payload, DataDecodingError, DecodingResult,
-	VersionedDatum, VersionedGenericDatumShape,
+	VersionedDatum, VersionedGenericDatum,
 };
 use cardano_serialization_lib::{BigInt, BigNum, ConstrPlutusData, PlutusData, PlutusList};
 use sidechain_domain::{AssetId, AssetName, PolicyId};
@@ -45,7 +45,7 @@ impl From<ReserveRedeemer> for PlutusData {
 
 impl From<ReserveDatum> for PlutusData {
 	fn from(value: ReserveDatum) -> Self {
-		VersionedGenericDatumShape {
+		VersionedGenericDatum {
 			datum: {
 				let mut immutable_settings = PlutusList::new();
 				let t0 = PlutusData::new_integer(&BigInt::zero());
@@ -102,8 +102,10 @@ impl VersionedDatum for ReserveDatum {
 
 	fn decode(datum: &PlutusData) -> DecodingResult<Self> {
 		match plutus_data_version_and_payload(datum) {
-			Some((0, datum, _)) => decode_v0_reserve_datum(&datum)
-				.ok_or_else(|| decoding_error_and_log(&datum, "ReserveDatum", "invalid data")),
+			Some(VersionedGenericDatum { version: 0, datum, .. }) => {
+				decode_v0_reserve_datum(&datum)
+					.ok_or_else(|| decoding_error_and_log(&datum, "ReserveDatum", "invalid data"))
+			},
 			_ => Err(decoding_error_and_log(datum, "ReserveDatum", "unversioned datum")),
 		}
 	}
@@ -129,22 +131,11 @@ fn decode_v0_reserve_datum(datum: &PlutusData) -> Option<ReserveDatum> {
 	let t0: u64 = immutable_settings_iter.next()?.as_integer()?.as_u64()?.into();
 	let token = decode_token_id_datum(immutable_settings_iter.next()?)?;
 
-	let v_function_hash_and_initial_incentive_list = outer_iter.next()?.as_list()?;
-	let mut v_function_hash_and_initial_incentive_iter =
-		v_function_hash_and_initial_incentive_list.into_iter();
-	let total_accrued_function_script_hash = PolicyId(
-		v_function_hash_and_initial_incentive_iter
-			.next()?
-			.as_bytes()?
-			.to_vec()
-			.try_into()
-			.ok()?,
-	);
-	let initial_incentive = v_function_hash_and_initial_incentive_iter
-		.next()?
-		.as_integer()?
-		.as_u64()?
-		.into();
+	let mutable_settings_list = outer_iter.next()?.as_list()?;
+	let mut mutable_settings_iter = mutable_settings_list.into_iter();
+	let total_accrued_function_script_hash =
+		PolicyId(mutable_settings_iter.next()?.as_bytes()?.to_vec().try_into().ok()?);
+	let initial_incentive = mutable_settings_iter.next()?.as_integer()?.as_u64()?.into();
 
 	let stats = ReserveStats {
 		token_total_amount_transferred: outer_iter.next()?.as_integer()?.as_u64()?.into(),

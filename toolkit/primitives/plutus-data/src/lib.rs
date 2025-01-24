@@ -17,11 +17,15 @@ pub struct DataDecodingError {
 type DecodingResult<T> = std::result::Result<T, DataDecodingError>;
 
 pub trait PlutusDataExtensions {
+	fn as_u64(&self) -> Option<u64>;
 	fn as_u32(&self) -> Option<u32>;
 	fn as_u16(&self) -> Option<u16>;
 }
 
 impl PlutusDataExtensions for cardano_serialization_lib::PlutusData {
+	fn as_u64(&self) -> Option<u64> {
+		self.as_integer()?.as_u64().map(u64::from)
+	}
 	fn as_u32(&self) -> Option<u32> {
 		u32::try_from(self.as_integer()?.as_u64()?).ok()
 	}
@@ -67,7 +71,7 @@ pub(crate) trait VersionedDatumWithLegacy: Sized {
 	/// * `const_data` - immutable part of the schema
 	/// * `mut_data` - mutable part of the schema
 	fn decode_versioned(
-		version: u32,
+		version: u64,
 		const_data: &PlutusData,
 		mut_data: &PlutusData,
 	) -> Result<Self, String>;
@@ -79,18 +83,22 @@ impl<T: VersionedDatumWithLegacy> VersionedDatum for T {
 	fn decode(data: &PlutusData) -> DecodingResult<Self> {
 		(match plutus_data_version_and_payload(data) {
 			None => Self::decode_legacy(data),
-			Some((version, const_payload, mut_payload)) => {
-				Self::decode_versioned(version, &const_payload, &mut_payload)
+			Some(VersionedGenericDatum { datum, generic_data, version }) => {
+				Self::decode_versioned(version, &datum, &generic_data)
 			},
 		})
 		.map_err(|msg| decoding_error_and_log(data, Self::NAME, &msg))
 	}
 }
 
-fn plutus_data_version_and_payload(data: &PlutusData) -> Option<(u32, PlutusData, PlutusData)> {
+fn plutus_data_version_and_payload(data: &PlutusData) -> Option<VersionedGenericDatum> {
 	let fields = data.as_list().filter(|outer_list| outer_list.len() == 3)?;
 
-	Some((fields.get(2).as_u32()?, fields.get(0), fields.get(1)))
+	Some(VersionedGenericDatum {
+		datum: fields.get(0),
+		generic_data: fields.get(1),
+		version: fields.get(2).as_u64()?,
+	})
 }
 
 fn decoding_error_and_log(data: &PlutusData, to: &str, msg: &str) -> DataDecodingError {
@@ -101,14 +109,14 @@ fn decoding_error_and_log(data: &PlutusData, to: &str, msg: &str) -> DataDecodin
 /// This struct has the same shape as `VersionedGenericDatum` from smart-contracts.
 /// It is used to help implementing a proper `From` trait for `PlutusData` for
 /// datum types.
-pub(crate) struct VersionedGenericDatumShape {
+pub(crate) struct VersionedGenericDatum {
 	pub datum: PlutusData,
 	pub generic_data: PlutusData,
 	pub version: u64,
 }
 
-impl From<VersionedGenericDatumShape> for PlutusData {
-	fn from(value: VersionedGenericDatumShape) -> Self {
+impl From<VersionedGenericDatum> for PlutusData {
+	fn from(value: VersionedGenericDatum) -> Self {
 		let mut list = PlutusList::new();
 		list.add(&value.datum);
 		list.add(&value.generic_data);

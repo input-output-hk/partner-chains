@@ -1,6 +1,6 @@
 use crate::{
 	DataDecodingError, DecodingResult, PlutusDataExtensions, VersionedDatum,
-	VersionedDatumWithLegacy, VersionedGenericDatumShape,
+	VersionedDatumWithLegacy, VersionedGenericDatum,
 };
 use cardano_serialization_lib::{PlutusData, PlutusList};
 
@@ -32,7 +32,7 @@ pub fn d_parameter_to_plutus_data(d_param: &sidechain_domain::DParameter) -> Plu
 	list.add(&PlutusData::new_integer(&d_param.num_permissioned_candidates.into()));
 	list.add(&PlutusData::new_integer(&d_param.num_registered_candidates.into()));
 	let generic_data = PlutusData::new_list(&list);
-	VersionedGenericDatumShape {
+	VersionedGenericDatum {
 		datum: PlutusData::new_empty_constr_plutus_data(&0u64.into()),
 		generic_data,
 		version: 0,
@@ -59,7 +59,7 @@ impl VersionedDatumWithLegacy for DParamDatum {
 	}
 
 	fn decode_versioned(
-		version: u32,
+		version: u64,
 		_const_data: &PlutusData,
 		mut_data: &PlutusData,
 	) -> Result<Self, String> {

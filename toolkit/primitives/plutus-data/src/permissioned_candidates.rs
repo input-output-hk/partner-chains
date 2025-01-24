@@ -3,7 +3,7 @@ use sidechain_domain::*;
 
 use crate::{
 	DataDecodingError, DecodingResult, VersionedDatum, VersionedDatumWithLegacy,
-	VersionedGenericDatumShape,
+	VersionedGenericDatum,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -56,7 +56,7 @@ pub fn permissioned_candidates_to_plutus_data(
 		list.add(&PlutusData::new_list(&candidate_datum));
 	}
 	let generic_data = PlutusData::new_list(&list);
-	VersionedGenericDatumShape {
+	VersionedGenericDatum {
 		datum: PlutusData::new_empty_constr_plutus_data(&BigNum::zero()),
 		generic_data,
 		version: 0,
@@ -83,7 +83,7 @@ impl VersionedDatumWithLegacy for PermissionedCandidateDatums {
 	}
 
 	fn decode_versioned(
-		version: u32,
+		version: u64,
 		_const_data: &PlutusData,
 		mut_data: &PlutusData,
 	) -> Result<Self, String> {
