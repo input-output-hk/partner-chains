@@ -185,8 +185,8 @@
 
 <span class="attr">#[derive(Clone, Debug)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>ReserveUtxo {
-	<span class="kw">pub</span>(<span class="kw">crate</span>) reserve_utxo: OgmiosUtxo,
-	<span class="kw">pub</span>(<span class="kw">crate</span>) reserve_settings: ReserveDatum,
+	<span class="kw">pub</span>(<span class="kw">crate</span>) utxo: OgmiosUtxo,
+	<span class="kw">pub</span>(<span class="kw">crate</span>) datum: ReserveDatum,
 }
 
 <span class="kw">impl </span>ReserveData {
@@ -267,7 +267,7 @@
 				<span class="macro">anyhow!</span>(<span class="string">"Reserve Utxo not found, is the Reserve Token Management initialized?"</span>)
 			})<span class="question-mark">?</span>;
 
-		<span class="prelude-val">Ok</span>(ReserveUtxo { reserve_utxo, reserve_settings })
+		<span class="prelude-val">Ok</span>(ReserveUtxo { utxo: reserve_utxo, datum: reserve_settings })
 	}
 }
 

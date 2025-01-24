@@ -200,7 +200,7 @@
 	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_key, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>governance = get_governance_data(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>reserve = ReserveData::get(genesis_utxo, <span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="kw">let </span>utxo = reserve.get_reserve_utxo(<span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>.reserve_utxo;
+	<span class="kw">let </span>utxo = reserve.get_reserve_utxo(<span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>.utxo;
 	<span class="kw">let </span>current_amount = get_token_amount(<span class="kw-2">&amp;</span>utxo, <span class="kw-2">&amp;</span>parameters.token);
 	<span class="kw">let </span>token_amount =
 		TokenAmount { token: parameters.token, amount: current_amount + parameters.amount };

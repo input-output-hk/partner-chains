@@ -356,7 +356,7 @@
 <a href="#356" id="356">356</a>
 <a href="#357" id="357">357</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
-	PlutusDataExtensions, VersionedDatum, VersionedDatumWithLegacy, VersionedGenericDatumShape,
+	PlutusDataExtensions, VersionedDatum, VersionedDatumWithLegacy, VersionedGenericDatum,
 };
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
@@ -422,13 +422,13 @@
 	}
 
 	<span class="kw">fn </span>decode_versioned(
-		version: u32,
-		const_data: <span class="kw-2">&amp;</span>PlutusData,
-		mut_data: <span class="kw-2">&amp;</span>PlutusData,
+		version: u64,
+		datum: <span class="kw-2">&amp;</span>PlutusData,
+		appendix: <span class="kw-2">&amp;</span>PlutusData,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, String&gt; {
 		<span class="kw">match </span>version {
-			<span class="number">0 </span>=&gt; decode_v0_register_validator_datum(const_data, mut_data)
-				.ok_or(<span class="string">"Can not parse mutable part of data"</span>.to_string()),
+			<span class="number">0 </span>=&gt; decode_v0_register_validator_datum(datum, appendix)
+				.ok_or(<span class="string">"Can not parse appendix"</span>.to_string()),
 			<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">"Unknown version: {version}"</span>)),
 		}
 	}
@@ -474,10 +474,10 @@
 }
 
 <span class="kw">fn </span>decode_v0_register_validator_datum(
-	const_data: <span class="kw-2">&amp;</span>PlutusData,
-	mut_data: <span class="kw-2">&amp;</span>PlutusData,
+	datum: <span class="kw-2">&amp;</span>PlutusData,
+	appendix: <span class="kw-2">&amp;</span>PlutusData,
 ) -&gt; <span class="prelude-ty">Option</span>&lt;RegisterValidatorDatum&gt; {
-	<span class="kw">let </span>fields = mut_data
+	<span class="kw">let </span>fields = appendix
 		.as_constr_plutus_data()
 		.filter(|datum| datum.alternative().is_zero())
 		.filter(|datum| datum.data().len() &gt;= <span class="number">6</span>)<span class="question-mark">?
@@ -489,7 +489,7 @@
 	<span class="kw">let </span>aura_pub_key = fields.get(<span class="number">4</span>).as_bytes().map(AuraPublicKey)<span class="question-mark">?</span>;
 	<span class="kw">let </span>grandpa_pub_key = fields.get(<span class="number">5</span>).as_bytes().map(GrandpaPublicKey)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>own_pkh = MainchainAddressHash(const_data.as_bytes()<span class="question-mark">?</span>.try_into().ok()<span class="question-mark">?</span>);
+	<span class="kw">let </span>own_pkh = MainchainAddressHash(datum.as_bytes()<span class="question-mark">?</span>.try_into().ok()<span class="question-mark">?</span>);
 	<span class="prelude-val">Some</span>(RegisterValidatorDatum::V0 {
 		stake_ownership,
 		sidechain_pub_key,
@@ -569,17 +569,17 @@
 				aura_pub_key,
 				grandpa_pub_key,
 			} =&gt; {
-				<span class="kw">let </span><span class="kw-2">mut </span>generic_data_fields = PlutusList::new();
-				generic_data_fields.add(<span class="kw-2">&amp;</span>stake_ownership_to_plutus_data(stake_ownership));
-				generic_data_fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(sidechain_pub_key.<span class="number">0</span>));
-				generic_data_fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(sidechain_signature.<span class="number">0</span>));
-				generic_data_fields.add(<span class="kw-2">&amp;</span>utxo_id_to_plutus_data(registration_utxo));
-				generic_data_fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(aura_pub_key.<span class="number">0</span>));
-				generic_data_fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(grandpa_pub_key.<span class="number">0</span>));
-				<span class="kw">let </span>generic_data = ConstrPlutusData::new(<span class="kw-2">&amp;</span>BigNum::zero(), <span class="kw-2">&amp;</span>generic_data_fields);
-				VersionedGenericDatumShape {
+				<span class="kw">let </span><span class="kw-2">mut </span>appendix_fields = PlutusList::new();
+				appendix_fields.add(<span class="kw-2">&amp;</span>stake_ownership_to_plutus_data(stake_ownership));
+				appendix_fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(sidechain_pub_key.<span class="number">0</span>));
+				appendix_fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(sidechain_signature.<span class="number">0</span>));
+				appendix_fields.add(<span class="kw-2">&amp;</span>utxo_id_to_plutus_data(registration_utxo));
+				appendix_fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(aura_pub_key.<span class="number">0</span>));
+				appendix_fields.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(grandpa_pub_key.<span class="number">0</span>));
+				<span class="kw">let </span>appendix = ConstrPlutusData::new(<span class="kw-2">&amp;</span>BigNum::zero(), <span class="kw-2">&amp;</span>appendix_fields);
+				VersionedGenericDatum {
 					datum: PlutusData::new_bytes(own_pkh.<span class="number">0</span>.to_vec()),
-					generic_data: PlutusData::new_constr_plutus_data(<span class="kw-2">&amp;</span>generic_data),
+					appendix: PlutusData::new_constr_plutus_data(<span class="kw-2">&amp;</span>appendix),
 					version: <span class="number">0</span>,
 				}
 				.into()

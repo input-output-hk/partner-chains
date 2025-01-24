@@ -532,7 +532,7 @@
 		<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Reference utxo {reference_utxo:?} not found on chain"</span>));
 	};
 
-	<span class="kw">let </span>ReserveUtxo { reserve_utxo, reserve_settings } =
+	<span class="kw">let </span>ReserveUtxo { utxo: reserve_utxo, datum: reserve_datum } =
 		reserve_data.get_reserve_utxo(<span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
 	<span class="kw">let </span>tx = Costs::calculate_costs(
@@ -541,7 +541,7 @@
 				<span class="kw-2">&amp;</span>ctx,
 				<span class="kw-2">&amp;</span>reserve_data,
 				<span class="kw-2">&amp;</span>reserve_utxo,
-				<span class="kw-2">&amp;</span>reserve_settings,
+				<span class="kw-2">&amp;</span>reserve_datum,
 				<span class="kw-2">&amp;</span>reference_utxo,
 				token.amount,
 				tip.slot,

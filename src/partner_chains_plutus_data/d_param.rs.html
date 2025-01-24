@@ -124,7 +124,7 @@
 <a href="#124" id="124">124</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
 	DataDecodingError, DecodingResult, PlutusDataExtensions, VersionedDatum,
-	VersionedDatumWithLegacy, VersionedGenericDatumShape,
+	VersionedDatumWithLegacy, VersionedGenericDatum,
 };
 <span class="kw">use </span>cardano_serialization_lib::{PlutusData, PlutusList};
 
@@ -155,10 +155,10 @@
 	<span class="kw">let </span><span class="kw-2">mut </span>list = PlutusList::new();
 	list.add(<span class="kw-2">&amp;</span>PlutusData::new_integer(<span class="kw-2">&amp;</span>d_param.num_permissioned_candidates.into()));
 	list.add(<span class="kw-2">&amp;</span>PlutusData::new_integer(<span class="kw-2">&amp;</span>d_param.num_registered_candidates.into()));
-	<span class="kw">let </span>generic_data = PlutusData::new_list(<span class="kw-2">&amp;</span>list);
-	VersionedGenericDatumShape {
+	<span class="kw">let </span>appendix = PlutusData::new_list(<span class="kw-2">&amp;</span>list);
+	VersionedGenericDatum {
 		datum: PlutusData::new_empty_constr_plutus_data(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into()),
-		generic_data,
+		appendix,
 		version: <span class="number">0</span>,
 	}
 	.into()
@@ -183,13 +183,13 @@
 	}
 
 	<span class="kw">fn </span>decode_versioned(
-		version: u32,
-		_const_data: <span class="kw-2">&amp;</span>PlutusData,
-		mut_data: <span class="kw-2">&amp;</span>PlutusData,
+		version: u64,
+		_datum: <span class="kw-2">&amp;</span>PlutusData,
+		appendix: <span class="kw-2">&amp;</span>PlutusData,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, String&gt; {
 		<span class="kw">match </span>version {
-			<span class="number">0 </span>=&gt; DParamDatum::decode_legacy(mut_data)
-				.map_err(|msg| <span class="macro">format!</span>(<span class="string">"Can not parse mutable part of data: {msg}"</span>)),
+			<span class="number">0 </span>=&gt; DParamDatum::decode_legacy(appendix)
+				.map_err(|msg| <span class="macro">format!</span>(<span class="string">"Cannot parse appendix: {msg}"</span>)),
 			<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">"Unknown version: {version}"</span>)),
 		}
 	}

@@ -174,8 +174,8 @@
 <span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
 	csl::{
-		get_builder_config, AssetIdExt, CostStore, Costs, OgmiosUtxoExt, TransactionBuilderExt,
-		TransactionContext, TransactionOutputAmountBuilderExt,
+		get_builder_config, unit_plutus_data, AssetIdExt, CostStore, Costs, OgmiosUtxoExt,
+		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	reserve::ReserveData,
@@ -206,12 +206,12 @@
 	<span class="kw">let </span>governance = get_governance_data(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>reserve = ReserveData::get(genesis_utxo, <span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>reserve_utxo = reserve.get_reserve_utxo(<span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="kw">let </span>amount = get_amount_to_release(<span class="kw-2">&amp;</span>reserve_utxo).ok_or_else(|| <span class="macro">anyhow!</span>(<span class="string">"Internal Error. Reserve Validator has UTXO with Reserve Auth Policy Token, but without other asset."</span>))<span class="question-mark">?</span>;
-	<span class="kw">let </span>utxo = reserve_utxo.reserve_utxo;
+	<span class="kw">let </span><span class="kw-2">ref </span>reserve_utxo @ ReserveUtxo { <span class="kw-2">ref </span>utxo, .. } =
+		reserve.get_reserve_utxo(<span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>amount = get_amount_to_release(reserve_utxo).ok_or_else(|| <span class="macro">anyhow!</span>(<span class="string">"Internal Error. Reserve Validator has UTXO with Reserve Auth Policy Token, but without other asset."</span>))<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>tx = Costs::calculate_costs(
-		|costs| build_tx(<span class="kw-2">&amp;</span>amount, <span class="kw-2">&amp;</span>utxo, <span class="kw-2">&amp;</span>reserve, <span class="kw-2">&amp;</span>governance, costs, <span class="kw-2">&amp;</span>ctx),
+		|costs| build_tx(<span class="kw-2">&amp;</span>amount, utxo, <span class="kw-2">&amp;</span>reserve, <span class="kw-2">&amp;</span>governance, costs, <span class="kw-2">&amp;</span>ctx),
 		client,
 	)
 	.<span class="kw">await</span><span class="question-mark">?</span>;
@@ -231,8 +231,8 @@
 }
 
 <span class="kw">fn </span>get_amount_to_release(reserve_utxo: <span class="kw-2">&amp;</span>ReserveUtxo) -&gt; <span class="prelude-ty">Option</span>&lt;TokenAmount&gt; {
-	<span class="kw">let </span>token = reserve_utxo.reserve_settings.immutable_settings.token.clone();
-	<span class="kw">let </span>amount = reserve_utxo.reserve_utxo.get_asset_amount(<span class="kw-2">&amp;</span>token).try_into().ok()<span class="question-mark">?</span>;
+	<span class="kw">let </span>token = reserve_utxo.datum.immutable_settings.token.clone();
+	<span class="kw">let </span>amount = reserve_utxo.utxo.get_asset_amount(<span class="kw-2">&amp;</span>token).try_into().ok()<span class="question-mark">?</span>;
 	<span class="prelude-val">Some</span>(TokenAmount { token, amount })
 }
 
@@ -300,6 +300,6 @@
 }
 
 <span class="kw">fn </span>illiquid_supply_validator_redeemer() -&gt; PlutusData {
-	PlutusData::new_empty_constr_plutus_data(<span class="kw-2">&amp;</span>BigNum::zero())
+	unit_plutus_data()
 }
 </code></pre></div></section></main></body></html>

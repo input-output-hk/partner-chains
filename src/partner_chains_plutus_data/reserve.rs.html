@@ -223,18 +223,9 @@
 <a href="#223" id="223">223</a>
 <a href="#224" id="224">224</a>
 <a href="#225" id="225">225</a>
-<a href="#226" id="226">226</a>
-<a href="#227" id="227">227</a>
-<a href="#228" id="228">228</a>
-<a href="#229" id="229">229</a>
-<a href="#230" id="230">230</a>
-<a href="#231" id="231">231</a>
-<a href="#232" id="232">232</a>
-<a href="#233" id="233">233</a>
-<a href="#234" id="234">234</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
 	decoding_error_and_log, plutus_data_version_and_payload, DataDecodingError, DecodingResult,
-	VersionedDatum, VersionedGenericDatumShape,
+	VersionedDatum, VersionedGenericDatum,
 };
 <span class="kw">use </span>cardano_serialization_lib::{BigInt, BigNum, ConstrPlutusData, PlutusData, PlutusList};
 <span class="kw">use </span>sidechain_domain::{AssetId, AssetName, PolicyId};
@@ -279,7 +270,7 @@
 
 <span class="kw">impl </span>From&lt;ReserveDatum&gt; <span class="kw">for </span>PlutusData {
 	<span class="kw">fn </span>from(value: ReserveDatum) -&gt; <span class="self">Self </span>{
-		VersionedGenericDatumShape {
+		VersionedGenericDatum {
 			datum: {
 				<span class="kw">let </span><span class="kw-2">mut </span>immutable_settings = PlutusList::new();
 				<span class="kw">let </span>t0 = PlutusData::new_integer(<span class="kw-2">&amp;</span>BigInt::zero());
@@ -316,7 +307,7 @@
 				PlutusData::new_list(<span class="kw-2">&amp;</span>datum)
 			},
 			<span class="comment">// this empty constructor below is Plutus encoding of `()`
-			</span>generic_data: PlutusData::new_empty_constr_plutus_data(<span class="kw-2">&amp;</span>BigNum::zero()),
+			</span>appendix: PlutusData::new_empty_constr_plutus_data(<span class="kw-2">&amp;</span>BigNum::zero()),
 			version: <span class="number">0</span>,
 		}
 		.into()
@@ -336,8 +327,10 @@
 
 	<span class="kw">fn </span>decode(datum: <span class="kw-2">&amp;</span>PlutusData) -&gt; DecodingResult&lt;<span class="self">Self</span>&gt; {
 		<span class="kw">match </span>plutus_data_version_and_payload(datum) {
-			<span class="prelude-val">Some</span>((<span class="number">0</span>, datum, <span class="kw">_</span>)) =&gt; decode_v0_reserve_datum(<span class="kw-2">&amp;</span>datum)
-				.ok_or_else(|| decoding_error_and_log(<span class="kw-2">&amp;</span>datum, <span class="string">"ReserveDatum"</span>, <span class="string">"invalid data"</span>)),
+			<span class="prelude-val">Some</span>(VersionedGenericDatum { version: <span class="number">0</span>, datum, .. }) =&gt; {
+				decode_v0_reserve_datum(<span class="kw-2">&amp;</span>datum)
+					.ok_or_else(|| decoding_error_and_log(<span class="kw-2">&amp;</span>datum, <span class="string">"ReserveDatum"</span>, <span class="string">"invalid data"</span>))
+			},
 			<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(decoding_error_and_log(datum, <span class="string">"ReserveDatum"</span>, <span class="string">"unversioned datum"</span>)),
 		}
 	}
@@ -363,22 +356,11 @@
 	<span class="kw">let </span>t0: u64 = immutable_settings_iter.next()<span class="question-mark">?</span>.as_integer()<span class="question-mark">?</span>.as_u64()<span class="question-mark">?</span>.into();
 	<span class="kw">let </span>token = decode_token_id_datum(immutable_settings_iter.next()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>v_function_hash_and_initial_incentive_list = outer_iter.next()<span class="question-mark">?</span>.as_list()<span class="question-mark">?</span>;
-	<span class="kw">let </span><span class="kw-2">mut </span>v_function_hash_and_initial_incentive_iter =
-		v_function_hash_and_initial_incentive_list.into_iter();
-	<span class="kw">let </span>total_accrued_function_script_hash = PolicyId(
-		v_function_hash_and_initial_incentive_iter
-			.next()<span class="question-mark">?
-			</span>.as_bytes()<span class="question-mark">?
-			</span>.to_vec()
-			.try_into()
-			.ok()<span class="question-mark">?</span>,
-	);
-	<span class="kw">let </span>initial_incentive = v_function_hash_and_initial_incentive_iter
-		.next()<span class="question-mark">?
-		</span>.as_integer()<span class="question-mark">?
-		</span>.as_u64()<span class="question-mark">?
-		</span>.into();
+	<span class="kw">let </span>mutable_settings_list = outer_iter.next()<span class="question-mark">?</span>.as_list()<span class="question-mark">?</span>;
+	<span class="kw">let </span><span class="kw-2">mut </span>mutable_settings_iter = mutable_settings_list.into_iter();
+	<span class="kw">let </span>total_accrued_function_script_hash =
+		PolicyId(mutable_settings_iter.next()<span class="question-mark">?</span>.as_bytes()<span class="question-mark">?</span>.to_vec().try_into().ok()<span class="question-mark">?</span>);
+	<span class="kw">let </span>initial_incentive = mutable_settings_iter.next()<span class="question-mark">?</span>.as_integer()<span class="question-mark">?</span>.as_u64()<span class="question-mark">?</span>.into();
 
 	<span class="kw">let </span>stats = ReserveStats {
 		token_total_amount_transferred: outer_iter.next()<span class="question-mark">?</span>.as_integer()<span class="question-mark">?</span>.as_u64()<span class="question-mark">?</span>.into(),
