@@ -151,11 +151,7 @@ jobs:
     permissions:
       id-token: write
       contents: write
-    if: >
-      always() && (
-        (inputs.no-build != 'true' && needs.upload-to-s3.result == 'success') || 
-        (inputs.no-build == 'true' && needs.download-from-s3.result == 'success')
-      )
+    if: ${{ always() && !failure() && !cancelled() }}
     steps:
       - name: Artifacts Ready
         run: |
