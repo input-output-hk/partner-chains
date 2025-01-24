@@ -3,7 +3,7 @@ use sidechain_domain::*;
 
 use crate::{
 	DataDecodingError, DecodingResult, VersionedDatum, VersionedDatumWithLegacy,
-	VersionedGenericDatumShape,
+	VersionedGenericDatum,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -55,10 +55,10 @@ pub fn permissioned_candidates_to_plutus_data(
 		candidate_datum.add(&PlutusData::new_bytes(candidate.grandpa_public_key.0.clone()));
 		list.add(&PlutusData::new_list(&candidate_datum));
 	}
-	let generic_data = PlutusData::new_list(&list);
-	VersionedGenericDatumShape {
+	let appendix = PlutusData::new_list(&list);
+	VersionedGenericDatum {
 		datum: PlutusData::new_empty_constr_plutus_data(&BigNum::zero()),
-		generic_data,
+		appendix,
 		version: 0,
 	}
 	.into()
@@ -83,13 +83,13 @@ impl VersionedDatumWithLegacy for PermissionedCandidateDatums {
 	}
 
 	fn decode_versioned(
-		version: u32,
-		_const_data: &PlutusData,
-		mut_data: &PlutusData,
+		version: u64,
+		_datum: &PlutusData,
+		appendix: &PlutusData,
 	) -> Result<Self, String> {
 		match version {
-			0 => PermissionedCandidateDatums::decode_legacy(mut_data)
-				.map_err(|msg| format!("Can not parse mutable part of data: {msg}")),
+			0 => PermissionedCandidateDatums::decode_legacy(appendix)
+				.map_err(|msg| format!("Cannot parse appendix: {msg}")),
 			_ => Err(format!("Unknown version: {version}")),
 		}
 	}

@@ -35,8 +35,8 @@ pub(crate) struct ReserveData {
 
 #[derive(Clone, Debug)]
 pub(crate) struct ReserveUtxo {
-	pub(crate) reserve_utxo: OgmiosUtxo,
-	pub(crate) reserve_settings: ReserveDatum,
+	pub(crate) utxo: OgmiosUtxo,
+	pub(crate) datum: ReserveDatum,
 }
 
 impl ReserveData {
@@ -117,7 +117,7 @@ impl ReserveData {
 				anyhow!("Reserve Utxo not found, is the Reserve Token Management initialized?")
 			})?;
 
-		Ok(ReserveUtxo { reserve_utxo, reserve_settings })
+		Ok(ReserveUtxo { utxo: reserve_utxo, datum: reserve_settings })
 	}
 }
 

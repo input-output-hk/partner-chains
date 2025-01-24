@@ -22,8 +22,8 @@ use super::{reserve_utxo_input_with_validator_script_reference, ReserveUtxo, Tok
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
-		get_builder_config, AssetIdExt, CostStore, Costs, OgmiosUtxoExt, TransactionBuilderExt,
-		TransactionContext, TransactionOutputAmountBuilderExt,
+		get_builder_config, unit_plutus_data, AssetIdExt, CostStore, Costs, OgmiosUtxoExt,
+		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	reserve::ReserveData,
@@ -54,12 +54,12 @@ pub async fn handover_reserve<
 	let governance = get_governance_data(genesis_utxo, client).await?;
 	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
 
-	let reserve_utxo = reserve.get_reserve_utxo(&ctx, client).await?;
-	let amount = get_amount_to_release(&reserve_utxo).ok_or_else(|| anyhow!("Internal Error. Reserve Validator has UTXO with Reserve Auth Policy Token, but without other asset."))?;
-	let utxo = reserve_utxo.reserve_utxo;
+	let ref reserve_utxo @ ReserveUtxo { ref utxo, .. } =
+		reserve.get_reserve_utxo(&ctx, client).await?;
+	let amount = get_amount_to_release(reserve_utxo).ok_or_else(|| anyhow!("Internal Error. Reserve Validator has UTXO with Reserve Auth Policy Token, but without other asset."))?;
 
 	let tx = Costs::calculate_costs(
-		|costs| build_tx(&amount, &utxo, &reserve, &governance, costs, &ctx),
+		|costs| build_tx(&amount, utxo, &reserve, &governance, costs, &ctx),
 		client,
 	)
 	.await?;
@@ -79,8 +79,8 @@ pub async fn handover_reserve<
 }
 
 fn get_amount_to_release(reserve_utxo: &ReserveUtxo) -> Option<TokenAmount> {
-	let token = reserve_utxo.reserve_settings.immutable_settings.token.clone();
-	let amount = reserve_utxo.reserve_utxo.get_asset_amount(&token).try_into().ok()?;
+	let token = reserve_utxo.datum.immutable_settings.token.clone();
+	let amount = reserve_utxo.utxo.get_asset_amount(&token).try_into().ok()?;
 	Some(TokenAmount { token, amount })
 }
 
@@ -148,5 +148,5 @@ fn illiquid_supply_validator_output(
 }
 
 fn illiquid_supply_validator_redeemer() -> PlutusData {
-	PlutusData::new_empty_constr_plutus_data(&BigNum::zero())
+	unit_plutus_data()
 }
