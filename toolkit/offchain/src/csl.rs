@@ -186,19 +186,6 @@ impl ScriptExUnits {
 	}
 }
 
-pub(crate) fn get_validator_budgets(
-	mut responses: Vec<OgmiosEvaluateTransactionResponse>,
-) -> ScriptExUnits {
-	responses.sort_by_key(|r| r.validator.index);
-	let (mint_ex_units, spend_ex_units) = responses
-		.into_iter()
-		.partition::<Vec<_>, _>(|response| response.validator.purpose == "mint");
-	let mint_ex_units = mint_ex_units.into_iter().map(ex_units_from_response).collect();
-	let spend_ex_units = spend_ex_units.into_iter().map(ex_units_from_response).collect();
-
-	ScriptExUnits { mint_ex_units, spend_ex_units }
-}
-
 fn ex_units_from_response(resp: OgmiosEvaluateTransactionResponse) -> ExUnits {
 	ExUnits::new(&resp.budget.memory.into(), &resp.budget.cpu.into())
 }
@@ -846,7 +833,7 @@ mod tests {
 	use cardano_serialization_lib::{AssetName, Language, NetworkIdKind};
 	use hex_literal::hex;
 	use ogmios_client::{
-		transactions::{OgmiosBudget, OgmiosValidatorIndex},
+		transactions::OgmiosBudget,
 		types::{Asset, OgmiosValue},
 	};
 	use pretty_assertions::assert_eq;
@@ -976,41 +963,6 @@ mod tests {
 		let ex_units = super::convert_ex_units(&OgmiosBudget { memory: 1000, cpu: 2000 });
 		assert_eq!(ex_units.mem(), 1000u64.into());
 		assert_eq!(ex_units.steps(), 2000u64.into());
-	}
-
-	#[test]
-	fn get_validator_budgets_works() {
-		let result = get_validator_budgets(vec![
-			OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex::new(1, "mint"),
-				budget: OgmiosBudget::new(11, 21),
-			},
-			OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex::new(0, "spend"),
-				budget: OgmiosBudget::new(10, 20),
-			},
-			OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex::new(3, "mint"),
-				budget: OgmiosBudget::new(13, 23),
-			},
-			OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex::new(2, "spend"),
-				budget: OgmiosBudget::new(12, 22),
-			},
-		]);
-
-		let expected = ScriptExUnits {
-			mint_ex_units: vec![
-				ExUnits::new(&11u64.into(), &21u64.into()),
-				ExUnits::new(&13u64.into(), &23u64.into()),
-			],
-			spend_ex_units: vec![
-				ExUnits::new(&10u64.into(), &20u64.into()),
-				ExUnits::new(&12u64.into(), &22u64.into()),
-			],
-		};
-
-		assert_eq!(result, expected);
 	}
 }
 
