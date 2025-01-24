@@ -45,7 +45,7 @@ pub async fn update_reserve_settings<
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance = get_governance_data(genesis_utxo, client).await?;
 	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
-	let ReserveUtxo { reserve_utxo, reserve_settings: mut reserve_datum } =
+	let ReserveUtxo { utxo: reserve_utxo, datum: mut reserve_datum } =
 		reserve.get_reserve_utxo(&ctx, client).await?;
 
 	if let Some(total_accrued_function_script_hash) = total_accrued_function_script_hash_opt.clone()

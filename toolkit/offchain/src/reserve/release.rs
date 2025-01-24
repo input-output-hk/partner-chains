@@ -54,7 +54,7 @@ pub async fn release_reserve_funds<
 		return Err(anyhow!("Reference utxo {reference_utxo:?} not found on chain"));
 	};
 
-	let ReserveUtxo { reserve_utxo, reserve_settings } =
+	let ReserveUtxo { utxo: reserve_utxo, datum: reserve_datum } =
 		reserve_data.get_reserve_utxo(&ctx, client).await?;
 
 	let tx = Costs::calculate_costs(
@@ -63,7 +63,7 @@ pub async fn release_reserve_funds<
 				&ctx,
 				&reserve_data,
 				&reserve_utxo,
-				&reserve_settings,
+				&reserve_datum,
 				&reference_utxo,
 				token.amount,
 				tip.slot,

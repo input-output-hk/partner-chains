@@ -52,7 +52,7 @@ pub async fn deposit_to_reserve<
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance = get_governance_data(genesis_utxo, client).await?;
 	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
-	let utxo = reserve.get_reserve_utxo(&ctx, client).await?.reserve_utxo;
+	let utxo = reserve.get_reserve_utxo(&ctx, client).await?.utxo;
 	let current_amount = get_token_amount(&utxo, &parameters.token);
 	let token_amount =
 		TokenAmount { token: parameters.token, amount: current_amount + parameters.amount };
