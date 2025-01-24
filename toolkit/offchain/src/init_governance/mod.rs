@@ -184,10 +184,6 @@ impl GovernanceData {
 }
 
 impl GovernanceData {
-	pub(crate) fn policy_script_hash(&self) -> ScriptHash {
-		self.policy_script.csl_script_hash()
-	}
-
 	pub(crate) fn utxo_id_as_tx_input(&self) -> TransactionInput {
 		TransactionInput::new(
 			&TransactionHash::from_bytes(self.utxo_id().tx_hash.0.to_vec()).unwrap(),

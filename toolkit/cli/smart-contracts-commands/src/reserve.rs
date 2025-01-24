@@ -151,7 +151,7 @@ pub struct UpdateReserveSettingsCmd {
 	genesis_utxo: UtxoId,
 	#[arg(long)]
 	/// Script hash of the 'total accrued function', also called V-function, that computes how many tokens could be released from the reserve at given moment.
-	total_accrued_function_script_hash: Option<ScriptHash>,
+	total_accrued_function_script_hash: ScriptHash,
 }
 
 impl UpdateReserveSettingsCmd {

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 apt -qq update &> /dev/null
-apt -qq -y install jq ncat &> /dev/null
+apt -qq -y install curl jq ncat &> /dev/null
 
 cp /usr/local/bin/partner-chains-node /partner-chains-node
 
