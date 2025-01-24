@@ -1,39 +1,52 @@
-# Setting up token management for a partner chain
+# Native token reserve management
 
-This guide shows you how to set up and manage a token management contract on the Cardano blockchain, enabling proper observability on partner chains. 
-This guide presents the step-by-step process involving interactions with both the Cardano and the partner chain blockchain.
+## Overview
+
+This guide covers the following tasks: 
+
+1. **On Cardano:** 
+
+- Creating your new token and setting up rules for how tokens are released over time. 
+- This involves setting up and managing a token management contract on the Cardano blockchain, enabling proper observability on your partner chain. 
+
+2. **On your partner chain:** 
+
+- Connecting your partner chain to track the token and enable token operations across both chains. 
+- This involves following a step-by-step process for interacting with both the Cardano blockchain and your partner chain.
+
+After you complete the steps in this guide, you will have a fully functioning token system that works across Cardano and your partner chain.
 
 ![Native token management contract](native-token-mgt-contract.png "Native token management contract")
 
-# Prerequisites
+## Prerequisites
 
 - **Cardano Node Setup:** A running Cardano node, including Ogmios and Kupo, to interact with the Cardano blockchain.
 
-- **Partner Chain Node Setup:** Access to a partner chain node.
+- **Partner Chain Node Setup:** A running partner chain node.
 
 - **Development Environment:** Haskell and related tools installed for running scripts.
 
 - **Native Token Creation Knowledge:** Familiarity with creating Cardano native tokens.
 
-- **Command-Line Tools:** Access to `pc-contracts-cli` (partner-chains-smart-contracts release binary) and `partner-chains-cli` (partner-chains release binary)
+- **Command-Line Tools:** `pc-contracts-cli` ([partner-chains-smart-contracts release binary](https://github.com/input-output-hk/partner-chains-smart-contracts/releases)) 
 
-# Overview
+<!-- Comments from Alex Romanov to incorporate -->
 
-This guide covers two main tasks: 
+## Rewards schemes
 
-1. **On Cardano:** Creating your new token and setting up rules for how tokens are released over time.
+Please note that rewards schemes for token release is the responsibility of the Chain Builder. 
 
-2. **On your partner chain:** Connecting your partner chain to track the token and enable token operations across both chains. 
+# Part One: Initialization
 
-After you complete the steps in this guide, you will have a fully functioning token system that works across Cardano and your partner chain.
+Initialization includes creating the native token on Cardano, writing the V-function, running the commands `init-reserve-management` and `reserve-create` at the `pc-contracts-cli` side. 
 
-# 1. Setting up your token on Cardano
+## 1. Setting up your token on Cardano
 
-## 1.1 Creating a native token
+### 1.1 Creating a native token
 
 Objective: Create a Cardano native token within your partner chain ecosystem.
 
-### Steps
+#### Steps
 
 This step is outside the scope of partner chains and requires following the standard procedure for creating Cardano native tokens. 
 Please see: [Minting Native Assets](https://developers.cardano.org/docs/native-tokens/minting/) on the Cardano Developer Portal for details. 
@@ -49,19 +62,28 @@ Generally speaking, however, the process includes these  steps:
 
    - Asset Name: The name of the token in hexadecimal.
 
-## 1.2 Configuring token release schedule
+### 1.2 Configuring the token release schedule
 
-### 1.2.1 Implementing V(t) release function
+#### 1.2.1 Implementing V(t) release function
 
-Understanding `V` function:
+**Understanding the `V` function:**
 
-- Purpose: The `V` function defines the schedule and amount of token `A` that moves from the reserve supply to the circulating supply over time.
+- The `V` function defines the schedule and amount of tokens `A` that move from the reserve supply to the circulating supply over time.
 
-- User Responsibility: You need to provide the logic for `V`, which determines how tokens are released. 
+- The Validity interval is to be present and equal to `[T, infinity]`, where `T` is time in the recent past, close to the current time.
 
-   - This logic can be written using native or Plutus scripts as well as Aiken scripts. The code should be compiled and attached as a reference script to UTXO.
+- The Transaction input with ReserveAuthPolicy token is to be present. This utxo contains datum in the form
+`[[[T_0, ], [_, _], _], _, _]` where `T_0` is the start time of the Reserve system. Based on `T_0` and `T`, one can calculate how much time has passed since the start of the system.
 
-- You can check the [example V-function](https://github.com/input-output-hk/partner-chains-smart-contracts/blob/master/onchain/src/TrustlessSidechain/ExampleVFunction.hs) in the partner-chains-smart-contracts repository.
+- The `V` function should be able to mint X tokens and be invoked repeatedly, each time minting X new tokens. The value of X should grow in time and represent the total number of tokens to be released from the Reserve to IlliquidCirculationSupply up to the current moment in time.
+
+**User responsibility:** 
+
+- You need to provide the logic for `V`, which determines how tokens are released. 
+
+- This logic can be written using native or Plutus scripts as well as Aiken scripts. The code should be compiled and attached as a reference script to UTXO.
+
+- For reference, you can check the [example V-function](https://github.com/input-output-hk/partner-chains-smart-contracts/blob/master/onchain/src/TrustlessSidechain/ExampleVFunction.hs) in the partner-chains-smart-contracts repository.
 
 After compilation, include the script as a CBOR in the reference.json:
 
@@ -91,23 +113,23 @@ cardano-cli conway transaction sign \
 cardano-cli conway transaction submit --tx-file tx.signed --testnet-magic 2
 ```
 
-### Steps
+#### Steps
 
 1. Implement V-function (see [example V-function](https://github.com/input-output-hk/partner-chains-smart-contracts/blob/master/onchain/src/TrustlessSidechain/ExampleVFunction.hs) in the partner-chains-smart-contracts repository). 
 
-2. Compile V-function script.
+2. Compile the V-function script.
 
 3. Include the script as a CBOR in the reference.json.
 
 4. Add reference.json to the transaction and submit it to Cardano. 
 
-5. Find and note hash#id for the transaction that has V-function script attached.
+5. Find and note the hash#id for the transaction that has the V-function script attached.
 
-## 1.3 Initializing token reserve controls
+### 1.3 Initializing token reserve controls
 
 Objective: Initialize the reserve management system for your token.
 
-### 1.3.1 Run `init-reserve-management` command
+#### 1.3.1 Run the `init-reserve-management` command
 
 Command template:
 
@@ -122,17 +144,17 @@ Command template:
 --network testnet
 ```
 
-### Steps
+#### Steps
 
 1. Execute the `init-reserve-management` command.
 
 2. Confirm initialization: Ensure that the `InitReserveManagement` scripts are correctly initialized by checking the command output.
 
-## 1.4 Creating your token reserve
+### 1.4 Creating your token reserve
 
 Objective: Create a reserve for your token and define the release function `V`.
 
-### 1.4.1 Run `reserve-create` command
+#### 1.4.1 Run the `reserve-create` command
 
 Command template:
 
@@ -174,11 +196,11 @@ Command template:
 
 * `--genesis-utxo`: The genesis UTXO of the running partnerchain.
 
-* `--network`: The network you operate on (`testnet` or `mainnet`).
+* `--network`: The network you operate on (for example, `testnet` or `mainnet`).
 
 * `--total-accrued-function-script-hash`: The script hash of your `V` function.
 
-* `--reserve-posixtime-t0`: an integer that could possibly be used by user defined `V` function. It will be written into PlutusData of UTXO at Reserve Validator. Deprecated. This field will be set to 0 in the future versions of CLI.
+* `--reserve-posixtime-t0`: an integer that could possibly be used by user-defined `V` function. It will be written into PlutusData of UTXO at Reserve Validator. Deprecated. This field will be set to 0 in the future versions of the CLI.
 
 * `--reserve-asset-script-hash`: The script hash of the reserve asset (policy ID).
 
@@ -188,7 +210,7 @@ Command template:
 
 * `--payment-signing-key-file`: Your payment signing key file for transaction signing. This key has to have `reserve-initial-deposit-amount` in its wallet. 
 
-### Steps
+#### Steps
 
 1. Prepare the parameters: Replace the placeholders with your actual values.
 
@@ -196,11 +218,19 @@ Command template:
 
 3. Confirm initialization: Ensure that the reserve initialization transaction has been confirmed by checking the command output.
 
-## 1.5 Releasing tokens from reserve to circulation
+
+# Part Two: Usage
+
+Usage includes the `reserve-release-funds` and `reserve-handover` commands.
+
+- `reserve-handover` &ndash; a command for finishing the flow (either there is nothing to release or the Governance Authority user wants to finish the flow).
+- `reserve-release-funds` &ndash; a command to "move" the flow until the end. 
+
+## 2. Releasing tokens from reserve to circulation
 
 Objective: Release available reserve tokens (defined by the `V` function).
 
-### 1.5.1 Run the `reserve-release-funds` command
+### 2.1 Run the `reserve-release-funds` command
 
 #### Command template
 
@@ -221,11 +251,11 @@ Objective: Release available reserve tokens (defined by the `V` function).
 
 * `--genesis-utxo`: The genesis UTXO of the running partnerchain
 
-* `--network`: The network you operate on (`testnet` or `mainnet`)
+* `--network`: The network you operate on (for example, `testnet` or `mainnet`)
 
 * `--payment-signing-key-file`: Your payment signing key file for transaction signing
 
-* `--reserve-transaction-input`: UTXO where `V` function script is attached as a reference
+* `--reserve-transaction-input`: UTXO where the `V` function script is attached as a reference
 
 * `--total-accrued-till-now`: amount of tokens to release 
 
@@ -235,17 +265,17 @@ Objective: Release available reserve tokens (defined by the `V` function).
 
    - Ensure you have enough tokens to release in this time frame (the `V` function defines release logic). 
 
-### Steps
+#### Steps
 
 1. Execute the `reserve-release-funds` command.
 
 2. Confirm completion: make sure that the release process has been completed by checking the command output.
 
-## 1.6 Transferring token control to smart contracts
+## 2.2 Transferring token control to smart contracts
 
 Objective: Complete the reserve setup by handing over control to the appropriate scripts.
 
-### 1.6.1 Run the `reserve-handover` command
+### 2.2.1 Run the `reserve-handover` command
 
 #### Command template
 
@@ -261,17 +291,22 @@ Objective: Complete the reserve setup by handing over control to the appropriate
   --hand-over
 ```
 
-### Steps
+#### Steps
 
 1. Execute the `reserve-handover` command.
 
 2. Confirm completion: Make sure that the handover process has been completed and the illiquid circulation supply transaction has been confirmed by checking the command output.
 
-## 1.7 Initializing token reserve with initial deposit
+## 2.3 Initializing token reserve with initial deposit
 
 Objective: Configure the initial token reserve by depositing a specified amount of tokens into the reserve contract.
 
-### 1.7.1 Run the `reserve-deposit` command (optional)
+
+# Part Three: Configuration
+
+Configuration includes `reserve-deposit` and `reserve-update-settings` commands used to either change token in reserve or V-function. 
+
+## 3. Run the `reserve-deposit` command (optional)
 
 #### Command template
 
@@ -303,7 +338,7 @@ Objective: Configure the initial token reserve by depositing a specified amount 
 
 * `--reserve-initial-deposit-amount`: The amount of tokens to deposit into the reserve
 
-### Steps
+#### Steps
 
 1. Replace the placeholder values with your specific configuration parameters.
 
@@ -311,13 +346,13 @@ Objective: Configure the initial token reserve by depositing a specified amount 
 
 3. Verify that the deposit completed successfully by checking the command output status.
 
-# 2. Connecting your token to your partner chain
+## 4. Connecting your token to your partner chain
 
-## 2.1 Gathering required token parameters
+### 4.1 Gathering required token parameters
 
 Objective: Collect the essential parameters needed to configure the native token management contract on the partner chain.
 
-### Required parameters
+#### Required parameters
 
 - NATIVE_TOKEN_POLICY_ID - the policy ID from Step 1.1.
 
@@ -325,13 +360,13 @@ Objective: Collect the essential parameters needed to configure the native token
 
 - ILLIQUID_SUPPLY_VALIDATOR_ADDRESS - can be obtained from the output of the `addresses` command (see below). 
 
-### 2.1.1 Retrieving the validator address
+#### 4.1.1 Retrieving the validator address
 
 Execute the `addresses` command: 
 
 ```bash
 ./pc-contracts-cli addresses \
---genesis-utxo <GenesisCommitteeHashUTxO> \
+  --genesis-utxo <GenesisCommitteeHashUTxO> \
   --ogmios-host <Ogmios_Host> \
   --ogmios-port <Ogmios_Port> \
   --kupo-host <Kupo_Host> \
@@ -353,11 +388,11 @@ Locate the validator address in the command output:
 }
 ```
 
-## 2.2 Following the Native Token Migration Guide
+### 4.2 Following the Native Token Migration Guide
 
 Objective: Migrate and synchronize the token state between Cardano and the partner chain.
 
-### Steps
+#### Steps
 
 1. Open the [Native Token Migration Guide](https://github.com/input-output-hk/partner-chains/blob/master/docs/developer-guides/native-token-migration-guide.md).
 
@@ -365,15 +400,13 @@ Objective: Migrate and synchronize the token state between Cardano and the partn
 
 3. Verify synchronization by checking that the token state is appropriately observed on the partner chain.
 
-## 2.3 Updating current native token management configuration (optional)
+### 4.3 Updating current native token management configuration (optional)
 
 Objective: Update native token configuration if migration has already happened.
 
-**Warning:** The following steps need to be executed by the Governance Authority via a sudo account at PolkadotUI.
+#### Steps
 
-### Steps
-
-Note that these steps need to be run by the governance authority from the sudo account in the Polkadot UI. 
+**Warning:** The following steps need to be executed by the Governance Authority from the sudo account in the Polkadot UI.
 
 1. Run `set_main_chain_scripts` extrinsic on the nativeTokenManagement pallet via the Polkadot UI portal to set the native token `policy ID`, `asset name`, and `illiquid supply validator address`. 
 
@@ -393,16 +426,16 @@ Example native token configuration:
 }
 ```
 
-# Notes
+## Notes
 
 * The partner chains node follows any token movements on the illiquid supply validator address once the block becomes stable on Cardano (it is based on the `securityParam` of Cardano).
 
-   - The `securityParam` of Cardano specifies that the blockchain is considered to be final after 2160 blocks for mainnet. See [CIPs/CIP-0009/README.md at master · cardano-foundation/CIPs](https://github.com/cardano-foundation/CIPs/blob/master/CIP-0009/README.md#non-updatable-parameters). 
+   - The `securityParam` of Cardano specifies that the blockchain is considered to be final after 2160 blocks for mainnet. See [CIPs/CIP-0009/README.md](https://github.com/cardano-foundation/CIPs/blob/master/CIP-0009/README.md#non-updatable-parameters) for details about the protocol parameter specifications. 
 
       - 2.5h for preview
 
       - ~12h for mainnet
 
-* The `reserve-deposit` command can be executed only by the governance authority -- the one who created the reserve.
+* The `reserve-deposit` command can be executed only by the governance authority &ndash; the one who created the reserve.
 
-* One native token is expected to be in the reserve at a time. The governance authority can create another reserve with another token for a single genesis UTXO. However, it is recommended to move all tokens from `ReserveValidator` address to `IlliquidSupplyValidator` address (using `release-handover`) before starting to manage a second token. 
+* One native token is expected to be in the reserve at a time. The governance authority can create another reserve with another token for a single genesis UTXO. However, it is recommended to move all tokens from the `ReserveValidator` address to the `IlliquidSupplyValidator` address (using `release-handover`) before starting to manage a second token. 
