@@ -22,6 +22,8 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
+		/// Beneficiary ID. This can be an arbitrary type, depending on what entities are block
+		/// beneficiaries on a specific chain.
 		type BeneficiaryId: Member + Parameter + MaxEncodedLen;
 
 		/// Type of accumulated "reward" value
@@ -31,6 +33,7 @@ pub mod pallet {
 			+ MaxEncodedLen
 			+ Add<Self::BlockRewardPoints, Output = Self::BlockRewardPoints>;
 
+		/// Reward calculator, run each block to determine its worth in [BlockRewardPoints]
 		type GetBlockRewardPoints: GetBlockRewardPoints<Self::BlockRewardPoints>;
 	}
 
@@ -69,6 +72,7 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		/// Inherent setting the current block beneficiary, so it can be processed when the block is finalized
 		fn get_beneficiary_from_inherent_data(
 			data: &InherentData,
 		) -> Result<T::BeneficiaryId, InherentError> {
@@ -113,6 +117,8 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		/// Returns the current beneficiary-accumulated blocks rewards mapping and cleans internal storage.
+		/// The caller must process all entries returned by this function.
 		pub fn get_rewards_and_clear() -> Vec<(T::BeneficiaryId, T::BlockRewardPoints)> {
 			PendingRewards::<T>::drain().collect()
 		}
