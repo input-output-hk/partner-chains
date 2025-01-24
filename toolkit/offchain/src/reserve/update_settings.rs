@@ -38,7 +38,7 @@ pub async fn update_reserve_settings<
 >(
 	genesis_utxo: UtxoId,
 	payment_key: [u8; 32],
-	mut total_accrued_function_script_hash_opt: Option<ScriptHash>,
+	total_accrued_function_script_hash: ScriptHash,
 	client: &T,
 	await_tx: &A,
 ) -> anyhow::Result<Option<McTxHash>> {
@@ -48,26 +48,17 @@ pub async fn update_reserve_settings<
 	let ReserveUtxo { utxo: reserve_utxo, datum: mut reserve_datum } =
 		reserve.get_reserve_utxo(&ctx, client).await?;
 
-	if let Some(total_accrued_function_script_hash) = total_accrued_function_script_hash_opt.clone()
+	if total_accrued_function_script_hash
+		== reserve_datum.mutable_settings.total_accrued_function_script_hash
 	{
-		if total_accrued_function_script_hash
-			== reserve_datum.mutable_settings.total_accrued_function_script_hash
-		{
-			total_accrued_function_script_hash_opt = None;
-			log::info!(
-				"Reserve V function hash is already set to {:?}.",
-				total_accrued_function_script_hash
-			);
-		} else {
-			reserve_datum.mutable_settings.total_accrued_function_script_hash =
-				total_accrued_function_script_hash.clone();
-		}
-	}
-
-	if total_accrued_function_script_hash_opt.is_none() {
-		log::info!("Nothing to update.");
+		log::info!(
+			"Reserve V function hash is already set to {:?}. Nothing to update.",
+			total_accrued_function_script_hash
+		);
 		return Ok(None);
 	}
+	reserve_datum.mutable_settings.total_accrued_function_script_hash =
+		total_accrued_function_script_hash.clone();
 
 	let tx = Costs::calculate_costs(
 		|costs| {
