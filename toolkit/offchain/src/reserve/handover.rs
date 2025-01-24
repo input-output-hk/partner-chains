@@ -22,8 +22,8 @@ use super::{reserve_utxo_input_with_validator_script_reference, ReserveUtxo, Tok
 use crate::{
 	await_tx::AwaitTx,
 	csl::{
-		get_builder_config, AssetIdExt, CostStore, Costs, OgmiosUtxoExt, TransactionBuilderExt,
-		TransactionContext, TransactionOutputAmountBuilderExt,
+		get_builder_config, unit_plutus_data, AssetIdExt, CostStore, Costs, OgmiosUtxoExt,
+		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
 	},
 	init_governance::{get_governance_data, GovernanceData},
 	reserve::ReserveData,
@@ -148,5 +148,5 @@ fn illiquid_supply_validator_output(
 }
 
 fn illiquid_supply_validator_redeemer() -> PlutusData {
-	PlutusData::new_empty_constr_plutus_data(&BigNum::zero())
+	unit_plutus_data()
 }

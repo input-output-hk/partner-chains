@@ -37,8 +37,8 @@ impl PlutusDataExtensions for cardano_serialization_lib::PlutusData {
 /// Trait that provides decoding of versioned generic plutus data.
 ///
 /// Versioned generic plutus data contain a version number and two data sections:
-/// - immutable section - the data with stable schema, read and validated by smart contracts
-/// - mutable section - generic data with evolving schema indicated by the version number, not used by smart contracts
+/// - datum - the data with stable schema, read and validated by smart contracts
+/// - appendix - generic data with evolving schema indicated by the version number, not used by smart contracts
 ///
 /// The corresponding definition in the smart contracts repo is:
 /// ```haskell
@@ -68,12 +68,12 @@ pub(crate) trait VersionedDatumWithLegacy: Sized {
 	///
 	/// Parameters:
 	/// * `version` - version number
-	/// * `const_data` - immutable part of the schema
-	/// * `mut_data` - mutable part of the schema
+	/// * `datum` - datum with schema specified by smart-contract
+	/// * `appendix` - generic data ignored by smart-contract logic, schema is version dependent
 	fn decode_versioned(
 		version: u64,
-		const_data: &PlutusData,
-		mut_data: &PlutusData,
+		datum: &PlutusData,
+		appendix: &PlutusData,
 	) -> Result<Self, String>;
 }
 
@@ -83,8 +83,8 @@ impl<T: VersionedDatumWithLegacy> VersionedDatum for T {
 	fn decode(data: &PlutusData) -> DecodingResult<Self> {
 		(match plutus_data_version_and_payload(data) {
 			None => Self::decode_legacy(data),
-			Some(VersionedGenericDatum { datum, generic_data, version }) => {
-				Self::decode_versioned(version, &datum, &generic_data)
+			Some(VersionedGenericDatum { datum, appendix, version }) => {
+				Self::decode_versioned(version, &datum, &appendix)
 			},
 		})
 		.map_err(|msg| decoding_error_and_log(data, Self::NAME, &msg))
@@ -96,7 +96,7 @@ fn plutus_data_version_and_payload(data: &PlutusData) -> Option<VersionedGeneric
 
 	Some(VersionedGenericDatum {
 		datum: fields.get(0),
-		generic_data: fields.get(1),
+		appendix: fields.get(1),
 		version: fields.get(2).as_u64()?,
 	})
 }
@@ -111,7 +111,7 @@ fn decoding_error_and_log(data: &PlutusData, to: &str, msg: &str) -> DataDecodin
 /// datum types.
 pub(crate) struct VersionedGenericDatum {
 	pub datum: PlutusData,
-	pub generic_data: PlutusData,
+	pub appendix: PlutusData,
 	pub version: u64,
 }
 
@@ -119,7 +119,7 @@ impl From<VersionedGenericDatum> for PlutusData {
 	fn from(value: VersionedGenericDatum) -> Self {
 		let mut list = PlutusList::new();
 		list.add(&value.datum);
-		list.add(&value.generic_data);
+		list.add(&value.appendix);
 		list.add(&PlutusData::new_integer(&value.version.into()));
 		PlutusData::new_list(&list)
 	}

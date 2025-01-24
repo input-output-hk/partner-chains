@@ -82,7 +82,7 @@ impl From<ReserveDatum> for PlutusData {
 				PlutusData::new_list(&datum)
 			},
 			// this empty constructor below is Plutus encoding of `()`
-			generic_data: PlutusData::new_empty_constr_plutus_data(&BigNum::zero()),
+			appendix: PlutusData::new_empty_constr_plutus_data(&BigNum::zero()),
 			version: 0,
 		}
 		.into()

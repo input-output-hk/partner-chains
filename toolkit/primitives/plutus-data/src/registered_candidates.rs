@@ -66,12 +66,12 @@ impl VersionedDatumWithLegacy for RegisterValidatorDatum {
 
 	fn decode_versioned(
 		version: u64,
-		const_data: &PlutusData,
-		mut_data: &PlutusData,
+		datum: &PlutusData,
+		appendix: &PlutusData,
 	) -> Result<Self, String> {
 		match version {
-			0 => decode_v0_register_validator_datum(const_data, mut_data)
-				.ok_or("Can not parse mutable part of data".to_string()),
+			0 => decode_v0_register_validator_datum(datum, appendix)
+				.ok_or("Can not parse appendix".to_string()),
 			_ => Err(format!("Unknown version: {version}")),
 		}
 	}
@@ -117,10 +117,10 @@ impl From<RegisterValidatorDatum> for CandidateRegistration {
 }
 
 fn decode_v0_register_validator_datum(
-	const_data: &PlutusData,
-	mut_data: &PlutusData,
+	datum: &PlutusData,
+	appendix: &PlutusData,
 ) -> Option<RegisterValidatorDatum> {
-	let fields = mut_data
+	let fields = appendix
 		.as_constr_plutus_data()
 		.filter(|datum| datum.alternative().is_zero())
 		.filter(|datum| datum.data().len() >= 6)?
@@ -132,7 +132,7 @@ fn decode_v0_register_validator_datum(
 	let aura_pub_key = fields.get(4).as_bytes().map(AuraPublicKey)?;
 	let grandpa_pub_key = fields.get(5).as_bytes().map(GrandpaPublicKey)?;
 
-	let own_pkh = MainchainAddressHash(const_data.as_bytes()?.try_into().ok()?);
+	let own_pkh = MainchainAddressHash(datum.as_bytes()?.try_into().ok()?);
 	Some(RegisterValidatorDatum::V0 {
 		stake_ownership,
 		sidechain_pub_key,
@@ -212,17 +212,17 @@ impl From<RegisterValidatorDatum> for PlutusData {
 				aura_pub_key,
 				grandpa_pub_key,
 			} => {
-				let mut generic_data_fields = PlutusList::new();
-				generic_data_fields.add(&stake_ownership_to_plutus_data(stake_ownership));
-				generic_data_fields.add(&PlutusData::new_bytes(sidechain_pub_key.0));
-				generic_data_fields.add(&PlutusData::new_bytes(sidechain_signature.0));
-				generic_data_fields.add(&utxo_id_to_plutus_data(registration_utxo));
-				generic_data_fields.add(&PlutusData::new_bytes(aura_pub_key.0));
-				generic_data_fields.add(&PlutusData::new_bytes(grandpa_pub_key.0));
-				let generic_data = ConstrPlutusData::new(&BigNum::zero(), &generic_data_fields);
+				let mut appendix_fields = PlutusList::new();
+				appendix_fields.add(&stake_ownership_to_plutus_data(stake_ownership));
+				appendix_fields.add(&PlutusData::new_bytes(sidechain_pub_key.0));
+				appendix_fields.add(&PlutusData::new_bytes(sidechain_signature.0));
+				appendix_fields.add(&utxo_id_to_plutus_data(registration_utxo));
+				appendix_fields.add(&PlutusData::new_bytes(aura_pub_key.0));
+				appendix_fields.add(&PlutusData::new_bytes(grandpa_pub_key.0));
+				let appendix = ConstrPlutusData::new(&BigNum::zero(), &appendix_fields);
 				VersionedGenericDatum {
 					datum: PlutusData::new_bytes(own_pkh.0.to_vec()),
-					generic_data: PlutusData::new_constr_plutus_data(&generic_data),
+					appendix: PlutusData::new_constr_plutus_data(&appendix),
 					version: 0,
 				}
 				.into()
