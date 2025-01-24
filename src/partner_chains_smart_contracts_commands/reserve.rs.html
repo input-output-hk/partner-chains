@@ -385,7 +385,7 @@
 	</span>genesis_utxo: UtxoId,
 	<span class="attr">#[arg(long)]
 	</span><span class="doccomment">/// Script hash of the 'total accrued function', also called V-function, that computes how many tokens could be released from the reserve at given moment.
-	</span>total_accrued_function_script_hash: <span class="prelude-ty">Option</span>&lt;ScriptHash&gt;,
+	</span>total_accrued_function_script_hash: ScriptHash,
 }
 
 <span class="kw">impl </span>UpdateReserveSettingsCmd {

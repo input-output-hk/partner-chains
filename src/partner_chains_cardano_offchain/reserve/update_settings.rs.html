@@ -140,15 +140,6 @@
 <a href="#140" id="140">140</a>
 <a href="#141" id="141">141</a>
 <a href="#142" id="142">142</a>
-<a href="#143" id="143">143</a>
-<a href="#144" id="144">144</a>
-<a href="#145" id="145">145</a>
-<a href="#146" id="146">146</a>
-<a href="#147" id="147">147</a>
-<a href="#148" id="148">148</a>
-<a href="#149" id="149">149</a>
-<a href="#150" id="150">150</a>
-<a href="#151" id="151">151</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Transaction that updates reserve settings.
 //!
 //! Specification:
@@ -189,7 +180,7 @@
 &gt;(
 	genesis_utxo: UtxoId,
 	payment_key: [u8; <span class="number">32</span>],
-	<span class="kw-2">mut </span>total_accrued_function_script_hash_opt: <span class="prelude-ty">Option</span>&lt;ScriptHash&gt;,
+	total_accrued_function_script_hash: ScriptHash,
 	client: <span class="kw-2">&amp;</span>T,
 	await_tx: <span class="kw-2">&amp;</span>A,
 ) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
@@ -199,26 +190,17 @@
 	<span class="kw">let </span>ReserveUtxo { utxo: reserve_utxo, datum: <span class="kw-2">mut </span>reserve_datum } =
 		reserve.get_reserve_utxo(<span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">if let </span><span class="prelude-val">Some</span>(total_accrued_function_script_hash) = total_accrued_function_script_hash_opt.clone()
+	<span class="kw">if </span>total_accrued_function_script_hash
+		== reserve_datum.mutable_settings.total_accrued_function_script_hash
 	{
-		<span class="kw">if </span>total_accrued_function_script_hash
-			== reserve_datum.mutable_settings.total_accrued_function_script_hash
-		{
-			total_accrued_function_script_hash_opt = <span class="prelude-val">None</span>;
-			<span class="macro">log::info!</span>(
-				<span class="string">"Reserve V function hash is already set to {:?}."</span>,
-				total_accrued_function_script_hash
-			);
-		} <span class="kw">else </span>{
-			reserve_datum.mutable_settings.total_accrued_function_script_hash =
-				total_accrued_function_script_hash.clone();
-		}
-	}
-
-	<span class="kw">if </span>total_accrued_function_script_hash_opt.is_none() {
-		<span class="macro">log::info!</span>(<span class="string">"Nothing to update."</span>);
+		<span class="macro">log::info!</span>(
+			<span class="string">"Reserve V function hash is already set to {:?}. Nothing to update."</span>,
+			total_accrued_function_script_hash
+		);
 		<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
 	}
+	reserve_datum.mutable_settings.total_accrued_function_script_hash =
+		total_accrued_function_script_hash.clone();
 
 	<span class="kw">let </span>tx = Costs::calculate_costs(
 		|costs| {
