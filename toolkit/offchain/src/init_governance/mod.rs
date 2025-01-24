@@ -1,9 +1,10 @@
+use crate::csl::Costs;
 use crate::csl::OgmiosUtxoExt;
 use crate::plutus_script;
 use crate::scripts_data;
 use crate::{
 	await_tx::{AwaitTx, FixedDelayRetries},
-	csl::{get_first_validator_budget, key_hash_address, NetworkTypeExt},
+	csl::{key_hash_address, NetworkTypeExt},
 	OffchainError,
 };
 use anyhow::anyhow;
@@ -93,32 +94,27 @@ pub async fn run_init_governance<
 			.clone(),
 	};
 
-	let tx_context = crate::csl::TransactionContext {
+	let ctx = crate::csl::TransactionContext {
 		payment_key,
 		payment_key_utxos: own_utxos,
 		network: network.to_csl(),
 		protocol_parameters,
 	};
 
-	let unsigned_transaction = transaction::init_governance_transaction(
-		governance_authority,
-		&tx_context,
-		genesis_utxo.clone(),
-		ExUnits::new(&0u64.into(), &0u64.into()),
-	)?;
+	let tx = Costs::calculate_costs(
+		|costs| {
+			transaction::init_governance_transaction(
+				governance_authority,
+				genesis_utxo.clone(),
+				costs,
+				&ctx,
+			)
+		},
+		client,
+	)
+	.await?;
 
-	log::info!("📨 Submitting transaction..");
-
-	let all_costs = client.evaluate_transaction(&unsigned_transaction.to_bytes()).await?;
-	let cost = get_first_validator_budget(all_costs)?;
-
-	let unsigned_transaction = transaction::init_governance_transaction(
-		governance_authority,
-		&tx_context,
-		genesis_utxo.clone(),
-		cost,
-	)?;
-	let signed_transaction = tx_context.sign(&unsigned_transaction);
+	let signed_transaction = ctx.sign(&tx);
 
 	let result = client.submit_transaction(&signed_transaction.to_bytes()).await?;
 	let tx_id = result.transaction.id;

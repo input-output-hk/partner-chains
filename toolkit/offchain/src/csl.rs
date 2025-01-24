@@ -226,7 +226,7 @@ impl CostStore for Costs {
 			Costs::Costs(cost_lookup) => cost_lookup
 				.mints
 				.get(&script.csl_script_hash())
-				.expect("should not be called with an unknown script")
+				.expect("get_mint should not be called with an unknown script")
 				.clone(),
 		}
 	}
@@ -236,7 +236,7 @@ impl CostStore for Costs {
 			Costs::Costs(cost_lookup) => cost_lookup
 				.spends
 				.get(&spend_ix)
-				.expect("should not be called with an unknown script")
+				.expect("get_spend should not be called with an unknown script")
 				.clone(),
 		}
 	}
@@ -247,7 +247,7 @@ impl CostStore for Costs {
 				match cost_lookup.spends.values().collect::<Vec<_>>()[..] {
 					[x] => x.clone(),
 					_ => panic!(
-						"should only be called when exacly one spend is expected to be present"
+						"get_one_spend should only be called when exacly one spend is expected to be present"
 					),
 				}
 			},

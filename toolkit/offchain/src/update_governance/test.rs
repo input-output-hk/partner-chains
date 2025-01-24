@@ -1,5 +1,5 @@
 use super::{test_values, update_governance_tx};
-use crate::csl::{empty_asset_name, OgmiosUtxoExt, TransactionContext};
+use crate::csl::{empty_asset_name, Costs, OgmiosUtxoExt, TransactionContext};
 use crate::init_governance::GovernanceData;
 use crate::test_values::protocol_parameters;
 use cardano_serialization_lib::*;
@@ -109,6 +109,15 @@ fn spend_ex_units() -> ExUnits {
 	ExUnits::new(&111u64.into(), &222u64.into())
 }
 
+fn test_costs() -> Costs {
+	Costs::new(
+		vec![(governance_script().csl_script_hash(), mint_ex_units())]
+			.into_iter()
+			.collect(),
+		vec![(0, spend_ex_units())].into_iter().collect(),
+	)
+}
+
 fn multisig_policy_hash() -> [u8; 28] {
 	// important: this is the hash of the multisig policy parametrized with the *old* authority
 	hex!("a646474b8f5431261506b6c273d307c7569a4eb6c96b42dd4a29520a")
@@ -125,10 +134,9 @@ fn test_update_governance_tx() -> Transaction {
 		test_values::VERSION_ORACLE_POLICY,
 		genesis_utxo().to_domain(),
 		new_governance_authority(),
-		&tx_context(),
 		&governance_data(),
-		mint_ex_units(),
-		spend_ex_units(),
+		test_costs(),
+		&tx_context(),
 	)
 	.expect("Test transaction should be constructed without error")
 }
