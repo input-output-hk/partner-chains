@@ -10,6 +10,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * Changed the `smart-contracts init-governance` command to `smart-contracts governance init`
 * smart-contracts commands and offchain tests now use WebSockets implementation of Ogmios client
 * Updated to polkadot-stable2409-3 (aka v1.16.3).
+* `local-environment` now uses the `partner-chains-node` based container for the smart-contracts setup.
 
 ## Removed
 

@@ -434,6 +434,7 @@ create_docker_compose() {
         cat ./modules/postgres.txt >> docker-compose.yml
         cat ./modules/partner-chains-external-node.txt >> docker-compose.yml
         cat ./modules/pc-contracts-cli.txt >> docker-compose.yml
+        cat ./modules/partner-chains-setup.txt >> docker-compose.yml
         ;;
       0)
         echo -e "Including all services.\n"
@@ -444,6 +445,7 @@ create_docker_compose() {
         cat ./modules/postgres.txt >> docker-compose.yml
         cat ./modules/partner-chains-nodes.txt >> docker-compose.yml
         cat ./modules/pc-contracts-cli.txt >> docker-compose.yml
+        cat ./modules/partner-chains-setup.txt >> docker-compose.yml
         ;;
       *)
         echo "Invalid deployment option selected."
