@@ -7,10 +7,10 @@ use sidechain_domain::{AssetId, AssetName, PolicyId};
 
 #[derive(Debug, Clone)]
 pub enum ReserveRedeemer {
-	DepositToReserve { governance_version: u64 },
-	TransferToIlliquidCirculationSupply,
-	UpdateReserve { governance_version: u64 },
-	Handover { governance_version: u64 },
+	DepositToReserve = 0,
+	ReleaseFromReserve = 1,
+	UpdateReserve = 2,
+	Handover = 3,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -38,28 +38,7 @@ pub struct ReserveStats {
 
 impl From<ReserveRedeemer> for PlutusData {
 	fn from(value: ReserveRedeemer) -> Self {
-		use ReserveRedeemer::*;
-		match value {
-			DepositToReserve { governance_version } => {
-				PlutusData::new_single_value_constr_plutus_data(
-					&BigNum::from(0_u64),
-					&PlutusData::new_integer(&BigInt::from(governance_version)),
-				)
-			},
-			TransferToIlliquidCirculationSupply => {
-				PlutusData::new_empty_constr_plutus_data(&BigNum::from(1_u64))
-			},
-			UpdateReserve { governance_version } => {
-				PlutusData::new_single_value_constr_plutus_data(
-					&BigNum::from(2_u64),
-					&PlutusData::new_integer(&BigInt::from(governance_version)),
-				)
-			},
-			Handover { governance_version } => PlutusData::new_single_value_constr_plutus_data(
-				&BigNum::from(3_u64),
-				&PlutusData::new_integer(&BigInt::from(governance_version)),
-			),
-		}
+		PlutusData::new_empty_constr_plutus_data(&BigNum::from(value as u64))
 	}
 }
 
@@ -127,7 +106,18 @@ impl VersionedDatum for ReserveDatum {
 		match plutus_data_version_and_payload(datum) {
 			Some((0, datum, _)) => decode_v0_reserve_datum(&datum)
 				.ok_or_else(|| decoding_error_and_log(&datum, "ReserveDatum", "invalid data")),
-			_ => Err(decoding_error_and_log(datum, "ReserveDatum", "invalid data")),
+			_ => Err(decoding_error_and_log(datum, "ReserveDatum", "unversioned datum")),
+		}
+	}
+}
+
+impl ReserveDatum {
+	pub fn after_withdrawal(self, amount: u64) -> Self {
+		Self {
+			stats: ReserveStats {
+				token_total_amount_transferred: self.stats.token_total_amount_transferred + amount,
+			},
+			..self
 		}
 	}
 }
@@ -206,7 +196,7 @@ mod tests {
 			},
 			mutable_settings: ReserveMutableSettings {
 				total_accrued_function_script_hash: PolicyId([2; 28]),
-				initial_incentive: 10,
+				initial_incentive: 0,
 			},
 			stats: ReserveStats { token_total_amount_transferred: 1000 },
 		}
@@ -224,7 +214,7 @@ mod tests {
 				]},
 				{"list":[
 					{"bytes": "02020202020202020202020202020202020202020202020202020202"},
-					{"int": 10}
+					{"int": 0}
 				]},
 				{"int": 1000}
 			]},

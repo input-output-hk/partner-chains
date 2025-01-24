@@ -136,7 +136,7 @@ fn update_governance_tx(
 
 	tx_builder.set_inputs(&{
 		let mut inputs = TxInputsBuilder::new();
-		inputs.add_script_utxo_input_with_data(
+		inputs.add_script_utxo_input(
 			&governance_data.utxo,
 			&version_oracle_validator,
 			&PlutusData::new_integer(&(raw_scripts::ScriptId::GovernancePolicy as u32).into()),

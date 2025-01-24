@@ -158,23 +158,17 @@ pub(crate) async fn get_governance_utxo<T: QueryLedgerState + Transactions + Que
 	utxos
 		.into_iter()
 		.find(|utxo| {
-			let correct_datum = utxo
-				.datum
-				.as_ref()
-				.and_then(|datum| {
-					PlutusData::from_bytes(datum.bytes.clone()).ok().and_then(|plutus_data| {
-						VersionOracleDatum::try_from(plutus_data)
-							.ok()
-							.map(|data| data.version_oracle == 32)
-					})
-				})
-				.unwrap_or(false);
+			let correct_datum =
+				utxo.get_plutus_data()
+					.and_then(|plutus_data| VersionOracleDatum::try_from(plutus_data).ok())
+					.map(|data| data.version_oracle == 32)
+					.unwrap_or(false);
 
 			let contains_version_oracle_token =
 				utxo.value.native_tokens.contains_key(&version_oracle_policy.script_hash());
 			correct_datum && contains_version_oracle_token
 		})
-		.ok_or_else(|| JsError::from_str("Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using `init-governance` command."))
+		.ok_or_else(|| JsError::from_str("Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using governance init command."))
 }
 
 #[derive(Clone, Debug)]

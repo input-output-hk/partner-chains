@@ -242,12 +242,10 @@ impl FromStr for NetworkProtocol {
 	type Err = String;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		match s {
+		match s.to_lowercase().as_str() {
 			"http" => Ok(NetworkProtocol::Http),
 			"https" => Ok(NetworkProtocol::Https),
-			other => {
-				Err(format!("Invalid security protocol {other}, please provide http or https"))
-			},
+			other => Err(format!("Invalid security protocol {other}, please provide http or http")),
 		}
 	}
 }

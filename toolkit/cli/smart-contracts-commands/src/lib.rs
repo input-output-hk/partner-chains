@@ -3,6 +3,7 @@ use sidechain_domain::*;
 pub mod d_parameter;
 pub mod get_scripts;
 pub mod governance;
+pub mod permissioned_candidates;
 pub mod register;
 pub mod reserve;
 
@@ -13,6 +14,8 @@ pub enum SmartContractsCmd {
 	GetScripts(get_scripts::GetScripts),
 	/// Upsert DParameter
 	UpsertDParameter(d_parameter::UpsertDParameterCmd),
+	/// Upsert Permissioned Candidates
+	UpsertPermissionedCandidates(permissioned_candidates::UpsertPermissionedCandidatesCmd),
 	/// Register candidate
 	Register(register::RegisterCmd),
 	/// Deregister candidate
@@ -40,6 +43,7 @@ impl SmartContractsCmd {
 			Self::Governance(cmd) => cmd.execute().await,
 			Self::GetScripts(cmd) => cmd.execute().await,
 			Self::UpsertDParameter(cmd) => cmd.execute().await,
+			Self::UpsertPermissionedCandidates(cmd) => cmd.execute().await,
 			Self::Register(cmd) => cmd.execute().await,
 			Self::Deregister(cmd) => cmd.execute().await,
 			Self::Reserve(cmd) => cmd.execute().await,

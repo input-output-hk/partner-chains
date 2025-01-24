@@ -9,6 +9,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * `setup-main-chain-state` command now uses native Rust to upsert the D-Parameter and upsert permissioned candidates
 * Changed the `smart-contracts init-governance` command to `smart-contracts governance init`
 * smart-contracts commands and offchain tests now use WebSockets implementation of Ogmios client
+* Updated to polkadot-stable2409-3 (aka v1.16.3).
 
 ## Removed
 
@@ -22,9 +23,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Added
 
-* Command `smart-contracts reserve init`
-* Command `smart-contracts reserve create`
-* Command `smart-contracts reserve deposit`
+* Command `smart-contracts reserve init`, `create`, `deposit`, `release`, `handover` and `update-settings`
 * Command `smart-contracts governance update`
 * Ogmios client backed by jsonrpsee `WsClient`
 

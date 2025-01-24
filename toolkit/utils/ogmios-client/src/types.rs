@@ -80,7 +80,7 @@ impl From<[u8; 32]> for DatumHash {
 
 impl std::fmt::Debug for DatumHash {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		f.debug_struct("DatumHash").field("bytes", &hex::encode(&self.bytes)).finish()
+		f.debug_struct("DatumHash").field("bytes", &hex::encode(self.bytes)).finish()
 	}
 }
 

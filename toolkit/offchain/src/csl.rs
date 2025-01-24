@@ -2,6 +2,7 @@ use crate::plutus_script::PlutusScript;
 use cardano_serialization_lib::*;
 use fraction::{FromPrimitive, Ratio};
 use ogmios_client::query_ledger_state::ReferenceScriptsCosts;
+use ogmios_client::transactions::Transactions;
 use ogmios_client::{
 	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, QueryLedgerState},
 	query_network::QueryNetwork,
@@ -9,6 +10,7 @@ use ogmios_client::{
 	types::{OgmiosUtxo, OgmiosValue},
 };
 use sidechain_domain::{AssetId, MainchainAddressHash, MainchainPrivateKey, NetworkType, UtxoId};
+use std::collections::HashMap;
 
 pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: Language) -> [u8; 28] {
 	// Before hashing the script, we need to prepend with byte denoting the language.
@@ -201,6 +203,112 @@ fn ex_units_from_response(resp: OgmiosEvaluateTransactionResponse) -> ExUnits {
 	ExUnits::new(&resp.budget.memory.into(), &resp.budget.cpu.into())
 }
 
+pub struct CostLookup {
+	mints: HashMap<cardano_serialization_lib::ScriptHash, ExUnits>,
+	spends: HashMap<u32, ExUnits>,
+}
+
+pub enum Costs {
+	Costs(CostLookup),
+	ZeroCosts,
+}
+
+pub trait CostStore {
+	fn get_mint(&self, script: &PlutusScript) -> ExUnits;
+	fn get_spend(&self, spend_ix: u32) -> ExUnits;
+	fn get_one_spend(&self) -> ExUnits;
+}
+
+impl CostStore for Costs {
+	fn get_mint(&self, script: &PlutusScript) -> ExUnits {
+		match self {
+			Costs::ZeroCosts => zero_ex_units(),
+			Costs::Costs(cost_lookup) => cost_lookup
+				.mints
+				.get(&script.csl_script_hash())
+				.expect("should not be called with an unknown script")
+				.clone(),
+		}
+	}
+	fn get_spend(&self, spend_ix: u32) -> ExUnits {
+		match self {
+			Costs::ZeroCosts => zero_ex_units(),
+			Costs::Costs(cost_lookup) => cost_lookup
+				.spends
+				.get(&spend_ix)
+				.expect("should not be called with an unknown script")
+				.clone(),
+		}
+	}
+	fn get_one_spend(&self) -> ExUnits {
+		match self {
+			Costs::ZeroCosts => zero_ex_units(),
+			Costs::Costs(cost_lookup) => {
+				match cost_lookup.spends.values().collect::<Vec<_>>()[..] {
+					[x] => x.clone(),
+					_ => panic!(
+						"should only be called when exacly one spend is expected to be present"
+					),
+				}
+			},
+		}
+	}
+}
+
+impl Costs {
+	pub fn new(
+		mints: HashMap<cardano_serialization_lib::ScriptHash, ExUnits>,
+		spends: HashMap<u32, ExUnits>,
+	) -> Costs {
+		Costs::Costs(CostLookup { mints, spends })
+	}
+
+	pub async fn calculate_costs<T: Transactions, F>(
+		make_tx: F,
+		client: &T,
+	) -> anyhow::Result<Transaction>
+	where
+		F: Fn(Costs) -> anyhow::Result<Transaction>,
+	{
+		let tx = make_tx(Costs::ZeroCosts)?;
+		// stage 1
+		let costs = Self::from_ogmios(&tx, client).await?;
+
+		let tx = make_tx(costs)?;
+		// stage 2
+		let costs = Self::from_ogmios(&tx, client).await?;
+
+		make_tx(costs)
+	}
+
+	async fn from_ogmios<T: Transactions>(tx: &Transaction, client: &T) -> anyhow::Result<Costs> {
+		let evaluate_response = client.evaluate_transaction(&tx.to_bytes()).await?;
+
+		let mut mints = HashMap::new();
+		let mut spends = HashMap::new();
+		for er in evaluate_response {
+			match er.validator.purpose.as_str() {
+				"mint" => {
+					mints.insert(
+						tx.body()
+							.mint()
+							.expect("tx.body.mint() should not be empty if we received a 'mint' response from Ogmios")
+							.keys()
+							.get(er.validator.index as usize),
+						ex_units_from_response(er),
+					);
+				},
+				"spend" => {
+					spends.insert(er.validator.index, ex_units_from_response(er));
+				},
+				_ => {},
+			}
+		}
+
+		Ok(Costs::Costs(CostLookup { mints, spends }))
+	}
+}
+
 /// Conversion of ogmios-client budget to CSL execution units
 pub(crate) fn convert_ex_units(v: &OgmiosBudget) -> ExUnits {
 	ExUnits::new(&v.memory.into(), &v.cpu.into())
@@ -222,6 +330,8 @@ pub(crate) trait OgmiosUtxoExt {
 	fn to_domain(&self) -> sidechain_domain::UtxoId;
 
 	fn get_asset_amount(&self, asset: &AssetId) -> i128;
+
+	fn get_plutus_data(&self) -> Option<PlutusData>;
 }
 
 impl OgmiosUtxoExt for OgmiosUtxo {
@@ -258,6 +368,12 @@ impl OgmiosUtxoExt for OgmiosUtxo {
 			.iter()
 			.find(|asset| asset.name == asset_id.asset_name.0.to_vec())
 			.map_or_else(|| 0, |asset| asset.amount)
+	}
+
+	fn get_plutus_data(&self) -> Option<PlutusData> {
+		(self.datum.as_ref())
+			.map(|datum| datum.bytes.clone())
+			.and_then(|bytes| PlutusData::from_bytes(bytes).ok())
 	}
 }
 
@@ -364,15 +480,17 @@ pub(crate) trait TransactionBuilderExt {
 	fn add_mint_one_script_token(
 		&mut self,
 		script: &PlutusScript,
+		asset_name: &AssetName,
+		redeemer_data: &PlutusData,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError>;
 
-	/// Adds minting of 1 token (with empty asset name) for the given script using reference input
+	/// Adds minting of tokens (with empty asset name) for the given script using reference input
 	fn add_mint_script_token_using_reference_script(
 		&mut self,
 		script: &PlutusScript,
 		ref_input: &TransactionInput,
-		amount: &BigNum,
+		amount: &Int,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError>;
 
@@ -382,7 +500,12 @@ pub(crate) trait TransactionBuilderExt {
 		ref_input: &TransactionInput,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError> {
-		self.add_mint_script_token_using_reference_script(script, ref_input, &1u64.into(), ex_units)
+		self.add_mint_script_token_using_reference_script(
+			script,
+			ref_input,
+			&Int::new_i32(1),
+			ex_units,
+		)
 	}
 
 	/// Sets fields required by the most of partner-chains smart contract transactions.
@@ -406,10 +529,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 			.with_address(&validator.address(ctx.network))
 			.with_plutus_data(datum)
 			.next()?;
-		let mut ma = MultiAsset::new();
-		let mut assets = Assets::new();
-		assets.insert(&empty_asset_name(), &1u64.into());
-		ma.insert(&policy.script_hash().into(), &assets);
+		let ma = MultiAsset::new().with_asset_amount(&policy.empty_name_asset(), 1u64)?;
 		let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
 		let min_ada = MinOutputAdaCalculator::new(
 			&output,
@@ -442,6 +562,8 @@ impl TransactionBuilderExt for TransactionBuilder {
 	fn add_mint_one_script_token(
 		&mut self,
 		script: &PlutusScript,
+		asset_name: &AssetName,
+		redeemer_data: &PlutusData,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError> {
 		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
@@ -449,14 +571,9 @@ impl TransactionBuilderExt for TransactionBuilder {
 		let validator_source = PlutusScriptSource::new(&script.to_csl());
 		let mint_witness = MintWitness::new_plutus_script(
 			&validator_source,
-			&Redeemer::new(
-				&RedeemerTag::new_mint(),
-				&0u32.into(),
-				&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
-				ex_units,
-			),
+			&Redeemer::new(&RedeemerTag::new_mint(), &0u32.into(), redeemer_data, ex_units),
 		);
-		mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new_i32(1))?;
+		mint_builder.add_asset(&mint_witness, asset_name, &Int::new_i32(1))?;
 		self.set_mint_builder(&mint_builder);
 		Ok(())
 	}
@@ -465,7 +582,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 		&mut self,
 		script: &PlutusScript,
 		ref_input: &TransactionInput,
-		amount: &BigNum,
+		amount: &Int,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError> {
 		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
@@ -473,19 +590,14 @@ impl TransactionBuilderExt for TransactionBuilder {
 		let validator_source = PlutusScriptSource::new_ref_input(
 			&script.csl_script_hash(),
 			ref_input,
-			&Language::new_plutus_v2(),
+			&script.language,
 			script.bytes.len(),
 		);
 		let mint_witness = MintWitness::new_plutus_script(
 			&validator_source,
-			&Redeemer::new(
-				&RedeemerTag::new_mint(),
-				&0u32.into(),
-				&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
-				ex_units,
-			),
+			&Redeemer::new(&RedeemerTag::new_mint(), &0u32.into(), &unit_plutus_data(), ex_units),
 		);
-		mint_builder.add_asset(&mint_witness, &empty_asset_name(), &Int::new(amount))?;
+		mint_builder.add_asset(&mint_witness, &empty_asset_name(), amount)?;
 		self.set_mint_builder(&mint_builder);
 		Ok(())
 	}
@@ -544,8 +656,21 @@ impl TransactionBuilderExt for TransactionBuilder {
 			}
 			selected.push(input);
 		}
+
+		let balanced_transaction =
 		try_balance(self, &selected, ctx)
-			.map_err(|e| JsError::from_str(&format!("Could not balance transaction. Usually it means that the payment key does not own UTXO set required to cover transaction outputs and fees or to provide collateral. Cause: {}", e)))
+			.map_err(|e| JsError::from_str(&format!("Could not balance transaction. Usually it means that the payment key does not own UTXO set required to cover transaction outputs and fees or to provide collateral. Cause: {}", e)))?;
+
+		debug_assert!(
+			balanced_transaction.body().collateral().is_some(),
+			"BUG: Balanced transaction should have collateral set."
+		);
+		debug_assert!(
+			balanced_transaction.body().collateral_return().is_some(),
+			"BUG: Balanced transaction should have collateral returned."
+		);
+
+		Ok(balanced_transaction)
 	}
 }
 
@@ -581,19 +706,12 @@ impl TransactionOutputAmountBuilderExt for TransactionOutputAmountBuilder {
 		ctx: &TransactionContext,
 	) -> Result<Self, JsError> {
 		let min_ada = self.with_coin_and_asset(&0u64.into(), ma).get_minimum_ada(ctx)?;
-		Ok(self.with_coin_and_asset(&min_ada, &ma))
+		Ok(self.with_coin_and_asset(&min_ada, ma))
 	}
 }
 
 pub(crate) trait InputsBuilderExt: Sized {
 	fn add_script_utxo_input(
-		&mut self,
-		utxo: &OgmiosUtxo,
-		script: &PlutusScript,
-		ex_units: &ExUnits,
-	) -> Result<(), JsError>;
-
-	fn add_script_utxo_input_with_data(
 		&mut self,
 		utxo: &OgmiosUtxo,
 		script: &PlutusScript,
@@ -610,20 +728,6 @@ pub(crate) trait InputsBuilderExt: Sized {
 
 impl InputsBuilderExt for TxInputsBuilder {
 	fn add_script_utxo_input(
-		&mut self,
-		utxo: &OgmiosUtxo,
-		script: &PlutusScript,
-		ex_units: &ExUnits,
-	) -> Result<(), JsError> {
-		self.add_script_utxo_input_with_data(
-			utxo,
-			script,
-			&PlutusData::new_empty_constr_plutus_data(&0u32.into()),
-			ex_units,
-		)
-	}
-
-	fn add_script_utxo_input_with_data(
 		&mut self,
 		utxo: &OgmiosUtxo,
 		script: &PlutusScript,
@@ -664,14 +768,74 @@ impl InputsBuilderExt for TxInputsBuilder {
 	}
 }
 
-pub(crate) trait AssetNameExt {
+pub(crate) trait AssetNameExt: Sized {
 	fn to_csl(&self) -> Result<cardano_serialization_lib::AssetName, JsError>;
+	fn from_csl(asset_name: cardano_serialization_lib::AssetName) -> Result<Self, JsError>;
 }
 
 impl AssetNameExt for sidechain_domain::AssetName {
 	fn to_csl(&self) -> Result<cardano_serialization_lib::AssetName, JsError> {
 		cardano_serialization_lib::AssetName::new(self.0.to_vec())
 	}
+	fn from_csl(asset_name: cardano_serialization_lib::AssetName) -> Result<Self, JsError> {
+		let name = asset_name.name().try_into().map_err(|err| {
+			JsError::from_str(&format!("Failed to cast CSL asset name to domain: {err:?}"))
+		})?;
+		Ok(Self(name))
+	}
+}
+
+pub(crate) trait AssetIdExt {
+	fn to_multi_asset(&self, amount: impl Into<BigNum>) -> Result<MultiAsset, JsError>;
+}
+impl AssetIdExt for AssetId {
+	fn to_multi_asset(&self, amount: impl Into<BigNum>) -> Result<MultiAsset, JsError> {
+		let mut ma = MultiAsset::new();
+		let mut assets = Assets::new();
+		assets.insert(&self.asset_name.to_csl()?, &amount.into());
+		ma.insert(&self.policy_id.0.into(), &assets);
+		Ok(ma)
+	}
+}
+
+pub(crate) trait MultiAssetExt: Sized {
+	fn from_ogmios_utxo(utxo: &OgmiosUtxo) -> Result<Self, JsError>;
+	fn with_asset_amount(self, asset: &AssetId, amount: impl Into<BigNum>)
+		-> Result<Self, JsError>;
+}
+
+impl MultiAssetExt for MultiAsset {
+	fn from_ogmios_utxo(utxo: &OgmiosUtxo) -> Result<Self, JsError> {
+		let mut ma = MultiAsset::new();
+		for (policy, policy_assets) in utxo.value.native_tokens.iter() {
+			let mut assets = Assets::new();
+			for asset in policy_assets {
+				assets.insert(
+					&cardano_serialization_lib::AssetName::new(asset.name.clone())?,
+					&(asset.amount as u64).into(),
+				);
+			}
+			ma.insert(&PolicyID::from(*policy), &assets);
+		}
+		Ok(ma)
+	}
+	fn with_asset_amount(
+		mut self,
+		asset: &AssetId,
+		amount: impl Into<BigNum>,
+	) -> Result<Self, JsError> {
+		self.set_asset(&asset.policy_id.0.into(), &asset.asset_name.to_csl()?, &0u64.into());
+		let mut assets = Assets::new();
+		assets.insert(&asset.asset_name.to_csl()?, &amount.into());
+		self.insert(&asset.policy_id.0.into(), &assets);
+		Ok(self)
+	}
+}
+
+/// In Plutus smart-contracts, unit value is represented as `Constr 0 []`.
+/// It is used in many places where there is no particular value needed for redeemer.
+pub(crate) fn unit_plutus_data() -> PlutusData {
+	PlutusData::new_empty_constr_plutus_data(&BigNum::zero())
 }
 
 #[cfg(test)]
@@ -853,7 +1017,8 @@ mod tests {
 #[cfg(test)]
 mod prop_tests {
 	use super::{
-		get_builder_config, zero_ex_units, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext,
+		empty_asset_name, get_builder_config, unit_plutus_data, zero_ex_units, OgmiosUtxoExt,
+		TransactionBuilderExt, TransactionContext,
 	};
 	use crate::test_values::*;
 	use cardano_serialization_lib::{
@@ -879,7 +1044,14 @@ mod prop_tests {
 			protocol_parameters: protocol_parameters(),
 		};
 		let mut tx_builder = TransactionBuilder::new(&get_builder_config(&ctx).unwrap());
-		tx_builder.add_mint_one_script_token(&test_policy(), &zero_ex_units()).unwrap();
+		tx_builder
+			.add_mint_one_script_token(
+				&test_policy(),
+				&empty_asset_name(),
+				&unit_plutus_data(),
+				&zero_ex_units(),
+			)
+			.unwrap();
 		tx_builder
 			.add_output_with_one_script_token(
 				&test_validator(),
