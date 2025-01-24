@@ -61,6 +61,7 @@ where
 	BeneficiaryId: TryFrom<Vec<u8>> + Send + Sync + Encode,
 	<BeneficiaryId as TryFrom<Vec<u8>>>::Error: std::fmt::Debug,
 {
+	/// Read and decode beneficiary ID from the specified environment variable
 	pub fn from_env(env_var: &str) -> Result<Self, InherentProviderCreationError> {
 		let beneficiary_string = std::env::var(env_var)
 			.map_err(|_| InherentProviderCreationError::NotSet(env_var.into()))?;
