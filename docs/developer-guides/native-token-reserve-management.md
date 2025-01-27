@@ -30,15 +30,13 @@ After you complete the steps in this guide, you will have a fully functioning to
 
 - **Command-Line Tools:** `pc-contracts-cli` ([partner-chains-smart-contracts release binary](https://github.com/input-output-hk/partner-chains-smart-contracts/releases)) 
 
-<!-- Comments from Alex Romanov to incorporate -->
-
 ## Rewards schemes
 
 Please note that rewards schemes for token release is the responsibility of the Chain Builder. 
 
 # Part One: Initialization
 
-Initialization includes creating the native token on Cardano, writing the V-function, running the commands `init-reserve-management` and `reserve-create` at the `pc-contracts-cli` side. 
+Initialization includes creating the native token on Cardano, writing the `VFunction`, running the commands `init-reserve-management` and `reserve-create` at the `pc-contracts-cli` side. 
 
 ## 1. Setting up your token on Cardano
 
@@ -50,7 +48,7 @@ Objective: Create a Cardano native token within your partner chain ecosystem.
 
 This step is outside the scope of partner chains and requires following the standard procedure for creating Cardano native tokens. 
 Please see: [Minting Native Assets](https://developers.cardano.org/docs/native-tokens/minting/) on the Cardano Developer Portal for details. 
-Generally speaking, however, the process includes these  steps:
+Generally speaking, however, the process includes these steps:
 
 1. Defining the token policy: establishing the monetary policy script for your token.
 
@@ -66,24 +64,35 @@ Generally speaking, however, the process includes these  steps:
 
 #### 1.2.1 Implementing V(t) release function
 
-**Understanding the `V` function:**
+**Understanding the `VFunction`:**
 
-- The `V` function defines the schedule and amount of tokens `A` that move from the reserve supply to the circulating supply over time.
+- The `VFunction` defines the schedule and amount of tokens `A` that move from the reserve supply to the circulating supply over time.
+
+- `VFunction` is a minting policy that has to accept 2 parameters (or more if you like).
+
+   - The first parameter is the `VFunction` Redeemer (which can be anything)
+   - The second parameter is the `ScriptContext` (every smart contract takes this as parameter)
+
+- `VFunction` has to return true if the number of tokens minted is ok according to the `VFunction` logic, and should return false otherwise.
 
 - The Validity interval is to be present and equal to `[T, infinity]`, where `T` is time in the recent past, close to the current time.
 
 - The Transaction input with ReserveAuthPolicy token is to be present. This utxo contains datum in the form
 `[[[T_0, ], [_, _], _], _, _]` where `T_0` is the start time of the Reserve system. Based on `T_0` and `T`, one can calculate how much time has passed since the start of the system.
 
-- The `V` function should be able to mint X tokens and be invoked repeatedly, each time minting X new tokens. The value of X should grow in time and represent the total number of tokens to be released from the Reserve to IlliquidCirculationSupply up to the current moment in time.
+- The `VFunction` should be able to mint X tokens and be invoked repeatedly, each time minting X new tokens. The value of X should grow in time and represent the total number of tokens to be released from the Reserve to IlliquidCirculationSupply up to the current moment in time.
+
+- Smart contracts do not pass anything to each other directly. However, each smart contract in a given single transaction has access to the context of the whole transaction, including input UTXOs, datums, etc.
+
+- Implementers of the `VFunction` should expect the validity interval to be correctly set up by the offchain release command.
 
 **User responsibility:** 
 
-- You need to provide the logic for `V`, which determines how tokens are released. 
+- You need to provide the logic for `VFunction`, which determines how tokens are released. 
 
 - This logic can be written using native or Plutus scripts as well as Aiken scripts. The code should be compiled and attached as a reference script to UTXO.
 
-- For reference, you can check the [example V-function](https://github.com/input-output-hk/partner-chains-smart-contracts/blob/master/onchain/src/TrustlessSidechain/ExampleVFunction.hs) in the partner-chains-smart-contracts repository.
+- For reference, you can check the [example VFunction](https://github.com/input-output-hk/partner-chains-smart-contracts/blob/master/onchain/src/TrustlessSidechain/ExampleVFunction.hs) in the partner-chains-smart-contracts repository.
 
 After compilation, include the script as a CBOR in the reference.json:
 
@@ -115,15 +124,15 @@ cardano-cli conway transaction submit --tx-file tx.signed --testnet-magic 2
 
 #### Steps
 
-1. Implement V-function (see [example V-function](https://github.com/input-output-hk/partner-chains-smart-contracts/blob/master/onchain/src/TrustlessSidechain/ExampleVFunction.hs) in the partner-chains-smart-contracts repository). 
+1. Implement `VFunction` (see [example VFunction](https://github.com/input-output-hk/partner-chains-smart-contracts/blob/master/onchain/src/TrustlessSidechain/ExampleVFunction.hs) in the partner-chains-smart-contracts repository). 
 
-2. Compile the V-function script.
+2. Compile the `VFunction` script.
 
 3. Include the script as a CBOR in the reference.json.
 
 4. Add reference.json to the transaction and submit it to Cardano. 
 
-5. Find and note the hash#id for the transaction that has the V-function script attached.
+5. Find and note the hash#id for the transaction that has the `VFunction` script attached.
 
 ### 1.3 Initializing token reserve controls
 
@@ -228,7 +237,7 @@ Usage includes the `reserve-release-funds` and `reserve-handover` commands.
 
 ## 2. Releasing tokens from reserve to circulation
 
-Objective: Release available reserve tokens (defined by the `V` function).
+Objective: Release available reserve tokens (defined by the `VFunction`).
 
 ### 2.1 Run the `reserve-release-funds` command
 
@@ -255,7 +264,7 @@ Objective: Release available reserve tokens (defined by the `V` function).
 
 * `--payment-signing-key-file`: Your payment signing key file for transaction signing
 
-* `--reserve-transaction-input`: UTXO where the `V` function script is attached as a reference
+* `--reserve-transaction-input`: UTXO where the `VFunction` script is attached as a reference
 
 * `--total-accrued-till-now`: amount of tokens to release 
 
@@ -263,7 +272,7 @@ Objective: Release available reserve tokens (defined by the `V` function).
 
    - If 10 tokens have already been released and you want to release 10 more, then the total accrued until now should be defined as 20. 
 
-   - Ensure you have enough tokens to release in this time frame (the `V` function defines release logic). 
+   - Ensure you have enough tokens to release in this time frame (the `VFunction` defines release logic). 
 
 #### Steps
 
@@ -301,12 +310,7 @@ Objective: Complete the reserve setup by handing over control to the appropriate
 
 Objective: Configure the initial token reserve by depositing a specified amount of tokens into the reserve contract.
 
-
-# Part Three: Configuration
-
-Configuration includes `reserve-deposit` and `reserve-update-settings` commands used to either change token in reserve or V-function. 
-
-## 3. Run the `reserve-deposit` command (optional)
+## 3 Run the `reserve-deposit` command (optional)
 
 #### Command template
 
@@ -345,6 +349,12 @@ Configuration includes `reserve-deposit` and `reserve-update-settings` commands 
 2. Execute the `reserve-deposit` command.
 
 3. Verify that the deposit completed successfully by checking the command output status.
+
+# Part Three: Configuration
+
+Configuration includes `reserve-update-settings` commands used to either change token in reserve or `VFunction`. 
+
+<!-- Only "initialize", "create" and "update settings" are related to configuration.  -->
 
 ## 4. Connecting your token to your partner chain
 
