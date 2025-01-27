@@ -172,7 +172,7 @@ jobs:
             fi
 
   build-and-publish-ecr:
-    if: ${{ github.event.inputs.no-build != 'true' }}
+    if: always() && !inputs.no-build && needs.artifacts-ready.result == 'success'
     permissions:
       id-token: write
       contents: write
@@ -192,7 +192,7 @@ jobs:
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
 
   create-draft-release:
-    if: ${{ github.event.inputs.no-release != 'true' }}
+    if: always() && !inputs.no-release && needs.artifacts-ready.result == 'success'
     permissions:
       id-token: write
       contents: write
@@ -213,6 +213,7 @@ jobs:
       id-token: write
       contents: write
     needs: artifacts-ready
+    if: always() && needs.artifacts-ready.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
