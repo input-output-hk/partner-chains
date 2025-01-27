@@ -149,22 +149,27 @@ jobs:
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_S3_ROLE_ARN_SECRET }}
 
   artifacts-ready:
-    needs:
-      - upload-to-s3
-      - download-from-s3
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: write
-    if: ${{ always() && !failure() && !cancelled() }}
-    steps:
-      - name: Artifacts Ready
-        run: |
-          if [[ "${{ inputs.no-build }}" != "true" ]]; then
-            echo "Artifacts have been compiled and uploaded to S3"
-          else
-            echo "Previously built artifacts were downloaded from S3"
-          fi
+      needs:
+        - upload-to-s3
+        - download-from-s3
+      runs-on: ubuntu-latest
+      permissions:
+        id-token: write
+        contents: write
+      if: |
+        always() && 
+        (
+          (github.event.inputs.no-build == 'true' && needs.download-from-s3.result == 'success') ||
+          (github.event.inputs.no-build != 'true' && needs.upload-to-s3.result == 'success')
+        )
+      steps:
+        - name: Artifacts Ready
+          run: |
+            if [[ "${{ inputs.no-build }}" != "true" ]]; then
+              echo "Artifacts have been compiled and uploaded to S3"
+            else
+              echo "Previously built artifacts were downloaded from S3"
+            fi
 
   build-and-publish-ecr:
     if: ${{ github.event.inputs.no-build != 'true' }}
