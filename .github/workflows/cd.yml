@@ -12,40 +12,40 @@ on:
         required: true
         type: string
       no-build:
-        description: "Skip build and use previously artifacts built in a past run"
+        description: "SKIP BUILD - Use artifacts built in a previous run"
         required: false
         type: boolean
         default: false
-      no-public-release:
-        description: "Skip steps to publish public release"
-        required: false
-        type: boolean
-        default: true
       no-release:
-        description: "Skip creating draft release page"
-        required: false
-        type: boolean
-        default: false
-      no-ghcr:
-        description: "Skip publishing GHCR image"
+        description: "SKIP RELEASE - Don't even create a draft release"
         required: false
         type: boolean
         default: false
       no-deploy:
-        description: "Skip deployment to staging environment"
+        description: "SKIP DEPLOY - Don't deploy to staging environment"
         required: false
         type: boolean
         default: false
       no-wipe:
-        description: "Skip staging environment chain wipe and keep volumes"
+        description: "SKIP WIPE - Don't wipe staging chain"
         required: false
         type: boolean
         default: false
       no-tests:
-        description: "Skip all test steps against staging environment"
+        description: "SKIP TESTS - Exlucde all test jobs against staging environment"
         required: false
         type: boolean
         default: false
+      no-public-release:
+        description: "SKIP PUBLIC RELEASE - Don't make release public"
+        required: false
+        type: boolean
+        default: true
+      no-ghcr:
+        description: "SKIP GHCR - Don't publish public GHCR image"
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   id-token: write
