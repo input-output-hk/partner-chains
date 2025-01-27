@@ -7,7 +7,7 @@ use ogmios_client::transactions::Transactions;
 use ogmios_client::{
 	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, QueryLedgerState},
 	query_network::QueryNetwork,
-	transactions::{OgmiosBudget, OgmiosEvaluateTransactionResponse},
+	transactions::OgmiosEvaluateTransactionResponse,
 	types::{OgmiosUtxo, OgmiosValue},
 };
 use sidechain_domain::{AssetId, MainchainAddressHash, MainchainPrivateKey, NetworkType, UtxoId};
@@ -159,16 +159,6 @@ pub(crate) fn convert_reference_script_costs(
 	Ok(UnitInterval::new(&numerator, &denominator))
 }
 
-/// Returns the budget of the first validator as [`ExUnits`]
-pub(crate) fn get_first_validator_budget(
-	validators_budgets: Vec<OgmiosEvaluateTransactionResponse>,
-) -> Result<ExUnits, JsError> {
-	let validator_budget = validators_budgets.first().ok_or_else(|| {
-		JsError::from_str("Internal error: cannot use evaluateTransaction response")
-	})?;
-	Ok(convert_ex_units(&validator_budget.budget))
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct ScriptExUnits {
 	pub mint_ex_units: Vec<ExUnits>,
@@ -298,11 +288,6 @@ impl Costs {
 
 		Ok(Costs::Costs(CostLookup { mints, spends }))
 	}
-}
-
-/// Conversion of ogmios-client budget to CSL execution units
-pub(crate) fn convert_ex_units(v: &OgmiosBudget) -> ExUnits {
-	ExUnits::new(&v.memory.into(), &v.cpu.into())
 }
 
 pub(crate) fn empty_asset_name() -> AssetName {
@@ -836,10 +821,7 @@ mod tests {
 	use crate::test_values::protocol_parameters;
 	use cardano_serialization_lib::{AssetName, Language, NetworkIdKind};
 	use hex_literal::hex;
-	use ogmios_client::{
-		transactions::OgmiosBudget,
-		types::{Asset, OgmiosValue},
-	};
+	use ogmios_client::types::{Asset, OgmiosValue};
 	use pretty_assertions::assert_eq;
 
 	#[test]
@@ -960,13 +942,6 @@ mod tests {
 				.unwrap(),
 			-900
 		);
-	}
-
-	#[test]
-	fn convert_ex_values_test() {
-		let ex_units = super::convert_ex_units(&OgmiosBudget { memory: 1000, cpu: 2000 });
-		assert_eq!(ex_units.mem(), 1000u64.into());
-		assert_eq!(ex_units.steps(), 2000u64.into());
 	}
 }
 

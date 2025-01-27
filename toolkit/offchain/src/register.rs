@@ -1,6 +1,5 @@
 use crate::csl::{
-	get_first_validator_budget, unit_plutus_data, InputsBuilderExt, OgmiosUtxoExt,
-	TransactionBuilderExt, TransactionContext,
+	unit_plutus_data, CostStore, Costs, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext
 };
 use crate::csl::{MainchainPrivateKeyExt, TransactionOutputAmountBuilderExt};
 use crate::{
@@ -10,7 +9,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	ExUnits, JsError, PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
+	PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
 	TxInputsBuilder,
 };
 use ogmios_client::{
@@ -63,10 +62,10 @@ pub async fn run_register<
 	genesis_utxo: UtxoId,
 	candidate_registration: &CandidateRegistration,
 	payment_signing_key: MainchainPrivateKey,
-	ogmios_client: &C,
+	client: &C,
 	await_tx: A,
 ) -> anyhow::Result<Option<McTxHash>> {
-	let ctx = TransactionContext::for_payment_key(payment_signing_key.0, ogmios_client).await?;
+	let ctx = TransactionContext::for_payment_key(payment_signing_key.0, client).await?;
 	let validator = crate::scripts_data::registered_candidates_scripts(genesis_utxo)?;
 	let validator_address = validator.address_bech32(ctx.network)?;
 	let registration_utxo = ctx
@@ -74,7 +73,7 @@ pub async fn run_register<
 		.iter()
 		.find(|u| u.to_domain() == candidate_registration.registration_utxo)
 		.ok_or(anyhow!("registration utxo not found at payment address"))?;
-	let all_registration_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
+	let all_registration_utxos = client.query_utxos(&[validator_address]).await?;
 	let own_registrations = get_own_registrations(
 		candidate_registration.own_pkh,
 		candidate_registration.stake_ownership.pub_key.clone(),
@@ -89,38 +88,23 @@ pub async fn run_register<
 	}
 	let own_registration_utxos = own_registrations.iter().map(|r| r.0.clone()).collect::<Vec<_>>();
 
-	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
-	let mut tx = register_tx(
-		&validator,
-		candidate_registration,
-		registration_utxo,
-		&own_registration_utxos,
-		&ctx,
-		zero_ex_units,
-	)?;
-
-	if !own_registration_utxos.is_empty() {
-		let evaluate_response =
-			ogmios_client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
-				anyhow!(
-					"Evaluate candidate registration transaction request failed: {}, bytes: {}",
-					e,
-					hex::encode(tx.to_bytes())
-				)
-			})?;
-		let validator_redeemer_ex_units = get_first_validator_budget(evaluate_response)?;
-		tx = register_tx(
-			&validator,
-			candidate_registration,
-			registration_utxo,
-			&own_registration_utxos,
-			&ctx,
-			validator_redeemer_ex_units,
-		)?;
-	}
+	let tx = Costs::calculate_costs(
+		|costs| {
+			register_tx(
+				&validator,
+				candidate_registration,
+				registration_utxo,
+				&own_registration_utxos,
+				costs,
+				&ctx,
+			)
+		},
+		client,
+	)
+	.await?;
 
 	let signed_tx = ctx.sign(&tx).to_bytes();
-	let result = ogmios_client.submit_transaction(&signed_tx).await.map_err(|e| {
+	let result = client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow!(
 			"Submit candidate registration transaction request failed: {}, bytes: {}",
 			e,
@@ -129,7 +113,7 @@ pub async fn run_register<
 	})?;
 	let tx_id = result.transaction.id;
 	log::info!("✅ Transaction submitted. ID: {}", hex::encode(result.transaction.id));
-	await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_id, 0)).await?;
+	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
 
 	Ok(Some(McTxHash(result.transaction.id)))
 }
@@ -173,13 +157,13 @@ pub async fn run_deregister<
 	genesis_utxo: UtxoId,
 	payment_signing_key: MainchainPrivateKey,
 	stake_ownership_pub_key: MainchainPublicKey,
-	ogmios_client: &C,
+	client: &C,
 	await_tx: A,
 ) -> anyhow::Result<Option<McTxHash>> {
-	let ctx = TransactionContext::for_payment_key(payment_signing_key.0, ogmios_client).await?;
+	let ctx = TransactionContext::for_payment_key(payment_signing_key.0, client).await?;
 	let validator = crate::scripts_data::registered_candidates_scripts(genesis_utxo)?;
 	let validator_address = validator.address_bech32(ctx.network)?;
-	let all_registration_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
+	let all_registration_utxos = client.query_utxos(&[validator_address]).await?;
 	let own_registrations = get_own_registrations(
 		payment_signing_key.to_pub_key_hash(),
 		stake_ownership_pub_key.clone(),
@@ -192,21 +176,17 @@ pub async fn run_deregister<
 	}
 
 	let own_registration_utxos = own_registrations.iter().map(|r| r.0.clone()).collect::<Vec<_>>();
-	let zero_ex_units = ExUnits::new(&0u64.into(), &0u64.into());
-	let tx = deregister_tx(&validator, &own_registration_utxos, &ctx, zero_ex_units)?;
 
-	let evaluate_response =
-		ogmios_client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
-			anyhow!(
-				"Evaluate candidate deregistration transaction request failed: {}, bytes: {}",
-				e,
-				hex::encode(tx.to_bytes())
-			)
-		})?;
-	let validator_redeemer_ex_units = get_first_validator_budget(evaluate_response)?;
-	let tx = deregister_tx(&validator, &own_registration_utxos, &ctx, validator_redeemer_ex_units)?;
+	let tx = Costs::calculate_costs(
+		|costs| {
+			deregister_tx(&validator, &own_registration_utxos, costs, &ctx)
+		},
+		client,
+	)
+	.await?;
+
 	let signed_tx = ctx.sign(&tx).to_bytes();
-	let result = ogmios_client.submit_transaction(&signed_tx).await.map_err(|e| {
+	let result = client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow!(
 			"Submit candidate deregistration transaction request failed: {}, bytes: {}",
 			e,
@@ -215,7 +195,7 @@ pub async fn run_deregister<
 	})?;
 	let tx_id = result.transaction.id;
 	log::info!("✅ Transaction submitted. ID: {}", hex::encode(result.transaction.id));
-	await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_id, 0)).await?;
+	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
 
 	Ok(Some(McTxHash(result.transaction.id)))
 }
@@ -255,9 +235,9 @@ fn register_tx(
 	candidate_registration: &CandidateRegistration,
 	registration_utxo: &OgmiosUtxo,
 	own_registration_utxos: &[OgmiosUtxo],
+	costs: Costs,
 	ctx: &TransactionContext,
-	validator_redeemer_ex_units: ExUnits,
-) -> Result<Transaction, JsError> {
+) -> anyhow::Result<Transaction> {
 	let config = crate::csl::get_builder_config(ctx)?;
 	let mut tx_builder = TransactionBuilder::new(&config);
 
@@ -268,7 +248,7 @@ fn register_tx(
 				own_registration_utxo,
 				validator,
 				&register_redeemer_data(),
-				&validator_redeemer_ex_units,
+				&costs.get_one_spend(),
 			)?;
 		}
 		inputs.add_key_inputs(&[registration_utxo.clone()], &ctx.payment_key_hash())?;
@@ -285,15 +265,15 @@ fn register_tx(
 		tx_builder.add_output(&output)?;
 	}
 
-	tx_builder.balance_update_and_build(ctx)
+	Ok(tx_builder.balance_update_and_build(ctx)?)
 }
 
 fn deregister_tx(
 	validator: &PlutusScript,
 	own_registration_utxos: &[OgmiosUtxo],
+	costs: Costs,
 	ctx: &TransactionContext,
-	validator_redeemer_ex_units: ExUnits,
-) -> Result<Transaction, JsError> {
+) -> anyhow::Result<Transaction> {
 	let config = crate::csl::get_builder_config(ctx)?;
 	let mut tx_builder = TransactionBuilder::new(&config);
 
@@ -304,13 +284,13 @@ fn deregister_tx(
 				own_registration_utxo,
 				validator,
 				&register_redeemer_data(),
-				&validator_redeemer_ex_units.clone(),
+				&costs.get_one_spend(),
 			)?;
 		}
 		tx_builder.set_inputs(&inputs);
 	}
 
-	tx_builder.balance_update_and_build(ctx)
+	Ok(tx_builder.balance_update_and_build(ctx)?)
 }
 
 fn register_redeemer_data() -> PlutusData {
@@ -320,10 +300,10 @@ fn register_redeemer_data() -> PlutusData {
 #[cfg(test)]
 mod tests {
 	use super::register_tx;
-	use crate::csl::{OgmiosUtxoExt, TransactionContext};
+	use crate::csl::{Costs, OgmiosUtxoExt, TransactionContext};
 	use crate::test_values::{self, *};
 	use cardano_serialization_lib::{
-		Address, BigNum, ExUnits, NetworkIdKind, Transaction, TransactionInputs,
+		Address, NetworkIdKind, Transaction, TransactionInputs,
 	};
 	use ogmios_client::types::OgmiosValue;
 	use ogmios_client::types::{OgmiosTx, OgmiosUtxo};
@@ -384,7 +364,6 @@ mod tests {
 
 	#[test]
 	fn register_tx_regression_test() {
-		let ex_units = ExUnits::new(&0u32.into(), &0u32.into());
 		let payment_key_utxos =
 			vec![lesser_payment_utxo(), greater_payment_utxo(), registration_utxo()];
 		let ctx = TransactionContext {
@@ -401,8 +380,8 @@ mod tests {
 			&candidate_registration,
 			registration_utxo,
 			&own_registration_utxos,
+			Costs::ZeroCosts,
 			&ctx,
-			ex_units,
 		)
 		.unwrap();
 
@@ -451,8 +430,8 @@ mod tests {
 			&candidate_registration,
 			registration_utxo,
 			&own_registration_utxos,
+			Costs::ZeroCosts,
 			&ctx,
-			ExUnits::new(&BigNum::zero(), &BigNum::zero()),
 		)
 		.unwrap();
 
