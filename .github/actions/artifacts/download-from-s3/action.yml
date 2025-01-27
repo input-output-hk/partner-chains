@@ -39,19 +39,19 @@ runs:
       uses: actions/upload-artifact@v4
       with:
         name: partner-chains-node-linux-artifact
-        path: artifacts/partner-chains-node-*-x86_64-linux
+        path: artifacts/partner-chains-node-linux-artifact/partner-chains-node-*-x86_64-linux
         if-no-files-found: error
 
     - name: Upload MacOS x86_64 Artifact
       uses: actions/upload-artifact@v4
       with:
         name: partner-chains-node-macos-x86_64-artifact
-        path: artifacts/partner-chains-node-*-x86_64-apple-darwin
+        path: artifacts/partner-chains-node-macos-x86_64-artifact/partner-chains-node-*-x86_64-apple-darwin
         if-no-files-found: error
 
     - name: Upload MacOS ARM64 Artifact
       uses: actions/upload-artifact@v4
       with:
         name: partner-chains-node-macos-arm64-artifact
-        path: artifacts/partner-chains-node-*-aarch64-apple-darwin
+        path: artifacts/partner-chains-node-macos-arm64-artifact/partner-chains-node-*-aarch64-apple-darwin
         if-no-files-found: error
