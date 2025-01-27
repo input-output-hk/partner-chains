@@ -70,6 +70,8 @@ runs:
         release_notes="${release_notes//$'\r'/'%0D'}"
 
         echo "release_notes=$release_notes" >> $GITHUB_OUTPUT
+
+        echo "::set-output name=release_notes::$release_notes"
       shell: bash
 
     - name: Create draft release
