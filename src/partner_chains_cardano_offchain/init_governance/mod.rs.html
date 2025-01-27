@@ -212,16 +212,13 @@
 <a href="#212" id="212">212</a>
 <a href="#213" id="213">213</a>
 <a href="#214" id="214">214</a>
-<a href="#215" id="215">215</a>
-<a href="#216" id="216">216</a>
-<a href="#217" id="217">217</a>
-<a href="#218" id="218">218</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::OgmiosUtxoExt;
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::Costs;
+<span class="kw">use </span><span class="kw">crate</span>::csl::OgmiosUtxoExt;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script;
 <span class="kw">use </span><span class="kw">crate</span>::scripts_data;
 <span class="kw">use crate</span>::{
 	await_tx::{AwaitTx, FixedDelayRetries},
-	csl::{get_first_validator_budget, key_hash_address, NetworkTypeExt},
+	csl::{key_hash_address, NetworkTypeExt},
 	OffchainError,
 };
 <span class="kw">use </span>anyhow::anyhow;
@@ -311,32 +308,27 @@
 			</span>.clone(),
 	};
 
-	<span class="kw">let </span>tx_context = <span class="kw">crate</span>::csl::TransactionContext {
+	<span class="kw">let </span>ctx = <span class="kw">crate</span>::csl::TransactionContext {
 		payment_key,
 		payment_key_utxos: own_utxos,
 		network: network.to_csl(),
 		protocol_parameters,
 	};
 
-	<span class="kw">let </span>unsigned_transaction = transaction::init_governance_transaction(
-		governance_authority,
-		<span class="kw-2">&amp;</span>tx_context,
-		genesis_utxo.clone(),
-		ExUnits::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span><span class="number">0u64</span>.into()),
-	)<span class="question-mark">?</span>;
+	<span class="kw">let </span>tx = Costs::calculate_costs(
+		|costs| {
+			transaction::init_governance_transaction(
+				governance_authority,
+				genesis_utxo.clone(),
+				costs,
+				<span class="kw-2">&amp;</span>ctx,
+			)
+		},
+		client,
+	)
+	.<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="macro">log::info!</span>(<span class="string">"📨 Submitting transaction.."</span>);
-
-	<span class="kw">let </span>all_costs = client.evaluate_transaction(<span class="kw-2">&amp;</span>unsigned_transaction.to_bytes()).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="kw">let </span>cost = get_first_validator_budget(all_costs)<span class="question-mark">?</span>;
-
-	<span class="kw">let </span>unsigned_transaction = transaction::init_governance_transaction(
-		governance_authority,
-		<span class="kw-2">&amp;</span>tx_context,
-		genesis_utxo.clone(),
-		cost,
-	)<span class="question-mark">?</span>;
-	<span class="kw">let </span>signed_transaction = tx_context.sign(<span class="kw-2">&amp;</span>unsigned_transaction);
+	<span class="kw">let </span>signed_transaction = ctx.sign(<span class="kw-2">&amp;</span>tx);
 
 	<span class="kw">let </span>result = client.submit_transaction(<span class="kw-2">&amp;</span>signed_transaction.to_bytes()).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>tx_id = result.transaction.id;

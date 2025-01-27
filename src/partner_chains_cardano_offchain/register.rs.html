@@ -542,30 +542,8 @@
 <a href="#542" id="542">542</a>
 <a href="#543" id="543">543</a>
 <a href="#544" id="544">544</a>
-<a href="#545" id="545">545</a>
-<a href="#546" id="546">546</a>
-<a href="#547" id="547">547</a>
-<a href="#548" id="548">548</a>
-<a href="#549" id="549">549</a>
-<a href="#550" id="550">550</a>
-<a href="#551" id="551">551</a>
-<a href="#552" id="552">552</a>
-<a href="#553" id="553">553</a>
-<a href="#554" id="554">554</a>
-<a href="#555" id="555">555</a>
-<a href="#556" id="556">556</a>
-<a href="#557" id="557">557</a>
-<a href="#558" id="558">558</a>
-<a href="#559" id="559">559</a>
-<a href="#560" id="560">560</a>
-<a href="#561" id="561">561</a>
-<a href="#562" id="562">562</a>
-<a href="#563" id="563">563</a>
-<a href="#564" id="564">564</a>
-<a href="#565" id="565">565</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::{
-	get_first_validator_budget, unit_plutus_data, InputsBuilderExt, OgmiosUtxoExt,
-	TransactionBuilderExt, TransactionContext,
+	unit_plutus_data, CostStore, Costs, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext
 };
 <span class="kw">use </span><span class="kw">crate</span>::csl::{MainchainPrivateKeyExt, TransactionOutputAmountBuilderExt};
 <span class="kw">use crate</span>::{
@@ -575,7 +553,7 @@
 };
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
-	ExUnits, JsError, PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
+	PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
 	TxInputsBuilder,
 };
 <span class="kw">use </span>ogmios_client::{
@@ -628,10 +606,10 @@
 	genesis_utxo: UtxoId,
 	candidate_registration: <span class="kw-2">&amp;</span>CandidateRegistration,
 	payment_signing_key: MainchainPrivateKey,
-	ogmios_client: <span class="kw-2">&amp;</span>C,
+	client: <span class="kw-2">&amp;</span>C,
 	await_tx: A,
 ) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
-	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_signing_key.<span class="number">0</span>, ogmios_client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_signing_key.<span class="number">0</span>, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>validator = <span class="kw">crate</span>::scripts_data::registered_candidates_scripts(genesis_utxo)<span class="question-mark">?</span>;
 	<span class="kw">let </span>validator_address = validator.address_bech32(ctx.network)<span class="question-mark">?</span>;
 	<span class="kw">let </span>registration_utxo = ctx
@@ -639,7 +617,7 @@
 		.iter()
 		.find(|u| u.to_domain() == candidate_registration.registration_utxo)
 		.ok_or(<span class="macro">anyhow!</span>(<span class="string">"registration utxo not found at payment address"</span>))<span class="question-mark">?</span>;
-	<span class="kw">let </span>all_registration_utxos = ogmios_client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>all_registration_utxos = client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>own_registrations = get_own_registrations(
 		candidate_registration.own_pkh,
 		candidate_registration.stake_ownership.pub_key.clone(),
@@ -654,38 +632,23 @@
 	}
 	<span class="kw">let </span>own_registration_utxos = own_registrations.iter().map(|r| r.<span class="number">0</span>.clone()).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
 
-	<span class="kw">let </span>zero_ex_units = ExUnits::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span><span class="number">0u64</span>.into());
-	<span class="kw">let </span><span class="kw-2">mut </span>tx = register_tx(
-		<span class="kw-2">&amp;</span>validator,
-		candidate_registration,
-		registration_utxo,
-		<span class="kw-2">&amp;</span>own_registration_utxos,
-		<span class="kw-2">&amp;</span>ctx,
-		zero_ex_units,
-	)<span class="question-mark">?</span>;
-
-	<span class="kw">if </span>!own_registration_utxos.is_empty() {
-		<span class="kw">let </span>evaluate_response =
-			ogmios_client.evaluate_transaction(<span class="kw-2">&amp;</span>tx.to_bytes()).<span class="kw">await</span>.map_err(|e| {
-				<span class="macro">anyhow!</span>(
-					<span class="string">"Evaluate candidate registration transaction request failed: {}, bytes: {}"</span>,
-					e,
-					hex::encode(tx.to_bytes())
-				)
-			})<span class="question-mark">?</span>;
-		<span class="kw">let </span>validator_redeemer_ex_units = get_first_validator_budget(evaluate_response)<span class="question-mark">?</span>;
-		tx = register_tx(
-			<span class="kw-2">&amp;</span>validator,
-			candidate_registration,
-			registration_utxo,
-			<span class="kw-2">&amp;</span>own_registration_utxos,
-			<span class="kw-2">&amp;</span>ctx,
-			validator_redeemer_ex_units,
-		)<span class="question-mark">?</span>;
-	}
+	<span class="kw">let </span>tx = Costs::calculate_costs(
+		|costs| {
+			register_tx(
+				<span class="kw-2">&amp;</span>validator,
+				candidate_registration,
+				registration_utxo,
+				<span class="kw-2">&amp;</span>own_registration_utxos,
+				costs,
+				<span class="kw-2">&amp;</span>ctx,
+			)
+		},
+		client,
+	)
+	.<span class="kw">await</span><span class="question-mark">?</span>;
 
 	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
-	<span class="kw">let </span>result = ogmios_client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
+	<span class="kw">let </span>result = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
 		<span class="macro">anyhow!</span>(
 			<span class="string">"Submit candidate registration transaction request failed: {}, bytes: {}"</span>,
 			e,
@@ -694,7 +657,7 @@
 	})<span class="question-mark">?</span>;
 	<span class="kw">let </span>tx_id = result.transaction.id;
 	<span class="macro">log::info!</span>(<span class="string">"✅ Transaction submitted. ID: {}"</span>, hex::encode(result.transaction.id));
-	await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_id, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
+	await_tx.await_tx_output(client, UtxoId::new(tx_id, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(McTxHash(result.transaction.id)))
 }
@@ -738,13 +701,13 @@
 	genesis_utxo: UtxoId,
 	payment_signing_key: MainchainPrivateKey,
 	stake_ownership_pub_key: MainchainPublicKey,
-	ogmios_client: <span class="kw-2">&amp;</span>C,
+	client: <span class="kw-2">&amp;</span>C,
 	await_tx: A,
 ) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
-	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_signing_key.<span class="number">0</span>, ogmios_client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_signing_key.<span class="number">0</span>, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>validator = <span class="kw">crate</span>::scripts_data::registered_candidates_scripts(genesis_utxo)<span class="question-mark">?</span>;
 	<span class="kw">let </span>validator_address = validator.address_bech32(ctx.network)<span class="question-mark">?</span>;
-	<span class="kw">let </span>all_registration_utxos = ogmios_client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>all_registration_utxos = client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>own_registrations = get_own_registrations(
 		payment_signing_key.to_pub_key_hash(),
 		stake_ownership_pub_key.clone(),
@@ -757,21 +720,17 @@
 	}
 
 	<span class="kw">let </span>own_registration_utxos = own_registrations.iter().map(|r| r.<span class="number">0</span>.clone()).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
-	<span class="kw">let </span>zero_ex_units = ExUnits::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span><span class="number">0u64</span>.into());
-	<span class="kw">let </span>tx = deregister_tx(<span class="kw-2">&amp;</span>validator, <span class="kw-2">&amp;</span>own_registration_utxos, <span class="kw-2">&amp;</span>ctx, zero_ex_units)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>evaluate_response =
-		ogmios_client.evaluate_transaction(<span class="kw-2">&amp;</span>tx.to_bytes()).<span class="kw">await</span>.map_err(|e| {
-			<span class="macro">anyhow!</span>(
-				<span class="string">"Evaluate candidate deregistration transaction request failed: {}, bytes: {}"</span>,
-				e,
-				hex::encode(tx.to_bytes())
-			)
-		})<span class="question-mark">?</span>;
-	<span class="kw">let </span>validator_redeemer_ex_units = get_first_validator_budget(evaluate_response)<span class="question-mark">?</span>;
-	<span class="kw">let </span>tx = deregister_tx(<span class="kw-2">&amp;</span>validator, <span class="kw-2">&amp;</span>own_registration_utxos, <span class="kw-2">&amp;</span>ctx, validator_redeemer_ex_units)<span class="question-mark">?</span>;
+	<span class="kw">let </span>tx = Costs::calculate_costs(
+		|costs| {
+			deregister_tx(<span class="kw-2">&amp;</span>validator, <span class="kw-2">&amp;</span>own_registration_utxos, costs, <span class="kw-2">&amp;</span>ctx)
+		},
+		client,
+	)
+	.<span class="kw">await</span><span class="question-mark">?</span>;
+
 	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
-	<span class="kw">let </span>result = ogmios_client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
+	<span class="kw">let </span>result = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
 		<span class="macro">anyhow!</span>(
 			<span class="string">"Submit candidate deregistration transaction request failed: {}, bytes: {}"</span>,
 			e,
@@ -780,7 +739,7 @@
 	})<span class="question-mark">?</span>;
 	<span class="kw">let </span>tx_id = result.transaction.id;
 	<span class="macro">log::info!</span>(<span class="string">"✅ Transaction submitted. ID: {}"</span>, hex::encode(result.transaction.id));
-	await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_id, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
+	await_tx.await_tx_output(client, UtxoId::new(tx_id, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(McTxHash(result.transaction.id)))
 }
@@ -820,9 +779,9 @@
 	candidate_registration: <span class="kw-2">&amp;</span>CandidateRegistration,
 	registration_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
 	own_registration_utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo],
+	costs: Costs,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
-	validator_redeemer_ex_units: ExUnits,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Transaction, JsError&gt; {
+) -&gt; anyhow::Result&lt;Transaction&gt; {
 	<span class="kw">let </span>config = <span class="kw">crate</span>::csl::get_builder_config(ctx)<span class="question-mark">?</span>;
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>config);
 
@@ -833,7 +792,7 @@
 				own_registration_utxo,
 				validator,
 				<span class="kw-2">&amp;</span>register_redeemer_data(),
-				<span class="kw-2">&amp;</span>validator_redeemer_ex_units,
+				<span class="kw-2">&amp;</span>costs.get_one_spend(),
 			)<span class="question-mark">?</span>;
 		}
 		inputs.add_key_inputs(<span class="kw-2">&amp;</span>[registration_utxo.clone()], <span class="kw-2">&amp;</span>ctx.payment_key_hash())<span class="question-mark">?</span>;
@@ -850,15 +809,15 @@
 		tx_builder.add_output(<span class="kw-2">&amp;</span>output)<span class="question-mark">?</span>;
 	}
 
-	tx_builder.balance_update_and_build(ctx)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
 }
 
 <span class="kw">fn </span>deregister_tx(
 	validator: <span class="kw-2">&amp;</span>PlutusScript,
 	own_registration_utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo],
+	costs: Costs,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
-	validator_redeemer_ex_units: ExUnits,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Transaction, JsError&gt; {
+) -&gt; anyhow::Result&lt;Transaction&gt; {
 	<span class="kw">let </span>config = <span class="kw">crate</span>::csl::get_builder_config(ctx)<span class="question-mark">?</span>;
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>config);
 
@@ -869,13 +828,13 @@
 				own_registration_utxo,
 				validator,
 				<span class="kw-2">&amp;</span>register_redeemer_data(),
-				<span class="kw-2">&amp;</span>validator_redeemer_ex_units.clone(),
+				<span class="kw-2">&amp;</span>costs.get_one_spend(),
 			)<span class="question-mark">?</span>;
 		}
 		tx_builder.set_inputs(<span class="kw-2">&amp;</span>inputs);
 	}
 
-	tx_builder.balance_update_and_build(ctx)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
 }
 
 <span class="kw">fn </span>register_redeemer_data() -&gt; PlutusData {
@@ -885,10 +844,10 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use </span><span class="kw">super</span>::register_tx;
-	<span class="kw">use </span><span class="kw">crate</span>::csl::{OgmiosUtxoExt, TransactionContext};
+	<span class="kw">use </span><span class="kw">crate</span>::csl::{Costs, OgmiosUtxoExt, TransactionContext};
 	<span class="kw">use </span><span class="kw">crate</span>::test_values::{<span class="self">self</span>, <span class="kw-2">*</span>};
 	<span class="kw">use </span>cardano_serialization_lib::{
-		Address, BigNum, ExUnits, NetworkIdKind, Transaction, TransactionInputs,
+		Address, NetworkIdKind, Transaction, TransactionInputs,
 	};
 	<span class="kw">use </span>ogmios_client::types::OgmiosValue;
 	<span class="kw">use </span>ogmios_client::types::{OgmiosTx, OgmiosUtxo};
@@ -949,7 +908,6 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>register_tx_regression_test() {
-		<span class="kw">let </span>ex_units = ExUnits::new(<span class="kw-2">&amp;</span><span class="number">0u32</span>.into(), <span class="kw-2">&amp;</span><span class="number">0u32</span>.into());
 		<span class="kw">let </span>payment_key_utxos =
 			<span class="macro">vec!</span>[lesser_payment_utxo(), greater_payment_utxo(), registration_utxo()];
 		<span class="kw">let </span>ctx = TransactionContext {
@@ -966,8 +924,8 @@
 			<span class="kw-2">&amp;</span>candidate_registration,
 			registration_utxo,
 			<span class="kw-2">&amp;</span>own_registration_utxos,
+			Costs::ZeroCosts,
 			<span class="kw-2">&amp;</span>ctx,
-			ex_units,
 		)
 		.unwrap();
 
@@ -1016,8 +974,8 @@
 			<span class="kw-2">&amp;</span>candidate_registration,
 			registration_utxo,
 			<span class="kw-2">&amp;</span>own_registration_utxos,
+			Costs::ZeroCosts,
 			<span class="kw-2">&amp;</span>ctx,
-			ExUnits::new(<span class="kw-2">&amp;</span>BigNum::zero(), <span class="kw-2">&amp;</span>BigNum::zero()),
 		)
 		.unwrap();
 

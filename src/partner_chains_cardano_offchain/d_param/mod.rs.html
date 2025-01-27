@@ -261,66 +261,6 @@
 <a href="#261" id="261">261</a>
 <a href="#262" id="262">262</a>
 <a href="#263" id="263">263</a>
-<a href="#264" id="264">264</a>
-<a href="#265" id="265">265</a>
-<a href="#266" id="266">266</a>
-<a href="#267" id="267">267</a>
-<a href="#268" id="268">268</a>
-<a href="#269" id="269">269</a>
-<a href="#270" id="270">270</a>
-<a href="#271" id="271">271</a>
-<a href="#272" id="272">272</a>
-<a href="#273" id="273">273</a>
-<a href="#274" id="274">274</a>
-<a href="#275" id="275">275</a>
-<a href="#276" id="276">276</a>
-<a href="#277" id="277">277</a>
-<a href="#278" id="278">278</a>
-<a href="#279" id="279">279</a>
-<a href="#280" id="280">280</a>
-<a href="#281" id="281">281</a>
-<a href="#282" id="282">282</a>
-<a href="#283" id="283">283</a>
-<a href="#284" id="284">284</a>
-<a href="#285" id="285">285</a>
-<a href="#286" id="286">286</a>
-<a href="#287" id="287">287</a>
-<a href="#288" id="288">288</a>
-<a href="#289" id="289">289</a>
-<a href="#290" id="290">290</a>
-<a href="#291" id="291">291</a>
-<a href="#292" id="292">292</a>
-<a href="#293" id="293">293</a>
-<a href="#294" id="294">294</a>
-<a href="#295" id="295">295</a>
-<a href="#296" id="296">296</a>
-<a href="#297" id="297">297</a>
-<a href="#298" id="298">298</a>
-<a href="#299" id="299">299</a>
-<a href="#300" id="300">300</a>
-<a href="#301" id="301">301</a>
-<a href="#302" id="302">302</a>
-<a href="#303" id="303">303</a>
-<a href="#304" id="304">304</a>
-<a href="#305" id="305">305</a>
-<a href="#306" id="306">306</a>
-<a href="#307" id="307">307</a>
-<a href="#308" id="308">308</a>
-<a href="#309" id="309">309</a>
-<a href="#310" id="310">310</a>
-<a href="#311" id="311">311</a>
-<a href="#312" id="312">312</a>
-<a href="#313" id="313">313</a>
-<a href="#314" id="314">314</a>
-<a href="#315" id="315">315</a>
-<a href="#316" id="316">316</a>
-<a href="#317" id="317">317</a>
-<a href="#318" id="318">318</a>
-<a href="#319" id="319">319</a>
-<a href="#320" id="320">320</a>
-<a href="#321" id="321">321</a>
-<a href="#322" id="322">322</a>
-<a href="#323" id="323">323</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! D-parameter is stored on chain in an UTXO at the D-parameter validator address.
 //! There should be at most one UTXO at the validator address and it should contain the D-parameter.
 //! This UTXO should have 1 token of the D-parameter policy with an empty asset name.
@@ -329,15 +269,13 @@
 
 </span><span class="kw">use </span><span class="kw">crate</span>::await_tx::{AwaitTx, FixedDelayRetries};
 <span class="kw">use </span><span class="kw">crate</span>::csl::{
-	empty_asset_name, get_builder_config, get_validator_budgets, unit_plutus_data, zero_ex_units,
-	InputsBuilderExt, ScriptExUnits, TransactionBuilderExt, TransactionContext,
+	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, InputsBuilderExt,
+	TransactionBuilderExt, TransactionContext,
 };
 <span class="kw">use </span><span class="kw">crate</span>::init_governance::{<span class="self">self</span>, GovernanceData};
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>anyhow::anyhow;
-<span class="kw">use </span>cardano_serialization_lib::{
-	ExUnits, JsError, PlutusData, ScriptHash, Transaction, TransactionBuilder, TxInputsBuilder,
-};
+<span class="kw">use </span>cardano_serialization_lib::{PlutusData, Transaction, TransactionBuilder, TxInputsBuilder};
 <span class="kw">use </span>ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
@@ -345,7 +283,6 @@
 };
 <span class="kw">use </span>partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
 <span class="kw">use </span>sidechain_domain::{DParameter, McTxHash, UtxoId};
-<span class="kw">use </span>std::collections::HashMap;
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
@@ -459,46 +396,12 @@
 ) -&gt; anyhow::Result&lt;McTxHash&gt; {
 	<span class="kw">let </span>gov_data = init_governance::get_governance_data(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>tx = mint_d_param_token_tx(
-		validator,
-		policy,
-		d_parameter,
-		<span class="kw-2">&amp;</span>gov_data,
-		<span class="kw-2">&amp;</span>ctx,
-		<span class="kw-2">&amp;</span>zero_ex_units(),
-		<span class="kw-2">&amp;</span>zero_ex_units(),
-	)<span class="question-mark">?</span>;
+	<span class="kw">let </span>tx = Costs::calculate_costs(
+		|costs| mint_d_param_token_tx(validator, policy, d_parameter, <span class="kw-2">&amp;</span>gov_data, costs, <span class="kw-2">&amp;</span>ctx),
+		client,
+	)
+	.<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>evaluate_response = client.evaluate_transaction(<span class="kw-2">&amp;</span>tx.to_bytes()).<span class="kw">await</span>.map_err(|e| {
-		<span class="macro">anyhow!</span>(
-			<span class="string">"Evaluate insert D-parameter transaction request failed: {}, bytes: {}"</span>,
-			e,
-			hex::encode(tx.to_bytes())
-		)
-	})<span class="question-mark">?</span>;
-
-	<span class="kw">let </span>mint_keys = tx.body().mint().expect(<span class="string">"insert D parameter transaction has two mints"</span>).keys();
-	<span class="kw">let </span>script_to_index: HashMap&lt;ScriptHash, usize&gt; =
-		<span class="macro">vec!</span>[(mint_keys.get(<span class="number">0</span>), <span class="number">0</span>), (mint_keys.get(<span class="number">1</span>), <span class="number">1</span>)].into_iter().collect();
-	<span class="kw">let </span>mint_ex_units = get_validator_budgets(evaluate_response).mint_ex_units;
-	<span class="kw">let </span>policy_idx = <span class="kw-2">*</span>script_to_index.get(<span class="kw-2">&amp;</span>policy.csl_script_hash()).unwrap();
-	<span class="kw">let </span>gov_policy_idx = <span class="kw-2">*</span>script_to_index.get(<span class="kw-2">&amp;</span>gov_data.policy_script.csl_script_hash()).unwrap();
-	<span class="kw">let </span>policy_ex_units = mint_ex_units
-		.get(policy_idx)
-		.expect(<span class="string">"Evaluate transaction response should have entry for d_param policy"</span>);
-	<span class="kw">let </span>gov_policy_ex_units = mint_ex_units
-		.get(gov_policy_idx)
-		.expect(<span class="string">"Evaluate transaction response should have entry for governance policy"</span>);
-
-	<span class="kw">let </span>tx = mint_d_param_token_tx(
-		validator,
-		policy,
-		d_parameter,
-		<span class="kw-2">&amp;</span>gov_data,
-		<span class="kw-2">&amp;</span>ctx,
-		policy_ex_units,
-		gov_policy_ex_units,
-	)<span class="question-mark">?</span>;
 	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
 	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
 		<span class="macro">anyhow!</span>(
@@ -521,40 +424,24 @@
 	genesis_utxo: UtxoId,
 	client: <span class="kw-2">&amp;</span>C,
 ) -&gt; anyhow::Result&lt;McTxHash&gt; {
-	<span class="kw">let </span>zero_ex_units = ScriptExUnits {
-		mint_ex_units: <span class="macro">vec!</span>[zero_ex_units()],
-		spend_ex_units: <span class="macro">vec!</span>[zero_ex_units()],
-	};
-
 	<span class="kw">let </span>governance_data = init_governance::get_governance_data(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>tx = update_d_param_tx(
-		validator,
-		policy,
-		d_parameter,
-		current_utxo,
-		<span class="kw-2">&amp;</span>governance_data,
-		<span class="kw-2">&amp;</span>ctx,
-		zero_ex_units,
-	)<span class="question-mark">?</span>;
-	<span class="kw">let </span>evaluate_response = client.evaluate_transaction(<span class="kw-2">&amp;</span>tx.to_bytes()).<span class="kw">await</span>.map_err(|e| {
-		<span class="macro">anyhow!</span>(
-			<span class="string">"Evaluate update D-parameter transaction request failed: {}, bytes: {}"</span>,
-			e,
-			hex::encode(tx.to_bytes())
-		)
-	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>spend_ex_units = get_validator_budgets(evaluate_response);
+	<span class="kw">let </span>tx = Costs::calculate_costs(
+		|costs| {
+			update_d_param_tx(
+				validator,
+				policy,
+				d_parameter,
+				current_utxo,
+				<span class="kw-2">&amp;</span>governance_data,
+				costs,
+				<span class="kw-2">&amp;</span>ctx,
+			)
+		},
+		client,
+	)
+	.<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>tx = update_d_param_tx(
-		validator,
-		policy,
-		d_parameter,
-		current_utxo,
-		<span class="kw-2">&amp;</span>governance_data,
-		<span class="kw-2">&amp;</span>ctx,
-		spend_ex_units,
-	)<span class="question-mark">?</span>;
 	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
 	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
 		<span class="macro">anyhow!</span>(
@@ -573,17 +460,16 @@
 	policy: <span class="kw-2">&amp;</span>PlutusScript,
 	d_parameter: <span class="kw-2">&amp;</span>DParameter,
 	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
+	costs: Costs,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
-	d_param_policy_ex_units: <span class="kw-2">&amp;</span>ExUnits,
-	gov_policy_ex_units: <span class="kw-2">&amp;</span>ExUnits,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Transaction, JsError&gt; {
+) -&gt; anyhow::Result&lt;Transaction&gt; {
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
 	<span class="comment">// The essence of transaction: mint D-Param token and set output with it, mint a governance token.
 	</span>tx_builder.add_mint_one_script_token(
 		policy,
 		<span class="kw-2">&amp;</span>empty_asset_name(),
 		<span class="kw-2">&amp;</span>unit_plutus_data(),
-		d_param_policy_ex_units,
+		<span class="kw-2">&amp;</span>costs.get_mint(policy),
 	)<span class="question-mark">?</span>;
 	tx_builder.add_output_with_one_script_token(
 		validator,
@@ -596,10 +482,10 @@
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		<span class="kw-2">&amp;</span>governance_data.policy_script,
 		<span class="kw-2">&amp;</span>gov_tx_input,
-		gov_policy_ex_units,
+		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>governance_data.policy_script),
 	)<span class="question-mark">?</span>;
 
-	tx_builder.balance_update_and_build(ctx)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
 }
 
 <span class="kw">fn </span>update_d_param_tx(
@@ -608,9 +494,9 @@
 	d_parameter: <span class="kw-2">&amp;</span>DParameter,
 	script_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
 	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
+	costs: Costs,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
-	ex_units: ScriptExUnits,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Transaction, JsError&gt; {
+) -&gt; anyhow::Result&lt;Transaction&gt; {
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
 
 	<span class="kw">let </span><span class="kw-2">mut </span>inputs = TxInputsBuilder::new();
@@ -618,10 +504,7 @@
 		script_utxo,
 		validator,
 		<span class="kw-2">&amp;</span>unit_plutus_data(),
-		ex_units
-			.spend_ex_units
-			.first()
-			.ok_or_else(|| JsError::from_str(<span class="string">"Spend ex units not found"</span>))<span class="question-mark">?</span>,
+		<span class="kw-2">&amp;</span>costs.get_one_spend(),
 	)<span class="question-mark">?</span>;
 	tx_builder.set_inputs(<span class="kw-2">&amp;</span>inputs);
 
@@ -636,12 +519,9 @@
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		<span class="kw-2">&amp;</span>governance_data.policy_script,
 		<span class="kw-2">&amp;</span>gov_tx_input,
-		ex_units
-			.mint_ex_units
-			.first()
-			.ok_or_else(|| JsError::from_str(<span class="string">"Mint ex units not found"</span>))<span class="question-mark">?</span>,
+		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>governance_data.policy_script),
 	)<span class="question-mark">?</span>;
 
-	tx_builder.balance_update_and_build(ctx)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
 }
 </code></pre></div></section></main></body></html>

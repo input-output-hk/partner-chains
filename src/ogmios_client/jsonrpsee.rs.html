@@ -132,14 +132,14 @@
 </span><span class="kw">pub async fn </span>client_for_url(addr: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;OgmiosClients, String&gt; {
 	<span class="kw">if </span>addr.starts_with(<span class="string">"http"</span>) || addr.starts_with(<span class="string">"https"</span>) {
 		<span class="kw">let </span>client = HttpClientBuilder::default()
-			.build(addr.to_owned())
-			.map_err(|e| <span class="macro">format!</span>(<span class="string">"Couldn't create HTTP client: {}"</span>, e.to_string()))<span class="question-mark">?</span>;
+			.build(addr)
+			.map_err(|e| <span class="macro">format!</span>(<span class="string">"Couldn't create HTTP client: {}"</span>, e))<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(OgmiosClients::HttpClient(client))
 	} <span class="kw">else if </span>addr.starts_with(<span class="string">"ws"</span>) || addr.starts_with(<span class="string">"wss"</span>) {
 		<span class="kw">let </span>client = WsClientBuilder::default()
 			.build(addr.to_owned())
 			.<span class="kw">await
-			</span>.map_err(|e| <span class="macro">format!</span>(<span class="string">"Couldn't create WebSockets client: {}"</span>, e.to_string()))<span class="question-mark">?</span>;
+			</span>.map_err(|e| <span class="macro">format!</span>(<span class="string">"Couldn't create WebSockets client: {}"</span>, e))<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(OgmiosClients::WsClient(client))
 	} <span class="kw">else </span>{
 		<span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">"Invalid Schema of URL: '{}'. Expected http, https, ws or wss."</span>, addr))

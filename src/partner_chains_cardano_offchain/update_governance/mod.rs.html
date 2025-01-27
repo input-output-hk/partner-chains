@@ -127,27 +127,6 @@
 <a href="#127" id="127">127</a>
 <a href="#128" id="128">128</a>
 <a href="#129" id="129">129</a>
-<a href="#130" id="130">130</a>
-<a href="#131" id="131">131</a>
-<a href="#132" id="132">132</a>
-<a href="#133" id="133">133</a>
-<a href="#134" id="134">134</a>
-<a href="#135" id="135">135</a>
-<a href="#136" id="136">136</a>
-<a href="#137" id="137">137</a>
-<a href="#138" id="138">138</a>
-<a href="#139" id="139">139</a>
-<a href="#140" id="140">140</a>
-<a href="#141" id="141">141</a>
-<a href="#142" id="142">142</a>
-<a href="#143" id="143">143</a>
-<a href="#144" id="144">144</a>
-<a href="#145" id="145">145</a>
-<a href="#146" id="146">146</a>
-<a href="#147" id="147">147</a>
-<a href="#148" id="148">148</a>
-<a href="#149" id="149">149</a>
-<a href="#150" id="150">150</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Building and submitting of the transaction that changes the current governance authority
 //!
 //! The transaction:
@@ -155,19 +134,16 @@
 //! 2. Mints exactly 1 multi-sig policy token as authentication
 //! 3. Produces a new governance UTXO at the version oracle validator address with a version oracle
 //!    Plutus datum attached that contains the script ID (32) and policy hash.
-</span><span class="kw">use crate</span>::{
+</span><span class="kw">use </span><span class="kw">crate</span>::csl::Costs;
+<span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
-	csl::{
-		get_validator_budgets, InputsBuilderExt, ScriptExUnits, TransactionBuilderExt,
-		TransactionContext,
-	},
+	csl::{CostStore, InputsBuilderExt, TransactionBuilderExt, TransactionContext},
 	init_governance::{<span class="self">self</span>, transaction::version_oracle_datum_output, GovernanceData},
 	plutus_script::PlutusScript,
 	scripts_data::multisig_governance_policy_configuration,
 };
-<span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
-	ExUnits, Language, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
+	Language, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
 };
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -192,45 +168,28 @@
 	client: <span class="kw-2">&amp;</span>T,
 	await_tx: A,
 ) -&gt; anyhow::Result&lt;OgmiosTx&gt; {
-	<span class="kw">let </span>tx_context = TransactionContext::for_payment_key(payment_key.<span class="number">0</span>, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_key.<span class="number">0</span>, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
 	<span class="kw">let </span>governance_data = init_governance::get_governance_data(genesis_utxo_id, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>tx = update_governance_tx(
-		raw_scripts::MULTI_SIG_POLICY,
-		raw_scripts::VERSION_ORACLE_VALIDATOR,
-		raw_scripts::VERSION_ORACLE_POLICY,
-		genesis_utxo_id,
-		new_governance_authority,
-		<span class="kw-2">&amp;</span>tx_context,
-		<span class="kw-2">&amp;</span>governance_data,
-		ExUnits::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span><span class="number">0u64</span>.into()),
-		ExUnits::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span><span class="number">0u64</span>.into()),
-	)<span class="question-mark">?</span>;
+	<span class="kw">let </span>tx = Costs::calculate_costs(
+		|costs| {
+			update_governance_tx(
+				raw_scripts::MULTI_SIG_POLICY,
+				raw_scripts::VERSION_ORACLE_VALIDATOR,
+				raw_scripts::VERSION_ORACLE_POLICY,
+				genesis_utxo_id,
+				new_governance_authority,
+				<span class="kw-2">&amp;</span>governance_data,
+				costs,
+				<span class="kw-2">&amp;</span>ctx,
+			)
+		},
+		client,
+	)
+	.<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>costs = client.evaluate_transaction(<span class="kw-2">&amp;</span>tx.to_bytes()).<span class="kw">await</span><span class="question-mark">?</span>;
-
-	<span class="kw">let </span>ScriptExUnits { mint_ex_units, spend_ex_units } = get_validator_budgets(costs);
-
-	<span class="kw">let </span>[mint_cost] = <span class="kw-2">&amp;</span>mint_ex_units[..] <span class="kw">else </span>{
-		<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Error retrieving witness costs: mint cost data missing."</span>));
-	};
-	<span class="kw">let </span>[spend_cost] = <span class="kw-2">&amp;</span>spend_ex_units[..] <span class="kw">else </span>{
-		<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Error retrieving witness costs: spend cost data missing."</span>));
-	};
-
-	<span class="kw">let </span>tx = update_governance_tx(
-		raw_scripts::MULTI_SIG_POLICY,
-		raw_scripts::VERSION_ORACLE_VALIDATOR,
-		raw_scripts::VERSION_ORACLE_POLICY,
-		genesis_utxo_id,
-		new_governance_authority,
-		<span class="kw-2">&amp;</span>tx_context,
-		<span class="kw-2">&amp;</span>governance_data,
-		mint_cost.clone(),
-		spend_cost.clone(),
-	)<span class="question-mark">?</span>;
-	<span class="kw">let </span>signed_tx = tx_context.sign(<span class="kw-2">&amp;</span>tx);
+	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx);
 
 	<span class="kw">let </span>response = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx.to_bytes()).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="macro">log::info!</span>(<span class="string">"Submitted transaction: {}"</span>, hex::encode(response.transaction.id));
@@ -251,10 +210,9 @@
 	version_oracle_policy: <span class="kw-2">&amp;</span>[u8],
 	genesis_utxo: UtxoId,
 	new_governance_authority: MainchainAddressHash,
-	tx_context: <span class="kw-2">&amp;</span>TransactionContext,
 	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
-	mint_ex_units: ExUnits,
-	spend_ex_units: ExUnits,
+	costs: Costs,
+	ctx: <span class="kw-2">&amp;</span>TransactionContext,
 ) -&gt; anyhow::Result&lt;Transaction&gt; {
 	<span class="kw">let </span>multi_sig_policy =
 		PlutusScript::from_wrapped_cbor(multi_sig_policy, Language::new_plutus_v2())<span class="question-mark">?
@@ -265,23 +223,23 @@
 	<span class="kw">let </span>version_oracle_policy =
 		PlutusScript::from_wrapped_cbor(version_oracle_policy, Language::new_plutus_v2())<span class="question-mark">?
 			</span>.apply_data(genesis_utxo)<span class="question-mark">?
-			</span>.apply_uplc_data(version_oracle_validator.address_data(tx_context.network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+			</span>.apply_uplc_data(version_oracle_validator.address_data(ctx.network)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>config = <span class="kw">crate</span>::csl::get_builder_config(tx_context)<span class="question-mark">?</span>;
+	<span class="kw">let </span>config = <span class="kw">crate</span>::csl::get_builder_config(ctx)<span class="question-mark">?</span>;
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>config);
 
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		<span class="kw-2">&amp;</span>governance_data.policy_script,
 		<span class="kw-2">&amp;</span>governance_data.utxo_id_as_tx_input(),
-		<span class="kw-2">&amp;</span>mint_ex_units,
+		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>governance_data.policy_script),
 	)<span class="question-mark">?</span>;
 
 	tx_builder.add_output(<span class="kw-2">&amp;</span>version_oracle_datum_output(
 		version_oracle_validator.clone(),
 		version_oracle_policy.clone(),
 		multi_sig_policy.clone(),
-		tx_context.network,
-		tx_context,
+		ctx.network,
+		ctx,
 	)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
 	tx_builder.set_inputs(<span class="kw-2">&amp;</span>{
@@ -290,12 +248,12 @@
 			<span class="kw-2">&amp;</span>governance_data.utxo,
 			<span class="kw-2">&amp;</span>version_oracle_validator,
 			<span class="kw-2">&amp;</span>PlutusData::new_integer(<span class="kw-2">&amp;</span>(raw_scripts::ScriptId::GovernancePolicy <span class="kw">as </span>u32).into()),
-			<span class="kw-2">&amp;</span>spend_ex_units,
+			<span class="kw-2">&amp;</span>costs.get_one_spend(),
 		)<span class="question-mark">?</span>;
 
 		inputs
 	});
 
-	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(tx_context)<span class="question-mark">?</span>)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
 }
 </code></pre></div></section></main></body></html>

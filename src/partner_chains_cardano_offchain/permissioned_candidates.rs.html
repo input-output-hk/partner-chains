@@ -580,38 +580,6 @@
 <a href="#580" id="580">580</a>
 <a href="#581" id="581">581</a>
 <a href="#582" id="582">582</a>
-<a href="#583" id="583">583</a>
-<a href="#584" id="584">584</a>
-<a href="#585" id="585">585</a>
-<a href="#586" id="586">586</a>
-<a href="#587" id="587">587</a>
-<a href="#588" id="588">588</a>
-<a href="#589" id="589">589</a>
-<a href="#590" id="590">590</a>
-<a href="#591" id="591">591</a>
-<a href="#592" id="592">592</a>
-<a href="#593" id="593">593</a>
-<a href="#594" id="594">594</a>
-<a href="#595" id="595">595</a>
-<a href="#596" id="596">596</a>
-<a href="#597" id="597">597</a>
-<a href="#598" id="598">598</a>
-<a href="#599" id="599">599</a>
-<a href="#600" id="600">600</a>
-<a href="#601" id="601">601</a>
-<a href="#602" id="602">602</a>
-<a href="#603" id="603">603</a>
-<a href="#604" id="604">604</a>
-<a href="#605" id="605">605</a>
-<a href="#606" id="606">606</a>
-<a href="#607" id="607">607</a>
-<a href="#608" id="608">608</a>
-<a href="#609" id="609">609</a>
-<a href="#610" id="610">610</a>
-<a href="#611" id="611">611</a>
-<a href="#612" id="612">612</a>
-<a href="#613" id="613">613</a>
-<a href="#614" id="614">614</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Permissioned candidates are stored on chain in an UTXO at the Permissioned Candidates Validator address.
 //! There should be at most one UTXO at the validator address and it should contain the permissioned candidates list.
@@ -620,11 +588,9 @@
 //! in the `datum` field of it. Field should contain list of list, where each inner list is a triple of byte strings
 //! `[sidechain_public_key, aura_public_key, grandpa_publicKey]`.
 
-</span><span class="kw">use </span>std::collections::HashMap;
-
-<span class="kw">use </span><span class="kw">crate</span>::await_tx::{AwaitTx, FixedDelayRetries};
+</span><span class="kw">use </span><span class="kw">crate</span>::await_tx::{AwaitTx, FixedDelayRetries};
 <span class="kw">use </span><span class="kw">crate</span>::csl::{
-	empty_asset_name, get_builder_config, get_validator_budgets, zero_ex_units, InputsBuilderExt,
+	empty_asset_name, get_builder_config, CostStore, Costs, InputsBuilderExt,
 	TransactionBuilderExt, TransactionContext,
 };
 <span class="kw">use </span><span class="kw">crate</span>::init_governance::{<span class="self">self</span>, GovernanceData};
@@ -632,8 +598,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::scripts_data;
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
-	BigInt, ExUnits, JsError, PlutusData, ScriptHash, Transaction, TransactionBuilder,
-	TxInputsBuilder,
+	BigInt, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
 };
 <span class="kw">use </span>ogmios_client::query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId};
 <span class="kw">use </span>ogmios_client::query_network::QueryNetwork;
@@ -772,47 +737,21 @@
 <span class="kw">where
 	</span>C: Transactions + QueryLedgerState + QueryNetwork,
 {
-	<span class="kw">let </span>tx = mint_permissioned_candidates_token_tx(
-		validator,
-		policy,
-		candidates,
-		governance_data,
-		<span class="kw-2">&amp;</span>ctx,
-		<span class="kw-2">&amp;</span>zero_ex_units(),
-		<span class="kw-2">&amp;</span>zero_ex_units(),
-	)<span class="question-mark">?</span>;
+	<span class="kw">let </span>tx = Costs::calculate_costs(
+		|costs| {
+			mint_permissioned_candidates_token_tx(
+				validator,
+				policy,
+				candidates,
+				governance_data,
+				costs,
+				<span class="kw-2">&amp;</span>ctx,
+			)
+		},
+		client,
+	)
+	.<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>evaluate_response = client.evaluate_transaction(<span class="kw-2">&amp;</span>tx.to_bytes()).<span class="kw">await</span>.map_err(|e| {
-		<span class="macro">anyhow!</span>(
-			<span class="string">"Evaluate insert permissioned candidates transaction request failed: {}, bytes: {}"</span>,
-			e,
-			hex::encode(tx.to_bytes())
-		)
-	})<span class="question-mark">?</span>;
-
-	<span class="kw">let </span>mint_keys = tx.body().mint().expect(<span class="string">"insert D parameter transaction has two mints"</span>).keys();
-	<span class="kw">let </span>script_to_index: HashMap&lt;ScriptHash, usize&gt; =
-		<span class="macro">vec!</span>[(mint_keys.get(<span class="number">0</span>), <span class="number">0</span>), (mint_keys.get(<span class="number">1</span>), <span class="number">1</span>)].into_iter().collect();
-	<span class="kw">let </span>mint_ex_units = get_validator_budgets(evaluate_response).mint_ex_units;
-	<span class="kw">let </span>policy_idx = <span class="kw-2">*</span>script_to_index.get(<span class="kw-2">&amp;</span>policy.csl_script_hash()).unwrap();
-	<span class="kw">let </span>gov_policy_idx =
-		<span class="kw-2">*</span>script_to_index.get(<span class="kw-2">&amp;</span>governance_data.policy_script.csl_script_hash()).unwrap();
-	<span class="kw">let </span>policy_ex_units = mint_ex_units
-		.get(policy_idx)
-		.expect(<span class="string">"Evaluate transaction response should have entry for d_param policy"</span>);
-	<span class="kw">let </span>gov_policy_ex_units = mint_ex_units
-		.get(gov_policy_idx)
-		.expect(<span class="string">"Evaluate transaction response should have entry for governance policy"</span>);
-
-	<span class="kw">let </span>tx = mint_permissioned_candidates_token_tx(
-		validator,
-		policy,
-		candidates,
-		governance_data,
-		<span class="kw-2">&amp;</span>ctx,
-		policy_ex_units,
-		gov_policy_ex_units,
-	)<span class="question-mark">?</span>;
 	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
 	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
 		<span class="macro">anyhow!</span>(
@@ -838,42 +777,22 @@
 <span class="kw">where
 	</span>C: Transactions + QueryNetwork + QueryLedgerState,
 {
-	<span class="kw">let </span>tx = update_permissioned_candidates_tx(
-		validator,
-		policy,
-		candidates,
-		current_utxo,
-		governance_data,
-		<span class="kw-2">&amp;</span>ctx,
-		<span class="kw-2">&amp;</span>zero_ex_units(),
-		<span class="kw-2">&amp;</span>zero_ex_units(),
-	)<span class="question-mark">?</span>;
-	<span class="kw">let </span>evaluate_response = client.evaluate_transaction(<span class="kw-2">&amp;</span>tx.to_bytes()).<span class="kw">await</span>.map_err(|e| {
-		<span class="macro">anyhow!</span>(
-			<span class="string">"Evaluate update permissioned candidates transaction request failed: {}, bytes: {}"</span>,
-			e,
-			hex::encode(tx.to_bytes())
-		)
-	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>spend_ex_units = get_validator_budgets(evaluate_response);
-	<span class="kw">let </span>permissioned_candidates_spend_ex_units = spend_ex_units
-		.spend_ex_units
-		.first()
-		.ok_or_else(|| JsError::from_str(<span class="string">"Spend ex units for Permissioned Candidates Policy are missing in Evaluate Response"</span>))<span class="question-mark">?</span>;
-	<span class="kw">let </span>governance_mint_ex_units = spend_ex_units.spend_ex_units.first().ok_or_else(|| {
-		JsError::from_str(<span class="string">"Mint ex units for Governance Policy are missing in Evaluate Response"</span>)
-	})<span class="question-mark">?</span>;
+	<span class="kw">let </span>tx = Costs::calculate_costs(
+		|costs| {
+			update_permissioned_candidates_tx(
+				validator,
+				policy,
+				candidates,
+				current_utxo,
+				governance_data,
+				costs,
+				<span class="kw-2">&amp;</span>ctx,
+			)
+		},
+		client,
+	)
+	.<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>tx = update_permissioned_candidates_tx(
-		validator,
-		policy,
-		candidates,
-		current_utxo,
-		governance_data,
-		<span class="kw-2">&amp;</span>ctx,
-		permissioned_candidates_spend_ex_units,
-		governance_mint_ex_units,
-	)<span class="question-mark">?</span>;
 	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
 	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
 		<span class="macro">anyhow!</span>(
@@ -893,18 +812,17 @@
 	policy: <span class="kw-2">&amp;</span>PlutusScript,
 	permissioned_candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
 	governance_data: <span class="kw-2">&amp;</span>init_governance::GovernanceData,
+	costs: Costs,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
-	permissioned_candidates_ex_units: <span class="kw-2">&amp;</span>ExUnits,
-	governance_ex_units: <span class="kw-2">&amp;</span>ExUnits,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Transaction, JsError&gt; {
+) -&gt; anyhow::Result&lt;Transaction&gt; {
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
 	<span class="comment">// The essence of transaction: mint permissioned candidates token and set output with it, mint a governance token.
 	</span>{
 		tx_builder.add_mint_one_script_token(
-			<span class="kw-2">&amp;</span>policy,
+			policy,
 			<span class="kw-2">&amp;</span>empty_asset_name(),
 			<span class="kw-2">&amp;</span>permissioned_candidates_policy_redeemer_data(),
-			permissioned_candidates_ex_units,
+			<span class="kw-2">&amp;</span>costs.get_mint(policy),
 		)<span class="question-mark">?</span>;
 	}
 	tx_builder.add_output_with_one_script_token(
@@ -918,10 +836,10 @@
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		<span class="kw-2">&amp;</span>governance_data.policy_script,
 		<span class="kw-2">&amp;</span>gov_tx_input,
-		governance_ex_units,
+		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>governance_data.policy_script),
 	)<span class="question-mark">?</span>;
 
-	tx_builder.balance_update_and_build(ctx)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
 }
 
 <span class="kw">fn </span>update_permissioned_candidates_tx(
@@ -930,10 +848,9 @@
 	permissioned_candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
 	script_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
 	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
+	costs: Costs,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
-	permissioned_candidates_ex_units: <span class="kw-2">&amp;</span>ExUnits,
-	governance_ex_units: <span class="kw-2">&amp;</span>ExUnits,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Transaction, JsError&gt; {
+) -&gt; anyhow::Result&lt;Transaction&gt; {
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
 
 	{
@@ -942,7 +859,7 @@
 			script_utxo,
 			validator,
 			<span class="kw-2">&amp;</span>permissioned_candidates_policy_redeemer_data(),
-			permissioned_candidates_ex_units,
+			<span class="kw-2">&amp;</span>costs.get_one_spend(),
 		)<span class="question-mark">?</span>;
 		tx_builder.set_inputs(<span class="kw-2">&amp;</span>inputs);
 	}
@@ -958,10 +875,10 @@
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		<span class="kw-2">&amp;</span>governance_data.policy_script,
 		<span class="kw-2">&amp;</span>gov_tx_input,
-		governance_ex_units,
+		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>governance_data.policy_script),
 	)<span class="question-mark">?</span>;
 
-	tx_builder.balance_update_and_build(ctx)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
 }
 
 <span class="kw">fn </span>permissioned_candidates_policy_redeemer_data() -&gt; PlutusData {
@@ -972,7 +889,7 @@
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::{mint_permissioned_candidates_token_tx, update_permissioned_candidates_tx};
 	<span class="kw">use crate</span>::{
-		csl::{empty_asset_name, TransactionContext},
+		csl::{empty_asset_name, Costs, TransactionContext},
 		init_governance::GovernanceData,
 		plutus_script::PlutusScript,
 		test_values::<span class="kw-2">*</span>,
@@ -992,9 +909,8 @@
 			<span class="kw-2">&amp;</span>test_policy(),
 			<span class="kw-2">&amp;</span>input_candidates(),
 			<span class="kw-2">&amp;</span>test_governance_data(),
+			test_costs_mint(),
 			<span class="kw-2">&amp;</span>test_tx_context(),
-			<span class="kw-2">&amp;</span>permissioned_candidates_ex_units(),
-			<span class="kw-2">&amp;</span>governance_ex_units(),
 		)
 		.unwrap();
 
@@ -1086,9 +1002,8 @@
 			<span class="kw-2">&amp;</span>input_candidates(),
 			<span class="kw-2">&amp;</span>script_utxo,
 			<span class="kw-2">&amp;</span>test_governance_data(),
+			test_costs_update(),
 			<span class="kw-2">&amp;</span>test_tx_context(),
-			<span class="kw-2">&amp;</span>permissioned_candidates_ex_units(),
-			<span class="kw-2">&amp;</span>governance_ex_units(),
 		)
 		.unwrap();
 		<span class="kw">let </span>body = tx.body();
@@ -1149,6 +1064,27 @@
 	}
 	<span class="kw">fn </span>governance_ex_units() -&gt; ExUnits {
 		ExUnits::new(<span class="kw-2">&amp;</span><span class="number">99999u32</span>.into(), <span class="kw-2">&amp;</span><span class="number">999u32</span>.into())
+	}
+
+	<span class="kw">fn </span>test_costs_mint() -&gt; Costs {
+		Costs::new(
+			<span class="macro">vec!</span>[
+				(test_policy().csl_script_hash(), permissioned_candidates_ex_units()),
+				(test_goveranance_policy().csl_script_hash(), governance_ex_units()),
+			]
+			.into_iter()
+			.collect(),
+			<span class="macro">vec!</span>[(<span class="number">0</span>, permissioned_candidates_ex_units())].into_iter().collect(),
+		)
+	}
+
+	<span class="kw">fn </span>test_costs_update() -&gt; Costs {
+		Costs::new(
+			<span class="macro">vec!</span>[(test_goveranance_policy().csl_script_hash(), governance_ex_units())]
+				.into_iter()
+				.collect(),
+			<span class="macro">vec!</span>[(<span class="number">0</span>, permissioned_candidates_ex_units())].into_iter().collect(),
+		)
 	}
 
 	<span class="kw">fn </span>test_goveranance_policy() -&gt; PlutusScript {

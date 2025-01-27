@@ -95,37 +95,37 @@
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>init_governance_transaction(
 	governance_authority: MainchainAddressHash,
-	tx_context: <span class="kw-2">&amp;</span>TransactionContext,
 	genesis_utxo: OgmiosUtxo,
-	ex_units: ExUnits,
+	costs: Costs,
+	ctx: <span class="kw-2">&amp;</span>TransactionContext,
 ) -&gt; anyhow::Result&lt;Transaction&gt; {
 	<span class="kw">let </span>multi_sig_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, Language::new_plutus_v2())<span class="question-mark">?
 			</span>.apply_uplc_data(multisig_governance_policy_configuration(governance_authority))<span class="question-mark">?</span>;
-	<span class="kw">let </span>version_oracle = version_oracle(genesis_utxo.to_domain(), tx_context.network)<span class="question-mark">?</span>;
-	<span class="kw">let </span>config = <span class="kw">crate</span>::csl::get_builder_config(tx_context)<span class="question-mark">?</span>;
+	<span class="kw">let </span>version_oracle = version_oracle(genesis_utxo.to_domain(), ctx.network)<span class="question-mark">?</span>;
+	<span class="kw">let </span>config = <span class="kw">crate</span>::csl::get_builder_config(ctx)<span class="question-mark">?</span>;
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>config);
 
 	tx_builder.add_mint_one_script_token(
 		<span class="kw-2">&amp;</span>version_oracle.policy,
 		<span class="kw-2">&amp;</span>version_oracle_asset_name(),
 		<span class="kw-2">&amp;</span>mint_redeemer(<span class="kw-2">&amp;</span>multi_sig_policy),
-		<span class="kw-2">&amp;</span>ex_units,
+		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>version_oracle.policy),
 	)<span class="question-mark">?</span>;
 
 	tx_builder.add_output(<span class="kw-2">&amp;</span>version_oracle_datum_output(
 		version_oracle.validator.clone(),
 		version_oracle.policy.clone(),
 		multi_sig_policy,
-		tx_context.network,
-		tx_context,
+		ctx.network,
+		ctx,
 	)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
 	tx_builder.set_inputs(<span class="kw-2">&amp;</span>{
-		TxInputsBuilder::with_key_inputs(<span class="kw-2">&amp;</span>[genesis_utxo], <span class="kw-2">&amp;</span>tx_context.payment_key_hash())<span class="question-mark">?
+		TxInputsBuilder::with_key_inputs(<span class="kw-2">&amp;</span>[genesis_utxo], <span class="kw-2">&amp;</span>ctx.payment_key_hash())<span class="question-mark">?
 	</span>});
 
-	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(tx_context)<span class="question-mark">?</span>)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
 }
 
 <span class="kw">fn </span>version_oracle_asset_name() -&gt; AssetName {
