@@ -45,12 +45,12 @@ runs:
 
         if echo "$release_response" | grep -q '"message": "Not Found"'; then
           echo "Release with tag $tag does not exist. Proceeding to create a new draft release."
-          echo "::set-output name=release_exists::false"
-          echo "::set-output name=release_id::"
+          echo "release_exists=false" >> $GITHUB_OUTPUT
+          echo "release_id=" >> $GITHUB_OUTPUT
         else
           echo "Release with tag $tag already exists."
-          echo "::set-output name=release_exists::true"
-          echo "::set-output name=release_id::$(echo $release_response | jq -r .id)"
+          echo "release_exists=true" >> $GITHUB_OUTPUT
+          echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_OUTPUT
         fi
       shell: bash
 
@@ -69,7 +69,7 @@ runs:
         release_notes="${release_notes//$'\n'/'%0A'}"
         release_notes="${release_notes//$'\r'/'%0D'}"
 
-        echo "::set-output name=release_notes::$release_notes"
+        echo "release_notes=$release_notes" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Create draft release
@@ -90,7 +90,7 @@ runs:
                           "https://api.github.com/repos/${{ github.repository }}/releases")
 
         echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
-        echo "::set-output name=release_id::$(echo $release_response | jq -r .id)"
+        echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Upload artifacts to release

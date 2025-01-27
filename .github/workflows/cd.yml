@@ -108,12 +108,33 @@ jobs:
           tag: ${{ inputs.tag }}
           os: macos-arm64
 
+  build-and-publish-ecr:
+    if: ${{ github.event.inputs.no-build != 'true' }}
+    permissions:
+      id-token: write
+      contents: write
+    needs: build-linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build and Publish to ECR
+        uses: ./.github/actions/images/build-and-publish-ecr
+        with:
+          sha: ${{ inputs.sha }}
+          tag: ${{ inputs.tag }}
+        env:
+          AWS_REGION: "eu-central-1"
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+
   upload-to-s3:
     if: ${{ github.event.inputs.no-build != 'true' }}
     needs:
       - build-linux
       - build-macos-x86_64
       - build-macos-arm64
+      - build-and-publish-ecr
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -170,26 +191,6 @@ jobs:
             else
               echo "Previously built artifacts were downloaded from S3"
             fi
-
-  build-and-publish-ecr:
-    if: always() && !inputs.no-build && needs.artifacts-ready.result == 'success'
-    permissions:
-      id-token: write
-      contents: write
-    needs: artifacts-ready
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build and Publish to ECR
-        uses: ./.github/actions/images/build-and-publish-ecr
-        with:
-          sha: ${{ inputs.sha }}
-          tag: ${{ inputs.tag }}
-        env:
-          AWS_REGION: "eu-central-1"
-          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
 
   create-draft-release:
     if: always() && !inputs.no-release && needs.artifacts-ready.result == 'success'
