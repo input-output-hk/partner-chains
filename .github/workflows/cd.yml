@@ -227,6 +227,7 @@ jobs:
           tag: ${{ inputs.tag }}
 
   upload-chain-specs:
+    if: always() && needs.generate-chain-specs.result == 'success'
     permissions:
       id-token: write
       contents: write
@@ -245,7 +246,14 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   deploy-staging-preview:
-    if: ${{ github.event.inputs.no-deploy != 'true' }}
+    if: |
+      always() &&
+      github.event.inputs.no-deploy != 'true' && 
+      (
+        (!inputs.no-build && needs.build-and-publish-ecr.result == 'success') || 
+        inputs.no-build
+      ) && 
+      needs.upload-chain-specs.result == 'success'
     permissions:
       id-token: write
       contents: write
@@ -273,7 +281,10 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   partner-chain-ready:
-    if: ${{ github.event.inputs.no-tests != 'true' && (needs.deploy-staging-preview.result == 'success' || needs.deploy-staging-preview.result == 'skipped') }}
+    if: |
+      always() &&
+      github.event.inputs.no-tests != 'true' && 
+      (needs.deploy-staging-preview.result == 'success' || needs.deploy-staging-preview.result == 'skipped')
     runs-on: eks
     needs: deploy-staging-preview
     outputs:
@@ -318,7 +329,7 @@ jobs:
         shell: bash
 
   run-smoke-tests:
-    if: ${{ github.event.inputs.no-tests != 'true' }}
+    if: always() && github.event.inputs.no-tests != 'true' && needs.partner-chain-ready.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -344,7 +355,7 @@ jobs:
           threads: 1
 
   run-all-tests:
-    if: ${{ github.event.inputs.no-tests != 'true' }}
+    if: always() && github.event.inputs.no-tests != 'true' && needs.run-smoke-tests.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -373,7 +384,7 @@ jobs:
           threads: 1
 
   wait-for-n1-epoch:
-    if: ${{ github.event.inputs.no-tests != 'true' }}
+    if: always() && github.event.inputs.no-tests != 'true' && needs.partner-chain-ready.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -407,7 +418,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n1-epoch:
-    if: ${{ github.event.inputs.no-tests != 'true' }}
+    if: always() && github.event.inputs.no-tests != 'true' && needs.wait-for-n1-epoch.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -437,7 +448,11 @@ jobs:
           threads: 1
 
   wait-for-n2-epoch:
-    if: ${{ github.event.inputs.no-tests != 'true' }}
+    if: |
+      always() && 
+      github.event.inputs.no-tests != 'true' && 
+      needs.partner-chain-ready.result == 'success' && 
+      needs.wait-for-n1-epoch.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -473,7 +488,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n2-epoch:
-    if: ${{ github.event.inputs.no-tests != 'true' }}
+    if: always() && github.event.inputs.no-tests != 'true' && needs.wait-for-n2-epoch.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -503,7 +518,11 @@ jobs:
           threads: 1
 
   publish-ghcr:
-    if: ${{ always() && github.event.inputs.no-ghcr != 'true' && (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success') }}
+    if: |
+      always() && 
+      github.event.inputs.no-ghcr != 'true' && 
+      needs.artifacts-ready.result == 'success' &&
+      (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success')
     permissions:
       id-token: write
       contents: write
@@ -521,8 +540,13 @@ jobs:
             https://api.github.com/repos/${{ github.repository }}/actions/workflows/publish.yml/dispatches \
             -d '{"ref": "${{ github.ref_name }}", "inputs": {"sha": "${{ inputs.sha }}", "tag": "${{ inputs.tag }}"}}'
 
-  publish-draft-release:
-    if: ${{ always() && github.event.inputs.no-release != 'true' && github.event.inputs.no-public-release != 'true' && (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success') }}
+  publish-public-release:
+    if: |
+      always() && 
+      github.event.inputs.no-release != 'true' && 
+      github.event.inputs.no-public-release != 'true' && 
+      needs.artifacts-ready.result == 'success' &&
+      (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success')
     permissions:
       id-token: write
       contents: write
