@@ -250,7 +250,7 @@ The generate-keys wizard will generate necessary keys and save them to your node
 
 If these keys already exist in the node’s keystore, you will be asked to overwrite existing keys. The wizard will also generate a network key for your node if needed.
 
-1. Start the wizard: `./partner-chains-cli generate-keys`
+1. Start the wizard: `./partner-chains-node wizards generate-keys`
 2. Input the node base path. It is saved in `partner-chains-cli-resources-config.json`.
 
 Now the wizard will output `partner-chains-public-keys.json` containing three keys:
@@ -267,7 +267,7 @@ Now the wizard will output `partner-chains-public-keys.json` containing three ke
 
 Before running this wizard, be sure that `ogmios` is available by host and port.
 
-1. Start the wizard:`./partner-chains-cli prepare-configuration`
+1. Start the wizard:`./partner-chains-node wizards prepare-configuration`
 2. Update the bootnodes array and provide public ip or hostname
 3. Provide required payment keys and select genesis utxo to initialize the chain
 4. Configure initial native token supply address (optional)
@@ -354,7 +354,7 @@ A sample file:
 
 The wizard reads the file `partner-chains-cli-chain-config.json`. This file should be present and identical for every node participating in the chain.
 
-1. Start the wizard: `./partner-chains-cli create-chain-spec`
+1. Start the wizard: `./partner-chains-node wizards create-chain-spec`
 
 The wizard displays the contents of `chain_parameters` and `initial_permissioned_candidates` from the `partner-chains-cli-chain-config.json` file. You can manually modify these values before running this wizard.
 
@@ -364,7 +364,7 @@ The wizard informs you of the full path to the `chain-spec.json` file. You can n
 
 ### 5. Run the setup-main-chain-state wizard
 
-1. Start the wizard: `./partner-chains-cli setup-main-chain-state`
+1. Start the wizard: `./partner-chains-node wizards setup-main-chain-state`
 
 The wizard reads the permissioned candidates list from the chain config file and Cardano. If it finds any discrepancy, it allows you to update the list. To update the list, add to the `initial_permissioned_candidates` array in `partner-chains-cli-chain-config.json` and re-run the setup-main-chain-state wizard.
 
@@ -387,7 +387,7 @@ The start-node wizard is used to start a partner chain node. Make sure that `car
 
 Be sure two main chain (Cardano) epochs have passed since the registration of a new partner chain before running the start-node wizard. On the preview network, this is between 1-2 days.
 
-1. Start the wizard: `./partner-chains-cli start-node`
+1. Start the wizard: `./partner-chains-node wizards start-node`
 2. The wizard checks if all required keys are present. If not, it reminds you to run the generate-keys wizard first, and exits.
 3. If the `chain-spec` file is not present, it should be generated with the create-chain-spec wizard.
 4. The wizard checks the `partner-chains-cli-chain-config.json` file. If it is missing or invalid, it should be generated with the prepare-configuration wizard.

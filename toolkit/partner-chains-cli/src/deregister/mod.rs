@@ -12,7 +12,7 @@ use crate::CmdRun;
 use anyhow::anyhow;
 use partner_chains_cardano_offchain::register::Deregister;
 
-#[derive(Debug, clap::Parser)]
+#[derive(Clone, Debug, clap::Parser)]
 pub struct DeregisterCmd;
 
 impl CmdRun for DeregisterCmd {

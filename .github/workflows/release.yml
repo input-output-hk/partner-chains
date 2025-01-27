@@ -20,7 +20,6 @@ jobs:
       - name: Set filename variables
         id: set-filenames
         run: |
-          echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
           echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
 
       - name: Checkout code
@@ -38,19 +37,6 @@ jobs:
           cp target/x86_64-unknown-linux-gnu/release/partner-chains-node $PARTNER_CHAINS_NODE_X86_64_LINUX
           chmod +x $PARTNER_CHAINS_NODE_X86_64_LINUX
 
-      - name: Build partner-chains-cli
-        run: |
-          rustup target add x86_64-unknown-linux-gnu
-          cargo build -p partner-chains-cli --locked --release --target x86_64-unknown-linux-gnu
-          cp target/x86_64-unknown-linux-gnu/release/partner-chains-cli $PARTNER_CHAINS_CLI_X86_64_LINUX
-          chmod +x $PARTNER_CHAINS_CLI_X86_64_LINUX
-
-      - name: Upload partner-chains-cli-x86_64-linux
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}
-          path: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}
-
       - name: Upload partner-chains-node-x86_64-linux
         uses: actions/upload-artifact@v4
         with:
@@ -63,7 +49,6 @@ jobs:
       - name: Set filename variables
         id: set-filenames
         run: |
-          echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
           echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
 
       - name: Checkout code
@@ -84,19 +69,6 @@ jobs:
           cp target/x86_64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN
           chmod +x $PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN
 
-      - name: Build partner-chains-cli
-        run: |
-          rustup target add x86_64-apple-darwin
-          cargo build -p partner-chains-cli --locked --release --target x86_64-apple-darwin
-          cp target/x86_64-apple-darwin/release/partner-chains-cli $PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN
-          chmod +x $PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN
-
-      - name: Upload partner-chains-cli-x86_64-apple-darwin
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}
-          path: ${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}
-
       - name: Upload partner-chains-node-x86_64-apple-darwin
         uses: actions/upload-artifact@v4
         with:
@@ -109,7 +81,6 @@ jobs:
       - name: Set filename variables
         id: set-filenames
         run: |
-          echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
           echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
 
       - name: Checkout code
@@ -130,25 +101,12 @@ jobs:
           cp target/aarch64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN
           chmod +x $PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN
 
-      - name: Build partner-chains-cli
-        run: |
-          rustup target add aarch64-apple-darwin
-          cargo build -p partner-chains-cli --locked --release --target aarch64-apple-darwin
-          cp target/aarch64-apple-darwin/release/partner-chains-cli $PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN
-          chmod +x $PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN
-
-      - name: Upload partner-chains-cli-aarch64-apple-darwin
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}
-          path: ${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}
-
       - name: Upload partner-chains-node-aarch64-apple-darwin
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}
           path: ${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}
-  
+
   release:
     runs-on: ubuntu-latest
     needs: [partner-chains-linux, partner-chains-macos-x86_64, partner-chains-macos-arm64]
@@ -157,49 +115,46 @@ jobs:
       - name: Set filename variables
         id: set-filenames
         run: |
-          echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
           echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-linux" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
           echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
-          echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
           echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ github.event.inputs.partner-chains-tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
-  
+
       - name: Download Linux CLI artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}
           path: artifact-linux/
-  
+
       - name: Download Linux NODE artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}
           path: artifact-linux/
-  
+
       - name: Download macOS x86_64 CLI artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}
           path: artifact-macos-x86_64/
-  
+
       - name: Download macOS x86_64 NODE artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}
           path: artifact-macos-x86_64/
-  
+
       - name: Download macOS ARM64 CLI artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN }}
           path: artifact-macos-arm64/
-  
+
       - name: Download macOS ARM64 NODE artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}
           path: artifact-macos-arm64/
-  
+
       - name: Check if release already exists
         id: check_release
         run: |
@@ -215,7 +170,7 @@ jobs:
             echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
             echo "::set-output name=release_id::$(echo $release_response | jq -r .id)"
           fi
-  
+
       - name: Create draft release
         id: create_release
         if: ${{ steps.check_release.outputs.release_exists == 'false' }}
@@ -226,7 +181,7 @@ jobs:
                             "https://api.github.com/repos/${{ github.repository }}/releases")
           echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
           echo "::set-output name=release_id::$(echo $release_response | jq -r .id)"
-  
+
       - name: Upload artifacts to release
         if: ${{ steps.check_release.outputs.release_exists == 'true' || steps.create_release.outputs.release_id != '' }}
         run: |
@@ -234,7 +189,7 @@ jobs:
           if [ -z "$release_id" ]; then
             release_id="${{ steps.check_release.outputs.release_id }}"
           fi
-  
+
           for artifact in "artifact-linux/${{ env.PARTNER_CHAINS_CLI_X86_64_LINUX }}" \
                           "artifact-linux/${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}" \
                           "artifact-macos-x86_64/${{ env.PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN }}" \

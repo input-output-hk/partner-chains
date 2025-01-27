@@ -48,7 +48,6 @@ build:
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node-artifact
-  SAVE ARTIFACT target/*/partner-chains-cli AS LOCAL partner-chains-cli-artifact
 
 test:
   FROM +build

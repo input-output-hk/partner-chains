@@ -4,7 +4,6 @@ use super::*;
 
 const RESOURCES_CONFIG_PATH: &str = "partner-chains-cli-resources-config.json";
 const DATA_PATH: &str = "/path/to/data";
-const EXECUTABLE_PATH: &str = "executable/path";
 const CHAIN_SPEC_FILE: &str = "chain-spec.json";
 const DB_CONNECTION_STRING: &str =
 	"postgresql://postgres-user:postgres-password@localhost:5432/cexplorer";
@@ -18,16 +17,12 @@ const CROSS_CHAIN_PREFIX: &str = "63726368"; // "crch" in hex
 const AURA_PREFIX: &str = "61757261"; // "aura" in hex
 
 fn default_config() -> StartNodeConfig {
-	StartNodeConfig {
-		substrate_node_base_path: DATA_PATH.into(),
-		node_executable: EXECUTABLE_PATH.into(),
-	}
+	StartNodeConfig { substrate_node_base_path: DATA_PATH.into() }
 }
 
 fn default_config_json() -> serde_json::Value {
 	serde_json::json!({
 		"substrate_node_base_path": DATA_PATH,
-		"substrate_node_executable_path": EXECUTABLE_PATH,
 		"db_sync_postgres_connection_string": DB_CONNECTION_STRING
 	})
 }
@@ -73,7 +68,7 @@ fn default_chain_config_run_command() -> String {
          MC__FIRST_SLOT_NUMBER='{FIRST_SLOT_NUMBER}' \\
          BLOCK_STABILITY_MARGIN='0' \\
 		 SIDECHAIN_BLOCK_BENEFICIARY='{SIDECHAIN_BLOCK_BENEFICIARY_STRING}' \\
- {EXECUTABLE_PATH} --validator --chain {CHAIN_SPEC_FILE} --base-path {DATA_PATH} --port {node_ws_port} --bootnodes {BOOTNODE}"
+ <mock executable> --validator --chain {CHAIN_SPEC_FILE} --base-path {DATA_PATH} --port {node_ws_port} --bootnodes {BOOTNODE}"
 	)
 }
 
@@ -81,7 +76,6 @@ fn default_chain_config_run_command() -> String {
 fn value_check_prompt() -> MockIO {
     MockIO::Group(vec![
         MockIO::eprint("The following values will be used to run the node:"),
-        MockIO::eprint(&format!("    executable = {}", EXECUTABLE_PATH)),
         MockIO::eprint(&format!("    base path  = {}", DATA_PATH)),
         MockIO::eprint(&format!("    chain spec = {}", CHAIN_SPEC_PATH)),
 		MockIO::eprint(&format!("    bootnodes  = [{}]", BOOTNODE)),
@@ -109,7 +103,6 @@ fn happy_path() {
 	];
 
 	let context = MockIOContext::new()
-		.with_file(EXECUTABLE_PATH, "<mock executable>")
 		.with_json_file(RESOURCES_CONFIG_PATH, default_config_json())
         .with_json_file(CHAIN_CONFIG_FILE_PATH, default_chain_config())
 		.with_file(CHAIN_SPEC_FILE, "irrelevant")
@@ -117,10 +110,6 @@ fn happy_path() {
 			MockIO::file_read(RESOURCES_CONFIG_PATH),
 			MockIO::eprint(&format!(
 				"🛠️ Loaded node base path from config ({RESOURCES_CONFIG_PATH}): {DATA_PATH}"
-			)),
-			MockIO::file_read(RESOURCES_CONFIG_PATH),
-			MockIO::eprint(&format!(
-				"🛠️ Loaded Partner Chains node executable from config ({RESOURCES_CONFIG_PATH}): {EXECUTABLE_PATH}"
 			)),
 			MockIO::list_dir(&keystore_path(), Some(keystore_files.clone())),
 			MockIO::file_read(RESOURCES_CONFIG_PATH),
@@ -262,22 +251,5 @@ mod load_chain_config {
 		let result = load_chain_config(&context);
 
 		assert!(result.expect("should succeed").is_none(), "should not return a config value");
-	}
-}
-
-mod verify_config {
-	use super::*;
-	use crate::{start_node::verify_config, tests::MockIOContext};
-
-	#[test]
-	fn fails_when_node_executable_missing() {
-		let context = MockIOContext::new();
-
-		let result = verify_config(&default_config(), &context);
-
-		assert_eq!(
-			result.unwrap_err().to_string(),
-			"Partner Chains Node executable file (executable/path) is missing"
-		)
 	}
 }

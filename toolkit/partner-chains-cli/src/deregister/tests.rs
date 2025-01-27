@@ -217,9 +217,7 @@ fn chain_parameters_json() -> serde_json::Value {
 }
 
 fn test_resources_config_content() -> serde_json::Value {
-	json!({
-		"substrate_node_executable_path": "./partner-chains-node"
-	})
+	json!({})
 }
 
 fn valid_payment_signing_key_content() -> serde_json::Value {

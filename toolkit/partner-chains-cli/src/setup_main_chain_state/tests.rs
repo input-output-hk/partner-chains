@@ -1,6 +1,6 @@
-use crate::config::config_fields;
 use crate::config::config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
-use crate::config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
+use crate::config::CHAIN_CONFIG_FILE_PATH;
+use crate::config::{config_fields, RESOURCES_CONFIG_FILE_PATH};
 use crate::ogmios::config::tests::{default_ogmios_service_config, prompt_ogmios_configuration_io};
 use crate::prepare_configuration::tests::{
 	prompt_and_save_to_existing_file, prompt_with_default_and_save_to_existing_file,
@@ -208,10 +208,9 @@ fn get_ariadne_parameters_io(result: serde_json::Value) -> MockIO {
 		MockIO::print("Will read the current D-Parameter and Permissioned Candidates from the main chain, using 'partner-chains-node ariadne-parameters' command."),
 		prompt_and_save_to_existing_file(config_fields::POSTGRES_CONNECTION_STRING, "postgres://postgres:password123@localhost:5432/cexplorer"),
 		set_env_for_node_io(),
-		prompt_and_save_to_existing_file(config_fields::NODE_EXECUTABLE,"./partner-chains-node"),
 		MockIO::current_timestamp(timestamp_for_preview_epoch_605),
 		MockIO::new_tmp_dir(),
-		MockIO::run_command("./partner-chains-node ariadne-parameters --base-path /tmp/MockIOContext_tmp_dir --chain chain-spec.json --mc-epoch-number 607", &ariadne_parameters_command_output),
+		MockIO::run_command("<mock executable> ariadne-parameters --base-path /tmp/MockIOContext_tmp_dir --chain chain-spec.json --mc-epoch-number 607", &ariadne_parameters_command_output),
 		MockIO::print(&ariadne_parameters_command_output),
 	])
 }
@@ -427,9 +426,7 @@ fn chain_parameters_json() -> serde_json::Value {
 }
 
 fn test_resources_config_content() -> serde_json::Value {
-	json!({
-		"substrate_node_executable_path": "./partner-chains-node"
-	})
+	json!({})
 }
 
 fn ariadne_parameters_not_found_response() -> serde_json::Value {

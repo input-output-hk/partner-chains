@@ -6,8 +6,8 @@ use sidechain_runtime::{
 };
 
 /// Produces template chain spec for Partner Chains.
-/// This code should be run by `partner-chains-cli chain-spec`, to produce JSON chain spec file.
-/// `initial_validators` fields should be updated by the `partner-chains-cli chain-spec`.
+/// This code should be run by `partner-chains-node wizards chain-spec`, to produce JSON chain spec file.
+/// `initial_validators` fields should be updated by the `partner-chains-node wizards chain-spec`.
 /// Add and modify other fields of `ChainSpec` accordingly to the needs of your chain.
 pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 	let runtime_genesis_config = RuntimeGenesisConfig {

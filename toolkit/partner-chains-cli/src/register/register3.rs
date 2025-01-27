@@ -114,9 +114,7 @@ fn show_registration_status(
 		.into_os_string()
 		.into_string()
 		.expect("PathBuf is a valid UTF-8 String");
-	let node_executable = config_fields::NODE_EXECUTABLE
-		.load_from_file(context)
-		.ok_or_else(|| anyhow::anyhow!("⚠️ Unable to load node executable"))?;
+	let node_executable = context.current_executable()?;
 	let command = format!(
 		"{} registration-status --mainchain-pub-key {} --mc-epoch-number {} --chain chain-spec.json --base-path {temp_dir_path}",
 		node_executable, mc_public_key.to_hex_string(), mc_epoch_number
@@ -315,8 +313,7 @@ mod tests {
         MockIO::set_env_var("MC__FIRST_SLOT_NUMBER", "4320"),
 		MockIO::print("Registrations status for epoch 25:"),
         MockIO::new_tmp_dir(),
-        MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
-        MockIO::run_command("/path/to/node registration-status --mainchain-pub-key 0xcef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --mc-epoch-number 25 --chain chain-spec.json --base-path /tmp/MockIOContext_tmp_dir", "{\"epoch\":1,\"validators\":[{\"public_key\":\"cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7\",\"status\":\"Registered\"}]}"),
+        MockIO::run_command("<mock executable> registration-status --mainchain-pub-key 0xcef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --mc-epoch-number 25 --chain chain-spec.json --base-path /tmp/MockIOContext_tmp_dir", "{\"epoch\":1,\"validators\":[{\"public_key\":\"cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7\",\"status\":\"Registered\"}]}"),
         MockIO::print("Registration status:"),
         MockIO::print("{\"epoch\":1,\"validators\":[{\"public_key\":\"cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7\",\"status\":\"Registered\"}]}"),
 		]

@@ -1,10 +1,9 @@
 use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::create_chain_spec::{CreateChainSpecCmd, INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE};
 use crate::tests::{MockIO, MockIOContext};
-use crate::{config, CmdRun};
+use crate::CmdRun;
 use anyhow::anyhow;
 use colored::Colorize;
-use serde_json::json;
 
 #[test]
 fn happy_path() {
@@ -258,14 +257,10 @@ fn set_env_vars_io() -> MockIO {
 
 fn run_build_spec_io(output: Result<String, anyhow::Error>) -> MockIO {
 	MockIO::Group(vec![
-		MockIO::file_write_json(
-			config::config_fields::NODE_EXECUTABLE.config_file,
-			json!({"substrate_node_executable_path": "./partner-chains-node"}),
-		),
 		set_env_vars_io(),
 		MockIO::RunCommand {
 			expected_cmd:
-				"./partner-chains-node build-spec --disable-default-bootnode > chain-spec.json"
+				"<mock executable> build-spec --disable-default-bootnode > chain-spec.json"
 					.to_string(),
 			output,
 		},
