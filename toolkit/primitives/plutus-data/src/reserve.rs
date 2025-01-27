@@ -1,16 +1,16 @@
 use crate::{
 	decoding_error_and_log, plutus_data_version_and_payload, DataDecodingError, DecodingResult,
-	VersionedDatum, VersionedGenericDatumShape,
+	VersionedDatum, VersionedGenericDatum,
 };
 use cardano_serialization_lib::{BigInt, BigNum, ConstrPlutusData, PlutusData, PlutusList};
 use sidechain_domain::{AssetId, AssetName, PolicyId};
 
 #[derive(Debug, Clone)]
 pub enum ReserveRedeemer {
-	DepositToReserve { governance_version: u64 },
-	TransferToIlliquidCirculationSupply,
-	UpdateReserve { governance_version: u64 },
-	Handover { governance_version: u64 },
+	DepositToReserve = 0,
+	ReleaseFromReserve = 1,
+	UpdateReserve = 2,
+	Handover = 3,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -22,6 +22,7 @@ pub struct ReserveDatum {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReserveImmutableSettings {
+	pub t0: u64,
 	pub token: AssetId,
 }
 
@@ -38,39 +39,15 @@ pub struct ReserveStats {
 
 impl From<ReserveRedeemer> for PlutusData {
 	fn from(value: ReserveRedeemer) -> Self {
-		use ReserveRedeemer::*;
-		match value {
-			DepositToReserve { governance_version } => {
-				PlutusData::new_single_value_constr_plutus_data(
-					&BigNum::from(0_u64),
-					&PlutusData::new_integer(&BigInt::from(governance_version)),
-				)
-			},
-			TransferToIlliquidCirculationSupply => {
-				PlutusData::new_empty_constr_plutus_data(&BigNum::from(1_u64))
-			},
-			UpdateReserve { governance_version } => {
-				PlutusData::new_single_value_constr_plutus_data(
-					&BigNum::from(2_u64),
-					&PlutusData::new_integer(&BigInt::from(governance_version)),
-				)
-			},
-			Handover { governance_version } => PlutusData::new_single_value_constr_plutus_data(
-				&BigNum::from(3_u64),
-				&PlutusData::new_integer(&BigInt::from(governance_version)),
-			),
-		}
+		PlutusData::new_empty_constr_plutus_data(&BigNum::from(value as u64))
 	}
 }
 
 impl From<ReserveDatum> for PlutusData {
 	fn from(value: ReserveDatum) -> Self {
-		VersionedGenericDatumShape {
+		VersionedGenericDatum {
 			datum: {
 				let mut immutable_settings = PlutusList::new();
-				// `t0` field is not used by on-chain code of partner-chains smart-contracts,
-				// but only gave a possiblity for user to store "t0" for his own V-function.
-				// Not configurable anymore, hardcoded to 0. If users need "t0" for their V-function, they are responsible for storing it somewhere.
 				let t0 = PlutusData::new_integer(&BigInt::zero());
 				immutable_settings.add(&t0);
 				let (policy_id_bytes, asset_name_bytes) = {
@@ -105,7 +82,7 @@ impl From<ReserveDatum> for PlutusData {
 				PlutusData::new_list(&datum)
 			},
 			// this empty constructor below is Plutus encoding of `()`
-			generic_data: PlutusData::new_empty_constr_plutus_data(&BigNum::zero()),
+			appendix: PlutusData::new_empty_constr_plutus_data(&BigNum::zero()),
 			version: 0,
 		}
 		.into()
@@ -125,9 +102,22 @@ impl VersionedDatum for ReserveDatum {
 
 	fn decode(datum: &PlutusData) -> DecodingResult<Self> {
 		match plutus_data_version_and_payload(datum) {
-			Some((0, datum, _)) => decode_v0_reserve_datum(&datum)
-				.ok_or_else(|| decoding_error_and_log(&datum, "ReserveDatum", "invalid data")),
-			_ => Err(decoding_error_and_log(datum, "ReserveDatum", "invalid data")),
+			Some(VersionedGenericDatum { version: 0, datum, .. }) => {
+				decode_v0_reserve_datum(&datum)
+					.ok_or_else(|| decoding_error_and_log(&datum, "ReserveDatum", "invalid data"))
+			},
+			_ => Err(decoding_error_and_log(datum, "ReserveDatum", "unversioned datum")),
+		}
+	}
+}
+
+impl ReserveDatum {
+	pub fn after_withdrawal(self, amount: u64) -> Self {
+		Self {
+			stats: ReserveStats {
+				token_total_amount_transferred: self.stats.token_total_amount_transferred + amount,
+			},
+			..self
 		}
 	}
 }
@@ -138,32 +128,21 @@ fn decode_v0_reserve_datum(datum: &PlutusData) -> Option<ReserveDatum> {
 
 	let immutable_settings_list = outer_iter.next()?.as_list()?;
 	let mut immutable_settings_iter = immutable_settings_list.into_iter();
-	let _obsolete_t0: u64 = immutable_settings_iter.next()?.as_integer()?.as_u64()?.into();
+	let t0: u64 = immutable_settings_iter.next()?.as_integer()?.as_u64()?.into();
 	let token = decode_token_id_datum(immutable_settings_iter.next()?)?;
 
-	let v_function_hash_and_initial_incentive_list = outer_iter.next()?.as_list()?;
-	let mut v_function_hash_and_initial_incentive_iter =
-		v_function_hash_and_initial_incentive_list.into_iter();
-	let total_accrued_function_script_hash = PolicyId(
-		v_function_hash_and_initial_incentive_iter
-			.next()?
-			.as_bytes()?
-			.to_vec()
-			.try_into()
-			.ok()?,
-	);
-	let initial_incentive = v_function_hash_and_initial_incentive_iter
-		.next()?
-		.as_integer()?
-		.as_u64()?
-		.into();
+	let mutable_settings_list = outer_iter.next()?.as_list()?;
+	let mut mutable_settings_iter = mutable_settings_list.into_iter();
+	let total_accrued_function_script_hash =
+		PolicyId(mutable_settings_iter.next()?.as_bytes()?.to_vec().try_into().ok()?);
+	let initial_incentive = mutable_settings_iter.next()?.as_integer()?.as_u64()?.into();
 
 	let stats = ReserveStats {
 		token_total_amount_transferred: outer_iter.next()?.as_integer()?.as_u64()?.into(),
 	};
 
 	Some(ReserveDatum {
-		immutable_settings: ReserveImmutableSettings { token },
+		immutable_settings: ReserveImmutableSettings { t0, token },
 		mutable_settings: ReserveMutableSettings {
 			total_accrued_function_script_hash,
 			initial_incentive,
@@ -199,6 +178,7 @@ mod tests {
 	fn test_datum() -> ReserveDatum {
 		ReserveDatum {
 			immutable_settings: ReserveImmutableSettings {
+				t0: 0,
 				token: sidechain_domain::AssetId {
 					policy_id: PolicyId([0; 28]),
 					asset_name: AssetName::from_hex_unsafe("aabbcc"),

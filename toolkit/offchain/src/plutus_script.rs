@@ -1,6 +1,6 @@
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, Context, Error};
 use cardano_serialization_lib::{
-	Address, Language, LanguageKind, NetworkIdKind, PlutusData, ScriptHash,
+	Address, JsError, Language, LanguageKind, NetworkIdKind, PlutusData, ScriptHash,
 };
 use ogmios_client::types::{OgmiosScript, OgmiosScript::Plutus};
 use plutus::ToDatum;
@@ -32,18 +32,7 @@ impl PlutusScript {
 
 	pub fn from_ogmios(ogmios_script: OgmiosScript) -> anyhow::Result<Self> {
 		if let Plutus(script) = ogmios_script {
-			let language_kind = match script.language.as_str() {
-				"plutus:v1" => Language::new_plutus_v1(),
-				"plutus:v2" => Language::new_plutus_v2(),
-				"plutus:v3" => Language::new_plutus_v3(),
-				_ => {
-					return Err(anyhow!(
-						"Unsupported Plutus language version: {}",
-						script.language
-					));
-				},
-			};
-			Ok(Self { bytes: script.cbor, language: language_kind })
+			script.try_into()
 		} else {
 			Err(anyhow!("Expected Plutus script, got something else."))
 		}
@@ -106,6 +95,13 @@ impl PlutusScript {
 		AssetId { policy_id: self.policy_id(), asset_name: AssetName::empty() }
 	}
 
+	pub fn asset(
+		&self,
+		asset_name: cardano_serialization_lib::AssetName,
+	) -> Result<AssetId, JsError> {
+		Ok(AssetId { policy_id: self.policy_id(), asset_name: AssetName::from_csl(asset_name)? })
+	}
+
 	pub fn to_csl(&self) -> cardano_serialization_lib::PlutusScript {
 		match self.language.kind() {
 			LanguageKind::PlutusV1 => {
@@ -122,29 +118,29 @@ impl PlutusScript {
 }
 
 impl TryFrom<ogmios_client::types::PlutusScript> for PlutusScript {
-	type Error = ogmios_client::types::PlutusScript;
+	type Error = Error;
 
 	fn try_from(script: ogmios_client::types::PlutusScript) -> Result<Self, Self::Error> {
 		let language = match script.language.as_str() {
 			"plutus:v1" => Language::new_plutus_v1(),
 			"plutus:v2" => Language::new_plutus_v2(),
 			"plutus:v3" => Language::new_plutus_v3(),
-			_ => return Err(script),
+			_ => return Err(anyhow!("Unsupported Plutus language version: {}", script.language)),
 		};
 		Ok(Self::from_cbor(&script.cbor, language))
 	}
 }
 
-impl Into<ogmios_client::types::PlutusScript> for PlutusScript {
-	fn into(self) -> ogmios_client::types::PlutusScript {
+impl From<PlutusScript> for ogmios_client::types::PlutusScript {
+	fn from(val: PlutusScript) -> Self {
 		ogmios_client::types::PlutusScript {
-			language: match self.language.kind() {
+			language: match val.language.kind() {
 				LanguageKind::PlutusV1 => "plutus:v1",
 				LanguageKind::PlutusV2 => "plutus:v2",
 				LanguageKind::PlutusV3 => "plutus:v3",
 			}
 			.to_string(),
-			cbor: self.bytes,
+			cbor: val.bytes,
 		}
 	}
 }

@@ -10,7 +10,6 @@ SIDECHAIN_MAIN_CLI_IMAGE="node:22-bookworm"
 TESTS_IMAGE="python:3.10-slim"
 PC_CONTRACTS_CLI_ZIP_URL="https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/v7.0.2/pc-contracts-cli-v7.0.2.zip"
 PARTNER_CHAINS_NODE_URL="https://github.com/input-output-hk/partner-chains/releases/download/v1.3.0/partner-chains-node-v1.3.0-x86_64-linux"
-PARTNER_CHAINS_CLI_URL="https://github.com/input-output-hk/partner-chains/releases/download/v1.3.0/partner-chains-cli-v1.3.0-x86_64-linux"
 
 display_banner() {
   cat <<'EOF'
@@ -166,8 +165,6 @@ configure_artifact_overrides() {
                 echo -e "./configurations/pc-contracts-cli/overrides/pc-contracts-cli and ./configurations/pc-contracts-cli/overrides/node_modules \n"
                 echo "To override the partner-chains-node artifact, copy artifact to path:"
                 echo -e "./configurations/pc-contracts-cli/overrides/partner-chains-node \n"
-                echo "To override the partner-chains-cli artifact, copy artifact to path:"
-                echo -e "./configurations/pc-contracts-cli/overrides/partner-chains-cli \n"
             else
                 echo -e "Artifact overrides disabled. Stable versions will be automatically downloaded within the container from Github Releases. \n"
             fi
@@ -199,13 +196,6 @@ configure_artifact_overrides() {
             echo -e "partner-chains-node found. Override enabled. \n"
         else
             echo -e "partner-chains-node not found. Override disabled for partner-chains-node. \n"
-        fi
-
-        # Check for partner-chains-cli artifact
-        if [ -f "./configurations/pc-contracts-cli/overrides/partner-chains-cli" ]; then
-            echo -e "partner-chains-cli found. Override enabled. \n"
-        else
-            echo -e "partner-chains-cli not found. Override disabled for partner-chains-cli. \n"
         fi
     fi
 }
@@ -434,6 +424,7 @@ create_docker_compose() {
         cat ./modules/postgres.txt >> docker-compose.yml
         cat ./modules/partner-chains-external-node.txt >> docker-compose.yml
         cat ./modules/pc-contracts-cli.txt >> docker-compose.yml
+        cat ./modules/partner-chains-setup.txt >> docker-compose.yml
         ;;
       0)
         echo -e "Including all services.\n"
@@ -444,6 +435,7 @@ create_docker_compose() {
         cat ./modules/postgres.txt >> docker-compose.yml
         cat ./modules/partner-chains-nodes.txt >> docker-compose.yml
         cat ./modules/pc-contracts-cli.txt >> docker-compose.yml
+        cat ./modules/partner-chains-setup.txt >> docker-compose.yml
         ;;
       *)
         echo "Invalid deployment option selected."

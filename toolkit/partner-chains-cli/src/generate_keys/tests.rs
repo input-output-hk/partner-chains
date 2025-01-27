@@ -3,7 +3,6 @@ use crate::tests::*;
 use crate::CmdRun;
 
 const DATA_PATH: &str = "/path/to/data";
-const EXECUTABLE_PATH: &str = "./partner-chains-node";
 const RESOURCES_CONFIG_PATH: &str = "partner-chains-cli-resources-config.json";
 const KEYS_FILE: &str = "partner-chains-public-keys.json";
 const CHAIN_NAME: &str = "partner_chains_template";
@@ -13,11 +12,7 @@ const CROSS_CHAIN_PREFIX: &str = "63726368"; // "crch" in hex
 const AURA_PREFIX: &str = "61757261"; // "aura" in hex
 
 fn default_config() -> GenerateKeysConfig {
-	GenerateKeysConfig {
-		chain_name: CHAIN_NAME.into(),
-		substrate_node_base_path: DATA_PATH.into(),
-		node_executable: EXECUTABLE_PATH.into(),
-	}
+	GenerateKeysConfig { chain_name: CHAIN_NAME.into(), substrate_node_base_path: DATA_PATH.into() }
 }
 
 fn network_key_file() -> String {
@@ -43,20 +38,11 @@ pub mod scenarios {
 
 	pub fn prompt_all_config_fields() -> MockIO {
 		MockIO::Group(vec![
-			MockIO::file_write_json(
-				RESOURCES_CONFIG_PATH,
-				serde_json::json!({
-					"substrate_node_executable_path": EXECUTABLE_PATH
-				}),
-			),
-			MockIO::file_read(RESOURCES_CONFIG_PATH),
 			MockIO::prompt("node base path", Some("./data"), DATA_PATH),
-			MockIO::file_read(RESOURCES_CONFIG_PATH),
 			MockIO::file_write_json(
 				RESOURCES_CONFIG_PATH,
 				serde_json::json!({
 					"substrate_node_base_path": DATA_PATH,
-					"substrate_node_executable_path": EXECUTABLE_PATH
 				}),
 			),
 		])
@@ -70,28 +56,28 @@ pub mod scenarios {
 		MockIO::Group(vec![
 			MockIO::list_dir(&keystore_path(), None),
 			MockIO::eprint("⚙️ Generating Cross-chain (ecdsa) key"),
-			MockIO::run_command_json(&format!("{EXECUTABLE_PATH} key generate --scheme ecdsa --output-type json"),
+			MockIO::run_command_json(&format!("<mock executable> key generate --scheme ecdsa --output-type json"),
 				&serde_json::json!({"publicKey": cross_chain_key, "secretPhrase": "cross-chain secret phrase"})),
 			MockIO::eprint("💾 Inserting Cross-chain (ecdsa) key"),
-			MockIO::run_command(&format!("{EXECUTABLE_PATH} key insert --base-path {DATA_PATH} --scheme ecdsa --key-type crch --suri 'cross-chain secret phrase'"), ""),
+			MockIO::run_command(&format!("<mock executable> key insert --base-path {DATA_PATH} --scheme ecdsa --key-type crch --suri 'cross-chain secret phrase'"), ""),
 			MockIO::eprint(&format!("💾 Cross-chain key stored at {}/{CROSS_CHAIN_PREFIX}{cross_chain_key}", &keystore_path())),
 			MockIO::enewline(),
 
 			MockIO::list_dir(&keystore_path(), None),
 			MockIO::eprint("⚙️ Generating Grandpa (ed25519) key"),
-			MockIO::run_command_json(&format!("{EXECUTABLE_PATH} key generate --scheme ed25519 --output-type json"),
+			MockIO::run_command_json(&format!("<mock executable> key generate --scheme ed25519 --output-type json"),
 				&serde_json::json!({"publicKey": grandpa_key, "secretPhrase": "grandpa secret phrase"})),
 			MockIO::eprint("💾 Inserting Grandpa (ed25519) key"),
-			MockIO::run_command(&format!("{EXECUTABLE_PATH} key insert --base-path {DATA_PATH} --scheme ed25519 --key-type gran --suri 'grandpa secret phrase'"), ""),
+			MockIO::run_command(&format!("<mock executable> key insert --base-path {DATA_PATH} --scheme ed25519 --key-type gran --suri 'grandpa secret phrase'"), ""),
 			MockIO::eprint(&format!("💾 Grandpa key stored at {}/{GRANDPA_PREFIX}{grandpa_key}", &keystore_path())),
 			MockIO::enewline(),
 
 			MockIO::list_dir(&keystore_path(), None),
 			MockIO::eprint("⚙️ Generating Aura (sr25519) key"),
-			MockIO::run_command_json(&format!("{EXECUTABLE_PATH} key generate --scheme sr25519 --output-type json"),
+			MockIO::run_command_json(&format!("<mock executable> key generate --scheme sr25519 --output-type json"),
 				&serde_json::json!({"publicKey": aura_key, "secretPhrase": "aura secret phrase"})),
 			MockIO::eprint("💾 Inserting Aura (sr25519) key"),
-			MockIO::run_command(&format!("{EXECUTABLE_PATH} key insert --base-path {DATA_PATH} --scheme sr25519 --key-type aura --suri 'aura secret phrase'"), ""),
+			MockIO::run_command(&format!("<mock executable> key insert --base-path {DATA_PATH} --scheme sr25519 --key-type aura --suri 'aura secret phrase'"), ""),
 			MockIO::eprint(&format!("💾 Aura key stored at {}/{AURA_PREFIX}{aura_key}", &keystore_path())),
 			MockIO::enewline(),
 		])
@@ -102,7 +88,7 @@ pub mod scenarios {
 			MockIO::file_read(&network_key_file()),
 			MockIO::eprint("⚙️ Generating network key"),
 			MockIO::run_command(
-				&format!("{EXECUTABLE_PATH} key generate-node-key --base-path {DATA_PATH}"),
+				&format!("<mock executable> key generate-node-key --base-path {DATA_PATH}"),
 				"irrelevant",
 			),
 		])
@@ -164,25 +150,19 @@ pub mod scenarios {
 
 #[test]
 fn happy_path() {
-	let mock_context = MockIOContext::new()
-		.with_file(EXECUTABLE_PATH, "<mock executable>")
-		.with_expected_io(vec![
-			scenarios::show_intro(),
-			MockIO::enewline(),
-			scenarios::set_dummy_env(),
-			scenarios::prompt_all_config_fields(),
-			MockIO::enewline(),
-			scenarios::generate_all_spo_keys(
-				"aura-pub-key",
-				"grandpa-pub-key",
-				"cross-chain-pub-key",
-			),
-			scenarios::write_key_file("aura-pub-key", "grandpa-pub-key", "cross-chain-pub-key"),
-			MockIO::enewline(),
-			scenarios::generate_network_key(),
-			MockIO::enewline(),
-			MockIO::eprint("🚀 All done!"),
-		]);
+	let mock_context = MockIOContext::new().with_expected_io(vec![
+		scenarios::show_intro(),
+		MockIO::enewline(),
+		scenarios::set_dummy_env(),
+		scenarios::prompt_all_config_fields(),
+		MockIO::enewline(),
+		scenarios::generate_all_spo_keys("aura-pub-key", "grandpa-pub-key", "cross-chain-pub-key"),
+		scenarios::write_key_file("aura-pub-key", "grandpa-pub-key", "cross-chain-pub-key"),
+		MockIO::enewline(),
+		scenarios::generate_network_key(),
+		MockIO::enewline(),
+		MockIO::eprint("🚀 All done!"),
+	]);
 
 	let result = GenerateKeysCmd {}.run(&mock_context);
 
@@ -191,35 +171,29 @@ fn happy_path() {
 
 mod config_read {
 	use super::*;
-	use config::config_fields::NODE_EXECUTABLE_DEFAULT;
 	use pretty_assertions::assert_eq;
 
 	#[test]
 	fn prompts_for_each_when_missing() {
-		let context = MockIOContext::new()
-			.with_file(NODE_EXECUTABLE_DEFAULT, "<mock executable>")
-			.with_expected_io(vec![scenarios::prompt_all_config_fields()]);
+		let context =
+			MockIOContext::new().with_expected_io(vec![scenarios::prompt_all_config_fields()]);
 
 		let result = GenerateKeysConfig::load(&context);
 
 		assert_eq!(result.chain_name, CHAIN_NAME);
-		assert_eq!(result.node_executable, EXECUTABLE_PATH);
 		assert_eq!(result.substrate_node_base_path, DATA_PATH);
 	}
 
 	#[test]
 	fn reads_all_when_present() {
 		let context = MockIOContext::new()
-			.with_file(NODE_EXECUTABLE_DEFAULT, "<mock executable>")
 			.with_json_file(
 				RESOURCES_CONFIG_PATH,
 				serde_json::json!({
 					"substrate_node_base_path": DATA_PATH,
-					"substrate_node_executable_path": EXECUTABLE_PATH
 				}),
 			)
 			.with_expected_io(vec![
-				MockIO::file_read(RESOURCES_CONFIG_PATH),
 				MockIO::file_read(RESOURCES_CONFIG_PATH),
 				MockIO::eprint(&format!(
 					"🛠️ Loaded node base path from config ({RESOURCES_CONFIG_PATH}): {DATA_PATH}"
@@ -229,21 +203,7 @@ mod config_read {
 		let result = GenerateKeysConfig::load(&context);
 
 		assert_eq!(result.chain_name, CHAIN_NAME);
-		assert_eq!(result.node_executable, EXECUTABLE_PATH);
 		assert_eq!(result.substrate_node_base_path, DATA_PATH);
-	}
-
-	#[test]
-	fn verify_executable_returns_error_when_node_executable_missing() {
-		let context = MockIOContext::new();
-
-		let result = verify_executable(&default_config(), &context);
-
-		assert!(result.is_err());
-		assert_eq!(
-			result.unwrap_err().to_string(),
-			"Partner Chains Node executable file (./partner-chains-node) is missing"
-		)
 	}
 }
 
@@ -262,7 +222,6 @@ mod generate_spo_keys {
 				RESOURCES_CONFIG_PATH,
 				serde_json::json!({
 					"substrate_node_base_path": DATA_PATH,
-					"substrate_node_executable_path": EXECUTABLE_PATH
 				}),
 			)
 			.with_expected_io(vec![
@@ -303,7 +262,6 @@ mod generate_spo_keys {
 				RESOURCES_CONFIG_PATH,
 				serde_json::json!({
 					"substrate_node_base_path": DATA_PATH,
-					"substrate_node_executable_path": EXECUTABLE_PATH
 				}),
 			)
 			.with_expected_io(vec![
@@ -326,16 +284,14 @@ mod generate_network_key {
 
 	#[test]
 	fn generates_new_key_when_missing() {
-		let context = MockIOContext::new()
-			.with_file(EXECUTABLE_PATH, "<mock executable>")
-			.with_expected_io(vec![
-				MockIO::file_read(&network_key_file()),
-				MockIO::eprint("⚙️ Generating network key"),
-				MockIO::run_command(
-					&format!("{EXECUTABLE_PATH} key generate-node-key --base-path {DATA_PATH}"),
-					"irrelevant",
-				),
-			]);
+		let context = MockIOContext::new().with_expected_io(vec![
+			MockIO::file_read(&network_key_file()),
+			MockIO::eprint("⚙️ Generating network key"),
+			MockIO::run_command(
+				&format!("<mock executable> key generate-node-key --base-path {DATA_PATH}"),
+				"irrelevant",
+			),
+		]);
 
 		let result = generate_network_key(&default_config(), &context);
 
@@ -363,10 +319,8 @@ mod generate_network_key {
 		// too long
 		let key = "584d548cae2b3a960b1e6b5233fc5e8cbadfc1823f8df0c2e96f830d255dbdf42545223";
 
-		let context = MockIOContext::new()
-			.with_file(EXECUTABLE_PATH, "<mock executable>")
-			.with_file(&network_key_file(), key)
-			.with_expected_io(vec![
+		let context =
+			MockIOContext::new().with_file(&network_key_file(), key).with_expected_io(vec![
 				MockIO::file_read(&network_key_file()),
 				MockIO::eprint(
 					"⚠️ Network key in keystore is invalid (Invalid hex), wizard will regenerate it",
@@ -374,7 +328,7 @@ mod generate_network_key {
 				MockIO::eprint("⚙️ Regenerating the network key"),
 				MockIO::delete_file(&network_key_file()),
 				MockIO::run_command(
-					&format!("{EXECUTABLE_PATH} key generate-node-key --base-path {DATA_PATH}"),
+					&format!("<mock executable> key generate-node-key --base-path {DATA_PATH}"),
 					"irrelevant",
 				),
 			]);

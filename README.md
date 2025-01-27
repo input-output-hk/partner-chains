@@ -28,7 +28,7 @@ cargo build --profile=production
 
 ### Downloads
 
-Please see the [releases page](https://github.com/input-output-hk/partner-chains/releases) for the latest downloadable binaries and Docker images of the `partner-chains-node` and `partner-chains-cli`.
+Please see the [releases page](https://github.com/input-output-hk/partner-chains/releases) for the latest downloadable binaries and Docker images of the `partner-chains-node`.
 
 ### Docker Image
 
@@ -45,8 +45,8 @@ Refer to the [documentation](docs/user-guides) for detailed instructions on how 
 
 ### Block Production Rewards for Validators
 
-The Partner Chains node provides a simple mechanism for exposing the mapping of block beneficiaries with produced blocks. 
-The chain builder is responsible for using this input to accurately calculate and distribute block rewards on their partner chain, following the tokenomics they will design and implement. 
+The Partner Chains node provides a simple mechanism for exposing the mapping of block beneficiaries with produced blocks.
+The chain builder is responsible for using this input to accurately calculate and distribute block rewards on their partner chain, following the tokenomics they will design and implement.
 For managing payouts, they will leverage the provided artifacts to distribute payments to validators on the partner chain ledger, applying their specific business logic.
 
 | Component | Description |
@@ -58,7 +58,7 @@ For managing payouts, they will leverage the provided artifacts to distribute pa
 
 #### For Partner Chains Node Operators
 
-1. Implement a reward distribution system using the block production data provided by the Partner Chains node. 
+1. Implement a reward distribution system using the block production data provided by the Partner Chains node.
 2. Set up and manage the required smart contracts on Cardano.
 3. Automate the reward calculation and distribution process within the consensus layer.
 4. Establish a registration process for validators.
@@ -71,7 +71,7 @@ For managing payouts, they will leverage the provided artifacts to distribute pa
 #### More Details
 
 1. Block Production Tracking: The Partner Chain node logs block production data. Each block has a beneficiary, identified by Partner Chain receiving addresses (such as `SizedByteStrings(0x1)`, `SizedByteStrings(0x2)`, etc.). At the end of each Partner Chain epoch, the node summarizes who produced how many blocks.
-2. Smart Contract Implementation: Two main smart contracts are involved: 
+2. Smart Contract Implementation: Two main smart contracts are involved:
 
 	a. Permissioned candidates contract: Lists approved validators with their public keys.
 

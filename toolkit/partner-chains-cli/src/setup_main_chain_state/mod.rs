@@ -16,7 +16,7 @@ use sidechain_domain::{McEpochNumber, UtxoId};
 #[cfg(test)]
 mod tests;
 
-#[derive(Debug, clap::Parser)]
+#[derive(Clone, Debug, clap::Parser)]
 pub struct SetupMainChainStateCmd;
 
 /// Formats of the output of the `ariadne-parameters` command.
@@ -160,8 +160,7 @@ fn get_ariadne_parameters<C: IOContext>(
 		&chain_config.cardano,
 		&postgres_connection_string,
 	);
-	let executable =
-		config_fields::NODE_EXECUTABLE.prompt_with_default_from_file_parse_and_save(context)?;
+	let executable = context.current_executable()?;
 	// Call for state that will be effective in two main chain epochs from now.
 	let epoch = get_current_mainchain_epoch(context, chain_config)?.0 + 2;
 	let temp_dir = context.new_tmp_dir();

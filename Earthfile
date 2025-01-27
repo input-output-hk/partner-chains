@@ -48,7 +48,6 @@ build:
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node-artifact
-  SAVE ARTIFACT target/*/partner-chains-cli AS LOCAL partner-chains-cli-artifact
 
 test:
   FROM +build
@@ -83,8 +82,6 @@ docker:
     RUN useradd -m -u 1000 -U -s /bin/sh -d /substrate substrate \
         && mkdir -p /data /substrate/.local/share/partner-chains-node \
         && chown -R substrate:substrate /data /substrate \
-        # remove package managers
-        && rm -rf /usr/bin/apt* /usr/bin/dpkg* \
         && ln -s /data /substrate/.local/share/partner-chains-node
 
     USER substrate

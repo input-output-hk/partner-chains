@@ -1,16 +1,16 @@
 #!/bin/sh
 
-echo 'Waiting for Cardano chain to sync and pc-contracts-cli configuration to complete...'
+echo 'Waiting for Cardano chain to sync and Partner Chains smart contracts setup to complete...'
 
 while true; do
-    if [ -f "/shared/pc-contracts-cli.ready" ]; then
+    if [ -f "/shared/partner-chains-setup.ready" ]; then
         break
     else
         sleep 1
     fi
 done
 
-echo "pc-contracts-cli configuration complete. Starting node..."
+echo "Partner Chains smart contracts setup complete. Starting node..."
 
 export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP_MILLIS)
 

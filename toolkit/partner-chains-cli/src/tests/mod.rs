@@ -477,6 +477,10 @@ impl IOContext for MockIOContext {
 		})
 	}
 
+	fn current_executable(&self) -> anyhow::Result<String> {
+		Ok("<mock executable>".to_owned())
+	}
+
 	fn eprint(&self, msg: &str) {
 		let next = self.pop_next_action(&format!("eprint({msg})"));
 		next.print_mock_location_on_panic(|next| match next {

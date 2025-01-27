@@ -18,7 +18,7 @@ use std::str::FromStr;
 #[cfg(test)]
 mod tests;
 
-#[derive(Debug, clap::Parser)]
+#[derive(Clone, Debug, clap::Parser)]
 pub struct StartNodeCmd {
 	#[arg(long)]
 	silent: bool,
@@ -26,7 +26,6 @@ pub struct StartNodeCmd {
 
 pub struct StartNodeConfig {
 	pub substrate_node_base_path: String,
-	pub node_executable: String,
 }
 
 impl StartNodeConfig {
@@ -34,7 +33,6 @@ impl StartNodeConfig {
 		Self {
 			substrate_node_base_path: config_fields::SUBSTRATE_NODE_DATA_BASE_PATH
 				.load_or_prompt_and_save(context),
-			node_executable: config_fields::NODE_EXECUTABLE.load_or_prompt_and_save(context),
 		}
 	}
 	pub fn keystore_path(&self) -> String {
@@ -51,7 +49,6 @@ pub struct StartNodeChainConfig {
 impl CmdRun for StartNodeCmd {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		let config = StartNodeConfig::load(context);
-		verify_config(&config, context)?;
 
 		if !check_keystore(&config, context)? || !check_chain_spec(context) {
 			return Ok(());
@@ -81,16 +78,6 @@ impl CmdRun for StartNodeCmd {
 	}
 }
 
-fn verify_config<C: IOContext>(config: &StartNodeConfig, context: &C) -> anyhow::Result<()> {
-	if !context.file_exists(&config.node_executable) {
-		return Err(anyhow!(
-			"Partner Chains Node executable file ({}) is missing",
-			config.node_executable
-		));
-	}
-	Ok(())
-}
-
 fn load_chain_config<C: IOContext>(context: &C) -> anyhow::Result<Option<StartNodeChainConfig>> {
 	let Some(chain_config_file) = context.read_file(CHAIN_CONFIG_FILE_PATH) else {
 		context.eprint(&format!("⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} does not exists. Run prepare-configuration wizard first."));
@@ -108,7 +95,7 @@ fn load_chain_config<C: IOContext>(context: &C) -> anyhow::Result<Option<StartNo
 
 #[rustfmt::skip]
 fn prompt_values_fine<C: IOContext>(
-	StartNodeConfig { substrate_node_base_path, node_executable }: &StartNodeConfig,
+	StartNodeConfig { substrate_node_base_path }: &StartNodeConfig,
 	StartNodeChainConfig {
 		cardano,
 		bootnodes,
@@ -119,7 +106,6 @@ fn prompt_values_fine<C: IOContext>(
 ) -> bool
 {
 	context.eprint("The following values will be used to run the node:");
-	context.eprint(&format!("    executable = {}", node_executable));
 	context.eprint(&format!("    base path  = {}", substrate_node_base_path));
 	context.eprint(&format!("    chain spec = {}", CHAIN_SPEC_PATH));
 	context.eprint(&format!("    bootnodes  = [{}]", bootnodes.join(", ")));
@@ -185,7 +171,7 @@ fn account_id_hex_from_ecdsa_key(key: &str) -> anyhow::Result<String> {
 }
 
 pub fn start_node<C: IOContext>(
-	StartNodeConfig { substrate_node_base_path, node_executable }: StartNodeConfig,
+	StartNodeConfig { substrate_node_base_path }: StartNodeConfig,
 	StartNodeChainConfig {
 		cardano:
 			CardanoParameters {
@@ -202,6 +188,7 @@ pub fn start_node<C: IOContext>(
 	beneficiary: String,
 	context: &C,
 ) -> anyhow::Result<()> {
+	let executable = context.current_executable()?;
 	let environment_prefix = format!(
 		"CARDANO_SECURITY_PARAMETER='{security_parameter}' \\
          CARDANO_ACTIVE_SLOTS_COEFF='{active_slots_coeff}' \\
@@ -229,7 +216,7 @@ pub fn start_node<C: IOContext>(
 		context,
 	);
 	context.run_command(&format!(
-		"{environment_prefix} {node_executable} --validator --chain {CHAIN_SPEC_PATH} --base-path {substrate_node_base_path} --port {ws_port} {bootnodes}",
+		"{environment_prefix} {executable} --validator --chain {CHAIN_SPEC_PATH} --base-path {substrate_node_base_path} --port {ws_port} {bootnodes}",
 	))?;
 
 	Ok(())

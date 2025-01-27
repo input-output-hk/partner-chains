@@ -255,7 +255,7 @@ The generate-keys wizard will generate necessary keys and save them to your node
 If these keys already exist in the node’s keystore, you will be asked to overwrite existing keys. The wizard will also generate a network key for your node if needed.
 
 1. To start the wizard, run the following command in the node repository:
-`./partner-chains-cli generate-keys`
+`./partner-chains-node wizards generate-keys`
 3. Input the node base path. It is saved in `partner-chains-cli-resources-config.json`
 
 Now the wizard will output `partner-chains-public-keys.json` containing three keys:
@@ -282,7 +282,7 @@ Registration is a three-step process, with the second step executed on the 'cold
 
 The register-1 wizard obtains the registration UTXO.
 
-1. Start the wizard: `./partner-chains-cli register1`
+1. Start the wizard: `./partner-chains-node wizards register1`
 2. Follow the steps when prompted by the wizard
 
 The wizard derives a payment address from the payment verification key and queries Ogmios for the UTXOs of the derived address.
@@ -317,7 +317,7 @@ The wizard will give you the option of displaying the registration status. If yo
 
 The start-node wizard is used to start a partner chain node. Make sure that `cardano-node` is running with DB Sync running and fully synced. You will need to provide a link to postgreSQL server running with DB Sync as part of starting the node.
 
-1. Start the wizard: `./partner-chains-cli start-node`.
+1. Start the wizard: `./partner-chains-node wizards start-node`.
 2. The wizard checks if all required keys are present. If not, it reminds you to the run the generate-keys wizard first, and exits.
 3. If the `chain-spec` file is not present, you should obtain it from the governance authority.
 4. The wizard checks the `partner-chains-cli-chain-config.json` file. If it is missing or invalid, you should obtain it from the governance authority.
@@ -332,7 +332,7 @@ Registration is effective after 1-2 Cardano epochs. After the waiting period, th
 
 To deregister from the list of block producer candidates, you need to run the deregister wizard.
 
-1. Start the wizard: `./partner-chains-cli deregister`.
+1. Start the wizard: `./partner-chains-node wizards deregister`.
 2. The wizard checks the `partner-chains-cli-chain-config.json` file.
 3. The wizard prompts for the payment verification key file used during registration.
 4. The wizard prompts for the cold verification key matching the cold signing key used during registration.

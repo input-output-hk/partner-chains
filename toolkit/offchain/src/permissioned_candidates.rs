@@ -6,11 +6,9 @@
 //! in the `datum` field of it. Field should contain list of list, where each inner list is a triple of byte strings
 //! `[sidechain_public_key, aura_public_key, grandpa_publicKey]`.
 
-use std::collections::HashMap;
-
 use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::csl::{
-	get_builder_config, get_validator_budgets, zero_ex_units, InputsBuilderExt,
+	empty_asset_name, get_builder_config, CostStore, Costs, InputsBuilderExt,
 	TransactionBuilderExt, TransactionContext,
 };
 use crate::init_governance::{self, GovernanceData};
@@ -18,8 +16,7 @@ use crate::plutus_script::PlutusScript;
 use crate::scripts_data;
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	BigInt, ExUnits, JsError, PlutusData, ScriptHash, Transaction, TransactionBuilder,
-	TxInputsBuilder,
+	BigInt, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
 };
 use ogmios_client::query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId};
 use ogmios_client::query_network::QueryNetwork;
@@ -158,47 +155,21 @@ async fn insert_permissioned_candidates<C>(
 where
 	C: Transactions + QueryLedgerState + QueryNetwork,
 {
-	let tx = mint_permissioned_candidates_token_tx(
-		validator,
-		policy,
-		candidates,
-		governance_data,
-		&ctx,
-		&zero_ex_units(),
-		&zero_ex_units(),
-	)?;
+	let tx = Costs::calculate_costs(
+		|costs| {
+			mint_permissioned_candidates_token_tx(
+				validator,
+				policy,
+				candidates,
+				governance_data,
+				costs,
+				&ctx,
+			)
+		},
+		client,
+	)
+	.await?;
 
-	let evaluate_response = client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
-		anyhow!(
-			"Evaluate insert permissioned candidates transaction request failed: {}, bytes: {}",
-			e,
-			hex::encode(tx.to_bytes())
-		)
-	})?;
-
-	let mint_keys = tx.body().mint().expect("insert D parameter transaction has two mints").keys();
-	let script_to_index: HashMap<ScriptHash, usize> =
-		vec![(mint_keys.get(0), 0), (mint_keys.get(1), 1)].into_iter().collect();
-	let mint_ex_units = get_validator_budgets(evaluate_response).mint_ex_units;
-	let policy_idx = *script_to_index.get(&policy.csl_script_hash()).unwrap();
-	let gov_policy_idx =
-		*script_to_index.get(&governance_data.policy_script.csl_script_hash()).unwrap();
-	let policy_ex_units = mint_ex_units
-		.get(policy_idx)
-		.expect("Evaluate transaction response should have entry for d_param policy");
-	let gov_policy_ex_units = mint_ex_units
-		.get(gov_policy_idx)
-		.expect("Evaluate transaction response should have entry for governance policy");
-
-	let tx = mint_permissioned_candidates_token_tx(
-		validator,
-		policy,
-		candidates,
-		governance_data,
-		&ctx,
-		policy_ex_units,
-		gov_policy_ex_units,
-	)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow!(
@@ -224,42 +195,22 @@ async fn update_permissioned_candidates<C>(
 where
 	C: Transactions + QueryNetwork + QueryLedgerState,
 {
-	let tx = update_permissioned_candidates_tx(
-		validator,
-		policy,
-		candidates,
-		current_utxo,
-		governance_data,
-		&ctx,
-		&zero_ex_units(),
-		&zero_ex_units(),
-	)?;
-	let evaluate_response = client.evaluate_transaction(&tx.to_bytes()).await.map_err(|e| {
-		anyhow!(
-			"Evaluate update permissioned candidates transaction request failed: {}, bytes: {}",
-			e,
-			hex::encode(tx.to_bytes())
-		)
-	})?;
-	let spend_ex_units = get_validator_budgets(evaluate_response);
-	let permissioned_candidates_spend_ex_units = spend_ex_units
-		.spend_ex_units
-		.first()
-		.ok_or_else(|| JsError::from_str("Spend ex units for Permissioned Candidates Policy are missing in Evaluate Response"))?;
-	let governance_mint_ex_units = spend_ex_units.spend_ex_units.first().ok_or_else(|| {
-		JsError::from_str("Mint ex units for Governance Policy are missing in Evaluate Response")
-	})?;
+	let tx = Costs::calculate_costs(
+		|costs| {
+			update_permissioned_candidates_tx(
+				validator,
+				policy,
+				candidates,
+				current_utxo,
+				governance_data,
+				costs,
+				&ctx,
+			)
+		},
+		client,
+	)
+	.await?;
 
-	let tx = update_permissioned_candidates_tx(
-		validator,
-		policy,
-		candidates,
-		current_utxo,
-		governance_data,
-		&ctx,
-		permissioned_candidates_spend_ex_units,
-		governance_mint_ex_units,
-	)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow!(
@@ -279,17 +230,17 @@ fn mint_permissioned_candidates_token_tx(
 	policy: &PlutusScript,
 	permissioned_candidates: &[PermissionedCandidateData],
 	governance_data: &init_governance::GovernanceData,
+	costs: Costs,
 	ctx: &TransactionContext,
-	permissioned_candidates_ex_units: &ExUnits,
-	governance_ex_units: &ExUnits,
-) -> Result<Transaction, JsError> {
+) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	// The essence of transaction: mint permissioned candidates token and set output with it, mint a governance token.
 	{
 		tx_builder.add_mint_one_script_token(
-			&policy,
+			policy,
+			&empty_asset_name(),
 			&permissioned_candidates_policy_redeemer_data(),
-			permissioned_candidates_ex_units,
+			&costs.get_mint(policy),
 		)?;
 	}
 	tx_builder.add_output_with_one_script_token(
@@ -303,10 +254,10 @@ fn mint_permissioned_candidates_token_tx(
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&governance_data.policy_script,
 		&gov_tx_input,
-		governance_ex_units,
+		&costs.get_mint(&governance_data.policy_script),
 	)?;
 
-	tx_builder.balance_update_and_build(ctx)
+	Ok(tx_builder.balance_update_and_build(ctx)?)
 }
 
 fn update_permissioned_candidates_tx(
@@ -315,10 +266,9 @@ fn update_permissioned_candidates_tx(
 	permissioned_candidates: &[PermissionedCandidateData],
 	script_utxo: &OgmiosUtxo,
 	governance_data: &GovernanceData,
+	costs: Costs,
 	ctx: &TransactionContext,
-	permissioned_candidates_ex_units: &ExUnits,
-	governance_ex_units: &ExUnits,
-) -> Result<Transaction, JsError> {
+) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
 	{
@@ -327,7 +277,7 @@ fn update_permissioned_candidates_tx(
 			script_utxo,
 			validator,
 			&permissioned_candidates_policy_redeemer_data(),
-			permissioned_candidates_ex_units,
+			&costs.get_one_spend(),
 		)?;
 		tx_builder.set_inputs(&inputs);
 	}
@@ -343,10 +293,10 @@ fn update_permissioned_candidates_tx(
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&governance_data.policy_script,
 		&gov_tx_input,
-		governance_ex_units,
+		&costs.get_mint(&governance_data.policy_script),
 	)?;
 
-	tx_builder.balance_update_and_build(ctx)
+	Ok(tx_builder.balance_update_and_build(ctx)?)
 }
 
 fn permissioned_candidates_policy_redeemer_data() -> PlutusData {
@@ -357,7 +307,7 @@ fn permissioned_candidates_policy_redeemer_data() -> PlutusData {
 mod tests {
 	use super::{mint_permissioned_candidates_token_tx, update_permissioned_candidates_tx};
 	use crate::{
-		csl::{empty_asset_name, TransactionContext},
+		csl::{empty_asset_name, Costs, TransactionContext},
 		init_governance::GovernanceData,
 		plutus_script::PlutusScript,
 		test_values::*,
@@ -377,9 +327,8 @@ mod tests {
 			&test_policy(),
 			&input_candidates(),
 			&test_governance_data(),
+			test_costs_mint(),
 			&test_tx_context(),
-			&permissioned_candidates_ex_units(),
-			&governance_ex_units(),
 		)
 		.unwrap();
 
@@ -471,9 +420,8 @@ mod tests {
 			&input_candidates(),
 			&script_utxo,
 			&test_governance_data(),
+			test_costs_update(),
 			&test_tx_context(),
-			&permissioned_candidates_ex_units(),
-			&governance_ex_units(),
 		)
 		.unwrap();
 		let body = tx.body();
@@ -534,6 +482,27 @@ mod tests {
 	}
 	fn governance_ex_units() -> ExUnits {
 		ExUnits::new(&99999u32.into(), &999u32.into())
+	}
+
+	fn test_costs_mint() -> Costs {
+		Costs::new(
+			vec![
+				(test_policy().csl_script_hash(), permissioned_candidates_ex_units()),
+				(test_goveranance_policy().csl_script_hash(), governance_ex_units()),
+			]
+			.into_iter()
+			.collect(),
+			vec![(0, permissioned_candidates_ex_units())].into_iter().collect(),
+		)
+	}
+
+	fn test_costs_update() -> Costs {
+		Costs::new(
+			vec![(test_goveranance_policy().csl_script_hash(), governance_ex_units())]
+				.into_iter()
+				.collect(),
+			vec![(0, permissioned_candidates_ex_units())].into_iter().collect(),
+		)
 	}
 
 	fn test_goveranance_policy() -> PlutusScript {

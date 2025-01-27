@@ -1,0 +1,19 @@
+
+  partner-chains-setup:
+    container_name: partner-chains-setup
+    image: ${PARTNER_CHAINS_NODE_IMAGE}
+    platform: linux/amd64
+    user: "0:0"
+    volumes:
+      - shared-volume:/shared
+      - cardano-node-1-data:/data
+      - ./configurations/genesis/shelley/genesis-utxo.skey:/shared/shelley/genesis-utxo.skey
+      - ./configurations/cardano/keys/funded_address.skey:/keys/funded_address.skey
+      - ./configurations/cardano/keys/funded_address.vkey:/keys/funded_address.vkey
+      - ./configurations/cardano/keys/owner-stake.skey:/keys/owner-stake.skey
+      - ./configurations/partner-chains-setup/entrypoint.sh:/entrypoint.sh
+      - ./configurations/partner-chains-nodes/:/partner-chains-nodes/
+    environment:
+      - GOVERNANCE_AUTHORITY=e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b
+      - OGMIOS_PORT=${OGMIOS_PORT}
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]

@@ -9,6 +9,13 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * `setup-main-chain-state` command now uses native Rust to upsert the D-Parameter and upsert permissioned candidates
 * Changed the `smart-contracts init-governance` command to `smart-contracts governance init`
 * smart-contracts commands and offchain tests now use WebSockets implementation of Ogmios client
+* Updated to polkadot-stable2409-3 (aka v1.16.3).
+* `local-environment` now uses the `partner-chains-node` based container for the smart-contracts setup.
+* `partner-chains-cli` separate binary is transformed to a library crated and integreted in `partner-chains-node-commands` library crate.
+Every invocation of `partner-chains-cli` should be replaced with `<node> wizards` subcommand of the node built with Partner Chains SDK.
+The only other change is that "node executable path" configuration is not present in `partner-chains-cli-resources.json` anymore, because it is not needed anymore.
+Code will always invoke "self" executable instead.
+Since this change, all functionality of Partner Chains is available in the one executable of the node.
 
 ## Removed
 
@@ -22,7 +29,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Added
 
-* Command `smart-contracts reserve init`, `create`, `deposit`, `handover` and `update-settings`
+* Command `smart-contracts reserve init`, `create`, `deposit`, `release`, `handover` and `update-settings`
 * Command `smart-contracts governance update`
 * Ogmios client backed by jsonrpsee `WsClient`
 

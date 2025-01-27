@@ -42,14 +42,14 @@ pub enum OgmiosClients {
 pub async fn client_for_url(addr: &str) -> Result<OgmiosClients, String> {
 	if addr.starts_with("http") || addr.starts_with("https") {
 		let client = HttpClientBuilder::default()
-			.build(addr.to_owned())
-			.map_err(|e| format!("Couldn't create HTTP client: {}", e.to_string()))?;
+			.build(addr)
+			.map_err(|e| format!("Couldn't create HTTP client: {}", e))?;
 		Ok(OgmiosClients::HttpClient(client))
 	} else if addr.starts_with("ws") || addr.starts_with("wss") {
 		let client = WsClientBuilder::default()
 			.build(addr.to_owned())
 			.await
-			.map_err(|e| format!("Couldn't create WebSockets client: {}", e.to_string()))?;
+			.map_err(|e| format!("Couldn't create WebSockets client: {}", e))?;
 		Ok(OgmiosClients::WsClient(client))
 	} else {
 		Err(format!("Invalid Schema of URL: '{}'. Expected http, https, ws or wss.", addr))

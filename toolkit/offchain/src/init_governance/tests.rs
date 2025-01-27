@@ -1,13 +1,15 @@
 use super::transaction::*;
 use crate::await_tx::mock::ImmediateSuccess;
-use crate::csl::OgmiosUtxoExt;
+use crate::csl::{Costs, OgmiosUtxoExt};
 use crate::init_governance::run_init_governance;
+use crate::scripts_data;
 use crate::test_values::protocol_parameters;
 use crate::{csl::TransactionContext, ogmios_mock::MockOgmiosClient};
 use cardano_serialization_lib::{ExUnits, NetworkIdKind, PrivateKey};
 use hex_literal::*;
 use ogmios_client::transactions::{
-	OgmiosBudget, OgmiosEvaluateTransactionResponse, SubmitTransactionResponse,
+	OgmiosBudget, OgmiosEvaluateTransactionResponse, OgmiosValidatorIndex,
+	SubmitTransactionResponse,
 };
 use ogmios_client::types::*;
 use pretty_assertions::assert_eq;
@@ -136,9 +138,9 @@ fn transaction_creation() {
 	let transaction: serde_json::Value = serde_json::from_str(
 		&init_governance_transaction(
 			governance_authority(),
-			&tx_context(),
 			genesis_utxo(),
-			ExUnits::new(&789754u64.into(), &171220003u64.into()),
+			test_costs(),
+			&tx_context(),
 		)
 		.unwrap()
 		.to_json()
@@ -152,14 +154,14 @@ fn transaction_creation() {
 #[tokio::test]
 async fn transaction_run() {
 	let transaction_id = [2; 32];
-	let transaction = OgmiosTx { id: transaction_id.clone() };
+	let transaction = OgmiosTx { id: transaction_id };
 	let budget = OgmiosBudget { memory: 100, cpu: 200 };
 	let mock_client = MockOgmiosClient::new()
 		.with_protocol_parameters(protocol_parameters())
 		.with_utxos(vec![genesis_utxo(), payment_utxo()])
 		.with_evaluate_result(vec![OgmiosEvaluateTransactionResponse {
 			budget,
-			..Default::default()
+			validator: OgmiosValidatorIndex { index: 0, purpose: "mint".to_owned() },
 		}])
 		.with_submit_result(SubmitTransactionResponse { transaction });
 
@@ -206,6 +208,25 @@ fn tx_context() -> TransactionContext {
 		network: NetworkIdKind::Testnet,
 		protocol_parameters: protocol_parameters(),
 	}
+}
+
+fn test_costs() -> Costs {
+	Costs::new(
+		vec![(
+			version_oracle_policy().csl_script_hash(),
+			ExUnits::new(&789754u64.into(), &171220003u64.into()),
+		)]
+		.into_iter()
+		.collect(),
+		vec![].into_iter().collect(),
+	)
+}
+
+fn version_oracle_policy() -> crate::plutus_script::PlutusScript {
+	let (_, version_oracle_policy, _) =
+		scripts_data::version_scripts_and_address(genesis_utxo().to_domain(), tx_context().network)
+			.unwrap();
+	version_oracle_policy
 }
 
 fn governance_authority() -> MainchainAddressHash {

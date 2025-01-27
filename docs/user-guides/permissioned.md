@@ -150,7 +150,7 @@ The generate-keys wizard will generate necessary keys and save them to your node
 
 If these keys already exist in the node’s keystore, you will be asked to overwrite existing keys. The wizard will also generate a network key for your node if needed.
 
-1. Start the wizard: `./partner-chains-cli generate-keys`
+1. Start the wizard: `./partner-chains-node wizards generate-keys`
 2. Input the node base path. It is saved in `partner-chains-cli-resources-config.json`.
 
 Now the wizard will output `partner-chains-public-keys.json` containing three keys.
@@ -178,7 +178,7 @@ Contact the chain builder and request the `chain-spec.json` and `partner-chains-
 
 The start-node wizard is used to start a partner chain node. Make sure that `cardano-node` is running with DB Sync running and fully synced. You will need to provide a link to postgreSQL server running with DB Sync as part of starting the node.
 
-1. Start the wizard: `./partner-chains-cli start-node`
+1. Start the wizard: `./partner-chains-node start-node`
 2. The wizard checks if all required keys are present. If not, it reminds you to run the generate-keys wizard first, and exits.
 3. If the `chain-spec` file is not present, you should obtain it from the chain builder.
 4. The wizard checks the `partner-chains-cli-chain-config.json` file. If it is missing or invalid, you should obtain it from the chain builder.

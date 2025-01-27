@@ -16,7 +16,7 @@
 //!   * Reserve Validator Version Utxo
 //!   * Governance Policy Script
 
-use super::ReserveData;
+use super::{reserve_utxo_input_with_validator_script_reference, ReserveData};
 use crate::reserve::ReserveUtxo;
 use crate::{
 	await_tx::AwaitTx, csl::*, init_governance::get_governance_data,
@@ -38,70 +38,43 @@ pub async fn update_reserve_settings<
 >(
 	genesis_utxo: UtxoId,
 	payment_key: [u8; 32],
-	mut total_accrued_function_script_hash_opt: Option<ScriptHash>,
+	total_accrued_function_script_hash: ScriptHash,
 	client: &T,
 	await_tx: &A,
 ) -> anyhow::Result<Option<McTxHash>> {
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance = get_governance_data(genesis_utxo, client).await?;
 	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
-	let ReserveUtxo { reserve_utxo, mut reserve_settings } =
+	let ReserveUtxo { utxo: reserve_utxo, datum: mut reserve_datum } =
 		reserve.get_reserve_utxo(&ctx, client).await?;
 
-	if let Some(total_accrued_function_script_hash) = total_accrued_function_script_hash_opt.clone()
+	if total_accrued_function_script_hash
+		== reserve_datum.mutable_settings.total_accrued_function_script_hash
 	{
-		if total_accrued_function_script_hash
-			== reserve_settings.mutable_settings.total_accrued_function_script_hash
-		{
-			total_accrued_function_script_hash_opt = None;
-			log::info!(
-				"Reserve V function hash is already set to {:?}.",
-				total_accrued_function_script_hash
-			);
-		} else {
-			reserve_settings.mutable_settings.total_accrued_function_script_hash =
-				total_accrued_function_script_hash.clone();
-		}
-	}
-
-	if total_accrued_function_script_hash_opt.is_none() {
-		log::info!("Nothing to update.");
+		log::info!(
+			"Reserve V function hash is already set to {:?}. Nothing to update.",
+			total_accrued_function_script_hash
+		);
 		return Ok(None);
 	}
+	reserve_datum.mutable_settings.total_accrued_function_script_hash =
+		total_accrued_function_script_hash.clone();
 
-	let tx_to_evaluate = update_reserve_settings_tx(
-		&reserve_settings,
-		&reserve,
-		&governance,
-		&zero_ex_units(),
-		&reserve_utxo,
-		&zero_ex_units(),
-		&ctx,
-	)?;
+	let tx = Costs::calculate_costs(
+		|costs| {
+			update_reserve_settings_tx(
+				&reserve_datum,
+				&reserve,
+				&governance,
+				&reserve_utxo,
+				costs,
+				&ctx,
+			)
+		},
+		client,
+	)
+	.await?;
 
-	let evaluate_response = client.evaluate_transaction(&tx_to_evaluate.to_bytes()).await?;
-
-	let budgets = get_validator_budgets(evaluate_response);
-	let gov_cost = budgets
-		.mint_ex_units
-		.first()
-		.expect("Every Update Reserve Settings transaction should have one mint")
-		.clone();
-	let reserve_cost = budgets
-		.spend_ex_units
-		.first()
-		.expect("Every Update Reserve Settings transaction should have one spend")
-		.clone();
-
-	let tx = update_reserve_settings_tx(
-		&reserve_settings,
-		&reserve,
-		&governance,
-		&gov_cost,
-		&reserve_utxo,
-		&reserve_cost,
-		&ctx,
-	)?;
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow::anyhow!(
@@ -120,37 +93,19 @@ fn update_reserve_settings_tx(
 	datum: &ReserveDatum,
 	reserve: &ReserveData,
 	governance: &GovernanceData,
-	governance_script_cost: &ExUnits,
 	reserve_utxo: &OgmiosUtxo,
-	reserve_script_cost: &ExUnits,
+	costs: Costs,
 	ctx: &TransactionContext,
-) -> Result<Transaction, JsError> {
+) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
 	// spend old settings
-	{
-		let mut inputs = TxInputsBuilder::new();
-
-		let witness = PlutusWitness::new_with_ref_without_datum(
-			&PlutusScriptSource::new_ref_input(
-				&reserve.scripts.validator.csl_script_hash(),
-				&reserve.validator_version_utxo.to_csl_tx_input(),
-				&reserve.scripts.validator.language,
-				reserve.scripts.validator.bytes.len(),
-			),
-			&Redeemer::new(
-				&RedeemerTag::new_spend(),
-				// CSL will set redeemer index for the index of script input after sorting transaction inputs
-				&0u32.into(),
-				&ReserveRedeemer::UpdateReserve { governance_version: 1u64 }.into(),
-				reserve_script_cost,
-			),
-		);
-		let amount = reserve_utxo.value.to_csl()?;
-		inputs.add_plutus_script_input(&witness, &reserve_utxo.to_csl_tx_input(), &amount);
-
-		tx_builder.set_inputs(&inputs);
-	}
+	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
+		reserve_utxo,
+		reserve,
+		ReserveRedeemer::UpdateReserve,
+		&costs.get_one_spend(),
+	)?);
 	{
 		let amount_builder = TransactionOutputBuilder::new()
 			.with_address(&reserve.scripts.validator.address(ctx.network))
@@ -170,11 +125,10 @@ fn update_reserve_settings_tx(
 		tx_builder.add_output(&a)?;
 	}
 
-	let gov_tx_input = governance.utxo_id_as_tx_input();
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&governance.policy_script,
-		&gov_tx_input,
-		governance_script_cost,
+		&governance.utxo_id_as_tx_input(),
+		&costs.get_mint(&governance.policy_script),
 	)?;
 	tx_builder.add_script_reference_input(
 		&reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
@@ -184,5 +138,5 @@ fn update_reserve_settings_tx(
 		&reserve.auth_policy_version_utxo.to_csl_tx_input(),
 		reserve.scripts.auth_policy.bytes.len(),
 	);
-	tx_builder.balance_update_and_build(ctx)
+	Ok(tx_builder.balance_update_and_build(ctx)?)
 }

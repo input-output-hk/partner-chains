@@ -395,16 +395,6 @@ pub mod config_fields {
 			_marker: PhantomData,
 		};
 
-	pub const NODE_EXECUTABLE_DEFAULT: &str = "./partner-chains-node";
-
-	pub const NODE_EXECUTABLE: ConfigFieldDefinition<'static, String> = ConfigFieldDefinition {
-		config_file: RESOURCES_CONFIG_FILE_PATH,
-		path: &["substrate_node_executable_path"],
-		name: "Partner Chains node executable",
-		default: Some(NODE_EXECUTABLE_DEFAULT),
-		_marker: PhantomData,
-	};
-
 	pub const CARDANO_PAYMENT_VERIFICATION_KEY_FILE: ConfigFieldDefinition<'static, String> =
 		ConfigFieldDefinition {
 			config_file: RESOURCES_CONFIG_FILE_PATH,
