@@ -1,6 +1,6 @@
 use crate::{
 	DataDecodingError, DecodingResult, PlutusDataExtensions, VersionedDatum,
-	VersionedDatumWithLegacy, VersionedGenericDatumShape,
+	VersionedDatumWithLegacy, VersionedGenericDatum,
 };
 use cardano_serialization_lib::{PlutusData, PlutusList};
 
@@ -31,10 +31,10 @@ pub fn d_parameter_to_plutus_data(d_param: &sidechain_domain::DParameter) -> Plu
 	let mut list = PlutusList::new();
 	list.add(&PlutusData::new_integer(&d_param.num_permissioned_candidates.into()));
 	list.add(&PlutusData::new_integer(&d_param.num_registered_candidates.into()));
-	let generic_data = PlutusData::new_list(&list);
-	VersionedGenericDatumShape {
+	let appendix = PlutusData::new_list(&list);
+	VersionedGenericDatum {
 		datum: PlutusData::new_empty_constr_plutus_data(&0u64.into()),
-		generic_data,
+		appendix,
 		version: 0,
 	}
 	.into()
@@ -59,13 +59,13 @@ impl VersionedDatumWithLegacy for DParamDatum {
 	}
 
 	fn decode_versioned(
-		version: u32,
-		_const_data: &PlutusData,
-		mut_data: &PlutusData,
+		version: u64,
+		_datum: &PlutusData,
+		appendix: &PlutusData,
 	) -> Result<Self, String> {
 		match version {
-			0 => DParamDatum::decode_legacy(mut_data)
-				.map_err(|msg| format!("Can not parse mutable part of data: {msg}")),
+			0 => DParamDatum::decode_legacy(appendix)
+				.map_err(|msg| format!("Cannot parse appendix: {msg}")),
 			_ => Err(format!("Unknown version: {version}")),
 		}
 	}

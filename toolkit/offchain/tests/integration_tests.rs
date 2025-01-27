@@ -357,7 +357,7 @@ async fn run_update_reserve_settings_management<
 	reserve::update_settings::update_reserve_settings(
 		genesis_utxo,
 		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
-		Some(updated_total_accrued_function_script_hash),
+		updated_total_accrued_function_script_hash,
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)

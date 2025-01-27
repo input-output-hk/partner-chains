@@ -13,19 +13,10 @@ runs:
     - name: Set filename variables
       id: set-filenames
       run: |
-        echo "PARTNER_CHAINS_CLI_X86_64_LINUX=partner-chains-cli-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
         echo "PARTNER_CHAINS_NODE_X86_64_LINUX=partner-chains-node-${{ inputs.tag }}-x86_64-linux" >> $GITHUB_ENV
-        echo "PARTNER_CHAINS_CLI_X86_64_APPLE_DARWIN=partner-chains-cli-${{ inputs.tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
         echo "PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN=partner-chains-node-${{ inputs.tag }}-x86_64-apple-darwin" >> $GITHUB_ENV
-        echo "PARTNER_CHAINS_CLI_AARCH64_APPLE_DARWIN=partner-chains-cli-${{ inputs.tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
         echo "PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN=partner-chains-node-${{ inputs.tag }}-aarch64-apple-darwin" >> $GITHUB_ENV
       shell: bash
-
-    - name: Download partner-chains-cli-linux-artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: partner-chains-cli-linux-artifact
-        path: artifact-linux/
 
     - name: Download partner-chains-node-linux-artifact
       uses: actions/download-artifact@v4
@@ -33,23 +24,11 @@ runs:
         name: partner-chains-node-linux-artifact
         path: artifact-linux/
 
-    - name: Download partner-chains-cli-macos-x86_64-artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: partner-chains-cli-macos-x86_64-artifact
-        path: artifact-macos-x86_64/
-
     - name: Download partner-chains-node-macos-x86_64-artifact
       uses: actions/download-artifact@v4
       with:
         name: partner-chains-node-macos-x86_64-artifact
         path: artifact-macos-x86_64/
-
-    - name: Download partner-chains-cli-macos-arm64-artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: partner-chains-cli-macos-arm64-artifact
-        path: artifact-macos-arm64/
 
     - name: Download partner-chains-node-macos-arm64-artifact
       uses: actions/download-artifact@v4
@@ -81,39 +60,39 @@ runs:
         tag="${{ inputs.tag }}"
         changelog_file="changelog.md"
         section_names="Changed|Added"
-    
+
         # Extract the "Changed" and "Added" sections from changelog.md for the given tag
         release_notes=$(awk -v tag="$tag" -v sections="$section_names" 'BEGIN{in_tag=0;in_section=0;section_regex="^## ("sections")$";}/^# /{if($0=="# "tag){in_tag=1;next;}else if(in_tag){exit;}}/^## /{if(in_tag&&match($0,section_regex)){in_section=1;print $0;next;}else if(in_tag){in_section=0;}}{if(in_section&&in_tag)print $0;}' "$changelog_file")
-    
+
         # Escape special characters for GitHub Actions output
         release_notes="${release_notes//'%'/'%25'}"
         release_notes="${release_notes//$'\n'/'%0A'}"
         release_notes="${release_notes//$'\r'/'%0D'}"
-    
+
         echo "::set-output name=release_notes::$release_notes"
       shell: bash
-    
+
     - name: Create draft release
       id: create_release
       if: ${{ steps.check_release.outputs.release_exists == 'false' }}
       run: |
         tag="${{ inputs.tag }}"
-    
+
         release_body="### Pre-release candidate for version $tag\n\n"
         release_body+="This is a draft pre-release candidate for release $tag that is undergoing testing. The current testing status is:\n\n"
         release_body+="- [x] Local environment\n"
         release_body+="- [ ] Staging preview environment\n"
         release_body+="- [ ] Staging preprod environment\n\n"
         release_body+="Please note: this release is not yet fully verified and is pending further testing.\n"
-    
+
         release_response=$(curl -s -X POST -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
                           -d '{"tag_name": "'$tag'", "name": "'$tag'", "body": "'"$release_body"'", "draft": true, "generate_release_notes": true, "prerelease": true}' \
                           "https://api.github.com/repos/${{ github.repository }}/releases")
-        
+
         echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
         echo "::set-output name=release_id::$(echo $release_response | jq -r .id)"
       shell: bash
-    
+
     - name: Upload artifacts to release
       if: ${{ steps.check_release.outputs.release_exists == 'true' || steps.create_release.outputs.release_id != '' }}
       run: |
@@ -139,4 +118,3 @@ runs:
             "https://uploads.github.com/repos/${{ github.repository }}/releases/$release_id/assets?name=$(basename $artifact)"
         done
       shell: bash
-

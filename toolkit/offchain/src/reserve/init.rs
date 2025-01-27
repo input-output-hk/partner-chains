@@ -326,7 +326,7 @@ mod tests {
 		let gov_token_amount = change_output
 			.amount()
 			.multiasset()
-			.and_then(|ma| ma.get(&test_governance_data().policy_script_hash()))
+			.and_then(|ma| ma.get(&test_governance_data().policy_script.csl_script_hash()))
 			.and_then(|gov_ma| gov_ma.get(&AssetName::new(vec![]).unwrap()))
 			.unwrap();
 		assert_eq!(gov_token_amount, BigNum::one(), "Change contains one goverenance token");
@@ -358,7 +358,7 @@ mod tests {
 		let gov_mint = tx
 			.body()
 			.mint()
-			.and_then(|mint| mint.get(&test_governance_data().policy_script_hash()))
+			.and_then(|mint| mint.get(&test_governance_data().policy_script.csl_script_hash()))
 			.and_then(|assets| assets.get(0))
 			.and_then(|assets| assets.get(&AssetName::new(vec![]).unwrap()))
 			.expect("Transaction should have a mint of Governance Policy token");

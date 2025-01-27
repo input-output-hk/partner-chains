@@ -13,6 +13,7 @@ frame-support = { workspace = true }
 log = { workspace = true }
 log4rs = { workspace = true }
 parity-scale-codec = { workspace = true }
+partner-chains-cli = { workspace = true }
 partner-chains-smart-contracts-commands = { workspace = true }
 plutus = { workspace = true }
 sidechain-domain = { workspace = true, default-features = true }

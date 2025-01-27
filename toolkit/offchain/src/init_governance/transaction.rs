@@ -10,37 +10,37 @@ use sidechain_domain::MainchainAddressHash;
 
 pub(crate) fn init_governance_transaction(
 	governance_authority: MainchainAddressHash,
-	tx_context: &TransactionContext,
 	genesis_utxo: OgmiosUtxo,
-	ex_units: ExUnits,
+	costs: Costs,
+	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
 	let multi_sig_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, Language::new_plutus_v2())?
 			.apply_uplc_data(multisig_governance_policy_configuration(governance_authority))?;
-	let version_oracle = version_oracle(genesis_utxo.to_domain(), tx_context.network)?;
-	let config = crate::csl::get_builder_config(tx_context)?;
+	let version_oracle = version_oracle(genesis_utxo.to_domain(), ctx.network)?;
+	let config = crate::csl::get_builder_config(ctx)?;
 	let mut tx_builder = TransactionBuilder::new(&config);
 
 	tx_builder.add_mint_one_script_token(
 		&version_oracle.policy,
 		&version_oracle_asset_name(),
 		&mint_redeemer(&multi_sig_policy),
-		&ex_units,
+		&costs.get_mint(&version_oracle.policy),
 	)?;
 
 	tx_builder.add_output(&version_oracle_datum_output(
 		version_oracle.validator.clone(),
 		version_oracle.policy.clone(),
 		multi_sig_policy,
-		tx_context.network,
-		tx_context,
+		ctx.network,
+		ctx,
 	)?)?;
 
 	tx_builder.set_inputs(&{
-		TxInputsBuilder::with_key_inputs(&[genesis_utxo], &tx_context.payment_key_hash())?
+		TxInputsBuilder::with_key_inputs(&[genesis_utxo], &ctx.payment_key_hash())?
 	});
 
-	Ok(tx_builder.balance_update_and_build(tx_context)?)
+	Ok(tx_builder.balance_update_and_build(ctx)?)
 }
 
 fn version_oracle_asset_name() -> AssetName {

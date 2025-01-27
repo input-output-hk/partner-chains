@@ -32,11 +32,6 @@ runs:
       uses: docker/login-action@v3
       with:
         registry: ${{ env.ECR_REGISTRY_SECRET }}
-    - name: Download partner-chains-cli artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: partner-chains-cli-artifact
-        path: dev/local-environment/configurations/pc-contracts-cli/overrides/
     - name: Download partner-chains-node artifact
       uses: actions/download-artifact@v4
       with:
@@ -44,7 +39,6 @@ runs:
         path: dev/local-environment/configurations/pc-contracts-cli/overrides/
     - name: Deploy local environment with overrides
       run: |
-        mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-cli
         mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node
         mkdir -p dev/local-environment/configurations/tests/e2e-tests
         cp -r E2E-tests/* dev/local-environment/configurations/tests/e2e-tests

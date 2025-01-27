@@ -82,7 +82,10 @@ pub struct ReserveParameters {
 impl From<&ReserveParameters> for ReserveDatum {
 	fn from(value: &ReserveParameters) -> Self {
 		ReserveDatum {
-			immutable_settings: ReserveImmutableSettings { token: value.token.clone() },
+			// `t0` field is not used by on-chain code of partner-chains smart-contracts,
+			// but only gave a possiblity for user to store "t0" for his own V-function.
+			// Not configurable anymore, hardcoded to 0. If users need "t0" for their V-function, they are responsible for storing it somewhere.
+			immutable_settings: ReserveImmutableSettings { t0: 0, token: value.token.clone() },
 			mutable_settings: ReserveMutableSettings {
 				total_accrued_function_script_hash: value
 					.total_accrued_function_script_hash

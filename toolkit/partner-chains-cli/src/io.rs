@@ -26,6 +26,7 @@ pub trait IOContext {
 		+ UpsertPermissionedCandidates;
 
 	fn run_command(&self, cmd: &str) -> anyhow::Result<String>;
+	fn current_executable(&self) -> anyhow::Result<String>;
 	fn print(&self, msg: &str);
 	fn eprint(&self, msg: &str);
 	fn enewline(&self);
@@ -92,6 +93,12 @@ impl IOContext for DefaultCmdRunContext {
 			return Err(anyhow!("Failed to run command"));
 		}
 		Ok(String::from_utf8(output)?)
+	}
+
+	fn current_executable(&self) -> anyhow::Result<String> {
+		let exe = std::env::current_exe()?;
+		let node_executable = exe.to_str().ok_or(anyhow!("Cannot get current executable name"))?;
+		Ok(node_executable.to_string())
 	}
 
 	fn print(&self, msg: &str) {
