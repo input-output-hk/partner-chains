@@ -1,4 +1,5 @@
 use crate::plutus_script::PlutusScript;
+use anyhow::Context;
 use cardano_serialization_lib::*;
 use fraction::{FromPrimitive, Ratio};
 use ogmios_client::query_ledger_state::ReferenceScriptsCosts;
@@ -6,7 +7,7 @@ use ogmios_client::transactions::Transactions;
 use ogmios_client::{
 	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, QueryLedgerState},
 	query_network::QueryNetwork,
-	transactions::{OgmiosBudget, OgmiosEvaluateTransactionResponse},
+	transactions::OgmiosEvaluateTransactionResponse,
 	types::{OgmiosUtxo, OgmiosValue},
 };
 use sidechain_domain::{AssetId, MainchainAddressHash, MainchainPrivateKey, NetworkType, UtxoId};
@@ -158,16 +159,6 @@ pub(crate) fn convert_reference_script_costs(
 	Ok(UnitInterval::new(&numerator, &denominator))
 }
 
-/// Returns the budget of the first validator as [`ExUnits`]
-pub(crate) fn get_first_validator_budget(
-	validators_budgets: Vec<OgmiosEvaluateTransactionResponse>,
-) -> Result<ExUnits, JsError> {
-	let validator_budget = validators_budgets.first().ok_or_else(|| {
-		JsError::from_str("Internal error: cannot use evaluateTransaction response")
-	})?;
-	Ok(convert_ex_units(&validator_budget.budget))
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct ScriptExUnits {
 	pub mint_ex_units: Vec<ExUnits>,
@@ -184,19 +175,6 @@ impl ScriptExUnits {
 	pub fn with_spend_ex_units(self, spend_ex_units: Vec<ExUnits>) -> Self {
 		Self { spend_ex_units, ..self }
 	}
-}
-
-pub(crate) fn get_validator_budgets(
-	mut responses: Vec<OgmiosEvaluateTransactionResponse>,
-) -> ScriptExUnits {
-	responses.sort_by_key(|r| r.validator.index);
-	let (mint_ex_units, spend_ex_units) = responses
-		.into_iter()
-		.partition::<Vec<_>, _>(|response| response.validator.purpose == "mint");
-	let mint_ex_units = mint_ex_units.into_iter().map(ex_units_from_response).collect();
-	let spend_ex_units = spend_ex_units.into_iter().map(ex_units_from_response).collect();
-
-	ScriptExUnits { mint_ex_units, spend_ex_units }
 }
 
 fn ex_units_from_response(resp: OgmiosEvaluateTransactionResponse) -> ExUnits {
@@ -226,7 +204,7 @@ impl CostStore for Costs {
 			Costs::Costs(cost_lookup) => cost_lookup
 				.mints
 				.get(&script.csl_script_hash())
-				.expect("should not be called with an unknown script")
+				.expect("get_mint should not be called with an unknown script")
 				.clone(),
 		}
 	}
@@ -236,7 +214,7 @@ impl CostStore for Costs {
 			Costs::Costs(cost_lookup) => cost_lookup
 				.spends
 				.get(&spend_ix)
-				.expect("should not be called with an unknown script")
+				.expect("get_spend should not be called with an unknown spend index")
 				.clone(),
 		}
 	}
@@ -247,7 +225,7 @@ impl CostStore for Costs {
 				match cost_lookup.spends.values().collect::<Vec<_>>()[..] {
 					[x] => x.clone(),
 					_ => panic!(
-						"should only be called when exacly one spend is expected to be present"
+						"get_one_spend should only be called when exacly one spend is expected to be present"
 					),
 				}
 			},
@@ -282,7 +260,10 @@ impl Costs {
 	}
 
 	async fn from_ogmios<T: Transactions>(tx: &Transaction, client: &T) -> anyhow::Result<Costs> {
-		let evaluate_response = client.evaluate_transaction(&tx.to_bytes()).await?;
+		let evaluate_response = client
+			.evaluate_transaction(&tx.to_bytes())
+			.await
+			.context("calculate_costs received Ogmios error from evaluate_transaction")?;
 
 		let mut mints = HashMap::new();
 		let mut spends = HashMap::new();
@@ -307,11 +288,6 @@ impl Costs {
 
 		Ok(Costs::Costs(CostLookup { mints, spends }))
 	}
-}
-
-/// Conversion of ogmios-client budget to CSL execution units
-pub(crate) fn convert_ex_units(v: &OgmiosBudget) -> ExUnits {
-	ExUnits::new(&v.memory.into(), &v.cpu.into())
 }
 
 pub(crate) fn empty_asset_name() -> AssetName {
@@ -845,10 +821,7 @@ mod tests {
 	use crate::test_values::protocol_parameters;
 	use cardano_serialization_lib::{AssetName, Language, NetworkIdKind};
 	use hex_literal::hex;
-	use ogmios_client::{
-		transactions::{OgmiosBudget, OgmiosValidatorIndex},
-		types::{Asset, OgmiosValue},
-	};
+	use ogmios_client::types::{Asset, OgmiosValue};
 	use pretty_assertions::assert_eq;
 
 	#[test]
@@ -969,48 +942,6 @@ mod tests {
 				.unwrap(),
 			-900
 		);
-	}
-
-	#[test]
-	fn convert_ex_values_test() {
-		let ex_units = super::convert_ex_units(&OgmiosBudget { memory: 1000, cpu: 2000 });
-		assert_eq!(ex_units.mem(), 1000u64.into());
-		assert_eq!(ex_units.steps(), 2000u64.into());
-	}
-
-	#[test]
-	fn get_validator_budgets_works() {
-		let result = get_validator_budgets(vec![
-			OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex::new(1, "mint"),
-				budget: OgmiosBudget::new(11, 21),
-			},
-			OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex::new(0, "spend"),
-				budget: OgmiosBudget::new(10, 20),
-			},
-			OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex::new(3, "mint"),
-				budget: OgmiosBudget::new(13, 23),
-			},
-			OgmiosEvaluateTransactionResponse {
-				validator: OgmiosValidatorIndex::new(2, "spend"),
-				budget: OgmiosBudget::new(12, 22),
-			},
-		]);
-
-		let expected = ScriptExUnits {
-			mint_ex_units: vec![
-				ExUnits::new(&11u64.into(), &21u64.into()),
-				ExUnits::new(&13u64.into(), &23u64.into()),
-			],
-			spend_ex_units: vec![
-				ExUnits::new(&10u64.into(), &20u64.into()),
-				ExUnits::new(&12u64.into(), &22u64.into()),
-			],
-		};
-
-		assert_eq!(result, expected);
 	}
 }
 

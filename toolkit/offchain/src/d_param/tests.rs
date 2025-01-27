@@ -1,5 +1,4 @@
 use super::{mint_d_param_token_tx, update_d_param_tx};
-use crate::d_param::ScriptExUnits;
 use crate::init_governance::GovernanceData;
 use crate::{
 	csl::{empty_asset_name, TransactionContext},
@@ -14,6 +13,8 @@ use partner_chains_plutus_data::d_param::d_parameter_to_plutus_data;
 use sidechain_domain::DParameter;
 
 mod mint_tx {
+	use crate::csl::Costs;
+
 	use super::*;
 	use cardano_serialization_lib::Transaction;
 
@@ -25,15 +26,26 @@ mod mint_tx {
 		ExUnits::new(&20000u32.into(), &400u32.into())
 	}
 
+	fn test_costs() -> Costs {
+		Costs::new(
+			vec![
+				(ScriptHash::from_bytes(token_policy_id().to_vec()).unwrap(), policy_ex_units()),
+				(governance_script_hash(), goveranance_ex_units()),
+			]
+			.into_iter()
+			.collect(),
+			vec![].into_iter().collect(),
+		)
+	}
+
 	fn mint_d_param_tx() -> Transaction {
 		mint_d_param_token_tx(
 			&test_validator(),
 			&test_policy(),
 			&input_d_param(),
 			&governance_data(),
+			test_costs(),
 			&test_tx_context(),
-			&policy_ex_units(),
-			&goveranance_ex_units(),
 		)
 		.expect("Test transaction should be constructed without error")
 	}
@@ -162,6 +174,8 @@ mod mint_tx {
 }
 
 mod update_d_parameter {
+	use crate::csl::Costs;
+
 	use super::*;
 	use cardano_serialization_lib::{Redeemer, Transaction};
 	use pretty_assertions::assert_eq;
@@ -192,10 +206,12 @@ mod update_d_parameter {
 	fn mint_ex_units() -> ExUnits {
 		ExUnits::new(&10000u32.into(), &200u32.into())
 	}
-	fn ex_units() -> ScriptExUnits {
-		ScriptExUnits::new()
-			.with_spend_ex_units(vec![spend_ex_units()])
-			.with_mint_ex_units(vec![mint_ex_units()])
+
+	fn test_costs() -> Costs {
+		Costs::new(
+			vec![(governance_script_hash(), mint_ex_units())].into_iter().collect(),
+			vec![(0, spend_ex_units())].into_iter().collect(),
+		)
 	}
 
 	fn update_d_param_tx() -> Transaction {
@@ -205,8 +221,8 @@ mod update_d_parameter {
 			&input_d_param(),
 			&script_utxo(),
 			&governance_data(),
+			test_costs(),
 			&test_tx_context(),
-			ex_units(),
 		)
 		.unwrap()
 	}
