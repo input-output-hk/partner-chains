@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["get_private_key_and_key_hash","run_init_governance"]};

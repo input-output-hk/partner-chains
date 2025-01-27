@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["set_main_chain_follower_env"]};

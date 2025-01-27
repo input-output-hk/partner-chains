@@ -59,8 +59,8 @@
 };
 
 <span class="doccomment">/// Produces template chain spec for Partner Chains.
-/// This code should be run by `partner-chains-cli chain-spec`, to produce JSON chain spec file.
-/// `initial_validators` fields should be updated by the `partner-chains-cli chain-spec`.
+/// This code should be run by `partner-chains-node wizards chain-spec`, to produce JSON chain spec file.
+/// `initial_validators` fields should be updated by the `partner-chains-node wizards chain-spec`.
 /// Add and modify other fields of `ChainSpec` accordingly to the needs of your chain.
 </span><span class="kw">pub fn </span>chain_spec() -&gt; <span class="prelude-ty">Result</span>&lt;ChainSpec, envy::Error&gt; {
 	<span class="kw">let </span>runtime_genesis_config = RuntimeGenesisConfig {

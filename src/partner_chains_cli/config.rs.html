@@ -585,16 +585,6 @@
 <a href="#585" id="585">585</a>
 <a href="#586" id="586">586</a>
 <a href="#587" id="587">587</a>
-<a href="#588" id="588">588</a>
-<a href="#589" id="589">589</a>
-<a href="#590" id="590">590</a>
-<a href="#591" id="591">591</a>
-<a href="#592" id="592">592</a>
-<a href="#593" id="593">593</a>
-<a href="#594" id="594">594</a>
-<a href="#595" id="595">595</a>
-<a href="#596" id="596">596</a>
-<a href="#597" id="597">597</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	CARDANO_ACTIVE_SLOTS_COEFF, CARDANO_EPOCH_DURATION_MILLIS, CARDANO_FIRST_EPOCH_NUMBER,
 	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_SECURITY_PARAMETER,
@@ -991,16 +981,6 @@
 			default: <span class="prelude-val">Some</span>(<span class="string">"./data"</span>),
 			_marker: PhantomData,
 		};
-
-	<span class="kw">pub const </span>NODE_EXECUTABLE_DEFAULT: <span class="kw-2">&amp;</span>str = <span class="string">"./partner-chains-node"</span>;
-
-	<span class="kw">pub const </span>NODE_EXECUTABLE: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; = ConfigFieldDefinition {
-		config_file: RESOURCES_CONFIG_FILE_PATH,
-		path: <span class="kw-2">&amp;</span>[<span class="string">"substrate_node_executable_path"</span>],
-		name: <span class="string">"Partner Chains node executable"</span>,
-		default: <span class="prelude-val">Some</span>(NODE_EXECUTABLE_DEFAULT),
-		_marker: PhantomData,
-	};
 
 	<span class="kw">pub const </span>CARDANO_PAYMENT_VERIFICATION_KEY_FILE: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, String&gt; =
 		ConfigFieldDefinition {

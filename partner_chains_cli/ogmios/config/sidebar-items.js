@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["OGMIOS_REQUIRED"],"fn":["establish_ogmios_configuration","prompt_ogmios_configuration"]};

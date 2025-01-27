@@ -221,19 +221,6 @@
 <a href="#221" id="221">221</a>
 <a href="#222" id="222">222</a>
 <a href="#223" id="223">223</a>
-<a href="#224" id="224">224</a>
-<a href="#225" id="225">225</a>
-<a href="#226" id="226">226</a>
-<a href="#227" id="227">227</a>
-<a href="#228" id="228">228</a>
-<a href="#229" id="229">229</a>
-<a href="#230" id="230">230</a>
-<a href="#231" id="231">231</a>
-<a href="#232" id="232">232</a>
-<a href="#233" id="233">233</a>
-<a href="#234" id="234">234</a>
-<a href="#235" id="235">235</a>
-<a href="#236" id="236">236</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	NODE_P2P_PORT, POSTGRES_CONNECTION_STRING, SIDECHAIN_BLOCK_BENEFICIARY,
 };
@@ -254,7 +241,7 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
 
-<span class="attr">#[derive(Debug, clap::Parser)]
+<span class="attr">#[derive(Clone, Debug, clap::Parser)]
 </span><span class="kw">pub struct </span>StartNodeCmd {
 	<span class="attr">#[arg(long)]
 	</span>silent: bool,
@@ -262,7 +249,6 @@
 
 <span class="kw">pub struct </span>StartNodeConfig {
 	<span class="kw">pub </span>substrate_node_base_path: String,
-	<span class="kw">pub </span>node_executable: String,
 }
 
 <span class="kw">impl </span>StartNodeConfig {
@@ -270,7 +256,6 @@
 		<span class="self">Self </span>{
 			substrate_node_base_path: config_fields::SUBSTRATE_NODE_DATA_BASE_PATH
 				.load_or_prompt_and_save(context),
-			node_executable: config_fields::NODE_EXECUTABLE.load_or_prompt_and_save(context),
 		}
 	}
 	<span class="kw">pub fn </span>keystore_path(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
@@ -287,7 +272,6 @@
 <span class="kw">impl </span>CmdRun <span class="kw">for </span>StartNodeCmd {
 	<span class="kw">fn </span>run&lt;C: IOContext&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;()&gt; {
 		<span class="kw">let </span>config = StartNodeConfig::load(context);
-		verify_config(<span class="kw-2">&amp;</span>config, context)<span class="question-mark">?</span>;
 
 		<span class="kw">if </span>!check_keystore(<span class="kw-2">&amp;</span>config, context)<span class="question-mark">? </span>|| !check_chain_spec(context) {
 			<span class="kw">return </span><span class="prelude-val">Ok</span>(());
@@ -317,16 +301,6 @@
 	}
 }
 
-<span class="kw">fn </span>verify_config&lt;C: IOContext&gt;(config: <span class="kw-2">&amp;</span>StartNodeConfig, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;()&gt; {
-	<span class="kw">if </span>!context.file_exists(<span class="kw-2">&amp;</span>config.node_executable) {
-		<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(
-			<span class="string">"Partner Chains Node executable file ({}) is missing"</span>,
-			config.node_executable
-		));
-	}
-	<span class="prelude-val">Ok</span>(())
-}
-
 <span class="kw">fn </span>load_chain_config&lt;C: IOContext&gt;(context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;StartNodeChainConfig&gt;&gt; {
 	<span class="kw">let </span><span class="prelude-val">Some</span>(chain_config_file) = context.read_file(CHAIN_CONFIG_FILE_PATH) <span class="kw">else </span>{
 		context.eprint(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} does not exists. Run prepare-configuration wizard first."</span>));
@@ -344,7 +318,7 @@
 
 <span class="attr">#[rustfmt::skip]
 </span><span class="kw">fn </span>prompt_values_fine&lt;C: IOContext&gt;(
-	StartNodeConfig { substrate_node_base_path, node_executable }: <span class="kw-2">&amp;</span>StartNodeConfig,
+	StartNodeConfig { substrate_node_base_path }: <span class="kw-2">&amp;</span>StartNodeConfig,
 	StartNodeChainConfig {
 		cardano,
 		bootnodes,
@@ -355,7 +329,6 @@
 ) -&gt; bool
 {
 	context.eprint(<span class="string">"The following values will be used to run the node:"</span>);
-	context.eprint(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"    executable = {}"</span>, node_executable));
 	context.eprint(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"    base path  = {}"</span>, substrate_node_base_path));
 	context.eprint(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"    chain spec = {}"</span>, CHAIN_SPEC_PATH));
 	context.eprint(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"    bootnodes  = [{}]"</span>, bootnodes.join(<span class="string">", "</span>)));
@@ -421,7 +394,7 @@
 }
 
 <span class="kw">pub fn </span>start_node&lt;C: IOContext&gt;(
-	StartNodeConfig { substrate_node_base_path, node_executable }: StartNodeConfig,
+	StartNodeConfig { substrate_node_base_path }: StartNodeConfig,
 	StartNodeChainConfig {
 		cardano:
 			CardanoParameters {
@@ -438,6 +411,7 @@
 	beneficiary: String,
 	context: <span class="kw-2">&amp;</span>C,
 ) -&gt; anyhow::Result&lt;()&gt; {
+	<span class="kw">let </span>executable = context.current_executable()<span class="question-mark">?</span>;
 	<span class="kw">let </span>environment_prefix = <span class="macro">format!</span>(
 		<span class="string">"CARDANO_SECURITY_PARAMETER='{security_parameter}' \\
          CARDANO_ACTIVE_SLOTS_COEFF='{active_slots_coeff}' \\
@@ -465,7 +439,7 @@
 		context,
 	);
 	context.run_command(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-		<span class="string">"{environment_prefix} {node_executable} --validator --chain {CHAIN_SPEC_PATH} --base-path {substrate_node_base_path} --port {ws_port} {bootnodes}"</span>,
+		<span class="string">"{environment_prefix} {executable} --validator --chain {CHAIN_SPEC_PATH} --base-path {substrate_node_base_path} --port {ws_port} {bootnodes}"</span>,
 	))<span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(())

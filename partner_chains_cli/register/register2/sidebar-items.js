@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["get_mainchain_cold_skey"],"struct":["Register2Cmd"]};
+window.SIDEBAR_ITEMS = {"struct":["Register2Cmd"]};

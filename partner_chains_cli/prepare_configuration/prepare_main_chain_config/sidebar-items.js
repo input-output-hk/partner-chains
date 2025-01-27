@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["OUTRO"],"fn":["prepare_main_chain_config","prepare_native_token","set_up_cardano_addresses"]};

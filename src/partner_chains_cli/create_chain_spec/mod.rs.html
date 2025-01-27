@@ -213,10 +213,7 @@
 <a href="#213" id="213">213</a>
 <a href="#214" id="214">214</a>
 <a href="#215" id="215">215</a>
-<a href="#216" id="216">216</a>
-<a href="#217" id="217">217</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{NODE_EXECUTABLE, NODE_EXECUTABLE_DEFAULT};
-<span class="kw">use </span><span class="kw">crate</span>::config::ConfigFieldDefinition;
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::ConfigFieldDefinition;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
 <span class="kw">use crate</span>::{config::config_fields, CmdRun};
@@ -228,7 +225,7 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
 
-<span class="attr">#[derive(Debug, clap::Parser)]
+<span class="attr">#[derive(Clone, Debug, clap::Parser)]
 </span><span class="kw">pub struct </span>CreateChainSpecCmd;
 
 <span class="kw">const </span>SESSION_INITIAL_VALIDATORS_PATH: <span class="kw-2">&amp;</span>str =
@@ -297,8 +294,7 @@
 		context: <span class="kw-2">&amp;</span>C,
 		config: <span class="kw-2">&amp;</span>CreateChainSpecConfig,
 	) -&gt; anyhow::Result&lt;String&gt; {
-		<span class="kw">let </span>node_executable =
-			NODE_EXECUTABLE.save_if_empty(NODE_EXECUTABLE_DEFAULT.to_string(), context);
+		<span class="kw">let </span>node_executable = context.current_executable()<span class="question-mark">?</span>;
 		context.set_env_var(<span class="string">"GENESIS_UTXO"</span>, <span class="kw-2">&amp;</span>config.genesis_utxo.to_string());
 		context.set_env_var(
 			<span class="string">"COMMITTEE_CANDIDATE_ADDRESS"</span>,

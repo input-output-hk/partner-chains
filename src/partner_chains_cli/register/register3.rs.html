@@ -428,9 +428,6 @@
 <a href="#428" id="428">428</a>
 <a href="#429" id="429">429</a>
 <a href="#430" id="430">430</a>
-<a href="#431" id="431">431</a>
-<a href="#432" id="432">432</a>
-<a href="#433" id="433">433</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_key::get_mc_pkey_from_file;
 <span class="kw">use </span><span class="kw">crate</span>::config;
 <span class="kw">use </span><span class="kw">crate</span>::config::config_fields;
@@ -547,9 +544,7 @@
 		.into_os_string()
 		.into_string()
 		.expect(<span class="string">"PathBuf is a valid UTF-8 String"</span>);
-	<span class="kw">let </span>node_executable = config_fields::NODE_EXECUTABLE
-		.load_from_file(context)
-		.ok_or_else(|| <span class="macro">anyhow::anyhow!</span>(<span class="string">"⚠️ Unable to load node executable"</span>))<span class="question-mark">?</span>;
+	<span class="kw">let </span>node_executable = context.current_executable()<span class="question-mark">?</span>;
 	<span class="kw">let </span>command = <span class="macro">format!</span>(
 		<span class="string">"{} registration-status --mainchain-pub-key {} --mc-epoch-number {} --chain chain-spec.json --base-path {temp_dir_path}"</span>,
 		node_executable, mc_public_key.to_hex_string(), mc_epoch_number
@@ -748,8 +743,7 @@
         MockIO::set_env_var(<span class="string">"MC__FIRST_SLOT_NUMBER"</span>, <span class="string">"4320"</span>),
 		MockIO::print(<span class="string">"Registrations status for epoch 25:"</span>),
         MockIO::new_tmp_dir(),
-        MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
-        MockIO::run_command(<span class="string">"/path/to/node registration-status --mainchain-pub-key 0xcef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --mc-epoch-number 25 --chain chain-spec.json --base-path /tmp/MockIOContext_tmp_dir"</span>, <span class="string">"{\"epoch\":1,\"validators\":[{\"public_key\":\"cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7\",\"status\":\"Registered\"}]}"</span>),
+        MockIO::run_command(<span class="string">"&lt;mock executable&gt; registration-status --mainchain-pub-key 0xcef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 --mc-epoch-number 25 --chain chain-spec.json --base-path /tmp/MockIOContext_tmp_dir"</span>, <span class="string">"{\"epoch\":1,\"validators\":[{\"public_key\":\"cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7\",\"status\":\"Registered\"}]}"</span>),
         MockIO::print(<span class="string">"Registration status:"</span>),
         MockIO::print(<span class="string">"{\"epoch\":1,\"validators\":[{\"public_key\":\"cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7\",\"status\":\"Registered\"}]}"</span>),
 		]

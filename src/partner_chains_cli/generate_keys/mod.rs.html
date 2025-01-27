@@ -247,20 +247,6 @@
 <a href="#247" id="247">247</a>
 <a href="#248" id="248">248</a>
 <a href="#249" id="249">249</a>
-<a href="#250" id="250">250</a>
-<a href="#251" id="251">251</a>
-<a href="#252" id="252">252</a>
-<a href="#253" id="253">253</a>
-<a href="#254" id="254">254</a>
-<a href="#255" id="255">255</a>
-<a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a>
-<a href="#258" id="258">258</a>
-<a href="#259" id="259">259</a>
-<a href="#260" id="260">260</a>
-<a href="#261" id="261">261</a>
-<a href="#262" id="262">262</a>
-<a href="#263" id="263">263</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="self">self</span>::config::KEYS_FILE_PATH;
 <span class="kw">use </span><span class="kw">crate</span>::config::config_values::DEFAULT_CHAIN_NAME;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
@@ -274,25 +260,20 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
 
-<span class="attr">#[derive(Debug, clap::Parser)]
+<span class="attr">#[derive(Clone, Debug, clap::Parser)]
 </span><span class="kw">pub struct </span>GenerateKeysCmd {}
 
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">pub struct </span>GenerateKeysConfig {
 	<span class="kw">pub </span>chain_name: String,
 	<span class="kw">pub </span>substrate_node_base_path: String,
-	<span class="kw">pub </span>node_executable: String,
 }
 <span class="kw">impl </span>GenerateKeysConfig {
 	<span class="kw">pub fn </span>load&lt;C: IOContext&gt;(context: <span class="kw-2">&amp;</span>C) -&gt; <span class="self">Self </span>{
-		<span class="comment">// ETCM-7825: hardcoded node executable
-		</span><span class="kw">let </span>node_executable = config_fields::NODE_EXECUTABLE
-			.save_if_empty(config_fields::NODE_EXECUTABLE_DEFAULT.to_string(), context);
 		<span class="self">Self </span>{
 			chain_name: DEFAULT_CHAIN_NAME.into(),
 			substrate_node_base_path: config_fields::SUBSTRATE_NODE_DATA_BASE_PATH
 				.load_or_prompt_and_save(context),
-			node_executable,
 		}
 	}
 	<span class="kw">fn </span>keystore_path(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
@@ -337,16 +318,6 @@
 
 		<span class="prelude-val">Ok</span>(())
 	}
-}
-
-<span class="kw">pub fn </span>verify_executable&lt;C: IOContext&gt;(
-	GenerateKeysConfig { node_executable, .. }: <span class="kw-2">&amp;</span>GenerateKeysConfig,
-	context: <span class="kw-2">&amp;</span>C,
-) -&gt; anyhow::Result&lt;()&gt; {
-	<span class="kw">if </span>!context.file_exists(node_executable) {
-		<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Partner Chains Node executable file ({node_executable}) is missing"</span>));
-	}
-	<span class="prelude-val">Ok</span>(())
 }
 
 <span class="kw">pub fn </span>set_dummy_env_vars&lt;C: IOContext&gt;(context: <span class="kw-2">&amp;</span>C) {
@@ -440,9 +411,10 @@
 }
 
 <span class="kw">fn </span>run_generate_network_key&lt;C: IOContext&gt;(
-	GenerateKeysConfig { substrate_node_base_path, node_executable, .. }: <span class="kw-2">&amp;</span>GenerateKeysConfig,
+	GenerateKeysConfig { substrate_node_base_path, .. }: <span class="kw-2">&amp;</span>GenerateKeysConfig,
 	context: <span class="kw-2">&amp;</span>C,
 ) -&gt; anyhow::Result&lt;()&gt; {
+	<span class="kw">let </span>node_executable = context.current_executable()<span class="question-mark">?</span>;
 	context.run_command(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
 		<span class="string">"{node_executable} key generate-node-key --base-path {substrate_node_base_path}"
 	</span>))<span class="question-mark">?</span>;
@@ -464,9 +436,9 @@
 
 <span class="kw">pub fn </span>generate_keys&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
-	executable: <span class="kw-2">&amp;</span>str,
 	KeyDefinition { scheme, name, .. }: <span class="kw-2">&amp;</span>KeyDefinition,
 ) -&gt; anyhow::Result&lt;KeyGenerationOutput&gt; {
+	<span class="kw">let </span>executable = context.current_executable()<span class="question-mark">?</span>;
 	context.eprint(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"⚙️ Generating {name} ({scheme}) key"</span>));
 	<span class="kw">let </span>output = context
 		.run_command(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"{executable} key generate --scheme {scheme} --output-type json"</span>))<span class="question-mark">?</span>;
@@ -477,10 +449,11 @@
 
 <span class="kw">pub fn </span>store_keys&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
-	GenerateKeysConfig { chain_name, substrate_node_base_path: base_path, node_executable }: <span class="kw-2">&amp;</span>GenerateKeysConfig,
+	GenerateKeysConfig { chain_name, substrate_node_base_path: base_path }: <span class="kw-2">&amp;</span>GenerateKeysConfig,
 	key_def: <span class="kw-2">&amp;</span>KeyDefinition,
 	KeyGenerationOutput { secret_phrase, public_key }: <span class="kw-2">&amp;</span>KeyGenerationOutput,
 ) -&gt; anyhow::Result&lt;()&gt; {
+	<span class="kw">let </span>node_executable = context.current_executable()<span class="question-mark">?</span>;
 	<span class="kw">let </span>KeyDefinition { scheme, key_type, name } = key_def;
 	context.eprint(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"💾 Inserting {name} ({scheme}) key"</span>));
 	<span class="kw">let </span>cmd = <span class="macro">format!</span>(<span class="string">"{node_executable} key insert --base-path {base_path} --scheme {scheme} --key-type {key_type} --suri '{secret_phrase}'"</span>);
@@ -496,7 +469,6 @@
 	context: <span class="kw-2">&amp;</span>C,
 	key_def: <span class="kw-2">&amp;</span>KeyDefinition,
 ) -&gt; anyhow::Result&lt;String&gt; {
-	<span class="kw">let </span>GenerateKeysConfig { node_executable, .. } = config;
 	<span class="kw">let </span>keystore_path = config.keystore_path();
 	<span class="kw">let </span>existing_keys = context.list_directory(<span class="kw-2">&amp;</span>keystore_path)<span class="question-mark">?</span>.unwrap_or_default();
 
@@ -505,7 +477,7 @@
 			<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"A {} key already exists in store: {key} - overwrite it?"</span>, key_def.name),
 			<span class="bool-val">false</span>,
 		) {
-			<span class="kw">let </span>new_key = generate_keys(context, node_executable, key_def)<span class="question-mark">?</span>;
+			<span class="kw">let </span>new_key = generate_keys(context, key_def)<span class="question-mark">?</span>;
 			store_keys(context, config, key_def, <span class="kw-2">&amp;</span>new_key)<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>old_key_path = <span class="macro">format!</span>(<span class="string">"{keystore_path}/{}{key}"</span>, key_def.key_type_hex());
@@ -518,7 +490,7 @@
 			<span class="prelude-val">Ok</span>(<span class="macro">format!</span>(<span class="string">"0x{key}"</span>))
 		}
 	} <span class="kw">else </span>{
-		<span class="kw">let </span>new_key = generate_keys(context, node_executable, key_def)<span class="question-mark">?</span>;
+		<span class="kw">let </span>new_key = generate_keys(context, key_def)<span class="question-mark">?</span>;
 		store_keys(context, config, key_def, <span class="kw-2">&amp;</span>new_key)<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(new_key.public_key)

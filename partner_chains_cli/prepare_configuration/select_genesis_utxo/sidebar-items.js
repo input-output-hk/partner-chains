@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["INTRO"],"fn":["derive_address","save_if_missing","select_genesis_utxo"]};

@@ -69,7 +69,7 @@
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>partner_chains_cardano_offchain::register::Deregister;
 
-<span class="attr">#[derive(Debug, clap::Parser)]
+<span class="attr">#[derive(Clone, Debug, clap::Parser)]
 </span><span class="kw">pub struct </span>DeregisterCmd;
 
 <span class="kw">impl </span>CmdRun <span class="kw">for </span>DeregisterCmd {

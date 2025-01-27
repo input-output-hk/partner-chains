@@ -204,6 +204,15 @@
 <a href="#204" id="204">204</a>
 <a href="#205" id="205">205</a>
 <a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
@@ -211,6 +220,7 @@
 <span class="kw">use </span>cli_commands::registration_signatures::RegistrationSignaturesCmd;
 <span class="kw">use </span>frame_support::sp_runtime::traits::NumberFor;
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode};
+<span class="kw">use </span>partner_chains_cli::io::DefaultCmdRunContext;
 <span class="kw">use </span>partner_chains_smart_contracts_commands::SmartContractsCmd;
 <span class="kw">use </span>sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 <span class="kw">use </span>sc_service::TaskManager;
@@ -295,6 +305,10 @@
 	<span class="doccomment">/// Commands for interacting with Partner Chain smart contracts on Cardano
 	</span><span class="attr">#[command(subcommand)]
 	</span>SmartContracts(SmartContractsCmd),
+
+	<span class="doccomment">/// Partner Chains text "wizards" for setting up chain
+	</span><span class="attr">#[command(subcommand)]
+	</span>Wizards(partner_chains_cli::Command),
 }
 
 <span class="kw">pub fn </span>run&lt;Cli, Block, CrossChainPublic, SessionKeys, Client&gt;(
@@ -362,6 +376,10 @@
 		PartnerChainsSubcommand::SmartContracts(cmd) =&gt; {
 			<span class="kw">crate</span>::setup_log4rs()<span class="question-mark">?</span>;
 			<span class="prelude-val">Ok</span>(cmd.execute_blocking()<span class="question-mark">?</span>)
+		},
+		PartnerChainsSubcommand::Wizards(cmd) =&gt; {
+			setup_log4rs()<span class="question-mark">?</span>;
+			<span class="prelude-val">Ok</span>(cmd.run(<span class="kw-2">&amp;</span>DefaultCmdRunContext).map_err(|e| sc_cli::Error::Application(e.into()))<span class="question-mark">?</span>)
 		},
 	}
 }

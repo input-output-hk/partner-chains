@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["query_utxos","select_from_utxos","to_display_string","utxo_id"]};

@@ -194,6 +194,13 @@
 <a href="#194" id="194">194</a>
 <a href="#195" id="195">195</a>
 <a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::ServiceConfig;
 <span class="kw">use </span><span class="kw">crate</span>::ogmios::{ogmios_request, OgmiosRequest, OgmiosResponse};
 <span class="kw">use </span>anyhow::{anyhow, Context};
@@ -222,6 +229,7 @@
 		+ UpsertPermissionedCandidates;
 
 	<span class="kw">fn </span>run_command(<span class="kw-2">&amp;</span><span class="self">self</span>, cmd: <span class="kw-2">&amp;</span>str) -&gt; anyhow::Result&lt;String&gt;;
+	<span class="kw">fn </span>current_executable(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; anyhow::Result&lt;String&gt;;
 	<span class="kw">fn </span>print(<span class="kw-2">&amp;</span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>str);
 	<span class="kw">fn </span>eprint(<span class="kw-2">&amp;</span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>str);
 	<span class="kw">fn </span>enewline(<span class="kw-2">&amp;</span><span class="self">self</span>);
@@ -288,6 +296,12 @@
 			<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Failed to run command"</span>));
 		}
 		<span class="prelude-val">Ok</span>(String::from_utf8(output)<span class="question-mark">?</span>)
+	}
+
+	<span class="kw">fn </span>current_executable(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; anyhow::Result&lt;String&gt; {
+		<span class="kw">let </span>exe = std::env::current_exe()<span class="question-mark">?</span>;
+		<span class="kw">let </span>node_executable = exe.to_str().ok_or(<span class="macro">anyhow!</span>(<span class="string">"Cannot get current executable name"</span>))<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(node_executable.to_string())
 	}
 
 	<span class="kw">fn </span>print(<span class="kw-2">&amp;</span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>str) {

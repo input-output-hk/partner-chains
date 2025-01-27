@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["derive_address","get_ecdsa_pair_from_file","load_chain_config_field","read_generated_keys","sign_registration_message_with_sidechain_key"],"struct":["GeneratedKeysFileContent","Register1Cmd"]};
+window.SIDEBAR_ITEMS = {"fn":["load_chain_config_field","read_generated_keys"],"struct":["GeneratedKeysFileContent","Register1Cmd"]};
