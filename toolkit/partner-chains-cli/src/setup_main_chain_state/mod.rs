@@ -236,14 +236,15 @@ fn set_candidates_on_main_chain<C: IOContext>(
 		let ogmios_config = prompt_ogmios_configuration(context)?;
 		let payment_signing_key_path =
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
-		let pkey = cardano_key::get_mc_pkey_from_file(&payment_signing_key_path, context)?;
+		let pkey =
+			cardano_key::get_mc_payment_signing_key_from_file(&payment_signing_key_path, context)?;
 		let offchain = context.offchain_impl(&ogmios_config)?;
 		let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 		tokio_runtime
 			.block_on(offchain.upsert_permissioned_candidates(
 				genesis_utxo,
 				&candidates.to_candidate_data(),
-				pkey.0,
+				&pkey,
 			))
 			.context("Permissioned candidates update failed")?;
 		context.print("Permissioned candidates updated. The change will be effective in two main chain epochs.");
@@ -273,7 +274,7 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 		let payment_signing_key_path =
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
 		let payment_signing_key =
-			cardano_key::get_mc_pkey_from_file(&payment_signing_key_path, context)?;
+			cardano_key::get_mc_payment_signing_key_from_file(&payment_signing_key_path, context)?;
 		let d_parameter =
 			sidechain_domain::DParameter { num_permissioned_candidates, num_registered_candidates };
 		let offchain = context.offchain_impl(&ogmios_config)?;
@@ -281,7 +282,7 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 		tokio_runtime.block_on(offchain.upsert_d_param(
 			genesis_utxo,
 			&d_parameter,
-			payment_signing_key.0,
+			&payment_signing_key,
 		))?;
 		context.print(&format!("D-parameter updated to ({}, {}). The change will be effective in two main chain epochs.", p, r));
 	}

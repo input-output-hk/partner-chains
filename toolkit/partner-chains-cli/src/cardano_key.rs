@@ -1,54 +1,80 @@
 use crate::IOContext;
 use anyhow::anyhow;
-use sidechain_domain::{MainchainPrivateKey, MainchainPublicKey};
+use partner_chains_cardano_offchain::cardano_keys::{
+	CardanoKeyFileContent, CardanoPaymentSigningKey,
+};
+use sidechain_domain::MainchainPublicKey;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct CardanoKeyFileContent {
-	cbor_hex: String,
-}
-
-const CBOR_KEY_PREFIX: &str = "5820";
-
-pub(crate) fn get_key_bytes_from_file<const N: usize>(
+fn parse_json_key_file(
 	path: &str,
 	context: &impl IOContext,
-) -> anyhow::Result<[u8; N]> {
+) -> anyhow::Result<CardanoKeyFileContent> {
 	let Some(file_content) = context.read_file(path) else {
 		return Err(anyhow!("Failed to read Cardano key file {path}"));
 	};
-
-	let json = serde_json::from_str::<CardanoKeyFileContent>(&file_content)
-		.map_err(|err| anyhow!("Failed to parse Cardano key file {path}: {err:?}"))?;
-
-	let Some(vkey) = json.cbor_hex.strip_prefix(CBOR_KEY_PREFIX) else {
-		return Err(anyhow!(
-			"Invalid cbor value of Cardano key - missing prefix {CBOR_KEY_PREFIX}: {}",
-			json.cbor_hex
-		));
-	};
-
-	let bytes: [u8; N] = hex::decode(vkey)
-		.map_err(|err| {
-			anyhow!("Invalid cbor value of Cardano key - not valid hex: {}\n{err:?}", json.cbor_hex)
-		})?
-		.try_into()
-		.map_err(|_| {
-			anyhow!("Invalid cbor value of Cardano key - incorrect length: {}", json.cbor_hex)
-		})?;
-	Ok(bytes)
+	serde_json::from_str::<CardanoKeyFileContent>(&file_content)
+		.map_err(|err| anyhow!("Failed to parse Cardano key file {path}: '{err}'"))
 }
 
-pub(crate) fn get_mc_pkey_from_file(
+pub(crate) fn get_mc_payment_signing_key_from_file(
 	path: &str,
 	context: &impl IOContext,
-) -> anyhow::Result<MainchainPrivateKey> {
-	Ok(MainchainPrivateKey(get_key_bytes_from_file(path, context)?))
+) -> anyhow::Result<CardanoPaymentSigningKey> {
+	let key_file = parse_json_key_file(path, context)?;
+	CardanoPaymentSigningKey::try_from(key_file)
+		.map_err(|err| anyhow!("Failed to parse Cardano Payment Signing key file {path}: '{err}'"))
 }
 
-pub(crate) fn get_mc_pubkey_from_file(
+pub(crate) fn get_mc_payment_verification_key_from_file(
 	path: &str,
 	context: &impl IOContext,
 ) -> anyhow::Result<MainchainPublicKey> {
-	Ok(MainchainPublicKey(get_key_bytes_from_file(path, context)?))
+	let key_file = parse_json_key_file(path, context)?;
+	let key_type = key_file.r#type.clone();
+	if key_type == "PaymentExtendedVerificationKeyShelley_ed25519_bip32" {
+		let key_bytes = key_file
+			.raw_key_bytes::<64>()
+			.map_err(|e| anyhow!("Failed to parse key bytes in {path}. {e}"))?;
+		let prefix: [u8; 32] = key_bytes[0..32].try_into().unwrap();
+		Ok(MainchainPublicKey(prefix))
+	} else if key_type == "PaymentVerificationKeyShelley_ed25519" {
+		let key_bytes = key_file
+			.raw_key_bytes()
+			.map_err(|e| anyhow!("Failed to parse key bytes in {path}. {e}"))?;
+		Ok(MainchainPublicKey(key_bytes))
+	} else {
+		Err(anyhow!(
+			"Unexpected key type '{key_type}' in {path}. Expected a Payment Verification Key."
+		))
+	}
+}
+
+pub(crate) fn get_mc_staking_signing_key_from_file(
+	path: &str,
+	context: &impl IOContext,
+) -> anyhow::Result<[u8; 32]> {
+	let key_file = parse_json_key_file(path, context)?;
+	let key_type = key_file.r#type.clone();
+	if key_type == "StakePoolSigningKey_ed25519" {
+		key_file
+			.raw_key_bytes()
+			.map_err(|err| anyhow!("Failed to parse {path}: '{err}'"))
+	} else {
+		Err(anyhow!("Expected Stake Pool Signing Key, but got '{key_type}' in {path}"))
+	}
+}
+
+pub(crate) fn get_mc_staking_verification_key_from_file(
+	path: &str,
+	context: &impl IOContext,
+) -> anyhow::Result<MainchainPublicKey> {
+	let key_file = parse_json_key_file(path, context)?;
+	let key_type = key_file.r#type.clone();
+	if key_type == "StakePoolVerificationKey_ed25519" {
+		Ok(MainchainPublicKey(
+			key_file.raw_key_bytes().map_err(|e| anyhow!("Failed to parse {path}: '{e}'"))?,
+		))
+	} else {
+		Err(anyhow!("Expected Stake Pool Verification Key, but got '{key_type}' in {path}"))
+	}
 }

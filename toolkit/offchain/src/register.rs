@@ -1,8 +1,9 @@
+use crate::cardano_keys::CardanoPaymentSigningKey;
+use crate::csl::TransactionOutputAmountBuilderExt;
 use crate::csl::{
 	unit_plutus_data, CostStore, Costs, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
 	TransactionContext,
 };
-use crate::csl::{MainchainPrivateKeyExt, TransactionOutputAmountBuilderExt};
 use crate::{
 	await_tx::{AwaitTx, FixedDelayRetries},
 	plutus_script::PlutusScript,
@@ -29,7 +30,7 @@ pub trait Register {
 		&self,
 		genesis_utxo: UtxoId,
 		candidate_registration: &CandidateRegistration,
-		payment_signing_key: MainchainPrivateKey,
+		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> Result<Option<McTxHash>, OffchainError>;
 }
 
@@ -41,7 +42,7 @@ where
 		&self,
 		genesis_utxo: UtxoId,
 		candidate_registration: &CandidateRegistration,
-		payment_signing_key: MainchainPrivateKey,
+		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> Result<Option<McTxHash>, OffchainError> {
 		run_register(
 			genesis_utxo,
@@ -61,11 +62,11 @@ pub async fn run_register<
 >(
 	genesis_utxo: UtxoId,
 	candidate_registration: &CandidateRegistration,
-	payment_signing_key: MainchainPrivateKey,
+	payment_signing_key: &CardanoPaymentSigningKey,
 	client: &C,
 	await_tx: A,
 ) -> anyhow::Result<Option<McTxHash>> {
-	let ctx = TransactionContext::for_payment_key(payment_signing_key.0, client).await?;
+	let ctx = TransactionContext::for_payment_key(payment_signing_key, client).await?;
 	let validator = crate::scripts_data::registered_candidates_scripts(genesis_utxo)?;
 	let validator_address = validator.address_bech32(ctx.network)?;
 	let registration_utxo = ctx
@@ -123,7 +124,7 @@ pub trait Deregister {
 	async fn deregister(
 		&self,
 		genesis_utxo: UtxoId,
-		payment_signing_key: MainchainPrivateKey,
+		payment_signing_key: &CardanoPaymentSigningKey,
 		stake_ownership_pub_key: MainchainPublicKey,
 	) -> Result<Option<McTxHash>, OffchainError>;
 }
@@ -135,7 +136,7 @@ where
 	async fn deregister(
 		&self,
 		genesis_utxo: UtxoId,
-		payment_signing_key: MainchainPrivateKey,
+		payment_signing_key: &CardanoPaymentSigningKey,
 		stake_ownership_pub_key: MainchainPublicKey,
 	) -> Result<Option<McTxHash>, OffchainError> {
 		run_deregister(
@@ -155,12 +156,12 @@ pub async fn run_deregister<
 	A: AwaitTx,
 >(
 	genesis_utxo: UtxoId,
-	payment_signing_key: MainchainPrivateKey,
+	payment_signing_key: &CardanoPaymentSigningKey,
 	stake_ownership_pub_key: MainchainPublicKey,
 	client: &C,
 	await_tx: A,
 ) -> anyhow::Result<Option<McTxHash>> {
-	let ctx = TransactionContext::for_payment_key(payment_signing_key.0, client).await?;
+	let ctx = TransactionContext::for_payment_key(payment_signing_key, client).await?;
 	let validator = crate::scripts_data::registered_candidates_scripts(genesis_utxo)?;
 	let validator_address = validator.address_bech32(ctx.network)?;
 	let all_registration_utxos = client.query_utxos(&[validator_address]).await?;

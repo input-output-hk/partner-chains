@@ -31,7 +31,7 @@ impl UpsertDParameterCmd {
 		upsert_d_param(
 			self.genesis_utxo,
 			&d_param,
-			payment_key.0,
+			&payment_key,
 			&client,
 			&FixedDelayRetries::two_minutes(),
 		)

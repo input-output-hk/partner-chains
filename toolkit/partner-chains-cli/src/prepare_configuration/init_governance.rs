@@ -4,9 +4,10 @@ use crate::{
 	IOContext,
 };
 use ogmios_client::types::OgmiosTx;
-use partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
-use partner_chains_cardano_offchain::init_governance::InitGovernance;
-use sidechain_domain::{MainchainKeyHash, MainchainPrivateKey, UtxoId};
+use partner_chains_cardano_offchain::{
+	cardano_keys::CardanoPaymentSigningKey, init_governance::InitGovernance,
+};
+use sidechain_domain::{MainchainKeyHash, UtxoId};
 
 pub(crate) fn run_init_governance<C: IOContext>(
 	genesis_utxo: UtxoId,
@@ -17,16 +18,17 @@ pub(crate) fn run_init_governance<C: IOContext>(
 	let (payment_key, governance_authority) = get_private_key_and_key_hash(context)?;
 	let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 	runtime
-		.block_on(offchain.init_governance(governance_authority, payment_key, genesis_utxo))
+		.block_on(offchain.init_governance(governance_authority, &payment_key, genesis_utxo))
 		.map_err(|e| anyhow::anyhow!("Governance initalization failed: {e:?}!"))
 }
 
 fn get_private_key_and_key_hash<C: IOContext>(
 	context: &C,
-) -> Result<(MainchainPrivateKey, MainchainKeyHash), anyhow::Error> {
+) -> Result<(CardanoPaymentSigningKey, MainchainKeyHash), anyhow::Error> {
 	let cardano_signing_key_file = config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
 		.prompt_with_default_from_file_and_save(context);
-	let pkey = cardano_key::get_mc_pkey_from_file(&cardano_signing_key_file, context)?;
+	let pkey =
+		cardano_key::get_mc_payment_signing_key_from_file(&cardano_signing_key_file, context)?;
 	let addr_hash = pkey.to_pub_key_hash();
 
 	Ok((pkey, addr_hash))
@@ -45,7 +47,7 @@ mod tests {
 	use hex_literal::hex;
 	use ogmios_client::types::OgmiosTx;
 	use serde_json::{json, Value};
-	use sidechain_domain::{MainchainKeyHash, MainchainPrivateKey, UtxoId};
+	use sidechain_domain::{MainchainKeyHash, UtxoId};
 
 	#[test]
 	fn happy_path() {
@@ -99,9 +101,7 @@ mod tests {
 		let mock = OffchainMock::new().with_init_governance(
 			TEST_GENESIS_UTXO,
 			MainchainKeyHash(hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b")),
-			MainchainPrivateKey(hex!(
-				"d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
-			)),
+			hex!("d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386").to_vec(),
 			Ok(OgmiosTx {
 				id: hex!("0000000000000000000000000000000000000000000000000000000000000000"),
 			}),

@@ -1,3 +1,6 @@
+use partner_chains_cardano_offchain::cardano_keys::{
+	CardanoKeyFileContent, CardanoPaymentSigningKey,
+};
 use sidechain_domain::*;
 
 pub mod d_parameter;
@@ -55,13 +58,6 @@ impl SmartContractsCmd {
 	}
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct CardanoKeyFileContent {
-	r#type: String,
-	cbor_hex: String,
-}
-
 #[derive(Clone, Debug, clap::Parser)]
 pub(crate) struct PaymentFilePath {
 	/// Path to the Cardano Signing Key file used sign transaction(s) and pay for them
@@ -70,25 +66,9 @@ pub(crate) struct PaymentFilePath {
 }
 
 impl PaymentFilePath {
-	pub(crate) fn read_key(&self) -> CmdResult<MainchainPrivateKey> {
-		let key = Self::read_and_parse(&self.payment_key_file)
-			.map_err(|e| format!("Could not read private key file. Reason: {}", e))?;
-		Ok(key)
-	}
-	fn read_and_parse(path: &str) -> CmdResult<MainchainPrivateKey> {
-		let file_content_str = String::from_utf8(std::fs::read(path)?)?;
-		let file_content = serde_json::from_str::<CardanoKeyFileContent>(&file_content_str)?;
-		let key_type = file_content.r#type;
-		if !key_type.contains("SigningKey") {
-			return Err(
-				format!("Unsupported key type: {}. Expected a signing key", key_type).into()
-			);
-		}
-		let key_hex = (file_content.cbor_hex.strip_prefix("5820"))
-			.ok_or("CBOR prefix missing in payment key".to_string())?;
-		let key_bytes = (hex::decode(key_hex)?.try_into())
-			.map_err(|_| format!("{} is not the valid lengh of 32", key_hex))?;
-		Ok(MainchainPrivateKey(key_bytes))
+	pub(crate) fn read_key(&self) -> CmdResult<CardanoPaymentSigningKey> {
+		let key_file = CardanoKeyFileContent::parse_file(&self.payment_key_file)?;
+		Ok(CardanoPaymentSigningKey::try_from(key_file)?)
 	}
 }
 

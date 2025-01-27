@@ -7,11 +7,10 @@ use partner_chains_cardano_offchain::init_governance::InitGovernance;
 use partner_chains_cardano_offchain::permissioned_candidates::UpsertPermissionedCandidates;
 use partner_chains_cardano_offchain::register::{Deregister, Register};
 use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData};
-use partner_chains_cardano_offchain::OffchainError;
+use partner_chains_cardano_offchain::{cardano_keys::CardanoPaymentSigningKey, OffchainError};
 use pretty_assertions::assert_eq;
 use sidechain_domain::{
-	CandidateRegistration, DParameter, MainchainKeyHash, MainchainPrivateKey, MainchainPublicKey,
-	McTxHash, UtxoId,
+	CandidateRegistration, DParameter, MainchainKeyHash, MainchainPublicKey, McTxHash, UtxoId,
 };
 use sp_core::offchain::Timestamp;
 use std::collections::HashMap;
@@ -257,21 +256,24 @@ impl OffchainMocks {
 pub struct OffchainMock {
 	pub scripts_data: HashMap<UtxoId, Result<ScriptsData, OffchainError>>,
 	pub init_governance:
-		HashMap<(UtxoId, MainchainKeyHash, MainchainPrivateKey), Result<OgmiosTx, OffchainError>>,
-	pub upsert_d_param: HashMap<(UtxoId, DParameter, [u8; 32]), Result<Option<McTxHash>, String>>,
+		HashMap<(UtxoId, MainchainKeyHash, PrivateKeyBytes), Result<OgmiosTx, OffchainError>>,
+	pub upsert_d_param:
+		HashMap<(UtxoId, DParameter, PrivateKeyBytes), Result<Option<McTxHash>, String>>,
 	pub upsert_permissioned_candidates: HashMap<
-		(UtxoId, Vec<sidechain_domain::PermissionedCandidateData>, [u8; 32]),
+		(UtxoId, Vec<sidechain_domain::PermissionedCandidateData>, PrivateKeyBytes),
 		Result<Option<McTxHash>, String>,
 	>,
 	pub register: HashMap<
-		(UtxoId, CandidateRegistration, MainchainPrivateKey),
+		(UtxoId, CandidateRegistration, PrivateKeyBytes),
 		Result<Option<McTxHash>, OffchainError>,
 	>,
 	pub deregister: HashMap<
-		(UtxoId, MainchainPrivateKey, MainchainPublicKey),
+		(UtxoId, PrivateKeyBytes, MainchainPublicKey),
 		Result<Option<McTxHash>, OffchainError>,
 	>,
 }
+
+type PrivateKeyBytes = Vec<u8>;
 
 impl OffchainMock {
 	pub fn new() -> Self {
@@ -290,7 +292,7 @@ impl OffchainMock {
 		self,
 		genesis_utxo: UtxoId,
 		governance: MainchainKeyHash,
-		payment_key: MainchainPrivateKey,
+		payment_key: PrivateKeyBytes,
 		result: Result<OgmiosTx, OffchainError>,
 	) -> Self {
 		Self {
@@ -305,17 +307,17 @@ impl OffchainMock {
 		self,
 		genesis_utxo: UtxoId,
 		d_param: DParameter,
-		payment_key: MainchainPrivateKey,
+		payment_key: PrivateKeyBytes,
 		result: Result<Option<McTxHash>, String>,
 	) -> Self {
-		Self { upsert_d_param: [((genesis_utxo, d_param, payment_key.0), result)].into(), ..self }
+		Self { upsert_d_param: [((genesis_utxo, d_param, payment_key), result)].into(), ..self }
 	}
 
 	pub(crate) fn with_register(
 		self,
 		genesis_utxo: UtxoId,
 		candidate_registration: CandidateRegistration,
-		payment_key: MainchainPrivateKey,
+		payment_key: PrivateKeyBytes,
 		result: Result<Option<McTxHash>, OffchainError>,
 	) -> Self {
 		Self {
@@ -327,7 +329,7 @@ impl OffchainMock {
 	pub(crate) fn with_deregister(
 		self,
 		genesis_utxo: UtxoId,
-		payment_signing_key: MainchainPrivateKey,
+		payment_signing_key: PrivateKeyBytes,
 		stake_ownership_pub_key: MainchainPublicKey,
 		result: Result<Option<McTxHash>, OffchainError>,
 	) -> Self {
@@ -342,12 +344,12 @@ impl OffchainMock {
 		self,
 		genesis_utxo: UtxoId,
 		candidates: &[sidechain_domain::PermissionedCandidateData],
-		payment_key: MainchainPrivateKey,
+		payment_key: PrivateKeyBytes,
 		result: Result<Option<McTxHash>, String>,
 	) -> Self {
 		Self {
 			upsert_permissioned_candidates: [(
-				(genesis_utxo, candidates.to_vec(), payment_key.0),
+				(genesis_utxo, candidates.to_vec(), payment_key),
 				result,
 			)]
 			.into(),
@@ -368,11 +370,11 @@ impl InitGovernance for OffchainMock {
 	async fn init_governance(
 		&self,
 		governance_authority: MainchainKeyHash,
-		payment_key: MainchainPrivateKey,
+		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
 	) -> Result<OgmiosTx, OffchainError> {
 		self.init_governance
-			.get(&(genesis_utxo_id, governance_authority, payment_key))
+			.get(&(genesis_utxo_id, governance_authority, payment_key.to_bytes()))
 			.cloned()
 			.unwrap_or_else(|| {
 				Err(OffchainError::InternalError("No mock for init_governance".into()))
@@ -385,13 +387,16 @@ impl UpsertDParam for OffchainMock {
 		&self,
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
-		payment_signing_key: [u8; 32],
+		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> anyhow::Result<Option<McTxHash>> {
 		self.upsert_d_param
-			.get(&(genesis_utxo, d_parameter.clone(), payment_signing_key))
+			.get(&(genesis_utxo, d_parameter.clone(), payment_signing_key.to_bytes()))
 			.cloned()
 			.unwrap_or_else(|| {
-				Err(format!("No mock for upsert_d_param({genesis_utxo}, {d_parameter:?}, {payment_signing_key:?})"))
+				Err(format!(
+					"No mock for upsert_d_param({genesis_utxo}, {d_parameter:?}, {:?})",
+					hex::encode(payment_signing_key.to_bytes())
+				))
 			})
 			.map_err(|err| anyhow!("{err}"))
 	}
@@ -402,13 +407,16 @@ impl Register for OffchainMock {
 		&self,
 		genesis_utxo: UtxoId,
 		candidate_registration: &CandidateRegistration,
-		payment_signing_key: MainchainPrivateKey,
+		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> Result<Option<McTxHash>, OffchainError> {
 		self.register
-			.get(&(genesis_utxo, candidate_registration.clone(), payment_signing_key.clone()))
+			.get(&(genesis_utxo, candidate_registration.clone(), payment_signing_key.to_bytes()))
 			.cloned()
 			.unwrap_or_else(|| {
-				Err(OffchainError::InternalError(format!("No mock for register({genesis_utxo}, {candidate_registration:?}, {payment_signing_key:?})")))
+				Err(OffchainError::InternalError(format!(
+					"No mock for register({genesis_utxo}, {candidate_registration:?}, {:?})",
+					hex::encode(payment_signing_key.to_bytes())
+				)))
 			})
 	}
 }
@@ -417,14 +425,17 @@ impl Deregister for OffchainMock {
 	async fn deregister(
 		&self,
 		genesis_utxo: UtxoId,
-		payment_signing_key: MainchainPrivateKey,
+		payment_signing_key: &CardanoPaymentSigningKey,
 		stake_ownership_pub_key: MainchainPublicKey,
 	) -> Result<Option<McTxHash>, OffchainError> {
 		self.deregister
-			.get(&(genesis_utxo, payment_signing_key.clone(), stake_ownership_pub_key.clone()))
+			.get(&(genesis_utxo, payment_signing_key.to_bytes(), stake_ownership_pub_key.clone()))
 			.cloned()
 			.unwrap_or_else(|| {
-				Err(OffchainError::InternalError(format!("No mock for deregister({genesis_utxo}, {payment_signing_key:?}, {stake_ownership_pub_key:?})")))
+				Err(OffchainError::InternalError(format!(
+					"No mock for deregister({genesis_utxo}, {:?}, {stake_ownership_pub_key:?})",
+					hex::encode(payment_signing_key.to_bytes())
+				)))
 			})
 	}
 }
@@ -434,13 +445,13 @@ impl UpsertPermissionedCandidates for OffchainMock {
 		&self,
 		genesis_utxo: UtxoId,
 		candidates: &[sidechain_domain::PermissionedCandidateData],
-		payment_signing_key: [u8; 32],
+		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> anyhow::Result<Option<McTxHash>> {
 		self.upsert_permissioned_candidates
-			.get(&(genesis_utxo, candidates.to_vec(), payment_signing_key))
+			.get(&(genesis_utxo, candidates.to_vec(), payment_signing_key.to_bytes()))
 			.cloned()
 			.unwrap_or_else(|| {
-				Err(format!("No mock for upsert_permissioned_candidates({genesis_utxo:?}, {candidates:?}, {payment_signing_key:?})\n defined mocks:{:?}", self.upsert_permissioned_candidates))
+				Err(format!("No mock for upsert_permissioned_candidates({genesis_utxo:?}, {candidates:?}, {:?})\n defined mocks:{:?}", hex::encode(payment_signing_key.to_bytes()),self.upsert_permissioned_candidates))
 			})
 			.map_err(|err| anyhow!("{err}"))
 	}

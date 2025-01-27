@@ -1,6 +1,5 @@
 use crate::{parse_partnerchain_public_keys, PaymentFilePath};
 use ogmios_client::jsonrpsee::client_for_url;
-use partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	register::{run_deregister, run_register},
@@ -61,7 +60,7 @@ impl RegisterCmd {
 		run_register(
 			self.genesis_utxo,
 			&candidate_registration,
-			payment_key,
+			&payment_key,
 			&client,
 			FixedDelayRetries::two_minutes(),
 		)
@@ -92,7 +91,7 @@ impl DeregisterCmd {
 
 		run_deregister(
 			self.genesis_utxo,
-			payment_signing_key,
+			&payment_signing_key,
 			self.spo_public_key,
 			&client,
 			FixedDelayRetries::two_minutes(),

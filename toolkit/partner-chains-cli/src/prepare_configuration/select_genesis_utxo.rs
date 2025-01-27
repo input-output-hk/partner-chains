@@ -45,8 +45,11 @@ fn derive_address<C: IOContext>(
 	let cardano_payment_verification_key_file =
 		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
 			.prompt_with_default_from_file_and_save(context);
-	let key_bytes: [u8; 32] =
-		cardano_key::get_key_bytes_from_file(&cardano_payment_verification_key_file, context)?;
+	let key_bytes: [u8; 32] = cardano_key::get_mc_payment_verification_key_from_file(
+		&cardano_payment_verification_key_file,
+		context,
+	)?
+	.0;
 	let address =
 		partner_chains_cardano_offchain::csl::payment_address(&key_bytes, cardano_network.to_csl());
 	address.to_bech32(None).map_err(|e| anyhow!(e.to_string()))

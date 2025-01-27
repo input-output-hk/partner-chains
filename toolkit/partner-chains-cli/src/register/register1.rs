@@ -150,8 +150,11 @@ fn derive_address<C: IOContext>(
 	let cardano_payment_verification_key_file =
 		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
 			.prompt_with_default_from_file_and_save(context);
-	let key_bytes: [u8; 32] =
-		cardano_key::get_key_bytes_from_file(&cardano_payment_verification_key_file, context)?;
+	let key_bytes: [u8; 32] = cardano_key::get_mc_payment_verification_key_from_file(
+		&cardano_payment_verification_key_file,
+		context,
+	)?
+	.0;
 	let address =
 		partner_chains_cardano_offchain::csl::payment_address(&key_bytes, cardano_network.to_csl());
 	address.to_bech32(None).map_err(|e| anyhow!(e.to_string()))
@@ -431,8 +434,8 @@ mod tests {
 
 	const PAYMENT_VKEY_CONTENT: &str = r#"
 {
-    "type": "StakePoolVerificationKey_ed25519",
-    "description": "Stake Pool Operator Verification Key",
+    "type": "PaymentVerificationKeyShelley_ed25519",
+    "description": "Payment Verification Key",
     "cborHex": "5820a35ef86f1622172816bb9e916aea86903b2c8d32c728ad5c9b9472be7e3c5e88"
 }
 "#;

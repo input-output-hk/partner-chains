@@ -1,7 +1,9 @@
 #[cfg(test)]
 mod tests;
 
-use crate::cardano_key::{get_mc_pkey_from_file, get_mc_pubkey_from_file};
+use crate::cardano_key::{
+	get_mc_payment_signing_key_from_file, get_mc_staking_verification_key_from_file,
+};
 use crate::config::config_fields::{
 	CARDANO_COLD_VERIFICATION_KEY_FILE, CARDANO_PAYMENT_SIGNING_KEY_FILE,
 };
@@ -26,10 +28,12 @@ impl CmdRun for DeregisterCmd {
 		context.print("Payment signing key and cold verification key used for registration are required to deregister.");
 		let payment_signing_key_path =
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
-		let payment_signing_key = get_mc_pkey_from_file(&payment_signing_key_path, context)?;
+		let payment_signing_key =
+			get_mc_payment_signing_key_from_file(&payment_signing_key_path, context)?;
 		let cold_vkey_path =
 			CARDANO_COLD_VERIFICATION_KEY_FILE.prompt_with_default_from_file_and_save(context);
-		let stake_ownership_pub_key = get_mc_pubkey_from_file(&cold_vkey_path, context)?;
+		let stake_ownership_pub_key =
+			get_mc_staking_verification_key_from_file(&cold_vkey_path, context)?;
 		let ogmios_config = establish_ogmios_configuration(context)?;
 		let offchain = context.offchain_impl(&ogmios_config)?;
 
@@ -37,7 +41,7 @@ impl CmdRun for DeregisterCmd {
 		runtime
 			.block_on(offchain.deregister(
 				chain_config.chain_parameters.genesis_utxo,
-				payment_signing_key,
+				&payment_signing_key,
 				stake_ownership_pub_key,
 			))
 			.map_err(|e| anyhow::anyhow!("Candidate deregistration failed: {e:?}!"))?;

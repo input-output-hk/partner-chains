@@ -11,8 +11,7 @@ use crate::CmdRun;
 use hex_literal::hex;
 use serde_json::json;
 use sidechain_domain::{
-	AuraPublicKey, DParameter, GrandpaPublicKey, MainchainPrivateKey, McTxHash, SidechainPublicKey,
-	UtxoId,
+	AuraPublicKey, DParameter, GrandpaPublicKey, McTxHash, SidechainPublicKey, UtxoId,
 };
 use sp_core::offchain::Timestamp;
 
@@ -502,6 +501,6 @@ fn valid_payment_signing_key_content() -> serde_json::Value {
 	})
 }
 
-fn payment_signing_key() -> MainchainPrivateKey {
-	MainchainPrivateKey(hex!("0000000000000000000000000000000000000000000000000000000000000001"))
+fn payment_signing_key() -> Vec<u8> {
+	hex!("0000000000000000000000000000000000000000000000000000000000000001").to_vec()
 }

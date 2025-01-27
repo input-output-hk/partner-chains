@@ -1,4 +1,4 @@
-use crate::cardano_key::get_key_bytes_from_file;
+use crate::cardano_key::get_mc_staking_signing_key_from_file;
 use crate::io::IOContext;
 use crate::CmdRun;
 use clap::Parser;
@@ -63,7 +63,7 @@ fn get_mainchain_cold_skey<C: IOContext>(
 	context: &C,
 	keys_path: &str,
 ) -> Result<MainchainSigningKeyParam, anyhow::Error> {
-	Ok(MainchainSigningKeyParam::from(get_key_bytes_from_file(keys_path, context)?))
+	Ok(MainchainSigningKeyParam::from(get_mc_staking_signing_key_from_file(keys_path, context)?))
 }
 
 #[cfg(test)]
