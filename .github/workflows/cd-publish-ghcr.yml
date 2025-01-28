@@ -1,4 +1,6 @@
-name: "CD: Publish"
+# Workflow not to be executed manually, but by the cd.yml workflow
+
+name: "CD: Publish Image to GHCR"
 
 on:
   workflow_dispatch:
@@ -37,15 +39,3 @@ jobs:
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
           ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  publish-release:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Publish Release
-        uses: ./.github/actions/release/publish-draft-release
-        with:
-          tag: ${{ inputs.tag }}
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
