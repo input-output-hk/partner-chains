@@ -164,7 +164,9 @@ where
 		},
 		PartnerChainsSubcommand::Wizards(cmd) => {
 			setup_log4rs()?;
-			Ok(cmd.run(&DefaultCmdRunContext).map_err(|e| sc_cli::Error::Application(e.into()))?)
+			Ok(cmd
+				.run(&DefaultCmdRunContext)
+				.map_err(|e| sc_cli::Error::Application(e.into()))?)
 		},
 	}
 }

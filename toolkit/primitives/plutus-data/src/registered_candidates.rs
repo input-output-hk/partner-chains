@@ -43,7 +43,7 @@ pub enum RegisterValidatorDatum {
 		sidechain_signature: SidechainSignature,
 		registration_utxo: UtxoId,
 		//own_pkh is used by offchain code to find the registration UTXO when re-registering or deregistering
-		own_pkh: MainchainAddressHash,
+		own_pkh: MainchainKeyHash,
 		aura_pub_key: AuraPublicKey,
 		grandpa_pub_key: GrandpaPublicKey,
 	},
@@ -132,7 +132,7 @@ fn decode_v0_register_validator_datum(
 	let aura_pub_key = fields.get(4).as_bytes().map(AuraPublicKey)?;
 	let grandpa_pub_key = fields.get(5).as_bytes().map(GrandpaPublicKey)?;
 
-	let own_pkh = MainchainAddressHash(datum.as_bytes()?.try_into().ok()?);
+	let own_pkh = MainchainKeyHash(datum.as_bytes()?.try_into().ok()?);
 	Some(RegisterValidatorDatum::V0 {
 		stake_ownership,
 		sidechain_pub_key,
@@ -155,7 +155,7 @@ fn decode_legacy_register_validator_datum(datum: &PlutusData) -> Option<Register
 	let sidechain_pub_key = fields.get(1).as_bytes().map(SidechainPublicKey)?;
 	let sidechain_signature = fields.get(2).as_bytes().map(SidechainSignature)?;
 	let registration_utxo = decode_utxo_id_datum(fields.get(3))?;
-	let own_pkh = MainchainAddressHash(fields.get(4).as_bytes()?.try_into().ok()?);
+	let own_pkh = MainchainKeyHash(fields.get(4).as_bytes()?.try_into().ok()?);
 	let aura_pub_key = fields.get(5).as_bytes().map(AuraPublicKey)?;
 	let grandpa_pub_key = fields.get(6).as_bytes().map(GrandpaPublicKey)?;
 	Some(RegisterValidatorDatum::V0 {
@@ -270,7 +270,7 @@ mod tests {
 				tx_hash: McTxHash(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13")),
 				index: UtxoIndex(1),
 			},
-			own_pkh: MainchainAddressHash(hex!("aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00")),
+			own_pkh: MainchainKeyHash(hex!("aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00")),
 			aura_pub_key: AuraPublicKey(hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").into()),
 			grandpa_pub_key: GrandpaPublicKey(hex!("88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee").into()),
 		}

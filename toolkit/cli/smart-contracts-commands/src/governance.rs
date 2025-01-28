@@ -4,7 +4,7 @@ use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries, init_governance::run_init_governance,
 	update_governance::run_update_governance,
 };
-use sidechain_domain::{MainchainAddressHash, UtxoId};
+use sidechain_domain::{MainchainKeyHash, UtxoId};
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -30,7 +30,7 @@ pub struct InitGovernanceCmd {
 	common_arguments: crate::CommonArguments,
 	/// Governance authority hash to be set.
 	#[arg(long, short = 'g')]
-	governance_authority: MainchainAddressHash,
+	governance_authority: MainchainKeyHash,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
 	/// Genesis UTXO of the new chain, it will be spent durning initialization. If not set, then one will be selected from UTXOs of the payment key.
@@ -61,7 +61,7 @@ pub struct UpdateGovernanceCmd {
 	common_arguments: crate::CommonArguments,
 	/// Governance authority hash to be set.
 	#[arg(long, short = 'g')]
-	new_governance_authority: MainchainAddressHash,
+	new_governance_authority: MainchainKeyHash,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
 	/// Genesis UTXO of the chain

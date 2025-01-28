@@ -22,7 +22,7 @@ use ogmios_client::{
 	transactions::Transactions,
 	types::OgmiosTx,
 };
-use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, McTxHash, UtxoId, UtxoIndex};
+use sidechain_domain::{MainchainKeyHash, MainchainPrivateKey, McTxHash, UtxoId, UtxoIndex};
 
 #[cfg(test)]
 mod test;
@@ -33,7 +33,7 @@ pub async fn run_update_governance<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 >(
-	new_governance_authority: MainchainAddressHash,
+	new_governance_authority: MainchainKeyHash,
 	payment_key: MainchainPrivateKey,
 	genesis_utxo_id: UtxoId,
 	client: &T,
@@ -80,7 +80,7 @@ fn update_governance_tx(
 	version_oracle_validator: &[u8],
 	version_oracle_policy: &[u8],
 	genesis_utxo: UtxoId,
-	new_governance_authority: MainchainAddressHash,
+	new_governance_authority: MainchainKeyHash,
 	governance_data: &GovernanceData,
 	costs: Costs,
 	ctx: &TransactionContext,

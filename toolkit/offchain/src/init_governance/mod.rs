@@ -16,7 +16,7 @@ use ogmios_client::{
 	types::{OgmiosTx, OgmiosUtxo},
 };
 use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
-use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, UtxoId};
+use sidechain_domain::{MainchainKeyHash, MainchainPrivateKey, UtxoId};
 
 #[cfg(test)]
 mod tests;
@@ -29,7 +29,7 @@ pub trait InitGovernance {
 	#[allow(async_fn_in_trait)]
 	async fn init_governance(
 		&self,
-		governance_authority: MainchainAddressHash,
+		governance_authority: MainchainKeyHash,
 		payment_key: MainchainPrivateKey,
 		genesis_utxo_id: UtxoId,
 	) -> Result<OgmiosTx, OffchainError>;
@@ -41,7 +41,7 @@ where
 {
 	async fn init_governance(
 		&self,
-		governance_authority: MainchainAddressHash,
+		governance_authority: MainchainKeyHash,
 		payment_key: MainchainPrivateKey,
 		genesis_utxo_id: UtxoId,
 	) -> Result<OgmiosTx, OffchainError> {
@@ -62,7 +62,7 @@ pub async fn run_init_governance<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 >(
-	governance_authority: MainchainAddressHash,
+	governance_authority: MainchainKeyHash,
 	payment_key: MainchainPrivateKey,
 	genesis_utxo_id: Option<UtxoId>,
 	client: &T,

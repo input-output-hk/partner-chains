@@ -6,10 +6,10 @@ use crate::{
 use cardano_serialization_lib::*;
 use ogmios_client::types::OgmiosUtxo;
 use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
-use sidechain_domain::MainchainAddressHash;
+use sidechain_domain::MainchainKeyHash;
 
 pub(crate) fn init_governance_transaction(
-	governance_authority: MainchainAddressHash,
+	governance_authority: MainchainKeyHash,
 	genesis_utxo: OgmiosUtxo,
 	costs: Costs,
 	ctx: &TransactionContext,
