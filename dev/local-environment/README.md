@@ -12,7 +12,6 @@ The local environment includes:
 - 1 x Db-sync
 - 1 x Ogmios
 - 1 x Kupo
-- 1 x Ubuntu / NodeJS image for running pc-contracts-cli
 - 1 x Partner Chains Setup container based on Partner Chains Node Image to setup the smart-contracts
 
 The stack `setup.sh` script will create a docker-compose.yml stack configuration files, and populate an .env file with environment values. The stack can be deployed with `docker-compose up -d`.
@@ -58,13 +57,11 @@ To use custom node image one simply has to update `PARTNER_CHAINS_NODE_IMAGE` (d
 
 These can be found at the very top of the `setup.sh` script.
 
-Make sure that `PC_CONTRACTS_CLI_ZIP_URL` version is compatible with your custom node.
-
 Alternatively artifact URLs can be overriden from local files with the `--overrides` argument. See main `setup.sh` interactive dialogue for more details.
 
 ```
 cd dev/local-environment
-cp /path/to/artifact ./configurations/pc-contracts-cli/overrides/partner-chains-node
+cp /path/to/artifact ./configurations/partner-chains-node/overrides/partner-chains-node
 bash setup.sh --non-interactive --overrides --node-image ${{ inputs.image }}
 ```
 
@@ -90,7 +87,7 @@ Initialize and configure the Docker environment.
   -n, --non-interactive     Run with no interactive prompts and accept sensible default configuration settings.
   -d, --deployment-option   Specify one of the custom deployment options (1, 2, 3, or 4).
   -p, --postgres-password   Set a specific password for PostgreSQL (overrides automatic generation).
-  -o, --overrides           Enable custom artifact overrides from artifacts in ./configurations/pc-contracts-cli/ (PC and PCSC).
+  -o, --overrides           Enable custom artifact overrides from artifacts in ./configurations/partner-chains-node/.
   -i, --node-image          Specify a custom Partner Chains Node image.
   -t, --tests               Include tests container.
   -h, --help                Display this help dialogue and exit.

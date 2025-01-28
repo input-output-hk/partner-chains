@@ -8,7 +8,6 @@ OGMIOS_IMAGE="cardanosolutions/ogmios:v6.11.0"
 POSTGRES_IMAGE="postgres:17.2"
 SIDECHAIN_MAIN_CLI_IMAGE="node:22-bookworm"
 TESTS_IMAGE="python:3.10-slim"
-PC_CONTRACTS_CLI_ZIP_URL="https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/v7.0.2/pc-contracts-cli-v7.0.2.zip"
 PARTNER_CHAINS_NODE_URL="https://github.com/input-output-hk/partner-chains/releases/download/v1.3.0/partner-chains-node-v1.3.0-x86_64-linux"
 
 display_banner() {
@@ -161,10 +160,8 @@ configure_artifact_overrides() {
             if [[ $override_artifact == [Yy]* ]]; then
                 overrides=yes
                 echo -e "Artifact overrides enabled. \n"
-                echo "To override pc-contracts-cli artifact, copy artifacts to path:"
-                echo -e "./configurations/pc-contracts-cli/overrides/pc-contracts-cli and ./configurations/pc-contracts-cli/overrides/node_modules \n"
                 echo "To override the partner-chains-node artifact, copy artifact to path:"
-                echo -e "./configurations/pc-contracts-cli/overrides/partner-chains-node \n"
+                echo -e "./configurations/partner-chains-node/overrides/partner-chains-node \n"
             else
                 echo -e "Artifact overrides disabled. Stable versions will be automatically downloaded within the container from Github Releases. \n"
             fi
@@ -178,21 +175,8 @@ configure_artifact_overrides() {
 
     # Check for the existence of the artifact paths
     if [ "$overrides" == "yes" ]; then
-        # Check for pc-contracts-cli artifact
-        if [[ -f "./configurations/pc-contracts-cli/overrides/pc-contracts-cli" && -d "./configurations/pc-contracts-cli/overrides/node_modules" ]]; then
-            echo -e "pc-contracts-cli and node_modules found. Override enabled. \n"
-        elif [[ -f "./configurations/pc-contracts-cli/overrides/pc-contracts-cli" && ! -d "./configurations/pc-contracts-cli/overrides/node_modules" ]]; then
-            echo -e "Error: 'pc-contracts-cli' found but 'node_modules' directory is missing. \n"
-            exit 1
-        elif [[ ! -f "./configurations/pc-contracts-cli/overrides/pc-contracts-cli" && -d "./configurations/pc-contracts-cli/overrides/node_modules" ]]; then
-            echo -e "Error: 'node_modules' directory found but 'pc-contracts-cli' script is missing. \n"
-            exit 1
-        else
-            echo -e "pc-contracts-cli and node_modules not found. Override disabled for pc-contracts-cli. \n"
-        fi
-
         # Check for partner-chains-node artifact
-        if [ -f "./configurations/pc-contracts-cli/overrides/partner-chains-node" ]; then
+        if [ -f "./configurations/partner-chains-node/overrides/partner-chains-node" ]; then
             echo -e "partner-chains-node found. Override enabled. \n"
         else
             echo -e "partner-chains-node not found. Override disabled for partner-chains-node. \n"
@@ -360,7 +344,6 @@ POSTGRES_IMAGE=$POSTGRES_IMAGE
 SIDECHAIN_MAIN_CLI_IMAGE=$SIDECHAIN_MAIN_CLI_IMAGE
 TESTS_IMAGE=$TESTS_IMAGE
 PARTNER_CHAINS_NODE_IMAGE=${node_image:-$PARTNER_CHAINS_NODE_IMAGE}
-PC_CONTRACTS_CLI_ZIP_URL=$PC_CONTRACTS_CLI_ZIP_URL
 PARTNER_CHAINS_NODE_URL=$PARTNER_CHAINS_NODE_URL
 PARTNER_CHAINS_CLI_URL=$PARTNER_CHAINS_CLI_URL
 EOF
@@ -423,7 +406,6 @@ create_docker_compose() {
         cat ./modules/db-sync.txt >> docker-compose.yml
         cat ./modules/postgres.txt >> docker-compose.yml
         cat ./modules/partner-chains-external-node.txt >> docker-compose.yml
-        cat ./modules/pc-contracts-cli.txt >> docker-compose.yml
         cat ./modules/partner-chains-setup.txt >> docker-compose.yml
         ;;
       0)
@@ -434,7 +416,6 @@ create_docker_compose() {
         cat ./modules/db-sync.txt >> docker-compose.yml
         cat ./modules/postgres.txt >> docker-compose.yml
         cat ./modules/partner-chains-nodes.txt >> docker-compose.yml
-        cat ./modules/pc-contracts-cli.txt >> docker-compose.yml
         cat ./modules/partner-chains-setup.txt >> docker-compose.yml
         ;;
       *)
@@ -505,7 +486,7 @@ parse_arguments() {
                 echo "  -n, --non-interactive     Run with no interactive prompts and accept sensible default configuration settings."
                 echo "  -d, --deployment-option   Specify one of the custom deployment options (1, 2, 3, or 4)."
                 echo "  -p, --postgres-password   Set a specific password for PostgreSQL (overrides automatic generation)."
-                echo "  -o, --overrides           Enable custom artifact overrides from artifacts in ./configurations/pc-contracts-cli/ (PC and PCSC)."
+                echo "  -o, --overrides           Enable custom artifact overrides from artifacts in ./configurations/partner-chains-node/."
                 echo "  -i, --node-image          Specify a custom Partner Chains Node image."
                 echo "  -t, --tests               Include tests container."
                 echo "  -h, --help                Display this help dialogue and exit."

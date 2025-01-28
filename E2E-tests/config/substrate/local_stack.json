@@ -10,13 +10,9 @@
                 "cli": "cardano-cli",
                 "shell": "docker exec cardano-node-1 bash -c"
             },
-            "sidechain_main_cli": {
+            "partner_chains_node": {
                 "cli": "./partner-chains-node",
-                "shell": "docker exec partner-chains-setup bash -c"
-            },
-            "generate_signatures_cli": {
-                "cli": "./partner-chains-node",
-                "shell": "docker exec pc-contracts-cli bash -c"
+                "shell": "docker exec partner-chains-node bash -c"
             },
             "bech32": {
                 "cli": "bech32"

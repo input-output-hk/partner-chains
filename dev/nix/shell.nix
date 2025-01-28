@@ -63,7 +63,6 @@
 
           # our local packages
           self'.packages.cardano-cli
-          self'.packages.pc-contracts-cli
         ]
         ++ (
           if isDarwin

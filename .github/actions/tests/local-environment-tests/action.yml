@@ -36,10 +36,10 @@ runs:
       uses: actions/download-artifact@v4
       with:
         name: partner-chains-node-artifact
-        path: dev/local-environment/configurations/pc-contracts-cli/overrides/
+        path: dev/local-environment/configurations/partner-chains-node/overrides/
     - name: Deploy local environment with overrides
       run: |
-        mv dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node-artifact dev/local-environment/configurations/pc-contracts-cli/overrides/partner-chains-node
+        mv dev/local-environment/configurations/partner-chains-node/overrides/partner-chains-node-artifact dev/local-environment/configurations/partner-chains-node/overrides/partner-chains-node
         mkdir -p dev/local-environment/configurations/tests/e2e-tests
         cp -r E2E-tests/* dev/local-environment/configurations/tests/e2e-tests
         cd dev/local-environment

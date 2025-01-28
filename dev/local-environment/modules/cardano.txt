@@ -7,7 +7,7 @@
       - cardano-node-1-data:/data
       - shared-volume:/shared
       - ./configurations/busybox:/busybox
-      - ./configurations/pc-contracts-cli:/pc-contracts-cli
+      - ./configurations/partner-chains-node:/partner-chains-node
       - ./configurations/cardano/entrypoint.sh:/entrypoint.sh
       - ./configurations/cardano/topology-pool1.json:/shared/node-1-topology.json
       - ./configurations/cardano/keys/cold.vkey:/keys/cold.vkey

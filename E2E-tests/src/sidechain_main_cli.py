@@ -34,12 +34,10 @@ class RegistrationSignatures:
 
 class SidechainMainCli:
     def __init__(self, config: ApiConfig, cardano_cli: CardanoCli):
-        sidechain_main_cli_config = config.stack_config.tools["sidechain_main_cli"]
-        self.cli = sidechain_main_cli_config.cli
-        self.generate_signatures_cli = config.stack_config.tools["generate_signatures_cli"].cli
+        self.cli = config.stack_config.tools["partner_chains_node"].cli
         self.cardano_cli = cardano_cli
         self.config = config
-        self.run_command = RunnerFactory.get_runner(sidechain_main_cli_config.ssh, sidechain_main_cli_config.shell)
+        self.run_command = RunnerFactory.get_runner(cli.ssh, cli.shell)
 
     def get_signatures(
         self,
@@ -50,7 +48,7 @@ class SidechainMainCli:
         grandpa_verification_key,
     ):
         get_signatures_cmd = (
-            f"{self.generate_signatures_cli} registration-signatures "
+            f"{self.cli} registration-signatures "
             f"--genesis-utxo {self.config.genesis_utxo} "
             f"--mainchain-signing-key {spo_signing_key} "
             f"--sidechain-signing-key {sidechain_signing_key} "
