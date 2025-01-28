@@ -11,8 +11,8 @@
                 "shell": "docker exec cardano-node-1 bash -c"
             },
             "sidechain_main_cli": {
-                "cli": "./pc-contracts-cli",
-                "shell": "docker exec pc-contracts-cli bash -c"
+                "cli": "./partner-chains-node",
+                "shell": "docker exec partner-chains-setup bash -c"
             },
             "generate_signatures_cli": {
                 "cli": "./partner-chains-node",

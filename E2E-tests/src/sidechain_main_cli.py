@@ -2,6 +2,7 @@ from .cardano_cli import CardanoCli
 from .run_command import RunnerFactory
 from config.api_config import ApiConfig, Node
 import json
+import re
 import logging as logger
 
 
@@ -104,50 +105,42 @@ class SidechainMainCli:
 
     def register_candidate(self, signatures: RegistrationSignatures, payment_key, spo_public_key, registration_utxo):
         register_cmd = (
-            f"{self.cli} register "
-            f"--payment-signing-key-file {payment_key} "
+            f"{self.cli} smart-contracts register "
+            f"--payment-key-file {payment_key} "
             f"--genesis-utxo {self.config.genesis_utxo} "
-            "--ada-based-staking "
             f"--spo-public-key {spo_public_key} "
             f"--sidechain-public-keys {signatures.sidechain_public_keys} "
             f"--spo-signature {signatures.spo_signature} "
             f"--sidechain-signature {signatures.sidechain_signature} "
             f"--registration-utxo {registration_utxo} "
-            f"--ogmios-host {self.config.stack_config.ogmios_host} "
-            f"--ogmios-port {self.config.stack_config.ogmios_port} "
-            f"--kupo-host {self.config.stack_config.kupo_host} "
-            f"--kupo-port {self.config.stack_config.kupo_port} "
-            f"--network {self.config.nodes_config.network}"
+            f"--ogmios-url {self.config.stack_config.ogmios_url} "
         )
 
         result = self.run_command.run(register_cmd, timeout=self.config.timeouts.register_cmd)
         response = self.handle_response(result)
+        tx_id = self.extract_transaction_id(response)
 
-        if "endpoint" in response and "transactionId" in response and response["endpoint"] == "CommitteeCandidateReg":
-            return response['transactionId'], self._calculate_registration_epoch()
+        if tx_id:
+            return tx_id, self._calculate_registration_epoch()
         else:
             logger.error(f"Wrong response format of register command: {response}")
             return None, None
 
     def deregister_candidate(self, payment_key, spo_public_key):
         deregister_cmd = (
-            f"{self.cli} deregister "
-            f"--payment-signing-key-file {payment_key} "
+            f"{self.cli} smart-contracts deregister "
+            f"--payment-key-file {payment_key} "
             f"--genesis-utxo {self.config.genesis_utxo} "
-            "--ada-based-staking "
             f"--spo-public-key {spo_public_key} "
-            f"--ogmios-host {self.config.stack_config.ogmios_host} "
-            f"--ogmios-port {self.config.stack_config.ogmios_port} "
-            f"--kupo-host {self.config.stack_config.kupo_host} "
-            f"--kupo-port {self.config.stack_config.kupo_port} "
-            f"--network {self.config.nodes_config.network}"
+            f"--ogmios-url {self.config.stack_config.ogmios_url} "
         )
 
         result = self.run_command.run(deregister_cmd, timeout=self.config.timeouts.deregister_cmd)
         response = self.handle_response(result)
+        tx_id = self.extract_transaction_id(response)
 
-        if "endpoint" in response and "transactionId" in response and response["endpoint"] == "CommitteeCandidateDereg":
-            return response['transactionId'], self._calculate_registration_epoch()
+        if tx_id:
+            return tx_id, self._calculate_registration_epoch()
         else:
             logger.error(f"Wrong response format from deregister command: {response}")
             return None, None
@@ -203,13 +196,7 @@ class SidechainMainCli:
             logger.error(f"Error during command: {result.stderr}")
             raise SidechainMainCliException(result.stderr)
 
-        try:
-            json_part = self._get_json_string(result.stdout)
-            response = json.loads(json_part)
-            return response
-        except json.JSONDecodeError:
-            logger.error(f"Could not parse response of command: {result}")
-            raise SidechainMainCliException(result.stdout)
+        return result.stdout
 
     def _get_json_string(self, s):
         start = s.find('{')
@@ -217,3 +204,11 @@ class SidechainMainCli:
         if start != -1 and end != -1:
             return s[start : end + 1]  # end+1 because slicing is exclusive at the end
         return ''
+
+    def extract_transaction_id(self, log_output):
+        pattern = r"Transaction submitted\. ID: ([a-f0-9]{64})"
+        match = re.search(pattern, log_output)
+        if match:
+            return match.group(1)
+        else:
+            return None
