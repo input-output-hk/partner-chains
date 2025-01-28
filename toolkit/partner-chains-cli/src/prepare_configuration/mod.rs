@@ -213,14 +213,11 @@ pub mod tests {
 		}
 
 		pub fn read_config() -> MockIO {
-			MockIO::Group(vec![
-				prompt_with_default_and_save_to_existing_file(
-					SUBSTRATE_NODE_DATA_BASE_PATH,
-					SUBSTRATE_NODE_DATA_BASE_PATH.default,
-					DATA_PATH,
-				),
-				MockIO::file_read(&network_key_file()),
-			])
+			MockIO::Group(vec![prompt_with_default_and_save_to_existing_file(
+				SUBSTRATE_NODE_DATA_BASE_PATH,
+				SUBSTRATE_NODE_DATA_BASE_PATH.default,
+				DATA_PATH,
+			)])
 		}
 
 		pub fn pick_ip_protocol_with_defaults() -> MockIO {
@@ -357,13 +354,11 @@ pub mod tests {
 			.with_expected_io(vec![
 				scenarios::show_intro(),
 				scenarios::read_config(),
-				MockIO::file_read(BOOTNODES.config_file),
 				scenarios::pick_dns_protocol(
 					vec![Ipv4.into(), Dns.into()],
 					3034,
 					Dns.default_address().to_string(),
 				),
-				MockIO::file_read(BOOTNODES.config_file),
 				scenarios::save_dns_bootnode(KEY, 3034),
 				MockIO::eprint(&outro()),
 			]);
@@ -385,13 +380,11 @@ pub mod tests {
 			.with_expected_io(vec![
 				scenarios::show_intro(),
 				scenarios::read_config(),
-				MockIO::file_read(BOOTNODES.config_file),
 				scenarios::pick_ip_protocol(
 					vec![Ipv4.into(), Dns.into()],
 					3034,
 					"ip_address".to_string(),
 				),
-				MockIO::file_read(BOOTNODES.config_file),
 				scenarios::save_ip_bootnode(KEY, 3034),
 				MockIO::eprint(&outro()),
 			]);
@@ -424,7 +417,6 @@ pub mod tests {
 					DATA_PATH,
 				),
 				save_to_new_file(SUBSTRATE_NODE_DATA_BASE_PATH, DATA_PATH),
-				MockIO::file_read(&network_key_file()),
 				scenarios::pick_ip_protocol_with_defaults(),
 				scenarios::save_ip_bootnode(KEY, DEFAULT_PORT),
 				MockIO::eprint(&outro()),
@@ -458,14 +450,11 @@ pub mod tests {
 		field_definition: ConfigFieldDefinition<'_, T>,
 		value: &str,
 	) -> MockIO {
-		MockIO::Group(vec![
-			MockIO::file_read(field_definition.config_file),
-			MockIO::file_write_json_contains(
-				field_definition.config_file,
-				&field_definition.json_pointer(),
-				value,
-			),
-		])
+		MockIO::Group(vec![MockIO::file_write_json_contains(
+			field_definition.config_file,
+			&field_definition.json_pointer(),
+			value,
+		)])
 	}
 
 	pub fn save_to_new_file<T>(
@@ -493,7 +482,6 @@ pub mod tests {
 		value: &str,
 	) -> MockIO {
 		MockIO::Group(vec![
-			MockIO::file_read(field_definition.config_file),
 			MockIO::prompt(field_definition.name, default, value),
 			save_to_existing_file(field_definition, value),
 		])
@@ -505,7 +493,6 @@ pub mod tests {
 		value: &str,
 	) -> MockIO {
 		MockIO::Group(vec![
-			MockIO::file_read(field_definition.config_file),
 			MockIO::prompt_multi_option(
 				field_definition.name,
 				T::select_options_with_default(default),

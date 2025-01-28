@@ -21,9 +21,7 @@ fn no_ariadne_parameters_on_main_chain_no_updates() {
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
-			read_chain_config_io(),
 			print_info_io(),
-			read_initial_permissioned_candidates_io(),
 			get_ariadne_parameters_io(ariadne_parameters_not_found_response()),
 			print_ariadne_parameters_not_found_io(),
 			prompt_permissioned_candidates_update_io(false),
@@ -56,9 +54,7 @@ fn no_ariadne_parameters_on_main_chain_do_updates() {
 		.with_json_file("payment.skey", valid_payment_signing_key_content())
 		.with_offchain_mocks(OffchainMocks::new_with_mock("http://localhost:1337", offchain_mock))
 		.with_expected_io(vec![
-			read_chain_config_io(),
 			print_info_io(),
-			read_initial_permissioned_candidates_io(),
 			get_ariadne_parameters_io(ariadne_parameters_not_found_response()),
 			print_ariadne_parameters_not_found_io(),
 			prompt_permissioned_candidates_update_io(true),
@@ -77,9 +73,7 @@ fn ariadne_parameters_are_on_main_chain_no_updates() {
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
-			read_chain_config_io(),
 			print_info_io(),
-			read_initial_permissioned_candidates_io(),
 			get_ariadne_parameters_io(ariadne_parameters_found_response()),
 			print_main_chain_and_configuration_candidates_difference_io(),
 			prompt_permissioned_candidates_update_io(false),
@@ -112,9 +106,7 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 		.with_json_file("payment.skey", valid_payment_signing_key_content())
 		.with_offchain_mocks(OffchainMocks::new_with_mock("http://localhost:1337", offchain_mock))
 		.with_expected_io(vec![
-			read_chain_config_io(),
 			print_info_io(),
-			read_initial_permissioned_candidates_io(),
 			get_ariadne_parameters_io(ariadne_parameters_found_response()),
 			print_main_chain_and_configuration_candidates_difference_io(),
 			prompt_permissioned_candidates_update_io(true),
@@ -141,9 +133,7 @@ fn fails_if_update_permissioned_candidates_fail() {
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
-			read_chain_config_io(),
 			print_info_io(),
-			read_initial_permissioned_candidates_io(),
 			get_ariadne_parameters_io(ariadne_parameters_found_response()),
 			print_main_chain_and_configuration_candidates_difference_io(),
 			prompt_permissioned_candidates_update_io(true),
@@ -159,9 +149,7 @@ fn candidates_on_main_chain_are_same_as_in_config_no_updates() {
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_expected_io(vec![
-			read_chain_config_io(),
 			print_info_io(),
-			read_initial_permissioned_candidates_io(),
 			get_ariadne_parameters_io(ariadne_parameters_same_as_in_config_response()),
 			print_main_chain_and_configuration_candidates_are_equal_io(),
 			print_d_param_from_main_chain_io(),
@@ -170,14 +158,6 @@ fn candidates_on_main_chain_are_same_as_in_config_no_updates() {
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
 	result.expect("should succeed");
-}
-
-fn read_chain_config_io() -> MockIO {
-	MockIO::file_read(CHAIN_CONFIG_FILE_PATH)
-}
-
-fn read_initial_permissioned_candidates_io() -> MockIO {
-	MockIO::file_read(CHAIN_CONFIG_FILE_PATH)
 }
 
 fn print_info_io() -> MockIO {
@@ -241,7 +221,6 @@ fn upsert_permissioned_candidates_io() -> MockIO {
 			Some("payment.skey"),
 			"payment.skey",
 		),
-		MockIO::file_read("payment.skey"),
 		MockIO::print(
 			"Permissioned candidates updated. The change will be effective in two main chain epochs.",
 		)])
@@ -258,7 +237,6 @@ fn upsert_permissioned_candidates_failed_io() -> MockIO {
 			Some("payment.skey"),
 			"payment.skey",
 		),
-		MockIO::file_read("payment.skey"),
 	])
 }
 
@@ -287,7 +265,6 @@ fn insert_d_parameter_io() -> MockIO {
 			Some("payment.skey"),
 			"payment.skey",
 		),
-		MockIO::file_read("payment.skey"),
 		MockIO::print(
 			"D-parameter updated to (4, 7). The change will be effective in two main chain epochs.",
 		),
@@ -315,7 +292,6 @@ fn update_d_parameter_io() -> MockIO {
 			Some("payment.skey"),
 			"payment.skey",
 		),
-		MockIO::file_read("payment.skey"),
 		MockIO::print(
 			"D-parameter updated to (4, 7). The change will be effective in two main chain epochs.",
 		),

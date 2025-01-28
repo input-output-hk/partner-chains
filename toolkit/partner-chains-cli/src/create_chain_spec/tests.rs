@@ -11,13 +11,11 @@ fn happy_path() {
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_config_content())
 		.with_json_file("chain-spec.json", test_chain_spec_content())
 		.with_expected_io(vec![
-			read_chain_config_io(),
 			show_intro(),
 			show_chain_parameters(),
 			show_initial_permissioned_candidates(),
 			MockIO::prompt_yes_no("Do you want to continue?", true, true),
 			run_build_spec_io(Ok("ok".to_string())),
-			read_chain_spec_io(),
 			write_updated_chain_spec_io(),
 			show_outro(),
 		]);
@@ -30,7 +28,6 @@ fn shows_warning_when_initial_candidates_are_empty() {
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_config_content_with_empty_initial_permissioned_candidates())
 		.with_expected_io(vec![
-			read_chain_config_io(),
 			show_intro(),
 			show_chain_parameters(),
 			MockIO::print(&"WARNING: The list of initial permissioned candidates is empty. Generated chain spec will not allow the chain to start.".red().to_string()),
@@ -49,7 +46,6 @@ fn instruct_user_when_config_file_is_invalid() {
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_config_content_without_initial_permissioned_candidates())
 		.with_expected_io(vec![
-			MockIO::file_read(CHAIN_CONFIG_FILE_PATH), //reads initial_permissioned_candidates
 			MockIO::eprint("The 'partner-chains-cli-chain-config.json' configuration file is missing or invalid.
 If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.
 If you are a validator, you can obtain the chain configuration file from the governance authority."),
@@ -63,7 +59,6 @@ fn instruct_user_when_config_file_has_a_field_in_wrong_format() {
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_config_content_with_a_field_in_wrong_format())
 		.with_expected_io(vec![
-			MockIO::file_read(CHAIN_CONFIG_FILE_PATH), //reads initial_permissioned_candidates
 			MockIO::eprint("The 'partner-chains-cli-chain-config.json' configuration file is missing or invalid.
 If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.
 If you are a validator, you can obtain the chain configuration file from the governance authority."),
@@ -77,13 +72,11 @@ fn errors_if_chain_spec_is_missing() {
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_config_content())
 		.with_expected_io(vec![
-			read_chain_config_io(),
 			show_intro(),
 			show_chain_parameters(),
 			show_initial_permissioned_candidates(),
 			MockIO::prompt_yes_no("Do you want to continue?", true, true),
 			run_build_spec_io(Ok("ok".to_string())),
-			read_chain_spec_io(),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
 	let err = result.expect_err("should return error");
@@ -100,7 +93,6 @@ fn forwards_build_spec_error_if_it_fails() {
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_config_content())
 		.with_json_file("chain-spec.json", test_chain_spec_content())
 		.with_expected_io(vec![
-			read_chain_config_io(),
 			show_intro(),
 			show_chain_parameters(),
 			show_initial_permissioned_candidates(),
@@ -267,10 +259,6 @@ fn run_build_spec_io(output: Result<String, anyhow::Error>) -> MockIO {
 	])
 }
 
-fn read_chain_spec_io() -> MockIO {
-	MockIO::Group(vec![MockIO::file_read("chain-spec.json")])
-}
-
 fn write_updated_chain_spec_io() -> MockIO {
 	MockIO::file_write_json(
 		"chain-spec.json",
@@ -334,18 +322,5 @@ fn show_outro() -> MockIO {
 		MockIO::print("chain-spec.json file has been created."),
 		MockIO::print("If you are the governance authority, you can distribute it to the validators."),
 		MockIO::print("Run 'setup-main-chain-state' command to set D-parameter and permissioned candidates on Cardano."),
-	])
-}
-
-fn read_chain_config_io() -> MockIO {
-	MockIO::Group(vec![
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // genesis utxo
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // initial permissioned candidates
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // committee candidates address
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // d parameter policy id
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // permissioned candidates policy id
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // native token policy id
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // native token asset name
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // illiquid supply validator address
 	])
 }

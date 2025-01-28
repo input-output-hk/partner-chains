@@ -57,18 +57,15 @@ mod tests {
 			.with_json_file("payment.skey", payment_key_content())
 			.with_offchain_mocks(preprod_offchain_mocks())
 			.with_expected_io(vec![
-				MockIO::file_read(CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file),
 				MockIO::prompt(
 					"path to the payment signing key file",
 					Some("payment.skey"),
 					"payment.skey",
 				),
-				MockIO::file_read(CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file),
 				MockIO::file_write_json(
 					CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file,
 					test_resources_config(),
 				),
-				MockIO::file_read("payment.skey"),
 			]);
 		run_init_governance(TEST_GENESIS_UTXO, &ogmios_config(), &mock_context)
 			.expect("should succeed");

@@ -85,7 +85,6 @@ pub mod scenarios {
 
 	pub fn generate_network_key() -> MockIO {
 		MockIO::Group(vec![
-			MockIO::file_read(&network_key_file()),
 			MockIO::eprint("⚙️ Generating network key"),
 			MockIO::run_command(
 				&format!("<mock executable> key generate-node-key --base-path {DATA_PATH}"),
@@ -193,12 +192,9 @@ mod config_read {
 					"substrate_node_base_path": DATA_PATH,
 				}),
 			)
-			.with_expected_io(vec![
-				MockIO::file_read(RESOURCES_CONFIG_PATH),
-				MockIO::eprint(&format!(
-					"🛠️ Loaded node base path from config ({RESOURCES_CONFIG_PATH}): {DATA_PATH}"
-				)),
-			]);
+			.with_expected_io(vec![MockIO::eprint(&format!(
+				"🛠️ Loaded node base path from config ({RESOURCES_CONFIG_PATH}): {DATA_PATH}"
+			))]);
 
 		let result = GenerateKeysConfig::load(&context);
 
@@ -285,7 +281,6 @@ mod generate_network_key {
 	#[test]
 	fn generates_new_key_when_missing() {
 		let context = MockIOContext::new().with_expected_io(vec![
-			MockIO::file_read(&network_key_file()),
 			MockIO::eprint("⚙️ Generating network key"),
 			MockIO::run_command(
 				&format!("<mock executable> key generate-node-key --base-path {DATA_PATH}"),
@@ -305,7 +300,6 @@ mod generate_network_key {
 
 		let context =
 			MockIOContext::new().with_file(&network_key_file(), key).with_expected_io(vec![
-				MockIO::file_read(&network_key_file()),
 				MockIO::eprint("🔑 A valid network key is already present in the keystore, skipping generation")
 			]);
 
@@ -321,7 +315,6 @@ mod generate_network_key {
 
 		let context =
 			MockIOContext::new().with_file(&network_key_file(), key).with_expected_io(vec![
-				MockIO::file_read(&network_key_file()),
 				MockIO::eprint(
 					"⚠️ Network key in keystore is invalid (Invalid hex), wizard will regenerate it",
 				),

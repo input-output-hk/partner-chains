@@ -30,7 +30,6 @@ pub enum MockIO {
 	Prompt { prompt: String, default: Option<String>, input: String },
 	PromptYN { prompt: String, default: bool, choice: bool },
 	PromptMultiOption { prompt: String, options: Vec<String>, choice: String },
-	FileRead { path: String },
 	FileWrite { path: String, input: String },
 	FileWriteJson { path: String, input: serde_json::Value },
 	FileWriteJsonField { path: String, key: String, value: String },
@@ -86,10 +85,7 @@ impl MockIO {
 		}
 		.with_location()
 	}
-	#[track_caller]
-	pub fn file_read(path: &str) -> Self {
-		Self::FileRead { path: path.into() }.with_location()
-	}
+
 	#[track_caller]
 	pub fn file_write(path: &str, input: &str) -> Self {
 		Self::FileWrite { path: path.into(), input: input.into() }.with_location()
@@ -586,18 +582,7 @@ impl IOContext for MockIOContext {
 	}
 
 	fn read_file(&self, path: &str) -> Option<String> {
-		let next = self.pop_next_action(&format!("read_file({path})"));
-		let content = self.files.lock().unwrap().get::<String>(&path.to_string()).cloned();
-		next.print_mock_location_on_panic(|next| match next {
-			MockIO::FileRead { path: expected_path } => {
-				assert_eq!(
-					path, expected_path,
-					"File read for incorrect file {path}, expected: {expected_path}"
-				);
-				content.clone()
-			},
-			other => panic!("Unexpected file read for {path}, expected: {other:?}"),
-		})
+		self.files.lock().unwrap().get::<String>(&path.to_string()).cloned()
 	}
 
 	fn file_exists(&self, path: &str) -> bool {

@@ -95,7 +95,6 @@ mod tests {
 				Some("cold.skey"),
 				"/invalid/cold.skey",
 			),
-			MockIO::file_read("/invalid/cold.skey"),
 			MockIO::eprint("Unable to read mainchain signing key file"),
 		]);
 
@@ -111,14 +110,11 @@ mod tests {
 	}
 
 	fn prompt_mc_cold_key_path_io() -> Vec<MockIO> {
-		vec![
-			MockIO::prompt(
-				"Path to mainchain signing key file",
-				Some("cold.skey"),
-				"/path/to/cold.skey",
-			),
-			MockIO::file_read("/path/to/cold.skey"),
-		]
+		vec![MockIO::prompt(
+			"Path to mainchain signing key file",
+			Some("cold.skey"),
+			"/path/to/cold.skey",
+		)]
 	}
 
 	fn output_result_io() -> Vec<MockIO> {
