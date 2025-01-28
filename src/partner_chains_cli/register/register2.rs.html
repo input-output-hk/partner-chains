@@ -147,7 +147,7 @@
 <a href="#147" id="147">147</a>
 <a href="#148" id="148">148</a>
 <a href="#149" id="149">149</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_key::get_key_bytes_from_file;
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_key::get_mc_staking_signing_key_from_file;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::CmdRun;
 <span class="kw">use </span>clap::Parser;
@@ -212,7 +212,7 @@
 	context: <span class="kw-2">&amp;</span>C,
 	keys_path: <span class="kw-2">&amp;</span>str,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainSigningKeyParam, anyhow::Error&gt; {
-	<span class="prelude-val">Ok</span>(MainchainSigningKeyParam::from(get_key_bytes_from_file(keys_path, context)<span class="question-mark">?</span>))
+	<span class="prelude-val">Ok</span>(MainchainSigningKeyParam::from(get_mc_staking_signing_key_from_file(keys_path, context)<span class="question-mark">?</span>))
 }
 
 <span class="attr">#[cfg(test)]

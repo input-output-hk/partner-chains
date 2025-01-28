@@ -101,10 +101,8 @@
 <a href="#101" id="101">101</a>
 <a href="#102" id="102">102</a>
 <a href="#103" id="103">103</a>
-<a href="#104" id="104">104</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{parse_partnerchain_public_keys, PaymentFilePath};
 <span class="kw">use </span>ogmios_client::jsonrpsee::client_for_url;
-<span class="kw">use </span>partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	register::{run_deregister, run_register},
@@ -165,7 +163,7 @@
 		run_register(
 			<span class="self">self</span>.genesis_utxo,
 			<span class="kw-2">&amp;</span>candidate_registration,
-			payment_key,
+			<span class="kw-2">&amp;</span>payment_key,
 			<span class="kw-2">&amp;</span>client,
 			FixedDelayRetries::two_minutes(),
 		)
@@ -196,7 +194,7 @@
 
 		run_deregister(
 			<span class="self">self</span>.genesis_utxo,
-			payment_signing_key,
+			<span class="kw-2">&amp;</span>payment_signing_key,
 			<span class="self">self</span>.spo_public_key,
 			<span class="kw-2">&amp;</span>client,
 			FixedDelayRetries::two_minutes(),

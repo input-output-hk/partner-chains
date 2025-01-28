@@ -140,6 +140,7 @@
 <a href="#140" id="140">140</a>
 <a href="#141" id="141">141</a>
 <a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Transaction that updates reserve settings.
 //!
 //! Specification:
@@ -159,6 +160,7 @@
 //!   * Governance Policy Script
 
 </span><span class="kw">use super</span>::{reserve_utxo_input_with_validator_script_reference, ReserveData};
+<span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
 <span class="kw">use </span><span class="kw">crate</span>::reserve::ReserveUtxo;
 <span class="kw">use crate</span>::{
 	await_tx::AwaitTx, csl::<span class="kw-2">*</span>, init_governance::get_governance_data,
@@ -179,7 +181,7 @@
 	A: AwaitTx,
 &gt;(
 	genesis_utxo: UtxoId,
-	payment_key: [u8; <span class="number">32</span>],
+	payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	total_accrued_function_script_hash: ScriptHash,
 	client: <span class="kw-2">&amp;</span>T,
 	await_tx: <span class="kw-2">&amp;</span>A,

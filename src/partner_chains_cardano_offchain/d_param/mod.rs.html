@@ -261,6 +261,7 @@
 <a href="#261" id="261">261</a>
 <a href="#262" id="262">262</a>
 <a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! D-parameter is stored on chain in an UTXO at the D-parameter validator address.
 //! There should be at most one UTXO at the validator address and it should contain the D-parameter.
 //! This UTXO should have 1 token of the D-parameter policy with an empty asset name.
@@ -268,6 +269,7 @@
 //! `datum` field being `[num_permissioned_candidates, num_registered_candidates]`.
 
 </span><span class="kw">use </span><span class="kw">crate</span>::await_tx::{AwaitTx, FixedDelayRetries};
+<span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
 <span class="kw">use </span><span class="kw">crate</span>::csl::{
 	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, InputsBuilderExt,
 	TransactionBuilderExt, TransactionContext,
@@ -293,7 +295,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		genesis_utxo: UtxoId,
 		d_parameter: <span class="kw-2">&amp;</span>DParameter,
-		payment_signing_key: [u8; <span class="number">32</span>],
+		payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt;;
 }
 
@@ -302,7 +304,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		genesis_utxo: UtxoId,
 		d_parameter: <span class="kw-2">&amp;</span>DParameter,
-		payment_signing_key: [u8; <span class="number">32</span>],
+		payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
 		upsert_d_param(
 			genesis_utxo,
@@ -321,7 +323,7 @@
 &gt;(
 	genesis_utxo: UtxoId,
 	d_parameter: <span class="kw-2">&amp;</span>DParameter,
-	payment_signing_key: [u8; <span class="number">32</span>],
+	payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	ogmios_client: <span class="kw-2">&amp;</span>C,
 	await_tx: <span class="kw-2">&amp;</span>A,
 ) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {

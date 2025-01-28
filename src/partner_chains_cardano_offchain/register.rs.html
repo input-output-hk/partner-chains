@@ -537,11 +537,13 @@
 <a href="#537" id="537">537</a>
 <a href="#538" id="538">538</a>
 <a href="#539" id="539">539</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::{
+<a href="#540" id="540">540</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
+<span class="kw">use </span><span class="kw">crate</span>::csl::TransactionOutputAmountBuilderExt;
+<span class="kw">use </span><span class="kw">crate</span>::csl::{
 	unit_plutus_data, CostStore, Costs, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
 	TransactionContext,
 };
-<span class="kw">use </span><span class="kw">crate</span>::csl::{MainchainPrivateKeyExt, TransactionOutputAmountBuilderExt};
 <span class="kw">use crate</span>::{
 	await_tx::{AwaitTx, FixedDelayRetries},
 	plutus_script::PlutusScript,
@@ -568,7 +570,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		genesis_utxo: UtxoId,
 		candidate_registration: <span class="kw-2">&amp;</span>CandidateRegistration,
-		payment_signing_key: MainchainPrivateKey,
+		payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;, OffchainError&gt;;
 }
 
@@ -580,7 +582,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		genesis_utxo: UtxoId,
 		candidate_registration: <span class="kw-2">&amp;</span>CandidateRegistration,
-		payment_signing_key: MainchainPrivateKey,
+		payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;, OffchainError&gt; {
 		run_register(
 			genesis_utxo,
@@ -600,11 +602,11 @@
 &gt;(
 	genesis_utxo: UtxoId,
 	candidate_registration: <span class="kw-2">&amp;</span>CandidateRegistration,
-	payment_signing_key: MainchainPrivateKey,
+	payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	client: <span class="kw-2">&amp;</span>C,
 	await_tx: A,
 ) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
-	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_signing_key.<span class="number">0</span>, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_signing_key, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>validator = <span class="kw">crate</span>::scripts_data::registered_candidates_scripts(genesis_utxo)<span class="question-mark">?</span>;
 	<span class="kw">let </span>validator_address = validator.address_bech32(ctx.network)<span class="question-mark">?</span>;
 	<span class="kw">let </span>registration_utxo = ctx
@@ -662,7 +664,7 @@
 	</span><span class="kw">async fn </span>deregister(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		genesis_utxo: UtxoId,
-		payment_signing_key: MainchainPrivateKey,
+		payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 		stake_ownership_pub_key: MainchainPublicKey,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;, OffchainError&gt;;
 }
@@ -674,7 +676,7 @@
 	<span class="kw">async fn </span>deregister(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		genesis_utxo: UtxoId,
-		payment_signing_key: MainchainPrivateKey,
+		payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 		stake_ownership_pub_key: MainchainPublicKey,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;, OffchainError&gt; {
 		run_deregister(
@@ -694,12 +696,12 @@
 	A: AwaitTx,
 &gt;(
 	genesis_utxo: UtxoId,
-	payment_signing_key: MainchainPrivateKey,
+	payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	stake_ownership_pub_key: MainchainPublicKey,
 	client: <span class="kw-2">&amp;</span>C,
 	await_tx: A,
 ) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
-	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_signing_key.<span class="number">0</span>, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_signing_key, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>validator = <span class="kw">crate</span>::scripts_data::registered_candidates_scripts(genesis_utxo)<span class="question-mark">?</span>;
 	<span class="kw">let </span>validator_address = validator.address_bech32(ctx.network)<span class="question-mark">?</span>;
 	<span class="kw">let </span>all_registration_utxos = client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;

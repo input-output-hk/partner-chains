@@ -124,27 +124,10 @@
 <a href="#124" id="124">124</a>
 <a href="#125" id="125">125</a>
 <a href="#126" id="126">126</a>
-<a href="#127" id="127">127</a>
-<a href="#128" id="128">128</a>
-<a href="#129" id="129">129</a>
-<a href="#130" id="130">130</a>
-<a href="#131" id="131">131</a>
-<a href="#132" id="132">132</a>
-<a href="#133" id="133">133</a>
-<a href="#134" id="134">134</a>
-<a href="#135" id="135">135</a>
-<a href="#136" id="136">136</a>
-<a href="#137" id="137">137</a>
-<a href="#138" id="138">138</a>
-<a href="#139" id="139">139</a>
-<a href="#140" id="140">140</a>
-<a href="#141" id="141">141</a>
-<a href="#142" id="142">142</a>
-<a href="#143" id="143">143</a>
-<a href="#144" id="144">144</a>
-<a href="#145" id="145">145</a>
-<a href="#146" id="146">146</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
+</pre></div><pre class="rust"><code><span class="kw">use </span>partner_chains_cardano_offchain::cardano_keys::{
+	CardanoKeyFileContent, CardanoPaymentSigningKey,
+};
+<span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
 
 <span class="kw">pub mod </span>d_parameter;
 <span class="kw">pub mod </span>get_scripts;
@@ -201,13 +184,6 @@
 	}
 }
 
-<span class="attr">#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-#[serde(rename_all = <span class="string">"camelCase"</span>)]
-</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>CardanoKeyFileContent {
-	r#type: String,
-	cbor_hex: String,
-}
-
 <span class="attr">#[derive(Clone, Debug, clap::Parser)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>PaymentFilePath {
 	<span class="doccomment">/// Path to the Cardano Signing Key file used sign transaction(s) and pay for them
@@ -216,25 +192,9 @@
 }
 
 <span class="kw">impl </span>PaymentFilePath {
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>read_key(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; CmdResult&lt;MainchainPrivateKey&gt; {
-		<span class="kw">let </span>key = <span class="self">Self</span>::read_and_parse(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key_file)
-			.map_err(|e| <span class="macro">format!</span>(<span class="string">"Could not read private key file. Reason: {}"</span>, e))<span class="question-mark">?</span>;
-		<span class="prelude-val">Ok</span>(key)
-	}
-	<span class="kw">fn </span>read_and_parse(path: <span class="kw-2">&amp;</span>str) -&gt; CmdResult&lt;MainchainPrivateKey&gt; {
-		<span class="kw">let </span>file_content_str = String::from_utf8(std::fs::read(path)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
-		<span class="kw">let </span>file_content = serde_json::from_str::&lt;CardanoKeyFileContent&gt;(<span class="kw-2">&amp;</span>file_content_str)<span class="question-mark">?</span>;
-		<span class="kw">let </span>key_type = file_content.r#type;
-		<span class="kw">if </span>!key_type.contains(<span class="string">"SigningKey"</span>) {
-			<span class="kw">return </span><span class="prelude-val">Err</span>(
-				<span class="macro">format!</span>(<span class="string">"Unsupported key type: {}. Expected a signing key"</span>, key_type).into()
-			);
-		}
-		<span class="kw">let </span>key_hex = (file_content.cbor_hex.strip_prefix(<span class="string">"5820"</span>))
-			.ok_or(<span class="string">"CBOR prefix missing in payment key"</span>.to_string())<span class="question-mark">?</span>;
-		<span class="kw">let </span>key_bytes = (hex::decode(key_hex)<span class="question-mark">?</span>.try_into())
-			.map_err(|<span class="kw">_</span>| <span class="macro">format!</span>(<span class="string">"{} is not the valid lengh of 32"</span>, key_hex))<span class="question-mark">?</span>;
-		<span class="prelude-val">Ok</span>(MainchainPrivateKey(key_bytes))
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>read_key(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; CmdResult&lt;CardanoPaymentSigningKey&gt; {
+		<span class="kw">let </span>key_file = CardanoKeyFileContent::parse_file(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key_file)<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(CardanoPaymentSigningKey::try_from(key_file)<span class="question-mark">?</span>)
 	}
 }
 

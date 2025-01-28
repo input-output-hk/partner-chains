@@ -99,7 +99,7 @@
 		upsert_permissioned_candidates(
 			<span class="self">self</span>.genesis_utxo,
 			<span class="kw-2">&amp;</span>permissioned_candidates,
-			payment_key.<span class="number">0</span>,
+			<span class="kw-2">&amp;</span>payment_key,
 			<span class="kw-2">&amp;</span>client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 		)

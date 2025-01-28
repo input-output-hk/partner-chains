@@ -479,6 +479,7 @@
 <a href="#479" id="479">479</a>
 <a href="#480" id="480">480</a>
 <a href="#481" id="481">481</a>
+<a href="#482" id="482">482</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Initialization of the reserve management is execution of three similar transaction to
 //! initialize three scripts: Rerserve Management Validator, Reserve Management Policy and
 //! Illiquid Circulation Supply Validator.
@@ -497,6 +498,7 @@
 
 </span><span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
+	cardano_keys::CardanoPaymentSigningKey,
 	csl::{
 		get_builder_config, CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt,
 		TransactionContext, TransactionOutputAmountBuilderExt,
@@ -526,7 +528,7 @@
 	A: AwaitTx,
 &gt;(
 	genesis_utxo: UtxoId,
-	payment_key: [u8; <span class="number">32</span>],
+	payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	client: <span class="kw-2">&amp;</span>T,
 	await_tx: <span class="kw-2">&amp;</span>A,
 ) -&gt; anyhow::Result&lt;Vec&lt;McTxHash&gt;&gt; {
@@ -585,7 +587,7 @@
 &gt;(
 	script: ScriptData,
 	genesis_utxo: UtxoId,
-	payment_key: [u8; <span class="number">32</span>],
+	payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	client: <span class="kw-2">&amp;</span>T,
 	await_tx: <span class="kw-2">&amp;</span>A,
 ) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {

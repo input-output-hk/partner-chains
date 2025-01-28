@@ -292,7 +292,7 @@
 		<span class="kw">let </span>ogmios_client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let _ </span>= init_reserve_management(
 			<span class="self">self</span>.genesis_utxo,
-			payment_key.<span class="number">0</span>,
+			<span class="kw-2">&amp;</span>payment_key,
 			<span class="kw-2">&amp;</span>ogmios_client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 		)
@@ -332,7 +332,7 @@
 				initial_deposit: <span class="self">self</span>.initial_deposit_amount,
 			},
 			<span class="self">self</span>.genesis_utxo,
-			payment_key.<span class="number">0</span>,
+			<span class="kw-2">&amp;</span>payment_key,
 			<span class="kw-2">&amp;</span>ogmios_client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 		)
@@ -365,7 +365,7 @@
 		<span class="kw">let _ </span>= deposit_to_reserve(
 			TokenAmount { token: <span class="self">self</span>.token, amount: <span class="self">self</span>.amount },
 			<span class="self">self</span>.genesis_utxo,
-			payment_key.<span class="number">0</span>,
+			<span class="kw-2">&amp;</span>payment_key,
 			<span class="kw-2">&amp;</span>ogmios_client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 		)
@@ -394,7 +394,7 @@
 		<span class="kw">let </span>ogmios_client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let _ </span>= update_reserve_settings(
 			<span class="self">self</span>.genesis_utxo,
-			payment_key.<span class="number">0</span>,
+			<span class="kw-2">&amp;</span>payment_key,
 			<span class="self">self</span>.total_accrued_function_script_hash,
 			<span class="kw-2">&amp;</span>ogmios_client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
@@ -421,7 +421,7 @@
 		<span class="kw">let </span>ogmios_client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let _ </span>= handover_reserve(
 			<span class="self">self</span>.genesis_utxo,
-			payment_key.<span class="number">0</span>,
+			<span class="kw-2">&amp;</span>payment_key,
 			<span class="kw-2">&amp;</span>ogmios_client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 		)
@@ -458,7 +458,7 @@
 			TokenAmount { token: <span class="self">self</span>.token, amount: <span class="self">self</span>.amount },
 			<span class="self">self</span>.genesis_utxo,
 			<span class="self">self</span>.reference_utxo,
-			payment_key.<span class="number">0</span>,
+			<span class="kw-2">&amp;</span>payment_key,
 			<span class="kw-2">&amp;</span>ogmios_client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 		)

@@ -595,7 +595,7 @@
 };
 <span class="kw">use </span><span class="kw">crate</span>::init_governance::{<span class="self">self</span>, GovernanceData};
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
-<span class="kw">use </span><span class="kw">crate</span>::scripts_data;
+<span class="kw">use crate</span>::{cardano_keys::CardanoPaymentSigningKey, scripts_data};
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
 	BigInt, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
@@ -615,7 +615,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		genesis_utxo: UtxoId,
 		candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
-		payment_signing_key: [u8; <span class="number">32</span>],
+		payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt;;
 }
 
@@ -626,7 +626,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		genesis_utxo: UtxoId,
 		candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
-		payment_signing_key: [u8; <span class="number">32</span>],
+		payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
 		upsert_permissioned_candidates(
 			genesis_utxo,
@@ -645,7 +645,7 @@
 &gt;(
 	genesis_utxo: UtxoId,
 	candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
-	payment_signing_key: [u8; <span class="number">32</span>],
+	payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	ogmios_client: <span class="kw-2">&amp;</span>C,
 	await_tx: <span class="kw-2">&amp;</span>A,
 ) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {

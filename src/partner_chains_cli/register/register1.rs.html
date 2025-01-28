@@ -553,6 +553,9 @@
 <a href="#553" id="553">553</a>
 <a href="#554" id="554">554</a>
 <a href="#555" id="555">555</a>
+<a href="#556" id="556">556</a>
+<a href="#557" id="557">557</a>
+<a href="#558" id="558">558</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_values::DEFAULT_CHAIN_NAME;
 <span class="kw">use </span><span class="kw">crate</span>::config::KEYS_FILE_PATH;
 <span class="kw">use </span><span class="kw">crate</span>::generate_keys::keystore_path;
@@ -705,8 +708,11 @@
 	<span class="kw">let </span>cardano_payment_verification_key_file =
 		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
 			.prompt_with_default_from_file_and_save(context);
-	<span class="kw">let </span>key_bytes: [u8; <span class="number">32</span>] =
-		cardano_key::get_key_bytes_from_file(<span class="kw-2">&amp;</span>cardano_payment_verification_key_file, context)<span class="question-mark">?</span>;
+	<span class="kw">let </span>key_bytes: [u8; <span class="number">32</span>] = cardano_key::get_mc_payment_verification_key_from_file(
+		<span class="kw-2">&amp;</span>cardano_payment_verification_key_file,
+		context,
+	)<span class="question-mark">?
+	</span>.<span class="number">0</span>;
 	<span class="kw">let </span>address =
 		partner_chains_cardano_offchain::csl::payment_address(<span class="kw-2">&amp;</span>key_bytes, cardano_network.to_csl());
 	address.to_bech32(<span class="prelude-val">None</span>).map_err(|e| <span class="macro">anyhow!</span>(e.to_string()))
@@ -986,8 +992,8 @@
 
 	<span class="kw">const </span>PAYMENT_VKEY_CONTENT: <span class="kw-2">&amp;</span>str = <span class="string">r#"
 {
-    "type": "StakePoolVerificationKey_ed25519",
-    "description": "Stake Pool Operator Verification Key",
+    "type": "PaymentVerificationKeyShelley_ed25519",
+    "description": "Payment Verification Key",
     "cborHex": "5820a35ef86f1622172816bb9e916aea86903b2c8d32c728ad5c9b9472be7e3c5e88"
 }
 "#</span>;

@@ -202,17 +202,8 @@
 <a href="#202" id="202">202</a>
 <a href="#203" id="203">203</a>
 <a href="#204" id="204">204</a>
-<a href="#205" id="205">205</a>
-<a href="#206" id="206">206</a>
-<a href="#207" id="207">207</a>
-<a href="#208" id="208">208</a>
-<a href="#209" id="209">209</a>
-<a href="#210" id="210">210</a>
-<a href="#211" id="211">211</a>
-<a href="#212" id="212">212</a>
-<a href="#213" id="213">213</a>
-<a href="#214" id="214">214</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::Costs;
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
+<span class="kw">use </span><span class="kw">crate</span>::csl::Costs;
 <span class="kw">use </span><span class="kw">crate</span>::csl::OgmiosUtxoExt;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script;
 <span class="kw">use </span><span class="kw">crate</span>::scripts_data;
@@ -230,7 +221,7 @@
 	types::{OgmiosTx, OgmiosUtxo},
 };
 <span class="kw">use </span>partner_chains_plutus_data::version_oracle::VersionOracleDatum;
-<span class="kw">use </span>sidechain_domain::{MainchainKeyHash, MainchainPrivateKey, UtxoId};
+<span class="kw">use </span>sidechain_domain::{MainchainKeyHash, UtxoId};
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
@@ -244,7 +235,7 @@
 	</span><span class="kw">async fn </span>init_governance(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		governance_authority: MainchainKeyHash,
-		payment_key: MainchainPrivateKey,
+		payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;OgmiosTx, OffchainError&gt;;
 }
@@ -256,7 +247,7 @@
 	<span class="kw">async fn </span>init_governance(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		governance_authority: MainchainKeyHash,
-		payment_key: MainchainPrivateKey,
+		payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;OgmiosTx, OffchainError&gt; {
 		run_init_governance(
@@ -277,22 +268,18 @@
 	A: AwaitTx,
 &gt;(
 	governance_authority: MainchainKeyHash,
-	payment_key: MainchainPrivateKey,
+	payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	genesis_utxo_id: <span class="prelude-ty">Option</span>&lt;UtxoId&gt;,
 	client: <span class="kw-2">&amp;</span>T,
 	await_tx: A,
 ) -&gt; anyhow::Result&lt;(UtxoId, OgmiosTx)&gt; {
-	<span class="kw">let </span>payment_key = PrivateKey::from_normal_bytes(<span class="kw-2">&amp;</span>payment_key.<span class="number">0</span>)
-		.expect(<span class="string">"MainchainPrivateKey is a valid PrivateKey"</span>);
+	<span class="kw">let </span>ctx = <span class="kw">crate</span>::csl::TransactionContext::for_payment_key(payment_key, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>network = client.shelley_genesis_configuration().<span class="kw">await</span><span class="question-mark">?</span>.network;
-
-	<span class="kw">let </span>own_address = key_hash_address(<span class="kw-2">&amp;</span>payment_key.to_public().hash(), network.to_csl());
+	<span class="kw">let </span>own_address = key_hash_address(<span class="kw-2">&amp;</span>ctx.payment_key_hash(), ctx.network);
 	<span class="macro">log::info!</span>(<span class="string">"✉️ Submitter address: {}"</span>, own_address.to_bech32(<span class="prelude-val">None</span>).unwrap());
 
-	<span class="kw">let </span>own_utxos = client.query_utxos(<span class="kw-2">&amp;</span>[own_address.to_bech32(<span class="prelude-val">None</span>)<span class="question-mark">?</span>]).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>own_utxos = ctx.payment_key_utxos.clone();
 	<span class="macro">log::info!</span>(<span class="string">"💱 {} UTXOs available"</span>, own_utxos.len());
-	<span class="kw">let </span>protocol_parameters = client.query_protocol_parameters().<span class="kw">await</span><span class="question-mark">?</span>;
 
 	<span class="kw">let </span>genesis_utxo = <span class="kw">match </span>genesis_utxo_id {
 		<span class="prelude-val">None </span>=&gt; {
@@ -306,13 +293,6 @@
 			.find(|utxo| utxo.transaction.id == utxo_id.tx_hash.<span class="number">0 </span>&amp;&amp; utxo.index == utxo_id.index.<span class="number">0</span>)
 			.ok_or(<span class="macro">anyhow!</span>(<span class="string">"Could not find genesis UTXO: {utxo_id}"</span>))<span class="question-mark">?
 			</span>.clone(),
-	};
-
-	<span class="kw">let </span>ctx = <span class="kw">crate</span>::csl::TransactionContext {
-		payment_key,
-		payment_key_utxos: own_utxos,
-		network: network.to_csl(),
-		protocol_parameters,
 	};
 
 	<span class="kw">let </span>tx = Costs::calculate_costs(

@@ -1102,24 +1102,8 @@
 <a href="#1102" id="1102">1102</a>
 <a href="#1103" id="1103">1103</a>
 <a href="#1104" id="1104">1104</a>
-<a href="#1105" id="1105">1105</a>
-<a href="#1106" id="1106">1106</a>
-<a href="#1107" id="1107">1107</a>
-<a href="#1108" id="1108">1108</a>
-<a href="#1109" id="1109">1109</a>
-<a href="#1110" id="1110">1110</a>
-<a href="#1111" id="1111">1111</a>
-<a href="#1112" id="1112">1112</a>
-<a href="#1113" id="1113">1113</a>
-<a href="#1114" id="1114">1114</a>
-<a href="#1115" id="1115">1115</a>
-<a href="#1116" id="1116">1116</a>
-<a href="#1117" id="1117">1117</a>
-<a href="#1118" id="1118">1118</a>
-<a href="#1119" id="1119">1119</a>
-<a href="#1120" id="1120">1120</a>
-<a href="#1121" id="1121">1121</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
+<span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>anyhow::Context;
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>fraction::{FromPrimitive, Ratio};
@@ -1131,7 +1115,7 @@
 	transactions::OgmiosEvaluateTransactionResponse,
 	types::{OgmiosUtxo, OgmiosValue},
 };
-<span class="kw">use </span>sidechain_domain::{AssetId, MainchainKeyHash, MainchainPrivateKey, NetworkType, UtxoId};
+<span class="kw">use </span>sidechain_domain::{AssetId, NetworkType, UtxoId};
 <span class="kw">use </span>std::collections::HashMap;
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>plutus_script_hash(script_bytes: <span class="kw-2">&amp;</span>[u8], language: Language) -&gt; [u8; <span class="number">28</span>] {
@@ -1484,24 +1468,6 @@
 	}
 }
 
-<span class="kw">pub trait </span>MainchainPrivateKeyExt {
-	<span class="kw">fn </span>to_pub_key_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; MainchainKeyHash;
-}
-
-<span class="kw">impl </span>MainchainPrivateKeyExt <span class="kw">for </span>MainchainPrivateKey {
-	<span class="kw">fn </span>to_pub_key_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; MainchainKeyHash {
-		cardano_serialization_lib::PrivateKey::from_normal_bytes(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>)
-			.expect(<span class="string">"Conversion cannot fail on valid MainchainPrivateKey values"</span>)
-			.to_public()
-			.hash()
-			.to_bytes()
-			.as_slice()
-			.try_into()
-			.map(MainchainKeyHash)
-			.expect(<span class="string">"Conversion cannot fail as representation is the same"</span>)
-	}
-}
-
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>TransactionContext {
 	<span class="doccomment">/// This key is added as required signer and used to sign the transaction.
 	</span><span class="kw">pub</span>(<span class="kw">crate</span>) payment_key: PrivateKey,
@@ -1516,10 +1482,10 @@
 	<span class="doccomment">/// Gets `TransactionContext`, having UTXOs for the given payment key and the network configuration,
 	/// required to perform most of the partner-chains smart contract operations.
 	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>for_payment_key&lt;C: QueryLedgerState + QueryNetwork&gt;(
-		payment_signing_key: [u8; <span class="number">32</span>],
+		payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 		client: <span class="kw-2">&amp;</span>C,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;TransactionContext, anyhow::Error&gt; {
-		<span class="kw">let </span>payment_key = PrivateKey::from_normal_bytes(<span class="kw-2">&amp;</span>payment_signing_key)<span class="question-mark">?</span>;
+		<span class="kw">let </span>payment_key = payment_key.clone().<span class="number">0</span>;
 		<span class="kw">let </span>network = client.shelley_genesis_configuration().<span class="kw">await</span><span class="question-mark">?</span>.network.to_csl();
 		<span class="kw">let </span>protocol_parameters = client.query_protocol_parameters().<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let </span>payment_address = key_hash_address(<span class="kw-2">&amp;</span>payment_key.to_public().hash(), network);

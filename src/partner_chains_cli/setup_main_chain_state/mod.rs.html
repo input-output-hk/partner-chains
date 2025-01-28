@@ -297,6 +297,7 @@
 <a href="#297" id="297">297</a>
 <a href="#298" id="298">298</a>
 <a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{CARDANO_PAYMENT_SIGNING_KEY_FILE, POSTGRES_CONNECTION_STRING};
 <span class="kw">use </span><span class="kw">crate</span>::config::{config_fields, ChainConfig, ConfigFieldDefinition, CHAIN_CONFIG_FILE_PATH};
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
@@ -535,14 +536,15 @@
 		<span class="kw">let </span>ogmios_config = prompt_ogmios_configuration(context)<span class="question-mark">?</span>;
 		<span class="kw">let </span>payment_signing_key_path =
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
-		<span class="kw">let </span>pkey = cardano_key::get_mc_pkey_from_file(<span class="kw-2">&amp;</span>payment_signing_key_path, context)<span class="question-mark">?</span>;
+		<span class="kw">let </span>pkey =
+			cardano_key::get_mc_payment_signing_key_from_file(<span class="kw-2">&amp;</span>payment_signing_key_path, context)<span class="question-mark">?</span>;
 		<span class="kw">let </span>offchain = context.offchain_impl(<span class="kw-2">&amp;</span>ogmios_config)<span class="question-mark">?</span>;
 		<span class="kw">let </span>tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))<span class="question-mark">?</span>;
 		tokio_runtime
 			.block_on(offchain.upsert_permissioned_candidates(
 				genesis_utxo,
 				<span class="kw-2">&amp;</span>candidates.to_candidate_data(),
-				pkey.<span class="number">0</span>,
+				<span class="kw-2">&amp;</span>pkey,
 			))
 			.context(<span class="string">"Permissioned candidates update failed"</span>)<span class="question-mark">?</span>;
 		context.print(<span class="string">"Permissioned candidates updated. The change will be effective in two main chain epochs."</span>);
@@ -572,7 +574,7 @@
 		<span class="kw">let </span>payment_signing_key_path =
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
 		<span class="kw">let </span>payment_signing_key =
-			cardano_key::get_mc_pkey_from_file(<span class="kw-2">&amp;</span>payment_signing_key_path, context)<span class="question-mark">?</span>;
+			cardano_key::get_mc_payment_signing_key_from_file(<span class="kw-2">&amp;</span>payment_signing_key_path, context)<span class="question-mark">?</span>;
 		<span class="kw">let </span>d_parameter =
 			sidechain_domain::DParameter { num_permissioned_candidates, num_registered_candidates };
 		<span class="kw">let </span>offchain = context.offchain_impl(<span class="kw-2">&amp;</span>ogmios_config)<span class="question-mark">?</span>;
@@ -580,7 +582,7 @@
 		tokio_runtime.block_on(offchain.upsert_d_param(
 			genesis_utxo,
 			<span class="kw-2">&amp;</span>d_parameter,
-			payment_signing_key.<span class="number">0</span>,
+			<span class="kw-2">&amp;</span>payment_signing_key,
 		))<span class="question-mark">?</span>;
 		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"D-parameter updated to ({}, {}). The change will be effective in two main chain epochs."</span>, p, r));
 	}

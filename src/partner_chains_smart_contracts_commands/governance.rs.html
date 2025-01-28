@@ -133,7 +133,7 @@
 
 		run_init_governance(
 			<span class="self">self</span>.governance_authority,
-			payment_key,
+			<span class="kw-2">&amp;</span>payment_key,
 			<span class="self">self</span>.genesis_utxo,
 			<span class="kw-2">&amp;</span>client,
 			FixedDelayRetries::two_minutes(),
@@ -164,7 +164,7 @@
 
 		run_update_governance(
 			<span class="self">self</span>.new_governance_authority,
-			payment_key,
+			<span class="kw-2">&amp;</span>payment_key,
 			<span class="self">self</span>.genesis_utxo,
 			<span class="kw-2">&amp;</span>client,
 			FixedDelayRetries::two_minutes(),

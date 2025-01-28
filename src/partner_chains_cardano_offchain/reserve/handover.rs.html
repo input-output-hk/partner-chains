@@ -150,6 +150,7 @@
 <a href="#150" id="150">150</a>
 <a href="#151" id="151">151</a>
 <a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Specification for deposit transaction:
 //!
@@ -173,6 +174,7 @@
 </span><span class="kw">use super</span>::{reserve_utxo_input_with_validator_script_reference, ReserveUtxo, TokenAmount};
 <span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
+	cardano_keys::CardanoPaymentSigningKey,
 	csl::{
 		get_builder_config, unit_plutus_data, AssetIdExt, CostStore, Costs, OgmiosUtxoExt,
 		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
@@ -198,7 +200,7 @@
 	A: AwaitTx,
 &gt;(
 	genesis_utxo: UtxoId,
-	payment_key: [u8; <span class="number">32</span>],
+	payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	client: <span class="kw-2">&amp;</span>T,
 	await_tx: <span class="kw-2">&amp;</span>A,
 ) -&gt; anyhow::Result&lt;McTxHash&gt; {
