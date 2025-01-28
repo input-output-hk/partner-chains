@@ -2,6 +2,8 @@
 
 /// Primitives used for awaiting for tx being observed on the blockchain
 pub mod await_tx;
+/// Parsing and wrapping of Cardano keys
+pub mod cardano_keys;
 /// General purpose code for interacting with cardano-serialization-lib
 pub mod csl;
 /// Supports D-Parameter upsert

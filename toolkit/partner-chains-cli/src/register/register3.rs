@@ -1,4 +1,4 @@
-use crate::cardano_key::get_mc_pkey_from_file;
+use crate::cardano_key::get_mc_payment_signing_key_from_file;
 use crate::config;
 use crate::config::config_fields;
 use crate::config::CHAIN_CONFIG_FILE_PATH;
@@ -7,7 +7,6 @@ use crate::main_chain_follower::set_main_chain_follower_env;
 use crate::ogmios::config::establish_ogmios_configuration;
 use crate::CmdRun;
 use clap::Parser;
-use partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
 use partner_chains_cardano_offchain::register::Register;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_domain::*;
@@ -51,7 +50,7 @@ impl CmdRun for Register3Cmd {
 			context.prompt("Path to mainchain payment signing key file", Some("payment.skey"));
 
 		let payment_signing_key =
-			get_mc_pkey_from_file(&cardano_payment_signing_key_path, context)?;
+			get_mc_payment_signing_key_from_file(&cardano_payment_signing_key_path, context)?;
 		let ogmios_configuration = establish_ogmios_configuration(context)?;
 		let candidate_registration = CandidateRegistration {
 			stake_ownership: AdaBasedStaking {
@@ -72,7 +71,7 @@ impl CmdRun for Register3Cmd {
 			.block_on(offchain.register(
 				self.genesis_utxo,
 				&candidate_registration,
-				payment_signing_key,
+				&payment_signing_key,
 			))
 			.map_err(|e| anyhow::anyhow!("Candidate registration failed: {e:?}!"))?;
 
@@ -350,10 +349,8 @@ mod tests {
 		})
 	}
 
-	fn payment_signing_key() -> MainchainPrivateKey {
-		MainchainPrivateKey(hex!(
-			"d75c630516c33a66b11b3444a70b65083aeb21353bd919cc5e3daa02c9732a84"
-		))
+	fn payment_signing_key() -> Vec<u8> {
+		hex!("d75c630516c33a66b11b3444a70b65083aeb21353bd919cc5e3daa02c9732a84").to_vec()
 	}
 
 	fn chain_config_content() -> serde_json::Value {

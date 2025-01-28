@@ -20,7 +20,10 @@
 //!       and M tokens are being released, the transaction should mint N+M V-Function tokens.
 //!       These tokens are worthless and don't serve any purpose after the transaction is done.
 use super::{reserve_utxo_input_with_validator_script_reference, ReserveData, TokenAmount};
-use crate::{await_tx::AwaitTx, csl::*, plutus_script::PlutusScript, reserve::ReserveUtxo};
+use crate::{
+	await_tx::AwaitTx, cardano_keys::CardanoPaymentSigningKey, csl::*, plutus_script::PlutusScript,
+	reserve::ReserveUtxo,
+};
 use anyhow::anyhow;
 use cardano_serialization_lib::{
 	Int, MultiAsset, PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
@@ -43,7 +46,7 @@ pub async fn release_reserve_funds<
 	token: TokenAmount,
 	genesis_utxo: UtxoId,
 	reference_utxo: UtxoId,
-	payment_key: [u8; 32],
+	payment_key: &CardanoPaymentSigningKey,
 	client: &T,
 	await_tx: &A,
 ) -> anyhow::Result<McTxHash> {

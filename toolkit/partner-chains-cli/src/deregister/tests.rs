@@ -93,7 +93,7 @@ fn fails_when_payment_signing_key_is_not_valid() {
 	let result = DeregisterCmd.run(&mock_context);
 	assert_eq!(
 		result.err().unwrap().to_string(),
-		r#"Failed to parse Cardano key file my_payment.skey: Error("expected ident", line: 1, column: 2)"#
+		"Failed to parse Cardano key file my_payment.skey: 'expected ident at line 1 column 2'"
 	);
 }
 
@@ -112,7 +112,7 @@ fn fails_when_cold_key_is_not_valid() {
 	let result = DeregisterCmd.run(&mock_context);
 	assert_eq!(
 		result.err().unwrap().to_string(),
-		r#"Failed to parse Cardano key file my_cold.vkey: Error("expected ident", line: 1, column: 2)"#
+		"Failed to parse Cardano key file my_cold.vkey: 'expected ident at line 1 column 2'"
 	);
 }
 
@@ -245,8 +245,8 @@ fn genesis_utxo() -> UtxoId {
 		.unwrap()
 }
 
-fn payment_signing_key() -> MainchainPrivateKey {
-	MainchainPrivateKey(hex!("0000000000000000000000000000000000000000000000000000000000000001"))
+fn payment_signing_key() -> Vec<u8> {
+	hex!("0000000000000000000000000000000000000000000000000000000000000001").to_vec()
 }
 
 fn stake_ownership_pub_key() -> MainchainPublicKey {

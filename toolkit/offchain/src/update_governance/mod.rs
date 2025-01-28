@@ -8,7 +8,9 @@
 use crate::csl::Costs;
 use crate::{
 	await_tx::AwaitTx,
-	csl::{CostStore, InputsBuilderExt, TransactionBuilderExt, TransactionContext},
+	cardano_keys::CardanoPaymentSigningKey,
+	csl::CostStore,
+	csl::{InputsBuilderExt, TransactionBuilderExt, TransactionContext},
 	init_governance::{self, transaction::version_oracle_datum_output, GovernanceData},
 	plutus_script::PlutusScript,
 	scripts_data::multisig_governance_policy_configuration,
@@ -22,7 +24,7 @@ use ogmios_client::{
 	transactions::Transactions,
 	types::OgmiosTx,
 };
-use sidechain_domain::{MainchainKeyHash, MainchainPrivateKey, McTxHash, UtxoId, UtxoIndex};
+use sidechain_domain::{MainchainKeyHash, McTxHash, UtxoId, UtxoIndex};
 
 #[cfg(test)]
 mod test;
@@ -34,13 +36,12 @@ pub async fn run_update_governance<
 	A: AwaitTx,
 >(
 	new_governance_authority: MainchainKeyHash,
-	payment_key: MainchainPrivateKey,
+	payment_key: &CardanoPaymentSigningKey,
 	genesis_utxo_id: UtxoId,
 	client: &T,
 	await_tx: A,
 ) -> anyhow::Result<OgmiosTx> {
-	let ctx = TransactionContext::for_payment_key(payment_key.0, client).await?;
-
+	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance_data = init_governance::get_governance_data(genesis_utxo_id, client).await?;
 
 	let tx = Costs::calculate_costs(

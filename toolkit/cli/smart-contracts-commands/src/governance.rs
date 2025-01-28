@@ -45,7 +45,7 @@ impl InitGovernanceCmd {
 
 		run_init_governance(
 			self.governance_authority,
-			payment_key,
+			&payment_key,
 			self.genesis_utxo,
 			&client,
 			FixedDelayRetries::two_minutes(),
@@ -76,7 +76,7 @@ impl UpdateGovernanceCmd {
 
 		run_update_governance(
 			self.new_governance_authority,
-			payment_key,
+			&payment_key,
 			self.genesis_utxo,
 			&client,
 			FixedDelayRetries::two_minutes(),

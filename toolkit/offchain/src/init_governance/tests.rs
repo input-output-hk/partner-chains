@@ -1,5 +1,6 @@
 use super::transaction::*;
 use crate::await_tx::mock::ImmediateSuccess;
+use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::{Costs, OgmiosUtxoExt};
 use crate::init_governance::run_init_governance;
 use crate::scripts_data;
@@ -14,7 +15,7 @@ use ogmios_client::transactions::{
 use ogmios_client::types::*;
 use pretty_assertions::assert_eq;
 use serde_json::json;
-use sidechain_domain::{MainchainKeyHash, MainchainPrivateKey};
+use sidechain_domain::MainchainKeyHash;
 
 fn expected_transaction() -> serde_json::Value {
 	json!({
@@ -168,7 +169,7 @@ async fn transaction_run() {
 	let genesis_utxo = genesis_utxo().to_domain();
 	let (result_genesis_utxo, result_tx) = run_init_governance(
 		governance_authority(),
-		payment_key_domain(),
+		&payment_key_domain(),
 		Some(genesis_utxo),
 		&mock_client,
 		ImmediateSuccess,
@@ -193,12 +194,15 @@ fn genesis_utxo() -> OgmiosUtxo {
 	}
 }
 
-fn payment_key_domain() -> MainchainPrivateKey {
-	MainchainPrivateKey(hex!("94f7531c9639654b77fa7e10650702b6937e05cd868f419f54bcb8368e413f04"))
+const PAYMENT_KEY_BYTES: [u8; 32] =
+	hex!("94f7531c9639654b77fa7e10650702b6937e05cd868f419f54bcb8368e413f04");
+
+fn payment_key_domain() -> CardanoPaymentSigningKey {
+	CardanoPaymentSigningKey::from_normal_bytes(PAYMENT_KEY_BYTES).unwrap()
 }
 
 fn payment_key() -> PrivateKey {
-	PrivateKey::from_normal_bytes(&payment_key_domain().0).unwrap()
+	PrivateKey::from_normal_bytes(&PAYMENT_KEY_BYTES).unwrap()
 }
 
 fn tx_context() -> TransactionContext {
