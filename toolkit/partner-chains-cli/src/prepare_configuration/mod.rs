@@ -190,10 +190,13 @@ fn peer_id_from_network_key(key_str: &str) -> anyhow::Result<String> {
 pub mod tests {
 	use super::*;
 	use crate::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
-	use crate::config::{ConfigFieldDefinition, SelectOptions, RESOURCES_CONFIG_FILE_PATH};
+	use crate::config::{
+		ConfigFieldDefinition, SelectOptions, CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH,
+	};
 	use crate::prepare_configuration::PrepareConfigurationError::NetworkKeyNotFoundError;
 	use crate::prepare_configuration::Protocol::{Dns, Ipv4};
 	use crate::tests::{MockIO, MockIOContext};
+	use crate::verify_json;
 
 	const KEY: &str = "962515971a22aa95706c2109ba6e9502c7f39b33bdf63024f46f77894424f1fe";
 	pub const CHAIN_NAME: &str = "partner_chains_template";
@@ -205,7 +208,7 @@ pub mod tests {
 
 	pub mod scenarios {
 		use super::*;
-		use crate::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
+		use crate::config::config_fields::SUBSTRATE_NODE_DATA_BASE_PATH;
 		use crate::prepare_configuration::Protocol::{Dns, Ipv4};
 
 		pub fn show_intro() -> MockIO {
@@ -213,7 +216,7 @@ pub mod tests {
 		}
 
 		pub fn read_config() -> MockIO {
-			MockIO::Group(vec![prompt_with_default_and_save_to_existing_file(
+			MockIO::Group(vec![prompt_with_default(
 				SUBSTRATE_NODE_DATA_BASE_PATH,
 				SUBSTRATE_NODE_DATA_BASE_PATH.default,
 				DATA_PATH,
@@ -253,15 +256,11 @@ pub mod tests {
 			])
 		}
 
-		pub fn save_ip_bootnode(key: &str, port: u16) -> MockIO {
+		pub fn ip_bootnode(key: &str, port: u16) -> serde_json::Value {
 			let peer_id = peer_id_from_network_key(key).unwrap();
-			let bootnodes_value = format!("/ip4/10.2.2.4/tcp/{port}/p2p/{peer_id}");
-			MockIO::Group(vec![MockIO::file_write_json(
-				BOOTNODES.config_file,
-				serde_json::json!({
-					"bootnodes": [bootnodes_value]
-				}),
-			)])
+			serde_json::json!({
+				"bootnodes": [format!("/ip4/10.2.2.4/tcp/{port}/p2p/{peer_id}")]
+			})
 		}
 
 		pub fn pick_dns_protocol_with_defaults() -> MockIO {
@@ -288,15 +287,11 @@ pub mod tests {
 			])
 		}
 
-		pub fn save_dns_bootnode(key: &str, port: u16) -> MockIO {
+		pub fn dns_bootnode(key: &str, port: u16) -> serde_json::Value {
 			let peer_id = peer_id_from_network_key(key).unwrap();
-			let bootnodes_value = format!("/dns/iog.io/tcp/{port}/p2p/{peer_id}");
-			MockIO::Group(vec![MockIO::file_write_json(
-				BOOTNODES.config_file,
-				serde_json::json!({
-					"bootnodes": [bootnodes_value]
-				}),
-			)])
+			serde_json::json!({
+				"bootnodes": [format!("/dns/iog.io/tcp/{port}/p2p/{peer_id}")]
+			})
 		}
 	}
 
@@ -318,11 +313,15 @@ pub mod tests {
 			scenarios::show_intro(),
 			scenarios::read_config(),
 			scenarios::pick_ip_protocol_with_defaults(),
-			scenarios::save_ip_bootnode(KEY, DEFAULT_PORT),
 			MockIO::eprint(&outro()),
 		]);
 
 		let result = establish_bootnodes(&mock_context);
+		verify_json!(
+			mock_context,
+			CHAIN_CONFIG_FILE_PATH,
+			scenarios::ip_bootnode(KEY, DEFAULT_PORT)
+		);
 
 		result.expect("should succeed");
 	}
@@ -333,13 +332,17 @@ pub mod tests {
 			scenarios::show_intro(),
 			scenarios::read_config(),
 			scenarios::pick_dns_protocol_with_defaults(),
-			scenarios::save_dns_bootnode(KEY, DEFAULT_PORT),
 			MockIO::eprint(&outro()),
 		]);
 
 		let result = establish_bootnodes(&mock_context);
 
 		result.expect("should succeed");
+		verify_json!(
+			mock_context,
+			CHAIN_CONFIG_FILE_PATH,
+			scenarios::dns_bootnode(KEY, DEFAULT_PORT)
+		);
 	}
 
 	#[test]
@@ -359,11 +362,11 @@ pub mod tests {
 					3034,
 					Dns.default_address().to_string(),
 				),
-				scenarios::save_dns_bootnode(KEY, 3034),
 				MockIO::eprint(&outro()),
 			]);
 
 		let result = establish_bootnodes(&mock_context);
+		verify_json!(mock_context, CHAIN_CONFIG_FILE_PATH, scenarios::dns_bootnode(KEY, 3034));
 
 		result.expect("should succeed");
 	}
@@ -385,11 +388,11 @@ pub mod tests {
 					3034,
 					"ip_address".to_string(),
 				),
-				scenarios::save_ip_bootnode(KEY, 3034),
 				MockIO::eprint(&outro()),
 			]);
 
 		let result = establish_bootnodes(&mock_context);
+		verify_json!(mock_context, CHAIN_CONFIG_FILE_PATH, scenarios::ip_bootnode(KEY, 3034));
 
 		result.expect("should succeed");
 	}
@@ -416,15 +419,23 @@ pub mod tests {
 					SUBSTRATE_NODE_DATA_BASE_PATH.default,
 					DATA_PATH,
 				),
-				save_to_new_file(SUBSTRATE_NODE_DATA_BASE_PATH, DATA_PATH),
 				scenarios::pick_ip_protocol_with_defaults(),
-				scenarios::save_ip_bootnode(KEY, DEFAULT_PORT),
 				MockIO::eprint(&outro()),
 			]);
 
 		let result = establish_bootnodes(&mock_context);
 
 		result.expect("should succeed");
+		verify_json!(
+			mock_context,
+			RESOURCES_CONFIG_FILE_PATH,
+			serde_json::json!({"substrate_node_base_path": DATA_PATH})
+		);
+		verify_json!(
+			mock_context,
+			CHAIN_CONFIG_FILE_PATH,
+			scenarios::ip_bootnode(KEY, DEFAULT_PORT)
+		);
 	}
 
 	#[test]
@@ -446,59 +457,28 @@ pub mod tests {
 		assert!(error.to_string().contains("⚠️ Invalid IP address"));
 	}
 
-	pub fn save_to_existing_file<T>(
-		field_definition: ConfigFieldDefinition<'_, T>,
-		value: &str,
-	) -> MockIO {
-		MockIO::Group(vec![MockIO::file_write_json_contains(
-			field_definition.config_file,
-			&field_definition.json_pointer(),
-			value,
-		)])
-	}
-
-	pub fn save_to_new_file<T>(
-		field_definition: ConfigFieldDefinition<'_, T>,
-		value: &str,
-	) -> MockIO {
-		MockIO::Group(vec![MockIO::file_write_json_contains(
-			field_definition.config_file,
-			&field_definition.json_pointer(),
-			value,
-		)])
-	}
-
-	pub fn prompt_and_save_to_existing_file<T>(
-		field_definition: ConfigFieldDefinition<'_, T>,
-		value: &str,
-	) -> MockIO {
+	pub fn prompt<T>(field_definition: ConfigFieldDefinition<'_, T>, value: &str) -> MockIO {
 		let default = field_definition.default;
-		prompt_with_default_and_save_to_existing_file(field_definition, default, value)
+		prompt_with_default(field_definition, default, value)
 	}
 
-	pub fn prompt_with_default_and_save_to_existing_file<T>(
+	pub fn prompt_with_default<T>(
 		field_definition: ConfigFieldDefinition<'_, T>,
 		default: Option<&str>,
 		value: &str,
 	) -> MockIO {
-		MockIO::Group(vec![
-			MockIO::prompt(field_definition.name, default, value),
-			save_to_existing_file(field_definition, value),
-		])
+		MockIO::prompt(field_definition.name, default, value)
 	}
 
-	pub fn prompt_multi_option_with_default_and_save_to_existing_file<T: SelectOptions>(
+	pub fn prompt_multi_option_with_default<T: SelectOptions>(
 		field_definition: ConfigFieldDefinition<'_, T>,
 		default: Option<&str>,
 		value: &str,
 	) -> MockIO {
-		MockIO::Group(vec![
-			MockIO::prompt_multi_option(
-				field_definition.name,
-				T::select_options_with_default(default),
-				value,
-			),
-			save_to_existing_file(field_definition, value),
-		])
+		MockIO::prompt_multi_option(
+			field_definition.name,
+			T::select_options_with_default(default),
+			value,
+		)
 	}
 }

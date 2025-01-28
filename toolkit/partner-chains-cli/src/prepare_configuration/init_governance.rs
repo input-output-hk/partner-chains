@@ -39,10 +39,11 @@ mod tests {
 	use super::run_init_governance;
 	use crate::{
 		config::{
-			config_fields::{CARDANO_PAYMENT_SIGNING_KEY_FILE, GENESIS_UTXO, OGMIOS_PROTOCOL},
-			NetworkProtocol, ServiceConfig,
+			config_fields::{GENESIS_UTXO, OGMIOS_PROTOCOL},
+			NetworkProtocol, ServiceConfig, RESOURCES_CONFIG_FILE_PATH,
 		},
 		tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks},
+		verify_json,
 	};
 	use hex_literal::hex;
 	use ogmios_client::types::OgmiosTx;
@@ -56,19 +57,14 @@ mod tests {
 			.with_json_file(OGMIOS_PROTOCOL.config_file, serde_json::json!({}))
 			.with_json_file("payment.skey", payment_key_content())
 			.with_offchain_mocks(preprod_offchain_mocks())
-			.with_expected_io(vec![
-				MockIO::prompt(
-					"path to the payment signing key file",
-					Some("payment.skey"),
-					"payment.skey",
-				),
-				MockIO::file_write_json(
-					CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file,
-					test_resources_config(),
-				),
-			]);
+			.with_expected_io(vec![MockIO::prompt(
+				"path to the payment signing key file",
+				Some("payment.skey"),
+				"payment.skey",
+			)]);
 		run_init_governance(TEST_GENESIS_UTXO, &ogmios_config(), &mock_context)
 			.expect("should succeed");
+		verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, test_resources_config());
 	}
 
 	fn payment_key_content() -> serde_json::Value {

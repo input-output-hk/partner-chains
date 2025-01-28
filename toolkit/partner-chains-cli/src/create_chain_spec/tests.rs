@@ -1,7 +1,7 @@
 use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::create_chain_spec::{CreateChainSpecCmd, INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE};
 use crate::tests::{MockIO, MockIOContext};
-use crate::CmdRun;
+use crate::{verify_json, CmdRun};
 use anyhow::anyhow;
 use colored::Colorize;
 
@@ -16,11 +16,11 @@ fn happy_path() {
 			show_initial_permissioned_candidates(),
 			MockIO::prompt_yes_no("Do you want to continue?", true, true),
 			run_build_spec_io(Ok("ok".to_string())),
-			write_updated_chain_spec_io(),
 			show_outro(),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
 	result.expect("should succeed");
+	verify_json!(mock_context, "chain-spec.json", updated_chain_spec())
 }
 
 #[test]
@@ -259,61 +259,58 @@ fn run_build_spec_io(output: Result<String, anyhow::Error>) -> MockIO {
 	])
 }
 
-fn write_updated_chain_spec_io() -> MockIO {
-	MockIO::file_write_json(
-		"chain-spec.json",
-		serde_json::json!(
-			{
-				"genesis": {
-					"runtimeGenesis": {
-						"config": {
-							"session": {
-								"initialValidators": [
-									[
-										  "5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X",
-										  {
-											"aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-											"grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
-										}
-									],
-									[
-										"5DVskgSC9ncWQpxFMeUn45NU43RUq93ByEge6ApbnLk6BR9N",
-										{
-											"aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-											"grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
-										}
-									]
-								]
-							},
-							"sessionCommitteeManagement": {
-								"initialAuthorities": [
-									[
-										"KW39r9CJjAVzmkf9zQ4YDb2hqfAVGdRqn53eRqyruqpxAP5YL",
-										{
-											"aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-											"grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
-										}
-									],
-									[
-										"KWByAN7WfZABWS5AoWqxriRmF5f2jnDqy3rB5pfHLGkY93ibN",
-										{
-											"aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-											"grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
-										}
-									]
+fn updated_chain_spec() -> serde_json::Value {
+	serde_json::json!(
+		{
+			"genesis": {
+				"runtimeGenesis": {
+					"config": {
+						"session": {
+							"initialValidators": [
+								[
+									  "5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X",
+									  {
+										"aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+										"grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
+									}
 								],
-								"main_chain_scripts": {
-									"committee_candidate_address": "0x002244",
-									"d_parameter_policy_id": "0x1234",
-									"permissioned_candidates_policy_id": "0x5678"
-								}
-							},
-						}
+								[
+									"5DVskgSC9ncWQpxFMeUn45NU43RUq93ByEge6ApbnLk6BR9N",
+									{
+										"aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+										"grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
+									}
+								]
+							]
+						},
+						"sessionCommitteeManagement": {
+							"initialAuthorities": [
+								[
+									"KW39r9CJjAVzmkf9zQ4YDb2hqfAVGdRqn53eRqyruqpxAP5YL",
+									{
+										"aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+										"grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
+									}
+								],
+								[
+									"KWByAN7WfZABWS5AoWqxriRmF5f2jnDqy3rB5pfHLGkY93ibN",
+									{
+										"aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+										"grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
+									}
+								]
+							],
+							"main_chain_scripts": {
+								"committee_candidate_address": "0x002244",
+								"d_parameter_policy_id": "0x1234",
+								"permissioned_candidates_policy_id": "0x5678"
+							}
+						},
 					}
-				},
-				"some_other_field": "irrelevant"
-			}
-		),
+				}
+			},
+			"some_other_field": "irrelevant"
+		}
 	)
 }
 

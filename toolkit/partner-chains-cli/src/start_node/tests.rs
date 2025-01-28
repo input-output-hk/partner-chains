@@ -20,10 +20,19 @@ fn default_config() -> StartNodeConfig {
 	StartNodeConfig { substrate_node_base_path: DATA_PATH.into() }
 }
 
-fn default_config_json() -> serde_json::Value {
+fn default_resources_config_json() -> serde_json::Value {
 	serde_json::json!({
 		"substrate_node_base_path": DATA_PATH,
 		"db_sync_postgres_connection_string": DB_CONNECTION_STRING
+	})
+}
+
+fn expected_final_resources_config_json() -> serde_json::Value {
+	serde_json::json!({
+		"substrate_node_base_path": DATA_PATH,
+		"db_sync_postgres_connection_string": DB_CONNECTION_STRING,
+		"sidechain_block_beneficiary": SIDECHAIN_BLOCK_BENEFICIARY_STRING,
+		"node_p2p_port": 30333
 	})
 }
 
@@ -103,7 +112,7 @@ fn happy_path() {
 	];
 
 	let context = MockIOContext::new()
-		.with_json_file(RESOURCES_CONFIG_PATH, default_config_json())
+		.with_json_file(RESOURCES_CONFIG_PATH, default_resources_config_json())
         .with_json_file(CHAIN_CONFIG_FILE_PATH, default_chain_config())
 		.with_file(CHAIN_SPEC_FILE, "irrelevant")
 		.with_expected_io(vec![
@@ -115,15 +124,14 @@ fn happy_path() {
 				"🛠️ Loaded DB-Sync Postgres connection string from config ({RESOURCES_CONFIG_PATH}): {DB_CONNECTION_STRING}"
 			)),
 			MockIO::list_dir(&keystore_path(), Some(keystore_files.clone())),
-			MockIO::file_write_json_contains(RESOURCES_CONFIG_PATH, &SIDECHAIN_BLOCK_BENEFICIARY.json_pointer(), SIDECHAIN_BLOCK_BENEFICIARY_STRING),
 			value_check_prompt(),
-			MockIO::file_write_json_contains(RESOURCES_CONFIG_PATH, &NODE_P2P_PORT.json_pointer(), NODE_P2P_PORT.default.unwrap()),
 			MockIO::run_command(&default_chain_config_run_command(), "irrelevant")
 		]);
 
 	let result = StartNodeCmd { silent: false }.run(&context);
 
 	result.expect("should succeed");
+	verify_json!(context, RESOURCES_CONFIG_PATH, expected_final_resources_config_json());
 }
 
 mod check_chain_spec {
