@@ -310,7 +310,7 @@
 <span class="kw">use </span>cardano_serialization_lib::{Language, NetworkIdKind};
 <span class="kw">use </span>ogmios_client::query_network::QueryNetwork;
 <span class="kw">use </span>serde::Serialize;
-<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, PolicyId, UtxoId};
+<span class="kw">use </span>sidechain_domain::{MainchainKeyHash, PolicyId, UtxoId};
 <span class="kw">use </span>uplc::PlutusData;
 
 <span class="doccomment">/// Provides convenient access to the addresses and hashes of the partner chain smart contracts.
@@ -550,7 +550,7 @@
 <span class="comment">// Returns the simplest MultiSig policy configuration plutus data:
 // there is one required authority and it is the governance authority from sidechain params.
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>multisig_governance_policy_configuration(
-	governance_authority: MainchainAddressHash,
+	governance_authority: MainchainKeyHash,
 ) -&gt; PlutusData {
 	PlutusData::Array(<span class="macro">vec!</span>[
 		PlutusData::Array(<span class="macro">vec!</span>[uplc::PlutusData::BoundedBytes(

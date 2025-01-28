@@ -91,10 +91,10 @@
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>ogmios_client::types::OgmiosUtxo;
 <span class="kw">use </span>partner_chains_plutus_data::version_oracle::VersionOracleDatum;
-<span class="kw">use </span>sidechain_domain::MainchainAddressHash;
+<span class="kw">use </span>sidechain_domain::MainchainKeyHash;
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>init_governance_transaction(
-	governance_authority: MainchainAddressHash,
+	governance_authority: MainchainKeyHash,
 	genesis_utxo: OgmiosUtxo,
 	costs: Costs,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,

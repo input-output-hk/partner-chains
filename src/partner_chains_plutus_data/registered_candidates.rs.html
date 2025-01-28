@@ -400,7 +400,7 @@
 		sidechain_signature: SidechainSignature,
 		registration_utxo: UtxoId,
 		<span class="comment">//own_pkh is used by offchain code to find the registration UTXO when re-registering or deregistering
-		</span>own_pkh: MainchainAddressHash,
+		</span>own_pkh: MainchainKeyHash,
 		aura_pub_key: AuraPublicKey,
 		grandpa_pub_key: GrandpaPublicKey,
 	},
@@ -489,7 +489,7 @@
 	<span class="kw">let </span>aura_pub_key = fields.get(<span class="number">4</span>).as_bytes().map(AuraPublicKey)<span class="question-mark">?</span>;
 	<span class="kw">let </span>grandpa_pub_key = fields.get(<span class="number">5</span>).as_bytes().map(GrandpaPublicKey)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>own_pkh = MainchainAddressHash(datum.as_bytes()<span class="question-mark">?</span>.try_into().ok()<span class="question-mark">?</span>);
+	<span class="kw">let </span>own_pkh = MainchainKeyHash(datum.as_bytes()<span class="question-mark">?</span>.try_into().ok()<span class="question-mark">?</span>);
 	<span class="prelude-val">Some</span>(RegisterValidatorDatum::V0 {
 		stake_ownership,
 		sidechain_pub_key,
@@ -512,7 +512,7 @@
 	<span class="kw">let </span>sidechain_pub_key = fields.get(<span class="number">1</span>).as_bytes().map(SidechainPublicKey)<span class="question-mark">?</span>;
 	<span class="kw">let </span>sidechain_signature = fields.get(<span class="number">2</span>).as_bytes().map(SidechainSignature)<span class="question-mark">?</span>;
 	<span class="kw">let </span>registration_utxo = decode_utxo_id_datum(fields.get(<span class="number">3</span>))<span class="question-mark">?</span>;
-	<span class="kw">let </span>own_pkh = MainchainAddressHash(fields.get(<span class="number">4</span>).as_bytes()<span class="question-mark">?</span>.try_into().ok()<span class="question-mark">?</span>);
+	<span class="kw">let </span>own_pkh = MainchainKeyHash(fields.get(<span class="number">4</span>).as_bytes()<span class="question-mark">?</span>.try_into().ok()<span class="question-mark">?</span>);
 	<span class="kw">let </span>aura_pub_key = fields.get(<span class="number">5</span>).as_bytes().map(AuraPublicKey)<span class="question-mark">?</span>;
 	<span class="kw">let </span>grandpa_pub_key = fields.get(<span class="number">6</span>).as_bytes().map(GrandpaPublicKey)<span class="question-mark">?</span>;
 	<span class="prelude-val">Some</span>(RegisterValidatorDatum::V0 {
@@ -627,7 +627,7 @@
 				tx_hash: McTxHash(<span class="macro">hex!</span>(<span class="string">"cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"</span>)),
 				index: UtxoIndex(<span class="number">1</span>),
 			},
-			own_pkh: MainchainAddressHash(<span class="macro">hex!</span>(<span class="string">"aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00"</span>)),
+			own_pkh: MainchainKeyHash(<span class="macro">hex!</span>(<span class="string">"aabbccddeeff00aabbccddeeff00aabbccddeeff00aabbccddeeff00"</span>)),
 			aura_pub_key: AuraPublicKey(<span class="macro">hex!</span>(<span class="string">"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"</span>).into()),
 			grandpa_pub_key: GrandpaPublicKey(<span class="macro">hex!</span>(<span class="string">"88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"</span>).into()),
 		}

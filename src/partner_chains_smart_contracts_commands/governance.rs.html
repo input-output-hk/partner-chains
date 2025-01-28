@@ -92,7 +92,7 @@
 	await_tx::FixedDelayRetries, init_governance::run_init_governance,
 	update_governance::run_update_governance,
 };
-<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, UtxoId};
+<span class="kw">use </span>sidechain_domain::{MainchainKeyHash, UtxoId};
 
 <span class="attr">#[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -118,7 +118,7 @@
 	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
 	<span class="doccomment">/// Governance authority hash to be set.
 	</span><span class="attr">#[arg(long, short = <span class="string">'g'</span>)]
-	</span>governance_authority: MainchainAddressHash,
+	</span>governance_authority: MainchainKeyHash,
 	<span class="attr">#[clap(flatten)]
 	</span>payment_key_file: PaymentFilePath,
 	<span class="doccomment">/// Genesis UTXO of the new chain, it will be spent durning initialization. If not set, then one will be selected from UTXOs of the payment key.
@@ -149,7 +149,7 @@
 	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
 	<span class="doccomment">/// Governance authority hash to be set.
 	</span><span class="attr">#[arg(long, short = <span class="string">'g'</span>)]
-	</span>new_governance_authority: MainchainAddressHash,
+	</span>new_governance_authority: MainchainKeyHash,
 	<span class="attr">#[clap(flatten)]
 	</span>payment_key_file: PaymentFilePath,
 	<span class="doccomment">/// Genesis UTXO of the chain

@@ -117,7 +117,7 @@
 <span class="kw">use </span>ogmios_client::types::OgmiosTx;
 <span class="kw">use </span>partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
 <span class="kw">use </span>partner_chains_cardano_offchain::init_governance::InitGovernance;
-<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, UtxoId};
+<span class="kw">use </span>sidechain_domain::{MainchainKeyHash, MainchainPrivateKey, UtxoId};
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>run_init_governance&lt;C: IOContext&gt;(
 	genesis_utxo: UtxoId,
@@ -134,7 +134,7 @@
 
 <span class="kw">fn </span>get_private_key_and_key_hash&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
-) -&gt; <span class="prelude-ty">Result</span>&lt;(MainchainPrivateKey, MainchainAddressHash), anyhow::Error&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;(MainchainPrivateKey, MainchainKeyHash), anyhow::Error&gt; {
 	<span class="kw">let </span>cardano_signing_key_file = config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
 		.prompt_with_default_from_file_and_save(context);
 	<span class="kw">let </span>pkey = cardano_key::get_mc_pkey_from_file(<span class="kw-2">&amp;</span>cardano_signing_key_file, context)<span class="question-mark">?</span>;
@@ -156,7 +156,7 @@
 	<span class="kw">use </span>hex_literal::hex;
 	<span class="kw">use </span>ogmios_client::types::OgmiosTx;
 	<span class="kw">use </span>serde_json::{json, Value};
-	<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, UtxoId};
+	<span class="kw">use </span>sidechain_domain::{MainchainKeyHash, MainchainPrivateKey, UtxoId};
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>happy_path() {
@@ -209,7 +209,7 @@
 	<span class="kw">fn </span>preprod_offchain_mocks() -&gt; OffchainMocks {
 		<span class="kw">let </span>mock = OffchainMock::new().with_init_governance(
 			TEST_GENESIS_UTXO,
-			MainchainAddressHash(<span class="macro">hex!</span>(<span class="string">"e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"</span>)),
+			MainchainKeyHash(<span class="macro">hex!</span>(<span class="string">"e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"</span>)),
 			MainchainPrivateKey(<span class="macro">hex!</span>(
 				<span class="string">"d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
 			</span>)),

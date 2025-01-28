@@ -1131,7 +1131,7 @@
 	transactions::OgmiosEvaluateTransactionResponse,
 	types::{OgmiosUtxo, OgmiosValue},
 };
-<span class="kw">use </span>sidechain_domain::{AssetId, MainchainAddressHash, MainchainPrivateKey, NetworkType, UtxoId};
+<span class="kw">use </span>sidechain_domain::{AssetId, MainchainKeyHash, MainchainPrivateKey, NetworkType, UtxoId};
 <span class="kw">use </span>std::collections::HashMap;
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>plutus_script_hash(script_bytes: <span class="kw-2">&amp;</span>[u8], language: Language) -&gt; [u8; <span class="number">28</span>] {
@@ -1485,11 +1485,11 @@
 }
 
 <span class="kw">pub trait </span>MainchainPrivateKeyExt {
-	<span class="kw">fn </span>to_pub_key_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; MainchainAddressHash;
+	<span class="kw">fn </span>to_pub_key_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; MainchainKeyHash;
 }
 
 <span class="kw">impl </span>MainchainPrivateKeyExt <span class="kw">for </span>MainchainPrivateKey {
-	<span class="kw">fn </span>to_pub_key_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; MainchainAddressHash {
+	<span class="kw">fn </span>to_pub_key_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; MainchainKeyHash {
 		cardano_serialization_lib::PrivateKey::from_normal_bytes(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>)
 			.expect(<span class="string">"Conversion cannot fail on valid MainchainPrivateKey values"</span>)
 			.to_public()
@@ -1497,7 +1497,7 @@
 			.to_bytes()
 			.as_slice()
 			.try_into()
-			.map(MainchainAddressHash)
+			.map(MainchainKeyHash)
 			.expect(<span class="string">"Conversion cannot fail as representation is the same"</span>)
 	}
 }

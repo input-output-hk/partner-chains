@@ -151,7 +151,7 @@
 	transactions::Transactions,
 	types::OgmiosTx,
 };
-<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, McTxHash, UtxoId, UtxoIndex};
+<span class="kw">use </span>sidechain_domain::{MainchainKeyHash, MainchainPrivateKey, McTxHash, UtxoId, UtxoIndex};
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>test;
@@ -162,7 +162,7 @@
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 &gt;(
-	new_governance_authority: MainchainAddressHash,
+	new_governance_authority: MainchainKeyHash,
 	payment_key: MainchainPrivateKey,
 	genesis_utxo_id: UtxoId,
 	client: <span class="kw-2">&amp;</span>T,
@@ -209,7 +209,7 @@
 	version_oracle_validator: <span class="kw-2">&amp;</span>[u8],
 	version_oracle_policy: <span class="kw-2">&amp;</span>[u8],
 	genesis_utxo: UtxoId,
-	new_governance_authority: MainchainAddressHash,
+	new_governance_authority: MainchainKeyHash,
 	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
 	costs: Costs,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,

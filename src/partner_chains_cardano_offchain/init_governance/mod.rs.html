@@ -230,7 +230,7 @@
 	types::{OgmiosTx, OgmiosUtxo},
 };
 <span class="kw">use </span>partner_chains_plutus_data::version_oracle::VersionOracleDatum;
-<span class="kw">use </span>sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, UtxoId};
+<span class="kw">use </span>sidechain_domain::{MainchainKeyHash, MainchainPrivateKey, UtxoId};
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
@@ -243,7 +243,7 @@
 	</span><span class="attr">#[allow(async_fn_in_trait)]
 	</span><span class="kw">async fn </span>init_governance(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		governance_authority: MainchainAddressHash,
+		governance_authority: MainchainKeyHash,
 		payment_key: MainchainPrivateKey,
 		genesis_utxo_id: UtxoId,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;OgmiosTx, OffchainError&gt;;
@@ -255,7 +255,7 @@
 {
 	<span class="kw">async fn </span>init_governance(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		governance_authority: MainchainAddressHash,
+		governance_authority: MainchainKeyHash,
 		payment_key: MainchainPrivateKey,
 		genesis_utxo_id: UtxoId,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;OgmiosTx, OffchainError&gt; {
@@ -276,7 +276,7 @@
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 &gt;(
-	governance_authority: MainchainAddressHash,
+	governance_authority: MainchainKeyHash,
 	payment_key: MainchainPrivateKey,
 	genesis_utxo_id: <span class="prelude-ty">Option</span>&lt;UtxoId&gt;,
 	client: <span class="kw-2">&amp;</span>T,

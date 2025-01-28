@@ -474,15 +474,15 @@
 
 	<span class="kw">fn </span>make_stake_map(
 		stake_pool_entries: Vec&lt;StakePoolEntry&gt;,
-	) -&gt; HashMap&lt;MainchainAddressHash, StakeDelegation&gt; {
+	) -&gt; HashMap&lt;MainchainKeyHash, StakeDelegation&gt; {
 		stake_pool_entries
 			.into_iter()
-			.map(|e| (MainchainAddressHash(e.pool_hash), StakeDelegation(e.stake.<span class="number">0</span>)))
+			.map(|e| (MainchainKeyHash(e.pool_hash), StakeDelegation(e.stake.<span class="number">0</span>)))
 			.collect()
 	}
 
 	<span class="kw">fn </span>get_stake_delegation(
-		stake_map: <span class="kw-2">&amp;</span>HashMap&lt;MainchainAddressHash, StakeDelegation&gt;,
+		stake_map: <span class="kw-2">&amp;</span>HashMap&lt;MainchainKeyHash, StakeDelegation&gt;,
 		mainchain_pub_key: <span class="kw-2">&amp;</span>MainchainPublicKey,
 	) -&gt; <span class="prelude-ty">Option</span>&lt;StakeDelegation&gt; {
 		<span class="kw">if </span>stake_map.is_empty() {
@@ -490,7 +490,7 @@
 		</span>} <span class="kw">else </span>{
 			<span class="prelude-val">Some</span>(
 				stake_map
-					.get(<span class="kw-2">&amp;</span>MainchainAddressHash::from_vkey(mainchain_pub_key.<span class="number">0</span>))
+					.get(<span class="kw-2">&amp;</span>MainchainKeyHash::from_vkey(mainchain_pub_key.<span class="number">0</span>))
 					.cloned()
 					.unwrap_or(StakeDelegation(<span class="number">0</span>)),
 			)

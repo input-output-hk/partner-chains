@@ -537,13 +537,9 @@
 <a href="#537" id="537">537</a>
 <a href="#538" id="538">538</a>
 <a href="#539" id="539">539</a>
-<a href="#540" id="540">540</a>
-<a href="#541" id="541">541</a>
-<a href="#542" id="542">542</a>
-<a href="#543" id="543">543</a>
-<a href="#544" id="544">544</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::{
-	unit_plutus_data, CostStore, Costs, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext
+	unit_plutus_data, CostStore, Costs, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
+	TransactionContext,
 };
 <span class="kw">use </span><span class="kw">crate</span>::csl::{MainchainPrivateKeyExt, TransactionOutputAmountBuilderExt};
 <span class="kw">use crate</span>::{
@@ -553,8 +549,7 @@
 };
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
-	PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
-	TxInputsBuilder,
+	PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder, TxInputsBuilder,
 };
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -722,9 +717,7 @@
 	<span class="kw">let </span>own_registration_utxos = own_registrations.iter().map(|r| r.<span class="number">0</span>.clone()).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
 
 	<span class="kw">let </span>tx = Costs::calculate_costs(
-		|costs| {
-			deregister_tx(<span class="kw-2">&amp;</span>validator, <span class="kw-2">&amp;</span>own_registration_utxos, costs, <span class="kw-2">&amp;</span>ctx)
-		},
+		|costs| deregister_tx(<span class="kw-2">&amp;</span>validator, <span class="kw-2">&amp;</span>own_registration_utxos, costs, <span class="kw-2">&amp;</span>ctx),
 		client,
 	)
 	.<span class="kw">await</span><span class="question-mark">?</span>;
@@ -745,7 +738,7 @@
 }
 
 <span class="kw">fn </span>get_own_registrations(
-	own_pkh: MainchainAddressHash,
+	own_pkh: MainchainKeyHash,
 	spo_pub_key: MainchainPublicKey,
 	validator_utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo],
 ) -&gt; Vec&lt;(OgmiosUtxo, CandidateRegistration)&gt; {
@@ -846,9 +839,7 @@
 	<span class="kw">use </span><span class="kw">super</span>::register_tx;
 	<span class="kw">use </span><span class="kw">crate</span>::csl::{Costs, OgmiosUtxoExt, TransactionContext};
 	<span class="kw">use </span><span class="kw">crate</span>::test_values::{<span class="self">self</span>, <span class="kw-2">*</span>};
-	<span class="kw">use </span>cardano_serialization_lib::{
-		Address, NetworkIdKind, Transaction, TransactionInputs,
-	};
+	<span class="kw">use </span>cardano_serialization_lib::{Address, NetworkIdKind, Transaction, TransactionInputs};
 	<span class="kw">use </span>ogmios_client::types::OgmiosValue;
 	<span class="kw">use </span>ogmios_client::types::{OgmiosTx, OgmiosUtxo};
 	<span class="kw">use </span>partner_chains_plutus_data::registered_candidates::candidate_registration_to_plutus_data;
@@ -859,9 +850,8 @@
 	};
 
 	<span class="kw">use </span>sidechain_domain::{
-		AdaBasedStaking, AuraPublicKey, CandidateRegistration, GrandpaPublicKey,
-		MainchainAddressHash, MainchainSignature, McTxHash, SidechainPublicKey, SidechainSignature,
-		UtxoId, UtxoIndex,
+		AdaBasedStaking, AuraPublicKey, CandidateRegistration, GrandpaPublicKey, MainchainKeyHash,
+		MainchainSignature, McTxHash, SidechainPublicKey, SidechainSignature, UtxoId, UtxoIndex,
 	};
 
 	<span class="kw">fn </span>sum_lovelace(utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo]) -&gt; u64 {
@@ -871,8 +861,8 @@
 	<span class="kw">const </span>MIN_UTXO_LOVELACE: u64 = <span class="number">1000000</span>;
 	<span class="kw">const </span>FIVE_ADA: u64 = <span class="number">5000000</span>;
 
-	<span class="kw">fn </span>own_pkh() -&gt; MainchainAddressHash {
-		MainchainAddressHash([<span class="number">0</span>; <span class="number">28</span>])
+	<span class="kw">fn </span>own_pkh() -&gt; MainchainKeyHash {
+		MainchainKeyHash([<span class="number">0</span>; <span class="number">28</span>])
 	}
 	<span class="kw">fn </span>candidate_registration(registration_utxo: UtxoId) -&gt; CandidateRegistration {
 		CandidateRegistration {

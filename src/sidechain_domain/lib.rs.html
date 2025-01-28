@@ -748,6 +748,7 @@
 <a href="#748" id="748">748</a>
 <a href="#749" id="749">749</a>
 <a href="#750" id="750">750</a>
+<a href="#751" id="751">751</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -1024,9 +1025,10 @@
 	}
 }
 
-<span class="kw">pub const </span>MAINCHAIN_ADDRESS_HASH_LEN: usize = <span class="number">28</span>;
+<span class="kw">pub const </span>MAINCHAIN_KEY_HASH_LEN: usize = <span class="number">28</span>;
 
-<span class="doccomment">/// Some hash of MainchainAddress, 28 bytes. Presumably blake2b_224.
+<span class="doccomment">/// blake2b_224 hash of a Cardano Verification (Public) Key.
+/// It can be a hash of Payment Verification, Payment Extended Verification or Staking Verification Key.
 /// Way to get it: cardano-cli latest address key-hash --payment-verification-key-file FILE
 </span><span class="attr">#[derive(
 	Clone, Copy, Decode, Default, Eq, Encode, Hash, MaxEncodedLen, PartialEq, ToDatum, TypeInfo,
@@ -1034,16 +1036,16 @@
 #[byte_string(debug)]
 #[cfg_attr(feature = <span class="string">"std"</span>, byte_string(to_hex_string, decode_hex))]
 #[cfg_attr(feature = <span class="string">"serde"</span>, byte_string(hex_serialize, hex_deserialize))]
-</span><span class="kw">pub struct </span>MainchainAddressHash(<span class="kw">pub </span>[u8; MAINCHAIN_ADDRESS_HASH_LEN]);
+</span><span class="kw">pub struct </span>MainchainKeyHash(<span class="kw">pub </span>[u8; MAINCHAIN_KEY_HASH_LEN]);
 
-<span class="kw">impl </span>Display <span class="kw">for </span>MainchainAddressHash {
+<span class="kw">impl </span>Display <span class="kw">for </span>MainchainKeyHash {
 	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; core::fmt::Result {
 		<span class="kw">let </span>hash = sp_core::hexdisplay::HexDisplay::from(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>);
 		<span class="macro">write!</span>(f, <span class="string">"0x{}"</span>, hash)
 	}
 }
 
-<span class="kw">impl </span>MainchainAddressHash {
+<span class="kw">impl </span>MainchainKeyHash {
 	<span class="kw">pub fn </span>from_vkey(vkey: [u8; <span class="number">32</span>]) -&gt; <span class="self">Self </span>{
 		<span class="self">Self</span>(blake2b(<span class="kw-2">&amp;</span>vkey))
 	}
@@ -1445,7 +1447,7 @@
 	<span class="kw">pub </span>stake_ownership: AdaBasedStaking,
 	<span class="kw">pub </span>partner_chain_pub_key: SidechainPublicKey,
 	<span class="kw">pub </span>partner_chain_signature: SidechainSignature,
-	<span class="kw">pub </span>own_pkh: MainchainAddressHash,
+	<span class="kw">pub </span>own_pkh: MainchainKeyHash,
 	<span class="kw">pub </span>registration_utxo: UtxoId,
 	<span class="kw">pub </span>aura_pub_key: AuraPublicKey,
 	<span class="kw">pub </span>grandpa_pub_key: GrandpaPublicKey,
