@@ -40,6 +40,13 @@
           openssl
           gnumake
 
+          # tools for e2e testing
+          docker-compose
+          python311
+          python311Packages.pip
+          python311Packages.virtualenv
+          sops
+
           # local development tools
           rustToolchain
           nodejs
