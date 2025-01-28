@@ -125,19 +125,16 @@ mod tests {
 
 	fn prompt_payment_vkey_and_read_it_to_derive_address() -> MockIO {
 		MockIO::Group(vec![
-			MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
 			MockIO::prompt(
 				"path to the payment verification file",
 				Some("payment.vkey"),
 				"payment.vkey",
 			),
-			MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
 			MockIO::file_write_json_contains(
 				RESOURCES_CONFIG_FILE_PATH,
 				"/cardano_payment_verification_key_file",
 				"payment.vkey",
 			),
-			MockIO::file_read("payment.vkey"),
 		])
 	}
 }

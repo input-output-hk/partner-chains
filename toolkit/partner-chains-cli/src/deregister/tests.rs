@@ -30,7 +30,6 @@ fn happy_path() {
 		.with_json_file(MY_COLD_VKEY, valid_cold_verification_key_content())
 		.with_offchain_mocks(OffchainMocks::new_with_mock("http://localhost:1337", offchain_mock))
 		.with_expected_io(vec![
-			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 			print_info_io(),
 			read_keys_io(),
 			establish_ogmios_configuration_io(None, default_ogmios_service_config()),
@@ -54,7 +53,6 @@ fn errors_if_smart_contracts_dont_output_transaction_id() {
 		.with_json_file(MY_COLD_VKEY, valid_cold_verification_key_content())
 		.with_offchain_mocks(OffchainMocks::new_with_mock("http://localhost:1337", offchain_mock))
 		.with_expected_io(vec![
-			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 			print_info_io(),
 			read_keys_io(),
 			establish_ogmios_configuration_io(None, default_ogmios_service_config()),
@@ -68,9 +66,8 @@ fn errors_if_smart_contracts_dont_output_transaction_id() {
 
 #[test]
 fn fails_when_chain_config_is_not_valid() {
-	let mock_context = MockIOContext::new()
-		.with_json_file(CHAIN_CONFIG_FILE_PATH, invalid_chain_config_content())
-		.with_expected_io(vec![MockIO::file_read(CHAIN_CONFIG_FILE_PATH)]);
+	let mock_context =
+		MockIOContext::new().with_json_file(CHAIN_CONFIG_FILE_PATH, invalid_chain_config_content());
 	let result = DeregisterCmd.run(&mock_context);
 	assert_eq!(
 	    result.err().unwrap().to_string(),
@@ -85,7 +82,6 @@ fn fails_when_payment_signing_key_is_not_valid() {
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_file(MY_PAYMEMENT_SKEY, "not a proper Cardano key json")
 		.with_expected_io(vec![
-            MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 			print_info_io(),
             MockIO::print("Payment signing key and cold verification key used for registration are required to deregister."),
             read_payment_signing_key()
@@ -104,11 +100,7 @@ fn fails_when_cold_key_is_not_valid() {
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_json_file(MY_PAYMEMENT_SKEY, valid_payment_signing_key_content())
 		.with_file(MY_COLD_VKEY, "not a proper Cardano key json")
-		.with_expected_io(vec![
-			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
-			print_info_io(),
-			read_keys_io(),
-		]);
+		.with_expected_io(vec![print_info_io(), read_keys_io()]);
 	let result = DeregisterCmd.run(&mock_context);
 	assert_eq!(
 		result.err().unwrap().to_string(),
@@ -137,33 +129,27 @@ fn read_keys_io() -> MockIO {
 
 fn read_payment_signing_key() -> MockIO {
 	MockIO::Group(vec![
-		MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
 		MockIO::prompt(
 			"path to the payment signing key file",
 			Some("payment.skey"),
 			MY_PAYMEMENT_SKEY,
 		),
-		MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
 		MockIO::file_write_json_contains(
 			RESOURCES_CONFIG_FILE_PATH,
 			"/cardano_payment_signing_key_file",
 			MY_PAYMEMENT_SKEY,
 		),
-		MockIO::file_read(MY_PAYMEMENT_SKEY),
 	])
 }
 
 fn read_cold_verification_key() -> MockIO {
 	MockIO::Group(vec![
-		MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
 		MockIO::prompt("path to the cold verification key file", Some("cold.vkey"), MY_COLD_VKEY),
-		MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
 		MockIO::file_write_json_contains(
 			RESOURCES_CONFIG_FILE_PATH,
 			"/cardano_cold_verification_key_file",
 			MY_COLD_VKEY,
 		),
-		MockIO::file_read(MY_COLD_VKEY),
 	])
 }
 

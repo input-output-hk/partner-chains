@@ -172,21 +172,17 @@ mod tests {
 							true,
 							true,
 						),
-						MockIO::file_read(NATIVE_TOKEN_POLICY.config_file),
 						MockIO::prompt(
 							NATIVE_TOKEN_POLICY.name,
 							None,
 							"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
 						),
-						MockIO::file_read(NATIVE_TOKEN_POLICY.config_file),
 						MockIO::file_write_json_contains(
 							NATIVE_TOKEN_POLICY.config_file,
 							&NATIVE_TOKEN_POLICY.json_pointer(),
 							"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
 						),
-						MockIO::file_read(NATIVE_TOKEN_ASSET_NAME.config_file),
 						MockIO::prompt(NATIVE_TOKEN_ASSET_NAME.name, None, "5043546f6b656e44656d6f"),
-						MockIO::file_read(NATIVE_TOKEN_ASSET_NAME.config_file),
 						MockIO::file_write_json_contains(
 							NATIVE_TOKEN_ASSET_NAME.config_file,
 							&NATIVE_TOKEN_ASSET_NAME.json_pointer(),
@@ -234,8 +230,6 @@ mod tests {
 				),
 				save_to_existing_file(ILLIQUID_SUPPLY_ADDRESS, TEST_ILLIQUID_SUPPLY_ADDRESS),
 				print_addresses_io(),
-				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
-				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				MockIO::file_write_json(
 					INITIAL_PERMISSIONED_CANDIDATES.config_file,
 					test_chain_config(),
@@ -292,7 +286,6 @@ mod tests {
 				),
 				save_to_existing_file(ILLIQUID_SUPPLY_ADDRESS, TEST_ILLIQUID_SUPPLY_ADDRESS),
 				print_addresses_io(),
-				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				scenarios::prompt_and_save_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
 			]);

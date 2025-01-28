@@ -180,7 +180,6 @@ mod tests {
 				vec![
 					intro_msg_io(),
 					prompt_mc_payment_key_path_io(),
-					read_payment_skey(),
 					get_ogmios_config(),
 					prompt_for_registration_status_y(),
 					show_registration_status_io(),
@@ -211,15 +210,10 @@ mod tests {
 				offchain_mock,
 			))
 			.with_expected_io(
-				vec![
-					intro_msg_io(),
-					prompt_mc_payment_key_path_io(),
-					read_payment_skey(),
-					get_ogmios_config(),
-				]
-				.into_iter()
-				.flatten()
-				.collect::<Vec<MockIO>>(),
+				vec![intro_msg_io(), prompt_mc_payment_key_path_io(), get_ogmios_config()]
+					.into_iter()
+					.flatten()
+					.collect::<Vec<MockIO>>(),
 			);
 
 		let result = mock_register3_cmd().run(&mock_context);
@@ -246,7 +240,6 @@ mod tests {
 				vec![
 					intro_msg_io(),
 					prompt_mc_payment_key_path_io(),
-					read_payment_skey(),
 					get_ogmios_config(),
 					prompt_for_registration_status_n(),
 				]
@@ -263,7 +256,6 @@ mod tests {
 		vec![
             MockIO::print("⚙️ Register as a committee candidate (step 3/3)"),
 			MockIO::print("This command will submit the registration message to the mainchain."),
-			MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // check if the chain config file exists
 			MockIO::print("To proceed with the next command, a payment signing key is required. Please note that this key will not be stored or communicated over the network."),
         ]
 	}
@@ -293,13 +285,9 @@ mod tests {
 	fn show_registration_status_io() -> Vec<MockIO> {
 		vec![
         MockIO::print("The registration status will be queried from a db-sync instance for which a valid connection string is required. Please note that this db-sync instance needs to be up and synced with the main chain."),
-        MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
         MockIO::current_timestamp(mock_timestamp()),
-        MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
         MockIO::prompt("DB-Sync Postgres connection string",POSTGRES_CONNECTION_STRING.default,POSTGRES_CONNECTION_STRING.default.unwrap()),
-        MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
         MockIO::file_write_json_contains(RESOURCES_CONFIG_FILE_PATH, &POSTGRES_CONNECTION_STRING.json_pointer(), POSTGRES_CONNECTION_STRING.default.unwrap()),
-        MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
         MockIO::set_env_var(
 			  "DB_SYNC_POSTGRES_CONNECTION_STRING",  POSTGRES_CONNECTION_STRING.default.unwrap(),
 	  	),
@@ -316,10 +304,6 @@ mod tests {
         MockIO::print("Registration status:"),
         MockIO::print("{\"epoch\":1,\"validators\":[{\"public_key\":\"cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7\",\"status\":\"Registered\"}]}"),
 		]
-	}
-
-	fn read_payment_skey() -> Vec<MockIO> {
-		vec![MockIO::file_read("/path/to/payment.skey")]
 	}
 
 	fn mock_register3_cmd() -> Register3Cmd {
