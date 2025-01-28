@@ -350,13 +350,6 @@
 <a href="#350" id="350">350</a>
 <a href="#351" id="351">351</a>
 <a href="#352" id="352">352</a>
-<a href="#353" id="353">353</a>
-<a href="#354" id="354">354</a>
-<a href="#355" id="355">355</a>
-<a href="#356" id="356">356</a>
-<a href="#357" id="357">357</a>
-<a href="#358" id="358">358</a>
-<a href="#359" id="359">359</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
 	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
@@ -531,21 +524,17 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 							<span class="bool-val">true</span>,
 							<span class="bool-val">true</span>,
 						),
-						MockIO::file_read(NATIVE_TOKEN_POLICY.config_file),
 						MockIO::prompt(
 							NATIVE_TOKEN_POLICY.name,
 							<span class="prelude-val">None</span>,
 							<span class="string">"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"</span>,
 						),
-						MockIO::file_read(NATIVE_TOKEN_POLICY.config_file),
 						MockIO::file_write_json_contains(
 							NATIVE_TOKEN_POLICY.config_file,
 							<span class="kw-2">&amp;</span>NATIVE_TOKEN_POLICY.json_pointer(),
 							<span class="string">"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"</span>,
 						),
-						MockIO::file_read(NATIVE_TOKEN_ASSET_NAME.config_file),
 						MockIO::prompt(NATIVE_TOKEN_ASSET_NAME.name, <span class="prelude-val">None</span>, <span class="string">"5043546f6b656e44656d6f"</span>),
-						MockIO::file_read(NATIVE_TOKEN_ASSET_NAME.config_file),
 						MockIO::file_write_json_contains(
 							NATIVE_TOKEN_ASSET_NAME.config_file,
 							<span class="kw-2">&amp;</span>NATIVE_TOKEN_ASSET_NAME.json_pointer(),
@@ -593,8 +582,6 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 				),
 				save_to_existing_file(ILLIQUID_SUPPLY_ADDRESS, TEST_ILLIQUID_SUPPLY_ADDRESS),
 				print_addresses_io(),
-				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
-				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				MockIO::file_write_json(
 					INITIAL_PERMISSIONED_CANDIDATES.config_file,
 					test_chain_config(),
@@ -651,7 +638,6 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 				),
 				save_to_existing_file(ILLIQUID_SUPPLY_ADDRESS, TEST_ILLIQUID_SUPPLY_ADDRESS),
 				print_addresses_io(),
-				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
 				scenarios::prompt_and_save_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
 			]);

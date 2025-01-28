@@ -143,10 +143,6 @@
 <a href="#143" id="143">143</a>
 <a href="#144" id="144">144</a>
 <a href="#145" id="145">145</a>
-<a href="#146" id="146">146</a>
-<a href="#147" id="147">147</a>
-<a href="#148" id="148">148</a>
-<a href="#149" id="149">149</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_key::get_mc_staking_signing_key_from_file;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::CmdRun;
@@ -244,7 +240,6 @@
 				<span class="prelude-val">Some</span>(<span class="string">"cold.skey"</span>),
 				<span class="string">"/invalid/cold.skey"</span>,
 			),
-			MockIO::file_read(<span class="string">"/invalid/cold.skey"</span>),
 			MockIO::eprint(<span class="string">"Unable to read mainchain signing key file"</span>),
 		]);
 
@@ -260,14 +255,11 @@
 	}
 
 	<span class="kw">fn </span>prompt_mc_cold_key_path_io() -&gt; Vec&lt;MockIO&gt; {
-		<span class="macro">vec!</span>[
-			MockIO::prompt(
-				<span class="string">"Path to mainchain signing key file"</span>,
-				<span class="prelude-val">Some</span>(<span class="string">"cold.skey"</span>),
-				<span class="string">"/path/to/cold.skey"</span>,
-			),
-			MockIO::file_read(<span class="string">"/path/to/cold.skey"</span>),
-		]
+		<span class="macro">vec!</span>[MockIO::prompt(
+			<span class="string">"Path to mainchain signing key file"</span>,
+			<span class="prelude-val">Some</span>(<span class="string">"cold.skey"</span>),
+			<span class="string">"/path/to/cold.skey"</span>,
+		)]
 	}
 
 	<span class="kw">fn </span>output_result_io() -&gt; Vec&lt;MockIO&gt; {

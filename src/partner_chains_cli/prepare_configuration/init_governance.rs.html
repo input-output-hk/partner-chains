@@ -106,9 +106,6 @@
 <a href="#106" id="106">106</a>
 <a href="#107" id="107">107</a>
 <a href="#108" id="108">108</a>
-<a href="#109" id="109">109</a>
-<a href="#110" id="110">110</a>
-<a href="#111" id="111">111</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
 	cardano_key,
 	config::{config_fields, ServiceConfig},
@@ -168,18 +165,15 @@
 			.with_json_file(<span class="string">"payment.skey"</span>, payment_key_content())
 			.with_offchain_mocks(preprod_offchain_mocks())
 			.with_expected_io(<span class="macro">vec!</span>[
-				MockIO::file_read(CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file),
 				MockIO::prompt(
 					<span class="string">"path to the payment signing key file"</span>,
 					<span class="prelude-val">Some</span>(<span class="string">"payment.skey"</span>),
 					<span class="string">"payment.skey"</span>,
 				),
-				MockIO::file_read(CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file),
 				MockIO::file_write_json(
 					CARDANO_PAYMENT_SIGNING_KEY_FILE.config_file,
 					test_resources_config(),
 				),
-				MockIO::file_read(<span class="string">"payment.skey"</span>),
 			]);
 		run_init_governance(TEST_GENESIS_UTXO, <span class="kw-2">&amp;</span>ogmios_config(), <span class="kw-2">&amp;</span>mock_context)
 			.expect(<span class="string">"should succeed"</span>);
