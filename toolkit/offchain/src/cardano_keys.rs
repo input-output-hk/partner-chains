@@ -9,7 +9,7 @@ use sidechain_domain::MainchainKeyHash;
 pub struct CardanoPaymentSigningKey(pub(crate) PrivateKey);
 
 impl CardanoPaymentSigningKey {
-	pub fn from_extended_128_bytes(bytes: [u8; 128]) -> Result<Self, anyhow::Error> {
+	pub fn from_extended_128_bytes(bytes: [u8; 128]) -> anyhow::Result<Self> {
 		// All 128 bytes are: 64 bytes of prefix, 32 bytes of verification key, 32 bytes of chain code
 		let prefix: [u8; 64] = bytes[0..64].try_into().unwrap();
 		Ok(Self(
