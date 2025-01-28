@@ -10,7 +10,7 @@ use ogmios_client::{
 	transactions::OgmiosEvaluateTransactionResponse,
 	types::{OgmiosUtxo, OgmiosValue},
 };
-use sidechain_domain::{AssetId, MainchainAddressHash, MainchainPrivateKey, NetworkType, UtxoId};
+use sidechain_domain::{AssetId, MainchainKeyHash, MainchainPrivateKey, NetworkType, UtxoId};
 use std::collections::HashMap;
 
 pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: Language) -> [u8; 28] {
@@ -364,11 +364,11 @@ impl UtxoIdExt for UtxoId {
 }
 
 pub trait MainchainPrivateKeyExt {
-	fn to_pub_key_hash(&self) -> MainchainAddressHash;
+	fn to_pub_key_hash(&self) -> MainchainKeyHash;
 }
 
 impl MainchainPrivateKeyExt for MainchainPrivateKey {
-	fn to_pub_key_hash(&self) -> MainchainAddressHash {
+	fn to_pub_key_hash(&self) -> MainchainKeyHash {
 		cardano_serialization_lib::PrivateKey::from_normal_bytes(&self.0)
 			.expect("Conversion cannot fail on valid MainchainPrivateKey values")
 			.to_public()
@@ -376,7 +376,7 @@ impl MainchainPrivateKeyExt for MainchainPrivateKey {
 			.to_bytes()
 			.as_slice()
 			.try_into()
-			.map(MainchainAddressHash)
+			.map(MainchainKeyHash)
 			.expect("Conversion cannot fail as representation is the same")
 	}
 }

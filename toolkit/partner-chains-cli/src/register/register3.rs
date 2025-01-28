@@ -421,7 +421,7 @@ mod tests {
 			},
 			partner_chain_pub_key: SidechainPublicKey(hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec()),
 			partner_chain_signature: SidechainSignature(hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854").to_vec()),
-			own_pkh: MainchainAddressHash(hex!("7fa48bb8fb5d6804fad26237738ce490d849e4567161e38ab8415ff3")),
+			own_pkh: MainchainKeyHash(hex!("7fa48bb8fb5d6804fad26237738ce490d849e4567161e38ab8415ff3")),
 			registration_utxo: UtxoId { tx_hash: McTxHash(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13")), index: UtxoIndex(0) },
 			aura_pub_key: AuraPublicKey(hex!("79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf").to_vec()),
 			grandpa_pub_key: GrandpaPublicKey(hex!("1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07").to_vec())

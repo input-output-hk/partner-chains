@@ -1,5 +1,6 @@
 use crate::csl::{
-	unit_plutus_data, CostStore, Costs, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext
+	unit_plutus_data, CostStore, Costs, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
+	TransactionContext,
 };
 use crate::csl::{MainchainPrivateKeyExt, TransactionOutputAmountBuilderExt};
 use crate::{
@@ -9,8 +10,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
-	TxInputsBuilder,
+	PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder, TxInputsBuilder,
 };
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -178,9 +178,7 @@ pub async fn run_deregister<
 	let own_registration_utxos = own_registrations.iter().map(|r| r.0.clone()).collect::<Vec<_>>();
 
 	let tx = Costs::calculate_costs(
-		|costs| {
-			deregister_tx(&validator, &own_registration_utxos, costs, &ctx)
-		},
+		|costs| deregister_tx(&validator, &own_registration_utxos, costs, &ctx),
 		client,
 	)
 	.await?;
@@ -201,7 +199,7 @@ pub async fn run_deregister<
 }
 
 fn get_own_registrations(
-	own_pkh: MainchainAddressHash,
+	own_pkh: MainchainKeyHash,
 	spo_pub_key: MainchainPublicKey,
 	validator_utxos: &[OgmiosUtxo],
 ) -> Vec<(OgmiosUtxo, CandidateRegistration)> {
@@ -302,9 +300,7 @@ mod tests {
 	use super::register_tx;
 	use crate::csl::{Costs, OgmiosUtxoExt, TransactionContext};
 	use crate::test_values::{self, *};
-	use cardano_serialization_lib::{
-		Address, NetworkIdKind, Transaction, TransactionInputs,
-	};
+	use cardano_serialization_lib::{Address, NetworkIdKind, Transaction, TransactionInputs};
 	use ogmios_client::types::OgmiosValue;
 	use ogmios_client::types::{OgmiosTx, OgmiosUtxo};
 	use partner_chains_plutus_data::registered_candidates::candidate_registration_to_plutus_data;
@@ -315,9 +311,8 @@ mod tests {
 	};
 
 	use sidechain_domain::{
-		AdaBasedStaking, AuraPublicKey, CandidateRegistration, GrandpaPublicKey,
-		MainchainAddressHash, MainchainSignature, McTxHash, SidechainPublicKey, SidechainSignature,
-		UtxoId, UtxoIndex,
+		AdaBasedStaking, AuraPublicKey, CandidateRegistration, GrandpaPublicKey, MainchainKeyHash,
+		MainchainSignature, McTxHash, SidechainPublicKey, SidechainSignature, UtxoId, UtxoIndex,
 	};
 
 	fn sum_lovelace(utxos: &[OgmiosUtxo]) -> u64 {
@@ -327,8 +322,8 @@ mod tests {
 	const MIN_UTXO_LOVELACE: u64 = 1000000;
 	const FIVE_ADA: u64 = 5000000;
 
-	fn own_pkh() -> MainchainAddressHash {
-		MainchainAddressHash([0; 28])
+	fn own_pkh() -> MainchainKeyHash {
+		MainchainKeyHash([0; 28])
 	}
 	fn candidate_registration(registration_utxo: UtxoId) -> CandidateRegistration {
 		CandidateRegistration {
