@@ -94,7 +94,7 @@ const HELP_EXAMPLES: &str = r#"
 ║   6. deregister            : cancel registration                               ║
 ║                                                                                ║
 ║   Note: This sequence assumes that the chain-spec.json and                     ║
-║         pc-chain-config.json files have been obtained from     ║
+║         pc-chain-config.json files have been obtained from                     ║
 ║         the Governance Authority and are present in the working directory.     ║
 ╟────────────────────────────────────────────────────────────────────────────────╢
 ║ Permissioned Validator:                                                        ║
@@ -105,7 +105,7 @@ const HELP_EXAMPLES: &str = r#"
 ║         with the Governance Authority. The 'start-node' command can only be    ║
 ║         executed after the Governance Authority has established the partner    ║
 ║         chain on the main network. This sequence assumes that the              ║
-║         chain-spec.json and pc-chain-config.json files have    ║
+║         chain-spec.json and pc-chain-config.json files have                    ║
 ║         been obtained from the Governance Authority and are present in the     ║
 ║         working directory.                                                     ║
 ╚════════════════════════════════════════════════════════════════════════════════╝
