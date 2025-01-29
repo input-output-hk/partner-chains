@@ -36,6 +36,7 @@ use ogmios_client::{
 	transactions::Transactions,
 	types::OgmiosUtxo,
 };
+use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 use raw_scripts::{
 	ScriptId, ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, RESERVE_AUTH_POLICY, RESERVE_VALIDATOR,
 };
@@ -228,26 +229,12 @@ pub(crate) async fn find_script_utxo<T: QueryLedgerState>(
 	// Decode datum from utxos and check if it contains script id
 	Ok(validator_utxos.into_iter().find(|utxo| {
 		utxo.get_plutus_data()
-			.and_then(decode_version_oracle_validator_datum)
+			.and_then(|data| TryInto::<VersionOracleDatum>::try_into(data).ok())
 			.is_some_and(|datum| {
-				datum.script_id == script_id
-					&& datum.version_oracle_policy_id == version_oracle.policy.script_hash()
+				datum.version_oracle == script_id
+					&& datum.currency_symbol == version_oracle.policy.script_hash()
 			})
 	}))
-}
-
-pub(crate) struct VersionOracleValidatorDatum {
-	pub(crate) script_id: u32,
-	pub(crate) version_oracle_policy_id: [u8; 28],
-}
-
-fn decode_version_oracle_validator_datum(data: PlutusData) -> Option<VersionOracleValidatorDatum> {
-	let list = data.as_list()?;
-	let mut list_iter = list.into_iter();
-	let script_id = list_iter.next()?.as_integer()?;
-	let script_id: u32 = script_id.as_u64()?.try_into().ok()?;
-	let version_oracle_policy_id: [u8; 28] = list_iter.next()?.as_bytes()?.try_into().ok()?;
-	Some(VersionOracleValidatorDatum { script_id, version_oracle_policy_id })
 }
 
 #[cfg(test)]
