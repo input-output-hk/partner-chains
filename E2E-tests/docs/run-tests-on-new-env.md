@@ -6,7 +6,7 @@
 * A node with Postgres SQL (for automated test data)
 * A node with [cardano-node](https://github.com/IntersectMBO/cardano-node) + [cardano-db-sync](https://github.com/IntersectMBO/cardano-db-sync) + [postgres](https://www.postgresql.org/) (running locally OR on one of the partner-chains nodes)
 * [ogmios](https://github.com/CardanoSolutions/ogmios) and [kupo](https://github.com/CardanoSolutions/kupo) (running locally OR on the remote host)
-* [partner-chains-node](https://github.com/input-output-hk/partner-chains) and [pc-contracts-cli](https://github.com/input-output-hk/partner-chains-smart-contracts) (running locally OR on the remote tools host)
+* [partner-chains-node](https://github.com/input-output-hk/partner-chains) (running locally OR on the remote tools host)
 * cardano-cli (from a local cardano-node OR on the remote tools host)
 
 **NOTE:**
