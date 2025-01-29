@@ -13,7 +13,7 @@ use crate::csl::{
 };
 use crate::init_governance::{self, GovernanceData};
 use crate::plutus_script::PlutusScript;
-use crate::scripts_data;
+use crate::{cardano_keys::CardanoPaymentSigningKey, scripts_data};
 use anyhow::anyhow;
 use cardano_serialization_lib::{
 	BigInt, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
@@ -33,7 +33,7 @@ pub trait UpsertPermissionedCandidates {
 		&self,
 		genesis_utxo: UtxoId,
 		candidates: &[PermissionedCandidateData],
-		payment_signing_key: [u8; 32],
+		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> anyhow::Result<Option<McTxHash>>;
 }
 
@@ -44,7 +44,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>
 		&self,
 		genesis_utxo: UtxoId,
 		candidates: &[PermissionedCandidateData],
-		payment_signing_key: [u8; 32],
+		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> anyhow::Result<Option<McTxHash>> {
 		upsert_permissioned_candidates(
 			genesis_utxo,
@@ -63,7 +63,7 @@ pub async fn upsert_permissioned_candidates<
 >(
 	genesis_utxo: UtxoId,
 	candidates: &[PermissionedCandidateData],
-	payment_signing_key: [u8; 32],
+	payment_signing_key: &CardanoPaymentSigningKey,
 	ogmios_client: &C,
 	await_tx: &A,
 ) -> anyhow::Result<Option<McTxHash>> {

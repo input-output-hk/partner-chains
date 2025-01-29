@@ -11,31 +11,41 @@ on:
         description: "partner-chains release tag"
         required: true
         type: string
+      no-build:
+        description: "SKIP BUILD - Use artifacts built in a previous run"
+        required: false
+        type: boolean
+        default: false
       no-release:
-        description: "Skip Release and GHCR steps"
+        description: "SKIP RELEASE - Don't even create a draft release"
         required: false
         type: boolean
         default: false
       no-deploy:
-        description: "Skip deploy steps"
-        required: false
-        type: boolean
-        default: false
-      no-tests:
-        description: "Skip test steps"
+        description: "SKIP DEPLOY - Don't deploy to staging environment"
         required: false
         type: boolean
         default: false
       no-wipe:
-        description: "Skip chain wipe"
+        description: "SKIP WIPE - Don't wipe staging chain"
         required: false
         type: boolean
         default: false
-      no-public:
-        description: "Skip the final publish step"
+      no-tests:
+        description: "SKIP TESTS - Exlucde all test jobs against staging environment"
         required: false
         type: boolean
         default: false
+      no-public-release:
+        description: "SKIP PUBLIC RELEASE - Don't make release public"
+        required: false
+        type: boolean
+        default: true
+      no-ghcr:
+        description: "SKIP GHCR - Don't publish public GHCR image"
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   id-token: write
@@ -51,6 +61,7 @@ env:
 
 jobs:
   build-linux:
+    if: ${{ github.event.inputs.no-build != 'true' }}
     permissions:
       id-token: write
       contents: write
@@ -58,8 +69,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.sha }}
       - name: Build and Upload for Linux
         uses: ./.github/actions/artifacts/build-pc-artifacts
         with:
@@ -68,7 +77,7 @@ jobs:
           os: linux
 
   build-macos-x86_64:
-    if: ${{ github.event.inputs.no-release != 'true' }}
+    if: ${{ github.event.inputs.no-build != 'true' }}
     permissions:
       id-token: write
       contents: write
@@ -76,8 +85,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.sha }}
       - name: Build and Upload for macOS x86_64
         uses: ./.github/actions/artifacts/build-pc-artifacts
         with:
@@ -86,7 +93,7 @@ jobs:
           os: macos-x86_64
 
   build-macos-arm64:
-    if: ${{ github.event.inputs.no-release != 'true' }}
+    if: ${{ github.event.inputs.no-build != 'true' }}
     permissions:
       id-token: write
       contents: write
@@ -94,8 +101,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.sha }}
       - name: Build and Upload for macOS arm64
         uses: ./.github/actions/artifacts/build-pc-artifacts
         with:
@@ -104,6 +109,7 @@ jobs:
           os: macos-arm64
 
   build-and-publish-ecr:
+    if: ${{ github.event.inputs.no-build != 'true' }}
     permissions:
       id-token: write
       contents: write
@@ -122,15 +128,78 @@ jobs:
           ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
 
-  create-draft-release:
-    if: ${{ github.event.inputs.no-release != 'true' }}
-    permissions:
-      id-token: write
-      contents: write
+  upload-to-s3:
+    if: ${{ github.event.inputs.no-build != 'true' }}
     needs:
       - build-linux
       - build-macos-x86_64
       - build-macos-arm64
+      - build-and-publish-ecr
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Upload Artifacts to S3
+        uses: ./.github/actions/artifacts/upload-to-s3
+        with:
+          sha: ${{ inputs.sha }}
+          bucket-name: ${{ secrets.AWS_CD_ARTIFACT_S3_BUCKET }}
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_S3_ROLE_ARN_SECRET }}
+
+  download-from-s3:
+    if: ${{ github.event.inputs.no-build == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download Artifacts from S3
+        uses: ./.github/actions/artifacts/download-from-s3
+        with:
+          sha: ${{ inputs.sha }}
+          bucket-name: ${{ secrets.AWS_CD_ARTIFACT_S3_BUCKET }}
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_S3_ROLE_ARN_SECRET }}
+
+  artifacts-ready:
+      needs:
+        - upload-to-s3
+        - download-from-s3
+      runs-on: ubuntu-latest
+      outputs:
+       status: success
+      permissions:
+        id-token: write
+        contents: write
+      if: |
+        always() && 
+        (
+          (github.event.inputs.no-build == 'true' && needs.download-from-s3.result == 'success') ||
+          (github.event.inputs.no-build != 'true' && needs.upload-to-s3.result == 'success')
+        )
+      steps:
+        - name: Artifacts Ready
+          run: |
+            if [[ "${{ inputs.no-build }}" != "true" ]]; then
+              echo "Artifacts have been compiled and uploaded to S3"
+            else
+              echo "Previously built artifacts were downloaded from S3"
+            fi
+
+  create-draft-release:
+    if: always() && !inputs.no-release && needs.artifacts-ready.result == 'success'
+    permissions:
+      id-token: write
+      contents: write
+    needs: artifacts-ready
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -146,7 +215,8 @@ jobs:
     permissions:
       id-token: write
       contents: write
-    needs: build-linux
+    needs: artifacts-ready
+    if: always() && needs.artifacts-ready.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -157,6 +227,7 @@ jobs:
           tag: ${{ inputs.tag }}
 
   upload-chain-specs:
+    if: always() && needs.generate-chain-specs.result == 'success'
     permissions:
       id-token: write
       contents: write
@@ -175,13 +246,20 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   deploy-staging-preview:
-    if: ${{ github.event.inputs.no-deploy != 'true' }}
+    if: |
+      always() &&
+      github.event.inputs.no-deploy != 'true' && 
+      (
+        (!inputs.no-build && needs.build-and-publish-ecr.result == 'success') || 
+        inputs.no-build
+      ) && 
+      needs.upload-chain-specs.result == 'success'
     permissions:
       id-token: write
       contents: write
     needs:
-      - build-and-publish-ecr
       - upload-chain-specs
+      - build-and-publish-ecr
     runs-on: eks
     steps:
       - name: Checkout
@@ -203,7 +281,10 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   partner-chain-ready:
-    if: ${{ github.event.inputs.no-tests != 'true' && (needs.deploy-staging-preview.result == 'success' || needs.deploy-staging-preview.result == 'skipped') }}
+    if: |
+      always() &&
+      github.event.inputs.no-tests != 'true' && 
+      (needs.deploy-staging-preview.result == 'success' || needs.deploy-staging-preview.result == 'skipped')
     runs-on: eks
     needs: deploy-staging-preview
     outputs:
@@ -248,7 +329,7 @@ jobs:
         shell: bash
 
   run-smoke-tests:
-    if: ${{ github.event.inputs.no-tests != 'true' }}
+    if: always() && github.event.inputs.no-tests != 'true' && needs.partner-chain-ready.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -274,7 +355,7 @@ jobs:
           threads: 1
 
   run-all-tests:
-    if: ${{ github.event.inputs.no-tests != 'true' }}
+    if: always() && github.event.inputs.no-tests != 'true' && needs.run-smoke-tests.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -303,7 +384,7 @@ jobs:
           threads: 1
 
   wait-for-n1-epoch:
-    if: ${{ github.event.inputs.no-tests != 'true' }}
+    if: always() && github.event.inputs.no-tests != 'true' && needs.partner-chain-ready.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -337,7 +418,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n1-epoch:
-    if: ${{ github.event.inputs.no-tests != 'true' }}
+    if: always() && github.event.inputs.no-tests != 'true' && needs.wait-for-n1-epoch.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -367,7 +448,11 @@ jobs:
           threads: 1
 
   wait-for-n2-epoch:
-    if: ${{ github.event.inputs.no-tests != 'true' }}
+    if: |
+      always() && 
+      github.event.inputs.no-tests != 'true' && 
+      needs.partner-chain-ready.result == 'success' && 
+      needs.wait-for-n1-epoch.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -403,7 +488,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n2-epoch:
-    if: ${{ github.event.inputs.no-tests != 'true' }}
+    if: always() && github.event.inputs.no-tests != 'true' && needs.wait-for-n2-epoch.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -432,16 +517,42 @@ jobs:
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
           threads: 1
 
-  publish:
-    if: ${{ always() && github.event.inputs.no-release != 'true' && github.event.inputs.no-public != 'true' && (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success') }}
+  publish-ghcr:
+    if: |
+      always() && 
+      github.event.inputs.no-ghcr != 'true' && 
+      needs.artifacts-ready.result == 'success' &&
+      (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success')
     permissions:
       id-token: write
       contents: write
       packages: write
     needs:
-      - build-linux
-      - build-macos-x86_64
-      - build-macos-arm64
+      - artifacts-ready
+      - run-all-tests-on-n2-epoch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Publish Workflow
+        run: |
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.ACTIONS_PUBLISH_PAT }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/publish.yml/dispatches \
+            -d '{"ref": "${{ github.ref_name }}", "inputs": {"sha": "${{ inputs.sha }}", "tag": "${{ inputs.tag }}"}}'
+
+  publish-public-release:
+    if: |
+      always() && 
+      github.event.inputs.no-release != 'true' && 
+      github.event.inputs.no-public-release != 'true' && 
+      needs.artifacts-ready.result == 'success' &&
+      (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success')
+    permissions:
+      id-token: write
+      contents: write
+      packages: write
+    needs:
+      - artifacts-ready
       - run-all-tests-on-n2-epoch
     runs-on: ubuntu-latest
     steps:

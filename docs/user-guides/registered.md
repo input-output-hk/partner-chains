@@ -256,7 +256,7 @@ If these keys already exist in the node’s keystore, you will be asked to overw
 
 1. To start the wizard, run the following command in the node repository:
 `./partner-chains-node wizards generate-keys`
-3. Input the node base path. It is saved in `partner-chains-cli-resources-config.json`
+3. Input the node base path. It is saved in `pc-resources-config.json`
 
 Now the wizard will output `partner-chains-public-keys.json` containing three keys:
 
@@ -272,7 +272,7 @@ Now the wizard will output `partner-chains-public-keys.json` containing three ke
 
 Obtaining the chain parameters needs to be done manually.
 
-Contact the chain builder and request the `chain-spec.json` file and the `partner-chains-cli-chain-config.json` file.
+Contact the chain builder and request the `chain-spec.json` file and the `pc-chain-config.json` file.
 
 ### 5. Register for the partner chain
 
@@ -320,9 +320,9 @@ The start-node wizard is used to start a partner chain node. Make sure that `car
 1. Start the wizard: `./partner-chains-node wizards start-node`.
 2. The wizard checks if all required keys are present. If not, it reminds you to the run the generate-keys wizard first, and exits.
 3. If the `chain-spec` file is not present, you should obtain it from the governance authority.
-4. The wizard checks the `partner-chains-cli-chain-config.json` file. If it is missing or invalid, you should obtain it from the governance authority.
+4. The wizard checks the `pc-chain-config.json` file. If it is missing or invalid, you should obtain it from the governance authority.
 5. If the `db_sync_postgres_connection_string` is missing from the `partner-chain-cli-resources-config.json` file, the wizard prompts for it using the default value `postgresql://postgres-user:postgres-password@localhost:5432/cexplorer`.
-6. The wizard outputs all relevant parameters and asks if they are correct. If not, you should edit the `partner-chains-cli-chain-config.json` and/or `partner-chain-cli-resources-config.json` files and run the wizard again.
+6. The wizard outputs all relevant parameters and asks if they are correct. If not, you should edit the `pc-chain-config.json` and/or `partner-chain-cli-resources-config.json` files and run the wizard again.
 
 The wizard sets the required environment variables and starts the node.
 
@@ -333,7 +333,7 @@ Registration is effective after 1-2 Cardano epochs. After the waiting period, th
 To deregister from the list of block producer candidates, you need to run the deregister wizard.
 
 1. Start the wizard: `./partner-chains-node wizards deregister`.
-2. The wizard checks the `partner-chains-cli-chain-config.json` file.
+2. The wizard checks the `pc-chain-config.json` file.
 3. The wizard prompts for the payment verification key file used during registration.
 4. The wizard prompts for the cold verification key matching the cold signing key used during registration.
 5. The wizard prompts for ogmios and kupo addresses.
@@ -342,7 +342,7 @@ To deregister from the list of block producer candidates, you need to run the de
 ---
 **NOTE**
 
-The configuration of the chain is stored in the file `partner-chains-cli-chain-config.json`. This file needs to remain identical with other nodes in the network.
+The configuration of the chain is stored in the file `pc-chain-config.json`. This file needs to remain identical with other nodes in the network.
 
 
 ---

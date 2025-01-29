@@ -17,6 +17,7 @@ use ogmios_client::{
 };
 use partner_chains_cardano_offchain::{
 	await_tx::{AwaitTx, FixedDelayRetries},
+	cardano_keys::CardanoPaymentSigningKey,
 	d_param, init_governance, permissioned_candidates,
 	register::Register,
 	reserve::{self, release::release_reserve_funds, TokenAmount},
@@ -25,9 +26,8 @@ use partner_chains_cardano_offchain::{
 use partner_chains_plutus_data::reserve::ReserveDatum;
 use sidechain_domain::{
 	AdaBasedStaking, AssetId, AssetName, AuraPublicKey, CandidateRegistration, DParameter,
-	GrandpaPublicKey, MainchainAddressHash, MainchainPrivateKey, MainchainPublicKey,
-	MainchainSignature, McTxHash, PermissionedCandidateData, PolicyId, SidechainPublicKey,
-	SidechainSignature, UtxoId, UtxoIndex,
+	GrandpaPublicKey, MainchainKeyHash, MainchainPublicKey, MainchainSignature, McTxHash,
+	PermissionedCandidateData, PolicyId, SidechainPublicKey, SidechainSignature, UtxoId, UtxoIndex,
 };
 use std::time::Duration;
 use testcontainers::{clients::Cli, Container, GenericImage};
@@ -37,23 +37,31 @@ const TEST_IMAGE: &str = "ghcr.io/input-output-hk/smart-contracts-tests-cardano-
 
 const TEST_IMAGE_TAG: &str = "v10.1.4-v6.11.0";
 
-const GOVERNANCE_AUTHORITY: MainchainAddressHash =
-	MainchainAddressHash(hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"));
+const GOVERNANCE_AUTHORITY: MainchainKeyHash =
+	MainchainKeyHash(hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"));
 
-const GOVERNANCE_AUTHORITY_PAYMENT_KEY: MainchainPrivateKey =
-	MainchainPrivateKey(hex!("d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"));
+fn governance_authority_payment_key() -> CardanoPaymentSigningKey {
+	CardanoPaymentSigningKey::from_normal_bytes(hex!(
+		"d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
+	))
+	.unwrap()
+}
 
 const GOVERNANCE_AUTHORITY_ADDRESS: &str =
 	"addr_test1vr5vxqpnpl3325cu4zw55tnapjqzzx78pdrnk8k5j7wl72c6y08nd";
 
-const EVE_PAYMENT_KEY: MainchainPrivateKey =
-	MainchainPrivateKey(hex!("34a6ce19688e950b58ea73803a00db61d0505ba10d65756d85f27c37d24c06af"));
+fn eve_payment_key() -> CardanoPaymentSigningKey {
+	CardanoPaymentSigningKey::from_normal_bytes(hex!(
+		"34a6ce19688e950b58ea73803a00db61d0505ba10d65756d85f27c37d24c06af"
+	))
+	.unwrap()
+}
 
 const EVE_PUBLIC_KEY: MainchainPublicKey =
 	MainchainPublicKey(hex!("a5ab6e82531cac3480cf7ff360f38a0beeea93cabfdd1ed0495e0423f7875c57"));
 
-const EVE_PUBLIC_KEY_HASH: MainchainAddressHash =
-	MainchainAddressHash(hex!("84ba05c28879b299a8377e62128adc7a0e0df3ac438ff95efc7c8443"));
+const EVE_PUBLIC_KEY_HASH: MainchainKeyHash =
+	MainchainKeyHash(hex!("84ba05c28879b299a8377e62128adc7a0e0df3ac438ff95efc7c8443"));
 
 const EVE_ADDRESS: &str = "addr_test1vzzt5pwz3pum9xdgxalxyy52m3aqur0n43pcl727l37ggscl8h7v8";
 
@@ -84,7 +92,9 @@ async fn governance_flow() {
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
 	let _ = run_update_goveranance(&client, genesis_utxo).await;
-	assert!(run_upsert_d_param(genesis_utxo, 0, 1, EVE_PAYMENT_KEY, &client).await.is_some());
+	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &eve_payment_key(), &client)
+		.await
+		.is_some());
 }
 
 #[tokio::test]
@@ -94,13 +104,13 @@ async fn upsert_d_param() {
 	let container = client.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
-	assert!(run_upsert_d_param(genesis_utxo, 0, 1, GOVERNANCE_AUTHORITY_PAYMENT_KEY, &client)
+	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &governance_authority_payment_key(), &client)
 		.await
 		.is_some());
-	assert!(run_upsert_d_param(genesis_utxo, 0, 1, GOVERNANCE_AUTHORITY_PAYMENT_KEY, &client)
+	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &governance_authority_payment_key(), &client)
 		.await
 		.is_none());
-	assert!(run_upsert_d_param(genesis_utxo, 1, 1, GOVERNANCE_AUTHORITY_PAYMENT_KEY, &client)
+	assert!(run_upsert_d_param(genesis_utxo, 1, 1, &governance_authority_payment_key(), &client)
 		.await
 		.is_some())
 }
@@ -222,7 +232,7 @@ async fn run_init_goveranance<
 	let genesis_utxo = governance_utxos.first().cloned().unwrap().utxo_id();
 	let _ = init_governance::run_init_governance(
 		GOVERNANCE_AUTHORITY,
-		GOVERNANCE_AUTHORITY_PAYMENT_KEY,
+		&governance_authority_payment_key(),
 		Some(genesis_utxo),
 		client,
 		FixedDelayRetries::new(Duration::from_millis(500), 100),
@@ -240,7 +250,7 @@ async fn run_update_goveranance<
 ) {
 	let _ = update_governance::run_update_governance(
 		EVE_PUBLIC_KEY_HASH,
-		GOVERNANCE_AUTHORITY_PAYMENT_KEY,
+		&governance_authority_payment_key(),
 		genesis_utxo,
 		client,
 		FixedDelayRetries::new(Duration::from_millis(500), 100),
@@ -255,13 +265,13 @@ async fn run_upsert_d_param<
 	genesis_utxo: UtxoId,
 	num_permissioned_candidates: u16,
 	num_registered_candidates: u16,
-	pkey: MainchainPrivateKey,
+	pkey: &CardanoPaymentSigningKey,
 	client: &T,
 ) -> Option<McTxHash> {
 	let tx_hash = d_param::upsert_d_param(
 		genesis_utxo,
 		&DParameter { num_permissioned_candidates, num_registered_candidates },
-		pkey.0,
+		pkey,
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
@@ -291,7 +301,7 @@ async fn run_upsert_permissioned_candidates<
 	let tx_hash = permissioned_candidates::upsert_permissioned_candidates(
 		genesis_utxo,
 		&candidates,
-		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		&governance_authority_payment_key(),
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
@@ -314,7 +324,7 @@ async fn run_init_reserve_management<
 ) -> Vec<McTxHash> {
 	reserve::init::init_reserve_management(
 		genesis_utxo,
-		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		&governance_authority_payment_key(),
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
@@ -339,7 +349,7 @@ async fn run_create_reserve_management<
 			initial_deposit: INITIAL_DEPOSIT_AMOUNT,
 		},
 		genesis_utxo,
-		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		&governance_authority_payment_key(),
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
@@ -356,7 +366,7 @@ async fn run_update_reserve_settings_management<
 ) -> Option<McTxHash> {
 	reserve::update_settings::update_reserve_settings(
 		genesis_utxo,
-		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		&governance_authority_payment_key(),
 		updated_total_accrued_function_script_hash,
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
@@ -380,7 +390,7 @@ async fn run_deposit_to_reserve<
 			amount: DEPOSIT_AMOUNT,
 		},
 		genesis_utxo,
-		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		&governance_authority_payment_key(),
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
@@ -396,7 +406,7 @@ async fn run_handover_reserve<
 ) -> Result<McTxHash, anyhow::Error> {
 	reserve::handover::handover_reserve(
 		genesis_utxo,
-		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		&governance_authority_payment_key(),
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
@@ -421,7 +431,7 @@ async fn run_release_reserve_funds<
 		},
 		genesis_utxo,
 		reference_utxo,
-		GOVERNANCE_AUTHORITY_PAYMENT_KEY.0,
+		&governance_authority_payment_key(),
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
@@ -451,7 +461,7 @@ async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryU
 				aura_pub_key: AuraPublicKey([22u8; 32].to_vec()),
 				grandpa_pub_key: GrandpaPublicKey([23u8; 32].to_vec()),
 			},
-			EVE_PAYMENT_KEY,
+			&eve_payment_key(),
 		)
 		.await
 		.unwrap()

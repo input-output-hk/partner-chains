@@ -16,6 +16,10 @@ Every invocation of `partner-chains-cli` should be replaced with `<node> wizards
 The only other change is that "node executable path" configuration is not present in `partner-chains-cli-resources.json` anymore, because it is not needed anymore.
 Code will always invoke "self" executable instead.
 Since this change, all functionality of Partner Chains is available in the one executable of the node.
+* Added support for extended payment signing and verification keys.
+* Renamed file names of the configs used by wizard commands. `partner-chains-cli-resources-config.json` is now
+`pc-resources-config.json`, `partner-chains-cli-chain-config.json` is now `pc-chain-config.json`. Rename your
+files accordingly if migrating from prior versions.
 
 ## Removed
 

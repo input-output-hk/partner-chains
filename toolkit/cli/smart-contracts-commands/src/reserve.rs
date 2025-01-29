@@ -58,7 +58,7 @@ impl InitReserveCmd {
 		let ogmios_client = client_for_url(&self.common_arguments.ogmios_url).await?;
 		let _ = init_reserve_management(
 			self.genesis_utxo,
-			payment_key.0,
+			&payment_key,
 			&ogmios_client,
 			&FixedDelayRetries::two_minutes(),
 		)
@@ -98,7 +98,7 @@ impl CreateReserveCmd {
 				initial_deposit: self.initial_deposit_amount,
 			},
 			self.genesis_utxo,
-			payment_key.0,
+			&payment_key,
 			&ogmios_client,
 			&FixedDelayRetries::two_minutes(),
 		)
@@ -131,7 +131,7 @@ impl DepositReserveCmd {
 		let _ = deposit_to_reserve(
 			TokenAmount { token: self.token, amount: self.amount },
 			self.genesis_utxo,
-			payment_key.0,
+			&payment_key,
 			&ogmios_client,
 			&FixedDelayRetries::two_minutes(),
 		)
@@ -160,7 +160,7 @@ impl UpdateReserveSettingsCmd {
 		let ogmios_client = client_for_url(&self.common_arguments.ogmios_url).await?;
 		let _ = update_reserve_settings(
 			self.genesis_utxo,
-			payment_key.0,
+			&payment_key,
 			self.total_accrued_function_script_hash,
 			&ogmios_client,
 			&FixedDelayRetries::two_minutes(),
@@ -187,7 +187,7 @@ impl HandoverReserveCmd {
 		let ogmios_client = client_for_url(&self.common_arguments.ogmios_url).await?;
 		let _ = handover_reserve(
 			self.genesis_utxo,
-			payment_key.0,
+			&payment_key,
 			&ogmios_client,
 			&FixedDelayRetries::two_minutes(),
 		)
@@ -224,7 +224,7 @@ impl ReleaseReserveCmd {
 			TokenAmount { token: self.token, amount: self.amount },
 			self.genesis_utxo,
 			self.reference_utxo,
-			payment_key.0,
+			&payment_key,
 			&ogmios_client,
 			&FixedDelayRetries::two_minutes(),
 		)

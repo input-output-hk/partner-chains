@@ -274,9 +274,10 @@ impl TryFrom<Vec<u8>> for MainchainPublicKey {
 	}
 }
 
-pub const MAINCHAIN_ADDRESS_HASH_LEN: usize = 28;
+pub const MAINCHAIN_KEY_HASH_LEN: usize = 28;
 
-/// Some hash of MainchainAddress, 28 bytes. Presumably blake2b_224.
+/// blake2b_224 hash of a Cardano Verification (Public) Key.
+/// It can be a hash of Payment Verification, Payment Extended Verification or Staking Verification Key.
 /// Way to get it: cardano-cli latest address key-hash --payment-verification-key-file FILE
 #[derive(
 	Clone, Copy, Decode, Default, Eq, Encode, Hash, MaxEncodedLen, PartialEq, ToDatum, TypeInfo,
@@ -284,16 +285,16 @@ pub const MAINCHAIN_ADDRESS_HASH_LEN: usize = 28;
 #[byte_string(debug)]
 #[cfg_attr(feature = "std", byte_string(to_hex_string, decode_hex))]
 #[cfg_attr(feature = "serde", byte_string(hex_serialize, hex_deserialize))]
-pub struct MainchainAddressHash(pub [u8; MAINCHAIN_ADDRESS_HASH_LEN]);
+pub struct MainchainKeyHash(pub [u8; MAINCHAIN_KEY_HASH_LEN]);
 
-impl Display for MainchainAddressHash {
+impl Display for MainchainKeyHash {
 	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
 		let hash = sp_core::hexdisplay::HexDisplay::from(&self.0);
 		write!(f, "0x{}", hash)
 	}
 }
 
-impl MainchainAddressHash {
+impl MainchainKeyHash {
 	pub fn from_vkey(vkey: [u8; 32]) -> Self {
 		Self(blake2b(&vkey))
 	}
@@ -695,7 +696,7 @@ pub struct CandidateRegistration {
 	pub stake_ownership: AdaBasedStaking,
 	pub partner_chain_pub_key: SidechainPublicKey,
 	pub partner_chain_signature: SidechainSignature,
-	pub own_pkh: MainchainAddressHash,
+	pub own_pkh: MainchainKeyHash,
 	pub registration_utxo: UtxoId,
 	pub aura_pub_key: AuraPublicKey,
 	pub grandpa_pub_key: GrandpaPublicKey,

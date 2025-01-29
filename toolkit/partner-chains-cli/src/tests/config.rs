@@ -2,7 +2,7 @@ use crate::config::*;
 
 mod config_field {
 
-	use crate::tests::{MockIO, MockIOContext};
+	use crate::{tests::MockIOContext, verify_json};
 
 	use super::*;
 
@@ -26,12 +26,10 @@ mod config_field {
 			}
 		});
 
-		let mock_context = MockIOContext::new().with_expected_io(vec![MockIO::file_write_json(
-			config_file_path,
-			expected_file_content,
-		)]);
+		let mock_context = MockIOContext::new();
 
 		config_field.save_to_file(&"this is a test string".into(), &mock_context);
+		verify_json!(mock_context, config_file_path, expected_file_content);
 	}
 
 	#[test]
@@ -67,14 +65,10 @@ mod config_field {
 			}
 		});
 
-		let mock_context = MockIOContext::new()
-			.with_json_file(config_file_path, existing_content)
-			.with_expected_io(vec![
-				MockIO::file_read(config_file_path),
-				MockIO::file_write_json(config_file_path, expected_file_content),
-			]);
+		let mock_context = MockIOContext::new().with_json_file(config_file_path, existing_content);
 
 		config_field.save_to_file(&"this is a test string".into(), &mock_context);
+		verify_json!(mock_context, config_file_path, expected_file_content);
 	}
 
 	#[test]
@@ -97,9 +91,8 @@ mod config_field {
 			_marker: Default::default(),
 		};
 
-		let mock_context = MockIOContext::new()
-			.with_json_file(config_file_path, json_content.clone())
-			.with_expected_io(vec![MockIO::file_read(config_file_path)]);
+		let mock_context =
+			MockIOContext::new().with_json_file(config_file_path, json_content.clone());
 
 		let read_content = config_field.load_file(&mock_context);
 

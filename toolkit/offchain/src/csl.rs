@@ -1,3 +1,4 @@
+use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::plutus_script::PlutusScript;
 use anyhow::Context;
 use cardano_serialization_lib::*;
@@ -10,7 +11,7 @@ use ogmios_client::{
 	transactions::OgmiosEvaluateTransactionResponse,
 	types::{OgmiosUtxo, OgmiosValue},
 };
-use sidechain_domain::{AssetId, MainchainAddressHash, MainchainPrivateKey, NetworkType, UtxoId};
+use sidechain_domain::{AssetId, NetworkType, UtxoId};
 use std::collections::HashMap;
 
 pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: Language) -> [u8; 28] {
@@ -363,24 +364,6 @@ impl UtxoIdExt for UtxoId {
 	}
 }
 
-pub trait MainchainPrivateKeyExt {
-	fn to_pub_key_hash(&self) -> MainchainAddressHash;
-}
-
-impl MainchainPrivateKeyExt for MainchainPrivateKey {
-	fn to_pub_key_hash(&self) -> MainchainAddressHash {
-		cardano_serialization_lib::PrivateKey::from_normal_bytes(&self.0)
-			.expect("Conversion cannot fail on valid MainchainPrivateKey values")
-			.to_public()
-			.hash()
-			.to_bytes()
-			.as_slice()
-			.try_into()
-			.map(MainchainAddressHash)
-			.expect("Conversion cannot fail as representation is the same")
-	}
-}
-
 pub(crate) struct TransactionContext {
 	/// This key is added as required signer and used to sign the transaction.
 	pub(crate) payment_key: PrivateKey,
@@ -395,10 +378,10 @@ impl TransactionContext {
 	/// Gets `TransactionContext`, having UTXOs for the given payment key and the network configuration,
 	/// required to perform most of the partner-chains smart contract operations.
 	pub(crate) async fn for_payment_key<C: QueryLedgerState + QueryNetwork>(
-		payment_signing_key: [u8; 32],
+		payment_key: &CardanoPaymentSigningKey,
 		client: &C,
 	) -> Result<TransactionContext, anyhow::Error> {
-		let payment_key = PrivateKey::from_normal_bytes(&payment_signing_key)?;
+		let payment_key = payment_key.clone().0;
 		let network = client.shelley_genesis_configuration().await?.network.to_csl();
 		let protocol_parameters = client.query_protocol_parameters().await?;
 		let payment_address = key_hash_address(&payment_key.to_public().hash(), network);

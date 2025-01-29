@@ -2,7 +2,7 @@ use crate::tests::{MockIO, MockIOContext};
 
 use super::*;
 
-const RESOURCES_CONFIG_PATH: &str = "partner-chains-cli-resources-config.json";
+const RESOURCES_CONFIG_PATH: &str = "pc-resources-config.json";
 const DATA_PATH: &str = "/path/to/data";
 const CHAIN_SPEC_FILE: &str = "chain-spec.json";
 const DB_CONNECTION_STRING: &str =
@@ -20,10 +20,19 @@ fn default_config() -> StartNodeConfig {
 	StartNodeConfig { substrate_node_base_path: DATA_PATH.into() }
 }
 
-fn default_config_json() -> serde_json::Value {
+fn default_resources_config_json() -> serde_json::Value {
 	serde_json::json!({
 		"substrate_node_base_path": DATA_PATH,
 		"db_sync_postgres_connection_string": DB_CONNECTION_STRING
+	})
+}
+
+fn expected_final_resources_config_json() -> serde_json::Value {
+	serde_json::json!({
+		"substrate_node_base_path": DATA_PATH,
+		"db_sync_postgres_connection_string": DB_CONNECTION_STRING,
+		"sidechain_block_beneficiary": SIDECHAIN_BLOCK_BENEFICIARY_STRING,
+		"node_p2p_port": 30333
 	})
 }
 
@@ -103,34 +112,26 @@ fn happy_path() {
 	];
 
 	let context = MockIOContext::new()
-		.with_json_file(RESOURCES_CONFIG_PATH, default_config_json())
+		.with_json_file(RESOURCES_CONFIG_PATH, default_resources_config_json())
         .with_json_file(CHAIN_CONFIG_FILE_PATH, default_chain_config())
 		.with_file(CHAIN_SPEC_FILE, "irrelevant")
 		.with_expected_io(vec![
-			MockIO::file_read(RESOURCES_CONFIG_PATH),
 			MockIO::eprint(&format!(
 				"🛠️ Loaded node base path from config ({RESOURCES_CONFIG_PATH}): {DATA_PATH}"
 			)),
 			MockIO::list_dir(&keystore_path(), Some(keystore_files.clone())),
-			MockIO::file_read(RESOURCES_CONFIG_PATH),
 			MockIO::eprint(&format!(
 				"🛠️ Loaded DB-Sync Postgres connection string from config ({RESOURCES_CONFIG_PATH}): {DB_CONNECTION_STRING}"
 			)),
-			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 			MockIO::list_dir(&keystore_path(), Some(keystore_files.clone())),
-			MockIO::file_read(RESOURCES_CONFIG_PATH),
-			MockIO::file_read(RESOURCES_CONFIG_PATH),
-			MockIO::file_write_json_contains(RESOURCES_CONFIG_PATH, &SIDECHAIN_BLOCK_BENEFICIARY.json_pointer(), SIDECHAIN_BLOCK_BENEFICIARY_STRING),
 			value_check_prompt(),
-			MockIO::file_read(RESOURCES_CONFIG_PATH),
-			MockIO::file_read(RESOURCES_CONFIG_PATH),
-			MockIO::file_write_json_contains(RESOURCES_CONFIG_PATH, &NODE_P2P_PORT.json_pointer(), NODE_P2P_PORT.default.unwrap()),
 			MockIO::run_command(&default_chain_config_run_command(), "irrelevant")
 		]);
 
 	let result = StartNodeCmd { silent: false }.run(&context);
 
 	result.expect("should succeed");
+	verify_json!(context, RESOURCES_CONFIG_PATH, expected_final_resources_config_json());
 }
 
 mod check_chain_spec {
@@ -210,9 +211,8 @@ mod load_chain_config {
 
 	#[test]
 	fn accepts_a_correct_config() {
-		let context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_FILE_PATH, default_chain_config())
-			.with_expected_io(vec![MockIO::file_read(CHAIN_CONFIG_FILE_PATH)]);
+		let context =
+			MockIOContext::new().with_json_file(CHAIN_CONFIG_FILE_PATH, default_chain_config());
 
 		let result = load_chain_config(&context);
 
@@ -223,7 +223,6 @@ mod load_chain_config {
 	fn aborts_when_missing() {
 		let context =
 			MockIOContext::new().with_expected_io(vec![
-                MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
                 MockIO::eprint(&format!(
                     "⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} does not exists. Run prepare-configuration wizard first."
                 ))
@@ -242,7 +241,6 @@ mod load_chain_config {
 		let context = MockIOContext::new()
 			.with_json_file(CHAIN_CONFIG_FILE_PATH, incorrect)
 			.with_expected_io(vec![
-                MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
                 MockIO::eprint(&format!(
                     "⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} is invalid: missing field `cardano` at line 8 column 1. Run prepare-configuration wizard or fix errors manually."
                 ))

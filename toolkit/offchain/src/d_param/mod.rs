@@ -5,6 +5,7 @@
 //! `datum` field being `[num_permissioned_candidates, num_registered_candidates]`.
 
 use crate::await_tx::{AwaitTx, FixedDelayRetries};
+use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::{
 	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, InputsBuilderExt,
 	TransactionBuilderExt, TransactionContext,
@@ -30,7 +31,7 @@ pub trait UpsertDParam {
 		&self,
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
-		payment_signing_key: [u8; 32],
+		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> anyhow::Result<Option<McTxHash>>;
 }
 
@@ -39,7 +40,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> Upse
 		&self,
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
-		payment_signing_key: [u8; 32],
+		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> anyhow::Result<Option<McTxHash>> {
 		upsert_d_param(
 			genesis_utxo,
@@ -58,7 +59,7 @@ pub async fn upsert_d_param<
 >(
 	genesis_utxo: UtxoId,
 	d_parameter: &DParameter,
-	payment_signing_key: [u8; 32],
+	payment_signing_key: &CardanoPaymentSigningKey,
 	ogmios_client: &C,
 	await_tx: &A,
 ) -> anyhow::Result<Option<McTxHash>> {

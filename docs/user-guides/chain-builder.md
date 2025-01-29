@@ -251,7 +251,7 @@ The generate-keys wizard will generate necessary keys and save them to your node
 If these keys already exist in the node’s keystore, you will be asked to overwrite existing keys. The wizard will also generate a network key for your node if needed.
 
 1. Start the wizard: `./partner-chains-node wizards generate-keys`
-2. Input the node base path. It is saved in `partner-chains-cli-resources-config.json`.
+2. Input the node base path. It is saved in `pc-resources-config.json`.
 
 Now the wizard will output `partner-chains-public-keys.json` containing three keys:
 
@@ -273,7 +273,7 @@ Before running this wizard, be sure that `ogmios` is available by host and port.
 4. Configure initial native token supply address (optional)
 5. Store the main chain configuration
 
-This wizard will submit a governance initialization transaction, that spends the genesis utxo. It will also result in a `partner-chains-cli-chain-config.json` file. The wizard also adds required cardano addresses and policy ids to the configuration file.
+This wizard will submit a governance initialization transaction, that spends the genesis utxo. It will also result in a `pc-chain-config.json` file. The wizard also adds required cardano addresses and policy ids to the configuration file.
 
 After chain-config file has been generated, it should be updated with your keys and the keys of other *permissioned* candidates in the `initial_permissioned_candidates` array.
 
@@ -302,7 +302,7 @@ The wizard asks for the genesis utxo that identifies a partner chain.
 
 ##### Storing the main chain configuration
 
-The wizard completes by reporting that the `partner-chains-cli-chain-config.json` file is ready for distribution to network participants and also that the `create-chain-spec` wizard should be executed when keys of permissioned candidates are gathered.
+The wizard completes by reporting that the `pc-chain-config.json` file is ready for distribution to network participants and also that the `create-chain-spec` wizard should be executed when keys of permissioned candidates are gathered.
 
 A sample file:
 
@@ -352,11 +352,11 @@ A sample file:
 
 ### 4. Run the create-chain-spec wizard
 
-The wizard reads the file `partner-chains-cli-chain-config.json`. This file should be present and identical for every node participating in the chain.
+The wizard reads the file `pc-chain-config.json`. This file should be present and identical for every node participating in the chain.
 
 1. Start the wizard: `./partner-chains-node wizards create-chain-spec`
 
-The wizard displays the contents of `chain_parameters` and `initial_permissioned_candidates` from the `partner-chains-cli-chain-config.json` file. You can manually modify these values before running this wizard.
+The wizard displays the contents of `chain_parameters` and `initial_permissioned_candidates` from the `pc-chain-config.json` file. You can manually modify these values before running this wizard.
 
 The wizard creates the chain specification file `chain-spec.json` using these values.
 
@@ -366,7 +366,7 @@ The wizard informs you of the full path to the `chain-spec.json` file. You can n
 
 1. Start the wizard: `./partner-chains-node wizards setup-main-chain-state`
 
-The wizard reads the permissioned candidates list from the chain config file and Cardano. If it finds any discrepancy, it allows you to update the list. To update the list, add to the `initial_permissioned_candidates` array in `partner-chains-cli-chain-config.json` and re-run the setup-main-chain-state wizard.
+The wizard reads the permissioned candidates list from the chain config file and Cardano. If it finds any discrepancy, it allows you to update the list. To update the list, add to the `initial_permissioned_candidates` array in `pc-chain-config.json` and re-run the setup-main-chain-state wizard.
 
 Next, the wizard deals with the D parameter. If it is present on the main chain, the wizard displays its value and allows you to update it.
 
@@ -377,7 +377,7 @@ The D parameter has two values:
 
 The default value of R is zero, and the default value of P is the number of entries in the list of permissioned candidates.
 
-The configuration of the chain is stored in the file `partner-chains-cli-chain-config.json`. This file should be present and identical for every node participating in the network.
+The configuration of the chain is stored in the file `pc-chain-config.json`. This file should be present and identical for every node participating in the network.
 
 Information about the resources used by each node is stored in the file `partner-chain-cli-resources-config.json`. This file should be present for every node participating in the chain, but its contents are specific to each node.
 
@@ -390,12 +390,12 @@ Be sure two main chain (Cardano) epochs have passed since the registration of a 
 1. Start the wizard: `./partner-chains-node wizards start-node`
 2. The wizard checks if all required keys are present. If not, it reminds you to run the generate-keys wizard first, and exits.
 3. If the `chain-spec` file is not present, it should be generated with the create-chain-spec wizard.
-4. The wizard checks the `partner-chains-cli-chain-config.json` file. If it is missing or invalid, it should be generated with the prepare-configuration wizard.
+4. The wizard checks the `pc-chain-config.json` file. If it is missing or invalid, it should be generated with the prepare-configuration wizard.
 5. If the `db_sync_postgres_connection_string` is missing from the `partner-chain-cli-resources-config.json` file, the wizard prompts for it, using the default value `postgresql://postgres-user:postgres-password@localhost:5432/cexplorer`.
-6. The wizard outputs all relevant parameters and asks if they are correct. If not, you should edit the `partner-chains-cli-chain-config.json` and/or `partner-chain-cli-resources-config.json` files and run the wizard again.
+6. The wizard outputs all relevant parameters and asks if they are correct. If not, you should edit the `pc-chain-config.json` and/or `partner-chain-cli-resources-config.json` files and run the wizard again.
 
 ### 7. Distribute chain files to participants
 
 The partner chain is now ready to start accepting registered validator nodes. [Permissioned candidates](./docs/user-guides/permissioned.md) and [Registered candidates](./docs/user-guides/registered.md) have different onboarding processes. Please follow the respective steps for the corresponding type of user.
 
-Be prepared to share `chain-spec.json` and `partner-chains-cli-chain-config.json` files to both types of users.
+Be prepared to share `chain-spec.json` and `pc-chain-config.json` files to both types of users.

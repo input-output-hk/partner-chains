@@ -6,7 +6,7 @@ use cardano_serialization_lib::*;
 use hex_literal::hex;
 use ogmios_client::types::{Asset, Datum, OgmiosTx, OgmiosUtxo, OgmiosValue};
 use pretty_assertions::assert_eq;
-use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey};
+use sidechain_domain::{MainchainKeyHash, MainchainPrivateKey};
 
 fn payment_key_domain() -> MainchainPrivateKey {
 	MainchainPrivateKey(hex!("94f7531c9639654b77fa7e10650702b6937e05cd868f419f54bcb8368e413f04"))
@@ -95,10 +95,8 @@ fn governance_data() -> GovernanceData {
 	GovernanceData { policy_script: governance_script(), utxo: governance_utxo() }
 }
 
-fn new_governance_authority() -> MainchainAddressHash {
-	MainchainAddressHash(hex_literal::hex!(
-		"84ba05c28879b299a8377e62128adc7a0e0df3ac438ff95efc7c8443"
-	))
+fn new_governance_authority() -> MainchainKeyHash {
+	MainchainKeyHash(hex_literal::hex!("84ba05c28879b299a8377e62128adc7a0e0df3ac438ff95efc7c8443"))
 }
 
 fn mint_ex_units() -> ExUnits {

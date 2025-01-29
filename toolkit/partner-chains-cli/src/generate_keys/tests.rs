@@ -1,26 +1,29 @@
 use super::*;
+use crate::config::RESOURCES_CONFIG_FILE_PATH;
 use crate::tests::*;
 use crate::CmdRun;
+use scenarios::key_file_content;
+use scenarios::resources_file_content;
 
 const DATA_PATH: &str = "/path/to/data";
-const RESOURCES_CONFIG_PATH: &str = "partner-chains-cli-resources-config.json";
-const KEYS_FILE: &str = "partner-chains-public-keys.json";
-const CHAIN_NAME: &str = "partner_chains_template";
 
 const GRANDPA_PREFIX: &str = "6772616e"; // "gran" in hex
 const CROSS_CHAIN_PREFIX: &str = "63726368"; // "crch" in hex
 const AURA_PREFIX: &str = "61757261"; // "aura" in hex
 
 fn default_config() -> GenerateKeysConfig {
-	GenerateKeysConfig { chain_name: CHAIN_NAME.into(), substrate_node_base_path: DATA_PATH.into() }
+	GenerateKeysConfig {
+		chain_name: DEFAULT_CHAIN_NAME.into(),
+		substrate_node_base_path: DATA_PATH.into(),
+	}
 }
 
 fn network_key_file() -> String {
-	format!("{DATA_PATH}/chains/{CHAIN_NAME}/network/secret_ed25519")
+	format!("{DATA_PATH}/chains/{DEFAULT_CHAIN_NAME}/network/secret_ed25519")
 }
 
 fn keystore_path() -> String {
-	format!("{DATA_PATH}/chains/{CHAIN_NAME}/keystore")
+	format!("{DATA_PATH}/chains/{DEFAULT_CHAIN_NAME}/keystore")
 }
 
 pub mod scenarios {
@@ -37,15 +40,11 @@ pub mod scenarios {
 	}
 
 	pub fn prompt_all_config_fields() -> MockIO {
-		MockIO::Group(vec![
-			MockIO::prompt("node base path", Some("./data"), DATA_PATH),
-			MockIO::file_write_json(
-				RESOURCES_CONFIG_PATH,
-				serde_json::json!({
-					"substrate_node_base_path": DATA_PATH,
-				}),
-			),
-		])
+		MockIO::prompt("node base path", Some("./data"), DATA_PATH)
+	}
+
+	pub fn resources_file_content() -> serde_json::Value {
+		serde_json::json!({"substrate_node_base_path": DATA_PATH})
 	}
 
 	pub fn generate_all_spo_keys(
@@ -85,7 +84,6 @@ pub mod scenarios {
 
 	pub fn generate_network_key() -> MockIO {
 		MockIO::Group(vec![
-			MockIO::file_read(&network_key_file()),
 			MockIO::eprint("⚙️ Generating network key"),
 			MockIO::run_command(
 				&format!("<mock executable> key generate-node-key --base-path {DATA_PATH}"),
@@ -93,17 +91,15 @@ pub mod scenarios {
 			),
 		])
 	}
-
+	pub fn key_file_content(aura: &str, grandpa: &str, cross_chain: &str) -> serde_json::Value {
+		serde_json::json!({
+			"sidechain_pub_key": cross_chain,
+			"aura_pub_key": aura,
+			"grandpa_pub_key": grandpa,
+		})
+	}
 	pub fn write_key_file(aura: &str, grandpa: &str, cross_chain: &str) -> MockIO {
 		MockIO::Group(vec![
-			MockIO::file_write_json(
-				"partner-chains-public-keys.json",
-				serde_json::json!({
-					"aura_pub_key": aura,
-					"grandpa_pub_key": grandpa,
-					"sidechain_pub_key": cross_chain,
-				}),
-			),
 			MockIO::eprint("🔑 The following public keys were generated and saved to the partner-chains-public-keys.json file:"),
 			MockIO::print(&format!(
 				"{{
@@ -167,6 +163,12 @@ fn happy_path() {
 	let result = GenerateKeysCmd {}.run(&mock_context);
 
 	result.expect("should succeed");
+	verify_json!(
+		mock_context,
+		"partner-chains-public-keys.json",
+		key_file_content("aura-pub-key", "grandpa-pub-key", "cross-chain-pub-key")
+	);
+	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, resources_file_content());
 }
 
 mod config_read {
@@ -180,7 +182,7 @@ mod config_read {
 
 		let result = GenerateKeysConfig::load(&context);
 
-		assert_eq!(result.chain_name, CHAIN_NAME);
+		assert_eq!(result.chain_name, DEFAULT_CHAIN_NAME);
 		assert_eq!(result.substrate_node_base_path, DATA_PATH);
 	}
 
@@ -188,21 +190,18 @@ mod config_read {
 	fn reads_all_when_present() {
 		let context = MockIOContext::new()
 			.with_json_file(
-				RESOURCES_CONFIG_PATH,
+				RESOURCES_CONFIG_FILE_PATH,
 				serde_json::json!({
 					"substrate_node_base_path": DATA_PATH,
 				}),
 			)
-			.with_expected_io(vec![
-				MockIO::file_read(RESOURCES_CONFIG_PATH),
-				MockIO::eprint(&format!(
-					"🛠️ Loaded node base path from config ({RESOURCES_CONFIG_PATH}): {DATA_PATH}"
-				)),
-			]);
+			.with_expected_io(vec![MockIO::eprint(&format!(
+				"🛠️ Loaded node base path from config ({RESOURCES_CONFIG_FILE_PATH}): {DATA_PATH}"
+			))]);
 
 		let result = GenerateKeysConfig::load(&context);
 
-		assert_eq!(result.chain_name, CHAIN_NAME);
+		assert_eq!(result.chain_name, DEFAULT_CHAIN_NAME);
 		assert_eq!(result.substrate_node_base_path, DATA_PATH);
 	}
 }
@@ -219,7 +218,7 @@ mod generate_spo_keys {
 		];
 		let mock_context = MockIOContext::new()
 			.with_json_file(
-				RESOURCES_CONFIG_PATH,
+				RESOURCES_CONFIG_FILE_PATH,
 				serde_json::json!({
 					"substrate_node_base_path": DATA_PATH,
 				}),
@@ -252,21 +251,26 @@ mod generate_spo_keys {
 		let result = generate_spo_keys(&default_config(), &mock_context);
 
 		result.expect("should succeed");
+		verify_json!(
+			mock_context,
+			"partner-chains-public-keys.json",
+			key_file_content("0xaura-key", "0xgrandpa-key", "0xcross-chain-key")
+		);
 	}
 
 	#[test]
 	fn skips_the_step_if_user_declines_keys_file_overwrite() {
 		let mock_context = MockIOContext::new()
-			.with_file(KEYS_FILE, "irrelevant")
+			.with_file(KEYS_FILE_PATH, "irrelevant")
 			.with_json_file(
-				RESOURCES_CONFIG_PATH,
+				RESOURCES_CONFIG_FILE_PATH,
 				serde_json::json!({
 					"substrate_node_base_path": DATA_PATH,
 				}),
 			)
 			.with_expected_io(vec![
 				MockIO::prompt_yes_no(
-					&format! {"keys file {KEYS_FILE} exists - overwrite it?"},
+					&format! {"keys file {KEYS_FILE_PATH} exists - overwrite it?"},
 					false,
 					false,
 				),
@@ -285,7 +289,6 @@ mod generate_network_key {
 	#[test]
 	fn generates_new_key_when_missing() {
 		let context = MockIOContext::new().with_expected_io(vec![
-			MockIO::file_read(&network_key_file()),
 			MockIO::eprint("⚙️ Generating network key"),
 			MockIO::run_command(
 				&format!("<mock executable> key generate-node-key --base-path {DATA_PATH}"),
@@ -305,7 +308,6 @@ mod generate_network_key {
 
 		let context =
 			MockIOContext::new().with_file(&network_key_file(), key).with_expected_io(vec![
-				MockIO::file_read(&network_key_file()),
 				MockIO::eprint("🔑 A valid network key is already present in the keystore, skipping generation")
 			]);
 
@@ -321,7 +323,6 @@ mod generate_network_key {
 
 		let context =
 			MockIOContext::new().with_file(&network_key_file(), key).with_expected_io(vec![
-				MockIO::file_read(&network_key_file()),
 				MockIO::eprint(
 					"⚠️ Network key in keystore is invalid (Invalid hex), wizard will regenerate it",
 				),

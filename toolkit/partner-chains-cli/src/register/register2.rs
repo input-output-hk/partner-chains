@@ -1,4 +1,4 @@
-use crate::cardano_key::get_key_bytes_from_file;
+use crate::cardano_key::get_mc_staking_signing_key_from_file;
 use crate::io::IOContext;
 use crate::CmdRun;
 use clap::Parser;
@@ -63,7 +63,7 @@ fn get_mainchain_cold_skey<C: IOContext>(
 	context: &C,
 	keys_path: &str,
 ) -> Result<MainchainSigningKeyParam, anyhow::Error> {
-	Ok(MainchainSigningKeyParam::from(get_key_bytes_from_file(keys_path, context)?))
+	Ok(MainchainSigningKeyParam::from(get_mc_staking_signing_key_from_file(keys_path, context)?))
 }
 
 #[cfg(test)]
@@ -95,7 +95,6 @@ mod tests {
 				Some("cold.skey"),
 				"/invalid/cold.skey",
 			),
-			MockIO::file_read("/invalid/cold.skey"),
 			MockIO::eprint("Unable to read mainchain signing key file"),
 		]);
 
@@ -111,14 +110,11 @@ mod tests {
 	}
 
 	fn prompt_mc_cold_key_path_io() -> Vec<MockIO> {
-		vec![
-			MockIO::prompt(
-				"Path to mainchain signing key file",
-				Some("cold.skey"),
-				"/path/to/cold.skey",
-			),
-			MockIO::file_read("/path/to/cold.skey"),
-		]
+		vec![MockIO::prompt(
+			"Path to mainchain signing key file",
+			Some("cold.skey"),
+			"/path/to/cold.skey",
+		)]
 	}
 
 	fn output_result_io() -> Vec<MockIO> {

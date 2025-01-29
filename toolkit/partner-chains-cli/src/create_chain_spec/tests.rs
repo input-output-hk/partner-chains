@@ -1,7 +1,7 @@
 use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::create_chain_spec::{CreateChainSpecCmd, INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE};
 use crate::tests::{MockIO, MockIOContext};
-use crate::CmdRun;
+use crate::{verify_json, CmdRun};
 use anyhow::anyhow;
 use colored::Colorize;
 
@@ -11,18 +11,16 @@ fn happy_path() {
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_config_content())
 		.with_json_file("chain-spec.json", test_chain_spec_content())
 		.with_expected_io(vec![
-			read_chain_config_io(),
 			show_intro(),
 			show_chain_parameters(),
 			show_initial_permissioned_candidates(),
 			MockIO::prompt_yes_no("Do you want to continue?", true, true),
 			run_build_spec_io(Ok("ok".to_string())),
-			read_chain_spec_io(),
-			write_updated_chain_spec_io(),
 			show_outro(),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
 	result.expect("should succeed");
+	verify_json!(mock_context, "chain-spec.json", updated_chain_spec())
 }
 
 #[test]
@@ -30,11 +28,10 @@ fn shows_warning_when_initial_candidates_are_empty() {
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_config_content_with_empty_initial_permissioned_candidates())
 		.with_expected_io(vec![
-			read_chain_config_io(),
 			show_intro(),
 			show_chain_parameters(),
 			MockIO::print(&"WARNING: The list of initial permissioned candidates is empty. Generated chain spec will not allow the chain to start.".red().to_string()),
-			MockIO::print(&"Update 'initial_permissioned_candidates' field of partner-chains-cli-chain-config.json file with keys of initial committee.".red().to_string()),
+			MockIO::print(&"Update 'initial_permissioned_candidates' field of pc-chain-config.json file with keys of initial committee.".red().to_string()),
 			MockIO::print(&INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE.yellow().to_string()),
 			MockIO::prompt_yes_no("Do you want to continue?", true, false),
 			MockIO::print("Aborted."),
@@ -49,8 +46,7 @@ fn instruct_user_when_config_file_is_invalid() {
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_config_content_without_initial_permissioned_candidates())
 		.with_expected_io(vec![
-			MockIO::file_read(CHAIN_CONFIG_FILE_PATH), //reads initial_permissioned_candidates
-			MockIO::eprint("The 'partner-chains-cli-chain-config.json' configuration file is missing or invalid.
+			MockIO::eprint("The 'pc-chain-config.json' configuration file is missing or invalid.
 If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.
 If you are a validator, you can obtain the chain configuration file from the governance authority."),
 		]);
@@ -63,8 +59,7 @@ fn instruct_user_when_config_file_has_a_field_in_wrong_format() {
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_config_content_with_a_field_in_wrong_format())
 		.with_expected_io(vec![
-			MockIO::file_read(CHAIN_CONFIG_FILE_PATH), //reads initial_permissioned_candidates
-			MockIO::eprint("The 'partner-chains-cli-chain-config.json' configuration file is missing or invalid.
+			MockIO::eprint("The 'pc-chain-config.json' configuration file is missing or invalid.
 If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.
 If you are a validator, you can obtain the chain configuration file from the governance authority."),
 		]);
@@ -77,13 +72,11 @@ fn errors_if_chain_spec_is_missing() {
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_config_content())
 		.with_expected_io(vec![
-			read_chain_config_io(),
 			show_intro(),
 			show_chain_parameters(),
 			show_initial_permissioned_candidates(),
 			MockIO::prompt_yes_no("Do you want to continue?", true, true),
 			run_build_spec_io(Ok("ok".to_string())),
-			read_chain_spec_io(),
 		]);
 	let result = CreateChainSpecCmd.run(&mock_context);
 	let err = result.expect_err("should return error");
@@ -100,7 +93,6 @@ fn forwards_build_spec_error_if_it_fails() {
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_config_content())
 		.with_json_file("chain-spec.json", test_chain_spec_content())
 		.with_expected_io(vec![
-			read_chain_config_io(),
 			show_intro(),
 			show_chain_parameters(),
 			show_initial_permissioned_candidates(),
@@ -267,65 +259,58 @@ fn run_build_spec_io(output: Result<String, anyhow::Error>) -> MockIO {
 	])
 }
 
-fn read_chain_spec_io() -> MockIO {
-	MockIO::Group(vec![MockIO::file_read("chain-spec.json")])
-}
-
-fn write_updated_chain_spec_io() -> MockIO {
-	MockIO::file_write_json(
-		"chain-spec.json",
-		serde_json::json!(
-			{
-				"genesis": {
-					"runtimeGenesis": {
-						"config": {
-							"session": {
-								"initialValidators": [
-									[
-										  "5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X",
-										  {
-											"aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-											"grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
-										}
-									],
-									[
-										"5DVskgSC9ncWQpxFMeUn45NU43RUq93ByEge6ApbnLk6BR9N",
-										{
-											"aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-											"grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
-										}
-									]
-								]
-							},
-							"sessionCommitteeManagement": {
-								"initialAuthorities": [
-									[
-										"KW39r9CJjAVzmkf9zQ4YDb2hqfAVGdRqn53eRqyruqpxAP5YL",
-										{
-											"aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-											"grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
-										}
-									],
-									[
-										"KWByAN7WfZABWS5AoWqxriRmF5f2jnDqy3rB5pfHLGkY93ibN",
-										{
-											"aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-											"grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
-										}
-									]
+fn updated_chain_spec() -> serde_json::Value {
+	serde_json::json!(
+		{
+			"genesis": {
+				"runtimeGenesis": {
+					"config": {
+						"session": {
+							"initialValidators": [
+								[
+									  "5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X",
+									  {
+										"aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+										"grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
+									}
 								],
-								"main_chain_scripts": {
-									"committee_candidate_address": "0x002244",
-									"d_parameter_policy_id": "0x1234",
-									"permissioned_candidates_policy_id": "0x5678"
-								}
-							},
-						}
+								[
+									"5DVskgSC9ncWQpxFMeUn45NU43RUq93ByEge6ApbnLk6BR9N",
+									{
+										"aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+										"grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
+									}
+								]
+							]
+						},
+						"sessionCommitteeManagement": {
+							"initialAuthorities": [
+								[
+									"KW39r9CJjAVzmkf9zQ4YDb2hqfAVGdRqn53eRqyruqpxAP5YL",
+									{
+										"aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+										"grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
+									}
+								],
+								[
+									"KWByAN7WfZABWS5AoWqxriRmF5f2jnDqy3rB5pfHLGkY93ibN",
+									{
+										"aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+										"grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
+									}
+								]
+							],
+							"main_chain_scripts": {
+								"committee_candidate_address": "0x002244",
+								"d_parameter_policy_id": "0x1234",
+								"permissioned_candidates_policy_id": "0x5678"
+							}
+						},
 					}
-				},
-				"some_other_field": "irrelevant"
-			}
-		),
+				}
+			},
+			"some_other_field": "irrelevant"
+		}
 	)
 }
 
@@ -334,18 +319,5 @@ fn show_outro() -> MockIO {
 		MockIO::print("chain-spec.json file has been created."),
 		MockIO::print("If you are the governance authority, you can distribute it to the validators."),
 		MockIO::print("Run 'setup-main-chain-state' command to set D-parameter and permissioned candidates on Cardano."),
-	])
-}
-
-fn read_chain_config_io() -> MockIO {
-	MockIO::Group(vec![
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // genesis utxo
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // initial permissioned candidates
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // committee candidates address
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // d parameter policy id
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // permissioned candidates policy id
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // native token policy id
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // native token asset name
-		MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // illiquid supply validator address
 	])
 }

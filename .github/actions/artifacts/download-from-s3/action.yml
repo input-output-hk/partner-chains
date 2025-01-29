@@ -1,0 +1,57 @@
+name: "Download Artifacts from S3"
+description: "Download built artifacts from an S3 bucket using SHA for lookup"
+inputs:
+  sha:
+    description: "Commit SHA for locating artifacts in S3"
+    required: true
+  bucket-name:
+    description: "S3 bucket name"
+    required: true
+outputs: {}
+runs:
+  using: "composite"
+  steps:
+    - name: Acquire AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ env.AWS_ROLE_ARN_SECRET }}
+        aws-region: eu-central-1
+
+    - name: Download Artifacts from S3
+      shell: bash
+      run: |
+        S3_BUCKET_NAME="${{ inputs.bucket-name }}"
+        S3_PATH="artifacts/${{ inputs.sha }}"
+        OUTPUT_DIR="artifacts"
+
+        echo "Checking if artifacts exist in S3..."
+        aws s3 ls "s3://$S3_BUCKET_NAME/$S3_PATH/" || {
+          echo "Artifacts for SHA ${{ inputs.sha }} not found in S3."
+          exit 1
+        }
+
+        echo "Downloading artifacts from S3..."
+        mkdir -p $OUTPUT_DIR
+        aws s3 cp --recursive "s3://$S3_BUCKET_NAME/$S3_PATH/" $OUTPUT_DIR
+        echo "Artifacts downloaded successfully to $OUTPUT_DIR."
+
+    - name: Upload Linux Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: partner-chains-node-linux-artifact
+        path: artifacts/partner-chains-node-linux-artifact/partner-chains-node-*-x86_64-linux
+        if-no-files-found: error
+
+    - name: Upload MacOS x86_64 Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: partner-chains-node-macos-x86_64-artifact
+        path: artifacts/partner-chains-node-macos-x86_64-artifact/partner-chains-node-*-x86_64-apple-darwin
+        if-no-files-found: error
+
+    - name: Upload MacOS ARM64 Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: partner-chains-node-macos-arm64-artifact
+        path: artifacts/partner-chains-node-macos-arm64-artifact/partner-chains-node-*-aarch64-apple-darwin
+        if-no-files-found: error

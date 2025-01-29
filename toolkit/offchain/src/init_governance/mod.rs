@@ -1,3 +1,4 @@
+use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::Costs;
 use crate::csl::OgmiosUtxoExt;
 use crate::plutus_script;
@@ -16,7 +17,7 @@ use ogmios_client::{
 	types::{OgmiosTx, OgmiosUtxo},
 };
 use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
-use sidechain_domain::{MainchainAddressHash, MainchainPrivateKey, UtxoId};
+use sidechain_domain::{MainchainKeyHash, UtxoId};
 
 #[cfg(test)]
 mod tests;
@@ -29,8 +30,8 @@ pub trait InitGovernance {
 	#[allow(async_fn_in_trait)]
 	async fn init_governance(
 		&self,
-		governance_authority: MainchainAddressHash,
-		payment_key: MainchainPrivateKey,
+		governance_authority: MainchainKeyHash,
+		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
 	) -> Result<OgmiosTx, OffchainError>;
 }
@@ -41,8 +42,8 @@ where
 {
 	async fn init_governance(
 		&self,
-		governance_authority: MainchainAddressHash,
-		payment_key: MainchainPrivateKey,
+		governance_authority: MainchainKeyHash,
+		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
 	) -> Result<OgmiosTx, OffchainError> {
 		run_init_governance(
@@ -62,23 +63,19 @@ pub async fn run_init_governance<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 >(
-	governance_authority: MainchainAddressHash,
-	payment_key: MainchainPrivateKey,
+	governance_authority: MainchainKeyHash,
+	payment_key: &CardanoPaymentSigningKey,
 	genesis_utxo_id: Option<UtxoId>,
 	client: &T,
 	await_tx: A,
 ) -> anyhow::Result<(UtxoId, OgmiosTx)> {
-	let payment_key = PrivateKey::from_normal_bytes(&payment_key.0)
-		.expect("MainchainPrivateKey is a valid PrivateKey");
+	let ctx = crate::csl::TransactionContext::for_payment_key(payment_key, client).await?;
 
-	let network = client.shelley_genesis_configuration().await?.network;
-
-	let own_address = key_hash_address(&payment_key.to_public().hash(), network.to_csl());
+	let own_address = key_hash_address(&ctx.payment_key_hash(), ctx.network);
 	log::info!("✉️ Submitter address: {}", own_address.to_bech32(None).unwrap());
 
-	let own_utxos = client.query_utxos(&[own_address.to_bech32(None)?]).await?;
+	let own_utxos = ctx.payment_key_utxos.clone();
 	log::info!("💱 {} UTXOs available", own_utxos.len());
-	let protocol_parameters = client.query_protocol_parameters().await?;
 
 	let genesis_utxo = match genesis_utxo_id {
 		None => {
@@ -92,13 +89,6 @@ pub async fn run_init_governance<
 			.find(|utxo| utxo.transaction.id == utxo_id.tx_hash.0 && utxo.index == utxo_id.index.0)
 			.ok_or(anyhow!("Could not find genesis UTXO: {utxo_id}"))?
 			.clone(),
-	};
-
-	let ctx = crate::csl::TransactionContext {
-		payment_key,
-		payment_key_utxos: own_utxos,
-		network: network.to_csl(),
-		protocol_parameters,
 	};
 
 	let tx = Costs::calculate_costs(

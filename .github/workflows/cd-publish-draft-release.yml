@@ -1,0 +1,33 @@
+# Workflow not to be executed manually, but by the cd.yml workflow
+
+name: "CD: Publish Draft Release"
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'The SHA of the commit to build'
+        required: true
+        type: string
+      tag:
+        description: 'The tag for the release'
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: write
+  packages: write
+
+jobs:
+  publish-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Publish Release
+        uses: ./.github/actions/release/publish-draft-release
+        with:
+          tag: ${{ inputs.tag }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

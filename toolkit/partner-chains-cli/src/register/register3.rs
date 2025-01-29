@@ -1,4 +1,4 @@
-use crate::cardano_key::get_mc_pkey_from_file;
+use crate::cardano_key::get_mc_payment_signing_key_from_file;
 use crate::config;
 use crate::config::config_fields;
 use crate::config::CHAIN_CONFIG_FILE_PATH;
@@ -7,7 +7,6 @@ use crate::main_chain_follower::set_main_chain_follower_env;
 use crate::ogmios::config::establish_ogmios_configuration;
 use crate::CmdRun;
 use clap::Parser;
-use partner_chains_cardano_offchain::csl::MainchainPrivateKeyExt;
 use partner_chains_cardano_offchain::register::Register;
 use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_domain::*;
@@ -51,7 +50,7 @@ impl CmdRun for Register3Cmd {
 			context.prompt("Path to mainchain payment signing key file", Some("payment.skey"));
 
 		let payment_signing_key =
-			get_mc_pkey_from_file(&cardano_payment_signing_key_path, context)?;
+			get_mc_payment_signing_key_from_file(&cardano_payment_signing_key_path, context)?;
 		let ogmios_configuration = establish_ogmios_configuration(context)?;
 		let candidate_registration = CandidateRegistration {
 			stake_ownership: AdaBasedStaking {
@@ -72,7 +71,7 @@ impl CmdRun for Register3Cmd {
 			.block_on(offchain.register(
 				self.genesis_utxo,
 				&candidate_registration,
-				payment_signing_key,
+				&payment_signing_key,
 			))
 			.map_err(|e| anyhow::anyhow!("Candidate registration failed: {e:?}!"))?;
 
@@ -152,8 +151,12 @@ mod tests {
 			config_fields::POSTGRES_CONNECTION_STRING, CHAIN_CONFIG_FILE_PATH,
 			RESOURCES_CONFIG_FILE_PATH,
 		},
-		ogmios::config::tests::{default_ogmios_service_config, establish_ogmios_configuration_io},
+		ogmios::config::tests::{
+			default_ogmios_config_json, default_ogmios_service_config,
+			establish_ogmios_configuration_io,
+		},
 		tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks},
+		verify_json,
 	};
 	use hex_literal::hex;
 	use partner_chains_cardano_offchain::OffchainError;
@@ -181,7 +184,6 @@ mod tests {
 				vec![
 					intro_msg_io(),
 					prompt_mc_payment_key_path_io(),
-					read_payment_skey(),
 					get_ogmios_config(),
 					prompt_for_registration_status_y(),
 					show_registration_status_io(),
@@ -193,6 +195,7 @@ mod tests {
 
 		let result = mock_register3_cmd().run(&mock_context);
 		result.expect("should succeed");
+		verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, final_resources_config_json());
 	}
 
 	#[test]
@@ -212,15 +215,10 @@ mod tests {
 				offchain_mock,
 			))
 			.with_expected_io(
-				vec![
-					intro_msg_io(),
-					prompt_mc_payment_key_path_io(),
-					read_payment_skey(),
-					get_ogmios_config(),
-				]
-				.into_iter()
-				.flatten()
-				.collect::<Vec<MockIO>>(),
+				vec![intro_msg_io(), prompt_mc_payment_key_path_io(), get_ogmios_config()]
+					.into_iter()
+					.flatten()
+					.collect::<Vec<MockIO>>(),
 			);
 
 		let result = mock_register3_cmd().run(&mock_context);
@@ -247,7 +245,6 @@ mod tests {
 				vec![
 					intro_msg_io(),
 					prompt_mc_payment_key_path_io(),
-					read_payment_skey(),
 					get_ogmios_config(),
 					prompt_for_registration_status_n(),
 				]
@@ -264,7 +261,6 @@ mod tests {
 		vec![
             MockIO::print("⚙️ Register as a committee candidate (step 3/3)"),
 			MockIO::print("This command will submit the registration message to the mainchain."),
-			MockIO::file_read(CHAIN_CONFIG_FILE_PATH), // check if the chain config file exists
 			MockIO::print("To proceed with the next command, a payment signing key is required. Please note that this key will not be stored or communicated over the network."),
         ]
 	}
@@ -294,13 +290,8 @@ mod tests {
 	fn show_registration_status_io() -> Vec<MockIO> {
 		vec![
         MockIO::print("The registration status will be queried from a db-sync instance for which a valid connection string is required. Please note that this db-sync instance needs to be up and synced with the main chain."),
-        MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
         MockIO::current_timestamp(mock_timestamp()),
-        MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
         MockIO::prompt("DB-Sync Postgres connection string",POSTGRES_CONNECTION_STRING.default,POSTGRES_CONNECTION_STRING.default.unwrap()),
-        MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
-        MockIO::file_write_json_contains(RESOURCES_CONFIG_FILE_PATH, &POSTGRES_CONNECTION_STRING.json_pointer(), POSTGRES_CONNECTION_STRING.default.unwrap()),
-        MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
         MockIO::set_env_var(
 			  "DB_SYNC_POSTGRES_CONNECTION_STRING",  POSTGRES_CONNECTION_STRING.default.unwrap(),
 	  	),
@@ -317,10 +308,6 @@ mod tests {
         MockIO::print("Registration status:"),
         MockIO::print("{\"epoch\":1,\"validators\":[{\"public_key\":\"cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7\",\"status\":\"Registered\"}]}"),
 		]
-	}
-
-	fn read_payment_skey() -> Vec<MockIO> {
-		vec![MockIO::file_read("/path/to/payment.skey")]
 	}
 
 	fn mock_register3_cmd() -> Register3Cmd {
@@ -350,10 +337,8 @@ mod tests {
 		})
 	}
 
-	fn payment_signing_key() -> MainchainPrivateKey {
-		MainchainPrivateKey(hex!(
-			"d75c630516c33a66b11b3444a70b65083aeb21353bd919cc5e3daa02c9732a84"
-		))
+	fn payment_signing_key() -> Vec<u8> {
+		hex!("d75c630516c33a66b11b3444a70b65083aeb21353bd919cc5e3daa02c9732a84").to_vec()
 	}
 
 	fn chain_config_content() -> serde_json::Value {
@@ -395,6 +380,16 @@ mod tests {
 		})
 	}
 
+	fn final_resources_config_json() -> serde_json::Value {
+		json!({
+			"cardano_payment_verification_key_file": "payment.vkey",
+			"db_sync_postgres_connection_string": "postgresql://postgres-user:postgres-password@localhost:5432/cexplorer",
+			"ogmios": default_ogmios_config_json(),
+			"substrate_node_base_path": "/path/to/data",
+			"substrate_node_executable_path": "/path/to/node"
+		})
+	}
+
 	fn chain_parameters_json() -> serde_json::Value {
 		json!({
 		  "genesis_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0"
@@ -421,7 +416,7 @@ mod tests {
 			},
 			partner_chain_pub_key: SidechainPublicKey(hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec()),
 			partner_chain_signature: SidechainSignature(hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854").to_vec()),
-			own_pkh: MainchainAddressHash(hex!("7fa48bb8fb5d6804fad26237738ce490d849e4567161e38ab8415ff3")),
+			own_pkh: MainchainKeyHash(hex!("7fa48bb8fb5d6804fad26237738ce490d849e4567161e38ab8415ff3")),
 			registration_utxo: UtxoId { tx_hash: McTxHash(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13")), index: UtxoIndex(0) },
 			aura_pub_key: AuraPublicKey(hex!("79c3b7fc0b7697b9414cb87adcb37317d1cab32818ae18c0e97ad76395d1fdcf").to_vec()),
 			grandpa_pub_key: GrandpaPublicKey(hex!("1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07").to_vec())

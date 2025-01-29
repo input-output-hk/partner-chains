@@ -73,9 +73,9 @@ fn prepare_native_token<C: IOContext>(context: &C) -> anyhow::Result<()> {
 	Ok(())
 }
 
-const OUTRO: &str = r#"Chain configuration (partner-chains-cli-chain-config.json) is now ready for distribution to network participants.
+const OUTRO: &str = r#"Chain configuration (pc-chain-config.json) is now ready for distribution to network participants.
 
-If you intend to run a chain with permissioned candidates, you must manually set their keys in the partner-chains-cli-chain-config.json file before proceeding. Here's an example of how to add permissioned candidates:
+If you intend to run a chain with permissioned candidates, you must manually set their keys in the pc-chain-config.json file before proceeding. Here's an example of how to add permissioned candidates:
 
 {
   ...
@@ -99,12 +99,12 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 mod tests {
 	use super::*;
 	use crate::config::config_fields::{GENESIS_UTXO, OGMIOS_PROTOCOL};
-	use crate::config::NetworkProtocol;
+	use crate::config::{NetworkProtocol, CHAIN_CONFIG_FILE_PATH};
 	use crate::ogmios::test_values::{preprod_eras_summaries, preprod_shelley_config};
 	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 	use crate::prepare_configuration::prepare_cardano_params::tests::PREPROD_CARDANO_PARAMS;
-	use crate::prepare_configuration::tests::save_to_existing_file;
 	use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
+	use crate::verify_json;
 	use partner_chains_cardano_offchain::scripts_data::{Addresses, PolicyIds, ScriptsData};
 	use serde_json::json;
 	use serde_json::Value;
@@ -132,38 +132,8 @@ mod tests {
 
 	pub mod scenarios {
 		use super::*;
-		use crate::config::config_fields::*;
 
-		pub fn save_cardano_params() -> MockIO {
-			MockIO::Group(vec![
-				save_to_existing_file(
-					CARDANO_SECURITY_PARAMETER,
-					&PREPROD_CARDANO_PARAMS.security_parameter.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_ACTIVE_SLOTS_COEFF,
-					&PREPROD_CARDANO_PARAMS.active_slots_coeff.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_FIRST_EPOCH_NUMBER,
-					&PREPROD_CARDANO_PARAMS.first_epoch_number.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_FIRST_SLOT_NUMBER,
-					&PREPROD_CARDANO_PARAMS.first_slot_number.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_EPOCH_DURATION_MILLIS,
-					&PREPROD_CARDANO_PARAMS.epoch_duration_millis.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS,
-					&PREPROD_CARDANO_PARAMS.first_epoch_timestamp_millis.to_string(),
-				),
-			])
-		}
-
-		pub fn prompt_and_save_native_asset_scripts() -> MockIO {
+		pub fn prompt_native_asset_scripts() -> MockIO {
 			MockIO::Group(vec![
 						MockIO::print("Partner Chains can store their initial token supply on Cardano as Cardano native tokens."),
 						MockIO::print("Creation of the native token is not supported by this wizard and must be performed manually before this step."),
@@ -172,26 +142,12 @@ mod tests {
 							true,
 							true,
 						),
-						MockIO::file_read(NATIVE_TOKEN_POLICY.config_file),
 						MockIO::prompt(
 							NATIVE_TOKEN_POLICY.name,
 							None,
 							"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
 						),
-						MockIO::file_read(NATIVE_TOKEN_POLICY.config_file),
-						MockIO::file_write_json_contains(
-							NATIVE_TOKEN_POLICY.config_file,
-							&NATIVE_TOKEN_POLICY.json_pointer(),
-							"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
-						),
-						MockIO::file_read(NATIVE_TOKEN_ASSET_NAME.config_file),
 						MockIO::prompt(NATIVE_TOKEN_ASSET_NAME.name, None, "5043546f6b656e44656d6f"),
-						MockIO::file_read(NATIVE_TOKEN_ASSET_NAME.config_file),
-						MockIO::file_write_json_contains(
-							NATIVE_TOKEN_ASSET_NAME.config_file,
-							&NATIVE_TOKEN_ASSET_NAME.json_pointer(),
-							"5043546f6b656e44656d6f",
-						),
 					])
 		}
 	}
@@ -202,6 +158,14 @@ mod tests {
 			"description": "Payment Signing Key",
 			"cborHex": "5820d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
 		})
+	}
+
+	fn initial_permissioned_candidates_json() -> serde_json::Value {
+		json!([{
+		  "aura_pub_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
+		  "grandpa_pub_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
+		  "sidechain_pub_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
+		}])
 	}
 
 	#[test]
@@ -222,25 +186,8 @@ mod tests {
 					OgmiosRequest::QueryNetworkShelleyGenesis,
 					Ok(OgmiosResponse::QueryNetworkShelleyGenesis(preprod_shelley_config())),
 				),
-				scenarios::save_cardano_params(),
-				save_to_existing_file(
-					COMMITTEE_CANDIDATES_ADDRESS,
-					TEST_COMMITTEE_CANDIDATES_ADDRESS,
-				),
-				save_to_existing_file(D_PARAMETER_POLICY_ID, TEST_D_PARAMETER_POLICY_ID),
-				save_to_existing_file(
-					PERMISSIONED_CANDIDATES_POLICY_ID,
-					TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
-				),
-				save_to_existing_file(ILLIQUID_SUPPLY_ADDRESS, TEST_ILLIQUID_SUPPLY_ADDRESS),
 				print_addresses_io(),
-				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
-				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
-				MockIO::file_write_json(
-					INITIAL_PERMISSIONED_CANDIDATES.config_file,
-					test_chain_config(),
-				),
-				scenarios::prompt_and_save_native_asset_scripts(),
+				scenarios::prompt_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
 			]);
 		prepare_main_chain_config(
@@ -249,6 +196,7 @@ mod tests {
 			UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
 		)
 		.expect("should succeed");
+		verify_json!(mock_context, CHAIN_CONFIG_FILE_PATH, expected_chain_config(json!([])));
 	}
 
 	#[test]
@@ -256,15 +204,7 @@ mod tests {
 		let mock_context = MockIOContext::new()
 			.with_json_file(
 				INITIAL_PERMISSIONED_CANDIDATES.config_file,
-				serde_json::json!({
-					"initial_permissioned_candidates": [
-						{
-						  "aura_pub_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
-						  "grandpa_pub_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
-						  "sidechain_pub_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
-						}
-					]
-				}),
+				json!({"initial_permissioned_candidates": initial_permissioned_candidates_json()}),
 			)
 			.with_json_file("payment.skey", payment_key_content())
 			.with_json_file(OGMIOS_PROTOCOL.config_file, serde_json::json!({}))
@@ -280,20 +220,8 @@ mod tests {
 					OgmiosRequest::QueryNetworkShelleyGenesis,
 					Ok(OgmiosResponse::QueryNetworkShelleyGenesis(preprod_shelley_config())),
 				),
-				scenarios::save_cardano_params(),
-				save_to_existing_file(
-					COMMITTEE_CANDIDATES_ADDRESS,
-					TEST_COMMITTEE_CANDIDATES_ADDRESS,
-				),
-				save_to_existing_file(D_PARAMETER_POLICY_ID, TEST_D_PARAMETER_POLICY_ID),
-				save_to_existing_file(
-					PERMISSIONED_CANDIDATES_POLICY_ID,
-					TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
-				),
-				save_to_existing_file(ILLIQUID_SUPPLY_ADDRESS, TEST_ILLIQUID_SUPPLY_ADDRESS),
 				print_addresses_io(),
-				MockIO::file_read(INITIAL_PERMISSIONED_CANDIDATES.config_file),
-				scenarios::prompt_and_save_native_asset_scripts(),
+				scenarios::prompt_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
 			]);
 		prepare_main_chain_config(
@@ -302,6 +230,11 @@ mod tests {
 			UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
 		)
 		.expect("should succeed");
+		verify_json!(
+			mock_context,
+			CHAIN_CONFIG_FILE_PATH,
+			expected_chain_config(initial_permissioned_candidates_json())
+		);
 	}
 
 	fn print_addresses_io() -> MockIO {
@@ -335,7 +268,7 @@ mod tests {
 		OffchainMocks::new_with_mock("http://localhost:1337", mock)
 	}
 
-	fn test_chain_config() -> Value {
+	fn expected_chain_config(initial_permissioned_candidates: Value) -> Value {
 		serde_json::json!({
 			"cardano": {
 				"security_parameter": PREPROD_CARDANO_PARAMS.security_parameter,
@@ -351,9 +284,13 @@ mod tests {
 				"permissioned_candidates_policy_id": TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
 				"native_token": {
 					"illiquid_supply_address": TEST_ILLIQUID_SUPPLY_ADDRESS,
+					"asset": {
+						"policy_id":"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
+						"asset_name":"5043546f6b656e44656d6f"
+					}
 				}
 			},
-			"initial_permissioned_candidates": []
+			"initial_permissioned_candidates": initial_permissioned_candidates
 		})
 	}
 }

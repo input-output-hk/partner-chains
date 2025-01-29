@@ -1,10 +1,10 @@
 use crate::config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
 use crate::deregister::DeregisterCmd;
 use crate::ogmios::config::tests::{
-	default_ogmios_service_config, establish_ogmios_configuration_io,
+	default_ogmios_config_json, default_ogmios_service_config, establish_ogmios_configuration_io,
 };
 use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
-use crate::CmdRun;
+use crate::{verify_json, CmdRun};
 use hex_literal::hex;
 use partner_chains_cardano_offchain::OffchainError;
 use serde_json::json;
@@ -30,13 +30,13 @@ fn happy_path() {
 		.with_json_file(MY_COLD_VKEY, valid_cold_verification_key_content())
 		.with_offchain_mocks(OffchainMocks::new_with_mock("http://localhost:1337", offchain_mock))
 		.with_expected_io(vec![
-			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 			print_info_io(),
 			read_keys_io(),
 			establish_ogmios_configuration_io(None, default_ogmios_service_config()),
 		]);
 	let result = DeregisterCmd.run(&mock_context);
 	assert!(result.is_ok());
+	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, final_resources_config_content());
 }
 
 #[test]
@@ -54,7 +54,6 @@ fn errors_if_smart_contracts_dont_output_transaction_id() {
 		.with_json_file(MY_COLD_VKEY, valid_cold_verification_key_content())
 		.with_offchain_mocks(OffchainMocks::new_with_mock("http://localhost:1337", offchain_mock))
 		.with_expected_io(vec![
-			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 			print_info_io(),
 			read_keys_io(),
 			establish_ogmios_configuration_io(None, default_ogmios_service_config()),
@@ -64,17 +63,17 @@ fn errors_if_smart_contracts_dont_output_transaction_id() {
 		result.err().unwrap().to_string(),
 		r#"Candidate deregistration failed: InternalError("test error")!"#
 	);
+	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, final_resources_config_content());
 }
 
 #[test]
 fn fails_when_chain_config_is_not_valid() {
-	let mock_context = MockIOContext::new()
-		.with_json_file(CHAIN_CONFIG_FILE_PATH, invalid_chain_config_content())
-		.with_expected_io(vec![MockIO::file_read(CHAIN_CONFIG_FILE_PATH)]);
+	let mock_context =
+		MockIOContext::new().with_json_file(CHAIN_CONFIG_FILE_PATH, invalid_chain_config_content());
 	let result = DeregisterCmd.run(&mock_context);
 	assert_eq!(
 	    result.err().unwrap().to_string(),
-		"Couldn't parse chain configuration file partner-chains-cli-chain-config.json. The chain configuration file that was used for registration is required in the working directory."
+		"Couldn't parse chain configuration file pc-chain-config.json. The chain configuration file that was used for registration is required in the working directory."
 	);
 }
 
@@ -85,7 +84,6 @@ fn fails_when_payment_signing_key_is_not_valid() {
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_file(MY_PAYMEMENT_SKEY, "not a proper Cardano key json")
 		.with_expected_io(vec![
-            MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
 			print_info_io(),
             MockIO::print("Payment signing key and cold verification key used for registration are required to deregister."),
             read_payment_signing_key()
@@ -93,7 +91,7 @@ fn fails_when_payment_signing_key_is_not_valid() {
 	let result = DeregisterCmd.run(&mock_context);
 	assert_eq!(
 		result.err().unwrap().to_string(),
-		r#"Failed to parse Cardano key file my_payment.skey: Error("expected ident", line: 1, column: 2)"#
+		"Failed to parse Cardano key file my_payment.skey: 'expected ident at line 1 column 2'"
 	);
 }
 
@@ -104,15 +102,16 @@ fn fails_when_cold_key_is_not_valid() {
 		.with_json_file(RESOURCES_CONFIG_FILE_PATH, test_resources_config_content())
 		.with_json_file(MY_PAYMEMENT_SKEY, valid_payment_signing_key_content())
 		.with_file(MY_COLD_VKEY, "not a proper Cardano key json")
-		.with_expected_io(vec![
-			MockIO::file_read(CHAIN_CONFIG_FILE_PATH),
-			print_info_io(),
-			read_keys_io(),
-		]);
+		.with_expected_io(vec![print_info_io(), read_keys_io()]);
 	let result = DeregisterCmd.run(&mock_context);
 	assert_eq!(
 		result.err().unwrap().to_string(),
-		r#"Failed to parse Cardano key file my_cold.vkey: Error("expected ident", line: 1, column: 2)"#
+		"Failed to parse Cardano key file my_cold.vkey: 'expected ident at line 1 column 2'"
+	);
+	verify_json!(
+		mock_context,
+		RESOURCES_CONFIG_FILE_PATH,
+		json!({"cardano_payment_signing_key_file": MY_PAYMEMENT_SKEY, "cardano_cold_verification_key_file": MY_COLD_VKEY})
 	);
 }
 
@@ -136,35 +135,11 @@ fn read_keys_io() -> MockIO {
 }
 
 fn read_payment_signing_key() -> MockIO {
-	MockIO::Group(vec![
-		MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
-		MockIO::prompt(
-			"path to the payment signing key file",
-			Some("payment.skey"),
-			MY_PAYMEMENT_SKEY,
-		),
-		MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
-		MockIO::file_write_json_contains(
-			RESOURCES_CONFIG_FILE_PATH,
-			"/cardano_payment_signing_key_file",
-			MY_PAYMEMENT_SKEY,
-		),
-		MockIO::file_read(MY_PAYMEMENT_SKEY),
-	])
+	MockIO::prompt("path to the payment signing key file", Some("payment.skey"), MY_PAYMEMENT_SKEY)
 }
 
 fn read_cold_verification_key() -> MockIO {
-	MockIO::Group(vec![
-		MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
-		MockIO::prompt("path to the cold verification key file", Some("cold.vkey"), MY_COLD_VKEY),
-		MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
-		MockIO::file_write_json_contains(
-			RESOURCES_CONFIG_FILE_PATH,
-			"/cardano_cold_verification_key_file",
-			MY_COLD_VKEY,
-		),
-		MockIO::file_read(MY_COLD_VKEY),
-	])
+	MockIO::prompt("path to the cold verification key file", Some("cold.vkey"), MY_COLD_VKEY)
 }
 
 fn test_chain_config_content() -> serde_json::Value {
@@ -220,6 +195,14 @@ fn test_resources_config_content() -> serde_json::Value {
 	json!({})
 }
 
+fn final_resources_config_content() -> serde_json::Value {
+	json!({
+		"cardano_payment_signing_key_file": MY_PAYMEMENT_SKEY,
+		"cardano_cold_verification_key_file": MY_COLD_VKEY,
+		"ogmios": default_ogmios_config_json()
+	})
+}
+
 fn valid_payment_signing_key_content() -> serde_json::Value {
 	json!(
 		{
@@ -245,8 +228,8 @@ fn genesis_utxo() -> UtxoId {
 		.unwrap()
 }
 
-fn payment_signing_key() -> MainchainPrivateKey {
-	MainchainPrivateKey(hex!("0000000000000000000000000000000000000000000000000000000000000001"))
+fn payment_signing_key() -> Vec<u8> {
+	hex!("0000000000000000000000000000000000000000000000000000000000000001").to_vec()
 }
 
 fn stake_ownership_pub_key() -> MainchainPublicKey {

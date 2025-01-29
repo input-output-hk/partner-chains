@@ -138,7 +138,7 @@ where
 	T: DeserializeOwned,
 {
 	field.load_from_file(context).ok_or_else(|| {
-		context.eprint("⚠️ The chain configuration file `partner-chains-cli-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority.");
+		context.eprint("⚠️ The chain configuration file `pc-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority.");
 		anyhow::anyhow!("failed to read {}", field.path.join("."))
 	})
 }
@@ -150,8 +150,11 @@ fn derive_address<C: IOContext>(
 	let cardano_payment_verification_key_file =
 		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
 			.prompt_with_default_from_file_and_save(context);
-	let key_bytes: [u8; 32] =
-		cardano_key::get_key_bytes_from_file(&cardano_payment_verification_key_file, context)?;
+	let key_bytes: [u8; 32] = cardano_key::get_mc_payment_verification_key_from_file(
+		&cardano_payment_verification_key_file,
+		context,
+	)?
+	.0;
 	let address =
 		partner_chains_cardano_offchain::csl::payment_address(&key_bytes, cardano_network.to_csl());
 	address.to_bech32(None).map_err(|e| anyhow!(e.to_string()))
@@ -161,12 +164,17 @@ fn derive_address<C: IOContext>(
 mod tests {
 	use super::*;
 	use crate::tests::{MockIO, MockIOContext};
+	use config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
 	use ogmios::{
-		config::tests::{default_ogmios_service_config, prompt_ogmios_configuration_io},
+		config::tests::{
+			default_ogmios_config_json, default_ogmios_service_config,
+			prompt_ogmios_configuration_io,
+		},
 		test_values::preview_shelley_config,
 		OgmiosRequest,
 	};
 	use select_utxo::tests::{mock_7_valid_utxos_rows, mock_result_7_valid};
+	use serde_json::json;
 
 	const PAYMENT_VKEY_PATH: &str = "payment.vkey";
 
@@ -177,20 +185,17 @@ mod tests {
 		});
 
 		let mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_without_cardano_fields)
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_without_cardano_fields)
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
 			.with_file(ECDSA_KEY_PATH, ECDSA_KEY_FILE_CONTENT)
 			.with_file(PAYMENT_VKEY_PATH, PAYMENT_VKEY_CONTENT)
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
-					read_chain_config_io(),
-					read_resource_config_io(),
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
-					sign_registration_message_io(),
 					output_io(),
 				]
 				.into_iter()
@@ -200,6 +205,15 @@ mod tests {
 
 		let result = Register1Cmd {}.run(&mock_context);
 		result.expect("should succeed");
+		verify_json!(
+			mock_context,
+			RESOURCES_CONFIG_FILE_PATH,
+			json!({
+				"substrate_node_base_path": "/path/to/data",
+				"cardano_payment_verification_key_file": PAYMENT_VKEY_PATH,
+				"ogmios": default_ogmios_config_json()
+			})
+		);
 	}
 
 	#[test]
@@ -218,16 +232,12 @@ mod tests {
 	#[test]
 	fn report_error_if_chain_config_fields_are_missing() {
 		let mock_context = MockIOContext::new()
-			.with_json_file("partner-chains-cli-chain-config.json", serde_json::json!({}))
+			.with_json_file("pc-chain-config.json", serde_json::json!({}))
 			.with_expected_io(
-				vec![
-					intro_msg_io(),
-					vec![MockIO::file_read("partner-chains-cli-chain-config.json")],
-					invalid_chain_config_io(),
-				]
-				.into_iter()
-				.flatten()
-				.collect::<Vec<MockIO>>(),
+				vec![intro_msg_io(), invalid_chain_config_io()]
+					.into_iter()
+					.flatten()
+					.collect::<Vec<MockIO>>(),
 			);
 
 		let result = Register1Cmd {}.run(&mock_context);
@@ -237,20 +247,17 @@ mod tests {
 	#[test]
 	fn saved_prompt_fields_are_loaded_without_prompting() {
 		let mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_content())
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
 			.with_file(PAYMENT_VKEY_PATH, PAYMENT_VKEY_CONTENT)
 			.with_file(ECDSA_KEY_PATH, ECDSA_KEY_FILE_CONTENT)
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
-					read_chain_config_io(),
-					read_resource_config_io(),
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
-					sign_registration_message_io(),
 					output_io(),
 				]
 				.into_iter()
@@ -265,20 +272,15 @@ mod tests {
 	#[test]
 	fn report_error_if_payment_file_is_invalid() {
 		let mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_content())
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
 			.with_file(PAYMENT_VKEY_PATH, "invalid content")
 			.with_expected_io(
-				vec![
-					intro_msg_io(),
-					read_chain_config_io(),
-					read_resource_config_io(),
-					derive_address_io(),
-				]
-				.into_iter()
-				.flatten()
-				.collect::<Vec<MockIO>>(),
+				vec![intro_msg_io(), derive_address_io()]
+					.into_iter()
+					.flatten()
+					.collect::<Vec<MockIO>>(),
 			);
 
 		let result = Register1Cmd {}.run(&mock_context);
@@ -292,15 +294,13 @@ mod tests {
 	#[test]
 	fn utxo_query_error() {
 		let mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_content())
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
 			.with_file(PAYMENT_VKEY_PATH, PAYMENT_VKEY_CONTENT)
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
-					read_chain_config_io(),
-					read_resource_config_io(),
 					derive_address_io(),
 					vec![
 
@@ -328,13 +328,11 @@ mod tests {
 	#[test]
 	fn should_error_with_missing_public_keys_file() {
 		let mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_content())
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
-					read_chain_config_io(),
-					read_resource_config_io(),
 					vec![MockIO::eprint("⚠️ The keys file `partner-chains-cli-keys.json` is missing or invalid. Please run the `generate-keys` command first")],
 				]
 				.into_iter()
@@ -349,20 +347,17 @@ mod tests {
 	#[test]
 	fn should_error_with_missing_private_keys_in_storage() {
 		let mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_content())
 			.with_file(PAYMENT_VKEY_PATH, PAYMENT_VKEY_CONTENT)
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
-					read_chain_config_io(),
-					read_resource_config_io(),
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
 					vec![
-						MockIO::file_read(ECDSA_KEY_PATH),
 						MockIO::eprint("⚠️ Failed to read sidechain key from the keystore: seed phrase file not found"),
 					],
 				]
@@ -378,25 +373,20 @@ mod tests {
 	#[test]
 	fn should_error_on_invalid_seed_phrase() {
 		let mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_content())
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
 			.with_file(PAYMENT_VKEY_PATH, PAYMENT_VKEY_CONTENT)
 			.with_file(ECDSA_KEY_PATH, "invalid seed phrase")
 			.with_expected_io(
 				vec![
 					intro_msg_io(),
-					read_chain_config_io(),
-					read_resource_config_io(),
 					derive_address_io(),
 					query_utxos_io(),
 					select_utxo_io(),
-					vec![
-						MockIO::file_read(ECDSA_KEY_PATH),
-						MockIO::eprint(
-							"⚠️ Failed to read sidechain key from the keystore: Invalid phrase",
-						),
-					],
+					vec![MockIO::eprint(
+						"⚠️ Failed to read sidechain key from the keystore: Invalid phrase",
+					)],
 				]
 				.into_iter()
 				.flatten()
@@ -406,9 +396,6 @@ mod tests {
 		let result = Register1Cmd {}.run(&mock_context);
 		assert!(result.is_err());
 	}
-
-	const CHAIN_CONFIG_PATH: &str = "partner-chains-cli-chain-config.json";
-	const RESOURCE_CONFIG_PATH: &str = "partner-chains-cli-resources-config.json";
 
 	fn chain_config_content() -> serde_json::Value {
 		serde_json::json!({
@@ -431,8 +418,8 @@ mod tests {
 
 	const PAYMENT_VKEY_CONTENT: &str = r#"
 {
-    "type": "StakePoolVerificationKey_ed25519",
-    "description": "Stake Pool Operator Verification Key",
+    "type": "PaymentVerificationKeyShelley_ed25519",
+    "description": "Payment Verification Key",
     "cborHex": "5820a35ef86f1622172816bb9e916aea86903b2c8d32c728ad5c9b9472be7e3c5e88"
 }
 "#;
@@ -450,23 +437,9 @@ mod tests {
 	fn intro_msg_io() -> Vec<MockIO> {
 		vec![MockIO::print("⚙️ Registering as a committee candidate (step 1/3)")]
 	}
-	fn read_chain_config_io() -> Vec<MockIO> {
-		vec![
-			MockIO::file_read(CHAIN_CONFIG_PATH), // genesis utxo
-		]
-	}
-
-	fn read_resource_config_io() -> Vec<MockIO> {
-		vec![
-			MockIO::file_read(RESOURCE_CONFIG_PATH), // substrate node base path
-			MockIO::file_read(KEYS_FILE_PATH),       // generated keys file
-		]
-	}
 
 	fn address_and_utxo_msg_io() -> MockIO {
-		MockIO::Group(vec![
-			MockIO::print("This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service"),
-		])
+		MockIO::print("This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service")
 	}
 
 	fn ogmios_network_request_io() -> MockIO {
@@ -478,31 +451,11 @@ mod tests {
 	}
 
 	fn prompt_cardano_payment_verification_key_file_io() -> MockIO {
-		MockIO::Group(vec![
-			MockIO::file_read(RESOURCE_CONFIG_PATH),
-			MockIO::prompt(
-				"path to the payment verification file",
-				Some(PAYMENT_VKEY_PATH),
-				PAYMENT_VKEY_PATH,
-			),
-			MockIO::file_read(RESOURCE_CONFIG_PATH),
-			MockIO::file_write_json(
-				RESOURCE_CONFIG_PATH,
-				serde_json::json!({
-					"substrate_node_base_path": "/path/to/data",
-					"cardano_payment_verification_key_file": PAYMENT_VKEY_PATH,
-					"ogmios": {
-						"hostname": "localhost",
-						"port": 1337,
-						"protocol": "http"
-					}
-				}),
-			),
-		])
-	}
-
-	fn read_payment_verification_key_file_io() -> MockIO {
-		MockIO::file_read("payment.vkey")
+		MockIO::prompt(
+			"path to the payment verification file",
+			Some(PAYMENT_VKEY_PATH),
+			PAYMENT_VKEY_PATH,
+		)
 	}
 
 	fn derive_address_io() -> Vec<MockIO> {
@@ -514,7 +467,6 @@ mod tests {
 			),
 			ogmios_network_request_io(),
 			prompt_cardano_payment_verification_key_file_io(),
-			read_payment_verification_key_file_io(),
 		]
 	}
 
@@ -545,11 +497,7 @@ mod tests {
 
 	const ECDSA_KEY_PATH: &str = "/path/to/data/chains/partner_chains_template/keystore/63726368031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6";
 
-	fn sign_registration_message_io() -> Vec<MockIO> {
-		vec![MockIO::file_read(ECDSA_KEY_PATH)]
-	}
-
 	fn invalid_chain_config_io() -> Vec<MockIO> {
-		vec![MockIO::eprint("⚠️ The chain configuration file `partner-chains-cli-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority.")]
+		vec![MockIO::eprint("⚠️ The chain configuration file `pc-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority.")]
 	}
 }

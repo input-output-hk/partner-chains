@@ -44,7 +44,7 @@ impl UpsertPermissionedCandidatesCmd {
 		upsert_permissioned_candidates(
 			self.genesis_utxo,
 			&permissioned_candidates,
-			payment_key.0,
+			&payment_key,
 			&client,
 			&FixedDelayRetries::two_minutes(),
 		)

@@ -45,8 +45,11 @@ fn derive_address<C: IOContext>(
 	let cardano_payment_verification_key_file =
 		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
 			.prompt_with_default_from_file_and_save(context);
-	let key_bytes: [u8; 32] =
-		cardano_key::get_key_bytes_from_file(&cardano_payment_verification_key_file, context)?;
+	let key_bytes: [u8; 32] = cardano_key::get_mc_payment_verification_key_from_file(
+		&cardano_payment_verification_key_file,
+		context,
+	)?
+	.0;
 	let address =
 		partner_chains_cardano_offchain::csl::payment_address(&key_bytes, cardano_network.to_csl());
 	address.to_bech32(None).map_err(|e| anyhow!(e.to_string()))
@@ -59,13 +62,14 @@ mod tests {
 	use crate::config::config_fields::GENESIS_UTXO;
 	use crate::config::RESOURCES_CONFIG_FILE_PATH;
 	use crate::ogmios::config::tests::{
-		default_ogmios_service_config, prompt_ogmios_configuration_io,
+		default_ogmios_config_json, default_ogmios_service_config, prompt_ogmios_configuration_io,
 	};
 	use crate::ogmios::test_values::preview_shelley_config;
 	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 	use crate::prepare_configuration::select_genesis_utxo::{select_genesis_utxo, INTRO};
 	use crate::select_utxo::tests::{mock_7_valid_utxos_rows, mock_result_7_valid, query_utxos_io};
 	use crate::tests::{MockIO, MockIOContext};
+	use crate::verify_json;
 
 	fn test_vkey_file_json() -> serde_json::Value {
 		serde_json::json!({
@@ -94,16 +98,21 @@ mod tests {
 				 	mock_7_valid_utxos_rows(),
 					 "4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"
 				),
-				MockIO::file_write_json_contains(
-					GENESIS_UTXO.config_file,
-					&GENESIS_UTXO.json_pointer(),
-					"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93",
-				),
 			]);
 
 		let result = select_genesis_utxo(&mock_context);
 
 		result.expect("should succeed");
+		verify_json!(
+			mock_context,
+			GENESIS_UTXO.config_file,
+			serde_json::json!({"chain_parameters": {"genesis_utxo": "4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93"}})
+		);
+		verify_json!(
+			mock_context,
+			RESOURCES_CONFIG_FILE_PATH,
+			serde_json::json!({"cardano_payment_verification_key_file": "payment.vkey", "ogmios": default_ogmios_config_json()})
+		);
 	}
 
 	fn read_shelly_config_to_get_network() -> MockIO {
@@ -121,20 +130,10 @@ mod tests {
 	}
 
 	fn prompt_payment_vkey_and_read_it_to_derive_address() -> MockIO {
-		MockIO::Group(vec![
-			MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
-			MockIO::prompt(
-				"path to the payment verification file",
-				Some("payment.vkey"),
-				"payment.vkey",
-			),
-			MockIO::file_read(RESOURCES_CONFIG_FILE_PATH),
-			MockIO::file_write_json_contains(
-				RESOURCES_CONFIG_FILE_PATH,
-				"/cardano_payment_verification_key_file",
-				"payment.vkey",
-			),
-			MockIO::file_read("payment.vkey"),
-		])
+		MockIO::prompt(
+			"path to the payment verification file",
+			Some("payment.vkey"),
+			"payment.vkey",
+		)
 	}
 }

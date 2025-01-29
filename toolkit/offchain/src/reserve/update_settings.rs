@@ -17,6 +17,7 @@
 //!   * Governance Policy Script
 
 use super::{reserve_utxo_input_with_validator_script_reference, ReserveData};
+use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::reserve::ReserveUtxo;
 use crate::{
 	await_tx::AwaitTx, csl::*, init_governance::get_governance_data,
@@ -37,7 +38,7 @@ pub async fn update_reserve_settings<
 	A: AwaitTx,
 >(
 	genesis_utxo: UtxoId,
-	payment_key: [u8; 32],
+	payment_key: &CardanoPaymentSigningKey,
 	total_accrued_function_script_hash: ScriptHash,
 	client: &T,
 	await_tx: &A,
