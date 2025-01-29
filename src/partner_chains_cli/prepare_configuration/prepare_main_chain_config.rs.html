@@ -294,62 +294,6 @@
 <a href="#294" id="294">294</a>
 <a href="#295" id="295">295</a>
 <a href="#296" id="296">296</a>
-<a href="#297" id="297">297</a>
-<a href="#298" id="298">298</a>
-<a href="#299" id="299">299</a>
-<a href="#300" id="300">300</a>
-<a href="#301" id="301">301</a>
-<a href="#302" id="302">302</a>
-<a href="#303" id="303">303</a>
-<a href="#304" id="304">304</a>
-<a href="#305" id="305">305</a>
-<a href="#306" id="306">306</a>
-<a href="#307" id="307">307</a>
-<a href="#308" id="308">308</a>
-<a href="#309" id="309">309</a>
-<a href="#310" id="310">310</a>
-<a href="#311" id="311">311</a>
-<a href="#312" id="312">312</a>
-<a href="#313" id="313">313</a>
-<a href="#314" id="314">314</a>
-<a href="#315" id="315">315</a>
-<a href="#316" id="316">316</a>
-<a href="#317" id="317">317</a>
-<a href="#318" id="318">318</a>
-<a href="#319" id="319">319</a>
-<a href="#320" id="320">320</a>
-<a href="#321" id="321">321</a>
-<a href="#322" id="322">322</a>
-<a href="#323" id="323">323</a>
-<a href="#324" id="324">324</a>
-<a href="#325" id="325">325</a>
-<a href="#326" id="326">326</a>
-<a href="#327" id="327">327</a>
-<a href="#328" id="328">328</a>
-<a href="#329" id="329">329</a>
-<a href="#330" id="330">330</a>
-<a href="#331" id="331">331</a>
-<a href="#332" id="332">332</a>
-<a href="#333" id="333">333</a>
-<a href="#334" id="334">334</a>
-<a href="#335" id="335">335</a>
-<a href="#336" id="336">336</a>
-<a href="#337" id="337">337</a>
-<a href="#338" id="338">338</a>
-<a href="#339" id="339">339</a>
-<a href="#340" id="340">340</a>
-<a href="#341" id="341">341</a>
-<a href="#342" id="342">342</a>
-<a href="#343" id="343">343</a>
-<a href="#344" id="344">344</a>
-<a href="#345" id="345">345</a>
-<a href="#346" id="346">346</a>
-<a href="#347" id="347">347</a>
-<a href="#348" id="348">348</a>
-<a href="#349" id="349">349</a>
-<a href="#350" id="350">350</a>
-<a href="#351" id="351">351</a>
-<a href="#352" id="352">352</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
 	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
@@ -451,12 +395,12 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{GENESIS_UTXO, OGMIOS_PROTOCOL};
-	<span class="kw">use </span><span class="kw">crate</span>::config::NetworkProtocol;
+	<span class="kw">use </span><span class="kw">crate</span>::config::{NetworkProtocol, CHAIN_CONFIG_FILE_PATH};
 	<span class="kw">use </span><span class="kw">crate</span>::ogmios::test_values::{preprod_eras_summaries, preprod_shelley_config};
 	<span class="kw">use </span><span class="kw">crate</span>::ogmios::{OgmiosRequest, OgmiosResponse};
 	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::prepare_cardano_params::tests::PREPROD_CARDANO_PARAMS;
-	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::tests::save_to_existing_file;
 	<span class="kw">use </span><span class="kw">crate</span>::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
+	<span class="kw">use </span><span class="kw">crate</span>::verify_json;
 	<span class="kw">use </span>partner_chains_cardano_offchain::scripts_data::{Addresses, PolicyIds, ScriptsData};
 	<span class="kw">use </span>serde_json::json;
 	<span class="kw">use </span>serde_json::Value;
@@ -484,38 +428,8 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 
 	<span class="kw">pub mod </span>scenarios {
 		<span class="kw">use super</span>::<span class="kw-2">*</span>;
-		<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::<span class="kw-2">*</span>;
 
-		<span class="kw">pub fn </span>save_cardano_params() -&gt; MockIO {
-			MockIO::Group(<span class="macro">vec!</span>[
-				save_to_existing_file(
-					CARDANO_SECURITY_PARAMETER,
-					<span class="kw-2">&amp;</span>PREPROD_CARDANO_PARAMS.security_parameter.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_ACTIVE_SLOTS_COEFF,
-					<span class="kw-2">&amp;</span>PREPROD_CARDANO_PARAMS.active_slots_coeff.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_FIRST_EPOCH_NUMBER,
-					<span class="kw-2">&amp;</span>PREPROD_CARDANO_PARAMS.first_epoch_number.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_FIRST_SLOT_NUMBER,
-					<span class="kw-2">&amp;</span>PREPROD_CARDANO_PARAMS.first_slot_number.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_EPOCH_DURATION_MILLIS,
-					<span class="kw-2">&amp;</span>PREPROD_CARDANO_PARAMS.epoch_duration_millis.to_string(),
-				),
-				save_to_existing_file(
-					CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS,
-					<span class="kw-2">&amp;</span>PREPROD_CARDANO_PARAMS.first_epoch_timestamp_millis.to_string(),
-				),
-			])
-		}
-
-		<span class="kw">pub fn </span>prompt_and_save_native_asset_scripts() -&gt; MockIO {
+		<span class="kw">pub fn </span>prompt_native_asset_scripts() -&gt; MockIO {
 			MockIO::Group(<span class="macro">vec!</span>[
 						MockIO::print(<span class="string">"Partner Chains can store their initial token supply on Cardano as Cardano native tokens."</span>),
 						MockIO::print(<span class="string">"Creation of the native token is not supported by this wizard and must be performed manually before this step."</span>),
@@ -529,17 +443,7 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 							<span class="prelude-val">None</span>,
 							<span class="string">"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"</span>,
 						),
-						MockIO::file_write_json_contains(
-							NATIVE_TOKEN_POLICY.config_file,
-							<span class="kw-2">&amp;</span>NATIVE_TOKEN_POLICY.json_pointer(),
-							<span class="string">"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"</span>,
-						),
 						MockIO::prompt(NATIVE_TOKEN_ASSET_NAME.name, <span class="prelude-val">None</span>, <span class="string">"5043546f6b656e44656d6f"</span>),
-						MockIO::file_write_json_contains(
-							NATIVE_TOKEN_ASSET_NAME.config_file,
-							<span class="kw-2">&amp;</span>NATIVE_TOKEN_ASSET_NAME.json_pointer(),
-							<span class="string">"5043546f6b656e44656d6f"</span>,
-						),
 					])
 		}
 	}
@@ -550,6 +454,14 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 			<span class="string">"description"</span>: <span class="string">"Payment Signing Key"</span>,
 			<span class="string">"cborHex"</span>: <span class="string">"5820d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
 		</span>})
+	}
+
+	<span class="kw">fn </span>initial_permissioned_candidates_json() -&gt; serde_json::Value {
+		<span class="macro">json!</span>([{
+		  <span class="string">"aura_pub_key"</span>: <span class="string">"0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"</span>,
+		  <span class="string">"grandpa_pub_key"</span>: <span class="string">"0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"</span>,
+		  <span class="string">"sidechain_pub_key"</span>: <span class="string">"0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
+		</span>}])
 	}
 
 	<span class="attr">#[test]
@@ -570,23 +482,8 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 					OgmiosRequest::QueryNetworkShelleyGenesis,
 					<span class="prelude-val">Ok</span>(OgmiosResponse::QueryNetworkShelleyGenesis(preprod_shelley_config())),
 				),
-				scenarios::save_cardano_params(),
-				save_to_existing_file(
-					COMMITTEE_CANDIDATES_ADDRESS,
-					TEST_COMMITTEE_CANDIDATES_ADDRESS,
-				),
-				save_to_existing_file(D_PARAMETER_POLICY_ID, TEST_D_PARAMETER_POLICY_ID),
-				save_to_existing_file(
-					PERMISSIONED_CANDIDATES_POLICY_ID,
-					TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
-				),
-				save_to_existing_file(ILLIQUID_SUPPLY_ADDRESS, TEST_ILLIQUID_SUPPLY_ADDRESS),
 				print_addresses_io(),
-				MockIO::file_write_json(
-					INITIAL_PERMISSIONED_CANDIDATES.config_file,
-					test_chain_config(),
-				),
-				scenarios::prompt_and_save_native_asset_scripts(),
+				scenarios::prompt_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
 			]);
 		prepare_main_chain_config(
@@ -595,6 +492,7 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 			UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
 		)
 		.expect(<span class="string">"should succeed"</span>);
+		<span class="macro">verify_json!</span>(mock_context, CHAIN_CONFIG_FILE_PATH, expected_chain_config(<span class="macro">json!</span>([])));
 	}
 
 	<span class="attr">#[test]
@@ -602,15 +500,7 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 		<span class="kw">let </span>mock_context = MockIOContext::new()
 			.with_json_file(
 				INITIAL_PERMISSIONED_CANDIDATES.config_file,
-				<span class="macro">serde_json::json!</span>({
-					<span class="string">"initial_permissioned_candidates"</span>: [
-						{
-						  <span class="string">"aura_pub_key"</span>: <span class="string">"0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"</span>,
-						  <span class="string">"grandpa_pub_key"</span>: <span class="string">"0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"</span>,
-						  <span class="string">"sidechain_pub_key"</span>: <span class="string">"0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
-						</span>}
-					]
-				}),
+				<span class="macro">json!</span>({<span class="string">"initial_permissioned_candidates"</span>: initial_permissioned_candidates_json()}),
 			)
 			.with_json_file(<span class="string">"payment.skey"</span>, payment_key_content())
 			.with_json_file(OGMIOS_PROTOCOL.config_file, <span class="macro">serde_json::json!</span>({}))
@@ -626,19 +516,8 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 					OgmiosRequest::QueryNetworkShelleyGenesis,
 					<span class="prelude-val">Ok</span>(OgmiosResponse::QueryNetworkShelleyGenesis(preprod_shelley_config())),
 				),
-				scenarios::save_cardano_params(),
-				save_to_existing_file(
-					COMMITTEE_CANDIDATES_ADDRESS,
-					TEST_COMMITTEE_CANDIDATES_ADDRESS,
-				),
-				save_to_existing_file(D_PARAMETER_POLICY_ID, TEST_D_PARAMETER_POLICY_ID),
-				save_to_existing_file(
-					PERMISSIONED_CANDIDATES_POLICY_ID,
-					TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
-				),
-				save_to_existing_file(ILLIQUID_SUPPLY_ADDRESS, TEST_ILLIQUID_SUPPLY_ADDRESS),
 				print_addresses_io(),
-				scenarios::prompt_and_save_native_asset_scripts(),
+				scenarios::prompt_native_asset_scripts(),
 				MockIO::eprint(OUTRO),
 			]);
 		prepare_main_chain_config(
@@ -647,6 +526,11 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 			UtxoId::from_str(TEST_GENESIS_UTXO).unwrap(),
 		)
 		.expect(<span class="string">"should succeed"</span>);
+		<span class="macro">verify_json!</span>(
+			mock_context,
+			CHAIN_CONFIG_FILE_PATH,
+			expected_chain_config(initial_permissioned_candidates_json())
+		);
 	}
 
 	<span class="kw">fn </span>print_addresses_io() -&gt; MockIO {
@@ -680,7 +564,7 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 		OffchainMocks::new_with_mock(<span class="string">"http://localhost:1337"</span>, mock)
 	}
 
-	<span class="kw">fn </span>test_chain_config() -&gt; Value {
+	<span class="kw">fn </span>expected_chain_config(initial_permissioned_candidates: Value) -&gt; Value {
 		<span class="macro">serde_json::json!</span>({
 			<span class="string">"cardano"</span>: {
 				<span class="string">"security_parameter"</span>: PREPROD_CARDANO_PARAMS.security_parameter,
@@ -696,9 +580,13 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 				<span class="string">"permissioned_candidates_policy_id"</span>: TEST_PERMISSIONED_CANDIDATES_POLICY_ID,
 				<span class="string">"native_token"</span>: {
 					<span class="string">"illiquid_supply_address"</span>: TEST_ILLIQUID_SUPPLY_ADDRESS,
+					<span class="string">"asset"</span>: {
+						<span class="string">"policy_id"</span>:<span class="string">"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"</span>,
+						<span class="string">"asset_name"</span>:<span class="string">"5043546f6b656e44656d6f"
+					</span>}
 				}
 			},
-			<span class="string">"initial_permissioned_candidates"</span>: []
+			<span class="string">"initial_permissioned_candidates"</span>: initial_permissioned_candidates
 		})
 	}
 }

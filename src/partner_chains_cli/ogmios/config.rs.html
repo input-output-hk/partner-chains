@@ -80,6 +80,14 @@
 <a href="#80" id="80">80</a>
 <a href="#81" id="81">81</a>
 <a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::config::ServiceConfig;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
@@ -110,10 +118,10 @@
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span><span class="kw">crate</span>::config::NetworkProtocol;
 	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::tests::{
-		prompt_multi_option_with_default_and_save_to_existing_file,
-		prompt_with_default_and_save_to_existing_file,
+		prompt_multi_option_with_default, prompt_with_default,
 	};
 	<span class="kw">use </span><span class="kw">crate</span>::tests::MockIO;
+	<span class="kw">use </span>serde_json::{json, Value};
 	<span class="kw">use </span>std::str::FromStr;
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>default_ogmios_service_config() -&gt; ServiceConfig {
@@ -125,6 +133,14 @@
 			hostname: OGMIOS_HOSTNAME.default.unwrap_or(<span class="string">"localhost"</span>).to_string(),
 			port: OGMIOS_PORT.default.unwrap_or(<span class="string">"1337"</span>).parse().unwrap(),
 		}
+	}
+
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>default_ogmios_config_json() -&gt; Value {
+		<span class="macro">json!</span>({
+			<span class="string">"protocol"</span>: <span class="string">"http"</span>,
+			<span class="string">"hostname"</span>: <span class="string">"localhost"</span>,
+			<span class="string">"port"</span>: <span class="number">1337</span>,
+		})
 	}
 
 	<span class="doccomment">/// Assumption for this function is that resources config file exists, so tests context should have it.
@@ -144,17 +160,17 @@
 		config_to_set: <span class="kw-2">&amp;</span>ServiceConfig,
 	) -&gt; MockIO {
 		MockIO::Group(<span class="macro">vec!</span>[
-			prompt_multi_option_with_default_and_save_to_existing_file(
+			prompt_multi_option_with_default(
 				OGMIOS_PROTOCOL,
 				<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>default_config.protocol.to_string()),
 				<span class="kw-2">&amp;</span>config_to_set.protocol.to_string(),
 			),
-			prompt_with_default_and_save_to_existing_file(
+			prompt_with_default(
 				OGMIOS_HOSTNAME,
 				<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>default_config.hostname),
 				<span class="kw-2">&amp;</span>config_to_set.hostname,
 			),
-			prompt_with_default_and_save_to_existing_file(
+			prompt_with_default(
 				OGMIOS_PORT,
 				<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>default_config.port.to_string()),
 				<span class="kw-2">&amp;</span>config_to_set.port.to_string(),

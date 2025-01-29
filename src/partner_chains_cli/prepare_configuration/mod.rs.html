@@ -482,26 +482,6 @@
 <a href="#482" id="482">482</a>
 <a href="#483" id="483">483</a>
 <a href="#484" id="484">484</a>
-<a href="#485" id="485">485</a>
-<a href="#486" id="486">486</a>
-<a href="#487" id="487">487</a>
-<a href="#488" id="488">488</a>
-<a href="#489" id="489">489</a>
-<a href="#490" id="490">490</a>
-<a href="#491" id="491">491</a>
-<a href="#492" id="492">492</a>
-<a href="#493" id="493">493</a>
-<a href="#494" id="494">494</a>
-<a href="#495" id="495">495</a>
-<a href="#496" id="496">496</a>
-<a href="#497" id="497">497</a>
-<a href="#498" id="498">498</a>
-<a href="#499" id="499">499</a>
-<a href="#500" id="500">500</a>
-<a href="#501" id="501">501</a>
-<a href="#502" id="502">502</a>
-<a href="#503" id="503">503</a>
-<a href="#504" id="504">504</a>
 </pre></div><pre class="rust"><code><span class="kw">mod </span>init_governance;
 <span class="kw">mod </span>prepare_cardano_params;
 <span class="kw">mod </span>prepare_main_chain_config;
@@ -694,10 +674,13 @@
 </span><span class="kw">pub mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
-	<span class="kw">use </span><span class="kw">crate</span>::config::{ConfigFieldDefinition, SelectOptions, RESOURCES_CONFIG_FILE_PATH};
+	<span class="kw">use </span><span class="kw">crate</span>::config::{
+		ConfigFieldDefinition, SelectOptions, CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH,
+	};
 	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::PrepareConfigurationError::NetworkKeyNotFoundError;
 	<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::Protocol::{Dns, Ipv4};
 	<span class="kw">use </span><span class="kw">crate</span>::tests::{MockIO, MockIOContext};
+	<span class="kw">use </span><span class="kw">crate</span>::verify_json;
 
 	<span class="kw">const </span>KEY: <span class="kw-2">&amp;</span>str = <span class="string">"962515971a22aa95706c2109ba6e9502c7f39b33bdf63024f46f77894424f1fe"</span>;
 	<span class="kw">pub const </span>CHAIN_NAME: <span class="kw-2">&amp;</span>str = <span class="string">"partner_chains_template"</span>;
@@ -709,7 +692,7 @@
 
 	<span class="kw">pub mod </span>scenarios {
 		<span class="kw">use super</span>::<span class="kw-2">*</span>;
-		<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
+		<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::SUBSTRATE_NODE_DATA_BASE_PATH;
 		<span class="kw">use </span><span class="kw">crate</span>::prepare_configuration::Protocol::{Dns, Ipv4};
 
 		<span class="kw">pub fn </span>show_intro() -&gt; MockIO {
@@ -717,7 +700,7 @@
 		}
 
 		<span class="kw">pub fn </span>read_config() -&gt; MockIO {
-			MockIO::Group(<span class="macro">vec!</span>[prompt_with_default_and_save_to_existing_file(
+			MockIO::Group(<span class="macro">vec!</span>[prompt_with_default(
 				SUBSTRATE_NODE_DATA_BASE_PATH,
 				SUBSTRATE_NODE_DATA_BASE_PATH.default,
 				DATA_PATH,
@@ -757,15 +740,11 @@
 			])
 		}
 
-		<span class="kw">pub fn </span>save_ip_bootnode(key: <span class="kw-2">&amp;</span>str, port: u16) -&gt; MockIO {
+		<span class="kw">pub fn </span>ip_bootnode(key: <span class="kw-2">&amp;</span>str, port: u16) -&gt; serde_json::Value {
 			<span class="kw">let </span>peer_id = peer_id_from_network_key(key).unwrap();
-			<span class="kw">let </span>bootnodes_value = <span class="macro">format!</span>(<span class="string">"/ip4/10.2.2.4/tcp/{port}/p2p/{peer_id}"</span>);
-			MockIO::Group(<span class="macro">vec!</span>[MockIO::file_write_json(
-				BOOTNODES.config_file,
-				<span class="macro">serde_json::json!</span>({
-					<span class="string">"bootnodes"</span>: [bootnodes_value]
-				}),
-			)])
+			<span class="macro">serde_json::json!</span>({
+				<span class="string">"bootnodes"</span>: [<span class="macro">format!</span>(<span class="string">"/ip4/10.2.2.4/tcp/{port}/p2p/{peer_id}"</span>)]
+			})
 		}
 
 		<span class="kw">pub fn </span>pick_dns_protocol_with_defaults() -&gt; MockIO {
@@ -792,15 +771,11 @@
 			])
 		}
 
-		<span class="kw">pub fn </span>save_dns_bootnode(key: <span class="kw-2">&amp;</span>str, port: u16) -&gt; MockIO {
+		<span class="kw">pub fn </span>dns_bootnode(key: <span class="kw-2">&amp;</span>str, port: u16) -&gt; serde_json::Value {
 			<span class="kw">let </span>peer_id = peer_id_from_network_key(key).unwrap();
-			<span class="kw">let </span>bootnodes_value = <span class="macro">format!</span>(<span class="string">"/dns/iog.io/tcp/{port}/p2p/{peer_id}"</span>);
-			MockIO::Group(<span class="macro">vec!</span>[MockIO::file_write_json(
-				BOOTNODES.config_file,
-				<span class="macro">serde_json::json!</span>({
-					<span class="string">"bootnodes"</span>: [bootnodes_value]
-				}),
-			)])
+			<span class="macro">serde_json::json!</span>({
+				<span class="string">"bootnodes"</span>: [<span class="macro">format!</span>(<span class="string">"/dns/iog.io/tcp/{port}/p2p/{peer_id}"</span>)]
+			})
 		}
 	}
 
@@ -822,11 +797,15 @@
 			scenarios::show_intro(),
 			scenarios::read_config(),
 			scenarios::pick_ip_protocol_with_defaults(),
-			scenarios::save_ip_bootnode(KEY, DEFAULT_PORT),
 			MockIO::eprint(<span class="kw-2">&amp;</span>outro()),
 		]);
 
 		<span class="kw">let </span>result = establish_bootnodes(<span class="kw-2">&amp;</span>mock_context);
+		<span class="macro">verify_json!</span>(
+			mock_context,
+			CHAIN_CONFIG_FILE_PATH,
+			scenarios::ip_bootnode(KEY, DEFAULT_PORT)
+		);
 
 		result.expect(<span class="string">"should succeed"</span>);
 	}
@@ -837,13 +816,17 @@
 			scenarios::show_intro(),
 			scenarios::read_config(),
 			scenarios::pick_dns_protocol_with_defaults(),
-			scenarios::save_dns_bootnode(KEY, DEFAULT_PORT),
 			MockIO::eprint(<span class="kw-2">&amp;</span>outro()),
 		]);
 
 		<span class="kw">let </span>result = establish_bootnodes(<span class="kw-2">&amp;</span>mock_context);
 
 		result.expect(<span class="string">"should succeed"</span>);
+		<span class="macro">verify_json!</span>(
+			mock_context,
+			CHAIN_CONFIG_FILE_PATH,
+			scenarios::dns_bootnode(KEY, DEFAULT_PORT)
+		);
 	}
 
 	<span class="attr">#[test]
@@ -863,11 +846,11 @@
 					<span class="number">3034</span>,
 					Dns.default_address().to_string(),
 				),
-				scenarios::save_dns_bootnode(KEY, <span class="number">3034</span>),
 				MockIO::eprint(<span class="kw-2">&amp;</span>outro()),
 			]);
 
 		<span class="kw">let </span>result = establish_bootnodes(<span class="kw-2">&amp;</span>mock_context);
+		<span class="macro">verify_json!</span>(mock_context, CHAIN_CONFIG_FILE_PATH, scenarios::dns_bootnode(KEY, <span class="number">3034</span>));
 
 		result.expect(<span class="string">"should succeed"</span>);
 	}
@@ -889,11 +872,11 @@
 					<span class="number">3034</span>,
 					<span class="string">"ip_address"</span>.to_string(),
 				),
-				scenarios::save_ip_bootnode(KEY, <span class="number">3034</span>),
 				MockIO::eprint(<span class="kw-2">&amp;</span>outro()),
 			]);
 
 		<span class="kw">let </span>result = establish_bootnodes(<span class="kw-2">&amp;</span>mock_context);
+		<span class="macro">verify_json!</span>(mock_context, CHAIN_CONFIG_FILE_PATH, scenarios::ip_bootnode(KEY, <span class="number">3034</span>));
 
 		result.expect(<span class="string">"should succeed"</span>);
 	}
@@ -920,15 +903,23 @@
 					SUBSTRATE_NODE_DATA_BASE_PATH.default,
 					DATA_PATH,
 				),
-				save_to_new_file(SUBSTRATE_NODE_DATA_BASE_PATH, DATA_PATH),
 				scenarios::pick_ip_protocol_with_defaults(),
-				scenarios::save_ip_bootnode(KEY, DEFAULT_PORT),
 				MockIO::eprint(<span class="kw-2">&amp;</span>outro()),
 			]);
 
 		<span class="kw">let </span>result = establish_bootnodes(<span class="kw-2">&amp;</span>mock_context);
 
 		result.expect(<span class="string">"should succeed"</span>);
+		<span class="macro">verify_json!</span>(
+			mock_context,
+			RESOURCES_CONFIG_FILE_PATH,
+			<span class="macro">serde_json::json!</span>({<span class="string">"substrate_node_base_path"</span>: DATA_PATH})
+		);
+		<span class="macro">verify_json!</span>(
+			mock_context,
+			CHAIN_CONFIG_FILE_PATH,
+			scenarios::ip_bootnode(KEY, DEFAULT_PORT)
+		);
 	}
 
 	<span class="attr">#[test]
@@ -950,60 +941,29 @@
 		<span class="macro">assert!</span>(error.to_string().contains(<span class="string">"⚠️ Invalid IP address"</span>));
 	}
 
-	<span class="kw">pub fn </span>save_to_existing_file&lt;T&gt;(
-		field_definition: ConfigFieldDefinition&lt;<span class="lifetime">'_</span>, T&gt;,
-		value: <span class="kw-2">&amp;</span>str,
-	) -&gt; MockIO {
-		MockIO::Group(<span class="macro">vec!</span>[MockIO::file_write_json_contains(
-			field_definition.config_file,
-			<span class="kw-2">&amp;</span>field_definition.json_pointer(),
-			value,
-		)])
-	}
-
-	<span class="kw">pub fn </span>save_to_new_file&lt;T&gt;(
-		field_definition: ConfigFieldDefinition&lt;<span class="lifetime">'_</span>, T&gt;,
-		value: <span class="kw-2">&amp;</span>str,
-	) -&gt; MockIO {
-		MockIO::Group(<span class="macro">vec!</span>[MockIO::file_write_json_contains(
-			field_definition.config_file,
-			<span class="kw-2">&amp;</span>field_definition.json_pointer(),
-			value,
-		)])
-	}
-
-	<span class="kw">pub fn </span>prompt_and_save_to_existing_file&lt;T&gt;(
-		field_definition: ConfigFieldDefinition&lt;<span class="lifetime">'_</span>, T&gt;,
-		value: <span class="kw-2">&amp;</span>str,
-	) -&gt; MockIO {
+	<span class="kw">pub fn </span>prompt&lt;T&gt;(field_definition: ConfigFieldDefinition&lt;<span class="lifetime">'_</span>, T&gt;, value: <span class="kw-2">&amp;</span>str) -&gt; MockIO {
 		<span class="kw">let </span>default = field_definition.default;
-		prompt_with_default_and_save_to_existing_file(field_definition, default, value)
+		prompt_with_default(field_definition, default, value)
 	}
 
-	<span class="kw">pub fn </span>prompt_with_default_and_save_to_existing_file&lt;T&gt;(
+	<span class="kw">pub fn </span>prompt_with_default&lt;T&gt;(
 		field_definition: ConfigFieldDefinition&lt;<span class="lifetime">'_</span>, T&gt;,
 		default: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;,
 		value: <span class="kw-2">&amp;</span>str,
 	) -&gt; MockIO {
-		MockIO::Group(<span class="macro">vec!</span>[
-			MockIO::prompt(field_definition.name, default, value),
-			save_to_existing_file(field_definition, value),
-		])
+		MockIO::prompt(field_definition.name, default, value)
 	}
 
-	<span class="kw">pub fn </span>prompt_multi_option_with_default_and_save_to_existing_file&lt;T: SelectOptions&gt;(
+	<span class="kw">pub fn </span>prompt_multi_option_with_default&lt;T: SelectOptions&gt;(
 		field_definition: ConfigFieldDefinition&lt;<span class="lifetime">'_</span>, T&gt;,
 		default: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;,
 		value: <span class="kw-2">&amp;</span>str,
 	) -&gt; MockIO {
-		MockIO::Group(<span class="macro">vec!</span>[
-			MockIO::prompt_multi_option(
-				field_definition.name,
-				T::select_options_with_default(default),
-				value,
-			),
-			save_to_existing_file(field_definition, value),
-		])
+		MockIO::prompt_multi_option(
+			field_definition.name,
+			T::select_options_with_default(default),
+			value,
+		)
 	}
 }
 </code></pre></div></section></main></body></html>

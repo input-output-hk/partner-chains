@@ -503,9 +503,6 @@
 <a href="#503" id="503">503</a>
 <a href="#504" id="504">504</a>
 <a href="#505" id="505">505</a>
-<a href="#506" id="506">506</a>
-<a href="#507" id="507">507</a>
-<a href="#508" id="508">508</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_values::DEFAULT_CHAIN_NAME;
 <span class="kw">use </span><span class="kw">crate</span>::config::KEYS_FILE_PATH;
 <span class="kw">use </span><span class="kw">crate</span>::generate_keys::keystore_path;
@@ -673,11 +670,15 @@
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span><span class="kw">crate</span>::tests::{MockIO, MockIOContext};
 	<span class="kw">use </span>ogmios::{
-		config::tests::{default_ogmios_service_config, prompt_ogmios_configuration_io},
+		config::tests::{
+			default_ogmios_config_json, default_ogmios_service_config,
+			prompt_ogmios_configuration_io,
+		},
 		test_values::preview_shelley_config,
 		OgmiosRequest,
 	};
 	<span class="kw">use </span>select_utxo::tests::{mock_7_valid_utxos_rows, mock_result_7_valid};
+	<span class="kw">use </span>serde_json::json;
 
 	<span class="kw">const </span>PAYMENT_VKEY_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"payment.vkey"</span>;
 
@@ -708,6 +709,15 @@
 
 		<span class="kw">let </span>result = Register1Cmd {}.run(<span class="kw-2">&amp;</span>mock_context);
 		result.expect(<span class="string">"should succeed"</span>);
+		<span class="macro">verify_json!</span>(
+			mock_context,
+			RESOURCE_CONFIG_PATH,
+			<span class="macro">json!</span>({
+				<span class="string">"substrate_node_base_path"</span>: <span class="string">"/path/to/data"</span>,
+				<span class="string">"cardano_payment_verification_key_file"</span>: PAYMENT_VKEY_PATH,
+				<span class="string">"ogmios"</span>: default_ogmios_config_json()
+			})
+		);
 	}
 
 	<span class="attr">#[test]
@@ -936,9 +946,7 @@
 	}
 
 	<span class="kw">fn </span>address_and_utxo_msg_io() -&gt; MockIO {
-		MockIO::Group(<span class="macro">vec!</span>[
-			MockIO::print(<span class="string">"This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service"</span>),
-		])
+		MockIO::print(<span class="string">"This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service"</span>)
 	}
 
 	<span class="kw">fn </span>ogmios_network_request_io() -&gt; MockIO {
@@ -950,25 +958,11 @@
 	}
 
 	<span class="kw">fn </span>prompt_cardano_payment_verification_key_file_io() -&gt; MockIO {
-		MockIO::Group(<span class="macro">vec!</span>[
-			MockIO::prompt(
-				<span class="string">"path to the payment verification file"</span>,
-				<span class="prelude-val">Some</span>(PAYMENT_VKEY_PATH),
-				PAYMENT_VKEY_PATH,
-			),
-			MockIO::file_write_json(
-				RESOURCE_CONFIG_PATH,
-				<span class="macro">serde_json::json!</span>({
-					<span class="string">"substrate_node_base_path"</span>: <span class="string">"/path/to/data"</span>,
-					<span class="string">"cardano_payment_verification_key_file"</span>: PAYMENT_VKEY_PATH,
-					<span class="string">"ogmios"</span>: {
-						<span class="string">"hostname"</span>: <span class="string">"localhost"</span>,
-						<span class="string">"port"</span>: <span class="number">1337</span>,
-						<span class="string">"protocol"</span>: <span class="string">"http"
-					</span>}
-				}),
-			),
-		])
+		MockIO::prompt(
+			<span class="string">"path to the payment verification file"</span>,
+			<span class="prelude-val">Some</span>(PAYMENT_VKEY_PATH),
+			PAYMENT_VKEY_PATH,
+		)
 	}
 
 	<span class="kw">fn </span>derive_address_io() -&gt; Vec&lt;MockIO&gt; {
