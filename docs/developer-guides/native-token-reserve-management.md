@@ -77,8 +77,7 @@ Generally speaking, however, the process includes these steps:
 
 - The Validity interval is to be present and equal to `[T, infinity]`, where `T` is time in the recent past, close to the current time.
 
-- The Transaction input with ReserveAuthPolicy token is to be present. This utxo contains datum in the form
-`[[[T_0, ], [_, _], _], _, _]` where `T_0` is the start time of the Reserve system. Based on `T_0` and `T`, one can calculate how much time has passed since the start of the system.
+- The Transaction input with ReserveAuthPolicy token is to be present. 
 
 - The `VFunction` should be able to mint X tokens and be invoked repeatedly, each time minting X new tokens. The value of X should grow in time and represent the total number of tokens to be released from the Reserve to IlliquidCirculationSupply up to the current moment in time.
 
@@ -272,6 +271,8 @@ Objective: Release available reserve tokens (defined by the `VFunction`).
 
    - If 10 tokens have already been released and you want to release 10 more, then the total accrued until now should be defined as 20. 
 
+   - If `--total-accrued-till-now` passed by the user is lower than the factual number, then nothing will be released.
+
    - Ensure you have enough tokens to release in this time frame (the `VFunction` defines release logic). 
 
 #### Steps
@@ -306,11 +307,11 @@ Objective: Complete the reserve setup by handing over control to the appropriate
 
 2. Confirm completion: Make sure that the handover process has been completed and the illiquid circulation supply transaction has been confirmed by checking the command output.
 
-## 2.3 Initializing token reserve with initial deposit
+## 3 Initializing token reserve with initial deposit
 
 Objective: Configure the initial token reserve by depositing a specified amount of tokens into the reserve contract.
 
-## 3 Run the `reserve-deposit` command (optional)
+### 3.1 Run the `reserve-deposit` command (optional)
 
 #### Command template
 
