@@ -205,9 +205,7 @@ fn version_oracle_plutus_list(script_id: u32, script_hash: &[u8]) -> PlutusList 
 // There exist UTXO at Version Oracle Validator with Datum that contains
 // * script id of the script being initialized
 // * Version Oracle Policy Id
-async fn script_is_initialized<
-	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
->(
+async fn script_is_initialized<T: QueryLedgerState>(
 	script: &ScriptData,
 	version_oracle: &VersionOracleData,
 	ctx: &TransactionContext,
@@ -219,9 +217,7 @@ async fn script_is_initialized<
 // Finds an UTXO at Version Oracle Validator with Datum that contains
 // * given script id
 // * Version Oracle Policy Id
-pub(crate) async fn find_script_utxo<
-	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
->(
+pub(crate) async fn find_script_utxo<T: QueryLedgerState>(
 	script_id: u32,
 	version_oracle: &VersionOracleData,
 	ctx: &TransactionContext,
