@@ -501,8 +501,6 @@
 <a href="#501" id="501">501</a>
 <a href="#502" id="502">502</a>
 <a href="#503" id="503">503</a>
-<a href="#504" id="504">504</a>
-<a href="#505" id="505">505</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_values::DEFAULT_CHAIN_NAME;
 <span class="kw">use </span><span class="kw">crate</span>::config::KEYS_FILE_PATH;
 <span class="kw">use </span><span class="kw">crate</span>::generate_keys::keystore_path;
@@ -643,7 +641,7 @@
 	</span>T: DeserializeOwned,
 {
 	field.load_from_file(context).ok_or_else(|| {
-		context.eprint(<span class="string">"⚠️ The chain configuration file `partner-chains-cli-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority."</span>);
+		context.eprint(<span class="string">"⚠️ The chain configuration file `pc-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority."</span>);
 		<span class="macro">anyhow::anyhow!</span>(<span class="string">"failed to read {}"</span>, field.path.join(<span class="string">"."</span>))
 	})
 }
@@ -669,6 +667,7 @@
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span><span class="kw">crate</span>::tests::{MockIO, MockIOContext};
+	<span class="kw">use </span>config::{CHAIN_CONFIG_FILE_PATH, RESOURCES_CONFIG_FILE_PATH};
 	<span class="kw">use </span>ogmios::{
 		config::tests::{
 			default_ogmios_config_json, default_ogmios_service_config,
@@ -689,8 +688,8 @@
 		});
 
 		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_without_cardano_fields)
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_without_cardano_fields)
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
 			.with_file(ECDSA_KEY_PATH, ECDSA_KEY_FILE_CONTENT)
 			.with_file(PAYMENT_VKEY_PATH, PAYMENT_VKEY_CONTENT)
@@ -711,7 +710,7 @@
 		result.expect(<span class="string">"should succeed"</span>);
 		<span class="macro">verify_json!</span>(
 			mock_context,
-			RESOURCE_CONFIG_PATH,
+			RESOURCES_CONFIG_FILE_PATH,
 			<span class="macro">json!</span>({
 				<span class="string">"substrate_node_base_path"</span>: <span class="string">"/path/to/data"</span>,
 				<span class="string">"cardano_payment_verification_key_file"</span>: PAYMENT_VKEY_PATH,
@@ -736,7 +735,7 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>report_error_if_chain_config_fields_are_missing() {
 		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_json_file(<span class="string">"partner-chains-cli-chain-config.json"</span>, <span class="macro">serde_json::json!</span>({}))
+			.with_json_file(<span class="string">"pc-chain-config.json"</span>, <span class="macro">serde_json::json!</span>({}))
 			.with_expected_io(
 				<span class="macro">vec!</span>[intro_msg_io(), invalid_chain_config_io()]
 					.into_iter()
@@ -751,8 +750,8 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>saved_prompt_fields_are_loaded_without_prompting() {
 		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_content())
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
 			.with_file(PAYMENT_VKEY_PATH, PAYMENT_VKEY_CONTENT)
 			.with_file(ECDSA_KEY_PATH, ECDSA_KEY_FILE_CONTENT)
@@ -776,8 +775,8 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>report_error_if_payment_file_is_invalid() {
 		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_content())
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
 			.with_file(PAYMENT_VKEY_PATH, <span class="string">"invalid content"</span>)
 			.with_expected_io(
@@ -798,8 +797,8 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>utxo_query_error() {
 		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_content())
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
 			.with_file(PAYMENT_VKEY_PATH, PAYMENT_VKEY_CONTENT)
 			.with_expected_io(
@@ -832,8 +831,8 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>should_error_with_missing_public_keys_file() {
 		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_content())
 			.with_expected_io(
 				<span class="macro">vec!</span>[
 					intro_msg_io(),
@@ -851,8 +850,8 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>should_error_with_missing_private_keys_in_storage() {
 		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_content())
 			.with_file(PAYMENT_VKEY_PATH, PAYMENT_VKEY_CONTENT)
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
 			.with_expected_io(
@@ -877,8 +876,8 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>should_error_on_invalid_seed_phrase() {
 		<span class="kw">let </span>mock_context = MockIOContext::new()
-			.with_json_file(CHAIN_CONFIG_PATH, chain_config_content())
-			.with_json_file(RESOURCE_CONFIG_PATH, resource_config_content())
+			.with_json_file(CHAIN_CONFIG_FILE_PATH, chain_config_content())
+			.with_json_file(RESOURCES_CONFIG_FILE_PATH, resource_config_content())
 			.with_json_file(KEYS_FILE_PATH, generated_keys_file_content())
 			.with_file(PAYMENT_VKEY_PATH, PAYMENT_VKEY_CONTENT)
 			.with_file(ECDSA_KEY_PATH, <span class="string">"invalid seed phrase"</span>)
@@ -900,9 +899,6 @@
 		<span class="kw">let </span>result = Register1Cmd {}.run(<span class="kw-2">&amp;</span>mock_context);
 		<span class="macro">assert!</span>(result.is_err());
 	}
-
-	<span class="kw">const </span>CHAIN_CONFIG_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"partner-chains-cli-chain-config.json"</span>;
-	<span class="kw">const </span>RESOURCE_CONFIG_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"partner-chains-cli-resources-config.json"</span>;
 
 	<span class="kw">fn </span>chain_config_content() -&gt; serde_json::Value {
 		<span class="macro">serde_json::json!</span>({
@@ -1005,7 +1001,7 @@
 	<span class="kw">const </span>ECDSA_KEY_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"/path/to/data/chains/partner_chains_template/keystore/63726368031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6"</span>;
 
 	<span class="kw">fn </span>invalid_chain_config_io() -&gt; Vec&lt;MockIO&gt; {
-		<span class="macro">vec!</span>[MockIO::eprint(<span class="string">"⚠️ The chain configuration file `partner-chains-cli-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority."</span>)]
+		<span class="macro">vec!</span>[MockIO::eprint(<span class="string">"⚠️ The chain configuration file `pc-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority."</span>)]
 	}
 }
 </code></pre></div></section></main></body></html>
