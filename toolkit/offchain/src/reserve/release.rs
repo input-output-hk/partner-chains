@@ -34,7 +34,7 @@ use ogmios_client::{
 	transactions::Transactions,
 	types::{OgmiosScript, OgmiosUtxo},
 };
-use partner_chains_plutus_data::reserve::{ReserveDatum, ReserveRedeemer};
+use partner_chains_plutus_data::reserve::ReserveRedeemer;
 use sidechain_domain::{McTxHash, UtxoId};
 
 pub async fn release_reserve_funds<
@@ -57,8 +57,7 @@ pub async fn release_reserve_funds<
 		return Err(anyhow!("Reference utxo {reference_utxo:?} not found on chain"));
 	};
 
-	let ReserveUtxo { utxo: reserve_utxo, datum: reserve_datum } =
-		reserve_data.get_reserve_utxo(&ctx, client).await?;
+	let reserve_utxo = reserve_data.get_reserve_utxo(&ctx, client).await?;
 
 	let tx = Costs::calculate_costs(
 		|costs| {
@@ -66,7 +65,6 @@ pub async fn release_reserve_funds<
 				&ctx,
 				&reserve_data,
 				&reserve_utxo,
-				&reserve_datum,
 				&reference_utxo,
 				token.amount,
 				tip.slot,
@@ -96,19 +94,18 @@ pub async fn release_reserve_funds<
 fn reserve_release_tx(
 	ctx: &TransactionContext,
 	reserve_data: &ReserveData,
-	previous_reserve_utxo: &OgmiosUtxo,
-	previous_reserve_datum: &ReserveDatum,
+	previous_reserve: &ReserveUtxo,
 	reference_utxo: &OgmiosUtxo,
 	cumulative_total_transfer: u64,
 	latest_slot: u64,
 	costs: Costs,
 ) -> anyhow::Result<Transaction> {
-	let token = previous_reserve_datum.immutable_settings.token.clone();
-	let stats = previous_reserve_datum.stats.clone();
+	let token = previous_reserve.datum.immutable_settings.token.clone();
+	let stats = previous_reserve.datum.stats.clone();
 
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
-	let reserve_balance = previous_reserve_utxo.get_asset_amount(&token);
+	let reserve_balance = previous_reserve.utxo.get_asset_amount(&token);
 	let amount_to_transfer = cumulative_total_transfer - stats.token_total_amount_transferred;
 	if amount_to_transfer as i128 > reserve_balance {
 		return Err(anyhow!("Not enough funds in the reserve to transfer {amount_to_transfer} tokens (reserve balance: {reserve_balance})"));
@@ -139,7 +136,7 @@ fn reserve_release_tx(
 
 	// Remove tokens from the reserve
 	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
-		previous_reserve_utxo,
+		&previous_reserve.utxo,
 		reserve_data,
 		ReserveRedeemer::ReleaseFromReserve,
 		&costs.get_one_spend(),
@@ -162,11 +159,11 @@ fn reserve_release_tx(
 		TransactionOutputBuilder::new()
 			.with_address(&reserve_data.scripts.validator.address(ctx.network))
 			.with_plutus_data(&PlutusData::from(
-				previous_reserve_datum.clone().after_withdrawal(amount_to_transfer),
+				previous_reserve.datum.clone().after_withdrawal(amount_to_transfer),
 			))
 			.next()?
 			.with_minimum_ada_and_asset(
-				&MultiAsset::from_ogmios_utxo(previous_reserve_utxo)?
+				&MultiAsset::from_ogmios_utxo(&previous_reserve.utxo)?
 					.with_asset_amount(&token, left_in_reserve)?,
 				ctx,
 			)?
@@ -193,7 +190,7 @@ mod tests {
 	use super::{empty_asset_name, reserve_release_tx, AssetNameExt, Costs, TransactionContext};
 	use crate::{
 		plutus_script::PlutusScript,
-		reserve::{release::OgmiosUtxoExt, ReserveData},
+		reserve::{release::OgmiosUtxoExt, ReserveData, ReserveUtxo},
 		scripts_data::ReserveScripts,
 		test_values::protocol_parameters,
 	};
@@ -334,7 +331,7 @@ mod tests {
 		}
 	}
 
-	fn previous_reserve_utxo() -> OgmiosUtxo {
+	fn previous_reserve_ogmios_utxo() -> OgmiosUtxo {
 		OgmiosUtxo {
 			transaction: OgmiosTx {
 				id: hex!("23de508bbfeb6af651da305a2de022463f71e47d58365eba36d98fa6c4aed731"),
@@ -359,6 +356,10 @@ mod tests {
 			index: 1,
 			..Default::default()
 		}
+	}
+
+	fn previous_reserve_utxo() -> ReserveUtxo {
+		ReserveUtxo { utxo: previous_reserve_ogmios_utxo(), datum: previous_reserve_datum() }
 	}
 
 	fn token_policy() -> PolicyId {
@@ -389,7 +390,6 @@ mod tests {
 			&tx_context(),
 			&reserve_data(),
 			&previous_reserve_utxo(),
-			&previous_reserve_datum(),
 			&reference_utxo(),
 			20,
 			0,
@@ -439,7 +439,7 @@ mod tests {
 		let inputs: Vec<_> =
 			reserve_release_test_tx().body().inputs().into_iter().cloned().collect();
 
-		assert!(inputs.contains(&previous_reserve_utxo().to_csl_tx_input()))
+		assert!(inputs.contains(&previous_reserve_utxo().utxo.to_csl_tx_input()))
 	}
 
 	#[test]
