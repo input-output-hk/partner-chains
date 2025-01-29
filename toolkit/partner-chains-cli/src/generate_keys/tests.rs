@@ -1,6 +1,8 @@
 use super::*;
 use crate::tests::*;
 use crate::CmdRun;
+use scenarios::key_file_content;
+use scenarios::resources_file_content;
 
 const DATA_PATH: &str = "/path/to/data";
 const RESOURCES_CONFIG_PATH: &str = "partner-chains-cli-resources-config.json";
@@ -37,15 +39,11 @@ pub mod scenarios {
 	}
 
 	pub fn prompt_all_config_fields() -> MockIO {
-		MockIO::Group(vec![
-			MockIO::prompt("node base path", Some("./data"), DATA_PATH),
-			MockIO::file_write_json(
-				RESOURCES_CONFIG_PATH,
-				serde_json::json!({
-					"substrate_node_base_path": DATA_PATH,
-				}),
-			),
-		])
+		MockIO::prompt("node base path", Some("./data"), DATA_PATH)
+	}
+
+	pub fn resources_file_content() -> serde_json::Value {
+		serde_json::json!({"substrate_node_base_path": DATA_PATH})
 	}
 
 	pub fn generate_all_spo_keys(
@@ -92,17 +90,15 @@ pub mod scenarios {
 			),
 		])
 	}
-
+	pub fn key_file_content(aura: &str, grandpa: &str, cross_chain: &str) -> serde_json::Value {
+		serde_json::json!({
+			"sidechain_pub_key": cross_chain,
+			"aura_pub_key": aura,
+			"grandpa_pub_key": grandpa,
+		})
+	}
 	pub fn write_key_file(aura: &str, grandpa: &str, cross_chain: &str) -> MockIO {
 		MockIO::Group(vec![
-			MockIO::file_write_json(
-				"partner-chains-public-keys.json",
-				serde_json::json!({
-					"aura_pub_key": aura,
-					"grandpa_pub_key": grandpa,
-					"sidechain_pub_key": cross_chain,
-				}),
-			),
 			MockIO::eprint("🔑 The following public keys were generated and saved to the partner-chains-public-keys.json file:"),
 			MockIO::print(&format!(
 				"{{
@@ -166,6 +162,12 @@ fn happy_path() {
 	let result = GenerateKeysCmd {}.run(&mock_context);
 
 	result.expect("should succeed");
+	verify_json!(
+		mock_context,
+		"partner-chains-public-keys.json",
+		key_file_content("aura-pub-key", "grandpa-pub-key", "cross-chain-pub-key")
+	);
+	verify_json!(mock_context, RESOURCES_CONFIG_PATH, resources_file_content());
 }
 
 mod config_read {
@@ -248,6 +250,11 @@ mod generate_spo_keys {
 		let result = generate_spo_keys(&default_config(), &mock_context);
 
 		result.expect("should succeed");
+		verify_json!(
+			mock_context,
+			"partner-chains-public-keys.json",
+			key_file_content("0xaura-key", "0xgrandpa-key", "0xcross-chain-key")
+		);
 	}
 
 	#[test]

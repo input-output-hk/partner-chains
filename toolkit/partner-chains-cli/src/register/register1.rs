@@ -165,11 +165,15 @@ mod tests {
 	use super::*;
 	use crate::tests::{MockIO, MockIOContext};
 	use ogmios::{
-		config::tests::{default_ogmios_service_config, prompt_ogmios_configuration_io},
+		config::tests::{
+			default_ogmios_config_json, default_ogmios_service_config,
+			prompt_ogmios_configuration_io,
+		},
 		test_values::preview_shelley_config,
 		OgmiosRequest,
 	};
 	use select_utxo::tests::{mock_7_valid_utxos_rows, mock_result_7_valid};
+	use serde_json::json;
 
 	const PAYMENT_VKEY_PATH: &str = "payment.vkey";
 
@@ -200,6 +204,15 @@ mod tests {
 
 		let result = Register1Cmd {}.run(&mock_context);
 		result.expect("should succeed");
+		verify_json!(
+			mock_context,
+			RESOURCE_CONFIG_PATH,
+			json!({
+				"substrate_node_base_path": "/path/to/data",
+				"cardano_payment_verification_key_file": PAYMENT_VKEY_PATH,
+				"ogmios": default_ogmios_config_json()
+			})
+		);
 	}
 
 	#[test]
@@ -428,9 +441,7 @@ mod tests {
 	}
 
 	fn address_and_utxo_msg_io() -> MockIO {
-		MockIO::Group(vec![
-			MockIO::print("This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service"),
-		])
+		MockIO::print("This wizard will query your UTXOs using address derived from the payment verification key and Ogmios service")
 	}
 
 	fn ogmios_network_request_io() -> MockIO {
@@ -442,25 +453,11 @@ mod tests {
 	}
 
 	fn prompt_cardano_payment_verification_key_file_io() -> MockIO {
-		MockIO::Group(vec![
-			MockIO::prompt(
-				"path to the payment verification file",
-				Some(PAYMENT_VKEY_PATH),
-				PAYMENT_VKEY_PATH,
-			),
-			MockIO::file_write_json(
-				RESOURCE_CONFIG_PATH,
-				serde_json::json!({
-					"substrate_node_base_path": "/path/to/data",
-					"cardano_payment_verification_key_file": PAYMENT_VKEY_PATH,
-					"ogmios": {
-						"hostname": "localhost",
-						"port": 1337,
-						"protocol": "http"
-					}
-				}),
-			),
-		])
+		MockIO::prompt(
+			"path to the payment verification file",
+			Some(PAYMENT_VKEY_PATH),
+			PAYMENT_VKEY_PATH,
+		)
 	}
 
 	fn derive_address_io() -> Vec<MockIO> {

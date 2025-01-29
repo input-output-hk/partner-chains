@@ -151,8 +151,12 @@ mod tests {
 			config_fields::POSTGRES_CONNECTION_STRING, CHAIN_CONFIG_FILE_PATH,
 			RESOURCES_CONFIG_FILE_PATH,
 		},
-		ogmios::config::tests::{default_ogmios_service_config, establish_ogmios_configuration_io},
+		ogmios::config::tests::{
+			default_ogmios_config_json, default_ogmios_service_config,
+			establish_ogmios_configuration_io,
+		},
 		tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks},
+		verify_json,
 	};
 	use hex_literal::hex;
 	use partner_chains_cardano_offchain::OffchainError;
@@ -191,6 +195,7 @@ mod tests {
 
 		let result = mock_register3_cmd().run(&mock_context);
 		result.expect("should succeed");
+		verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, final_resources_config_json());
 	}
 
 	#[test]
@@ -287,7 +292,6 @@ mod tests {
         MockIO::print("The registration status will be queried from a db-sync instance for which a valid connection string is required. Please note that this db-sync instance needs to be up and synced with the main chain."),
         MockIO::current_timestamp(mock_timestamp()),
         MockIO::prompt("DB-Sync Postgres connection string",POSTGRES_CONNECTION_STRING.default,POSTGRES_CONNECTION_STRING.default.unwrap()),
-        MockIO::file_write_json_contains(RESOURCES_CONFIG_FILE_PATH, &POSTGRES_CONNECTION_STRING.json_pointer(), POSTGRES_CONNECTION_STRING.default.unwrap()),
         MockIO::set_env_var(
 			  "DB_SYNC_POSTGRES_CONNECTION_STRING",  POSTGRES_CONNECTION_STRING.default.unwrap(),
 	  	),
@@ -373,6 +377,16 @@ mod tests {
 				  "partner_chain_pub_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27"
 				}
 			],
+		})
+	}
+
+	fn final_resources_config_json() -> serde_json::Value {
+		json!({
+			"cardano_payment_verification_key_file": "payment.vkey",
+			"db_sync_postgres_connection_string": "postgresql://postgres-user:postgres-password@localhost:5432/cexplorer",
+			"ogmios": default_ogmios_config_json(),
+			"substrate_node_base_path": "/path/to/data",
+			"substrate_node_executable_path": "/path/to/node"
 		})
 	}
 

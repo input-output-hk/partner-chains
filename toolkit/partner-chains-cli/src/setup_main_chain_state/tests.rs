@@ -1,13 +1,13 @@
 use crate::config::config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE;
 use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::config::{config_fields, RESOURCES_CONFIG_FILE_PATH};
-use crate::ogmios::config::tests::{default_ogmios_service_config, prompt_ogmios_configuration_io};
-use crate::prepare_configuration::tests::{
-	prompt_and_save_to_existing_file, prompt_with_default_and_save_to_existing_file,
+use crate::ogmios::config::tests::{
+	default_ogmios_config_json, default_ogmios_service_config, prompt_ogmios_configuration_io,
 };
+use crate::prepare_configuration::tests::{prompt, prompt_with_default};
 use crate::setup_main_chain_state::SetupMainChainStateCmd;
 use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
-use crate::CmdRun;
+use crate::{verify_json, CmdRun};
 use hex_literal::hex;
 use serde_json::json;
 use sidechain_domain::{
@@ -31,6 +31,7 @@ fn no_ariadne_parameters_on_main_chain_no_updates() {
 	let result = SetupMainChainStateCmd.run(&mock_context);
 
 	result.expect("should succeed");
+	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, no_updates_resources_json());
 }
 
 #[test]
@@ -65,6 +66,7 @@ fn no_ariadne_parameters_on_main_chain_do_updates() {
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
 	result.expect("should succeed");
+	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, post_updates_resources_json());
 }
 
 #[test]
@@ -83,6 +85,7 @@ fn ariadne_parameters_are_on_main_chain_no_updates() {
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
 	result.expect("should succeed");
+	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, no_updates_resources_json());
 }
 
 #[test]
@@ -118,6 +121,7 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
 	result.expect("should succeed");
+	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, post_updates_resources_json());
 }
 
 #[test]
@@ -141,6 +145,7 @@ fn fails_if_update_permissioned_candidates_fail() {
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
 	result.expect_err("should return error");
+	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, post_updates_resources_json());
 }
 
 #[test]
@@ -158,6 +163,7 @@ fn candidates_on_main_chain_are_same_as_in_config_no_updates() {
 		]);
 	let result = SetupMainChainStateCmd.run(&mock_context);
 	result.expect("should succeed");
+	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, no_updates_resources_json());
 }
 
 fn print_info_io() -> MockIO {
@@ -185,7 +191,7 @@ fn get_ariadne_parameters_io(result: serde_json::Value) -> MockIO {
 	let timestamp_for_preview_epoch_605 = Timestamp::from_unix_millis(1_718_972_296_000u64);
 	MockIO::Group(vec![
 		MockIO::print("Will read the current D-Parameter and Permissioned Candidates from the main chain, using 'partner-chains-node ariadne-parameters' command."),
-		prompt_and_save_to_existing_file(config_fields::POSTGRES_CONNECTION_STRING, "postgres://postgres:password123@localhost:5432/cexplorer"),
+		prompt(config_fields::POSTGRES_CONNECTION_STRING, "postgres://postgres:password123@localhost:5432/cexplorer"),
 		set_env_for_node_io(),
 		MockIO::current_timestamp(timestamp_for_preview_epoch_605),
 		MockIO::new_tmp_dir(),
@@ -216,11 +222,7 @@ fn upsert_permissioned_candidates_io() -> MockIO {
 			&default_ogmios_service_config(),
 			&default_ogmios_service_config(),
 		),
-		prompt_with_default_and_save_to_existing_file(
-			CARDANO_PAYMENT_SIGNING_KEY_FILE,
-			Some("payment.skey"),
-			"payment.skey",
-		),
+		prompt(CARDANO_PAYMENT_SIGNING_KEY_FILE, "payment.skey"),
 		MockIO::print(
 			"Permissioned candidates updated. The change will be effective in two main chain epochs.",
 		)])
@@ -232,11 +234,7 @@ fn upsert_permissioned_candidates_failed_io() -> MockIO {
 			&default_ogmios_service_config(),
 			&default_ogmios_service_config(),
 		),
-		prompt_with_default_and_save_to_existing_file(
-			CARDANO_PAYMENT_SIGNING_KEY_FILE,
-			Some("payment.skey"),
-			"payment.skey",
-		),
+		prompt(CARDANO_PAYMENT_SIGNING_KEY_FILE, "payment.skey"),
 	])
 }
 
@@ -260,11 +258,7 @@ fn insert_d_parameter_io() -> MockIO {
 			Some("0"),
 			"7",
 		),
-		prompt_with_default_and_save_to_existing_file(
-			CARDANO_PAYMENT_SIGNING_KEY_FILE,
-			Some("payment.skey"),
-			"payment.skey",
-		),
+		prompt(CARDANO_PAYMENT_SIGNING_KEY_FILE, "payment.skey"),
 		MockIO::print(
 			"D-parameter updated to (4, 7). The change will be effective in two main chain epochs.",
 		),
@@ -287,11 +281,7 @@ fn update_d_parameter_io() -> MockIO {
 			Some("4"),
 			"7",
 		),
-		prompt_with_default_and_save_to_existing_file(
-			CARDANO_PAYMENT_SIGNING_KEY_FILE,
-			Some("payment.skey"),
-			"payment.skey",
-		),
+		prompt_with_default(CARDANO_PAYMENT_SIGNING_KEY_FILE, Some("payment.skey"), "payment.skey"),
 		MockIO::print(
 			"D-parameter updated to (4, 7). The change will be effective in two main chain epochs.",
 		),
@@ -361,6 +351,18 @@ fn test_chain_config_content() -> serde_json::Value {
 			}
 		],
 	})
+}
+
+fn post_updates_resources_json() -> serde_json::Value {
+	json!({
+		"cardano_payment_signing_key_file": "payment.skey",
+		"db_sync_postgres_connection_string": "postgres://postgres:password123@localhost:5432/cexplorer",
+		"ogmios": default_ogmios_config_json()
+	})
+}
+
+fn no_updates_resources_json() -> serde_json::Value {
+	json!({"db_sync_postgres_connection_string": "postgres://postgres:password123@localhost:5432/cexplorer"})
 }
 
 fn initial_permissioned_candidates() -> Vec<sidechain_domain::PermissionedCandidateData> {

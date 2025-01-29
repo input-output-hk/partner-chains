@@ -28,10 +28,10 @@ pub(crate) mod tests {
 	use super::*;
 	use crate::config::NetworkProtocol;
 	use crate::prepare_configuration::tests::{
-		prompt_multi_option_with_default_and_save_to_existing_file,
-		prompt_with_default_and_save_to_existing_file,
+		prompt_multi_option_with_default, prompt_with_default,
 	};
 	use crate::tests::MockIO;
+	use serde_json::{json, Value};
 	use std::str::FromStr;
 
 	pub(crate) fn default_ogmios_service_config() -> ServiceConfig {
@@ -43,6 +43,14 @@ pub(crate) mod tests {
 			hostname: OGMIOS_HOSTNAME.default.unwrap_or("localhost").to_string(),
 			port: OGMIOS_PORT.default.unwrap_or("1337").parse().unwrap(),
 		}
+	}
+
+	pub(crate) fn default_ogmios_config_json() -> Value {
+		json!({
+			"protocol": "http",
+			"hostname": "localhost",
+			"port": 1337,
+		})
 	}
 
 	/// Assumption for this function is that resources config file exists, so tests context should have it.
@@ -62,17 +70,17 @@ pub(crate) mod tests {
 		config_to_set: &ServiceConfig,
 	) -> MockIO {
 		MockIO::Group(vec![
-			prompt_multi_option_with_default_and_save_to_existing_file(
+			prompt_multi_option_with_default(
 				OGMIOS_PROTOCOL,
 				Some(&default_config.protocol.to_string()),
 				&config_to_set.protocol.to_string(),
 			),
-			prompt_with_default_and_save_to_existing_file(
+			prompt_with_default(
 				OGMIOS_HOSTNAME,
 				Some(&default_config.hostname),
 				&config_to_set.hostname,
 			),
-			prompt_with_default_and_save_to_existing_file(
+			prompt_with_default(
 				OGMIOS_PORT,
 				Some(&default_config.port.to_string()),
 				&config_to_set.port.to_string(),

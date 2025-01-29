@@ -30,9 +30,6 @@ pub enum MockIO {
 	Prompt { prompt: String, default: Option<String>, input: String },
 	PromptYN { prompt: String, default: bool, choice: bool },
 	PromptMultiOption { prompt: String, options: Vec<String>, choice: String },
-	FileWrite { path: String, input: String },
-	FileWriteJson { path: String, input: serde_json::Value },
-	FileWriteJsonField { path: String, key: String, value: String },
 	NewTmpFile { content: String },
 	NewTmpDir,
 	ListDirectory { path: String, result: Option<Vec<String>> },
@@ -84,22 +81,6 @@ impl MockIO {
 			input: input.into(),
 		}
 		.with_location()
-	}
-
-	#[track_caller]
-	pub fn file_write(path: &str, input: &str) -> Self {
-		Self::FileWrite { path: path.into(), input: input.into() }.with_location()
-	}
-
-	#[track_caller]
-	pub fn file_write_json_contains(path: &str, key: &str, value: &str) -> Self {
-		Self::FileWriteJsonField { path: path.into(), key: key.into(), value: value.into() }
-			.with_location()
-	}
-
-	#[track_caller]
-	pub fn file_write_json(path: &str, input: serde_json::Value) -> Self {
-		Self::FileWriteJson { path: path.into(), input }.with_location()
 	}
 
 	#[track_caller]
@@ -528,57 +509,7 @@ impl IOContext for MockIOContext {
 	}
 
 	fn write_file(&self, path: &str, input: &str) {
-		let next = self.pop_next_action(&format!("write_file(path = {path}, input = {input})"));
-		next.print_mock_location_on_panic(|next| match next {
-			MockIO::FileWriteJsonField {
-				path: expected_path,
-				key: expected_key,
-				value: expected_value,
-			} => {
-				assert_eq!(
-					path, expected_path,
-					"Unexpected file write: {path}, expected: {expected_path}"
-				);
-				let parsed_input: serde_json::Value =
-					serde_json::from_str(input).expect("Invalid json write attempt to {path}");
-				let value_opt = parsed_input.pointer(&expected_key);
-				let value = value_opt.unwrap_or_else(|| {
-					panic!("Unexpected write input. Expected key {expected_key} not found in json {parsed_input}")
-				});
-
-				assert_eq!(
-					expected_value,
-					value.to_string().replace('"', ""),
-					"Unexpected write input: {value}, expected: {expected_value}"
-				);
-				self.files.lock().unwrap().insert(path.into(), input.into());
-			},
-			MockIO::FileWriteJson { path: expected_path, input: expected_input } => {
-				assert_eq!(
-					path, expected_path,
-					"Unexpected file write: {path}, expected: {expected_path}"
-				);
-				let parsed_input: serde_json::Value =
-					serde_json::from_str(input).expect("Invalid json write attempt to {path}");
-				assert_eq!(
-					parsed_input, expected_input,
-					"Unexpected write input: {parsed_input}, expected: {expected_input}"
-				);
-				self.files.lock().unwrap().insert(path.into(), input.into());
-			},
-			MockIO::FileWrite { path: expected_path, input: expected_input } => {
-				assert_eq!(
-					path, expected_path,
-					"Unexpected file write: {path}, expected: {expected_path}"
-				);
-				assert_eq!(
-					input, &expected_input,
-					"Unexpected file write input: {input}, expected: {expected_input}"
-				);
-				self.files.lock().unwrap().insert(path.into(), input.into());
-			},
-			other => panic!("Unexpected file write action, expected: {other:?}"),
-		})
+		self.files.lock().unwrap().insert(path.into(), input.into());
 	}
 
 	fn read_file(&self, path: &str) -> Option<String> {
@@ -718,6 +649,23 @@ impl IOContext for MockIOContext {
 		})?;
 		Ok(mock.clone())
 	}
+}
+
+#[macro_export]
+macro_rules! verify_json {
+	($ctx:ident, $path:expr, $expected:expr) => {{
+		let actual = $ctx
+			.files
+			.lock()
+			.unwrap()
+			.get($path)
+			.map(|s| {
+				serde_json::from_str::<serde_json::Value>(s)
+					.unwrap_or_else(|_| panic!("{} is not valid JSON", $path))
+			})
+			.unwrap_or_else(|| panic!("Expected file {} not found", $path));
+		pretty_assertions::assert_eq!(actual, $expected, "File {} does not match expected", $path);
+	}};
 }
 
 #[test]
