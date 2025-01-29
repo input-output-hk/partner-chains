@@ -73,9 +73,9 @@ fn prepare_native_token<C: IOContext>(context: &C) -> anyhow::Result<()> {
 	Ok(())
 }
 
-const OUTRO: &str = r#"Chain configuration (partner-chains-cli-chain-config.json) is now ready for distribution to network participants.
+const OUTRO: &str = r#"Chain configuration (pc-chain-config.json) is now ready for distribution to network participants.
 
-If you intend to run a chain with permissioned candidates, you must manually set their keys in the partner-chains-cli-chain-config.json file before proceeding. Here's an example of how to add permissioned candidates:
+If you intend to run a chain with permissioned candidates, you must manually set their keys in the pc-chain-config.json file before proceeding. Here's an example of how to add permissioned candidates:
 
 {
   ...

@@ -2,7 +2,7 @@ use crate::tests::{MockIO, MockIOContext};
 
 use super::*;
 
-const RESOURCES_CONFIG_PATH: &str = "partner-chains-cli-resources-config.json";
+const RESOURCES_CONFIG_PATH: &str = "pc-resources-config.json";
 const DATA_PATH: &str = "/path/to/data";
 const CHAIN_SPEC_FILE: &str = "chain-spec.json";
 const DB_CONNECTION_STRING: &str =

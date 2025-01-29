@@ -5,7 +5,7 @@ use scenarios::key_file_content;
 use scenarios::resources_file_content;
 
 const DATA_PATH: &str = "/path/to/data";
-const RESOURCES_CONFIG_PATH: &str = "partner-chains-cli-resources-config.json";
+const RESOURCES_CONFIG_PATH: &str = "pc-resources-config.json";
 const KEYS_FILE: &str = "partner-chains-public-keys.json";
 const CHAIN_NAME: &str = "partner_chains_template";
 

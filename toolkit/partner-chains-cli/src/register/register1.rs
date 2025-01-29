@@ -138,7 +138,7 @@ where
 	T: DeserializeOwned,
 {
 	field.load_from_file(context).ok_or_else(|| {
-		context.eprint("⚠️ The chain configuration file `partner-chains-cli-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority.");
+		context.eprint("⚠️ The chain configuration file `pc-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority.");
 		anyhow::anyhow!("failed to read {}", field.path.join("."))
 	})
 }
@@ -231,7 +231,7 @@ mod tests {
 	#[test]
 	fn report_error_if_chain_config_fields_are_missing() {
 		let mock_context = MockIOContext::new()
-			.with_json_file("partner-chains-cli-chain-config.json", serde_json::json!({}))
+			.with_json_file("pc-chain-config.json", serde_json::json!({}))
 			.with_expected_io(
 				vec![intro_msg_io(), invalid_chain_config_io()]
 					.into_iter()
@@ -396,8 +396,8 @@ mod tests {
 		assert!(result.is_err());
 	}
 
-	const CHAIN_CONFIG_PATH: &str = "partner-chains-cli-chain-config.json";
-	const RESOURCE_CONFIG_PATH: &str = "partner-chains-cli-resources-config.json";
+	const CHAIN_CONFIG_PATH: &str = "pc-chain-config.json";
+	const RESOURCE_CONFIG_PATH: &str = "pc-resources-config.json";
 
 	fn chain_config_content() -> serde_json::Value {
 		serde_json::json!({
@@ -500,6 +500,6 @@ mod tests {
 	const ECDSA_KEY_PATH: &str = "/path/to/data/chains/partner_chains_template/keystore/63726368031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6";
 
 	fn invalid_chain_config_io() -> Vec<MockIO> {
-		vec![MockIO::eprint("⚠️ The chain configuration file `partner-chains-cli-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority.")]
+		vec![MockIO::eprint("⚠️ The chain configuration file `pc-chain-config.json` is missing or invalid.\n If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.\n If you are a validator, you can obtain the chain configuration file from the governance authority.")]
 	}
 }
