@@ -23,8 +23,6 @@ pub mod reserve;
 pub mod scripts_data;
 #[cfg(test)]
 pub mod test_values;
-/// Module for interaction with the untyped plutus scripts
-pub mod untyped_plutus;
 /// Supports governance updates
 pub mod update_governance;
 
