@@ -42,28 +42,19 @@ fn caradano_parameters(
 			.checked_add(first_epoch_era.start.time_seconds)
 			.and_then(|seconds| seconds.checked_mul(1000))
 			.ok_or_else(|| anyhow::anyhow!("First epoch timestamp overflow"))?,
+		main_chain_slot_duration_millis: shelley_config.slot_length_millis,
 	})
 }
 
-// Partner Chains Main Chain follower supports only eras with 1 second slots.
-// This functions gets the first era with 1 second slots,
+// This functions gets the first era
 // such that all following eras have the same slot length and epoch length.
 fn get_first_epoch_era(eras_summaries: Vec<EraSummary>) -> Result<EraSummary, anyhow::Error> {
-	let latest_era_parameters = eras_summaries
-		.last()
-		.ok_or_else(|| anyhow::anyhow!("No eras found"))?
-		.parameters
-		.clone();
-	if latest_era_parameters.slot_length_millis != 1000 {
-		return Err(anyhow::anyhow!(
-			"Unexpected slot length in latest era, Partner Chains support only 1 second slots"
-		));
-	}
+	let latest_era = eras_summaries.last().ok_or_else(|| anyhow::anyhow!("No eras found"))?;
 	let first_epoch_era = eras_summaries
-		.into_iter()
-		.find(|era| era.parameters == latest_era_parameters)
+		.iter()
+		.find(|era| era.parameters == latest_era.parameters)
 		.ok_or_else(|| anyhow::anyhow!("No eras found"))?;
-	Ok(first_epoch_era)
+	Ok(first_epoch_era.clone())
 }
 
 #[cfg(test)]
@@ -86,6 +77,7 @@ pub mod tests {
 		first_slot_number: 86400,
 		epoch_duration_millis: 432000000,
 		first_epoch_timestamp_millis: 1655769600000,
+		main_chain_slot_duration_millis: 1000,
 	};
 
 	pub(crate) const PREVIEW_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
@@ -95,6 +87,7 @@ pub mod tests {
 		first_slot_number: 0,
 		epoch_duration_millis: 86400000,
 		first_epoch_timestamp_millis: 1666656000000,
+		main_chain_slot_duration_millis: 1000,
 	};
 
 	#[test]

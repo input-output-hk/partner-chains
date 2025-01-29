@@ -181,6 +181,7 @@ pub fn start_node<C: IOContext>(
 				first_slot_number,
 				epoch_duration_millis,
 				first_epoch_timestamp_millis,
+				main_chain_slot_duration_millis,
 			},
 		bootnodes,
 	}: StartNodeChainConfig,
@@ -195,6 +196,7 @@ pub fn start_node<C: IOContext>(
          DB_SYNC_POSTGRES_CONNECTION_STRING='{db_connection_string}' \\
          MC__FIRST_EPOCH_TIMESTAMP_MILLIS='{first_epoch_timestamp_millis}' \\
          MC__EPOCH_DURATION_MILLIS='{epoch_duration_millis}' \\
+         MC__SLOT_DURATION_MILLIS='{main_chain_slot_duration_millis}' \\
          MC__FIRST_EPOCH_NUMBER='{first_epoch_number}' \\
          MC__FIRST_SLOT_NUMBER='{first_slot_number}' \\
          BLOCK_STABILITY_MARGIN='0' \\
