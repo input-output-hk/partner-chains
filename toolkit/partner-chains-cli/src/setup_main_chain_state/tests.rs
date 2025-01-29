@@ -290,7 +290,7 @@ fn update_d_parameter_io() -> MockIO {
 
 fn print_main_chain_and_configuration_candidates_difference_io() -> MockIO {
 	MockIO::Group(vec![
-		MockIO::print("Permissioned candidates in the partner-chains-cli-chain-config.json file does not match the most recent on-chain initial permissioned candidates."),
+		MockIO::print("Permissioned candidates in the pc-chain-config.json file does not match the most recent on-chain initial permissioned candidates."),
 		MockIO::print("The most recent on-chain initial permissioned candidates are:"),
 		MockIO::print("Partner Chains Key: 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1, AURA: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d, GRANDPA: 0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"),
 		MockIO::print("Partner Chains Key: 0x0263c9cdabbef76829fe5b35f0bbf3051bd1c41b80f58b5d07c271d0dd04de2a4e, AURA: 0x9cedc9f7b926191f64d68ee77dd90c834f0e73c0f53855d77d3b0517041d5640, GRANDPA: 0xde21d8171821fc29a43a1ed90ee75623edc3794012010f165b6afc3483a569aa"),
@@ -302,7 +302,7 @@ fn print_main_chain_and_configuration_candidates_difference_io() -> MockIO {
 
 fn print_main_chain_and_configuration_candidates_are_equal_io() -> MockIO {
 	MockIO::Group(vec![
-		MockIO::print("Permissioned candidates in the partner-chains-cli-chain-config.json file match the most recent on-chain initial permissioned candidates."),
+		MockIO::print("Permissioned candidates in the pc-chain-config.json file match the most recent on-chain initial permissioned candidates."),
 	])
 }
 

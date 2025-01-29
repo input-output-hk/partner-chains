@@ -1,28 +1,29 @@
 use super::*;
+use crate::config::RESOURCES_CONFIG_FILE_PATH;
 use crate::tests::*;
 use crate::CmdRun;
 use scenarios::key_file_content;
 use scenarios::resources_file_content;
 
 const DATA_PATH: &str = "/path/to/data";
-const RESOURCES_CONFIG_PATH: &str = "partner-chains-cli-resources-config.json";
-const KEYS_FILE: &str = "partner-chains-public-keys.json";
-const CHAIN_NAME: &str = "partner_chains_template";
 
 const GRANDPA_PREFIX: &str = "6772616e"; // "gran" in hex
 const CROSS_CHAIN_PREFIX: &str = "63726368"; // "crch" in hex
 const AURA_PREFIX: &str = "61757261"; // "aura" in hex
 
 fn default_config() -> GenerateKeysConfig {
-	GenerateKeysConfig { chain_name: CHAIN_NAME.into(), substrate_node_base_path: DATA_PATH.into() }
+	GenerateKeysConfig {
+		chain_name: DEFAULT_CHAIN_NAME.into(),
+		substrate_node_base_path: DATA_PATH.into(),
+	}
 }
 
 fn network_key_file() -> String {
-	format!("{DATA_PATH}/chains/{CHAIN_NAME}/network/secret_ed25519")
+	format!("{DATA_PATH}/chains/{DEFAULT_CHAIN_NAME}/network/secret_ed25519")
 }
 
 fn keystore_path() -> String {
-	format!("{DATA_PATH}/chains/{CHAIN_NAME}/keystore")
+	format!("{DATA_PATH}/chains/{DEFAULT_CHAIN_NAME}/keystore")
 }
 
 pub mod scenarios {
@@ -167,7 +168,7 @@ fn happy_path() {
 		"partner-chains-public-keys.json",
 		key_file_content("aura-pub-key", "grandpa-pub-key", "cross-chain-pub-key")
 	);
-	verify_json!(mock_context, RESOURCES_CONFIG_PATH, resources_file_content());
+	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, resources_file_content());
 }
 
 mod config_read {
@@ -181,7 +182,7 @@ mod config_read {
 
 		let result = GenerateKeysConfig::load(&context);
 
-		assert_eq!(result.chain_name, CHAIN_NAME);
+		assert_eq!(result.chain_name, DEFAULT_CHAIN_NAME);
 		assert_eq!(result.substrate_node_base_path, DATA_PATH);
 	}
 
@@ -189,18 +190,18 @@ mod config_read {
 	fn reads_all_when_present() {
 		let context = MockIOContext::new()
 			.with_json_file(
-				RESOURCES_CONFIG_PATH,
+				RESOURCES_CONFIG_FILE_PATH,
 				serde_json::json!({
 					"substrate_node_base_path": DATA_PATH,
 				}),
 			)
 			.with_expected_io(vec![MockIO::eprint(&format!(
-				"🛠️ Loaded node base path from config ({RESOURCES_CONFIG_PATH}): {DATA_PATH}"
+				"🛠️ Loaded node base path from config ({RESOURCES_CONFIG_FILE_PATH}): {DATA_PATH}"
 			))]);
 
 		let result = GenerateKeysConfig::load(&context);
 
-		assert_eq!(result.chain_name, CHAIN_NAME);
+		assert_eq!(result.chain_name, DEFAULT_CHAIN_NAME);
 		assert_eq!(result.substrate_node_base_path, DATA_PATH);
 	}
 }
@@ -217,7 +218,7 @@ mod generate_spo_keys {
 		];
 		let mock_context = MockIOContext::new()
 			.with_json_file(
-				RESOURCES_CONFIG_PATH,
+				RESOURCES_CONFIG_FILE_PATH,
 				serde_json::json!({
 					"substrate_node_base_path": DATA_PATH,
 				}),
@@ -260,16 +261,16 @@ mod generate_spo_keys {
 	#[test]
 	fn skips_the_step_if_user_declines_keys_file_overwrite() {
 		let mock_context = MockIOContext::new()
-			.with_file(KEYS_FILE, "irrelevant")
+			.with_file(KEYS_FILE_PATH, "irrelevant")
 			.with_json_file(
-				RESOURCES_CONFIG_PATH,
+				RESOURCES_CONFIG_FILE_PATH,
 				serde_json::json!({
 					"substrate_node_base_path": DATA_PATH,
 				}),
 			)
 			.with_expected_io(vec![
 				MockIO::prompt_yes_no(
-					&format! {"keys file {KEYS_FILE} exists - overwrite it?"},
+					&format! {"keys file {KEYS_FILE_PATH} exists - overwrite it?"},
 					false,
 					false,
 				),

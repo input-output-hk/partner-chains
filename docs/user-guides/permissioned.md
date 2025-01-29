@@ -151,7 +151,7 @@ The generate-keys wizard will generate necessary keys and save them to your node
 If these keys already exist in the node’s keystore, you will be asked to overwrite existing keys. The wizard will also generate a network key for your node if needed.
 
 1. Start the wizard: `./partner-chains-node wizards generate-keys`
-2. Input the node base path. It is saved in `partner-chains-cli-resources-config.json`.
+2. Input the node base path. It is saved in `pc-resources-config.json`.
 
 Now the wizard will output `partner-chains-public-keys.json` containing three keys.
 ``` javascript
@@ -172,7 +172,7 @@ Contact the chain builder and provide the `partner-chains-cli-public-keys.json` 
 
 Obtaining these files is as simple as getting the file from the chain builder.
 
-Contact the chain builder and request the `chain-spec.json` and `partner-chains-cli-chain-config.json` files.
+Contact the chain builder and request the `chain-spec.json` and `pc-chain-config.json` files.
 
 ### 6. Run the partner chain node
 
@@ -181,16 +181,16 @@ The start-node wizard is used to start a partner chain node. Make sure that `car
 1. Start the wizard: `./partner-chains-node start-node`
 2. The wizard checks if all required keys are present. If not, it reminds you to run the generate-keys wizard first, and exits.
 3. If the `chain-spec` file is not present, you should obtain it from the chain builder.
-4. The wizard checks the `partner-chains-cli-chain-config.json` file. If it is missing or invalid, you should obtain it from the chain builder.
+4. The wizard checks the `pc-chain-config.json` file. If it is missing or invalid, you should obtain it from the chain builder.
 5. If the `db_sync_postgres_connection_string` is missing from the `partner-chain-cli-resources-config.json` file, the wizard prompts for it, using the default value `postgresql://postgres-user:postgres-password@localhost:5432/cexplorer`.
-6. The wizard outputs all relevant parameters and asks if they are correct. If not, you should edit the `partner-chains-cli-chain-config.json` and/or `partner-chain-cli-resources-config.json` files and run the wizard again.
+6. The wizard outputs all relevant parameters and asks if they are correct. If not, you should edit the `pc-chain-config.json` and/or `partner-chain-cli-resources-config.json` files and run the wizard again.
 
 The wizard sets the required environment variables and starts the node.
 
 ---
 **NOTE**
 
-The configuration of the chain is stored in the file `partner-chains-cli-chain-config.json`. This file needs to remain idential with other nodes in the network.
+The configuration of the chain is stored in the file `pc-chain-config.json`. This file needs to remain idential with other nodes in the network.
 
 ---
 

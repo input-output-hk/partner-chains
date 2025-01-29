@@ -73,7 +73,7 @@ fn fails_when_chain_config_is_not_valid() {
 	let result = DeregisterCmd.run(&mock_context);
 	assert_eq!(
 	    result.err().unwrap().to_string(),
-		"Couldn't parse chain configuration file partner-chains-cli-chain-config.json. The chain configuration file that was used for registration is required in the working directory."
+		"Couldn't parse chain configuration file pc-chain-config.json. The chain configuration file that was used for registration is required in the working directory."
 	);
 }
 

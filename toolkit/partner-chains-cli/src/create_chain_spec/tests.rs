@@ -31,7 +31,7 @@ fn shows_warning_when_initial_candidates_are_empty() {
 			show_intro(),
 			show_chain_parameters(),
 			MockIO::print(&"WARNING: The list of initial permissioned candidates is empty. Generated chain spec will not allow the chain to start.".red().to_string()),
-			MockIO::print(&"Update 'initial_permissioned_candidates' field of partner-chains-cli-chain-config.json file with keys of initial committee.".red().to_string()),
+			MockIO::print(&"Update 'initial_permissioned_candidates' field of pc-chain-config.json file with keys of initial committee.".red().to_string()),
 			MockIO::print(&INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE.yellow().to_string()),
 			MockIO::prompt_yes_no("Do you want to continue?", true, false),
 			MockIO::print("Aborted."),
@@ -46,7 +46,7 @@ fn instruct_user_when_config_file_is_invalid() {
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_config_content_without_initial_permissioned_candidates())
 		.with_expected_io(vec![
-			MockIO::eprint("The 'partner-chains-cli-chain-config.json' configuration file is missing or invalid.
+			MockIO::eprint("The 'pc-chain-config.json' configuration file is missing or invalid.
 If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.
 If you are a validator, you can obtain the chain configuration file from the governance authority."),
 		]);
@@ -59,7 +59,7 @@ fn instruct_user_when_config_file_has_a_field_in_wrong_format() {
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_config_content_with_a_field_in_wrong_format())
 		.with_expected_io(vec![
-			MockIO::eprint("The 'partner-chains-cli-chain-config.json' configuration file is missing or invalid.
+			MockIO::eprint("The 'pc-chain-config.json' configuration file is missing or invalid.
 If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.
 If you are a validator, you can obtain the chain configuration file from the governance authority."),
 		]);

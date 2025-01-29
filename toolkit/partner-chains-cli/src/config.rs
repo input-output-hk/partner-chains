@@ -343,8 +343,8 @@ pub struct ChainConfig {
 }
 
 pub const KEYS_FILE_PATH: &str = "partner-chains-public-keys.json";
-pub const CHAIN_CONFIG_FILE_PATH: &str = "partner-chains-cli-chain-config.json";
-pub const RESOURCES_CONFIG_FILE_PATH: &str = "partner-chains-cli-resources-config.json";
+pub const CHAIN_CONFIG_FILE_PATH: &str = "pc-chain-config.json";
+pub const RESOURCES_CONFIG_FILE_PATH: &str = "pc-resources-config.json";
 pub const CHAIN_SPEC_PATH: &str = "chain-spec.json";
 
 pub fn load_chain_config(context: &impl IOContext) -> anyhow::Result<ChainConfig> {
