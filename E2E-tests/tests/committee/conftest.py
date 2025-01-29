@@ -1,4 +1,5 @@
 import logging
+import random
 from config.api_config import ApiConfig
 from pytest import fixture, skip
 from sqlalchemy import select, func, text
@@ -146,19 +147,19 @@ def candidate(request, initialize_candidates, api: BlockchainApi, config: ApiCon
     return available_candidates[0]
 
 
-# TODO: Merge in one function with parameter???
 @fixture
-def permissioned_candidate(
-    request, initialize_permissioned_candidates, api: BlockchainApi, config: ApiConfig, db: Session
-) -> PermissionedCandidates:
+def permissioned_candidates(
+    initialize_permissioned_candidates, api: BlockchainApi, config: ApiConfig, db: Session
+) -> (list[PermissionedCandidates], PermissionedCandidates):
     """
-    Same as above but for permissioned candidates
+    Get list of permissioned candidates and swap one active with inactive candidate to test rotation.
     """
-    permissioned_candidates = [name for name, node in config.nodes_config.nodes.items() if node.permissioned_candidate]
-    if not permissioned_candidates:
-        skip("No permissioned candidates available")
+    rotation_permissioned_candidates = [
+        name for name, node in config.nodes_config.nodes.items() if node.permissioned_candidate
+    ]
+    if not rotation_permissioned_candidates:
+        skip("No rotation permissioned candidates available in config.")
 
-    candidate_status = request.node.get_closest_marker("permissioned_candidate_status").args[0]
     current_epoch = api.get_mc_epoch()
 
     committee_for_query = aliased(PermissionedCandidates, name='query')
@@ -171,30 +172,21 @@ def permissioned_candidate(
     query = (
         select(committee_for_query)
         .where(committee_for_query.next_status_epoch == subquery)
-        .where(committee_for_query.next_status == candidate_status)
-        .where(committee_for_query.name.in_(permissioned_candidates))
+        .where(committee_for_query.name.in_(rotation_permissioned_candidates))
     )
     candidates = db.scalars(query).all()
 
     if not candidates:
-        skip(f"No {candidate_status} permissioned candidates available.")
+        skip("No permissioned candidates available in db.")
 
-    candidates_names = [candidate.name for candidate in candidates]
-    pending_candidates_names = []
-    query_for_pending = (
-        select(PermissionedCandidates)
-        .where(PermissionedCandidates.name.in_(candidates_names))
-        .where(PermissionedCandidates.next_status_epoch > current_epoch + 1)
-        .order_by(PermissionedCandidates.id.desc())
-    )
-    pending_candidates = db.scalars(query_for_pending).all()
-    pending_candidates_names = [candidate.name for candidate in pending_candidates]
+    # Remove one active candidate to test rotation
+    active_candidates = [candidate for candidate in candidates if candidate.next_status == 'active']
 
-    available_candidates = [candidate for candidate in candidates if candidate.name not in pending_candidates_names]
+    if active_candidates:
+        candidate_to_remove = random.choice(active_candidates)
+        candidates.remove(candidate_to_remove)
 
-    if not available_candidates:
-        skip(f"No {candidate_status} permissioned candidates available without a pending status")
-    return available_candidates[0]
+    yield candidates, candidate_to_remove
 
 
 @fixture

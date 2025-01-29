@@ -49,13 +49,6 @@ def is_hex(s):
         return False
 
 
-class PermissionedCandidate:
-    def __init__(self, config: Node):
-        self.public_key = config.public_key
-        self.aura_public_key = config.aura_public_key
-        self.grandpa_public_key = config.grandpa_public_key
-
-
 class SubstrateApi(BlockchainApi):
     def __init__(self, config: ApiConfig, secrets, db_sync: Session):
         self.config = config
@@ -286,18 +279,16 @@ class SubstrateApi(BlockchainApi):
     def update_d_param(self, permissioned_candidates_count, registered_candidates_count):
         signing_key = self.config.nodes_config.governance_authority.mainchain_key
 
-        result = self.sidechain_main_cli.update_d_param(
-            permissioned_candidates_count,
-            registered_candidates_count,
-            signing_key,
+        tx_id, mc_epoch = self.sidechain_main_cli.update_d_param(
+            permissioned_candidates_count, registered_candidates_count, signing_key
         )
 
-        if result:
+        if tx_id and mc_epoch:
             logger.info(
                 f"Update of D Param of P: {permissioned_candidates_count} and R: {registered_candidates_count} "
-                f" was successful and will take effect in 2 epochs "
+                f" was successful and will take effect in {mc_epoch} epoch. Transaction id: {tx_id}"
             )
-            return True, result
+            return True, mc_epoch
         else:
             return False, None
 
@@ -601,33 +592,17 @@ class SubstrateApi(BlockchainApi):
                 return False  # Wait until merkleRoots is empty or all epochs relayed
         return True
 
-    def add_permissioned_candidate(self, candidate_name: str):
-        candidate = PermissionedCandidate(self.config.nodes_config.nodes[candidate_name])
-        txId, next_status_epoch = self.sidechain_main_cli.update_permissioned_candidates(
-            self.config.nodes_config.governance_authority.mainchain_key, [candidate], []
+    def upsert_permissioned_candidates(self, new_candidates_list):
+        txId, mc_epoch = self.sidechain_main_cli.upsert_permissioned_candidates(
+            self.config.nodes_config.governance_authority.mainchain_key, new_candidates_list
         )
 
-        if txId and next_status_epoch:
+        if txId and mc_epoch:
             logger.info(
-                f"Addition of permissioned candidate {candidate_name} was successful and will take effect in MC epoch "
-                f"{next_status_epoch}. Transaction id: {txId}"
+                f"Success! New permissioned candidates are set and will be effective in "
+                f"{mc_epoch} MC epoch. Transaction id: {txId}"
             )
-            return True, next_status_epoch
-        else:
-            return False, None
-
-    def remove_permissioned_candidate(self, candidate_name: str):
-        candidate = PermissionedCandidate(self.config.nodes_config.nodes[candidate_name])
-        txId, next_status_epoch = self.sidechain_main_cli.update_permissioned_candidates(
-            self.config.nodes_config.governance_authority.mainchain_key, [], [candidate]
-        )
-
-        if txId and next_status_epoch:
-            logger.info(
-                f"Removal of permissioned candidate {candidate_name} was successful and will take effect in "
-                f"{next_status_epoch} MC epoch. Transaction id: {txId}"
-            )
-            return True, next_status_epoch
+            return True, mc_epoch
         else:
             return False, None
 

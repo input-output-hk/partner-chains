@@ -1,6 +1,6 @@
 from .cardano_cli import CardanoCli
 from .run_command import RunnerFactory
-from config.api_config import ApiConfig, Node
+from config.api_config import ApiConfig
 import json
 import re
 import logging as logger
@@ -76,30 +76,25 @@ class SidechainMainCli:
             raise e
         return signatures
 
-    def update_d_param(
-        self,
-        permissioned_candidates_count,
-        registered_candidates_count,
-        payment_key,
-    ):
+    def update_d_param(self, permissioned_candidates_count, registered_candidates_count, payment_key):
         update_d_param_cmd = (
-            f"{self.cli} update-d-parameter "
+            f"{self.cli} smart-contracts upsert-d-parameter "
             f"--genesis-utxo {self.config.genesis_utxo} "
-            f"--d-parameter-permissioned-candidates-count {permissioned_candidates_count} "
-            f"--d-parameter-registered-candidates-count {registered_candidates_count} "
-            f"--payment-signing-key-file {payment_key} "
-            f"--ogmios-host {self.config.stack_config.ogmios_host} "
-            f"--ogmios-port {self.config.stack_config.ogmios_port} "
-            f"--kupo-host {self.config.stack_config.kupo_host} "
-            f"--kupo-port {self.config.stack_config.kupo_port} "
-            f"--network {self.config.nodes_config.network}"
+            f"--permissioned-candidates-count {permissioned_candidates_count} "
+            f"--registered-candidates-count {registered_candidates_count} "
+            f"--payment-key-file {payment_key} "
+            f"--ogmios-url {self.config.stack_config.ogmios_url} "
         )
 
         result = self.run_command.run(update_d_param_cmd)
-
         response = self.handle_response(result)
+        tx_id = self.extract_transaction_id(response)
 
-        return response
+        if tx_id:
+            return tx_id, self._effective_in_mc_epoch()
+        else:
+            logger.error(f"Wrong response format of upsert-d-parameter command: {response}")
+            return None, None
 
     def register_candidate(self, signatures: RegistrationSignatures, payment_key, spo_public_key, registration_utxo):
         register_cmd = (
@@ -119,7 +114,7 @@ class SidechainMainCli:
         tx_id = self.extract_transaction_id(response)
 
         if tx_id:
-            return tx_id, self._calculate_registration_epoch()
+            return tx_id, self._effective_in_mc_epoch()
         else:
             logger.error(f"Wrong response format of register command: {response}")
             return None, None
@@ -138,55 +133,45 @@ class SidechainMainCli:
         tx_id = self.extract_transaction_id(response)
 
         if tx_id:
-            return tx_id, self._calculate_registration_epoch()
+            return tx_id, self._effective_in_mc_epoch()
         else:
             logger.error(f"Wrong response format from deregister command: {response}")
             return None, None
 
-    def _calculate_registration_epoch(self):
-        """Calculates main chain epoch in which a (de)registration will be processed by the sidechain module"""
+    def _effective_in_mc_epoch(self):
+        """Calculates main chain epoch in which smart contracts operation will be effective."""
         return self.cardano_cli.get_epoch() + 2
 
-    def update_permissioned_candidates(self, governance_key, add_candidates_list, remove_candidates_list):
-        update_candidates_cmd = (
-            f"{self.cli} update-permissioned-candidates "
-            f"--payment-signing-key-file {governance_key} "
-            f"--genesis-utxo {self.config.genesis_utxo} "
-            f"--ogmios-host {self.config.stack_config.ogmios_host} "
-            f"--ogmios-port {self.config.stack_config.ogmios_port} "
-            f"--kupo-host {self.config.stack_config.kupo_host} "
-            f"--kupo-port {self.config.stack_config.kupo_port} "
-            f"--network {self.config.nodes_config.network} "
-        )
+    def upsert_permissioned_candidates(self, governance_key, new_candidates_list):
+        # Create permissioned candidates file to be used in CLI command
+        permissioned_candidates = []
+        for candidate in new_candidates_list:
+            permissioned_candidates.append(self.config.nodes_config.nodes[candidate.name])
 
-        candidate: Node
-        for candidate in add_candidates_list:
-            update_candidates_cmd += (
-                "--add-candidate "
-                f'{candidate.public_key}:'
-                f'{candidate.aura_public_key}:'
-                f'{candidate.grandpa_public_key} '
-            )
-        for candidate in remove_candidates_list:
-            update_candidates_cmd += (
-                "--remove-candidate "
-                f'{candidate.public_key}:'
-                f'{candidate.aura_public_key}:'
-                f'{candidate.grandpa_public_key} '
-            )
+        candidates_file_content = "\n".join(
+            f"{candidate.public_key}:{candidate.aura_public_key}:{candidate.grandpa_public_key}"
+            for candidate in permissioned_candidates
+        )
+        permissioned_candidates_file = "/tmp/permissioned_candidates.csv"
+        save_file_cmd = f"echo '{candidates_file_content}' > {permissioned_candidates_file}"
+        self.run_command.run(save_file_cmd)
+
+        update_candidates_cmd = (
+            f"{self.cli} smart-contracts upsert-permissioned-candidates "
+            f"--payment-key-file {governance_key} "
+            f"--genesis-utxo {self.config.genesis_utxo} "
+            f"--permissioned-candidates-file {permissioned_candidates_file} "
+            f"--ogmios-url {self.config.stack_config.ogmios_url} "
+        )
 
         result = self.run_command.run(update_candidates_cmd, timeout=self.config.timeouts.register_cmd)
         response = self.handle_response(result)
+        tx_id = self.extract_transaction_id(response)
 
-        if (
-            "endpoint" in response
-            and "transactionId" in response
-            and response["endpoint"] == "UpdatePermissionedCandidates"
-        ):
-            logger.debug(f'Update Permissioned Candidates list txId: {response["transactionId"]}')
-            return response['transactionId'], self._calculate_registration_epoch()
+        if tx_id:
+            return tx_id, self._effective_in_mc_epoch()
         else:
-            logger.error(f"Wrong response format from update-permissioned-candidates command: {response}")
+            logger.error(f"Wrong response format from upsert-permissioned-candidates command: {response}")
             return False, None
 
     def handle_response(self, result):
@@ -204,7 +189,7 @@ class SidechainMainCli:
         return ''
 
     def extract_transaction_id(self, log_output):
-        pattern = r"Transaction submitted\. ID: ([a-f0-9]{64})"
+        pattern = r"Transaction output \'([a-f0-9]{64})\'"
         match = re.search(pattern, log_output)
         if match:
             return match.group(1)
