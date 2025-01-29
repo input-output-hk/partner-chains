@@ -26,7 +26,7 @@ use crate::{
 		get_builder_config, unit_plutus_data, AssetIdExt, CostStore, Costs, OgmiosUtxoExt,
 		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
 	},
-	init_governance::{get_governance_data, GovernanceData},
+	governance::GovernanceData,
 	reserve::ReserveData,
 	scripts_data::ReserveScripts,
 };
@@ -52,7 +52,7 @@ pub async fn handover_reserve<
 	await_tx: &A,
 ) -> anyhow::Result<McTxHash> {
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
-	let governance = get_governance_data(genesis_utxo, client).await?;
+	let governance = GovernanceData::get(genesis_utxo, client).await?;
 	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
 
 	let ref reserve_utxo @ ReserveUtxo { ref utxo, .. } =

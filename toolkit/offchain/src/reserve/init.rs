@@ -21,7 +21,7 @@ use crate::{
 		get_builder_config, CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt,
 		TransactionContext, TransactionOutputAmountBuilderExt,
 	},
-	init_governance::{get_governance_data, GovernanceData},
+	governance::GovernanceData,
 	plutus_script::PlutusScript,
 	scripts_data::{self, VersionOracleData},
 };
@@ -110,7 +110,7 @@ async fn initialize_script<
 	await_tx: &A,
 ) -> anyhow::Result<Option<McTxHash>> {
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
-	let governance = get_governance_data(genesis_utxo, client).await?;
+	let governance = GovernanceData::get(genesis_utxo, client).await?;
 	let version_oracle = scripts_data::version_oracle(genesis_utxo, ctx.network)?;
 
 	if script_is_initialized(&script, &version_oracle, &ctx, client).await? {
@@ -259,7 +259,7 @@ mod tests {
 	use super::{init_script_tx, ScriptData};
 	use crate::{
 		csl::{unit_plutus_data, Costs, OgmiosUtxoExt, TransactionContext},
-		init_governance::GovernanceData,
+		governance::GovernanceData,
 		plutus_script::PlutusScript,
 		scripts_data::{self, VersionOracleData},
 		test_values::{make_utxo, payment_addr, payment_key, protocol_parameters},

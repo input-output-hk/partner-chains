@@ -1,6 +1,6 @@
 use super::{test_values, update_governance_tx};
 use crate::csl::{empty_asset_name, Costs, OgmiosUtxoExt, TransactionContext};
-use crate::init_governance::GovernanceData;
+use crate::governance::GovernanceData;
 use crate::test_values::protocol_parameters;
 use cardano_serialization_lib::*;
 use hex_literal::hex;

@@ -23,7 +23,7 @@ use crate::{
 		get_builder_config, CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt,
 		TransactionContext, TransactionOutputAmountBuilderExt,
 	},
-	init_governance::{get_governance_data, GovernanceData},
+	governance::GovernanceData,
 	scripts_data::ReserveScripts,
 };
 use cardano_serialization_lib::{
@@ -51,7 +51,7 @@ pub async fn create_reserve_utxo<
 	await_tx: &A,
 ) -> anyhow::Result<McTxHash> {
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
-	let governance = get_governance_data(genesis_utxo, client).await?;
+	let governance = GovernanceData::get(genesis_utxo, client).await?;
 	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
 
 	let tx = Costs::calculate_costs(

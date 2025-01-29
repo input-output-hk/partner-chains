@@ -8,6 +8,8 @@ pub mod cardano_keys;
 pub mod csl;
 /// Supports D-Parameter upsert
 pub mod d_param;
+/// Governance data types
+pub mod governance;
 /// Supports governance initialization
 pub mod init_governance;
 #[cfg(test)]
