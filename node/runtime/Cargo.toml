@@ -87,9 +87,7 @@ serde_json = { workspace = true }
 substrate-wasm-builder = { workspace = true, optional = true }
 
 [features]
-default = ["std", "with-rocksdb-weights"]
-with-rocksdb-weights = []
-with-paritydb-weights = []
+default = ["std"]
 std = [
 	"authority-selection-inherents/std",
 	"sp-block-rewards/std",
