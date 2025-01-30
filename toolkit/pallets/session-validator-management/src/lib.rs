@@ -214,7 +214,9 @@ pub mod pallet {
 
 			if *validators_param != validators {
 				if *call_selection_inputs_hash == computed_selection_inputs_hash {
-					return Err(InherentError::InvalidValidators(computed_selection_inputs_hash));
+					return Err(InherentError::InvalidValidatorsMatchingHash(
+						computed_selection_inputs_hash,
+					));
 				} else {
 					return Err(InherentError::InvalidValidatorsHashMismatch(
 						computed_selection_inputs_hash,
