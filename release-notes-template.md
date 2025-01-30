@@ -18,7 +18,7 @@
 ## Compatibility matrix
 | partner-chains-node | partner-chains-smart-contracts | cardano-node | cardano-db-sync | kupo | ogmios |
 | -------------------- | -------------------------------- | --------------- | ------------------ | ----- | ------- |
-| [VERSION]           | [VERSION]                        | [VERSION]       | [VERSION]          | [VERSION] | [VERSION] |
+| [RELEASE_VERSION]           | [VERSION]                        | [VERSION]       | [VERSION]          | [VERSION] | [VERSION] |
 
 ## Binaries
 
@@ -29,7 +29,7 @@ PC smart contracts CLI can be downloaded from [here](https://github.com/input-ou
 You can also pull the Docker image of the `partner-chains-node` from GitHub Container Registry:
 
 ```bash
-docker pull ghcr.io/input-output-hk/partner-chains/partner-chains-node:[VERSION]
+docker pull ghcr.io/input-output-hk/partner-chains/partner-chains-node:[RELEASE_VERSION]
 ```
 
 ## How to Use
