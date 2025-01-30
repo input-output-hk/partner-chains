@@ -192,7 +192,7 @@ Command template:
 
 * `--initial-deposit-amount`: The initial amount of tokens to deposit into the reserve.
 
-* `--payment-key-file`: Your payment key file for transaction signing. This key has to have `reserve-initial-deposit-amount` in its wallet.
+* `--payment-key-file`: Your payment key file for transaction signing. This key has to have `initial-deposit-amount` in its wallet.
 
 #### Steps
 
