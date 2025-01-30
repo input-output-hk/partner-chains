@@ -1,66 +1,19 @@
 name: "Publish Release"
-description: "Publishes a GitHub release from draft status and updates release notes."
+description: "Publishes a GitHub release from draft status."
 inputs:
   tag:
     description: "Tag for the release"
     required: true
 
-outputs:
-  release_exists:
-    description: "Whether the release exists"
-    value: ${{ steps.check_release.outputs.release_exists }}
-  release_id:
-    description: "ID of the release"
-    value: ${{ steps.check_release.outputs.release_id }}
-
 runs:
   using: "composite"
   steps:
-    - name: Check if release exists
-      id: check_release
-      run: |
-        set -e
-        tag="${{ inputs.tag }}"
-        release_response=$(curl -s -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/${{ github.repository }}/releases?per_page=100")
-        release_id=$(echo "$release_response" | jq -r '.[] | select(.tag_name=="'"$tag"'") | .id')
-        if [ -z "$release_id" ] || [ "$release_id" == "null" ]; then
-          echo "release_exists=false" >> "$GITHUB_OUTPUT"
-          echo "release_id=" >> "$GITHUB_OUTPUT"
-        else
-          echo "release_exists=true" >> "$GITHUB_OUTPUT"
-          echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
-        fi
-      shell: bash
-
     - name: Publish release
-      run: |
-        set -e
-        if [[ "${{ steps.check_release.outputs.release_exists }}" == "true" ]]; then
-          release_id="${{ steps.check_release.outputs.release_id }}"
-          release_data=$(curl -s -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/$release_id")
-          current_body=$(echo "$release_data" | jq -r .body)
-          updated_body=$(echo "$current_body" | \
-            sed 's/- \[ \] Staging preview environment/- [x] Staging preview environment/g' | \
-            sed 's/Pre-release candidate for/Release/g' | \
-            sed 's/This is a draft pre-release candidate/This is a tested release/g' | \
-            sed 's/that is undergoing testing/that has passed our automated testing/g')
-          json_data=$(jq -n \
-            --arg name "$tag" \
-            --arg body "$updated_body" \
-            '{"draft": false, "prerelease": false, "name": $name, "body": $body, "make_latest": "true"}')
-          response=$(curl -s -X PATCH -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
-            -d "$json_data" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/$release_id")
-          echo "Response: $response"
-          if echo "$response" | jq -e '.id' >/dev/null; then
-            echo "Release updated successfully"
-          else
-            echo "Failed to update release"
-            exit 1
-          fi
-        else
-          echo "Release does not exist, skipping publish step."
-        fi
-      shell: bash
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ inputs.tag }}
+        draft: false
+        prerelease: false
+        make_latest: true
+      env:
+        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
