@@ -80,7 +80,7 @@ runs:
     - name: Process release notes
       shell: bash
       run: |
-        # Replace [RELEASE_VERSION] with release version
+        # Replace [RELEASE_VERSION] with release version if it exists
         sed "s/\[RELEASE_VERSION\]/${{ inputs.tag }}/g" release-sha/release-notes-template.md > release-notes.md
 
     - name: Create draft release
