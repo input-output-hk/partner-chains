@@ -49,10 +49,6 @@ To configure the stack, you will need to do the following:
                 "cli": <STRING>,
                 "ssh": "${stack_config[ssh]}"
             },
-            "sidechain_main_cli": {
-                "cli": <STRING>,
-                "ssh": "${stack_config[ssh]}"
-            },
             "partner_chains_node": {
                 "cli": <STRING>,
                 "ssh": "${stack_config[ssh]}"

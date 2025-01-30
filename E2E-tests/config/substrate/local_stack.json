@@ -12,7 +12,7 @@
             },
             "partner_chains_node": {
                 "cli": "./partner-chains-node",
-                "shell": "docker exec partner-chains-node bash -c"
+                "shell": "docker exec partner-chains-setup bash -c"
             },
             "bech32": {
                 "cli": "bech32"

@@ -1,4 +1,3 @@
-from .cardano_cli import CardanoCli
 from .run_command import RunnerFactory
 from config.api_config import ApiConfig
 import json
@@ -6,8 +5,8 @@ import re
 import logging as logger
 
 
-class SidechainMainCliException(Exception):
-    def __init__(self, message="Sidechain Main CLI error occurred", status_code=None):
+class PartnerChainsNodeException(Exception):
+    def __init__(self, message="Partner Chain CLI error occurred", status_code=None):
         self.message = message
         self.status_code = status_code
         super().__init__(self.message)
@@ -32,12 +31,12 @@ class RegistrationSignatures:
         self.sidechain_signature = sidechain_signature
 
 
-class SidechainMainCli:
-    def __init__(self, config: ApiConfig, cardano_cli: CardanoCli):
-        self.cli = config.stack_config.tools["partner_chains_node"].cli
-        self.cardano_cli = cardano_cli
+class PartnerChainsNode:
+    def __init__(self, config: ApiConfig):
         self.config = config
-        self.run_command = RunnerFactory.get_runner(cli.ssh, cli.shell)
+        cli_config = config.stack_config.tools["partner_chains_node"]
+        self.cli = cli_config.cli
+        self.run_command = RunnerFactory.get_runner(cli_config.ssh, cli_config.shell)
 
     def get_signatures(
         self,
@@ -91,7 +90,7 @@ class SidechainMainCli:
         tx_id = self.extract_transaction_id(response)
 
         if tx_id:
-            return tx_id, self._effective_in_mc_epoch()
+            return tx_id
         else:
             logger.error(f"Wrong response format of upsert-d-parameter command: {response}")
             return None, None
@@ -114,7 +113,7 @@ class SidechainMainCli:
         tx_id = self.extract_transaction_id(response)
 
         if tx_id:
-            return tx_id, self._effective_in_mc_epoch()
+            return tx_id
         else:
             logger.error(f"Wrong response format of register command: {response}")
             return None, None
@@ -133,14 +132,10 @@ class SidechainMainCli:
         tx_id = self.extract_transaction_id(response)
 
         if tx_id:
-            return tx_id, self._effective_in_mc_epoch()
+            return tx_id
         else:
             logger.error(f"Wrong response format from deregister command: {response}")
             return None, None
-
-    def _effective_in_mc_epoch(self):
-        """Calculates main chain epoch in which smart contracts operation will be effective."""
-        return self.cardano_cli.get_epoch() + 2
 
     def upsert_permissioned_candidates(self, governance_key, new_candidates_list):
         # Create permissioned candidates file to be used in CLI command
@@ -169,7 +164,7 @@ class SidechainMainCli:
         tx_id = self.extract_transaction_id(response)
 
         if tx_id:
-            return tx_id, self._effective_in_mc_epoch()
+            return tx_id
         else:
             logger.error(f"Wrong response format from upsert-permissioned-candidates command: {response}")
             return False, None
@@ -177,16 +172,9 @@ class SidechainMainCli:
     def handle_response(self, result):
         if result.stderr and not result.stdout:
             logger.error(f"Error during command: {result.stderr}")
-            raise SidechainMainCliException(result.stderr)
+            raise PartnerChainsNodeException(result.stderr)
 
         return result.stdout
-
-    def _get_json_string(self, s):
-        start = s.find('{')
-        end = s.rfind('}')
-        if start != -1 and end != -1:
-            return s[start : end + 1]  # end+1 because slicing is exclusive at the end
-        return ''
 
     def extract_transaction_id(self, log_output):
         pattern = r"Transaction output \'([a-f0-9]{64})\'"
