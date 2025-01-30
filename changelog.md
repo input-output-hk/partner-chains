@@ -5,7 +5,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 # Unreleased
 
 ## Changed
-
+* Replaced custom weights with default substrate weights for few pallets
 * `setup-main-chain-state` command now uses native Rust to upsert the D-Parameter and upsert permissioned candidates
 * Changed the `smart-contracts init-governance` command to `smart-contracts governance init`
 * smart-contracts commands and offchain tests now use WebSockets implementation of Ogmios client
