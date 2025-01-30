@@ -69,7 +69,6 @@ licenses:
 fmt:
   FROM +source
   CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN find node/runtime/src/weights -type f -name '*.rs' -exec cargo fmt -- {} +
   RUN cargo fmt --check
 
 docker:
