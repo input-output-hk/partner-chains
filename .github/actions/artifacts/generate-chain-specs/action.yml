@@ -19,6 +19,8 @@ runs:
         chmod +x partner-chains-node-${{ inputs.tag }}-x86_64-linux
         source ./dev/envs/devnet/.envrc
         ./partner-chains-node-${{ inputs.tag }}-x86_64-linux build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
+        source ./dev/envs/ci-preview/.envrc
+        ./partner-chains-node-${{ inputs.tag }}-x86_64-linux build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
         source ./dev/envs/staging-preview/.envrc
         ./partner-chains-node-${{ inputs.tag }}-x86_64-linux build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
         source ./dev/envs/staging-preprod/.envrc
@@ -29,5 +31,6 @@ runs:
         name: chain-specs
         path: |
           devnet_chain_spec.json
+          ci_preview_chain_spec.json
           staging_preview_chain_spec.json
           staging_preprod_chain_spec.json

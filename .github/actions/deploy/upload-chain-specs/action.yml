@@ -51,6 +51,17 @@ runs:
             --namespace=sc
         fi
       shell: bash
+
+    - name: Update Kubernetes secret for ci-preview chain spec
+      run: |
+        if [ -f ./ci_preview_chain_spec.json ]; then
+          SECRET_NAME="ci-preview-chain-spec-${{ inputs.sha }}"
+          kubectl delete secret "$SECRET_NAME" --namespace=ci-preview --ignore-not-found
+          kubectl create secret generic "$SECRET_NAME" \
+            --from-file=ci_preview_chain_spec.json=./ci_preview_chain_spec.json \
+            --namespace=ci-preview
+        fi
+      shell: bash
     
     - name: Update Kubernetes secret for staging-preview chain spec
       run: |
