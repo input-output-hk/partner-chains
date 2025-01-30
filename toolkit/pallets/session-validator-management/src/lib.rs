@@ -213,7 +213,14 @@ pub mod pallet {
 					});
 
 			if *validators_param != validators {
-				return Err(InherentError::InvalidValidators);
+				if *call_selection_inputs_hash == computed_selection_inputs_hash {
+					return Err(InherentError::InvalidValidators(computed_selection_inputs_hash));
+				} else {
+					return Err(InherentError::InvalidValidatorsHashMismatch(
+						computed_selection_inputs_hash,
+						call_selection_inputs_hash.clone(),
+					));
+				}
 			}
 
 			if *call_selection_inputs_hash != computed_selection_inputs_hash {
