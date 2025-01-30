@@ -170,16 +170,36 @@
 <a href="#170" id="170">170</a>
 <a href="#171" id="171">171</a>
 <a href="#172" id="172">172</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>anyhow::{anyhow, Context, Error};
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::<span class="kw-2">*</span>;
+<span class="kw">use </span>anyhow::{anyhow, Context, Error};
 <span class="kw">use </span>cardano_serialization_lib::{
 	Address, JsError, Language, LanguageKind, NetworkIdKind, PlutusData, ScriptHash,
 };
 <span class="kw">use </span>ogmios_client::types::{OgmiosScript, OgmiosScript::Plutus};
 <span class="kw">use </span>plutus::ToDatum;
 <span class="kw">use </span>sidechain_domain::{AssetId, AssetName, PolicyId};
-<span class="kw">use </span>uplc::ast::{DeBruijn, Program};
-
-<span class="kw">use crate</span>::{csl::<span class="kw-2">*</span>, untyped_plutus::<span class="kw-2">*</span>};
+<span class="kw">use </span>uplc::{
+	ast::{DeBruijn, Program},
+	plutus_data,
+};
 
 <span class="doccomment">/// Wraps a Plutus script cbor
 </span><span class="attr">#[derive(Clone, PartialEq, Eq)]
@@ -213,12 +233,21 @@
 	<span class="doccomment">/// This function is needed to create [PlutusScript] from scripts in [raw_scripts],
 	/// which are encoded as a cbor byte string containing the cbor of the script
 	/// itself. This function removes this layer of wrapping.
-	</span><span class="kw">pub fn </span>from_wrapped_cbor(cbor: <span class="kw-2">&amp;</span>[u8], language: Language) -&gt; anyhow::Result&lt;<span class="self">Self</span>&gt; {
-		<span class="prelude-val">Ok</span>(<span class="self">Self</span>::from_cbor(<span class="kw-2">&amp;</span>unwrap_one_layer_of_cbor(cbor)<span class="question-mark">?</span>, language))
+	</span><span class="kw">pub fn </span>from_wrapped_cbor(
+		plutus_script_raw_cbor: <span class="kw-2">&amp;</span>[u8],
+		language: Language,
+	) -&gt; anyhow::Result&lt;<span class="self">Self</span>&gt; {
+		<span class="kw">let </span>plutus_script_bytes: uplc::PlutusData = minicbor::decode(plutus_script_raw_cbor)<span class="question-mark">?</span>;
+		<span class="kw">let </span>plutus_script_bytes = <span class="kw">match </span>plutus_script_bytes {
+			uplc::PlutusData::BoundedBytes(bb) =&gt; <span class="prelude-val">Ok</span>(bb),
+			<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"expected validator raw to be BoundedBytes"</span>)),
+		}<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(<span class="self">Self</span>::from_cbor(<span class="kw-2">&amp;</span>plutus_script_bytes, language))
 	}
 
 	<span class="kw">pub fn </span>apply_data(<span class="self">self</span>, data: <span class="kw">impl </span>ToDatum) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, anyhow::Error&gt; {
-		<span class="kw">let </span>data = datum_to_uplc_plutus_data(<span class="kw-2">&amp;</span>data.to_datum());
+		<span class="kw">let </span>data = plutus_data(<span class="kw-2">&amp;</span>minicbor::to_vec(data.to_datum()).expect(<span class="string">"to_vec is Infallible"</span>))
+			.expect(<span class="string">"trasformation from PC Datum to pallas PlutusData can't fail"</span>);
 		<span class="self">self</span>.apply_uplc_data(data)
 	}
 
@@ -241,7 +270,14 @@
 	<span class="comment">// Returns PlutusData representation of the given script. It is done in the same way as on-chain code expects.
 	// First, the Address is created, then it is converted to PlutusData.
 	</span><span class="kw">pub fn </span>address_data(<span class="kw-2">&amp;</span><span class="self">self</span>, network: NetworkIdKind) -&gt; anyhow::Result&lt;uplc::PlutusData&gt; {
-		csl_plutus_data_to_uplc(<span class="kw-2">&amp;</span>PlutusData::from_address(<span class="kw-2">&amp;</span><span class="self">self</span>.address(network))<span class="question-mark">?</span>)
+		<span class="kw">let </span><span class="kw-2">mut </span>se = cbor_event::se::Serializer::new_vec();
+		cbor_event::se::Serialize::serialize(
+			<span class="kw-2">&amp;</span>PlutusData::from_address(<span class="kw-2">&amp;</span><span class="self">self</span>.address(network))<span class="question-mark">?</span>,
+			<span class="kw-2">&amp;mut </span>se,
+		)
+		.map_err(|e| <span class="macro">anyhow!</span>(e))<span class="question-mark">?</span>;
+		<span class="kw">let </span>bytes = se.finalize();
+		minicbor::decode(<span class="kw-2">&amp;</span>bytes).map_err(|e| <span class="macro">anyhow!</span>(e.to_string()))
 	}
 
 	<span class="doccomment">/// Returns bech32 address of the given PlutusV2 script

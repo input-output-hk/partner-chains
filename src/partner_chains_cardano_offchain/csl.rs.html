@@ -1094,14 +1094,6 @@
 <a href="#1094" id="1094">1094</a>
 <a href="#1095" id="1095">1095</a>
 <a href="#1096" id="1096">1096</a>
-<a href="#1097" id="1097">1097</a>
-<a href="#1098" id="1098">1098</a>
-<a href="#1099" id="1099">1099</a>
-<a href="#1100" id="1100">1100</a>
-<a href="#1101" id="1101">1101</a>
-<a href="#1102" id="1102">1102</a>
-<a href="#1103" id="1103">1103</a>
-<a href="#1104" id="1104">1104</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>anyhow::Context;
@@ -1593,15 +1585,7 @@
 			.with_plutus_data(datum)
 			.next()<span class="question-mark">?</span>;
 		<span class="kw">let </span>ma = MultiAsset::new().with_asset_amount(<span class="kw-2">&amp;</span>policy.empty_name_asset(), <span class="number">1u64</span>)<span class="question-mark">?</span>;
-		<span class="kw">let </span>output = amount_builder.with_coin_and_asset(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span>ma).build()<span class="question-mark">?</span>;
-		<span class="kw">let </span>min_ada = MinOutputAdaCalculator::new(
-			<span class="kw-2">&amp;</span>output,
-			<span class="kw-2">&amp;</span>DataCost::new_coins_per_byte(
-				<span class="kw-2">&amp;</span>ctx.protocol_parameters.min_utxo_deposit_coefficient.into(),
-			),
-		)
-		.calculate_ada()<span class="question-mark">?</span>;
-		<span class="kw">let </span>output = amount_builder.with_coin_and_asset(<span class="kw-2">&amp;</span>min_ada, <span class="kw-2">&amp;</span>ma).build()<span class="question-mark">?</span>;
+		<span class="kw">let </span>output = amount_builder.with_minimum_ada_and_asset(<span class="kw-2">&amp;</span>ma, ctx)<span class="question-mark">?</span>.build()<span class="question-mark">?</span>;
 		<span class="self">self</span>.add_output(<span class="kw-2">&amp;</span>output)
 	}
 

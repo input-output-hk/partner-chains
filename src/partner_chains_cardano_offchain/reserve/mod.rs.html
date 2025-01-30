@@ -139,15 +139,6 @@
 <a href="#139" id="139">139</a>
 <a href="#140" id="140">140</a>
 <a href="#141" id="141">141</a>
-<a href="#142" id="142">142</a>
-<a href="#143" id="143">143</a>
-<a href="#144" id="144">144</a>
-<a href="#145" id="145">145</a>
-<a href="#146" id="146">146</a>
-<a href="#147" id="147">147</a>
-<a href="#148" id="148">148</a>
-<a href="#149" id="149">149</a>
-<a href="#150" id="150">150</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! All smart-contracts related to Rewards Token Reserve Management
 
 </span><span class="kw">use crate</span>::{
@@ -159,12 +150,7 @@
 	ExUnits, JsError, PlutusScriptSource, PlutusWitness, Redeemer, RedeemerTag, TxInputsBuilder,
 };
 <span class="kw">use </span>init::find_script_utxo;
-<span class="kw">use </span>ogmios_client::{
-	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
-	query_network::QueryNetwork,
-	transactions::Transactions,
-	types::OgmiosUtxo,
-};
+<span class="kw">use </span>ogmios_client::{query_ledger_state::QueryLedgerState, types::OgmiosUtxo};
 <span class="kw">use </span>partner_chains_plutus_data::reserve::{ReserveDatum, ReserveRedeemer};
 <span class="kw">use </span>sidechain_domain::{AssetId, AssetName, UtxoId};
 
@@ -190,9 +176,7 @@
 }
 
 <span class="kw">impl </span>ReserveData {
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get&lt;
-		T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
-	&gt;(
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get&lt;T: QueryLedgerState&gt;(
 		genesis_utxo: UtxoId,
 		ctx: <span class="kw-2">&amp;</span>TransactionContext,
 		client: <span class="kw-2">&amp;</span>T,
@@ -238,9 +222,7 @@
 		})
 	}
 
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_reserve_utxo&lt;
-		T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
-	&gt;(
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_reserve_utxo&lt;T: QueryLedgerState&gt;(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		ctx: <span class="kw-2">&amp;</span>TransactionContext,
 		client: <span class="kw-2">&amp;</span>T,

@@ -515,7 +515,7 @@
 	transactions::Transactions,
 	types::{OgmiosScript, OgmiosUtxo},
 };
-<span class="kw">use </span>partner_chains_plutus_data::reserve::{ReserveDatum, ReserveRedeemer};
+<span class="kw">use </span>partner_chains_plutus_data::reserve::ReserveRedeemer;
 <span class="kw">use </span>sidechain_domain::{McTxHash, UtxoId};
 
 <span class="kw">pub async fn </span>release_reserve_funds&lt;
@@ -538,8 +538,7 @@
 		<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Reference utxo {reference_utxo:?} not found on chain"</span>));
 	};
 
-	<span class="kw">let </span>ReserveUtxo { utxo: reserve_utxo, datum: reserve_datum } =
-		reserve_data.get_reserve_utxo(<span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>reserve_utxo = reserve_data.get_reserve_utxo(<span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
 	<span class="kw">let </span>tx = Costs::calculate_costs(
 		|costs| {
@@ -547,7 +546,6 @@
 				<span class="kw-2">&amp;</span>ctx,
 				<span class="kw-2">&amp;</span>reserve_data,
 				<span class="kw-2">&amp;</span>reserve_utxo,
-				<span class="kw-2">&amp;</span>reserve_datum,
 				<span class="kw-2">&amp;</span>reference_utxo,
 				token.amount,
 				tip.slot,
@@ -577,19 +575,18 @@
 <span class="kw">fn </span>reserve_release_tx(
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
 	reserve_data: <span class="kw-2">&amp;</span>ReserveData,
-	previous_reserve_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
-	previous_reserve_datum: <span class="kw-2">&amp;</span>ReserveDatum,
+	previous_reserve: <span class="kw-2">&amp;</span>ReserveUtxo,
 	reference_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
 	cumulative_total_transfer: u64,
 	latest_slot: u64,
 	costs: Costs,
 ) -&gt; anyhow::Result&lt;Transaction&gt; {
-	<span class="kw">let </span>token = previous_reserve_datum.immutable_settings.token.clone();
-	<span class="kw">let </span>stats = previous_reserve_datum.stats.clone();
+	<span class="kw">let </span>token = previous_reserve.datum.immutable_settings.token.clone();
+	<span class="kw">let </span>stats = previous_reserve.datum.stats.clone();
 
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
 
-	<span class="kw">let </span>reserve_balance = previous_reserve_utxo.get_asset_amount(<span class="kw-2">&amp;</span>token);
+	<span class="kw">let </span>reserve_balance = previous_reserve.utxo.get_asset_amount(<span class="kw-2">&amp;</span>token);
 	<span class="kw">let </span>amount_to_transfer = cumulative_total_transfer - stats.token_total_amount_transferred;
 	<span class="kw">if </span>amount_to_transfer <span class="kw">as </span>i128 &gt; reserve_balance {
 		<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Not enough funds in the reserve to transfer {amount_to_transfer} tokens (reserve balance: {reserve_balance})"</span>));
@@ -620,7 +617,7 @@
 
 	<span class="comment">// Remove tokens from the reserve
 	</span>tx_builder.set_inputs(<span class="kw-2">&amp;</span>reserve_utxo_input_with_validator_script_reference(
-		previous_reserve_utxo,
+		<span class="kw-2">&amp;</span>previous_reserve.utxo,
 		reserve_data,
 		ReserveRedeemer::ReleaseFromReserve,
 		<span class="kw-2">&amp;</span>costs.get_one_spend(),
@@ -643,11 +640,11 @@
 		TransactionOutputBuilder::new()
 			.with_address(<span class="kw-2">&amp;</span>reserve_data.scripts.validator.address(ctx.network))
 			.with_plutus_data(<span class="kw-2">&amp;</span>PlutusData::from(
-				previous_reserve_datum.clone().after_withdrawal(amount_to_transfer),
+				previous_reserve.datum.clone().after_withdrawal(amount_to_transfer),
 			))
 			.next()<span class="question-mark">?
 			</span>.with_minimum_ada_and_asset(
-				<span class="kw-2">&amp;</span>MultiAsset::from_ogmios_utxo(previous_reserve_utxo)<span class="question-mark">?
+				<span class="kw-2">&amp;</span>MultiAsset::from_ogmios_utxo(<span class="kw-2">&amp;</span>previous_reserve.utxo)<span class="question-mark">?
 					</span>.with_asset_amount(<span class="kw-2">&amp;</span>token, left_in_reserve)<span class="question-mark">?</span>,
 				ctx,
 			)<span class="question-mark">?
@@ -674,7 +671,7 @@
 	<span class="kw">use super</span>::{empty_asset_name, reserve_release_tx, AssetNameExt, Costs, TransactionContext};
 	<span class="kw">use crate</span>::{
 		plutus_script::PlutusScript,
-		reserve::{release::OgmiosUtxoExt, ReserveData},
+		reserve::{release::OgmiosUtxoExt, ReserveData, ReserveUtxo},
 		scripts_data::ReserveScripts,
 		test_values::protocol_parameters,
 	};
@@ -815,7 +812,7 @@
 		}
 	}
 
-	<span class="kw">fn </span>previous_reserve_utxo() -&gt; OgmiosUtxo {
+	<span class="kw">fn </span>previous_reserve_ogmios_utxo() -&gt; OgmiosUtxo {
 		OgmiosUtxo {
 			transaction: OgmiosTx {
 				id: <span class="macro">hex!</span>(<span class="string">"23de508bbfeb6af651da305a2de022463f71e47d58365eba36d98fa6c4aed731"</span>),
@@ -840,6 +837,10 @@
 			index: <span class="number">1</span>,
 			..Default::default()
 		}
+	}
+
+	<span class="kw">fn </span>previous_reserve_utxo() -&gt; ReserveUtxo {
+		ReserveUtxo { utxo: previous_reserve_ogmios_utxo(), datum: previous_reserve_datum() }
 	}
 
 	<span class="kw">fn </span>token_policy() -&gt; PolicyId {
@@ -870,7 +871,6 @@
 			<span class="kw-2">&amp;</span>tx_context(),
 			<span class="kw-2">&amp;</span>reserve_data(),
 			<span class="kw-2">&amp;</span>previous_reserve_utxo(),
-			<span class="kw-2">&amp;</span>previous_reserve_datum(),
 			<span class="kw-2">&amp;</span>reference_utxo(),
 			<span class="number">20</span>,
 			<span class="number">0</span>,
@@ -920,7 +920,7 @@
 		<span class="kw">let </span>inputs: Vec&lt;<span class="kw">_</span>&gt; =
 			reserve_release_test_tx().body().inputs().into_iter().cloned().collect();
 
-		<span class="macro">assert!</span>(inputs.contains(<span class="kw-2">&amp;</span>previous_reserve_utxo().to_csl_tx_input()))
+		<span class="macro">assert!</span>(inputs.contains(<span class="kw-2">&amp;</span>previous_reserve_utxo().utxo.to_csl_tx_input()))
 	}
 
 	<span class="attr">#[test]

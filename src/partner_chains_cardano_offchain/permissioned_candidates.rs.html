@@ -593,7 +593,7 @@
 	empty_asset_name, get_builder_config, CostStore, Costs, InputsBuilderExt,
 	TransactionBuilderExt, TransactionContext,
 };
-<span class="kw">use </span><span class="kw">crate</span>::init_governance::{<span class="self">self</span>, GovernanceData};
+<span class="kw">use </span><span class="kw">crate</span>::governance::GovernanceData;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use crate</span>::{cardano_keys::CardanoPaymentSigningKey, scripts_data};
 <span class="kw">use </span>anyhow::anyhow;
@@ -652,7 +652,7 @@
 	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>(validator, policy) =
 		scripts_data::permissioned_candidates_scripts(genesis_utxo, ctx.network)<span class="question-mark">?</span>;
-	<span class="kw">let </span>governance_data = init_governance::get_governance_data(genesis_utxo, ogmios_client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>governance_data = GovernanceData::get(genesis_utxo, ogmios_client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>validator_address = validator.address_bech32(ctx.network)<span class="question-mark">?</span>;
 	<span class="kw">let </span>validator_utxos = ogmios_client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span><span class="kw-2">mut </span>candidates = candidates.to_owned();
@@ -811,7 +811,7 @@
 	validator: <span class="kw-2">&amp;</span>PlutusScript,
 	policy: <span class="kw-2">&amp;</span>PlutusScript,
 	permissioned_candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
-	governance_data: <span class="kw-2">&amp;</span>init_governance::GovernanceData,
+	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
 	costs: Costs,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
 ) -&gt; anyhow::Result&lt;Transaction&gt; {
@@ -890,7 +890,7 @@
 	<span class="kw">use super</span>::{mint_permissioned_candidates_token_tx, update_permissioned_candidates_tx};
 	<span class="kw">use crate</span>::{
 		csl::{empty_asset_name, Costs, TransactionContext},
-		init_governance::GovernanceData,
+		governance::GovernanceData,
 		plutus_script::PlutusScript,
 		test_values::<span class="kw-2">*</span>,
 	};

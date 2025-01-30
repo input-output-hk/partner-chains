@@ -274,7 +274,7 @@
 	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, InputsBuilderExt,
 	TransactionBuilderExt, TransactionContext,
 };
-<span class="kw">use </span><span class="kw">crate</span>::init_governance::{<span class="self">self</span>, GovernanceData};
+<span class="kw">use </span><span class="kw">crate</span>::governance::GovernanceData;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{PlutusData, Transaction, TransactionBuilder, TxInputsBuilder};
@@ -396,7 +396,7 @@
 	genesis_utxo: UtxoId,
 	client: <span class="kw-2">&amp;</span>C,
 ) -&gt; anyhow::Result&lt;McTxHash&gt; {
-	<span class="kw">let </span>gov_data = init_governance::get_governance_data(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>gov_data = GovernanceData::get(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
 	<span class="kw">let </span>tx = Costs::calculate_costs(
 		|costs| mint_d_param_token_tx(validator, policy, d_parameter, <span class="kw-2">&amp;</span>gov_data, costs, <span class="kw-2">&amp;</span>ctx),
@@ -426,7 +426,7 @@
 	genesis_utxo: UtxoId,
 	client: <span class="kw-2">&amp;</span>C,
 ) -&gt; anyhow::Result&lt;McTxHash&gt; {
-	<span class="kw">let </span>governance_data = init_governance::get_governance_data(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>governance_data = GovernanceData::get(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
 	<span class="kw">let </span>tx = Costs::calculate_costs(
 		|costs| {

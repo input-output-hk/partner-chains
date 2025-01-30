@@ -179,7 +179,7 @@
 		get_builder_config, unit_plutus_data, AssetIdExt, CostStore, Costs, OgmiosUtxoExt,
 		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
 	},
-	init_governance::{get_governance_data, GovernanceData},
+	governance::GovernanceData,
 	reserve::ReserveData,
 	scripts_data::ReserveScripts,
 };
@@ -205,7 +205,7 @@
 	await_tx: <span class="kw-2">&amp;</span>A,
 ) -&gt; anyhow::Result&lt;McTxHash&gt; {
 	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_key, client).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="kw">let </span>governance = get_governance_data(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>governance = GovernanceData::get(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>reserve = ReserveData::get(genesis_utxo, <span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
 	<span class="kw">let </span><span class="kw-2">ref </span>reserve_utxo @ ReserveUtxo { <span class="kw-2">ref </span>utxo, .. } =

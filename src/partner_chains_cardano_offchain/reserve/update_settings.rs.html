@@ -139,8 +139,6 @@
 <a href="#139" id="139">139</a>
 <a href="#140" id="140">140</a>
 <a href="#141" id="141">141</a>
-<a href="#142" id="142">142</a>
-<a href="#143" id="143">143</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Transaction that updates reserve settings.
 //!
 //! Specification:
@@ -161,11 +159,9 @@
 
 </span><span class="kw">use super</span>::{reserve_utxo_input_with_validator_script_reference, ReserveData};
 <span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
+<span class="kw">use </span><span class="kw">crate</span>::governance::GovernanceData;
 <span class="kw">use </span><span class="kw">crate</span>::reserve::ReserveUtxo;
-<span class="kw">use crate</span>::{
-	await_tx::AwaitTx, csl::<span class="kw-2">*</span>, init_governance::get_governance_data,
-	init_governance::GovernanceData,
-};
+<span class="kw">use crate</span>::{await_tx::AwaitTx, csl::<span class="kw-2">*</span>};
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>ogmios_client::types::OgmiosUtxo;
 <span class="kw">use </span>ogmios_client::{
@@ -187,7 +183,7 @@
 	await_tx: <span class="kw-2">&amp;</span>A,
 ) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
 	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_key, client).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="kw">let </span>governance = get_governance_data(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>governance = GovernanceData::get(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>reserve = ReserveData::get(genesis_utxo, <span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>ReserveUtxo { utxo: reserve_utxo, datum: <span class="kw-2">mut </span>reserve_datum } =
 		reserve.get_reserve_utxo(<span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;

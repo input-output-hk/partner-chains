@@ -128,6 +128,7 @@
 <a href="#128" id="128">128</a>
 <a href="#129" id="129">129</a>
 <a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Building and submitting of the transaction that changes the current governance authority
 //!
 //! The transaction:
@@ -136,12 +137,13 @@
 //! 3. Produces a new governance UTXO at the version oracle validator address with a version oracle
 //!    Plutus datum attached that contains the script ID (32) and policy hash.
 </span><span class="kw">use </span><span class="kw">crate</span>::csl::Costs;
+<span class="kw">use </span><span class="kw">crate</span>::governance::GovernanceData;
 <span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::CostStore,
 	csl::{InputsBuilderExt, TransactionBuilderExt, TransactionContext},
-	init_governance::{<span class="self">self</span>, transaction::version_oracle_datum_output, GovernanceData},
+	init_governance::transaction::version_oracle_datum_output,
 	plutus_script::PlutusScript,
 	scripts_data::multisig_governance_policy_configuration,
 };
@@ -172,7 +174,7 @@
 	await_tx: A,
 ) -&gt; anyhow::Result&lt;OgmiosTx&gt; {
 	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_key, client).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="kw">let </span>governance_data = init_governance::get_governance_data(genesis_utxo_id, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>governance_data = GovernanceData::get(genesis_utxo_id, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
 	<span class="kw">let </span>tx = Costs::calculate_costs(
 		|costs| {

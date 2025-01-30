@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["csl_plutus_data_to_uplc","datum_to_uplc_plutus_data"]};
