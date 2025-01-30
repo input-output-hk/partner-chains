@@ -72,7 +72,7 @@ class LocalRunner(Runner):
         logging.debug(f"CMD: '{command}' TIMEOUT: {timeout} SHELL: {self.shell}")
 
         executable = self.shell
-        if self.shell.split(" "):
+        if self.shell and self.shell.split(" "):
             executable = None
             command = "{shell} \"{command}\"".format(shell=self.shell, command=command)
 

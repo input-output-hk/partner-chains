@@ -10,25 +10,7 @@ while true; do
     fi
 done
 
-echo "Partner Chains smart contracts setup complete. Waiting 2 epochs to start..."
-
-while true; do
-    if [ -f "/shared/2-epochs.ready" ]; then
-        break
-    else
-        sleep 1
-    fi
-done
-
-echo "2 mainchain epochs passed, starting node..."
-
-while true; do
-    if [ -f "/shared/partner-chains-node-1.ready" ] && [ -f "/shared/partner-chains-node-2.ready" ] && [ -f "/shared/partner-chains-node-3.ready" ] && [ -f "/shared/partner-chains-node-4.ready" ]; then
-        break
-    else
-        sleep 1
-    fi
-done
+echo "Partner Chains smart contracts setup complete. Starting node..."
 
 export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP_MILLIS)
 

@@ -16,25 +16,21 @@
         node = 3030;
         postgres = 5432;
         ogmios = 1337;
-        kupo = 1442;
       };
       preprod = {
         node = 3031;
         postgres = 5433;
         ogmios = 1338;
-        kupo = 1443;
       };
       sanchonet = {
         node = 3032;
         postgres = 5434;
         ogmios = 1339;
-        kupo = 1444;
       };
       mainnet = {
         node = 3033;
         postgres = 5435;
         ogmios = 1340;
-        kupo = 1445;
       };
     }."${network}";
     mkStack = network: let
@@ -197,45 +193,6 @@
           timeout_seconds = 20;
           success_threshold = 1;
           failure_threshold = 1000;
-        };
-        availability.restart = "on_failure";
-        depends_on."cardano-node-${network}".condition = "process_healthy";
-      };
-      "kupo-${network}" = {
-        namespace = network;
-        command = ''
-          ${self'.packages.kupo}/bin/kupo \
-            --node-socket ${node-socket} \
-            --node-config ${node-config} \
-            --host 0.0.0.0 \
-            --workdir ${data-dir}/kupo \
-            --match "*" \
-            --since origin \
-            --port ${toString (ports network).kupo}
-        '';
-        liveness_probe = {
-          exec = {
-            command = ''
-              pgrep -f kupo
-            '';
-          };
-          initial_delay_seconds = 5;
-          period_seconds = 2;
-          timeout_seconds = 5;
-          success_threshold = 5;
-          failure_threshold = 3;
-        };
-        readiness_probe = {
-          http_get = {
-            host = "0.0.0.0";
-            port = (ports network).kupo;
-            path = "/matches";
-          };
-          initial_delay_seconds = 5;
-          period_seconds = 5;
-          timeout_seconds = 20;
-          success_threshold = 1;
-          failure_threshold = 20;
         };
         availability.restart = "on_failure";
         depends_on."cardano-node-${network}".condition = "process_healthy";

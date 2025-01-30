@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import Sequence
 from pytest import mark
 import pytest
-from src.sidechain_main_cli import SidechainMainCliException
+from src.partner_chains_node import PartnerChainsNodeException
 
 
 def get_burn_tx_from_rpc(api: BlockchainApi, tx_hash):
@@ -115,7 +115,7 @@ def test_burn_more_than_balance_should_fail(api: BlockchainApi, config: ApiConfi
     burning_key = config.nodes_config.passive_transfer_account.mainchain_key
     pc_addr = config.nodes_config.negative_test_transfer_account.partner_chain_address
 
-    with pytest.raises(SidechainMainCliException) as excinfo:
+    with pytest.raises(PartnerChainsNodeException) as excinfo:
         api.burn_tokens(pc_addr, amount, burning_key)
     assert "BalanceInsufficientError" in excinfo.value.message
 
@@ -133,7 +133,7 @@ def test_burn_negative_balance_should_fail(api: BlockchainApi, config: ApiConfig
     burning_key = config.nodes_config.passive_transfer_account.mainchain_key
     pc_addr = config.nodes_config.negative_test_transfer_account.partner_chain_address
 
-    with pytest.raises(SidechainMainCliException) as excinfo:
+    with pytest.raises(PartnerChainsNodeException) as excinfo:
         api.burn_tokens(pc_addr, amount, burning_key)
     assert "ExUnitsEvaluationFailed" in excinfo.value.message
 
@@ -150,7 +150,7 @@ def test_burn_with_invalid_key_should_fail(api: BlockchainApi, config: ApiConfig
     burning_key = config.nodes_config.invalid_mc_skey.mainchain_key
     pc_addr = config.nodes_config.negative_test_transfer_account.partner_chain_address
 
-    with pytest.raises(SidechainMainCliException) as excinfo:
+    with pytest.raises(PartnerChainsNodeException) as excinfo:
         api.burn_tokens(pc_addr, amount, burning_key)
     assert "Error while decoding key" in excinfo.value.message
 

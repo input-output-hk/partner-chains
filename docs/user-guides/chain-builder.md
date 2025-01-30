@@ -6,8 +6,7 @@ Partner Chain builders are organizations that want to build their own blockchain
 1. Install dependencies
     1. Cardano node v10.1.4
         1. Ogmios v6.11.0
-        2. Kupo - v2.10.0
-        3. DB Sync  v13.6.0.4 (PostgreSQLv15.3+)
+        2. DB Sync  v13.6.0.4 (PostgreSQLv15.3+)
     2. Download the partner chain node v1.4.0
 2. Run the generate-keys wizard
 3. Run the prepare-configuration wizard
@@ -22,7 +21,7 @@ Partner Chain builders are organizations that want to build their own blockchain
 
 To run the Partner Chains stack, several dependencies need to be installed on a `cardano-node`.
 
-Ogmios, Kupo and DB Sync are essential to enable registration communication with the main chain (Cardano). Ogmios and Kupo are used for submitting transactions to Cardano, and DB Sync is for observation of main chain state.
+Ogmios and DB Sync are essential to enable registration communication with the main chain (Cardano). Ogmios is used for submitting transactions to Cardano, and DB Sync is for observation of main chain state.
 
 ### 1.1 Cardano node v10.1.4
 
@@ -84,49 +83,7 @@ journalctl -fu ogmios.service
 
 For further instructions, please see [Ogmios](https://ogmios.dev/getting-started/building/).
 
-### 1.1.2 Kupo - v2.10.0
-
-Kupo is a fast, lightweight and configurable chain indexer for Cardano.
-
-You will find it convenient to install [Kupo](https://github.com/CardanoSolutions/kupo) using pre-built binaries as well. You can also build Kupo from source.
-
-1. Obtain the [binary](https://github.com/CardanoSolutions/kupo/releases)
-2. Change the file to an executable: `sudo chmod +x /home/ubuntu/kupo`
-3. Add executable to the PATH: `sudo mv kupo /usr/local/bin`
-4. Create a working directory: `mkdir ~/kupo`
-3. Run Kupo as a service:
-
-```
-sudo tee /etc/systemd/system/kupo.service > /dev/null <<'EOF'
-[Unit]
-Description=Kupo Service
-After=network.target
-
-[Service]
-User=ubuntu
-Type=simple
-Environment="HOME=/home/ubuntu"
-ExecStart=/usr/local/bin/kupo \
-  --node-socket $HOME/preview/node.socket \
-  --node-config $HOME/preview/configs/config.json \
-  --since origin \
-  --defer-db-indexes \
-  --match "*" \
-  --workdir $HOME/kupo
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-sudo systemctl daemon-reload && \
-sudo systemctl enable kupo.service && \
-sudo systemctl start kupo.service
-```
-
-Please refer to [Kupo](https://cardanosolutions.github.io/kupo/#section/Overview) for detailed instructions.
-
-### 1.1.3 Cardano DB Sync v13.6.0.4
+### 1.1.2 Cardano DB Sync v13.6.0.4
 
 The partner chain needs DB Sync on `cardano-node` to observe Cardano's state.
 
@@ -230,7 +187,7 @@ journalctl -fu cardano-db-sync.service
 ---
 **WARNING**
 
-Ensure that the node is synced with the network to 100% as well as Kupo and DB Sync before continuing beyond this point. On preview network, it is roughly 24 hours before sync is complete.
+Ensure that the node is synced with the network to 100% as well as DB Sync before continuing beyond this point. On preview network, it is roughly 24 hours before sync is complete.
 
 ---
 

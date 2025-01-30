@@ -4,7 +4,7 @@ from config.api_config import ApiConfig
 from src.db.models import OutgoingTx
 from sqlalchemy.orm import Session
 from pytest import mark, raises
-from src.sidechain_main_cli import SidechainMainCliException
+from src.partner_chains_node import PartnerChainsNodeException
 
 
 @mark.skip_blockchain("pc_evm", reason="not implemented yet")
@@ -342,7 +342,7 @@ def test_claim_transaction_signed_by_another_recipient_should_fail(
     logging.info(f"Checking if committee handover happened for epoch {db_tx.available_on_pc_epoch}")
     wait_until(api.check_epoch_signatures_uploaded, db_tx.available_on_pc_epoch, timeout=config.timeouts.claim_cmd)
     logging.info(f"Handover for pc epoch {db_tx.available_on_pc_epoch} has happened")
-    with raises(SidechainMainCliException) as excinfo:
+    with raises(PartnerChainsNodeException) as excinfo:
         api.claim_tokens(config.nodes_config.random_mc_account.mainchain_key, db_tx.combined_proof)
     assert "ERROR-FUEL-MINTING-POLICY-04" in excinfo.value.message
 
@@ -368,7 +368,7 @@ def test_claim_transaction_with_invalid_key_should_fail(
     logging.info(f"Checking if committee handover happened for epoch {db_tx.available_on_pc_epoch}")
     wait_until(api.check_epoch_signatures_uploaded, db_tx.available_on_pc_epoch, timeout=config.timeouts.claim_cmd)
     logging.info(f"Handover for pc epoch {db_tx.available_on_pc_epoch} has happened")
-    with raises(SidechainMainCliException) as excinfo:
+    with raises(PartnerChainsNodeException) as excinfo:
         api.claim_tokens(config.nodes_config.invalid_mc_skey.mainchain_key, db_tx.combined_proof)
     assert "Error while decoding key" in excinfo.value.message
 
@@ -384,7 +384,7 @@ def test_claim_on_already_claimed_transaction_should_fail(
     * claiming tokens for that transaction again should fail
     """
     logging.info(f"Claiming tx that should fail: {latest_claimed_outgoing_tx}")
-    with raises(SidechainMainCliException) as excinfo:
+    with raises(PartnerChainsNodeException) as excinfo:
         api.claim_tokens(
             config.nodes_config.active_transfer_account.mainchain_key,
             latest_claimed_outgoing_tx.combined_proof,
