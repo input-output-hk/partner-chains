@@ -338,8 +338,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+          ref: master
       - name: Deploy staging-preview
         uses: ./.github/actions/deploy/deploy-ci-preview
         with:
