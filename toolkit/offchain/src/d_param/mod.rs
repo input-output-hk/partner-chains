@@ -10,7 +10,7 @@ use crate::csl::{
 	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, InputsBuilderExt,
 	TransactionBuilderExt, TransactionContext,
 };
-use crate::init_governance::{self, GovernanceData};
+use crate::governance::GovernanceData;
 use crate::plutus_script::PlutusScript;
 use anyhow::anyhow;
 use cardano_serialization_lib::{PlutusData, Transaction, TransactionBuilder, TxInputsBuilder};
@@ -132,7 +132,7 @@ async fn insert_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 	genesis_utxo: UtxoId,
 	client: &C,
 ) -> anyhow::Result<McTxHash> {
-	let gov_data = init_governance::get_governance_data(genesis_utxo, client).await?;
+	let gov_data = GovernanceData::get(genesis_utxo, client).await?;
 
 	let tx = Costs::calculate_costs(
 		|costs| mint_d_param_token_tx(validator, policy, d_parameter, &gov_data, costs, &ctx),
@@ -162,7 +162,7 @@ async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 	genesis_utxo: UtxoId,
 	client: &C,
 ) -> anyhow::Result<McTxHash> {
-	let governance_data = init_governance::get_governance_data(genesis_utxo, client).await?;
+	let governance_data = GovernanceData::get(genesis_utxo, client).await?;
 
 	let tx = Costs::calculate_costs(
 		|costs| {

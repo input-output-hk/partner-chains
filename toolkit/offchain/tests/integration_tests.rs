@@ -13,7 +13,6 @@ use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
-	types::OgmiosUtxo,
 };
 use partner_chains_cardano_offchain::{
 	await_tx::{AwaitTx, FixedDelayRetries},
@@ -420,7 +419,7 @@ async fn run_release_reserve_funds<
 	release_amount: u64,
 	reference_utxo: UtxoId,
 	client: &T,
-) -> () {
+) {
 	release_reserve_funds(
 		TokenAmount {
 			token: AssetId {
@@ -517,9 +516,9 @@ async fn assert_mutable_settings_eq<T: QueryLedgerState + ogmios_client::OgmiosC
 	updated_total_accrued_function_script_hash: PolicyId,
 	client: &T,
 ) {
-	let (_reserve_utxo, reserve_settings) = get_reserve_utxo(genesis_utxo, client).await;
+	let reserve_datum = get_reserve_datum(genesis_utxo, client).await;
 
-	let mutable_settings = reserve_settings.mutable_settings;
+	let mutable_settings = reserve_datum.mutable_settings;
 	assert_eq!(
 		mutable_settings.total_accrued_function_script_hash,
 		updated_total_accrued_function_script_hash
@@ -527,12 +526,12 @@ async fn assert_mutable_settings_eq<T: QueryLedgerState + ogmios_client::OgmiosC
 	assert_eq!(mutable_settings.initial_incentive, 0);
 }
 
-async fn get_reserve_utxo<
+async fn get_reserve_datum<
 	T: QueryLedgerState + ogmios_client::OgmiosClient + ogmios_client::query_network::QueryNetwork,
 >(
 	genesis_utxo: UtxoId,
 	client: &T,
-) -> (OgmiosUtxo, ReserveDatum) {
+) -> ReserveDatum {
 	let scripts_data =
 		scripts_data::get_scripts_data_with_ogmios(genesis_utxo, client).await.unwrap();
 	let validator_address = scripts_data.addresses.reserve_validator;
@@ -554,7 +553,6 @@ async fn get_reserve_utxo<
 				.datum
 				.and_then(|d| cardano_serialization_lib::PlutusData::from_bytes(d.bytes).ok())
 				.and_then(|d| ReserveDatum::try_from(d).ok())
-				.map(|d| (utxo, d))
 		})
 		.unwrap()
 }

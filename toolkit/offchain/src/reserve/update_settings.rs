@@ -18,11 +18,9 @@
 
 use super::{reserve_utxo_input_with_validator_script_reference, ReserveData};
 use crate::cardano_keys::CardanoPaymentSigningKey;
+use crate::governance::GovernanceData;
 use crate::reserve::ReserveUtxo;
-use crate::{
-	await_tx::AwaitTx, csl::*, init_governance::get_governance_data,
-	init_governance::GovernanceData,
-};
+use crate::{await_tx::AwaitTx, csl::*};
 use cardano_serialization_lib::*;
 use ogmios_client::types::OgmiosUtxo;
 use ogmios_client::{
@@ -44,7 +42,7 @@ pub async fn update_reserve_settings<
 	await_tx: &A,
 ) -> anyhow::Result<Option<McTxHash>> {
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
-	let governance = get_governance_data(genesis_utxo, client).await?;
+	let governance = GovernanceData::get(genesis_utxo, client).await?;
 	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
 	let ReserveUtxo { utxo: reserve_utxo, datum: mut reserve_datum } =
 		reserve.get_reserve_utxo(&ctx, client).await?;

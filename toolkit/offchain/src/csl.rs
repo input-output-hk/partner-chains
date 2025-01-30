@@ -489,15 +489,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 			.with_plutus_data(datum)
 			.next()?;
 		let ma = MultiAsset::new().with_asset_amount(&policy.empty_name_asset(), 1u64)?;
-		let output = amount_builder.with_coin_and_asset(&0u64.into(), &ma).build()?;
-		let min_ada = MinOutputAdaCalculator::new(
-			&output,
-			&DataCost::new_coins_per_byte(
-				&ctx.protocol_parameters.min_utxo_deposit_coefficient.into(),
-			),
-		)
-		.calculate_ada()?;
-		let output = amount_builder.with_coin_and_asset(&min_ada, &ma).build()?;
+		let output = amount_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()?;
 		self.add_output(&output)
 	}
 

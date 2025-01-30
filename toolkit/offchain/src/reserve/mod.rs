@@ -9,12 +9,7 @@ use cardano_serialization_lib::{
 	ExUnits, JsError, PlutusScriptSource, PlutusWitness, Redeemer, RedeemerTag, TxInputsBuilder,
 };
 use init::find_script_utxo;
-use ogmios_client::{
-	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
-	query_network::QueryNetwork,
-	transactions::Transactions,
-	types::OgmiosUtxo,
-};
+use ogmios_client::{query_ledger_state::QueryLedgerState, types::OgmiosUtxo};
 use partner_chains_plutus_data::reserve::{ReserveDatum, ReserveRedeemer};
 use sidechain_domain::{AssetId, AssetName, UtxoId};
 
@@ -40,9 +35,7 @@ pub(crate) struct ReserveUtxo {
 }
 
 impl ReserveData {
-	pub(crate) async fn get<
-		T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
-	>(
+	pub(crate) async fn get<T: QueryLedgerState>(
 		genesis_utxo: UtxoId,
 		ctx: &TransactionContext,
 		client: &T,
@@ -88,9 +81,7 @@ impl ReserveData {
 		})
 	}
 
-	pub(crate) async fn get_reserve_utxo<
-		T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
-	>(
+	pub(crate) async fn get_reserve_utxo<T: QueryLedgerState>(
 		&self,
 		ctx: &TransactionContext,
 		client: &T,

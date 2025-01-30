@@ -11,7 +11,7 @@ use crate::csl::{
 	empty_asset_name, get_builder_config, CostStore, Costs, InputsBuilderExt,
 	TransactionBuilderExt, TransactionContext,
 };
-use crate::init_governance::{self, GovernanceData};
+use crate::governance::GovernanceData;
 use crate::plutus_script::PlutusScript;
 use crate::{cardano_keys::CardanoPaymentSigningKey, scripts_data};
 use anyhow::anyhow;
@@ -70,7 +70,7 @@ pub async fn upsert_permissioned_candidates<
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
 	let (validator, policy) =
 		scripts_data::permissioned_candidates_scripts(genesis_utxo, ctx.network)?;
-	let governance_data = init_governance::get_governance_data(genesis_utxo, ogmios_client).await?;
+	let governance_data = GovernanceData::get(genesis_utxo, ogmios_client).await?;
 	let validator_address = validator.address_bech32(ctx.network)?;
 	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
 	let mut candidates = candidates.to_owned();
@@ -229,7 +229,7 @@ fn mint_permissioned_candidates_token_tx(
 	validator: &PlutusScript,
 	policy: &PlutusScript,
 	permissioned_candidates: &[PermissionedCandidateData],
-	governance_data: &init_governance::GovernanceData,
+	governance_data: &GovernanceData,
 	costs: Costs,
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
@@ -308,7 +308,7 @@ mod tests {
 	use super::{mint_permissioned_candidates_token_tx, update_permissioned_candidates_tx};
 	use crate::{
 		csl::{empty_asset_name, Costs, TransactionContext},
-		init_governance::GovernanceData,
+		governance::GovernanceData,
 		plutus_script::PlutusScript,
 		test_values::*,
 	};

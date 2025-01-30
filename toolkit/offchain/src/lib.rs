@@ -8,6 +8,8 @@ pub mod cardano_keys;
 pub mod csl;
 /// Supports D-Parameter upsert
 pub mod d_param;
+/// Governance data types
+pub mod governance;
 /// Supports governance initialization
 pub mod init_governance;
 #[cfg(test)]
@@ -23,8 +25,6 @@ pub mod reserve;
 pub mod scripts_data;
 #[cfg(test)]
 pub mod test_values;
-/// Module for interaction with the untyped plutus scripts
-pub mod untyped_plutus;
 /// Supports governance updates
 pub mod update_governance;
 

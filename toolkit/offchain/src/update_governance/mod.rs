@@ -6,12 +6,13 @@
 //! 3. Produces a new governance UTXO at the version oracle validator address with a version oracle
 //!    Plutus datum attached that contains the script ID (32) and policy hash.
 use crate::csl::Costs;
+use crate::governance::GovernanceData;
 use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::CostStore,
 	csl::{InputsBuilderExt, TransactionBuilderExt, TransactionContext},
-	init_governance::{self, transaction::version_oracle_datum_output, GovernanceData},
+	init_governance::transaction::version_oracle_datum_output,
 	plutus_script::PlutusScript,
 	scripts_data::multisig_governance_policy_configuration,
 };
@@ -42,7 +43,7 @@ pub async fn run_update_governance<
 	await_tx: A,
 ) -> anyhow::Result<OgmiosTx> {
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
-	let governance_data = init_governance::get_governance_data(genesis_utxo_id, client).await?;
+	let governance_data = GovernanceData::get(genesis_utxo_id, client).await?;
 
 	let tx = Costs::calculate_costs(
 		|costs| {

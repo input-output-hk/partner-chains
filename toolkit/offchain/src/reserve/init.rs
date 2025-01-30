@@ -21,7 +21,7 @@ use crate::{
 		get_builder_config, CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt,
 		TransactionContext, TransactionOutputAmountBuilderExt,
 	},
-	init_governance::{get_governance_data, GovernanceData},
+	governance::GovernanceData,
 	plutus_script::PlutusScript,
 	scripts_data::{self, VersionOracleData},
 };
@@ -36,6 +36,7 @@ use ogmios_client::{
 	transactions::Transactions,
 	types::OgmiosUtxo,
 };
+use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 use raw_scripts::{
 	ScriptId, ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, RESERVE_AUTH_POLICY, RESERVE_VALIDATOR,
 };
@@ -110,7 +111,7 @@ async fn initialize_script<
 	await_tx: &A,
 ) -> anyhow::Result<Option<McTxHash>> {
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
-	let governance = get_governance_data(genesis_utxo, client).await?;
+	let governance = GovernanceData::get(genesis_utxo, client).await?;
 	let version_oracle = scripts_data::version_oracle(genesis_utxo, ctx.network)?;
 
 	if script_is_initialized(&script, &version_oracle, &ctx, client).await? {
@@ -205,9 +206,7 @@ fn version_oracle_plutus_list(script_id: u32, script_hash: &[u8]) -> PlutusList 
 // There exist UTXO at Version Oracle Validator with Datum that contains
 // * script id of the script being initialized
 // * Version Oracle Policy Id
-async fn script_is_initialized<
-	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
->(
+async fn script_is_initialized<T: QueryLedgerState>(
 	script: &ScriptData,
 	version_oracle: &VersionOracleData,
 	ctx: &TransactionContext,
@@ -219,9 +218,7 @@ async fn script_is_initialized<
 // Finds an UTXO at Version Oracle Validator with Datum that contains
 // * given script id
 // * Version Oracle Policy Id
-pub(crate) async fn find_script_utxo<
-	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
->(
+pub(crate) async fn find_script_utxo<T: QueryLedgerState>(
 	script_id: u32,
 	version_oracle: &VersionOracleData,
 	ctx: &TransactionContext,
@@ -232,26 +229,12 @@ pub(crate) async fn find_script_utxo<
 	// Decode datum from utxos and check if it contains script id
 	Ok(validator_utxos.into_iter().find(|utxo| {
 		utxo.get_plutus_data()
-			.and_then(decode_version_oracle_validator_datum)
+			.and_then(|data| TryInto::<VersionOracleDatum>::try_into(data).ok())
 			.is_some_and(|datum| {
-				datum.script_id == script_id
-					&& datum.version_oracle_policy_id == version_oracle.policy.script_hash()
+				datum.version_oracle == script_id
+					&& datum.currency_symbol == version_oracle.policy.script_hash()
 			})
 	}))
-}
-
-pub(crate) struct VersionOracleValidatorDatum {
-	pub(crate) script_id: u32,
-	pub(crate) version_oracle_policy_id: [u8; 28],
-}
-
-fn decode_version_oracle_validator_datum(data: PlutusData) -> Option<VersionOracleValidatorDatum> {
-	let list = data.as_list()?;
-	let mut list_iter = list.into_iter();
-	let script_id = list_iter.next()?.as_integer()?;
-	let script_id: u32 = script_id.as_u64()?.try_into().ok()?;
-	let version_oracle_policy_id: [u8; 28] = list_iter.next()?.as_bytes()?.try_into().ok()?;
-	Some(VersionOracleValidatorDatum { script_id, version_oracle_policy_id })
 }
 
 #[cfg(test)]
@@ -259,7 +242,7 @@ mod tests {
 	use super::{init_script_tx, ScriptData};
 	use crate::{
 		csl::{unit_plutus_data, Costs, OgmiosUtxoExt, TransactionContext},
-		init_governance::GovernanceData,
+		governance::GovernanceData,
 		plutus_script::PlutusScript,
 		scripts_data::{self, VersionOracleData},
 		test_values::{make_utxo, payment_addr, payment_key, protocol_parameters},

@@ -1,3 +1,4 @@
+use crate::csl::*;
 use anyhow::{anyhow, Context, Error};
 use cardano_serialization_lib::{
 	Address, JsError, Language, LanguageKind, NetworkIdKind, PlutusData, ScriptHash,
@@ -5,9 +6,10 @@ use cardano_serialization_lib::{
 use ogmios_client::types::{OgmiosScript, OgmiosScript::Plutus};
 use plutus::ToDatum;
 use sidechain_domain::{AssetId, AssetName, PolicyId};
-use uplc::ast::{DeBruijn, Program};
-
-use crate::{csl::*, untyped_plutus::*};
+use uplc::{
+	ast::{DeBruijn, Program},
+	plutus_data,
+};
 
 /// Wraps a Plutus script cbor
 #[derive(Clone, PartialEq, Eq)]
@@ -41,12 +43,21 @@ impl PlutusScript {
 	/// This function is needed to create [PlutusScript] from scripts in [raw_scripts],
 	/// which are encoded as a cbor byte string containing the cbor of the script
 	/// itself. This function removes this layer of wrapping.
-	pub fn from_wrapped_cbor(cbor: &[u8], language: Language) -> anyhow::Result<Self> {
-		Ok(Self::from_cbor(&unwrap_one_layer_of_cbor(cbor)?, language))
+	pub fn from_wrapped_cbor(
+		plutus_script_raw_cbor: &[u8],
+		language: Language,
+	) -> anyhow::Result<Self> {
+		let plutus_script_bytes: uplc::PlutusData = minicbor::decode(plutus_script_raw_cbor)?;
+		let plutus_script_bytes = match plutus_script_bytes {
+			uplc::PlutusData::BoundedBytes(bb) => Ok(bb),
+			_ => Err(anyhow!("expected validator raw to be BoundedBytes")),
+		}?;
+		Ok(Self::from_cbor(&plutus_script_bytes, language))
 	}
 
 	pub fn apply_data(self, data: impl ToDatum) -> Result<Self, anyhow::Error> {
-		let data = datum_to_uplc_plutus_data(&data.to_datum());
+		let data = plutus_data(&minicbor::to_vec(data.to_datum()).expect("to_vec is Infallible"))
+			.expect("trasformation from PC Datum to pallas PlutusData can't fail");
 		self.apply_uplc_data(data)
 	}
 
@@ -69,7 +80,14 @@ impl PlutusScript {
 	// Returns PlutusData representation of the given script. It is done in the same way as on-chain code expects.
 	// First, the Address is created, then it is converted to PlutusData.
 	pub fn address_data(&self, network: NetworkIdKind) -> anyhow::Result<uplc::PlutusData> {
-		csl_plutus_data_to_uplc(&PlutusData::from_address(&self.address(network))?)
+		let mut se = cbor_event::se::Serializer::new_vec();
+		cbor_event::se::Serialize::serialize(
+			&PlutusData::from_address(&self.address(network))?,
+			&mut se,
+		)
+		.map_err(|e| anyhow!(e))?;
+		let bytes = se.finalize();
+		minicbor::decode(&bytes).map_err(|e| anyhow!(e.to_string()))
 	}
 
 	/// Returns bech32 address of the given PlutusV2 script
