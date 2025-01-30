@@ -2,8 +2,6 @@
     "stack_config": {
         "ogmios_host": "ogmios",
         "ogmios_port": 1337,
-        "kupo_host": "kupo",
-        "kupo_port": 1442,
         "tools_shell": "/bin/bash",
         "tools": {
             "cardano_cli": {

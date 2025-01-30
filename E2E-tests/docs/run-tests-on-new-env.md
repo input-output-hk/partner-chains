@@ -5,7 +5,7 @@
 * A partner chain node with JSON-RPC API available
 * A node with Postgres SQL (for automated test data)
 * A node with [cardano-node](https://github.com/IntersectMBO/cardano-node) + [cardano-db-sync](https://github.com/IntersectMBO/cardano-db-sync) + [postgres](https://www.postgresql.org/) (running locally OR on one of the partner-chains nodes)
-* [ogmios](https://github.com/CardanoSolutions/ogmios) and [kupo](https://github.com/CardanoSolutions/kupo) (running locally OR on the remote host)
+* [ogmios](https://github.com/CardanoSolutions/ogmios) (running locally OR on the remote host)
 * [partner-chains-node](https://github.com/input-output-hk/partner-chains) (running locally OR on the remote tools host)
 * cardano-cli (from a local cardano-node OR on the remote tools host)
 
@@ -148,10 +148,10 @@ E.g. for Cardano Preview it will be:
 
 ### 4. Add `<env>_stack.json` to `config/<blockchain>/<env>` folder
 
-`<env>_stack.json` configuration file represents connection strings to partner chain dependencies (ogmios, kupo) and binaries (partner-chains-node, sidechain-main-cli, cardano-cli).
+`<env>_stack.json` configuration file represents connection strings to partner chain dependencies (ogmios) and binaries (partner-chains-node, sidechain-main-cli, cardano-cli).
 
 **NOTE:**
-- **ogmios** and **kupo** services can be executed on the remote host or made available on test runner machine
+- **ogmios** services can be executed on the remote host or made available on test runner machine
 - partner chains binaries can be made available on the test runner machine or on the remote host
   - if you want to use the remote host - you need to configure your own SSH keys
 
@@ -162,8 +162,6 @@ E.g. for Cardano Preview it will be:
     "stack_config": {
         "ogmios_host": <STRING>,
         "ogmios_port": 1337,
-        "kupo_host": <STRING>,
-        "kupo_port": 1442,
         "tools_shell": "/bin/bash",
         "tools_host": <STRING,
         "ssh": {

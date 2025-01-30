@@ -7,8 +7,7 @@ A registered block producer is a Cardano stake pool operator (SPO) that desires 
 2. Install partner chains dependencies
     1. Cardano node v10.1.4
         1. Ogmios v6.11.0
-        2. Kupo - v2.10.0
-        3. Cardano DB Sync v13.6.0.4 (PostgreSQL v15.3+)
+        2. Cardano DB Sync v13.6.0.4 (PostgreSQL v15.3+)
     2. Download the partner chain node v1.4.0
 3. Run the generate-keys wizard
 4. Obtain chain parameters from the chain builder
@@ -33,7 +32,7 @@ Once you have the Cardano SPO keys, you are ready to continue with this guide.
 
 To run the partner chains stack, several dependencies need to be installed on the Cardano node.
 
-Ogmios, Kupo and DB Sync are essential to enable registration communication with the main chain (Cardano).
+Ogmios, and DB Sync are essential to enable registration communication with the main chain (Cardano).
 
 ### 2.1 Cardano node dependencies
 
@@ -89,49 +88,7 @@ journalctl -fu ogmios.service
 
 For further instructions, please see [Ogmios](https://ogmios.dev/getting-started/building/).
 
-### 2.1.2 Kupo - v2.10.0
-
-Kupo is a fast, lightweight and configurable chain indexer for Cardano.
-
-You may find it convenient to install [Kupo](https://github.com/CardanoSolutions/kupo) via pre-built binaries as well. You can also build Kupo from source.
-
-1. Obtain the [binary](https://github.com/CardanoSolutions/kupo/releases)
-  1. Just the Kupo binary is needed, not the SQLite3
-2. Change the file to an executable: `chmod +x /home/ubuntu/kupo`
-3. Add executable to PATH `sudo mv kup /usr/local/bin`
-4. Create a working directory: `mkdir ~/kupo`
-5. Run Kupo as a service:
-```
-sudo tee /etc/systemd/system/kupo.service > /dev/null <<'EOF'
-[Unit]
-Description=Kupo Service
-After=network.target
-
-[Service]
-User=ubuntu
-Type=simple
-Environment="HOME=/home/ubuntu"
-ExecStart=/usr/local/bin/kupo \
-  --node-socket $HOME/preview/node.socket \
-  --node-config $HOME/preview/configs/config.json \
-  --since origin \
-  --defer-db-indexes \
-  --match "*" \
-  --workdir $HOME/kupo
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-sudo systemctl daemon-reload && \
-sudo systemctl enable kupo.service && \
-sudo systemctl start kupo.service
-```
-
-Please refer to [Kupo](https://cardanosolutions.github.io/kupo/#section/Overview) for detailed instructions.
-
-### 2.1.3 Cardano DB Sync v13.6.0.4
+### 2.1.2 Cardano DB Sync v13.6.0.4
 
 The partner chain needs DB Sync on a `cardano-node` to observe Cardano's state.
 
@@ -234,7 +191,7 @@ journalctl -fu cardano-db-sync.service
 ---
 **WARNING**
 
-Ensure that the node is synced with the network to 100% as well as Kupo and DB Sync before continuing beyond this point. On preview network, it is roughly 24 hours before sync is complete.
+Ensure that the node is synced with the network to 100% as well as DB Sync before continuing beyond this point. On preview network, it is roughly 24 hours before sync is complete.
 
 ---
 
@@ -336,7 +293,7 @@ To deregister from the list of block producer candidates, you need to run the de
 2. The wizard checks the `pc-chain-config.json` file.
 3. The wizard prompts for the payment verification key file used during registration.
 4. The wizard prompts for the cold verification key matching the cold signing key used during registration.
-5. The wizard prompts for ogmios and kupo addresses.
+5. The wizard prompts for the Ogmios address.
 6. The wizard executes the deregistration command. The change will be effective after two Cardano epochs boundaries.
 
 ---

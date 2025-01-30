@@ -130,7 +130,7 @@ journalctl -fu cardano-dy-sync.service
 ---
 **IMPORTANT NOTE**
 
-Ensure that the node is synced with the network to 100% as well as Kupo and DB Sync before continuing beyond this point. On preview network, it is roughly 24 hours before sync is complete.
+Ensure that the node is synced with the network to 100% as well as DB Sync before continuing beyond this point. On preview network, it is roughly 24 hours before sync is complete.
 
 ---
 

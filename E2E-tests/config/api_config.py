@@ -135,8 +135,6 @@ class StackApiConfig:
     ogmios_host: str = MISSING
     ogmios_port: int = MISSING
     ogmios_url: str = SI("${.ogmios_scheme}://${.ogmios_host}:${.ogmios_port}")
-    kupo_host: str = MISSING
-    kupo_port: int = MISSING
     tools: dict[str, Tool] = MISSING
     tools_host: str = MISSING
     tools_shell: Optional[str] = None

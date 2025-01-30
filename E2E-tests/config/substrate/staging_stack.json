@@ -2,8 +2,6 @@
     "stack_config": {
         "ogmios_host": "staging-preview-services-service.staging-preview.svc.cluster.local",
         "ogmios_port": 1337,
-        "kupo_host": "staging-preview-services-service.staging-preview.svc.cluster.local",
-        "kupo_port": 1442,
         "tools_host": "10.0.12.157",
         "ssh": {
             "username": "root",

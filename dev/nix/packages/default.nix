@@ -19,7 +19,6 @@
     packages = {
       inherit (cardanoPackages) cardano-node cardano-cli cardano-testnet;
       inherit (dbSyncPackages) "cardano-db-sync:exe:cardano-db-sync";
-      kupo = pkgs.callPackage ./kupo.nix {  };
       ogmios = pkgs.callPackage ./ogmios.nix { };
       process-compose = pkgs.process-compose.overrideAttrs (oldAttrs: {
         patches = [ ./pc.patch ];
