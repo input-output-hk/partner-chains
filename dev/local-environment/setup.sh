@@ -251,7 +251,6 @@ CPU_DBSYNC=0.000
 MEM_DBSYNC=1000G
 CPU_OGMIOS=0.000
 MEM_OGMIOS=1000G
-ARTIFACT_OVERRIDE=$overrides
 EOF
     else
         cat <<EOF >.env
@@ -268,7 +267,6 @@ CPU_DBSYNC=$cpu_dbsync
 MEM_DBSYNC=$mem_dbsync
 CPU_OGMIOS=$cpu_ogmios
 MEM_OGMIOS=$mem_ogmios
-ARTIFACT_OVERRIDE=$overrides
 EOF
     fi
 

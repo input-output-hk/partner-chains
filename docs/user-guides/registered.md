@@ -32,7 +32,7 @@ Once you have the Cardano SPO keys, you are ready to continue with this guide.
 
 To run the partner chains stack, several dependencies need to be installed on the Cardano node.
 
-Ogmios, and DB Sync are essential to enable registration communication with the main chain (Cardano).
+Ogmios and DB Sync are essential to enable registration communication with the main chain (Cardano).
 
 ### 2.1 Cardano node dependencies
 

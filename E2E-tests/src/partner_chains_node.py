@@ -93,7 +93,7 @@ class PartnerChainsNode:
             return tx_id
         else:
             logger.error(f"Wrong response format of upsert-d-parameter command: {response}")
-            return None, None
+            return None
 
     def register_candidate(self, signatures: RegistrationSignatures, payment_key, spo_public_key, registration_utxo):
         register_cmd = (
@@ -116,7 +116,7 @@ class PartnerChainsNode:
             return tx_id
         else:
             logger.error(f"Wrong response format of register command: {response}")
-            return None, None
+            return None
 
     def deregister_candidate(self, payment_key, spo_public_key):
         deregister_cmd = (
@@ -135,7 +135,7 @@ class PartnerChainsNode:
             return tx_id
         else:
             logger.error(f"Wrong response format from deregister command: {response}")
-            return None, None
+            return None
 
     def upsert_permissioned_candidates(self, governance_key, new_candidates_list):
         # Create permissioned candidates file to be used in CLI command
@@ -167,7 +167,7 @@ class PartnerChainsNode:
             return tx_id
         else:
             logger.error(f"Wrong response format from upsert-permissioned-candidates command: {response}")
-            return False, None
+            return None
 
     def handle_response(self, result):
         if result.stderr and not result.stdout:

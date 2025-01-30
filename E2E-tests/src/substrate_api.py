@@ -719,5 +719,5 @@ class SubstrateApi(BlockchainApi):
         raise Exception(f"Query: {query} failed after {retries} retries")
 
     def _effective_in_mc_epoch(self):
-        """Calculates main chain epoch in which smart contracts operation will be effective."""
+        """Calculates main chain epoch in which smart contracts candidates related operation will be effective."""
         return self.cardano_cli.get_epoch() + 2

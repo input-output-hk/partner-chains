@@ -21,7 +21,7 @@ Partner Chain builders are organizations that want to build their own blockchain
 
 To run the Partner Chains stack, several dependencies need to be installed on a `cardano-node`.
 
-Ogmios, and DB Sync are essential to enable registration communication with the main chain (Cardano). Ogmios is used for submitting transactions to Cardano, and DB Sync is for observation of main chain state.
+Ogmios and DB Sync are essential to enable registration communication with the main chain (Cardano). Ogmios is used for submitting transactions to Cardano, and DB Sync is for observation of main chain state.
 
 ### 1.1 Cardano node v10.1.4
 
@@ -187,7 +187,7 @@ journalctl -fu cardano-db-sync.service
 ---
 **WARNING**
 
-Ensure that the node is synced with the network to 100% as well and DB Sync before continuing beyond this point. On preview network, it is roughly 24 hours before sync is complete.
+Ensure that the node is synced with the network to 100% as well as DB Sync before continuing beyond this point. On preview network, it is roughly 24 hours before sync is complete.
 
 ---
 
