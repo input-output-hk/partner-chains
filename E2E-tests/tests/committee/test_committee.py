@@ -70,12 +70,14 @@ class TestCommitteeDistribution:
             new_d_param = DParam(np.random.randint(p_floor, p_ceil + 1), np.random.randint(t_floor, t_ceil + 1))
 
         logging.info(f"Updating d-param to {new_d_param}")
-        result = api.update_d_param(new_d_param.permissioned_candidates_number, new_d_param.trustless_candidates_number)
+        result, mc_epoch = api.update_d_param(
+            new_d_param.permissioned_candidates_number, new_d_param.trustless_candidates_number
+        )
         assert result, "D-param update failed"
 
         # FIXME: ETCM-8945 - create and use wait_for_transaction function instead of wait_for_next_pc_block
         api.wait_for_next_pc_block()
-        actual_d_param = api.get_d_param(current_mc_epoch + 2)
+        actual_d_param = api.get_d_param(mc_epoch)
         actual_p = actual_d_param.permissioned_candidates_number
         actual_t = actual_d_param.trustless_candidates_number
         assert (

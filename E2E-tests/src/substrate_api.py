@@ -1,6 +1,6 @@
 from .blockchain_api import BlockchainApi, Transaction, Wallet
 from .pc_epoch_calculator import PartnerChainEpochCalculator
-from config.api_config import ApiConfig, Node
+from config.api_config import ApiConfig
 from substrateinterface import SubstrateInterface, Keypair, KeypairType
 from eth_keys.datatypes import PrivateKey
 from sqlalchemy import desc, select, func
@@ -13,7 +13,7 @@ import hashlib
 import logging as logger
 from .run_command import RunnerFactory
 from .cardano_cli import CardanoCli
-from .sidechain_main_cli import SidechainMainCli
+from .partner_chains_node import PartnerChainsNode
 from .partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, PartnerChainRpcException, DParam
 import string
 import time
@@ -49,13 +49,6 @@ def is_hex(s):
         return False
 
 
-class PermissionedCandidate:
-    def __init__(self, config: Node):
-        self.public_key = config.public_key
-        self.aura_public_key = config.aura_public_key
-        self.grandpa_public_key = config.grandpa_public_key
-
-
 class SubstrateApi(BlockchainApi):
     def __init__(self, config: ApiConfig, secrets, db_sync: Session):
         self.config = config
@@ -65,7 +58,7 @@ class SubstrateApi(BlockchainApi):
         self._substrate = None
         self.run_command = RunnerFactory.get_runner(config.stack_config.ssh, config.stack_config.tools_shell)
         self.cardano_cli = CardanoCli(config.main_chain, config.stack_config.tools["cardano_cli"])
-        self.sidechain_main_cli = SidechainMainCli(config, self.cardano_cli)
+        self.partner_chains_node = PartnerChainsNode(config)
         self.partner_chain_rpc = PartnerChainRpc(config.nodes_config.node.rpc_url)
         self.partner_chain_epoch_calculator = PartnerChainEpochCalculator(config)
         self.compact_encoder = RuntimeConfiguration().create_scale_object('Compact')
@@ -283,25 +276,39 @@ class SubstrateApi(BlockchainApi):
             logger.error(f"Could not parse cardano key file: {e}")
         return key.strip()
 
+    #################
     def update_d_param(self, permissioned_candidates_count, registered_candidates_count):
         signing_key = self.config.nodes_config.governance_authority.mainchain_key
 
-        result = self.sidechain_main_cli.update_d_param(
-            permissioned_candidates_count,
-            registered_candidates_count,
-            signing_key,
+        tx_id = self.partner_chains_node.update_d_param(
+            permissioned_candidates_count, registered_candidates_count, signing_key
         )
+        effective_in_mc_epoch = self._effective_in_mc_epoch()
 
-        if result:
+        if tx_id and effective_in_mc_epoch:
             logger.info(
                 f"Update of D Param of P: {permissioned_candidates_count} and R: {registered_candidates_count} "
-                f" was successful and will take effect in 2 epochs "
+                f" was successful and will take effect in {effective_in_mc_epoch} epoch. Transaction id: {tx_id}"
             )
-            return True, result
+            return True, effective_in_mc_epoch
         else:
             return False, None
 
-    #################
+    def upsert_permissioned_candidates(self, new_candidates_list):
+        txId = self.partner_chains_node.upsert_permissioned_candidates(
+            self.config.nodes_config.governance_authority.mainchain_key, new_candidates_list
+        )
+        effective_in_mc_epoch = self._effective_in_mc_epoch()
+
+        if txId and effective_in_mc_epoch:
+            logger.info(
+                f"Success! New permissioned candidates are set and will be effective in "
+                f"{effective_in_mc_epoch} MC epoch. Transaction id: {txId}"
+            )
+            return True, effective_in_mc_epoch
+        else:
+            return False, None
+
     def register_candidate(self, candidate_name):
         keys_files = self.config.nodes_config.nodes[candidate_name].keys_files
         # Get a UTxO from payment account
@@ -309,7 +316,7 @@ class SubstrateApi(BlockchainApi):
         registration_utxo = next(filter(lambda utxo: utxos_json[utxo]["value"]["lovelace"] > 2500000, utxos_json), None)
         assert registration_utxo is not None, "ERROR: Could not find a well funded utxo for registration"
 
-        signatures = self.sidechain_main_cli.get_signatures(
+        signatures = self.partner_chains_node.get_signatures(
             registration_utxo,
             self._read_cardano_key_file(keys_files.spo_signing_key),
             self._read_json_file(keys_files.partner_chain_signing_key)['skey'],
@@ -317,35 +324,36 @@ class SubstrateApi(BlockchainApi):
             self.config.nodes_config.nodes[candidate_name].grandpa_public_key,
         )
 
-        txId, next_status_epoch = self.sidechain_main_cli.register_candidate(
+        txId = self.partner_chains_node.register_candidate(
             signatures,
             keys_files.cardano_payment_key,
             self._read_cardano_key_file(keys_files.spo_public_key),
             registration_utxo,
         )
+        effective_in_mc_epoch = self._effective_in_mc_epoch()
 
-        if txId and next_status_epoch:
+        if txId and effective_in_mc_epoch:
             logger.info(
                 f"Registration of {candidate_name} was successful and will take effect in "
-                f"{next_status_epoch} MC epoch. Transaction id: {txId}"
+                f"{effective_in_mc_epoch} MC epoch. Transaction id: {txId}"
             )
-            return True, next_status_epoch
+            return True, effective_in_mc_epoch
         else:
             return False, None
 
     def deregister_candidate(self, candidate_name):
         keys_files = self.config.nodes_config.nodes[candidate_name].keys_files
-        txId, next_status_epoch = self.sidechain_main_cli.deregister_candidate(
-            keys_files.cardano_payment_key,
-            self._read_cardano_key_file(keys_files.spo_public_key),
+        txId = self.partner_chains_node.deregister_candidate(
+            keys_files.cardano_payment_key, self._read_cardano_key_file(keys_files.spo_public_key)
         )
+        effective_in_mc_epoch = self._effective_in_mc_epoch()
 
-        if txId and next_status_epoch:
+        if txId and effective_in_mc_epoch:
             logger.info(
                 f"Deregistration of {candidate_name} was successful and will take effect in "
-                f"{next_status_epoch} MC epoch. Transaction id: {txId}"
+                f"{effective_in_mc_epoch} MC epoch. Transaction id: {txId}"
             )
-            return True, next_status_epoch
+            return True, effective_in_mc_epoch
         else:
             return False, None
 
@@ -376,7 +384,7 @@ class SubstrateApi(BlockchainApi):
         return self.burn_tokens_for_hex_address(recipient_hex, amount, payment_key)
 
     def burn_tokens_for_hex_address(self, recipient_hex, amount, payment_key):
-        txHash = self.sidechain_main_cli.burn_tokens(recipient_hex, amount, payment_key)
+        txHash = self.partner_chains_node.burn_tokens(recipient_hex, amount, payment_key)
         if txHash:
             tx_block_no = self.get_mc_block_no_by_tx_hash(txHash)
             mc_stable_block = tx_block_no + self.config.main_chain.security_param
@@ -451,7 +459,7 @@ class SubstrateApi(BlockchainApi):
         return response
 
     def claim_tokens(self, mc_private_key_file, combined_proof, distributed_set_utxo=None) -> bool:
-        return self.sidechain_main_cli.claim_tokens(
+        return self.partner_chains_node.claim_tokens(
             mc_private_key_file, combined_proof, distributed_set_utxo=distributed_set_utxo
         )
 
@@ -601,36 +609,6 @@ class SubstrateApi(BlockchainApi):
                 return False  # Wait until merkleRoots is empty or all epochs relayed
         return True
 
-    def add_permissioned_candidate(self, candidate_name: str):
-        candidate = PermissionedCandidate(self.config.nodes_config.nodes[candidate_name])
-        txId, next_status_epoch = self.sidechain_main_cli.update_permissioned_candidates(
-            self.config.nodes_config.governance_authority.mainchain_key, [candidate], []
-        )
-
-        if txId and next_status_epoch:
-            logger.info(
-                f"Addition of permissioned candidate {candidate_name} was successful and will take effect in MC epoch "
-                f"{next_status_epoch}. Transaction id: {txId}"
-            )
-            return True, next_status_epoch
-        else:
-            return False, None
-
-    def remove_permissioned_candidate(self, candidate_name: str):
-        candidate = PermissionedCandidate(self.config.nodes_config.nodes[candidate_name])
-        txId, next_status_epoch = self.sidechain_main_cli.update_permissioned_candidates(
-            self.config.nodes_config.governance_authority.mainchain_key, [], [candidate]
-        )
-
-        if txId and next_status_epoch:
-            logger.info(
-                f"Removal of permissioned candidate {candidate_name} was successful and will take effect in "
-                f"{next_status_epoch} MC epoch. Transaction id: {txId}"
-            )
-            return True, next_status_epoch
-        else:
-            return False, None
-
     def get_block_extrinsic_value(self, extrinsic_name, block_no):
         block = self.get_block(block_no)
         return self.extract_block_extrinsic_value(extrinsic_name, block)
@@ -739,3 +717,7 @@ class SubstrateApi(BlockchainApi):
         # If the query still fails after retrying, raise an exception
         logger.error(f"Query: {query} failed after {retries} retries")
         raise Exception(f"Query: {query} failed after {retries} retries")
+
+    def _effective_in_mc_epoch(self):
+        """Calculates main chain epoch in which smart contracts candidates related operation will be effective."""
+        return self.cardano_cli.get_epoch() + 2

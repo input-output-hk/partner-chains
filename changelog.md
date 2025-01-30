@@ -11,7 +11,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * smart-contracts commands and offchain tests now use WebSockets implementation of Ogmios client
 * Updated to polkadot-stable2409-3 (aka v1.16.3).
 * `local-environment` now uses the `partner-chains-node` based container for the smart-contracts setup.
-* `partner-chains-cli` separate binary is transformed to a library crated and integreted in `partner-chains-node-commands` library crate.
+* `partner-chains-cli` separate binary is transformed to a library crated and integrated in `partner-chains-node-commands` library crate.
 Every invocation of `partner-chains-cli` should be replaced with `<node> wizards` subcommand of the node built with Partner Chains SDK.
 The only other change is that "node executable path" configuration is not present in `partner-chains-cli-resources.json` anymore, because it is not needed anymore.
 Code will always invoke "self" executable instead.
@@ -20,15 +20,21 @@ Since this change, all functionality of Partner Chains is available in the one e
 * Renamed file names of the configs used by wizard commands. `partner-chains-cli-resources-config.json` is now
 `pc-resources-config.json`, `partner-chains-cli-chain-config.json` is now `pc-chain-config.json`. Rename your
 files accordingly if migrating from prior versions.
+* e2e tests: config has been changed to use `partner-chains-node` to interact with smart contracts
+* e2e tests: test_add_permissioned_candidate and test_remove_permissioned_candidate have been merged into test_upsert_permissioned_candidates, and it's now
+setting the permissioned candidates exactly as provided, overriding previous candidates. That means you can no longer remove a single candidate, you need
+to provide a whole list if you only want to remove one candidate. Set `"permissioned_candidate": true` in your config for every permissioned candidate on your network
+to achieve this.
 
 ## Removed
 
 * Separate binary partner-chains-smart-contracts-commands.
+* Override artifacts option in `local-environment` (docker image artifact is used).
 
 ## Fixed
 
 * Cache returning invalid results when native token MainChainScripts has changed.
-* Crash of parnter-chain-node smart-contracts command. Logging is now set independently.
+* Crash of partner-chain-node smart-contracts command. Logging is now set independently.
 * Renamed of argument 'ogmios-host' to 'ogmios-url' in smart-contracts subcommands.
 
 ## Added

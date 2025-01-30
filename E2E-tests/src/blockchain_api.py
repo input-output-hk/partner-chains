@@ -121,14 +121,14 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def update_d_param(self, permissioned_candidates_count: int, trustless_candidates_count: int) -> dict:
+    def update_d_param(self, permissioned_candidates_count: int, trustless_candidates_count: int) -> (bool, int):
         """
         Update D parameter configuration for the sidechain
         Arguments:
             permissioned_candidates_count {int} -- Number of permissioned candidates
             trustless_candidates_count {int} -- Number of trustless candidates
         Returns:
-            (bool, json response) - True/False, and a json response from the sidechain main cli
+            (bool, int) - True/False, and a main chain epoch that it will take effect
         """
         pass
 
@@ -146,10 +146,6 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def add_permissioned_candidate(self, candidate_name: str) -> (bool, int):
-        pass
-
-    @abstractmethod
     def deregister_candidate(self, candidate: str) -> (bool, int):
         """
         Deregisters candidate from participation in a partner chain consensus protocol
@@ -163,7 +159,7 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def remove_permissioned_candidate(self, candidate_name: str) -> (bool, int):
+    def upsert_permissioned_candidates(self, new_candidates_list: list) -> (bool, int):
         pass
 
     @abstractmethod
