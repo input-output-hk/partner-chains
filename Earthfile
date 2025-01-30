@@ -177,11 +177,3 @@ chainspecs:
   RUN . ./dev/envs/staging-preprod/.envrc \
       && partner-chains-node build-spec --chain staging --disable-default-bootnode > staging_preprod_chain_spec.json
   SAVE ARTIFACT staging_preprod_chain_spec.json AS LOCAL staging_preprod_chain_spec.json
-
-
-
-
-
-
-
-
