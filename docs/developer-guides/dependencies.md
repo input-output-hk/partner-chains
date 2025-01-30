@@ -4,8 +4,8 @@ For a local cluster of nodes we need to have the dependencies running.
 The main chain follower reads from **postgres** that **db-sync** writes to.
 **db-sync** itself requires UDS connection to **cardano-node**.
 
-For executing **partner-chains-smart-contracts** CLI commands **ogmios** and **kupo** are required.
-Both of them open HTTP ports that `pc-contracts-cli` is looking for by default (1337 and 1442).
+For executing **partner-chains-node** CLI commands **ogmios** is required.
+It opens an HTTP port that `partner-chains-node` is looking for by default (1337).
 
 This document will help you with spinning up the dependencies running in either docker; or
 _process-compose_; the latter utilizing containerless, natively built binaries via nix.
@@ -13,7 +13,7 @@ _process-compose_; the latter utilizing containerless, natively built binaries v
 ## Using docker
 
 This section uses **cardano-node**, **cardano-db-sync** from ghcr.io repository,
-and **postgres**, **kupo**, and **ogmios** from docker.io repository.
+and **postgres**, and **ogmios** from docker.io repository.
 Setup uses docker volumes for cardano-node data, postgres data and substrate node data, and
 **cardano-node** Unix domain socket for **cardano-db-sync**.
 

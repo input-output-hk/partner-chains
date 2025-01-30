@@ -5,8 +5,8 @@
 * A partner chain node with JSON-RPC API available
 * A node with Postgres SQL (for automated test data)
 * A node with [cardano-node](https://github.com/IntersectMBO/cardano-node) + [cardano-db-sync](https://github.com/IntersectMBO/cardano-db-sync) + [postgres](https://www.postgresql.org/) (running locally OR on one of the partner-chains nodes)
-* [ogmios](https://github.com/CardanoSolutions/ogmios) and [kupo](https://github.com/CardanoSolutions/kupo) (running locally OR on the remote host)
-* [partner-chains-node](https://github.com/input-output-hk/partner-chains) and [pc-contracts-cli](https://github.com/input-output-hk/partner-chains-smart-contracts) (running locally OR on the remote tools host)
+* [ogmios](https://github.com/CardanoSolutions/ogmios) (running locally OR on the remote host)
+* [partner-chains-node](https://github.com/input-output-hk/partner-chains) (running locally OR on the remote tools host)
 * cardano-cli (from a local cardano-node OR on the remote tools host)
 
 **NOTE:**
@@ -58,7 +58,9 @@ Add payment signing key of the governance authority as `init.skey` to `secrets/<
   - `public_key` - ECDSA public key (hex) for partner chain
   - `aura_public_key` - Sr25519 public key (hex)
   - `grandpa_public_key` - Ed25519 public key (hex)
-  - `permissioned_candidate` - indicator whether this node is permissioned candidate (true|false)
+  - `permissioned_candidate` - set to true if you want this node to participate in block production as permissioned candidate (true|false)
+                               random candidate will be removed each execution to test rotation
+                               use with caution, tests may alter your permissioned candidates resulting in not achieving consensus
   - `block_reward_id` - reward id configured at the partner chain startup
   - `key_files` - a set of keys for registered candidates
     - `cardano_payment_key` - path to payment key of registered candidate (payment.skey from step 1)
@@ -146,10 +148,10 @@ E.g. for Cardano Preview it will be:
 
 ### 4. Add `<env>_stack.json` to `config/<blockchain>/<env>` folder
 
-`<env>_stack.json` configuration file represents connection strings to partner chain dependencies (ogmios, kupo) and binaries (partner-chains-node, sidechain-main-cli, cardano-cli).
+`<env>_stack.json` configuration file represents connection strings to partner chain dependencies (ogmios) and binaries (partner-chains-node, sidechain-main-cli, cardano-cli).
 
 **NOTE:**
-- **ogmios** and **kupo** services can be executed on the remote host or made available on test runner machine
+- **ogmios** services can be executed on the remote host or made available on test runner machine
 - partner chains binaries can be made available on the test runner machine or on the remote host
   - if you want to use the remote host - you need to configure your own SSH keys
 
@@ -160,8 +162,6 @@ E.g. for Cardano Preview it will be:
     "stack_config": {
         "ogmios_host": <STRING>,
         "ogmios_port": 1337,
-        "kupo_host": <STRING>,
-        "kupo_port": 1442,
         "tools_shell": "/bin/bash",
         "tools_host": <STRING,
         "ssh": {
@@ -175,10 +175,7 @@ E.g. for Cardano Preview it will be:
             "cardano_cli": {
                 "cli": <STRING>, // path to cardano-cli binary
             },
-            "sidechain_main_cli": {
-                "cli": <STRING> // path to sidechain-main-cli binary
-            },
-            "generate_signatures_cli": {
+            "partner_chains_node": {
                 "cli": <STRING> // path to partner-chains-node binary
             },
             "bech32": {

@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
 
-PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node:v1.3.0"
+PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node:v1.4.0"
 CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.1.4"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.4"
-KUPO_IMAGE="cardanosolutions/kupo:v2.10.0"
 OGMIOS_IMAGE="cardanosolutions/ogmios:v6.11.0"
 POSTGRES_IMAGE="postgres:17.2"
 SIDECHAIN_MAIN_CLI_IMAGE="node:22-bookworm"
 TESTS_IMAGE="python:3.10-slim"
-PC_CONTRACTS_CLI_ZIP_URL="https://github.com/input-output-hk/partner-chains-smart-contracts/releases/download/v7.0.2/pc-contracts-cli-v7.0.2.zip"
-PARTNER_CHAINS_NODE_URL="https://github.com/input-output-hk/partner-chains/releases/download/v1.3.0/partner-chains-node-v1.3.0-x86_64-linux"
 
 display_banner() {
   cat <<'EOF'
@@ -137,70 +134,6 @@ configure_ogmios() {
   echo
 }
 
-configure_kupo() {
-  echo "===== KUPO CONFIGURATION ========"
-  read -p "Do you want to set a non-default port for Kupo? (Will default to 1442) (Y/N): " set_kupo_port
-  if [[ $set_kupo_port == [Yy]* ]]; then
-    kupo_port=$(validate_port "Enter port for Kupo: ")
-  else
-    kupo_port=1442
-  fi
-  echo
-}
-
-configure_artifact_overrides() {
-    local mode=$1
-
-    if [ "$mode" == "interactive" ]; then
-        echo "===== ARTIFACT OVERRIDE CONFIGURATION ========"
-
-        if [ "$overrides" == "yes" ]; then
-            echo -e "Artifact overrides enabled. \n"
-        else
-            read -p "Do you want to override artifacts from local paths? (Y/N): " override_artifact
-            if [[ $override_artifact == [Yy]* ]]; then
-                overrides=yes
-                echo -e "Artifact overrides enabled. \n"
-                echo "To override pc-contracts-cli artifact, copy artifacts to path:"
-                echo -e "./configurations/pc-contracts-cli/overrides/pc-contracts-cli and ./configurations/pc-contracts-cli/overrides/node_modules \n"
-                echo "To override the partner-chains-node artifact, copy artifact to path:"
-                echo -e "./configurations/pc-contracts-cli/overrides/partner-chains-node \n"
-            else
-                echo -e "Artifact overrides disabled. Stable versions will be automatically downloaded within the container from Github Releases. \n"
-            fi
-        fi
-    else
-        # Non-interactive mode
-        if [ "$overrides" == "yes" ]; then
-            echo -e "Artifact overrides enabled. \n"
-        fi
-    fi
-
-    # Check for the existence of the artifact paths
-    if [ "$overrides" == "yes" ]; then
-        # Check for pc-contracts-cli artifact
-        if [[ -f "./configurations/pc-contracts-cli/overrides/pc-contracts-cli" && -d "./configurations/pc-contracts-cli/overrides/node_modules" ]]; then
-            echo -e "pc-contracts-cli and node_modules found. Override enabled. \n"
-        elif [[ -f "./configurations/pc-contracts-cli/overrides/pc-contracts-cli" && ! -d "./configurations/pc-contracts-cli/overrides/node_modules" ]]; then
-            echo -e "Error: 'pc-contracts-cli' found but 'node_modules' directory is missing. \n"
-            exit 1
-        elif [[ ! -f "./configurations/pc-contracts-cli/overrides/pc-contracts-cli" && -d "./configurations/pc-contracts-cli/overrides/node_modules" ]]; then
-            echo -e "Error: 'node_modules' directory found but 'pc-contracts-cli' script is missing. \n"
-            exit 1
-        else
-            echo -e "pc-contracts-cli and node_modules not found. Override disabled for pc-contracts-cli. \n"
-        fi
-
-        # Check for partner-chains-node artifact
-        if [ -f "./configurations/pc-contracts-cli/overrides/partner-chains-node" ]; then
-            echo -e "partner-chains-node found. Override enabled. \n"
-        else
-            echo -e "partner-chains-node not found. Override disabled for partner-chains-node. \n"
-        fi
-    fi
-}
-
-
 resource_limits_setup() {
   echo "===== RESOURCE LIMITS SETUP ========"
   read -p "Do you want to restrict CPU and Memory limits for the stack? (Y/N) " restrict_resources
@@ -221,8 +154,6 @@ resource_limits_setup() {
       mem_dbsync=200M
       cpu_ogmios=0.2
       mem_ogmios=500M
-      cpu_kupo=0.4
-      mem_kupo=600M
     else
       CPU_PARTNER_CHAINS_NODE=$(validate_cpu_limit "Enter CPU limit for Partner Chains nodes (e.g., 0.4 for 0.4 CPU): ")
       MEM_PARTNER_CHAINS_NODE=$(validate_memory_limit "Enter Memory limit for each of the 3 x Partner Chains nodes (e.g., 400M for 400 MB): ")
@@ -236,8 +167,6 @@ resource_limits_setup() {
       mem_dbsync=$(validate_memory_limit "Enter Memory limit for db-sync (e.g., 200M for 200 MB): ")
       cpu_ogmios=$(validate_cpu_limit "Enter CPU limit for Ogmios (e.g., 0.2 for 0.2 CPU): ")
       mem_ogmios=$(validate_memory_limit "Enter Memory limit for Ogmios (e.g., 500M for 500 MB): ")
-      cpu_kupo=$(validate_cpu_limit "Enter CPU limit for Kupo (e.g., 0.4 for 0.4 CPU): ")
-      mem_kupo=$(validate_memory_limit "Enter Memory limit for Kupo (e.g., 600M for 600 MB): ")
     fi
   else
     DEFAULT_CPU_LIMIT="0.000"
@@ -252,8 +181,6 @@ resource_limits_setup() {
     mem_dbsync=$DEFAULT_MEM_LIMIT
     cpu_ogmios=$DEFAULT_CPU_LIMIT
     mem_ogmios=$DEFAULT_MEM_LIMIT
-    cpu_kupo=$DEFAULT_CPU_LIMIT
-    mem_kupo=$DEFAULT_MEM_LIMIT
   fi
   echo
 }
@@ -314,7 +241,6 @@ configure_env() {
 POSTGRES_PORT=5432
 POSTGRES_PASSWORD=$db_password
 OGMIOS_PORT=1337
-KUPO_PORT=1442
 CPU_PARTNER_CHAINS_NODE=0.000
 MEM_PARTNER_CHAINS_NODE=1000G
 CPU_CARDANO=0.000
@@ -325,16 +251,12 @@ CPU_DBSYNC=0.000
 MEM_DBSYNC=1000G
 CPU_OGMIOS=0.000
 MEM_OGMIOS=1000G
-CPU_KUPO=0.000
-MEM_KUPO=1000G
-ARTIFACT_OVERRIDE=$overrides
 EOF
     else
         cat <<EOF >.env
 POSTGRES_PORT=$db_port
 POSTGRES_PASSWORD=$db_password
 OGMIOS_PORT=$ogmios_port
-KUPO_PORT=$kupo_port
 CPU_PARTNER_CHAINS_NODE=$CPU_PARTNER_CHAINS_NODE
 MEM_PARTNER_CHAINS_NODE=$MEM_PARTNER_CHAINS_NODE
 CPU_CARDANO=$cpu_cardano
@@ -345,24 +267,17 @@ CPU_DBSYNC=$cpu_dbsync
 MEM_DBSYNC=$mem_dbsync
 CPU_OGMIOS=$cpu_ogmios
 MEM_OGMIOS=$mem_ogmios
-CPU_KUPO=$cpu_kupo
-MEM_KUPO=$mem_kupo
-ARTIFACT_OVERRIDE=$overrides
 EOF
     fi
 
     cat <<EOF >>.env
 CARDANO_IMAGE=$CARDANO_IMAGE
 DBSYNC_IMAGE=$DBSYNC_IMAGE
-KUPO_IMAGE=$KUPO_IMAGE
 OGMIOS_IMAGE=$OGMIOS_IMAGE
 POSTGRES_IMAGE=$POSTGRES_IMAGE
 SIDECHAIN_MAIN_CLI_IMAGE=$SIDECHAIN_MAIN_CLI_IMAGE
 TESTS_IMAGE=$TESTS_IMAGE
 PARTNER_CHAINS_NODE_IMAGE=${node_image:-$PARTNER_CHAINS_NODE_IMAGE}
-PC_CONTRACTS_CLI_ZIP_URL=$PC_CONTRACTS_CLI_ZIP_URL
-PARTNER_CHAINS_NODE_URL=$PARTNER_CHAINS_NODE_URL
-PARTNER_CHAINS_CLI_URL=$PARTNER_CHAINS_CLI_URL
 EOF
 
     if [ "$mode" == "interactive" ]; then
@@ -376,8 +291,8 @@ choose_deployment_option() {
   if [[ $modify_stack =~ ^[Yy]$ ]]; then
     echo "Choose your deployment option:"
     echo "1) Include only Cardano testnet"
-    echo "2) Include Cardano testnet with Kupo and Ogmios"
-    echo "3) Include Cardano testnet, Kupo, Ogmios, DB-Sync and Postgres"
+    echo "2) Include Cardano testnet with Ogmios"
+    echo "3) Include Cardano testnet, Ogmios, DB-Sync and Postgres"
     echo "4) Deploy a single Partner Chains node with network_mode: "host" for external connections (adjust partner-chains-external-node.txt before running this script)"
     read -p "Enter your choice (1/2/3/4): " deployment_option
   else
@@ -402,16 +317,14 @@ create_docker_compose() {
         cat ./modules/cardano.txt >> docker-compose.yml
         ;;
       2)
-        echo -e "Including Cardano testnet, Kupo, and Ogmios services.\n"
+        echo -e "Including Cardano testnet, and Ogmios services.\n"
         cat ./modules/cardano.txt >> docker-compose.yml
         cat ./modules/ogmios.txt >> docker-compose.yml
-        cat ./modules/kupo.txt >> docker-compose.yml
         ;;
       3)
-        echo -e "Including Cardano testnet, Kupo, Ogmios, DB-Sync, and Postgres services.\n"
+        echo -e "Including Cardano testnet, Ogmios, DB-Sync, and Postgres services.\n"
         cat ./modules/cardano.txt >> docker-compose.yml
         cat ./modules/ogmios.txt >> docker-compose.yml
-        cat ./modules/kupo.txt >> docker-compose.yml
         cat ./modules/db-sync.txt >> docker-compose.yml
         cat ./modules/postgres.txt >> docker-compose.yml
         ;;
@@ -419,22 +332,18 @@ create_docker_compose() {
         echo -e "Including all services with external partner chain node.\n"
         cat ./modules/cardano.txt >> docker-compose.yml
         cat ./modules/ogmios.txt >> docker-compose.yml
-        cat ./modules/kupo.txt >> docker-compose.yml
         cat ./modules/db-sync.txt >> docker-compose.yml
         cat ./modules/postgres.txt >> docker-compose.yml
         cat ./modules/partner-chains-external-node.txt >> docker-compose.yml
-        cat ./modules/pc-contracts-cli.txt >> docker-compose.yml
         cat ./modules/partner-chains-setup.txt >> docker-compose.yml
         ;;
       0)
         echo -e "Including all services.\n"
         cat ./modules/cardano.txt >> docker-compose.yml
         cat ./modules/ogmios.txt >> docker-compose.yml
-        cat ./modules/kupo.txt >> docker-compose.yml
         cat ./modules/db-sync.txt >> docker-compose.yml
         cat ./modules/postgres.txt >> docker-compose.yml
         cat ./modules/partner-chains-nodes.txt >> docker-compose.yml
-        cat ./modules/pc-contracts-cli.txt >> docker-compose.yml
         cat ./modules/partner-chains-setup.txt >> docker-compose.yml
         ;;
       *)
@@ -454,7 +363,6 @@ parse_arguments() {
     non_interactive=0
     deployment_option=0
     postgres_password=""
-    overrides="no"
     tests_enabled="no"
 
     while [[ $# -gt 0 ]]; do
@@ -481,10 +389,6 @@ parse_arguments() {
                     exit 1
                 fi
                 ;;
-            -o|--overrides)
-                overrides="yes"
-                shift
-                ;;
             -i|--node-image)
                 if [[ -n "$2" ]]; then
                     node_image="$2"
@@ -505,7 +409,6 @@ parse_arguments() {
                 echo "  -n, --non-interactive     Run with no interactive prompts and accept sensible default configuration settings."
                 echo "  -d, --deployment-option   Specify one of the custom deployment options (1, 2, 3, or 4)."
                 echo "  -p, --postgres-password   Set a specific password for PostgreSQL (overrides automatic generation)."
-                echo "  -o, --overrides           Enable custom artifact overrides from artifacts in ./configurations/pc-contracts-cli/ (PC and PCSC)."
                 echo "  -i, --node-image          Specify a custom Partner Chains Node image."
                 echo "  -t, --tests               Include tests container."
                 echo "  -h, --help                Display this help dialogue and exit."
@@ -525,7 +428,6 @@ parse_arguments() {
     export non_interactive
     export deployment_option
     export postgres_password
-    export overrides
     export node_image
     export tests_enabled
 }
@@ -539,7 +441,6 @@ main() {
         configure_postgres "non-interactive"
         detect_os "non-interactive"
         configure_env "non-interactive"
-        configure_artifact_overrides "non-interactive"
         create_docker_compose "non-interactive"
     else
         display_banner
@@ -547,8 +448,6 @@ main() {
         backup_files "interactive"
         configure_postgres "interactive"
         configure_ogmios
-        configure_kupo
-        configure_artifact_overrides "interactive"
         resource_limits_setup
 
         if [ "$deployment_option" -eq 0 ]; then

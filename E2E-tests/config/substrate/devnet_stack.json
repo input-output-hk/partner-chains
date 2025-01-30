@@ -2,8 +2,6 @@
     "stack_config": {
         "ogmios_host": "devnet-services-service",
         "ogmios_port": 1337,
-        "kupo_host": "devnet-services-service",
-        "kupo_port": 1442,
         "tools_host": "10.0.12.126",
         "ssh": {
             "username": "root",
@@ -17,11 +15,7 @@
                 "cli": "export CARDANO_NODE_SOCKET_PATH=/ipc/node.socket && /tools/cardano-cli",
                 "ssh": "${stack_config[ssh]}"
             },
-            "sidechain_main_cli": {
-                "cli": "/tools/partner-chains-smart-contracts-7.0.2/pc-contracts-cli",
-                "ssh": "${stack_config[ssh]}"
-            },
-            "generate_signatures_cli": {
+            "partner_chains_node": {
                 "cli": "/tools/partner-chains-node",
                 "ssh": "${stack_config[ssh]}"
             },

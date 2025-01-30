@@ -231,6 +231,5 @@ while [ $epoch -lt $n_2_epoch ]; do
   echo "Current epoch: $epoch"
 done
 echo "DParam is now active!"
-touch /shared/2-epochs.ready
 
 tail -f /dev/null

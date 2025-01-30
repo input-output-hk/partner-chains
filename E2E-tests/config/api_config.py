@@ -131,10 +131,10 @@ class NodesApiConfig:
 
 @dataclass
 class StackApiConfig:
+    ogmios_scheme: str = "http"
     ogmios_host: str = MISSING
     ogmios_port: int = MISSING
-    kupo_host: str = MISSING
-    kupo_port: int = MISSING
+    ogmios_url: str = SI("${.ogmios_scheme}://${.ogmios_host}:${.ogmios_port}")
     tools: dict[str, Tool] = MISSING
     tools_host: str = MISSING
     tools_shell: Optional[str] = None
