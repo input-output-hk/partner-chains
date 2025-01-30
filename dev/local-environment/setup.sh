@@ -134,43 +134,6 @@ configure_ogmios() {
   echo
 }
 
-configure_artifact_overrides() {
-    local mode=$1
-
-    if [ "$mode" == "interactive" ]; then
-        echo "===== ARTIFACT OVERRIDE CONFIGURATION ========"
-
-        if [ "$overrides" == "yes" ]; then
-            echo -e "Artifact overrides enabled. \n"
-        else
-            read -p "Do you want to override artifacts from local paths? (Y/N): " override_artifact
-            if [[ $override_artifact == [Yy]* ]]; then
-                overrides=yes
-                echo -e "Artifact overrides enabled. \n"
-                echo "To override the partner-chains-node artifact, copy artifact to path:"
-                echo -e "./configurations/partner-chains-node/overrides/partner-chains-node \n"
-            else
-                echo -e "Artifact overrides disabled. Stable versions will be automatically downloaded within the container from Github Releases. \n"
-            fi
-        fi
-    else
-        # Non-interactive mode
-        if [ "$overrides" == "yes" ]; then
-            echo -e "Artifact overrides enabled. \n"
-        fi
-    fi
-
-    # Check for the existence of the artifact paths
-    if [ "$overrides" == "yes" ]; then
-        # Check for partner-chains-node artifact
-        if [ -f "./configurations/partner-chains-node/overrides/partner-chains-node" ]; then
-            echo -e "partner-chains-node found. Override enabled. \n"
-        else
-            echo -e "partner-chains-node not found. Override disabled for partner-chains-node. \n"
-        fi
-    fi
-}
-
 resource_limits_setup() {
   echo "===== RESOURCE LIMITS SETUP ========"
   read -p "Do you want to restrict CPU and Memory limits for the stack? (Y/N) " restrict_resources
@@ -487,7 +450,6 @@ main() {
         backup_files "interactive"
         configure_postgres "interactive"
         configure_ogmios
-        configure_artifact_overrides "interactive"
         resource_limits_setup
 
         if [ "$deployment_option" -eq 0 ]; then
