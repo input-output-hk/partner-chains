@@ -1013,22 +1013,6 @@
 <a href="#1013" id="1013">1013</a>
 <a href="#1014" id="1014">1014</a>
 <a href="#1015" id="1015">1015</a>
-<a href="#1016" id="1016">1016</a>
-<a href="#1017" id="1017">1017</a>
-<a href="#1018" id="1018">1018</a>
-<a href="#1019" id="1019">1019</a>
-<a href="#1020" id="1020">1020</a>
-<a href="#1021" id="1021">1021</a>
-<a href="#1022" id="1022">1022</a>
-<a href="#1023" id="1023">1023</a>
-<a href="#1024" id="1024">1024</a>
-<a href="#1025" id="1025">1025</a>
-<a href="#1026" id="1026">1026</a>
-<a href="#1027" id="1027">1027</a>
-<a href="#1028" id="1028">1028</a>
-<a href="#1029" id="1029">1029</a>
-<a href="#1030" id="1030">1030</a>
-<a href="#1031" id="1031">1031</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attr">#![recursion_limit = <span class="string">"256"</span>]
@@ -1038,14 +1022,17 @@
 </span><span class="kw">extern crate </span>frame_benchmarking;
 
 <span class="comment">// A few exports that help ease life for downstream crates.
-</span><span class="kw">use </span><span class="kw">crate</span>::weights::rocksdb_weights::constants::RocksDbWeight;
-<span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
+</span><span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::{
 	validate_permissioned_candidate_data, PermissionedCandidateDataError, RegistrationDataError,
 	StakeError,
 };
 <span class="kw">use </span>authority_selection_inherents::select_authorities::select_authorities;
 <span class="kw">use </span>frame_support::genesis_builder_helper::{build_state, get_preset};
+<span class="attr">#[cfg(feature = <span class="string">"with-paritydb-weights"</span>)]
+</span><span class="kw">use </span>frame_support::weights::constants::ParityDbWeight <span class="kw">as </span>RuntimeDbWeight;
+<span class="attr">#[cfg(feature = <span class="string">"with-rocksdb-weights"</span>)]
+</span><span class="kw">use </span>frame_support::weights::constants::RocksDbWeight <span class="kw">as </span>RuntimeDbWeight;
 <span class="kw">use </span>frame_support::BoundedVec;
 <span class="kw">pub use </span>frame_support::{
 	construct_runtime, parameter_types,
@@ -1099,9 +1086,6 @@
 </span><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">"OUT_DIR"</span>), <span class="string">"/wasm_binary.rs"</span>));
 
-<span class="attr">#[allow(warnings)]
-</span><span class="kw">mod </span>weights;
-
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>mock;
 
@@ -1126,8 +1110,6 @@
 
 <span class="doccomment">/// A hash of some data used by the chain.
 </span><span class="kw">pub type </span>Hash = sp_core::H256;
-
-<span class="kw">type </span>DbWeight = RocksDbWeight;
 
 <span class="doccomment">/// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -1264,28 +1246,15 @@
 <span class="doccomment">/// We allow for 2 seconds of compute with a 6 second average block time.
 </span><span class="kw">pub const </span>MAXIMUM_BLOCK_WEIGHT: Weight =
 	Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(<span class="number">2</span>), u64::MAX);
+<span class="kw">pub const </span>MAXIMUM_BLOCK_LENGTH: u32 = <span class="number">5 </span>* <span class="number">1024 </span>* <span class="number">1024</span>;
 
 <span class="macro">parameter_types!</span> {
 	<span class="kw">pub const </span>BlockHashCount: BlockNumber = <span class="number">2400</span>;
 	<span class="kw">pub const </span>Version: RuntimeVersion = VERSION;
-	<span class="kw">pub </span>BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights::builder()
-			.base_block(weights::block_weights::BlockExecutionWeight::get())
-			.for_class(frame_support::dispatch::DispatchClass::all(), |weights| {
-				weights.base_extrinsic = weights::extrinsic_weights::ExtrinsicBaseWeight::get();
-			})
-			.for_class(frame_support::dispatch::DispatchClass::Normal, |weights| {
-				weights.max_total = <span class="prelude-val">Some</span>(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
-			})
-			.for_class(frame_support::dispatch::DispatchClass::Operational, |weights| {
-				weights.max_total = <span class="prelude-val">Some</span>(MAXIMUM_BLOCK_WEIGHT);
-				weights.reserved = <span class="prelude-val">Some</span>(
-					MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT,
-				);
-			})
-			.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
-			.build_or_panic();
+	<span class="kw">pub </span>BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
+		::with_sensible_defaults(MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO);
 	<span class="kw">pub </span>BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
-		::max_with_normal_ratio(<span class="number">5 </span>* <span class="number">1024 </span>* <span class="number">1024</span>, NORMAL_DISPATCH_RATIO);
+		::max_with_normal_ratio(MAXIMUM_BLOCK_LENGTH, NORMAL_DISPATCH_RATIO);
 	<span class="kw">pub const </span>SS58Prefix: u8 = <span class="number">42</span>;
 }
 
@@ -1319,7 +1288,7 @@
 	<span class="doccomment">/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	</span><span class="kw">type </span>BlockHashCount = BlockHashCount;
 	<span class="doccomment">/// The weight of database operations that the runtime can invoke.
-	</span><span class="kw">type </span>DbWeight = DbWeight;
+	</span><span class="kw">type </span>DbWeight = RuntimeDbWeight;
 	<span class="doccomment">/// Version of the runtime.
 	</span><span class="kw">type </span>Version = Version;
 	<span class="doccomment">/// Converts a module to the index of the module in `construct_runtime!`.
@@ -1333,7 +1302,7 @@
 	<span class="doccomment">/// The data to be stored in an account.
 	</span><span class="kw">type </span>AccountData = pallet_balances::AccountData&lt;Balance&gt;;
 	<span class="doccomment">/// Weight information for the extrinsics of this pallet.
-	</span><span class="kw">type </span>SystemWeightInfo = weights::frame_system::WeightInfo&lt;Runtime&gt;;
+	</span><span class="kw">type </span>SystemWeightInfo = frame_system::weights::SubstrateWeight&lt;Runtime&gt;;
 	<span class="doccomment">/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	</span><span class="kw">type </span>SS58Prefix = SS58Prefix;
 	<span class="doccomment">/// The set code logic, just the default since we're not a parachain.
@@ -1388,7 +1357,7 @@
 	</span><span class="kw">type </span>Moment = u64;
 	<span class="kw">type </span>OnTimestampSet = Aura;
 	<span class="kw">type </span>MinimumPeriod = ConstU64&lt;{ SLOT_DURATION / <span class="number">2 </span>}&gt;;
-	<span class="kw">type </span>WeightInfo = weights::pallet_timestamp::WeightInfo&lt;Runtime&gt;;
+	<span class="kw">type </span>WeightInfo = pallet_timestamp::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
 <span class="doccomment">/// Existential deposit.
@@ -1405,7 +1374,7 @@
 	<span class="kw">type </span>DustRemoval = ();
 	<span class="kw">type </span>ExistentialDeposit = ConstU128&lt;EXISTENTIAL_DEPOSIT&gt;;
 	<span class="kw">type </span>AccountStore = System;
-	<span class="kw">type </span>WeightInfo = weights::pallet_balances::WeightInfo&lt;Runtime&gt;;
+	<span class="kw">type </span>WeightInfo = pallet_balances::weights::SubstrateWeight&lt;Runtime&gt;;
 	<span class="kw">type </span>FreezeIdentifier = ();
 	<span class="kw">type </span>MaxFreezes = ();
 	<span class="kw">type </span>RuntimeHoldReason = ();
@@ -1428,7 +1397,7 @@
 <span class="kw">impl </span>pallet_sudo::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>RuntimeCall = RuntimeCall;
-	<span class="kw">type </span>WeightInfo = weights::pallet_sudo::WeightInfo&lt;Runtime&gt;;
+	<span class="kw">type </span>WeightInfo = pallet_sudo::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
 <span class="kw">impl </span>pallet_partner_chains_session::Config <span class="kw">for </span>Runtime {
@@ -1452,6 +1421,7 @@
 	<span class="kw">type </span>AuthorityKeys = SessionKeys;
 	<span class="kw">type </span>AuthoritySelectionInputs = AuthoritySelectionInputs;
 	<span class="kw">type </span>ScEpochNumber = ScEpochNumber;
+	<span class="kw">type </span>WeightInfo = pallet_session_validator_management::weights::SubstrateWeight&lt;Runtime&gt;;
 
 	<span class="kw">fn </span>select_authorities(
 		input: AuthoritySelectionInputs,
@@ -1463,8 +1433,6 @@
 	<span class="kw">fn </span>current_epoch_number() -&gt; ScEpochNumber {
 		Sidechain::current_epoch_number()
 	}
-
-	<span class="kw">type </span>WeightInfo = weights::pallet_session_validator_management::WeightInfo&lt;Runtime&gt;;
 }
 
 <span class="macro">parameter_types!</span> {
@@ -1478,7 +1446,7 @@
 		<span class="kw">let </span>rewards = BlockRewards::get_rewards_and_clear();
 		<span class="macro">log::info!</span>(<span class="string">"Rewards accrued in epoch {old_epoch}: {rewards:?}"</span>);
 
-		DbWeight::get().reads_writes(<span class="number">1</span>, <span class="number">1</span>)
+		RuntimeDbWeight::get().reads_writes(<span class="number">1</span>, <span class="number">1</span>)
 	}
 }
 

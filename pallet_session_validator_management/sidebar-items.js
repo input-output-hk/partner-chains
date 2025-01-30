@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["pallet"],"trait":["WeightInfo"]};
+window.SIDEBAR_ITEMS = {"mod":["pallet","weights"]};
