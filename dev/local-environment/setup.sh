@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node:v1.3.0"
+PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node:v1.4.0"
 CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.1.4"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.4"
 KUPO_IMAGE="cardanosolutions/kupo:v2.10.0"
@@ -8,7 +8,6 @@ OGMIOS_IMAGE="cardanosolutions/ogmios:v6.11.0"
 POSTGRES_IMAGE="postgres:17.2"
 SIDECHAIN_MAIN_CLI_IMAGE="node:22-bookworm"
 TESTS_IMAGE="python:3.10-slim"
-PARTNER_CHAINS_NODE_URL="https://github.com/input-output-hk/partner-chains/releases/download/v1.3.0/partner-chains-node-v1.3.0-x86_64-linux"
 
 display_banner() {
   cat <<'EOF'
@@ -147,44 +146,6 @@ configure_kupo() {
   echo
 }
 
-configure_artifact_overrides() {
-    local mode=$1
-
-    if [ "$mode" == "interactive" ]; then
-        echo "===== ARTIFACT OVERRIDE CONFIGURATION ========"
-
-        if [ "$overrides" == "yes" ]; then
-            echo -e "Artifact overrides enabled. \n"
-        else
-            read -p "Do you want to override artifacts from local paths? (Y/N): " override_artifact
-            if [[ $override_artifact == [Yy]* ]]; then
-                overrides=yes
-                echo -e "Artifact overrides enabled. \n"
-                echo "To override the partner-chains-node artifact, copy artifact to path:"
-                echo -e "./configurations/partner-chains-node/overrides/partner-chains-node \n"
-            else
-                echo -e "Artifact overrides disabled. Stable versions will be automatically downloaded within the container from Github Releases. \n"
-            fi
-        fi
-    else
-        # Non-interactive mode
-        if [ "$overrides" == "yes" ]; then
-            echo -e "Artifact overrides enabled. \n"
-        fi
-    fi
-
-    # Check for the existence of the artifact paths
-    if [ "$overrides" == "yes" ]; then
-        # Check for partner-chains-node artifact
-        if [ -f "./configurations/partner-chains-node/overrides/partner-chains-node" ]; then
-            echo -e "partner-chains-node found. Override enabled. \n"
-        else
-            echo -e "partner-chains-node not found. Override disabled for partner-chains-node. \n"
-        fi
-    fi
-}
-
-
 resource_limits_setup() {
   echo "===== RESOURCE LIMITS SETUP ========"
   read -p "Do you want to restrict CPU and Memory limits for the stack? (Y/N) " restrict_resources
@@ -311,7 +272,6 @@ CPU_OGMIOS=0.000
 MEM_OGMIOS=1000G
 CPU_KUPO=0.000
 MEM_KUPO=1000G
-ARTIFACT_OVERRIDE=$overrides
 EOF
     else
         cat <<EOF >.env
@@ -331,7 +291,6 @@ CPU_OGMIOS=$cpu_ogmios
 MEM_OGMIOS=$mem_ogmios
 CPU_KUPO=$cpu_kupo
 MEM_KUPO=$mem_kupo
-ARTIFACT_OVERRIDE=$overrides
 EOF
     fi
 
@@ -344,8 +303,6 @@ POSTGRES_IMAGE=$POSTGRES_IMAGE
 SIDECHAIN_MAIN_CLI_IMAGE=$SIDECHAIN_MAIN_CLI_IMAGE
 TESTS_IMAGE=$TESTS_IMAGE
 PARTNER_CHAINS_NODE_IMAGE=${node_image:-$PARTNER_CHAINS_NODE_IMAGE}
-PARTNER_CHAINS_NODE_URL=$PARTNER_CHAINS_NODE_URL
-PARTNER_CHAINS_CLI_URL=$PARTNER_CHAINS_CLI_URL
 EOF
 
     if [ "$mode" == "interactive" ]; then
@@ -435,7 +392,6 @@ parse_arguments() {
     non_interactive=0
     deployment_option=0
     postgres_password=""
-    overrides="no"
     tests_enabled="no"
 
     while [[ $# -gt 0 ]]; do
@@ -462,10 +418,6 @@ parse_arguments() {
                     exit 1
                 fi
                 ;;
-            -o|--overrides)
-                overrides="yes"
-                shift
-                ;;
             -i|--node-image)
                 if [[ -n "$2" ]]; then
                     node_image="$2"
@@ -486,7 +438,6 @@ parse_arguments() {
                 echo "  -n, --non-interactive     Run with no interactive prompts and accept sensible default configuration settings."
                 echo "  -d, --deployment-option   Specify one of the custom deployment options (1, 2, 3, or 4)."
                 echo "  -p, --postgres-password   Set a specific password for PostgreSQL (overrides automatic generation)."
-                echo "  -o, --overrides           Enable custom artifact overrides from artifacts in ./configurations/partner-chains-node/."
                 echo "  -i, --node-image          Specify a custom Partner Chains Node image."
                 echo "  -t, --tests               Include tests container."
                 echo "  -h, --help                Display this help dialogue and exit."
@@ -506,7 +457,6 @@ parse_arguments() {
     export non_interactive
     export deployment_option
     export postgres_password
-    export overrides
     export node_image
     export tests_enabled
 }
@@ -520,7 +470,6 @@ main() {
         configure_postgres "non-interactive"
         detect_os "non-interactive"
         configure_env "non-interactive"
-        configure_artifact_overrides "non-interactive"
         create_docker_compose "non-interactive"
     else
         display_banner
@@ -529,7 +478,6 @@ main() {
         configure_postgres "interactive"
         configure_ogmios
         configure_kupo
-        configure_artifact_overrides "interactive"
         resource_limits_setup
 
         if [ "$deployment_option" -eq 0 ]; then

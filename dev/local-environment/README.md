@@ -51,19 +51,11 @@ When stopping the stack, it is mandatory to also wipe all volumes. The environme
 docker compose down --volumes
 ```
 
-## Custom Images and Artifacts
+## Custom Image
 
-To use custom node image one simply has to update `PARTNER_CHAINS_NODE_IMAGE` (docker image) and `PARTNER_CHAINS_NODE_URL` (node artifact, used to build chain-spec and execute chain setup smart-contracts)
+To use custom node image one simply has to update `PARTNER_CHAINS_NODE_IMAGE` (docker image).
 
 These can be found at the very top of the `setup.sh` script.
-
-Alternatively artifact URLs can be overriden from local files with the `--overrides` argument. See main `setup.sh` interactive dialogue for more details.
-
-```
-cd dev/local-environment
-cp /path/to/artifact ./configurations/partner-chains-node/overrides/partner-chains-node
-bash setup.sh --non-interactive --overrides --node-image ${{ inputs.image }}
-```
 
 ## Custom Deployment Options
 
@@ -74,11 +66,11 @@ The `setup.sh` script supports argument `--deployment-option X` with the below p
 3. Include Cardano testnet, Kupo, Ogmios, DB-Sync and Postgres
 4. Deploy a single Partner Chains node with network_mode: "host" for external connections
 
-Option 3 is suitable for providing a local Postgres with our minimal Cardano chain for local testing. Option 4 is suitable for deploying individual Partner Chain Nodes accross distrubted systems.
+Option 3 is suitable for providing a local Postgres with our minimal Cardano chain for local testing. Option 4 is suitable for deploying individual Partner Chain Nodes across distributed systems.
 
 ## Other Features
 
-We are continuing to develop this utility for a range of appications, and regularly add additional features. The `setup.sh --help` output will always show the latest details for available features:
+We are continuing to develop this utility for a range of applications, and regularly add additional features. The `setup.sh --help` output will always show the latest details for available features:
 
 ```
 $ bash setup.sh --help
@@ -87,7 +79,6 @@ Initialize and configure the Docker environment.
   -n, --non-interactive     Run with no interactive prompts and accept sensible default configuration settings.
   -d, --deployment-option   Specify one of the custom deployment options (1, 2, 3, or 4).
   -p, --postgres-password   Set a specific password for PostgreSQL (overrides automatic generation).
-  -o, --overrides           Enable custom artifact overrides from artifacts in ./configurations/partner-chains-node/.
   -i, --node-image          Specify a custom Partner Chains Node image.
   -t, --tests               Include tests container.
   -h, --help                Display this help dialogue and exit.

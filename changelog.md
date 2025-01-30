@@ -29,6 +29,7 @@ to achieve this.
 ## Removed
 
 * Separate binary partner-chains-smart-contracts-commands.
+* Override artifacts option in `local-environment` (docker image artifact is used).
 
 ## Fixed
 
