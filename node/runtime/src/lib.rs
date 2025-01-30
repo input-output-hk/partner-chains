@@ -7,7 +7,7 @@
 extern crate frame_benchmarking;
 
 // A few exports that help ease life for downstream crates.
-use crate::weights::rocksdb_weights::constants::RocksDbWeight;
+use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::{
 	validate_permissioned_candidate_data, PermissionedCandidateDataError, RegistrationDataError,
@@ -95,8 +95,6 @@ pub type Nonce = u32;
 
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
-
-type DbWeight = RocksDbWeight;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -233,28 +231,15 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 2 seconds of compute with a 6 second average block time.
 pub const MAXIMUM_BLOCK_WEIGHT: Weight =
 	Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2), u64::MAX);
+pub const MAXIMUM_BLOCK_LENGTH: u32 = 5 * 1024 * 1024;
 
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 2400;
 	pub const Version: RuntimeVersion = VERSION;
-	pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights::builder()
-			.base_block(weights::block_weights::BlockExecutionWeight::get())
-			.for_class(frame_support::dispatch::DispatchClass::all(), |weights| {
-				weights.base_extrinsic = weights::extrinsic_weights::ExtrinsicBaseWeight::get();
-			})
-			.for_class(frame_support::dispatch::DispatchClass::Normal, |weights| {
-				weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
-			})
-			.for_class(frame_support::dispatch::DispatchClass::Operational, |weights| {
-				weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
-				weights.reserved = Some(
-					MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT,
-				);
-			})
-			.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
-			.build_or_panic();
+	pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
+		::with_sensible_defaults(MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO);
 	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
-		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+		::max_with_normal_ratio(MAXIMUM_BLOCK_LENGTH, NORMAL_DISPATCH_RATIO);
 	pub const SS58Prefix: u8 = 42;
 }
 
@@ -288,7 +273,7 @@ impl frame_system::Config for Runtime {
 	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	type BlockHashCount = BlockHashCount;
 	/// The weight of database operations that the runtime can invoke.
-	type DbWeight = DbWeight;
+	type DbWeight = RuntimeDbWeight;
 	/// Version of the runtime.
 	type Version = Version;
 	/// Converts a module to the index of the module in `construct_runtime!`.
@@ -302,7 +287,7 @@ impl frame_system::Config for Runtime {
 	/// The data to be stored in an account.
 	type AccountData = pallet_balances::AccountData<Balance>;
 	/// Weight information for the extrinsics of this pallet.
-	type SystemWeightInfo = weights::frame_system::WeightInfo<Runtime>;
+	type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = SS58Prefix;
 	/// The set code logic, just the default since we're not a parachain.
@@ -357,7 +342,7 @@ impl pallet_timestamp::Config for Runtime {
 	type Moment = u64;
 	type OnTimestampSet = Aura;
 	type MinimumPeriod = ConstU64<{ SLOT_DURATION / 2 }>;
-	type WeightInfo = weights::pallet_timestamp::WeightInfo<Runtime>;
+	type WeightInfo = pallet_timestamp::weights::SubstrateWeight<Runtime>;
 }
 
 /// Existential deposit.
@@ -374,7 +359,7 @@ impl pallet_balances::Config for Runtime {
 	type DustRemoval = ();
 	type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
 	type AccountStore = System;
-	type WeightInfo = weights::pallet_balances::WeightInfo<Runtime>;
+	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 	type FreezeIdentifier = ();
 	type MaxFreezes = ();
 	type RuntimeHoldReason = ();
@@ -397,7 +382,7 @@ impl pallet_transaction_payment::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
-	type WeightInfo = weights::pallet_sudo::WeightInfo<Runtime>;
+	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_partner_chains_session::Config for Runtime {
@@ -421,6 +406,7 @@ impl pallet_session_validator_management::Config for Runtime {
 	type AuthorityKeys = SessionKeys;
 	type AuthoritySelectionInputs = AuthoritySelectionInputs;
 	type ScEpochNumber = ScEpochNumber;
+	type WeightInfo = pallet_session_validator_management::weights::SubstrateWeight<Runtime>;
 
 	fn select_authorities(
 		input: AuthoritySelectionInputs,
@@ -432,8 +418,6 @@ impl pallet_session_validator_management::Config for Runtime {
 	fn current_epoch_number() -> ScEpochNumber {
 		Sidechain::current_epoch_number()
 	}
-
-	type WeightInfo = weights::pallet_session_validator_management::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -447,7 +431,7 @@ impl sp_sidechain::OnNewEpoch for LogBeneficiaries {
 		let rewards = BlockRewards::get_rewards_and_clear();
 		log::info!("Rewards accrued in epoch {old_epoch}: {rewards:?}");
 
-		DbWeight::get().reads_writes(1, 1)
+		RuntimeDbWeight::get().reads_writes(1, 1)
 	}
 }
 

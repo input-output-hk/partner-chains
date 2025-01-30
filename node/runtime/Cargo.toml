@@ -88,6 +88,8 @@ substrate-wasm-builder = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
+with-rocksdb-weights = []
+with-paritydb-weights = []
 std = [
 	"authority-selection-inherents/std",
 	"sp-block-rewards/std",

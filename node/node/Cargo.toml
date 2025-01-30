@@ -108,9 +108,18 @@ authority-selection-inherents = { workspace = true, features = ["mock"] }
 
 [features]
 default = ["sidechain-domain/std"]
+rocksdb = [
+	"sc-cli/rocksdb",
+	"sc-service/rocksdb",
+	"sidechain-runtime/with-rocksdb-weights",
+]
+paritydb = [
+	"sidechain-runtime/with-paritydb-weights",
+]
 # Dependencies that are only required if runtime benchmarking should be build.
 runtime-benchmarks = [
 	"sidechain-runtime/runtime-benchmarks",
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-benchmarking-cli/runtime-benchmarks",
 ]
+ 
