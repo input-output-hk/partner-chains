@@ -58,7 +58,9 @@ Add payment signing key of the governance authority as `init.skey` to `secrets/<
   - `public_key` - ECDSA public key (hex) for partner chain
   - `aura_public_key` - Sr25519 public key (hex)
   - `grandpa_public_key` - Ed25519 public key (hex)
-  - `permissioned_candidate` - indicator whether this node is permissioned candidate (true|false)
+  - `permissioned_candidate` - set to true if you want this node to participate in block production as permissioned candidate (true|false)
+                               random candidate will be removed each execution to test rotation
+                               use with caution, tests may alter your permissioned candidates resulting in not achieving consensus
   - `block_reward_id` - reward id configured at the partner chain startup
   - `key_files` - a set of keys for registered candidates
     - `cardano_payment_key` - path to payment key of registered candidate (payment.skey from step 1)
