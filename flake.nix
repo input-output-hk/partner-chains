@@ -26,7 +26,7 @@
       url = "github:IntersectMBO/cardano-db-sync/13.6.0.4";
       flake = false;
     };
-    # ... ogmios are defined in dev/nix/packages
+    # ... ogmios is defined in dev/nix/packages
 
     configurations = {
       url = "github:input-output-hk/cardano-configurations";
