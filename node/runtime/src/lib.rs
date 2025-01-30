@@ -7,10 +7,6 @@
 extern crate frame_benchmarking;
 
 // A few exports that help ease life for downstream crates.
-#[cfg(feature = "with-paritydb-weights")]
-use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
-#[cfg(feature = "with-rocksdb-weights")]
-use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::{
 	validate_permissioned_candidate_data, PermissionedCandidateDataError, RegistrationDataError,
@@ -18,6 +14,10 @@ use authority_selection_inherents::filter_invalid_candidates::{
 };
 use authority_selection_inherents::select_authorities::select_authorities;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
+#[cfg(feature = "with-paritydb-weights")]
+use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
+#[cfg(feature = "with-rocksdb-weights")]
+use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::BoundedVec;
 pub use frame_support::{
 	construct_runtime, parameter_types,
