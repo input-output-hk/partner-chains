@@ -294,7 +294,8 @@ choose_deployment_option() {
     echo "2) Include Cardano testnet with Ogmios"
     echo "3) Include Cardano testnet, Ogmios, DB-Sync and Postgres"
     echo "4) Deploy a single Partner Chains node with network_mode: "host" for external connections (adjust partner-chains-external-node.txt before running this script)"
-    read -p "Enter your choice (1/2/3/4): " deployment_option
+    echo "5) Deploy a 3 node Partner Chain network using wizard" 
+    read -p "Enter your choice (1/2/3/4/5): " deployment_option
   else
     deployment_option=0
   fi
@@ -337,6 +338,14 @@ create_docker_compose() {
         cat ./modules/partner-chains-external-node.txt >> docker-compose.yml
         cat ./modules/partner-chains-setup.txt >> docker-compose.yml
         ;;
+      5)
+        echo -e "Including all services with wizard partner chain node.\n"
+        cat ./modules/cardano.txt >> docker-compose.yml
+        cat ./modules/ogmios.txt >> docker-compose.yml
+        cat ./modules/db-sync.txt >> docker-compose.yml
+        cat ./modules/postgres.txt >> docker-compose.yml
+        cat ./modules/partner-chains-wizard.txt >> docker-compose.yml
+        ;;
       0)
         echo -e "Including all services.\n"
         cat ./modules/cardano.txt >> docker-compose.yml
@@ -372,11 +381,11 @@ parse_arguments() {
                 shift
                 ;;
             -d|--deployment-option)
-                if [[ -n "$2" && "$2" =~ ^[1-4]$ ]]; then
+                if [[ -n "$2" && "$2" =~ ^[1-5]$ ]]; then
                     deployment_option="$2"
                     shift 2
                 else
-                    echo "Error: Invalid deployment option '$2'. Valid options are 1, 2, 3, or 4."
+                    echo "Error: Invalid deployment option '$2'. Valid options are 1, 2, 3, 4 or 5."
                     exit 1
                 fi
                 ;;

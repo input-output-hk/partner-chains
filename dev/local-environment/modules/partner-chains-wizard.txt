@@ -1,0 +1,55 @@
+
+  partner-chains-wizard-1:
+    container_name: partner-chains-wizard-1
+    image: ${PARTNER_CHAINS_NODE_IMAGE}
+    platform: linux/amd64
+    user: "0:0"
+    volumes:
+      - shared-volume:/shared
+      - ./configurations/cardano/keys/funded_address.skey:/keys/funded_address.skey
+      - ./configurations/cardano/keys/funded_address.vkey:/keys/funded_address.vkey
+      - ./configurations/wizard/governance-authority/entrypoint.sh:/entrypoint.sh
+    environment:
+      - OGMIOS_PORT=${OGMIOS_PORT}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "30333:30333"
+      - "9933:9944"
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+
+  partner-chains-wizard-2:
+    container_name: partner-chains-wizard-2
+    image: ${PARTNER_CHAINS_NODE_IMAGE}
+    platform: linux/amd64
+    user: "0:0"
+    volumes:
+      - shared-volume:/shared
+      - ./configurations/wizard/permissioned/entrypoint.sh:/entrypoint.sh
+    environment:
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "30334:30334"
+      - "9934:9944"
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+
+  partner-chains-wizard-3:
+    container_name: partner-chains-wizard-3
+    image: ${PARTNER_CHAINS_NODE_IMAGE}
+    platform: linux/amd64
+    user: "0:0"
+    volumes:
+      - shared-volume:/shared
+      - ./configurations/cardano/keys/funded_address.skey:/keys/funded_address.skey
+      - ./configurations/cardano/keys/funded_address.vkey:/keys/funded_address.vkey
+      - ./configurations/cardano/keys/cold.skey:/keys/cold.skey
+      - ./configurations/cardano/keys/cold.vkey:/keys/cold.vkey
+      - ./configurations/wizard/registered/entrypoint.sh:/entrypoint.sh
+    environment:
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "30335:30335"
+      - "9935:9944"
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
