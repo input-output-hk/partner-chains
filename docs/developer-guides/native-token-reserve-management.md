@@ -161,7 +161,7 @@ Objective: Create a reserve for your token and define the release function `V`.
 Command template:
 
 ```bash
-/partner-chains-node smart-contracts reserve create \
+./partner-chains-node smart-contracts reserve create \
   --genesis-utxo <GENESIS_UTXO> \
   --ogmios-url <OGMIOS_URL> \
   --payment-key-file <PAYMENT_KEY_FILE> \
@@ -173,7 +173,7 @@ Command template:
 #### Example command
 
 ```bash
-/partner-chains-node smart-contracts reserve create \
+./partner-chains-node smart-contracts reserve create \
   --genesis-utxo b88dd63b770357e58c30d17f364a7b681a8fd52f721614db35977594 \
   --ogmios-url ws://localhost:1337 \
   --payment-key-file payment.skey \
