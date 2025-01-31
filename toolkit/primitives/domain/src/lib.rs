@@ -24,7 +24,7 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen, WrapperTypeEncode};
 use plutus::{Datum, ToDatum};
 use plutus_datum_derive::*;
 use scale_info::TypeInfo;
-use sp_core::{bounded::BoundedVec, ecdsa, ed25519, sr25519, ConstU32};
+use sp_core::{bounded::BoundedVec, ecdsa, ed25519, sr25519, ConstU32, Pair};
 #[cfg(feature = "serde")]
 use {
 	derive_more::FromStr,
@@ -265,6 +265,21 @@ impl MainchainPublicKey {
 #[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
 #[byte_string(hex_serialize, hex_deserialize)]
 pub struct MainchainPrivateKey(pub [u8; MAINCHAIN_PRIVATE_KEY_LEN]);
+
+#[cfg(feature = "std")]
+impl MainchainPrivateKey {
+	pub fn ed25519(&self) -> ed25519::Pair {
+		ed25519::Pair::from_seed_slice(&self.0).expect("Mainchain key should be of correct length")
+	}
+
+	pub fn sign(&self, unsigned_message: &[u8]) -> MainchainSignature {
+		MainchainSignature(self.ed25519().sign(unsigned_message).0)
+	}
+
+	pub fn vkey(&self) -> MainchainPublicKey {
+		MainchainPublicKey(self.ed25519().public().0)
+	}
+}
 
 impl core::fmt::Debug for MainchainPrivateKey {
 	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {

@@ -18,7 +18,7 @@
 use super::{reserve_utxo_input_with_validator_script_reference, ReserveData, TokenAmount};
 use crate::{
 	await_tx::AwaitTx,
-	cardano_keys::CardanoPaymentSigningKey,
+	cardano_keys::CardanoSigningKey,
 	csl::{
 		get_builder_config, CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt,
 		TransactionContext, TransactionOutputAmountBuilderExt,
@@ -46,7 +46,7 @@ pub async fn deposit_to_reserve<
 >(
 	parameters: TokenAmount,
 	genesis_utxo: UtxoId,
-	payment_key: &CardanoPaymentSigningKey,
+	payment_key: &CardanoSigningKey,
 	client: &T,
 	await_tx: &A,
 ) -> anyhow::Result<McTxHash> {

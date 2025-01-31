@@ -7,7 +7,7 @@ use partner_chains_cardano_offchain::init_governance::InitGovernance;
 use partner_chains_cardano_offchain::permissioned_candidates::UpsertPermissionedCandidates;
 use partner_chains_cardano_offchain::register::{Deregister, Register};
 use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData};
-use partner_chains_cardano_offchain::{cardano_keys::CardanoPaymentSigningKey, OffchainError};
+use partner_chains_cardano_offchain::{cardano_keys::CardanoSigningKey, OffchainError};
 use pretty_assertions::assert_eq;
 use sidechain_domain::{
 	CandidateRegistration, DParameter, MainchainKeyHash, MainchainPublicKey, McTxHash, UtxoId,
@@ -347,7 +347,7 @@ impl InitGovernance for OffchainMock {
 	async fn init_governance(
 		&self,
 		governance_authority: MainchainKeyHash,
-		payment_key: &CardanoPaymentSigningKey,
+		payment_key: &CardanoSigningKey,
 		genesis_utxo_id: UtxoId,
 	) -> Result<OgmiosTx, OffchainError> {
 		self.init_governance
@@ -364,7 +364,7 @@ impl UpsertDParam for OffchainMock {
 		&self,
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
-		payment_signing_key: &CardanoPaymentSigningKey,
+		payment_signing_key: &CardanoSigningKey,
 	) -> anyhow::Result<Option<McTxHash>> {
 		self.upsert_d_param
 			.get(&(genesis_utxo, d_parameter.clone(), payment_signing_key.to_bytes()))
@@ -384,7 +384,7 @@ impl Register for OffchainMock {
 		&self,
 		genesis_utxo: UtxoId,
 		candidate_registration: &CandidateRegistration,
-		payment_signing_key: &CardanoPaymentSigningKey,
+		payment_signing_key: &CardanoSigningKey,
 	) -> Result<Option<McTxHash>, OffchainError> {
 		self.register
 			.get(&(genesis_utxo, candidate_registration.clone(), payment_signing_key.to_bytes()))
@@ -402,7 +402,7 @@ impl Deregister for OffchainMock {
 	async fn deregister(
 		&self,
 		genesis_utxo: UtxoId,
-		payment_signing_key: &CardanoPaymentSigningKey,
+		payment_signing_key: &CardanoSigningKey,
 		stake_ownership_pub_key: MainchainPublicKey,
 	) -> Result<Option<McTxHash>, OffchainError> {
 		self.deregister
@@ -422,7 +422,7 @@ impl UpsertPermissionedCandidates for OffchainMock {
 		&self,
 		genesis_utxo: UtxoId,
 		candidates: &[sidechain_domain::PermissionedCandidateData],
-		payment_signing_key: &CardanoPaymentSigningKey,
+		payment_signing_key: &CardanoSigningKey,
 	) -> anyhow::Result<Option<McTxHash>> {
 		self.upsert_permissioned_candidates
 			.get(&(genesis_utxo, candidates.to_vec(), payment_signing_key.to_bytes()))

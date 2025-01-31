@@ -1,7 +1,7 @@
 use crate::IOContext;
 use anyhow::anyhow;
 use partner_chains_cardano_offchain::cardano_keys::{
-	CardanoKeyFileContent, CardanoPaymentSigningKey,
+	CardanoKeyFileContent, CardanoSigningKey,
 };
 use sidechain_domain::MainchainPublicKey;
 
@@ -19,9 +19,9 @@ fn parse_json_key_file(
 pub(crate) fn get_mc_payment_signing_key_from_file(
 	path: &str,
 	context: &impl IOContext,
-) -> anyhow::Result<CardanoPaymentSigningKey> {
+) -> anyhow::Result<CardanoSigningKey> {
 	let key_file = parse_json_key_file(path, context)?;
-	CardanoPaymentSigningKey::try_from(key_file)
+	CardanoSigningKey::try_from(key_file)
 		.map_err(|err| anyhow!("Failed to parse Cardano Payment Signing key file {path}: '{err}'"))
 }
 

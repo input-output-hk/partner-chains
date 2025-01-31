@@ -16,7 +16,7 @@ use ogmios_client::{
 };
 use partner_chains_cardano_offchain::{
 	await_tx::{AwaitTx, FixedDelayRetries},
-	cardano_keys::CardanoPaymentSigningKey,
+	cardano_keys::CardanoSigningKey,
 	d_param, init_governance, permissioned_candidates,
 	register::Register,
 	reserve::{self, release::release_reserve_funds, TokenAmount},
@@ -39,8 +39,8 @@ const TEST_IMAGE_TAG: &str = "v10.1.4-v6.11.0";
 const GOVERNANCE_AUTHORITY: MainchainKeyHash =
 	MainchainKeyHash(hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"));
 
-fn governance_authority_payment_key() -> CardanoPaymentSigningKey {
-	CardanoPaymentSigningKey::from_normal_bytes(hex!(
+fn governance_authority_payment_key() -> CardanoSigningKey {
+	CardanoSigningKey::from_normal_bytes(hex!(
 		"d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
 	))
 	.unwrap()
@@ -49,8 +49,8 @@ fn governance_authority_payment_key() -> CardanoPaymentSigningKey {
 const GOVERNANCE_AUTHORITY_ADDRESS: &str =
 	"addr_test1vr5vxqpnpl3325cu4zw55tnapjqzzx78pdrnk8k5j7wl72c6y08nd";
 
-fn eve_payment_key() -> CardanoPaymentSigningKey {
-	CardanoPaymentSigningKey::from_normal_bytes(hex!(
+fn eve_payment_key() -> CardanoSigningKey {
+	CardanoSigningKey::from_normal_bytes(hex!(
 		"34a6ce19688e950b58ea73803a00db61d0505ba10d65756d85f27c37d24c06af"
 	))
 	.unwrap()
@@ -272,7 +272,7 @@ async fn run_upsert_d_param<
 	genesis_utxo: UtxoId,
 	num_permissioned_candidates: u16,
 	num_registered_candidates: u16,
-	pkey: &CardanoPaymentSigningKey,
+	pkey: &CardanoSigningKey,
 	client: &T,
 ) -> Option<McTxHash> {
 	let tx_hash = d_param::upsert_d_param(

@@ -1,4 +1,4 @@
-use crate::cardano_keys::CardanoPaymentSigningKey;
+use crate::cardano_keys::CardanoSigningKey;
 use crate::csl::Costs;
 use crate::csl::OgmiosUtxoExt;
 use crate::{
@@ -27,7 +27,7 @@ pub trait InitGovernance {
 	async fn init_governance(
 		&self,
 		governance_authority: MainchainKeyHash,
-		payment_key: &CardanoPaymentSigningKey,
+		payment_key: &CardanoSigningKey,
 		genesis_utxo_id: UtxoId,
 	) -> Result<OgmiosTx, OffchainError>;
 }
@@ -39,7 +39,7 @@ where
 	async fn init_governance(
 		&self,
 		governance_authority: MainchainKeyHash,
-		payment_key: &CardanoPaymentSigningKey,
+		payment_key: &CardanoSigningKey,
 		genesis_utxo_id: UtxoId,
 	) -> Result<OgmiosTx, OffchainError> {
 		run_init_governance(
@@ -60,7 +60,7 @@ pub async fn run_init_governance<
 	A: AwaitTx,
 >(
 	governance_authority: MainchainKeyHash,
-	payment_key: &CardanoPaymentSigningKey,
+	payment_key: &CardanoSigningKey,
 	genesis_utxo_id: Option<UtxoId>,
 	client: &T,
 	await_tx: A,

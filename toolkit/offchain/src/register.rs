@@ -1,4 +1,4 @@
-use crate::cardano_keys::CardanoPaymentSigningKey;
+use crate::cardano_keys::CardanoSigningKey;
 use crate::csl::TransactionOutputAmountBuilderExt;
 use crate::csl::{
 	unit_plutus_data, CostStore, Costs, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
@@ -30,7 +30,7 @@ pub trait Register {
 		&self,
 		genesis_utxo: UtxoId,
 		candidate_registration: &CandidateRegistration,
-		payment_signing_key: &CardanoPaymentSigningKey,
+		payment_signing_key: &CardanoSigningKey,
 	) -> Result<Option<McTxHash>, OffchainError>;
 }
 
@@ -42,7 +42,7 @@ where
 		&self,
 		genesis_utxo: UtxoId,
 		candidate_registration: &CandidateRegistration,
-		payment_signing_key: &CardanoPaymentSigningKey,
+		payment_signing_key: &CardanoSigningKey,
 	) -> Result<Option<McTxHash>, OffchainError> {
 		run_register(
 			genesis_utxo,
@@ -62,7 +62,7 @@ pub async fn run_register<
 >(
 	genesis_utxo: UtxoId,
 	candidate_registration: &CandidateRegistration,
-	payment_signing_key: &CardanoPaymentSigningKey,
+	payment_signing_key: &CardanoSigningKey,
 	client: &C,
 	await_tx: A,
 ) -> anyhow::Result<Option<McTxHash>> {
@@ -124,7 +124,7 @@ pub trait Deregister {
 	async fn deregister(
 		&self,
 		genesis_utxo: UtxoId,
-		payment_signing_key: &CardanoPaymentSigningKey,
+		payment_signing_key: &CardanoSigningKey,
 		stake_ownership_pub_key: MainchainPublicKey,
 	) -> Result<Option<McTxHash>, OffchainError>;
 }
@@ -136,7 +136,7 @@ where
 	async fn deregister(
 		&self,
 		genesis_utxo: UtxoId,
-		payment_signing_key: &CardanoPaymentSigningKey,
+		payment_signing_key: &CardanoSigningKey,
 		stake_ownership_pub_key: MainchainPublicKey,
 	) -> Result<Option<McTxHash>, OffchainError> {
 		run_deregister(
@@ -156,7 +156,7 @@ pub async fn run_deregister<
 	A: AwaitTx,
 >(
 	genesis_utxo: UtxoId,
-	payment_signing_key: &CardanoPaymentSigningKey,
+	payment_signing_key: &CardanoSigningKey,
 	stake_ownership_pub_key: MainchainPublicKey,
 	client: &C,
 	await_tx: A,

@@ -1,6 +1,6 @@
 use super::transaction::*;
 use crate::await_tx::mock::ImmediateSuccess;
-use crate::cardano_keys::CardanoPaymentSigningKey;
+use crate::cardano_keys::CardanoSigningKey;
 use crate::csl::{Costs, OgmiosUtxoExt};
 use crate::init_governance::run_init_governance;
 use crate::scripts_data;
@@ -197,8 +197,8 @@ fn genesis_utxo() -> OgmiosUtxo {
 const PAYMENT_KEY_BYTES: [u8; 32] =
 	hex!("94f7531c9639654b77fa7e10650702b6937e05cd868f419f54bcb8368e413f04");
 
-fn payment_key_domain() -> CardanoPaymentSigningKey {
-	CardanoPaymentSigningKey::from_normal_bytes(PAYMENT_KEY_BYTES).unwrap()
+fn payment_key_domain() -> CardanoSigningKey {
+	CardanoSigningKey::from_normal_bytes(PAYMENT_KEY_BYTES).unwrap()
 }
 
 fn payment_key() -> PrivateKey {
