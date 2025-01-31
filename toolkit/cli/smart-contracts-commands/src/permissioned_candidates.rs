@@ -26,10 +26,13 @@ impl UpsertPermissionedCandidatesCmd {
 
 		let mut permissioned_candidates = Vec::new();
 
-		for line in read_to_string(&self.permissioned_candidates_file)
-			.expect("Permissioned candidates file with each line representing one candidate")
-			.lines()
-		{
+		let file_content = read_to_string(&self.permissioned_candidates_file).map_err(|e| {
+			format!(
+				"Could not read permissioned candidates file '{}'. Cause: {e}",
+				&self.permissioned_candidates_file
+			)
+		})?;
+		for line in file_content.lines() {
 			if line.is_empty() {
 				continue;
 			}
