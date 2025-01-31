@@ -53,6 +53,9 @@
 <a href="#53" id="53">53</a>
 <a href="#54" id="54">54</a>
 <a href="#55" id="55">55</a>
+<a href="#56" id="56">56</a>
+<a href="#57" id="57">57</a>
+<a href="#58" id="58">58</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::parse_partnerchain_public_keys;
 <span class="kw">use </span><span class="kw">crate</span>::PaymentFilePath;
 <span class="kw">use </span>ogmios_client::jsonrpsee::client_for_url;
@@ -81,10 +84,13 @@
 
 		<span class="kw">let </span><span class="kw-2">mut </span>permissioned_candidates = Vec::new();
 
-		<span class="kw">for </span>line <span class="kw">in </span>read_to_string(<span class="kw-2">&amp;</span><span class="self">self</span>.permissioned_candidates_file)
-			.expect(<span class="string">"Permissioned candidates file with each line representing one candidate"</span>)
-			.lines()
-		{
+		<span class="kw">let </span>file_content = read_to_string(<span class="kw-2">&amp;</span><span class="self">self</span>.permissioned_candidates_file).map_err(|e| {
+			<span class="macro">format!</span>(
+				<span class="string">"Could not read permissioned candidates file '{}'. Cause: {e}"</span>,
+				<span class="kw-2">&amp;</span><span class="self">self</span>.permissioned_candidates_file
+			)
+		})<span class="question-mark">?</span>;
+		<span class="kw">for </span>line <span class="kw">in </span>file_content.lines() {
 			<span class="kw">if </span>line.is_empty() {
 				<span class="kw">continue</span>;
 			}
