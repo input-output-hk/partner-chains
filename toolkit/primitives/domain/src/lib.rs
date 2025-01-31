@@ -11,7 +11,7 @@ extern crate core;
 extern crate num_derive;
 
 pub use alloc::vec::Vec;
-use alloc::{str::FromStr, string::ToString, vec};
+use alloc::{format, str::FromStr, string::String, string::ToString, vec};
 use byte_string_derive::byte_string;
 use core::fmt::{Display, Formatter};
 use crypto::blake2b;
@@ -21,7 +21,7 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use plutus::{Datum, ToDatum};
 use plutus_datum_derive::*;
 use scale_info::TypeInfo;
-use sp_core::{bounded::BoundedVec, ecdsa, ed25519, sr25519, ConstU32};
+use sp_core::{bounded::BoundedVec, ecdsa, ed25519, sr25519, ConstU32, Pair};
 #[cfg(feature = "serde")]
 use {
 	derive_more::FromStr,
@@ -187,9 +187,8 @@ impl FromStr for MainchainAddress {
 	}
 }
 
-#[cfg(feature = "std")]
-impl std::fmt::Display for MainchainAddress {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Display for MainchainAddress {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		let s = String::from_utf8(self.0.to_vec())
 			.expect("MainchainAddressString is always properly encoded UTF-8");
 		write!(f, "{}", s)
@@ -258,6 +257,21 @@ const MAINCHAIN_PRIVATE_KEY_LEN: usize = 32;
 #[byte_string(hex_serialize, hex_deserialize)]
 pub struct MainchainPrivateKey(pub [u8; MAINCHAIN_PRIVATE_KEY_LEN]);
 
+#[cfg(feature = "std")]
+impl MainchainPrivateKey {
+	pub fn ed25519(&self) -> ed25519::Pair {
+		ed25519::Pair::from_seed_slice(&self.0).expect("Mainchain key should be of correct length")
+	}
+
+	pub fn sign(&self, unsigned_message: &[u8]) -> MainchainSignature {
+		MainchainSignature(self.ed25519().sign(unsigned_message).0)
+	}
+
+	pub fn vkey(&self) -> MainchainPublicKey {
+		MainchainPublicKey(self.ed25519().public().0)
+	}
+}
+
 impl core::fmt::Debug for MainchainPrivateKey {
 	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
 		write!(f, "***")
@@ -295,17 +309,43 @@ impl Display for MainchainKeyHash {
 }
 
 impl MainchainKeyHash {
-	pub fn from_vkey(vkey: [u8; 32]) -> Self {
-		Self(blake2b(&vkey))
+	pub fn from_vkey(vkey: &[u8; 32]) -> Self {
+		Self(blake2b(vkey))
+	}
+
+	pub fn from_bech32_address(address: &str) -> Result<Self, String> {
+		let (_hrp, u5data, _variant) = bech32::decode(address)
+			.map_err(|e| format!("Failed to decode {address} as bech32 string: {e:?}"))?;
+
+		let data: Vec<u8> = bech32::FromBase32::from_base32(&u5data)
+			.map_err(|e| format!("{address} is not valid Base32: {e:?}"))?;
+
+		// drop leading recovery byte
+		let hash_bytes = (data[1..=MAINCHAIN_KEY_HASH_LEN].try_into())
+			.map_err(|e| format!("{address} is not a valid Bech32 address: {e:?}"))?;
+
+		Ok(Self(hash_bytes))
 	}
 }
 
-/// ECDSA signature of MainchainPrivateKey, 64 bytes.
+/// EDDSA signature, 64 bytes.
 const MAINCHAIN_SIGNATURE_LEN: usize = 64;
 
 #[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, decode_hex)]
 pub struct MainchainSignature(pub [u8; MAINCHAIN_SIGNATURE_LEN]);
+
+impl MainchainSignature {
+	pub fn verify(&self, public_key: &MainchainPublicKey, signed_message: &[u8]) -> bool {
+		let mainchain_signature = ed25519::Signature::from(self.0);
+
+		sp_io::crypto::ed25519_verify(
+			&mainchain_signature,
+			signed_message,
+			&ed25519::Public::from(public_key.0),
+		)
+	}
+}
 
 #[derive(
 	Clone,
@@ -725,12 +765,12 @@ pub struct AdaBasedStaking {
 
 #[cfg(test)]
 mod tests {
-	use super::MainchainAddress;
+	use super::*;
 	use core::str::FromStr;
+	use hex_literal::hex;
 
 	#[test]
 	fn main_chain_address_string_serialize_deserialize_round_trip() {
-		use super::MainchainAddress;
 		let address = MainchainAddress::from_str(
 			"addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc",
 		)
@@ -750,5 +790,16 @@ mod tests {
 		let str = address.to_string();
 		let from_str = MainchainAddress::from_str(&str).unwrap();
 		assert_eq!(address, from_str);
+	}
+
+	#[test]
+	fn main_chain_address_hash_from_bech32_address() {
+		let bech32_address = "addr_test1vr5vxqpnpl3325cu4zw55tnapjqzzx78pdrnk8k5j7wl72c6y08nd";
+		let expected_hash: [u8; MAINCHAIN_KEY_HASH_LEN] =
+			hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b");
+
+		let hash = MainchainKeyHash::from_bech32_address(bech32_address).unwrap();
+
+		assert_eq!(hash.0, expected_hash);
 	}
 }

@@ -1,6 +1,6 @@
 use ogmios_client::jsonrpsee::{client_for_url, OgmiosClients};
 use partner_chains_cardano_offchain::cardano_keys::{
-	CardanoKeyFileContent, CardanoPaymentSigningKey,
+	CardanoKeyFileContent, CardanoSigningKey,
 };
 use sidechain_domain::*;
 
@@ -68,16 +68,16 @@ impl SmartContractsCmd {
 }
 
 #[derive(Clone, Debug, clap::Parser)]
-pub(crate) struct PaymentFilePath {
+pub struct PaymentFilePath {
 	/// Path to the Cardano Signing Key file used sign transaction(s) and pay for them
 	#[arg(long, short = 'k')]
 	payment_key_file: String,
 }
 
 impl PaymentFilePath {
-	pub(crate) fn read_key(&self) -> CmdResult<CardanoPaymentSigningKey> {
+	pub fn read_key(&self) -> CmdResult<CardanoSigningKey> {
 		let key_file = CardanoKeyFileContent::parse_file(&self.payment_key_file)?;
-		Ok(CardanoPaymentSigningKey::try_from(key_file)?)
+		Ok(CardanoSigningKey::try_from(key_file)?)
 	}
 }
 

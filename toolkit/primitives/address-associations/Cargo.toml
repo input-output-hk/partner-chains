@@ -1,0 +1,37 @@
+[package]
+name = "sp-address-associations"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+async-trait = { workspace = true }
+parity-scale-codec = { workspace = true }
+sp-core = { workspace = true }
+sp-inherents = { workspace = true }
+sp-runtime = { workspace = true }
+thiserror = { workspace = true }
+sidechain-domain = { workspace = true }
+scale-info = { workspace = true }
+serde = { workspace = true, optional = true }
+
+[features]
+default = ["std"]
+std = [
+    "sidechain-domain/std",
+    "sp-core/std",
+	"sp-runtime/std",
+	"parity-scale-codec/std",
+	"sp-core/std",
+	"sp-inherents/std",
+	"sp-runtime/std",
+    "serde?/std",
+    "scale-info/std"
+]
+cardano = []
+serde = [
+    "dep:serde",
+    "sidechain-domain/serde",
+	"sp-core/serde",
+]
+mock = []

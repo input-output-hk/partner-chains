@@ -87,6 +87,7 @@ frame-benchmarking = { workspace = true }
 # Local Dependencies
 sidechain-runtime = { workspace = true }
 sidechain-mc-hash = { workspace = true, features = ["mock"] }
+sp-address-associations = { workspace = true, features = ["std"] }
 sp-native-token-management = { workspace = true }
 db-sync-follower = { workspace = true, features = ["block-source", "candidate-source", "native-token", "mc-hash", "sidechain-rpc"] }
 main-chain-follower-mock = { workspace = true, features = ["block-source", "candidate-source", "native-token", "mc-hash", "sidechain-rpc"] }

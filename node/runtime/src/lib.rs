@@ -38,10 +38,9 @@ pub use pallet_session_validator_management;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use session_manager::ValidatorManagementSessionManager;
-use sidechain_domain::UtxoId;
 use sidechain_domain::{
 	MainchainPublicKey, NativeTokenAmount, PermissionedCandidateData, RegistrationData,
-	ScEpochNumber, ScSlotNumber, StakeDelegation,
+	ScEpochNumber, ScSlotNumber, StakeDelegation, UtxoId,
 };
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -456,6 +455,16 @@ impl pallet_block_rewards::Config for Runtime {
 	type GetBlockRewardPoints = sp_block_rewards::SimpleBlockCount;
 }
 
+impl pallet_address_associations::Config for Runtime {
+	type WeightInfo = pallet_address_associations::weights::SubstrateWeight<Runtime>;
+
+	type PartnerChainAddress = AccountId;
+
+	fn genesis_utxo() -> UtxoId {
+		Sidechain::genesis_utxo()
+	}
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime {
@@ -470,6 +479,7 @@ construct_runtime!(
 		// Sidechain pallet must come after the Aura pallet, since it gets the slot number from it
 		Sidechain: pallet_sidechain,
 		SessionCommitteeManagement: pallet_session_validator_management,
+		AddressAssociations: pallet_address_associations,
 		BlockRewards: pallet_block_rewards,
 		// pallet_grandpa reads pallet_session::pallet::CurrentIndex storage.
 		// Only stub implementation of pallet_session should be wired.
@@ -523,6 +533,7 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_sudo, Sudo]
 		[pallet_native_token_management, NativeTokenManagement]
+		[pallet_address_associations, AddressAssociations]
 	);
 }
 

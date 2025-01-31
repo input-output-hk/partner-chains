@@ -2,6 +2,7 @@ use authority_selection_inherents::authority_selection_inputs::AuthoritySelectio
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use clap::Parser;
+use cli_commands::address_association_signatures::AddressAssociationSignaturesCmd;
 use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use frame_support::sp_runtime::traits::NumberFor;
 use parity_scale_codec::{Decode, Encode};
@@ -13,6 +14,7 @@ use sidechain_domain::{MainchainPublicKey, McEpochNumber, ScEpochNumber};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
+use sp_runtime::AccountId32;
 use sp_session_validator_management::SessionValidatorManagementApi;
 use sp_session_validator_management_query::commands::*;
 use sp_session_validator_management_query::SessionValidatorManagementQuery;
@@ -87,6 +89,9 @@ pub enum PartnerChainsSubcommand {
 	/// Generates registration signatures for partner chains committee candidates
 	RegistrationSignatures(RegistrationSignaturesCmd),
 
+	/// Signs address association
+	SignAddressAssociation(AddressAssociationSignaturesCmd<AccountId32>),
+
 	/// Commands for interacting with Partner Chain smart contracts on Cardano
 	#[command(subcommand)]
 	SmartContracts(SmartContractsCmd),
@@ -158,6 +163,10 @@ where
 			})
 		},
 		PartnerChainsSubcommand::RegistrationSignatures(cmd) => Ok(println!("{}", cmd.execute())),
+		PartnerChainsSubcommand::SignAddressAssociation(cmd) => {
+			cmd.execute().map_err(|e| sc_service::Error::Application(e.into()))?;
+			Ok(())
+		},
 		PartnerChainsSubcommand::SmartContracts(cmd) => {
 			crate::setup_log4rs()?;
 			Ok(cmd.execute_blocking()?)

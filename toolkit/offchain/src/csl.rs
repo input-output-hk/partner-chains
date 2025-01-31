@@ -1,4 +1,4 @@
-use crate::cardano_keys::CardanoPaymentSigningKey;
+use crate::cardano_keys::CardanoSigningKey;
 use crate::plutus_script::PlutusScript;
 use anyhow::Context;
 use cardano_serialization_lib::*;
@@ -378,7 +378,7 @@ impl TransactionContext {
 	/// Gets `TransactionContext`, having UTXOs for the given payment key and the network configuration,
 	/// required to perform most of the partner-chains smart contract operations.
 	pub(crate) async fn for_payment_key<C: QueryLedgerState + QueryNetwork>(
-		payment_key: &CardanoPaymentSigningKey,
+		payment_key: &CardanoSigningKey,
 		client: &C,
 	) -> Result<TransactionContext, anyhow::Error> {
 		let payment_key = payment_key.clone().0;
