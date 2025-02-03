@@ -1,0 +1,33 @@
+{
+    "atms_kind": "plain-ecdsa-secp256k1",
+    "committee_epoch_slippage": 0,
+    "committee_participation_tolerance": 0.18,
+    "max_validators": 32,
+    "main_chain": {
+        "network": "--testnet-magic 2",
+        "epoch_length": 86400,
+        "slot_length": 1,
+        "active_slots_coeff": 0.05,
+        "security_param": 432,
+        "init_timestamp": 1666656000,
+        "block_stability_margin": 0
+    },
+    "nodes_config": {
+        "default_scheme": "ws",
+        "default_rpc_scheme": "http",
+        "default_port": 9933
+    },
+    "timeouts": {
+        "long_running_function": 50,
+        "register_cmd": 300,
+        "deregister_cmd": 300,
+        "burn_cmd": 300,
+        "burn_tx_visible_in_pc_rpc": 60,
+        "claim_cmd": 360
+    },
+    "poll_intervals": {
+        "transaction_finalization": 1
+    },
+    "block_encoding_suffix_grandpa": "5906",
+    "block_encoding_suffix_aura": "0905"
+}

@@ -1,0 +1,20 @@
+{
+    "stack_config": {
+        "ogmios_host": "ogmios",
+        "ogmios_port": 1337,
+        "tools_shell": "/bin/bash",
+        "tools": {
+            "cardano_cli": {
+                "cli": "cardano-cli",
+                "shell": "docker exec cardano-node-1 bash -c"
+            },
+            "partner_chains_node": {
+                "cli": "./partner-chains-node",
+                "shell": "docker exec partner-chains-setup bash -c"
+            },
+            "bech32": {
+                "cli": "bech32"
+            }
+        }
+    }
+}

@@ -1,0 +1,69 @@
+import logging
+from src.blockchain_api import BlockchainApi
+from src.db.models import PermissionedCandidates
+from sqlalchemy.orm import Session
+from pytest import mark
+
+
+@mark.skip_blockchain("pc_evm", reason="not implemented yet")
+@mark.ariadne
+@mark.test_key('ETCM-7015')
+@mark.registration
+@mark.xdist_group(name="governance_action")
+@mark.usefixtures("governance_skey_with_cli")
+def test_upsert_permissioned_candidates(permissioned_candidates, api: BlockchainApi, db: Session):
+    """Test addition of the permissioned candidate
+
+    * add inactive permissioned candidate
+    * check that candidate appeared in the partner_chain_getAriadneParameters() response
+    """
+    new_candidates_list, candidate_to_remove = permissioned_candidates
+
+    logging.info(f"Setting permissioned candidates {new_candidates_list}")
+    result, next_status_epoch = api.upsert_permissioned_candidates(new_candidates_list)
+    assert result, f"Addition of permissioned candidate {new_candidates_list} failed."
+
+    for candidate in new_candidates_list:
+        new_permission_candidate = PermissionedCandidates()
+        new_permission_candidate.name = candidate.name
+        new_permission_candidate.next_status = "active"
+        new_permission_candidate.next_status_epoch = next_status_epoch
+        db.add(new_permission_candidate)
+
+    removed_candidate = PermissionedCandidates()
+    removed_candidate.name = candidate_to_remove.name
+    removed_candidate.next_status = "inactive"
+    removed_candidate.next_status_epoch = next_status_epoch
+    db.add(removed_candidate)
+    db.commit()
+
+    # TODO: split into separate test
+    expected_candidates = []
+    for candidate in new_candidates_list:
+        expected_candidates.append(
+            {
+                "sidechainPublicKey": api.config.nodes_config.nodes[candidate.name].public_key,
+                "auraPublicKey": api.config.nodes_config.nodes[candidate.name].aura_public_key,
+                "grandpaPublicKey": api.config.nodes_config.nodes[candidate.name].grandpa_public_key,
+                "isValid": True,
+            }
+        )
+
+    # Get operation status from RPC
+    api.wait_for_next_pc_block()
+    logging.info(f"Querying ariadne params for epoch {next_status_epoch}...")
+    rpc_permissioned_candidates = api.partner_chain_rpc.partner_chain_get_ariadne_parameters(next_status_epoch).result[
+        "permissionedCandidates"
+    ]
+    assert compare_lists_of_dicts(
+        expected_candidates, rpc_permissioned_candidates
+    ), "Expected permissioned candidates not found"
+
+
+def compare_lists_of_dicts(list1, list2):
+    def sort_key(d):
+        return tuple(sorted(d.items()))
+
+    sorted_list1 = sorted(list1, key=sort_key)
+    sorted_list2 = sorted(list2, key=sort_key)
+    return sorted_list1 == sorted_list2
