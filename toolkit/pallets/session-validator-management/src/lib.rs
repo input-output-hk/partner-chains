@@ -225,13 +225,6 @@ pub mod pallet {
 				}
 			}
 
-			if *call_selection_inputs_hash != computed_selection_inputs_hash {
-				log::warn!("⁉️️ Correct committee set via inherent in imported block, but different input data hash found. Expected: {}, got: {}",
-					computed_selection_inputs_hash.to_hex_string(),
-					call_selection_inputs_hash.to_hex_string(),
-				);
-			}
-
 			Ok(())
 		}
 

@@ -5,7 +5,9 @@ mod inherent_tests {
 	use super::*;
 	use crate::{pallet, CommitteeInfo, Error};
 	use frame_support::assert_err;
+	use sidechain_domain::byte_string::SizedByteString;
 	use sp_runtime::DispatchError;
+	use sp_session_validator_management::InherentError;
 
 	#[test]
 	fn changes_validator_vec_based_on_inherent_data() {
@@ -111,6 +113,63 @@ mod inherent_tests {
 				&call,
 				&inherent_data_from_which_committee_cannot_be_selected
 			));
+		});
+	}
+
+	#[test]
+	fn check_inherent_error_includes_both_hashes_if_different() {
+		let mut genesis_validators = [ALICE, BOB];
+		new_test_ext_with_genesis_initial_authorities(&genesis_validators).execute_with(|| {
+			assert!(pallet::NextCommittee::<Test>::get().is_none());
+			let (inherent_data_from_which_committee_cannot_be_selected, selection_inputs_hash) =
+				create_inherent_data(&genesis_validators);
+			genesis_validators.reverse();
+			let call = pallet::Call::set {
+				validators: ids_and_keys_fn(&genesis_validators),
+				for_epoch_number: 43,
+				selection_inputs_hash: selection_inputs_hash.clone(),
+			};
+
+			let expected_err =
+				InherentError::InvalidValidatorsMatchingHash(selection_inputs_hash.clone());
+			assert_eq!(
+				<SessionCommitteeManagement as ProvideInherent>::check_inherent(
+					&call,
+					&inherent_data_from_which_committee_cannot_be_selected
+				),
+				Err(expected_err)
+			);
+		});
+	}
+
+	#[test]
+	fn check_inherent_error_includes_hash_if_correct() {
+		let mut genesis_validators = [ALICE, BOB];
+		new_test_ext_with_genesis_initial_authorities(&genesis_validators).execute_with(|| {
+			assert!(pallet::NextCommittee::<Test>::get().is_none());
+			let (
+				inherent_data_from_which_committee_cannot_be_selected,
+				correct_selection_inputs_hash,
+			) = create_inherent_data(&genesis_validators);
+			let incorrect_selection_inputs_hash = SizedByteString([9u8; 32]);
+			genesis_validators.reverse();
+			let call = pallet::Call::set {
+				validators: ids_and_keys_fn(&genesis_validators),
+				for_epoch_number: 43,
+				selection_inputs_hash: incorrect_selection_inputs_hash.clone(),
+			};
+
+			let expected_err = InherentError::InvalidValidatorsHashMismatch(
+				correct_selection_inputs_hash.clone(),
+				incorrect_selection_inputs_hash.clone(),
+			);
+			assert_eq!(
+				<SessionCommitteeManagement as ProvideInherent>::check_inherent(
+					&call,
+					&inherent_data_from_which_committee_cannot_be_selected
+				),
+				Err(expected_err)
+			);
 		});
 	}
 }
