@@ -35,7 +35,7 @@ runs:
     - name: Deploy local environment
       run: |
         mkdir -p dev/local-environment/configurations/tests/e2e-tests
-        cp -r E2E-tests/* dev/local-environment/configurations/tests/e2e-tests
+        cp -r e2e-tests/* dev/local-environment/configurations/tests/e2e-tests
         cd dev/local-environment
         bash setup.sh --non-interactive --postgres-password azMpOp4mTqhlKDmgCVQr --node-image ${{ inputs.image }} --tests
         docker compose up -d
