@@ -71,26 +71,31 @@ runs:
         echo "release_notes=$release_notes" >> $GITHUB_OUTPUT
       shell: bash
 
+    - name: Checkout specific SHA
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.sha }}
+        path: release-sha
+
+    - name: Process release notes
+      shell: bash
+      run: |
+        # Replace [THIS_WILL_BE_SET_AUTOMATICALLY] with release version if it exists
+        sed "s/\[THIS_WILL_BE_SET_AUTOMATICALLY\]/${{ inputs.tag }}/g" release-sha/release-notes-template.md > release-notes.md
+
     - name: Create draft release
       id: create_release
       if: ${{ steps.check_release.outputs.release_exists == 'false' }}
-      run: |
-        tag="${{ inputs.tag }}"
-
-        release_body="### Pre-release candidate for version $tag\n\n"
-        release_body+="This is a draft pre-release candidate for release $tag that is undergoing testing. The current testing status is:\n\n"
-        release_body+="- [x] Local environment\n"
-        release_body+="- [ ] Staging preview environment\n"
-        release_body+="- [ ] Staging preprod environment\n\n"
-        release_body+="Please note: this release is not yet fully verified and is pending further testing.\n"
-
-        release_response=$(curl -s -X POST -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
-                          -d '{"tag_name": "'$tag'", "name": "'$tag'", "body": "'"$release_body"'", "draft": true, "generate_release_notes": true, "prerelease": true}' \
-                          "https://api.github.com/repos/${{ github.repository }}/releases")
-
-        echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
-        echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_OUTPUT
-      shell: bash
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ inputs.tag }}
+        name: "Partner Chains Node ${{ inputs.tag }}"
+        body_path: release-notes.md
+        draft: true
+        prerelease: true
+        generate_release_notes: false
+      env:
+        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
 
     - name: Upload artifacts to release
       if: ${{ steps.check_release.outputs.release_exists == 'true' || steps.create_release.outputs.release_id != '' }}
