@@ -1,6 +1,6 @@
 [package]
 name = "sidechain-mc-hash"
-version = "1.4.0"
+version = "1.5.0"
 edition = "2021"
 description = "Logic for putting a main chain block reference in digest and inherent data"
 license = "Apache-2.0"

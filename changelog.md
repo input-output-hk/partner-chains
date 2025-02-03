@@ -5,6 +5,16 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 # Unreleased
 
 ## Changed
+
+## Removed
+
+## Fixed
+
+## Added
+
+# v1.5.0
+
+## Changed
 * Replaced custom weights with default substrate weights for few pallets
 * Updated to polkadot-stable2409-4 (aka v1.16.4).
 * `setup-main-chain-state` command now uses native Rust to upsert the D-Parameter and upsert permissioned candidates
