@@ -74,15 +74,15 @@ runs:
         GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
 
     - name: Upload artifacts to release
-      if: ${{ steps.check_release.outputs.release_exists == 'true' || steps.create_release.outputs.release_id != '' }}
+      if: ${{ steps.check_release.outputs.release_exists == 'true' || steps.create_release.outputs.id != '' }}
       run: |
         # Extract the release ID
-        release_id="${{ steps.create_release.outputs.release_id }}"
+        release_id="${{ steps.create_release.outputs.id }}"
         if [ -z "$release_id" ]; then
           release_id="${{ steps.check_release.outputs.release_id }}"
         fi
         echo "Uploading artifacts to release ID $release_id..."
-
+    
         for artifact in "artifact-linux/${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}" \
                         "artifact-macos-x86_64/${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}" \
                         "artifact-macos-arm64/${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}"; do
@@ -93,5 +93,8 @@ runs:
             -H "Content-Type: application/octet-stream" \
             --data-binary @"$artifact" \
             "https://uploads.github.com/repos/${{ github.repository }}/releases/$release_id/assets?name=$(basename $artifact)"
+        done
+      shell: bash
+
         done
       shell: bash
