@@ -3,8 +3,8 @@ use frame_support::{
 	parameter_types,
 	traits::{ConstBool, ConstU64},
 };
-use mock_types::session_keys::SessionKeys;
 use pallet_session_validator_management::pallet;
+use serde::{Deserialize, Serialize};
 use sidechain_domain::ScEpochNumber;
 use sp_core::{crypto::AccountId32, H256};
 use sp_runtime::{
@@ -15,6 +15,25 @@ use sp_runtime::{
 type Block = frame_system::mocking::MockBlock<Test>;
 type AccountId = AccountId32;
 type AuthorityId = AccountId32;
+
+#[derive(
+	PartialOrd,
+	Ord,
+	PartialEq,
+	Eq,
+	Debug,
+	Clone,
+	MaxEncodedLen,
+	Encode,
+	Decode,
+	Serialize,
+	Deserialize,
+	TypeInfo,
+)]
+pub struct SessionKeys {
+	pub aura: [u8; 32],
+	pub grandpa: [u8; 32],
+}
 
 impl crate::Config for Test {}
 

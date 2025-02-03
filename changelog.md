@@ -41,6 +41,7 @@ to achieve this.
 
 * Separate binary partner-chains-smart-contracts-commands.
 * Override artifacts option in `local-environment` (docker image artifact is used).
+* Removed the `mock-types` crate.
 
 ## Fixed
 
