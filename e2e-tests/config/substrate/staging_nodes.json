@@ -2,7 +2,7 @@
     "deployment_mc_epoch": 813,
     "initial_pc_epoch": 4824881,
     "genesis_utxo": "0c1fe996e4bdc2480d1e16c57823b4c5cd80b190d0814212977835ecce24afe3#1",
-    "deployment_version": "v1.4.0-rc9",
+    "deployment_version": "v1.5.0-rc4",
     "test_environment": "staging",
     "nodes_config": {
         "nodes": {

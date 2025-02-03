@@ -60,7 +60,7 @@ jobs:
     - name: checkout code
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'v1.4.0-rc11' }}
+        ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
     - name: Set deployment_version as env variable
       run: echo "DEPLOYMENT_VERSION=$(jq -r .deployment_version ./e2e-tests/config/substrate/staging_nodes.json)" >> $GITHUB_ENV
@@ -72,7 +72,7 @@ jobs:
         elif [ ! -z "${{ inputs.execution }}" ]; then
           echo "TEST_EXECUTION=${{ inputs.execution }}" >> $GITHUB_ENV
         else
-          echo "TEST_PLAN=ETCM-8917" >> $GITHUB_ENV
+          echo "TEST_PLAN=ETCM-9302" >> $GITHUB_ENV
         fi
 
     - name: set report_to_xray env variable

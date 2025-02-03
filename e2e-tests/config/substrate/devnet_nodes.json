@@ -2,7 +2,7 @@
     "deployment_mc_epoch": 755,
     "initial_pc_epoch": 4810931,
     "genesis_utxo": "c14edd7764339d9877f76259184ecebca240e8cdf41b1a837c34637e7d50b5ed#0",
-    "deployment_version": "v1.4.0",
+    "deployment_version": "master",
     "test_environment": "devnet",
     "committee_participation_tolerance": 0.21,
     "nodes_config": {
