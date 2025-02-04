@@ -23,7 +23,7 @@ jobs:
 
   build-pre-merge:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (github.event.pull_request.merged || github.event.action != 'closed'))
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
     outputs:
       sha: ${{ steps.get_sha.outputs.sha }}
     steps:
