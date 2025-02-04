@@ -36,7 +36,10 @@ std = [
     "sp-core/std",
     "sp-runtime/std",
     "sp-std/std",
-    "sp-session-validator-management/std"
+    "sp-session-validator-management/std",
+    "sp-session-validator-management/serde",
+    "sidechain-domain/std",
+    "sidechain-domain/serde",
 ]
 try-runtime = ["frame-support/try-runtime"]
 mock = [

@@ -54,6 +54,7 @@ to achieve this.
 * Command `smart-contracts reserve init`, `create`, `deposit`, `release`, `handover` and `update-settings`
 * Command `smart-contracts governance update`
 * Ogmios client backed by jsonrpsee `WsClient`
+* Input data is now included in the `set` committee inherent in `pallet-session-validator-management`
 
 # v1.4.0
 
