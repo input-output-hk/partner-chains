@@ -168,6 +168,13 @@ jobs:
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_S3_ROLE_ARN_SECRET }}
+      - name: Rename artifacts
+        run: |
+          for file in *${{ inputs.sha }}*; do
+            if [ -f "$file" ]; then
+              mv "$file" "${file/${{ inputs.sha }}/${{ inputs.tag }}}"
+            fi
+          done
 
   artifacts-ready:
       needs:
@@ -545,7 +552,7 @@ jobs:
           curl -X POST \
             -H "Authorization: token ${{ secrets.ACTIONS_PUBLISH_PAT }}" \
             -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/publish.yml/dispatches \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/release-publish-ghcr.yml/dispatches \
             -d '{"ref": "${{ github.ref_name }}", "inputs": {"sha": "${{ inputs.sha }}", "tag": "${{ inputs.tag }}"}}'
 
   publish-public-release:
@@ -569,7 +576,7 @@ jobs:
           curl -X POST \
             -H "Authorization: token ${{ secrets.ACTIONS_PUBLISH_PAT }}" \
             -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/publish.yml/dispatches \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/release-publish-draft-release.yml/dispatches \
             -d '{"ref": "${{ github.ref_name }}", "inputs": {"sha": "${{ inputs.sha }}", "tag": "${{ inputs.tag }}"}}'
 
 #  deploy-staging-preprod:
