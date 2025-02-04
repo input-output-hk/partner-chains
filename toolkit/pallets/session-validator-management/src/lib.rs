@@ -337,10 +337,7 @@ pub mod pallet {
 				.get_data::<T::AuthoritySelectionInputs>(&INHERENT_IDENTIFIER)
 				.expect("Validator inherent data not correctly encoded")
 				.expect("Validator inherent data must be provided");
-			let raw_data = decoded_data.encode();
-
-			let data_hash =
-				blake2_256(&raw_data).to_vec().try_into().expect("blake256 is always 32 bytes");
+			let data_hash = SizedByteString(blake2_256(&decoded_data.encode()));
 
 			(decoded_data, data_hash)
 		}
