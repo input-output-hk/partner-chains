@@ -1,5 +1,4 @@
 use crate::{parse_partnerchain_public_keys, PaymentFilePath};
-use ogmios_client::jsonrpsee::client_for_url;
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	register::{run_deregister, run_register},
@@ -43,7 +42,7 @@ pub struct RegisterCmd {
 impl RegisterCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_key = self.payment_key_file.read_key()?;
-		let client = client_for_url(&self.common_arguments.ogmios_url).await?;
+		let client = self.common_arguments.get_ogmios_client().await?;
 		let candidate_registration = CandidateRegistration {
 			stake_ownership: AdaBasedStaking {
 				pub_key: self.spo_public_key,
@@ -87,7 +86,7 @@ pub struct DeregisterCmd {
 impl DeregisterCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_signing_key = self.payment_key_file.read_key()?;
-		let client = client_for_url(&self.common_arguments.ogmios_url).await?;
+		let client = self.common_arguments.get_ogmios_client().await?;
 
 		run_deregister(
 			self.genesis_utxo,
