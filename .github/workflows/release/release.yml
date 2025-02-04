@@ -130,7 +130,7 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   deploy-staging-preview:
-    if: github.event.inputs.no-deploy != 'true' && needs.upload-chain-specs.result == 'success'
+    if: inputs.no-deploy != 'true' && needs.upload-chain-specs.result == 'success'
     permissions:
       id-token: write
       contents: write
@@ -144,7 +144,7 @@ jobs:
         with:
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
           sha: ${{ github.sha }}
-          no-wipe: ${{ github.event.inputs.no-wipe || 'false' }}
+          no-wipe: ${{ inputs.no-wipe || 'false' }}
         env:
           AWS_REGION: "eu-central-1"
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -158,7 +158,7 @@ jobs:
   partner-chain-ready:
     if: |
       always() &&
-      github.event.inputs.no-tests != 'true' && 
+      inputs.no-tests != 'true' && 
       (needs.deploy-staging-preview.result == 'success' || needs.deploy-staging-preview.result == 'skipped')
     runs-on: eks
     needs: deploy-staging-preview
@@ -204,7 +204,7 @@ jobs:
         shell: bash
 
   run-smoke-tests:
-    if: always() && github.event.inputs.no-tests != 'true' && needs.partner-chain-ready.result == 'success'
+    if: always() && inputs.no-tests != 'true' && needs.partner-chain-ready.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -214,7 +214,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag }}
+          ref: ${{ inputs.tag }}
       - name: Setup tests
         uses: ./.github/actions/tests/setup-python
         env:
@@ -232,7 +232,7 @@ jobs:
           threads: 1
 
   run-all-tests:
-    if: always() && github.event.inputs.no-tests != 'true' && needs.run-smoke-tests.result == 'success'
+    if: always() && inputs.no-tests != 'true' && needs.run-smoke-tests.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -242,7 +242,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag }}
+          ref: ${{ inputs.tag }}
       - name: Setup tests
         uses: ./.github/actions/tests/setup-python
         env:
@@ -263,7 +263,7 @@ jobs:
           threads: 1
 
   wait-for-n1-epoch:
-    if: always() && github.event.inputs.no-tests != 'true' && needs.partner-chain-ready.result == 'success'
+    if: always() && inputs.no-tests != 'true' && needs.partner-chain-ready.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -297,7 +297,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n1-epoch:
-    if: always() && github.event.inputs.no-tests != 'true' && needs.wait-for-n1-epoch.result == 'success'
+    if: always() && inputs.no-tests != 'true' && needs.wait-for-n1-epoch.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -307,7 +307,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag }}
+          ref: ${{ inputs.tag }}
       - name: Setup tests
         uses: ./.github/actions/tests/setup-python
         env:
@@ -331,7 +331,7 @@ jobs:
   wait-for-n2-epoch:
     if: |
       always() && 
-      github.event.inputs.no-tests != 'true' && 
+      inputs.no-tests != 'true' && 
       needs.partner-chain-ready.result == 'success' && 
       needs.wait-for-n1-epoch.result == 'success'
     permissions:
@@ -369,7 +369,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n2-epoch:
-    if: always() && github.event.inputs.no-tests != 'true' && needs.wait-for-n2-epoch.result == 'success'
+    if: always() && inputs.no-tests != 'true' && needs.wait-for-n2-epoch.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -379,7 +379,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag }}
+          ref: ${{ inputs.tag }}
       - name: Setup tests
         uses: ./.github/actions/tests/setup-python
         env:
@@ -402,8 +402,8 @@ jobs:
 
   publish-ghcr:
     if: |
-      github.event.inputs.no-ghcr != 'true' && 
-      (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success')
+      inputs.no-ghcr != 'true' && 
+      (inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success')
     permissions:
       id-token: write
       contents: write
@@ -421,9 +421,9 @@ jobs:
 
   publish-public-release:
     if: |
-      github.event.inputs.no-release != 'true' && 
-      github.event.inputs.no-public-release != 'true' && 
-      (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success')
+      inputs.no-release != 'true' && 
+      inputs.no-public-release != 'true' && 
+      (inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success')
     permissions:
       id-token: write
       contents: write
