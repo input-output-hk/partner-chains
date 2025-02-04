@@ -80,7 +80,7 @@ jobs:
         uses: ./.github/actions/tests/local-environment-tests
         with:
           tag: CI
-          image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ needs.build.outputs.sha }}
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build.outputs.sha }}
           sha: ${{ needs.build.outputs.sha }}
           tests: premerge
         env:

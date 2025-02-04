@@ -13,8 +13,19 @@ ci:
   BUILD +docker --image=$image --tags=$tags
 
 setup:
-  FROM paritytech/ci-unified:bullseye-1.81.0-2024-11-19-v202411281558
+  FROM ubuntu:24.04
   WORKDIR /build
+  
+  RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    git \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+  RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  ENV PATH="/root/.cargo/bin:${PATH}"
 
   # copy pre-existing $CARGO_HOME artifacts into the cache
   RUN cp -rl $CARGO_HOME /tmp/cargo
@@ -72,31 +83,38 @@ fmt:
   RUN cargo fmt --check
 
 docker:
-    FROM debian:bullseye-slim
-    ARG image=sidechains-substrate-node
+    FROM ubuntu:24.04
+    ARG image=partner-chains-node
     ARG tags
 
-    DO +INSTALL
+    RUN apt-get update && apt-get install -y \
+        ca-certificates \
+        libgcc-s1 \
+        libstdc++6 \
+        libc6 \
+        libssl3 \
+        zlib1g \
+        libgomp1 \
+        && rm -rf /var/lib/apt/lists/*
 
-    RUN useradd -m -u 1000 -U -s /bin/sh -d /substrate substrate \
+    RUN useradd -m -u 1010 -U -s /bin/sh -d /substrate substrate \
         && mkdir -p /data /substrate/.local/share/partner-chains-node \
         && chown -R substrate:substrate /data /substrate \
         && ln -s /data /substrate/.local/share/partner-chains-node
 
+    COPY +build/partner-chains-node /usr/local/bin/
+    RUN chown substrate:substrate /usr/local/bin/partner-chains-node && chmod +x /usr/local/bin/partner-chains-node
+
     USER substrate
 
-    #p2p
     EXPOSE 30333
-    #prometheus exporter
     EXPOSE 9615
-    #JSON-RPC HTTP
     EXPOSE 9933
-    #JSON-RPC WS
     EXPOSE 9944
 
     VOLUME ["/data"]
 
-    ENTRYPOINT ["./usr/local/bin/partner-chains-node"]
+    ENTRYPOINT ["/usr/local/bin/partner-chains-node"]
 
     ARG EARTHLY_GIT_HASH
     ENV EARTHLY_GIT_HASH=$EARTHLY_GIT_HASH
@@ -108,7 +126,6 @@ docker:
 deps:
     FROM +source
     COPY +build/partner-chains-node .
-    # calculate libary deps
     RUN ldd partner-chains-node \
         | awk 'NF == 4 { system("echo " $3) }' \
         | tar -czf deps.tgz --files-from=-
@@ -137,11 +154,9 @@ INSTALL:
   COPY +build/partner-chains-node /usr/local/bin
   COPY +deps/deps /tmp/deps.tgz
 
-  # install deps
   RUN tar -v -C / -xzf /tmp/deps.tgz \
       && rm -rf /tmp/deps.tgz
 
-  # Sanity checks
   RUN ldd /usr/local/bin/partner-chains-node \
       && /usr/local/bin/partner-chains-node --version
 
