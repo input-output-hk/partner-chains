@@ -300,7 +300,7 @@ jobs:
             curl -s -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"chain_getFinalizedHead","params":[],"id":"1"}' http://$STAGING_PREVIEW_VALIDATOR_1_HOST:$STAGING_PREVIEW_VALIDATOR_1_PORT |
             jq -r ".result" |
             xargs -I {} curl -s -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"chain_getHeader","params":["{}"],"id":"1"}' http://$STAGING_PREVIEW_VALIDATOR_1_HOST:$STAGING_PREVIEW_VALIDATOR_1_PORT |
-            jq -r ".result.number" | xargs printf "%d"
+            jq -r ".result.number" | xargs printf "%d" || true
           }
 
           INITIAL_FINALIZED_NUMBER=$(get_finalized_number)
