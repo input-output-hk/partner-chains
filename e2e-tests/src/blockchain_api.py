@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from src.partner_chain_rpc import PartnerChainRpcResponse, DParam
+from config.api_config import Node
 
 
 class Transaction:
@@ -159,7 +160,7 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def upsert_permissioned_candidates(self, new_candidates_list: list) -> (bool, int):
+    def upsert_permissioned_candidates(self, new_candidates_list: dict[str, Node]) -> (bool, int):
         pass
 
     @abstractmethod

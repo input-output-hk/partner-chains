@@ -1,8 +1,10 @@
 import logging
+from config.api_config import Node
 from src.blockchain_api import BlockchainApi
 from src.db.models import PermissionedCandidates
 from sqlalchemy.orm import Session
 from pytest import mark
+from typing import Tuple
 
 
 @mark.skip_blockchain("pc_evm", reason="not implemented yet")
@@ -11,7 +13,9 @@ from pytest import mark
 @mark.registration
 @mark.xdist_group(name="governance_action")
 @mark.usefixtures("governance_skey_with_cli")
-def test_upsert_permissioned_candidates(permissioned_candidates, api: BlockchainApi, db: Session):
+def test_upsert_permissioned_candidates(
+    permissioned_candidates: Tuple[dict[str, Node], str], api: BlockchainApi, db: Session
+):
     """Test addition of the permissioned candidate
 
     * add inactive permissioned candidate
@@ -23,15 +27,15 @@ def test_upsert_permissioned_candidates(permissioned_candidates, api: Blockchain
     result, next_status_epoch = api.upsert_permissioned_candidates(new_candidates_list)
     assert result, f"Addition of permissioned candidate {new_candidates_list} failed."
 
-    for candidate in new_candidates_list:
+    for candidate in new_candidates_list.keys():
         new_permission_candidate = PermissionedCandidates()
-        new_permission_candidate.name = candidate.name
+        new_permission_candidate.name = candidate
         new_permission_candidate.next_status = "active"
         new_permission_candidate.next_status_epoch = next_status_epoch
         db.add(new_permission_candidate)
 
     removed_candidate = PermissionedCandidates()
-    removed_candidate.name = candidate_to_remove.name
+    removed_candidate.name = candidate_to_remove
     removed_candidate.next_status = "inactive"
     removed_candidate.next_status_epoch = next_status_epoch
     db.add(removed_candidate)
@@ -39,12 +43,12 @@ def test_upsert_permissioned_candidates(permissioned_candidates, api: Blockchain
 
     # TODO: split into separate test
     expected_candidates = []
-    for candidate in new_candidates_list:
+    for candidate in new_candidates_list.values():
         expected_candidates.append(
             {
-                "sidechainPublicKey": api.config.nodes_config.nodes[candidate.name].public_key,
-                "auraPublicKey": api.config.nodes_config.nodes[candidate.name].aura_public_key,
-                "grandpaPublicKey": api.config.nodes_config.nodes[candidate.name].grandpa_public_key,
+                "sidechainPublicKey": candidate.public_key,
+                "auraPublicKey": candidate.aura_public_key,
+                "grandpaPublicKey": candidate.grandpa_public_key,
                 "isValid": True,
             }
         )
