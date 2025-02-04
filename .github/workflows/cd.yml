@@ -11,11 +11,6 @@ on:
         description: "partner-chains release tag"
         required: true
         type: string
-      no-build:
-        description: "SKIP BUILD - Use artifacts built in a previous run"
-        required: false
-        type: boolean
-        default: false
       no-release:
         description: "SKIP RELEASE - Don't even create a draft release"
         required: false
@@ -43,6 +38,11 @@ on:
         default: true
       no-ghcr:
         description: "SKIP GHCR - Don't publish public GHCR image"
+        required: false
+        type: boolean
+        default: true
+      no-build:
+        description: "SKIP BUILD - Use artifacts built in either CI or previous run"
         required: false
         type: boolean
         default: true
