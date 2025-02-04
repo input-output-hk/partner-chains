@@ -29,6 +29,7 @@
 <a href="#29" id="29">29</a>
 <a href="#30" id="30">30</a>
 <a href="#31" id="31">31</a>
+<a href="#32" id="32">32</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>sidechain_domain::{EpochNonce, ScEpochNumber};
 <span class="kw">use </span>sp_core::U256;
 
@@ -40,9 +41,10 @@
 	epoch_nonce.resize_with(<span class="number">32</span>, || <span class="number">0</span>);
 	<span class="kw">let </span>epoch_nonce: [u8; <span class="number">32</span>] =
 		epoch_nonce.try_into().expect(<span class="string">"Should never fail after being resized"</span>);
-	<span class="kw">let </span>seed_u256: U256 =
-		U256::from(epoch_nonce).overflowing_add(U256::from(sidechain_epoch_number.<span class="number">0</span>)).<span class="number">0</span>;
-	&lt;[u8; <span class="number">32</span>]&gt;::from(seed_u256)
+	<span class="kw">let </span>seed_u256: U256 = U256::from_big_endian(<span class="kw-2">&amp;</span>epoch_nonce)
+		.overflowing_add(U256::from(sidechain_epoch_number.<span class="number">0</span>))
+		.<span class="number">0</span>;
+	seed_u256.to_big_endian()
 }
 
 <span class="attr">#[cfg(test)]
@@ -53,10 +55,10 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>should_create_correct_seed() {
-		<span class="kw">let </span>nonce_vec = Vec::from(&lt;[u8; <span class="number">32</span>]&gt;::from(U256::from(<span class="number">10</span>)));
+		<span class="kw">let </span>nonce_vec = Vec::from(U256::from(<span class="number">10</span>).to_big_endian());
 		<span class="macro">assert_eq!</span>(
 			seed_from_nonce_and_sc_epoch(<span class="kw-2">&amp;</span>EpochNonce(nonce_vec), <span class="kw-2">&amp;</span>ScEpochNumber(<span class="number">2</span>)),
-			&lt;[u8; <span class="number">32</span>]&gt;::from(U256::from(<span class="number">12</span>))
+			U256::from(<span class="number">12</span>).to_big_endian()
 		);
 	}
 }

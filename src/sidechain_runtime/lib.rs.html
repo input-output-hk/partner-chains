@@ -1013,6 +1013,9 @@
 <a href="#1013" id="1013">1013</a>
 <a href="#1014" id="1014">1014</a>
 <a href="#1015" id="1015">1015</a>
+<a href="#1016" id="1016">1016</a>
+<a href="#1017" id="1017">1017</a>
+<a href="#1018" id="1018">1018</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attr">#![recursion_limit = <span class="string">"256"</span>]
@@ -1020,6 +1023,8 @@
 #[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
 #[macro_use]
 </span><span class="kw">extern crate </span>frame_benchmarking;
+
+<span class="kw">extern crate </span>alloc;
 
 <span class="comment">// A few exports that help ease life for downstream crates.
 </span><span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
@@ -1029,10 +1034,7 @@
 };
 <span class="kw">use </span>authority_selection_inherents::select_authorities::select_authorities;
 <span class="kw">use </span>frame_support::genesis_builder_helper::{build_state, get_preset};
-<span class="attr">#[cfg(feature = <span class="string">"with-paritydb-weights"</span>)]
-</span><span class="kw">use </span>frame_support::weights::constants::ParityDbWeight <span class="kw">as </span>RuntimeDbWeight;
-<span class="attr">#[cfg(feature = <span class="string">"with-rocksdb-weights"</span>)]
-</span><span class="kw">use </span>frame_support::weights::constants::RocksDbWeight <span class="kw">as </span>RuntimeDbWeight;
+<span class="kw">use </span>frame_support::weights::constants::RocksDbWeight <span class="kw">as </span>RuntimeDbWeight;
 <span class="kw">use </span>frame_support::BoundedVec;
 <span class="kw">pub use </span>frame_support::{
 	construct_runtime, parameter_types,
@@ -1066,7 +1068,7 @@
 </span><span class="kw">pub use </span>sp_runtime::BuildStorage;
 <span class="kw">use </span>sp_runtime::DispatchResult;
 <span class="kw">use </span>sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
+	generic, impl_opaque_keys,
 	traits::{
 		AccountIdLookup, BlakeTwo256, Block <span class="kw">as </span>BlockT, IdentifyAccount, NumberFor, One, OpaqueKeys,
 		Verify,
@@ -1202,8 +1204,8 @@
 // https://docs.substrate.io/main-docs/build/upgrade#runtime-versioning
 </span><span class="attr">#[sp_version::runtime_version]
 </span><span class="kw">pub const </span>VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">"cardano-sidechain"</span>),
-	impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">"cardano-sidechain"</span>),
+	spec_name: alloc::borrow::Cow::Borrowed(<span class="string">"cardano-sidechain"</span>),
+	impl_name: alloc::borrow::Cow::Borrowed(<span class="string">"cardano-sidechain"</span>),
 	authoring_version: <span class="number">1</span>,
 	<span class="comment">// The version of the runtime specification. A full node will not attempt to use its native
 	//   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
@@ -1214,7 +1216,7 @@
 	impl_version: <span class="number">1</span>,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: <span class="number">1</span>,
-	state_version: <span class="number">1</span>,
+	system_version: <span class="number">1</span>,
 };
 
 <span class="doccomment">/// This determines the average expected block time that we are targeting.
@@ -1303,6 +1305,8 @@
 	</span><span class="kw">type </span>AccountData = pallet_balances::AccountData&lt;Balance&gt;;
 	<span class="doccomment">/// Weight information for the extrinsics of this pallet.
 	</span><span class="kw">type </span>SystemWeightInfo = frame_system::weights::SubstrateWeight&lt;Runtime&gt;;
+	<span class="comment">// WeightInfo for extensions is present but not accessible in polkadot-stable2412-1, because of that we are using () in our demo runtime
+	</span><span class="kw">type </span>ExtensionsWeightInfo = ();
 	<span class="doccomment">/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	</span><span class="kw">type </span>SS58Prefix = SS58Prefix;
 	<span class="doccomment">/// The set code logic, just the default since we're not a parachain.
@@ -1379,6 +1383,7 @@
 	<span class="kw">type </span>MaxFreezes = ();
 	<span class="kw">type </span>RuntimeHoldReason = ();
 	<span class="kw">type </span>RuntimeFreezeReason = RuntimeFreezeReason;
+	<span class="kw">type </span>DoneSlashHandler = ();
 }
 
 <span class="macro">parameter_types!</span> {
@@ -1392,6 +1397,7 @@
 	<span class="kw">type </span>WeightToFee = IdentityFee&lt;Balance&gt;;
 	<span class="kw">type </span>LengthToFee = IdentityFee&lt;Balance&gt;;
 	<span class="kw">type </span>FeeMultiplierUpdate = ConstFeeMultiplier&lt;FeeMultiplier&gt;;
+	<span class="kw">type </span>WeightInfo = pallet_transaction_payment::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
 <span class="kw">impl </span>pallet_sudo::Config <span class="kw">for </span>Runtime {
@@ -1743,7 +1749,7 @@
 
 		<span class="kw">fn </span>dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
-		) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;frame_benchmarking::BenchmarkBatch&gt;, sp_runtime::RuntimeString&gt; {
+		) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;frame_benchmarking::BenchmarkBatch&gt;, alloc::string::String&gt; {
 			<span class="kw">use </span>frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch};
 			<span class="kw">use </span>sp_storage::TrackedStorageKey;
 
