@@ -117,7 +117,7 @@ mod inherent_tests {
 	}
 
 	#[test]
-	fn check_inherent_error_includes_both_hashes_if_different() {
+	fn check_inherent_error_includes_hash_if_correct() {
 		let mut genesis_validators = [ALICE, BOB];
 		new_test_ext_with_genesis_initial_authorities(&genesis_validators).execute_with(|| {
 			assert!(pallet::NextCommittee::<Test>::get().is_none());
@@ -143,7 +143,7 @@ mod inherent_tests {
 	}
 
 	#[test]
-	fn check_inherent_error_includes_hash_if_correct() {
+	fn check_inherent_error_includes_both_hashes_if_different() {
 		let mut genesis_validators = [ALICE, BOB];
 		new_test_ext_with_genesis_initial_authorities(&genesis_validators).execute_with(|| {
 			assert!(pallet::NextCommittee::<Test>::get().is_none());
