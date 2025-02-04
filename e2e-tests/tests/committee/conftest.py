@@ -1,6 +1,7 @@
 import logging
 import random
-from config.api_config import ApiConfig
+from typing import Tuple
+from config.api_config import ApiConfig, Node
 from pytest import fixture, skip
 from sqlalchemy import select, func, text
 from sqlalchemy.orm import Session, aliased
@@ -149,44 +150,42 @@ def candidate(request, initialize_candidates, api: BlockchainApi, config: ApiCon
 
 @fixture
 def permissioned_candidates(
-    initialize_permissioned_candidates, api: BlockchainApi, config: ApiConfig, db: Session
-) -> (list[PermissionedCandidates], PermissionedCandidates):
+    initialize_permissioned_candidates, api: BlockchainApi, config: ApiConfig
+) -> Tuple[dict[str, Node], str]:
     """
-    Get list of permissioned candidates and swap one active with inactive candidate to test rotation.
+    Creates a tuple of new permissioned candidates to set and the name of the candidate to remove.
+
+    * get permissioned candidates from config
+    * get <current_mc_epoch+2> candidates from RPC
+    * delete one active candidate to test rotation
+    * if no current active candidates, delete one from config list and return the rest
+
+    Returns:
+        Tuple[dict[str, Node], str]: config <Node> objects, name of the candidate to remove
     """
-    rotation_permissioned_candidates = [
-        name for name, node in config.nodes_config.nodes.items() if node.permissioned_candidate
-    ]
-    if not rotation_permissioned_candidates:
-        skip("No rotation permissioned candidates available in config.")
+    candidates = {name: node for name, node in config.nodes_config.nodes.items() if node.permissioned_candidate}
+    if not candidates:
+        skip("No permissioned candidates available in config.")
 
     current_epoch = api.get_mc_epoch()
-
-    committee_for_query = aliased(PermissionedCandidates, name='query')
-    committee_for_subquery = aliased(PermissionedCandidates, name='subquery')
-    subquery = (
-        select(func.max(committee_for_subquery.next_status_epoch))
-        .where(committee_for_subquery.name == committee_for_query.name)
-        .where(committee_for_subquery.next_status_epoch <= current_epoch + 1)
-    ).scalar_subquery()
-    query = (
-        select(committee_for_query)
-        .where(committee_for_query.next_status_epoch == subquery)
-        .where(committee_for_query.name.in_(rotation_permissioned_candidates))
-    )
-    candidates = db.scalars(query).all()
-
-    if not candidates:
-        skip("No permissioned candidates available in db.")
-
-    # Remove one active candidate to test rotation
-    active_candidates = [candidate for candidate in candidates if candidate.next_status == 'active']
+    active_candidates = api.get_permissioned_candidates(current_epoch + 2, valid_only=True)
 
     if active_candidates:
         candidate_to_remove = random.choice(active_candidates)
-        candidates.remove(candidate_to_remove)
+        candidate_name_to_remove = next(
+            (name for name, node in candidates.items() if node.aura_public_key == candidate_to_remove["auraPublicKey"]),
+            None,
+        )
+        if not candidate_name_to_remove:
+            raise ValueError(
+                f"Could not find candidate with aura key {candidate_to_remove['auraPublicKey']} in config."
+            )
+        del candidates[candidate_name_to_remove]
+    else:
+        candidate_name_to_remove = random.choice(list(candidates.keys()))
+        del candidates[candidate_name_to_remove]
 
-    yield candidates, candidate_to_remove
+    return candidates, candidate_name_to_remove
 
 
 @fixture
@@ -215,17 +214,27 @@ def trustless_rotation_candidates(request, mc_epoch, db: Session, config: ApiCon
 def permissioned_rotation_candidates(request, mc_epoch, db: Session, config: ApiConfig) -> PermissionedCandidates:
     """Parameterized fixture to get all the 'active' or 'inactive' rotation (permissioned) candidates
     for given mc epoch. Use @pytest.mark.candidate_status() to pass data ('active' or 'inactive' only).
+    If there are multiple entries for the same candidate, the one with the highest ID is returned.
     """
     all_rotation_candidates = [name for name, node in config.nodes_config.nodes.items() if node.permissioned_candidate]
     candidate_status = request.node.get_closest_marker("candidate_status").args[0]
 
-    query = (
-        select(PermissionedCandidates)
+    # Create an alias for the table to use in a subquery
+    latest_entries = (
+        db.query(func.max(PermissionedCandidates.id).label("latest_id"))
+        .group_by(PermissionedCandidates.name)
         .where(PermissionedCandidates.name.in_(all_rotation_candidates))
-        .where(PermissionedCandidates.next_status == candidate_status)
         .where(PermissionedCandidates.next_status_epoch == mc_epoch)
+        .subquery()
     )
-    rotation_candidates = db.scalars(query).all()
+
+    # Query the latest statuses using a join
+    rotation_candidates = (
+        db.query(PermissionedCandidates)
+        .join(latest_entries, PermissionedCandidates.id == latest_entries.c.latest_id)
+        .where(PermissionedCandidates.next_status == candidate_status)
+        .all()
+    )
 
     if not rotation_candidates:
         skip(f"No {candidate_status} permissioned candidates for MC epoch {mc_epoch}.")

@@ -206,7 +206,7 @@ class SubstrateApi(BlockchainApi):
 
     @long_running_function
     def submit_transaction(self, tx: Transaction, wait_for_finalization):
-        tx._receipt = self.substrate.submit_extrinsic(tx._signed, wait_for_finalization)
+        tx._receipt = self.substrate.submit_extrinsic(tx._signed, wait_for_finalization=wait_for_finalization)
         logger.debug(f"Transaction sent {tx._receipt.extrinsic}")
         tx.hash = tx._receipt.extrinsic_hash
         tx.total_fee_amount = tx._receipt.total_fee_amount
