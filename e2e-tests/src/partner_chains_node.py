@@ -1,5 +1,5 @@
 from .run_command import RunnerFactory
-from config.api_config import ApiConfig
+from config.api_config import ApiConfig, Node
 import json
 import re
 import logging as logger
@@ -137,15 +137,11 @@ class PartnerChainsNode:
             logger.error(f"Wrong response format from deregister command: {response}")
             return None
 
-    def upsert_permissioned_candidates(self, governance_key, new_candidates_list):
+    def upsert_permissioned_candidates(self, governance_key, new_candidates_list: dict[str, Node]):
         # Create permissioned candidates file to be used in CLI command
-        permissioned_candidates = []
-        for candidate in new_candidates_list:
-            permissioned_candidates.append(self.config.nodes_config.nodes[candidate.name])
-
         candidates_file_content = "\n".join(
             f"{candidate.public_key}:{candidate.aura_public_key}:{candidate.grandpa_public_key}"
-            for candidate in permissioned_candidates
+            for candidate in new_candidates_list.values()
         )
         permissioned_candidates_file = "/tmp/permissioned_candidates.csv"
         save_file_cmd = f"echo '{candidates_file_content}' > {permissioned_candidates_file}"
