@@ -15,6 +15,7 @@ log = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 derive-new = { workspace = true }
+serde_json = { workspace = true, default-features = false, features = ["alloc"] }
 
 pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
@@ -36,6 +37,7 @@ sp-consensus-slots = { workspace = true }
 sp-core = { workspace = true }
 sp-genesis-builder = { workspace = true }
 sp-inherents = { workspace = true }
+sp-keyring = { workspace = true }
 sp-offchain = { workspace = true }
 sp-runtime = { workspace = true }
 sp-session = { workspace = true }
@@ -91,6 +93,7 @@ default = ["std"]
 std = [
 	"authority-selection-inherents/std",
 	"sp-block-rewards/std",
+	"serde_json/std",
 	"frame-try-runtime?/std",
 	"frame-system-benchmarking?/std",
 	"frame-system-rpc-runtime-api/std",
@@ -154,7 +157,7 @@ runtime-benchmarks = [
 	"pallet-sudo/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
-	"pallet-session-validator-management-benchmarking/runtime-benchmarks",
+	"pallet-native-token-management/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-try-runtime/try-runtime",

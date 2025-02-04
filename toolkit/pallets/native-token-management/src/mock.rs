@@ -79,6 +79,7 @@ impl frame_system::Config for Test {
 impl crate::pallet::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type TokenTransferHandler = Mock;
+	type WeightInfo = ();
 }
 
 impl mock_pallet::Config for Test {}
