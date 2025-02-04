@@ -7,7 +7,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["main_chain_follower_mock",["",[],["block.rs","candidate.rs","lib.rs","mc_hash.rs","native_token.rs","sidechain_rpc.rs"]]],\
 ["ogmios_client",["",[],["jsonrpsee.rs","lib.rs","query_ledger_state.rs","query_network.rs","transactions.rs","types.rs"]]],\
 ["pallet_block_rewards",["",[],["lib.rs"]]],\
-["pallet_native_token_management",["",[],["lib.rs"]]],\
+["pallet_native_token_management",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_partner_chains_session",["",[],["lib.rs"]]],\
 ["pallet_session_runtime_stub",["",[],["lib.rs"]]],\
 ["pallet_session_validator_management",["",[],["lib.rs","weights.rs"]]],\
@@ -29,7 +29,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["sidechain_block_search",["",[],["binary_search.rs","impl_block_info.rs","impl_compare_strategy.rs","impl_find_block.rs","lib.rs"]]],\
 ["sidechain_domain",["",[],["byte_string.rs","crypto.rs","lib.rs","mainchain_epoch.rs"]]],\
 ["sidechain_mc_hash",["",[],["lib.rs"]]],\
-["sidechain_runtime",["",[],["lib.rs"]]],\
+["sidechain_runtime",["",[],["genesis_config_presets.rs","lib.rs"]]],\
 ["sidechain_slots",["",[],["lib.rs","runtime_api_client.rs"]]],\
 ["sp_block_rewards",["",[],["lib.rs"]]],\
 ["sp_native_token_management",["",[],["lib.rs"]]],\

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["pallet"],"trait":["TokenTransferHandler"]};
+window.SIDEBAR_ITEMS = {"mod":["pallet","weights"],"trait":["TokenTransferHandler"]};

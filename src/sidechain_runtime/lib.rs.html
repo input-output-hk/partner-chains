@@ -1014,8 +1014,6 @@
 <a href="#1014" id="1014">1014</a>
 <a href="#1015" id="1015">1015</a>
 <a href="#1016" id="1016">1016</a>
-<a href="#1017" id="1017">1017</a>
-<a href="#1018" id="1018">1018</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attr">#![recursion_limit = <span class="string">"256"</span>]
@@ -1087,6 +1085,8 @@
 <span class="comment">// Make the WASM binary available.
 </span><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">"OUT_DIR"</span>), <span class="string">"/wasm_binary.rs"</span>));
+
+<span class="kw">pub mod </span>genesis_config_presets;
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>mock;
@@ -1332,6 +1332,7 @@
 <span class="kw">impl </span>pallet_native_token_management::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>TokenTransferHandler = TokenTransferHandler;
+	<span class="kw">type </span>WeightInfo = pallet_native_token_management::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
 <span class="kw">impl </span>pallet_aura::Config <span class="kw">for </span>Runtime {
@@ -1537,7 +1538,7 @@
 		[pallet_balances, Balances]
 		[pallet_timestamp, Timestamp]
 		[pallet_sudo, Sudo]
-		[pallet_session_validator_management, SessionValidatorManagementBench::&lt;Runtime&gt;]
+		[pallet_native_token_management, NativeTokenManagement]
 	);
 }
 
@@ -1548,14 +1549,13 @@
 		}
 
 		<span class="kw">fn </span>get_preset(id: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;sp_genesis_builder::PresetId&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
-			get_preset::&lt;RuntimeGenesisConfig&gt;(id, |<span class="kw">_</span>| <span class="prelude-val">None</span>)
+			get_preset::&lt;RuntimeGenesisConfig&gt;(id, <span class="kw">crate</span>::genesis_config_presets::get_preset)
 		}
 
 		<span class="kw">fn </span>preset_names() -&gt; Vec&lt;sp_genesis_builder::PresetId&gt; {
-			<span class="macro">vec!</span>[]
+			<span class="kw">crate</span>::genesis_config_presets::preset_names()
 		}
 	}
-
 
 	<span class="kw">impl </span>sp_api::Core&lt;Block&gt; <span class="kw">for </span>Runtime {
 		<span class="kw">fn </span>version() -&gt; RuntimeVersion {
@@ -1737,7 +1737,6 @@
 			<span class="kw">use </span>frame_support::traits::StorageInfoTrait;
 			<span class="kw">use </span>frame_system_benchmarking::Pallet <span class="kw">as </span>SystemBench;
 			<span class="kw">use </span>baseline::Pallet <span class="kw">as </span>BaselineBench;
-			<span class="kw">use </span>pallet_session_validator_management_benchmarking::Pallet <span class="kw">as </span>SessionValidatorManagementBench;
 
 			<span class="kw">let </span><span class="kw-2">mut </span>list = Vec::&lt;BenchmarkList&gt;::new();
 			<span class="macro">list_benchmarks!</span>(list, extra);
@@ -1755,11 +1754,8 @@
 
 			<span class="kw">use </span>frame_system_benchmarking::Pallet <span class="kw">as </span>SystemBench;
 			<span class="kw">use </span>baseline::Pallet <span class="kw">as </span>BaselineBench;
-			<span class="kw">use </span>pallet_session_validator_management_benchmarking::Pallet <span class="kw">as </span>SessionValidatorManagementBench;
-
 			<span class="kw">impl </span>frame_system_benchmarking::Config <span class="kw">for </span>Runtime {}
 			<span class="kw">impl </span>baseline::Config <span class="kw">for </span>Runtime {}
-			<span class="kw">impl </span>pallet_session_validator_management_benchmarking::Config <span class="kw">for </span>Runtime {}
 
 			<span class="kw">use </span>frame_support::traits::WhitelistedStorageKeys;
 			<span class="kw">let </span>whitelist: Vec&lt;TrackedStorageKey&gt; = AllPalletsWithSystem::whitelisted_storage_keys();
