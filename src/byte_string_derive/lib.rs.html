@@ -504,7 +504,7 @@
 
 	<span class="macro">quote!</span> {
 		<span class="kw">impl </span>#impl_generics #name #ty_generics #where_clause {
-			<span class="kw">pub fn </span>to_hex_string(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
+			<span class="kw">pub fn </span>to_hex_string(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; alloc::string::String {
 				sp_core::bytes::to_hex(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, <span class="bool-val">false</span>)
 			}
 		}

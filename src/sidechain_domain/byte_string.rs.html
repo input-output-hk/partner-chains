@@ -26,6 +26,13 @@
 <a href="#26" id="26">26</a>
 <a href="#27" id="27">27</a>
 <a href="#28" id="28">28</a>
+<a href="#29" id="29">29</a>
+<a href="#30" id="30">30</a>
+<a href="#31" id="31">31</a>
+<a href="#32" id="32">32</a>
+<a href="#33" id="33">33</a>
+<a href="#34" id="34">34</a>
+<a href="#35" id="35">35</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>alloc::vec::Vec;
 <span class="kw">use </span>byte_string_derive::byte_string;
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -43,7 +50,8 @@
 <span class="comment">// Constant size variant of `ByteString` that's usable as a runtime type
 </span><span class="attr">#[derive(Eq, Clone, PartialEq, TypeInfo, MaxEncodedLen, Encode, Decode)]
 #[byte_string(debug)]
-#[cfg_attr(feature = <span class="string">"std"</span>, byte_string(to_hex_string, decode_hex))]
+#[byte_string(to_hex_string)]
+#[cfg_attr(feature = <span class="string">"std"</span>, byte_string(decode_hex))]
 #[cfg_attr(feature = <span class="string">"serde"</span>, byte_string(hex_serialize))]
 </span><span class="kw">pub struct </span>SizedByteString&lt;<span class="kw">const </span>N: usize&gt;(<span class="kw">pub </span>[u8; N]);
 
@@ -52,6 +60,12 @@
 
 	<span class="kw">fn </span>try_from(value: Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
 		<span class="prelude-val">Ok</span>(SizedByteString(value.try_into()<span class="question-mark">?</span>))
+	}
+}
+
+<span class="kw">impl</span>&lt;<span class="kw">const </span>N: usize&gt; Default <span class="kw">for </span>SizedByteString&lt;N&gt; {
+	<span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>([<span class="number">0</span>; N])
 	}
 }
 </code></pre></div></section></main></body></html>

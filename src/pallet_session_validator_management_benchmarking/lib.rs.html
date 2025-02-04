@@ -155,7 +155,7 @@
 		set_epoch_number::&lt;T&gt;(for_epoch_number.into());
 
 		<span class="attr">#[extrinsic_call]
-		</span><span class="kw">_</span>(RawOrigin::None, validators.clone(), for_epoch_number);
+		</span><span class="kw">_</span>(RawOrigin::None, validators.clone(), for_epoch_number, Default::default());
 	}
 
 	<span class="macro">impl_benchmark_test_suite!</span>(Pallet, <span class="kw">crate</span>::mock::new_test_ext(), <span class="kw">crate</span>::mock::Test);

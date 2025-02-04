@@ -373,6 +373,18 @@
 <a href="#373" id="373">373</a>
 <a href="#374" id="374">374</a>
 <a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
+<a href="#378" id="378">378</a>
+<a href="#379" id="379">379</a>
+<a href="#380" id="380">380</a>
+<a href="#381" id="381">381</a>
+<a href="#382" id="382">382</a>
+<a href="#383" id="383">383</a>
+<a href="#384" id="384">384</a>
+<a href="#385" id="385">385</a>
+<a href="#386" id="386">386</a>
+<a href="#387" id="387">387</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!  Pallet for setting the Partner Chain validators using inherent data
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -396,7 +408,9 @@
 	<span class="kw">use </span>frame_support::pallet_prelude::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 	<span class="kw">use </span>log::{info, warn};
+	<span class="kw">use </span>sidechain_domain::byte_string::SizedByteString;
 	<span class="kw">use </span>sidechain_domain::{MainchainAddress, PolicyId};
+	<span class="kw">use </span>sp_core::blake2_256;
 	<span class="kw">use </span>sp_runtime::traits::{One, Zero};
 	<span class="kw">use </span>sp_session_validator_management::<span class="kw-2">*</span>;
 	<span class="kw">use </span>sp_std::fmt::Display;
@@ -546,31 +560,36 @@
 				<span class="prelude-val">None
 			</span>} <span class="kw">else </span>{
 				<span class="kw">let </span>for_epoch_number = CurrentCommittee::&lt;T&gt;::get().epoch + One::one();
+				<span class="kw">let </span>(authority_selection_inputs, selection_inputs_hash) =
+					<span class="self">Self</span>::inherent_data_to_authority_selection_inputs(data);
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(validators) =
-					<span class="self">Self</span>::calculate_committee_from_inherent_data(data, for_epoch_number)
+					T::select_authorities(authority_selection_inputs, for_epoch_number)
 				{
-					<span class="prelude-val">Some</span>(Call::set { validators, for_epoch_number })
+					<span class="prelude-val">Some</span>(Call::set { validators, for_epoch_number, selection_inputs_hash })
 				} <span class="kw">else </span>{
 					<span class="kw">let </span>current_committee = CurrentCommittee::&lt;T&gt;::get();
 					<span class="kw">let </span>current_committee_epoch = current_committee.epoch;
 					<span class="macro">warn!</span>(<span class="string">"Committee for epoch {for_epoch_number} is the same as for epoch {current_committee_epoch}"</span>);
 					<span class="kw">let </span>validators = current_committee.committee;
-					<span class="prelude-val">Some</span>(Call::set { validators, for_epoch_number })
+					<span class="prelude-val">Some</span>(Call::set { validators, for_epoch_number, selection_inputs_hash })
 				}
 			}
 		}
 
 		<span class="comment">// TODO make this call run by every full node, so it can be relied upon for ensuring that the block is correct
 		</span><span class="kw">fn </span>check_inherent(call: <span class="kw-2">&amp;</span><span class="self">Self</span>::Call, data: <span class="kw-2">&amp;</span>InherentData) -&gt; <span class="prelude-ty">Result</span>&lt;(), <span class="self">Self</span>::Error&gt; {
-			<span class="kw">let </span>(validators_param, for_epoch_number_param) = <span class="kw">match </span>call {
-				Call::set { <span class="kw-2">ref </span>validators, <span class="kw-2">ref </span>for_epoch_number } =&gt; {
-					(validators, for_epoch_number)
+			<span class="kw">let </span>(validators_param, for_epoch_number_param, call_selection_inputs_hash) = <span class="kw">match </span>call
+			{
+				Call::set { <span class="kw-2">ref </span>validators, <span class="kw-2">ref </span>for_epoch_number, <span class="kw-2">ref </span>selection_inputs_hash } =&gt; {
+					(validators, for_epoch_number, selection_inputs_hash)
 				},
 				<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(()),
 			};
 
+			<span class="kw">let </span>(authority_selection_inputs, computed_selection_inputs_hash) =
+				<span class="self">Self</span>::inherent_data_to_authority_selection_inputs(data);
 			<span class="kw">let </span>validators =
-				<span class="self">Self</span>::calculate_committee_from_inherent_data(data, <span class="kw-2">*</span>for_epoch_number_param)
+				T::select_authorities(authority_selection_inputs, <span class="kw-2">*</span>for_epoch_number_param)
 					.unwrap_or_else(|| {
 						<span class="comment">// Proposed block should keep the same committee if calculation of new one was impossible.
 						// This is code is executed before the committee rotation, so the NextCommittee should be used.
@@ -581,7 +600,16 @@
 					});
 
 			<span class="kw">if </span><span class="kw-2">*</span>validators_param != validators {
-				<span class="kw">return </span><span class="prelude-val">Err</span>(InherentError::InvalidValidators);
+				<span class="kw">if </span><span class="kw-2">*</span>call_selection_inputs_hash == computed_selection_inputs_hash {
+					<span class="kw">return </span><span class="prelude-val">Err</span>(InherentError::InvalidValidatorsMatchingHash(
+						computed_selection_inputs_hash,
+					));
+				} <span class="kw">else </span>{
+					<span class="kw">return </span><span class="prelude-val">Err</span>(InherentError::InvalidValidatorsHashMismatch(
+						computed_selection_inputs_hash,
+						call_selection_inputs_hash.clone(),
+					));
+				}
 			}
 
 			<span class="prelude-val">Ok</span>(())
@@ -616,12 +644,13 @@
 			origin: OriginFor&lt;T&gt;,
 			validators: BoundedVec&lt;(T::AuthorityId, T::AuthorityKeys), T::MaxValidators&gt;,
 			for_epoch_number: T::ScEpochNumber,
+			selection_inputs_hash: SizedByteString&lt;<span class="number">32</span>&gt;,
 		) -&gt; DispatchResult {
 			ensure_none(origin)<span class="question-mark">?</span>;
 			<span class="kw">let </span>expected_epoch_number = CurrentCommittee::&lt;T&gt;::get().epoch + One::one();
 			<span class="macro">ensure!</span>(for_epoch_number == expected_epoch_number, Error::&lt;T&gt;::InvalidEpoch);
 			<span class="kw">let </span>len = validators.len();
-			<span class="macro">info!</span>(<span class="string">"💼 Storing committee of size {len} for epoch {for_epoch_number}"</span>);
+			<span class="macro">info!</span>(<span class="string">"💼 Storing committee of size {len} for epoch {for_epoch_number}, input data hash: {}"</span>, selection_inputs_hash.to_hex_string());
 			NextCommittee::&lt;T&gt;::put(CommitteeInfo {
 				epoch: for_epoch_number,
 				committee: validators,
@@ -690,19 +719,14 @@
 
 		<span class="kw">fn </span>inherent_data_to_authority_selection_inputs(
 			data: <span class="kw-2">&amp;</span>InherentData,
-		) -&gt; T::AuthoritySelectionInputs {
-			data.get_data::&lt;T::AuthoritySelectionInputs&gt;(<span class="kw-2">&amp;</span>INHERENT_IDENTIFIER)
+		) -&gt; (T::AuthoritySelectionInputs, SizedByteString&lt;<span class="number">32</span>&gt;) {
+			<span class="kw">let </span>decoded_data = data
+				.get_data::&lt;T::AuthoritySelectionInputs&gt;(<span class="kw-2">&amp;</span>INHERENT_IDENTIFIER)
 				.expect(<span class="string">"Validator inherent data not correctly encoded"</span>)
-				.expect(<span class="string">"Validator inherent data must be provided"</span>)
-		}
+				.expect(<span class="string">"Validator inherent data must be provided"</span>);
+			<span class="kw">let </span>data_hash = SizedByteString(blake2_256(<span class="kw-2">&amp;</span>decoded_data.encode()));
 
-		<span class="kw">fn </span>calculate_committee_from_inherent_data(
-			data: <span class="kw-2">&amp;</span>InherentData,
-			epoch_number: T::ScEpochNumber,
-		) -&gt; <span class="prelude-ty">Option</span>&lt;BoundedVec&lt;(T::AuthorityId, T::AuthorityKeys), T::MaxValidators&gt;&gt; {
-			<span class="kw">let </span>authority_selection_inputs =
-				<span class="self">Self</span>::inherent_data_to_authority_selection_inputs(data);
-			T::select_authorities(authority_selection_inputs, epoch_number)
+			(decoded_data, data_hash)
 		}
 
 		<span class="kw">pub fn </span>calculate_committee(

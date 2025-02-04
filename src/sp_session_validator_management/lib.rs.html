@@ -89,12 +89,28 @@
 <a href="#89" id="89">89</a>
 <a href="#90" id="90">90</a>
 <a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">use </span>core::str::FromStr;
 
 <span class="kw">use </span>scale_info::TypeInfo;
-<span class="kw">use </span>sidechain_domain::{MainchainAddress, PolicyId};
+<span class="kw">use </span>sidechain_domain::{byte_string::SizedByteString, MainchainAddress, PolicyId};
 <span class="kw">use </span>sp_core::{Decode, Encode, MaxEncodedLen};
 <span class="kw">use </span>sp_inherents::{InherentIdentifier, IsFatalError};
 
@@ -103,7 +119,11 @@
 <span class="attr">#[derive(Encode, sp_runtime::RuntimeDebug, PartialEq, Eq)]
 #[cfg_attr(feature = <span class="string">"std"</span>, derive(Decode, thiserror::Error))]
 </span><span class="kw">pub enum </span>InherentError {
-	<span class="attr">#[cfg_attr(
+	<span class="attr">#[deprecated(
+		since = <span class="string">"1.5.0"</span>,
+		note = <span class="string">"Use InvalidValidatorsMatchingHash or InvalidValidatorsHashMismatch"
+	</span>)]
+	#[cfg_attr(
 		feature = <span class="string">"std"</span>,
 		error(<span class="string">"The validators in the block do not match the calculated validators"</span>)
 	)]
@@ -113,6 +133,18 @@
 		error(<span class="string">"Candidates inherent required: committee needs to be stored one epoch in advance"</span>)
 	)]
 	</span>CommitteeNeedsToBeStoredOneEpochInAdvance,
+	<span class="attr">#[cfg_attr(
+		feature = <span class="string">"std"</span>,
+		error(<span class="string">"The validators in the block do not match the calculated validators. Input data hash ({}) is valid."</span>, .<span class="number">0</span>.to_hex_string())
+	)]
+	</span>InvalidValidatorsMatchingHash(SizedByteString&lt;<span class="number">32</span>&gt;),
+	<span class="attr">#[cfg_attr(
+		feature = <span class="string">"std"</span>,
+		error(<span class="string">"The validators and input data hash in the block do not match the calculated values. Expected hash: {}, got: {}"</span>,
+			.<span class="number">0</span>.to_hex_string(),
+			.<span class="number">1</span>.to_hex_string())
+	)]
+	</span>InvalidValidatorsHashMismatch(SizedByteString&lt;<span class="number">32</span>&gt;, SizedByteString&lt;<span class="number">32</span>&gt;),
 }
 
 <span class="kw">impl </span>IsFatalError <span class="kw">for </span>InherentError {
