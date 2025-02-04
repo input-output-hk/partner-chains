@@ -576,7 +576,6 @@ dependencies = [
  "hex-literal",
  "log",
  "minicbor 0.20.0",
- "mock-types",
  "num-bigint",
  "num-traits",
  "parity-scale-codec",
@@ -5300,17 +5299,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mock-types"
-version = "1.5.0"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
-]
-
-[[package]]
 name = "mockall"
 version = "0.11.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6300,7 +6288,6 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "mock-types",
  "pallet-aura",
  "pallet-session-validator-management",
  "pallet-sidechain",
@@ -6315,6 +6302,7 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "sp-session-validator-management",
  "sp-std",
 ]
 

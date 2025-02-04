@@ -24,12 +24,12 @@ frame-benchmarking = { workspace = true }
 pallet-aura = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-sidechain = { workspace = true }
+sp-session-validator-management = { workspace = true, features = ["serde"] }
 pallet-session-validator-management = { workspace = true }
 
 [dev-dependencies]
 sp-io = { workspace = true }
 serde = { workspace = true }
-mock-types = { workspace = true }
 
 [features]
 default = ["std"]
@@ -51,6 +51,7 @@ std = [
 	"pallet-aura/std",
 	"pallet-sidechain/std",
 	"pallet-session-validator-management/std",
+	"sp-session-validator-management/std",
 ]
 
 runtime-benchmarks = [

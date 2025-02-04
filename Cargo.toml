@@ -17,7 +17,6 @@ members = [
 	"toolkit/primitives/consensus/aura",
 	"toolkit/primitives/block-rewards",
 	"toolkit/primitives/domain",
-	"toolkit/primitives/mock-types",
 	"toolkit/primitives/selection",
 	"toolkit/primitives/sidechain-block-search",
 	"toolkit/primitives/sidechain-slots",
@@ -207,7 +206,6 @@ plutus = { path = "toolkit/utils/plutus", default-features = false }
 plutus-datum-derive = { default-features = false, path = "toolkit/utils/plutus/plutus-datum-derive" }
 byte-string-derive = { default-features = false, path = "toolkit/utils/byte-string-derivation" }
 sidechain-slots = { path = "toolkit/primitives/sidechain-slots", default-features = false }
-mock-types = { path = "toolkit/primitives/mock-types", default-features = false }
 cli-commands = { path = "toolkit/cli/commands" }
 partner-chains-node-commands = { path = "toolkit/cli/node-commands" }
 time-source = { path = "toolkit/utils/time-source" }
