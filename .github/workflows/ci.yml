@@ -115,8 +115,8 @@ jobs:
           github_actor_username: ${{ github.actor }}
           env: local-pre-merge
         run: |
-          mv .report.json E2E-tests/.report.json
-          cd E2E-tests
+          mv .report.json e2e-tests/.report.json
+          cd e2e-tests
           ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
         shell: bash
 
@@ -321,8 +321,8 @@ jobs:
           github_actor_username: ${{ github.actor }}
           env: local-post-merge
         run: |
-          mv .report.json E2E-tests/.report.json
-          cd E2E-tests
+          mv .report.json e2e-tests/.report.json
+          cd e2e-tests
           ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
         shell: bash
 

@@ -13,7 +13,7 @@ ci:
   BUILD +docker --image=$image --tags=$tags
 
 setup:
-  FROM paritytech/ci-unified:bullseye-1.81.0-2024-09-11-v202409111034
+  FROM paritytech/ci-unified:bullseye-1.81.0-2024-11-19-v202411281558
   WORKDIR /build
 
   # copy pre-existing $CARGO_HOME artifacts into the cache

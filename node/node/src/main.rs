@@ -1,8 +1,6 @@
 //! Substrate Node Template CLI library.
 #![warn(missing_docs)]
 
-#[macro_use]
-mod benchmarking;
 mod chain_spec;
 mod cli;
 mod command;

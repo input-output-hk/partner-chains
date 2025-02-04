@@ -54,54 +54,35 @@ runs:
         fi
       shell: bash
 
-    - name: Extract release notes
-      id: extract_release_notes
-      run: |
-        tag="${{ inputs.tag }}"
-        changelog_file="changelog.md"
-        section_names="Changed|Added"
-
-        # Extract the "Changed" and "Added" sections from changelog.md for the given tag
-        release_notes=$(awk -v tag="$tag" -v sections="$section_names" 'BEGIN{in_tag=0;in_section=0;section_regex="^## ("sections")$";}/^# /{if($0=="# "tag){in_tag=1;next;}else if(in_tag){exit;}}/^## /{if(in_tag&&match($0,section_regex)){in_section=1;print $0;next;}else if(in_tag){in_section=0;}}{if(in_section&&in_tag)print $0;}' "$changelog_file")
-
-        # Escape special characters for GitHub Actions output
-        release_notes="${release_notes//'%'/'%25'}"
-        release_notes="${release_notes//$'\n'/'%0A'}"
-        release_notes="${release_notes//$'\r'/'%0D'}"
-        echo "release_notes=$release_notes" >> $GITHUB_OUTPUT
-      shell: bash
+    - name: Checkout specific SHA
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.sha }}
+        path: release-sha
 
     - name: Create draft release
       id: create_release
       if: ${{ steps.check_release.outputs.release_exists == 'false' }}
-      run: |
-        tag="${{ inputs.tag }}"
-
-        release_body="### Pre-release candidate for version $tag\n\n"
-        release_body+="This is a draft pre-release candidate for release $tag that is undergoing testing. The current testing status is:\n\n"
-        release_body+="- [x] Local environment\n"
-        release_body+="- [ ] Staging preview environment\n"
-        release_body+="- [ ] Staging preprod environment\n\n"
-        release_body+="Please note: this release is not yet fully verified and is pending further testing.\n"
-
-        release_response=$(curl -s -X POST -H "Authorization: token ${{ env.GITHUB_TOKEN }}" \
-                          -d '{"tag_name": "'$tag'", "name": "'$tag'", "body": "'"$release_body"'", "draft": true, "generate_release_notes": true, "prerelease": true}' \
-                          "https://api.github.com/repos/${{ github.repository }}/releases")
-
-        echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_ENV
-        echo "release_id=$(echo $release_response | jq -r .id)" >> $GITHUB_OUTPUT
-      shell: bash
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ inputs.tag }}
+        name: "Partner Chains Node ${{ inputs.tag }}"
+        draft: true
+        prerelease: true
+        generate_release_notes: false
+      env:
+        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
 
     - name: Upload artifacts to release
-      if: ${{ steps.check_release.outputs.release_exists == 'true' || steps.create_release.outputs.release_id != '' }}
+      if: ${{ steps.check_release.outputs.release_exists == 'true' || steps.create_release.outputs.id != '' }}
       run: |
         # Extract the release ID
-        release_id="${{ steps.create_release.outputs.release_id }}"
+        release_id="${{ steps.create_release.outputs.id }}"
         if [ -z "$release_id" ]; then
           release_id="${{ steps.check_release.outputs.release_id }}"
         fi
         echo "Uploading artifacts to release ID $release_id..."
-
+    
         for artifact in "artifact-linux/${{ env.PARTNER_CHAINS_NODE_X86_64_LINUX }}" \
                         "artifact-macos-x86_64/${{ env.PARTNER_CHAINS_NODE_X86_64_APPLE_DARWIN }}" \
                         "artifact-macos-arm64/${{ env.PARTNER_CHAINS_NODE_AARCH64_APPLE_DARWIN }}"; do
@@ -112,5 +93,8 @@ runs:
             -H "Content-Type: application/octet-stream" \
             --data-binary @"$artifact" \
             "https://uploads.github.com/repos/${{ github.repository }}/releases/$release_id/assets?name=$(basename $artifact)"
+        done
+      shell: bash
+
         done
       shell: bash

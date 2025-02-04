@@ -1,6 +1,6 @@
 [package]
 name = "sidechain-runtime"
-version = "1.4.0"
+version = "1.5.0"
 description = "A reference implementation of a partner chain runtime"
 authors = ["IOG"]
 edition = "2021"
@@ -87,9 +87,7 @@ serde_json = { workspace = true }
 substrate-wasm-builder = { workspace = true, optional = true }
 
 [features]
-default = ["std", "with-rocksdb-weights"]
-with-rocksdb-weights = []
-with-paritydb-weights = []
+default = ["std"]
 std = [
 	"authority-selection-inherents/std",
 	"sp-block-rewards/std",

@@ -1,6 +1,6 @@
 [package]
 name = "partner-chains-node"
-version = "1.4.0"
+version = "1.5.0"
 description = "A reference implementation of a partner chain node"
 authors = ["IOG"]
 homepage = "https://iohk.io/"
@@ -29,7 +29,6 @@ sc-service = { workspace = true }
 sc-telemetry = { workspace = true }
 sc-transaction-pool = { workspace = true }
 sc-transaction-pool-api = { workspace = true }
-sc-offchain = { workspace = true }
 sc-consensus-aura = { workspace = true }
 sc-partner-chains-consensus-aura = { workspace = true }
 sp-consensus-aura = { workspace = true }
@@ -84,7 +83,6 @@ pallet-transaction-payment-rpc = { workspace = true }
 
 # These dependencies are used for runtime benchmarking
 frame-benchmarking = { workspace = true }
-frame-benchmarking-cli = { workspace = true }
 
 # Local Dependencies
 sidechain-runtime = { workspace = true }
@@ -108,18 +106,3 @@ authority-selection-inherents = { workspace = true, features = ["mock"] }
 
 [features]
 default = ["sidechain-domain/std"]
-rocksdb = [
-	"sc-cli/rocksdb",
-	"sc-service/rocksdb",
-	"sidechain-runtime/with-rocksdb-weights",
-]
-paritydb = [
-	"sidechain-runtime/with-paritydb-weights",
-]
-# Dependencies that are only required if runtime benchmarking should be build.
-runtime-benchmarks = [
-	"sidechain-runtime/runtime-benchmarks",
-	"frame-benchmarking/runtime-benchmarks",
-	"frame-benchmarking-cli/runtime-benchmarks",
-]
- 

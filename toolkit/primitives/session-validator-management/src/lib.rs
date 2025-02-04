@@ -3,7 +3,7 @@
 use core::str::FromStr;
 
 use scale_info::TypeInfo;
-use sidechain_domain::{MainchainAddress, PolicyId};
+use sidechain_domain::{byte_string::SizedByteString, MainchainAddress, PolicyId};
 use sp_core::{Decode, Encode, MaxEncodedLen};
 use sp_inherents::{InherentIdentifier, IsFatalError};
 
@@ -12,6 +12,10 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"/ariadne";
 #[derive(Encode, sp_runtime::RuntimeDebug, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Decode, thiserror::Error))]
 pub enum InherentError {
+	#[deprecated(
+		since = "1.5.0",
+		note = "Use InvalidValidatorsMatchingHash or InvalidValidatorsHashMismatch"
+	)]
 	#[cfg_attr(
 		feature = "std",
 		error("The validators in the block do not match the calculated validators")
@@ -22,6 +26,18 @@ pub enum InherentError {
 		error("Candidates inherent required: committee needs to be stored one epoch in advance")
 	)]
 	CommitteeNeedsToBeStoredOneEpochInAdvance,
+	#[cfg_attr(
+		feature = "std",
+		error("The validators in the block do not match the calculated validators. Input data hash ({}) is valid.", .0.to_hex_string())
+	)]
+	InvalidValidatorsMatchingHash(SizedByteString<32>),
+	#[cfg_attr(
+		feature = "std",
+		error("The validators and input data hash in the block do not match the calculated values. Expected hash: {}, got: {}",
+			.0.to_hex_string(),
+			.1.to_hex_string())
+	)]
+	InvalidValidatorsHashMismatch(SizedByteString<32>, SizedByteString<32>),
 }
 
 impl IsFatalError for InherentError {

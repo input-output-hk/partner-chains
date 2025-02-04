@@ -15,7 +15,8 @@ pub struct ByteString(pub Vec<u8>);
 // Constant size variant of `ByteString` that's usable as a runtime type
 #[derive(Eq, Clone, PartialEq, TypeInfo, MaxEncodedLen, Encode, Decode)]
 #[byte_string(debug)]
-#[cfg_attr(feature = "std", byte_string(to_hex_string, decode_hex))]
+#[byte_string(to_hex_string)]
+#[cfg_attr(feature = "std", byte_string(decode_hex))]
 #[cfg_attr(feature = "serde", byte_string(hex_serialize))]
 pub struct SizedByteString<const N: usize>(pub [u8; N]);
 
@@ -24,5 +25,11 @@ impl<const N: usize> TryFrom<Vec<u8>> for SizedByteString<N> {
 
 	fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
 		Ok(SizedByteString(value.try_into()?))
+	}
+}
+
+impl<const N: usize> Default for SizedByteString<N> {
+	fn default() -> Self {
+		Self([0; N])
 	}
 }

@@ -2,13 +2,13 @@
     "stack_config": {
         "ogmios_host": "devnet-services-service",
         "ogmios_port": 1337,
-        "tools_host": "10.0.12.126",
+        "tools_host": "10.0.12.65",
         "ssh": {
             "username": "root",
             "host": "${stack_config[tools_host]}",
             "port": 22,
             "host_keys_path": "config/substrate/known_hosts",
-            "private_key_path": "secrets/substrate/ci/keys/ssh-key.yaml.decrypted"
+            "private_key_path": "secrets/substrate/devnet/keys/ssh-key.yaml.decrypted"
         },
         "tools": {
             "cardano_cli": {

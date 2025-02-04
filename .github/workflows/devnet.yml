@@ -59,10 +59,10 @@ jobs:
     - name: checkout code
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'v1.3.0-test' }}
+        ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
     - name: Set deployment_version as env variable
-      run: echo "DEPLOYMENT_VERSION=$(jq -r .deployment_version ./E2E-tests/config/substrate/devnet_nodes.json)" >> $GITHUB_ENV
+      run: echo "DEPLOYMENT_VERSION=$(jq -r .deployment_version ./e2e-tests/config/substrate/devnet_nodes.json)" >> $GITHUB_ENV
 
     - name: Set XRay variables
       run: |
@@ -103,7 +103,7 @@ jobs:
         JIRA_URL: ${{ secrets.JIRA_URL }}
         MARKERS: "not active_flow and not passive_flow"
       run: |
-        cd E2E-tests
+        cd e2e-tests
         earthly \
           --secret AWS_SESSION_TOKEN="$AWS_SESSION_TOKEN" \
           --secret AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
@@ -138,7 +138,7 @@ jobs:
         name: debug_log
         retention-days: 15
         overwrite: true
-        path: E2E-tests/debug.log
+        path: e2e-tests/debug.log
 
     - name: Setup Node
       uses: actions/setup-node@v4
@@ -149,11 +149,11 @@ jobs:
     - name: Install Ctrf
       if: ${{ !cancelled() }}
       run: |
-        cd E2E-tests
+        cd e2e-tests
         npm install github-actions-ctrf
 
     - name: Generate Summary Report
       if: ${{ !cancelled() }}
       run: |
-        cd E2E-tests
+        cd e2e-tests
         npx github-actions-ctrf ctrf-report.json

@@ -4,6 +4,19 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 # Unreleased
 
+* Update polkadot-sdk to polkadot-stable2412-1.
+WARNING: Benchmarking command has been removed, because `frame-benchmarking-cli` crate became GPLv3 without any exception.
+
+## Changed
+
+## Removed
+
+## Fixed
+
+## Added
+
+# v1.5.0
+
 ## Changed
 * Replaced custom weights with default substrate weights for few pallets
 * Updated to polkadot-stable2409-4 (aka v1.16.4).
@@ -31,6 +44,7 @@ to achieve this.
 
 * Separate binary partner-chains-smart-contracts-commands.
 * Override artifacts option in `local-environment` (docker image artifact is used).
+* Removed the `mock-types` crate.
 
 ## Fixed
 
@@ -43,6 +57,7 @@ to achieve this.
 * Command `smart-contracts reserve init`, `create`, `deposit`, `release`, `handover` and `update-settings`
 * Command `smart-contracts governance update`
 * Ogmios client backed by jsonrpsee `WsClient`
+* Input data is now included in the `set` committee inherent in `pallet-session-validator-management`
 
 # v1.4.0
 
