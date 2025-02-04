@@ -339,7 +339,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: master
-      - name: Deploy staging-preview
+      - name: Deploy ci-preview
         uses: ./.github/actions/deploy/deploy-ci-preview
         with:
           image:  ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ needs.build.outputs.sha }}
