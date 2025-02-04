@@ -207,7 +207,7 @@ jobs:
           EARTHLY_OUTPUT: true
           EARTHLY_PUSH: true
         run: |
-          earthly -P +ci --image=${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node
+          earthly -P +ci --image=${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node
       - name: Upload partner-chains-node artifact
         uses: actions/upload-artifact@v4
         with:
