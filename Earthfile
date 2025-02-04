@@ -8,7 +8,7 @@ ci:
   BUILD +licenses
   BUILD +fmt
   BUILD +chainspecs
-  ARG image=sidechains-substrate-node
+  ARG image=partner-chains-node
   ARG tags
   BUILD +docker --image=$image --tags=$tags
 

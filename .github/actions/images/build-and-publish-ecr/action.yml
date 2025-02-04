@@ -67,6 +67,6 @@ runs:
 
     - name: Push to ECR
       run: |
-        docker tag substrate-node:${{ inputs.sha }} ${{ env.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
-        docker push ${{ env.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
+        docker tag substrate-node:${{ inputs.sha }} ${{ env.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
+        docker push ${{ env.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
       shell: bash
