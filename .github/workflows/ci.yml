@@ -326,16 +326,46 @@ jobs:
           ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
         shell: bash
 
+  deploy-ci-preview:
+    needs:
+      - build
+      - local-environment-tests-post-merge-alert
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: eks
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: master
+      - name: Deploy ci-preview
+        uses: ./.github/actions/deploy/deploy-ci-preview
+        with:
+          image:  ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ needs.build.outputs.sha }}
+          sha: ${{ needs.build.outputs.sha }}
+          no-wipe: true
+        env:
+          AWS_REGION: "eu-central-1"
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+
   post-merge-actions-complete:
     if: ${{ always() && (github.event_name == 'pull_request' && github.event.pull_request.merged == true) }}
-    needs: [deploy-rustdoc, upload-chain-specs, local-environment-tests-post-merge]
+    needs: [deploy-rustdoc, upload-chain-specs, local-environment-tests-post-merge, deploy-ci-preview]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
         run: |
           if [[ "${{ needs.deploy-rustdoc.result }}" != "success" ||
                 "${{ needs.upload-chain-specs.result }}" != "success" ||
-                "${{ needs.local-environment-tests-post-merge.result }}" != "success" ]]; then
+                "${{ needs.local-environment-tests-post-merge.result }}" != "success" ]]
+                "${{ needs.deploy-ci-preview.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1
           else
