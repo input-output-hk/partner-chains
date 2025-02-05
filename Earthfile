@@ -4,7 +4,7 @@ ARG --global FEATURES
 
 ci:
   BUILD +build
-  #BUILD +test
+  BUILD +test
   BUILD +licenses
   BUILD +fmt
   BUILD +chainspecs
@@ -74,15 +74,17 @@ build:
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node-artifact
 
-#test:
-#  FROM +build
-#  LET WASM_BUILD_STD=0
-#  DO github.com/earthly/lib:3.0.2+INSTALL_DIND
-#  CACHE --sharing shared --id cargo $CARGO_HOME
-#  RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
-#  WITH DOCKER
-#    RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
-#  END
+test:
+  FROM +build
+  LET WASM_BUILD_STD=0
+  DO github.com/earthly/lib:3.0.2+INSTALL_DIND
+  CACHE --sharing shared --id cargo $CARGO_HOME
+  RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES
+  #RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
+  WITH DOCKER
+    RUN cargo test --locked --profile=$PROFILE --features=$FEATURES
+    #RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
+  END
 
 licenses:
     FROM +source
