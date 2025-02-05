@@ -277,6 +277,15 @@
 <a href="#277" id="277">277</a>
 <a href="#278" id="278">278</a>
 <a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{McEpochNumber, McSlotNumber};
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">use </span>parity_scale_codec::Decode;
@@ -292,6 +301,12 @@
 	<span class="doccomment">/// Number of the Cardano Epoch started at `first_epoch_timestamp_millis`
 	</span><span class="kw">pub </span>first_epoch_number: u32,
 	<span class="kw">pub </span>first_slot_number: u64,
+	<span class="attr">#[cfg_attr(feature = <span class="string">"std"</span>, serde(default = <span class="string">"default_slot_duration"</span>))]
+	</span><span class="kw">pub </span>slot_duration_millis: Duration,
+}
+
+<span class="kw">fn </span>default_slot_duration() -&gt; Duration {
+	Duration::from_millis(<span class="number">1000</span>)
 }
 
 <span class="attr">#[derive(Encode, PartialEq, Eq)]
@@ -375,8 +390,7 @@
 			.unix_millis()
 			.checked_sub(<span class="self">self</span>.first_epoch_timestamp_millis.unix_millis())
 			.ok_or(EpochDerivationError::TimestampTooSmall)<span class="question-mark">?</span>;
-		<span class="kw">let </span>mainchain_slot_duration = <span class="number">1000</span>;
-		<span class="prelude-val">Ok</span>(<span class="self">self</span>.first_slot_number + time_elapsed / mainchain_slot_duration)
+		<span class="prelude-val">Ok</span>(<span class="self">self</span>.first_slot_number + time_elapsed / <span class="self">self</span>.slot_duration_millis.millis())
 	}
 
 	<span class="kw">fn </span>mainchain_epoch_to_timestamp(<span class="kw-2">&amp;</span><span class="self">self</span>, epoch: McEpochNumber) -&gt; Timestamp {
@@ -423,6 +437,7 @@
 					first_epoch_number: <span class="number">100</span>,
 					epoch_duration_millis: Duration::from_millis(<span class="number">1000</span>),
 					first_slot_number: <span class="number">42</span>,
+					slot_duration_millis: Duration::from_millis(<span class="number">1000</span>)
 				}
 			);
 			<span class="prelude-val">Ok</span>(())
@@ -442,6 +457,7 @@
 			epoch_duration_millis: Duration::from_millis(<span class="number">1</span>),
 			first_epoch_number: <span class="number">0</span>,
 			first_slot_number: <span class="number">0</span>,
+			slot_duration_millis: Duration::from_millis(<span class="number">1000</span>),
 		}
 	}
 
@@ -451,6 +467,7 @@
 			epoch_duration_millis: Duration::from_millis(<span class="number">5 </span>* <span class="number">24 </span>* <span class="number">60 </span>* <span class="number">60 </span>* <span class="number">1000</span>),
 			first_epoch_number: <span class="number">75</span>,
 			first_slot_number: <span class="number">0</span>,
+			slot_duration_millis: Duration::from_millis(<span class="number">1000</span>),
 		}
 	}
 
@@ -460,6 +477,7 @@
 			epoch_duration_millis: Duration::from_millis(<span class="number">5 </span>* <span class="number">24 </span>* <span class="number">60 </span>* <span class="number">60 </span>* <span class="number">1000</span>),
 			first_epoch_number: <span class="number">4</span>,
 			first_slot_number: <span class="number">86400</span>,
+			slot_duration_millis: Duration::from_millis(<span class="number">1000</span>),
 		}
 	}
 

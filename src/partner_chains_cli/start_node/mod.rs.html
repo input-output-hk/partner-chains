@@ -221,6 +221,8 @@
 <a href="#221" id="221">221</a>
 <a href="#222" id="222">222</a>
 <a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	NODE_P2P_PORT, POSTGRES_CONNECTION_STRING, SIDECHAIN_BLOCK_BENEFICIARY,
 };
@@ -404,6 +406,7 @@
 				first_slot_number,
 				epoch_duration_millis,
 				first_epoch_timestamp_millis,
+				main_chain_slot_duration_millis,
 			},
 		bootnodes,
 	}: StartNodeChainConfig,
@@ -418,6 +421,7 @@
          DB_SYNC_POSTGRES_CONNECTION_STRING='{db_connection_string}' \\
          MC__FIRST_EPOCH_TIMESTAMP_MILLIS='{first_epoch_timestamp_millis}' \\
          MC__EPOCH_DURATION_MILLIS='{epoch_duration_millis}' \\
+         MC__SLOT_DURATION_MILLIS='{main_chain_slot_duration_millis}' \\
          MC__FIRST_EPOCH_NUMBER='{first_epoch_number}' \\
          MC__FIRST_SLOT_NUMBER='{first_slot_number}' \\
          BLOCK_STABILITY_MARGIN='0' \\

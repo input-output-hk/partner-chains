@@ -285,6 +285,7 @@
 <a href="#285" id="285">285</a>
 <a href="#286" id="286">286</a>
 <a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
 	data_sources::read_mc_epoch_config,
 	db_model::{<span class="self">self</span>, Block, BlockNumber, SlotNumber},
@@ -394,14 +395,15 @@
 		mc_epoch_config: <span class="kw-2">&amp;</span>MainchainEpochConfig,
 	) -&gt; BlockDataSourceImpl {
 		<span class="kw">let </span>k: f64 = cardano_security_parameter.into();
-		<span class="kw">let </span>min_slot_boundary = (k / cardano_active_slots_coeff).round() <span class="kw">as </span>i64;
+		<span class="kw">let </span>slot_duration: f64 = mc_epoch_config.slot_duration_millis.millis() <span class="kw">as </span>f64;
+		<span class="kw">let </span>min_slot_boundary = (slot_duration * k / cardano_active_slots_coeff).round() <span class="kw">as </span>i64;
 		<span class="kw">let </span>max_slot_boundary = <span class="number">3 </span>* min_slot_boundary;
 		<span class="kw">let </span>cache_size = <span class="number">100</span>;
 		BlockDataSourceImpl::new(
 			pool,
 			cardano_security_parameter,
-			TimeDelta::seconds(min_slot_boundary),
-			TimeDelta::seconds(max_slot_boundary),
+			TimeDelta::milliseconds(min_slot_boundary),
+			TimeDelta::milliseconds(max_slot_boundary),
 			mc_epoch_config.clone(),
 			block_stability_margin,
 			cache_size,
