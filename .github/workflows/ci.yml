@@ -47,8 +47,14 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
+      - name: Setup Earthly cache
+        run: |
+          mkdir -p ~/.earthly
+          echo "cache:\n  path: /tmp/earthly-cache" >> ~/.earthly/config.yml
       - name: Build and Artifacts and Push Image
         env:
+          EARTHLY_CACHE_PATH: /tmp/earthly-cache
+          EARTHLY_REMOTE_CACHE: true
           EARTHLY_CI: true
           EARTHLY_OUTPUT: true
           EARTHLY_PUSH: true
