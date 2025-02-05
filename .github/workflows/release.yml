@@ -110,7 +110,7 @@ jobs:
         uses: ./.github/actions/deploy/deploy-staging-preview
         with:
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
-          sha: ${{ github.sha }}
+          sha: ${{ inputs.sha }}
           no-wipe: ${{ inputs.no-wipe || 'false' }}
         env:
           AWS_REGION: "eu-central-1"
