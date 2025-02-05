@@ -13,6 +13,8 @@ WARNING: Benchmarking command has been removed, because `frame-benchmarking-cli`
 
 ## Fixed
 
+* Overflow error in `smart-contracts reserve release` if amount is not higher than already released amount.
+
 ## Added
 
 # v1.5.0
