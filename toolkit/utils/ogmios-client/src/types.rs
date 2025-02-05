@@ -155,10 +155,11 @@ impl OgmiosValue {
 	}
 }
 
+// Asset of an UTXO, therefore amount can not be negative
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Asset {
 	pub name: Vec<u8>,
-	pub amount: i128,
+	pub amount: u64,
 }
 
 impl TryFrom<serde_json::Value> for OgmiosValue {
@@ -185,8 +186,8 @@ impl TryFrom<serde_json::Value> for OgmiosValue {
 							.map_err(|_| "expected asset name to be hexstring");
 						let amount = amount
 							.as_number()
-							.and_then(|n| n.clone().as_i128())
-							.ok_or("expected amount to be i128");
+							.and_then(|n| n.clone().as_u64())
+							.ok_or("expected asset amount to be u64");
 						name.and_then(|name| amount.map(|amount| Asset { name, amount }))
 					})
 					.collect();
@@ -286,7 +287,6 @@ mod tests {
 				"": 18446744073709551615i128
 			},
 			"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
-				"cdef": -18446744073709551615i128,
 				"aaaa": 1,
 			}
 		});
@@ -298,17 +298,13 @@ mod tests {
 				.get(&hex!("e0d4479b3dbb53b1aecd48f7ef524a9cf166585923d91d9c72ed02cb"))
 				.unwrap()
 				.clone(),
-			vec![Asset { name: vec![], amount: 18446744073709551615i128 }]
+			vec![Asset { name: vec![], amount: 18446744073709551615u64 }]
 		);
 		let assets = value
 			.native_tokens
 			.get(&hex!("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
 			.unwrap()
 			.clone();
-		assert_eq!(
-			assets.iter().find(|asset| asset.name == hex!("cdef").to_vec()).unwrap().amount,
-			-18446744073709551615i128
-		);
 		assert_eq!(
 			assets.iter().find(|asset| asset.name == hex!("aaaa").to_vec()).unwrap().amount,
 			1

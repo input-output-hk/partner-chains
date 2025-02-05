@@ -10,6 +10,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Fixed
 
+* Overflow error in `smart-contracts reserve release` if amount is not higher than already released amount.
+
 ## Added
 
 # v1.5.0

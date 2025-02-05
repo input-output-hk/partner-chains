@@ -306,7 +306,7 @@ pub(crate) trait OgmiosUtxoExt {
 
 	fn to_domain(&self) -> sidechain_domain::UtxoId;
 
-	fn get_asset_amount(&self, asset: &AssetId) -> i128;
+	fn get_asset_amount(&self, asset: &AssetId) -> u64;
 
 	fn get_plutus_data(&self) -> Option<PlutusData>;
 }
@@ -336,7 +336,7 @@ impl OgmiosUtxoExt for OgmiosUtxo {
 		}
 	}
 
-	fn get_asset_amount(&self, asset_id: &AssetId) -> i128 {
+	fn get_asset_amount(&self, asset_id: &AssetId) -> u64 {
 		self.value
 			.native_tokens
 			.get(&asset_id.policy_id.0)
