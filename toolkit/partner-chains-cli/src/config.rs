@@ -4,6 +4,7 @@ use crate::config::config_fields::{
 };
 use crate::io::IOContext;
 use clap::{arg, Parser};
+use config_fields::CARDANO_SLOT_DURATION_MILLIS;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sidechain_domain::UtxoId;
 use sp_core::offchain::{Duration, Timestamp};
@@ -271,6 +272,7 @@ pub struct CardanoParameters {
 	pub first_slot_number: u64,
 	pub epoch_duration_millis: u64,
 	pub first_epoch_timestamp_millis: u64,
+	pub main_chain_slot_duration_millis: u64,
 }
 
 impl CardanoParameters {
@@ -282,6 +284,7 @@ impl CardanoParameters {
 		CARDANO_EPOCH_DURATION_MILLIS.save_to_file(&self.epoch_duration_millis, context);
 		CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS
 			.save_to_file(&self.first_epoch_timestamp_millis, context);
+		CARDANO_SLOT_DURATION_MILLIS.save_to_file(&self.main_chain_slot_duration_millis, context);
 	}
 
 	pub fn read(context: &impl IOContext) -> Option<Self> {
@@ -292,6 +295,8 @@ impl CardanoParameters {
 			first_slot_number: CARDANO_FIRST_SLOT_NUMBER.load_from_file(context)?,
 			epoch_duration_millis: CARDANO_EPOCH_DURATION_MILLIS.load_from_file(context)?,
 			first_epoch_timestamp_millis: CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS
+				.load_from_file(context)?,
+			main_chain_slot_duration_millis: CARDANO_SLOT_DURATION_MILLIS
 				.load_from_file(context)?,
 		})
 	}
@@ -306,6 +311,7 @@ impl From<CardanoParameters> for sidechain_domain::mainchain_epoch::MainchainEpo
 			epoch_duration_millis: Duration::from_millis(value.epoch_duration_millis),
 			first_epoch_number: value.first_epoch_number,
 			first_slot_number: value.first_slot_number,
+			slot_duration_millis: Duration::from_millis(value.main_chain_slot_duration_millis),
 		}
 	}
 }
@@ -561,6 +567,15 @@ pub mod config_fields {
 			path: &["cardano", "first_epoch_timestamp_millis"],
 			name: "cardano first shelley epoch timestamp in millis",
 			default: None,
+			_marker: PhantomData,
+		};
+
+	pub const CARDANO_SLOT_DURATION_MILLIS: ConfigFieldDefinition<'static, u64> =
+		ConfigFieldDefinition {
+			config_file: CHAIN_CONFIG_FILE_PATH,
+			path: &["cardano", "slot_duration_millis"],
+			name: "cardano slot duration in millis",
+			default: Some("1000"),
 			_marker: PhantomData,
 		};
 

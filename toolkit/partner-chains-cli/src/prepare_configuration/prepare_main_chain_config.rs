@@ -276,7 +276,8 @@ mod tests {
 				"first_epoch_number": PREPROD_CARDANO_PARAMS.first_epoch_number,
 				"first_slot_number": PREPROD_CARDANO_PARAMS.first_slot_number,
 				"epoch_duration_millis": PREPROD_CARDANO_PARAMS.epoch_duration_millis,
-				"first_epoch_timestamp_millis": PREPROD_CARDANO_PARAMS.first_epoch_timestamp_millis
+				"first_epoch_timestamp_millis": PREPROD_CARDANO_PARAMS.first_epoch_timestamp_millis,
+				"slot_duration_millis": PREPROD_CARDANO_PARAMS.main_chain_slot_duration_millis
 			},
 			"cardano_addresses": {
 				"committee_candidates_address": TEST_COMMITTEE_CANDIDATES_ADDRESS,

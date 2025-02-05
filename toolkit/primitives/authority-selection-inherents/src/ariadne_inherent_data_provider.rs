@@ -221,6 +221,7 @@ mod tests {
 					* 10,
 			),
 			first_slot_number: 0,
+			slot_duration_millis: Duration::from_millis(1000),
 		};
 		let mc_reference_epoch = McEpochNumber(1);
 		let empty_ariadne_idp = AriadneInherentDataProvider::new(

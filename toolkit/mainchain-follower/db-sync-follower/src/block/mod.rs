@@ -107,14 +107,15 @@ impl BlockDataSourceImpl {
 		mc_epoch_config: &MainchainEpochConfig,
 	) -> BlockDataSourceImpl {
 		let k: f64 = cardano_security_parameter.into();
-		let min_slot_boundary = (k / cardano_active_slots_coeff).round() as i64;
+		let slot_duration: f64 = mc_epoch_config.slot_duration_millis.millis() as f64;
+		let min_slot_boundary = (slot_duration * k / cardano_active_slots_coeff).round() as i64;
 		let max_slot_boundary = 3 * min_slot_boundary;
 		let cache_size = 100;
 		BlockDataSourceImpl::new(
 			pool,
 			cardano_security_parameter,
-			TimeDelta::seconds(min_slot_boundary),
-			TimeDelta::seconds(max_slot_boundary),
+			TimeDelta::milliseconds(min_slot_boundary),
+			TimeDelta::milliseconds(max_slot_boundary),
 			mc_epoch_config.clone(),
 			block_stability_margin,
 			cache_size,
