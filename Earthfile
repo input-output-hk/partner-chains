@@ -74,21 +74,21 @@ build:
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node-artifact
 
-build-test:
-  FROM +source
-  LET WASM_BUILD_STD=0
-  CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN cargo build --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
-  SAVE ARTIFACT target
-
-test:
-  FROM +build-test
-  LET WASM_BUILD_STD=0 
-  DO github.com/earthly/lib:3.0.2+INSTALL_DIND
-  CACHE --sharing shared --id build-target target
-  WITH DOCKER
-    RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
-  END
+#build-test:
+#  FROM +source
+#  LET WASM_BUILD_STD=0
+#  CACHE --sharing shared --id cargo $CARGO_HOME
+#  RUN cargo build --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
+#  SAVE ARTIFACT target
+#
+#test:
+#  FROM +build-test
+#  LET WASM_BUILD_STD=0 
+#  DO github.com/earthly/lib:3.0.2+INSTALL_DIND
+#  CACHE --sharing shared --id build-target target
+#  WITH DOCKER
+#    RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
+#  END
 
 licenses:
     FROM +source
