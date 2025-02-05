@@ -31,7 +31,7 @@ setup:
     pkg-config \
     jq \
     libjq-dev \
-    toml-utils \
+    python3-yq \
     && rm -rf /var/lib/apt/lists/*
 
   RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
