@@ -533,7 +533,7 @@
 		.filter(|datum| datum.data().len() &gt;= <span class="number">2</span>)<span class="question-mark">?
 		</span>.data();
 	<span class="kw">let </span>pub_key = TryFrom::try_from(fields.get(<span class="number">0</span>).as_bytes()<span class="question-mark">?</span>).ok()<span class="question-mark">?</span>;
-	<span class="kw">let </span>signature = MainchainSignature(fields.get(<span class="number">1</span>).as_bytes()<span class="question-mark">?</span>);
+	<span class="kw">let </span>signature = MainchainSignature(fields.get(<span class="number">1</span>).as_bytes()<span class="question-mark">?</span>.try_into().ok()<span class="question-mark">?</span>);
 	<span class="prelude-val">Some</span>(AdaBasedStaking { pub_key, signature })
 }
 <span class="kw">fn </span>decode_utxo_id_datum(datum: PlutusData) -&gt; <span class="prelude-ty">Option</span>&lt;UtxoId&gt; {

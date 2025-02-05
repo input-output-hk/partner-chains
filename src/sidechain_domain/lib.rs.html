@@ -749,6 +749,9 @@
 <a href="#749" id="749">749</a>
 <a href="#750" id="750">750</a>
 <a href="#751" id="751">751</a>
+<a href="#752" id="752">752</a>
+<a href="#753" id="753">753</a>
+<a href="#754" id="754">754</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -1025,7 +1028,7 @@
 	}
 }
 
-<span class="kw">pub const </span>MAINCHAIN_KEY_HASH_LEN: usize = <span class="number">28</span>;
+<span class="kw">const </span>MAINCHAIN_KEY_HASH_LEN: usize = <span class="number">28</span>;
 
 <span class="doccomment">/// blake2b_224 hash of a Cardano Verification (Public) Key.
 /// It can be a hash of Payment Verification, Payment Extended Verification or Staking Verification Key.
@@ -1051,9 +1054,12 @@
 	}
 }
 
+<span class="doccomment">/// ECDSA signature of MainchainPrivateKey, 64 bytes.
+</span><span class="kw">const </span>MAINCHAIN_SIGNATURE_LEN: usize = <span class="number">64</span>;
+
 <span class="attr">#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, decode_hex)]
-</span><span class="kw">pub struct </span>MainchainSignature(<span class="kw">pub </span>Vec&lt;u8&gt;);
+</span><span class="kw">pub struct </span>MainchainSignature(<span class="kw">pub </span>[u8; MAINCHAIN_SIGNATURE_LEN]);
 
 <span class="attr">#[derive(
 	Clone,

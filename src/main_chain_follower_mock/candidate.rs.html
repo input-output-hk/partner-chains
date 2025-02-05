@@ -245,6 +245,8 @@
 <a href="#245" id="245">245</a>
 <a href="#246" id="246">246</a>
 <a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::Result;
 <span class="kw">use </span>async_trait::async_trait;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::<span class="kw-2">*</span>;
@@ -295,7 +297,9 @@
 		<span class="kw">let </span>registrations = <span class="macro">vec!</span>[RegistrationData {
 			registration_utxo: mock.registration_utxo,
 			sidechain_signature: SidechainSignature(mock.sidechain_signature.<span class="number">0</span>.clone()),
-			mainchain_signature: MainchainSignature(mock.mainchain_signature.<span class="number">0</span>),
+			mainchain_signature: MainchainSignature(
+				mock.mainchain_signature.<span class="number">0</span>.try_into().expect(<span class="string">"Mainchain signature is 64 bytes"</span>),
+			),
 			cross_chain_signature: CrossChainSignature(mock.sidechain_signature.<span class="number">0</span>.clone()),
 			sidechain_pub_key: SidechainPublicKey(mock.sidechain_pub_key.<span class="number">0</span>.clone()),
 			cross_chain_pub_key: CrossChainPublicKey(mock.sidechain_pub_key.<span class="number">0</span>.clone()),
