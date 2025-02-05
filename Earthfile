@@ -79,7 +79,7 @@ check-benchmarks:
   FROM +build
   RUN cargo install --locked zepter
   CACHE --sharing shared --id cargo $CARGO_HOME  
-  RUN zepter lint propagate-feature --feature runtime-benchmarks --left-side-feature-missing=ignore --workspace --feature-enables-dep="runtime-benchmarks:frame-benchmarking"
+  RUN zepter lint propagate-feature --feature runtime-benchmarks --left-side-feature-missing=ignore --workspace --feature-enables-dep="runtime-benchmarks:frame-benchmarking" --fix
 
 test:
   FROM +check-benchmarks
