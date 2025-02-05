@@ -92,6 +92,7 @@ jobs:
       - name: Create Draft Release
         uses: ./.github/actions/release/create-draft-release
         with:
+          sha: ${{ inputs.sha }}
           tag: ${{ inputs.tag }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
