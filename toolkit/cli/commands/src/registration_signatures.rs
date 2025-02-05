@@ -90,7 +90,7 @@ impl RegisterValidatorMessage {
 			sc_public_key_and_signature_for_datum(sidechain_key, self.clone());
 		RegistrationCmdOutput {
 			spo_public_key: MainchainPublicKey(mc_pub_key.into()),
-			spo_signature: MainchainSignature(mc_signature.to_vec()),
+			spo_signature: MainchainSignature(mc_signature.to_bytes()),
 			sidechain_public_key: SidechainPublicKey(sc_pub_key.serialize().to_vec()),
 			sidechain_signature: SidechainSignature(sc_signature.serialize_compact().to_vec()),
 		}

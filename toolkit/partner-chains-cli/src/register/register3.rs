@@ -319,7 +319,7 @@ mod tests {
             grandpa_pub_key: "1a55db596380bc63f5ee964565359b5ea8e0096c798c3281692df097abbd9aa4b657f887915ad2a52fc85c674ef4044baeaf7149546af93a2744c379b9798f07".parse().unwrap(),
             partner_chain_signature: SidechainSignature(hex_literal::hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854").to_vec()),
 			spo_public_key: MainchainPublicKey(hex_literal::hex!("cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7")),
-			spo_signature: MainchainSignature(hex_literal::hex!("aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801").to_vec()),
+			spo_signature: MainchainSignature(hex_literal::hex!("aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801")),
         }
 	}
 
@@ -412,7 +412,7 @@ mod tests {
 		CandidateRegistration {
 			stake_ownership: AdaBasedStaking {
 				pub_key: MainchainPublicKey(hex!("cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7")),
-				signature: MainchainSignature(hex!("aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801").to_vec())
+				signature: MainchainSignature(hex!("aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801"))
 			},
 			partner_chain_pub_key: SidechainPublicKey(hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec()),
 			partner_chain_signature: SidechainSignature(hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854").to_vec()),

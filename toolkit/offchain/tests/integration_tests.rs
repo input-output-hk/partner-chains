@@ -451,7 +451,7 @@ async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryU
 			&CandidateRegistration {
 				stake_ownership: AdaBasedStaking {
 					pub_key: EVE_PUBLIC_KEY,
-					signature: MainchainSignature(vec![19u8; 32]),
+					signature: MainchainSignature([19u8; 64]),
 				},
 				partner_chain_pub_key: SidechainPublicKey([20u8; 32].to_vec()),
 				partner_chain_signature: partnerchain_signature,
