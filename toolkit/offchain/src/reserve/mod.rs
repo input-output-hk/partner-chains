@@ -97,7 +97,7 @@ impl ReserveData {
 		let (reserve_utxo, reserve_settings) = validator_utxos
 			.into_iter()
 			.find_map(|utxo| {
-				if utxo.get_asset_amount(&auth_token_asset_id) != 1i128 {
+				if utxo.get_asset_amount(&auth_token_asset_id) != 1u64 {
 					return None;
 				}
 				utxo.get_plutus_data()

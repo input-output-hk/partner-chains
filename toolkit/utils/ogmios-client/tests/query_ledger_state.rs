@@ -257,10 +257,7 @@ async fn query_utxos() {
 					let mut map = std::collections::HashMap::new();
 					map.insert(
 						hex!("e0d4479b3dbb53b1aecd48f7ef524a9cf166585923d91d9c72ed02cb"),
-						vec![Asset {
-							name: hex!("707070").to_vec(),
-							amount: 18446744073709551615i128,
-						}],
+						vec![Asset { name: hex!("707070").to_vec(), amount: 18446744073709551615 }],
 					);
 					map
 				},
@@ -319,10 +316,7 @@ async fn query_utxos_by_tx_hash() {
 					let mut map = std::collections::HashMap::new();
 					map.insert(
 						hex!("e0d4479b3dbb53b1aecd48f7ef524a9cf166585923d91d9c72ed02cb"),
-						vec![Asset {
-							name: hex!("707070").to_vec(),
-							amount: 18446744073709551615i128,
-						}],
+						vec![Asset { name: hex!("707070").to_vec(), amount: 18446744073709551615 }],
 					);
 					map
 				},
