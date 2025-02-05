@@ -22,6 +22,11 @@ setup:
     git \
     python3 \
     python3-pip \
+    protobuf-compiler \
+    clang \
+    cmake \
+    libssl-dev \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
   RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -31,10 +36,12 @@ setup:
   RUN cp -rl $CARGO_HOME /tmp/cargo
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cp -rua /tmp/cargo/. $CARGO_HOME && rm -rf /tmp/cargo
-
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
   RUN rustup show
   RUN cargo install --locked --version 0.1.68 cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
+
+  # Add Linux target
+  RUN rustup target add x86_64-unknown-linux-gnu
 
 source:
   FROM +setup
