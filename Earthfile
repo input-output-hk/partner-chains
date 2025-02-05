@@ -34,7 +34,7 @@ setup:
       libjq-dev \
       && rm -rf /var/lib/apt/lists/*
 
-  RUN pip3 install --break-system-packages tomlq
+  RUN pip3 install --break-system-packages tomlq toml
 
   RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
   ENV PATH="/root/.cargo/bin:${PATH}"
@@ -87,7 +87,7 @@ test:
 licenses:
     FROM +source
     COPY scripts/validate_workspace_licenses.py validate_workspace_licenses.py
-    RUN pip install toml
+    RUN pip3 install --break-system-packages toml
     RUN cargo install --locked cargo-license
     RUN python3 validate_workspace_licenses.py
 
