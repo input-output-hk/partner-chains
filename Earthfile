@@ -68,12 +68,12 @@ build-deps:
 build:
   FROM +source
   LET WASM_BUILD_STD=0
-  ARG CACHE_KEY=$(find . -type f -name "*.rs" -o -name "*.toml" | sort | xargs cat | sha256sum)
-  CACHE --sharing shared --id cargo-build-$CACHE_KEY target
+  #ARG CACHE_KEY=$(find . -type f -name "*.rs" -o -name "*.toml" | sort | xargs cat | sha256sum)
+  #CACHE --sharing shared --id cargo-build-$CACHE_KEY target
   CACHE --sharing shared --id cargo $CARGO_HOME
   ARG EARTHLY_GIT_HASH
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
-  SAVE ARTIFACT target
+  #SAVE ARTIFACT target
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node-artifact
 
