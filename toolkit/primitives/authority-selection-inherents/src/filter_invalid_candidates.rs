@@ -382,7 +382,7 @@ mod tests {
 				registration_utxo: signed_message.registration_utxo,
 				sidechain_signature: SidechainSignature(sidechain_signature),
 				mainchain_signature: MainchainSignature(
-					mainchain_signature.0.try_into().expect("TODO"),
+					mainchain_signature.0.try_into().expect("Mainchain signature is 64 bytes"),
 				),
 				cross_chain_signature: CrossChainSignature(vec![]),
 				sidechain_pub_key: SidechainPublicKey(sidechain_pub_key),
