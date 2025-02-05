@@ -16,7 +16,8 @@ setup:
   FROM ubuntu:24.04
   WORKDIR /build
   ENV CARGO_HOME=/root/.cargo
-  
+
+  CACHE /var/lib/apt/lists 
   RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
