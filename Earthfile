@@ -46,7 +46,6 @@ setup:
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
   RUN rustup show
   RUN cargo install --locked --version 0.1.68 cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
-  RUN cargo install --locked zepter && cp "$CARGO_HOME/bin/zepter" /usr/local/bin
 
   # Add Linux target
   RUN rustup target add x86_64-unknown-linux-gnu
@@ -75,14 +74,15 @@ build:
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node-artifact
 
-check-benchmarks:
-  FROM +build
-  RUN cargo install --locked zepter
-  CACHE --sharing shared --id cargo $CARGO_HOME  
-  RUN zepter lint propagate-feature --feature runtime-benchmarks --left-side-feature-missing=ignore --workspace --feature-enables-dep="runtime-benchmarks:frame-benchmarking" --fix
+build-test:
+  FROM +source
+  LET WASM_BUILD_STD=0
+  CACHE --sharing shared --id cargo $CARGO_HOME
+  RUN cargo build --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
+  SAVE ARTIFACT target
 
 test:
-  FROM +check-benchmarks
+  FROM +build-test
   LET WASM_BUILD_STD=0 
   DO github.com/earthly/lib:3.0.2+INSTALL_DIND
   CACHE --sharing shared --id build-target target
