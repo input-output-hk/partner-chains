@@ -300,9 +300,12 @@ impl MainchainKeyHash {
 	}
 }
 
+/// ECDSA signature of MainchainPrivateKey, 64 bytes.
+const MAINCHAIN_SIGNATURE_LEN: usize = MAINCHAIN_PRIVATE_KEY_LEN * 2;
+
 #[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, decode_hex)]
-pub struct MainchainSignature(pub Vec<u8>);
+pub struct MainchainSignature(pub [u8; MAINCHAIN_SIGNATURE_LEN]);
 
 #[derive(
 	Clone,

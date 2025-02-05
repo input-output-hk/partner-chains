@@ -48,7 +48,9 @@ impl From<MockRegistration> for CandidateRegistrations {
 		let registrations = vec![RegistrationData {
 			registration_utxo: mock.registration_utxo,
 			sidechain_signature: SidechainSignature(mock.sidechain_signature.0.clone()),
-			mainchain_signature: MainchainSignature(mock.mainchain_signature.0),
+			mainchain_signature: MainchainSignature(
+				mock.mainchain_signature.0.try_into().expect("Mainchain signature is 64 bytes"),
+			),
 			cross_chain_signature: CrossChainSignature(mock.sidechain_signature.0.clone()),
 			sidechain_pub_key: SidechainPublicKey(mock.sidechain_pub_key.0.clone()),
 			cross_chain_pub_key: CrossChainPublicKey(mock.sidechain_pub_key.0.clone()),
