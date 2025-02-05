@@ -171,36 +171,40 @@ jobs:
         shell: bash
       - name: Check Finalization Status
         run: |
-          FINALIZED_NUMBER=$(
-              curl -s -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"chain_getFinalizedHead","params":[],"id":"1"}' http://$STAGING_PREVIEW_VALIDATOR_1_HOST:$STAGING_PREVIEW_VALIDATOR_1_PORT |
-              jq -r ".result" |
-              xargs -I {} curl -s -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"chain_getHeader","params":["{}"],"id":"1"}' http://$STAGING_PREVIEW_VALIDATOR_1_HOST:$STAGING_PREVIEW_VALIDATOR_1_PORT |
-              jq -r ".result.number" | xargs printf "%d"
-          )
+          get_finalized_number() {
+            curl -s -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"chain_getFinalizedHead","params":[],"id":"1"}' http://$STAGING_PREVIEW_VALIDATOR_1_HOST:$STAGING_PREVIEW_VALIDATOR_1_PORT |
+            jq -r ".result" |
+            xargs -I {} curl -s -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"chain_getHeader","params":["{}"],"id":"1"}' http://$STAGING_PREVIEW_VALIDATOR_1_HOST:$STAGING_PREVIEW_VALIDATOR_1_PORT |
+            jq -r ".result.number" | xargs printf "%d" || true
+          }
+
+          INITIAL_FINALIZED_NUMBER=$(get_finalized_number)
+          echo "Initial Finalized Block Number: $INITIAL_FINALIZED_NUMBER"
 
           timeout=300  # Timeout in seconds
           interval=10  # Interval in seconds
           elapsed=0
 
-          while [ "$FINALIZED_NUMBER" -le 0 ]; do
+          while true; do
             if [ $elapsed -ge $timeout ]; then
               echo "Timeout reached: $timeout seconds"
               exit 1
             fi
 
+            CURRENT_FINALIZED_NUMBER=$(get_finalized_number)
+            echo "Current Finalized Block Number: $CURRENT_FINALIZED_NUMBER"
+
+            if [ "$CURRENT_FINALIZED_NUMBER" -gt "$INITIAL_FINALIZED_NUMBER" ]; then
+              echo "Finalized block number has increased."
+              break
+            fi
+
             echo "Waiting for blocks to be finalized..."
             sleep $interval
             elapsed=$((elapsed + interval))
-
-            FINALIZED_NUMBER=$(
-              curl -s -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"chain_getFinalizedHead","params":[],"id":"1"}' http://$STAGING_PREVIEW_VALIDATOR_1_HOST:$STAGING_PREVIEW_VALIDATOR_1_PORT |
-              jq -r ".result" |
-              xargs -I {} curl -s -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"chain_getHeader","params":["{}"],"id":"1"}' http://$STAGING_PREVIEW_VALIDATOR_1_HOST:$STAGING_PREVIEW_VALIDATOR_1_PORT |
-              jq -r ".result.number" | xargs printf "%d"
-            )
           done
 
-          echo "Blocks are being finalized. Finalized Block Number: $FINALIZED_NUMBER"
+          echo "Blocks are being finalized. Finalized Block Number: $CURRENT_FINALIZED_NUMBER"
         shell: bash
 
   run-smoke-tests:

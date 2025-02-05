@@ -95,6 +95,3 @@ runs:
             "https://uploads.github.com/repos/${{ github.repository }}/releases/$release_id/assets?name=$(basename $artifact)"
         done
       shell: bash
-
-        done
-      shell: bash

@@ -24,11 +24,16 @@ pub use pallet::*;
 use sidechain_domain::*;
 use sp_native_token_management::*;
 
+mod benchmarking;
+
 #[cfg(test)]
 mod tests;
 
 #[cfg(test)]
 mod mock;
+
+pub mod weights;
+pub use weights::WeightInfo;
 
 /// Interface for user-provided logic to handle native token transfers into the illiquid supply on the main chain.
 ///
@@ -49,6 +54,7 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		type TokenTransferHandler: TokenTransferHandler;
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::event]
@@ -135,7 +141,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
-		#[pallet::weight((0, DispatchClass::Mandatory))]
+		#[pallet::weight((T::WeightInfo::transfer_tokens(), DispatchClass::Mandatory))]
 		pub fn transfer_tokens(
 			origin: OriginFor<T>,
 			token_amount: NativeTokenAmount,
@@ -158,7 +164,7 @@ pub mod pallet {
 		///
 		/// This extrinsic must be run either using `sudo` or some other chain governance mechanism.
 		#[pallet::call_index(1)]
-		#[pallet::weight((1, DispatchClass::Normal))]
+		#[pallet::weight((T::WeightInfo::set_main_chain_scripts(), DispatchClass::Normal))]
 		pub fn set_main_chain_scripts(
 			origin: OriginFor<T>,
 			native_token_policy_id: PolicyId,

@@ -6274,6 +6274,7 @@ dependencies = [
 name = "pallet-native-token-management"
 version = "1.5.0"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
