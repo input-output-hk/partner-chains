@@ -274,7 +274,7 @@ impl TryFrom<Vec<u8>> for MainchainPublicKey {
 	}
 }
 
-pub const MAINCHAIN_KEY_HASH_LEN: usize = 28;
+const MAINCHAIN_KEY_HASH_LEN: usize = 28;
 
 /// blake2b_224 hash of a Cardano Verification (Public) Key.
 /// It can be a hash of Payment Verification, Payment Extended Verification or Staking Verification Key.
