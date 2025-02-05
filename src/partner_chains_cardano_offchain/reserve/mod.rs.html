@@ -238,7 +238,7 @@
 		<span class="kw">let </span>(reserve_utxo, reserve_settings) = validator_utxos
 			.into_iter()
 			.find_map(|utxo| {
-				<span class="kw">if </span>utxo.get_asset_amount(<span class="kw-2">&amp;</span>auth_token_asset_id) != <span class="number">1i128 </span>{
+				<span class="kw">if </span>utxo.get_asset_amount(<span class="kw-2">&amp;</span>auth_token_asset_id) != <span class="number">1u64 </span>{
 					<span class="kw">return </span><span class="prelude-val">None</span>;
 				}
 				utxo.get_plutus_data()

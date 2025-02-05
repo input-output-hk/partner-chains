@@ -1402,7 +1402,7 @@
 
 	<span class="kw">fn </span>to_domain(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; sidechain_domain::UtxoId;
 
-	<span class="kw">fn </span>get_asset_amount(<span class="kw-2">&amp;</span><span class="self">self</span>, asset: <span class="kw-2">&amp;</span>AssetId) -&gt; i128;
+	<span class="kw">fn </span>get_asset_amount(<span class="kw-2">&amp;</span><span class="self">self</span>, asset: <span class="kw-2">&amp;</span>AssetId) -&gt; u64;
 
 	<span class="kw">fn </span>get_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;PlutusData&gt;;
 }
@@ -1432,7 +1432,7 @@
 		}
 	}
 
-	<span class="kw">fn </span>get_asset_amount(<span class="kw-2">&amp;</span><span class="self">self</span>, asset_id: <span class="kw-2">&amp;</span>AssetId) -&gt; i128 {
+	<span class="kw">fn </span>get_asset_amount(<span class="kw-2">&amp;</span><span class="self">self</span>, asset_id: <span class="kw-2">&amp;</span>AssetId) -&gt; u64 {
 		<span class="self">self</span>.value
 			.native_tokens
 			.get(<span class="kw-2">&amp;</span>asset_id.policy_id.<span class="number">0</span>)

@@ -411,10 +411,6 @@
 <a href="#411" id="411">411</a>
 <a href="#412" id="412">412</a>
 <a href="#413" id="413">413</a>
-<a href="#414" id="414">414</a>
-<a href="#415" id="415">415</a>
-<a href="#416" id="416">416</a>
-<a href="#417" id="417">417</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Common types used in the Ogmios API.
 
 </span><span class="kw">use </span>serde::{Deserialize, Deserializer};
@@ -572,10 +568,11 @@
 	}
 }
 
-<span class="attr">#[derive(Clone, Debug, PartialEq, Eq)]
+<span class="comment">// Asset of an UTXO, therefore amount can not be negative
+</span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>Asset {
 	<span class="kw">pub </span>name: Vec&lt;u8&gt;,
-	<span class="kw">pub </span>amount: i128,
+	<span class="kw">pub </span>amount: u64,
 }
 
 <span class="kw">impl </span>TryFrom&lt;serde_json::Value&gt; <span class="kw">for </span>OgmiosValue {
@@ -602,8 +599,8 @@
 							.map_err(|<span class="kw">_</span>| <span class="string">"expected asset name to be hexstring"</span>);
 						<span class="kw">let </span>amount = amount
 							.as_number()
-							.and_then(|n| n.clone().as_i128())
-							.ok_or(<span class="string">"expected amount to be i128"</span>);
+							.and_then(|n| n.clone().as_u64())
+							.ok_or(<span class="string">"expected asset amount to be u64"</span>);
 						name.and_then(|name| amount.map(|amount| Asset { name, amount }))
 					})
 					.collect();
@@ -703,7 +700,6 @@
 				<span class="string">""</span>: <span class="number">18446744073709551615i128
 			</span>},
 			<span class="string">"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"</span>: {
-				<span class="string">"cdef"</span>: -<span class="number">18446744073709551615i128</span>,
 				<span class="string">"aaaa"</span>: <span class="number">1</span>,
 			}
 		});
@@ -715,17 +711,13 @@
 				.get(<span class="kw-2">&amp;</span><span class="macro">hex!</span>(<span class="string">"e0d4479b3dbb53b1aecd48f7ef524a9cf166585923d91d9c72ed02cb"</span>))
 				.unwrap()
 				.clone(),
-			<span class="macro">vec!</span>[Asset { name: <span class="macro">vec!</span>[], amount: <span class="number">18446744073709551615i128 </span>}]
+			<span class="macro">vec!</span>[Asset { name: <span class="macro">vec!</span>[], amount: <span class="number">18446744073709551615u64 </span>}]
 		);
 		<span class="kw">let </span>assets = value
 			.native_tokens
 			.get(<span class="kw-2">&amp;</span><span class="macro">hex!</span>(<span class="string">"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"</span>))
 			.unwrap()
 			.clone();
-		<span class="macro">assert_eq!</span>(
-			assets.iter().find(|asset| asset.name == <span class="macro">hex!</span>(<span class="string">"cdef"</span>).to_vec()).unwrap().amount,
-			-<span class="number">18446744073709551615i128
-		</span>);
 		<span class="macro">assert_eq!</span>(
 			assets.iter().find(|asset| asset.name == <span class="macro">hex!</span>(<span class="string">"aaaa"</span>).to_vec()).unwrap().amount,
 			<span class="number">1
