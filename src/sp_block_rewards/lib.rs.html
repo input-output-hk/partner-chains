@@ -100,6 +100,7 @@
 <a href="#100" id="100">100</a>
 <a href="#101" id="101">101</a>
 <a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 #[cfg(test)]
@@ -163,7 +164,8 @@
 	</span>BeneficiaryId: TryFrom&lt;Vec&lt;u8&gt;&gt; + Send + Sync + Encode,
 	&lt;BeneficiaryId <span class="kw">as </span>TryFrom&lt;Vec&lt;u8&gt;&gt;&gt;::Error: std::fmt::Debug,
 {
-	<span class="kw">pub fn </span>from_env(env_var: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, InherentProviderCreationError&gt; {
+	<span class="doccomment">/// Read and decode beneficiary ID from the specified environment variable
+	</span><span class="kw">pub fn </span>from_env(env_var: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, InherentProviderCreationError&gt; {
 		<span class="kw">let </span>beneficiary_string = std::env::var(env_var)
 			.map_err(|<span class="kw">_</span>| InherentProviderCreationError::NotSet(env_var.into()))<span class="question-mark">?</span>;
 		<span class="kw">let </span>beneficiary_bytes = sp_core::bytes::from_hex(<span class="kw-2">&amp;</span>beneficiary_string)
