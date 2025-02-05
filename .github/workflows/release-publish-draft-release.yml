@@ -1,6 +1,6 @@
 # Workflow not to be executed manually, but by the release.yml workflow
 
-name: "CD: Publish Draft Release"
+name: "Release: Publish Draft Release"
 
 on:
   workflow_dispatch:

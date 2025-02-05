@@ -80,7 +80,7 @@ jobs:
           done
 
   create-draft-release:
-    if: !inputs.no-release
+    if: ${{ !inputs.no-release }}
     permissions:
       id-token: write
       contents: write
