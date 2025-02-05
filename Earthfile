@@ -150,6 +150,7 @@ deps:
 
 mock:
   FROM +setup
+  ENV PATH="/opt/venv/bin:$PATH"
   ARG CRATES=$(tomlq -r '.workspace.members[]' Cargo.toml)
   ARG SRCS=$(tomlq -r '.workspace.members[] + "/src"' Cargo.toml)
   ARG LIBS=$(tomlq -r '.workspace.dependencies[]|select(type == "object" and has("path")).path + "/src/lib.rs"' Cargo.toml)
@@ -164,6 +165,7 @@ mock:
 fetch-deps:
   FROM +mock
   CACHE --sharing shared --id cargo $CARGO_HOME
+  ENV PATH="/opt/venv/bin:$PATH"
   RUN --ssh cargo fetch --locked
 
 INSTALL:
