@@ -8,22 +8,47 @@ ci:
   BUILD +licenses
   BUILD +fmt
   BUILD +chainspecs
-  ARG image=sidechains-substrate-node
+  ARG image=partner-chains-node
   ARG tags
   BUILD +docker --image=$image --tags=$tags
 
 setup:
-  FROM paritytech/ci-unified:bullseye-1.81.0-2024-11-19-v202411281558
+  FROM ubuntu:24.04
   WORKDIR /build
+  ENV CARGO_HOME=/root/.cargo
+
+  CACHE /var/lib/apt/lists
+  RUN apt-get update && apt-get install -y \
+      build-essential \
+      curl \
+      git \
+      python3 \
+      python3-pip \
+      python3-venv \
+      protobuf-compiler \
+      clang \
+      cmake \
+      libssl-dev \
+      pkg-config \
+      jq \
+      libjq-dev \
+      && rm -rf /var/lib/apt/lists/*
+
+  RUN pip3 install --break-system-packages tomlq toml
+
+  RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  ENV PATH="/root/.cargo/bin:${PATH}"
 
   # copy pre-existing $CARGO_HOME artifacts into the cache
   RUN cp -rl $CARGO_HOME /tmp/cargo
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cp -rua /tmp/cargo/. $CARGO_HOME && rm -rf /tmp/cargo
-
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
   RUN rustup show
   RUN cargo install --locked --version 0.1.68 cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
+
+  # Add Linux target
+  RUN rustup target add x86_64-unknown-linux-gnu
 
 source:
   FROM +setup
@@ -43,9 +68,12 @@ build-deps:
 build:
   FROM +source
   LET WASM_BUILD_STD=0
+  #ARG CACHE_KEY=$(find . -type f -name "*.rs" -o -name "*.toml" | sort | xargs cat | sha256sum)
+  #CACHE --sharing shared --id cargo-build-$CACHE_KEY target
   CACHE --sharing shared --id cargo $CARGO_HOME
   ARG EARTHLY_GIT_HASH
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
+  #SAVE ARTIFACT target
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node-artifact
 
@@ -54,15 +82,15 @@ test:
   LET WASM_BUILD_STD=0
   DO github.com/earthly/lib:3.0.2+INSTALL_DIND
   CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
+  RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES
   WITH DOCKER
-    RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
+    RUN cargo test --locked --profile=$PROFILE --features=$FEATURES
   END
 
 licenses:
     FROM +source
     COPY scripts/validate_workspace_licenses.py validate_workspace_licenses.py
-    RUN pip install toml
+    RUN pip3 install --break-system-packages toml
     RUN cargo install --locked cargo-license
     RUN python3 validate_workspace_licenses.py
 
@@ -72,31 +100,38 @@ fmt:
   RUN cargo fmt --check
 
 docker:
-    FROM debian:bullseye-slim
-    ARG image=sidechains-substrate-node
+    FROM ubuntu:24.04
+    ARG image=partner-chains-node
     ARG tags
 
-    DO +INSTALL
+    RUN apt-get update && apt-get install -y \
+        ca-certificates \
+        libgcc-s1 \
+        libstdc++6 \
+        libc6 \
+        libssl3 \
+        zlib1g \
+        libgomp1 \
+        && rm -rf /var/lib/apt/lists/*
 
-    RUN useradd -m -u 1000 -U -s /bin/sh -d /substrate substrate \
+    RUN useradd -m -u 1010 -U -s /bin/sh -d /substrate substrate \
         && mkdir -p /data /substrate/.local/share/partner-chains-node \
         && chown -R substrate:substrate /data /substrate \
         && ln -s /data /substrate/.local/share/partner-chains-node
 
+    COPY +build/partner-chains-node /usr/local/bin/
+    RUN chown substrate:substrate /usr/local/bin/partner-chains-node && chmod +x /usr/local/bin/partner-chains-node
+
     USER substrate
 
-    #p2p
     EXPOSE 30333
-    #prometheus exporter
     EXPOSE 9615
-    #JSON-RPC HTTP
     EXPOSE 9933
-    #JSON-RPC WS
     EXPOSE 9944
 
     VOLUME ["/data"]
 
-    ENTRYPOINT ["./usr/local/bin/partner-chains-node"]
+    ENTRYPOINT ["/usr/local/bin/partner-chains-node"]
 
     ARG EARTHLY_GIT_HASH
     ENV EARTHLY_GIT_HASH=$EARTHLY_GIT_HASH
@@ -108,7 +143,6 @@ docker:
 deps:
     FROM +source
     COPY +build/partner-chains-node .
-    # calculate libary deps
     RUN ldd partner-chains-node \
         | awk 'NF == 4 { system("echo " $3) }' \
         | tar -czf deps.tgz --files-from=-
@@ -137,11 +171,9 @@ INSTALL:
   COPY +build/partner-chains-node /usr/local/bin
   COPY +deps/deps /tmp/deps.tgz
 
-  # install deps
   RUN tar -v -C / -xzf /tmp/deps.tgz \
       && rm -rf /tmp/deps.tgz
 
-  # Sanity checks
   RUN ldd /usr/local/bin/partner-chains-node \
       && /usr/local/bin/partner-chains-node --version
 

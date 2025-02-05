@@ -27,7 +27,7 @@ runs:
 
     - name: Pull Docker Image from ECR
       run: |
-        docker pull ${{ env.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
+        docker pull ${{ env.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
       shell: bash
 
     - name: Login to GitHub Container Registry
@@ -39,9 +39,9 @@ runs:
 
     - name: Tag Docker Image for GHCR
       run: |
-        docker tag ${{ env.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }} ghcr.io/${{ github.repository }}/partner-chains-node:latest
-        docker tag ${{ env.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }} ghcr.io/${{ github.repository }}/partner-chains-node:${{ inputs.sha }}
-        docker tag ${{ env.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }} ghcr.io/${{ github.repository }}/partner-chains-node:${{ inputs.tag }}
+        docker tag ${{ env.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }} ghcr.io/${{ github.repository }}/partner-chains-node:latest
+        docker tag ${{ env.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }} ghcr.io/${{ github.repository }}/partner-chains-node:${{ inputs.sha }}
+        docker tag ${{ env.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }} ghcr.io/${{ github.repository }}/partner-chains-node:${{ inputs.tag }}
       shell: bash
 
     - name: Push Tagged Images to GHCR

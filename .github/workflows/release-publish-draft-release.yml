@@ -1,4 +1,4 @@
-# Workflow not to be executed manually, but by the cd.yml workflow
+# Workflow not to be executed manually, but by the release.yml workflow
 
 name: "CD: Publish Draft Release"
 

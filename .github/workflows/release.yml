@@ -4,18 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       sha:
-        description: "partner-chains commit SHA to build from"
+        description: "partner-chains commit SHA to release"
         required: true
         type: string
       tag:
         description: "partner-chains release tag"
         required: true
         type: string
-      no-build:
-        description: "SKIP BUILD - Use artifacts built in a previous run"
-        required: false
-        type: boolean
-        default: false
       no-release:
         description: "SKIP RELEASE - Don't even create a draft release"
         required: false
@@ -60,99 +55,7 @@ env:
   STAGING_PREVIEW_VALIDATOR_1_PORT: 9933
 
 jobs:
-  build-linux:
-    if: ${{ github.event.inputs.no-build != 'true' }}
-    permissions:
-      id-token: write
-      contents: write
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build and Upload for Linux
-        uses: ./.github/actions/artifacts/build-pc-artifacts
-        with:
-          sha: ${{ inputs.sha }}
-          tag: ${{ inputs.tag }}
-          os: linux
-
-  build-macos-x86_64:
-    if: ${{ github.event.inputs.no-build != 'true' }}
-    permissions:
-      id-token: write
-      contents: write
-    runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build and Upload for macOS x86_64
-        uses: ./.github/actions/artifacts/build-pc-artifacts
-        with:
-          sha: ${{ inputs.sha }}
-          tag: ${{ inputs.tag }}
-          os: macos-x86_64
-
-  build-macos-arm64:
-    if: ${{ github.event.inputs.no-build != 'true' }}
-    permissions:
-      id-token: write
-      contents: write
-    runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build and Upload for macOS arm64
-        uses: ./.github/actions/artifacts/build-pc-artifacts
-        with:
-          sha: ${{ inputs.sha }}
-          tag: ${{ inputs.tag }}
-          os: macos-arm64
-
-  build-and-publish-ecr:
-    if: ${{ github.event.inputs.no-build != 'true' }}
-    permissions:
-      id-token: write
-      contents: write
-    needs: build-linux
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Build and Publish to ECR
-        uses: ./.github/actions/images/build-and-publish-ecr
-        with:
-          sha: ${{ inputs.sha }}
-          tag: ${{ inputs.tag }}
-        env:
-          AWS_REGION: "eu-central-1"
-          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-
-  upload-to-s3:
-    if: ${{ github.event.inputs.no-build != 'true' }}
-    needs:
-      - build-linux
-      - build-macos-x86_64
-      - build-macos-arm64
-      - build-and-publish-ecr
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Upload Artifacts to S3
-        uses: ./.github/actions/artifacts/upload-to-s3
-        with:
-          sha: ${{ inputs.sha }}
-          bucket-name: ${{ secrets.AWS_CD_ARTIFACT_S3_BUCKET }}
-        env:
-          AWS_REGION: ${{ env.AWS_REGION }}
-          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_S3_ROLE_ARN_SECRET }}
-
   download-from-s3:
-    if: ${{ github.event.inputs.no-build == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -168,38 +71,20 @@ jobs:
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_S3_ROLE_ARN_SECRET }}
-
-  artifacts-ready:
-      needs:
-        - upload-to-s3
-        - download-from-s3
-      runs-on: ubuntu-latest
-      outputs:
-       status: success
-      permissions:
-        id-token: write
-        contents: write
-      if: |
-        always() && 
-        (
-          (github.event.inputs.no-build == 'true' && needs.download-from-s3.result == 'success') ||
-          (github.event.inputs.no-build != 'true' && needs.upload-to-s3.result == 'success')
-        )
-      steps:
-        - name: Artifacts Ready
-          run: |
-            if [[ "${{ inputs.no-build }}" != "true" ]]; then
-              echo "Artifacts have been compiled and uploaded to S3"
-            else
-              echo "Previously built artifacts were downloaded from S3"
+      - name: Rename artifacts
+        run: |
+          for file in *${{ inputs.sha }}*; do
+            if [ -f "$file" ]; then
+              mv "$file" "${file/${{ inputs.sha }}/${{ inputs.tag }}}"
             fi
+          done
 
   create-draft-release:
-    if: always() && !inputs.no-release && needs.artifacts-ready.result == 'success'
+    if: !inputs.no-release
     permissions:
       id-token: write
       contents: write
-    needs: artifacts-ready
+    needs: download-from-s3
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -215,8 +100,7 @@ jobs:
     permissions:
       id-token: write
       contents: write
-    needs: artifacts-ready
-    if: always() && needs.artifacts-ready.result == 'success'
+    needs: download-from-s3
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -227,7 +111,7 @@ jobs:
           tag: ${{ inputs.tag }}
 
   upload-chain-specs:
-    if: always() && needs.generate-chain-specs.result == 'success'
+    if: needs.generate-chain-specs.result == 'success'
     permissions:
       id-token: write
       contents: write
@@ -246,20 +130,11 @@ jobs:
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   deploy-staging-preview:
-    if: |
-      always() &&
-      github.event.inputs.no-deploy != 'true' && 
-      (
-        (!inputs.no-build && needs.build-and-publish-ecr.result == 'success') || 
-        inputs.no-build
-      ) && 
-      needs.upload-chain-specs.result == 'success'
+    if: inputs.no-deploy != 'true' && needs.upload-chain-specs.result == 'success'
     permissions:
       id-token: write
       contents: write
-    needs:
-      - upload-chain-specs
-      - build-and-publish-ecr
+    needs: upload-chain-specs
     runs-on: eks
     steps:
       - name: Checkout
@@ -267,9 +142,9 @@ jobs:
       - name: Deploy staging-preview
         uses: ./.github/actions/deploy/deploy-staging-preview
         with:
-          image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
           sha: ${{ github.sha }}
-          no-wipe: ${{ github.event.inputs.no-wipe || 'false' }}
+          no-wipe: ${{ inputs.no-wipe || 'false' }}
         env:
           AWS_REGION: "eu-central-1"
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -283,7 +158,7 @@ jobs:
   partner-chain-ready:
     if: |
       always() &&
-      github.event.inputs.no-tests != 'true' && 
+      inputs.no-tests != 'true' && 
       (needs.deploy-staging-preview.result == 'success' || needs.deploy-staging-preview.result == 'skipped')
     runs-on: eks
     needs: deploy-staging-preview
@@ -333,7 +208,7 @@ jobs:
         shell: bash
 
   run-smoke-tests:
-    if: always() && github.event.inputs.no-tests != 'true' && needs.partner-chain-ready.result == 'success'
+    if: always() && inputs.no-tests != 'true' && needs.partner-chain-ready.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -343,7 +218,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag }}
+          ref: ${{ inputs.tag }}
       - name: Setup tests
         uses: ./.github/actions/tests/setup-python
         env:
@@ -361,7 +236,7 @@ jobs:
           threads: 1
 
   run-all-tests:
-    if: always() && github.event.inputs.no-tests != 'true' && needs.run-smoke-tests.result == 'success'
+    if: always() && inputs.no-tests != 'true' && needs.run-smoke-tests.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -371,7 +246,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag }}
+          ref: ${{ inputs.tag }}
       - name: Setup tests
         uses: ./.github/actions/tests/setup-python
         env:
@@ -392,7 +267,7 @@ jobs:
           threads: 1
 
   wait-for-n1-epoch:
-    if: always() && github.event.inputs.no-tests != 'true' && needs.partner-chain-ready.result == 'success'
+    if: always() && inputs.no-tests != 'true' && needs.partner-chain-ready.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -426,7 +301,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n1-epoch:
-    if: always() && github.event.inputs.no-tests != 'true' && needs.wait-for-n1-epoch.result == 'success'
+    if: always() && inputs.no-tests != 'true' && needs.wait-for-n1-epoch.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -436,7 +311,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag }}
+          ref: ${{ inputs.tag }}
       - name: Setup tests
         uses: ./.github/actions/tests/setup-python
         env:
@@ -460,7 +335,7 @@ jobs:
   wait-for-n2-epoch:
     if: |
       always() && 
-      github.event.inputs.no-tests != 'true' && 
+      inputs.no-tests != 'true' && 
       needs.partner-chain-ready.result == 'success' && 
       needs.wait-for-n1-epoch.result == 'success'
     permissions:
@@ -498,7 +373,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n2-epoch:
-    if: always() && github.event.inputs.no-tests != 'true' && needs.wait-for-n2-epoch.result == 'success'
+    if: always() && inputs.no-tests != 'true' && needs.wait-for-n2-epoch.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -508,7 +383,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag }}
+          ref: ${{ inputs.tag }}
       - name: Setup tests
         uses: ./.github/actions/tests/setup-python
         env:
@@ -531,17 +406,13 @@ jobs:
 
   publish-ghcr:
     if: |
-      always() && 
-      github.event.inputs.no-ghcr != 'true' && 
-      needs.artifacts-ready.result == 'success' &&
-      (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success')
+      inputs.no-ghcr != 'true' && 
+      (inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success')
     permissions:
       id-token: write
       contents: write
       packages: write
-    needs:
-      - artifacts-ready
-      - run-all-tests-on-n2-epoch
+    needs: run-all-tests-on-n2-epoch
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Publish Workflow
@@ -549,23 +420,19 @@ jobs:
           curl -X POST \
             -H "Authorization: token ${{ secrets.ACTIONS_PUBLISH_PAT }}" \
             -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/publish.yml/dispatches \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/release-publish-ghcr.yml/dispatches \
             -d '{"ref": "${{ github.ref_name }}", "inputs": {"sha": "${{ inputs.sha }}", "tag": "${{ inputs.tag }}"}}'
 
   publish-public-release:
     if: |
-      always() && 
-      github.event.inputs.no-release != 'true' && 
-      github.event.inputs.no-public-release != 'true' && 
-      needs.artifacts-ready.result == 'success' &&
-      (github.event.inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success')
+      inputs.no-release != 'true' && 
+      inputs.no-public-release != 'true' && 
+      (inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success')
     permissions:
       id-token: write
       contents: write
       packages: write
-    needs:
-      - artifacts-ready
-      - run-all-tests-on-n2-epoch
+    needs: run-all-tests-on-n2-epoch
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Publish Workflow
@@ -573,57 +440,5 @@ jobs:
           curl -X POST \
             -H "Authorization: token ${{ secrets.ACTIONS_PUBLISH_PAT }}" \
             -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/publish.yml/dispatches \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/release-publish-draft-release.yml/dispatches \
             -d '{"ref": "${{ github.ref_name }}", "inputs": {"sha": "${{ inputs.sha }}", "tag": "${{ inputs.tag }}"}}'
-
-#  deploy-staging-preprod:
-#    if: ${{ github.event.inputs.no-deploy != 'true' }}
-#    permissions:
-#      id-token: write
-#      contents: write
-#    needs: run-all-tests-on-n2-epoch
-#    runs-on: eks
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#      - name: Deploy staging-preprod
-#        uses: ./.github/actions/deploy-staging-preprod
-#        with:
-#          image: ${{ secrets.ECR_REGISTRY_SECRET }}/substrate-node:${{ inputs.sha }}
-#          chain-spec-secret: ${{ inputs.chain-spec-secret }}
-#          no-wipe: ${{ github.event.inputs.no-wipe || 'false' }}
-#        env:
-#          AWS_REGION: "eu-central-1"
-#          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-#          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-#          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-#          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-#          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-#          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-#          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
-#
-#  staging-preprod-tests:
-#    if: ${{ github.event.inputs.no-tests != 'true' }}
-#    permissions:
-#      id-token: write
-#      contents: write
-#    needs: deploy-staging-preprod
-#    runs-on: eks
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#      - name: Run Tests
-#        uses: ./.github/actions/tests/staging-preprod-tests
-#        with:
-#          node-host: staging-preprod-validator-1.staging-preprod.svc.cluster.local
-#          node-port: 9933
-#        env:
-#          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-#          AWS_ROLE_ARN_: ${{ secrets.AWS_ROLE_ARN_ }}
-#          SSH_KEY_BINARY_HOST: ${{ secrets.SSH_KEY_BINARY_HOST }}
-#          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-#          JIRA_URL: ${{ secrets.JIRA_URL }}
-#          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-#          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-#          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-#          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
