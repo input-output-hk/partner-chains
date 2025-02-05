@@ -52,10 +52,10 @@ echo "D parameter policy ID: $D_PARAMETER_POLICY_ID"
 export PERMISSIONED_CANDIDATES_POLICY_ID=$(jq -r '.policyIds.PermissionedCandidates' addresses.json)
 echo "Permissioned candidates policy ID: $PERMISSIONED_CANDIDATES_POLICY_ID"
 
-echo "Setting placeholder values for NATIVE_TOKEN_POLICY_ID, NATIVE_TOKEN_ASSET_NAME, and ILLIQUID_SUPPLY_VALIDATOR_ADDRESS for chain-spec creation"
-export NATIVE_TOKEN_POLICY_ID="ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"
-export NATIVE_TOKEN_ASSET_NAME="5043546f6b656e44656d6f"
-export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"
+echo "Setting values for NATIVE_TOKEN_POLICY_ID, NATIVE_TOKEN_ASSET_NAME, and ILLIQUID_SUPPLY_VALIDATOR_ADDRESS for chain-spec creation"
+export NATIVE_TOKEN_POLICY_ID="1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2b"
+export NATIVE_TOKEN_ASSET_NAME="52657761726420746f6b656e"
+export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wpy8ewg646rg4ce78nl3aassmkquf4wlxcaugqlxwzcylkca0q8v3"
 
 echo "Inserting D parameter..."
 
@@ -195,11 +195,17 @@ jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities
      ]
  ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
-echo "Configuring Balances..."
+echo "Set initial funds to Alice (ecdsa), ?, and Alice (sr25519)"
 jq '.genesis.runtimeGenesis.config.balances.balances = [
     ["5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X", 1000000000000000],
-    ["5D9eDKbFt4JKaEndQvMmbJYnpX9ENUj8U9UUg1AxSa64FJxE", 1000000000000000]
+    ["5D9eDKbFt4JKaEndQvMmbJYnpX9ENUj8U9UUg1AxSa64FJxE", 1000000000000000],
+    ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY", 1000000000000000]
 ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
+
+echo "Configuring Alice as sudo..."
+jq '.genesis.runtimeGenesis.config.sudo = {
+    "key": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+}' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
 echo "Configuring Epoch Length..."
 jq '.genesis.runtimeGenesis.config.sidechain.slotsPerEpoch = 5' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
