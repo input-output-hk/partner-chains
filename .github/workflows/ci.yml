@@ -210,7 +210,7 @@ jobs:
           earthly -P +ci --image=${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node --tags="latest"
       - name: Rename artifact
         run: |
-          cp partner-chains-node-artifact/partner-chains-node partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
+          cp partner-chains-node partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
           chmod +x partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
       - name: Upload partner-chains-node artifact
         uses: actions/upload-artifact@v4
