@@ -96,45 +96,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-  generate-chain-specs:
-    permissions:
-      id-token: write
-      contents: write
-    needs: download-from-s3
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Generate Chain Specs
-        uses: ./.github/actions/artifacts/generate-chain-specs
-        with:
-          tag: ${{ inputs.tag }}
-
-  upload-chain-specs:
-    if: needs.generate-chain-specs.result == 'success'
-    permissions:
-      id-token: write
-      contents: write
-    needs: generate-chain-specs
-    runs-on: eks
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Upload chain spec artifacts to Kubernetes
-        uses: ./.github/actions/deploy/upload-chain-specs
-        with:
-          sha: ${{ github.sha }}
-        env:
-          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
-
   deploy-staging-preview:
-    if: inputs.no-deploy != 'true' && needs.upload-chain-specs.result == 'success'
+    if: inputs.no-deploy != 'true'
     permissions:
       id-token: write
       contents: write
-    needs: upload-chain-specs
     runs-on: eks
     steps:
       - name: Checkout
