@@ -71,6 +71,7 @@ build:
   CACHE --sharing shared --id cargo $CARGO_HOME
   ARG EARTHLY_GIT_HASH
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
+  SAVE ARTIFACT target
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node-artifact
 
