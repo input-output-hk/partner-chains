@@ -81,6 +81,7 @@ test:
   CACHE --sharing shared --id cargo $CARGO_HOME
   #RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES
   #RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
+  COPY +build/target .
   WITH DOCKER
     RUN cargo test --locked --profile=$PROFILE --features=$FEATURES
     #RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
