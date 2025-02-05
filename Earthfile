@@ -15,6 +15,7 @@ ci:
 setup:
   FROM ubuntu:24.04
   WORKDIR /build
+  ENV CARGO_HOME=/root/.cargo
   
   RUN apt-get update && apt-get install -y \
     build-essential \
