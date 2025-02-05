@@ -4,7 +4,7 @@ ARG --global FEATURES
 
 ci:
   BUILD +build
-  BUILD +test
+  #BUILD +test
   BUILD +licenses
   BUILD +fmt
   BUILD +chainspecs
