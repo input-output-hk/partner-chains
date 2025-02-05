@@ -79,9 +79,11 @@ build:
 
 test:
   FROM +build
+  LET WASM_BUILD_STD=0
   DO github.com/earthly/lib:3.0.2+INSTALL_DIND
+  CACHE --sharing shared --id cargo $CARGO_HOME
   WITH DOCKER
-    RUN cargo test --locked --profile=$PROFILE --features=$FEATURES
+    RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
   END
 
 licenses:
