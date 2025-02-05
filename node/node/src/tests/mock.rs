@@ -35,6 +35,7 @@ pub fn test_epoch_config() -> MainchainEpochConfig {
 				* 10,
 		),
 		first_slot_number: 0,
+		slot_duration_millis: Duration::from_millis(1000),
 	}
 }
 

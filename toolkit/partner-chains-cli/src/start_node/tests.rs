@@ -44,6 +44,7 @@ const FIRST_EPOCH_NUMBER: u64 = 5;
 const FIRST_SLOT_NUMBER: u64 = 42000;
 const EPOCH_DURATION_MILLIS: u64 = 43200;
 const FIRST_EPOCH_TIMESTAMP_MILLIS: u64 = 1590000000000;
+const SLOT_DURATION_MILLIS: u64 = 1000;
 
 fn default_chain_config() -> serde_json::Value {
 	serde_json::json!({
@@ -57,7 +58,8 @@ fn default_chain_config() -> serde_json::Value {
 			"first_epoch_number": FIRST_EPOCH_NUMBER,
 			"first_slot_number": FIRST_SLOT_NUMBER,
 			"epoch_duration_millis": EPOCH_DURATION_MILLIS,
-			"first_epoch_timestamp_millis": FIRST_EPOCH_TIMESTAMP_MILLIS
+			"first_epoch_timestamp_millis": FIRST_EPOCH_TIMESTAMP_MILLIS,
+			"main_chain_slot_duration_millis": SLOT_DURATION_MILLIS
 		},
 		"chain_parameters": {
 			"genesis_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0",
@@ -73,6 +75,7 @@ fn default_chain_config_run_command() -> String {
          DB_SYNC_POSTGRES_CONNECTION_STRING='{DB_CONNECTION_STRING}' \\
          MC__FIRST_EPOCH_TIMESTAMP_MILLIS='{FIRST_EPOCH_TIMESTAMP_MILLIS}' \\
          MC__EPOCH_DURATION_MILLIS='{EPOCH_DURATION_MILLIS}' \\
+         MC__SLOT_DURATION_MILLIS='{SLOT_DURATION_MILLIS}' \\
          MC__FIRST_EPOCH_NUMBER='{FIRST_EPOCH_NUMBER}' \\
          MC__FIRST_SLOT_NUMBER='{FIRST_SLOT_NUMBER}' \\
          BLOCK_STABILITY_MARGIN='0' \\

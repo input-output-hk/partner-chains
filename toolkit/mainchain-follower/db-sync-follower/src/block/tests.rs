@@ -274,6 +274,7 @@ fn mainchain_epoch_config() -> MainchainEpochConfig {
 		epoch_duration_millis: Duration::from_millis(1000 * 1000),
 		first_epoch_number: 189,
 		first_slot_number: 189000,
+		slot_duration_millis: Duration::from_millis(1000),
 	}
 }
 
