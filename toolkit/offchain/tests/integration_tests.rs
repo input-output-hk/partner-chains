@@ -451,7 +451,7 @@ async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryU
 			&CandidateRegistration {
 				stake_ownership: AdaBasedStaking {
 					pub_key: EVE_PUBLIC_KEY,
-					signature: MainchainSignature(vec![19u8; 32]),
+					signature: MainchainSignature([19u8; 64]),
 				},
 				partner_chain_pub_key: SidechainPublicKey([20u8; 32].to_vec()),
 				partner_chain_signature: partnerchain_signature,
@@ -544,9 +544,9 @@ async fn get_reserve_datum<
 			let reserve_auth_asset_name: Vec<u8> = Vec::new();
 			let auth_token =
 				utxo.value.native_tokens.get(&reserve_auth_policy_id).and_then(|assets| {
-					assets.iter().find(|asset| {
-						asset.name == reserve_auth_asset_name && asset.amount == 1i128
-					})
+					assets
+						.iter()
+						.find(|asset| asset.name == reserve_auth_asset_name && asset.amount == 1u64)
 				});
 			auth_token?;
 			utxo.clone()

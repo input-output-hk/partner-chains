@@ -274,7 +274,7 @@ impl TryFrom<Vec<u8>> for MainchainPublicKey {
 	}
 }
 
-pub const MAINCHAIN_KEY_HASH_LEN: usize = 28;
+const MAINCHAIN_KEY_HASH_LEN: usize = 28;
 
 /// blake2b_224 hash of a Cardano Verification (Public) Key.
 /// It can be a hash of Payment Verification, Payment Extended Verification or Staking Verification Key.
@@ -300,9 +300,12 @@ impl MainchainKeyHash {
 	}
 }
 
+/// ECDSA signature of MainchainPrivateKey, 64 bytes.
+const MAINCHAIN_SIGNATURE_LEN: usize = 64;
+
 #[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, decode_hex)]
-pub struct MainchainSignature(pub Vec<u8>);
+pub struct MainchainSignature(pub [u8; MAINCHAIN_SIGNATURE_LEN]);
 
 #[derive(
 	Clone,

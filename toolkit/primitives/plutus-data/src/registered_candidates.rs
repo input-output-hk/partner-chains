@@ -176,7 +176,7 @@ fn decode_ada_based_staking_datum(datum: PlutusData) -> Option<AdaBasedStaking> 
 		.filter(|datum| datum.data().len() >= 2)?
 		.data();
 	let pub_key = TryFrom::try_from(fields.get(0).as_bytes()?).ok()?;
-	let signature = MainchainSignature(fields.get(1).as_bytes()?);
+	let signature = MainchainSignature(fields.get(1).as_bytes()?.try_into().ok()?);
 	Some(AdaBasedStaking { pub_key, signature })
 }
 fn decode_utxo_id_datum(datum: PlutusData) -> Option<UtxoId> {

@@ -106,11 +106,12 @@ fn reserve_release_tx(
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
 	let reserve_balance = previous_reserve.utxo.get_asset_amount(&token);
-	let amount_to_transfer = cumulative_total_transfer - stats.token_total_amount_transferred;
-	if amount_to_transfer as i128 > reserve_balance {
-		return Err(anyhow!("Not enough funds in the reserve to transfer {amount_to_transfer} tokens (reserve balance: {reserve_balance})"));
-	}
-	let left_in_reserve: u64 = (reserve_balance - (amount_to_transfer as i128)) as u64;
+	let token_total_amount_transferred = stats.token_total_amount_transferred;
+	let amount_to_transfer = cumulative_total_transfer.checked_sub(token_total_amount_transferred)
+		.filter(|x| *x > 0)
+		.ok_or_else(||anyhow!("The requested total amount: {cumulative_total_transfer} is not greater than the amount already transferred to illiquid supply: {token_total_amount_transferred}.",))?;
+	let left_in_reserve = reserve_balance.checked_sub(amount_to_transfer)
+		.ok_or_else(||anyhow!("Not enough funds in the reserve to transfer {amount_to_transfer} tokens (reserve balance: {reserve_balance})"))?;
 
 	// Additional reference scripts
 	tx_builder.add_script_reference_input(
@@ -477,5 +478,24 @@ mod tests {
 			.expect("Should transfer reserve token to illiquid supply");
 
 		assert_eq!(illiquid_supply_output, 980u64.into())
+	}
+
+	// This test would not have to exists if the user interface was asking for amount to transfer instead of total amount.
+	#[test]
+	fn return_error_if_total_transferred_amount_is_not_greater_than_already_released_amount() {
+		let amount = previous_reserve_datum().stats.token_total_amount_transferred;
+		let result = reserve_release_tx(
+			&tx_context(),
+			&reserve_data(),
+			&previous_reserve_utxo(),
+			&reference_utxo(),
+			amount,
+			0,
+			Costs::ZeroCosts,
+		);
+		let err = result.unwrap_err();
+		assert!(err
+			.to_string()
+			.contains("is not greater than the amount already transferred to illiquid supply"))
 	}
 }
