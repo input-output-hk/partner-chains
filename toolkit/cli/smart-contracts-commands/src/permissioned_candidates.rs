@@ -1,6 +1,5 @@
 use crate::parse_partnerchain_public_keys;
 use crate::PaymentFilePath;
-use ogmios_client::jsonrpsee::client_for_url;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 use partner_chains_cardano_offchain::permissioned_candidates::upsert_permissioned_candidates;
 use sidechain_domain::UtxoId;
@@ -42,7 +41,7 @@ impl UpsertPermissionedCandidatesCmd {
 			permissioned_candidates.push(permissioned_candidate);
 		}
 
-		let client = client_for_url(&self.common_arguments.ogmios_url).await?;
+		let client = self.common_arguments.get_ogmios_client().await?;
 
 		upsert_permissioned_candidates(
 			self.genesis_utxo,

@@ -71,7 +71,9 @@ pub struct UtxoValue {
 pub fn ogmios_request(addr: &str, req: OgmiosRequest) -> anyhow::Result<OgmiosResponse> {
 	let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 	tokio_runtime.block_on(async {
-		let client = client_for_url(addr).await.map_err(|e| anyhow::anyhow!(e))?;
+		let client = client_for_url(addr)
+			.await
+			.map_err(|e| anyhow::anyhow!("Failed to connect to Ogmios at {} with: {}", addr, e))?;
 		match req {
 			OgmiosRequest::QueryLedgerStateEraSummaries => {
 				let era_summaries = client.era_summaries().await.map_err(|e| anyhow::anyhow!(e))?;
