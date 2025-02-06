@@ -1,3 +1,4 @@
+use ogmios_client::jsonrpsee::{client_for_url, OgmiosClients};
 use partner_chains_cardano_offchain::cardano_keys::{
 	CardanoKeyFileContent, CardanoPaymentSigningKey,
 };
@@ -36,6 +37,14 @@ pub enum SmartContractsCmd {
 pub struct CommonArguments {
 	#[arg(default_value = "ws://localhost:1337", long, short = 'O')]
 	ogmios_url: String,
+}
+
+impl CommonArguments {
+	pub async fn get_ogmios_client(&self) -> crate::CmdResult<OgmiosClients> {
+		Ok(client_for_url(&self.ogmios_url).await.map_err(|e| {
+			format!("Failed to connect to Ogmios at {} with: {}", &self.ogmios_url, e)
+		})?)
+	}
 }
 
 type CmdResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;

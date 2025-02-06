@@ -10,7 +10,7 @@ from src.blockchain_api import BlockchainApi, Wallet
 from src.blockchain_types import BlockchainTypes
 from src.password_filter import PasswordFilter
 from src.pc_epoch_calculator import PartnerChainEpochCalculator
-from src.partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse
+from src.partner_chain_rpc import PartnerChainRpc
 from config.api_config import ApiConfig
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -21,7 +21,6 @@ import time
 _config: ApiConfig = None
 partner_chain_rpc_api: PartnerChainRpc = None
 partner_chain_epoch_calc: PartnerChainEpochCalculator = None
-partner_chain_status: PartnerChainRpcResponse = None
 
 
 def pytest_addoption(parser):
@@ -104,8 +103,17 @@ def pytest_configure(config: Config):
     partner_chain_rpc_api = PartnerChainRpc(_config.nodes_config.node.rpc_url)
     partner_chain_epoch_calc = PartnerChainEpochCalculator(_config)
 
+    # set partner chain status on main thread
+    if not hasattr(config, 'workerinput'):
+        config.partner_chain_status = partner_chain_rpc_api.partner_chain_get_status().result
+
     logger = logging.getLogger()
     logger.addFilter(TimestampFilter())
+
+
+def pytest_configure_node(node):
+    # set partner chain status on worker threads
+    node.workerinput["partner_chain_status"] = node.config.partner_chain_status
 
 
 class TimestampFilter(logging.Filter):
@@ -120,11 +128,13 @@ def pytest_generate_tests(metafunc: Metafunc):
         mc_epoch_cmd_line_option = metafunc.config.getoption("--mc-epoch")
         pc_epoch_cmd_line_option = metafunc.config.getoption("--pc-epoch")
 
-        global partner_chain_status
-        if not partner_chain_status:
-            partner_chain_status = partner_chain_rpc_api.partner_chain_get_status().result
-        current_mc_epoch = partner_chain_status["mainchain"]["epoch"]
-        current_pc_epoch = partner_chain_status["sidechain"]["epoch"]
+        is_worker_thread = getattr(metafunc.config, 'workerinput', False)
+        if is_worker_thread:
+            current_mc_epoch = is_worker_thread.get("partner_chain_status")["mainchain"]["epoch"]
+            current_pc_epoch = is_worker_thread.get("partner_chain_status")["sidechain"]["epoch"]
+        else:
+            current_mc_epoch = metafunc.config.partner_chain_status["mainchain"]["epoch"]
+            current_pc_epoch = metafunc.config.partner_chain_status["sidechain"]["epoch"]
 
         if not _config.initial_pc_epoch:
             logging.warning("Initial SC epoch is not set in config. Searching via RPC...")

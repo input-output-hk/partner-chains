@@ -1,5 +1,4 @@
 use crate::PaymentFilePath;
-use ogmios_client::jsonrpsee::client_for_url;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 use partner_chains_cardano_offchain::d_param::upsert_d_param;
 use sidechain_domain::DParameter;
@@ -26,7 +25,7 @@ impl UpsertDParameterCmd {
 			num_permissioned_candidates: self.permissioned_candidates_count,
 			num_registered_candidates: self.registered_candidates_count,
 		};
-		let client = client_for_url(&self.common_arguments.ogmios_url).await?;
+		let client = self.common_arguments.get_ogmios_client().await?;
 
 		upsert_d_param(
 			self.genesis_utxo,

@@ -10,14 +10,6 @@ runs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Update flake.lock with calling PR
-      if: ${{ github.event_name == 'repository_dispatch' }}
-      run: |
-        nix flake lock --update-input trustless-sidechain \
-        --override-input trustless-sidechain \
-        github:input-output-hk/partner-chains-smart-contracts/${{ github.event.client_payload.ref }}
-      shell: bash
-
     - name: Acquire AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:

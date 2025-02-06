@@ -90,7 +90,6 @@ build:
   #ARG CACHE_KEY=$(find . -type f -name "*.rs" -o -name "*.toml" | sort | xargs cat | sha256sum)
   #CACHE --sharing shared --id cargo-build-$CACHE_KEY target
   CACHE --sharing shared --id cargo $CARGO_HOME
-  ARG EARTHLY_GIT_HASH
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
   #SAVE ARTIFACT target
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node
@@ -152,12 +151,9 @@ docker:
 
     ENTRYPOINT ["/usr/local/bin/partner-chains-node"]
 
-    ARG EARTHLY_GIT_HASH
-    ENV EARTHLY_GIT_HASH=$EARTHLY_GIT_HASH
-
-    FOR tag IN $EARTHLY_GIT_HASH $tags
-        SAVE IMAGE --push $image:$tag
-    END
+		FOR tag IN $tags
+		    SAVE IMAGE --push $image:$tag
+		END
 
 deps:
     FROM +source

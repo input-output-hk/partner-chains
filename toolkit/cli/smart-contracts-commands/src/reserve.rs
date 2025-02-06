@@ -1,5 +1,4 @@
 use crate::PaymentFilePath;
-use ogmios_client::jsonrpsee::client_for_url;
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	reserve::{
@@ -13,6 +12,7 @@ use partner_chains_cardano_offchain::{
 	},
 };
 use sidechain_domain::{AssetId, ScriptHash, UtxoId};
+use std::num::NonZero;
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -55,11 +55,11 @@ pub struct InitReserveCmd {
 impl InitReserveCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_key = self.payment_key_file.read_key()?;
-		let ogmios_client = client_for_url(&self.common_arguments.ogmios_url).await?;
+		let client = self.common_arguments.get_ogmios_client().await?;
 		let _ = init_reserve_management(
 			self.genesis_utxo,
 			&payment_key,
-			&ogmios_client,
+			&client,
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;
@@ -90,7 +90,7 @@ pub struct CreateReserveCmd {
 impl CreateReserveCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_key = self.payment_key_file.read_key()?;
-		let ogmios_client = client_for_url(&self.common_arguments.ogmios_url).await?;
+		let client = self.common_arguments.get_ogmios_client().await?;
 		let _ = create_reserve_utxo(
 			ReserveParameters {
 				total_accrued_function_script_hash: self.total_accrued_function_script_hash,
@@ -99,7 +99,7 @@ impl CreateReserveCmd {
 			},
 			self.genesis_utxo,
 			&payment_key,
-			&ogmios_client,
+			&client,
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;
@@ -127,12 +127,12 @@ pub struct DepositReserveCmd {
 impl DepositReserveCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_key = self.payment_key_file.read_key()?;
-		let ogmios_client = client_for_url(&self.common_arguments.ogmios_url).await?;
+		let client = self.common_arguments.get_ogmios_client().await?;
 		let _ = deposit_to_reserve(
 			TokenAmount { token: self.token, amount: self.amount },
 			self.genesis_utxo,
 			&payment_key,
-			&ogmios_client,
+			&client,
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;
@@ -157,12 +157,12 @@ pub struct UpdateReserveSettingsCmd {
 impl UpdateReserveSettingsCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_key = self.payment_key_file.read_key()?;
-		let ogmios_client = client_for_url(&self.common_arguments.ogmios_url).await?;
+		let client = self.common_arguments.get_ogmios_client().await?;
 		let _ = update_reserve_settings(
 			self.genesis_utxo,
 			&payment_key,
 			self.total_accrued_function_script_hash,
-			&ogmios_client,
+			&client,
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;
@@ -184,11 +184,11 @@ pub struct HandoverReserveCmd {
 impl HandoverReserveCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_key = self.payment_key_file.read_key()?;
-		let ogmios_client = client_for_url(&self.common_arguments.ogmios_url).await?;
+		let client = self.common_arguments.get_ogmios_client().await?;
 		let _ = handover_reserve(
 			self.genesis_utxo,
 			&payment_key,
-			&ogmios_client,
+			&client,
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;
@@ -208,24 +208,21 @@ pub struct ReleaseReserveCmd {
 	/// Reference UTXO containing the V-Function script
 	#[arg(long, short('r'))]
 	reference_utxo: UtxoId,
-	/// Encoded asset id in form <policy_id_hex>.<asset_name_hex>.
+	/// Amount of reserve tokens to be released to the illiquid supply.
 	#[arg(long)]
-	token: AssetId,
-	/// Current value of the V-Function
-	#[arg(long)]
-	amount: u64,
+	amount: NonZero<u64>,
 }
 
 impl ReleaseReserveCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_key = self.payment_key_file.read_key()?;
-		let ogmios_client = client_for_url(&self.common_arguments.ogmios_url).await?;
+		let client = self.common_arguments.get_ogmios_client().await?;
 		let _ = release_reserve_funds(
-			TokenAmount { token: self.token, amount: self.amount },
+			self.amount,
 			self.genesis_utxo,
 			self.reference_utxo,
 			&payment_key,
-			&ogmios_client,
+			&client,
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;

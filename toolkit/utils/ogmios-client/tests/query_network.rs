@@ -43,7 +43,7 @@ async fn shelley_genesis_configuration() {
 	})
 	.await
 	.unwrap();
-	let client = client_for_url(&format!("http://{address}")).await.unwrap();
+	let client = client_for_url(&format!("ws://{address}")).await.unwrap();
 	let genesis_configuration = client.shelley_genesis_configuration().await.unwrap();
 	assert_eq!(
 		genesis_configuration,
