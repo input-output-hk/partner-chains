@@ -18,6 +18,22 @@ ci-post-merge:
   ARG tags
   BUILD +docker --image=$image --tags=$tags
 
+ci-workflow-dispatch:
+  BUILD +build
+  BUILD +test
+  BUILD +licenses
+  BUILD +fmt
+  ARG image=partner-chains-node
+  ARG tags
+  BUILD +docker --image=$image --tags=$tags
+
+ci-post-merge:
+  BUILD +build
+  BUILD +chainspecs
+  ARG image=partner-chains-node
+  ARG tags
+  BUILD +docker --image=$image --tags=$tags
+
 setup:
   FROM ubuntu:24.04
   WORKDIR /build
