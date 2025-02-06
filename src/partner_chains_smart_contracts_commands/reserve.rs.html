@@ -229,8 +229,6 @@
 <a href="#229" id="229">229</a>
 <a href="#230" id="230">230</a>
 <a href="#231" id="231">231</a>
-<a href="#232" id="232">232</a>
-<a href="#233" id="233">233</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::PaymentFilePath;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
@@ -245,6 +243,7 @@
 	},
 };
 <span class="kw">use </span>sidechain_domain::{AssetId, ScriptHash, UtxoId};
+<span class="kw">use </span>std::num::NonZero;
 
 <span class="attr">#[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -440,12 +439,9 @@
 	<span class="doccomment">/// Reference UTXO containing the V-Function script
 	</span><span class="attr">#[arg(long, short(<span class="string">'r'</span>))]
 	</span>reference_utxo: UtxoId,
-	<span class="doccomment">/// Encoded asset id in form &lt;policy_id_hex&gt;.&lt;asset_name_hex&gt;.
+	<span class="doccomment">/// Amount of reserve tokens to be released to the illiquid supply.
 	</span><span class="attr">#[arg(long)]
-	</span>token: AssetId,
-	<span class="doccomment">/// Current value of the V-Function
-	</span><span class="attr">#[arg(long)]
-	</span>amount: u64,
+	</span>amount: NonZero&lt;u64&gt;,
 }
 
 <span class="kw">impl </span>ReleaseReserveCmd {
@@ -453,7 +449,7 @@
 		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
 		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let _ </span>= release_reserve_funds(
-			TokenAmount { token: <span class="self">self</span>.token, amount: <span class="self">self</span>.amount },
+			<span class="self">self</span>.amount,
 			<span class="self">self</span>.genesis_utxo,
 			<span class="self">self</span>.reference_utxo,
 			<span class="kw-2">&amp;</span>payment_key,

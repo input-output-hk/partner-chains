@@ -480,25 +480,6 @@
 <a href="#480" id="480">480</a>
 <a href="#481" id="481">481</a>
 <a href="#482" id="482">482</a>
-<a href="#483" id="483">483</a>
-<a href="#484" id="484">484</a>
-<a href="#485" id="485">485</a>
-<a href="#486" id="486">486</a>
-<a href="#487" id="487">487</a>
-<a href="#488" id="488">488</a>
-<a href="#489" id="489">489</a>
-<a href="#490" id="490">490</a>
-<a href="#491" id="491">491</a>
-<a href="#492" id="492">492</a>
-<a href="#493" id="493">493</a>
-<a href="#494" id="494">494</a>
-<a href="#495" id="495">495</a>
-<a href="#496" id="496">496</a>
-<a href="#497" id="497">497</a>
-<a href="#498" id="498">498</a>
-<a href="#499" id="499">499</a>
-<a href="#500" id="500">500</a>
-<a href="#501" id="501">501</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! This transaction releases some funds to the illiquid supply.
 //! Inputs:
 //!     - previous utxo at the *reserve validator*, containing the reserve tokens and the
@@ -520,7 +501,7 @@
 //!       including the ones released in this transaction*. Ie. if N tokens were already released
 //!       and M tokens are being released, the transaction should mint N+M V-Function tokens.
 //!       These tokens are worthless and don't serve any purpose after the transaction is done.
-</span><span class="kw">use super</span>::{reserve_utxo_input_with_validator_script_reference, ReserveData, TokenAmount};
+</span><span class="kw">use super</span>::{reserve_utxo_input_with_validator_script_reference, ReserveData};
 <span class="kw">use crate</span>::{
 	await_tx::AwaitTx, cardano_keys::CardanoPaymentSigningKey, csl::<span class="kw-2">*</span>, plutus_script::PlutusScript,
 	reserve::ReserveUtxo,
@@ -537,14 +518,13 @@
 };
 <span class="kw">use </span>partner_chains_plutus_data::reserve::ReserveRedeemer;
 <span class="kw">use </span>sidechain_domain::{McTxHash, UtxoId};
+<span class="kw">use </span>std::num::NonZero;
 
 <span class="kw">pub async fn </span>release_reserve_funds&lt;
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 &gt;(
-	<span class="comment">// Asset ID of the reserve token and current value of the V-Function,
-	// ie. the *total* number of tokens that will have been released after this transction
-	</span>token: TokenAmount,
+	amount: NonZero&lt;u64&gt;,
 	genesis_utxo: UtxoId,
 	reference_utxo: UtxoId,
 	payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
@@ -567,7 +547,7 @@
 				<span class="kw-2">&amp;</span>reserve_data,
 				<span class="kw-2">&amp;</span>reserve_utxo,
 				<span class="kw-2">&amp;</span>reference_utxo,
-				token.amount,
+				amount.into(),
 				tip.slot,
 				costs,
 			)
@@ -597,20 +577,21 @@
 	reserve_data: <span class="kw-2">&amp;</span>ReserveData,
 	previous_reserve: <span class="kw-2">&amp;</span>ReserveUtxo,
 	reference_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
-	cumulative_total_transfer: u64,
+	amount_to_transfer: u64,
 	latest_slot: u64,
 	costs: Costs,
 ) -&gt; anyhow::Result&lt;Transaction&gt; {
-	<span class="kw">let </span>token = previous_reserve.datum.immutable_settings.token.clone();
-	<span class="kw">let </span>stats = previous_reserve.datum.stats.clone();
+	<span class="kw">let </span>token = <span class="kw-2">&amp;</span>previous_reserve.datum.immutable_settings.token;
+	<span class="kw">let </span>stats = <span class="kw-2">&amp;</span>previous_reserve.datum.stats;
 
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
 
 	<span class="kw">let </span>reserve_balance = previous_reserve.utxo.get_asset_amount(<span class="kw-2">&amp;</span>token);
 	<span class="kw">let </span>token_total_amount_transferred = stats.token_total_amount_transferred;
-	<span class="kw">let </span>amount_to_transfer = cumulative_total_transfer.checked_sub(token_total_amount_transferred)
-		.filter(|x| <span class="kw-2">*</span>x &gt; <span class="number">0</span>)
-		.ok_or_else(||<span class="macro">anyhow!</span>(<span class="string">"The requested total amount: {cumulative_total_transfer} is not greater than the amount already transferred to illiquid supply: {token_total_amount_transferred}."</span>,))<span class="question-mark">?</span>;
+	<span class="kw">let </span>cumulative_total_transfer: u64 = token_total_amount_transferred
+		.checked_add(amount_to_transfer)
+		.expect(<span class="string">"cumulative_total_transfer overflow u64"</span>);
+
 	<span class="kw">let </span>left_in_reserve = reserve_balance.checked_sub(amount_to_transfer)
 		.ok_or_else(||<span class="macro">anyhow!</span>(<span class="string">"Not enough funds in the reserve to transfer {amount_to_transfer} tokens (reserve balance: {reserve_balance})"</span>))<span class="question-mark">?</span>;
 
@@ -661,7 +642,7 @@
 		TransactionOutputBuilder::new()
 			.with_address(<span class="kw-2">&amp;</span>reserve_data.scripts.validator.address(ctx.network))
 			.with_plutus_data(<span class="kw-2">&amp;</span>PlutusData::from(
-				previous_reserve.datum.clone().after_withdrawal(amount_to_transfer),
+				previous_reserve.datum.clone().after_withdrawal(amount_to_transfer.into()),
 			))
 			.next()<span class="question-mark">?
 			</span>.with_minimum_ada_and_asset(
@@ -893,7 +874,7 @@
 			<span class="kw-2">&amp;</span>reserve_data(),
 			<span class="kw-2">&amp;</span>previous_reserve_utxo(),
 			<span class="kw-2">&amp;</span>reference_utxo(),
-			<span class="number">20</span>,
+			<span class="number">5</span>,
 			<span class="number">0</span>,
 			Costs::ZeroCosts,
 		)
@@ -933,7 +914,7 @@
 			.get(<span class="kw-2">&amp;</span>empty_asset_name())
 			.expect(<span class="string">"The minted token should have an empty asset name"</span>);
 
-		<span class="macro">assert_eq!</span>(v_function_token_mint_amount, Int::new_i32(<span class="number">20</span>))
+		<span class="macro">assert_eq!</span>(v_function_token_mint_amount, Int::new_i32(<span class="number">15</span>))
 	}
 
 	<span class="attr">#[test]
@@ -960,12 +941,12 @@
 			.get(<span class="kw-2">&amp;</span>token_name().to_csl().unwrap())
 			.expect(<span class="string">"Should transfer reserve token to illiquid supply"</span>);
 
-		<span class="macro">assert_eq!</span>(illiquid_supply_output, <span class="number">10u64</span>.into())
+		<span class="macro">assert_eq!</span>(illiquid_supply_output, <span class="number">5u64</span>.into())
 	}
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>should_leave_unreleased_tokens_at_reserve_validator() {
-		<span class="kw">let </span>illiquid_supply_output = (reserve_release_test_tx().body().outputs().into_iter())
+		<span class="kw">let </span>validator_output = (reserve_release_test_tx().body().outputs().into_iter())
 			.find(|output| {
 				output.address() == reserve_validator_script().address(NetworkIdKind::Testnet)
 			})
@@ -978,26 +959,7 @@
 			.get(<span class="kw-2">&amp;</span>token_name().to_csl().unwrap())
 			.expect(<span class="string">"Should transfer reserve token to illiquid supply"</span>);
 
-		<span class="macro">assert_eq!</span>(illiquid_supply_output, <span class="number">980u64</span>.into())
-	}
-
-	<span class="comment">// This test would not have to exists if the user interface was asking for amount to transfer instead of total amount.
-	</span><span class="attr">#[test]
-	</span><span class="kw">fn </span>return_error_if_total_transferred_amount_is_not_greater_than_already_released_amount() {
-		<span class="kw">let </span>amount = previous_reserve_datum().stats.token_total_amount_transferred;
-		<span class="kw">let </span>result = reserve_release_tx(
-			<span class="kw-2">&amp;</span>tx_context(),
-			<span class="kw-2">&amp;</span>reserve_data(),
-			<span class="kw-2">&amp;</span>previous_reserve_utxo(),
-			<span class="kw-2">&amp;</span>reference_utxo(),
-			amount,
-			<span class="number">0</span>,
-			Costs::ZeroCosts,
-		);
-		<span class="kw">let </span>err = result.unwrap_err();
-		<span class="macro">assert!</span>(err
-			.to_string()
-			.contains(<span class="string">"is not greater than the amount already transferred to illiquid supply"</span>))
+		<span class="macro">assert_eq!</span>(validator_output, <span class="number">985u64</span>.into())
 	}
 }
 </code></pre></div></section></main></body></html>
