@@ -83,6 +83,7 @@ build-deps:
   # Cache the target directory using the recipe hash so that if dependencies are unchanged, this cache is restored
   CACHE --sharing shared --id cargo-deps-$RECIPE_HASH target
   RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES --recipe-path recipe.json
+  RUN mkdir -p target  # Ensure the target directory exists
   SAVE ARTIFACT target
 
 #build:
