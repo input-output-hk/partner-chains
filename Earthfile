@@ -67,11 +67,22 @@ source:
   END
   COPY --dir +build-deps/target .
 
+#build-deps:
+#  FROM +fetch-deps
+#  CACHE --sharing shared --id cargo $CARGO_HOME
+#  RUN cargo --locked chef prepare
+#  RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES
+#  SAVE ARTIFACT target
+
 build-deps:
   FROM +fetch-deps
   CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN cargo --locked chef prepare
-  RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES
+  # Generate a recipe file (make sure this file is deterministic)
+  RUN cargo --locked chef prepare --recipe-path recipe.json
+  LET RECIPE_HASH=$(cat recipe.json | sha256sum)
+  # Cache the target directory using the recipe hash so that if dependencies are unchanged, this cache is restored
+  CACHE --sharing shared --id cargo-deps-$RECIPE_HASH target
+  RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES --recipe-path recipe.json
   SAVE ARTIFACT target
 
 build:
