@@ -51,6 +51,7 @@ env:
 
 jobs:
   download-from-s3:
+    if: ${{ !inputs.no-release }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
