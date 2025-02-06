@@ -224,7 +224,6 @@ Objective: Release available reserve tokens (defined by the `VFunction`).
   --ogmios-url ws://localhost:1337 \
   --payment-key-file <PAYMENT_KEY_FILE> \
   --reference-utxo 156803a18a4dbde48dc83a21b8b1007b693cdf096b73596252745fdef1de6414#0 \
-  --token <TOKEN> \
   --amount <AMOUNT>
 ```
 
@@ -236,17 +235,11 @@ Objective: Release available reserve tokens (defined by the `VFunction`).
 
 * `--reference-utxo`: UTXO where the `VFunction` script is attached as a reference.
 
-* `--token`: Reserve token asset id encoded in form `<policy_id_hex>.<asset_name_hex>`.
-
 * `--amount`: amount of tokens to release
 
-   - The number should be calculated as `number of tokens release up to this time + amount of tokens to release`
+   - Command will fail if amount is greater than the number of tokens in the reserve.
 
-   - If 10 tokens have already been released and you want to release 10 more, then the total accrued until now should be defined as 20.
-
-   - If `--amount` passed by the user is lower than the factual number, then nothing will be released.
-
-   - Ensure you have enough tokens to release in this time frame (the `VFunction` defines release logic).
+   - Command will fail if the `VFunction` refuses to relase given amount.
 
 #### Steps
 
