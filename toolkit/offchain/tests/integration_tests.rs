@@ -149,6 +149,14 @@ async fn reserve_management_scenario() {
 	)
 	.await;
 	assert_illiquid_supply(genesis_utxo, RELEASE_AMOUNT, &client).await;
+	run_release_reserve_funds(genesis_utxo, RELEASE_AMOUNT, V_FUNCTION_UTXO, &client).await;
+	assert_reserve_deposited(
+		genesis_utxo,
+		INITIAL_DEPOSIT_AMOUNT + DEPOSIT_AMOUNT - 2 * RELEASE_AMOUNT,
+		&client,
+	)
+	.await;
+	assert_illiquid_supply(genesis_utxo, 2 * RELEASE_AMOUNT, &client).await;
 	run_update_reserve_settings_management(
 		genesis_utxo,
 		UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH,
@@ -421,13 +429,7 @@ async fn run_release_reserve_funds<
 	client: &T,
 ) {
 	release_reserve_funds(
-		TokenAmount {
-			token: AssetId {
-				policy_id: REWARDS_TOKEN_POLICY_ID,
-				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
-			},
-			amount: release_amount,
-		},
+		release_amount.try_into().unwrap(),
 		genesis_utxo,
 		reference_utxo,
 		&governance_authority_payment_key(),

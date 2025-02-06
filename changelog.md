@@ -10,13 +10,12 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Fixed
 
-* Overflow error in `smart-contracts reserve release` if amount is not higher than already released amount.
-
 ## Added
 
 # v1.5.0
 
 ## Changed
+* `smart-contracts reserve release` command parameter `--amount` semantic has changed, it now represent the amount of tokens to release in this command execution
 * Replaced custom weights with default substrate weights for few pallets
 * Updated to polkadot-stable2409-4 (aka v1.16.4).
 * `setup-main-chain-state` command now uses native Rust to upsert the D-Parameter and upsert permissioned candidates

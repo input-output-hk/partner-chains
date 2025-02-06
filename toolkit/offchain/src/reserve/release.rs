@@ -19,7 +19,7 @@
 //!       including the ones released in this transaction*. Ie. if N tokens were already released
 //!       and M tokens are being released, the transaction should mint N+M V-Function tokens.
 //!       These tokens are worthless and don't serve any purpose after the transaction is done.
-use super::{reserve_utxo_input_with_validator_script_reference, ReserveData, TokenAmount};
+use super::{reserve_utxo_input_with_validator_script_reference, ReserveData};
 use crate::{
 	await_tx::AwaitTx, cardano_keys::CardanoPaymentSigningKey, csl::*, plutus_script::PlutusScript,
 	reserve::ReserveUtxo,
@@ -36,14 +36,13 @@ use ogmios_client::{
 };
 use partner_chains_plutus_data::reserve::ReserveRedeemer;
 use sidechain_domain::{McTxHash, UtxoId};
+use std::num::NonZero;
 
 pub async fn release_reserve_funds<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 >(
-	// Asset ID of the reserve token and current value of the V-Function,
-	// ie. the *total* number of tokens that will have been released after this transction
-	token: TokenAmount,
+	amount: NonZero<u64>,
 	genesis_utxo: UtxoId,
 	reference_utxo: UtxoId,
 	payment_key: &CardanoPaymentSigningKey,
@@ -66,7 +65,7 @@ pub async fn release_reserve_funds<
 				&reserve_data,
 				&reserve_utxo,
 				&reference_utxo,
-				token.amount,
+				amount.into(),
 				tip.slot,
 				costs,
 			)
@@ -96,20 +95,21 @@ fn reserve_release_tx(
 	reserve_data: &ReserveData,
 	previous_reserve: &ReserveUtxo,
 	reference_utxo: &OgmiosUtxo,
-	cumulative_total_transfer: u64,
+	amount_to_transfer: u64,
 	latest_slot: u64,
 	costs: Costs,
 ) -> anyhow::Result<Transaction> {
-	let token = previous_reserve.datum.immutable_settings.token.clone();
-	let stats = previous_reserve.datum.stats.clone();
+	let token = &previous_reserve.datum.immutable_settings.token;
+	let stats = &previous_reserve.datum.stats;
 
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
 	let reserve_balance = previous_reserve.utxo.get_asset_amount(&token);
 	let token_total_amount_transferred = stats.token_total_amount_transferred;
-	let amount_to_transfer = cumulative_total_transfer.checked_sub(token_total_amount_transferred)
-		.filter(|x| *x > 0)
-		.ok_or_else(||anyhow!("The requested total amount: {cumulative_total_transfer} is not greater than the amount already transferred to illiquid supply: {token_total_amount_transferred}.",))?;
+	let cumulative_total_transfer: u64 = token_total_amount_transferred
+		.checked_add(amount_to_transfer)
+		.expect("cumulative_total_transfer overflow u64");
+
 	let left_in_reserve = reserve_balance.checked_sub(amount_to_transfer)
 		.ok_or_else(||anyhow!("Not enough funds in the reserve to transfer {amount_to_transfer} tokens (reserve balance: {reserve_balance})"))?;
 
@@ -160,7 +160,7 @@ fn reserve_release_tx(
 		TransactionOutputBuilder::new()
 			.with_address(&reserve_data.scripts.validator.address(ctx.network))
 			.with_plutus_data(&PlutusData::from(
-				previous_reserve.datum.clone().after_withdrawal(amount_to_transfer),
+				previous_reserve.datum.clone().after_withdrawal(amount_to_transfer.into()),
 			))
 			.next()?
 			.with_minimum_ada_and_asset(
@@ -392,7 +392,7 @@ mod tests {
 			&reserve_data(),
 			&previous_reserve_utxo(),
 			&reference_utxo(),
-			20,
+			5,
 			0,
 			Costs::ZeroCosts,
 		)
@@ -432,7 +432,7 @@ mod tests {
 			.get(&empty_asset_name())
 			.expect("The minted token should have an empty asset name");
 
-		assert_eq!(v_function_token_mint_amount, Int::new_i32(20))
+		assert_eq!(v_function_token_mint_amount, Int::new_i32(15))
 	}
 
 	#[test]
@@ -459,12 +459,12 @@ mod tests {
 			.get(&token_name().to_csl().unwrap())
 			.expect("Should transfer reserve token to illiquid supply");
 
-		assert_eq!(illiquid_supply_output, 10u64.into())
+		assert_eq!(illiquid_supply_output, 5u64.into())
 	}
 
 	#[test]
 	fn should_leave_unreleased_tokens_at_reserve_validator() {
-		let illiquid_supply_output = (reserve_release_test_tx().body().outputs().into_iter())
+		let validator_output = (reserve_release_test_tx().body().outputs().into_iter())
 			.find(|output| {
 				output.address() == reserve_validator_script().address(NetworkIdKind::Testnet)
 			})
@@ -477,25 +477,6 @@ mod tests {
 			.get(&token_name().to_csl().unwrap())
 			.expect("Should transfer reserve token to illiquid supply");
 
-		assert_eq!(illiquid_supply_output, 980u64.into())
-	}
-
-	// This test would not have to exists if the user interface was asking for amount to transfer instead of total amount.
-	#[test]
-	fn return_error_if_total_transferred_amount_is_not_greater_than_already_released_amount() {
-		let amount = previous_reserve_datum().stats.token_total_amount_transferred;
-		let result = reserve_release_tx(
-			&tx_context(),
-			&reserve_data(),
-			&previous_reserve_utxo(),
-			&reference_utxo(),
-			amount,
-			0,
-			Costs::ZeroCosts,
-		);
-		let err = result.unwrap_err();
-		assert!(err
-			.to_string()
-			.contains("is not greater than the amount already transferred to illiquid supply"))
+		assert_eq!(validator_output, 985u64.into())
 	}
 }
