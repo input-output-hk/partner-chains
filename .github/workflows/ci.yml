@@ -497,7 +497,6 @@ jobs:
   
   build-macos-x86_64-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
-    needs: build-linux-workflow-dispatch
     permissions:
       id-token: write
       contents: write
@@ -517,7 +516,6 @@ jobs:
   
   build-macos-arm64-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
-    needs: build-linux-workflow-dispatch
     permissions:
       id-token: write
       contents: write
