@@ -1,7 +1,7 @@
 //! OgmiosClient implementation with jsonrpsee.
 //! Major drawback is that it swallows the error response from the server in case of 400 Bad Request.
 
-use crate::{OgmiosClient, OgmiosClientError, OgmiosParams};
+use crate::{query_ledger_state::QueryLedgerState, OgmiosClient, OgmiosClientError, OgmiosParams};
 use jsonrpsee::{
 	core::{client::ClientT, traits::ToRpcParams, ClientError},
 	http_client::{HttpClient, HttpClientBuilder},
@@ -44,7 +44,16 @@ pub async fn client_for_url(addr: &str) -> Result<OgmiosClients, String> {
 		let client = HttpClientBuilder::default()
 			.build(addr)
 			.map_err(|e| format!("Couldn't create HTTP client: {}", e))?;
-		Ok(OgmiosClients::HttpClient(client))
+
+		let http_client = OgmiosClients::HttpClient(client);
+
+		// We make a call to get_tip to test HTTP connection
+		http_client
+			.get_tip()
+			.await
+			.map_err(|e| format!("Failed to test HTTP connection: {}", e))?;
+
+		Ok(http_client)
 	} else if addr.starts_with("ws") || addr.starts_with("wss") {
 		let client = WsClientBuilder::default()
 			.build(addr.to_owned())
