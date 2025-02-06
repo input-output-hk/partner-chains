@@ -21,11 +21,6 @@ on:
         required: false
         type: boolean
         default: false
-      no-wipe:
-        description: "SKIP WIPE - Don't wipe staging chain"
-        required: false
-        type: boolean
-        default: false
       no-tests:
         description: "SKIP TESTS - Exlucde all test jobs against staging environment"
         required: false
@@ -111,7 +106,7 @@ jobs:
         with:
           image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
           sha: ${{ inputs.sha }}
-          no-wipe: ${{ inputs.no-wipe || 'false' }}
+          no-wipe: 'true' 
         env:
           AWS_REGION: "eu-central-1"
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
