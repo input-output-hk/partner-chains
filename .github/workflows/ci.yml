@@ -26,7 +26,7 @@ jobs:
 
   build-linux-pre-merge:
     runs-on: ubuntu-latest
-    if: github.event_name != 'workflow_dispatch' && github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     outputs:
       sha: ${{ steps.get_sha.outputs.sha }}
     steps:
@@ -75,7 +75,7 @@ jobs:
             ./staging_preprod_chain_spec.json
 
   local-environment-tests:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     needs: build-linux-pre-merge
     runs-on: ubuntu-latest
     steps:
@@ -102,7 +102,7 @@ jobs:
 
   local-environment-tests-alert:
     needs: local-environment-tests
-    if: always() && needs.local-environment-tests.result != 'skipped'
+    if: always() && needs.local-environment-tests.result != 'skipped' && github.event_name == 'pull_request' && github.event.pull_request.merged == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -131,6 +131,7 @@ jobs:
 
   devshell-tests:
     needs: build-linux-pre-merge
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     strategy:
       matrix:
         os: [nixos, macos]
@@ -161,7 +162,7 @@ jobs:
           && rm /tmp/outputs
 
   pre-merge-checks-complete:
-    if: ${{ always() && (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == false)) }}
+    if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
     needs: [build-linux-pre-merge, local-environment-tests, devshell-tests]
     runs-on: ubuntu-latest
     steps:
