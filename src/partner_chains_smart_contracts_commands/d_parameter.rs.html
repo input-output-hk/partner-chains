@@ -39,9 +39,7 @@
 <a href="#39" id="39">39</a>
 <a href="#40" id="40">40</a>
 <a href="#41" id="41">41</a>
-<a href="#42" id="42">42</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::PaymentFilePath;
-<span class="kw">use </span>ogmios_client::jsonrpsee::client_for_url;
 <span class="kw">use </span>partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 <span class="kw">use </span>partner_chains_cardano_offchain::d_param::upsert_d_param;
 <span class="kw">use </span>sidechain_domain::DParameter;
@@ -68,7 +66,7 @@
 			num_permissioned_candidates: <span class="self">self</span>.permissioned_candidates_count,
 			num_registered_candidates: <span class="self">self</span>.registered_candidates_count,
 		};
-		<span class="kw">let </span>client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
 
 		upsert_d_param(
 			<span class="self">self</span>.genesis_utxo,

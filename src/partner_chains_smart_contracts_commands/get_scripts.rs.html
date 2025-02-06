@@ -22,9 +22,7 @@
 <a href="#22" id="22">22</a>
 <a href="#23" id="23">23</a>
 <a href="#24" id="24">24</a>
-<a href="#25" id="25">25</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>ogmios_client::jsonrpsee::client_for_url;
-<span class="kw">use </span>partner_chains_cardano_offchain::scripts_data::get_scripts_data_with_ogmios;
+</pre></div><pre class="rust"><code><span class="kw">use </span>partner_chains_cardano_offchain::scripts_data::get_scripts_data_with_ogmios;
 <span class="kw">use </span>sidechain_domain::UtxoId;
 
 <span class="attr">#[derive(Clone, Debug, clap::Parser)]
@@ -38,7 +36,7 @@
 
 <span class="kw">impl </span>GetScripts {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
-		<span class="kw">let </span>client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let </span>scripts_data = get_scripts_data_with_ogmios(<span class="self">self</span>.genesis_utxo, <span class="kw-2">&amp;</span>client).<span class="kw">await</span><span class="question-mark">?</span>;
 
 		<span class="kw">let </span>json = serde_json::to_string_pretty(<span class="kw-2">&amp;</span>scripts_data)<span class="question-mark">?</span>;

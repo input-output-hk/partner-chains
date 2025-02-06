@@ -231,9 +231,7 @@
 <a href="#231" id="231">231</a>
 <a href="#232" id="232">232</a>
 <a href="#233" id="233">233</a>
-<a href="#234" id="234">234</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::PaymentFilePath;
-<span class="kw">use </span>ogmios_client::jsonrpsee::client_for_url;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	reserve::{
@@ -289,11 +287,11 @@
 <span class="kw">impl </span>InitReserveCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
 		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
-		<span class="kw">let </span>ogmios_client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let _ </span>= init_reserve_management(
 			<span class="self">self</span>.genesis_utxo,
 			<span class="kw-2">&amp;</span>payment_key,
-			<span class="kw-2">&amp;</span>ogmios_client,
+			<span class="kw-2">&amp;</span>client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;
@@ -324,7 +322,7 @@
 <span class="kw">impl </span>CreateReserveCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
 		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
-		<span class="kw">let </span>ogmios_client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let _ </span>= create_reserve_utxo(
 			ReserveParameters {
 				total_accrued_function_script_hash: <span class="self">self</span>.total_accrued_function_script_hash,
@@ -333,7 +331,7 @@
 			},
 			<span class="self">self</span>.genesis_utxo,
 			<span class="kw-2">&amp;</span>payment_key,
-			<span class="kw-2">&amp;</span>ogmios_client,
+			<span class="kw-2">&amp;</span>client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;
@@ -361,12 +359,12 @@
 <span class="kw">impl </span>DepositReserveCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
 		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
-		<span class="kw">let </span>ogmios_client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let _ </span>= deposit_to_reserve(
 			TokenAmount { token: <span class="self">self</span>.token, amount: <span class="self">self</span>.amount },
 			<span class="self">self</span>.genesis_utxo,
 			<span class="kw-2">&amp;</span>payment_key,
-			<span class="kw-2">&amp;</span>ogmios_client,
+			<span class="kw-2">&amp;</span>client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;
@@ -391,12 +389,12 @@
 <span class="kw">impl </span>UpdateReserveSettingsCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
 		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
-		<span class="kw">let </span>ogmios_client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let _ </span>= update_reserve_settings(
 			<span class="self">self</span>.genesis_utxo,
 			<span class="kw-2">&amp;</span>payment_key,
 			<span class="self">self</span>.total_accrued_function_script_hash,
-			<span class="kw-2">&amp;</span>ogmios_client,
+			<span class="kw-2">&amp;</span>client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;
@@ -418,11 +416,11 @@
 <span class="kw">impl </span>HandoverReserveCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
 		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
-		<span class="kw">let </span>ogmios_client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let _ </span>= handover_reserve(
 			<span class="self">self</span>.genesis_utxo,
 			<span class="kw-2">&amp;</span>payment_key,
-			<span class="kw-2">&amp;</span>ogmios_client,
+			<span class="kw-2">&amp;</span>client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;
@@ -453,13 +451,13 @@
 <span class="kw">impl </span>ReleaseReserveCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
 		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
-		<span class="kw">let </span>ogmios_client = client_for_url(<span class="kw-2">&amp;</span><span class="self">self</span>.common_arguments.ogmios_url).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let _ </span>= release_reserve_funds(
 			TokenAmount { token: <span class="self">self</span>.token, amount: <span class="self">self</span>.amount },
 			<span class="self">self</span>.genesis_utxo,
 			<span class="self">self</span>.reference_utxo,
 			<span class="kw-2">&amp;</span>payment_key,
-			<span class="kw-2">&amp;</span>ogmios_client,
+			<span class="kw-2">&amp;</span>client,
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;

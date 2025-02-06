@@ -88,10 +88,19 @@
 <a href="#88" id="88">88</a>
 <a href="#89" id="89">89</a>
 <a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! OgmiosClient implementation with jsonrpsee.
 //! Major drawback is that it swallows the error response from the server in case of 400 Bad Request.
 
-</span><span class="kw">use crate</span>::{OgmiosClient, OgmiosClientError, OgmiosParams};
+</span><span class="kw">use crate</span>::{query_ledger_state::QueryLedgerState, OgmiosClient, OgmiosClientError, OgmiosParams};
 <span class="kw">use </span>jsonrpsee::{
 	core::{client::ClientT, traits::ToRpcParams, ClientError},
 	http_client::{HttpClient, HttpClientBuilder},
@@ -134,7 +143,16 @@
 		<span class="kw">let </span>client = HttpClientBuilder::default()
 			.build(addr)
 			.map_err(|e| <span class="macro">format!</span>(<span class="string">"Couldn't create HTTP client: {}"</span>, e))<span class="question-mark">?</span>;
-		<span class="prelude-val">Ok</span>(OgmiosClients::HttpClient(client))
+
+		<span class="kw">let </span>http_client = OgmiosClients::HttpClient(client);
+
+		<span class="comment">// We make a call to get_tip to test HTTP connection
+		</span>http_client
+			.get_tip()
+			.<span class="kw">await
+			</span>.map_err(|e| <span class="macro">format!</span>(<span class="string">"Failed to test HTTP connection: {}"</span>, e))<span class="question-mark">?</span>;
+
+		<span class="prelude-val">Ok</span>(http_client)
 	} <span class="kw">else if </span>addr.starts_with(<span class="string">"ws"</span>) || addr.starts_with(<span class="string">"wss"</span>) {
 		<span class="kw">let </span>client = WsClientBuilder::default()
 			.build(addr.to_owned())
