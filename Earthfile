@@ -2,11 +2,17 @@ VERSION 0.8
 ARG --global PROFILE=release
 ARG --global FEATURES
 
-ci:
+ci-pre-merge:
   BUILD +build
   BUILD +test
   BUILD +licenses
   BUILD +fmt
+  ARG image=partner-chains-node
+  ARG tags
+  BUILD +docker --image=$image --tags=$tags
+
+ci-post-merge:
+  BUILD +build
   BUILD +chainspecs
   ARG image=partner-chains-node
   ARG tags
@@ -82,9 +88,9 @@ test:
   LET WASM_BUILD_STD=0
   DO github.com/earthly/lib:3.0.2+INSTALL_DIND
   CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES
+  RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
   WITH DOCKER
-    RUN cargo test --locked --profile=$PROFILE --features=$FEATURES
+    RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
   END
 
 licenses:
