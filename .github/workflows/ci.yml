@@ -66,7 +66,7 @@ jobs:
           EARTHLY_OUTPUT: true
           EARTHLY_PUSH: true
         run: |
-          earthly -P ../+ci-pre-merge --image=${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node
+          earthly -P ../+ci-pre-merge --image=${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node --tags="${{ steps.get_sha.outputs.sha }}"
       - name: Upload partner-chains-node artifact
         uses: actions/upload-artifact@v4
         with:
@@ -220,7 +220,7 @@ jobs:
           EARTHLY_OUTPUT: true
           EARTHLY_PUSH: true
         run: |
-          earthly -P ../+ci-post-merge --image=${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node --tags="latest"
+          earthly -P ../+ci-post-merge --image=${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node --tags="${{ steps.get_sha.outputs.sha }} latest"
       - name: Rename artifact
         working-directory: ./to-build
         run: |
@@ -490,7 +490,7 @@ jobs:
           EARTHLY_OUTPUT: true
           EARTHLY_PUSH: true
         run: |
-          earthly -P ../+ci-workflow-dispatch --image=${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node
+          earthly -P ../+ci-workflow-dispatch --image=${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node --tags="${{ inputs.sha }}"
       - name: Rename artifact
         working-directory: ./to-build
         run: |
