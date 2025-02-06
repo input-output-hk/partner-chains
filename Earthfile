@@ -61,6 +61,7 @@ setup:
 
 source:
   FROM +setup
+  RUN mkdir -p target
   ARG CRATES=$(tomlq -r .workspace.members[] Cargo.toml)
   FOR crate IN $CRATES
       COPY --dir $crate $crate
