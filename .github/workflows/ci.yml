@@ -6,6 +6,11 @@ on:
     branches:
       - master
   workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Commit SHA to build'
+        required: true
+        type: string
 
 env:
   AWS_REGION: "eu-central-1"
@@ -432,6 +437,159 @@ jobs:
                 "${{ needs.upload-chain-specs.result }}" != "success" ||
                 "${{ needs.local-environment-tests-post-merge.result }}" != "success" ]]
                 "${{ needs.deploy-ci-preview.result }}" != "success" ]]; then
+            echo "One or more needed jobs failed."
+            exit 1
+          else
+            echo "All needed jobs passed."
+          fi
+
+### Workflow dispatch flow ###############################################################################################################
+
+  build-linux-workflow-dispatch:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout specific SHA
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.sha }}
+      - name: Setup Earthly
+        uses: ./.github/earthly-setup
+        with:
+          ssh_key: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          config_tar: ${{ secrets.EARTHLY_TAR }}
+      - name: Acquire AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Login to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ECR_REGISTRY_SECRET }}
+      - name: Build and Artifacts and Push Image
+        env:
+          EARTHLY_CI: true
+          EARTHLY_OUTPUT: true
+          EARTHLY_PUSH: true
+        run: |
+          earthly -P +ci --image=${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node --tags="${{ inputs.sha }}"
+      - name: Rename artifact
+        run: |
+          cp partner-chains-node partner-chains-node-${{ inputs.sha }}-x86_64-linux
+          chmod +x partner-chains-node-${{ inputs.sha }}-x86_64-linux
+      - name: Upload partner-chains-node artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-chains-node-linux-artifact
+          path: partner-chains-node-${{ inputs.sha }}-x86_64-linux
+      - name: Upload chain spec artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chain-specs
+          path: |
+            ./devnet_chain_spec.json
+            ./ci_preview_chain_spec.json
+            ./staging_preview_chain_spec.json
+            ./staging_preprod_chain_spec.json
+  
+  build-macos-x86_64-workflow-dispatch:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build-linux-workflow-dispatch
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: macos-latest
+    steps:
+      - name: Checkout specific SHA
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Build and Upload for macOS x86_64
+        uses: ./.github/actions/artifacts/build-pc-artifacts
+        with:
+          sha: ${{ inputs.sha }}
+          tag: ${{ inputs.sha }}
+          os: macos-x86_64
+  
+  build-macos-arm64-workflow-dispatch:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build-linux-workflow-dispatch
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: macos-latest
+    steps:
+      - name: Checkout specific SHA
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Build and Upload for macOS arm64
+        uses: ./.github/actions/artifacts/build-pc-artifacts
+        with:
+          sha: ${{ inputs.sha }}
+          tag: ${{ inputs.sha }}
+          os: macos-arm64
+  
+  upload-to-s3-workflow-dispatch:
+    if: github.event_name == 'workflow_dispatch'
+    needs:
+      - build-linux-workflow-dispatch
+      - build-macos-x86_64-workflow-dispatch
+      - build-macos-arm64-workflow-dispatch
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Checkout specific SHA
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Upload Artifacts to S3
+        uses: ./.github/actions/artifacts/upload-to-s3
+        with:
+          sha: ${{ inputs.sha }}
+          bucket-name: ${{ secrets.AWS_CD_ARTIFACT_S3_BUCKET }}
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_S3_ROLE_ARN_SECRET }}
+  
+  upload-chain-specs-workflow-dispatch:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build-linux-workflow-dispatch
+    runs-on: eks
+    steps:
+      - name: Checkout specific SHA
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Upload chain spec artifacts to Kubernetes
+        uses: ./.github/actions/deploy/upload-chain-specs
+        with:
+          sha: ${{ inputs.sha }}
+        env:
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+  
+  workflow-dispatch-flow-complete:
+    if: ${{ always() && github.event_name == 'workflow_dispatch' }}
+    needs: [build-linux-workflow-dispatch, build-macos-x86_64-workflow-dispatch, build-macos-arm64-workflow-dispatch, upload-to-s3-workflow-dispatch, upload-chain-specs-workflow-dispatch]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if any needed job failed
+        run: |
+          if [[ "${{ needs.build-linux-workflow-dispatch.result }}" != "success" ||
+                "${{ needs.build-macos-x86_64-workflow-dispatch.result }}" != "success" ||
+                "${{ needs.build-macos-arm64-workflow-dispatch.result }}" != "success" ||
+                "${{ needs.upload-to-s3-workflow-dispatch.result }}" != "success" ||
+                "${{ needs.upload-chain-specs-workflow-dispatch.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1
           else
