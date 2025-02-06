@@ -71,7 +71,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: partner-chains-node-artifact
-          path: partner-chains-node-artifact
+          path: ./to-build/partner-chains-node-artifact
 
   local-environment-tests:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
@@ -230,16 +230,16 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: partner-chains-node-linux-artifact
-          path: ./partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
+          path: ./to-build/partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
       - name: Upload chain spec artifacts
         uses: actions/upload-artifact@v4
         with:
           name: chain-specs
           path: |
-            ./devnet_chain_spec.json
-            ./ci_preview_chain_spec.json
-            ./staging_preview_chain_spec.json
-            ./staging_preprod_chain_spec.json
+            ./to-build/devnet_chain_spec.json
+            ./to-build/ci_preview_chain_spec.json
+            ./to-build/staging_preview_chain_spec.json
+            ./to-build/staging_preprod_chain_spec.json
 
   build-macos-x86_64:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
@@ -500,16 +500,16 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: partner-chains-node-linux-artifact
-          path: ./partner-chains-node-${{ inputs.sha }}-x86_64-linux
+          path: ./to-build/partner-chains-node-${{ inputs.sha }}-x86_64-linux
       - name: Upload chain spec artifacts
         uses: actions/upload-artifact@v4
         with:
           name: chain-specs
           path: |
-            ./devnet_chain_spec.json
-            ./ci_preview_chain_spec.json
-            ./staging_preview_chain_spec.json
-            ./staging_preprod_chain_spec.json
+            ./to-build/devnet_chain_spec.json
+            ./to-build/ci_preview_chain_spec.json
+            ./to-build/staging_preview_chain_spec.json
+            ./to-build/staging_preprod_chain_spec.json
   
   build-macos-x86_64-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
