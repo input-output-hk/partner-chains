@@ -13,6 +13,13 @@ ci-pre-merge:
 
 ci-post-merge:
   BUILD +build
+  BUILD +chainspecs
+  ARG image=partner-chains-node
+  ARG tags
+  BUILD +docker --image=$image --tags=$tags
+
+ci-workflow-dispatch:
+  BUILD +build
   BUILD +test
   BUILD +licenses
   BUILD +fmt
