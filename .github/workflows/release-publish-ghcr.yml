@@ -1,6 +1,6 @@
 # Workflow not to be executed manually, but by the release.yml workflow
 
-name: "Release: Publish Image to GHCR"
+name: "Release: Publish Image to GHCR (Don't run manually!)"
 
 on:
   workflow_dispatch:
