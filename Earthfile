@@ -2,7 +2,16 @@ VERSION 0.8
 ARG --global PROFILE=release
 ARG --global FEATURES
 
-ci:
+ci-pre-merge:
+  BUILD +build
+  BUILD +test
+  BUILD +licenses
+  BUILD +fmt
+  ARG image=partner-chains-node
+  ARG tags
+  BUILD +docker --image=$image --tags=$tags
+
+ci-post-merge:
   BUILD +build
   BUILD +test
   BUILD +licenses
@@ -18,6 +27,7 @@ setup:
   ENV CARGO_HOME=/root/.cargo
 
   CACHE /var/lib/apt/lists
+  CACHE /var/cache/apt/archives
   RUN apt-get update && apt-get install -y \
       build-essential \
       curl \
@@ -34,6 +44,8 @@ setup:
       libjq-dev \
       && rm -rf /var/lib/apt/lists/*
 
+  ENV PIP_CACHE_DIR=/root/.cache/pip
+  CACHE /root/.cache/pip
   RUN pip3 install --break-system-packages tomlq toml
 
   RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -82,9 +94,9 @@ test:
   LET WASM_BUILD_STD=0
   DO github.com/earthly/lib:3.0.2+INSTALL_DIND
   CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES
+  RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
   WITH DOCKER
-    RUN cargo test --locked --profile=$PROFILE --features=$FEATURES
+    RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
   END
 
 licenses:
