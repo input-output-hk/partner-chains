@@ -24,6 +24,7 @@ setup:
   ENV CARGO_HOME=/root/.cargo
 
   CACHE /var/lib/apt/lists
+  CACHE /var/cache/apt/archives
   RUN apt-get update && apt-get install -y \
       build-essential \
       curl \
@@ -40,6 +41,8 @@ setup:
       libjq-dev \
       && rm -rf /var/lib/apt/lists/*
 
+  ENV PIP_CACHE_DIR=/root/.cache/pip
+  CACHE /root/.cache/pip
   RUN pip3 install --break-system-packages tomlq toml
 
   RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -74,8 +77,8 @@ build-deps:
 build:
   FROM +source
   LET WASM_BUILD_STD=0
-  #ARG CACHE_KEY=$(find . -type f -name "*.rs" -o -name "*.toml" | sort | xargs cat | sha256sum)
-  #CACHE --sharing shared --id cargo-build-$CACHE_KEY target
+  ARG CACHE_KEY=$(find . -type f -name "*.rs" -o -name "*.toml" | sort | xargs cat | sha256sum)
+  CACHE --sharing shared --id cargo-build-$CACHE_KEY target
   CACHE --sharing shared --id cargo $CARGO_HOME
   ARG EARTHLY_GIT_HASH
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
