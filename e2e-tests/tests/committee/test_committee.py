@@ -153,8 +153,10 @@ class TestCommitteeDistribution:
         2. Get epoch committee length (RPC:partner_chain_getEpochCommittee)
         3. Assert both numbers are equal
         """
-        if pc_epoch <= config.initial_pc_epoch:
+        if pc_epoch < config.initial_pc_epoch:
             skip("Cannot query committee before initial epoch.")
+        if pc_epoch == config.initial_pc_epoch:
+            skip("Initial committee is set in chain-spec, not DParam.")
         mc_epoch = pc_epoch_calculator.find_mc_epoch(pc_epoch, current_mc_epoch)
         d_param_cache: DParam = d_param_cache(mc_epoch)
         max_validators = config.max_validators
