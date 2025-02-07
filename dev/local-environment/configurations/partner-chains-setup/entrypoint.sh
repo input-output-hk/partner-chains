@@ -58,7 +58,7 @@ echo "Permissioned candidates policy ID: $PERMISSIONED_CANDIDATES_POLICY_ID"
 echo "Setting values for NATIVE_TOKEN_POLICY_ID, NATIVE_TOKEN_ASSET_NAME, and ILLIQUID_SUPPLY_VALIDATOR_ADDRESS for chain-spec creation"
 export NATIVE_TOKEN_POLICY_ID="1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2b"
 export NATIVE_TOKEN_ASSET_NAME="52657761726420746f6b656e"
-export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wpy8ewg646rg4ce78nl3aassmkquf4wlxcaugqlxwzcylkca0q8v3"
+export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wq0mnff9xtddgxx8wjxt8sx68gxvf06yy2c60tqdgsp8ydsgvu7hq"
 
 echo "Inserting D parameter..."
 
@@ -204,7 +204,7 @@ jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities
   }
 ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
-echo "Set initial funds to Alice (ecdsa), ?, and Alice (sr25519)"
+echo "Setting initial funds to Alice (ecdsa), ?, and Alice (sr25519)"
 jq '.genesis.runtimeGenesis.config.balances.balances = [
     ["5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X", 1000000000000000],
     ["5D9eDKbFt4JKaEndQvMmbJYnpX9ENUj8U9UUg1AxSa64FJxE", 1000000000000000],
