@@ -351,7 +351,7 @@ mod tests {
 				"epoch_duration_millis": 86400000,
 				"first_epoch_number": 1,
 				"first_slot_number": 4320,
-				"main_chain_slot_duration_millis": 1000,
+				"slot_duration_millis": 1000,
 				"network": "mainnet"
 			},
 			"cardano_addresses": {

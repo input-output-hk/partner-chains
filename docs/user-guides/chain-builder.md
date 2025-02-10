@@ -274,7 +274,7 @@ A sample file:
     "first_epoch_number": 208,
     "first_epoch_timestamp_millis": 1596059091000,
     "first_slot_number": 4492800,
-    "main_chain_slot_duration_millis": 1000,
+    "slot_duration_millis": 1000,
     "network": 0,
     "security_parameter": 2160
   },
