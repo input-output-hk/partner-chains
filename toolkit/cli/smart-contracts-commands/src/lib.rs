@@ -16,8 +16,8 @@ pub mod reserve;
 pub enum SmartContractsCmd {
 	/// Print validator addresses and policy IDs of Partner Chain smart contracts
 	GetScripts(get_scripts::GetScripts),
-	/// Upsert DParameter
-	UpsertDParameter(d_parameter::UpsertDParameterCmd),
+	#[command(subcommand)]
+	DParameterCmd(d_parameter::DParameterCmd),
 	/// Upsert Permissioned Candidates
 	UpsertPermissionedCandidates(permissioned_candidates::UpsertPermissionedCandidatesCmd),
 	/// Register candidate
@@ -54,7 +54,7 @@ impl SmartContractsCmd {
 		match self {
 			Self::Governance(cmd) => cmd.execute().await,
 			Self::GetScripts(cmd) => cmd.execute().await,
-			Self::UpsertDParameter(cmd) => cmd.execute().await,
+			Self::DParameterCmd(cmd) => cmd.execute().await,
 			Self::UpsertPermissionedCandidates(cmd) => cmd.execute().await,
 			Self::Register(cmd) => cmd.execute().await,
 			Self::Deregister(cmd) => cmd.execute().await,

@@ -33,6 +33,14 @@ pub trait UpsertDParam {
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> anyhow::Result<Option<McTxHash>>;
+
+	#[allow(async_fn_in_trait)]
+	async fn get_upsert_d_param_tx(
+		&self,
+		genesis_utxo: UtxoId,
+		d_parameter: &DParameter,
+		payment_signing_key: &CardanoPaymentSigningKey,
+	) -> anyhow::Result<Transaction>;
 }
 
 impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> UpsertDParam for C {
@@ -50,6 +58,79 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> Upse
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await
+	}
+
+	async fn get_upsert_d_param_tx(
+		&self,
+		genesis_utxo: UtxoId,
+		d_parameter: &DParameter,
+		payment_signing_key: &CardanoPaymentSigningKey,
+	) -> anyhow::Result<Transaction> {
+		get_upsert_d_param_tx(
+			genesis_utxo,
+			d_parameter,
+			payment_signing_key,
+			self,
+			&FixedDelayRetries::two_minutes(),
+		)
+		.await
+	}
+}
+
+pub async fn get_upsert_d_param_tx<
+	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
+	genesis_utxo: UtxoId,
+	d_parameter: &DParameter,
+	payment_signing_key: &CardanoPaymentSigningKey,
+	ogmios_client: &C,
+	await_tx: &A,
+) -> anyhow::Result<Transaction> {
+	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
+	let (validator, policy) = crate::scripts_data::d_parameter_scripts(genesis_utxo, ctx.network)?;
+	let validator_address = validator.address_bech32(ctx.network)?;
+	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
+
+	let mtx = match get_current_d_parameter(validator_utxos)? {
+		Some((_, current_d_param)) if current_d_param == *d_parameter => {
+			log::info!("Current D-parameter value is equal to the one to be set.");
+			None
+		},
+		Some((current_utxo, _)) => {
+			log::info!("Current D-parameter is different to the one to be set. Updating.");
+			Some(
+				get_update_d_param_tx(
+					&validator,
+					&policy,
+					d_parameter,
+					&current_utxo,
+					ctx,
+					genesis_utxo,
+					ogmios_client,
+				)
+				.await?,
+			)
+		},
+		None => {
+			log::info!("There is no D-parameter set. Inserting new one.");
+			Some(
+				get_insert_d_param_tx(
+					&validator,
+					&policy,
+					d_parameter,
+					ctx,
+					genesis_utxo,
+					ogmios_client,
+				)
+				.await?,
+			)
+		},
+	};
+	if let Some(tx) = mtx {
+		return Ok(tx);
+	} else {
+		panic!("AAAA");
 	}
 }
 
@@ -124,6 +205,22 @@ fn get_current_d_parameter(
 	}
 }
 
+async fn get_insert_d_param_tx<C: QueryLedgerState + Transactions + QueryNetwork>(
+	validator: &PlutusScript,
+	policy: &PlutusScript,
+	d_parameter: &DParameter,
+	ctx: TransactionContext,
+	genesis_utxo: UtxoId,
+	client: &C,
+) -> anyhow::Result<Transaction> {
+	let gov_data = GovernanceData::get(genesis_utxo, client).await?;
+
+	let tx =
+		mint_d_param_token_tx(validator, policy, d_parameter, &gov_data, Costs::ZeroCosts, &ctx)?;
+
+	Ok(tx)
+}
+
 async fn insert_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 	validator: &PlutusScript,
 	policy: &PlutusScript,
@@ -151,6 +248,29 @@ async fn insert_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 	let tx_id = McTxHash(res.transaction.id);
 	log::info!("Transaction submitted: {}", hex::encode(tx_id.0));
 	Ok(tx_id)
+}
+
+async fn get_update_d_param_tx<C: QueryLedgerState + Transactions + QueryNetwork>(
+	validator: &PlutusScript,
+	policy: &PlutusScript,
+	d_parameter: &DParameter,
+	current_utxo: &OgmiosUtxo,
+	ctx: TransactionContext,
+	genesis_utxo: UtxoId,
+	client: &C,
+) -> anyhow::Result<Transaction> {
+	let governance_data = GovernanceData::get(genesis_utxo, client).await?;
+
+	let tx = update_d_param_tx(
+		validator,
+		policy,
+		d_parameter,
+		current_utxo,
+		&governance_data,
+		Costs::ZeroCosts,
+		&ctx,
+	)?;
+	Ok(tx)
 }
 
 async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
