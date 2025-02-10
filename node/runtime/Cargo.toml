@@ -15,7 +15,9 @@ log = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 derive-new = { workspace = true }
-serde_json = { workspace = true, default-features = false, features = ["alloc"] }
+serde_json = { workspace = true, default-features = false, features = [
+	"alloc",
+] }
 
 pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
@@ -26,6 +28,7 @@ pallet-session = { workspace = true }
 pallet-sudo = { workspace = true }
 frame-system = { workspace = true }
 frame-try-runtime = { workspace = true, optional = true }
+hex = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 frame-executive = { workspace = true }
@@ -61,6 +64,7 @@ frame-system-benchmarking = { workspace = true, optional = true }
 
 # Local Dependencies
 sp-block-rewards = { workspace = true }
+pallet-block-production-log = { workspace = true }
 pallet-block-rewards = { workspace = true }
 sp-sidechain = { workspace = true }
 pallet-sidechain = { workspace = true }
@@ -108,6 +112,7 @@ std = [
 	"frame-try-runtime/std",
 	"pallet-aura/std",
 	"pallet-balances/std",
+	"pallet-block-production-log/std",
 	"pallet-block-rewards/std",
 	"pallet-grandpa/std",
 	"pallet-sudo/std",
@@ -157,6 +162,7 @@ runtime-benchmarks = [
 	"pallet-sudo/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
+	"pallet-block-production-log/runtime-benchmarks",
 	"pallet-native-token-management/runtime-benchmarks",
 ]
 try-runtime = [

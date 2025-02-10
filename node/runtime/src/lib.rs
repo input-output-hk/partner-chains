@@ -45,6 +45,7 @@ use sidechain_domain::{
 };
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_core::hexdisplay::HexDisplay;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -196,7 +197,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 140,
+	spec_version: 150,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -432,11 +433,19 @@ parameter_types! {
 }
 
 pub struct LogBeneficiaries;
+
 impl sp_sidechain::OnNewEpoch for LogBeneficiaries {
 	fn on_new_epoch(old_epoch: ScEpochNumber, _new_epoch: ScEpochNumber) -> sp_weights::Weight {
 		let rewards = BlockRewards::get_rewards_and_clear();
 		log::info!("Rewards accrued in epoch {old_epoch}: {rewards:?}");
-
+		let slot = pallet_aura::CurrentSlot::<Runtime>::get();
+		let block_production_log = BlockProductionLog::take_prefix(&slot);
+		if let Some((s, b)) = block_production_log.first() {
+			log::info!("Block production log head: {} -> {}", **s, HexDisplay::from(&b.0))
+		};
+		if let Some((s, b)) = block_production_log.last() {
+			log::info!("Block production log tail: {} -> {}", **s, HexDisplay::from(&b.0))
+		};
 		RuntimeDbWeight::get().reads_writes(1, 1)
 	}
 }
@@ -456,6 +465,16 @@ impl pallet_block_rewards::Config for Runtime {
 	type GetBlockRewardPoints = sp_block_rewards::SimpleBlockCount;
 }
 
+impl pallet_block_production_log::Config for Runtime {
+	type BlockProducerId = BeneficiaryId;
+	type WeightInfo = pallet_block_production_log::weights::SubstrateWeight<Runtime>;
+
+	fn current_slot() -> sp_consensus_slots::Slot {
+		let slot: u64 = pallet_aura::CurrentSlot::<Runtime>::get().into();
+		sp_consensus_slots::Slot::from(slot)
+	}
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime {
@@ -471,6 +490,7 @@ construct_runtime!(
 		Sidechain: pallet_sidechain,
 		SessionCommitteeManagement: pallet_session_validator_management,
 		BlockRewards: pallet_block_rewards,
+		BlockProductionLog: pallet_block_production_log,
 		// pallet_grandpa reads pallet_session::pallet::CurrentIndex storage.
 		// Only stub implementation of pallet_session should be wired.
 		// Partner Chains session_manager ValidatorManagementSessionManager writes to pallet_session::pallet::CurrentIndex.
@@ -523,6 +543,7 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_sudo, Sudo]
 		[pallet_native_token_management, NativeTokenManagement]
+		[pallet_block_production_log, BlockProductionLog]
 	);
 }
 

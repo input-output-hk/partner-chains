@@ -2,11 +2,10 @@
 use crate::authority_selection_inputs::AuthoritySelectionDataSource;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use parity_scale_codec::{Decode, Encode};
-use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 #[cfg(feature = "std")]
 use {
 	crate::authority_selection_inputs::AuthoritySelectionInputsCreationError,
-	sidechain_domain::mainchain_epoch::MainchainEpochDerivation,
+	sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation},
 	sidechain_domain::*,
 	sidechain_slots::ScSlotConfig,
 	sp_api::ProvideRuntimeApi,

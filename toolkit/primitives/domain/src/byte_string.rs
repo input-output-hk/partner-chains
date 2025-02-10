@@ -20,6 +20,12 @@ pub struct ByteString(pub Vec<u8>);
 #[cfg_attr(feature = "serde", byte_string(hex_serialize))]
 pub struct SizedByteString<const N: usize>(pub [u8; N]);
 
+impl<const N: usize> From<[u8; N]> for SizedByteString<N> {
+	fn from(value: [u8; N]) -> Self {
+		Self(value)
+	}
+}
+
 impl<const N: usize> TryFrom<Vec<u8>> for SizedByteString<N> {
 	type Error = <[u8; N] as TryFrom<Vec<u8>>>::Error;
 
