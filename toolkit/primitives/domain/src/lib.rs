@@ -13,11 +13,14 @@ extern crate num_derive;
 pub use alloc::vec::Vec;
 use alloc::{str::FromStr, string::ToString, vec};
 use byte_string_derive::byte_string;
-use core::fmt::{Display, Formatter};
+use core::{
+	fmt::{Display, Formatter},
+	ops::Deref,
+};
 use crypto::blake2b;
 use derive_more::{From, Into};
 use num_derive::*;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen, WrapperTypeEncode};
 use plutus::{Datum, ToDatum};
 use plutus_datum_derive::*;
 use scale_info::TypeInfo;
@@ -303,9 +306,27 @@ impl MainchainKeyHash {
 /// ECDSA signature of MainchainPrivateKey, 64 bytes.
 const MAINCHAIN_SIGNATURE_LEN: usize = 64;
 
-#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
+#[derive(Clone, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, decode_hex)]
 pub struct MainchainSignature(pub [u8; MAINCHAIN_SIGNATURE_LEN]);
+
+impl WrapperTypeEncode for MainchainSignature {}
+impl Deref for MainchainSignature {
+	type Target = [u8];
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
+	}
+}
+impl Decode for MainchainSignature {
+	fn decode<I: parity_scale_codec::Input>(
+		input: &mut I,
+	) -> Result<Self, parity_scale_codec::Error> {
+		let vec: Vec<u8> = Decode::decode(input)?;
+		let arr = vec.try_into().map_err(|_| "Incorrect MainchainSignature size")?;
+		Ok(MainchainSignature(arr))
+	}
+}
 
 #[derive(
 	Clone,
@@ -725,8 +746,7 @@ pub struct AdaBasedStaking {
 
 #[cfg(test)]
 mod tests {
-	use super::MainchainAddress;
-	use core::str::FromStr;
+	use super::*;
 
 	#[test]
 	fn main_chain_address_string_serialize_deserialize_round_trip() {
@@ -750,5 +770,26 @@ mod tests {
 		let str = address.to_string();
 		let from_str = MainchainAddress::from_str(&str).unwrap();
 		assert_eq!(address, from_str);
+	}
+
+	#[test]
+	fn main_chain_signature_should_be_backward_compatible_with_vec() {
+		#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
+		#[byte_string(debug, hex_serialize, decode_hex)]
+		struct LegacyMCSignature(pub Vec<u8>);
+
+		let legacy_encoded = LegacyMCSignature(vec![10; 64]).encode();
+
+		let legacy_decoded = MainchainSignature::decode(&mut legacy_encoded.as_slice())
+			.expect("Encoded legacy should decode to current type");
+
+		assert_eq!(legacy_decoded.0, [10; MAINCHAIN_SIGNATURE_LEN]);
+
+		let current_encoded = MainchainSignature([9; MAINCHAIN_SIGNATURE_LEN]).encode();
+
+		let current_decoded = LegacyMCSignature::decode(&mut current_encoded.as_slice())
+			.expect("Encoded current should decode to legacy");
+
+		assert_eq!(current_decoded.0, vec![9; 64]);
 	}
 }
