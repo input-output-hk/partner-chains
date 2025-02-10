@@ -75,6 +75,20 @@ jobs:
         with:
           name: partner-chains-node-artifact
           path: ./to-build/partner-chains-node-artifact
+      - name: Upload partner-chains-node artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-chains-node-artifact
+          path: ./to-build/partner-chains-node-artifact
+      - name: Upload chain spec artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chain-specs
+          path: |
+            ./to-build/devnet_chain_spec.json
+            ./to-build/ci_preview_chain_spec.json
+            ./to-build/staging_preview_chain_spec.json
+            ./to-build/staging_preprod_chain_spec.json
 
   local-environment-tests:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
@@ -163,16 +177,210 @@ jobs:
           "s3://cache.sc.iog.io?secret-key=${{ runner.temp }}/nix-key&region=$AWS_DEFAULT_REGION" \
           && rm /tmp/outputs
 
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Commit SHA to build'
+        required: true
+        type: string
+
+env:
+  AWS_REGION: "eu-central-1"
+  SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+
+### Pre merge workflow ###############################################################################################################
+
+  build-linux-pre-merge:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    outputs:
+      sha: ${{ steps.get_sha.outputs.sha }}
+    steps:
+      - name: Checkout for Earthfile
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Checkout code to build
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: ./to-build
+      - name: Get current commit SHA
+        id: get_sha
+        working-directory: ./to-build
+        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+      - name: Setup Earthly
+        uses: ./.github/earthly-setup
+        with:
+          ssh_key: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          config_tar: ${{ secrets.EARTHLY_TAR }}
+      - name: Acquire AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Login to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ECR_REGISTRY_SECRET }}
+      - name: Copy Earthfile to build directory
+        run: |
+          cp Earthfile ./to-build/
+      - name: Build and Artifacts and Push Image
+        working-directory: ./to-build
+        env:
+          EARTHLY_CI: true
+          EARTHLY_OUTPUT: true
+          EARTHLY_PUSH: true
+        run: |
+          earthly -P +ci-pre-merge --image=${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node --tags="${{ steps.get_sha.outputs.sha }}"
+      - name: Upload partner-chains-node artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-chains-node-artifact
+          path: ./to-build/partner-chains-node-artifact
+      - name: Upload chain spec artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chain-specs
+          path: |
+            ./to-build/devnet_chain_spec.json
+            ./to-build/ci_preview_chain_spec.json
+            ./to-build/staging_preview_chain_spec.json
+            ./to-build/staging_preprod_chain_spec.json
+
+  local-environment-tests:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    needs: build-linux-pre-merge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Deploy and test against local environment
+        uses: ./.github/actions/tests/local-environment-tests
+        with:
+          tag: CI
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-pre-merge.outputs.sha }}
+          sha: ${{ needs.build-linux-pre-merge.outputs.sha }}
+          tests: premerge
+        env:
+          SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          TEST_ENVIRONMENT: local
+
+  local-environment-tests-alert:
+    needs: local-environment-tests
+    if: always() && needs.local-environment-tests.result != 'skipped' && github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Download test report
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+      - name: Report to slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          repository: ${{ github.repository }}
+          slack_ref_name: ${{ github.ref_name }}
+          job_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          github_actor_username: ${{ github.actor }}
+          env: local-pre-merge
+        run: |
+          mv .report.json e2e-tests/.report.json
+          cd e2e-tests
+          ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
+        shell: bash
+
+  devshell-tests:
+    needs: build-linux-pre-merge
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    strategy:
+      matrix:
+        os: [nixos, macos]
+    runs-on:
+      - self-hosted
+      - ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Acquire AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_ }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Add signing key for nix
+        run: echo "${{ secrets.NIX_SIGNING_KEY }}" > "${{ runner.temp }}/nix-key"
+      - name: Run nixci to build/test all outputs
+        run: |
+          nix run github:srid/nixci -- -v build -- --fallback > /tmp/outputs
+      - name: Copy nix scopes to nix cache
+        run: |
+          nix-store --stdin -q --deriver < /tmp/outputs | nix-store --stdin -qR --include-outputs \
+          | nix copy --stdin --to \
+          "s3://cache.sc.iog.io?secret-key=${{ runner.temp }}/nix-key&region=$AWS_DEFAULT_REGION" \
+          && rm /tmp/outputs
+
+  upload-chain-specs-pre-merge:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    needs: build-linux-pre-merge
+    runs-on: eks
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Upload chain spec artifacts to Kubernetes
+        uses: ./.github/actions/deploy/upload-chain-specs
+        with:
+          sha: ${{ needs.build-linux-pre-merge.outputs.sha }}
+        env:
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+
   pre-merge-checks-complete:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
-    needs: [build-linux-pre-merge, local-environment-tests, devshell-tests]
+    needs: [build-linux-pre-merge, local-environment-tests, devshell-tests, upload-chain-specs-pre-merge]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
         run: |
           if [[ "${{ needs.build-linux-pre-merge.result }}" != "success" ||
                 "${{ needs.local-environment-tests.result }}" != "success" ||
-                "${{ needs.devshell-tests.result }}" != "success" ]]; then
+                "${{ needs.devshell-tests.result }}" != "success" ||
+                "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1
           else
