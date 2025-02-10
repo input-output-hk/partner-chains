@@ -193,33 +193,37 @@ INSTALL:
       && /usr/local/bin/partner-chains-node --version
 
 chainspecs:
-  FROM +setup
-  DO +INSTALL
-
-  # Devnet
-  COPY dev/envs/devnet/.envrc dev/envs/devnet/.envrc
-  COPY dev/envs/devnet/addresses.json dev/envs/devnet/addresses.json
-  RUN . ./dev/envs/devnet/.envrc \
-      && partner-chains-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
-  SAVE ARTIFACT devnet_chain_spec.json AS LOCAL devnet_chain_spec.json
-
-  # ci-preview
-  COPY dev/envs/ci-preview/.envrc dev/envs/ci-preview/.envrc
-  COPY dev/envs/ci-preview/addresses.json dev/envs/ci-preview/addresses.json
-  RUN . ./dev/envs/ci-preview/.envrc \
-      && partner-chains-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
-  SAVE ARTIFACT ci_preview_chain_spec.json AS LOCAL ci_preview_chain_spec.json
-
-  # staging-preview
-  COPY dev/envs/staging-preview/.envrc dev/envs/staging-preview/.envrc
-  COPY dev/envs/staging-preview/addresses.json dev/envs/staging-preview/addresses.json
-  RUN . ./dev/envs/ci-preview/.envrc \
-      && partner-chains-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
-  SAVE ARTIFACT staging_preview_chain_spec.json AS LOCAL staging_preview_chain_spec.json
-
-  # staging-preprod
-  COPY dev/envs/staging-preprod/.envrc dev/envs/staging-preprod/.envrc
-  COPY dev/envs/staging-preprod/addresses.json dev/envs/staging-preprod/addresses.json
-  RUN . ./dev/envs/staging-preprod/.envrc \
-      && partner-chains-node build-spec --chain staging --disable-default-bootnode > staging_preprod_chain_spec.json
-  SAVE ARTIFACT staging_preprod_chain_spec.json AS LOCAL staging_preprod_chain_spec.json
+ FROM +setup
+ DO +INSTALL
+ # Devnet
+ RUN if [ -d "dev/envs/devnet" ]; then \
+     cp dev/envs/devnet/.envrc dev/envs/devnet/.envrc && \
+     cp dev/envs/devnet/addresses.json dev/envs/devnet/addresses.json && \
+     . ./dev/envs/devnet/.envrc && \
+     partner-chains-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json && \
+     SAVE ARTIFACT devnet_chain_spec.json AS LOCAL devnet_chain_spec.json; \
+ fi || true
+ # ci-preview
+ RUN if [ -d "dev/envs/ci-preview" ]; then \
+     cp dev/envs/ci-preview/.envrc dev/envs/ci-preview/.envrc && \
+     cp dev/envs/ci-preview/addresses.json dev/envs/ci-preview/addresses.json && \
+     . ./dev/envs/ci-preview/.envrc && \
+     partner-chains-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json && \
+     SAVE ARTIFACT ci_preview_chain_spec.json AS LOCAL ci_preview_chain_spec.json; \
+ fi || true
+ # staging-preview
+ RUN if [ -d "dev/envs/staging-preview" ]; then \
+     cp dev/envs/staging-preview/.envrc dev/envs/staging-preview/.envrc && \
+     cp dev/envs/staging-preview/addresses.json dev/envs/staging-preview/addresses.json && \
+     . ./dev/envs/staging-preview/.envrc && \
+     partner-chains-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json && \
+     SAVE ARTIFACT staging_preview_chain_spec.json AS LOCAL staging_preview_chain_spec.json; \
+ fi || true
+ # staging-preprod
+ RUN if [ -d "dev/envs/staging-preprod" ]; then \
+     cp dev/envs/staging-preprod/.envrc dev/envs/staging-preprod/.envrc && \
+     cp dev/envs/staging-preprod/addresses.json dev/envs/staging-preprod/addresses.json && \
+     . ./dev/envs/staging-preprod/.envrc && \
+     partner-chains-node build-spec --chain staging --disable-default-bootnode > staging_preprod_chain_spec.json && \
+     SAVE ARTIFACT staging_preprod_chain_spec.json AS LOCAL staging_preprod_chain_spec.json; \
+ fi || true
