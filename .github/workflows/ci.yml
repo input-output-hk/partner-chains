@@ -547,12 +547,68 @@ jobs:
           tag: ${{ inputs.sha }}
           os: macos-arm64
   
+  local-environment-tests-workflow-dispatch:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build-linux-workflow-dispatch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout specific SHA
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Deploy and test against local environment
+        uses: ./.github/actions/tests/local-environment-tests
+        with:
+          tag: CI
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ inputs.sha }}
+          sha: ${{ inputs.sha }}
+          tests: postmerge
+        env:
+          SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
+          EARTHLY_TAR: ${{ secrets.EARTHLY_TAR }}
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+          TEST_ENVIRONMENT: local
+  
+  local-environment-tests-workflow-dispatch-alert:
+    needs: local-environment-tests-workflow-dispatch
+    if: always() && needs.local-environment-tests-workflow-dispatch.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout specific SHA
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Download test report
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+      - name: Report to slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          repository: ${{ github.repository }}
+          slack_ref_name: ${{ github.ref_name }}
+          job_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          github_actor_username: ${{ github.actor }}
+          env: local-workflow-dispatch
+        run: |
+          mv .report.json e2e-tests/.report.json
+          cd e2e-tests
+          ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
+        shell: bash
+  
   upload-to-s3-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
     needs:
       - build-linux-workflow-dispatch
       - build-macos-x86_64-workflow-dispatch
       - build-macos-arm64-workflow-dispatch
+      - local-environment-tests-workflow-dispatch
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -574,7 +630,9 @@ jobs:
   
   upload-chain-specs-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
-    needs: build-linux-workflow-dispatch
+    needs: 
+      - build-linux-workflow-dispatch
+      - local-environment-tests-workflow-dispatch
     runs-on: eks
     steps:
       - name: Checkout specific SHA
@@ -593,7 +651,7 @@ jobs:
   
   workflow-dispatch-flow-complete:
     if: ${{ always() && github.event_name == 'workflow_dispatch' }}
-    needs: [build-linux-workflow-dispatch, build-macos-x86_64-workflow-dispatch, build-macos-arm64-workflow-dispatch, upload-to-s3-workflow-dispatch, upload-chain-specs-workflow-dispatch]
+    needs: [build-linux-workflow-dispatch, build-macos-x86_64-workflow-dispatch, build-macos-arm64-workflow-dispatch, local-environment-tests-workflow-dispatch, upload-to-s3-workflow-dispatch, upload-chain-specs-workflow-dispatch]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
@@ -601,10 +659,13 @@ jobs:
           if [[ "${{ needs.build-linux-workflow-dispatch.result }}" != "success" ||
                 "${{ needs.build-macos-x86_64-workflow-dispatch.result }}" != "success" ||
                 "${{ needs.build-macos-arm64-workflow-dispatch.result }}" != "success" ||
+                "${{ needs.local-environment-tests-workflow-dispatch.result }}" != "success" ||
                 "${{ needs.upload-to-s3-workflow-dispatch.result }}" != "success" ||
                 "${{ needs.upload-chain-specs-workflow-dispatch.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1
           else
+            echo "All needed jobs passed."
+          fi
             echo "All needed jobs passed."
           fi
