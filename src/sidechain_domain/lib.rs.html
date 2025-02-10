@@ -752,6 +752,47 @@
 <a href="#752" id="752">752</a>
 <a href="#753" id="753">753</a>
 <a href="#754" id="754">754</a>
+<a href="#755" id="755">755</a>
+<a href="#756" id="756">756</a>
+<a href="#757" id="757">757</a>
+<a href="#758" id="758">758</a>
+<a href="#759" id="759">759</a>
+<a href="#760" id="760">760</a>
+<a href="#761" id="761">761</a>
+<a href="#762" id="762">762</a>
+<a href="#763" id="763">763</a>
+<a href="#764" id="764">764</a>
+<a href="#765" id="765">765</a>
+<a href="#766" id="766">766</a>
+<a href="#767" id="767">767</a>
+<a href="#768" id="768">768</a>
+<a href="#769" id="769">769</a>
+<a href="#770" id="770">770</a>
+<a href="#771" id="771">771</a>
+<a href="#772" id="772">772</a>
+<a href="#773" id="773">773</a>
+<a href="#774" id="774">774</a>
+<a href="#775" id="775">775</a>
+<a href="#776" id="776">776</a>
+<a href="#777" id="777">777</a>
+<a href="#778" id="778">778</a>
+<a href="#779" id="779">779</a>
+<a href="#780" id="780">780</a>
+<a href="#781" id="781">781</a>
+<a href="#782" id="782">782</a>
+<a href="#783" id="783">783</a>
+<a href="#784" id="784">784</a>
+<a href="#785" id="785">785</a>
+<a href="#786" id="786">786</a>
+<a href="#787" id="787">787</a>
+<a href="#788" id="788">788</a>
+<a href="#789" id="789">789</a>
+<a href="#790" id="790">790</a>
+<a href="#791" id="791">791</a>
+<a href="#792" id="792">792</a>
+<a href="#793" id="793">793</a>
+<a href="#794" id="794">794</a>
+<a href="#795" id="795">795</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -767,11 +808,14 @@
 <span class="kw">pub use </span>alloc::vec::Vec;
 <span class="kw">use </span>alloc::{str::FromStr, string::ToString, vec};
 <span class="kw">use </span>byte_string_derive::byte_string;
-<span class="kw">use </span>core::fmt::{Display, Formatter};
+<span class="kw">use </span>core::{
+	fmt::{Display, Formatter},
+	ops::Deref,
+};
 <span class="kw">use </span>crypto::blake2b;
 <span class="kw">use </span>derive_more::{From, Into};
 <span class="kw">use </span>num_derive::<span class="kw-2">*</span>;
-<span class="kw">use </span>parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+<span class="kw">use </span>parity_scale_codec::{Decode, Encode, MaxEncodedLen, WrapperTypeEncode};
 <span class="kw">use </span>plutus::{Datum, ToDatum};
 <span class="kw">use </span>plutus_datum_derive::<span class="kw-2">*</span>;
 <span class="kw">use </span>scale_info::TypeInfo;
@@ -1057,9 +1101,27 @@
 <span class="doccomment">/// ECDSA signature of MainchainPrivateKey, 64 bytes.
 </span><span class="kw">const </span>MAINCHAIN_SIGNATURE_LEN: usize = <span class="number">64</span>;
 
-<span class="attr">#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
+<span class="attr">#[derive(Clone, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, decode_hex)]
 </span><span class="kw">pub struct </span>MainchainSignature(<span class="kw">pub </span>[u8; MAINCHAIN_SIGNATURE_LEN]);
+
+<span class="kw">impl </span>WrapperTypeEncode <span class="kw">for </span>MainchainSignature {}
+<span class="kw">impl </span>Deref <span class="kw">for </span>MainchainSignature {
+	<span class="kw">type </span>Target = [u8];
+
+	<span class="kw">fn </span>deref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span>::Target {
+		<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0
+	</span>}
+}
+<span class="kw">impl </span>Decode <span class="kw">for </span>MainchainSignature {
+	<span class="kw">fn </span>decode&lt;I: parity_scale_codec::Input&gt;(
+		input: <span class="kw-2">&amp;mut </span>I,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, parity_scale_codec::Error&gt; {
+		<span class="kw">let </span>vec: Vec&lt;u8&gt; = Decode::decode(input)<span class="question-mark">?</span>;
+		<span class="kw">let </span>arr = vec.try_into().map_err(|<span class="kw">_</span>| <span class="string">"Incorrect MainchainSignature size"</span>)<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(MainchainSignature(arr))
+	}
+}
 
 <span class="attr">#[derive(
 	Clone,
@@ -1479,8 +1541,7 @@
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
-	<span class="kw">use </span><span class="kw">super</span>::MainchainAddress;
-	<span class="kw">use </span>core::str::FromStr;
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>main_chain_address_string_serialize_deserialize_round_trip() {
@@ -1504,6 +1565,27 @@
 		<span class="kw">let </span>str = address.to_string();
 		<span class="kw">let </span>from_str = MainchainAddress::from_str(<span class="kw-2">&amp;</span>str).unwrap();
 		<span class="macro">assert_eq!</span>(address, from_str);
+	}
+
+	<span class="attr">#[test]
+	</span><span class="kw">fn </span>main_chain_signature_should_be_backward_compatible_with_vec() {
+		<span class="attr">#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
+		#[byte_string(debug, hex_serialize, decode_hex)]
+		</span><span class="kw">struct </span>LegacyMCSignature(<span class="kw">pub </span>Vec&lt;u8&gt;);
+
+		<span class="kw">let </span>legacy_encoded = LegacyMCSignature(<span class="macro">vec!</span>[<span class="number">10</span>; <span class="number">64</span>]).encode();
+
+		<span class="kw">let </span>legacy_decoded = MainchainSignature::decode(<span class="kw-2">&amp;mut </span>legacy_encoded.as_slice())
+			.expect(<span class="string">"Encoded legacy should decode to current type"</span>);
+
+		<span class="macro">assert_eq!</span>(legacy_decoded.<span class="number">0</span>, [<span class="number">10</span>; MAINCHAIN_SIGNATURE_LEN]);
+
+		<span class="kw">let </span>current_encoded = MainchainSignature([<span class="number">9</span>; MAINCHAIN_SIGNATURE_LEN]).encode();
+
+		<span class="kw">let </span>current_decoded = LegacyMCSignature::decode(<span class="kw-2">&amp;mut </span>current_encoded.as_slice())
+			.expect(<span class="string">"Encoded current should decode to legacy"</span>);
+
+		<span class="macro">assert_eq!</span>(current_decoded.<span class="number">0</span>, <span class="macro">vec!</span>[<span class="number">9</span>; <span class="number">64</span>]);
 	}
 }
 </code></pre></div></section></main></body></html>
