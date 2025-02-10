@@ -42,7 +42,7 @@ fn caradano_parameters(
 			.checked_add(first_epoch_era.start.time_seconds)
 			.and_then(|seconds| seconds.checked_mul(1000))
 			.ok_or_else(|| anyhow::anyhow!("First epoch timestamp overflow"))?,
-		main_chain_slot_duration_millis: shelley_config.slot_length_millis,
+		slot_duration_millis: shelley_config.slot_length_millis,
 	})
 }
 
@@ -77,7 +77,7 @@ pub mod tests {
 		first_slot_number: 86400,
 		epoch_duration_millis: 432000000,
 		first_epoch_timestamp_millis: 1655769600000,
-		main_chain_slot_duration_millis: 1000,
+		slot_duration_millis: 1000,
 	};
 
 	pub(crate) const PREVIEW_CARDANO_PARAMS: CardanoParameters = CardanoParameters {
@@ -87,7 +87,7 @@ pub mod tests {
 		first_slot_number: 0,
 		epoch_duration_millis: 86400000,
 		first_epoch_timestamp_millis: 1666656000000,
-		main_chain_slot_duration_millis: 1000,
+		slot_duration_millis: 1000,
 	};
 
 	#[test]

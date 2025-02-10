@@ -272,7 +272,7 @@ pub struct CardanoParameters {
 	pub first_slot_number: u64,
 	pub epoch_duration_millis: u64,
 	pub first_epoch_timestamp_millis: u64,
-	pub main_chain_slot_duration_millis: u64,
+	pub slot_duration_millis: u64,
 }
 
 impl CardanoParameters {
@@ -284,21 +284,7 @@ impl CardanoParameters {
 		CARDANO_EPOCH_DURATION_MILLIS.save_to_file(&self.epoch_duration_millis, context);
 		CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS
 			.save_to_file(&self.first_epoch_timestamp_millis, context);
-		CARDANO_SLOT_DURATION_MILLIS.save_to_file(&self.main_chain_slot_duration_millis, context);
-	}
-
-	pub fn read(context: &impl IOContext) -> Option<Self> {
-		Some(Self {
-			security_parameter: CARDANO_SECURITY_PARAMETER.load_from_file(context)?,
-			active_slots_coeff: CARDANO_ACTIVE_SLOTS_COEFF.load_from_file(context)?,
-			first_epoch_number: CARDANO_FIRST_EPOCH_NUMBER.load_from_file(context)?,
-			first_slot_number: CARDANO_FIRST_SLOT_NUMBER.load_from_file(context)?,
-			epoch_duration_millis: CARDANO_EPOCH_DURATION_MILLIS.load_from_file(context)?,
-			first_epoch_timestamp_millis: CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS
-				.load_from_file(context)?,
-			main_chain_slot_duration_millis: CARDANO_SLOT_DURATION_MILLIS
-				.load_from_file(context)?,
-		})
+		CARDANO_SLOT_DURATION_MILLIS.save_to_file(&self.slot_duration_millis, context);
 	}
 }
 
@@ -311,7 +297,7 @@ impl From<CardanoParameters> for sidechain_domain::mainchain_epoch::MainchainEpo
 			epoch_duration_millis: Duration::from_millis(value.epoch_duration_millis),
 			first_epoch_number: value.first_epoch_number,
 			first_slot_number: value.first_slot_number,
-			slot_duration_millis: Duration::from_millis(value.main_chain_slot_duration_millis),
+			slot_duration_millis: Duration::from_millis(value.slot_duration_millis),
 		}
 	}
 }

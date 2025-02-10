@@ -59,7 +59,7 @@ fn default_chain_config() -> serde_json::Value {
 			"first_slot_number": FIRST_SLOT_NUMBER,
 			"epoch_duration_millis": EPOCH_DURATION_MILLIS,
 			"first_epoch_timestamp_millis": FIRST_EPOCH_TIMESTAMP_MILLIS,
-			"main_chain_slot_duration_millis": SLOT_DURATION_MILLIS
+			"slot_duration_millis": SLOT_DURATION_MILLIS
 		},
 		"chain_parameters": {
 			"genesis_utxo": "0000000000000000000000000000000000000000000000000000000000000000#0",
