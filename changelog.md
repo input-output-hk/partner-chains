@@ -4,9 +4,6 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 # Unreleased
 
-* Update polkadot-sdk to polkadot-stable2412-1.
-WARNING: Benchmarking command has been removed, because `frame-benchmarking-cli` crate became GPLv3 without any exception.
-
 ## Changed
 
 ## Removed
@@ -14,6 +11,11 @@ WARNING: Benchmarking command has been removed, because `frame-benchmarking-cli`
 ## Fixed
 
 ## Added
+
+# v1.6.0
+
+* Update polkadot-sdk to polkadot-stable2412-1.
+WARNING: Benchmarking command has been removed, because `frame-benchmarking-cli` crate became GPLv3 without any exception.
 
 # v1.5.0
 
