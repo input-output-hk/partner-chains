@@ -401,7 +401,7 @@ fn create_epoch_candidates_idp(validators: &[MockValidator]) -> Vec<CandidateReg
 				sidechain_signature: SidechainSignature(
 					sidechain_signature_bytes_no_recovery.clone(),
 				),
-				mainchain_signature: MainchainSignature(mainchain_signature.0),
+				mainchain_signature: MainchainSignature(mainchain_signature.0.to_vec()),
 				cross_chain_signature: CrossChainSignature(sidechain_signature_bytes_no_recovery),
 				sidechain_pub_key: validator.sidechain_pub_key(),
 				aura_pub_key: validator.aura_pub_key(),

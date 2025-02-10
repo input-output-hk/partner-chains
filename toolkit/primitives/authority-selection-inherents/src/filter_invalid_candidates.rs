@@ -304,7 +304,7 @@ mod tests {
 				hex!("f3622ed6e121836765f684068ecf3cf13eb3eb7d2fc7edcabdb41cad940434ca7b9edf45ce8b6d8d2b2a842fb8265856a3f950d72d42499c72ad28dc46b5dc90").to_vec()
 			),
 			mainchain_signature: MainchainSignature(
-				hex!("2e5e39928409aa9ef5ab955da1cd3819ebd2e7461e766d685305280b6986929e3df2bf4cc5a2ed355c20a0dfb44f2e6ef1f36b6da3bbae3ff0c040705b412e07")
+				hex!("2e5e39928409aa9ef5ab955da1cd3819ebd2e7461e766d685305280b6986929e3df2bf4cc5a2ed355c20a0dfb44f2e6ef1f36b6da3bbae3ff0c040705b412e07").to_vec()
 			),
 			cross_chain_signature: CrossChainSignature(
 				hex!("f3622ed6e121836765f684068ecf3cf13eb3eb7d2fc7edcabdb41cad940434ca7b9edf45ce8b6d8d2b2a842fb8265856a3f950d72d42499c72ad28dc46b5dc90").to_vec()
@@ -381,9 +381,7 @@ mod tests {
 			let registration_data = RegistrationData {
 				registration_utxo: signed_message.registration_utxo,
 				sidechain_signature: SidechainSignature(sidechain_signature),
-				mainchain_signature: MainchainSignature(
-					mainchain_signature.0.try_into().expect("Mainchain signature is 64 bytes"),
-				),
+				mainchain_signature: MainchainSignature(mainchain_signature.0.to_vec()),
 				cross_chain_signature: CrossChainSignature(vec![]),
 				sidechain_pub_key: SidechainPublicKey(sidechain_pub_key),
 				cross_chain_pub_key: CrossChainPublicKey(vec![]),
