@@ -330,7 +330,7 @@ mod tests {
 		CandidateRegistration {
 			stake_ownership: AdaBasedStaking {
 				pub_key: test_values::mainchain_pub_key(),
-				signature: MainchainSignature([0u8; 64]),
+				signature: MainchainSignature(Vec::new()),
 			},
 			partner_chain_pub_key: SidechainPublicKey(Vec::new()),
 			partner_chain_signature: SidechainSignature(Vec::new()),

@@ -53,9 +53,7 @@ pub fn create_valid_registration_data(
 		registration_utxo: signed_message.registration_utxo,
 		// Specification requires the signature length to be 64 instead of 65
 		sidechain_signature: SidechainSignature(sidechain_signature.0[0..64].to_vec()),
-		mainchain_signature: MainchainSignature(
-			mainchain_signature.0.try_into().expect("Mainchain signature is 64 bytes"),
-		),
+		mainchain_signature: MainchainSignature(mainchain_signature.0.to_vec()),
 		cross_chain_signature: CrossChainSignature(vec![]),
 		sidechain_pub_key: SidechainPublicKey(sidechain_account.public().0.to_vec()),
 		cross_chain_pub_key: CrossChainPublicKey(vec![]),

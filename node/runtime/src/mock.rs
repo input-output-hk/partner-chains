@@ -337,7 +337,7 @@ pub fn create_inherent_data_struct(
 				sidechain_signature: SidechainSignature(
 					sidechain_signature.into_inner().0[..64].to_vec(),
 				),
-				mainchain_signature: MainchainSignature(mainchain_signature.0),
+				mainchain_signature: MainchainSignature(mainchain_signature.0.to_vec()),
 				cross_chain_signature: CrossChainSignature(vec![]),
 				sidechain_pub_key: SidechainPublicKey(
 					validator.cross_chain.public().into_inner().0.to_vec(),
