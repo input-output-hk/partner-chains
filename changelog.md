@@ -9,6 +9,13 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * Update polkadot-sdk to polkadot-stable2412-1.
 WARNING: Benchmarking command has been removed, because `frame-benchmarking-cli` crate became GPLv3 without any exception.
 
+<<<<<<=
+## Changed
+
+* Made Cardano slot duration configurable with default of 1000ms. If your partner chain's main chain is Cardano
+mainnet or one of the official testnets, you don't need to change anything. Otherwise, the duration can
+be set through `MC__SLOT_DURATION_MILLIS` environment variable.
+
 ## Removed
 
 ## Fixed
@@ -42,9 +49,6 @@ files accordingly if migrating from prior versions.
 setting the permissioned candidates exactly as provided, overriding previous candidates. That means you can no longer remove a single candidate, you need
 to provide a whole list if you only want to remove one candidate. Set `"permissioned_candidate": true` in your config for every permissioned candidate on your network
 to achieve this.
-* Made Cardano slot duration configurable with default of 1000ms. If your partner chain's main chain is Cardano
-mainnet or one of the official testnets, you don't need to change anything. Otherwise, the duration can
-be set through `MC__SLOT_DURATION_MILLIS` environment variable.
 
 ## Removed
 
