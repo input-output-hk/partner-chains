@@ -7,6 +7,7 @@ ci-pre-merge:
   BUILD +test
   BUILD +licenses
   BUILD +fmt
+  BUILD +chainspecs
   ARG image=partner-chains-node
   ARG tags
   BUILD +docker --image=$image --tags=$tags
