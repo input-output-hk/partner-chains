@@ -543,7 +543,6 @@ jobs:
           name: chain-specs
           path: |
             ./to-build/devnet_chain_spec.json
-            ./to-build/ci_preview_chain_spec.json
             ./to-build/staging_preview_chain_spec.json
             ./to-build/staging_preprod_chain_spec.json
   
