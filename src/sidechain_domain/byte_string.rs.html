@@ -33,6 +33,12 @@
 <a href="#33" id="33">33</a>
 <a href="#34" id="34">34</a>
 <a href="#35" id="35">35</a>
+<a href="#36" id="36">36</a>
+<a href="#37" id="37">37</a>
+<a href="#38" id="38">38</a>
+<a href="#39" id="39">39</a>
+<a href="#40" id="40">40</a>
+<a href="#41" id="41">41</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>alloc::vec::Vec;
 <span class="kw">use </span>byte_string_derive::byte_string;
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -54,6 +60,12 @@
 #[cfg_attr(feature = <span class="string">"std"</span>, byte_string(decode_hex))]
 #[cfg_attr(feature = <span class="string">"serde"</span>, byte_string(hex_serialize))]
 </span><span class="kw">pub struct </span>SizedByteString&lt;<span class="kw">const </span>N: usize&gt;(<span class="kw">pub </span>[u8; N]);
+
+<span class="kw">impl</span>&lt;<span class="kw">const </span>N: usize&gt; From&lt;[u8; N]&gt; <span class="kw">for </span>SizedByteString&lt;N&gt; {
+	<span class="kw">fn </span>from(value: [u8; N]) -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>(value)
+	}
+}
 
 <span class="kw">impl</span>&lt;<span class="kw">const </span>N: usize&gt; TryFrom&lt;Vec&lt;u8&gt;&gt; <span class="kw">for </span>SizedByteString&lt;N&gt; {
 	<span class="kw">type </span>Error = &lt;[u8; N] <span class="kw">as </span>TryFrom&lt;Vec&lt;u8&gt;&gt;&gt;::Error;

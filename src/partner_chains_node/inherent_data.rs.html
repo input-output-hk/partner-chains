@@ -236,6 +236,11 @@
 <a href="#236" id="236">236</a>
 <a href="#237" id="237">237</a>
 <a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider <span class="kw">as </span>AriadneIDP;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::{
 	AuthoritySelectionDataSource, AuthoritySelectionInputs,
@@ -254,6 +259,7 @@
 };
 <span class="kw">use </span>sidechain_slots::ScSlotConfig;
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
+<span class="kw">use </span>sp_block_production_log::BlockProducerIdInherentProvider;
 <span class="kw">use </span>sp_block_rewards::BlockBeneficiaryInherentProvider;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_consensus_aura::{
@@ -300,6 +306,7 @@
 		TimestampIDP,
 		McHashIDP,
 		AriadneIDP,
+		BlockProducerIdInherentProvider&lt;BeneficiaryId&gt;,
 		BlockBeneficiaryInherentProvider&lt;BeneficiaryId&gt;,
 		NativeTokenIDP,
 	);
@@ -337,6 +344,8 @@
 			mc_hash.mc_epoch(),
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let </span>block_producer_id_provider =
+			BlockProducerIdInherentProvider::from_env(<span class="string">"SIDECHAIN_BLOCK_BENEFICIARY"</span>)<span class="question-mark">?</span>;
 		<span class="kw">let </span>block_beneficiary_provider =
 			BlockBeneficiaryInherentProvider::&lt;BeneficiaryId&gt;::from_env(
 				<span class="string">"SIDECHAIN_BLOCK_BENEFICIARY"</span>,
@@ -355,6 +364,7 @@
 			timestamp,
 			mc_hash,
 			ariadne_data_provider,
+			block_producer_id_provider,
 			block_beneficiary_provider,
 			native_token,
 		))

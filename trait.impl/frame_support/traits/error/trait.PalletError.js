@@ -1,3 +1,4 @@
 (function() {var implementors = {
+"pallet_block_production_log":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_block_production_log/pallet/enum.Error.html\" title=\"enum pallet_block_production_log::pallet::Error\">Error</a>&lt;T&gt;"]],
 "pallet_session_validator_management":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_session_validator_management/pallet/enum.Error.html\" title=\"enum pallet_session_validator_management::pallet::Error\">Error</a>&lt;T&gt;"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
