@@ -16,6 +16,7 @@ use sidechain_runtime::{
 };
 use sidechain_slots::ScSlotConfig;
 use sp_api::ProvideRuntimeApi;
+use sp_block_production_log::BlockProducerIdInherentProvider;
 use sp_block_rewards::BlockBeneficiaryInherentProvider;
 use sp_blockchain::HeaderBackend;
 use sp_consensus_aura::{
@@ -62,6 +63,7 @@ where
 		TimestampIDP,
 		McHashIDP,
 		AriadneIDP,
+		BlockProducerIdInherentProvider<BeneficiaryId>,
 		BlockBeneficiaryInherentProvider<BeneficiaryId>,
 		NativeTokenIDP,
 	);
@@ -99,6 +101,8 @@ where
 			mc_hash.mc_epoch(),
 		)
 		.await?;
+		let block_producer_id_provider =
+			BlockProducerIdInherentProvider::from_env("SIDECHAIN_BLOCK_BENEFICIARY")?;
 		let block_beneficiary_provider =
 			BlockBeneficiaryInherentProvider::<BeneficiaryId>::from_env(
 				"SIDECHAIN_BLOCK_BENEFICIARY",
@@ -117,6 +121,7 @@ where
 			timestamp,
 			mc_hash,
 			ariadne_data_provider,
+			block_producer_id_provider,
 			block_beneficiary_provider,
 			native_token,
 		))

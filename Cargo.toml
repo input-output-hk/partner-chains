@@ -6,6 +6,7 @@ members = [
 	"toolkit/cli/node-commands",
 	"toolkit/cli/smart-contracts-commands",
 	"toolkit/client/consensus/aura",
+	"toolkit/pallets/block-production-log",
 	"toolkit/pallets/block-rewards",
 	"toolkit/pallets/pallet-session-runtime-stub",
 	"toolkit/pallets/partner-chains-session",
@@ -15,6 +16,7 @@ members = [
 	"toolkit/pallets/session-validator-management/benchmarking",
 	"toolkit/pallets/session-validator-management/rpc",
 	"toolkit/primitives/consensus/aura",
+	"toolkit/primitives/block-production-log",
 	"toolkit/primitives/block-rewards",
 	"toolkit/primitives/domain",
 	"toolkit/primitives/selection",
@@ -70,18 +72,23 @@ futures = { version = "0.3.30", features = ["thread-pool"] }
 hex = { version = "0.4.3", features = ["alloc"], default-features = false }
 hex-literal = "0.4.1"
 itertools = "0.13.0"
-jsonrpsee = { version = "0.24", features = ["client-core", "server", "macros" ] }
+jsonrpsee = { version = "0.24", features = ["client-core", "server", "macros"] }
 libp2p-identity = "0.2"
 log = { version = "0.4", default-features = false }
 minicbor = { version = "0.20", features = ["alloc"] }
 num-bigint = { version = "0.4.3", default-features = false }
 num-traits = { version = "0.2.17", default-features = false }
-parity-scale-codec = { package = "parity-scale-codec", version = "3.6.12", default-features = false, features = ["derive", "max-encoded-len"] }
+parity-scale-codec = { package = "parity-scale-codec", version = "3.6.12", default-features = false, features = [
+	"derive",
+	"max-encoded-len",
+] }
 quickcheck = { version = "1.0.3" }
 pallas-addresses = { git = "https://github.com/txpipe/pallas.git", tag = "v0.31.0" }
 pallas-primitives = { git = "https://github.com/txpipe/pallas.git", tag = "v0.31.0" }
 proptest = { version = "1.5.0" }
-scale-info = { version = "2.11.1", default-features = false, features = ["derive"] }
+scale-info = { version = "2.11.1", default-features = false, features = [
+	"derive",
+] }
 testcontainers = { version = "0.15.0" }
 quickcheck_macros = { version = "1" }
 quote = "1.0"
@@ -89,8 +96,13 @@ rand_chacha = { version = "0.3.1", default-features = false }
 rand = { version = "0.8.5", default-features = false }
 tokio-retry = { version = "0.3" }
 secp256k1 = { version = "0.28.2", default-features = false }
-serde = { version = "1.0.209", default-features = false, features = ["derive", "alloc"] }
-serde_json = { version = '1.0.132', default-features = false, features = ["alloc"] }
+serde = { version = "1.0.209", default-features = false, features = [
+	"derive",
+	"alloc",
+] }
+serde_json = { version = '1.0.132', default-features = false, features = [
+	"alloc",
+] }
 syn = "2.0"
 tempfile = "3.10.1"
 thiserror = { version = "1.0.48" }
@@ -186,6 +198,7 @@ raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-c
 
 # local dependencies
 sidechain-runtime = { path = "node/runtime" }
+pallet-block-production-log = { path = "toolkit/pallets/block-production-log", default-features = false }
 pallet-block-rewards = { path = "toolkit/pallets/block-rewards", default-features = false }
 pallet-sidechain = { path = "toolkit/pallets/sidechain", default-features = false }
 pallet-sidechain-rpc = { path = "toolkit/pallets/sidechain/rpc", default-features = false }
@@ -195,6 +208,7 @@ pallet-session-validator-management = { default-features = false, path = "toolki
 pallet-session-validator-management-benchmarking = { default-features = false, path = "toolkit/pallets/session-validator-management/benchmarking" }
 pallet-session-validator-management-rpc = { path = "toolkit/pallets/session-validator-management/rpc" }
 ogmios-client = { path = "toolkit/utils/ogmios-client", default-features = false }
+sp-block-production-log = { path = "toolkit/primitives/block-production-log", default-features = false }
 sp-block-rewards = { path = "toolkit/primitives/block-rewards", default-features = false }
 selection = { path = "toolkit/primitives/selection", default-features = false }
 sidechain-domain = { path = "toolkit/primitives/domain", default-features = false }

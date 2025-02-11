@@ -4,6 +4,8 @@ use crate::tests::runtime_api_mock::{mock_header, TestApi};
 use authority_selection_inherents::{
 	authority_selection_inputs::AuthoritySelectionInputs, mock::MockAuthoritySelectionDataSource,
 };
+use hex_literal::hex;
+use sidechain_domain::byte_string::SizedByteString;
 use sidechain_domain::{
 	MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, NativeTokenAmount,
 	ScEpochNumber,
@@ -50,13 +52,21 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 	.await
 	.unwrap();
 
-	let (slot, timestamp, mc_hash, ariadne_data, block_beneficiary, native_token) =
-		inherent_data_providers;
+	let (
+		slot,
+		timestamp,
+		mc_hash,
+		ariadne_data,
+		block_producer_id,
+		block_beneficiary,
+		native_token,
+	) = inherent_data_providers;
 	let mut inherent_data = InherentData::new();
 	slot.provide_inherent_data(&mut inherent_data).await.unwrap();
 	timestamp.provide_inherent_data(&mut inherent_data).await.unwrap();
 	mc_hash.provide_inherent_data(&mut inherent_data).await.unwrap();
 	ariadne_data.provide_inherent_data(&mut inherent_data).await.unwrap();
+	block_producer_id.provide_inherent_data(&mut inherent_data).await.unwrap();
 	block_beneficiary.provide_inherent_data(&mut inherent_data).await.unwrap();
 	native_token.provide_inherent_data(&mut inherent_data).await.unwrap();
 	assert_eq!(
@@ -84,7 +94,15 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 	assert!(inherent_data
 		.get_data::<NativeTokenAmount>(&sp_native_token_management::INHERENT_IDENTIFIER)
 		.unwrap()
-		.is_some())
+		.is_some());
+	assert_eq!(
+		inherent_data
+			.get_data::<SizedByteString::<32>>(&sp_block_production_log::INHERENT_IDENTIFIER)
+			.unwrap(),
+		Some(SizedByteString::<32>(hex!(
+			"0000000000000000000000000000000000000000000000000000000000000001"
+		)))
+	);
 }
 
 #[tokio::test]
