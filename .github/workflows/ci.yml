@@ -519,6 +519,10 @@ jobs:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
       - name: Copy Earthfile to build directory
         run: |
+          echo source
+          cat Earthfile
+          echo target
+          cat ./to-build/Earthfile
           cp Earthfile ./to-build/
       - name: Build and Artifacts and Push Image
         working-directory: ./to-build
