@@ -214,7 +214,7 @@ chainspecs:
   # staging-preview
   COPY dev/envs/staging-preview/.envrc dev/envs/staging-preview/.envrc
   COPY dev/envs/staging-preview/addresses.json dev/envs/staging-preview/addresses.json
-  RUN . ./dev/envs/ci-preview/.envrc \
+  RUN . ./dev/envs/staging-preview/.envrc \
       && partner-chains-node build-spec --chain staging --disable-default-bootnode > staging_preview_chain_spec.json
   SAVE ARTIFACT staging_preview_chain_spec.json AS LOCAL staging_preview_chain_spec.json
 
