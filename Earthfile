@@ -204,13 +204,6 @@ chainspecs:
       && partner-chains-node build-spec --chain local --disable-default-bootnode > devnet_chain_spec.json
   SAVE ARTIFACT devnet_chain_spec.json AS LOCAL devnet_chain_spec.json
 
-  # ci-preview
-  COPY dev/envs/ci-preview/.envrc dev/envs/ci-preview/.envrc
-  COPY dev/envs/ci-preview/addresses.json dev/envs/ci-preview/addresses.json
-  RUN . ./dev/envs/ci-preview/.envrc \
-      && partner-chains-node build-spec --chain staging --disable-default-bootnode > ci_preview_chain_spec.json
-  SAVE ARTIFACT ci_preview_chain_spec.json AS LOCAL ci_preview_chain_spec.json
-
   # staging-preview
   COPY dev/envs/staging-preview/.envrc dev/envs/staging-preview/.envrc
   COPY dev/envs/staging-preview/addresses.json dev/envs/staging-preview/addresses.json
