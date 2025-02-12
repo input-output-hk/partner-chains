@@ -6166,6 +6166,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-address-associations"
+version = "0.1.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sidechain-domain",
+ "sp-address-associations",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-aura"
 version = "38.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2412-1#ab5882bbc67bcc48464566a2b48171265147acac"
@@ -6765,6 +6784,7 @@ dependencies = [
  "sidechain-mc-hash",
  "sidechain-runtime",
  "sidechain-slots",
+ "sp-address-associations",
  "sp-api",
  "sp-block-builder",
  "sp-block-production-log",
@@ -9920,11 +9940,13 @@ dependencies = [
 name = "sidechain-domain"
 version = "1.5.0"
 dependencies = [
+ "bech32 0.9.1",
  "blake2b_simd",
  "byte-string-derive",
  "derive_more",
  "figment",
  "hex",
+ "hex-literal",
  "lazy_static",
  "num-bigint",
  "num-derive",
@@ -9937,6 +9959,7 @@ dependencies = [
  "serde_json",
  "sp-core",
  "sp-crypto-hashing",
+ "sp-io",
  "sp-std",
  "thiserror",
 ]
@@ -9977,6 +10000,7 @@ dependencies = [
  "hex-literal",
  "log",
  "minicbor 0.20.0",
+ "pallet-address-associations",
  "pallet-aura",
  "pallet-balances",
  "pallet-block-production-log",
@@ -10001,6 +10025,7 @@ dependencies = [
  "session-manager",
  "sidechain-domain",
  "sidechain-slots",
+ "sp-address-associations",
  "sp-api",
  "sp-block-builder",
  "sp-block-rewards",
@@ -10196,6 +10221,14 @@ dependencies = [
  "log",
  "rand",
  "sha1",
+]
+
+[[package]]
+name = "sp-address-associations"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "sidechain-domain",
 ]
 
 [[package]]

@@ -1,0 +1,16 @@
+[package]
+name = "sp-address-associations"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+parity-scale-codec = { workspace = true }
+sidechain-domain = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "parity-scale-codec/std",
+    "sidechain-domain/std",
+]
