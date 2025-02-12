@@ -14,7 +14,7 @@ pub trait Transactions {
 	async fn evaluate_transaction(
 		&self,
 		tx_bytes: &[u8],
-	) -> Result<Vec<OgmiosEvaluateTransactionResponse>, OgmiosClientError>;
+	) -> Result<Vec<OgmiosEvaluateTransactionResponse>, OgmiosClientError<EvaluateTransactionError>>;
 
 	/// Submits a signed transaction.
 	///
@@ -24,14 +24,45 @@ pub trait Transactions {
 	async fn submit_transaction(
 		&self,
 		tx_bytes: &[u8],
-	) -> Result<SubmitTransactionResponse, OgmiosClientError>;
+	) -> Result<SubmitTransactionResponse, OgmiosClientError<SubmitTransactionError>>;
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub enum EvaluateTransactionError {
+	EvaluateError(crate::generated::EvaluateTransactionFailure),
+	DeserialisationError(crate::generated::DeserialisationFailure),
+}
+
+impl std::fmt::Display for EvaluateTransactionError {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Self::EvaluateError(e) => write!(f, "{:?}", e),
+			Self::DeserialisationError(e) => write!(f, "{:?}", e),
+		}
+	}
+}
+
+#[derive(Deserialize, Clone, Debug)]
+pub enum SubmitTransactionError {
+	SubmitError(crate::generated::SubmitTransactionFailure),
+	DeserialisationError(crate::generated::DeserialisationFailure),
+}
+
+impl std::fmt::Display for SubmitTransactionError {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Self::SubmitError(e) => write!(f, "{:?}", e),
+			Self::DeserialisationError(e) => write!(f, "{:?}", e),
+		}
+	}
 }
 
 impl<T: OgmiosClient> Transactions for T {
 	async fn evaluate_transaction(
 		&self,
 		tx_bytes: &[u8],
-	) -> Result<Vec<OgmiosEvaluateTransactionResponse>, OgmiosClientError> {
+	) -> Result<Vec<OgmiosEvaluateTransactionResponse>, OgmiosClientError<EvaluateTransactionError>>
+	{
 		let params = ByNameParamsBuilder::new()
 			.insert("transaction", serde_json::json!({"cbor": hex::encode(tx_bytes)}))?
 			.insert("additionalUtxo", serde_json::json!([]))?
@@ -42,7 +73,7 @@ impl<T: OgmiosClient> Transactions for T {
 	async fn submit_transaction(
 		&self,
 		tx_bytes: &[u8],
-	) -> Result<SubmitTransactionResponse, OgmiosClientError> {
+	) -> Result<SubmitTransactionResponse, OgmiosClientError<SubmitTransactionError>> {
 		let params = ByNameParamsBuilder::new()
 			.insert("transaction", serde_json::json!({"cbor": hex::encode(tx_bytes)}))?
 			.build();

@@ -13,26 +13,55 @@ use ::jsonrpsee::core::{
 	params::{ArrayParams, ObjectParams},
 	traits::ToRpcParams,
 };
-use serde::de::DeserializeOwned;
+use serde::{de::DeserializeOwned, Deserialize};
+use serde_json::Value;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, thiserror::Error)]
-pub enum OgmiosClientError {
+pub enum OgmiosClientError<T> {
 	#[error("Couldn't construct parameters: '{0}'")]
 	ParametersError(String),
 	#[error("JsonRPC request failed: '{0}'")]
 	RequestError(String),
+	#[error("JsonRPC request failed: '{0}'")]
+	CallError(T),
 	#[error("Could not parse response: '{0}'")]
 	ResponseError(String),
 }
 
+/// Untyped JSON-RPC Error Object, not optimized as we are interested more in easy use than in performance.
+/// Used when we are not interested in specific errors for handling.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ErrorObject {
+	pub code: i32,
+	pub message: String,
+	pub data: Option<Value>,
+}
+
+impl std::fmt::Display for ErrorObject {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match &self.data {
+			Some(data) => {
+				write!(
+					f,
+					"code: {}, message: {}, data: {}",
+					self.code,
+					self.message,
+					serde_json::to_string(data).map_err(|_| std::fmt::Error)?
+				)
+			},
+			None => write!(f, "code: {}, message: {}", self.code, self.message),
+		}
+	}
+}
+
 pub trait OgmiosClient {
 	#[allow(async_fn_in_trait)]
-	async fn request<T: DeserializeOwned>(
+	async fn request<T: DeserializeOwned, E: DeserializeOwned>(
 		&self,
 		method: &str,
 		params: OgmiosParams,
-	) -> Result<T, OgmiosClientError>;
+	) -> Result<T, OgmiosClientError<E>>;
 }
 
 #[derive(Clone)]
@@ -87,9 +116,8 @@ impl ByNameParamsBuilder {
 		self,
 		key: &'static str,
 		value: T,
-	) -> Result<Self, OgmiosClientError> {
-		let value = serde_json::to_value(value)
-			.map_err(|e| OgmiosClientError::ParametersError(e.to_string()))?;
+	) -> Result<Self, InsertParametersError> {
+		let value = serde_json::to_value(value).map_err(InsertParametersError)?;
 		let mut params = self.params;
 		params.insert(key, value);
 		Ok(Self { params })
@@ -97,5 +125,13 @@ impl ByNameParamsBuilder {
 
 	pub fn build(self) -> OgmiosParams {
 		OgmiosParams::ByName(self.params)
+	}
+}
+
+pub struct InsertParametersError(serde_json::Error);
+
+impl<T> From<InsertParametersError> for OgmiosClientError<T> {
+	fn from(e: InsertParametersError) -> Self {
+		OgmiosClientError::ParametersError(e.0.to_string())
 	}
 }
