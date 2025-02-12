@@ -10,6 +10,7 @@ extern crate alloc;
 extern crate core;
 extern crate num_derive;
 
+pub use alloc::collections::btree_map::BTreeMap;
 pub use alloc::vec::Vec;
 use alloc::{format, str::FromStr, string::String, string::ToString, vec};
 use byte_string_derive::byte_string;
@@ -33,7 +34,7 @@ use {
 
 /// A main chain epoch number. In range [0, 2^31-1].
 #[derive(
-	Default, Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, Hash, TypeInfo, PartialOrd,
+	Default, Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, Hash, TypeInfo, Ord, PartialOrd,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, FromStr))]
 pub struct McEpochNumber(pub u32);
@@ -820,4 +821,30 @@ mod tests {
 
 		assert_eq!(current_decoded.0, vec![9; 64]);
 	}
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+pub struct StakePoolKeyHash(pub [u8; 28]); // hash28type
+#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+pub struct DelegatorAddressHash(pub [u8; 29]); // addr29type
+#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+pub struct DelegatorScriptHash(pub [u8; 28]); // hash28type
+#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+pub struct DelegationKey {
+	pub delegator_address: DelegatorAddressHash,
+	pub script_hash: Option<DelegatorScriptHash>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct DelegatorStakeAmount(pub u64);
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct TotalStakeAmount(pub u64);
+
+#[derive(Debug, Clone, Default)]
+pub struct StakeDistribution(pub BTreeMap<StakePoolKeyHash, PoolDelegation>);
+
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct PoolDelegation {
+	pub total_stake: TotalStakeAmount,
+	pub delegators: BTreeMap<DelegationKey, DelegatorStakeAmount>,
 }

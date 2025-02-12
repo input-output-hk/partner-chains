@@ -2,6 +2,7 @@ use crate::db_datum::DbDatum;
 use crate::SqlxError;
 use cardano_serialization_lib::PlutusData;
 use chrono::NaiveDateTime;
+use itertools::Itertools;
 use log::info;
 use num_traits::ToPrimitive;
 use sidechain_domain::*;
@@ -21,6 +22,12 @@ macro_rules! sqlx_implementations_for_wrapper {
 	($WRAPPED:ty, $DBTYPE:expr, $NAME:ty, $DOMAIN:ty) => {
 		impl sqlx::Type<Postgres> for $NAME {
 			fn type_info() -> <Postgres as sqlx::Database>::TypeInfo {
+				PgTypeInfo::with_name($DBTYPE)
+			}
+		}
+
+		impl sqlx::postgres::PgHasArrayType for $NAME {
+			fn array_type_info() -> PgTypeInfo {
 				PgTypeInfo::with_name($DBTYPE)
 			}
 		}
@@ -308,6 +315,41 @@ impl Default for TxPosition {
 pub(crate) struct BlockTokenAmount {
 	pub block_hash: [u8; 32],
 	pub amount: NativeTokenAmount,
+}
+
+#[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
+pub(crate) struct StakePoolDelegationOutputRow {
+	pub epoch_number: EpochNumber,
+	pub epoch_stake_amount: StakeDelegation,
+	pub pool_hash_raw: [u8; 28],
+	pub stake_address_hash_raw: [u8; 29],
+	pub stake_address_script_hash: Option<[u8; 28]>,
+}
+
+pub(crate) async fn get_stake_pool_delegations(
+	pool: &Pool<Postgres>,
+	epoch: Vec<EpochNumber>,
+) -> Result<Vec<StakePoolDelegationOutputRow>, SqlxError> {
+	// TODO normal conversion
+	let es = epoch.into_iter().map(|e| e.0 as i32).collect_vec();
+	Ok(sqlx::query_as::<_, StakePoolDelegationOutputRow>(
+		"
+SELECT
+	epoch_stake.epoch_no AS epoch_number,
+	epoch_stake.amount AS epoch_stake_amount,
+	pool_hash.hash_raw AS pool_hash_raw,
+	stake_address.hash_raw AS stake_address_hash_raw,
+	stake_address.script_hash AS stake_address_script_hash
+FROM
+			   epoch_stake
+	INNER JOIN stake_address      ON epoch_stake.addr_id = stake_address.id
+	INNER JOIN pool_hash          ON epoch_stake.pool_id = pool_hash.id
+WHERE epoch_stake.epoch_no IN (SELECT unnest($1::integer[]))
+    ",
+	)
+	.bind(es)
+	.fetch_all(pool)
+	.await?)
 }
 
 #[cfg(any(feature = "block-source", feature = "native-token"))]

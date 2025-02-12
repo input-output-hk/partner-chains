@@ -1907,6 +1907,7 @@ dependencies = [
  "sidechain-domain",
  "sidechain-mc-hash",
  "sp-native-token-management",
+ "sp-stake-distribution",
  "sp-timestamp",
  "sqlx",
  "substrate-prometheus-endpoint",
@@ -10814,6 +10815,28 @@ dependencies = [
  "sp-api",
  "sp-blockchain",
  "sp-runtime",
+]
+
+[[package]]
+name = "sp-stake-distribution"
+version = "1.5.0"
+dependencies = [
+ "async-trait",
+ "derive-new",
+ "derive_more",
+ "envy",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sidechain-domain",
+ "sidechain-mc-hash",
+ "sp-api",
+ "sp-blockchain",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-version",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]
