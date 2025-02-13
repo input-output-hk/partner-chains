@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["associate_address"]};

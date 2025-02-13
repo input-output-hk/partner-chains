@@ -6,6 +6,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["main_chain_follower_cli",["",[],["main.rs"]]],\
 ["main_chain_follower_mock",["",[],["block.rs","candidate.rs","lib.rs","mc_hash.rs","native_token.rs","sidechain_rpc.rs"]]],\
 ["ogmios_client",["",[],["jsonrpsee.rs","lib.rs","query_ledger_state.rs","query_network.rs","transactions.rs","types.rs"]]],\
+["pallet_address_associations",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_block_production_log",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_block_rewards",["",[],["lib.rs"]]],\
 ["pallet_native_token_management",["",[],["lib.rs","weights.rs"]]],\
@@ -32,6 +33,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["sidechain_mc_hash",["",[],["lib.rs"]]],\
 ["sidechain_runtime",["",[],["genesis_config_presets.rs","lib.rs"]]],\
 ["sidechain_slots",["",[],["lib.rs","runtime_api_client.rs"]]],\
+["sp_address_associations",["",[],["lib.rs"]]],\
 ["sp_block_production_log",["",[],["lib.rs"]]],\
 ["sp_block_rewards",["",[],["lib.rs"]]],\
 ["sp_native_token_management",["",[],["lib.rs"]]],\

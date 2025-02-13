@@ -1035,6 +1035,17 @@
 <a href="#1035" id="1035">1035</a>
 <a href="#1036" id="1036">1036</a>
 <a href="#1037" id="1037">1037</a>
+<a href="#1038" id="1038">1038</a>
+<a href="#1039" id="1039">1039</a>
+<a href="#1040" id="1040">1040</a>
+<a href="#1041" id="1041">1041</a>
+<a href="#1042" id="1042">1042</a>
+<a href="#1043" id="1043">1043</a>
+<a href="#1044" id="1044">1044</a>
+<a href="#1045" id="1045">1045</a>
+<a href="#1046" id="1046">1046</a>
+<a href="#1047" id="1047">1047</a>
+<a href="#1048" id="1048">1048</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attr">#![recursion_limit = <span class="string">"256"</span>]
@@ -1075,10 +1086,9 @@
 <span class="kw">pub use </span>pallet_timestamp::Call <span class="kw">as </span>TimestampCall;
 <span class="kw">use </span>pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 <span class="kw">use </span>session_manager::ValidatorManagementSessionManager;
-<span class="kw">use </span>sidechain_domain::UtxoId;
 <span class="kw">use </span>sidechain_domain::{
 	MainchainPublicKey, NativeTokenAmount, PermissionedCandidateData, RegistrationData,
-	ScEpochNumber, ScSlotNumber, StakeDelegation,
+	ScEpochNumber, ScSlotNumber, StakeDelegation, UtxoId,
 };
 <span class="kw">use </span>sp_api::impl_runtime_apis;
 <span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityId <span class="kw">as </span>AuraId;
@@ -1512,6 +1522,16 @@
 	}
 }
 
+<span class="kw">impl </span>pallet_address_associations::Config <span class="kw">for </span>Runtime {
+	<span class="kw">type </span>WeightInfo = pallet_address_associations::weights::SubstrateWeight&lt;Runtime&gt;;
+
+	<span class="kw">type </span>PartnerChainAddress = AccountId;
+
+	<span class="kw">fn </span>genesis_utxo() -&gt; UtxoId {
+		Sidechain::genesis_utxo()
+	}
+}
+
 <span class="comment">// Create the runtime by composing the FRAME pallets that were previously configured.
 </span><span class="macro">construct_runtime!</span>(
 	<span class="kw">pub struct </span>Runtime {
@@ -1526,6 +1546,7 @@
 		// Sidechain pallet must come after the Aura pallet, since it gets the slot number from it
 		</span>Sidechain: pallet_sidechain,
 		SessionCommitteeManagement: pallet_session_validator_management,
+		AddressAssociations: pallet_address_associations,
 		BlockRewards: pallet_block_rewards,
 		BlockProductionLog: pallet_block_production_log,
 		<span class="comment">// pallet_grandpa reads pallet_session::pallet::CurrentIndex storage.
@@ -1581,6 +1602,7 @@
 		[pallet_sudo, Sudo]
 		[pallet_native_token_management, NativeTokenManagement]
 		[pallet_block_production_log, BlockProductionLog]
+		[pallet_address_associations, AddressAssociations]
 	);
 }
 
