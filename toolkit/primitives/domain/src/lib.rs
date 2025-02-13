@@ -11,7 +11,7 @@ extern crate core;
 extern crate num_derive;
 
 pub use alloc::vec::Vec;
-use alloc::{str::FromStr, string::ToString, vec};
+use alloc::{format, str::FromStr, string::String, string::ToString, vec};
 use byte_string_derive::byte_string;
 use core::{
 	fmt::{Display, Formatter},
@@ -190,9 +190,8 @@ impl FromStr for MainchainAddress {
 	}
 }
 
-#[cfg(feature = "std")]
-impl std::fmt::Display for MainchainAddress {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Display for MainchainAddress {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		let s = String::from_utf8(self.0.to_vec())
 			.expect("MainchainAddressString is always properly encoded UTF-8");
 		write!(f, "{}", s)
@@ -257,6 +256,12 @@ pub struct MainchainPublicKey(pub [u8; MAINCHAIN_PUBLIC_KEY_LEN]);
 
 const MAINCHAIN_PRIVATE_KEY_LEN: usize = 32;
 
+impl MainchainPublicKey {
+	pub fn hash(&self) -> MainchainKeyHash {
+		MainchainKeyHash::from_vkey(&self.0)
+	}
+}
+
 #[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
 #[byte_string(hex_serialize, hex_deserialize)]
 pub struct MainchainPrivateKey(pub [u8; MAINCHAIN_PRIVATE_KEY_LEN]);
@@ -298,17 +303,28 @@ impl Display for MainchainKeyHash {
 }
 
 impl MainchainKeyHash {
-	pub fn from_vkey(vkey: [u8; 32]) -> Self {
-		Self(blake2b(&vkey))
+	pub fn from_vkey(vkey: &[u8; 32]) -> Self {
+		Self(blake2b(vkey))
 	}
 }
 
-/// ECDSA signature of MainchainPrivateKey, 64 bytes.
-const MAINCHAIN_SIGNATURE_LEN: usize = 64;
+/// EDDSA signature, 64 bytes.
+pub const MAINCHAIN_SIGNATURE_LEN: usize = 64;
 
 #[derive(Clone, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, decode_hex)]
+/// EDDSA signature
+///
+/// WARNING: This type needs to be backwards compatibile with a legacy schema wrapping `Vec<u8>`.
+///          Because of this, it is not handled correctly by PolkadotJS. If you need to accept
+///          this type as extrinsic argument, use raw `[u8; MAINCHAIN_SIGNATURE_LEN]` instead.
 pub struct MainchainSignature(pub [u8; MAINCHAIN_SIGNATURE_LEN]);
+
+impl From<[u8; MAINCHAIN_SIGNATURE_LEN]> for MainchainSignature {
+	fn from(raw: [u8; MAINCHAIN_SIGNATURE_LEN]) -> Self {
+		Self(raw)
+	}
+}
 
 impl WrapperTypeEncode for MainchainSignature {}
 impl Deref for MainchainSignature {
@@ -325,6 +341,18 @@ impl Decode for MainchainSignature {
 		let vec: Vec<u8> = Decode::decode(input)?;
 		let arr = vec.try_into().map_err(|_| "Incorrect MainchainSignature size")?;
 		Ok(MainchainSignature(arr))
+	}
+}
+
+impl MainchainSignature {
+	pub fn verify(&self, public_key: &MainchainPublicKey, signed_message: &[u8]) -> bool {
+		let mainchain_signature = ed25519::Signature::from(self.0);
+
+		sp_io::crypto::ed25519_verify(
+			&mainchain_signature,
+			signed_message,
+			&ed25519::Public::from(public_key.0),
+		)
 	}
 }
 
@@ -747,10 +775,10 @@ pub struct AdaBasedStaking {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use core::str::FromStr;
 
 	#[test]
 	fn main_chain_address_string_serialize_deserialize_round_trip() {
-		use super::MainchainAddress;
 		let address = MainchainAddress::from_str(
 			"addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc",
 		)

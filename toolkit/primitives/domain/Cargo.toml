@@ -24,9 +24,12 @@ lazy_static = { workspace = true }
 blake2b_simd = { workspace = true }
 figment = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
+bech32 = { workspace = true }
+sp-io = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }
+hex-literal = { workspace = true }
 
 [features]
 default = ["std"]
@@ -38,6 +41,8 @@ std = [
 	"num-bigint/std",
 	"figment",
 	"thiserror",
+	"bech32/std",
+	"sp-io/std",
 ]
 serde = [
 	"dep:serde",

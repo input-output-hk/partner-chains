@@ -41,6 +41,8 @@ members = [
 	"toolkit/primitives/native-token-management",
 	"toolkit/offchain",
 	"toolkit/primitives/plutus-data",
+	"toolkit/pallets/address-associations",
+	"toolkit/primitives/address-associations",
 ]
 resolver = "2"
 
@@ -123,6 +125,7 @@ inquire = { version = "0.7.5" }
 parking_lot = { version = "0.12.3", default-features = false }
 envy = { version = "0.4.2" }
 log4rs = { version = "1.3.0" }
+bech32 = { version = "0.9.1", default-features = false }
 
 # substrate dependencies
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2412-1" }
@@ -236,3 +239,5 @@ partner-chains-cardano-offchain = { path = "toolkit/offchain", default-features 
 partner-chains-cli = { path = "toolkit/partner-chains-cli", default-features = false }
 partner-chains-plutus-data = { path = "toolkit/primitives/plutus-data", default-features = false }
 partner-chains-smart-contracts-commands = { path = "toolkit/cli/smart-contracts-commands", default-features = false }
+sp-address-associations = { path =	"toolkit/primitives/address-associations", default-features = false }
+pallet-address-associations = { path = "toolkit/pallets/address-associations", default-features = false }

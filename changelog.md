@@ -60,6 +60,7 @@ be set through `MC__SLOT_DURATION_MILLIS` environment variable.
 
 ## Added
 
+* Address Associations pallet
 * Command `smart-contracts reserve init`, `create`, `deposit`, `release`, `handover` and `update-settings`
 * Command `smart-contracts governance update`
 * Ogmios client backed by jsonrpsee `WsClient`

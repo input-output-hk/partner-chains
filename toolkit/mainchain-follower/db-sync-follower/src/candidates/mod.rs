@@ -197,7 +197,7 @@ impl CandidatesDataSourceImpl {
 		} else {
 			Some(
 				stake_map
-					.get(&MainchainKeyHash::from_vkey(mainchain_pub_key.0))
+					.get(&MainchainKeyHash::from_vkey(&mainchain_pub_key.0))
 					.cloned()
 					.unwrap_or(StakeDelegation(0)),
 			)
