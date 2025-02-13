@@ -6,14 +6,13 @@ use mock::*;
 use sidechain_domain::*;
 use sp_runtime::AccountId32;
 
-mod inherent {
-	use sp_core::crypto::Ss58Codec;
+use sp_core::crypto::Ss58Codec;
 
-	use super::*;
+use super::*;
 
-	#[test]
-	fn saves_new_address_association() {
-		new_test_ext().execute_with(|| {
+#[test]
+fn saves_new_address_association() {
+	new_test_ext().execute_with(|| {
 			// Alice
 			let mc_pub_key = MainchainPublicKey(hex!(
 				"2bebcb7fbc74a6e0fd6e00a311698b047b7b659f0e047ff5349dbd984aefc52c"
@@ -38,38 +37,35 @@ mod inherent {
 				Some(pc_address)
 			);
 		})
-	}
+}
 
-	#[test]
-	fn rejects_duplicate_key_association() {
-		new_test_ext().execute_with(|| {
-			let mc_pub_key = MainchainPublicKey([1; 32]);
-			let mc_signarture = [1; 64];
+#[test]
+fn rejects_duplicate_key_association() {
+	new_test_ext().execute_with(|| {
+		let mc_pub_key = MainchainPublicKey([1; 32]);
+		let mc_signarture = [1; 64];
 
-			crate::AddressAssociations::<Test>::insert(
-				&mc_pub_key.hash(),
+		crate::AddressAssociations::<Test>::insert(&mc_pub_key.hash(), AccountId32::new([0; 32]));
+		assert_eq!(
+			Pallet::<Test>::get_partner_chain_address_for(&mc_pub_key),
+			Some(AccountId32::new([0; 32]))
+		);
+		assert_eq!(
+			super::Pallet::<Test>::associate_address(
+				OriginFor::<Test>::signed(AccountId32::new([1; 32])),
 				AccountId32::new([0; 32]),
-			);
-			assert_eq!(
-				Pallet::<Test>::get_partner_chain_address_for(&mc_pub_key),
-				Some(AccountId32::new([0; 32]))
-			);
-			assert_eq!(
-				super::Pallet::<Test>::associate_address(
-					OriginFor::<Test>::signed(AccountId32::new([1; 32])),
-					AccountId32::new([0; 32]),
-					mc_signarture,
-					mc_pub_key,
-				)
-				.unwrap_err(),
-				Error::<Test>::MainchainKeyAlreadyAssociated.into()
-			);
-		})
-	}
+				mc_signarture,
+				mc_pub_key,
+			)
+			.unwrap_err(),
+			Error::<Test>::MainchainKeyAlreadyAssociated.into()
+		);
+	})
+}
 
-	#[test]
-	fn rejects_invalid_mainchain_signature() {
-		new_test_ext().execute_with(|| {
+#[test]
+fn rejects_invalid_mainchain_signature() {
+	new_test_ext().execute_with(|| {
 			let mc_pub_key = MainchainPublicKey(hex!(
 				"fc014cb5f071f5d6a36cb5a7e5f168c86555989445a23d4abec33d280f71aca4"
 			));
@@ -86,5 +82,4 @@ mod inherent {
 				Error::<Test>::InvalidMainchainSignature.into()
 			);
 		})
-	}
 }
