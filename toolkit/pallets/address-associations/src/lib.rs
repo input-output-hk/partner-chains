@@ -15,6 +15,16 @@ pub mod mock;
 #[cfg(test)]
 pub mod tests;
 
+use parity_scale_codec::Encode;
+use sidechain_domain::{MainchainPublicKey, UtxoId};
+
+#[derive(Debug, Clone, Encode)]
+pub struct AddressAssociationSignedMessage<SCAddr> {
+	pub mainchain_vkey: MainchainPublicKey,
+	pub partnerchain_address: SCAddr,
+	pub genesis_utxo: UtxoId,
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -24,7 +34,6 @@ pub mod pallet {
 	use sidechain_domain::{
 		MainchainKeyHash, MainchainPublicKey, MainchainSignature, UtxoId, MAINCHAIN_SIGNATURE_LEN,
 	};
-	use sp_address_associations::AddressAssociationSignedMessage;
 
 	pub const PALLET_VERSION: u32 = 1;
 

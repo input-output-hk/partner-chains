@@ -23,7 +23,7 @@ sp-io = { workspace = true, default-features = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-sp-address-associations = { workspace = true }
+pallet-address-associations = { workspace = true }
 parity-scale-codec = { workspace = true }
 
 [dev-dependencies]

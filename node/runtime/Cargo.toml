@@ -77,7 +77,6 @@ session-manager = { workspace = true }
 pallet-native-token-management = { workspace = true }
 sp-native-token-management = { workspace = true, features = ["serde"] }
 pallet-session-runtime-stub = { workspace = true, default-features = false }
-sp-address-associations = { workspace = true }
 pallet-address-associations = { workspace = true }
 
 [dev-dependencies]
@@ -153,7 +152,6 @@ std = [
 	"pallet-native-token-management/std",
 	"sp-native-token-management/std",
 	"pallet-session-runtime-stub/std",
-	"sp-address-associations/std",
 ]
 
 runtime-benchmarks = [

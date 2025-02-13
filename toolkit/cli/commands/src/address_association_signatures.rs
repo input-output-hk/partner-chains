@@ -2,11 +2,11 @@ use crate::key_params::MainchainSigningKeyParam;
 use anyhow::Ok;
 use byte_string::ByteString;
 use clap::Parser;
+use pallet_address_associations::AddressAssociationSignedMessage;
 use parity_scale_codec::Encode;
 use serde::Serialize;
 use serde_json::json;
 use sidechain_domain::*;
-use sp_address_associations::AddressAssociationSignedMessage;
 use std::str::FromStr;
 
 #[derive(Clone, Debug, Parser)]
