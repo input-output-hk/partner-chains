@@ -12,7 +12,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct AddressAssociationSignaturesCmd<
-	PartnerchainAddress: Clone + Sync + Send + FromStr + Encode + 'static,
+	PartnerchainAddress: Clone + Sync + Send + FromStr + 'static,
 > {
 	/// Genesis UTXO of the target Partner Chain
 	#[arg(long)]
