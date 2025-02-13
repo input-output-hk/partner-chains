@@ -79,6 +79,7 @@ mod test {
 		}
 	}
 
+	// This test is specifically kept in sync with the pallet siganture verification test
 	#[test]
 	fn signature_test() {
 		let cmd = AddressAssociationSignaturesCmd {
@@ -90,6 +91,7 @@ mod test {
 				// re-encoding of 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY (Alice)
 				AccountId32(hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")),
 			signing_key: MainchainSigningKeyParam(SigningKey::from(hex!(
+				// Private key of Alice (pubkey: 2bebcb7fbc74a6e0fd6e00a311698b047b7b659f0e047ff5349dbd984aefc52c)
 				"d75c630516c33a66b11b3444a70b65083aeb21353bd919cc5e3daa02c9732a84"
 			))),
 		};
