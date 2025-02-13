@@ -2,7 +2,6 @@ use crate::db_datum::DbDatum;
 use crate::SqlxError;
 use cardano_serialization_lib::PlutusData;
 use chrono::NaiveDateTime;
-use itertools::Itertools;
 use log::info;
 use num_traits::ToPrimitive;
 use sidechain_domain::*;
@@ -22,12 +21,6 @@ macro_rules! sqlx_implementations_for_wrapper {
 	($WRAPPED:ty, $DBTYPE:expr, $NAME:ty, $DOMAIN:ty) => {
 		impl sqlx::Type<Postgres> for $NAME {
 			fn type_info() -> <Postgres as sqlx::Database>::TypeInfo {
-				PgTypeInfo::with_name($DBTYPE)
-			}
-		}
-
-		impl sqlx::postgres::PgHasArrayType for $NAME {
-			fn array_type_info() -> PgTypeInfo {
 				PgTypeInfo::with_name($DBTYPE)
 			}
 		}
@@ -124,6 +117,21 @@ sqlx_implementations_for_wrapper!(i32, "INT4", BlockNumber, McBlockNumber);
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) struct EpochNumber(pub u32);
 sqlx_implementations_for_wrapper!(i32, "INT4", EpochNumber, McEpochNumber);
+
+impl sqlx::postgres::PgHasArrayType for EpochNumber {
+	fn array_type_info() -> sqlx::postgres::PgTypeInfo {
+		<i32 as sqlx::postgres::PgHasArrayType>::array_type_info()
+	}
+}
+
+#[derive(sqlx::Decode, sqlx::Encode)]
+pub struct EpochNumbers(Vec<EpochNumber>);
+
+impl sqlx::Type<sqlx::Postgres> for EpochNumbers {
+	fn type_info() -> <sqlx::Postgres as sqlx::Database>::TypeInfo {
+		<Vec<EpochNumber> as sqlx::Type<sqlx::Postgres>>::type_info()
+	}
+}
 
 #[derive(Debug, Copy, Clone, sqlx::FromRow, PartialEq)]
 pub(crate) struct EpochNumberRow(pub EpochNumber);
@@ -328,10 +336,8 @@ pub(crate) struct StakePoolDelegationOutputRow {
 
 pub(crate) async fn get_stake_pool_delegations(
 	pool: &Pool<Postgres>,
-	epoch: Vec<EpochNumber>,
+	epochs: Vec<EpochNumber>,
 ) -> Result<Vec<StakePoolDelegationOutputRow>, SqlxError> {
-	// TODO normal conversion
-	let es = epoch.into_iter().map(|e| e.0 as i32).collect_vec();
 	Ok(sqlx::query_as::<_, StakePoolDelegationOutputRow>(
 		"
 SELECT
@@ -347,7 +353,7 @@ FROM
 WHERE epoch_stake.epoch_no IN (SELECT unnest($1::integer[]))
     ",
 	)
-	.bind(es)
+	.bind(EpochNumbers(epochs))
 	.fetch_all(pool)
 	.await?)
 }
