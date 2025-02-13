@@ -552,6 +552,7 @@ def get_pc_epoch_blocks(api: BlockchainApi, config: ApiConfig, blocks_dict, curr
                 block_range = range(0, 0)
             blocks_dict[epoch] = {}
             blocks_dict[epoch]["range"] = block_range
+            logging.info(f"Getting blocks for epoch {epoch}...")
             for block in block_range:
                 blocks_dict[epoch][block] = api.get_block(block)
         return blocks_dict[epoch]

@@ -628,7 +628,10 @@ class SubstrateApi(BlockchainApi):
         block_hash = self.substrate.get_block_hash(block_no)
         return self.substrate.get_block(block_hash)
 
-    def get_block_author(self, block):
+    def get_validator_set(self, block):
+        return self.substrate.query("Session", "ValidatorsAndKeys", block_hash=block["header"]["parentHash"])
+
+    def get_block_author(self, block, validator_set):
         """Custom implementation of substrate.get_block(include_author=True) to get block author.
         py-substrate-interface does not work because it calls "Validators" function from "Session" pallet,
         which in our node is disabled and returns empty list. Here we use "ValidatorsAndKeys".
@@ -637,9 +640,6 @@ class SubstrateApi(BlockchainApi):
         Note: py-substrate-interface was also breaking at this point because we have another "PreRuntime" log
         for mcsh engine (main chain hash) which is not supported by py-substrate-interface.
         """
-        validator_set = self.substrate.query(
-            "Session", "ValidatorsAndKeys", block_hash=block["header"]["parentHash"]
-        )
         for log_data in block["header"]["digest"]["logs"]:
             engine = bytes(log_data[1][0])
             if "PreRuntime" in log_data and engine == b'aura':

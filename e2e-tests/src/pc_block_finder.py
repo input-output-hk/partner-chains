@@ -36,6 +36,7 @@ class BlockFinder:
             return None
 
     def get_block_range(self, next_epoch_timestamp, current_pc_epoch, pc_epoch):
+        logging.info(f"Finding block range for epoch {pc_epoch}...")
         epoch_to_test_start_timestamp = (
             next_epoch_timestamp
             - (current_pc_epoch - pc_epoch + 1)
