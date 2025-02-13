@@ -23,7 +23,6 @@ sp-io = { workspace = true, default-features = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-partner-chains-smart-contracts-commands = { workspace = true }
 sp-address-associations = { workspace = true }
 parity-scale-codec = { workspace = true }
 
