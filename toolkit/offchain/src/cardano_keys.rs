@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use cardano_serialization_lib::PrivateKey;
-use sidechain_domain::{MainchainKeyHash, MainchainPublicKey};
+use sidechain_domain::MainchainKeyHash;
 
 /// Signing (payment) key abstraction layer. Hides internal crytpo library details.
 /// It is either:
@@ -29,12 +29,6 @@ impl CardanoPaymentSigningKey {
 		Ok(self.0.sign(message).to_bytes())
 	}
 
-	pub fn vkey(&self) -> MainchainPublicKey {
-		MainchainPublicKey(
-			(self.0.to_public().as_bytes().try_into()).expect("Public from private never fails"),
-		)
-	}
-
 	pub fn to_pub_key_hash(&self) -> MainchainKeyHash {
 		MainchainKeyHash(
 			self.0
@@ -57,9 +51,7 @@ impl TryFrom<CardanoKeyFileContent> for CardanoPaymentSigningKey {
 
 	fn try_from(key: CardanoKeyFileContent) -> Result<Self, Self::Error> {
 		let key_type = key.r#type.clone();
-		if key_type == "PaymentSigningKeyShelley_ed25519"
-			|| key_type == "StakeSigningKeyShelley_ed25519"
-		{
+		if key_type == "PaymentSigningKeyShelley_ed25519" {
 			Ok(CardanoPaymentSigningKey::from_normal_bytes(key.raw_key_bytes()?)?)
 		} else if key_type == "PaymentExtendedSigningKeyShelley_ed25519_bip32" {
 			Ok(CardanoPaymentSigningKey::from_extended_128_bytes(key.raw_key_bytes()?)?)
