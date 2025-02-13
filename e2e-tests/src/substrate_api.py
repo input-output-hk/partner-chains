@@ -628,7 +628,10 @@ class SubstrateApi(BlockchainApi):
         block_hash = self.substrate.get_block_hash(block_no)
         return self.substrate.get_block(block_hash)
 
-    def get_block_author(self, block_number):
+    def get_validator_set(self, block):
+        return self.substrate.query("Session", "ValidatorsAndKeys", block_hash=block["header"]["parentHash"])
+
+    def get_block_author(self, block, validator_set):
         """Custom implementation of substrate.get_block(include_author=True) to get block author.
         py-substrate-interface does not work because it calls "Validators" function from "Session" pallet,
         which in our node is disabled and returns empty list. Here we use "ValidatorsAndKeys".
@@ -637,29 +640,26 @@ class SubstrateApi(BlockchainApi):
         Note: py-substrate-interface was also breaking at this point because we have another "PreRuntime" log
         for mcsh engine (main chain hash) which is not supported by py-substrate-interface.
         """
-        block_data = self.get_block(block_number)
-        validator_set = self.substrate.query(
-            "Session", "ValidatorsAndKeys", block_hash=block_data["header"]["parentHash"]
-        )
-        for log_data in block_data["header"]["digest"]["logs"]:
+        for log_data in block["header"]["digest"]["logs"]:
             engine = bytes(log_data[1][0])
             if "PreRuntime" in log_data and engine == b'aura':
                 aura_predigest = self.substrate.runtime_config.create_scale_object(
                     type_string='RawAuraPreDigest', data=ScaleBytes(bytes(log_data[1][1]))
                 )
 
-                aura_predigest.decode(check_remaining=self.config.get("strict_scale_decode"))
+                aura_predigest.decode(check_remaining=self.substrate.config.get("strict_scale_decode"))
 
                 rank_validator = aura_predigest.value["slot_number"] % len(validator_set)
 
                 block_author = validator_set[rank_validator]
-                block_data["author"] = block_author.value[1]["aura"]
+                block["author"] = block_author.value[1]["aura"]
                 break
 
-        if "author" not in block_data:
-            logger.error(f"Could not find author for block {block_number}. No PreRuntime log found with aura engine.")
+        if "author" not in block:
+            block_no = block["header"]["number"]
+            logger.error(f"Could not find author for block {block_no}. No PreRuntime log found with aura engine.")
             return None
-        return block_data["author"]
+        return block["author"]
 
     def get_mc_hash_from_pc_block_header(self, block):
         mc_hash_key = "0x6d637368"
@@ -678,13 +678,13 @@ class SubstrateApi(BlockchainApi):
             .order_by(desc(Tx.id))
             .limit(1)
         )
-        block_no = self.__get_data_from_db_sync(query, retries=5, delay=10)
+        block_no = self.__get_data_from_db_sync(query, retries=retries, delay=delay)
         logger.debug(f"Block no for tx: {tx_hash} was found. It's block number is {block_no}")
         return block_no
 
     def get_mc_block_by_block_hash(self, block_hash, retries=5, delay=10):
         query = select(Block).where(Block.hash == f"\\x{block_hash}").order_by(desc(Block.id)).limit(1)
-        block = self.__get_data_from_db_sync(query, retries=5, delay=10)
+        block = self.__get_data_from_db_sync(query, retries=retries, delay=delay)
         logger.debug(f"Block for hash: {block_hash} was found. It's block number is {block}")
         return block
 
