@@ -74,13 +74,13 @@ fn delegator_address_hash_4() -> [u8; 28] {
 	hex!("ad148225d7fb809f74a07d2dbc2eef91617f603bfb731e634bf8a1a9")
 }
 fn delegator_address_hash_5() -> [u8; 28] {
-	hex!("b96fcef3b9351af6834bd850e3a97859d7bd5b729d24bf3646aeaccf")
+	hex!("49b16fb356be9e46778478f2c9601a24fa16c88b2a97681d5af06d01")
 }
 fn delegator_address_hash_6() -> [u8; 28] {
 	hex!("ba149e2e2379097e65f0c03f2733d3103151e7f100d36dfdb01a0b22")
 }
-fn script_hash_1() -> DelegatorScriptHash {
-	DelegatorScriptHash(hex!("ec6586f39718287300c62842ddfff37a541c46acffb379744ba1063a"))
+fn script_hash_1() -> [u8; 28] {
+	hex!("49b16fb356be9e46778478f2c9601a24fa16c88b2a97681d5af06d01")
 }
 
 fn pool_delegation_1() -> PoolDelegation {
@@ -88,24 +88,15 @@ fn pool_delegation_1() -> PoolDelegation {
 		total_stake: StakeDelegation(5001995651486),
 		delegators: [
 			(
-				DelegationKey {
-					delegator_address_hash: delegator_address_hash_1(),
-					script_hash: None,
-				},
+				DelegatorKey::StakeKeyHash(delegator_address_hash_1()),
 				DelegatorStakeAmount(5000000000000),
 			),
 			(
-				DelegationKey {
-					delegator_address_hash: delegator_address_hash_2(),
-					script_hash: None,
-				},
+				DelegatorKey::StakeKeyHash(delegator_address_hash_2()),
 				DelegatorStakeAmount(997825743),
 			),
 			(
-				DelegationKey {
-					delegator_address_hash: delegator_address_hash_3(),
-					script_hash: None,
-				},
+				DelegatorKey::StakeKeyHash(delegator_address_hash_3()),
 				DelegatorStakeAmount(997825743),
 			),
 		]
@@ -117,24 +108,18 @@ fn pool_delegation_2() -> PoolDelegation {
 		total_stake: StakeDelegation(1001995478725),
 		delegators: [
 			(
-				DelegationKey {
-					delegator_address_hash: delegator_address_hash_4(),
-					script_hash: None,
-				},
+				DelegatorKey::StakeKeyHash(delegator_address_hash_4()),
 				DelegatorStakeAmount(997825743),
 			),
 			(
-				DelegationKey {
-					delegator_address_hash: delegator_address_hash_5(),
-					script_hash: Some(script_hash_1()),
+				DelegatorKey::ScriptKeyHash {
+					hash_raw: delegator_address_hash_5(),
+					script_hash: script_hash_1(),
 				},
 				DelegatorStakeAmount(1000000000000),
 			),
 			(
-				DelegationKey {
-					delegator_address_hash: delegator_address_hash_6(),
-					script_hash: None,
-				},
+				DelegatorKey::StakeKeyHash(delegator_address_hash_6()),
 				DelegatorStakeAmount(997652982),
 			),
 		]

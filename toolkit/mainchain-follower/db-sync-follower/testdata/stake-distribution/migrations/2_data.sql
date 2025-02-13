@@ -9,17 +9,17 @@ declare
     pool_hash_view_2 text := 'pool18r62tz408lkgfu6pq5svwzkh2vslkeg6mf72qf3h8njgvzhx9ce';
     pool_hash_view_3 text := 'pool1grvqd4eu354qervmr62uew0nsrjqedx5kglldeqr4c29vv59rku';
 
-    script_hash_1 hash28type := decode('ec6586f39718287300c62842ddfff37a541c46acffb379744ba1063a', 'hex');
+    script_hash_1 hash28type := decode('49b16fb356be9e46778478f2c9601a24fa16c88b2a97681d5af06d01', 'hex');
 
     stake_hash_raw_0 addr29type := decode('e0ba149e2e2379097e65f0c03f2733d3103151e7f100d36dfdb01a0b22', 'hex');
-    stake_hash_raw_1 addr29type := decode('e0b96fcef3b9351af6834bd850e3a97859d7bd5b729d24bf3646aeaccf', 'hex');
+    stake_hash_raw_1 addr29type := decode('f049b16fb356be9e46778478f2c9601a24fa16c88b2a97681d5af06d01', 'hex');
     stake_hash_raw_2 addr29type := decode('e0ad148225d7fb809f74a07d2dbc2eef91617f603bfb731e634bf8a1a9', 'hex');
     stake_hash_raw_3 addr29type := decode('e0aa898fce3be344c6be2d86fe1c5918675c9b0672cda8ab809d262824', 'hex');
     stake_hash_raw_4 addr29type := decode('e033916328baa83c42dbdcde825122ccf024ca3599c19ca6fb1697dc93', 'hex');
     stake_hash_raw_5 addr29type := decode('e0c55157ae1b08643719584c4972132ed210c64b02da80004cbd9b8c7f', 'hex');
 
     stake_view_0 text := 'stake_test1uzapf83wydusjln97rqr7fen6vgrz5087yqdxm0akqdqkgstjz8g4';
-    stake_view_1 text := 'stake_test1uzuklnhnhy634a5rf0v9pcaf0pva002mw2wjf0ekg6h2encat3ykr';
+    stake_view_1 text := 'stake_test17pymzman26lfu3nhs3u09jtqrgj059kg3v4fw6qattcx6qgt82eah';
     stake_view_2 text := 'stake_test1uzk3fq396lacp8m55p7jm0pwa7gkzlmq80ahx8nrf0u2r2gefsccu';
     stake_view_3 text := 'stake_test1uz4gnr7w8035f3479kr0u8zerpn4excxwtx632uqn5nzsfq7jnzwv';
     stake_view_4 text := 'stake_test1uqeezcegh25rcskmmn0gy5fzenczfj34n8qeefhmz6taeycqg9wts';

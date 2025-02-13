@@ -836,11 +836,9 @@ mod tests {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
-pub struct DelegatorScriptHash(pub [u8; 28]); // hash28type
-#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
-pub struct DelegationKey {
-	pub delegator_address_hash: [u8; 28],
-	pub script_hash: Option<DelegatorScriptHash>,
+pub enum DelegatorKey {
+	StakeKeyHash([u8; 28]),
+	ScriptKeyHash { hash_raw: [u8; 28], script_hash: [u8; 28] },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -852,5 +850,5 @@ pub struct StakeDistribution(pub BTreeMap<MainchainKeyHash, PoolDelegation>);
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct PoolDelegation {
 	pub total_stake: StakeDelegation,
-	pub delegators: BTreeMap<DelegationKey, DelegatorStakeAmount>,
+	pub delegators: BTreeMap<DelegatorKey, DelegatorStakeAmount>,
 }
