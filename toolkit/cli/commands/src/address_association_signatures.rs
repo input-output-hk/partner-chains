@@ -1,8 +1,8 @@
-use anyhow::{anyhow, Ok};
+use crate::key_params::MainchainSigningKeyParam;
+use anyhow::Ok;
 use byte_string::ByteString;
 use clap::Parser;
 use parity_scale_codec::Encode;
-use partner_chains_smart_contracts_commands::PaymentFilePath;
 use serde::Serialize;
 use serde_json::json;
 use sidechain_domain::*;
@@ -20,10 +20,9 @@ pub struct AddressAssociationSignaturesCmd<
 	/// Partner Chain address to be associated with the Cardano address
 	#[arg(long, value_parser=parse::<PartnerchainAddress>)]
 	pub partnerchain_address: PartnerchainAddress,
-	/// Path to file containing the Cardano ECDSA signing key.
-	/// Cardano public key corresponding to this signing key will be associated with partnerchain_address.
-	#[clap(flatten)]
-	signing_key_file: PaymentFilePath,
+	/// Cardano ECDSA signing key. Its public key will be associated with partnerchain_address.
+	#[arg(long)]
+	pub signing_key: MainchainSigningKeyParam,
 }
 
 fn parse<T: FromStr>(s: &str) -> Result<T, String> {
@@ -35,19 +34,18 @@ where
 	PartnerchainAddress: Serialize + Clone + Sync + Send + FromStr + Encode + 'static,
 {
 	pub fn execute(&self) -> anyhow::Result<()> {
-		let Self { partnerchain_address, genesis_utxo, signing_key_file } = self.clone();
-		let key = signing_key_file.read_key().map_err(|e| anyhow!(e))?;
+		let Self { partnerchain_address, genesis_utxo, signing_key } = self.clone();
 		let msg = AddressAssociationSignedMessage {
-			mainchain_vkey: key.vkey(),
+			mainchain_vkey: signing_key.vkey(),
 			partnerchain_address: partnerchain_address.clone(),
 			genesis_utxo,
 		};
 		let encoded = msg.encode();
-		let signature: ByteString = key.sign(&encoded)?.into();
+		let signature: ByteString = signing_key.0.sign(&encoded).s_bytes().to_vec().into();
 		let output = json!({
 			"pcAddr": partnerchain_address,
 			"signature": signature,
-			"verificationKey": key.vkey()
+			"verificationKey": signing_key.vkey()
 
 		});
 		println!("{}", serde_json::to_string_pretty(&output)?);

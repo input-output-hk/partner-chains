@@ -1,5 +1,5 @@
 use secp256k1::{PublicKey, SecretKey};
-use sidechain_domain::SidechainPublicKey;
+use sidechain_domain::{MainchainPublicKey, SidechainPublicKey};
 use std::convert::Infallible;
 use std::fmt::Display;
 use std::io;
@@ -91,5 +91,11 @@ impl FromStr for MainchainSigningKeyParam {
 impl From<[u8; 32]> for MainchainSigningKeyParam {
 	fn from(key: [u8; 32]) -> Self {
 		MainchainSigningKeyParam(ed25519_zebra::SigningKey::from(key))
+	}
+}
+
+impl MainchainSigningKeyParam {
+	pub fn vkey(&self) -> MainchainPublicKey {
+		MainchainPublicKey(ed25519_zebra::VerificationKey::from(&self.0).into())
 	}
 }
