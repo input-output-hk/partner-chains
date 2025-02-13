@@ -4,11 +4,8 @@ use frame_system::pallet_prelude::OriginFor;
 use hex_literal::hex;
 use mock::*;
 use sidechain_domain::*;
-use sp_runtime::AccountId32;
-
 use sp_core::crypto::Ss58Codec;
-
-use super::*;
+use sp_runtime::AccountId32;
 
 #[test]
 fn saves_new_address_association() {
