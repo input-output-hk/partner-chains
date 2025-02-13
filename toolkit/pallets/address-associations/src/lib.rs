@@ -70,15 +70,15 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::associate_address())]
 		pub fn associate_address(
 			_origin: OriginFor<T>,
-			pc_addr: T::PartnerChainAddress,
+			partnerchain_address: T::PartnerChainAddress,
 			signature: [u8; MAINCHAIN_SIGNATURE_LEN],
-			mc_vkey: MainchainPublicKey,
+			mainchain_public_key: MainchainPublicKey,
 		) -> DispatchResult {
 			let signature: MainchainSignature = signature.into();
 
 			let genesis_utxo = T::genesis_utxo();
 
-			let mc_vkey_hash = MainchainKeyHash::from_vkey(&mc_vkey.0);
+			let mc_vkey_hash = MainchainKeyHash::from_vkey(&mainchain_public_key.0);
 
 			ensure!(
 				!AddressAssociations::<T>::contains_key(&mc_vkey_hash),
@@ -86,17 +86,17 @@ pub mod pallet {
 			);
 
 			let address_association_message = AddressAssociationSignedMessage {
-				mainchain_public_key: mc_vkey.clone(),
-				partnerchain_address: pc_addr.clone(),
+				mainchain_public_key: mainchain_public_key.clone(),
+				partnerchain_address: partnerchain_address.clone(),
 				genesis_utxo,
 			};
 
 			let is_valid_signature =
-				signature.verify(&mc_vkey, &address_association_message.encode());
+				signature.verify(&mainchain_public_key, &address_association_message.encode());
 
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
 
-			AddressAssociations::<T>::insert(mc_vkey_hash, pc_addr);
+			AddressAssociations::<T>::insert(mc_vkey_hash, partnerchain_address);
 			Ok(())
 		}
 	}
