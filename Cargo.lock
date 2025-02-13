@@ -1284,6 +1284,7 @@ dependencies = [
  "ed25519-zebra",
  "hex",
  "hex-literal",
+ "parity-scale-codec",
  "plutus",
  "plutus-datum-derive",
  "secp256k1 0.28.2",

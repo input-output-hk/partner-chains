@@ -18,14 +18,14 @@ pub struct AddressAssociationSignaturesCmd<
 	#[arg(long)]
 	pub genesis_utxo: UtxoId,
 	/// Partner Chain address to be associated with the Cardano address
-	#[arg(long, value_parser=parse::<PartnerchainAddress>)]
+	#[arg(long, value_parser=parse_pc_address::<PartnerchainAddress>)]
 	pub partnerchain_address: PartnerchainAddress,
 	/// Cardano ECDSA signing key. Its public key will be associated with partnerchain_address.
 	#[arg(long)]
 	pub signing_key: MainchainSigningKeyParam,
 }
 
-fn parse<T: FromStr>(s: &str) -> Result<T, String> {
+fn parse_pc_address<T: FromStr>(s: &str) -> Result<T, String> {
 	T::from_str(s).map_err(|_| "Failed to parse Partner Chain address".to_owned())
 }
 
