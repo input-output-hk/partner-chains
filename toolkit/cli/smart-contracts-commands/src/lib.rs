@@ -68,14 +68,14 @@ impl SmartContractsCmd {
 }
 
 #[derive(Clone, Debug, clap::Parser)]
-pub struct PaymentFilePath {
+pub(crate) struct PaymentFilePath {
 	/// Path to the Cardano Signing Key file used sign transaction(s) and pay for them
 	#[arg(long, short = 'k')]
 	payment_key_file: String,
 }
 
 impl PaymentFilePath {
-	pub fn read_key(&self) -> CmdResult<CardanoPaymentSigningKey> {
+	pub(crate) fn read_key(&self) -> CmdResult<CardanoPaymentSigningKey> {
 		let key_file = CardanoKeyFileContent::parse_file(&self.payment_key_file)?;
 		Ok(CardanoPaymentSigningKey::try_from(key_file)?)
 	}
