@@ -1284,6 +1284,8 @@ dependencies = [
  "ed25519-zebra",
  "hex",
  "hex-literal",
+ "pallet-address-associations",
+ "parity-scale-codec",
  "plutus",
  "plutus-datum-derive",
  "secp256k1 0.28.2",
@@ -6177,7 +6179,6 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "sidechain-domain",
- "sp-address-associations",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -6784,7 +6785,6 @@ dependencies = [
  "sidechain-mc-hash",
  "sidechain-runtime",
  "sidechain-slots",
- "sp-address-associations",
  "sp-api",
  "sp-block-builder",
  "sp-block-production-log",
@@ -10025,7 +10025,6 @@ dependencies = [
  "session-manager",
  "sidechain-domain",
  "sidechain-slots",
- "sp-address-associations",
  "sp-api",
  "sp-block-builder",
  "sp-block-rewards",
@@ -10221,14 +10220,6 @@ dependencies = [
  "log",
  "rand",
  "sha1",
-]
-
-[[package]]
-name = "sp-address-associations"
-version = "0.1.0"
-dependencies = [
- "parity-scale-codec",
- "sidechain-domain",
 ]
 
 [[package]]

@@ -42,7 +42,6 @@ members = [
 	"toolkit/offchain",
 	"toolkit/primitives/plutus-data",
 	"toolkit/pallets/address-associations",
-	"toolkit/primitives/address-associations",
 ]
 resolver = "2"
 
@@ -239,5 +238,4 @@ partner-chains-cardano-offchain = { path = "toolkit/offchain", default-features 
 partner-chains-cli = { path = "toolkit/partner-chains-cli", default-features = false }
 partner-chains-plutus-data = { path = "toolkit/primitives/plutus-data", default-features = false }
 partner-chains-smart-contracts-commands = { path = "toolkit/cli/smart-contracts-commands", default-features = false }
-sp-address-associations = { path =	"toolkit/primitives/address-associations", default-features = false }
 pallet-address-associations = { path = "toolkit/pallets/address-associations", default-features = false }

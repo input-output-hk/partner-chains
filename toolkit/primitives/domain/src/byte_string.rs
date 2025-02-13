@@ -12,6 +12,12 @@ use scale_info::TypeInfo;
 #[cfg_attr(feature = "serde", byte_string(hex_serialize, hex_deserialize))]
 pub struct ByteString(pub Vec<u8>);
 
+impl From<Vec<u8>> for ByteString {
+	fn from(vec: Vec<u8>) -> Self {
+		Self(vec)
+	}
+}
+
 // Constant size variant of `ByteString` that's usable as a runtime type
 #[derive(Eq, Clone, PartialEq, TypeInfo, MaxEncodedLen, Encode, Decode)]
 #[byte_string(debug)]
