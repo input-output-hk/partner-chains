@@ -34,10 +34,13 @@ fn rows_to_distribution(
 	let mut res = BTreeMap::<McEpochNumber, StakeDistribution>::new();
 	for row in rows {
 		let per_epoch_distro = res.entry(McEpochNumber(row.epoch_number.0)).or_default();
-		let pool = per_epoch_distro.0.entry(StakePoolKeyHash(row.pool_hash_raw)).or_default();
+		let pool = per_epoch_distro.0.entry(MainchainKeyHash(row.pool_hash_raw)).or_default();
 		pool.delegators
 			.entry(DelegationKey {
-				delegator_address: DelegatorAddressHash(row.stake_address_hash_raw),
+				// We drop the first byte as it is not part of the hash but used by db-sync.
+				delegator_address_hash: row.stake_address_hash_raw[1..29]
+					.try_into()
+					.expect("stake_address_hash_raw is 29 bytes"),
 				script_hash: row.stake_address_script_hash.map(DelegatorScriptHash),
 			})
 			.or_insert(DelegatorStakeAmount(row.epoch_stake_amount.0));

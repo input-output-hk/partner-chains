@@ -289,7 +289,19 @@ const MAINCHAIN_KEY_HASH_LEN: usize = 28;
 /// It can be a hash of Payment Verification, Payment Extended Verification or Staking Verification Key.
 /// Way to get it: cardano-cli latest address key-hash --payment-verification-key-file FILE
 #[derive(
-	Clone, Copy, Decode, Default, Eq, Encode, Hash, MaxEncodedLen, PartialEq, ToDatum, TypeInfo,
+	Clone,
+	Copy,
+	Decode,
+	Default,
+	Encode,
+	Hash,
+	MaxEncodedLen,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	ToDatum,
+	TypeInfo,
 )]
 #[byte_string(debug)]
 #[cfg_attr(feature = "std", byte_string(to_hex_string, decode_hex))]
@@ -824,27 +836,21 @@ mod tests {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
-pub struct StakePoolKeyHash(pub [u8; 28]); // hash28type
-#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
-pub struct DelegatorAddressHash(pub [u8; 29]); // addr29type
-#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
 pub struct DelegatorScriptHash(pub [u8; 28]); // hash28type
 #[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
 pub struct DelegationKey {
-	pub delegator_address: DelegatorAddressHash,
+	pub delegator_address_hash: [u8; 28],
 	pub script_hash: Option<DelegatorScriptHash>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DelegatorStakeAmount(pub u64);
-#[derive(Debug, Clone, PartialEq, Default)]
-pub struct TotalStakeAmount(pub u64);
 
 #[derive(Debug, Clone, Default)]
-pub struct StakeDistribution(pub BTreeMap<StakePoolKeyHash, PoolDelegation>);
+pub struct StakeDistribution(pub BTreeMap<MainchainKeyHash, PoolDelegation>);
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct PoolDelegation {
-	pub total_stake: TotalStakeAmount,
+	pub total_stake: StakeDelegation,
 	pub delegators: BTreeMap<DelegationKey, DelegatorStakeAmount>,
 }
