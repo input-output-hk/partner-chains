@@ -26,6 +26,7 @@
       - ./configurations/genesis/shelley/genesis-utxo.skey:/shared/shelley/genesis-utxo.skey
       - ./configurations/genesis/shelley/genesis-utxo.vkey:/shared/shelley/genesis-utxo.vkey
       - ./configurations/genesis/conway/genesis.conway.json:/shared/conway/genesis.conway.json.base
+      - ./runtime-values:/runtime-values
     environment:
       - CARDANO_NODE_SOCKET_PATH=/data/node.socket
     entrypoint: ["/bin/bash", "/entrypoint.sh"]

@@ -48,6 +48,7 @@ echo "Updated ConwayGenesisHash value in config files to: $conway_hash"
 
 byron_startTimeMillis=$(($byron_startTime * 1000))
 echo $byron_startTimeMillis > /shared/MC__FIRST_EPOCH_TIMESTAMP_MILLIS
+echo $byron_startTimeMillis > /runtime-values/MC__FIRST_EPOCH_TIMESTAMP_MILLIS
 echo "Created /shared/MC__FIRST_EPOCH_TIMESTAMP_MILLIS with value: $byron_startTimeMillis"
 
 echo "Current time is now: $(date +"%H:%M:%S.%3N"). Starting node..."
@@ -179,6 +180,7 @@ cat /shared/eve.utxo
 
 echo "Querying and saving the first UTXO details for new address to /shared/genesis.utxo:"
 cardano-cli latest query utxo --testnet-magic 42 --address "${new_address}" | /busybox awk 'NR>2 { print $1 "#" $2; exit }' > /shared/genesis.utxo
+cat /shared/genesis.utxo > /runtime-values/genesis.utxo
 cat /shared/genesis.utxo
 
 touch /shared/cardano.ready
