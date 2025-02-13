@@ -20,7 +20,7 @@ use sidechain_domain::{MainchainPublicKey, UtxoId};
 
 #[derive(Debug, Clone, Encode)]
 pub struct AddressAssociationSignedMessage<PartnerChainAddress> {
-	pub mainchain_vkey: MainchainPublicKey,
+	pub mainchain_public_key: MainchainPublicKey,
 	pub partnerchain_address: PartnerChainAddress,
 	pub genesis_utxo: UtxoId,
 }
@@ -86,7 +86,7 @@ pub mod pallet {
 			);
 
 			let address_association_message = AddressAssociationSignedMessage {
-				mainchain_vkey: mc_vkey.clone(),
+				mainchain_public_key: mc_vkey.clone(),
 				partnerchain_address: pc_addr.clone(),
 				genesis_utxo,
 			};

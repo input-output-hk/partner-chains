@@ -36,9 +36,9 @@ where
 	pub fn execute(&self) -> anyhow::Result<()> {
 		let signature = self.sign();
 		let output = json!({
-			"pcAddr": self.partnerchain_address,
+			"partnerchain_address": self.partnerchain_address,
 			"signature": signature,
-			"verificationKey": self.signing_key.vkey()
+			"mainchain_public_key": self.signing_key.vkey()
 
 		});
 		println!("{}", serde_json::to_string_pretty(&output)?);
@@ -47,7 +47,7 @@ where
 
 	fn sign(&self) -> ByteString {
 		let msg = AddressAssociationSignedMessage {
-			mainchain_vkey: self.signing_key.vkey(),
+			mainchain_public_key: self.signing_key.vkey(),
 			partnerchain_address: self.partnerchain_address.clone(),
 			genesis_utxo: self.genesis_utxo,
 		};
