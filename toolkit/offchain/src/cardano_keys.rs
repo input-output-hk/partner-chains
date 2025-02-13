@@ -6,9 +6,9 @@ use sidechain_domain::{MainchainKeyHash, MainchainPublicKey};
 /// It is either:
 /// * 32 bytes regural private key
 /// * 64 bytes extended private key
-pub struct CardanoSigningKey(pub(crate) PrivateKey);
+pub struct CardanoPaymentSigningKey(pub(crate) PrivateKey);
 
-impl CardanoSigningKey {
+impl CardanoPaymentSigningKey {
 	pub fn from_extended_128_bytes(bytes: [u8; 128]) -> anyhow::Result<Self> {
 		// All 128 bytes are: 64 bytes of prefix, 32 bytes of verification key, 32 bytes of chain code
 		let prefix: [u8; 64] = bytes[0..64].try_into().unwrap();
@@ -52,7 +52,7 @@ impl CardanoSigningKey {
 	}
 }
 
-impl TryFrom<CardanoKeyFileContent> for CardanoSigningKey {
+impl TryFrom<CardanoKeyFileContent> for CardanoPaymentSigningKey {
 	type Error = anyhow::Error;
 
 	fn try_from(key: CardanoKeyFileContent) -> Result<Self, Self::Error> {
@@ -60,16 +60,16 @@ impl TryFrom<CardanoKeyFileContent> for CardanoSigningKey {
 		if key_type == "PaymentSigningKeyShelley_ed25519"
 			|| key_type == "StakeSigningKeyShelley_ed25519"
 		{
-			Ok(CardanoSigningKey::from_normal_bytes(key.raw_key_bytes()?)?)
+			Ok(CardanoPaymentSigningKey::from_normal_bytes(key.raw_key_bytes()?)?)
 		} else if key_type == "PaymentExtendedSigningKeyShelley_ed25519_bip32" {
-			Ok(CardanoSigningKey::from_extended_128_bytes(key.raw_key_bytes()?)?)
+			Ok(CardanoPaymentSigningKey::from_extended_128_bytes(key.raw_key_bytes()?)?)
 		} else {
 			Err(anyhow!("Unsupported key type: {}. Expected a signing key", key_type))
 		}
 	}
 }
 
-impl Clone for CardanoSigningKey {
+impl Clone for CardanoPaymentSigningKey {
 	fn clone(&self) -> Self {
 		let bytes = self.0.as_bytes();
 		let private_key = if bytes.len() == 32 {
@@ -121,7 +121,7 @@ impl CardanoKeyFileContent {
 
 #[cfg(test)]
 mod tests {
-	use crate::cardano_keys::{CardanoKeyFileContent, CardanoSigningKey};
+	use crate::cardano_keys::{CardanoKeyFileContent, CardanoPaymentSigningKey};
 
 	#[test]
 	fn cardano_key_content_key_raw_bytes() {
@@ -144,7 +144,7 @@ mod tests {
 			r#type: "PaymentExtendedSigningKeyShelley_ed25519_bip32".to_owned(),
 			cbor_hex: "588020baf85b0e955e969cdaa852b31f223bad0348c274790c2a924602efdaba144266994eeb10f17618065431db154d28c0c7ce11277f412d614ebe82c59688b0244fbd942f1a7b94da07dfcf1c8be9826fd6222c0bae8604eebe0b6215f5d9b841203e23e0617b7e5191898dba700a7541152a3e03a816fc61b3887fe85c6d37d1".to_owned()
 		};
-		let key = CardanoSigningKey::try_from(key_file_content).unwrap();
+		let key = CardanoPaymentSigningKey::try_from(key_file_content).unwrap();
 		assert_eq!(
 			hex::encode(key.to_pub_key_hash().0),
 			"9e287cbfac63670ff624edc69eea5f26c6f56f86f474e3e0d83f7c5c"
@@ -158,7 +158,7 @@ mod tests {
 			cbor_hex: "5820d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
 				.to_owned(),
 		};
-		let key = CardanoSigningKey::try_from(key_file_content).unwrap();
+		let key = CardanoPaymentSigningKey::try_from(key_file_content).unwrap();
 		assert_eq!(
 			hex::encode(key.to_pub_key_hash().0),
 			"e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"

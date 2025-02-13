@@ -5,7 +5,7 @@ use crate::{
 };
 use ogmios_client::types::OgmiosTx;
 use partner_chains_cardano_offchain::{
-	cardano_keys::CardanoSigningKey, init_governance::InitGovernance,
+	cardano_keys::CardanoPaymentSigningKey, init_governance::InitGovernance,
 };
 use sidechain_domain::{MainchainKeyHash, UtxoId};
 
@@ -24,7 +24,7 @@ pub(crate) fn run_init_governance<C: IOContext>(
 
 fn get_private_key_and_key_hash<C: IOContext>(
 	context: &C,
-) -> Result<(CardanoSigningKey, MainchainKeyHash), anyhow::Error> {
+) -> Result<(CardanoPaymentSigningKey, MainchainKeyHash), anyhow::Error> {
 	let cardano_signing_key_file = config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
 		.prompt_with_default_from_file_and_save(context);
 	let pkey =

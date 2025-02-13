@@ -9,7 +9,7 @@ use crate::csl::Costs;
 use crate::governance::GovernanceData;
 use crate::{
 	await_tx::AwaitTx,
-	cardano_keys::CardanoSigningKey,
+	cardano_keys::CardanoPaymentSigningKey,
 	csl::CostStore,
 	csl::{InputsBuilderExt, TransactionBuilderExt, TransactionContext},
 	init_governance::transaction::version_oracle_datum_output,
@@ -37,7 +37,7 @@ pub async fn run_update_governance<
 	A: AwaitTx,
 >(
 	new_governance_authority: MainchainKeyHash,
-	payment_key: &CardanoSigningKey,
+	payment_key: &CardanoPaymentSigningKey,
 	genesis_utxo_id: UtxoId,
 	client: &T,
 	await_tx: A,

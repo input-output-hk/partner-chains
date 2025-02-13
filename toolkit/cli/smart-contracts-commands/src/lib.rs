@@ -1,6 +1,6 @@
 use ogmios_client::jsonrpsee::{client_for_url, OgmiosClients};
 use partner_chains_cardano_offchain::cardano_keys::{
-	CardanoKeyFileContent, CardanoSigningKey,
+	CardanoKeyFileContent, CardanoPaymentSigningKey,
 };
 use sidechain_domain::*;
 
@@ -75,9 +75,9 @@ pub struct PaymentFilePath {
 }
 
 impl PaymentFilePath {
-	pub fn read_key(&self) -> CmdResult<CardanoSigningKey> {
+	pub fn read_key(&self) -> CmdResult<CardanoPaymentSigningKey> {
 		let key_file = CardanoKeyFileContent::parse_file(&self.payment_key_file)?;
-		Ok(CardanoSigningKey::try_from(key_file)?)
+		Ok(CardanoPaymentSigningKey::try_from(key_file)?)
 	}
 }
 

@@ -16,7 +16,7 @@
 
 use crate::{
 	await_tx::AwaitTx,
-	cardano_keys::CardanoSigningKey,
+	cardano_keys::CardanoPaymentSigningKey,
 	csl::{
 		get_builder_config, CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt,
 		TransactionContext, TransactionOutputAmountBuilderExt,
@@ -47,7 +47,7 @@ pub async fn init_reserve_management<
 	A: AwaitTx,
 >(
 	genesis_utxo: UtxoId,
-	payment_key: &CardanoSigningKey,
+	payment_key: &CardanoPaymentSigningKey,
 	client: &T,
 	await_tx: &A,
 ) -> anyhow::Result<Vec<McTxHash>> {
@@ -106,7 +106,7 @@ async fn initialize_script<
 >(
 	script: ScriptData,
 	genesis_utxo: UtxoId,
-	payment_key: &CardanoSigningKey,
+	payment_key: &CardanoPaymentSigningKey,
 	client: &T,
 	await_tx: &A,
 ) -> anyhow::Result<Option<McTxHash>> {

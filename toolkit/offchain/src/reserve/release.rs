@@ -21,7 +21,7 @@
 //!       These tokens are worthless and don't serve any purpose after the transaction is done.
 use super::{reserve_utxo_input_with_validator_script_reference, ReserveData};
 use crate::{
-	await_tx::AwaitTx, cardano_keys::CardanoSigningKey, csl::*, plutus_script::PlutusScript,
+	await_tx::AwaitTx, cardano_keys::CardanoPaymentSigningKey, csl::*, plutus_script::PlutusScript,
 	reserve::ReserveUtxo,
 };
 use anyhow::anyhow;
@@ -45,7 +45,7 @@ pub async fn release_reserve_funds<
 	amount: NonZero<u64>,
 	genesis_utxo: UtxoId,
 	reference_utxo: UtxoId,
-	payment_key: &CardanoSigningKey,
+	payment_key: &CardanoPaymentSigningKey,
 	client: &T,
 	await_tx: &A,
 ) -> anyhow::Result<McTxHash> {
