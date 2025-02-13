@@ -99,7 +99,7 @@ def test_block_authors_match_committee_seats(
 
     block_authors = []
     for block_no in get_pc_epoch_blocks(pc_epoch)["range"]:
-        block_author = api.get_block_author(block_number=block_no)
+        block_author = api.get_block_author(block=get_pc_epoch_blocks(pc_epoch)[block_no])
         assert block_author, f"Could not get author of block {block_no}."
         assert (
             block_author in committee_block_auth_pub_keys

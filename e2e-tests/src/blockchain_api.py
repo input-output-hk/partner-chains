@@ -470,11 +470,11 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def get_block_author(self, block_number: int) -> str:
+    def get_block_author(self, block) -> str:
         """Gets the author of a block.
 
         Arguments:
-            block_number {int} -- block number
+            block
 
         Returns:
             str -- block author public key
