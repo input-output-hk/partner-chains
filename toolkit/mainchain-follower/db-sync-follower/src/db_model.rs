@@ -333,7 +333,9 @@ FROM
 			   epoch_stake
 	INNER JOIN stake_address      ON epoch_stake.addr_id = stake_address.id
 	INNER JOIN pool_hash          ON epoch_stake.pool_id = pool_hash.id
-WHERE epoch_stake.epoch_no = $1
+WHERE
+	    epoch_stake.epoch_no = $1
+	AND epoch_stake.amount > 0
     ",
 	)
 	.bind(epoch)

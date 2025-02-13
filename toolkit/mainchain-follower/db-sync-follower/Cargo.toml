@@ -45,8 +45,9 @@ authority-selection-inherents = { workspace = true, features = [
 ], optional = true }
 cardano-serialization-lib = { workspace = true }
 partner-chains-plutus-data = { workspace = true }
-
-sp-stake-distribution = { workspace = true, features = ["std"], optional = true }
+sp-stake-distribution = { workspace = true, features = [
+    "std",
+], optional = true }
 
 [dev-dependencies]
 tokio-test = "0.4.3"

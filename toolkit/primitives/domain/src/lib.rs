@@ -841,7 +841,7 @@ pub enum DelegatorKey {
 	ScriptKeyHash { hash_raw: [u8; 28], script_hash: [u8; 28] },
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct DelegatorStakeAmount(pub u64);
 
 #[derive(Debug, Clone, Default)]

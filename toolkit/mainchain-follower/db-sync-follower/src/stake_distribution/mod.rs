@@ -31,10 +31,10 @@ fn rows_to_distribution(rows: Vec<StakePoolDelegationOutputRow>) -> StakeDistrib
 	for row in rows {
 		let pool = res.entry(MainchainKeyHash(row.pool_hash_raw)).or_default();
 		let delegator_key = match &row.stake_address_hash_raw[..] {
-			[0xe0, rest @ ..] => DelegatorKey::StakeKeyHash(
+			[0xe0 | 0xe1, rest @ ..] => DelegatorKey::StakeKeyHash(
 				rest.try_into().expect("stake_address_hash_raw is 29 bytes"),
 			),
-			[0xf0, rest @ ..] => DelegatorKey::ScriptKeyHash {
+			[0xf0 | 0xf1, rest @ ..] => DelegatorKey::ScriptKeyHash {
 				hash_raw: rest.try_into().expect("stake_address_hash_raw is 29 bytes"),
 				script_hash: row
 					.stake_address_script_hash
