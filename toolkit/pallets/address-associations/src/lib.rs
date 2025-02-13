@@ -19,9 +19,9 @@ use parity_scale_codec::Encode;
 use sidechain_domain::{MainchainPublicKey, UtxoId};
 
 #[derive(Debug, Clone, Encode)]
-pub struct AddressAssociationSignedMessage<SCAddr> {
+pub struct AddressAssociationSignedMessage<PartnerChainAddress> {
 	pub mainchain_vkey: MainchainPublicKey,
-	pub partnerchain_address: SCAddr,
+	pub partnerchain_address: PartnerChainAddress,
 	pub genesis_utxo: UtxoId,
 }
 
