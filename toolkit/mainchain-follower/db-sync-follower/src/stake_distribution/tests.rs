@@ -1,9 +1,9 @@
 use hex_literal::hex;
 use sidechain_domain::*;
-use sp_stake_distribution::StakeBreakdownDataSource;
+use sp_stake_distribution::StakeDistributionDataSource;
 use sqlx::PgPool;
 
-use super::StakeBreakdownDataSourceImpl;
+use super::StakeDistributionDataSourceImpl;
 
 #[sqlx::test(migrations = "./testdata/stake-distribution/migrations")]
 async fn stake_distribution_works_for_no_epochs(pool: PgPool) {
@@ -50,8 +50,8 @@ async fn stake_distribution_works_for_multiple_epochs(pool: PgPool) {
 	assert_eq!(distribution_for_188.get(&stake_pool_key_hash_2()).unwrap(), &pool_delegation_2());
 }
 
-fn make_source(pool: PgPool) -> StakeBreakdownDataSourceImpl {
-	StakeBreakdownDataSourceImpl::new(pool, None)
+fn make_source(pool: PgPool) -> StakeDistributionDataSourceImpl {
+	StakeDistributionDataSourceImpl::new(pool, None)
 }
 
 fn stake_pool_key_hash_1() -> StakePoolKeyHash {

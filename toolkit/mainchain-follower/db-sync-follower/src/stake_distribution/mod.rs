@@ -4,20 +4,20 @@ use crate::observed_async_trait;
 use derive_new::new;
 use itertools::Itertools;
 use sidechain_domain::*;
-use sp_stake_distribution::StakeBreakdownDataSource;
+use sp_stake_distribution::StakeDistributionDataSource;
 use sqlx::PgPool;
 
 #[cfg(test)]
 mod tests;
 
 #[derive(new)]
-pub struct StakeBreakdownDataSourceImpl {
+pub struct StakeDistributionDataSourceImpl {
 	pub pool: PgPool,
 	metrics_opt: Option<McFollowerMetrics>,
 }
 
 observed_async_trait!(
-impl StakeBreakdownDataSource for StakeBreakdownDataSourceImpl {
+impl StakeDistributionDataSource for StakeDistributionDataSourceImpl {
 	async fn get_stake_pool_delegation_distribution(
 		&self,
 		epochs: Vec<McEpochNumber>,
