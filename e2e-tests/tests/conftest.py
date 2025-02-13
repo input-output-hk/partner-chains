@@ -271,13 +271,27 @@ def load_config(blockchain, nodes_env, stack_env, ci_run, node_host, node_port, 
         config.nodes_config.node.host = node_host
     if node_port:
         config.nodes_config.node.port = node_port
-    if deployment_mc_epoch:
+
+    # Initialize RPC client to get dynamic values if needed
+    rpc_client = PartnerChainRpc(config.nodes_config.node.rpc_url)
+    chain_status = rpc_client.partner_chain_get_status().result
+
+    # Get deployment_mc_epoch from RPC if not provided
+    if not deployment_mc_epoch and not config.deployment_mc_epoch:
+        config.deployment_mc_epoch = chain_status["mainchain"]["epoch"]
+        logging.info(f"Using current mainchain epoch as deployment_mc_epoch: {config.deployment_mc_epoch}")
+    elif deployment_mc_epoch:
         config.deployment_mc_epoch = deployment_mc_epoch
+
+    # Get initial_pc_epoch from RPC if not provided
+    if not config.initial_pc_epoch:
+        config.initial_pc_epoch = chain_status["sidechain"]["epoch"]
+        logging.info(f"Using current sidechain epoch as initial_pc_epoch: {config.initial_pc_epoch}")
+
     if init_timestamp:
         config.main_chain.init_timestamp = init_timestamp
 
     # register resolvers for custom interpolations
-    # example: ${pc_epochs_in_mc_epoch_count:${..main_chain.epoch_length},${.block_duration},${.slots_in_epoch}}
     OmegaConf.register_new_resolver(
         "pc_epochs_in_mc_epoch_count",
         lambda mc_epoch_length, block_duration, slots_in_epoch: int(mc_epoch_length / block_duration / slots_in_epoch),
