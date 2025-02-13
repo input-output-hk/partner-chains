@@ -118,21 +118,6 @@ sqlx_implementations_for_wrapper!(i32, "INT4", BlockNumber, McBlockNumber);
 pub(crate) struct EpochNumber(pub u32);
 sqlx_implementations_for_wrapper!(i32, "INT4", EpochNumber, McEpochNumber);
 
-impl sqlx::postgres::PgHasArrayType for EpochNumber {
-	fn array_type_info() -> sqlx::postgres::PgTypeInfo {
-		<i32 as sqlx::postgres::PgHasArrayType>::array_type_info()
-	}
-}
-
-#[derive(sqlx::Decode, sqlx::Encode)]
-pub struct EpochNumbers(Vec<EpochNumber>);
-
-impl sqlx::Type<sqlx::Postgres> for EpochNumbers {
-	fn type_info() -> <sqlx::Postgres as sqlx::Database>::TypeInfo {
-		<Vec<EpochNumber> as sqlx::Type<sqlx::Postgres>>::type_info()
-	}
-}
-
 #[derive(Debug, Copy, Clone, sqlx::FromRow, PartialEq)]
 pub(crate) struct EpochNumberRow(pub EpochNumber);
 
@@ -327,7 +312,6 @@ pub(crate) struct BlockTokenAmount {
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 pub(crate) struct StakePoolDelegationOutputRow {
-	pub epoch_number: EpochNumber,
 	pub epoch_stake_amount: StakeDelegation,
 	pub pool_hash_raw: [u8; 28],
 	pub stake_address_hash_raw: [u8; 29],
@@ -336,12 +320,11 @@ pub(crate) struct StakePoolDelegationOutputRow {
 
 pub(crate) async fn get_stake_pool_delegations(
 	pool: &Pool<Postgres>,
-	epochs: Vec<EpochNumber>,
+	epoch: EpochNumber,
 ) -> Result<Vec<StakePoolDelegationOutputRow>, SqlxError> {
 	Ok(sqlx::query_as::<_, StakePoolDelegationOutputRow>(
 		"
 SELECT
-	epoch_stake.epoch_no AS epoch_number,
 	epoch_stake.amount AS epoch_stake_amount,
 	pool_hash.hash_raw AS pool_hash_raw,
 	stake_address.hash_raw AS stake_address_hash_raw,
@@ -350,10 +333,10 @@ FROM
 			   epoch_stake
 	INNER JOIN stake_address      ON epoch_stake.addr_id = stake_address.id
 	INNER JOIN pool_hash          ON epoch_stake.pool_id = pool_hash.id
-WHERE epoch_stake.epoch_no IN (SELECT unnest($1::integer[]))
+WHERE epoch_stake.epoch_no = $1
     ",
 	)
-	.bind(EpochNumbers(epochs))
+	.bind(epoch)
 	.fetch_all(pool)
 	.await?)
 }

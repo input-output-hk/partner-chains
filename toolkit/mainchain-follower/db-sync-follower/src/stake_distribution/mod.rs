@@ -2,7 +2,6 @@ use crate::db_model::{EpochNumber, StakePoolDelegationOutputRow};
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
 use derive_new::new;
-use itertools::Itertools;
 use sidechain_domain::*;
 use sp_stake_distribution::StakeDistributionDataSource;
 use sqlx::PgPool;
@@ -20,21 +19,17 @@ observed_async_trait!(
 impl StakeDistributionDataSource for StakeDistributionDataSourceImpl {
 	async fn get_stake_pool_delegation_distribution(
 		&self,
-		epochs: Vec<McEpochNumber>,
-	) -> Result<BTreeMap<McEpochNumber, StakeDistribution>, Box<dyn std::error::Error + Send + Sync>> {
-		let epochs = epochs.into_iter().map(EpochNumber::from).collect_vec();
-		let rows = crate::db_model::get_stake_pool_delegations(&self.pool, epochs).await?;
+		epoch: McEpochNumber,
+	) -> Result<StakeDistribution, Box<dyn std::error::Error + Send + Sync>> {
+		let rows = crate::db_model::get_stake_pool_delegations(&self.pool, EpochNumber::from(epoch)).await?;
 		Ok(rows_to_distribution(rows))
 	}
 });
 
-fn rows_to_distribution(
-	rows: Vec<StakePoolDelegationOutputRow>,
-) -> BTreeMap<McEpochNumber, StakeDistribution> {
-	let mut res = BTreeMap::<McEpochNumber, StakeDistribution>::new();
+fn rows_to_distribution(rows: Vec<StakePoolDelegationOutputRow>) -> StakeDistribution {
+	let mut res = BTreeMap::<MainchainKeyHash, PoolDelegation>::new();
 	for row in rows {
-		let per_epoch_distro = res.entry(McEpochNumber(row.epoch_number.0)).or_default();
-		let pool = per_epoch_distro.0.entry(MainchainKeyHash(row.pool_hash_raw)).or_default();
+		let pool = res.entry(MainchainKeyHash(row.pool_hash_raw)).or_default();
 		let delegator_key = match &row.stake_address_hash_raw[..] {
 			[0xe0, rest @ ..] => DelegatorKey::StakeKeyHash(
 				rest.try_into().expect("stake_address_hash_raw is 29 bytes"),
@@ -52,5 +47,5 @@ fn rows_to_distribution(
 			.or_insert(DelegatorStakeAmount(row.epoch_stake_amount.0));
 		pool.total_stake.0 += row.epoch_stake_amount.0;
 	}
-	res
+	StakeDistribution(res)
 }

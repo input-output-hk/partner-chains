@@ -6,48 +6,15 @@ use sqlx::PgPool;
 use super::StakeDistributionDataSourceImpl;
 
 #[sqlx::test(migrations = "./testdata/stake-distribution/migrations")]
-async fn stake_distribution_works_for_no_epochs(pool: PgPool) {
-	let result = make_source(pool)
-		.get_stake_pool_delegation_distribution(Vec::new())
-		.await
-		.unwrap();
+async fn stake_distribution_works(pool: PgPool) {
+	let epoch = McEpochNumber(188);
+	let distribution =
+		make_source(pool).get_stake_pool_delegation_distribution(epoch).await.unwrap().0;
 
-	assert!(result.is_empty());
-}
-
-#[sqlx::test(migrations = "./testdata/stake-distribution/migrations")]
-async fn stake_distribution_works_for_single_epoch(pool: PgPool) {
-	let result = make_source(pool)
-		.get_stake_pool_delegation_distribution(vec![McEpochNumber(188)])
-		.await
-		.unwrap();
-
-	let distribution_for_188 = &result.get(&McEpochNumber(188)).unwrap().0;
-	let distribution_for_189 = &result.get(&McEpochNumber(189));
-
-	assert!(distribution_for_188.contains_key(&stake_pool_key_hash_1()));
-	assert!(distribution_for_188.contains_key(&stake_pool_key_hash_2()));
-	assert!(distribution_for_189.is_none());
-	assert_eq!(distribution_for_188.get(&stake_pool_key_hash_1()).unwrap(), &pool_delegation_1());
-	assert_eq!(distribution_for_188.get(&stake_pool_key_hash_2()).unwrap(), &pool_delegation_2());
-}
-
-#[sqlx::test(migrations = "./testdata/stake-distribution/migrations")]
-async fn stake_distribution_works_for_multiple_epochs(pool: PgPool) {
-	let result = make_source(pool)
-		.get_stake_pool_delegation_distribution(vec![McEpochNumber(188), McEpochNumber(189)])
-		.await
-		.unwrap();
-
-	let distribution_for_188 = &result.get(&McEpochNumber(188)).unwrap().0;
-	let distribution_for_189 = &result.get(&McEpochNumber(189)).unwrap().0;
-
-	assert!(distribution_for_188.contains_key(&stake_pool_key_hash_1()));
-	assert!(distribution_for_188.contains_key(&stake_pool_key_hash_2()));
-	assert!(distribution_for_189.contains_key(&stake_pool_key_hash_1()));
-	assert!(distribution_for_189.contains_key(&stake_pool_key_hash_2()));
-	assert_eq!(distribution_for_188.get(&stake_pool_key_hash_1()).unwrap(), &pool_delegation_1());
-	assert_eq!(distribution_for_188.get(&stake_pool_key_hash_2()).unwrap(), &pool_delegation_2());
+	assert!(distribution.contains_key(&stake_pool_key_hash_1()));
+	assert!(distribution.contains_key(&stake_pool_key_hash_2()));
+	assert_eq!(distribution.get(&stake_pool_key_hash_1()).unwrap(), &pool_delegation_1());
+	assert_eq!(distribution.get(&stake_pool_key_hash_2()).unwrap(), &pool_delegation_2());
 }
 
 fn make_source(pool: PgPool) -> StakeDistributionDataSourceImpl {
