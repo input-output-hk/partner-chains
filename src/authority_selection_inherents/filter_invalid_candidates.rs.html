@@ -579,8 +579,6 @@
 <a href="#579" id="579">579</a>
 <a href="#580" id="580">580</a>
 <a href="#581" id="581">581</a>
-<a href="#582" id="582">582</a>
-<a href="#583" id="583">583</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Functionality related to filtering invalid candidates from the candidates
 
 </span><span class="kw">use </span>frame_support::pallet_prelude::TypeInfo;
@@ -964,9 +962,7 @@
 			<span class="kw">let </span>registration_data = RegistrationData {
 				registration_utxo: signed_message.registration_utxo,
 				sidechain_signature: SidechainSignature(sidechain_signature),
-				mainchain_signature: MainchainSignature(
-					mainchain_signature.<span class="number">0</span>.try_into().expect(<span class="string">"Mainchain signature is 64 bytes"</span>),
-				),
+				mainchain_signature: MainchainSignature(mainchain_signature.<span class="number">0</span>),
 				cross_chain_signature: CrossChainSignature(<span class="macro">vec!</span>[]),
 				sidechain_pub_key: SidechainPublicKey(sidechain_pub_key),
 				cross_chain_pub_key: CrossChainPublicKey(<span class="macro">vec!</span>[]),

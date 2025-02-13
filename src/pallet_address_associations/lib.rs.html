@@ -112,6 +112,15 @@
 <a href="#112" id="112">112</a>
 <a href="#113" id="113">113</a>
 <a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Pallet storing associations from main chain public key to parter chain address.
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -129,6 +138,16 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">pub mod </span>tests;
 
+<span class="kw">use </span>parity_scale_codec::Encode;
+<span class="kw">use </span>sidechain_domain::{MainchainPublicKey, UtxoId};
+
+<span class="attr">#[derive(Debug, Clone, Encode)]
+</span><span class="kw">pub struct </span>AddressAssociationSignedMessage&lt;PartnerChainAddress&gt; {
+	<span class="kw">pub </span>mainchain_public_key: MainchainPublicKey,
+	<span class="kw">pub </span>partnerchain_address: PartnerChainAddress,
+	<span class="kw">pub </span>genesis_utxo: UtxoId,
+}
+
 <span class="attr">#[frame_support::pallet]
 </span><span class="kw">pub mod </span>pallet {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
@@ -138,7 +157,6 @@
 	<span class="kw">use </span>sidechain_domain::{
 		MainchainKeyHash, MainchainPublicKey, MainchainSignature, UtxoId, MAINCHAIN_SIGNATURE_LEN,
 	};
-	<span class="kw">use </span>sp_address_associations::AddressAssociationSignedMessage;
 
 	<span class="kw">pub const </span>PALLET_VERSION: u32 = <span class="number">1</span>;
 
@@ -175,15 +193,15 @@
 		#[pallet::weight(T::WeightInfo::associate_address())]
 		</span><span class="kw">pub fn </span>associate_address(
 			_origin: OriginFor&lt;T&gt;,
-			pc_addr: T::PartnerChainAddress,
+			partnerchain_address: T::PartnerChainAddress,
 			signature: [u8; MAINCHAIN_SIGNATURE_LEN],
-			mc_vkey: MainchainPublicKey,
+			mainchain_public_key: MainchainPublicKey,
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>signature: MainchainSignature = signature.into();
 
 			<span class="kw">let </span>genesis_utxo = T::genesis_utxo();
 
-			<span class="kw">let </span>mc_vkey_hash = MainchainKeyHash::from_vkey(<span class="kw-2">&amp;</span>mc_vkey.<span class="number">0</span>);
+			<span class="kw">let </span>mc_vkey_hash = MainchainKeyHash::from_vkey(<span class="kw-2">&amp;</span>mainchain_public_key.<span class="number">0</span>);
 
 			<span class="macro">ensure!</span>(
 				!AddressAssociations::&lt;T&gt;::contains_key(<span class="kw-2">&amp;</span>mc_vkey_hash),
@@ -191,17 +209,17 @@
 			);
 
 			<span class="kw">let </span>address_association_message = AddressAssociationSignedMessage {
-				mainchain_vkey: mc_vkey.clone(),
-				partnerchain_address: pc_addr.clone(),
+				mainchain_public_key: mainchain_public_key.clone(),
+				partnerchain_address: partnerchain_address.clone(),
 				genesis_utxo,
 			};
 
 			<span class="kw">let </span>is_valid_signature =
-				signature.verify(<span class="kw-2">&amp;</span>mc_vkey, <span class="kw-2">&amp;</span>address_association_message.encode());
+				signature.verify(<span class="kw-2">&amp;</span>mainchain_public_key, <span class="kw-2">&amp;</span>address_association_message.encode());
 
 			<span class="macro">ensure!</span>(is_valid_signature, Error::&lt;T&gt;::InvalidMainchainSignature);
 
-			AddressAssociations::&lt;T&gt;::insert(mc_vkey_hash, pc_addr);
+			AddressAssociations::&lt;T&gt;::insert(mc_vkey_hash, partnerchain_address);
 			<span class="prelude-val">Ok</span>(())
 		}
 	}

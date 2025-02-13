@@ -1,7 +1,7 @@
 var srcIndex = new Map(JSON.parse('[\
 ["authority_selection_inherents",["",[],["ariadne_inherent_data_provider.rs","authority_selection_inputs.rs","filter_invalid_candidates.rs","lib.rs","select_authorities.rs"]]],\
 ["byte_string_derive",["",[],["lib.rs"]]],\
-["cli_commands",["",[],["key_params.rs","lib.rs","registration_signatures.rs","signing.rs"]]],\
+["cli_commands",["",[],["address_association_signatures.rs","key_params.rs","lib.rs","registration_signatures.rs","signing.rs"]]],\
 ["db_sync_follower",["",[["block",[],["mod.rs"]],["candidates",[],["cached.rs","datum.rs","mod.rs"]],["mc_hash",[],["mod.rs"]],["native_token",[],["mod.rs"]],["sidechain_rpc",[],["mod.rs"]]],["data_sources.rs","db_datum.rs","db_model.rs","lib.rs","metrics.rs"]]],\
 ["main_chain_follower_cli",["",[],["main.rs"]]],\
 ["main_chain_follower_mock",["",[],["block.rs","candidate.rs","lib.rs","mc_hash.rs","native_token.rs","sidechain_rpc.rs"]]],\
@@ -33,7 +33,6 @@ var srcIndex = new Map(JSON.parse('[\
 ["sidechain_mc_hash",["",[],["lib.rs"]]],\
 ["sidechain_runtime",["",[],["genesis_config_presets.rs","lib.rs"]]],\
 ["sidechain_slots",["",[],["lib.rs","runtime_api_client.rs"]]],\
-["sp_address_associations",["",[],["lib.rs"]]],\
 ["sp_block_production_log",["",[],["lib.rs"]]],\
 ["sp_block_rewards",["",[],["lib.rs"]]],\
 ["sp_native_token_management",["",[],["lib.rs"]]],\
