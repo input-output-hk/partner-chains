@@ -3,7 +3,7 @@ SHARED_DIR="$SCRIPT_DIR/data/shared"
 DOT_ENV="$SCRIPT_DIR/.env"
 SHELLEY_GENESIS_FILE="$SCRIPT_DIR/configurations/genesis/shelley/genesis.json"
 TIMESTAMP_FILE="$SCRIPT_DIR/runtime-values/MC__FIRST_EPOCH_TIMESTAMP_MILLIS"
-PC_GENESIS_FILE="$SCRIPT_DIR/runtime-values/genesis.utxo"
+PC_GENESIS_UTXO_FILE="$SCRIPT_DIR/runtime-values/genesis.utxo"
 
 if ! [ -f "$DOT_ENV" ]; then
     echo "$DOT_ENV file missing!"
@@ -27,9 +27,9 @@ else
     export CARDANO_SECURITY_PARAMETER=$(jq '.securityParam' $SHELLEY_GENESIS_FILE)
     export CARDANO_ACTIVE_SLOTS_COEFF=$(jq '.activeSlotCoeff' $SHELLEY_GENESIS_FILE)
 
-    if [ -f "$PC_GENESIS_FILE" ]; then
-        export GENESIS_UTXO=$(cat $PC_GENESIS_FILE)
+    if [ -f "$PC_GENESIS_UTXO_FILE" ]; then
+        export GENESIS_UTXO=$(cat $PC_GENESIS_UTXO_FILE)
     else
-        echo "Partner Chain genesis file $PC_GENESIS_FILE not present"
+        echo "Partner Chain genesis file $PC_GENESIS_UTXO_FILE not present"
     fi
 fi
