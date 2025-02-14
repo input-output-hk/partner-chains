@@ -33,12 +33,9 @@ fn delegator_address_hash_2() -> [u8; 28] {
 	hex!("aa898fce3be344c6be2d86fe1c5918675c9b0672cda8ab809d262824")
 }
 fn delegator_address_hash_3() -> [u8; 28] {
-	hex!("c55157ae1b08643719584c4972132ed210c64b02da80004cbd9b8c7f")
-}
-fn delegator_address_hash_4() -> [u8; 28] {
 	hex!("49b16fb356be9e46778478f2c9601a24fa16c88b2a97681d5af06d01")
 }
-fn delegator_address_hash_5() -> [u8; 28] {
+fn delegator_address_hash_4() -> [u8; 28] {
 	hex!("ba149e2e2379097e65f0c03f2733d3103151e7f100d36dfdb01a0b22")
 }
 fn script_hash_1() -> [u8; 28] {
@@ -47,7 +44,7 @@ fn script_hash_1() -> [u8; 28] {
 
 fn pool_delegation_1() -> PoolDelegation {
 	PoolDelegation {
-		total_stake: StakeDelegation(5001995651486),
+		total_stake: StakeDelegation(5000997825743),
 		delegators: [
 			(
 				DelegatorKey::ScriptKeyHash {
@@ -60,10 +57,6 @@ fn pool_delegation_1() -> PoolDelegation {
 				DelegatorKey::StakeKeyHash(delegator_address_hash_2()),
 				DelegatorStakeAmount(997825743),
 			),
-			(
-				DelegatorKey::StakeKeyHash(delegator_address_hash_3()),
-				DelegatorStakeAmount(997825743),
-			),
 		]
 		.into(),
 	}
@@ -74,13 +67,13 @@ fn pool_delegation_2() -> PoolDelegation {
 		delegators: [
 			(
 				DelegatorKey::ScriptKeyHash {
-					hash_raw: delegator_address_hash_4(),
+					hash_raw: delegator_address_hash_3(),
 					script_hash: script_hash_1(),
 				},
 				DelegatorStakeAmount(1000000000000),
 			),
 			(
-				DelegatorKey::StakeKeyHash(delegator_address_hash_5()),
+				DelegatorKey::StakeKeyHash(delegator_address_hash_4()),
 				DelegatorStakeAmount(997652982),
 			),
 		]

@@ -11,12 +11,18 @@ declare
 
     script_hash_1 hash28type := decode('49b16fb356be9e46778478f2c9601a24fa16c88b2a97681d5af06d01', 'hex');
 
+    -- first byte determines address type, currently:
+    -- e0 - stake key (no script hash attached) on testnet
+    -- f0 - script key (script hash attached) on testnet
+    -- e1 - stake key (no script hash attached) on mainnet
+    -- f1 - script key (script hash attached) on mainnet
     stake_hash_raw_0 addr29type := decode('e0ba149e2e2379097e65f0c03f2733d3103151e7f100d36dfdb01a0b22', 'hex');
     stake_hash_raw_1 addr29type := decode('f049b16fb356be9e46778478f2c9601a24fa16c88b2a97681d5af06d01', 'hex');
     stake_hash_raw_2 addr29type := decode('e0ad148225d7fb809f74a07d2dbc2eef91617f603bfb731e634bf8a1a9', 'hex');
     stake_hash_raw_3 addr29type := decode('e1aa898fce3be344c6be2d86fe1c5918675c9b0672cda8ab809d262824', 'hex');
     stake_hash_raw_4 addr29type := decode('f133916328baa83c42dbdcde825122ccf024ca3599c19ca6fb1697dc93', 'hex');
-    stake_hash_raw_5 addr29type := decode('e1c55157ae1b08643719584c4972132ed210c64b02da80004cbd9b8c7f', 'hex');
+    -- first byte intentionally invalid
+    stake_hash_raw_5 addr29type := decode('eec55157ae1b08643719584c4972132ed210c64b02da80004cbd9b8c7f', 'hex');
 
     stake_view_0 text := 'stake_test1uzapf83wydusjln97rqr7fen6vgrz5087yqdxm0akqdqkgstjz8g4';
     stake_view_1 text := 'stake_test17pymzman26lfu3nhs3u09jtqrgj059kg3v4fw6qattcx6qgt82eah';
@@ -63,14 +69,7 @@ VALUES
   (3      , 2      , 997825743    , 189     ),
 --(addr_id, pool_id, amount       , epoch_no)
   (4      , 1      , 871970938    , 190     ),
-  (5      , 1      , 1000000000000, 190     ),
---(addr_id, pool_id, amount       , epoch_no)
-  (0      , 1      , 997652982    , 193     ),
-  (1      , 1      , 1000000000000, 193     ),
-  (2      , 1      , 997825743    , 193     ),
-  (3      , 2      , 997825743    , 193     ),
-  (4      , 2      , 5000000000000, 193     ),
-  (5      , 2      , 997825743    , 193     )
+  (5      , 1      , 1000000000000, 190     )
 ;
 
 end $$;

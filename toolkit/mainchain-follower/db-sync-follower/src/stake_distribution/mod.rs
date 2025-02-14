@@ -28,8 +28,7 @@ impl StakeDistributionDataSource for StakeDistributionDataSourceImpl {
 
 fn rows_to_distribution(rows: Vec<StakePoolDelegationOutputRow>) -> StakeDistribution {
 	let mut res = BTreeMap::<MainchainKeyHash, PoolDelegation>::new();
-	for row in rows {
-		let pool = res.entry(MainchainKeyHash(row.pool_hash_raw)).or_default();
+	'row_loop: for row in rows {
 		let delegator_key = match &row.stake_address_hash_raw[..] {
 			[0xe0 | 0xe1, rest @ ..] => DelegatorKey::StakeKeyHash(
 				rest.try_into().expect("stake_address_hash_raw is 29 bytes"),
@@ -40,8 +39,15 @@ fn rows_to_distribution(rows: Vec<StakePoolDelegationOutputRow>) -> StakeDistrib
 					.stake_address_script_hash
 					.expect("stake_address_script_hash must be present for script keys"),
 			},
-			_ => panic!("invalid starting address byte on stake_address_hash_raw"),
+			_ => {
+				log::warn!(
+					"invalid starting address byte on stake_address_hash_raw: {}",
+					hex::encode(row.stake_address_hash_raw)
+				);
+				continue 'row_loop;
+			},
 		};
+		let pool = res.entry(MainchainKeyHash(row.pool_hash_raw)).or_default();
 		pool.delegators
 			.entry(delegator_key)
 			.or_insert(DelegatorStakeAmount(row.epoch_stake_amount.0));
