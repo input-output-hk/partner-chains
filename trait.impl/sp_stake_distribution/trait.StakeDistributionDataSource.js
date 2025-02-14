@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"db_sync_follower":[["impl StakeDistributionDataSource for <a class=\"struct\" href=\"db_sync_follower/stake_distribution/struct.StakeDistributionDataSourceImpl.html\" title=\"struct db_sync_follower::stake_distribution::StakeDistributionDataSourceImpl\">StakeDistributionDataSourceImpl</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

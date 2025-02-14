@@ -2,7 +2,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["authority_selection_inherents",["",[],["ariadne_inherent_data_provider.rs","authority_selection_inputs.rs","filter_invalid_candidates.rs","lib.rs","select_authorities.rs"]]],\
 ["byte_string_derive",["",[],["lib.rs"]]],\
 ["cli_commands",["",[],["address_association_signatures.rs","key_params.rs","lib.rs","registration_signatures.rs","signing.rs"]]],\
-["db_sync_follower",["",[["block",[],["mod.rs"]],["candidates",[],["cached.rs","datum.rs","mod.rs"]],["mc_hash",[],["mod.rs"]],["native_token",[],["mod.rs"]],["sidechain_rpc",[],["mod.rs"]]],["data_sources.rs","db_datum.rs","db_model.rs","lib.rs","metrics.rs"]]],\
+["db_sync_follower",["",[["block",[],["mod.rs"]],["candidates",[],["cached.rs","datum.rs","mod.rs"]],["mc_hash",[],["mod.rs"]],["native_token",[],["mod.rs"]],["sidechain_rpc",[],["mod.rs"]],["stake_distribution",[],["mod.rs"]]],["data_sources.rs","db_datum.rs","db_model.rs","lib.rs","metrics.rs"]]],\
 ["main_chain_follower_cli",["",[],["main.rs"]]],\
 ["main_chain_follower_mock",["",[],["block.rs","candidate.rs","lib.rs","mc_hash.rs","native_token.rs","sidechain_rpc.rs"]]],\
 ["ogmios_client",["",[],["jsonrpsee.rs","lib.rs","query_ledger_state.rs","query_network.rs","transactions.rs","types.rs"]]],\
@@ -40,6 +40,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["sp_session_validator_management",["",[],["lib.rs"]]],\
 ["sp_session_validator_management_query",["",[["types",[],["ariadne.rs","mod.rs","registrations.rs"]]],["commands.rs","get_registrations.rs","lib.rs"]]],\
 ["sp_sidechain",["",[],["lib.rs","query.rs"]]],\
+["sp_stake_distribution",["",[],["lib.rs"]]],\
 ["time_source",["",[],["lib.rs"]]]\
 ]'));
 createSrcSidebar();

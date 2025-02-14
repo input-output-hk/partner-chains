@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["DataSourceError"],"macro":["observed_async_trait"],"mod":["block","candidates","data_sources","mc_hash","metrics","native_token","sidechain_rpc"],"struct":["SqlxError"],"type":["Result"]};
+window.SIDEBAR_ITEMS = {"enum":["DataSourceError"],"macro":["observed_async_trait"],"mod":["block","candidates","data_sources","mc_hash","metrics","native_token","sidechain_rpc","stake_distribution"],"struct":["SqlxError"],"type":["Result"]};
