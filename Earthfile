@@ -24,7 +24,6 @@ ci-workflow-dispatch:
   BUILD +test
   BUILD +licenses
   BUILD +fmt
-  BUILD +chainspecs
   ARG image=partner-chains-node
   ARG tags
   BUILD +docker --image=$image --tags=$tags
@@ -72,27 +71,51 @@ setup:
 
 source:
   FROM +setup
+  RUN mkdir -p target
   ARG CRATES=$(tomlq -r .workspace.members[] Cargo.toml)
   FOR crate IN $CRATES
       COPY --dir $crate $crate
   END
   COPY --dir +build-deps/target .
 
+#build-deps:
+#  FROM +fetch-deps
+#  CACHE --sharing shared --id cargo $CARGO_HOME
+#  RUN cargo --locked chef prepare
+#  RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES
+#  SAVE ARTIFACT target
+
 build-deps:
   FROM +fetch-deps
   CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN cargo --locked chef prepare
-  RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES
+  # Generate a recipe file (make sure this file is deterministic)
+  RUN cargo --locked chef prepare --recipe-path recipe.json
+  LET RECIPE_HASH=$(cat recipe.json | sha256sum)
+  # Cache the target directory using the recipe hash so that if dependencies are unchanged, this cache is restored
+  CACHE --sharing shared --id cargo-deps-$RECIPE_HASH target
+  RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES --recipe-path recipe.json
+  RUN mkdir -p target  # Ensure the target directory exists
   SAVE ARTIFACT target
+
+#build:
+#  FROM +source
+#  LET WASM_BUILD_STD=0
+#  ARG CACHE_KEY=$(find . -type f -name "*.rs" -o -name "*.toml" | sort | xargs cat | sha256sum)
+#  CACHE --sharing shared --id cargo-build-$CACHE_KEY target
+#  CACHE --sharing shared --id cargo $CARGO_HOME
+#  ARG EARTHLY_GIT_HASH
+#  RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
+#  #SAVE ARTIFACT target
+#  SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node
+#  SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node-artifact
 
 build:
   FROM +source
   LET WASM_BUILD_STD=0
-  #ARG CACHE_KEY=$(find . -type f -name "*.rs" -o -name "*.toml" | sort | xargs cat | sha256sum)
-  #CACHE --sharing shared --id cargo-build-$CACHE_KEY target
+  ARG CACHE_KEY=$(find . -path "./target" -prune -o -type f \( -name "*.rs" -o -name "*.toml" \) -print | sort | xargs cat | sha256sum)
+  CACHE --sharing shared --id cargo-build-$CACHE_KEY target
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
-  #SAVE ARTIFACT target
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node-artifact
 
