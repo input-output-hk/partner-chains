@@ -34,5 +34,6 @@ dev/local-environment/docker-compose.yml
 dev/local-environment/docker-compose.yml.bak
 dev/local-environment/configurations/tests/e2e-tests
 dev/local-environment/configurations/partner-chains-node/overrides
+dev/local-environment/runtime-values/*
 
 ogmios_client.log

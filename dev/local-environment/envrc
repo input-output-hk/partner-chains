@@ -1,0 +1,35 @@
+SCRIPT_DIR=$(dirname "$_")
+SHARED_DIR="$SCRIPT_DIR/data/shared"
+DOT_ENV="$SCRIPT_DIR/.env"
+SHELLEY_GENESIS_FILE="$SCRIPT_DIR/configurations/genesis/shelley/genesis.json"
+TIMESTAMP_FILE="$SCRIPT_DIR/runtime-values/MC__FIRST_EPOCH_TIMESTAMP_MILLIS"
+PC_GENESIS_UTXO_FILE="$SCRIPT_DIR/runtime-values/genesis.utxo"
+
+if ! [ -f "$DOT_ENV" ]; then
+    echo "$DOT_ENV file missing!"
+elif ! [ -f "$TIMESTAMP_FILE" ]; then
+    echo "Timestamp file $TIMESTAMP_FILE missing!";
+elif ! [ -f "$SHELLEY_GENESIS_FILE" ]; then
+    echo "Shelley genesis file $SHELLEY_GENESIS_FILE missing!"
+else
+    source "$DOT_ENV"
+
+    export DB_SYNC_POSTGRES_CONNECTION_STRING="postgres://postgres:$POSTGRES_PASSWORD@localhost:$POSTGRES_PORT/cexplorer"
+    export USE_MAIN_CHAIN_FOLLOWER_MOCK=false
+
+    export BLOCK_STABILITY_MARGIN=0
+    export MC__FIRST_EPOCH_NUMBER=0
+    export MC__FIRST_SLOT_NUMBER=0
+    export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=$(cat $TIMESTAMP_FILE)
+
+    export MC__SLOT_DURATION_MILLIS=$(jq '.slotLength * 1000' $SHELLEY_GENESIS_FILE)
+    export MC__EPOCH_DURATION_MILLIS=$(jq '.epochLength * 1000' $SHELLEY_GENESIS_FILE)
+    export CARDANO_SECURITY_PARAMETER=$(jq '.securityParam' $SHELLEY_GENESIS_FILE)
+    export CARDANO_ACTIVE_SLOTS_COEFF=$(jq '.activeSlotCoeff' $SHELLEY_GENESIS_FILE)
+
+    if [ -f "$PC_GENESIS_UTXO_FILE" ]; then
+        export GENESIS_UTXO=$(cat $PC_GENESIS_UTXO_FILE)
+    else
+        echo "Partner Chain genesis file $PC_GENESIS_UTXO_FILE not present"
+    fi
+fi
