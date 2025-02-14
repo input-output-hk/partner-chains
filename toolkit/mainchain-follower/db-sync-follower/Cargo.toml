@@ -6,8 +6,15 @@ license = "Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-sqlx = { version = "0.7.4", default-features = false, features = ["runtime-tokio-rustls", "postgres", "macros", "chrono", "migrate", "bigdecimal"]}
-tokio = { workspace = true, features = ["full"]}
+sqlx = { version = "0.7.4", default-features = false, features = [
+    "runtime-tokio-rustls",
+    "postgres",
+    "macros",
+    "chrono",
+    "migrate",
+    "bigdecimal",
+] }
+tokio = { workspace = true, features = ["full"] }
 futures = { workspace = true }
 chrono = "0.4.31"
 hex = { workspace = true }
@@ -28,12 +35,19 @@ substrate-prometheus-endpoint = { workspace = true }
 derive-new = { workspace = true }
 lru = { workspace = true }
 sp-timestamp = { workspace = true, features = ["std"] }
-sp-native-token-management = { workspace = true, features = ["std"], optional = true }
+sp-native-token-management = { workspace = true, features = [
+    "std",
+], optional = true }
 sidechain-mc-hash = { workspace = true, optional = true }
 pallet-sidechain-rpc = { workspace = true, optional = true }
-authority-selection-inherents = { workspace = true, features = ["std"], optional = true }
+authority-selection-inherents = { workspace = true, features = [
+    "std",
+], optional = true }
 cardano-serialization-lib = { workspace = true }
 partner-chains-plutus-data = { workspace = true }
+sp-stake-distribution = { workspace = true, features = [
+    "std",
+], optional = true }
 
 [dev-dependencies]
 tokio-test = "0.4.3"
@@ -47,3 +61,4 @@ candidate-source = ["authority-selection-inherents"]
 native-token = ["sp-native-token-management"]
 mc-hash = ["sidechain-mc-hash", "block-source"]
 sidechain-rpc = ["pallet-sidechain-rpc", "block-source"]
+stake-distribution = ["sp-stake-distribution"]

@@ -10,6 +10,7 @@ extern crate alloc;
 extern crate core;
 extern crate num_derive;
 
+pub use alloc::collections::btree_map::BTreeMap;
 pub use alloc::vec::Vec;
 use alloc::{format, str::FromStr, string::String, string::ToString, vec};
 use byte_string_derive::byte_string;
@@ -33,7 +34,7 @@ use {
 
 /// A main chain epoch number. In range [0, 2^31-1].
 #[derive(
-	Default, Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, Hash, TypeInfo, PartialOrd,
+	Default, Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, Hash, TypeInfo, Ord, PartialOrd,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, FromStr))]
 pub struct McEpochNumber(pub u32);
@@ -288,7 +289,19 @@ const MAINCHAIN_KEY_HASH_LEN: usize = 28;
 /// It can be a hash of Payment Verification, Payment Extended Verification or Staking Verification Key.
 /// Way to get it: cardano-cli latest address key-hash --payment-verification-key-file FILE
 #[derive(
-	Clone, Copy, Decode, Default, Eq, Encode, Hash, MaxEncodedLen, PartialEq, ToDatum, TypeInfo,
+	Clone,
+	Copy,
+	Decode,
+	Default,
+	Encode,
+	Hash,
+	MaxEncodedLen,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	ToDatum,
+	TypeInfo,
 )]
 #[byte_string(debug)]
 #[cfg_attr(feature = "std", byte_string(to_hex_string, decode_hex))]
@@ -820,4 +833,22 @@ mod tests {
 
 		assert_eq!(current_decoded.0, vec![9; 64]);
 	}
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+pub enum DelegatorKey {
+	StakeKeyHash([u8; 28]),
+	ScriptKeyHash { hash_raw: [u8; 28], script_hash: [u8; 28] },
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct DelegatorStakeAmount(pub u64);
+
+#[derive(Debug, Clone, Default)]
+pub struct StakeDistribution(pub BTreeMap<MainchainKeyHash, PoolDelegation>);
+
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct PoolDelegation {
+	pub total_stake: StakeDelegation,
+	pub delegators: BTreeMap<DelegatorKey, DelegatorStakeAmount>,
 }
