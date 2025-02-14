@@ -28,30 +28,36 @@ impl StakeDistributionDataSource for StakeDistributionDataSourceImpl {
 
 fn rows_to_distribution(rows: Vec<StakePoolDelegationOutputRow>) -> StakeDistribution {
 	let mut res = BTreeMap::<MainchainKeyHash, PoolDelegation>::new();
-	'row_loop: for row in rows {
-		let delegator_key = match &row.stake_address_hash_raw[..] {
-			[0xe0 | 0xe1, rest @ ..] => DelegatorKey::StakeKeyHash(
-				rest.try_into().expect("stake_address_hash_raw is 29 bytes"),
-			),
-			[0xf0 | 0xf1, rest @ ..] => DelegatorKey::ScriptKeyHash {
-				hash_raw: rest.try_into().expect("stake_address_hash_raw is 29 bytes"),
-				script_hash: row
-					.stake_address_script_hash
-					.expect("stake_address_script_hash must be present for script keys"),
+	for row in rows {
+		match get_delegator_key(&row) {
+			Ok(delegator_key) => {
+				let pool = res.entry(MainchainKeyHash(row.pool_hash_raw)).or_default();
+				pool.delegators
+					.entry(delegator_key)
+					.or_insert(DelegatorStakeAmount(row.epoch_stake_amount.0));
+				pool.total_stake.0 += row.epoch_stake_amount.0;
 			},
-			_ => {
-				log::warn!(
-					"invalid starting address byte on stake_address_hash_raw: {}",
-					hex::encode(row.stake_address_hash_raw)
-				);
-				continue 'row_loop;
+			Err(e) => {
+				log::warn!("Failed to parse StakePoolDelegationOutputRow: {}", e)
 			},
-		};
-		let pool = res.entry(MainchainKeyHash(row.pool_hash_raw)).or_default();
-		pool.delegators
-			.entry(delegator_key)
-			.or_insert(DelegatorStakeAmount(row.epoch_stake_amount.0));
-		pool.total_stake.0 += row.epoch_stake_amount.0;
+		}
 	}
 	StakeDistribution(res)
+}
+
+fn get_delegator_key(row: &StakePoolDelegationOutputRow) -> Result<DelegatorKey, String> {
+	match &row.stake_address_hash_raw[..] {
+		[0xe0 | 0xe1, rest @ ..] => Ok(DelegatorKey::StakeKeyHash(
+			rest.try_into().expect("infallible: stake_address_hash_raw is 29 bytes"),
+		)),
+		[0xf0 | 0xf1, rest @ ..] => Ok(DelegatorKey::ScriptKeyHash {
+			hash_raw: rest.try_into().expect("infallible: stake_address_hash_raw is 29 bytes"),
+			script_hash: row
+				.stake_address_script_hash
+				.ok_or("stake_address_script_hash must be present for script keys")?,
+		}),
+		_ => {
+			Err(format!("invalid stake address hash: {}", hex::encode(row.stake_address_hash_raw)))
+		},
+	}
 }

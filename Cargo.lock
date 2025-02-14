@@ -10822,20 +10822,7 @@ name = "sp-stake-distribution"
 version = "1.5.0"
 dependencies = [
  "async-trait",
- "derive-new",
- "derive_more",
- "envy",
- "parity-scale-codec",
- "scale-info",
- "serde",
  "sidechain-domain",
- "sidechain-mc-hash",
- "sp-api",
- "sp-blockchain",
- "sp-inherents",
- "sp-runtime",
- "sp-version",
- "thiserror",
  "tokio",
 ]
 
