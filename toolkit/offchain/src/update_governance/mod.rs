@@ -5,7 +5,7 @@
 //! 2. Mints exactly 1 multi-sig policy token as authentication
 //! 3. Produces a new governance UTXO at the version oracle validator address with a version oracle
 //!    Plutus datum attached that contains the script ID (32) and policy hash.
-use crate::csl::Costs;
+use crate::csl::{empty_asset_name, CalculateCostsError, Costs};
 use crate::governance::GovernanceData;
 use crate::{
 	await_tx::AwaitTx,
@@ -19,6 +19,9 @@ use crate::{
 use cardano_serialization_lib::{
 	Language, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
 };
+use ogmios_client::generated::{EvaluateTransactionFailure, RedeemerPointerPurpose};
+use ogmios_client::transactions::EvaluateTransactionError;
+use ogmios_client::OgmiosClientError;
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
@@ -60,7 +63,36 @@ pub async fn run_update_governance<
 		},
 		client,
 	)
-	.await?;
+	.await
+	.map_err(|e| match e {
+		CalculateCostsError::EvaluateResponseError {
+			tx,
+			error:
+				OgmiosClientError::CallError(EvaluateTransactionError::EvaluateError(
+					EvaluateTransactionFailure::ScriptExecutionFailure { code, data, message },
+				)),
+		} => {
+			let is_governance_failure = tx
+				.body()
+				.mint()
+				.and_then(|mint| mint.get(&governance_data.policy_script.csl_script_hash()))
+				.and_then(|mints_assets| mints_assets.get(0)).and_then(|mint_assets|mint_assets.get(&empty_asset_name())).and_then(|index|index.as_positive()).and_then(|index|{
+					let index: u64 = index.into();
+					data.into_iter()
+						.find(|rp| rp.validator.purpose == RedeemerPointerPurpose::Mint && rp.validator.index.0 == index)
+				}).is_some();
+			if is_governance_failure {
+				anyhow::anyhow!(
+					"Transaction rejected becuse of governance policy failure. Perhaps transaction was not signed by the current governance authority!"
+				)
+			} else {
+				anyhow::anyhow!(
+					"EvaluateTransaction failed with code: {code:?} and message: {message}"
+				)
+			}
+		},
+		e => anyhow::anyhow!("EvaluateTransaction failed with {e:?}"),
+	})?;
 
 	let signed_tx = ctx.sign(&tx);
 

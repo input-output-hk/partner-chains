@@ -1,10 +1,10 @@
 use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::plutus_script::PlutusScript;
-use anyhow::Context;
 use cardano_serialization_lib::*;
 use fraction::{FromPrimitive, Ratio};
 use ogmios_client::query_ledger_state::ReferenceScriptsCosts;
-use ogmios_client::transactions::Transactions;
+use ogmios_client::transactions::{EvaluateTransactionError, Transactions};
+use ogmios_client::OgmiosClientError;
 use ogmios_client::{
 	query_ledger_state::{PlutusCostModels, ProtocolParametersResponse, QueryLedgerState},
 	query_network::QueryNetwork,
@@ -245,26 +245,30 @@ impl Costs {
 	pub async fn calculate_costs<T: Transactions, F>(
 		make_tx: F,
 		client: &T,
-	) -> anyhow::Result<Transaction>
+	) -> Result<Transaction, CalculateCostsError>
 	where
 		F: Fn(Costs) -> anyhow::Result<Transaction>,
 	{
-		let tx = make_tx(Costs::ZeroCosts)?;
+		let tx =
+			make_tx(Costs::ZeroCosts).map_err(|e| CalculateCostsError::BuildTransactionError(e))?;
 		// stage 1
 		let costs = Self::from_ogmios(&tx, client).await?;
 
-		let tx = make_tx(costs)?;
+		let tx = make_tx(costs).map_err(|e| CalculateCostsError::BuildTransactionError(e))?;
 		// stage 2
 		let costs = Self::from_ogmios(&tx, client).await?;
 
-		make_tx(costs)
+		make_tx(costs).map_err(|e| CalculateCostsError::BuildTransactionError(e))
 	}
 
-	async fn from_ogmios<T: Transactions>(tx: &Transaction, client: &T) -> anyhow::Result<Costs> {
+	async fn from_ogmios<T: Transactions>(
+		tx: &Transaction,
+		client: &T,
+	) -> Result<Costs, CalculateCostsError> {
 		let evaluate_response = client
 			.evaluate_transaction(&tx.to_bytes())
 			.await
-			.context("calculate_costs received Ogmios error from evaluate_transaction")?;
+			.map_err(|e| CalculateCostsError::EvaluateResponseError { tx: tx.clone(), error: e })?;
 
 		let mut mints = HashMap::new();
 		let mut spends = HashMap::new();
@@ -288,6 +292,24 @@ impl Costs {
 		}
 
 		Ok(Costs::Costs(CostLookup { mints, spends }))
+	}
+}
+
+#[derive(Debug)]
+pub enum CalculateCostsError {
+	EvaluateResponseError { tx: Transaction, error: OgmiosClientError<EvaluateTransactionError> },
+	BuildTransactionError(anyhow::Error),
+}
+
+// For "unhandling" into anyhow::Error
+impl From<CalculateCostsError> for anyhow::Error {
+	fn from(value: CalculateCostsError) -> Self {
+		match value {
+			CalculateCostsError::EvaluateResponseError { tx: _tx, error } => {
+				anyhow::anyhow!("Evaluate transaction error: {} ", error)
+			},
+			CalculateCostsError::BuildTransactionError(e) => e,
+		}
 	}
 }
 
