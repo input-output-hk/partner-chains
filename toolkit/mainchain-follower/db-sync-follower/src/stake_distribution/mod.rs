@@ -43,8 +43,8 @@ impl StakeDistributionDataSource for StakeDistributionDataSourceImpl {
 			.get_stake_pool_delegation_distribution_for_pools(epoch, vec![pool_hash])
 			.await?
 			.0
-			.get(&pool_hash)
-			.expect("infallible: result has to contain pool hash")
+			.entry(pool_hash)
+			.or_default()
 			.clone())
 	}
 
