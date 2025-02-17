@@ -32,7 +32,7 @@ struct ParsedCandidate {
 
 #[derive(Debug)]
 struct RegisteredCandidate {
-	mainchain_pub_key: MainchainPublicKey,
+	mainchain_pub_key: StakePoolPublicKey,
 	registration_utxo: UtxoId,
 	tx_inputs: Vec<UtxoId>,
 	sidechain_signature: SidechainSignature,
@@ -160,7 +160,7 @@ impl CandidatesDataSourceImpl {
 
 	fn group_candidates_by_mc_pub_key(
 		candidates: Vec<RegisteredCandidate>,
-	) -> HashMap<MainchainPublicKey, Vec<RegisteredCandidate>> {
+	) -> HashMap<StakePoolPublicKey, Vec<RegisteredCandidate>> {
 		candidates.into_iter().into_group_map_by(|c| c.mainchain_pub_key.clone())
 	}
 
@@ -190,7 +190,7 @@ impl CandidatesDataSourceImpl {
 
 	fn get_stake_delegation(
 		stake_map: &HashMap<MainchainKeyHash, StakeDelegation>,
-		mainchain_pub_key: &MainchainPublicKey,
+		mainchain_pub_key: &StakePoolPublicKey,
 	) -> Option<StakeDelegation> {
 		if stake_map.is_empty() {
 			None

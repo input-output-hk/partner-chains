@@ -125,7 +125,7 @@ pub trait Deregister {
 		&self,
 		genesis_utxo: UtxoId,
 		payment_signing_key: &CardanoPaymentSigningKey,
-		stake_ownership_pub_key: MainchainPublicKey,
+		stake_ownership_pub_key: StakePoolPublicKey,
 	) -> Result<Option<McTxHash>, OffchainError>;
 }
 
@@ -137,7 +137,7 @@ where
 		&self,
 		genesis_utxo: UtxoId,
 		payment_signing_key: &CardanoPaymentSigningKey,
-		stake_ownership_pub_key: MainchainPublicKey,
+		stake_ownership_pub_key: StakePoolPublicKey,
 	) -> Result<Option<McTxHash>, OffchainError> {
 		run_deregister(
 			genesis_utxo,
@@ -157,7 +157,7 @@ pub async fn run_deregister<
 >(
 	genesis_utxo: UtxoId,
 	payment_signing_key: &CardanoPaymentSigningKey,
-	stake_ownership_pub_key: MainchainPublicKey,
+	stake_ownership_pub_key: StakePoolPublicKey,
 	client: &C,
 	await_tx: A,
 ) -> anyhow::Result<Option<McTxHash>> {
@@ -201,7 +201,7 @@ pub async fn run_deregister<
 
 fn get_own_registrations(
 	own_pkh: MainchainKeyHash,
-	spo_pub_key: MainchainPublicKey,
+	spo_pub_key: StakePoolPublicKey,
 	validator_utxos: &[OgmiosUtxo],
 ) -> Vec<(OgmiosUtxo, CandidateRegistration)> {
 	let mut own_registrations = Vec::new();

@@ -10,7 +10,7 @@ use partner_chains_cli::io::DefaultCmdRunContext;
 use partner_chains_smart_contracts_commands::SmartContractsCmd;
 use sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 use sc_service::TaskManager;
-use sidechain_domain::{MainchainPublicKey, McEpochNumber, ScEpochNumber};
+use sidechain_domain::{McEpochNumber, ScEpochNumber, StakePoolPublicKey};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
@@ -54,7 +54,7 @@ impl CliConfiguration for SidechainParamsCmd {
 #[derive(Debug, Clone, Parser)]
 pub struct RegistrationStatusCmd {
 	#[arg(long)]
-	pub mainchain_pub_key: MainchainPublicKey,
+	pub mainchain_pub_key: StakePoolPublicKey,
 	#[arg(long)]
 	pub mc_epoch_number: McEpochNumber,
 	#[allow(missing_docs)]

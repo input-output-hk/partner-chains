@@ -233,6 +233,6 @@ fn payment_signing_key() -> Vec<u8> {
 	hex!("0000000000000000000000000000000000000000000000000000000000000001").to_vec()
 }
 
-fn stake_ownership_pub_key() -> MainchainPublicKey {
-	MainchainPublicKey(hex!("1111111111111111111111111111111111111111111111111111111111111111"))
+fn stake_ownership_pub_key() -> StakePoolPublicKey {
+	StakePoolPublicKey(hex!("1111111111111111111111111111111111111111111111111111111111111111"))
 }

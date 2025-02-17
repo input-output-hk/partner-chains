@@ -9,7 +9,7 @@ use authority_selection_inherents::authority_selection_inputs::{
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use derive_new::new;
 use sidechain_block_search::{predicates::AnyBlockInEpoch, FindSidechainBlock, SidechainInfo};
-use sidechain_domain::{MainchainPublicKey, McEpochNumber, ScEpochNumber};
+use sidechain_domain::{McEpochNumber, ScEpochNumber, StakePoolPublicKey};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{HeaderBackend, Info};
 use sp_core::bytes::to_hex;
@@ -37,7 +37,7 @@ pub trait SessionValidatorManagementQueryApi {
 	async fn get_registrations(
 		&self,
 		mc_epoch_number: McEpochNumber,
-		mc_public_key: MainchainPublicKey,
+		mc_public_key: StakePoolPublicKey,
 	) -> QueryResult<Vec<CandidateRegistrationEntry>>;
 
 	/// Regardless of `epoch_number` value, all the candidates data validation is done based on the validation api from the latest sidechain block.
@@ -142,7 +142,7 @@ where
 	async fn get_registrations(
 		&self,
 		mc_epoch_number: McEpochNumber,
-		mc_public_key: MainchainPublicKey,
+		mc_public_key: StakePoolPublicKey,
 	) -> QueryResult<Vec<CandidateRegistrationEntry>> {
 		let api = self.client.runtime_api();
 		let best_block = self.client.info().best_hash;

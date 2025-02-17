@@ -4,7 +4,7 @@ use authority_selection_inherents::filter_invalid_candidates::{RegistrationDataE
 use parity_scale_codec::Decode;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::{
-	MainchainPublicKey, RegistrationData, SidechainPublicKey, StakeDelegation, UtxoInfo,
+	RegistrationData, SidechainPublicKey, StakeDelegation, StakePoolPublicKey, UtxoInfo,
 };
 use sp_core::{
 	bytes::to_hex,
@@ -50,7 +50,7 @@ pub type GetRegistrationsResponseMap = HashMap<String, Vec<CandidateRegistration
 impl CandidateRegistrationEntry {
 	pub fn new(
 		registration_data: RegistrationData,
-		mainchain_pub_key: MainchainPublicKey,
+		mainchain_pub_key: StakePoolPublicKey,
 		stake_delegation: Option<StakeDelegation>,
 		invalid_reasons: Option<RegistrationDataError>,
 	) -> Self {

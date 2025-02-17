@@ -1,4 +1,4 @@
-use crate::key_params::MainchainSigningKeyParam;
+use crate::key_params::StakeSigningKeyParam;
 use anyhow::Ok;
 use byte_string::ByteString;
 use clap::Parser;
@@ -20,9 +20,9 @@ pub struct AddressAssociationSignaturesCmd<
 	/// Partner Chain address to be associated with the Cardano address
 	#[arg(long, value_parser=parse_pc_address::<PartnerchainAddress>)]
 	pub partnerchain_address: PartnerchainAddress,
-	/// Cardano ECDSA signing key. Its public key will be associated with partnerchain_address.
+	/// Cardano Stake Signing Key bytes in hex format. Its public key will be associated with partnerchain_address.
 	#[arg(long)]
-	pub signing_key: MainchainSigningKeyParam,
+	pub signing_key: StakeSigningKeyParam,
 }
 
 fn parse_pc_address<T: FromStr>(s: &str) -> Result<T, String> {
@@ -38,7 +38,7 @@ where
 		let output = json!({
 			"partnerchain_address": self.partnerchain_address,
 			"signature": signature,
-			"mainchain_public_key": self.signing_key.vkey()
+			"stake_public_key": self.signing_key.vkey()
 
 		});
 		println!("{}", serde_json::to_string_pretty(&output)?);
@@ -47,7 +47,7 @@ where
 
 	fn sign(&self) -> ByteString {
 		let msg = AddressAssociationSignedMessage {
-			mainchain_public_key: self.signing_key.vkey(),
+			stake_public_key: self.signing_key.vkey(),
 			partnerchain_address: self.partnerchain_address.clone(),
 			genesis_utxo: self.genesis_utxo,
 		};
@@ -59,8 +59,6 @@ where
 #[cfg(test)]
 mod test {
 	use super::*;
-	use crate::key_params::MainchainSigningKeyParam;
-	use ed25519_zebra::SigningKey;
 	use hex::FromHexError;
 	use hex_literal::hex;
 	use sidechain_domain::byte_string::ByteString;
@@ -90,10 +88,10 @@ mod test {
 			partnerchain_address:
 				// re-encoding of 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY (Alice)
 				AccountId32(hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d")),
-			signing_key: MainchainSigningKeyParam(SigningKey::from(hex!(
+			signing_key: StakeSigningKeyParam::from_str(
 				// Private key of Alice (pubkey: 2bebcb7fbc74a6e0fd6e00a311698b047b7b659f0e047ff5349dbd984aefc52c)
 				"d75c630516c33a66b11b3444a70b65083aeb21353bd919cc5e3daa02c9732a84"
-			))),
+			).unwrap(),
 		};
 
 		assert_eq!(

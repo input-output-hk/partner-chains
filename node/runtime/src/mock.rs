@@ -350,7 +350,7 @@ pub fn create_inherent_data_struct(
 			};
 
 			CandidateRegistrations {
-				mainchain_pub_key: MainchainPublicKey(dummy_mainchain_pub_key.public().0),
+				mainchain_pub_key: StakePoolPublicKey(dummy_mainchain_pub_key.public().0),
 				registrations: vec![registration_data],
 				stake_delegation: Some(StakeDelegation(7)),
 			}

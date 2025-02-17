@@ -19,7 +19,7 @@ mod benchmarks {
 	#[benchmark]
 	fn associate_address() {
 		// Alice
-		let mc_pub_key = MainchainPublicKey(hex!(
+		let mc_pub_key = StakePoolPublicKey(hex!(
 			"2bebcb7fbc74a6e0fd6e00a311698b047b7b659f0e047ff5349dbd984aefc52c"
 		));
 		// Alice

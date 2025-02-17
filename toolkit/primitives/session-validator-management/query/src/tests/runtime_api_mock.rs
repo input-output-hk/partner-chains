@@ -79,7 +79,7 @@ sp_api::mock_impl_runtime_apis! {
 	}
 
 	impl CandidateValidationApi<Block> for TestRuntimeApi {
-		fn validate_registered_candidate_data(mainchain_pub_key: &MainchainPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError> {
+		fn validate_registered_candidate_data(mainchain_pub_key: &StakePoolPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError> {
 			validate_registration_data(mainchain_pub_key, registration_data, TEST_UTXO_ID).err()
 		}
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError> {

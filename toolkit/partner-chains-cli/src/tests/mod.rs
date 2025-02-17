@@ -10,7 +10,7 @@ use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData}
 use partner_chains_cardano_offchain::{cardano_keys::CardanoPaymentSigningKey, OffchainError};
 use pretty_assertions::assert_eq;
 use sidechain_domain::{
-	CandidateRegistration, DParameter, MainchainKeyHash, MainchainPublicKey, McTxHash, UtxoId,
+	CandidateRegistration, DParameter, MainchainKeyHash, McTxHash, StakePoolPublicKey, UtxoId,
 };
 use sp_core::offchain::Timestamp;
 use std::collections::HashMap;
@@ -245,7 +245,7 @@ pub struct OffchainMock {
 		Result<Option<McTxHash>, OffchainError>,
 	>,
 	pub deregister: HashMap<
-		(UtxoId, PrivateKeyBytes, MainchainPublicKey),
+		(UtxoId, PrivateKeyBytes, StakePoolPublicKey),
 		Result<Option<McTxHash>, OffchainError>,
 	>,
 }
@@ -307,7 +307,7 @@ impl OffchainMock {
 		self,
 		genesis_utxo: UtxoId,
 		payment_signing_key: PrivateKeyBytes,
-		stake_ownership_pub_key: MainchainPublicKey,
+		stake_ownership_pub_key: StakePoolPublicKey,
 		result: Result<Option<McTxHash>, OffchainError>,
 	) -> Self {
 		Self {
@@ -403,7 +403,7 @@ impl Deregister for OffchainMock {
 		&self,
 		genesis_utxo: UtxoId,
 		payment_signing_key: &CardanoPaymentSigningKey,
-		stake_ownership_pub_key: MainchainPublicKey,
+		stake_ownership_pub_key: StakePoolPublicKey,
 	) -> Result<Option<McTxHash>, OffchainError> {
 		self.deregister
 			.get(&(genesis_utxo, payment_signing_key.to_bytes(), stake_ownership_pub_key.clone()))

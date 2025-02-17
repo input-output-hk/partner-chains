@@ -234,7 +234,7 @@ mod get_registration_tests {
 			let supported_epoch = McEpochNumber(1);
 			let (mainchain_account, _) = ed25519::Pair::generate();
 			let (sidechain_account, _) = ecdsa::Pair::generate();
-			let mc_public_key = MainchainPublicKey(mainchain_account.public().0);
+			let mc_public_key = StakePoolPublicKey(mainchain_account.public().0);
 			let valid_registration_data = create_valid_registration_data(
 				mainchain_account,
 				sidechain_account.clone(),

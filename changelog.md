@@ -315,7 +315,7 @@ types instead of raw byte arrays
 
 ## Changed
 
-* ETCM-6517 - `sidechain_getRegistrations` changed to return only active and invalid registrations in `mainchainEpoch` for `mainchainPublicKey`
+* ETCM-6517 - `sidechain_getRegistrations` changed to return only active and invalid registrations in `mainchainEpoch` for `StakePoolPublicKey`
 * ETCM-6517 - `sidechain_getAriadneParameters` extended with `candidateRegistrations` response field
 * ETCM-5756 (update) - increased granularity of errors when retrieving the parameters
 * ETCM-6629 - moved `sidechain_getStatus` json RPC method to `sidechain-pallet`

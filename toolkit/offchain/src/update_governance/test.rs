@@ -6,14 +6,13 @@ use cardano_serialization_lib::*;
 use hex_literal::hex;
 use ogmios_client::types::{Asset, Datum, OgmiosTx, OgmiosUtxo, OgmiosValue};
 use pretty_assertions::assert_eq;
-use sidechain_domain::{MainchainKeyHash, MainchainPrivateKey};
-
-fn payment_key_domain() -> MainchainPrivateKey {
-	MainchainPrivateKey(hex!("94f7531c9639654b77fa7e10650702b6937e05cd868f419f54bcb8368e413f04"))
-}
+use sidechain_domain::MainchainKeyHash;
 
 fn payment_key() -> PrivateKey {
-	PrivateKey::from_normal_bytes(&payment_key_domain().0).unwrap()
+	PrivateKey::from_normal_bytes(&hex!(
+		"94f7531c9639654b77fa7e10650702b6937e05cd868f419f54bcb8368e413f04"
+	))
+	.unwrap()
 }
 
 fn test_address_bech32() -> String {

@@ -1,5 +1,5 @@
-use crate::key_params::{MainchainSigningKeyParam, SidechainSigningKeyParam};
-use crate::signing::{mainchain_public_key_and_signature, sc_public_key_and_signature_for_datum};
+use crate::key_params::{SidechainSigningKeyParam, StakePoolSigningKeyParam};
+use crate::signing::{cardano_spo_public_key_and_signature, sc_public_key_and_signature_for_datum};
 use clap::Parser;
 use plutus::{Datum, ToDatum};
 use plutus_datum_derive::*;
@@ -7,7 +7,7 @@ use secp256k1::SecretKey;
 use serde::Serialize;
 use serde_json;
 use sidechain_domain::{
-	MainchainPublicKey, MainchainSignature, SidechainPublicKey, SidechainSignature, UtxoId,
+	MainchainSignature, SidechainPublicKey, SidechainSignature, StakePoolPublicKey, UtxoId,
 };
 use std::fmt::{Display, Formatter};
 
@@ -16,8 +16,9 @@ use std::fmt::{Display, Formatter};
 pub struct RegistrationSignaturesCmd {
 	#[arg(long)]
 	pub genesis_utxo: UtxoId,
+	/// Bytes of the Cardano Stake Pool Signing Key. Bytes of 'cbor' field of a Cardano key file content, after dropping the '5820' prefix.
 	#[arg(long)]
-	pub mainchain_signing_key: MainchainSigningKeyParam,
+	pub mainchain_signing_key: StakePoolSigningKeyParam,
 	#[arg(long)]
 	pub sidechain_signing_key: SidechainSigningKeyParam,
 	#[arg(long)]
@@ -44,7 +45,7 @@ impl RegistrationSignaturesCmd {
 
 #[derive(Clone, Debug, Serialize)]
 pub struct RegistrationCmdOutput {
-	pub spo_public_key: MainchainPublicKey,
+	pub spo_public_key: StakePoolPublicKey,
 	pub spo_signature: MainchainSignature,
 	pub sidechain_public_key: SidechainPublicKey,
 	pub sidechain_signature: SidechainSignature,
@@ -84,13 +85,13 @@ impl RegisterValidatorMessage {
 		mainchain_key: ed25519_zebra::SigningKey,
 		sidechain_key: SecretKey,
 	) -> RegistrationCmdOutput {
-		let (mc_pub_key, mc_signature) =
-			mainchain_public_key_and_signature(mainchain_key, self.clone());
+		let (spo_public_key, spo_signature) =
+			cardano_spo_public_key_and_signature(mainchain_key, self.clone());
 		let (sc_pub_key, sc_signature) =
 			sc_public_key_and_signature_for_datum(sidechain_key, self.clone());
 		RegistrationCmdOutput {
-			spo_public_key: MainchainPublicKey(mc_pub_key.into()),
-			spo_signature: MainchainSignature(mc_signature.to_bytes()),
+			spo_public_key,
+			spo_signature,
 			sidechain_public_key: SidechainPublicKey(sc_pub_key.serialize().to_vec()),
 			sidechain_signature: SidechainSignature(sc_signature.serialize_compact().to_vec()),
 		}

@@ -5,7 +5,7 @@ use jsonrpsee::{
 	proc_macros::rpc,
 	types::{ErrorObject, ErrorObjectOwned},
 };
-use sidechain_domain::{MainchainPublicKey, McEpochNumber};
+use sidechain_domain::{McEpochNumber, StakePoolPublicKey};
 use sp_session_validator_management_query::types::*;
 use sp_session_validator_management_query::SessionValidatorManagementQueryApi;
 use std::sync::Arc;
@@ -24,7 +24,7 @@ pub trait SessionValidatorManagementRpcApi {
 	async fn get_registrations(
 		&self,
 		mc_epoch_number: McEpochNumber,
-		mc_public_key: MainchainPublicKey,
+		mc_public_key: StakePoolPublicKey,
 	) -> RpcResult<Vec<CandidateRegistrationEntry>>;
 
 	/// Regardless of `epoch_number` value, all the candidates data validation is done based on the validation api from the latest sidechain block.
@@ -52,7 +52,7 @@ where
 	async fn get_registrations(
 		&self,
 		mc_epoch_number: McEpochNumber,
-		mc_public_key: MainchainPublicKey,
+		mc_public_key: StakePoolPublicKey,
 	) -> RpcResult<Vec<CandidateRegistrationEntry>> {
 		self.query_api
 			.get_registrations(mc_epoch_number, mc_public_key)
