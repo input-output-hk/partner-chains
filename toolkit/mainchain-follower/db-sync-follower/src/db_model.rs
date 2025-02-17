@@ -343,6 +343,34 @@ WHERE
 	.await?)
 }
 
+pub(crate) async fn get_stake_pool_delegations_for_pools(
+	pool: &Pool<Postgres>,
+	epoch: EpochNumber,
+	stake_pool_hashes: Vec<[u8; 28]>,
+) -> Result<Vec<StakePoolDelegationOutputRow>, SqlxError> {
+	Ok(sqlx::query_as::<_, StakePoolDelegationOutputRow>(
+		"
+SELECT
+	epoch_stake.amount AS epoch_stake_amount,
+	pool_hash.hash_raw AS pool_hash_raw,
+	stake_address.hash_raw AS stake_address_hash_raw,
+	stake_address.script_hash AS stake_address_script_hash
+FROM
+			   epoch_stake
+	INNER JOIN stake_address      ON epoch_stake.addr_id = stake_address.id
+	INNER JOIN pool_hash          ON epoch_stake.pool_id = pool_hash.id
+WHERE
+	    epoch_stake.epoch_no = $1
+	AND epoch_stake.amount > 0
+	AND pool_hash.hash_raw IN (SELECT unnest($2))
+    ",
+	)
+	.bind(epoch)
+	.bind(stake_pool_hashes)
+	.fetch_all(pool)
+	.await?)
+}
+
 #[cfg(any(feature = "block-source", feature = "native-token"))]
 pub(crate) async fn get_latest_block_info(
 	pool: &Pool<Postgres>,
