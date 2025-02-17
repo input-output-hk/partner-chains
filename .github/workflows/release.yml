@@ -94,7 +94,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
   deploy-staging-preview:
-    if: inputs.no-deploy != 'true'
+    if: ${{ inputs.no-deploy == false }}
     permissions:
       id-token: write
       contents: write
@@ -121,7 +121,7 @@ jobs:
   partner-chain-ready:
     if: |
       always() &&
-      inputs.no-tests != 'true' && 
+      inputs.no-tests == false && 
       (needs.deploy-staging-preview.result == 'success' || needs.deploy-staging-preview.result == 'skipped')
     runs-on: eks
     needs: deploy-staging-preview
@@ -171,7 +171,7 @@ jobs:
         shell: bash
 
   run-smoke-tests:
-    if: always() && inputs.no-tests != 'true' && needs.partner-chain-ready.result == 'success'
+    if: always() && inputs.no-tests == false && needs.partner-chain-ready.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -199,7 +199,7 @@ jobs:
           threads: 1
 
   run-all-tests:
-    if: always() && inputs.no-tests != 'true' && needs.run-smoke-tests.result == 'success'
+    if: always() && inputs.no-tests == false && needs.run-smoke-tests.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -230,7 +230,7 @@ jobs:
           threads: 1
 
   wait-for-n1-epoch:
-    if: always() && inputs.no-tests != 'true' && needs.partner-chain-ready.result == 'success'
+    if: always() && inputs.no-tests == false && needs.partner-chain-ready.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -264,7 +264,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n1-epoch:
-    if: always() && inputs.no-tests != 'true' && needs.wait-for-n1-epoch.result == 'success'
+    if: always() && inputs.no-tests == false && needs.wait-for-n1-epoch.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -298,7 +298,7 @@ jobs:
   wait-for-n2-epoch:
     if: |
       always() && 
-      inputs.no-tests != 'true' && 
+      inputs.no-tests == false && 
       needs.partner-chain-ready.result == 'success' && 
       needs.wait-for-n1-epoch.result == 'success'
     permissions:
@@ -336,7 +336,7 @@ jobs:
           environment: staging-preview
 
   run-all-tests-on-n2-epoch:
-    if: always() && inputs.no-tests != 'true' && needs.wait-for-n2-epoch.result == 'success'
+    if: always() && inputs.no-tests == false && needs.wait-for-n2-epoch.result == 'success'
     permissions:
       id-token: write
       contents: read
@@ -369,8 +369,8 @@ jobs:
 
   publish-ghcr:
     if: |
-      inputs.no-ghcr != 'true' && 
-      (inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success')
+      inputs.no-ghcr == false && 
+      (inputs.no-tests == true || needs.run-all-tests-on-n2-epoch.result == 'success')
     permissions:
       id-token: write
       contents: write
@@ -388,9 +388,9 @@ jobs:
 
   publish-public-release:
     if: |
-      inputs.no-release != 'true' && 
-      inputs.no-public-release != 'true' && 
-      (inputs.no-tests == 'true' || needs.run-all-tests-on-n2-epoch.result == 'success')
+      inputs.no-release == false && 
+      inputs.no-public-release == false && 
+      (inputs.no-tests == true || needs.run-all-tests-on-n2-epoch.result == 'success')
     permissions:
       id-token: write
       contents: write
