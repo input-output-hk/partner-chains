@@ -318,9 +318,10 @@ pub(crate) struct StakePoolDelegationOutputRow {
 	pub stake_address_script_hash: Option<[u8; 28]>,
 }
 
-pub(crate) async fn get_stake_pool_delegations(
+pub(crate) async fn get_stake_pool_delegations_for_pools(
 	pool: &Pool<Postgres>,
 	epoch: EpochNumber,
+	stake_pool_hashes: Vec<[u8; 28]>,
 ) -> Result<Vec<StakePoolDelegationOutputRow>, SqlxError> {
 	Ok(sqlx::query_as::<_, StakePoolDelegationOutputRow>(
 		"
@@ -336,9 +337,11 @@ FROM
 WHERE
 	    epoch_stake.epoch_no = $1
 	AND epoch_stake.amount > 0
+	AND pool_hash.hash_raw IN (SELECT unnest($2))
     ",
 	)
 	.bind(epoch)
+	.bind(stake_pool_hashes)
 	.fetch_all(pool)
 	.await?)
 }

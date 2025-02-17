@@ -6,17 +6,54 @@ use sqlx::PgPool;
 use super::StakeDistributionDataSourceImpl;
 
 #[sqlx::test(migrations = "./testdata/stake-distribution/migrations")]
-async fn stake_distribution_works(pool: PgPool) {
+async fn stake_pool_delegation_distribution_for_pool_works(pool: PgPool) {
 	let epoch = McEpochNumber(188);
-	let distribution =
-		make_source(pool).get_stake_pool_delegation_distribution(epoch).await.unwrap().0;
+	let pool_delegation = make_source(pool)
+		.get_stake_pool_delegation_distribution_for_pool(epoch, stake_pool_key_hash_1())
+		.await
+		.unwrap();
+
+	assert_eq!(pool_delegation, pool_delegation_1());
+}
+
+#[sqlx::test(migrations = "./testdata/stake-distribution/migrations")]
+async fn stake_pool_delegation_distribution_for_pool_works_twice(pool: PgPool) {
+	let epoch = McEpochNumber(188);
+	let source = make_source(pool);
+
+	let pool_delegation = source
+		.get_stake_pool_delegation_distribution_for_pool(epoch, stake_pool_key_hash_1())
+		.await
+		.unwrap();
+
+	assert_eq!(pool_delegation, pool_delegation_1());
+
+	let pool_delegation = source
+		.get_stake_pool_delegation_distribution_for_pool(epoch, stake_pool_key_hash_1())
+		.await
+		.unwrap();
+
+	assert_eq!(pool_delegation, pool_delegation_1());
+}
+
+#[sqlx::test(migrations = "./testdata/stake-distribution/migrations")]
+async fn stake_pool_delegation_distribution_for_pools_works(pool: PgPool) {
+	let epoch = McEpochNumber(188);
+	let distribution = make_source(pool)
+		.get_stake_pool_delegation_distribution_for_pools(
+			epoch,
+			vec![stake_pool_key_hash_1(), stake_pool_key_hash_2()],
+		)
+		.await
+		.unwrap()
+		.0;
 
 	assert_eq!(distribution.get(&stake_pool_key_hash_1()).unwrap(), &pool_delegation_1());
 	assert_eq!(distribution.get(&stake_pool_key_hash_2()).unwrap(), &pool_delegation_2());
 }
 
 fn make_source(pool: PgPool) -> StakeDistributionDataSourceImpl {
-	StakeDistributionDataSourceImpl::new(pool, None)
+	StakeDistributionDataSourceImpl::new(pool, None, 100)
 }
 
 fn stake_pool_key_hash_1() -> MainchainKeyHash {
