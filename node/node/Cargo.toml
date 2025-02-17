@@ -107,6 +107,7 @@ main-chain-follower-mock = { workspace = true, features = [
 ] }
 tokio = { workspace = true }
 cli-commands = { workspace = true }
+sp-stake-distribution = { workspace = true, features = ["std"] }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }

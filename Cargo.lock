@@ -5176,6 +5176,7 @@ dependencies = [
  "sidechain-domain",
  "sidechain-mc-hash",
  "sp-native-token-management",
+ "sp-stake-distribution",
  "sp-timestamp",
 ]
 
@@ -6804,6 +6805,7 @@ dependencies = [
  "sp-session-validator-management",
  "sp-session-validator-management-query",
  "sp-sidechain",
+ "sp-stake-distribution",
  "sp-timestamp",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
