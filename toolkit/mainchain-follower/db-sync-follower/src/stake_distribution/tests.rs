@@ -42,7 +42,7 @@ async fn stake_pool_delegation_distribution_for_pools_works(pool: PgPool) {
 	let distribution = make_source(pool)
 		.get_stake_pool_delegation_distribution_for_pools(
 			epoch,
-			vec![stake_pool_key_hash_1(), stake_pool_key_hash_2()],
+			&[stake_pool_key_hash_1(), stake_pool_key_hash_2()],
 		)
 		.await
 		.unwrap()

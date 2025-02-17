@@ -15,6 +15,6 @@ pub trait StakeDistributionDataSource {
 	async fn get_stake_pool_delegation_distribution_for_pools(
 		&self,
 		epoch: McEpochNumber,
-		pool_hashes: Vec<MainchainKeyHash>,
+		pool_hashes: &[MainchainKeyHash],
 	) -> Result<StakeDistribution, Box<dyn std::error::Error + Send + Sync>>;
 }
