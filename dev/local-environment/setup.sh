@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 
-PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node:v1.5.0-rc8"
+PARTNER_CHAINS_NODE_IMAGE="ghcr.io/input-output-hk/partner-chains/partner-chains-node:v1.5.0"
 CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.1.4"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.4"
 OGMIOS_IMAGE="cardanosolutions/ogmios:v6.11.0"
 POSTGRES_IMAGE="postgres:17.2"
-SIDECHAIN_MAIN_CLI_IMAGE="node:22-bookworm"
 TESTS_IMAGE="python:3.10-slim"
 
 display_banner() {
@@ -275,7 +274,6 @@ CARDANO_IMAGE=$CARDANO_IMAGE
 DBSYNC_IMAGE=$DBSYNC_IMAGE
 OGMIOS_IMAGE=$OGMIOS_IMAGE
 POSTGRES_IMAGE=$POSTGRES_IMAGE
-SIDECHAIN_MAIN_CLI_IMAGE=$SIDECHAIN_MAIN_CLI_IMAGE
 TESTS_IMAGE=$TESTS_IMAGE
 PARTNER_CHAINS_NODE_IMAGE=${node_image:-$PARTNER_CHAINS_NODE_IMAGE}
 EOF
