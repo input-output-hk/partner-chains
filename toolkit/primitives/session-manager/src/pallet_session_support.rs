@@ -1,5 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use core::marker::PhantomData;
 use derive_new::new;
 use frame_system::pallet_prelude::BlockNumberFor;

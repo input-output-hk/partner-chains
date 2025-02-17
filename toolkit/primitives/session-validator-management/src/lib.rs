@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(feature = "std")]
 use core::str::FromStr;
 
 use scale_info::TypeInfo;

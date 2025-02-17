@@ -11,8 +11,10 @@ extern crate core;
 extern crate num_derive;
 
 pub use alloc::collections::btree_map::BTreeMap;
+#[cfg(feature = "std")]
+use alloc::format;
 pub use alloc::vec::Vec;
-use alloc::{format, str::FromStr, string::String, string::ToString, vec};
+use alloc::{str::FromStr, string::String, string::ToString, vec};
 use byte_string_derive::byte_string;
 use core::{
 	fmt::{Display, Formatter},
