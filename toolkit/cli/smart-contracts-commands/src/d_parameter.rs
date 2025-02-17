@@ -19,6 +19,34 @@ impl DParameterCmd {
 }
 
 #[derive(Clone, Debug, clap::Parser)]
+pub struct AssembleTransaction {
+	#[clap(flatten)]
+	common_arguments: crate::CommonArguments,
+
+	#[arg(flatten)]
+	tx: String,
+
+	#[clap(flatten)]
+	witness: Vec<String>,
+}
+
+impl AssembleTransaction {
+	pub async fn execute(self) -> crate::CmdResult<()> {
+		let tx = self.tx.parse()?;
+		let witness = self.witness.iter().map(|w| w.parse()).collect::<Result<Vec<_>, _>>()?;
+		let client = self.common_arguments.get_ogmios_client().await?;
+
+		let tx = client.assemble_tx(tx, witness).await?;
+		let tx_hex = tx.to_hex();
+		println!("Tx: {tx_hex}");
+
+		let body = tx.body().to_hex();
+		println!("Body: {body}");
+		Ok(())
+	}
+}
+
+#[derive(Clone, Debug, clap::Parser)]
 pub struct GetUpsertTransaction {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,

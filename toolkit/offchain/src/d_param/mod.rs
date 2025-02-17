@@ -8,7 +8,7 @@ use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::{
 	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, InputsBuilderExt,
-	TransactionBuilderExt, TransactionContext,
+	TransactionBuilderExt, TransactionContext, Vkeywitness,
 };
 use crate::governance::GovernanceData;
 use crate::plutus_script::PlutusScript;
@@ -19,6 +19,7 @@ use ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
 	types::OgmiosUtxo,
 };
+// use pallas_primitives::conway::VKeyWitness;
 use partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
 use sidechain_domain::{DParameter, McTxHash, UtxoId};
 
@@ -40,6 +41,13 @@ pub trait UpsertDParam {
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
+	) -> anyhow::Result<Transaction>;
+
+	#[allow(async_fn_in_trait)]
+	async fn assemble_tx(
+		&self,
+		tx: Transaction,
+		witnesses: Vec<String>,
 	) -> anyhow::Result<Transaction>;
 }
 
@@ -66,26 +74,46 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> Upse
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> anyhow::Result<Transaction> {
-		get_upsert_d_param_tx(
-			genesis_utxo,
-			d_parameter,
-			payment_signing_key,
-			self,
-			&FixedDelayRetries::two_minutes(),
-		)
-		.await
+		get_upsert_d_param_tx(genesis_utxo, d_parameter, payment_signing_key, self).await
 	}
+
+	async fn assemble_tx(
+		&self,
+		tx: Transaction,
+		witnesses: Vec<VKeyWitness>,
+	) -> anyhow::Result<Transaction> {
+		assemble_tx(tx, witnesses, self).await
+	}
+}
+
+pub async fn assemble_tx<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>(
+	tx: Transaction,
+	witnesses: Vec<VKeyWitness>,
+	client: &C,
+) -> anyhow::Result<Transaction> {
+	let body = tx.body();
+	let witness_set = tx.witness_set();
+	let auxilary_data = tx.auxiliary_data();
+
+	let vkey_witnesses = witness_set.vkeys().unwrap();
+	for w in witnesses {
+		vkey_witnesses.add(&w);
+	}
+
+	witness_set.set_vkeys(&witnesses);
+
+	let tx = Transaction::new(body, witness_set, auxilary_data);
+
+	Ok(tx)
 }
 
 pub async fn get_upsert_d_param_tx<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
-	A: AwaitTx,
 >(
 	genesis_utxo: UtxoId,
 	d_parameter: &DParameter,
 	payment_signing_key: &CardanoPaymentSigningKey,
 	ogmios_client: &C,
-	await_tx: &A,
 ) -> anyhow::Result<Transaction> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
 	let (validator, policy) = crate::scripts_data::d_parameter_scripts(genesis_utxo, ctx.network)?;

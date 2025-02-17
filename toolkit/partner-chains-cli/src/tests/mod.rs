@@ -1,6 +1,7 @@
 use crate::io::IOContext;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 use anyhow::anyhow;
+use cardano_serialization_lib::Transaction;
 use ogmios_client::types::OgmiosTx;
 use partner_chains_cardano_offchain::d_param::UpsertDParam;
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
@@ -236,6 +237,8 @@ pub struct OffchainMock {
 		HashMap<(UtxoId, MainchainKeyHash, PrivateKeyBytes), Result<OgmiosTx, OffchainError>>,
 	pub upsert_d_param:
 		HashMap<(UtxoId, DParameter, PrivateKeyBytes), Result<Option<McTxHash>, String>>,
+	pub get_upsert_d_param_tx:
+		HashMap<(UtxoId, DParameter, PrivateKeyBytes), Result<Transaction, String>>,
 	pub upsert_permissioned_candidates: HashMap<
 		(UtxoId, Vec<sidechain_domain::PermissionedCandidateData>, PrivateKeyBytes),
 		Result<Option<McTxHash>, String>,
@@ -288,6 +291,19 @@ impl OffchainMock {
 		result: Result<Option<McTxHash>, String>,
 	) -> Self {
 		Self { upsert_d_param: [((genesis_utxo, d_param, payment_key), result)].into(), ..self }
+	}
+
+	pub(crate) fn with_get_upsert_d_param_tx(
+		self,
+		genesis_utxo: UtxoId,
+		d_param: DParameter,
+		payment_key: PrivateKeyBytes,
+		reusult: Result<Transaction, String>,
+	) -> Self {
+		Self {
+			get_upsert_d_param_tx: [((genesis_utxo, d_param, payment_key), reusult)].into(),
+			..self
+		}
 	}
 
 	pub(crate) fn with_register(
@@ -367,6 +383,24 @@ impl UpsertDParam for OffchainMock {
 		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> anyhow::Result<Option<McTxHash>> {
 		self.upsert_d_param
+			.get(&(genesis_utxo, d_parameter.clone(), payment_signing_key.to_bytes()))
+			.cloned()
+			.unwrap_or_else(|| {
+				Err(format!(
+					"No mock for upsert_d_param({genesis_utxo}, {d_parameter:?}, {:?})",
+					hex::encode(payment_signing_key.to_bytes())
+				))
+			})
+			.map_err(|err| anyhow!("{err}"))
+	}
+
+	async fn get_upsert_d_param_tx(
+		&self,
+		genesis_utxo: UtxoId,
+		d_parameter: &DParameter,
+		payment_signing_key: &CardanoPaymentSigningKey,
+	) -> anyhow::Result<Transaction> {
+		self.get_upsert_d_param_tx
 			.get(&(genesis_utxo, d_parameter.clone(), payment_signing_key.to_bytes()))
 			.cloned()
 			.unwrap_or_else(|| {
