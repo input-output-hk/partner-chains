@@ -5,7 +5,7 @@ CARDANO_IMAGE="ghcr.io/intersectmbo/cardano-node:10.1.4"
 DBSYNC_IMAGE="ghcr.io/intersectmbo/cardano-db-sync:13.6.0.4"
 OGMIOS_IMAGE="cardanosolutions/ogmios:v6.11.0"
 POSTGRES_IMAGE="postgres:17.2"
-TESTS_IMAGE="python:3.10-slim"
+TESTS_IMAGE="python:3.12-slim"
 
 display_banner() {
   cat <<'EOF'
