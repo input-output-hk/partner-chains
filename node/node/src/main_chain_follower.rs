@@ -23,7 +23,7 @@ pub struct DataSources {
 	pub authority_selection: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
 	pub native_token: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 	pub sidechain_rpc: Arc<dyn SidechainRpcDataSource + Send + Sync>,
-	pub stake_distribution_data_source: Arc<dyn StakeDistributionDataSource + Send + Sync>,
+	pub stake_distribution: Arc<dyn StakeDistributionDataSource + Send + Sync>,
 }
 
 pub(crate) async fn create_cached_main_chain_follower_data_sources(
@@ -60,7 +60,7 @@ pub fn create_mock_data_sources(
 		mc_hash: Arc::new(McHashDataSourceMock::new(block)),
 		authority_selection: Arc::new(AuthoritySelectionDataSourceMock::new_from_env()?),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
-		stake_distribution_data_source: Arc::new(StakeDistributionDataSourceMock::new()),
+		stake_distribution: Arc::new(StakeDistributionDataSourceMock::new()),
 	})
 }
 
@@ -88,7 +88,7 @@ pub async fn create_cached_data_sources(
 			pool.clone(),
 			metrics_opt.clone(),
 		)?),
-		stake_distribution_data_source: Arc::new(StakeDistributionDataSourceImpl::new(
+		stake_distribution: Arc::new(StakeDistributionDataSourceImpl::new(
 			pool,
 			metrics_opt,
 			STAKE_CACHE_SIZE,
