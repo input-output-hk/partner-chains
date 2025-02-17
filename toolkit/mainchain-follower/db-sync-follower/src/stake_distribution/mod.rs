@@ -24,16 +24,6 @@ impl StakeDistributionDataSourceImpl {
 
 observed_async_trait!(
 impl StakeDistributionDataSource for StakeDistributionDataSourceImpl {
-	async fn get_stake_pool_delegation_distribution(
-		&self,
-		epoch: McEpochNumber,
-	) -> Result<StakeDistribution, Box<dyn std::error::Error + Send + Sync>> {
-		let rows =
-			crate::db_model::get_stake_pool_delegations(&self.pool, EpochNumber::from(epoch))
-				.await?;
-		Ok(rows_to_distribution(rows))
-	}
-
 	async fn get_stake_pool_delegation_distribution_for_pool(
 		&self,
 		epoch: McEpochNumber,

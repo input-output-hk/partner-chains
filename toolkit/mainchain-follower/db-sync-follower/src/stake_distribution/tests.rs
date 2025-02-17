@@ -6,16 +6,6 @@ use sqlx::PgPool;
 use super::StakeDistributionDataSourceImpl;
 
 #[sqlx::test(migrations = "./testdata/stake-distribution/migrations")]
-async fn stake_pool_delegation_distribution_works(pool: PgPool) {
-	let epoch = McEpochNumber(188);
-	let distribution =
-		make_source(pool).get_stake_pool_delegation_distribution(epoch).await.unwrap().0;
-
-	assert_eq!(distribution.get(&stake_pool_key_hash_1()).unwrap(), &pool_delegation_1());
-	assert_eq!(distribution.get(&stake_pool_key_hash_2()).unwrap(), &pool_delegation_2());
-}
-
-#[sqlx::test(migrations = "./testdata/stake-distribution/migrations")]
 async fn stake_pool_delegation_distribution_for_pool_works(pool: PgPool) {
 	let epoch = McEpochNumber(188);
 	let pool_delegation = make_source(pool)
