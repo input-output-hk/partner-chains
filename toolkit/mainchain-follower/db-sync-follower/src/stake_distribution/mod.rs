@@ -10,7 +10,6 @@ use std::sync::{Arc, Mutex};
 #[cfg(test)]
 mod tests;
 
-type DistributionPerPoolCacheKey = (McEpochNumber, MainchainKeyHash);
 pub struct StakeDistributionDataSourceImpl {
 	pub pool: PgPool,
 	metrics_opt: Option<McFollowerMetrics>,
@@ -54,27 +53,27 @@ impl StakeDistributionDataSource for StakeDistributionDataSourceImpl {
 		epoch: McEpochNumber,
 		pool_hashes: Vec<MainchainKeyHash>,
 	) -> Result<StakeDistribution, Box<dyn std::error::Error + Send + Sync>> {
-		let mut to_query = Vec::<[u8; 28]>::new();
-		let mut res = BTreeMap::new();
+		let mut pool_hashes_to_query = Vec::<[u8; 28]>::new();
+		let mut stake_distribution = BTreeMap::<MainchainKeyHash, PoolDelegation>::new();
 
 		for pool_hash in pool_hashes {
 			match self.cache.get_distribution_for_pool(epoch, pool_hash) {
 				Some(pool_delegation) => {
-					res.insert(pool_hash, pool_delegation);
+					stake_distribution.insert(pool_hash, pool_delegation);
 				},
-				None => to_query.push(pool_hash.0),
+				None => pool_hashes_to_query.push(pool_hash.0),
 			}
 		}
 		let rows = crate::db_model::get_stake_pool_delegations_for_pools(
 			&self.pool,
 			EpochNumber::from(epoch),
-			to_query,
+			pool_hashes_to_query,
 		)
 		.await?;
 		let mut queried_pool_delegations = rows_to_distribution(rows);
 		self.cache.put_distribution_for_pools(epoch, queried_pool_delegations.clone());
-		res.append(&mut queried_pool_delegations.0);
-		Ok(StakeDistribution(res))
+		stake_distribution.append(&mut queried_pool_delegations.0);
+		Ok(StakeDistribution(stake_distribution))
 	}
 }
 );
@@ -115,6 +114,7 @@ fn get_delegator_key(row: &StakePoolDelegationOutputRow) -> Result<DelegatorKey,
 	}
 }
 
+type DistributionPerPoolCacheKey = (McEpochNumber, MainchainKeyHash);
 struct Cache {
 	distribution_per_pool_cache: Arc<Mutex<LruCache<DistributionPerPoolCacheKey, PoolDelegation>>>,
 }
