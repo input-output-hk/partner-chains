@@ -124,7 +124,7 @@ impl Cache {
 		pool_hash: &MainchainKeyHash,
 	) -> Option<PoolDelegation> {
 		if let Ok(mut cache) = self.distribution_per_pool_cache.lock() {
-			cache.get(&(epoch, pool_hash.clone())).map(|e| e.clone())
+			cache.get(&(epoch, *pool_hash)).map(|e| e.clone())
 		} else {
 			None
 		}
