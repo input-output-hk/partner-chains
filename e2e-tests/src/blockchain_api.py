@@ -470,11 +470,24 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def get_block_author(self, block_number: int) -> str:
+    def get_validator_set(self, block) -> str:
+        """Gets validator set for a given block.
+
+        Arguments:
+            block -- block object
+
+        Returns:
+            str -- block author public key
+        """
+        pass
+
+    @abstractmethod
+    def get_block_author(self, block, validator_set) -> str:
         """Gets the author of a block.
 
         Arguments:
-            block_number {int} -- block number
+            block -- block object
+            validator_set -- validator set for given pc epoch
 
         Returns:
             str -- block author public key
