@@ -73,6 +73,8 @@ setup:
 source:
   FROM +setup
   ARG CRATES=$(tomlq -r .workspace.members[] Cargo.toml)
+  COPY .git .git
+  COPY .gitignore .gitignore
   FOR crate IN $CRATES
       COPY --dir $crate $crate
   END
