@@ -7,13 +7,17 @@
 use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::{
-	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, InputsBuilderExt,
-	TransactionBuilderExt, TransactionContext, Vkeywitness,
+	convert_cost_models, empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs,
+	InputsBuilderExt, TransactionBuilderExt, TransactionContext,
 };
 use crate::governance::GovernanceData;
 use crate::plutus_script::PlutusScript;
 use anyhow::anyhow;
-use cardano_serialization_lib::{PlutusData, Transaction, TransactionBuilder, TxInputsBuilder};
+use cardano_serialization_lib::{
+	hash_script_data, CostModel, Costmdls, PlutusData, PlutusList, Redeemer, RedeemerTag,
+	RedeemerTagKind, Redeemers, Transaction, TransactionBuilder, TxInputsBuilder, Vkeywitness,
+	Vkeywitnesses,
+};
 use ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
 use ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
@@ -47,7 +51,7 @@ pub trait UpsertDParam {
 	async fn assemble_tx(
 		&self,
 		tx: Transaction,
-		witnesses: Vec<String>,
+		witnesses: Vec<Vkeywitness>,
 	) -> anyhow::Result<Transaction>;
 }
 
@@ -80,7 +84,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> Upse
 	async fn assemble_tx(
 		&self,
 		tx: Transaction,
-		witnesses: Vec<VKeyWitness>,
+		witnesses: Vec<Vkeywitness>,
 	) -> anyhow::Result<Transaction> {
 		assemble_tx(tx, witnesses, self).await
 	}
@@ -88,23 +92,75 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> Upse
 
 pub async fn assemble_tx<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>(
 	tx: Transaction,
-	witnesses: Vec<VKeyWitness>,
-	client: &C,
+	witnesses: Vec<Vkeywitness>,
+	ogmios_client: &C,
 ) -> anyhow::Result<Transaction> {
 	let body = tx.body();
+
 	let witness_set = tx.witness_set();
 	let auxilary_data = tx.auxiliary_data();
 
-	let vkey_witnesses = witness_set.vkeys().unwrap();
-	for w in witnesses {
+	let protocol_parameters = ogmios_client.query_protocol_parameters().await?;
+	let mdls = convert_cost_models(&protocol_parameters.plutus_cost_models);
+
+	let mut new_body = body.clone();
+	let mut new_witness_set = witness_set.clone();
+
+	let mut new_redeemers = Redeemers::new();
+
+	let mut input_datums = PlutusList::new();
+
+	let mut vkey_witnesses = witness_set.vkeys().unwrap_or_else(|| Vkeywitnesses::new());
+	for w in witnesses.clone() {
 		vkey_witnesses.add(&w);
 	}
 
-	witness_set.set_vkeys(&witnesses);
+	new_witness_set.set_vkeys(&vkey_witnesses);
 
-	let tx = Transaction::new(body, witness_set, auxilary_data);
+	// for i in 0..new_witness_set.redeemers().unwrap().len() {
+	// 	let redeemer = new_witness_set.redeemers().unwrap().get(i);
+	// 	input_datums.add(&redeemer.data());
+	// 	if redeemer.tag() == RedeemerTag::new_spend() {
+	// 		let costs = costs.get_spend(u32::try_from(redeemer.index())?);
 
-	Ok(tx)
+	// 		new_redeemers.add(&Redeemer::new(
+	// 			&RedeemerTag::new_spend(),
+	// 			&redeemer.index(),
+	// 			&redeemer.data(),
+	// 			&costs,
+	// 		));
+	// 	}
+	// 	if redeemer.tag() == RedeemerTag::new_mint() {
+	// 		let script_hash =
+	// 			new_body.mint().unwrap().keys().get(usize::try_from(redeemer.index())?);
+
+	// 		let costs = costs.get_mint_by_hash(&script_hash);
+
+	// 		new_redeemers.add(&Redeemer::new(
+	// 			&RedeemerTag::new_mint(),
+	// 			&redeemer.index(),
+	// 			&redeemer.data(),
+	// 			&costs,
+	// 		));
+	// 	}
+	// }
+
+	// new_witness_set.set_redeemers(&new_redeemers);
+
+	// let script_data_hash_datums =
+	// 	if input_datums.len() > 0 { Some(input_datums) } else { None };
+
+	// let script_data_hash = hash_script_data(
+	// 	&new_witness_set.redeemers().unwrap(),
+	// 	&mdls,
+	// 	script_data_hash_datums,
+	// );
+
+	// new_body.set_script_data_hash(&script_data_hash);
+
+	let new_tx = Transaction::new(&new_body, &new_witness_set, auxilary_data.clone());
+
+	Ok(new_tx)
 }
 
 pub async fn get_upsert_d_param_tx<
@@ -243,9 +299,14 @@ async fn get_insert_d_param_tx<C: QueryLedgerState + Transactions + QueryNetwork
 ) -> anyhow::Result<Transaction> {
 	let gov_data = GovernanceData::get(genesis_utxo, client).await?;
 
-	let tx =
-		mint_d_param_token_tx(validator, policy, d_parameter, &gov_data, Costs::ZeroCosts, &ctx)?;
+	// let tx =
+	// 	mint_d_param_token_tx(validator, policy, d_parameter, &gov_data, Costs::ZeroCosts, &ctx)?;
 
+	let tx = Costs::calculate_costs(
+		|costs| mint_d_param_token_tx(validator, policy, d_parameter, &gov_data, costs, &ctx),
+		client,
+	)
+	.await?;
 	Ok(tx)
 }
 
@@ -289,15 +350,21 @@ async fn get_update_d_param_tx<C: QueryLedgerState + Transactions + QueryNetwork
 ) -> anyhow::Result<Transaction> {
 	let governance_data = GovernanceData::get(genesis_utxo, client).await?;
 
-	let tx = update_d_param_tx(
-		validator,
-		policy,
-		d_parameter,
-		current_utxo,
-		&governance_data,
-		Costs::ZeroCosts,
-		&ctx,
-	)?;
+	let tx = Costs::calculate_costs(
+		|costs| {
+			update_d_param_tx(
+				validator,
+				policy,
+				d_parameter,
+				current_utxo,
+				&governance_data,
+				costs,
+				&ctx,
+			)
+		},
+		client,
+	)
+	.await?;
 	Ok(tx)
 }
 

@@ -420,6 +420,14 @@ impl From<ecdsa::Public> for SidechainPublicKey {
 
 #[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
+pub struct TransactionCbor(pub Vec<u8>);
+
+#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
+pub struct VKeyWitnessCbor(pub Vec<u8>);
+
+#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct SidechainSignature(pub Vec<u8>);
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
