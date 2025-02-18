@@ -23,7 +23,7 @@ def test_upsert_permissioned_candidates(
     """
     new_candidates_list, candidate_to_remove = permissioned_candidates
 
-    logging.info(f"Setting permissioned candidates {new_candidates_list}")
+    logging.info(f"Setting permissioned candidates {list(new_candidates_list.keys())}")
     result, next_status_epoch = api.upsert_permissioned_candidates(new_candidates_list)
     assert result, f"Addition of permissioned candidate {new_candidates_list} failed."
 

@@ -14,7 +14,7 @@ Welcome to `Partner Chains Tests`, a powerful and flexible test automation frame
 
 ## Installation
 
-1. Install `python 3.10` and `pip`.
+1. Install `python 3.12` and `pip`.
 2. Create and activate virtual environment
 ```bash
    $ pip install virtualenv

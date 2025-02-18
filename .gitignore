@@ -37,3 +37,6 @@ dev/local-environment/configurations/partner-chains-node/overrides
 dev/local-environment/runtime-values/*
 
 ogmios_client.log
+
+# e2e tests (Python)
+venv
