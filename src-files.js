@@ -4,7 +4,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["cli_commands",["",[],["address_association_signatures.rs","key_params.rs","lib.rs","registration_signatures.rs","signing.rs"]]],\
 ["db_sync_follower",["",[["block",[],["mod.rs"]],["candidates",[],["cached.rs","datum.rs","mod.rs"]],["mc_hash",[],["mod.rs"]],["native_token",[],["mod.rs"]],["sidechain_rpc",[],["mod.rs"]],["stake_distribution",[],["mod.rs"]]],["data_sources.rs","db_datum.rs","db_model.rs","lib.rs","metrics.rs"]]],\
 ["main_chain_follower_cli",["",[],["main.rs"]]],\
-["main_chain_follower_mock",["",[],["block.rs","candidate.rs","lib.rs","mc_hash.rs","native_token.rs","sidechain_rpc.rs"]]],\
+["main_chain_follower_mock",["",[],["block.rs","candidate.rs","lib.rs","mc_hash.rs","native_token.rs","sidechain_rpc.rs","stake_distribution.rs"]]],\
 ["ogmios_client",["",[],["jsonrpsee.rs","lib.rs","query_ledger_state.rs","query_network.rs","transactions.rs","types.rs"]]],\
 ["pallet_address_associations",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_block_production_log",["",[],["lib.rs","weights.rs"]]],\

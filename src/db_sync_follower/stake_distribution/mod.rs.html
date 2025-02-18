@@ -174,7 +174,7 @@
 		pool_hash: MainchainKeyHash,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;PoolDelegation, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="prelude-val">Ok</span>(<span class="self">self
-			</span>.get_stake_pool_delegation_distribution_for_pools(epoch, <span class="macro">vec!</span>[pool_hash])
+			</span>.get_stake_pool_delegation_distribution_for_pools(epoch, <span class="kw-2">&amp;</span>[pool_hash])
 			.<span class="kw">await</span><span class="question-mark">?
 			</span>.<span class="number">0
 			</span>.entry(pool_hash)
@@ -185,7 +185,7 @@
 	<span class="kw">async fn </span>get_stake_pool_delegation_distribution_for_pools(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		epoch: McEpochNumber,
-		pool_hashes: Vec&lt;MainchainKeyHash&gt;,
+		pool_hashes: <span class="kw-2">&amp;</span>[MainchainKeyHash],
 	) -&gt; <span class="prelude-ty">Result</span>&lt;StakeDistribution, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span><span class="kw-2">mut </span>pool_hashes_to_query = Vec::&lt;[u8; <span class="number">28</span>]&gt;::new();
 		<span class="kw">let </span><span class="kw-2">mut </span>stake_distribution = BTreeMap::&lt;MainchainKeyHash, PoolDelegation&gt;::new();
@@ -193,7 +193,7 @@
 		<span class="kw">for </span>pool_hash <span class="kw">in </span>pool_hashes {
 			<span class="kw">match </span><span class="self">self</span>.cache.get_distribution_for_pool(epoch, pool_hash) {
 				<span class="prelude-val">Some</span>(pool_delegation) =&gt; {
-					stake_distribution.insert(pool_hash, pool_delegation);
+					stake_distribution.insert(pool_hash.clone(), pool_delegation);
 				},
 				<span class="prelude-val">None </span>=&gt; pool_hashes_to_query.push(pool_hash.<span class="number">0</span>),
 			}
@@ -265,10 +265,10 @@
 	<span class="kw">fn </span>get_distribution_for_pool(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		epoch: McEpochNumber,
-		pool_hash: MainchainKeyHash,
+		pool_hash: <span class="kw-2">&amp;</span>MainchainKeyHash,
 	) -&gt; <span class="prelude-ty">Option</span>&lt;PoolDelegation&gt; {
 		<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="kw-2">mut </span>cache) = <span class="self">self</span>.distribution_per_pool_cache.lock() {
-			cache.get(<span class="kw-2">&amp;</span>(epoch, pool_hash)).map(|e| e.clone())
+			cache.get(<span class="kw-2">&amp;</span>(epoch, <span class="kw-2">*</span>pool_hash)).map(|e| e.clone())
 		} <span class="kw">else </span>{
 			<span class="prelude-val">None
 		</span>}

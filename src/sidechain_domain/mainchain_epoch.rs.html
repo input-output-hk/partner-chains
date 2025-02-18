@@ -286,6 +286,7 @@
 <a href="#286" id="286">286</a>
 <a href="#287" id="287">287</a>
 <a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{McEpochNumber, McSlotNumber};
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">use </span>parity_scale_codec::Decode;
@@ -305,7 +306,8 @@
 	</span><span class="kw">pub </span>slot_duration_millis: Duration,
 }
 
-<span class="kw">fn </span>default_slot_duration() -&gt; Duration {
+<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+</span><span class="kw">fn </span>default_slot_duration() -&gt; Duration {
 	Duration::from_millis(<span class="number">1000</span>)
 }
 

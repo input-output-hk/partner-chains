@@ -85,21 +85,33 @@
 <a href="#85" id="85">85</a>
 <a href="#86" id="86">86</a>
 <a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 <span class="kw">use </span>db_sync_follower::{
 	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl,
 	mc_hash::McHashDataSourceImpl, metrics::McFollowerMetrics,
 	native_token::NativeTokenManagementDataSourceImpl, sidechain_rpc::SidechainRpcDataSourceImpl,
+	stake_distribution::StakeDistributionDataSourceImpl,
 };
 <span class="kw">use </span>main_chain_follower_mock::{
 	block::BlockDataSourceMock, candidate::AuthoritySelectionDataSourceMock,
 	mc_hash::McHashDataSourceMock, native_token::NativeTokenDataSourceMock,
-	sidechain_rpc::SidechainRpcDataSourceMock,
+	sidechain_rpc::SidechainRpcDataSourceMock, stake_distribution::StakeDistributionDataSourceMock,
 };
 <span class="kw">use </span>pallet_sidechain_rpc::SidechainRpcDataSource;
 <span class="kw">use </span>sc_service::error::Error <span class="kw">as </span>ServiceError;
 <span class="kw">use </span>sidechain_mc_hash::McHashDataSource;
 <span class="kw">use </span>sp_native_token_management::NativeTokenManagementDataSource;
+<span class="kw">use </span>sp_stake_distribution::StakeDistributionDataSource;
 <span class="kw">use </span>std::{error::Error, sync::Arc};
 
 <span class="attr">#[derive(Clone)]
@@ -108,6 +120,7 @@
 	<span class="kw">pub </span>authority_selection: Arc&lt;<span class="kw">dyn </span>AuthoritySelectionDataSource + Send + Sync&gt;,
 	<span class="kw">pub </span>native_token: Arc&lt;<span class="kw">dyn </span>NativeTokenManagementDataSource + Send + Sync&gt;,
 	<span class="kw">pub </span>sidechain_rpc: Arc&lt;<span class="kw">dyn </span>SidechainRpcDataSource + Send + Sync&gt;,
+	<span class="kw">pub </span>stake_distribution: Arc&lt;<span class="kw">dyn </span>StakeDistributionDataSource + Send + Sync&gt;,
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>create_cached_main_chain_follower_data_sources(
@@ -144,10 +157,12 @@
 		mc_hash: Arc::new(McHashDataSourceMock::new(block)),
 		authority_selection: Arc::new(AuthoritySelectionDataSourceMock::new_from_env()<span class="question-mark">?</span>),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
+		stake_distribution: Arc::new(StakeDistributionDataSourceMock::new()),
 	})
 }
 
 <span class="kw">pub const </span>CANDIDATES_FOR_EPOCH_CACHE_SIZE: usize = <span class="number">64</span>;
+<span class="kw">pub const </span>STAKE_CACHE_SIZE: usize = <span class="number">100</span>;
 
 <span class="kw">pub async fn </span>create_cached_data_sources(
 	metrics_opt: <span class="prelude-ty">Option</span>&lt;McFollowerMetrics&gt;,
@@ -167,9 +182,14 @@
 				</span>.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE)<span class="question-mark">?</span>,
 		),
 		native_token: Arc::new(NativeTokenManagementDataSourceImpl::new_from_env(
+			pool.clone(),
+			metrics_opt.clone(),
+		)<span class="question-mark">?</span>),
+		stake_distribution: Arc::new(StakeDistributionDataSourceImpl::new(
 			pool,
 			metrics_opt,
-		)<span class="question-mark">?</span>),
+			STAKE_CACHE_SIZE,
+		)),
 	})
 }
 </code></pre></div></section></main></body></html>

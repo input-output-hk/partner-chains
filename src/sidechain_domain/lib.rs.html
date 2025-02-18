@@ -852,6 +852,8 @@
 <a href="#852" id="852">852</a>
 <a href="#853" id="853">853</a>
 <a href="#854" id="854">854</a>
+<a href="#855" id="855">855</a>
+<a href="#856" id="856">856</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -865,8 +867,10 @@
 <span class="kw">extern crate </span>num_derive;
 
 <span class="kw">pub use </span>alloc::collections::btree_map::BTreeMap;
+<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+</span><span class="kw">use </span>alloc::format;
 <span class="kw">pub use </span>alloc::vec::Vec;
-<span class="kw">use </span>alloc::{format, str::FromStr, string::String, string::ToString, vec};
+<span class="kw">use </span>alloc::{str::FromStr, string::String, string::ToString, vec};
 <span class="kw">use </span>byte_string_derive::byte_string;
 <span class="kw">use </span>core::{
 	fmt::{Display, Formatter},

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["block","candidate","mc_hash","native_token","sidechain_rpc"]};
+window.SIDEBAR_ITEMS = {"mod":["block","candidate","mc_hash","native_token","sidechain_rpc","stake_distribution"]};

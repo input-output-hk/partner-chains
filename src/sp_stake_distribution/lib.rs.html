@@ -35,7 +35,7 @@
 	</span><span class="kw">async fn </span>get_stake_pool_delegation_distribution_for_pools(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		epoch: McEpochNumber,
-		pool_hashes: Vec&lt;MainchainKeyHash&gt;,
+		pool_hashes: <span class="kw-2">&amp;</span>[MainchainKeyHash],
 	) -&gt; <span class="prelude-ty">Result</span>&lt;StakeDistribution, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;;
 }
 </code></pre></div></section></main></body></html>

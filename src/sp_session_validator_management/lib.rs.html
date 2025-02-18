@@ -105,8 +105,10 @@
 <a href="#105" id="105">105</a>
 <a href="#106" id="106">106</a>
 <a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
+#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">use </span>core::str::FromStr;
 
 <span class="kw">use </span>scale_info::TypeInfo;
