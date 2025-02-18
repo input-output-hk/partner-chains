@@ -17,6 +17,7 @@ pub struct MainchainEpochConfig {
 	pub slot_duration_millis: Duration,
 }
 
+#[cfg(feature = "std")]
 fn default_slot_duration() -> Duration {
 	Duration::from_millis(1000)
 }

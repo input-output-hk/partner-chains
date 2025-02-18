@@ -3,16 +3,18 @@ use db_sync_follower::{
 	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl,
 	mc_hash::McHashDataSourceImpl, metrics::McFollowerMetrics,
 	native_token::NativeTokenManagementDataSourceImpl, sidechain_rpc::SidechainRpcDataSourceImpl,
+	stake_distribution::StakeDistributionDataSourceImpl,
 };
 use main_chain_follower_mock::{
 	block::BlockDataSourceMock, candidate::AuthoritySelectionDataSourceMock,
 	mc_hash::McHashDataSourceMock, native_token::NativeTokenDataSourceMock,
-	sidechain_rpc::SidechainRpcDataSourceMock,
+	sidechain_rpc::SidechainRpcDataSourceMock, stake_distribution::StakeDistributionDataSourceMock,
 };
 use pallet_sidechain_rpc::SidechainRpcDataSource;
 use sc_service::error::Error as ServiceError;
 use sidechain_mc_hash::McHashDataSource;
 use sp_native_token_management::NativeTokenManagementDataSource;
+use sp_stake_distribution::StakeDistributionDataSource;
 use std::{error::Error, sync::Arc};
 
 #[derive(Clone)]
@@ -21,6 +23,7 @@ pub struct DataSources {
 	pub authority_selection: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
 	pub native_token: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 	pub sidechain_rpc: Arc<dyn SidechainRpcDataSource + Send + Sync>,
+	pub stake_distribution: Arc<dyn StakeDistributionDataSource + Send + Sync>,
 }
 
 pub(crate) async fn create_cached_main_chain_follower_data_sources(
@@ -57,10 +60,12 @@ pub fn create_mock_data_sources(
 		mc_hash: Arc::new(McHashDataSourceMock::new(block)),
 		authority_selection: Arc::new(AuthoritySelectionDataSourceMock::new_from_env()?),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
+		stake_distribution: Arc::new(StakeDistributionDataSourceMock::new()),
 	})
 }
 
 pub const CANDIDATES_FOR_EPOCH_CACHE_SIZE: usize = 64;
+pub const STAKE_CACHE_SIZE: usize = 100;
 
 pub async fn create_cached_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
@@ -80,8 +85,13 @@ pub async fn create_cached_data_sources(
 				.cached(CANDIDATES_FOR_EPOCH_CACHE_SIZE)?,
 		),
 		native_token: Arc::new(NativeTokenManagementDataSourceImpl::new_from_env(
+			pool.clone(),
+			metrics_opt.clone(),
+		)?),
+		stake_distribution: Arc::new(StakeDistributionDataSourceImpl::new(
 			pool,
 			metrics_opt,
-		)?),
+			STAKE_CACHE_SIZE,
+		)),
 	})
 }

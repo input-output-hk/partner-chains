@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use core::str::FromStr;
+#[cfg(feature = "std")]
+use {core::str::FromStr, sp_runtime::traits::Block as BlockT};
 
 #[cfg(feature = "std")]
 pub use inherent_provider::*;
@@ -8,7 +9,7 @@ pub use inherent_provider::*;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use sidechain_domain::*;
 use sp_inherents::*;
-use sp_runtime::{scale_info::TypeInfo, traits::Block as BlockT};
+use sp_runtime::scale_info::TypeInfo;
 
 #[cfg(test)]
 mod tests;

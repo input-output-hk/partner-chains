@@ -30,7 +30,7 @@ impl StakeDistributionDataSource for StakeDistributionDataSourceImpl {
 		pool_hash: MainchainKeyHash,
 	) -> Result<PoolDelegation, Box<dyn std::error::Error + Send + Sync>> {
 		Ok(self
-			.get_stake_pool_delegation_distribution_for_pools(epoch, vec![pool_hash])
+			.get_stake_pool_delegation_distribution_for_pools(epoch, &[pool_hash])
 			.await?
 			.0
 			.entry(pool_hash)
@@ -41,7 +41,7 @@ impl StakeDistributionDataSource for StakeDistributionDataSourceImpl {
 	async fn get_stake_pool_delegation_distribution_for_pools(
 		&self,
 		epoch: McEpochNumber,
-		pool_hashes: Vec<MainchainKeyHash>,
+		pool_hashes: &[MainchainKeyHash],
 	) -> Result<StakeDistribution, Box<dyn std::error::Error + Send + Sync>> {
 		let mut pool_hashes_to_query = Vec::<[u8; 28]>::new();
 		let mut stake_distribution = BTreeMap::<MainchainKeyHash, PoolDelegation>::new();
@@ -49,7 +49,7 @@ impl StakeDistributionDataSource for StakeDistributionDataSourceImpl {
 		for pool_hash in pool_hashes {
 			match self.cache.get_distribution_for_pool(epoch, pool_hash) {
 				Some(pool_delegation) => {
-					stake_distribution.insert(pool_hash, pool_delegation);
+					stake_distribution.insert(pool_hash.clone(), pool_delegation);
 				},
 				None => pool_hashes_to_query.push(pool_hash.0),
 			}
@@ -121,10 +121,10 @@ impl Cache {
 	fn get_distribution_for_pool(
 		&self,
 		epoch: McEpochNumber,
-		pool_hash: MainchainKeyHash,
+		pool_hash: &MainchainKeyHash,
 	) -> Option<PoolDelegation> {
 		if let Ok(mut cache) = self.distribution_per_pool_cache.lock() {
-			cache.get(&(epoch, pool_hash)).map(|e| e.clone())
+			cache.get(&(epoch, *pool_hash)).map(|e| e.clone())
 		} else {
 			None
 		}
