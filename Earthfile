@@ -73,6 +73,8 @@ setup:
 source:
   FROM +setup
   ARG CRATES=$(tomlq -r .workspace.members[] Cargo.toml)
+  COPY .git .git
+  COPY .gitignore .gitignore
   FOR crate IN $CRATES
       COPY --dir $crate $crate
   END
@@ -92,7 +94,7 @@ build:
   #CACHE --sharing shared --id cargo-build-$CACHE_KEY target
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
-  #SAVE ARTIFACT target
+  RUN ./target/*/partner-chains-node --version
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node
   SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node-artifact
 
@@ -139,6 +141,7 @@ docker:
         && ln -s /data /substrate/.local/share/partner-chains-node
 
     COPY +build/partner-chains-node /usr/local/bin/
+    RUN /usr/local/bin/partner-chains-node --version
     RUN chown substrate:substrate /usr/local/bin/partner-chains-node && chmod +x /usr/local/bin/partner-chains-node
 
     USER substrate
