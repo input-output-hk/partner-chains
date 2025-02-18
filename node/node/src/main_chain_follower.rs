@@ -65,7 +65,7 @@ pub fn create_mock_data_sources(
 }
 
 pub const CANDIDATES_FOR_EPOCH_CACHE_SIZE: usize = 64;
-pub const STAKE_CACHE_SIZE: usize = 8;
+pub const STAKE_CACHE_SIZE: usize = 100;
 
 pub async fn create_cached_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
