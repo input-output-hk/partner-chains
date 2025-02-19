@@ -7,6 +7,7 @@ pub use registrations::*;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::bytes::to_hex;
+use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 
 #[derive(
 	Clone, Eq, PartialEq, Encode, Decode, Default, TypeInfo, Debug, Serialize, Deserialize,
@@ -18,12 +19,28 @@ pub struct GetCommitteeResponse {
 }
 
 impl GetCommitteeResponse {
-	pub fn new<CrossChainPublic: AsRef<[u8]>>(
+	pub fn new<Member: CommitteeMemberT>(
 		sidechain_epoch: sidechain_domain::ScEpochNumber,
-		committee: Vec<CrossChainPublic>,
-	) -> GetCommitteeResponse {
-		let committee: Vec<CommitteeMember> =
-			committee.into_iter().map(CommitteeMember::new).collect();
+		committee: Vec<Member>,
+	) -> GetCommitteeResponse
+	where
+		Member::AuthorityId: AsRef<[u8]>,
+	{
+		let committee = committee
+			.into_iter()
+			.map(|member| CommitteeMember::new(member.authority_id()))
+			.collect();
+		GetCommitteeResponse { sidechain_epoch: sidechain_epoch.0, committee }
+	}
+
+	pub fn new_legacy<AuthorityId>(
+		sidechain_epoch: sidechain_domain::ScEpochNumber,
+		committee: Vec<AuthorityId>,
+	) -> GetCommitteeResponse
+	where
+		AuthorityId: AsRef<[u8]>,
+	{
+		let committee = committee.into_iter().map(|member| CommitteeMember::new(member)).collect();
 		GetCommitteeResponse { sidechain_epoch: sidechain_epoch.0, committee }
 	}
 }
@@ -53,7 +70,7 @@ mod tests {
 	fn get_committee_response_to_json_test() {
 		let input = GetCommitteeResponse::new(
 			ScEpochNumber(4703884),
-			vec![ecdsa::Public::from([0u8; 33]), ecdsa::Public::from([255u8; 33])],
+			vec![(ecdsa::Public::from([0u8; 33]), 0), (ecdsa::Public::from([255u8; 33]), 1)],
 		);
 
 		let json_value = serde_json::to_value(input).expect("Serialization failed");

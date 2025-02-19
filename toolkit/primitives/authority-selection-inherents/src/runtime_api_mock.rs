@@ -21,10 +21,10 @@ impl sp_api::ProvideRuntimeApi<Block> for TestApi {
 }
 
 sp_api::mock_impl_runtime_apis! {
-	impl SessionValidatorManagementApi<Block, AccountKeys, CrossChainPublicKey, AuthoritySelectionInputs, ScEpochNumber>
+	impl SessionValidatorManagementApi<Block, (CrossChainPublicKey, AccountKeys), AuthoritySelectionInputs, ScEpochNumber>
 		for TestApi
 	{
-		fn get_current_committee() -> (ScEpochNumber, Vec<CrossChainPublicKey>) {
+		fn get_current_committee() -> (ScEpochNumber, Vec<(CrossChainPublicKey, AccountKeys)>) {
 			unimplemented!()
 		}
 		fn get_next_unset_epoch_number() -> sidechain_domain::ScEpochNumber {

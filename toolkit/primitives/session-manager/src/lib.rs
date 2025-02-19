@@ -43,7 +43,10 @@ impl<T: pallet_session_validator_management::Config + pallet_session::Config>
 				.expect(
 					"Session should never end without current epoch validators defined. \
 				Check ShouldEndSession implementation or if it is used before starting new session",
-				),
+				)
+				.into_iter()
+				.map(|member| (member.authority_id().into(), member.authority_keys()))
+				.collect(),
 		)
 	}
 

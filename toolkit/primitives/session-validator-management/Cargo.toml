@@ -28,8 +28,11 @@ std = [
     "sp-inherents/std",
     "sp-std/std",
     "sp-runtime/std",
+    "sidechain-domain/std",
+    "sidechain-domain/serde",
     "thiserror",
-    "envy"
+    "envy",
+    "serde"
 ]
 serde = [
 	"dep:serde",

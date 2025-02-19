@@ -2,6 +2,7 @@ use authority_selection_inherents::ariadne_inherent_data_provider::AriadneInhere
 use authority_selection_inherents::authority_selection_inputs::{
 	AuthoritySelectionDataSource, AuthoritySelectionInputs,
 };
+use authority_selection_inherents::CommitteeMember;
 use derive_new::new;
 use jsonrpsee::core::async_trait;
 use sc_consensus_aura::{find_pre_digest, SlotDuration};
@@ -10,10 +11,9 @@ use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::{McBlockHash, ScEpochNumber};
 use sidechain_mc_hash::McHashDataSource;
 use sidechain_mc_hash::McHashInherentDataProvider as McHashIDP;
-use sidechain_runtime::{
-	opaque::{Block, SessionKeys},
-	BeneficiaryId, CrossChainPublic,
-};
+use sidechain_runtime::opaque::SessionKeys;
+use sidechain_runtime::CrossChainPublic;
+use sidechain_runtime::{opaque::Block, BeneficiaryId};
 use sidechain_slots::ScSlotConfig;
 use sp_api::ProvideRuntimeApi;
 use sp_block_production_log::BlockProducerIdInherentProvider;
@@ -51,8 +51,7 @@ where
 	T: HeaderBackend<Block>,
 	T::Api: SessionValidatorManagementApi<
 		Block,
-		SessionKeys,
-		CrossChainPublic,
+		CommitteeMember<CrossChainPublic, SessionKeys>,
 		AuthoritySelectionInputs,
 		ScEpochNumber,
 	>,
@@ -149,8 +148,7 @@ where
 	T: ProvideRuntimeApi<Block> + Send + Sync + HeaderBackend<Block>,
 	T::Api: SessionValidatorManagementApi<
 		Block,
-		SessionKeys,
-		CrossChainPublic,
+		CommitteeMember<CrossChainPublic, SessionKeys>,
 		AuthoritySelectionInputs,
 		ScEpochNumber,
 	>,

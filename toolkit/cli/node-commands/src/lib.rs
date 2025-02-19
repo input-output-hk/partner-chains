@@ -15,6 +15,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 use sp_runtime::AccountId32;
+use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 use sp_session_validator_management::SessionValidatorManagementApi;
 use sp_session_validator_management_query::commands::*;
 use sp_session_validator_management_query::SessionValidatorManagementQuery;
@@ -102,7 +103,7 @@ pub enum PartnerChainsSubcommand {
 	Wizards(partner_chains_cli::Command),
 }
 
-pub fn run<Cli, Block, CrossChainPublic, SessionKeys, Client>(
+pub fn run<Cli, Block, CommitteeMember, Client>(
 	cli: &Cli,
 	get_deps: impl FnOnce(
 		sc_service::Configuration,
@@ -119,15 +120,15 @@ where
 		+ GetSidechainStatus<Block>
 		+ SessionValidatorManagementApi<
 			Block,
-			SessionKeys,
-			CrossChainPublic,
+			CommitteeMember,
 			AuthoritySelectionInputs,
 			ScEpochNumber,
 		> + CandidateValidationApi<Block>,
 	Block: BlockT,
 	NumberFor<Block>: From<u32> + Into<u32>,
-	SessionKeys: Decode + Send + Sync + 'static,
-	CrossChainPublic: Decode + Encode + AsRef<[u8]> + Send + Sync + 'static,
+	CommitteeMember: CommitteeMemberT + Encode + Decode + Send + Sync + 'static,
+	CommitteeMember::AuthorityId: Decode + Encode + AsRef<[u8]> + Send + Sync + 'static,
+	CommitteeMember::AuthorityKeys: Decode + Encode,
 {
 	match cmd {
 		PartnerChainsSubcommand::SidechainParams(cmd) => {

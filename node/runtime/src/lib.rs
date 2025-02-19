@@ -14,6 +14,7 @@ use authority_selection_inherents::filter_invalid_candidates::{
 	StakeError,
 };
 use authority_selection_inherents::select_authorities::select_authorities;
+use authority_selection_inherents::CommitteeMember;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::BoundedVec;
@@ -43,7 +44,6 @@ use sp_runtime::{
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, DispatchResult, MultiSignature, Perbill,
 };
-use sp_session_validator_management::CommitteeMember;
 use sp_sidechain::SidechainStatus;
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -398,8 +398,7 @@ impl pallet_session_validator_management::Config for Runtime {
 	type AuthoritySelectionInputs = AuthoritySelectionInputs;
 	type ScEpochNumber = ScEpochNumber;
 	type WeightInfo = pallet_session_validator_management::weights::SubstrateWeight<Runtime>;
-	type CommitteeMember =
-		authority_selection_inherents::CommitteeMember<CrossChainPublic, SessionKeys>;
+	type CommitteeMember = CommitteeMember<CrossChainPublic, SessionKeys>;
 
 	fn select_authorities(
 		input: AuthoritySelectionInputs,
@@ -828,23 +827,24 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl sp_session_validator_management::SessionValidatorManagementApi<Block, SessionKeys, CrossChainPublic, AuthoritySelectionInputs, sidechain_domain::ScEpochNumber> for Runtime {
-		fn get_current_committee() -> (ScEpochNumber, Vec<CrossChainPublic>) {
+	#[api_version(2)]
+	impl sp_session_validator_management::SessionValidatorManagementApi<
+		Block,
+		CommitteeMember<CrossChainPublic, SessionKeys>,
+		AuthoritySelectionInputs,
+		sidechain_domain::ScEpochNumber
+	> for Runtime {
+		fn get_current_committee() -> (ScEpochNumber, Vec<CommitteeMember<CrossChainPublic, SessionKeys>>) {
 			SessionCommitteeManagement::get_current_committee()
 		}
-		fn get_next_committee() -> Option<(ScEpochNumber, Vec<CrossChainPublic>)> {
+		fn get_next_committee() -> Option<(ScEpochNumber, Vec<CommitteeMember<CrossChainPublic, SessionKeys>>)> {
 			SessionCommitteeManagement::get_next_committee()
 		}
 		fn get_next_unset_epoch_number() -> sidechain_domain::ScEpochNumber {
 			SessionCommitteeManagement::get_next_unset_epoch_number()
 		}
-		fn calculate_committee(authority_selection_inputs: AuthoritySelectionInputs, sidechain_epoch: ScEpochNumber) -> Option<Vec<(CrossChainPublic, SessionKeys)>> {
-			Some(
-				SessionCommitteeManagement::calculate_committee(authority_selection_inputs, sidechain_epoch)?
-				.into_iter()
-				.map(|member| (member.authority_id(), member.authority_keys()))
-				.collect()
-			)
+		fn calculate_committee(authority_selection_inputs: AuthoritySelectionInputs, sidechain_epoch: ScEpochNumber) -> Option<Vec<CommitteeMember<CrossChainPublic, SessionKeys>>> {
+			SessionCommitteeManagement::calculate_committee(authority_selection_inputs, sidechain_epoch)
 		}
 		fn get_main_chain_scripts() -> sp_session_validator_management::MainChainScripts {
 			SessionCommitteeManagement::get_main_chain_scripts()

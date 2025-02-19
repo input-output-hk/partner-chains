@@ -107,19 +107,35 @@ impl MainChainScripts {
 }
 
 sp_api::decl_runtime_apis! {
+	#[api_version(2)]
 	pub trait SessionValidatorManagementApi<
-		SessionKeys: parity_scale_codec::Decode,
-		CrossChainPublic: parity_scale_codec::Decode + parity_scale_codec::Encode,
+		CommitteeMember: parity_scale_codec::Decode + parity_scale_codec::Encode + crate::CommitteeMember,
 		AuthoritySelectionInputs: parity_scale_codec::Encode,
 		ScEpochNumber: parity_scale_codec::Encode + parity_scale_codec::Decode
-	> {
+	> where
+	CommitteeMember::AuthorityId: Encode + Decode,
+	CommitteeMember::AuthorityKeys: Encode + Decode,
+	{
 		fn get_main_chain_scripts() -> MainChainScripts;
-		fn get_current_committee() -> (ScEpochNumber, sp_std::vec::Vec<CrossChainPublic>);
-		fn get_next_committee() -> Option<(ScEpochNumber, sp_std::vec::Vec<CrossChainPublic>)>;
 		fn get_next_unset_epoch_number() -> ScEpochNumber;
+
+		#[changed_in(2)]
+		fn get_current_committee() -> (ScEpochNumber, sp_std::vec::Vec<CommitteeMember::AuthorityId>);
+		fn get_current_committee() -> (ScEpochNumber, sp_std::vec::Vec<CommitteeMember>);
+
+		#[changed_in(2)]
+		fn get_next_committee() -> Option<(ScEpochNumber, sp_std::vec::Vec<CommitteeMember::AuthorityId>)>;
+		fn get_next_committee() -> Option<(ScEpochNumber, sp_std::vec::Vec<CommitteeMember>)>;
+
+		#[changed_in(2)]
 		fn calculate_committee(
 			authority_selection_inputs: AuthoritySelectionInputs,
 			sidechain_epoch: ScEpochNumber
-		) -> Option<sp_std::vec::Vec<(CrossChainPublic, SessionKeys)>>;
+		) -> Option<sp_std::vec::Vec<(CommitteeMember::AuthorityId, CommitteeMember::AuthorityKeys)>>;
+
+		fn calculate_committee(
+			authority_selection_inputs: AuthoritySelectionInputs,
+			sidechain_epoch: ScEpochNumber
+		) -> Option<sp_std::vec::Vec<CommitteeMember>>;
 	}
 }

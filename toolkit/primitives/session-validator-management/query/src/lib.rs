@@ -8,14 +8,17 @@ use authority_selection_inherents::authority_selection_inputs::{
 };
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use derive_new::new;
+use parity_scale_codec::{Decode, Encode};
 use sidechain_block_search::{predicates::AnyBlockInEpoch, FindSidechainBlock, SidechainInfo};
 use sidechain_domain::{McEpochNumber, ScEpochNumber, StakePoolPublicKey};
-use sp_api::ProvideRuntimeApi;
+use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::{HeaderBackend, Info};
 use sp_core::bytes::to_hex;
 use sp_runtime::traits::NumberFor;
 use sp_runtime::traits::{Block as BlockT, Zero};
-use sp_session_validator_management::SessionValidatorManagementApi;
+use sp_session_validator_management::{
+	CommitteeMember as CommitteeMemberT, SessionValidatorManagementApi,
+};
 use sp_sidechain::{GetGenesisUtxo, GetSidechainStatus};
 use std::sync::Arc;
 use types::*;
@@ -48,33 +51,87 @@ pub trait SessionValidatorManagementQueryApi {
 }
 
 #[derive(new)]
-pub struct SessionValidatorManagementQuery<
-	C,
-	Block,
-	SessionKeys: parity_scale_codec::Decode,
-	CrossChainPublic,
-> {
+pub struct SessionValidatorManagementQuery<C, Block, CommitteeMember: Decode> {
 	client: Arc<C>,
 	candidate_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
-	_marker: std::marker::PhantomData<(Block, SessionKeys, CrossChainPublic)>,
+	_marker: std::marker::PhantomData<(Block, CommitteeMember)>,
+}
+
+impl<C, Block, CommitteeMember> SessionValidatorManagementQuery<C, Block, CommitteeMember>
+where
+	Block: BlockT,
+	C: ProvideRuntimeApi<Block>,
+	C::Api: sp_api::Core<Block> + ApiExt<Block>,
+	CommitteeMember: CommitteeMemberT + Encode + Decode,
+	CommitteeMember::AuthorityId: Encode + Decode + AsRef<[u8]>,
+	CommitteeMember::AuthorityKeys: Encode + Decode,
+	AuthoritySelectionInputs: Encode + Decode,
+	C::Api: SessionValidatorManagementApi<
+		Block,
+		CommitteeMember,
+		AuthoritySelectionInputs,
+		ScEpochNumber,
+	>,
+{
+	fn validator_management_api_version(&self, block: Block::Hash) -> QueryResult<u32> {
+		let version = (self.client.runtime_api())
+			.api_version::<dyn SessionValidatorManagementApi<
+				Block,
+				CommitteeMember,
+				AuthoritySelectionInputs,
+				ScEpochNumber,
+			>>(block)
+			.map_err(err_debug)?
+			.unwrap_or(1);
+		Ok(version)
+	}
+
+	fn get_current_committee_versioned(
+		&self,
+		block: Block::Hash,
+	) -> QueryResult<GetCommitteeResponse> {
+		let api = self.client.runtime_api();
+
+		if self.validator_management_api_version(block)? < 2 {
+			#[allow(deprecated)]
+			let (epoch, authority_ids) =
+				api.get_current_committee_before_version_2(block).map_err(err_debug)?;
+			Ok(GetCommitteeResponse::new_legacy(epoch, authority_ids))
+		} else {
+			let (epoch, authority_data) = api.get_current_committee(block).map_err(err_debug)?;
+			Ok(GetCommitteeResponse::new(epoch, authority_data))
+		}
+	}
+
+	fn get_next_committee_versioned(
+		&self,
+		block: Block::Hash,
+	) -> QueryResult<Option<GetCommitteeResponse>> {
+		let api = self.client.runtime_api();
+
+		if self.validator_management_api_version(block)? < 2 {
+			#[allow(deprecated)]
+			Ok(api.get_next_committee_before_version_2(block).map_err(err_debug)?.map(
+				|(epoch, authority_ids)| GetCommitteeResponse::new_legacy(epoch, authority_ids),
+			))
+		} else {
+			Ok(api
+				.get_next_committee(block)
+				.map_err(err_debug)?
+				.map(|(epoch, authority_data)| GetCommitteeResponse::new(epoch, authority_data)))
+		}
+	}
 }
 
 #[async_trait]
-impl<
-		C,
-		Block,
-		SessionKeys: parity_scale_codec::Decode + Send + Sync + 'static,
-		CrossChainPublic: parity_scale_codec::Decode
-			+ parity_scale_codec::Encode
-			+ AsRef<[u8]>
-			+ Send
-			+ Sync
-			+ 'static,
-	> SessionValidatorManagementQueryApi
-	for SessionValidatorManagementQuery<C, Block, SessionKeys, CrossChainPublic>
+impl<C, Block, CommitteeMember> SessionValidatorManagementQueryApi
+	for SessionValidatorManagementQuery<C, Block, CommitteeMember>
 where
 	Block: BlockT,
 	NumberFor<Block>: From<u32> + Into<u32>,
+	CommitteeMember: CommitteeMemberT + Decode + Encode + Send + Sync + 'static,
+	CommitteeMember::AuthorityKeys: Decode + Encode,
+	CommitteeMember::AuthorityId: AsRef<[u8]> + Decode + Encode + Send + Sync + 'static,
 	C: Send + Sync + 'static,
 	C: ProvideRuntimeApi<Block>,
 	C: HeaderBackend<Block>,
@@ -82,8 +139,7 @@ where
 	C::Api: GetSidechainStatus<Block>,
 	C::Api: SessionValidatorManagementApi<
 		Block,
-		SessionKeys,
-		CrossChainPublic,
+		CommitteeMember,
 		AuthoritySelectionInputs,
 		ScEpochNumber,
 	>,
@@ -95,10 +151,8 @@ where
 		let Info { genesis_hash, best_number: latest_block, best_hash, .. } = self.client.info();
 
 		if epoch_number.is_zero() {
-			let (_, genesis_committee) = (self.client.runtime_api())
-				.get_current_committee(genesis_hash)
-				.map_err(err_debug)?;
-			return Ok(GetCommitteeResponse::new(epoch_number, genesis_committee));
+			let genesis_committee = self.get_current_committee_versioned(genesis_hash)?;
+			return Ok(GetCommitteeResponse { sidechain_epoch: 0, ..genesis_committee });
 		}
 
 		let first_epoch = {
@@ -123,20 +177,16 @@ where
 			return Err(format!("Committee is unknown for epoch {epoch_number}"));
 		}
 
-		let (_, committee) = if epoch_number == epoch_of_latest_block.next() {
-			(self.client.runtime_api())
-				.get_next_committee(best_hash)
-				.map_err(err_debug)?
+		if epoch_number == epoch_of_latest_block.next() {
+			self.get_next_committee_versioned(best_hash)?
 				.ok_or(format!("Committee is unknown for the next epoch: {epoch_number}"))
 		} else {
 			let block_hash = self
 				.client
 				.find_block(AnyBlockInEpoch { epoch: epoch_number })
 				.map_err(err_debug)?;
-			(self.client.runtime_api()).get_current_committee(block_hash).map_err(err_debug)
-		}?;
-
-		Ok(GetCommitteeResponse::new(epoch_number, committee))
+			self.get_current_committee_versioned(block_hash)
+		}
 	}
 
 	async fn get_registrations(

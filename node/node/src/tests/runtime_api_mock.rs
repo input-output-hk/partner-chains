@@ -1,5 +1,6 @@
 use super::mock::mock_genesis_utxo;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
+use authority_selection_inherents::CommitteeMember;
 use sidechain_domain::*;
 use sidechain_mc_hash::McHashInherentDigest;
 use sidechain_runtime::opaque::SessionKeys;
@@ -58,25 +59,25 @@ sp_api::mock_impl_runtime_apis! {
 		fn genesis_utxo() -> UtxoId { mock_genesis_utxo() }
 	}
 
-	impl sp_session_validator_management::SessionValidatorManagementApi<Block, SessionKeys, CrossChainPublic, AuthoritySelectionInputs, ScEpochNumber> for TestApi {
-		fn get_current_committee() -> (ScEpochNumber, Vec<CrossChainPublic>) {
+	impl sp_session_validator_management::SessionValidatorManagementApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>, AuthoritySelectionInputs, ScEpochNumber> for TestApi {
+		fn get_current_committee() -> (ScEpochNumber, Vec<CommitteeMember<CrossChainPublic, SessionKeys>>) {
 			unimplemented!()
 		}
 		fn get_next_unset_epoch_number() -> sidechain_domain::ScEpochNumber {
 			self.next_unset_epoch_number
 		}
-		fn calculate_committee(authority_selection_inputs: AuthoritySelectionInputs, _sidechain_epoch: sidechain_domain::ScEpochNumber) -> Option<Vec<(CrossChainPublic, SessionKeys)>> {
+		fn calculate_committee(authority_selection_inputs: AuthoritySelectionInputs, _sidechain_epoch: sidechain_domain::ScEpochNumber) -> Option<Vec<CommitteeMember<CrossChainPublic, SessionKeys>>> {
 			if authority_selection_inputs.registered_candidates.is_empty() {
 				None
 			} else {
-				let result: Vec<(CrossChainPublic, SessionKeys)> = authority_selection_inputs.registered_candidates.into_iter().map(|candidate| {
+				let result = authority_selection_inputs.registered_candidates.into_iter().map(|candidate| {
 					let registration = candidate.registrations().first().unwrap().clone();
 					let cross_chain_pub_slice: [u8; 33] = registration.cross_chain_pub_key.0.try_into().unwrap();
 					let cross_chain_public: CrossChainPublic = CrossChainPublic::from(ecdsa::Public::from(cross_chain_pub_slice));
 					let aura_pub_key = registration.aura_pub_key.try_into_sr25519().unwrap();
 					let grandpa_pub_key = registration.grandpa_pub_key.try_into_ed25519().unwrap();
 					let session_keys = (aura_pub_key, grandpa_pub_key).into();
-					(cross_chain_public, session_keys)
+					CommitteeMember::permissioned(cross_chain_public, session_keys)
 				}).collect();
 				Some(result)
 			}
