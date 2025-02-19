@@ -12,11 +12,12 @@ use sidechain_domain::{McBlockHash, ScEpochNumber};
 use sidechain_mc_hash::McHashDataSource;
 use sidechain_mc_hash::McHashInherentDataProvider as McHashIDP;
 use sidechain_runtime::opaque::SessionKeys;
-use sidechain_runtime::CrossChainPublic;
 use sidechain_runtime::{opaque::Block, BeneficiaryId};
+use sidechain_runtime::{BlockAuthor, CrossChainPublic};
 use sidechain_slots::ScSlotConfig;
 use sp_api::ProvideRuntimeApi;
-use sp_block_production_log::BlockProducerIdInherentProvider;
+use sp_block_production_log::BlockAuthorInherentProvider;
+use sp_block_production_log::BlockProductionLogApi;
 use sp_block_rewards::BlockBeneficiaryInherentProvider;
 use sp_blockchain::HeaderBackend;
 use sp_consensus_aura::{
@@ -56,13 +57,14 @@ where
 		ScEpochNumber,
 	>,
 	T::Api: NativeTokenManagementApi<Block>,
+	T::Api: BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>,
 {
 	type InherentDataProviders = (
 		AuraIDP,
 		TimestampIDP,
 		McHashIDP,
 		AriadneIDP,
-		BlockProducerIdInherentProvider<BeneficiaryId>,
+		BlockAuthorInherentProvider<BlockAuthor>,
 		BlockBeneficiaryInherentProvider<BeneficiaryId>,
 		NativeTokenIDP,
 	);
@@ -101,7 +103,7 @@ where
 		)
 		.await?;
 		let block_producer_id_provider =
-			BlockProducerIdInherentProvider::from_env("SIDECHAIN_BLOCK_BENEFICIARY")?;
+			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash)?;
 		let block_beneficiary_provider =
 			BlockBeneficiaryInherentProvider::<BeneficiaryId>::from_env(
 				"SIDECHAIN_BLOCK_BENEFICIARY",

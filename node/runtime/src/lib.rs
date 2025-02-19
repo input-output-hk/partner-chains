@@ -27,6 +27,9 @@ use opaque::SessionKeys;
 use pallet_grandpa::AuthorityId as GrandpaId;
 use pallet_session_validator_management;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
+use parity_scale_codec::MaxEncodedLen;
+use parity_scale_codec::{Decode, Encode};
+use scale_info::TypeInfo;
 use session_manager::ValidatorManagementSessionManager;
 use sidechain_domain::{
 	NativeTokenAmount, PermissionedCandidateData, RegistrationData, ScEpochNumber, ScSlotNumber,
@@ -34,7 +37,7 @@ use sidechain_domain::{
 };
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, hexdisplay::HexDisplay, OpaqueMetadata};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	generic, impl_opaque_keys,
 	traits::{
@@ -431,10 +434,10 @@ impl sp_sidechain::OnNewEpoch for LogBeneficiaries {
 		let slot = pallet_aura::CurrentSlot::<Runtime>::get();
 		let block_production_log = BlockProductionLog::take_prefix(&slot);
 		if let Some((s, b)) = block_production_log.first() {
-			log::info!("Block production log head: {} -> {}", **s, HexDisplay::from(&b.0))
+			log::info!("Block production log head: {} -> {:?}", **s, b)
 		};
 		if let Some((s, b)) = block_production_log.last() {
-			log::info!("Block production log tail: {} -> {}", **s, HexDisplay::from(&b.0))
+			log::info!("Block production log tail: {} -> {:?}", **s, b)
 		};
 		RuntimeDbWeight::get().reads_writes(1, 1)
 	}
@@ -455,8 +458,32 @@ impl pallet_block_rewards::Config for Runtime {
 	type GetBlockRewardPoints = sp_block_rewards::SimpleBlockCount;
 }
 
+#[derive(MaxEncodedLen, Encode, Decode, Clone, TypeInfo, PartialEq, Eq, Debug)]
+pub enum BlockAuthor {
+	Incentivized(CrossChainPublic, StakePoolPublicKey),
+	ProBono(CrossChainPublic),
+}
+impl BlockAuthor {
+	pub fn id(&self) -> &CrossChainPublic {
+		match self {
+			Self::Incentivized(id, _ ) => id,
+			Self::ProBono(id) => id
+		}
+	}
+}
+impl From<CommitteeMember<CrossChainPublic, SessionKeys>> for BlockAuthor {
+	fn from(value: CommitteeMember<CrossChainPublic, SessionKeys>) -> Self {
+		match value {
+			CommitteeMember::Permissioned { id, .. } => BlockAuthor::ProBono(id),
+			CommitteeMember::Registered { id, stake_pool_pub_key, .. } => {
+				BlockAuthor::Incentivized(id, stake_pool_pub_key)
+			},
+		}
+	}
+}
+
 impl pallet_block_production_log::Config for Runtime {
-	type BlockProducerId = BeneficiaryId;
+	type BlockProducerId = BlockAuthor;
 	type WeightInfo = pallet_block_production_log::weights::SubstrateWeight<Runtime>;
 
 	fn current_slot() -> sp_consensus_slots::Slot {
@@ -869,6 +896,15 @@ impl_runtime_apis! {
 		}
 		fn initialized() -> bool {
 			NativeTokenManagement::initialized()
+		}
+	}
+
+	impl sp_block_production_log::BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>  for Runtime {
+		fn get_current_author() -> CommitteeMember<CrossChainPublic, SessionKeys> {
+			let mut committee = SessionCommitteeManagement::get_current_committee().1;
+			let slot = pallet_aura::CurrentSlot::<Runtime>::get();
+			// this implementation is compatible with round-robin employed by Aura
+			committee.remove(*slot as usize % committee.len())
 		}
 	}
 }

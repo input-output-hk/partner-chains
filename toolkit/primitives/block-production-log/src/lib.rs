@@ -1,12 +1,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
+
 #[cfg(test)]
 mod test;
 
-use parity_scale_codec::Encode;
+use core::error::Error;
+use parity_scale_codec::{Decode, Encode};
 use sp_inherents::{InherentIdentifier, IsFatalError};
+use sp_runtime::traits::Block as BlockT;
 #[cfg(feature = "std")]
-use {parity_scale_codec::Decode, sp_inherents::InherentData};
+use {sp_api::ProvideRuntimeApi, sp_inherents::InherentData};
 
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blprdlog";
 
@@ -14,7 +18,7 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blprdlog";
 #[cfg_attr(not(feature = "std"), derive(Debug))]
 #[cfg_attr(feature = "std", derive(Decode, thiserror::Error, sp_runtime::RuntimeDebug))]
 pub enum InherentError {
-	#[cfg_attr(feature = "std", error("Block Producer Id inherent must be provided every block"))]
+	#[cfg_attr(feature = "std", error("Block Author inherent must be provided every block"))]
 	InherentRequired,
 }
 impl IsFatalError for InherentError {
@@ -25,41 +29,40 @@ impl IsFatalError for InherentError {
 
 #[cfg(feature = "std")]
 #[derive(Debug)]
-pub struct BlockProducerIdInherentProvider<T> {
-	pub id: T,
+pub struct BlockAuthorInherentProvider<Author> {
+	pub author: Author,
 }
 
 #[cfg(feature = "std")]
-impl<T> BlockProducerIdInherentProvider<T>
-where
-	T: TryFrom<Vec<u8>> + Send + Sync + Encode,
-	<T as TryFrom<Vec<u8>>>::Error: std::fmt::Debug,
-{
-	pub fn from_env(env_var: &str) -> Result<Self, String> {
-		let env_var_value = std::env::var(env_var).map_err(|_| {
-			format!("Block Producer Id environment variable '{env_var}' is not set")
-		})?;
-		let bytes = sp_core::bytes::from_hex(&env_var_value)
-			.map_err(|_| format!("Block Producer Id environment variable '{env_var}' value '{env_var_value}' is not a valid hex string"))?;
-		let id = T::try_from(bytes.clone()).map_err(|e| {
-			format!("Could not convert '{env_var_value}' into Block Producer Id. Cause: {e:#?}")
-		})?;
+impl<Author> BlockAuthorInherentProvider<Author> {
+	pub fn new<C, Member, Block>(
+		client: &C,
+		parent_hash: Block::Hash,
+	) -> Result<Self, Box<dyn Error + Send + Sync>>
+	where
+		Member: Decode,
+		Block: BlockT,
+		C: ProvideRuntimeApi<Block>,
+		C::Api: BlockProductionLogApi<Block, Member>,
+		Author: From<Member>,
+	{
+		let author: Author = client.runtime_api().get_current_author(parent_hash)?.into();
 
-		Ok(BlockProducerIdInherentProvider { id })
+		Ok(BlockAuthorInherentProvider { author })
 	}
 }
 
 #[cfg(feature = "std")]
 #[async_trait::async_trait]
-impl<T> sp_inherents::InherentDataProvider for BlockProducerIdInherentProvider<T>
+impl<T> sp_inherents::InherentDataProvider for BlockAuthorInherentProvider<T>
 where
-	T: TryFrom<Vec<u8>> + Send + Sync + Encode,
+	T: Send + Sync + Encode + Decode,
 {
 	async fn provide_inherent_data(
 		&self,
 		inherent_data: &mut InherentData,
 	) -> Result<(), sp_inherents::Error> {
-		inherent_data.put_data(INHERENT_IDENTIFIER, &self.id)
+		inherent_data.put_data(INHERENT_IDENTIFIER, &self.author)
 	}
 
 	async fn try_handle_error(
@@ -73,5 +76,14 @@ where
 		} else {
 			None
 		}
+	}
+}
+
+sp_api::decl_runtime_apis! {
+	pub trait BlockProductionLogApi<Member>
+	where
+		Member: Decode
+	{
+		fn get_current_author() -> Member;
 	}
 }

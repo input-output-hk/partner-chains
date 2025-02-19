@@ -7,6 +7,7 @@ license = "Apache-2.0"
 [dependencies]
 async-trait = { workspace = true }
 parity-scale-codec = { workspace = true }
+sp-api = { workspace = true }
 sp-core = { workspace = true, optional = true }
 sp-inherents = { workspace = true }
 sp-runtime = { workspace = true }
@@ -14,7 +15,6 @@ thiserror = { workspace = true }
 
 [dev-dependencies]
 hex = { workspace = true }
-sealed_test = { workspace = true }
 
 [features]
 default = ["std"]
@@ -26,4 +26,5 @@ std = [
 	"sp-core/std",
 	"sp-inherents/std",
 	"sp-runtime/std",
+	"sp-api/std",
 ]

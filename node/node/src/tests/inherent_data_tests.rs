@@ -5,14 +5,14 @@ use authority_selection_inherents::{
 	authority_selection_inputs::AuthoritySelectionInputs, mock::MockAuthoritySelectionDataSource,
 };
 use hex_literal::hex;
-use sidechain_domain::byte_string::SizedByteString;
 use sidechain_domain::{
 	MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, NativeTokenAmount,
 	ScEpochNumber,
 };
 use sidechain_mc_hash::mock::MockMcHashDataSource;
+use sidechain_runtime::BlockAuthor;
 use sp_consensus_aura::Slot;
-use sp_core::H256;
+use sp_core::{ecdsa, H256};
 use sp_inherents::CreateInherentDataProviders;
 use sp_inherents::{InherentData, InherentDataProvider};
 use sp_native_token_management::mock::MockNativeTokenDataSource;
@@ -97,11 +97,14 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 		.is_some());
 	assert_eq!(
 		inherent_data
-			.get_data::<SizedByteString::<32>>(&sp_block_production_log::INHERENT_IDENTIFIER)
+			.get_data::<BlockAuthor>(&sp_block_production_log::INHERENT_IDENTIFIER)
 			.unwrap(),
-		Some(SizedByteString::<32>(hex!(
-			"0000000000000000000000000000000000000000000000000000000000000001"
-		)))
+		Some(BlockAuthor::ProBono(
+			ecdsa::Public::from_raw(hex!(
+				"000000000000000000000000000000000000000000000000000000000000000001"
+			))
+			.into()
+		))
 	);
 }
 

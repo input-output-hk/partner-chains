@@ -1,6 +1,7 @@
 use super::mock::mock_genesis_utxo;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::CommitteeMember;
+use hex_literal::hex;
 use sidechain_domain::*;
 use sidechain_mc_hash::McHashInherentDigest;
 use sidechain_runtime::opaque::SessionKeys;
@@ -8,6 +9,7 @@ use sidechain_runtime::CrossChainPublic;
 use sp_api::{ApiRef, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_core::ecdsa;
+use sp_core::{ed25519, sr25519};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, NumberFor, Zero};
 use sp_runtime::Digest;
 use sp_sidechain::GetGenesisUtxo;
@@ -105,6 +107,18 @@ sp_api::mock_impl_runtime_apis! {
 
 		fn initialized() -> bool {
 			true
+		}
+	}
+
+	impl sp_block_production_log::BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>> for TestApi {
+		fn get_current_author() -> CommitteeMember<CrossChainPublic, SessionKeys> {
+			CommitteeMember::permissioned(
+				ecdsa::Public::from_raw(hex!("000000000000000000000000000000000000000000000000000000000000000001")).into(),
+				SessionKeys {
+					aura: sr25519::Public::default().into(),
+					grandpa: ed25519::Public::default().into()
+				}
+			)
 		}
 	}
 }
