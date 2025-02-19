@@ -8,7 +8,6 @@ extern crate frame_benchmarking;
 
 extern crate alloc;
 
-// A few exports that help ease life for downstream crates.
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::{
 	validate_permissioned_candidate_data, PermissionedCandidateDataError, RegistrationDataError,
@@ -18,24 +17,14 @@ use authority_selection_inherents::select_authorities::select_authorities;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::BoundedVec;
-pub use frame_support::{
+use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{
-		ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem, Randomness,
-		StorageInfo,
-	},
-	weights::{
-		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
-		IdentityFee,
-	},
-	PalletId, StorageValue,
+	traits::{ConstBool, ConstU128, ConstU32, ConstU64, ConstU8},
+	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, IdentityFee},
 };
-pub use frame_system::Call as SystemCall;
 use opaque::SessionKeys;
-pub use pallet_balances::Call as BalancesCall;
 use pallet_grandpa::AuthorityId as GrandpaId;
-pub use pallet_session_validator_management;
-pub use pallet_timestamp::Call as TimestampCall;
+use pallet_session_validator_management;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use session_manager::ValidatorManagementSessionManager;
 use sidechain_domain::{
@@ -44,11 +33,7 @@ use sidechain_domain::{
 };
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::hexdisplay::HexDisplay;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-#[cfg(any(feature = "std", test))]
-pub use sp_runtime::BuildStorage;
-use sp_runtime::DispatchResult;
+use sp_core::{crypto::KeyTypeId, hexdisplay::HexDisplay, OpaqueMetadata};
 use sp_runtime::{
 	generic, impl_opaque_keys,
 	traits::{
@@ -56,9 +41,9 @@ use sp_runtime::{
 		Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, MultiSignature,
+	ApplyExtrinsicResult, DispatchResult, MultiSignature, Perbill,
 };
-pub use sp_runtime::{Perbill, Permill};
+use sp_session_validator_management::CommitteeMember;
 use sp_sidechain::SidechainStatus;
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -413,20 +398,19 @@ impl pallet_session_validator_management::Config for Runtime {
 	type AuthoritySelectionInputs = AuthoritySelectionInputs;
 	type ScEpochNumber = ScEpochNumber;
 	type WeightInfo = pallet_session_validator_management::weights::SubstrateWeight<Runtime>;
+	type CommitteeMember =
+		authority_selection_inherents::CommitteeMember<CrossChainPublic, SessionKeys>;
 
 	fn select_authorities(
 		input: AuthoritySelectionInputs,
 		sidechain_epoch: ScEpochNumber,
-	) -> Option<BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>> {
-		let committee = select_authorities::<Self::AuthorityId, Self::AuthorityKeys>(
-			Sidechain::genesis_utxo(),
-			input,
-			sidechain_epoch,
-		)?
-		.into_iter()
-		.map(|member| (member.account_id().clone(), member.account_keys().clone()))
-		.collect();
-		Some(BoundedVec::truncate_from(committee))
+	) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>> {
+		Some(BoundedVec::truncate_from(
+			select_authorities(Sidechain::genesis_utxo(), input, sidechain_epoch)?
+				.into_iter()
+				.map(|member| member.into())
+				.collect(),
+		))
 	}
 
 	fn current_epoch_number() -> ScEpochNumber {
@@ -543,6 +527,10 @@ pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// The payload being signed in transactions.
 pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
+pub type Migrations = (
+	pallet_session_validator_management::migrations::v1::LegacyToV1Migration<Runtime>,
+	// More migrations can be added here
+);
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
 	Runtime,
@@ -550,6 +538,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
+	Migrations,
 >;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -850,7 +839,12 @@ impl_runtime_apis! {
 			SessionCommitteeManagement::get_next_unset_epoch_number()
 		}
 		fn calculate_committee(authority_selection_inputs: AuthoritySelectionInputs, sidechain_epoch: ScEpochNumber) -> Option<Vec<(CrossChainPublic, SessionKeys)>> {
-			SessionCommitteeManagement::calculate_committee(authority_selection_inputs, sidechain_epoch)
+			Some(
+				SessionCommitteeManagement::calculate_committee(authority_selection_inputs, sidechain_epoch)?
+				.into_iter()
+				.map(|member| (member.authority_id(), member.authority_keys()))
+				.collect()
+			)
 		}
 		fn get_main_chain_scripts() -> sp_session_validator_management::MainChainScripts {
 			SessionCommitteeManagement::get_main_chain_scripts()

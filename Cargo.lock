@@ -10023,6 +10023,7 @@ dependencies = [
  "plutus",
  "pretty_assertions",
  "scale-info",
+ "serde",
  "serde_json",
  "session-manager",
  "sidechain-domain",

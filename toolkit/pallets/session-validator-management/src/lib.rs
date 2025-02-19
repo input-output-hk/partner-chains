@@ -3,6 +3,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::type_complexity)]
 
+pub mod migrations;
+
 pub use pallet::*;
 
 #[cfg(any(test, feature = "mock"))]
@@ -13,6 +15,7 @@ mod tests;
 
 pub mod weights;
 
+pub use sp_session_validator_management::CommitteeMember;
 pub use weights::WeightInfo;
 
 #[frame_support::pallet]
@@ -24,12 +27,15 @@ pub mod pallet {
 	use sidechain_domain::byte_string::SizedByteString;
 	use sidechain_domain::{MainchainAddress, PolicyId};
 	use sp_core::blake2_256;
-	use sp_runtime::traits::{One, Zero};
+	use sp_runtime::traits::{MaybeSerializeDeserialize, One, Zero};
 	use sp_session_validator_management::*;
 	use sp_std::fmt::Display;
 	use sp_std::{ops::Add, vec, vec::Vec};
 
+	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+
 	#[pallet::pallet]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
@@ -57,10 +63,16 @@ pub mod pallet {
 			+ From<u64>
 			+ Into<u64>;
 
+		type CommitteeMember: Parameter
+			+ Member
+			+ MaybeSerializeDeserialize
+			+ MaxEncodedLen
+			+ CommitteeMember<AuthorityId = Self::AuthorityId, AuthorityKeys = Self::AuthorityKeys>;
+
 		fn select_authorities(
 			input: Self::AuthoritySelectionInputs,
 			sidechain_epoch: Self::ScEpochNumber,
-		) -> Option<BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>>;
+		) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>>;
 
 		fn current_epoch_number() -> Self::ScEpochNumber;
 
@@ -77,21 +89,15 @@ pub mod pallet {
 
 	#[derive(CloneNoBound, Encode, Decode, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(MaxValidators))]
-	pub struct CommitteeInfo<
-		ScEpochNumber: Clone,
-		AuthorityId: Clone,
-		AuthorityKeys: Clone,
-		MaxValidators,
-	> {
+	pub struct CommitteeInfo<ScEpochNumber: Clone, CommitteeMember: Clone, MaxValidators> {
 		pub epoch: ScEpochNumber,
-		pub committee: BoundedVec<(AuthorityId, AuthorityKeys), MaxValidators>,
+		pub committee: BoundedVec<CommitteeMember, MaxValidators>,
 	}
 
-	impl<ScEpochNumber, AuthorityId, AuthorityKeys, MaxValidators> Default
-		for CommitteeInfo<ScEpochNumber, AuthorityId, AuthorityKeys, MaxValidators>
+	impl<ScEpochNumber, CommitteeMember, MaxValidators> Default
+		for CommitteeInfo<ScEpochNumber, CommitteeMember, MaxValidators>
 	where
-		AuthorityId: Clone,
-		AuthorityKeys: Clone,
+		CommitteeMember: Clone,
 		ScEpochNumber: Clone + Zero,
 	{
 		fn default() -> Self {
@@ -102,14 +108,14 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type CurrentCommittee<T: Config> = StorageValue<
 		_,
-		CommitteeInfo<T::ScEpochNumber, T::AuthorityId, T::AuthorityKeys, T::MaxValidators>,
+		CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>,
 		ValueQuery,
 	>;
 
 	#[pallet::storage]
 	pub type NextCommittee<T: Config> = StorageValue<
 		_,
-		CommitteeInfo<T::ScEpochNumber, T::AuthorityId, T::AuthorityKeys, T::MaxValidators>,
+		CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>,
 		OptionQuery,
 	>;
 
@@ -126,7 +132,7 @@ pub mod pallet {
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
-		pub initial_authorities: Vec<(T::AuthorityId, T::AuthorityKeys)>,
+		pub initial_authorities: Vec<T::CommitteeMember>,
 		pub main_chain_scripts: MainChainScripts,
 	}
 
@@ -255,7 +261,7 @@ pub mod pallet {
 		))]
 		pub fn set(
 			origin: OriginFor<T>,
-			validators: BoundedVec<(T::AuthorityId, T::AuthorityKeys), T::MaxValidators>,
+			validators: BoundedVec<T::CommitteeMember, T::MaxValidators>,
 			for_epoch_number: T::ScEpochNumber,
 			selection_inputs_hash: SizedByteString<32>,
 		) -> DispatchResult {
@@ -304,18 +310,17 @@ pub mod pallet {
 			CurrentCommittee::<T>::get()
 				.committee
 				.get(index)
-				.map(|authority| authority.0.clone())
+				.map(|authority| authority.authority_id())
 				.clone()
 		}
 
 		pub fn current_committee_storage(
-		) -> CommitteeInfo<T::ScEpochNumber, T::AuthorityId, T::AuthorityKeys, T::MaxValidators> {
+		) -> CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators> {
 			CurrentCommittee::<T>::get()
 		}
 
-		pub fn next_committee_storage() -> Option<
-			CommitteeInfo<T::ScEpochNumber, T::AuthorityId, T::AuthorityKeys, T::MaxValidators>,
-		> {
+		pub fn next_committee_storage(
+		) -> Option<CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>> {
 			NextCommittee::<T>::get()
 		}
 
@@ -325,7 +330,7 @@ pub mod pallet {
 				NextCommittee::<T>::get()?
 					.committee
 					.into_iter()
-					.map(|(id, _)| id)
+					.map(|member| member.authority_id())
 					.collect::<Vec<T::AuthorityId>>(),
 			))
 		}
@@ -345,7 +350,7 @@ pub mod pallet {
 		pub fn calculate_committee(
 			authority_selection_inputs: T::AuthoritySelectionInputs,
 			sidechain_epoch: T::ScEpochNumber,
-		) -> Option<Vec<(T::AuthorityId, T::AuthorityKeys)>> {
+		) -> Option<Vec<T::CommitteeMember>> {
 			T::select_authorities(authority_selection_inputs, sidechain_epoch).map(|c| c.to_vec())
 		}
 
@@ -357,7 +362,7 @@ pub mod pallet {
 			let validators: Vec<(T::AccountId, T::AuthorityKeys)> = next_committee
 				.committee
 				.into_iter()
-				.map(|(pub_key, keys)| (pub_key.into(), keys))
+				.map(|member| (member.authority_id().into(), member.authority_keys()))
 				.collect();
 			let len = validators.len();
 			info!(
@@ -369,14 +374,25 @@ pub mod pallet {
 
 		pub fn get_current_committee() -> (T::ScEpochNumber, Vec<T::AuthorityId>) {
 			let committee_info = CurrentCommittee::<T>::get();
-			(committee_info.epoch, committee_info.committee.into_iter().map(|(id, _)| id).collect())
+			(
+				committee_info.epoch,
+				committee_info
+					.committee
+					.into_iter()
+					.map(|member| member.authority_id())
+					.collect(),
+			)
 		}
 
 		pub fn get_next_committee() -> Option<(T::ScEpochNumber, Vec<T::AuthorityId>)> {
 			let committee_info = NextCommittee::<T>::get()?;
 			Some((
 				committee_info.epoch,
-				committee_info.committee.into_iter().map(|(id, _)| id).collect(),
+				committee_info
+					.committee
+					.into_iter()
+					.map(|member| member.authority_id())
+					.collect(),
 			))
 		}
 

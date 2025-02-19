@@ -47,6 +47,23 @@ impl IsFatalError for InherentError {
 	}
 }
 
+pub trait CommitteeMember {
+	type AuthorityId;
+	type AuthorityKeys;
+	fn authority_id(&self) -> Self::AuthorityId;
+	fn authority_keys(&self) -> Self::AuthorityKeys;
+}
+impl<AuthorityId: Clone, AuthorityKeys: Clone> CommitteeMember for (AuthorityId, AuthorityKeys) {
+	type AuthorityId = AuthorityId;
+	type AuthorityKeys = AuthorityKeys;
+	fn authority_id(&self) -> AuthorityId {
+		self.0.clone()
+	}
+	fn authority_keys(&self) -> AuthorityKeys {
+		self.1.clone()
+	}
+}
+
 #[cfg(feature = "std")]
 impl From<InherentError> for sp_inherents::Error {
 	fn from(value: InherentError) -> Self {

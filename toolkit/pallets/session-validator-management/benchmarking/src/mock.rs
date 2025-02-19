@@ -106,11 +106,12 @@ impl pallet::Config for Test {
 	type AuthorityKeys = SessionKeys;
 	type AuthoritySelectionInputs = ();
 	type ScEpochNumber = ScEpochNumber;
+	type CommitteeMember = (Self::AuthorityId, Self::AuthorityKeys);
 
 	fn select_authorities(
 		_: Self::AuthoritySelectionInputs,
 		_: ScEpochNumber,
-	) -> Option<BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>> {
+	) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>> {
 		todo!("not used in benchmarks")
 	}
 
