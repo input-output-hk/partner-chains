@@ -1,6 +1,6 @@
 # Partner Chains Tests
 
-Welcome to `Partner Chains Tests`, a powerful and flexible test automation framework for system and end-to-end (E2E) tests for partner chains. 
+Welcome to `Partner Chains Tests`, a powerful and flexible test automation framework for system and end-to-end (E2E) tests for partner chains.
 
 ## Features
 
@@ -10,23 +10,25 @@ Welcome to `Partner Chains Tests`, a powerful and flexible test automation frame
 
 ## Partner Chains Tests - Infrastructure
 
-![Test Infrastructure](/docs/pc-tests-infra.png)
+![Test Infrastructure](/e2e-tests/docs/pc-tests-infra.png)
 
 ## Installation
 
 1. Install `python 3.12` and `pip`.
 2. Create and activate virtual environment
+
 ```bash
-   $ pip install virtualenv
-   $ python -m venv venv
-   $ source venv/bin/active
+  pip install virtualenv
+  python -m venv venv
+  source venv/bin/activate
 ```
+
 3. Install requirements `pip install -r requirements.txt`.
-4. Install sops to [manage keys](/docs/secrets.md). You can also configure [your own keys with sops](/docs/configure-sops.md)
+4. Install sops to [manage keys](/e2e-tests/docs/secrets.md). You can also configure [your own keys with sops](/e2e-tests/docs/configure-sops.md)
 
 ## Getting Started
 
-- Choose an environment to run tests. You have an option to run on [local](/docs/run-tests-on-local-env.md) or [your own custom](/docs/run-tests-on-new-env.md) environments
+- Choose an environment to run tests. You have an option to run on [local](/e2e-tests/docs/run-tests-on-local-env.md) or [your own custom](/e2e-tests/docs/run-tests-on-new-env.md) environments
 - Run `pytest -h` to see all available options, or simply `pytest` to execute all tests.
 
 ### Execution Options
@@ -56,5 +58,5 @@ Custom options:
 ### Run tests on the local environment
 
 ```bash
-$ pytest -rP -v --blockchain substrate --env local --stack local --log-cli-level debug -vv -s -m "not active_flow and not passive_flow and not probability"
+pytest -rP -v --blockchain substrate --env local --stack local --log-cli-level debug -vv -s -m "not active_flow and not passive_flow and not probability"
 ```
