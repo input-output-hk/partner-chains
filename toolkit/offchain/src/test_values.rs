@@ -7,7 +7,7 @@ use ogmios_client::{
 	},
 	types::{OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue},
 };
-use sidechain_domain::MainchainPublicKey;
+use sidechain_domain::StakePoolPublicKey;
 
 pub(crate) fn payment_key() -> PrivateKey {
 	PrivateKey::from_normal_bytes(&hex!(
@@ -23,8 +23,8 @@ pub(crate) fn payment_addr() -> Address {
 	Address::from_bech32(PAYMENT_ADDR).unwrap()
 }
 
-pub(crate) fn mainchain_pub_key() -> MainchainPublicKey {
-	MainchainPublicKey(hex!("bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d"))
+pub(crate) fn stake_pool_pub_key() -> StakePoolPublicKey {
+	StakePoolPublicKey(hex!("bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d"))
 }
 
 pub(crate) fn test_validator() -> PlutusScript {

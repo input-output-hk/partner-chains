@@ -27,7 +27,7 @@ pub fn create_valid_candidate_registrations_from_seed(
 		create_valid_registration_data(mainchain_account, sidechain_account, genesis_utxo);
 
 	CandidateRegistrations {
-		mainchain_pub_key: MainchainPublicKey(mainchain_account.public().0),
+		stake_pool_public_key: StakePoolPublicKey(mainchain_account.public().0),
 		registrations: vec![registration_data],
 		stake_delegation: Some(StakeDelegation(7)),
 	}

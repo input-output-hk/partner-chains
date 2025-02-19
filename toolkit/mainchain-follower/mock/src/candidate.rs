@@ -42,7 +42,7 @@ impl MockRegistration {
 
 impl From<MockRegistration> for CandidateRegistrations {
 	fn from(mock: MockRegistration) -> Self {
-		let mainchain_pub_key = MainchainPublicKey(mock.mainchain_pub_key.0.try_into().expect(
+		let stake_pool_public_key = StakePoolPublicKey(mock.mainchain_pub_key.0.try_into().expect(
 			"Invalid mock configuration. 'mainchain_pub_key' public key should be 32 bytes.",
 		));
 		let registrations = vec![RegistrationData {
@@ -71,7 +71,7 @@ impl From<MockRegistration> for CandidateRegistrations {
 			grandpa_pub_key: GrandpaPublicKey(mock.grandpa_pub_key.0),
 		}];
 		let stake_delegation = Some(StakeDelegation(333));
-		CandidateRegistrations { mainchain_pub_key, registrations, stake_delegation }
+		CandidateRegistrations { stake_pool_public_key, registrations, stake_delegation }
 	}
 }
 

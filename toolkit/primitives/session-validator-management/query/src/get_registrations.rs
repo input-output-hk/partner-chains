@@ -30,7 +30,7 @@ where
 		let best_block = self.client.info().best_hash;
 
 		let registration_data_validation =
-			|pub_key: &MainchainPublicKey, registration_data: &RegistrationData| {
+			|pub_key: &StakePoolPublicKey, registration_data: &RegistrationData| {
 				api.validate_registered_candidate_data(best_block, pub_key, registration_data)
 			};
 		let stake_validation = |stake_delegation: &Option<StakeDelegation>| {
@@ -63,7 +63,7 @@ where
 fn get_registrations_response_map(
 	candidates: Vec<CandidateRegistrations>,
 	validate_registration_data: impl Fn(
-		&MainchainPublicKey,
+		&StakePoolPublicKey,
 		&RegistrationData,
 	) -> Result<Option<RegistrationDataError>, sp_api::ApiError>,
 	validate_stake: impl Fn(&Option<StakeDelegation>) -> Result<Option<StakeError>, sp_api::ApiError>,

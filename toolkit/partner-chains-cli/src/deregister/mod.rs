@@ -2,7 +2,7 @@
 mod tests;
 
 use crate::cardano_key::{
-	get_mc_payment_signing_key_from_file, get_mc_staking_verification_key_from_file,
+	get_mc_payment_signing_key_from_file, get_stake_pool_verification_key_from_file,
 };
 use crate::config::config_fields::{
 	CARDANO_COLD_VERIFICATION_KEY_FILE, CARDANO_PAYMENT_SIGNING_KEY_FILE,
@@ -33,7 +33,7 @@ impl CmdRun for DeregisterCmd {
 		let cold_vkey_path =
 			CARDANO_COLD_VERIFICATION_KEY_FILE.prompt_with_default_from_file_and_save(context);
 		let stake_ownership_pub_key =
-			get_mc_staking_verification_key_from_file(&cold_vkey_path, context)?;
+			get_stake_pool_verification_key_from_file(&cold_vkey_path, context)?;
 		let ogmios_config = establish_ogmios_configuration(context)?;
 		let offchain = context.offchain_impl(&ogmios_config)?;
 

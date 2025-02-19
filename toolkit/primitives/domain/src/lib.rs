@@ -250,46 +250,46 @@ impl FromStr for AssetId {
 	}
 }
 
-const MAINCHAIN_PUBLIC_KEY_LEN: usize = 32;
+const STAKE_POOL_PUBLIC_KEY_LEN: usize = 32;
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
 #[cfg_attr(feature = "std", byte_string(to_hex_string))]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
-pub struct MainchainPublicKey(pub [u8; MAINCHAIN_PUBLIC_KEY_LEN]);
+pub struct StakePoolPublicKey(pub [u8; STAKE_POOL_PUBLIC_KEY_LEN]);
 
-const MAINCHAIN_PRIVATE_KEY_LEN: usize = 32;
-
-impl MainchainPublicKey {
+impl StakePoolPublicKey {
 	pub fn hash(&self) -> MainchainKeyHash {
 		MainchainKeyHash::from_vkey(&self.0)
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
-#[byte_string(hex_serialize, hex_deserialize)]
-pub struct MainchainPrivateKey(pub [u8; MAINCHAIN_PRIVATE_KEY_LEN]);
-
-impl core::fmt::Debug for MainchainPrivateKey {
-	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-		write!(f, "***")
-	}
-}
-
-impl TryFrom<Vec<u8>> for MainchainPublicKey {
+impl TryFrom<Vec<u8>> for StakePoolPublicKey {
 	type Error = &'static str;
 
 	fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
 		<[u8; 32]>::try_from(value)
 			.map_err(|_| "Mainchain public key must be 32 bytes long")
-			.map(MainchainPublicKey)
+			.map(StakePoolPublicKey)
+	}
+}
+
+const STAKE_PUBLIC_KEY_LEN: usize = 32;
+
+#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
+#[cfg_attr(feature = "std", byte_string(to_hex_string))]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
+pub struct StakePublicKey(pub [u8; STAKE_PUBLIC_KEY_LEN]);
+
+impl StakePublicKey {
+	pub fn hash(&self) -> MainchainKeyHash {
+		MainchainKeyHash(blake2b(&self.0))
 	}
 }
 
 const MAINCHAIN_KEY_HASH_LEN: usize = 28;
 
 /// blake2b_224 hash of a Cardano Verification (Public) Key.
-/// It can be a hash of Payment Verification, Payment Extended Verification or Staking Verification Key.
-/// Way to get it: cardano-cli latest address key-hash --payment-verification-key-file FILE
+/// It can be a hash of Payment Verification, Payment Extended Verification, Stake Pool Verification Key or Staking Verification Key.
 #[derive(
 	Clone,
 	Copy,
@@ -327,6 +327,7 @@ impl MainchainKeyHash {
 pub const MAINCHAIN_SIGNATURE_LEN: usize = 64;
 
 #[derive(Clone, TypeInfo, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "std", byte_string(to_hex_string))]
 #[byte_string(debug, hex_serialize, decode_hex)]
 /// EDDSA signature
 ///
@@ -360,7 +361,7 @@ impl Decode for MainchainSignature {
 }
 
 impl MainchainSignature {
-	pub fn verify(&self, public_key: &MainchainPublicKey, signed_message: &[u8]) -> bool {
+	pub fn verify(&self, public_key: &StakePoolPublicKey, signed_message: &[u8]) -> bool {
 		let mainchain_signature = ed25519::Signature::from(self.0);
 
 		sp_io::crypto::ed25519_verify(
@@ -368,6 +369,27 @@ impl MainchainSignature {
 			signed_message,
 			&ed25519::Public::from(public_key.0),
 		)
+	}
+}
+
+/// EDDSA signature, 64 bytes.
+pub const STAKE_KEY_SIGNATURE_LEN: usize = 64;
+
+#[derive(Clone, Encode, Decode, PartialEq, Eq, Hash, TypeInfo)]
+#[byte_string(debug, hex_serialize, decode_hex)]
+/// EDDSA signature made with Stake Signing Key
+pub struct StakeKeySignature(pub [u8; STAKE_KEY_SIGNATURE_LEN]);
+
+impl From<[u8; STAKE_KEY_SIGNATURE_LEN]> for StakeKeySignature {
+	fn from(raw: [u8; STAKE_KEY_SIGNATURE_LEN]) -> Self {
+		Self(raw)
+	}
+}
+
+impl StakeKeySignature {
+	pub fn verify(&self, public_key: &StakePublicKey, message: &[u8]) -> bool {
+		let signature = ed25519::Signature::from(self.0);
+		sp_io::crypto::ed25519_verify(&signature, message, &ed25519::Public::from(public_key.0))
 	}
 }
 
@@ -631,6 +653,7 @@ pub struct RegistrationData {
 	/// UTXO that is an input parameter to the registration transaction
 	pub registration_utxo: UtxoId,
 	pub sidechain_signature: SidechainSignature,
+	/// Stake Pool key signature
 	pub mainchain_signature: MainchainSignature,
 	pub cross_chain_signature: CrossChainSignature,
 	pub sidechain_pub_key: SidechainPublicKey,
@@ -645,7 +668,7 @@ pub struct RegistrationData {
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct CandidateRegistrations {
-	pub mainchain_pub_key: MainchainPublicKey,
+	pub stake_pool_public_key: StakePoolPublicKey,
 	/// **List of Registrations** done by the **Authority Candidate**
 	pub registrations: Vec<RegistrationData>,
 	pub stake_delegation: Option<StakeDelegation>,
@@ -653,15 +676,15 @@ pub struct CandidateRegistrations {
 
 impl CandidateRegistrations {
 	pub fn new(
-		mainchain_pub_key: MainchainPublicKey,
+		stake_pool_public_key: StakePoolPublicKey,
 		stake_delegation: Option<StakeDelegation>,
 		registrations: Vec<RegistrationData>,
 	) -> Self {
-		Self { mainchain_pub_key, registrations, stake_delegation }
+		Self { stake_pool_public_key, registrations, stake_delegation }
 	}
 
-	pub fn mainchain_pub_key(&self) -> &MainchainPublicKey {
-		&self.mainchain_pub_key
+	pub fn mainchain_pub_key(&self) -> &StakePoolPublicKey {
+		&self.stake_pool_public_key
 	}
 
 	pub fn registrations(&self) -> &[RegistrationData] {
@@ -783,7 +806,7 @@ impl CandidateRegistration {
 /// The other variant, TokenBasedStaking, is not supported
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct AdaBasedStaking {
-	pub pub_key: MainchainPublicKey,
+	pub pub_key: StakePoolPublicKey,
 	pub signature: MainchainSignature,
 }
 

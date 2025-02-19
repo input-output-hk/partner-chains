@@ -4,8 +4,8 @@ use partner_chains_cardano_offchain::{
 	register::{run_deregister, run_register},
 };
 use sidechain_domain::{
-	AdaBasedStaking, CandidateRegistration, MainchainPublicKey, MainchainSignature,
-	PermissionedCandidateData, SidechainSignature, UtxoId,
+	AdaBasedStaking, CandidateRegistration, MainchainSignature, PermissionedCandidateData,
+	SidechainSignature, StakePoolPublicKey, UtxoId,
 };
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -33,7 +33,7 @@ pub struct RegisterCmd {
 	partner_chain_signature: SidechainSignature,
 	/// Hex string representing bytes of the Stake Pool Verification Key
 	#[arg(long)]
-	spo_public_key: MainchainPublicKey,
+	spo_public_key: StakePoolPublicKey,
 	/// Hex string of bytes of the registration message signature by main chain key, obtained by 'registration-signatures' command
 	#[arg(long)]
 	spo_signature: MainchainSignature,
@@ -80,7 +80,7 @@ pub struct DeregisterCmd {
 	payment_key_file: PaymentFilePath,
 	/// Hex string representing bytes of the Stake Pool Verification Key
 	#[arg(long)]
-	spo_public_key: MainchainPublicKey,
+	spo_public_key: StakePoolPublicKey,
 }
 
 impl DeregisterCmd {

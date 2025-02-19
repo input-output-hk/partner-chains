@@ -10,7 +10,7 @@ use partner_chains_cli::io::DefaultCmdRunContext;
 use partner_chains_smart_contracts_commands::SmartContractsCmd;
 use sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 use sc_service::TaskManager;
-use sidechain_domain::{MainchainPublicKey, McEpochNumber, ScEpochNumber};
+use sidechain_domain::{McEpochNumber, ScEpochNumber, StakePoolPublicKey};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
@@ -54,7 +54,8 @@ impl CliConfiguration for SidechainParamsCmd {
 #[derive(Debug, Clone, Parser)]
 pub struct RegistrationStatusCmd {
 	#[arg(long)]
-	pub mainchain_pub_key: MainchainPublicKey,
+	#[arg(long, alias = "mainchain-pub-key")]
+	pub stake_pool_pub_key: StakePoolPublicKey,
 	#[arg(long)]
 	pub mc_epoch_number: McEpochNumber,
 	#[allow(missing_docs)]
@@ -78,7 +79,7 @@ pub enum PartnerChainsSubcommand {
 	/// If registration has been included in Cardano block in epoch N, then it should be returned by this command if epoch greater than N+1 is provided.
 	/// If this command won't show your registration after a few minutes after it has been included in a cardano block, you can start debugging for unsuccessful registration.
 	#[clap(
-		after_help = "Example: partner-chains-node -- registration-status --mainchain-pub-key 0x702b81ab2e86cf73a87062af1eb0da666d451976d9d91c63a119ed94e6a33dc0 --mc-epoch-number 586"
+		after_help = "Example: partner-chains-node -- registration-status --stake-pool-pub-key 0x702b81ab2e86cf73a87062af1eb0da666d451976d9d91c63a119ed94e6a33dc0 --mc-epoch-number 586"
 	)]
 	RegistrationStatus(RegistrationStatusCmd),
 
@@ -145,7 +146,7 @@ where
 					print_result(cli_get_registration_status(
 						query,
 						cmd.mc_epoch_number,
-						cmd.mainchain_pub_key.clone(),
+						cmd.stake_pool_pub_key.clone(),
 					)),
 					task_manager,
 				))

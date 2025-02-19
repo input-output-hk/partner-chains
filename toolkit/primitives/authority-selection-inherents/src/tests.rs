@@ -412,7 +412,7 @@ fn create_epoch_candidates_idp(validators: &[MockValidator]) -> Vec<CandidateReg
 			};
 
 			CandidateRegistrations {
-				mainchain_pub_key: MainchainPublicKey(mainchain_key_pair.public().0),
+				stake_pool_public_key: StakePoolPublicKey(mainchain_key_pair.public().0),
 				registrations: vec![registration_data],
 				stake_delegation: Some(StakeDelegation(validator.stake)),
 			}

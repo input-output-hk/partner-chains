@@ -16,11 +16,11 @@ pub mod mock;
 pub mod tests;
 
 use parity_scale_codec::Encode;
-use sidechain_domain::{MainchainPublicKey, UtxoId};
+use sidechain_domain::{StakePublicKey, UtxoId};
 
 #[derive(Debug, Clone, Encode)]
 pub struct AddressAssociationSignedMessage<PartnerChainAddress> {
-	pub mainchain_public_key: MainchainPublicKey,
+	pub stake_public_key: StakePublicKey,
 	pub partnerchain_address: PartnerChainAddress,
 	pub genesis_utxo: UtxoId,
 }
@@ -31,9 +31,7 @@ pub mod pallet {
 	use crate::weights::WeightInfo;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::OriginFor;
-	use sidechain_domain::{
-		MainchainKeyHash, MainchainPublicKey, MainchainSignature, UtxoId, MAINCHAIN_SIGNATURE_LEN,
-	};
+	use sidechain_domain::{MainchainKeyHash, StakeKeySignature, StakePublicKey, UtxoId};
 
 	pub const PALLET_VERSION: u32 = 1;
 
@@ -71,32 +69,30 @@ pub mod pallet {
 		pub fn associate_address(
 			_origin: OriginFor<T>,
 			partnerchain_address: T::PartnerChainAddress,
-			signature: [u8; MAINCHAIN_SIGNATURE_LEN],
-			mainchain_public_key: MainchainPublicKey,
+			signature: StakeKeySignature,
+			stake_public_key: StakePublicKey,
 		) -> DispatchResult {
-			let signature: MainchainSignature = signature.into();
-
 			let genesis_utxo = T::genesis_utxo();
 
-			let mc_vkey_hash = MainchainKeyHash::from_vkey(&mainchain_public_key.0);
+			let stake_key_hash = stake_public_key.hash();
 
 			ensure!(
-				!AddressAssociations::<T>::contains_key(&mc_vkey_hash),
+				!AddressAssociations::<T>::contains_key(&stake_key_hash),
 				Error::<T>::MainchainKeyAlreadyAssociated
 			);
 
 			let address_association_message = AddressAssociationSignedMessage {
-				mainchain_public_key: mainchain_public_key.clone(),
+				stake_public_key: stake_public_key.clone(),
 				partnerchain_address: partnerchain_address.clone(),
 				genesis_utxo,
 			};
 
 			let is_valid_signature =
-				signature.verify(&mainchain_public_key, &address_association_message.encode());
+				signature.verify(&stake_public_key, &address_association_message.encode());
 
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
 
-			AddressAssociations::<T>::insert(mc_vkey_hash, partnerchain_address);
+			AddressAssociations::<T>::insert(stake_key_hash, partnerchain_address);
 			Ok(())
 		}
 	}
@@ -115,9 +111,9 @@ pub mod pallet {
 
 		/// Retrieves the partner chain address for a given main chain public key if the association for it exists.
 		pub fn get_partner_chain_address_for(
-			mc_addr: &MainchainPublicKey,
+			stake_public_key: &StakePublicKey,
 		) -> Option<T::PartnerChainAddress> {
-			AddressAssociations::<T>::get(MainchainKeyHash::from_vkey(&mc_addr.0))
+			AddressAssociations::<T>::get(stake_public_key.hash())
 		}
 	}
 }

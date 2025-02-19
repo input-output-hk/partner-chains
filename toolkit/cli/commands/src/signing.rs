@@ -1,7 +1,7 @@
-use ed25519_zebra::ed25519;
 use plutus::to_datum_cbor_bytes;
 use plutus::ToDatum;
 use secp256k1::{ecdsa::Signature, Message, PublicKey, SecretKey};
+use sidechain_domain::{MainchainSignature, StakePoolPublicKey};
 use sp_io::hashing::blake2_256;
 
 pub fn hash<T: ToDatum>(msg: T) -> [u8; 32] {
@@ -22,12 +22,12 @@ pub fn sc_public_key_and_signature_for_datum<T: ToDatum>(
 	sc_public_key_and_signature(key, hashed_msg)
 }
 
-pub fn mainchain_public_key_and_signature<T: ToDatum>(
+pub fn cardano_spo_public_key_and_signature<T: ToDatum>(
 	key: ed25519_zebra::SigningKey,
 	datum_msg: T,
-) -> (ed25519_zebra::VerificationKey, ed25519::Signature) {
+) -> (StakePoolPublicKey, MainchainSignature) {
 	let message = to_datum_cbor_bytes(datum_msg);
-	let signature = key.sign(&message);
-	let public = ed25519_zebra::VerificationKey::from(&key);
+	let signature = MainchainSignature(key.sign(&message).into());
+	let public = StakePoolPublicKey(ed25519_zebra::VerificationKey::from(&key).into());
 	(public, signature)
 }

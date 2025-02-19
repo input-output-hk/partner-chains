@@ -78,7 +78,7 @@ where
 	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
 {
 	let stake_delegation = validate_stake(candidate_registrations.stake_delegation).ok()?;
-	let mainchain_pub_key = candidate_registrations.mainchain_pub_key;
+	let mainchain_pub_key = candidate_registrations.stake_pool_public_key;
 
 	let (candidate_data, _) = candidate_registrations
 		.registrations
@@ -167,7 +167,7 @@ pub fn validate_permissioned_candidate_data<AccountId: TryFrom<SidechainPublicKe
 
 /// Is the registration data provided by the authority candidate valid?
 pub fn validate_registration_data(
-	mainchain_pub_key: &MainchainPublicKey,
+	stake_pool_pub_key: &StakePoolPublicKey,
 	registration_data: &RegistrationData,
 	genesis_utxo: UtxoId,
 ) -> Result<Candidate<ecdsa::Public, (sr25519::Public, ed25519::Public)>, RegistrationDataError> {
@@ -193,7 +193,7 @@ pub fn validate_registration_data(
 	let signed_message_encoded = minicbor::to_vec(signed_message.to_datum())
 		.expect("`RegisterValidatorSignedMessage` should always be encodable");
 
-	verify_mainchain_signature(mainchain_pub_key, registration_data, &signed_message_encoded)?;
+	verify_stake_pool_signature(stake_pool_pub_key, registration_data, &signed_message_encoded)?;
 	verify_sidechain_signature(
 		sidechain_pub_key,
 		&registration_data.sidechain_signature,
@@ -219,21 +219,19 @@ pub fn validate_stake(stake: Option<StakeDelegation>) -> Result<StakeDelegation,
 	}
 }
 
-fn verify_mainchain_signature(
-	mainchain_pub_key: &MainchainPublicKey,
+fn verify_stake_pool_signature(
+	stake_pool_pub_key: &StakePoolPublicKey,
 	registration_data: &RegistrationData,
 	signed_message_encoded: &[u8],
 ) -> Result<(), RegistrationDataError> {
-	let mainchain_signature: [u8; 64] = registration_data
+	let spo_signature: [u8; 64] = registration_data
 		.mainchain_signature
 		.0
 		.clone()
 		.try_into()
 		.map_err(|_| RegistrationDataError::InvalidMainchainSignature)?;
-	let mainchain_signature = ed25519::Signature::from(mainchain_signature);
-	if mainchain_signature
-		.verify(signed_message_encoded, &ed25519::Public::from(mainchain_pub_key.0))
-	{
+	let spo_signature = ed25519::Signature::from(spo_signature);
+	if spo_signature.verify(signed_message_encoded, &ed25519::Public::from(stake_pool_pub_key.0)) {
 		Ok(())
 	} else {
 		Err(RegistrationDataError::InvalidMainchainSignature)
@@ -276,7 +274,7 @@ fn verify_tx_inputs(registration_data: &RegistrationData) -> Result<(), Registra
 // When implementing, make sure that the same validation is used here and in the committee selection logic
 sp_api::decl_runtime_apis! {
 	pub trait CandidateValidationApi {
-		fn validate_registered_candidate_data(mainchain_pub_key: &MainchainPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError>;
+		fn validate_registered_candidate_data(mainchain_pub_key: &StakePoolPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError>;
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError>;
 		fn validate_permissioned_candidate_data(candidate: PermissionedCandidateData) -> Option<PermissionedCandidateDataError>;
 	}
@@ -290,7 +288,7 @@ mod tests {
 	use sp_core::Pair;
 
 	/// Get Valid Parameters of the `is_registration_data_valid()` function
-	fn create_valid_parameters() -> (MainchainPublicKey, RegistrationData, UtxoId) {
+	fn create_valid_parameters() -> (StakePoolPublicKey, RegistrationData, UtxoId) {
 		let registration_utxo = UtxoId {
 			tx_hash: McTxHash(hex!(
 				"d260a76b267e27fdf79c217ec61b776d6436dc78eefeac8f3c615486a71f38eb"
@@ -342,7 +340,7 @@ mod tests {
 		};
 
 		(
-			MainchainPublicKey(hex!(
+			StakePoolPublicKey(hex!(
 				"fb335cabe7d3dd77d0177cd332e9a44998d9d5085b811650853b7bb0752a8bef"
 			)),
 			registration_data,
@@ -361,7 +359,7 @@ mod tests {
 		fn create_parameters(
 			signing_sidechain_account: ecdsa::Pair,
 			sidechain_pub_key: Vec<u8>,
-		) -> (MainchainPublicKey, RegistrationData, UtxoId) {
+		) -> (StakePoolPublicKey, RegistrationData, UtxoId) {
 			let mainchain_account = ed25519::Pair::from_seed_slice(&[7u8; 32]).unwrap();
 			let genesis_utxo =
 				UtxoId { tx_hash: McTxHash([7u8; TX_HASH_SIZE]), index: UtxoIndex(0) };
@@ -397,7 +395,7 @@ mod tests {
 				tx_inputs: vec![signed_message.registration_utxo],
 			};
 
-			(MainchainPublicKey(mainchain_account.public().0), registration_data, genesis_utxo)
+			(StakePoolPublicKey(mainchain_account.public().0), registration_data, genesis_utxo)
 		}
 
 		#[test]
@@ -415,7 +413,7 @@ mod tests {
 		fn should_not_work_if_mainchain_pub_key_is_different() {
 			let (mainchain_pub_key, registration_data, genesis_utxo) = create_valid_parameters();
 			let different_mainchain_pub_key =
-				MainchainPublicKey(ed25519::Pair::from_seed_slice(&[0u8; 32]).unwrap().public().0);
+				StakePoolPublicKey(ed25519::Pair::from_seed_slice(&[0u8; 32]).unwrap().public().0);
 			assert_ne!(mainchain_pub_key, different_mainchain_pub_key);
 			assert_eq!(
 				validate_registration_data(
@@ -501,22 +499,22 @@ mod tests {
 		let (mc_pub_key, registration_data, genesis_utxo) = create_valid_parameters();
 		let candidate_registrations = vec![
 			CandidateRegistrations {
-				mainchain_pub_key: mc_pub_key.clone(),
+				stake_pool_public_key: mc_pub_key.clone(),
 				registrations: vec![registration_data.clone()],
 				stake_delegation: Some(StakeDelegation(0)),
 			},
 			CandidateRegistrations {
-				mainchain_pub_key: mc_pub_key.clone(),
+				stake_pool_public_key: mc_pub_key.clone(),
 				registrations: vec![registration_data.clone()],
 				stake_delegation: Some(StakeDelegation(1)),
 			},
 			CandidateRegistrations {
-				mainchain_pub_key: mc_pub_key.clone(),
+				stake_pool_public_key: mc_pub_key.clone(),
 				registrations: vec![registration_data.clone()],
 				stake_delegation: None,
 			},
 			CandidateRegistrations {
-				mainchain_pub_key: mc_pub_key,
+				stake_pool_public_key: mc_pub_key,
 				registrations: vec![registration_data],
 				stake_delegation: Some(StakeDelegation(2)),
 			},

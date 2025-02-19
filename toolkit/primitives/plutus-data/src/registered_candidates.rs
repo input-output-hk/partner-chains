@@ -261,7 +261,7 @@ mod tests {
 	fn test_datum_v0() -> RegisterValidatorDatum {
 		RegisterValidatorDatum::V0 {
 			stake_ownership: AdaBasedStaking {
-				pub_key: MainchainPublicKey(hex!("bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d")),
+				pub_key: StakePoolPublicKey(hex!("bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d")),
 				signature: MainchainSignature(hex!("28d1c3b7df297a60d24a3f88bc53d7029a8af35e8dd876764fd9e7a24203a3482a98263cc8ba2ddc7dc8e7faea31c2e7bad1f00e28c43bc863503e3172dc6b0a").into()),
 			},
 			sidechain_pub_key: SidechainPublicKey(hex!("02fe8d1eb1bcb3432b1db5833ff5f2226d9cb5e65cee430558c18ed3a3c86ce1af").into()),

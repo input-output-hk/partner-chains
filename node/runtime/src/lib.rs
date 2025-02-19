@@ -39,8 +39,8 @@ pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use session_manager::ValidatorManagementSessionManager;
 use sidechain_domain::{
-	MainchainPublicKey, NativeTokenAmount, PermissionedCandidateData, RegistrationData,
-	ScEpochNumber, ScSlotNumber, StakeDelegation, UtxoId,
+	NativeTokenAmount, PermissionedCandidateData, RegistrationData, ScEpochNumber, ScSlotNumber,
+	StakeDelegation, StakePoolPublicKey, UtxoId,
 };
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -850,8 +850,8 @@ impl_runtime_apis! {
 	}
 
 	impl authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi<Block> for Runtime {
-		fn validate_registered_candidate_data(mainchain_pub_key: &MainchainPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError> {
-			authority_selection_inherents::filter_invalid_candidates::validate_registration_data(mainchain_pub_key, registration_data, Sidechain::genesis_utxo()).err()
+		fn validate_registered_candidate_data(stake_pool_public_key: &StakePoolPublicKey, registration_data: &RegistrationData) -> Option<RegistrationDataError> {
+			authority_selection_inherents::filter_invalid_candidates::validate_registration_data(stake_pool_public_key, registration_data, Sidechain::genesis_utxo()).err()
 		}
 		fn validate_stake(stake: Option<StakeDelegation>) -> Option<StakeError> {
 			authority_selection_inherents::filter_invalid_candidates::validate_stake(stake).err()

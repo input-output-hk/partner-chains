@@ -1,5 +1,5 @@
 use crate::SessionValidatorManagementQueryApi;
-use sidechain_domain::{MainchainPublicKey, McEpochNumber};
+use sidechain_domain::{McEpochNumber, StakePoolPublicKey};
 
 pub async fn cli_get_ariadne_parameters(
 	query: impl SessionValidatorManagementQueryApi,
@@ -16,10 +16,10 @@ pub async fn cli_get_ariadne_parameters(
 pub async fn cli_get_registration_status(
 	query: impl SessionValidatorManagementQueryApi,
 	mc_epoch_number: McEpochNumber,
-	mainchain_pub_key: MainchainPublicKey,
+	stake_pool_public_key: StakePoolPublicKey,
 ) -> Result<String, String> {
 	let registrations = query
-		.get_registrations(mc_epoch_number, mainchain_pub_key.clone())
+		.get_registrations(mc_epoch_number, stake_pool_public_key.clone())
 		.await
 		.map_err(|err| err.to_string())?;
 	let registrations_json = serde_json::to_value(registrations).map_err(|err| err.to_string())?;
@@ -40,8 +40,8 @@ mod tests {
 	use hex_literal::hex;
 	use serde_json::Value;
 	use sidechain_domain::{
-		AuraPublicKey, GrandpaPublicKey, MainchainPublicKey, McBlockNumber, McSlotNumber, McTxHash,
-		McTxIndexInBlock, SidechainPublicKey, UtxoId, UtxoIndex, UtxoInfo,
+		AuraPublicKey, GrandpaPublicKey, McBlockNumber, McSlotNumber, McTxHash, McTxIndexInBlock,
+		SidechainPublicKey, StakePoolPublicKey, UtxoId, UtxoIndex, UtxoInfo,
 	};
 
 	struct MockSessionValidatorManagementQuery {
@@ -58,7 +58,7 @@ mod tests {
 		async fn get_registrations(
 			&self,
 			_: McEpochNumber,
-			_: MainchainPublicKey,
+			_: StakePoolPublicKey,
 		) -> QueryResult<Vec<CandidateRegistrationEntry>> {
 			Ok(self.expected_registrations.clone())
 		}
@@ -158,7 +158,7 @@ mod tests {
 		let cmd_output = cli_get_registration_status(
 			query,
 			McEpochNumber(303),
-			MainchainPublicKey(hex!(
+			StakePoolPublicKey(hex!(
 				"7521303029fc73ea2dd6a410c4c3cf570bf294a7e02942e049d50ba117acec22"
 			)),
 		)

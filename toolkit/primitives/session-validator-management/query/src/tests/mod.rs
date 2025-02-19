@@ -234,7 +234,7 @@ mod get_registration_tests {
 			let supported_epoch = McEpochNumber(1);
 			let (mainchain_account, _) = ed25519::Pair::generate();
 			let (sidechain_account, _) = ecdsa::Pair::generate();
-			let mc_public_key = MainchainPublicKey(mainchain_account.public().0);
+			let stake_pool_public_key = StakePoolPublicKey(mainchain_account.public().0);
 			let valid_registration_data = create_valid_registration_data(
 				mainchain_account,
 				sidechain_account.clone(),
@@ -264,7 +264,7 @@ mod get_registration_tests {
 				.with_candidates_per_epoch(vec![
 					vec![],
 					vec![CandidateRegistrations {
-						mainchain_pub_key: mc_public_key.clone(),
+						stake_pool_public_key: stake_pool_public_key.clone(),
 						registrations,
 						stake_delegation: stake,
 					}],
@@ -275,7 +275,7 @@ mod get_registration_tests {
 				SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source_mock));
 
 			let registrations =
-				api.get_registrations(supported_epoch, mc_public_key).await.unwrap();
+				api.get_registrations(supported_epoch, stake_pool_public_key).await.unwrap();
 
 			let block_numbers: Vec<McBlockNumber> = registrations
 				.clone()

@@ -295,7 +295,7 @@ fn latest_permissioned_candidates() -> Vec<RawPermissionedCandidateData> {
 
 fn leader_candidate_spo_a() -> CandidateRegistrations {
 	CandidateRegistrations {
-			mainchain_pub_key: MainchainPublicKey(hex!("bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d")),
+			stake_pool_public_key: StakePoolPublicKey(hex!("bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d")),
 			registrations: vec![
 				RegistrationData {
 					registration_utxo: UtxoId::new(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"), 1),
@@ -325,7 +325,7 @@ fn leader_candidate_spo_a() -> CandidateRegistrations {
 
 fn leader_candidate_spo_b() -> CandidateRegistrations {
 	CandidateRegistrations {
-			mainchain_pub_key: MainchainPublicKey(hex!("cfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d")),
+			stake_pool_public_key: StakePoolPublicKey(hex!("cfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d")),
 			registrations: vec![
 				RegistrationData {
 					registration_utxo: UtxoId::new(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"), 1),
@@ -355,7 +355,7 @@ fn leader_candidate_spo_b() -> CandidateRegistrations {
 
 fn leader_candidate_spo_c() -> CandidateRegistrations {
 	CandidateRegistrations {
-			mainchain_pub_key: MainchainPublicKey(hex!("3fd6618bfcb8d964f44beba4280bd91c6e87ac5bca4aa1c8f1cde9e85352660b")),
+			stake_pool_public_key: StakePoolPublicKey(hex!("3fd6618bfcb8d964f44beba4280bd91c6e87ac5bca4aa1c8f1cde9e85352660b")),
 			registrations: vec![
 				RegistrationData {
 					registration_utxo: UtxoId::new(hex!("cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13"), 2),

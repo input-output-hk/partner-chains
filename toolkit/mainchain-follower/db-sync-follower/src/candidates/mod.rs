@@ -32,7 +32,7 @@ struct ParsedCandidate {
 
 #[derive(Debug)]
 struct RegisteredCandidate {
-	mainchain_pub_key: MainchainPublicKey,
+	stake_pool_pub_key: StakePoolPublicKey,
 	registration_utxo: UtxoId,
 	tx_inputs: Vec<UtxoId>,
 	sidechain_signature: SidechainSignature,
@@ -101,7 +101,7 @@ impl AuthoritySelectionDataSource for CandidatesDataSourceImpl {
 		let stake_map = Self::make_stake_map(db_model::get_stake_distribution(&self.pool, epoch).await?);
 		Ok(Self::group_candidates_by_mc_pub_key(candidates).into_iter().map(|(mainchain_pub_key, candidate_registrations)| {
 			CandidateRegistrations {
-				mainchain_pub_key: mainchain_pub_key.clone(),
+				stake_pool_public_key: mainchain_pub_key.clone(),
 				registrations: candidate_registrations.into_iter().map(Self::make_registration_data).collect(),
 				stake_delegation: Self::get_stake_delegation(&stake_map, &mainchain_pub_key),
 			}
@@ -160,8 +160,8 @@ impl CandidatesDataSourceImpl {
 
 	fn group_candidates_by_mc_pub_key(
 		candidates: Vec<RegisteredCandidate>,
-	) -> HashMap<MainchainPublicKey, Vec<RegisteredCandidate>> {
-		candidates.into_iter().into_group_map_by(|c| c.mainchain_pub_key.clone())
+	) -> HashMap<StakePoolPublicKey, Vec<RegisteredCandidate>> {
+		candidates.into_iter().into_group_map_by(|c| c.stake_pool_pub_key.clone())
 	}
 
 	fn make_registration_data(c: RegisteredCandidate) -> RegistrationData {
@@ -190,14 +190,14 @@ impl CandidatesDataSourceImpl {
 
 	fn get_stake_delegation(
 		stake_map: &HashMap<MainchainKeyHash, StakeDelegation>,
-		mainchain_pub_key: &MainchainPublicKey,
+		stake_pool_pub_key: &StakePoolPublicKey,
 	) -> Option<StakeDelegation> {
 		if stake_map.is_empty() {
 			None
 		} else {
 			Some(
 				stake_map
-					.get(&MainchainKeyHash::from_vkey(&mainchain_pub_key.0))
+					.get(&MainchainKeyHash::from_vkey(&stake_pool_pub_key.0))
 					.cloned()
 					.unwrap_or(StakeDelegation(0)),
 			)
@@ -222,7 +222,7 @@ impl CandidatesDataSourceImpl {
 					grandpa_pub_key,
 				} = c.datum;
 				Ok(RegisteredCandidate {
-					mainchain_pub_key: stake_ownership.pub_key,
+					stake_pool_pub_key: stake_ownership.pub_key,
 					mainchain_signature: stake_ownership.signature,
 					// For now we use the same key for both cross chain and sidechain actions
 					cross_chain_pub_key: CrossChainPublicKey(sidechain_pub_key.0.clone()),

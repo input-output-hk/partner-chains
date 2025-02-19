@@ -25,8 +25,8 @@ use partner_chains_cardano_offchain::{
 use partner_chains_plutus_data::reserve::ReserveDatum;
 use sidechain_domain::{
 	AdaBasedStaking, AssetId, AssetName, AuraPublicKey, CandidateRegistration, DParameter,
-	GrandpaPublicKey, MainchainKeyHash, MainchainPublicKey, MainchainSignature, McTxHash,
-	PermissionedCandidateData, PolicyId, SidechainPublicKey, SidechainSignature, UtxoId, UtxoIndex,
+	GrandpaPublicKey, MainchainKeyHash, MainchainSignature, McTxHash, PermissionedCandidateData,
+	PolicyId, SidechainPublicKey, SidechainSignature, StakePoolPublicKey, UtxoId, UtxoIndex,
 };
 use std::time::Duration;
 use testcontainers::{clients::Cli, Container, GenericImage};
@@ -56,8 +56,8 @@ fn eve_payment_key() -> CardanoPaymentSigningKey {
 	.unwrap()
 }
 
-const EVE_PUBLIC_KEY: MainchainPublicKey =
-	MainchainPublicKey(hex!("a5ab6e82531cac3480cf7ff360f38a0beeea93cabfdd1ed0495e0423f7875c57"));
+const EVE_PUBLIC_KEY: StakePoolPublicKey =
+	StakePoolPublicKey(hex!("a5ab6e82531cac3480cf7ff360f38a0beeea93cabfdd1ed0495e0423f7875c57"));
 
 const EVE_PUBLIC_KEY_HASH: MainchainKeyHash =
 	MainchainKeyHash(hex!("84ba05c28879b299a8377e62128adc7a0e0df3ac438ff95efc7c8443"));
