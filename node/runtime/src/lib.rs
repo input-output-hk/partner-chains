@@ -418,7 +418,15 @@ impl pallet_session_validator_management::Config for Runtime {
 		input: AuthoritySelectionInputs,
 		sidechain_epoch: ScEpochNumber,
 	) -> Option<BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>> {
-		select_authorities(Sidechain::genesis_utxo(), input, sidechain_epoch)
+		let committee = select_authorities::<Self::AuthorityId, Self::AuthorityKeys>(
+			Sidechain::genesis_utxo(),
+			input,
+			sidechain_epoch,
+		)?
+		.into_iter()
+		.map(|member| (member.account_id().clone(), member.account_keys().clone()))
+		.collect();
+		Some(BoundedVec::truncate_from(committee))
 	}
 
 	fn current_epoch_number() -> ScEpochNumber {
