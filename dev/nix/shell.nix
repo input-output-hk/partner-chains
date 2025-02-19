@@ -11,12 +11,7 @@
     ...
   }: let
     isDarwin = pkgs.lib.hasSuffix "darwin" system;
-    fenixPkgs = inputs'.fenix.packages;
-    rustToolchain = with fenixPkgs;
-      fromToolchainFile {
-        file = ../../rust-toolchain.toml;
-        sha256 = "VZZnlyP69+Y3crrLHQyJirqlHrTtGTsyiSnZB8jEvVo=";
-      };
+    inherit (self'.packages) rustToolchain;
   in {
     devShells = {
       default = pkgs.mkShell {
