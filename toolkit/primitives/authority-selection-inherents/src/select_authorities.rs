@@ -86,7 +86,7 @@ fn trustless_candidates_with_weights<A: Clone, B: Clone>(
 	trustless_candidates
 		.iter()
 		.map(|c| {
-			(Candidate::Trustless(c.clone()), u128::from(c.stake_delegation.0) * weight_factor)
+			(Candidate::Registered(c.clone()), u128::from(c.stake_delegation.0) * weight_factor)
 		})
 		.collect()
 }

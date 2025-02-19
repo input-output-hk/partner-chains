@@ -39,21 +39,21 @@ pub struct PermissionedCandidate<TAccountId, TAccountKeys> {
 #[derive(Clone, Debug, Encode, Decode, PartialEq)]
 pub enum Candidate<TAccountId, TAccountKeys> {
 	Permissioned(PermissionedCandidate<TAccountId, TAccountKeys>),
-	Trustless(CandidateWithStake<TAccountId, TAccountKeys>),
+	Registered(CandidateWithStake<TAccountId, TAccountKeys>),
 }
 
 impl<TAccountId, TAccountKeys> Candidate<TAccountId, TAccountKeys> {
 	pub fn account_id(&self) -> &TAccountId {
 		match self {
 			Candidate::Permissioned(c) => &c.account_id,
-			Candidate::Trustless(c) => &c.account_id,
+			Candidate::Registered(c) => &c.account_id,
 		}
 	}
 
 	pub fn account_keys(&self) -> &TAccountKeys {
 		match self {
 			Candidate::Permissioned(c) => &c.account_keys,
-			Candidate::Trustless(c) => &c.account_keys,
+			Candidate::Registered(c) => &c.account_keys,
 		}
 	}
 }
