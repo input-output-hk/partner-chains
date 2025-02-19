@@ -665,7 +665,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		genesis_utxo: UtxoId,
 		payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
-		stake_ownership_pub_key: MainchainPublicKey,
+		stake_ownership_pub_key: StakePoolPublicKey,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;, OffchainError&gt;;
 }
 
@@ -677,7 +677,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		genesis_utxo: UtxoId,
 		payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
-		stake_ownership_pub_key: MainchainPublicKey,
+		stake_ownership_pub_key: StakePoolPublicKey,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;, OffchainError&gt; {
 		run_deregister(
 			genesis_utxo,
@@ -697,7 +697,7 @@
 &gt;(
 	genesis_utxo: UtxoId,
 	payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
-	stake_ownership_pub_key: MainchainPublicKey,
+	stake_ownership_pub_key: StakePoolPublicKey,
 	client: <span class="kw-2">&amp;</span>C,
 	await_tx: A,
 ) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
@@ -741,7 +741,7 @@
 
 <span class="kw">fn </span>get_own_registrations(
 	own_pkh: MainchainKeyHash,
-	spo_pub_key: MainchainPublicKey,
+	spo_pub_key: StakePoolPublicKey,
 	validator_utxos: <span class="kw-2">&amp;</span>[OgmiosUtxo],
 ) -&gt; Vec&lt;(OgmiosUtxo, CandidateRegistration)&gt; {
 	<span class="kw">let </span><span class="kw-2">mut </span>own_registrations = Vec::new();
@@ -869,7 +869,7 @@
 	<span class="kw">fn </span>candidate_registration(registration_utxo: UtxoId) -&gt; CandidateRegistration {
 		CandidateRegistration {
 			stake_ownership: AdaBasedStaking {
-				pub_key: test_values::mainchain_pub_key(),
+				pub_key: test_values::stake_pool_pub_key(),
 				signature: MainchainSignature([<span class="number">0u8</span>; <span class="number">64</span>]),
 			},
 			partner_chain_pub_key: SidechainPublicKey(Vec::new()),

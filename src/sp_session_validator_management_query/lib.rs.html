@@ -220,7 +220,7 @@
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 <span class="kw">use </span>derive_new::new;
 <span class="kw">use </span>sidechain_block_search::{predicates::AnyBlockInEpoch, FindSidechainBlock, SidechainInfo};
-<span class="kw">use </span>sidechain_domain::{MainchainPublicKey, McEpochNumber, ScEpochNumber};
+<span class="kw">use </span>sidechain_domain::{McEpochNumber, ScEpochNumber, StakePoolPublicKey};
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::{HeaderBackend, Info};
 <span class="kw">use </span>sp_core::bytes::to_hex;
@@ -248,7 +248,7 @@
 	</span><span class="kw">async fn </span>get_registrations(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		mc_epoch_number: McEpochNumber,
-		mc_public_key: MainchainPublicKey,
+		stake_pool_public_key: StakePoolPublicKey,
 	) -&gt; QueryResult&lt;Vec&lt;CandidateRegistrationEntry&gt;&gt;;
 
 	<span class="doccomment">/// Regardless of `epoch_number` value, all the candidates data validation is done based on the validation api from the latest sidechain block.
@@ -353,7 +353,7 @@
 	<span class="kw">async fn </span>get_registrations(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		mc_epoch_number: McEpochNumber,
-		mc_public_key: MainchainPublicKey,
+		mc_public_key: StakePoolPublicKey,
 	) -&gt; QueryResult&lt;Vec&lt;CandidateRegistrationEntry&gt;&gt; {
 		<span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
 		<span class="kw">let </span>best_block = <span class="self">self</span>.client.info().best_hash;

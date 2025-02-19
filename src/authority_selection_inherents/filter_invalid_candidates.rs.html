@@ -577,8 +577,6 @@
 <a href="#577" id="577">577</a>
 <a href="#578" id="578">578</a>
 <a href="#579" id="579">579</a>
-<a href="#580" id="580">580</a>
-<a href="#581" id="581">581</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Functionality related to filtering invalid candidates from the candidates
 
 </span><span class="kw">use </span>frame_support::pallet_prelude::TypeInfo;
@@ -659,7 +657,7 @@
 	TAccountKeys: From&lt;(sr25519::Public, ed25519::Public)&gt;,
 {
 	<span class="kw">let </span>stake_delegation = validate_stake(candidate_registrations.stake_delegation).ok()<span class="question-mark">?</span>;
-	<span class="kw">let </span>mainchain_pub_key = candidate_registrations.mainchain_pub_key;
+	<span class="kw">let </span>mainchain_pub_key = candidate_registrations.stake_pool_public_key;
 
 	<span class="kw">let </span>(candidate_data, <span class="kw">_</span>) = candidate_registrations
 		.registrations
@@ -748,7 +746,7 @@
 
 <span class="doccomment">/// Is the registration data provided by the authority candidate valid?
 </span><span class="kw">pub fn </span>validate_registration_data(
-	mainchain_pub_key: <span class="kw-2">&amp;</span>MainchainPublicKey,
+	stake_pool_pub_key: <span class="kw-2">&amp;</span>StakePoolPublicKey,
 	registration_data: <span class="kw-2">&amp;</span>RegistrationData,
 	genesis_utxo: UtxoId,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Candidate&lt;ecdsa::Public, (sr25519::Public, ed25519::Public)&gt;, RegistrationDataError&gt; {
@@ -774,7 +772,7 @@
 	<span class="kw">let </span>signed_message_encoded = minicbor::to_vec(signed_message.to_datum())
 		.expect(<span class="string">"`RegisterValidatorSignedMessage` should always be encodable"</span>);
 
-	verify_mainchain_signature(mainchain_pub_key, registration_data, <span class="kw-2">&amp;</span>signed_message_encoded)<span class="question-mark">?</span>;
+	verify_stake_pool_signature(stake_pool_pub_key, registration_data, <span class="kw-2">&amp;</span>signed_message_encoded)<span class="question-mark">?</span>;
 	verify_sidechain_signature(
 		sidechain_pub_key,
 		<span class="kw-2">&amp;</span>registration_data.sidechain_signature,
@@ -800,21 +798,19 @@
 	}
 }
 
-<span class="kw">fn </span>verify_mainchain_signature(
-	mainchain_pub_key: <span class="kw-2">&amp;</span>MainchainPublicKey,
+<span class="kw">fn </span>verify_stake_pool_signature(
+	stake_pool_pub_key: <span class="kw-2">&amp;</span>StakePoolPublicKey,
 	registration_data: <span class="kw-2">&amp;</span>RegistrationData,
 	signed_message_encoded: <span class="kw-2">&amp;</span>[u8],
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(), RegistrationDataError&gt; {
-	<span class="kw">let </span>mainchain_signature: [u8; <span class="number">64</span>] = registration_data
+	<span class="kw">let </span>spo_signature: [u8; <span class="number">64</span>] = registration_data
 		.mainchain_signature
 		.<span class="number">0
 		</span>.clone()
 		.try_into()
 		.map_err(|<span class="kw">_</span>| RegistrationDataError::InvalidMainchainSignature)<span class="question-mark">?</span>;
-	<span class="kw">let </span>mainchain_signature = ed25519::Signature::from(mainchain_signature);
-	<span class="kw">if </span>mainchain_signature
-		.verify(signed_message_encoded, <span class="kw-2">&amp;</span>ed25519::Public::from(mainchain_pub_key.<span class="number">0</span>))
-	{
+	<span class="kw">let </span>spo_signature = ed25519::Signature::from(spo_signature);
+	<span class="kw">if </span>spo_signature.verify(signed_message_encoded, <span class="kw-2">&amp;</span>ed25519::Public::from(stake_pool_pub_key.<span class="number">0</span>)) {
 		<span class="prelude-val">Ok</span>(())
 	} <span class="kw">else </span>{
 		<span class="prelude-val">Err</span>(RegistrationDataError::InvalidMainchainSignature)
@@ -857,7 +853,7 @@
 <span class="comment">// When implementing, make sure that the same validation is used here and in the committee selection logic
 </span><span class="macro">sp_api::decl_runtime_apis!</span> {
 	<span class="kw">pub trait </span>CandidateValidationApi {
-		<span class="kw">fn </span>validate_registered_candidate_data(mainchain_pub_key: <span class="kw-2">&amp;</span>MainchainPublicKey, registration_data: <span class="kw-2">&amp;</span>RegistrationData) -&gt; <span class="prelude-ty">Option</span>&lt;RegistrationDataError&gt;;
+		<span class="kw">fn </span>validate_registered_candidate_data(mainchain_pub_key: <span class="kw-2">&amp;</span>StakePoolPublicKey, registration_data: <span class="kw-2">&amp;</span>RegistrationData) -&gt; <span class="prelude-ty">Option</span>&lt;RegistrationDataError&gt;;
 		<span class="kw">fn </span>validate_stake(stake: <span class="prelude-ty">Option</span>&lt;StakeDelegation&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;StakeError&gt;;
 		<span class="kw">fn </span>validate_permissioned_candidate_data(candidate: PermissionedCandidateData) -&gt; <span class="prelude-ty">Option</span>&lt;PermissionedCandidateDataError&gt;;
 	}
@@ -871,7 +867,7 @@
 	<span class="kw">use </span>sp_core::Pair;
 
 	<span class="doccomment">/// Get Valid Parameters of the `is_registration_data_valid()` function
-	</span><span class="kw">fn </span>create_valid_parameters() -&gt; (MainchainPublicKey, RegistrationData, UtxoId) {
+	</span><span class="kw">fn </span>create_valid_parameters() -&gt; (StakePoolPublicKey, RegistrationData, UtxoId) {
 		<span class="kw">let </span>registration_utxo = UtxoId {
 			tx_hash: McTxHash(<span class="macro">hex!</span>(
 				<span class="string">"d260a76b267e27fdf79c217ec61b776d6436dc78eefeac8f3c615486a71f38eb"
@@ -923,7 +919,7 @@
 		};
 
 		(
-			MainchainPublicKey(<span class="macro">hex!</span>(
+			StakePoolPublicKey(<span class="macro">hex!</span>(
 				<span class="string">"fb335cabe7d3dd77d0177cd332e9a44998d9d5085b811650853b7bb0752a8bef"
 			</span>)),
 			registration_data,
@@ -942,7 +938,7 @@
 		<span class="kw">fn </span>create_parameters(
 			signing_sidechain_account: ecdsa::Pair,
 			sidechain_pub_key: Vec&lt;u8&gt;,
-		) -&gt; (MainchainPublicKey, RegistrationData, UtxoId) {
+		) -&gt; (StakePoolPublicKey, RegistrationData, UtxoId) {
 			<span class="kw">let </span>mainchain_account = ed25519::Pair::from_seed_slice(<span class="kw-2">&amp;</span>[<span class="number">7u8</span>; <span class="number">32</span>]).unwrap();
 			<span class="kw">let </span>genesis_utxo =
 				UtxoId { tx_hash: McTxHash([<span class="number">7u8</span>; TX_HASH_SIZE]), index: UtxoIndex(<span class="number">0</span>) };
@@ -978,7 +974,7 @@
 				tx_inputs: <span class="macro">vec!</span>[signed_message.registration_utxo],
 			};
 
-			(MainchainPublicKey(mainchain_account.public().<span class="number">0</span>), registration_data, genesis_utxo)
+			(StakePoolPublicKey(mainchain_account.public().<span class="number">0</span>), registration_data, genesis_utxo)
 		}
 
 		<span class="attr">#[test]
@@ -996,7 +992,7 @@
 		</span><span class="kw">fn </span>should_not_work_if_mainchain_pub_key_is_different() {
 			<span class="kw">let </span>(mainchain_pub_key, registration_data, genesis_utxo) = create_valid_parameters();
 			<span class="kw">let </span>different_mainchain_pub_key =
-				MainchainPublicKey(ed25519::Pair::from_seed_slice(<span class="kw-2">&amp;</span>[<span class="number">0u8</span>; <span class="number">32</span>]).unwrap().public().<span class="number">0</span>);
+				StakePoolPublicKey(ed25519::Pair::from_seed_slice(<span class="kw-2">&amp;</span>[<span class="number">0u8</span>; <span class="number">32</span>]).unwrap().public().<span class="number">0</span>);
 			<span class="macro">assert_ne!</span>(mainchain_pub_key, different_mainchain_pub_key);
 			<span class="macro">assert_eq!</span>(
 				validate_registration_data(
@@ -1082,22 +1078,22 @@
 		<span class="kw">let </span>(mc_pub_key, registration_data, genesis_utxo) = create_valid_parameters();
 		<span class="kw">let </span>candidate_registrations = <span class="macro">vec!</span>[
 			CandidateRegistrations {
-				mainchain_pub_key: mc_pub_key.clone(),
+				stake_pool_public_key: mc_pub_key.clone(),
 				registrations: <span class="macro">vec!</span>[registration_data.clone()],
 				stake_delegation: <span class="prelude-val">Some</span>(StakeDelegation(<span class="number">0</span>)),
 			},
 			CandidateRegistrations {
-				mainchain_pub_key: mc_pub_key.clone(),
+				stake_pool_public_key: mc_pub_key.clone(),
 				registrations: <span class="macro">vec!</span>[registration_data.clone()],
 				stake_delegation: <span class="prelude-val">Some</span>(StakeDelegation(<span class="number">1</span>)),
 			},
 			CandidateRegistrations {
-				mainchain_pub_key: mc_pub_key.clone(),
+				stake_pool_public_key: mc_pub_key.clone(),
 				registrations: <span class="macro">vec!</span>[registration_data.clone()],
 				stake_delegation: <span class="prelude-val">None</span>,
 			},
 			CandidateRegistrations {
-				mainchain_pub_key: mc_pub_key,
+				stake_pool_public_key: mc_pub_key,
 				registrations: <span class="macro">vec!</span>[registration_data],
 				stake_delegation: <span class="prelude-val">Some</span>(StakeDelegation(<span class="number">2</span>)),
 			},

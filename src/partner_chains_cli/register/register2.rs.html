@@ -142,16 +142,15 @@
 <a href="#142" id="142">142</a>
 <a href="#143" id="143">143</a>
 <a href="#144" id="144">144</a>
-<a href="#145" id="145">145</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_key::get_mc_staking_signing_key_from_file;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::CmdRun;
 <span class="kw">use </span>clap::Parser;
 <span class="kw">use </span>cli_commands::key_params::{
-	MainchainSigningKeyParam, PlainPublicKeyParam, SidechainPublicKeyParam,
+	PlainPublicKeyParam, SidechainPublicKeyParam, StakePoolSigningKeyParam,
 };
 <span class="kw">use </span>cli_commands::registration_signatures::RegisterValidatorMessage;
-<span class="kw">use </span>cli_commands::signing::mainchain_public_key_and_signature;
+<span class="kw">use </span>cli_commands::signing::cardano_spo_public_key_and_signature;
 <span class="kw">use </span>sidechain_domain::UtxoId;
 
 <span class="attr">#[derive(Clone, Debug, Parser)]
@@ -178,11 +177,10 @@
 			<span class="string">"  This command will use SPO cold signing key for signing the registration message."</span>,
 		);
 
-		<span class="kw">let </span>mainchain_signing_key_path =
-			context.prompt(<span class="string">"Path to mainchain signing key file"</span>, <span class="prelude-val">Some</span>(<span class="string">"cold.skey"</span>));
-		<span class="kw">let </span>mainchain_signing_key =
-			get_mainchain_cold_skey(context, <span class="kw-2">&amp;</span>mainchain_signing_key_path)
-				.inspect_err(|<span class="kw">_</span>| context.eprint(<span class="string">"Unable to read mainchain signing key file"</span>))<span class="question-mark">?</span>;
+		<span class="kw">let </span>stake_pool_signing_key_path =
+			context.prompt(<span class="string">"Path to Stake Pool signing key file"</span>, <span class="prelude-val">Some</span>(<span class="string">"cold.skey"</span>));
+		<span class="kw">let </span>mainchain_signing_key = get_stake_pool_cold_skey(context, <span class="kw-2">&amp;</span>stake_pool_signing_key_path)
+			.inspect_err(|<span class="kw">_</span>| context.eprint(<span class="string">"Unable to read Stake Pool signing key file"</span>))<span class="question-mark">?</span>;
 
 		<span class="kw">let </span>registration_message = RegisterValidatorMessage {
 			genesis_utxo: <span class="self">self</span>.genesis_utxo,
@@ -190,11 +188,11 @@
 			registration_utxo: <span class="self">self</span>.registration_utxo,
 		};
 
-		<span class="kw">let </span>(verification_key, mc_signature) =
-			mainchain_public_key_and_signature(mainchain_signing_key.<span class="number">0</span>, registration_message);
+		<span class="kw">let </span>(verification_key, spo_signature) =
+			cardano_spo_public_key_and_signature(mainchain_signing_key.<span class="number">0</span>, registration_message);
 
-		<span class="kw">let </span>spo_public_key = hex::encode(verification_key);
-		<span class="kw">let </span>spo_signature = hex::encode(mc_signature.to_vec());
+		<span class="kw">let </span>spo_public_key = verification_key.to_hex_string();
+		<span class="kw">let </span>spo_signature = spo_signature.to_hex_string();
 		<span class="kw">let </span>executable = context.current_executable()<span class="question-mark">?</span>;
 		context.print(<span class="string">"To finish the registration process, run the following command on the machine with the partner chain dependencies running:\n"</span>);
 		context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
@@ -204,11 +202,11 @@
 	}
 }
 
-<span class="kw">fn </span>get_mainchain_cold_skey&lt;C: IOContext&gt;(
+<span class="kw">fn </span>get_stake_pool_cold_skey&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
 	keys_path: <span class="kw-2">&amp;</span>str,
-) -&gt; <span class="prelude-ty">Result</span>&lt;MainchainSigningKeyParam, anyhow::Error&gt; {
-	<span class="prelude-val">Ok</span>(MainchainSigningKeyParam::from(get_mc_staking_signing_key_from_file(keys_path, context)<span class="question-mark">?</span>))
+) -&gt; <span class="prelude-ty">Result</span>&lt;StakePoolSigningKeyParam, anyhow::Error&gt; {
+	<span class="prelude-val">Ok</span>(StakePoolSigningKeyParam::from(get_mc_staking_signing_key_from_file(keys_path, context)<span class="question-mark">?</span>))
 }
 
 <span class="attr">#[cfg(test)]
@@ -232,15 +230,15 @@
 	}
 
 	<span class="attr">#[test]
-	</span><span class="kw">fn </span>invalid_mc_signing_key() {
+	</span><span class="kw">fn </span>invalid_stake_pool_signing_key() {
 		<span class="kw">let </span>mock_context = MockIOContext::new().with_expected_io(<span class="macro">vec!</span>[
 			MockIO::Group(intro_msg_io()),
 			MockIO::prompt(
-				<span class="string">"Path to mainchain signing key file"</span>,
+				<span class="string">"Path to Stake Pool signing key file"</span>,
 				<span class="prelude-val">Some</span>(<span class="string">"cold.skey"</span>),
 				<span class="string">"/invalid/cold.skey"</span>,
 			),
-			MockIO::eprint(<span class="string">"Unable to read mainchain signing key file"</span>),
+			MockIO::eprint(<span class="string">"Unable to read Stake Pool signing key file"</span>),
 		]);
 
 		<span class="kw">let </span>result = mock_register2_cmd().run(<span class="kw-2">&amp;</span>mock_context);
@@ -256,7 +254,7 @@
 
 	<span class="kw">fn </span>prompt_mc_cold_key_path_io() -&gt; Vec&lt;MockIO&gt; {
 		<span class="macro">vec!</span>[MockIO::prompt(
-			<span class="string">"Path to mainchain signing key file"</span>,
+			<span class="string">"Path to Stake Pool signing key file"</span>,
 			<span class="prelude-val">Some</span>(<span class="string">"cold.skey"</span>),
 			<span class="string">"/path/to/cold.skey"</span>,
 		)]
@@ -265,7 +263,7 @@
 	<span class="kw">fn </span>output_result_io() -&gt; Vec&lt;MockIO&gt; {
 		<span class="macro">vec!</span>[
             MockIO::print(<span class="string">"To finish the registration process, run the following command on the machine with the partner chain dependencies running:\n"</span>),
-            MockIO::print(<span class="string">"&lt;mock executable&gt; wizards register3 \\\n--genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n--registration-utxo 7e9ebd0950ae1bec5606f0cd7ac88b3c60b1103d7feb6ffa36402edae4d1b617#0 \\\n--aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n--grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n--partner-chain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n--partner-chain-signature 7a7e3e585a5dc248d4a2772814e1b58c90313443dd99369f994e960ecc4931442a08305743db7ab42ab9b8672e00250e1cc7c08bc018b0630a8197c4f95528a301 \\\n--spo-public-key cef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 \\\n--spo-signature aaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801"</span>),
+            MockIO::print(<span class="string">"&lt;mock executable&gt; wizards register3 \\\n--genesis-utxo 0000000000000000000000000000000000000000000000000000000000000001#0 \\\n--registration-utxo 7e9ebd0950ae1bec5606f0cd7ac88b3c60b1103d7feb6ffa36402edae4d1b617#0 \\\n--aura-pub-key 0xdf883ee0648f33b6103017b61be702017742d501b8fe73b1d69ca0157460b777 \\\n--grandpa-pub-key 0x5a091a06abd64f245db11d2987b03218c6bd83d64c262fe10e3a2a1230e90327 \\\n--partner-chain-pub-key 0x031e75acbf45ef8df98bbe24b19b28fff807be32bf88838c30c0564d7bec5301f6 \\\n--partner-chain-signature 7a7e3e585a5dc248d4a2772814e1b58c90313443dd99369f994e960ecc4931442a08305743db7ab42ab9b8672e00250e1cc7c08bc018b0630a8197c4f95528a301 \\\n--spo-public-key 0xcef2d1630c034d3b9034eb7903d61f419a3074a1ad01d4550cc72f2b733de6e7 \\\n--spo-signature 0xaaa39fbf163ed77c69820536f5dc22854e7e13f964f1e077efde0844a09bde64c1aab4d2b401e0fe39b43c91aa931cad26fa55c8766378462c06d86c85134801"</span>),
         ]
 	}
 	<span class="comment">// non 0 genesis utxo 8ea10040249ad3033ae7c4d4b69e0b2e2b50a90741b783491cb5ddf8ced0d861

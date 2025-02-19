@@ -106,8 +106,8 @@
 	register::{run_deregister, run_register},
 };
 <span class="kw">use </span>sidechain_domain::{
-	AdaBasedStaking, CandidateRegistration, MainchainPublicKey, MainchainSignature,
-	PermissionedCandidateData, SidechainSignature, UtxoId,
+	AdaBasedStaking, CandidateRegistration, MainchainSignature, PermissionedCandidateData,
+	SidechainSignature, StakePoolPublicKey, UtxoId,
 };
 
 <span class="attr">#[derive(Clone, Debug, clap::Parser)]
@@ -135,7 +135,7 @@
 	</span>partner_chain_signature: SidechainSignature,
 	<span class="doccomment">/// Hex string representing bytes of the Stake Pool Verification Key
 	</span><span class="attr">#[arg(long)]
-	</span>spo_public_key: MainchainPublicKey,
+	</span>spo_public_key: StakePoolPublicKey,
 	<span class="doccomment">/// Hex string of bytes of the registration message signature by main chain key, obtained by 'registration-signatures' command
 	</span><span class="attr">#[arg(long)]
 	</span>spo_signature: MainchainSignature,
@@ -182,7 +182,7 @@
 	</span>payment_key_file: PaymentFilePath,
 	<span class="doccomment">/// Hex string representing bytes of the Stake Pool Verification Key
 	</span><span class="attr">#[arg(long)]
-	</span>spo_public_key: MainchainPublicKey,
+	</span>spo_public_key: StakePoolPublicKey,
 }
 
 <span class="kw">impl </span>DeregisterCmd {

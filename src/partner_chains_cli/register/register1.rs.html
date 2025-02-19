@@ -500,7 +500,6 @@
 <a href="#500" id="500">500</a>
 <a href="#501" id="501">501</a>
 <a href="#502" id="502">502</a>
-<a href="#503" id="503">503</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_values::DEFAULT_CHAIN_NAME;
 <span class="kw">use </span><span class="kw">crate</span>::config::KEYS_FILE_PATH;
 <span class="kw">use </span><span class="kw">crate</span>::generate_keys::keystore_path;
@@ -653,11 +652,10 @@
 	<span class="kw">let </span>cardano_payment_verification_key_file =
 		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
 			.prompt_with_default_from_file_and_save(context);
-	<span class="kw">let </span>key_bytes: [u8; <span class="number">32</span>] = cardano_key::get_mc_payment_verification_key_from_file(
+	<span class="kw">let </span>key_bytes: [u8; <span class="number">32</span>] = cardano_key::get_payment_verification_key_bytes_from_file(
 		<span class="kw-2">&amp;</span>cardano_payment_verification_key_file,
 		context,
-	)<span class="question-mark">?
-	</span>.<span class="number">0</span>;
+	)<span class="question-mark">?</span>;
 	<span class="kw">let </span>address =
 		partner_chains_cardano_offchain::csl::payment_address(<span class="kw-2">&amp;</span>key_bytes, cardano_network.to_csl());
 	address.to_bech32(<span class="prelude-val">None</span>).map_err(|e| <span class="macro">anyhow!</span>(e.to_string()))

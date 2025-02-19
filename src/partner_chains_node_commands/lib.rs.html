@@ -224,6 +224,7 @@
 <a href="#224" id="224">224</a>
 <a href="#225" id="225">225</a>
 <a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
@@ -236,7 +237,7 @@
 <span class="kw">use </span>partner_chains_smart_contracts_commands::SmartContractsCmd;
 <span class="kw">use </span>sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 <span class="kw">use </span>sc_service::TaskManager;
-<span class="kw">use </span>sidechain_domain::{MainchainPublicKey, McEpochNumber, ScEpochNumber};
+<span class="kw">use </span>sidechain_domain::{McEpochNumber, ScEpochNumber, StakePoolPublicKey};
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
@@ -280,7 +281,8 @@
 <span class="attr">#[derive(Debug, Clone, Parser)]
 </span><span class="kw">pub struct </span>RegistrationStatusCmd {
 	<span class="attr">#[arg(long)]
-	</span><span class="kw">pub </span>mainchain_pub_key: MainchainPublicKey,
+	#[arg(long, alias = <span class="string">"mainchain-pub-key"</span>)]
+	</span><span class="kw">pub </span>stake_pool_pub_key: StakePoolPublicKey,
 	<span class="attr">#[arg(long)]
 	</span><span class="kw">pub </span>mc_epoch_number: McEpochNumber,
 	<span class="attr">#[allow(missing_docs)]
@@ -304,7 +306,7 @@
 	/// If registration has been included in Cardano block in epoch N, then it should be returned by this command if epoch greater than N+1 is provided.
 	/// If this command won't show your registration after a few minutes after it has been included in a cardano block, you can start debugging for unsuccessful registration.
 	</span><span class="attr">#[clap(
-		after_help = <span class="string">"Example: partner-chains-node -- registration-status --mainchain-pub-key 0x702b81ab2e86cf73a87062af1eb0da666d451976d9d91c63a119ed94e6a33dc0 --mc-epoch-number 586"
+		after_help = <span class="string">"Example: partner-chains-node -- registration-status --stake-pool-pub-key 0x702b81ab2e86cf73a87062af1eb0da666d451976d9d91c63a119ed94e6a33dc0 --mc-epoch-number 586"
 	</span>)]
 	</span>RegistrationStatus(RegistrationStatusCmd),
 
@@ -371,7 +373,7 @@
 					print_result(cli_get_registration_status(
 						query,
 						cmd.mc_epoch_number,
-						cmd.mainchain_pub_key.clone(),
+						cmd.stake_pool_pub_key.clone(),
 					)),
 					task_manager,
 				))

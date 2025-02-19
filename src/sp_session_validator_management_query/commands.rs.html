@@ -191,7 +191,7 @@
 <a href="#191" id="191">191</a>
 <a href="#192" id="192">192</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::SessionValidatorManagementQueryApi;
-<span class="kw">use </span>sidechain_domain::{MainchainPublicKey, McEpochNumber};
+<span class="kw">use </span>sidechain_domain::{McEpochNumber, StakePoolPublicKey};
 
 <span class="kw">pub async fn </span>cli_get_ariadne_parameters(
 	query: <span class="kw">impl </span>SessionValidatorManagementQueryApi,
@@ -208,10 +208,10 @@
 <span class="kw">pub async fn </span>cli_get_registration_status(
 	query: <span class="kw">impl </span>SessionValidatorManagementQueryApi,
 	mc_epoch_number: McEpochNumber,
-	mainchain_pub_key: MainchainPublicKey,
+	stake_pool_public_key: StakePoolPublicKey,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;String, String&gt; {
 	<span class="kw">let </span>registrations = query
-		.get_registrations(mc_epoch_number, mainchain_pub_key.clone())
+		.get_registrations(mc_epoch_number, stake_pool_public_key.clone())
 		.<span class="kw">await
 		</span>.map_err(|err| err.to_string())<span class="question-mark">?</span>;
 	<span class="kw">let </span>registrations_json = serde_json::to_value(registrations).map_err(|err| err.to_string())<span class="question-mark">?</span>;
@@ -232,8 +232,8 @@
 	<span class="kw">use </span>hex_literal::hex;
 	<span class="kw">use </span>serde_json::Value;
 	<span class="kw">use </span>sidechain_domain::{
-		AuraPublicKey, GrandpaPublicKey, MainchainPublicKey, McBlockNumber, McSlotNumber, McTxHash,
-		McTxIndexInBlock, SidechainPublicKey, UtxoId, UtxoIndex, UtxoInfo,
+		AuraPublicKey, GrandpaPublicKey, McBlockNumber, McSlotNumber, McTxHash, McTxIndexInBlock,
+		SidechainPublicKey, StakePoolPublicKey, UtxoId, UtxoIndex, UtxoInfo,
 	};
 
 	<span class="kw">struct </span>MockSessionValidatorManagementQuery {
@@ -250,7 +250,7 @@
 		<span class="kw">async fn </span>get_registrations(
 			<span class="kw-2">&amp;</span><span class="self">self</span>,
 			<span class="kw">_</span>: McEpochNumber,
-			<span class="kw">_</span>: MainchainPublicKey,
+			<span class="kw">_</span>: StakePoolPublicKey,
 		) -&gt; QueryResult&lt;Vec&lt;CandidateRegistrationEntry&gt;&gt; {
 			<span class="prelude-val">Ok</span>(<span class="self">self</span>.expected_registrations.clone())
 		}
@@ -350,7 +350,7 @@
 		<span class="kw">let </span>cmd_output = cli_get_registration_status(
 			query,
 			McEpochNumber(<span class="number">303</span>),
-			MainchainPublicKey(<span class="macro">hex!</span>(
+			StakePoolPublicKey(<span class="macro">hex!</span>(
 				<span class="string">"7521303029fc73ea2dd6a410c4c3cf570bf294a7e02942e049d50ba117acec22"
 			</span>)),
 		)

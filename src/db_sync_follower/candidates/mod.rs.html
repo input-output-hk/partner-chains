@@ -325,7 +325,7 @@
 
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">struct </span>RegisteredCandidate {
-	mainchain_pub_key: MainchainPublicKey,
+	stake_pool_pub_key: StakePoolPublicKey,
 	registration_utxo: UtxoId,
 	tx_inputs: Vec&lt;UtxoId&gt;,
 	sidechain_signature: SidechainSignature,
@@ -394,7 +394,7 @@
 		<span class="kw">let </span>stake_map = <span class="self">Self</span>::make_stake_map(db_model::get_stake_distribution(<span class="kw-2">&amp;</span><span class="self">self</span>.pool, epoch).<span class="kw">await</span><span class="question-mark">?</span>);
 		<span class="prelude-val">Ok</span>(<span class="self">Self</span>::group_candidates_by_mc_pub_key(candidates).into_iter().map(|(mainchain_pub_key, candidate_registrations)| {
 			CandidateRegistrations {
-				mainchain_pub_key: mainchain_pub_key.clone(),
+				stake_pool_public_key: mainchain_pub_key.clone(),
 				registrations: candidate_registrations.into_iter().map(<span class="self">Self</span>::make_registration_data).collect(),
 				stake_delegation: <span class="self">Self</span>::get_stake_delegation(<span class="kw-2">&amp;</span>stake_map, <span class="kw-2">&amp;</span>mainchain_pub_key),
 			}
@@ -453,8 +453,8 @@
 
 	<span class="kw">fn </span>group_candidates_by_mc_pub_key(
 		candidates: Vec&lt;RegisteredCandidate&gt;,
-	) -&gt; HashMap&lt;MainchainPublicKey, Vec&lt;RegisteredCandidate&gt;&gt; {
-		candidates.into_iter().into_group_map_by(|c| c.mainchain_pub_key.clone())
+	) -&gt; HashMap&lt;StakePoolPublicKey, Vec&lt;RegisteredCandidate&gt;&gt; {
+		candidates.into_iter().into_group_map_by(|c| c.stake_pool_pub_key.clone())
 	}
 
 	<span class="kw">fn </span>make_registration_data(c: RegisteredCandidate) -&gt; RegistrationData {
@@ -483,14 +483,14 @@
 
 	<span class="kw">fn </span>get_stake_delegation(
 		stake_map: <span class="kw-2">&amp;</span>HashMap&lt;MainchainKeyHash, StakeDelegation&gt;,
-		mainchain_pub_key: <span class="kw-2">&amp;</span>MainchainPublicKey,
+		stake_pool_pub_key: <span class="kw-2">&amp;</span>StakePoolPublicKey,
 	) -&gt; <span class="prelude-ty">Option</span>&lt;StakeDelegation&gt; {
 		<span class="kw">if </span>stake_map.is_empty() {
 			<span class="prelude-val">None
 		</span>} <span class="kw">else </span>{
 			<span class="prelude-val">Some</span>(
 				stake_map
-					.get(<span class="kw-2">&amp;</span>MainchainKeyHash::from_vkey(<span class="kw-2">&amp;</span>mainchain_pub_key.<span class="number">0</span>))
+					.get(<span class="kw-2">&amp;</span>MainchainKeyHash::from_vkey(<span class="kw-2">&amp;</span>stake_pool_pub_key.<span class="number">0</span>))
 					.cloned()
 					.unwrap_or(StakeDelegation(<span class="number">0</span>)),
 			)
@@ -515,7 +515,7 @@
 					grandpa_pub_key,
 				} = c.datum;
 				<span class="prelude-val">Ok</span>(RegisteredCandidate {
-					mainchain_pub_key: stake_ownership.pub_key,
+					stake_pool_pub_key: stake_ownership.pub_key,
 					mainchain_signature: stake_ownership.signature,
 					<span class="comment">// For now we use the same key for both cross chain and sidechain actions
 					</span>cross_chain_pub_key: CrossChainPublicKey(sidechain_pub_key.<span class="number">0</span>.clone()),

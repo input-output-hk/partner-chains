@@ -31,10 +31,10 @@
 <a href="#31" id="31">31</a>
 <a href="#32" id="32">32</a>
 <a href="#33" id="33">33</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>ed25519_zebra::ed25519;
-<span class="kw">use </span>plutus::to_datum_cbor_bytes;
+</pre></div><pre class="rust"><code><span class="kw">use </span>plutus::to_datum_cbor_bytes;
 <span class="kw">use </span>plutus::ToDatum;
 <span class="kw">use </span>secp256k1::{ecdsa::Signature, Message, PublicKey, SecretKey};
+<span class="kw">use </span>sidechain_domain::{MainchainSignature, StakePoolPublicKey};
 <span class="kw">use </span>sp_io::hashing::blake2_256;
 
 <span class="kw">pub fn </span>hash&lt;T: ToDatum&gt;(msg: T) -&gt; [u8; <span class="number">32</span>] {
@@ -55,13 +55,13 @@
 	sc_public_key_and_signature(key, hashed_msg)
 }
 
-<span class="kw">pub fn </span>mainchain_public_key_and_signature&lt;T: ToDatum&gt;(
+<span class="kw">pub fn </span>cardano_spo_public_key_and_signature&lt;T: ToDatum&gt;(
 	key: ed25519_zebra::SigningKey,
 	datum_msg: T,
-) -&gt; (ed25519_zebra::VerificationKey, ed25519::Signature) {
+) -&gt; (StakePoolPublicKey, MainchainSignature) {
 	<span class="kw">let </span>message = to_datum_cbor_bytes(datum_msg);
-	<span class="kw">let </span>signature = key.sign(<span class="kw-2">&amp;</span>message);
-	<span class="kw">let </span>public = ed25519_zebra::VerificationKey::from(<span class="kw-2">&amp;</span>key);
+	<span class="kw">let </span>signature = MainchainSignature(key.sign(<span class="kw-2">&amp;</span>message).into());
+	<span class="kw">let </span>public = StakePoolPublicKey(ed25519_zebra::VerificationKey::from(<span class="kw-2">&amp;</span>key).into());
 	(public, signature)
 }
 </code></pre></div></section></main></body></html>

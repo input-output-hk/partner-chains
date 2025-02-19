@@ -122,8 +122,9 @@
 <a href="#122" id="122">122</a>
 <a href="#123" id="123">123</a>
 <a href="#124" id="124">124</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::key_params::{MainchainSigningKeyParam, SidechainSigningKeyParam};
-<span class="kw">use </span><span class="kw">crate</span>::signing::{mainchain_public_key_and_signature, sc_public_key_and_signature_for_datum};
+<a href="#125" id="125">125</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::key_params::{SidechainSigningKeyParam, StakePoolSigningKeyParam};
+<span class="kw">use </span><span class="kw">crate</span>::signing::{cardano_spo_public_key_and_signature, sc_public_key_and_signature_for_datum};
 <span class="kw">use </span>clap::Parser;
 <span class="kw">use </span>plutus::{Datum, ToDatum};
 <span class="kw">use </span>plutus_datum_derive::<span class="kw-2">*</span>;
@@ -131,7 +132,7 @@
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>serde_json;
 <span class="kw">use </span>sidechain_domain::{
-	MainchainPublicKey, MainchainSignature, SidechainPublicKey, SidechainSignature, UtxoId,
+	MainchainSignature, SidechainPublicKey, SidechainSignature, StakePoolPublicKey, UtxoId,
 };
 <span class="kw">use </span>std::fmt::{Display, Formatter};
 
@@ -140,8 +141,9 @@
 </span><span class="kw">pub struct </span>RegistrationSignaturesCmd {
 	<span class="attr">#[arg(long)]
 	</span><span class="kw">pub </span>genesis_utxo: UtxoId,
-	<span class="attr">#[arg(long)]
-	</span><span class="kw">pub </span>mainchain_signing_key: MainchainSigningKeyParam,
+	<span class="doccomment">/// Bytes of the Cardano Stake Pool Signing Key. Bytes of 'cbor' field of a Cardano key file content, after dropping the '5820' prefix.
+	</span><span class="attr">#[arg(long)]
+	</span><span class="kw">pub </span>mainchain_signing_key: StakePoolSigningKeyParam,
 	<span class="attr">#[arg(long)]
 	</span><span class="kw">pub </span>sidechain_signing_key: SidechainSigningKeyParam,
 	<span class="attr">#[arg(long)]
@@ -168,7 +170,7 @@
 
 <span class="attr">#[derive(Clone, Debug, Serialize)]
 </span><span class="kw">pub struct </span>RegistrationCmdOutput {
-	<span class="kw">pub </span>spo_public_key: MainchainPublicKey,
+	<span class="kw">pub </span>spo_public_key: StakePoolPublicKey,
 	<span class="kw">pub </span>spo_signature: MainchainSignature,
 	<span class="kw">pub </span>sidechain_public_key: SidechainPublicKey,
 	<span class="kw">pub </span>sidechain_signature: SidechainSignature,
@@ -208,13 +210,13 @@
 		mainchain_key: ed25519_zebra::SigningKey,
 		sidechain_key: SecretKey,
 	) -&gt; RegistrationCmdOutput {
-		<span class="kw">let </span>(mc_pub_key, mc_signature) =
-			mainchain_public_key_and_signature(mainchain_key, <span class="self">self</span>.clone());
+		<span class="kw">let </span>(spo_public_key, spo_signature) =
+			cardano_spo_public_key_and_signature(mainchain_key, <span class="self">self</span>.clone());
 		<span class="kw">let </span>(sc_pub_key, sc_signature) =
 			sc_public_key_and_signature_for_datum(sidechain_key, <span class="self">self</span>.clone());
 		RegistrationCmdOutput {
-			spo_public_key: MainchainPublicKey(mc_pub_key.into()),
-			spo_signature: MainchainSignature(mc_signature.to_bytes()),
+			spo_public_key,
+			spo_signature,
 			sidechain_public_key: SidechainPublicKey(sc_pub_key.serialize().to_vec()),
 			sidechain_signature: SidechainSignature(sc_signature.serialize_compact().to_vec()),
 		}

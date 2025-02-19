@@ -152,7 +152,7 @@
 		<span class="kw">let </span>best_block = <span class="self">self</span>.client.info().best_hash;
 
 		<span class="kw">let </span>registration_data_validation =
-			|pub_key: <span class="kw-2">&amp;</span>MainchainPublicKey, registration_data: <span class="kw-2">&amp;</span>RegistrationData| {
+			|pub_key: <span class="kw-2">&amp;</span>StakePoolPublicKey, registration_data: <span class="kw-2">&amp;</span>RegistrationData| {
 				api.validate_registered_candidate_data(best_block, pub_key, registration_data)
 			};
 		<span class="kw">let </span>stake_validation = |stake_delegation: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;StakeDelegation&gt;| {
@@ -185,7 +185,7 @@
 </span><span class="kw">fn </span>get_registrations_response_map(
 	candidates: Vec&lt;CandidateRegistrations&gt;,
 	validate_registration_data: <span class="kw">impl </span>Fn(
-		<span class="kw-2">&amp;</span>MainchainPublicKey,
+		<span class="kw-2">&amp;</span>StakePoolPublicKey,
 		<span class="kw-2">&amp;</span>RegistrationData,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;RegistrationDataError&gt;, sp_api::ApiError&gt;,
 	validate_stake: <span class="kw">impl </span>Fn(<span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;StakeDelegation&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;StakeError&gt;, sp_api::ApiError&gt;,

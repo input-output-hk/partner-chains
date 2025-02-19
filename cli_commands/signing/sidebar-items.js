@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["hash","mainchain_public_key_and_signature","sc_public_key_and_signature","sc_public_key_and_signature_for_datum"]};
+window.SIDEBAR_ITEMS = {"fn":["cardano_spo_public_key_and_signature","hash","sc_public_key_and_signature","sc_public_key_and_signature_for_datum"]};

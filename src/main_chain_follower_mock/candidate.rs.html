@@ -291,7 +291,7 @@
 
 <span class="kw">impl </span>From&lt;MockRegistration&gt; <span class="kw">for </span>CandidateRegistrations {
 	<span class="kw">fn </span>from(mock: MockRegistration) -&gt; <span class="self">Self </span>{
-		<span class="kw">let </span>mainchain_pub_key = MainchainPublicKey(mock.mainchain_pub_key.<span class="number">0</span>.try_into().expect(
+		<span class="kw">let </span>stake_pool_public_key = StakePoolPublicKey(mock.mainchain_pub_key.<span class="number">0</span>.try_into().expect(
 			<span class="string">"Invalid mock configuration. 'mainchain_pub_key' public key should be 32 bytes."</span>,
 		));
 		<span class="kw">let </span>registrations = <span class="macro">vec!</span>[RegistrationData {
@@ -320,7 +320,7 @@
 			grandpa_pub_key: GrandpaPublicKey(mock.grandpa_pub_key.<span class="number">0</span>),
 		}];
 		<span class="kw">let </span>stake_delegation = <span class="prelude-val">Some</span>(StakeDelegation(<span class="number">333</span>));
-		CandidateRegistrations { mainchain_pub_key, registrations, stake_delegation }
+		CandidateRegistrations { stake_pool_public_key, registrations, stake_delegation }
 	}
 }
 

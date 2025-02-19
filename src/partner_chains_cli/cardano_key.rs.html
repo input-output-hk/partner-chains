@@ -78,12 +78,13 @@
 <a href="#78" id="78">78</a>
 <a href="#79" id="79">79</a>
 <a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::IOContext;
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>partner_chains_cardano_offchain::cardano_keys::{
 	CardanoKeyFileContent, CardanoPaymentSigningKey,
 };
-<span class="kw">use </span>sidechain_domain::MainchainPublicKey;
+<span class="kw">use </span>sidechain_domain::StakePoolPublicKey;
 
 <span class="kw">fn </span>parse_json_key_file(
 	path: <span class="kw-2">&amp;</span>str,
@@ -105,23 +106,24 @@
 		.map_err(|err| <span class="macro">anyhow!</span>(<span class="string">"Failed to parse Cardano Payment Signing key file {path}: '{err}'"</span>))
 }
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_mc_payment_verification_key_from_file(
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_payment_verification_key_bytes_from_file(
 	path: <span class="kw-2">&amp;</span>str,
 	context: <span class="kw-2">&amp;</span><span class="kw">impl </span>IOContext,
-) -&gt; anyhow::Result&lt;MainchainPublicKey&gt; {
+) -&gt; anyhow::Result&lt;[u8; <span class="number">32</span>]&gt; {
 	<span class="kw">let </span>key_file = parse_json_key_file(path, context)<span class="question-mark">?</span>;
 	<span class="kw">let </span>key_type = key_file.r#type.clone();
 	<span class="kw">if </span>key_type == <span class="string">"PaymentExtendedVerificationKeyShelley_ed25519_bip32" </span>{
 		<span class="kw">let </span>key_bytes = key_file
 			.raw_key_bytes::&lt;<span class="number">64</span>&gt;()
 			.map_err(|e| <span class="macro">anyhow!</span>(<span class="string">"Failed to parse key bytes in {path}. {e}"</span>))<span class="question-mark">?</span>;
-		<span class="kw">let </span>prefix: [u8; <span class="number">32</span>] = key_bytes[<span class="number">0</span>..<span class="number">32</span>].try_into().unwrap();
-		<span class="prelude-val">Ok</span>(MainchainPublicKey(prefix))
+		<span class="kw">let </span>prefix: [u8; <span class="number">32</span>] =
+			key_bytes[<span class="number">0</span>..<span class="number">32</span>].try_into().expect(<span class="string">"[0..32] of [u8; 64] has to fit [u8; 32]"</span>);
+		<span class="prelude-val">Ok</span>(prefix)
 	} <span class="kw">else if </span>key_type == <span class="string">"PaymentVerificationKeyShelley_ed25519" </span>{
 		<span class="kw">let </span>key_bytes = key_file
 			.raw_key_bytes()
 			.map_err(|e| <span class="macro">anyhow!</span>(<span class="string">"Failed to parse key bytes in {path}. {e}"</span>))<span class="question-mark">?</span>;
-		<span class="prelude-val">Ok</span>(MainchainPublicKey(key_bytes))
+		<span class="prelude-val">Ok</span>(key_bytes)
 	} <span class="kw">else </span>{
 		<span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(
 			<span class="string">"Unexpected key type '{key_type}' in {path}. Expected a Payment Verification Key."
@@ -144,14 +146,14 @@
 	}
 }
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_mc_staking_verification_key_from_file(
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_stake_pool_verification_key_from_file(
 	path: <span class="kw-2">&amp;</span>str,
 	context: <span class="kw-2">&amp;</span><span class="kw">impl </span>IOContext,
-) -&gt; anyhow::Result&lt;MainchainPublicKey&gt; {
+) -&gt; anyhow::Result&lt;StakePoolPublicKey&gt; {
 	<span class="kw">let </span>key_file = parse_json_key_file(path, context)<span class="question-mark">?</span>;
 	<span class="kw">let </span>key_type = key_file.r#type.clone();
 	<span class="kw">if </span>key_type == <span class="string">"StakePoolVerificationKey_ed25519" </span>{
-		<span class="prelude-val">Ok</span>(MainchainPublicKey(
+		<span class="prelude-val">Ok</span>(StakePoolPublicKey(
 			key_file.raw_key_bytes().map_err(|e| <span class="macro">anyhow!</span>(<span class="string">"Failed to parse {path}: '{e}'"</span>))<span class="question-mark">?</span>,
 		))
 	} <span class="kw">else </span>{

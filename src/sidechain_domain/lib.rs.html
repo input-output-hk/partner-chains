@@ -854,6 +854,29 @@
 <a href="#854" id="854">854</a>
 <a href="#855" id="855">855</a>
 <a href="#856" id="856">856</a>
+<a href="#857" id="857">857</a>
+<a href="#858" id="858">858</a>
+<a href="#859" id="859">859</a>
+<a href="#860" id="860">860</a>
+<a href="#861" id="861">861</a>
+<a href="#862" id="862">862</a>
+<a href="#863" id="863">863</a>
+<a href="#864" id="864">864</a>
+<a href="#865" id="865">865</a>
+<a href="#866" id="866">866</a>
+<a href="#867" id="867">867</a>
+<a href="#868" id="868">868</a>
+<a href="#869" id="869">869</a>
+<a href="#870" id="870">870</a>
+<a href="#871" id="871">871</a>
+<a href="#872" id="872">872</a>
+<a href="#873" id="873">873</a>
+<a href="#874" id="874">874</a>
+<a href="#875" id="875">875</a>
+<a href="#876" id="876">876</a>
+<a href="#877" id="877">877</a>
+<a href="#878" id="878">878</a>
+<a href="#879" id="879">879</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -1106,46 +1129,46 @@
 	}
 }
 
-<span class="kw">const </span>MAINCHAIN_PUBLIC_KEY_LEN: usize = <span class="number">32</span>;
+<span class="kw">const </span>STAKE_POOL_PUBLIC_KEY_LEN: usize = <span class="number">32</span>;
 
 <span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
 #[cfg_attr(feature = <span class="string">"std"</span>, byte_string(to_hex_string))]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
-</span><span class="kw">pub struct </span>MainchainPublicKey(<span class="kw">pub </span>[u8; MAINCHAIN_PUBLIC_KEY_LEN]);
+</span><span class="kw">pub struct </span>StakePoolPublicKey(<span class="kw">pub </span>[u8; STAKE_POOL_PUBLIC_KEY_LEN]);
 
-<span class="kw">const </span>MAINCHAIN_PRIVATE_KEY_LEN: usize = <span class="number">32</span>;
-
-<span class="kw">impl </span>MainchainPublicKey {
+<span class="kw">impl </span>StakePoolPublicKey {
 	<span class="kw">pub fn </span>hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; MainchainKeyHash {
 		MainchainKeyHash::from_vkey(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>)
 	}
 }
 
-<span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
-#[byte_string(hex_serialize, hex_deserialize)]
-</span><span class="kw">pub struct </span>MainchainPrivateKey(<span class="kw">pub </span>[u8; MAINCHAIN_PRIVATE_KEY_LEN]);
-
-<span class="kw">impl </span>core::fmt::Debug <span class="kw">for </span>MainchainPrivateKey {
-	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; core::fmt::Result {
-		<span class="macro">write!</span>(f, <span class="string">"***"</span>)
-	}
-}
-
-<span class="kw">impl </span>TryFrom&lt;Vec&lt;u8&gt;&gt; <span class="kw">for </span>MainchainPublicKey {
+<span class="kw">impl </span>TryFrom&lt;Vec&lt;u8&gt;&gt; <span class="kw">for </span>StakePoolPublicKey {
 	<span class="kw">type </span>Error = <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str;
 
 	<span class="kw">fn </span>try_from(value: Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
 		&lt;[u8; <span class="number">32</span>]&gt;::try_from(value)
 			.map_err(|<span class="kw">_</span>| <span class="string">"Mainchain public key must be 32 bytes long"</span>)
-			.map(MainchainPublicKey)
+			.map(StakePoolPublicKey)
+	}
+}
+
+<span class="kw">const </span>STAKE_PUBLIC_KEY_LEN: usize = <span class="number">32</span>;
+
+<span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
+#[cfg_attr(feature = <span class="string">"std"</span>, byte_string(to_hex_string))]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
+</span><span class="kw">pub struct </span>StakePublicKey(<span class="kw">pub </span>[u8; STAKE_PUBLIC_KEY_LEN]);
+
+<span class="kw">impl </span>StakePublicKey {
+	<span class="kw">pub fn </span>hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; MainchainKeyHash {
+		MainchainKeyHash(blake2b(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>))
 	}
 }
 
 <span class="kw">const </span>MAINCHAIN_KEY_HASH_LEN: usize = <span class="number">28</span>;
 
 <span class="doccomment">/// blake2b_224 hash of a Cardano Verification (Public) Key.
-/// It can be a hash of Payment Verification, Payment Extended Verification or Staking Verification Key.
-/// Way to get it: cardano-cli latest address key-hash --payment-verification-key-file FILE
+/// It can be a hash of Payment Verification, Payment Extended Verification, Stake Pool Verification Key or Staking Verification Key.
 </span><span class="attr">#[derive(
 	Clone,
 	Copy,
@@ -1183,6 +1206,7 @@
 </span><span class="kw">pub const </span>MAINCHAIN_SIGNATURE_LEN: usize = <span class="number">64</span>;
 
 <span class="attr">#[derive(Clone, TypeInfo, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = <span class="string">"std"</span>, byte_string(to_hex_string))]
 #[byte_string(debug, hex_serialize, decode_hex)]
 </span><span class="doccomment">/// EDDSA signature
 ///
@@ -1216,7 +1240,7 @@
 }
 
 <span class="kw">impl </span>MainchainSignature {
-	<span class="kw">pub fn </span>verify(<span class="kw-2">&amp;</span><span class="self">self</span>, public_key: <span class="kw-2">&amp;</span>MainchainPublicKey, signed_message: <span class="kw-2">&amp;</span>[u8]) -&gt; bool {
+	<span class="kw">pub fn </span>verify(<span class="kw-2">&amp;</span><span class="self">self</span>, public_key: <span class="kw-2">&amp;</span>StakePoolPublicKey, signed_message: <span class="kw-2">&amp;</span>[u8]) -&gt; bool {
 		<span class="kw">let </span>mainchain_signature = ed25519::Signature::from(<span class="self">self</span>.<span class="number">0</span>);
 
 		sp_io::crypto::ed25519_verify(
@@ -1224,6 +1248,27 @@
 			signed_message,
 			<span class="kw-2">&amp;</span>ed25519::Public::from(public_key.<span class="number">0</span>),
 		)
+	}
+}
+
+<span class="doccomment">/// EDDSA signature, 64 bytes.
+</span><span class="kw">pub const </span>STAKE_KEY_SIGNATURE_LEN: usize = <span class="number">64</span>;
+
+<span class="attr">#[derive(Clone, Encode, Decode, PartialEq, Eq, Hash, TypeInfo)]
+#[byte_string(debug, hex_serialize, decode_hex)]
+</span><span class="doccomment">/// EDDSA signature made with Stake Signing Key
+</span><span class="kw">pub struct </span>StakeKeySignature(<span class="kw">pub </span>[u8; STAKE_KEY_SIGNATURE_LEN]);
+
+<span class="kw">impl </span>From&lt;[u8; STAKE_KEY_SIGNATURE_LEN]&gt; <span class="kw">for </span>StakeKeySignature {
+	<span class="kw">fn </span>from(raw: [u8; STAKE_KEY_SIGNATURE_LEN]) -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>(raw)
+	}
+}
+
+<span class="kw">impl </span>StakeKeySignature {
+	<span class="kw">pub fn </span>verify(<span class="kw-2">&amp;</span><span class="self">self</span>, public_key: <span class="kw-2">&amp;</span>StakePublicKey, message: <span class="kw-2">&amp;</span>[u8]) -&gt; bool {
+		<span class="kw">let </span>signature = ed25519::Signature::from(<span class="self">self</span>.<span class="number">0</span>);
+		sp_io::crypto::ed25519_verify(<span class="kw-2">&amp;</span>signature, message, <span class="kw-2">&amp;</span>ed25519::Public::from(public_key.<span class="number">0</span>))
 	}
 }
 
@@ -1487,7 +1532,8 @@
 	<span class="doccomment">/// UTXO that is an input parameter to the registration transaction
 	</span><span class="kw">pub </span>registration_utxo: UtxoId,
 	<span class="kw">pub </span>sidechain_signature: SidechainSignature,
-	<span class="kw">pub </span>mainchain_signature: MainchainSignature,
+	<span class="doccomment">/// Stake Pool key signature
+	</span><span class="kw">pub </span>mainchain_signature: MainchainSignature,
 	<span class="kw">pub </span>cross_chain_signature: CrossChainSignature,
 	<span class="kw">pub </span>sidechain_pub_key: SidechainPublicKey,
 	<span class="kw">pub </span>cross_chain_pub_key: CrossChainPublicKey,
@@ -1501,7 +1547,7 @@
 </span><span class="attr">#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(Serialize))]
 </span><span class="kw">pub struct </span>CandidateRegistrations {
-	<span class="kw">pub </span>mainchain_pub_key: MainchainPublicKey,
+	<span class="kw">pub </span>stake_pool_public_key: StakePoolPublicKey,
 	<span class="doccomment">/// **List of Registrations** done by the **Authority Candidate**
 	</span><span class="kw">pub </span>registrations: Vec&lt;RegistrationData&gt;,
 	<span class="kw">pub </span>stake_delegation: <span class="prelude-ty">Option</span>&lt;StakeDelegation&gt;,
@@ -1509,15 +1555,15 @@
 
 <span class="kw">impl </span>CandidateRegistrations {
 	<span class="kw">pub fn </span>new(
-		mainchain_pub_key: MainchainPublicKey,
+		stake_pool_public_key: StakePoolPublicKey,
 		stake_delegation: <span class="prelude-ty">Option</span>&lt;StakeDelegation&gt;,
 		registrations: Vec&lt;RegistrationData&gt;,
 	) -&gt; <span class="self">Self </span>{
-		<span class="self">Self </span>{ mainchain_pub_key, registrations, stake_delegation }
+		<span class="self">Self </span>{ stake_pool_public_key, registrations, stake_delegation }
 	}
 
-	<span class="kw">pub fn </span>mainchain_pub_key(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>MainchainPublicKey {
-		<span class="kw-2">&amp;</span><span class="self">self</span>.mainchain_pub_key
+	<span class="kw">pub fn </span>mainchain_pub_key(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>StakePoolPublicKey {
+		<span class="kw-2">&amp;</span><span class="self">self</span>.stake_pool_public_key
 	}
 
 	<span class="kw">pub fn </span>registrations(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[RegistrationData] {
@@ -1639,7 +1685,7 @@
 /// The other variant, TokenBasedStaking, is not supported
 </span><span class="attr">#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 </span><span class="kw">pub struct </span>AdaBasedStaking {
-	<span class="kw">pub </span>pub_key: MainchainPublicKey,
+	<span class="kw">pub </span>pub_key: StakePoolPublicKey,
 	<span class="kw">pub </span>signature: MainchainSignature,
 }
 

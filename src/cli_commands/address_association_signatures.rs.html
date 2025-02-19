@@ -100,9 +100,7 @@
 <a href="#100" id="100">100</a>
 <a href="#101" id="101">101</a>
 <a href="#102" id="102">102</a>
-<a href="#103" id="103">103</a>
-<a href="#104" id="104">104</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::key_params::MainchainSigningKeyParam;
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::key_params::StakeSigningKeyParam;
 <span class="kw">use </span>anyhow::Ok;
 <span class="kw">use </span>byte_string::ByteString;
 <span class="kw">use </span>clap::Parser;
@@ -124,9 +122,9 @@
 	<span class="doccomment">/// Partner Chain address to be associated with the Cardano address
 	</span><span class="attr">#[arg(long, value_parser=parse_pc_address::&lt;PartnerchainAddress&gt;)]
 	</span><span class="kw">pub </span>partnerchain_address: PartnerchainAddress,
-	<span class="doccomment">/// Cardano ECDSA signing key. Its public key will be associated with partnerchain_address.
+	<span class="doccomment">/// Cardano Stake Signing Key bytes in hex format. Its public key will be associated with partnerchain_address.
 	</span><span class="attr">#[arg(long)]
-	</span><span class="kw">pub </span>signing_key: MainchainSigningKeyParam,
+	</span><span class="kw">pub </span>signing_key: StakeSigningKeyParam,
 }
 
 <span class="kw">fn </span>parse_pc_address&lt;T: FromStr&gt;(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;T, String&gt; {
@@ -142,7 +140,7 @@
 		<span class="kw">let </span>output = <span class="macro">json!</span>({
 			<span class="string">"partnerchain_address"</span>: <span class="self">self</span>.partnerchain_address,
 			<span class="string">"signature"</span>: signature,
-			<span class="string">"mainchain_public_key"</span>: <span class="self">self</span>.signing_key.vkey()
+			<span class="string">"stake_public_key"</span>: <span class="self">self</span>.signing_key.vkey()
 
 		});
 		<span class="macro">println!</span>(<span class="string">"{}"</span>, serde_json::to_string_pretty(<span class="kw-2">&amp;</span>output)<span class="question-mark">?</span>);
@@ -151,7 +149,7 @@
 
 	<span class="kw">fn </span>sign(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ByteString {
 		<span class="kw">let </span>msg = AddressAssociationSignedMessage {
-			mainchain_public_key: <span class="self">self</span>.signing_key.vkey(),
+			stake_public_key: <span class="self">self</span>.signing_key.vkey(),
 			partnerchain_address: <span class="self">self</span>.partnerchain_address.clone(),
 			genesis_utxo: <span class="self">self</span>.genesis_utxo,
 		};
@@ -163,8 +161,6 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>test {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use </span><span class="kw">crate</span>::key_params::MainchainSigningKeyParam;
-	<span class="kw">use </span>ed25519_zebra::SigningKey;
 	<span class="kw">use </span>hex::FromHexError;
 	<span class="kw">use </span>hex_literal::hex;
 	<span class="kw">use </span>sidechain_domain::byte_string::ByteString;
@@ -194,10 +190,10 @@
 			partnerchain_address:
 				<span class="comment">// re-encoding of 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY (Alice)
 				</span>AccountId32(<span class="macro">hex!</span>(<span class="string">"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"</span>)),
-			signing_key: MainchainSigningKeyParam(SigningKey::from(<span class="macro">hex!</span>(
+			signing_key: StakeSigningKeyParam::from_str(
 				<span class="comment">// Private key of Alice (pubkey: 2bebcb7fbc74a6e0fd6e00a311698b047b7b659f0e047ff5349dbd984aefc52c)
 				</span><span class="string">"d75c630516c33a66b11b3444a70b65083aeb21353bd919cc5e3daa02c9732a84"
-			</span>))),
+			</span>).unwrap(),
 		};
 
 		<span class="macro">assert_eq!</span>(
