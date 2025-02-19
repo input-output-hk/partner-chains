@@ -33,11 +33,10 @@ impl CmdRun for Register2Cmd {
 			"  This command will use SPO cold signing key for signing the registration message.",
 		);
 
-		let mainchain_signing_key_path =
-			context.prompt("Path to mainchain signing key file", Some("cold.skey"));
-		let mainchain_signing_key =
-			get_mainchain_cold_skey(context, &mainchain_signing_key_path)
-				.inspect_err(|_| context.eprint("Unable to read mainchain signing key file"))?;
+		let stake_pool_signing_key_path =
+			context.prompt("Path to Stake Pool signing key file", Some("cold.skey"));
+		let mainchain_signing_key = get_stake_pool_cold_skey(context, &stake_pool_signing_key_path)
+			.inspect_err(|_| context.eprint("Unable to read Stake Pool signing key file"))?;
 
 		let registration_message = RegisterValidatorMessage {
 			genesis_utxo: self.genesis_utxo,
@@ -59,7 +58,7 @@ impl CmdRun for Register2Cmd {
 	}
 }
 
-fn get_mainchain_cold_skey<C: IOContext>(
+fn get_stake_pool_cold_skey<C: IOContext>(
 	context: &C,
 	keys_path: &str,
 ) -> Result<StakePoolSigningKeyParam, anyhow::Error> {
@@ -87,15 +86,15 @@ mod tests {
 	}
 
 	#[test]
-	fn invalid_mc_signing_key() {
+	fn invalid_stake_pool_signing_key() {
 		let mock_context = MockIOContext::new().with_expected_io(vec![
 			MockIO::Group(intro_msg_io()),
 			MockIO::prompt(
-				"Path to mainchain signing key file",
+				"Path to Stake Pool signing key file",
 				Some("cold.skey"),
 				"/invalid/cold.skey",
 			),
-			MockIO::eprint("Unable to read mainchain signing key file"),
+			MockIO::eprint("Unable to read Stake Pool signing key file"),
 		]);
 
 		let result = mock_register2_cmd().run(&mock_context);
@@ -111,7 +110,7 @@ mod tests {
 
 	fn prompt_mc_cold_key_path_io() -> Vec<MockIO> {
 		vec![MockIO::prompt(
-			"Path to mainchain signing key file",
+			"Path to Stake Pool signing key file",
 			Some("cold.skey"),
 			"/path/to/cold.skey",
 		)]
