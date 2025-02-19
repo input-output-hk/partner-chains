@@ -23,7 +23,7 @@ pub struct RegisterValidatorSignedMessage {
 
 #[derive(Clone, Debug, Encode, Decode, PartialEq)]
 pub struct CandidateWithStake<TAccountId, TAccountKeys> {
-	pub main_chain_pub_key: StakePoolPublicKey,
+	pub stake_pool_pub_key: StakePoolPublicKey,
 	/// Amount of ADA staked/locked by the Authority Candidate
 	pub stake_delegation: StakeDelegation,
 	pub account_id: TAccountId,
@@ -102,13 +102,13 @@ where
 	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
 {
 	let stake_delegation = validate_stake(candidate_registrations.stake_delegation).ok()?;
-	let main_chain_pub_key = candidate_registrations.stake_pool_public_key;
+	let stake_pool_pub_key = candidate_registrations.stake_pool_public_key;
 
 	let ((account_id, account_keys), _) = candidate_registrations
 		.registrations
 		.into_iter()
 		.filter_map(|registration_data| {
-			match validate_registration_data(&main_chain_pub_key, &registration_data, genesis_utxo)
+			match validate_registration_data(&stake_pool_pub_key, &registration_data, genesis_utxo)
 			{
 				Ok(candidate) => Some((candidate, registration_data.utxo_info)),
 				Err(_) => None,
@@ -121,7 +121,7 @@ where
 		account_id: account_id.into(),
 		account_keys: account_keys.into(),
 		stake_delegation,
-		main_chain_pub_key,
+		stake_pool_pub_key,
 	})
 }
 
