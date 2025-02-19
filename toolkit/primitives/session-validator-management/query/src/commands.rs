@@ -16,10 +16,10 @@ pub async fn cli_get_ariadne_parameters(
 pub async fn cli_get_registration_status(
 	query: impl SessionValidatorManagementQueryApi,
 	mc_epoch_number: McEpochNumber,
-	mainchain_pub_key: StakePoolPublicKey,
+	stake_pool_public_key: StakePoolPublicKey,
 ) -> Result<String, String> {
 	let registrations = query
-		.get_registrations(mc_epoch_number, mainchain_pub_key.clone())
+		.get_registrations(mc_epoch_number, stake_pool_public_key.clone())
 		.await
 		.map_err(|err| err.to_string())?;
 	let registrations_json = serde_json::to_value(registrations).map_err(|err| err.to_string())?;

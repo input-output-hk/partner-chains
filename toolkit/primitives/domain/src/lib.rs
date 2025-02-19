@@ -653,6 +653,7 @@ pub struct RegistrationData {
 	/// UTXO that is an input parameter to the registration transaction
 	pub registration_utxo: UtxoId,
 	pub sidechain_signature: SidechainSignature,
+	/// Stake Pool key signature
 	pub mainchain_signature: MainchainSignature,
 	pub cross_chain_signature: CrossChainSignature,
 	pub sidechain_pub_key: SidechainPublicKey,
@@ -667,7 +668,7 @@ pub struct RegistrationData {
 #[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct CandidateRegistrations {
-	pub mainchain_pub_key: StakePoolPublicKey,
+	pub stake_pool_public_key: StakePoolPublicKey,
 	/// **List of Registrations** done by the **Authority Candidate**
 	pub registrations: Vec<RegistrationData>,
 	pub stake_delegation: Option<StakeDelegation>,
@@ -675,15 +676,15 @@ pub struct CandidateRegistrations {
 
 impl CandidateRegistrations {
 	pub fn new(
-		mainchain_pub_key: StakePoolPublicKey,
+		stake_pool_public_key: StakePoolPublicKey,
 		stake_delegation: Option<StakeDelegation>,
 		registrations: Vec<RegistrationData>,
 	) -> Self {
-		Self { mainchain_pub_key, registrations, stake_delegation }
+		Self { stake_pool_public_key, registrations, stake_delegation }
 	}
 
 	pub fn mainchain_pub_key(&self) -> &StakePoolPublicKey {
-		&self.mainchain_pub_key
+		&self.stake_pool_public_key
 	}
 
 	pub fn registrations(&self) -> &[RegistrationData] {

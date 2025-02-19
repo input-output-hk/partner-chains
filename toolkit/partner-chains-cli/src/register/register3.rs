@@ -106,7 +106,7 @@ fn prepare_mc_follower_env<C: IOContext>(context: &C) -> anyhow::Result<()> {
 fn show_registration_status(
 	context: &impl IOContext,
 	mc_epoch_number: McEpochNumber,
-	mc_public_key: StakePoolPublicKey,
+	stake_pool_public_key: StakePoolPublicKey,
 ) -> Result<(), anyhow::Error> {
 	let temp_dir = context.new_tmp_dir();
 	let temp_dir_path = temp_dir
@@ -116,7 +116,7 @@ fn show_registration_status(
 	let node_executable = context.current_executable()?;
 	let command = format!(
 		"{} registration-status --mainchain-pub-key {} --mc-epoch-number {} --chain chain-spec.json --base-path {temp_dir_path}",
-		node_executable, mc_public_key.to_hex_string(), mc_epoch_number
+		node_executable, stake_pool_public_key.to_hex_string(), mc_epoch_number
 	);
 	let output = context.run_command(&command)?;
 	context.print("Registration status:");

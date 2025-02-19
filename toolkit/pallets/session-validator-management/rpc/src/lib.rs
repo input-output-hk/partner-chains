@@ -24,7 +24,7 @@ pub trait SessionValidatorManagementRpcApi {
 	async fn get_registrations(
 		&self,
 		mc_epoch_number: McEpochNumber,
-		mc_public_key: StakePoolPublicKey,
+		#[argument(rename = "mc_public_key")] stake_pool_public_key: StakePoolPublicKey,
 	) -> RpcResult<Vec<CandidateRegistrationEntry>>;
 
 	/// Regardless of `epoch_number` value, all the candidates data validation is done based on the validation api from the latest sidechain block.
@@ -52,10 +52,10 @@ where
 	async fn get_registrations(
 		&self,
 		mc_epoch_number: McEpochNumber,
-		mc_public_key: StakePoolPublicKey,
+		stake_pool_public_key: StakePoolPublicKey,
 	) -> RpcResult<Vec<CandidateRegistrationEntry>> {
 		self.query_api
-			.get_registrations(mc_epoch_number, mc_public_key)
+			.get_registrations(mc_epoch_number, stake_pool_public_key)
 			.await
 			.map_err(error_object_from_str)
 	}

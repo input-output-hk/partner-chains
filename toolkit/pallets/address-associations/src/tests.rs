@@ -11,7 +11,7 @@ use sp_runtime::AccountId32;
 fn saves_new_address_association() {
 	new_test_ext().execute_with(|| {
 			// Alice
-			let mc_pub_key = StakePublicKey(hex!(
+			let stake_public_key = StakePublicKey(hex!(
 				"2bebcb7fbc74a6e0fd6e00a311698b047b7b659f0e047ff5349dbd984aefc52c"
 			));
 			let mc_signature = hex!("1aa8c1b363a207ddadf0c6242a0632f5a557690a327d0245f9d473b983b3d8e1c95a3dd804cab41123c36ddbcb7137b8261c35d5c8ef04ce9d0f8d5c4b3ca607");
@@ -25,12 +25,12 @@ fn saves_new_address_association() {
 					OriginFor::<Test>::signed(AccountId32::new([1; 32])),
 					pc_address.clone(),
 					mc_signature.into(),
-					mc_pub_key.clone(),
+					stake_public_key.clone(),
 				)
 			);
 
 			assert_eq!(
-				Pallet::<Test>::get_partner_chain_address_for(&mc_pub_key),
+				Pallet::<Test>::get_partner_chain_address_for(&stake_public_key),
 				Some(pc_address)
 			);
 		})

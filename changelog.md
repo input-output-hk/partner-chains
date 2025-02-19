@@ -6,6 +6,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* Split MainchainPublicKey to StakePoolPublicKey and StakePublicKey. Some parameters names has been changed as well, so potentially compiliation of downstream projects could be broken.
 * Update polkadot-sdk to polkadot-stable2412-1.
 WARNING: Benchmarking command has been removed, because `frame-benchmarking-cli` crate became GPLv3 without any exception.
 * Made Cardano slot duration configurable with default of 1000ms. If your partner chain's main chain is Cardano
@@ -315,7 +316,7 @@ types instead of raw byte arrays
 
 ## Changed
 
-* ETCM-6517 - `sidechain_getRegistrations` changed to return only active and invalid registrations in `mainchainEpoch` for `StakePoolPublicKey`
+* ETCM-6517 - `sidechain_getRegistrations` changed to return only active and invalid registrations in `mainchainEpoch` for `mainchainPublicKey`
 * ETCM-6517 - `sidechain_getAriadneParameters` extended with `candidateRegistrations` response field
 * ETCM-5756 (update) - increased granularity of errors when retrieving the parameters
 * ETCM-6629 - moved `sidechain_getStatus` json RPC method to `sidechain-pallet`

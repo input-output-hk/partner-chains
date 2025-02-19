@@ -45,11 +45,11 @@ impl CmdRun for Register2Cmd {
 			registration_utxo: self.registration_utxo,
 		};
 
-		let (verification_key, mc_signature) =
+		let (verification_key, spo_signature) =
 			cardano_spo_public_key_and_signature(mainchain_signing_key.0, registration_message);
 
 		let spo_public_key = verification_key.to_hex_string();
-		let spo_signature = mc_signature.to_hex_string();
+		let spo_signature = spo_signature.to_hex_string();
 		let executable = context.current_executable()?;
 		context.print("To finish the registration process, run the following command on the machine with the partner chain dependencies running:\n");
 		context.print(&format!(

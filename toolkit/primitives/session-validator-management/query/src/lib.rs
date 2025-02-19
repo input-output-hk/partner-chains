@@ -37,7 +37,7 @@ pub trait SessionValidatorManagementQueryApi {
 	async fn get_registrations(
 		&self,
 		mc_epoch_number: McEpochNumber,
-		mc_public_key: StakePoolPublicKey,
+		stake_pool_public_key: StakePoolPublicKey,
 	) -> QueryResult<Vec<CandidateRegistrationEntry>>;
 
 	/// Regardless of `epoch_number` value, all the candidates data validation is done based on the validation api from the latest sidechain block.

@@ -28,11 +28,13 @@ pub struct CandidateRegistrationEntry {
 	pub sidechain_pub_key: String,
 	/// SS58 address derived from public key. ss58(blake2b32(sidechainPubKey))
 	pub sidechain_account_id: String,
+	/// Stake Pool public key
 	pub mainchain_pub_key: String,
 	pub cross_chain_pub_key: String,
 	pub aura_pub_key: String,
 	pub grandpa_pub_key: String,
 	pub sidechain_signature: String,
+	/// Signature made with Stake Pool key
 	pub mainchain_signature: String,
 	pub cross_chain_signature: String,
 	/// Data of Utxo that contained this registration"
@@ -50,7 +52,7 @@ pub type GetRegistrationsResponseMap = HashMap<String, Vec<CandidateRegistration
 impl CandidateRegistrationEntry {
 	pub fn new(
 		registration_data: RegistrationData,
-		mainchain_pub_key: StakePoolPublicKey,
+		stake_pool_public_key: StakePoolPublicKey,
 		stake_delegation: Option<StakeDelegation>,
 		invalid_reasons: Option<RegistrationDataError>,
 	) -> Self {
@@ -60,7 +62,7 @@ impl CandidateRegistrationEntry {
 				registration_data.sidechain_pub_key.clone(),
 			)
 			.unwrap_or("Invalid Sidechain Public Key. Could not decode...".into()),
-			mainchain_pub_key: to_hex(&mainchain_pub_key.0.clone(), false),
+			mainchain_pub_key: to_hex(&stake_pool_public_key.0.clone(), false),
 			cross_chain_pub_key: to_hex(&registration_data.cross_chain_pub_key.0, false),
 			aura_pub_key: to_hex(&registration_data.aura_pub_key.0, false),
 			grandpa_pub_key: to_hex(&registration_data.grandpa_pub_key.0, false),

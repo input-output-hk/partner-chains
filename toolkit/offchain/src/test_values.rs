@@ -23,7 +23,7 @@ pub(crate) fn payment_addr() -> Address {
 	Address::from_bech32(PAYMENT_ADDR).unwrap()
 }
 
-pub(crate) fn mainchain_pub_key() -> StakePoolPublicKey {
+pub(crate) fn stake_pool_pub_key() -> StakePoolPublicKey {
 	StakePoolPublicKey(hex!("bfbee74ab533f40979101057f96de62e95233f2a5216eb16b54106f09fd7350d"))
 }
 
