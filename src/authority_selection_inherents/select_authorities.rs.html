@@ -107,31 +107,18 @@
 <a href="#107" id="107">107</a>
 <a href="#108" id="108">108</a>
 <a href="#109" id="109">109</a>
-<a href="#110" id="110">110</a>
-<a href="#111" id="111">111</a>
-<a href="#112" id="112">112</a>
-<a href="#113" id="113">113</a>
-<a href="#114" id="114">114</a>
-<a href="#115" id="115">115</a>
-<a href="#116" id="116">116</a>
-<a href="#117" id="117">117</a>
-<a href="#118" id="118">118</a>
-<a href="#119" id="119">119</a>
-<a href="#120" id="120">120</a>
-<a href="#121" id="121">121</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Functionality related to selecting the validators from the valid candidates
 
 </span><span class="kw">use </span><span class="kw">crate</span>::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span><span class="kw">crate</span>::filter_invalid_candidates::{
 	filter_invalid_permissioned_candidates, filter_trustless_candidates_registrations, Candidate,
-	CandidateWithStake,
+	CandidateWithStake, PermissionedCandidate,
 };
-<span class="kw">use </span>frame_support::BoundedVec;
 <span class="kw">use </span>log::{info, warn};
 <span class="kw">use </span>plutus::<span class="kw-2">*</span>;
 <span class="kw">use </span>selection::{Weight, WeightedRandomSelectionConfig};
 <span class="kw">use </span>sidechain_domain::{DParameter, ScEpochNumber, UtxoId};
-<span class="kw">use </span>sp_core::{ecdsa, ed25519, sr25519, Get};
+<span class="kw">use </span>sp_core::{ecdsa, ed25519, sr25519};
 
 <span class="kw">type </span>CandidateWithWeight&lt;A, B&gt; = (Candidate&lt;A, B&gt;, Weight);
 
@@ -156,12 +143,11 @@
 </span><span class="kw">pub fn </span>select_authorities&lt;
 	TAccountId: Clone + Ord + TryFrom&lt;sidechain_domain::SidechainPublicKey&gt; + From&lt;ecdsa::Public&gt;,
 	TAccountKeys: Clone + From&lt;(sr25519::Public, ed25519::Public)&gt;,
-	MaxValidators: Get&lt;u32&gt;,
 &gt;(
 	genesis_utxo: UtxoId,
 	input: AuthoritySelectionInputs,
 	sidechain_epoch: ScEpochNumber,
-) -&gt; <span class="prelude-ty">Option</span>&lt;BoundedVec&lt;(TAccountId, TAccountKeys), MaxValidators&gt;&gt; {
+) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;Candidate&lt;TAccountId, TAccountKeys&gt;&gt;&gt; {
 	<span class="kw">let </span>valid_trustless_candidates = filter_trustless_candidates_registrations::&lt;
 		TAccountId,
 		TAccountKeys,
@@ -179,16 +165,15 @@
 		<span class="kw-2">&amp;</span>input.d_parameter,
 		<span class="kw-2">&amp;</span>valid_trustless_candidates,
 	));
-	candidates_with_weight.sort_by(|a, b| a.<span class="number">0</span>.account_id.cmp(<span class="kw-2">&amp;</span>b.<span class="number">0</span>.account_id));
+	candidates_with_weight.sort_by(|a, b| a.<span class="number">0</span>.account_id().cmp(<span class="kw-2">&amp;</span>b.<span class="number">0</span>.account_id()));
 
 	<span class="kw">let </span>random_seed =
 		selection::impls::seed_from_nonce_and_sc_epoch(<span class="kw-2">&amp;</span>input.epoch_nonce, <span class="kw-2">&amp;</span>sidechain_epoch);
 	<span class="kw">let </span>committee_size =
 		input.d_parameter.num_registered_candidates + input.d_parameter.num_permissioned_candidates;
-	<span class="kw">if let </span><span class="prelude-val">Some</span>(validators) =
-		weighted_selection(candidates_with_weight, committee_size, random_seed)
+	<span class="kw">if let </span><span class="prelude-val">Some</span>(validators) = (WeightedRandomSelectionConfig { size: committee_size }
+		.select_authorities(candidates_with_weight, random_seed))
 	{
-		<span class="kw">let </span>validators = BoundedVec::truncate_from(validators);
 		<span class="macro">info!</span>(<span class="string">"💼 Selected committee of {} seats for epoch {} from {} permissioned and {} registered candidates"</span>, validators.len(), sidechain_epoch, valid_permissioned_candidates.len(), valid_trustless_candidates.len());
 		<span class="prelude-val">Some</span>(validators)
 	} <span class="kw">else </span>{
@@ -209,12 +194,14 @@
 	</span>};
 	trustless_candidates
 		.iter()
-		.map(|c| (c.candidate.clone(), u128::from(c.stake_delegation.<span class="number">0</span>) * weight_factor))
+		.map(|c| {
+			(Candidate::Registered(c.clone()), u128::from(c.stake_delegation.<span class="number">0</span>) * weight_factor)
+		})
 		.collect()
 }
 
 <span class="kw">fn </span>permissioned_candidates_with_weights&lt;A: Clone, B: Clone&gt;(
-	permissioned_candidates: <span class="kw-2">&amp;</span>[Candidate&lt;A, B&gt;],
+	permissioned_candidates: <span class="kw-2">&amp;</span>[PermissionedCandidate&lt;A, B&gt;],
 	d_parameter: <span class="kw-2">&amp;</span>DParameter,
 	valid_trustless_candidates: <span class="kw-2">&amp;</span>[CandidateWithStake&lt;A, B&gt;],
 ) -&gt; Vec&lt;CandidateWithWeight&lt;A, B&gt;&gt; {
@@ -224,20 +211,9 @@
 	} <span class="kw">else </span>{
 		<span class="number">1 </span><span class="comment">// if there are no trustless candidates, permissioned candidates should be selected with equal weight
 	</span>};
-	permissioned_candidates.iter().map(|c| (c.clone(), weight)).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
-}
-
-<span class="kw">fn </span>weighted_selection&lt;TAccountId: Clone + Ord, TAccountKeys: Clone&gt;(
-	candidates: Vec&lt;CandidateWithWeight&lt;TAccountId, TAccountKeys&gt;&gt;,
-	size: u16,
-	random_seed: [u8; <span class="number">32</span>],
-) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;(TAccountId, TAccountKeys)&gt;&gt; {
-	<span class="prelude-val">Some</span>(
-		WeightedRandomSelectionConfig { size }
-			.select_authorities(candidates, random_seed)<span class="question-mark">?
-			</span>.into_iter()
-			.map(|c| (c.account_id, c.account_keys))
-			.collect(),
-	)
+	permissioned_candidates
+		.iter()
+		.map(|c| (Candidate::Permissioned(c.clone()), weight))
+		.collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
 }
 </code></pre></div></section></main></body></html>

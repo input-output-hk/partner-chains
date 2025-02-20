@@ -577,6 +577,30 @@
 <a href="#577" id="577">577</a>
 <a href="#578" id="578">578</a>
 <a href="#579" id="579">579</a>
+<a href="#580" id="580">580</a>
+<a href="#581" id="581">581</a>
+<a href="#582" id="582">582</a>
+<a href="#583" id="583">583</a>
+<a href="#584" id="584">584</a>
+<a href="#585" id="585">585</a>
+<a href="#586" id="586">586</a>
+<a href="#587" id="587">587</a>
+<a href="#588" id="588">588</a>
+<a href="#589" id="589">589</a>
+<a href="#590" id="590">590</a>
+<a href="#591" id="591">591</a>
+<a href="#592" id="592">592</a>
+<a href="#593" id="593">593</a>
+<a href="#594" id="594">594</a>
+<a href="#595" id="595">595</a>
+<a href="#596" id="596">596</a>
+<a href="#597" id="597">597</a>
+<a href="#598" id="598">598</a>
+<a href="#599" id="599">599</a>
+<a href="#600" id="600">600</a>
+<a href="#601" id="601">601</a>
+<a href="#602" id="602">602</a>
+<a href="#603" id="603">603</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Functionality related to filtering invalid candidates from the candidates
 
 </span><span class="kw">use </span>frame_support::pallet_prelude::TypeInfo;
@@ -600,17 +624,41 @@
 	</span><span class="kw">pub </span>registration_utxo: UtxoId,
 }
 
-<span class="attr">#[derive(Clone, Debug, Encode, Decode)]
+<span class="attr">#[derive(Clone, Debug, Encode, Decode, PartialEq)]
 </span><span class="kw">pub struct </span>CandidateWithStake&lt;TAccountId, TAccountKeys&gt; {
-	<span class="kw">pub </span>candidate: Candidate&lt;TAccountId, TAccountKeys&gt;,
+	<span class="kw">pub </span>stake_pool_pub_key: StakePoolPublicKey,
 	<span class="doccomment">/// Amount of ADA staked/locked by the Authority Candidate
 	</span><span class="kw">pub </span>stake_delegation: StakeDelegation,
+	<span class="kw">pub </span>account_id: TAccountId,
+	<span class="kw">pub </span>account_keys: TAccountKeys,
 }
 
 <span class="attr">#[derive(Clone, Debug, Encode, Decode, PartialEq)]
-</span><span class="kw">pub struct </span>Candidate&lt;TAccountId, TAccountKeys&gt; {
+</span><span class="kw">pub struct </span>PermissionedCandidate&lt;TAccountId, TAccountKeys&gt; {
 	<span class="kw">pub </span>account_id: TAccountId,
 	<span class="kw">pub </span>account_keys: TAccountKeys,
+}
+
+<span class="attr">#[derive(Clone, Debug, Encode, Decode, PartialEq)]
+</span><span class="kw">pub enum </span>Candidate&lt;TAccountId, TAccountKeys&gt; {
+	Permissioned(PermissionedCandidate&lt;TAccountId, TAccountKeys&gt;),
+	Registered(CandidateWithStake&lt;TAccountId, TAccountKeys&gt;),
+}
+
+<span class="kw">impl</span>&lt;TAccountId, TAccountKeys&gt; Candidate&lt;TAccountId, TAccountKeys&gt; {
+	<span class="kw">pub fn </span>account_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>TAccountId {
+		<span class="kw">match </span><span class="self">self </span>{
+			Candidate::Permissioned(c) =&gt; <span class="kw-2">&amp;</span>c.account_id,
+			Candidate::Registered(c) =&gt; <span class="kw-2">&amp;</span>c.account_id,
+		}
+	}
+
+	<span class="kw">pub fn </span>account_keys(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>TAccountKeys {
+		<span class="kw">match </span><span class="self">self </span>{
+			Candidate::Permissioned(c) =&gt; <span class="kw-2">&amp;</span>c.account_keys,
+			Candidate::Registered(c) =&gt; <span class="kw-2">&amp;</span>c.account_keys,
+		}
+	}
 }
 
 <span class="doccomment">/// Get the valid trustless candidates from the registrations from inherent data
@@ -632,7 +680,7 @@
 
 <span class="kw">pub fn </span>filter_invalid_permissioned_candidates&lt;TAccountId, TAccountKeys&gt;(
 	permissioned_candidates: Vec&lt;PermissionedCandidateData&gt;,
-) -&gt; Vec&lt;Candidate&lt;TAccountId, TAccountKeys&gt;&gt;
+) -&gt; Vec&lt;PermissionedCandidate&lt;TAccountId, TAccountKeys&gt;&gt;
 <span class="kw">where
 	</span>TAccountKeys: From&lt;(sr25519::Public, ed25519::Public)&gt;,
 	TAccountId: TryFrom&lt;sidechain_domain::SidechainPublicKey&gt;,
@@ -643,7 +691,7 @@
 			<span class="kw">let </span>(account_id, aura_key, grandpa_key) =
 				validate_permissioned_candidate_data(candidate).ok()<span class="question-mark">?</span>;
 			<span class="kw">let </span>account_keys = (aura_key, grandpa_key).into();
-			<span class="prelude-val">Some</span>(Candidate { account_id, account_keys })
+			<span class="prelude-val">Some</span>(PermissionedCandidate { account_id, account_keys })
 		})
 		.collect()
 }
@@ -657,13 +705,14 @@
 	TAccountKeys: From&lt;(sr25519::Public, ed25519::Public)&gt;,
 {
 	<span class="kw">let </span>stake_delegation = validate_stake(candidate_registrations.stake_delegation).ok()<span class="question-mark">?</span>;
-	<span class="kw">let </span>mainchain_pub_key = candidate_registrations.stake_pool_public_key;
+	<span class="kw">let </span>stake_pool_pub_key = candidate_registrations.stake_pool_public_key;
 
-	<span class="kw">let </span>(candidate_data, <span class="kw">_</span>) = candidate_registrations
+	<span class="kw">let </span>((account_id, account_keys), <span class="kw">_</span>) = candidate_registrations
 		.registrations
 		.into_iter()
 		.filter_map(|registration_data| {
-			<span class="kw">match </span>validate_registration_data(<span class="kw-2">&amp;</span>mainchain_pub_key, <span class="kw-2">&amp;</span>registration_data, genesis_utxo) {
+			<span class="kw">match </span>validate_registration_data(<span class="kw-2">&amp;</span>stake_pool_pub_key, <span class="kw-2">&amp;</span>registration_data, genesis_utxo)
+			{
 				<span class="prelude-val">Ok</span>(candidate) =&gt; <span class="prelude-val">Some</span>((candidate, registration_data.utxo_info)),
 				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">None</span>,
 			}
@@ -672,11 +721,10 @@
 		</span>.max_by_key(|(<span class="kw">_</span>, utxo_info)| utxo_info.ordering_key())<span class="question-mark">?</span>;
 
 	<span class="prelude-val">Some</span>(CandidateWithStake {
-		candidate: Candidate {
-			account_id: candidate_data.account_id.into(),
-			account_keys: candidate_data.account_keys.into(),
-		},
+		account_id: account_id.into(),
+		account_keys: account_keys.into(),
 		stake_delegation,
+		stake_pool_pub_key,
 	})
 }
 
@@ -749,7 +797,7 @@
 	stake_pool_pub_key: <span class="kw-2">&amp;</span>StakePoolPublicKey,
 	registration_data: <span class="kw-2">&amp;</span>RegistrationData,
 	genesis_utxo: UtxoId,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Candidate&lt;ecdsa::Public, (sr25519::Public, ed25519::Public)&gt;, RegistrationDataError&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;(ecdsa::Public, (sr25519::Public, ed25519::Public)), RegistrationDataError&gt; {
 	<span class="kw">let </span>aura_pub_key = registration_data
 		.aura_pub_key
 		.try_into_sr25519()
@@ -782,7 +830,7 @@
 
 	<span class="comment">// TODO - Stake Validation: https://input-output.atlassian.net/browse/ETCM-4082
 
-	</span><span class="prelude-val">Ok</span>(Candidate { account_id: sidechain_pub_key, account_keys: (aura_pub_key, grandpa_pub_key) })
+	</span><span class="prelude-val">Ok</span>((sidechain_pub_key, (aura_pub_key, grandpa_pub_key)))
 }
 
 <span class="kw">pub fn </span>validate_stake(stake: <span class="prelude-ty">Option</span>&lt;StakeDelegation&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;StakeDelegation, StakeError&gt; {
