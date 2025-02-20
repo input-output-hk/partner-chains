@@ -21,17 +21,41 @@ pub struct RegisterValidatorSignedMessage {
 	pub registration_utxo: UtxoId,
 }
 
-#[derive(Clone, Debug, Encode, Decode)]
+#[derive(Clone, Debug, Encode, Decode, PartialEq)]
 pub struct CandidateWithStake<TAccountId, TAccountKeys> {
-	pub candidate: Candidate<TAccountId, TAccountKeys>,
+	pub stake_pool_pub_key: StakePoolPublicKey,
 	/// Amount of ADA staked/locked by the Authority Candidate
 	pub stake_delegation: StakeDelegation,
+	pub account_id: TAccountId,
+	pub account_keys: TAccountKeys,
 }
 
 #[derive(Clone, Debug, Encode, Decode, PartialEq)]
-pub struct Candidate<TAccountId, TAccountKeys> {
+pub struct PermissionedCandidate<TAccountId, TAccountKeys> {
 	pub account_id: TAccountId,
 	pub account_keys: TAccountKeys,
+}
+
+#[derive(Clone, Debug, Encode, Decode, PartialEq)]
+pub enum Candidate<TAccountId, TAccountKeys> {
+	Permissioned(PermissionedCandidate<TAccountId, TAccountKeys>),
+	Registered(CandidateWithStake<TAccountId, TAccountKeys>),
+}
+
+impl<TAccountId, TAccountKeys> Candidate<TAccountId, TAccountKeys> {
+	pub fn account_id(&self) -> &TAccountId {
+		match self {
+			Candidate::Permissioned(c) => &c.account_id,
+			Candidate::Registered(c) => &c.account_id,
+		}
+	}
+
+	pub fn account_keys(&self) -> &TAccountKeys {
+		match self {
+			Candidate::Permissioned(c) => &c.account_keys,
+			Candidate::Registered(c) => &c.account_keys,
+		}
+	}
 }
 
 /// Get the valid trustless candidates from the registrations from inherent data
@@ -53,7 +77,7 @@ where
 
 pub fn filter_invalid_permissioned_candidates<TAccountId, TAccountKeys>(
 	permissioned_candidates: Vec<PermissionedCandidateData>,
-) -> Vec<Candidate<TAccountId, TAccountKeys>>
+) -> Vec<PermissionedCandidate<TAccountId, TAccountKeys>>
 where
 	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
 	TAccountId: TryFrom<sidechain_domain::SidechainPublicKey>,
@@ -64,7 +88,7 @@ where
 			let (account_id, aura_key, grandpa_key) =
 				validate_permissioned_candidate_data(candidate).ok()?;
 			let account_keys = (aura_key, grandpa_key).into();
-			Some(Candidate { account_id, account_keys })
+			Some(PermissionedCandidate { account_id, account_keys })
 		})
 		.collect()
 }
@@ -78,13 +102,14 @@ where
 	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
 {
 	let stake_delegation = validate_stake(candidate_registrations.stake_delegation).ok()?;
-	let mainchain_pub_key = candidate_registrations.stake_pool_public_key;
+	let stake_pool_pub_key = candidate_registrations.stake_pool_public_key;
 
-	let (candidate_data, _) = candidate_registrations
+	let ((account_id, account_keys), _) = candidate_registrations
 		.registrations
 		.into_iter()
 		.filter_map(|registration_data| {
-			match validate_registration_data(&mainchain_pub_key, &registration_data, genesis_utxo) {
+			match validate_registration_data(&stake_pool_pub_key, &registration_data, genesis_utxo)
+			{
 				Ok(candidate) => Some((candidate, registration_data.utxo_info)),
 				Err(_) => None,
 			}
@@ -93,11 +118,10 @@ where
 		.max_by_key(|(_, utxo_info)| utxo_info.ordering_key())?;
 
 	Some(CandidateWithStake {
-		candidate: Candidate {
-			account_id: candidate_data.account_id.into(),
-			account_keys: candidate_data.account_keys.into(),
-		},
+		account_id: account_id.into(),
+		account_keys: account_keys.into(),
 		stake_delegation,
+		stake_pool_pub_key,
 	})
 }
 
@@ -170,7 +194,7 @@ pub fn validate_registration_data(
 	stake_pool_pub_key: &StakePoolPublicKey,
 	registration_data: &RegistrationData,
 	genesis_utxo: UtxoId,
-) -> Result<Candidate<ecdsa::Public, (sr25519::Public, ed25519::Public)>, RegistrationDataError> {
+) -> Result<(ecdsa::Public, (sr25519::Public, ed25519::Public)), RegistrationDataError> {
 	let aura_pub_key = registration_data
 		.aura_pub_key
 		.try_into_sr25519()
@@ -203,7 +227,7 @@ pub fn validate_registration_data(
 
 	// TODO - Stake Validation: https://input-output.atlassian.net/browse/ETCM-4082
 
-	Ok(Candidate { account_id: sidechain_pub_key, account_keys: (aura_pub_key, grandpa_pub_key) })
+	Ok((sidechain_pub_key, (aura_pub_key, grandpa_pub_key)))
 }
 
 pub fn validate_stake(stake: Option<StakeDelegation>) -> Result<StakeDelegation, StakeError> {

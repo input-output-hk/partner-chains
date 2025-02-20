@@ -3,14 +3,13 @@
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use crate::filter_invalid_candidates::{
 	filter_invalid_permissioned_candidates, filter_trustless_candidates_registrations, Candidate,
-	CandidateWithStake,
+	CandidateWithStake, PermissionedCandidate,
 };
-use frame_support::BoundedVec;
 use log::{info, warn};
 use plutus::*;
 use selection::{Weight, WeightedRandomSelectionConfig};
 use sidechain_domain::{DParameter, ScEpochNumber, UtxoId};
-use sp_core::{ecdsa, ed25519, sr25519, Get};
+use sp_core::{ecdsa, ed25519, sr25519};
 
 type CandidateWithWeight<A, B> = (Candidate<A, B>, Weight);
 
@@ -35,12 +34,11 @@ type CandidateWithWeight<A, B> = (Candidate<A, B>, Weight);
 pub fn select_authorities<
 	TAccountId: Clone + Ord + TryFrom<sidechain_domain::SidechainPublicKey> + From<ecdsa::Public>,
 	TAccountKeys: Clone + From<(sr25519::Public, ed25519::Public)>,
-	MaxValidators: Get<u32>,
 >(
 	genesis_utxo: UtxoId,
 	input: AuthoritySelectionInputs,
 	sidechain_epoch: ScEpochNumber,
-) -> Option<BoundedVec<(TAccountId, TAccountKeys), MaxValidators>> {
+) -> Option<Vec<Candidate<TAccountId, TAccountKeys>>> {
 	let valid_trustless_candidates = filter_trustless_candidates_registrations::<
 		TAccountId,
 		TAccountKeys,
@@ -58,16 +56,15 @@ pub fn select_authorities<
 		&input.d_parameter,
 		&valid_trustless_candidates,
 	));
-	candidates_with_weight.sort_by(|a, b| a.0.account_id.cmp(&b.0.account_id));
+	candidates_with_weight.sort_by(|a, b| a.0.account_id().cmp(&b.0.account_id()));
 
 	let random_seed =
 		selection::impls::seed_from_nonce_and_sc_epoch(&input.epoch_nonce, &sidechain_epoch);
 	let committee_size =
 		input.d_parameter.num_registered_candidates + input.d_parameter.num_permissioned_candidates;
-	if let Some(validators) =
-		weighted_selection(candidates_with_weight, committee_size, random_seed)
+	if let Some(validators) = (WeightedRandomSelectionConfig { size: committee_size }
+		.select_authorities(candidates_with_weight, random_seed))
 	{
-		let validators = BoundedVec::truncate_from(validators);
 		info!("💼 Selected committee of {} seats for epoch {} from {} permissioned and {} registered candidates", validators.len(), sidechain_epoch, valid_permissioned_candidates.len(), valid_trustless_candidates.len());
 		Some(validators)
 	} else {
@@ -88,12 +85,14 @@ fn trustless_candidates_with_weights<A: Clone, B: Clone>(
 	};
 	trustless_candidates
 		.iter()
-		.map(|c| (c.candidate.clone(), u128::from(c.stake_delegation.0) * weight_factor))
+		.map(|c| {
+			(Candidate::Registered(c.clone()), u128::from(c.stake_delegation.0) * weight_factor)
+		})
 		.collect()
 }
 
 fn permissioned_candidates_with_weights<A: Clone, B: Clone>(
-	permissioned_candidates: &[Candidate<A, B>],
+	permissioned_candidates: &[PermissionedCandidate<A, B>],
 	d_parameter: &DParameter,
 	valid_trustless_candidates: &[CandidateWithStake<A, B>],
 ) -> Vec<CandidateWithWeight<A, B>> {
@@ -103,19 +102,8 @@ fn permissioned_candidates_with_weights<A: Clone, B: Clone>(
 	} else {
 		1 // if there are no trustless candidates, permissioned candidates should be selected with equal weight
 	};
-	permissioned_candidates.iter().map(|c| (c.clone(), weight)).collect::<Vec<_>>()
-}
-
-fn weighted_selection<TAccountId: Clone + Ord, TAccountKeys: Clone>(
-	candidates: Vec<CandidateWithWeight<TAccountId, TAccountKeys>>,
-	size: u16,
-	random_seed: [u8; 32],
-) -> Option<Vec<(TAccountId, TAccountKeys)>> {
-	Some(
-		WeightedRandomSelectionConfig { size }
-			.select_authorities(candidates, random_seed)?
-			.into_iter()
-			.map(|c| (c.account_id, c.account_keys))
-			.collect(),
-	)
+	permissioned_candidates
+		.iter()
+		.map(|c| (Candidate::Permissioned(c.clone()), weight))
+		.collect::<Vec<_>>()
 }

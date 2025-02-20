@@ -160,7 +160,7 @@ impl pallet_session_validator_management::Config for Test {
 			Sidechain::genesis_utxo(),
 		)
 		.into_iter()
-		.map(|c| (c.candidate.account_id, c.candidate.account_keys))
+		.map(|c| (c.account_id, c.account_keys))
 		.collect();
 		if candidates.is_empty() {
 			None

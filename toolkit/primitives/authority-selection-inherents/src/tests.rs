@@ -9,7 +9,7 @@ use plutus::ToDatum;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::*;
-use sp_core::{ecdsa, ed25519, sr25519, ConstU32, Pair};
+use sp_core::{ecdsa, ed25519, sr25519, Pair};
 use sp_runtime::traits::Zero;
 use std::collections::HashMap;
 
@@ -194,7 +194,7 @@ fn ariadne_all_permissioned_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -202,8 +202,10 @@ fn ariadne_all_permissioned_test() {
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
-	let committee_names =
-		committee.iter().map(|(id, _)| account_id_to_name(id)).collect::<Vec<_>>();
+	let committee_names = committee
+		.iter()
+		.map(|member| account_id_to_name(member.account_id()))
+		.collect::<Vec<_>>();
 	let expected_committee_names = vec!["bob", "bob", "alice", "bob", "bob", "alice", "bob", "bob"];
 
 	assert_eq!(committee_names, expected_committee_names);
@@ -222,7 +224,7 @@ fn ariadne_only_permissioned_candidates_are_present_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -230,8 +232,10 @@ fn ariadne_only_permissioned_candidates_are_present_test() {
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
-	let committee_names =
-		committee.iter().map(|(id, _)| account_id_to_name(id)).collect::<Vec<_>>();
+	let committee_names = committee
+		.iter()
+		.map(|member| account_id_to_name(member.account_id()))
+		.collect::<Vec<_>>();
 	let expected_committee_names = vec!["bob", "bob", "alice", "bob", "bob", "alice", "bob", "bob"];
 
 	assert_eq!(committee_names, expected_committee_names);
@@ -250,7 +254,7 @@ fn ariadne_3_to_2_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -258,8 +262,10 @@ fn ariadne_3_to_2_test() {
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
-	let committee_names =
-		committee.iter().map(|(id, _)| account_id_to_name(id)).collect::<Vec<_>>();
+	let committee_names = committee
+		.iter()
+		.map(|member| account_id_to_name(member.account_id()))
+		.collect::<Vec<_>>();
 	let expected_committee_names = vec!["bob", "charlie", "charlie", "alice", "bob"];
 
 	assert_eq!(committee_names, expected_committee_names);
@@ -278,7 +284,7 @@ fn ariadne_3_to_2_with_more_available_candidates_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -286,8 +292,10 @@ fn ariadne_3_to_2_with_more_available_candidates_test() {
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
-	let committee_names =
-		committee.iter().map(|(id, _)| account_id_to_name(id)).collect::<Vec<_>>();
+	let committee_names = committee
+		.iter()
+		.map(|member| account_id_to_name(member.account_id()))
+		.collect::<Vec<_>>();
 	let expected_committee_names = vec!["bob", "bob", "bob", "alice", "henry"];
 
 	assert_eq!(committee_names, expected_committee_names);
@@ -306,7 +314,7 @@ fn ariadne_4_to_7_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<32>>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
@@ -314,8 +322,10 @@ fn ariadne_4_to_7_test() {
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
-	let committee_names =
-		committee.iter().map(|(id, _)| account_id_to_name(id)).collect::<Vec<_>>();
+	let committee_names = committee
+		.iter()
+		.map(|member| account_id_to_name(member.account_id()))
+		.collect::<Vec<_>>();
 	let expected_committee_names = vec![
 		"bob", "charlie", "henry", "ida", "kim", "bob", "alice", "greg", "ida", "ferdie", "henry",
 	];
@@ -337,15 +347,15 @@ fn ariadne_selection_statistics_test() {
 		&registered_validators,
 		d_parameter,
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<30000>>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
 	);
 	let committee = calculated_committee.unwrap();
 	let mut map = HashMap::new();
-	for (id, _) in &committee {
-		*map.entry(id).or_insert(0u32) += 1;
+	for member in &committee {
+		*map.entry(member.account_id()).or_insert(0u32) += 1;
 	}
 	let alice_count = *map.get(&ALICE.account_id()).unwrap_or(&0);
 	let bob_count = *map.get(&BOB.account_id()).unwrap_or(&0);
@@ -366,7 +376,7 @@ fn ariadne_does_not_return_empty_committee() {
 		&[],
 		DParameter { num_permissioned_candidates: 1, num_registered_candidates: 1 },
 	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys, ConstU32<10>>(
+	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
 		UtxoId::default(),
 		authority_selection_inputs,
 		ScEpochNumber::zero(),
