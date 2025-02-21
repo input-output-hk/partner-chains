@@ -13,7 +13,6 @@ pub struct AuthoritySelectionInputs {
 	pub epoch_nonce: EpochNonce,
 }
 
-// #[derive(Debug, PartialEq, Eq, Clone, Decode, thiserror::Error, Serialize, Deserialize)]
 #[cfg(feature = "std")]
 #[derive(Debug, thiserror::Error)]
 pub enum AuthoritySelectionInputsCreationError {
@@ -30,16 +29,14 @@ pub enum AuthoritySelectionInputsCreationError {
 	GetEpochNonceQuery(McEpochNumber, Box<dyn std::error::Error + Send + Sync>),
 }
 
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct RawPermissionedCandidateData {
 	pub sidechain_public_key: SidechainPublicKey,
 	pub aura_public_key: AuraPublicKey,
 	pub grandpa_public_key: GrandpaPublicKey,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct AriadneParameters {
 	pub d_parameter: DParameter,
 	pub permissioned_candidates: Vec<RawPermissionedCandidateData>,

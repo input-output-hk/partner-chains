@@ -15,6 +15,7 @@ log = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 derive-new = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true, default-features = false, features = [
 	"alloc",
 ] }

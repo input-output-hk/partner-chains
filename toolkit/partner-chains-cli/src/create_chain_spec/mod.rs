@@ -4,7 +4,7 @@ use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, Permissio
 use crate::{config::config_fields, CmdRun};
 use anyhow::{anyhow, Context};
 use serde::de::DeserializeOwned;
-use serde_json::Value as JValue;
+use serde_json::{json, Value as JValue};
 use sidechain_domain::UtxoId;
 
 #[cfg(test)]
@@ -120,7 +120,14 @@ impl CreateChainSpecCmd {
 		let initial_authorities = config
 			.initial_permissioned_candidates_parsed
 			.iter()
-			.map(|c| serde_json::to_value((c.sidechain, c.session_keys())))
+			.map(|c| -> anyhow::Result<serde_json::Value> {
+				Ok(json!({
+					"Permissioned": {
+						"id": serde_json::to_value(c.sidechain)?,
+						"keys": c.session_keys()
+					}
+				}))
+			})
 			.collect::<Result<Vec<serde_json::Value>, _>>()?;
 		let initial_authorities = serde_json::Value::Array(initial_authorities);
 		Self::update_field(

@@ -1,4 +1,5 @@
 use crate::chain_spec::*;
+use authority_selection_inherents::CommitteeMember;
 use sc_service::ChainType;
 use sidechain_domain::*;
 use sidechain_runtime::{
@@ -195,7 +196,7 @@ pub fn testnet_genesis(
 		session_committee_management: SessionCommitteeManagementConfig {
 			initial_authorities: initial_authorities
 				.into_iter()
-				.map(|keys| (keys.cross_chain, keys.session))
+				.map(|keys| CommitteeMember::permissioned(keys.cross_chain, keys.session))
 				.collect(),
 			main_chain_scripts: sp_session_validator_management::MainChainScripts::read_from_env()?,
 		},

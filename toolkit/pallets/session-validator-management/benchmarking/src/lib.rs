@@ -37,7 +37,7 @@ fn set_epoch_number<T: Config>(epoch: u64) {
 }
 
 use pallet_session_validator_management::Call;
-#[benchmarks]
+#[benchmarks(where <T as pallet_session_validator_management::Config>::CommitteeMember: From<(<T as pallet_session_validator_management::Config>::AuthorityId, <T as pallet_session_validator_management::Config>::AuthorityKeys)>)]
 pub mod benchmarks {
 	use super::*;
 
@@ -66,15 +66,15 @@ pub mod benchmarks {
 			})
 			.collect();
 		let validators: BoundedVec<
-			(<T as pallet_session_validator_management::Config>::AuthorityId, T::AuthorityKeys),
+			<T as pallet_session_validator_management::Config>::CommitteeMember,
 			T::MaxValidators,
-		> = validators.try_into().unwrap();
+		> = BoundedVec::truncate_from(validators.into_iter().map(|member| member.into()).collect());
 
 		let for_epoch_number = T::current_epoch_number() + One::one();
 		set_epoch_number::<T>(for_epoch_number.into());
 
 		#[extrinsic_call]
-		_(RawOrigin::None, validators.clone(), for_epoch_number, Default::default());
+		_(RawOrigin::None, validators, for_epoch_number, Default::default());
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);

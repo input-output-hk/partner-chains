@@ -1,5 +1,6 @@
 //! Functionality related to filtering invalid candidates from the candidates
 
+use crate::CommitteeMember;
 use frame_support::pallet_prelude::TypeInfo;
 use parity_scale_codec::{Decode, Encode};
 use plutus::*;
@@ -40,6 +41,23 @@ pub struct PermissionedCandidate<TAccountId, TAccountKeys> {
 pub enum Candidate<TAccountId, TAccountKeys> {
 	Permissioned(PermissionedCandidate<TAccountId, TAccountKeys>),
 	Registered(CandidateWithStake<TAccountId, TAccountKeys>),
+}
+
+impl<AuthorityId, AuthorityKeys> From<Candidate<AuthorityId, AuthorityKeys>>
+	for CommitteeMember<AuthorityId, AuthorityKeys>
+{
+	fn from(candidate: Candidate<AuthorityId, AuthorityKeys>) -> Self {
+		match candidate {
+			Candidate::Permissioned(member) => {
+				Self::Permissioned { id: member.account_id, keys: member.account_keys }
+			},
+			Candidate::Registered(member) => Self::Registered {
+				id: member.account_id,
+				keys: member.account_keys,
+				stake_pool_pub_key: member.stake_pool_pub_key,
+			},
+		}
+	}
 }
 
 impl<TAccountId, TAccountKeys> Candidate<TAccountId, TAccountKeys> {

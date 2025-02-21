@@ -4,6 +4,7 @@ use core::marker::PhantomData;
 use derive_new::new;
 use frame_system::pallet_prelude::BlockNumberFor;
 use log::info;
+use pallet_session_validator_management::CommitteeMember;
 use sp_staking::SessionIndex;
 use sp_std::vec::Vec;
 
@@ -27,7 +28,7 @@ impl<T: pallet_session_validator_management::Config + pallet_session::Config>
 			pallet_session_validator_management::Pallet::<T>::current_committee_storage()
 				.committee
 				.into_iter()
-				.map(|(id, keys)| (id.into(), keys))
+				.map(|member| (member.authority_id().into(), member.authority_keys()))
 				.collect::<Vec<_>>(),
 		)
 	}

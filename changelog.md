@@ -13,6 +13,9 @@ WARNING: Benchmarking command has been removed, because `frame-benchmarking-cli`
 mainnet or one of the official testnets, you don't need to change anything. Otherwise, the duration can
 be set through `MC__SLOT_DURATION_MILLIS` environment variable.
 * e2e-tests: updated python to 3.12 and libs versions.
+* Committee member data stored by the Session Validator Management Pallet is now fullly generic. To migrate to this version,
+define your own `CommitteeMember` type and implement the trait `CommitteeMember` for it. See the `CommitteeMember`
+type implemented in `node/runtime/src/lib.rs` for reference using Ariadne.
 
 ## Removed
 

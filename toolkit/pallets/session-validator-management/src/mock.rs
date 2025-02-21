@@ -91,6 +91,7 @@ impl pallet::Config for Test {
 	type AuthoritySelectionInputs =
 		BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>;
 	type ScEpochNumber = ScEpochNumber;
+	type CommitteeMember = (Self::AuthorityId, Self::AuthorityKeys);
 
 	fn select_authorities(
 		input: Self::AuthoritySelectionInputs,

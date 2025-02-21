@@ -174,28 +174,34 @@ jq '.genesis.runtimeGenesis.config.session.initialValidators = [
 
 echo "Configuring Initial Authorities..."
 jq '.genesis.runtimeGenesis.config.sessionCommitteeManagement.initialAuthorities = [
-     [
-         "KW39r9CJjAVzmkf9zQ4YDb2hqfAVGdRqn53eRqyruqpxAP5YL",
-         {
-             "aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-             "grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
-         }
-     ],
-     [
-         "KWByAN7WfZABWS5AoWqxriRmF5f2jnDqy3rB5pfHLGkY93ibN",
-         {
-             "aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
-             "grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
-         }
-     ],
-     [
-         "KWBpGtyJLBkJERdZT1a1uu19c2uPpZm9nFd8SGtCfRUAT3Y4w",
-         {
-             "aura": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
-             "grandpa": "5DbKjhNLpqX3zqZdNBc9BGb4fHU1cRBaDhJUskrvkwfraDi6"
-         }
-     ]
- ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
+  {
+    "Permissioned": {
+      "id": "KW39r9CJjAVzmkf9zQ4YDb2hqfAVGdRqn53eRqyruqpxAP5YL",
+      "keys": {
+        "aura": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+        "grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu"
+      }
+    }
+  },
+  {
+    "Permissioned": {
+      "id": "KWByAN7WfZABWS5AoWqxriRmF5f2jnDqy3rB5pfHLGkY93ibN",
+      "keys": {
+        "aura": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+        "grandpa": "5GoNkf6WdbxCFnPdAnYYQyCjAKPJgLNxXwPjwTh6DGg6gN3E"
+      }
+    }
+  },
+  {
+    "Permissioned": {
+      "id": "KWBpGtyJLBkJERdZT1a1uu19c2uPpZm9nFd8SGtCfRUAT3Y4w",
+      "keys": {
+        "aura": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+        "grandpa": "5DbKjhNLpqX3zqZdNBc9BGb4fHU1cRBaDhJUskrvkwfraDi6"
+      }
+    }
+  }
+]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
 echo "Set initial funds to Alice (ecdsa), ?, and Alice (sr25519)"
 jq '.genesis.runtimeGenesis.config.balances.balances = [

@@ -149,6 +149,7 @@ impl pallet_session_validator_management::Config for Test {
 	type AuthorityKeys = TestSessionKeys;
 	type AuthoritySelectionInputs = AuthoritySelectionInputs;
 	type ScEpochNumber = ScEpochNumber;
+	type CommitteeMember = (Self::AuthorityId, Self::AuthorityKeys);
 
 	/// Mock simply selects all valid registered candidates as validators.
 	fn select_authorities(
