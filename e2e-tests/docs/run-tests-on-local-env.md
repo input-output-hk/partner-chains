@@ -3,25 +3,25 @@
 ## Prerequisites
 
 - Docker Desktop, lazydocker
-- python3, pip
+- python3, pip. At this point, python from nix devshell does not work with e2e-tests, please install a separate one in your system.
 
 ## Steps
 
 1. Configure partner-chains local environment by running [setup.sh](/dev/local-environment/setup.sh)
-   - If you want to use a pre-configured postgres password from /e2e-tests/secrets/substrate/local/local.json: `$ ./setup.sh -p <PASSWORD>`
+   - If you want to use a pre-configured postgres password from /e2e-tests/secrets/substrate/local/local.json: `$ ./setup.sh -p azMpOp4mTqhlKDmgCVQr`
    - If you want to use generated password from local env: run `$ ./setup.sh -n`. Password is saved in `.env` file, you will need it later
 2. Run local environment: `$ docker-compose up -d` and wait until the partner chains nodes finish syncing
 3. Get initial_timestamp value: `$ docker exec cardano-node-1 cat /shared/cardano.start`
 4. Set postgres passwords
    - If you used a pre-configured password, skip this step
    - If you used a generated password - update db and dbSync password values in `secrets/substrate/local/local.json` with the POSTGRES_PASSWORD env variable value from the `.env` file
-5. Update `main_chain.init_timestamp` at config/substrate/local_nodes.json to the resulting value of `docker exec cardano-node-1 cat /shared/cardano.start` or alteratively pass it directly to `pytest` with `--init-timestamp=1234567890`
+5. Update `main_chain.init_timestamp` at `config/substrate/local_nodes.json` to the resulting value of `docker exec cardano-node-1 cat /shared/cardano.start` or alteratively pass it directly to `pytest` with `--init-timestamp=1234567890`
 6. Create and activate virtual environment
 
 ```bash
    pip install virtualenv
    python -m venv venv
-   source venv/bin/active
+   source venv/bin/activate
 ```
 
 1. Install project dependencies: `$ pip install -r requirements.txt`
