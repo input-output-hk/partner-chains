@@ -213,13 +213,20 @@
 <a href="#213" id="213">213</a>
 <a href="#214" id="214">214</a>
 <a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::ConfigFieldDefinition;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
 <span class="kw">use crate</span>::{config::config_fields, CmdRun};
 <span class="kw">use </span>anyhow::{anyhow, Context};
 <span class="kw">use </span>serde::de::DeserializeOwned;
-<span class="kw">use </span>serde_json::Value <span class="kw">as </span>JValue;
+<span class="kw">use </span>serde_json::{json, Value <span class="kw">as </span>JValue};
 <span class="kw">use </span>sidechain_domain::UtxoId;
 
 <span class="attr">#[cfg(test)]
@@ -335,7 +342,14 @@
 		<span class="kw">let </span>initial_authorities = config
 			.initial_permissioned_candidates_parsed
 			.iter()
-			.map(|c| serde_json::to_value((c.sidechain, c.session_keys())))
+			.map(|c| -&gt; anyhow::Result&lt;serde_json::Value&gt; {
+				<span class="prelude-val">Ok</span>(<span class="macro">json!</span>({
+					<span class="string">"Permissioned"</span>: {
+						<span class="string">"id"</span>: serde_json::to_value(c.sidechain)<span class="question-mark">?</span>,
+						<span class="string">"keys"</span>: c.session_keys()
+					}
+				}))
+			})
 			.collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;serde_json::Value&gt;, <span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>;
 		<span class="kw">let </span>initial_authorities = serde_json::Value::Array(initial_authorities);
 		<span class="self">Self</span>::update_field(

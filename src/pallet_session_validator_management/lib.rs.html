@@ -385,12 +385,30 @@
 <a href="#385" id="385">385</a>
 <a href="#386" id="386">386</a>
 <a href="#387" id="387">387</a>
+<a href="#388" id="388">388</a>
+<a href="#389" id="389">389</a>
+<a href="#390" id="390">390</a>
+<a href="#391" id="391">391</a>
+<a href="#392" id="392">392</a>
+<a href="#393" id="393">393</a>
+<a href="#394" id="394">394</a>
+<a href="#395" id="395">395</a>
+<a href="#396" id="396">396</a>
+<a href="#397" id="397">397</a>
+<a href="#398" id="398">398</a>
+<a href="#399" id="399">399</a>
+<a href="#400" id="400">400</a>
+<a href="#401" id="401">401</a>
+<a href="#402" id="402">402</a>
+<a href="#403" id="403">403</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!  Pallet for setting the Partner Chain validators using inherent data
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 #![allow(clippy::type_complexity)]
 
-</span><span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
+</span><span class="kw">pub mod </span>migrations;
+
+<span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
 
 <span class="attr">#[cfg(any(test, feature = <span class="string">"mock"</span>))]
 </span><span class="kw">pub mod </span>mock;
@@ -400,6 +418,7 @@
 
 <span class="kw">pub mod </span>weights;
 
+<span class="kw">pub use </span>sp_session_validator_management::CommitteeMember;
 <span class="kw">pub use </span>weights::WeightInfo;
 
 <span class="attr">#[frame_support::pallet]
@@ -411,12 +430,15 @@
 	<span class="kw">use </span>sidechain_domain::byte_string::SizedByteString;
 	<span class="kw">use </span>sidechain_domain::{MainchainAddress, PolicyId};
 	<span class="kw">use </span>sp_core::blake2_256;
-	<span class="kw">use </span>sp_runtime::traits::{One, Zero};
+	<span class="kw">use </span>sp_runtime::traits::{MaybeSerializeDeserialize, One, Zero};
 	<span class="kw">use </span>sp_session_validator_management::<span class="kw-2">*</span>;
 	<span class="kw">use </span>sp_std::fmt::Display;
 	<span class="kw">use </span>sp_std::{ops::Add, vec, vec::Vec};
 
+	<span class="kw">const </span>STORAGE_VERSION: StorageVersion = StorageVersion::new(<span class="number">1</span>);
+
 	<span class="attr">#[pallet::pallet]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	</span><span class="kw">pub struct </span>Pallet&lt;T&gt;(<span class="kw">_</span>);
 
 	<span class="attr">#[pallet::config]
@@ -444,10 +466,16 @@
 			+ From&lt;u64&gt;
 			+ Into&lt;u64&gt;;
 
+		<span class="kw">type </span>CommitteeMember: Parameter
+			+ Member
+			+ MaybeSerializeDeserialize
+			+ MaxEncodedLen
+			+ CommitteeMember&lt;AuthorityId = <span class="self">Self</span>::AuthorityId, AuthorityKeys = <span class="self">Self</span>::AuthorityKeys&gt;;
+
 		<span class="kw">fn </span>select_authorities(
 			input: <span class="self">Self</span>::AuthoritySelectionInputs,
 			sidechain_epoch: <span class="self">Self</span>::ScEpochNumber,
-		) -&gt; <span class="prelude-ty">Option</span>&lt;BoundedVec&lt;(<span class="self">Self</span>::AuthorityId, <span class="self">Self</span>::AuthorityKeys), <span class="self">Self</span>::MaxValidators&gt;&gt;;
+		) -&gt; <span class="prelude-ty">Option</span>&lt;BoundedVec&lt;<span class="self">Self</span>::CommitteeMember, <span class="self">Self</span>::MaxValidators&gt;&gt;;
 
 		<span class="kw">fn </span>current_epoch_number() -&gt; <span class="self">Self</span>::ScEpochNumber;
 
@@ -464,21 +492,15 @@
 
 	<span class="attr">#[derive(CloneNoBound, Encode, Decode, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(MaxValidators))]
-	</span><span class="kw">pub struct </span>CommitteeInfo&lt;
-		ScEpochNumber: Clone,
-		AuthorityId: Clone,
-		AuthorityKeys: Clone,
-		MaxValidators,
-	&gt; {
+	</span><span class="kw">pub struct </span>CommitteeInfo&lt;ScEpochNumber: Clone, CommitteeMember: Clone, MaxValidators&gt; {
 		<span class="kw">pub </span>epoch: ScEpochNumber,
-		<span class="kw">pub </span>committee: BoundedVec&lt;(AuthorityId, AuthorityKeys), MaxValidators&gt;,
+		<span class="kw">pub </span>committee: BoundedVec&lt;CommitteeMember, MaxValidators&gt;,
 	}
 
-	<span class="kw">impl</span>&lt;ScEpochNumber, AuthorityId, AuthorityKeys, MaxValidators&gt; Default
-		<span class="kw">for </span>CommitteeInfo&lt;ScEpochNumber, AuthorityId, AuthorityKeys, MaxValidators&gt;
+	<span class="kw">impl</span>&lt;ScEpochNumber, CommitteeMember, MaxValidators&gt; Default
+		<span class="kw">for </span>CommitteeInfo&lt;ScEpochNumber, CommitteeMember, MaxValidators&gt;
 	<span class="kw">where
-		</span>AuthorityId: Clone,
-		AuthorityKeys: Clone,
+		</span>CommitteeMember: Clone,
 		ScEpochNumber: Clone + Zero,
 	{
 		<span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
@@ -489,14 +511,14 @@
 	<span class="attr">#[pallet::storage]
 	</span><span class="kw">pub type </span>CurrentCommittee&lt;T: Config&gt; = StorageValue&lt;
 		<span class="kw">_</span>,
-		CommitteeInfo&lt;T::ScEpochNumber, T::AuthorityId, T::AuthorityKeys, T::MaxValidators&gt;,
+		CommitteeInfo&lt;T::ScEpochNumber, T::CommitteeMember, T::MaxValidators&gt;,
 		ValueQuery,
 	&gt;;
 
 	<span class="attr">#[pallet::storage]
 	</span><span class="kw">pub type </span>NextCommittee&lt;T: Config&gt; = StorageValue&lt;
 		<span class="kw">_</span>,
-		CommitteeInfo&lt;T::ScEpochNumber, T::AuthorityId, T::AuthorityKeys, T::MaxValidators&gt;,
+		CommitteeInfo&lt;T::ScEpochNumber, T::CommitteeMember, T::MaxValidators&gt;,
 		OptionQuery,
 	&gt;;
 
@@ -513,7 +535,7 @@
 	<span class="attr">#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
 	</span><span class="kw">pub struct </span>GenesisConfig&lt;T: Config&gt; {
-		<span class="kw">pub </span>initial_authorities: Vec&lt;(T::AuthorityId, T::AuthorityKeys)&gt;,
+		<span class="kw">pub </span>initial_authorities: Vec&lt;T::CommitteeMember&gt;,
 		<span class="kw">pub </span>main_chain_scripts: MainChainScripts,
 	}
 
@@ -642,7 +664,7 @@
 		))]
 		</span><span class="kw">pub fn </span>set(
 			origin: OriginFor&lt;T&gt;,
-			validators: BoundedVec&lt;(T::AuthorityId, T::AuthorityKeys), T::MaxValidators&gt;,
+			validators: BoundedVec&lt;T::CommitteeMember, T::MaxValidators&gt;,
 			for_epoch_number: T::ScEpochNumber,
 			selection_inputs_hash: SizedByteString&lt;<span class="number">32</span>&gt;,
 		) -&gt; DispatchResult {
@@ -691,18 +713,17 @@
 			CurrentCommittee::&lt;T&gt;::get()
 				.committee
 				.get(index)
-				.map(|authority| authority.<span class="number">0</span>.clone())
+				.map(|authority| authority.authority_id())
 				.clone()
 		}
 
 		<span class="kw">pub fn </span>current_committee_storage(
-		) -&gt; CommitteeInfo&lt;T::ScEpochNumber, T::AuthorityId, T::AuthorityKeys, T::MaxValidators&gt; {
+		) -&gt; CommitteeInfo&lt;T::ScEpochNumber, T::CommitteeMember, T::MaxValidators&gt; {
 			CurrentCommittee::&lt;T&gt;::get()
 		}
 
-		<span class="kw">pub fn </span>next_committee_storage() -&gt; <span class="prelude-ty">Option</span>&lt;
-			CommitteeInfo&lt;T::ScEpochNumber, T::AuthorityId, T::AuthorityKeys, T::MaxValidators&gt;,
-		&gt; {
+		<span class="kw">pub fn </span>next_committee_storage(
+		) -&gt; <span class="prelude-ty">Option</span>&lt;CommitteeInfo&lt;T::ScEpochNumber, T::CommitteeMember, T::MaxValidators&gt;&gt; {
 			NextCommittee::&lt;T&gt;::get()
 		}
 
@@ -712,7 +733,7 @@
 				NextCommittee::&lt;T&gt;::get()<span class="question-mark">?
 					</span>.committee
 					.into_iter()
-					.map(|(id, <span class="kw">_</span>)| id)
+					.map(|member| member.authority_id())
 					.collect::&lt;Vec&lt;T::AuthorityId&gt;&gt;(),
 			))
 		}
@@ -732,7 +753,7 @@
 		<span class="kw">pub fn </span>calculate_committee(
 			authority_selection_inputs: T::AuthoritySelectionInputs,
 			sidechain_epoch: T::ScEpochNumber,
-		) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;(T::AuthorityId, T::AuthorityKeys)&gt;&gt; {
+		) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;T::CommitteeMember&gt;&gt; {
 			T::select_authorities(authority_selection_inputs, sidechain_epoch).map(|c| c.to_vec())
 		}
 
@@ -744,7 +765,7 @@
 			<span class="kw">let </span>validators: Vec&lt;(T::AccountId, T::AuthorityKeys)&gt; = next_committee
 				.committee
 				.into_iter()
-				.map(|(pub_key, keys)| (pub_key.into(), keys))
+				.map(|member| (member.authority_id().into(), member.authority_keys()))
 				.collect();
 			<span class="kw">let </span>len = validators.len();
 			<span class="macro">info!</span>(
@@ -756,14 +777,25 @@
 
 		<span class="kw">pub fn </span>get_current_committee() -&gt; (T::ScEpochNumber, Vec&lt;T::AuthorityId&gt;) {
 			<span class="kw">let </span>committee_info = CurrentCommittee::&lt;T&gt;::get();
-			(committee_info.epoch, committee_info.committee.into_iter().map(|(id, <span class="kw">_</span>)| id).collect())
+			(
+				committee_info.epoch,
+				committee_info
+					.committee
+					.into_iter()
+					.map(|member| member.authority_id())
+					.collect(),
+			)
 		}
 
 		<span class="kw">pub fn </span>get_next_committee() -&gt; <span class="prelude-ty">Option</span>&lt;(T::ScEpochNumber, Vec&lt;T::AuthorityId&gt;)&gt; {
 			<span class="kw">let </span>committee_info = NextCommittee::&lt;T&gt;::get()<span class="question-mark">?</span>;
 			<span class="prelude-val">Some</span>((
 				committee_info.epoch,
-				committee_info.committee.into_iter().map(|(id, <span class="kw">_</span>)| id).collect(),
+				committee_info
+					.committee
+					.into_iter()
+					.map(|member| member.authority_id())
+					.collect(),
 			))
 		}
 

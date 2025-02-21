@@ -601,9 +601,28 @@
 <a href="#601" id="601">601</a>
 <a href="#602" id="602">602</a>
 <a href="#603" id="603">603</a>
+<a href="#604" id="604">604</a>
+<a href="#605" id="605">605</a>
+<a href="#606" id="606">606</a>
+<a href="#607" id="607">607</a>
+<a href="#608" id="608">608</a>
+<a href="#609" id="609">609</a>
+<a href="#610" id="610">610</a>
+<a href="#611" id="611">611</a>
+<a href="#612" id="612">612</a>
+<a href="#613" id="613">613</a>
+<a href="#614" id="614">614</a>
+<a href="#615" id="615">615</a>
+<a href="#616" id="616">616</a>
+<a href="#617" id="617">617</a>
+<a href="#618" id="618">618</a>
+<a href="#619" id="619">619</a>
+<a href="#620" id="620">620</a>
+<a href="#621" id="621">621</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Functionality related to filtering invalid candidates from the candidates
 
-</span><span class="kw">use </span>frame_support::pallet_prelude::TypeInfo;
+</span><span class="kw">use </span><span class="kw">crate</span>::CommitteeMember;
+<span class="kw">use </span>frame_support::pallet_prelude::TypeInfo;
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode};
 <span class="kw">use </span>plutus::<span class="kw-2">*</span>;
 <span class="kw">use </span>plutus_datum_derive::ToDatum;
@@ -643,6 +662,23 @@
 </span><span class="kw">pub enum </span>Candidate&lt;TAccountId, TAccountKeys&gt; {
 	Permissioned(PermissionedCandidate&lt;TAccountId, TAccountKeys&gt;),
 	Registered(CandidateWithStake&lt;TAccountId, TAccountKeys&gt;),
+}
+
+<span class="kw">impl</span>&lt;AuthorityId, AuthorityKeys&gt; From&lt;Candidate&lt;AuthorityId, AuthorityKeys&gt;&gt;
+	<span class="kw">for </span>CommitteeMember&lt;AuthorityId, AuthorityKeys&gt;
+{
+	<span class="kw">fn </span>from(candidate: Candidate&lt;AuthorityId, AuthorityKeys&gt;) -&gt; <span class="self">Self </span>{
+		<span class="kw">match </span>candidate {
+			Candidate::Permissioned(member) =&gt; {
+				<span class="self">Self</span>::Permissioned { id: member.account_id, keys: member.account_keys }
+			},
+			Candidate::Registered(member) =&gt; <span class="self">Self</span>::Registered {
+				id: member.account_id,
+				keys: member.account_keys,
+				stake_pool_pub_key: member.stake_pool_pub_key,
+			},
+		}
+	}
 }
 
 <span class="kw">impl</span>&lt;TAccountId, TAccountKeys&gt; Candidate&lt;TAccountId, TAccountKeys&gt; {

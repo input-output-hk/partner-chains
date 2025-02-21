@@ -12,7 +12,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["pallet_native_token_management",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_partner_chains_session",["",[],["lib.rs"]]],\
 ["pallet_session_runtime_stub",["",[],["lib.rs"]]],\
-["pallet_session_validator_management",["",[],["lib.rs","weights.rs"]]],\
+["pallet_session_validator_management",["",[["migrations",[],["mod.rs","v0.rs","v1.rs"]]],["lib.rs","weights.rs"]]],\
 ["pallet_session_validator_management_benchmarking",["",[],["lib.rs"]]],\
 ["pallet_session_validator_management_rpc",["",[],["lib.rs"]]],\
 ["pallet_sidechain",["",[],["lib.rs"]]],\

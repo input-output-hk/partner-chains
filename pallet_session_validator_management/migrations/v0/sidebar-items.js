@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["CurrentCommittee_Storage_Instance","LegacyCommitteeInfo","NextCommittee_Storage_Instance"],"type":["CurrentCommittee","NextCommittee"]};

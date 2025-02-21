@@ -113,10 +113,12 @@
 <a href="#113" id="113">113</a>
 <a href="#114" id="114">114</a>
 <a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>core::marker::PhantomData;
 <span class="kw">use </span>derive_new::new;
 <span class="kw">use </span>frame_system::pallet_prelude::BlockNumberFor;
 <span class="kw">use </span>log::{debug, warn};
+<span class="kw">use </span>pallet_session_validator_management::CommitteeMember;
 <span class="kw">use </span>sp_staking::SessionIndex;
 <span class="kw">use </span>sp_std::vec::Vec;
 
@@ -138,7 +140,7 @@
 			pallet_session_validator_management::Pallet::&lt;T&gt;::current_committee_storage()
 				.committee
 				.into_iter()
-				.map(|(id, <span class="kw">_</span>)| id.into())
+				.map(|member| member.authority_id().into())
 				.collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;(),
 		)
 	}

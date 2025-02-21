@@ -107,12 +107,14 @@
 <a href="#107" id="107">107</a>
 <a href="#108" id="108">108</a>
 <a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">use </span>core::marker::PhantomData;
 <span class="kw">use </span>derive_new::new;
 <span class="kw">use </span>frame_system::pallet_prelude::BlockNumberFor;
 <span class="kw">use </span>log::info;
+<span class="kw">use </span>pallet_session_validator_management::CommitteeMember;
 <span class="kw">use </span>sp_staking::SessionIndex;
 <span class="kw">use </span>sp_std::vec::Vec;
 
@@ -136,7 +138,7 @@
 			pallet_session_validator_management::Pallet::&lt;T&gt;::current_committee_storage()
 				.committee
 				.into_iter()
-				.map(|(id, keys)| (id.into(), keys))
+				.map(|member| (member.authority_id().into(), member.authority_keys()))
 				.collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;(),
 		)
 	}

@@ -118,7 +118,7 @@
 }
 
 <span class="kw">use </span>pallet_session_validator_management::Call;
-<span class="attr">#[benchmarks]
+<span class="attr">#[benchmarks(<span class="kw">where </span>&lt;T <span class="kw">as </span>pallet_session_validator_management::Config&gt;::CommitteeMember: From&lt;(&lt;T <span class="kw">as </span>pallet_session_validator_management::Config&gt;::AuthorityId, &lt;T <span class="kw">as </span>pallet_session_validator_management::Config&gt;::AuthorityKeys)&gt;)]
 </span><span class="kw">pub mod </span>benchmarks {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 
@@ -147,15 +147,15 @@
 			})
 			.collect();
 		<span class="kw">let </span>validators: BoundedVec&lt;
-			(&lt;T <span class="kw">as </span>pallet_session_validator_management::Config&gt;::AuthorityId, T::AuthorityKeys),
+			&lt;T <span class="kw">as </span>pallet_session_validator_management::Config&gt;::CommitteeMember,
 			T::MaxValidators,
-		&gt; = validators.try_into().unwrap();
+		&gt; = BoundedVec::truncate_from(validators.into_iter().map(|member| member.into()).collect());
 
 		<span class="kw">let </span>for_epoch_number = T::current_epoch_number() + One::one();
 		set_epoch_number::&lt;T&gt;(for_epoch_number.into());
 
 		<span class="attr">#[extrinsic_call]
-		</span><span class="kw">_</span>(RawOrigin::None, validators.clone(), for_epoch_number, Default::default());
+		</span><span class="kw">_</span>(RawOrigin::None, validators, for_epoch_number, Default::default());
 	}
 
 	<span class="macro">impl_benchmark_test_suite!</span>(Pallet, <span class="kw">crate</span>::mock::new_test_ext(), <span class="kw">crate</span>::mock::Test);
