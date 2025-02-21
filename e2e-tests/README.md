@@ -14,7 +14,7 @@ Welcome to `Partner Chains Tests`, a powerful and flexible test automation frame
 
 ## Installation
 
-1. Install `python 3.12` and `pip`.
+1. Install `python 3.12` and `pip`. At this point, python from nix devshell does not work with e2e-tests, please install a separate one in your system.
 2. Create and activate virtual environment
 
 ```bash
