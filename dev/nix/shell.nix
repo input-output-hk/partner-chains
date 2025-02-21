@@ -49,17 +49,14 @@
 
           # local development tools
           rustToolchain
-          nodejs
           gawk
           cargo-edit
           cargo-license
-          perl
 
           # infra packages
           earthly
           awscli2
           kubectl
-          kubernetes-helm
 
           # our local packages
           self'.packages.cardano-cli
