@@ -170,3 +170,22 @@ def test_block_headers_have_mc_hash(api: BlockchainApi, config: ApiConfig, pc_ep
 
         if latest_stable_block_diff < config.main_chain.security_param + config.main_chain.block_stability_margin:
             logger.warning(f"Unexpected (but within offset) stable block number saved in header of block {block_no}")
+
+@mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
+@mark.test_key('ETCM-9306')
+@mark.delegator_rewards
+def test_block_production_log(api: BlockchainApi, config: ApiConfig, pc_epoch, get_pc_epoch_blocks):
+    """Test that for each block production log entry, the block for given slot was produced by the node of given SPO
+
+    * ...
+    """
+    blocks_range = get_pc_epoch_blocks(pc_epoch)["range"]
+    last_block_num = blocks_range[-1]
+    last_block = api.get_block(last_block_num)
+    block_production_log = api.substrate.query("BlockProductionLog", "Log", block_hash=last_block["header"]["parentHash"])
+    logger.warning(f"dir(last_block): {dir(last_block)}")
+    logger.warning(f"last_block: {last_block}")
+    logger.warning(f"block_production_log: {block_production_log}")
+    for (slot, producer_id_in) in block_production_log:
+    	timestamp = slot_to_timestamp(slot)
+    assert 1 == pc_epoch, "fail for a reason"
