@@ -17,7 +17,7 @@ from .partner_chains_node import PartnerChainsNode
 from .partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, PartnerChainRpcException, DParam
 import string
 import time
-from scalecodec.base import RuntimeConfiguration, ScaleBytes
+from scalecodec.base import ScaleBytes
 
 
 def _keypair_type_to_name(type):
@@ -61,7 +61,6 @@ class SubstrateApi(BlockchainApi):
         self.partner_chains_node = PartnerChainsNode(config)
         self.partner_chain_rpc = PartnerChainRpc(config.nodes_config.node.rpc_url)
         self.partner_chain_epoch_calculator = PartnerChainEpochCalculator(config)
-        self.compact_encoder = RuntimeConfiguration().create_scale_object('Compact')
         with open("src/runtime_api.json") as file:
             self.custom_type_registry = json.load(file)
 
@@ -222,7 +221,7 @@ class SubstrateApi(BlockchainApi):
         wallet.private_key = keypair.private_key
         wallet.mnemonic = mnemonic
         wallet.seed = keypair.seed_hex
-        wallet.public_key = keypair.public_key
+        wallet.public_key = keypair.public_key.hex()
         wallet.crypto_type = keypair.crypto_type
         logger.debug(f"New wallet created {wallet.address}")
         return wallet
@@ -252,7 +251,7 @@ class SubstrateApi(BlockchainApi):
         wallet.address = keypair.ss58_address
         wallet.private_key = keypair.private_key
         wallet.crypto_type = keypair.crypto_type
-        wallet.public_key = keypair.public_key
+        wallet.public_key = keypair.public_key.hex()
         wallet.seed = keypair.seed_hex
         return wallet
 
@@ -721,3 +720,36 @@ class SubstrateApi(BlockchainApi):
     def _effective_in_mc_epoch(self):
         """Calculates main chain epoch in which smart contracts candidates related operation will be effective."""
         return self.cardano_cli.get_epoch() + 2
+
+    def sign_address_association(self, address, stake_signing_key):
+        return self.partner_chains_node.sign_address_association(address, stake_signing_key)
+
+    def submit_address_association(self, signature, wallet):
+        tx = Transaction()
+        tx._unsigned = self.substrate.compose_call(
+            call_module="AddressAssociations",
+            call_function="associate_address",
+            call_params={
+                "partnerchain_address": signature.partner_chain_address,
+                "signature": signature.signature,
+                "stake_public_key": signature.stake_public_key,
+            }
+        )
+        logger.debug(f"Transaction built {tx._unsigned}")
+
+        if wallet.crypto_type and wallet.crypto_type == KeypairType.ECDSA:
+            tx._signed = self.__create_signed_ecdsa_extrinsic(call=tx._unsigned, keypair=wallet.raw)
+        else:
+            tx._signed = self.substrate.create_signed_extrinsic(call=tx._unsigned, keypair=wallet.raw)
+        logger.debug(f"Transaction signed {tx._signed}")
+
+        tx._receipt = self.substrate.submit_extrinsic(tx._signed, wait_for_inclusion=True)
+        logger.debug(f"Transaction sent {tx._receipt.extrinsic}")
+        tx.hash = tx._receipt.extrinsic_hash
+        tx.total_fee_amount = tx._receipt.total_fee_amount
+        return tx
+
+    def get_address_association(self, stake_key_hash):
+        result = self.substrate.query("AddressAssociations", "AddressAssociations", [hex(int(stake_key_hash, 16))])
+        logger.debug(f"Address association for {stake_key_hash}: {result}")
+        return result.value

@@ -1,10 +1,32 @@
 from pytest import mark, skip
-from src.blockchain_api import BlockchainApi
+from src.blockchain_api import BlockchainApi, Wallet
 from config.api_config import ApiConfig
 import logging as logger
 import math
 
 COMMITTEE_REPETITIONS_IN_PC_EPOCH = 2
+
+
+@mark.block_reward
+def test_delegator_can_associate_pc_address(api: BlockchainApi, new_wallet: Wallet, get_wallet: Wallet):
+    logger.info("Signing address association...")
+    stake_skey, stake_vkey = api.cardano_cli.generate_stake_keys()
+    skey_hex = stake_skey["cborHex"][4:]
+    vkey_hex = stake_vkey["cborHex"][4:]
+    signature = api.sign_address_association(new_wallet.public_key, skey_hex)
+    assert signature.partner_chain_address == new_wallet.address
+    assert signature.signature, "Signature is empty"
+    assert signature.stake_public_key == f"0x{vkey_hex}"
+
+    logger.info("Submitting address association...")
+    tx = api.submit_address_association(signature, wallet=get_wallet)
+    assert tx.hash, "Could not submit address association"
+
+    logger.info("Verifying address association...")
+    vkey_hash = api.cardano_cli.get_stake_key_hash(vkey_hex)
+    logger.info(f"Stake public key hash: {vkey_hash}")
+    address_association = api.get_address_association(vkey_hash)
+    assert address_association == new_wallet.address, "Address association not found"
 
 
 @mark.skip_on_new_chain
