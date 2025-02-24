@@ -1,42 +1,44 @@
-use crate::BlockProducerIdInherentProvider;
-use sealed_test::prelude::*;
+use crate::{BlockAuthorInherentProvider, BlockProductionLogApi};
+use sp_api::ApiRef;
+use sp_api::ProvideRuntimeApi;
+use sp_runtime::traits::Block as BlockT;
 
-const BLOCK_PRODUCER_ID_ENV_VAR_VALUE: &str =
-	"020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9";
+pub type Block = sp_runtime::generic::Block<
+	sp_runtime::generic::Header<u32, sp_runtime::traits::BlakeTwo256>,
+	sp_runtime::OpaqueExtrinsic,
+>;
 
-#[sealed_test]
-fn from_env_happy_path() {
-	std::env::set_var("TEST_VAR_NAME", BLOCK_PRODUCER_ID_ENV_VAR_VALUE);
-	let provider = BlockProducerIdInherentProvider::<[u8; 32]>::from_env("TEST_VAR_NAME").unwrap();
-	assert_eq!(hex::encode(provider.id), BLOCK_PRODUCER_ID_ENV_VAR_VALUE)
+type Member = u32;
+type Author = u64;
+
+#[derive(Clone, Default)]
+struct TestApi {
+	author: Member,
 }
 
-#[sealed_test]
-fn from_env_happy_path_with_0x_prefix() {
-	let env_var_value = format!("0x{}", BLOCK_PRODUCER_ID_ENV_VAR_VALUE);
-	std::env::set_var("TEST_VAR_NAME", env_var_value);
-	let provider = BlockProducerIdInherentProvider::<[u8; 32]>::from_env("TEST_VAR_NAME").unwrap();
-	assert_eq!(hex::encode(provider.id), BLOCK_PRODUCER_ID_ENV_VAR_VALUE)
+impl ProvideRuntimeApi<Block> for TestApi {
+	type Api = Self;
+	fn runtime_api(&self) -> ApiRef<Self::Api> {
+		(*self).clone().into()
+	}
 }
 
-#[sealed_test]
-fn error_when_env_var_is_not_set() {
-	std::env::remove_var("TEST_VAR_NAME");
-	let err = BlockProducerIdInherentProvider::<[u8; 32]>::from_env("TEST_VAR_NAME").unwrap_err();
-	assert_eq!(err, "Block Producer Id environment variable 'TEST_VAR_NAME' is not set");
+sp_api::mock_impl_runtime_apis! {
+	impl BlockProductionLogApi<Block, Member> for TestApi {
+
+		fn get_current_author() -> Member {
+			self.author
+		}
+	}
 }
 
-#[sealed_test]
-fn error_when_invalid_hex() {
-	std::env::set_var("TEST_VAR_NAME", "0xabcdzzzzz");
-	let err = BlockProducerIdInherentProvider::<[u8; 32]>::from_env("TEST_VAR_NAME").unwrap_err();
-	assert_eq!(err, "Block Producer Id environment variable 'TEST_VAR_NAME' value '0xabcdzzzzz' is not a valid hex string");
-}
+#[test]
+fn provides_author_based_on_runtime_api() {
+	let mock_api = TestApi { author: 102 };
 
-#[sealed_test]
-fn error_when_failed_try_from() {
-	std::env::set_var("TEST_VAR_NAME", BLOCK_PRODUCER_ID_ENV_VAR_VALUE);
-	// Value is 32 bytes, expected 33
-	let err = BlockProducerIdInherentProvider::<[u8; 33]>::from_env("TEST_VAR_NAME").unwrap_err();
-	assert!(err.starts_with("Could not convert '020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9' into Block Producer Id. Cause:"));
+	let provider =
+		BlockAuthorInherentProvider::<Author>::new(&mock_api, <Block as BlockT>::Hash::default())
+			.expect("Should not fail");
+
+	assert_eq!(provider.author, mock_api.author.into());
 }

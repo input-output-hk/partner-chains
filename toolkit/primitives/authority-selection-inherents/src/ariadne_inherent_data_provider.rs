@@ -2,7 +2,6 @@
 use crate::authority_selection_inputs::AuthoritySelectionDataSource;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use parity_scale_codec::{Decode, Encode};
-use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 #[cfg(feature = "std")]
 use {
 	crate::authority_selection_inputs::AuthoritySelectionInputsCreationError,
@@ -13,6 +12,7 @@ use {
 	sp_consensus_slots::Slot,
 	sp_inherents::{InherentData, InherentIdentifier},
 	sp_runtime::traits::Block as BlockT,
+	sp_session_validator_management::CommitteeMember as CommitteeMemberT,
 	sp_session_validator_management::{
 		InherentError, MainChainScripts, SessionValidatorManagementApi, INHERENT_IDENTIFIER,
 	},
