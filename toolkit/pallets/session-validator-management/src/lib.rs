@@ -354,16 +354,12 @@ pub mod pallet {
 			T::select_authorities(authority_selection_inputs, sidechain_epoch).map(|c| c.to_vec())
 		}
 
-		pub fn rotate_committee_to_next_epoch() -> Option<Vec<(T::AccountId, T::AuthorityKeys)>> {
+		pub fn rotate_committee_to_next_epoch() -> Option<Vec<T::CommitteeMember>> {
 			let next_committee = NextCommittee::<T>::take()?;
 
 			CurrentCommittee::<T>::put(next_committee.clone());
 
-			let validators: Vec<(T::AccountId, T::AuthorityKeys)> = next_committee
-				.committee
-				.into_iter()
-				.map(|member| (member.authority_id().into(), member.authority_keys()))
-				.collect();
+			let validators = next_committee.committee.to_vec();
 			let len = validators.len();
 			info!(
 				"Committee rotated: Returning {len} validators, stored in epoch {}",
@@ -372,28 +368,14 @@ pub mod pallet {
 			Some(validators)
 		}
 
-		pub fn get_current_committee() -> (T::ScEpochNumber, Vec<T::AuthorityId>) {
+		pub fn get_current_committee() -> (T::ScEpochNumber, Vec<T::CommitteeMember>) {
 			let committee_info = CurrentCommittee::<T>::get();
-			(
-				committee_info.epoch,
-				committee_info
-					.committee
-					.into_iter()
-					.map(|member| member.authority_id())
-					.collect(),
-			)
+			(committee_info.epoch, committee_info.committee.to_vec())
 		}
 
-		pub fn get_next_committee() -> Option<(T::ScEpochNumber, Vec<T::AuthorityId>)> {
+		pub fn get_next_committee() -> Option<(T::ScEpochNumber, Vec<T::CommitteeMember>)> {
 			let committee_info = NextCommittee::<T>::get()?;
-			Some((
-				committee_info.epoch,
-				committee_info
-					.committee
-					.into_iter()
-					.map(|member| member.authority_id())
-					.collect(),
-			))
+			Some((committee_info.epoch, committee_info.committee.to_vec()))
 		}
 
 		pub fn get_main_chain_scripts() -> MainChainScripts {

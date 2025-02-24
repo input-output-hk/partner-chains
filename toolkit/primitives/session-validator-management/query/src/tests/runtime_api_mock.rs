@@ -16,7 +16,7 @@ pub type Block = sp_runtime::generic::Block<
 >;
 
 type SessionKeys = u64;
-#[derive(Encode, Decode)]
+#[derive(Encode, Decode, Clone)]
 pub struct CrossChainPublic([u8; 33]);
 impl AsRef<[u8]> for CrossChainPublic {
 	fn as_ref(&self) -> &[u8] {
@@ -44,16 +44,16 @@ sp_api::mock_impl_runtime_apis! {
 			})
 		}
 	}
-	impl SessionValidatorManagementApi<Block, SessionKeys, CrossChainPublic, AuthoritySelectionInputs, ScEpochNumber> for TestRuntimeApi {
+	impl SessionValidatorManagementApi<Block, (CrossChainPublic, SessionKeys), AuthoritySelectionInputs, ScEpochNumber> for TestRuntimeApi {
 		#[advanced]
-		fn get_current_committee(at: <Block as BlockT>::Hash) -> Result<(ScEpochNumber, sp_std::vec::Vec<CrossChainPublic>), sp_api::ApiError> {
+		fn get_current_committee(at: <Block as BlockT>::Hash) -> Result<(ScEpochNumber, sp_std::vec::Vec<(CrossChainPublic, SessionKeys)>), sp_api::ApiError> {
 			self.check_using_same_instance_for_same_block(at.encode())?;
 			let block_number = conversion::block_hash_to_block_number(at.into());
 			let block_epoch = conversion::get_epoch(block_number);
 			Ok((ScEpochNumber(block_epoch as u64), committee_for_epoch(block_epoch as u64)))
 		}
 		#[advanced]
-		fn get_next_committee(at: <Block as BlockT>::Hash) -> Result<Option<(ScEpochNumber, sp_std::vec::Vec<CrossChainPublic>)>, sp_api::ApiError> {
+		fn get_next_committee(at: <Block as BlockT>::Hash) -> Result<Option<(ScEpochNumber, sp_std::vec::Vec<(CrossChainPublic, SessionKeys)>)>, sp_api::ApiError> {
 			self.check_using_same_instance_for_same_block(at.encode())?;
 			let block_number = conversion::block_hash_to_block_number(at.into()) ;
 			let block_epoch = conversion::get_epoch(block_number) + 1;
@@ -91,10 +91,10 @@ sp_api::mock_impl_runtime_apis! {
 	}
 }
 
-pub(crate) fn committee_for_epoch(epoch: u64) -> Vec<CrossChainPublic> {
+pub(crate) fn committee_for_epoch(epoch: u64) -> Vec<(CrossChainPublic, SessionKeys)> {
 	if epoch == conversion::GENESIS_EPOCH || epoch == conversion::EPOCH_OF_BLOCK_1 {
-		vec![CrossChainPublic([0u8; 33]), CrossChainPublic([1u8; 33])]
+		vec![(CrossChainPublic([0u8; 33]), 0), (CrossChainPublic([1u8; 33]), 1)]
 	} else {
-		vec![CrossChainPublic([epoch as u8; 33]), CrossChainPublic([epoch as u8 + 1; 33])]
+		vec![(CrossChainPublic([epoch as u8; 33]), 2), (CrossChainPublic([epoch as u8 + 1; 33]), 3)]
 	}
 }

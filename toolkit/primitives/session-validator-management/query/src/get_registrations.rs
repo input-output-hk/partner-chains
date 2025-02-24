@@ -9,12 +9,8 @@ use sidechain_domain::{
 use sp_core::bytes::to_hex;
 use sp_sidechain::GetGenesisUtxo;
 
-impl<
-		C,
-		Block,
-		SessionKeys: parity_scale_codec::Decode + Send + Sync + 'static,
-		CrossChainPublic,
-	> SessionValidatorManagementQuery<C, Block, SessionKeys, CrossChainPublic>
+impl<C, Block, SessionKeys: parity_scale_codec::Decode + Send + Sync + 'static>
+	SessionValidatorManagementQuery<C, Block, SessionKeys>
 where
 	Block: BlockT,
 	C: HeaderBackend<Block>,

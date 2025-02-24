@@ -2,6 +2,7 @@
 use crate::authority_selection_inputs::AuthoritySelectionDataSource;
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use parity_scale_codec::{Decode, Encode};
+use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 #[cfg(feature = "std")]
 use {
 	crate::authority_selection_inputs::AuthoritySelectionInputsCreationError,
@@ -40,7 +41,7 @@ impl AriadneInherentDataProvider {
 		})
 	}
 
-	pub async fn new<Block, SessionKeys, CrossChainPublic, T>(
+	pub async fn new<Block, CommitteeMember, T>(
 		client: &T,
 		sc_slot_config: &ScSlotConfig,
 		mc_epoch_config: &MainchainEpochConfig,
@@ -50,14 +51,14 @@ impl AriadneInherentDataProvider {
 		mc_reference_epoch: McEpochNumber,
 	) -> Result<Self, InherentProviderCreationError>
 	where
-		SessionKeys: Decode,
-		CrossChainPublic: Decode + Encode,
+		CommitteeMember: CommitteeMemberT + Decode + Encode,
+		CommitteeMember::AuthorityKeys: Decode + Encode,
+		CommitteeMember::AuthorityId: Decode + Encode,
 		Block: BlockT,
 		T: ProvideRuntimeApi<Block> + Send + Sync,
 		T::Api: SessionValidatorManagementApi<
 			Block,
-			SessionKeys,
-			CrossChainPublic,
+			CommitteeMember,
 			AuthoritySelectionInputs,
 			ScEpochNumber,
 		>,
@@ -103,7 +104,7 @@ pub enum InherentProviderCreationError {
 }
 
 #[cfg(feature = "std")]
-fn mc_epoch_for_next_ariadne_cidp<Block, SessionKeys, CrossChainPublic, T>(
+fn mc_epoch_for_next_ariadne_cidp<Block, CommitteeMember, T>(
 	client: &T,
 	sc_slot_config: &ScSlotConfig,
 	epoch_config: &MainchainEpochConfig,
@@ -112,13 +113,13 @@ fn mc_epoch_for_next_ariadne_cidp<Block, SessionKeys, CrossChainPublic, T>(
 ) -> Result<McEpochNumber, InherentProviderCreationError>
 where
 	Block: BlockT,
-	SessionKeys: Decode,
-	CrossChainPublic: Decode + Encode,
+	CommitteeMember: Decode + Encode + CommitteeMemberT,
+	CommitteeMember::AuthorityKeys: Decode + Encode,
+	CommitteeMember::AuthorityId: Decode + Encode,
 	T: ProvideRuntimeApi<Block> + Send + Sync,
 	T::Api: SessionValidatorManagementApi<
 		Block,
-		SessionKeys,
-		CrossChainPublic,
+		CommitteeMember,
 		AuthoritySelectionInputs,
 		ScEpochNumber,
 	>,
