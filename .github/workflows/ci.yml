@@ -289,7 +289,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: master
-      - name: Get current commit SHA 
+      - name: Get current commit SHA
         id: get_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Build and Upload for macOS x86_64
@@ -311,7 +311,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: master
-      - name: Get current commit SHA 
+      - name: Get current commit SHA
         id: get_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Build and Upload for macOS arm64
@@ -337,7 +337,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: master
-      - name: Get current commit SHA 
+      - name: Get current commit SHA
         id: get_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Upload Artifacts to S3
@@ -472,9 +472,34 @@ jobs:
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
+  ci-preview-tests-post-merge:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    needs: deploy-ci-preview
+    runs-on: eks
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: master
+      - name: Deploy and test against ci-preview
+        uses: ./.github/actions/tests/run-e2e-tests
+        with:
+          env: ci
+          blockchain: substrate
+          markers: "not active_flow and not passive_flow and not probability"
+
   post-merge-actions-complete:
     if: ${{ always() && (github.event_name == 'pull_request' && github.event.pull_request.merged == true) }}
-    needs: [build-linux-post-merge, deploy-rustdoc, upload-chain-specs, local-environment-tests-post-merge, deploy-ci-preview]
+    needs:
+      [
+        build-linux-post-merge,
+        deploy-rustdoc,
+        upload-chain-specs,
+        local-environment-tests-post-merge,
+        ci-preview-tests-post-merge,
+        deploy-ci-preview,
+      ]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
@@ -550,7 +575,7 @@ jobs:
             ./to-build/ci_preview_chain_spec.json
             ./to-build/staging_preview_chain_spec.json
             ./to-build/staging_preprod_chain_spec.json
-  
+
   build-macos-x86_64-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
     permissions:
@@ -569,7 +594,7 @@ jobs:
           sha: ${{ inputs.sha }}
           tag: ${{ inputs.sha }}
           os: macos-x86_64
-  
+
   build-macos-arm64-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
     permissions:
@@ -588,7 +613,7 @@ jobs:
           sha: ${{ inputs.sha }}
           tag: ${{ inputs.sha }}
           os: macos-arm64
-  
+
   upload-to-s3-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
     needs:
@@ -613,7 +638,7 @@ jobs:
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_S3_ROLE_ARN_SECRET }}
-  
+
   upload-chain-specs-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
     needs: build-linux-workflow-dispatch
@@ -632,7 +657,7 @@ jobs:
           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
-  
+
   workflow-dispatch-flow-complete:
     if: ${{ always() && github.event_name == 'workflow_dispatch' }}
     needs: [build-linux-workflow-dispatch, build-macos-x86_64-workflow-dispatch, build-macos-arm64-workflow-dispatch, upload-to-s3-workflow-dispatch, upload-chain-specs-workflow-dispatch]
