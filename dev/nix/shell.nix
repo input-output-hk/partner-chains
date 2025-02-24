@@ -24,6 +24,8 @@
         RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
         LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
         LD_LIBRARY_PATH = "${rustToolchain}/lib";
+        # https://github.com/NixOS/nixpkgs/issues/370494#issuecomment-2625163369
+        CFLAGS = "-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE";
 
         # envs needed in order to construct some of the rust crates
         ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
