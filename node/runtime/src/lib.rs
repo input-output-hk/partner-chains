@@ -37,6 +37,8 @@ use sidechain_domain::{
 };
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_core::hexdisplay::HexDisplay;
+use sp_core::ByteArray;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	generic, impl_opaque_keys,
@@ -434,10 +436,18 @@ impl sp_sidechain::OnNewEpoch for LogBeneficiaries {
 		let slot = pallet_aura::CurrentSlot::<Runtime>::get();
 		let block_production_log = BlockProductionLog::take_prefix(&slot);
 		if let Some((s, b)) = block_production_log.first() {
-			log::info!("Block production log head: {} -> {:?}", **s, b)
+			log::info!(
+				"Block production log head: {} -> {:?}",
+				**s,
+				HexDisplay::from(&b.id().as_slice())
+			)
 		};
 		if let Some((s, b)) = block_production_log.last() {
-			log::info!("Block production log tail: {} -> {:?}", **s, b)
+			log::info!(
+				"Block production log tail: {} -> {:?}",
+				**s,
+				HexDisplay::from(&b.id().as_slice())
+			)
 		};
 		RuntimeDbWeight::get().reads_writes(1, 1)
 	}
@@ -466,8 +476,8 @@ pub enum BlockAuthor {
 impl BlockAuthor {
 	pub fn id(&self) -> &CrossChainPublic {
 		match self {
-			Self::Incentivized(id, _ ) => id,
-			Self::ProBono(id) => id
+			Self::Incentivized(id, _) => id,
+			Self::ProBono(id) => id,
 		}
 	}
 }
