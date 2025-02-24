@@ -1048,6 +1048,61 @@
 <a href="#1048" id="1048">1048</a>
 <a href="#1049" id="1049">1049</a>
 <a href="#1050" id="1050">1050</a>
+<a href="#1051" id="1051">1051</a>
+<a href="#1052" id="1052">1052</a>
+<a href="#1053" id="1053">1053</a>
+<a href="#1054" id="1054">1054</a>
+<a href="#1055" id="1055">1055</a>
+<a href="#1056" id="1056">1056</a>
+<a href="#1057" id="1057">1057</a>
+<a href="#1058" id="1058">1058</a>
+<a href="#1059" id="1059">1059</a>
+<a href="#1060" id="1060">1060</a>
+<a href="#1061" id="1061">1061</a>
+<a href="#1062" id="1062">1062</a>
+<a href="#1063" id="1063">1063</a>
+<a href="#1064" id="1064">1064</a>
+<a href="#1065" id="1065">1065</a>
+<a href="#1066" id="1066">1066</a>
+<a href="#1067" id="1067">1067</a>
+<a href="#1068" id="1068">1068</a>
+<a href="#1069" id="1069">1069</a>
+<a href="#1070" id="1070">1070</a>
+<a href="#1071" id="1071">1071</a>
+<a href="#1072" id="1072">1072</a>
+<a href="#1073" id="1073">1073</a>
+<a href="#1074" id="1074">1074</a>
+<a href="#1075" id="1075">1075</a>
+<a href="#1076" id="1076">1076</a>
+<a href="#1077" id="1077">1077</a>
+<a href="#1078" id="1078">1078</a>
+<a href="#1079" id="1079">1079</a>
+<a href="#1080" id="1080">1080</a>
+<a href="#1081" id="1081">1081</a>
+<a href="#1082" id="1082">1082</a>
+<a href="#1083" id="1083">1083</a>
+<a href="#1084" id="1084">1084</a>
+<a href="#1085" id="1085">1085</a>
+<a href="#1086" id="1086">1086</a>
+<a href="#1087" id="1087">1087</a>
+<a href="#1088" id="1088">1088</a>
+<a href="#1089" id="1089">1089</a>
+<a href="#1090" id="1090">1090</a>
+<a href="#1091" id="1091">1091</a>
+<a href="#1092" id="1092">1092</a>
+<a href="#1093" id="1093">1093</a>
+<a href="#1094" id="1094">1094</a>
+<a href="#1095" id="1095">1095</a>
+<a href="#1096" id="1096">1096</a>
+<a href="#1097" id="1097">1097</a>
+<a href="#1098" id="1098">1098</a>
+<a href="#1099" id="1099">1099</a>
+<a href="#1100" id="1100">1100</a>
+<a href="#1101" id="1101">1101</a>
+<a href="#1102" id="1102">1102</a>
+<a href="#1103" id="1103">1103</a>
+<a href="#1104" id="1104">1104</a>
+<a href="#1105" id="1105">1105</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attr">#![recursion_limit = <span class="string">"256"</span>]
@@ -1077,6 +1132,9 @@
 <span class="kw">use </span>pallet_grandpa::AuthorityId <span class="kw">as </span>GrandpaId;
 <span class="kw">use </span>pallet_session_validator_management;
 <span class="kw">use </span>pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
+<span class="kw">use </span>parity_scale_codec::MaxEncodedLen;
+<span class="kw">use </span>parity_scale_codec::{Decode, Encode};
+<span class="kw">use </span>scale_info::TypeInfo;
 <span class="kw">use </span>session_manager::ValidatorManagementSessionManager;
 <span class="kw">use </span>sidechain_domain::{
 	NativeTokenAmount, PermissionedCandidateData, RegistrationData, ScEpochNumber, ScSlotNumber,
@@ -1084,7 +1142,9 @@
 };
 <span class="kw">use </span>sp_api::impl_runtime_apis;
 <span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityId <span class="kw">as </span>AuraId;
-<span class="kw">use </span>sp_core::{crypto::KeyTypeId, hexdisplay::HexDisplay, OpaqueMetadata};
+<span class="kw">use </span>sp_core::hexdisplay::HexDisplay;
+<span class="kw">use </span>sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+<span class="kw">use </span>sp_core::{ByteArray, Pair};
 <span class="kw">use </span>sp_runtime::{
 	generic, impl_opaque_keys,
 	traits::{
@@ -1481,10 +1541,18 @@
 		<span class="kw">let </span>slot = pallet_aura::CurrentSlot::&lt;Runtime&gt;::get();
 		<span class="kw">let </span>block_production_log = BlockProductionLog::take_prefix(<span class="kw-2">&amp;</span>slot);
 		<span class="kw">if let </span><span class="prelude-val">Some</span>((s, b)) = block_production_log.first() {
-			<span class="macro">log::info!</span>(<span class="string">"Block production log head: {} -&gt; {}"</span>, <span class="kw-2">**</span>s, HexDisplay::from(<span class="kw-2">&amp;</span>b.<span class="number">0</span>))
+			<span class="macro">log::info!</span>(
+				<span class="string">"Block production log head: {} -&gt; {:?}"</span>,
+				<span class="kw-2">**</span>s,
+				HexDisplay::from(<span class="kw-2">&amp;</span>b.id().as_slice())
+			)
 		};
 		<span class="kw">if let </span><span class="prelude-val">Some</span>((s, b)) = block_production_log.last() {
-			<span class="macro">log::info!</span>(<span class="string">"Block production log tail: {} -&gt; {}"</span>, <span class="kw-2">**</span>s, HexDisplay::from(<span class="kw-2">&amp;</span>b.<span class="number">0</span>))
+			<span class="macro">log::info!</span>(
+				<span class="string">"Block production log tail: {} -&gt; {:?}"</span>,
+				<span class="kw-2">**</span>s,
+				HexDisplay::from(<span class="kw-2">&amp;</span>b.id().as_slice())
+			)
 		};
 		RuntimeDbWeight::get().reads_writes(<span class="number">1</span>, <span class="number">1</span>)
 	}
@@ -1505,8 +1573,39 @@
 	<span class="kw">type </span>GetBlockRewardPoints = sp_block_rewards::SimpleBlockCount;
 }
 
+<span class="attr">#[derive(MaxEncodedLen, Encode, Decode, Clone, TypeInfo, PartialEq, Eq, Debug)]
+</span><span class="kw">pub enum </span>BlockAuthor {
+	Incentivized(CrossChainPublic, StakePoolPublicKey),
+	ProBono(CrossChainPublic),
+}
+<span class="kw">impl </span>BlockAuthor {
+	<span class="kw">pub fn </span>id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>CrossChainPublic {
+		<span class="kw">match </span><span class="self">self </span>{
+			<span class="self">Self</span>::Incentivized(id, <span class="kw">_</span>) =&gt; id,
+			<span class="self">Self</span>::ProBono(id) =&gt; id,
+		}
+	}
+}
+<span class="kw">impl </span>From&lt;CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;&gt; <span class="kw">for </span>BlockAuthor {
+	<span class="kw">fn </span>from(value: CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;) -&gt; <span class="self">Self </span>{
+		<span class="kw">match </span>value {
+			CommitteeMember::Permissioned { id, .. } =&gt; BlockAuthor::ProBono(id),
+			CommitteeMember::Registered { id, stake_pool_pub_key, .. } =&gt; {
+				BlockAuthor::Incentivized(id, stake_pool_pub_key)
+			},
+		}
+	}
+}
+<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+</span><span class="kw">impl </span>From&lt;[u8; <span class="number">32</span>]&gt; <span class="kw">for </span>BlockAuthor {
+	<span class="kw">fn </span>from(arr: [u8; <span class="number">32</span>]) -&gt; <span class="self">Self </span>{
+		<span class="kw">let </span>id = sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>arr).public().into();
+		<span class="self">Self</span>::ProBono(id)
+	}
+}
+
 <span class="kw">impl </span>pallet_block_production_log::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>BlockProducerId = BeneficiaryId;
+	<span class="kw">type </span>BlockProducerId = BlockAuthor;
 	<span class="kw">type </span>WeightInfo = pallet_block_production_log::weights::SubstrateWeight&lt;Runtime&gt;;
 
 	<span class="kw">fn </span>current_slot() -&gt; sp_consensus_slots::Slot {
@@ -1919,6 +2018,17 @@
 		}
 		<span class="kw">fn </span>initialized() -&gt; bool {
 			NativeTokenManagement::initialized()
+		}
+	}
+
+	<span class="kw">impl </span>sp_block_production_log::BlockProductionLogApi&lt;Block, CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;&gt;  <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>get_current_author() -&gt; CommitteeMember&lt;CrossChainPublic, SessionKeys&gt; {
+			<span class="kw">let </span>committee = SessionCommitteeManagement::get_current_committee().<span class="number">1</span>;
+			<span class="kw">let </span>slot = pallet_aura::CurrentSlot::&lt;Runtime&gt;::get();
+			<span class="comment">// this implementation is compatible with round-robin employed by Aura
+			</span>committee.get(<span class="kw-2">*</span>slot <span class="kw">as </span>usize % committee.len())
+				.expect(<span class="string">"Slot modulo committee size is a valid index unless committee is missing"</span>)
+				.clone()
 		}
 	}
 }

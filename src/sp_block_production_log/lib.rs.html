@@ -75,15 +75,31 @@
 <a href="#75" id="75">75</a>
 <a href="#76" id="76">76</a>
 <a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
-#[cfg(test)]
+</span><span class="kw">extern crate </span>alloc;
+
+<span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>test;
 
-<span class="kw">use </span>parity_scale_codec::Encode;
+<span class="kw">use </span>core::error::Error;
+<span class="kw">use </span>parity_scale_codec::{Decode, Encode};
 <span class="kw">use </span>sp_inherents::{InherentIdentifier, IsFatalError};
+<span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
-</span><span class="kw">use </span>{parity_scale_codec::Decode, sp_inherents::InherentData};
+</span><span class="kw">use </span>{sp_api::ProvideRuntimeApi, sp_inherents::InherentData};
 
 <span class="kw">pub const </span>INHERENT_IDENTIFIER: InherentIdentifier = <span class="kw-2">*</span><span class="string">b"blprdlog"</span>;
 
@@ -91,7 +107,7 @@
 #[cfg_attr(not(feature = <span class="string">"std"</span>), derive(Debug))]
 #[cfg_attr(feature = <span class="string">"std"</span>, derive(Decode, thiserror::Error, sp_runtime::RuntimeDebug))]
 </span><span class="kw">pub enum </span>InherentError {
-	<span class="attr">#[cfg_attr(feature = <span class="string">"std"</span>, error(<span class="string">"Block Producer Id inherent must be provided every block"</span>))]
+	<span class="attr">#[cfg_attr(feature = <span class="string">"std"</span>, error(<span class="string">"Block Author inherent must be provided every block"</span>))]
 	</span>InherentRequired,
 }
 <span class="kw">impl </span>IsFatalError <span class="kw">for </span>InherentError {
@@ -102,41 +118,40 @@
 
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 #[derive(Debug)]
-</span><span class="kw">pub struct </span>BlockProducerIdInherentProvider&lt;T&gt; {
-	<span class="kw">pub </span>id: T,
+</span><span class="kw">pub struct </span>BlockAuthorInherentProvider&lt;Author&gt; {
+	<span class="kw">pub </span>author: Author,
 }
 
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
-</span><span class="kw">impl</span>&lt;T&gt; BlockProducerIdInherentProvider&lt;T&gt;
-<span class="kw">where
-	</span>T: TryFrom&lt;Vec&lt;u8&gt;&gt; + Send + Sync + Encode,
-	&lt;T <span class="kw">as </span>TryFrom&lt;Vec&lt;u8&gt;&gt;&gt;::Error: std::fmt::Debug,
-{
-	<span class="kw">pub fn </span>from_env(env_var: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, String&gt; {
-		<span class="kw">let </span>env_var_value = std::env::var(env_var).map_err(|<span class="kw">_</span>| {
-			<span class="macro">format!</span>(<span class="string">"Block Producer Id environment variable '{env_var}' is not set"</span>)
-		})<span class="question-mark">?</span>;
-		<span class="kw">let </span>bytes = sp_core::bytes::from_hex(<span class="kw-2">&amp;</span>env_var_value)
-			.map_err(|<span class="kw">_</span>| <span class="macro">format!</span>(<span class="string">"Block Producer Id environment variable '{env_var}' value '{env_var_value}' is not a valid hex string"</span>))<span class="question-mark">?</span>;
-		<span class="kw">let </span>id = T::try_from(bytes.clone()).map_err(|e| {
-			<span class="macro">format!</span>(<span class="string">"Could not convert '{env_var_value}' into Block Producer Id. Cause: {e:#?}"</span>)
-		})<span class="question-mark">?</span>;
+</span><span class="kw">impl</span>&lt;Author&gt; BlockAuthorInherentProvider&lt;Author&gt; {
+	<span class="kw">pub fn </span>new&lt;C, Member, Block&gt;(
+		client: <span class="kw-2">&amp;</span>C,
+		parent_hash: Block::Hash,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Box&lt;<span class="kw">dyn </span>Error + Send + Sync&gt;&gt;
+	<span class="kw">where
+		</span>Member: Decode,
+		Block: BlockT,
+		C: ProvideRuntimeApi&lt;Block&gt;,
+		C::Api: BlockProductionLogApi&lt;Block, Member&gt;,
+		Author: From&lt;Member&gt;,
+	{
+		<span class="kw">let </span>author: Author = client.runtime_api().get_current_author(parent_hash)<span class="question-mark">?</span>.into();
 
-		<span class="prelude-val">Ok</span>(BlockProducerIdInherentProvider { id })
+		<span class="prelude-val">Ok</span>(BlockAuthorInherentProvider { author })
 	}
 }
 
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 #[async_trait::async_trait]
-</span><span class="kw">impl</span>&lt;T&gt; sp_inherents::InherentDataProvider <span class="kw">for </span>BlockProducerIdInherentProvider&lt;T&gt;
+</span><span class="kw">impl</span>&lt;T&gt; sp_inherents::InherentDataProvider <span class="kw">for </span>BlockAuthorInherentProvider&lt;T&gt;
 <span class="kw">where
-	</span>T: TryFrom&lt;Vec&lt;u8&gt;&gt; + Send + Sync + Encode,
+	</span>T: Send + Sync + Encode + Decode,
 {
 	<span class="kw">async fn </span>provide_inherent_data(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		inherent_data: <span class="kw-2">&amp;mut </span>InherentData,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), sp_inherents::Error&gt; {
-		inherent_data.put_data(INHERENT_IDENTIFIER, <span class="kw-2">&amp;</span><span class="self">self</span>.id)
+		inherent_data.put_data(INHERENT_IDENTIFIER, <span class="kw-2">&amp;</span><span class="self">self</span>.author)
 	}
 
 	<span class="kw">async fn </span>try_handle_error(
@@ -150,6 +165,15 @@
 		} <span class="kw">else </span>{
 			<span class="prelude-val">None
 		</span>}
+	}
+}
+
+<span class="macro">sp_api::decl_runtime_apis!</span> {
+	<span class="kw">pub trait </span>BlockProductionLogApi&lt;Member&gt;
+	<span class="kw">where
+		</span>Member: Decode
+	{
+		<span class="kw">fn </span>get_current_author() -&gt; Member;
 	}
 }
 </code></pre></div></section></main></body></html>

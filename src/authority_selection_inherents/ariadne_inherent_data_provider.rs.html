@@ -244,7 +244,6 @@
 </span><span class="kw">use </span><span class="kw">crate</span>::authority_selection_inputs::AuthoritySelectionDataSource;
 <span class="kw">use </span><span class="kw">crate</span>::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode};
-<span class="kw">use </span>sp_session_validator_management::CommitteeMember <span class="kw">as </span>CommitteeMemberT;
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">use </span>{
 	<span class="kw">crate</span>::authority_selection_inputs::AuthoritySelectionInputsCreationError,
@@ -255,6 +254,7 @@
 	sp_consensus_slots::Slot,
 	sp_inherents::{InherentData, InherentIdentifier},
 	sp_runtime::traits::Block <span class="kw">as </span>BlockT,
+	sp_session_validator_management::CommitteeMember <span class="kw">as </span>CommitteeMemberT,
 	sp_session_validator_management::{
 		InherentError, MainChainScripts, SessionValidatorManagementApi, INHERENT_IDENTIFIER,
 	},
