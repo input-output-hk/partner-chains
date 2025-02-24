@@ -468,6 +468,25 @@ jobs:
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
+  ci-preview-tests-post-merge:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    needs: deploy-ci-preview
+    runs-on: eks
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: master
+      - name: Deploy and test against ci-preview
+        uses: ./.github/actions/tests/run-e2e-tests
+        with:
+          env: ${{ env.TEST_ENVIRONMENT }}
+          blockchain: substrate
+          markers: "not active_flow and not passive_flow and not probability and not rpc"
+        env:
+          TEST_ENVIRONMENT: ci
+
   post-merge-actions-complete:
     if: ${{ always() && (github.event_name == 'pull_request' && github.event.pull_request.merged == true) }}
     needs:
@@ -476,6 +495,7 @@ jobs:
         deploy-rustdoc,
         upload-chain-specs,
         local-environment-tests-post-merge,
+        ci-preview-tests-post-merge,
         deploy-ci-preview,
       ]
     runs-on: ubuntu-latest
