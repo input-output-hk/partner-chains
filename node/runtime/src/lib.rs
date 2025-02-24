@@ -921,7 +921,9 @@ impl_runtime_apis! {
 			let mut committee = SessionCommitteeManagement::get_current_committee().1;
 			let slot = pallet_aura::CurrentSlot::<Runtime>::get();
 			// this implementation is compatible with round-robin employed by Aura
-			committee.remove(*slot as usize % committee.len())
+			committee.get(*slot as usize % committee.len())
+				.expect("Slot modulo committee size is a valid index unless committee is missing")
+				.clone()
 		}
 	}
 }
