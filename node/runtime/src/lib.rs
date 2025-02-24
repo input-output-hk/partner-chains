@@ -918,7 +918,7 @@ impl_runtime_apis! {
 
 	impl sp_block_production_log::BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>  for Runtime {
 		fn get_current_author() -> CommitteeMember<CrossChainPublic, SessionKeys> {
-			let mut committee = SessionCommitteeManagement::get_current_committee().1;
+			let committee = SessionCommitteeManagement::get_current_committee().1;
 			let slot = pallet_aura::CurrentSlot::<Runtime>::get();
 			// this implementation is compatible with round-robin employed by Aura
 			committee.get(*slot as usize % committee.len())
