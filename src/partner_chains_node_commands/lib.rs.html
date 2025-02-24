@@ -225,6 +225,7 @@
 <a href="#225" id="225">225</a>
 <a href="#226" id="226">226</a>
 <a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
@@ -242,6 +243,7 @@
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="kw">use </span>sp_runtime::AccountId32;
+<span class="kw">use </span>sp_session_validator_management::CommitteeMember <span class="kw">as </span>CommitteeMemberT;
 <span class="kw">use </span>sp_session_validator_management::SessionValidatorManagementApi;
 <span class="kw">use </span>sp_session_validator_management_query::commands::<span class="kw-2">*</span>;
 <span class="kw">use </span>sp_session_validator_management_query::SessionValidatorManagementQuery;
@@ -329,7 +331,7 @@
 	</span>Wizards(partner_chains_cli::Command),
 }
 
-<span class="kw">pub fn </span>run&lt;Cli, Block, CrossChainPublic, SessionKeys, Client&gt;(
+<span class="kw">pub fn </span>run&lt;Cli, Block, CommitteeMember, Client&gt;(
 	cli: <span class="kw-2">&amp;</span>Cli,
 	get_deps: <span class="kw">impl </span>FnOnce(
 		sc_service::Configuration,
@@ -346,15 +348,15 @@
 		+ GetSidechainStatus&lt;Block&gt;
 		+ SessionValidatorManagementApi&lt;
 			Block,
-			SessionKeys,
-			CrossChainPublic,
+			CommitteeMember,
 			AuthoritySelectionInputs,
 			ScEpochNumber,
 		&gt; + CandidateValidationApi&lt;Block&gt;,
 	Block: BlockT,
 	NumberFor&lt;Block&gt;: From&lt;u32&gt; + Into&lt;u32&gt;,
-	SessionKeys: Decode + Send + Sync + <span class="lifetime">'static</span>,
-	CrossChainPublic: Decode + Encode + AsRef&lt;[u8]&gt; + Send + Sync + <span class="lifetime">'static</span>,
+	CommitteeMember: CommitteeMemberT + Encode + Decode + Send + Sync + <span class="lifetime">'static</span>,
+	CommitteeMember::AuthorityId: Decode + Encode + AsRef&lt;[u8]&gt; + Send + Sync + <span class="lifetime">'static</span>,
+	CommitteeMember::AuthorityKeys: Decode + Encode,
 {
 	<span class="kw">match </span>cmd {
 		PartnerChainsSubcommand::SidechainParams(cmd) =&gt; {

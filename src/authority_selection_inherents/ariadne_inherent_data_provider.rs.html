@@ -239,10 +239,12 @@
 <a href="#239" id="239">239</a>
 <a href="#240" id="240">240</a>
 <a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
 </pre></div><pre class="rust"><code><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">use </span><span class="kw">crate</span>::authority_selection_inputs::AuthoritySelectionDataSource;
 <span class="kw">use </span><span class="kw">crate</span>::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode};
+<span class="kw">use </span>sp_session_validator_management::CommitteeMember <span class="kw">as </span>CommitteeMemberT;
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">use </span>{
 	<span class="kw">crate</span>::authority_selection_inputs::AuthoritySelectionInputsCreationError,
@@ -281,7 +283,7 @@
 		})
 	}
 
-	<span class="kw">pub async fn </span>new&lt;Block, SessionKeys, CrossChainPublic, T&gt;(
+	<span class="kw">pub async fn </span>new&lt;Block, CommitteeMember, T&gt;(
 		client: <span class="kw-2">&amp;</span>T,
 		sc_slot_config: <span class="kw-2">&amp;</span>ScSlotConfig,
 		mc_epoch_config: <span class="kw-2">&amp;</span>MainchainEpochConfig,
@@ -291,14 +293,14 @@
 		mc_reference_epoch: McEpochNumber,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, InherentProviderCreationError&gt;
 	<span class="kw">where
-		</span>SessionKeys: Decode,
-		CrossChainPublic: Decode + Encode,
+		</span>CommitteeMember: CommitteeMemberT + Decode + Encode,
+		CommitteeMember::AuthorityKeys: Decode + Encode,
+		CommitteeMember::AuthorityId: Decode + Encode,
 		Block: BlockT,
 		T: ProvideRuntimeApi&lt;Block&gt; + Send + Sync,
 		T::Api: SessionValidatorManagementApi&lt;
 			Block,
-			SessionKeys,
-			CrossChainPublic,
+			CommitteeMember,
 			AuthoritySelectionInputs,
 			ScEpochNumber,
 		&gt;,
@@ -344,7 +346,7 @@
 }
 
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
-</span><span class="kw">fn </span>mc_epoch_for_next_ariadne_cidp&lt;Block, SessionKeys, CrossChainPublic, T&gt;(
+</span><span class="kw">fn </span>mc_epoch_for_next_ariadne_cidp&lt;Block, CommitteeMember, T&gt;(
 	client: <span class="kw-2">&amp;</span>T,
 	sc_slot_config: <span class="kw-2">&amp;</span>ScSlotConfig,
 	epoch_config: <span class="kw-2">&amp;</span>MainchainEpochConfig,
@@ -353,13 +355,13 @@
 ) -&gt; <span class="prelude-ty">Result</span>&lt;McEpochNumber, InherentProviderCreationError&gt;
 <span class="kw">where
 	</span>Block: BlockT,
-	SessionKeys: Decode,
-	CrossChainPublic: Decode + Encode,
+	CommitteeMember: Decode + Encode + CommitteeMemberT,
+	CommitteeMember::AuthorityKeys: Decode + Encode,
+	CommitteeMember::AuthorityId: Decode + Encode,
 	T: ProvideRuntimeApi&lt;Block&gt; + Send + Sync,
 	T::Api: SessionValidatorManagementApi&lt;
 		Block,
-		SessionKeys,
-		CrossChainPublic,
+		CommitteeMember,
 		AuthoritySelectionInputs,
 		ScEpochNumber,
 	&gt;,

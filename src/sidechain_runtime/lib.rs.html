@@ -1064,6 +1064,7 @@
 	StakeError,
 };
 <span class="kw">use </span>authority_selection_inherents::select_authorities::select_authorities;
+<span class="kw">use </span>authority_selection_inherents::CommitteeMember;
 <span class="kw">use </span>frame_support::genesis_builder_helper::{build_state, get_preset};
 <span class="kw">use </span>frame_support::weights::constants::RocksDbWeight <span class="kw">as </span>RuntimeDbWeight;
 <span class="kw">use </span>frame_support::BoundedVec;
@@ -1093,7 +1094,6 @@
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, DispatchResult, MultiSignature, Perbill,
 };
-<span class="kw">use </span>sp_session_validator_management::CommitteeMember;
 <span class="kw">use </span>sp_sidechain::SidechainStatus;
 <span class="kw">use </span>sp_std::prelude::<span class="kw-2">*</span>;
 <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
@@ -1448,8 +1448,7 @@
 	<span class="kw">type </span>AuthoritySelectionInputs = AuthoritySelectionInputs;
 	<span class="kw">type </span>ScEpochNumber = ScEpochNumber;
 	<span class="kw">type </span>WeightInfo = pallet_session_validator_management::weights::SubstrateWeight&lt;Runtime&gt;;
-	<span class="kw">type </span>CommitteeMember =
-		authority_selection_inherents::CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;;
+	<span class="kw">type </span>CommitteeMember = CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;;
 
 	<span class="kw">fn </span>select_authorities(
 		input: AuthoritySelectionInputs,
@@ -1878,23 +1877,24 @@
 		}
 	}
 
-	<span class="kw">impl </span>sp_session_validator_management::SessionValidatorManagementApi&lt;Block, SessionKeys, CrossChainPublic, AuthoritySelectionInputs, sidechain_domain::ScEpochNumber&gt; <span class="kw">for </span>Runtime {
-		<span class="kw">fn </span>get_current_committee() -&gt; (ScEpochNumber, Vec&lt;CrossChainPublic&gt;) {
+	<span class="attr">#[api_version(<span class="number">2</span>)]
+	</span><span class="kw">impl </span>sp_session_validator_management::SessionValidatorManagementApi&lt;
+		Block,
+		CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;,
+		AuthoritySelectionInputs,
+		sidechain_domain::ScEpochNumber
+	&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>get_current_committee() -&gt; (ScEpochNumber, Vec&lt;CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;&gt;) {
 			SessionCommitteeManagement::get_current_committee()
 		}
-		<span class="kw">fn </span>get_next_committee() -&gt; <span class="prelude-ty">Option</span>&lt;(ScEpochNumber, Vec&lt;CrossChainPublic&gt;)&gt; {
+		<span class="kw">fn </span>get_next_committee() -&gt; <span class="prelude-ty">Option</span>&lt;(ScEpochNumber, Vec&lt;CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;&gt;)&gt; {
 			SessionCommitteeManagement::get_next_committee()
 		}
 		<span class="kw">fn </span>get_next_unset_epoch_number() -&gt; sidechain_domain::ScEpochNumber {
 			SessionCommitteeManagement::get_next_unset_epoch_number()
 		}
-		<span class="kw">fn </span>calculate_committee(authority_selection_inputs: AuthoritySelectionInputs, sidechain_epoch: ScEpochNumber) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;(CrossChainPublic, SessionKeys)&gt;&gt; {
-			<span class="prelude-val">Some</span>(
-				SessionCommitteeManagement::calculate_committee(authority_selection_inputs, sidechain_epoch)<span class="question-mark">?
-				</span>.into_iter()
-				.map(|member| (member.authority_id(), member.authority_keys()))
-				.collect()
-			)
+		<span class="kw">fn </span>calculate_committee(authority_selection_inputs: AuthoritySelectionInputs, sidechain_epoch: ScEpochNumber) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;&gt;&gt; {
+			SessionCommitteeManagement::calculate_committee(authority_selection_inputs, sidechain_epoch)
 		}
 		<span class="kw">fn </span>get_main_chain_scripts() -&gt; sp_session_validator_management::MainChainScripts {
 			SessionCommitteeManagement::get_main_chain_scripts()

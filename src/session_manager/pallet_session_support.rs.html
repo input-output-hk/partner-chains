@@ -155,7 +155,7 @@
 			pallet_session_validator_management::Pallet::&lt;T&gt;::rotate_committee_to_next_epoch()
 				.expect(
 					<span class="string">"PalletSessionSupport: Session should never end without current epoch validators defined. This may be caused by ShouldEndSession invalid behavior or being called before starting new session"</span>,
-				).into_iter().map(|(id, <span class="kw">_</span>)| id).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;(),
+				).into_iter().map(|member| member.authority_id().into()).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;(),
 		)
 	}
 

@@ -123,6 +123,22 @@
 <a href="#123" id="123">123</a>
 <a href="#124" id="124">124</a>
 <a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 #[cfg(feature = <span class="string">"std"</span>)]
@@ -232,20 +248,36 @@
 }
 
 <span class="macro">sp_api::decl_runtime_apis!</span> {
-	<span class="kw">pub trait </span>SessionValidatorManagementApi&lt;
-		SessionKeys: parity_scale_codec::Decode,
-		CrossChainPublic: parity_scale_codec::Decode + parity_scale_codec::Encode,
+	<span class="attr">#[api_version(<span class="number">2</span>)]
+	</span><span class="kw">pub trait </span>SessionValidatorManagementApi&lt;
+		CommitteeMember: parity_scale_codec::Decode + parity_scale_codec::Encode + <span class="kw">crate</span>::CommitteeMember,
 		AuthoritySelectionInputs: parity_scale_codec::Encode,
 		ScEpochNumber: parity_scale_codec::Encode + parity_scale_codec::Decode
-	&gt; {
+	&gt; <span class="kw">where
+	</span>CommitteeMember::AuthorityId: Encode + Decode,
+	CommitteeMember::AuthorityKeys: Encode + Decode,
+	{
 		<span class="kw">fn </span>get_main_chain_scripts() -&gt; MainChainScripts;
-		<span class="kw">fn </span>get_current_committee() -&gt; (ScEpochNumber, sp_std::vec::Vec&lt;CrossChainPublic&gt;);
-		<span class="kw">fn </span>get_next_committee() -&gt; <span class="prelude-ty">Option</span>&lt;(ScEpochNumber, sp_std::vec::Vec&lt;CrossChainPublic&gt;)&gt;;
 		<span class="kw">fn </span>get_next_unset_epoch_number() -&gt; ScEpochNumber;
+
+		<span class="attr">#[changed_in(<span class="number">2</span>)]
+		</span><span class="kw">fn </span>get_current_committee() -&gt; (ScEpochNumber, sp_std::vec::Vec&lt;CommitteeMember::AuthorityId&gt;);
+		<span class="kw">fn </span>get_current_committee() -&gt; (ScEpochNumber, sp_std::vec::Vec&lt;CommitteeMember&gt;);
+
+		<span class="attr">#[changed_in(<span class="number">2</span>)]
+		</span><span class="kw">fn </span>get_next_committee() -&gt; <span class="prelude-ty">Option</span>&lt;(ScEpochNumber, sp_std::vec::Vec&lt;CommitteeMember::AuthorityId&gt;)&gt;;
+		<span class="kw">fn </span>get_next_committee() -&gt; <span class="prelude-ty">Option</span>&lt;(ScEpochNumber, sp_std::vec::Vec&lt;CommitteeMember&gt;)&gt;;
+
+		<span class="attr">#[changed_in(<span class="number">2</span>)]
+		</span><span class="kw">fn </span>calculate_committee(
+			authority_selection_inputs: AuthoritySelectionInputs,
+			sidechain_epoch: ScEpochNumber
+		) -&gt; <span class="prelude-ty">Option</span>&lt;sp_std::vec::Vec&lt;(CommitteeMember::AuthorityId, CommitteeMember::AuthorityKeys)&gt;&gt;;
+
 		<span class="kw">fn </span>calculate_committee(
 			authority_selection_inputs: AuthoritySelectionInputs,
 			sidechain_epoch: ScEpochNumber
-		) -&gt; <span class="prelude-ty">Option</span>&lt;sp_std::vec::Vec&lt;(CrossChainPublic, SessionKeys)&gt;&gt;;
+		) -&gt; <span class="prelude-ty">Option</span>&lt;sp_std::vec::Vec&lt;CommitteeMember&gt;&gt;;
 	}
 }
 </code></pre></div></section></main></body></html>

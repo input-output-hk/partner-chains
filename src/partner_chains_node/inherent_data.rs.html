@@ -239,12 +239,11 @@
 <a href="#239" id="239">239</a>
 <a href="#240" id="240">240</a>
 <a href="#241" id="241">241</a>
-<a href="#242" id="242">242</a>
-<a href="#243" id="243">243</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider <span class="kw">as </span>AriadneIDP;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::{
 	AuthoritySelectionDataSource, AuthoritySelectionInputs,
 };
+<span class="kw">use </span>authority_selection_inherents::CommitteeMember;
 <span class="kw">use </span>derive_new::new;
 <span class="kw">use </span>jsonrpsee::core::async_trait;
 <span class="kw">use </span>sc_consensus_aura::{find_pre_digest, SlotDuration};
@@ -253,10 +252,9 @@
 <span class="kw">use </span>sidechain_domain::{McBlockHash, ScEpochNumber};
 <span class="kw">use </span>sidechain_mc_hash::McHashDataSource;
 <span class="kw">use </span>sidechain_mc_hash::McHashInherentDataProvider <span class="kw">as </span>McHashIDP;
-<span class="kw">use </span>sidechain_runtime::{
-	opaque::{Block, SessionKeys},
-	BeneficiaryId, CrossChainPublic,
-};
+<span class="kw">use </span>sidechain_runtime::opaque::SessionKeys;
+<span class="kw">use </span>sidechain_runtime::CrossChainPublic;
+<span class="kw">use </span>sidechain_runtime::{opaque::Block, BeneficiaryId};
 <span class="kw">use </span>sidechain_slots::ScSlotConfig;
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_block_production_log::BlockProducerIdInherentProvider;
@@ -294,8 +292,7 @@
 	T: HeaderBackend&lt;Block&gt;,
 	T::Api: SessionValidatorManagementApi&lt;
 		Block,
-		SessionKeys,
-		CrossChainPublic,
+		CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;,
 		AuthoritySelectionInputs,
 		ScEpochNumber,
 	&gt;,
@@ -392,8 +389,7 @@
 	</span>T: ProvideRuntimeApi&lt;Block&gt; + Send + Sync + HeaderBackend&lt;Block&gt;,
 	T::Api: SessionValidatorManagementApi&lt;
 		Block,
-		SessionKeys,
-		CrossChainPublic,
+		CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;,
 		AuthoritySelectionInputs,
 		ScEpochNumber,
 	&gt;,

@@ -108,6 +108,9 @@
 <a href="#108" id="108">108</a>
 <a href="#109" id="109">109</a>
 <a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">use </span>core::marker::PhantomData;
@@ -153,7 +156,10 @@
 				.expect(
 					<span class="string">"Session should never end without current epoch validators defined. \
 				Check ShouldEndSession implementation or if it is used before starting new session"</span>,
-				),
+				)
+				.into_iter()
+				.map(|member| (member.authority_id().into(), member.authority_keys()))
+				.collect(),
 		)
 	}
 

@@ -146,8 +146,10 @@
 </span><span class="attr">#![warn(missing_docs)]
 
 </span><span class="kw">use </span><span class="kw">crate</span>::main_chain_follower::DataSources;
-<span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
+<span class="kw">use </span>authority_selection_inherents::{
+	authority_selection_inputs::AuthoritySelectionInputs, CommitteeMember,
+};
 <span class="kw">use </span>jsonrpsee::RpcModule;
 <span class="kw">use </span>pallet_session_validator_management_rpc::<span class="kw-2">*</span>;
 <span class="kw">use </span>pallet_sidechain_rpc::<span class="kw-2">*</span>;
@@ -159,12 +161,11 @@
 <span class="kw">use </span>sc_transaction_pool_api::TransactionPool;
 <span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 <span class="kw">use </span>sidechain_domain::ScEpochNumber;
-<span class="kw">use </span>sidechain_runtime::CrossChainPublic;
 <span class="kw">use </span>sidechain_runtime::{
 	opaque::{Block, SessionKeys},
 	AccountId, Balance, Nonce,
 };
-<span class="kw">use </span>sidechain_runtime::{BlockNumber, Hash};
+<span class="kw">use </span>sidechain_runtime::{BlockNumber, CrossChainPublic, Hash};
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_block_builder::BlockBuilder;
 <span class="kw">use </span>sp_blockchain::{Error <span class="kw">as </span>BlockChainError, HeaderBackend, HeaderMetadata};
@@ -217,8 +218,7 @@
 	C::Api: sp_sidechain::GetSidechainStatus&lt;Block&gt;,
 	C::Api: sp_session_validator_management::SessionValidatorManagementApi&lt;
 		Block,
-		SessionKeys,
-		CrossChainPublic,
+		CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;,
 		AuthoritySelectionInputs,
 		ScEpochNumber,
 	&gt;,
