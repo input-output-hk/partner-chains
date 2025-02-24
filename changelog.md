@@ -24,7 +24,11 @@ type implemented in `node/runtime/src/lib.rs` for reference using Ariadne.
 
 ## Added
 
-block-production-log pallet, see it's readme for more details.
+* block-production-log pallet, see it's readme for more details.
+* Block participaton pallet and inherent data provider, making available data on block producers
+  and their delegators. This feature is meant to be used by Partner Chains developers to implement
+  block production reward payouts in their own runtimes. See `toolkit/primitives/block-participation/README.md`
+  for more information.
 
 # v1.5.0
 

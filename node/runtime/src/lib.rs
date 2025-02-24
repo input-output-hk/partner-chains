@@ -32,14 +32,19 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use session_manager::ValidatorManagementSessionManager;
 use sidechain_domain::{
-	NativeTokenAmount, PermissionedCandidateData, RegistrationData, ScEpochNumber, ScSlotNumber,
-	StakeDelegation, StakePoolPublicKey, UtxoId,
+	DelegatorKey, MainchainKeyHash, NativeTokenAmount, PermissionedCandidateData, RegistrationData,
+	ScEpochNumber, ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
 };
+use sidechain_slots::Slot;
 use sp_api::impl_runtime_apis;
+use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::hexdisplay::HexDisplay;
+use sp_core::ByteArray;
+#[cfg(feature = "runtime-benchmarks")]
+use sp_core::Pair;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_core::{ByteArray, Pair};
+use sp_inherents::InherentIdentifier;
 use sp_runtime::{
 	generic, impl_opaque_keys,
 	traits::{
@@ -468,7 +473,9 @@ impl pallet_block_rewards::Config for Runtime {
 	type GetBlockRewardPoints = sp_block_rewards::SimpleBlockCount;
 }
 
-#[derive(MaxEncodedLen, Encode, Decode, Clone, TypeInfo, PartialEq, Eq, Debug)]
+#[derive(
+	MaxEncodedLen, Encode, Decode, Clone, TypeInfo, PartialEq, Eq, Debug, Hash, PartialOrd, Ord,
+)]
 pub enum BlockAuthor {
 	Incentivized(CrossChainPublic, StakePoolPublicKey),
 	ProBono(CrossChainPublic),
@@ -488,6 +495,15 @@ impl From<CommitteeMember<CrossChainPublic, SessionKeys>> for BlockAuthor {
 			CommitteeMember::Registered { id, stake_pool_pub_key, .. } => {
 				BlockAuthor::Incentivized(id, stake_pool_pub_key)
 			},
+		}
+	}
+}
+
+impl AsCardanoSPO for BlockAuthor {
+	fn as_cardano_spo(&self) -> Option<MainchainKeyHash> {
+		match self {
+			BlockAuthor::Incentivized(_, key) => Some(key.hash()),
+			BlockAuthor::ProBono(_) => None,
 		}
 	}
 }
@@ -519,6 +535,21 @@ impl pallet_address_associations::Config for Runtime {
 	}
 }
 
+impl pallet_block_participation::Config for Runtime {
+	type WeightInfo = pallet_block_participation::weights::SubstrateWeight<Runtime>;
+	type DelegatorId = DelegatorKey;
+
+	fn should_release_data(slot: sidechain_slots::Slot) -> Option<sidechain_slots::Slot> {
+		if *slot % 3 == 0 {
+			Some(slot)
+		} else {
+			None
+		}
+	}
+
+	const TARGET_INHERENT_ID: InherentIdentifier = [42; 8];
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime {
@@ -536,6 +567,7 @@ construct_runtime!(
 		AddressAssociations: pallet_address_associations,
 		BlockRewards: pallet_block_rewards,
 		BlockProductionLog: pallet_block_production_log,
+		BlockParticipation: pallet_block_participation,
 		// pallet_grandpa reads pallet_session::pallet::CurrentIndex storage.
 		// Only stub implementation of pallet_session should be wired.
 		// Partner Chains session_manager ValidatorManagementSessionManager writes to pallet_session::pallet::CurrentIndex.
@@ -595,6 +627,7 @@ mod benches {
 		[pallet_native_token_management, NativeTokenManagement]
 		[pallet_block_production_log, BlockProductionLog]
 		[pallet_address_associations, AddressAssociations]
+		[pallet_block_participation, BlockParticipation]
 	);
 }
 
@@ -924,6 +957,18 @@ impl_runtime_apis! {
 			committee.get(*slot as usize % committee.len())
 				.expect("Slot modulo committee size is a valid index unless committee is missing")
 				.clone()
+		}
+	}
+
+	impl sp_block_participation::BlockParticipationApi<Block, BlockAuthor> for Runtime {
+		fn should_release_data(slot: Slot) -> Option<Slot> {
+			BlockParticipation::should_release_data(slot)
+		}
+		fn blocks_produced_up_to_slot(slot: Slot) -> Vec<(Slot, BlockAuthor)> {
+			BlockParticipation::blocks_produced_up_to_slot(slot).collect()
+		}
+		fn target_inherent_id() -> InherentIdentifier {
+			<Runtime as pallet_block_participation::Config>::TARGET_INHERENT_ID
 		}
 	}
 }

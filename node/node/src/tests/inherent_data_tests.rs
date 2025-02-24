@@ -1,16 +1,19 @@
 use crate::inherent_data::{ProposalCIDP, VerifierCIDP};
 use crate::tests::mock::{test_client, test_create_inherent_data_config};
+use crate::tests::runtime_api_mock;
 use crate::tests::runtime_api_mock::{mock_header, TestApi};
 use authority_selection_inherents::{
 	authority_selection_inputs::AuthoritySelectionInputs, mock::MockAuthoritySelectionDataSource,
 };
 use hex_literal::hex;
+use main_chain_follower_mock::stake_distribution::StakeDistributionDataSourceMock;
 use sidechain_domain::{
-	MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, NativeTokenAmount,
-	ScEpochNumber,
+	DelegatorKey, MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber,
+	NativeTokenAmount, ScEpochNumber,
 };
 use sidechain_mc_hash::mock::MockMcHashDataSource;
 use sidechain_runtime::BlockAuthor;
+use sp_block_participation::BlockProductionData;
 use sp_consensus_aura::Slot;
 use sp_core::{ecdsa, H256};
 use sp_inherents::CreateInherentDataProviders;
@@ -47,28 +50,15 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 		Arc::new(mc_hash_data_source),
 		Arc::new(MockAuthoritySelectionDataSource::default()),
 		Arc::new(native_token_data_source),
+		Arc::new(StakeDistributionDataSourceMock::new()),
 	)
 	.create_inherent_data_providers(H256::zero(), ())
 	.await
 	.unwrap();
 
-	let (
-		slot,
-		timestamp,
-		mc_hash,
-		ariadne_data,
-		block_producer_id,
-		block_beneficiary,
-		native_token,
-	) = inherent_data_providers;
 	let mut inherent_data = InherentData::new();
-	slot.provide_inherent_data(&mut inherent_data).await.unwrap();
-	timestamp.provide_inherent_data(&mut inherent_data).await.unwrap();
-	mc_hash.provide_inherent_data(&mut inherent_data).await.unwrap();
-	ariadne_data.provide_inherent_data(&mut inherent_data).await.unwrap();
-	block_producer_id.provide_inherent_data(&mut inherent_data).await.unwrap();
-	block_beneficiary.provide_inherent_data(&mut inherent_data).await.unwrap();
-	native_token.provide_inherent_data(&mut inherent_data).await.unwrap();
+	inherent_data_providers.provide_inherent_data(&mut inherent_data).await.unwrap();
+
 	assert_eq!(
 		inherent_data
 			.get_data::<Slot>(&sp_consensus_aura::inherents::INHERENT_IDENTIFIER)
@@ -106,6 +96,20 @@ async fn block_proposal_cidp_should_be_created_correctly() {
 			.into()
 		))
 	);
+	assert_eq!(
+		inherent_data
+			.get_data::<Slot>(&sp_block_participation::INHERENT_IDENTIFIER)
+			.unwrap(),
+		Some(Slot::from(30))
+	);
+	assert_eq!(
+		inherent_data
+			.get_data::<BlockProductionData<BlockAuthor, DelegatorKey>>(
+				&runtime_api_mock::TEST_TARGET_INHERENT_ID
+			)
+			.unwrap(),
+		Some(BlockProductionData::new(Slot::from(30), vec![]))
+	);
 }
 
 #[tokio::test]
@@ -137,19 +141,15 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		Arc::new(mc_hash_data_source),
 		Arc::new(MockAuthoritySelectionDataSource::default()),
 		Arc::new(native_token_data_source),
+		Arc::new(StakeDistributionDataSourceMock::new()),
 	);
 
 	let inherent_data_providers = verifier_cidp
 		.create_inherent_data_providers(mock_header().hash(), (30.into(), mc_block_hash))
 		.await
 		.unwrap();
-	let (timestamp, ariadne_data_provider, production_log_provider, native_token_provider) =
-		inherent_data_providers;
 	let mut inherent_data = InherentData::new();
-	timestamp.provide_inherent_data(&mut inherent_data).await.unwrap();
-	ariadne_data_provider.provide_inherent_data(&mut inherent_data).await.unwrap();
-	production_log_provider.provide_inherent_data(&mut inherent_data).await.unwrap();
-	native_token_provider.provide_inherent_data(&mut inherent_data).await.unwrap();
+	inherent_data_providers.provide_inherent_data(&mut inherent_data).await.unwrap();
 
 	assert_eq!(
 		inherent_data.get_data::<Timestamp>(&sp_timestamp::INHERENT_IDENTIFIER).unwrap(),
@@ -173,5 +173,19 @@ async fn block_verification_cidp_should_be_created_correctly() {
 			))
 			.into()
 		))
+	);
+	assert_eq!(
+		inherent_data
+			.get_data::<Slot>(&sp_block_participation::INHERENT_IDENTIFIER)
+			.unwrap(),
+		Some(Slot::from(30))
+	);
+	assert_eq!(
+		inherent_data
+			.get_data::<BlockProductionData<BlockAuthor, DelegatorKey>>(
+				&runtime_api_mock::TEST_TARGET_INHERENT_ID
+			)
+			.unwrap(),
+		Some(BlockProductionData::new(Slot::from(30), vec![]))
 	);
 }
