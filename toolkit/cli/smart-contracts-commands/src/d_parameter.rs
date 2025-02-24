@@ -4,10 +4,10 @@ use partner_chains_cardano_offchain::csl::{HelperTransaction, HelperVKeyWitness}
 use partner_chains_cardano_offchain::d_param::{
 	assemble_tx, get_upsert_d_param_tx, upsert_d_param,
 };
-use sidechain_domain::DParameter;
 use sidechain_domain::TransactionCbor;
 use sidechain_domain::UtxoId;
 use sidechain_domain::VKeyWitnessCbor;
+use sidechain_domain::{DParameter, MainchainKeyHash};
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -67,6 +67,8 @@ pub struct GetUpsertTransaction {
 	registered_candidates_count: u16,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
+	#[arg(short, long, num_args = 1.., value_delimiter = ' ')]
+	governance_authority: Vec<MainchainKeyHash>,
 	#[arg(long, short('c'))]
 	genesis_utxo: UtxoId,
 }
@@ -80,7 +82,14 @@ impl GetUpsertTransaction {
 		};
 		let client = self.common_arguments.get_ogmios_client().await?;
 
-		let tx = get_upsert_d_param_tx(self.genesis_utxo, &d_param, &payment_key, &client).await?;
+		let tx = get_upsert_d_param_tx(
+			self.genesis_utxo,
+			&d_param,
+			&payment_key,
+			self.governance_authority,
+			&client,
+		)
+		.await?;
 
 		let tx_hex = tx.to_hex();
 		println!("Tx: {tx_hex}");

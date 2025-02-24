@@ -26,7 +26,7 @@ pub trait InitGovernance {
 	#[allow(async_fn_in_trait)]
 	async fn init_governance(
 		&self,
-		governance_authority: MainchainKeyHash,
+		governance_authority: Vec<MainchainKeyHash>,
 		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
 	) -> Result<OgmiosTx, OffchainError>;
@@ -38,7 +38,7 @@ where
 {
 	async fn init_governance(
 		&self,
-		governance_authority: MainchainKeyHash,
+		governance_authority: Vec<MainchainKeyHash>,
 		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
 	) -> Result<OgmiosTx, OffchainError> {
@@ -59,12 +59,13 @@ pub async fn run_init_governance<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 >(
-	governance_authority: MainchainKeyHash,
+	governance_authority: Vec<MainchainKeyHash>,
 	payment_key: &CardanoPaymentSigningKey,
 	genesis_utxo_id: Option<UtxoId>,
 	client: &T,
 	await_tx: A,
 ) -> anyhow::Result<(UtxoId, OgmiosTx)> {
+	println!("Gov auth: {:?}", governance_authority);
 	let ctx = crate::csl::TransactionContext::for_payment_key(payment_key, client).await?;
 
 	let own_address = key_hash_address(&ctx.payment_key_hash(), ctx.network);
@@ -90,7 +91,7 @@ pub async fn run_init_governance<
 	let tx = Costs::calculate_costs(
 		|costs| {
 			transaction::init_governance_transaction(
-				governance_authority,
+				governance_authority.clone(),
 				genesis_utxo.clone(),
 				costs,
 				&ctx,
@@ -101,7 +102,7 @@ pub async fn run_init_governance<
 	.await?;
 
 	let signed_transaction = ctx.sign(&tx);
-
+	println!("Signed transaction: {}", signed_transaction.to_hex());
 	let result = client.submit_transaction(&signed_transaction.to_bytes()).await?;
 	let tx_id = result.transaction.id;
 	log::info!("✅ Transaction submitted. ID: {}", hex::encode(result.transaction.id));

@@ -14,9 +14,9 @@ use crate::governance::GovernanceData;
 use crate::plutus_script::PlutusScript;
 use anyhow::anyhow;
 use cardano_serialization_lib::{
-	hash_script_data, CostModel, Costmdls, PlutusData, PlutusList, Redeemer, RedeemerTag,
-	RedeemerTagKind, Redeemers, Transaction, TransactionBuilder, TxInputsBuilder, Vkeywitness,
-	Vkeywitnesses,
+	hash_script_data, CostModel, Costmdls, Ed25519KeyHashes, PlutusData, PlutusList, Redeemer,
+	RedeemerTag, RedeemerTagKind, Redeemers, Transaction, TransactionBuilder, TxInputsBuilder,
+	Vkeywitness, Vkeywitnesses,
 };
 use ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
 use ogmios_client::{
@@ -25,7 +25,7 @@ use ogmios_client::{
 };
 // use pallas_primitives::conway::VKeyWitness;
 use partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
-use sidechain_domain::{DParameter, McTxHash, UtxoId};
+use sidechain_domain::{DParameter, MainchainKeyHash, McTxHash, UtxoId};
 
 #[cfg(test)]
 mod tests;
@@ -45,6 +45,7 @@ pub trait UpsertDParam {
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
+		governance_authority: Vec<MainchainKeyHash>,
 	) -> anyhow::Result<Transaction>;
 
 	#[allow(async_fn_in_trait)]
@@ -77,8 +78,16 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> Upse
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
+		governance_authority: Vec<MainchainKeyHash>,
 	) -> anyhow::Result<Transaction> {
-		get_upsert_d_param_tx(genesis_utxo, d_parameter, payment_signing_key, self).await
+		get_upsert_d_param_tx(
+			genesis_utxo,
+			d_parameter,
+			payment_signing_key,
+			governance_authority,
+			self,
+		)
+		.await
 	}
 
 	async fn assemble_tx(
@@ -101,14 +110,9 @@ pub async fn assemble_tx<C: QueryLedgerState + QueryNetwork + Transactions + Que
 	let auxilary_data = tx.auxiliary_data();
 
 	let protocol_parameters = ogmios_client.query_protocol_parameters().await?;
-	let mdls = convert_cost_models(&protocol_parameters.plutus_cost_models);
 
-	let mut new_body = body.clone();
+	let new_body = body.clone();
 	let mut new_witness_set = witness_set.clone();
-
-	let mut new_redeemers = Redeemers::new();
-
-	let mut input_datums = PlutusList::new();
 
 	let mut vkey_witnesses = witness_set.vkeys().unwrap_or_else(|| Vkeywitnesses::new());
 	for w in witnesses.clone() {
@@ -169,6 +173,7 @@ pub async fn get_upsert_d_param_tx<
 	genesis_utxo: UtxoId,
 	d_parameter: &DParameter,
 	payment_signing_key: &CardanoPaymentSigningKey,
+	governance_authority: Vec<MainchainKeyHash>,
 	ogmios_client: &C,
 ) -> anyhow::Result<Transaction> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
@@ -191,6 +196,7 @@ pub async fn get_upsert_d_param_tx<
 					&current_utxo,
 					ctx,
 					genesis_utxo,
+					governance_authority,
 					ogmios_client,
 				)
 				.await?,
@@ -205,6 +211,7 @@ pub async fn get_upsert_d_param_tx<
 					d_parameter,
 					ctx,
 					genesis_utxo,
+					governance_authority,
 					ogmios_client,
 				)
 				.await?,
@@ -295,6 +302,7 @@ async fn get_insert_d_param_tx<C: QueryLedgerState + Transactions + QueryNetwork
 	d_parameter: &DParameter,
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
+	governance_authority: Vec<MainchainKeyHash>,
 	client: &C,
 ) -> anyhow::Result<Transaction> {
 	let gov_data = GovernanceData::get(genesis_utxo, client).await?;
@@ -303,7 +311,17 @@ async fn get_insert_d_param_tx<C: QueryLedgerState + Transactions + QueryNetwork
 	// 	mint_d_param_token_tx(validator, policy, d_parameter, &gov_data, Costs::ZeroCosts, &ctx)?;
 
 	let tx = Costs::calculate_costs(
-		|costs| mint_d_param_token_tx(validator, policy, d_parameter, &gov_data, costs, &ctx),
+		|costs| {
+			mint_d_param_token_tx(
+				validator,
+				policy,
+				d_parameter,
+				&gov_data,
+				costs,
+				governance_authority.clone(),
+				&ctx,
+			)
+		},
 		client,
 	)
 	.await?;
@@ -321,7 +339,17 @@ async fn insert_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 	let gov_data = GovernanceData::get(genesis_utxo, client).await?;
 
 	let tx = Costs::calculate_costs(
-		|costs| mint_d_param_token_tx(validator, policy, d_parameter, &gov_data, costs, &ctx),
+		|costs| {
+			mint_d_param_token_tx(
+				validator,
+				policy,
+				d_parameter,
+				&gov_data,
+				costs,
+				vec![MainchainKeyHash(ctx.payment_key_hash().to_bytes().try_into().unwrap())],
+				&ctx,
+			)
+		},
 		client,
 	)
 	.await?;
@@ -346,6 +374,7 @@ async fn get_update_d_param_tx<C: QueryLedgerState + Transactions + QueryNetwork
 	current_utxo: &OgmiosUtxo,
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
+	governance_authority: Vec<MainchainKeyHash>,
 	client: &C,
 ) -> anyhow::Result<Transaction> {
 	let governance_data = GovernanceData::get(genesis_utxo, client).await?;
@@ -359,6 +388,7 @@ async fn get_update_d_param_tx<C: QueryLedgerState + Transactions + QueryNetwork
 				current_utxo,
 				&governance_data,
 				costs,
+				governance_authority.clone(),
 				&ctx,
 			)
 		},
@@ -388,6 +418,7 @@ async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 				current_utxo,
 				&governance_data,
 				costs,
+				vec![MainchainKeyHash(ctx.payment_key_hash().to_bytes().try_into().unwrap())],
 				&ctx,
 			)
 		},
@@ -414,6 +445,7 @@ fn mint_d_param_token_tx(
 	d_parameter: &DParameter,
 	governance_data: &GovernanceData,
 	costs: Costs,
+	governance_authority: Vec<MainchainKeyHash>,
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
@@ -438,6 +470,10 @@ fn mint_d_param_token_tx(
 		&costs.get_mint(&governance_data.policy_script),
 	)?;
 
+	for key in governance_authority.iter() {
+		tx_builder.add_required_signer(&key.0.into());
+	}
+
 	Ok(tx_builder.balance_update_and_build(ctx)?)
 }
 
@@ -448,6 +484,7 @@ fn update_d_param_tx(
 	script_utxo: &OgmiosUtxo,
 	governance_data: &GovernanceData,
 	costs: Costs,
+	governance_authority: Vec<MainchainKeyHash>,
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
@@ -474,6 +511,10 @@ fn update_d_param_tx(
 		&gov_tx_input,
 		&costs.get_mint(&governance_data.policy_script),
 	)?;
+
+	for key in governance_authority.iter() {
+		tx_builder.add_required_signer(&key.0.into());
+	}
 
 	Ok(tx_builder.balance_update_and_build(ctx)?)
 }

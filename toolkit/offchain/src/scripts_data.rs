@@ -242,13 +242,16 @@ pub(crate) fn reserve_scripts(
 // Returns the simplest MultiSig policy configuration plutus data:
 // there is one required authority and it is the governance authority from sidechain params.
 pub(crate) fn multisig_governance_policy_configuration(
-	governance_authority: MainchainKeyHash,
+	governance_authority: Vec<MainchainKeyHash>,
 ) -> PlutusData {
 	PlutusData::Array(vec![
-		PlutusData::Array(vec![uplc::PlutusData::BoundedBytes(
-			governance_authority.0.to_vec().into(),
-		)]),
-		PlutusData::BigInt(uplc::BigInt::Int(1.into())),
+		PlutusData::Array(
+			governance_authority
+				.iter()
+				.map(|hash| PlutusData::BoundedBytes(hash.0.to_vec().into()))
+				.collect(),
+		),
+		PlutusData::BigInt(uplc::BigInt::Int((governance_authority.len() as i64).into())),
 	])
 }
 

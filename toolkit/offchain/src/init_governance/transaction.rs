@@ -9,7 +9,7 @@ use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 use sidechain_domain::MainchainKeyHash;
 
 pub(crate) fn init_governance_transaction(
-	governance_authority: MainchainKeyHash,
+	governance_authority: Vec<MainchainKeyHash>,
 	genesis_utxo: OgmiosUtxo,
 	costs: Costs,
 	ctx: &TransactionContext,
