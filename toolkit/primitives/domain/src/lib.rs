@@ -252,7 +252,9 @@ impl FromStr for AssetId {
 
 const STAKE_POOL_PUBLIC_KEY_LEN: usize = 32;
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
+#[derive(
+	Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash, Ord, PartialOrd,
+)]
 #[cfg_attr(feature = "std", byte_string(to_hex_string))]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct StakePoolPublicKey(pub [u8; STAKE_POOL_PUBLIC_KEY_LEN]);
@@ -860,14 +862,35 @@ mod tests {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Clone, PartialEq, Eq, Ord, PartialOrd, TypeInfo, MaxEncodedLen, Encode, Decode)]
 pub enum DelegatorKey {
 	StakeKeyHash([u8; 28]),
 	ScriptKeyHash { hash_raw: [u8; 28], script_hash: [u8; 28] },
 }
 
+impl alloc::fmt::Debug for DelegatorKey {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+		let s = match self {
+			Self::ScriptKeyHash { hash_raw, script_hash } => alloc::format!(
+				"ScriptKeyHash{{ hash_raw: {}, script_hash: {} }}",
+				hex::encode(hash_raw),
+				hex::encode(script_hash)
+			),
+			Self::StakeKeyHash(hash) => alloc::format!("StakeKeyHash({})", hex::encode(hash)),
+		};
+
+		f.write_str(&s)
+	}
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct DelegatorStakeAmount(pub u64);
+
+impl<T: Into<u64>> From<T> for DelegatorStakeAmount {
+	fn from(value: T) -> Self {
+		Self(value.into())
+	}
+}
 
 #[derive(Debug, Clone, Default)]
 pub struct StakeDistribution(pub BTreeMap<MainchainKeyHash, PoolDelegation>);

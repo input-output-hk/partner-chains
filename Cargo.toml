@@ -43,6 +43,8 @@ members = [
 	"toolkit/primitives/plutus-data",
 	"toolkit/pallets/address-associations",
 	"toolkit/primitives/stake-distribution",
+	"toolkit/pallets/block-participation",
+	"toolkit/primitives/block-participation",
 ]
 resolver = "2"
 
@@ -241,3 +243,5 @@ partner-chains-cli = { path = "toolkit/partner-chains-cli", default-features = f
 partner-chains-plutus-data = { path = "toolkit/primitives/plutus-data", default-features = false }
 partner-chains-smart-contracts-commands = { path = "toolkit/cli/smart-contracts-commands", default-features = false }
 pallet-address-associations = { path = "toolkit/pallets/address-associations", default-features = false }
+pallet-block-participation = { path = "toolkit/pallets/block-participation", default-features = false }
+sp-block-participation = { path = "toolkit/primitives/block-participation", default-features = false }

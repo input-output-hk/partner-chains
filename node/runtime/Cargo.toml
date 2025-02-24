@@ -80,6 +80,8 @@ pallet-native-token-management = { workspace = true }
 sp-native-token-management = { workspace = true, features = ["serde"] }
 pallet-session-runtime-stub = { workspace = true, default-features = false }
 pallet-address-associations = { workspace = true }
+pallet-block-participation = { workspace = true }
+sp-block-participation = { workspace = true }
 
 [dev-dependencies]
 sp-io = { workspace = true }
@@ -155,6 +157,8 @@ std = [
 	"sp-native-token-management/std",
 	"pallet-session-runtime-stub/std",
 	"sp-block-production-log/std",
+	"pallet-block-participation/std",
+	"sp-block-participation/std",
 ]
 
 runtime-benchmarks = [
@@ -170,6 +174,7 @@ runtime-benchmarks = [
 	"pallet-block-production-log/runtime-benchmarks",
 	"pallet-native-token-management/runtime-benchmarks",
 	"pallet-address-associations/runtime-benchmarks",
+	"pallet-block-participation/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-try-runtime/try-runtime",

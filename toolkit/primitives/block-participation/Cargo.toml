@@ -1,0 +1,39 @@
+[package]
+name = "sp-block-participation"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+thiserror = { workspace = true }
+
+async-trait = { workspace = true }
+parity-scale-codec = { workspace = true }
+sp-inherents = { workspace = true }
+sp-runtime = { workspace = true }
+sidechain-domain = { workspace = true }
+sp-api = { workspace = true }
+log = { workspace = true }
+sp-stake-distribution = { workspace = true, optional = true }
+sp-consensus-slots = { workspace = true }
+scale-info = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+pretty_assertions = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "parity-scale-codec/std",
+    "sp-inherents/std",
+    "sp-runtime/std",
+    "sp-runtime/std",
+    "sp-api/std",
+    "sp-stake-distribution",
+    "sp-stake-distribution/std",
+    "log/std",
+    "sp-consensus-slots/std",
+    "sidechain-domain/std",
+    "scale-info/std"
+]
