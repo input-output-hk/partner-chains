@@ -38,8 +38,8 @@ use sidechain_domain::{
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::hexdisplay::HexDisplay;
-use sp_core::ByteArray;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{ByteArray, Pair};
 use sp_runtime::{
 	generic, impl_opaque_keys,
 	traits::{
@@ -489,6 +489,13 @@ impl From<CommitteeMember<CrossChainPublic, SessionKeys>> for BlockAuthor {
 				BlockAuthor::Incentivized(id, stake_pool_pub_key)
 			},
 		}
+	}
+}
+#[cfg(feature = "runtime-benchmarks")]
+impl From<[u8; 32]> for BlockAuthor {
+	fn from(arr: [u8; 32]) -> Self {
+		let id = sp_core::ecdsa::Pair::from_seed(&arr).public().into();
+		Self::ProBono(id)
 	}
 }
 
