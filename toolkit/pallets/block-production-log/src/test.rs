@@ -1,5 +1,8 @@
 use super::*;
-use frame_support::{assert_err, assert_ok, traits::UnfilteredDispatchable};
+use frame_support::{
+	assert_err, assert_ok,
+	traits::{Hooks, UnfilteredDispatchable},
+};
 use mock::*;
 use sp_consensus_slots::Slot;
 
@@ -15,6 +18,13 @@ fn first_append_should_succeed() {
 		let call = Call::<Test>::append { block_producer_id: make_id(1) };
 		assert_ok!(call.dispatch_bypass_filter(RuntimeOrigin::none()));
 
+		assert_eq!(CurrentProducer::<Test>::get(), Some(make_id(1)));
+
+		// Log should not be appended to until block finalization
+		assert!(Log::<Test>::get().is_empty());
+
+		Pallet::<Test>::on_finalize(System::block_number());
+
 		assert_eq!(Log::<Test>::get().to_vec(), vec![(Slot::from(1001000), make_id(1))]);
 	})
 }
@@ -29,6 +39,10 @@ fn append_to_end_of_log() {
 		let call = Call::<Test>::append { block_producer_id: make_id(2) };
 		assert_ok!(call.dispatch_bypass_filter(RuntimeOrigin::none()));
 		assert_eq!(LatestBlock::<Test>::get(), Some(1001));
+		assert_eq!(CurrentProducer::<Test>::get(), Some(make_id(2)));
+
+		Pallet::<Test>::on_finalize(System::block_number());
+
 		assert_eq!(
 			Log::<Test>::get().to_vec(),
 			vec![(Slot::from(100), make_id(1)), (Slot::from(1001000), make_id(2))]
