@@ -10,6 +10,7 @@
     system,
     ...
   }: let
+    isLinux = pkgs.lib.hasSuffix "linux" system;
     isDarwin = pkgs.lib.hasSuffix "darwin" system;
     fenixPkgs = inputs'.fenix.packages;
     rustToolchain = with fenixPkgs;
@@ -25,7 +26,7 @@
         LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
         LD_LIBRARY_PATH = "${rustToolchain}/lib";
         # https://github.com/NixOS/nixpkgs/issues/370494#issuecomment-2625163369
-        CFLAGS = "-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE";
+        CFLAGS = if isLinux then "-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE" else "";
 
         # envs needed in order to construct some of the rust crates
         ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
@@ -54,6 +55,7 @@
           gawk
           cargo-edit
           cargo-license
+          nixfmt-rfc-style
 
           # infra packages
           earthly
