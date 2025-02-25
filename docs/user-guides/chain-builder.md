@@ -354,6 +354,6 @@ Be sure two main chain (Cardano) epochs have passed since the registration of a 
 
 ### 7. Distribute chain files to participants
 
-The partner chain is now ready to start accepting registered validator nodes. [Permissioned candidates](./docs/user-guides/permissioned.md) and [Registered candidates](./docs/user-guides/registered.md) have different onboarding processes. Please follow the respective steps for the corresponding type of user.
+The partner chain is now ready to start accepting registered validator nodes. [Permissioned candidates](/docs/user-guides/permissioned.md) and [Registered candidates](/docs/user-guides/registered.md) have different onboarding processes. Please follow the respective steps for the corresponding type of user.
 
 Be prepared to share `chain-spec.json` and `pc-chain-config.json` files to both types of users.
