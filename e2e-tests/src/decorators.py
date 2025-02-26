@@ -10,7 +10,7 @@ def long_running_function(func):
         signal.signal(signal.SIGALRM, timeout_handler)
         signal.alarm(args[0].config.timeouts.long_running_function)
         try:
-            func(*args, **kwargs)
+            return func(*args, **kwargs)
         finally:
             signal.alarm(0)
 

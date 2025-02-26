@@ -1,14 +1,12 @@
 import os
 import json
 import logging
-import re
 import subprocess
 from omegaconf import OmegaConf
 from pytest import fixture, skip, Config, Metafunc, UsageError
-from .log_filter import sensitive_filter
+from src.log_filter import sensitive_filter
 from src.blockchain_api import BlockchainApi, Wallet
 from src.blockchain_types import BlockchainTypes
-from src.password_filter import PasswordFilter
 from src.pc_epoch_calculator import PartnerChainEpochCalculator
 from src.partner_chain_rpc import PartnerChainRpc
 from config.api_config import ApiConfig
@@ -78,11 +76,9 @@ def pytest_configure(config: Config):
         raise UsageError("Options --latest-mc-epoch, --mc-epoch, and --pc-epoch are mutually exclusive.")
 
     # Mask sensitive data in logs
-    password_pattern = re.compile(r"((pass|skey|signing-key|private-key|secret).*?[=: ]\s*)\s*\S+\b", re.IGNORECASE)
     paramiko_logger = logging.getLogger("paramiko")
     paramiko_logger.setLevel(logging.ERROR)
     logger = logging.getLogger()
-    logger.addFilter(PasswordFilter(password_pattern))
     logger.addFilter(sensitive_filter)
 
     # create objects needed for collection phase

@@ -1,5 +1,6 @@
 from .run_command import RunnerFactory
 from config.api_config import ApiConfig, Node
+from dataclasses import dataclass
 import json
 import re
 import logging as logger
@@ -31,12 +32,39 @@ class RegistrationSignatures:
         self.sidechain_signature = sidechain_signature
 
 
+@dataclass
+class AddressAssociationSignature:
+    partner_chain_address: str
+    signature: str
+    stake_public_key: str
+
+
 class PartnerChainsNode:
     def __init__(self, config: ApiConfig):
         self.config = config
         cli_config = config.stack_config.tools["partner_chains_node"]
         self.cli = cli_config.cli
         self.run_command = RunnerFactory.get_runner(cli_config.ssh, cli_config.shell)
+
+    def sign_address_association(self, partner_chain_address, stake_signing_key):
+        sign_address_association_cmd = (
+            f"{self.cli} sign-address-association "
+            f"--genesis-utxo {self.config.genesis_utxo} "
+            f"--partnerchain-address {partner_chain_address} "
+            f"--signing-key {stake_signing_key}"
+        )
+
+        result = self.run_command.run(sign_address_association_cmd)
+        try:
+            response = json.loads(result.stdout)
+            return AddressAssociationSignature(
+                partner_chain_address=response["partnerchain_address"],
+                signature=response["signature"],
+                stake_public_key=response["stake_public_key"]
+            )
+        except Exception as e:
+            logger.error(f"Could not parse response of sign-address-association cmd: {result}")
+            raise e
 
     def get_signatures(
         self,

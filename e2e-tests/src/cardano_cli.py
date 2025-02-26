@@ -77,3 +77,30 @@ class CardanoCli:
         if result.stderr:
             logger.error(result.stderr)
         return json.loads(result.stdout)
+
+    def generate_stake_keys(self):
+        logger.info("Generating stake keys")
+        cmd = f"{self.cli} latest stake-address key-gen --verification-key-file /dev/stdout --signing-key-file /dev/stdout"
+        result = self.run_command.run(cmd)
+        if result.stderr:
+            logger.error(result.stderr)
+            return None, None
+
+        # Convert to a valid JSON array
+        modified_response = "[" + result.stdout.replace("}\n{", "},\n{") + "]"
+        parsed_data = json.loads(modified_response)
+
+        signing_key = parsed_data[0]
+        verification_key = parsed_data[1]
+
+        logger.info(f"Stake signing key: {signing_key}")
+        logger.info(f"Stake verification key: {verification_key}")
+        return signing_key, verification_key
+
+    def get_stake_key_hash(self, stake_key):
+        logger.info("Getting stake key hash")
+        cmd = f"{self.cli} latest stake-address key-hash --stake-verification-key {stake_key}"
+        result = self.run_command.run(cmd)
+        if result.stderr:
+            logger.error(result.stderr)
+        return result.stdout.strip()

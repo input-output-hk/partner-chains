@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from src.partner_chain_rpc import PartnerChainRpcResponse, DParam
+from src.partner_chains_node import AddressAssociationSignature
 from config.api_config import Node
 
 
@@ -528,3 +529,43 @@ class BlockchainApi(ABC):
         Returns:
             (dict) - The block
         """
+
+    @abstractmethod
+    def sign_address_association(self, address: str, stake_signing_key: str) -> AddressAssociationSignature:
+        """
+        Signs an address association with a given wallet.
+
+        Arguments:
+            address {str} -- PC address (hex format) to be associated with the Cardano address
+            stake_signing_key {str} -- Cardano Stake signing key in hex format
+
+        Returns:
+            AddressAssociationSignature
+        """
+        pass
+
+    @abstractmethod
+    def submit_address_association(self, signature: AddressAssociationSignature, wallet: Wallet) -> Transaction:
+        """
+        Submits an address association to the network.
+
+        Arguments:
+            signature {AddressAssociationSignature} -- Signature object
+
+        Returns:
+            Transaction
+        """
+        pass
+
+    @abstractmethod
+    def get_address_association(self, stake_key_hash: str) -> str:
+        """
+        Retrieves the PC address associated with the Cardano address.
+
+        Arguments:
+            stake_key_hash {str} -- Stake verification key hash
+
+        Returns:
+            str -- PC address associated with the Cardano address
+        """
+        pass
