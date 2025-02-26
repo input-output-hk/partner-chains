@@ -147,7 +147,7 @@ fn drop_prefix() {
 			(Slot::from(104), make_id(4)),
 		]);
 
-		BlockProductionLog::drop_prefix(Slot::from(102));
+		BlockProductionLog::drop_prefix(&Slot::from(102));
 
 		let left_in_storage = Log::<Test>::get().to_vec();
 
