@@ -108,9 +108,11 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 		pub fn take_prefix(slot: &Slot) -> Vec<(Slot, T::BlockProducerId)> {
-			let (to_return, to_retain) = Log::<T>::get().into_iter().partition(|(s, _)| s <= slot);
-			Log::<T>::put(to_retain);
-			to_return
+			let removed_prefix = Log::<T>::mutate(|log| {
+				let pos = log.partition_point(|(s, _)| s <= slot);
+				log.drain(..pos).collect()
+			});
+			removed_prefix
 		}
 
 		pub fn peek_prefix(slot: Slot) -> impl Iterator<Item = (Slot, T::BlockProducerId)> {
