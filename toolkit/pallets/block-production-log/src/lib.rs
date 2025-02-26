@@ -113,11 +113,11 @@ pub mod pallet {
 			to_return
 		}
 
-		pub fn peek_prefix<'a>(slot: Slot) -> impl Iterator<Item = (Slot, T::BlockProducerId)> {
+		pub fn peek_prefix(slot: Slot) -> impl Iterator<Item = (Slot, T::BlockProducerId)> {
 			Log::<T>::get().into_iter().take_while(move |(s, _)| s <= &slot)
 		}
 
-		pub fn drop_prefix<'a>(slot: Slot) {
+		pub fn drop_prefix(slot: Slot) {
 			Log::<T>::mutate(|vec| vec.retain(move |(s, _)| s > &slot))
 		}
 	}
