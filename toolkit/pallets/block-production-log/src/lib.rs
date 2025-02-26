@@ -118,9 +118,7 @@ pub mod pallet {
 		}
 
 		pub fn drop_prefix<'a>(slot: Slot) {
-			let entries_left: Vec<_> =
-				Log::<T>::get().into_iter().filter(move |(s, _)| s > &slot).collect();
-			Log::<T>::put(entries_left);
+			Log::<T>::mutate(|vec| vec.retain(move |(s, _)| s > &slot))
 		}
 	}
 }

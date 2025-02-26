@@ -135,3 +135,49 @@ fn take_prefix_when_there_are_two_entries_for_the_same_slot() {
 		);
 	})
 }
+
+#[test]
+fn drop_prefix() {
+	new_test_ext().execute_with(|| {
+		Log::<Test>::put(vec![
+			(Slot::from(100), make_id(0)),
+			(Slot::from(101), make_id(1)),
+			(Slot::from(102), make_id(2)),
+			(Slot::from(103), make_id(3)),
+			(Slot::from(104), make_id(4)),
+		]);
+
+		BlockProductionLog::drop_prefix(Slot::from(102));
+
+		let left_in_storage = Log::<Test>::get().to_vec();
+
+		assert_eq!(
+			left_in_storage.to_vec(),
+			vec![(Slot::from(103), make_id(3)), (Slot::from(104), make_id(4)),]
+		);
+	})
+}
+
+#[test]
+fn peek_prefix() {
+	new_test_ext().execute_with(|| {
+		Log::<Test>::put(vec![
+			(Slot::from(100), make_id(0)),
+			(Slot::from(101), make_id(1)),
+			(Slot::from(102), make_id(2)),
+			(Slot::from(103), make_id(3)),
+			(Slot::from(104), make_id(4)),
+		]);
+
+		let prefix = BlockProductionLog::peek_prefix(Slot::from(102));
+
+		assert_eq!(
+			prefix.collect::<Vec<_>>(),
+			vec![
+				(Slot::from(100), make_id(0)),
+				(Slot::from(101), make_id(1)),
+				(Slot::from(102), make_id(2)),
+			]
+		);
+	})
+}
