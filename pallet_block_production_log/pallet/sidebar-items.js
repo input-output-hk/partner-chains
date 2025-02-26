@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Call","Error"],"mod":["dispatchables","storage_types"],"struct":["Pallet"],"trait":["Config"],"type":["LatestBlock","Log","Module"]};
+window.SIDEBAR_ITEMS = {"enum":["Call","Error"],"mod":["dispatchables","storage_types"],"struct":["Pallet"],"trait":["Config"],"type":["CurrentProducer","LatestBlock","Log","Module"]};

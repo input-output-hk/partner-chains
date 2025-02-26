@@ -98,6 +98,32 @@
 <a href="#98" id="98">98</a>
 <a href="#99" id="99">99</a>
 <a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">mod </span>benchmarking;
@@ -135,6 +161,10 @@
 	#[pallet::unbounded]
 	</span><span class="kw">pub type </span>Log&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, Vec&lt;(Slot, T::BlockProducerId)&gt;, ValueQuery&gt;;
 
+	<span class="doccomment">/// Temporary storage of the current block's producer, to be appended to the log on block finalization.
+	</span><span class="attr">#[pallet::storage]
+	</span><span class="kw">pub type </span>CurrentProducer&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, T::BlockProducerId, OptionQuery&gt;;
+
 	<span class="doccomment">/// This storage is used to prevent calling `append` multiple times for the same block or for past blocks.
 	</span><span class="attr">#[pallet::storage]
 	</span><span class="kw">pub type </span>LatestBlock&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, BlockNumberFor&lt;T&gt;, OptionQuery&gt;;
@@ -170,7 +200,7 @@
 
 	<span class="attr">#[pallet::call]
 	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
-		<span class="doccomment">/// Appends an entry to the log. Log has to be ordered by slots and writing the same slot twice is forbidden.
+		<span class="doccomment">/// Schedules an entry to be appended to the log. Log has to be ordered by slots and writing the same slot twice is forbidden.
 		</span><span class="attr">#[pallet::call_index(<span class="number">0</span>)]
 		#[pallet::weight((T::WeightInfo::append(), DispatchClass::Mandatory))]
 		</span><span class="kw">pub fn </span>append(
@@ -186,15 +216,37 @@
 			}<span class="question-mark">?</span>;
 			LatestBlock::&lt;T&gt;::put(current_block);
 
-			<span class="prelude-val">Ok</span>(Log::&lt;T&gt;::append((T::current_slot(), block_producer_id)))
+			<span class="prelude-val">Ok</span>(CurrentProducer::&lt;T&gt;::put(block_producer_id))
+		}
+	}
+
+	<span class="attr">#[pallet::hooks]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; Hooks&lt;BlockNumberFor&lt;T&gt;&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
+		<span class="kw">fn </span>on_finalize(block: BlockNumberFor&lt;T&gt;) {
+			<span class="kw">let </span>block_producer_id =
+				CurrentProducer::&lt;T&gt;::take().expect(<span class="string">"Author is set before on_finalize; qed"</span>);
+
+			<span class="macro">log::info!</span>(<span class="string">"👷 Block {block:?} producer is {block_producer_id:?}"</span>);
+
+			Log::&lt;T&gt;::append((T::current_slot(), block_producer_id))
 		}
 	}
 
 	<span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
 		<span class="kw">pub fn </span>take_prefix(slot: <span class="kw-2">&amp;</span>Slot) -&gt; Vec&lt;(Slot, T::BlockProducerId)&gt; {
-			<span class="kw">let </span>(to_return, to_retain) = Log::&lt;T&gt;::get().into_iter().partition(|(s, <span class="kw">_</span>)| s &lt;= slot);
-			Log::&lt;T&gt;::put(to_retain);
-			to_return
+			<span class="kw">let </span>removed_prefix = Log::&lt;T&gt;::mutate(|log| {
+				<span class="kw">let </span>pos = log.partition_point(|(s, <span class="kw">_</span>)| s &lt;= slot);
+				log.drain(..pos).collect()
+			});
+			removed_prefix
+		}
+
+		<span class="kw">pub fn </span>peek_prefix(slot: Slot) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (Slot, T::BlockProducerId)&gt; {
+			Log::&lt;T&gt;::get().into_iter().take_while(<span class="kw">move </span>|(s, <span class="kw">_</span>)| s &lt;= <span class="kw-2">&amp;</span>slot)
+		}
+
+		<span class="kw">pub fn </span>drop_prefix(slot: Slot) {
+			Log::&lt;T&gt;::mutate(|vec| vec.retain(<span class="kw">move </span>|(s, <span class="kw">_</span>)| s &gt; <span class="kw-2">&amp;</span>slot))
 		}
 	}
 }

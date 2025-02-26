@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["LatestBlock","Log"]};
+window.SIDEBAR_ITEMS = {"struct":["CurrentProducer","LatestBlock","Log"]};
