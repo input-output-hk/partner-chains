@@ -78,8 +78,7 @@ def pytest_configure(config: Config):
     # Mask sensitive data in logs
     paramiko_logger = logging.getLogger("paramiko")
     paramiko_logger.setLevel(logging.ERROR)
-    logger = logging.getLogger()
-    logger.addFilter(sensitive_filter)
+    logging.getLogger().addFilter(sensitive_filter)
 
     # create objects needed for collection phase
     blockchain = config.getoption("blockchain")
@@ -99,23 +98,16 @@ def pytest_configure(config: Config):
     partner_chain_rpc_api = PartnerChainRpc(_config.nodes_config.node.rpc_url)
     partner_chain_epoch_calc = PartnerChainEpochCalculator(_config)
 
-    # set partner chain status on main thread
-    if not hasattr(config, 'workerinput'):
-        config.partner_chain_status = partner_chain_rpc_api.partner_chain_get_status().result
 
-    logger = logging.getLogger()
-    logger.addFilter(TimestampFilter())
+def pytest_sessionstart(session):
+    # set partner chain status on main thread
+    if not hasattr(session.config, 'workerinput'):
+        session.config.partner_chain_status = partner_chain_rpc_api.partner_chain_get_status().result
 
 
 def pytest_configure_node(node):
     # set partner chain status on worker threads
     node.workerinput["partner_chain_status"] = node.config.partner_chain_status
-
-
-class TimestampFilter(logging.Filter):
-    def filter(self, record):
-        record.asctime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(record.created))
-        return True
 
 
 def pytest_generate_tests(metafunc: Metafunc):
@@ -209,6 +201,14 @@ def pytest_collection_modifyitems(items):
         for marker in item.iter_markers(name="test_key"):
             test_key = marker.args[0]
             item.user_properties.append(("test_key", test_key))
+
+
+def pytest_runtest_logstart(nodeid):
+    logging.info(f"Starting test: {nodeid}")
+
+
+def pytest_runtest_logfinish(nodeid):
+    logging.info(f"Finished test: {nodeid}")
 
 
 def pytest_runtest_makereport(item, call):
