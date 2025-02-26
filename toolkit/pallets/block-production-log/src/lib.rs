@@ -35,6 +35,10 @@ pub mod pallet {
 	#[pallet::unbounded]
 	pub type Log<T: Config> = StorageValue<_, Vec<(Slot, T::BlockProducerId)>, ValueQuery>;
 
+	/// Temporary storage of the current block's producer, to be appended to the log on block finalization.
+	#[pallet::storage]
+	pub type CurrentProducer<T: Config> = StorageValue<_, T::BlockProducerId, OptionQuery>;
+
 	/// This storage is used to prevent calling `append` multiple times for the same block or for past blocks.
 	#[pallet::storage]
 	pub type LatestBlock<T: Config> = StorageValue<_, BlockNumberFor<T>, OptionQuery>;
@@ -70,7 +74,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Appends an entry to the log. Log has to be ordered by slots and writing the same slot twice is forbidden.
+		/// Schedules an entry to be appended to the log. Log has to be ordered by slots and writing the same slot twice is forbidden.
 		#[pallet::call_index(0)]
 		#[pallet::weight((T::WeightInfo::append(), DispatchClass::Mandatory))]
 		pub fn append(
@@ -86,15 +90,37 @@ pub mod pallet {
 			}?;
 			LatestBlock::<T>::put(current_block);
 
-			Ok(Log::<T>::append((T::current_slot(), block_producer_id)))
+			Ok(CurrentProducer::<T>::put(block_producer_id))
+		}
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_finalize(block: BlockNumberFor<T>) {
+			let block_producer_id =
+				CurrentProducer::<T>::take().expect("Author is set before on_finalize; qed");
+
+			log::info!("👷 Block {block:?} producer is {block_producer_id:?}");
+
+			Log::<T>::append((T::current_slot(), block_producer_id))
 		}
 	}
 
 	impl<T: Config> Pallet<T> {
 		pub fn take_prefix(slot: &Slot) -> Vec<(Slot, T::BlockProducerId)> {
-			let (to_return, to_retain) = Log::<T>::get().into_iter().partition(|(s, _)| s <= slot);
-			Log::<T>::put(to_retain);
-			to_return
+			let removed_prefix = Log::<T>::mutate(|log| {
+				let pos = log.partition_point(|(s, _)| s <= slot);
+				log.drain(..pos).collect()
+			});
+			removed_prefix
+		}
+
+		pub fn peek_prefix(slot: Slot) -> impl Iterator<Item = (Slot, T::BlockProducerId)> {
+			Log::<T>::get().into_iter().take_while(move |(s, _)| s <= &slot)
+		}
+
+		pub fn drop_prefix(slot: Slot) {
+			Log::<T>::mutate(|vec| vec.retain(move |(s, _)| s > &slot))
 		}
 	}
 }
