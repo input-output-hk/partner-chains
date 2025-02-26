@@ -40,9 +40,9 @@
 
               # tools for e2e testing
               docker-compose
-              python311
-              python311Packages.pip
-              python311Packages.virtualenv
+              python312
+              python312Packages.pip
+              python312Packages.virtualenv
               sops
 
               # local development tools
