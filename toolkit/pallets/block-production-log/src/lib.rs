@@ -119,8 +119,11 @@ pub mod pallet {
 			Log::<T>::get().into_iter().take_while(move |(s, _)| s <= &slot)
 		}
 
-		pub fn drop_prefix(slot: Slot) {
-			Log::<T>::mutate(|vec| vec.retain(move |(s, _)| s > &slot))
+		pub fn drop_prefix(slot: &Slot) {
+			Log::<T>::mutate(|log| {
+				let position = log.partition_point(|(s, _)| s <= slot);
+				log.drain(..position);
+			});
 		}
 	}
 }
