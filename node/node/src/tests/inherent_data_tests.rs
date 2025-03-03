@@ -143,10 +143,12 @@ async fn block_verification_cidp_should_be_created_correctly() {
 		.create_inherent_data_providers(mock_header().hash(), (30.into(), mc_block_hash))
 		.await
 		.unwrap();
-	let (timestamp, ariadne_data_provider, native_token_provider) = inherent_data_providers;
+	let (timestamp, ariadne_data_provider, production_log_provider, native_token_provider) =
+		inherent_data_providers;
 	let mut inherent_data = InherentData::new();
 	timestamp.provide_inherent_data(&mut inherent_data).await.unwrap();
 	ariadne_data_provider.provide_inherent_data(&mut inherent_data).await.unwrap();
+	production_log_provider.provide_inherent_data(&mut inherent_data).await.unwrap();
 	native_token_provider.provide_inherent_data(&mut inherent_data).await.unwrap();
 
 	assert_eq!(
@@ -160,5 +162,16 @@ async fn block_verification_cidp_should_be_created_correctly() {
 	assert!(inherent_data
 		.get_data::<NativeTokenAmount>(&sp_native_token_management::INHERENT_IDENTIFIER)
 		.unwrap()
-		.is_some())
+		.is_some());
+	assert_eq!(
+		inherent_data
+			.get_data::<BlockAuthor>(&sp_block_production_log::INHERENT_IDENTIFIER)
+			.unwrap(),
+		Some(BlockAuthor::ProBono(
+			ecdsa::Public::from_raw(hex!(
+				"000000000000000000000000000000000000000000000000000000000000000001"
+			))
+			.into()
+		))
+	);
 }
