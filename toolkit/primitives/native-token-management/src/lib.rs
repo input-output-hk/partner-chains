@@ -94,8 +94,7 @@ impl IsFatalError for InherentError {
 mod inherent_provider {
 	use super::*;
 	use sidechain_mc_hash::get_mc_hash_for_block;
-	use sp_api::ApiExt;
-	use sp_api::{ApiError, Core, ProvideRuntimeApi};
+	use sp_api::{ApiError, ApiExt, Core, ProvideRuntimeApi};
 	use sp_blockchain::HeaderBackend;
 	use std::error::Error;
 	use std::sync::Arc;
