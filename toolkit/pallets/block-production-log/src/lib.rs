@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod benchmarking;
+pub mod benchmarking;
 #[cfg(test)]
 pub mod mock;
 #[cfg(test)]
@@ -29,6 +29,9 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 
 		fn current_slot() -> Slot;
+
+		#[cfg(feature = "runtime-benchmarks")]
+		type BenchmarkHelper: benchmarking::BenchmarkHelper<Self::BlockProducerId>;
 	}
 
 	#[pallet::storage]

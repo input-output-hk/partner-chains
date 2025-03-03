@@ -9,27 +9,19 @@ use frame_system::RawOrigin;
 use sp_consensus_slots::Slot;
 use sp_std::vec::Vec;
 
-#[benchmarks(where <T as Config>::BlockProducerId: From<[u8; 32]>)]
+pub trait BenchmarkHelper<BlockProducerId> {
+	fn producer_id() -> BlockProducerId;
+}
+
+#[benchmarks]
 mod benchmarks {
 
 	use super::*;
 
-	fn make_id<T: Config>(i: u64) -> T::BlockProducerId
-	where
-		<T as Config>::BlockProducerId: From<[u8; 32]>,
-	{
-		let mut id = [0u8; 32];
-		id[0..8].copy_from_slice(&i.to_le_bytes());
-		id.into()
-	}
-
-	fn setup_storage<T: Config>(num_items: u64)
-	where
-		<T as Config>::BlockProducerId: From<[u8; 32]>,
-	{
+	fn setup_storage<T: Config>(num_items: u64) {
 		let vec = (0..num_items)
 			.into_iter()
-			.map(|i| (Slot::from(i), make_id::<T>(i)))
+			.map(|i| (Slot::from(i), T::BenchmarkHelper::producer_id()))
 			.collect::<Vec<_>>();
 		Log::<T>::put(vec);
 	}
@@ -37,7 +29,7 @@ mod benchmarks {
 	#[benchmark]
 	fn append() -> Result<(), BenchmarkError> {
 		setup_storage::<T>(59);
-		let id = make_id::<T>(1001);
+		let id = T::BenchmarkHelper::producer_id();
 		#[block]
 		{
 			BlockProductionLog::<T>::append(RawOrigin::None.into(), id)?;

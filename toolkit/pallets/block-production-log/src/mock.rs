@@ -62,6 +62,16 @@ impl frame_system::Config for Test {
 	type PostTransactions = ();
 }
 
+#[cfg(feature = "runtime-benchmarks")]
+pub struct PalletBlockProductionLogBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl crate::benchmarking::BenchmarkHelper<[u8; 32]> for PalletBlockProductionLogBenchmarkHelper {
+	fn producer_id() -> [u8; 32] {
+		Default::default()
+	}
+}
+
 impl crate::pallet::Config for Test {
 	type BlockProducerId = [u8; 32];
 	type WeightInfo = ();
@@ -69,6 +79,9 @@ impl crate::pallet::Config for Test {
 	fn current_slot() -> Slot {
 		Slot::from(1001000)
 	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = PalletBlockProductionLogBenchmarkHelper;
 }
 
 impl mock_pallet::Config for Test {}

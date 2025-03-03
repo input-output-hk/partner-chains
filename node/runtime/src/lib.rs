@@ -507,11 +507,17 @@ impl AsCardanoSPO for BlockAuthor {
 		}
 	}
 }
+
 #[cfg(feature = "runtime-benchmarks")]
-impl From<[u8; 32]> for BlockAuthor {
-	fn from(arr: [u8; 32]) -> Self {
-		let id = sp_core::ecdsa::Pair::from_seed(&arr).public().into();
-		Self::ProBono(id)
+pub struct PalletBlockProductionLogBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_block_production_log::benchmarking::BenchmarkHelper<BlockAuthor>
+	for PalletBlockProductionLogBenchmarkHelper
+{
+	fn producer_id() -> BlockAuthor {
+		let id = sp_core::ecdsa::Public::from_slice(&[0u8; 33]).unwrap().into();
+		BlockAuthor::ProBono(id)
 	}
 }
 
@@ -523,6 +529,9 @@ impl pallet_block_production_log::Config for Runtime {
 		let slot: u64 = pallet_aura::CurrentSlot::<Runtime>::get().into();
 		sp_consensus_slots::Slot::from(slot)
 	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = PalletBlockProductionLogBenchmarkHelper;
 }
 
 impl pallet_address_associations::Config for Runtime {
