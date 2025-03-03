@@ -192,3 +192,46 @@ def test_block_headers_have_mc_hash(api: BlockchainApi, config: ApiConfig, pc_ep
 
         if latest_stable_block_diff < config.main_chain.security_param + config.main_chain.block_stability_margin:
             logger.warning(f"Unexpected (but within offset) stable block number saved in header of block {block_no}")
+
+
+@mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
+@mark.test_key('ETCM-9394')
+@mark.block_production_log
+def test_block_production_log_pallet(
+    api: BlockchainApi,
+    config: ApiConfig,
+    get_pc_epoch_committee,
+    pc_epoch,
+    get_pc_epoch_blocks,
+):
+    """
+    For each block in a specified pc epoch:
+        * queries the block production log and for each entry:
+            * verifies that authors in the log are correct.
+    """
+    if pc_epoch == config.initial_pc_epoch:
+        skip("Cannot query committee before initial pc epoch")
+
+    logger.info(f"Verifying block production log for epoch: {pc_epoch}...")
+    blocks = get_pc_epoch_blocks(pc_epoch)["range"][:-1]
+    prev_committee = get_pc_epoch_committee(pc_epoch - 1)
+    curr_committee = get_pc_epoch_committee(pc_epoch)
+    # first block in an epoch is authored by previous committee
+    committee = prev_committee[-1:] + curr_committee[:-1]
+    for block_no in blocks:
+        block_hash = api.get_block(block_no)["header"]["hash"]
+        for slot, block_producer_id in api.get_block_production_log(block_hash):
+            author_index = slot % len(committee)
+            expected_author = committee[author_index]["sidechainPubKey"]
+            if "Incentivized" in block_producer_id:
+                cross_chain_public, _ = block_producer_id["Incentivized"]
+                assert (
+                    cross_chain_public == expected_author
+                ), f"Incorrect author: block {block_no} ({block_hash}) was authored by non-committee member"
+            elif "ProBono" in block_producer_id:
+                cross_chain_public = block_producer_id["ProBono"]
+                assert (
+                    cross_chain_public == expected_author
+                ), f"Incorrect author: block {block_no} ({block_hash}) was authored by non-committee member"
+            else:
+                assert False, f"Invalid block producer id: {block_producer_id}"

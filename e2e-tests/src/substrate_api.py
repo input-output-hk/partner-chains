@@ -624,8 +624,7 @@ class SubstrateApi(BlockchainApi):
         return self.substrate.get_block_header(block_number=block_no)["header"]
 
     def get_block(self, block_no):
-        block_hash = self.substrate.get_block_hash(block_no)
-        return self.substrate.get_block(block_hash)
+        return self.substrate.get_block(block_number=block_no)
 
     def get_validator_set(self, block):
         return self.substrate.query("Session", "ValidatorsAndKeys", block_hash=block["header"]["parentHash"])
@@ -752,4 +751,9 @@ class SubstrateApi(BlockchainApi):
     def get_address_association(self, stake_key_hash):
         result = self.substrate.query("AddressAssociations", "AddressAssociations", [f"0x{stake_key_hash}"])
         logger.debug(f"Address association for {stake_key_hash}: {result}")
+        return result.value
+
+    def get_block_production_log(self, block_hash=None):
+        result = self.substrate.query("BlockProductionLog", "Log", block_hash=block_hash)
+        logger.debug(f"Block production log: {result}")
         return result.value
