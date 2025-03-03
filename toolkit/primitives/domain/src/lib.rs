@@ -34,6 +34,10 @@ use {
 	serde::{Deserialize, Deserializer, Serialize, Serializer},
 };
 
+/// The number of main chain epochs back a Partner Chain queries for committee selection inputs.
+/// This offset is necessary to ensure that data is present and stable.
+pub const DATA_MC_EPOCH_OFFSET: u32 = 2;
+
 /// A main chain epoch number. In range [0, 2^31-1].
 #[derive(
 	Default, Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, Hash, TypeInfo, Ord, PartialOrd,

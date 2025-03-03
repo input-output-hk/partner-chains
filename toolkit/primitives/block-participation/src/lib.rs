@@ -116,6 +116,7 @@ pub mod inherent_data {
 	use alloc::fmt::Debug;
 	use core::error::Error;
 	use sidechain_domain::mainchain_epoch::*;
+	use sidechain_domain::DATA_MC_EPOCH_OFFSET;
 	use sidechain_domain::*;
 	use sp_api::{ApiError, ApiExt, ProvideRuntimeApi};
 	use sp_inherents::{InherentData, InherentDataProvider};
@@ -261,10 +262,6 @@ pub mod inherent_data {
 				.map_err(InherentDataCreationError::DataSourceError)
 		}
 
-		// The number of main chain epochs back a Partner Chain queries for candidate stake delegation.
-		// This offset is necessary to fetch the same data that was used to select committee members.
-		const DATA_MC_EPOCH_OFFSET: u32 = 2;
-
 		fn data_mc_epoch_for_slot(
 			slot: Slot,
 			slot_duration: SlotDuration,
@@ -279,10 +276,10 @@ pub mod inherent_data {
 				.timestamp_to_mainchain_epoch(timestamp)
 				.expect("Mainchain epoch for past slots exists");
 
-			(mc_epoch.0.checked_sub(Self::DATA_MC_EPOCH_OFFSET))
+			(mc_epoch.0.checked_sub(DATA_MC_EPOCH_OFFSET))
 				.ok_or(InherentDataCreationError::McEpochBelowOffset(
 					mc_epoch,
-					Self::DATA_MC_EPOCH_OFFSET,
+					DATA_MC_EPOCH_OFFSET,
 				))
 				.map(McEpochNumber)
 		}
