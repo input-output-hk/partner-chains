@@ -10,7 +10,10 @@ use parity_scale_codec::{Decode, Encode};
 use sp_inherents::{InherentIdentifier, IsFatalError};
 use sp_runtime::traits::Block as BlockT;
 #[cfg(feature = "std")]
-use {sp_api::Core, sp_api::ProvideRuntimeApi, sp_api::RuntimeApiInfo, sp_inherents::InherentData};
+use {
+	sp_api::{ApiExt, ProvideRuntimeApi},
+	sp_inherents::InherentData,
+};
 
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blprdlog";
 
@@ -46,8 +49,10 @@ impl<Author> BlockAuthorInherentProvider<Author> {
 		C::Api: BlockProductionLogApi<Block, Member>,
 		Author: From<Member>,
 	{
-		let version = client.runtime_api().version(parent_hash)?;
-		if version.has_api_with(&<dyn BlockProductionLogApi<Block, Member>>::ID, |_| true) {
+		if client
+			.runtime_api()
+			.has_api::<dyn BlockProductionLogApi<Block, Member>>(parent_hash)?
+		{
 			Self::new(client, parent_hash)
 		} else {
 			Ok(Self { author: None })
