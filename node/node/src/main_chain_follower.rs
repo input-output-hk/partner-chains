@@ -13,8 +13,8 @@ use main_chain_follower_mock::{
 use pallet_sidechain_rpc::SidechainRpcDataSource;
 use sc_service::error::Error as ServiceError;
 use sidechain_mc_hash::McHashDataSource;
+use sp_block_participation::inherent_data::BlockParticipationDataSource;
 use sp_native_token_management::NativeTokenManagementDataSource;
-use sp_stake_distribution::StakeDistributionDataSource;
 use std::{error::Error, sync::Arc};
 
 #[derive(Clone)]
@@ -23,7 +23,7 @@ pub struct DataSources {
 	pub authority_selection: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
 	pub native_token: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 	pub sidechain_rpc: Arc<dyn SidechainRpcDataSource + Send + Sync>,
-	pub stake_distribution: Arc<dyn StakeDistributionDataSource + Send + Sync>,
+	pub stake_distribution: Arc<dyn BlockParticipationDataSource + Send + Sync>,
 }
 
 pub(crate) async fn create_cached_main_chain_follower_data_sources(

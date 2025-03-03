@@ -17,20 +17,12 @@ pub type Block = sp_runtime::generic::Block<
 pub type Hash = <Block as sp_runtime::traits::Block>::Hash;
 
 #[derive(Default)]
-struct MockStakeDistributionDataSource {
+struct MockBlockParticipationDataSource {
 	stake_distributions: HashMap<McEpochNumber, StakeDistribution>,
 }
 
 #[async_trait::async_trait]
-impl StakeDistributionDataSource for MockStakeDistributionDataSource {
-	async fn get_stake_pool_delegation_distribution_for_pool(
-		&self,
-		_epoch: McEpochNumber,
-		_pool_hash: MainchainKeyHash,
-	) -> Result<PoolDelegation, Box<dyn std::error::Error + Send + Sync>> {
-		unimplemented!("Not used")
-	}
-
+impl BlockParticipationDataSource for MockBlockParticipationDataSource {
 	async fn get_stake_pool_delegation_distribution_for_pools(
 		&self,
 		epoch: McEpochNumber,
@@ -125,7 +117,7 @@ async fn provides_data_when_api_returns_a_slot() {
 		],
 	};
 	#[rustfmt::skip]
-	let data_source = MockStakeDistributionDataSource {
+	let data_source = MockBlockParticipationDataSource {
 		stake_distributions: [(
 			McEpochNumber(47),
 			StakeDistribution(
@@ -294,7 +286,7 @@ async fn provides_data_when_api_returns_a_slot() {
 #[tokio::test]
 async fn skips_providing_data_if_api_returns_none() {
 	let client = TestApi { payout_slot: None, blocks_produced_up_to_slot: vec![] };
-	let data_source = MockStakeDistributionDataSource::default();
+	let data_source = MockBlockParticipationDataSource::default();
 	let parent_hash = Hash::from([2; 32]);
 	let current_slot = Slot::from(10);
 	let mc_epoch_config = MainchainEpochConfig {
@@ -329,7 +321,7 @@ async fn returns_error_if_producer_missing_in_stake_distribution() {
 			(Slot::from(491), Some(producer1)),
 		],
 	};
-	let data_source = MockStakeDistributionDataSource {
+	let data_source = MockBlockParticipationDataSource {
 		stake_distributions: [(McEpochNumber(47), StakeDistribution([].into()))].into(),
 	};
 	let parent_hash = Hash::from([2; 32]);

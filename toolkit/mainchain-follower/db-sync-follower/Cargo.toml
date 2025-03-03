@@ -45,7 +45,7 @@ authority-selection-inherents = { workspace = true, features = [
 ], optional = true }
 cardano-serialization-lib = { workspace = true }
 partner-chains-plutus-data = { workspace = true }
-sp-stake-distribution = { workspace = true, features = [
+sp-block-participation = { workspace = true, features = [
     "std",
 ], optional = true }
 
@@ -61,4 +61,4 @@ candidate-source = ["authority-selection-inherents"]
 native-token = ["sp-native-token-management"]
 mc-hash = ["sidechain-mc-hash", "block-source"]
 sidechain-rpc = ["pallet-sidechain-rpc", "block-source"]
-stake-distribution = ["sp-stake-distribution"]
+block-participation = ["sp-block-participation"]

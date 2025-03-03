@@ -121,9 +121,18 @@ pub mod inherent_data {
 	use sp_api::{ApiError, ApiExt, ProvideRuntimeApi};
 	use sp_inherents::{InherentData, InherentDataProvider};
 	use sp_runtime::traits::Block as BlockT;
-	pub use sp_stake_distribution::StakeDistributionDataSource;
 	use std::collections::HashMap;
 	use std::hash::Hash;
+
+	#[async_trait::async_trait]
+	pub trait BlockParticipationDataSource {
+		/// Retrieves stake pool delegation distribution for provided epoch and pools
+		async fn get_stake_pool_delegation_distribution_for_pools(
+			&self,
+			epoch: McEpochNumber,
+			pool_hashes: &[MainchainKeyHash],
+		) -> Result<StakeDistribution, Box<dyn std::error::Error + Send + Sync>>;
+	}
 
 	#[derive(thiserror::Error, Debug)]
 	pub enum InherentDataCreationError<BlockProducerId: Debug> {
@@ -162,7 +171,7 @@ pub mod inherent_data {
 	{
 		pub async fn new<Block: BlockT, T>(
 			client: &T,
-			data_source: &(dyn StakeDistributionDataSource + Send + Sync),
+			data_source: &(dyn BlockParticipationDataSource + Send + Sync),
 			parent_hash: <Block as BlockT>::Hash,
 			current_slot: Slot,
 			mc_epoch_config: &MainchainEpochConfig,
@@ -253,7 +262,7 @@ pub mod inherent_data {
 		async fn fetch_delegations(
 			mc_epoch: McEpochNumber,
 			producers: impl Iterator<Item = BlockProducer>,
-			data_source: &(dyn StakeDistributionDataSource + Send + Sync),
+			data_source: &(dyn BlockParticipationDataSource + Send + Sync),
 		) -> Result<StakeDistribution, InherentDataCreationError<BlockProducer>> {
 			let pools: Vec<_> = producers.flat_map(|p| p.as_cardano_spo()).collect();
 			data_source

@@ -3,7 +3,7 @@ use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
 use lru::LruCache;
 use sidechain_domain::*;
-use sp_stake_distribution::StakeDistributionDataSource;
+use sp_block_participation::inherent_data::BlockParticipationDataSource;
 use sqlx::PgPool;
 use std::sync::{Arc, Mutex};
 
@@ -23,21 +23,7 @@ impl StakeDistributionDataSourceImpl {
 }
 
 observed_async_trait!(
-impl StakeDistributionDataSource for StakeDistributionDataSourceImpl {
-	async fn get_stake_pool_delegation_distribution_for_pool(
-		&self,
-		epoch: McEpochNumber,
-		pool_hash: MainchainKeyHash,
-	) -> Result<PoolDelegation, Box<dyn std::error::Error + Send + Sync>> {
-		Ok(self
-			.get_stake_pool_delegation_distribution_for_pools(epoch, &[pool_hash])
-			.await?
-			.0
-			.entry(pool_hash)
-			.or_default()
-			.clone())
-	}
-
+impl BlockParticipationDataSource for StakeDistributionDataSourceImpl {
 	async fn get_stake_pool_delegation_distribution_for_pools(
 		&self,
 		epoch: McEpochNumber,

@@ -95,7 +95,7 @@ db-sync-follower = { workspace = true, features = [
     "native-token",
     "mc-hash",
     "sidechain-rpc",
-    "stake-distribution",
+    "block-participation",
 ] }
 main-chain-follower-mock = { workspace = true, features = [
     "block-source",
@@ -103,11 +103,10 @@ main-chain-follower-mock = { workspace = true, features = [
     "native-token",
     "mc-hash",
     "sidechain-rpc",
-    "stake-distribution",
+    "block-participation",
 ] }
 tokio = { workspace = true }
 cli-commands = { workspace = true }
-sp-stake-distribution = { workspace = true, features = ["std"] }
 sp-block-participation = { workspace = true, features = ["std"] }
 
 [build-dependencies]

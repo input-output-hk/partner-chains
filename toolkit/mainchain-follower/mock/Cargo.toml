@@ -17,7 +17,7 @@ sidechain-domain = { workspace = true }
 sp-timestamp = { workspace = true }
 sp-native-token-management = { workspace = true, optional = true }
 sidechain-mc-hash = { workspace = true, optional = true }
-sp-stake-distribution = { workspace = true, optional = true }
+sp-block-participation = { workspace = true, optional = true }
 pallet-sidechain-rpc = { workspace = true, optional = true }
 authority-selection-inherents = { workspace = true, optional = true }
 
@@ -28,11 +28,11 @@ std = [
 	"sidechain-domain/std",
 	"rand/std",
 	"sp-native-token-management?/std",
-	"sp-stake-distribution?/std"
+	"sp-block-participation?/std"
 ]
 block-source = []
 candidate-source = ["authority-selection-inherents"]
 native-token = ["sp-native-token-management"]
 mc-hash = ["sidechain-mc-hash"]
 sidechain-rpc = ["pallet-sidechain-rpc"]
-stake-distribution = ["sp-stake-distribution"]
+block-participation = ["sp-block-participation"]
