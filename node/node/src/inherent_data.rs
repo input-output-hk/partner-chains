@@ -158,8 +158,10 @@ where
 		ScEpochNumber,
 	>,
 	T::Api: NativeTokenManagementApi<Block>,
+	T::Api: BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>,
 {
-	type InherentDataProviders = (TimestampIDP, AriadneIDP, NativeTokenIDP);
+	type InherentDataProviders =
+		(TimestampIDP, AriadneIDP, BlockAuthorInherentProvider<BlockAuthor>, NativeTokenIDP);
 
 	async fn create_inherent_data_providers(
 		&self,
@@ -207,7 +209,13 @@ where
 		)
 		.await?;
 
-		Ok((timestamp, ariadne_data_provider, native_token))
+		#[cfg(test)]
+		let block_producer_id_provider = BlockAuthorInherentProvider::new(client.as_ref(), parent_hash)?;
+		#[cfg(not(test))]
+		let block_producer_id_provider =
+			BlockAuthorInherentProvider::new_if_pallet_present(client.as_ref(), parent_hash)?;
+
+		Ok((timestamp, ariadne_data_provider, block_producer_id_provider, native_token))
 	}
 }
 
