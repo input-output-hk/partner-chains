@@ -102,8 +102,11 @@ where
 			mc_hash.mc_epoch(),
 		)
 		.await?;
+		#[cfg(test)]
+		let block_producer_id_provider = BlockAuthorInherentProvider::new(client.as_ref(), parent_hash)?;
+		#[cfg(not(test))]
 		let block_producer_id_provider =
-			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash)?;
+			BlockAuthorInherentProvider::new_if_pallet_present(client.as_ref(), parent_hash)?;
 		let block_beneficiary_provider =
 			BlockBeneficiaryInherentProvider::<BeneficiaryId>::from_env(
 				"SIDECHAIN_BLOCK_BENEFICIARY",

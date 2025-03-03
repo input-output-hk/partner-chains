@@ -40,5 +40,5 @@ fn provides_author_based_on_runtime_api() {
 		BlockAuthorInherentProvider::<Author>::new(&mock_api, <Block as BlockT>::Hash::default())
 			.expect("Should not fail");
 
-	assert_eq!(provider.author, mock_api.author.into());
+	assert_eq!(provider.author.unwrap(), mock_api.author.into());
 }

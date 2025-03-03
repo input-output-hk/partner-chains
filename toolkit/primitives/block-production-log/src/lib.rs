@@ -10,7 +10,7 @@ use parity_scale_codec::{Decode, Encode};
 use sp_inherents::{InherentIdentifier, IsFatalError};
 use sp_runtime::traits::Block as BlockT;
 #[cfg(feature = "std")]
-use {sp_api::ProvideRuntimeApi, sp_inherents::InherentData};
+use {sp_api::Core, sp_api::ProvideRuntimeApi, sp_api::RuntimeApiInfo, sp_inherents::InherentData};
 
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blprdlog";
 
@@ -30,11 +30,29 @@ impl IsFatalError for InherentError {
 #[cfg(feature = "std")]
 #[derive(Debug)]
 pub struct BlockAuthorInherentProvider<Author> {
-	pub author: Author,
+	pub author: Option<Author>,
 }
 
 #[cfg(feature = "std")]
 impl<Author> BlockAuthorInherentProvider<Author> {
+	pub fn new_if_pallet_present<C, Member, Block>(
+		client: &C,
+		parent_hash: Block::Hash,
+	) -> Result<Self, Box<dyn Error + Send + Sync>>
+	where
+		Member: Decode,
+		Block: BlockT,
+		C: ProvideRuntimeApi<Block>,
+		C::Api: BlockProductionLogApi<Block, Member>,
+		Author: From<Member>,
+	{
+		let version = client.runtime_api().version(parent_hash)?;
+		if version.has_api_with(&<dyn BlockProductionLogApi<Block, Member>>::ID, |_| true) {
+			Self::new(client, parent_hash)
+		} else {
+			Ok(Self { author: None })
+		}
+	}
 	pub fn new<C, Member, Block>(
 		client: &C,
 		parent_hash: Block::Hash,
@@ -48,7 +66,7 @@ impl<Author> BlockAuthorInherentProvider<Author> {
 	{
 		let author: Author = client.runtime_api().get_current_author(parent_hash)?.into();
 
-		Ok(BlockAuthorInherentProvider { author })
+		Ok(BlockAuthorInherentProvider { author: Some(author) })
 	}
 }
 
@@ -62,7 +80,10 @@ where
 		&self,
 		inherent_data: &mut InherentData,
 	) -> Result<(), sp_inherents::Error> {
-		inherent_data.put_data(INHERENT_IDENTIFIER, &self.author)
+		if let Some(author) = &self.author {
+			inherent_data.put_data(INHERENT_IDENTIFIER, author)?;
+		}
+		Ok(())
 	}
 
 	async fn try_handle_error(
