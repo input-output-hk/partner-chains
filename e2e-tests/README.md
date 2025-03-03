@@ -14,8 +14,7 @@ Welcome to `Partner Chains Tests`, a powerful and flexible test automation frame
 
 ## Installation
 
-1. Install `python 3.12` and `pip`. At this point, python from nix devshell does not work with e2e-tests, please install a separate one in your system.
-2. Create and activate virtual environment
+1. Create and activate virtual environment
 
 ```bash
   pip install virtualenv
@@ -23,8 +22,8 @@ Welcome to `Partner Chains Tests`, a powerful and flexible test automation frame
   source venv/bin/activate
 ```
 
-3. Install requirements `pip install -r requirements.txt`.
-4. Install sops to [manage keys](/e2e-tests/docs/secrets.md). You can also configure [your own keys with sops](/e2e-tests/docs/configure-sops.md)
+2. Install requirements `pip install -r requirements.txt`.
+3. Install sops to [manage keys](/e2e-tests/docs/secrets.md). You can also configure [your own keys with sops](/e2e-tests/docs/configure-sops.md)
 
 ## Getting Started
 

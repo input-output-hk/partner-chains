@@ -9,18 +9,20 @@
           file = ../../rust-toolchain.toml;
           sha256 = "VZZnlyP69+Y3crrLHQyJirqlHrTtGTsyiSnZB8jEvVo=";
         };
-    in {
+    in
+    {
       devShells = {
         default = pkgs.mkShell {
           # envs needed for rust toochain
           RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
           LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
-          LD_LIBRARY_PATH = "${rustToolchain}/lib";
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ rustToolchain pkgs.stdenv.cc.cc pkgs.libz ];
           # https://github.com/NixOS/nixpkgs/issues/370494#issuecomment-2625163369
-          CFLAGS = if isLinux then
-            "-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE"
-          else
-            "";
+          CFLAGS =
+            if isLinux then
+              "-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE"
+            else
+              "";
 
           # envs needed in order to construct some of the rust crates
           ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";

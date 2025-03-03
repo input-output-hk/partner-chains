@@ -533,11 +533,13 @@ class BlockchainApi(ABC):
     @abstractmethod
     def sign_address_association(self, address: str, stake_signing_key: str) -> AddressAssociationSignature:
         """
-        Signs an address association with a given wallet.
+        Creates a signature of the association between a PC address and a Cardano address. This association along
+        with the signature can be submitted to the network via :func:`submit_address_association` method to allow
+        ADA delegators to participate in PC block production rewards.
 
         Arguments:
             address {str} -- PC address (hex format) to be associated with the Cardano address
-            stake_signing_key {str} -- Cardano Stake signing key in hex format
+            stake_signing_key {str} -- Cardano Stake Signing key in hex format
 
         Returns:
             AddressAssociationSignature
@@ -547,10 +549,12 @@ class BlockchainApi(ABC):
     @abstractmethod
     def submit_address_association(self, signature: AddressAssociationSignature, wallet: Wallet) -> Transaction:
         """
-        Submits an address association to the network.
+        Submits the association between a PC address and a Cardano address to the network. This allows ADA delegators
+        to participate in PC block production rewards.
 
         Arguments:
-            signature {AddressAssociationSignature} -- Signature object
+            signature {AddressAssociationSignature} -- Signature of the association
+            wallet {Wallet} -- Wallet used to sign the transaction
 
         Returns:
             Transaction
@@ -566,6 +570,6 @@ class BlockchainApi(ABC):
             stake_key_hash {str} -- Stake verification key hash
 
         Returns:
-            str -- PC address associated with the Cardano address
+            str -- PC SS58 address associated with the Cardano address
         """
         pass

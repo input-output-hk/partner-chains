@@ -112,17 +112,15 @@ runs:
         echo "Copy test results from docker container"
         mkdir -p e2e-tests
         docker cp tests:/e2e-tests/.report.json e2e-tests/.report.json
-
-    - uses: geekyeggo/delete-artifact@v5
-      continue-on-error: true
-      with:
-          name: test-results
+        docker cp tests:/e2e-tests/debug.log e2e-tests/debug.log
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
       with:
         name: test-results
-        path: e2e-tests/.report.json
+        path: |
+          e2e-tests/.report.json
+          e2e-tests/debug.log
         overwrite: true
         if-no-files-found: error
         include-hidden-files: true
