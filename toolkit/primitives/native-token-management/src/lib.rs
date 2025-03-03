@@ -94,7 +94,8 @@ impl IsFatalError for InherentError {
 mod inherent_provider {
 	use super::*;
 	use sidechain_mc_hash::get_mc_hash_for_block;
-	use sp_api::{ApiError, Core, ProvideRuntimeApi, RuntimeApiInfo};
+	use sp_api::ApiExt;
+	use sp_api::{ApiError, Core, ProvideRuntimeApi};
 	use sp_blockchain::HeaderBackend;
 	use std::error::Error;
 	use std::sync::Arc;
@@ -145,9 +146,10 @@ mod inherent_provider {
 			C: ProvideRuntimeApi<Block> + Send + Sync,
 			C::Api: NativeTokenManagementApi<Block>,
 		{
-			let version = client.runtime_api().version(parent_hash)?;
-
-			if version.has_api_with(&<dyn NativeTokenManagementApi<Block>>::ID, |_| true) {
+			if client
+				.runtime_api()
+				.has_api::<dyn NativeTokenManagementApi<Block>>(parent_hash)?
+			{
 				Self::new(client, data_source, mc_hash, parent_hash).await
 			} else {
 				Ok(Self { token_amount: None })
