@@ -21,8 +21,13 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blprdlog";
 #[cfg_attr(not(feature = "std"), derive(Debug))]
 #[cfg_attr(feature = "std", derive(Decode, thiserror::Error, sp_runtime::RuntimeDebug))]
 pub enum InherentError {
-	#[cfg_attr(feature = "std", error("Block Author inherent must be provided every block"))]
+	#[cfg_attr(
+		feature = "std",
+		error("Block Author inherent must be provided every block after initialization")
+	)]
 	InherentRequired,
+	#[cfg_attr(feature = "std", error("Block Author inherent data is not correctly encoded"))]
+	InvalidData,
 }
 impl IsFatalError for InherentError {
 	fn is_fatal_error(&self) -> bool {
@@ -50,16 +55,13 @@ impl<Author> BlockAuthorInherentProvider<Author> {
 		C::Api: BlockProductionLogApi<Block, Member>,
 		Author: From<Member>,
 	{
-		if client
-			.runtime_api()
-			.has_api::<dyn BlockProductionLogApi<Block, Member>>(parent_hash)?
-		{
-			let author: Author = client.runtime_api().get_author(parent_hash, slot)?.into();
-
-			Ok(BlockAuthorInherentProvider { author: Some(author) })
-		} else {
-			Ok(Self { author: None })
+		let api = client.runtime_api();
+		if !api.has_api::<dyn BlockProductionLogApi<Block, Member>>(parent_hash)? {
+			return Ok(Self { author: None });
 		}
+		let author = client.runtime_api().get_author(parent_hash, slot)?.map(Author::from);
+
+		Ok(BlockAuthorInherentProvider { author })
 	}
 }
 
@@ -99,6 +101,6 @@ sp_api::decl_runtime_apis! {
 		Member: Decode
 	{
 		/// Returns author based on current committee and provided slot
-		fn get_author(slot: sidechain_slots::Slot) -> Member;
+		fn get_author(slot: sidechain_slots::Slot) -> Option<Member>;
 	}
 }

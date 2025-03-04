@@ -14,7 +14,7 @@ type Author = u64;
 
 #[derive(Clone, Default)]
 struct TestApi {
-	author: Member,
+	author: Option<Member>,
 }
 
 impl ProvideRuntimeApi<Block> for TestApi {
@@ -26,16 +26,15 @@ impl ProvideRuntimeApi<Block> for TestApi {
 
 sp_api::mock_impl_runtime_apis! {
 	impl BlockProductionLogApi<Block, Member> for TestApi {
-
-		fn get_author(_slot: Slot) -> Member {
+		fn get_author(_slot: Slot) -> Option<Member> {
 			self.author
 		}
 	}
 }
 
 #[test]
-fn provides_author_based_on_runtime_api() {
-	let mock_api = TestApi { author: 102 };
+fn provides_author_when_runtime_api_returns_one() {
+	let mock_api = TestApi { author: Some(102) };
 
 	let provider = BlockAuthorInherentProvider::<Author>::new(
 		&mock_api,
@@ -44,5 +43,19 @@ fn provides_author_based_on_runtime_api() {
 	)
 	.expect("Should not fail");
 
-	assert_eq!(provider.author.unwrap(), Author::from(mock_api.author));
+	assert_eq!(provider.author, mock_api.author.map(Author::from));
+}
+
+#[test]
+fn skips_providing_author_when_runtime_api_returns_none() {
+	let mock_api = TestApi { author: None };
+
+	let provider = BlockAuthorInherentProvider::<Author>::new(
+		&mock_api,
+		<Block as BlockT>::Hash::default(),
+		Slot::from(42),
+	)
+	.expect("Should not fail");
+
+	assert_eq!(provider.author, None);
 }

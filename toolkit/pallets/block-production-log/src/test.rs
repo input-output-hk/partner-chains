@@ -1,9 +1,11 @@
 use super::*;
 use frame_support::{
 	assert_err, assert_ok,
+	inherent::{InherentData, ProvideInherent},
 	traits::{Hooks, UnfilteredDispatchable},
 };
 use mock::*;
+use sp_block_production_log::{InherentError, INHERENT_IDENTIFIER};
 use sp_consensus_slots::Slot;
 
 fn make_id(i: u64) -> [u8; 32] {
@@ -26,6 +28,7 @@ fn first_append_should_succeed() {
 		Pallet::<Test>::on_finalize(System::block_number());
 
 		assert_eq!(Log::<Test>::get().to_vec(), vec![(Slot::from(1001000), make_id(1))]);
+		assert_eq!(Initialized::<Test>::get(), true);
 	})
 }
 
@@ -75,6 +78,38 @@ fn can_not_append_twice_for_same_block_even_after_take_full_prefix() {
 			call.dispatch_bypass_filter(RuntimeOrigin::none()),
 			Error::<Test>::BlockNumberNotIncreased
 		);
+	})
+}
+
+#[test]
+fn inherent_is_not_required_if_data_is_not_present_and_pallet_is_uninitialized() {
+	new_test_ext().execute_with(|| {
+		let inherent_data = InherentData::new();
+		let result = Pallet::<Test>::is_inherent_required(&inherent_data);
+
+		assert_eq!(result, Ok(None));
+	})
+}
+
+#[test]
+fn inherent_is_required_if_data_is_present() {
+	new_test_ext().execute_with(|| {
+		let mut inherent_data = InherentData::new();
+		inherent_data.put_data(INHERENT_IDENTIFIER, &[10; 32]).unwrap();
+		let result = Pallet::<Test>::is_inherent_required(&inherent_data);
+
+		assert_eq!(result, Ok(Some(InherentError::InherentRequired)));
+	})
+}
+
+#[test]
+fn inherent_is_required_if_data_is_not_present_but_pallet_is_initialized() {
+	new_test_ext().execute_with(|| {
+		Initialized::<Test>::put(true);
+		let inherent_data = InherentData::new();
+		let result = Pallet::<Test>::is_inherent_required(&inherent_data);
+
+		assert_eq!(result, Ok(Some(InherentError::InherentRequired)));
 	})
 }
 
