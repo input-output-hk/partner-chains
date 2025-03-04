@@ -7,20 +7,20 @@ use derive_new::new;
 use jsonrpsee::core::async_trait;
 use sc_consensus_aura::{find_pre_digest, SlotDuration};
 use sc_service::Arc;
-use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
-use sidechain_domain::DelegatorKey;
-use sidechain_domain::{McBlockHash, ScEpochNumber};
-use sidechain_mc_hash::McHashDataSource;
-use sidechain_mc_hash::McHashInherentDataProvider as McHashIDP;
-use sidechain_runtime::opaque::SessionKeys;
-use sidechain_runtime::{opaque::Block, BeneficiaryId};
-use sidechain_runtime::{BlockAuthor, CrossChainPublic};
+use sidechain_domain::{
+	mainchain_epoch::MainchainEpochConfig, DelegatorKey, McBlockHash, ScEpochNumber,
+};
+use sidechain_mc_hash::{McHashDataSource, McHashInherentDataProvider as McHashIDP};
+use sidechain_runtime::{
+	opaque::{Block, SessionKeys},
+	BeneficiaryId, BlockAuthor, CrossChainPublic,
+};
 use sidechain_slots::ScSlotConfig;
 use sp_api::ProvideRuntimeApi;
-use sp_block_participation::inherent_data::BlockParticipationInherentDataProvider;
-use sp_block_participation::BlockParticipationApi;
-use sp_block_production_log::BlockAuthorInherentProvider;
-use sp_block_production_log::BlockProductionLogApi;
+use sp_block_participation::{
+	inherent_data::BlockParticipationInherentDataProvider, BlockParticipationApi,
+};
+a
 use sp_block_rewards::BlockBeneficiaryInherentProvider;
 use sp_blockchain::HeaderBackend;
 use sp_consensus_aura::{
