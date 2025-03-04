@@ -160,36 +160,7 @@ pub mod inherent_data {
 		Delegator: CardanoDelegator + Ord + Debug,
 		BlockProducer: AsCardanoSPO,
 	{
-		pub async fn new_cardano_stake_based_if_pallet_present<Block: BlockT, T>(
-			client: &T,
-			data_source: &(dyn StakeDistributionDataSource + Send + Sync),
-			parent_hash: <Block as BlockT>::Hash,
-			current_slot: Slot,
-			mc_epoch_config: &MainchainEpochConfig,
-			slot_duration: SlotDuration,
-		) -> Result<Self, InherentDataCreationError<BlockProducer>>
-		where
-			T: ProvideRuntimeApi<Block> + Send + Sync,
-			T::Api: BlockParticipationApi<Block, BlockProducer>,
-		{
-			if client
-				.runtime_api()
-				.has_api::<dyn BlockParticipationApi<Block, BlockProducer>>(parent_hash)?
-			{
-				Self::new_cardano_stake_based(
-					client,
-					data_source,
-					parent_hash,
-					current_slot,
-					mc_epoch_config,
-					slot_duration,
-				)
-				.await
-			} else {
-				Ok(Self::Inert)
-			}
-		}
-		pub async fn new_cardano_stake_based<Block: BlockT, T>(
+		pub async fn new<Block: BlockT, T>(
 			client: &T,
 			data_source: &(dyn StakeDistributionDataSource + Send + Sync),
 			parent_hash: <Block as BlockT>::Hash,
@@ -202,6 +173,11 @@ pub mod inherent_data {
 			T::Api: BlockParticipationApi<Block, BlockProducer>,
 		{
 			let api = client.runtime_api();
+
+			if !api.has_api::<dyn BlockParticipationApi<Block, BlockProducer>>(parent_hash)? {
+				return Ok(Self::Inert);
+			}
+
 			let Some(up_to_slot) = api.should_release_data(parent_hash, current_slot)? else {
 				log::debug!("💤︎ Skipping computing block participation data this block...");
 				return Ok(Self::Inert);

@@ -179,14 +179,16 @@ async fn provides_data_when_api_returns_a_slot() {
 		.into(),
 	};
 
-	let provider = BlockParticipationInherentDataProvider::<BlockProducer, Beneficiary>::new_cardano_stake_based(
+	let provider = BlockParticipationInherentDataProvider::<BlockProducer, Beneficiary>::new(
 		&client,
 		&data_source,
 		parent_hash,
 		current_slot,
 		&mc_epoch_config,
 		slot_duration,
-	).await.expect("Should succeed");
+	)
+	.await
+	.expect("Should succeed");
 
 	let BlockParticipationInherentDataProvider::Active {
 		target_inherent_id,
@@ -304,14 +306,16 @@ async fn skips_providing_data_if_api_returns_none() {
 	};
 	let slot_duration = SlotDuration::from_millis(1000);
 
-	let provider = BlockParticipationInherentDataProvider::<BlockProducer, Beneficiary>::new_cardano_stake_based(
+	let provider = BlockParticipationInherentDataProvider::<BlockProducer, Beneficiary>::new(
 		&client,
 		&data_source,
 		parent_hash,
 		current_slot,
 		&mc_epoch_config,
 		slot_duration,
-	).await.expect("Should succeed");
+	)
+	.await
+	.expect("Should succeed");
 
 	assert_eq!(provider, BlockParticipationInherentDataProvider::Inert);
 }
@@ -339,14 +343,16 @@ async fn returns_error_if_producer_missing_in_stake_distribution() {
 	};
 	let slot_duration = SlotDuration::from_millis(1000);
 
-	let err = BlockParticipationInherentDataProvider::<BlockProducer, Beneficiary>::new_cardano_stake_based(
+	let err = BlockParticipationInherentDataProvider::<BlockProducer, Beneficiary>::new(
 		&client,
 		&data_source,
 		parent_hash,
 		current_slot,
 		&mc_epoch_config,
 		slot_duration,
-	).await.expect_err("Should return error");
+	)
+	.await
+	.expect_err("Should return error");
 
 	match err {
 		InherentDataCreationError::DataMissing(epoch, producer) => {

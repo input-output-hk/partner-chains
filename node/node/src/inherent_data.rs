@@ -20,7 +20,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_participation::{
 	inherent_data::BlockParticipationInherentDataProvider, BlockParticipationApi,
 };
-a
+use sp_block_production_log::{BlockAuthorInherentProvider, BlockProductionLogApi};
 use sp_block_rewards::BlockBeneficiaryInherentProvider;
 use sp_blockchain::HeaderBackend;
 use sp_consensus_aura::{
@@ -125,18 +125,7 @@ where
 		)
 		.await?;
 
-		#[cfg(test)]
-		let payouts = BlockParticipationInherentDataProvider::new_cardano_stake_based(
-			client.as_ref(),
-			stake_distribution_data_source.as_ref(),
-			parent_hash,
-			*slot,
-			mc_epoch_config,
-			config.sc_slot_config.slot_duration,
-		)
-		.await?;
-		#[cfg(not(test))]
-		let payouts = BlockParticipationInherentDataProvider::new_cardano_stake_based_if_pallet_present(
+		let payouts = BlockParticipationInherentDataProvider::new(
 			client.as_ref(),
 			stake_distribution_data_source.as_ref(),
 			parent_hash,
@@ -247,16 +236,15 @@ where
 		let block_producer_id_provider =
 			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash)?;
 
-		let payouts =
-			BlockParticipationInherentDataProvider::new_cardano_stake_based_if_pallet_present(
-				client.as_ref(),
-				stake_distribution_data_source.as_ref(),
-				parent_hash,
-				verified_block_slot,
-				mc_epoch_config,
-				config.sc_slot_config.slot_duration,
-			)
-			.await?;
+		let payouts = BlockParticipationInherentDataProvider::new(
+			client.as_ref(),
+			stake_distribution_data_source.as_ref(),
+			parent_hash,
+			verified_block_slot,
+			mc_epoch_config,
+			config.sc_slot_config.slot_duration,
+		)
+		.await?;
 
 		Ok((timestamp, ariadne_data_provider, block_producer_id_provider, native_token, payouts))
 	}
