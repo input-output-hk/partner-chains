@@ -246,6 +246,43 @@
 <a href="#246" id="246">246</a>
 <a href="#247" id="247">247</a>
 <a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider <span class="kw">as </span>AriadneIDP;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::{
 	AuthoritySelectionDataSource, AuthoritySelectionInputs,
@@ -255,17 +292,20 @@
 <span class="kw">use </span>jsonrpsee::core::async_trait;
 <span class="kw">use </span>sc_consensus_aura::{find_pre_digest, SlotDuration};
 <span class="kw">use </span>sc_service::Arc;
-<span class="kw">use </span>sidechain_domain::mainchain_epoch::MainchainEpochConfig;
-<span class="kw">use </span>sidechain_domain::{McBlockHash, ScEpochNumber};
-<span class="kw">use </span>sidechain_mc_hash::McHashDataSource;
-<span class="kw">use </span>sidechain_mc_hash::McHashInherentDataProvider <span class="kw">as </span>McHashIDP;
-<span class="kw">use </span>sidechain_runtime::opaque::SessionKeys;
-<span class="kw">use </span>sidechain_runtime::{opaque::Block, BeneficiaryId};
-<span class="kw">use </span>sidechain_runtime::{BlockAuthor, CrossChainPublic};
+<span class="kw">use </span>sidechain_domain::{
+	mainchain_epoch::MainchainEpochConfig, DelegatorKey, McBlockHash, ScEpochNumber,
+};
+<span class="kw">use </span>sidechain_mc_hash::{McHashDataSource, McHashInherentDataProvider <span class="kw">as </span>McHashIDP};
+<span class="kw">use </span>sidechain_runtime::{
+	opaque::{Block, SessionKeys},
+	BeneficiaryId, BlockAuthor, CrossChainPublic,
+};
 <span class="kw">use </span>sidechain_slots::ScSlotConfig;
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
-<span class="kw">use </span>sp_block_production_log::BlockAuthorInherentProvider;
-<span class="kw">use </span>sp_block_production_log::BlockProductionLogApi;
+<span class="kw">use </span>sp_block_participation::{
+	inherent_data::BlockParticipationInherentDataProvider, BlockParticipationApi,
+};
+<span class="kw">use </span>sp_block_production_log::{BlockAuthorInherentProvider, BlockProductionLogApi};
 <span class="kw">use </span>sp_block_rewards::BlockBeneficiaryInherentProvider;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_consensus_aura::{
@@ -280,6 +320,7 @@
 <span class="kw">use </span>sp_partner_chains_consensus_aura::CurrentSlotProvider;
 <span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, Header, Zero};
 <span class="kw">use </span>sp_session_validator_management::SessionValidatorManagementApi;
+<span class="kw">use </span>sp_stake_distribution::StakeDistributionDataSource;
 <span class="kw">use </span>sp_timestamp::{InherentDataProvider <span class="kw">as </span>TimestampIDP, Timestamp};
 <span class="kw">use </span>std::error::Error;
 <span class="kw">use </span>time_source::TimeSource;
@@ -291,6 +332,7 @@
 	mc_hash_data_source: Arc&lt;<span class="kw">dyn </span>McHashDataSource + Send + Sync&gt;,
 	authority_selection_data_source: Arc&lt;<span class="kw">dyn </span>AuthoritySelectionDataSource + Send + Sync&gt;,
 	native_token_data_source: Arc&lt;<span class="kw">dyn </span>NativeTokenManagementDataSource + Send + Sync&gt;,
+	stake_distribution_data_source: Arc&lt;<span class="kw">dyn </span>StakeDistributionDataSource + Send + Sync&gt;,
 }
 
 <span class="attr">#[async_trait]
@@ -306,6 +348,7 @@
 	&gt;,
 	T::Api: NativeTokenManagementApi&lt;Block&gt;,
 	T::Api: BlockProductionLogApi&lt;Block, CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;&gt;,
+	T::Api: BlockParticipationApi&lt;Block, BlockAuthor&gt;,
 {
 	<span class="kw">type </span>InherentDataProviders = (
 		AuraIDP,
@@ -315,6 +358,7 @@
 		BlockAuthorInherentProvider&lt;BlockAuthor&gt;,
 		BlockBeneficiaryInherentProvider&lt;BeneficiaryId&gt;,
 		NativeTokenIDP,
+		BlockParticipationInherentDataProvider&lt;BlockAuthor, DelegatorKey&gt;,
 	);
 
 	<span class="kw">async fn </span>create_inherent_data_providers(
@@ -328,6 +372,7 @@
 			mc_hash_data_source,
 			authority_selection_data_source,
 			native_token_data_source,
+			stake_distribution_data_source,
 		} = <span class="self">self</span>;
 		<span class="kw">let </span>CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source } = config;
 
@@ -365,6 +410,16 @@
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;
 
+		<span class="kw">let </span>payouts = BlockParticipationInherentDataProvider::new(
+			client.as_ref(),
+			stake_distribution_data_source.as_ref(),
+			parent_hash,
+			<span class="kw-2">*</span>slot,
+			mc_epoch_config,
+			config.sc_slot_config.slot_duration,
+		)
+		.<span class="kw">await</span><span class="question-mark">?</span>;
+
 		<span class="prelude-val">Ok</span>((
 			slot,
 			timestamp,
@@ -373,6 +428,7 @@
 			block_producer_id_provider,
 			block_beneficiary_provider,
 			native_token,
+			payouts,
 		))
 	}
 }
@@ -384,6 +440,7 @@
 	mc_hash_data_source: Arc&lt;<span class="kw">dyn </span>McHashDataSource + Send + Sync&gt;,
 	authority_selection_data_source: Arc&lt;<span class="kw">dyn </span>AuthoritySelectionDataSource + Send + Sync&gt;,
 	native_token_data_source: Arc&lt;<span class="kw">dyn </span>NativeTokenManagementDataSource + Send + Sync&gt;,
+	stake_distribution_data_source: Arc&lt;<span class="kw">dyn </span>StakeDistributionDataSource + Send + Sync&gt;,
 }
 
 <span class="kw">impl</span>&lt;T: Send + Sync&gt; CurrentSlotProvider <span class="kw">for </span>VerifierCIDP&lt;T&gt; {
@@ -404,9 +461,15 @@
 	&gt;,
 	T::Api: NativeTokenManagementApi&lt;Block&gt;,
 	T::Api: BlockProductionLogApi&lt;Block, CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;&gt;,
+	T::Api: BlockParticipationApi&lt;Block, BlockAuthor&gt;,
 {
-	<span class="kw">type </span>InherentDataProviders =
-		(TimestampIDP, AriadneIDP, BlockAuthorInherentProvider&lt;BlockAuthor&gt;, NativeTokenIDP);
+	<span class="kw">type </span>InherentDataProviders = (
+		TimestampIDP,
+		AriadneIDP,
+		BlockAuthorInherentProvider&lt;BlockAuthor&gt;,
+		NativeTokenIDP,
+		BlockParticipationInherentDataProvider&lt;BlockAuthor, DelegatorKey&gt;,
+	);
 
 	<span class="kw">async fn </span>create_inherent_data_providers(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
@@ -419,6 +482,7 @@
 			mc_hash_data_source,
 			authority_selection_data_source,
 			native_token_data_source,
+			stake_distribution_data_source,
 		} = <span class="self">self</span>;
 		<span class="kw">let </span>CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source, .. } = config;
 
@@ -457,7 +521,17 @@
 		<span class="kw">let </span>block_producer_id_provider =
 			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash)<span class="question-mark">?</span>;
 
-		<span class="prelude-val">Ok</span>((timestamp, ariadne_data_provider, block_producer_id_provider, native_token))
+		<span class="kw">let </span>payouts = BlockParticipationInherentDataProvider::new(
+			client.as_ref(),
+			stake_distribution_data_source.as_ref(),
+			parent_hash,
+			verified_block_slot,
+			mc_epoch_config,
+			config.sc_slot_config.slot_duration,
+		)
+		.<span class="kw">await</span><span class="question-mark">?</span>;
+
+		<span class="prelude-val">Ok</span>((timestamp, ariadne_data_provider, block_producer_id_provider, native_token, payouts))
 	}
 }
 

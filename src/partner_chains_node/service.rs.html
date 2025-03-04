@@ -382,6 +382,8 @@
 <a href="#382" id="382">382</a>
 <a href="#383" id="383">383</a>
 <a href="#384" id="384">384</a>
+<a href="#385" id="385">385</a>
+<a href="#386" id="386">386</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 </span><span class="kw">use </span><span class="kw">crate</span>::inherent_data::{CreateInherentDataConfig, ProposalCIDP, VerifierCIDP};
@@ -525,6 +527,7 @@
 			data_sources.mc_hash.clone(),
 			data_sources.authority_selection.clone(),
 			data_sources.native_token.clone(),
+			data_sources.stake_distribution.clone(),
 		),
 		spawner: <span class="kw-2">&amp;</span>task_manager.spawn_essential_handle(),
 		registry: config.prometheus_registry(),
@@ -699,6 +702,7 @@
 				data_sources.mc_hash.clone(),
 				data_sources.authority_selection.clone(),
 				data_sources.native_token.clone(),
+				data_sources.stake_distribution,
 			),
 			force_authoring,
 			backoff_authoring_blocks,
