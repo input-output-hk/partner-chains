@@ -80,7 +80,17 @@ def pytest_configure(config: Config):
     paramiko_logger.setLevel(logging.ERROR)
     logging.getLogger().addFilter(sensitive_filter)
 
-    # create objects needed for collection phase
+    # Create one log file for each worker
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER")
+    if worker_id is not None:
+        logging.basicConfig(
+            format=config.getini("log_file_format"),
+            filename=f"debug_{worker_id}.log",
+            level=config.getini("log_file_level"),
+            datefmt=config.getini("log_file_date_format"),
+        )
+
+    # Create objects needed for collection phase
     blockchain = config.getoption("blockchain")
     global _config
     _config = load_config(
@@ -201,14 +211,6 @@ def pytest_collection_modifyitems(items):
         for marker in item.iter_markers(name="test_key"):
             test_key = marker.args[0]
             item.user_properties.append(("test_key", test_key))
-
-
-def pytest_runtest_logstart(nodeid):
-    logging.info(f"Starting test: {nodeid}")
-
-
-def pytest_runtest_logfinish(nodeid):
-    logging.info(f"Finished test: {nodeid}")
 
 
 def pytest_runtest_makereport(item, call):
@@ -398,6 +400,13 @@ def api(blockchain, config, secrets, db_sync) -> BlockchainApi:
     api: BlockchainApi = class_name(config, secrets, db_sync)
     yield api
     api.close()
+
+
+@fixture(scope="function", autouse=True)
+def log_test_name(request):
+    logging.info(f"Running test: {request.node.nodeid}")
+    yield
+    logging.info(f"Finished test: {request.node.nodeid}")
 
 
 @fixture(scope="function", autouse=True)
