@@ -227,20 +227,6 @@
 <a href="#227" id="227">227</a>
 <a href="#228" id="228">228</a>
 <a href="#229" id="229">229</a>
-<a href="#230" id="230">230</a>
-<a href="#231" id="231">231</a>
-<a href="#232" id="232">232</a>
-<a href="#233" id="233">233</a>
-<a href="#234" id="234">234</a>
-<a href="#235" id="235">235</a>
-<a href="#236" id="236">236</a>
-<a href="#237" id="237">237</a>
-<a href="#238" id="238">238</a>
-<a href="#239" id="239">239</a>
-<a href="#240" id="240">240</a>
-<a href="#241" id="241">241</a>
-<a href="#242" id="242">242</a>
-<a href="#243" id="243">243</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 #[cfg(feature = <span class="string">"std"</span>)]
@@ -337,7 +323,7 @@
 </span><span class="kw">mod </span>inherent_provider {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span>sidechain_mc_hash::get_mc_hash_for_block;
-	<span class="kw">use </span>sp_api::{ApiError, Core, ProvideRuntimeApi, RuntimeApiInfo};
+	<span class="kw">use </span>sp_api::{ApiError, ApiExt, Core, ProvideRuntimeApi};
 	<span class="kw">use </span>sp_blockchain::HeaderBackend;
 	<span class="kw">use </span>std::error::Error;
 	<span class="kw">use </span>std::sync::Arc;
@@ -376,7 +362,7 @@
 	<span class="kw">impl </span>NativeTokenManagementInherentDataProvider {
 		<span class="doccomment">/// Creates inherent data provider only if the pallet is present in the runtime.
 		/// Returns zero transfers if not.
-		</span><span class="kw">pub async fn </span>new_if_pallet_present&lt;Block, C&gt;(
+		</span><span class="kw">pub async fn </span>new&lt;Block, C&gt;(
 			client: Arc&lt;C&gt;,
 			data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>NativeTokenManagementDataSource + Send + Sync),
 			mc_hash: McBlockHash,
@@ -388,45 +374,31 @@
 			C: ProvideRuntimeApi&lt;Block&gt; + Send + Sync,
 			C::Api: NativeTokenManagementApi&lt;Block&gt;,
 		{
-			<span class="kw">let </span>version = client.runtime_api().version(parent_hash)<span class="question-mark">?</span>;
+			<span class="kw">if </span>client
+				.runtime_api()
+				.has_api::&lt;<span class="kw">dyn </span>NativeTokenManagementApi&lt;Block&gt;&gt;(parent_hash)<span class="question-mark">?
+			</span>{
+				<span class="kw">let </span>api = client.runtime_api();
+				<span class="kw">let </span><span class="prelude-val">Some</span>(scripts) = api.get_main_chain_scripts(parent_hash)<span class="question-mark">? </span><span class="kw">else </span>{
+					<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="self">Self </span>{ token_amount: <span class="prelude-val">None </span>});
+				};
+				<span class="kw">let </span>parent_mc_hash: <span class="prelude-ty">Option</span>&lt;McBlockHash&gt; = <span class="kw">if </span>api.initialized(parent_hash)<span class="question-mark">? </span>{
+					get_mc_hash_for_block(client.as_ref(), parent_hash)
+						.map_err(IDPCreationError::McHashError)<span class="question-mark">?
+				</span>} <span class="kw">else </span>{
+					<span class="prelude-val">None
+				</span>};
+				<span class="kw">let </span>token_amount = data_source
+					.get_total_native_token_transfer(parent_mc_hash, mc_hash, scripts)
+					.<span class="kw">await
+					</span>.map_err(IDPCreationError::DataSourceError)<span class="question-mark">?</span>;
 
-			<span class="kw">if </span>version.has_api_with(<span class="kw-2">&amp;</span>&lt;<span class="kw">dyn </span>NativeTokenManagementApi&lt;Block&gt;&gt;::ID, |<span class="kw">_</span>| <span class="bool-val">true</span>) {
-				<span class="self">Self</span>::new(client, data_source, mc_hash, parent_hash).<span class="kw">await
-			</span>} <span class="kw">else </span>{
+				<span class="kw">let </span>token_amount = <span class="kw">if </span>token_amount.<span class="number">0 </span>&gt; <span class="number">0 </span>{ <span class="prelude-val">Some</span>(token_amount) } <span class="kw">else </span>{ <span class="prelude-val">None </span>};
+
+				<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ token_amount })
+			} <span class="kw">else </span>{
 				<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ token_amount: <span class="prelude-val">None </span>})
 			}
-		}
-
-		<span class="kw">pub async fn </span>new&lt;Block, C&gt;(
-			client: Arc&lt;C&gt;,
-			data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>NativeTokenManagementDataSource + Send + Sync),
-			mc_hash: McBlockHash,
-			parent_hash: &lt;Block <span class="kw">as </span>BlockT&gt;::Hash,
-		) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, IDPCreationError&gt;
-		<span class="kw">where
-			</span>Block: BlockT,
-			C: HeaderBackend&lt;Block&gt;,
-			C: ProvideRuntimeApi&lt;Block&gt; + Send + Sync,
-			C::Api: NativeTokenManagementApi&lt;Block&gt;,
-		{
-			<span class="kw">let </span>api = client.runtime_api();
-			<span class="kw">let </span><span class="prelude-val">Some</span>(scripts) = api.get_main_chain_scripts(parent_hash)<span class="question-mark">? </span><span class="kw">else </span>{
-				<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="self">Self </span>{ token_amount: <span class="prelude-val">None </span>});
-			};
-			<span class="kw">let </span>parent_mc_hash: <span class="prelude-ty">Option</span>&lt;McBlockHash&gt; = <span class="kw">if </span>api.initialized(parent_hash)<span class="question-mark">? </span>{
-				get_mc_hash_for_block(client.as_ref(), parent_hash)
-					.map_err(IDPCreationError::McHashError)<span class="question-mark">?
-			</span>} <span class="kw">else </span>{
-				<span class="prelude-val">None
-			</span>};
-			<span class="kw">let </span>token_amount = data_source
-				.get_total_native_token_transfer(parent_mc_hash, mc_hash, scripts)
-				.<span class="kw">await
-				</span>.map_err(IDPCreationError::DataSourceError)<span class="question-mark">?</span>;
-
-			<span class="kw">let </span>token_amount = <span class="kw">if </span>token_amount.<span class="number">0 </span>&gt; <span class="number">0 </span>{ <span class="prelude-val">Some</span>(token_amount) } <span class="kw">else </span>{ <span class="prelude-val">None </span>};
-
-			<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ token_amount })
 		}
 	}
 

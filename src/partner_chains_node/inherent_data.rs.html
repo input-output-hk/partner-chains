@@ -241,6 +241,11 @@
 <a href="#241" id="241">241</a>
 <a href="#242" id="242">242</a>
 <a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider <span class="kw">as </span>AriadneIDP;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::{
 	AuthoritySelectionDataSource, AuthoritySelectionInputs,
@@ -398,8 +403,10 @@
 		ScEpochNumber,
 	&gt;,
 	T::Api: NativeTokenManagementApi&lt;Block&gt;,
+	T::Api: BlockProductionLogApi&lt;Block, CommitteeMember&lt;CrossChainPublic, SessionKeys&gt;&gt;,
 {
-	<span class="kw">type </span>InherentDataProviders = (TimestampIDP, AriadneIDP, NativeTokenIDP);
+	<span class="kw">type </span>InherentDataProviders =
+		(TimestampIDP, AriadneIDP, BlockAuthorInherentProvider&lt;BlockAuthor&gt;, NativeTokenIDP);
 
 	<span class="kw">async fn </span>create_inherent_data_providers(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
@@ -447,7 +454,10 @@
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;
 
-		<span class="prelude-val">Ok</span>((timestamp, ariadne_data_provider, native_token))
+		<span class="kw">let </span>block_producer_id_provider =
+			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash)<span class="question-mark">?</span>;
+
+		<span class="prelude-val">Ok</span>((timestamp, ariadne_data_provider, block_producer_id_provider, native_token))
 	}
 }
 
