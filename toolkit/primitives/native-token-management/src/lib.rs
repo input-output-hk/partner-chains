@@ -133,7 +133,7 @@ mod inherent_provider {
 	impl NativeTokenManagementInherentDataProvider {
 		/// Creates inherent data provider only if the pallet is present in the runtime.
 		/// Returns zero transfers if not.
-		pub async fn new_if_pallet_present<Block, C>(
+		pub async fn new<Block, C>(
 			client: Arc<C>,
 			data_source: &(dyn NativeTokenManagementDataSource + Send + Sync),
 			mc_hash: McBlockHash,
@@ -149,42 +149,27 @@ mod inherent_provider {
 				.runtime_api()
 				.has_api::<dyn NativeTokenManagementApi<Block>>(parent_hash)?
 			{
-				Self::new(client, data_source, mc_hash, parent_hash).await
+				let api = client.runtime_api();
+				let Some(scripts) = api.get_main_chain_scripts(parent_hash)? else {
+					return Ok(Self { token_amount: None });
+				};
+				let parent_mc_hash: Option<McBlockHash> = if api.initialized(parent_hash)? {
+					get_mc_hash_for_block(client.as_ref(), parent_hash)
+						.map_err(IDPCreationError::McHashError)?
+				} else {
+					None
+				};
+				let token_amount = data_source
+					.get_total_native_token_transfer(parent_mc_hash, mc_hash, scripts)
+					.await
+					.map_err(IDPCreationError::DataSourceError)?;
+
+				let token_amount = if token_amount.0 > 0 { Some(token_amount) } else { None };
+
+				Ok(Self { token_amount })
 			} else {
 				Ok(Self { token_amount: None })
 			}
-		}
-
-		pub async fn new<Block, C>(
-			client: Arc<C>,
-			data_source: &(dyn NativeTokenManagementDataSource + Send + Sync),
-			mc_hash: McBlockHash,
-			parent_hash: <Block as BlockT>::Hash,
-		) -> Result<Self, IDPCreationError>
-		where
-			Block: BlockT,
-			C: HeaderBackend<Block>,
-			C: ProvideRuntimeApi<Block> + Send + Sync,
-			C::Api: NativeTokenManagementApi<Block>,
-		{
-			let api = client.runtime_api();
-			let Some(scripts) = api.get_main_chain_scripts(parent_hash)? else {
-				return Ok(Self { token_amount: None });
-			};
-			let parent_mc_hash: Option<McBlockHash> = if api.initialized(parent_hash)? {
-				get_mc_hash_for_block(client.as_ref(), parent_hash)
-					.map_err(IDPCreationError::McHashError)?
-			} else {
-				None
-			};
-			let token_amount = data_source
-				.get_total_native_token_transfer(parent_mc_hash, mc_hash, scripts)
-				.await
-				.map_err(IDPCreationError::DataSourceError)?;
-
-			let token_amount = if token_amount.0 > 0 { Some(token_amount) } else { None };
-
-			Ok(Self { token_amount })
 		}
 	}
 

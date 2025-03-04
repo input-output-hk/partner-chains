@@ -103,7 +103,7 @@ where
 		)
 		.await?;
 		let block_producer_id_provider =
-			BlockAuthorInherentProvider::new_if_pallet_present(client.as_ref(), parent_hash)?;
+			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash)?;
 		let block_beneficiary_provider =
 			BlockBeneficiaryInherentProvider::<BeneficiaryId>::from_env(
 				"SIDECHAIN_BLOCK_BENEFICIARY",
@@ -207,7 +207,7 @@ where
 		.await?;
 
 		let block_producer_id_provider =
-			BlockAuthorInherentProvider::new_if_pallet_present(client.as_ref(), parent_hash)?;
+			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash)?;
 
 		Ok((timestamp, ariadne_data_provider, block_producer_id_provider, native_token))
 	}

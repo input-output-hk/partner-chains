@@ -38,7 +38,7 @@ pub struct BlockAuthorInherentProvider<Author> {
 
 #[cfg(feature = "std")]
 impl<Author> BlockAuthorInherentProvider<Author> {
-	pub fn new_if_pallet_present<C, Member, Block>(
+	pub fn new<C, Member, Block>(
 		client: &C,
 		parent_hash: Block::Hash,
 	) -> Result<Self, Box<dyn Error + Send + Sync>>
@@ -55,23 +55,10 @@ impl<Author> BlockAuthorInherentProvider<Author> {
 		{
 			Self::new(client, parent_hash)
 		} else {
-			Ok(Self { author: None })
-		}
-	}
-	pub fn new<C, Member, Block>(
-		client: &C,
-		parent_hash: Block::Hash,
-	) -> Result<Self, Box<dyn Error + Send + Sync>>
-	where
-		Member: Decode,
-		Block: BlockT,
-		C: ProvideRuntimeApi<Block>,
-		C::Api: BlockProductionLogApi<Block, Member>,
-		Author: From<Member>,
-	{
-		let author: Author = client.runtime_api().get_current_author(parent_hash)?.into();
+			let author: Author = client.runtime_api().get_current_author(parent_hash)?.into();
 
-		Ok(BlockAuthorInherentProvider { author: Some(author) })
+			Ok(BlockAuthorInherentProvider { author: Some(author) })
+		}
 	}
 }
 
