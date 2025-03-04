@@ -4,10 +4,10 @@ Partner Chain builders are organizations that want to build their own blockchain
 
 ## Order of Operations
 1. Install dependencies
-    1. Cardano node v10.1.4
-        1. Ogmios v6.11.0
-        2. DB Sync  v13.6.0.4 (PostgreSQLv15.3+)
-    2. Download the partner chain node v1.4.0
+    1. Cardano node
+        1. Ogmios
+        2. DB Sync
+    2. Download the partner chain node
 2. Run the generate-keys wizard
 3. Run the prepare-configuration wizard
     1. Set chain parameters
@@ -19,11 +19,18 @@ Partner Chain builders are organizations that want to build their own blockchain
 
 ### 1. Install Partner Chains dependencies
 
-To run the Partner Chains stack, several dependencies need to be installed on a `cardano-node`.
+To run the partner chains stack, several dependencies need to be installed on the same machine as the Cardano node.
 
 Ogmios and DB Sync are essential to enable registration communication with the main chain (Cardano). Ogmios is used for submitting transactions to Cardano, and DB Sync is for observation of main chain state.
 
-### 1.1 Cardano node v10.1.4
+---
+**NOTE**
+
+Consult the Compatibility matrix on the releases page for dependency version compatibility for a particular release. These change with each [release](https://github.com/input-output-hk/partner-chains/releases).
+
+---
+
+### 1.1 Cardano node
 
 Cardano node is required to start a partner chain. The installation of `cardano-node` is out of the scope of this guide. Refer to our [Cardano course handbook](https://cardano-course.gitbook.io/cardano-course/handbook) for documentation and video instruction.
 
@@ -38,7 +45,7 @@ Be mindful of file paths in the instruction sets below. Your Cardano node may ha
 
 ---
 
-### 1.1.1 Ogmios - v6.11.0
+### 1.1.1 Ogmios
 
 Ogmios is a lightweight bridge interface for `cardano-node`. It offers a WebSocket API that enables local clients to speak to the main chain via JSON/RPC.
 
@@ -83,7 +90,7 @@ journalctl -fu ogmios.service
 
 For further instructions, please see [Ogmios](https://ogmios.dev/getting-started/building/).
 
-### 1.1.2 Cardano DB Sync v13.6.0.4
+### 1.1.2 Cardano DB Sync
 
 The partner chain needs DB Sync on `cardano-node` to observe Cardano's state.
 
