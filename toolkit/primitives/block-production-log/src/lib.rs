@@ -10,7 +10,10 @@ use parity_scale_codec::{Decode, Encode};
 use sp_inherents::{InherentIdentifier, IsFatalError};
 use sp_runtime::traits::Block as BlockT;
 #[cfg(feature = "std")]
-use {sp_api::ProvideRuntimeApi, sp_inherents::InherentData};
+use {
+	sp_api::{ApiExt, ProvideRuntimeApi},
+	sp_inherents::InherentData,
+};
 
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blprdlog";
 
@@ -30,7 +33,7 @@ impl IsFatalError for InherentError {
 #[cfg(feature = "std")]
 #[derive(Debug)]
 pub struct BlockAuthorInherentProvider<Author> {
-	pub author: Author,
+	pub author: Option<Author>,
 }
 
 #[cfg(feature = "std")]
@@ -46,9 +49,16 @@ impl<Author> BlockAuthorInherentProvider<Author> {
 		C::Api: BlockProductionLogApi<Block, Member>,
 		Author: From<Member>,
 	{
-		let author: Author = client.runtime_api().get_current_author(parent_hash)?.into();
+		if client
+			.runtime_api()
+			.has_api::<dyn BlockProductionLogApi<Block, Member>>(parent_hash)?
+		{
+			let author: Author = client.runtime_api().get_current_author(parent_hash)?.into();
 
-		Ok(BlockAuthorInherentProvider { author })
+			Ok(BlockAuthorInherentProvider { author: Some(author) })
+		} else {
+			Ok(Self { author: None })
+		}
 	}
 }
 
@@ -62,7 +72,10 @@ where
 		&self,
 		inherent_data: &mut InherentData,
 	) -> Result<(), sp_inherents::Error> {
-		inherent_data.put_data(INHERENT_IDENTIFIER, &self.author)
+		if let Some(author) = &self.author {
+			inherent_data.put_data(INHERENT_IDENTIFIER, author)?;
+		}
+		Ok(())
 	}
 
 	async fn try_handle_error(

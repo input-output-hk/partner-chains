@@ -42,8 +42,6 @@ ledger structure. Consult the implementation in `runtime/src/lib.rs` for an exam
 Consult the reference implementation in `node/src/main_chain_follower.rs` for an example.
 3. Add the inherent data provider to your inherent data provider creation logic.
 Consult the implementation in `node/src/inherent_data.rs` for an example.
-Because the inherent data provider should only run after the pallet is added and fully configured
-in the runtime, `new_if_pallet_present` factory function should be used instead of `new`, when added to an already running chain.
 4. Release or otherwise make available for deployment the new version of node and runtime.
 
 ### Upgrading the chain

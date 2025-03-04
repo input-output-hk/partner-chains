@@ -16,6 +16,7 @@ be set through `MC__SLOT_DURATION_MILLIS` environment variable.
 * Committee member data stored by the Session Validator Management Pallet is now fullly generic. To migrate to this version,
 define your own `CommitteeMember` type and implement the trait `CommitteeMember` for it. See the `CommitteeMember`
 type implemented in `node/runtime/src/lib.rs` for reference using Ariadne.
+* Merged functionality of `NativeTokenManagementInherentDataProvider::new_if_pallet_present` into `new`. Use this single constructor from now on.
 
 ## Removed
 
