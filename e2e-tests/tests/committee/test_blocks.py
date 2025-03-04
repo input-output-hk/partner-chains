@@ -200,38 +200,36 @@ def test_block_headers_have_mc_hash(api: BlockchainApi, config: ApiConfig, pc_ep
 def test_block_production_log_pallet(
     api: BlockchainApi,
     config: ApiConfig,
-    get_pc_epoch_committee,
-    pc_epoch,
-    get_pc_epoch_blocks,
 ):
     """
     For each block in a specified pc epoch:
         * queries the block production log and for each entry:
             * verifies that authors in the log are correct.
     """
-    if pc_epoch == config.initial_pc_epoch:
-        skip("Cannot query committee before initial pc epoch")
-
-    logger.info(f"Verifying block production log for epoch: {pc_epoch}...")
-    blocks = get_pc_epoch_blocks(pc_epoch)["range"][:-1]
-    prev_committee = get_pc_epoch_committee(pc_epoch - 1)
-    curr_committee = get_pc_epoch_committee(pc_epoch)
-    # first block in an epoch is authored by previous committee
-    committee = prev_committee[-1:] + curr_committee[:-1]
-    for block_no in blocks:
-        block_hash = api.get_block(block_no)["header"]["hash"]
-        for slot, block_producer_id in api.get_block_production_log(block_hash):
-            author_index = slot % len(committee)
-            expected_author = committee[author_index]["sidechainPubKey"]
-            if "Incentivized" in block_producer_id:
-                cross_chain_public, _ = block_producer_id["Incentivized"]
-                assert (
-                    cross_chain_public == expected_author
-                ), f"Incorrect author: block {block_no} ({block_hash}) was authored by non-committee member"
-            elif "ProBono" in block_producer_id:
-                cross_chain_public = block_producer_id["ProBono"]
-                assert (
-                    cross_chain_public == expected_author
-                ), f"Incorrect author: block {block_no} ({block_hash}) was authored by non-committee member"
-            else:
-                assert False, f"Invalid block producer id: {block_producer_id}"
+    block = api.get_block()
+    block_no = block["header"]["number"]
+    block_hash = block["header"]["hash"]
+    block_production_log = api.get_block_production_log(block_hash=block_hash)
+    block_production_log.reverse()
+    for slot, block_producer_id in block_production_log:
+        logger.debug(f"checking slot {slot}")
+        committee = api.get_validator_set(block).value
+        author_index = slot % len(committee)
+        _, expected_node = committee[author_index]
+        expected_author = next(x.public_key for x in config.nodes_config.nodes.values() if x.aura_public_key == expected_node["aura"])
+        if "Incentivized" in block_producer_id:
+            cross_chain_public, _ = block_producer_id["Incentivized"]
+            logger.debug(f"incentivized {cross_chain_public == expected_author} {cross_chain_public} {expected_author}")
+            assert (
+                cross_chain_public == expected_author
+            ), f"Incorrect author: block {block_no} ({block_hash}) was authored by non-committee member"
+        elif "ProBono" in block_producer_id:
+            cross_chain_public = block_producer_id["ProBono"]
+            logger.debug(f"probono {cross_chain_public == expected_author} {cross_chain_public} {expected_author}")
+            assert (
+                cross_chain_public == expected_author
+            ), f"Incorrect author: block {block_no} ({block_hash}) was authored by non-committee member"
+        else:
+            assert False, f"Invalid block producer id: {block_producer_id}"
+        block_no = block_no - 1
+        block = api.get_block(block_no)

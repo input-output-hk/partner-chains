@@ -623,7 +623,7 @@ class SubstrateApi(BlockchainApi):
     def get_block_header(self, block_no):
         return self.substrate.get_block_header(block_number=block_no)["header"]
 
-    def get_block(self, block_no):
+    def get_block(self, block_no=None):
         return self.substrate.get_block(block_number=block_no)
 
     def get_validator_set(self, block):
