@@ -21,18 +21,18 @@ sp-io = { workspace = true }
 [features]
 default = ["std"]
 std = [
-    "frame-benchmarking/std",
-    "frame-support/std",
-    "frame-system/std",
-    "log/std",
-    "scale-info/std",
-    "parity-scale-codec/std",
-    "scale-info/std",
-    "sp-native-token-management/std",
+	"frame-benchmarking/std",
+	"frame-support/std",
+	"frame-system/std",
+	"log/std",
+	"scale-info/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"sp-native-token-management/std",
 ]
 runtime-benchmarks = [
-    "frame-benchmarking/runtime-benchmarks",
-    "frame-support/runtime-benchmarks",
-    "frame-system/runtime-benchmarks",
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
 ]
 mock = []

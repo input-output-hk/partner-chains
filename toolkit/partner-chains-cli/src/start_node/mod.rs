@@ -127,7 +127,9 @@ fn check_chain_spec<C: IOContext>(context: &C) -> bool {
 		true
 	} else {
 		context.eprint(&format!("Chain spec file {} missing.", CHAIN_SPEC_PATH));
-		context.eprint("Please run the create-chain-spec wizard first or you can get it from your chain governance.");
+		context.eprint(
+			"Please run the create-chain-spec wizard first or you can get it from your chain governance.",
+		);
 		false
 	}
 }

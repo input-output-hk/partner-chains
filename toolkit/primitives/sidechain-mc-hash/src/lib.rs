@@ -27,16 +27,18 @@ pub struct McHashInherentDataProvider {
 pub enum McHashInherentError {
 	#[error("{0}")]
 	DataSourceError(Box<dyn Error + Send + Sync>),
-	#[error("Stable block not found at {0}. It means that the main chain wasn't producing blocks for a long time.")]
+	#[error(
+		"Stable block not found at {0}. It means that the main chain wasn't producing blocks for a long time."
+	)]
 	StableBlockNotFound(Timestamp),
 	#[error("Slot represents a timestamp bigger than of u64::MAX")]
 	SlotTooBig,
 	#[error(
-	"Main chain state {0} referenced in imported block at slot {1} with timestamp {2} not found"
+		"Main chain state {0} referenced in imported block at slot {1} with timestamp {2} not found"
 	)]
 	McStateReferenceInvalid(McBlockHash, Slot, Timestamp),
 	#[error(
-	"Main chain state {0} referenced in imported block at slot {1} corresponds to main chain block number which is lower than its parent's {2}<{3}"
+		"Main chain state {0} referenced in imported block at slot {1} corresponds to main chain block number which is lower than its parent's {2}<{3}"
 	)]
 	McStateReferenceRegressed(McBlockHash, Slot, McBlockNumber, McBlockNumber),
 	#[error("Failed to retrieve MC hash from digest: {0}")]

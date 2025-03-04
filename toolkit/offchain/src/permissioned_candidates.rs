@@ -129,12 +129,18 @@ fn get_current_permissioned_candidates(
 			anyhow!("Invalid state: an UTXO at the validator script address does not have a datum")
 		})?;
 		let datum_plutus_data = PlutusData::from_bytes(datum.bytes).map_err(|e| {
-			anyhow!("Internal error: could not decode datum of permissioned candidates validator script: {}", e)
+			anyhow!(
+				"Internal error: could not decode datum of permissioned candidates validator script: {}",
+				e
+			)
 		})?;
 		let mut permissioned_candidates: Vec<PermissionedCandidateData> =
 			PermissionedCandidateDatums::try_from(datum_plutus_data)
 				.map_err(|e| {
-					anyhow!("Internal error: could not decode datum of permissioned candidates validator script: {}", e)
+					anyhow!(
+						"Internal error: could not decode datum of permissioned candidates validator script: {}",
+						e
+					)
 				})?
 				.into();
 		permissioned_candidates.sort();

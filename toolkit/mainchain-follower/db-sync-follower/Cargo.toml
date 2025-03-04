@@ -7,12 +7,12 @@ license = "Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 sqlx = { version = "0.7.4", default-features = false, features = [
-    "runtime-tokio-rustls",
-    "postgres",
-    "macros",
-    "chrono",
-    "migrate",
-    "bigdecimal",
+	"runtime-tokio-rustls",
+	"postgres",
+	"macros",
+	"chrono",
+	"migrate",
+	"bigdecimal",
 ] }
 tokio = { workspace = true, features = ["full"] }
 futures = { workspace = true }
@@ -36,17 +36,17 @@ derive-new = { workspace = true }
 lru = { workspace = true }
 sp-timestamp = { workspace = true, features = ["std"] }
 sp-native-token-management = { workspace = true, features = [
-    "std",
+	"std",
 ], optional = true }
 sidechain-mc-hash = { workspace = true, optional = true }
 pallet-sidechain-rpc = { workspace = true, optional = true }
 authority-selection-inherents = { workspace = true, features = [
-    "std",
+	"std",
 ], optional = true }
 cardano-serialization-lib = { workspace = true }
 partner-chains-plutus-data = { workspace = true }
 sp-stake-distribution = { workspace = true, features = [
-    "std",
+	"std",
 ], optional = true }
 
 [dev-dependencies]

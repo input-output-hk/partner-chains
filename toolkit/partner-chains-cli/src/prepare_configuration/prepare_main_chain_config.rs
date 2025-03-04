@@ -135,20 +135,24 @@ mod tests {
 
 		pub fn prompt_native_asset_scripts() -> MockIO {
 			MockIO::Group(vec![
-						MockIO::print("Partner Chains can store their initial token supply on Cardano as Cardano native tokens."),
-						MockIO::print("Creation of the native token is not supported by this wizard and must be performed manually before this step."),
-						MockIO::prompt_yes_no(
-							"Do you want to configure a native token for you Partner Chain?",
-							true,
-							true,
-						),
-						MockIO::prompt(
-							NATIVE_TOKEN_POLICY.name,
-							None,
-							"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
-						),
-						MockIO::prompt(NATIVE_TOKEN_ASSET_NAME.name, None, "5043546f6b656e44656d6f"),
-					])
+				MockIO::print(
+					"Partner Chains can store their initial token supply on Cardano as Cardano native tokens.",
+				),
+				MockIO::print(
+					"Creation of the native token is not supported by this wizard and must be performed manually before this step.",
+				),
+				MockIO::prompt_yes_no(
+					"Do you want to configure a native token for you Partner Chain?",
+					true,
+					true,
+				),
+				MockIO::prompt(
+					NATIVE_TOKEN_POLICY.name,
+					None,
+					"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
+				),
+				MockIO::prompt(NATIVE_TOKEN_ASSET_NAME.name, None, "5043546f6b656e44656d6f"),
+			])
 		}
 	}
 

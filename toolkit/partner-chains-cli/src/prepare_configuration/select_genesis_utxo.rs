@@ -94,8 +94,8 @@ mod tests {
 				),
 				MockIO::prompt_multi_option(
 					"Select an UTXO to use as the genesis UTXO",
-				 	mock_7_valid_utxos_rows(),
-					 "4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)"
+					mock_7_valid_utxos_rows(),
+					"4704a903b01514645067d851382efd4a6ed5d2ff07cf30a538acc78fed7c4c02#93 (1100000 lovelace)",
 				),
 			]);
 

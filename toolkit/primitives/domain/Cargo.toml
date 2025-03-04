@@ -1,7 +1,7 @@
 [package]
 name = "sidechain-domain"
 version = "1.5.0"
-authors = [ "Nikolaos Dymitriadis <nikolaos.dymitriadis@iohk.io>" ]
+authors = ["Nikolaos Dymitriadis <nikolaos.dymitriadis@iohk.io>"]
 edition = "2021"
 license = "Apache-2.0"
 
@@ -44,8 +44,4 @@ std = [
 	"bech32/std",
 	"sp-io/std",
 ]
-serde = [
-	"dep:serde",
-	"scale-info/serde",
-	"sp-core/serde",
-]
+serde = ["dep:serde", "scale-info/serde", "sp-core/serde"]

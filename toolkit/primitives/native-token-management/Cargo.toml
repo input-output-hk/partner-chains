@@ -30,24 +30,20 @@ tokio = { workspace = true }
 [features]
 default = ["std"]
 std = [
-    "async-trait",
-    "parity-scale-codec/std",
-    "scale-info/std",
-    "sidechain-domain/std",
-    "sidechain-mc-hash",
-    "sp-api/std",
-    "sp-blockchain",
-    "sp-inherents/std",
-    "sp-runtime/std",
-    "thiserror",
-    "envy",
-    "sp-version",
-    "sp-version/std",
-    "serde"
+	"async-trait",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"sidechain-domain/std",
+	"sidechain-mc-hash",
+	"sp-api/std",
+	"sp-blockchain",
+	"sp-inherents/std",
+	"sp-runtime/std",
+	"thiserror",
+	"envy",
+	"sp-version",
+	"sp-version/std",
+	"serde",
 ]
-serde = [
-	"dep:serde",
-	"scale-info/serde",
-	"sidechain-domain/serde",
-]
+serde = ["dep:serde", "scale-info/serde", "sidechain-domain/serde"]
 mock = []

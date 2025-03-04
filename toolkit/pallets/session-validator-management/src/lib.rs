@@ -188,7 +188,9 @@ pub mod pallet {
 				} else {
 					let current_committee = CurrentCommittee::<T>::get();
 					let current_committee_epoch = current_committee.epoch;
-					warn!("Committee for epoch {for_epoch_number} is the same as for epoch {current_committee_epoch}");
+					warn!(
+						"Committee for epoch {for_epoch_number} is the same as for epoch {current_committee_epoch}"
+					);
 					let validators = current_committee.committee;
 					Some(Call::set { validators, for_epoch_number, selection_inputs_hash })
 				}
@@ -199,7 +201,7 @@ pub mod pallet {
 		fn check_inherent(call: &Self::Call, data: &InherentData) -> Result<(), Self::Error> {
 			let (validators_param, for_epoch_number_param, call_selection_inputs_hash) = match call
 			{
-				Call::set { ref validators, ref for_epoch_number, ref selection_inputs_hash } => {
+				Call::set { validators, for_epoch_number, selection_inputs_hash } => {
 					(validators, for_epoch_number, selection_inputs_hash)
 				},
 				_ => return Ok(()),
@@ -269,7 +271,10 @@ pub mod pallet {
 			let expected_epoch_number = CurrentCommittee::<T>::get().epoch + One::one();
 			ensure!(for_epoch_number == expected_epoch_number, Error::<T>::InvalidEpoch);
 			let len = validators.len();
-			info!("💼 Storing committee of size {len} for epoch {for_epoch_number}, input data hash: {}", selection_inputs_hash.to_hex_string());
+			info!(
+				"💼 Storing committee of size {len} for epoch {for_epoch_number}, input data hash: {}",
+				selection_inputs_hash.to_hex_string()
+			);
 			NextCommittee::<T>::put(CommitteeInfo {
 				epoch: for_epoch_number,
 				committee: validators,

@@ -28,9 +28,9 @@ quickcheck_macros = { workspace = true }
 default = ["std"]
 std = [
 	"sidechain-domain/std",
-    "sp-std/std",
-    "sp-core/std",
+	"sp-std/std",
+	"sp-core/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
-    "rand/std"
+	"rand/std",
 ]

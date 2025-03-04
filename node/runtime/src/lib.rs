@@ -495,6 +495,7 @@ impl From<CommitteeMember<CrossChainPublic, SessionKeys>> for BlockAuthor {
 impl From<[u8; 32]> for BlockAuthor {
 	fn from(arr: [u8; 32]) -> Self {
 		let id = sp_core::ecdsa::Pair::from_seed(&arr).public().into();
+		let id = sp_core::ecdsa::Public::from_seed(&arr).public().into();
 		Self::ProBono(id)
 	}
 }
@@ -807,13 +808,13 @@ impl_runtime_apis! {
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, alloc::string::String> {
 			use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch};
 			use sp_storage::TrackedStorageKey;
-
 			use frame_system_benchmarking::Pallet as SystemBench;
 			use baseline::Pallet as BaselineBench;
-			impl frame_system_benchmarking::Config for Runtime {}
-			impl baseline::Config for Runtime {}
-
 			use frame_support::traits::WhitelistedStorageKeys;
+
+			impl baseline::Config for Runtime {}
+			impl frame_system_benchmarking::Config for Runtime {}
+
 			let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 
 			let mut batches = Vec::<BenchmarkBatch>::new();

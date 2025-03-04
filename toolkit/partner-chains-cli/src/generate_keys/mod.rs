@@ -46,7 +46,7 @@ pub fn keystore_path(substrate_node_base_path: &str, chain_name: &str) -> String
 impl CmdRun for GenerateKeysCmd {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		context.eprint(
-			"This 🧙 wizard will generate the following keys and save them to your node's keystore:"
+			"This 🧙 wizard will generate the following keys and save them to your node's keystore:",
 		);
 		context.eprint("→  an ECDSA Cross-chain key");
 		context.eprint("→  an ED25519 Grandpa key");
@@ -207,7 +207,9 @@ pub fn store_keys<C: IOContext>(
 	let node_executable = context.current_executable()?;
 	let KeyDefinition { scheme, key_type, name } = key_def;
 	context.eprint(&format!("💾 Inserting {name} ({scheme}) key"));
-	let cmd = format!("{node_executable} key insert --base-path {base_path} --scheme {scheme} --key-type {key_type} --suri '{secret_phrase}'");
+	let cmd = format!(
+		"{node_executable} key insert --base-path {base_path} --scheme {scheme} --key-type {key_type} --suri '{secret_phrase}'"
+	);
 	let _ = context.run_command(&cmd)?;
 	let store_path =
 		format!("{base_path}/chains/{chain_name}/keystore/{}{public_key}", key_def.key_type_hex(),);

@@ -43,14 +43,19 @@ setup:
       python3 \
       python3-pip \
       python3-venv \
-      protobuf-compiler \
       clang \
       cmake \
       libssl-dev \
       pkg-config \
       jq \
       libjq-dev \
-      && rm -rf /var/lib/apt/lists/*
+      unzip
+
+  # Install recent protoc
+  ENV PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+  RUN curl -LO $PB_REL/download/v29.3/protoc-29.3-linux-x86_64.zip
+  RUN unzip protoc-29.3-linux-x86_64.zip -d /usr/local
+  RUN protoc --version
 
   ENV PIP_CACHE_DIR=/root/.cache/pip
   CACHE /root/.cache/pip
@@ -64,8 +69,9 @@ setup:
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cp -rua /tmp/cargo/. $CARGO_HOME && rm -rf /tmp/cargo
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
+  RUN rustup toolchain install
   RUN rustup show
-  RUN cargo install --locked --version 0.1.68 cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
+  RUN cargo install --locked --version 0.1.71 cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
 
   # Add Linux target
   RUN rustup target add x86_64-unknown-linux-gnu
@@ -89,9 +95,6 @@ build-deps:
 
 build:
   FROM +source
-  LET WASM_BUILD_STD=0
-  #ARG CACHE_KEY=$(find . -type f -name "*.rs" -o -name "*.toml" | sort | xargs cat | sha256sum)
-  #CACHE --sharing shared --id cargo-build-$CACHE_KEY target
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
   RUN ./target/*/partner-chains-node --version
@@ -100,7 +103,6 @@ build:
 
 test:
   FROM +build
-  LET WASM_BUILD_STD=0
   DO github.com/earthly/lib:3.0.2+INSTALL_DIND
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks

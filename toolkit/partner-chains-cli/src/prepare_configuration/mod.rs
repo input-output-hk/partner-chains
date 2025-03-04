@@ -155,7 +155,10 @@ impl FromStr for Protocol {
 const INTRO: &str = "This 🧙 wizard will generate chain config file";
 
 fn outro() -> String {
-	format!("Bootnode saved successfully. Keep in mind that you can manually modify {}, to edit bootnodes.", BOOTNODES.config_file)
+	format!(
+		"Bootnode saved successfully. Keep in mind that you can manually modify {}, to edit bootnodes.",
+		BOOTNODES.config_file
+	)
 }
 
 const CHOOSE_PROTOCOL_PROMPT: &str = "Your bootnode should be accessible via:";

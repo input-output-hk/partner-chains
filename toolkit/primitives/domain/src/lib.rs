@@ -822,7 +822,12 @@ mod tests {
 		)
 		.unwrap();
 		let serialized = serde_json::to_value(&address).unwrap();
-		assert_eq!(serialized, serde_json::json!("0x616464725f7465737431777a35716337666b327061743030353877347a77766b77333579747074656a336e7563336a65326b6774616e356471337274347363"));
+		assert_eq!(
+			serialized,
+			serde_json::json!(
+				"0x616464725f7465737431777a35716337666b327061743030353877347a77766b77333579747074656a336e7563336a65326b6774616e356471337274347363"
+			)
+		);
 		let deserialized = serde_json::from_value(serialized).unwrap();
 		assert_eq!(address, deserialized);
 	}

@@ -28,7 +28,7 @@ std = [
 	"sidechain-domain/std",
 	"rand/std",
 	"sp-native-token-management?/std",
-	"sp-stake-distribution?/std"
+	"sp-stake-distribution?/std",
 ]
 block-source = []
 candidate-source = ["authority-selection-inherents"]

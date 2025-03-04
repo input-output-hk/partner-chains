@@ -28,20 +28,18 @@ sp-io = { workspace = true }
 [features]
 default = ["std"]
 std = [
-    "parity-scale-codec/std",
+	"parity-scale-codec/std",
 	"scale-info/std",
-    "frame-support/std",
-    "frame-system/std",
-    "log/std",
-    "sp-core/std",
-    "sp-runtime/std",
-    "sp-std/std",
-    "sp-session-validator-management/std",
-    "sp-session-validator-management/serde",
-    "sidechain-domain/std",
-    "sidechain-domain/serde",
+	"frame-support/std",
+	"frame-system/std",
+	"log/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"sp-session-validator-management/std",
+	"sp-session-validator-management/serde",
+	"sidechain-domain/std",
+	"sidechain-domain/serde",
 ]
 try-runtime = ["frame-support/try-runtime"]
-mock = [
-     "sp-io"
-]
+mock = ["sp-io"]

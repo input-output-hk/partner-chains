@@ -22,20 +22,16 @@ envy = { workspace = true, optional = true }
 [features]
 default = ["std"]
 std = [
-    "parity-scale-codec/std",
-    "sp-api/std",
-    "sp-core/std",
-    "sp-inherents/std",
-    "sp-std/std",
-    "sp-runtime/std",
-    "sidechain-domain/std",
-    "sidechain-domain/serde",
-    "thiserror",
-    "envy",
-    "serde"
-]
-serde = [
-	"dep:serde",
-	"scale-info/serde",
+	"parity-scale-codec/std",
+	"sp-api/std",
+	"sp-core/std",
+	"sp-inherents/std",
+	"sp-std/std",
+	"sp-runtime/std",
+	"sidechain-domain/std",
 	"sidechain-domain/serde",
+	"thiserror",
+	"envy",
+	"serde",
 ]
+serde = ["dep:serde", "scale-info/serde", "sidechain-domain/serde"]

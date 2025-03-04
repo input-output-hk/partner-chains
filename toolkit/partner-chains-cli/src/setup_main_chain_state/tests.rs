@@ -167,7 +167,9 @@ fn candidates_on_main_chain_are_same_as_in_config_no_updates() {
 }
 
 fn print_info_io() -> MockIO {
-	MockIO::print("This wizard will set or update D-Parameter and Permissioned Candidates on the main chain. Setting either of these costs ADA!")
+	MockIO::print(
+		"This wizard will set or update D-Parameter and Permissioned Candidates on the main chain. Setting either of these costs ADA!",
+	)
 }
 
 fn set_env_for_node_io() -> MockIO {
@@ -190,18 +192,28 @@ fn get_ariadne_parameters_io(result: serde_json::Value) -> MockIO {
 	let ariadne_parameters_command_output = serde_json::to_string(&result).unwrap();
 	let timestamp_for_preview_epoch_605 = Timestamp::from_unix_millis(1_718_972_296_000u64);
 	MockIO::Group(vec![
-		MockIO::print("Will read the current D-Parameter and Permissioned Candidates from the main chain, using 'partner-chains-node ariadne-parameters' command."),
-		prompt(config_fields::POSTGRES_CONNECTION_STRING, "postgres://postgres:password123@localhost:5432/cexplorer"),
+		MockIO::print(
+			"Will read the current D-Parameter and Permissioned Candidates from the main chain, using 'partner-chains-node ariadne-parameters' command.",
+		),
+		prompt(
+			config_fields::POSTGRES_CONNECTION_STRING,
+			"postgres://postgres:password123@localhost:5432/cexplorer",
+		),
 		set_env_for_node_io(),
 		MockIO::current_timestamp(timestamp_for_preview_epoch_605),
 		MockIO::new_tmp_dir(),
-		MockIO::run_command("<mock executable> ariadne-parameters --base-path /tmp/MockIOContext_tmp_dir --chain chain-spec.json --mc-epoch-number 607", &ariadne_parameters_command_output),
+		MockIO::run_command(
+			"<mock executable> ariadne-parameters --base-path /tmp/MockIOContext_tmp_dir --chain chain-spec.json --mc-epoch-number 607",
+			&ariadne_parameters_command_output,
+		),
 		MockIO::print(&ariadne_parameters_command_output),
 	])
 }
 
 fn print_post_update_info_io() -> MockIO {
-	MockIO::print("Done. Main chain state is set. Please remember that any changes can be observed immediately, but from the Partner Chain point of view they will be effective in two main chain epochs.")
+	MockIO::print(
+		"Done. Main chain state is set. Please remember that any changes can be observed immediately, but from the Partner Chain point of view they will be effective in two main chain epochs.",
+	)
 }
 
 fn prompt_d_parameter_update_io(choice: bool) -> MockIO {
@@ -213,7 +225,11 @@ fn prompt_d_parameter_update_io(choice: bool) -> MockIO {
 }
 
 fn prompt_permissioned_candidates_update_io(choice: bool) -> MockIO {
-	MockIO::prompt_yes_no("Do you want to set/update the permissioned candidates on the main chain with values from configuration file?", false, choice)
+	MockIO::prompt_yes_no(
+		"Do you want to set/update the permissioned candidates on the main chain with values from configuration file?",
+		false,
+		choice,
+	)
 }
 
 fn upsert_permissioned_candidates_io() -> MockIO {
@@ -225,7 +241,8 @@ fn upsert_permissioned_candidates_io() -> MockIO {
 		prompt(CARDANO_PAYMENT_SIGNING_KEY_FILE, "payment.skey"),
 		MockIO::print(
 			"Permissioned candidates updated. The change will be effective in two main chain epochs.",
-		)])
+		),
+	])
 }
 
 fn upsert_permissioned_candidates_failed_io() -> MockIO {
@@ -290,20 +307,30 @@ fn update_d_parameter_io() -> MockIO {
 
 fn print_main_chain_and_configuration_candidates_difference_io() -> MockIO {
 	MockIO::Group(vec![
-		MockIO::print("Permissioned candidates in the pc-chain-config.json file does not match the most recent on-chain initial permissioned candidates."),
+		MockIO::print(
+			"Permissioned candidates in the pc-chain-config.json file does not match the most recent on-chain initial permissioned candidates.",
+		),
 		MockIO::print("The most recent on-chain initial permissioned candidates are:"),
-		MockIO::print("Partner Chains Key: 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1, AURA: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d, GRANDPA: 0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"),
-		MockIO::print("Partner Chains Key: 0x0263c9cdabbef76829fe5b35f0bbf3051bd1c41b80f58b5d07c271d0dd04de2a4e, AURA: 0x9cedc9f7b926191f64d68ee77dd90c834f0e73c0f53855d77d3b0517041d5640, GRANDPA: 0xde21d8171821fc29a43a1ed90ee75623edc3794012010f165b6afc3483a569aa"),
+		MockIO::print(
+			"Partner Chains Key: 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1, AURA: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d, GRANDPA: 0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
+		),
+		MockIO::print(
+			"Partner Chains Key: 0x0263c9cdabbef76829fe5b35f0bbf3051bd1c41b80f58b5d07c271d0dd04de2a4e, AURA: 0x9cedc9f7b926191f64d68ee77dd90c834f0e73c0f53855d77d3b0517041d5640, GRANDPA: 0xde21d8171821fc29a43a1ed90ee75623edc3794012010f165b6afc3483a569aa",
+		),
 		MockIO::print("The permissioned candidates in the configuration file are:"),
-		MockIO::print("Partner Chains Key: 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1, AURA: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d, GRANDPA: 0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"),
-		MockIO::print("Partner Chains Key: 0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27, AURA: 0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48, GRANDPA: 0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69"),
+		MockIO::print(
+			"Partner Chains Key: 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1, AURA: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d, GRANDPA: 0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
+		),
+		MockIO::print(
+			"Partner Chains Key: 0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27, AURA: 0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48, GRANDPA: 0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
+		),
 	])
 }
 
 fn print_main_chain_and_configuration_candidates_are_equal_io() -> MockIO {
-	MockIO::Group(vec![
-		MockIO::print("Permissioned candidates in the pc-chain-config.json file match the most recent on-chain initial permissioned candidates."),
-	])
+	MockIO::Group(vec![MockIO::print(
+		"Permissioned candidates in the pc-chain-config.json file match the most recent on-chain initial permissioned candidates.",
+	)])
 }
 
 fn print_d_param_from_main_chain_io() -> MockIO {

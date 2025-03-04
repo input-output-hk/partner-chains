@@ -109,7 +109,9 @@ fn value_check_prompt() -> MockIO {
 #[test]
 fn happy_path() {
 	let keystore_files = vec![
-		format!("{CROSS_CHAIN_PREFIX}020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"),
+		format!(
+			"{CROSS_CHAIN_PREFIX}020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"
+		),
 		format!("{AURA_PREFIX}aura-key"),
 		format!("{GRANDPA_PREFIX}grandpa-key"),
 	];
@@ -153,7 +155,9 @@ mod check_chain_spec {
 	fn fails_if_not_present() {
 		let context = MockIOContext::new().with_expected_io(vec![
 			MockIO::eprint("Chain spec file chain-spec.json missing."),
-			MockIO::eprint("Please run the create-chain-spec wizard first or you can get it from your chain governance."),
+			MockIO::eprint(
+				"Please run the create-chain-spec wizard first or you can get it from your chain governance.",
+			),
 		]);
 
 		let result = check_chain_spec(&context);
