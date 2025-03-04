@@ -156,9 +156,8 @@ pub mod inherent_data {
 
 	impl<BlockProducer, Delegator> BlockParticipationInherentDataProvider<BlockProducer, Delegator>
 	where
-		BlockProducer: Decode + Clone + Hash + Eq + Ord + Debug,
+		BlockProducer: AsCardanoSPO + Decode + Clone + Hash + Eq + Ord + Debug,
 		Delegator: CardanoDelegator + Ord + Debug,
-		BlockProducer: AsCardanoSPO,
 	{
 		pub async fn new<Block: BlockT, T>(
 			client: &T,
