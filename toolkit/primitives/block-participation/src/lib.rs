@@ -347,7 +347,7 @@ pub mod inherent_data {
 			inherent_data: &mut InherentData,
 		) -> Result<(), sp_inherents::Error> {
 			if let Self::Active { target_inherent_id, block_production_data } = &self {
-				inherent_data.put_data(target_inherent_id.clone(), block_production_data)?;
+				inherent_data.put_data(*target_inherent_id, block_production_data)?;
 				inherent_data.put_data(INHERENT_IDENTIFIER, &block_production_data.up_to_slot)?;
 			}
 			Ok(())
