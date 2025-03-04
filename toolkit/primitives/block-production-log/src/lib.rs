@@ -53,11 +53,11 @@ impl<Author> BlockAuthorInherentProvider<Author> {
 			.runtime_api()
 			.has_api::<dyn BlockProductionLogApi<Block, Member>>(parent_hash)?
 		{
-			Self::new(client, parent_hash)
-		} else {
 			let author: Author = client.runtime_api().get_current_author(parent_hash)?.into();
 
 			Ok(BlockAuthorInherentProvider { author: Some(author) })
+		} else {
+			Ok(Self { author: None })
 		}
 	}
 }
