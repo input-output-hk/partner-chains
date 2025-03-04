@@ -6254,6 +6254,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-block-participation"
+version = "0.1.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-block-production-log",
+ "parity-scale-codec",
+ "pretty_assertions",
+ "scale-info",
+ "sp-block-participation",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-block-production-log"
 version = "1.5.0"
 dependencies = [
@@ -6788,6 +6807,7 @@ dependencies = [
  "sidechain-slots",
  "sp-api",
  "sp-block-builder",
+ "sp-block-participation",
  "sp-block-production-log",
  "sp-block-rewards",
  "sp-blockchain",
@@ -10005,6 +10025,7 @@ dependencies = [
  "pallet-address-associations",
  "pallet-aura",
  "pallet-balances",
+ "pallet-block-participation",
  "pallet-block-production-log",
  "pallet-block-rewards",
  "pallet-grandpa",
@@ -10030,6 +10051,7 @@ dependencies = [
  "sidechain-slots",
  "sp-api",
  "sp-block-builder",
+ "sp-block-participation",
  "sp-block-production-log",
  "sp-block-rewards",
  "sp-consensus-aura",
@@ -10296,6 +10318,25 @@ dependencies = [
  "sp-api",
  "sp-inherents",
  "sp-runtime",
+]
+
+[[package]]
+name = "sp-block-participation"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "log",
+ "parity-scale-codec",
+ "pretty_assertions",
+ "scale-info",
+ "sidechain-domain",
+ "sp-api",
+ "sp-consensus-slots",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-stake-distribution",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]

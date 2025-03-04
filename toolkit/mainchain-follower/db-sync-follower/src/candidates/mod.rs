@@ -276,6 +276,7 @@ impl CandidatesDataSourceImpl {
 			.collect()
 	}
 
+	const DATA_MC_EPOCH_OFFSET: u32 = 2;
 	fn get_epoch_of_data_storage(
 		&self,
 		epoch_of_data_usage: McEpochNumber,
@@ -287,7 +288,7 @@ impl CandidatesDataSourceImpl {
 			))
 			.into())
 		} else {
-			Ok(McEpochNumber(epoch_of_data_usage.0 - 2))
+			Ok(McEpochNumber(epoch_of_data_usage.0 - Self::DATA_MC_EPOCH_OFFSET))
 		}
 	}
 }

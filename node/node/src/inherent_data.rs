@@ -7,17 +7,20 @@ use derive_new::new;
 use jsonrpsee::core::async_trait;
 use sc_consensus_aura::{find_pre_digest, SlotDuration};
 use sc_service::Arc;
-use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
-use sidechain_domain::{McBlockHash, ScEpochNumber};
-use sidechain_mc_hash::McHashDataSource;
-use sidechain_mc_hash::McHashInherentDataProvider as McHashIDP;
-use sidechain_runtime::opaque::SessionKeys;
-use sidechain_runtime::{opaque::Block, BeneficiaryId};
-use sidechain_runtime::{BlockAuthor, CrossChainPublic};
+use sidechain_domain::{
+	mainchain_epoch::MainchainEpochConfig, DelegatorKey, McBlockHash, ScEpochNumber,
+};
+use sidechain_mc_hash::{McHashDataSource, McHashInherentDataProvider as McHashIDP};
+use sidechain_runtime::{
+	opaque::{Block, SessionKeys},
+	BeneficiaryId, BlockAuthor, CrossChainPublic,
+};
 use sidechain_slots::ScSlotConfig;
 use sp_api::ProvideRuntimeApi;
-use sp_block_production_log::BlockAuthorInherentProvider;
-use sp_block_production_log::BlockProductionLogApi;
+use sp_block_participation::{
+	inherent_data::BlockParticipationInherentDataProvider, BlockParticipationApi,
+};
+use sp_block_production_log::{BlockAuthorInherentProvider, BlockProductionLogApi};
 use sp_block_rewards::BlockBeneficiaryInherentProvider;
 use sp_blockchain::HeaderBackend;
 use sp_consensus_aura::{
@@ -32,6 +35,7 @@ use sp_native_token_management::{
 use sp_partner_chains_consensus_aura::CurrentSlotProvider;
 use sp_runtime::traits::{Block as BlockT, Header, Zero};
 use sp_session_validator_management::SessionValidatorManagementApi;
+use sp_stake_distribution::StakeDistributionDataSource;
 use sp_timestamp::{InherentDataProvider as TimestampIDP, Timestamp};
 use std::error::Error;
 use time_source::TimeSource;
@@ -43,6 +47,7 @@ pub struct ProposalCIDP<T> {
 	mc_hash_data_source: Arc<dyn McHashDataSource + Send + Sync>,
 	authority_selection_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
 	native_token_data_source: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
+	stake_distribution_data_source: Arc<dyn StakeDistributionDataSource + Send + Sync>,
 }
 
 #[async_trait]
@@ -58,6 +63,7 @@ where
 	>,
 	T::Api: NativeTokenManagementApi<Block>,
 	T::Api: BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>,
+	T::Api: BlockParticipationApi<Block, BlockAuthor>,
 {
 	type InherentDataProviders = (
 		AuraIDP,
@@ -67,6 +73,7 @@ where
 		BlockAuthorInherentProvider<BlockAuthor>,
 		BlockBeneficiaryInherentProvider<BeneficiaryId>,
 		NativeTokenIDP,
+		BlockParticipationInherentDataProvider<BlockAuthor, DelegatorKey>,
 	);
 
 	async fn create_inherent_data_providers(
@@ -80,6 +87,7 @@ where
 			mc_hash_data_source,
 			authority_selection_data_source,
 			native_token_data_source,
+			stake_distribution_data_source,
 		} = self;
 		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source } = config;
 
@@ -117,6 +125,16 @@ where
 		)
 		.await?;
 
+		let payouts = BlockParticipationInherentDataProvider::new(
+			client.as_ref(),
+			stake_distribution_data_source.as_ref(),
+			parent_hash,
+			*slot,
+			mc_epoch_config,
+			config.sc_slot_config.slot_duration,
+		)
+		.await?;
+
 		Ok((
 			slot,
 			timestamp,
@@ -125,6 +143,7 @@ where
 			block_producer_id_provider,
 			block_beneficiary_provider,
 			native_token,
+			payouts,
 		))
 	}
 }
@@ -136,6 +155,7 @@ pub struct VerifierCIDP<T> {
 	mc_hash_data_source: Arc<dyn McHashDataSource + Send + Sync>,
 	authority_selection_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
 	native_token_data_source: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
+	stake_distribution_data_source: Arc<dyn StakeDistributionDataSource + Send + Sync>,
 }
 
 impl<T: Send + Sync> CurrentSlotProvider for VerifierCIDP<T> {
@@ -156,9 +176,15 @@ where
 	>,
 	T::Api: NativeTokenManagementApi<Block>,
 	T::Api: BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>,
+	T::Api: BlockParticipationApi<Block, BlockAuthor>,
 {
-	type InherentDataProviders =
-		(TimestampIDP, AriadneIDP, BlockAuthorInherentProvider<BlockAuthor>, NativeTokenIDP);
+	type InherentDataProviders = (
+		TimestampIDP,
+		AriadneIDP,
+		BlockAuthorInherentProvider<BlockAuthor>,
+		NativeTokenIDP,
+		BlockParticipationInherentDataProvider<BlockAuthor, DelegatorKey>,
+	);
 
 	async fn create_inherent_data_providers(
 		&self,
@@ -171,6 +197,7 @@ where
 			mc_hash_data_source,
 			authority_selection_data_source,
 			native_token_data_source,
+			stake_distribution_data_source,
 		} = self;
 		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source, .. } = config;
 
@@ -209,7 +236,17 @@ where
 		let block_producer_id_provider =
 			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash)?;
 
-		Ok((timestamp, ariadne_data_provider, block_producer_id_provider, native_token))
+		let payouts = BlockParticipationInherentDataProvider::new(
+			client.as_ref(),
+			stake_distribution_data_source.as_ref(),
+			parent_hash,
+			verified_block_slot,
+			mc_epoch_config,
+			config.sc_slot_config.slot_duration,
+		)
+		.await?;
+
+		Ok((timestamp, ariadne_data_provider, block_producer_id_provider, native_token, payouts))
 	}
 }
 
