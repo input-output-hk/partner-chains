@@ -7,14 +7,9 @@ to the issue.
 # Checklist
 
 - [ ] Commit sequence broadly makes sense and commits have useful messages.
+- [ ] The size limit of 400 LOC isn't needlessly exceeded
+- [ ] The PR refers to a JIRA ticket (if one exists)
 - [ ] New tests are added if needed and existing tests are updated.
 - [ ] Relevant logging and metrics added
-- [ ] CI passes. See note on CI.
 - [ ] Any changes are noted in the `changelog.md` for affected crate
 - [ ] Self-reviewed the diff
-
-# Note on CI
-If your PR is from a fork, the necessary CI jobs won't trigger automatically for security reasons.
-You will need to get someone with write privileges.  Please contact IOG Partner Chains developers to do this
-for you.
-
