@@ -12,6 +12,7 @@ sp-core = { workspace = true, optional = true }
 sp-inherents = { workspace = true }
 sp-runtime = { workspace = true }
 thiserror = { workspace = true }
+sidechain-slots = { workspace = true }
 
 [dev-dependencies]
 hex = { workspace = true }

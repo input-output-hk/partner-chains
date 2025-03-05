@@ -10346,6 +10346,7 @@ dependencies = [
  "async-trait",
  "hex",
  "parity-scale-codec",
+ "sidechain-slots",
  "sp-api",
  "sp-core",
  "sp-inherents",
