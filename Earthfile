@@ -56,7 +56,7 @@ setup:
   CACHE /root/.cache/pip
   RUN pip3 install --break-system-packages tomlq toml
 
-  RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --version 1.27.0
   ENV PATH="/root/.cargo/bin:${PATH}"
 
   # copy pre-existing $CARGO_HOME artifacts into the cache
@@ -64,9 +64,6 @@ setup:
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cp -rua /tmp/cargo/. $CARGO_HOME && rm -rf /tmp/cargo
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
-  
-  # Explicitly install the toolchain mentioned in the error
-  RUN rustup toolchain install 1.81.0
   RUN rustup show
   RUN cargo install --locked --version 0.1.68 cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
 
