@@ -73,9 +73,6 @@ setup:
 
   # Add Linux target
   RUN rustup target add x86_64-unknown-linux-gnu
-  
-  # Add wasm32 target
-  RUN rustup target add wasm32-unknown-unknown
 
 source:
   FROM +setup
