@@ -56,7 +56,7 @@ setup:
   CACHE /root/.cache/pip
   RUN pip3 install --break-system-packages tomlq toml
 
-  # Install rustup (keep the default version which would be 1.28.0)
+  # Install rustup
   RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
   ENV PATH="/root/.cargo/bin:${PATH}"
 
@@ -66,7 +66,7 @@ setup:
   RUN cp -rua /tmp/cargo/. $CARGO_HOME && rm -rf /tmp/cargo
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
   
-  # Explicitly install the toolchain
+  # Install the toolchain
   RUN rustup toolchain install
   RUN rustup show
   RUN cargo install --locked --version 0.1.68 cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
