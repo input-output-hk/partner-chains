@@ -54,7 +54,10 @@ impl<Author> BlockAuthorInherentProvider<Author> {
 			.runtime_api()
 			.has_api::<dyn BlockProductionLogApi<Block, Member>>(parent_hash)?
 		{
-			let author: Author = client.runtime_api().get_current_author(parent_hash, slot)?.into();
+			let author: Author = client
+				.runtime_api()
+				.get_current_committee_member_for_slot(parent_hash, slot)?
+				.into();
 
 			Ok(BlockAuthorInherentProvider { author: Some(author) })
 		} else {
@@ -98,6 +101,6 @@ sp_api::decl_runtime_apis! {
 	where
 		Member: Decode
 	{
-		fn get_current_author(slot: sidechain_slots::Slot) -> Member;
+		fn get_current_committee_member_for_slot(slot: sidechain_slots::Slot) -> Member;
 	}
 }

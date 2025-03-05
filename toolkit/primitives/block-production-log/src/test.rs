@@ -27,7 +27,7 @@ impl ProvideRuntimeApi<Block> for TestApi {
 sp_api::mock_impl_runtime_apis! {
 	impl BlockProductionLogApi<Block, Member> for TestApi {
 
-		fn get_current_author(_slot: Slot) -> Member {
+		fn get_current_committee_member_for_slot(_slot: Slot) -> Member {
 			self.author
 		}
 	}
