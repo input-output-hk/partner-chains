@@ -98,6 +98,7 @@ sp_api::decl_runtime_apis! {
 	where
 		Member: Decode
 	{
+		/// Returns author based on current committee and provided slot
 		fn get_author(slot: sidechain_slots::Slot) -> Member;
 	}
 }
