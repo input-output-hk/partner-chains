@@ -100,6 +100,8 @@
 <a href="#100" id="100">100</a>
 <a href="#101" id="101">101</a>
 <a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">extern crate </span>alloc;
@@ -143,6 +145,7 @@
 	<span class="kw">pub fn </span>new&lt;C, Member, Block&gt;(
 		client: <span class="kw-2">&amp;</span>C,
 		parent_hash: Block::Hash,
+		slot: sidechain_slots::Slot,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Box&lt;<span class="kw">dyn </span>Error + Send + Sync&gt;&gt;
 	<span class="kw">where
 		</span>Member: Decode,
@@ -155,7 +158,7 @@
 			.runtime_api()
 			.has_api::&lt;<span class="kw">dyn </span>BlockProductionLogApi&lt;Block, Member&gt;&gt;(parent_hash)<span class="question-mark">?
 		</span>{
-			<span class="kw">let </span>author: Author = client.runtime_api().get_current_author(parent_hash)<span class="question-mark">?</span>.into();
+			<span class="kw">let </span>author: Author = client.runtime_api().get_author(parent_hash, slot)<span class="question-mark">?</span>.into();
 
 			<span class="prelude-val">Ok</span>(BlockAuthorInherentProvider { author: <span class="prelude-val">Some</span>(author) })
 		} <span class="kw">else </span>{
@@ -199,7 +202,8 @@
 	<span class="kw">where
 		</span>Member: Decode
 	{
-		<span class="kw">fn </span>get_current_author() -&gt; Member;
+		<span class="doccomment">/// Returns author based on current committee and provided slot
+		</span><span class="kw">fn </span>get_author(slot: sidechain_slots::Slot) -&gt; Member;
 	}
 }
 </code></pre></div></section></main></body></html>

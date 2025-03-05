@@ -396,7 +396,7 @@
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let </span>block_producer_id_provider =
-			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash)<span class="question-mark">?</span>;
+			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash, <span class="kw-2">*</span>slot)<span class="question-mark">?</span>;
 		<span class="kw">let </span>block_beneficiary_provider =
 			BlockBeneficiaryInherentProvider::&lt;BeneficiaryId&gt;::from_env(
 				<span class="string">"SIDECHAIN_BLOCK_BENEFICIARY"</span>,
@@ -519,7 +519,7 @@
 		.<span class="kw">await</span><span class="question-mark">?</span>;
 
 		<span class="kw">let </span>block_producer_id_provider =
-			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash)<span class="question-mark">?</span>;
+			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash, verified_block_slot)<span class="question-mark">?</span>;
 
 		<span class="kw">let </span>payouts = BlockParticipationInherentDataProvider::new(
 			client.as_ref(),
