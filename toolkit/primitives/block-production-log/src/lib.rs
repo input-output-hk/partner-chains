@@ -41,6 +41,7 @@ impl<Author> BlockAuthorInherentProvider<Author> {
 	pub fn new<C, Member, Block>(
 		client: &C,
 		parent_hash: Block::Hash,
+		slot: sidechain_slots::Slot,
 	) -> Result<Self, Box<dyn Error + Send + Sync>>
 	where
 		Member: Decode,
@@ -53,7 +54,7 @@ impl<Author> BlockAuthorInherentProvider<Author> {
 			.runtime_api()
 			.has_api::<dyn BlockProductionLogApi<Block, Member>>(parent_hash)?
 		{
-			let author: Author = client.runtime_api().get_current_author(parent_hash)?.into();
+			let author: Author = client.runtime_api().get_author(parent_hash, slot)?.into();
 
 			Ok(BlockAuthorInherentProvider { author: Some(author) })
 		} else {
@@ -97,6 +98,7 @@ sp_api::decl_runtime_apis! {
 	where
 		Member: Decode
 	{
-		fn get_current_author() -> Member;
+		/// Returns author based on current committee and provided slot
+		fn get_author(slot: sidechain_slots::Slot) -> Member;
 	}
 }

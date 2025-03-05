@@ -1,4 +1,5 @@
 use crate::{BlockAuthorInherentProvider, BlockProductionLogApi};
+use sidechain_slots::Slot;
 use sp_api::ApiRef;
 use sp_api::ProvideRuntimeApi;
 use sp_runtime::traits::Block as BlockT;
@@ -26,7 +27,7 @@ impl ProvideRuntimeApi<Block> for TestApi {
 sp_api::mock_impl_runtime_apis! {
 	impl BlockProductionLogApi<Block, Member> for TestApi {
 
-		fn get_current_author() -> Member {
+		fn get_author(_slot: Slot) -> Member {
 			self.author
 		}
 	}
@@ -36,9 +37,12 @@ sp_api::mock_impl_runtime_apis! {
 fn provides_author_based_on_runtime_api() {
 	let mock_api = TestApi { author: 102 };
 
-	let provider =
-		BlockAuthorInherentProvider::<Author>::new(&mock_api, <Block as BlockT>::Hash::default())
-			.expect("Should not fail");
+	let provider = BlockAuthorInherentProvider::<Author>::new(
+		&mock_api,
+		<Block as BlockT>::Hash::default(),
+		Slot::from(42),
+	)
+	.expect("Should not fail");
 
-	assert_eq!(provider.author.unwrap(), mock_api.author.into());
+	assert_eq!(provider.author.unwrap(), Author::from(mock_api.author));
 }

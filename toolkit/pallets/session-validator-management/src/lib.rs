@@ -314,6 +314,12 @@ pub mod pallet {
 				.clone()
 		}
 
+		pub fn get_current_authority_round_robin(index: usize) -> Option<T::CommitteeMember> {
+			let committee = CurrentCommittee::<T>::get().committee;
+
+			committee.get(index % committee.len() as usize).cloned()
+		}
+
 		pub fn current_committee_storage(
 		) -> CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators> {
 			CurrentCommittee::<T>::get()
