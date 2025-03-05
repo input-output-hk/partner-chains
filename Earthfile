@@ -59,21 +59,29 @@ setup:
   # Make sure cargo home directory exists
   RUN mkdir -p ${CARGO_HOME}
   
-  # Pin rustup to 1.27.0 to avoid the 1.28.0 issue
-  RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --version 1.27.0
+  # Pin rustup to 1.27.0 to avoid the 1.28.0 issue and ensure it's properly sourced
+  # Adding the rustup install, path setting, and first rustup command in a single RUN block
+  RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --version 1.27.0 && \
+      . ${CARGO_HOME}/env && \
+      mkdir -p /tmp/cargo && \
+      cp -r ${CARGO_HOME}/. /tmp/cargo/ || true
+      
+  # Set PATH for all subsequent commands
   ENV PATH="/root/.cargo/bin:${PATH}"
 
-  # copy pre-existing $CARGO_HOME artifacts into the cache
-  # Use 'mkdir -p' to ensure the directory exists and '|| true' to prevent failure
-  RUN mkdir -p ${CARGO_HOME} && cp -rl ${CARGO_HOME} /tmp/cargo || true
+  # Setup cargo cache
   CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN if [ -d "/tmp/cargo" ]; then cp -rua /tmp/cargo/. ${CARGO_HOME} && rm -rf /tmp/cargo; fi
+  RUN cp -r /tmp/cargo/. ${CARGO_HOME}/ || true && rm -rf /tmp/cargo
+  
+  # Copy files and setup rust toolchain
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
-  RUN rustup show
-  RUN cargo install --locked --version 0.1.68 cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
+  
+  # Source env in each command that uses rustup or cargo
+  RUN . ${CARGO_HOME}/env && rustup show
+  RUN . ${CARGO_HOME}/env && cargo install --locked --version 0.1.68 cargo-chef && cp "${CARGO_HOME}/bin/cargo-chef" /usr/local/bin
 
   # Add Linux target
-  RUN rustup target add x86_64-unknown-linux-gnu
+  RUN . ${CARGO_HOME}/env && rustup target add x86_64-unknown-linux-gnu
 
 source:
   FROM +setup
