@@ -258,11 +258,11 @@ You must not spend the selected UTXO, because it needs to be consumed later in t
 
 ---
 
-Finally, the wizard outputs the command for obtaining signatures. You use this command in the next step (register-2 wizard). You must run it on a newly prepared machine with the main chain cold signing key (e.g. `cold.skey`).
+Finally, the wizard outputs the command for obtaining signatures, this command will be used as input in the next step (register-2 wizard). We suggest the command to be run on an offline machine, as to not expose the Cardano `cold.skey` to the internet, and return to the online machine to perform the register-3 wizard.
 
 #### Register-2 wizard
 
-The register-2 wizard obtains signatures for the registration message. It only requires the `partner-chain-cli` binary executable to be installed on the 'cold' machine.
+The register-2 wizard obtains signatures for the registration message. It only requires the `partner-chain-cli` binary executable to be installed on the offline machine.
 
 1. Follow the steps when prompted by the wizard
 
