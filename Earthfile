@@ -68,11 +68,13 @@ setup:
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cp -rua /tmp/cargo/. $CARGO_HOME && rm -rf /tmp/cargo
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
-  RUN rustup show
-  RUN cargo install --locked --version 0.1.68 cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
+  
+  # Source the cargo environment before running rustup commands
+  RUN . $CARGO_HOME/env && rustup show
+  RUN . $CARGO_HOME/env && cargo install --locked --version 0.1.68 cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
 
-  # Add Linux target
-  RUN rustup target add x86_64-unknown-linux-gnu
+  # Add Linux target with sourced environment
+  RUN . $CARGO_HOME/env && rustup target add x86_64-unknown-linux-gnu
 
 source:
   FROM +setup
