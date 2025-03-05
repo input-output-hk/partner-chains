@@ -750,6 +750,6 @@ class SubstrateApi(BlockchainApi):
         return tx
 
     def get_address_association(self, stake_key_hash):
-        result = self.substrate.query("AddressAssociations", "AddressAssociations", [hex(int(stake_key_hash, 16))])
+        result = self.substrate.query("AddressAssociations", "AddressAssociations", [f"0x{stake_key_hash}"])
         logger.debug(f"Address association for {stake_key_hash}: {result}")
         return result.value
