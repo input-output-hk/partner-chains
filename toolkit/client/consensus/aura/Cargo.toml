@@ -2,7 +2,7 @@
 name = "sc-partner-chains-consensus-aura"
 version = "1.5.0"
 description = "Partner Chains modification to the Substrate Aura consensus engine"
-authors = [ "IOG "]
+authors = ["IOG "]
 homepage = "https://iohk.io/"
 edition = "2021"
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"

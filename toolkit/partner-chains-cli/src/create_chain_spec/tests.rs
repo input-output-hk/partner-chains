@@ -197,23 +197,39 @@ fn show_intro() -> MockIO {
 fn show_chain_parameters() -> MockIO {
 	MockIO::Group(vec![
 		MockIO::print("Chain parameters:"),
-		MockIO::print("- Genesis UTXO: 0000000000000000000000000000000000000000000000000000000000000000#0"),
+		MockIO::print(
+			"- Genesis UTXO: 0000000000000000000000000000000000000000000000000000000000000000#0",
+		),
 		MockIO::print("SessionValidatorManagement Main Chain Configuration:"),
-		MockIO::print("- committee_candidate_address: addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc"),
-		MockIO::print("- d_parameter_policy_id: d0ebb61e2ba362255a7c4a253c6578884603b56fb0a68642657602d6"),
-		MockIO::print("- permissioned_candidates_policy_id: 58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe"),
+		MockIO::print(
+			"- committee_candidate_address: addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc",
+		),
+		MockIO::print(
+			"- d_parameter_policy_id: d0ebb61e2ba362255a7c4a253c6578884603b56fb0a68642657602d6",
+		),
+		MockIO::print(
+			"- permissioned_candidates_policy_id: 58b4ba68f641d58f7f1bba07182eca9386da1e88a34d47a14638c3fe",
+		),
 		MockIO::print("Native Token Management Configuration (unused if empty):"),
 		MockIO::print("- asset name: 5043546f6b656e44656d6f"),
-		MockIO::print("- asset policy ID: ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4"),
-		MockIO::print("- illiquid supply address: addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz"),
+		MockIO::print(
+			"- asset policy ID: ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
+		),
+		MockIO::print(
+			"- illiquid supply address: addr_test1wrhvtvx3f0g9wv9rx8kfqc60jva3e07nqujk2cspekv4mqs9rjdvz",
+		),
 	])
 }
 
 fn show_initial_permissioned_candidates() -> MockIO {
 	MockIO::Group(vec![
 		MockIO::print("Initial permissioned candidates:"),
-		MockIO::print("- Partner Chains Key: 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1, AURA: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d, GRANDPA: 0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"),
-		MockIO::print("- Partner Chains Key: 0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27, AURA: 0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48, GRANDPA: 0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69"),
+		MockIO::print(
+			"- Partner Chains Key: 0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1, AURA: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d, GRANDPA: 0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
+		),
+		MockIO::print(
+			"- Partner Chains Key: 0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27, AURA: 0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48, GRANDPA: 0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
+		),
 	])
 }
 
@@ -321,7 +337,11 @@ fn updated_chain_spec() -> serde_json::Value {
 fn show_outro() -> MockIO {
 	MockIO::Group(vec![
 		MockIO::print("chain-spec.json file has been created."),
-		MockIO::print("If you are the governance authority, you can distribute it to the validators."),
-		MockIO::print("Run 'setup-main-chain-state' command to set D-parameter and permissioned candidates on Cardano."),
+		MockIO::print(
+			"If you are the governance authority, you can distribute it to the validators.",
+		),
+		MockIO::print(
+			"Run 'setup-main-chain-state' command to set D-parameter and permissioned candidates on Cardano.",
+		),
 	])
 }

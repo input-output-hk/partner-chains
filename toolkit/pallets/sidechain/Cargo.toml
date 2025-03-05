@@ -16,7 +16,7 @@ sp-core = { workspace = true }
 sp-runtime = { workspace = true }
 sp-sidechain = { workspace = true }
 sidechain-domain = { workspace = true }
-sidechain-slots = { workspace = true, features = ["serde"]}
+sidechain-slots = { workspace = true, features = ["serde"] }
 log = { workspace = true }
 
 [dev-dependencies]

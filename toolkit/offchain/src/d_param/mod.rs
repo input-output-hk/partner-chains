@@ -112,12 +112,14 @@ fn get_current_d_parameter(
 		let datum_plutus_data = PlutusData::from_bytes(datum.bytes).map_err(|e| {
 			anyhow!("Internal error: could not decode datum of D-parameter validator script: {}", e)
 		})?;
-		let current_d_param: DParameter =
-			DParamDatum::try_from(datum_plutus_data)
-				.map_err(|e| {
-					anyhow!("Internal error: could not decode datum of D-parameter validator script: {}", e)
-				})?
-				.into();
+		let current_d_param: DParameter = DParamDatum::try_from(datum_plutus_data)
+			.map_err(|e| {
+				anyhow!(
+					"Internal error: could not decode datum of D-parameter validator script: {}",
+					e
+				)
+			})?
+			.into();
 		Ok(Some((utxo.clone(), current_d_param)))
 	} else {
 		Ok(None)

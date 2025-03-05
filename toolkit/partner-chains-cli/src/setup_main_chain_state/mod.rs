@@ -247,7 +247,9 @@ fn set_candidates_on_main_chain<C: IOContext>(
 				&pkey,
 			))
 			.context("Permissioned candidates update failed")?;
-		context.print("Permissioned candidates updated. The change will be effective in two main chain epochs.");
+		context.print(
+			"Permissioned candidates updated. The change will be effective in two main chain epochs.",
+		);
 	}
 	Ok(())
 }
@@ -284,7 +286,10 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 			&d_parameter,
 			&payment_signing_key,
 		))?;
-		context.print(&format!("D-parameter updated to ({}, {}). The change will be effective in two main chain epochs.", p, r));
+		context.print(&format!(
+			"D-parameter updated to ({}, {}). The change will be effective in two main chain epochs.",
+			p, r
+		));
 	}
 	Ok(())
 }

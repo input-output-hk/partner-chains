@@ -65,7 +65,13 @@ pub fn select_authorities<
 	if let Some(validators) = (WeightedRandomSelectionConfig { size: committee_size }
 		.select_authorities(candidates_with_weight, random_seed))
 	{
-		info!("💼 Selected committee of {} seats for epoch {} from {} permissioned and {} registered candidates", validators.len(), sidechain_epoch, valid_permissioned_candidates.len(), valid_trustless_candidates.len());
+		info!(
+			"💼 Selected committee of {} seats for epoch {} from {} permissioned and {} registered candidates",
+			validators.len(),
+			sidechain_epoch,
+			valid_permissioned_candidates.len(),
+			valid_trustless_candidates.len()
+		);
 		Some(validators)
 	} else {
 		warn!("🚫 Failed to select validators for epoch {}", sidechain_epoch);

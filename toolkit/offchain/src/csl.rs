@@ -274,7 +274,9 @@ impl Costs {
 					mints.insert(
 						tx.body()
 							.mint()
-							.expect("tx.body.mint() should not be empty if we received a 'mint' response from Ogmios")
+							.expect(
+								"tx.body.mint() should not be empty if we received a 'mint' response from Ogmios",
+							)
 							.keys()
 							.get(er.validator.index as usize),
 						ex_units_from_response(er),

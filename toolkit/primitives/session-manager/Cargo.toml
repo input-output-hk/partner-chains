@@ -26,16 +26,16 @@ pallet-session-validator-management = { workspace = true, features = ["mock"] }
 [features]
 default = ["std"]
 std = [
-    "frame-system/std",
-    "pallet-session-validator-management/std",
-    "sp-session-validator-management/std",
-    "sp-session-validator-management/serde",
-    "pallet-session/std",
-    "pallet-sidechain/std",
-    "pallet-partner-chains-session/std",
-    "sidechain-domain/std",
-    "sp-runtime/std",
-    "sp-staking/std",
-    "sp-std/std",
-    "log/std",
+	"frame-system/std",
+	"pallet-session-validator-management/std",
+	"sp-session-validator-management/std",
+	"sp-session-validator-management/serde",
+	"pallet-session/std",
+	"pallet-sidechain/std",
+	"pallet-partner-chains-session/std",
+	"sidechain-domain/std",
+	"sp-runtime/std",
+	"sp-staking/std",
+	"sp-std/std",
+	"log/std",
 ]

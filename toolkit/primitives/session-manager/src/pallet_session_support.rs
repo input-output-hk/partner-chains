@@ -71,7 +71,9 @@ where
 				debug!("PalletSessionSupport: should_end_session({n:?}) = true");
 				true
 			} else {
-				warn!("PalletSessionSupport: should_end_session({n:?}) 'current epoch' > 'committee epoch' but the next committee is not defined");
+				warn!(
+					"PalletSessionSupport: should_end_session({n:?}) 'current epoch' > 'committee epoch' but the next committee is not defined"
+				);
 				false
 			}
 		} else {

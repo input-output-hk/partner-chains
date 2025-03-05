@@ -13,15 +13,15 @@ pallet-partner-chains-session = { workspace = true }
 pallet-session = { workspace = true }
 sp-runtime = { workspace = true }
 sp-staking = { workspace = true }
-sp-std = {workspace = true}
+sp-std = { workspace = true }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 
 std = [
 	"pallet-partner-chains-session/std",
 	"pallet-session/std",
 	"sp-runtime/std",
 	"sp-staking/std",
-	"sp-std/std"
+	"sp-std/std",
 ]

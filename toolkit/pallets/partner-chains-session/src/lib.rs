@@ -465,7 +465,9 @@ impl<T: Config> Pallet<T> {
 			Self::inc_provider(account);
 		}
 		for account in to_dec {
-			Self::dec_provider(account).expect("We always match dec_providers with corresponding inc_providers, thus it cannot fail");
+			Self::dec_provider(account).expect(
+				"We always match dec_providers with corresponding inc_providers, thus it cannot fail",
+			);
 		}
 	}
 

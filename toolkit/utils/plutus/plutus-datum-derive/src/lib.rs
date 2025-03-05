@@ -78,12 +78,12 @@ fn impl_to_datum_derive(ast: &syn::DeriveInput) -> TokenStream {
 			compile_error!("ToDatum isn't yet implemented for Union types"),
 		},
 	};
-	let gen = quote! {
+	let generated = quote! {
 		impl #bounded_generics ToDatum for #name #generics {
 			fn to_datum(&self) -> Datum {
 				#body
 			}
 		}
 	};
-	gen.into()
+	generated.into()
 }

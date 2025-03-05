@@ -344,7 +344,9 @@ pub fn load_chain_config(context: &impl IOContext) -> anyhow::Result<ChainConfig
 		serde_json::from_str::<ChainConfig>(&chain_config_file)
 			.map_err(|err| anyhow::anyhow!(format!("⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} is invalid: {err}. Run prepare-configuration wizard or fix errors manually.")))
 	} else {
-		Err(anyhow::anyhow!(format!("⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} does not exists. Run prepare-configuration wizard first.")))
+		Err(anyhow::anyhow!(format!(
+			"⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} does not exists. Run prepare-configuration wizard first."
+		)))
 	}
 }
 

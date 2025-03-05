@@ -15,7 +15,7 @@ sidechain-domain = { workspace = true }
 sp-api = { workspace = true }
 sp-blockchain = { workspace = true, optional = true }
 sp-runtime = { workspace = true }
-sp-core = { workspace = true, features = ["serde"]}
+sp-core = { workspace = true, features = ["serde"] }
 sp-consensus-slots = { workspace = true }
 serde = { workspace = true, optional = true }
 envy = { workspace = true, optional = true }
@@ -26,16 +26,12 @@ proptest = { workspace = true }
 [features]
 default = ['std']
 std = [
-    'sidechain-domain/std',
-    'scale-info/std',
-    'sp-api/std',
+	'sidechain-domain/std',
+	'scale-info/std',
+	'sp-api/std',
 	'sp-blockchain',
-    'sp-core/std',
-    'sp-consensus-slots/std',
-    'envy'
+	'sp-core/std',
+	'sp-consensus-slots/std',
+	'envy',
 ]
-serde = [
-    "dep:serde",
-    "scale-info/serde",
-    "sp-core/serde",
-]
+serde = ["dep:serde", "scale-info/serde", "sp-core/serde"]

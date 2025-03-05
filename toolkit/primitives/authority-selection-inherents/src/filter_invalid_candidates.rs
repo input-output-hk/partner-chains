@@ -148,7 +148,12 @@ where
 pub enum StakeError {
 	#[cfg_attr(feature = "std", error("Stake should be greater than 0"))]
 	InvalidStake,
-	#[cfg_attr(feature = "std", error("Stake delegation information cannot be computed yet. Registration will turn valid if stake delegation for the epoch will be greater than 0"))]
+	#[cfg_attr(
+		feature = "std",
+		error(
+			"Stake delegation information cannot be computed yet. Registration will turn valid if stake delegation for the epoch will be greater than 0"
+		)
+	)]
 	UnknownStake,
 }
 
