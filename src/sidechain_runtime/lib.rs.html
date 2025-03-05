@@ -1143,6 +1143,12 @@
 <a href="#1143" id="1143">1143</a>
 <a href="#1144" id="1144">1144</a>
 <a href="#1145" id="1145">1145</a>
+<a href="#1146" id="1146">1146</a>
+<a href="#1147" id="1147">1147</a>
+<a href="#1148" id="1148">1148</a>
+<a href="#1149" id="1149">1149</a>
+<a href="#1150" id="1150">1150</a>
+<a href="#1151" id="1151">1151</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attr">#![recursion_limit = <span class="string">"256"</span>]
@@ -1185,10 +1191,7 @@
 <span class="kw">use </span>sp_block_participation::AsCardanoSPO;
 <span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityId <span class="kw">as </span>AuraId;
 <span class="kw">use </span>sp_core::hexdisplay::HexDisplay;
-<span class="kw">use </span>sp_core::ByteArray;
-<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
-</span><span class="kw">use </span>sp_core::Pair;
-<span class="kw">use </span>sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+<span class="kw">use </span>sp_core::{crypto::KeyTypeId, ByteArray, OpaqueMetadata};
 <span class="kw">use </span>sp_inherents::InherentIdentifier;
 <span class="kw">use </span>sp_runtime::{
 	generic, impl_opaque_keys,
@@ -1652,11 +1655,17 @@
 		}
 	}
 }
+
 <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
-</span><span class="kw">impl </span>From&lt;[u8; <span class="number">32</span>]&gt; <span class="kw">for </span>BlockAuthor {
-	<span class="kw">fn </span>from(arr: [u8; <span class="number">32</span>]) -&gt; <span class="self">Self </span>{
-		<span class="kw">let </span>id = sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>arr).public().into();
-		<span class="self">Self</span>::ProBono(id)
+</span><span class="kw">pub struct </span>PalletBlockProductionLogBenchmarkHelper;
+
+<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+</span><span class="kw">impl </span>pallet_block_production_log::benchmarking::BenchmarkHelper&lt;BlockAuthor&gt;
+	<span class="kw">for </span>PalletBlockProductionLogBenchmarkHelper
+{
+	<span class="kw">fn </span>producer_id() -&gt; BlockAuthor {
+		<span class="kw">let </span>id = sp_core::ecdsa::Public::from_slice(<span class="kw-2">&amp;</span>[<span class="number">0u8</span>; <span class="number">33</span>]).unwrap().into();
+		BlockAuthor::ProBono(id)
 	}
 }
 
@@ -1668,6 +1677,9 @@
 		<span class="kw">let </span>slot: u64 = pallet_aura::CurrentSlot::&lt;Runtime&gt;::get().into();
 		sp_consensus_slots::Slot::from(slot)
 	}
+
+	<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+	</span><span class="kw">type </span>BenchmarkHelper = PalletBlockProductionLogBenchmarkHelper;
 }
 
 <span class="kw">impl </span>pallet_address_associations::Config <span class="kw">for </span>Runtime {

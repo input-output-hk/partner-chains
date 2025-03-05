@@ -136,9 +136,12 @@
 <a href="#136" id="136">136</a>
 <a href="#137" id="137">137</a>
 <a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
-</span><span class="kw">mod </span>benchmarking;
+</span><span class="kw">pub mod </span>benchmarking;
 <span class="attr">#[cfg(test)]
 </span><span class="kw">pub mod </span>mock;
 <span class="attr">#[cfg(test)]
@@ -167,6 +170,9 @@
 		<span class="kw">type </span>WeightInfo: WeightInfo;
 
 		<span class="kw">fn </span>current_slot() -&gt; Slot;
+
+		<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
+		</span><span class="kw">type </span>BenchmarkHelper: benchmarking::BenchmarkHelper&lt;<span class="self">Self</span>::BlockProducerId&gt;;
 	}
 
 	<span class="attr">#[pallet::storage]
