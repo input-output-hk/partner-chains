@@ -44,5 +44,5 @@ fn provides_author_based_on_runtime_api() {
 	)
 	.expect("Should not fail");
 
-	assert_eq!(provider.author.unwrap(), mock_api.author as Author);
+	assert_eq!(provider.author.unwrap(), Author::from(mock_api.author));
 }
