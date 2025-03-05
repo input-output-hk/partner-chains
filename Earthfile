@@ -102,6 +102,7 @@ build-deps:
 
 build:
   FROM +source
+  LET WASM_BUILD_STD=0
   #ARG CACHE_KEY=$(find . -type f -name "*.rs" -o -name "*.toml" | sort | xargs cat | sha256sum)
   #CACHE --sharing shared --id cargo-build-$CACHE_KEY target
   CACHE --sharing shared --id cargo $CARGO_HOME
@@ -112,6 +113,7 @@ build:
 
 test:
   FROM +build
+  LET WASM_BUILD_STD=0
   DO github.com/earthly/lib:3.0.2+INSTALL_DIND
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
