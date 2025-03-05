@@ -7,9 +7,9 @@ Before you begin, some software must be installed.
 ## Order of Operations
 
 1. Install dependencies
-    1. Cardano node v10.1.4
-        1. DB Sync v13.6.0.4 (PostgreSQL v15.3+)
-2. Download the partner chain node v1.4.0
+    1. Cardano node
+        1. DB Sync
+2. Download the partner chain node
 3. Run the generate-keys wizard
 4. Share keys with the chain builder
 5. Obtain the chain configuration and specification files
@@ -24,9 +24,15 @@ This guide is currently aimed at the **preview testnet only**. In most `cardano-
 
 ### 1. Install partner chains dependencies
 
-To run the partner chains stack, several dependencies need to be installed on the Cardano node.
+To run the partner chains stack, Permissioned users need an operational Cardano node setup with DB Sync.
 
-### 1.1 Cardano node v10.1.4
+---
+**NOTE**
+
+Consult the Compatibility matrix on the releases page for dependency version compatibility for a particular release. These change with each [release](https://github.com/input-output-hk/partner-chains/releases).
+---
+
+### 1.1 Cardano node
 
 A passive Cardano node is required to validate a partner chain. The installation of `cardano-node` is out of the scope of this guide. Refer to the [Cardano course handbook](https://cardano-course.gitbook.io/cardano-course/handbook) for documentation and video instruction.
 

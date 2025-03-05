@@ -5,10 +5,10 @@ A registered block producer is a Cardano stake pool operator (SPO) that desires 
 ## Order of Operations
 1. Become a Cardano SPO
 2. Install partner chains dependencies
-    1. Cardano node v10.1.4
-        1. Ogmios v6.11.0
-        2. Cardano DB Sync v13.6.0.4 (PostgreSQL v15.3+)
-    2. Download the partner chain node v1.4.0
+    1. Cardano node
+        1. Ogmios
+        2. Cardano DB Sync
+    2. Download the partner chain node
 3. Run the generate-keys wizard
 4. Obtain chain parameters from the chain builder
 5. Register for the partner chain
@@ -24,15 +24,21 @@ This guide is currently aimed at the **preview testnet only**. In most `cardano-
 
 ### 1. Become a Cardano SPO on preview
 
-Cardano SPO keys are necessary to register as a partner chain validator. The installation for a Cardano SPO is out of the scope of this guide. Refer to the [Cardano course handbook](https://cardano-course.gitbook.io/cardano-course/handbook) for documentation and video instruction.
+An operational Cardano Stake Pool is required to validate a partner chain as a Registered user. The installation for a Cardano Stake Pool is out of the scope of this guide. Refer to the [Cardano course handbook](https://cardano-course.gitbook.io/cardano-course/handbook) for documentation and video instruction.
 
-Once you have the Cardano SPO keys, you are ready to continue with this guide.
+Once you have a Cardano Stake Pool registered on the preview network, you are ready to continue with this guide.
 
 ### 2. Install partner chain dependencies
 
-To run the partner chains stack, several dependencies need to be installed on the Cardano node.
+To run the partner chains stack, several dependencies need to be installed on the same machine as the Cardano node.
 
 Ogmios and DB Sync are essential to enable registration communication with the main chain (Cardano).
+
+---
+**NOTE**
+
+Consult the Compatibility matrix on the releases page for dependency version compatibility for a particular release. These change with each [release](https://github.com/input-output-hk/partner-chains/releases).
+---
 
 ### 2.1 Cardano node dependencies
 
@@ -45,7 +51,7 @@ Be mindful of file paths in the instruction sets below. Your `cardano-node` may 
 
 ---
 
-### 2.1.1 Ogmios - v6.11.0
+### 2.1.1 Ogmios
 
 Ogmios is a lightweight bridge interface for `cardano-node`. It offers a WebSocket API that enables local clients to speak to the main chain via JSON/RPC.
 
@@ -88,7 +94,7 @@ journalctl -fu ogmios.service
 
 For further instructions, please see [Ogmios](https://ogmios.dev/getting-started/building/).
 
-### 2.1.2 Cardano DB Sync v13.6.0.4
+### 2.1.2 Cardano DB Sync
 
 The partner chain needs DB Sync on a `cardano-node` to observe Cardano's state.
 
@@ -252,11 +258,11 @@ You must not spend the selected UTXO, because it needs to be consumed later in t
 
 ---
 
-Finally, the wizard outputs the command for obtaining signatures. You use this command in the next step (register-2 wizard). You must run it on a newly prepared machine with the main chain cold signing key.
+Finally, the wizard outputs the command for obtaining signatures, this command will be used as input in the next step (register-2 wizard). We suggest the command to be run on an offline machine, as to not expose the Cardano `cold.skey` to the internet, and return to the online machine to perform the register-3 wizard.
 
 #### Register-2 wizard
 
-The register-2 wizard obtains signatures for the registration message. It only requires the `partner-chain-cli` binary executable to be installed on the 'cold' machine.
+The register-2 wizard obtains signatures for the registration message. It only requires the `partner-chain-cli` binary executable to be installed on the offline machine.
 
 1. Follow the steps when prompted by the wizard
 
@@ -300,7 +306,6 @@ To deregister from the list of block producer candidates, you need to run the de
 **NOTE**
 
 The configuration of the chain is stored in the file `pc-chain-config.json`. This file needs to remain identical with other nodes in the network.
-
 
 ---
 
