@@ -18,7 +18,7 @@ pub(crate) fn run_init_governance<C: IOContext>(
 	let (payment_key, governance_authority) = get_private_key_and_key_hash(context)?;
 	let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 	runtime
-		.block_on(offchain.init_governance(governance_authority, &payment_key, genesis_utxo))
+		.block_on(offchain.init_governance(vec![governance_authority],1, &payment_key, genesis_utxo))
 		.map_err(|e| anyhow::anyhow!("Governance initalization failed: {e:?}!"))
 }
 

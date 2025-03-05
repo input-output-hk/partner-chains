@@ -28,8 +28,11 @@ pub struct InitGovernanceCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
 	/// Governance authority hash to be set.
-	#[arg(long, short = 'g')]
-	governance_authority: MainchainKeyHash,
+	#[arg(short, long, num_args = 1.., value_delimiter = ' ')]
+	governance_authority: Vec<MainchainKeyHash>,
+	/// Governance threshold to be set.
+	#[arg(long)]
+	governance_threshold: u8,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
 	/// Genesis UTXO of the new chain, it will be spent durning initialization. If not set, then one will be selected from UTXOs of the payment key.
@@ -44,6 +47,7 @@ impl InitGovernanceCmd {
 
 		run_init_governance(
 			self.governance_authority,
+			self.governance_threshold,
 			&payment_key,
 			self.genesis_utxo,
 			&client,
@@ -58,9 +62,15 @@ impl InitGovernanceCmd {
 pub struct UpdateGovernanceCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
+	/// Old governance authority hash to be set.
+	#[arg(short = 'o', long, num_args = 1.., value_delimiter = ' ')]
+	old_governance_authority: Vec<MainchainKeyHash>,
 	/// Governance authority hash to be set.
-	#[arg(long, short = 'g')]
-	new_governance_authority: MainchainKeyHash,
+	#[arg(short = 'g', long, num_args = 1.., value_delimiter = ' ')]
+	new_governance_authority: Vec<MainchainKeyHash>,
+	/// Governance threshold to be set.
+	#[arg(long)]
+	new_governance_threshold: u8,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
 	/// Genesis UTXO of the chain
@@ -74,7 +84,9 @@ impl UpdateGovernanceCmd {
 		let client = self.common_arguments.get_ogmios_client().await?;
 
 		run_update_governance(
+			self.old_governance_authority,
 			self.new_governance_authority,
+			self.new_governance_threshold,
 			&payment_key,
 			self.genesis_utxo,
 			&client,
