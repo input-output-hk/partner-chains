@@ -88,8 +88,9 @@ runs:
           ${deployment_mc_epoch_switch} \
           ${decrypt_switch} \
           --json-report \
+          --json-report-file=logs/.report.json \
           --json-report-summary \
-          --junitxml=junit_report.xml"
+          --junitxml=logs/junit_report.xml"
 
         if [[ "${{ inputs.local-environment }}" == "true" ]]; then
           echo "Running tests via docker exec"
@@ -111,16 +112,13 @@ runs:
       run: |
         echo "Copy test results from docker container"
         mkdir -p e2e-tests
-        docker cp tests:/e2e-tests/.report.json e2e-tests/.report.json
-        docker cp tests:/e2e-tests/debug.log e2e-tests/debug.log
+        docker cp tests:/e2e-tests/logs e2e-tests
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
       with:
         name: test-results
-        path: |
-          e2e-tests/.report.json
-          e2e-tests/debug.log
+        path: e2e-tests/logs
         overwrite: true
         if-no-files-found: error
         include-hidden-files: true
