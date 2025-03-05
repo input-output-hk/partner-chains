@@ -50,19 +50,22 @@ pub mod pallet {
 		const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
 
 		fn create_inherent(data: &InherentData) -> Option<Self::Call> {
-			let block_producer_id = data
-				.get_data::<T::BlockProducerId>(&Self::INHERENT_IDENTIFIER)
-				.expect("Block Production Log inherent data not correctly encoded")
-				.expect("Block Production Log inherent data must be provided");
-			Some(Call::append { block_producer_id })
+			Self::decode_inherent_data(data)
+				.unwrap()
+				.map(|block_producer_id| Call::append { block_producer_id })
 		}
 
 		fn is_inherent(call: &Self::Call) -> bool {
 			matches!(call, Call::append { .. })
 		}
 
-		fn is_inherent_required(_: &InherentData) -> Result<Option<Self::Error>, Self::Error> {
-			Ok(Some(Self::Error::InherentRequired))
+		fn is_inherent_required(data: &InherentData) -> Result<Option<Self::Error>, Self::Error> {
+			let has_data = Self::decode_inherent_data(data)?.is_some();
+			if has_data || LatestBlock::<T>::get().is_some() {
+				Ok(Some(Self::Error::InherentRequired))
+			} else {
+				Ok(None)
+			}
 		}
 	}
 
@@ -97,16 +100,22 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(block: BlockNumberFor<T>) {
-			let block_producer_id =
-				CurrentProducer::<T>::take().expect("Author is set before on_finalize; qed");
-
-			log::info!("👷 Block {block:?} producer is {block_producer_id:?}");
-
-			Log::<T>::append((T::current_slot(), block_producer_id))
+			if let Some(block_producer_id) = CurrentProducer::<T>::take() {
+				log::info!("👷 Block {block:?} producer is {block_producer_id:?}");
+				Log::<T>::append((T::current_slot(), block_producer_id));
+			} else {
+				log::warn!("👷 Block {block:?} producer not set. This should occur only at the beginning of the production log pallet's lifetime.")
+			}
 		}
 	}
 
 	impl<T: Config> Pallet<T> {
+		fn decode_inherent_data(
+			data: &InherentData,
+		) -> Result<Option<T::BlockProducerId>, InherentError> {
+			data.get_data::<T::BlockProducerId>(&Self::INHERENT_IDENTIFIER)
+				.map_err(|_| InherentError::InvalidData)
+		}
 		pub fn take_prefix(slot: &Slot) -> Vec<(Slot, T::BlockProducerId)> {
 			let removed_prefix = Log::<T>::mutate(|log| {
 				let pos = log.partition_point(|(s, _)| s <= slot);

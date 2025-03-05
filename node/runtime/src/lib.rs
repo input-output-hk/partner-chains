@@ -191,7 +191,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 150,
+	spec_version: 151,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -950,9 +950,8 @@ impl_runtime_apis! {
 	}
 
 	impl sp_block_production_log::BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>>  for Runtime {
-		fn get_author(slot: Slot) -> CommitteeMember<CrossChainPublic, SessionKeys> {
+		fn get_author(slot: Slot) -> Option<CommitteeMember<CrossChainPublic, SessionKeys>> {
 			 SessionCommitteeManagement::get_current_authority_round_robin(*slot as usize)
-				.expect("Slot modulo committee size is a valid index unless committee is missing")
 		}
 	}
 

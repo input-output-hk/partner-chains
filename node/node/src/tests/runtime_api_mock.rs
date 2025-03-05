@@ -114,14 +114,14 @@ sp_api::mock_impl_runtime_apis! {
 	}
 
 	impl sp_block_production_log::BlockProductionLogApi<Block, CommitteeMember<CrossChainPublic, SessionKeys>> for TestApi {
-		fn get_author(_slot: Slot) -> CommitteeMember<CrossChainPublic, SessionKeys> {
-			CommitteeMember::permissioned(
+		fn get_author(_slot: Slot) -> Option<CommitteeMember<CrossChainPublic, SessionKeys>> {
+			Some(CommitteeMember::permissioned(
 				ecdsa::Public::from_raw(hex!("000000000000000000000000000000000000000000000000000000000000000001")).into(),
 				SessionKeys {
 					aura: sr25519::Public::default().into(),
 					grandpa: ed25519::Public::default().into()
 				}
-			)
+			))
 		}
 	}
 
