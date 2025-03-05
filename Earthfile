@@ -56,21 +56,15 @@ setup:
   CACHE /root/.cache/pip
   RUN pip3 install --break-system-packages tomlq toml
 
-  # Pin specific rustup version (use 1.27.0 to avoid the 1.28.0 issue)
-  RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none --profile minimal --version 1.27.0
+  # Pin rustup to 1.27.0 to avoid the 1.28.0 issue
+  RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --version 1.27.0
   ENV PATH="/root/.cargo/bin:${PATH}"
-  
-  # Copy configuration files early
-  COPY rust-toolchain.toml .
-  
-  # Explicitly install the toolchain from rust-toolchain.toml
-  RUN rustup toolchain install $(cat rust-toolchain.toml | grep 'channel' | cut -d '"' -f 2)
 
   # copy pre-existing $CARGO_HOME artifacts into the cache
   RUN cp -rl $CARGO_HOME /tmp/cargo
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cp -rua /tmp/cargo/. $CARGO_HOME && rm -rf /tmp/cargo
-  COPY Cargo.* .rustfmt.toml .
+  COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
   RUN rustup show
   RUN cargo install --locked --version 0.1.68 cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
 
