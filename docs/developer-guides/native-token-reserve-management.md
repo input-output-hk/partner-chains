@@ -154,7 +154,7 @@ Command template:
 
 ### 1.4 Creating your token reserve
 
-Objective: Create a reserve for your token and define the release function `V`.
+Objective: Create a reserve for your token and define the release function `V`. There can be only one reserve, therefore one reserve token, for a partner chain.
 
 #### 1.4.1 Run the `reserve create` command
 
@@ -188,9 +188,9 @@ Command template:
 
 * `--total-accrued-function-script-hash`: The script hash of your `V` function
 
-* `--token`: Reserve token asset id encoded in form `<policy_id_hex>.<asset_name_hex>`
+* `--token`: Reserve token asset id encoded in form `<policy_id_hex>.<asset_name_hex>`, this sets the reserve token asset id
 
-* `--initial-deposit-amount`: The initial amount of tokens to deposit into the reserve
+* `--initial-deposit-amount`: The initial amount of tokens to deposit into the reserve, at least this amout of tokens has to available in the payment wallet
 
 * `--payment-key-file`: Your payment key file for transaction signing. This key has to have `initial-deposit-amount` in its wallet.
 
@@ -232,7 +232,7 @@ Objective: Release available reserve tokens (defined by the `VFunction`).
 
 * `--payment-key-file`: Your payment key file for transaction signing
 
-* `--reference-utxo`: UTXO where the `VFunction` script is attached as a reference
+* `--reference-utxo`: UTXO where the `VFunction` script is attached as a reference, this value should be published by the governance authority that has created the reserve
 
 * `--amount`: amount of tokens to release
 
@@ -273,6 +273,8 @@ Objective: Configure the initial token reserve by depositing a specified amount 
 
 ### 3.1 Run the `reserve deposit` command (optional)
 
+Objective: increase the pool of reserve tokens.
+
 #### Command template
 
 ```bash
@@ -280,7 +282,6 @@ Objective: Configure the initial token reserve by depositing a specified amount 
   --genesis-utxo <GENESIS_UTXO> \
   --ogmios-url ws://localhost:1337 \
   --payment-key-file <PAYMENT_KEY_FILE> \
-  --token <TOKEN> \
   --amount <AMOUNT>
 ```
 
@@ -289,8 +290,6 @@ Objective: Configure the initial token reserve by depositing a specified amount 
 * `--genesis-utxo`: The genesis UTXO of the running partner chain
 
 * `--payment-key-file`: Your payment key file for transaction signing
-
-* `--token`: Reserve token asset id encoded in form `<policy_id_hex>.<asset_name_hex>`
 
 * `--amount`: Amount of tokens to deposit. They must be present in the payment wallet.
 

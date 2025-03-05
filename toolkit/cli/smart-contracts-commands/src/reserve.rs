@@ -8,7 +8,6 @@ use partner_chains_cardano_offchain::{
 		init::init_reserve_management,
 		release::release_reserve_funds,
 		update_settings::update_reserve_settings,
-		TokenAmount,
 	},
 };
 use sidechain_domain::{AssetId, ScriptHash, UtxoId};
@@ -19,10 +18,13 @@ use std::num::NonZero;
 pub enum ReserveCmd {
 	/// Initialize the reserve management system for your chain
 	Init(InitReserveCmd),
+	/// Creates the reserve for your chain. `init` and `create` will be merged into a single command in a future release.
 	Create(CreateReserveCmd),
+	/// Deposits tokens from payment key wallet to the reserve
 	Deposit(DepositReserveCmd),
 	/// Update reserve management system settings for your chain
 	UpdateSettings(UpdateReserveSettingsCmd),
+	/// Releases all the remaining funds from the reserve to the illiquid supply
 	Handover(HandoverReserveCmd),
 	/// Releases funds from the reserve to the illiquid supply
 	Release(ReleaseReserveCmd),
@@ -113,12 +115,9 @@ pub struct DepositReserveCmd {
 	common_arguments: crate::CommonArguments,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
-	/// Genesis UTXO of the partner-chain.
+	/// Genesis UTXO of the partner-chain, identifies the partner chain and its reserve.
 	#[arg(long, short('c'))]
 	genesis_utxo: UtxoId,
-	/// Reserve token asset id encoded in form <policy_id_hex>.<asset_name_hex>.
-	#[arg(long)]
-	token: AssetId,
 	/// Amount of tokens to deposit. They must be present in the payment wallet.
 	#[arg(long)]
 	amount: u64,
@@ -129,7 +128,7 @@ impl DepositReserveCmd {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
 		let _ = deposit_to_reserve(
-			TokenAmount { token: self.token, amount: self.amount },
+			self.amount,
 			self.genesis_utxo,
 			&payment_key,
 			&client,

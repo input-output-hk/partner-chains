@@ -44,7 +44,7 @@ pub async fn deposit_to_reserve<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 >(
-	parameters: TokenAmount,
+	amount: u64,
 	genesis_utxo: UtxoId,
 	payment_key: &CardanoPaymentSigningKey,
 	client: &T,
@@ -53,10 +53,11 @@ pub async fn deposit_to_reserve<
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance = GovernanceData::get(genesis_utxo, client).await?;
 	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
-	let utxo = reserve.get_reserve_utxo(&ctx, client).await?.utxo;
-	let current_amount = get_token_amount(&utxo, &parameters.token);
-	let token_amount =
-		TokenAmount { token: parameters.token, amount: current_amount + parameters.amount };
+	let reserve_utxo = reserve.get_reserve_utxo(&ctx, client).await?;
+	let utxo = reserve_utxo.utxo;
+	let token = reserve_utxo.datum.immutable_settings.token;
+	let current_amount = get_token_amount(&utxo, &token);
+	let token_amount = TokenAmount { token, amount: current_amount + amount };
 
 	let tx = Costs::calculate_costs(
 		|costs| deposit_to_reserve_tx(&token_amount, &utxo, &reserve, &governance, costs, &ctx),

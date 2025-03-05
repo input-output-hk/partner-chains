@@ -19,7 +19,7 @@ use partner_chains_cardano_offchain::{
 	cardano_keys::CardanoPaymentSigningKey,
 	d_param, init_governance, permissioned_candidates,
 	register::Register,
-	reserve::{self, release::release_reserve_funds, TokenAmount},
+	reserve::{self, release::release_reserve_funds},
 	scripts_data, update_governance,
 };
 use partner_chains_plutus_data::reserve::ReserveDatum;
@@ -389,13 +389,7 @@ async fn run_deposit_to_reserve<
 	client: &T,
 ) {
 	reserve::deposit::deposit_to_reserve(
-		TokenAmount {
-			token: AssetId {
-				policy_id: REWARDS_TOKEN_POLICY_ID,
-				asset_name: AssetName::from_hex_unsafe(REWARDS_TOKEN_ASSET_NAME_STR),
-			},
-			amount: DEPOSIT_AMOUNT,
-		},
+		DEPOSIT_AMOUNT,
 		genesis_utxo,
 		&governance_authority_payment_key(),
 		client,
