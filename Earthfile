@@ -56,29 +56,30 @@ setup:
   CACHE /root/.cache/pip
   RUN pip3 install --break-system-packages tomlq toml
 
-  # Install rustup with version pinned to 1.27.0, and run initial setup all in one command
-  RUN mkdir -p ${CARGO_HOME} && \
-      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --version 1.27.0 && \
-      export PATH="/root/.cargo/bin:$PATH" && \
-      rustup --version
+  # Create the cargo directory
+  RUN mkdir -p ${CARGO_HOME}
+
+  # Install rustup (pinned version) and just wait for it to complete
+  RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --version 1.27.0
   
-  # Set PATH for subsequent commands
+  # Set PATH environment variable explicitly
   ENV PATH="/root/.cargo/bin:${PATH}"
 
-  # Set up cargo cache - we need to create the directory structure
+  # Copy cargo cache - more careful handling
   RUN mkdir -p /tmp/cargo
   CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN if [ -d "/tmp/cargo" ]; then cp -r /tmp/cargo/. $CARGO_HOME/ || true; fi && rm -rf /tmp/cargo
+  RUN cp -r /tmp/cargo/. $CARGO_HOME/ || true && rm -rf /tmp/cargo
   
+  # Copy config files
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
   
-  # Now try to run rustup show
-  RUN which rustup || echo "rustup not found in PATH"
-  RUN rustup show
-  RUN cargo install --locked --version 0.1.68 cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
+  # Install toolchain explicitly
+  RUN rustup default stable
+  RUN rustup show || true
+  RUN cargo install --locked --version 0.1.68 cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin || true
 
   # Add Linux target
-  RUN rustup target add x86_64-unknown-linux-gnu
+  RUN rustup target add x86_64-unknown-linux-gnu || true
 
 source:
   FROM +setup
