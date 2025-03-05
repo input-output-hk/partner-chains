@@ -66,16 +66,16 @@ setup:
   RUN cp -rua /tmp/cargo/. $CARGO_HOME && rm -rf /tmp/cargo
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
   
-  # Explicitly install the toolchain (this is the new requirement in rustup 1.28.0)
-  RUN rustup toolchain install 1.81.0
+  # Explicitly install the toolchain
+  RUN rustup toolchain install
   RUN rustup show
   RUN cargo install --locked --version 0.1.68 cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
 
-  # Add Linux target for the regular toolchain
+  # Add Linux target
   RUN rustup target add x86_64-unknown-linux-gnu
   
-  # Add wasm32 target for the specific toolchain
-  RUN rustup target add wasm32-unknown-unknown --toolchain 1.81.0-x86_64-unknown-linux-gnu
+  # Add wasm32 target
+  RUN rustup target add wasm32-unknown-unknown
 
 source:
   FROM +setup
