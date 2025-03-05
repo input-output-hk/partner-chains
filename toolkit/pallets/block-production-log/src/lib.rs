@@ -43,11 +43,6 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type LatestBlock<T: Config> = StorageValue<_, BlockNumberFor<T>, OptionQuery>;
 
-	/// This flag keeps track of whether the pallet has been initialized by receiving non-empty inherent data.
-	/// In initialized state, the inherent is requires for every block.
-	#[pallet::storage]
-	pub type Initialized<T: Config> = StorageValue<_, bool, ValueQuery>;
-
 	#[pallet::inherent]
 	impl<T: Config> ProvideInherent for Pallet<T> {
 		type Call = Call<T>;
@@ -66,7 +61,7 @@ pub mod pallet {
 
 		fn is_inherent_required(data: &InherentData) -> Result<Option<Self::Error>, Self::Error> {
 			let has_data = Self::decode_inherent_data(data)?.is_some();
-			if has_data || Initialized::<T>::get() {
+			if has_data || LatestBlock::<T>::get().is_some() {
 				Ok(Some(Self::Error::InherentRequired))
 			} else {
 				Ok(None)
@@ -108,7 +103,6 @@ pub mod pallet {
 			if let Some(block_producer_id) = CurrentProducer::<T>::take() {
 				log::info!("👷 Block {block:?} producer is {block_producer_id:?}");
 				Log::<T>::append((T::current_slot(), block_producer_id));
-				Initialized::<T>::put(true);
 			} else {
 				log::warn!("👷 Block {block:?} producer not set. This should occur only at the beginning of the production log pallet's lifetime.")
 			}
