@@ -127,6 +127,15 @@
 <a href="#127" id="127">127</a>
 <a href="#128" id="128">128</a>
 <a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">mod </span>benchmarking;
@@ -179,19 +188,22 @@
 		<span class="kw">const </span>INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
 
 		<span class="kw">fn </span>create_inherent(data: <span class="kw-2">&amp;</span>InherentData) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Call&gt; {
-			<span class="kw">let </span>block_producer_id = data
-				.get_data::&lt;T::BlockProducerId&gt;(<span class="kw-2">&amp;</span><span class="self">Self</span>::INHERENT_IDENTIFIER)
-				.expect(<span class="string">"Block Production Log inherent data not correctly encoded"</span>)
-				.expect(<span class="string">"Block Production Log inherent data must be provided"</span>);
-			<span class="prelude-val">Some</span>(Call::append { block_producer_id })
+			<span class="self">Self</span>::decode_inherent_data(data)
+				.unwrap()
+				.map(|block_producer_id| Call::append { block_producer_id })
 		}
 
 		<span class="kw">fn </span>is_inherent(call: <span class="kw-2">&amp;</span><span class="self">Self</span>::Call) -&gt; bool {
 			<span class="macro">matches!</span>(call, Call::append { .. })
 		}
 
-		<span class="kw">fn </span>is_inherent_required(<span class="kw">_</span>: <span class="kw-2">&amp;</span>InherentData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Error&gt;, <span class="self">Self</span>::Error&gt; {
-			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">Self</span>::Error::InherentRequired))
+		<span class="kw">fn </span>is_inherent_required(data: <span class="kw-2">&amp;</span>InherentData) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Error&gt;, <span class="self">Self</span>::Error&gt; {
+			<span class="kw">let </span>has_data = <span class="self">Self</span>::decode_inherent_data(data)<span class="question-mark">?</span>.is_some();
+			<span class="kw">if </span>has_data || LatestBlock::&lt;T&gt;::get().is_some() {
+				<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">Self</span>::Error::InherentRequired))
+			} <span class="kw">else </span>{
+				<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
+			}
 		}
 	}
 
@@ -226,16 +238,22 @@
 	<span class="attr">#[pallet::hooks]
 	</span><span class="kw">impl</span>&lt;T: Config&gt; Hooks&lt;BlockNumberFor&lt;T&gt;&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
 		<span class="kw">fn </span>on_finalize(block: BlockNumberFor&lt;T&gt;) {
-			<span class="kw">let </span>block_producer_id =
-				CurrentProducer::&lt;T&gt;::take().expect(<span class="string">"Author is set before on_finalize; qed"</span>);
-
-			<span class="macro">log::info!</span>(<span class="string">"👷 Block {block:?} producer is {block_producer_id:?}"</span>);
-
-			Log::&lt;T&gt;::append((T::current_slot(), block_producer_id))
+			<span class="kw">if let </span><span class="prelude-val">Some</span>(block_producer_id) = CurrentProducer::&lt;T&gt;::take() {
+				<span class="macro">log::info!</span>(<span class="string">"👷 Block {block:?} producer is {block_producer_id:?}"</span>);
+				Log::&lt;T&gt;::append((T::current_slot(), block_producer_id));
+			} <span class="kw">else </span>{
+				<span class="macro">log::warn!</span>(<span class="string">"👷 Block {block:?} producer not set. This should occur only at the beginning of the production log pallet's lifetime."</span>)
+			}
 		}
 	}
 
 	<span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
+		<span class="kw">fn </span>decode_inherent_data(
+			data: <span class="kw-2">&amp;</span>InherentData,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;T::BlockProducerId&gt;, InherentError&gt; {
+			data.get_data::&lt;T::BlockProducerId&gt;(<span class="kw-2">&amp;</span><span class="self">Self</span>::INHERENT_IDENTIFIER)
+				.map_err(|<span class="kw">_</span>| InherentError::InvalidData)
+		}
 		<span class="kw">pub fn </span>take_prefix(slot: <span class="kw-2">&amp;</span>Slot) -&gt; Vec&lt;(Slot, T::BlockProducerId)&gt; {
 			<span class="kw">let </span>removed_prefix = Log::&lt;T&gt;::mutate(|log| {
 				<span class="kw">let </span>pos = log.partition_point(|(s, <span class="kw">_</span>)| s &lt;= slot);

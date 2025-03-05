@@ -102,6 +102,8 @@
 <a href="#102" id="102">102</a>
 <a href="#103" id="103">103</a>
 <a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">extern crate </span>alloc;
@@ -125,8 +127,13 @@
 #[cfg_attr(not(feature = <span class="string">"std"</span>), derive(Debug))]
 #[cfg_attr(feature = <span class="string">"std"</span>, derive(Decode, thiserror::Error, sp_runtime::RuntimeDebug))]
 </span><span class="kw">pub enum </span>InherentError {
-	<span class="attr">#[cfg_attr(feature = <span class="string">"std"</span>, error(<span class="string">"Block Author inherent must be provided every block"</span>))]
+	<span class="attr">#[cfg_attr(
+		feature = <span class="string">"std"</span>,
+		error(<span class="string">"Block Author inherent must be provided every block after initialization"</span>)
+	)]
 	</span>InherentRequired,
+	<span class="attr">#[cfg_attr(feature = <span class="string">"std"</span>, error(<span class="string">"Block Author inherent data is not correctly encoded"</span>))]
+	</span>InvalidData,
 }
 <span class="kw">impl </span>IsFatalError <span class="kw">for </span>InherentError {
 	<span class="kw">fn </span>is_fatal_error(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
@@ -154,16 +161,13 @@
 		C::Api: BlockProductionLogApi&lt;Block, Member&gt;,
 		Author: From&lt;Member&gt;,
 	{
-		<span class="kw">if </span>client
-			.runtime_api()
-			.has_api::&lt;<span class="kw">dyn </span>BlockProductionLogApi&lt;Block, Member&gt;&gt;(parent_hash)<span class="question-mark">?
-		</span>{
-			<span class="kw">let </span>author: Author = client.runtime_api().get_author(parent_hash, slot)<span class="question-mark">?</span>.into();
-
-			<span class="prelude-val">Ok</span>(BlockAuthorInherentProvider { author: <span class="prelude-val">Some</span>(author) })
-		} <span class="kw">else </span>{
-			<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ author: <span class="prelude-val">None </span>})
+		<span class="kw">let </span>api = client.runtime_api();
+		<span class="kw">if </span>!api.has_api::&lt;<span class="kw">dyn </span>BlockProductionLogApi&lt;Block, Member&gt;&gt;(parent_hash)<span class="question-mark">? </span>{
+			<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="self">Self </span>{ author: <span class="prelude-val">None </span>});
 		}
+		<span class="kw">let </span>author = client.runtime_api().get_author(parent_hash, slot)<span class="question-mark">?</span>.map(Author::from);
+
+		<span class="prelude-val">Ok</span>(BlockAuthorInherentProvider { author })
 	}
 }
 
@@ -203,7 +207,7 @@
 		</span>Member: Decode
 	{
 		<span class="doccomment">/// Returns author based on current committee and provided slot
-		</span><span class="kw">fn </span>get_author(slot: sidechain_slots::Slot) -&gt; Member;
+		</span><span class="kw">fn </span>get_author(slot: sidechain_slots::Slot) -&gt; <span class="prelude-ty">Option</span>&lt;Member&gt;;
 	}
 }
 </code></pre></div></section></main></body></html>

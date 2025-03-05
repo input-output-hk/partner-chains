@@ -389,6 +389,9 @@
 <a href="#389" id="389">389</a>
 <a href="#390" id="390">390</a>
 <a href="#391" id="391">391</a>
+<a href="#392" id="392">392</a>
+<a href="#393" id="393">393</a>
+<a href="#394" id="394">394</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!  Pallet for setting the Partner Chain validators using inherent data
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -707,6 +710,9 @@
 
 		<span class="kw">pub fn </span>get_current_authority_round_robin(index: usize) -&gt; <span class="prelude-ty">Option</span>&lt;T::CommitteeMember&gt; {
 			<span class="kw">let </span>committee = CurrentCommittee::&lt;T&gt;::get().committee;
+			<span class="kw">if </span>committee.is_empty() {
+				<span class="kw">return </span><span class="prelude-val">None</span>;
+			}
 
 			committee.get(index % committee.len() <span class="kw">as </span>usize).cloned()
 		}
