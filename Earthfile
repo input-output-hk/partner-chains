@@ -60,9 +60,11 @@ setup:
   RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none --profile minimal --version 1.27.0
   ENV PATH="/root/.cargo/bin:${PATH}"
   
-  # Explicitly install the toolchain from rust-toolchain.toml
+  # Copy configuration files early
   COPY rust-toolchain.toml .
-  RUN rustup toolchain install $(rustup toolchain list -v 2>/dev/null || cat rust-toolchain.toml | grep 'channel' | cut -d '"' -f 2)
+  
+  # Explicitly install the toolchain from rust-toolchain.toml
+  RUN rustup toolchain install $(cat rust-toolchain.toml | grep 'channel' | cut -d '"' -f 2)
 
   # copy pre-existing $CARGO_HOME artifacts into the cache
   RUN cp -rl $CARGO_HOME /tmp/cargo
