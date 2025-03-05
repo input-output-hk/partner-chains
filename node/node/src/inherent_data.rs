@@ -111,7 +111,7 @@ where
 		)
 		.await?;
 		let block_producer_id_provider =
-			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash)?;
+			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash, *slot)?;
 		let block_beneficiary_provider =
 			BlockBeneficiaryInherentProvider::<BeneficiaryId>::from_env(
 				"SIDECHAIN_BLOCK_BENEFICIARY",
@@ -234,7 +234,7 @@ where
 		.await?;
 
 		let block_producer_id_provider =
-			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash)?;
+			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash, verified_block_slot)?;
 
 		let payouts = BlockParticipationInherentDataProvider::new(
 			client.as_ref(),
