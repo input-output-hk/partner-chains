@@ -71,8 +71,11 @@ setup:
   RUN rustup show
   RUN cargo install --locked --version 0.1.68 cargo-chef && cp "$CARGO_HOME/bin/cargo-chef" /usr/local/bin
 
-  # Add Linux target
+  # Add Linux target for the regular toolchain
   RUN rustup target add x86_64-unknown-linux-gnu
+  
+  # Add wasm32 target for the specific toolchain
+  RUN rustup target add wasm32-unknown-unknown --toolchain 1.81.0-x86_64-unknown-linux-gnu
 
 source:
   FROM +setup
