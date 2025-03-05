@@ -6,6 +6,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* Governance update command now accepts multiple old_governance_authority key hashes, multiple key hashes in the new_governance_authority list, and new_governance_threshold - the minimal number of keys required to sign a transaction.
+
 ## Removed
 
 ## Fixed
