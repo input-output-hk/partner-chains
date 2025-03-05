@@ -40,10 +40,7 @@ use sp_api::impl_runtime_apis;
 use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::hexdisplay::HexDisplay;
-use sp_core::ByteArray;
-#[cfg(feature = "runtime-benchmarks")]
-use sp_core::Pair;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{crypto::KeyTypeId, ByteArray, OpaqueMetadata};
 use sp_inherents::InherentIdentifier;
 use sp_runtime::{
 	generic, impl_opaque_keys,
@@ -507,11 +504,17 @@ impl AsCardanoSPO for BlockAuthor {
 		}
 	}
 }
+
 #[cfg(feature = "runtime-benchmarks")]
-impl From<[u8; 32]> for BlockAuthor {
-	fn from(arr: [u8; 32]) -> Self {
-		let id = sp_core::ecdsa::Pair::from_seed(&arr).public().into();
-		Self::ProBono(id)
+pub struct PalletBlockProductionLogBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_block_production_log::benchmarking::BenchmarkHelper<BlockAuthor>
+	for PalletBlockProductionLogBenchmarkHelper
+{
+	fn producer_id() -> BlockAuthor {
+		let id = sp_core::ecdsa::Public::from_slice(&[0u8; 33]).unwrap().into();
+		BlockAuthor::ProBono(id)
 	}
 }
 
@@ -523,6 +526,9 @@ impl pallet_block_production_log::Config for Runtime {
 		let slot: u64 = pallet_aura::CurrentSlot::<Runtime>::get().into();
 		sp_consensus_slots::Slot::from(slot)
 	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = PalletBlockProductionLogBenchmarkHelper;
 }
 
 impl pallet_address_associations::Config for Runtime {
