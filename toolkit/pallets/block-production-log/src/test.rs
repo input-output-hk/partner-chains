@@ -28,7 +28,6 @@ fn first_append_should_succeed() {
 		Pallet::<Test>::on_finalize(System::block_number());
 
 		assert_eq!(Log::<Test>::get().to_vec(), vec![(Slot::from(1001000), make_id(1))]);
-		assert_eq!(Initialized::<Test>::get(), true);
 	})
 }
 
@@ -105,7 +104,7 @@ fn inherent_is_required_if_data_is_present() {
 #[test]
 fn inherent_is_required_if_data_is_not_present_but_pallet_is_initialized() {
 	new_test_ext().execute_with(|| {
-		Initialized::<Test>::put(true);
+		LatestBlock::<Test>::put(1u64);
 		let inherent_data = InherentData::new();
 		let result = Pallet::<Test>::is_inherent_required(&inherent_data);
 
