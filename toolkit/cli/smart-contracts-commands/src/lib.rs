@@ -10,14 +10,14 @@ pub mod governance;
 pub mod permissioned_candidates;
 pub mod register;
 pub mod reserve;
+pub mod assemble_tx;
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
 pub enum SmartContractsCmd {
 	/// Print validator addresses and policy IDs of Partner Chain smart contracts
 	GetScripts(get_scripts::GetScripts),
-	/// Upsert DParameter
-	UpsertDParameter(d_parameter::UpsertDParameterCmd),
+	DParameterCmd(d_parameter::UpsertDParameterCmd),
 	/// Upsert Permissioned Candidates
 	UpsertPermissionedCandidates(permissioned_candidates::UpsertPermissionedCandidatesCmd),
 	/// Register candidate
@@ -30,6 +30,7 @@ pub enum SmartContractsCmd {
 	/// Commands for management of on-chain governance
 	#[command(subcommand)]
 	Governance(governance::GovernanceCmd),
+	AssembleTx(assemble_tx::AssembleTxCmd),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -54,11 +55,12 @@ impl SmartContractsCmd {
 		match self {
 			Self::Governance(cmd) => cmd.execute().await,
 			Self::GetScripts(cmd) => cmd.execute().await,
-			Self::UpsertDParameter(cmd) => cmd.execute().await,
+			Self::DParameterCmd(cmd) => cmd.execute().await,
 			Self::UpsertPermissionedCandidates(cmd) => cmd.execute().await,
 			Self::Register(cmd) => cmd.execute().await,
 			Self::Deregister(cmd) => cmd.execute().await,
 			Self::Reserve(cmd) => cmd.execute().await,
+			Self::AssembleTx(cmd) => cmd.execute().await,
 		}
 	}
 

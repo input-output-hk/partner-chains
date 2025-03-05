@@ -131,7 +131,7 @@ fn test_update_governance_tx() -> Transaction {
 		test_values::VERSION_ORACLE_VALIDATOR,
 		test_values::VERSION_ORACLE_POLICY,
 		genesis_utxo().to_domain(),
-		new_governance_authority(),
+		vec![new_governance_authority()],
 		&governance_data(),
 		test_costs(),
 		&tx_context(),

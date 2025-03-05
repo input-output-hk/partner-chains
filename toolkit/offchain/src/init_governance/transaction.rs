@@ -9,14 +9,15 @@ use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 use sidechain_domain::MainchainKeyHash;
 
 pub(crate) fn init_governance_transaction(
-	governance_authority: MainchainKeyHash,
+	governance_authority: Vec<MainchainKeyHash>,
+	governance_threshold: u8,
 	genesis_utxo: OgmiosUtxo,
 	costs: Costs,
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
 	let multi_sig_policy =
 		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, Language::new_plutus_v2())?
-			.apply_uplc_data(multisig_governance_policy_configuration(governance_authority))?;
+			.apply_uplc_data(multisig_governance_policy_configuration(governance_authority, governance_threshold))?;
 	let version_oracle = version_oracle(genesis_utxo.to_domain(), ctx.network)?;
 	let config = crate::csl::get_builder_config(ctx)?;
 	let mut tx_builder = TransactionBuilder::new(&config);
