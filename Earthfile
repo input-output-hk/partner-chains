@@ -56,6 +56,10 @@ setup:
   CACHE /root/.cache/pip
   RUN pip3 install --break-system-packages tomlq toml
 
+  # Create cargo directory first
+  RUN mkdir -p ${CARGO_HOME}
+
+  # Install rustup with version pinned to 1.27.0
   RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --version 1.27.0
   ENV PATH="/root/.cargo/bin:${PATH}"
 
