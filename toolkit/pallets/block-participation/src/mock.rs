@@ -78,6 +78,18 @@ impl frame_system::Config for Test {
 type DelegatorId = u32;
 type BlockProducerId = u64;
 
+#[cfg(feature = "runtime-benchmarks")]
+pub struct PalletBlockProductionLogBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_block_production_log::benchmarking::BenchmarkHelper<u64>
+	for PalletBlockProductionLogBenchmarkHelper
+{
+	fn producer_id() -> u64 {
+		Default::default()
+	}
+}
+
 impl pallet_block_production_log::Config for Test {
 	type BlockProducerId = BlockProducerId;
 
@@ -86,6 +98,9 @@ impl pallet_block_production_log::Config for Test {
 	fn current_slot() -> Slot {
 		mock_pallet::CurrentSlot::<Test>::get()
 	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = PalletBlockProductionLogBenchmarkHelper;
 }
 
 const TEST_INHERENT_ID: InherentIdentifier = [42; 8];
