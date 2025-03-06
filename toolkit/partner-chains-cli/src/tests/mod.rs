@@ -10,7 +10,7 @@ use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData}
 use partner_chains_cardano_offchain::{cardano_keys::CardanoPaymentSigningKey, OffchainError};
 use pretty_assertions::assert_eq;
 use sidechain_domain::{
-	CandidateRegistration, DParameter, MainchainKeyHash, MainchainPublicKey, McTxHash, UtxoId,
+	CandidateRegistration, DParameter, MainchainKeyHash, MainchainPublicKey, McTxHash, UtxoId, McSmartContractResult,
 };
 use sp_core::offchain::Timestamp;
 use std::collections::HashMap;
@@ -237,8 +237,8 @@ pub struct OffchainMock {
 	pub upsert_d_param:
 		HashMap<(UtxoId, DParameter, PrivateKeyBytes), Result<Option<McTxHash>, String>>,
 	pub upsert_permissioned_candidates: HashMap<
-		(UtxoId, Vec<sidechain_domain::PermissionedCandidateData>, PrivateKeyBytes),
-		Result<Option<McTxHash>, String>,
+		(UtxoId, Vec<sidechain_domain::PermissionedCandidateData>, PrivateKeyBytes, Vec<MainchainKeyHash>),
+		Result<Option<McSmartContractResult>, String>,
 	>,
 	pub register: HashMap<
 		(UtxoId, CandidateRegistration, PrivateKeyBytes),
@@ -322,11 +322,12 @@ impl OffchainMock {
 		genesis_utxo: UtxoId,
 		candidates: &[sidechain_domain::PermissionedCandidateData],
 		payment_key: PrivateKeyBytes,
-		result: Result<Option<McTxHash>, String>,
+		governance: Vec<MainchainKeyHash>,
+		result: Result<Option<McSmartContractResult>, String>,
 	) -> Self {
 		Self {
 			upsert_permissioned_candidates: [(
-				(genesis_utxo, candidates.to_vec(), payment_key),
+				(genesis_utxo, candidates.to_vec(), payment_key, governance),
 				result,
 			)]
 			.into(),
@@ -423,12 +424,14 @@ impl UpsertPermissionedCandidates for OffchainMock {
 		genesis_utxo: UtxoId,
 		candidates: &[sidechain_domain::PermissionedCandidateData],
 		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<McTxHash>> {
+		governance_authority: Vec<MainchainKeyHash>,
+	) -> anyhow::Result<Option<McSmartContractResult>> {
+		let gov_auth = governance_authority.clone();
 		self.upsert_permissioned_candidates
-			.get(&(genesis_utxo, candidates.to_vec(), payment_signing_key.to_bytes()))
+			.get(&(genesis_utxo, candidates.to_vec(), payment_signing_key.to_bytes(), governance_authority))
 			.cloned()
 			.unwrap_or_else(|| {
-				Err(format!("No mock for upsert_permissioned_candidates({genesis_utxo:?}, {candidates:?}, {:?})\n defined mocks:{:?}", hex::encode(payment_signing_key.to_bytes()),self.upsert_permissioned_candidates))
+				Err(format!("No mock for upsert_permissioned_candidates({genesis_utxo:?}, {candidates:?}, {gov_auth:?}, {:?})\n defined mocks:{:?}", hex::encode(payment_signing_key.to_bytes()),self.upsert_permissioned_candidates))
 			})
 			.map_err(|err| anyhow!("{err}"))
 	}

@@ -11,7 +11,7 @@ use crate::{verify_json, CmdRun};
 use hex_literal::hex;
 use serde_json::json;
 use sidechain_domain::{
-	AuraPublicKey, DParameter, GrandpaPublicKey, McTxHash, SidechainPublicKey, UtxoId,
+	AuraPublicKey, DParameter, GrandpaPublicKey, McTxHash, SidechainPublicKey, UtxoId, MainchainKeyHash, McSmartContractResult,
 };
 use sp_core::offchain::Timestamp;
 
@@ -47,7 +47,8 @@ fn no_ariadne_parameters_on_main_chain_do_updates() {
 			genesis_utxo(),
 			&initial_permissioned_candidates(),
 			payment_signing_key(),
-			Ok(Some(McTxHash([2; 32]))),
+			vec![governance_key()],
+			Ok(Some(McSmartContractResult::TxHash(McTxHash([1; 32])))),
 		);
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
@@ -101,7 +102,8 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 			genesis_utxo(),
 			&initial_permissioned_candidates(),
 			payment_signing_key(),
-			Ok(Some(McTxHash([2; 32]))),
+			vec![governance_key()],
+			Ok(Some(McSmartContractResult::TxHash(McTxHash([1; 32])))),
 		);
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
@@ -130,6 +132,7 @@ fn fails_if_update_permissioned_candidates_fail() {
 		genesis_utxo(),
 		&initial_permissioned_candidates(),
 		payment_signing_key(),
+		vec![governance_key()],
 		Err("something went wrong".into()),
 	);
 	let mock_context = MockIOContext::new()
@@ -482,4 +485,8 @@ fn valid_payment_signing_key_content() -> serde_json::Value {
 
 fn payment_signing_key() -> Vec<u8> {
 	hex!("0000000000000000000000000000000000000000000000000000000000000001").to_vec()
+}
+
+fn governance_key() -> MainchainKeyHash {
+	MainchainKeyHash(hex!("c0c076fde689af49a07d93b2b48fbcb6865785d2a7bb1430fc3fe190"))
 }

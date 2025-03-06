@@ -3,6 +3,7 @@ use crate::PaymentFilePath;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 use partner_chains_cardano_offchain::permissioned_candidates::upsert_permissioned_candidates;
 use sidechain_domain::UtxoId;
+use sidechain_domain::MainchainKeyHash;
 use std::fs::read_to_string;
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -17,6 +18,8 @@ pub struct UpsertPermissionedCandidatesCmd {
 	payment_key_file: PaymentFilePath,
 	#[arg(long, short('c'))]
 	genesis_utxo: UtxoId,
+	#[arg(short, long, num_args = 1.., value_delimiter = ' ')]
+	governance_authority: Vec<MainchainKeyHash>,
 }
 
 impl UpsertPermissionedCandidatesCmd {
@@ -43,10 +46,17 @@ impl UpsertPermissionedCandidatesCmd {
 
 		let client = self.common_arguments.get_ogmios_client().await?;
 
+		let governance_authority = if self.governance_authority.len() == 0 {
+			vec![payment_key.to_pub_key_hash()]
+		} else {
+			self.governance_authority.clone()
+		};
+
 		upsert_permissioned_candidates(
 			self.genesis_utxo,
 			&permissioned_candidates,
 			&payment_key,
+			governance_authority,
 			&client,
 			&FixedDelayRetries::two_minutes(),
 		)

@@ -27,6 +27,7 @@ use sidechain_domain::{
 	AdaBasedStaking, AssetId, AssetName, AuraPublicKey, CandidateRegistration, DParameter,
 	GrandpaPublicKey, MainchainKeyHash, MainchainPublicKey, MainchainSignature, McTxHash,
 	PermissionedCandidateData, PolicyId, SidechainPublicKey, SidechainSignature, UtxoId, UtxoIndex,
+	McSmartContractResult::TxHash,
 };
 use std::time::Duration;
 use testcontainers::{clients::Cli, Container, GenericImage};
@@ -121,9 +122,9 @@ async fn upsert_permissioned_candidates() {
 	let container = client.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
-	assert!(run_upsert_permissioned_candidates(genesis_utxo, 77, &client).await.is_some());
-	assert!(run_upsert_permissioned_candidates(genesis_utxo, 77, &client).await.is_none());
-	assert!(run_upsert_permissioned_candidates(genesis_utxo, 231, &client).await.is_some())
+	assert!(run_upsert_permissioned_candidates(genesis_utxo, 77, vec![GOVERNANCE_AUTHORITY], &client).await.is_some());
+	assert!(run_upsert_permissioned_candidates(genesis_utxo, 77, vec![GOVERNANCE_AUTHORITY], &client).await.is_none());
+	assert!(run_upsert_permissioned_candidates(genesis_utxo, 231, vec![GOVERNANCE_AUTHORITY], &client).await.is_some())
 }
 
 #[tokio::test]
@@ -298,6 +299,7 @@ async fn run_upsert_permissioned_candidates<
 >(
 	genesis_utxo: UtxoId,
 	candidate: u8,
+	governance: Vec<MainchainKeyHash>,
 	client: &T,
 ) -> Option<McTxHash> {
 	let candidates = vec![PermissionedCandidateData {
@@ -309,18 +311,22 @@ async fn run_upsert_permissioned_candidates<
 		genesis_utxo,
 		&candidates,
 		&governance_authority_payment_key(),
+		governance,
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
 	.unwrap();
-	if let Some(tx_hash) = tx_hash {
+	if let Some(TxHash(tx_hash)) = tx_hash {
 		FixedDelayRetries::new(Duration::from_millis(500), 100)
 			.await_tx_output(client, UtxoId::new(tx_hash.0, 0))
 			.await
-			.unwrap()
-	};
-	tx_hash
+			.unwrap();
+
+		Some(tx_hash)
+	} else {
+		None
+	}
 }
 
 async fn run_init_reserve_management<

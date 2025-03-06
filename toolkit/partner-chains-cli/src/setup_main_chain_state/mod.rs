@@ -245,6 +245,8 @@ fn set_candidates_on_main_chain<C: IOContext>(
 				genesis_utxo,
 				&candidates.to_candidate_data(),
 				&pkey,
+				vec![pkey.to_pub_key_hash()],
+
 			))
 			.context("Permissioned candidates update failed")?;
 		context.print("Permissioned candidates updated. The change will be effective in two main chain epochs.");
