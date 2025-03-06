@@ -1,6 +1,6 @@
 import logging
 import random
-from typing import Tuple
+from typing import Generator, Tuple
 from config.api_config import ApiConfig, Node
 from pytest import fixture, skip
 from sqlalchemy import select, func, text
@@ -477,7 +477,7 @@ def committees_dict() -> dict:
 
 
 @fixture(scope="session")
-def get_pc_epoch_committee(api: BlockchainApi, committees_dict) -> dict:
+def get_pc_epoch_committee(api: BlockchainApi, committees_dict) -> Generator[dict, None, None]:
     """
     Fixture that stores the return of RPC endpoint partner_chain_getEpochCommittee in a dictionary
     """
@@ -496,26 +496,6 @@ def get_pc_epoch_committee(api: BlockchainApi, committees_dict) -> dict:
     yield _get_pc_epoch_committee
 
 
-@fixture(scope="session", autouse=True)
-def signatures_dict() -> dict:
-    return {}
-
-
-@fixture(scope="session")
-def get_pc_epoch_signatures(api: BlockchainApi, signatures_dict) -> dict:
-    """
-    Fixture that stores the return of RPC endpoint partner_chain_getEpochSignatures in a dictionary
-    """
-
-    def _get_pc_epoch_signatures(epoch, signatures_dict=signatures_dict, api=api):
-        if epoch not in signatures_dict.keys():
-            signatures = api.get_epoch_signatures(epoch).result["committeeHandover"]
-            signatures_dict[epoch] = signatures
-        return signatures_dict[epoch]
-
-    yield _get_pc_epoch_signatures
-
-
 @fixture(scope="session", autouse=False)
 def get_block_authorship_keys_dict(config: ApiConfig) -> dict:
     """
@@ -527,7 +507,7 @@ def get_block_authorship_keys_dict(config: ApiConfig) -> dict:
         block_authorship_keys[config.nodes_config.nodes[member].public_key] = config.nodes_config.nodes[
             member
         ].aura_public_key
-    yield block_authorship_keys
+    return block_authorship_keys
 
 
 @fixture(scope="session", autouse=True)
@@ -536,7 +516,9 @@ def blocks_dict() -> dict:
 
 
 @fixture(scope="session")
-def get_pc_epoch_blocks(api: BlockchainApi, config: ApiConfig, blocks_dict, current_pc_epoch) -> dict:
+def get_pc_epoch_blocks(
+    api: BlockchainApi, config: ApiConfig, blocks_dict, current_pc_epoch
+) -> Generator[dict, None, None]:
     """
     Fixture that stores the blocks of an epoch in a dictionary
     """

@@ -123,7 +123,8 @@ def test_block_headers_have_mc_hash(api: BlockchainApi, config: ApiConfig, pc_ep
         OFFSET = 1
 
         assert (
-            latest_stable_block_diff + OFFSET >= config.main_chain.security_param + config.main_chain.block_stability_margin
+            latest_stable_block_diff + OFFSET
+            >= config.main_chain.security_param + config.main_chain.block_stability_margin
         ), f"Unexpected stable block number saved in header of block {block_no}"
 
         if latest_stable_block_diff < config.main_chain.security_param + config.main_chain.block_stability_margin:
@@ -143,7 +144,9 @@ def test_block_production_log_pallet(
     for slot, block_producer_id in block_production_log:
         committee = api.get_validator_set(block).value
         author_index = slot % len(committee)
-        expected_node = next(x for x in config.nodes_config.nodes.values() if x.aura_public_key == committee[author_index][1]["aura"])
+        expected_node = next(
+            x for x in config.nodes_config.nodes.values() if x.aura_public_key == committee[author_index][1]["aura"]
+        )
         if "Incentivized" in block_producer_id:
             cross_chain_public, stake_pool_public_key = block_producer_id["Incentivized"]
             assert (

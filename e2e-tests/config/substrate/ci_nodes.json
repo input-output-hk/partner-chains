@@ -97,33 +97,6 @@
         "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000205"
       }
     },
-    "passive_transfer_account": {
-      "partner_chain_address": "5D4UdLBfePonjFvS1brdNA7sh2zpPvTh6PSEVihx6kPciPXD",
-      "partner_chain_key": "./secrets/substrate/staging/keys/transfer_account_passive/partner_chain.skey.json.decrypted",
-      "mainchain_address": "addr_test1vzl3ya6ffdxvezm0dvtdr45td986vsvkrx5pyx9fw3emdhsearcjj",
-      "mainchain_key": "./secrets/substrate/staging/keys/transfer_account_passive/mainchain.skey.json.decrypted"
-    },
-    "active_transfer_account": {
-      "partner_chain_address": "5HgahNbxK7syB2M2VB9iUJ6dcuHidCuP2jx2pJVidxRrKSng",
-      "partner_chain_key": "",
-      "mainchain_address": "addr_test1vzcghuzz3hk70eqsagr0ep9gqkgkrg7cf485heu0tgwdwwg4jfjg8",
-      "mainchain_address_bech32": "605f7fad2d0b682219db7b2e70a2a61fe18fa5c6ff5c66d484ef93d911",
-      "mainchain_key": "./secrets/substrate/staging/keys/transfer_account_active/mainchain.skey.json.decrypted"
-    },
-    "negative_test_transfer_account": {
-      "partner_chain_address": "5F1N52dZx48UpXNLtcCzSMHZEroqQDuYKfidg46Tp37SjPcE",
-      "partner_chain_key": "./secrets/substrate/staging/keys/transfer_account_negative/partner_chain.skey.json.decrypted",
-      "mainchain_address": "",
-      "mainchain_key": ""
-    },
-    "random_mc_account": {
-      "mainchain_address": "addr_test1vzgk8hw98hy3zege2655fllq5lqrjcjxqgx5ufyul6hnvrcgl5tpl",
-      "mainchain_key": "./secrets/substrate/staging/keys/random_mc_account/random.skey.json.decrypted"
-    },
-    "invalid_mc_skey": {
-      "mainchain_address": "addr_test1vzgk8hw98hy3zege2655fllq5lqrjcjxqgx5ufyul6hnvrcgl5tpl",
-      "mainchain_key": "./secrets/substrate/staging/keys/invalid_mc_skey/random.skey.json.decrypted"
-    },
     "governance_authority": {
       "mainchain_address": "addr_test1vq0sjaaupatuvl9x6aefdsd4whlqtfku93068qzkhf3u2rqt9cnuq",
       "mainchain_key": "./secrets/substrate/staging/keys/governance_authority/init.skey.json.decrypted"
@@ -134,16 +107,6 @@
     "block_duration": 6,
     "slots_in_epoch": 60,
     "token_policy_id": "",
-    "fees": {
-      "ECDSA": {
-        "lock": 113638153,
-        "send": 298945144
-      },
-      "SR25519": {
-        "lock": 817414141,
-        "send": 298945143
-      }
-    },
     "d_param_min": {
       "permissioned_candidates_number": 6,
       "trustless_candidates_number": 4

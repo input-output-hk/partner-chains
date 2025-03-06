@@ -119,7 +119,7 @@ runs:
         env: ${{ env.TEST_ENVIRONMENT }}
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
-        markers: "not active_flow and not passive_flow and not probability and not rpc"
+        markers: "not probability and not rpc"
         local-environment: "true"
     - name: Wait for epoch 3
       if: ${{ inputs.tests == 'postmerge' }}
@@ -136,6 +136,7 @@ runs:
         env: ${{ env.TEST_ENVIRONMENT }}
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
+        markers: "not probability"
         local-environment: "true"
     - name: Wait for epoch 4
       if: ${{ inputs.tests == 'postmerge' }}
@@ -153,7 +154,7 @@ runs:
         mc_epoch: 3
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
-        markers: "not active_flow and not passive_flow and not probability and not native_token"
+        markers: "not probability and not native_token"
         local-environment: "true"
     - name: Check if no skipped tests
       if: ${{ inputs.tests == 'postmerge' }}
