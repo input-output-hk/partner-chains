@@ -15,6 +15,22 @@
     flake-compat = import inputs.flake-compat;
     cardanoPackages = (flake-compat { src = inputs.cardano-node; }).defaultNix.packages.${system};
     dbSyncPackages = (flake-compat { src = inputs.cardano-dbsync; }).defaultNix.packages.${system};
+    fenixPkgs = inputs'.fenix.packages;
+    # rustToolchain = with fenixPkgs;
+    #   fromToolchainFile {
+    #       file = ../../../rust-toolchain.toml;
+    #       sha256 = "VZZnlyP69+Y3crrLHQyJirqlHrTtGTsyiSnZB8jEvVo=";
+    #     }
+    rustToolchain = fenixPkgs.combine [
+      fenixPkgs.latest.toolchain
+      fenixPkgs.latest.rust-src
+      fenixPkgs.targets.wasm32-unknown-unknown.latest.rust-std
+    ];
+    customRustPlatform = pkgs.makeRustPlatform {
+      cargo = rustToolchain;
+      rustc = rustToolchain;
+    };
+
   in {
     packages = {
       inherit (cardanoPackages) cardano-node cardano-cli cardano-testnet;
@@ -24,7 +40,70 @@
         patches = [ ./pc.patch ];
       });
       partnerchains-stack = pkgs.callPackage ./partnerchains-stack { inherit (self'.packages) partnerchains-stack-unwrapped; };
+      partner-chains = customRustPlatform.buildRustPackage rec {
+        pname = "partner-chains";
+        version = "1.5";
+        src = ../../../.;
+        # cargoDeps = customRustPlatform.importCargoLock {
+        #   lockFile = ../../../Cargo.lock;
+        #   #lockFileContents = builtins.readFile ../../../Cargo.lock ++ builtins.readFile "${rustToolchain}/lib/rustlib/src/rust/library/Cargo.lock";
+        #   outputHashes = {
+        #     "binary-merkle-tree-16.0.0" = "sha256-E7Mq/0EwqVSnJ6nX7TZppLjwje7vYuxjjCkt5kWQjfQ=";
+        #     "pallas-addresses-0.31.0" = "sha256-gecokNSH018NSFb8Cm+Gvql8wkip0t/IkdgY3ZRILbE=";
+        #     "raw-scripts-7.0.2" = "sha256-rUms2AZGOEjh1/zvfVoqv/B1XFUiglDf9UAMaqFIQZU=";
+        #   };
+        # };
+        useFetchCargoVendor = true;
+        cargoHash = "sha256-25ya0mZBt5njJgvbGDWhi+PbLFNj0bRjuo5+VhG19tM=";
+        #SKIP_WASM_BUILD = 1;
+        doCheck = false;
+        patches = [./rust-src-std.patch ];
+        nativeBuildInputs = [
+          pkgs.stdenv.cc
+          pkgs.protobuf
+          pkgs.clang
+          pkgs.llvmPackages.lld
+          customRustPlatform.bindgenHook
+          pkgs.rustc
+          pkgs.rustc.llvmPackages.lld
+        ];
+        buildInputs = [
+          pkgs.rocksdb
+          pkgs.openssl
+          pkgs.libclang.lib
+        ] ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.rust-jemalloc-sys-unprefixed ]
+        ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+          pkgs.Security
+          pkgs.SystemConfiguration
+        ];
+        postFixup = ''
+          patchelf --set-rpath ${pkgs.rocksdb}/lib $out/bin/partner-chains-node
+        '';
+        CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_LINKER = "${pkgs.llvmPackages.lld}/bin/lld";
+        RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
+        LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
+        LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+          rustToolchain
+          pkgs.stdenv.cc.cc
+          pkgs.libz
+          pkgs.clang
+        ];
+        # https://github.com/NixOS/nixpkgs/issues/370494#issuecomment-2625163369
+        CFLAGS =
+          if pkgs.lib.hasSuffix "linux" system then
+            "-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE"
+          else
+            "";
+        PROTOC = "${pkgs.protobuf}/bin/protoc";
+        ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
+        OPENSSL_NO_VENDOR = 1;
+        OPENSSL_DIR = "${pkgs.openssl.dev}";
+        OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
+        OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
+        BINDGEN_EXTRA_CLANG_ARGS = "-I${pkgs.stdenv.cc.cc}/include";
 
+
+      };
     };
   };
 }

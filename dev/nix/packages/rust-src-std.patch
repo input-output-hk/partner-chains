@@ -1,0 +1,400 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index b6ceab24..573fa700 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -30,12 +30,34 @@ dependencies = [
+  "gimli 0.29.0",
+ ]
+ 
++[[package]]
++name = "addr2line"
++version = "0.24.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "dfbe277e56a376000877090da837660b4427aad530e3028d44e0bffe4f89a1c1"
++dependencies = [
++ "cpp_demangle 0.4.4",
++ "fallible-iterator 0.3.0",
++ "gimli 0.31.1",
++ "memmap2 0.9.4",
++ "object 0.36.7",
++ "rustc-demangle",
++ "smallvec",
++ "typed-arena",
++]
++
+ [[package]]
+ name = "adler"
+ version = "1.0.2"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "f26201604c87b1e01bd3d98f8d5d9a8fcbb815e8cedb41ffccbeb4bf593a35fe"
+ 
++[[package]]
++name = "adler2"
++version = "2.0.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
++
+ [[package]]
+ name = "aead"
+ version = "0.5.2"
+@@ -95,9 +117,9 @@ dependencies = [
+ 
+ [[package]]
+ name = "allocator-api2"
+-version = "0.2.18"
++version = "0.2.21"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "5c6cb57a04249c6480766f7f7cef5467412af1490f8d1e243141daddada3264f"
++checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
+ 
+ [[package]]
+ name = "android-tzdata"
+@@ -613,8 +635,8 @@ dependencies = [
+  "cc",
+  "cfg-if",
+  "libc",
+- "miniz_oxide",
+- "object 0.36.1",
++ "miniz_oxide 0.7.4",
++ "object 0.36.7",
+  "rustc-demangle",
+ ]
+ 
+@@ -1346,6 +1368,12 @@ version = "1.0.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "2382f75942f4b3be3690fe4f86365e9c853c1587d6ee58212cebf6e2a9ccd101"
+ 
++[[package]]
++name = "compiler_builtins"
++version = "0.1.146"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "a97117b1434b79833f39a5fabdf82f890bd98c1988334dea1cb67f7e627fa311"
++
+ [[package]]
+ name = "concurrent-queue"
+ version = "2.5.0"
+@@ -1469,6 +1497,15 @@ dependencies = [
+  "cfg-if",
+ ]
+ 
++[[package]]
++name = "cpp_demangle"
++version = "0.4.4"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "96e58d342ad113c2b878f16d5d034c03be492ae460cdbc02b7f0f2284d310c7d"
++dependencies = [
++ "cfg-if",
++]
++
+ [[package]]
+ name = "cpufeatures"
+ version = "0.2.12"
+@@ -2112,6 +2149,17 @@ dependencies = [
+  "syn 2.0.87",
+ ]
+ 
++[[package]]
++name = "dlmalloc"
++version = "0.2.7"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "d9b5e0d321d61de16390ed273b647ce51605b575916d3c25e6ddf27a1e140035"
++dependencies = [
++ "cfg-if",
++ "libc",
++ "windows-sys 0.59.0",
++]
++
+ [[package]]
+ name = "doc-comment"
+ version = "0.3.3"
+@@ -2579,6 +2627,16 @@ version = "0.4.2"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "0ce7134b9999ecaf8bcd65542e436736ef32ddca1b3e06094cb6ec5755203b80"
+ 
++[[package]]
++name = "flate2"
++version = "1.0.35"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "c936bfdafb507ebbf50b8074c54fa31c5be9a1e7e5f467dd659697041407d07c"
++dependencies = [
++ "crc32fast",
++ "miniz_oxide 0.8.3",
++]
++
+ [[package]]
+ name = "float-cmp"
+ version = "0.9.0"
+@@ -2605,6 +2663,12 @@ version = "1.0.7"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
+ 
++[[package]]
++name = "foldhash"
++version = "0.1.4"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "a0d2fde1f7b3d48b8395d5f2de76c18a528bd6a9cdde438df747bfcba3e05d6f"
++
+ [[package]]
+ name = "fork-tree"
+ version = "13.0.1"
+@@ -2622,6 +2686,12 @@ dependencies = [
+  "percent-encoding",
+ ]
+ 
++[[package]]
++name = "fortanix-sgx-abi"
++version = "0.5.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "57cafc2274c10fab234f176b25903ce17e690fca7597090d50880e047a0389c5"
++
+ [[package]]
+ name = "forwarded-header-value"
+ version = "0.1.1"
+@@ -3071,6 +3141,15 @@ dependencies = [
+  "zeroize",
+ ]
+ 
++[[package]]
++name = "getopts"
++version = "0.2.21"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "14dbbfd5c71d70241ecf9e6f13737f7b5ce823821063188d7e46c41d371eebd5"
++dependencies = [
++ "unicode-width",
++]
++
+ [[package]]
+ name = "getrandom"
+ version = "0.2.15"
+@@ -3131,6 +3210,16 @@ version = "0.29.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "40ecd4077b5ae9fd2e9e169b102c6c330d0605168eb0e8bf79952b256dbefffd"
+ 
++[[package]]
++name = "gimli"
++version = "0.31.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "07e28edb80900c19c28f1072f2e8aeca7fa06b23cd4169cefe1af5aa3260783f"
++dependencies = [
++ "fallible-iterator 0.3.0",
++ "stable_deref_trait",
++]
++
+ [[package]]
+ name = "glob"
+ version = "0.3.1"
+@@ -3262,6 +3351,17 @@ dependencies = [
+  "allocator-api2",
+ ]
+ 
++[[package]]
++name = "hashbrown"
++version = "0.15.2"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "bf151400ff0baff5465007dd2f3e717f3fe502074ca563069ce3a6629d07b289"
++dependencies = [
++ "allocator-api2",
++ "equivalent",
++ "foldhash",
++]
++
+ [[package]]
+ name = "hashlink"
+ version = "0.8.4"
+@@ -5377,6 +5477,15 @@ dependencies = [
+  "adler",
+ ]
+ 
++[[package]]
++name = "miniz_oxide"
++version = "0.8.3"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "b8402cab7aefae129c6977bb0ff1b8fd9a04eb5b51efc50a70bea51cda0c7924"
++dependencies = [
++ "adler2",
++]
++
+ [[package]]
+ name = "mio"
+ version = "0.8.11"
+@@ -5949,11 +6058,13 @@ dependencies = [
+ 
+ [[package]]
+ name = "object"
+-version = "0.36.1"
++version = "0.36.7"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "081b846d1d56ddfc18fdf1a922e4f6e07a11768ea1b92dec44e42b72712ccfce"
++checksum = "62948e14d923ea95ea2c7c86c71013138b66525b86bdc08d2dcc262bdb497b87"
+ dependencies = [
++ "flate2",
+  "memchr",
++ "ruzstd",
+ ]
+ 
+ [[package]]
+@@ -7662,6 +7773,21 @@ dependencies = [
+  "proc-macro2",
+ ]
+ 
++[[package]]
++name = "r-efi"
++version = "4.5.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "e9e935efc5854715dfc0a4c9ef18dc69dee0ec3bf9cc3ab740db831c0fdd86a3"
++
++[[package]]
++name = "r-efi-alloc"
++version = "1.0.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "31d6f09fe2b6ad044bc3d2c34ce4979796581afd2f1ebc185837e02421e02fd7"
++dependencies = [
++ "r-efi",
++]
++
+ [[package]]
+ name = "radium"
+ version = "0.7.0"
+@@ -8315,6 +8441,15 @@ dependencies = [
+  "wait-timeout",
+ ]
+ 
++[[package]]
++name = "ruzstd"
++version = "0.7.3"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "fad02996bfc73da3e301efe90b1837be9ed8f4a462b6ed410aa35d00381de89f"
++dependencies = [
++ "twox-hash",
++]
++
+ [[package]]
+ name = "rw-stream-sink"
+ version = "0.4.0"
+@@ -10009,8 +10144,13 @@ dependencies = [
+ name = "sidechain-runtime"
+ version = "1.5.0"
+ dependencies = [
++ "addr2line 0.24.2",
++ "allocator-api2",
+  "authority-selection-inherents",
++ "compiler_builtins",
+  "derive-new",
++ "dlmalloc",
++ "fortanix-sgx-abi",
+  "frame-benchmarking",
+  "frame-executive",
+  "frame-support",
+@@ -10018,10 +10158,14 @@ dependencies = [
+  "frame-system-benchmarking",
+  "frame-system-rpc-runtime-api",
+  "frame-try-runtime",
++ "getopts",
++ "hashbrown 0.15.2",
+  "hex",
+  "hex-literal",
+  "log",
+  "minicbor 0.20.0",
++ "miniz_oxide 0.8.3",
++ "object 0.36.7",
+  "pallet-address-associations",
+  "pallet-aura",
+  "pallet-balances",
+@@ -10043,6 +10187,8 @@ dependencies = [
+  "parity-scale-codec",
+  "plutus",
+  "pretty_assertions",
++ "r-efi",
++ "r-efi-alloc",
+  "scale-info",
+  "serde",
+  "serde_json",
+@@ -10075,6 +10221,9 @@ dependencies = [
+  "sp-version",
+  "sp-weights",
+  "substrate-wasm-builder",
++ "unicode-width",
++ "unwinding",
++ "windows-sys 0.59.0",
+ ]
+ 
+ [[package]]
+@@ -12412,9 +12561,9 @@ checksum = "d4c87d22b6e3f4a18d4d40ef354e97c90fcb14dd91d7dc0aa9d8a1172ebf7202"
+ 
+ [[package]]
+ name = "unicode-width"
+-version = "0.1.13"
++version = "0.1.14"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "0336d538f7abc86d282a4189614dfaa90810dfc2c6f6427eaf88e16311dd225d"
++checksum = "7dd6e30e90baa6f72411720665d41d89b9a3d039dc45b8faea1ddd07f617f6af"
+ 
+ [[package]]
+ name = "unicode-xid"
+@@ -12487,6 +12636,16 @@ version = "0.9.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
+ 
++[[package]]
++name = "unwinding"
++version = "0.2.5"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "51f06a05848f650946acef3bf525fe96612226b61f74ae23ffa4e98bfbb8ab3c"
++dependencies = [
++ "gimli 0.31.1",
++ "libc",
++]
++
+ [[package]]
+ name = "uplc"
+ version = "1.1.6"
+@@ -12911,7 +13070,7 @@ dependencies = [
+  "anyhow",
+  "bincode",
+  "cfg-if",
+- "cpp_demangle",
++ "cpp_demangle 0.3.5",
+  "gimli 0.27.3",
+  "log",
+  "object 0.30.4",
+@@ -13130,6 +13289,15 @@ dependencies = [
+  "windows-targets 0.52.6",
+ ]
+ 
++[[package]]
++name = "windows-sys"
++version = "0.59.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "1e38bc4d79ed67fd075bcc251a1c39b32a1776bbe92e5bef1f0bf1f8c531853b"
++dependencies = [
++ "windows-targets 0.52.6",
++]
++
+ [[package]]
+ name = "windows-targets"
+ version = "0.42.2"
+diff --git a/node/runtime/Cargo.toml b/node/runtime/Cargo.toml
+index 5a783e9c..b8030f94 100644
+--- a/node/runtime/Cargo.toml
++++ b/node/runtime/Cargo.toml
+@@ -95,6 +95,20 @@ pretty_assertions = { workspace = true }
+ serde_json = { workspace = true }
+ 
+ [build-dependencies]
++compiler_builtins = "=0.1.146"
++hashbrown = "^0.15"
++object = "=0.36.7"
++dlmalloc = "=0.2.7"
++addr2line = "=0.24.2"
++miniz_oxide = "=0.8.3"
++r-efi = "4.0.0"
++r-efi-alloc = "1.0.0"
++fortanix-sgx-abi = "0.5.0"
++allocator-api2 = "=0.2.21"
++unwinding = "0.2.5"
++windows-sys = "=0.59.0"
++getopts = "=0.2.21"
++unicode-width = "=0.1.14"
+ substrate-wasm-builder = { workspace = true, optional = true }
+ 
+ [features]
