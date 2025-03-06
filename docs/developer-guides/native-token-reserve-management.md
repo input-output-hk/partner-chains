@@ -190,7 +190,7 @@ Command template:
 
 * `--token`: Reserve token asset id encoded in form `<policy_id_hex>.<asset_name_hex>`, this sets the reserve token asset id
 
-* `--initial-deposit-amount`: The initial amount of tokens to deposit into the reserve, at least this amout of tokens has to available in the payment wallet
+* `--initial-deposit-amount`: The initial amount of tokens to deposit into the reserve, at least this amount of tokens has to be available in the payment wallet
 
 * `--payment-key-file`: Your payment key file for transaction signing. This key has to have `initial-deposit-amount` in its wallet.
 
