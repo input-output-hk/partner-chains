@@ -228,7 +228,6 @@
 <a href="#228" id="228">228</a>
 <a href="#229" id="229">229</a>
 <a href="#230" id="230">230</a>
-<a href="#231" id="231">231</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::PaymentFilePath;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
@@ -239,7 +238,6 @@
 		init::init_reserve_management,
 		release::release_reserve_funds,
 		update_settings::update_reserve_settings,
-		TokenAmount,
 	},
 };
 <span class="kw">use </span>sidechain_domain::{AssetId, ScriptHash, UtxoId};
@@ -250,11 +248,14 @@
 </span><span class="kw">pub enum </span>ReserveCmd {
 	<span class="doccomment">/// Initialize the reserve management system for your chain
 	</span>Init(InitReserveCmd),
-	Create(CreateReserveCmd),
-	Deposit(DepositReserveCmd),
+	<span class="doccomment">/// Creates the reserve for your chain. `init` and `create` will be merged into a single command in a future release.
+	</span>Create(CreateReserveCmd),
+	<span class="doccomment">/// Deposits tokens from payment key wallet to the reserve
+	</span>Deposit(DepositReserveCmd),
 	<span class="doccomment">/// Update reserve management system settings for your chain
 	</span>UpdateSettings(UpdateReserveSettingsCmd),
-	Handover(HandoverReserveCmd),
+	<span class="doccomment">/// Releases all the remaining funds from the reserve to the illiquid supply
+	</span>Handover(HandoverReserveCmd),
 	<span class="doccomment">/// Releases funds from the reserve to the illiquid supply
 	</span>Release(ReleaseReserveCmd),
 }
@@ -344,12 +345,9 @@
 	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
 	<span class="attr">#[clap(flatten)]
 	</span>payment_key_file: PaymentFilePath,
-	<span class="doccomment">/// Genesis UTXO of the partner-chain.
+	<span class="doccomment">/// Genesis UTXO of the partner-chain, identifies the partner chain and its reserve.
 	</span><span class="attr">#[arg(long, short(<span class="string">'c'</span>))]
 	</span>genesis_utxo: UtxoId,
-	<span class="doccomment">/// Reserve token asset id encoded in form &lt;policy_id_hex&gt;.&lt;asset_name_hex&gt;.
-	</span><span class="attr">#[arg(long)]
-	</span>token: AssetId,
 	<span class="doccomment">/// Amount of tokens to deposit. They must be present in the payment wallet.
 	</span><span class="attr">#[arg(long)]
 	</span>amount: u64,
@@ -360,7 +358,7 @@
 		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
 		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let _ </span>= deposit_to_reserve(
-			TokenAmount { token: <span class="self">self</span>.token, amount: <span class="self">self</span>.amount },
+			<span class="self">self</span>.amount,
 			<span class="self">self</span>.genesis_utxo,
 			<span class="kw-2">&amp;</span>payment_key,
 			<span class="kw-2">&amp;</span>client,
