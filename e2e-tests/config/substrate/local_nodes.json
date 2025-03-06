@@ -8,7 +8,13 @@
     "active_slots_coeff": 0.4,
     "security_param": 5,
     "init_timestamp": 1730141520,
-    "block_stability_margin": 0
+    "block_stability_margin": 0,
+    "native_token": {
+      "total_accrued_function_script_hash": "ef1eb7b85327a8460799025a5affd0a8d8015731e9aacd5d1106a82b",
+      "total_accrued_function_address": "addr_test1vzuasm5nqzh7n909f7wang7apjprpg29l2f9sk6shlt84rqep6nyc",
+      "policy_id": "1fab25f376bc49a181d03a869ee8eaa3157a3a3d242a619ca7995b2b",
+      "asset_name": "52657761726420746f6b656e"
+    }
   },
   "nodes_config": {
     "nodes": {

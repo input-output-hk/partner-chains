@@ -13,7 +13,7 @@ import hashlib
 import logging as logger
 from .run_command import RunnerFactory
 from .cardano_cli import CardanoCli
-from .partner_chains_node import PartnerChainsNode
+from .partner_chains_node.node import PartnerChainsNode
 from .partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, PartnerChainRpcException, DParam
 import string
 import time
@@ -280,7 +280,7 @@ class SubstrateApi(BlockchainApi):
     def update_d_param(self, permissioned_candidates_count, registered_candidates_count):
         signing_key = self.config.nodes_config.governance_authority.mainchain_key
 
-        tx_id = self.partner_chains_node.update_d_param(
+        tx_id = self.partner_chains_node.smart_contracts.update_d_param(
             permissioned_candidates_count, registered_candidates_count, signing_key
         )
         effective_in_mc_epoch = self._effective_in_mc_epoch()
@@ -295,7 +295,7 @@ class SubstrateApi(BlockchainApi):
             return False, None
 
     def upsert_permissioned_candidates(self, new_candidates_list):
-        txId = self.partner_chains_node.upsert_permissioned_candidates(
+        txId = self.partner_chains_node.smart_contracts.upsert_permissioned_candidates(
             self.config.nodes_config.governance_authority.mainchain_key, new_candidates_list
         )
         effective_in_mc_epoch = self._effective_in_mc_epoch()
@@ -324,7 +324,7 @@ class SubstrateApi(BlockchainApi):
             self.config.nodes_config.nodes[candidate_name].grandpa_public_key,
         )
 
-        txId = self.partner_chains_node.register_candidate(
+        txId = self.partner_chains_node.smart_contracts.register(
             signatures,
             keys_files.cardano_payment_key,
             self.read_cardano_key_file(keys_files.spo_public_key),
@@ -343,7 +343,7 @@ class SubstrateApi(BlockchainApi):
 
     def deregister_candidate(self, candidate_name):
         keys_files = self.config.nodes_config.nodes[candidate_name].keys_files
-        txId = self.partner_chains_node.deregister_candidate(
+        txId = self.partner_chains_node.smart_contracts.deregister(
             keys_files.cardano_payment_key, self.read_cardano_key_file(keys_files.spo_public_key)
         )
         effective_in_mc_epoch = self._effective_in_mc_epoch()

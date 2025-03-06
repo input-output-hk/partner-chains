@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from src.partner_chain_rpc import PartnerChainRpcResponse, DParam
-from src.partner_chains_node import AddressAssociationSignature
+from src.partner_chains_node.node import PartnerChainsNode
+from src.partner_chains_node.models import AddressAssociationSignature
 from config.api_config import Node
 
 
@@ -26,6 +27,8 @@ class Wallet:
 
 
 class BlockchainApi(ABC):
+    partner_chains_node: PartnerChainsNode
+
     @abstractmethod
     def close(self):
         pass

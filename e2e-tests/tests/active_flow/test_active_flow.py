@@ -4,7 +4,7 @@ from config.api_config import ApiConfig
 from src.db.models import OutgoingTx
 from sqlalchemy.orm import Session
 from pytest import mark, raises
-from src.partner_chains_node import PartnerChainsNodeException
+from src.partner_chains_node.node import PartnerChainsNodeException
 
 
 @mark.skip_blockchain("pc_evm", reason="not implemented yet")

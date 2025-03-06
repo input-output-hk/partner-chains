@@ -35,24 +35,24 @@ class CardanoCli:
         return json.loads(result.stdout)
 
     def get_token_list_from_address(self, address):
-        logger.info('Getting list of tokens and ADA with amounts...')
+        logger.info("Getting list of tokens and ADA with amounts...")
         utxosJson = self.get_utxos(address)
         tokensDict = {}
         for utxo in utxosJson.keys():
-            for token_policy in utxosJson[utxo]['value'].keys():
-                if token_policy == 'lovelace':
-                    if 'ADA' in tokensDict.keys():
-                        tokensDict['ADA'] += utxosJson[utxo]['value'][token_policy]
+            for token_policy in utxosJson[utxo]["value"].keys():
+                if token_policy == "lovelace":
+                    if "ADA" in tokensDict.keys():
+                        tokensDict["ADA"] += utxosJson[utxo]["value"][token_policy]
                     else:
-                        tokensDict['ADA'] = utxosJson[utxo]['value'][token_policy]
+                        tokensDict["ADA"] = utxosJson[utxo]["value"][token_policy]
                 else:
-                    for token_name in utxosJson[utxo]['value'][token_policy].keys():
-                        if token_policy + '.' + token_name in tokensDict.keys():
-                            tokensDict[token_policy + '.' + token_name] += utxosJson[utxo]['value'][token_policy][
+                    for token_name in utxosJson[utxo]["value"][token_policy].keys():
+                        if token_policy + "." + token_name in tokensDict.keys():
+                            tokensDict[token_policy + "." + token_name] += utxosJson[utxo]["value"][token_policy][
                                 token_name
                             ]
                         else:
-                            tokensDict[token_policy + '.' + token_name] = utxosJson[utxo]['value'][token_policy][
+                            tokensDict[token_policy + "." + token_name] = utxosJson[utxo]["value"][token_policy][
                                 token_name
                             ]
         return tokensDict
@@ -72,7 +72,7 @@ class CardanoCli:
 
     def get_stake_snapshot_of_pool(self, pool_id):
         logger.info("Getting pool's stake distribution")
-        cmd = f'{self.cli} latest query stake-snapshot {self.network} --stake-pool-id {pool_id}'
+        cmd = f"{self.cli} latest query stake-snapshot {self.network} --stake-pool-id {pool_id}"
         result = self.run_command.run(cmd)
         if result.stderr:
             logger.error(result.stderr)
@@ -80,7 +80,10 @@ class CardanoCli:
 
     def generate_stake_keys(self):
         logger.info("Generating stake keys")
-        cmd = f"{self.cli} latest stake-address key-gen --verification-key-file /dev/stdout --signing-key-file /dev/stdout"
+        cmd = (
+            f"{self.cli} latest stake-address key-gen "
+            "--verification-key-file /dev/stdout --signing-key-file /dev/stdout"
+        )
         result = self.run_command.run(cmd)
         if result.stderr:
             logger.error(result.stderr)

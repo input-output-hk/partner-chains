@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import Sequence
 from pytest import mark
 import pytest
-from src.partner_chains_node import PartnerChainsNodeException
+from src.partner_chains_node.node import PartnerChainsNodeException
 
 
 def get_burn_tx_from_rpc(api: BlockchainApi, tx_hash):
