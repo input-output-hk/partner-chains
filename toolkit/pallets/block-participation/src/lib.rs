@@ -21,8 +21,11 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_block_production_log::Config {
+	pub trait Config: frame_system::Config {
 		type WeightInfo: crate::weights::WeightInfo;
+
+		/// Type identifying the producer of a block on the Partner Chain
+		type BlockAuthor: Member + Parameter + MaxEncodedLen;
 
 		/// Type identifying indirect block production participants on the Partner Chain
 		/// This can be native stakers on Partner Chain, stakers on the main chain or other.
@@ -30,6 +33,15 @@ pub mod pallet {
 
 		/// Should return slot up to which block production data should be released or None.
 		fn should_release_data(slot: Slot) -> Option<Slot>;
+
+		/// Returns block authors since last processing up to `slot`
+		fn blocks_produced_up_to_slot(
+			slot: Slot,
+		) -> impl Iterator<Item = (Slot, Self::BlockAuthor)>;
+
+		/// Discards block production data at the source up to slot
+		/// This should remove exactly the same data as returned by `blocks_produced_up_to_slot`
+		fn discard_blocks_produced_up_to_slot(slot: Slot);
 
 		/// Inherent ID for which block participation data should be provided.
 		/// It should be set to the ID used by the pallet that will process participation data for
@@ -92,7 +104,7 @@ pub mod pallet {
 		pub fn note_processing(origin: OriginFor<T>, up_to_slot: Slot) -> DispatchResult {
 			ensure_none(origin)?;
 			log::info!("🧾 Processing block participation data up to slot {}.", *up_to_slot);
-			pallet_block_production_log::Pallet::<T>::drop_prefix(&up_to_slot);
+			T::discard_blocks_produced_up_to_slot(up_to_slot);
 			Ok(())
 		}
 	}
@@ -101,13 +113,6 @@ pub mod pallet {
 		/// Should return slot up to which block production data should be released or None.
 		pub fn should_release_data(slot: Slot) -> Option<Slot> {
 			<T as Config>::should_release_data(slot)
-		}
-
-		pub fn blocks_produced_up_to_slot(
-			slot: Slot,
-		) -> impl Iterator<Item = (Slot, <T as pallet_block_production_log::Config>::BlockProducerId)>
-		{
-			pallet_block_production_log::Pallet::<T>::peek_prefix(slot)
 		}
 	}
 }

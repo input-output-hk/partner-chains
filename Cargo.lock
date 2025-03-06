@@ -6261,7 +6261,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "pallet-block-production-log",
  "parity-scale-codec",
  "pretty_assertions",
  "scale-info",

@@ -32,7 +32,8 @@ std = [
 	'sp-blockchain',
     'sp-core/std',
     'sp-consensus-slots/std',
-    'envy'
+    'envy',
+    'serde'
 ]
 serde = [
     "dep:serde",

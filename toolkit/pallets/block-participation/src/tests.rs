@@ -5,18 +5,19 @@ use frame_system::Origin;
 use pretty_assertions::assert_eq;
 use sp_block_participation::BlockProductionData;
 use sp_block_participation::{Slot, INHERENT_IDENTIFIER};
+use sp_runtime::BoundedVec;
 
 #[test]
 fn inherent_clears_production_log_prefix() {
 	new_test_ext().execute_with(|| {
 		let initial_log = (1..=20).map(|i| (Slot::from(i), i + 100)).collect();
 		let expected_log: Vec<_> = (11..=20).map(|i| (Slot::from(i), i + 100)).collect();
-		pallet_block_production_log::Log::<Test>::set(initial_log);
+		mock_pallet::BlockProductionLog::<Test>::put(BoundedVec::truncate_from(initial_log));
 
 		Payouts::note_processing(Origin::<Test>::None.into(), Slot::from(10))
 			.expect("Should succeed");
 
-		let log = pallet_block_production_log::Log::<Test>::get();
+		let log = mock_pallet::BlockProductionLog::<Test>::get().unwrap().to_vec();
 		assert_eq!(log, expected_log);
 	})
 }
@@ -78,17 +79,4 @@ fn inherent_is_required_when_data_is_present() {
 fn inherent_is_not_required_when_data_is_not_present() {
 	let inherent_data = InherentData::new();
 	assert_ok!(Payouts::is_inherent_required(&inherent_data), None)
-}
-
-#[test]
-fn peek_prefix_returns_prefix_from_productions_log() {
-	new_test_ext().execute_with(|| {
-		let log = (1..=20).map(|i| (Slot::from(i), i + 100)).collect();
-		let expected_prefix: Vec<_> = (1..=10).map(|i| (Slot::from(i), i + 100)).collect();
-		pallet_block_production_log::Log::<Test>::set(log);
-
-		let prefix: Vec<_> = Payouts::blocks_produced_up_to_slot(Slot::from(10)).collect();
-
-		assert_eq!(prefix, expected_prefix);
-	})
 }

@@ -12,7 +12,6 @@ parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 sp-std = { workspace = true }
 sp-block-participation = { workspace = true }
-pallet-block-production-log = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 
 [dev-dependencies]
@@ -31,6 +30,5 @@ std = [
     "scale-info/std",
     "sp-std/std",
     "sp-block-participation/std",
-    "pallet-block-production-log/std"
 ]
 runtime-benchmarks = ["frame-benchmarking"]

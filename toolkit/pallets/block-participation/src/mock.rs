@@ -15,7 +15,7 @@ pub type Block = frame_system::mocking::MockBlock<Test>;
 pub type AccountId = AccountId32;
 
 #[frame_support::pallet]
-mod mock_pallet {
+pub mod mock_pallet {
 	use super::*;
 
 	#[pallet::pallet]
@@ -29,12 +29,15 @@ mod mock_pallet {
 
 	#[pallet::storage]
 	pub type SlotToPay<T: Config> = StorageMap<_, Twox64Concat, Slot, Slot, OptionQuery>;
+
+	#[pallet::storage]
+	pub type BlockProductionLog<T: Config> =
+		StorageValue<_, BoundedVec<(Slot, BlockProducerId), ConstU32<100>>>;
 }
 
 construct_runtime! {
 	pub enum Test {
 		System: frame_system,
-		ProductionLog: pallet_block_production_log,
 		Payouts: crate::pallet,
 		Mock: crate::mock::mock_pallet
 	}
@@ -78,43 +81,37 @@ impl frame_system::Config for Test {
 type DelegatorId = u32;
 type BlockProducerId = u64;
 
-#[cfg(feature = "runtime-benchmarks")]
-pub struct PalletBlockProductionLogBenchmarkHelper;
-
-#[cfg(feature = "runtime-benchmarks")]
-impl pallet_block_production_log::benchmarking::BenchmarkHelper<u64>
-	for PalletBlockProductionLogBenchmarkHelper
-{
-	fn producer_id() -> u64 {
-		Default::default()
-	}
-}
-
-impl pallet_block_production_log::Config for Test {
-	type BlockProducerId = BlockProducerId;
-
-	type WeightInfo = ();
-
-	fn current_slot() -> Slot {
-		mock_pallet::CurrentSlot::<Test>::get()
-	}
-
-	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = PalletBlockProductionLogBenchmarkHelper;
-}
-
 const TEST_INHERENT_ID: InherentIdentifier = [42; 8];
 
 impl crate::pallet::Config for Test {
 	type WeightInfo = ();
 
 	type DelegatorId = DelegatorId;
+	type BlockAuthor = BlockProducerId;
 
 	fn should_release_data(slot: Slot) -> Option<Slot> {
 		mock_pallet::SlotToPay::<Test>::get(slot)
 	}
 
 	const TARGET_INHERENT_ID: InherentIdentifier = TEST_INHERENT_ID;
+
+	fn discard_blocks_produced_up_to_slot(up_to_slot: Slot) {
+		let log = mock_pallet::BlockProductionLog::<Test>::get();
+		if let Some(log) = log {
+			let log = log.iter().filter(|(slot, _)| *slot > up_to_slot).cloned().collect();
+			mock_pallet::BlockProductionLog::<Test>::put(BoundedVec::truncate_from(log));
+		}
+	}
+
+	fn blocks_produced_up_to_slot(
+		up_to_slot: Slot,
+	) -> impl Iterator<Item = (Slot, Self::BlockAuthor)> {
+		mock_pallet::BlockProductionLog::<Test>::get()
+			.unwrap()
+			.clone()
+			.into_iter()
+			.filter(move |(slot, _)| *slot < up_to_slot)
+	}
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
