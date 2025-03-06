@@ -195,7 +195,7 @@ jobs:
           blockchain: substrate
           env: staging
           decrypt: true
-          markers: "not active_flow and not passive_flow and (CD or rpc)"
+          markers: "CD or rpc"
           threads: 1
 
   run-all-tests:

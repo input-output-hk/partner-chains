@@ -12,7 +12,7 @@ inputs:
   markers:
     description: 'Run tests by markers (-m)'
     required: false
-    default: 'not active_flow and not passive_flow and not probability'
+    default: 'not probability'
   mc_epoch:
     description: 'MC epoch to test (committee tests)'
     required: false
