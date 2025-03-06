@@ -435,22 +435,6 @@ impl sp_sidechain::OnNewEpoch for LogBeneficiaries {
 	fn on_new_epoch(old_epoch: ScEpochNumber, _new_epoch: ScEpochNumber) -> sp_weights::Weight {
 		let rewards = BlockRewards::get_rewards_and_clear();
 		log::info!("Rewards accrued in epoch {old_epoch}: {rewards:?}");
-		let slot = pallet_aura::CurrentSlot::<Runtime>::get();
-		let block_production_log = BlockProductionLog::take_prefix(&slot);
-		if let Some((s, b)) = block_production_log.first() {
-			log::info!(
-				"Block production log head: {} -> {:?}",
-				**s,
-				HexDisplay::from(&b.id().as_slice())
-			)
-		};
-		if let Some((s, b)) = block_production_log.last() {
-			log::info!(
-				"Block production log tail: {} -> {:?}",
-				**s,
-				HexDisplay::from(&b.id().as_slice())
-			)
-		};
 		RuntimeDbWeight::get().reads_writes(1, 1)
 	}
 }
