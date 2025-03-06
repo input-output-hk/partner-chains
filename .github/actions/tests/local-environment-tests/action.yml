@@ -157,7 +157,7 @@ runs:
     - name: Check if no skipped tests
       if: ${{ inputs.tests == 'postmerge' }}
       run: |
-        skipped=$(jq -r .summary.skipped e2e-tests/.report.json)
+        skipped=$(jq -r .summary.skipped e2e-tests/logs/.report.json)
         if [ "$skipped" != "null" ]; then
           echo "Skipped tests found: $skipped. Check test logs for more information."
           exit 1

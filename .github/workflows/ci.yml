@@ -121,10 +121,13 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Create logs directory
+        run: mkdir -p e2e-tests/logs
       - name: Download test report
         uses: actions/download-artifact@v4
         with:
           name: test-results
+          path: e2e-tests/logs
       - name: Report to slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -135,7 +138,6 @@ jobs:
           github_actor_username: ${{ github.actor }}
           env: local-pre-merge
         run: |
-          mv .report.json e2e-tests/.report.json
           cd e2e-tests
           ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
         shell: bash
@@ -420,10 +422,13 @@ jobs:
         with:
           fetch-depth: 0
           ref: master
+      - name: Create logs directory
+        run: mkdir -p e2e-tests/logs
       - name: Download test report
         uses: actions/download-artifact@v4
         with:
           name: test-results
+          path: e2e-tests/logs
       - name: Report to slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -434,7 +439,6 @@ jobs:
           github_actor_username: ${{ github.actor }}
           env: local-post-merge
         run: |
-          mv .report.json e2e-tests/.report.json
           cd e2e-tests
           ./report_slack.sh $repository $slack_ref_name $job_url $env $github_actor_username null
         shell: bash

@@ -2,7 +2,7 @@
 
 slack_webhook_url=$SLACK_WEBHOOK_URL
 jira_url=$JIRA_URL
-report=".report.json"
+report="logs/.report.json"
 repository=$1
 ref_name=$2
 job_url=$3

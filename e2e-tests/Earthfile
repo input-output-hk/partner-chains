@@ -30,7 +30,7 @@ ARG decrypt=false
 IF $decrypt
   ARG decrypt_switch="--decrypt"
 END
-ARG --global pytest_cmd=pytest --blockchain $blockchain --env $env --stack $stack --log-cli-level $log_level -k $keyword $latest_mc_epoch_switch $markers_switch $node_host_switch $node_port_switch $decrypt_switch --json-report --json-report-summary --junitxml=junit_report.xml --ctrf ctrf-report.json
+ARG --global pytest_cmd=pytest --blockchain $blockchain --env $env --stack $stack --log-cli-level $log_level -k $keyword $latest_mc_epoch_switch $markers_switch $node_host_switch $node_port_switch $decrypt_switch --json-report --json-report-file=logs/.report.json --json-report-summary --junitxml=logs/junit_report.xml --ctrf logs/ctrf-report.json
 
 build:
   ARG USERARCH
@@ -52,23 +52,17 @@ test:
 
 test-artifacts:
   FROM +test
-  SAVE ARTIFACT .report.json
-  SAVE ARTIFACT debug.log
-  SAVE ARTIFACT junit_report.xml
-  SAVE ARTIFACT ctrf-report.json
+  SAVE ARTIFACT logs
 
 report:
   FROM alpine:3.19
-  COPY +test-artifacts/.report.json .
-  COPY +test-artifacts/debug.log .
-  COPY +test-artifacts/ctrf-report.json .
-  SAVE ARTIFACT debug.log AS LOCAL debug.log
-  SAVE ARTIFACT ctrf-report.json AS LOCAL ctrf-report.json
+  COPY +test-artifacts/logs logs
+  SAVE ARTIFACT logs AS LOCAL logs
   COPY ./report_slack.sh ./report_xray.sh .
   RUN apk add --no-cache curl jq bash
-  RUN cat .report.json | jq
-  ARG exitcode=$(cat .report.json | jq '.exitcode')
-  ARG summary=$(cat .report.json | jq '.summary')
+  RUN cat logs/.report.json | jq
+  ARG exitcode=$(cat logs/.report.json | jq '.exitcode')
+  ARG summary=$(cat logs/.report.json | jq '.summary')
   ARG job_url
   ARG repository=unknown
   ARG plan
@@ -78,8 +72,7 @@ report:
   ELSE
     ARG xray_switch="-e ${execution}"
   END
-  COPY +test-artifacts/junit_report.xml .
-  ARG xray_report_name=junit_report.xml
+  ARG xray_report_name=logs/junit_report.xml
   ARG report_to_xray=false
   IF $report_to_xray
     RUN --secret XRAY_API_BASE_URL --secret XRAY_CLIENT_ID --secret XRAY_CLIENT_SECRET ./report_xray.sh -r $xray_report_name $xray_switch

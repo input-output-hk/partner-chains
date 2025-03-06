@@ -131,14 +131,15 @@ jobs:
           --decrypt=true \
           --markers="$MARKERS"
 
-    - name: Archive Debug Log
+    - name: Archive Test Logs
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: debug_log
+        name: test-logs
         retention-days: 15
         overwrite: true
-        path: e2e-tests/debug.log
+        include-hidden-files: true
+        path: e2e-tests/logs
 
     - name: Setup Node
       uses: actions/setup-node@v4
@@ -156,4 +157,4 @@ jobs:
       if: ${{ !cancelled() }}
       run: |
         cd e2e-tests
-        npx github-actions-ctrf ctrf-report.json
+        npx github-actions-ctrf logs/ctrf-report.json
