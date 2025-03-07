@@ -10,6 +10,7 @@ pub mod governance;
 pub mod permissioned_candidates;
 pub mod register;
 pub mod reserve;
+pub mod assemble_tx;
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -30,6 +31,7 @@ pub enum SmartContractsCmd {
 	/// Commands for management of on-chain governance
 	#[command(subcommand)]
 	Governance(governance::GovernanceCmd),
+	AssembleTx(assemble_tx::AssembleTxCmd),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -59,6 +61,7 @@ impl SmartContractsCmd {
 			Self::Register(cmd) => cmd.execute().await,
 			Self::Deregister(cmd) => cmd.execute().await,
 			Self::Reserve(cmd) => cmd.execute().await,
+			Self::AssembleTx(cmd) => cmd.execute().await,
 		}
 	}
 
