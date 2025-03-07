@@ -30,7 +30,6 @@ def test_delegator_can_associate_pc_address(api: BlockchainApi, new_wallet: Wall
 
 
 @mark.skip_on_new_chain
-@mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
 @mark.test_key('ETCM-7019')
 @mark.block_reward
 def test_block_beneficiaries_match_committee_seats(
@@ -90,7 +89,6 @@ def test_block_beneficiaries_match_committee_seats(
         ) in (0, 1), f"Block rewards for {seat} does not match committee seat expected distribution"
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
 @mark.skip_on_new_chain
 @mark.test_key('ETCM-7020')
 @mark.committee_rotation
@@ -152,7 +150,6 @@ def test_block_authors_match_committee_seats(
     assert expected_authors.sort() == block_authors.sort(), f"Unexpected block authors for SC epoch {pc_epoch}"
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
 @mark.test_key('ETCM-7481')
 @mark.mc_state_reference_block
 def test_block_headers_have_mc_hash(api: BlockchainApi, config: ApiConfig, pc_epoch, get_pc_epoch_blocks):

@@ -455,20 +455,6 @@ def new_wallet(api: BlockchainApi) -> Wallet:
 def get_wallet(api: BlockchainApi) -> Wallet:
     yield api.get_wallet()
 
-
-@fixture(autouse=True)
-def skip_by_blockchain(request, blockchain):
-    skip_marker = request.node.get_closest_marker("skip_blockchain")
-    if not skip_marker:
-        return
-
-    if skip_marker.args[0] == blockchain:
-        reason = f"skipped on {blockchain} blockchain"
-        if skip_marker.kwargs and skip_marker.kwargs["reason"]:
-            reason = skip_marker.kwargs["reason"]
-        skip(reason)
-
-
 @fixture(scope="session")
 def full_mc_epoch_has_passed_since_deployment(config: ApiConfig, current_mc_epoch):
     logging.info("Checking if full MC epoch has elapsed since deployment")

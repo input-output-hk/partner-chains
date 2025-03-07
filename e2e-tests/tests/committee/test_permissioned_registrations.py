@@ -7,7 +7,6 @@ from pytest import mark
 from typing import Tuple
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.ariadne
 @mark.test_key('ETCM-7015')
 @mark.registration
