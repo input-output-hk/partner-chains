@@ -1,5 +1,7 @@
 use crate::config::config_fields::{CARDANO_PAYMENT_SIGNING_KEY_FILE, POSTGRES_CONNECTION_STRING};
-use crate::config::{config_fields, ChainConfig, ConfigFieldDefinition, CHAIN_CONFIG_FILE_PATH};
+use crate::config::{
+	config_fields, ChainConfig, ConfigFieldDefinition, ServiceConfig, CHAIN_CONFIG_FILE_PATH,
+};
 use crate::io::IOContext;
 use crate::ogmios::config::prompt_ogmios_configuration;
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
@@ -90,9 +92,13 @@ impl CmdRun for SetupMainChainStateCmd {
 		);
 		let config_initial_authorities =
 			initial_permissioned_candidates_from_chain_config(context)?;
+
 		if let Some(ariadne_parameters) = get_ariadne_parameters(context, &chain_config)? {
-			if ariadne_parameters.permissioned_candidates == config_initial_authorities {
+			let ogmios_config: Option<ServiceConfig> = if ariadne_parameters.permissioned_candidates
+				== config_initial_authorities
+			{
 				context.print(&format!("Permissioned candidates in the {} file match the most recent on-chain initial permissioned candidates.", CHAIN_CONFIG_FILE_PATH));
+				None
 			} else {
 				print_on_chain_and_config_permissioned_candidates(
 					context,
@@ -103,8 +109,8 @@ impl CmdRun for SetupMainChainStateCmd {
 					context,
 					config_initial_authorities,
 					chain_config.chain_parameters.genesis_utxo,
-				)?;
-			}
+				)?
+			};
 			context.print(&format!(
 				"D-Parameter on the main chain is: (P={}, R={})",
 				ariadne_parameters.d_parameter.num_permissioned_candidates,
@@ -112,11 +118,12 @@ impl CmdRun for SetupMainChainStateCmd {
 			));
 			set_d_parameter_on_main_chain(
 				context,
+				ogmios_config,
 				ariadne_parameters.d_parameter,
 				chain_config.chain_parameters.genesis_utxo,
 			)?;
 		} else {
-			set_candidates_on_main_chain(
+			let ogmios_config: Option<ServiceConfig> = set_candidates_on_main_chain(
 				context,
 				config_initial_authorities,
 				chain_config.chain_parameters.genesis_utxo,
@@ -125,6 +132,7 @@ impl CmdRun for SetupMainChainStateCmd {
 				DParameter { num_permissioned_candidates: 0, num_registered_candidates: 0 };
 			set_d_parameter_on_main_chain(
 				context,
+				ogmios_config,
 				default_d_parameter,
 				chain_config.chain_parameters.genesis_utxo,
 			)?;
@@ -230,7 +238,7 @@ fn set_candidates_on_main_chain<C: IOContext>(
 	context: &C,
 	candidates: SortedPermissionedCandidates,
 	genesis_utxo: UtxoId,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Option<ServiceConfig>> {
 	let update = context.prompt_yes_no("Do you want to set/update the permissioned candidates on the main chain with values from configuration file?", false);
 	if update {
 		let ogmios_config = prompt_ogmios_configuration(context)?;
@@ -248,19 +256,25 @@ fn set_candidates_on_main_chain<C: IOContext>(
 			))
 			.context("Permissioned candidates update failed")?;
 		context.print("Permissioned candidates updated. The change will be effective in two main chain epochs.");
+		Ok(Some(ogmios_config))
+	} else {
+		Ok(None)
 	}
-	Ok(())
 }
 
 fn set_d_parameter_on_main_chain<C: IOContext>(
 	context: &C,
+	ogmios_config: Option<ServiceConfig>,
 	default_d_parameter: DParameter,
 	genesis_utxo: UtxoId,
 ) -> anyhow::Result<()> {
 	let update = context
 		.prompt_yes_no("Do you want to set/update the D-parameter on the main chain?", false);
 	if update {
-		let ogmios_config = prompt_ogmios_configuration(context)?;
+		let ogmios_config = match ogmios_config {
+			Some(config) => config,
+			None => prompt_ogmios_configuration(context)?,
+		};
 		let p = context.prompt(
 			"Enter P, the number of permissioned candidates seats, as a non-negative integer.",
 			Some(&default_d_parameter.num_permissioned_candidates.to_string()),
