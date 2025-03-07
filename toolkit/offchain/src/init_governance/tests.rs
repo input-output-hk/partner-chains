@@ -138,7 +138,7 @@ fn expected_transaction() -> serde_json::Value {
 fn transaction_creation() {
 	let transaction: serde_json::Value = serde_json::from_str(
 		&init_governance_transaction(
-			governance_authority(),
+			vec![governance_authority()],
 			genesis_utxo(),
 			test_costs(),
 			&tx_context(),
@@ -168,7 +168,7 @@ async fn transaction_run() {
 
 	let genesis_utxo = genesis_utxo().to_domain();
 	let (result_genesis_utxo, result_tx) = run_init_governance(
-		governance_authority(),
+		vec![governance_authority()],
 		&payment_key_domain(),
 		Some(genesis_utxo),
 		&mock_client,
