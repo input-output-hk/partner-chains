@@ -583,7 +583,7 @@
 
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
 
-	<span class="kw">let </span>reserve_balance = previous_reserve.utxo.get_asset_amount(<span class="kw-2">&amp;</span>token);
+	<span class="kw">let </span>reserve_balance = previous_reserve.utxo.get_asset_amount(token);
 	<span class="kw">let </span>token_total_amount_transferred = stats.token_total_amount_transferred;
 	<span class="kw">let </span>cumulative_total_transfer: u64 = token_total_amount_transferred
 		.checked_add(amount_to_transfer)
@@ -639,12 +639,12 @@
 		TransactionOutputBuilder::new()
 			.with_address(<span class="kw-2">&amp;</span>reserve_data.scripts.validator.address(ctx.network))
 			.with_plutus_data(<span class="kw-2">&amp;</span>PlutusData::from(
-				previous_reserve.datum.clone().after_withdrawal(amount_to_transfer.into()),
+				previous_reserve.datum.clone().after_withdrawal(amount_to_transfer),
 			))
 			.next()<span class="question-mark">?
 			</span>.with_minimum_ada_and_asset(
 				<span class="kw-2">&amp;</span>MultiAsset::from_ogmios_utxo(<span class="kw-2">&amp;</span>previous_reserve.utxo)<span class="question-mark">?
-					</span>.with_asset_amount(<span class="kw-2">&amp;</span>token, left_in_reserve)<span class="question-mark">?</span>,
+					</span>.with_asset_amount(token, left_in_reserve)<span class="question-mark">?</span>,
 				ctx,
 			)<span class="question-mark">?
 			</span>.build()<span class="question-mark">?

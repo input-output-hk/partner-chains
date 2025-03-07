@@ -146,8 +146,6 @@
 <a href="#146" id="146">146</a>
 <a href="#147" id="147">147</a>
 <a href="#148" id="148">148</a>
-<a href="#149" id="149">149</a>
-<a href="#150" id="150">150</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Specification for deposit transaction:
 //!
@@ -237,9 +235,7 @@
 		.and_then(|assets| assets.iter().find(|asset| asset.name == asset_name.<span class="number">0</span>.to_vec()))
 		.map(|asset| asset.amount)
 		.unwrap_or(<span class="number">0</span>) <span class="comment">// Token can be not found if the reserve was created with the initial deposit of 0 tokens
-		</span>.try_into()
-		.expect(<span class="string">"Token amount in an UTXO always fits u64"</span>)
-}
+</span>}
 
 <span class="kw">fn </span>deposit_to_reserve_tx(
 	parameters: <span class="kw-2">&amp;</span>TokenAmount,

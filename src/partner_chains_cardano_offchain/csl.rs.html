@@ -1094,6 +1094,11 @@
 <a href="#1094" id="1094">1094</a>
 <a href="#1095" id="1095">1095</a>
 <a href="#1096" id="1096">1096</a>
+<a href="#1097" id="1097">1097</a>
+<a href="#1098" id="1098">1098</a>
+<a href="#1099" id="1099">1099</a>
+<a href="#1100" id="1100">1100</a>
+<a href="#1101" id="1101">1101</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>anyhow::Context;
@@ -1213,19 +1218,13 @@
 			<span class="kw">for </span>(policy_id, assets) <span class="kw">in </span><span class="self">self</span>.native_tokens.iter() {
 				<span class="kw">let </span><span class="kw-2">mut </span>csl_assets = Assets::new();
 				<span class="kw">for </span>asset <span class="kw">in </span>assets.iter() {
-					<span class="kw">let </span>amount: u64 = asset.amount.try_into().map_err(|<span class="kw">_</span>| {
-						JsError::from_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-							<span class="string">"Could not convert Ogmios UTOX value, asset amount {} too large"</span>,
-							asset.amount,
-						))
-					})<span class="question-mark">?</span>;
 					<span class="kw">let </span>asset_name = AssetName::new(asset.name.clone()).map_err(|e| {
 						JsError::from_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
 							<span class="string">"Could not convert Ogmios UTXO value, asset name is invalid: '{}'"</span>,
 							e
 						))
 					})<span class="question-mark">?</span>;
-					csl_assets.insert(<span class="kw-2">&amp;</span>asset_name, <span class="kw-2">&amp;</span>amount.into());
+					csl_assets.insert(<span class="kw-2">&amp;</span>asset_name, <span class="kw-2">&amp;</span>asset.amount.into());
 				}
 				multiasset.insert(<span class="kw-2">&amp;</span>ScriptHash::from(<span class="kw-2">*</span>policy_id), <span class="kw-2">&amp;</span>csl_assets);
 			}
@@ -1859,7 +1858,7 @@
 			<span class="kw">for </span>asset <span class="kw">in </span>policy_assets {
 				assets.insert(
 					<span class="kw-2">&amp;</span>cardano_serialization_lib::AssetName::new(asset.name.clone())<span class="question-mark">?</span>,
-					<span class="kw-2">&amp;</span>(asset.amount <span class="kw">as </span>u64).into(),
+					<span class="kw-2">&amp;</span>asset.amount.into(),
 				);
 			}
 			ma.insert(<span class="kw-2">&amp;</span>PolicyID::from(<span class="kw-2">*</span>policy), <span class="kw-2">&amp;</span>assets);
@@ -1871,11 +1870,22 @@
 		asset: <span class="kw-2">&amp;</span>AssetId,
 		amount: <span class="kw">impl </span>Into&lt;BigNum&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, JsError&gt; {
-		<span class="self">self</span>.set_asset(<span class="kw-2">&amp;</span>asset.policy_id.<span class="number">0</span>.into(), <span class="kw-2">&amp;</span>asset.asset_name.to_csl()<span class="question-mark">?</span>, <span class="kw-2">&amp;</span><span class="number">0u64</span>.into());
-		<span class="kw">let </span><span class="kw-2">mut </span>assets = Assets::new();
-		assets.insert(<span class="kw-2">&amp;</span>asset.asset_name.to_csl()<span class="question-mark">?</span>, <span class="kw-2">&amp;</span>amount.into());
-		<span class="self">self</span>.insert(<span class="kw-2">&amp;</span>asset.policy_id.<span class="number">0</span>.into(), <span class="kw-2">&amp;</span>assets);
-		<span class="prelude-val">Ok</span>(<span class="self">self</span>)
+		<span class="kw">let </span>policy_id = asset.policy_id.<span class="number">0</span>.into();
+		<span class="kw">let </span>asset_name = asset.asset_name.to_csl()<span class="question-mark">?</span>;
+		<span class="kw">let </span>amount: BigNum = amount.into();
+		<span class="kw">if </span>amount &gt; BigNum::zero() {
+			<span class="self">self</span>.set_asset(<span class="kw-2">&amp;</span>policy_id, <span class="kw-2">&amp;</span>asset_name, <span class="kw-2">&amp;</span>amount);
+			<span class="prelude-val">Ok</span>(<span class="self">self</span>)
+		} <span class="kw">else </span>{
+			<span class="comment">// CSL doesn't have a public API to remove asset from MultiAsset, setting it to 0 isn't really helpful.
+			</span><span class="kw">let </span>current_value = <span class="self">self</span>.get_asset(<span class="kw-2">&amp;</span>policy_id, <span class="kw-2">&amp;</span>asset_name);
+			<span class="kw">if </span>current_value &gt; BigNum::zero() {
+				<span class="kw">let </span>ma_to_sub = MultiAsset::new().with_asset_amount(asset, current_value)<span class="question-mark">?</span>;
+				<span class="prelude-val">Ok</span>(<span class="self">self</span>.sub(<span class="kw-2">&amp;</span>ma_to_sub))
+			} <span class="kw">else </span>{
+				<span class="prelude-val">Ok</span>(<span class="self">self</span>)
+			}
+		}
 	}
 }
 

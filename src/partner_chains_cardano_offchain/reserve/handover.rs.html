@@ -151,6 +151,13 @@
 <a href="#151" id="151">151</a>
 <a href="#152" id="152">152</a>
 <a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Specification for deposit transaction:
 //!
@@ -183,7 +190,6 @@
 	reserve::ReserveData,
 	scripts_data::ReserveScripts,
 };
-<span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -210,7 +216,7 @@
 
 	<span class="kw">let </span><span class="kw-2">ref </span>reserve_utxo @ ReserveUtxo { <span class="kw-2">ref </span>utxo, .. } =
 		reserve.get_reserve_utxo(<span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="kw">let </span>amount = get_amount_to_release(reserve_utxo).ok_or_else(|| <span class="macro">anyhow!</span>(<span class="string">"Internal Error. Reserve Validator has UTXO with Reserve Auth Policy Token, but without other asset."</span>))<span class="question-mark">?</span>;
+	<span class="kw">let </span>amount = get_amount_to_release(reserve_utxo);
 
 	<span class="kw">let </span>tx = Costs::calculate_costs(
 		|costs| build_tx(<span class="kw-2">&amp;</span>amount, utxo, <span class="kw-2">&amp;</span>reserve, <span class="kw-2">&amp;</span>governance, costs, <span class="kw-2">&amp;</span>ctx),
@@ -232,10 +238,10 @@
 	<span class="prelude-val">Ok</span>(McTxHash(tx_id))
 }
 
-<span class="kw">fn </span>get_amount_to_release(reserve_utxo: <span class="kw-2">&amp;</span>ReserveUtxo) -&gt; <span class="prelude-ty">Option</span>&lt;TokenAmount&gt; {
+<span class="kw">fn </span>get_amount_to_release(reserve_utxo: <span class="kw-2">&amp;</span>ReserveUtxo) -&gt; TokenAmount {
 	<span class="kw">let </span>token = reserve_utxo.datum.immutable_settings.token.clone();
-	<span class="kw">let </span>amount = reserve_utxo.utxo.get_asset_amount(<span class="kw-2">&amp;</span>token).try_into().ok()<span class="question-mark">?</span>;
-	<span class="prelude-val">Some</span>(TokenAmount { token, amount })
+	<span class="kw">let </span>amount = reserve_utxo.utxo.get_asset_amount(<span class="kw-2">&amp;</span>token);
+	TokenAmount { token, amount }
 }
 
 <span class="kw">fn </span>build_tx(
@@ -293,12 +299,20 @@
 	scripts: <span class="kw-2">&amp;</span>ReserveScripts,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;TransactionOutput, JsError&gt; {
-	<span class="kw">let </span>ma = output_value.token.to_multi_asset(output_value.amount)<span class="question-mark">?</span>;
-	<span class="kw">let </span>amount_builder = TransactionOutputBuilder::new()
-		.with_address(<span class="kw-2">&amp;</span>scripts.illiquid_circulation_supply_validator.address(ctx.network))
-		.with_plutus_data(<span class="kw-2">&amp;</span>illiquid_supply_validator_redeemer())
-		.next()<span class="question-mark">?</span>;
-	amount_builder.with_minimum_ada_and_asset(<span class="kw-2">&amp;</span>ma, ctx)<span class="question-mark">?</span>.build()
+	<span class="kw">let </span>tx_output_builder = TransactionOutputBuilder::new()
+		.with_address(<span class="kw-2">&amp;</span>scripts.illiquid_circulation_supply_validator.address(ctx.network));
+	<span class="kw">if </span>output_value.amount &gt; <span class="number">0 </span>{
+		<span class="kw">let </span>ma = output_value.token.to_multi_asset(output_value.amount)<span class="question-mark">?</span>;
+		<span class="kw">let </span>amount_builder = tx_output_builder
+			.with_plutus_data(<span class="kw-2">&amp;</span>illiquid_supply_validator_redeemer())
+			.next()<span class="question-mark">?</span>;
+		amount_builder.with_minimum_ada_and_asset(<span class="kw-2">&amp;</span>ma, ctx)<span class="question-mark">?</span>.build()
+	} <span class="kw">else </span>{
+		<span class="comment">// Smart-contract requires to deposit exactly one UTXO in the illiquid supply validator,
+		// otherwise it returns ERROR-RESERVE-16: No unique output utxo at the illiquid circulation supply address
+		</span><span class="kw">let </span>amount_builder = tx_output_builder.next()<span class="question-mark">?</span>;
+		amount_builder.with_minimum_ada(ctx)<span class="question-mark">?</span>.build()
+	}
 }
 
 <span class="kw">fn </span>illiquid_supply_validator_redeemer() -&gt; PlutusData {
