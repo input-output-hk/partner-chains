@@ -573,3 +573,16 @@ class BlockchainApi(ABC):
             str -- PC SS58 address associated with the Cardano address
         """
         pass
+
+    @abstractmethod
+    def get_block_production_log(self, block_hash=None):
+        """
+        Retrieves block production log for block with provided hash or latest if hash is not provided.
+
+        Arguments:
+            block_hash {str} -- PC block hash
+
+        Returns:
+            block production log
+        """
+        pass
