@@ -33,7 +33,6 @@ std = [
     'sp-core/std',
     'sp-consensus-slots/std',
     'envy',
-    'serde'
 ]
 serde = [
     "dep:serde",

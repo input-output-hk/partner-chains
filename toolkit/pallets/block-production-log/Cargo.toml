@@ -14,7 +14,7 @@ parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
 sidechain-domain = { workspace = true }
 sp-block-production-log = { workspace = true }
-sp-consensus-slots = { workspace = true }
+sp-consensus-slots = { workspace = true, features = ["serde"] }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 
