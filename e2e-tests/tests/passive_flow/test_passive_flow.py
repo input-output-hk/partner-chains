@@ -14,7 +14,6 @@ def get_burn_tx_from_rpc(api: BlockchainApi, tx_hash):
     return next((tx for tx in txs_awaiting_mc_stability if tx["txHash"] == tx_hash), None)
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-7008')
 @mark.passive_flow
 def test_burn_was_successful(burn_tx: tuple[bool, IncomingTx]):
@@ -27,7 +26,6 @@ def test_burn_was_successful(burn_tx: tuple[bool, IncomingTx]):
     assert result
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-7009')
 @mark.passive_flow
 def test_burn_amount_was_deducted_from_mc_addr(api: BlockchainApi, config: ApiConfig, burn_tx: tuple[bool, IncomingTx]):
@@ -41,7 +39,6 @@ def test_burn_amount_was_deducted_from_mc_addr(api: BlockchainApi, config: ApiCo
     assert actual_mc_balance == tx.mc_balance - tx.amount
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-7013')
 @mark.passive_flow
 def test_burn_tx_is_awaiting_mc_stability(
@@ -63,7 +60,6 @@ def test_burn_tx_is_awaiting_mc_stability(
     ), f"tx should be stable at block {tx.stable_at_block}, but rpc returned {tx_from_rpc['stableAtMainchainBlock']}"
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-7014')
 @mark.passive_flow
 def test_burn_tx_was_received_on_pc_addr(
@@ -101,7 +97,6 @@ def test_burn_tx_was_received_on_pc_addr(
 ##############################################################
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-7010')
 @mark.passive_flow
 def test_burn_more_than_balance_should_fail(api: BlockchainApi, config: ApiConfig):
@@ -120,7 +115,6 @@ def test_burn_more_than_balance_should_fail(api: BlockchainApi, config: ApiConfi
     assert "BalanceInsufficientError" in excinfo.value.message
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-7011')
 @mark.passive_flow
 def test_burn_negative_balance_should_fail(api: BlockchainApi, config: ApiConfig):
@@ -155,7 +149,6 @@ def test_burn_with_invalid_key_should_fail(api: BlockchainApi, config: ApiConfig
     assert "Error while decoding key" in excinfo.value.message
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-7149')
 @mark.passive_flow
 def test_burn_with_receiver_address_less_than_32_bytes(api: BlockchainApi, config: ApiConfig):
@@ -186,7 +179,6 @@ def test_burn_with_receiver_address_less_than_32_bytes(api: BlockchainApi, confi
     assert found, "No matching recipient and value found in 'awaitingMcStability'"
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-7148')
 @mark.passive_flow
 def test_burn_with_receiver_address_more_than_32_bytes(api: BlockchainApi, config: ApiConfig):
