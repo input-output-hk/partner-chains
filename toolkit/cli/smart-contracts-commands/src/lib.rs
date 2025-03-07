@@ -4,6 +4,7 @@ use partner_chains_cardano_offchain::cardano_keys::{
 };
 use sidechain_domain::*;
 
+pub mod assemble_tx;
 pub mod d_parameter;
 pub mod get_scripts;
 pub mod governance;
@@ -30,6 +31,8 @@ pub enum SmartContractsCmd {
 	/// Commands for management of on-chain governance
 	#[command(subcommand)]
 	Governance(governance::GovernanceCmd),
+	/// Assemble and submit a transaction
+	AssembleAndSubmitTx(assemble_tx::AssembleAndSubmitCmd),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -59,6 +62,7 @@ impl SmartContractsCmd {
 			Self::Register(cmd) => cmd.execute().await,
 			Self::Deregister(cmd) => cmd.execute().await,
 			Self::Reserve(cmd) => cmd.execute().await,
+			Self::AssembleAndSubmitTx(cmd) => cmd.execute().await,
 		}
 	}
 
