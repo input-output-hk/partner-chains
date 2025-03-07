@@ -87,8 +87,6 @@ fn get_token_amount(utxo: &OgmiosUtxo, token: &AssetId) -> u64 {
 		.and_then(|assets| assets.iter().find(|asset| asset.name == asset_name.0.to_vec()))
 		.map(|asset| asset.amount)
 		.unwrap_or(0) // Token can be not found if the reserve was created with the initial deposit of 0 tokens
-		.try_into()
-		.expect("Token amount in an UTXO always fits u64")
 }
 
 fn deposit_to_reserve_tx(

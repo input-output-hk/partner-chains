@@ -104,7 +104,7 @@ fn reserve_release_tx(
 
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
-	let reserve_balance = previous_reserve.utxo.get_asset_amount(&token);
+	let reserve_balance = previous_reserve.utxo.get_asset_amount(token);
 	let token_total_amount_transferred = stats.token_total_amount_transferred;
 	let cumulative_total_transfer: u64 = token_total_amount_transferred
 		.checked_add(amount_to_transfer)
@@ -160,12 +160,12 @@ fn reserve_release_tx(
 		TransactionOutputBuilder::new()
 			.with_address(&reserve_data.scripts.validator.address(ctx.network))
 			.with_plutus_data(&PlutusData::from(
-				previous_reserve.datum.clone().after_withdrawal(amount_to_transfer.into()),
+				previous_reserve.datum.clone().after_withdrawal(amount_to_transfer),
 			))
 			.next()?
 			.with_minimum_ada_and_asset(
 				&MultiAsset::from_ogmios_utxo(&previous_reserve.utxo)?
-					.with_asset_amount(&token, left_in_reserve)?,
+					.with_asset_amount(token, left_in_reserve)?,
 				ctx,
 			)?
 			.build()?

@@ -117,19 +117,13 @@ impl OgmiosValueExt for OgmiosValue {
 			for (policy_id, assets) in self.native_tokens.iter() {
 				let mut csl_assets = Assets::new();
 				for asset in assets.iter() {
-					let amount: u64 = asset.amount.try_into().map_err(|_| {
-						JsError::from_str(&format!(
-							"Could not convert Ogmios UTOX value, asset amount {} too large",
-							asset.amount,
-						))
-					})?;
 					let asset_name = AssetName::new(asset.name.clone()).map_err(|e| {
 						JsError::from_str(&format!(
 							"Could not convert Ogmios UTXO value, asset name is invalid: '{}'",
 							e
 						))
 					})?;
-					csl_assets.insert(&asset_name, &amount.into());
+					csl_assets.insert(&asset_name, &asset.amount.into());
 				}
 				multiasset.insert(&ScriptHash::from(*policy_id), &csl_assets);
 			}
@@ -763,7 +757,7 @@ impl MultiAssetExt for MultiAsset {
 			for asset in policy_assets {
 				assets.insert(
 					&cardano_serialization_lib::AssetName::new(asset.name.clone())?,
-					&(asset.amount as u64).into(),
+					&asset.amount.into(),
 				);
 			}
 			ma.insert(&PolicyID::from(*policy), &assets);
