@@ -1905,8 +1905,8 @@ dependencies = [
  "serde_json",
  "sidechain-domain",
  "sidechain-mc-hash",
+ "sp-block-participation",
  "sp-native-token-management",
- "sp-stake-distribution",
  "sp-timestamp",
  "sqlx",
  "substrate-prometheus-endpoint",
@@ -5174,8 +5174,8 @@ dependencies = [
  "serde_json",
  "sidechain-domain",
  "sidechain-mc-hash",
+ "sp-block-participation",
  "sp-native-token-management",
- "sp-stake-distribution",
  "sp-timestamp",
 ]
 
@@ -6261,7 +6261,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "pallet-block-production-log",
  "parity-scale-codec",
  "pretty_assertions",
  "scale-info",
@@ -6824,7 +6823,6 @@ dependencies = [
  "sp-session-validator-management",
  "sp-session-validator-management-query",
  "sp-sidechain",
- "sp-stake-distribution",
  "sp-timestamp",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
@@ -10334,7 +10332,6 @@ dependencies = [
  "sp-consensus-slots",
  "sp-inherents",
  "sp-runtime",
- "sp-stake-distribution",
  "thiserror",
  "tokio",
 ]
@@ -10860,15 +10857,6 @@ dependencies = [
  "sp-api",
  "sp-blockchain",
  "sp-runtime",
-]
-
-[[package]]
-name = "sp-stake-distribution"
-version = "1.5.0"
-dependencies = [
- "async-trait",
- "sidechain-domain",
- "tokio",
 ]
 
 [[package]]

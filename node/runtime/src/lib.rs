@@ -435,22 +435,6 @@ impl sp_sidechain::OnNewEpoch for LogBeneficiaries {
 	fn on_new_epoch(old_epoch: ScEpochNumber, _new_epoch: ScEpochNumber) -> sp_weights::Weight {
 		let rewards = BlockRewards::get_rewards_and_clear();
 		log::info!("Rewards accrued in epoch {old_epoch}: {rewards:?}");
-		let slot = pallet_aura::CurrentSlot::<Runtime>::get();
-		let block_production_log = BlockProductionLog::take_prefix(&slot);
-		if let Some((s, b)) = block_production_log.first() {
-			log::info!(
-				"Block production log head: {} -> {:?}",
-				**s,
-				HexDisplay::from(&b.id().as_slice())
-			)
-		};
-		if let Some((s, b)) = block_production_log.last() {
-			log::info!(
-				"Block production log tail: {} -> {:?}",
-				**s,
-				HexDisplay::from(&b.id().as_slice())
-			)
-		};
 		RuntimeDbWeight::get().reads_writes(1, 1)
 	}
 }
@@ -543,6 +527,7 @@ impl pallet_address_associations::Config for Runtime {
 
 impl pallet_block_participation::Config for Runtime {
 	type WeightInfo = pallet_block_participation::weights::SubstrateWeight<Runtime>;
+	type BlockAuthor = BlockAuthor;
 	type DelegatorId = DelegatorKey;
 
 	fn should_release_data(slot: sidechain_slots::Slot) -> Option<sidechain_slots::Slot> {
@@ -551,6 +536,14 @@ impl pallet_block_participation::Config for Runtime {
 		} else {
 			None
 		}
+	}
+
+	fn blocks_produced_up_to_slot(slot: Slot) -> impl Iterator<Item = (Slot, BlockAuthor)> {
+		BlockProductionLog::peek_prefix(slot)
+	}
+
+	fn discard_blocks_produced_up_to_slot(slot: Slot) {
+		BlockProductionLog::drop_prefix(&slot)
 	}
 
 	const TARGET_INHERENT_ID: InherentIdentifier = [42; 8];
@@ -966,7 +959,7 @@ impl_runtime_apis! {
 			BlockParticipation::should_release_data(slot)
 		}
 		fn blocks_produced_up_to_slot(slot: Slot) -> Vec<(Slot, BlockAuthor)> {
-			BlockParticipation::blocks_produced_up_to_slot(slot).collect()
+			<Runtime as pallet_block_participation::Config>::blocks_produced_up_to_slot(slot).collect()
 		}
 		fn target_inherent_id() -> InherentIdentifier {
 			<Runtime as pallet_block_participation::Config>::TARGET_INHERENT_ID

@@ -11,7 +11,7 @@ pub mod mc_hash;
 pub mod native_token;
 #[cfg(feature = "sidechain-rpc")]
 pub mod sidechain_rpc;
-#[cfg(feature = "stake-distribution")]
+#[cfg(feature = "block-participation")]
 pub mod stake_distribution;
 
 #[allow(unused)]

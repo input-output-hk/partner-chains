@@ -42,7 +42,6 @@ members = [
 	"toolkit/offchain",
 	"toolkit/primitives/plutus-data",
 	"toolkit/pallets/address-associations",
-	"toolkit/primitives/stake-distribution",
 	"toolkit/pallets/block-participation",
 	"toolkit/primitives/block-participation",
 ]
@@ -233,7 +232,6 @@ session-manager = { path = "toolkit/primitives/session-manager", default-feature
 sp-sidechain = { path = "toolkit/primitives/sidechain", default-features = false }
 pallet-native-token-management = { path = "toolkit/pallets/native-token-management", default-features = false }
 sp-native-token-management = { path = "toolkit/primitives/native-token-management", default-features = false }
-sp-stake-distribution = { path = "toolkit/primitives/stake-distribution", default-features = false }
 sc-partner-chains-consensus-aura = { path = "toolkit/client/consensus/aura", default-features = false }
 sp-partner-chains-consensus-aura = { path = "toolkit/primitives/consensus/aura", default-features = false }
 pallet-partner-chains-session = { path = "toolkit/pallets/partner-chains-session", default-features = false }

@@ -276,19 +276,16 @@ impl CandidatesDataSourceImpl {
 			.collect()
 	}
 
-	const DATA_MC_EPOCH_OFFSET: u32 = 2;
 	fn get_epoch_of_data_storage(
 		&self,
 		epoch_of_data_usage: McEpochNumber,
 	) -> Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>> {
-		if epoch_of_data_usage.0 < 2 {
-			Err(BadRequest(format!(
-				"Minimum supported epoch of data usage is 2, but {} was provided",
+		offset_data_epoch(&epoch_of_data_usage).map_err(|offset| {
+			BadRequest(format!(
+				"Minimum supported epoch of data usage is {offset}, but {} was provided",
 				epoch_of_data_usage.0
 			))
-			.into())
-		} else {
-			Ok(McEpochNumber(epoch_of_data_usage.0 - Self::DATA_MC_EPOCH_OFFSET))
-		}
+			.into()
+		})
 	}
 }

@@ -18,7 +18,8 @@ use sidechain_runtime::{
 use sidechain_slots::ScSlotConfig;
 use sp_api::ProvideRuntimeApi;
 use sp_block_participation::{
-	inherent_data::BlockParticipationInherentDataProvider, BlockParticipationApi,
+	inherent_data::{BlockParticipationDataSource, BlockParticipationInherentDataProvider},
+	BlockParticipationApi,
 };
 use sp_block_production_log::{BlockAuthorInherentProvider, BlockProductionLogApi};
 use sp_block_rewards::BlockBeneficiaryInherentProvider;
@@ -35,7 +36,6 @@ use sp_native_token_management::{
 use sp_partner_chains_consensus_aura::CurrentSlotProvider;
 use sp_runtime::traits::{Block as BlockT, Header, Zero};
 use sp_session_validator_management::SessionValidatorManagementApi;
-use sp_stake_distribution::StakeDistributionDataSource;
 use sp_timestamp::{InherentDataProvider as TimestampIDP, Timestamp};
 use std::error::Error;
 use time_source::TimeSource;
@@ -47,7 +47,7 @@ pub struct ProposalCIDP<T> {
 	mc_hash_data_source: Arc<dyn McHashDataSource + Send + Sync>,
 	authority_selection_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
 	native_token_data_source: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
-	stake_distribution_data_source: Arc<dyn StakeDistributionDataSource + Send + Sync>,
+	block_participation_data_source: Arc<dyn BlockParticipationDataSource + Send + Sync>,
 }
 
 #[async_trait]
@@ -87,7 +87,7 @@ where
 			mc_hash_data_source,
 			authority_selection_data_source,
 			native_token_data_source,
-			stake_distribution_data_source,
+			block_participation_data_source,
 		} = self;
 		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source } = config;
 
@@ -127,7 +127,7 @@ where
 
 		let payouts = BlockParticipationInherentDataProvider::new(
 			client.as_ref(),
-			stake_distribution_data_source.as_ref(),
+			block_participation_data_source.as_ref(),
 			parent_hash,
 			*slot,
 			mc_epoch_config,
@@ -155,7 +155,7 @@ pub struct VerifierCIDP<T> {
 	mc_hash_data_source: Arc<dyn McHashDataSource + Send + Sync>,
 	authority_selection_data_source: Arc<dyn AuthoritySelectionDataSource + Send + Sync>,
 	native_token_data_source: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
-	stake_distribution_data_source: Arc<dyn StakeDistributionDataSource + Send + Sync>,
+	block_participation_data_source: Arc<dyn BlockParticipationDataSource + Send + Sync>,
 }
 
 impl<T: Send + Sync> CurrentSlotProvider for VerifierCIDP<T> {
@@ -197,7 +197,7 @@ where
 			mc_hash_data_source,
 			authority_selection_data_source,
 			native_token_data_source,
-			stake_distribution_data_source,
+			block_participation_data_source,
 		} = self;
 		let CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source, .. } = config;
 
@@ -238,7 +238,7 @@ where
 
 		let payouts = BlockParticipationInherentDataProvider::new(
 			client.as_ref(),
-			stake_distribution_data_source.as_ref(),
+			block_participation_data_source.as_ref(),
 			parent_hash,
 			verified_block_slot,
 			mc_epoch_config,

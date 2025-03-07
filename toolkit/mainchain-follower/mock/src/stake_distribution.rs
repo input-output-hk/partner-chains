@@ -1,5 +1,5 @@
 use sidechain_domain::*;
-use sp_stake_distribution::StakeDistributionDataSource;
+use sp_block_participation::inherent_data::BlockParticipationDataSource;
 
 pub struct StakeDistributionDataSourceMock;
 
@@ -10,15 +10,7 @@ impl StakeDistributionDataSourceMock {
 }
 
 #[async_trait::async_trait]
-impl StakeDistributionDataSource for StakeDistributionDataSourceMock {
-	async fn get_stake_pool_delegation_distribution_for_pool(
-		&self,
-		_epoch: McEpochNumber,
-		_pool_hash: MainchainKeyHash,
-	) -> Result<PoolDelegation, Box<dyn std::error::Error + Send + Sync>> {
-		Ok(PoolDelegation::default())
-	}
-
+impl BlockParticipationDataSource for StakeDistributionDataSourceMock {
 	async fn get_stake_pool_delegation_distribution_for_pools(
 		&self,
 		_epoch: McEpochNumber,

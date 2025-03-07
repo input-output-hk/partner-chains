@@ -14,7 +14,6 @@ sp-runtime = { workspace = true }
 sidechain-domain = { workspace = true }
 sp-api = { workspace = true }
 log = { workspace = true }
-sp-stake-distribution = { workspace = true, optional = true }
 sp-consensus-slots = { workspace = true }
 scale-info = { workspace = true }
 
@@ -30,8 +29,6 @@ std = [
     "sp-runtime/std",
     "sp-runtime/std",
     "sp-api/std",
-    "sp-stake-distribution",
-    "sp-stake-distribution/std",
     "log/std",
     "sp-consensus-slots/std",
     "sidechain-domain/std",

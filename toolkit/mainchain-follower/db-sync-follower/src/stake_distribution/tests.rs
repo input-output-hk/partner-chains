@@ -1,40 +1,9 @@
 use hex_literal::hex;
 use sidechain_domain::*;
-use sp_stake_distribution::StakeDistributionDataSource;
+use sp_block_participation::inherent_data::BlockParticipationDataSource;
 use sqlx::PgPool;
 
 use super::StakeDistributionDataSourceImpl;
-
-#[sqlx::test(migrations = "./testdata/stake-distribution/migrations")]
-async fn stake_pool_delegation_distribution_for_pool_works(pool: PgPool) {
-	let epoch = McEpochNumber(188);
-	let pool_delegation = make_source(pool)
-		.get_stake_pool_delegation_distribution_for_pool(epoch, stake_pool_key_hash_1())
-		.await
-		.unwrap();
-
-	assert_eq!(pool_delegation, pool_delegation_1());
-}
-
-#[sqlx::test(migrations = "./testdata/stake-distribution/migrations")]
-async fn stake_pool_delegation_distribution_for_pool_works_twice(pool: PgPool) {
-	let epoch = McEpochNumber(188);
-	let source = make_source(pool);
-
-	let pool_delegation = source
-		.get_stake_pool_delegation_distribution_for_pool(epoch, stake_pool_key_hash_1())
-		.await
-		.unwrap();
-
-	assert_eq!(pool_delegation, pool_delegation_1());
-
-	let pool_delegation = source
-		.get_stake_pool_delegation_distribution_for_pool(epoch, stake_pool_key_hash_1())
-		.await
-		.unwrap();
-
-	assert_eq!(pool_delegation, pool_delegation_1());
-}
 
 #[sqlx::test(migrations = "./testdata/stake-distribution/migrations")]
 async fn stake_pool_delegation_distribution_for_pools_works(pool: PgPool) {

@@ -28,7 +28,7 @@ impl Default for SlotsPerEpoch {
 }
 
 impl SlotsPerEpoch {
-	#[cfg(feature = "std")]
+	#[cfg(all(feature = "std", feature = "serde"))]
 	pub fn read_from_env() -> Result<Self, envy::Error> {
 		#[derive(Serialize, Deserialize)]
 		struct SlotsPerEpochEnvConfig {
