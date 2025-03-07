@@ -28,7 +28,7 @@
 2. Run partner-chains tests on partner-chains local environment
 
 ```bash
-pytest -rP -v --blockchain substrate --env local --stack local --log-cli-level debug -vv -s -m "not active_flow and not passive_flow and not probability"
+pytest -rP -v --blockchain substrate --env local --log-cli-level debug -vv -s -m "not active_flow and not passive_flow and not probability"
 ```
 
 ## Substrate Portal

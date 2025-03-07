@@ -226,12 +226,11 @@ E.g. for Cardano Preview it will be:
 ### 6. Run tests on your custom environment
 
 ```bash
-$ pytest -rP -v --blockchain <blockchain> --env <env> --stack <env> --log-cli-level debug -vv -s -m "not active_flow and not passive_flow and not probability"
+$ pytest -rP -v --blockchain <blockchain> --env <env> --log-cli-level debug -vv -s -m "not active_flow and not passive_flow and not probability"
 ```
 where:
 
 * `--env` - target node environment
-* `--stack` - target dependencies stack
 * `--blockchain` - target type of blockchain: substrate, `<blockchain>`
 * `--log-cli-level` - log level for output (info, debug, warning, critical, error)
 * `-m` - pytest markers to filter tests for execution
