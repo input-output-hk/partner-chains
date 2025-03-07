@@ -110,8 +110,8 @@
 <span class="kw">use </span>pallet_sidechain_rpc::SidechainRpcDataSource;
 <span class="kw">use </span>sc_service::error::Error <span class="kw">as </span>ServiceError;
 <span class="kw">use </span>sidechain_mc_hash::McHashDataSource;
+<span class="kw">use </span>sp_block_participation::inherent_data::BlockParticipationDataSource;
 <span class="kw">use </span>sp_native_token_management::NativeTokenManagementDataSource;
-<span class="kw">use </span>sp_stake_distribution::StakeDistributionDataSource;
 <span class="kw">use </span>std::{error::Error, sync::Arc};
 
 <span class="attr">#[derive(Clone)]
@@ -120,7 +120,7 @@
 	<span class="kw">pub </span>authority_selection: Arc&lt;<span class="kw">dyn </span>AuthoritySelectionDataSource + Send + Sync&gt;,
 	<span class="kw">pub </span>native_token: Arc&lt;<span class="kw">dyn </span>NativeTokenManagementDataSource + Send + Sync&gt;,
 	<span class="kw">pub </span>sidechain_rpc: Arc&lt;<span class="kw">dyn </span>SidechainRpcDataSource + Send + Sync&gt;,
-	<span class="kw">pub </span>stake_distribution: Arc&lt;<span class="kw">dyn </span>StakeDistributionDataSource + Send + Sync&gt;,
+	<span class="kw">pub </span>block_participation: Arc&lt;<span class="kw">dyn </span>BlockParticipationDataSource + Send + Sync&gt;,
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>create_cached_main_chain_follower_data_sources(
@@ -157,7 +157,7 @@
 		mc_hash: Arc::new(McHashDataSourceMock::new(block)),
 		authority_selection: Arc::new(AuthoritySelectionDataSourceMock::new_from_env()<span class="question-mark">?</span>),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
-		stake_distribution: Arc::new(StakeDistributionDataSourceMock::new()),
+		block_participation: Arc::new(StakeDistributionDataSourceMock::new()),
 	})
 }
 
@@ -185,7 +185,7 @@
 			pool.clone(),
 			metrics_opt.clone(),
 		)<span class="question-mark">?</span>),
-		stake_distribution: Arc::new(StakeDistributionDataSourceImpl::new(
+		block_participation: Arc::new(StakeDistributionDataSourceImpl::new(
 			pool,
 			metrics_opt,
 			STAKE_CACHE_SIZE,

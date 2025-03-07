@@ -1,1 +1,0 @@
-searchState.loadedDescShard("sp_stake_distribution", 0, "Retrieves stake pool delegation distribution for provided …\nRetrieves stake pool delegation distribution for provided …")

@@ -42,7 +42,6 @@ var srcIndex = new Map(JSON.parse('[\
 ["sp_session_validator_management",["",[],["lib.rs"]]],\
 ["sp_session_validator_management_query",["",[["types",[],["ariadne.rs","mod.rs","registrations.rs"]]],["commands.rs","get_registrations.rs","lib.rs"]]],\
 ["sp_sidechain",["",[],["lib.rs","query.rs"]]],\
-["sp_stake_distribution",["",[],["lib.rs"]]],\
 ["time_source",["",[],["lib.rs"]]]\
 ]'));
 createSrcSidebar();

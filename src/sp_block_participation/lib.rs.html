@@ -348,6 +348,7 @@
 <a href="#348" id="348">348</a>
 <a href="#349" id="349">349</a>
 <a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">extern crate </span>alloc;
@@ -470,9 +471,18 @@
 	<span class="kw">use </span>sp_api::{ApiError, ApiExt, ProvideRuntimeApi};
 	<span class="kw">use </span>sp_inherents::{InherentData, InherentDataProvider};
 	<span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
-	<span class="kw">pub use </span>sp_stake_distribution::StakeDistributionDataSource;
 	<span class="kw">use </span>std::collections::HashMap;
 	<span class="kw">use </span>std::hash::Hash;
+
+	<span class="attr">#[async_trait::async_trait]
+	</span><span class="kw">pub trait </span>BlockParticipationDataSource {
+		<span class="doccomment">/// Retrieves stake pool delegation distribution for provided epoch and pools
+		</span><span class="kw">async fn </span>get_stake_pool_delegation_distribution_for_pools(
+			<span class="kw-2">&amp;</span><span class="self">self</span>,
+			epoch: McEpochNumber,
+			pool_hashes: <span class="kw-2">&amp;</span>[MainchainKeyHash],
+		) -&gt; <span class="prelude-ty">Result</span>&lt;StakeDistribution, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;;
+	}
 
 	<span class="attr">#[derive(thiserror::Error, Debug)]
 	</span><span class="kw">pub enum </span>InherentDataCreationError&lt;BlockProducerId: Debug&gt; {
@@ -511,7 +521,7 @@
 	{
 		<span class="kw">pub async fn </span>new&lt;Block: BlockT, T&gt;(
 			client: <span class="kw-2">&amp;</span>T,
-			data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>StakeDistributionDataSource + Send + Sync),
+			data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>BlockParticipationDataSource + Send + Sync),
 			parent_hash: &lt;Block <span class="kw">as </span>BlockT&gt;::Hash,
 			current_slot: Slot,
 			mc_epoch_config: <span class="kw-2">&amp;</span>MainchainEpochConfig,
@@ -602,7 +612,7 @@
 		<span class="kw">async fn </span>fetch_delegations(
 			mc_epoch: McEpochNumber,
 			producers: <span class="kw">impl </span>Iterator&lt;Item = BlockProducer&gt;,
-			data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>StakeDistributionDataSource + Send + Sync),
+			data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>BlockParticipationDataSource + Send + Sync),
 		) -&gt; <span class="prelude-ty">Result</span>&lt;StakeDistribution, InherentDataCreationError&lt;BlockProducer&gt;&gt; {
 			<span class="kw">let </span>pools: Vec&lt;<span class="kw">_</span>&gt; = producers.flat_map(|p| p.as_cardano_spo()).collect();
 			data_source
@@ -610,10 +620,6 @@
 				.<span class="kw">await
 				</span>.map_err(InherentDataCreationError::DataSourceError)
 		}
-
-		<span class="comment">// The number of main chain epochs back a Partner Chain queries for candidate stake delegation.
-		// This offset is necessary to fetch the same data that was used to select committee members.
-		</span><span class="kw">const </span>DATA_MC_EPOCH_OFFSET: u32 = <span class="number">2</span>;
 
 		<span class="kw">fn </span>data_mc_epoch_for_slot(
 			slot: Slot,
@@ -629,12 +635,8 @@
 				.timestamp_to_mainchain_epoch(timestamp)
 				.expect(<span class="string">"Mainchain epoch for past slots exists"</span>);
 
-			(mc_epoch.<span class="number">0</span>.checked_sub(<span class="self">Self</span>::DATA_MC_EPOCH_OFFSET))
-				.ok_or(InherentDataCreationError::McEpochBelowOffset(
-					mc_epoch,
-					<span class="self">Self</span>::DATA_MC_EPOCH_OFFSET,
-				))
-				.map(McEpochNumber)
+			offset_data_epoch(<span class="kw-2">&amp;</span>mc_epoch)
+				.map_err(|offset| InherentDataCreationError::McEpochBelowOffset(mc_epoch, offset))
 		}
 
 		<span class="kw">fn </span>count_blocks_by_epoch_and_producer(

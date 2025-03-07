@@ -128,26 +128,12 @@
 <a href="#128" id="128">128</a>
 <a href="#129" id="129">129</a>
 <a href="#130" id="130">130</a>
-<a href="#131" id="131">131</a>
-<a href="#132" id="132">132</a>
-<a href="#133" id="133">133</a>
-<a href="#134" id="134">134</a>
-<a href="#135" id="135">135</a>
-<a href="#136" id="136">136</a>
-<a href="#137" id="137">137</a>
-<a href="#138" id="138">138</a>
-<a href="#139" id="139">139</a>
-<a href="#140" id="140">140</a>
-<a href="#141" id="141">141</a>
-<a href="#142" id="142">142</a>
-<a href="#143" id="143">143</a>
-<a href="#144" id="144">144</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::db_model::{EpochNumber, StakePoolDelegationOutputRow};
 <span class="kw">use </span><span class="kw">crate</span>::metrics::McFollowerMetrics;
 <span class="kw">use </span><span class="kw">crate</span>::observed_async_trait;
 <span class="kw">use </span>lru::LruCache;
 <span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
-<span class="kw">use </span>sp_stake_distribution::StakeDistributionDataSource;
+<span class="kw">use </span>sp_block_participation::inherent_data::BlockParticipationDataSource;
 <span class="kw">use </span>sqlx::PgPool;
 <span class="kw">use </span>std::sync::{Arc, Mutex};
 
@@ -167,21 +153,7 @@
 }
 
 <span class="macro">observed_async_trait!</span>(
-<span class="kw">impl </span>StakeDistributionDataSource <span class="kw">for </span>StakeDistributionDataSourceImpl {
-	<span class="kw">async fn </span>get_stake_pool_delegation_distribution_for_pool(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		epoch: McEpochNumber,
-		pool_hash: MainchainKeyHash,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;PoolDelegation, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
-		<span class="prelude-val">Ok</span>(<span class="self">self
-			</span>.get_stake_pool_delegation_distribution_for_pools(epoch, <span class="kw-2">&amp;</span>[pool_hash])
-			.<span class="kw">await</span><span class="question-mark">?
-			</span>.<span class="number">0
-			</span>.entry(pool_hash)
-			.or_default()
-			.clone())
-	}
-
+<span class="kw">impl </span>BlockParticipationDataSource <span class="kw">for </span>StakeDistributionDataSourceImpl {
 	<span class="kw">async fn </span>get_stake_pool_delegation_distribution_for_pools(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		epoch: McEpochNumber,

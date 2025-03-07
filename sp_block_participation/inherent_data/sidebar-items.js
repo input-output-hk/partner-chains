@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["BlockParticipationInherentDataProvider","InherentDataCreationError"],"trait":["StakeDistributionDataSource"]};
+window.SIDEBAR_ITEMS = {"enum":["BlockParticipationInherentDataProvider","InherentDataCreationError"],"trait":["BlockParticipationDataSource"]};

@@ -303,7 +303,8 @@
 <span class="kw">use </span>sidechain_slots::ScSlotConfig;
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_block_participation::{
-	inherent_data::BlockParticipationInherentDataProvider, BlockParticipationApi,
+	inherent_data::{BlockParticipationDataSource, BlockParticipationInherentDataProvider},
+	BlockParticipationApi,
 };
 <span class="kw">use </span>sp_block_production_log::{BlockAuthorInherentProvider, BlockProductionLogApi};
 <span class="kw">use </span>sp_block_rewards::BlockBeneficiaryInherentProvider;
@@ -320,7 +321,6 @@
 <span class="kw">use </span>sp_partner_chains_consensus_aura::CurrentSlotProvider;
 <span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, Header, Zero};
 <span class="kw">use </span>sp_session_validator_management::SessionValidatorManagementApi;
-<span class="kw">use </span>sp_stake_distribution::StakeDistributionDataSource;
 <span class="kw">use </span>sp_timestamp::{InherentDataProvider <span class="kw">as </span>TimestampIDP, Timestamp};
 <span class="kw">use </span>std::error::Error;
 <span class="kw">use </span>time_source::TimeSource;
@@ -332,7 +332,7 @@
 	mc_hash_data_source: Arc&lt;<span class="kw">dyn </span>McHashDataSource + Send + Sync&gt;,
 	authority_selection_data_source: Arc&lt;<span class="kw">dyn </span>AuthoritySelectionDataSource + Send + Sync&gt;,
 	native_token_data_source: Arc&lt;<span class="kw">dyn </span>NativeTokenManagementDataSource + Send + Sync&gt;,
-	stake_distribution_data_source: Arc&lt;<span class="kw">dyn </span>StakeDistributionDataSource + Send + Sync&gt;,
+	block_participation_data_source: Arc&lt;<span class="kw">dyn </span>BlockParticipationDataSource + Send + Sync&gt;,
 }
 
 <span class="attr">#[async_trait]
@@ -372,7 +372,7 @@
 			mc_hash_data_source,
 			authority_selection_data_source,
 			native_token_data_source,
-			stake_distribution_data_source,
+			block_participation_data_source,
 		} = <span class="self">self</span>;
 		<span class="kw">let </span>CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source } = config;
 
@@ -412,7 +412,7 @@
 
 		<span class="kw">let </span>payouts = BlockParticipationInherentDataProvider::new(
 			client.as_ref(),
-			stake_distribution_data_source.as_ref(),
+			block_participation_data_source.as_ref(),
 			parent_hash,
 			<span class="kw-2">*</span>slot,
 			mc_epoch_config,
@@ -440,7 +440,7 @@
 	mc_hash_data_source: Arc&lt;<span class="kw">dyn </span>McHashDataSource + Send + Sync&gt;,
 	authority_selection_data_source: Arc&lt;<span class="kw">dyn </span>AuthoritySelectionDataSource + Send + Sync&gt;,
 	native_token_data_source: Arc&lt;<span class="kw">dyn </span>NativeTokenManagementDataSource + Send + Sync&gt;,
-	stake_distribution_data_source: Arc&lt;<span class="kw">dyn </span>StakeDistributionDataSource + Send + Sync&gt;,
+	block_participation_data_source: Arc&lt;<span class="kw">dyn </span>BlockParticipationDataSource + Send + Sync&gt;,
 }
 
 <span class="kw">impl</span>&lt;T: Send + Sync&gt; CurrentSlotProvider <span class="kw">for </span>VerifierCIDP&lt;T&gt; {
@@ -482,7 +482,7 @@
 			mc_hash_data_source,
 			authority_selection_data_source,
 			native_token_data_source,
-			stake_distribution_data_source,
+			block_participation_data_source,
 		} = <span class="self">self</span>;
 		<span class="kw">let </span>CreateInherentDataConfig { mc_epoch_config, sc_slot_config, time_source, .. } = config;
 
@@ -523,7 +523,7 @@
 
 		<span class="kw">let </span>payouts = BlockParticipationInherentDataProvider::new(
 			client.as_ref(),
-			stake_distribution_data_source.as_ref(),
+			block_participation_data_source.as_ref(),
 			parent_hash,
 			verified_block_slot,
 			mc_epoch_config,

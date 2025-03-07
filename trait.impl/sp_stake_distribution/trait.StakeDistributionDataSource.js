@@ -1,4 +1,0 @@
-(function() {var implementors = {
-"db_sync_follower":[["impl StakeDistributionDataSource for <a class=\"struct\" href=\"db_sync_follower/stake_distribution/struct.StakeDistributionDataSourceImpl.html\" title=\"struct db_sync_follower::stake_distribution::StakeDistributionDataSourceImpl\">StakeDistributionDataSourceImpl</a>"]],
-"main_chain_follower_mock":[["impl StakeDistributionDataSource for <a class=\"struct\" href=\"main_chain_follower_mock/stake_distribution/struct.StakeDistributionDataSourceMock.html\" title=\"struct main_chain_follower_mock::stake_distribution::StakeDistributionDataSourceMock\">StakeDistributionDataSourceMock</a>"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

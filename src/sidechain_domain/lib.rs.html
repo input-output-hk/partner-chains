@@ -900,6 +900,14 @@
 <a href="#900" id="900">900</a>
 <a href="#901" id="901">901</a>
 <a href="#902" id="902">902</a>
+<a href="#903" id="903">903</a>
+<a href="#904" id="904">904</a>
+<a href="#905" id="905">905</a>
+<a href="#906" id="906">906</a>
+<a href="#907" id="907">907</a>
+<a href="#908" id="908">908</a>
+<a href="#909" id="909">909</a>
+<a href="#910" id="910">910</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Types/Structs/Functions meant to be used by other modules / our Business Logic (i.e the Sidechain's node / runtime in our case)
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -935,6 +943,14 @@
 	derive_more::FromStr,
 	serde::{Deserialize, Deserializer, Serialize, Serializer},
 };
+
+<span class="doccomment">/// The number of main chain epochs back a Partner Chain queries for committee selection inputs.
+/// This offset is necessary to ensure that data is present and stable.
+</span><span class="kw">const </span>DATA_MC_EPOCH_OFFSET: u32 = <span class="number">2</span>;
+
+<span class="kw">pub fn </span>offset_data_epoch(epoch: <span class="kw-2">&amp;</span>McEpochNumber) -&gt; <span class="prelude-ty">Result</span>&lt;McEpochNumber, u32&gt; {
+	<span class="prelude-val">Ok</span>(McEpochNumber(epoch.<span class="number">0</span>.checked_sub(DATA_MC_EPOCH_OFFSET).ok_or(DATA_MC_EPOCH_OFFSET)<span class="question-mark">?</span>))
+}
 
 <span class="doccomment">/// A main chain epoch number. In range [0, 2^31-1].
 </span><span class="attr">#[derive(
