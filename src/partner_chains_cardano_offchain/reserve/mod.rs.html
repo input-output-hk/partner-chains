@@ -139,6 +139,10 @@
 <a href="#139" id="139">139</a>
 <a href="#140" id="140">140</a>
 <a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! All smart-contracts related to Rewards Token Reserve Management
 
 </span><span class="kw">use crate</span>::{
@@ -222,11 +226,11 @@
 		})
 	}
 
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_reserve_utxo&lt;T: QueryLedgerState&gt;(
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_reserve_utxo_opt&lt;T: QueryLedgerState&gt;(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		ctx: <span class="kw-2">&amp;</span>TransactionContext,
 		client: <span class="kw-2">&amp;</span>T,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;ReserveUtxo, anyhow::Error&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;ReserveUtxo&gt;, anyhow::Error&gt; {
 		<span class="kw">let </span>validator_address = <span class="self">self</span>.scripts.validator.address(ctx.network).to_bech32(<span class="prelude-val">None</span>)<span class="question-mark">?</span>;
 		<span class="kw">let </span>validator_utxos = client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
 
@@ -235,21 +239,25 @@
 			asset_name: AssetName::empty(),
 		};
 
-		<span class="kw">let </span>(reserve_utxo, reserve_settings) = validator_utxos
-			.into_iter()
-			.find_map(|utxo| {
-				<span class="kw">if </span>utxo.get_asset_amount(<span class="kw-2">&amp;</span>auth_token_asset_id) != <span class="number">1u64 </span>{
-					<span class="kw">return </span><span class="prelude-val">None</span>;
-				}
-				utxo.get_plutus_data()
-					.and_then(|d| ReserveDatum::try_from(d).ok())
-					.map(|d| (utxo, d))
-			})
-			.ok_or_else(|| {
-				<span class="macro">anyhow!</span>(<span class="string">"Reserve Utxo not found, is the Reserve Token Management initialized?"</span>)
-			})<span class="question-mark">?</span>;
+		<span class="kw">let </span>reserve_utxo = validator_utxos.into_iter().find_map(|utxo| {
+			<span class="kw">if </span>utxo.get_asset_amount(<span class="kw-2">&amp;</span>auth_token_asset_id) != <span class="number">1u64 </span>{
+				<span class="kw">return </span><span class="prelude-val">None</span>;
+			}
+			utxo.get_plutus_data()
+				.and_then(|d| ReserveDatum::try_from(d).ok())
+				.map(|datum| ReserveUtxo { utxo, datum })
+		});
+		<span class="prelude-val">Ok</span>(reserve_utxo)
+	}
 
-		<span class="prelude-val">Ok</span>(ReserveUtxo { utxo: reserve_utxo, datum: reserve_settings })
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>get_reserve_utxo&lt;T: QueryLedgerState&gt;(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		ctx: <span class="kw-2">&amp;</span>TransactionContext,
+		client: <span class="kw-2">&amp;</span>T,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;ReserveUtxo, anyhow::Error&gt; {
+		<span class="self">self</span>.get_reserve_utxo_opt(ctx, client).<span class="kw">await</span><span class="question-mark">?</span>.ok_or_else(|| {
+			<span class="macro">anyhow!</span>(<span class="string">"Reserve Utxo not found, is the Reserve Token Management initialized?"</span>)
+		})
 	}
 }
 

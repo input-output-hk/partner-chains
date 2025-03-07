@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["ReserveCmd"],"struct":["CreateReserveCmd","DepositReserveCmd","HandoverReserveCmd","InitReserveCmd","ReleaseReserveCmd","UpdateReserveSettingsCmd"]};
+window.SIDEBAR_ITEMS = {"enum":["ReserveCmd"],"struct":["CreateReserveCmd","DepositReserveCmd","HandoverReserveCmd","ReleaseReserveCmd","UpdateReserveSettingsCmd"]};
