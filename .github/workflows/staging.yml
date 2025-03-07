@@ -118,7 +118,6 @@ jobs:
           +report \
           --log_level="${LOG_LEVEL:-"info"}" \
           --env=${{ env.TEST_ENVIRONMENT }} \
-          --stack=${{ env.TEST_ENVIRONMENT }} \
           --keyword="${KEYWORD:-"test_"}" \
           --repository ${{ github.repository }} \
           --job_url="$JOB_URL" \
