@@ -27,6 +27,7 @@ pub mod scripts_data;
 pub mod test_values;
 /// Supports governance updates
 pub mod update_governance;
+pub mod assemble_tx;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum OffchainError {

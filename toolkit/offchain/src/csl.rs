@@ -14,6 +14,36 @@ use ogmios_client::{
 use sidechain_domain::{AssetId, NetworkType, UtxoId};
 use std::collections::HashMap;
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct HelperTransaction {
+	cbor: Vec<u8>,
+}
+
+impl HelperTransaction {
+	pub fn new(cbor: Vec<u8>) -> Self {
+		HelperTransaction { cbor }
+	}
+
+	pub fn to_csl(&self) -> anyhow::Result<Transaction> {
+		Transaction::from_bytes(self.cbor.clone()).map_err(|e| anyhow::anyhow!(e))
+	}
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct HelperVKeyWitness {
+	cbor: Vec<u8>,
+}
+
+impl HelperVKeyWitness {
+	pub fn new(cbor: Vec<u8>) -> Self {
+		HelperVKeyWitness { cbor }
+	}
+
+	pub fn to_csl(&self) -> anyhow::Result<Vkeywitness> {
+		Vkeywitness::from_bytes(self.cbor.clone()).map_err(|e| anyhow::anyhow!(e))
+	}
+}
+
 pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: Language) -> [u8; 28] {
 	// Before hashing the script, we need to prepend with byte denoting the language.
 	let mut buf: Vec<u8> = vec![language_to_u8(language)];
@@ -188,6 +218,7 @@ pub enum Costs {
 
 pub trait CostStore {
 	fn get_mint(&self, script: &PlutusScript) -> ExUnits;
+	fn get_mint_by_hash(&self, script_hash: &ScriptHash) -> ExUnits;
 	fn get_spend(&self, spend_ix: u32) -> ExUnits;
 	fn get_one_spend(&self) -> ExUnits;
 }
@@ -200,6 +231,16 @@ impl CostStore for Costs {
 				.mints
 				.get(&script.csl_script_hash())
 				.expect("get_mint should not be called with an unknown script")
+				.clone(),
+		}
+	}
+	fn get_mint_by_hash(&self, script_hash: &ScriptHash) -> ExUnits {
+		match self {
+			Costs::ZeroCosts => zero_ex_units(),
+			Costs::Costs(cost_lookup) => cost_lookup
+				.mints
+				.get(script_hash)
+				.expect("get_mint_by_hash should not be called with an unknown script hash")
 				.clone(),
 		}
 	}
@@ -254,7 +295,10 @@ impl Costs {
 		make_tx(costs)
 	}
 
-	async fn from_ogmios<T: Transactions>(tx: &Transaction, client: &T) -> anyhow::Result<Costs> {
+	pub async fn from_ogmios<T: Transactions>(
+		tx: &Transaction,
+		client: &T,
+	) -> anyhow::Result<Costs> {
 		let evaluate_response = client
 			.evaluate_transaction(&tx.to_bytes())
 			.await
