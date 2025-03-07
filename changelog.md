@@ -23,6 +23,9 @@ type implemented in `node/runtime/src/lib.rs` for reference using Ariadne.
 
 ## Fixed
 
+* Failure of `smart-contracts reserve release` command when releasing all tokens in the reserve
+* Failure of `smart-contracts reserve handover` command when reserve is empty
+
 ## Added
 
 * block-production-log pallet, see it's readme for more details.

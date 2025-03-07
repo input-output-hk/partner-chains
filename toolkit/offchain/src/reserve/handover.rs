@@ -30,7 +30,6 @@ use crate::{
 	reserve::ReserveData,
 	scripts_data::ReserveScripts,
 };
-use anyhow::anyhow;
 use cardano_serialization_lib::*;
 use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -57,7 +56,7 @@ pub async fn handover_reserve<
 
 	let ref reserve_utxo @ ReserveUtxo { ref utxo, .. } =
 		reserve.get_reserve_utxo(&ctx, client).await?;
-	let amount = get_amount_to_release(reserve_utxo).ok_or_else(|| anyhow!("Internal Error. Reserve Validator has UTXO with Reserve Auth Policy Token, but without other asset."))?;
+	let amount = get_amount_to_release(reserve_utxo);
 
 	let tx = Costs::calculate_costs(
 		|costs| build_tx(&amount, utxo, &reserve, &governance, costs, &ctx),
@@ -79,10 +78,10 @@ pub async fn handover_reserve<
 	Ok(McTxHash(tx_id))
 }
 
-fn get_amount_to_release(reserve_utxo: &ReserveUtxo) -> Option<TokenAmount> {
+fn get_amount_to_release(reserve_utxo: &ReserveUtxo) -> TokenAmount {
 	let token = reserve_utxo.datum.immutable_settings.token.clone();
-	let amount = reserve_utxo.utxo.get_asset_amount(&token).try_into().ok()?;
-	Some(TokenAmount { token, amount })
+	let amount = reserve_utxo.utxo.get_asset_amount(&token);
+	TokenAmount { token, amount }
 }
 
 fn build_tx(
@@ -140,12 +139,20 @@ fn illiquid_supply_validator_output(
 	scripts: &ReserveScripts,
 	ctx: &TransactionContext,
 ) -> Result<TransactionOutput, JsError> {
-	let ma = output_value.token.to_multi_asset(output_value.amount)?;
-	let amount_builder = TransactionOutputBuilder::new()
-		.with_address(&scripts.illiquid_circulation_supply_validator.address(ctx.network))
-		.with_plutus_data(&illiquid_supply_validator_redeemer())
-		.next()?;
-	amount_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()
+	let tx_output_builder = TransactionOutputBuilder::new()
+		.with_address(&scripts.illiquid_circulation_supply_validator.address(ctx.network));
+	if output_value.amount > 0 {
+		let ma = output_value.token.to_multi_asset(output_value.amount)?;
+		let amount_builder = tx_output_builder
+			.with_plutus_data(&illiquid_supply_validator_redeemer())
+			.next()?;
+		amount_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()
+	} else {
+		// Smart-contract requires to deposit exactly one UTXO in the illiquid supply validator,
+		// otherwise it returns ERROR-RESERVE-16: No unique output utxo at the illiquid circulation supply address
+		let amount_builder = tx_output_builder.next()?;
+		amount_builder.with_minimum_ada(ctx)?.build()
+	}
 }
 
 fn illiquid_supply_validator_redeemer() -> PlutusData {
