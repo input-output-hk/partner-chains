@@ -171,6 +171,24 @@ async fn reserve_management_scenario() {
 }
 
 #[tokio::test]
+async fn reserve_relese_to_zero_scenario() {
+	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
+	let client = Cli::default();
+	let container = client.run(image);
+	let client = initialize(&container).await;
+	let genesis_utxo = run_init_goveranance(&client).await;
+	let txs = run_init_reserve_management(genesis_utxo, &client).await;
+	assert_eq!(txs.len(), 3);
+	let _ = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
+	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
+	run_release_reserve_funds(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, V_FUNCTION_UTXO, &client).await;
+	assert_reserve_deposited(genesis_utxo, 0, &client).await;
+	assert_illiquid_supply(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
+	run_handover_reserve(genesis_utxo, &client).await.unwrap();
+	assert_reserve_handed_over(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
+}
+
+#[tokio::test]
 async fn register() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
 	let client = Cli::default();

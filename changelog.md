@@ -2,15 +2,12 @@
 
 This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.0).
 
-# Unreleased
-
-## Changed
-
-## Removed
+# v1.5.1
 
 ## Fixed
 
-## Added
+* Failure of `smart-contracts reserve release` command when releasing all tokens in the reserve
+* Failure of `smart-contracts reserve handover` command when reserve is empty
 
 # v1.5.0
 

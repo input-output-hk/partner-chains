@@ -117,19 +117,13 @@ impl OgmiosValueExt for OgmiosValue {
 			for (policy_id, assets) in self.native_tokens.iter() {
 				let mut csl_assets = Assets::new();
 				for asset in assets.iter() {
-					let amount: u64 = asset.amount.try_into().map_err(|_| {
-						JsError::from_str(&format!(
-							"Could not convert Ogmios UTOX value, asset amount {} too large",
-							asset.amount,
-						))
-					})?;
 					let asset_name = AssetName::new(asset.name.clone()).map_err(|e| {
 						JsError::from_str(&format!(
 							"Could not convert Ogmios UTXO value, asset name is invalid: '{}'",
 							e
 						))
 					})?;
-					csl_assets.insert(&asset_name, &amount.into());
+					csl_assets.insert(&asset_name, &asset.amount.into());
 				}
 				multiasset.insert(&ScriptHash::from(*policy_id), &csl_assets);
 			}
@@ -763,7 +757,7 @@ impl MultiAssetExt for MultiAsset {
 			for asset in policy_assets {
 				assets.insert(
 					&cardano_serialization_lib::AssetName::new(asset.name.clone())?,
-					&(asset.amount as u64).into(),
+					&asset.amount.into(),
 				);
 			}
 			ma.insert(&PolicyID::from(*policy), &assets);
@@ -775,11 +769,22 @@ impl MultiAssetExt for MultiAsset {
 		asset: &AssetId,
 		amount: impl Into<BigNum>,
 	) -> Result<Self, JsError> {
-		self.set_asset(&asset.policy_id.0.into(), &asset.asset_name.to_csl()?, &0u64.into());
-		let mut assets = Assets::new();
-		assets.insert(&asset.asset_name.to_csl()?, &amount.into());
-		self.insert(&asset.policy_id.0.into(), &assets);
-		Ok(self)
+		let policy_id = asset.policy_id.0.into();
+		let asset_name = asset.asset_name.to_csl()?;
+		let amount: BigNum = amount.into();
+		if amount > BigNum::zero() {
+			self.set_asset(&policy_id, &asset_name, &amount);
+			Ok(self)
+		} else {
+			// CSL doesn't have a public API to remove asset from MultiAsset, setting it to 0 isn't really helpful.
+			let current_value = self.get_asset(&policy_id, &asset_name);
+			if current_value > BigNum::zero() {
+				let ma_to_sub = MultiAsset::new().with_asset_amount(asset, current_value)?;
+				Ok(self.sub(&ma_to_sub))
+			} else {
+				Ok(self)
+			}
+		}
 	}
 }
 
