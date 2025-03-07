@@ -16,12 +16,13 @@ use authority_selection_inherents::filter_invalid_candidates::{
 use authority_selection_inherents::select_authorities::select_authorities;
 use authority_selection_inherents::CommitteeMember;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
+use frame_support::inherent::ProvideInherent;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
-use frame_support::BoundedVec;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{ConstBool, ConstU128, ConstU32, ConstU64, ConstU8},
 	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, IdentityFee},
+	BoundedVec,
 };
 use opaque::SessionKeys;
 use pallet_grandpa::AuthorityId as GrandpaId;
@@ -39,7 +40,6 @@ use sidechain_slots::Slot;
 use sp_api::impl_runtime_apis;
 use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::hexdisplay::HexDisplay;
 use sp_core::{crypto::KeyTypeId, ByteArray, OpaqueMetadata};
 use sp_inherents::InherentIdentifier;
 use sp_runtime::{
@@ -53,8 +53,6 @@ use sp_runtime::{
 };
 use sp_sidechain::SidechainStatus;
 use sp_std::prelude::*;
-#[cfg(feature = "std")]
-use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use sp_weights::Weight;
 
@@ -69,6 +67,8 @@ mod mock;
 
 #[cfg(test)]
 mod header_tests;
+
+mod test_helper_pallet;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -422,21 +422,11 @@ parameter_types! {
 	pub const MaxTransactions: u32 = 256u32;
 }
 
-pub struct LogBeneficiaries;
-
-impl sp_sidechain::OnNewEpoch for LogBeneficiaries {
-	fn on_new_epoch(old_epoch: ScEpochNumber, _new_epoch: ScEpochNumber) -> sp_weights::Weight {
-		let rewards = BlockRewards::get_rewards_and_clear();
-		log::info!("Rewards accrued in epoch {old_epoch}: {rewards:?}");
-		RuntimeDbWeight::get().reads_writes(1, 1)
-	}
-}
-
 impl pallet_sidechain::Config for Runtime {
 	fn current_slot_number() -> ScSlotNumber {
 		ScSlotNumber(*pallet_aura::CurrentSlot::<Self>::get())
 	}
-	type OnNewEpoch = LogBeneficiaries;
+	type OnNewEpoch = TestHelperPallet;
 }
 
 pub type BeneficiaryId = sidechain_domain::byte_string::SizedByteString<32>;
@@ -539,8 +529,10 @@ impl pallet_block_participation::Config for Runtime {
 		BlockProductionLog::drop_prefix(&slot)
 	}
 
-	const TARGET_INHERENT_ID: InherentIdentifier = [42; 8];
+	const TARGET_INHERENT_ID: InherentIdentifier = TestHelperPallet::INHERENT_IDENTIFIER;
 }
+
+impl crate::test_helper_pallet::Config for Runtime {}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -568,6 +560,7 @@ construct_runtime!(
 		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
 		Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,
+		TestHelperPallet: crate::test_helper_pallet,
 	}
 );
 
