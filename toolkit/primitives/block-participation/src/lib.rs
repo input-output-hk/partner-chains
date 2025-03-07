@@ -284,7 +284,7 @@ pub mod inherent_data {
 				.timestamp_to_mainchain_epoch(timestamp)
 				.expect("Mainchain epoch for past slots exists");
 
-			offset_data_epoch(mc_epoch)
+			offset_data_epoch(&mc_epoch)
 				.map_err(|offset| InherentDataCreationError::McEpochBelowOffset(mc_epoch, offset))
 		}
 

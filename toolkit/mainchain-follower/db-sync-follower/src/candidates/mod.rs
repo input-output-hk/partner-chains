@@ -280,7 +280,7 @@ impl CandidatesDataSourceImpl {
 		&self,
 		epoch_of_data_usage: McEpochNumber,
 	) -> Result<McEpochNumber, Box<dyn std::error::Error + Send + Sync>> {
-		offset_data_epoch(epoch_of_data_usage).map_err(|offset| {
+		offset_data_epoch(&epoch_of_data_usage).map_err(|offset| {
 			BadRequest(format!(
 				"Minimum supported epoch of data usage is {offset}, but {} was provided",
 				epoch_of_data_usage.0
