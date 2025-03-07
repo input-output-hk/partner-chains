@@ -33,8 +33,8 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use session_manager::ValidatorManagementSessionManager;
 use sidechain_domain::{
-	DelegatorKey, MainchainKeyHash, NativeTokenAmount, PermissionedCandidateData, RegistrationData,
-	ScEpochNumber, ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
+	DelegatorKey, MainchainKeyHash, PermissionedCandidateData, RegistrationData, ScEpochNumber,
+	ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
 };
 use sidechain_slots::Slot;
 use sp_api::impl_runtime_apis;
@@ -49,7 +49,7 @@ use sp_runtime::{
 		Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, DispatchResult, MultiSignature, Perbill,
+	ApplyExtrinsicResult, MultiSignature, Perbill,
 };
 use sp_sidechain::SidechainStatus;
 use sp_std::prelude::*;
@@ -289,18 +289,9 @@ impl frame_system::Config for Runtime {
 	type PostTransactions = ();
 }
 
-pub struct TokenTransferHandler;
-
-impl pallet_native_token_management::TokenTransferHandler for TokenTransferHandler {
-	fn handle_token_transfer(token_amount: NativeTokenAmount) -> DispatchResult {
-		log::info!("💸 Registered transfer of {} native tokens", token_amount.0);
-		Ok(())
-	}
-}
-
 impl pallet_native_token_management::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type TokenTransferHandler = TokenTransferHandler;
+	type TokenTransferHandler = TestHelperPallet;
 	type WeightInfo = pallet_native_token_management::weights::SubstrateWeight<Runtime>;
 }
 
