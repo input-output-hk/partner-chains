@@ -35,7 +35,7 @@ def test_register_candidate(candidate: Candidates, api: BlockchainApi, db: Sessi
     api.wait_for_next_pc_block()
     candidate_registrations = api.get_trustless_candidates(next_status_epoch, valid_only=False)
     spo_public_key = config.nodes_config.nodes[candidate.name].keys_files.spo_public_key
-    registered_mc_pub_key = f"0x{api._read_cardano_key_file(spo_public_key)}"
+    registered_mc_pub_key = f"0x{api.read_cardano_key_file(spo_public_key)}"
     # FIXME: ETCM-7370 handle multiple registrations for a single spo
     registration = candidate_registrations[registered_mc_pub_key][0]
     registered_pc_pub_key = config.nodes_config.nodes[candidate.name].public_key
@@ -87,7 +87,7 @@ def test_deregister_candidate(candidate: Candidates, api: BlockchainApi, db: Ses
     # Get deregistration status from RPC
     api.wait_for_next_pc_block()
     candidate_registrations = api.get_trustless_candidates(next_status_epoch, valid_only=False)
-    deregistered_mc_pub_key = api._read_cardano_key_file(
+    deregistered_mc_pub_key = api.read_cardano_key_file(
         config.nodes_config.nodes[candidate.name].keys_files.spo_public_key
     )
 
