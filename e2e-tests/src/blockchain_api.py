@@ -575,9 +575,9 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def get_block_production_log(self, block_hash):
+    def get_block_production_log(self, block_hash=None):
         """
-        Retrieves block production log for latest block.
+        Retrieves block production log for block with provided hash or latest if hash is not provided.
 
         Arguments:
             block_hash {str} -- PC block hash
