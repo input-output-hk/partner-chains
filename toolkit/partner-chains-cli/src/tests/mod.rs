@@ -10,7 +10,7 @@ use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData}
 use partner_chains_cardano_offchain::{cardano_keys::CardanoPaymentSigningKey, OffchainError};
 use pretty_assertions::assert_eq;
 use sidechain_domain::{
-	CandidateRegistration, DParameter, MainchainKeyHash, MainchainPublicKey, McTxHash, UtxoId,
+	CandidateRegistration, DParameter, MainchainKeyHash, MainchainPublicKey, McTxHash, UtxoId, McSmartContractResult,
 };
 use sp_core::offchain::Timestamp;
 use std::collections::HashMap;
@@ -235,7 +235,7 @@ pub struct OffchainMock {
 	pub init_governance:
 		HashMap<(UtxoId, MainchainKeyHash, PrivateKeyBytes), Result<OgmiosTx, OffchainError>>,
 	pub upsert_d_param:
-		HashMap<(UtxoId, DParameter, PrivateKeyBytes), Result<Option<McTxHash>, String>>,
+		HashMap<(UtxoId, DParameter, PrivateKeyBytes, Vec<MainchainKeyHash>), Result<Option<McSmartContractResult>, String>>,
 	pub upsert_permissioned_candidates: HashMap<
 		(UtxoId, Vec<sidechain_domain::PermissionedCandidateData>, PrivateKeyBytes),
 		Result<Option<McTxHash>, String>,
@@ -285,9 +285,10 @@ impl OffchainMock {
 		genesis_utxo: UtxoId,
 		d_param: DParameter,
 		payment_key: PrivateKeyBytes,
-		result: Result<Option<McTxHash>, String>,
+		governance: Vec<MainchainKeyHash>,
+		result: Result<Option<McSmartContractResult>, String>,
 	) -> Self {
-		Self { upsert_d_param: [((genesis_utxo, d_param, payment_key), result)].into(), ..self }
+		Self { upsert_d_param: [((genesis_utxo, d_param, payment_key, governance), result)].into(), ..self }
 	}
 
 	pub(crate) fn with_register(
@@ -365,9 +366,10 @@ impl UpsertDParam for OffchainMock {
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<McTxHash>> {
+		governance_authority: Vec<MainchainKeyHash>,
+	) -> anyhow::Result<Option<McSmartContractResult>> {
 		self.upsert_d_param
-			.get(&(genesis_utxo, d_parameter.clone(), payment_signing_key.to_bytes()))
+			.get(&(genesis_utxo, d_parameter.clone(), payment_signing_key.to_bytes(), governance_authority))
 			.cloned()
 			.unwrap_or_else(|| {
 				Err(format!(

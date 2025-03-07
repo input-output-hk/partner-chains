@@ -45,6 +45,7 @@ mod mint_tx {
 			&input_d_param(),
 			&governance_data(),
 			test_costs(),
+			vec![mainchain_key_hash()],
 			&test_tx_context(),
 		)
 		.expect("Test transaction should be constructed without error")
@@ -222,6 +223,7 @@ mod update_d_parameter {
 			&script_utxo(),
 			&governance_data(),
 			test_costs(),
+			vec![mainchain_key_hash()],
 			&test_tx_context(),
 		)
 		.unwrap()

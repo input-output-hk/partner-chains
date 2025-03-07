@@ -4,23 +4,33 @@
 //! The datum encodes D-parameter using VersionedGenericDatum envelope with the D-parameter being
 //! `datum` field being `[num_permissioned_candidates, num_registered_candidates]`.
 
+use std::any::Any;
+
 use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::{
-	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, InputsBuilderExt,
-	TransactionBuilderExt, TransactionContext,
+	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs,
+	InputsBuilderExt, TransactionBuilderExt, TransactionContext,
 };
 use crate::governance::GovernanceData;
 use crate::plutus_script::PlutusScript;
 use anyhow::anyhow;
-use cardano_serialization_lib::{PlutusData, Transaction, TransactionBuilder, TxInputsBuilder};
+use cardano_serialization_lib::{
+	PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
+};
 use ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
 use ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
 	types::OgmiosUtxo,
 };
+// use pallas_primitives::conway::VKeyWitness;
 use partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
-use sidechain_domain::{DParameter, McTxHash, UtxoId};
+use serde_json::json;
+use sidechain_domain::{
+	DParameter, MainchainKeyHash, McSmartContractResult,
+	McSmartContractResult::{TxCBOR, TxHash},
+	McTxHash, UtxoId,
+};
 
 #[cfg(test)]
 mod tests;
@@ -32,7 +42,8 @@ pub trait UpsertDParam {
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<McTxHash>>;
+		governance_authority: Vec<MainchainKeyHash>,
+	) -> anyhow::Result<Option<McSmartContractResult>>;
 }
 
 impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> UpsertDParam for C {
@@ -41,11 +52,13 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> Upse
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<McTxHash>> {
+		governance_authority: Vec<MainchainKeyHash>,
+	) -> anyhow::Result<Option<McSmartContractResult>> {
 		upsert_d_param(
 			genesis_utxo,
 			d_parameter,
 			payment_signing_key,
+			governance_authority,
 			self,
 			&FixedDelayRetries::two_minutes(),
 		)
@@ -60,9 +73,10 @@ pub async fn upsert_d_param<
 	genesis_utxo: UtxoId,
 	d_parameter: &DParameter,
 	payment_signing_key: &CardanoPaymentSigningKey,
+	governance_authority: Vec<MainchainKeyHash>,
 	ogmios_client: &C,
 	await_tx: &A,
-) -> anyhow::Result<Option<McTxHash>> {
+) -> anyhow::Result<Option<McSmartContractResult>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
 	let (validator, policy) = crate::scripts_data::d_parameter_scripts(genesis_utxo, ctx.network)?;
 	let validator_address = validator.address_bech32(ctx.network)?;
@@ -83,6 +97,7 @@ pub async fn upsert_d_param<
 					&current_utxo,
 					ctx,
 					genesis_utxo,
+					governance_authority,
 					ogmios_client,
 				)
 				.await?,
@@ -91,12 +106,20 @@ pub async fn upsert_d_param<
 		None => {
 			log::info!("There is no D-parameter set. Inserting new one.");
 			Some(
-				insert_d_param(&validator, &policy, d_parameter, ctx, genesis_utxo, ogmios_client)
-					.await?,
+				insert_d_param(
+					&validator,
+					&policy,
+					d_parameter,
+					ctx,
+					genesis_utxo,
+					governance_authority,
+					ogmios_client,
+				)
+				.await?,
 			)
 		},
 	};
-	if let Some(tx_hash) = tx_hash_opt {
+	if let Some(TxHash(tx_hash)) = tx_hash_opt {
 		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
 	}
 	Ok(tx_hash_opt)
@@ -130,27 +153,52 @@ async fn insert_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 	d_parameter: &DParameter,
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
+	governance_authority: Vec<MainchainKeyHash>,
 	client: &C,
-) -> anyhow::Result<McTxHash> {
+) -> anyhow::Result<McSmartContractResult> {
 	let gov_data = GovernanceData::get(genesis_utxo, client).await?;
 
 	let tx = Costs::calculate_costs(
-		|costs| mint_d_param_token_tx(validator, policy, d_parameter, &gov_data, costs, &ctx),
+		|costs| {
+			mint_d_param_token_tx(
+				validator,
+				policy,
+				d_parameter,
+				&gov_data,
+				costs,
+				governance_authority.clone(),
+				&ctx,
+			)
+		},
 		client,
 	)
 	.await?;
 
-	let signed_tx = ctx.sign(&tx).to_bytes();
-	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-		anyhow!(
-			"Submit insert D-parameter transaction request failed: {}, bytes: {}",
-			e,
-			hex::encode(signed_tx)
-		)
-	})?;
-	let tx_id = McTxHash(res.transaction.id);
-	log::info!("Transaction submitted: {}", hex::encode(tx_id.0));
-	Ok(tx_id)
+	let context_pub_key_hash =
+		MainchainKeyHash(ctx.payment_key_hash().to_bytes().try_into().unwrap());
+
+	if governance_authority == vec![context_pub_key_hash] {
+		let signed_tx = ctx.sign(&tx).to_bytes();
+		let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
+			anyhow!(
+				"Submit insert D-parameter transaction request failed: {}, bytes: {}",
+				e,
+				hex::encode(signed_tx)
+			)
+		})?;
+		let tx_id = McTxHash(res.transaction.id);
+		log::info!("Transaction submitted: {}", hex::encode(tx_id.0));
+		Ok(TxHash(tx_id))
+	} else {
+		let tx_envelope = json!(
+			{ "type": "Unwitnessed Tx ConwayEra",
+			  "description": "",
+			  "cborHex": hex::encode(tx.to_bytes())
+			}
+		);
+		log::info!("Transaction envelope: {}", tx_envelope);
+		Ok(TxCBOR(tx.to_bytes()))
+	}
 }
 
 async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
@@ -160,8 +208,9 @@ async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 	current_utxo: &OgmiosUtxo,
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
+	governance_authority: Vec<MainchainKeyHash>,
 	client: &C,
-) -> anyhow::Result<McTxHash> {
+) -> anyhow::Result<McSmartContractResult> {
 	let governance_data = GovernanceData::get(genesis_utxo, client).await?;
 
 	let tx = Costs::calculate_costs(
@@ -173,6 +222,7 @@ async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 				current_utxo,
 				&governance_data,
 				costs,
+				governance_authority.clone(),
 				&ctx,
 			)
 		},
@@ -180,17 +230,31 @@ async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 	)
 	.await?;
 
-	let signed_tx = ctx.sign(&tx).to_bytes();
-	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-		anyhow!(
-			"Submit D-parameter update transaction request failed: {}, bytes: {}",
-			e,
-			hex::encode(signed_tx)
-		)
-	})?;
-	let tx_id = McTxHash(res.transaction.id);
-	log::info!("Update D-parameter transaction submitted: {}", hex::encode(tx_id.0));
-	Ok(tx_id)
+	let context_pub_key_hash =
+		MainchainKeyHash(ctx.payment_key_hash().to_bytes().try_into().unwrap());
+
+	if governance_authority == vec![context_pub_key_hash] {
+		let signed_tx = ctx.sign(&tx).to_bytes();
+		let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
+			anyhow!(
+				"Submit D-parameter update transaction request failed: {}, bytes: {}",
+				e,
+				hex::encode(signed_tx)
+			)
+		})?;
+		let tx_id = McTxHash(res.transaction.id);
+		log::info!("Update D-parameter transaction submitted: {}", hex::encode(tx_id.0));
+		Ok(TxHash(tx_id))
+	} else {
+		let tx_envelope = json!(
+			{ "type": "Unwitnessed Tx ConwayEra",
+			  "description": "",
+			  "cborHex": hex::encode(tx.to_bytes())
+			}
+		);
+		log::info!("Transaction envelope: {}", tx_envelope);
+		Ok(TxCBOR(tx.to_bytes()))
+	}
 }
 
 fn mint_d_param_token_tx(
@@ -199,6 +263,7 @@ fn mint_d_param_token_tx(
 	d_parameter: &DParameter,
 	governance_data: &GovernanceData,
 	costs: Costs,
+	governance_authority: Vec<MainchainKeyHash>,
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
@@ -223,6 +288,10 @@ fn mint_d_param_token_tx(
 		&costs.get_mint(&governance_data.policy_script),
 	)?;
 
+	for key in governance_authority.iter() {
+		tx_builder.add_required_signer(&key.0.into());
+	}
+
 	Ok(tx_builder.balance_update_and_build(ctx)?)
 }
 
@@ -233,6 +302,7 @@ fn update_d_param_tx(
 	script_utxo: &OgmiosUtxo,
 	governance_data: &GovernanceData,
 	costs: Costs,
+	governance_authority: Vec<MainchainKeyHash>,
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
@@ -259,6 +329,10 @@ fn update_d_param_tx(
 		&gov_tx_input,
 		&costs.get_mint(&governance_data.policy_script),
 	)?;
+
+	for key in governance_authority.iter() {
+		tx_builder.add_required_signer(&key.0.into());
+	}
 
 	Ok(tx_builder.balance_update_and_build(ctx)?)
 }

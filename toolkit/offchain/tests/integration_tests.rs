@@ -27,6 +27,7 @@ use sidechain_domain::{
 	AdaBasedStaking, AssetId, AssetName, AuraPublicKey, CandidateRegistration, DParameter,
 	GrandpaPublicKey, MainchainKeyHash, MainchainPublicKey, MainchainSignature, McTxHash,
 	PermissionedCandidateData, PolicyId, SidechainPublicKey, SidechainSignature, UtxoId, UtxoIndex,
+	McSmartContractResult::TxHash,
 };
 use std::time::Duration;
 use testcontainers::{clients::Cli, Container, GenericImage};
@@ -91,7 +92,7 @@ async fn governance_flow() {
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
 	let _ = run_update_goveranance(&client, genesis_utxo).await;
-	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &eve_payment_key(), &client)
+	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &eve_payment_key(),vec![EVE_PUBLIC_KEY_HASH], &client)
 		.await
 		.is_some());
 }
@@ -103,13 +104,13 @@ async fn upsert_d_param() {
 	let container = client.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
-	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &governance_authority_payment_key(), &client)
+	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &governance_authority_payment_key(), vec![GOVERNANCE_AUTHORITY], &client)
 		.await
 		.is_some());
-	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &governance_authority_payment_key(), &client)
+	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &governance_authority_payment_key(), vec![GOVERNANCE_AUTHORITY], &client)
 		.await
 		.is_none());
-	assert!(run_upsert_d_param(genesis_utxo, 1, 1, &governance_authority_payment_key(), &client)
+	assert!(run_upsert_d_param(genesis_utxo, 1, 1, &governance_authority_payment_key(), vec![GOVERNANCE_AUTHORITY], &client)
 		.await
 		.is_some())
 }
@@ -273,24 +274,28 @@ async fn run_upsert_d_param<
 	num_permissioned_candidates: u16,
 	num_registered_candidates: u16,
 	pkey: &CardanoPaymentSigningKey,
+	governance: Vec<MainchainKeyHash>,
 	client: &T,
 ) -> Option<McTxHash> {
 	let tx_hash = d_param::upsert_d_param(
 		genesis_utxo,
 		&DParameter { num_permissioned_candidates, num_registered_candidates },
 		pkey,
+		governance,
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
 	.unwrap();
-	if let Some(tx_hash) = tx_hash {
+	if let Some(TxHash(tx_hash)) = tx_hash {
 		FixedDelayRetries::new(Duration::from_millis(500), 100)
 			.await_tx_output(client, UtxoId::new(tx_hash.0, 0))
 			.await
-			.unwrap()
-	};
-	tx_hash
+			.unwrap();
+		Some(tx_hash)
+	} else {
+		None
+	}
 }
 
 async fn run_upsert_permissioned_candidates<

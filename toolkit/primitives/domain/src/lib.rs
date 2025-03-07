@@ -420,6 +420,14 @@ impl From<ecdsa::Public> for SidechainPublicKey {
 
 #[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
+pub struct TransactionCbor(pub Vec<u8>);
+
+#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
+pub struct VKeyWitnessCbor(pub Vec<u8>);
+
+#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct SidechainSignature(pub Vec<u8>);
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
@@ -555,6 +563,12 @@ impl TryFrom<Vec<u8>> for McTxHash {
 			.map_err(|_| "McTxHash must be 32 bytes long")
 			.map(McTxHash)
 	}
+}
+
+#[derive(Clone, Debug)]
+pub enum McSmartContractResult {
+	TxHash(McTxHash),
+	TxCBOR(Vec<u8>),
 }
 
 #[derive(Default, Clone, Decode, Encode, PartialEq, Eq, TypeInfo, ToDatum, MaxEncodedLen, Hash)]

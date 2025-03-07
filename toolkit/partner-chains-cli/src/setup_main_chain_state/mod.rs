@@ -275,6 +275,7 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 			CARDANO_PAYMENT_SIGNING_KEY_FILE.prompt_with_default_from_file_and_save(context);
 		let payment_signing_key =
 			cardano_key::get_mc_payment_signing_key_from_file(&payment_signing_key_path, context)?;
+		let payment_verification_key_hash = payment_signing_key.to_pub_key_hash();
 		let d_parameter =
 			sidechain_domain::DParameter { num_permissioned_candidates, num_registered_candidates };
 		let offchain = context.offchain_impl(&ogmios_config)?;
@@ -283,6 +284,7 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 			genesis_utxo,
 			&d_parameter,
 			&payment_signing_key,
+			vec![payment_verification_key_hash],
 		))?;
 		context.print(&format!("D-parameter updated to ({}, {}). The change will be effective in two main chain epochs.", p, r));
 	}
