@@ -16,9 +16,7 @@ use std::num::NonZero;
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
 pub enum ReserveCmd {
-	/// Initialize the reserve management system for your chain
-	Init(InitReserveCmd),
-	/// Creates the reserve for your chain. `init` and `create` will be merged into a single command in a future release.
+	/// Initialize the reserve management system and creates the reserve for your chain.
 	Create(CreateReserveCmd),
 	/// Deposits tokens from payment key wallet to the reserve
 	Deposit(DepositReserveCmd),
@@ -33,39 +31,12 @@ pub enum ReserveCmd {
 impl ReserveCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		match self {
-			Self::Init(cmd) => cmd.execute().await,
 			Self::Create(cmd) => cmd.execute().await,
 			Self::Deposit(cmd) => cmd.execute().await,
 			Self::UpdateSettings(cmd) => cmd.execute().await,
 			Self::Handover(cmd) => cmd.execute().await,
 			Self::Release(cmd) => cmd.execute().await,
 		}
-	}
-}
-
-#[derive(Clone, Debug, clap::Parser)]
-pub struct InitReserveCmd {
-	#[clap(flatten)]
-	common_arguments: crate::CommonArguments,
-	#[clap(flatten)]
-	payment_key_file: PaymentFilePath,
-	/// Genesis UTXO of the partner-chain.
-	#[arg(long, short('c'))]
-	genesis_utxo: UtxoId,
-}
-
-impl InitReserveCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
-		let payment_key = self.payment_key_file.read_key()?;
-		let client = self.common_arguments.get_ogmios_client().await?;
-		let _ = init_reserve_management(
-			self.genesis_utxo,
-			&payment_key,
-			&client,
-			&FixedDelayRetries::two_minutes(),
-		)
-		.await?;
-		Ok(())
 	}
 }
 
@@ -93,6 +64,13 @@ impl CreateReserveCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
+		let _ = init_reserve_management(
+			self.genesis_utxo,
+			&payment_key,
+			&client,
+			&FixedDelayRetries::two_minutes(),
+		)
+		.await?;
 		let _ = create_reserve_utxo(
 			ReserveParameters {
 				total_accrued_function_script_hash: self.total_accrued_function_script_hash,
