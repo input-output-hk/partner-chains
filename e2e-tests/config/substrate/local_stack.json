@@ -1,5 +1,6 @@
 {
     "stack_config": {
+        "ogmios_scheme": "ws",
         "ogmios_host": "ogmios",
         "ogmios_port": 1337,
         "tools_shell": "/bin/bash",

@@ -48,6 +48,15 @@ class Node:
 
 
 @dataclass
+class NativeToken:
+    total_accrued_function_script_hash: str = MISSING
+    total_accrued_function_address: str = MISSING
+    policy_id: str = MISSING
+    asset_name: str = MISSING
+    token: str = SI("${.policy_id}.${.asset_name}")
+
+
+@dataclass
 class MainChainConfig:
     network: str = MISSING
     epoch_length: int = MISSING
@@ -56,6 +65,7 @@ class MainChainConfig:
     security_param: int = MISSING
     init_timestamp: int = MISSING
     block_stability_margin: int = MISSING
+    native_token: Optional[NativeToken] = None
 
 
 @dataclass
