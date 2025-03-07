@@ -244,10 +244,6 @@ fn new_d_parameter() -> DParameter {
 
 fn insert_d_parameter_io() -> MockIO {
 	MockIO::Group(vec![
-		prompt_ogmios_configuration_io(
-			&default_ogmios_service_config(),
-			&default_ogmios_service_config(),
-		),
 		MockIO::prompt(
 			"Enter P, the number of permissioned candidates seats, as a non-negative integer.",
 			Some("0"),
@@ -267,10 +263,6 @@ fn insert_d_parameter_io() -> MockIO {
 
 fn update_d_parameter_io() -> MockIO {
 	MockIO::Group(vec![
-		prompt_ogmios_configuration_io(
-			&default_ogmios_service_config(),
-			&default_ogmios_service_config(),
-		),
 		MockIO::prompt(
 			"Enter P, the number of permissioned candidates seats, as a non-negative integer.",
 			Some("6"),
