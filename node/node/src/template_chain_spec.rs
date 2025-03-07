@@ -3,6 +3,7 @@ use sc_service::ChainType;
 use sidechain_runtime::{
 	AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig, RuntimeGenesisConfig,
 	SessionCommitteeManagementConfig, SessionConfig, SidechainConfig, SudoConfig, SystemConfig,
+	TestHelperPalletConfig,
 };
 
 /// Produces template chain spec for Partner Chains.
@@ -39,6 +40,10 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 		},
 		native_token_management: NativeTokenManagementConfig {
 			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()?,
+			..Default::default()
+		},
+		test_helper_pallet: TestHelperPalletConfig {
+			participation_data_release_period: 30,
 			..Default::default()
 		},
 	};

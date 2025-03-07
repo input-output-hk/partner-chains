@@ -505,11 +505,7 @@ impl pallet_block_participation::Config for Runtime {
 	type DelegatorId = DelegatorKey;
 
 	fn should_release_data(slot: sidechain_slots::Slot) -> Option<sidechain_slots::Slot> {
-		if *slot % 3 == 0 {
-			Some(slot)
-		} else {
-			None
-		}
+		TestHelperPallet::should_release_participation_data(slot)
 	}
 
 	fn blocks_produced_up_to_slot(slot: Slot) -> impl Iterator<Item = (Slot, BlockAuthor)> {

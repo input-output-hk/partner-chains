@@ -1,11 +1,13 @@
+#![allow(deprecated)]
+
 pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use crate::BlockAuthor;
 	use frame_support::pallet_prelude::*;
-	use frame_system::ensure_none;
 	use frame_system::pallet_prelude::OriginFor;
+	use frame_system::{ensure_none, ensure_root};
 	use sidechain_domain::*;
 	use sp_block_participation::BlockProductionData;
 	use sp_inherents::IsFatalError;
@@ -21,6 +23,34 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::unbounded]
 	pub type LatestParticipationData<T: Config> = StorageValue<_, ParticipationData, OptionQuery>;
+
+	#[pallet::storage]
+	pub type ParticipationDataReleasePeriod<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	#[pallet::genesis_config]
+	#[derive(frame_support::DefaultNoBound)]
+	pub struct GenesisConfig<T: Config> {
+		pub participation_data_release_period: u64,
+		pub _phantom: PhantomData<T>,
+	}
+	#[pallet::genesis_build]
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+		fn build(&self) {
+			ParticipationDataReleasePeriod::<T>::put(self.participation_data_release_period);
+		}
+	}
+
+	impl<T: Config> Pallet<T> {
+		pub fn should_release_participation_data(
+			slot: sidechain_slots::Slot,
+		) -> Option<sidechain_slots::Slot> {
+			if *slot % ParticipationDataReleasePeriod::<T>::get() == 0 {
+				Some(slot)
+			} else {
+				None
+			}
+		}
+	}
 
 	impl<T: Config> sp_sidechain::OnNewEpoch for Pallet<T> {
 		fn on_new_epoch(old_epoch: ScEpochNumber, _new_epoch: ScEpochNumber) -> sp_weights::Weight {
@@ -49,6 +79,18 @@ pub mod pallet {
 			ensure_none(origin)?;
 			log::info!("📊 Block participation inherent data released");
 			LatestParticipationData::<T>::put(data);
+			Ok(())
+		}
+
+		#[pallet::call_index(1)]
+		#[pallet::weight(0)]
+		pub fn set_block_participation_data_release_period(
+			origin: OriginFor<T>,
+			period: u64,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+			log::info!("📊 Block participation data release period changed to {period}");
+			ParticipationDataReleasePeriod::<T>::put(period);
 			Ok(())
 		}
 	}
