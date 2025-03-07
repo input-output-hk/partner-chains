@@ -38,6 +38,10 @@ use {
 /// This offset is necessary to ensure that data is present and stable.
 pub const DATA_MC_EPOCH_OFFSET: u32 = 2;
 
+pub fn offset_data_epoch(epoch: McEpochNumber) -> Result<McEpochNumber, u32> {
+	Ok(McEpochNumber(epoch.0.checked_sub(DATA_MC_EPOCH_OFFSET).ok_or(DATA_MC_EPOCH_OFFSET)?))
+}
+
 /// A main chain epoch number. In range [0, 2^31-1].
 #[derive(
 	Default, Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, Hash, TypeInfo, Ord, PartialOrd,

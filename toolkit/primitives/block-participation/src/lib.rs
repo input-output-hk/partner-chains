@@ -116,7 +116,6 @@ pub mod inherent_data {
 	use alloc::fmt::Debug;
 	use core::error::Error;
 	use sidechain_domain::mainchain_epoch::*;
-	use sidechain_domain::DATA_MC_EPOCH_OFFSET;
 	use sidechain_domain::*;
 	use sp_api::{ApiError, ApiExt, ProvideRuntimeApi};
 	use sp_inherents::{InherentData, InherentDataProvider};
@@ -285,12 +284,8 @@ pub mod inherent_data {
 				.timestamp_to_mainchain_epoch(timestamp)
 				.expect("Mainchain epoch for past slots exists");
 
-			(mc_epoch.0.checked_sub(DATA_MC_EPOCH_OFFSET))
-				.ok_or(InherentDataCreationError::McEpochBelowOffset(
-					mc_epoch,
-					DATA_MC_EPOCH_OFFSET,
-				))
-				.map(McEpochNumber)
+			offset_data_epoch(mc_epoch)
+				.map_err(|offset| InherentDataCreationError::McEpochBelowOffset(mc_epoch, offset))
 		}
 
 		fn count_blocks_by_epoch_and_producer(
