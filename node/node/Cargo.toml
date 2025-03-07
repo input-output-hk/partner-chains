@@ -1,6 +1,6 @@
 [package]
 name = "partner-chains-node"
-version = "1.5.0"
+version = "1.5.1"
 description = "A reference implementation of a partner chain node"
 authors = ["IOG"]
 homepage = "https://iohk.io/"

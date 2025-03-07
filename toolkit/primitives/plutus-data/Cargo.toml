@@ -1,6 +1,6 @@
 [package]
 name = "partner-chains-plutus-data"
-version = "1.5.0"
+version = "1.5.1"
 edition = "2021"
 description = "Parsing and serialization of Plutus data schemas used by Partner Chains smart contracts."
 license = "Apache-2.0"
