@@ -194,42 +194,36 @@ def test_block_headers_have_mc_hash(api: BlockchainApi, config: ApiConfig, pc_ep
             logger.warning(f"Unexpected (but within offset) stable block number saved in header of block {block_no}")
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
-@mark.test_key('ETCM-9394')
 @mark.block_production_log
 def test_block_production_log_pallet(
     api: BlockchainApi,
     config: ApiConfig,
 ):
-    """
-    For each block in a specified pc epoch:
-        * queries the block production log and for each entry:
-            * verifies that authors in the log are correct.
-    """
     block = api.get_block()
     block_no = block["header"]["number"]
     block_hash = block["header"]["hash"]
     block_production_log = api.get_block_production_log(block_hash=block_hash)
     block_production_log.reverse()
     for slot, block_producer_id in block_production_log:
-        logger.debug(f"checking slot {slot}")
         committee = api.get_validator_set(block).value
         author_index = slot % len(committee)
-        _, expected_node = committee[author_index]
-        expected_author = next(x.public_key for x in config.nodes_config.nodes.values() if x.aura_public_key == expected_node["aura"])
+        expected_node = next(x for x in config.nodes_config.nodes.values() if x.aura_public_key == committee[author_index][1]["aura"])
         if "Incentivized" in block_producer_id:
-            cross_chain_public, _ = block_producer_id["Incentivized"]
-            logger.debug(f"incentivized {cross_chain_public == expected_author} {cross_chain_public} {expected_author}")
+            cross_chain_public, stake_pool_public_key = block_producer_id["Incentivized"]
             assert (
-                cross_chain_public == expected_author
+                cross_chain_public == expected_node.public_key
             ), f"Incorrect author: block {block_no} ({block_hash}) was authored by non-committee member"
+            expected_spo_key = api.read_cardano_key_file(expected_node["keys_files"]["spo_public_key"])
+            assert (
+                stake_pool_public_key[2:] == expected_spo_key
+            ), f"Incorrect SPO: block {block_no} ({block_hash}) author has incorrect SPO"
         elif "ProBono" in block_producer_id:
             cross_chain_public = block_producer_id["ProBono"]
-            logger.debug(f"probono {cross_chain_public == expected_author} {cross_chain_public} {expected_author}")
             assert (
-                cross_chain_public == expected_author
+                cross_chain_public == expected_node.public_key
             ), f"Incorrect author: block {block_no} ({block_hash}) was authored by non-committee member"
         else:
             assert False, f"Invalid block producer id: {block_producer_id}"
         block_no = block_no - 1
         block = api.get_block(block_no)
+        block_hash = block["header"]["hash"]

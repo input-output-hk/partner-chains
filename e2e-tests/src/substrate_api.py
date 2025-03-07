@@ -267,7 +267,9 @@ class SubstrateApi(BlockchainApi):
             content = json.load(file)
         return content
 
-    def _read_cardano_key_file(self, filepath):
+    #################
+
+    def read_cardano_key_file(self, filepath) -> str:
         key_content = self._read_json_file(filepath)
         try:
             key = key_content["cborHex"][4:]  # Remove 5820 from cborHex string
@@ -275,7 +277,6 @@ class SubstrateApi(BlockchainApi):
             logger.error(f"Could not parse cardano key file: {e}")
         return key.strip()
 
-    #################
     def update_d_param(self, permissioned_candidates_count, registered_candidates_count):
         signing_key = self.config.nodes_config.governance_authority.mainchain_key
 
@@ -317,7 +318,7 @@ class SubstrateApi(BlockchainApi):
 
         signatures = self.partner_chains_node.get_signatures(
             registration_utxo,
-            self._read_cardano_key_file(keys_files.spo_signing_key),
+            self.read_cardano_key_file(keys_files.spo_signing_key),
             self._read_json_file(keys_files.partner_chain_signing_key)['skey'],
             self.config.nodes_config.nodes[candidate_name].aura_public_key,
             self.config.nodes_config.nodes[candidate_name].grandpa_public_key,
@@ -326,7 +327,7 @@ class SubstrateApi(BlockchainApi):
         txId = self.partner_chains_node.register_candidate(
             signatures,
             keys_files.cardano_payment_key,
-            self._read_cardano_key_file(keys_files.spo_public_key),
+            self.read_cardano_key_file(keys_files.spo_public_key),
             registration_utxo,
         )
         effective_in_mc_epoch = self._effective_in_mc_epoch()
@@ -343,7 +344,7 @@ class SubstrateApi(BlockchainApi):
     def deregister_candidate(self, candidate_name):
         keys_files = self.config.nodes_config.nodes[candidate_name].keys_files
         txId = self.partner_chains_node.deregister_candidate(
-            keys_files.cardano_payment_key, self._read_cardano_key_file(keys_files.spo_public_key)
+            keys_files.cardano_payment_key, self.read_cardano_key_file(keys_files.spo_public_key)
         )
         effective_in_mc_epoch = self._effective_in_mc_epoch()
 
