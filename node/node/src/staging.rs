@@ -6,7 +6,7 @@ use sidechain_domain::*;
 use sidechain_runtime::{
 	AccountId, AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig,
 	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
-	SudoConfig, SystemConfig,
+	SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
 use sp_core::bytes::from_hex;
 use sp_core::{ed25519, sr25519};
@@ -150,6 +150,10 @@ pub fn staging_genesis(
 		},
 		native_token_management: NativeTokenManagementConfig {
 			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()?,
+			..Default::default()
+		},
+		test_helper_pallet: TestHelperPalletConfig {
+			participation_data_release_period: 30,
 			..Default::default()
 		},
 	};

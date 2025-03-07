@@ -16,12 +16,13 @@ use authority_selection_inherents::filter_invalid_candidates::{
 use authority_selection_inherents::select_authorities::select_authorities;
 use authority_selection_inherents::CommitteeMember;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
+use frame_support::inherent::ProvideInherent;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
-use frame_support::BoundedVec;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{ConstBool, ConstU128, ConstU32, ConstU64, ConstU8},
 	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, IdentityFee},
+	BoundedVec,
 };
 use opaque::SessionKeys;
 use pallet_grandpa::AuthorityId as GrandpaId;
@@ -32,14 +33,13 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use session_manager::ValidatorManagementSessionManager;
 use sidechain_domain::{
-	DelegatorKey, MainchainKeyHash, NativeTokenAmount, PermissionedCandidateData, RegistrationData,
-	ScEpochNumber, ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
+	DelegatorKey, MainchainKeyHash, PermissionedCandidateData, RegistrationData, ScEpochNumber,
+	ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
 };
 use sidechain_slots::Slot;
 use sp_api::impl_runtime_apis;
 use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::hexdisplay::HexDisplay;
 use sp_core::{crypto::KeyTypeId, ByteArray, OpaqueMetadata};
 use sp_inherents::InherentIdentifier;
 use sp_runtime::{
@@ -49,12 +49,10 @@ use sp_runtime::{
 		Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, DispatchResult, MultiSignature, Perbill,
+	ApplyExtrinsicResult, MultiSignature, Perbill,
 };
 use sp_sidechain::SidechainStatus;
 use sp_std::prelude::*;
-#[cfg(feature = "std")]
-use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use sp_weights::Weight;
 
@@ -69,6 +67,8 @@ mod mock;
 
 #[cfg(test)]
 mod header_tests;
+
+mod test_helper_pallet;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -212,13 +212,6 @@ pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
 
-/// The version information used to identify this runtime when compiled natively.
-#[cfg(feature = "std")]
-pub fn native_version() -> NativeVersion {
-	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
-}
-
-pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 
 /// We allow for 2 seconds of compute with a 6 second average block time.
@@ -296,18 +289,9 @@ impl frame_system::Config for Runtime {
 	type PostTransactions = ();
 }
 
-pub struct TokenTransferHandler;
-
-impl pallet_native_token_management::TokenTransferHandler for TokenTransferHandler {
-	fn handle_token_transfer(token_amount: NativeTokenAmount) -> DispatchResult {
-		log::info!("💸 Registered transfer of {} native tokens", token_amount.0);
-		Ok(())
-	}
-}
-
 impl pallet_native_token_management::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type TokenTransferHandler = TokenTransferHandler;
+	type TokenTransferHandler = TestHelperPallet;
 	type WeightInfo = pallet_native_token_management::weights::SubstrateWeight<Runtime>;
 }
 
@@ -429,21 +413,11 @@ parameter_types! {
 	pub const MaxTransactions: u32 = 256u32;
 }
 
-pub struct LogBeneficiaries;
-
-impl sp_sidechain::OnNewEpoch for LogBeneficiaries {
-	fn on_new_epoch(old_epoch: ScEpochNumber, _new_epoch: ScEpochNumber) -> sp_weights::Weight {
-		let rewards = BlockRewards::get_rewards_and_clear();
-		log::info!("Rewards accrued in epoch {old_epoch}: {rewards:?}");
-		RuntimeDbWeight::get().reads_writes(1, 1)
-	}
-}
-
 impl pallet_sidechain::Config for Runtime {
 	fn current_slot_number() -> ScSlotNumber {
 		ScSlotNumber(*pallet_aura::CurrentSlot::<Self>::get())
 	}
-	type OnNewEpoch = LogBeneficiaries;
+	type OnNewEpoch = TestHelperPallet;
 }
 
 pub type BeneficiaryId = sidechain_domain::byte_string::SizedByteString<32>;
@@ -531,11 +505,7 @@ impl pallet_block_participation::Config for Runtime {
 	type DelegatorId = DelegatorKey;
 
 	fn should_release_data(slot: sidechain_slots::Slot) -> Option<sidechain_slots::Slot> {
-		if *slot % 3 == 0 {
-			Some(slot)
-		} else {
-			None
-		}
+		TestHelperPallet::should_release_participation_data(slot)
 	}
 
 	fn blocks_produced_up_to_slot(slot: Slot) -> impl Iterator<Item = (Slot, BlockAuthor)> {
@@ -546,8 +516,10 @@ impl pallet_block_participation::Config for Runtime {
 		BlockProductionLog::drop_prefix(&slot)
 	}
 
-	const TARGET_INHERENT_ID: InherentIdentifier = [42; 8];
+	const TARGET_INHERENT_ID: InherentIdentifier = TestHelperPallet::INHERENT_IDENTIFIER;
 }
+
+impl crate::test_helper_pallet::Config for Runtime {}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -575,6 +547,7 @@ construct_runtime!(
 		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
 		Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,
+		TestHelperPallet: crate::test_helper_pallet,
 	}
 );
 
