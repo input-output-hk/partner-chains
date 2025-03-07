@@ -156,6 +156,10 @@
 <a href="#156" id="156">156</a>
 <a href="#157" id="157">157</a>
 <a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::chain_spec::get_account_id_from_seed;
 <span class="kw">use </span><span class="kw">crate</span>::chain_spec::<span class="kw-2">*</span>;
 <span class="kw">use </span>authority_selection_inherents::CommitteeMember;
@@ -164,7 +168,7 @@
 <span class="kw">use </span>sidechain_runtime::{
 	AccountId, AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig,
 	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
-	SudoConfig, SystemConfig,
+	SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
 <span class="kw">use </span>sp_core::bytes::from_hex;
 <span class="kw">use </span>sp_core::{ed25519, sr25519};
@@ -308,6 +312,10 @@
 		},
 		native_token_management: NativeTokenManagementConfig {
 			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()<span class="question-mark">?</span>,
+			..Default::default()
+		},
+		test_helper_pallet: TestHelperPalletConfig {
+			participation_data_release_period: <span class="number">30</span>,
 			..Default::default()
 		},
 	};

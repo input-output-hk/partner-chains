@@ -51,11 +51,17 @@
 <a href="#51" id="51">51</a>
 <a href="#52" id="52">52</a>
 <a href="#53" id="53">53</a>
+<a href="#54" id="54">54</a>
+<a href="#55" id="55">55</a>
+<a href="#56" id="56">56</a>
+<a href="#57" id="57">57</a>
+<a href="#58" id="58">58</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::chain_spec::<span class="kw-2">*</span>;
 <span class="kw">use </span>sc_service::ChainType;
 <span class="kw">use </span>sidechain_runtime::{
 	AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig, RuntimeGenesisConfig,
 	SessionCommitteeManagementConfig, SessionConfig, SidechainConfig, SudoConfig, SystemConfig,
+	TestHelperPalletConfig,
 };
 
 <span class="doccomment">/// Produces template chain spec for Partner Chains.
@@ -92,6 +98,10 @@
 		},
 		native_token_management: NativeTokenManagementConfig {
 			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()<span class="question-mark">?</span>,
+			..Default::default()
+		},
+		test_helper_pallet: TestHelperPalletConfig {
+			participation_data_release_period: <span class="number">30</span>,
 			..Default::default()
 		},
 	};

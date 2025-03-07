@@ -32,7 +32,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["sidechain_block_search",["",[],["binary_search.rs","impl_block_info.rs","impl_compare_strategy.rs","impl_find_block.rs","lib.rs"]]],\
 ["sidechain_domain",["",[],["byte_string.rs","crypto.rs","lib.rs","mainchain_epoch.rs"]]],\
 ["sidechain_mc_hash",["",[],["lib.rs"]]],\
-["sidechain_runtime",["",[],["genesis_config_presets.rs","lib.rs"]]],\
+["sidechain_runtime",["",[],["genesis_config_presets.rs","lib.rs","test_helper_pallet.rs"]]],\
 ["sidechain_slots",["",[],["lib.rs","runtime_api_client.rs"]]],\
 ["sp_block_participation",["",[],["lib.rs"]]],\
 ["sp_block_production_log",["",[],["lib.rs"]]],\
