@@ -6,7 +6,6 @@ from pytest import mark
 from config.api_config import ApiConfig
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.candidate_status("inactive")
 @mark.ariadne
 @mark.test_key('ETCM-7017')
@@ -58,7 +57,6 @@ def test_register_candidate(candidate: Candidates, api: BlockchainApi, db: Sessi
     ], f"Registered candidate {candidate.name} is not valid. Invalidity reason: {registration['invalidReasons']}."
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.candidate_status("active")
 @mark.ariadne
 @mark.test_key('ETCM-7018')
