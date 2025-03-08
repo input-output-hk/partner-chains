@@ -8,16 +8,30 @@ license = "Apache-2.0"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-fraction = { workspace = true, features = ["with-decimal", "with-serde-support"] }
+fraction = { workspace = true, features = [
+	"with-decimal",
+	"with-serde-support",
+] }
 hex = { workspace = true }
-jsonrpsee = { workspace = true, optional = true, features = ["client-core", "http-client", "macros", "ws-client"] }
+jsonrpsee = { workspace = true, optional = true, features = [
+	"client-core",
+	"http-client",
+	"macros",
+	"ws-client",
+] }
 serde = { workspace = true }
-serde_json = { workspace = true, features = ["raw_value", "arbitrary_precision"] }
+serde_json = { workspace = true, features = [
+	"raw_value",
+	"arbitrary_precision",
+] }
 thiserror = { workspace = true }
 time = { workspace = true, features = ["std", "serde", "parsing"] }
 sidechain-domain = { workspace = true, features = ["std"] }
 log = { workspace = true, optional = true }
 anyhow = { workspace = true }
+
+chrono = { version = "0.4.39", features = ["serde"] }
+regress = { version = "0.10.3" }
 
 [dev-dependencies]
 anyhow = { workspace = true }

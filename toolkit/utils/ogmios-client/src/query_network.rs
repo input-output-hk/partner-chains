@@ -1,6 +1,6 @@
 //! Queries that start with `queryNetwork/`.
 
-use crate::{types::SlotLength, OgmiosClient, OgmiosClientError, OgmiosParams};
+use crate::{types::SlotLength, ErrorObject, OgmiosClient, OgmiosClientError, OgmiosParams};
 use fraction::Decimal;
 use serde::Deserialize;
 use serde_json::Value;
@@ -11,13 +11,13 @@ pub trait QueryNetwork {
 	#[allow(async_fn_in_trait)]
 	async fn shelley_genesis_configuration(
 		&self,
-	) -> Result<ShelleyGenesisConfigurationResponse, OgmiosClientError>;
+	) -> Result<ShelleyGenesisConfigurationResponse, OgmiosClientError<ErrorObject>>;
 }
 
 impl<T: OgmiosClient> QueryNetwork for T {
 	async fn shelley_genesis_configuration(
 		&self,
-	) -> Result<ShelleyGenesisConfigurationResponse, OgmiosClientError> {
+	) -> Result<ShelleyGenesisConfigurationResponse, OgmiosClientError<ErrorObject>> {
 		let mut params = HashMap::new();
 		params.insert("era", Value::String("shelley".to_string()));
 		self.request("queryNetwork/genesisConfiguration", OgmiosParams::ByName(params))
