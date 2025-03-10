@@ -6,6 +6,16 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+## Removed
+
+## Fixed
+
+## Added
+
+# v1.6.0
+
+## Changed
+
 * Split MainchainPublicKey to StakePoolPublicKey and StakePublicKey. Some parameters names has been changed as well, so potentially compiliation of downstream projects could be broken.
 * Update polkadot-sdk to polkadot-stable2412-1.
 WARNING: Benchmarking command has been removed, because `frame-benchmarking-cli` crate became GPLv3 without any exception.
@@ -19,8 +29,6 @@ type implemented in `node/runtime/src/lib.rs` for reference using Ariadne.
 * Merged functionality of `NativeTokenManagementInherentDataProvider::new_if_pallet_present` into `new`. Use this single constructor from now on.
 * `smart-contracts reserve deposit` command parameter `token` has been removed, because it was redundant.
 * `smart-contracts reserve init` and `create` command has been merged into one command `smart-contracts reserve create`. This means that the reserve system is initialized during the creation of the reserve.
-
-## Removed
 
 ## Fixed
 
