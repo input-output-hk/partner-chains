@@ -4,9 +4,10 @@
 //!       [ReserveData] plutus data with reserve configuration and release stats
 //! Reference inputs:
 //!     - utxo with V-Function reference script matching the hash saved in the input [ReserveData].
-//!       IMPORTANT: The V-Function returns the total number of tokens that should have been
-//!                  released up to now. The number of tokens released in a single transaction
-//!                  equals <curent v-function value> - <number of previously released tokens>
+//!       IMPORTANT: The V-Function script will evaluate against the total number of tokens that
+//!                  should have been released up to now.
+//!                  The number of tokens released in a single transaction equals
+//!                  <current v-function value> - <number of previously released tokens>.
 //!     - utxo with authentication policy reference script
 //!     - utxo with validator version policy reference script
 //!     - utxo with illiquid supply validator reference script
@@ -108,7 +109,7 @@ fn reserve_release_tx(
 	let token_total_amount_transferred = stats.token_total_amount_transferred;
 	let cumulative_total_transfer: u64 = token_total_amount_transferred
 		.checked_add(amount_to_transfer)
-		.expect("cumulative_total_transfer overflow u64");
+		.expect("cumulative_total_transfer can't overflow u64");
 
 	let left_in_reserve = reserve_balance.checked_sub(amount_to_transfer)
 		.ok_or_else(||anyhow!("Not enough funds in the reserve to transfer {amount_to_transfer} tokens (reserve balance: {reserve_balance})"))?;
