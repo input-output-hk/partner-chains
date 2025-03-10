@@ -166,7 +166,6 @@ class TestCommitteeDistribution:
         committee = get_pc_epoch_committee(pc_epoch)
         assert len(committee) == expected_committee_size, f"Committee size mismatch for pc epoch {pc_epoch}."
 
-    @mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
     @mark.test_key('ETCM-7027')
     @mark.ariadne
     @mark.committee_distribution
@@ -189,7 +188,6 @@ class TestCommitteeDistribution:
         pc_epochs_in_mc_epoch_count = config.nodes_config.pc_epochs_in_mc_epoch_count
         assert api.get_committee_seats(mc_epoch) * pc_epochs_in_mc_epoch_count == actual_total_attendance
 
-    @mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
     @mark.test_key('ETCM-7028')
     @mark.ariadne
     @mark.probability
@@ -266,7 +264,6 @@ class TestCommitteeRotation:
         else:
             return None
 
-    @mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
     @mark.test_key("ETCM-7236")
     @mark.committee_rotation
     @mark.active_flow
@@ -290,7 +287,6 @@ class TestCommitteeRotation:
             f"expected next committee from epoch {pc_epoch - 1}",
         )
 
-    @mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
     @mark.candidate_status("active")
     @mark.test_key('ETCM-6987')
     @mark.ariadne
@@ -312,7 +308,6 @@ class TestCommitteeRotation:
                 f"{candidate.next_status_epoch}"
             )
 
-    @mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
     @mark.candidate_status("inactive")
     @mark.test_key('ETCM-6988')
     @mark.ariadne
@@ -334,7 +329,6 @@ class TestCommitteeRotation:
                 f"{candidate.next_status_epoch}"
             )
 
-    @mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
     @mark.candidate_status("active")
     @mark.test_key('ETCM-6989')
     @mark.ariadne
@@ -356,7 +350,6 @@ class TestCommitteeRotation:
                 f"{candidate.next_status_epoch}",
             )
 
-    @mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
     @mark.candidate_status("inactive")
     @mark.test_key('ETCM-6990')
     @mark.ariadne
@@ -381,7 +374,6 @@ class TestCommitteeRotation:
 
 class TestCommitteeMembers:
 
-    @mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
     @mark.test_key('ETCM-7033')
     @mark.ariadne
     @mark.committee_members
@@ -393,7 +385,6 @@ class TestCommitteeMembers:
             skip("Stake pool is not yet initialized")
         assert len(api.get_trustless_candidates(current_mc_epoch, valid_only=True)) > 0
 
-    @mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
     @mark.test_key('ETCM-7034')
     @mark.ariadne
     @mark.committee_members
@@ -435,7 +426,6 @@ class TestCommitteeMembers:
         for signature in signatures:
             assert signature["signature"]
 
-    @mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
     @mark.test_key('ETCM-7026')
     @mark.ariadne
     @mark.committee_members
@@ -472,7 +462,6 @@ class TestCommitteeMembers:
                 pub_key in active_candidates
             ), f"Committee member {pub_key} not an active candidate for pc epoch {pc_epoch}"
 
-    @mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
     @mark.ariadne
     @mark.test_key('ETCM-7029')
     @mark.committee_members

@@ -23,7 +23,6 @@ partner_chain_epoch_calc: PartnerChainEpochCalculator = None
 
 def pytest_addoption(parser):
     parser.addoption("--env", action="store", default="local", help="Target node environment")
-    parser.addoption("--stack", action="store", default="local", help="Target dependencies stack")
     parser.addoption(
         "--blockchain",
         action="store",
@@ -96,7 +95,6 @@ def pytest_configure(config: Config):
     _config = load_config(
         blockchain,
         config.getoption("env"),
-        config.getoption("stack"),
         config.getoption("--ci-run"),
         config.getoption("--node-host"),
         config.getoption("--node-port"),
@@ -224,11 +222,6 @@ def nodes_env(request):
 
 
 @fixture(scope="session")
-def stack_env(request):
-    return request.config.getoption("--stack")
-
-
-@fixture(scope="session")
 def blockchain(request):
     return request.config.getoption("--blockchain")
 
@@ -243,7 +236,7 @@ def decrypt(request):
     return request.config.getoption("--decrypt")
 
 
-def load_config(blockchain, nodes_env, stack_env, ci_run, node_host, node_port, deployment_mc_epoch, init_timestamp):
+def load_config(blockchain, nodes_env, ci_run, node_host, node_port, deployment_mc_epoch, init_timestamp):
     default_config_path = f"{os.getcwd()}/config/config.json"
     assert os.path.isfile(default_config_path), f"Config file not found {default_config_path}"
     default_config = OmegaConf.load(default_config_path)
@@ -252,7 +245,7 @@ def load_config(blockchain, nodes_env, stack_env, ci_run, node_host, node_port, 
     assert os.path.isfile(blockchain_config_path), f"Config file not found {blockchain_config_path}"
     blockchain_config = OmegaConf.load(blockchain_config_path)
 
-    stack_config_path = f"{os.getcwd()}/config/{blockchain}/{stack_env}_stack.json"
+    stack_config_path = f"{os.getcwd()}/config/{blockchain}/{nodes_env}_stack.json"
     assert os.path.isfile(stack_config_path), f"Config file not found {stack_config_path}"
     stack_config = OmegaConf.load(stack_config_path)
 
@@ -454,20 +447,6 @@ def new_wallet(api: BlockchainApi) -> Wallet:
 @fixture(scope="session")
 def get_wallet(api: BlockchainApi) -> Wallet:
     yield api.get_wallet()
-
-
-@fixture(autouse=True)
-def skip_by_blockchain(request, blockchain):
-    skip_marker = request.node.get_closest_marker("skip_blockchain")
-    if not skip_marker:
-        return
-
-    if skip_marker.args[0] == blockchain:
-        reason = f"skipped on {blockchain} blockchain"
-        if skip_marker.kwargs and skip_marker.kwargs["reason"]:
-            reason = skip_marker.kwargs["reason"]
-        skip(reason)
-
 
 @fixture(scope="session")
 def full_mc_epoch_has_passed_since_deployment(config: ApiConfig, current_mc_epoch):
