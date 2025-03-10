@@ -7,7 +7,6 @@ COPY --dir ./config ./secrets ./tests ./src ./requirements.txt ./pytest.ini ./to
 ARG AWS_DEFAULT_REGION=eu-central-1
 ARG blockchain=substrate
 ARG env=staging
-ARG stack=staging
 ARG log_level=info
 ARG keyword=test_
 ARG markers
@@ -30,7 +29,7 @@ ARG decrypt=false
 IF $decrypt
   ARG decrypt_switch="--decrypt"
 END
-ARG --global pytest_cmd=pytest --blockchain $blockchain --env $env --stack $stack --log-cli-level $log_level -k $keyword $latest_mc_epoch_switch $markers_switch $node_host_switch $node_port_switch $decrypt_switch --json-report --json-report-file=logs/.report.json --json-report-summary --junitxml=logs/junit_report.xml --ctrf logs/ctrf-report.json
+ARG --global pytest_cmd=pytest --blockchain $blockchain --env $env --log-cli-level $log_level -k $keyword $latest_mc_epoch_switch $markers_switch $node_host_switch $node_port_switch $decrypt_switch --json-report --json-report-file=logs/.report.json --json-report-summary --junitxml=logs/junit_report.xml --ctrf logs/ctrf-report.json
 
 build:
   ARG USERARCH

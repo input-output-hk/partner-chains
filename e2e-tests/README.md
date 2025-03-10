@@ -36,7 +36,6 @@ Welcome to `Partner Chains Tests`, a powerful and flexible test automation frame
 Custom options:
   --ctrf=CTRF           generate test report. Report file name is optional
   --env=ENV             Target node environment
-  --stack=STACK         Target dependencies stack
   --blockchain={substrate,midnight}
                         Blockchain network type
   --ci-run              Overrides config values specific for executing from ci runner
@@ -57,5 +56,5 @@ Custom options:
 ### Run tests on the local environment
 
 ```bash
-pytest -rP -v --blockchain substrate --env local --stack local --log-cli-level debug -vv -s -m "not active_flow and not passive_flow and not probability"
+pytest -rP -v --blockchain substrate --env local --log-cli-level debug -vv -s -m "not active_flow and not passive_flow and not probability"
 ```
