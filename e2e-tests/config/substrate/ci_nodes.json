@@ -1,42 +1,155 @@
 {
-    "genesis_utxo": "67fa24dcda2ef78acf69dee758292d659493b85bf540a95b371cff4b10150359#1",
-    "deployment_mc_epoch": 527,
-    "nodes_config": {
-        "nodes": {
-            "alice": {
-                "host": "127.0.0.1",
-                "port": "9933",
-                "aura_ss58_address": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-                "pool_id": "0a4b4b4740e5795c683069c0ec7e6291700d99b1501f17d1a2aa7064",
-                "public_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
-                "cardano_payment_addr": "addr_test1vp67p2gw9nuaahnma5ymjwths4f86pcu426mx39j7ysv86g2rpz6k",
-                "keys_files": {
-                    "cardano_payment_key": "./secrets/substrate/ci/keys/alice/payment.skey.json.decrypted",
-                    "spo_signing_key": "./secrets/substrate/ci/keys/alice/cold.skey.json.decrypted",
-                    "spo_public_key": "./secrets/substrate/ci/keys/alice/cold.vkey.json.decrypted",
-                    "partner_chain_signing_key": "./secrets/substrate/ci/keys/alice/sidechain.skey.json.decrypted"
-                }
-            }
+  "deployment_mc_epoch": 863,
+  "genesis_utxo": "de7b8efb08243b770be30cfa22a9ed64317c50052bb4394392960ddcc9810048#1",
+  "deployment_version": "master",
+  "test_environment": "ci",
+  "nodes_config": {
+    "nodes": {
+      "validator-1": {
+        "host": "10.0.10.7",
+        "port": "30621",
+        "aura_ss58_address": "5GHLr2zBDNPXno9XdKgh541uRSiTxnZyzFcr4jK6HUbHMpit",
+        "pool_id": "da74fc8256d15c7ab3370a6ca28398986cb97c32e9ef66026ac61e99",
+        "public_key": "0x03b827f4da9711bab7292e5695576a841a4d20af9a07b1ba7a230168d2a78e9df4",
+        "aura_public_key": "0xba94651de6279a38a416b97b9720c3df76224435e951ac73e9e302a4ee9fcf73",
+        "grandpa_public_key": "0xdde2501588713ddad5daf5a898c19d82cd591609c9184679868640c8cfe8287d",
+        "rotation_candidate": true,
+        "cardano_payment_addr": "addr_test1vq6ywn0f007x32j47jrk5qy9hy3gknsvszrcpdqkeaye7pshu2w2t",
+        "keys_files": {
+          "cardano_payment_key": "./secrets/substrate/ci/keys/validator-1/payment.skey.json.decrypted",
+          "spo_signing_key": "./secrets/substrate/ci/keys/validator-1/cold.skey.json.decrypted",
+          "spo_public_key": "./secrets/substrate/ci/keys/validator-1/cold.vkey.json.decrypted",
+          "partner_chain_signing_key": "./secrets/substrate/ci/keys/validator-1/partner_chain.skey.json.decrypted"
         },
-        "governance_authority": {
-            "mainchain_address": "addr_test1vzyfvhqtezgzc5zkeg59dp9u2mnynrrhkmsyqpwd0qqezaghu3dhg",
-            "mainchain_key": "./secrets/substrate/ci/keys/governance_authority/init.skey.json.decrypted"
+        "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000201"
+      },
+      "validator-2": {
+        "host": "10.0.11.26",
+        "port": "30622",
+        "aura_ss58_address": "5DHbxU687f1Y3x8yBCWMtqSiJ5qt2yrxQPXNXZNNDaFtmXKv",
+        "pool_id": "eaed153a8b046770cfd094ee72d080ea682188e63ac11937e3f7f827",
+        "public_key": "0x02ef5bcd94d54a18ad199559782cd72ac3ccd850976aaaafbca8f9d2625afbf7c4",
+        "aura_public_key": "0x36128fff2acc04f206ccaf4e9f8e9995998efced29075a58b7d76d3735c21208",
+        "grandpa_public_key": "0x8f9a9856a27cc114ce85b64f41144f0c907c4bd8b3102b083b52b6b61aff6c47",
+        "rotation_candidate": true,
+        "cardano_payment_addr": "addr_test1vz80jkz5d2kdaykfrqlqryr6lt46tunk4ldfjqv88hevrpsrdfmm5",
+        "keys_files": {
+          "cardano_payment_key": "./secrets/substrate/ci/keys/validator-2/payment.skey.json.decrypted",
+          "spo_signing_key": "./secrets/substrate/ci/keys/validator-2/cold.skey.json.decrypted",
+          "spo_public_key": "./secrets/substrate/ci/keys/validator-2/cold.vkey.json.decrypted",
+          "partner_chain_signing_key": "./secrets/substrate/ci/keys/validator-2/partner_chain.skey.json.decrypted"
         },
-        "selected_node": "alice",
-        "node": "${nodes_config[nodes][${nodes_config[selected_node]}]}",
-        "token_conversion_rate": 9,
-        "block_duration": 6,
-        "slots_in_epoch": 60,
-        "token_policy_id": "b964a3723648dc744308f541bb1388d235c78214d1957f0189579036.4655454c",
-        "fees": {
-            "ECDSA": {
-                "lock": 113638153,
-                "send": 298945144
-            },
-            "SR25519": {
-                "lock": 817414140,
-                "send": 298945143
-            }
-        }
+        "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000202"
+      },
+      "validator-3": {
+        "host": "10.0.12.51",
+        "port": "30623",
+        "aura_ss58_address": "5FYtL6HccYhk6KZeFP7hNnkMaXrAwVpTHJWsfnNJcu8AM6in",
+        "pool_id": "7dfba85597a867fffa59037df7f6adcd50e745dcceac2b48eda94b20",
+        "public_key": "0x02f2762ab6e1a125dc03908a7b738f8023d13763f28a11d7633c6c8bc463478430",
+        "aura_public_key": "0x9a32d3896a56e822321f7bc915befc8ce112c5d67e3c6497295bd3d7b020f94c",
+        "grandpa_public_key": "0x4f3c0ecc6dc474f27ad7967f5cdbd50da047ffedbc91b65f5cd247515489c98f",
+        "permissioned_candidate": true,
+        "cardano_payment_addr": "addr_test1vrxc6wvtmqrqx4n9e89sqf9u0w0jcp8a96s7gkddfsr0ppcdvzcf6",
+        "keys_files": {
+          "cardano_payment_key": "./secrets/substrate/ci/keys/validator-3/payment.skey.json.decrypted",
+          "spo_signing_key": "./secrets/substrate/ci/keys/validator-3/cold.skey.json.decrypted",
+          "spo_public_key": "./secrets/substrate/ci/keys/validator-3/cold.vkey.json.decrypted",
+          "partner_chain_signing_key": "./secrets/substrate/ci/keys/validator-3/partner_chain.skey.json.decrypted"
+        },
+        "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000203"
+      },
+      "validator-4": {
+        "host": "10.0.10.188",
+        "port": "30624",
+        "aura_ss58_address": "5GVpqdtqjxqUjuVKMkmh8ehSwcs2nXjpvzHqjouZXMJAyC4b",
+        "pool_id": "2a3f5dd02da1310e081f2367412e02b72baad3e2a5045f62df2c78c5",
+        "public_key": "0x025e19f82c5e2bac5e8869d49ff26359e442628bc5cfa38eeb5275f43d04015da8",
+        "aura_public_key": "0xc41992b8eb2f3a8a6c46211df584827f9eeb0175e2c75e1242392262b55b6874",
+        "grandpa_public_key": "0x34b71fdad96431bf115350d8ad21eec07a2b154ff32dc31125f988e308bebea8",
+        "permissioned_candidate": true,
+        "cardano_payment_addr": "addr_test1vq65mgmcpd6rq6ndy22kwxzdc9u0tmrpr7s30037qdhlalg3f5ax0",
+        "keys_files": {
+          "cardano_payment_key": "./secrets/substrate/ci/keys/validator-4/payment.skey.json.decrypted",
+          "spo_signing_key": "./secrets/substrate/ci/keys/validator-4/cold.skey.json.decrypted",
+          "spo_public_key": "./secrets/substrate/ci/keys/validator-4/cold.vkey.json.decrypted",
+          "partner_chain_signing_key": "./secrets/substrate/ci/keys/validator-4/partner_chain.skey.json.decrypted"
+        },
+        "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000204"
+      },
+      "validator-5": {
+        "host": "10.0.11.239",
+        "port": "30625",
+        "aura_ss58_address": "5DsfhT7HJe6i5LYeKBzefrXijW5UgPsn2Cuyw5WMa4uEktTn",
+        "pool_id": "ae81beee7a6c3fa13bba811f91f63ebdd7eb25dd8a62476d4996de10",
+        "public_key": "0x03f38a062a4b372c045c1dddc4fe98a2c9cb1d6eec8bf02f973fd29b1096cd8155",
+        "aura_public_key": "0x500d7ff6d903c85db5ee5624df9510c2a085cf30da260166bd370010d0bdc97a",
+        "grandpa_public_key": "0xa04d74c1539550876d04e4d2de4e0531087c3b6810ce96ddc16d78ccf4ac4f11",
+        "permissioned_candidate": true,
+        "cardano_payment_addr": "addr_test1vqqm36dcg5xeeqgc29r8gu6wujlmr4fyrdrvuzq4qnem2vs7g2kvj",
+        "keys_files": {
+          "cardano_payment_key": "./secrets/substrate/ci/keys/validator-5/payment.skey.json.decrypted",
+          "spo_signing_key": "./secrets/substrate/ci/keys/validator-5/cold.skey.json.decrypted",
+          "spo_public_key": "./secrets/substrate/ci/keys/validator-5/cold.vkey.json.decrypted",
+          "partner_chain_signing_key": "./secrets/substrate/ci/keys/validator-5/partner_chain.skey.json.decrypted"
+        },
+        "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000205"
+      }
+    },
+    "passive_transfer_account": {
+      "partner_chain_address": "5D4UdLBfePonjFvS1brdNA7sh2zpPvTh6PSEVihx6kPciPXD",
+      "partner_chain_key": "./secrets/substrate/ci/keys/transfer_account_passive/partner_chain.skey.json.decrypted",
+      "mainchain_address": "addr_test1vzl3ya6ffdxvezm0dvtdr45td986vsvkrx5pyx9fw3emdhsearcjj",
+      "mainchain_key": "./secrets/substrate/ci/keys/transfer_account_passive/mainchain.skey.json.decrypted"
+    },
+    "active_transfer_account": {
+      "partner_chain_address": "5HgahNbxK7syB2M2VB9iUJ6dcuHidCuP2jx2pJVidxRrKSng",
+      "partner_chain_key": "",
+      "mainchain_address": "addr_test1vzcghuzz3hk70eqsagr0ep9gqkgkrg7cf485heu0tgwdwwg4jfjg8",
+      "mainchain_address_bech32": "605f7fad2d0b682219db7b2e70a2a61fe18fa5c6ff5c66d484ef93d911",
+      "mainchain_key": "./secrets/substrate/ci/keys/transfer_account_active/mainchain.skey.json.decrypted"
+    },
+    "negative_test_transfer_account": {
+      "partner_chain_address": "5F1N52dZx48UpXNLtcCzSMHZEroqQDuYKfidg46Tp37SjPcE",
+      "partner_chain_key": "./secrets/substrate/ci/keys/transfer_account_negative/partner_chain.skey.json.decrypted",
+      "mainchain_address": "",
+      "mainchain_key": ""
+    },
+    "random_mc_account": {
+      "mainchain_address": "addr_test1vzgk8hw98hy3zege2655fllq5lqrjcjxqgx5ufyul6hnvrcgl5tpl",
+      "mainchain_key": "./secrets/substrate/ci/keys/random_mc_account/random.skey.json.decrypted"
+    },
+    "invalid_mc_skey": {
+      "mainchain_address": "addr_test1vzgk8hw98hy3zege2655fllq5lqrjcjxqgx5ufyul6hnvrcgl5tpl",
+      "mainchain_key": "./secrets/substrate/ci/keys/invalid_mc_skey/random.skey.json.decrypted"
+    },
+    "governance_authority": {
+      "mainchain_address": "addr_test1vq0sjaaupatuvl9x6aefdsd4whlqtfku93068qzkhf3u2rqt9cnuq",
+      "mainchain_key": "./secrets/substrate/ci/keys/governance_authority/init.skey.json.decrypted"
+    },
+    "selected_node": "validator-4",
+    "node": "${nodes_config[nodes][${nodes_config[selected_node]}]}",
+    "token_conversion_rate": 9,
+    "block_duration": 6,
+    "slots_in_epoch": 60,
+    "token_policy_id": "",
+    "fees": {
+      "ECDSA": {
+        "lock": 113638153,
+        "send": 298945144
+      },
+      "SR25519": {
+        "lock": 817414141,
+        "send": 298945143
+      }
+    },
+    "d_param_min": {
+      "permissioned_candidates_number": 6,
+      "trustless_candidates_number": 4
+    },
+    "d_param_max": {
+      "permissioned_candidates_number": 6,
+      "trustless_candidates_number": 4
     }
+  }
 }
