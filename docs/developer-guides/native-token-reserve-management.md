@@ -64,20 +64,18 @@ Generally speaking, however, the process includes these steps:
 
 **Understanding the `VFunction`:**
 
-- The `VFunction` defines the schedule and amount of tokens `A` that move from the reserve supply to the circulating supply over time
+- The `VFunction` policy defines the schedule of allowed reserve token movement from the reserve supply to the circulating supply over time
 
 - `VFunction` is a minting policy that has to accept 2 parameters (or more if you like)
 
    - The first parameter is the `VFunction` Redeemer (which can be anything)
    - The second parameter is the `ScriptContext` (every smart contract takes this as parameter)
 
-- `VFunction` has to return true if the number of tokens minted is ok according to the `VFunction` logic, and should return false otherwise
-
 - The Validity interval is to be present and equal to `[T, infinity]`, where `T` is time in the recent past, close to the current time
 
 - The Transaction input with ReserveAuthPolicy token is to be present
 
-- The `VFunction` should be able to mint X tokens and be invoked repeatedly, each time minting X new tokens. The value of X should grow in time and represent the total number of tokens to be released from the reserve to IlliquidCirculationSupply up to the current moment in time
+- The `VFunction` policy should allow to mint at most X tokens, where X is the highest allowed sum of all releases from the reserve to IlliquidCirculationSupply up to the current moment in time
 
 - Smart contracts do not pass anything to each other directly. However, each smart contract in a given single transaction has access to the context of the whole transaction, including input UTXOs, datums, etc
 
@@ -165,7 +163,7 @@ Command template:
 
 * `--genesis-utxo`: The genesis UTXO of the running partner chain
 
-* `--total-accrued-function-script-hash`: The script hash of your `V` function
+* `--total-accrued-function-script-hash`: The script hash of your `V` function. Hint: to get script hash from the script file is: `cardano-cli latest transaction policyid --script-file <PATH>`
 
 * `--token`: Reserve token asset id encoded in form `<policy_id_hex>.<asset_name_hex>`, this sets the reserve token asset id
 
