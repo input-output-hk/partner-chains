@@ -1,6 +1,6 @@
 [package]
 name = "pallet-session-validator-management"
-version = "1.5.0"
+version = "1.6.0"
 description = "FRAME pallet for setting validators with InherentData using pallet-session"
 edition = "2021"
 license = "Unlicense"
