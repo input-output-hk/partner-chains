@@ -90,7 +90,7 @@ class CardanoCli:
             return None, None
 
         # Convert to a valid JSON array
-        modified_response = "[" + result.stdout.replace("}\n{", "},\n{") + "]"
+        modified_response = "[" + result.stdout.replace("\r", "").replace("}\n{", "},\n{") + "]"
         parsed_data = json.loads(modified_response)
 
         signing_key = parsed_data[0]
