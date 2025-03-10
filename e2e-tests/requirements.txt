@@ -2,7 +2,6 @@ omegaconf==2.3.0
 pytest==8.3.4
 pytest-xdist==3.6.1
 substrate-interface==1.7.11
-web3==7.8.0
 sqlalchemy==2.0.38
 psycopg2-binary==2.9.10
 filelock==3.17.0

@@ -46,8 +46,8 @@ impl CmdRun for Register3Cmd {
 
 		context.print("To proceed with the next command, a payment signing key is required. Please note that this key will not be stored or communicated over the network.");
 
-		let cardano_payment_signing_key_path =
-			context.prompt("Path to mainchain payment signing key file", Some("payment.skey"));
+		let cardano_payment_signing_key_path = config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
+			.prompt_with_default_from_file_and_save(context);
 
 		let payment_signing_key =
 			get_mc_payment_signing_key_from_file(&cardano_payment_signing_key_path, context)?;
@@ -267,7 +267,7 @@ mod tests {
 
 	fn prompt_mc_payment_key_path_io() -> Vec<MockIO> {
 		vec![MockIO::prompt(
-			"Path to mainchain payment signing key file",
+			"path to the payment signing key file",
 			Some("payment.skey"),
 			"/path/to/payment.skey",
 		)]
@@ -383,6 +383,7 @@ mod tests {
 
 	fn final_resources_config_json() -> serde_json::Value {
 		json!({
+			"cardano_payment_signing_key_file": "/path/to/payment.skey",
 			"cardano_payment_verification_key_file": "payment.vkey",
 			"db_sync_postgres_connection_string": "postgresql://postgres-user:postgres-password@localhost:5432/cexplorer",
 			"ogmios": default_ogmios_config_json(),
