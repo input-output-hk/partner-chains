@@ -7,7 +7,6 @@ from pytest import mark, raises
 from src.partner_chains_node.node import PartnerChainsNodeException
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-6996')
 @mark.active_flow
 def test_lock_transaction(api: BlockchainApi, config: ApiConfig, db: Session, secrets, mc_active_address):
@@ -57,7 +56,6 @@ def test_lock_transaction(api: BlockchainApi, config: ApiConfig, db: Session, se
     ), f"Balance mismatch: {db_tx.pc_balance_after_lock} != {db_tx.pc_balance} - {tx.value} - {db_tx.fees_spent}"
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-7002')
 @mark.active_flow
 def test_outgoing_transaction_is_pending(
@@ -118,7 +116,6 @@ def test_outgoing_transaction_is_pending(
         ), f"Tx {db_tx.lock_tx_hash} not found pending as expected on pc epoch {db_tx.available_on_pc_epoch}"
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-7005')
 @mark.active_flow
 def test_claim_transactions(
@@ -173,7 +170,6 @@ def test_verify_outgoing_balances(config: ApiConfig, db: Session, unverified_out
 
 
 @mark.xfail(run=False, reason="[ETCM-6842] Locking less than the conversion ratio in tokens does not raise exception")
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-6997')
 @mark.active_flow
 def test_lock_less_than_conversion_ratio_tokens_should_fail(
@@ -206,7 +202,6 @@ def test_lock_less_than_conversion_ratio_tokens_should_fail(
     )
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-6998')
 @mark.active_flow
 def test_lock_with_empty_wallet_should_fail(api: BlockchainApi, config: ApiConfig, mc_active_address):
@@ -237,7 +232,6 @@ def test_lock_with_empty_wallet_should_fail(api: BlockchainApi, config: ApiConfi
     )
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-6999')
 @mark.active_flow
 def test_lock_with_invalid_key_should_fail(api: BlockchainApi, config: ApiConfig, secrets, mc_active_address):
@@ -269,7 +263,6 @@ def test_lock_with_invalid_key_should_fail(api: BlockchainApi, config: ApiConfig
 
 
 @mark.xfail(run=False, reason="[ETCM-6843] Locking more than mc balance does not raise an exception")
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-7000')
 @mark.active_flow
 def test_lock_more_than_balance_should_fail(api: BlockchainApi, config: ApiConfig, secrets, mc_active_address):
@@ -300,7 +293,6 @@ def test_lock_more_than_balance_should_fail(api: BlockchainApi, config: ApiConfi
     )
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-7001')
 @mark.active_flow
 def test_lock_negative_balance_should_fail(api: BlockchainApi, config: ApiConfig, secrets, mc_active_address):
@@ -321,7 +313,6 @@ def test_lock_negative_balance_should_fail(api: BlockchainApi, config: ApiConfig
     assert str(excinfo.value) == "can't convert negative int to unsigned"
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-7003')
 @mark.active_flow
 def test_claim_transaction_signed_by_another_recipient_should_fail(
@@ -347,7 +338,6 @@ def test_claim_transaction_signed_by_another_recipient_should_fail(
     assert "ERROR-FUEL-MINTING-POLICY-04" in excinfo.value.message
 
 
-@mark.skip_blockchain("pc_evm", reason="not implemented yet")
 @mark.test_key('ETCM-7004')
 @mark.active_flow
 def test_claim_transaction_with_invalid_key_should_fail(

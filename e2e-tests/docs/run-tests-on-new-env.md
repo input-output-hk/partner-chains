@@ -232,7 +232,7 @@ where:
 
 * `--env` - target node environment
 * `--stack` - target dependencies stack
-* `--blockchain` - target type of blockchain: substrate, evm, `<blockchain>`
+* `--blockchain` - target type of blockchain: substrate, `<blockchain>`
 * `--log-cli-level` - log level for output (info, debug, warning, critical, error)
 * `-m` - pytest markers to filter tests for execution
 * `-vv` - pytest parameter to show duration of tests

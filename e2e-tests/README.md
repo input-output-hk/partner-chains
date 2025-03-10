@@ -37,7 +37,7 @@ Custom options:
   --ctrf=CTRF           generate test report. Report file name is optional
   --env=ENV             Target node environment
   --stack=STACK         Target dependencies stack
-  --blockchain={substrate,midnight,pc_evm}
+  --blockchain={substrate,midnight}
                         Blockchain network type
   --ci-run              Overrides config values specific for executing from ci runner
   --decrypt             Decrypts secrets and keys files
