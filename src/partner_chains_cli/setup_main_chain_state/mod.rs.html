@@ -298,8 +298,24 @@
 <a href="#298" id="298">298</a>
 <a href="#299" id="299">299</a>
 <a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{CARDANO_PAYMENT_SIGNING_KEY_FILE, POSTGRES_CONNECTION_STRING};
-<span class="kw">use </span><span class="kw">crate</span>::config::{config_fields, ChainConfig, ConfigFieldDefinition, CHAIN_CONFIG_FILE_PATH};
+<span class="kw">use </span><span class="kw">crate</span>::config::{
+	config_fields, ChainConfig, ConfigFieldDefinition, ServiceConfig, CHAIN_CONFIG_FILE_PATH,
+};
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::ogmios::config::prompt_ogmios_configuration;
 <span class="kw">use </span><span class="kw">crate</span>::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
@@ -390,10 +406,14 @@
 		);
 		<span class="kw">let </span>config_initial_authorities =
 			initial_permissioned_candidates_from_chain_config(context)<span class="question-mark">?</span>;
+
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(ariadne_parameters) = get_ariadne_parameters(context, <span class="kw-2">&amp;</span>chain_config)<span class="question-mark">? </span>{
-			<span class="kw">if </span>ariadne_parameters.permissioned_candidates == config_initial_authorities {
+			<span class="kw">let </span>ogmios_config: <span class="prelude-ty">Option</span>&lt;ServiceConfig&gt; = <span class="kw">if </span>ariadne_parameters.permissioned_candidates
+				== config_initial_authorities
+			{
 				context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"Permissioned candidates in the {} file match the most recent on-chain initial permissioned candidates."</span>, CHAIN_CONFIG_FILE_PATH));
-			} <span class="kw">else </span>{
+				<span class="prelude-val">None
+			</span>} <span class="kw">else </span>{
 				print_on_chain_and_config_permissioned_candidates(
 					context,
 					<span class="kw-2">&amp;</span>ariadne_parameters.permissioned_candidates,
@@ -403,8 +423,8 @@
 					context,
 					config_initial_authorities,
 					chain_config.chain_parameters.genesis_utxo,
-				)<span class="question-mark">?</span>;
-			}
+				)<span class="question-mark">?
+			</span>};
 			context.print(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
 				<span class="string">"D-Parameter on the main chain is: (P={}, R={})"</span>,
 				ariadne_parameters.d_parameter.num_permissioned_candidates,
@@ -412,11 +432,12 @@
 			));
 			set_d_parameter_on_main_chain(
 				context,
+				ogmios_config,
 				ariadne_parameters.d_parameter,
 				chain_config.chain_parameters.genesis_utxo,
 			)<span class="question-mark">?</span>;
 		} <span class="kw">else </span>{
-			set_candidates_on_main_chain(
+			<span class="kw">let </span>ogmios_config: <span class="prelude-ty">Option</span>&lt;ServiceConfig&gt; = set_candidates_on_main_chain(
 				context,
 				config_initial_authorities,
 				chain_config.chain_parameters.genesis_utxo,
@@ -425,6 +446,7 @@
 				DParameter { num_permissioned_candidates: <span class="number">0</span>, num_registered_candidates: <span class="number">0 </span>};
 			set_d_parameter_on_main_chain(
 				context,
+				ogmios_config,
 				default_d_parameter,
 				chain_config.chain_parameters.genesis_utxo,
 			)<span class="question-mark">?</span>;
@@ -530,7 +552,7 @@
 	context: <span class="kw-2">&amp;</span>C,
 	candidates: SortedPermissionedCandidates,
 	genesis_utxo: UtxoId,
-) -&gt; anyhow::Result&lt;()&gt; {
+) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;ServiceConfig&gt;&gt; {
 	<span class="kw">let </span>update = context.prompt_yes_no(<span class="string">"Do you want to set/update the permissioned candidates on the main chain with values from configuration file?"</span>, <span class="bool-val">false</span>);
 	<span class="kw">if </span>update {
 		<span class="kw">let </span>ogmios_config = prompt_ogmios_configuration(context)<span class="question-mark">?</span>;
@@ -548,19 +570,25 @@
 			))
 			.context(<span class="string">"Permissioned candidates update failed"</span>)<span class="question-mark">?</span>;
 		context.print(<span class="string">"Permissioned candidates updated. The change will be effective in two main chain epochs."</span>);
+		<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(ogmios_config))
+	} <span class="kw">else </span>{
+		<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
 	}
-	<span class="prelude-val">Ok</span>(())
 }
 
 <span class="kw">fn </span>set_d_parameter_on_main_chain&lt;C: IOContext&gt;(
 	context: <span class="kw-2">&amp;</span>C,
+	ogmios_config: <span class="prelude-ty">Option</span>&lt;ServiceConfig&gt;,
 	default_d_parameter: DParameter,
 	genesis_utxo: UtxoId,
 ) -&gt; anyhow::Result&lt;()&gt; {
 	<span class="kw">let </span>update = context
 		.prompt_yes_no(<span class="string">"Do you want to set/update the D-parameter on the main chain?"</span>, <span class="bool-val">false</span>);
 	<span class="kw">if </span>update {
-		<span class="kw">let </span>ogmios_config = prompt_ogmios_configuration(context)<span class="question-mark">?</span>;
+		<span class="kw">let </span>ogmios_config = <span class="kw">match </span>ogmios_config {
+			<span class="prelude-val">Some</span>(config) =&gt; config,
+			<span class="prelude-val">None </span>=&gt; prompt_ogmios_configuration(context)<span class="question-mark">?</span>,
+		};
 		<span class="kw">let </span>p = context.prompt(
 			<span class="string">"Enter P, the number of permissioned candidates seats, as a non-negative integer."</span>,
 			<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>default_d_parameter.num_permissioned_candidates.to_string()),
