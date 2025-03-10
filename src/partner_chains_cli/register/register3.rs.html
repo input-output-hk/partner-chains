@@ -424,6 +424,7 @@
 <a href="#424" id="424">424</a>
 <a href="#425" id="425">425</a>
 <a href="#426" id="426">426</a>
+<a href="#427" id="427">427</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_key::get_mc_payment_signing_key_from_file;
 <span class="kw">use </span><span class="kw">crate</span>::config;
 <span class="kw">use </span><span class="kw">crate</span>::config::config_fields;
@@ -472,8 +473,8 @@
 
 		context.print(<span class="string">"To proceed with the next command, a payment signing key is required. Please note that this key will not be stored or communicated over the network."</span>);
 
-		<span class="kw">let </span>cardano_payment_signing_key_path =
-			context.prompt(<span class="string">"Path to mainchain payment signing key file"</span>, <span class="prelude-val">Some</span>(<span class="string">"payment.skey"</span>));
+		<span class="kw">let </span>cardano_payment_signing_key_path = config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
+			.prompt_with_default_from_file_and_save(context);
 
 		<span class="kw">let </span>payment_signing_key =
 			get_mc_payment_signing_key_from_file(<span class="kw-2">&amp;</span>cardano_payment_signing_key_path, context)<span class="question-mark">?</span>;
@@ -693,7 +694,7 @@
 
 	<span class="kw">fn </span>prompt_mc_payment_key_path_io() -&gt; Vec&lt;MockIO&gt; {
 		<span class="macro">vec!</span>[MockIO::prompt(
-			<span class="string">"Path to mainchain payment signing key file"</span>,
+			<span class="string">"path to the payment signing key file"</span>,
 			<span class="prelude-val">Some</span>(<span class="string">"payment.skey"</span>),
 			<span class="string">"/path/to/payment.skey"</span>,
 		)]
@@ -809,6 +810,7 @@
 
 	<span class="kw">fn </span>final_resources_config_json() -&gt; serde_json::Value {
 		<span class="macro">json!</span>({
+			<span class="string">"cardano_payment_signing_key_file"</span>: <span class="string">"/path/to/payment.skey"</span>,
 			<span class="string">"cardano_payment_verification_key_file"</span>: <span class="string">"payment.vkey"</span>,
 			<span class="string">"db_sync_postgres_connection_string"</span>: <span class="string">"postgresql://postgres-user:postgres-password@localhost:5432/cexplorer"</span>,
 			<span class="string">"ogmios"</span>: default_ogmios_config_json(),
