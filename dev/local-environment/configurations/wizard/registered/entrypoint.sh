@@ -76,7 +76,7 @@ echo "Running register3 command..."
 expect <<EOF
 spawn $register3_command
 set timeout 300
-expect "Path to mainchain payment signing key file (payment.skey)"
+expect "path to the payment signing key file (payment.skey)"
 send "keys/funded_address.skey\r"
 expect "Ogmios protocol (http/https)"
 send "\r"
