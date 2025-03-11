@@ -89,11 +89,17 @@ expect eof
 EOF
 
 
-echo "Configuring Balances..."
+echo "Set initial funds to Alice (ecdsa), ?, and Alice (sr25519)"
 jq '.genesis.runtimeGenesis.config.balances.balances = [
     ["5C7C2Z5sWbytvHpuLTvzKunnnRwQxft1jiqrLD5rhucQ5S9X", 1000000000000000],
-    ["5D9eDKbFt4JKaEndQvMmbJYnpX9ENUj8U9UUg1AxSa64FJxE", 1000000000000000]
+    ["5D9eDKbFt4JKaEndQvMmbJYnpX9ENUj8U9UUg1AxSa64FJxE", 1000000000000000],
+    ["5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY", 1000000000000000]
 ]' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
+
+echo "Configuring Alice as sudo..."
+jq '.genesis.runtimeGenesis.config.sudo = {
+    "key": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+}' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
 
 echo "Configuring Epoch Length..."
 jq '.genesis.runtimeGenesis.config.sidechain.slotsPerEpoch = 5' chain-spec.json > tmp.json && mv tmp.json chain-spec.json
@@ -127,12 +133,6 @@ expect "path to the payment signing key file (keys/funded_address.skey)"
 send "\r"
 expect "Do you want to set/update the D-parameter on the main chain? (y/N)"
 send "y\r"
-expect "Ogmios protocol (http/https)"
-send "\r"
-expect "Ogmios hostname (ogmios)"
-send "\r"
-expect "Ogmios port (1337)"
-send "\r"
 expect "Enter P, the number of permissioned candidates seats, as a non-negative integer. (0)"
 send "2\r"
 expect "Enter R, the number of registered candidates seats, as a non-negative integer. (0)"
