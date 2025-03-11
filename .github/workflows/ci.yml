@@ -470,7 +470,7 @@ jobs:
         with:
           image:  ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-post-merge.outputs.sha }}
           sha: ${{ needs.build-linux-post-merge.outputs.sha }}
-          no-wipe: true
+          no-wipe: false
         env:
           AWS_REGION: "eu-central-1"
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
