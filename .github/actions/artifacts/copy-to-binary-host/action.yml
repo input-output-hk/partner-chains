@@ -13,7 +13,7 @@ runs:
     - name: Download partner-chains-node-linux-artifact
       uses: actions/download-artifact@v4
       with:
-        name: partner-chains-node-linux-artifact
+        name: partner-chains-node-artifact
 
     - name: Acquire AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
