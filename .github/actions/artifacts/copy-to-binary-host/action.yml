@@ -1,0 +1,54 @@
+name: "Copy to binary-host"
+description: "Copied binary to binary-host"
+inputs:
+  sha:
+    description: "Git SHA"
+    required: true
+
+outputs: {}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Download partner-chains-node-linux-artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: partner-chains-node-linux-artifact
+
+    - name: Acquire AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ env.AWS_ROLE_ARN_SECRET }}
+        aws-region: eu-central-1
+
+    - name: Login to ECR
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.ECR_REGISTRY_SECRET }}
+
+    - name: Install kubectl, kubernetes-helm, and awscli
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x ./kubectl
+        sudo mv ./kubectl /usr/local/bin/kubectl
+        curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+        sudo apt-get install apt-transport-https --yes
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+        sudo apt-get update
+        sudo apt-get install helm
+      shell: bash
+
+    - name: Configure kubectl
+      run: |
+        echo "${{ env.kubeconfig_base64 }}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml
+        kubectl config set-cluster my-cluster --server=${{ env.K8S_SERVER }} --insecure-skip-tls-verify=true
+        kubectl config set-credentials github-actions --token=${{ env.K8S_SA_TOKEN }}
+        kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
+        kubectl config use-context my-context
+      shell: bash
+
+    - name: Copy binary to binary-host
+      continue-on-error: true
+      run: |
+        kubectl cp partner-chains-node sc/binary-host:/tools/ci-preview/parnter-chains-node-${{ inputs.sha }} -c binary-host
+      shell: bash
