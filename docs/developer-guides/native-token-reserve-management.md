@@ -64,14 +64,12 @@ Generally speaking, however, the process includes these steps:
 
 **Understanding the `VFunction`:**
 
-- The `VFunction` defines the schedule and amount of tokens `A` that move from the reserve supply to the circulating supply over time
+- The `VFunction` policy defines the schedule of allowed reserve token movement from the reserve supply to the circulating supply over time
 
 - `VFunction` is a minting policy that has to accept 2 parameters (or more if you like)
 
    - The first parameter is the `VFunction` Redeemer (which can be anything)
    - The second parameter is the `ScriptContext` (every smart contract takes this as parameter)
-
-- `VFunction` has to return true if the number of tokens minted is ok according to the `VFunction` logic, and should return false otherwise
 
 - The Validity interval is to be present and equal to `[T, infinity]`, where `T` is time in the recent past, close to the current time
 
@@ -165,7 +163,7 @@ Command template:
 
 * `--genesis-utxo`: The genesis UTXO of the running partner chain
 
-* `--total-accrued-function-script-hash`: The script hash of your `V` function
+* `--total-accrued-function-script-hash`: The script hash of your `V` function. Hint: to get script hash from the script file is: `cardano-cli latest transaction policyid --script-file <PATH>`
 
 * `--token`: Reserve token asset id encoded in form `<policy_id_hex>.<asset_name_hex>`, this sets the reserve token asset id
 
