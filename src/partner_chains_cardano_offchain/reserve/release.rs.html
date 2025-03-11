@@ -477,15 +477,17 @@
 <a href="#477" id="477">477</a>
 <a href="#478" id="478">478</a>
 <a href="#479" id="479">479</a>
+<a href="#480" id="480">480</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! This transaction releases some funds to the illiquid supply.
 //! Inputs:
 //!     - previous utxo at the *reserve validator*, containing the reserve tokens and the
 //!       [ReserveData] plutus data with reserve configuration and release stats
 //! Reference inputs:
 //!     - utxo with V-Function reference script matching the hash saved in the input [ReserveData].
-//!       IMPORTANT: The V-Function returns the total number of tokens that should have been
-//!                  released up to now. The number of tokens released in a single transaction
-//!                  equals &lt;curent v-function value&gt; - &lt;number of previously released tokens&gt;
+//!       IMPORTANT: The V-Function script will evaluate against the total number of tokens that
+//!                  should have been released up to now.
+//!                  The number of tokens released in a single transaction equals
+//!                  &lt;current v-function value&gt; - &lt;number of previously released tokens&gt;.
 //!     - utxo with authentication policy reference script
 //!     - utxo with validator version policy reference script
 //!     - utxo with illiquid supply validator reference script
@@ -587,7 +589,7 @@
 	<span class="kw">let </span>token_total_amount_transferred = stats.token_total_amount_transferred;
 	<span class="kw">let </span>cumulative_total_transfer: u64 = token_total_amount_transferred
 		.checked_add(amount_to_transfer)
-		.expect(<span class="string">"cumulative_total_transfer overflow u64"</span>);
+		.expect(<span class="string">"cumulative_total_transfer can't overflow u64"</span>);
 
 	<span class="kw">let </span>left_in_reserve = reserve_balance.checked_sub(amount_to_transfer)
 		.ok_or_else(||<span class="macro">anyhow!</span>(<span class="string">"Not enough funds in the reserve to transfer {amount_to_transfer} tokens (reserve balance: {reserve_balance})"</span>))<span class="question-mark">?</span>;

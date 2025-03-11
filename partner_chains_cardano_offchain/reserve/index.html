@@ -7,9 +7,10 @@ Inputs:
 [ReserveData] plutus data with reserve configuration and release stats
 Reference inputs:
 - utxo with V-Function reference script matching the hash saved in the input [ReserveData].
-IMPORTANT: The V-Function returns the total number of tokens that should have been
-released up to now. The number of tokens released in a single transaction
-equals <curent v-function value> - <number of previously released tokens>
+IMPORTANT: The V-Function script will evaluate against the total number of tokens that
+should have been released up to now.
+The number of tokens released in a single transaction equals
+<current v-function value> - <number of previously released tokens>.
 - utxo with authentication policy reference script
 - utxo with validator version policy reference script
 - utxo with illiquid supply validator reference script
