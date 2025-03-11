@@ -195,7 +195,7 @@ jobs:
 
   pre-merge-checks-complete:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
-    needs: [build-linux-pre-merge, local-environment-tests, devshell-tests, upload-chain-specs-pre-merge]
+    needs: [build-linux-pre-merge, local-environment-tests, devshell-tests, upload-chain-specs-pre-merge, copy-to-binary-host]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
@@ -209,6 +209,15 @@ jobs:
           else
             echo "All needed jobs passed."
           fi
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Copy to binary-host
+        uses: ./.github/actions/artifacts/copy-to-binary-host
+        with:
+          sha: ${{ needs.build-linux-pre-merge.outputs.sha }}
 
 ### Post merge workflow ###############################################################################################################
 
