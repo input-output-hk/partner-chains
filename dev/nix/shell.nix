@@ -23,7 +23,11 @@
               "-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE"
             else
               "";
-
+          # Add CXXFLAGS for C++17 support on Darwin
+          CXXFLAGS = if isDarwin then "-std=c++17" else "";
+          # Explicitly set wasm-opt-sys compiler
+          WASM_OPT_SYS_CC = if isDarwin then "${pkgs.clang}/bin/clang" else "";
+          WASM_OPT_SYS_CXX = if isDarwin then "${pkgs.clang}/bin/clang++" else "";
           # envs needed in order to construct some of the rust crates
           ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
           OPENSSL_NO_VENDOR = 1;
@@ -39,30 +43,29 @@
               libiconv
               openssl
               gnumake
-
               # tools for e2e testing
               docker-compose
               python312
               python312Packages.pip
               python312Packages.virtualenv
               sops
-
               # local development tools
               rustToolchain
               gawk
               cargo-edit
               cargo-license
               nixfmt-rfc-style
-
               # infra packages
               earthly
               awscli2
               kubectl
-
               # our local packages
               self'.packages.cardano-cli
             ] ++ (if isDarwin then
-              [ pkgs.darwin.apple_sdk.frameworks.SystemConfiguration ]
+              [ 
+                pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+                pkgs.clang   # Explicitly add clang for Darwin
+              ]
             else
               [ pkgs.clang ]);
         };
