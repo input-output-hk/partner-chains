@@ -34,7 +34,7 @@ Please note that rewards schemes for token release is the responsibility of the 
 
 # Initialization
 
-Initialization includes creating the native token on Cardano, writing the `VFunction`, and running the command `smart-contracts reserve create` at the `partner-chains-node` side.
+Initialization includes creating the native token on Cardano, writing the `VFunction`, running the commands `smart-contracts reserve init` and `smart-contracts reserve create` at the `partner-chains-node` side.
 
 ## 1. Setting up your token on Cardano
 
@@ -129,11 +129,32 @@ cardano-cli conway transaction submit --tx-file tx.signed --testnet-magic 2
 
 5. Find and note the hash#id for the transaction that has the `VFunction` script attached.
 
-### 1.3 Initializing token reserve controls and creating your token reserve
+### 1.3 Initializing token reserve controls
+
+Objective: Initialize the reserve management system for your token.
+
+#### 1.3.1 Run the `reserve init` command
+
+Command template:
+
+```bash
+./partner-chains-node smart-contracts reserve init \
+  --genesis-utxo <GENESIS_UTXO> \
+  --ogmios-url <OGMIOS_URL> \
+  --payment-key-file <PAYMENT_KEY_FILE>
+```
+
+#### Steps
+
+1. Execute the `reserve init` command.
+
+2. Confirm initialization: Ensure that the `InitReserveManagement` scripts are correctly initialized by checking the command output.
+
+### 1.4 Creating your token reserve
 
 Objective: Create a reserve for your token and define the release function `V`. There can be only one reserve, therefore one reserve token, for a partner chain.
 
-#### 1.3.1 Run the `reserve create` command
+#### 1.4.1 Run the `reserve create` command
 
 Command template:
 
@@ -223,9 +244,30 @@ Objective: Release available reserve tokens (defined by the `VFunction`).
 
 2. Confirm completion: make sure that the release process has been completed by checking the command output.
 
-## 3. Depositing additional tokens to the reserve
+## 2.2 Transferring token control to smart contracts
 
-Objective: Add tokens to the reserve by depositing a specified amount of tokens into the reserve contract.
+Objective: Complete the reserve setup by handing over control to the appropriate scripts.
+
+### 2.2.1 Run the `reserve handover` command
+
+#### Command template
+
+```bash
+./partner-chains-node smart-contracts reserve handover \
+  --genesis-utxo <GENESIS_UTXO> \
+  --ogmios-url <OGMIOS_URL> \
+  --payment-key-file <PAYMENT_KEY_FILE>
+```
+
+#### Steps
+
+1. Execute the `reserve handover` command.
+
+2. Confirm completion: Make sure that the handover process has been completed and the illiquid circulation supply transaction has been confirmed by checking the command output.
+
+## 3 Initializing token reserve with initial deposit
+
+Objective: Configure the initial token reserve by depositing a specified amount of tokens into the reserve contract.
 
 ### 3.1 Run the `reserve deposit` command (optional)
 
@@ -257,36 +299,15 @@ Objective: increase the pool of reserve tokens.
 
 3. Verify that the deposit completed successfully by checking the command output status.
 
-## 4. Transferring token control to smart contracts
-
-Objective: Tear down the reserve by transferring all the tokens to the illiquid circulation supply smart contract and removing its configuration.
-
-### 4.1 Run the `reserve handover` command
-
-#### Command template
-
-```bash
-./partner-chains-node smart-contracts reserve handover \
-  --genesis-utxo <GENESIS_UTXO> \
-  --ogmios-url <OGMIOS_URL> \
-  --payment-key-file <PAYMENT_KEY_FILE>
-```
-
-#### Steps
-
-1. Execute the `reserve handover` command.
-
-2. Confirm completion: Make sure that the handover process has been completed and the illiquid circulation supply transaction has been confirmed by checking the command output.
-
 # Configuration
 
-Configuration includes `reserve update-settings` commands used to change `VFunction`.
+Configuration includes `reserve update-settings` commands used to either change token in reserve or `VFunction`.
 
 <!-- Only "initialize", "create" and "update settings" are related to configuration.  -->
 
-## 5. Connecting your token to your partner chain
+## 4. Connecting your token to your partner chain
 
-### 5.1 Gathering required token parameters
+### 4.1 Gathering required token parameters
 
 Objective: Collect the essential parameters needed to configure the native token management contract on the partner chain.
 
@@ -298,7 +319,7 @@ Objective: Collect the essential parameters needed to configure the native token
 
 - ILLIQUID_SUPPLY_VALIDATOR_ADDRESS - can be obtained from the output of the `get-scripts` command (see below).
 
-#### 5.1.1 Retrieving the validator address
+#### 4.1.1 Retrieving the validator address
 
 Execute the `get-scripts` command:
 
@@ -320,7 +341,7 @@ Locate the validator address in the command output:
 }
 ```
 
-### 5.2 Following the native token migration guide
+### 4.2 Following the native token migration guide
 
 Objective: Migrate and synchronize the token state between Cardano and the partner chain.
 
@@ -332,7 +353,7 @@ Objective: Migrate and synchronize the token state between Cardano and the partn
 
 3. Verify synchronization by checking that the token state is appropriately observed on the partner chain.
 
-### 5.3 Updating current native token management configuration (optional)
+### 4.3 Updating current native token management configuration (optional)
 
 Objective: Update native token configuration if migration has already happened.
 

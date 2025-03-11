@@ -13,7 +13,7 @@ The Governance System sets and updates the key required to sign the following tr
 
 * management of *D-Parameter*
 * management of *Permissioned Candidates List*
-* management of *Rewards Reserve Mechanism* lifecycle: creation and handover
+* management of *Rewards Reserve Mechanism* lifecycle: initialization, creation, and handover
 * update of the Governance System itself
 
 The Governance System has to be initialized before performing any of these operations.

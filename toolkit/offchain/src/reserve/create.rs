@@ -40,10 +40,6 @@ use partner_chains_plutus_data::reserve::{
 };
 use sidechain_domain::{AssetId, McTxHash, PolicyId, UtxoId};
 
-/// Submits transaction that creates a new reserve UTXO at Reserve Validator address.
-/// Returns transaction id if the reserve was created successfully.
-/// Returns None if reserve already exists with the same settings.
-/// Returns Error if reserve already exists with different settings.
 pub async fn create_reserve_utxo<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
@@ -53,45 +49,17 @@ pub async fn create_reserve_utxo<
 	payment_key: &CardanoPaymentSigningKey,
 	client: &T,
 	await_tx: &A,
-) -> anyhow::Result<Option<McTxHash>> {
+) -> anyhow::Result<McTxHash> {
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance = GovernanceData::get(genesis_utxo, client).await?;
 	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
 
-	match compare_reserve_settings(&parameters, &reserve, &ctx, client).await? {
-		ReserveSettingsComparison::NoSettingsOnChain => {
-			let tx_id =
-				do_create_reserve_utxo(&parameters, &reserve, &governance, &ctx, client, await_tx)
-					.await?;
-			Ok(Some(tx_id))
-		},
-		ReserveSettingsComparison::SettingsMatch => {
-			log::info!("Reserve already exists with the same settings");
-			Ok(None)
-		},
-		ReserveSettingsComparison::SettingsMismatch => {
-			log::info!("Reserve already exists with different settings");
-			Err(anyhow::anyhow!("Reserve already exists with different settings"))
-		},
-	}
-}
-
-async fn do_create_reserve_utxo<
-	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
-	A: AwaitTx,
->(
-	parameters: &ReserveParameters,
-	reserve: &ReserveData,
-	governance: &GovernanceData,
-	ctx: &TransactionContext,
-	client: &T,
-	await_tx: &A,
-) -> anyhow::Result<McTxHash> {
 	let tx = Costs::calculate_costs(
-		|costs| create_reserve_tx(parameters, reserve, governance, costs, ctx),
+		|costs| create_reserve_tx(&parameters, &reserve, &governance, costs, &ctx),
 		client,
 	)
 	.await?;
+
 	let signed_tx = ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow::anyhow!(
@@ -103,7 +71,7 @@ async fn do_create_reserve_utxo<
 	let tx_id = res.transaction.id;
 	log::info!("Create Reserve transaction submitted: {}", hex::encode(tx_id));
 	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
-	Ok(McTxHash(res.transaction.id))
+	Ok(McTxHash(tx_id))
 }
 
 pub struct ReserveParameters {
@@ -176,33 +144,4 @@ fn reserve_validator_output(
 		.with_asset_amount(&parameters.token, parameters.initial_deposit)?;
 
 	amount_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()
-}
-
-enum ReserveSettingsComparison {
-	NoSettingsOnChain,
-	SettingsMatch,
-	SettingsMismatch,
-}
-
-async fn compare_reserve_settings<T: QueryLedgerState>(
-	parameters: &ReserveParameters,
-	reserve: &ReserveData,
-	ctx: &TransactionContext,
-	client: &T,
-) -> anyhow::Result<ReserveSettingsComparison> {
-	Ok(match reserve.get_reserve_utxo_opt(ctx, client).await? {
-		None => ReserveSettingsComparison::NoSettingsOnChain,
-		Some(reserve_utxo) => {
-			let datum = reserve_utxo.datum;
-			let on_chain_token = datum.immutable_settings.token;
-			let on_chain_script_hash = datum.mutable_settings.total_accrued_function_script_hash;
-			if on_chain_token != parameters.token
-				|| on_chain_script_hash != parameters.total_accrued_function_script_hash
-			{
-				ReserveSettingsComparison::SettingsMismatch
-			} else {
-				ReserveSettingsComparison::SettingsMatch
-			}
-		},
-	})
 }
