@@ -45,7 +45,17 @@ fn testnet_genesis(
 			..Default::default()
 		},
 		sudo: SudoConfig { key: Some(root) },
-		..Default::default()
+		test_helper_pallet: crate::test_helper_pallet::GenesisConfig {
+			participation_data_release_period: 30,
+			_phantom: core::marker::PhantomData,
+		},
+		system: Default::default(),
+		transaction_payment: Default::default(),
+		sidechain: Default::default(),
+		session_committee_management: Default::default(),
+		pallet_session: Default::default(),
+		session: Default::default(),
+		native_token_management: Default::default(),
 	};
 
 	serde_json::to_value(config).expect("Could not build genesis config.")

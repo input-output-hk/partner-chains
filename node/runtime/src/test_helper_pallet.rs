@@ -24,8 +24,14 @@ pub mod pallet {
 	#[pallet::unbounded]
 	pub type LatestParticipationData<T: Config> = StorageValue<_, ParticipationData, OptionQuery>;
 
+	#[pallet::type_value]
+	pub fn DefaultParticipationDataReleasePeriod<T: Config>() -> u64 {
+		30u64
+	}
+
 	#[pallet::storage]
-	pub type ParticipationDataReleasePeriod<T: Config> = StorageValue<_, u64, ValueQuery>;
+	pub type ParticipationDataReleasePeriod<T: Config> =
+		StorageValue<_, u64, ValueQuery, DefaultParticipationDataReleasePeriod<T>>;
 
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
