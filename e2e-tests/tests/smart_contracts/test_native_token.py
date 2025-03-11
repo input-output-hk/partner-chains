@@ -29,6 +29,11 @@ def test_create_reserve(api: BlockchainApi, reserve_cfg, governance_authority, a
     initial_deposit = 1000
     assert initial_deposit < native_token_balance, "Not enough tokens to create reserve"
 
+    response = api.partner_chains_node.smart_contracts.reserve.init(
+        payment_key=governance_authority.mainchain_key,
+    )
+    assert not response.stderr
+
     response = api.partner_chains_node.smart_contracts.reserve.create(
         v_function_hash=reserve_cfg.total_accrued_function_script_hash,
         initial_deposit=initial_deposit,
