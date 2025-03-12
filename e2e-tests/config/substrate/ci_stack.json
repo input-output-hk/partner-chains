@@ -8,7 +8,7 @@
             "host": "${stack_config[tools_host]}",
             "port": 22,
             "host_keys_path": "config/substrate/known_hosts",
-            "private_key_path": "secrets/substrate/ci/keys/ssh-key.yaml.decrypted"
+            "private_key_path": "secrets/substrate/staging/keys/ssh-key.yaml.decrypted"
         },
         "tools": {
             "cardano_cli": {
@@ -16,7 +16,7 @@
                 "ssh": "${stack_config[ssh]}"
             },
             "partner_chains_node": {
-                "cli": "/tools/partner-chains-node",
+                "cli": "/tools/partner-chains-node-ci-preview",
                 "ssh": "${stack_config[ssh]}"
             },
             "bech32": {

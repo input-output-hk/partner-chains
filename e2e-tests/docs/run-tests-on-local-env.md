@@ -3,7 +3,6 @@
 ## Prerequisites
 
 - Docker Desktop, lazydocker
-- python3, pip. At this point, python from nix devshell does not work with e2e-tests, please install a separate one in your system.
 
 ## Steps
 
