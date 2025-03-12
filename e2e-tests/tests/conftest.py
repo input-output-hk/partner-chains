@@ -315,9 +315,9 @@ def secrets_ci(secrets, decrypt, ci_path):
 
 
 @fixture(scope="session", autouse=True)
-def decrypt_keys(blockchain, nodes_env, decrypt, ci_run):
+def decrypt_keys(config, blockchain, nodes_env, decrypt, ci_run):
     if decrypt:
-        keys_path = f"secrets/{blockchain}/{nodes_env}/keys"
+        keys_path = config.keys_path or f"secrets/{blockchain}/{nodes_env}/keys"
         subprocess.check_output(
             [
                 f"find {keys_path} -type f -not -path '*/preprodSPO/*' -not -name '*.decrypted' -exec "
