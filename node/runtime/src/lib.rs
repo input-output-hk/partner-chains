@@ -36,19 +36,21 @@ use sidechain_domain::{
 	DelegatorKey, MainchainKeyHash, PermissionedCandidateData, RegistrationData, ScEpochNumber,
 	ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
 };
+use pallet_session::historical as pallet_session_historical;
 use sidechain_slots::Slot;
 use sp_api::impl_runtime_apis;
 use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, ByteArray, OpaqueMetadata};
+use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_inherents::InherentIdentifier;
 use sp_runtime::{
 	generic, impl_opaque_keys,
 	traits::{
-		AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, One, OpaqueKeys,
+		AccountIdLookup, BlakeTwo256, Block as BlockT, Convert, IdentifyAccount, NumberFor, One, OpaqueKeys,
 		Verify,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity},
+	transaction_validity::{TransactionSource, TransactionPriority, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature, Perbill,
 };
 use sp_sidechain::SidechainStatus;
@@ -159,11 +161,12 @@ pub mod opaque {
 		pub struct SessionKeys {
 			pub aura: Aura,
 			pub grandpa: Grandpa,
+			pub im_online: ImOnline,
 		}
 	}
-	impl From<(sr25519::Public, ed25519::Public)> for SessionKeys {
-		fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
-			Self { aura: aura.into(), grandpa: grandpa.into() }
+	impl From<(sr25519::Public, ed25519::Public, sr25519::Public)> for SessionKeys {
+		fn from((aura, grandpa, im_online): (sr25519::Public, ed25519::Public, sr25519::Public)) -> Self {
+			Self { aura: aura.into(), grandpa: grandpa.into(), im_online: im_online.into() }
 		}
 	}
 
@@ -521,6 +524,67 @@ impl pallet_block_participation::Config for Runtime {
 
 impl crate::test_helper_pallet::Config for Runtime {}
 
+impl<LocalCall> frame_system::offchain::CreateInherent<LocalCall> for Runtime
+where
+	RuntimeCall: From<LocalCall>,
+{
+	fn create_inherent(call: RuntimeCall) -> UncheckedExtrinsic {
+		generic::UncheckedExtrinsic::new_bare(call).into()
+	}
+}
+
+impl frame_system::offchain::SigningTypes for Runtime {
+	type Public = <Signature as Verify>::Signer;
+	type Signature = Signature;
+}
+
+impl<C> frame_system::offchain::CreateTransactionBase<C> for Runtime
+where
+	RuntimeCall: From<C>,
+{
+	type Extrinsic = UncheckedExtrinsic;
+	type RuntimeCall = RuntimeCall;
+}
+
+parameter_types! {
+	pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+	pub const MaxAuthorities: u32 = 1000;
+	pub const MaxKeys: u32 = 10_000;
+	pub const MaxPeerInHeartbeats: u32 = 10_000;
+	pub const PERIOD: u32 = 5 * MINUTES;
+	pub const OFFSET: u32 = 0;
+}
+
+impl pallet_im_online::Config for Runtime {
+	type AuthorityId = ImOnlineId;
+	type RuntimeEvent = RuntimeEvent;
+	type NextSessionRotation = pallet_session::PeriodicSessions<PERIOD, OFFSET>;
+	type ValidatorSet = Historical;
+	type ReportUnresponsiveness = Offences;
+	type UnsignedPriority = ImOnlineUnsignedPriority;
+	type WeightInfo = pallet_im_online::weights::SubstrateWeight<Runtime>;
+	type MaxKeys = MaxKeys;
+	type MaxPeerInHeartbeats = MaxPeerInHeartbeats;
+}
+
+impl pallet_offences::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
+	type OnOffenceHandler = ();
+}
+
+pub struct NullIdentity;
+impl<T> Convert<T, Option<()>> for NullIdentity {
+	fn convert(_: T) -> Option<()> {
+		Some(())
+	}
+}
+
+impl pallet_session::historical::Config for Runtime {
+	type FullIdentification = ();
+	type FullIdentificationOf = NullIdentity;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime {
@@ -544,6 +608,9 @@ construct_runtime!(
 		// Partner Chains session_manager ValidatorManagementSessionManager writes to pallet_session::pallet::CurrentIndex.
 		// ValidatorManagementSessionManager is wired in by pallet_partner_chains_session.
 		PalletSession: pallet_session,
+		Historical: pallet_session_historical,
+		ImOnline: pallet_im_online,
+		Offences: pallet_offences,
 		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
 		Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,

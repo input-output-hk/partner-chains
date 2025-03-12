@@ -54,6 +54,7 @@ impl RegisterCmd {
 			registration_utxo: self.registration_utxo,
 			aura_pub_key: self.partner_chain_public_keys.aura_public_key,
 			grandpa_pub_key: self.partner_chain_public_keys.grandpa_public_key,
+			im_online_pub_key: self.partner_chain_public_keys.im_online_public_key,
 		};
 
 		run_register(
