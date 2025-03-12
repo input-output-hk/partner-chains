@@ -206,6 +206,28 @@
 <a href="#206" id="206">206</a>
 <a href="#207" id="207">207</a>
 <a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::PaymentFilePath;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
@@ -224,7 +246,9 @@
 <span class="attr">#[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
 </span><span class="kw">pub enum </span>ReserveCmd {
-	<span class="doccomment">/// Initialize the reserve management system and creates the reserve for your chain.
+	<span class="doccomment">/// Initialize the reserve management system for your chain
+	</span>Init(InitReserveCmd),
+	<span class="doccomment">/// Creates the reserve for your chain. `init` and `create` will be merged into a single command in a future release.
 	</span>Create(CreateReserveCmd),
 	<span class="doccomment">/// Deposits tokens from payment key wallet to the reserve
 	</span>Deposit(DepositReserveCmd),
@@ -239,12 +263,39 @@
 <span class="kw">impl </span>ReserveCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
 		<span class="kw">match </span><span class="self">self </span>{
+			<span class="self">Self</span>::Init(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::Create(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::Deposit(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::UpdateSettings(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::Handover(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::Release(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 		}
+	}
+}
+
+<span class="attr">#[derive(Clone, Debug, clap::Parser)]
+</span><span class="kw">pub struct </span>InitReserveCmd {
+	<span class="attr">#[clap(flatten)]
+	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
+	<span class="attr">#[clap(flatten)]
+	</span>payment_key_file: PaymentFilePath,
+	<span class="doccomment">/// Genesis UTXO of the partner-chain.
+	</span><span class="attr">#[arg(long, short(<span class="string">'c'</span>))]
+	</span>genesis_utxo: UtxoId,
+}
+
+<span class="kw">impl </span>InitReserveCmd {
+	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
+		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
+		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let _ </span>= init_reserve_management(
+			<span class="self">self</span>.genesis_utxo,
+			<span class="kw-2">&amp;</span>payment_key,
+			<span class="kw-2">&amp;</span>client,
+			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
+		)
+		.<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(())
 	}
 }
 
@@ -272,13 +323,6 @@
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
 		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
 		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
-		<span class="kw">let _ </span>= init_reserve_management(
-			<span class="self">self</span>.genesis_utxo,
-			<span class="kw-2">&amp;</span>payment_key,
-			<span class="kw-2">&amp;</span>client,
-			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
-		)
-		.<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let _ </span>= create_reserve_utxo(
 			ReserveParameters {
 				total_accrued_function_script_hash: <span class="self">self</span>.total_accrued_function_script_hash,
