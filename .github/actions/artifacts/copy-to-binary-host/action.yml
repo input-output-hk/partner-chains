@@ -24,11 +24,6 @@ runs:
         role-to-assume: ${{ env.AWS_ROLE_ARN_SECRET }}
         aws-region: eu-central-1
 
-    - name: Login to ECR
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.ECR_REGISTRY_SECRET }}
-
     - name: Install kubectl, kubernetes-helm, and awscli
       run: |
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
