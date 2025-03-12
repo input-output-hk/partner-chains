@@ -14,6 +14,8 @@ pub mod pallet {
 
 	type ParticipationData = BlockProductionData<BlockAuthor, DelegatorKey>;
 
+	pub const DEFAULT_PARTICIPATION_DATA_RELEASE_PERIOD: u64 = 30;
+
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
@@ -24,8 +26,14 @@ pub mod pallet {
 	#[pallet::unbounded]
 	pub type LatestParticipationData<T: Config> = StorageValue<_, ParticipationData, OptionQuery>;
 
+	#[pallet::type_value]
+	pub fn DefaultParticipationDataReleasePeriod<T: Config>() -> u64 {
+		DEFAULT_PARTICIPATION_DATA_RELEASE_PERIOD
+	}
+
 	#[pallet::storage]
-	pub type ParticipationDataReleasePeriod<T: Config> = StorageValue<_, u64, ValueQuery>;
+	pub type ParticipationDataReleasePeriod<T: Config> =
+		StorageValue<_, u64, ValueQuery, DefaultParticipationDataReleasePeriod<T>>;
 
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
