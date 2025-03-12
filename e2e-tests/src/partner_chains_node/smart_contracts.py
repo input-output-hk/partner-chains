@@ -120,6 +120,16 @@ class SmartContracts:
             self.run_command = run_command
             self.config = config
 
+        def init(self, payment_key):
+            cmd = (
+                f"{self.cli} smart-contracts reserve init "
+                f"--payment-key-file {payment_key} "
+                f"--genesis-utxo {self.config.genesis_utxo} "
+                f"--ogmios-url {self.config.stack_config.ogmios_url}"
+            )
+            response = self.run_command.run(cmd)
+            return parse_response(response)
+
         def create(self, v_function_hash, initial_deposit, token, payment_key):
             cmd = (
                 f"{self.cli} smart-contracts reserve create "

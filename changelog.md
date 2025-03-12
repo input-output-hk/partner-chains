@@ -28,7 +28,6 @@ define your own `CommitteeMember` type and implement the trait `CommitteeMember`
 type implemented in `node/runtime/src/lib.rs` for reference using Ariadne.
 * Merged functionality of `NativeTokenManagementInherentDataProvider::new_if_pallet_present` into `new`. Use this single constructor from now on.
 * `smart-contracts reserve deposit` command parameter `token` has been removed, because it was redundant.
-* `smart-contracts reserve init` and `create` command has been merged into one command `smart-contracts reserve create`. This means that the reserve system is initialized during the creation of the reserve.
 
 ## Fixed
 
