@@ -53,6 +53,8 @@ runs:
     - name: Copy binary to binary-host
       continue-on-error: true
       run: |
+        kubectl exec -n sc binary-host -c binary-host -- mkdir -p /tools/${{ inputs.env }}
         kubectl cp partner-chains-node sc/binary-host:/tools/${{ inputs.env }}/partner-chains-node-${{ inputs.sha }} -c binary-host
         kubectl cp partner-chains-node sc/binary-host:/tools/${{ inputs.env }}/partner-chains-node-latest -c binary-host
       shell: bash
+    
