@@ -47,7 +47,7 @@ runs:
 
     - name: Delete old partner-chains-node binaries
       run: |
-        kubectl exec sc/binary-host -c binary-host -- find /tools/${{ inputs.env }} -name "partner-chains-node-*" -type f -mtime +30 -delete
+        kubectl exec -it binary-host -c binary-host -n sc -- find /tools/${{ inputs.env }} -name "partner-chains-node-*" -type f -mtime +30 -delete
       shell: bash
 
     - name: Copy binary to binary-host
