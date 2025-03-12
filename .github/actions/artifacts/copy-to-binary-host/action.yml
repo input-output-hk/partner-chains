@@ -4,6 +4,9 @@ inputs:
   sha:
     description: "Git SHA"
     required: true
+  env:
+    description: "ci-preview or staging (used to determine the binary-host /tools subdirectory)"
+    required: true
 
 outputs: {}
 
@@ -47,8 +50,14 @@ runs:
         kubectl config use-context my-context
       shell: bash
 
+    - name: Delete old partner-chains-node binaries
+      run: |
+        kubectl exec sc/binary-host -c binary-host -- find /tools/${{ inputs.env }} -name "partner-chains-node-*" -type f -mtime +30 -delete
+      shell: bash
+
     - name: Copy binary to binary-host
       continue-on-error: true
       run: |
-        kubectl cp partner-chains-node sc/binary-host:/tools/ci-preview/parnter-chains-node-${{ inputs.sha }} -c binary-host
+        kubectl cp partner-chains-node sc/binary-host:/tools/${{ inputs.env }}/partner-chains-node-${{ inputs.sha }} -c binary-host
+        kubectl cp partner-chains-node sc/binary-host:/tools/${{ inputs.env }}/partner-chains-node-latest -c binary-host
       shell: bash
