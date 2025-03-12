@@ -22,17 +22,31 @@ def addresses(api: BlockchainApi):
 
 
 @mark.xdist_group(name="governance_action")
+def test_init_reserve(api: BlockchainApi, governance_authority):
+    response = api.partner_chains_node.smart_contracts.reserve.init(
+        payment_key=governance_authority.mainchain_key,
+    )
+    assert not response.stderr
+    if (
+        "Script 'Reserve Management Validator' is already initialized" in response.stdout
+        and "Script 'Reserve Management Policy' is already initialized" in response.stdout
+        and "Script 'Illiquid Circulation Validator' is already initialized" in response.stdout
+    ):
+        skip("Reserve already initialized")
+    assert response.transaction_id
+
+
+@mark.xdist_group(name="governance_action")
 def test_create_reserve(api: BlockchainApi, reserve_cfg, governance_authority, addresses):
+    is_created = api.get_mc_balance(addresses["ReserveValidator"], reserve_cfg.token)
+    if is_created:
+        skip("Reserve already exists")
+
     native_token_balance = api.get_mc_balance(governance_authority.mainchain_address, reserve_cfg.token)
     assert native_token_balance > 0, "Native token not found. Have you minted it?"
 
     initial_deposit = 1000
     assert initial_deposit < native_token_balance, "Not enough tokens to create reserve"
-
-    response = api.partner_chains_node.smart_contracts.reserve.init(
-        payment_key=governance_authority.mainchain_key,
-    )
-    assert not response.stderr
 
     response = api.partner_chains_node.smart_contracts.reserve.create(
         v_function_hash=reserve_cfg.total_accrued_function_script_hash,
@@ -41,8 +55,6 @@ def test_create_reserve(api: BlockchainApi, reserve_cfg, governance_authority, a
         payment_key=governance_authority.mainchain_key,
     )
     assert not response.stderr
-    if "Reserve already exists with the same settings" in response.stdout:
-        skip("Reserve already exists")
     assert response.transaction_id
 
     native_token_current_balance = api.get_mc_balance(governance_authority.mainchain_address, reserve_cfg.token)
