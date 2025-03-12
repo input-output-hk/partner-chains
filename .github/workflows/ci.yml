@@ -214,6 +214,14 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Download binary 
+        uses: actions/download-artifact@v4
+        with:
+          name: partner-chains-node-artifact 
+          path: partner-chains-node
+      - name: Debug directory contents
+        run: ls -la
+        shell: bash
       - name: Copy to binary-host
         uses: ./.github/actions/artifacts/copy-to-binary-host
         with:

@@ -84,11 +84,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Download binary 
+        uses: actions/download-artifact@v4
+        with:
+          name: partner-chains-node-linux-artifact 
+          path: partner-chains-node
       - name: Copy to binary-host
         uses: ./.github/actions/artifacts/copy-to-binary-host
         with:
           sha: ${{ inputs.sha }}
           env: "staging"
+          binary: ""
         env:
           AWS_REGION: "eu-central-1"
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
