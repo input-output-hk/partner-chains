@@ -219,6 +219,7 @@ jobs:
         with:
           sha: ${{ needs.build-linux-pre-merge.outputs.sha }}
           env: "ci-preview"
+        env:
           AWS_REGION: "eu-central-1"
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
