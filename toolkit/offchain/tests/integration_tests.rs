@@ -138,9 +138,6 @@ async fn reserve_management_scenario() {
 	let txs = run_init_reserve_management(genesis_utxo, &client).await;
 	assert_eq!(txs.len(), 0);
 	let _ = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
-	let second_create_result =
-		run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
-	assert_eq!(second_create_result, None, "reserve create should be idempotent");
 	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
 	run_deposit_to_reserve(genesis_utxo, &client).await;
 	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT + DEPOSIT_AMOUNT, &client).await;
@@ -366,7 +363,7 @@ async fn run_create_reserve_management<
 	genesis_utxo: UtxoId,
 	v_function_hash: PolicyId,
 	client: &T,
-) -> Option<McTxHash> {
+) -> McTxHash {
 	reserve::create::create_reserve_utxo(
 		reserve::create::ReserveParameters {
 			total_accrued_function_script_hash: v_function_hash,

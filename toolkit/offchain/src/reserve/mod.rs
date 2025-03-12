@@ -81,11 +81,11 @@ impl ReserveData {
 		})
 	}
 
-	pub(crate) async fn get_reserve_utxo_opt<T: QueryLedgerState>(
+	pub(crate) async fn get_reserve_utxo<T: QueryLedgerState>(
 		&self,
 		ctx: &TransactionContext,
 		client: &T,
-	) -> Result<Option<ReserveUtxo>, anyhow::Error> {
+	) -> Result<ReserveUtxo, anyhow::Error> {
 		let validator_address = self.scripts.validator.address(ctx.network).to_bech32(None)?;
 		let validator_utxos = client.query_utxos(&[validator_address]).await?;
 
@@ -94,25 +94,21 @@ impl ReserveData {
 			asset_name: AssetName::empty(),
 		};
 
-		let reserve_utxo = validator_utxos.into_iter().find_map(|utxo| {
-			if utxo.get_asset_amount(&auth_token_asset_id) != 1u64 {
-				return None;
-			}
-			utxo.get_plutus_data()
-				.and_then(|d| ReserveDatum::try_from(d).ok())
-				.map(|datum| ReserveUtxo { utxo, datum })
-		});
-		Ok(reserve_utxo)
-	}
+		let (reserve_utxo, reserve_settings) = validator_utxos
+			.into_iter()
+			.find_map(|utxo| {
+				if utxo.get_asset_amount(&auth_token_asset_id) != 1u64 {
+					return None;
+				}
+				utxo.get_plutus_data()
+					.and_then(|d| ReserveDatum::try_from(d).ok())
+					.map(|d| (utxo, d))
+			})
+			.ok_or_else(|| {
+				anyhow!("Reserve Utxo not found, is the Reserve Token Management initialized?")
+			})?;
 
-	pub(crate) async fn get_reserve_utxo<T: QueryLedgerState>(
-		&self,
-		ctx: &TransactionContext,
-		client: &T,
-	) -> Result<ReserveUtxo, anyhow::Error> {
-		self.get_reserve_utxo_opt(ctx, client).await?.ok_or_else(|| {
-			anyhow!("Reserve Utxo not found, is the Reserve Token Management initialized?")
-		})
+		Ok(ReserveUtxo { utxo: reserve_utxo, datum: reserve_settings })
 	}
 }
 
