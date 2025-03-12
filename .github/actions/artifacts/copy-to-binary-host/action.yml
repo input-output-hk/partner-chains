@@ -45,6 +45,11 @@ runs:
         kubectl config use-context my-context
       shell: bash
 
+    - name: Create Subdirs (if they don't exist)
+      run: |
+        kubectl exec -n sc binary-host -c binary-host -- mkdir -p /tools/${{ inputs.env }}
+      shell: bash
+
     - name: Delete old partner-chains-node binaries
       run: |
         kubectl exec -it binary-host -c binary-host -n sc -- find /tools/${{ inputs.env }} -name "partner-chains-node-*" -type f -mtime +30 -delete
@@ -53,7 +58,6 @@ runs:
     - name: Copy binary to binary-host
       continue-on-error: true
       run: |
-        kubectl exec -n sc binary-host -c binary-host -- mkdir -p /tools/${{ inputs.env }}
         kubectl cp partner-chains-node sc/binary-host:/tools/${{ inputs.env }}/partner-chains-node-${{ inputs.sha }} -c binary-host
         kubectl cp partner-chains-node sc/binary-host:/tools/${{ inputs.env }}/partner-chains-node-latest -c binary-host
       shell: bash
