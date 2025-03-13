@@ -209,30 +209,6 @@ jobs:
           else
             echo "All needed jobs passed."
           fi
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Download binary 
-        uses: actions/download-artifact@v4
-        with:
-          name: partner-chains-node-artifact 
-          path: partner-chains-node
-      - name: Debug directory contents
-        run: ls -la
-        shell: bash
-      - name: Copy to binary-host
-        uses: ./.github/actions/artifacts/copy-to-binary-host
-        with:
-          sha: ${{ needs.build-linux-pre-merge.outputs.sha }}
-          env: "ci-preview"
-        env:
-          AWS_REGION: "eu-central-1"
-          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
 ### Post merge workflow ###############################################################################################################
 
@@ -506,12 +482,32 @@ jobs:
         with:
           fetch-depth: 0
           ref: master
+      - name: Download binary 
+        uses: actions/download-artifact@v4
+        with:
+          name: partner-chains-node-linux-artifact
+          path: partner-chains-node
+      - name: Debug directory contents
+        run: ls -la
+        shell: bash
+      - name: Copy to binary-host
+        uses: ./.github/actions/artifacts/copy-to-binary-host
+        with:
+          sha: ${{ needs.build-linux-post-merge.outputs.sha }}
+          env: "ci-preview"
+        env:
+          AWS_REGION: "eu-central-1"
+          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
       - name: Deploy and test against ci-preview
         uses: ./.github/actions/tests/run-e2e-tests
         with:
           env: ci
           blockchain: substrate
           markers: "not active_flow and not passive_flow and not probability"
+          sha: ${{ needs.build-linux-post-merge.outputs.sha }}
 
   post-merge-actions-complete:
     if: ${{ always() && (github.event_name == 'pull_request' && github.event.pull_request.merged == true) }}

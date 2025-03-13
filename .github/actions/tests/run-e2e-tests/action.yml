@@ -5,6 +5,9 @@ inputs:
   env:
     description: 'Test environment'
     required: true
+  sha:
+    description: 'Binary SHA'
+    required: false
   keyword:
     description: 'Run tests by keyword (-k)'
     required: false
