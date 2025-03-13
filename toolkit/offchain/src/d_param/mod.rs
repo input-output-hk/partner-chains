@@ -207,7 +207,7 @@ fn mint_d_param_token_tx(
 		policy,
 		&empty_asset_name(),
 		&unit_plutus_data(),
-		&costs.get_mint(policy),
+		&costs.get_mint(&policy.csl_script_hash()),
 	)?;
 	tx_builder.add_output_with_one_script_token(
 		validator,
@@ -217,10 +217,11 @@ fn mint_d_param_token_tx(
 	)?;
 
 	let gov_tx_input = governance_data.utxo_id_as_tx_input();
+	let gov_policy_script = governance_data.policy.script();
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&governance_data.policy_script,
+		&gov_policy_script,
 		&gov_tx_input,
-		&costs.get_mint(&governance_data.policy_script),
+		&costs.get_mint(&gov_policy_script.csl_script_hash()),
 	)?;
 
 	Ok(tx_builder.balance_update_and_build(ctx)?)
@@ -254,10 +255,11 @@ fn update_d_param_tx(
 	)?;
 
 	let gov_tx_input = governance_data.utxo_id_as_tx_input();
+	let gov_policy_script = governance_data.policy.script();
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&governance_data.policy_script,
+		&gov_policy_script,
 		&gov_tx_input,
-		&costs.get_mint(&governance_data.policy_script),
+		&costs.get_mint(&gov_policy_script.csl_script_hash()),
 	)?;
 
 	Ok(tx_builder.balance_update_and_build(ctx)?)

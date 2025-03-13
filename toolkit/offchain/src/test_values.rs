@@ -1,4 +1,7 @@
-use crate::plutus_script::PlutusScript;
+use crate::{
+	governance::{GovernancePolicyScript, PartnerChainsMultisigPolicy},
+	plutus_script::PlutusScript,
+};
 use cardano_serialization_lib::{Address, Language, PlutusData, PrivateKey};
 use hex_literal::hex;
 use ogmios_client::{
@@ -39,6 +42,18 @@ pub(crate) fn test_policy() -> PlutusScript {
 		bytes: hex!("49480100002221200101").to_vec(),
 		language: Language::new_plutus_v2(),
 	}
+}
+
+pub(crate) fn test_governance_policy() -> GovernancePolicyScript {
+	GovernancePolicyScript::MultiSig(PartnerChainsMultisigPolicy {
+		script: test_governance_script(),
+		key_hashes: vec![],
+		threshold: 0,
+	})
+}
+
+pub(crate) fn test_governance_script() -> PlutusScript {
+	PlutusScript { bytes: hex!("112233").to_vec(), language: Language::new_plutus_v2() }
 }
 
 pub(crate) fn test_plutus_data() -> PlutusData {
