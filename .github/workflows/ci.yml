@@ -487,9 +487,6 @@ jobs:
         with:
           name: partner-chains-node-linux-artifact
           path: partner-chains-node
-      - name: Debug directory contents
-        run: ls -la
-        shell: bash
       - name: Copy to binary-host
         uses: ./.github/actions/artifacts/copy-to-binary-host
         with:
@@ -507,7 +504,6 @@ jobs:
           env: ci
           blockchain: substrate
           markers: "not active_flow and not passive_flow and not probability"
-          sha: ${{ needs.build-linux-post-merge.outputs.sha }}
 
   post-merge-actions-complete:
     if: ${{ always() && (github.event_name == 'pull_request' && github.event.pull_request.merged == true) }}

@@ -94,7 +94,6 @@ jobs:
         with:
           sha: ${{ inputs.sha }}
           env: "staging"
-          binary: ""
         env:
           AWS_REGION: "eu-central-1"
           AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
