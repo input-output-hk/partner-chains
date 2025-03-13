@@ -4,7 +4,7 @@ members = [
 	"node/runtime",
 	"toolkit/cli/commands",
 	"toolkit/cli/node-commands",
-	"toolkit/cli/smart-contracts-commands",
+	"toolkit/smart-contracts/commands",
 	"toolkit/substrate-extensions/aura/consensus",
 	"toolkit/block-production-log/pallet",
 	"toolkit/substrate-extensions/partner-chains-session",
@@ -37,8 +37,8 @@ members = [
 	"toolkit/partner-chains-cli",
 	"toolkit/native-token-management/pallet",
 	"toolkit/native-token-management/primitives",
-	"toolkit/offchain",
-	"toolkit/domain/plutus-data",
+	"toolkit/smart-contracts/offchain",
+	"toolkit/smart-contracts/plutus-data",
 	"toolkit/address-associations/pallet",
 	"toolkit/block-participation/pallet",
 	"toolkit/block-participation/primitives",
@@ -199,23 +199,37 @@ substrate-wasm-builder = { default-features = false, git = "https://github.com/p
 raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", tag = "v7.0.2" }
 
 # local dependencies
-sidechain-runtime = { path = "node/runtime" }
-ogmios-client = { path = "toolkit/utils/ogmios-client", default-features = false }
-sidechain-domain = { path = "toolkit/domain/sidechain", default-features = false }
-db-sync-follower = { path = "toolkit/mainchain-follower/db-sync-follower" }
-main-chain-follower-mock = { path = "toolkit/mainchain-follower/mock", default-features = false }
+
+# utils
 plutus = { path = "toolkit/utils/plutus", default-features = false }
 plutus-datum-derive = { default-features = false, path = "toolkit/utils/plutus/plutus-datum-derive" }
 byte-string-derive = { default-features = false, path = "toolkit/utils/byte-string-derivation" }
+ogmios-client = { path = "toolkit/utils/ogmios-client", default-features = false }
+time-source = { path = "toolkit/utils/time-source" }
+
+# domain
+sidechain-domain = { path = "toolkit/domain/sidechain", default-features = false }
+
+# smart contracts
+partner-chains-plutus-data = { path = "toolkit/smart-contracts/plutus-data", default-features = false }
+partner-chains-cardano-offchain = { path = "toolkit/smart-contracts/offchain", default-features = false }
+partner-chains-smart-contracts-commands = { path = "toolkit/smart-contracts/commands", default-features = false }
+
+
 cli-commands = { path = "toolkit/cli/commands" }
 partner-chains-node-commands = { path = "toolkit/cli/node-commands" }
-time-source = { path = "toolkit/utils/time-source" }
-partner-chains-cardano-offchain = { path = "toolkit/offchain", default-features = false }
 partner-chains-cli = { path = "toolkit/partner-chains-cli", default-features = false }
-partner-chains-plutus-data = { path = "toolkit/domain/plutus-data", default-features = false }
-partner-chains-smart-contracts-commands = { path = "toolkit/cli/smart-contracts-commands", default-features = false }
 pallet-address-associations = { path = "toolkit/address-associations/pallet", default-features = false }
 
+# sidechain core
+sidechain-block-search = { path = "toolkit/sidechain/sidechain-block-search", default-features = false }
+sidechain-slots = { path = "toolkit/sidechain/sidechain-slots", default-features = false }
+sidechain-mc-hash = { path = "toolkit/sidechain/sidechain-mc-hash", default-features = false }
+sp-sidechain = { path = "toolkit/sidechain/primitives", default-features = false }
+pallet-sidechain = { path = "toolkit/sidechain/pallet", default-features = false }
+pallet-sidechain-rpc = { path = "toolkit/sidechain/rpc", default-features = false }
+
+# committee selection
 selection = { path = "toolkit/committee-selection/selection", default-features = false }
 sp-session-validator-management = { default-features = false, path = "toolkit/committee-selection/session-validator-management/primitives" }
 sp-session-validator-management-query = { default-features = false, path = "toolkit/committee-selection/session-validator-management/query" }
@@ -225,23 +239,25 @@ pallet-session-validator-management-rpc = { path = "toolkit/committee-selection/
 session-manager = { path = "toolkit/committee-selection/session-validator-management/session-manager", default-features = false }
 authority-selection-inherents = { path = "toolkit/committee-selection/authority-selection-inherents", default-features = false }
 
+# substrate extensions
 sc-partner-chains-consensus-aura = { path = "toolkit/substrate-extensions/aura/consensus", default-features = false }
 sp-partner-chains-consensus-aura = { path = "toolkit/substrate-extensions/aura/primitives", default-features = false }
 pallet-partner-chains-session = { path = "toolkit/substrate-extensions/partner-chains-session", default-features = false }
 pallet-session-runtime-stub = { path = "toolkit/substrate-extensions/partner-chains-session/stub", default-features = false }
 
-sidechain-block-search = { path = "toolkit/sidechain/sidechain-block-search", default-features = false }
-sidechain-slots = { path = "toolkit/sidechain/sidechain-slots", default-features = false }
-sidechain-mc-hash = { path = "toolkit/sidechain/sidechain-mc-hash", default-features = false }
-sp-sidechain = { path = "toolkit/sidechain/primitives", default-features = false }
-pallet-sidechain = { path = "toolkit/sidechain/pallet", default-features = false }
-pallet-sidechain-rpc = { path = "toolkit/sidechain/rpc", default-features = false }
-
+# native token management
 pallet-native-token-management = { path = "toolkit/native-token-management/pallet", default-features = false }
 sp-native-token-management = { path = "toolkit/native-token-management/primitives", default-features = false }
 
+# block production and rewards
 pallet-block-production-log = { path = "toolkit/block-production-log/pallet", default-features = false }
 sp-block-production-log = { path = "toolkit/block-production-log/primitives", default-features = false }
-
 pallet-block-participation = { path = "toolkit/block-participation/pallet", default-features = false }
 sp-block-participation = { path = "toolkit/block-participation/primitives", default-features = false }
+
+# main chain follower
+db-sync-follower = { path = "toolkit/mainchain-follower/db-sync-follower" }
+main-chain-follower-mock = { path = "toolkit/mainchain-follower/mock", default-features = false }
+
+# demo node
+sidechain-runtime = { path = "node/runtime" }
