@@ -53,6 +53,7 @@ runs:
     - name: Copy binary to binary-host
       continue-on-error: true
       run: |
+        chmod +x partner-chains-node-binary
         cp partner-chains-node-binary partner-chains-node-latest
         cp partner-chains-node-binary partner-chains-node-${{ inputs.sha }} 
         kubectl cp partner-chains-node-latest sc/binary-host:/tools/${{ inputs.env }} -c binary-host
