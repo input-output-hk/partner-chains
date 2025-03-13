@@ -260,9 +260,9 @@ jobs:
           earthly -P +ci-post-merge --image=${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node --tags="${{ steps.get_sha.outputs.sha }} latest"
       - name: Rename artifact
         run: |
-          cp ./to-build/partner-chains-node ./partner-chains-node
           cp ./to-build/partner-chains-node ./to-build/partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
           chmod +x ./to-build/partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
+          cp ./to-build/partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux partner-chains-node-binary
       - name: Copy to binary-host
         uses: ./.github/actions/artifacts/copy-to-binary-host
         with:
