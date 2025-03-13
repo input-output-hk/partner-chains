@@ -22,7 +22,6 @@ use sp_block_participation::{
 	BlockParticipationApi,
 };
 use sp_block_production_log::{BlockAuthorInherentProvider, BlockProductionLogApi};
-use sp_block_rewards::BlockBeneficiaryInherentProvider;
 use sp_blockchain::HeaderBackend;
 use sp_consensus_aura::{
 	inherents::InherentDataProvider as AuraIDP, sr25519::AuthorityPair as AuraPair, Slot,
@@ -71,7 +70,6 @@ where
 		McHashIDP,
 		AriadneIDP,
 		BlockAuthorInherentProvider<BlockAuthor>,
-		BlockBeneficiaryInherentProvider<BeneficiaryId>,
 		NativeTokenIDP,
 		BlockParticipationInherentDataProvider<BlockAuthor, DelegatorKey>,
 	);
@@ -112,10 +110,6 @@ where
 		.await?;
 		let block_producer_id_provider =
 			BlockAuthorInherentProvider::new(client.as_ref(), parent_hash, *slot)?;
-		let block_beneficiary_provider =
-			BlockBeneficiaryInherentProvider::<BeneficiaryId>::from_env(
-				"SIDECHAIN_BLOCK_BENEFICIARY",
-			)?;
 
 		let native_token = NativeTokenIDP::new(
 			client.clone(),
@@ -141,7 +135,6 @@ where
 			mc_hash,
 			ariadne_data_provider,
 			block_producer_id_provider,
-			block_beneficiary_provider,
 			native_token,
 			payouts,
 		))
