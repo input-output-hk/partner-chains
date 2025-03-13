@@ -35,8 +35,8 @@ members = [
 	"toolkit/primitives/session-validator-management/query",
 	"toolkit/primitives/session-manager",
 	"toolkit/partner-chains-cli",
-	"toolkit/pallets/native-token-management",
-	"toolkit/primitives/native-token-management",
+	"toolkit/native-token-management/pallet",
+	"toolkit/native-token-management/primitives",
 	"toolkit/offchain",
 	"toolkit/primitives/plutus-data",
 	"toolkit/pallets/address-associations",
@@ -222,8 +222,6 @@ partner-chains-node-commands = { path = "toolkit/cli/node-commands" }
 time-source = { path = "toolkit/utils/time-source" }
 authority-selection-inherents = { path = "toolkit/primitives/authority-selection-inherents", default-features = false }
 session-manager = { path = "toolkit/primitives/session-manager", default-features = false }
-pallet-native-token-management = { path = "toolkit/pallets/native-token-management", default-features = false }
-sp-native-token-management = { path = "toolkit/primitives/native-token-management", default-features = false }
 sc-partner-chains-consensus-aura = { path = "toolkit/client/consensus/aura", default-features = false }
 sp-partner-chains-consensus-aura = { path = "toolkit/primitives/consensus/aura", default-features = false }
 pallet-partner-chains-session = { path = "toolkit/pallets/partner-chains-session", default-features = false }
@@ -243,3 +241,6 @@ sidechain-mc-hash = { path = "toolkit/sidechain/sidechain-mc-hash", default-feat
 sp-sidechain = { path = "toolkit/sidechain/primitives", default-features = false }
 pallet-sidechain = { path = "toolkit/sidechain/pallet", default-features = false }
 pallet-sidechain-rpc = { path = "toolkit/sidechain/rpc", default-features = false }
+
+pallet-native-token-management = { path = "toolkit/native-token-management/pallet", default-features = false }
+sp-native-token-management = { path = "toolkit/native-token-management/primitives", default-features = false }
