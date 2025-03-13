@@ -1108,13 +1108,6 @@
 <a href="#1108" id="1108">1108</a>
 <a href="#1109" id="1109">1109</a>
 <a href="#1110" id="1110">1110</a>
-<a href="#1111" id="1111">1111</a>
-<a href="#1112" id="1112">1112</a>
-<a href="#1113" id="1113">1113</a>
-<a href="#1114" id="1114">1114</a>
-<a href="#1115" id="1115">1115</a>
-<a href="#1116" id="1116">1116</a>
-<a href="#1117" id="1117">1117</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attr">#![recursion_limit = <span class="string">"256"</span>]
@@ -1539,12 +1532,6 @@
 
 <span class="kw">pub type </span>BeneficiaryId = sidechain_domain::byte_string::SizedByteString&lt;<span class="number">32</span>&gt;;
 
-<span class="kw">impl </span>pallet_block_rewards::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>BeneficiaryId = BeneficiaryId;
-	<span class="kw">type </span>BlockRewardPoints = u32;
-	<span class="kw">type </span>GetBlockRewardPoints = sp_block_rewards::SimpleBlockCount;
-}
-
 <span class="attr">#[derive(
 	MaxEncodedLen, Encode, Decode, Clone, TypeInfo, PartialEq, Eq, Debug, Hash, PartialOrd, Ord,
 )]
@@ -1653,7 +1640,6 @@
 		</span>Sidechain: pallet_sidechain,
 		SessionCommitteeManagement: pallet_session_validator_management,
 		AddressAssociations: pallet_address_associations,
-		BlockRewards: pallet_block_rewards,
 		BlockProductionLog: pallet_block_production_log,
 		BlockParticipation: pallet_block_participation,
 		<span class="comment">// pallet_grandpa reads pallet_session::pallet::CurrentIndex storage.

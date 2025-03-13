@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["set_current_block_beneficiary"]};

@@ -9,7 +9,6 @@ var srcIndex = new Map(JSON.parse('[\
 ["pallet_address_associations",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_block_participation",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_block_production_log",["",[],["lib.rs","weights.rs"]]],\
-["pallet_block_rewards",["",[],["lib.rs"]]],\
 ["pallet_native_token_management",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_partner_chains_session",["",[],["lib.rs"]]],\
 ["pallet_session_runtime_stub",["",[],["lib.rs"]]],\
@@ -36,7 +35,6 @@ var srcIndex = new Map(JSON.parse('[\
 ["sidechain_slots",["",[],["lib.rs","runtime_api_client.rs"]]],\
 ["sp_block_participation",["",[],["lib.rs"]]],\
 ["sp_block_production_log",["",[],["lib.rs"]]],\
-["sp_block_rewards",["",[],["lib.rs"]]],\
 ["sp_native_token_management",["",[],["lib.rs"]]],\
 ["sp_partner_chains_consensus_aura",["",[],["block_proposal.rs","inherent_digest.rs","lib.rs"]]],\
 ["sp_session_validator_management",["",[],["lib.rs"]]],\

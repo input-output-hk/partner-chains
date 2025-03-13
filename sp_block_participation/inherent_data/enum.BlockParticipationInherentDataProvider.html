@@ -22,7 +22,7 @@ from the block production log pallet.</li>
     data_source: &amp;(dyn <a class="trait" href="trait.BlockParticipationDataSource.html" title="trait sp_block_participation::inherent_data::BlockParticipationDataSource">BlockParticipationDataSource</a> + <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Sync.html" title="trait core::marker::Sync">Sync</a>),
     parent_hash: &lt;Block as BlockT&gt;::Hash,
     current_slot: <a class="struct" href="../struct.Slot.html" title="struct sp_block_participation::Slot">Slot</a>,
-    mc_epoch_config: &amp;MainchainEpochConfig,
+    mc_epoch_config: &amp;<a class="struct" href="../../sidechain_domain/mainchain_epoch/struct.MainchainEpochConfig.html" title="struct sidechain_domain::mainchain_epoch::MainchainEpochConfig">MainchainEpochConfig</a>,
     slot_duration: <a class="struct" href="../struct.SlotDuration.html" title="struct sp_block_participation::SlotDuration">SlotDuration</a>,
 ) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.81.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;Self, <a class="enum" href="enum.InherentDataCreationError.html" title="enum sp_block_participation::inherent_data::InherentDataCreationError">InherentDataCreationError</a>&lt;BlockProducer&gt;&gt;<div class="where">where
     T: ProvideRuntimeApi&lt;Block&gt; + <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Sync.html" title="trait core::marker::Sync">Sync</a>,
