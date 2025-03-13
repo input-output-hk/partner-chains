@@ -14,7 +14,7 @@ members = [
 	"toolkit/committee-selection/session-validator-management/rpc",
 	"toolkit/substrate-extensions/aura/primitives",
 	"toolkit/block-production-log/primitives",
-	"toolkit/domain/sidechain",
+	"toolkit/sidechain/domain",
 	"toolkit/committee-selection/selection",
 	"toolkit/committee-selection/authority-selection-inherents",
 	"toolkit/mainchain-follower/main-chain-follower-cli",
@@ -207,9 +207,6 @@ byte-string-derive = { default-features = false, path = "toolkit/utils/byte-stri
 ogmios-client = { path = "toolkit/utils/ogmios-client", default-features = false }
 time-source = { path = "toolkit/utils/time-source" }
 
-# domain
-sidechain-domain = { path = "toolkit/domain/sidechain", default-features = false }
-
 # smart contracts
 partner-chains-plutus-data = { path = "toolkit/smart-contracts/plutus-data", default-features = false }
 partner-chains-cardano-offchain = { path = "toolkit/smart-contracts/offchain", default-features = false }
@@ -222,6 +219,7 @@ partner-chains-cli = { path = "toolkit/partner-chains-cli", default-features = f
 pallet-address-associations = { path = "toolkit/address-associations/pallet", default-features = false }
 
 # sidechain core
+sidechain-domain = { path = "toolkit/sidechain/domain", default-features = false }
 sidechain-block-search = { path = "toolkit/sidechain/sidechain-block-search", default-features = false }
 sidechain-slots = { path = "toolkit/sidechain/sidechain-slots", default-features = false }
 sidechain-mc-hash = { path = "toolkit/sidechain/sidechain-mc-hash", default-features = false }
