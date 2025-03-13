@@ -9,8 +9,6 @@ members = [
 	"toolkit/pallets/block-production-log",
 	"toolkit/pallets/pallet-session-runtime-stub",
 	"toolkit/pallets/partner-chains-session",
-	"toolkit/pallets/sidechain",
-	"toolkit/pallets/sidechain/rpc",
 	"toolkit/pallets/session-validator-management",
 	"toolkit/pallets/session-validator-management/benchmarking",
 	"toolkit/pallets/session-validator-management/rpc",
@@ -18,8 +16,6 @@ members = [
 	"toolkit/primitives/block-production-log",
 	"toolkit/primitives/domain",
 	"toolkit/primitives/selection",
-	"toolkit/primitives/sidechain-block-search",
-	"toolkit/primitives/sidechain-slots",
 	"toolkit/primitives/authority-selection-inherents",
 	"toolkit/mainchain-follower/main-chain-follower-cli",
 	"toolkit/mainchain-follower/db-sync-follower",
@@ -29,11 +25,15 @@ members = [
 	"toolkit/utils/plutus/plutus-datum-derive",
 	"toolkit/utils/ogmios-client",
 	"toolkit/utils/time-source",
-	"toolkit/primitives/sidechain-mc-hash",
+	"toolkit/sidechain/sidechain-mc-hash",
+	"toolkit/sidechain/pallet",
+	"toolkit/sidechain/rpc",
+	"toolkit/sidechain/sidechain-block-search",
+	"toolkit/sidechain/sidechain-slots",
+	"toolkit/sidechain/primitives",
 	"toolkit/primitives/session-validator-management",
 	"toolkit/primitives/session-validator-management/query",
 	"toolkit/primitives/session-manager",
-	"toolkit/primitives/sidechain",
 	"toolkit/partner-chains-cli",
 	"toolkit/pallets/native-token-management",
 	"toolkit/primitives/native-token-management",
@@ -212,20 +212,16 @@ ogmios-client = { path = "toolkit/utils/ogmios-client", default-features = false
 sp-block-production-log = { path = "toolkit/primitives/block-production-log", default-features = false }
 selection = { path = "toolkit/primitives/selection", default-features = false }
 sidechain-domain = { path = "toolkit/primitives/domain", default-features = false }
-sidechain-block-search = { path = "toolkit/primitives/sidechain-block-search", default-features = false }
 db-sync-follower = { path = "toolkit/mainchain-follower/db-sync-follower" }
 main-chain-follower-mock = { path = "toolkit/mainchain-follower/mock", default-features = false }
 plutus = { path = "toolkit/utils/plutus", default-features = false }
 plutus-datum-derive = { default-features = false, path = "toolkit/utils/plutus/plutus-datum-derive" }
 byte-string-derive = { default-features = false, path = "toolkit/utils/byte-string-derivation" }
-sidechain-slots = { path = "toolkit/primitives/sidechain-slots", default-features = false }
 cli-commands = { path = "toolkit/cli/commands" }
 partner-chains-node-commands = { path = "toolkit/cli/node-commands" }
 time-source = { path = "toolkit/utils/time-source" }
-sidechain-mc-hash = { path = "toolkit/primitives/sidechain-mc-hash", default-features = false }
 authority-selection-inherents = { path = "toolkit/primitives/authority-selection-inherents", default-features = false }
 session-manager = { path = "toolkit/primitives/session-manager", default-features = false }
-sp-sidechain = { path = "toolkit/primitives/sidechain", default-features = false }
 pallet-native-token-management = { path = "toolkit/pallets/native-token-management", default-features = false }
 sp-native-token-management = { path = "toolkit/primitives/native-token-management", default-features = false }
 sc-partner-chains-consensus-aura = { path = "toolkit/client/consensus/aura", default-features = false }
@@ -239,3 +235,11 @@ partner-chains-smart-contracts-commands = { path = "toolkit/cli/smart-contracts-
 pallet-address-associations = { path = "toolkit/pallets/address-associations", default-features = false }
 pallet-block-participation = { path = "toolkit/pallets/block-participation", default-features = false }
 sp-block-participation = { path = "toolkit/primitives/block-participation", default-features = false }
+
+
+sidechain-block-search = { path = "toolkit/sidechain/sidechain-block-search", default-features = false }
+sidechain-slots = { path = "toolkit/sidechain/sidechain-slots", default-features = false }
+sidechain-mc-hash = { path = "toolkit/sidechain/sidechain-mc-hash", default-features = false }
+sp-sidechain = { path = "toolkit/sidechain/primitives", default-features = false }
+pallet-sidechain = { path = "toolkit/sidechain/pallet", default-features = false }
+pallet-sidechain-rpc = { path = "toolkit/sidechain/rpc", default-features = false }
