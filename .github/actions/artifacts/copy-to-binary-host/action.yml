@@ -55,7 +55,7 @@ runs:
       run: |
         cp partner-chains-node-binary partner-chains-node-latest
         cp partner-chains-node-binary partner-chains-node-${{ inputs.sha }} 
-        kubectl cp partner-chains-node-binary sc/binary-host:/tools/${{ inputs.env }} -c binary-host
-        kubectl cp partner-chains-node-partner-chains-node-${{ inputs.sha }} sc/binary-host:/tools/${{ inputs.env }} -c binary-host
+        kubectl cp partner-chains-node-latest sc/binary-host:/tools/${{ inputs.env }} -c binary-host
+        kubectl cp partner-chains-node-${{ inputs.sha }} sc/binary-host:/tools/${{ inputs.env }} -c binary-host
       shell: bash
     
