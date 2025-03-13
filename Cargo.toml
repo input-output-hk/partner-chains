@@ -6,14 +6,14 @@ members = [
 	"toolkit/cli/node-commands",
 	"toolkit/cli/smart-contracts-commands",
 	"toolkit/substrate-extensions/aura/consensus",
-	"toolkit/pallets/block-production-log",
+	"toolkit/block-production-log/pallet",
 	"toolkit/substrate-extensions/partner-chains-session",
 	"toolkit/substrate-extensions/partner-chains-session/stub",
 	"toolkit/committee-selection/session-validator-management/pallet",
 	"toolkit/committee-selection/session-validator-management/pallet/benchmarking",
 	"toolkit/committee-selection/session-validator-management/rpc",
 	"toolkit/substrate-extensions/aura/primitives",
-	"toolkit/primitives/block-production-log",
+	"toolkit/block-production-log/primitives",
 	"toolkit/primitives/domain",
 	"toolkit/committee-selection/selection",
 	"toolkit/committee-selection/authority-selection-inherents",
@@ -40,8 +40,8 @@ members = [
 	"toolkit/offchain",
 	"toolkit/primitives/plutus-data",
 	"toolkit/address-associations/pallet",
-	"toolkit/pallets/block-participation",
-	"toolkit/primitives/block-participation",
+	"toolkit/block-participation/pallet",
+	"toolkit/block-participation/primitives",
 ]
 resolver = "2"
 
@@ -200,9 +200,7 @@ raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-c
 
 # local dependencies
 sidechain-runtime = { path = "node/runtime" }
-pallet-block-production-log = { path = "toolkit/pallets/block-production-log", default-features = false }
 ogmios-client = { path = "toolkit/utils/ogmios-client", default-features = false }
-sp-block-production-log = { path = "toolkit/primitives/block-production-log", default-features = false }
 sidechain-domain = { path = "toolkit/primitives/domain", default-features = false }
 db-sync-follower = { path = "toolkit/mainchain-follower/db-sync-follower" }
 main-chain-follower-mock = { path = "toolkit/mainchain-follower/mock", default-features = false }
@@ -217,8 +215,6 @@ partner-chains-cli = { path = "toolkit/partner-chains-cli", default-features = f
 partner-chains-plutus-data = { path = "toolkit/primitives/plutus-data", default-features = false }
 partner-chains-smart-contracts-commands = { path = "toolkit/cli/smart-contracts-commands", default-features = false }
 pallet-address-associations = { path = "toolkit/address-associations/pallet", default-features = false }
-pallet-block-participation = { path = "toolkit/pallets/block-participation", default-features = false }
-sp-block-participation = { path = "toolkit/primitives/block-participation", default-features = false }
 
 selection = { path = "toolkit/committee-selection/selection", default-features = false }
 sp-session-validator-management = { default-features = false, path = "toolkit/committee-selection/session-validator-management/primitives" }
@@ -243,3 +239,9 @@ pallet-sidechain-rpc = { path = "toolkit/sidechain/rpc", default-features = fals
 
 pallet-native-token-management = { path = "toolkit/native-token-management/pallet", default-features = false }
 sp-native-token-management = { path = "toolkit/native-token-management/primitives", default-features = false }
+
+pallet-block-production-log = { path = "toolkit/block-production-log/pallet", default-features = false }
+sp-block-production-log = { path = "toolkit/block-production-log/primitives", default-features = false }
+
+pallet-block-participation = { path = "toolkit/block-participation/pallet", default-features = false }
+sp-block-participation = { path = "toolkit/block-participation/primitives", default-features = false }
