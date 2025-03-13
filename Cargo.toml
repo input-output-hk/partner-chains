@@ -5,14 +5,14 @@ members = [
 	"toolkit/cli/commands",
 	"toolkit/cli/node-commands",
 	"toolkit/cli/smart-contracts-commands",
-	"toolkit/client/consensus/aura",
+	"toolkit/substrate-extensions/aura/consensus",
 	"toolkit/pallets/block-production-log",
-	"toolkit/pallets/pallet-session-runtime-stub",
-	"toolkit/pallets/partner-chains-session",
+	"toolkit/substrate-extensions/partner-chains-session",
+	"toolkit/substrate-extensions/partner-chains-session/stub",
 	"toolkit/pallets/session-validator-management",
 	"toolkit/pallets/session-validator-management/benchmarking",
 	"toolkit/pallets/session-validator-management/rpc",
-	"toolkit/primitives/consensus/aura",
+	"toolkit/substrate-extensions/aura/primitives",
 	"toolkit/primitives/block-production-log",
 	"toolkit/primitives/domain",
 	"toolkit/primitives/selection",
@@ -222,10 +222,6 @@ partner-chains-node-commands = { path = "toolkit/cli/node-commands" }
 time-source = { path = "toolkit/utils/time-source" }
 authority-selection-inherents = { path = "toolkit/primitives/authority-selection-inherents", default-features = false }
 session-manager = { path = "toolkit/primitives/session-manager", default-features = false }
-sc-partner-chains-consensus-aura = { path = "toolkit/client/consensus/aura", default-features = false }
-sp-partner-chains-consensus-aura = { path = "toolkit/primitives/consensus/aura", default-features = false }
-pallet-partner-chains-session = { path = "toolkit/pallets/partner-chains-session", default-features = false }
-pallet-session-runtime-stub = { path = "toolkit/pallets/pallet-session-runtime-stub", default-features = false }
 partner-chains-cardano-offchain = { path = "toolkit/offchain", default-features = false }
 partner-chains-cli = { path = "toolkit/partner-chains-cli", default-features = false }
 partner-chains-plutus-data = { path = "toolkit/primitives/plutus-data", default-features = false }
@@ -234,6 +230,11 @@ pallet-address-associations = { path = "toolkit/pallets/address-associations", d
 pallet-block-participation = { path = "toolkit/pallets/block-participation", default-features = false }
 sp-block-participation = { path = "toolkit/primitives/block-participation", default-features = false }
 
+
+sc-partner-chains-consensus-aura = { path = "toolkit/substrate-extensions/aura/consensus", default-features = false }
+sp-partner-chains-consensus-aura = { path = "toolkit/substrate-extensions/aura/primitives", default-features = false }
+pallet-partner-chains-session = { path = "toolkit/substrate-extensions/partner-chains-session", default-features = false }
+pallet-session-runtime-stub = { path = "toolkit/substrate-extensions/partner-chains-session/stub", default-features = false }
 
 sidechain-block-search = { path = "toolkit/sidechain/sidechain-block-search", default-features = false }
 sidechain-slots = { path = "toolkit/sidechain/sidechain-slots", default-features = false }
