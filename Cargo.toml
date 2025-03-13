@@ -39,7 +39,7 @@ members = [
 	"toolkit/native-token-management/primitives",
 	"toolkit/offchain",
 	"toolkit/primitives/plutus-data",
-	"toolkit/pallets/address-associations",
+	"toolkit/address-associations/pallet",
 	"toolkit/pallets/block-participation",
 	"toolkit/primitives/block-participation",
 ]
@@ -216,7 +216,7 @@ partner-chains-cardano-offchain = { path = "toolkit/offchain", default-features 
 partner-chains-cli = { path = "toolkit/partner-chains-cli", default-features = false }
 partner-chains-plutus-data = { path = "toolkit/primitives/plutus-data", default-features = false }
 partner-chains-smart-contracts-commands = { path = "toolkit/cli/smart-contracts-commands", default-features = false }
-pallet-address-associations = { path = "toolkit/pallets/address-associations", default-features = false }
+pallet-address-associations = { path = "toolkit/address-associations/pallet", default-features = false }
 pallet-block-participation = { path = "toolkit/pallets/block-participation", default-features = false }
 sp-block-participation = { path = "toolkit/primitives/block-participation", default-features = false }
 
