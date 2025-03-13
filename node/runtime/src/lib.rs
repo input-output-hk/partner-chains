@@ -26,6 +26,8 @@ use frame_support::{
 };
 use opaque::SessionKeys;
 use pallet_grandpa::AuthorityId as GrandpaId;
+use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
+use pallet_session::historical as pallet_session_historical;
 use pallet_session_validator_management;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use parity_scale_codec::MaxEncodedLen;
@@ -36,21 +38,19 @@ use sidechain_domain::{
 	DelegatorKey, MainchainKeyHash, PermissionedCandidateData, RegistrationData, ScEpochNumber,
 	ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
 };
-use pallet_session::historical as pallet_session_historical;
 use sidechain_slots::Slot;
 use sp_api::impl_runtime_apis;
 use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_inherents::InherentIdentifier;
 use sp_runtime::{
 	generic, impl_opaque_keys,
 	traits::{
-		AccountIdLookup, BlakeTwo256, Block as BlockT, Convert, IdentifyAccount, NumberFor, One, OpaqueKeys,
-		Verify,
+		AccountIdLookup, BlakeTwo256, Block as BlockT, Convert, IdentifyAccount, NumberFor, One,
+		OpaqueKeys, Verify,
 	},
-	transaction_validity::{TransactionSource, TransactionPriority, TransactionValidity},
+	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature, Perbill,
 };
 use sp_sidechain::SidechainStatus;
@@ -165,7 +165,9 @@ pub mod opaque {
 		}
 	}
 	impl From<(sr25519::Public, ed25519::Public, sr25519::Public)> for SessionKeys {
-		fn from((aura, grandpa, im_online): (sr25519::Public, ed25519::Public, sr25519::Public)) -> Self {
+		fn from(
+			(aura, grandpa, im_online): (sr25519::Public, ed25519::Public, sr25519::Public),
+		) -> Self {
 			Self { aura: aura.into(), grandpa: grandpa.into(), im_online: im_online.into() }
 		}
 	}

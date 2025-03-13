@@ -197,7 +197,10 @@ pub enum PermissionedCandidateDataError {
 
 pub fn validate_permissioned_candidate_data<AccountId: TryFrom<SidechainPublicKey>>(
 	candidate: PermissionedCandidateData,
-) -> Result<(AccountId, sr25519::Public, ed25519::Public, sr25519::Public), PermissionedCandidateDataError> {
+) -> Result<
+	(AccountId, sr25519::Public, ed25519::Public, sr25519::Public),
+	PermissionedCandidateDataError,
+> {
 	Ok((
 		candidate
 			.sidechain_public_key
@@ -223,7 +226,10 @@ pub fn validate_registration_data(
 	stake_pool_pub_key: &StakePoolPublicKey,
 	registration_data: &RegistrationData,
 	genesis_utxo: UtxoId,
-) -> Result<(ecdsa::Public, (sr25519::Public, ed25519::Public, sr25519::Public)), RegistrationDataError> {
+) -> Result<
+	(ecdsa::Public, (sr25519::Public, ed25519::Public, sr25519::Public)),
+	RegistrationDataError,
+> {
 	let aura_pub_key = registration_data
 		.aura_pub_key
 		.try_into_sr25519()

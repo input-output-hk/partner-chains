@@ -48,7 +48,11 @@ pub(crate) struct ParsedPermissionedCandidatesKeys {
 
 impl ParsedPermissionedCandidatesKeys {
 	pub fn session_keys(&self) -> SessionKeys {
-		SessionKeys { aura: self.aura.into(), grandpa: self.grandpa.into(), im_online: self.im_online.into() }
+		SessionKeys {
+			aura: self.aura.into(),
+			grandpa: self.grandpa.into(),
+			im_online: self.im_online.into(),
+		}
 	}
 
 	pub fn account_id_32(&self) -> AccountId32 {
@@ -71,10 +75,9 @@ impl TryFrom<&PermissionedCandidateKeys> for ParsedPermissionedCandidatesKeys {
 			"{} is invalid Ed25519 public key",
 			value.grandpa_pub_key
 		)))?;
-		let im_online = parse_sr25519(&value.im_online_pub_key).ok_or(anyhow::Error::msg(format!(
-			"{} is invalid sr25519 public key",
-			value.im_online_pub_key
-		)))?;
+		let im_online = parse_sr25519(&value.im_online_pub_key).ok_or(anyhow::Error::msg(
+			format!("{} is invalid sr25519 public key", value.im_online_pub_key),
+		))?;
 		Ok(Self { sidechain, aura, grandpa, im_online })
 	}
 }

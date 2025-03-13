@@ -21,7 +21,8 @@ pub fn authority_keys(
 	let aura_pk = sr25519::Public::from_raw(from_hex(aura_pub_key).unwrap().try_into().unwrap());
 	let granda_pk =
 		ed25519::Public::from_raw(from_hex(grandpa_pub_key).unwrap().try_into().unwrap());
-	let im_online_pk = sr25519::Public::from_raw(from_hex(im_online_pub_key).unwrap().try_into().unwrap());
+	let im_online_pk =
+		sr25519::Public::from_raw(from_hex(im_online_pub_key).unwrap().try_into().unwrap());
 	let sidechain_pk = sidechain_domain::SidechainPublicKey(from_hex(sidechain_pub_key).unwrap());
 
 	let session_keys = (aura_pk, granda_pk, im_online_pk).into();

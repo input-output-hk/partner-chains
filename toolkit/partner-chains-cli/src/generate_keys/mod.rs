@@ -117,7 +117,7 @@ pub fn generate_spo_keys<C: IOContext>(
 			sidechain_pub_key: cross_chain_key,
 			aura_pub_key: aura_key,
 			grandpa_pub_key: grandpa_key,
-			im_online_pub_key: im_online_key
+			im_online_pub_key: im_online_key,
 		})
 		.expect("Failed to serialize public keys");
 		context.write_file(KEYS_FILE_PATH, &public_keys_json);
