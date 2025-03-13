@@ -3,6 +3,8 @@ from pytest import fixture, mark, skip
 from src.blockchain_api import BlockchainApi
 from config.api_config import ApiConfig, NativeToken, MainchainAccount
 
+pytestmark = mark.native_token
+
 
 @fixture(scope="session", autouse=True)
 def reserve_cfg(config: ApiConfig) -> NativeToken:
