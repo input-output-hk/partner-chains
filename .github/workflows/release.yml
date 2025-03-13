@@ -89,6 +89,9 @@ jobs:
         with:
           name: partner-chains-node-linux-artifact 
           path: partner-chains-node-binary
+      - name: debug
+        run: ls -la && ls -la partner-chains-node-binary
+        shell: bash 
       - name: Copy to binary-host
         uses: ./.github/actions/artifacts/copy-to-binary-host
         with:
