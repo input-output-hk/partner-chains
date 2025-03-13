@@ -14,7 +14,7 @@ members = [
 	"toolkit/committee-selection/session-validator-management/rpc",
 	"toolkit/substrate-extensions/aura/primitives",
 	"toolkit/block-production-log/primitives",
-	"toolkit/primitives/domain",
+	"toolkit/domain/sidechain",
 	"toolkit/committee-selection/selection",
 	"toolkit/committee-selection/authority-selection-inherents",
 	"toolkit/mainchain-follower/main-chain-follower-cli",
@@ -38,7 +38,7 @@ members = [
 	"toolkit/native-token-management/pallet",
 	"toolkit/native-token-management/primitives",
 	"toolkit/offchain",
-	"toolkit/primitives/plutus-data",
+	"toolkit/domain/plutus-data",
 	"toolkit/address-associations/pallet",
 	"toolkit/block-participation/pallet",
 	"toolkit/block-participation/primitives",
@@ -201,7 +201,7 @@ raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-c
 # local dependencies
 sidechain-runtime = { path = "node/runtime" }
 ogmios-client = { path = "toolkit/utils/ogmios-client", default-features = false }
-sidechain-domain = { path = "toolkit/primitives/domain", default-features = false }
+sidechain-domain = { path = "toolkit/domain/sidechain", default-features = false }
 db-sync-follower = { path = "toolkit/mainchain-follower/db-sync-follower" }
 main-chain-follower-mock = { path = "toolkit/mainchain-follower/mock", default-features = false }
 plutus = { path = "toolkit/utils/plutus", default-features = false }
@@ -212,7 +212,7 @@ partner-chains-node-commands = { path = "toolkit/cli/node-commands" }
 time-source = { path = "toolkit/utils/time-source" }
 partner-chains-cardano-offchain = { path = "toolkit/offchain", default-features = false }
 partner-chains-cli = { path = "toolkit/partner-chains-cli", default-features = false }
-partner-chains-plutus-data = { path = "toolkit/primitives/plutus-data", default-features = false }
+partner-chains-plutus-data = { path = "toolkit/domain/plutus-data", default-features = false }
 partner-chains-smart-contracts-commands = { path = "toolkit/cli/smart-contracts-commands", default-features = false }
 pallet-address-associations = { path = "toolkit/address-associations/pallet", default-features = false }
 
