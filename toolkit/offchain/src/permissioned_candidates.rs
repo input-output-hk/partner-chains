@@ -240,7 +240,7 @@ fn mint_permissioned_candidates_token_tx(
 			policy,
 			&empty_asset_name(),
 			&permissioned_candidates_policy_redeemer_data(),
-			&costs.get_mint(&policy.csl_script_hash()),
+			&costs.get_mint(&policy.clone().into()),
 		)?;
 	}
 	tx_builder.add_output_with_one_script_token(
@@ -255,7 +255,7 @@ fn mint_permissioned_candidates_token_tx(
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&gov_script,
 		&gov_tx_input,
-		&costs.get_mint(&gov_script.csl_script_hash()),
+		&costs.get_mint(&gov_script),
 	)?;
 
 	Ok(tx_builder.balance_update_and_build(ctx)?)
@@ -295,7 +295,7 @@ fn update_permissioned_candidates_tx(
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&gov_policy_script,
 		&gov_tx_input,
-		&costs.get_mint(&gov_policy_script.csl_script_hash()),
+		&costs.get_mint(&gov_policy_script),
 	)?;
 
 	Ok(tx_builder.balance_update_and_build(ctx)?)

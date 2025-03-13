@@ -87,6 +87,7 @@ impl std::fmt::Debug for DatumHash {
 #[derive(Clone, Deserialize, Eq, PartialEq)]
 pub struct OgmiosScript {
 	pub language: String,
+	pub json: Option<NativeScript>,
 	#[serde(deserialize_with = "parse_bytes")]
 	pub cbor: Vec<u8>,
 	pub json: Option<NativeScript>,

@@ -109,10 +109,11 @@ fn create_reserve_tx(
 ) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
+	let auth_policy_script = reserve.scripts.auth_policy.clone().into();
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&reserve.scripts.auth_policy.clone().into(),
+		&auth_policy_script,
 		&reserve.auth_policy_version_utxo.to_csl_tx_input(),
-		&costs.get_mint(&reserve.scripts.auth_policy.csl_script_hash()),
+		&costs.get_mint(&auth_policy_script),
 	)?;
 	tx_builder.add_output(&reserve_validator_output(parameters, &reserve.scripts, ctx)?)?;
 
@@ -121,7 +122,7 @@ fn create_reserve_tx(
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&gov_policy_script,
 		&gov_tx_input,
-		&costs.get_mint(&gov_policy_script.csl_script_hash()),
+		&costs.get_mint(&gov_policy_script),
 	)?;
 	tx_builder.add_script_reference_input(
 		&reserve.validator_version_utxo.to_csl_tx_input(),

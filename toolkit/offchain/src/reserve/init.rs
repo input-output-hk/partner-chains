@@ -162,7 +162,7 @@ fn init_script_tx(
 			&version_oracle.policy,
 			&version_oracle_asset_name(),
 			&witness,
-			&costs.get_mint(&version_oracle.policy.csl_script_hash()),
+			&costs.get_mint(&version_oracle.policy.clone().into()),
 		)?;
 	}
 	{
@@ -186,7 +186,7 @@ fn init_script_tx(
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&gov_script,
 		&gov_tx_input,
-		&costs.get_mint(&gov_script.csl_script_hash()),
+		&costs.get_mint(&gov_script),
 	)?;
 
 	tx_builder.add_script_reference_input(&gov_tx_input, gov_script.length());

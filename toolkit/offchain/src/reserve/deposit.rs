@@ -112,7 +112,7 @@ fn deposit_to_reserve_tx(
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&gov_policy_script,
 		&governance.utxo_id_as_tx_input(),
-		&costs.get_mint(&gov_policy_script.csl_script_hash()),
+		&costs.get_mint(&gov_policy_script),
 	)?;
 
 	tx_builder.add_script_reference_input(

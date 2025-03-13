@@ -2,7 +2,7 @@ use crate::csl::{NetworkTypeExt, OgmiosUtxoExt};
 use crate::plutus_script;
 use crate::scripts_data;
 use cardano_serialization_lib::*;
-use ogmios_client::types::{NativeScript as OgmiosNativeScript, OgmiosScript};
+use ogmios_client::types::NativeScript as OgmiosNativeScript;
 use ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, types::OgmiosUtxo,
 };
@@ -143,10 +143,7 @@ fn read_policy(governance_utxo: &OgmiosUtxo) -> Result<GovernancePolicyScript, J
 	let plutus_multisig = plutus_script::PlutusScript::from_ogmios(script.clone())
 		.ok()
 		.and_then(parse_pc_multisig);
-	let policy_script = plutus_multisig.or_else(|| match script {
-		OgmiosScript::Native(native) => parse_simple_at_least_n_native_script(native),
-		_ => None,
-	});
+	let policy_script = plutus_multisig.or_else(|| parse_simple_at_least_n_native_script(script));
 	policy_script.ok_or_else(|| {
 		JsError::from_str(&format!(
 			"Cannot convert script from UTXO {} into a multisig policy",
@@ -178,10 +175,10 @@ fn parse_pc_multisig(script: plutus_script::PlutusScript) -> Option<GovernancePo
 }
 
 fn parse_simple_at_least_n_native_script(
-	script: ogmios_client::types::NativeScript,
+	script: ogmios_client::types::OgmiosScript,
 ) -> Option<GovernancePolicyScript> {
-	match script {
-		OgmiosNativeScript::Some { from, at_least } => {
+	match script.json {
+		Some(OgmiosNativeScript::Some { from, at_least }) => {
 			let mut keys = Vec::with_capacity(from.len());
 			for x in from {
 				let key = match x {

@@ -176,31 +176,36 @@ fn ex_units_from_response(resp: OgmiosEvaluateTransactionResponse) -> ExUnits {
 	ExUnits::new(&resp.budget.memory.into(), &resp.budget.cpu.into())
 }
 
+#[derive(Debug)]
 pub struct CostLookup {
 	mints: HashMap<cardano_serialization_lib::ScriptHash, ExUnits>,
 	spends: HashMap<u32, ExUnits>,
 }
 
+#[derive(Debug)]
 pub enum Costs {
 	Costs(CostLookup),
 	ZeroCosts,
 }
 
 pub trait CostStore {
-	fn get_mint(&self, script: &ScriptHash) -> ExUnits;
+	fn get_mint(&self, script: &Script) -> ExUnits;
 	fn get_spend(&self, spend_ix: u32) -> ExUnits;
 	fn get_one_spend(&self) -> ExUnits;
 }
 
 impl CostStore for Costs {
-	fn get_mint(&self, script_hash: &ScriptHash) -> ExUnits {
+	fn get_mint(&self, script: &Script) -> ExUnits {
 		match self {
 			Costs::ZeroCosts => zero_ex_units(),
-			Costs::Costs(cost_lookup) => cost_lookup
-				.mints
-				.get(script_hash)
-				.expect("get_mint should not be called with an unknown script")
-				.clone(),
+			Costs::Costs(cost_lookup) => match script {
+				Script::Plutus(script) => cost_lookup
+					.mints
+					.get(&script.csl_script_hash())
+					.expect("get_mint should not be called with an unknown script")
+					.clone(),
+				_ => zero_ex_units(),
+			},
 		}
 	}
 	fn get_spend(&self, spend_ix: u32) -> ExUnits {
@@ -559,11 +564,21 @@ impl TransactionBuilderExt for TransactionBuilder {
 				)
 			},
 			Script::Native(script) => {
+				println!("BBB: {}", script.to_bytes().len());
 				let source = NativeScriptSource::new_ref_input(
 					&script.hash(),
 					ref_input,
-					script.to_bytes().len(),
+					script.to_bytes().len() + 2,
 				);
+
+				//let xxx = script.get_required_signers();
+				//source.set_required_signers(&xxx);
+				//let source = NativeScriptSource::new(&script);
+				println!(
+					"Adding MintWitness:new_native_script, ref_input: {}",
+					ref_input.to_json().unwrap()
+				);
+				println!("{}", hex::encode(script.to_bytes()));
 				MintWitness::new_native_script(&source)
 			},
 		};
@@ -645,6 +660,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 	}
 }
 
+#[derive(Clone, Debug)]
 pub(crate) enum Script {
 	Plutus(PlutusScript),
 	Native(NativeScript),
@@ -667,6 +683,15 @@ impl Script {
 		match self {
 			Self::Plutus(script) => script.csl_script_hash(),
 			Self::Native(script) => script.hash(),
+		}
+	}
+
+	pub(crate) fn script_hash(&self) -> [u8; 28] {
+		match self {
+			Self::Plutus(script) => script.script_hash(),
+			Self::Native(script) => {
+				script.hash().to_bytes().try_into().expect("CSL script hash is always 28 bytes")
+			},
 		}
 	}
 

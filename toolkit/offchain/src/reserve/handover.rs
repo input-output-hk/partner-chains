@@ -95,10 +95,9 @@ fn build_tx(
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
 	let reserve_auth_policy_spend_cost = costs.get_one_spend();
-	let reserve_auth_policy_burn_cost =
-		costs.get_mint(&reserve.scripts.auth_policy.csl_script_hash());
+	let reserve_auth_policy_burn_cost = costs.get_mint(&reserve.scripts.auth_policy.clone().into());
 	let governance_script = governance.policy.script();
-	let governance_mint_cost = costs.get_mint(&governance_script.csl_script_hash());
+	let governance_mint_cost = costs.get_mint(&governance_script);
 
 	// mint goveranance token
 	tx_builder.add_mint_one_script_token_using_reference_script(

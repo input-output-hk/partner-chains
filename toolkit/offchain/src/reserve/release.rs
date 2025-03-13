@@ -131,7 +131,7 @@ fn reserve_release_tx(
 		&v_function,
 		&reference_utxo.to_csl_tx_input(),
 		&Int::new(&cumulative_total_transfer.into()),
-		&costs.get_mint(&v_function.csl_script_hash()),
+		&costs.get_mint(&v_function),
 	)?;
 
 	// Remove tokens from the reserve

@@ -8,12 +8,15 @@ use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::{
 	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, InputsBuilderExt,
-	TransactionBuilderExt, TransactionContext,
+	OgmiosUtxoExt, Script, TransactionBuilderExt, TransactionContext,
 };
 use crate::governance::GovernanceData;
 use crate::plutus_script::PlutusScript;
 use anyhow::anyhow;
-use cardano_serialization_lib::{PlutusData, Transaction, TransactionBuilder, TxInputsBuilder};
+use cardano_serialization_lib::{
+	NativeScriptSource, PlutusData, ScriptRef, Transaction, TransactionBuilder,
+	TransactionUnspentOutput, TxInputsBuilder,
+};
 use ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
 use ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
@@ -202,12 +205,48 @@ fn mint_d_param_token_tx(
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
+
+	let gov_tx_input = governance_data.utxo_id_as_tx_input();
+	let gov_policy_script = governance_data.policy.script();
+	tx_builder.add_mint_one_script_token_using_reference_script(
+		&gov_policy_script,
+		&gov_tx_input,
+		&costs.get_mint(&gov_policy_script),
+	)?;
+	// tx_builder.set_inputs(&{
+	// 	let mut inputs = TxInputsBuilder::new();
+	// 	let utxo = governance_data.utxo.to_csl()?;
+	// 	let mut output = utxo.output();
+
+	// 	let script = match gov_policy_script.clone() {
+	// 		Script::Native(script) => script.clone(),
+	// 		_ => panic!("hehe"),
+	// 	};
+	// 	output.set_script_ref(&ScriptRef::new_native_script(&script));
+
+	// 	println!("AAA: {}", gov_policy_script.length());
+	// 	let xxx = output.script_ref().as_ref().map(|x| x.to_unwrapped_bytes().len());
+	// 	dbg!(xxx);
+
+	// 	let mut blah = NativeScriptSource::new_ref_input(
+	// 		&gov_policy_script.csl_script_hash(),
+	// 		&governance_data.utxo.to_csl_tx_input(),
+	// 		gov_policy_script.length() + 2,
+	// 	);
+	// 	blah.set_required_signers(&script.get_required_signers());
+	// 	inputs.add_native_script_utxo(
+	// 		&TransactionUnspentOutput::new(&utxo.input(), &output),
+	// 		&blah,
+	// 	)?;
+	// 	inputs
+	// });
+
 	// The essence of transaction: mint D-Param token and set output with it, mint a governance token.
 	tx_builder.add_mint_one_script_token(
 		policy,
 		&empty_asset_name(),
 		&unit_plutus_data(),
-		&costs.get_mint(&policy.csl_script_hash()),
+		&costs.get_mint(&policy.clone().into()),
 	)?;
 	tx_builder.add_output_with_one_script_token(
 		validator,
@@ -216,15 +255,11 @@ fn mint_d_param_token_tx(
 		ctx,
 	)?;
 
-	let gov_tx_input = governance_data.utxo_id_as_tx_input();
-	let gov_policy_script = governance_data.policy.script();
-	tx_builder.add_mint_one_script_token_using_reference_script(
-		&gov_policy_script,
-		&gov_tx_input,
-		&costs.get_mint(&gov_policy_script.csl_script_hash()),
-	)?;
-
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	let tx = tx_builder.balance_update_and_build(ctx)?;
+	println!("Insert D-param tx: {}", hex::encode(tx.to_bytes()));
+	dbg!(tx.witness_set().native_scripts());
+	dbg!(tx.body().fee());
+	Ok(tx)
 }
 
 fn update_d_param_tx(
@@ -259,7 +294,7 @@ fn update_d_param_tx(
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&gov_policy_script,
 		&gov_tx_input,
-		&costs.get_mint(&gov_policy_script.csl_script_hash()),
+		&costs.get_mint(&gov_policy_script),
 	)?;
 
 	Ok(tx_builder.balance_update_and_build(ctx)?)

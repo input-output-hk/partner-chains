@@ -87,6 +87,7 @@ fn update_governance_tx(
 	costs: Costs,
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
+	println!("Update governance costs: {:?}", costs);
 	let multi_sig_policy =
 		PlutusScript::from_wrapped_cbor(multi_sig_policy, Language::new_plutus_v2())?
 			.apply_uplc_data(multisig_governance_policy_configuration(new_governance_authority))?;
@@ -104,13 +105,13 @@ fn update_governance_tx(
 	tx_builder.add_mint_one_script_token_using_reference_script(
 		&gov_policy_script,
 		&governance_data.utxo_id_as_tx_input(),
-		&costs.get_mint(&gov_policy_script.csl_script_hash()),
+		&costs.get_mint(&gov_policy_script),
 	)?;
 
 	tx_builder.add_output(&version_oracle_datum_output(
 		version_oracle_validator.clone(),
 		version_oracle_policy.clone(),
-		multi_sig_policy.clone(),
+		multi_sig_policy.clone().into(),
 		ctx.network,
 		ctx,
 	)?)?;
@@ -127,5 +128,9 @@ fn update_governance_tx(
 		inputs
 	});
 
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	let tx = tx_builder.balance_update_and_build(ctx)?;
+	println!("Update governance tx: {}", hex::encode(tx.to_bytes()));
+	dbg!(tx.witness_set().native_scripts());
+	dbg!(tx.body().fee());
+	Ok(tx)
 }
