@@ -99,7 +99,7 @@ impl VersionedDatumWithLegacy for PermissionedCandidateDatums {
 }
 
 fn decode_legacy_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandidateDatumV0> {
-	let datums = datum.as_list().filter(|datums| datums.len() == 3)?;
+	let datums = datum.as_list().filter(|datums| datums.len() == 4)?;
 
 	let sc = datums.get(0).as_bytes()?;
 	let aura = datums.get(1).as_bytes()?;
