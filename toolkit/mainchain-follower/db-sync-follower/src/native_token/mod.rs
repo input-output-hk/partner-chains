@@ -160,7 +160,7 @@ impl NativeTokenManagementDataSourceImpl {
 	}
 }
 
-fn to_db_asset(scripts: &MainChainScripts) -> crate::db_model::Asset {
+pub fn to_db_asset(scripts: &MainChainScripts) -> crate::db_model::Asset {
 	crate::db_model::Asset {
 		policy_id: scripts.native_token_policy_id.clone().into(),
 		asset_name: scripts.native_token_asset_name.clone().into(),
