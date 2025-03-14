@@ -1,7 +1,7 @@
 use anyhow::Ok;
+use crate::params::StakeSigningKeyParam;
 use byte_string::ByteString;
 use clap::Parser;
-use cli_utils::key_params::StakeSigningKeyParam;
 use pallet_address_associations::AddressAssociationSignedMessage;
 use parity_scale_codec::Encode;
 use serde::Serialize;

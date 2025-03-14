@@ -6806,7 +6806,6 @@ dependencies = [
  "anyhow",
  "authority-selection-inherents",
  "clap",
- "cli-utils",
  "ed25519-zebra",
  "env_logger 0.11.3",
  "frame-support",

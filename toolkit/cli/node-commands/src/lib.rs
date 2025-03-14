@@ -1,6 +1,6 @@
-use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 use crate::address_association_signatures::AddressAssociationSignaturesCmd;
 use crate::registration_signatures::RegistrationSignaturesCmd;
+use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use clap::Parser;
@@ -25,6 +25,7 @@ use std::future::Future;
 use std::sync::Arc;
 
 mod address_association_signatures;
+mod params;
 mod registration_signatures;
 
 #[derive(Debug, Clone, Parser)]
