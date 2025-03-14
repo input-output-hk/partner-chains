@@ -2,27 +2,29 @@
 
 use crate::{
 	types::{OgmiosBytesSize, OgmiosUtxo, OgmiosValue, SlotLength, TimeSeconds},
-	ByNameParamsBuilder, OgmiosClient, OgmiosClientError, OgmiosParams,
+	ByNameParamsBuilder, ErrorObject, OgmiosClient, OgmiosClientError, OgmiosParams,
 };
 use serde::Deserialize;
 
 pub trait QueryLedgerState {
 	#[allow(async_fn_in_trait)]
-	async fn get_tip(&self) -> Result<OgmiosTip, OgmiosClientError>;
+	async fn get_tip(&self) -> Result<OgmiosTip, OgmiosClientError<ErrorObject>>;
 
 	#[allow(async_fn_in_trait)]
-	async fn era_summaries(&self) -> Result<Vec<EraSummary>, OgmiosClientError>;
+	async fn era_summaries(&self) -> Result<Vec<EraSummary>, OgmiosClientError<ErrorObject>>;
 
 	#[allow(async_fn_in_trait)]
 	/// Parameters:
 	/// - `addresses`: bech32 address to query
-	async fn query_utxos(&self, addresses: &[String])
-		-> Result<Vec<OgmiosUtxo>, OgmiosClientError>;
+	async fn query_utxos(
+		&self,
+		addresses: &[String],
+	) -> Result<Vec<OgmiosUtxo>, OgmiosClientError<ErrorObject>>;
 
 	#[allow(async_fn_in_trait)]
 	async fn query_protocol_parameters(
 		&self,
-	) -> Result<ProtocolParametersResponse, OgmiosClientError>;
+	) -> Result<ProtocolParametersResponse, OgmiosClientError<ErrorObject>>;
 }
 
 pub trait QueryUtxoByUtxoId {
@@ -35,15 +37,15 @@ pub trait QueryUtxoByUtxoId {
 	async fn query_utxo_by_id(
 		&self,
 		utxo: sidechain_domain::UtxoId,
-	) -> Result<Option<OgmiosUtxo>, OgmiosClientError>;
+	) -> Result<Option<OgmiosUtxo>, OgmiosClientError<ErrorObject>>;
 }
 
 impl<T: OgmiosClient> QueryLedgerState for T {
-	async fn get_tip(&self) -> Result<OgmiosTip, OgmiosClientError> {
+	async fn get_tip(&self) -> Result<OgmiosTip, OgmiosClientError<ErrorObject>> {
 		self.request("queryLedgerState/tip", OgmiosParams::empty_positional()).await
 	}
 
-	async fn era_summaries(&self) -> Result<Vec<EraSummary>, OgmiosClientError> {
+	async fn era_summaries(&self) -> Result<Vec<EraSummary>, OgmiosClientError<ErrorObject>> {
 		self.request("queryLedgerState/eraSummaries", OgmiosParams::empty_positional())
 			.await
 	}
@@ -51,14 +53,14 @@ impl<T: OgmiosClient> QueryLedgerState for T {
 	async fn query_utxos(
 		&self,
 		addresses: &[String],
-	) -> Result<Vec<OgmiosUtxo>, OgmiosClientError> {
+	) -> Result<Vec<OgmiosUtxo>, OgmiosClientError<ErrorObject>> {
 		let params = ByNameParamsBuilder::new().insert("addresses", addresses)?.build();
 		self.request("queryLedgerState/utxo", params).await
 	}
 
 	async fn query_protocol_parameters(
 		&self,
-	) -> Result<ProtocolParametersResponse, OgmiosClientError> {
+	) -> Result<ProtocolParametersResponse, OgmiosClientError<ErrorObject>> {
 		self.request("queryLedgerState/protocolParameters", OgmiosParams::empty_by_name())
 			.await
 	}
@@ -68,7 +70,7 @@ impl<T: OgmiosClient> QueryUtxoByUtxoId for T {
 	async fn query_utxo_by_id(
 		&self,
 		utxo: sidechain_domain::UtxoId,
-	) -> Result<Option<OgmiosUtxo>, OgmiosClientError> {
+	) -> Result<Option<OgmiosUtxo>, OgmiosClientError<ErrorObject>> {
 		let reference = serde_json::json!({
 			"transaction": {"id": hex::encode(utxo.tx_hash.0)},
 			"index": utxo.index.0,

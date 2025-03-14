@@ -10,7 +10,10 @@ use jsonrpsee::{
 use serde::de::DeserializeOwned;
 use serde_json::json;
 
-fn request_to_json(method: &str, params: impl ToRpcParams) -> Result<String, OgmiosClientError> {
+fn request_to_json<E: DeserializeOwned>(
+	method: &str,
+	params: impl ToRpcParams,
+) -> Result<String, OgmiosClientError<E>> {
 	let params = params
 		.to_rpc_params()
 		.map_err(|err| OgmiosClientError::ParametersError(err.to_string()))?
@@ -66,11 +69,11 @@ pub async fn client_for_url(addr: &str) -> Result<OgmiosClients, String> {
 }
 
 impl OgmiosClient for OgmiosClients {
-	async fn request<T: DeserializeOwned>(
+	async fn request<T: DeserializeOwned, E: DeserializeOwned>(
 		&self,
 		method: &str,
 		params: OgmiosParams,
-	) -> Result<T, OgmiosClientError> {
+	) -> Result<T, OgmiosClientError<E>> {
 		log::debug!("request: {}", request_to_json(method, params.clone())?);
 		let response = match self {
 			OgmiosClients::HttpClient(client) => {
@@ -87,11 +90,16 @@ impl OgmiosClient for OgmiosClients {
 	}
 }
 
-impl From<jsonrpsee::core::ClientError> for OgmiosClientError {
+impl<T: DeserializeOwned> From<jsonrpsee::core::ClientError> for OgmiosClientError<T> {
 	fn from(e: jsonrpsee::core::ClientError) -> Self {
 		match e {
 			jsonrpsee::core::ClientError::ParseError(e) => {
 				OgmiosClientError::ResponseError(e.to_string())
+			},
+			jsonrpsee::core::ClientError::Call(err_obj) => {
+				let str = serde_json::to_string(&err_obj).unwrap();
+				let t = serde_json::from_str::<T>(&str).unwrap();
+				OgmiosClientError::CallError(t)
 			},
 			e => OgmiosClientError::RequestError(e.to_string()),
 		}
