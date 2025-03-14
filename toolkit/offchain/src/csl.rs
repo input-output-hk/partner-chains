@@ -311,12 +311,20 @@ impl OgmiosUtxoExt for OgmiosUtxo {
 	}
 
 	fn to_csl_tx_output(&self) -> Result<TransactionOutput, JsError> {
-		Ok(TransactionOutput::new(
+		let mut tx_out = TransactionOutput::new(
 			&Address::from_bech32(&self.address).map_err(|e| {
 				JsError::from_str(&format!("Couldn't convert address from ogmios: '{}'", e))
 			})?,
 			&self.value.to_csl()?,
-		))
+		);
+		if let Some(script) = self.script.clone() {
+			let script_ref = ScriptRef::from_bytes(script.cbor.clone())?;
+			tx_out.set_script_ref(&script_ref);
+		}
+		if let Some(data) = self.get_plutus_data() {
+			tx_out.set_plutus_data(&data);
+		}
+		Ok(tx_out)
 	}
 
 	fn to_csl(&self) -> Result<TransactionUnspentOutput, JsError> {
