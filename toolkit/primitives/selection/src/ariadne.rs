@@ -25,13 +25,13 @@ where
 	let total_stake: u128 = registered_candidates.iter().map(|(_, weight)| weight).sum();
 
 	let registered_candidates = registered_candidates_with_weights(
-		&registered_candidates,
+		registered_candidates,
 		num_registered_candidates,
 		permissioned_candidates.len(),
 	);
 
 	let permissioned_candidates = permissioned_candidates_with_weights(
-		&permissioned_candidates,
+		permissioned_candidates,
 		num_permissioned_candidates,
 		num_registered_candidates,
 		total_stake,
@@ -45,7 +45,7 @@ where
 }
 
 fn registered_candidates_with_weights<Candidate: Clone>(
-	registered_candidates: &[(Candidate, Weight)],
+	registered_candidates: Vec<(Candidate, Weight)>,
 	num_registered_candidates: u16,
 	permissioned_candidates_count: usize,
 ) -> Vec<(Candidate, Weight)> {
@@ -55,13 +55,13 @@ fn registered_candidates_with_weights<Candidate: Clone>(
 		1 // if there are no permissioned candidates, registered candidates should be selected using unmodified stake
 	};
 	registered_candidates
-		.iter()
-		.map(|(c, weight)| (c.clone().into(), weight * weight_factor))
+		.into_iter()
+		.map(|(c, weight)| (c, weight * weight_factor))
 		.collect()
 }
 
 fn permissioned_candidates_with_weights<Candidate: Clone>(
-	permissioned_candidates: &[Candidate],
+	permissioned_candidates: Vec<Candidate>,
 	num_permissioned_candidates: u16,
 	num_registered_candidates: u16,
 	total_stake: u128,
@@ -71,5 +71,5 @@ fn permissioned_candidates_with_weights<Candidate: Clone>(
 	} else {
 		1 // if there are no registered candidates, permissioned candidates should be selected with equal weight
 	};
-	permissioned_candidates.iter().map(|c| (c.clone().into(), weight)).collect()
+	permissioned_candidates.into_iter().map(|c| (c, weight)).collect()
 }
