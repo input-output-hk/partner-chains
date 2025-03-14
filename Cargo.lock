@@ -1274,17 +1274,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cli-utils"
-version = "1.6.0"
-dependencies = [
- "ed25519-zebra",
- "hex",
- "secp256k1 0.28.2",
- "sidechain-domain",
- "thiserror",
-]
-
-[[package]]
 name = "cloudabi"
 version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
