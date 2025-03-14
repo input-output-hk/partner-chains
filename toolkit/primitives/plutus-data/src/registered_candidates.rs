@@ -127,7 +127,7 @@ fn decode_v0_register_validator_datum(
 	let fields = appendix
 		.as_constr_plutus_data()
 		.filter(|datum| datum.alternative().is_zero())
-		.filter(|datum| datum.data().len() >= 6)?
+		.filter(|datum| datum.data().len() >= 7)?
 		.data();
 	let stake_ownership = decode_ada_based_staking_datum(fields.get(0))?;
 	let sidechain_pub_key = fields.get(1).as_bytes().map(SidechainPublicKey)?;
@@ -155,7 +155,7 @@ fn decode_legacy_register_validator_datum(datum: &PlutusData) -> Option<Register
 	let fields = datum
 		.as_constr_plutus_data()
 		.filter(|datum| datum.alternative().is_zero())
-		.filter(|datum| datum.data().len() >= 7)?
+		.filter(|datum| datum.data().len() >= 8)?
 		.data();
 	let stake_ownership = decode_ada_based_staking_datum(fields.get(0))?;
 	let sidechain_pub_key = fields.get(1).as_bytes().map(SidechainPublicKey)?;
