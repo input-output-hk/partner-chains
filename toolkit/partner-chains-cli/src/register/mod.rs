@@ -1,7 +1,6 @@
 use plutus_datum_derive::ToDatum;
-use secp256k1::{PublicKey, SecretKey};
+use secp256k1::PublicKey;
 use sidechain_domain::*;
-use sidechain_domain::{SidechainPublicKey, StakePoolPublicKey, StakePublicKey};
 use std::{convert::Infallible, fmt::Display, str::FromStr};
 
 pub mod register1;
