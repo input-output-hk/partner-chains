@@ -20,6 +20,7 @@ sp-core = { workspace = true, features = ["serde"] }
 sp-runtime = { workspace = true, features = ["serde"] }
 sp-staking = { workspace = true, features = ["serde"] }
 sp-std = { workspace = true }
+pallet-session = { workspace = true, optional = true }
 
 [features]
 default = ["std", "polkadot-js-compat"]
@@ -33,5 +34,7 @@ std = [
 	"sp-runtime/std",
 	"sp-staking/std",
 	"sp-std/std",
+	"pallet-session?/std"
 ]
 polkadot-js-compat = []
+pallet-session-compat = ["pallet-session"]
