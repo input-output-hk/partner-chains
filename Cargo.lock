@@ -6374,6 +6374,7 @@ dependencies = [
 name = "pallet-session-validator-management"
 version = "1.6.0"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -6739,7 +6740,6 @@ dependencies = [
  "async-trait",
  "authority-selection-inherents",
  "clap",
- "cli-commands",
  "db-sync-follower",
  "derive-new",
  "envy",
