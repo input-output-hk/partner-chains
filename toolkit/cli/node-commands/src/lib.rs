@@ -1,9 +1,9 @@
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
+use crate::address_association_signatures::AddressAssociationSignaturesCmd;
+use crate::registration_signatures::RegistrationSignaturesCmd;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use clap::Parser;
-use cli_commands::address_association_signatures::AddressAssociationSignaturesCmd;
-use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use frame_support::sp_runtime::traits::NumberFor;
 use parity_scale_codec::{Decode, Encode};
 use partner_chains_cli::io::DefaultCmdRunContext;
@@ -23,6 +23,9 @@ use sp_sidechain::GetGenesisUtxo;
 use sp_sidechain::GetSidechainStatus;
 use std::future::Future;
 use std::sync::Arc;
+
+mod address_association_signatures;
+mod registration_signatures;
 
 #[derive(Debug, Clone, Parser)]
 pub struct AriadneParametersCmd {

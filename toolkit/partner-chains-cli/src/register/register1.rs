@@ -1,11 +1,11 @@
 use crate::config::config_values::DEFAULT_CHAIN_NAME;
+use super::RegisterValidatorMessage;
 use crate::config::KEYS_FILE_PATH;
 use crate::generate_keys::keystore_path;
 use crate::io::IOContext;
 use crate::keystore::CROSS_CHAIN;
 use crate::{config::config_fields, *};
 use anyhow::anyhow;
-use cli_commands::registration_signatures::RegisterValidatorMessage;
 use ogmios::config::prompt_ogmios_configuration;
 use ogmios::get_shelley_config;
 use partner_chains_cardano_offchain::csl::NetworkTypeExt;

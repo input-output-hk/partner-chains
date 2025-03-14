@@ -33,6 +33,8 @@ tokio = { workspace = true }
 cardano-serialization-lib = { workspace = true }
 partner-chains-cardano-offchain = { workspace = true }
 log = { workspace = true }
+plutus = { workspace = true, default-features = true }
+plutus-datum-derive = { workspace = true, default-features = true }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

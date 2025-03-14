@@ -7,23 +7,10 @@ license = "Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = { workspace = true }
-clap = { workspace = true }
 ed25519-zebra = { workspace = true }
 hex = { workspace = true }
-hex-literal = { workspace = true }
-plutus = { workspace = true, default-features = true }
-plutus-datum-derive = { workspace = true, default-features = true }
 secp256k1 = { workspace = true, features = ["std", "global-context"] }
 sidechain-domain = { workspace = true, default-features = true, features = [
 	"std",
 ] }
-sp-io = { workspace = true, default-features = true }
 thiserror = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-pallet-address-associations = { workspace = true, features = ["std"] }
-parity-scale-codec = { workspace = true }
-
-[dev-dependencies]
-assert_cmd = { workspace = true }

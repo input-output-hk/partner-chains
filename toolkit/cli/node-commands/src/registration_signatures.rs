@@ -1,5 +1,5 @@
-use crate::key_params::{SidechainSigningKeyParam, StakePoolSigningKeyParam};
 use clap::Parser;
+use cli_commands::key_params::{SidechainSigningKeyParam, StakePoolSigningKeyParam};
 use plutus::{Datum, ToDatum};
 use plutus_datum_derive::*;
 use secp256k1::SecretKey;
