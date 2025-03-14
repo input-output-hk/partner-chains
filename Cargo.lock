@@ -1274,28 +1274,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cli-commands"
-version = "1.6.0"
-dependencies = [
- "anyhow",
- "assert_cmd",
- "clap",
- "ed25519-zebra",
- "hex",
- "hex-literal",
- "pallet-address-associations",
- "parity-scale-codec",
- "plutus",
- "plutus-datum-derive",
- "secp256k1 0.28.2",
- "serde",
- "serde_json",
- "sidechain-domain",
- "sp-io",
- "thiserror",
-]
-
-[[package]]
 name = "cloudabi"
 version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6709,8 +6687,8 @@ dependencies = [
  "anyhow",
  "cardano-serialization-lib",
  "clap",
- "cli-commands",
  "colored",
+ "ed25519-zebra",
  "hex",
  "hex-literal",
  "inquire",
@@ -6718,6 +6696,8 @@ dependencies = [
  "log",
  "ogmios-client",
  "partner-chains-cardano-offchain",
+ "plutus",
+ "plutus-datum-derive",
  "pretty_assertions",
  "secp256k1 0.28.2",
  "serde",
@@ -6739,7 +6719,6 @@ dependencies = [
  "async-trait",
  "authority-selection-inherents",
  "clap",
- "cli-commands",
  "db-sync-follower",
  "derive-new",
  "envy",
@@ -6813,19 +6792,27 @@ dependencies = [
 name = "partner-chains-node-commands"
 version = "1.6.0"
 dependencies = [
+ "anyhow",
  "authority-selection-inherents",
  "clap",
- "cli-commands",
+ "ed25519-zebra",
  "env_logger 0.11.3",
  "frame-support",
+ "hex",
+ "hex-literal",
  "log",
  "log4rs",
+ "pallet-address-associations",
  "parity-scale-codec",
  "partner-chains-cli",
  "partner-chains-smart-contracts-commands",
  "plutus",
+ "plutus-datum-derive",
  "sc-cli",
  "sc-service",
+ "secp256k1 0.28.2",
+ "serde",
+ "serde_json",
  "sidechain-domain",
  "sp-api",
  "sp-blockchain",
@@ -9907,6 +9894,7 @@ dependencies = [
  "blake2b_simd",
  "byte-string-derive",
  "derive_more",
+ "ed25519-zebra",
  "figment",
  "hex",
  "hex-literal",
@@ -9918,6 +9906,7 @@ dependencies = [
  "plutus",
  "plutus-datum-derive",
  "scale-info",
+ "secp256k1 0.28.2",
  "serde",
  "serde_json",
  "sp-core",

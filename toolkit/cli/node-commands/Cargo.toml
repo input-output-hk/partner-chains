@@ -7,7 +7,6 @@ license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
 [dependencies]
 authority-selection-inherents = { workspace = true }
 clap = { workspace = true }
-cli-commands = { workspace = true }
 env_logger = { workspace = true }
 frame-support = { workspace = true }
 log = { workspace = true }
@@ -16,6 +15,7 @@ parity-scale-codec = { workspace = true }
 partner-chains-cli = { workspace = true }
 partner-chains-smart-contracts-commands = { workspace = true }
 plutus = { workspace = true }
+plutus-datum-derive = { workspace = true, default-features = true }
 sidechain-domain = { workspace = true, default-features = true }
 sc-cli = { workspace = true, default-features = true }
 sc-service = { workspace = true, default-features = true }
@@ -25,6 +25,14 @@ sp-runtime = { workspace = true, default-features = true }
 sp-sidechain = { workspace = true, default-features = true }
 sp-session-validator-management = { workspace = true }
 sp-session-validator-management-query = { workspace = true }
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+ed25519-zebra = { workspace = true }
+secp256k1 = { workspace = true, features = ["std", "global-context"] }
+pallet-address-associations = { workspace = true, features = ["std"] }
+hex = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true }
+hex-literal = { workspace = true }

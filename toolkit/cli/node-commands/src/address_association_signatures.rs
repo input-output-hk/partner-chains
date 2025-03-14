@@ -1,4 +1,4 @@
-use crate::key_params::StakeSigningKeyParam;
+use crate::params::StakeSigningKeyParam;
 use anyhow::Ok;
 use byte_string::ByteString;
 use clap::Parser;

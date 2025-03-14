@@ -24,7 +24,6 @@ use crypto::blake2b;
 use derive_more::{From, Into};
 use num_derive::*;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen, WrapperTypeEncode};
-use plutus::{Datum, ToDatum};
 use plutus_datum_derive::*;
 use scale_info::TypeInfo;
 use sp_core::{bounded::BoundedVec, ecdsa, ed25519, sr25519, ConstU32};

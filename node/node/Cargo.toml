@@ -105,7 +105,6 @@ main-chain-follower-mock = { workspace = true, features = [
     "block-participation",
 ] }
 tokio = { workspace = true }
-cli-commands = { workspace = true }
 sp-block-participation = { workspace = true, features = ["std"] }
 
 [build-dependencies]
