@@ -14,7 +14,6 @@ rand_chacha = { workspace = true }
 rand = { workspace = true }
 parity-scale-codec = { workspace = true }
 scale-info = { workspace = true }
-sidechain-domain = { workspace = true }
 
 [dev-dependencies]
 quickcheck = { workspace = true }
@@ -23,7 +22,6 @@ quickcheck_macros = { workspace = true }
 [features]
 default = ["std"]
 std = [
-	"sidechain-domain/std",
 	"parity-scale-codec/std",
 	"scale-info/std",
     "rand/std"
