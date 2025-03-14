@@ -31,14 +31,6 @@ pub struct CandidateWithStake<TAccountId, TAccountKeys> {
 	pub account_keys: TAccountKeys,
 }
 
-impl<TAccountId, TAccountKeys> selection::ariadne::TrustlessCandidate
-	for CandidateWithStake<TAccountId, TAccountKeys>
-{
-	fn stake_weight(&self) -> selection::Weight {
-		self.stake_delegation.0.into()
-	}
-}
-
 #[derive(Clone, Debug, Encode, Decode, PartialEq)]
 pub struct PermissionedCandidate<TAccountId, TAccountKeys> {
 	pub account_id: TAccountId,

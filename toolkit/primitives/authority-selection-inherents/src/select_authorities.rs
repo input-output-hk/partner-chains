@@ -35,20 +35,27 @@ pub fn select_authorities<
 	input: AuthoritySelectionInputs,
 	sidechain_epoch: ScEpochNumber,
 ) -> Option<Vec<Candidate<TAccountId, TAccountKeys>>> {
-	let valid_registered_candidates = filter_trustless_candidates_registrations::<
-		TAccountId,
-		TAccountKeys,
-	>(input.registered_candidates, genesis_utxo);
-	let valid_permissioned_candidates =
-		filter_invalid_permissioned_candidates(input.permissioned_candidates);
+	let valid_registered_candidates: Vec<(Candidate<TAccountId, TAccountKeys>, u128)> =
+		filter_trustless_candidates_registrations::<TAccountId, TAccountKeys>(
+			input.registered_candidates,
+			genesis_utxo,
+		)
+		.into_iter()
+		.map(|c| (Candidate::Registered(c.clone()), c.stake_delegation.0.into()))
+		.collect();
+	let valid_permissioned_candidates: Vec<Candidate<TAccountId, TAccountKeys>> =
+		filter_invalid_permissioned_candidates(input.permissioned_candidates)
+			.into_iter()
+			.map(Candidate::Permissioned)
+			.collect();
 	let valid_permissioned_count = valid_permissioned_candidates.len();
 	let valid_registered_count = valid_registered_candidates.len();
 
 	let random_seed = seed_from_nonce_and_sc_epoch(&input.epoch_nonce, &sidechain_epoch);
 
 	if let Some(validators) = selection::ariadne::select_authorities(
-		input.d_parameter.num_permissioned_candidates,
 		input.d_parameter.num_registered_candidates,
+		input.d_parameter.num_permissioned_candidates,
 		valid_registered_candidates,
 		valid_permissioned_candidates,
 		random_seed,
