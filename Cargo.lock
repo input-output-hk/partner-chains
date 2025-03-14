@@ -2879,12 +2879,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fs_extra"
-version = "1.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42703706b716c37f96a77aea830392ad231f44c9e9a67872fa5548707e11b11c"
-
-[[package]]
 name = "fuchsia-cprng"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6291,22 +6285,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-block-rewards"
-version = "1.6.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-block-rewards",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-grandpa"
 version = "39.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2412-1#ab5882bbc67bcc48464566a2b48171265147acac"
@@ -6808,7 +6786,6 @@ dependencies = [
  "sp-block-builder",
  "sp-block-participation",
  "sp-block-production-log",
- "sp-block-rewards",
  "sp-blockchain",
  "sp-consensus",
  "sp-consensus-aura",
@@ -8302,18 +8279,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rusty-forkfork"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ce85af4dfa2fb0c0143121ab5e424c71ea693867357c9159b8777b59984c218"
-dependencies = [
- "fnv",
- "quick-error",
- "tempfile",
- "wait-timeout",
-]
-
-[[package]]
 name = "rw-stream-sink"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9557,28 +9522,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sealed_test"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a1867f8f005bd7fb73c367e2e45dd628417906a2ca27597fe59cbf04279a222"
-dependencies = [
- "fs_extra",
- "rusty-forkfork",
- "sealed_test_derive",
- "tempfile",
-]
-
-[[package]]
-name = "sealed_test_derive"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77253fb2d4451418d07025826028bcb96ee42d3e58859689a70ce62908009db6"
-dependencies = [
- "quote",
- "syn 2.0.87",
-]
-
-[[package]]
 name = "sec1"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10025,7 +9968,6 @@ dependencies = [
  "pallet-balances",
  "pallet-block-participation",
  "pallet-block-production-log",
- "pallet-block-rewards",
  "pallet-grandpa",
  "pallet-native-token-management",
  "pallet-partner-chains-session",
@@ -10051,7 +9993,6 @@ dependencies = [
  "sp-block-builder",
  "sp-block-participation",
  "sp-block-production-log",
- "sp-block-rewards",
  "sp-consensus-aura",
  "sp-consensus-grandpa",
  "sp-consensus-slots",
@@ -10345,19 +10286,6 @@ dependencies = [
  "parity-scale-codec",
  "sidechain-slots",
  "sp-api",
- "sp-core",
- "sp-inherents",
- "sp-runtime",
- "thiserror",
-]
-
-[[package]]
-name = "sp-block-rewards"
-version = "1.6.0"
-dependencies = [
- "async-trait",
- "parity-scale-codec",
- "sealed_test",
  "sp-core",
  "sp-inherents",
  "sp-runtime",

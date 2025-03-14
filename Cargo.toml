@@ -7,7 +7,6 @@ members = [
 	"toolkit/cli/smart-contracts-commands",
 	"toolkit/client/consensus/aura",
 	"toolkit/pallets/block-production-log",
-	"toolkit/pallets/block-rewards",
 	"toolkit/pallets/pallet-session-runtime-stub",
 	"toolkit/pallets/partner-chains-session",
 	"toolkit/pallets/sidechain",
@@ -17,7 +16,6 @@ members = [
 	"toolkit/pallets/session-validator-management/rpc",
 	"toolkit/primitives/consensus/aura",
 	"toolkit/primitives/block-production-log",
-	"toolkit/primitives/block-rewards",
 	"toolkit/primitives/domain",
 	"toolkit/primitives/selection",
 	"toolkit/primitives/sidechain-block-search",
@@ -203,7 +201,6 @@ raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-c
 # local dependencies
 sidechain-runtime = { path = "node/runtime" }
 pallet-block-production-log = { path = "toolkit/pallets/block-production-log", default-features = false }
-pallet-block-rewards = { path = "toolkit/pallets/block-rewards", default-features = false }
 pallet-sidechain = { path = "toolkit/pallets/sidechain", default-features = false }
 pallet-sidechain-rpc = { path = "toolkit/pallets/sidechain/rpc", default-features = false }
 sp-session-validator-management = { default-features = false, path = "toolkit/primitives/session-validator-management" }
@@ -213,7 +210,6 @@ pallet-session-validator-management-benchmarking = { default-features = false, p
 pallet-session-validator-management-rpc = { path = "toolkit/pallets/session-validator-management/rpc" }
 ogmios-client = { path = "toolkit/utils/ogmios-client", default-features = false }
 sp-block-production-log = { path = "toolkit/primitives/block-production-log", default-features = false }
-sp-block-rewards = { path = "toolkit/primitives/block-rewards", default-features = false }
 selection = { path = "toolkit/primitives/selection", default-features = false }
 sidechain-domain = { path = "toolkit/primitives/domain", default-features = false }
 sidechain-block-search = { path = "toolkit/primitives/sidechain-block-search", default-features = false }

@@ -422,12 +422,6 @@ impl pallet_sidechain::Config for Runtime {
 
 pub type BeneficiaryId = sidechain_domain::byte_string::SizedByteString<32>;
 
-impl pallet_block_rewards::Config for Runtime {
-	type BeneficiaryId = BeneficiaryId;
-	type BlockRewardPoints = u32;
-	type GetBlockRewardPoints = sp_block_rewards::SimpleBlockCount;
-}
-
 #[derive(
 	MaxEncodedLen, Encode, Decode, Clone, TypeInfo, PartialEq, Eq, Debug, Hash, PartialOrd, Ord,
 )]
@@ -536,7 +530,6 @@ construct_runtime!(
 		Sidechain: pallet_sidechain,
 		SessionCommitteeManagement: pallet_session_validator_management,
 		AddressAssociations: pallet_address_associations,
-		BlockRewards: pallet_block_rewards,
 		BlockProductionLog: pallet_block_production_log,
 		BlockParticipation: pallet_block_participation,
 		// pallet_grandpa reads pallet_session::pallet::CurrentIndex storage.

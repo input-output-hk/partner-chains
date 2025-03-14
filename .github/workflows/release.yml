@@ -88,7 +88,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: partner-chains-node-linux-artifact 
-          path: partner-chains-node
+          path: partner-chains-node-linux-artifact
+      - name: Place binary
+        run: cp ./partner-chains-node-linux-artifact/* partner-chains-node-binary
+        shell: bash 
       - name: Copy to binary-host
         uses: ./.github/actions/artifacts/copy-to-binary-host
         with:
