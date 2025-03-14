@@ -7,7 +7,6 @@ members = [
 	"toolkit/cli/smart-contracts-commands",
 	"toolkit/client/consensus/aura",
 	"toolkit/pallets/block-production-log",
-	"toolkit/pallets/pallet-session-runtime-stub",
 	"toolkit/pallets/partner-chains-session",
 	"toolkit/pallets/sidechain",
 	"toolkit/pallets/sidechain/rpc",
@@ -231,7 +230,6 @@ sp-native-token-management = { path = "toolkit/primitives/native-token-managemen
 sc-partner-chains-consensus-aura = { path = "toolkit/client/consensus/aura", default-features = false }
 sp-partner-chains-consensus-aura = { path = "toolkit/primitives/consensus/aura", default-features = false }
 pallet-partner-chains-session = { path = "toolkit/pallets/partner-chains-session", default-features = false }
-pallet-session-runtime-stub = { path = "toolkit/pallets/pallet-session-runtime-stub", default-features = false }
 partner-chains-cardano-offchain = { path = "toolkit/offchain", default-features = false }
 partner-chains-cli = { path = "toolkit/partner-chains-cli", default-features = false }
 partner-chains-plutus-data = { path = "toolkit/primitives/plutus-data", default-features = false }

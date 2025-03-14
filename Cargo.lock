@@ -6329,6 +6329,7 @@ dependencies = [
  "frame-system",
  "impl-trait-for-tuples",
  "log",
+ "pallet-session",
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
@@ -6357,17 +6358,6 @@ dependencies = [
  "sp-staking",
  "sp-state-machine",
  "sp-trie",
-]
-
-[[package]]
-name = "pallet-session-runtime-stub"
-version = "1.6.0"
-dependencies = [
- "pallet-partner-chains-session",
- "pallet-session",
- "sp-runtime",
- "sp-staking",
- "sp-std",
 ]
 
 [[package]]
@@ -9972,7 +9962,6 @@ dependencies = [
  "pallet-native-token-management",
  "pallet-partner-chains-session",
  "pallet-session",
- "pallet-session-runtime-stub",
  "pallet-session-validator-management",
  "pallet-session-validator-management-benchmarking",
  "pallet-sidechain",

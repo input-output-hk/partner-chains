@@ -103,6 +103,9 @@ use sp_runtime::{traits::OpaqueKeys, DispatchError, KeyTypeId, RuntimeAppPublic}
 use sp_staking::SessionIndex;
 use sp_std::prelude::*;
 
+#[cfg(feature = "pallet-session-compat")]
+pub mod pallet_session_compat;
+
 /// Decides whether the session should be ended.
 pub trait ShouldEndSession<BlockNumber> {
 	/// Return `true` if the session should be ended.
