@@ -92,6 +92,7 @@ pub(crate) fn get_builder_config(
 		.ref_script_coins_per_byte(&convert_reference_script_costs(
 			&protocol_parameters.min_fee_reference_scripts.clone(),
 		)?)
+		.deduplicate_explicit_ref_inputs_with_regular_inputs(true)
 		.build()
 }
 
@@ -189,23 +190,20 @@ pub enum Costs {
 }
 
 pub trait CostStore {
-	fn get_mint(&self, script: &Script) -> ExUnits;
+	fn get_mint(&self, script: &PlutusScript) -> ExUnits;
 	fn get_spend(&self, spend_ix: u32) -> ExUnits;
 	fn get_one_spend(&self) -> ExUnits;
 }
 
 impl CostStore for Costs {
-	fn get_mint(&self, script: &Script) -> ExUnits {
+	fn get_mint(&self, script: &PlutusScript) -> ExUnits {
 		match self {
 			Costs::ZeroCosts => zero_ex_units(),
-			Costs::Costs(cost_lookup) => match script {
-				Script::Plutus(script) => cost_lookup
-					.mints
-					.get(&script.csl_script_hash())
-					.expect("get_mint should not be called with an unknown script")
-					.clone(),
-				_ => zero_ex_units(),
-			},
+			Costs::Costs(cost_lookup) => cost_lookup
+				.mints
+				.get(&script.csl_script_hash())
+				.expect("get_mint should not be called with an unknown script")
+				.clone(),
 		}
 	}
 	fn get_spend(&self, spend_ix: u32) -> ExUnits {
@@ -454,7 +452,7 @@ pub(crate) trait TransactionBuilderExt {
 	/// Adds minting of tokens (with empty asset name) for the given script using reference input
 	fn add_mint_script_token_using_reference_script(
 		&mut self,
-		script: &Script,
+		script: &PlutusScript,
 		ref_input: &TransactionInput,
 		amount: &Int,
 		ex_units: &ExUnits,
@@ -462,7 +460,7 @@ pub(crate) trait TransactionBuilderExt {
 
 	fn add_mint_one_script_token_using_reference_script(
 		&mut self,
-		script: &Script,
+		script: &PlutusScript,
 		ref_input: &TransactionInput,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError> {
@@ -525,7 +523,6 @@ impl TransactionBuilderExt for TransactionBuilder {
 		ex_units: &ExUnits,
 	) -> Result<(), JsError> {
 		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
-
 		let validator_source = PlutusScriptSource::new(&script.to_csl());
 		let mint_witness = MintWitness::new_plutus_script(
 			&validator_source,
@@ -538,50 +535,23 @@ impl TransactionBuilderExt for TransactionBuilder {
 
 	fn add_mint_script_token_using_reference_script(
 		&mut self,
-		script: &Script,
+		script: &PlutusScript,
 		ref_input: &TransactionInput,
 		amount: &Int,
 		ex_units: &ExUnits,
 	) -> Result<(), JsError> {
 		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
 
-		let mint_witness = match script {
-			Script::Plutus(script) => {
-				let source = PlutusScriptSource::new_ref_input(
-					&script.csl_script_hash(),
-					ref_input,
-					&script.language,
-					script.bytes.len(),
-				);
-				MintWitness::new_plutus_script(
-					&source,
-					&Redeemer::new(
-						&RedeemerTag::new_mint(),
-						&0u32.into(),
-						&unit_plutus_data(),
-						ex_units,
-					),
-				)
-			},
-			Script::Native(script) => {
-				println!("BBB: {}", script.to_bytes().len());
-				let source = NativeScriptSource::new_ref_input(
-					&script.hash(),
-					ref_input,
-					script.to_bytes().len() + 2,
-				);
-
-				//let xxx = script.get_required_signers();
-				//source.set_required_signers(&xxx);
-				//let source = NativeScriptSource::new(&script);
-				println!(
-					"Adding MintWitness:new_native_script, ref_input: {}",
-					ref_input.to_json().unwrap()
-				);
-				println!("{}", hex::encode(script.to_bytes()));
-				MintWitness::new_native_script(&source)
-			},
-		};
+		let source = PlutusScriptSource::new_ref_input(
+			&script.csl_script_hash(),
+			ref_input,
+			&script.language,
+			script.bytes.len(),
+		);
+		let mint_witness = MintWitness::new_plutus_script(
+			&source,
+			&Redeemer::new(&RedeemerTag::new_mint(), &0u32.into(), &unit_plutus_data(), ex_units),
+		);
 
 		mint_builder.add_asset(&mint_witness, &empty_asset_name(), amount)?;
 		self.set_mint_builder(&mint_builder);
@@ -628,7 +598,8 @@ impl TransactionBuilderExt for TransactionBuilder {
 					&ctx.protocol_parameters.plutus_cost_models,
 				))?;
 			}
-			builder.build_tx()
+			let tx = builder.build_tx()?;
+			Ok(tx)
 		}
 		// Tries if the largest UTXO is enough to cover collateral, if not, adds more UTXOs
 		// starting from the largest remaining.
@@ -661,7 +632,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) enum Script {
+pub enum Script {
 	Plutus(PlutusScript),
 	Native(NativeScript),
 }
@@ -692,13 +663,6 @@ impl Script {
 			Self::Native(script) => {
 				script.hash().to_bytes().try_into().expect("CSL script hash is always 28 bytes")
 			},
-		}
-	}
-
-	pub(crate) fn length(&self) -> usize {
-		match self {
-			Self::Plutus(script) => script.bytes.len(),
-			Self::Native(script) => script.to_bytes().len(),
 		}
 	}
 }

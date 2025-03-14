@@ -117,18 +117,11 @@ fn create_reserve_tx(
 	)?;
 	tx_builder.add_output(&reserve_validator_output(parameters, &reserve.scripts, ctx)?)?;
 
-	let gov_tx_input = governance.utxo_id_as_tx_input();
-	let gov_policy_script = governance.policy.script();
-	tx_builder.add_mint_one_script_token_using_reference_script(
-		&gov_policy_script,
-		&gov_tx_input,
-		&costs.get_mint(&gov_policy_script),
-	)?;
 	tx_builder.add_script_reference_input(
 		&reserve.validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.validator.bytes.len(),
 	);
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(governance.add_governance_token_mint_and_build(tx_builder, &costs, ctx)?)
 }
 
 // Creates output with reserve token and the initial deposit

@@ -126,7 +126,7 @@ fn reserve_release_tx(
 
 	// Mint v-function tokens in the number equal to the *total* number of tokens transfered.
 	// This serves as a validation of the v-function value.
-	let v_function = Script::Plutus(v_function_from_utxo(reference_utxo)?);
+	let v_function = v_function_from_utxo(reference_utxo)?;
 	tx_builder.add_mint_script_token_using_reference_script(
 		&v_function,
 		&reference_utxo.to_csl_tx_input(),

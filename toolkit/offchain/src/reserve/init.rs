@@ -180,17 +180,7 @@ fn init_script_tx(
 		let output = amount_builder.with_minimum_ada_and_asset(&ma, ctx)?.build()?;
 		tx_builder.add_output(&output)?;
 	}
-	// Mint governance token
-	let gov_tx_input = governance.utxo_id_as_tx_input();
-	let gov_script = governance.policy.script();
-	tx_builder.add_mint_one_script_token_using_reference_script(
-		&gov_script,
-		&gov_tx_input,
-		&costs.get_mint(&gov_script),
-	)?;
-
-	tx_builder.add_script_reference_input(&gov_tx_input, gov_script.length());
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(governance.add_governance_token_mint_and_build(tx_builder, &costs, ctx)?)
 }
 
 fn version_oracle_asset_name() -> AssetName {

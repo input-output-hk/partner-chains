@@ -96,15 +96,6 @@ fn build_tx(
 
 	let reserve_auth_policy_spend_cost = costs.get_one_spend();
 	let reserve_auth_policy_burn_cost = costs.get_mint(&reserve.scripts.auth_policy.clone().into());
-	let governance_script = governance.policy.script();
-	let governance_mint_cost = costs.get_mint(&governance_script);
-
-	// mint goveranance token
-	tx_builder.add_mint_one_script_token_using_reference_script(
-		&governance_script,
-		&governance.utxo_id_as_tx_input(),
-		&governance_mint_cost,
-	)?;
 
 	// Spends UTXO with Reserve Auth Policy Token and Reserve (Reward) tokens
 	tx_builder.set_inputs(&reserve_utxo_input_with_validator_script_reference(
@@ -131,7 +122,7 @@ fn build_tx(
 		&reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.illiquid_circulation_supply_validator.bytes.len(),
 	);
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(governance.add_governance_token_mint_and_build(tx_builder, &costs, ctx)?)
 }
 
 // Creates output with reserve token and updated deposit

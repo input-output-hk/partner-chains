@@ -90,12 +90,8 @@ async fn governance_flow() {
 	let container = cli.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
-	println!("init governance done");
-	//let _ = run_update_goveranance(&client, genesis_utxo).await;
-	//	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &eve_payment_key(), &client)
-	//.await
-	//.is_some());
-	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &governance_authority_payment_key(), &client)
+	let _ = run_update_goveranance(&client, genesis_utxo).await;
+	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &eve_payment_key(), &client)
 		.await
 		.is_some());
 }

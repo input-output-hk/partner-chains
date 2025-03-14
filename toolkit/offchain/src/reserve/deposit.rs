@@ -20,8 +20,8 @@ use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::{
-		get_builder_config, CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt,
-		TransactionContext, TransactionOutputAmountBuilderExt,
+		get_builder_config, CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionContext,
+		TransactionOutputAmountBuilderExt,
 	},
 	governance::GovernanceData,
 	scripts_data::ReserveScripts,
@@ -108,13 +108,6 @@ fn deposit_to_reserve_tx(
 		&costs.get_one_spend(),
 	)?);
 
-	let gov_policy_script = governance.policy.script();
-	tx_builder.add_mint_one_script_token_using_reference_script(
-		&gov_policy_script,
-		&governance.utxo_id_as_tx_input(),
-		&costs.get_mint(&gov_policy_script),
-	)?;
-
 	tx_builder.add_script_reference_input(
 		&reserve.auth_policy_version_utxo.to_csl_tx_input(),
 		reserve.scripts.auth_policy.bytes.len(),
@@ -123,7 +116,7 @@ fn deposit_to_reserve_tx(
 		&reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.illiquid_circulation_supply_validator.bytes.len(),
 	);
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(governance.add_governance_token_mint_and_build(tx_builder, &costs, ctx)?)
 }
 
 // Creates output with reserve token and updated deposit

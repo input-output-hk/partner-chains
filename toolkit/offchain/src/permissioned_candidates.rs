@@ -250,15 +250,7 @@ fn mint_permissioned_candidates_token_tx(
 		ctx,
 	)?;
 
-	let gov_tx_input = governance_data.utxo_id_as_tx_input();
-	let gov_script = governance_data.policy.script();
-	tx_builder.add_mint_one_script_token_using_reference_script(
-		&gov_script,
-		&gov_tx_input,
-		&costs.get_mint(&gov_script),
-	)?;
-
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(governance_data.add_governance_token_mint_and_build(tx_builder, &costs, ctx)?)
 }
 
 fn update_permissioned_candidates_tx(
@@ -290,15 +282,7 @@ fn update_permissioned_candidates_tx(
 		ctx,
 	)?;
 
-	let gov_tx_input = governance_data.utxo_id_as_tx_input();
-	let gov_policy_script = governance_data.policy.script();
-	tx_builder.add_mint_one_script_token_using_reference_script(
-		&gov_policy_script,
-		&gov_tx_input,
-		&costs.get_mint(&gov_policy_script),
-	)?;
-
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(governance_data.add_governance_token_mint_and_build(tx_builder, &costs, ctx)?)
 }
 
 fn permissioned_candidates_policy_redeemer_data() -> PlutusData {

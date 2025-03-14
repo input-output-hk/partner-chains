@@ -90,7 +90,6 @@ pub struct OgmiosScript {
 	pub json: Option<NativeScript>,
 	#[serde(deserialize_with = "parse_bytes")]
 	pub cbor: Vec<u8>,
-	pub json: Option<NativeScript>,
 }
 
 impl std::fmt::Debug for OgmiosScript {

@@ -1,4 +1,7 @@
-use crate::csl::{NetworkTypeExt, OgmiosUtxoExt};
+use crate::csl::{
+	empty_asset_name, CostStore, Costs, NetworkTypeExt, OgmiosUtxoExt, Script,
+	TransactionBuilderExt, TransactionContext,
+};
 use crate::plutus_script;
 use crate::scripts_data;
 use cardano_serialization_lib::*;
@@ -132,6 +135,51 @@ impl GovernanceData {
 		let utxo = Self::get_governance_utxo(genesis_utxo, client).await?;
 		let policy = read_policy(&utxo)?;
 		Ok(GovernanceData { policy, utxo })
+	}
+
+	/// Adds minting governance token with script reference.
+	/// IMPORTANT: because of CSL limitations in computing fee, when the policy is a Native Script,
+	/// we have to add it like a regular script source and add a reference input.
+	/// After the transaction is built, native script witness has to be removed, otherwise transaction is invalid!
+	pub(crate) fn add_governance_token_mint_and_build(
+		&self,
+		mut tx_builder: TransactionBuilder,
+		costs: &Costs,
+		ctx: &TransactionContext,
+	) -> Result<Transaction, JsError> {
+		let gov_tx_input = self.utxo_id_as_tx_input();
+		let gov_policy_script = self.policy.script();
+		match gov_policy_script {
+			Script::Plutus(script) => {
+				tx_builder.add_mint_one_script_token_using_reference_script(
+					&script,
+					&gov_tx_input,
+					&costs.get_mint(&script),
+				)?;
+				tx_builder.balance_update_and_build(ctx)
+			},
+			Script::Native(script) => {
+				let source = NativeScriptSource::new(&script);
+				let mut mint_builder = tx_builder.get_mint_builder().unwrap_or(MintBuilder::new());
+				mint_builder.add_asset(
+					&MintWitness::new_native_script(&source),
+					&empty_asset_name(),
+					&Int::new_i32(1),
+				)?;
+				tx_builder.set_mint_builder(&mint_builder);
+				tx_builder.add_reference_input(&gov_tx_input);
+
+				let tx = tx_builder.balance_update_and_build(ctx)?;
+				let mut witness_set = TransactionWitnessSet::new();
+				if let Some(redeemers) = tx.witness_set().redeemers() {
+					witness_set.set_redeemers(&redeemers);
+				}
+				if let Some(plutus_scripts) = tx.witness_set().plutus_scripts() {
+					witness_set.set_plutus_scripts(&plutus_scripts);
+				}
+				Ok(Transaction::new(&tx.body(), &witness_set, tx.auxiliary_data()))
+			},
+		}
 	}
 }
 

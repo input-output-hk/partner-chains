@@ -124,12 +124,6 @@ fn update_reserve_settings_tx(
 		tx_builder.add_output(&a)?;
 	}
 
-	let gov_policy_script = governance.policy.script();
-	tx_builder.add_mint_one_script_token_using_reference_script(
-		&gov_policy_script,
-		&governance.utxo_id_as_tx_input(),
-		&costs.get_mint(&gov_policy_script),
-	)?;
 	tx_builder.add_script_reference_input(
 		&reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.illiquid_circulation_supply_validator.bytes.len(),
@@ -138,5 +132,5 @@ fn update_reserve_settings_tx(
 		&reserve.auth_policy_version_utxo.to_csl_tx_input(),
 		reserve.scripts.auth_policy.bytes.len(),
 	);
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(governance.add_governance_token_mint_and_build(tx_builder, &costs, ctx)?)
 }
