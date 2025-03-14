@@ -117,7 +117,7 @@
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>utxo_id_as_tx_input(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; TransactionInput {
 		TransactionInput::new(
-			<span class="kw-2">&amp;</span>TransactionHash::from_bytes(<span class="self">self</span>.utxo_id().tx_hash.<span class="number">0</span>.to_vec()).unwrap(),
+			<span class="kw-2">&amp;</span>TransactionHash::from(<span class="self">self</span>.utxo_id().tx_hash.<span class="number">0</span>),
 			<span class="self">self</span>.utxo_id().index.<span class="number">0</span>.into(),
 		)
 	}

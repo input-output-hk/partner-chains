@@ -1099,6 +1099,14 @@
 <a href="#1099" id="1099">1099</a>
 <a href="#1100" id="1100">1100</a>
 <a href="#1101" id="1101">1101</a>
+<a href="#1102" id="1102">1102</a>
+<a href="#1103" id="1103">1103</a>
+<a href="#1104" id="1104">1104</a>
+<a href="#1105" id="1105">1105</a>
+<a href="#1106" id="1106">1106</a>
+<a href="#1107" id="1107">1107</a>
+<a href="#1108" id="1108">1108</a>
+<a href="#1109" id="1109">1109</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>anyhow::Context;
@@ -1412,12 +1420,20 @@
 	}
 
 	<span class="kw">fn </span>to_csl_tx_output(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;TransactionOutput, JsError&gt; {
-		<span class="prelude-val">Ok</span>(TransactionOutput::new(
+		<span class="kw">let </span><span class="kw-2">mut </span>tx_out = TransactionOutput::new(
 			<span class="kw-2">&amp;</span>Address::from_bech32(<span class="kw-2">&amp;</span><span class="self">self</span>.address).map_err(|e| {
 				JsError::from_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"Couldn't convert address from ogmios: '{}'"</span>, e))
 			})<span class="question-mark">?</span>,
 			<span class="kw-2">&amp;</span><span class="self">self</span>.value.to_csl()<span class="question-mark">?</span>,
-		))
+		);
+		<span class="kw">if let </span><span class="prelude-val">Some</span>(script) = <span class="self">self</span>.script.clone() {
+			<span class="kw">let </span>script_ref = ScriptRef::from_bytes(script.cbor.clone())<span class="question-mark">?</span>;
+			tx_out.set_script_ref(<span class="kw-2">&amp;</span>script_ref);
+		}
+		<span class="kw">if let </span><span class="prelude-val">Some</span>(data) = <span class="self">self</span>.get_plutus_data() {
+			tx_out.set_plutus_data(<span class="kw-2">&amp;</span>data);
+		}
+		<span class="prelude-val">Ok</span>(tx_out)
 	}
 
 	<span class="kw">fn </span>to_csl(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;TransactionUnspentOutput, JsError&gt; {
