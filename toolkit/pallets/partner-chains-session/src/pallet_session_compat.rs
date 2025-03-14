@@ -1,4 +1,4 @@
-#![cfg_attr(not(feature = "std"), no_std)]
+//! Runtime implementations for polkadot-sdk's pallet-session when pallet-partner-chains-session is used
 
 use sp_staking::SessionIndex;
 use sp_std::prelude::*;
@@ -39,10 +39,13 @@ macro_rules! impl_pallet_session_config {
 		{
 			type RuntimeEvent = <$type as pallet_partner_chains_session::Config>::RuntimeEvent;
 			type ValidatorId = <$type as pallet_partner_chains_session::Config>::ValidatorId;
-			type ValidatorIdOf = pallet_session_runtime_stub::PalletSessionStubImpls;
-			type ShouldEndSession = pallet_session_runtime_stub::PalletSessionStubImpls;
+			type ValidatorIdOf =
+				pallet_partner_chains_session::pallet_session_compat::PalletSessionStubImpls;
+			type ShouldEndSession =
+				pallet_partner_chains_session::pallet_session_compat::PalletSessionStubImpls;
 			type NextSessionRotation = ();
-			type SessionManager = pallet_session_runtime_stub::PalletSessionStubImpls;
+			type SessionManager =
+				pallet_partner_chains_session::pallet_session_compat::PalletSessionStubImpls;
 			type SessionHandler = <$type as pallet_partner_chains_session::Config>::SessionHandler;
 			type Keys = <$type as pallet_partner_chains_session::Config>::Keys;
 			type WeightInfo = ();
