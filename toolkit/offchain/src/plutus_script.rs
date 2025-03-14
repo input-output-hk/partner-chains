@@ -3,7 +3,7 @@ use anyhow::{anyhow, Context, Error};
 use cardano_serialization_lib::{
 	Address, JsError, Language, LanguageKind, NetworkIdKind, PlutusData, ScriptHash,
 };
-use ogmios_client::types::{OgmiosScript, OgmiosScript::Plutus};
+use ogmios_client::types::OgmiosScript;
 use plutus::ToDatum;
 use sidechain_domain::{AssetId, AssetName, PolicyId};
 use uplc::{
@@ -33,11 +33,7 @@ impl PlutusScript {
 	}
 
 	pub fn from_ogmios(ogmios_script: OgmiosScript) -> anyhow::Result<Self> {
-		if let Plutus(script) = ogmios_script {
-			script.try_into()
-		} else {
-			Err(anyhow!("Expected Plutus script, got something else."))
-		}
+		ogmios_script.try_into()
 	}
 
 	/// This function is needed to create [PlutusScript] from scripts in [raw_scripts],
@@ -135,10 +131,10 @@ impl PlutusScript {
 	}
 }
 
-impl TryFrom<ogmios_client::types::PlutusScript> for PlutusScript {
+impl TryFrom<ogmios_client::types::OgmiosScript> for PlutusScript {
 	type Error = Error;
 
-	fn try_from(script: ogmios_client::types::PlutusScript) -> Result<Self, Self::Error> {
+	fn try_from(script: ogmios_client::types::OgmiosScript) -> Result<Self, Self::Error> {
 		let language = match script.language.as_str() {
 			"plutus:v1" => Language::new_plutus_v1(),
 			"plutus:v2" => Language::new_plutus_v2(),
@@ -149,9 +145,9 @@ impl TryFrom<ogmios_client::types::PlutusScript> for PlutusScript {
 	}
 }
 
-impl From<PlutusScript> for ogmios_client::types::PlutusScript {
+impl From<PlutusScript> for ogmios_client::types::OgmiosScript {
 	fn from(val: PlutusScript) -> Self {
-		ogmios_client::types::PlutusScript {
+		ogmios_client::types::OgmiosScript {
 			language: match val.language.kind() {
 				LanguageKind::PlutusV1 => "plutus:v1",
 				LanguageKind::PlutusV2 => "plutus:v2",
@@ -159,6 +155,7 @@ impl From<PlutusScript> for ogmios_client::types::PlutusScript {
 			}
 			.to_string(),
 			cbor: val.bytes,
+			json: None,
 		}
 	}
 }
