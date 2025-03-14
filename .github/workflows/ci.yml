@@ -494,10 +494,18 @@ jobs:
         with:
           fetch-depth: 0
           ref: master
-      - name: Deploy and test against ci-preview
+      - name: Setup tests
+        uses: ./.github/actions/tests/setup-python
+        env:
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+      - name: Test against ci-preview
         uses: ./.github/actions/tests/run-e2e-tests
         with:
           env: ci
+          decrypt: true
           blockchain: substrate
           markers: "not active_flow and not passive_flow and not probability"
 
