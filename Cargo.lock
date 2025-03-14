@@ -6374,7 +6374,6 @@ dependencies = [
 name = "pallet-session-validator-management"
 version = "1.6.0"
 dependencies = [
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -9907,6 +9906,7 @@ dependencies = [
  "blake2b_simd",
  "byte-string-derive",
  "derive_more",
+ "ed25519-zebra",
  "figment",
  "hex",
  "hex-literal",
@@ -9918,6 +9918,7 @@ dependencies = [
  "plutus",
  "plutus-datum-derive",
  "scale-info",
+ "secp256k1 0.28.2",
  "serde",
  "serde_json",
  "sp-core",
