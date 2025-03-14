@@ -8,16 +8,14 @@ pub trait Candidate {
 	fn sort_key(&self) -> Self::SortKey;
 }
 
-pub fn select_authorities<TC, PC, SC>(
+pub fn select_authorities<SC>(
 	num_registered_candidates: u16,
 	num_permissioned_candidates: u16,
-	registered_candidates: Vec<(TC, Weight)>,
-	permissioned_candidates: Vec<PC>,
+	registered_candidates: Vec<(SC, Weight)>,
+	permissioned_candidates: Vec<SC>,
 	seed: <ChaCha20Rng as SeedableRng>::Seed,
 ) -> Option<Vec<SC>>
 where
-	TC: Into<SC> + Clone,
-	PC: Into<SC> + Clone,
 	SC: Candidate + Clone,
 {
 	let committee_size = num_registered_candidates + num_permissioned_candidates;
@@ -46,8 +44,8 @@ where
 	weighted_random::select_authorities(weighted_candidates, seed, &weighted_config)
 }
 
-fn registered_candidates_with_weights<TCandidate: Clone + Into<Candidate>, Candidate>(
-	registered_candidates: &[(TCandidate, Weight)],
+fn registered_candidates_with_weights<Candidate: Clone>(
+	registered_candidates: &[(Candidate, Weight)],
 	num_registered_candidates: u16,
 	permissioned_candidates_count: usize,
 ) -> Vec<(Candidate, Weight)> {
@@ -62,8 +60,8 @@ fn registered_candidates_with_weights<TCandidate: Clone + Into<Candidate>, Candi
 		.collect()
 }
 
-fn permissioned_candidates_with_weights<PCandidate: Clone + Into<Candidate>, Candidate>(
-	permissioned_candidates: &[PCandidate],
+fn permissioned_candidates_with_weights<Candidate: Clone>(
+	permissioned_candidates: &[Candidate],
 	num_permissioned_candidates: u16,
 	num_registered_candidates: u16,
 	total_stake: u128,
