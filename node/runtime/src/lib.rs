@@ -17,17 +17,17 @@ use authority_selection_inherents::select_authorities::select_authorities;
 use authority_selection_inherents::CommitteeMember;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::inherent::ProvideInherent;
+use frame_support::traits::ValidatorSet;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstBool, ConstU128, ConstU32, ConstU64, ConstU8},
+	traits::{ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, ValidatorSetWithIdentification},
 	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, IdentityFee},
 	BoundedVec,
 };
 use opaque::SessionKeys;
 use pallet_grandpa::AuthorityId as GrandpaId;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-use pallet_session::historical as pallet_session_historical;
 use pallet_session_validator_management;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use parity_scale_codec::MaxEncodedLen;
@@ -54,6 +54,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult, MultiSignature, Perbill,
 };
 use sp_sidechain::SidechainStatus;
+use sp_staking::SessionIndex;
 use sp_std::prelude::*;
 use sp_version::RuntimeVersion;
 use sp_weights::Weight;
@@ -374,7 +375,7 @@ impl pallet_sudo::Config for Runtime {
 
 impl pallet_partner_chains_session::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type ValidatorId = <Self as frame_system::Config>::AccountId;
+	type ValidatorId = AccountId;
 	type ShouldEndSession = ValidatorManagementSessionManager<Runtime>;
 	type NextSessionRotation = ();
 	type SessionManager = ValidatorManagementSessionManager<Runtime>;
@@ -557,34 +558,47 @@ parameter_types! {
 	pub const OFFSET: u32 = 0;
 }
 
+pub struct GlueCode;
+
+impl ValidatorSet<AccountId> for GlueCode {
+	type ValidatorId = AccountId;
+	type ValidatorIdOf = pallet_session_runtime_stub::PalletSessionStubImpls;
+	fn session_index() -> SessionIndex {
+		Sidechain::current_epoch_number().0 as u32
+	}
+	fn validators() -> Vec<Self::ValidatorId> {
+		let (_epoch, validators) =
+			pallet_session_validator_management::Pallet::<Runtime>::get_current_committee();
+
+		use sp_session_validator_management::CommitteeMember;
+		validators
+			.into_iter()
+			.map(|committee_member| committee_member.authority_id().into())
+			.collect()
+	}
+}
+
+impl<T> Convert<T, Option<T>> for GlueCode {
+	fn convert(t: T) -> Option<T> {
+		Some(t)
+	}
+}
+
+impl ValidatorSetWithIdentification<AccountId> for GlueCode {
+	type Identification = AccountId;
+	type IdentificationOf = GlueCode;
+}
+
 impl pallet_im_online::Config for Runtime {
 	type AuthorityId = ImOnlineId;
 	type RuntimeEvent = RuntimeEvent;
 	type NextSessionRotation = pallet_session::PeriodicSessions<PERIOD, OFFSET>;
-	type ValidatorSet = Historical;
-	type ReportUnresponsiveness = Offences;
+	type ValidatorSet = GlueCode;
+	type ReportUnresponsiveness = ();
 	type UnsignedPriority = ImOnlineUnsignedPriority;
 	type WeightInfo = pallet_im_online::weights::SubstrateWeight<Runtime>;
 	type MaxKeys = MaxKeys;
 	type MaxPeerInHeartbeats = MaxPeerInHeartbeats;
-}
-
-impl pallet_offences::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
-	type OnOffenceHandler = ();
-}
-
-pub struct NullIdentity;
-impl<T> Convert<T, Option<()>> for NullIdentity {
-	fn convert(_: T) -> Option<()> {
-		Some(())
-	}
-}
-
-impl pallet_session::historical::Config for Runtime {
-	type FullIdentification = ();
-	type FullIdentificationOf = NullIdentity;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -610,9 +624,7 @@ construct_runtime!(
 		// Partner Chains session_manager ValidatorManagementSessionManager writes to pallet_session::pallet::CurrentIndex.
 		// ValidatorManagementSessionManager is wired in by pallet_partner_chains_session.
 		PalletSession: pallet_session,
-		Historical: pallet_session_historical,
 		ImOnline: pallet_im_online,
-		Offences: pallet_offences,
 		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
 		Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,
