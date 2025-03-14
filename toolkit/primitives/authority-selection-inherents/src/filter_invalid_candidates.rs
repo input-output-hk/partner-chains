@@ -31,6 +31,14 @@ pub struct CandidateWithStake<TAccountId, TAccountKeys> {
 	pub account_keys: TAccountKeys,
 }
 
+impl<TAccountId, TAccountKeys> selection::ariadne::TrustlessCandidate
+	for CandidateWithStake<TAccountId, TAccountKeys>
+{
+	fn stake_weight(&self) -> selection::Weight {
+		self.stake_delegation.0.into()
+	}
+}
+
 #[derive(Clone, Debug, Encode, Decode, PartialEq)]
 pub struct PermissionedCandidate<TAccountId, TAccountKeys> {
 	pub account_id: TAccountId,
@@ -41,6 +49,30 @@ pub struct PermissionedCandidate<TAccountId, TAccountKeys> {
 pub enum Candidate<TAccountId, TAccountKeys> {
 	Permissioned(PermissionedCandidate<TAccountId, TAccountKeys>),
 	Registered(CandidateWithStake<TAccountId, TAccountKeys>),
+}
+impl<TAccountId: Ord + Clone, TAccountKeys> selection::ariadne::Candidate
+	for Candidate<TAccountId, TAccountKeys>
+{
+	type SortKey = TAccountId;
+
+	fn sort_key(&self) -> Self::SortKey {
+		self.account_id().clone()
+	}
+}
+
+impl<TAccountId, TAccountKeys> From<PermissionedCandidate<TAccountId, TAccountKeys>>
+	for Candidate<TAccountId, TAccountKeys>
+{
+	fn from(c: PermissionedCandidate<TAccountId, TAccountKeys>) -> Self {
+		Self::Permissioned(c)
+	}
+}
+impl<TAccountId, TAccountKeys> From<CandidateWithStake<TAccountId, TAccountKeys>>
+	for Candidate<TAccountId, TAccountKeys>
+{
+	fn from(c: CandidateWithStake<TAccountId, TAccountKeys>) -> Self {
+		Self::Registered(c)
+	}
 }
 
 impl<AuthorityId, AuthorityKeys> From<Candidate<AuthorityId, AuthorityKeys>>

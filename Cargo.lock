@@ -9628,7 +9628,6 @@ dependencies = [
  "rand",
  "rand_chacha",
  "scale-info",
- "sidechain-domain",
 ]
 
 [[package]]

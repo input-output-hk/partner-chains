@@ -1,0 +1,84 @@
+use crate::{weighted_random, Weight, WeightedRandomSelectionConfig};
+use alloc::vec::Vec;
+use rand::SeedableRng;
+use rand_chacha::ChaCha20Rng;
+
+pub trait TrustlessCandidate {
+	fn stake_weight(&self) -> Weight;
+}
+
+pub trait Candidate {
+	type SortKey: Ord;
+	fn sort_key(&self) -> Self::SortKey;
+}
+
+pub fn select_authorities<TC, PC, SC>(
+	num_permissioned_candidates: u16,
+	num_registered_candidates: u16,
+	trustless_candidates: Vec<TC>,
+	permissioned_candidates: Vec<PC>,
+	seed: <ChaCha20Rng as SeedableRng>::Seed,
+) -> Option<Vec<SC>>
+where
+	TC: Into<SC> + TrustlessCandidate + Clone,
+	PC: Into<SC> + Clone,
+	SC: Candidate + Clone,
+{
+	let committee_size = num_registered_candidates + num_permissioned_candidates;
+	let weighted_config = WeightedRandomSelectionConfig { size: committee_size };
+	let mut weighted_candidates = alloc::vec![];
+
+	let total_stake: u128 = trustless_candidates.iter().map(|c| c.stake_weight()).sum();
+
+	let trustless_candidates = trustless_candidates_with_weights(
+		&trustless_candidates,
+		num_registered_candidates,
+		permissioned_candidates.len(),
+	);
+
+	let permissioned_candidates = permissioned_candidates_with_weights(
+		&permissioned_candidates,
+		num_permissioned_candidates,
+		num_registered_candidates,
+		total_stake,
+	);
+
+	weighted_candidates.extend(trustless_candidates);
+	weighted_candidates.extend(permissioned_candidates);
+	weighted_candidates.sort_by_key(|(c, _)| c.sort_key());
+
+	weighted_random::select_authorities(weighted_candidates, seed, &weighted_config)
+}
+
+fn trustless_candidates_with_weights<
+	TCandidate: TrustlessCandidate + Clone + Into<Candidate>,
+	Candidate,
+>(
+	trustless_candidates: &[TCandidate],
+	num_registered_candidates: u16,
+	permissioned_candidates_count: usize,
+) -> Vec<(Candidate, Weight)> {
+	let weight_factor = if permissioned_candidates_count > 0 {
+		u128::from(num_registered_candidates) * permissioned_candidates_count as u128
+	} else {
+		1 // if there are no permissioned candidates, trustless candidates should be selected using unmodified stake
+	};
+	trustless_candidates
+		.iter()
+		.map(|c| (c.clone().into(), c.stake_weight() * weight_factor))
+		.collect()
+}
+
+fn permissioned_candidates_with_weights<PCandidate: Clone + Into<Candidate>, Candidate>(
+	permissioned_candidates: &[PCandidate],
+	num_permissioned_candidates: u16,
+	num_registered_candidates: u16,
+	total_stake: u128,
+) -> Vec<(Candidate, Weight)> {
+	let weight = if total_stake > 0 && num_registered_candidates > 0 {
+		u128::from(num_permissioned_candidates) * u128::from(total_stake)
+	} else {
+		1 // if there are no trustless candidates, permissioned candidates should be selected with equal weight
+	};
+	permissioned_candidates.iter().map(|c| (c.clone().into(), weight)).collect()
+}

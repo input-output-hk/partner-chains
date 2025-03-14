@@ -3,15 +3,11 @@
 use crate::authority_selection_inputs::AuthoritySelectionInputs;
 use crate::filter_invalid_candidates::{
 	filter_invalid_permissioned_candidates, filter_trustless_candidates_registrations, Candidate,
-	CandidateWithStake, PermissionedCandidate,
 };
 use log::{info, warn};
 use plutus::*;
-use selection::{Weight, WeightedRandomSelectionConfig};
-use sidechain_domain::{DParameter, EpochNonce, ScEpochNumber, UtxoId};
+use sidechain_domain::{EpochNonce, ScEpochNumber, UtxoId};
 use sp_core::{ecdsa, ed25519, sr25519, U256};
-
-type CandidateWithWeight<A, B> = (Candidate<A, B>, Weight);
 
 /// Pseudo-random selection the authorities for the given sidechain epoch, according to the
 /// Ariadne specification: https://input-output.atlassian.net/wiki/spaces/SID/pages/4228612151/Ariadne+-+committee+selection+algorithm
@@ -39,72 +35,30 @@ pub fn select_authorities<
 	input: AuthoritySelectionInputs,
 	sidechain_epoch: ScEpochNumber,
 ) -> Option<Vec<Candidate<TAccountId, TAccountKeys>>> {
-	let valid_trustless_candidates = filter_trustless_candidates_registrations::<
+	let valid_registered_candidates = filter_trustless_candidates_registrations::<
 		TAccountId,
 		TAccountKeys,
 	>(input.registered_candidates, genesis_utxo);
 	let valid_permissioned_candidates =
 		filter_invalid_permissioned_candidates(input.permissioned_candidates);
-
-	let mut candidates_with_weight = trustless_candidates_with_weights(
-		&valid_trustless_candidates,
-		&input.d_parameter,
-		valid_permissioned_candidates.len(),
-	);
-	candidates_with_weight.extend(permissioned_candidates_with_weights(
-		&valid_permissioned_candidates,
-		&input.d_parameter,
-		&valid_trustless_candidates,
-	));
-	candidates_with_weight.sort_by(|a, b| a.0.account_id().cmp(&b.0.account_id()));
+	let valid_permissioned_count = valid_permissioned_candidates.len();
+	let valid_registered_count = valid_registered_candidates.len();
 
 	let random_seed = seed_from_nonce_and_sc_epoch(&input.epoch_nonce, &sidechain_epoch);
-	let committee_size =
-		input.d_parameter.num_registered_candidates + input.d_parameter.num_permissioned_candidates;
-	if let Some(validators) = (WeightedRandomSelectionConfig { size: committee_size }
-		.select_authorities(candidates_with_weight, random_seed))
-	{
-		info!("💼 Selected committee of {} seats for epoch {} from {} permissioned and {} registered candidates", validators.len(), sidechain_epoch, valid_permissioned_candidates.len(), valid_trustless_candidates.len());
+
+	if let Some(validators) = selection::ariadne::select_authorities(
+		input.d_parameter.num_permissioned_candidates,
+		input.d_parameter.num_registered_candidates,
+		valid_registered_candidates,
+		valid_permissioned_candidates,
+		random_seed,
+	) {
+		info!("💼 Selected committee of {} seats for epoch {} from {valid_permissioned_count} permissioned and {valid_registered_count} registered candidates", validators.len(), sidechain_epoch);
 		Some(validators)
 	} else {
 		warn!("🚫 Failed to select validators for epoch {}", sidechain_epoch);
 		None
 	}
-}
-
-fn trustless_candidates_with_weights<A: Clone, B: Clone>(
-	trustless_candidates: &[CandidateWithStake<A, B>],
-	d_parameter: &DParameter,
-	permissioned_candidates_count: usize,
-) -> Vec<CandidateWithWeight<A, B>> {
-	let weight_factor = if permissioned_candidates_count > 0 {
-		u128::from(d_parameter.num_registered_candidates) * permissioned_candidates_count as u128
-	} else {
-		1 // if there are no permissioned candidates, trustless candidates should be selected using unmodified stake
-	};
-	trustless_candidates
-		.iter()
-		.map(|c| {
-			(Candidate::Registered(c.clone()), u128::from(c.stake_delegation.0) * weight_factor)
-		})
-		.collect()
-}
-
-fn permissioned_candidates_with_weights<A: Clone, B: Clone>(
-	permissioned_candidates: &[PermissionedCandidate<A, B>],
-	d_parameter: &DParameter,
-	valid_trustless_candidates: &[CandidateWithStake<A, B>],
-) -> Vec<CandidateWithWeight<A, B>> {
-	let total_stake: u64 = valid_trustless_candidates.iter().map(|c| c.stake_delegation.0).sum();
-	let weight = if total_stake > 0 && d_parameter.num_registered_candidates > 0 {
-		u128::from(d_parameter.num_permissioned_candidates) * u128::from(total_stake)
-	} else {
-		1 // if there are no trustless candidates, permissioned candidates should be selected with equal weight
-	};
-	permissioned_candidates
-		.iter()
-		.map(|c| (Candidate::Permissioned(c.clone()), weight))
-		.collect::<Vec<_>>()
 }
 
 pub fn seed_from_nonce_and_sc_epoch(
