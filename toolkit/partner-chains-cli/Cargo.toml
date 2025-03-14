@@ -23,7 +23,6 @@ serde_json = { workspace = true, features = ["std"] }
 sidechain-runtime = { workspace = true }
 sp-core = { workspace = true, features = ["std"] }
 sp-runtime = { workspace = true }
-cli-utils = { workspace = true }
 thiserror = { workspace = true }
 tempfile = { workspace = true }
 secp256k1 = { workspace = true, features = ["std"] }
@@ -35,6 +34,7 @@ partner-chains-cardano-offchain = { workspace = true }
 log = { workspace = true }
 plutus = { workspace = true, default-features = true }
 plutus-datum-derive = { workspace = true, default-features = true }
+ed25519-zebra = { workspace = true }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }
