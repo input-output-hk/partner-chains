@@ -2,12 +2,7 @@ use plutus_datum_derive::ToDatum;
 use secp256k1::{PublicKey, SecretKey};
 use sidechain_domain::*;
 use sidechain_domain::{SidechainPublicKey, StakePoolPublicKey, StakePublicKey};
-use std::{
-	convert::Infallible,
-	fmt::Display,
-	io::{self, ErrorKind},
-	str::FromStr,
-};
+use std::{convert::Infallible, fmt::Display, str::FromStr};
 
 pub mod register1;
 pub mod register2;
@@ -56,31 +51,8 @@ impl FromStr for PlainPublicKeyParam {
 	}
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum Ed25519SigningKeyError {
-	#[error("{0}")]
-	HexError(#[from] hex::FromHexError),
-	#[error("{0}")]
-	Ed25519Error(#[from] ed25519_zebra::Error),
-}
-
-impl From<Ed25519SigningKeyError> for io::Error {
-	fn from(value: Ed25519SigningKeyError) -> Self {
-		io::Error::new(ErrorKind::InvalidInput, value)
-	}
-}
-
 #[derive(Clone, Debug)]
 pub struct StakePoolSigningKeyParam(pub ed25519_zebra::SigningKey);
-
-impl FromStr for StakePoolSigningKeyParam {
-	type Err = Ed25519SigningKeyError;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let trimmed = s.trim_start_matches("0x");
-		Ok(Self(ed25519_zebra::SigningKey::try_from(hex::decode(trimmed)?.as_slice())?))
-	}
-}
 
 impl From<[u8; 32]> for StakePoolSigningKeyParam {
 	fn from(key: [u8; 32]) -> Self {
