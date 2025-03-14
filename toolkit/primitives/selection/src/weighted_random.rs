@@ -30,7 +30,7 @@ pub fn select_authorities<T: Clone>(
 	let size = usize::from(config.size);
 	let total_weight: Weight = weighted_candidates.iter().map(|(_, weight)| weight).sum();
 
-	let mut committee: Vec<T> = sp_std::vec![];
+	let mut committee: Vec<T> = alloc::vec![];
 
 	let mut rng = ChaCha20Rng::from_seed(seed);
 

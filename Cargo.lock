@@ -9621,10 +9621,6 @@ dependencies = [
  "rand_chacha",
  "scale-info",
  "sidechain-domain",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]

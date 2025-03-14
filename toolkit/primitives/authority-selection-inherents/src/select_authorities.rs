@@ -8,8 +8,8 @@ use crate::filter_invalid_candidates::{
 use log::{info, warn};
 use plutus::*;
 use selection::{Weight, WeightedRandomSelectionConfig};
-use sidechain_domain::{DParameter, ScEpochNumber, UtxoId};
-use sp_core::{ecdsa, ed25519, sr25519};
+use sidechain_domain::{DParameter, EpochNonce, ScEpochNumber, UtxoId};
+use sp_core::{ecdsa, ed25519, sr25519, U256};
 
 type CandidateWithWeight<A, B> = (Candidate<A, B>, Weight);
 
@@ -58,8 +58,7 @@ pub fn select_authorities<
 	));
 	candidates_with_weight.sort_by(|a, b| a.0.account_id().cmp(&b.0.account_id()));
 
-	let random_seed =
-		selection::impls::seed_from_nonce_and_sc_epoch(&input.epoch_nonce, &sidechain_epoch);
+	let random_seed = seed_from_nonce_and_sc_epoch(&input.epoch_nonce, &sidechain_epoch);
 	let committee_size =
 		input.d_parameter.num_registered_candidates + input.d_parameter.num_permissioned_candidates;
 	if let Some(validators) = (WeightedRandomSelectionConfig { size: committee_size }
@@ -106,4 +105,34 @@ fn permissioned_candidates_with_weights<A: Clone, B: Clone>(
 		.iter()
 		.map(|c| (Candidate::Permissioned(c.clone()), weight))
 		.collect::<Vec<_>>()
+}
+
+pub fn seed_from_nonce_and_sc_epoch(
+	epoch_nonce: &EpochNonce,
+	sidechain_epoch_number: &ScEpochNumber,
+) -> [u8; 32] {
+	let mut epoch_nonce = epoch_nonce.0.clone();
+	epoch_nonce.resize_with(32, || 0);
+	let epoch_nonce: [u8; 32] =
+		epoch_nonce.try_into().expect("Should never fail after being resized");
+	let seed_u256: U256 = U256::from_big_endian(&epoch_nonce)
+		.overflowing_add(U256::from(sidechain_epoch_number.0))
+		.0;
+	seed_u256.to_big_endian()
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use sidechain_domain::{EpochNonce, ScEpochNumber};
+	use sp_core::U256;
+
+	#[test]
+	fn should_create_correct_seed() {
+		let nonce_vec = Vec::from(U256::from(10).to_big_endian());
+		assert_eq!(
+			seed_from_nonce_and_sc_epoch(&EpochNonce(nonce_vec), &ScEpochNumber(2)),
+			U256::from(12).to_big_endian()
+		);
+	}
 }
