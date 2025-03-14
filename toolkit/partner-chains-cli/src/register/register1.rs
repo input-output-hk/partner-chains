@@ -1,5 +1,5 @@
-use crate::config::config_values::DEFAULT_CHAIN_NAME;
 use super::RegisterValidatorMessage;
+use crate::config::config_values::DEFAULT_CHAIN_NAME;
 use crate::config::KEYS_FILE_PATH;
 use crate::generate_keys::keystore_path;
 use crate::io::IOContext;
