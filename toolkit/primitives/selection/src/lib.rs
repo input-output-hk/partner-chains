@@ -9,7 +9,5 @@ pub mod weighted_random;
 
 pub use weighted_random::*;
 
-pub mod impls;
-
 #[cfg(test)]
 mod tests;
