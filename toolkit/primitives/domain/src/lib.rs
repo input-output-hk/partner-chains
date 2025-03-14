@@ -60,7 +60,9 @@ impl Display for McEpochNumber {
 	}
 }
 /// Amount of Lovelace (which is a fraction of 1 ADA) staked/locked on Cardano
-#[derive(Default, Clone, Copy, Debug, Encode, Decode, TypeInfo, ToDatum, PartialEq, Eq)]
+#[derive(
+	Default, Clone, Copy, Debug, Encode, Decode, TypeInfo, ToDatum, PartialEq, Eq, PartialOrd, Ord,
+)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct StakeDelegation(pub u64);
 
