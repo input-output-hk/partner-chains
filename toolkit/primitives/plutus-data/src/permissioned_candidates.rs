@@ -55,6 +55,7 @@ pub fn permissioned_candidates_to_plutus_data(
 		candidate_datum.add(&PlutusData::new_bytes(candidate.sidechain_public_key.0.clone()));
 		candidate_datum.add(&PlutusData::new_bytes(candidate.aura_public_key.0.clone()));
 		candidate_datum.add(&PlutusData::new_bytes(candidate.grandpa_public_key.0.clone()));
+		candidate_datum.add(&PlutusData::new_bytes(candidate.im_online_public_key.0.clone()));
 		list.add(&PlutusData::new_list(&candidate_datum));
 	}
 	let appendix = PlutusData::new_list(&list);
