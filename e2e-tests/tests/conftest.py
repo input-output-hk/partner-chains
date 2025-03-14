@@ -315,21 +315,33 @@ def secrets_ci(secrets, decrypt, ci_path):
 
 
 @fixture(scope="session", autouse=True)
-def decrypt_keys(config, blockchain, nodes_env, decrypt, ci_run):
+def decrypt_keys(tmp_path_factory, config, blockchain, nodes_env, decrypt, ci_run):
     if decrypt:
-        keys_path = config.keys_path or f"secrets/{blockchain}/{nodes_env}/keys"
-        subprocess.check_output(
-            [
-                f"find {keys_path} -type f -not -path '*/preprodSPO/*' -not -name '*.decrypted' -exec "
-                f"sh -c \"sops -d '{{}}' > '{{}}.decrypted'\" \;"  # noqa: W605
-            ],
-            shell=True,
-        )
-        yield
-        subprocess.check_output(
-            ["find secrets -type f -name '*.decrypted' -exec rm {} \;"],  # noqa: W605
-            shell=True,
-        )
+        root_tmp_dir = tmp_path_factory.getbasetemp().parent
+        fn = root_tmp_dir / "secrets"
+        with FileLock(str(fn) + ".lock"):
+            if fn.is_file():
+                yield
+            else:
+                keys_path = config.keys_path or f"secrets/{blockchain}/{nodes_env}/keys"
+                # TODO this should use the existence of .decrypted files to determine if decryption is necessary
+                #      instead of relying on tmp/secrets file
+                subprocess.check_output(
+                    [
+                        f"find {keys_path} -type f -not -path '*/preprodSPO/*' -not -name '*.decrypted' -exec "
+                        f"sh -c \"sops -d '{{}}' > '{{}}.decrypted'\" \;"  # noqa: W605
+                    ],
+                    shell=True,
+                )
+                # write secrets lock
+                fn.write_text("keys decrypted")
+                yield
+                subprocess.check_output(
+                    ["find secrets -type f -name '*.decrypted' -exec rm {} \;"],  # noqa: W605
+                    shell=True,
+                )
+                # clean up secrets lock
+                os.remove(fn)
     else:
         # the yield statement is needed on both if/else sides because that's how the fixture communicates setup is done
 
