@@ -45,25 +45,10 @@ pub enum Candidate<TAccountId, TAccountKeys> {
 impl<TAccountId: Ord + Clone, TAccountKeys> selection::ariadne::Candidate
 	for Candidate<TAccountId, TAccountKeys>
 {
-	type SortKey = TAccountId;
+	type CandidateId = TAccountId;
 
-	fn sort_key(&self) -> Self::SortKey {
+	fn candidate_id(&self) -> Self::CandidateId {
 		self.account_id().clone()
-	}
-}
-
-impl<TAccountId, TAccountKeys> From<PermissionedCandidate<TAccountId, TAccountKeys>>
-	for Candidate<TAccountId, TAccountKeys>
-{
-	fn from(c: PermissionedCandidate<TAccountId, TAccountKeys>) -> Self {
-		Self::Permissioned(c)
-	}
-}
-impl<TAccountId, TAccountKeys> From<CandidateWithStake<TAccountId, TAccountKeys>>
-	for Candidate<TAccountId, TAccountKeys>
-{
-	fn from(c: CandidateWithStake<TAccountId, TAccountKeys>) -> Self {
-		Self::Registered(c)
 	}
 }
 

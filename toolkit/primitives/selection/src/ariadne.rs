@@ -4,8 +4,8 @@ use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
 
 pub trait Candidate {
-	type SortKey: Ord;
-	fn sort_key(&self) -> Self::SortKey;
+	type CandidateId: Ord;
+	fn candidate_id(&self) -> Self::CandidateId;
 }
 
 pub fn select_authorities<SC>(
@@ -39,7 +39,7 @@ where
 
 	weighted_candidates.extend(registered_candidates);
 	weighted_candidates.extend(permissioned_candidates);
-	weighted_candidates.sort_by_key(|(c, _)| c.sort_key());
+	weighted_candidates.sort_by_key(|(c, _)| c.candidate_id());
 
 	weighted_random::select_authorities(weighted_candidates, seed, &weighted_config)
 }
