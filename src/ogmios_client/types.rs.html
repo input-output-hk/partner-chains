@@ -411,6 +411,22 @@
 <a href="#411" id="411">411</a>
 <a href="#412" id="412">412</a>
 <a href="#413" id="413">413</a>
+<a href="#414" id="414">414</a>
+<a href="#415" id="415">415</a>
+<a href="#416" id="416">416</a>
+<a href="#417" id="417">417</a>
+<a href="#418" id="418">418</a>
+<a href="#419" id="419">419</a>
+<a href="#420" id="420">420</a>
+<a href="#421" id="421">421</a>
+<a href="#422" id="422">422</a>
+<a href="#423" id="423">423</a>
+<a href="#424" id="424">424</a>
+<a href="#425" id="425">425</a>
+<a href="#426" id="426">426</a>
+<a href="#427" id="427">427</a>
+<a href="#428" id="428">428</a>
+<a href="#429" id="429">429</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Common types used in the Ogmios API.
 
 </span><span class="kw">use </span>serde::{Deserialize, Deserializer};
@@ -497,25 +513,20 @@
 	}
 }
 
-<span class="attr">#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
-#[serde(untagged)]
-</span><span class="kw">pub enum </span>OgmiosScript {
-	Plutus(PlutusScript),
-	Native(NativeScript),
-}
-
 <span class="attr">#[derive(Clone, Deserialize, Eq, PartialEq)]
-</span><span class="kw">pub struct </span>PlutusScript {
+</span><span class="kw">pub struct </span>OgmiosScript {
 	<span class="kw">pub </span>language: String,
 	<span class="attr">#[serde(deserialize_with = <span class="string">"parse_bytes"</span>)]
 	</span><span class="kw">pub </span>cbor: Vec&lt;u8&gt;,
+	<span class="kw">pub </span>json: <span class="prelude-ty">Option</span>&lt;NativeScript&gt;,
 }
 
-<span class="kw">impl </span>std::fmt::Debug <span class="kw">for </span>PlutusScript {
+<span class="kw">impl </span>std::fmt::Debug <span class="kw">for </span>OgmiosScript {
 	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>std::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; std::fmt::Result {
 		f.debug_struct(<span class="string">"PlutusScript"</span>)
 			.field(<span class="string">"language"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.language)
 			.field(<span class="string">"cbor"</span>, <span class="kw-2">&amp;</span>hex::encode(<span class="kw-2">&amp;</span><span class="self">self</span>.cbor))
+			.field(<span class="string">"json"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.json)
 			.finish()
 	}
 }
@@ -675,7 +686,7 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use </span><span class="kw">super</span>::OgmiosUtxo;
-	<span class="kw">use </span><span class="kw">crate</span>::types::{Asset, NativeScript, OgmiosScript, OgmiosTx, OgmiosValue, PlutusScript};
+	<span class="kw">use </span><span class="kw">crate</span>::types::{Asset, NativeScript, OgmiosScript, OgmiosTx, OgmiosValue};
 	<span class="kw">use </span>hex_literal::hex;
 
 	<span class="attr">#[test]
@@ -781,10 +792,11 @@
 				value: OgmiosValue::new_lovelace(<span class="number">1356118</span>),
 				datum: <span class="prelude-val">None</span>,
 				datum_hash: <span class="prelude-val">None</span>,
-				script: <span class="prelude-val">Some</span>(OgmiosScript::Plutus(PlutusScript {
+				script: <span class="prelude-val">Some</span>(OgmiosScript {
 					language: <span class="string">"plutus:v3"</span>.into(),
-					cbor: <span class="macro">hex!</span>(<span class="string">"aabbccdd00112233"</span>).to_vec()
-				}))
+					cbor: <span class="macro">hex!</span>(<span class="string">"aabbccdd00112233"</span>).to_vec(),
+					json: <span class="prelude-val">None</span>,
+				})
 			}
 		)
 	}
@@ -796,7 +808,18 @@
 			<span class="string">"index"</span>: <span class="number">1</span>,
 			<span class="string">"address"</span>: <span class="string">"addr_test1vqezxrh24ts0775hulcg3ejcwj7hns8792vnn8met6z9gwsxt87zy"</span>,
 			<span class="string">"value"</span>: { <span class="string">"ada"</span>: {	<span class="string">"lovelace"</span>: <span class="number">1356118 </span>} },
-			<span class="string">"script"</span>: {<span class="string">"clause"</span>: <span class="string">"some"</span>, <span class="string">"atLeast"</span>: <span class="number">1</span>, <span class="string">"from"</span>:[{<span class="string">"clause"</span>: <span class="string">"signature"</span>,<span class="string">"from"</span>: <span class="string">"a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7"</span>}, {<span class="string">"clause"</span>: <span class="string">"before"</span>, <span class="string">"slot"</span>: <span class="number">100 </span>}]}
+			<span class="string">"script"</span>: {
+				<span class="string">"language"</span>: <span class="string">"native"</span>,
+				<span class="string">"json"</span>: {
+					<span class="string">"clause"</span>: <span class="string">"some"</span>,
+					<span class="string">"atLeast"</span>: <span class="number">1</span>,
+					<span class="string">"from"</span>:[
+						{<span class="string">"clause"</span>: <span class="string">"signature"</span>,<span class="string">"from"</span>: <span class="string">"a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7"</span>},
+						{<span class="string">"clause"</span>: <span class="string">"before"</span>, <span class="string">"slot"</span>: <span class="number">100 </span>}
+					]
+				},
+				<span class="string">"cbor"</span>: <span class="string">"830301818200581ce8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
+			</span>}
 		});
 		<span class="kw">let </span>utxo: OgmiosUtxo = serde_json::from_value(value).unwrap();
 		<span class="macro">assert_eq!</span>(
@@ -811,15 +834,24 @@
 				value: OgmiosValue::new_lovelace(<span class="number">1356118</span>),
 				datum: <span class="prelude-val">None</span>,
 				datum_hash: <span class="prelude-val">None</span>,
-				script: <span class="prelude-val">Some</span>(OgmiosScript::Native(NativeScript::Some {
-					from: <span class="macro">vec!</span>[
-						NativeScript::Signature {
-							from: <span class="macro">hex!</span>(<span class="string">"a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7"</span>)
-						},
-						NativeScript::Before { slot: <span class="number">100 </span>}
-					],
-					at_least: <span class="number">1
-				</span>}))
+				script: <span class="prelude-val">Some</span>(OgmiosScript {
+					language: <span class="string">"native"</span>.into(),
+					json: <span class="prelude-val">Some</span>(NativeScript::Some {
+						from: <span class="macro">vec!</span>[
+							NativeScript::Signature {
+								from: <span class="macro">hex!</span>(
+									<span class="string">"a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7"
+								</span>)
+							},
+							NativeScript::Before { slot: <span class="number">100 </span>}
+						],
+						at_least: <span class="number">1
+					</span>}),
+					cbor: <span class="macro">hex!</span>(
+						<span class="string">"830301818200581ce8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
+					</span>)
+					.to_vec()
+				})
 			}
 		)
 	}

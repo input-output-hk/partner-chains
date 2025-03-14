@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["NativeScript","OgmiosScript"],"struct":["Asset","Datum","DatumHash","OgmiosBytesSize","OgmiosTx","OgmiosUtxo","OgmiosValue","PlutusScript","SlotLength","TimeSeconds"]};
+window.SIDEBAR_ITEMS = {"enum":["NativeScript"],"struct":["Asset","Datum","DatumHash","OgmiosBytesSize","OgmiosScript","OgmiosTx","OgmiosUtxo","OgmiosValue","SlotLength","TimeSeconds"]};

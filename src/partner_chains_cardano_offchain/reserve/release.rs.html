@@ -473,11 +473,6 @@
 <a href="#473" id="473">473</a>
 <a href="#474" id="474">474</a>
 <a href="#475" id="475">475</a>
-<a href="#476" id="476">476</a>
-<a href="#477" id="477">477</a>
-<a href="#478" id="478">478</a>
-<a href="#479" id="479">479</a>
-<a href="#480" id="480">480</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! This transaction releases some funds to the illiquid supply.
 //! Inputs:
 //!     - previous utxo at the *reserve validator*, containing the reserve tokens and the
@@ -510,10 +505,8 @@
 	Int, MultiAsset, PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
 };
 <span class="kw">use </span>ogmios_client::{
-	query_ledger_state::<span class="kw-2">*</span>,
-	query_network::QueryNetwork,
-	transactions::Transactions,
-	types::{OgmiosScript, OgmiosUtxo},
+	query_ledger_state::<span class="kw-2">*</span>, query_network::QueryNetwork, transactions::Transactions,
+	types::OgmiosUtxo,
 };
 <span class="kw">use </span>partner_chains_plutus_data::reserve::ReserveRedeemer;
 <span class="kw">use </span>sidechain_domain::{McTxHash, UtxoId};
@@ -660,9 +653,6 @@
 	<span class="kw">let </span><span class="prelude-val">Some</span>(v_function_script) = utxo.script.clone() <span class="kw">else </span>{
 		<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"V-Function reference script missing from the reference UTXO"</span>,));
 	};
-	<span class="kw">let </span>OgmiosScript::Plutus(v_function_script) = v_function_script <span class="kw">else </span>{
-		<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"V-Function reference script is not a Plutus script"</span>));
-	};
 	PlutusScript::try_from(v_function_script)
 		.map_err(|val| <span class="macro">anyhow!</span>(<span class="string">"{val:?} is not a valid Plutus Script"</span>))
 }
@@ -680,7 +670,7 @@
 		Int, Language, NetworkIdKind, PolicyID, PrivateKey, Transaction,
 	};
 	<span class="kw">use </span>hex_literal::hex;
-	<span class="kw">use </span>ogmios_client::types::{Asset, OgmiosScript, OgmiosTx, OgmiosUtxo, OgmiosValue};
+	<span class="kw">use </span>ogmios_client::types::{Asset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	<span class="kw">use </span>partner_chains_plutus_data::reserve::{
 		ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats,
 	};
@@ -775,7 +765,7 @@
 				},
 				index: <span class="number">0</span>,
 				address: version_oracle_address(),
-				script: <span class="prelude-val">Some</span>(OgmiosScript::Plutus(auth_policy_script().into())),
+				script: <span class="prelude-val">Some</span>(auth_policy_script().into()),
 				..Default::default()
 			},
 			validator_version_utxo: OgmiosUtxo {
@@ -784,7 +774,7 @@
 				},
 				index: <span class="number">0</span>,
 				address: version_oracle_address(),
-				script: <span class="prelude-val">Some</span>(OgmiosScript::Plutus(reserve_validator_script().into())),
+				script: <span class="prelude-val">Some</span>(reserve_validator_script().into()),
 				..Default::default()
 			},
 			illiquid_circulation_supply_validator_version_utxo: OgmiosUtxo {
@@ -793,7 +783,7 @@
 				},
 				index: <span class="number">0</span>,
 				address: version_oracle_address(),
-				script: <span class="prelude-val">Some</span>(OgmiosScript::Plutus(illiquid_supply_validator_script().into())),
+				script: <span class="prelude-val">Some</span>(illiquid_supply_validator_script().into()),
 				..Default::default()
 			},
 		}
@@ -805,7 +795,7 @@
 				id: <span class="macro">hex!</span>(<span class="string">"45882cfd2de9381f34ae68ad073452e2a57a7ad11095dae49f365266637e9d04"</span>),
 			},
 			index: <span class="number">0</span>,
-			script: <span class="prelude-val">Some</span>(OgmiosScript::Plutus(applied_v_function().into())),
+			script: <span class="prelude-val">Some</span>(applied_v_function().into()),
 			..Default::default()
 		}
 	}

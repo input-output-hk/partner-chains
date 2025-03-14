@@ -185,15 +185,12 @@
 <a href="#185" id="185">185</a>
 <a href="#186" id="186">186</a>
 <a href="#187" id="187">187</a>
-<a href="#188" id="188">188</a>
-<a href="#189" id="189">189</a>
-<a href="#190" id="190">190</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::<span class="kw-2">*</span>;
 <span class="kw">use </span>anyhow::{anyhow, Context, Error};
 <span class="kw">use </span>cardano_serialization_lib::{
 	Address, JsError, Language, LanguageKind, NetworkIdKind, PlutusData, ScriptHash,
 };
-<span class="kw">use </span>ogmios_client::types::{OgmiosScript, OgmiosScript::Plutus};
+<span class="kw">use </span>ogmios_client::types::OgmiosScript;
 <span class="kw">use </span>plutus::ToDatum;
 <span class="kw">use </span>sidechain_domain::{AssetId, AssetName, PolicyId};
 <span class="kw">use </span>uplc::{
@@ -223,11 +220,7 @@
 	}
 
 	<span class="kw">pub fn </span>from_ogmios(ogmios_script: OgmiosScript) -&gt; anyhow::Result&lt;<span class="self">Self</span>&gt; {
-		<span class="kw">if let </span>Plutus(script) = ogmios_script {
-			script.try_into()
-		} <span class="kw">else </span>{
-			<span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(<span class="string">"Expected Plutus script, got something else."</span>))
-		}
+		ogmios_script.try_into()
 	}
 
 	<span class="doccomment">/// This function is needed to create [PlutusScript] from scripts in [raw_scripts],
@@ -325,10 +318,10 @@
 	}
 }
 
-<span class="kw">impl </span>TryFrom&lt;ogmios_client::types::PlutusScript&gt; <span class="kw">for </span>PlutusScript {
+<span class="kw">impl </span>TryFrom&lt;ogmios_client::types::OgmiosScript&gt; <span class="kw">for </span>PlutusScript {
 	<span class="kw">type </span>Error = Error;
 
-	<span class="kw">fn </span>try_from(script: ogmios_client::types::PlutusScript) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
+	<span class="kw">fn </span>try_from(script: ogmios_client::types::OgmiosScript) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
 		<span class="kw">let </span>language = <span class="kw">match </span>script.language.as_str() {
 			<span class="string">"plutus:v1" </span>=&gt; Language::new_plutus_v1(),
 			<span class="string">"plutus:v2" </span>=&gt; Language::new_plutus_v2(),
@@ -339,9 +332,9 @@
 	}
 }
 
-<span class="kw">impl </span>From&lt;PlutusScript&gt; <span class="kw">for </span>ogmios_client::types::PlutusScript {
+<span class="kw">impl </span>From&lt;PlutusScript&gt; <span class="kw">for </span>ogmios_client::types::OgmiosScript {
 	<span class="kw">fn </span>from(val: PlutusScript) -&gt; <span class="self">Self </span>{
-		ogmios_client::types::PlutusScript {
+		ogmios_client::types::OgmiosScript {
 			language: <span class="kw">match </span>val.language.kind() {
 				LanguageKind::PlutusV1 =&gt; <span class="string">"plutus:v1"</span>,
 				LanguageKind::PlutusV2 =&gt; <span class="string">"plutus:v2"</span>,
@@ -349,6 +342,7 @@
 			}
 			.to_string(),
 			cbor: val.bytes,
+			json: <span class="prelude-val">None</span>,
 		}
 	}
 }
