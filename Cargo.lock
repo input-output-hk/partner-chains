@@ -1274,7 +1274,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cli-commands"
+name = "cli-utils"
 version = "1.6.0"
 dependencies = [
  "ed25519-zebra",
@@ -6698,7 +6698,7 @@ dependencies = [
  "anyhow",
  "cardano-serialization-lib",
  "clap",
- "cli-commands",
+ "cli-utils",
  "colored",
  "hex",
  "hex-literal",
@@ -6806,7 +6806,7 @@ dependencies = [
  "anyhow",
  "authority-selection-inherents",
  "clap",
- "cli-commands",
+ "cli-utils",
  "ed25519-zebra",
  "env_logger 0.11.3",
  "frame-support",

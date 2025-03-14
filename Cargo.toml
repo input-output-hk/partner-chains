@@ -2,7 +2,7 @@
 members = [
 	"node/node",
 	"node/runtime",
-	"toolkit/cli/commands",
+	"toolkit/cli/utils",
 	"toolkit/cli/node-commands",
 	"toolkit/cli/smart-contracts-commands",
 	"toolkit/client/consensus/aura",
@@ -219,7 +219,7 @@ plutus = { path = "toolkit/utils/plutus", default-features = false }
 plutus-datum-derive = { default-features = false, path = "toolkit/utils/plutus/plutus-datum-derive" }
 byte-string-derive = { default-features = false, path = "toolkit/utils/byte-string-derivation" }
 sidechain-slots = { path = "toolkit/primitives/sidechain-slots", default-features = false }
-cli-commands = { path = "toolkit/cli/commands" }
+cli-utils = { path = "toolkit/cli/utils" }
 partner-chains-node-commands = { path = "toolkit/cli/node-commands" }
 time-source = { path = "toolkit/utils/time-source" }
 sidechain-mc-hash = { path = "toolkit/primitives/sidechain-mc-hash", default-features = false }

@@ -1,9 +1,9 @@
-use crate::cardano_key::get_mc_staking_signing_key_from_file;
 use super::RegisterValidatorMessage;
+use crate::cardano_key::get_mc_staking_signing_key_from_file;
 use crate::io::IOContext;
 use crate::CmdRun;
 use clap::Parser;
-use cli_commands::key_params::{
+use cli_utils::key_params::{
 	PlainPublicKeyParam, SidechainPublicKeyParam, StakePoolSigningKeyParam,
 };
 use sidechain_domain::crypto::cardano_spo_public_key_and_signature;
