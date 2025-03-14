@@ -554,7 +554,7 @@ parameter_types! {
 	pub const MaxAuthorities: u32 = 1000;
 	pub const MaxKeys: u32 = 10_000;
 	pub const MaxPeerInHeartbeats: u32 = 10_000;
-	pub const PERIOD: u32 = 5 * MINUTES;
+	pub const PERIOD: u32 = MINUTES / 2;
 	pub const OFFSET: u32 = 0;
 }
 
