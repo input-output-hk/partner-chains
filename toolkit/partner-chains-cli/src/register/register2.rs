@@ -6,7 +6,7 @@ use cli_commands::key_params::{
 	PlainPublicKeyParam, SidechainPublicKeyParam, StakePoolSigningKeyParam,
 };
 use cli_commands::registration_signatures::RegisterValidatorMessage;
-use cli_commands::signing::cardano_spo_public_key_and_signature;
+use sidechain_domain::crypto::cardano_spo_public_key_and_signature;
 use sidechain_domain::UtxoId;
 
 #[derive(Clone, Debug, Parser)]
