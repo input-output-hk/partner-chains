@@ -1,0 +1,76 @@
+use crate::await_tx::{AwaitTx, FixedDelayRetries};
+use crate::csl::{
+	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, InputsBuilderExt,
+	TransactionBuilderExt, TransactionContext,
+};
+use crate::governance::GovernanceData;
+use crate::plutus_script::PlutusScript;
+use anyhow::anyhow;
+use cardano_serialization_lib::{
+	PlutusData, Transaction, TransactionBuilder, TxInputsBuilder, Vkeywitness, Vkeywitnesses,
+};
+use ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
+use ogmios_client::{
+	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
+	types::OgmiosUtxo,
+};
+use partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
+use sidechain_domain::{
+	DParameter, MainchainKeyHash, McSmartContractResult,
+	McSmartContractResult::{TxCBOR, TxHash},
+	McTxHash, UtxoId,
+};
+
+pub trait AssembleTx {
+	#[allow(async_fn_in_trait)]
+	async fn assemble_tx(
+		&self,
+		transaction: Transaction,
+		witnesses: Vec<Vkeywitness>,
+	) -> anyhow::Result<Option<McTxHash>>;
+}
+
+impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> AssembleTx for C {
+	async fn assemble_tx(
+		&self,
+		transaction: Transaction,
+		witnesses: Vec<Vkeywitness>,
+	) -> anyhow::Result<Option<McTxHash>> {
+		assemble_tx(transaction, witnesses, self, &FixedDelayRetries::two_minutes()).await
+	}
+}
+
+pub async fn assemble_tx<
+	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
+	transaction: Transaction,
+	witnesses: Vec<Vkeywitness>,
+	ogmios_client: &C,
+	await_tx: &A,
+) -> anyhow::Result<Option<McTxHash>> {
+	let mut witness_set = transaction.witness_set();
+
+	let mut vk = witness_set.vkeys().unwrap_or_else(|| Vkeywitnesses::new());
+
+	for w in witnesses.iter() {
+		vk.add(&w);
+	}
+	witness_set.set_vkeys(&vk);
+
+	let new_tx = Transaction::new(&transaction.body(), &witness_set, transaction.auxiliary_data());
+
+	let res = ogmios_client.submit_transaction(&new_tx.to_bytes()).await.map_err(|e| {
+		anyhow!(
+			"Submit assembled transaction request failed: {}, bytes: {}",
+			e,
+			hex::encode(new_tx.to_bytes())
+		)
+	})?;
+	let tx_id = McTxHash(res.transaction.id);
+	log::info!("Transaction submitted: {}", hex::encode(tx_id.0));
+
+	await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_id.0, 0)).await?;
+
+	Ok(Some(tx_id))
+}

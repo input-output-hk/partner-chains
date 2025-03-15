@@ -14,6 +14,14 @@ use ogmios_client::{
 use sidechain_domain::{AssetId, NetworkType, UtxoId};
 use std::collections::HashMap;
 
+pub fn transaction_from_bytes(cbor: Vec<u8>) -> anyhow::Result<Transaction> {
+	Transaction::from_bytes(cbor).map_err(|e| anyhow::anyhow!(e))
+}
+
+pub fn vkey_witness_from_bytes(cbor: Vec<u8>) -> anyhow::Result<Vkeywitness> {
+	Vkeywitness::from_bytes(cbor).map_err(|e| anyhow::anyhow!(e))
+}
+
 pub(crate) fn plutus_script_hash(script_bytes: &[u8], language: Language) -> [u8; 28] {
 	// Before hashing the script, we need to prepend with byte denoting the language.
 	let mut buf: Vec<u8> = vec![language_to_u8(language)];
