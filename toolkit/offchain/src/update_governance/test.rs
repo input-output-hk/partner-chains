@@ -15,6 +15,11 @@ fn payment_key() -> PrivateKey {
 	.unwrap()
 }
 
+fn public_key_hash() -> MainchainKeyHash {
+	let payment_key = payment_key();
+	MainchainKeyHash::from_vkey(&payment_key.to_public().as_bytes().try_into().unwrap())
+}
+
 fn test_address_bech32() -> String {
 	"addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw".into()
 }
@@ -130,7 +135,9 @@ fn test_update_governance_tx() -> Transaction {
 		test_values::VERSION_ORACLE_VALIDATOR,
 		test_values::VERSION_ORACLE_POLICY,
 		genesis_utxo().to_domain(),
-		new_governance_authority(),
+		&vec![public_key_hash()],
+		&vec![new_governance_authority()],
+		1,
 		&governance_data(),
 		test_costs(),
 		&tx_context(),
