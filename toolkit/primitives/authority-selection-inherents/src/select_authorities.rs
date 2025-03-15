@@ -33,7 +33,7 @@ type CandidateWithWeight<A, B> = (Candidate<A, B>, Weight);
 ///   * otherwise, the weight is `P * W`
 pub fn select_authorities<
 	TAccountId: Clone + Ord + TryFrom<sidechain_domain::SidechainPublicKey> + From<ecdsa::Public>,
-	TAccountKeys: Clone + From<(sr25519::Public, ed25519::Public)>,
+	TAccountKeys: Clone + From<(sr25519::Public, ed25519::Public, sr25519::Public)>,
 >(
 	genesis_utxo: UtxoId,
 	input: AuthoritySelectionInputs,

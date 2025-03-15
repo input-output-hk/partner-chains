@@ -42,6 +42,7 @@ struct RegisteredCandidate {
 	cross_chain_pub_key: CrossChainPublicKey,
 	aura_pub_key: AuraPublicKey,
 	grandpa_pub_key: GrandpaPublicKey,
+	im_online_pub_key: ImOnlinePublicKey,
 	utxo_info: UtxoInfo,
 }
 
@@ -174,6 +175,7 @@ impl CandidatesDataSourceImpl {
 			cross_chain_pub_key: c.cross_chain_pub_key,
 			aura_pub_key: c.aura_pub_key,
 			grandpa_pub_key: c.grandpa_pub_key,
+			im_online_pub_key: c.im_online_pub_key,
 			utxo_info: c.utxo_info,
 			tx_inputs: c.tx_inputs,
 		}
@@ -220,6 +222,7 @@ impl CandidatesDataSourceImpl {
 					own_pkh: _own_pkh,
 					aura_pub_key,
 					grandpa_pub_key,
+					im_online_pub_key,
 				} = c.datum;
 				Ok(RegisteredCandidate {
 					stake_pool_pub_key: stake_ownership.pub_key,
@@ -231,6 +234,7 @@ impl CandidatesDataSourceImpl {
 					sidechain_pub_key,
 					aura_pub_key,
 					grandpa_pub_key,
+					im_online_pub_key,
 					registration_utxo,
 					tx_inputs: c.tx_inputs,
 					utxo_info: c.utxo_info,

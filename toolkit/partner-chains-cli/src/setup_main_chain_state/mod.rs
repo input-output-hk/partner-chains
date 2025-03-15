@@ -42,6 +42,7 @@ pub struct PermissionedCandidateData {
 	pub sidechain_public_key: String,
 	pub aura_public_key: String,
 	pub grandpa_public_key: String,
+	pub im_online_public_key: String,
 	pub is_valid: bool,
 }
 
@@ -53,6 +54,7 @@ impl TryFrom<PermissionedCandidateData> for ParsedPermissionedCandidatesKeys {
 			sidechain_pub_key: value.sidechain_public_key,
 			aura_pub_key: value.aura_public_key,
 			grandpa_pub_key: value.grandpa_public_key,
+			im_online_pub_key: value.im_online_public_key,
 		};
 		TryFrom::try_from(&keys)
 	}
@@ -79,6 +81,7 @@ impl SortedPermissionedCandidates {
 				sidechain_public_key: c.sidechain.into(),
 				aura_public_key: c.aura.into(),
 				grandpa_public_key: c.grandpa.into(),
+				im_online_public_key: c.im_online.into(),
 			})
 			.collect()
 	}

@@ -19,6 +19,7 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 		},
 		aura: AuraConfig { authorities: vec![] },
 		grandpa: GrandpaConfig { authorities: vec![], ..Default::default() },
+		im_online: Default::default(),
 		sudo: SudoConfig {
 			// No sudo account by default, please update with your preferences.
 			key: None,

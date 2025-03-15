@@ -13,14 +13,16 @@ pub(crate) struct PermissionedCandidateKeys {
 	pub aura_pub_key: String,
 	/// 0x prefixed hex representation of the Ed25519 public key
 	pub grandpa_pub_key: String,
+	/// 0x prefixed hex representation of the sr25519 public key
+	pub im_online_pub_key: String,
 }
 
 impl Display for PermissionedCandidateKeys {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 		write!(
 			f,
-			"Partner Chains Key: {}, AURA: {}, GRANDPA: {}",
-			self.sidechain_pub_key, self.aura_pub_key, self.grandpa_pub_key
+			"Partner Chains Key: {}, AURA: {}, GRANDPA: {}, IM_ONLINE: {}",
+			self.sidechain_pub_key, self.aura_pub_key, self.grandpa_pub_key, self.im_online_pub_key
 		)
 	}
 }
@@ -31,6 +33,7 @@ impl From<&ParsedPermissionedCandidatesKeys> for PermissionedCandidateKeys {
 			sidechain_pub_key: sp_core::bytes::to_hex(&value.sidechain.0, false),
 			aura_pub_key: sp_core::bytes::to_hex(&value.aura.0, false),
 			grandpa_pub_key: sp_core::bytes::to_hex(&value.grandpa.0, false),
+			im_online_pub_key: sp_core::bytes::to_hex(&value.im_online.0, false),
 		}
 	}
 }
@@ -40,11 +43,16 @@ pub(crate) struct ParsedPermissionedCandidatesKeys {
 	pub sidechain: ecdsa::Public,
 	pub aura: sr25519::Public,
 	pub grandpa: ed25519::Public,
+	pub im_online: sr25519::Public,
 }
 
 impl ParsedPermissionedCandidatesKeys {
 	pub fn session_keys(&self) -> SessionKeys {
-		SessionKeys { aura: self.aura.into(), grandpa: self.grandpa.into() }
+		SessionKeys {
+			aura: self.aura.into(),
+			grandpa: self.grandpa.into(),
+			im_online: self.im_online.into(),
+		}
 	}
 
 	pub fn account_id_32(&self) -> AccountId32 {
@@ -67,7 +75,10 @@ impl TryFrom<&PermissionedCandidateKeys> for ParsedPermissionedCandidatesKeys {
 			"{} is invalid Ed25519 public key",
 			value.grandpa_pub_key
 		)))?;
-		Ok(Self { sidechain, aura, grandpa })
+		let im_online = parse_sr25519(&value.im_online_pub_key).ok_or(anyhow::Error::msg(
+			format!("{} is invalid sr25519 public key", value.im_online_pub_key),
+		))?;
+		Ok(Self { sidechain, aura, grandpa, im_online })
 	}
 }
 

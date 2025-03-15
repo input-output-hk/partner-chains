@@ -25,7 +25,9 @@ pallet-balances = { workspace = true }
 frame-support = { workspace = true }
 pallet-grandpa = { workspace = true }
 pallet-partner-chains-session = { workspace = true }
-pallet-session = { workspace = true }
+pallet-session = { features = ["historical"], workspace = true }
+pallet-im-online = { workspace = true }
+pallet-offences = { workspace = true }
 pallet-sudo = { workspace = true }
 frame-system = { workspace = true }
 frame-try-runtime = { workspace = true, optional = true }
@@ -116,6 +118,8 @@ std = [
 	"pallet-balances/std",
 	"pallet-block-production-log/std",
 	"pallet-grandpa/std",
+	"pallet-im-online/std",
+	"pallet-offences/std",
 	"pallet-sudo/std",
 	"pallet-partner-chains-session/std",
 	"pallet-session-validator-management/std",
