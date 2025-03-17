@@ -5,8 +5,9 @@
 //! 2. Mints exactly 1 multi-sig policy token as authentication
 //! 3. Produces a new governance UTXO at the version oracle validator address with a version oracle
 //!    Plutus datum attached that contains the script ID (32) and policy hash.
-use crate::csl::Costs;
+use crate::csl::{Costs, TransactionExt};
 use crate::governance::GovernanceData;
+use crate::scripts_data::multisig_governance_policy_configuration;
 use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
@@ -14,7 +15,6 @@ use crate::{
 	csl::{InputsBuilderExt, TransactionBuilderExt, TransactionContext},
 	init_governance::transaction::version_oracle_datum_output,
 	plutus_script::PlutusScript,
-	scripts_data::multisig_governance_policy_configuration,
 };
 use cardano_serialization_lib::{
 	Language, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
@@ -102,15 +102,15 @@ fn update_governance_tx(
 	let mut tx_builder = TransactionBuilder::new(&config);
 
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&governance_data.policy_script,
+		&governance_data.policy.script(),
 		&governance_data.utxo_id_as_tx_input(),
-		&costs.get_mint(&governance_data.policy_script),
+		&costs,
 	)?;
 
 	tx_builder.add_output(&version_oracle_datum_output(
 		version_oracle_validator.clone(),
 		version_oracle_policy.clone(),
-		multi_sig_policy.clone(),
+		multi_sig_policy,
 		ctx.network,
 		ctx,
 	)?)?;
@@ -127,5 +127,5 @@ fn update_governance_tx(
 		inputs
 	});
 
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }

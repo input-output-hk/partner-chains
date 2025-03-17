@@ -1,7 +1,7 @@
 use super::{test_values, update_governance_tx};
 use crate::csl::{empty_asset_name, Costs, OgmiosUtxoExt, TransactionContext};
 use crate::governance::GovernanceData;
-use crate::test_values::protocol_parameters;
+use crate::test_values::{protocol_parameters, test_governance_policy};
 use cardano_serialization_lib::*;
 use hex_literal::hex;
 use ogmios_client::types::{Asset, Datum, OgmiosTx, OgmiosUtxo, OgmiosValue};
@@ -86,12 +86,8 @@ fn genesis_utxo() -> OgmiosUtxo {
 	}
 }
 
-fn governance_script() -> crate::plutus_script::PlutusScript {
-	crate::plutus_script::PlutusScript { language: Language::new_plutus_v2(), bytes: vec![] }
-}
-
 fn governance_data() -> GovernanceData {
-	GovernanceData { policy_script: governance_script(), utxo: governance_utxo() }
+	GovernanceData { policy: test_governance_policy(), utxo: governance_utxo() }
 }
 
 fn new_governance_authority() -> MainchainKeyHash {
@@ -108,7 +104,7 @@ fn spend_ex_units() -> ExUnits {
 
 fn test_costs() -> Costs {
 	Costs::new(
-		vec![(governance_script().csl_script_hash(), mint_ex_units())]
+		vec![(test_governance_policy().script().script_hash().into(), mint_ex_units())]
 			.into_iter()
 			.collect(),
 		vec![(0, spend_ex_units())].into_iter().collect(),
@@ -117,7 +113,7 @@ fn test_costs() -> Costs {
 
 fn multisig_policy_hash() -> [u8; 28] {
 	// important: this is the hash of the multisig policy parametrized with the *old* authority
-	hex!("a646474b8f5431261506b6c273d307c7569a4eb6c96b42dd4a29520a")
+	hex!("67400f8946a8572fe1d74005244979ae59ec021e4e2736d1a82e2e89")
 }
 
 fn version_oracle_validator_address() -> Address {

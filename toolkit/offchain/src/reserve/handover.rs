@@ -23,8 +23,9 @@ use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::{
-		get_builder_config, unit_plutus_data, AssetIdExt, CostStore, Costs, OgmiosUtxoExt,
-		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
+		get_builder_config, unit_plutus_data, AssetIdExt, CostStore, Costs, OgmiosUtxoExt, Script,
+		TransactionBuilderExt, TransactionContext, TransactionExt,
+		TransactionOutputAmountBuilderExt,
 	},
 	governance::GovernanceData,
 	reserve::ReserveData,
@@ -95,14 +96,12 @@ fn build_tx(
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
 	let reserve_auth_policy_spend_cost = costs.get_one_spend();
-	let reserve_auth_policy_burn_cost = costs.get_mint(&reserve.scripts.auth_policy);
-	let governance_mint_cost = costs.get_mint(&governance.policy_script);
 
 	// mint goveranance token
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&governance.policy_script,
+		&governance.policy.script(),
 		&governance.utxo_id_as_tx_input(),
-		&governance_mint_cost,
+		&costs,
 	)?;
 
 	// Spends UTXO with Reserve Auth Policy Token and Reserve (Reward) tokens
@@ -115,10 +114,10 @@ fn build_tx(
 
 	// burn reserve auth policy token
 	tx_builder.add_mint_script_token_using_reference_script(
-		&reserve.scripts.auth_policy,
+		&Script::Plutus(reserve.scripts.auth_policy.clone()),
 		&reserve.auth_policy_version_utxo.to_csl_tx_input(),
 		&Int::new_i32(-1),
-		&reserve_auth_policy_burn_cost,
+		&costs,
 	)?;
 
 	tx_builder.add_output(&illiquid_supply_validator_output(
@@ -130,7 +129,7 @@ fn build_tx(
 		&reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.illiquid_circulation_supply_validator.bytes.len(),
 	);
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
 // Creates output with reserve token and updated deposit
