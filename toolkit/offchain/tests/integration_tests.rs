@@ -171,7 +171,7 @@ async fn reserve_management_scenario() {
 }
 
 #[tokio::test]
-async fn reserve_relese_to_zero_scenario() {
+async fn reserve_release_to_zero_scenario() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
 	let client = Cli::default();
 	let container = client.run(image);

@@ -1,5 +1,5 @@
 use crate::cardano_keys::CardanoPaymentSigningKey;
-use crate::plutus_script::PlutusScript;
+use crate::plutus_script::{self, PlutusScript};
 use anyhow::Context;
 use cardano_serialization_lib::*;
 use fraction::{FromPrimitive, Ratio};
@@ -92,6 +92,7 @@ pub(crate) fn get_builder_config(
 		.ref_script_coins_per_byte(&convert_reference_script_costs(
 			&protocol_parameters.min_fee_reference_scripts.clone(),
 		)?)
+		.deduplicate_explicit_ref_inputs_with_regular_inputs(true)
 		.build()
 }
 
@@ -446,26 +447,33 @@ pub(crate) trait TransactionBuilderExt {
 		ex_units: &ExUnits,
 	) -> Result<(), JsError>;
 
-	/// Adds minting of tokens (with empty asset name) for the given script using reference input
+	/// Adds minting of tokens (with empty asset name) for the given script using reference input.
+	/// IMPORTANT: Because CSL doesn't properly calculate transaction fee if the script is Native,
+	/// this function adds reference input and regular native script, that is added to witnesses.
+	/// This native script has to be removed from witnesses, otherwise the transaction is rejectd!
 	fn add_mint_script_token_using_reference_script(
 		&mut self,
-		script: &PlutusScript,
+		script: &Script,
 		ref_input: &TransactionInput,
 		amount: &Int,
-		ex_units: &ExUnits,
+		costs: &Costs,
 	) -> Result<(), JsError>;
 
+	/// Adds minting of 1 token (with empty asset name) for the given script using reference input.
+	/// IMPORTANT: Because CSL doesn't properly calculate transaction fee if the script is Native,
+	/// this function adds reference input and regular native script, that is added to witnesses.
+	/// This native script has to be removed from witnesses, otherwise the transaction is rejectd!
 	fn add_mint_one_script_token_using_reference_script(
 		&mut self,
-		script: &PlutusScript,
+		script: &Script,
 		ref_input: &TransactionInput,
-		ex_units: &ExUnits,
+		costs: &Costs,
 	) -> Result<(), JsError> {
 		self.add_mint_script_token_using_reference_script(
 			script,
 			ref_input,
 			&Int::new_i32(1),
-			ex_units,
+			costs,
 		)
 	}
 
@@ -533,25 +541,42 @@ impl TransactionBuilderExt for TransactionBuilder {
 
 	fn add_mint_script_token_using_reference_script(
 		&mut self,
-		script: &PlutusScript,
+		script: &Script,
 		ref_input: &TransactionInput,
 		amount: &Int,
-		ex_units: &ExUnits,
+		costs: &Costs,
 	) -> Result<(), JsError> {
 		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
 
-		let validator_source = PlutusScriptSource::new_ref_input(
-			&script.csl_script_hash(),
-			ref_input,
-			&script.language,
-			script.bytes.len(),
-		);
-		let mint_witness = MintWitness::new_plutus_script(
-			&validator_source,
-			&Redeemer::new(&RedeemerTag::new_mint(), &0u32.into(), &unit_plutus_data(), ex_units),
-		);
-		mint_builder.add_asset(&mint_witness, &empty_asset_name(), amount)?;
-		self.set_mint_builder(&mint_builder);
+		match script {
+			Script::Plutus(script) => {
+				let source = PlutusScriptSource::new_ref_input(
+					&script.csl_script_hash(),
+					ref_input,
+					&script.language,
+					script.bytes.len(),
+				);
+				let mint_witness = MintWitness::new_plutus_script(
+					&source,
+					&Redeemer::new(
+						&RedeemerTag::new_mint(),
+						&0u32.into(),
+						&unit_plutus_data(),
+						&costs.get_mint(script),
+					),
+				);
+				mint_builder.add_asset(&mint_witness, &empty_asset_name(), amount)?;
+				self.set_mint_builder(&mint_builder);
+			},
+			Script::Native(script) => {
+				// new_ref_input causes invalid fee
+				let source = NativeScriptSource::new(script);
+				let mint_witness = MintWitness::new_native_script(&source);
+				mint_builder.add_asset(&mint_witness, &empty_asset_name(), amount)?;
+				self.set_mint_builder(&mint_builder);
+				self.add_reference_input(ref_input);
+			},
+		}
 		Ok(())
 	}
 
@@ -624,6 +649,24 @@ impl TransactionBuilderExt for TransactionBuilder {
 		);
 
 		Ok(balanced_transaction)
+	}
+}
+
+#[derive(Clone, Debug)]
+pub enum Script {
+	Plutus(PlutusScript),
+	Native(NativeScript),
+}
+
+impl Script {
+	#[cfg(test)]
+	pub(crate) fn script_hash(&self) -> [u8; 28] {
+		match self {
+			Self::Plutus(script) => script.script_hash(),
+			Self::Native(script) => {
+				script.hash().to_bytes().try_into().expect("CSL script hash is always 28 bytes")
+			},
+		}
 	}
 }
 
@@ -793,6 +836,34 @@ impl MultiAssetExt for MultiAsset {
 				Ok(self)
 			}
 		}
+	}
+}
+
+pub(crate) trait TransactionExt: Sized {
+	/// Removes all native scripts from transaction witness set.
+	fn remove_native_script_witnesses(self) -> Self;
+}
+
+impl TransactionExt for Transaction {
+	fn remove_native_script_witnesses(self) -> Self {
+		let ws = self.witness_set();
+		let mut new_ws = TransactionWitnessSet::new();
+		if let Some(bootstraps) = ws.bootstraps() {
+			new_ws.set_bootstraps(&bootstraps)
+		}
+		if let Some(plutus_data) = ws.plutus_data() {
+			new_ws.set_plutus_data(&plutus_data);
+		}
+		if let Some(plutus_scripts) = ws.plutus_scripts() {
+			new_ws.set_plutus_scripts(&plutus_scripts);
+		}
+		if let Some(redeemers) = ws.redeemers() {
+			new_ws.set_redeemers(&redeemers);
+		}
+		if let Some(vkeys) = ws.vkeys() {
+			new_ws.set_vkeys(&vkeys);
+		}
+		Transaction::new(&self.body(), &new_ws, self.auxiliary_data())
 	}
 }
 

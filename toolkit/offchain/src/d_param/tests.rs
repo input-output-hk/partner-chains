@@ -5,7 +5,7 @@ use crate::{
 	test_values::*,
 };
 use cardano_serialization_lib::{
-	Address, ExUnits, Int, Language, NetworkIdKind, PlutusData, RedeemerTag, ScriptHash,
+	Address, ExUnits, Int, NetworkIdKind, PlutusData, RedeemerTag, ScriptHash,
 };
 use hex_literal::hex;
 use ogmios_client::types::{Asset as OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
@@ -338,17 +338,13 @@ fn test_tx_context() -> TransactionContext {
 	}
 }
 
-fn governance_script() -> crate::plutus_script::PlutusScript {
-	crate::plutus_script::PlutusScript { language: Language::new_plutus_v2(), bytes: vec![] }
-}
-
 fn governance_script_hash() -> ScriptHash {
-	governance_script().csl_script_hash()
+	test_governance_policy().script().script_hash().into()
 }
 
 fn governance_data() -> GovernanceData {
 	GovernanceData {
-		policy_script: governance_script(),
+		policy: test_governance_policy(),
 		utxo: OgmiosUtxo { transaction: OgmiosTx { id: [15; 32] }, index: 0, ..Default::default() },
 	}
 }

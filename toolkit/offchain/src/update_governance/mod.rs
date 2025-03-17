@@ -5,8 +5,8 @@
 //! 2. Mints exactly 1 multi-sig policy token as authentication
 //! 3. Produces a new governance UTXO at the version oracle validator address with a version oracle
 //!    Plutus datum attached that contains the script ID (32) and policy hash.
-use crate::csl::Costs;
-use crate::governance::GovernanceData;
+use crate::csl::{Costs, TransactionExt};
+use crate::governance::{GovernanceData, GovernancePolicyScript, SimpleAtLeastN};
 use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
@@ -14,7 +14,6 @@ use crate::{
 	csl::{InputsBuilderExt, TransactionBuilderExt, TransactionContext},
 	init_governance::transaction::version_oracle_datum_output,
 	plutus_script::PlutusScript,
-	scripts_data::multisig_governance_policy_configuration,
 };
 use cardano_serialization_lib::{
 	Language, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
@@ -48,7 +47,6 @@ pub async fn run_update_governance<
 	let tx = Costs::calculate_costs(
 		|costs| {
 			update_governance_tx(
-				raw_scripts::MULTI_SIG_POLICY,
 				raw_scripts::VERSION_ORACLE_VALIDATOR,
 				raw_scripts::VERSION_ORACLE_POLICY,
 				genesis_utxo_id,
@@ -78,7 +76,6 @@ pub async fn run_update_governance<
 }
 
 fn update_governance_tx(
-	multi_sig_policy: &[u8],
 	version_oracle_validator: &[u8],
 	version_oracle_policy: &[u8],
 	genesis_utxo: UtxoId,
@@ -87,9 +84,10 @@ fn update_governance_tx(
 	costs: Costs,
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
-	let multi_sig_policy =
-		PlutusScript::from_wrapped_cbor(multi_sig_policy, Language::new_plutus_v2())?
-			.apply_uplc_data(multisig_governance_policy_configuration(new_governance_authority))?;
+	let multi_sig_policy = GovernancePolicyScript::AtLeastNNativeScript(SimpleAtLeastN {
+		threshold: 1,
+		key_hashes: vec![new_governance_authority.0],
+	});
 	let version_oracle_validator =
 		PlutusScript::from_wrapped_cbor(version_oracle_validator, Language::new_plutus_v2())?
 			.apply_data(genesis_utxo)?;
@@ -102,15 +100,15 @@ fn update_governance_tx(
 	let mut tx_builder = TransactionBuilder::new(&config);
 
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&governance_data.policy_script,
+		&governance_data.policy.script(),
 		&governance_data.utxo_id_as_tx_input(),
-		&costs.get_mint(&governance_data.policy_script),
+		&costs,
 	)?;
 
 	tx_builder.add_output(&version_oracle_datum_output(
 		version_oracle_validator.clone(),
 		version_oracle_policy.clone(),
-		multi_sig_policy.clone(),
+		multi_sig_policy.script(),
 		ctx.network,
 		ctx,
 	)?)?;
@@ -127,5 +125,5 @@ fn update_governance_tx(
 		inputs
 	});
 
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }

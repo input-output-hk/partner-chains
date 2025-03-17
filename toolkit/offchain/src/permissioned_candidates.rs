@@ -9,7 +9,7 @@
 use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::csl::{
 	empty_asset_name, get_builder_config, CostStore, Costs, InputsBuilderExt,
-	TransactionBuilderExt, TransactionContext,
+	TransactionBuilderExt, TransactionContext, TransactionExt,
 };
 use crate::governance::GovernanceData;
 use crate::plutus_script::PlutusScript;
@@ -240,7 +240,7 @@ fn mint_permissioned_candidates_token_tx(
 			policy,
 			&empty_asset_name(),
 			&permissioned_candidates_policy_redeemer_data(),
-			&costs.get_mint(policy),
+			&costs.get_mint(&policy.clone().into()),
 		)?;
 	}
 	tx_builder.add_output_with_one_script_token(
@@ -252,12 +252,12 @@ fn mint_permissioned_candidates_token_tx(
 
 	let gov_tx_input = governance_data.utxo_id_as_tx_input();
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&governance_data.policy_script,
+		&governance_data.policy.script(),
 		&gov_tx_input,
-		&costs.get_mint(&governance_data.policy_script),
+		&costs,
 	)?;
 
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
 fn update_permissioned_candidates_tx(
@@ -291,12 +291,12 @@ fn update_permissioned_candidates_tx(
 
 	let gov_tx_input = governance_data.utxo_id_as_tx_input();
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&governance_data.policy_script,
+		&governance_data.policy.script(),
 		&gov_tx_input,
-		&costs.get_mint(&governance_data.policy_script),
+		&costs,
 	)?;
 
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
 fn permissioned_candidates_policy_redeemer_data() -> PlutusData {
@@ -309,10 +309,9 @@ mod tests {
 	use crate::{
 		csl::{empty_asset_name, Costs, TransactionContext},
 		governance::GovernanceData,
-		plutus_script::PlutusScript,
 		test_values::*,
 	};
-	use cardano_serialization_lib::{Address, ExUnits, Int, Language, NetworkIdKind, PlutusData};
+	use cardano_serialization_lib::{Address, ExUnits, Int, NetworkIdKind, PlutusData};
 	use hex_literal::hex;
 	use ogmios_client::types::{Asset as OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	use partner_chains_plutus_data::permissioned_candidates::permissioned_candidates_to_plutus_data;
@@ -488,7 +487,7 @@ mod tests {
 		Costs::new(
 			vec![
 				(test_policy().csl_script_hash(), permissioned_candidates_ex_units()),
-				(test_goveranance_policy().csl_script_hash(), governance_ex_units()),
+				(test_governance_policy().script().script_hash().into(), governance_ex_units()),
 			]
 			.into_iter()
 			.collect(),
@@ -498,15 +497,11 @@ mod tests {
 
 	fn test_costs_update() -> Costs {
 		Costs::new(
-			vec![(test_goveranance_policy().csl_script_hash(), governance_ex_units())]
+			vec![(test_governance_policy().script().script_hash().into(), governance_ex_units())]
 				.into_iter()
 				.collect(),
 			vec![(0, permissioned_candidates_ex_units())].into_iter().collect(),
 		)
-	}
-
-	fn test_goveranance_policy() -> PlutusScript {
-		PlutusScript { bytes: hex!("88991122").into(), language: Language::new_plutus_v2() }
 	}
 
 	fn test_goveranance_utxo() -> OgmiosUtxo {
@@ -514,7 +509,7 @@ mod tests {
 	}
 
 	fn test_governance_data() -> GovernanceData {
-		GovernanceData { policy_script: test_goveranance_policy(), utxo: test_goveranance_utxo() }
+		GovernanceData { policy: test_governance_policy(), utxo: test_goveranance_utxo() }
 	}
 
 	fn test_tx_context() -> TransactionContext {
