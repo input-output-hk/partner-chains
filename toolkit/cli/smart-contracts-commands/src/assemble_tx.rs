@@ -1,10 +1,7 @@
 use partner_chains_cardano_offchain::assemble_tx::assemble_tx;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
-use partner_chains_cardano_offchain::csl::transaction_from_bytes;
-use partner_chains_cardano_offchain::csl::vkey_witness_from_bytes;
-use sidechain_domain::MainchainSignature;
-use sidechain_domain::TransactionCbor;
-use sidechain_domain::VKeyWitnessCbor;
+use partner_chains_cardano_offchain::csl::{transaction_from_bytes, vkey_witness_from_bytes};
+use sidechain_domain::{TransactionCbor, VKeyWitnessCbor};
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct AssembleAndSubmitCmd {
