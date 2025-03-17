@@ -571,12 +571,7 @@ impl ValidatorSet<AccountId> for GlueCode {
 	}
 	fn validators() -> Vec<Self::ValidatorId> {
 		let (_epoch, validators) =
-			match pallet_session_validator_management::Pallet::<Runtime>::get_next_committee() {
-				Some((epoch, validators)) => (epoch, validators),
-				None => {
-					pallet_session_validator_management::Pallet::<Runtime>::get_current_committee()
-				},
-			};
+			pallet_session_validator_management::Pallet::<Runtime>::get_current_committee();
 
 		use sp_session_validator_management::CommitteeMember;
 		validators
