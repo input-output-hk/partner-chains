@@ -132,6 +132,9 @@
 <a href="#132" id="132">132</a>
 <a href="#133" id="133">133</a>
 <a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(deprecated)]
 
 </span><span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
@@ -195,7 +198,10 @@
 	}
 
 	<span class="kw">impl</span>&lt;T: Config&gt; sp_sidechain::OnNewEpoch <span class="kw">for </span>Pallet&lt;T&gt; {
-		<span class="kw">fn </span>on_new_epoch(old_epoch: ScEpochNumber, _new_epoch: ScEpochNumber) -&gt; sp_weights::Weight {
+		<span class="kw">fn </span>on_new_epoch(
+			_old_epoch: ScEpochNumber,
+			_new_epoch: ScEpochNumber,
+		) -&gt; sp_weights::Weight {
 			<span class="kw">crate</span>::RuntimeDbWeight::get().reads_writes(<span class="number">0</span>, <span class="number">0</span>)
 		}
 	}

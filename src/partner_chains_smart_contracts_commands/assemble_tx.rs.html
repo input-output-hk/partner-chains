@@ -32,16 +32,10 @@
 <a href="#32" id="32">32</a>
 <a href="#33" id="33">33</a>
 <a href="#34" id="34">34</a>
-<a href="#35" id="35">35</a>
-<a href="#36" id="36">36</a>
-<a href="#37" id="37">37</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>partner_chains_cardano_offchain::assemble_tx::assemble_tx;
 <span class="kw">use </span>partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
-<span class="kw">use </span>partner_chains_cardano_offchain::csl::transaction_from_bytes;
-<span class="kw">use </span>partner_chains_cardano_offchain::csl::vkey_witness_from_bytes;
-<span class="kw">use </span>sidechain_domain::MainchainSignature;
-<span class="kw">use </span>sidechain_domain::TransactionCbor;
-<span class="kw">use </span>sidechain_domain::VKeyWitnessCbor;
+<span class="kw">use </span>partner_chains_cardano_offchain::csl::{transaction_from_bytes, vkey_witness_from_bytes};
+<span class="kw">use </span>sidechain_domain::{TransactionCbor, VKeyWitnessCbor};
 
 <span class="attr">#[derive(Clone, Debug, clap::Parser)]
 </span><span class="kw">pub struct </span>AssembleAndSubmitCmd {

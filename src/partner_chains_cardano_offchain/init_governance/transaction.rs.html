@@ -81,12 +81,8 @@
 <a href="#81" id="81">81</a>
 <a href="#82" id="82">82</a>
 <a href="#83" id="83">83</a>
-<a href="#84" id="84">84</a>
-<a href="#85" id="85">85</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
-	csl::<span class="kw-2">*</span>,
-	plutus_script::PlutusScript,
-	scripts_data::{multisig_governance_policy_configuration, version_oracle},
+	csl::<span class="kw-2">*</span>, governance::SimpleAtLeastN, plutus_script::PlutusScript, scripts_data::version_oracle,
 };
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>ogmios_client::types::OgmiosUtxo;
@@ -100,8 +96,8 @@
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
 ) -&gt; anyhow::Result&lt;Transaction&gt; {
 	<span class="kw">let </span>multi_sig_policy =
-		PlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, Language::new_plutus_v2())<span class="question-mark">?
-			</span>.apply_uplc_data(multisig_governance_policy_configuration(governance_authority))<span class="question-mark">?</span>;
+		SimpleAtLeastN { threshold: <span class="number">1</span>, key_hashes: <span class="macro">vec!</span>[governance_authority.<span class="number">0</span>] }
+			.to_csl_native_script();
 	<span class="kw">let </span>version_oracle = version_oracle(genesis_utxo.to_domain(), ctx.network)<span class="question-mark">?</span>;
 	<span class="kw">let </span>config = <span class="kw">crate</span>::csl::get_builder_config(ctx)<span class="question-mark">?</span>;
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>config);
@@ -132,13 +128,13 @@
 	AssetName::new(<span class="string">b"Version oracle"</span>.to_vec()).expect(<span class="string">"Constant asset name should work"</span>)
 }
 
-<span class="kw">fn </span>mint_redeemer(multi_sig_policy: <span class="kw-2">&amp;</span>PlutusScript) -&gt; PlutusData {
+<span class="kw">fn </span>mint_redeemer(multi_sig_policy: <span class="kw-2">&amp;</span>NativeScript) -&gt; PlutusData {
 	PlutusData::new_constr_plutus_data(<span class="kw-2">&amp;</span>ConstrPlutusData::new(<span class="kw-2">&amp;</span><span class="number">0u64</span>.into(), <span class="kw-2">&amp;</span>{
 		<span class="kw">let </span><span class="kw-2">mut </span>list = PlutusList::new();
 		list.add(<span class="kw-2">&amp;</span>PlutusData::new_integer(
 			<span class="kw-2">&amp;</span>(raw_scripts::ScriptId::GovernancePolicy <span class="kw">as </span>u32).into(),
 		));
-		list.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(multi_sig_policy.script_hash().to_vec()));
+		list.add(<span class="kw-2">&amp;</span>PlutusData::new_bytes(multi_sig_policy.hash().to_bytes()));
 		list
 	}))
 }
@@ -146,7 +142,7 @@
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>version_oracle_datum_output(
 	version_oracle_validator: PlutusScript,
 	version_oracle_policy: PlutusScript,
-	multi_sig_policy: PlutusScript,
+	multi_sig_policy: NativeScript,
 	network: NetworkIdKind,
 	tx_context: <span class="kw-2">&amp;</span>TransactionContext,
 ) -&gt; anyhow::Result&lt;cardano_serialization_lib::TransactionOutput&gt; {
@@ -159,7 +155,7 @@
 	<span class="kw">let </span>amount_builder = TransactionOutputBuilder::new()
 		.with_address(<span class="kw-2">&amp;</span>version_oracle_validator.address(network))
 		.with_plutus_data(<span class="kw-2">&amp;</span>datum)
-		.with_script_ref(<span class="kw-2">&amp;</span>ScriptRef::new_plutus_script(<span class="kw-2">&amp;</span>multi_sig_policy.to_csl()))
+		.with_script_ref(<span class="kw-2">&amp;</span>ScriptRef::new_native_script(<span class="kw-2">&amp;</span>multi_sig_policy))
 		.next()<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>ma = MultiAsset::new()
