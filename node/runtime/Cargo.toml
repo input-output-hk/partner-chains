@@ -24,7 +24,7 @@ pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
 frame-support = { workspace = true }
 pallet-grandpa = { workspace = true }
-pallet-partner-chains-session = { workspace = true }
+pallet-partner-chains-session = { workspace = true, features = ["pallet-session-compat"] }
 pallet-session = { workspace = true }
 pallet-sudo = { workspace = true }
 frame-system = { workspace = true }
@@ -76,7 +76,6 @@ sidechain-slots = { workspace = true }
 session-manager = { workspace = true }
 pallet-native-token-management = { workspace = true }
 sp-native-token-management = { workspace = true, features = ["serde"] }
-pallet-session-runtime-stub = { workspace = true, default-features = false }
 pallet-address-associations = { workspace = true }
 pallet-block-participation = { workspace = true }
 sp-block-participation = { workspace = true }
@@ -151,7 +150,6 @@ std = [
 	"sp-inherents/std",
 	"pallet-native-token-management/std",
 	"sp-native-token-management/std",
-	"pallet-session-runtime-stub/std",
 	"sp-block-production-log/std",
 	"pallet-block-participation/std",
 	"sp-block-participation/std",
