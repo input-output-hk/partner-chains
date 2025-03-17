@@ -1,5 +1,5 @@
 use crate::cardano_keys::CardanoPaymentSigningKey;
-use crate::plutus_script::{self, PlutusScript};
+use crate::plutus_script::PlutusScript;
 use anyhow::Context;
 use cardano_serialization_lib::*;
 use fraction::{FromPrimitive, Ratio};

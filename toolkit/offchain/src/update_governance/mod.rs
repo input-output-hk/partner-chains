@@ -6,7 +6,8 @@
 //! 3. Produces a new governance UTXO at the version oracle validator address with a version oracle
 //!    Plutus datum attached that contains the script ID (32) and policy hash.
 use crate::csl::{Costs, TransactionExt};
-use crate::governance::{GovernanceData, GovernancePolicyScript, SimpleAtLeastN};
+use crate::governance::GovernanceData;
+use crate::scripts_data::multisig_governance_policy_configuration;
 use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
@@ -47,6 +48,7 @@ pub async fn run_update_governance<
 	let tx = Costs::calculate_costs(
 		|costs| {
 			update_governance_tx(
+				raw_scripts::MULTI_SIG_POLICY,
 				raw_scripts::VERSION_ORACLE_VALIDATOR,
 				raw_scripts::VERSION_ORACLE_POLICY,
 				genesis_utxo_id,
@@ -76,6 +78,7 @@ pub async fn run_update_governance<
 }
 
 fn update_governance_tx(
+	multi_sig_policy: &[u8],
 	version_oracle_validator: &[u8],
 	version_oracle_policy: &[u8],
 	genesis_utxo: UtxoId,
@@ -84,10 +87,9 @@ fn update_governance_tx(
 	costs: Costs,
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
-	let multi_sig_policy = GovernancePolicyScript::AtLeastNNativeScript(SimpleAtLeastN {
-		threshold: 1,
-		key_hashes: vec![new_governance_authority.0],
-	});
+	let multi_sig_policy =
+		PlutusScript::from_wrapped_cbor(multi_sig_policy, Language::new_plutus_v2())?
+			.apply_uplc_data(multisig_governance_policy_configuration(new_governance_authority))?;
 	let version_oracle_validator =
 		PlutusScript::from_wrapped_cbor(version_oracle_validator, Language::new_plutus_v2())?
 			.apply_data(genesis_utxo)?;
@@ -108,7 +110,7 @@ fn update_governance_tx(
 	tx_builder.add_output(&version_oracle_datum_output(
 		version_oracle_validator.clone(),
 		version_oracle_policy.clone(),
-		multi_sig_policy.script(),
+		multi_sig_policy,
 		ctx.network,
 		ctx,
 	)?)?;

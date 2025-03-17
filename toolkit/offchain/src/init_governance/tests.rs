@@ -134,7 +134,6 @@ fn expected_transaction() -> serde_json::Value {
 	})
 }
 
-#[ignore]
 #[test]
 fn transaction_creation() {
 	let transaction: serde_json::Value = serde_json::from_str(

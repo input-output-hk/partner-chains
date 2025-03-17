@@ -122,6 +122,7 @@ fn version_oracle_validator_address() -> Address {
 
 fn test_update_governance_tx() -> Transaction {
 	update_governance_tx(
+		test_values::MULTI_SIG_POLICY,
 		test_values::VERSION_ORACLE_VALIDATOR,
 		test_values::VERSION_ORACLE_POLICY,
 		genesis_utxo().to_domain(),
@@ -133,7 +134,6 @@ fn test_update_governance_tx() -> Transaction {
 	.expect("Test transaction should be constructed without error")
 }
 
-#[ignore]
 #[test]
 fn update_governance_test() {
 	let tx: serde_json::Value =
@@ -185,7 +185,6 @@ fn consumes_the_previous_governance_utxo() {
 	assert!(input_utxos.contains(&governance_utxo().to_string()))
 }
 
-#[ignore]
 #[test]
 fn contains_correct_redeemers() {
 	let redeemers = test_update_governance_tx().witness_set().redeemers().unwrap();
