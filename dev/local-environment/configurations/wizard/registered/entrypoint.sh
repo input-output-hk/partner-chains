@@ -1,21 +1,40 @@
 #!/bin/bash
 
 echo "Installing dependencies..."
-
 apt -qq update &> /dev/null
 apt -qq -y install expect jq &> /dev/null
+cp /usr/local/bin/partner-chains-node /data/partner-chains-node
+cd /data
 
-cp /usr/local/bin/partner-chains-node /partner-chains-node
+
+start_node() {
+    echo "Starting the node..."
+    expect <<EOF
+spawn ./partner-chains-node wizards start-node
+expect "Proceed? (Y/n)"
+send "Y\r"
+set timeout -1
+expect eof
+EOF
+}
+
+
+if [ -f "/shared/partner-chains-wizard-3.ready" ]; then
+    echo "/shared/partner-chains-wizard-3.ready exists. Skipping configuration and copying chain-spec.json and pc-chain-config.json..."
+    cp /shared/chain-spec.json /data/chain-spec.json
+    cp /shared/pc-chain-config.json /data/pc-chain-config.json
+    start_node
+    exit 0
+fi
+
 
 echo "Beginning configuration..."
-
-
 echo "Generating keys..."
 expect <<EOF
 spawn ./partner-chains-node wizards generate-keys
 set timeout 60
 expect "node base path (./data)"
-send "\r"
+send ".\r"
 expect eof
 EOF
 
@@ -29,8 +48,8 @@ while true; do
     fi
 done
 
-cp /shared/chain-spec.json .
-cp /shared/pc-chain-config.json .
+cp /shared/chain-spec.json /data/chain-spec.json
+cp /shared/pc-chain-config.json /data/pc-chain-config.json
 
 
 echo "Registering candidate..."
@@ -44,7 +63,7 @@ send "ogmios\r"
 expect "Ogmios port (1337)"
 send "\r"
 expect "path to the payment verification file (payment.vkey)"
-send "keys/funded_address.vkey\r"
+send "/keys/funded_address.vkey\r"
 expect "Select UTXO to use for registration"
 send "\r"
 expect eof
@@ -61,7 +80,7 @@ register2_output=$(expect <<EOF
 spawn $register2_command
 set timeout 60
 expect "Path to mainchain signing key file (cold.skey)"
-send "keys/cold.skey\r"
+send "/keys/cold.skey\r"
 expect "/partner-chains-node wizards register3"
 expect eof
 catch wait result
@@ -77,7 +96,7 @@ expect <<EOF
 spawn $register3_command
 set timeout 300
 expect "Path to mainchain payment signing key file (payment.skey)"
-send "keys/funded_address.skey\r"
+send "/keys/funded_address.skey\r"
 expect "Ogmios protocol (http/https)"
 send "\r"
 expect "Ogmios hostname (ogmios)"
@@ -94,13 +113,7 @@ EOF
 echo "Configuring Node P2P port..."
 jq '.node_p2p_port = 30335' pc-resources-config.json > tmp.json && mv tmp.json pc-resources-config.json
 
-echo "Starting the node..."
-expect <<EOF
-spawn ./partner-chains-node wizards start-node
-expect "Proceed? (Y/n)"
-send "Y\r"
-set timeout -1
-expect eof
-EOF
+touch /shared/partner-chains-wizard-3.ready
+echo "Registration complete."
 
-# tail -f /dev/null
+start_node
