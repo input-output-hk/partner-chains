@@ -20,12 +20,13 @@ use alloc::{vec, vec::Vec};
 use serde_json::Value;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
+use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use sp_genesis_builder::{self, PresetId};
 use sp_keyring::AccountKeyring;
 
 // Returns the genesis config presets populated with given parameters.
 fn testnet_genesis(
-	initial_authorities: Vec<(AuraId, GrandpaId)>,
+	initial_authorities: Vec<(AuraId, GrandpaId, ImOnlineId)>,
 	endowed_accounts: Vec<AccountId>,
 	root: AccountId,
 ) -> Value {
@@ -56,6 +57,7 @@ fn testnet_genesis(
 		session_committee_management: Default::default(),
 		pallet_session: Default::default(),
 		session: Default::default(),
+		im_online: pallet_im_online::GenesisConfig { keys: initial_authorities.iter().map(|x| (x.2.clone())).collect::<Vec<_>>() },
 		native_token_management: Default::default(),
 	};
 
@@ -68,6 +70,7 @@ pub fn development_config_genesis() -> Value {
 		vec![(
 			sp_keyring::Sr25519Keyring::Alice.public().into(),
 			sp_keyring::Ed25519Keyring::Alice.public().into(),
+			sp_keyring::Sr25519Keyring::Alice.public().into(),
 		)],
 		vec![
 			AccountKeyring::Alice.to_account_id(),
@@ -86,10 +89,12 @@ pub fn local_config_genesis() -> Value {
 			(
 				sp_keyring::Sr25519Keyring::Alice.public().into(),
 				sp_keyring::Ed25519Keyring::Alice.public().into(),
+				sp_keyring::Sr25519Keyring::Alice.public().into(),
 			),
 			(
 				sp_keyring::Sr25519Keyring::Bob.public().into(),
 				sp_keyring::Ed25519Keyring::Bob.public().into(),
+				sp_keyring::Sr25519Keyring::Bob.public().into(),
 			),
 		],
 		AccountKeyring::iter()
