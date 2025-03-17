@@ -17,10 +17,10 @@
 
 use crate::{test_helper_pallet, AccountId, BalancesConfig, RuntimeGenesisConfig, SudoConfig};
 use alloc::{vec, vec::Vec};
+use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use serde_json::Value;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
-use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use sp_genesis_builder::{self, PresetId};
 use sp_keyring::AccountKeyring;
 
@@ -57,7 +57,9 @@ fn testnet_genesis(
 		session_committee_management: Default::default(),
 		pallet_session: Default::default(),
 		session: Default::default(),
-		im_online: pallet_im_online::GenesisConfig { keys: initial_authorities.iter().map(|x| (x.2.clone())).collect::<Vec<_>>() },
+		im_online: pallet_im_online::GenesisConfig {
+			keys: initial_authorities.iter().map(|x| (x.2.clone())).collect::<Vec<_>>(),
+		},
 		native_token_management: Default::default(),
 	};
 
