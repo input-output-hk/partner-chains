@@ -87,6 +87,8 @@
 <a href="#87" id="87">87</a>
 <a href="#88" id="88">88</a>
 <a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! This crate creates the attribute macro `ToDatum`
 
 </span><span class="kw">use </span>proc_macro::TokenStream;
@@ -116,7 +118,9 @@
 	<span class="kw">let </span><span class="kw-2">mut </span>bounded_generics = generics.clone();
 	<span class="kw">for </span>generic_param <span class="kw">in </span>bounded_generics.params.iter_mut() {
 		<span class="kw">if let </span>GenericParam::Type(<span class="kw-2">ref mut </span>type_param) = <span class="kw-2">*</span>generic_param {
-			type_param.bounds.push(TypeParamBound::Trait(<span class="macro">syn::parse_quote!</span>(ToDatum)));
+			type_param
+				.bounds
+				.push(TypeParamBound::Trait(<span class="macro">syn::parse_quote!</span>(plutus::ToDatum)));
 		}
 	}
 	<span class="kw">let </span>has_constructor_datum_attribute = ast.attrs.iter().any(|attr| {
@@ -138,7 +142,7 @@
 						.map(|i| <span class="macro">quote!</span> { <span class="self">self</span>.#i.to_datum()})
 						.collect();
 					<span class="macro">quote!</span> {
-						Datum::ConstructorDatum { constructor: <span class="number">0</span>, fields: <span class="macro">vec!</span>[#(#fields),<span class="kw-2">*</span>] }
+						plutus::Datum::ConstructorDatum { constructor: <span class="number">0</span>, fields: <span class="macro">vec!</span>[#(#fields),<span class="kw-2">*</span>] }
 					}
 				}
 			},
@@ -151,13 +155,13 @@
 						<span class="kw">let </span>fields: Vec&lt;<span class="kw">_</span>&gt; =
 							idents.iter().map(|token| <span class="macro">quote!</span> { <span class="self">self</span>.#token.to_datum()}).collect();
 						<span class="macro">quote!</span> {
-							Datum::ConstructorDatum { constructor: <span class="number">0</span>, fields: <span class="macro">vec!</span>[#(#fields),<span class="kw-2">*</span>] }
+							plutus::Datum::ConstructorDatum { constructor: <span class="number">0</span>, fields: <span class="macro">vec!</span>[#(#fields),<span class="kw-2">*</span>] }
 						}
 					},
 				}
 			},
 			syn::Fields::Unit =&gt; <span class="macro">quote!</span> {
-				Datum::ConstructorDatum { constructor: <span class="number">0</span>, fields: Vec::new() }
+				plutus::Datum::ConstructorDatum { constructor: <span class="number">0</span>, fields: Vec::new() }
 			},
 		},
 		syn::Data::Enum(_de) =&gt; <span class="macro">quote!</span> {
@@ -168,8 +172,8 @@
 		},
 	};
 	<span class="kw">let </span>gen = <span class="macro">quote!</span> {
-		<span class="kw">impl </span>#bounded_generics ToDatum <span class="kw">for </span>#name #generics {
-			<span class="kw">fn </span>to_datum(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Datum {
+		<span class="kw">impl </span>#bounded_generics plutus::ToDatum <span class="kw">for </span>#name #generics {
+			<span class="kw">fn </span>to_datum(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; plutus::Datum {
 				#body
 			}
 		}

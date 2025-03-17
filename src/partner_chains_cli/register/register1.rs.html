@@ -500,21 +500,21 @@
 <a href="#500" id="500">500</a>
 <a href="#501" id="501">501</a>
 <a href="#502" id="502">502</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_values::DEFAULT_CHAIN_NAME;
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">super</span>::RegisterValidatorMessage;
+<span class="kw">use </span><span class="kw">crate</span>::config::config_values::DEFAULT_CHAIN_NAME;
 <span class="kw">use </span><span class="kw">crate</span>::config::KEYS_FILE_PATH;
 <span class="kw">use </span><span class="kw">crate</span>::generate_keys::keystore_path;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::keystore::CROSS_CHAIN;
 <span class="kw">use crate</span>::{config::config_fields, <span class="kw-2">*</span>};
 <span class="kw">use </span>anyhow::anyhow;
-<span class="kw">use </span>cli_commands::registration_signatures::RegisterValidatorMessage;
-<span class="kw">use </span>cli_commands::signing::sc_public_key_and_signature_for_datum;
 <span class="kw">use </span>ogmios::config::prompt_ogmios_configuration;
 <span class="kw">use </span>ogmios::get_shelley_config;
 <span class="kw">use </span>partner_chains_cardano_offchain::csl::NetworkTypeExt;
 <span class="kw">use </span>select_utxo::{query_utxos, select_from_utxos};
 <span class="kw">use </span>serde::de::DeserializeOwned;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
+<span class="kw">use </span>sidechain_domain::crypto::sc_public_key_and_signature_for_datum;
 <span class="kw">use </span>sidechain_domain::{NetworkType, SidechainPublicKey, UtxoId};
 <span class="kw">use </span>sp_core::bytes::from_hex;
 <span class="kw">use </span>sp_core::{ecdsa, Pair};

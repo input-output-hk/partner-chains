@@ -140,17 +140,13 @@
 <a href="#140" id="140">140</a>
 <a href="#141" id="141">141</a>
 <a href="#142" id="142">142</a>
-<a href="#143" id="143">143</a>
-<a href="#144" id="144">144</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_key::get_mc_staking_signing_key_from_file;
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">super</span>::RegisterValidatorMessage;
+<span class="kw">use super</span>::{PlainPublicKeyParam, SidechainPublicKeyParam, StakePoolSigningKeyParam};
+<span class="kw">use </span><span class="kw">crate</span>::cardano_key::get_mc_staking_signing_key_from_file;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::CmdRun;
 <span class="kw">use </span>clap::Parser;
-<span class="kw">use </span>cli_commands::key_params::{
-	PlainPublicKeyParam, SidechainPublicKeyParam, StakePoolSigningKeyParam,
-};
-<span class="kw">use </span>cli_commands::registration_signatures::RegisterValidatorMessage;
-<span class="kw">use </span>cli_commands::signing::cardano_spo_public_key_and_signature;
+<span class="kw">use </span>sidechain_domain::crypto::cardano_spo_public_key_and_signature;
 <span class="kw">use </span>sidechain_domain::UtxoId;
 
 <span class="attr">#[derive(Clone, Debug, Parser)]

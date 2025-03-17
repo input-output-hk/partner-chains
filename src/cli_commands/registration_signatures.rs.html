@@ -122,17 +122,15 @@
 <a href="#122" id="122">122</a>
 <a href="#123" id="123">123</a>
 <a href="#124" id="124">124</a>
-<a href="#125" id="125">125</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::key_params::{SidechainSigningKeyParam, StakePoolSigningKeyParam};
-<span class="kw">use </span><span class="kw">crate</span>::signing::{cardano_spo_public_key_and_signature, sc_public_key_and_signature_for_datum};
 <span class="kw">use </span>clap::Parser;
-<span class="kw">use </span>plutus::{Datum, ToDatum};
 <span class="kw">use </span>plutus_datum_derive::<span class="kw-2">*</span>;
 <span class="kw">use </span>secp256k1::SecretKey;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>serde_json;
 <span class="kw">use </span>sidechain_domain::{
-	MainchainSignature, SidechainPublicKey, SidechainSignature, StakePoolPublicKey, UtxoId,
+	crypto::<span class="kw-2">*</span>, MainchainSignature, SidechainPublicKey, SidechainSignature, StakePoolPublicKey,
+	UtxoId,
 };
 <span class="kw">use </span>std::fmt::{Display, Formatter};
 

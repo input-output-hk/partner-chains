@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["register1","register2","register3"]};
+window.SIDEBAR_ITEMS = {"mod":["register1","register2","register3"],"struct":["PlainPublicKeyParam","RegisterValidatorMessage","SidechainPublicKeyParam","StakePoolSigningKeyParam"]};
