@@ -626,9 +626,9 @@ construct_runtime!(
 		// Partner Chains session_manager ValidatorManagementSessionManager writes to pallet_session::pallet::CurrentIndex.
 		// ValidatorManagementSessionManager is wired in by pallet_partner_chains_session.
 		PalletSession: pallet_session,
-		ImOnline: pallet_im_online,
 		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
 		Session: pallet_partner_chains_session,
+		ImOnline: pallet_im_online,
 		NativeTokenManagement: pallet_native_token_management,
 		TestHelperPallet: crate::test_helper_pallet,
 	}
