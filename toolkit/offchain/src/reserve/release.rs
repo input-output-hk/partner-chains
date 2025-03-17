@@ -30,10 +30,8 @@ use cardano_serialization_lib::{
 	Int, MultiAsset, PlutusData, Transaction, TransactionBuilder, TransactionOutputBuilder,
 };
 use ogmios_client::{
-	query_ledger_state::*,
-	query_network::QueryNetwork,
-	transactions::Transactions,
-	types::{OgmiosScript, OgmiosUtxo},
+	query_ledger_state::*, query_network::QueryNetwork, transactions::Transactions,
+	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::reserve::ReserveRedeemer;
 use sidechain_domain::{McTxHash, UtxoId};
@@ -180,9 +178,6 @@ fn v_function_from_utxo(utxo: &OgmiosUtxo) -> anyhow::Result<PlutusScript> {
 	let Some(v_function_script) = utxo.script.clone() else {
 		return Err(anyhow!("V-Function reference script missing from the reference UTXO",));
 	};
-	let OgmiosScript::Plutus(v_function_script) = v_function_script else {
-		return Err(anyhow!("V-Function reference script is not a Plutus script"));
-	};
 	PlutusScript::try_from(v_function_script)
 		.map_err(|val| anyhow!("{val:?} is not a valid Plutus Script"))
 }
@@ -200,7 +195,7 @@ mod tests {
 		Int, Language, NetworkIdKind, PolicyID, PrivateKey, Transaction,
 	};
 	use hex_literal::hex;
-	use ogmios_client::types::{Asset, OgmiosScript, OgmiosTx, OgmiosUtxo, OgmiosValue};
+	use ogmios_client::types::{Asset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	use partner_chains_plutus_data::reserve::{
 		ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats,
 	};
@@ -295,7 +290,7 @@ mod tests {
 				},
 				index: 0,
 				address: version_oracle_address(),
-				script: Some(OgmiosScript::Plutus(auth_policy_script().into())),
+				script: Some(auth_policy_script().into()),
 				..Default::default()
 			},
 			validator_version_utxo: OgmiosUtxo {
@@ -304,7 +299,7 @@ mod tests {
 				},
 				index: 0,
 				address: version_oracle_address(),
-				script: Some(OgmiosScript::Plutus(reserve_validator_script().into())),
+				script: Some(reserve_validator_script().into()),
 				..Default::default()
 			},
 			illiquid_circulation_supply_validator_version_utxo: OgmiosUtxo {
@@ -313,7 +308,7 @@ mod tests {
 				},
 				index: 0,
 				address: version_oracle_address(),
-				script: Some(OgmiosScript::Plutus(illiquid_supply_validator_script().into())),
+				script: Some(illiquid_supply_validator_script().into()),
 				..Default::default()
 			},
 		}
@@ -325,7 +320,7 @@ mod tests {
 				id: hex!("45882cfd2de9381f34ae68ad073452e2a57a7ad11095dae49f365266637e9d04"),
 			},
 			index: 0,
-			script: Some(OgmiosScript::Plutus(applied_v_function().into())),
+			script: Some(applied_v_function().into()),
 			..Default::default()
 		}
 	}

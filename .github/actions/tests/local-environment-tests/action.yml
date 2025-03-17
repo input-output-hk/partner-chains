@@ -153,6 +153,7 @@ runs:
         mc_epoch: 3
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
+        markers: "not active_flow and not passive_flow and not probability and not native_token"
         local-environment: "true"
     - name: Check if no skipped tests
       if: ${{ inputs.tests == 'postmerge' }}

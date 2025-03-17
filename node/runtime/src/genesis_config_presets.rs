@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{AccountId, BalancesConfig, RuntimeGenesisConfig, SudoConfig};
+use crate::{test_helper_pallet, AccountId, BalancesConfig, RuntimeGenesisConfig, SudoConfig};
 use alloc::{vec, vec::Vec};
 use serde_json::Value;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -45,7 +45,18 @@ fn testnet_genesis(
 			..Default::default()
 		},
 		sudo: SudoConfig { key: Some(root) },
-		..Default::default()
+		test_helper_pallet: test_helper_pallet::GenesisConfig {
+			participation_data_release_period:
+				test_helper_pallet::DEFAULT_PARTICIPATION_DATA_RELEASE_PERIOD,
+			_phantom: core::marker::PhantomData,
+		},
+		system: Default::default(),
+		transaction_payment: Default::default(),
+		sidechain: Default::default(),
+		session_committee_management: Default::default(),
+		pallet_session: Default::default(),
+		session: Default::default(),
+		native_token_management: Default::default(),
 	};
 
 	serde_json::to_value(config).expect("Could not build genesis config.")

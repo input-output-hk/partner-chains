@@ -14,18 +14,26 @@ pub mod pallet {
 
 	type ParticipationData = BlockProductionData<BlockAuthor, DelegatorKey>;
 
+	pub const DEFAULT_PARTICIPATION_DATA_RELEASE_PERIOD: u64 = 30;
+
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_block_rewards::Config {}
+	pub trait Config: frame_system::Config {}
 
 	#[pallet::storage]
 	#[pallet::unbounded]
 	pub type LatestParticipationData<T: Config> = StorageValue<_, ParticipationData, OptionQuery>;
 
+	#[pallet::type_value]
+	pub fn DefaultParticipationDataReleasePeriod<T: Config>() -> u64 {
+		DEFAULT_PARTICIPATION_DATA_RELEASE_PERIOD
+	}
+
 	#[pallet::storage]
-	pub type ParticipationDataReleasePeriod<T: Config> = StorageValue<_, u64, ValueQuery>;
+	pub type ParticipationDataReleasePeriod<T: Config> =
+		StorageValue<_, u64, ValueQuery, DefaultParticipationDataReleasePeriod<T>>;
 
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
@@ -54,10 +62,7 @@ pub mod pallet {
 
 	impl<T: Config> sp_sidechain::OnNewEpoch for Pallet<T> {
 		fn on_new_epoch(old_epoch: ScEpochNumber, _new_epoch: ScEpochNumber) -> sp_weights::Weight {
-			let rewards = pallet_block_rewards::Pallet::<T>::get_rewards_and_clear();
-			log::info!("Rewards accrued in epoch {old_epoch}: {rewards:?}");
-
-			crate::RuntimeDbWeight::get().reads_writes(1, 1)
+			crate::RuntimeDbWeight::get().reads_writes(0, 0)
 		}
 	}
 

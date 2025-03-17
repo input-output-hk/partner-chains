@@ -2,7 +2,6 @@ from pytest import mark, skip
 from src.blockchain_api import BlockchainApi, Wallet
 from config.api_config import ApiConfig
 import logging as logger
-import math
 
 COMMITTEE_REPETITIONS_IN_PC_EPOCH = 2
 
@@ -27,66 +26,6 @@ def test_delegator_can_associate_pc_address(api: BlockchainApi, new_wallet: Wall
     logger.info(f"Stake public key hash: {vkey_hash}")
     address_association = api.get_address_association(vkey_hash)
     assert address_association == new_wallet.address, "Address association not found"
-
-
-@mark.skip_on_new_chain
-@mark.test_key('ETCM-7019')
-@mark.block_reward
-def test_block_beneficiaries_match_committee_seats(
-    api: BlockchainApi, config: ApiConfig, get_pc_epoch_committee, pc_epoch, get_pc_epoch_blocks
-):
-    """
-    Verifies that a pc epoch's block rewards match the committee attendance.
-    The committee produces blocks in a round robin manner.
-    The pc epoch comes from the argument given at runtime.
-    """
-
-    # TODO: ETCM-6532 Add a deployed from pc epoch value and get max of the two values
-
-    logger.info(f"Verifying block rewards for pc epoch {pc_epoch}...")
-    first_block_no = get_pc_epoch_blocks(pc_epoch)["range"].start
-    last_block_no = get_pc_epoch_blocks(pc_epoch)["range"].stop
-    if last_block_no - first_block_no != config.nodes_config.slots_in_epoch:
-        skip(f'Some blocks missing on pc epoch {pc_epoch}. Found only {last_block_no - first_block_no} blocks.')
-    logger.debug(f"Block range: {first_block_no} - {last_block_no}")
-
-    block_cnt_dict = {}
-    block_cnt = 0
-    for block_no in get_pc_epoch_blocks(pc_epoch)["range"]:
-        beneficiary = api.extract_block_extrinsic_value("BlockRewards", get_pc_epoch_blocks(pc_epoch)[block_no])
-        if beneficiary in block_cnt_dict:
-            block_cnt_dict[beneficiary] += 1
-        else:
-            block_cnt_dict[beneficiary] = 1
-        block_cnt += 1
-
-    # Create beneficiary to public key dictionary
-    beneficiary_pub_key_dict = {}
-    for node in config.nodes_config.nodes:
-        beneficiary_pub_key_dict[config.nodes_config.nodes[node].public_key] = config.nodes_config.nodes[
-            node
-        ].block_rewards_id
-
-    committee = get_pc_epoch_committee(pc_epoch)
-    round_robin_turns = config.nodes_config.slots_in_epoch / len(committee)
-    round_robin_turns_int = int(round_robin_turns)
-    round_robin_turns_fraction = round_robin_turns - round_robin_turns_int
-
-    seat_cnt_dict = {}
-    seat_cnt = 0
-    for seat in committee:
-        if beneficiary_pub_key_dict[seat['sidechainPubKey']] in seat_cnt_dict:
-            seat_cnt_dict[beneficiary_pub_key_dict[seat['sidechainPubKey']]] += round_robin_turns
-        else:
-            seat_cnt_dict[beneficiary_pub_key_dict[seat['sidechainPubKey']]] = round_robin_turns
-        seat_cnt += round_robin_turns
-
-    assert math.isclose(seat_cnt, block_cnt, rel_tol=1e-9), "Committee seat count not equal to block rewards count"
-    for seat in seat_cnt_dict:
-        assert abs(
-            block_cnt_dict[seat]
-            - (seat_cnt_dict[seat] - round_robin_turns_fraction * int(seat_cnt_dict[seat] / round_robin_turns_int))
-        ) in (0, 1), f"Block rewards for {seat} does not match committee seat expected distribution"
 
 
 @mark.skip_on_new_chain

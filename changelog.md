@@ -8,6 +8,9 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Removed
 
+* Obsolete `block-rewards` pallet and its companion primitives crate. Block authorship information can be tracked
+using the `block-production-log` pallet instead.
+
 ## Fixed
 
 ## Added

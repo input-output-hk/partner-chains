@@ -162,6 +162,7 @@ class ApiConfig:
     test_environment: str = MISSING
     main_chain: MainChainConfig = MISSING
     timeouts: Timeout = MISSING
+    keys_path: Optional[str] = None
     poll_intervals: PollInterval = MISSING
     nodes_config: NodesApiConfig = MISSING
     stack_config: StackApiConfig = MISSING

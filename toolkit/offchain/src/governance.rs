@@ -21,7 +21,7 @@ impl GovernanceData {
 
 	pub(crate) fn utxo_id_as_tx_input(&self) -> TransactionInput {
 		TransactionInput::new(
-			&TransactionHash::from_bytes(self.utxo_id().tx_hash.0.to_vec()).unwrap(),
+			&TransactionHash::from(self.utxo_id().tx_hash.0),
 			self.utxo_id().index.0.into(),
 		)
 	}

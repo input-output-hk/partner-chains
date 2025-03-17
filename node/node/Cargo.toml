@@ -52,7 +52,6 @@ authority-selection-inherents = { workspace = true }
 frame-system = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 sp-block-production-log = { workspace = true }
-sp-block-rewards = { workspace = true }
 sidechain-domain = { workspace = true }
 sidechain-slots = { workspace = true }
 sp-sidechain = { workspace = true }
