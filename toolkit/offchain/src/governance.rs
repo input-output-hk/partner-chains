@@ -36,11 +36,11 @@ impl GovernancePolicyScript {
 	}
 }
 
-/// Plutus MultiSig implemented in partner-chains-smart-contracts repo,
-/// it is legacy and ideally should have been used only with a single key in the `governance init`.
-/// It allows to mint the governance token only if the transaction in `required_singers` field
-/// has at least `threshold` key hashes that are in the `key_hashes` list.
-/// `threshold` and `key_hashes` are applied Plutus Data applied to the script.
+/// Plutus MultiSig smart contract implemented in partner-chains-smart-contracts repo
+/// is legacy and ideally should have been used only with a single key in `governance init`.
+/// It allows minting the governance token only if the transaction in `required_singers` field
+/// has at least `threshold` number of key hashes from the `key_hashes` list.
+/// `threshold` and `key_hashes` are Plutus Data applied to the script.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct PartnerChainsMultisigPolicy {
 	pub(crate) script: plutus_script::PlutusScript,
