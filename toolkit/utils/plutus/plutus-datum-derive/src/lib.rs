@@ -27,7 +27,9 @@ fn impl_to_datum_derive(ast: &syn::DeriveInput) -> TokenStream {
 	let mut bounded_generics = generics.clone();
 	for generic_param in bounded_generics.params.iter_mut() {
 		if let GenericParam::Type(ref mut type_param) = *generic_param {
-			type_param.bounds.push(TypeParamBound::Trait(syn::parse_quote!(ToDatum)));
+			type_param
+				.bounds
+				.push(TypeParamBound::Trait(syn::parse_quote!(plutus::ToDatum)));
 		}
 	}
 	let has_constructor_datum_attribute = ast.attrs.iter().any(|attr| {
@@ -49,7 +51,7 @@ fn impl_to_datum_derive(ast: &syn::DeriveInput) -> TokenStream {
 						.map(|i| quote! { self.#i.to_datum()})
 						.collect();
 					quote! {
-						Datum::ConstructorDatum { constructor: 0, fields: vec![#(#fields),*] }
+						plutus::Datum::ConstructorDatum { constructor: 0, fields: vec![#(#fields),*] }
 					}
 				}
 			},
@@ -62,13 +64,13 @@ fn impl_to_datum_derive(ast: &syn::DeriveInput) -> TokenStream {
 						let fields: Vec<_> =
 							idents.iter().map(|token| quote! { self.#token.to_datum()}).collect();
 						quote! {
-							Datum::ConstructorDatum { constructor: 0, fields: vec![#(#fields),*] }
+							plutus::Datum::ConstructorDatum { constructor: 0, fields: vec![#(#fields),*] }
 						}
 					},
 				}
 			},
 			syn::Fields::Unit => quote! {
-				Datum::ConstructorDatum { constructor: 0, fields: Vec::new() }
+				plutus::Datum::ConstructorDatum { constructor: 0, fields: Vec::new() }
 			},
 		},
 		syn::Data::Enum(_de) => quote! {
@@ -79,8 +81,8 @@ fn impl_to_datum_derive(ast: &syn::DeriveInput) -> TokenStream {
 		},
 	};
 	let gen = quote! {
-		impl #bounded_generics ToDatum for #name #generics {
-			fn to_datum(&self) -> Datum {
+		impl #bounded_generics plutus::ToDatum for #name #generics {
+			fn to_datum(&self) -> plutus::Datum {
 				#body
 			}
 		}
