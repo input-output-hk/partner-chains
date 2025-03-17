@@ -586,6 +586,11 @@
 <a href="#586" id="586">586</a>
 <a href="#587" id="587">587</a>
 <a href="#588" id="588">588</a>
+<a href="#589" id="589">589</a>
+<a href="#590" id="590">590</a>
+<a href="#591" id="591">591</a>
+<a href="#592" id="592">592</a>
+<a href="#593" id="593">593</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	CARDANO_ACTIVE_SLOTS_COEFF, CARDANO_EPOCH_DURATION_MILLIS, CARDANO_FIRST_EPOCH_NUMBER,
 	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_SECURITY_PARAMETER,
@@ -860,8 +865,13 @@
 	<span class="kw">pub </span>first_slot_number: u64,
 	<span class="kw">pub </span>epoch_duration_millis: u64,
 	<span class="kw">pub </span>first_epoch_timestamp_millis: u64,
-	<span class="kw">pub </span>slot_duration_millis: u64,
+	<span class="attr">#[serde(default = <span class="string">"default_slot_duration_millis"</span>)]
+	</span><span class="kw">pub </span>slot_duration_millis: u64,
 }
+
+<span class="kw">fn </span>default_slot_duration_millis() -&gt; u64 {
+	<span class="number">1000
+</span>}
 
 <span class="kw">impl </span>CardanoParameters {
 	<span class="kw">pub fn </span>save(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span><span class="kw">impl </span>IOContext) {
