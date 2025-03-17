@@ -48,7 +48,7 @@ pub(crate) struct PartnerChainsMultisigPolicy {
 	pub(crate) threshold: u32,
 }
 
-/// This represent Cardano Native Script of type `atLeast`, where each of `scripts` has to be
+/// This represents Cardano Native Script of type `atLeast`, where each of `scripts` has to be
 /// of type `sig`. We call them `key_hashes` to match our Partner Chains Plutus MultiSig policy.
 /// `threshold` field of this struct is mapped to `required` field in the simple script.
 #[derive(Clone, Debug, Eq, PartialEq)]
