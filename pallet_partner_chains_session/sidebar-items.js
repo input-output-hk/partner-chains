@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["pallet"],"trait":["SessionHandler","SessionManager","ShouldEndSession"]};
+window.SIDEBAR_ITEMS = {"macro":["impl_pallet_session_config"],"mod":["pallet","pallet_session_compat"],"trait":["SessionHandler","SessionManager","ShouldEndSession"]};

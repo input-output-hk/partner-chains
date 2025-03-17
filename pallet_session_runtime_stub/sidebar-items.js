@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"macro":["impl_pallet_session_config"],"struct":["PalletSessionStubImpls"]};
