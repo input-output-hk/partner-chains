@@ -560,9 +560,18 @@ parameter_types! {
 
 pub struct GlueCode;
 
+pub struct ValidatorIdOf;
+
+impl<T> Convert<T, Option<T>> for ValidatorIdOf {
+	fn convert(t: T) -> Option<T> {
+		Some(t)
+	}
+}
+
 impl ValidatorSet<AccountId> for GlueCode {
 	type ValidatorId = AccountId;
-	type ValidatorIdOf = pallet_session_runtime_stub::PalletSessionStubImpls;
+	type ValidatorIdOf = ValidatorIdOf;
+
 	fn session_index() -> SessionIndex {
 		Sidechain::current_epoch_number().0 as u32
 	}
