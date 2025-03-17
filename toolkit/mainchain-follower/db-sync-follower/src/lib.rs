@@ -3,7 +3,7 @@ use cardano_serialization_lib::PlutusData;
 
 pub mod data_sources;
 mod db_datum;
-mod db_model;
+pub mod db_model;
 pub mod metrics;
 
 #[cfg(feature = "block-source")]
