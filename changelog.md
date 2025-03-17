@@ -6,6 +6,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* `governance init` and `governance update` will set Multisig policy implemented with ALeastN Native Script, instead of custom policy implemented as Plutus Script in partner-chains-smart-contracts. This policy doesn't require to set `required_signers` field in the transaction making it more user friendly.
+
 ## Removed
 
 * Obsolete `block-rewards` pallet and its companion primitives crate. Block authorship information can be tracked

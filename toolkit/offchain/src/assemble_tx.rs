@@ -1,25 +1,11 @@
 use crate::await_tx::{AwaitTx, FixedDelayRetries};
-use crate::csl::{
-	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, InputsBuilderExt,
-	TransactionBuilderExt, TransactionContext,
-};
-use crate::governance::GovernanceData;
-use crate::plutus_script::PlutusScript;
 use anyhow::anyhow;
-use cardano_serialization_lib::{
-	PlutusData, Transaction, TransactionBuilder, TxInputsBuilder, Vkeywitness, Vkeywitnesses,
-};
+use cardano_serialization_lib::{Transaction, Vkeywitness, Vkeywitnesses};
 use ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
 use ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, transactions::Transactions,
-	types::OgmiosUtxo,
 };
-use partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
-use sidechain_domain::{
-	DParameter, MainchainKeyHash, McSmartContractResult,
-	McSmartContractResult::{TxCBOR, TxHash},
-	McTxHash, UtxoId,
-};
+use sidechain_domain::{McTxHash, UtxoId};
 
 pub trait AssembleTx {
 	#[allow(async_fn_in_trait)]

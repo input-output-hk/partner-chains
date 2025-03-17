@@ -202,7 +202,7 @@ async fn register() {
 	assert!(run_register(genesis_utxo, other_signature, &client).await.is_some());
 }
 
-// Proves that our code can still understand Plutus Script MultiSig from PCSC
+// Proves that offchain code can still understand Plutus Script MultiSig from PCSC
 #[tokio::test]
 async fn update_legacy_governance() {
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
