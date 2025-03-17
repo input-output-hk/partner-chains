@@ -123,7 +123,7 @@ impl From<(sr25519::Public, ed25519::Public)> for TestSessionKeys {
 	}
 }
 
-pallet_session_runtime_stub::impl_pallet_session_config!(Test);
+pallet_partner_chains_session::impl_pallet_session_config!(Test);
 
 impl pallet_partner_chains_session::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
