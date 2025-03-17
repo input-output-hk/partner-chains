@@ -303,7 +303,7 @@ impl pallet_aura::Config for Runtime {
 	type SlotDuration = ConstU64<SLOT_DURATION>;
 }
 
-pallet_session_runtime_stub::impl_pallet_session_config!(Runtime);
+pallet_partner_chains_session::impl_pallet_session_config!(Runtime);
 
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
