@@ -1178,6 +1178,14 @@
 <a href="#1178" id="1178">1178</a>
 <a href="#1179" id="1179">1179</a>
 <a href="#1180" id="1180">1180</a>
+<a href="#1181" id="1181">1181</a>
+<a href="#1182" id="1182">1182</a>
+<a href="#1183" id="1183">1183</a>
+<a href="#1184" id="1184">1184</a>
+<a href="#1185" id="1185">1185</a>
+<a href="#1186" id="1186">1186</a>
+<a href="#1187" id="1187">1187</a>
+<a href="#1188" id="1188">1188</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>anyhow::Context;
@@ -1193,6 +1201,14 @@
 };
 <span class="kw">use </span>sidechain_domain::{AssetId, NetworkType, UtxoId};
 <span class="kw">use </span>std::collections::HashMap;
+
+<span class="kw">pub fn </span>transaction_from_bytes(cbor: Vec&lt;u8&gt;) -&gt; anyhow::Result&lt;Transaction&gt; {
+	Transaction::from_bytes(cbor).map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))
+}
+
+<span class="kw">pub fn </span>vkey_witness_from_bytes(cbor: Vec&lt;u8&gt;) -&gt; anyhow::Result&lt;Vkeywitness&gt; {
+	Vkeywitness::from_bytes(cbor).map_err(|e| <span class="macro">anyhow::anyhow!</span>(e))
+}
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>plutus_script_hash(script_bytes: <span class="kw-2">&amp;</span>[u8], language: Language) -&gt; [u8; <span class="number">28</span>] {
 	<span class="comment">// Before hashing the script, we need to prepend with byte denoting the language.
