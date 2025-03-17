@@ -272,7 +272,12 @@ pub struct CardanoParameters {
 	pub first_slot_number: u64,
 	pub epoch_duration_millis: u64,
 	pub first_epoch_timestamp_millis: u64,
+	#[serde(default = "default_slot_duration_millis")]
 	pub slot_duration_millis: u64,
+}
+
+fn default_slot_duration_millis() -> u64 {
+	1000
 }
 
 impl CardanoParameters {
