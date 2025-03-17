@@ -136,8 +136,9 @@
 //! 2. Mints exactly 1 multi-sig policy token as authentication
 //! 3. Produces a new governance UTXO at the version oracle validator address with a version oracle
 //!    Plutus datum attached that contains the script ID (32) and policy hash.
-</span><span class="kw">use </span><span class="kw">crate</span>::csl::Costs;
+</span><span class="kw">use </span><span class="kw">crate</span>::csl::{Costs, TransactionExt};
 <span class="kw">use </span><span class="kw">crate</span>::governance::GovernanceData;
+<span class="kw">use </span><span class="kw">crate</span>::scripts_data::multisig_governance_policy_configuration;
 <span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
@@ -145,7 +146,6 @@
 	csl::{InputsBuilderExt, TransactionBuilderExt, TransactionContext},
 	init_governance::transaction::version_oracle_datum_output,
 	plutus_script::PlutusScript,
-	scripts_data::multisig_governance_policy_configuration,
 };
 <span class="kw">use </span>cardano_serialization_lib::{
 	Language, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
@@ -233,15 +233,15 @@
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>config);
 
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		<span class="kw-2">&amp;</span>governance_data.policy_script,
+		<span class="kw-2">&amp;</span>governance_data.policy.script(),
 		<span class="kw-2">&amp;</span>governance_data.utxo_id_as_tx_input(),
-		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>governance_data.policy_script),
+		<span class="kw-2">&amp;</span>costs,
 	)<span class="question-mark">?</span>;
 
 	tx_builder.add_output(<span class="kw-2">&amp;</span>version_oracle_datum_output(
 		version_oracle_validator.clone(),
 		version_oracle_policy.clone(),
-		multi_sig_policy.clone(),
+		multi_sig_policy,
 		ctx.network,
 		ctx,
 	)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
@@ -258,6 +258,6 @@
 		inputs
 	});
 
-	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>.remove_native_script_witnesses())
 }
 </code></pre></div></section></main></body></html>

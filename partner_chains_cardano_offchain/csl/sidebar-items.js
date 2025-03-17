@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Costs"],"fn":["key_hash_address","payment_address","script_address","zero_ex_units"],"struct":["CostLookup","ScriptExUnits"],"trait":["CostStore","NetworkTypeExt","OgmiosValueExt","UtxoIdExt"]};
+window.SIDEBAR_ITEMS = {"enum":["Costs","Script"],"fn":["key_hash_address","payment_address","script_address","zero_ex_units"],"struct":["CostLookup","ScriptExUnits"],"trait":["CostStore","NetworkTypeExt","OgmiosValueExt","UtxoIdExt"]};

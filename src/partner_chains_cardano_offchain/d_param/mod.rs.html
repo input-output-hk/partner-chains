@@ -272,7 +272,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
 <span class="kw">use </span><span class="kw">crate</span>::csl::{
 	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, InputsBuilderExt,
-	TransactionBuilderExt, TransactionContext,
+	TransactionBuilderExt, TransactionContext, TransactionExt,
 };
 <span class="kw">use </span><span class="kw">crate</span>::governance::GovernanceData;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
@@ -471,7 +471,7 @@
 		policy,
 		<span class="kw-2">&amp;</span>empty_asset_name(),
 		<span class="kw-2">&amp;</span>unit_plutus_data(),
-		<span class="kw-2">&amp;</span>costs.get_mint(policy),
+		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>policy.clone().into()),
 	)<span class="question-mark">?</span>;
 	tx_builder.add_output_with_one_script_token(
 		validator,
@@ -482,12 +482,12 @@
 
 	<span class="kw">let </span>gov_tx_input = governance_data.utxo_id_as_tx_input();
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		<span class="kw-2">&amp;</span>governance_data.policy_script,
+		<span class="kw-2">&amp;</span>governance_data.policy.script(),
 		<span class="kw-2">&amp;</span>gov_tx_input,
-		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>governance_data.policy_script),
+		<span class="kw-2">&amp;</span>costs,
 	)<span class="question-mark">?</span>;
 
-	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>.remove_native_script_witnesses())
 }
 
 <span class="kw">fn </span>update_d_param_tx(
@@ -519,11 +519,11 @@
 
 	<span class="kw">let </span>gov_tx_input = governance_data.utxo_id_as_tx_input();
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		<span class="kw-2">&amp;</span>governance_data.policy_script,
+		<span class="kw-2">&amp;</span>governance_data.policy.script(),
 		<span class="kw-2">&amp;</span>gov_tx_input,
-		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>governance_data.policy_script),
+		<span class="kw-2">&amp;</span>costs,
 	)<span class="question-mark">?</span>;
 
-	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>.remove_native_script_witnesses())
 }
 </code></pre></div></section></main></body></html>

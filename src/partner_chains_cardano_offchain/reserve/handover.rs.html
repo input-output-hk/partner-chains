@@ -157,7 +157,6 @@
 <a href="#157" id="157">157</a>
 <a href="#158" id="158">158</a>
 <a href="#159" id="159">159</a>
-<a href="#160" id="160">160</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Specification for deposit transaction:
 //!
@@ -183,8 +182,9 @@
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::{
-		get_builder_config, unit_plutus_data, AssetIdExt, CostStore, Costs, OgmiosUtxoExt,
-		TransactionBuilderExt, TransactionContext, TransactionOutputAmountBuilderExt,
+		get_builder_config, unit_plutus_data, AssetIdExt, CostStore, Costs, OgmiosUtxoExt, Script,
+		TransactionBuilderExt, TransactionContext, TransactionExt,
+		TransactionOutputAmountBuilderExt,
 	},
 	governance::GovernanceData,
 	reserve::ReserveData,
@@ -255,14 +255,12 @@
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
 
 	<span class="kw">let </span>reserve_auth_policy_spend_cost = costs.get_one_spend();
-	<span class="kw">let </span>reserve_auth_policy_burn_cost = costs.get_mint(<span class="kw-2">&amp;</span>reserve.scripts.auth_policy);
-	<span class="kw">let </span>governance_mint_cost = costs.get_mint(<span class="kw-2">&amp;</span>governance.policy_script);
 
 	<span class="comment">// mint goveranance token
 	</span>tx_builder.add_mint_one_script_token_using_reference_script(
-		<span class="kw-2">&amp;</span>governance.policy_script,
+		<span class="kw-2">&amp;</span>governance.policy.script(),
 		<span class="kw-2">&amp;</span>governance.utxo_id_as_tx_input(),
-		<span class="kw-2">&amp;</span>governance_mint_cost,
+		<span class="kw-2">&amp;</span>costs,
 	)<span class="question-mark">?</span>;
 
 	<span class="comment">// Spends UTXO with Reserve Auth Policy Token and Reserve (Reward) tokens
@@ -275,10 +273,10 @@
 
 	<span class="comment">// burn reserve auth policy token
 	</span>tx_builder.add_mint_script_token_using_reference_script(
-		<span class="kw-2">&amp;</span>reserve.scripts.auth_policy,
+		<span class="kw-2">&amp;</span>Script::Plutus(reserve.scripts.auth_policy.clone()),
 		<span class="kw-2">&amp;</span>reserve.auth_policy_version_utxo.to_csl_tx_input(),
 		<span class="kw-2">&amp;</span>Int::new_i32(-<span class="number">1</span>),
-		<span class="kw-2">&amp;</span>reserve_auth_policy_burn_cost,
+		<span class="kw-2">&amp;</span>costs,
 	)<span class="question-mark">?</span>;
 
 	tx_builder.add_output(<span class="kw-2">&amp;</span>illiquid_supply_validator_output(
@@ -290,7 +288,7 @@
 		<span class="kw-2">&amp;</span>reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.illiquid_circulation_supply_validator.bytes.len(),
 	);
-	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>.remove_native_script_witnesses())
 }
 
 <span class="comment">// Creates output with reserve token and updated deposit

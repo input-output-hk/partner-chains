@@ -575,11 +575,6 @@
 <a href="#575" id="575">575</a>
 <a href="#576" id="576">576</a>
 <a href="#577" id="577">577</a>
-<a href="#578" id="578">578</a>
-<a href="#579" id="579">579</a>
-<a href="#580" id="580">580</a>
-<a href="#581" id="581">581</a>
-<a href="#582" id="582">582</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Permissioned candidates are stored on chain in an UTXO at the Permissioned Candidates Validator address.
 //! There should be at most one UTXO at the validator address and it should contain the permissioned candidates list.
@@ -591,7 +586,7 @@
 </span><span class="kw">use </span><span class="kw">crate</span>::await_tx::{AwaitTx, FixedDelayRetries};
 <span class="kw">use </span><span class="kw">crate</span>::csl::{
 	empty_asset_name, get_builder_config, CostStore, Costs, InputsBuilderExt,
-	TransactionBuilderExt, TransactionContext,
+	TransactionBuilderExt, TransactionContext, TransactionExt,
 };
 <span class="kw">use </span><span class="kw">crate</span>::governance::GovernanceData;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
@@ -822,7 +817,7 @@
 			policy,
 			<span class="kw-2">&amp;</span>empty_asset_name(),
 			<span class="kw-2">&amp;</span>permissioned_candidates_policy_redeemer_data(),
-			<span class="kw-2">&amp;</span>costs.get_mint(policy),
+			<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>policy.clone().into()),
 		)<span class="question-mark">?</span>;
 	}
 	tx_builder.add_output_with_one_script_token(
@@ -834,12 +829,12 @@
 
 	<span class="kw">let </span>gov_tx_input = governance_data.utxo_id_as_tx_input();
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		<span class="kw-2">&amp;</span>governance_data.policy_script,
+		<span class="kw-2">&amp;</span>governance_data.policy.script(),
 		<span class="kw-2">&amp;</span>gov_tx_input,
-		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>governance_data.policy_script),
+		<span class="kw-2">&amp;</span>costs,
 	)<span class="question-mark">?</span>;
 
-	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>.remove_native_script_witnesses())
 }
 
 <span class="kw">fn </span>update_permissioned_candidates_tx(
@@ -873,12 +868,12 @@
 
 	<span class="kw">let </span>gov_tx_input = governance_data.utxo_id_as_tx_input();
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		<span class="kw-2">&amp;</span>governance_data.policy_script,
+		<span class="kw-2">&amp;</span>governance_data.policy.script(),
 		<span class="kw-2">&amp;</span>gov_tx_input,
-		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>governance_data.policy_script),
+		<span class="kw-2">&amp;</span>costs,
 	)<span class="question-mark">?</span>;
 
-	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>.remove_native_script_witnesses())
 }
 
 <span class="kw">fn </span>permissioned_candidates_policy_redeemer_data() -&gt; PlutusData {
@@ -891,10 +886,9 @@
 	<span class="kw">use crate</span>::{
 		csl::{empty_asset_name, Costs, TransactionContext},
 		governance::GovernanceData,
-		plutus_script::PlutusScript,
 		test_values::<span class="kw-2">*</span>,
 	};
-	<span class="kw">use </span>cardano_serialization_lib::{Address, ExUnits, Int, Language, NetworkIdKind, PlutusData};
+	<span class="kw">use </span>cardano_serialization_lib::{Address, ExUnits, Int, NetworkIdKind, PlutusData};
 	<span class="kw">use </span>hex_literal::hex;
 	<span class="kw">use </span>ogmios_client::types::{Asset <span class="kw">as </span>OgmiosAsset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	<span class="kw">use </span>partner_chains_plutus_data::permissioned_candidates::permissioned_candidates_to_plutus_data;
@@ -1070,7 +1064,7 @@
 		Costs::new(
 			<span class="macro">vec!</span>[
 				(test_policy().csl_script_hash(), permissioned_candidates_ex_units()),
-				(test_goveranance_policy().csl_script_hash(), governance_ex_units()),
+				(test_governance_policy().script().script_hash().into(), governance_ex_units()),
 			]
 			.into_iter()
 			.collect(),
@@ -1080,15 +1074,11 @@
 
 	<span class="kw">fn </span>test_costs_update() -&gt; Costs {
 		Costs::new(
-			<span class="macro">vec!</span>[(test_goveranance_policy().csl_script_hash(), governance_ex_units())]
+			<span class="macro">vec!</span>[(test_governance_policy().script().script_hash().into(), governance_ex_units())]
 				.into_iter()
 				.collect(),
 			<span class="macro">vec!</span>[(<span class="number">0</span>, permissioned_candidates_ex_units())].into_iter().collect(),
 		)
-	}
-
-	<span class="kw">fn </span>test_goveranance_policy() -&gt; PlutusScript {
-		PlutusScript { bytes: <span class="macro">hex!</span>(<span class="string">"88991122"</span>).into(), language: Language::new_plutus_v2() }
 	}
 
 	<span class="kw">fn </span>test_goveranance_utxo() -&gt; OgmiosUtxo {
@@ -1096,7 +1086,7 @@
 	}
 
 	<span class="kw">fn </span>test_governance_data() -&gt; GovernanceData {
-		GovernanceData { policy_script: test_goveranance_policy(), utxo: test_goveranance_utxo() }
+		GovernanceData { policy: test_governance_policy(), utxo: test_goveranance_utxo() }
 	}
 
 	<span class="kw">fn </span>test_tx_context() -&gt; TransactionContext {

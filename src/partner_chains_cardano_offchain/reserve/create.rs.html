@@ -167,8 +167,8 @@
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::{
-		get_builder_config, CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt,
-		TransactionContext, TransactionOutputAmountBuilderExt,
+		get_builder_config, Costs, MultiAssetExt, OgmiosUtxoExt, Script, TransactionBuilderExt,
+		TransactionContext, TransactionExt, TransactionOutputAmountBuilderExt,
 	},
 	governance::GovernanceData,
 	scripts_data::ReserveScripts,
@@ -257,23 +257,23 @@
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(ctx)<span class="question-mark">?</span>);
 
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		<span class="kw-2">&amp;</span>reserve.scripts.auth_policy,
+		<span class="kw-2">&amp;</span>Script::Plutus(reserve.scripts.auth_policy.clone()),
 		<span class="kw-2">&amp;</span>reserve.auth_policy_version_utxo.to_csl_tx_input(),
-		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>reserve.scripts.auth_policy),
+		<span class="kw-2">&amp;</span>costs,
 	)<span class="question-mark">?</span>;
 	tx_builder.add_output(<span class="kw-2">&amp;</span>reserve_validator_output(parameters, <span class="kw-2">&amp;</span>reserve.scripts, ctx)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>gov_tx_input = governance.utxo_id_as_tx_input();
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		<span class="kw-2">&amp;</span>governance.policy_script,
+		<span class="kw-2">&amp;</span>governance.policy.script(),
 		<span class="kw-2">&amp;</span>gov_tx_input,
-		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>governance.policy_script),
+		<span class="kw-2">&amp;</span>costs,
 	)<span class="question-mark">?</span>;
 	tx_builder.add_script_reference_input(
 		<span class="kw-2">&amp;</span>reserve.validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.validator.bytes.len(),
 	);
-	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>)
+	<span class="prelude-val">Ok</span>(tx_builder.balance_update_and_build(ctx)<span class="question-mark">?</span>.remove_native_script_witnesses())
 }
 
 <span class="comment">// Creates output with reserve token and the initial deposit
