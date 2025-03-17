@@ -122,7 +122,6 @@ fn version_oracle_validator_address() -> Address {
 
 fn test_update_governance_tx() -> Transaction {
 	update_governance_tx(
-		test_values::MULTI_SIG_POLICY,
 		test_values::VERSION_ORACLE_VALIDATOR,
 		test_values::VERSION_ORACLE_POLICY,
 		genesis_utxo().to_domain(),
@@ -193,7 +192,7 @@ fn contains_correct_redeemers() {
 
 	let spend_redeemer = redeemers.get(0);
 	assert_eq!(spend_redeemer.tag(), RedeemerTag::new_spend());
-	assert_eq!(spend_redeemer.index(), 1u64.into());
+	assert_eq!(spend_redeemer.index(), 0u64.into());
 	assert_eq!(spend_redeemer.data(), PlutusData::new_integer(&32u64.into()));
 	assert_eq!(spend_redeemer.ex_units(), spend_ex_units());
 

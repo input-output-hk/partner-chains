@@ -34,7 +34,7 @@ fn expected_transaction() -> serde_json::Value {
 				{
 					"address": "addr_test1wzmdcvfgs74yktkyhgul4zr9gt4p49w049wxklnh99wkv9c43qytz",
 					"amount": {
-						"coin": "3318700",
+						"coin": "1430920",
 						"multiasset": {
 							"059e65b4502523c44889cd64a7b4cf32215ba73290fa8bae604ae499": {
 								"56657273696f6e206f7261636c65": "1"
@@ -45,13 +45,24 @@ fn expected_transaction() -> serde_json::Value {
 						"Data": "{\"list\":[{\"int\":32},{\"bytes\":\"059e65b4502523c44889cd64a7b4cf32215ba73290fa8bae604ae499\"}]}"
 					},
 					"script_ref": {
-						"PlutusScript": "5901d30100003323322323232323322323232222323232532323355333573466e20cc8c8c88c008004c058894cd4004400c884cc018008c010004c04488004c04088008c01000400840304034403c4c02d24010350543500300d37586ae84008dd69aba1357440026eb0014c040894cd400440448c884c8cd40514cd4c00cc04cc030dd6198009a9803998009a980380411000a40004400290080a400429000180300119112999ab9a33710002900009807a490350543600133003001002301522253350011300f49103505437002215333573466e1d20000041002133005337020089001000980991299a8008806910a999ab9a3371e00a6eb800840404c0100048c8cc8848cc00400c008d55ce80098031aab9e00137540026016446666aae7c00480348cd4030d5d080118019aba2002498c02888cccd55cf8009006119a8059aba100230033574400493119319ab9c00100512200212200130062233335573e0024010466a00e6eb8d5d080118019aba20020031200123300122337000040029000180191299a800880211099a802801180200089100109109119800802001919180080091198019801001000a61239f9f581c76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9ff01ff0001"
+						"NativeScript": {
+							"ScriptNOfK": {
+								"n": 1,
+								"native_scripts": [
+									{
+										"ScriptPubkey": {
+											"addr_keyhash": "76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"
+										}
+									}
+								]
+							}
+						}
 					}
 				},
 				{
 					"address": "addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw",
 					"amount": {
-						"coin": "9919227878",
+						"coin": "9921134930",
 						"multiasset": {
 							"01010101010101010101010101010101010101010101010101010101": {
 								"": "1"
@@ -62,7 +73,7 @@ fn expected_transaction() -> serde_json::Value {
 					"script_ref": null
 				}
 			],
-			"fee": "409359",
+			"fee": "390087",
 			"ttl": null,
 			"certs": null,
 			"withdrawals": null,
@@ -77,7 +88,7 @@ fn expected_transaction() -> serde_json::Value {
 					}
 				]
 			],
-			"script_data_hash": "721f0b6b00b9181fcf9cd6512b35bc929364abda7f1a7e45ddb2cce5925f990a",
+			"script_data_hash": "b916952fd30d8123e403045126a3aae97a45c70bb7bfe31e34994a2e6e05a28f",
 			"collateral": [
 				{
 					"transaction_id": "23249849e52ee17143509baf7a5abcbd76f9b589947d73e7bbc03ca9142f9535",
@@ -89,7 +100,7 @@ fn expected_transaction() -> serde_json::Value {
 			"collateral_return": {
 				"address": "addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw",
 				"amount": {
-					"coin": "9922331898",
+					"coin": "9922360806",
 					"multiasset": {
 						"01010101010101010101010101010101010101010101010101010101": {
 							"": "1"
@@ -99,7 +110,7 @@ fn expected_transaction() -> serde_json::Value {
 				"plutus_data": null,
 				"script_ref": null
 			},
-			"total_collateral": "614039",
+			"total_collateral": "585131",
 			"reference_inputs": null,
 			"required_signers": [
 				"76da17b2e3371ab7ca88ce0500441149f03cc5091009f99c99c080d9"
@@ -121,7 +132,7 @@ fn expected_transaction() -> serde_json::Value {
 				{
 					"tag": "Mint",
 					"index": "0",
-					"data": "{\"constructor\":0,\"fields\":[{\"int\":32},{\"bytes\":\"f298532e5be52f55bb60602ada0e4b7038569ec728fbe03c7254d2b9\"}]}",
+					"data": "{\"constructor\":0,\"fields\":[{\"int\":32},{\"bytes\":\"fe9046c83d510b767477b9f7f4817d546da295d112bb2dedc213f6cd\"}]}",
 					"ex_units": {
 						"mem": "789754",
 						"steps": "171220003"

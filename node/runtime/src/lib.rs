@@ -40,7 +40,9 @@ use sidechain_slots::Slot;
 use sp_api::impl_runtime_apis;
 use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{crypto::KeyTypeId, ByteArray, OpaqueMetadata};
+#[cfg(feature = "runtime-benchmarks")]
+use sp_core::ByteArray;
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_inherents::InherentIdentifier;
 use sp_runtime::{
 	generic, impl_opaque_keys,
