@@ -196,3 +196,87 @@ fn parse_simple_at_least_n_native_script(
 		_ => None,
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::read_policy;
+	use crate::{
+		governance::{GovernancePolicyScript, PartnerChainsMultisigPolicy, SimpleAtLeastN},
+		plutus_script::PlutusScript,
+	};
+	use hex_literal::hex;
+	use ogmios_client::types::OgmiosUtxo;
+
+	#[test]
+	fn read_pc_multisig_from_ogmios_utxo() {
+		let utxo_json = serde_json::json!({
+			  "transaction": { "id": "57342ce4f30afa749bd78f0c093609366d997a1c4747d206ec7fd0aea9a35b55" },
+		"index": 0,
+		"address": "addr_test1wplvesjjxtg8lhyy34ak2dr9l3kz8ged3hajvcvpanfx7rcwzvtc5",
+		"value": { "ada": { "lovelace": 1430920 } },
+		"script": {
+		  "language": "plutus:v2",
+			  "cbor": "5901d30100003323322323232323322323232222323232532323355333573466e20cc8c8c88c008004c058894cd4004400c884cc018008c010004c04488004c04088008c01000400840304034403c4c02d24010350543500300d37586ae84008dd69aba1357440026eb0014c040894cd400440448c884c8cd40514cd4c00cc04cc030dd6198009a9803998009a980380411000a40004400290080a400429000180300119112999ab9a33710002900009807a490350543600133003001002301522253350011300f49103505437002215333573466e1d20000041002133005337020089001000980991299a8008806910a999ab9a3371e00a6eb800840404c0100048c8cc8848cc00400c008d55ce80098031aab9e00137540026016446666aae7c00480348cd4030d5d080118019aba2002498c02888cccd55cf8009006119a8059aba100230033574400493119319ab9c00100512200212200130062233335573e0024010466a00e6eb8d5d080118019aba20020031200123300122337000040029000180191299a800880211099a802801180200089100109109119800802001919180080091198019801001000a61239f9f581ce8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2bff01ff0001"
+		}
+
+		  });
+		let ogmios_utxo: OgmiosUtxo = serde_json::from_value(utxo_json).unwrap();
+		let policy = read_policy(&ogmios_utxo).unwrap();
+		assert_eq!(
+			policy,
+			GovernancePolicyScript::MultiSig(PartnerChainsMultisigPolicy {
+				script: PlutusScript {
+					bytes: hex!("5901d30100003323322323232323322323232222323232532323355333573466e20cc8c8c88c008004c058894cd4004400c884cc018008c010004c04488004c04088008c01000400840304034403c4c02d24010350543500300d37586ae84008dd69aba1357440026eb0014c040894cd400440448c884c8cd40514cd4c00cc04cc030dd6198009a9803998009a980380411000a40004400290080a400429000180300119112999ab9a33710002900009807a490350543600133003001002301522253350011300f49103505437002215333573466e1d20000041002133005337020089001000980991299a8008806910a999ab9a3371e00a6eb800840404c0100048c8cc8848cc00400c008d55ce80098031aab9e00137540026016446666aae7c00480348cd4030d5d080118019aba2002498c02888cccd55cf8009006119a8059aba100230033574400493119319ab9c00100512200212200130062233335573e0024010466a00e6eb8d5d080118019aba20020031200123300122337000040029000180191299a800880211099a802801180200089100109109119800802001919180080091198019801001000a61239f9f581ce8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2bff01ff0001").to_vec(),
+				 language: cardano_serialization_lib::Language::new_plutus_v2()
+				},
+				key_hashes: vec![hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b")],
+				threshold: 1
+			})
+		)
+	}
+
+	#[test]
+	fn read_simple_at_least_n_native_script_from_ogmios_utxo() {
+		let utxo_json = serde_json::json!({
+			"transaction": { "id": "57342ce4f30afa749bd78f0c093609366d997a1c4747d206ec7fd0aea9a35b55" },
+			"index": 0,
+			"address": "addr_test1wplvesjjxtg8lhyy34ak2dr9l3kz8ged3hajvcvpanfx7rcwzvtc5",
+			"value": { "ada": { "lovelace": 1430920 } },
+			"script": {
+				"language": "native",
+				"json": {
+					"clause": "some",
+					"atLeast": 2,
+					"from": [
+						{
+							"clause": "signature",
+							"from": "e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
+						},
+						{
+							"clause": "signature",
+							"from": "a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7"
+						},
+						{
+							"clause": "signature",
+							"from": "b1b2b3b4b5b6b7b1b2b3b4b5b6b7b1b2b3b4b5b6b7b1b2b3b4b5b6b7"
+						}
+					  ]
+				},
+				"cbor": "830301818200581ce8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
+			}
+		});
+		let ogmios_utxo: OgmiosUtxo = serde_json::from_value(utxo_json).unwrap();
+		let policy = read_policy(&ogmios_utxo).unwrap();
+		assert_eq!(
+			policy,
+			GovernancePolicyScript::AtLeastNNativeScript(SimpleAtLeastN {
+				threshold: 2,
+				key_hashes: vec![
+					hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"),
+					hex!("a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7"),
+					hex!("b1b2b3b4b5b6b7b1b2b3b4b5b6b7b1b2b3b4b5b6b7b1b2b3b4b5b6b7")
+				]
+			})
+		)
+	}
+}
