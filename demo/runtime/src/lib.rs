@@ -619,6 +619,12 @@ impl pallet_governed_map::Config for Runtime {
 	type BenchmarkHelper = ();
 }
 
+impl pallet_glutton::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_glutton::weights::SubstrateWeight<Runtime>;
+	type AdminOrigin = EnsureRoot<AccountId>;
+}
+
 impl crate::test_helper_pallet::Config for Runtime {}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -649,6 +655,7 @@ construct_runtime!(
 		Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,
 		GovernedMap: pallet_governed_map,
+		Glutton: pallet_glutton,
 		TestHelperPallet: crate::test_helper_pallet,
 	}
 );

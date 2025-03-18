@@ -65,6 +65,7 @@ fn testnet_genesis(
 			main_chain_script: Some(sp_governed_map::MainChainScriptsV1::default()),
 			..Default::default()
 		},
+		glutton: Default::default(),
 	};
 
 	serde_json::to_value(config).expect("Could not build genesis config.")

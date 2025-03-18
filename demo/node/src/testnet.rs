@@ -209,6 +209,7 @@ pub fn testnet_genesis(
 			main_chain_script: Some(Default::default()),
 			..Default::default()
 		},
+		glutton: Default::default(),
 		test_helper_pallet: TestHelperPalletConfig {
 			participation_data_release_period: 30,
 			..Default::default()
