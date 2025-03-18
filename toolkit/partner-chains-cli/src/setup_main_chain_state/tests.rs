@@ -11,7 +11,8 @@ use crate::{verify_json, CmdRun};
 use hex_literal::hex;
 use serde_json::json;
 use sidechain_domain::{
-	AuraPublicKey, DParameter, GrandpaPublicKey, McTxHash, SidechainPublicKey, UtxoId,
+	AuraPublicKey, DParameter, GrandpaPublicKey, McSmartContractResult, McTxHash,
+	SidechainPublicKey, UtxoId,
 };
 use sp_core::offchain::Timestamp;
 
@@ -47,7 +48,7 @@ fn no_ariadne_parameters_on_main_chain_do_updates() {
 			genesis_utxo(),
 			&initial_permissioned_candidates(),
 			payment_signing_key(),
-			Ok(Some(McTxHash([2; 32]))),
+			Ok(Some(McSmartContractResult::tx_hash([2; 32]))),
 		);
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())
@@ -101,7 +102,7 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 			genesis_utxo(),
 			&initial_permissioned_candidates(),
 			payment_signing_key(),
-			Ok(Some(McTxHash([2; 32]))),
+			Ok(Some(McSmartContractResult::tx_hash([2; 32]))),
 		);
 	let mock_context = MockIOContext::new()
 		.with_json_file(CHAIN_CONFIG_FILE_PATH, test_chain_config_content())

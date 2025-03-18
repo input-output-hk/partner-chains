@@ -34,6 +34,22 @@ impl GovernancePolicyScript {
 			},
 		}
 	}
+
+	/// Checks if the policy is 1 of 1 for given key hash
+	pub(crate) fn is_single_key_policy_for(&self, key_hash: &Ed25519KeyHash) -> bool {
+		match self {
+			Self::MultiSig(PartnerChainsMultisigPolicy { script: _, key_hashes, threshold }) => {
+				*threshold == 1
+					&& key_hashes.len() == 1
+					&& key_hashes.iter().any(|h| &Ed25519KeyHash::from(h.clone()) == key_hash)
+			},
+			Self::AtLeastNNativeScript(SimpleAtLeastN { threshold, key_hashes }) => {
+				*threshold == 1
+					&& key_hashes.len() == 1
+					&& key_hashes.iter().any(|h| &Ed25519KeyHash::from(h.clone()) == key_hash)
+			},
+		}
+	}
 }
 
 /// Plutus MultiSig smart contract implemented in partner-chains-smart-contracts repo
