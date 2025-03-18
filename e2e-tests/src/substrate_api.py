@@ -280,33 +280,37 @@ class SubstrateApi(BlockchainApi):
     def update_d_param(self, permissioned_candidates_count, registered_candidates_count):
         signing_key = self.config.nodes_config.governance_authority.mainchain_key
 
-        tx_id = self.partner_chains_node.smart_contracts.update_d_param(
+        response = self.partner_chains_node.smart_contracts.update_d_param(
             permissioned_candidates_count, registered_candidates_count, signing_key
         )
+        tx_id = response.transaction_id
         effective_in_mc_epoch = self._effective_in_mc_epoch()
 
-        if tx_id and effective_in_mc_epoch:
+        if tx_id:
             logger.info(
                 f"Update of D Param of P: {permissioned_candidates_count} and R: {registered_candidates_count} "
                 f" was successful and will take effect in {effective_in_mc_epoch} epoch. Transaction id: {tx_id}"
             )
             return True, effective_in_mc_epoch
         else:
+            logger.error(f"Update of D Param failed, STDOUT: {response.stdout}, STDERR: {response.stderr}")
             return False, None
 
     def upsert_permissioned_candidates(self, new_candidates_list):
-        txId = self.partner_chains_node.smart_contracts.upsert_permissioned_candidates(
+        response = self.partner_chains_node.smart_contracts.upsert_permissioned_candidates(
             self.config.nodes_config.governance_authority.mainchain_key, new_candidates_list
         )
+        tx_id = response.transaction_id
         effective_in_mc_epoch = self._effective_in_mc_epoch()
 
-        if txId and effective_in_mc_epoch:
+        if tx_id:
             logger.info(
                 f"Success! New permissioned candidates are set and will be effective in "
-                f"{effective_in_mc_epoch} MC epoch. Transaction id: {txId}"
+                f"{effective_in_mc_epoch} MC epoch. Transaction id: {tx_id}"
             )
             return True, effective_in_mc_epoch
         else:
+            logger.error(f"Upsert permissioned candidates failed, STDOUT: {response.stdout}, STDERR: {response.stderr}")
             return False, None
 
     def register_candidate(self, candidate_name):
@@ -324,37 +328,45 @@ class SubstrateApi(BlockchainApi):
             self.config.nodes_config.nodes[candidate_name].grandpa_public_key,
         )
 
-        txId = self.partner_chains_node.smart_contracts.register(
+        response = self.partner_chains_node.smart_contracts.register(
             signatures,
             keys_files.cardano_payment_key,
             self.read_cardano_key_file(keys_files.spo_public_key),
             registration_utxo,
         )
+        tx_id = response.transaction_id
         effective_in_mc_epoch = self._effective_in_mc_epoch()
 
-        if txId and effective_in_mc_epoch:
+        if tx_id:
             logger.info(
                 f"Registration of {candidate_name} was successful and will take effect in "
-                f"{effective_in_mc_epoch} MC epoch. Transaction id: {txId}"
+                f"{effective_in_mc_epoch} MC epoch. Transaction id: {tx_id}"
             )
             return True, effective_in_mc_epoch
         else:
+            logger.error(
+                f"Registration of {candidate_name} failed, STDOUT: {response.stdout}, STDERR: {response.stderr}"
+            )
             return False, None
 
     def deregister_candidate(self, candidate_name):
         keys_files = self.config.nodes_config.nodes[candidate_name].keys_files
-        txId = self.partner_chains_node.smart_contracts.deregister(
+        response = self.partner_chains_node.smart_contracts.deregister(
             keys_files.cardano_payment_key, self.read_cardano_key_file(keys_files.spo_public_key)
         )
+        tx_id = response.transaction_id
         effective_in_mc_epoch = self._effective_in_mc_epoch()
 
-        if txId and effective_in_mc_epoch:
+        if tx_id:
             logger.info(
                 f"Deregistration of {candidate_name} was successful and will take effect in "
-                f"{effective_in_mc_epoch} MC epoch. Transaction id: {txId}"
+                f"{effective_in_mc_epoch} MC epoch. Transaction id: {tx_id}"
             )
             return True, effective_in_mc_epoch
         else:
+            logger.error(
+                f"Deregistration of {candidate_name} failed, STDOUT: {response.stdout}, STDERR: {response.stderr}"
+            )
             return False, None
 
     def get_pc_epoch(self):
