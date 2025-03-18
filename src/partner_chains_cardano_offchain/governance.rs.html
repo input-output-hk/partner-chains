@@ -279,6 +279,22 @@
 <a href="#279" id="279">279</a>
 <a href="#280" id="280">280</a>
 <a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::csl::{NetworkTypeExt, OgmiosUtxoExt};
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script;
 <span class="kw">use </span><span class="kw">crate</span>::scripts_data;
@@ -312,6 +328,22 @@
 			<span class="self">Self</span>::MultiSig(policy) =&gt; <span class="kw">crate</span>::csl::Script::Plutus(policy.script.clone()),
 			<span class="self">Self</span>::AtLeastNNativeScript(policy) =&gt; {
 				<span class="kw">crate</span>::csl::Script::Native(policy.to_csl_native_script())
+			},
+		}
+	}
+
+	<span class="doccomment">/// Checks if the policy is 1 of 1 for given key hash
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>is_single_key_policy_for(<span class="kw-2">&amp;</span><span class="self">self</span>, key_hash: <span class="kw-2">&amp;</span>Ed25519KeyHash) -&gt; bool {
+		<span class="kw">match </span><span class="self">self </span>{
+			<span class="self">Self</span>::MultiSig(PartnerChainsMultisigPolicy { script: <span class="kw">_</span>, key_hashes, threshold }) =&gt; {
+				<span class="kw-2">*</span>threshold == <span class="number">1
+					</span>&amp;&amp; key_hashes.len() == <span class="number">1
+					</span>&amp;&amp; key_hashes.iter().any(|h| <span class="kw-2">&amp;</span>Ed25519KeyHash::from(h.clone()) == key_hash)
+			},
+			<span class="self">Self</span>::AtLeastNNativeScript(SimpleAtLeastN { threshold, key_hashes }) =&gt; {
+				<span class="kw-2">*</span>threshold == <span class="number">1
+					</span>&amp;&amp; key_hashes.len() == <span class="number">1
+					</span>&amp;&amp; key_hashes.iter().any(|h| <span class="kw-2">&amp;</span>Ed25519KeyHash::from(h.clone()) == key_hash)
 			},
 		}
 	}
