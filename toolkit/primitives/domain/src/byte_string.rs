@@ -23,7 +23,7 @@ impl From<Vec<u8>> for ByteString {
 #[byte_string(debug)]
 #[byte_string(to_hex_string)]
 #[cfg_attr(feature = "std", byte_string(decode_hex))]
-#[cfg_attr(feature = "serde", byte_string(hex_serialize))]
+#[cfg_attr(feature = "serde", byte_string(hex_serialize, hex_deserialize))]
 pub struct SizedByteString<const N: usize>(pub [u8; N]);
 
 impl<const N: usize> From<[u8; N]> for SizedByteString<N> {

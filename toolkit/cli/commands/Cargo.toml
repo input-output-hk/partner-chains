@@ -14,7 +14,7 @@ hex = { workspace = true }
 hex-literal = { workspace = true }
 plutus = { workspace = true, default-features = true }
 plutus-datum-derive = { workspace = true, default-features = true }
-secp256k1 = { workspace = true, features = ["std", "global-context"] }
+secp256k1 = { workspace = true, features = ["std", "global-context", "hashes"] }
 sidechain-domain = { workspace = true, default-features = true, features = [
 	"std",
 ] }
@@ -24,6 +24,8 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 pallet-address-associations = { workspace = true, features = ["std"] }
 parity-scale-codec = { workspace = true }
+sp-block-producer-metadata = { workspace = true }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }
+pretty_assertions = { workspace = true }
