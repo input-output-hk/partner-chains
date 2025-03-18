@@ -6285,6 +6285,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-glutton"
+version = "25.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2412-1#ab5882bbc67bcc48464566a2b48171265147acac"
+dependencies = [
+ "blake2 0.10.6",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-runtime",
+]
+
+[[package]]
 name = "pallet-grandpa"
 version = "39.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2412-1#ab5882bbc67bcc48464566a2b48171265147acac"
@@ -6541,7 +6559,7 @@ checksum = "4e69bf016dc406eff7d53a7d3f7cf1c2e72c82b9088aac1118591e36dd2cd3e9"
 dependencies = [
  "bitcoin_hashes",
  "rand",
- "rand_core 0.6.4",
+ "rand_core 0.4.2",
  "serde",
  "unicode-normalization",
 ]
@@ -9961,6 +9979,7 @@ dependencies = [
  "pallet-balances",
  "pallet-block-participation",
  "pallet-block-production-log",
+ "pallet-glutton",
  "pallet-grandpa",
  "pallet-native-token-management",
  "pallet-partner-chains-session",

@@ -24,6 +24,7 @@ use frame_support::{
 	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, IdentityFee},
 	BoundedVec,
 };
+use frame_system::EnsureRoot;
 use opaque::SessionKeys;
 use pallet_grandpa::AuthorityId as GrandpaId;
 use pallet_session_validator_management;
@@ -515,6 +516,12 @@ impl pallet_block_participation::Config for Runtime {
 	const TARGET_INHERENT_ID: InherentIdentifier = TestHelperPallet::INHERENT_IDENTIFIER;
 }
 
+impl pallet_glutton::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = pallet_glutton::weights::SubstrateWeight<Runtime>;
+	type AdminOrigin = EnsureRoot<AccountId>;
+}
+
 impl crate::test_helper_pallet::Config for Runtime {}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -542,6 +549,7 @@ construct_runtime!(
 		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
 		Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,
+		Glutton: pallet_glutton,
 		TestHelperPallet: crate::test_helper_pallet,
 	}
 );

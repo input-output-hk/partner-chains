@@ -204,6 +204,7 @@ pub fn testnet_genesis(
 			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()?,
 			..Default::default()
 		},
+		glutton: Default::default(),
 		test_helper_pallet: TestHelperPalletConfig {
 			participation_data_release_period: 30,
 			..Default::default()
