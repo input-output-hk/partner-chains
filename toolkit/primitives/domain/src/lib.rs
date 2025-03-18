@@ -606,6 +606,12 @@ pub enum McSmartContractResult {
 	TxCBOR(Vec<u8>),
 }
 
+impl McSmartContractResult {
+	pub fn tx_hash(hash: [u8; 32]) -> Self {
+		Self::TxHash(McTxHash(hash))
+	}
+}
+
 #[derive(Default, Clone, Decode, Encode, PartialEq, Eq, TypeInfo, ToDatum, MaxEncodedLen, Hash)]
 #[byte_string(debug, decode_hex, hex_serialize, hex_deserialize)]
 pub struct McBlockHash(pub [u8; 32]);

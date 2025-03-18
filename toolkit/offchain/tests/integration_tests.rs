@@ -25,8 +25,9 @@ use partner_chains_cardano_offchain::{
 use partner_chains_plutus_data::reserve::ReserveDatum;
 use sidechain_domain::{
 	AdaBasedStaking, AssetId, AssetName, AuraPublicKey, CandidateRegistration, DParameter,
-	GrandpaPublicKey, MainchainKeyHash, MainchainSignature, McTxHash, PermissionedCandidateData,
-	PolicyId, SidechainPublicKey, SidechainSignature, StakePoolPublicKey, UtxoId, UtxoIndex,
+	GrandpaPublicKey, MainchainKeyHash, MainchainSignature, McSmartContractResult, McTxHash,
+	PermissionedCandidateData, PolicyId, SidechainPublicKey, SidechainSignature,
+	StakePoolPublicKey, UtxoId, UtxoIndex,
 };
 use std::time::Duration;
 use testcontainers::{clients::Cli, Container, GenericImage};
@@ -338,13 +339,13 @@ async fn run_upsert_permissioned_candidates<
 	genesis_utxo: UtxoId,
 	candidate: u8,
 	client: &T,
-) -> Option<McTxHash> {
+) -> Option<McSmartContractResult> {
 	let candidates = vec![PermissionedCandidateData {
 		sidechain_public_key: SidechainPublicKey([candidate; 33].to_vec()),
 		aura_public_key: AuraPublicKey([candidate; 32].to_vec()),
 		grandpa_public_key: GrandpaPublicKey([candidate; 32].to_vec()),
 	}];
-	let tx_hash = permissioned_candidates::upsert_permissioned_candidates(
+	permissioned_candidates::upsert_permissioned_candidates(
 		genesis_utxo,
 		&candidates,
 		&governance_authority_payment_key(),
@@ -352,14 +353,7 @@ async fn run_upsert_permissioned_candidates<
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
-	.unwrap();
-	if let Some(tx_hash) = tx_hash {
-		FixedDelayRetries::new(Duration::from_millis(500), 100)
-			.await_tx_output(client, UtxoId::new(tx_hash.0, 0))
-			.await
-			.unwrap()
-	};
-	tx_hash
+	.unwrap()
 }
 
 async fn run_init_reserve_management<

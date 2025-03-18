@@ -25,7 +25,7 @@ use ogmios_client::types::OgmiosUtxo;
 use partner_chains_plutus_data::permissioned_candidates::{
 	permissioned_candidates_to_plutus_data, PermissionedCandidateDatums,
 };
-use sidechain_domain::{McTxHash, PermissionedCandidateData, UtxoId};
+use sidechain_domain::{McSmartContractResult, McTxHash, PermissionedCandidateData, UtxoId};
 
 pub trait UpsertPermissionedCandidates {
 	#[allow(async_fn_in_trait)]
@@ -34,7 +34,7 @@ pub trait UpsertPermissionedCandidates {
 		genesis_utxo: UtxoId,
 		candidates: &[PermissionedCandidateData],
 		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<McTxHash>>;
+	) -> anyhow::Result<Option<McSmartContractResult>>;
 }
 
 impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>
@@ -45,7 +45,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>
 		genesis_utxo: UtxoId,
 		candidates: &[PermissionedCandidateData],
 		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<McTxHash>> {
+	) -> anyhow::Result<Option<McSmartContractResult>> {
 		upsert_permissioned_candidates(
 			genesis_utxo,
 			candidates,
@@ -66,7 +66,7 @@ pub async fn upsert_permissioned_candidates<
 	payment_signing_key: &CardanoPaymentSigningKey,
 	ogmios_client: &C,
 	await_tx: &A,
-) -> anyhow::Result<Option<McTxHash>> {
+) -> anyhow::Result<Option<McSmartContractResult>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
 	let (validator, policy) =
 		scripts_data::permissioned_candidates_scripts(genesis_utxo, ctx.network)?;
@@ -76,7 +76,7 @@ pub async fn upsert_permissioned_candidates<
 	let mut candidates = candidates.to_owned();
 	candidates.sort();
 
-	let tx_hash_opt = match get_current_permissioned_candidates(validator_utxos)? {
+	let result_opt = match get_current_permissioned_candidates(validator_utxos)? {
 		Some((_, current_permissioned_candidates))
 			if current_permissioned_candidates == *candidates =>
 		{
@@ -85,7 +85,7 @@ pub async fn upsert_permissioned_candidates<
 		},
 		Some((current_utxo, _)) => {
 			log::info!(
-				"Current permissioned candidates are different to the one to be set. Updating."
+				"Current permissioned candidates are different to the one to be set. Preparing transaction to update."
 			);
 			Some(
 				update_permissioned_candidates(
@@ -101,7 +101,9 @@ pub async fn upsert_permissioned_candidates<
 			)
 		},
 		None => {
-			log::info!("There are permissioned candidates. Inserting new ones.");
+			log::info!(
+				"There aren't any permissioned candidates. Preparing transaction to insert."
+			);
 			Some(
 				insert_permissioned_candidates(
 					&validator,
@@ -115,10 +117,10 @@ pub async fn upsert_permissioned_candidates<
 			)
 		},
 	};
-	if let Some(tx_hash) = tx_hash_opt {
+	if let Some(McSmartContractResult::TxHash(tx_hash)) = result_opt {
 		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
 	}
-	Ok(tx_hash_opt)
+	Ok(result_opt)
 }
 
 fn get_current_permissioned_candidates(
@@ -151,7 +153,7 @@ async fn insert_permissioned_candidates<C>(
 	governance_data: &GovernanceData,
 	ctx: TransactionContext,
 	client: &C,
-) -> anyhow::Result<McTxHash>
+) -> anyhow::Result<McSmartContractResult>
 where
 	C: Transactions + QueryLedgerState + QueryNetwork,
 {
@@ -170,17 +172,22 @@ where
 	)
 	.await?;
 
-	let signed_tx = ctx.sign(&tx).to_bytes();
-	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-		anyhow!(
-			"Submit insert permissioned candidates transaction request failed: {}, bytes: {}",
-			e,
-			hex::encode(tx.to_bytes())
-		)
-	})?;
-	let tx_id = McTxHash(res.transaction.id);
-	log::info!("Transaction submitted: {}", hex::encode(tx_id.0));
-	Ok(tx_id)
+	if governance_data.policy.is_single_key_policy_for(&ctx.payment_key_hash()) {
+		let signed_tx = ctx.sign(&tx).to_bytes();
+		let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
+			anyhow!(
+				"Submit insert permissioned candidates transaction request failed: {}, bytes: {}",
+				e,
+				hex::encode(tx.to_bytes())
+			)
+		})?;
+		let tx_id = res.transaction.id;
+		log::info!("Transaction submitted: {}", hex::encode(tx_id));
+		Ok(McSmartContractResult::tx_hash(tx_id))
+	} else {
+		log::info!("Transaction CBOR: {}", hex::encode(tx.to_bytes()));
+		Ok(McSmartContractResult::TxCBOR(tx.to_bytes()))
+	}
 }
 
 async fn update_permissioned_candidates<C>(
@@ -191,7 +198,7 @@ async fn update_permissioned_candidates<C>(
 	governance_data: &GovernanceData,
 	ctx: TransactionContext,
 	client: &C,
-) -> anyhow::Result<McTxHash>
+) -> anyhow::Result<McSmartContractResult>
 where
 	C: Transactions + QueryNetwork + QueryLedgerState,
 {
@@ -211,17 +218,25 @@ where
 	)
 	.await?;
 
-	let signed_tx = ctx.sign(&tx).to_bytes();
-	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-		anyhow!(
-			"Submit update permissioned candidates transaction request failed: {}, bytes: {}",
-			e,
-			hex::encode(&signed_tx)
-		)
-	})?;
-	let tx_id = McTxHash(res.transaction.id);
-	log::info!("Update permissioned candidates transaction submitted: {}", hex::encode(tx_id.0));
-	Ok(tx_id)
+	if governance_data.policy.is_single_key_policy_for(&ctx.payment_key_hash()) {
+		let signed_tx = ctx.sign(&tx).to_bytes();
+		let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
+			anyhow!(
+				"Submit update permissioned candidates transaction request failed: {}, bytes: {}",
+				e,
+				hex::encode(&signed_tx)
+			)
+		})?;
+		let tx_id = McTxHash(res.transaction.id);
+		log::info!(
+			"Update permissioned candidates transaction submitted: {}",
+			hex::encode(tx_id.0)
+		);
+		Ok(McSmartContractResult::TxHash(tx_id))
+	} else {
+		log::info!("Transaction CBOR: {}", hex::encode(tx.to_bytes()));
+		Ok(McSmartContractResult::TxCBOR(tx.to_bytes()))
+	}
 }
 
 /// Builds a transaction that mints a Permissioned Candidates token and also mint governance token
