@@ -57,6 +57,7 @@ fn testnet_genesis(
 		pallet_session: Default::default(),
 		session: Default::default(),
 		native_token_management: Default::default(),
+		glutton: Default::default(),
 	};
 
 	serde_json::to_value(config).expect("Could not build genesis config.")
