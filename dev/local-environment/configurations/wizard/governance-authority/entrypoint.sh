@@ -1,15 +1,39 @@
 #!/bin/bash
 
-echo "Installing dependencies..."
+start_node() {
+    echo "Starting the node..."
+    export MC__FIRST_EPOCH_TIMESTAMP_MILLIS=$(cat /shared/MC__FIRST_EPOCH_TIMESTAMP_MILLIS)
 
+    /usr/local/bin/partner-chains-node \
+        --validator \
+        --chain=/shared/chain-spec.json \
+        --node-key-file=/data/chains/partner_chains_template/network/secret_ed25519 \
+        --base-path=/data \
+        --keystore-path=/data/chains/partner_chains_template/keystore \
+        --unsafe-rpc-external \
+        --rpc-port=9933 \
+        --rpc-cors=all \
+        --prometheus-port=9615 \
+        --prometheus-external \
+        --state-pruning=archive \
+        --blocks-pruning=archive &
+    wait
+}
+
+if [ -f "/shared/partner-chains-wizard-1.ready" ]; then
+    echo "/shared/partner-chains-wizard-1.ready exists. Skipping configuration and starting the node..."
+    start_node
+    exit 0
+fi
+
+
+echo "Installing dependencies..."
 apt -qq update &> /dev/null
 apt -qq -y install expect curl jq ncat &> /dev/null
-
 cp /usr/local/bin/partner-chains-node /partner-chains-node
 
+
 echo "Beginning configuration..."
-
-
 echo "Generating keys..."
 expect <<EOF
 spawn ./partner-chains-node wizards generate-keys
@@ -21,7 +45,6 @@ EOF
 
 
 echo "Waiting for the Cardano network to sync and for Ogmios to start..."
-
 while true; do
     if nc -z ogmios $OGMIOS_PORT; then
         break
@@ -50,11 +73,11 @@ send "ogmios\r"
 expect "Ogmios port (1337)"
 send "\r"
 expect "path to the payment verification file (payment.vkey)"
-send "keys/funded_address.vkey\r"
+send "/keys/funded_address.vkey\r"
 expect "Select an UTXO to use as the genesis UTXO"
 send "\r"
 expect "path to the payment signing key file (payment.skey)"
-send "keys/funded_address.skey\r"
+send "/keys/funded_address.skey\r"
 expect "Do you want to configure a native token for you Partner Chain? (Y/n)"
 send "n\r"
 expect eof
@@ -63,7 +86,7 @@ EOF
 
 echo "Waiting for permissioned candidate's keys to be generated..."
 while true; do
-    if [ -f "/shared/partner-chains-wizard-2.ready" ]; then
+    if [ -f "/shared/partner-chains-wizard-2-keys.ready" ]; then
         break
     else
         sleep 1
@@ -108,7 +131,6 @@ echo "Copying chain-spec.json file to /shared/chain-spec.json..."
 cp chain-spec.json /shared/chain-spec.json
 echo "chain-spec.json generation complete."
 
-
 echo "Copying pc-chain-config.json file to /shared/pc-chain-config.json..."
 cp pc-chain-config.json /shared/pc-chain-config.json
 
@@ -129,7 +151,7 @@ expect "Ogmios hostname (ogmios)"
 send "\r"
 expect "Ogmios port (1337)"
 send "\r"
-expect "path to the payment signing key file (keys/funded_address.skey)"
+expect "path to the payment signing key file (/keys/funded_address.skey)"
 send "\r"
 expect "Do you want to set/update the D-parameter on the main chain? (y/N)"
 send "y\r"
@@ -137,20 +159,13 @@ expect "Enter P, the number of permissioned candidates seats, as a non-negative 
 send "2\r"
 expect "Enter R, the number of registered candidates seats, as a non-negative integer. (0)"
 send "1\r"
-expect "path to the payment signing key file (keys/funded_address.skey)"
+expect "path to the payment signing key file (/keys/funded_address.skey)"
 send "\r"
 expect "Done. Main chain state is set."
 expect eof
 EOF
 
-
+touch /shared/partner-chains-wizard-1.ready
 echo "Partner Chain configuration is complete, and will be able to start after two mainchain epochs."
 
-echo "Starting the node..."
-expect <<EOF
-spawn ./partner-chains-node wizards start-node
-expect "Proceed? (Y/n)"
-send "\r"
-set timeout -1
-expect eof
-EOF
+start_node
