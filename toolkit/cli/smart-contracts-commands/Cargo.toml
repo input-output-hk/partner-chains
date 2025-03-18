@@ -14,6 +14,7 @@ ogmios-client = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+anyhow = { workspace = true }
 
 [dev-dependencies]
 hex-literal = { workspace = true }
