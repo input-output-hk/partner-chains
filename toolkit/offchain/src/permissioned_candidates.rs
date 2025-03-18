@@ -85,7 +85,7 @@ pub async fn upsert_permissioned_candidates<
 		},
 		Some((current_utxo, _)) => {
 			log::info!(
-				"Current permissioned candidates are different to the one to be set. Updating."
+				"Current permissioned candidates are different to the one to be set. Preparing transaction to update."
 			);
 			Some(
 				update_permissioned_candidates(
@@ -101,7 +101,9 @@ pub async fn upsert_permissioned_candidates<
 			)
 		},
 		None => {
-			log::info!("There are permissioned candidates. Inserting new ones.");
+			log::info!(
+				"There aren't any permissioned candidates. Preparing transaction to insert."
+			);
 			Some(
 				insert_permissioned_candidates(
 					&validator,
