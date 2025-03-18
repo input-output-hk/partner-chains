@@ -38,6 +38,7 @@ class TestCommitteeDistribution:
     @mark.committee_distribution
     @mark.ariadne
     @mark.xdist_group("governance_action")
+    @mark.usefixtures("governance_skey_with_cli")
     def test_update_d_param(
         self,
         api: BlockchainApi,
@@ -73,7 +74,7 @@ class TestCommitteeDistribution:
         result, mc_epoch = api.update_d_param(
             new_d_param.permissioned_candidates_number, new_d_param.trustless_candidates_number
         )
-        assert result, "D-param update failed"
+        assert result, "D-param transaction id is empty. Check command output for errors."
 
         # FIXME: ETCM-8945 - create and use wait_for_transaction function instead of wait_for_next_pc_block
         api.wait_for_next_pc_block()
