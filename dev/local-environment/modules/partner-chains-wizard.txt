@@ -6,16 +6,25 @@
     user: "0:0"
     volumes:
       - shared-volume:/shared
+      - partner-chains-node-1-data:/data
       - ./configurations/cardano/keys/funded_address.skey:/keys/funded_address.skey
       - ./configurations/cardano/keys/funded_address.vkey:/keys/funded_address.vkey
       - ./configurations/wizard/governance-authority/entrypoint.sh:/entrypoint.sh
     environment:
-      - OGMIOS_PORT=${OGMIOS_PORT}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      OGMIOS_PORT: ${OGMIOS_PORT}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_SYNC_POSTGRES_CONNECTION_STRING: "postgres://postgres:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/cexplorer"
+      SIDECHAIN_BLOCK_BENEFICIARY: "0000000000000000000000000000000000000000000000000000000000000001"
+      CARDANO_SECURITY_PARAMETER: "5"
+      CARDANO_ACTIVE_SLOTS_COEFF: "0.4"
+      MC__FIRST_EPOCH_NUMBER: "0"
+      MC__FIRST_SLOT_NUMBER: "0"
+      MC__EPOCH_DURATION_MILLIS: "120000"
+      BLOCK_STABILITY_MARGIN: "0"
     ports:
       - "30333:30333"
-      - "9933:9944"
+      - "9933:9933"
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
 
   partner-chains-wizard-2:
@@ -25,13 +34,11 @@
     user: "0:0"
     volumes:
       - shared-volume:/shared
+      - partner-chains-node-2-data:/data
       - ./configurations/wizard/permissioned/entrypoint.sh:/entrypoint.sh
     environment:
       - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    ports:
-      - "30334:30334"
-      - "9934:9944"
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
 
   partner-chains-wizard-3:
@@ -41,6 +48,7 @@
     user: "0:0"
     volumes:
       - shared-volume:/shared
+      - partner-chains-node-3-data:/data
       - ./configurations/cardano/keys/funded_address.skey:/keys/funded_address.skey
       - ./configurations/cardano/keys/funded_address.vkey:/keys/funded_address.vkey
       - ./configurations/cardano/keys/cold.skey:/keys/cold.skey
@@ -49,7 +57,4 @@
     environment:
       - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    ports:
-      - "30335:30335"
-      - "9935:9944"
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
