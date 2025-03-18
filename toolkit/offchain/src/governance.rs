@@ -8,6 +8,8 @@ use ogmios_client::{
 };
 use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 use partner_chains_plutus_data::PlutusDataExtensions as _;
+use serde::Serialize;
+use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::UtxoId;
 
 #[derive(Clone, Debug)]
@@ -100,7 +102,7 @@ impl GovernanceData {
 	async fn get_governance_utxo<T: QueryLedgerState + QueryNetwork>(
 		genesis_utxo: UtxoId,
 		client: &T,
-	) -> Result<OgmiosUtxo, JsError> {
+	) -> Result<Option<OgmiosUtxo>, JsError> {
 		let network = client
 			.shelley_genesis_configuration()
 			.await
@@ -126,27 +128,24 @@ impl GovernanceData {
 			))
 		})?;
 
-		utxos
-		.into_iter()
-		.find(|utxo| {
-			let correct_datum =
-				utxo.get_plutus_data()
-					.and_then(|plutus_data| VersionOracleDatum::try_from(plutus_data).ok())
-					.map(|data| data.version_oracle == 32)
-					.unwrap_or(false);
+		Ok(utxos.into_iter().find(|utxo| {
+			let correct_datum = utxo
+				.get_plutus_data()
+				.and_then(|plutus_data| VersionOracleDatum::try_from(plutus_data).ok())
+				.map(|data| data.version_oracle == 32)
+				.unwrap_or(false);
 
 			let contains_version_oracle_token =
 				utxo.value.native_tokens.contains_key(&version_oracle_policy.script_hash());
 			correct_datum && contains_version_oracle_token
-		})
-		.ok_or_else(|| JsError::from_str("Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using governance init command."))
+		}))
 	}
 
 	pub(crate) async fn get<T: QueryLedgerState + QueryNetwork>(
 		genesis_utxo: UtxoId,
 		client: &T,
 	) -> Result<GovernanceData, JsError> {
-		let utxo = Self::get_governance_utxo(genesis_utxo, client).await?;
+		let utxo = Self::get_governance_utxo(genesis_utxo, client).await?.ok_or_else(|| JsError::from_str("Could not find governance versioning UTXO. This most likely means that governance was not properly set up on Cardano using governance init command."))?;
 		let policy = read_policy(&utxo)?;
 		Ok(GovernanceData { policy, utxo })
 	}
@@ -213,9 +212,49 @@ fn parse_simple_at_least_n_native_script(
 	}
 }
 
+#[derive(Serialize)]
+pub struct GovernancePolicySummary {
+	pub key_hashes: Vec<ByteString>,
+	pub threshold: u32,
+}
+
+impl From<GovernancePolicyScript> for GovernancePolicySummary {
+	fn from(value: GovernancePolicyScript) -> Self {
+		match value {
+			GovernancePolicyScript::MultiSig(PartnerChainsMultisigPolicy {
+				script: _,
+				key_hashes,
+				threshold,
+			}) => GovernancePolicySummary {
+				threshold,
+				key_hashes: key_hashes.iter().map(|h| ByteString::from(h.to_vec())).collect(),
+			},
+			GovernancePolicyScript::AtLeastNNativeScript(SimpleAtLeastN {
+				threshold,
+				key_hashes,
+			}) => GovernancePolicySummary {
+				threshold,
+				key_hashes: key_hashes.iter().map(|h| ByteString::from(h.to_vec())).collect(),
+			},
+		}
+	}
+}
+
+pub async fn get_governance_policy_summary<T: QueryLedgerState + QueryNetwork>(
+	genesis_utxo: UtxoId,
+	client: &T,
+) -> Result<Option<GovernancePolicySummary>, JsError> {
+	if let Some(utxo) = GovernanceData::get_governance_utxo(genesis_utxo, client).await? {
+		let summary = read_policy(&utxo)?.into();
+		Ok(Some(summary))
+	} else {
+		Ok(None)
+	}
+}
+
 #[cfg(test)]
 mod tests {
-	use super::read_policy;
+	use super::{read_policy, GovernancePolicySummary};
 	use crate::{
 		governance::{GovernancePolicyScript, PartnerChainsMultisigPolicy, SimpleAtLeastN},
 		plutus_script::PlutusScript,
@@ -292,6 +331,60 @@ mod tests {
 					hex!("b1b2b3b4b5b6b7b1b2b3b4b5b6b7b1b2b3b4b5b6b7b1b2b3b4b5b6b7")
 				]
 			})
+		)
+	}
+
+	#[test]
+	fn simple_at_least_n_policy_to_json() {
+		let summary: GovernancePolicySummary =
+			GovernancePolicyScript::AtLeastNNativeScript(SimpleAtLeastN {
+				threshold: 2,
+				key_hashes: vec![
+					hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"),
+					hex!("a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7"),
+					hex!("b1b2b3b4b5b6b7b1b2b3b4b5b6b7b1b2b3b4b5b6b7b1b2b3b4b5b6b7"),
+				],
+			})
+			.into();
+		assert_eq!(
+			serde_json::to_value(summary).unwrap(),
+			serde_json::json!({
+				"key_hashes": [
+					"0xe8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b",
+					"0xa1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7a1a2a3a4a5a6a7",
+					"0xb1b2b3b4b5b6b7b1b2b3b4b5b6b7b1b2b3b4b5b6b7b1b2b3b4b5b6b7"
+				],
+				"threshold": 2
+			}),
+		)
+	}
+
+	#[test]
+	fn pcsc_multisig_to_json() {
+		let summary: GovernancePolicySummary =
+			GovernancePolicyScript::MultiSig(PartnerChainsMultisigPolicy {
+				script: PlutusScript {
+					bytes: vec![],
+					language: cardano_serialization_lib::Language::new_plutus_v2(),
+				},
+				key_hashes: vec![
+					hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"),
+					[1u8; 28],
+					[2u8; 28],
+				],
+				threshold: 2,
+			})
+			.into();
+		assert_eq!(
+			serde_json::to_value(summary).unwrap(),
+			serde_json::json!({
+				"key_hashes": [
+					"0xe8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b",
+					"0x01010101010101010101010101010101010101010101010101010101",
+					"0x02020202020202020202020202020202020202020202020202020202"
+				],
+				"threshold": 2
+			}),
 		)
 	}
 }
