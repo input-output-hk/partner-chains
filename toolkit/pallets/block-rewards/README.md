@@ -6,7 +6,7 @@ The Block Rewards pallet serves as an accounting system for tracking and managin
 
 At its core, this pallet maintains an accounting ledger of who should receive rewards for block production and in what quantities. It operates on the principle that each successfully produced and finalized block generates a specific amount of rewards (determined by configurable reward point calculation strategies), which are credited to the designated beneficiary for that block.
 
-Unlike most other pallets that implement complete functionality independently, the Block Rewards pallet is intentionally designed as part of a modular system with clear separation of concerns:
+The Block Rewards pallet is intentionally designed as part of a modular system with clear separation of concerns:
 
 1. **Reward Accounting**: The Block Rewards pallet itself focuses solely on maintaining an accurate accounting of earned rewards, tracking who has earned what.
 
