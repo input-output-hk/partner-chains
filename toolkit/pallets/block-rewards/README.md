@@ -6,7 +6,7 @@ The Block Rewards pallet serves as an accounting system for tracking and managin
 
 At its core, this pallet maintains an accounting ledger of who should receive rewards for block production and in what quantities. It operates on the principle that each successfully produced and finalized block generates a specific amount of rewards (determined by configurable reward point calculation strategies), which are credited to the designated beneficiary for that block.
 
-The Block Rewards pallet is intentionally designed as part of a modular system with clear separation of concerns:
+Unlike most other pallets that implement complete functionality independently, the Block Rewards pallet is intentionally designed as part of a modular system with clear separation of concerns:
 
 1. **Reward Accounting**: The Block Rewards pallet itself focuses solely on maintaining an accurate accounting of earned rewards, tracking who has earned what.
 
@@ -38,62 +38,70 @@ The pallet serves several specific purposes:
 
 ## Primitives
 
-The Block Rewards pallet relies on primitives defined in the `toolkit/primitives/block-rewards` crate.
+The Block Rewards pallet relies on primitives defined in the `toolkit/primitives/block-rewards` crate:
 
-<CLAUDEMIND_THINKING>
-I need to create a detailed hooks section for the block-rewards pallet README. This should explain the hooks used by the pallet, what they do, and their role in the pallet's functionality.
-</CLAUDEMIND_THINKING>
+### Inherent Data Handling
 
-Here's a detailed hooks section that could be added to the block-rewards pallet README:
+1. **INHERENT_IDENTIFIER**: Identifies block beneficiary inherent data in blocks
+   ```rust
+   pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"beneficr";
+   ```
 
-## Hooks
+2. **InherentError**: Defines errors that can occur during inherent data processing
+   ```rust
+   pub enum InherentError {
+       InherentRequired,
+   }
+   ```
 
-The Block Rewards pallet implements the following FRAME hooks to ensure proper tracking and accounting of block production rewards:
+### Reward Calculation Traits
 
-### on_initialize
+1. **GetBlockRewardPoints**: Trait that defines how reward points are calculated for each block
+   ```rust
+   pub trait GetBlockRewardPoints<Reward> {
+       fn get_block_reward() -> Reward;
+   }
+   ```
 
-The `on_initialize` hook is called at the beginning of each block's execution, before any extrinsics are processed. For the Block Rewards pallet, this hook prepares the pallet for processing a new block:
+2. **SimpleBlockCount**: A basic implementation that assigns one reward unit per block
+   ```rust
+   pub struct SimpleBlockCount;
+   impl<Reward: One> GetBlockRewardPoints<Reward> for SimpleBlockCount {
+       fn get_block_reward() -> Reward {
+           Reward::one()
+       }
+   }
+   ```
+
+### Inherent Data Provider
+
+For runtimes that support the standard library, the primitives provide an inherent data provider:
 
 ```rust
-fn on_initialize(n: BlockNumberFor<T>) -> Weight {
-    // Function implementation
+pub struct BlockBeneficiaryInherentProvider<BeneficiaryId> {
+    pub beneficiary_id: BeneficiaryId,
 }
 ```
 
-**Key responsibilities:**
+This provider is responsible for:
+- Supplying the beneficiary ID for the current block
+- Reading the beneficiary ID from environment variables
+- Encoding this data as inherent data to be included in blocks
 
-1. **Inherent Data Verification Setup**: The hook establishes the verification system for block beneficiary inherent data to ensure:
-    - A beneficiary is specified for every block (making the inherent required)
-    - Only one beneficiary is set per block
-
-2. **Block Preparation**: The hook clears any pending block data from previous unsuccessful block attempts, ensuring a clean slate for the new block.
-
-3. **Weight Calculation**: The hook returns an appropriate weight based on the operations performed, ensuring proper accounting of computational resources.
-
-### on_finalize
-
-The `on_finalize` hook is called at the end of each block's execution, after all extrinsics have been processed. For the Block Rewards pallet, this hook is crucial as it handles the actual crediting of rewards:
+The inherent data provider includes a convenient constructor method:
 
 ```rust
-fn on_finalize(n: BlockNumberFor<T>) -> Weight {
-    // Function implementation
+impl<BeneficiaryId> BlockBeneficiaryInherentProvider<BeneficiaryId>
+where
+    BeneficiaryId: TryFrom<Vec<u8>> + Send + Sync + Encode,
+    <BeneficiaryId as TryFrom<Vec<u8>>>::Error: std::fmt::Debug,
+{
+    /// Read and decode beneficiary ID from the specified environment variable
+    pub fn from_env(env_var: &str) -> Result<Self, InherentProviderCreationError>
 }
 ```
 
-**Key responsibilities:**
-
-1. **Reward Crediting**: If a beneficiary was registered for the block (typically via inherent data), the hook:
-    - Calculates the block reward using the configured `GetBlockRewardPoints` strategy
-    - Adds the reward points to the beneficiary's accumulated total in storage
-    - Clears the pending block data to prepare for the next block
-
-2. **Event Emission**: The hook emits a `RewardsCollected` event with the beneficiary and reward amount, providing transparency about reward distribution.
-
-3. **Safety Check**: The hook handles the case where no beneficiary was set (which shouldn't happen due to inherent verification) by simply not awarding any points.
-
-The hooks mechanism is central to the pallet's operation, as it allows rewards to be automatically tracked and credited as part of the normal block processing flow. This eliminates the need for separate extrinsic calls to manage reward accounting, making the system more efficient and less prone to errors.
-
-Importantly, by using the `on_finalize` hook for crediting rewards, the pallet ensures that rewards are only given for blocks that successfully complete the entire block execution process, which aligns with the expectation that rewards should only be given for blocks that are included in the chain.
+This allows node operators to easily specify beneficiary IDs through environment variables, creating a flexible system for reward distribution that doesn't require changes to the chain's codebase.
 
 ## Usage
 
@@ -153,11 +161,30 @@ The pallet maintains the following storage items:
 
 ### Extrinsics
 
-- **set_current_block_beneficiary**: Sets the beneficiary for the current block
+#### set_current_block_beneficiary
+Sets the beneficiary for the current block (called via inherent data)
+
+```rust
+fn set_current_block_beneficiary(
+    origin: OriginFor<T>,
+    beneficiary: T::BeneficiaryId,
+) -> DispatchResultWithPostInfo
+```
+
+Parameters:
+- `beneficiary`: The ID of the beneficiary who will receive the block reward
 
 ### Public Functions (API)
 
-- **get_rewards_and_clear**: Returns all pending rewards and clears the storage
+#### get_rewards_and_clear
+Returns all pending rewards and clears the storage
+
+```rust
+fn get_rewards_and_clear() -> Vec<(T::BeneficiaryId, T::BlockRewardPoints)>
+```
+
+Returns:
+- `Vec<(T::BeneficiaryId, T::BlockRewardPoints)>`: Vector of (beneficiary, reward_points) pairs
 
 ### Inherent Data
 

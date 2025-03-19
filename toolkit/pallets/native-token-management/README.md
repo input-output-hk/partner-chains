@@ -22,64 +22,106 @@ This pallet is designed to be minimal yet flexible, focusing exclusively on the 
 
 ## Primitives
 
-The Native Token Management pallet relies on primitives defined in the `toolkit/primitives/native-token-management` crate.
+The Native Token Management pallet relies on primitives defined in the `toolkit/primitives/native-token-management` crate:
 
-<CLAUDEMIND_THINKING>
-I need to create a hooks section for the native-token-management pallet README. This should explain the hooks used by the pallet, what they do, and their role in the pallet's functionality.
-</CLAUDEMIND_THINKING>
+### Main Chain Scripts
 
-Here's a hooks section that could be added to the native-token-management pallet README:
-
-## Hooks
-
-The Native Token Management pallet implements the following FRAME hooks to ensure proper handling of token transfers from the main chain:
-
-### on_initialize
-
-The `on_initialize` hook is called at the beginning of each block's execution, before any extrinsics are processed. For the Native Token Management pallet, this hook handles the verification and setup for token transfer inherent data:
+The key data structure used by the pallet is `MainChainScripts`, which identifies on-chain entities involved in the native token management system:
 
 ```rust
-fn on_initialize(n: BlockNumberFor<T>) -> Weight {
-    // Function implementation
+pub struct MainChainScripts {
+    /// Minting policy ID of the native token
+    pub native_token_policy_id: PolicyId,
+    /// Asset name of the native token
+    pub native_token_asset_name: AssetName,
+    /// Address of the illiquid supply validator. All tokens sent to that address are effectively locked
+    /// and considered "sent" to the Partner Chain.
+    pub illiquid_supply_validator_address: MainchainAddress,
 }
 ```
 
-**Key responsibilities:**
-
-1. **Inherent Data Verification Setup**: The hook establishes the verification system for token transfer inherent data to ensure:
-    - When tokens are being transferred (amount > 0), the inherent must be provided
-    - The token amount in the inherent matches what the main chain follower observed
-    - Unexpected token transfer inherents (when no tokens are being transferred) are rejected
-
-2. **Error Handling**: The hook ensures appropriate errors are generated when verification fails, providing clear information about what went wrong.
-
-3. **Weight Calculation**: The hook returns an appropriate weight based on the operations performed, ensuring proper accounting of computational resources.
-
-### on_runtime_upgrade
-
-Although not explicitly a hook in the traditional sense, the pallet includes logic that runs when the runtime is upgraded:
+This structure includes helpful methods for standard library environments:
 
 ```rust
-#[pallet::hooks]
-impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-    // on_initialize hook
-    
-    // Logic that runs on runtime upgrade
-    fn on_runtime_upgrade() -> Weight {
-        // Migration logic
-    }
+impl MainChainScripts {
+    pub fn read_from_env() -> Result<Self, envy::Error>
 }
 ```
 
-**Key responsibilities:**
+### Inherent Data Handling
 
-1. **Storage Migration**: If needed, the hook handles migration of storage from older versions of the pallet to newer ones.
+1. **INHERENT_IDENTIFIER**: Used to identify native token transfer inherent data
+   ```rust
+   pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"nattoken";
+   ```
 
-2. **Initialization Handling**: Ensures that the initialization status is properly maintained across runtime upgrades.
+2. **TokenTransferData**: Represents token transfer data for inherent processing
+   ```rust
+   pub struct TokenTransferData {
+       pub token_amount: NativeTokenAmount,
+   }
+   ```
 
-The hooks mechanism is particularly important for this pallet as it allows the automatic processing of token transfers from the main chain without requiring manual intervention. When the main chain follower detects tokens sent to the illiquid supply validator address, it provides this information as inherent data, which the pallet then processes during block production through these hooks.
+3. **InherentError**: Defines errors that can occur during inherent data processing
+   ```rust
+   pub enum InherentError {
+       TokenTransferNotHandled(NativeTokenAmount),
+       IncorrectTokenNumberTransfered(NativeTokenAmount, NativeTokenAmount),
+       UnexpectedTokenTransferInherent(NativeTokenAmount),
+   }
+   ```
 
-This design ensures that token transfers are processed reliably and consistently as part of the normal block processing flow, providing a seamless bridge between the main chain and partner chain economies.
+### Runtime API
+
+The primitives define a runtime API for managing native tokens:
+
+```rust
+pub trait NativeTokenManagementApi {
+    fn get_main_chain_scripts() -> Option<MainChainScripts>;
+    /// Gets current initializaion status and set it to `true` afterwards. This check is used to
+    /// determine whether historical data from the beginning of main chain should be queried.
+    fn initialized() -> bool;
+}
+```
+
+### Inherent Data Provider
+
+For runtimes that support the standard library, the primitives provide an inherent data provider:
+
+```rust
+pub struct NativeTokenManagementInherentDataProvider {
+    pub token_amount: Option<NativeTokenAmount>,
+}
+```
+
+This provider interfaces with a data source that retrieves token transfer information from the main chain:
+
+```rust
+pub trait NativeTokenManagementDataSource {
+    /// Retrieves total of native token transfers into the illiquid supply in the range (after_block, to_block]
+    async fn get_total_native_token_transfer(
+        &self,
+        after_block: Option<McBlockHash>,
+        to_block: McBlockHash,
+        scripts: MainChainScripts,
+    ) -> Result<NativeTokenAmount, Box<dyn std::error::Error + Send + Sync>>;
+}
+```
+
+The inherent data provider includes a constructor method that automatically detects whether the pallet is present in the runtime:
+
+```rust
+impl NativeTokenManagementInherentDataProvider {
+    /// Creates inherent data provider only if the pallet is present in the runtime.
+    /// Returns zero transfers if not.
+    pub async fn new<Block, C>(
+        client: Arc<C>,
+        data_source: &(dyn NativeTokenManagementDataSource + Send + Sync),
+        mc_hash: McBlockHash,
+        parent_hash: <Block as BlockT>::Hash,
+    ) -> Result<Self, IDPCreationError>
+}
+```
 
 ## Configuration
 
@@ -108,13 +150,57 @@ The pallet maintains several storage items:
 
 ### Extrinsics
 
-- **transfer_tokens**: Handles the transfer of tokens from the main chain to the partner chain
-- **set_main_chain_scripts**: Updates the mainchain scripts configuration
+#### transfer_tokens
+Handles the transfer of tokens from the main chain to the partner chain
+
+```rust
+fn transfer_tokens(
+    origin: OriginFor<T>,
+    token_amount: NativeTokenAmount,
+) -> DispatchResultWithPostInfo
+```
+
+Parameters:
+- `token_amount`: The amount of tokens to transfer
+
+#### set_main_chain_scripts
+Updates the mainchain scripts configuration
+
+```rust
+fn set_main_chain_scripts(
+    origin: OriginFor<T>,
+    native_token_policy_id: PolicyId,
+    native_token_asset_name: AssetName,
+    illiquid_supply_validator_address: MainchainAddress,
+) -> DispatchResultWithPostInfo
+```
+
+Parameters:
+- `native_token_policy_id`: The policy ID of the native token
+- `native_token_asset_name`: The asset name of the native token
+- `illiquid_supply_validator_address`: The address of the validator handling illiquid supply
 
 ### Public Functions (API)
 
-- **get_main_chain_scripts**: Returns the current mainchain scripts configuration
-- **initialized**: Returns whether the pallet has been initialized and marks it as initialized if not
+#### get_main_chain_scripts
+Returns the current mainchain scripts configuration
+
+```rust
+fn get_main_chain_scripts() -> Option<MainChainScripts>
+```
+
+Returns:
+- `Option<MainChainScripts>`: The current mainchain scripts if configured, or None
+
+#### initialized
+Returns whether the pallet has been initialized and marks it as initialized if not
+
+```rust
+fn initialized() -> bool
+```
+
+Returns:
+- `bool`: Whether the pallet was already initialized before this call
 
 ### Inherent Data
 
