@@ -25,9 +25,8 @@ Furthermore, the pallet is designed to integrate seamlessly with other partner c
 The Partner Chains Session pallet fulfills several critical functions within the partner chain ecosystem:
 
 - Manages the lifecycle of validator sessions, including session creation, rotation, and termination
-- Provides a secure mechanism for validators to associate their identity with necessary session keys
+- Provides an automatic mechanism for validators to associate their identity with necessary session keys
 - Facilitates the orderly transition between validator sets without disrupting consensus
-- Enables on-the-fly disabling of validators who fail to perform their duties
 - Serves as the interface between validator selection logic and the consensus mechanism
 - Maintains backward compatibility with Substrate components that expect the standard session pallet interface
 

@@ -10,7 +10,6 @@ This pallet serves several purposes:
 - Establishes verifiable links between mainchain identities and partner chain addresses
 - Enables cross-chain validation of key ownership through cryptographic signatures
 - Provides a foundation for permission-based operations that require mainchain identity verification
-- Supports cross-chain governance and validator selection processes
 
 ## Configuration
 
