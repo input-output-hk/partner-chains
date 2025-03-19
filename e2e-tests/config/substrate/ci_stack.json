@@ -2,7 +2,7 @@
     "stack_config": {
         "ogmios_host": "devnet-services-service",
         "ogmios_port": 1337,
-        "tools_host": "binary-host-service",
+        "tools_host": "binary-host-service.sc.svc.cluster.local",
         "ssh": {
             "username": "root",
             "host": "${stack_config[tools_host]}",
