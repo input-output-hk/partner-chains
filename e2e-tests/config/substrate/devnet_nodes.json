@@ -8,8 +8,8 @@
     "nodes_config": {
         "nodes": {
             "alice": {
-                "host": "10.0.10.13",
-                "port": "30021",
+                "host": "alice-service.sc.svc.cluster.local",
+                "port": "9933",
                 "aura_ss58_address": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
                 "pool_id": "17a3e09033f190cdcddd11350f095d3ae11f1a61c65731366750177a",
                 "public_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
@@ -19,8 +19,8 @@
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000001"
             },
             "bob": {
-                "host": "10.0.10.13",
-                "port": "30022",
+                "host": "bob-service.sc.svc.cluster.local",
+                "port": "9933",
                 "aura_ss58_address": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
                 "pool_id": "dd67a558342e53c9ef9528124e44e43a34b2ae3b432aa5144ffec24d",
                 "public_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27",
@@ -30,8 +30,8 @@
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000002"
             },
             "charlie": {
-                "host": "10.0.10.13",
-                "port": "30023",
+                "host": "charlie-service.sc.svc.cluster.local",
+                "port": "9933",
                 "aura_ss58_address": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
                 "pool_id": "f824ff53b6a71522bb9f8db18fffd2469d957a56cf00e0cb0bdc8a08",
                 "public_key": "0x0389411795514af1627765eceffcbd002719f031604fadd7d188e2dc585b4e1afb",
@@ -41,8 +41,8 @@
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000003"
             },
             "dave": {
-                "host": "10.0.10.13",
-                "port": "30024",
+                "host": "dave-service.sc.svc.cluster.local",
+                "port": "9933",
                 "aura_ss58_address": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
                 "pool_id": "2e36e13ad5665685f163e4fa3d32ccf0a333fda0a67c93cbac99f7a2",
                 "public_key": "0x03bc9d0ca094bd5b8b3225d7651eac5d18c1c04bf8ae8f8b263eebca4e1410ed0c",
@@ -51,8 +51,8 @@
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000004"
             },
             "eve": {
-                "host": "10.0.10.13",
-                "port": "30025",
+                "host": "eve-service.sc.svc.cluster.local",
+                "port": "9933",
                 "aura_ss58_address": "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw",
                 "pool_id": "54512ccbdf3a6912bf4da983a4aa46e9c46eb0fd19a2b3f5341c5366",
                 "public_key": "0x031d10105e323c4afce225208f71a6441ee327a65b9e646e772500c74d31f669aa",
@@ -69,8 +69,8 @@
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000005"
             },
             "ferdie": {
-                "host": "10.0.10.13",
-                "port": "30026",
+                "host": "ferdie-service.sc.svc.cluster.local",
+                "port": "9933",
                 "aura_ss58_address": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
                 "pool_id": "9ad70551d17317e44866850f9827f6464f0867e50bff5a87b1f9e3c0",
                 "public_key": "0x0291f1217d5a04cb83312ee3d88a6e6b33284e053e6ccfc3a90339a0299d12967c",
@@ -87,8 +87,8 @@
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000006"
             },
             "greg": {
-                "host": "10.0.10.13",
-                "port": "30027",
+                "host": "greg-service.sc.svc.cluster.local",
+                "port": "9933",
                 "aura_ss58_address": "5D4oNr3wasgzxt7KdoHBjnxUthfoM93kWMav63aoYmPHfkBW",
                 "pool_id": "",
                 "public_key": "0x02dacce90fca29ca80404d9b4e8ff3d9dabd03def6a82e412acb2ad04dd734dbfc",
@@ -98,8 +98,8 @@
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000007"
             },
             "henry": {
-                "host": "10.0.10.13",
-                "port": "30028",
+                "host": "henry-service.sc.svc.cluster.local",
+                "port": "9933",
                 "aura_ss58_address": "5FcTxwLAQ8L23HvTa6Y6UUMBKJkYRG42Vg9wVVpZDpE2ZnTZ",
                 "pool_id": "",
                 "public_key": "0x0263c9cdabbef76829fe5b35f0bbf3051bd1c41b80f58b5d07c271d0dd04de2a4e",
