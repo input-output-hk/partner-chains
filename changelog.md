@@ -21,6 +21,8 @@ Its functionality was merged into `pallet-partner-chains-session` under the feat
 
 ## Added
 
+* `sign-block-producer-metadata` command to `cli-commands` for signing block producer metadata upsert message
+
 # v1.6.0
 
 ## Changed

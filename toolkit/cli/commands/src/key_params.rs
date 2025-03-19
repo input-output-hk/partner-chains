@@ -1,5 +1,5 @@
-use secp256k1::{PublicKey, SecretKey};
-use sidechain_domain::{SidechainPublicKey, StakePoolPublicKey, StakePublicKey};
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
+use sidechain_domain::*;
 use std::convert::Infallible;
 use std::fmt::Display;
 use std::io;
@@ -119,5 +119,22 @@ impl FromStr for StakeSigningKeyParam {
 impl StakeSigningKeyParam {
 	pub fn vkey(&self) -> StakePublicKey {
 		StakePublicKey(ed25519_zebra::VerificationKey::from(&self.0).into())
+	}
+}
+
+#[derive(Clone, Debug)]
+pub struct CrossChainSigningKeyParam(pub secp256k1::SecretKey);
+
+impl FromStr for CrossChainSigningKeyParam {
+	type Err = anyhow::Error;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		Ok(Self(secp256k1::SecretKey::from_slice(&hex::decode(s)?)?))
+	}
+}
+
+impl CrossChainSigningKeyParam {
+	pub fn vkey(&self) -> CrossChainPublicKey {
+		CrossChainPublicKey(self.0.public_key(&Secp256k1::new()).serialize().to_vec())
 	}
 }
