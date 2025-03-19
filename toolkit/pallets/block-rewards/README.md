@@ -85,10 +85,6 @@ fn on_finalize(n: BlockNumberFor<T>) -> Weight {
 
 3. **Safety Check**: The hook handles the case where no beneficiary was set (which shouldn't happen due to inherent verification) by simply not awarding any points.
 
-The hooks mechanism is central to the pallet's operation, as it allows rewards to be automatically tracked and credited as part of the normal block processing flow. This eliminates the need for separate extrinsic calls to manage reward accounting, making the system more efficient and less prone to errors.
-
-Importantly, by using the `on_finalize` hook for crediting rewards, the pallet ensures that rewards are only given for blocks that successfully complete the entire block execution process, which aligns with the expectation that rewards should only be given for blocks that are included in the chain.
-
 ## Usage
 
 ### Block beneficiary
