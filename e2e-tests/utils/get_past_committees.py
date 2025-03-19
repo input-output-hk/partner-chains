@@ -22,8 +22,8 @@ partner_chain = {
     "slots_in_epoch": 60,
 }
 
-devnet_rpc_url = "http://10.0.10.233:30023"  # devnet
-staging_rpc_url = "http://10.0.10.84:9933"  # staging
+devnet_rpc_url = "http://charlie-service.sc.svc.cluster.local:9933"  # devnet
+staging_rpc_url = "http://staging-preview-validator-1-service.staging-preview.svc.cluster.local:9933"  # staging
 halo2-qa_rpc_url = "http://node-01.halo2-qa.dev.platform.midnight.network:9944"  # halo2-qa
 
 # first_epoch_to_get_committee_since_chain_wipe = 4706032

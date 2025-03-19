@@ -1,12 +1,12 @@
 from substrateinterface import SubstrateInterface
 import json
 
-alice = 'ws://10.0.11.120:30021'
-bob = 'ws://10.0.11.120:30022'
-charlie = 'ws://10.0.11.120:30023'
-dave = 'ws://10.0.11.120:30024'
-eve = 'ws://10.0.11.120:30025'
-ferdie = 'ws://10.0.11.120:30026'
+alice = 'ws://alice-service.sc.svc.cluster.local:9933'
+bob = 'ws://bob-service.sc.svc.cluster.local:9933'
+charlie = 'ws://charlie-service.sc.svc.cluster.local:9933'
+dave = 'ws://dave-service.sc.svc.cluster.local:9933'
+eve = 'ws://eve-service.sc.svc.cluster.local:9933'
+ferdie = 'ws://ferdie-service.sc.svc.cluster.local:9933'
 
 
 def get_latest_pc_block_number(node_api, custom_type_registry):

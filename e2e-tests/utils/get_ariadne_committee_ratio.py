@@ -84,10 +84,10 @@ staging_keysdict = {
 TARGET_ENV = 'staging'
 if TARGET_ENV == 'devnet':
     keysdict = devnet_keysdict
-    NODE = 'http://10.0.10.13:30023'  # devnet charlie
+    NODE = 'http://charlie-service.sc.svc.cluster.local:9933'  # devnet charlie
 elif TARGET_ENV == 'staging':
     keysdict = staging_keysdict
-    NODE = 'http://10.0.11.16:9933'  # staging
+    NODE = 'http://staging-preview-validator-1-service.staging-preview.svc.cluster.local:9933'  # staging
 elif TARGET_ENV == 'local':
     keysdict = devnet_keysdict
     NODE = 'http://localhost:9945'  # local alice

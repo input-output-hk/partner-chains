@@ -10,8 +10,8 @@ from config.api_config import ApiConfig
 from src.substrate_api import SubstrateApi
 from pc_block_finder import BlockFinder
 
-STAGING_NODE = 'http://10.0.11.16:9933'  # staging
-DEVNET_NODE = 'http://10.0.10.13:30023'  # devnet charlie
+STAGING_NODE = 'http://staging-preview-validator-1-service.staging-preview.svc.cluster.local:9933'  # staging
+DEVNET_NODE = 'http://charlie-service.sc.svc.cluster.local:9933'  # devnet charlie
 LOCAL_NODE = 'http://localhost:9945'  # local alice
 
 STAGING_CONFIG = 'config/substrate/staging_nodes.json'

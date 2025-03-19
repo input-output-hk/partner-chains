@@ -8,8 +8,8 @@ def get_pc_balance(substrate, address):
     return balance.value
 
 
-# NODE = 'ws://10.0.10.13:30023'  # charlie devnet
-NODE = 'ws://10.0.10.55:9933'  # validator 1 staging
+# NODE = 'ws://charlie-service.sc.svc.cluster.local:9933'  # charlie devnet
+NODE = 'ws://staging-preview-validator-1-service.staging-preview.svc.cluster.local:9933'  # validator 1 staging
 
 
 def _keypair_name_to_type(type_name):
