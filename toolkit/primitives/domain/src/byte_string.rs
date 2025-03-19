@@ -52,7 +52,7 @@ impl<const N: usize> Default for SizedByteString<N> {
 	}
 }
 
-/// Byte-encoded text string with c
+/// Byte-encoded text string with bounded length
 #[derive(Eq, Clone, PartialEq, TypeInfo, Default, Encode, Decode, MaxEncodedLen)]
 pub struct BoundedString<const N: u32>(pub BoundedVec<u8, ConstU32<N>>);
 
