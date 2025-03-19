@@ -12,6 +12,7 @@ use crate::csl::{
 	TransactionBuilderExt, TransactionContext, TransactionExt,
 };
 use crate::governance::GovernanceData;
+use crate::multisig::{multisig_process, MultiSigSmartContractResult};
 use crate::plutus_script::PlutusScript;
 use crate::{cardano_keys::CardanoPaymentSigningKey, scripts_data};
 use anyhow::anyhow;
@@ -25,7 +26,7 @@ use ogmios_client::types::OgmiosUtxo;
 use partner_chains_plutus_data::permissioned_candidates::{
 	permissioned_candidates_to_plutus_data, PermissionedCandidateDatums,
 };
-use sidechain_domain::{McSmartContractResult, McTxHash, PermissionedCandidateData, UtxoId};
+use sidechain_domain::{PermissionedCandidateData, UtxoId};
 
 pub trait UpsertPermissionedCandidates {
 	#[allow(async_fn_in_trait)]
@@ -34,7 +35,7 @@ pub trait UpsertPermissionedCandidates {
 		genesis_utxo: UtxoId,
 		candidates: &[PermissionedCandidateData],
 		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<McSmartContractResult>>;
+	) -> anyhow::Result<Option<MultiSigSmartContractResult>>;
 }
 
 impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>
@@ -45,7 +46,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>
 		genesis_utxo: UtxoId,
 		candidates: &[PermissionedCandidateData],
 		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<McSmartContractResult>> {
+	) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
 		upsert_permissioned_candidates(
 			genesis_utxo,
 			candidates,
@@ -66,7 +67,7 @@ pub async fn upsert_permissioned_candidates<
 	payment_signing_key: &CardanoPaymentSigningKey,
 	ogmios_client: &C,
 	await_tx: &A,
-) -> anyhow::Result<Option<McSmartContractResult>> {
+) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
 	let (validator, policy) =
 		scripts_data::permissioned_candidates_scripts(genesis_utxo, ctx.network)?;
@@ -96,6 +97,7 @@ pub async fn upsert_permissioned_candidates<
 					&governance_data,
 					ctx,
 					ogmios_client,
+					await_tx,
 				)
 				.await?,
 			)
@@ -112,12 +114,13 @@ pub async fn upsert_permissioned_candidates<
 					&governance_data,
 					ctx,
 					ogmios_client,
+					await_tx,
 				)
 				.await?,
 			)
 		},
 	};
-	if let Some(McSmartContractResult::TxHash(tx_hash)) = result_opt {
+	if let Some(MultiSigSmartContractResult::TransactionSubmitted(tx_hash)) = result_opt {
 		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
 	}
 	Ok(result_opt)
@@ -146,19 +149,23 @@ fn get_current_permissioned_candidates(
 	}
 }
 
-async fn insert_permissioned_candidates<C>(
+async fn insert_permissioned_candidates<C, A>(
 	validator: &PlutusScript,
 	policy: &PlutusScript,
 	candidates: &[PermissionedCandidateData],
 	governance_data: &GovernanceData,
-	ctx: TransactionContext,
+	payment_ctx: TransactionContext,
 	client: &C,
-) -> anyhow::Result<McSmartContractResult>
+	await_tx: &A,
+) -> anyhow::Result<MultiSigSmartContractResult>
 where
-	C: Transactions + QueryLedgerState + QueryNetwork,
+	C: Transactions + QueryLedgerState + QueryNetwork + QueryUtxoByUtxoId,
+	A: AwaitTx,
 {
-	let tx = Costs::calculate_costs(
-		|costs| {
+	multisig_process(
+		governance_data,
+		&payment_ctx,
+		|costs, ctx| {
 			mint_permissioned_candidates_token_tx(
 				validator,
 				policy,
@@ -169,41 +176,29 @@ where
 			)
 		},
 		client,
+		await_tx,
 	)
-	.await?;
-
-	if governance_data.policy.is_single_key_policy_for(&ctx.payment_key_hash()) {
-		let signed_tx = ctx.sign(&tx).to_bytes();
-		let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-			anyhow!(
-				"Submit insert permissioned candidates transaction request failed: {}, bytes: {}",
-				e,
-				hex::encode(tx.to_bytes())
-			)
-		})?;
-		let tx_id = res.transaction.id;
-		log::info!("Transaction submitted: {}", hex::encode(tx_id));
-		Ok(McSmartContractResult::tx_hash(tx_id))
-	} else {
-		log::info!("Transaction CBOR: {}", hex::encode(tx.to_bytes()));
-		Ok(McSmartContractResult::TxCBOR(tx.to_bytes()))
-	}
+	.await
 }
 
-async fn update_permissioned_candidates<C>(
+async fn update_permissioned_candidates<C, A>(
 	validator: &PlutusScript,
 	policy: &PlutusScript,
 	candidates: &[PermissionedCandidateData],
 	current_utxo: &OgmiosUtxo,
 	governance_data: &GovernanceData,
-	ctx: TransactionContext,
+	payment_ctx: TransactionContext,
 	client: &C,
-) -> anyhow::Result<McSmartContractResult>
+	await_tx: &A,
+) -> anyhow::Result<MultiSigSmartContractResult>
 where
-	C: Transactions + QueryNetwork + QueryLedgerState,
+	C: Transactions + QueryNetwork + QueryLedgerState + QueryUtxoByUtxoId,
+	A: AwaitTx,
 {
-	let tx = Costs::calculate_costs(
-		|costs| {
+	multisig_process(
+		governance_data,
+		&payment_ctx,
+		|costs, ctx| {
 			update_permissioned_candidates_tx(
 				validator,
 				policy,
@@ -215,28 +210,9 @@ where
 			)
 		},
 		client,
+		await_tx,
 	)
-	.await?;
-
-	if governance_data.policy.is_single_key_policy_for(&ctx.payment_key_hash()) {
-		let signed_tx = ctx.sign(&tx).to_bytes();
-		let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-			anyhow!(
-				"Submit update permissioned candidates transaction request failed: {}, bytes: {}",
-				e,
-				hex::encode(&signed_tx)
-			)
-		})?;
-		let tx_id = McTxHash(res.transaction.id);
-		log::info!(
-			"Update permissioned candidates transaction submitted: {}",
-			hex::encode(tx_id.0)
-		);
-		Ok(McSmartContractResult::TxHash(tx_id))
-	} else {
-		log::info!("Transaction CBOR: {}", hex::encode(tx.to_bytes()));
-		Ok(McSmartContractResult::TxCBOR(tx.to_bytes()))
-	}
+	.await
 }
 
 /// Builds a transaction that mints a Permissioned Candidates token and also mint governance token
@@ -537,6 +513,7 @@ mod tests {
 			],
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
+			change_address: payment_addr(),
 		}
 	}
 

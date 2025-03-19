@@ -189,7 +189,7 @@ mod tests {
 		plutus_script::PlutusScript,
 		reserve::{release::OgmiosUtxoExt, ReserveData, ReserveUtxo},
 		scripts_data::ReserveScripts,
-		test_values::protocol_parameters,
+		test_values::{payment_addr, protocol_parameters},
 	};
 	use cardano_serialization_lib::{
 		Int, Language, NetworkIdKind, PolicyID, PrivateKey, Transaction,
@@ -240,6 +240,7 @@ mod tests {
 			payment_key_utxos: vec![payment_utxo()],
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
+			change_address: payment_addr(),
 		}
 	}
 

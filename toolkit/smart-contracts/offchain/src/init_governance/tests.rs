@@ -6,7 +6,7 @@ use crate::init_governance::run_init_governance;
 use crate::scripts_data;
 use crate::test_values::protocol_parameters;
 use crate::{csl::TransactionContext, ogmios_mock::MockOgmiosClient};
-use cardano_serialization_lib::{ExUnits, NetworkIdKind, PrivateKey};
+use cardano_serialization_lib::{Address, ExUnits, NetworkIdKind, PrivateKey};
 use hex_literal::*;
 use ogmios_client::transactions::{
 	OgmiosBudget, OgmiosEvaluateTransactionResponse, OgmiosValidatorIndex,
@@ -216,12 +216,17 @@ fn payment_key() -> PrivateKey {
 	PrivateKey::from_normal_bytes(&PAYMENT_KEY_BYTES).unwrap()
 }
 
+fn payment_address() -> Address {
+	Address::from_bech32("addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw").unwrap()
+}
+
 fn tx_context() -> TransactionContext {
 	TransactionContext {
 		payment_key: payment_key(),
 		payment_key_utxos: vec![payment_utxo()],
 		network: NetworkIdKind::Testnet,
 		protocol_parameters: protocol_parameters(),
+		change_address: payment_address(),
 	}
 }
 
