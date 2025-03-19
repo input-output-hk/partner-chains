@@ -18,7 +18,7 @@ pub struct BlockProducerMetadataSignatureCmd {
 	/// Path of the file containing the metadata in JSON format
 	#[arg(long)]
 	pub metadata_file: String,
-	/// ECDSA signing key of the
+	/// ECDSA signing key of the block producer, corresponding to the public key that will be associated with new metadata
 	#[arg(long)]
 	pub cross_chain_signing_key: CrossChainSigningKeyParam,
 }
