@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["select_authorities"]};
+window.SIDEBAR_ITEMS = {"fn":["seed_from_nonce_and_sc_epoch","select_authorities"]};

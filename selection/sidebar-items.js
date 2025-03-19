@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["impls","weighted_random"]};
+window.SIDEBAR_ITEMS = {"mod":["ariadne","weighted_random"]};

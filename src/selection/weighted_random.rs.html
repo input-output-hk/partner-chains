@@ -62,16 +62,12 @@
 <a href="#62" id="62">62</a>
 <a href="#63" id="63">63</a>
 <a href="#64" id="64">64</a>
-<a href="#65" id="65">65</a>
-<a href="#66" id="66">66</a>
 </pre></div><pre class="rust"><code><span class="kw">extern crate </span>alloc;
 <span class="kw">use </span>alloc::vec::Vec;
-<span class="kw">use </span>parity_scale_codec::{Decode, Encode};
 <span class="kw">use </span>rand::Rng;
 <span class="kw">use </span>rand_chacha::{rand_core::SeedableRng, ChaCha20Rng};
 
 <span class="doccomment">/// Parameters needed for weighted-pseudorandom selection algorithm
-</span><span class="attr">#[derive(Encode, Decode, scale_info::TypeInfo)]
 </span><span class="kw">pub struct </span>WeightedRandomSelectionConfig {
 	<span class="kw">pub </span>size: u16,
 }
@@ -96,7 +92,7 @@
 	<span class="kw">let </span>size = usize::from(config.size);
 	<span class="kw">let </span>total_weight: Weight = weighted_candidates.iter().map(|(<span class="kw">_</span>, weight)| weight).sum();
 
-	<span class="kw">let </span><span class="kw-2">mut </span>committee: Vec&lt;T&gt; = <span class="macro">sp_std::vec!</span>[];
+	<span class="kw">let </span><span class="kw-2">mut </span>committee: Vec&lt;T&gt; = <span class="macro">alloc::vec!</span>[];
 
 	<span class="kw">let </span><span class="kw-2">mut </span>rng = ChaCha20Rng::from_seed(seed);
 

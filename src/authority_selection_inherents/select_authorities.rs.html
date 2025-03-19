@@ -74,107 +74,46 @@
 <a href="#74" id="74">74</a>
 <a href="#75" id="75">75</a>
 <a href="#76" id="76">76</a>
-<a href="#77" id="77">77</a>
-<a href="#78" id="78">78</a>
-<a href="#79" id="79">79</a>
-<a href="#80" id="80">80</a>
-<a href="#81" id="81">81</a>
-<a href="#82" id="82">82</a>
-<a href="#83" id="83">83</a>
-<a href="#84" id="84">84</a>
-<a href="#85" id="85">85</a>
-<a href="#86" id="86">86</a>
-<a href="#87" id="87">87</a>
-<a href="#88" id="88">88</a>
-<a href="#89" id="89">89</a>
-<a href="#90" id="90">90</a>
-<a href="#91" id="91">91</a>
-<a href="#92" id="92">92</a>
-<a href="#93" id="93">93</a>
-<a href="#94" id="94">94</a>
-<a href="#95" id="95">95</a>
-<a href="#96" id="96">96</a>
-<a href="#97" id="97">97</a>
-<a href="#98" id="98">98</a>
-<a href="#99" id="99">99</a>
-<a href="#100" id="100">100</a>
-<a href="#101" id="101">101</a>
-<a href="#102" id="102">102</a>
-<a href="#103" id="103">103</a>
-<a href="#104" id="104">104</a>
-<a href="#105" id="105">105</a>
-<a href="#106" id="106">106</a>
-<a href="#107" id="107">107</a>
-<a href="#108" id="108">108</a>
-<a href="#109" id="109">109</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Functionality related to selecting the validators from the valid candidates
 
 </span><span class="kw">use </span><span class="kw">crate</span>::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span><span class="kw">crate</span>::filter_invalid_candidates::{
 	filter_invalid_permissioned_candidates, filter_trustless_candidates_registrations, Candidate,
-	CandidateWithStake, PermissionedCandidate,
 };
 <span class="kw">use </span>log::{info, warn};
 <span class="kw">use </span>plutus::<span class="kw-2">*</span>;
-<span class="kw">use </span>selection::{Weight, WeightedRandomSelectionConfig};
-<span class="kw">use </span>sidechain_domain::{DParameter, ScEpochNumber, UtxoId};
-<span class="kw">use </span>sp_core::{ecdsa, ed25519, sr25519};
+<span class="kw">use </span>sidechain_domain::{EpochNonce, ScEpochNumber, UtxoId};
+<span class="kw">use </span>sp_core::{ecdsa, ed25519, sr25519, U256};
 
-<span class="kw">type </span>CandidateWithWeight&lt;A, B&gt; = (Candidate&lt;A, B&gt;, Weight);
-
-<span class="doccomment">/// Pseudo-random selection the authorities for the given sidechain epoch, according to the
-/// Ariadne specification: https://input-output.atlassian.net/wiki/spaces/SID/pages/4228612151/Ariadne+-+committee+selection+algorithm
-///
+<span class="doccomment">/// Selects authorities using the Ariadne selection algorithm and data sourced from Partner Chains smart contracts on Cardano.
 /// Seed is constructed from the MC epoch nonce and the sidechain epoch.
-///
-/// Committee size is P+T, where P (permissioned) and T (trustless) are constituents of the D parameter.
-///
-/// Committee is a result of the weighted selection with repetition.
-///
-/// Weight function for trustless candidate is:
-///   * let `n` be the number of permissioned candidates from MC data
-///   * if `n == 0`, then the weight is `stake_delegation`
-///   * otherwise, the weight is `n * T * stake_delegation`
-///
-/// Weight for each permissioned candidates is:
-///   * let `W` be the sum of all stake delegations of trustless candidates
-///   * if `W == 0` or `T == 0` (there are no valid trustless candidates, or they are not taken into account), then the weight is `1`
-///   * otherwise, the weight is `P * W`
 </span><span class="kw">pub fn </span>select_authorities&lt;
 	TAccountId: Clone + Ord + TryFrom&lt;sidechain_domain::SidechainPublicKey&gt; + From&lt;ecdsa::Public&gt;,
-	TAccountKeys: Clone + From&lt;(sr25519::Public, ed25519::Public)&gt;,
+	TAccountKeys: Clone + Ord + From&lt;(sr25519::Public, ed25519::Public)&gt;,
 &gt;(
 	genesis_utxo: UtxoId,
 	input: AuthoritySelectionInputs,
 	sidechain_epoch: ScEpochNumber,
 ) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;Candidate&lt;TAccountId, TAccountKeys&gt;&gt;&gt; {
-	<span class="kw">let </span>valid_trustless_candidates = filter_trustless_candidates_registrations::&lt;
+	<span class="kw">let </span>valid_registered_candidates = filter_trustless_candidates_registrations::&lt;
 		TAccountId,
 		TAccountKeys,
 	&gt;(input.registered_candidates, genesis_utxo);
 	<span class="kw">let </span>valid_permissioned_candidates =
 		filter_invalid_permissioned_candidates(input.permissioned_candidates);
+	<span class="kw">let </span>valid_permissioned_count = valid_permissioned_candidates.len();
+	<span class="kw">let </span>valid_registered_count = valid_registered_candidates.len();
 
-	<span class="kw">let </span><span class="kw-2">mut </span>candidates_with_weight = trustless_candidates_with_weights(
-		<span class="kw-2">&amp;</span>valid_trustless_candidates,
-		<span class="kw-2">&amp;</span>input.d_parameter,
-		valid_permissioned_candidates.len(),
-	);
-	candidates_with_weight.extend(permissioned_candidates_with_weights(
-		<span class="kw-2">&amp;</span>valid_permissioned_candidates,
-		<span class="kw-2">&amp;</span>input.d_parameter,
-		<span class="kw-2">&amp;</span>valid_trustless_candidates,
-	));
-	candidates_with_weight.sort_by(|a, b| a.<span class="number">0</span>.account_id().cmp(<span class="kw-2">&amp;</span>b.<span class="number">0</span>.account_id()));
+	<span class="kw">let </span>random_seed = seed_from_nonce_and_sc_epoch(<span class="kw-2">&amp;</span>input.epoch_nonce, <span class="kw-2">&amp;</span>sidechain_epoch);
 
-	<span class="kw">let </span>random_seed =
-		selection::impls::seed_from_nonce_and_sc_epoch(<span class="kw-2">&amp;</span>input.epoch_nonce, <span class="kw-2">&amp;</span>sidechain_epoch);
-	<span class="kw">let </span>committee_size =
-		input.d_parameter.num_registered_candidates + input.d_parameter.num_permissioned_candidates;
-	<span class="kw">if let </span><span class="prelude-val">Some</span>(validators) = (WeightedRandomSelectionConfig { size: committee_size }
-		.select_authorities(candidates_with_weight, random_seed))
-	{
-		<span class="macro">info!</span>(<span class="string">"💼 Selected committee of {} seats for epoch {} from {} permissioned and {} registered candidates"</span>, validators.len(), sidechain_epoch, valid_permissioned_candidates.len(), valid_trustless_candidates.len());
+	<span class="kw">if let </span><span class="prelude-val">Some</span>(validators) = selection::ariadne::select_authorities(
+		input.d_parameter.num_registered_candidates,
+		input.d_parameter.num_permissioned_candidates,
+		valid_registered_candidates,
+		valid_permissioned_candidates,
+		random_seed,
+	) {
+		<span class="macro">info!</span>(<span class="string">"💼 Selected committee of {} seats for epoch {} from {valid_permissioned_count} permissioned and {valid_registered_count} registered candidates"</span>, validators.len(), sidechain_epoch);
 		<span class="prelude-val">Some</span>(validators)
 	} <span class="kw">else </span>{
 		<span class="macro">warn!</span>(<span class="string">"🚫 Failed to select validators for epoch {}"</span>, sidechain_epoch);
@@ -182,38 +121,33 @@
 	</span>}
 }
 
-<span class="kw">fn </span>trustless_candidates_with_weights&lt;A: Clone, B: Clone&gt;(
-	trustless_candidates: <span class="kw-2">&amp;</span>[CandidateWithStake&lt;A, B&gt;],
-	d_parameter: <span class="kw-2">&amp;</span>DParameter,
-	permissioned_candidates_count: usize,
-) -&gt; Vec&lt;CandidateWithWeight&lt;A, B&gt;&gt; {
-	<span class="kw">let </span>weight_factor = <span class="kw">if </span>permissioned_candidates_count &gt; <span class="number">0 </span>{
-		u128::from(d_parameter.num_registered_candidates) * permissioned_candidates_count <span class="kw">as </span>u128
-	} <span class="kw">else </span>{
-		<span class="number">1 </span><span class="comment">// if there are no permissioned candidates, trustless candidates should be selected using unmodified stake
-	</span>};
-	trustless_candidates
-		.iter()
-		.map(|c| {
-			(Candidate::Registered(c.clone()), u128::from(c.stake_delegation.<span class="number">0</span>) * weight_factor)
-		})
-		.collect()
+<span class="kw">pub fn </span>seed_from_nonce_and_sc_epoch(
+	epoch_nonce: <span class="kw-2">&amp;</span>EpochNonce,
+	sidechain_epoch_number: <span class="kw-2">&amp;</span>ScEpochNumber,
+) -&gt; [u8; <span class="number">32</span>] {
+	<span class="kw">let </span><span class="kw-2">mut </span>epoch_nonce = epoch_nonce.<span class="number">0</span>.clone();
+	epoch_nonce.resize_with(<span class="number">32</span>, || <span class="number">0</span>);
+	<span class="kw">let </span>epoch_nonce: [u8; <span class="number">32</span>] =
+		epoch_nonce.try_into().expect(<span class="string">"Should never fail after being resized"</span>);
+	<span class="kw">let </span>seed_u256: U256 = U256::from_big_endian(<span class="kw-2">&amp;</span>epoch_nonce)
+		.overflowing_add(U256::from(sidechain_epoch_number.<span class="number">0</span>))
+		.<span class="number">0</span>;
+	seed_u256.to_big_endian()
 }
 
-<span class="kw">fn </span>permissioned_candidates_with_weights&lt;A: Clone, B: Clone&gt;(
-	permissioned_candidates: <span class="kw-2">&amp;</span>[PermissionedCandidate&lt;A, B&gt;],
-	d_parameter: <span class="kw-2">&amp;</span>DParameter,
-	valid_trustless_candidates: <span class="kw-2">&amp;</span>[CandidateWithStake&lt;A, B&gt;],
-) -&gt; Vec&lt;CandidateWithWeight&lt;A, B&gt;&gt; {
-	<span class="kw">let </span>total_stake: u64 = valid_trustless_candidates.iter().map(|c| c.stake_delegation.<span class="number">0</span>).sum();
-	<span class="kw">let </span>weight = <span class="kw">if </span>total_stake &gt; <span class="number">0 </span>&amp;&amp; d_parameter.num_registered_candidates &gt; <span class="number">0 </span>{
-		u128::from(d_parameter.num_permissioned_candidates) * u128::from(total_stake)
-	} <span class="kw">else </span>{
-		<span class="number">1 </span><span class="comment">// if there are no trustless candidates, permissioned candidates should be selected with equal weight
-	</span>};
-	permissioned_candidates
-		.iter()
-		.map(|c| (Candidate::Permissioned(c.clone()), weight))
-		.collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()
+<span class="attr">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use </span>sidechain_domain::{EpochNonce, ScEpochNumber};
+	<span class="kw">use </span>sp_core::U256;
+
+	<span class="attr">#[test]
+	</span><span class="kw">fn </span>should_create_correct_seed() {
+		<span class="kw">let </span>nonce_vec = Vec::from(U256::from(<span class="number">10</span>).to_big_endian());
+		<span class="macro">assert_eq!</span>(
+			seed_from_nonce_and_sc_epoch(<span class="kw-2">&amp;</span>EpochNonce(nonce_vec), <span class="kw-2">&amp;</span>ScEpochNumber(<span class="number">2</span>)),
+			U256::from(<span class="number">12</span>).to_big_endian()
+		);
+	}
 }
 </code></pre></div></section></main></body></html>
