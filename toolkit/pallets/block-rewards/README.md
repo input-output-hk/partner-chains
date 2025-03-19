@@ -40,12 +40,6 @@ The pallet serves several specific purposes:
 
 The Block Rewards pallet relies on primitives defined in the `toolkit/primitives/block-rewards` crate.
 
-<CLAUDEMIND_THINKING>
-I need to create a detailed hooks section for the block-rewards pallet README. This should explain the hooks used by the pallet, what they do, and their role in the pallet's functionality.
-</CLAUDEMIND_THINKING>
-
-Here's a detailed hooks section that could be added to the block-rewards pallet README:
-
 ## Hooks
 
 The Block Rewards pallet implements the following FRAME hooks to ensure proper tracking and accounting of block production rewards:
