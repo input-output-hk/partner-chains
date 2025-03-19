@@ -24,12 +24,6 @@ This pallet is designed to be minimal yet flexible, focusing exclusively on the 
 
 The Native Token Management pallet relies on primitives defined in the `toolkit/primitives/native-token-management` crate.
 
-<CLAUDEMIND_THINKING>
-I need to create a hooks section for the native-token-management pallet README. This should explain the hooks used by the pallet, what they do, and their role in the pallet's functionality.
-</CLAUDEMIND_THINKING>
-
-Here's a hooks section that could be added to the native-token-management pallet README:
-
 ## Hooks
 
 The Native Token Management pallet implements the following FRAME hooks to ensure proper handling of token transfers from the main chain:
