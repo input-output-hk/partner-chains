@@ -96,6 +96,20 @@ Yes, when participation data needs to be processed. The runtime verifies this in
 - `ProcessingInvalidPreviousSlot`: The processing operation would move the processed slot boundary backwards, which is not allowed
 - `AlreadyProcessedInBlock`: Block participation data has already been processed in the current block
 
+## Hooks
+
+The Block Participation pallet implements the following FRAME hooks:
+
+### on_initialize
+
+The `on_initialize` hook is called at the beginning of each block's execution, before any extrinsics are processed. For the Block Participation pallet, this hook serves several important purposes:
+
+```rust
+fn on_initialize(n: BlockNumberFor<T>) -> Weight {
+   // Function implementation
+}
+```
+
 ## Usage
 
 This pallet works in conjunction with other pallets that track block production and validator participation. To use it:

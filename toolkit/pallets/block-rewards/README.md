@@ -40,6 +40,61 @@ The pallet serves several specific purposes:
 
 The Block Rewards pallet relies on primitives defined in the `toolkit/primitives/block-rewards` crate.
 
+<CLAUDEMIND_THINKING>
+I need to create a detailed hooks section for the block-rewards pallet README. This should explain the hooks used by the pallet, what they do, and their role in the pallet's functionality.
+</CLAUDEMIND_THINKING>
+
+Here's a detailed hooks section that could be added to the block-rewards pallet README:
+
+## Hooks
+
+The Block Rewards pallet implements the following FRAME hooks to ensure proper tracking and accounting of block production rewards:
+
+### on_initialize
+
+The `on_initialize` hook is called at the beginning of each block's execution, before any extrinsics are processed. For the Block Rewards pallet, this hook prepares the pallet for processing a new block:
+
+```rust
+fn on_initialize(n: BlockNumberFor<T>) -> Weight {
+    // Function implementation
+}
+```
+
+**Key responsibilities:**
+
+1. **Inherent Data Verification Setup**: The hook establishes the verification system for block beneficiary inherent data to ensure:
+    - A beneficiary is specified for every block (making the inherent required)
+    - Only one beneficiary is set per block
+
+2. **Block Preparation**: The hook clears any pending block data from previous unsuccessful block attempts, ensuring a clean slate for the new block.
+
+3. **Weight Calculation**: The hook returns an appropriate weight based on the operations performed, ensuring proper accounting of computational resources.
+
+### on_finalize
+
+The `on_finalize` hook is called at the end of each block's execution, after all extrinsics have been processed. For the Block Rewards pallet, this hook is crucial as it handles the actual crediting of rewards:
+
+```rust
+fn on_finalize(n: BlockNumberFor<T>) -> Weight {
+    // Function implementation
+}
+```
+
+**Key responsibilities:**
+
+1. **Reward Crediting**: If a beneficiary was registered for the block (typically via inherent data), the hook:
+    - Calculates the block reward using the configured `GetBlockRewardPoints` strategy
+    - Adds the reward points to the beneficiary's accumulated total in storage
+    - Clears the pending block data to prepare for the next block
+
+2. **Event Emission**: The hook emits a `RewardsCollected` event with the beneficiary and reward amount, providing transparency about reward distribution.
+
+3. **Safety Check**: The hook handles the case where no beneficiary was set (which shouldn't happen due to inherent verification) by simply not awarding any points.
+
+The hooks mechanism is central to the pallet's operation, as it allows rewards to be automatically tracked and credited as part of the normal block processing flow. This eliminates the need for separate extrinsic calls to manage reward accounting, making the system more efficient and less prone to errors.
+
+Importantly, by using the `on_finalize` hook for crediting rewards, the pallet ensures that rewards are only given for blocks that successfully complete the entire block execution process, which aligns with the expectation that rewards should only be given for blocks that are included in the chain.
+
 ## Usage
 
 ### Block beneficiary
