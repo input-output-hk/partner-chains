@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Native Token Management pallet serves as a bridge between a main chain (such as Cardano) and a partner chain, providing a secure and reliable mechanism for tracking and managing native token transfers between these two ecosystems. This pallet forms a fundamental component of the cross-chain interoperability layer, enabling the seamless flow of value across chain boundaries.
+The Native Token Management pallet serves as a bridge between the main chain (Cardano) and a partner chain, providing a secure and reliable mechanism for tracking and managing native token transfers between these two ecosystems. This pallet forms a fundamental component of the cross-chain interoperability layer, enabling the seamless flow of value across chain boundaries.
 
 At its core, this pallet solves the challenge of maintaining synchronized token supplies across two distinct blockchain environments. It achieves this by continuously monitoring events on the main chain where native tokens are sent to a designated "illiquid supply validator address," which serves as a bridge between the chains. When tokens are transferred to this address on the main chain, they are effectively locked there, and the pallet triggers the minting of an equivalent amount of tokens on the partner chain.
 
