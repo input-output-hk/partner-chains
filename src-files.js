@@ -1,7 +1,7 @@
 var srcIndex = new Map(JSON.parse('[\
 ["authority_selection_inherents",["",[],["ariadne_inherent_data_provider.rs","authority_selection_inputs.rs","filter_invalid_candidates.rs","lib.rs","select_authorities.rs"]]],\
 ["byte_string_derive",["",[],["lib.rs"]]],\
-["cli_commands",["",[],["address_association_signatures.rs","key_params.rs","lib.rs","registration_signatures.rs"]]],\
+["cli_commands",["",[],["address_association_signatures.rs","block_producer_metadata_signatures.rs","key_params.rs","lib.rs","registration_signatures.rs"]]],\
 ["db_sync_follower",["",[["block",[],["mod.rs"]],["candidates",[],["cached.rs","datum.rs","mod.rs"]],["mc_hash",[],["mod.rs"]],["native_token",[],["mod.rs"]],["sidechain_rpc",[],["mod.rs"]],["stake_distribution",[],["mod.rs"]]],["data_sources.rs","db_datum.rs","db_model.rs","lib.rs","metrics.rs"]]],\
 ["main_chain_follower_cli",["",[],["main.rs"]]],\
 ["main_chain_follower_mock",["",[],["block.rs","candidate.rs","lib.rs","mc_hash.rs","native_token.rs","sidechain_rpc.rs","stake_distribution.rs"]]],\
@@ -33,6 +33,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["sidechain_runtime",["",[],["genesis_config_presets.rs","lib.rs","test_helper_pallet.rs"]]],\
 ["sidechain_slots",["",[],["lib.rs","runtime_api_client.rs"]]],\
 ["sp_block_participation",["",[],["lib.rs"]]],\
+["sp_block_producer_metadata",["",[],["lib.rs"]]],\
 ["sp_block_production_log",["",[],["lib.rs"]]],\
 ["sp_native_token_management",["",[],["lib.rs"]]],\
 ["sp_partner_chains_consensus_aura",["",[],["block_proposal.rs","inherent_digest.rs","lib.rs"]]],\

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["address_association_signatures","key_params","registration_signatures"]};
+window.SIDEBAR_ITEMS = {"mod":["address_association_signatures","block_producer_metadata_signatures","key_params","registration_signatures"]};

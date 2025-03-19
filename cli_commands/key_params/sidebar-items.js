@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Ed25519SigningKeyError"],"struct":["PlainPublicKeyParam","SidechainPublicKeyParam","SidechainSigningKeyParam","StakePoolSigningKeyParam","StakeSigningKeyParam"]};
+window.SIDEBAR_ITEMS = {"enum":["Ed25519SigningKeyError"],"struct":["CrossChainSigningKeyParam","PlainPublicKeyParam","SidechainPublicKeyParam","SidechainSigningKeyParam","StakePoolSigningKeyParam","StakeSigningKeyParam"]};

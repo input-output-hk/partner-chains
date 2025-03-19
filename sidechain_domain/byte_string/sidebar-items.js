@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ByteString","SizedByteString"]};
+window.SIDEBAR_ITEMS = {"struct":["BoundedString","ByteString","SizedByteString"]};

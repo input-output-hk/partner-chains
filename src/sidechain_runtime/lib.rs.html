@@ -1110,6 +1110,16 @@
 <a href="#1110" id="1110">1110</a>
 <a href="#1111" id="1111">1111</a>
 <a href="#1112" id="1112">1112</a>
+<a href="#1113" id="1113">1113</a>
+<a href="#1114" id="1114">1114</a>
+<a href="#1115" id="1115">1115</a>
+<a href="#1116" id="1116">1116</a>
+<a href="#1117" id="1117">1117</a>
+<a href="#1118" id="1118">1118</a>
+<a href="#1119" id="1119">1119</a>
+<a href="#1120" id="1120">1120</a>
+<a href="#1121" id="1121">1121</a>
+<a href="#1122" id="1122">1122</a>
 </pre></div><pre class="rust"><code><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attr">#![recursion_limit = <span class="string">"256"</span>]
@@ -1143,7 +1153,9 @@
 <span class="kw">use </span>parity_scale_codec::MaxEncodedLen;
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode};
 <span class="kw">use </span>scale_info::TypeInfo;
+<span class="kw">use </span>serde::Deserialize;
 <span class="kw">use </span>session_manager::ValidatorManagementSessionManager;
+<span class="kw">use </span>sidechain_domain::byte_string::{BoundedString, SizedByteString};
 <span class="kw">use </span>sidechain_domain::{
 	DelegatorKey, MainchainKeyHash, PermissionedCandidateData, RegistrationData, ScEpochNumber,
 	ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
@@ -1569,6 +1581,14 @@
 			BlockAuthor::ProBono(<span class="kw">_</span>) =&gt; <span class="prelude-val">None</span>,
 		}
 	}
+}
+
+<span class="kw">pub const </span>MAX_METADATA_URL_LENGTH: u32 = <span class="number">512</span>;
+
+<span class="attr">#[derive(Clone, Debug, MaxEncodedLen, Encode, Deserialize)]
+</span><span class="kw">pub struct </span>BlockProducerMetadata {
+	<span class="kw">pub </span>url: BoundedString&lt;MAX_METADATA_URL_LENGTH&gt;,
+	<span class="kw">pub </span>hash: SizedByteString&lt;<span class="number">32</span>&gt;,
 }
 
 <span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]

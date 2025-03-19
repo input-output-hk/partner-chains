@@ -226,11 +226,23 @@
 <a href="#226" id="226">226</a>
 <a href="#227" id="227">227</a>
 <a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 <span class="kw">use </span>clap::Parser;
 <span class="kw">use </span>cli_commands::address_association_signatures::AddressAssociationSignaturesCmd;
+<span class="kw">use </span>cli_commands::block_producer_metadata_signatures::BlockProducerMetadataSignatureCmd;
 <span class="kw">use </span>cli_commands::registration_signatures::RegistrationSignaturesCmd;
 <span class="kw">use </span>frame_support::sp_runtime::traits::NumberFor;
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode};
@@ -243,6 +255,7 @@
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="kw">use </span>sp_runtime::AccountId32;
+<span class="kw">use </span>sp_runtime::DeserializeOwned;
 <span class="kw">use </span>sp_session_validator_management::CommitteeMember <span class="kw">as </span>CommitteeMemberT;
 <span class="kw">use </span>sp_session_validator_management::SessionValidatorManagementApi;
 <span class="kw">use </span>sp_session_validator_management_query::commands::<span class="kw-2">*</span>;
@@ -322,6 +335,9 @@
 	<span class="doccomment">/// Signs address association
 	</span>SignAddressAssociation(AddressAssociationSignaturesCmd&lt;AccountId32&gt;),
 
+	<span class="doccomment">/// Signs block producer metadata for submitting to the runtime
+	</span>SignBlockProducerMetadata(BlockProducerMetadataSignatureCmd),
+
 	<span class="doccomment">/// Commands for interacting with Partner Chain smart contracts on Cardano
 	</span><span class="attr">#[command(subcommand)]
 	</span>SmartContracts(SmartContractsCmd),
@@ -331,7 +347,7 @@
 	</span>Wizards(partner_chains_cli::Command),
 }
 
-<span class="kw">pub fn </span>run&lt;Cli, Block, CommitteeMember, Client&gt;(
+<span class="kw">pub fn </span>run&lt;Cli, Block, CommitteeMember, Client, BlockProducerMetadata&gt;(
 	cli: <span class="kw-2">&amp;</span>Cli,
 	get_deps: <span class="kw">impl </span>FnOnce(
 		sc_service::Configuration,
@@ -357,6 +373,7 @@
 	CommitteeMember: CommitteeMemberT + Encode + Decode + Send + Sync + <span class="lifetime">'static</span>,
 	CommitteeMember::AuthorityId: Decode + Encode + AsRef&lt;[u8]&gt; + Send + Sync + <span class="lifetime">'static</span>,
 	CommitteeMember::AuthorityKeys: Decode + Encode,
+	BlockProducerMetadata: DeserializeOwned + Encode + Send + Sync,
 {
 	<span class="kw">match </span>cmd {
 		PartnerChainsSubcommand::SidechainParams(cmd) =&gt; {
@@ -395,6 +412,11 @@
 		PartnerChainsSubcommand::RegistrationSignatures(cmd) =&gt; <span class="prelude-val">Ok</span>(<span class="macro">println!</span>(<span class="string">"{}"</span>, cmd.execute())),
 		PartnerChainsSubcommand::SignAddressAssociation(cmd) =&gt; {
 			cmd.execute().map_err(|e| sc_service::Error::Application(e.into()))<span class="question-mark">?</span>;
+			<span class="prelude-val">Ok</span>(())
+		},
+		PartnerChainsSubcommand::SignBlockProducerMetadata(cmd) =&gt; {
+			cmd.execute::&lt;BlockProducerMetadata&gt;()
+				.map_err(|e| sc_service::Error::Application(e.into()))<span class="question-mark">?</span>;
 			<span class="prelude-val">Ok</span>(())
 		},
 		PartnerChainsSubcommand::SmartContracts(cmd) =&gt; {
