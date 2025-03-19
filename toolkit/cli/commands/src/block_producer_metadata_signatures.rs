@@ -105,4 +105,25 @@ mod tests {
 
 		assert_eq!(output, expected_output)
 	}
+
+	#[test]
+	fn retuns_error_for_invalid_json() {
+		let cmd = BlockProducerMetadataSignatureCmd {
+			genesis_utxo: UtxoId::new([1; 32], 1),
+			metadata_file: "unused".to_string(),
+			cross_chain_signing_key: CrossChainSigningKeyParam(
+				secp256k1::SecretKey::from_slice(
+					// Alice cross-chain key
+					&hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"),
+				)
+				.unwrap(),
+			),
+		};
+
+		let metadata_reader = BufReader::new("{ invalid json }".as_bytes());
+
+		let output = cmd.get_output::<TestMetadata>(metadata_reader);
+
+		assert!(output.is_err(), "{:?} should be Err", output);
+	}
 }
