@@ -10,7 +10,7 @@ In the context of partner chains, "block participation" refers to the record of 
 
 2. **Performance Monitoring**: The participation data enables the network to monitor the performance of validators over time, identifying those who consistently meet their obligations and those who don't.
 
-3. **Rewards and Slashing**: Accurate participation records provide the foundation for fairly distributing rewards to validators who contribute to network security, and potentially applying penalties to those who fail to meet their obligations.
+3. **Rewards**: Accurate participation records provide the foundation for fairly distributing rewards to validators who contribute to network security.
 
 4. **Historical Analysis**: Participation data offers valuable insights into network health and validator behavior patterns over time, which can inform governance decisions and protocol improvements.
 
