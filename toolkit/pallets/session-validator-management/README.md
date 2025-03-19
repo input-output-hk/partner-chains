@@ -100,164 +100,22 @@ The pallet maintains several storage items:
 
 ### Extrinsics
 
-#### set
-Sets the validators for a future epoch
-
-```rust
-fn set(
-    origin: OriginFor<T>,
-    validators: Vec<T::CommitteeMember>,
-    for_epoch_number: T::ScEpochNumber,
-    selection_inputs_hash: Option<SizedByteString<32>>,
-) -> DispatchResultWithPostInfo
-```
-
-Parameters:
-- `validators`: The list of validators for the epoch
-- `for_epoch_number`: The epoch number for which these validators are being set
-- `selection_inputs_hash`: Optional hash of the selection inputs used to select these validators
-
-#### set_main_chain_scripts
-Updates the mainchain scripts configuration
-
-```rust
-fn set_main_chain_scripts(
-    origin: OriginFor<T>,
-    committee_candidate_address: MainchainAddress,
-    d_parameter_policy_id: PolicyId,
-    permissioned_candidates_policy_id: PolicyId,
-) -> DispatchResultWithPostInfo
-```
-
-Parameters:
-- `committee_candidate_address`: The address of the committee candidate
-- `d_parameter_policy_id`: The policy ID for the d-parameter
-- `permissioned_candidates_policy_id`: The policy ID for permissioned candidates
+- **set**: Sets the validators for a future epoch
+- **set_main_chain_scripts**: Updates the mainchain scripts configuration
 
 ### Public Functions (API)
 
-#### get_next_unset_epoch_number
-Returns the next epoch number for which validators haven't been set
-
-```rust
-fn get_next_unset_epoch_number() -> T::ScEpochNumber
-```
-
-Returns:
-- `T::ScEpochNumber`: The next epoch number that needs validators assigned
-
-#### get_current_authority
-Returns the authority at the given index
-
-```rust
-fn get_current_authority(index: u32) -> Option<T::AuthorityId>
-```
-
-Parameters:
-- `index`: The index of the authority to retrieve
-
-Returns:
-- `Option<T::AuthorityId>`: The authority at the given index, if it exists
-
-#### get_current_authority_round_robin
-Returns the authority using round-robin selection
-
-```rust
-fn get_current_authority_round_robin(index: u32) -> Option<T::AuthorityId>
-```
-
-Parameters:
-- `index`: A value used to determine which authority to select
-
-Returns:
-- `Option<T::AuthorityId>`: The selected authority, if any
-
-#### current_committee_storage
-Returns the current committee info
-
-```rust
-fn current_committee_storage() -> CommitteeInfo<T::CommitteeMember, T::ScEpochNumber>
-```
-
-Returns:
-- `CommitteeInfo<T::CommitteeMember, T::ScEpochNumber>`: Information about the current committee
-
-#### next_committee_storage
-Returns the next committee info
-
-```rust
-fn next_committee_storage() -> CommitteeInfo<T::CommitteeMember, T::ScEpochNumber>
-```
-
-Returns:
-- `CommitteeInfo<T::CommitteeMember, T::ScEpochNumber>`: Information about the next committee
-
-#### next_committee
-Returns the next committee
-
-```rust
-fn next_committee() -> Option<Vec<T::CommitteeMember>>
-```
-
-Returns:
-- `Option<Vec<T::CommitteeMember>>`: The next committee, if set
-
-#### calculate_committee
-Calculates committee for given inputs
-
-```rust
-fn calculate_committee(
-    authority_selection_inputs: T::AuthoritySelectionInputs,
-    sidechain_epoch: T::ScEpochNumber
-) -> Option<Vec<T::CommitteeMember>>
-```
-
-Parameters:
-- `authority_selection_inputs`: Inputs for the authority selection algorithm
-- `sidechain_epoch`: The epoch for which to calculate the committee
-
-Returns:
-- `Option<Vec<T::CommitteeMember>>`: The calculated committee, if successful
-
-#### rotate_committee_to_next_epoch
-Rotates committee to the next epoch
-
-```rust
-fn rotate_committee_to_next_epoch() -> Result<Vec<T::CommitteeMember>, ()>
-```
-
-Returns:
-- `Result<Vec<T::CommitteeMember>, ()>`: The new committee if rotation was successful
-
-#### get_current_committee
-Returns the current committee and epoch
-
-```rust
-fn get_current_committee() -> (T::ScEpochNumber, Vec<T::CommitteeMember>)
-```
-
-Returns:
-- `(T::ScEpochNumber, Vec<T::CommitteeMember>)`: The current epoch and committee
-
-#### get_next_committee
-Returns the next committee and epoch
-
-```rust
-fn get_next_committee() -> Option<(T::ScEpochNumber, Vec<T::CommitteeMember>)>
-```
-
-Returns:
-- `Option<(T::ScEpochNumber, Vec<T::CommitteeMember>)>`: The next epoch and committee, if set
-
-#### get_main_chain_scripts
-Returns the mainchain scripts configuration
-
-```rust
-fn get_main_chain_scripts() -> MainChainScripts
-```
-
-Returns:
-- `MainChainScripts`: The current mainchain scripts configuration
+- **get_next_unset_epoch_number**: Returns the next epoch number for which validators haven't been set
+- **get_current_authority**: Returns the authority at the given index
+- **get_current_authority_round_robin**: Returns the authority using round-robin selection
+- **current_committee_storage**: Returns the current committee info
+- **next_committee_storage**: Returns the next committee info
+- **next_committee**: Returns the next committee
+- **calculate_committee**: Calculates committee for given inputs
+- **rotate_committee_to_next_epoch**: Rotates committee to the next epoch
+- **get_current_committee**: Returns the current committee and epoch
+- **get_next_committee**: Returns the next committee and epoch
+- **get_main_chain_scripts**: Returns the mainchain scripts configuration
 
 ### Inherent Data
 
