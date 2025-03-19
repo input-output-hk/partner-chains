@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Native Token Management pallet serves as a bridge between a main chain (such as Cardano) and a partner chain, providing a secure and reliable mechanism for tracking and managing native token transfers between these two ecosystems. This pallet forms a fundamental component of the cross-chain interoperability layer, enabling the seamless flow of value across chain boundaries.
+The Native Token Management pallet serves as a bridge between the main chain (Cardano) and a partner chain, providing a secure and reliable mechanism for tracking and managing native token transfers between these two ecosystems. This pallet forms a fundamental component of the cross-chain interoperability layer, enabling the seamless flow of value across chain boundaries.
 
 At its core, this pallet solves the challenge of maintaining synchronized token supplies across two distinct blockchain environments. It achieves this by continuously monitoring events on the main chain where native tokens are sent to a designated "illiquid supply validator address," which serves as a bridge between the chains. When tokens are transferred to this address on the main chain, they are effectively locked there, and the pallet triggers the minting of an equivalent amount of tokens on the partner chain.
 
@@ -23,12 +23,6 @@ This pallet is designed to be minimal yet flexible, focusing exclusively on the 
 ## Primitives
 
 The Native Token Management pallet relies on primitives defined in the `toolkit/primitives/native-token-management` crate.
-
-<CLAUDEMIND_THINKING>
-I need to create a hooks section for the native-token-management pallet README. This should explain the hooks used by the pallet, what they do, and their role in the pallet's functionality.
-</CLAUDEMIND_THINKING>
-
-Here's a hooks section that could be added to the native-token-management pallet README:
 
 ## Hooks
 
@@ -76,10 +70,6 @@ impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 1. **Storage Migration**: If needed, the hook handles migration of storage from older versions of the pallet to newer ones.
 
 2. **Initialization Handling**: Ensures that the initialization status is properly maintained across runtime upgrades.
-
-The hooks mechanism is particularly important for this pallet as it allows the automatic processing of token transfers from the main chain without requiring manual intervention. When the main chain follower detects tokens sent to the illiquid supply validator address, it provides this information as inherent data, which the pallet then processes during block production through these hooks.
-
-This design ensures that token transfers are processed reliably and consistently as part of the normal block processing flow, providing a seamless bridge between the main chain and partner chain economies.
 
 ## Configuration
 

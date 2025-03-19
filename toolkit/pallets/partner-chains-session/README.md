@@ -35,12 +35,6 @@ The Partner Chains Session pallet fulfills several critical functions within the
 
 The Partner Chains Session pallet relies on primitives defined in the `toolkit/primitives/session-manager` crate.
 
-<CLAUDEMIND_THINKING>
-I need to create a hooks section for the partner-chains-session pallet README. This should explain the hooks used by the pallet, what they do, and their role in the pallet's functionality.
-</CLAUDEMIND_THINKING>
-
-Here's a hooks section that could be added to the partner-chains-session pallet README:
-
 ## Hooks
 
 The Partner Chains Session pallet implements the following FRAME hooks to manage session transitions and validator set updates:
