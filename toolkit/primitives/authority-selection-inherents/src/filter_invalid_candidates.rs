@@ -22,7 +22,7 @@ pub struct RegisterValidatorSignedMessage {
 	pub registration_utxo: UtxoId,
 }
 
-#[derive(Clone, Debug, Encode, Decode, PartialEq)]
+#[derive(Clone, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CandidateWithStake<TAccountId, TAccountKeys> {
 	pub stake_pool_pub_key: StakePoolPublicKey,
 	/// Amount of ADA staked/locked by the Authority Candidate
@@ -31,13 +31,13 @@ pub struct CandidateWithStake<TAccountId, TAccountKeys> {
 	pub account_keys: TAccountKeys,
 }
 
-#[derive(Clone, Debug, Encode, Decode, PartialEq)]
+#[derive(Clone, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PermissionedCandidate<TAccountId, TAccountKeys> {
 	pub account_id: TAccountId,
 	pub account_keys: TAccountKeys,
 }
 
-#[derive(Clone, Debug, Encode, Decode, PartialEq)]
+#[derive(Clone, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Candidate<TAccountId, TAccountKeys> {
 	Permissioned(PermissionedCandidate<TAccountId, TAccountKeys>),
 	Registered(CandidateWithStake<TAccountId, TAccountKeys>),
@@ -74,13 +74,20 @@ impl<TAccountId, TAccountKeys> Candidate<TAccountId, TAccountKeys> {
 			Candidate::Registered(c) => &c.account_keys,
 		}
 	}
+
+	pub fn stake_delegation(&self) -> Option<StakeDelegation> {
+		match self {
+			Candidate::Permissioned(_) => None,
+			Candidate::Registered(c) => Some(c.stake_delegation),
+		}
+	}
 }
 
 /// Get the valid trustless candidates from the registrations from inherent data
 pub fn filter_trustless_candidates_registrations<TAccountId, TAccountKeys>(
 	candidate_registrations: Vec<CandidateRegistrations>,
 	genesis_utxo: UtxoId,
-) -> Vec<CandidateWithStake<TAccountId, TAccountKeys>>
+) -> Vec<(Candidate<TAccountId, TAccountKeys>, selection::Weight)>
 where
 	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
 	TAccountId: From<ecdsa::Public>,
@@ -90,12 +97,16 @@ where
 		.flat_map(|candidate_registrations| {
 			select_latest_valid_candidate(candidate_registrations, genesis_utxo)
 		})
+		.map(|c| {
+			let weight = c.stake_delegation.0.into();
+			(Candidate::Registered(c), weight)
+		})
 		.collect()
 }
 
 pub fn filter_invalid_permissioned_candidates<TAccountId, TAccountKeys>(
 	permissioned_candidates: Vec<PermissionedCandidateData>,
-) -> Vec<PermissionedCandidate<TAccountId, TAccountKeys>>
+) -> Vec<Candidate<TAccountId, TAccountKeys>>
 where
 	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
 	TAccountId: TryFrom<sidechain_domain::SidechainPublicKey>,
@@ -106,7 +117,7 @@ where
 			let (account_id, aura_key, grandpa_key) =
 				validate_permissioned_candidate_data(candidate).ok()?;
 			let account_keys = (aura_key, grandpa_key).into();
-			Some(PermissionedCandidate { account_id, account_keys })
+			Some(Candidate::Permissioned(PermissionedCandidate { account_id, account_keys }))
 		})
 		.collect()
 }
@@ -568,8 +579,8 @@ mod tests {
 		);
 
 		assert_eq!(valid_candidates.len(), 2);
-		assert_eq!(valid_candidates[0].stake_delegation, StakeDelegation(1));
-		assert_eq!(valid_candidates[1].stake_delegation, StakeDelegation(2));
+		assert_eq!(valid_candidates[0].0.stake_delegation(), Some(StakeDelegation(1)));
+		assert_eq!(valid_candidates[1].0.stake_delegation(), Some(StakeDelegation(2)));
 	}
 
 	#[test]
@@ -606,12 +617,12 @@ mod tests {
 		);
 		assert_eq!(valid_candidates.len(), 1);
 		assert_eq!(
-			valid_candidates.first().unwrap().account_id,
-			valid_sidechain_pub_key.try_into().unwrap()
+			valid_candidates.first().unwrap().account_id(),
+			&valid_sidechain_pub_key.try_into().unwrap()
 		);
 		assert_eq!(
-			valid_candidates.first().unwrap().account_keys,
-			(
+			valid_candidates.first().unwrap().account_keys(),
+			&(
 				valid_candidate.aura_public_key.try_into_sr25519().unwrap(),
 				valid_candidate.grandpa_public_key.try_into_ed25519().unwrap()
 			)

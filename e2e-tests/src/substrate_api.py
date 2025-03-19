@@ -14,20 +14,9 @@ import logging as logger
 from .run_command import RunnerFactory
 from .cardano_cli import CardanoCli
 from .partner_chains_node.node import PartnerChainsNode
-from .partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, PartnerChainRpcException, DParam
-import string
+from .partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, DParam
 import time
 from scalecodec.base import ScaleBytes
-
-
-def _keypair_type_to_name(type):
-    match type:
-        case KeypairType.SR25519:
-            return "SR25519"
-        case KeypairType.ED25519:
-            return "ED25519"
-        case _:
-            return "ECDSA"
 
 
 def _keypair_name_to_type(type_name):
@@ -112,19 +101,6 @@ class SubstrateApi(BlockchainApi):
                 "value": tx.value,
             },
         )
-        logger.debug(f"Transaction built {tx._unsigned}")
-        return tx
-
-    def lock_transaction(self, tx: Transaction):
-        mc_address = tx.recipient
-        tx.recipient = self.cardano_address_to_bech32(mc_address)
-        if not tx.recipient or not all(c in string.hexdigits for c in tx.recipient[2:]):
-            raise ValueError(f"Bech32 conversion of {mc_address} not successful: {tx.recipient}")
-
-        tx._unsigned = self.substrate.compose_call(
-            call_module="ActiveFlow", call_function="lock", call_params={"amount": tx.value, "receiver": tx.recipient}
-        )
-        logger.info(f"***********LOCK TX: {tx}*****************")
         logger.debug(f"Transaction built {tx._unsigned}")
         return tx
 
@@ -372,9 +348,6 @@ class SubstrateApi(BlockchainApi):
     def get_pc_epoch(self):
         return self.partner_chain_rpc.partner_chain_get_status().result['sidechain']['epoch']
 
-    def get_pc_epoch_phase(self, slot_number=None):
-        return self.partner_chain_rpc.partner_chain_get_epoch_phase(slot_number).result['epochPhase']
-
     def get_params(self):
         return self.partner_chain_rpc.partner_chain_get_params().result
 
@@ -389,27 +362,6 @@ class SubstrateApi(BlockchainApi):
 
     def get_mc_sync_progress(self):
         return self.cardano_cli.get_sync_progress()
-
-    def burn_tokens(self, recipient, amount, payment_key):
-        assert self.substrate.is_valid_ss58_address(recipient), f"{recipient} is not a valid SS58 address"
-        recipient_hex = self.address_to_hex(recipient)
-        return self.burn_tokens_for_hex_address(recipient_hex, amount, payment_key)
-
-    def burn_tokens_for_hex_address(self, recipient_hex, amount, payment_key):
-        txHash = self.partner_chains_node.burn_tokens(recipient_hex, amount, payment_key)
-        if txHash:
-            tx_block_no = self.get_mc_block_no_by_tx_hash(txHash)
-            mc_stable_block = tx_block_no + self.config.main_chain.security_param
-            logger.info(
-                f"Burn tx of {amount} tokens to {recipient_hex} was successful, "
-                f"and will become stable at mc block {mc_stable_block}. Transaction id: {txHash}"
-            )
-            return True, txHash, mc_stable_block
-        else:
-            return False, None, None
-
-    def address_to_hex(self, address):
-        return self.substrate.ss58_decode(address)
 
     def wait_for_next_pc_block(self):
         logger.info('Waiting for next partner chain block')
@@ -426,64 +378,12 @@ class SubstrateApi(BlockchainApi):
             i = i + 1
         return success
 
-    def wait_for_next_mc_block(self):
-        logger.info('Waiting for next main chain block')
-        old_block = self.cardano_cli.get_block()
-        latest_block = old_block
-        i = 0
-        success = True
-        while latest_block == old_block:
-            time.sleep(10)
-            latest_block = self.cardano_cli.get_block()
-            if i == 24:  # No block in 4 minutes
-                success = False
-                break
-            i = i + 1
-        return success
-
-    def get_incoming_txs(self) -> dict:
-        response = self.partner_chain_rpc.partner_chain_get_incoming_transactions()
-        if response.error:
-            raise PartnerChainRpcException(f"Couldn't get incoming txs: {response.error.message}", response.error.code)
-        return response.result
-
-    def get_mc_stable_block_for_incoming_tx(self, txHash) -> int:
-        pendingTxs = self.get_incoming_txs()
-        tx_stable_at_mc_block = 0
-        for pendingTx in pendingTxs['awaitingMcStability']:
-            if pendingTx['txHash'] == txHash:
-                tx_stable_at_mc_block = pendingTx['stableAtMainchainBlock']
-        assert tx_stable_at_mc_block != 0, f"ERROR: Burn tx not identified as pending: {pendingTxs}"
-        return tx_stable_at_mc_block
-
     def get_epoch_committee(self, epoch) -> PartnerChainRpcResponse:
         logger.info(f"Getting committee for epoch {epoch}")
         response = self.partner_chain_rpc.partner_chain_get_epoch_committee(epoch)
         if response.error:
             logger.error(f"Couldn't get committee for epoch {epoch}: {response.error}")
         return response
-
-    def get_epoch_signatures(self, epoch) -> PartnerChainRpcResponse:
-        logger.info(f"Getting signatures for epoch {epoch}")
-        response = self.partner_chain_rpc.partner_chain_get_epoch_signatures(epoch)
-        if response.error:
-            logger.error(f"Couldn't get signatures for epoch {epoch}: {response.error}")
-        return response
-
-    def claim_tokens(self, mc_private_key_file, combined_proof, distributed_set_utxo=None) -> bool:
-        return self.partner_chains_node.claim_tokens(
-            mc_private_key_file, combined_proof, distributed_set_utxo=distributed_set_utxo
-        )
-
-    def get_outgoing_txs(self, epoch) -> dict:
-        return self.partner_chain_rpc.partner_chain_get_outgoing_transactions(epoch)
-
-    def get_outgoing_tx_merkle_proof(self, epoch, txId) -> str:
-        return self.partner_chain_rpc.partner_chain_get_outgoing_transaction_merkle_proof(epoch, txId).result
-
-    def get_expected_tx_fees(self, wallet_type, tx_type):
-        wallet_type_name = _keypair_type_to_name(wallet_type)
-        return eval(f"self.config.nodes_config.fees.{wallet_type_name}.{tx_type}")
 
     def get_status(self):
         return self.partner_chain_rpc.partner_chain_get_status().result
@@ -603,33 +503,15 @@ class SubstrateApi(BlockchainApi):
         d_param = DParam(response["numPermissionedCandidates"], response["numRegisteredCandidates"])
         return d_param
 
-    def cardano_address_to_bech32(self, mc_address: str):
-        bech32_config = self.config.stack_config.tools["bech32"]
-        bech32_addr = self.run_command.run(f"{bech32_config.cli} <<< {mc_address}")
-        if not bech32_addr.stdout or bech32_addr.stderr:
-            raise Exception(bech32_addr.stderr)
-        return '0x' + bech32_addr.stdout.strip()
-
-    def check_epoch_signatures_uploaded(self, pc_epoch=None):
-        signatures = self.partner_chain_rpc.partner_chain_get_signatures_to_upload().result
-        if not signatures:
-            return True
-        if not pc_epoch:
-            return False  # We don't have a sc epoch to wait for, so wait until all epochs are relayed
-        for signature in signatures:
-            if signature["epoch"] == pc_epoch and signature["merkleRoots"] != []:
-                return False  # Wait until merkleRoots is empty or all epochs relayed
-        return True
-
     def get_block_extrinsic_value(self, extrinsic_name, block_no):
         block = self.get_block(block_no)
         return self.extract_block_extrinsic_value(extrinsic_name, block)
 
     def extract_block_extrinsic_value(self, extrinsic_name, block):
-        for extr in block["extrinsics"]:
-            if extr["call"]["call_module"]["name"] == extrinsic_name:
+        for extrinsic in block["extrinsics"]:
+            if extrinsic["call"]["call_module"]["name"] == extrinsic_name:
                 # Convert <class 'scalecodec.types.GenericExtrinsic'> to python dict
-                extrinsic_dict = extr.value_serialized
+                extrinsic_dict = extrinsic.value_serialized
                 return extrinsic_dict["call"]["call_args"][0]["value"]
         return 0
 
@@ -746,7 +628,7 @@ class SubstrateApi(BlockchainApi):
                 "partnerchain_address": signature.partner_chain_address,
                 "signature": signature.signature,
                 "stake_public_key": signature.stake_public_key,
-            }
+            },
         )
         logger.debug(f"Transaction built {tx._unsigned}")
 

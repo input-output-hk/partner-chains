@@ -14,6 +14,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from src.db.models import Base
 from filelock import FileLock
+from typing import Generator
 import time
 
 _config: ApiConfig = None
@@ -388,19 +389,19 @@ def init_db_sync(secrets):
 
 
 @fixture(scope="session")
-def db(init_db) -> Session:
+def db(init_db) -> Generator[Session, None, None]:
     with Session(init_db) as session:
         yield session
 
 
 @fixture(scope="session")
-def db_sync(init_db_sync) -> Session:
+def db_sync(init_db_sync) -> Generator[Session, None, None]:
     with Session(init_db_sync) as session:
         yield session
 
 
 @fixture(scope="session")
-def api(blockchain, config, secrets, db_sync) -> BlockchainApi:
+def api(blockchain, config, secrets, db_sync) -> Generator[BlockchainApi, None, None]:
     class_name = BlockchainTypes.__getitem__(blockchain).value
     api: BlockchainApi = class_name(config, secrets, db_sync)
     yield api
@@ -453,12 +454,13 @@ def pc_epoch_calculator(config: ApiConfig) -> PartnerChainEpochCalculator:
 
 @fixture
 def new_wallet(api: BlockchainApi) -> Wallet:
-    yield api.new_wallet()
+    return api.new_wallet()
 
 
 @fixture(scope="session")
 def get_wallet(api: BlockchainApi) -> Wallet:
-    yield api.get_wallet()
+    return api.get_wallet()
+
 
 @fixture(scope="session")
 def full_mc_epoch_has_passed_since_deployment(config: ApiConfig, current_mc_epoch):

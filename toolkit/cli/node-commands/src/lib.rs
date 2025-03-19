@@ -3,6 +3,7 @@ use authority_selection_inherents::authority_selection_inputs::AuthoritySelectio
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use clap::Parser;
 use cli_commands::address_association_signatures::AddressAssociationSignaturesCmd;
+use cli_commands::block_producer_metadata_signatures::BlockProducerMetadataSignatureCmd;
 use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use frame_support::sp_runtime::traits::NumberFor;
 use parity_scale_codec::{Decode, Encode};
@@ -15,6 +16,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 use sp_runtime::AccountId32;
+use sp_runtime::DeserializeOwned;
 use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 use sp_session_validator_management::SessionValidatorManagementApi;
 use sp_session_validator_management_query::commands::*;
@@ -94,6 +96,9 @@ pub enum PartnerChainsSubcommand {
 	/// Signs address association
 	SignAddressAssociation(AddressAssociationSignaturesCmd<AccountId32>),
 
+	/// Signs block producer metadata for submitting to the runtime
+	SignBlockProducerMetadata(BlockProducerMetadataSignatureCmd),
+
 	/// Commands for interacting with Partner Chain smart contracts on Cardano
 	#[command(subcommand)]
 	SmartContracts(SmartContractsCmd),
@@ -103,7 +108,7 @@ pub enum PartnerChainsSubcommand {
 	Wizards(partner_chains_cli::Command),
 }
 
-pub fn run<Cli, Block, CommitteeMember, Client>(
+pub fn run<Cli, Block, CommitteeMember, Client, BlockProducerMetadata>(
 	cli: &Cli,
 	get_deps: impl FnOnce(
 		sc_service::Configuration,
@@ -129,6 +134,7 @@ where
 	CommitteeMember: CommitteeMemberT + Encode + Decode + Send + Sync + 'static,
 	CommitteeMember::AuthorityId: Decode + Encode + AsRef<[u8]> + Send + Sync + 'static,
 	CommitteeMember::AuthorityKeys: Decode + Encode,
+	BlockProducerMetadata: DeserializeOwned + Encode + Send + Sync,
 {
 	match cmd {
 		PartnerChainsSubcommand::SidechainParams(cmd) => {
@@ -167,6 +173,11 @@ where
 		PartnerChainsSubcommand::RegistrationSignatures(cmd) => Ok(println!("{}", cmd.execute())),
 		PartnerChainsSubcommand::SignAddressAssociation(cmd) => {
 			cmd.execute().map_err(|e| sc_service::Error::Application(e.into()))?;
+			Ok(())
+		},
+		PartnerChainsSubcommand::SignBlockProducerMetadata(cmd) => {
+			cmd.execute::<BlockProducerMetadata>()
+				.map_err(|e| sc_service::Error::Application(e.into()))?;
 			Ok(())
 		},
 		PartnerChainsSubcommand::SmartContracts(cmd) => {

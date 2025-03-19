@@ -47,12 +47,12 @@ class BlockFinder:
         epoch_to_test_end_timestamp = epoch_to_test_start_timestamp + (
             self.config.nodes_config.block_duration
             * self.config.nodes_config.slots_in_epoch
-            * 1000  # secs to millisecs
+            * 1000  # seconds to milliseconds
         )
 
         latest_block_number = self.api.get_latest_pc_block_number()
         latest_block_timestamp = self.api.get_block_extrinsic_value("Timestamp", latest_block_number)
-        time_diff = int((latest_block_timestamp - epoch_to_test_start_timestamp) / 1000)  # millisecs to secs
+        time_diff = int((latest_block_timestamp - epoch_to_test_start_timestamp) / 1000)  # milliseconds to seconds
         approximate_blocks_in_time_diff = int(time_diff / self.config.nodes_config.block_duration)
         approximate_first_block = latest_block_number - approximate_blocks_in_time_diff
         if approximate_first_block < 0:

@@ -35,54 +35,6 @@ class PermissionedCandidates(Base):
         )
 
 
-class IncomingTx(Base):
-    __tablename__ = "incoming_txs"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    pc_addr: Mapped[str] = mapped_column(String(128))
-    mc_addr: Mapped[str] = mapped_column(String(128))
-    pc_balance: Mapped[int] = mapped_column(BigInteger)
-    mc_balance: Mapped[int]
-    token_policy_id: Mapped[str] = mapped_column(String(128))
-    amount: Mapped[int]
-    stable_at_block: Mapped[Optional[int]]
-    tx_hash: Mapped[Optional[str]] = mapped_column(String(128))
-    is_settled: Mapped[bool] = mapped_column(default=False)
-    pc_balance_after_settlement: Mapped[Optional[int]] = mapped_column(BigInteger)
-
-    def __repr__(self) -> str:
-        return (
-            f"IncomingTx(id={self.id!r}, dest={self.pc_addr!r}, dest_balance={self.pc_balance!r}, "
-            f"amount={self.amount!r})"
-        )
-
-
-class OutgoingTx(Base):
-    __tablename__ = "outgoing_txs"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    pc_addr: Mapped[str] = mapped_column(String(128))
-    mc_addr: Mapped[str] = mapped_column(String(128))
-    pc_balance: Mapped[int] = mapped_column(BigInteger)
-    mc_balance: Mapped[int]
-    amount: Mapped[int] = mapped_column(BigInteger)
-    pc_balance_after_lock: Mapped[Optional[int]] = mapped_column(BigInteger)
-    fees_spent: Mapped[Optional[int]] = mapped_column(BigInteger)
-    available_on_pc_epoch: Mapped[Optional[int]]
-    tx_index_on_pc_epoch: Mapped[Optional[int]]
-    token_policy_id: Mapped[str] = mapped_column(String(128))
-    lock_tx_hash: Mapped[Optional[str]] = mapped_column(String(128))
-    combined_proof: Mapped[Optional[str]]
-    mc_balance_before_claim: Mapped[Optional[int]] = mapped_column(BigInteger)
-    mc_balance_after_claim: Mapped[Optional[int]] = mapped_column(BigInteger)
-    is_claimed: Mapped[bool] = mapped_column(default=False)
-    is_received: Mapped[Optional[bool]]
-
-    def __repr__(self) -> str:
-        return (
-            f"OutgoingTx(id={self.id!r}, dest={self.mc_addr!r}, dest_balance={self.mc_balance!r}, "
-            f"amount={self.amount!r})"
-        )
-
-
 class StakeDistributionCommittee(Base):
     __tablename__ = "stake_distribution_committee"
     id: Mapped[int] = mapped_column(primary_key=True)

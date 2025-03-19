@@ -22,7 +22,7 @@ on:
         type: boolean
         default: false
       no-tests:
-        description: "SKIP TESTS - Exlucde all test jobs against staging environment"
+        description: "SKIP TESTS - Exclude all test jobs against staging environment"
         required: false
         type: boolean
         default: false
@@ -224,7 +224,7 @@ jobs:
           blockchain: substrate
           env: staging
           decrypt: true
-          markers: "not active_flow and not passive_flow and (CD or rpc)"
+          markers: "CD or rpc"
           threads: 1
 
   run-all-tests:
@@ -254,7 +254,6 @@ jobs:
           blockchain: substrate
           env: staging
           decrypt: true
-          markers: "not active_flow and not passive_flow"
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
           threads: 1
 
@@ -320,7 +319,6 @@ jobs:
           env: staging
           decrypt: true
           latest_mc_epoch: true
-          markers: "not active_flow and not passive_flow"
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
           threads: 1
 
@@ -392,7 +390,6 @@ jobs:
           env: staging
           decrypt: true
           latest_mc_epoch: true
-          markers: "not active_flow and not passive_flow"
           deployment_mc_epoch: $DEPLOYMENT_MC_EPOCH
           threads: 1
 

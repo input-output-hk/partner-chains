@@ -109,33 +109,6 @@
                 "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000008"
             }
         },
-        "passive_transfer_account": {
-            "partner_chain_address": "5D4UdLBfePonjFvS1brdNA7sh2zpPvTh6PSEVihx6kPciPXD",
-            "partner_chain_key": "./secrets/substrate/devnet/keys/transfer_account_passive/partner_chain.skey.json.decrypted",
-            "mainchain_address": "addr_test1vq96qdngyx9esh8vuaymcps8yw9s0d5yufxqjuz89gthxsgl7euxg",
-            "mainchain_key": "./secrets/substrate/devnet/keys/transfer_account_passive/mainchain.skey.json.decrypted"
-        },
-        "active_transfer_account": {
-            "partner_chain_address": "5HgahNbxK7syB2M2VB9iUJ6dcuHidCuP2jx2pJVidxRrKSng",
-            "partner_chain_key": "",
-            "mainchain_address": "addr_test1vpnz3mdcqyutcmqjuwhlx9l4zdk4nwerlv3drymp8ana08sc5hnvd",
-            "mainchain_address_bech32": "0x606628edb80138bc6c12e3aff317f5136d59bb23fb22d193613f67d79e",
-            "mainchain_key": "./secrets/substrate/devnet/keys/transfer_account_active/mainchain.skey.json.decrypted"
-        },
-        "negative_test_transfer_account": {
-            "partner_chain_address": "5F1N52dZx48UpXNLtcCzSMHZEroqQDuYKfidg46Tp37SjPcE",
-            "partner_chain_key": "./secrets/substrate/devnet/keys/transfer_account_negative/partner_chain.skey.json.decrypted",
-            "mainchain_address": "",
-            "mainchain_key": ""
-        },
-        "random_mc_account": {
-            "mainchain_address": "addr_test1vzgk8hw98hy3zege2655fllq5lqrjcjxqgx5ufyul6hnvrcgl5tpl",
-            "mainchain_key": "./secrets/substrate/devnet/keys/random_mc_account/random.skey.json.decrypted"
-        },
-        "invalid_mc_skey": {
-            "mainchain_address": "addr_test1vzgk8hw98hy3zege2655fllq5lqrjcjxqgx5ufyul6hnvrcgl5tpl",
-            "mainchain_key": "./secrets/substrate/devnet/keys/invalid_mc_skey/random.skey.json.decrypted"
-        },
         "governance_authority": {
             "mainchain_address": "addr_test1vp7yrmz5p6mdm3ph0a0jaxtk58hny3wseuw80fwql93huygczalde",
             "mainchain_key": "./secrets/substrate/devnet/keys/governance_authority/init.skey.json.decrypted"
@@ -145,16 +118,6 @@
         "token_conversion_rate": 9,
         "block_duration": 6,
         "slots_in_epoch": 60,
-        "token_policy_id": "a8629ed63b21472af8b18382303a2367b4707e3c2bc852f303a4612b.4655454c",
-        "fees": {
-            "ECDSA": {
-                "lock": 113638153,
-                "send": 298945144
-            },
-            "SR25519": {
-                "lock": 817414141,
-                "send": 298945143
-            }
-        }
+        "token_policy_id": "a8629ed63b21472af8b18382303a2367b4707e3c2bc852f303a4612b.4655454c"
     }
 }

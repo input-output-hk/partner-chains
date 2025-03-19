@@ -296,7 +296,8 @@ async fn run_update_goveranance<
 	genesis_utxo: UtxoId,
 ) {
 	let _ = update_governance::run_update_governance(
-		EVE_PUBLIC_KEY_HASH,
+		&vec![EVE_PUBLIC_KEY_HASH],
+		1,
 		&governance_authority_payment_key(),
 		genesis_utxo,
 		client,
