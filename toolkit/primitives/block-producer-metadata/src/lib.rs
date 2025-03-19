@@ -1,3 +1,5 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
 use parity_scale_codec::Encode;
 use secp256k1::{hashes::sha256, Message, Secp256k1};
 use sidechain_domain::*;
@@ -20,16 +22,15 @@ impl<M: Encode> MetadataSignedMessage<M> {
 		&self,
 		vkey: &secp256k1::PublicKey,
 		signature: CrossChainSignature,
-	) -> bool {
+	) -> Result<(), secp256k1::Error> {
 		let data = self.encode();
 		let data_hash = Message::from_hashed_data::<sha256::Hash>(&data);
 
-		println!("{}", signature.0.len());
 		let signature = secp256k1::ecdsa::Signature::from_der(&signature.0)
 			.or_else(|_| secp256k1::ecdsa::Signature::from_compact(&signature.0))
 			.expect("ecdsa::Signature from CrossChainSignature should always succeed");
 
-		vkey.verify(&Secp256k1::new(), &data_hash, &signature).is_ok()
+		vkey.verify(&Secp256k1::new(), &data_hash, &signature)
 	}
 }
 
@@ -55,6 +56,6 @@ mod tests {
 
 		let signature = message.sign_with_key(&skey);
 
-		assert!(message.verify_signature(&vkey, signature));
+		assert_eq!(message.verify_signature(&vkey, signature), Ok(()));
 	}
 }

@@ -1,21 +1,12 @@
-#![allow(unused_imports)]
-use crate::key_params::{
-	CrossChainSigningKeyParam, SidechainSigningKeyParam, StakePoolSigningKeyParam,
-};
+use crate::key_params::CrossChainSigningKeyParam;
 use byte_string::ByteString;
 use clap::Parser;
 use parity_scale_codec::Encode;
-use plutus_datum_derive::*;
-use secp256k1::{hashes::sha256, Message, SecretKey};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::de::DeserializeOwned;
 use serde_json::{self, json};
-use sidechain_domain::{crypto::*, *};
+use sidechain_domain::*;
 use sp_block_producer_metadata::MetadataSignedMessage;
-use std::{
-	fmt::{Display, Formatter},
-	io::{BufReader, Read},
-	marker::PhantomData,
-};
+use std::io::{BufReader, Read};
 
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
@@ -68,13 +59,9 @@ mod tests {
 	use crate::key_params::CrossChainSigningKeyParam;
 	use hex_literal::hex;
 	use pretty_assertions::assert_eq;
-	use serde::{Deserialize, Serialize};
+	use serde::Deserialize;
 	use serde_json::json;
 	use sidechain_domain::UtxoId;
-	use std::{
-		io::{BufReader, BufWriter},
-		str::FromStr,
-	};
 
 	#[derive(Deserialize, Encode)]
 	struct TestMetadata {
@@ -106,8 +93,8 @@ mod tests {
 		let output = cmd.get_output::<TestMetadata>(metadata_reader).unwrap();
 
 		let expected_output = json!({
-			"cross_chain_pub_key": "0x0a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a12da8d65fae6d63a4abca410b7e50d50cd95d36001c28712fd2adf944adb03b12",
-			"signature": "0x304502210085bbfc2df4e11bf6f6c5fa496b37fab97392dd59601a30dcf9c45aa40fc0fa65022079d7f692bc72e04a16dc3f1676cc17c5709859aa03204115432f6f88362e4831",
+			"cross_chain_pub_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
+			"signature": "0x3045022100f86d3aa75a6a8bda35dfdd2472b8e5f2f95446e4542ab0adb6f3e7681f01b740022060082c0debfb9616a54f88cf42b88e1a2f43c75dc4394bfdde33972deb491fcb",
 			"encoded_metadata": "0x48687474703a2f2f6578616d706c652e636f6d1031323334"
 		});
 

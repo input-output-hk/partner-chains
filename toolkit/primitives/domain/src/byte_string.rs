@@ -54,9 +54,9 @@ impl<const N: usize> Default for SizedByteString<N> {
 
 /// Byte-encoded text string with c
 #[derive(Eq, Clone, PartialEq, TypeInfo, Default, Encode, Decode, MaxEncodedLen)]
-pub struct SizedString<const N: u32>(pub BoundedVec<u8, ConstU32<N>>);
+pub struct BoundedString<const N: u32>(pub BoundedVec<u8, ConstU32<N>>);
 
-impl<const N: u32> TryFrom<Vec<u8>> for SizedString<N> {
+impl<const N: u32> TryFrom<Vec<u8>> for BoundedString<N> {
 	type Error = <BoundedVec<u8, ConstU32<N>> as TryFrom<Vec<u8>>>::Error;
 
 	fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
@@ -64,7 +64,7 @@ impl<const N: u32> TryFrom<Vec<u8>> for SizedString<N> {
 	}
 }
 
-impl<'a, const N: u32> Deserialize<'a> for SizedString<N> {
+impl<'a, const N: u32> Deserialize<'a> for BoundedString<N> {
 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
 		D: serde::Deserializer<'a>,
@@ -78,7 +78,7 @@ impl<'a, const N: u32> Deserialize<'a> for SizedString<N> {
 	}
 }
 
-impl<const N: u32> Display for SizedString<N> {
+impl<const N: u32> Display for BoundedString<N> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		f.write_str(
 			&alloc::string::String::from_utf8(self.0.to_vec()).map_err(|_| core::fmt::Error)?,
@@ -86,8 +86,8 @@ impl<const N: u32> Display for SizedString<N> {
 	}
 }
 
-impl<const N: u32> Debug for SizedString<N> {
+impl<const N: u32> Debug for BoundedString<N> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-		f.write_str(&alloc::format!("SizedString<{N}>({self:?})"))
+		f.write_str(&alloc::format!("BoundedString<{N}>({self:?})"))
 	}
 }

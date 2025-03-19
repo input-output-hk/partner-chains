@@ -135,13 +135,6 @@ impl FromStr for CrossChainSigningKeyParam {
 
 impl CrossChainSigningKeyParam {
 	pub fn vkey(&self) -> CrossChainPublicKey {
-		CrossChainPublicKey(
-			self.0
-				.public_key(&Secp256k1::new())
-				.serialize_uncompressed()
-				.into_iter()
-				.skip(1)
-				.collect(),
-		)
+		CrossChainPublicKey(self.0.public_key(&Secp256k1::new()).serialize().to_vec())
 	}
 }
