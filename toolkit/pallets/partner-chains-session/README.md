@@ -35,6 +35,48 @@ The Partner Chains Session pallet fulfills several critical functions within the
 
 The Partner Chains Session pallet relies on primitives defined in the `toolkit/primitives/session-manager` crate.
 
+<CLAUDEMIND_THINKING>
+I need to create a hooks section for the partner-chains-session pallet README. This should explain the hooks used by the pallet, what they do, and their role in the pallet's functionality.
+</CLAUDEMIND_THINKING>
+
+Here's a hooks section that could be added to the partner-chains-session pallet README:
+
+## Hooks
+
+The Partner Chains Session pallet implements the following FRAME hooks to manage session transitions and validator set updates:
+
+### on_initialize
+
+The `on_initialize` hook is called at the beginning of each block's execution, before any extrinsics are processed. For the Partner Chains Session pallet, this hook handles session rotation:
+
+```rust
+fn on_initialize(n: BlockNumberFor<T>) -> Weight {
+    // Function implementation
+}
+```
+
+**Key responsibilities:**
+
+1. **Session Transition Check**: The hook queries the `ShouldEndSession` implementation to determine if the current session should end with this block.
+
+2. **Session Rotation**: If a session should end, the hook orchestrates the full session rotation process:
+    - Calls `on_before_session_ending` on session handlers to prepare for session end
+    - Calls `end_session` on the session manager to finish the current session
+    - Increments the session index
+    - Queries the session manager for a new validator set via `new_session`
+    - Rotates to the new validator set and clears any previously disabled validators
+    - Calls `start_session` on the session manager to initiate the new session
+    - Emits a `NewSession` event
+    - Calls `on_new_session` on session handlers to notify them of the new validator set
+
+3. **Weight Management**: The hook returns an appropriate weight based on whether a session rotation occurred:
+    - Returns the maximum block weight if a session rotation happened
+    - Returns zero weight if no rotation occurred
+
+This hook is the core mechanism for session transitions in the partner chain system. It ensures that validator sets are updated at appropriate times (typically aligned with epoch boundaries) and that all components relying on session information are properly notified of changes.
+
+The hook works in conjunction with the `ShouldEndSession` implementation (typically provided by the ValidatorManagementSessionManager) to determine when transitions should occur, creating a clean separation between the timing logic and the transition process itself.
+
 ## Configuration
 
 The pallet uses the following configuration traits:
