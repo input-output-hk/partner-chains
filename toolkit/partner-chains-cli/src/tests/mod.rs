@@ -235,8 +235,10 @@ pub struct OffchainMock {
 	pub scripts_data: HashMap<UtxoId, Result<ScriptsData, OffchainError>>,
 	pub init_governance:
 		HashMap<(UtxoId, MainchainKeyHash, PrivateKeyBytes), Result<OgmiosTx, OffchainError>>,
-	pub upsert_d_param:
-		HashMap<(UtxoId, DParameter, PrivateKeyBytes), Result<Option<McTxHash>, String>>,
+	pub upsert_d_param: HashMap<
+		(UtxoId, DParameter, PrivateKeyBytes),
+		Result<Option<McSmartContractResult>, String>,
+	>,
 	pub upsert_permissioned_candidates: HashMap<
 		(UtxoId, Vec<sidechain_domain::PermissionedCandidateData>, PrivateKeyBytes),
 		Result<Option<McSmartContractResult>, String>,
@@ -286,7 +288,7 @@ impl OffchainMock {
 		genesis_utxo: UtxoId,
 		d_param: DParameter,
 		payment_key: PrivateKeyBytes,
-		result: Result<Option<McTxHash>, String>,
+		result: Result<Option<McSmartContractResult>, String>,
 	) -> Self {
 		Self { upsert_d_param: [((genesis_utxo, d_param, payment_key), result)].into(), ..self }
 	}
@@ -366,7 +368,7 @@ impl UpsertDParam for OffchainMock {
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<McTxHash>> {
+	) -> anyhow::Result<Option<McSmartContractResult>> {
 		self.upsert_d_param
 			.get(&(genesis_utxo, d_parameter.clone(), payment_signing_key.to_bytes()))
 			.cloned()

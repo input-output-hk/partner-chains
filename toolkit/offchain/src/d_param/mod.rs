@@ -4,6 +4,8 @@
 //! The datum encodes D-parameter using VersionedGenericDatum envelope with the D-parameter being
 //! `datum` field being `[num_permissioned_candidates, num_registered_candidates]`.
 
+use std::any::Any;
+
 use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::{
@@ -20,7 +22,12 @@ use ogmios_client::{
 	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
-use sidechain_domain::{DParameter, McTxHash, UtxoId};
+use serde_json::json;
+use sidechain_domain::{
+	DParameter, MainchainKeyHash, McSmartContractResult,
+	McSmartContractResult::{TxCBOR, TxHash},
+	McTxHash, UtxoId,
+};
 
 #[cfg(test)]
 mod tests;
@@ -32,7 +39,7 @@ pub trait UpsertDParam {
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<McTxHash>>;
+	) -> anyhow::Result<Option<McSmartContractResult>>;
 }
 
 impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> UpsertDParam for C {
@@ -41,7 +48,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> Upse
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<McTxHash>> {
+	) -> anyhow::Result<Option<McSmartContractResult>> {
 		upsert_d_param(
 			genesis_utxo,
 			d_parameter,
@@ -62,7 +69,7 @@ pub async fn upsert_d_param<
 	payment_signing_key: &CardanoPaymentSigningKey,
 	ogmios_client: &C,
 	await_tx: &A,
-) -> anyhow::Result<Option<McTxHash>> {
+) -> anyhow::Result<Option<McSmartContractResult>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
 	let (validator, policy) = crate::scripts_data::d_parameter_scripts(genesis_utxo, ctx.network)?;
 	let validator_address = validator.address_bech32(ctx.network)?;
@@ -96,7 +103,7 @@ pub async fn upsert_d_param<
 			)
 		},
 	};
-	if let Some(tx_hash) = tx_hash_opt {
+	if let Some(TxHash(tx_hash)) = tx_hash_opt {
 		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
 	}
 	Ok(tx_hash_opt)
@@ -131,7 +138,7 @@ async fn insert_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
 	client: &C,
-) -> anyhow::Result<McTxHash> {
+) -> anyhow::Result<McSmartContractResult> {
 	let gov_data = GovernanceData::get(genesis_utxo, client).await?;
 
 	let tx = Costs::calculate_costs(
@@ -140,17 +147,41 @@ async fn insert_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 	)
 	.await?;
 
-	let signed_tx = ctx.sign(&tx).to_bytes();
-	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-		anyhow!(
-			"Submit insert D-parameter transaction request failed: {}, bytes: {}",
-			e,
-			hex::encode(signed_tx)
-		)
-	})?;
-	let tx_id = McTxHash(res.transaction.id);
-	log::info!("Transaction submitted: {}", hex::encode(tx_id.0));
-	Ok(tx_id)
+	if gov_data.policy.is_single_key_policy_for(&ctx.payment_key_hash()) {
+		let signed_tx = ctx.sign(&tx).to_bytes();
+		let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
+			anyhow!(
+				"Submit insert D-parameter transaction request failed: {}, bytes: {}",
+				e,
+				hex::encode(signed_tx)
+			)
+		})?;
+		let tx_id = McTxHash(res.transaction.id);
+		log::info!("Transaction submitted: {}", hex::encode(tx_id.0));
+		Ok(TxHash(tx_id))
+	} else {
+		let authorities = gov_data.policy.key_hashes();
+		if authorities.contains(&ctx.payment_key_hash().to_bytes().try_into().unwrap()) {
+			let signed_tx = ctx.sign(&tx).to_bytes();
+			let tx_envelope = json!(
+				{ "type": "Witnessed Tx ConwayEra",
+				  "description": "",
+				  "cborHex": hex::encode(signed_tx.clone())
+				}
+			);
+			println!("{}", tx_envelope);
+			Ok(TxCBOR(signed_tx))
+		} else {
+			let tx_envelope = json!(
+				{ "type": "Unwitnessed Tx ConwayEra",
+				  "description": "",
+				  "cborHex": hex::encode(tx.to_bytes())
+				}
+			);
+			println!("{}", tx_envelope);
+			Ok(TxCBOR(tx.to_bytes()))
+		}
+	}
 }
 
 async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
@@ -161,7 +192,7 @@ async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
 	client: &C,
-) -> anyhow::Result<McTxHash> {
+) -> anyhow::Result<McSmartContractResult> {
 	let governance_data = GovernanceData::get(genesis_utxo, client).await?;
 
 	let tx = Costs::calculate_costs(
@@ -180,17 +211,41 @@ async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 	)
 	.await?;
 
-	let signed_tx = ctx.sign(&tx).to_bytes();
-	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-		anyhow!(
-			"Submit D-parameter update transaction request failed: {}, bytes: {}",
-			e,
-			hex::encode(signed_tx)
-		)
-	})?;
-	let tx_id = McTxHash(res.transaction.id);
-	log::info!("Update D-parameter transaction submitted: {}", hex::encode(tx_id.0));
-	Ok(tx_id)
+	if governance_data.policy.is_single_key_policy_for(&ctx.payment_key_hash()) {
+		let signed_tx = ctx.sign(&tx).to_bytes();
+		let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
+			anyhow!(
+				"Submit D-parameter update transaction request failed: {}, bytes: {}",
+				e,
+				hex::encode(signed_tx)
+			)
+		})?;
+		let tx_id = McTxHash(res.transaction.id);
+		log::info!("Update D-parameter transaction submitted: {}", hex::encode(tx_id.0));
+		Ok(TxHash(tx_id))
+	} else {
+		let authorities = governance_data.policy.key_hashes();
+		if authorities.contains(&ctx.payment_key_hash().to_bytes().try_into().unwrap()) {
+			let signed_tx = ctx.sign(&tx).to_bytes();
+			let tx_envelope = json!(
+				{ "type": "Witnessed Tx ConwayEra",
+				  "description": "",
+				  "cborHex": hex::encode(signed_tx.clone())
+				}
+			);
+			println!("{}", tx_envelope);
+			Ok(TxCBOR(signed_tx))
+		} else {
+			let tx_envelope = json!(
+				{ "type": "Unwitnessed Tx ConwayEra",
+				  "description": "",
+				  "cborHex": hex::encode(tx.to_bytes())
+				}
+			);
+			println!("{}", tx_envelope);
+			Ok(TxCBOR(tx.to_bytes()))
+		}
+	}
 }
 
 fn mint_d_param_token_tx(
