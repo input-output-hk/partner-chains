@@ -51,57 +51,13 @@ The pallet maintains several storage items:
 
 ### Extrinsics
 
-#### transfer_tokens
-Handles the transfer of tokens from the main chain to the partner chain
-
-```rust
-fn transfer_tokens(
-    origin: OriginFor<T>,
-    token_amount: NativeTokenAmount,
-) -> DispatchResultWithPostInfo
-```
-
-Parameters:
-- `token_amount`: The amount of tokens to transfer
-
-#### set_main_chain_scripts
-Updates the mainchain scripts configuration
-
-```rust
-fn set_main_chain_scripts(
-    origin: OriginFor<T>,
-    native_token_policy_id: PolicyId,
-    native_token_asset_name: AssetName,
-    illiquid_supply_validator_address: MainchainAddress,
-) -> DispatchResultWithPostInfo
-```
-
-Parameters:
-- `native_token_policy_id`: The policy ID of the native token
-- `native_token_asset_name`: The asset name of the native token
-- `illiquid_supply_validator_address`: The address of the validator handling illiquid supply
+- **transfer_tokens**: Handles the transfer of tokens from the main chain to the partner chain
+- **set_main_chain_scripts**: Updates the mainchain scripts configuration
 
 ### Public Functions (API)
 
-#### get_main_chain_scripts
-Returns the current mainchain scripts configuration
-
-```rust
-fn get_main_chain_scripts() -> Option<MainChainScripts>
-```
-
-Returns:
-- `Option<MainChainScripts>`: The current mainchain scripts if configured, or None
-
-#### initialized
-Returns whether the pallet has been initialized and marks it as initialized if not
-
-```rust
-fn initialized() -> bool
-```
-
-Returns:
-- `bool`: Whether the pallet was already initialized before this call
+- **get_main_chain_scripts**: Returns the current mainchain scripts configuration
+- **initialized**: Returns whether the pallet has been initialized and marks it as initialized if not
 
 ### Inherent Data
 

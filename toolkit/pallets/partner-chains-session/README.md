@@ -87,104 +87,15 @@ The Partner Chains Session pallet does not expose direct extrinsics. Session man
 
 ### Public Functions (API)
 
-#### validators
-Returns the current set of validators
-
-```rust
-fn validators() -> Vec<T::ValidatorId>
-```
-
-Returns:
-- `Vec<T::ValidatorId>`: List of current validator IDs
-
-#### validators_and_keys
-Returns the current set of validators with their associated session keys
-
-```rust
-fn validators_and_keys() -> Vec<(T::ValidatorId, T::Keys)>
-```
-
-Returns:
-- `Vec<(T::ValidatorId, T::Keys)>`: List of (validator_id, keys) pairs
-
-#### current_index
-Returns the current session index
-
-```rust
-fn current_index() -> SessionIndex
-```
-
-Returns:
-- `SessionIndex`: The index of the current session
-
-#### disabled_validators
-Returns the list of indices of disabled validators
-
-```rust
-fn disabled_validators() -> Vec<u32>
-```
-
-Returns:
-- `Vec<u32>`: Indices of validators that have been disabled
-
-#### rotate_session
-Rotates to a new session, registering a new validator set
-
-```rust
-fn rotate_session()
-```
-
-#### disable_index
-Disables the validator at the specified index
-
-```rust
-fn disable_index(i: u32) -> bool
-```
-
-Parameters:
-- `i`: The index of the validator to disable
-
-Returns:
-- `bool`: Whether the validator was successfully disabled (false if already disabled)
-
-#### disable
-Disables the validator with the specified validator ID
-
-```rust
-fn disable(c: &T::ValidatorId) -> bool
-```
-
-Parameters:
-- `c`: The ID of the validator to disable
-
-Returns:
-- `bool`: Whether the validator was successfully disabled (false if not found or already disabled)
-
-#### new_session
-Prepares for a new session with the given index
-
-```rust
-fn new_session(index: SessionIndex) -> Option<Vec<(T::ValidatorId, T::Keys)>>
-```
-
-Parameters:
-- `index`: The index of the new session
-
-Returns:
-- `Option<Vec<(T::ValidatorId, T::Keys)>>`: The new set of validators and keys, if available
-
-#### new_session_genesis
-Special handler for the genesis session
-
-```rust
-fn new_session_genesis(index: SessionIndex) -> Option<Vec<(T::ValidatorId, T::Keys)>>
-```
-
-Parameters:
-- `index`: The index of the genesis session (typically 0)
-
-Returns:
-- `Option<Vec<(T::ValidatorId, T::Keys)>>`: The genesis set of validators and keys
+- **validators**: Returns the current set of validators
+- **validators_and_keys**: Returns the current set of validators with their keys
+- **current_index**: Returns the current session index
+- **disabled_validators**: Returns the list of disabled validators
+- **rotate_session**: Moves to the next session and registers a new validator set
+- **disable_index**: Disables the validator at the specified index
+- **disable**: Disables the validator with the specified validator ID
+- **new_session**: Plans a new session and returns the validator set
+- **new_session_genesis**: Plans a new session at genesis and returns the validator set
 
 ### Inherent Data
 

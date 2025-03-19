@@ -70,56 +70,13 @@ The pallet maintains several storage items:
 
 ### Extrinsics
 
-#### append
-Appends the block producer to the production log
-
-```rust
-fn append(
-    origin: OriginFor<T>,
-    block_producer_id: T::BlockProducerId,
-) -> DispatchResultWithPostInfo
-```
-
-Parameters:
-- `block_producer_id`: The ID of the block producer
+- **append**: Appends the block producer to the production log
 
 ### Public Functions (API)
 
-#### take_prefix
-Returns and removes block production data up to the given slot
-
-```rust
-fn take_prefix(slot: T::Slot) -> Vec<(T::Slot, T::BlockProducerId)>
-```
-
-Parameters:
-- `slot`: The slot up to which data should be returned and removed
-
-Returns:
-- `Vec<(T::Slot, T::BlockProducerId)>`: Vector of (slot, producer) pairs
-
-#### peek_prefix
-Returns an iterator of block production data up to the given slot without removing it
-
-```rust
-fn peek_prefix(slot: T::Slot) -> impl Iterator<Item = (T::Slot, T::BlockProducerId)>
-```
-
-Parameters:
-- `slot`: The slot up to which data should be returned
-
-Returns:
-- Iterator of (slot, producer) pairs
-
-#### drop_prefix
-Removes block production data up to the given slot
-
-```rust
-fn drop_prefix(slot: T::Slot)
-```
-
-Parameters:
-- `slot`: The slot up to which data should be removed
+- **take_prefix**: Returns and removes block production data up to the given slot
+- **peek_prefix**: Returns an iterator of block production data up to the given slot without removing it
+- **drop_prefix**: Removes block production data up to the given slot
 
 ### Inherent Data
 
