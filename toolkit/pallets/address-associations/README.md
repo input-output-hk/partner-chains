@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Address Associations pallet provides functionality to associate mainchain (e.g., Cardano) stake public keys with partner chain addresses. This forms a critical link between the main chain and the partner chain, enabling cross-chain identity verification and operations.
+The Address Associations pallet provides functionality to associate mainchain (i.e., Cardano) stake public keys with partner chain addresses. This forms a critical link between the main chain and the partner chain, enabling cross-chain identity verification and operations.
 
 ## Purpose
 
