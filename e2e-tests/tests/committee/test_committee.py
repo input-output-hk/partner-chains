@@ -265,29 +265,6 @@ class TestCommitteeRotation:
         else:
             return None
 
-    @mark.test_key("ETCM-7236")
-    @mark.committee_rotation
-    @mark.active_flow
-    def test_committee_was_selected_by_previous_committee(
-        self, pc_epoch, config: ApiConfig, get_pc_epoch_committee, get_pc_epoch_signatures
-    ):
-        """
-        * Query epoch n-1 for the next committee pub keys
-        * Query epoch n for the committee members' pub keys
-        * Assert both are equal
-        """
-        if pc_epoch <= config.initial_pc_epoch:
-            skip("Cannot query committee before initial epoch.")
-
-        expected_committee_public_keys = get_pc_epoch_signatures(pc_epoch - 1)['nextCommitteePubKeys']
-        expected_committee_public_keys.sort()
-        actual_committee_public_keys = [member['sidechainPubKey'] for member in get_pc_epoch_committee(pc_epoch)]
-        actual_committee_public_keys.sort()
-        assert actual_committee_public_keys == expected_committee_public_keys, (
-            f"Current committee for epoch {pc_epoch} does not match ",
-            f"expected next committee from epoch {pc_epoch - 1}",
-        )
-
     @mark.candidate_status("active")
     @mark.test_key('ETCM-6987')
     @mark.ariadne
@@ -394,38 +371,6 @@ class TestCommitteeMembers:
         if api.get_d_param(current_mc_epoch).permissioned_candidates_number == 0:
             skip("P==0, test is irrelevant")
         assert len(api.get_permissioned_candidates(current_mc_epoch, valid_only=True)) > 0
-
-    @mark.test_key('ETCM-7030')
-    @mark.committee_members
-    @mark.active_flow
-    def test_epoch_signatures_are_made_by_all_committee_members(
-        self, config: ApiConfig, get_pc_epoch_committee, get_pc_epoch_signatures, pc_epoch
-    ):
-        """Test that partner chain epoch is signed by current committee members
-        1. Create unique list of public keys selected as committee (RPC:partner_chain_getEpochCommittee)
-        2. Create unique list of public keys that have signed the epoch (RPC:partner_chain_getEpochSignatures)
-        3. Assert both lists are equal
-        """
-        if pc_epoch <= config.initial_pc_epoch:
-            skip("Cannot query committee before initial epoch.")
-        committee = get_pc_epoch_committee(pc_epoch)
-        signatures = get_pc_epoch_signatures(pc_epoch)["signatures"]
-        committee_public_keys = set(item["sidechainPubKey"] for item in committee)
-        signature_public_keys = set(item["committeeMember"] for item in signatures)
-
-        assert (
-            committee_public_keys == signature_public_keys
-        ), f"Epoch {pc_epoch} has wrong signatures, diff: {committee_public_keys - signature_public_keys}."
-
-    @mark.test_key('ETCM-7031')
-    @mark.committee_members
-    @mark.active_flow
-    def test_epoch_signatures_are_not_empty(self, config: ApiConfig, get_pc_epoch_signatures, pc_epoch):
-        if pc_epoch <= config.initial_pc_epoch:
-            skip("Cannot query committee before initial epoch.")
-        signatures = get_pc_epoch_signatures(pc_epoch)["signatures"]
-        for signature in signatures:
-            assert signature["signature"]
 
     @mark.test_key('ETCM-7026')
     @mark.ariadne

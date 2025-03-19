@@ -9,9 +9,6 @@ class Timeout:
     long_running_function: int = MISSING
     register_cmd: int = MISSING
     deregister_cmd: int = MISSING
-    burn_cmd: int = MISSING
-    burn_tx_visible_in_pc_rpc: int = MISSING
-    claim_cmd: int = MISSING
 
 
 @dataclass
@@ -75,15 +72,6 @@ class MainchainAccount:
 
 
 @dataclass
-class TransferAccount:
-    mainchain_address: str
-    mainchain_key: str
-    mainchain_address_bech32: str = MISSING
-    partner_chain_address: str = MISSING
-    partner_chain_key: str = MISSING
-
-
-@dataclass
 class SSH:
     username: str = MISSING
     host: str = MISSING
@@ -97,19 +85,6 @@ class Tool:
     cli: str = MISSING
     ssh: Optional[SSH] = None
     shell: Optional[str] = SI("${...tools_shell}")
-
-
-@dataclass
-class TxTypeFee:
-    send: int = MISSING
-    lock: int = MISSING
-
-
-@dataclass
-class Fees:
-    ECDSA: TxTypeFee = MISSING
-    SR25519: TxTypeFee = MISSING
-    ED25519: TxTypeFee = MISSING
 
 
 @dataclass
@@ -129,13 +104,7 @@ class NodesApiConfig:
     token_policy_id: str = MISSING
     d_param_min: Optional[DParam] = None
     d_param_max: Optional[DParam] = None
-    active_transfer_account: TransferAccount = MISSING
-    passive_transfer_account: TransferAccount = MISSING
-    negative_test_transfer_account: TransferAccount = MISSING
-    random_mc_account: MainchainAccount = MISSING
-    invalid_mc_skey: MainchainAccount = MISSING
     governance_authority: MainchainAccount = MISSING
-    fees: Fees = MISSING
     network: str = SI("${partner_chain_main_cli_network:${..main_chain.network}}")
 
 
@@ -169,5 +138,3 @@ class ApiConfig:
     deployment_mc_epoch: int = MISSING
     init_timestamp: int = MISSING
     initial_pc_epoch: Optional[int] = None
-    block_encoding_suffix_grandpa: str = MISSING
-    block_encoding_suffix_aura: str = MISSING

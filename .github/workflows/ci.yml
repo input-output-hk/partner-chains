@@ -507,7 +507,6 @@ jobs:
           env: ci
           decrypt: true
           blockchain: substrate
-          markers: "not active_flow and not passive_flow and not probability"
 
   post-merge-actions-complete:
     if: ${{ always() && (github.event_name == 'pull_request' && github.event.pull_request.merged == true) }}

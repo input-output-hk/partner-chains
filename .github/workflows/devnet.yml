@@ -101,7 +101,6 @@ jobs:
         XRAY_CLIENT_SECRET: ${{ secrets.XRAY_CLIENT_SECRET }}
         XRAY_API_BASE_URL: ${{ secrets.XRAY_API_BASE_URL }}
         JIRA_URL: ${{ secrets.JIRA_URL }}
-        MARKERS: "not active_flow and not passive_flow"
       run: |
         cd e2e-tests
         earthly \
@@ -127,8 +126,7 @@ jobs:
           --plan="$TEST_PLAN" \
           --execution="$TEST_EXECUTION" \
           --report_to_xray=$REPORT_TO_XRAY \
-          --decrypt=true \
-          --markers="$MARKERS"
+          --decrypt=true
 
     - name: Archive Test Logs
       if: always()
