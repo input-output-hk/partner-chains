@@ -39,6 +39,70 @@ This pallet's storage has changed compared to its legacy version. See [src/migra
 
 The Session Validator Management pallet relies on primitives defined in the `toolkit/primitives/session-validator-management` crate.
 
+<CLAUDEMIND_THINKING>
+I need to create a hooks section for the session-validator-management pallet README. This should explain the hooks used by the pallet, what they do, and their role in the pallet's functionality.
+</CLAUDEMIND_THINKING>
+
+Here's a hooks section that could be added to the session-validator-management pallet README:
+
+## Hooks
+
+The Session Validator Management pallet implements the following FRAME hooks to handle committee management, inherent processing, and validator selection:
+
+### on_initialize
+
+The `on_initialize` hook is called at the beginning of each block's execution, before any extrinsics are processed. For the Session Validator Management pallet, this hook handles inherent verification and committee transitions:
+
+```rust
+fn on_initialize(n: BlockNumberFor<T>) -> Weight {
+    // Function implementation
+}
+```
+
+**Key responsibilities:**
+
+1. **Inherent Verification Setup**: The hook establishes the verification system for authority selection inherent data to ensure:
+    - When no next committee has been set for future epochs, an inherent with authority selection inputs must be provided
+    - The calculated committee from the inherent data matches what should be expected
+    - Authority selection inputs hash matches if provided
+
+2. **Committee Checks**: The hook examines the current committee state to determine if new validators need to be selected for future epochs.
+
+3. **Weight Calculation**: The hook returns an appropriate weight based on the operations performed, ensuring proper accounting of computational resources.
+
+### on_finalize
+
+The `on_finalize` hook is called at the end of each block's execution, after all extrinsics have been processed. For the Session Validator Management pallet, this hook ensures that committee data is properly processed:
+
+```rust
+fn on_finalize(n: BlockNumberFor<T>) -> Weight {
+    // Function implementation
+}
+```
+
+**Key responsibilities:**
+
+1. **Pending Committee Processing**: If authority selection inputs were provided via inherent data, the hook finalizes the committee selection process:
+    - Calculates the committee based on the inputs and filtering/selection strategies
+    - Stores the new committee for the appropriate future epoch
+    - Emits the appropriate events to signal committee updates
+
+2. **Cleanup**: The hook clears any temporary data that was needed only during block execution.
+
+### on_runtime_upgrade
+
+Although not used as frequently as the other hooks, the pallet also implements logic that runs during runtime upgrades:
+
+```rust
+fn on_runtime_upgrade() -> Weight {
+    migrations::migrate::<T>()
+}
+```
+
+**Key responsibilities:**
+
+1. **Storage Migration**: Handles migration of storage formats between different versions of the pallet, ensuring data integrity across runtime upgrades.
+
 ## Configuration
 
 The pallet uses the following configuration traits:

@@ -24,6 +24,63 @@ This pallet is designed to be minimal yet flexible, focusing exclusively on the 
 
 The Native Token Management pallet relies on primitives defined in the `toolkit/primitives/native-token-management` crate.
 
+<CLAUDEMIND_THINKING>
+I need to create a hooks section for the native-token-management pallet README. This should explain the hooks used by the pallet, what they do, and their role in the pallet's functionality.
+</CLAUDEMIND_THINKING>
+
+Here's a hooks section that could be added to the native-token-management pallet README:
+
+## Hooks
+
+The Native Token Management pallet implements the following FRAME hooks to ensure proper handling of token transfers from the main chain:
+
+### on_initialize
+
+The `on_initialize` hook is called at the beginning of each block's execution, before any extrinsics are processed. For the Native Token Management pallet, this hook handles the verification and setup for token transfer inherent data:
+
+```rust
+fn on_initialize(n: BlockNumberFor<T>) -> Weight {
+    // Function implementation
+}
+```
+
+**Key responsibilities:**
+
+1. **Inherent Data Verification Setup**: The hook establishes the verification system for token transfer inherent data to ensure:
+    - When tokens are being transferred (amount > 0), the inherent must be provided
+    - The token amount in the inherent matches what the main chain follower observed
+    - Unexpected token transfer inherents (when no tokens are being transferred) are rejected
+
+2. **Error Handling**: The hook ensures appropriate errors are generated when verification fails, providing clear information about what went wrong.
+
+3. **Weight Calculation**: The hook returns an appropriate weight based on the operations performed, ensuring proper accounting of computational resources.
+
+### on_runtime_upgrade
+
+Although not explicitly a hook in the traditional sense, the pallet includes logic that runs when the runtime is upgraded:
+
+```rust
+#[pallet::hooks]
+impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+    // on_initialize hook
+    
+    // Logic that runs on runtime upgrade
+    fn on_runtime_upgrade() -> Weight {
+        // Migration logic
+    }
+}
+```
+
+**Key responsibilities:**
+
+1. **Storage Migration**: If needed, the hook handles migration of storage from older versions of the pallet to newer ones.
+
+2. **Initialization Handling**: Ensures that the initialization status is properly maintained across runtime upgrades.
+
+The hooks mechanism is particularly important for this pallet as it allows the automatic processing of token transfers from the main chain without requiring manual intervention. When the main chain follower detects tokens sent to the illiquid supply validator address, it provides this information as inherent data, which the pallet then processes during block production through these hooks.
+
+This design ensures that token transfers are processed reliably and consistently as part of the normal block processing flow, providing a seamless bridge between the main chain and partner chain economies.
+
 ## Configuration
 
 The pallet uses the following configuration traits:

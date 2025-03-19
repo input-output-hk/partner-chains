@@ -101,6 +101,20 @@ Yes, when a block is produced. The pallet verifies this inherent data to ensure 
 - `NoBlocksToTake`: Attempted to take blocks but no blocks were available in the specified range
 - `InvalidSlotBoundary`: Attempted to set an invalid slot boundary in the block production log
 
+## Hooks
+
+The Block Production Log pallet implements the following FRAME hooks to ensure proper handling of block production records:
+
+### on_initialize
+
+The `on_initialize` hook is called at the beginning of each block's execution, before any extrinsics are processed. For the Block Production Log pallet, this hook performs essential setup for inherent data verification:
+
+```rust
+fn on_initialize(n: BlockNumberFor<T>) -> Weight {
+    // Function implementation
+}
+```
+
 ## Usage
 
 The Block Production Log pallet is typically used in conjunction with the consensus mechanism and block participation tracking. The typical usage flow is:
