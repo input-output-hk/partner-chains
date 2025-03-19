@@ -33,7 +33,7 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use serde::Deserialize;
 use session_manager::ValidatorManagementSessionManager;
-use sidechain_domain::byte_string::SizedByteString;
+use sidechain_domain::byte_string::{SizedByteString, SizedString};
 use sidechain_domain::{
 	DelegatorKey, MainchainKeyHash, PermissionedCandidateData, RegistrationData, ScEpochNumber,
 	ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
@@ -463,22 +463,9 @@ impl AsCardanoSPO for BlockAuthor {
 
 pub const MAX_METADATA_URL_LENGTH: u32 = 512;
 
-#[derive(Clone, Debug, MaxEncodedLen, Encode)]
-pub struct MetadataUrl(BoundedVec<u8, ConstU32<MAX_METADATA_URL_LENGTH>>);
-impl<'a> Deserialize<'a> for MetadataUrl {
-	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-	where
-		D: serde::Deserializer<'a>,
-	{
-		Ok(Self(BoundedVec::truncate_from(
-			alloc::string::String::deserialize(deserializer)?.as_bytes().to_vec(),
-		)))
-	}
-}
-
 #[derive(Clone, Debug, MaxEncodedLen, Encode, Deserialize)]
 pub struct BlockProducerMetadata {
-	pub url: MetadataUrl,
+	pub url: SizedString<MAX_METADATA_URL_LENGTH>,
 	pub hash: SizedByteString<32>,
 }
 
