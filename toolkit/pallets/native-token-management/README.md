@@ -71,10 +71,6 @@ impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 
 2. **Initialization Handling**: Ensures that the initialization status is properly maintained across runtime upgrades.
 
-The hooks mechanism is particularly important for this pallet as it allows the automatic processing of token transfers from the main chain without requiring manual intervention. When the main chain follower detects tokens sent to the illiquid supply validator address, it provides this information as inherent data, which the pallet then processes during block production through these hooks.
-
-This design ensures that token transfers are processed reliably and consistently as part of the normal block processing flow, providing a seamless bridge between the main chain and partner chain economies.
-
 ## Configuration
 
 The pallet uses the following configuration traits:
