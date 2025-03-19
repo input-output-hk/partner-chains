@@ -6366,9 +6366,12 @@ dependencies = [
 name = "pallet-session-validator-management"
 version = "1.6.0"
 dependencies = [
+ "derive-new",
  "frame-support",
  "frame-system",
  "log",
+ "pallet-partner-chains-session",
+ "pallet-session",
  "parity-scale-codec",
  "scale-info",
  "sidechain-domain",
@@ -9790,24 +9793,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "session-manager"
-version = "1.6.0"
-dependencies = [
- "derive-new",
- "frame-system",
- "log",
- "pallet-partner-chains-session",
- "pallet-session",
- "pallet-session-validator-management",
- "pallet-sidechain",
- "sidechain-domain",
- "sp-runtime",
- "sp-session-validator-management",
- "sp-staking",
- "sp-std",
-]
-
-[[package]]
 name = "sha1"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9975,7 +9960,6 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "session-manager",
  "sidechain-domain",
  "sidechain-slots",
  "sp-api",

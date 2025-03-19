@@ -22,6 +22,10 @@ sp-session-validator-management = { workspace = true }
 sp-io = { workspace = true, optional = true }
 sidechain-domain = { workspace = true }
 
+derive-new = { workspace = true, optional = true }
+pallet-session = { workspace = true, optional = true }
+pallet-partner-chains-session = { workspace = true, optional = true }
+
 [dev-dependencies]
 sp-io = { workspace = true }
 
@@ -40,8 +44,16 @@ std = [
     "sp-session-validator-management/serde",
     "sidechain-domain/std",
     "sidechain-domain/serde",
+    "derive-new?/std",
+    "pallet-session?/std",
+    "pallet-partner-chains-session?/std",
 ]
 try-runtime = ["frame-support/try-runtime"]
 mock = [
      "sp-io"
+]
+pallet-session-compat = [
+    "derive-new",
+    "pallet-session",
+    "pallet-partner-chains-session",
 ]

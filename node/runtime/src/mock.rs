@@ -451,7 +451,7 @@ macro_rules! assert_aura_authorities {
 	}};
 }
 pub(crate) use assert_aura_authorities;
-use session_manager::ValidatorManagementSessionManager;
+use pallet_session_validator_management::session_manager::ValidatorManagementSessionManager;
 use sidechain_slots::SlotsPerEpoch;
 use sp_session_validator_management::MainChainScripts;
 

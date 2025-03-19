@@ -31,7 +31,6 @@ members = [
 	"toolkit/primitives/sidechain-mc-hash",
 	"toolkit/primitives/session-validator-management",
 	"toolkit/primitives/session-validator-management/query",
-	"toolkit/primitives/session-manager",
 	"toolkit/primitives/sidechain",
 	"toolkit/partner-chains-cli",
 	"toolkit/pallets/native-token-management",
@@ -224,7 +223,6 @@ partner-chains-node-commands = { path = "toolkit/cli/node-commands" }
 time-source = { path = "toolkit/utils/time-source" }
 sidechain-mc-hash = { path = "toolkit/primitives/sidechain-mc-hash", default-features = false }
 authority-selection-inherents = { path = "toolkit/primitives/authority-selection-inherents", default-features = false }
-session-manager = { path = "toolkit/primitives/session-manager", default-features = false }
 sp-sidechain = { path = "toolkit/primitives/sidechain", default-features = false }
 pallet-native-token-management = { path = "toolkit/pallets/native-token-management", default-features = false }
 sp-native-token-management = { path = "toolkit/primitives/native-token-management", default-features = false }
