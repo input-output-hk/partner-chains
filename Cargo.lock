@@ -9614,17 +9614,10 @@ dependencies = [
 name = "selection"
 version = "1.6.0"
 dependencies = [
- "parity-scale-codec",
  "quickcheck",
  "quickcheck_macros",
  "rand",
  "rand_chacha",
- "scale-info",
- "sidechain-domain",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
 ]
 
 [[package]]

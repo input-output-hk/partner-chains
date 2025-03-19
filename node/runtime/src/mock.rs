@@ -156,12 +156,12 @@ impl pallet_session_validator_management::Config for Test {
 		input: AuthoritySelectionInputs,
 		_sidechain_epoch: ScEpochNumber,
 	) -> Option<BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>> {
-		let candidates: Vec<_> = filter_trustless_candidates_registrations(
-			input.registered_candidates,
-			Sidechain::genesis_utxo(),
-		)
+		let candidates: Vec<_> = filter_trustless_candidates_registrations::<
+			Self::AuthorityId,
+			Self::AuthorityKeys,
+		>(input.registered_candidates, Sidechain::genesis_utxo())
 		.into_iter()
-		.map(|c| (c.account_id, c.account_keys))
+		.map(|(c, _)| (c.account_id().clone(), c.account_keys().clone()))
 		.collect();
 		if candidates.is_empty() {
 			None

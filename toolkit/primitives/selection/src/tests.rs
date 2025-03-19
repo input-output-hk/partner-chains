@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use quickcheck::Arbitrary;
 use quickcheck_macros::*;
 
@@ -7,11 +5,12 @@ use crate::{Weight, WeightedRandomSelectionConfig};
 
 macro_rules! assert_subset {
 	($type: ident, $subset:expr, $superset:expr) => {
-		let subset = HashSet::<$type>::from_iter($subset.iter().cloned());
-		let superset = HashSet::<$type>::from_iter($superset.iter().cloned());
+		let subset = std::collections::HashSet::<$type>::from_iter($subset.iter().cloned());
+		let superset = std::collections::HashSet::<$type>::from_iter($superset.iter().cloned());
 		assert!(subset.is_subset(&superset), "{:?} was not a subset of {:?}?", subset, superset);
 	};
 }
+pub(crate) use assert_subset;
 
 type CandidatesWithWeights = Vec<(String, Weight)>;
 
@@ -19,7 +18,7 @@ type CandidatesWithWeights = Vec<(String, Weight)>;
 struct TestWeightedCandidates(CandidatesWithWeights, [u8; 32]);
 
 #[derive(Clone, Debug)]
-struct TestNonce([u8; 32]);
+pub(crate) struct TestNonce(pub [u8; 32]);
 
 impl Arbitrary for TestNonce {
 	fn arbitrary(g: &mut quickcheck::Gen) -> Self {
