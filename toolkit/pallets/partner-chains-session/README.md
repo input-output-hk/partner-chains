@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Partner Chains Session pallet is a session management component designed specifically for the partner chains ecosystem. It is a refined adaptation of Substrate's standard session pallet, customized to meet the unique requirements of partner chains while maintaining compatibility with core Substrate functionalities.
+The Partner Chains Session pallet is a refined adaptation of Substrate's standard session pallet, customized to meet the requirements of partner chains while maintaining compatibility with core Substrate functionalities.
 
 This pallet serves as the cornerstone for managing validator sets and their associated session keys within the partner chain network. Unlike the original session pallet, it has been streamlined to eliminate unnecessary complexities while enhancing features that are critical for partner chains' consensus mechanisms.
 
