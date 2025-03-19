@@ -98,30 +98,11 @@ The pallet maintains the following storage items:
 
 ### Extrinsics
 
-#### set_current_block_beneficiary
-Sets the beneficiary for the current block (called via inherent data)
-
-```rust
-fn set_current_block_beneficiary(
-    origin: OriginFor<T>,
-    beneficiary: T::BeneficiaryId,
-) -> DispatchResultWithPostInfo
-```
-
-Parameters:
-- `beneficiary`: The ID of the beneficiary who will receive the block reward
+- **set_current_block_beneficiary**: Sets the beneficiary for the current block
 
 ### Public Functions (API)
 
-#### get_rewards_and_clear
-Returns all pending rewards and clears the storage
-
-```rust
-fn get_rewards_and_clear() -> Vec<(T::BeneficiaryId, T::BlockRewardPoints)>
-```
-
-Returns:
-- `Vec<(T::BeneficiaryId, T::BlockRewardPoints)>`: Vector of (beneficiary, reward_points) pairs
+- **get_rewards_and_clear**: Returns all pending rewards and clears the storage
 
 ### Inherent Data
 

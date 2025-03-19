@@ -41,42 +41,13 @@ The pallet maintains two main storage maps:
 
 ### Extrinsics
 
-#### associate_address
-Associates a mainchain public key with a partner chain address
-
-```rust
-fn associate_address(
-    origin: OriginFor<T>,
-    partnerchain_address: T::PartnerChainAddress,
-    signature: Vec<u8>,
-    stake_public_key: T::StakePublicKey,
-) -> DispatchResultWithPostInfo
-```
-
-Parameters:
-- `partnerchain_address`: The partner chain address to associate
-- `signature`: A signature proving ownership of the stake key
-- `stake_public_key`: The mainchain stake public key to associate
+- **associate_address**: Associates a mainchain public key with a partner chain address
 
 ### Public Functions (API)
 
-#### get_version
-Returns the current pallet version
-```rust
-fn get_version() -> PalletVersion
-```
-
-#### get_all_address_associations
-Returns an iterator over all mainchain-partnerchain address associations
-```rust
-fn get_all_address_associations() -> impl Iterator<Item = (T::StakePublicKey, T::PartnerChainAddress)>
-```
-
-#### get_partner_chain_address_for
-Returns the partner chain address for a given mainchain public key if it exists
-```rust
-fn get_partner_chain_address_for(stake_public_key: &T::StakePublicKey) -> Option<T::PartnerChainAddress>
-```
+- **get_version**: Returns the current pallet version
+- **get_all_address_associations**: Returns an iterator over all mainchain-partnerchain address associations
+- **get_partner_chain_address_for**: Returns the partner chain address for a given mainchain public key if it exists
 
 ### Inherent Data
 

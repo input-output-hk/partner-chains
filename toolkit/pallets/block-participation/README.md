@@ -66,33 +66,11 @@ The pallet maintains one main storage item:
 
 ### Extrinsics
 
-#### note_processing
-Records that block participation data has been processed up to a specific slot
-
-```rust
-fn note_processing(
-    origin: OriginFor<T>,
-    up_to_slot: T::Slot,
-) -> DispatchResultWithPostInfo
-```
-
-Parameters:
-- `up_to_slot`: The slot up to which data has been processed
+- **note_processing**: Records that block participation data has been processed up to a specific slot
 
 ### Public Functions (API)
 
-#### should_release_data
-Returns the slot up to which block production data should be released, or None if no data should be released
-
-```rust
-fn should_release_data(slot: T::Slot) -> Option<T::Slot>
-```
-
-Parameters:
-- `slot`: The current slot
-
-Returns:
-- `Option<T::Slot>`: The slot up to which data should be released, or None
+- **should_release_data**: Returns the slot up to which block production data should be released, or None
 
 ### Inherent Data
 
