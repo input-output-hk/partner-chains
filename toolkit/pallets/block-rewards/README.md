@@ -38,70 +38,7 @@ The pallet serves several specific purposes:
 
 ## Primitives
 
-The Block Rewards pallet relies on primitives defined in the `toolkit/primitives/block-rewards` crate:
-
-### Inherent Data Handling
-
-1. **INHERENT_IDENTIFIER**: Identifies block beneficiary inherent data in blocks
-   ```rust
-   pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"beneficr";
-   ```
-
-2. **InherentError**: Defines errors that can occur during inherent data processing
-   ```rust
-   pub enum InherentError {
-       InherentRequired,
-   }
-   ```
-
-### Reward Calculation Traits
-
-1. **GetBlockRewardPoints**: Trait that defines how reward points are calculated for each block
-   ```rust
-   pub trait GetBlockRewardPoints<Reward> {
-       fn get_block_reward() -> Reward;
-   }
-   ```
-
-2. **SimpleBlockCount**: A basic implementation that assigns one reward unit per block
-   ```rust
-   pub struct SimpleBlockCount;
-   impl<Reward: One> GetBlockRewardPoints<Reward> for SimpleBlockCount {
-       fn get_block_reward() -> Reward {
-           Reward::one()
-       }
-   }
-   ```
-
-### Inherent Data Provider
-
-For runtimes that support the standard library, the primitives provide an inherent data provider:
-
-```rust
-pub struct BlockBeneficiaryInherentProvider<BeneficiaryId> {
-    pub beneficiary_id: BeneficiaryId,
-}
-```
-
-This provider is responsible for:
-- Supplying the beneficiary ID for the current block
-- Reading the beneficiary ID from environment variables
-- Encoding this data as inherent data to be included in blocks
-
-The inherent data provider includes a convenient constructor method:
-
-```rust
-impl<BeneficiaryId> BlockBeneficiaryInherentProvider<BeneficiaryId>
-where
-    BeneficiaryId: TryFrom<Vec<u8>> + Send + Sync + Encode,
-    <BeneficiaryId as TryFrom<Vec<u8>>>::Error: std::fmt::Debug,
-{
-    /// Read and decode beneficiary ID from the specified environment variable
-    pub fn from_env(env_var: &str) -> Result<Self, InherentProviderCreationError>
-}
-```
-
-This allows node operators to easily specify beneficiary IDs through environment variables, creating a flexible system for reward distribution that doesn't require changes to the chain's codebase.
+The Block Rewards pallet relies on primitives defined in the `toolkit/primitives/block-rewards` crate.
 
 ## Usage
 

@@ -37,54 +37,7 @@ This pallet serves several important purposes in the partner chain ecosystem:
 
 ## Primitives
 
-The Block Production Log pallet relies on primitives defined in the `toolkit/primitives/block-production-log` crate:
-
-### Inherent Data Handling
-
-1. **INHERENT_IDENTIFIER**: Identifies block author inherent data in blocks
-   ```rust
-   pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blprdlog";
-   ```
-
-2. **InherentError**: Defines errors that can occur during inherent data processing
-   ```rust
-   pub enum InherentError {
-       InherentRequired,
-       InvalidData,
-   }
-   ```
-
-### Inherent Data Provider
-
-For runtimes that support the standard library, the primitives provide an inherent data provider:
-
-```rust
-pub struct BlockAuthorInherentProvider<Author> {
-    pub author: Option<Author>,
-}
-```
-
-This provider is responsible for:
-- Determining the appropriate block author based on the current slot
-- Providing this data as inherent data to be included in blocks
-
-### Runtime API
-
-The primitives define a runtime API that must be implemented by runtimes using the block production log:
-
-```rust
-pub trait BlockProductionLogApi<Member>
-where
-    Member: Decode
-{
-    /// Returns author based on current committee and provided slot
-    fn get_author(slot: sidechain_slots::Slot) -> Option<Member>;
-}
-```
-
-This API allows the runtime to determine which committee member should author a block at a given slot, which is essential for verifying that blocks are produced by the correct validators according to the slot schedule.
-
-The block production log primitives are intentionally minimal, focused solely on the inherent data mechanism for recording block authors. This design allows for flexibility in how the runtime implements and uses the block production log.
+The Block Production Log pallet relies on primitives defined in the `toolkit/primitives/block-production-log` crate.
 
 ## Configuration
 
