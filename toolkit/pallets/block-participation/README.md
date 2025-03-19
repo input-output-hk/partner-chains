@@ -10,7 +10,7 @@ In the context of partner chains, "block participation" refers to the record of 
 
 2. **Performance Monitoring**: The participation data enables the network to monitor the performance of validators over time, identifying those who consistently meet their obligations and those who don't.
 
-3. **Rewards**: Accurate participation records provide the foundation for fairly distributing rewards to validators who contribute to network security.
+3. **Rewards and Slashing**: Accurate participation records provide the foundation for fairly distributing rewards to validators who contribute to network security, and potentially applying penalties to those who fail to meet their obligations.
 
 4. **Historical Analysis**: Participation data offers valuable insights into network health and validator behavior patterns over time, which can inform governance decisions and protocol improvements.
 
@@ -34,7 +34,94 @@ This pallet serves several important purposes in the partner chain ecosystem:
 
 ## Primitives
 
-The Block Participation pallet utilizes several primitive types and structures defined in the `toolkit/primitives/block-participation` crate.
+The Block Participation pallet utilizes several primitive types and structures defined in the `toolkit/primitives/block-participation` crate:
+
+### Core Data Structures
+
+1. **DelegatorBlockParticipationData**: Represents a delegator's participation in block production with their share
+   ```rust
+   pub struct DelegatorBlockParticipationData<DelegatorId> {
+       id: DelegatorId,
+       share: u64,
+   }
+   ```
+
+2. **BlockProducerParticipationData**: Records a block producer's participation along with their delegators
+   ```rust
+   pub struct BlockProducerParticipationData<BlockProducerId, DelegatorId> {
+       block_producer: BlockProducerId,
+       block_count: u32,
+       delegator_total_shares: u64,
+       delegators: Vec<DelegatorBlockParticipationData<DelegatorId>>,
+   }
+   ```
+
+3. **BlockProductionData**: Contains participation data up to a specific slot
+   ```rust
+   pub struct BlockProductionData<BlockProducerId, DelegatorId> {
+       up_to_slot: Slot,
+       producer_participation: Vec<BlockProducerParticipationData<BlockProducerId, DelegatorId>>,
+   }
+   ```
+
+### Inherent Data Handling
+
+1. **INHERENT_IDENTIFIER**: Used to identify the block participation inherent data
+   ```rust
+   pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blokpart";
+   ```
+
+2. **InherentError**: Defines errors that can occur during inherent data processing
+   ```rust
+   pub enum InherentError {
+       InherentRequired,
+       UnexpectedInherent,
+       IncorrectSlotBoundary,
+       InvalidInherentData,
+   }
+   ```
+
+### Runtime API
+
+The primitives define a runtime API that must be implemented by runtimes using the block participation mechanism:
+
+```rust
+pub trait BlockParticipationApi<BlockProducerId: Decode> {
+    /// Should return slot up to which block production data should be released or None.
+    fn should_release_data(slot: Slot) -> Option<Slot>;
+    fn blocks_produced_up_to_slot(slot: Slot) -> Vec<(Slot, BlockProducerId)>;
+    fn target_inherent_id() -> InherentIdentifier;
+}
+```
+
+### Trait Requirements
+
+1. **AsCardanoSPO**: Allows conversion from a block producer type to a Cardano stake pool operator identifier
+   ```rust
+   pub trait AsCardanoSPO {
+       fn as_cardano_spo(&self) -> Option<MainchainKeyHash>;
+   }
+   ```
+
+2. **CardanoDelegator**: Allows conversion from a delegator key to a delegator identifier
+   ```rust
+   pub trait CardanoDelegator {
+       fn from_delegator_key(key: DelegatorKey) -> Self;
+   }
+   ```
+
+### Inherent Data Provider
+
+For runtimes that support the standard library, the primitives provide an inherent data provider:
+
+```rust
+pub struct BlockParticipationInherentDataProvider<BlockProducerId, DelegatorId>
+```
+
+This provider is responsible for:
+- Fetching stake pool delegation distribution from a data source
+- Calculating block participation based on block production history
+- Providing this data as inherent data to be included in blocks
 
 ## Configuration
 
@@ -66,11 +153,33 @@ The pallet maintains one main storage item:
 
 ### Extrinsics
 
-- **note_processing**: Records that block participation data has been processed up to a specific slot
+#### note_processing
+Records that block participation data has been processed up to a specific slot
+
+```rust
+fn note_processing(
+    origin: OriginFor<T>,
+    up_to_slot: T::Slot,
+) -> DispatchResultWithPostInfo
+```
+
+Parameters:
+- `up_to_slot`: The slot up to which data has been processed
 
 ### Public Functions (API)
 
-- **should_release_data**: Returns the slot up to which block production data should be released, or None
+#### should_release_data
+Returns the slot up to which block production data should be released, or None if no data should be released
+
+```rust
+fn should_release_data(slot: T::Slot) -> Option<T::Slot>
+```
+
+Parameters:
+- `slot`: The current slot
+
+Returns:
+- `Option<T::Slot>`: The slot up to which data should be released, or None
 
 ### Inherent Data
 
@@ -95,20 +204,6 @@ Yes, when participation data needs to be processed. The runtime verifies this in
 
 - `ProcessingInvalidPreviousSlot`: The processing operation would move the processed slot boundary backwards, which is not allowed
 - `AlreadyProcessedInBlock`: Block participation data has already been processed in the current block
-
-## Hooks
-
-The Block Participation pallet implements the following FRAME hooks:
-
-### on_initialize
-
-The `on_initialize` hook is called at the beginning of each block's execution, before any extrinsics are processed. For the Block Participation pallet, this hook serves several important purposes:
-
-```rust
-fn on_initialize(n: BlockNumberFor<T>) -> Weight {
-   // Function implementation
-}
-```
 
 ## Usage
 
