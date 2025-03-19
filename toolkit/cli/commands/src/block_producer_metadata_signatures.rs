@@ -26,7 +26,7 @@ pub struct BlockProducerMetadataSignatureCmd {
 impl BlockProducerMetadataSignatureCmd {
 	pub fn execute<M: Send + Sync + DeserializeOwned + Encode>(&self) -> anyhow::Result<()> {
 		let file = std::fs::File::open(self.metadata_file.clone())
-			.map_err(|err| anyhow!("Failed to open file {}: {err:?}", self.metadata_file))?;
+			.map_err(|err| anyhow!("Failed to open file {}: {err}", self.metadata_file))?;
 		let metadata_reader = BufReader::new(file);
 		let output = self.get_output::<M>(metadata_reader)?;
 
@@ -39,7 +39,9 @@ impl BlockProducerMetadataSignatureCmd {
 		&self,
 		metadata_reader: impl Read,
 	) -> anyhow::Result<serde_json::Value> {
-		let metadata: M = serde_json::from_reader(metadata_reader)?;
+		let metadata: M = serde_json::from_reader(metadata_reader).map_err(|err| {
+			anyhow!("Failed to parse metadata: {err}. Metadata should be in JSON format.",)
+		})?;
 		let encoded_metadata = metadata.encode();
 		let message = MetadataSignedMessage {
 			cross_chain_pub_key: self.cross_chain_signing_key.vkey(),
