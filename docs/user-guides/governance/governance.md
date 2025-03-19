@@ -64,13 +64,15 @@ In version v1.5 command to initialize governance is available in the Partner Cha
 	--genesis-utxo <GENESIS_UTXO> \
 	--ogmios-url <OGMIOS_URL> \
 	--payment-key-file <PAYMENT_KEY_FILE> \
-	--new-governance-authority <NEW_GOVERNANCE_AUTHORITY>
+	--new-governance-authority <NEW_GOVERNANCE_AUTHORITY> \
+	--new-governance-threshold <NEW_GOVERNANCE_THRESHOLD>
 ```
 
 * `<GENESIS_UTXO>`: The genesis UTXO of the Partner Chain. Same as the one used for `governance init`.
 * `<OGMIOS_URL>`: The URL of the Ogmios service connected to the Cardano node, it is optional and defaults to `ws://localhost:1337`.
 * `<PAYMENT_KEY_FILE>`: Cardano Shelley Payment Signing Key file (normal or extended) of the current governance authority (ie. hash of its public key should equal current governance authority hey hash).
-* `<NEW_GOVERNANCE_AUTHORITY>`: Hex encoded blake2b-224 hash of public key related to private key that will be required to sign governance operations following this operation.
+* `<NEW_GOVERNANCE_AUTHORITY>`: List of hex encoded blake2b-224 hashes of public keys related to private keys that will be required to sign governance operations following this operation. Multiple keys can be provided, separated by spaces.
+* `<NEW_GOVERNANCE_THRESHOLD>`: Number of keys required to sign a transaction.
 
 In version v1.4 this functionality is available in the smart contracts CLI application `pc-contracts-cli update-governance`.
 
