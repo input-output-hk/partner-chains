@@ -353,7 +353,7 @@ async fn run_upsert_d_param<
 	num_registered_candidates: u16,
 	pkey: &CardanoPaymentSigningKey,
 	client: &T,
-) -> Option<McTxHash> {
+) -> Option<MultiSigSmartContractResult> {
 	d_param::upsert_d_param(
 		genesis_utxo,
 		&DParameter { num_permissioned_candidates, num_registered_candidates },
