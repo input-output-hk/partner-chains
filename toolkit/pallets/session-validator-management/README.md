@@ -39,12 +39,6 @@ This pallet's storage has changed compared to its legacy version. See [src/migra
 
 The Session Validator Management pallet relies on primitives defined in the `toolkit/primitives/session-validator-management` crate.
 
-<CLAUDEMIND_THINKING>
-I need to create a hooks section for the session-validator-management pallet README. This should explain the hooks used by the pallet, what they do, and their role in the pallet's functionality.
-</CLAUDEMIND_THINKING>
-
-Here's a hooks section that could be added to the session-validator-management pallet README:
-
 ## Hooks
 
 The Session Validator Management pallet implements the following FRAME hooks to handle committee management, inherent processing, and validator selection:
