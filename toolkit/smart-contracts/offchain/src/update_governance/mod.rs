@@ -7,6 +7,7 @@
 //!    Plutus datum attached that contains the script ID (32) and policy hash.
 use crate::csl::{Costs, TransactionExt};
 use crate::governance::{GovernanceData, SimpleAtLeastN};
+use crate::multisig::{multisig_process, MultiSigSmartContractResult};
 use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
@@ -15,7 +16,6 @@ use crate::{
 	init_governance::transaction::version_oracle_datum_output,
 	plutus_script::PlutusScript,
 };
-use anyhow::anyhow;
 use cardano_serialization_lib::{
 	Language, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
 };
@@ -24,12 +24,7 @@ use ogmios_client::{
 	query_network::QueryNetwork,
 	transactions::Transactions,
 };
-use serde_json::json;
-use sidechain_domain::{
-	MainchainKeyHash, McSmartContractResult,
-	McSmartContractResult::{TxCBOR, TxHash},
-	McTxHash, UtxoId, UtxoIndex,
-};
+use sidechain_domain::{MainchainKeyHash, UtxoId};
 
 #[cfg(test)]
 mod test;
@@ -46,12 +41,14 @@ pub async fn run_update_governance<
 	genesis_utxo_id: UtxoId,
 	client: &T,
 	await_tx: A,
-) -> anyhow::Result<McSmartContractResult> {
-	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
+) -> anyhow::Result<MultiSigSmartContractResult> {
+	let payment_ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance_data = GovernanceData::get(genesis_utxo_id, client).await?;
 
-	let tx = Costs::calculate_costs(
-		|costs| {
+	multisig_process(
+		&governance_data,
+		&payment_ctx,
+		|costs, ctx| {
 			update_governance_tx(
 				raw_scripts::VERSION_ORACLE_VALIDATOR,
 				raw_scripts::VERSION_ORACLE_POLICY,
@@ -60,41 +57,13 @@ pub async fn run_update_governance<
 				new_governance_threshold,
 				&governance_data,
 				costs,
-				&ctx,
+				ctx,
 			)
 		},
 		client,
+		&await_tx,
 	)
-	.await?;
-
-	if governance_data.policy.is_single_key_policy_for(&ctx.payment_key_hash()) {
-		let signed_tx = ctx.sign(&tx).to_bytes();
-		let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-			anyhow!(
-				"Submit governance update transaction request failed: {}, bytes: {}",
-				e,
-				hex::encode(signed_tx)
-			)
-		})?;
-		let tx_id = McTxHash(res.transaction.id);
-		log::info!("Update Governance transaction submitted: {}", hex::encode(tx_id.0));
-		await_tx
-			.await_tx_output(
-				client,
-				UtxoId { tx_hash: McTxHash(res.transaction.id), index: UtxoIndex(0) },
-			)
-			.await?;
-		Ok(TxHash(tx_id))
-	} else {
-		let tx_envelope = json!(
-			{ "type": "Unwitnessed Tx ConwayEra",
-			  "description": "",
-			  "cborHex": hex::encode(tx.to_bytes())
-			}
-		);
-		log::info!("Transaction envelope: {}", tx_envelope);
-		Ok(TxCBOR(tx.to_bytes()))
-	}
+	.await
 }
 
 fn update_governance_tx(

@@ -335,6 +335,7 @@ fn test_tx_context() -> TransactionContext {
 		],
 		network: NetworkIdKind::Testnet,
 		protocol_parameters: protocol_parameters(),
+		change_address: payment_addr(),
 	}
 }
 

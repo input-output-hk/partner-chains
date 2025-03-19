@@ -85,7 +85,7 @@ impl UpdateGovernanceCmd {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
 
-		run_update_governance(
+		let result = run_update_governance(
 			&self.new_governance_authority,
 			self.new_governance_threshold,
 			&payment_key,
@@ -94,7 +94,7 @@ impl UpdateGovernanceCmd {
 			FixedDelayRetries::two_minutes(),
 		)
 		.await?;
-
+		println!("{}", serde_json::to_value(result)?);
 		Ok(())
 	}
 }

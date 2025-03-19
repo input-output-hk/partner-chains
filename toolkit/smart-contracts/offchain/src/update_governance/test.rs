@@ -1,5 +1,5 @@
 use super::{test_values, update_governance_tx};
-use crate::csl::{empty_asset_name, Costs, TransactionContext};
+use crate::csl::{empty_asset_name, key_hash_address, Costs, OgmiosUtxoExt, TransactionContext};
 use crate::governance::GovernanceData;
 use crate::test_values::{protocol_parameters, test_governance_policy};
 use cardano_serialization_lib::*;
@@ -13,6 +13,10 @@ fn payment_key() -> PrivateKey {
 		"94f7531c9639654b77fa7e10650702b6937e05cd868f419f54bcb8368e413f04"
 	))
 	.unwrap()
+}
+
+fn payment_key_address() -> Address {
+	key_hash_address(&payment_key().to_public().hash(), NetworkIdKind::Testnet)
 }
 
 fn test_address_bech32() -> String {
@@ -70,6 +74,7 @@ fn tx_context() -> TransactionContext {
 		payment_key_utxos: vec![payment_utxo()],
 		network: NetworkIdKind::Testnet,
 		protocol_parameters: protocol_parameters(),
+		change_address: payment_key_address(),
 	}
 }
 

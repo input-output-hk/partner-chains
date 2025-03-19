@@ -13,6 +13,8 @@ pub mod d_param;
 pub mod governance;
 /// Supports governance initialization
 pub mod init_governance;
+/// Types and functions related to smart-contracts that support MultiSig governance
+pub mod multisig;
 #[cfg(test)]
 pub mod ogmios_mock;
 /// Supports Permissioned Candidates upsert
