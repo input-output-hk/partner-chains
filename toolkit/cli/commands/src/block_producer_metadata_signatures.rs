@@ -1,4 +1,5 @@
 use crate::key_params::CrossChainSigningKeyParam;
+use anyhow::anyhow;
 use byte_string::ByteString;
 use clap::Parser;
 use parity_scale_codec::Encode;
@@ -24,7 +25,9 @@ pub struct BlockProducerMetadataSignatureCmd {
 
 impl BlockProducerMetadataSignatureCmd {
 	pub fn execute<M: Send + Sync + DeserializeOwned + Encode>(&self) -> anyhow::Result<()> {
-		let metadata_reader = BufReader::new(std::fs::File::open(self.metadata_file.clone())?);
+		let file = std::fs::File::open(self.metadata_file.clone())
+			.map_err(|err| anyhow!("Failed to open file {}: {err:?}", self.metadata_file))?;
+		let metadata_reader = BufReader::new(file);
 		let output = self.get_output::<M>(metadata_reader)?;
 
 		println!("{}", serde_json::to_string_pretty(&output)?);

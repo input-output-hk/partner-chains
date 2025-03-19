@@ -10268,7 +10268,7 @@ dependencies = [
 
 [[package]]
 name = "sp-block-producer-metadata"
-version = "0.1.0"
+version = "1.6.0"
 dependencies = [
  "hex-literal",
  "parity-scale-codec",
