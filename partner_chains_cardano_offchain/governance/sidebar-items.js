@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {};
+window.SIDEBAR_ITEMS = {"fn":["get_governance_policy_summary"],"struct":["GovernancePolicySummary"]};
