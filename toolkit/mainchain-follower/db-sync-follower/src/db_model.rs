@@ -1,5 +1,6 @@
 use crate::db_datum::DbDatum;
 use crate::SqlxError;
+use bigdecimal::ToPrimitive;
 use cardano_serialization_lib::PlutusData;
 use chrono::NaiveDateTime;
 pub use db_sync_sqlx::*;
@@ -8,7 +9,9 @@ use sidechain_domain::{
 	MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber, McTxHash, UtxoId,
 	UtxoIndex,
 };
-use sqlx::{Pool, Postgres};
+use sqlx::{
+	database::HasValueRef, error::BoxDynError, postgres::PgTypeInfo, Decode, Pool, Postgres,
+};
 use std::str::FromStr;
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
@@ -104,6 +107,28 @@ pub(crate) struct TokenTxOutput {
 	pub tx_slot_no: SlotNumber,
 	pub tx_block_index: TxIndexInBlock,
 	pub datum: Option<DbDatum>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct NativeTokenAmount(pub u128);
+impl From<NativeTokenAmount> for sidechain_domain::NativeTokenAmount {
+	fn from(value: NativeTokenAmount) -> Self {
+		Self(value.0)
+	}
+}
+
+impl sqlx::Type<Postgres> for NativeTokenAmount {
+	fn type_info() -> <Postgres as sqlx::Database>::TypeInfo {
+		PgTypeInfo::with_name("NUMERIC")
+	}
+}
+
+impl<'r> Decode<'r, Postgres> for NativeTokenAmount {
+	fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
+		let decoded = <sqlx::types::BigDecimal as Decode<Postgres>>::decode(value)?;
+		let i = decoded.to_u128().ok_or("NativeTokenQuantity is always a u128".to_string())?;
+		Ok(Self(i))
+	}
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]

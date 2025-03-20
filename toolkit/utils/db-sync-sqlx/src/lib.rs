@@ -118,28 +118,6 @@ impl<'r> Decode<'r, Postgres> for StakeDelegation {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct NativeTokenAmount(pub u128);
-impl From<NativeTokenAmount> for sidechain_domain::NativeTokenAmount {
-	fn from(value: NativeTokenAmount) -> Self {
-		Self(value.0)
-	}
-}
-
-impl sqlx::Type<Postgres> for NativeTokenAmount {
-	fn type_info() -> <Postgres as sqlx::Database>::TypeInfo {
-		PgTypeInfo::with_name("NUMERIC")
-	}
-}
-
-impl<'r> Decode<'r, Postgres> for NativeTokenAmount {
-	fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
-		let decoded = <sqlx::types::BigDecimal as Decode<Postgres>>::decode(value)?;
-		let i = decoded.to_u128().ok_or("NativeTokenQuantity is always a u128".to_string())?;
-		Ok(Self(i))
-	}
-}
-
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
 pub struct AssetName(pub Vec<u8>);
 
