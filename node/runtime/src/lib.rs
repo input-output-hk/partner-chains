@@ -530,11 +530,6 @@ where
 	}
 }
 
-impl frame_system::offchain::SigningTypes for Runtime {
-	type Public = <Signature as Verify>::Signer;
-	type Signature = Signature;
-}
-
 impl<C> frame_system::offchain::CreateTransactionBase<C> for Runtime
 where
 	RuntimeCall: From<C>,
@@ -567,17 +562,23 @@ impl ValidatorSet<AccountId> for GlueCode {
 	type ValidatorIdOf = ValidatorIdOf;
 
 	fn session_index() -> SessionIndex {
-		Sidechain::current_epoch_number().0 as u32
+		let current_index = pallet_session::Pallet::<Runtime>::current_index();
+		log::info!("ValidatorSet: current_index {:?}", current_index);
+		current_index
 	}
 	fn validators() -> Vec<Self::ValidatorId> {
 		let (_epoch, validators) =
 			pallet_session_validator_management::Pallet::<Runtime>::get_current_committee();
 
 		use sp_session_validator_management::CommitteeMember;
-		validators
+		let mut authorities: Vec<_> = validators
 			.into_iter()
 			.map(|committee_member| committee_member.authority_id().into())
-			.collect()
+			.collect();
+		log::info!("ValidatorSet: authorities {:?}", authorities);
+		authorities.sort();
+		log::info!("ValidatorSet: ordered authorities {:?}", authorities);
+		authorities
 	}
 }
 
