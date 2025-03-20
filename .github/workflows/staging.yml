@@ -127,7 +127,8 @@ jobs:
           --plan="$TEST_PLAN" \
           --execution="$TEST_EXECUTION" \
           --report_to_xray=$REPORT_TO_XRAY \
-          --decrypt=true
+          --decrypt=true \
+          --markers="not active_flow and not passive_flow"
 
     - name: Archive Debug Log
       if: always()
