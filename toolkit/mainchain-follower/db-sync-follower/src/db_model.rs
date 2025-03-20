@@ -67,14 +67,14 @@ macro_rules! sqlx_implementations_for_wrapper {
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
-pub struct Asset {
+pub(crate) struct Asset {
 	pub policy_id: PolicyId,
 	pub asset_name: AssetName,
 }
 
 impl Asset {
 	/// Creates an Asset with empty asset_name.
-	pub fn new(policy_id: sidechain_domain::PolicyId) -> Self {
+	fn new(policy_id: sidechain_domain::PolicyId) -> Self {
 		Self { policy_id: PolicyId(policy_id.0.to_vec()), asset_name: AssetName(vec![]) }
 	}
 }
@@ -89,7 +89,7 @@ impl From<sidechain_domain::AssetName> for AssetName {
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
-pub struct Block {
+pub(crate) struct Block {
 	pub block_no: BlockNumber,
 	pub hash: [u8; 32],
 	pub epoch_no: EpochNumber,
@@ -111,7 +111,7 @@ impl From<Block> for MainchainBlock {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct BlockNumber(pub u32);
+pub(crate) struct BlockNumber(pub u32);
 sqlx_implementations_for_wrapper!(i32, "INT4", BlockNumber, McBlockNumber);
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -128,7 +128,7 @@ impl From<EpochNumberRow> for EpochNumber {
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
-pub struct Address(pub String);
+pub(crate) struct Address(pub String);
 
 impl From<MainchainAddress> for Address {
 	fn from(addr: MainchainAddress) -> Self {
@@ -271,7 +271,7 @@ impl<'r> Decode<'r, Postgres> for StakeDelegation {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct NativeTokenAmount(pub u128);
+pub(crate) struct NativeTokenAmount(pub u128);
 impl From<NativeTokenAmount> for sidechain_domain::NativeTokenAmount {
 	fn from(value: NativeTokenAmount) -> Self {
 		Self(value.0)
@@ -305,13 +305,13 @@ impl Default for TxPosition {
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
-pub struct BlockTokenAmount {
+pub(crate) struct BlockTokenAmount {
 	pub block_hash: [u8; 32],
 	pub amount: NativeTokenAmount,
 }
 
 #[cfg(any(feature = "block-source", feature = "native-token"))]
-pub async fn get_latest_block_info(pool: &Pool<Postgres>) -> Result<Option<Block>, SqlxError> {
+pub(crate) async fn get_latest_block_info(pool: &Pool<Postgres>) -> Result<Option<Block>, SqlxError> {
 	Ok(sqlx::query_as::<_, Block>(
 		"
 SELECT
@@ -389,7 +389,7 @@ LIMIT 1",
 
 /// Query to get the block by its hash
 #[cfg(any(feature = "block-source", feature = "native-token"))]
-pub async fn get_block_by_hash(
+pub(crate) async fn get_block_by_hash(
 	pool: &Pool<Postgres>,
 	hash: McBlockHash,
 ) -> Result<Option<Block>, SqlxError> {
@@ -568,7 +568,7 @@ pub(crate) async fn index_exists(pool: &Pool<Postgres>, index_name: &str) -> boo
 /// Sums all transfers between genesis and the first block that is produced with the feature on.
 /// Used by `get_native_token_transfers` (NativeTokenDataSourceImpl).
 #[cfg(feature = "native-token")]
-pub async fn get_total_native_tokens_transfered(
+pub(crate) async fn get_total_native_tokens_transfered(
 	pool: &Pool<Postgres>,
 	to_block: BlockNumber,
 	asset: Asset,
@@ -602,7 +602,7 @@ AND block.block_no <= $4;
 /// On devnet postgres it takes around 5ms to execute when querying 1000 blocks.
 /// Used by `get_native_token_transfers` (NativeTokenDataSourceImpl).
 #[cfg(feature = "native-token")]
-pub async fn get_native_token_transfers(
+pub(crate) async fn get_native_token_transfers(
 	pool: &Pool<Postgres>,
 	from_block: BlockNumber,
 	to_block: BlockNumber,

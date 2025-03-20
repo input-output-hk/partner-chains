@@ -3,13 +3,9 @@ use cardano_serialization_lib::PlutusData;
 
 pub mod data_sources;
 mod db_datum;
-pub mod db_model;
+mod db_model;
 pub mod metrics;
 
-// pub use db_model::{
-// 	get_block_by_hash, get_latest_block_info, get_native_token_transfers,
-// 	get_total_native_tokens_transfered, Asset, Block, BlockNumber, BlockTokenAmount,
-// };
 #[cfg(feature = "block-source")]
 pub mod block;
 #[cfg(feature = "candidate-source")]

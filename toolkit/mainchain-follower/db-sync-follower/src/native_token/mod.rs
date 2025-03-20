@@ -149,6 +149,7 @@ impl NativeTokenManagementDataSourceImpl {
 		scripts: &MainChainScripts,
 	) -> Result<NativeTokenAmount> {
 		let to_block = get_to_block_no(to_block, &self.pool).await?;
+
 		Ok(crate::db_model::get_total_native_tokens_transfered(
 			&self.pool,
 			to_block,
@@ -160,7 +161,7 @@ impl NativeTokenManagementDataSourceImpl {
 	}
 }
 
-pub fn to_db_asset(scripts: &MainChainScripts) -> crate::db_model::Asset {
+fn to_db_asset(scripts: &MainChainScripts) -> crate::db_model::Asset {
 	crate::db_model::Asset {
 		policy_id: scripts.native_token_policy_id.clone().into(),
 		asset_name: scripts.native_token_asset_name.clone().into(),
