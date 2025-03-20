@@ -6,7 +6,7 @@
 //! In case of change to the supported cardano-node or ogmios,
 //! it should be updated accordingly and pushed to the registry.
 
-use cardano_serialization_lib::NetworkIdKind;
+use cardano_serialization_lib::{NetworkIdKind, PrivateKey, Transaction, Vkey, Vkeywitness};
 use hex_literal::hex;
 use ogmios_client::{
 	jsonrpsee::{client_for_url, OgmiosClients},
@@ -15,6 +15,7 @@ use ogmios_client::{
 	transactions::Transactions,
 };
 use partner_chains_cardano_offchain::{
+	assemble_tx,
 	await_tx::{AwaitTx, FixedDelayRetries},
 	cardano_keys::CardanoPaymentSigningKey,
 	d_param, init_governance, permissioned_candidates,
@@ -40,21 +41,21 @@ const TEST_IMAGE_TAG: &str = "v10.1.4-v6.11.0";
 const GOVERNANCE_AUTHORITY: MainchainKeyHash =
 	MainchainKeyHash(hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"));
 
+const GOVERNANCE_AUTHORITY_KEY: [u8; 32] =
+	hex!("d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386");
+
 fn governance_authority_payment_key() -> CardanoPaymentSigningKey {
-	CardanoPaymentSigningKey::from_normal_bytes(hex!(
-		"d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
-	))
-	.unwrap()
+	CardanoPaymentSigningKey::from_normal_bytes(GOVERNANCE_AUTHORITY_KEY).unwrap()
 }
 
 const GOVERNANCE_AUTHORITY_ADDRESS: &str =
 	"addr_test1vr5vxqpnpl3325cu4zw55tnapjqzzx78pdrnk8k5j7wl72c6y08nd";
 
+const EVE_PAYMENT_KEY: [u8; 32] =
+	hex!("34a6ce19688e950b58ea73803a00db61d0505ba10d65756d85f27c37d24c06af");
+
 fn eve_payment_key() -> CardanoPaymentSigningKey {
-	CardanoPaymentSigningKey::from_normal_bytes(hex!(
-		"34a6ce19688e950b58ea73803a00db61d0505ba10d65756d85f27c37d24c06af"
-	))
-	.unwrap()
+	CardanoPaymentSigningKey::from_normal_bytes(EVE_PAYMENT_KEY).unwrap()
 }
 
 const EVE_PUBLIC_KEY: StakePoolPublicKey =
@@ -92,9 +93,25 @@ async fn governance_flow() {
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
 	let _ = run_update_goveranance(&client, genesis_utxo).await;
-	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &eve_payment_key(), &client)
-		.await
-		.is_some());
+	let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
+	// TODO: ETCM-9576 run upsert for permissioned candidates and then d-param and sign and submit both later, to prove they can interleve
+	let upsert_result = permissioned_candidates::upsert_permissioned_candidates(
+		genesis_utxo,
+		&vec![],
+		&governance_authority_payment_key(),
+		&client,
+		&await_tx,
+	)
+	.await
+	.unwrap();
+	if let Some(McSmartContractResult::TxCBOR(tx_cbor)) = upsert_result {
+		let result =
+			run_assemble_and_sign(&tx_cbor, &[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY], &client)
+				.await;
+		assert!(result.is_some())
+	} else {
+		panic!("Expected transaction cbor, because governance policy is not '1 of 1'")
+	}
 }
 
 #[tokio::test]
@@ -296,8 +313,8 @@ async fn run_update_goveranance<
 	genesis_utxo: UtxoId,
 ) {
 	let _ = update_governance::run_update_governance(
-		&vec![EVE_PUBLIC_KEY_HASH],
-		1,
+		&vec![EVE_PUBLIC_KEY_HASH, GOVERNANCE_AUTHORITY],
+		2,
 		&governance_authority_payment_key(),
 		genesis_utxo,
 		client,
@@ -316,7 +333,7 @@ async fn run_upsert_d_param<
 	pkey: &CardanoPaymentSigningKey,
 	client: &T,
 ) -> Option<McTxHash> {
-	let tx_hash = d_param::upsert_d_param(
+	d_param::upsert_d_param(
 		genesis_utxo,
 		&DParameter { num_permissioned_candidates, num_registered_candidates },
 		pkey,
@@ -324,14 +341,7 @@ async fn run_upsert_d_param<
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
-	.unwrap();
-	if let Some(tx_hash) = tx_hash {
-		FixedDelayRetries::new(Duration::from_millis(500), 100)
-			.await_tx_output(client, UtxoId::new(tx_hash.0, 0))
-			.await
-			.unwrap()
-	};
-	tx_hash
+	.unwrap()
 }
 
 async fn run_upsert_permissioned_candidates<
@@ -617,4 +627,23 @@ async fn assert_illiquid_supply<T: QueryLedgerState>(
 		client,
 	)
 	.await;
+}
+
+async fn run_assemble_and_sign<
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+>(
+	tx_bytes: &[u8],
+	signatories: &[[u8; 32]],
+	client: &T,
+) -> Option<McTxHash> {
+	let tx = Transaction::from_bytes(tx_bytes.to_vec()).unwrap();
+	let witnesses: Vec<_> = signatories.iter().map(|s| sign(&tx, s)).collect();
+	let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
+	assemble_tx::assemble_tx(tx, witnesses, client, &await_tx).await.unwrap()
+}
+
+fn sign(tx: &Transaction, private_key: &[u8; 32]) -> Vkeywitness {
+	let private_key = PrivateKey::from_normal_bytes(private_key).unwrap();
+	let tx_hash: [u8; 32] = sidechain_domain::crypto::blake2b(tx.body().to_bytes().as_ref());
+	Vkeywitness::new(&Vkey::new(&private_key.to_public()), &private_key.sign(&tx_hash))
 }
