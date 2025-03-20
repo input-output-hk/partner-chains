@@ -1867,6 +1867,7 @@ dependencies = [
  "cardano-serialization-lib",
  "chrono",
  "ctor",
+ "db-sync-sqlx",
  "derive-new",
  "figment",
  "futures",
@@ -1876,7 +1877,6 @@ dependencies = [
  "log",
  "lru",
  "num-bigint",
- "num-traits",
  "pallet-sidechain-rpc",
  "partner-chains-plutus-data",
  "serde",
@@ -1891,6 +1891,15 @@ dependencies = [
  "thiserror",
  "tokio",
  "tokio-test",
+]
+
+[[package]]
+name = "db-sync-sqlx"
+version = "1.6.0"
+dependencies = [
+ "num-traits",
+ "sidechain-domain",
+ "sqlx",
 ]
 
 [[package]]

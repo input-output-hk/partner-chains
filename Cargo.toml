@@ -40,6 +40,7 @@ members = [
 	"toolkit/primitives/native-token-management",
 	"toolkit/offchain",
 	"toolkit/primitives/plutus-data",
+	"toolkit/utils/db-sync-sqlx",
 ]
 resolver = "2"
 
@@ -109,6 +110,14 @@ derive-new = { version = "0.7.0" }
 inquire = { version = "0.7.5" }
 parking_lot = { version = "0.12.3", default-features = false }
 envy = { version = "0.4.2" }
+sqlx = { version = "0.7.4", default-features = false, features = [
+    "runtime-tokio-rustls",
+    "postgres",
+    "macros",
+    "chrono",
+    "migrate",
+    "bigdecimal",
+] }
 
 # substrate dependencies
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409" }
@@ -221,3 +230,4 @@ pallet-session-runtime-stub = { path = "toolkit/pallets/pallet-session-runtime-s
 partner-chains-cardano-offchain = { path = "toolkit/offchain", default-features = false }
 partner-chains-plutus-data = { path = "toolkit/primitives/plutus-data", default-features = false }
 partner-chains-smart-contracts-commands = { path = "toolkit/cli/smart-contracts-commands", default-features = false }
+db-sync-sqlx = { path = "toolkit/utils/db-sync-sqlx" }
