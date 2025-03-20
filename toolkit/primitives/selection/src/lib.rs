@@ -4,12 +4,11 @@
 
 extern crate alloc;
 
+pub mod ariadne;
 /// Module that contains the pseudorandom algorithm for calculating the Sidechain Authorities from the Authority Candidates
 pub mod weighted_random;
 
 pub use weighted_random::*;
-
-pub mod impls;
 
 #[cfg(test)]
 mod tests;

@@ -6,16 +6,24 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* `governance update` command now accepts multiple governance authority key hashes, not just one. It also takes `new-governance-threshold` parameter, which is the number of signatures required to perform governance action.
+* `governance init` and `governance update` will set Multisig policy implemented with ALeastN Native Script, instead of custom policy implemented as Plutus Script in partner-chains-smart-contracts. This policy doesn't require to set `required_signers` field in the transaction making it more user friendly.
+* Extracted the "Ariadne" committee selection algorithm to the `selection` crate.
+
 ## Removed
 
 * Obsolete `block-rewards` pallet and its companion primitives crate. Block authorship information can be tracked
 using the `block-production-log` pallet instead.
 * Crate `pallet-session-runtime-stub` which provided stub config for Substrate's `pallet-session` when using `pallet-partner-chains-session`.
 Its functionality was merged into `pallet-partner-chains-session` under the feature `pallet-session-compat`.
+* Crate `session-manager`. Its functionality was merged into `pallet-session-validator-management` under
+the feature `pallet-session-compat`.
 
 ## Fixed
 
 ## Added
+
+* `sign-block-producer-metadata` command to `cli-commands` for signing block producer metadata upsert message
 
 # v1.6.0
 

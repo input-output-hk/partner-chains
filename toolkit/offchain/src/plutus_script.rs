@@ -68,6 +68,24 @@ impl PlutusScript {
 		Ok(Self { bytes, ..self })
 	}
 
+	pub fn unapply_data_uplc(&self) -> Result<uplc::PlutusData, anyhow::Error> {
+		let mut buffer = Vec::new();
+		let program = Program::<DeBruijn>::from_cbor(&self.bytes, &mut buffer).unwrap();
+		match program.term {
+			uplc::ast::Term::Apply { function: _, argument } => {
+				let res: Result<uplc::PlutusData, String> = (*argument).clone().try_into();
+				res.map_err(|e| anyhow!(e))
+			},
+			_ => Err(anyhow!("Given Plutus Script is not an applied term")),
+		}
+	}
+
+	pub fn unapply_data_csl(&self) -> Result<PlutusData, anyhow::Error> {
+		let uplc_pd = self.unapply_data_uplc()?;
+		let cbor_bytes = minicbor::to_vec(uplc_pd).expect("to_vec has Infallible error type");
+		Ok(PlutusData::from_bytes(cbor_bytes).expect("UPLC encoded PlutusData is valid"))
+	}
+
 	/// Builds an CSL `Address` for plutus script from the data obtained from smart contracts.
 	pub fn address(&self, network: NetworkIdKind) -> Address {
 		script_address(&self.bytes, network, self.language)
@@ -183,5 +201,34 @@ pub(crate) mod tests {
 				.apply_data(TEST_GENESIS_UTXO)
 				.unwrap();
 		assert_eq!(hex::encode(applied.bytes), hex::encode(CANDIDATES_SCRIPT_WITH_APPLIED_PARAMS));
+	}
+
+	#[test]
+	fn unapply_term_csl() {
+		let applied =
+			PlutusScript::from_wrapped_cbor(&CANDIDATES_SCRIPT_RAW, Language::new_plutus_v2())
+				.unwrap()
+				.apply_data(TEST_GENESIS_UTXO)
+				.unwrap();
+		let data: PlutusData = applied.unapply_data_csl().unwrap();
+		assert_eq!(
+			data,
+			PlutusData::from_bytes(minicbor::to_vec(TEST_GENESIS_UTXO.to_datum()).unwrap())
+				.unwrap()
+		)
+	}
+
+	#[test]
+	fn unapply_term_uplc() {
+		let applied =
+			PlutusScript::from_wrapped_cbor(&CANDIDATES_SCRIPT_RAW, Language::new_plutus_v2())
+				.unwrap()
+				.apply_data(TEST_GENESIS_UTXO)
+				.unwrap();
+		let data: uplc::PlutusData = applied.unapply_data_uplc().unwrap();
+		assert_eq!(
+			data,
+			plutus_data(&minicbor::to_vec(TEST_GENESIS_UTXO.to_datum()).unwrap()).unwrap()
+		)
 	}
 }

@@ -100,7 +100,7 @@ use frame_system::pallet_prelude::BlockNumberFor;
 use frame_system::DecRefStatus;
 pub use pallet::*;
 use sp_runtime::{traits::OpaqueKeys, DispatchError, KeyTypeId, RuntimeAppPublic};
-use sp_staking::SessionIndex;
+pub use sp_staking::SessionIndex;
 use sp_std::prelude::*;
 
 #[cfg(feature = "pallet-session-compat")]

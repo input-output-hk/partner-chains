@@ -61,7 +61,10 @@ pub mod pallet {
 	}
 
 	impl<T: Config> sp_sidechain::OnNewEpoch for Pallet<T> {
-		fn on_new_epoch(old_epoch: ScEpochNumber, _new_epoch: ScEpochNumber) -> sp_weights::Weight {
+		fn on_new_epoch(
+			_old_epoch: ScEpochNumber,
+			_new_epoch: ScEpochNumber,
+		) -> sp_weights::Weight {
 			crate::RuntimeDbWeight::get().reads_writes(0, 0)
 		}
 	}

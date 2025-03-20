@@ -1,11 +1,9 @@
 extern crate alloc;
 use alloc::vec::Vec;
-use parity_scale_codec::{Decode, Encode};
 use rand::Rng;
 use rand_chacha::{rand_core::SeedableRng, ChaCha20Rng};
 
 /// Parameters needed for weighted-pseudorandom selection algorithm
-#[derive(Encode, Decode, scale_info::TypeInfo)]
 pub struct WeightedRandomSelectionConfig {
 	pub size: u16,
 }
@@ -30,7 +28,7 @@ pub fn select_authorities<T: Clone>(
 	let size = usize::from(config.size);
 	let total_weight: Weight = weighted_candidates.iter().map(|(_, weight)| weight).sum();
 
-	let mut committee: Vec<T> = sp_std::vec![];
+	let mut committee: Vec<T> = alloc::vec![];
 
 	let mut rng = ChaCha20Rng::from_seed(seed);
 

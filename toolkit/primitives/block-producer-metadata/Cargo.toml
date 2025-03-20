@@ -1,0 +1,21 @@
+[package]
+name = "sp-block-producer-metadata"
+version = "1.6.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Primitives for the block producer on-chain metadata feature"
+
+[dependencies]
+sidechain-domain = { workspace = true }
+parity-scale-codec = { workspace = true }
+secp256k1 = { workspace = true, features = ["global-context", "hashes"] }
+
+[dev-dependencies]
+hex-literal = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "sidechain-domain/std",
+    "secp256k1/std",
+]

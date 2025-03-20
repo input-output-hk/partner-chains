@@ -2,7 +2,7 @@ use crate::{csl::NetworkTypeExt, plutus_script::PlutusScript, OffchainError};
 use cardano_serialization_lib::{Language, NetworkIdKind};
 use ogmios_client::query_network::QueryNetwork;
 use serde::Serialize;
-use sidechain_domain::{MainchainKeyHash, PolicyId, UtxoId};
+use sidechain_domain::{PolicyId, UtxoId};
 use uplc::PlutusData;
 
 /// Provides convenient access to the addresses and hashes of the partner chain smart contracts.
@@ -237,19 +237,6 @@ pub(crate) fn reserve_scripts(
 	)?
 	.apply_uplc_data(version_oracle_data.policy_id_as_plutus_data())?;
 	Ok(ReserveScripts { validator, auth_policy, illiquid_circulation_supply_validator })
-}
-
-// Returns the simplest MultiSig policy configuration plutus data:
-// there is one required authority and it is the governance authority from sidechain params.
-pub(crate) fn multisig_governance_policy_configuration(
-	governance_authority: MainchainKeyHash,
-) -> PlutusData {
-	PlutusData::Array(vec![
-		PlutusData::Array(vec![uplc::PlutusData::BoundedBytes(
-			governance_authority.0.to_vec().into(),
-		)]),
-		PlutusData::BigInt(uplc::BigInt::Int(1.into())),
-	])
 }
 
 #[cfg(test)]

@@ -24,7 +24,6 @@ use crypto::blake2b;
 use derive_more::{From, Into};
 use num_derive::*;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen, WrapperTypeEncode};
-use plutus::{Datum, ToDatum};
 use plutus_datum_derive::*;
 use scale_info::TypeInfo;
 use sp_core::{bounded::BoundedVec, ecdsa, ed25519, sr25519, ConstU32};
@@ -61,7 +60,9 @@ impl Display for McEpochNumber {
 	}
 }
 /// Amount of Lovelace (which is a fraction of 1 ADA) staked/locked on Cardano
-#[derive(Default, Clone, Copy, Debug, Encode, Decode, TypeInfo, ToDatum, PartialEq, Eq)]
+#[derive(
+	Default, Clone, Copy, Debug, Encode, Decode, TypeInfo, ToDatum, PartialEq, Eq, PartialOrd, Ord,
+)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct StakeDelegation(pub u64);
 
@@ -452,6 +453,16 @@ impl From<ecdsa::Public> for SidechainPublicKey {
 	}
 }
 
+/// CBOR bytes of Cardano Transaction.
+#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
+pub struct TransactionCbor(pub Vec<u8>);
+
+/// CBOR bytes of Cardano VKeyWitness.
+#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
+pub struct VKeyWitnessCbor(pub Vec<u8>);
+
 #[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct SidechainSignature(pub Vec<u8>);
@@ -588,6 +599,18 @@ impl TryFrom<Vec<u8>> for McTxHash {
 		<[u8; 32]>::try_from(value)
 			.map_err(|_| "McTxHash must be 32 bytes long")
 			.map(McTxHash)
+	}
+}
+
+#[derive(Clone, Debug)]
+pub enum McSmartContractResult {
+	TxHash(McTxHash),
+	TxCBOR(Vec<u8>),
+}
+
+impl McSmartContractResult {
+	pub fn tx_hash(hash: [u8; 32]) -> Self {
+		Self::TxHash(McTxHash(hash))
 	}
 }
 

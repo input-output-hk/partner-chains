@@ -125,9 +125,9 @@ fn update_reserve_settings_tx(
 	}
 
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&governance.policy_script,
+		&governance.policy.script(),
 		&governance.utxo_id_as_tx_input(),
-		&costs.get_mint(&governance.policy_script),
+		&costs,
 	)?;
 	tx_builder.add_script_reference_input(
 		&reserve.illiquid_circulation_supply_validator_version_utxo.to_csl_tx_input(),
@@ -137,5 +137,5 @@ fn update_reserve_settings_tx(
 		&reserve.auth_policy_version_utxo.to_csl_tx_input(),
 		reserve.scripts.auth_policy.bytes.len(),
 	);
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }

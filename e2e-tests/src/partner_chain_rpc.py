@@ -43,14 +43,6 @@ class PartnerChainRpc:
             "id": id,
         }
 
-    def partner_chain_get_incoming_transactions(self) -> PartnerChainRpcResponse:
-        response = requests.post(
-            self.url, headers=self.headers, json=self.__get_body(method="sidechain_getIncomingTransactions")
-        )
-        json_data = response.json()
-        logger.debug(json_data)
-        return PartnerChainRpcResponse.model_validate(json_data)
-
     def partner_chain_get_epoch_committee(self, epoch) -> PartnerChainRpcResponse:
         response = requests.post(
             self.url, headers=self.headers, json=self.__get_body(method="sidechain_getEpochCommittee", params=[epoch])
@@ -59,56 +51,8 @@ class PartnerChainRpc:
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)
 
-    def partner_chain_get_epoch_signatures(self, epoch):
-        response = requests.post(
-            self.url, headers=self.headers, json=self.__get_body(method="sidechain_getEpochSignatures", params=[epoch])
-        )
-        json_data = response.json()
-        logger.debug(json_data)
-        return PartnerChainRpcResponse.model_validate(json_data)
-
     def partner_chain_get_status(self):
         response = requests.post(self.url, headers=self.headers, json=self.__get_body(method="sidechain_getStatus"))
-        json_data = response.json()
-        logger.debug(json_data)
-        return PartnerChainRpcResponse.model_validate(json_data)
-
-    def partner_chain_get_epoch_phase(self, slot_num=None):
-        params = [slot_num] if slot_num else []
-        response = requests.post(
-            self.url, headers=self.headers, json=self.__get_body(method="sidechain_getEpochPhase", params=params)
-        )
-        json_data = response.json()
-        logger.debug(json_data)
-        return PartnerChainRpcResponse.model_validate(json_data)
-
-    def partner_chain_get_outgoing_transactions(self, epoch):
-        response = requests.post(
-            self.url,
-            headers=self.headers,
-            json=self.__get_body(method="sidechain_getOutgoingTransactions", params=[epoch]),
-        )
-        json_data = response.json()
-        logger.debug(json_data)
-        return PartnerChainRpcResponse.model_validate(json_data)
-
-    def partner_chain_get_outgoing_transaction_merkle_proof(self, epoch, txId):
-        response = requests.post(
-            self.url,
-            headers=self.headers,
-            json=self.__get_body(method="sidechain_getOutgoingTxMerkleProof", params=[epoch, txId]),
-        )
-        json_data = response.json()
-        logger.debug(json_data)
-        return PartnerChainRpcResponse.model_validate(json_data)
-
-    def partner_chain_get_signatures_to_upload(self, limit=None):
-        params = [limit] if limit else []
-        response = requests.post(
-            self.url,
-            headers=self.headers,
-            json=self.__get_body(method="sidechain_getSignaturesToUpload", params=params),
-        )
         json_data = response.json()
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)

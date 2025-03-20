@@ -473,7 +473,7 @@ jobs:
         with:
           image:  ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-post-merge.outputs.sha }}
           sha: ${{ needs.build-linux-post-merge.outputs.sha }}
-          no-wipe: false
+          no-wipe: true
         env:
           AWS_REGION: "eu-central-1"
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -507,7 +507,6 @@ jobs:
           env: ci
           decrypt: true
           blockchain: substrate
-          markers: "not active_flow and not passive_flow and not probability"
 
   post-merge-actions-complete:
     if: ${{ always() && (github.event_name == 'pull_request' && github.event.pull_request.merged == true) }}

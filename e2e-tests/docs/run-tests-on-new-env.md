@@ -129,20 +129,8 @@ E.g. for Cardano Preview it will be:
         "token_conversion_rate": <INT>, // default - 9
         "block_duration": <INT>,
         "slots_in_epoch": <INT>,
-        "token_policy_id": <STRING>,
-        "fees": {
-            "ECDSA": {
-                "lock": <INT>,
-                "send": <INT>
-            },
-            "SR25519": {
-                "lock": <INT>,
-                "send": <INT>
-            }
-        }
-    },
-    "block_encoding_suffix_grandpa": "3903",
-    "block_encoding_suffix_aura": "8902"
+        "token_policy_id": <STRING>
+    }
 }
 ```
 
@@ -226,7 +214,7 @@ E.g. for Cardano Preview it will be:
 ### 6. Run tests on your custom environment
 
 ```bash
-$ pytest -rP -v --blockchain <blockchain> --env <env> --log-cli-level debug -vv -s -m "not active_flow and not passive_flow and not probability"
+$ pytest -rP -v --blockchain <blockchain> --env <env> --log-cli-level debug -vv -s -m "not probability"
 ```
 where:
 

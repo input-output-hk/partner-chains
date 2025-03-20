@@ -20,8 +20,8 @@ use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::{
-		get_builder_config, CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt,
-		TransactionContext, TransactionOutputAmountBuilderExt,
+		get_builder_config, Costs, MultiAssetExt, OgmiosUtxoExt, Script, TransactionBuilderExt,
+		TransactionContext, TransactionExt, TransactionOutputAmountBuilderExt,
 	},
 	governance::GovernanceData,
 	scripts_data::ReserveScripts,
@@ -110,23 +110,23 @@ fn create_reserve_tx(
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&reserve.scripts.auth_policy,
+		&Script::Plutus(reserve.scripts.auth_policy.clone()),
 		&reserve.auth_policy_version_utxo.to_csl_tx_input(),
-		&costs.get_mint(&reserve.scripts.auth_policy),
+		&costs,
 	)?;
 	tx_builder.add_output(&reserve_validator_output(parameters, &reserve.scripts, ctx)?)?;
 
 	let gov_tx_input = governance.utxo_id_as_tx_input();
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&governance.policy_script,
+		&governance.policy.script(),
 		&gov_tx_input,
-		&costs.get_mint(&governance.policy_script),
+		&costs,
 	)?;
 	tx_builder.add_script_reference_input(
 		&reserve.validator_version_utxo.to_csl_tx_input(),
 		reserve.scripts.validator.bytes.len(),
 	);
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
 // Creates output with reserve token and the initial deposit

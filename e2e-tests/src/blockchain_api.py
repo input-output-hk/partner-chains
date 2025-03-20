@@ -46,10 +46,6 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def get_pc_epoch_phase(self, slot_number=None) -> str:
-        pass
-
-    @abstractmethod
     def get_params(self) -> dict:
         pass
 
@@ -82,14 +78,6 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def wait_for_next_mc_block(self) -> bool:
-        pass
-
-    @abstractmethod
-    def get_outgoing_transactions(self, epoch) -> list:
-        pass
-
-    @abstractmethod
     def build_transaction(self, tx: Transaction) -> Transaction:
         pass
 
@@ -102,19 +90,11 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def lock_transaction(self, tx: Transaction) -> Transaction:
-        pass
-
-    @abstractmethod
     def new_wallet(self) -> Wallet:
         pass
 
     @abstractmethod
     def get_wallet(self, address, public_key, secret, scheme) -> Wallet:
-        pass
-
-    @abstractmethod
-    def address_to_hex(self, address) -> str:
         pass
 
     @abstractmethod
@@ -168,59 +148,6 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def burn_tokens(self, recipient: str, amount: int, payment_key: str) -> (bool, str, int):
-        """Initiate transaction from main chain to partner chain, aka passive flow.
-
-        Arguments:
-            recipient {str} -- recipient's address
-            amount {int} -- amount of tokens to burn on the main chain
-            payment_key {str} -- main chain address' signing key
-
-        Returns:
-            (bool, string, int) - True/False, transaction hash, and main chain block when tx will become stable
-        """
-        pass
-
-    @abstractmethod
-    def burn_tokens_for_hex_address(self, recipient_hex: str, amount: int, payment_key: str) -> (bool, str, int):
-        """Initiate transaction from main chain to partner chain, aka passive flow.
-
-        Arguments:
-            recipient_hex {str} -- recipient's hex address
-            amount {int} -- amount of tokens to burn on the main chain
-            payment_key {str} -- main chain address' signing key
-
-        Returns:
-            (bool, string, int) - True/False, transaction hash, and main chain block when tx will become stable
-        """
-        pass
-
-    @abstractmethod
-    def get_incoming_txs(self) -> dict:
-        """
-        Retrieves a list of incoming pending txs
-
-        Returns:
-            (dict) - JSON
-        Raises:
-            PartnerChainRpcException
-        """
-        pass
-
-    @abstractmethod
-    def get_mc_stable_block_for_incoming_tx(self, txHash: str) -> int:
-        """
-        Finds the stable block number on mainchain where an incoming tx is going to be finalized
-
-        Arguments:
-            Hash of incoming transaction to query for
-
-        Returns:
-            (int) - The mainchain block number on which the tx's balance will be available on partner chain
-        """
-        pass
-
-    @abstractmethod
     def get_epoch_committee(self, epoch: int) -> PartnerChainRpcResponse:
         """
         Retrieves the committee for given epoch
@@ -230,19 +157,6 @@ class BlockchainApi(ABC):
 
         Returns:
             JSON dict {PartnerChainRpcResponse}
-        """
-        pass
-
-    @abstractmethod
-    def get_epoch_signatures(self, epoch: int) -> PartnerChainRpcResponse:
-        """Returns the data required for committee handover and Merkle root insertion: partner chain parameters,
-        next committee, Merkle root of outgoing transactions, and corresponding signatures.
-
-        Arguments:
-            epoch {int} -- partner chain epoch
-
-        Returns:
-            str -- JSON with keys 'params', 'committeeHandover', and 'outgoingTransactions'
         """
         pass
 
@@ -359,71 +273,6 @@ class BlockchainApi(ABC):
         Returns:
             dict - registration data
         """
-
-    @abstractmethod
-    def claim_tokens(self, mc_private_key_file, combined_proof, distributed_set_utxo=None) -> bool:
-        """
-        Claims tokens that have been locked on the partner chain, using a combined proof and an (optional)
-        distributed set utxo, for faster lookup.
-
-        Arguments: the private key file that is associated with the recipient of the lock transaction
-        and the combined proof of that lock transaction, after the committee has signed it.
-
-        Returns: boolean
-        """
-        pass
-
-    @abstractmethod
-    def get_outgoing_txs(self, epoch) -> dict:  # TODO: Verify dict or list
-        """
-        Retrieves a list of outgoing txs that happened in a sc epoch
-
-        Arguments: the partner chain epoch
-
-        Returns:
-            (dict) - JSON
-        """
-        pass
-
-    @abstractmethod
-    def get_outgoing_tx_merkle_proof(self, epoch, txId) -> str:  # TODO: verify str or dict
-        """
-        Retrieves the merkle proof of an outgoing tx
-
-        Arguments: the partner chain epoch and the index of the tx
-
-        Returns:
-            (str) - the merkle proof (TODO: or a dict?)
-        """
-        pass
-
-    @abstractmethod
-    def get_expected_tx_fees(self, wallet_type, tx_type) -> int:
-        """
-        Get the expected fee amount for a specific tx from the configuration
-
-        Arguments: wallet type and transaction type
-
-        Returns:
-            (int) - The amount of tokens necessary for the fee of a tx
-        """
-        pass
-
-    @abstractmethod
-    def cardano_address_to_bech32(self, mc_address: str) -> str:
-        """
-        Convert a cardano address to bech32 format
-
-        Arguments: Cardano address (string)
-
-        Returns:
-            (string) - The bech32 format of the address (hexstring)
-        """
-        pass
-
-    @abstractmethod
-    def check_epoch_signatures_uploaded(self, pc_epoch) -> bool:
-        pass
 
     @abstractmethod
     def get_block_extrinsic_value(self, extrinsic_name: str, block_no: int) -> str:

@@ -1,13 +1,12 @@
 use crate::key_params::{SidechainSigningKeyParam, StakePoolSigningKeyParam};
-use crate::signing::{cardano_spo_public_key_and_signature, sc_public_key_and_signature_for_datum};
 use clap::Parser;
-use plutus::{Datum, ToDatum};
 use plutus_datum_derive::*;
 use secp256k1::SecretKey;
 use serde::Serialize;
 use serde_json;
 use sidechain_domain::{
-	MainchainSignature, SidechainPublicKey, SidechainSignature, StakePoolPublicKey, UtxoId,
+	crypto::*, MainchainSignature, SidechainPublicKey, SidechainSignature, StakePoolPublicKey,
+	UtxoId,
 };
 use std::fmt::{Display, Formatter};
 

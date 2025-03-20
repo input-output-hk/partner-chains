@@ -28,12 +28,13 @@ use frame_support::{
 use opaque::SessionKeys;
 use pallet_grandpa::AuthorityId as GrandpaId;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-use pallet_session_validator_management;
+use pallet_session_validator_management::session_manager::ValidatorManagementSessionManager;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use parity_scale_codec::MaxEncodedLen;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
-use session_manager::ValidatorManagementSessionManager;
+use serde::Deserialize;
+use sidechain_domain::byte_string::{BoundedString, SizedByteString};
 use sidechain_domain::{
 	DelegatorKey, MainchainKeyHash, PermissionedCandidateData, RegistrationData, ScEpochNumber,
 	ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
@@ -42,6 +43,8 @@ use sidechain_slots::Slot;
 use sp_api::impl_runtime_apis;
 use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+#[cfg(feature = "runtime-benchmarks")]
+use sp_core::ByteArray;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_inherents::InherentIdentifier;
 use sp_runtime::{
@@ -461,6 +464,14 @@ impl AsCardanoSPO for BlockAuthor {
 			BlockAuthor::ProBono(_) => None,
 		}
 	}
+}
+
+pub const MAX_METADATA_URL_LENGTH: u32 = 512;
+
+#[derive(Clone, Debug, MaxEncodedLen, Encode, Deserialize)]
+pub struct BlockProducerMetadata {
+	pub url: BoundedString<MAX_METADATA_URL_LENGTH>,
+	pub hash: SizedByteString<32>,
 }
 
 #[cfg(feature = "runtime-benchmarks")]

@@ -1,15 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use crate::CommitteeMember;
 use core::marker::PhantomData;
 use derive_new::new;
 use frame_system::pallet_prelude::BlockNumberFor;
 use log::info;
-use pallet_session_validator_management::CommitteeMember;
-use sp_staking::SessionIndex;
+use pallet_partner_chains_session::SessionIndex;
 use sp_std::vec::Vec;
-
-/// [`pallet_session`] and [`pallet_session_validator_management`] integration.
-pub mod pallet_session_support;
 
 #[derive(new)]
 pub struct ValidatorManagementSessionManager<T> {
@@ -17,7 +14,7 @@ pub struct ValidatorManagementSessionManager<T> {
 }
 
 /// SessionManager, which takes committee from pallet_session_validator_management.
-impl<T: pallet_session_validator_management::Config + pallet_session::Config>
+impl<T: crate::Config + pallet_session::Config>
 	pallet_partner_chains_session::SessionManager<T::AccountId, T::AuthorityKeys>
 	for ValidatorManagementSessionManager<T>
 {
@@ -25,7 +22,7 @@ impl<T: pallet_session_validator_management::Config + pallet_session::Config>
 		_new_index: SessionIndex,
 	) -> Option<Vec<(T::AccountId, T::AuthorityKeys)>> {
 		Some(
-			pallet_session_validator_management::Pallet::<T>::current_committee_storage()
+			crate::Pallet::<T>::current_committee_storage()
 				.committee
 				.into_iter()
 				.map(|member| (member.authority_id().into(), member.authority_keys()))
@@ -39,7 +36,7 @@ impl<T: pallet_session_validator_management::Config + pallet_session::Config>
 		info!("New session {new_index}");
 		pallet_session::pallet::CurrentIndex::<T>::put(new_index);
 		Some(
-			pallet_session_validator_management::Pallet::<T>::rotate_committee_to_next_epoch()
+			crate::Pallet::<T>::rotate_committee_to_next_epoch()
 				.expect(
 					"Session should never end without current epoch validators defined. \
 				Check ShouldEndSession implementation or if it is used before starting new session",
@@ -66,25 +63,24 @@ impl<T: pallet_session_validator_management::Config + pallet_session::Config>
 impl<T, ScEpochNumber> pallet_partner_chains_session::ShouldEndSession<BlockNumberFor<T>>
 	for ValidatorManagementSessionManager<T>
 where
-	T: pallet_session_validator_management::Config<ScEpochNumber = ScEpochNumber>,
+	T: crate::Config<ScEpochNumber = ScEpochNumber>,
 	ScEpochNumber: Clone + PartialOrd,
 {
 	fn should_end_session(_n: BlockNumberFor<T>) -> bool {
 		let current_epoch_number = T::current_epoch_number();
 
-		current_epoch_number
-			> pallet_session_validator_management::Pallet::<T>::current_committee_storage().epoch
-			&& pallet_session_validator_management::Pallet::<T>::next_committee().is_some()
+		current_epoch_number > crate::Pallet::<T>::current_committee_storage().epoch
+			&& crate::Pallet::<T>::next_committee().is_some()
 	}
 }
 
 #[cfg(test)]
 mod tests {
+	use crate::mock::mock_pallet::CurrentEpoch;
+	use crate::mock::*;
+	use crate::session_manager::*;
 	use crate::*;
 	use pallet_partner_chains_session::ShouldEndSession;
-	use pallet_session_validator_management::mock::mock_pallet::CurrentEpoch;
-	use pallet_session_validator_management::mock::*;
-	use pallet_session_validator_management::{CommitteeInfo, CurrentCommittee, NextCommittee};
 	pub const IRRELEVANT: u64 = 2;
 
 	type Manager = ValidatorManagementSessionManager<Test>;

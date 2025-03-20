@@ -8,7 +8,7 @@ use crate::await_tx::{AwaitTx, FixedDelayRetries};
 use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::{
 	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, InputsBuilderExt,
-	TransactionBuilderExt, TransactionContext,
+	TransactionBuilderExt, TransactionContext, TransactionExt,
 };
 use crate::governance::GovernanceData;
 use crate::plutus_script::PlutusScript;
@@ -207,7 +207,7 @@ fn mint_d_param_token_tx(
 		policy,
 		&empty_asset_name(),
 		&unit_plutus_data(),
-		&costs.get_mint(policy),
+		&costs.get_mint(&policy.clone().into()),
 	)?;
 	tx_builder.add_output_with_one_script_token(
 		validator,
@@ -218,12 +218,12 @@ fn mint_d_param_token_tx(
 
 	let gov_tx_input = governance_data.utxo_id_as_tx_input();
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&governance_data.policy_script,
+		&governance_data.policy.script(),
 		&gov_tx_input,
-		&costs.get_mint(&governance_data.policy_script),
+		&costs,
 	)?;
 
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
 fn update_d_param_tx(
@@ -255,10 +255,10 @@ fn update_d_param_tx(
 
 	let gov_tx_input = governance_data.utxo_id_as_tx_input();
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&governance_data.policy_script,
+		&governance_data.policy.script(),
 		&gov_tx_input,
-		&costs.get_mint(&governance_data.policy_script),
+		&costs,
 	)?;
 
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }

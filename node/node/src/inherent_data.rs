@@ -13,7 +13,7 @@ use sidechain_domain::{
 use sidechain_mc_hash::{McHashDataSource, McHashInherentDataProvider as McHashIDP};
 use sidechain_runtime::{
 	opaque::{Block, SessionKeys},
-	BeneficiaryId, BlockAuthor, CrossChainPublic,
+	BlockAuthor, CrossChainPublic,
 };
 use sidechain_slots::ScSlotConfig;
 use sp_api::ProvideRuntimeApi;

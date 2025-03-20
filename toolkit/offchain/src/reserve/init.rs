@@ -19,7 +19,7 @@ use crate::{
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::{
 		get_builder_config, CostStore, Costs, MultiAssetExt, OgmiosUtxoExt, TransactionBuilderExt,
-		TransactionContext, TransactionOutputAmountBuilderExt,
+		TransactionContext, TransactionExt, TransactionOutputAmountBuilderExt,
 	},
 	governance::GovernanceData,
 	plutus_script::PlutusScript,
@@ -162,7 +162,7 @@ fn init_script_tx(
 			&version_oracle.policy,
 			&version_oracle_asset_name(),
 			&witness,
-			&costs.get_mint(&version_oracle.policy),
+			&costs.get_mint(&version_oracle.policy.clone().into()),
 		)?;
 	}
 	{
@@ -183,13 +183,12 @@ fn init_script_tx(
 	// Mint governance token
 	let gov_tx_input = governance.utxo_id_as_tx_input();
 	tx_builder.add_mint_one_script_token_using_reference_script(
-		&governance.policy_script,
+		&governance.policy.script(),
 		&gov_tx_input,
-		&costs.get_mint(&governance.policy_script),
+		&costs,
 	)?;
 
-	tx_builder.add_script_reference_input(&gov_tx_input, governance.policy_script.bytes.len());
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
 fn version_oracle_asset_name() -> AssetName {
@@ -243,15 +242,15 @@ mod tests {
 	use crate::{
 		csl::{unit_plutus_data, Costs, OgmiosUtxoExt, TransactionContext},
 		governance::GovernanceData,
-		plutus_script::PlutusScript,
 		scripts_data::{self, VersionOracleData},
-		test_values::{make_utxo, payment_addr, payment_key, protocol_parameters},
+		test_values::{
+			make_utxo, payment_addr, payment_key, protocol_parameters, test_governance_policy,
+		},
 	};
 	use cardano_serialization_lib::{
-		AssetName, BigNum, ConstrPlutusData, ExUnits, Int, Language, NetworkIdKind, PlutusData,
-		PlutusList, RedeemerTag, ScriptHash, Transaction,
+		AssetName, BigNum, ConstrPlutusData, ExUnits, Int, NetworkIdKind, PlutusData, PlutusList,
+		RedeemerTag, ScriptHash, Transaction,
 	};
-	use hex_literal::hex;
 	use ogmios_client::types::{OgmiosTx, OgmiosUtxo};
 	use raw_scripts::ScriptId;
 	use sidechain_domain::UtxoId;
@@ -310,7 +309,7 @@ mod tests {
 		let gov_token_amount = change_output
 			.amount()
 			.multiasset()
-			.and_then(|ma| ma.get(&test_governance_data().policy_script.csl_script_hash()))
+			.and_then(|ma| ma.get(&test_governance_data().policy.script().script_hash().into()))
 			.and_then(|gov_ma| gov_ma.get(&AssetName::new(vec![]).unwrap()))
 			.unwrap();
 		assert_eq!(gov_token_amount, BigNum::one(), "Change contains one goverenance token");
@@ -342,7 +341,7 @@ mod tests {
 		let gov_mint = tx
 			.body()
 			.mint()
-			.and_then(|mint| mint.get(&test_governance_data().policy_script.csl_script_hash()))
+			.and_then(|mint| mint.get(&test_governance_data().policy.script().script_hash().into()))
 			.and_then(|assets| assets.get(0))
 			.and_then(|assets| assets.get(&AssetName::new(vec![]).unwrap()))
 			.expect("Transaction should have a mint of Governance Policy token");
@@ -410,16 +409,12 @@ mod tests {
 		)
 	}
 
-	fn test_governance_script() -> PlutusScript {
-		PlutusScript { bytes: hex!("112233").to_vec(), language: Language::new_plutus_v2() }
-	}
-
 	fn test_governance_input() -> OgmiosUtxo {
 		OgmiosUtxo { transaction: OgmiosTx { id: [16; 32] }, index: 0, ..Default::default() }
 	}
 
 	fn test_governance_data() -> GovernanceData {
-		GovernanceData { policy_script: test_governance_script(), utxo: test_governance_input() }
+		GovernanceData { policy: test_governance_policy(), utxo: test_governance_input() }
 	}
 
 	fn version_oracle_data() -> VersionOracleData {
@@ -454,7 +449,7 @@ mod tests {
 	fn test_costs() -> Costs {
 		Costs::new(
 			vec![
-				(test_governance_script().csl_script_hash(), governance_script_cost()),
+				(test_governance_policy().script().script_hash().into(), governance_script_cost()),
 				(version_oracle_policy_csl_script_hash(), versioning_script_cost()),
 			]
 			.into_iter()

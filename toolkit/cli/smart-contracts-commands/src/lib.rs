@@ -4,7 +4,9 @@ use partner_chains_cardano_offchain::cardano_keys::{
 };
 use sidechain_domain::*;
 
+pub mod assemble_tx;
 pub mod d_parameter;
+pub mod get_multisig_data;
 pub mod get_scripts;
 pub mod governance;
 pub mod permissioned_candidates;
@@ -14,8 +16,10 @@ pub mod reserve;
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
 pub enum SmartContractsCmd {
-	/// Print validator addresses and policy IDs of Partner Chain smart contracts
+	/// Prints validator addresses and policy IDs of Partner Chain smart contracts
 	GetScripts(get_scripts::GetScripts),
+	/// Prints JSON summary of the current governance policy of a chain. Prints null if governance policy has not been set for given genesis utxo.
+	GetGovernancePolicy(get_multisig_data::GetGovernancePolicy),
 	/// Upsert DParameter
 	UpsertDParameter(d_parameter::UpsertDParameterCmd),
 	/// Upsert Permissioned Candidates
@@ -30,6 +34,8 @@ pub enum SmartContractsCmd {
 	/// Commands for management of on-chain governance
 	#[command(subcommand)]
 	Governance(governance::GovernanceCmd),
+	/// Assemble and submit a transaction
+	AssembleAndSubmitTx(assemble_tx::AssembleAndSubmitCmd),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -53,12 +59,14 @@ impl SmartContractsCmd {
 	pub async fn execute(self) -> CmdResult<()> {
 		match self {
 			Self::Governance(cmd) => cmd.execute().await,
+			Self::GetGovernancePolicy(cmd) => cmd.execute().await,
 			Self::GetScripts(cmd) => cmd.execute().await,
 			Self::UpsertDParameter(cmd) => cmd.execute().await,
 			Self::UpsertPermissionedCandidates(cmd) => cmd.execute().await,
 			Self::Register(cmd) => cmd.execute().await,
 			Self::Deregister(cmd) => cmd.execute().await,
 			Self::Reserve(cmd) => cmd.execute().await,
+			Self::AssembleAndSubmitTx(cmd) => cmd.execute().await,
 		}
 	}
 

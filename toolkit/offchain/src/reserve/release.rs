@@ -128,10 +128,10 @@ fn reserve_release_tx(
 	// This serves as a validation of the v-function value.
 	let v_function = v_function_from_utxo(reference_utxo)?;
 	tx_builder.add_mint_script_token_using_reference_script(
-		&v_function,
+		&Script::Plutus(v_function),
 		&reference_utxo.to_csl_tx_input(),
 		&Int::new(&cumulative_total_transfer.into()),
-		&costs.get_mint(&v_function),
+		&costs,
 	)?;
 
 	// Remove tokens from the reserve
@@ -171,7 +171,7 @@ fn reserve_release_tx(
 	})?;
 
 	tx_builder.set_validity_start_interval_bignum(latest_slot.into());
-	Ok(tx_builder.balance_update_and_build(ctx)?)
+	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 
 fn v_function_from_utxo(utxo: &OgmiosUtxo) -> anyhow::Result<PlutusScript> {

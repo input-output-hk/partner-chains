@@ -16,6 +16,10 @@
             "validator-4": {
                 "host": "staging-preview-validator-4-service.staging-preview.svc.cluster.local",
                 "port": "${nodes_config[default_port]}"
+            },
+            "validator-5": {
+                "host": "staging-preview-validator-5-service.staging-preview.svc.cluster.local",
+                "port": "${nodes_config[default_port]}"
             }
         }
     },

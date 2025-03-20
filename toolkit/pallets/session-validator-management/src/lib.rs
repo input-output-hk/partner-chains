@@ -4,6 +4,11 @@
 #![allow(clippy::type_complexity)]
 
 pub mod migrations;
+/// [`pallet_session`] and [`pallet_session_validator_management`] integration.
+#[cfg(feature = "pallet-session-compat")]
+pub mod pallet_session_support;
+#[cfg(feature = "pallet-session-compat")]
+pub mod session_manager;
 
 pub use pallet::*;
 
