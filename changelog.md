@@ -16,6 +16,8 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 using the `block-production-log` pallet instead.
 * Crate `pallet-session-runtime-stub` which provided stub config for Substrate's `pallet-session` when using `pallet-partner-chains-session`.
 Its functionality was merged into `pallet-partner-chains-session` under the feature `pallet-session-compat`.
+* Crate `session-manager`. Its functionality was merged into `pallet-session-validator-management` under
+the feature `pallet-session-compat`.
 
 ## Fixed
 

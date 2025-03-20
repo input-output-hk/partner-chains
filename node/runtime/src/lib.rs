@@ -26,13 +26,12 @@ use frame_support::{
 };
 use opaque::SessionKeys;
 use pallet_grandpa::AuthorityId as GrandpaId;
-use pallet_session_validator_management;
+use pallet_session_validator_management::session_manager::ValidatorManagementSessionManager;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use parity_scale_codec::MaxEncodedLen;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use serde::Deserialize;
-use session_manager::ValidatorManagementSessionManager;
 use sidechain_domain::byte_string::{BoundedString, SizedByteString};
 use sidechain_domain::{
 	DelegatorKey, MainchainKeyHash, PermissionedCandidateData, RegistrationData, ScEpochNumber,

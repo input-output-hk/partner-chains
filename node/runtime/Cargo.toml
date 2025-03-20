@@ -68,12 +68,11 @@ sp-block-production-log = { workspace = true }
 pallet-block-production-log = { workspace = true }
 sp-sidechain = { workspace = true }
 pallet-sidechain = { workspace = true }
-pallet-session-validator-management = { workspace = true }
+pallet-session-validator-management = { workspace = true, features = ["pallet-session-compat"] }
 sp-session-validator-management = { workspace = true, features = ["serde"] }
 pallet-session-validator-management-benchmarking = { workspace = true, optional = true }
 sidechain-domain = { workspace = true, features = ["serde"] }
 sidechain-slots = { workspace = true }
-session-manager = { workspace = true }
 pallet-native-token-management = { workspace = true }
 sp-native-token-management = { workspace = true, features = ["serde"] }
 pallet-address-associations = { workspace = true }
@@ -123,7 +122,6 @@ std = [
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 	"pallet-address-associations/std",
-	"session-manager/std",
 	"sp-api/std",
 	"sp-block-builder/std",
 	"sp-consensus-aura/std",
