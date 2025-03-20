@@ -11,7 +11,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["pallet_block_production_log",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_native_token_management",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_partner_chains_session",["",[],["lib.rs","pallet_session_compat.rs"]]],\
-["pallet_session_validator_management",["",[["migrations",[],["mod.rs","v0.rs","v1.rs"]]],["lib.rs","weights.rs"]]],\
+["pallet_session_validator_management",["",[["migrations",[],["mod.rs","v0.rs","v1.rs"]]],["lib.rs","pallet_session_support.rs","session_manager.rs","weights.rs"]]],\
 ["pallet_session_validator_management_benchmarking",["",[],["lib.rs"]]],\
 ["pallet_session_validator_management_rpc",["",[],["lib.rs"]]],\
 ["pallet_sidechain",["",[],["lib.rs"]]],\
@@ -26,7 +26,6 @@ var srcIndex = new Map(JSON.parse('[\
 ["plutus_datum_derive",["",[],["lib.rs"]]],\
 ["sc_partner_chains_consensus_aura",["",[],["import_queue.rs","lib.rs"]]],\
 ["selection",["",[],["ariadne.rs","lib.rs","weighted_random.rs"]]],\
-["session_manager",["",[],["lib.rs","pallet_session_support.rs"]]],\
 ["sidechain_block_search",["",[],["binary_search.rs","impl_block_info.rs","impl_compare_strategy.rs","impl_find_block.rs","lib.rs"]]],\
 ["sidechain_domain",["",[],["byte_string.rs","crypto.rs","lib.rs","mainchain_epoch.rs"]]],\
 ["sidechain_mc_hash",["",[],["lib.rs"]]],\

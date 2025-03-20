@@ -392,12 +392,22 @@
 <a href="#392" id="392">392</a>
 <a href="#393" id="393">393</a>
 <a href="#394" id="394">394</a>
+<a href="#395" id="395">395</a>
+<a href="#396" id="396">396</a>
+<a href="#397" id="397">397</a>
+<a href="#398" id="398">398</a>
+<a href="#399" id="399">399</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!  Pallet for setting the Partner Chain validators using inherent data
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 #![allow(clippy::type_complexity)]
 
 </span><span class="kw">pub mod </span>migrations;
+<span class="doccomment">/// [`pallet_session`] and [`pallet_session_validator_management`] integration.
+</span><span class="attr">#[cfg(feature = <span class="string">"pallet-session-compat"</span>)]
+</span><span class="kw">pub mod </span>pallet_session_support;
+<span class="attr">#[cfg(feature = <span class="string">"pallet-session-compat"</span>)]
+</span><span class="kw">pub mod </span>session_manager;
 
 <span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
 

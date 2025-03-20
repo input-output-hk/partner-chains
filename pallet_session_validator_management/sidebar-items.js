@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["migrations","pallet","weights"],"trait":["CommitteeMember"]};
+window.SIDEBAR_ITEMS = {"mod":["migrations","pallet","pallet_session_support","session_manager","weights"],"trait":["CommitteeMember"]};
