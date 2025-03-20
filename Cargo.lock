@@ -9975,6 +9975,7 @@ dependencies = [
  "minicbor 0.20.0",
  "pallet-address-associations",
  "pallet-aura",
+ "pallet-authorship",
  "pallet-balances",
  "pallet-block-participation",
  "pallet-block-production-log",
