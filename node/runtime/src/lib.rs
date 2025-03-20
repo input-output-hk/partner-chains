@@ -197,7 +197,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 151,
+	spec_version: 160,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -311,8 +311,6 @@ impl pallet_aura::Config for Runtime {
 	type AllowMultipleBlocksPerSlot = ConstBool<false>;
 	type SlotDuration = ConstU64<SLOT_DURATION>;
 }
-
-pallet_partner_chains_session::impl_pallet_session_config!(Runtime);
 
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -558,6 +556,7 @@ parameter_types! {
 	pub const OFFSET: u32 = 0;
 }
 
+pallet_partner_chains_session::impl_pallet_session_config!(Runtime);
 pub struct GlueCode;
 
 pub struct ValidatorIdOf;
