@@ -1,6 +1,6 @@
 [package]
 name = "db-sync-sqlx"
-version = "0.1.0"
+version = "1.6.0"
 edition = "2021"
 description = "sqlx support for Cardano Db-Sync queries"
 license = "Apache-2.0"
