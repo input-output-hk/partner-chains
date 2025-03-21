@@ -479,3 +479,28 @@ class BlockchainApi(ABC):
             block production log
         """
         pass
+
+    @abstractmethod
+    def get_block_participation_data(self, block_hash=None):
+        """
+        Calls testHelperPallet for block participation data. This helper pallet returns raw inherent data that can be
+        used by chain builders to implement rewards distribution logic.
+        Helper pallet releases data every 30 slots.
+
+        Arguments:
+            block_hash {str} -- PC block hash
+
+        Returns:
+            block participation data
+        """
+        pass
+
+    @abstractmethod
+    def get_initial_pc_epoch(self) -> int:
+        """
+        Returns initial PC epoch
+
+        Returns:
+            int -- initial PC epoch
+        """
+        pass

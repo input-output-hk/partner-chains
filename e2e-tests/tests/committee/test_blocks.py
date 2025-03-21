@@ -177,14 +177,17 @@ def test_block_headers_have_mc_hash(api: BlockchainApi, config: ApiConfig, pc_ep
 
 
 @mark.block_production_log
-def test_block_production_log_pallet(
-    api: BlockchainApi,
-    config: ApiConfig,
-):
+def test_block_production_log_pallet(api: BlockchainApi, config: ApiConfig):
     block = api.get_block()
     block_no = block["header"]["number"]
     block_hash = block["header"]["hash"]
     block_production_log = api.get_block_production_log(block_hash=block_hash)
+    assert block_production_log
+    block_range = range(block_no - len(block_production_log), block_no)
+    logger.info(
+        f"Verifying block authors for slots {block_production_log[0][0]}..{block_production_log[-1][0]} "
+        f"(blocks {block_range})"
+    )
     block_production_log.reverse()
     for slot, block_producer_id in block_production_log:
         committee = api.get_validator_set(block).value

@@ -687,3 +687,17 @@ class SubstrateApi(BlockchainApi):
         result = self.substrate.query("BlockProductionLog", "Log", block_hash=block_hash)
         logger.debug(f"Block production log: {result}")
         return result.value
+
+    def get_block_participation_data(self, block_hash=None):
+        result = self.substrate.query("TestHelperPallet", "LatestParticipationData", block_hash=block_hash)
+        logger.debug(f"Block participation data: {result}")
+        return result.value
+
+    def get_initial_pc_epoch(self):
+        block = self.get_block()
+        block_hash = block["header"]["hash"]
+        session_index_result = self.substrate.query("Session", "CurrentIndex", block_hash=block_hash)
+        epoch_result = self.substrate.query("Sidechain", "EpochNumber", block_hash=block_hash)
+        logger.debug(f"Current session index: {session_index_result}, epoch number: {epoch_result}")
+        initial_epoch = epoch_result.value - session_index_result.value
+        return initial_epoch

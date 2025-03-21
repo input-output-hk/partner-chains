@@ -6,7 +6,7 @@ from src.pc_epoch_calculator import PartnerChainEpochCalculator
 with open('config/config.json', 'r') as f:
     config_json = json.load(f)
 
-with open('config/substrate/devnet_nodes.json', 'r') as f:
+with open('config/substrate/local_nodes.json', 'r') as f:
     nodes_config_json = json.load(f)
 
 with open('config/substrate/local_stack.json', 'r') as f:
