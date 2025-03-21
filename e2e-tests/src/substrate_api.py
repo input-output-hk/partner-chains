@@ -653,3 +653,8 @@ class SubstrateApi(BlockchainApi):
         result = self.substrate.query("BlockProductionLog", "Log", block_hash=block_hash)
         logger.debug(f"Block production log: {result}")
         return result.value
+
+    def get_block_participation_data(self, block_hash=None):
+        result = self.substrate.query("TestHelperPallet", "LatestParticipationData", block_hash=block_hash)
+        logger.debug(f"Block participation data: {result}")
+        return result.value
