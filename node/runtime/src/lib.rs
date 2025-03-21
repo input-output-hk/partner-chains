@@ -25,6 +25,7 @@ use frame_support::{
 	BoundedVec,
 };
 use opaque::SessionKeys;
+use pallet_block_producer_metadata;
 use pallet_grandpa::AuthorityId as GrandpaId;
 use pallet_session_validator_management::session_manager::ValidatorManagementSessionManager;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
@@ -462,8 +463,8 @@ impl AsCardanoSPO for BlockAuthor {
 
 pub const MAX_METADATA_URL_LENGTH: u32 = 512;
 
-#[derive(Clone, Debug, MaxEncodedLen, Encode, Deserialize)]
-pub struct BlockProducerMetadata {
+#[derive(Clone, Debug, MaxEncodedLen, Encode, Decode, Deserialize, PartialEq, Eq, TypeInfo)]
+pub struct BlockProducerMetadataType {
 	pub url: BoundedString<MAX_METADATA_URL_LENGTH>,
 	pub hash: SizedByteString<32>,
 }
@@ -498,6 +499,16 @@ impl pallet_address_associations::Config for Runtime {
 	type WeightInfo = pallet_address_associations::weights::SubstrateWeight<Runtime>;
 
 	type PartnerChainAddress = AccountId;
+
+	fn genesis_utxo() -> UtxoId {
+		Sidechain::genesis_utxo()
+	}
+}
+
+impl pallet_block_producer_metadata::Config for Runtime {
+	type WeightInfo = pallet_block_producer_metadata::weights::SubstrateWeight<Runtime>;
+
+	type BlockProducerMetadata = BlockProducerMetadataType;
 
 	fn genesis_utxo() -> UtxoId {
 		Sidechain::genesis_utxo()
@@ -541,6 +552,7 @@ construct_runtime!(
 		Sidechain: pallet_sidechain,
 		SessionCommitteeManagement: pallet_session_validator_management,
 		AddressAssociations: pallet_address_associations,
+		BlockProducerMetadata: pallet_block_producer_metadata,
 		BlockProductionLog: pallet_block_production_log,
 		BlockParticipation: pallet_block_participation,
 		// pallet_grandpa reads pallet_session::pallet::CurrentIndex storage.
@@ -603,6 +615,7 @@ mod benches {
 		[pallet_native_token_management, NativeTokenManagement]
 		[pallet_block_production_log, BlockProductionLog]
 		[pallet_address_associations, AddressAssociations]
+		[pallet_block_producer_metadata, BlockProducerMetadata]
 		[pallet_block_participation, BlockParticipation]
 	);
 }

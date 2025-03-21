@@ -471,9 +471,72 @@ pub struct SidechainSignature(pub Vec<u8>);
 #[byte_string(debug, hex_serialize)]
 pub struct CrossChainPublicKey(pub Vec<u8>);
 
+impl CrossChainPublicKey {
+	pub fn hash(&self) -> CrossChainKeyHash {
+		CrossChainKeyHash(blake2b(&self.0))
+	}
+}
+
+impl From<secp256k1::PublicKey> for CrossChainPublicKey {
+	fn from(value: secp256k1::PublicKey) -> Self {
+		Self(value.serialize().to_vec())
+	}
+}
+
+impl From<CrossChainPublicKey> for secp256k1::PublicKey {
+	fn from(value: CrossChainPublicKey) -> Self {
+		secp256k1::PublicKey::from_slice(&value.0)
+			.expect("CrossChainPublicKey converts to valid secp256k1::PublicKey")
+	}
+}
+
+const CROSS_CHAIN_KEY_HASH_LEN: usize = 28;
+
+#[derive(
+	Clone,
+	Copy,
+	Decode,
+	Default,
+	Encode,
+	Hash,
+	MaxEncodedLen,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	ToDatum,
+	TypeInfo,
+)]
+#[byte_string(debug)]
+#[cfg_attr(feature = "std", byte_string(to_hex_string, decode_hex))]
+#[cfg_attr(feature = "serde", byte_string(hex_serialize, hex_deserialize))]
+pub struct CrossChainKeyHash(pub [u8; CROSS_CHAIN_KEY_HASH_LEN]);
+
+impl Display for CrossChainKeyHash {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+		let hash = sp_core::hexdisplay::HexDisplay::from(&self.0);
+		write!(f, "0x{}", hash)
+	}
+}
+
 #[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[byte_string(debug, hex_serialize)]
 pub struct CrossChainSignature(pub Vec<u8>);
+
+impl CrossChainSignature {
+	pub fn verify(&self, vkey: &CrossChainPublicKey, data: &[u8]) -> bool {
+		let data_hash =
+			secp256k1::Message::from_hashed_data::<secp256k1::hashes::sha256::Hash>(&data);
+
+		let signature = secp256k1::ecdsa::Signature::from_der(&self.0)
+			.or_else(|_| secp256k1::ecdsa::Signature::from_compact(&self.0))
+			.expect("ecdsa::Signature from CrossChainSignature should always succeed");
+
+		secp256k1::PublicKey::from(vkey.clone())
+			.verify(&secp256k1::Secp256k1::new(), &data_hash, &signature)
+			.is_ok()
+	}
+}
 
 #[derive(Default, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[byte_string(debug, hex_serialize)]

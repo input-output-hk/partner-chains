@@ -40,6 +40,7 @@ members = [
 	"toolkit/address-associations/pallet",
 	"toolkit/block-participation/pallet",
 	"toolkit/block-participation/primitives",
+	"toolkit/block-producer-metadata/pallet",
 	"toolkit/block-producer-metadata/primitives",
 	"toolkit/utils/db-sync-sqlx",
 ]
@@ -261,6 +262,7 @@ pallet-block-participation = { path = "toolkit/block-participation/pallet", defa
 sp-block-participation = { path = "toolkit/block-participation/primitives", default-features = false }
 
 # block producer metadata
+pallet-block-producer-metadata = { path = "toolkit/block-producer-metadata/pallet", default-features = false }
 sp-block-producer-metadata = { path = "toolkit/block-producer-metadata/primitives", default-features = false }
 
 # main chain follower

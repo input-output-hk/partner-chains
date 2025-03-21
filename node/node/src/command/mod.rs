@@ -5,7 +5,7 @@ use crate::{
 };
 use sc_cli::SubstrateCli;
 use sc_service::PartialComponents;
-use sidechain_runtime::{Block, BlockProducerMetadata};
+use sidechain_runtime::{Block, BlockProducerMetadataType};
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
@@ -71,7 +71,7 @@ pub fn run() -> sc_cli::Result<()> {
 					components.other.3.authority_selection,
 				))
 			};
-			partner_chains_node_commands::run::<_, _, _, _, BlockProducerMetadata>(
+			partner_chains_node_commands::run::<_, _, _, _, BlockProducerMetadataType>(
 				&cli,
 				make_dependencies,
 				cmd.clone(),

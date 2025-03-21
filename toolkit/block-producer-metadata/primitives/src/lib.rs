@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use parity_scale_codec::Encode;
-use secp256k1::{hashes::sha256, Message, Secp256k1};
+use secp256k1::{hashes::sha256, Message};
 use sidechain_domain::*;
 
 #[derive(Debug, Clone, Encode)]
@@ -12,25 +12,11 @@ pub struct MetadataSignedMessage<Metadata> {
 }
 
 impl<M: Encode> MetadataSignedMessage<M> {
+	#[cfg(feature = "std")]
 	pub fn sign_with_key(&self, skey: &secp256k1::SecretKey) -> CrossChainSignature {
 		let data = self.encode();
 		let data_hash = Message::from_hashed_data::<sha256::Hash>(&data);
 		CrossChainSignature(skey.sign_ecdsa(data_hash).serialize_der().into_iter().collect())
-	}
-
-	pub fn verify_signature(
-		&self,
-		vkey: &secp256k1::PublicKey,
-		signature: CrossChainSignature,
-	) -> Result<(), secp256k1::Error> {
-		let data = self.encode();
-		let data_hash = Message::from_hashed_data::<sha256::Hash>(&data);
-
-		let signature = secp256k1::ecdsa::Signature::from_der(&signature.0)
-			.or_else(|_| secp256k1::ecdsa::Signature::from_compact(&signature.0))
-			.expect("ecdsa::Signature from CrossChainSignature should always succeed");
-
-		vkey.verify(&Secp256k1::new(), &data_hash, &signature)
 	}
 }
 
@@ -38,6 +24,7 @@ impl<M: Encode> MetadataSignedMessage<M> {
 mod tests {
 	use super::*;
 	use hex_literal::hex;
+	use secp256k1::Secp256k1;
 
 	#[test]
 	fn round_trip() {
@@ -56,6 +43,6 @@ mod tests {
 
 		let signature = message.sign_with_key(&skey);
 
-		assert_eq!(message.verify_signature(&vkey, signature), Ok(()));
+		assert!(signature.verify(&vkey.into(), &message.encode()));
 	}
 }
