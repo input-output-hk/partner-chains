@@ -1,7 +1,6 @@
 use crate::io::IOContext;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 use anyhow::anyhow;
-use ogmios_client::types::OgmiosTx;
 use partner_chains_cardano_offchain::d_param::UpsertDParam;
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
 use partner_chains_cardano_offchain::permissioned_candidates::UpsertPermissionedCandidates;
@@ -234,7 +233,7 @@ impl OffchainMocks {
 pub struct OffchainMock {
 	pub scripts_data: HashMap<UtxoId, Result<ScriptsData, OffchainError>>,
 	pub init_governance:
-		HashMap<(UtxoId, MainchainKeyHash, PrivateKeyBytes), Result<OgmiosTx, OffchainError>>,
+		HashMap<(UtxoId, MainchainKeyHash, PrivateKeyBytes), Result<McTxHash, OffchainError>>,
 	pub upsert_d_param:
 		HashMap<(UtxoId, DParameter, PrivateKeyBytes), Result<Option<McTxHash>, String>>,
 	pub upsert_permissioned_candidates: HashMap<
@@ -271,7 +270,7 @@ impl OffchainMock {
 		genesis_utxo: UtxoId,
 		governance: MainchainKeyHash,
 		payment_key: PrivateKeyBytes,
-		result: Result<OgmiosTx, OffchainError>,
+		result: Result<McTxHash, OffchainError>,
 	) -> Self {
 		Self {
 			init_governance: vec![((genesis_utxo, governance, payment_key), result)]
@@ -350,7 +349,7 @@ impl InitGovernance for OffchainMock {
 		governance_authority: MainchainKeyHash,
 		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
-	) -> Result<OgmiosTx, OffchainError> {
+	) -> Result<McTxHash, OffchainError> {
 		self.init_governance
 			.get(&(genesis_utxo_id, governance_authority, payment_key.to_bytes()))
 			.cloned()

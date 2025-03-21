@@ -1,5 +1,5 @@
 use super::{test_values, update_governance_tx};
-use crate::csl::{empty_asset_name, Costs, OgmiosUtxoExt, TransactionContext};
+use crate::csl::{empty_asset_name, Costs, TransactionContext};
 use crate::governance::GovernanceData;
 use crate::test_values::{protocol_parameters, test_governance_policy};
 use cardano_serialization_lib::*;
@@ -124,7 +124,7 @@ fn test_update_governance_tx() -> Transaction {
 	update_governance_tx(
 		test_values::VERSION_ORACLE_VALIDATOR,
 		test_values::VERSION_ORACLE_POLICY,
-		genesis_utxo().to_domain(),
+		genesis_utxo().utxo_id(),
 		&vec![new_governance_authority()],
 		1,
 		&governance_data(),

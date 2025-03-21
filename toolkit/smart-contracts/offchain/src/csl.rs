@@ -307,8 +307,6 @@ pub(crate) trait OgmiosUtxoExt {
 	fn to_csl_tx_output(&self) -> Result<TransactionOutput, JsError>;
 	fn to_csl(&self) -> Result<TransactionUnspentOutput, JsError>;
 
-	fn to_domain(&self) -> sidechain_domain::UtxoId;
-
 	fn get_asset_amount(&self, asset: &AssetId) -> u64;
 
 	fn get_plutus_data(&self) -> Option<PlutusData>;
@@ -338,13 +336,6 @@ impl OgmiosUtxoExt for OgmiosUtxo {
 
 	fn to_csl(&self) -> Result<TransactionUnspentOutput, JsError> {
 		Ok(TransactionUnspentOutput::new(&self.to_csl_tx_input(), &self.to_csl_tx_output()?))
-	}
-
-	fn to_domain(&self) -> sidechain_domain::UtxoId {
-		sidechain_domain::UtxoId {
-			tx_hash: sidechain_domain::McTxHash(self.transaction.id),
-			index: sidechain_domain::UtxoIndex(self.index),
-		}
 	}
 
 	fn get_asset_amount(&self, asset_id: &AssetId) -> u64 {
