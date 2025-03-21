@@ -378,7 +378,7 @@ impl pallet_partner_chains_session::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = AccountId;
 	type ShouldEndSession = ValidatorManagementSessionManager<Runtime>;
-	type NextSessionRotation = ();
+	type NextSessionRotation = pallet_session::PeriodicSessions<PERIOD, OFFSET>;
 	type SessionManager = ValidatorManagementSessionManager<Runtime>;
 	type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = opaque::SessionKeys;
