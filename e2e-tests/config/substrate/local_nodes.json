@@ -7,7 +7,7 @@
     "slot_length": 1,
     "active_slots_coeff": 0.4,
     "security_param": 5,
-    "init_timestamp": 1730141520,
+    "init_timestamp": 1742993000,
     "block_stability_margin": 0,
     "native_token": {
       "total_accrued_function_script_hash": "ef1eb7b85327a8460799025a5affd0a8d8015731e9aacd5d1106a82b",
