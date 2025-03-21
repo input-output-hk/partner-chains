@@ -42,7 +42,7 @@ fn no_ariadne_parameters_on_main_chain_do_updates() {
 			UtxoId::default(),
 			new_d_parameter(),
 			payment_signing_key(),
-			Ok(Some(McTxHash([1; 32]))),
+			Ok(Some(McSmartContractResult::TxHash(McTxHash([1; 32])))),
 		)
 		.with_upsert_permissioned_candidates(
 			genesis_utxo(),
@@ -96,7 +96,7 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 			UtxoId::default(),
 			new_d_parameter(),
 			payment_signing_key(),
-			Ok(Some(McTxHash([1; 32]))),
+			Ok(Some(McSmartContractResult::TxHash(McTxHash([1; 32])))),
 		)
 		.with_upsert_permissioned_candidates(
 			genesis_utxo(),

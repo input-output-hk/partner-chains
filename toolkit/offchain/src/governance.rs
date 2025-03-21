@@ -52,6 +52,14 @@ impl GovernancePolicyScript {
 			},
 		}
 	}
+
+	/// Returns the list of authorities for the policy
+	pub(crate) fn key_hashes(&self) -> Vec<[u8; 28]> {
+		match self {
+			Self::MultiSig(PartnerChainsMultisigPolicy { key_hashes, .. }) => key_hashes.clone(),
+			Self::AtLeastNNativeScript(SimpleAtLeastN { key_hashes, .. }) => key_hashes.clone(),
+		}
+	}
 }
 
 /// Plutus MultiSig smart contract implemented in partner-chains-smart-contracts repo
