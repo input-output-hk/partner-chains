@@ -581,13 +581,11 @@ impl ValidatorSet<AccountId> for GlueCode {
 			pallet_session_validator_management::Pallet::<Runtime>::get_current_committee();
 
 		use sp_session_validator_management::CommitteeMember;
-		let mut authorities: Vec<_> = validators
+		let authorities: Vec<_> = validators
 			.into_iter()
 			.map(|committee_member| committee_member.authority_id().into())
 			.collect();
 		log::info!("ValidatorSet: authorities {:?}", authorities);
-		authorities.sort();
-		log::info!("ValidatorSet: ordered authorities {:?}", authorities);
 		authorities
 	}
 }
