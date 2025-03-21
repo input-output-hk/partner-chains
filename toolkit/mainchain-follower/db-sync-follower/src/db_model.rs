@@ -228,7 +228,7 @@ LIMIT 1",
 
 /// Query to get the block by its hash
 #[cfg(any(feature = "block-source", feature = "native-token"))]
-pub(crate) async fn get_block_by_hash(
+pub async fn get_block_by_hash(
 	pool: &Pool<Postgres>,
 	hash: McBlockHash,
 ) -> Result<Option<Block>, SqlxError> {
