@@ -94,13 +94,14 @@ pub(crate) fn parse_partnerchain_public_keys(
 	partner_chain_public_keys: &str,
 ) -> CmdResult<PermissionedCandidateData> {
 	let partner_chain_public_keys = partner_chain_public_keys.replace("0x", "");
-	if let [sidechain_pub_key, aura_pub_key, grandpa_pub_key] =
+	if let [sidechain_pub_key, aura_pub_key, grandpa_pub_key, im_online_pub_key] =
 		partner_chain_public_keys.split(":").collect::<Vec<_>>()[..]
 	{
 		Ok(PermissionedCandidateData {
 			sidechain_public_key: SidechainPublicKey(hex::decode(sidechain_pub_key)?),
 			aura_public_key: AuraPublicKey(hex::decode(aura_pub_key)?),
 			grandpa_public_key: GrandpaPublicKey(hex::decode(grandpa_pub_key)?),
+			im_online_public_key: ImOnlinePublicKey(hex::decode(im_online_pub_key)?),
 		})
 	} else {
 		Err("Failed to parse partner chain public keys.".into())

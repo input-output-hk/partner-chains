@@ -13,7 +13,7 @@ use sp_core::{ecdsa, ed25519, sr25519, U256};
 /// Seed is constructed from the MC epoch nonce and the sidechain epoch.
 pub fn select_authorities<
 	TAccountId: Clone + Ord + TryFrom<sidechain_domain::SidechainPublicKey> + From<ecdsa::Public>,
-	TAccountKeys: Clone + Ord + From<(sr25519::Public, ed25519::Public)>,
+	TAccountKeys: Clone + Ord + From<(sr25519::Public, ed25519::Public, sr25519::Public)>,
 >(
 	genesis_utxo: UtxoId,
 	input: AuthoritySelectionInputs,

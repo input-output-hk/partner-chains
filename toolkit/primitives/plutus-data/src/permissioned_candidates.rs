@@ -17,6 +17,7 @@ pub struct PermissionedCandidateDatumV0 {
 	pub sidechain_public_key: SidechainPublicKey,
 	pub aura_public_key: AuraPublicKey,
 	pub grandpa_public_key: GrandpaPublicKey,
+	pub im_online_public_key: ImOnlinePublicKey,
 }
 
 impl TryFrom<PlutusData> for PermissionedCandidateDatums {
@@ -32,6 +33,7 @@ impl From<PermissionedCandidateDatumV0> for PermissionedCandidateData {
 			sidechain_public_key: value.sidechain_public_key,
 			aura_public_key: value.aura_public_key,
 			grandpa_public_key: value.grandpa_public_key,
+			im_online_public_key: value.im_online_public_key,
 		}
 	}
 }
@@ -53,6 +55,7 @@ pub fn permissioned_candidates_to_plutus_data(
 		candidate_datum.add(&PlutusData::new_bytes(candidate.sidechain_public_key.0.clone()));
 		candidate_datum.add(&PlutusData::new_bytes(candidate.aura_public_key.0.clone()));
 		candidate_datum.add(&PlutusData::new_bytes(candidate.grandpa_public_key.0.clone()));
+		candidate_datum.add(&PlutusData::new_bytes(candidate.im_online_public_key.0.clone()));
 		list.add(&PlutusData::new_list(&candidate_datum));
 	}
 	let appendix = PlutusData::new_list(&list);
@@ -96,16 +99,18 @@ impl VersionedDatumWithLegacy for PermissionedCandidateDatums {
 }
 
 fn decode_legacy_candidate_datum(datum: &PlutusData) -> Option<PermissionedCandidateDatumV0> {
-	let datums = datum.as_list().filter(|datums| datums.len() == 3)?;
+	let datums = datum.as_list().filter(|datums| datums.len() == 4)?;
 
 	let sc = datums.get(0).as_bytes()?;
 	let aura = datums.get(1).as_bytes()?;
 	let grandpa = datums.get(2).as_bytes()?;
+	let im_online = datums.get(3).as_bytes()?;
 
 	Some(PermissionedCandidateDatumV0 {
 		sidechain_public_key: SidechainPublicKey(sc),
 		aura_public_key: AuraPublicKey(aura),
 		grandpa_public_key: GrandpaPublicKey(grandpa),
+		im_online_public_key: ImOnlinePublicKey(im_online),
 	})
 }
 

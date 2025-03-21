@@ -110,11 +110,14 @@ pub fn generate_spo_keys<C: IOContext>(
 		context.enewline();
 		let aura_key = generate_or_load_key(config, context, &AURA)?;
 		context.enewline();
+		let im_online_key = generate_or_load_key(config, context, &IM_ONLINE)?;
+		context.enewline();
 
 		let public_keys_json = serde_json::to_string_pretty(&PermissionedCandidateKeys {
 			sidechain_pub_key: cross_chain_key,
 			aura_pub_key: aura_key,
 			grandpa_pub_key: grandpa_key,
+			im_online_pub_key: im_online_key,
 		})
 		.expect("Failed to serialize public keys");
 		context.write_file(KEYS_FILE_PATH, &public_keys_json);

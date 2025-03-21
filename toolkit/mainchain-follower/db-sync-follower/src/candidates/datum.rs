@@ -6,9 +6,18 @@ use sidechain_domain::*;
 pub fn raw_permissioned_candidate_data_from(
 	datum: PermissionedCandidateDatumV0,
 ) -> RawPermissionedCandidateData {
-	let PermissionedCandidateDatumV0 { sidechain_public_key, aura_public_key, grandpa_public_key } =
-		datum;
-	RawPermissionedCandidateData { sidechain_public_key, aura_public_key, grandpa_public_key }
+	let PermissionedCandidateDatumV0 {
+		sidechain_public_key,
+		aura_public_key,
+		grandpa_public_key,
+		im_online_public_key,
+	} = datum;
+	RawPermissionedCandidateData {
+		sidechain_public_key,
+		aura_public_key,
+		grandpa_public_key,
+		im_online_public_key,
+	}
 }
 
 pub fn raw_permissioned_candidate_data_vec_from(
