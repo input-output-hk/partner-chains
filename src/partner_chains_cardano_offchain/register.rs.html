@@ -537,12 +537,10 @@
 <a href="#537" id="537">537</a>
 <a href="#538" id="538">538</a>
 <a href="#539" id="539">539</a>
-<a href="#540" id="540">540</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
 <span class="kw">use </span><span class="kw">crate</span>::csl::TransactionOutputAmountBuilderExt;
 <span class="kw">use </span><span class="kw">crate</span>::csl::{
-	unit_plutus_data, CostStore, Costs, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
-	TransactionContext,
+	unit_plutus_data, CostStore, Costs, InputsBuilderExt, TransactionBuilderExt, TransactionContext,
 };
 <span class="kw">use crate</span>::{
 	await_tx::{AwaitTx, FixedDelayRetries},
@@ -612,7 +610,7 @@
 	<span class="kw">let </span>registration_utxo = ctx
 		.payment_key_utxos
 		.iter()
-		.find(|u| u.to_domain() == candidate_registration.registration_utxo)
+		.find(|u| u.utxo_id() == candidate_registration.registration_utxo)
 		.ok_or(<span class="macro">anyhow!</span>(<span class="string">"registration utxo not found at payment address"</span>))<span class="question-mark">?</span>;
 	<span class="kw">let </span>all_registration_utxos = client.query_utxos(<span class="kw-2">&amp;</span>[validator_address]).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>own_registrations = get_own_registrations(
@@ -910,7 +908,7 @@
 		};
 		<span class="kw">let </span>own_registration_utxos = <span class="macro">vec!</span>[payment_key_utxos.get(<span class="number">1</span>).unwrap().clone()];
 		<span class="kw">let </span>registration_utxo = payment_key_utxos.first().unwrap();
-		<span class="kw">let </span>candidate_registration = candidate_registration(registration_utxo.to_domain());
+		<span class="kw">let </span>candidate_registration = candidate_registration(registration_utxo.utxo_id());
 		<span class="kw">let </span>tx = register_tx(
 			<span class="kw-2">&amp;</span>test_values::test_validator(),
 			<span class="kw-2">&amp;</span>candidate_registration,
@@ -955,7 +953,7 @@
 			protocol_parameters: protocol_parameters(),
 		};
 		<span class="kw">let </span>registration_utxo = payment_key_utxos.first().unwrap();
-		<span class="kw">let </span>candidate_registration = candidate_registration(registration_utxo.to_domain());
+		<span class="kw">let </span>candidate_registration = candidate_registration(registration_utxo.utxo_id());
 		<span class="kw">let </span>own_registration_utxos = <span class="kw">if </span>payment_utxos.len() &gt;= <span class="number">2 </span>{
 			<span class="macro">vec!</span>[payment_utxos.get(<span class="number">1</span>).unwrap().clone()]
 		} <span class="kw">else </span>{

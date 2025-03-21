@@ -1177,15 +1177,6 @@
 <a href="#1177" id="1177">1177</a>
 <a href="#1178" id="1178">1178</a>
 <a href="#1179" id="1179">1179</a>
-<a href="#1180" id="1180">1180</a>
-<a href="#1181" id="1181">1181</a>
-<a href="#1182" id="1182">1182</a>
-<a href="#1183" id="1183">1183</a>
-<a href="#1184" id="1184">1184</a>
-<a href="#1185" id="1185">1185</a>
-<a href="#1186" id="1186">1186</a>
-<a href="#1187" id="1187">1187</a>
-<a href="#1188" id="1188">1188</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>anyhow::Context;
@@ -1495,8 +1486,6 @@
 	<span class="kw">fn </span>to_csl_tx_output(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;TransactionOutput, JsError&gt;;
 	<span class="kw">fn </span>to_csl(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;TransactionUnspentOutput, JsError&gt;;
 
-	<span class="kw">fn </span>to_domain(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; sidechain_domain::UtxoId;
-
 	<span class="kw">fn </span>get_asset_amount(<span class="kw-2">&amp;</span><span class="self">self</span>, asset: <span class="kw-2">&amp;</span>AssetId) -&gt; u64;
 
 	<span class="kw">fn </span>get_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;PlutusData&gt;;
@@ -1526,13 +1515,6 @@
 
 	<span class="kw">fn </span>to_csl(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;TransactionUnspentOutput, JsError&gt; {
 		<span class="prelude-val">Ok</span>(TransactionUnspentOutput::new(<span class="kw-2">&amp;</span><span class="self">self</span>.to_csl_tx_input(), <span class="kw-2">&amp;</span><span class="self">self</span>.to_csl_tx_output()<span class="question-mark">?</span>))
-	}
-
-	<span class="kw">fn </span>to_domain(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; sidechain_domain::UtxoId {
-		sidechain_domain::UtxoId {
-			tx_hash: sidechain_domain::McTxHash(<span class="self">self</span>.transaction.id),
-			index: sidechain_domain::UtxoIndex(<span class="self">self</span>.index),
-		}
 	}
 
 	<span class="kw">fn </span>get_asset_amount(<span class="kw-2">&amp;</span><span class="self">self</span>, asset_id: <span class="kw-2">&amp;</span>AssetId) -&gt; u64 {

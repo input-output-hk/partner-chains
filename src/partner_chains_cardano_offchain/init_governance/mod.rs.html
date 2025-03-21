@@ -109,9 +109,12 @@
 <a href="#109" id="109">109</a>
 <a href="#110" id="110">110</a>
 <a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
 <span class="kw">use </span><span class="kw">crate</span>::csl::Costs;
-<span class="kw">use </span><span class="kw">crate</span>::csl::OgmiosUtxoExt;
 <span class="kw">use crate</span>::{
 	await_tx::{AwaitTx, FixedDelayRetries},
 	csl::key_hash_address,
@@ -122,8 +125,8 @@
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
-	types::OgmiosTx,
 };
+<span class="kw">use </span>sidechain_domain::McTxHash;
 <span class="kw">use </span>sidechain_domain::{MainchainKeyHash, UtxoId};
 
 <span class="attr">#[cfg(test)]
@@ -140,7 +143,7 @@
 		governance_authority: MainchainKeyHash,
 		payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;OgmiosTx, OffchainError&gt;;
+	) -&gt; <span class="prelude-ty">Result</span>&lt;McTxHash, OffchainError&gt;;
 }
 
 <span class="kw">impl</span>&lt;T&gt; InitGovernance <span class="kw">for </span>T
@@ -152,7 +155,7 @@
 		governance_authority: MainchainKeyHash,
 		payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;OgmiosTx, OffchainError&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;McTxHash, OffchainError&gt; {
 		run_init_governance(
 			governance_authority,
 			payment_key,
@@ -161,9 +164,15 @@
 			FixedDelayRetries::two_minutes(),
 		)
 		.<span class="kw">await
-		</span>.map(|(<span class="kw">_</span>, tx)| tx)
+		</span>.map(|result| result.tx_hash)
 		.map_err(|e| OffchainError::InternalError(e.to_string()))
 	}
+}
+
+<span class="attr">#[derive(serde::Serialize)]
+</span><span class="kw">pub struct </span>InitGovernanceResult {
+	<span class="kw">pub </span>tx_hash: McTxHash,
+	<span class="kw">pub </span>genesis_utxo: UtxoId,
 }
 
 <span class="kw">pub async fn </span>run_init_governance&lt;
@@ -175,7 +184,7 @@
 	genesis_utxo_id: <span class="prelude-ty">Option</span>&lt;UtxoId&gt;,
 	client: <span class="kw-2">&amp;</span>T,
 	await_tx: A,
-) -&gt; anyhow::Result&lt;(UtxoId, OgmiosTx)&gt; {
+) -&gt; anyhow::Result&lt;InitGovernanceResult&gt; {
 	<span class="kw">let </span>ctx = <span class="kw">crate</span>::csl::TransactionContext::for_payment_key(payment_key, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
 	<span class="kw">let </span>own_address = key_hash_address(<span class="kw-2">&amp;</span>ctx.payment_key_hash(), ctx.network);
@@ -215,9 +224,8 @@
 
 	<span class="kw">let </span>result = client.submit_transaction(<span class="kw-2">&amp;</span>signed_transaction.to_bytes()).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>tx_id = result.transaction.id;
-	<span class="macro">log::info!</span>(<span class="string">"✅ Transaction submitted. ID: {}"</span>, hex::encode(result.transaction.id));
+	<span class="macro">log::info!</span>(<span class="string">"✅ Transaction submitted. ID: {}"</span>, hex::encode(<span class="kw-2">&amp;</span>tx_id));
 	await_tx.await_tx_output(client, UtxoId::new(tx_id, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
-
-	<span class="prelude-val">Ok</span>((genesis_utxo.to_domain(), result.transaction))
+	<span class="prelude-val">Ok</span>(InitGovernanceResult { tx_hash: McTxHash(tx_id), genesis_utxo: genesis_utxo.utxo_id() })
 }
 </code></pre></div></section></main></body></html>

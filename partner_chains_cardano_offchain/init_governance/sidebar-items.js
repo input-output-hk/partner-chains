@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["run_init_governance"],"trait":["InitGovernance"]};
+window.SIDEBAR_ITEMS = {"fn":["run_init_governance"],"struct":["InitGovernanceResult"],"trait":["InitGovernance"]};
