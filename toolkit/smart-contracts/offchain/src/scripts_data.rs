@@ -105,23 +105,23 @@ pub async fn get_scripts_data_with_ogmios(
 	get_scripts_data(genesis_utxo, network)
 }
 
-pub(crate) struct VersionOracleData {
-	pub(crate) validator: PlutusScript,
-	pub(crate) policy: PlutusScript,
+pub struct VersionOracleData {
+	pub validator: PlutusScript,
+	pub policy: PlutusScript,
 }
 
 impl VersionOracleData {
-	pub(crate) fn policy_id(&self) -> PolicyId {
+	pub fn policy_id(&self) -> PolicyId {
 		self.policy.policy_id()
 	}
 
-	pub(crate) fn policy_id_as_plutus_data(&self) -> PlutusData {
+	pub fn policy_id_as_plutus_data(&self) -> PlutusData {
 		PlutusData::BoundedBytes(self.policy.script_hash().to_vec().into())
 	}
 }
 
 // Returns version oracle data required by other scripts.
-pub(crate) fn version_oracle(
+pub fn version_oracle(
 	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
 ) -> Result<VersionOracleData, anyhow::Error> {
