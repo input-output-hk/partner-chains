@@ -41,6 +41,7 @@ members = [
 	"toolkit/pallets/block-participation",
 	"toolkit/primitives/block-participation",
 	"toolkit/primitives/block-producer-metadata",
+	"toolkit/utils/db-sync-sqlx",
 ]
 resolver = "2"
 
@@ -124,6 +125,14 @@ parking_lot = { version = "0.12.3", default-features = false }
 envy = { version = "0.4.2" }
 log4rs = { version = "1.3.0" }
 bech32 = { version = "0.9.1", default-features = false }
+sqlx = { version = "0.7.4", default-features = false, features = [
+    "runtime-tokio-rustls",
+    "postgres",
+    "macros",
+    "chrono",
+    "migrate",
+    "bigdecimal",
+] }
 
 # substrate dependencies
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2412-1" }
@@ -237,3 +246,4 @@ pallet-address-associations = { path = "toolkit/pallets/address-associations", d
 pallet-block-participation = { path = "toolkit/pallets/block-participation", default-features = false }
 sp-block-participation = { path = "toolkit/primitives/block-participation", default-features = false }
 sp-block-producer-metadata = { path = "toolkit/primitives/block-producer-metadata", default-features = false }
+db-sync-sqlx = { path = "toolkit/utils/db-sync-sqlx" }

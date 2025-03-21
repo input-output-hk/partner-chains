@@ -24,6 +24,7 @@ the feature `pallet-session-compat`.
 ## Added
 
 * `sign-block-producer-metadata` command to `cli-commands` for signing block producer metadata upsert message
+* `db-sync-sqlx` crate containing Rust types representing Cardano primitives present in postgress tables populated by Db-Sync
 
 # v1.6.0
 

@@ -6,14 +6,8 @@ license = "Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-sqlx = { version = "0.7.4", default-features = false, features = [
-    "runtime-tokio-rustls",
-    "postgres",
-    "macros",
-    "chrono",
-    "migrate",
-    "bigdecimal",
-] }
+sqlx = { workspace = true }
+db-sync-sqlx = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 futures = { workspace = true }
 chrono = "0.4.31"
@@ -25,7 +19,6 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 bigdecimal = { workspace = true }
 async-trait = { workspace = true }
-num-traits = { workspace = true }
 num-bigint = { workspace = true }
 log = { workspace = true }
 thiserror = { workspace = true }

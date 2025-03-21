@@ -1,0 +1,11 @@
+[package]
+name = "db-sync-sqlx"
+version = "1.6.0"
+edition = "2021"
+description = "sqlx support for Cardano Db-Sync queries"
+license = "Apache-2.0"
+
+[dependencies]
+sqlx = { workspace = true }
+sidechain-domain = { workspace = true, features = ["std"] }
+num-traits = { workspace = true }
