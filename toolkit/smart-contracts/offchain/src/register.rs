@@ -1,8 +1,7 @@
 use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::TransactionOutputAmountBuilderExt;
 use crate::csl::{
-	unit_plutus_data, CostStore, Costs, InputsBuilderExt, OgmiosUtxoExt, TransactionBuilderExt,
-	TransactionContext,
+	unit_plutus_data, CostStore, Costs, InputsBuilderExt, TransactionBuilderExt, TransactionContext,
 };
 use crate::{
 	await_tx::{AwaitTx, FixedDelayRetries},
@@ -72,7 +71,7 @@ pub async fn run_register<
 	let registration_utxo = ctx
 		.payment_key_utxos
 		.iter()
-		.find(|u| u.to_domain() == candidate_registration.registration_utxo)
+		.find(|u| u.utxo_id() == candidate_registration.registration_utxo)
 		.ok_or(anyhow!("registration utxo not found at payment address"))?;
 	let all_registration_utxos = client.query_utxos(&[validator_address]).await?;
 	let own_registrations = get_own_registrations(
@@ -370,7 +369,7 @@ mod tests {
 		};
 		let own_registration_utxos = vec![payment_key_utxos.get(1).unwrap().clone()];
 		let registration_utxo = payment_key_utxos.first().unwrap();
-		let candidate_registration = candidate_registration(registration_utxo.to_domain());
+		let candidate_registration = candidate_registration(registration_utxo.utxo_id());
 		let tx = register_tx(
 			&test_values::test_validator(),
 			&candidate_registration,
@@ -415,7 +414,7 @@ mod tests {
 			protocol_parameters: protocol_parameters(),
 		};
 		let registration_utxo = payment_key_utxos.first().unwrap();
-		let candidate_registration = candidate_registration(registration_utxo.to_domain());
+		let candidate_registration = candidate_registration(registration_utxo.utxo_id());
 		let own_registration_utxos = if payment_utxos.len() >= 2 {
 			vec![payment_utxos.get(1).unwrap().clone()]
 		} else {

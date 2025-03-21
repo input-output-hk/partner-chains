@@ -3,17 +3,16 @@ use crate::{
 	config::{config_fields, ServiceConfig},
 	IOContext,
 };
-use ogmios_client::types::OgmiosTx;
 use partner_chains_cardano_offchain::{
 	cardano_keys::CardanoPaymentSigningKey, init_governance::InitGovernance,
 };
-use sidechain_domain::{MainchainKeyHash, UtxoId};
+use sidechain_domain::{MainchainKeyHash, McTxHash, UtxoId};
 
 pub(crate) fn run_init_governance<C: IOContext>(
 	genesis_utxo: UtxoId,
 	ogmios_config: &ServiceConfig,
 	context: &C,
-) -> anyhow::Result<OgmiosTx> {
+) -> anyhow::Result<McTxHash> {
 	let offchain = context.offchain_impl(ogmios_config)?;
 	let (payment_key, governance_authority) = get_private_key_and_key_hash(context)?;
 	let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
@@ -46,9 +45,8 @@ mod tests {
 		verify_json,
 	};
 	use hex_literal::hex;
-	use ogmios_client::types::OgmiosTx;
 	use serde_json::{json, Value};
-	use sidechain_domain::{MainchainKeyHash, UtxoId};
+	use sidechain_domain::{MainchainKeyHash, McTxHash, UtxoId};
 
 	#[test]
 	fn happy_path() {
@@ -95,9 +93,7 @@ mod tests {
 			TEST_GENESIS_UTXO,
 			MainchainKeyHash(hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b")),
 			hex!("d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386").to_vec(),
-			Ok(OgmiosTx {
-				id: hex!("0000000000000000000000000000000000000000000000000000000000000000"),
-			}),
+			Ok(McTxHash(hex!("0000000000000000000000000000000000000000000000000000000000000000"))),
 		);
 		OffchainMocks::new_with_mock("http://localhost:1337", mock)
 	}

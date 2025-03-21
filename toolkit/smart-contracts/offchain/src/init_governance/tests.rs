@@ -1,7 +1,7 @@
 use super::transaction::*;
 use crate::await_tx::mock::ImmediateSuccess;
 use crate::cardano_keys::CardanoPaymentSigningKey;
-use crate::csl::{Costs, OgmiosUtxoExt};
+use crate::csl::Costs;
 use crate::init_governance::run_init_governance;
 use crate::scripts_data;
 use crate::test_values::protocol_parameters;
@@ -177,8 +177,8 @@ async fn transaction_run() {
 		}])
 		.with_submit_result(SubmitTransactionResponse { transaction });
 
-	let genesis_utxo = genesis_utxo().to_domain();
-	let (result_genesis_utxo, result_tx) = run_init_governance(
+	let genesis_utxo = genesis_utxo().utxo_id();
+	let result = run_init_governance(
 		governance_authority(),
 		&payment_key_domain(),
 		Some(genesis_utxo),
@@ -188,8 +188,8 @@ async fn transaction_run() {
 	.await
 	.expect("Should succeed");
 
-	assert_eq!(result_tx.id, transaction_id);
-	assert_eq!(result_genesis_utxo, genesis_utxo);
+	assert_eq!(result.tx_hash.0, transaction_id);
+	assert_eq!(result.genesis_utxo, genesis_utxo);
 }
 
 fn genesis_utxo() -> OgmiosUtxo {
@@ -239,7 +239,7 @@ fn test_costs() -> Costs {
 
 fn version_oracle_policy() -> crate::plutus_script::PlutusScript {
 	let (_, version_oracle_policy, _) =
-		scripts_data::version_scripts_and_address(genesis_utxo().to_domain(), tx_context().network)
+		scripts_data::version_scripts_and_address(genesis_utxo().utxo_id(), tx_context().network)
 			.unwrap();
 	version_oracle_policy
 }

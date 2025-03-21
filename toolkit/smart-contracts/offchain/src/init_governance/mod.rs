@@ -1,6 +1,5 @@
 use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::Costs;
-use crate::csl::OgmiosUtxoExt;
 use crate::{
 	await_tx::{AwaitTx, FixedDelayRetries},
 	csl::key_hash_address,
@@ -11,8 +10,8 @@ use ogmios_client::{
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
 	query_network::QueryNetwork,
 	transactions::Transactions,
-	types::OgmiosTx,
 };
+use sidechain_domain::McTxHash;
 use sidechain_domain::{MainchainKeyHash, UtxoId};
 
 #[cfg(test)]
@@ -29,7 +28,7 @@ pub trait InitGovernance {
 		governance_authority: MainchainKeyHash,
 		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
-	) -> Result<OgmiosTx, OffchainError>;
+	) -> Result<McTxHash, OffchainError>;
 }
 
 impl<T> InitGovernance for T
@@ -41,7 +40,7 @@ where
 		governance_authority: MainchainKeyHash,
 		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
-	) -> Result<OgmiosTx, OffchainError> {
+	) -> Result<McTxHash, OffchainError> {
 		run_init_governance(
 			governance_authority,
 			payment_key,
@@ -50,9 +49,15 @@ where
 			FixedDelayRetries::two_minutes(),
 		)
 		.await
-		.map(|(_, tx)| tx)
+		.map(|result| result.tx_hash)
 		.map_err(|e| OffchainError::InternalError(e.to_string()))
 	}
+}
+
+#[derive(serde::Serialize)]
+pub struct InitGovernanceResult {
+	pub tx_hash: McTxHash,
+	pub genesis_utxo: UtxoId,
 }
 
 pub async fn run_init_governance<
@@ -64,7 +69,7 @@ pub async fn run_init_governance<
 	genesis_utxo_id: Option<UtxoId>,
 	client: &T,
 	await_tx: A,
-) -> anyhow::Result<(UtxoId, OgmiosTx)> {
+) -> anyhow::Result<InitGovernanceResult> {
 	let ctx = crate::csl::TransactionContext::for_payment_key(payment_key, client).await?;
 
 	let own_address = key_hash_address(&ctx.payment_key_hash(), ctx.network);
@@ -104,8 +109,7 @@ pub async fn run_init_governance<
 
 	let result = client.submit_transaction(&signed_transaction.to_bytes()).await?;
 	let tx_id = result.transaction.id;
-	log::info!("✅ Transaction submitted. ID: {}", hex::encode(result.transaction.id));
+	log::info!("✅ Transaction submitted. ID: {}", hex::encode(&tx_id));
 	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
-
-	Ok((genesis_utxo.to_domain(), result.transaction))
+	Ok(InitGovernanceResult { tx_hash: McTxHash(tx_id), genesis_utxo: genesis_utxo.utxo_id() })
 }

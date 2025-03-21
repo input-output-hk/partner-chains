@@ -43,7 +43,7 @@ impl InitGovernanceCmd {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
 
-		run_init_governance(
+		let result = run_init_governance(
 			self.governance_authority,
 			&payment_key,
 			self.genesis_utxo,
@@ -51,6 +51,7 @@ impl InitGovernanceCmd {
 			FixedDelayRetries::two_minutes(),
 		)
 		.await?;
+		println!("{}", serde_json::to_string_pretty(&result)?);
 		Ok(())
 	}
 }
