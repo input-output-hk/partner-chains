@@ -4,14 +4,14 @@ use anyhow::anyhow;
 use ogmios_client::types::OgmiosTx;
 use partner_chains_cardano_offchain::d_param::UpsertDParam;
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
+use partner_chains_cardano_offchain::multisig::MultiSigSmartContractResult;
 use partner_chains_cardano_offchain::permissioned_candidates::UpsertPermissionedCandidates;
 use partner_chains_cardano_offchain::register::{Deregister, Register};
 use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData};
 use partner_chains_cardano_offchain::{cardano_keys::CardanoPaymentSigningKey, OffchainError};
 use pretty_assertions::assert_eq;
 use sidechain_domain::{
-	CandidateRegistration, DParameter, MainchainKeyHash, McSmartContractResult, McTxHash,
-	StakePoolPublicKey, UtxoId,
+	CandidateRegistration, DParameter, MainchainKeyHash, McTxHash, StakePoolPublicKey, UtxoId,
 };
 use sp_core::offchain::Timestamp;
 use std::collections::HashMap;
@@ -239,7 +239,7 @@ pub struct OffchainMock {
 		HashMap<(UtxoId, DParameter, PrivateKeyBytes), Result<Option<McTxHash>, String>>,
 	pub upsert_permissioned_candidates: HashMap<
 		(UtxoId, Vec<sidechain_domain::PermissionedCandidateData>, PrivateKeyBytes),
-		Result<Option<McSmartContractResult>, String>,
+		Result<Option<MultiSigSmartContractResult>, String>,
 	>,
 	pub register: HashMap<
 		(UtxoId, CandidateRegistration, PrivateKeyBytes),
@@ -323,7 +323,7 @@ impl OffchainMock {
 		genesis_utxo: UtxoId,
 		candidates: &[sidechain_domain::PermissionedCandidateData],
 		payment_key: PrivateKeyBytes,
-		result: Result<Option<McSmartContractResult>, String>,
+		result: Result<Option<MultiSigSmartContractResult>, String>,
 	) -> Self {
 		Self {
 			upsert_permissioned_candidates: [(
@@ -424,7 +424,7 @@ impl UpsertPermissionedCandidates for OffchainMock {
 		genesis_utxo: UtxoId,
 		candidates: &[sidechain_domain::PermissionedCandidateData],
 		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<McSmartContractResult>> {
+	) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
 		self.upsert_permissioned_candidates
 			.get(&(genesis_utxo, candidates.to_vec(), payment_signing_key.to_bytes()))
 			.cloned()

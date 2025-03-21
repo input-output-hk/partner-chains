@@ -435,6 +435,7 @@ mod tests {
 			payment_key_utxos: vec![make_utxo(121u8, 3, 996272387, &payment_addr())],
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
+			change_address: payment_addr(),
 		}
 	}
 
