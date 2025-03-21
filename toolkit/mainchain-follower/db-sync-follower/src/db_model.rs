@@ -150,7 +150,7 @@ pub(crate) struct BlockTokenAmount {
 }
 
 #[cfg(any(feature = "block-source", feature = "native-token"))]
-pub(crate) async fn get_latest_block_info(pool: &Pool<Postgres>) -> Result<Option<Block>, SqlxError> {
+pub async fn get_latest_block_info(pool: &Pool<Postgres>) -> Result<Option<Block>, SqlxError> {
 	Ok(sqlx::query_as::<_, Block>(
 		"
 SELECT
