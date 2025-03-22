@@ -144,7 +144,7 @@ impl Default for TxPosition {
 }
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
-pub(crate) struct BlockTokenAmount {
+pub struct BlockTokenAmount {
 	pub block_hash: [u8; 32],
 	pub amount: NativeTokenAmount,
 }
