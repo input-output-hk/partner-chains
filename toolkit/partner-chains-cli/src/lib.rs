@@ -22,18 +22,20 @@ mod tests;
 
 use clap::Parser;
 use io::*;
+use serde::Serialize;
+use sp_core::{ed25519, sr25519};
 
 #[derive(Clone, Debug, Parser)]
 #[command(
     after_long_help = HELP_EXAMPLES,
 )]
-pub enum Command {
+pub enum Command<SessionKeys: Send + Sync + 'static> {
 	/// This wizard generates the keys required for operating a partner-chains node, stores them in the keystore directory, and prints the public keys and keystore location.
 	GenerateKeys(generate_keys::GenerateKeysCmd),
 	/// Wizard to obtain the configuration needed for the partner-chain governance authority. This configuration should be shared with chain participants and used to create the chain spec json file.
 	PrepareConfiguration(prepare_configuration::PrepareConfigurationCmd),
 	/// Wizard for creating a chain spec json file based on the chain configuration (see `prepare-configuration`).
-	CreateChainSpec(create_chain_spec::CreateChainSpecCmd),
+	CreateChainSpec(create_chain_spec::CreateChainSpecCmd<SessionKeys>),
 	/// Wizard for setting D-parameter and Permissioned Candidates list on the main chain.
 	/// Uses 'chain config' obtained after running `prepare-configuration`.
 	SetupMainChainState(setup_main_chain_state::SetupMainChainStateCmd),
@@ -50,8 +52,11 @@ pub enum Command {
 	Deregister(deregister::DeregisterCmd),
 }
 
-impl Command {
-	pub fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
+impl<SessionKeys: Send + Sync + 'static> Command<SessionKeys> {
+	pub fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()>
+	where
+		SessionKeys: From<(sr25519::Public, ed25519::Public)> + Serialize,
+	{
 		match self {
 			Command::GenerateKeys(cmd) => cmd.run(context),
 			Command::PrepareConfiguration(cmd) => cmd.run(context),

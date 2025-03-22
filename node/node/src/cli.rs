@@ -1,6 +1,7 @@
 use clap::command;
 use partner_chains_node_commands::PartnerChainsSubcommand;
 use sc_cli::RunCmd;
+use sidechain_runtime::opaque::SessionKeys;
 
 #[derive(Debug, clap::Parser)]
 pub struct Cli {
@@ -18,7 +19,7 @@ pub enum Subcommand {
 	Key(sc_cli::KeySubcommand),
 
 	#[clap(flatten)]
-	PartnerChains(PartnerChainsSubcommand),
+	PartnerChains(PartnerChainsSubcommand<SessionKeys>),
 
 	/// Build a chain specification.
 	BuildSpec(sc_cli::BuildSpecCmd),
