@@ -14,9 +14,11 @@ use sc_service::TaskManager;
 use sidechain_domain::{McEpochNumber, ScEpochNumber, StakePoolPublicKey};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
+use sp_core::{ed25519, sr25519};
 use sp_runtime::traits::Block as BlockT;
 use sp_runtime::AccountId32;
 use sp_runtime::DeserializeOwned;
+use sp_runtime::Serialize;
 use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 use sp_session_validator_management::SessionValidatorManagementApi;
 use sp_session_validator_management_query::commands::*;
@@ -74,7 +76,7 @@ impl CliConfiguration for RegistrationStatusCmd {
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
-pub enum PartnerChainsSubcommand {
+pub enum PartnerChainsSubcommand<SessionKeys: Send + Sync + 'static> {
 	/// Returns sidechain parameters
 	SidechainParams(SidechainParamsCmd),
 
@@ -105,10 +107,17 @@ pub enum PartnerChainsSubcommand {
 
 	/// Partner Chains text "wizards" for setting up chain
 	#[command(subcommand)]
-	Wizards(partner_chains_cli::Command),
+	Wizards(partner_chains_cli::Command<SessionKeys>),
 }
 
-pub fn run<Cli, Block, CommitteeMember, Client, BlockProducerMetadata>(
+pub fn run<
+	Cli,
+	Block,
+	CommitteeMember,
+	Client,
+	BlockProducerMetadata,
+	SessionKeys: Send + Sync + 'static,
+>(
 	cli: &Cli,
 	get_deps: impl FnOnce(
 		sc_service::Configuration,
@@ -116,7 +125,7 @@ pub fn run<Cli, Block, CommitteeMember, Client, BlockProducerMetadata>(
 		(Arc<Client>, TaskManager, Arc<dyn AuthoritySelectionDataSource + Send + Sync>),
 		sc_service::error::Error,
 	>,
-	cmd: PartnerChainsSubcommand,
+	cmd: PartnerChainsSubcommand<SessionKeys>,
 ) -> sc_cli::Result<()>
 where
 	Cli: SubstrateCli,
@@ -135,6 +144,7 @@ where
 	CommitteeMember::AuthorityId: Decode + Encode + AsRef<[u8]> + Send + Sync + 'static,
 	CommitteeMember::AuthorityKeys: Decode + Encode,
 	BlockProducerMetadata: DeserializeOwned + Encode + Send + Sync,
+	SessionKeys: From<(sr25519::Public, ed25519::Public)> + Serialize,
 {
 	match cmd {
 		PartnerChainsSubcommand::SidechainParams(cmd) => {

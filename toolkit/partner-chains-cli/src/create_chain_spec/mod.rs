@@ -1,24 +1,34 @@
+use std::marker::PhantomData;
+
 use crate::config::ConfigFieldDefinition;
 use crate::io::IOContext;
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
 use crate::{config::config_fields, CmdRun};
 use anyhow::{anyhow, Context};
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_json::{json, Value as JValue};
 use sidechain_domain::UtxoId;
+use sp_core::{ed25519, sr25519};
 
 #[cfg(test)]
 mod tests;
 
-#[derive(Clone, Debug, clap::Parser)]
-pub struct CreateChainSpecCmd;
+#[derive(Clone, Debug, Default, clap::Parser)]
+pub struct CreateChainSpecCmd<SessionKeys: Send + Sync + 'static> {
+	#[clap(skip)]
+	_phantom: PhantomData<SessionKeys>,
+}
 
 const SESSION_INITIAL_VALIDATORS_PATH: &str =
 	"/genesis/runtimeGenesis/config/session/initialValidators";
 const SESSION_VALIDATOR_MANAGEMENT_INITIAL_AUTHORITIES_PATH: &str =
 	"/genesis/runtimeGenesis/config/sessionCommitteeManagement/initialAuthorities";
 
-impl CmdRun for CreateChainSpecCmd {
+impl<SessionKeys: Send + Sync + 'static> CmdRun for CreateChainSpecCmd<SessionKeys>
+where
+	SessionKeys: From<(sr25519::Public, ed25519::Public)> + Serialize,
+{
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		let config = CreateChainSpecConfig::load(context)?;
 		context.print("This wizard will create a chain spec JSON file according to the provided configuration, using WASM runtime code from the compiled node binary.");
@@ -39,7 +49,10 @@ impl CmdRun for CreateChainSpecCmd {
 	}
 }
 
-impl CreateChainSpecCmd {
+impl<SessionKeys: Send + Sync + 'static> CreateChainSpecCmd<SessionKeys>
+where
+	SessionKeys: From<(sr25519::Public, ed25519::Public)> + Serialize,
+{
 	fn print_config<C: IOContext>(context: &C, config: &CreateChainSpecConfig) {
 		context.print("Chain parameters:");
 		context.print(format!("- Genesis UTXO: {}", config.genesis_utxo).as_str());
@@ -112,7 +125,7 @@ impl CreateChainSpecCmd {
 		let initial_validators = config
 			.initial_permissioned_candidates_parsed
 			.iter()
-			.map(|c| serde_json::to_value((c.account_id_32(), c.session_keys())))
+			.map(|c| serde_json::to_value((c.account_id_32(), c.session_keys::<SessionKeys>())))
 			.collect::<Result<Vec<serde_json::Value>, _>>()?;
 		let initial_validators = serde_json::Value::Array(initial_validators);
 		Self::update_field(&mut chain_spec, SESSION_INITIAL_VALIDATORS_PATH, initial_validators)?;
@@ -124,7 +137,7 @@ impl CreateChainSpecCmd {
 				Ok(json!({
 					"Permissioned": {
 						"id": serde_json::to_value(c.sidechain)?,
-						"keys": c.session_keys()
+						"keys": c.session_keys::<SessionKeys>()
 					}
 				}))
 			})

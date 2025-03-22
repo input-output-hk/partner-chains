@@ -671,5 +671,7 @@ macro_rules! verify_json {
 #[test]
 fn verify_cli() {
 	use clap::CommandFactory;
-	crate::Command::command().debug_assert()
+	use sp_core::{ed25519, sr25519};
+	type TestSessionKeys = (sr25519::Public, ed25519::Public);
+	crate::Command::<TestSessionKeys>::command().debug_assert()
 }
