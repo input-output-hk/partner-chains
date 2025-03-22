@@ -672,6 +672,23 @@ macro_rules! verify_json {
 
 #[test]
 fn verify_cli() {
+	use crate::runtime_bindings::*;
 	use clap::CommandFactory;
-	crate::Command::command().debug_assert()
+	use sp_core::{ecdsa, ed25519, sr25519};
+
+	struct MockRuntime;
+	impl PartnerChainRuntime for MockRuntime {
+		type AuthorityKeys = (sr25519::Public, ed25519::Public);
+		type AuthorityId = ecdsa::Public;
+		type CommitteeMember = (Self::AuthorityId, Self::AuthorityKeys);
+	}
+	impl PartnerChainRuntimeBindings for MockRuntime {
+		fn initial_member(
+			id: Self::AuthorityId,
+			keys: Self::AuthorityKeys,
+		) -> Self::CommitteeMember {
+			(id, keys)
+		}
+	}
+	crate::Command::<MockRuntime>::command().debug_assert()
 }

@@ -62,4 +62,8 @@ impl<AuthorityId: Clone, AuthorityKeys: Clone> CommitteeMemberT
 			Self::Registered { keys, .. } => keys.clone(),
 		}
 	}
+
+	fn initial(id: Self::AuthorityId, keys: Self::AuthorityKeys) -> Self {
+		Self::Permissioned { id, keys }
+	}
 }

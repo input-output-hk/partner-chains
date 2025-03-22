@@ -26,6 +26,7 @@ sidechain-domain = { workspace = true, default-features = true }
 sc-cli = { workspace = true, default-features = true }
 sc-service = { workspace = true, default-features = true }
 sp-api = { workspace = true, default-features = true }
+sp-core = { workspace = true, default-features = true }
 sp-blockchain = { workspace = true, default-features = true }
 sp-runtime = { workspace = true, default-features = true }
 sp-sidechain = { workspace = true, default-features = true }

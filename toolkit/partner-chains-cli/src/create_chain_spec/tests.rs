@@ -4,6 +4,60 @@ use crate::tests::{MockIO, MockIOContext};
 use crate::{verify_json, CmdRun};
 use anyhow::anyhow;
 use colored::Colorize;
+use pallet_session_validator_management::CommitteeMember;
+use serde::Serialize;
+use sp_core::{ecdsa, ed25519, sr25519};
+
+use super::{CreateChainSpecRuntimeBindings, PartnerChainRuntime};
+
+#[derive(Debug, Default, Clone, Serialize)]
+struct TestSessionKeys {
+	aura: sr25519::Public,
+	grandpa: ed25519::Public,
+}
+
+impl From<(sr25519::Public, ed25519::Public)> for TestSessionKeys {
+	fn from((aura, grandpa): (sr25519::Public, ed25519::Public)) -> Self {
+		Self { aura: aura.into(), grandpa: grandpa.into() }
+	}
+}
+
+#[derive(Debug, Clone, Serialize)]
+enum TestMember {
+	Permissioned { id: ecdsa::Public, keys: TestSessionKeys },
+}
+
+impl CommitteeMember for TestMember {
+	type AuthorityId = ecdsa::Public;
+	type AuthorityKeys = TestSessionKeys;
+
+	fn authority_id(&self) -> Self::AuthorityId {
+		unimplemented!("unused")
+	}
+	fn authority_keys(&self) -> Self::AuthorityKeys {
+		unimplemented!("unused")
+	}
+	fn initial(id: Self::AuthorityId, keys: Self::AuthorityKeys) -> Self {
+		Self::Permissioned { id, keys }
+	}
+}
+
+#[derive(Debug, Default, Clone)]
+struct MockRuntime;
+impl PartnerChainRuntime for MockRuntime {
+	type AuthorityKeys = TestSessionKeys;
+	type AuthorityId = ecdsa::Public;
+	type CommitteeMember = TestMember;
+}
+impl CreateChainSpecRuntimeBindings for MockRuntime {
+	fn initial_member(id: Self::AuthorityId, keys: Self::AuthorityKeys) -> Self::CommitteeMember {
+		TestMember::Permissioned { id, keys }
+	}
+}
+
+fn create_chain_spec_cmd() -> CreateChainSpecCmd<MockRuntime> {
+	CreateChainSpecCmd::default()
+}
 
 #[test]
 fn happy_path() {
@@ -18,7 +72,7 @@ fn happy_path() {
 			run_build_spec_io(Ok("ok".to_string())),
 			show_outro(),
 		]);
-	let result = CreateChainSpecCmd.run(&mock_context);
+	let result = create_chain_spec_cmd().run(&mock_context);
 	result.expect("should succeed");
 	verify_json!(mock_context, "chain-spec.json", updated_chain_spec())
 }
@@ -37,7 +91,7 @@ fn shows_warning_when_initial_candidates_are_empty() {
 			MockIO::print("Aborted."),
 		]
 		);
-	let result = CreateChainSpecCmd.run(&mock_context);
+	let result = create_chain_spec_cmd().run(&mock_context);
 	assert!(result.is_ok());
 }
 
@@ -50,7 +104,7 @@ fn instruct_user_when_config_file_is_invalid() {
 If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.
 If you are a validator, you can obtain the chain configuration file from the governance authority."),
 		]);
-	let result = CreateChainSpecCmd.run(&mock_context);
+	let result = create_chain_spec_cmd().run(&mock_context);
 	result.expect_err("should return error");
 }
 
@@ -63,7 +117,7 @@ fn instruct_user_when_config_file_has_a_field_in_wrong_format() {
 If you are the governance authority, please make sure you have run the `prepare-configuration` command to generate the chain configuration file.
 If you are a validator, you can obtain the chain configuration file from the governance authority."),
 		]);
-	let result = CreateChainSpecCmd.run(&mock_context);
+	let result = create_chain_spec_cmd().run(&mock_context);
 	result.expect_err("should return error");
 }
 
@@ -78,7 +132,7 @@ fn errors_if_chain_spec_is_missing() {
 			MockIO::prompt_yes_no("Do you want to continue?", true, true),
 			run_build_spec_io(Ok("ok".to_string())),
 		]);
-	let result = CreateChainSpecCmd.run(&mock_context);
+	let result = create_chain_spec_cmd().run(&mock_context);
 	let err = result.expect_err("should return error");
 	assert_eq!(
 		err.to_string(),
@@ -99,7 +153,7 @@ fn forwards_build_spec_error_if_it_fails() {
 			MockIO::prompt_yes_no("Do you want to continue?", true, true),
 			run_build_spec_io(Err(error)),
 		]);
-	let result = CreateChainSpecCmd.run(&mock_context);
+	let result = create_chain_spec_cmd().run(&mock_context);
 	let err = result.expect_err("should return error");
 	assert_eq!(err.to_string(), "Failed miserably".to_string());
 }
