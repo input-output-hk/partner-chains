@@ -15,7 +15,7 @@ use sqlx::{
 };
 
 #[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
-pub(crate) struct Block {
+pub struct Block {
 	pub block_no: BlockNumber,
 	pub hash: [u8; 32],
 	pub epoch_no: EpochNumber,
