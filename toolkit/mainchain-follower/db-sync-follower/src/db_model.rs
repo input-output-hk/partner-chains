@@ -110,7 +110,7 @@ pub(crate) struct TokenTxOutput {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct NativeTokenAmount(pub u128);
+pub struct NativeTokenAmount(pub u128);
 impl From<NativeTokenAmount> for sidechain_domain::NativeTokenAmount {
 	fn from(value: NativeTokenAmount) -> Self {
 		Self(value.0)
