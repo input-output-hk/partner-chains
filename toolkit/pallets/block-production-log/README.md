@@ -180,7 +180,7 @@ The Block Production Log pallet is typically used in conjunction with the consen
 
 4. The `take_prefix` function combines retrieval and pruning in a single operation for cases where data will be processed immediately and then no longer needed.
 
-## Integration with Block Participation
+## Integration
 
 This pallet is designed to work closely with the Block Participation pallet:
 
@@ -190,7 +190,7 @@ This pallet is designed to work closely with the Block Participation pallet:
 
 This separation of concerns creates a clean architecture that separates record-keeping from record processing.
 
-## Pallet Coupling
+### Runtime
 
 Relationships between the `block-production-log` pallet and other pallets in the system:
 
@@ -220,4 +220,28 @@ graph TB
     blockProductionLog -->|📝 **implements** *on_initialize* hook for block verification| frameSystem
     blockProductionLog -->|🧩 **uses** *Parameter*, *Member*, and *AtLeast32BitUnsigned* traits| spRuntimePrimitives
     blockProductionLog -->|👥 **receives** *BlockProducerId* data via inherent data| consensus
+```
+
+### Node
+
+Relationships between the `block-production-log` pallet and the node client:
+
+```mermaid
+graph TB
+    classDef main fill:#f9d,stroke:#333,stroke-width:4px
+    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
+    classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
+
+%% Main pallet (in the middle)
+    blockProductionLog[pallet-block-production-log]:::main
+
+%% Node component (positioned above)
+    node[node/node]:::consumer
+
+%% Relationships between node and the pallet
+    node -->|👥 **uses** *BlockAuthorInherentProvider* for block producer identification| blockProductionLog
+    node -->|📝 **initializes** *BlockAuthorInherentProvider* in inherent data creation| blockProductionLog
+    node -->|🔍 **retrieves** *BlockProducerId* for block verification| blockProductionLog
+    node -->|🧩 **integrates** *INHERENT_IDENTIFIER* for block production data| blockProductionLog
+    node -->|🔍 **calls** *append* through inherent data handling| blockProductionLog
 ```
