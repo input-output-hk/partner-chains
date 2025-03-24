@@ -438,31 +438,26 @@ Relationships between the `session-validator-management` pallet and the node cli
 
 ```mermaid
 graph TB
-    classDef main fill:#f9d,stroke:#333,stroke-width:4px
-    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
-    classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
+    classDef node fill:#bbf,stroke:#333,stroke-width:2px
+    classDef pallet fill:#f9d,stroke:#333,stroke-width:4px
 
-%% Node components that depend on session-validator-management (positioned above)
-    partnerChainsNode[Partner Chain Node]:::consumer
-    proposalCIDP[ProposalCIDP]:::consumer
-    verifierCIDP[VerifierCIDP]:::consumer
-    ariadneIDP[AriadneInherentDataProvider]:::consumer
+%% Node components (positioned above)
+    partnerChainsNode[Partner Chains Node]:::node
+    proposalCIDP[ProposalCIDP]:::node
+    verifierCIDP[VerifierCIDP]:::node
+    ariadneIDP[AriadneInherentDataProvider]:::node
 
-%% Main pallet (in the middle)
-    sessionValidatorManagement[pallet-session-validator-management]:::main
+%% The target pallet (positioned below)
+    sessionValidatorManagement[Session Validator Management Pallet]:::pallet
 
-%% Dependencies (positioned below)
-    
-%% Relationships for Node components that depend on session-validator-management
-    partnerChainsNode -->|👥 **creates** *inherent data providers* for consensus| proposalCIDP
-    partnerChainsNode -->|👥 **creates** *inherent data providers* for validation| verifierCIDP
+%% Relationships from node to pallet
+    partnerChainsNode -->|👥 **uses** *create_inherent_data_providers* for consensus operations| proposalCIDP
+    partnerChainsNode -->|👥 **uses** *create_inherent_data_providers* for verification operations| verifierCIDP
     proposalCIDP -->|👥 **uses** *SessionValidatorManagementApi* for committee management| sessionValidatorManagement
     verifierCIDP -->|👥 **uses** *SessionValidatorManagementApi* for authority verification| sessionValidatorManagement
-    ariadneIDP -->|👥 **provides** *AuthoritySelectionInputs* for committee selection| sessionValidatorManagement
-    partnerChainsNode -->|🧩 **uses** *authority_selection* data source for validator operations| sessionValidatorManagement
-    
-%% Relationships focused on runtime API usage
-    partnerChainsNode -->|📝 **calls** *select_authorities* through runtime API| sessionValidatorManagement
-    partnerChainsNode -->|🔍 **queries** *get_next_unset_epoch_number* for committee planning| sessionValidatorManagement
-    partnerChainsNode -->|👥 **accesses** *current_committee* and *next_committee* for consensus| sessionValidatorManagement
+    ariadneIDP -->|🧩 **provides** *AuthoritySelectionInputs* as inherent data| sessionValidatorManagement
+    proposalCIDP -->|👥 **consumes** *select_authorities* for committee formation| sessionValidatorManagement
+    verifierCIDP -->|🔍 **queries** *get_next_unset_epoch_number* for committee planning| sessionValidatorManagement
+    verifierCIDP -->|👥 **accesses** *current_committee* and *next_committee* for consensus| sessionValidatorManagement
+    ariadneIDP -->|📝 **implements** *ProvideInherent* for committee formation| sessionValidatorManagement
 ```
