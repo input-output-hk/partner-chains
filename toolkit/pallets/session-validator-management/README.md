@@ -371,6 +371,12 @@ construct_runtime!(
 );
 ```
 
+Relationships between the `session-validator-management` pallet and other pallets in the system:
+
+```mermaid
+
+```
+
 ## Usage with Partner Chains Session
 
 This pallet is typically used in conjunction with the Partner Chains Session pallet. A typical integration pattern:
