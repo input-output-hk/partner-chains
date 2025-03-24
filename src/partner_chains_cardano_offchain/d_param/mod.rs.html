@@ -250,18 +250,6 @@
 <a href="#250" id="250">250</a>
 <a href="#251" id="251">251</a>
 <a href="#252" id="252">252</a>
-<a href="#253" id="253">253</a>
-<a href="#254" id="254">254</a>
-<a href="#255" id="255">255</a>
-<a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a>
-<a href="#258" id="258">258</a>
-<a href="#259" id="259">259</a>
-<a href="#260" id="260">260</a>
-<a href="#261" id="261">261</a>
-<a href="#262" id="262">262</a>
-<a href="#263" id="263">263</a>
-<a href="#264" id="264">264</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! D-parameter is stored on chain in an UTXO at the D-parameter validator address.
 //! There should be at most one UTXO at the validator address and it should contain the D-parameter.
 //! This UTXO should have 1 token of the D-parameter policy with an empty asset name.
@@ -275,6 +263,10 @@
 	TransactionBuilderExt, TransactionContext, TransactionExt,
 };
 <span class="kw">use </span><span class="kw">crate</span>::governance::GovernanceData;
+<span class="kw">use </span><span class="kw">crate</span>::multisig::submit_or_create_tx_to_sign;
+<span class="kw">use </span><span class="kw">crate</span>::multisig::{
+	MultiSigSmartContractResult, MultiSigSmartContractResult::TransactionSubmitted,
+};
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{PlutusData, Transaction, TransactionBuilder, TxInputsBuilder};
@@ -284,7 +276,7 @@
 	types::OgmiosUtxo,
 };
 <span class="kw">use </span>partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
-<span class="kw">use </span>sidechain_domain::{DParameter, McTxHash, UtxoId};
+<span class="kw">use </span>sidechain_domain::{DParameter, UtxoId};
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
@@ -296,7 +288,7 @@
 		genesis_utxo: UtxoId,
 		d_parameter: <span class="kw-2">&amp;</span>DParameter,
 		payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
-	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt;;
+	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;MultiSigSmartContractResult&gt;&gt;;
 }
 
 <span class="kw">impl</span>&lt;C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId&gt; UpsertDParam <span class="kw">for </span>C {
@@ -305,7 +297,7 @@
 		genesis_utxo: UtxoId,
 		d_parameter: <span class="kw-2">&amp;</span>DParameter,
 		payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
-	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
+	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;MultiSigSmartContractResult&gt;&gt; {
 		upsert_d_param(
 			genesis_utxo,
 			d_parameter,
@@ -326,7 +318,7 @@
 	payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	ogmios_client: <span class="kw-2">&amp;</span>C,
 	await_tx: <span class="kw-2">&amp;</span>A,
-) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
+) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;MultiSigSmartContractResult&gt;&gt; {
 	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>(validator, policy) = <span class="kw">crate</span>::scripts_data::d_parameter_scripts(genesis_utxo, ctx.network)<span class="question-mark">?</span>;
 	<span class="kw">let </span>validator_address = validator.address_bech32(ctx.network)<span class="question-mark">?</span>;
@@ -360,7 +352,7 @@
 			)
 		},
 	};
-	<span class="kw">if let </span><span class="prelude-val">Some</span>(tx_hash) = tx_hash_opt {
+	<span class="kw">if let </span><span class="prelude-val">Some</span>(TransactionSubmitted(tx_hash)) = tx_hash_opt {
 		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.<span class="number">0</span>, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
 	}
 	<span class="prelude-val">Ok</span>(tx_hash_opt)
@@ -388,36 +380,28 @@
 	}
 }
 
-<span class="kw">async fn </span>insert_d_param&lt;C: QueryLedgerState + Transactions + QueryNetwork&gt;(
+<span class="kw">async fn </span>insert_d_param&lt;C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId&gt;(
 	validator: <span class="kw-2">&amp;</span>PlutusScript,
 	policy: <span class="kw-2">&amp;</span>PlutusScript,
 	d_parameter: <span class="kw-2">&amp;</span>DParameter,
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
 	client: <span class="kw-2">&amp;</span>C,
-) -&gt; anyhow::Result&lt;McTxHash&gt; {
+) -&gt; anyhow::Result&lt;MultiSigSmartContractResult&gt; {
 	<span class="kw">let </span>gov_data = GovernanceData::get(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>tx = Costs::calculate_costs(
-		|costs| mint_d_param_token_tx(validator, policy, d_parameter, <span class="kw-2">&amp;</span>gov_data, costs, <span class="kw-2">&amp;</span>ctx),
+	submit_or_create_tx_to_sign(
+		<span class="kw-2">&amp;</span>gov_data,
+		<span class="kw-2">&amp;</span>ctx,
+		|costs, ctx| mint_d_param_token_tx(validator, policy, d_parameter, <span class="kw-2">&amp;</span>gov_data, costs, <span class="kw-2">&amp;</span>ctx),
+		<span class="string">"Insert D-parameter"</span>,
 		client,
+		<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 	)
-	.<span class="kw">await</span><span class="question-mark">?</span>;
+	.<span class="kw">await
+</span>}
 
-	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
-	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
-		<span class="macro">anyhow!</span>(
-			<span class="string">"Submit insert D-parameter transaction request failed: {}, bytes: {}"</span>,
-			e,
-			hex::encode(signed_tx)
-		)
-	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>tx_id = McTxHash(res.transaction.id);
-	<span class="macro">log::info!</span>(<span class="string">"Transaction submitted: {}"</span>, hex::encode(tx_id.<span class="number">0</span>));
-	<span class="prelude-val">Ok</span>(tx_id)
-}
-
-<span class="kw">async fn </span>update_d_param&lt;C: QueryLedgerState + Transactions + QueryNetwork&gt;(
+<span class="kw">async fn </span>update_d_param&lt;C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId&gt;(
 	validator: <span class="kw-2">&amp;</span>PlutusScript,
 	policy: <span class="kw-2">&amp;</span>PlutusScript,
 	d_parameter: <span class="kw-2">&amp;</span>DParameter,
@@ -425,11 +409,13 @@
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
 	client: <span class="kw-2">&amp;</span>C,
-) -&gt; anyhow::Result&lt;McTxHash&gt; {
+) -&gt; anyhow::Result&lt;MultiSigSmartContractResult&gt; {
 	<span class="kw">let </span>governance_data = GovernanceData::get(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>tx = Costs::calculate_costs(
-		|costs| {
+	submit_or_create_tx_to_sign(
+		<span class="kw-2">&amp;</span>governance_data,
+		<span class="kw-2">&amp;</span>ctx,
+		|costs, ctx| {
 			update_d_param_tx(
 				validator,
 				policy,
@@ -440,22 +426,12 @@
 				<span class="kw-2">&amp;</span>ctx,
 			)
 		},
+		<span class="string">"Update D-parameter"</span>,
 		client,
+		<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 	)
-	.<span class="kw">await</span><span class="question-mark">?</span>;
-
-	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
-	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
-		<span class="macro">anyhow!</span>(
-			<span class="string">"Submit D-parameter update transaction request failed: {}, bytes: {}"</span>,
-			e,
-			hex::encode(signed_tx)
-		)
-	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>tx_id = McTxHash(res.transaction.id);
-	<span class="macro">log::info!</span>(<span class="string">"Update D-parameter transaction submitted: {}"</span>, hex::encode(tx_id.<span class="number">0</span>));
-	<span class="prelude-val">Ok</span>(tx_id)
-}
+	.<span class="kw">await
+</span>}
 
 <span class="kw">fn </span>mint_d_param_token_tx(
 	validator: <span class="kw-2">&amp;</span>PlutusScript,
