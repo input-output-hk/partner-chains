@@ -22,6 +22,7 @@ pub struct DelegatorBlockParticipationData<DelegatorId> {
 
 #[derive(Clone, Debug, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord)]
 pub struct BlockProducerParticipationData<BlockProducerId, DelegatorId> {
+	mc_epoch: McEpochNumber,
 	block_producer: BlockProducerId,
 	block_count: u32,
 	delegator_total_shares: u64,
@@ -251,6 +252,7 @@ pub mod inherent_data {
 			};
 
 			Ok(BlockProducerParticipationData {
+				mc_epoch,
 				block_producer,
 				block_count,
 				delegator_total_shares: beneficiary_total_share,
