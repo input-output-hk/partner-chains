@@ -189,3 +189,35 @@ This pallet is designed to work closely with the Block Participation pallet:
 3. Once processed, the Block Participation pallet signals that historical data can be pruned via the `drop_prefix` function.
 
 This separation of concerns creates a clean architecture that separates record-keeping from record processing.
+
+## Pallet Coupling
+
+Relationships between the `block-production-log` pallet and other pallets in the system:
+
+```mermaid
+graph TB
+    classDef main fill:#f9d,stroke:#333,stroke-width:4px
+    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
+    classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
+
+%% Pallets that depend on block-production-log (positioned above)
+    blockParticipation[pallet-block-participation]:::consumer
+
+%% Main pallet (in the middle)
+    blockProductionLog[pallet-block-production-log]:::main
+
+%% Dependencies (positioned below)
+    frameSystem[frame_system]:::dependency
+    spRuntimePrimitives[sp_runtime]:::dependency
+    consensus[consensus_mechanism]:::dependency
+
+%% Relationships for pallets that depend on block-production-log
+    blockParticipation -->|🔍 **uses** *peek_prefix* to retrieve block production data| blockProductionLog
+    blockParticipation -->|🔍 **calls** *drop_prefix* to prune processed data| blockProductionLog
+    blockParticipation -->|🔍 **calls** *take_prefix* to process and remove historical data| blockProductionLog
+
+%% Relationships for dependencies
+    blockProductionLog -->|📝 **implements** *on_initialize* hook for block verification| frameSystem
+    blockProductionLog -->|🧩 **uses** *Parameter*, *Member*, and *AtLeast32BitUnsigned* traits| spRuntimePrimitives
+    blockProductionLog -->|👥 **receives** *BlockProducerId* data via inherent data| consensus
+```

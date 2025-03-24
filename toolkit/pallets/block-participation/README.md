@@ -148,6 +148,8 @@ The pallet processes block production data through inherents, which should be cr
 
 ## Pallet Coupling
 
+Relationships between the `block-participation` pallet and other pallets in the system:
+
 ```mermaid
 graph TB
 classDef main fill:#f9d,stroke:#333,stroke-width:4px
