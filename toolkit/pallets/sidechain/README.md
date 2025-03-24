@@ -31,7 +31,7 @@ The Sidechain pallet serves several critical purposes in the partner chain ecosy
 
 ## Primitives
 
-The Sidechain pallet relies on primitives defined in the `toolkit/primitives/sidechain` crate.
+The Sidechain pallet relies on primitives defined in the `toolkit/primitives/sidechain` crate and the `sidechain_domain` and `sidechain_slots` types.
 
 ## Configuration
 
@@ -61,9 +61,9 @@ The Sidechain pallet does not expose direct extrinsics. Epoch transitions and re
 
 ### Public Functions (API)
 
-- **genesis_utxo**: Returns the genesis UTXO
-- **current_epoch_number**: Returns the current epoch number
-- **slots_per_epoch**: Returns the number of slots per epoch
+- **genesis_utxo()**: Returns the genesis UTXO
+- **current_epoch_number()**: Returns the current epoch number, calculated from the current slot and slots per epoch
+- **slots_per_epoch()**: Returns the number of slots per epoch
 
 ### Inherent Data
 
@@ -77,7 +77,7 @@ The Sidechain pallet does not emit events directly, but it triggers the OnNewEpo
 
 The pallet primarily operates through its hooks:
 
-- **on_initialize**: Called at the beginning of each block. This hook is where epoch transitions are detected by comparing the real epoch (calculated from the current slot) with the stored epoch. When a transition is detected, the OnNewEpoch handlers are called.
+- **on_initialize**: Called at the beginning of each block. This hook is where epoch transitions are detected by comparing the real epoch (calculated from the current slot) with the stored epoch. When a transition is detected, the OnNewEpoch handlers are called. It also initializes the EpochNumber storage item on the first run.
 
 ## Genesis Configuration
 
@@ -87,6 +87,8 @@ The pallet requires the following genesis configuration:
 pub struct GenesisConfig<T: Config> {
     pub genesis_utxo: UtxoId,
     pub slots_per_epoch: sidechain_slots::SlotsPerEpoch,
+    #[serde(skip)]
+    pub _config: sp_std::marker::PhantomData<T>,
 }
 ```
 
@@ -130,5 +132,5 @@ impl pallet_sidechain::Config for Runtime {
 - frame_system
 - frame_support
 - sp_sidechain (for the OnNewEpoch trait)
-- sidechain_domain (for domain-specific types like UtxoId)
-- sidechain_slots (for slot-related types)
+- sidechain_domain (for domain-specific types like ScEpochNumber, ScSlotNumber, UtxoId)
+- sidechain_slots (for slot-related types like SlotsPerEpoch)

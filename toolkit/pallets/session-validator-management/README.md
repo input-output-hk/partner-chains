@@ -16,7 +16,7 @@ At its core, this pallet addresses the critical challenge of validator selection
 
 5. **Main Chain Integration**: For partner chains that coordinate with a main chain (like Cardano), the pallet maintains relevant configuration data about main chain scripts and addresses, establishing a secure link between the two chains' governance systems.
 
-This pallet is designed with the complexity of cross-chain validator selection in mind. It allows for sophisticated selection algorithms, inherent data-based committee proposals, and seamless integration with both main chain data sources and the partner chain's session management system.
+This pallet is designed with the complexity of cross-chain validator selection in mind. It allows for sophisticated selection algorithms and seamless integration with both main chain data sources and the partner chain's session management system.
 
 The Session Validator Management pallet works in close coordination with the Partner Chains Session pallet, with a clear separation of concerns: this pallet focuses on who should be validators and when they should rotate, while the Session pallet manages the active validator set during each session.
 
@@ -33,7 +33,7 @@ This pallet provides a way to rotate session validators based on arbitrary input
 
 ## Migrations
 
-This pallet's storage has changed compared to its legacy version. See [src/migrations/README.md] for more information.
+This pallet's storage has changed compared to its legacy version. See the [migrations README](src/migrations/README.md) for more information.
 
 ## Primitives
 
@@ -45,47 +45,17 @@ The Session Validator Management pallet implements the following FRAME hooks to 
 
 ### on_initialize
 
-The `on_initialize` hook is called at the beginning of each block's execution, before any extrinsics are processed. For the Session Validator Management pallet, this hook handles inherent verification and committee transitions:
-
-```rust
-fn on_initialize(n: BlockNumberFor<T>) -> Weight {
-    // Function implementation
-}
-```
+The `on_initialize` hook is called at the beginning of each block's execution, before any extrinsics are processed. For the Session Validator Management pallet, this hook primarily handles initializing the committee for the first block.
 
 **Key responsibilities:**
 
-1. **Inherent Verification Setup**: The hook establishes the verification system for authority selection inherent data to ensure:
-    - When no next committee has been set for future epochs, an inherent with authority selection inputs must be provided
-    - The calculated committee from the inherent data matches what should be expected
-    - Authority selection inputs hash matches if provided
+1. **First Block Initialization**: The hook ensures that the genesis committee is properly set as the committee for the first block's epoch, allowing the handover phase to occur correctly.
 
-2. **Committee Checks**: The hook examines the current committee state to determine if new validators need to be selected for future epochs.
-
-3. **Weight Calculation**: The hook returns an appropriate weight based on the operations performed, ensuring proper accounting of computational resources.
-
-### on_finalize
-
-The `on_finalize` hook is called at the end of each block's execution, after all extrinsics have been processed. For the Session Validator Management pallet, this hook ensures that committee data is properly processed:
-
-```rust
-fn on_finalize(n: BlockNumberFor<T>) -> Weight {
-    // Function implementation
-}
-```
-
-**Key responsibilities:**
-
-1. **Pending Committee Processing**: If authority selection inputs were provided via inherent data, the hook finalizes the committee selection process:
-    - Calculates the committee based on the inputs and filtering/selection strategies
-    - Stores the new committee for the appropriate future epoch
-    - Emits the appropriate events to signal committee updates
-
-2. **Cleanup**: The hook clears any temporary data that was needed only during block execution.
+2. **Weight Calculation**: The hook returns an appropriate weight based on the operations performed, ensuring proper accounting of computational resources.
 
 ### on_runtime_upgrade
 
-Although not used as frequently as the other hooks, the pallet also implements logic that runs during runtime upgrades:
+The pallet also implements logic that runs during runtime upgrades:
 
 ```rust
 fn on_runtime_upgrade() -> Weight {
@@ -107,42 +77,55 @@ pub trait Config: frame_system::Config {
     /// The overarching event type.
     type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-    /// Type representing committee member with all its Authority Keys
-    type CommitteeMember: Parameter + Member + MaybeSerializeDeserialize + CommitteeMember<
-        AuthorityId = Self::AuthorityId,
-        AuthorityKeys = Self::AuthorityKeys,
-    > + Clone;
-    
-    /// Type representing epoch number
-    type ScEpochNumber: Parameter + Member + Default + Copy + PartialOrd + AtLeast32BitUnsigned +
-        TypeInfo;
+    /// Maximum number of validators that can be in a committee
+    #[pallet::constant]
+    type MaxValidators: Get<u32>;
     
     /// Type representing validator ID - unique identifier of a validator among all validators
-    type AuthorityId: Parameter + Member + MaybeSerializeDeserialize + Debug + Clone +
-        FromStr + From<Self::CommitteeMember>;
+    type AuthorityId: Member
+        + Parameter
+        + MaybeSerializeDeserialize
+        + MaxEncodedLen
+        + Ord
+        + Into<Self::AccountId>;
     
     /// All validator's keys, needed by various consensus or utility algorithms
-    type AuthorityKeys: Member + Parameter + MaybeSerializeDeserialize + From<Self::CommitteeMember>;
+    type AuthorityKeys: Parameter + Member + MaybeSerializeDeserialize + Ord + MaxEncodedLen;
     
+    /// Authority selection input data for calculating committee
+    type AuthoritySelectionInputs: Parameter;
+    
+    /// Type representing epoch number
+    type ScEpochNumber: Parameter
+        + MaxEncodedLen
+        + Zero
+        + Display
+        + Add
+        + One
+        + Default
+        + Ord
+        + Copy
+        + From<u64>
+        + Into<u64>;
+    
+    /// Type representing committee member with all its Authority Keys
+    type CommitteeMember: Parameter
+        + Member
+        + MaybeSerializeDeserialize
+        + MaxEncodedLen
+        + CommitteeMember<AuthorityId = Self::AuthorityId, AuthorityKeys = Self::AuthorityKeys>;
+
+    /// Function to select authorities based on input data and epoch
+    fn select_authorities(
+        input: Self::AuthoritySelectionInputs,
+        sidechain_epoch: Self::ScEpochNumber,
+    ) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>>;
+
     /// Runtime function that provides epoch number
     fn current_epoch_number() -> Self::ScEpochNumber;
-    
-    /// Authority selection input data for calculating `NextAuthorities`
-    type AuthoritySelectionInputs: Parameter + Member + Debug + codec::FullCodec;
-    
-    /// Type that can filter invalid candidates from authority selection inputs
-    type FilterCandidates: FilterCandidates<
-        Self::CommitteeMember,
-        Self::AuthoritySelectionInputs,
-        Self::ScEpochNumber,
-    >;
-    
-    /// Type that can select authorities from filtered candidates
-    type SelectAuthorities: SelectAuthorities<
-        Self::CommitteeMember,
-        Self::AuthoritySelectionInputs,
-        Self::ScEpochNumber,
-    >;
+
+    /// Weight functions needed for pallet_session_validator_management
+    type WeightInfo: WeightInfo;
 }
 ```
 
@@ -152,14 +135,14 @@ The pallet maintains several storage items:
 
 1. `CurrentCommittee`: Information about the current committee and its epoch
 2. `NextCommittee`: Information about the next committee and its epoch
-3. `MainChainScripts`: Configuration data for main chain scripts related to validator candidacy
+3. `MainChainScriptsConfiguration`: Configuration data for main chain scripts related to validator candidacy
 
 ## API Specification
 
 ### Extrinsics
 
-- **set**: Sets the validators for a future epoch
-- **set_main_chain_scripts**: Updates the mainchain scripts configuration
+- **set**: Sets the validators for a future epoch (primarily called through inherents)
+- **set_main_chain_scripts**: Updates the mainchain scripts configuration (requires root origin)
 
 ### Public Functions (API)
 
@@ -186,87 +169,107 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"/ariadne";
 `T::AuthoritySelectionInputs` - Input data for validator selection algorithm
 
 #### Inherent Required
-Yes, when no next committee has been set for future epochs. The pallet verifies this inherent data to ensure valid committee selection.
+Yes, when no next committee has been set for future epochs. The pallet requires inherent data to determine committee selection.
 
 ### Events
 
-- `CommitteeRotated(T::ScEpochNumber)`: Emitted when committee is rotated to a new epoch
-- `CommitteeSet(T::ScEpochNumber)`: Emitted when a committee is set for a future epoch
+The pallet defines events, although note that the current implementation in lib.rs has an empty Event enum. In practice, implementations typically include events such as:
+
+- `CommitteeRotated`: Emitted when committee is rotated to a new epoch
+- `CommitteeSet`: Emitted when a committee is set for a future epoch
 - `MainChainScriptsSet`: Emitted when the mainchain scripts configuration is updated
 
 ### Errors
 
-- `EpochMustBeGreaterThanCurrentCommitteeEpoch`: The epoch for which committee is being set must be greater than the current committee epoch
-- `EpochMustBeGreaterThanOrEqualToNextUnsetEpoch`: The epoch for which committee is being set must be greater than or equal to the next unset epoch
-- `NotAllValidators`: The committee must include all validators
-- `CommitteeAlreadySetForEpoch`: Committee is already set for the specified epoch
-- `NextCommitteeNotSet`: Next committee has not been set
-- `AuthoritySelectionFailed`: Failed to select authorities
-- `InputHashMismatch`: Input hash does not match calculated hash
+The pallet defines the following errors:
+
+- `InvalidEpoch`: The epoch is invalid for the operation
+- `UnnecessarySetCall`: The set call is unnecessary (committee is already set for the epoch)
 
 ## Integration Example
 
 A typical integration will include:
 
-1. Implementing the necessary selection logic:
+1. Defining a `CommitteeMember` type that implements the required trait:
 
 ```rust
-pub struct FilterInvalidCandidates;
-impl FilterCandidates<CommitteeMember, SelectionInputs, EpochNumber> for FilterInvalidCandidates {
-    fn filter_candidates(
-        candidates: &[CommitteeMember],
-        _inputs: &SelectionInputs,
-        _epoch: EpochNumber,
-    ) -> Vec<CommitteeMember> {
-        // Filter logic to remove invalid candidates
-        candidates.to_vec()
-    }
+#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Debug, MaxEncodedLen)]
+pub struct CommitteeMember {
+    pub authority_id: AccountId,
+    pub authority_keys: SessionKeys,
 }
 
-pub struct RandomAuthoritiesSelector;
-impl SelectAuthorities<CommitteeMember, SelectionInputs, EpochNumber> for RandomAuthoritiesSelector {
-    fn select_authorities(
-        candidates: &[CommitteeMember],
-        inputs: &SelectionInputs,
-        epoch: EpochNumber,
-    ) -> Option<Vec<CommitteeMember>> {
-        // Selection logic to choose validators from candidates
-        Some(weighted_random_selection(candidates, inputs, epoch))
+impl sp_session_validator_management::CommitteeMember for CommitteeMember {
+    type AuthorityId = AccountId;
+    type AuthorityKeys = SessionKeys;
+    
+    fn authority_id(&self) -> Self::AuthorityId {
+        self.authority_id.clone()
+    }
+    
+    fn authority_keys(&self) -> Self::AuthorityKeys {
+        self.authority_keys.clone()
     }
 }
 ```
 
-2. Configuring the pallet in the runtime:
+2. Implementing a validator selection function:
+
+```rust
+fn select_authorities(
+    inputs: SelectionInputs,
+    epoch: EpochNumber,
+) -> Option<BoundedVec<CommitteeMember, MaxValidatorsConfig>> {
+    // Selection logic to choose validators from candidates
+    let candidates = process_selection_inputs(inputs);
+    if candidates.is_empty() {
+        return None;
+    }
+    
+    let selected = select_based_on_criteria(&candidates, epoch);
+    Some(BoundedVec::truncate_from(selected))
+}
+```
+
+3. Configuring the pallet in the runtime:
 
 ```rust
 impl pallet_session_validator_management::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
-    type CommitteeMember = CommitteeMember;
-    type ScEpochNumber = EpochNumber;
+    type MaxValidators = MaxValidators;
     type AuthorityId = AccountId;
     type AuthorityKeys = SessionKeys;
+    type AuthoritySelectionInputs = SelectionInputs;
+    type ScEpochNumber = EpochNumber;
+    type CommitteeMember = CommitteeMember;
+    
+    fn select_authorities(
+        input: Self::AuthoritySelectionInputs,
+        sidechain_epoch: Self::ScEpochNumber,
+    ) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>> {
+        // Selection implementation
+    }
     
     fn current_epoch_number() -> Self::ScEpochNumber {
         Sidechain::current_epoch_number()
     }
     
-    type AuthoritySelectionInputs = SelectionInputs;
-    type FilterCandidates = FilterInvalidCandidates;
-    type SelectAuthorities = RandomAuthoritiesSelector;
+    type WeightInfo = weights::WeightInfo<Runtime>;
 }
 ```
 
-3. Integrating with the session management system:
+4. Integrating with the session management system:
 
 ```rust
 impl pallet_partner_chains_session::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
+    // Session pallet configuration
     type ValidatorId = AccountId;
-    type ShouldEndSession = ValidatorManagementSessionManager<Self>;
-    type NextSessionRotation = ValidatorManagementSessionManager<Self>;
-    type SessionManager = ValidatorManagementSessionManager<Self>;
+    type ShouldEndSession = SidechainEpochManager;
+    type NextSessionRotation = SidechainEpochManager;
+    type SessionManager = ValidatorManagementSessionManager<Runtime>;
     type SessionHandler = (Aura, Grandpa);
     type Keys = SessionKeys;
+    type WeightInfo = weights::WeightInfo<Runtime>;
 }
 ```
 
@@ -275,5 +278,5 @@ impl pallet_partner_chains_session::Config for Runtime {
 - frame_system
 - frame_support
 - sp_runtime
-- sp_staking
+- sp_session_validator_management
 - sidechain_domain (for main chain types)

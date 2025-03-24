@@ -18,35 +18,63 @@ The pallet uses the following configuration traits:
 ```rust
 #[pallet::config]
 pub trait Config: frame_system::Config {
-    /// The overarching event type.
-    type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+    /// Weight information for extrinsics in this pallet
+    type WeightInfo: crate::weights::WeightInfo;
 
-    /// Type representing the partner chain address.
-    type PartnerChainAddress: Parameter + Member + MaxEncodedLen + Copy + TypeInfo;
+    /// Partner chain address type
+    type PartnerChainAddress: Member + Parameter + MaxEncodedLen;
 
-    /// Type representing the mainchain stake public key.
-    type StakePublicKey: Parameter + Member + MaxEncodedLen + TypeInfo;
+    /// Function to provide the genesis UTXO ID
+    fn genesis_utxo() -> UtxoId;
 }
 ```
 
 ## Storage
 
-The pallet maintains two main storage maps:
+The pallet maintains a single storage map:
 
-1. `StakePublicKeyToPartnerChainAddress`: Maps from a mainchain stake public key to a partner chain address
-2. `PartnerChainAddressToStakePublicKey`: Maps from a partner chain address to a mainchain stake public key
+```rust
+#[pallet::storage]
+pub type AddressAssociations<T: Config> = StorageMap<
+    Hasher = Blake2_128Concat,
+    Key = MainchainKeyHash,
+    Value = T::PartnerChainAddress,
+    QueryKind = OptionQuery,
+>;
+```
+
+This maps from a mainchain key hash to a partner chain address.
 
 ## API Specification
 
 ### Extrinsics
 
 - **associate_address**: Associates a mainchain public key with a partner chain address
+  ```rust
+  pub fn associate_address(
+      _origin: OriginFor<T>,
+      partnerchain_address: T::PartnerChainAddress,
+      signature: StakeKeySignature,
+      stake_public_key: StakePublicKey,
+  ) -> DispatchResult
+  ```
 
 ### Public Functions (API)
 
 - **get_version**: Returns the current pallet version
+  ```rust
+  pub fn get_version() -> u32
+  ```
+
 - **get_all_address_associations**: Returns an iterator over all mainchain-partnerchain address associations
+  ```rust
+  pub fn get_all_address_associations() -> impl Iterator<Item = (MainchainKeyHash, T::PartnerChainAddress)>
+  ```
+
 - **get_partner_chain_address_for**: Returns the partner chain address for a given mainchain public key if it exists
+  ```rust
+  pub fn get_partner_chain_address_for(stake_public_key: &StakePublicKey) -> Option<T::PartnerChainAddress>
+  ```
 
 ### Inherent Data
 
@@ -54,30 +82,49 @@ This pallet does not use inherent data.
 
 ### Events
 
-- `AddressAssociated(T::StakePublicKey, T::PartnerChainAddress)`: Emitted when a mainchain public key is successfully associated with a partner chain address
+This pallet currently does not emit any events.
 
 ### Errors
 
-- `AddressAlreadyAssociated`: The partner chain address is already associated with a different stake public key
-- `StakePublicKeyAlreadyAssociated`: The stake public key is already associated with a different partner chain address
-- `InvalidSignature`: The provided signature is invalid and cannot prove ownership of the stake key
+```rust
+#[pallet::error]
+pub enum Error<T> {
+    MainchainKeyAlreadyAssociated,
+    InvalidMainchainSignature,
+}
+```
+
+- `MainchainKeyAlreadyAssociated`: The mainchain key is already associated with a partner chain address
+- `InvalidMainchainSignature`: The provided signature is invalid and cannot prove ownership of the stake key
 
 ## Usage
 
 To associate a mainchain stake public key with a partner chain address, the caller must:
 
-1. Generate a signature using their mainchain stake key
+1. Generate a signature using their mainchain stake key over a message containing:
+    - The stake public key
+    - The partner chain address
+    - The genesis UTXO ID
 2. Submit the `associate_address` extrinsic with their partner chain address, the signature, and their stake public key
 
-The pallet verifies the signature to ensure the caller owns both the mainchain stake key and the partner chain address before creating the association.
+The pallet verifies the signature to ensure the caller owns the mainchain stake key before creating the association.
+
+## Types
+
+The pallet relies on several types imported from the `sidechain_domain` crate:
+- `StakePublicKey`: Represents a mainchain stake public key
+- `MainchainKeyHash`: A hash of a mainchain stake public key
+- `StakeKeySignature`: A signature created using a mainchain stake key
+- `UtxoId`: Identifier for a UTXO (Unspent Transaction Output)
 
 ## Dependencies
 
 - frame_system
 - frame_support
+- sidechain_domain (for mainchain types)
 
 ## Security Considerations
 
 - Signatures are verified cryptographically to prevent unauthorized associations
 - Once created, associations cannot be modified without governance intervention
-- The pallet ensures one-to-one mappings between stake public keys and partner chain addresses
+- The pallet ensures that a mainchain key can only be associated with one partner chain address

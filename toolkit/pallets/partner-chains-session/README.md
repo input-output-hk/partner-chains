@@ -4,7 +4,7 @@
 
 The Partner Chains Session pallet is a refined adaptation of Substrate's standard session pallet, customized to meet the requirements of partner chains while maintaining compatibility with core Substrate functionalities.
 
-This pallet serves as the cornerstone for managing validator sets and their associated session keys within the partner chain network. Unlike the original session pallet, it has been streamlined to eliminate unnecessary complexities while enhancing features that are critical for partner chains' consensus mechanisms.
+This pallet serves as the cornerstone for managing validator sets and their associated session keys within the partner chain network. It has been streamlined to eliminate unnecessary complexities while enhancing features that are critical for partner chains' consensus mechanisms.
 
 The Partner Chains Session pallet operates on the principle of session-based validator rotation, where:
 
@@ -16,23 +16,17 @@ The Partner Chains Session pallet operates on the principle of session-based val
 
 4. **Validator Disabling**: The pallet includes mechanisms to disable validators during a session if they're found to be misbehaving, enhancing network security and resilience.
 
-This pallet eliminates the complex queuing mechanism from the original session pallet, opting instead for a direct rotation model that aligns better with the epoch-based consensus used in partner chains. This design choice reduces state bloat and simplifies the mental model for developers working with the pallet.
-
-Furthermore, the pallet is designed to integrate seamlessly with other partner chain components, particularly the Session Validator Management pallet, creating a cohesive system for validator selection, rotation, and session management.
+This pallet simplifies the approach to session management compared to the original session pallet. While the code still contains references to queued validators, they aren't actively used in the implemented logic, making the session transition more direct.
 
 ## Purpose
 
 The Partner Chains Session pallet fulfills several critical functions within the partner chain ecosystem:
 
 - Manages the lifecycle of validator sessions, including session creation, rotation, and termination
-- Provides an automatic mechanism for validators to associate their identity with necessary session keys
 - Facilitates the orderly transition between validator sets without disrupting consensus
 - Serves as the interface between validator selection logic and the consensus mechanism
 - Maintains backward compatibility with Substrate components that expect the standard session pallet interface
-
-## Primitives
-
-The Partner Chains Session pallet relies on primitives defined in the `toolkit/primitives/session-manager` crate.
+- Supports the disabling of validators who misbehave
 
 ## Hooks
 
@@ -44,7 +38,12 @@ The `on_initialize` hook is called at the beginning of each block's execution, b
 
 ```rust
 fn on_initialize(n: BlockNumberFor<T>) -> Weight {
-    // Function implementation
+    if T::ShouldEndSession::should_end_session(n) {
+        Self::rotate_session();
+        T::BlockWeights::get().max_block
+    } else {
+        Weight::zero()
+    }
 }
 ```
 
@@ -53,22 +52,20 @@ fn on_initialize(n: BlockNumberFor<T>) -> Weight {
 1. **Session Transition Check**: The hook queries the `ShouldEndSession` implementation to determine if the current session should end with this block.
 
 2. **Session Rotation**: If a session should end, the hook orchestrates the full session rotation process:
-    - Calls `on_before_session_ending` on session handlers to prepare for session end
-    - Calls `end_session` on the session manager to finish the current session
-    - Increments the session index
-    - Queries the session manager for a new validator set via `new_session`
-    - Rotates to the new validator set and clears any previously disabled validators
-    - Calls `start_session` on the session manager to initiate the new session
-    - Emits a `NewSession` event
-    - Calls `on_new_session` on session handlers to notify them of the new validator set
+   - Calls `on_before_session_ending` on session handlers to prepare for session end
+   - Calls `end_session` on the session manager to finish the current session
+   - Increments the session index
+   - Queries the session manager for a new validator set via `new_session`
+   - Rotates to the new validator set and clears any previously disabled validators
+   - Calls `start_session` on the session manager to initiate the new session
+   - Emits a `NewSession` event
+   - Calls `on_new_session` on session handlers to notify them of the new validator set
 
 3. **Weight Management**: The hook returns an appropriate weight based on whether a session rotation occurred:
-    - Returns the maximum block weight if a session rotation happened
-    - Returns zero weight if no rotation occurred
+   - Returns the maximum block weight if a session rotation happened
+   - Returns zero weight if no rotation occurred
 
-This hook is the core mechanism for session transitions in the partner chain system. It ensures that validator sets are updated at appropriate times (typically aligned with epoch boundaries) and that all components relying on session information are properly notified of changes.
-
-The hook works in conjunction with the `ShouldEndSession` implementation (typically provided by the ValidatorManagementSessionManager) to determine when transitions should occur, creating a clean separation between the timing logic and the transition process itself.
+This hook is the core mechanism for session transitions in the partner chain system. It ensures that validator sets are updated at appropriate times and that all components relying on session information are properly notified of changes.
 
 ## Configuration
 
@@ -123,53 +120,62 @@ The Partner Chains Session pallet does not expose direct extrinsics. Session man
 ### Public Functions (API)
 
 - **validators**: Returns the current set of validators
+  ```rust
+  pub fn validators() -> Vec<T::ValidatorId>
+  ```
+
 - **validators_and_keys**: Returns the current set of validators with their keys
+  ```rust
+  pub fn validators_and_keys() -> Vec<(T::ValidatorId, T::Keys)>
+  ```
+
 - **current_index**: Returns the current session index
+  ```rust
+  pub fn current_index() -> SessionIndex
+  ```
+
 - **disabled_validators**: Returns the list of disabled validators
+  ```rust
+  pub fn disabled_validators() -> Vec<u32>
+  ```
+
 - **rotate_session**: Moves to the next session and registers a new validator set
+  ```rust
+  pub fn rotate_session()
+  ```
+
 - **disable_index**: Disables the validator at the specified index
+  ```rust
+  pub fn disable_index(i: u32) -> bool
+  ```
+
 - **disable**: Disables the validator with the specified validator ID
-- **new_session**: Plans a new session and returns the validator set
-- **new_session_genesis**: Plans a new session at genesis and returns the validator set
-
-### Inherent Data
-
-The Partner Chains Session pallet does not use inherent data directly, but it does interact with other pallets that may provide session-related data through the inherent mechanism.
+  ```rust
+  pub fn disable(c: &T::ValidatorId) -> bool
+  ```
 
 ### Events
 
 - `NewSession { session_index: SessionIndex }`: Emitted when a new session begins, providing the index of the new session
 
-## Integration with Session Validator Management
+## Integration with Session Management
 
-The Partner Chains Session pallet is designed to work closely with the Session Validator Management pallet through the primitives in the session-manager crate. A typical integration pattern uses the `ValidatorManagementSessionManager` to bridge these two pallets:
+The Partner Chains Session pallet is designed to work with any component that implements the `SessionManager` trait:
 
 ```rust
-impl pallet_partner_chains_session::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type ValidatorId = AccountId;
-    type ShouldEndSession = ValidatorManagementSessionManager<Self>;
-    type NextSessionRotation = ValidatorManagementSessionManager<Self>;
-    type SessionManager = ValidatorManagementSessionManager<Self>;
-    type SessionHandler = <Self as pallet_session_validator_management::Config>::SessionHandler;
-    type Keys = <Self as pallet_session_validator_management::Config>::AuthorityKeys;
+pub trait SessionManager<ValidatorId, Keys> {
+    fn new_session(new_index: SessionIndex) -> Option<Vec<(ValidatorId, Keys)>>;
+    fn new_session_genesis(new_index: SessionIndex) -> Option<Vec<(ValidatorId, Keys)>>;
+    fn end_session(end_index: SessionIndex);
+    fn start_session(start_index: SessionIndex);
 }
 ```
 
-This setup ensures that:
-1. Sessions end when a new validator committee is ready (typically at epoch boundaries)
-2. The validator set is sourced from the Session Validator Management pallet
-3. Session keys are properly propagated to the consensus mechanisms
+## Compatibility
 
-## Compatibility with Substrate's Session Pallet
+For compatibility with different environments, the pallet includes feature flags:
 
-For runtimes that need to maintain compatibility with components expecting Substrate's original session pallet, the toolkit provides a compatibility helper through the `pallet_session_runtime_stub` crate:
-
-```rust
-impl_pallet_session_config!(Runtime);
-```
-
-This macro implements the standard `pallet_session::Config` trait for your runtime, delegating the core functionality to your `pallet_partner_chains_session::Config` implementation.
+1. `pallet-session-compat`: Enables compatibility components that help integrate with systems expecting the standard Substrate session pallet
 
 ## Dependencies
 

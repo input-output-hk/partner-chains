@@ -34,16 +34,16 @@ The `on_initialize` hook is called at the beginning of each block's execution, b
 
 ```rust
 fn on_initialize(n: BlockNumberFor<T>) -> Weight {
-    // Function implementation
+   // Function implementation
 }
 ```
 
 **Key responsibilities:**
 
 1. **Inherent Data Verification Setup**: The hook establishes the verification system for token transfer inherent data to ensure:
-    - When tokens are being transferred (amount > 0), the inherent must be provided
-    - The token amount in the inherent matches what the main chain follower observed
-    - Unexpected token transfer inherents (when no tokens are being transferred) are rejected
+   - When tokens are being transferred (amount > 0), the inherent must be provided
+   - The token amount in the inherent matches what the main chain follower observed
+   - Unexpected token transfer inherents (when no tokens are being transferred) are rejected
 
 2. **Error Handling**: The hook ensures appropriate errors are generated when verification fails, providing clear information about what went wrong.
 
@@ -51,7 +51,7 @@ fn on_initialize(n: BlockNumberFor<T>) -> Weight {
 
 ### on_runtime_upgrade
 
-Although not explicitly a hook in the traditional sense, the pallet includes logic that runs when the runtime is upgraded:
+The pallet includes logic that runs when the runtime is upgraded:
 
 ```rust
 #[pallet::hooks]
@@ -78,12 +78,10 @@ The pallet uses the following configuration traits:
 ```rust
 #[pallet::config]
 pub trait Config: frame_system::Config {
-    /// The overarching event type.
     type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
-    /// Handler for transferring tokens from native environment to the partner chain.
-    /// This is called when native token lock event is detected on the main chain.
-    type TokenHandler: TokenHandler;
+    
+    type TokenTransferHandler: TokenTransferHandler;
+    type WeightInfo: WeightInfo;
 }
 ```
 
@@ -91,7 +89,7 @@ pub trait Config: frame_system::Config {
 
 The pallet maintains several storage items:
 
-1. `MainChainScripts`: Stores the configurations needed to identify and track the native token on the main chain
+1. `MainChainScriptsConfiguration`: Stores the configurations needed to identify and track the native token on the main chain
 2. `Initialized`: Tracks whether the pallet has been initialized, used for historical data queries
 
 ## API Specification
@@ -99,12 +97,12 @@ The pallet maintains several storage items:
 ### Extrinsics
 
 - **transfer_tokens**: Handles the transfer of tokens from the main chain to the partner chain
-- **set_main_chain_scripts**: Updates the mainchain scripts configuration
+- **set_main_chain_scripts**: Updates the mainchain scripts configuration (must be called with Root origin)
 
 ### Public Functions (API)
 
 - **get_main_chain_scripts**: Returns the current mainchain scripts configuration
-- **initialized**: Returns whether the pallet has been initialized and marks it as initialized if not
+- **initialized**: Returns whether the pallet has been initialized
 
 ### Inherent Data
 
@@ -121,13 +119,20 @@ Yes, when token amounts greater than 0 are being transferred. The pallet verifie
 
 ### Events
 
-- `TokensTransferred(NativeTokenAmount)`: Emitted when tokens are transferred from the main chain to the partner chain
-- `MainChainScriptsSet`: Emitted when the mainchain scripts configuration is updated
+- `TokensTransfered(NativeTokenAmount)`: Emitted when tokens are transferred from the main chain to the partner chain
+- `MainChainScriptsSet`: Not explicitly emitted in the code but mentioned in the README
 
 ### Errors
 
-- `MainChainScriptsNotConfigured`: The required mainchain scripts have not been configured
-- `ZeroTokenAmount`: Attempted to transfer zero tokens, which is not allowed
+The pallet implements proper error handling through the inherent error type:
+
+```rust
+pub enum InherentError {
+    TokenTransferNotHandled(NativeTokenAmount),
+    IncorrectTokenNumberTransfered(NativeTokenAmount, NativeTokenAmount),
+    UnexpectedTokenTransferInherent(NativeTokenAmount),
+}
+```
 
 ## Migration
 
@@ -159,26 +164,27 @@ inherent_data_providers
     .map_err(|e| format!("Failed to register inherent data provider: {:?}", e))?;
 ```
 
-2. Implementing the `TokenHandler` trait in the runtime:
+2. Implementing the `TokenTransferHandler` trait in the runtime:
 
 ```rust
 pub struct NativeTokenHandler;
-impl TokenHandler for NativeTokenHandler {
-    fn handle_token_transfer(amount: NativeTokenAmount) -> DispatchResult {
-        // Chain-specific logic to mint tokens on the partner chain
-        // This might involve calling functions on a currency or assets pallet
-        Balances::mint(&TREASURY_ACCOUNT, amount.into())?;
-        
-        // Distribute tokens according to tokenomics rules
-        distribute_tokens(amount);
-        
-        Ok(())
-    }
+impl TokenTransferHandler for NativeTokenHandler {
+   fn handle_token_transfer(amount: NativeTokenAmount) -> DispatchResult {
+      // Chain-specific logic to mint tokens on the partner chain
+      // This might involve calling functions on a currency or assets pallet
+      Balances::mint(&TREASURY_ACCOUNT, amount.into())?;
+
+      // Distribute tokens according to tokenomics rules
+      distribute_tokens(amount);
+
+      Ok(())
+   }
 }
 
 impl pallet_native_token_management::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type TokenHandler = NativeTokenHandler;
+   type RuntimeEvent = RuntimeEvent;
+   type TokenTransferHandler = NativeTokenHandler;
+   type WeightInfo = weights::pallet_native_token_management::WeightInfo<Runtime>;
 }
 ```
 

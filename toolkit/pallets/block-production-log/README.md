@@ -51,11 +51,11 @@ pub trait Config: frame_system::Config {
 
     /// Type representing a block producer ID, which is recorded in the block production log.
     type BlockProducerId: Parameter + Member + Copy + MaybeSerializeDeserialize + Debug + MaxEncodedLen
-        + TypeInfo + Ord;
+    + TypeInfo + Ord;
 
     /// Type representing a block slot.
     type Slot: Parameter + Member + Copy + AtLeast32BitUnsigned + MaybeSerializeDeserialize
-        + Default + Debug + TypeInfo + Ord;
+    + Default + Debug + TypeInfo + Ord;
 }
 ```
 
@@ -71,12 +71,26 @@ The pallet maintains several storage items:
 ### Extrinsics
 
 - **append**: Appends the block producer to the production log
+  ```rust
+  pub fn append(origin: OriginFor<T>, block_producer: T::BlockProducerId, slot: T::Slot) -> DispatchResult
+  ```
 
 ### Public Functions (API)
 
 - **take_prefix**: Returns and removes block production data up to the given slot
+  ```rust
+  pub fn take_prefix(slot: T::Slot) -> Vec<(T::Slot, T::BlockProducerId)>
+  ```
+
 - **peek_prefix**: Returns an iterator of block production data up to the given slot without removing it
+  ```rust
+  pub fn peek_prefix(slot: T::Slot) -> Vec<(T::Slot, T::BlockProducerId)>
+  ```
+
 - **drop_prefix**: Removes block production data up to the given slot
+  ```rust
+  pub fn drop_prefix(slot: T::Slot) -> DispatchResult
+  ```
 
 ### Inherent Data
 
@@ -91,10 +105,13 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blprdlog";
 #### Inherent Required
 Yes, when a block is produced. The pallet verifies this inherent data to ensure blocks include information about who produced them.
 
+#### Inherent Verification
+The pallet verifies that the provided block producer ID matches the expected producer for the current slot. If verification fails, block production is halted with an appropriate error, ensuring that only valid block production records are added to the log.
+
 ### Events
 
-- `Appended(T::BlockProducerId, T::Slot)`: Emitted when a block producer is appended to the log for a specific slot
-- `Dropped(T::Slot)`: Emitted when production data is dropped up to a specific slot
+- `Appended(T::BlockProducerId, T::Slot)`: Emitted when a block producer is appended to the log for a specific slot. This event is triggered during regular block production.
+- `Dropped(T::Slot)`: Emitted when production data is dropped up to a specific slot. This typically occurs after data has been processed for rewards and is no longer needed.
 
 ### Errors
 
@@ -111,9 +128,13 @@ The `on_initialize` hook is called at the beginning of each block's execution, b
 
 ```rust
 fn on_initialize(n: BlockNumberFor<T>) -> Weight {
-    // Function implementation
+    // Sets up the verification context for the current block
+    // Initializes the expected block producer for the current slot
+    // Returns the appropriate weight for this operation
 }
 ```
+
+This hook ensures that each block's inherent data can be properly verified against the expected block production schedule.
 
 ## Usage
 
@@ -152,3 +173,158 @@ impl pallet_block_production_log::Config for Runtime {
 - frame_system
 - frame_support
 - sp_block_production_log (for inherent data handling)
+```
+
+```markdown
+# Address Associations Pallet
+
+## Overview
+
+The Address Associations pallet provides functionality to associate mainchain (i.e., Cardano) stake public keys with partner chain addresses. This forms a critical link between the main chain and the partner chain, enabling cross-chain identity verification and operations.
+
+## Purpose
+
+This pallet serves several purposes:
+- Establishes verifiable links between mainchain identities and partner chain addresses
+- Enables cross-chain validation of key ownership through cryptographic signatures
+- Provides a foundation for permission-based operations that require mainchain identity verification
+
+## Configuration
+
+The pallet uses the following configuration traits:
+
+```rust
+#[pallet::config]
+pub trait Config: frame_system::Config {
+    /// The overarching event type.
+    type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+    /// Weight information for extrinsics in this pallet
+    type WeightInfo: crate::weights::WeightInfo;
+
+    /// Partner chain address type
+    type PartnerChainAddress: Member + Parameter + MaxEncodedLen;
+
+    /// Function to provide the genesis UTXO ID
+    fn genesis_utxo() -> UtxoId;
+}
+```
+
+## Storage
+
+The pallet maintains a single storage map:
+
+```rust
+#[pallet::storage]
+pub type AddressAssociations<T: Config> = StorageMap<
+    Hasher = Blake2_128Concat,
+    Key = MainchainKeyHash,  // Derived from the StakePublicKey
+    Value = T::PartnerChainAddress,
+    QueryKind = OptionQuery,
+>;
+```
+
+This maps from a mainchain key hash (derived from a stake public key) to a partner chain address.
+
+## API Specification
+
+### Extrinsics
+
+- **associate_address**: Associates a mainchain public key with a partner chain address
+  ```rust
+  pub fn associate_address(
+      origin: OriginFor<T>,
+      partnerchain_address: T::PartnerChainAddress,
+      signature: StakeKeySignature,
+      stake_public_key: StakePublicKey,
+  ) -> DispatchResult
+  ```
+
+### Public Functions (API)
+
+- **get_version**: Returns the current pallet version
+  ```rust
+  pub fn get_version() -> u32
+  ```
+
+- **get_all_address_associations**: Returns an iterator over all mainchain-partnerchain address associations
+  ```rust
+  pub fn get_all_address_associations() -> impl Iterator<Item = (MainchainKeyHash, T::PartnerChainAddress)>
+  ```
+
+- **get_partner_chain_address_for**: Returns the partner chain address for a given mainchain public key if it exists
+  ```rust
+  pub fn get_partner_chain_address_for(stake_public_key: &StakePublicKey) -> Option<T::PartnerChainAddress>
+  ```
+
+- **get_mainchain_key_for**: Returns the mainchain key hash for a given partner chain address if it exists
+  ```rust
+  pub fn get_mainchain_key_for(address: &T::PartnerChainAddress) -> Option<MainchainKeyHash>
+  ```
+
+### Inherent Data
+
+This pallet does not use inherent data.
+
+### Events
+
+The pallet emits the following events:
+
+```rust
+#[pallet::event]
+#[pallet::generate_deposit(pub(super) fn deposit_event)]
+pub enum Event<T: Config> {
+    /// A new association between a mainchain key and partner chain address was created
+    AddressAssociated {
+        mainchain_key_hash: MainchainKeyHash,
+        partner_chain_address: T::PartnerChainAddress,
+    },
+}
+```
+
+### Errors
+
+```rust
+#[pallet::error]
+pub enum Error<T> {
+    MainchainKeyAlreadyAssociated,
+    InvalidMainchainSignature,
+}
+```
+
+- `MainchainKeyAlreadyAssociated`: The mainchain key is already associated with a partner chain address
+- `InvalidMainchainSignature`: The provided signature is invalid and cannot prove ownership of the stake key
+
+## Usage
+
+To associate a mainchain stake public key with a partner chain address, the caller must:
+
+1. Generate a signature using their mainchain stake key over a message containing:
+    - The stake public key
+    - The partner chain address
+    - The genesis UTXO ID
+2. Submit the `associate_address` extrinsic with their partner chain address, the signature, and their stake public key
+
+The pallet verifies the signature to ensure the caller owns the mainchain stake key before creating the association. Upon successful verification, the pallet:
+1. Creates the association in storage
+2. Emits an `AddressAssociated` event
+
+## Types
+
+The pallet relies on several types imported from the `sidechain_domain` crate:
+- `StakePublicKey`: Represents a mainchain stake public key
+- `MainchainKeyHash`: A hash of a mainchain stake public key
+- `StakeKeySignature`: A signature created using a mainchain stake key
+- `UtxoId`: Identifier for a UTXO (Unspent Transaction Output)
+
+## Dependencies
+
+- frame_system
+- frame_support
+- sidechain_domain (for mainchain types)
+
+## Security Considerations
+
+- Signatures are verified cryptographically to prevent unauthorized associations
+- Once created, associations cannot be modified without governance intervention
+- The pallet ensures that a mainchain key can only be associated with one partner chain address

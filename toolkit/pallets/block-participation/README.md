@@ -1,149 +1,285 @@
 # Block Participation Pallet
 
+A Substrate pallet for tracking block production participation in partner chains.
+
 ## Overview
 
-The Block Participation pallet manages and tracks validator participation in the block production process across the network. It establishes a systematic mechanism for recording when and how validators contribute to consensus, which is essential for maintaining network security, fairness, and proper incentive distribution.
-
-In the context of partner chains, "block participation" refers to the record of which validators have successfully produced blocks at which slots in the blockchain's history. This information is crucial for several reasons:
-
-1. **Consensus Integrity**: By tracking participation, the system can verify that the consensus rules are being properly followed, and that block production responsibilities are correctly assigned and fulfilled.
-
-2. **Performance Monitoring**: The participation data enables the network to monitor the performance of validators over time, identifying those who consistently meet their obligations and those who don't.
-
-3. **Rewards**: Accurate participation records provide the foundation for fairly distributing rewards to validators who contribute to network security.
-
-4. **Historical Analysis**: Participation data offers valuable insights into network health and validator behavior patterns over time, which can inform governance decisions and protocol improvements.
-
-5. **Slot Finality**: By knowing when participation data has been processed up to a certain slot, the system can make determinations about when certain slots can be considered "finalized" from a participation tracking perspective.
-
-The pallet provides a time-windowed approach to participation tracking, where data is processed up to specific slots, and historical data beyond a configured slack window can be safely released to optimize storage usage. This creates an efficient balance between maintaining necessary historical records and managing chain state growth.
-
-Additionally, it integrates with the inherent data mechanism of Substrate, allowing participation processing to be included automatically in blocks when appropriate, rather than requiring explicit extrinsic calls for every update.
-
-By separating the concerns of recording participation (typically handled by the block production log pallet) and processing that participation data (handled by this pallet), the system achieves a clean architectural separation that enhances maintainability and allows for more flexible reward and governance mechanisms.
+The Block Participation pallet provides functionality to track block production by validators in a partner chain. It allows for recording block authors and delegators associated with each block, enabling reward distribution and governance systems to account for validator participation.
 
 ## Purpose
 
-This pallet serves several important purposes in the partner chain ecosystem:
-
-- Tracks the processing progress of block participation data
-- Determines when historical block production data should be released
-- Helps maintain a record of validator participation in the consensus process
-- Supports reward mechanisms based on participation history
-- Enables other pallets to query if participation data is ready to be released or processed
+This pallet serves as a vital component in partner chain ecosystems by:
+1. Tracking which validators are actively producing blocks
+2. Recording delegator participation in block production
+3. Providing an interface for other pallets to query block production data
+4. Managing the release of historical block production data when it's no longer needed
 
 ## Primitives
 
-The Block Participation pallet utilizes several primitive types and structures defined in the `toolkit/primitives/block-participation` crate.
+This pallet uses primitives defined in the Substrate blockchain framework along with custom imports:
+
+```rust
+use codec::{Decode, Encode};
+use frame_support::traits::Get;
+use frame_system::ensure_signed;
+use scale_info::TypeInfo;
+use sp_block_participation::*;
+use sp_runtime::{
+    traits::{Member, Parameter},
+    RuntimeAppPublic,
+};
+use sp_std::{collections::btree_map::BTreeMap, prelude::*, vec};
+```
 
 ## Configuration
 
-The pallet uses the following configuration traits:
+This pallet has the following configuration trait:
 
 ```rust
-#[pallet::config]
 pub trait Config: frame_system::Config {
-    /// The overarching event type.
-    type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
-    /// The slot type
-    type Slot: Member + Parameter + AtLeast32BitUnsigned + Default + Copy + TypeInfo;
-
-    /// The slack window, in number of slots, that determines how long to wait before releasing block
-    /// production data.
-    #[pallet::constant]
-    type SlackWindow: Get<u32>;
+    /// Weight information for extrinsics in this pallet
+    type WeightInfo: crate::weights::WeightInfo;
+    
+    /// The type used to identify block authors
+    type BlockAuthor: Member + Parameter + MaxEncodedLen;
+    
+    /// The type used to identify delegators
+    type DelegatorId: Member + Parameter + MaxEncodedLen;
+    
+    /// A function that determines whether data for a specific slot should be released
+    fn should_release_data(slot: Slot) -> Option<Slot>;
+    
+    /// A function that provides an iterator of blocks produced up to a given slot
+    fn blocks_produced_up_to_slot(slot: Slot) -> impl Iterator<Item = (Slot, Self::BlockAuthor)>;
+    
+    /// A function that discards block production data up to a specified slot
+    fn discard_blocks_produced_up_to_slot(slot: Slot);
+    
+    /// The inherent identifier used for this pallet
+    const TARGET_INHERENT_ID: InherentIdentifier;
 }
 ```
-
-## Storage
-
-The pallet maintains one main storage item:
-
-- `ProcessedUpToSlot`: Records the slot up to which participation data has been processed
 
 ## API Specification
 
 ### Extrinsics
 
-- **note_processing**: Records that block participation data has been processed up to a specific slot
+#### `note_processing`
 
-### Public Functions (API)
+Processes block production data from an inherent, recording block authors and delegator participation.
 
-- **should_release_data**: Returns the slot up to which block production data should be released, or None
+```rust
+pub fn note_processing(origin: OriginFor<T>, data: InherentData) -> DispatchResult
+```
+
+### Public Functions
+
+#### `should_release_data`
+
+Determines if block production data should be released for a given slot.
+
+```rust
+pub fn should_release_data(slot: Slot) -> Option<Slot>
+```
 
 ### Inherent Data
 
-#### Inherent Identifier
+This pallet uses inherent data to provide block production information to the chain. The inherent data has the following structure:
+
 ```rust
-pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"partcptn";
+pub struct InherentData {
+    pub processed_up_to_slot: Slot,
+    pub participation_maps: BTreeMap<Slot, ParticipationMap<BlockAuthor, DelegatorId>>,
+}
 ```
 
-#### Data Type
-`Slot` - A specific slot boundary up to which block participation data should be processed
+## Integration
 
-#### Inherent Required
-Yes, when participation data needs to be processed. The runtime verifies this inherent data by checking:
-- If a previous inherent was already processed in the same block
-- Whether the slot value is greater than the last processed slot
+To integrate this pallet in your runtime:
 
-### Events
+1. Add the pallet to your runtime's `Cargo.toml`:
+```toml
+[dependencies]
+pallet-block-participation = { version = "4.0.0-dev", default-features = false }
+```
 
-- `Processed(T::Slot)`: Emitted when block participation data has been processed up to a specific slot
+2. Implement the pallet's Config trait for your runtime:
+```rust
+impl pallet_block_participation::Config for Runtime {
+    type WeightInfo = pallet_block_participation::weights::SubstrateWeight<Runtime>;
+    type BlockAuthor = AccountId;
+    type DelegatorId = AccountId;
+    
+    fn should_release_data(slot: Slot) -> Option<Slot> {
+        // Your implementation
+    }
+    
+    fn blocks_produced_up_to_slot(slot: Slot) -> impl Iterator<Item = (Slot, Self::BlockAuthor)> {
+        // Your implementation
+    }
+    
+    fn discard_blocks_produced_up_to_slot(slot: Slot) {
+        // Your implementation
+    }
+    
+    const TARGET_INHERENT_ID: InherentIdentifier = *b"blkparti";
+}
+```
+
+3. Add the pallet to your runtime:
+```rust
+construct_runtime!(
+    pub enum Runtime where
+        Block = Block,
+        NodeBlock = opaque::Block,
+        UncheckedExtrinsic = UncheckedExtrinsic
+    {
+        // Other pallets
+        BlockParticipation: pallet_block_participation::{Pallet, Call, Storage, Inherent},
+    }
+);
+```
+
+## Implementation Details
+
+This pallet relies on external storage for tracking block production data. The actual storage of block authors and delegator participation is expected to be handled by the runtime implementation through the Config trait methods.
+
+The pallet processes block production data through inherents, which should be created and supplied by the runtime during block production.
+```
+
+Here is the updated README.md for the Address Associations pallet (only minor changes needed):
+
+```markdown
+# Address Associations Pallet
+
+A Substrate pallet for establishing and verifying associations between mainchain stake public keys and partner chain addresses.
+
+## Overview
+
+The Address Associations pallet enables validators to associate their mainchain stake public keys with their partner chain addresses. This association is critical for various cross-chain functionalities, particularly for tracking validator participation and distributing rewards.
+
+## Purpose
+
+This pallet serves as a bridge component in partner chain ecosystems by:
+1. Allowing validators to create cryptographically verifiable links between their mainchain and partner chain identities
+2. Providing a lookup mechanism to translate between mainchain and partner chain identities
+3. Supporting various cross-chain functionalities including rewards distribution and governance
+
+## Configuration
+
+This pallet has the following configuration trait:
+
+```rust
+pub trait Config: frame_system::Config {
+    /// Weight information for extrinsics in this pallet
+    type WeightInfo: crate::weights::WeightInfo;
+    
+    /// The type used to represent a partner chain address
+    type PartnerChainAddress: Member + Parameter + MaxEncodedLen;
+    
+    /// A function that returns the genesis UTXO ID
+    fn genesis_utxo() -> UtxoId;
+}
+```
+
+## Storage
+
+This pallet defines the following storage items:
+
+```rust
+/// Maps a mainchain key hash to a partner chain address
+pub type AddressAssociations<T: Config> = StorageMap<
+    Hasher = Blake2_128Concat,
+    Key = MainchainKeyHash,
+    Value = T::PartnerChainAddress,
+    QueryKind = OptionQuery,
+>;
+```
+
+## API Specification
+
+### Extrinsics
+
+#### `associate_address`
+
+Associates a mainchain stake public key with a partner chain address using a verifiable signature.
+
+```rust
+pub fn associate_address(
+    origin: OriginFor<T>,
+    mainchain_key: Vec<u8>,
+    mainchain_signature: Vec<u8>
+) -> DispatchResult
+```
+
+### Public Functions
+
+#### `get_version`
+
+Returns the version of the pallet.
+
+```rust
+pub fn get_version() -> Version
+```
+
+#### `get_all_address_associations`
+
+Returns all mainchain key to partner chain address associations.
+
+```rust
+pub fn get_all_address_associations() -> Vec<(MainchainKeyHash, T::PartnerChainAddress)>
+```
+
+#### `get_partner_chain_address_for`
+
+Returns the partner chain address associated with a given mainchain key hash.
+
+```rust
+pub fn get_partner_chain_address_for(mainchain_key_hash: &MainchainKeyHash) -> Option<T::PartnerChainAddress>
+```
 
 ### Errors
 
-- `ProcessingInvalidPreviousSlot`: The processing operation would move the processed slot boundary backwards, which is not allowed
-- `AlreadyProcessedInBlock`: Block participation data has already been processed in the current block
+- `MainchainKeyAlreadyAssociated`: Returned when attempting to associate a mainchain key that is already associated with an address
+- `InvalidMainchainSignature`: Returned when the signature verification fails
 
-## Hooks
+### Events
 
-The Block Participation pallet implements the following FRAME hooks:
-
-### on_initialize
-
-The `on_initialize` hook is called at the beginning of each block's execution, before any extrinsics are processed. For the Block Participation pallet, this hook serves several important purposes:
-
-```rust
-fn on_initialize(n: BlockNumberFor<T>) -> Weight {
-   // Function implementation
-}
-```
+Note: This pallet currently does not emit any events. This could be considered as a potential enhancement in future versions to improve traceability and integration capabilities.
 
 ## Usage
 
-This pallet works in conjunction with other pallets that track block production and validator participation. To use it:
+To use this pallet to associate a mainchain key with a partner chain address:
 
-1. At regular intervals (typically determined by epoch boundaries), submit the `note_processing` extrinsic to record that participation data has been processed up to a specific slot.
+1. Create a signature using your mainchain stake private key on a specific message
+2. Call the `associate_address` extrinsic with your mainchain public key and the signature
+3. If the signature is valid and the key is not already associated, the association will be stored
 
-2. Other pallets can call `should_release_data` to determine if historical participation data can be released for a given slot, based on the slack window configuration.
+The message to sign is constructed from:
+- The genesis UTXO ID (provided by the runtime)
+- The partner chain address of the caller
 
-## Integration with Block Production Log
+## Types
 
-This pallet is typically used in conjunction with the Block Production Log pallet, which records the actual block production data. Together, they provide a complete system for:
-
-1. Recording which validators produced blocks in which slots
-2. Tracking when this data has been processed (e.g., for rewards calculation)
-3. Determining when historical data can be safely released to reclaim storage
-
-## Configuration Examples
-
-A typical configuration might use a slack window of 100 slots:
+This pallet defines and uses the following types:
 
 ```rust
-parameter_types! {
-    pub const ParticipationSlackWindow: u32 = 100;
-}
-
-impl pallet_block_participation::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type Slot = u64;
-    type SlackWindow = ParticipationSlackWindow;
-}
+pub type MainchainKeyHash = [u8; 32];
+pub type UtxoId = [u8; 32];
+pub type Version = u32;
 ```
 
 ## Dependencies
 
-- frame_system
-- frame_support
-- sp_block_participation (for inherent data handling)
+This pallet depends on the following Substrate components:
+
+- `frame_system`: For basic blockchain functionality
+- `frame_support`: For various pallet utilities
+- `sp_std`: For standard library types
+- `sp_core`: For cryptographic utilities
+- `sp_runtime`: For runtime types and traits
+- `scale_info`: For type information
+
+And also uses the following external crates:
+- `codec`: For encoding and decoding
+- `bitcoin`: For verification of Bitcoin-style signatures
