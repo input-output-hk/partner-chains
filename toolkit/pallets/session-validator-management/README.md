@@ -374,7 +374,32 @@ construct_runtime!(
 Relationships between the `session-validator-management` pallet and other pallets in the system:
 
 ```mermaid
+graph TB
+    classDef main fill:#f9d,stroke:#333,stroke-width:4px
+    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
+    classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
 
+%% Pallets that depend on session-validator-management (positioned above)
+    partnerChainsSession[pallet-partner-chains-session]:::consumer
+
+%% Main pallet (in the middle)
+    sessionValidatorManagement[pallet-session-validator-management]:::main
+
+%% Dependencies (positioned below)
+    frameSystem[frame_system]:::dependency
+    sidechainPallet[pallet-sidechain]:::dependency
+    sidechainDomain[sidechain_domain]:::dependency
+    
+%% Relationships for pallets that depend on session-validator-management
+    partnerChainsSession -->|👥 **uses** *rotate_committee_to_next_epoch* for validator rotation| sessionValidatorManagement
+    partnerChainsSession -->|👥 **consumes** *get_current_authority* for authority selection| sessionValidatorManagement
+    partnerChainsSession -->|📝 **implements** *SessionManager* with validator information| sessionValidatorManagement
+
+%% Relationships for dependencies
+    sessionValidatorManagement -->|👥 **obtains** *current_epoch_number* for committee rotation| sidechainPallet
+    sessionValidatorManagement -->|📝 **uses** *Hooks* for block processing| frameSystem
+    sessionValidatorManagement -->|🧩 **uses** *MainchainAddress* and *PolicyId* for configuration| sidechainDomain
+    sessionValidatorManagement -->|📝 **implements** *ProvideInherent* for automatic committee updates| frameSystem
 ```
 
 ## Usage with Partner Chains Session

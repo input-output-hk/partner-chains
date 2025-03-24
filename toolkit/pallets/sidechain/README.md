@@ -238,6 +238,12 @@ pallet_sidechain: SidechainConfig {
 },
 ```
 
+Relationships between the `sidechain` pallet and other pallets in the system:
+
+```mermaid
+
+```
+
 ## Usage
 
 The Sidechain pallet is typically used as a core coordination mechanism. The typical usage flow is:
