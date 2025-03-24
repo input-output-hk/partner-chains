@@ -658,6 +658,7 @@ async fn run_assemble_and_sign<
 	client: &T,
 ) -> Option<McTxHash> {
 	if let MultiSigSmartContractResult::TransactionToSign(MultiSigTransactionData {
+		tx_name: _,
 		temporary_wallet: _,
 		tx_cbor,
 	}) = multisig_result

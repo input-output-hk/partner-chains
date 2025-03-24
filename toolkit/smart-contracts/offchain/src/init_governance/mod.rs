@@ -1,5 +1,5 @@
 use crate::cardano_keys::CardanoPaymentSigningKey;
-use crate::csl::{Costs, OgmiosUtxoExt};
+use crate::csl::Costs;
 use crate::{
 	await_tx::{AwaitTx, FixedDelayRetries},
 	csl::key_hash_address,

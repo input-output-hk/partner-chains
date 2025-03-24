@@ -7,7 +7,7 @@
 //!    Plutus datum attached that contains the script ID (32) and policy hash.
 use crate::csl::{Costs, TransactionExt};
 use crate::governance::{GovernanceData, SimpleAtLeastN};
-use crate::multisig::{multisig_process, MultiSigSmartContractResult};
+use crate::multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult};
 use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
@@ -45,7 +45,7 @@ pub async fn run_update_governance<
 	let payment_ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance_data = GovernanceData::get(genesis_utxo_id, client).await?;
 
-	multisig_process(
+	submit_or_create_tx_to_sign(
 		&governance_data,
 		&payment_ctx,
 		|costs, ctx| {
@@ -60,6 +60,7 @@ pub async fn run_update_governance<
 				ctx,
 			)
 		},
+		"Update Governance",
 		client,
 		&await_tx,
 	)

@@ -12,7 +12,7 @@ use crate::csl::{
 	TransactionBuilderExt, TransactionContext, TransactionExt,
 };
 use crate::governance::GovernanceData;
-use crate::multisig::{multisig_process, MultiSigSmartContractResult};
+use crate::multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult};
 use crate::plutus_script::PlutusScript;
 use crate::{cardano_keys::CardanoPaymentSigningKey, scripts_data};
 use anyhow::anyhow;
@@ -162,7 +162,7 @@ where
 	C: Transactions + QueryLedgerState + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 {
-	multisig_process(
+	submit_or_create_tx_to_sign(
 		governance_data,
 		&payment_ctx,
 		|costs, ctx| {
@@ -175,6 +175,7 @@ where
 				&ctx,
 			)
 		},
+		"Insert Permissioned Candidates",
 		client,
 		await_tx,
 	)
@@ -195,7 +196,7 @@ where
 	C: Transactions + QueryNetwork + QueryLedgerState + QueryUtxoByUtxoId,
 	A: AwaitTx,
 {
-	multisig_process(
+	submit_or_create_tx_to_sign(
 		governance_data,
 		&payment_ctx,
 		|costs, ctx| {
@@ -209,6 +210,7 @@ where
 				&ctx,
 			)
 		},
+		"Update Permissioned Candidates",
 		client,
 		await_tx,
 	)

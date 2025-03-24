@@ -1,5 +1,5 @@
 use super::{test_values, update_governance_tx};
-use crate::csl::{empty_asset_name, key_hash_address, Costs, OgmiosUtxoExt, TransactionContext};
+use crate::csl::{empty_asset_name, key_hash_address, Costs, TransactionContext};
 use crate::governance::GovernanceData;
 use crate::test_values::{protocol_parameters, test_governance_policy};
 use cardano_serialization_lib::*;

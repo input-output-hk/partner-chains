@@ -26,6 +26,7 @@ pub enum MultiSigSmartContractResult {
 /// This prevents payment utxo from being spend when the signatures for MultiSig are being collected.
 #[derive(Clone, Debug, Serialize)]
 pub struct MultiSigTransactionData {
+	pub tx_name: String,
 	pub temporary_wallet: TemporaryWalletData,
 	#[serde(serialize_with = "serialize_as_conway_tx")]
 	pub tx_cbor: Vec<u8>,
@@ -109,11 +110,12 @@ pub(crate) async fn create_temporary_wallet<
 /// * creates a temporary wallet
 /// * sends 5 ADA from the payment wallet (subject of change)
 /// * creates a transaction that would be paid from the temporary wallet, signed by both wallets.
-/// If the chain has single key governance it creates and submits transaction paid by and signed by the payment wallet.
-pub(crate) async fn multisig_process<F, T, A>(
+/// If the chain has single key MultiSig governance it creates and submits transaction paid by and signed by the payment wallet.
+pub(crate) async fn submit_or_create_tx_to_sign<F, T, A>(
 	governance_data: &GovernanceData,
 	payment_ctx: &TransactionContext,
 	make_tx: F,
+	tx_name: &str,
 	client: &T,
 	await_tx: &A,
 ) -> anyhow::Result<MultiSigSmartContractResult>
@@ -122,39 +124,76 @@ where
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 {
-	if governance_data.policy.is_single_key_policy_for(&payment_ctx.payment_key_hash()) {
-		let tx = Costs::calculate_costs(|c| make_tx(c, &payment_ctx), client).await?;
-		let signed_tx = payment_ctx.sign(&tx).to_bytes();
-		let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-			anyhow::anyhow!(
-				"Submit governance update transaction request failed: {}, bytes: {}",
-				e,
-				hex::encode(signed_tx)
-			)
-		})?;
-		let tx_id = McTxHash(res.transaction.id);
-		log::info!("Update Governance transaction submitted: {}", hex::encode(tx_id.0));
-		await_tx
-			.await_tx_output(
-				client,
-				UtxoId { tx_hash: McTxHash(res.transaction.id), index: UtxoIndex(0) },
-			)
-			.await?;
-		Ok(MultiSigSmartContractResult::TransactionSubmitted(tx_id))
+	Ok(if governance_data.policy.is_single_key_policy_for(&payment_ctx.payment_key_hash()) {
+		MultiSigSmartContractResult::TransactionSubmitted(
+			submit_single_governance_key_tx(payment_ctx, make_tx, tx_name, client, await_tx)
+				.await?,
+		)
 	} else {
-		let temporary_wallet = create_temporary_wallet(&payment_ctx, client, await_tx).await?;
-		let temp_wallet_ctx = TransactionContext::for_payment_key_with_change_address(
-			&temporary_wallet.private_key,
-			&payment_ctx.change_address,
+		MultiSigSmartContractResult::TransactionToSign(
+			create_transaction_to_sign(payment_ctx, make_tx, tx_name, client, await_tx).await?,
+		)
+	})
+}
+
+async fn submit_single_governance_key_tx<F, T, A>(
+	payment_ctx: &TransactionContext,
+	make_tx: F,
+	tx_name: &str,
+	client: &T,
+	await_tx: &A,
+) -> anyhow::Result<McTxHash>
+where
+	F: Fn(Costs, &TransactionContext) -> anyhow::Result<Transaction>,
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	A: AwaitTx,
+{
+	let tx = Costs::calculate_costs(|c| make_tx(c, &payment_ctx), client).await?;
+	let signed_tx = payment_ctx.sign(&tx).to_bytes();
+	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
+		anyhow::anyhow!(
+			"Submit '{}' transaction request failed: {}, bytes: {}",
+			tx_name,
+			e,
+			hex::encode(signed_tx)
+		)
+	})?;
+	let tx_id = McTxHash(res.transaction.id);
+	log::info!("'{}' transaction submitted: {}", tx_name, hex::encode(tx_id.0));
+	await_tx
+		.await_tx_output(
 			client,
+			UtxoId { tx_hash: McTxHash(res.transaction.id), index: UtxoIndex(0) },
 		)
 		.await?;
-		let tx = Costs::calculate_costs(|c| make_tx(c, &temp_wallet_ctx), client).await?;
-		let signed_tx_by_caller = payment_ctx.sign(&tx);
-		let signed_tx = temp_wallet_ctx.sign(&signed_tx_by_caller);
-		Ok(MultiSigSmartContractResult::TransactionToSign(MultiSigTransactionData {
-			temporary_wallet: temporary_wallet.into(),
-			tx_cbor: signed_tx.to_bytes(),
-		}))
-	}
+	Ok(tx_id)
+}
+
+async fn create_transaction_to_sign<F, T, A>(
+	payment_ctx: &TransactionContext,
+	make_tx: F,
+	tx_name: &str,
+	client: &T,
+	await_tx: &A,
+) -> anyhow::Result<MultiSigTransactionData>
+where
+	F: Fn(Costs, &TransactionContext) -> anyhow::Result<Transaction>,
+	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	A: AwaitTx,
+{
+	let temporary_wallet = create_temporary_wallet(&payment_ctx, client, await_tx).await?;
+	let temp_wallet_ctx = TransactionContext::for_payment_key_with_change_address(
+		&temporary_wallet.private_key,
+		&payment_ctx.change_address,
+		client,
+	)
+	.await?;
+	let tx = Costs::calculate_costs(|c| make_tx(c, &temp_wallet_ctx), client).await?;
+	let signed_tx_by_caller = payment_ctx.sign(&tx);
+	let signed_tx = temp_wallet_ctx.sign(&signed_tx_by_caller);
+	Ok(MultiSigTransactionData {
+		tx_name: tx_name.to_owned(),
+		temporary_wallet: temporary_wallet.into(),
+		tx_cbor: signed_tx.to_bytes(),
+	})
 }
