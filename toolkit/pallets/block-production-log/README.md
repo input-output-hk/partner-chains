@@ -1,47 +1,40 @@
 # Block Production Log Pallet
 
+A Substrate pallet for recording and maintaining historical data of block production in partner chains.
+
 ## Overview
 
-The Block Production Log pallet records and maintains the historical data of which validators have produced blocks at specific slots throughout the blockchain's lifetime. This chronological record serves as the source of truth for validator participation in the network's consensus process.
-
-Unlike many other pallets that focus on state management, the Block Production Log specializes in historical record-keeping - capturing the essential relationship between time (slots) and validator activity. This historical data forms the empirical basis for several critical network functions:
-
-1. **Validator Performance Assessment**: By maintaining an accurate log of which validators successfully produced blocks when scheduled, the system can evaluate the reliability and performance of validators over time. This assessment is crucial for governance decisions regarding validator selection and rewards.
-
-2. **Reward Distribution Fairness**: Rewards in proof-of-stake networks are typically distributed based on validator participation. The block production log provides the verifiable data needed to ensure rewards are distributed fairly according to actual contributions.
-
-3. **Network Liveness Analysis**: The record of block production over time enables analysis of network liveness and the effectiveness of the validator set in maintaining consistent block production.
-
-4. **Consensus Mechanism Verification**: The block production log provides evidence that the consensus mechanism is functioning as expected, with validators producing blocks according to the protocol rules.
-
-5. **Delegator Information**: For delegated proof-of-stake systems, the log informs delegators about validator performance, helping them make informed decisions about delegation.
-
-The pallet implements an efficient storage strategy by supporting three key operations:
-- Appending new block production records
-- Retrieving historical records up to a specified slot
-- Removing (pruning) historical records that are no longer needed
-
-This approach balances the need for historical record-keeping with efficient storage management. By allowing controlled pruning of old data once it has been processed (typically for reward calculations), the pallet prevents unbounded state growth while ensuring all necessary historical data is available when needed.
-
-The Block Production Log pallet works seamlessly with the Block Participation pallet, which determines when historical data has been fully processed and can safely be pruned from storage.
+The Block Production Log pallet maintains a chronological record of which validators have produced blocks at specific slots throughout the blockchain's lifetime. This historical record serves as the source of truth for validator participation in the network's consensus process and forms the empirical basis for several critical network functions.
 
 ## Purpose
 
 This pallet serves several important purposes in the partner chain ecosystem:
 
-- Maintains a chronological record of block production by validators
-- Provides historical data for reward calculations
-- Supports analysis of validator performance over time
-- Enables efficient pruning of historical data to manage state growth
-- Forms the foundation for fair reward distribution based on participation
+1. Maintaining a chronological record of block production by validators
+2. Providing historical data for reward calculations
+3. Supporting analysis of validator performance over time
+4. Enabling efficient pruning of historical data to manage state growth
+5. Forming the foundation for fair reward distribution based on participation
 
 ## Primitives
 
-The Block Production Log pallet relies on primitives defined in the `toolkit/primitives/block-production-log` crate.
+This pallet uses primitives defined in the Substrate blockchain framework along with custom imports:
+
+```rust
+use codec::{Decode, Encode};
+use frame_support::{pallet_prelude::*, traits::Get};
+use frame_system::pallet_prelude::*;
+use scale_info::TypeInfo;
+use sp_runtime::{
+    traits::{AtLeast32BitUnsigned, Member, Parameter},
+    RuntimeAppPublic,
+};
+use sp_std::{fmt::Debug, prelude::*};
+```
 
 ## Configuration
 
-The pallet uses the following configuration traits:
+This pallet has the following configuration trait:
 
 ```rust
 #[pallet::config]
@@ -70,29 +63,43 @@ The pallet maintains several storage items:
 
 ### Extrinsics
 
-- **append**: Appends the block producer to the production log
-  ```rust
-  pub fn append(origin: OriginFor<T>, block_producer: T::BlockProducerId, slot: T::Slot) -> DispatchResult
-  ```
+#### `append`
 
-### Public Functions (API)
+Appends the block producer to the production log for a specific slot.
 
-- **take_prefix**: Returns and removes block production data up to the given slot
-  ```rust
-  pub fn take_prefix(slot: T::Slot) -> Vec<(T::Slot, T::BlockProducerId)>
-  ```
+```rust
+pub fn append(origin: OriginFor<T>, block_producer: T::BlockProducerId, slot: T::Slot) -> DispatchResult
+```
 
-- **peek_prefix**: Returns an iterator of block production data up to the given slot without removing it
-  ```rust
-  pub fn peek_prefix(slot: T::Slot) -> Vec<(T::Slot, T::BlockProducerId)>
-  ```
+### Public Functions
 
-- **drop_prefix**: Removes block production data up to the given slot
-  ```rust
-  pub fn drop_prefix(slot: T::Slot) -> DispatchResult
-  ```
+#### `take_prefix`
+
+Returns and removes block production data up to the given slot.
+
+```rust
+pub fn take_prefix(slot: T::Slot) -> Vec<(T::Slot, T::BlockProducerId)>
+```
+
+#### `peek_prefix`
+
+Returns an iterator of block production data up to the given slot without removing it.
+
+```rust
+pub fn peek_prefix(slot: T::Slot) -> Vec<(T::Slot, T::BlockProducerId)>
+```
+
+#### `drop_prefix`
+
+Removes block production data up to the given slot.
+
+```rust
+pub fn drop_prefix(slot: T::Slot) -> DispatchResult
+```
 
 ### Inherent Data
+
+This pallet uses inherent data to provide block production information to the chain.
 
 #### Inherent Identifier
 ```rust
@@ -102,16 +109,12 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blprdlog";
 #### Data Type
 `T::BlockProducerId` - The ID of the block producer who created the current block
 
-#### Inherent Required
-Yes, when a block is produced. The pallet verifies this inherent data to ensure blocks include information about who produced them.
-
-#### Inherent Verification
-The pallet verifies that the provided block producer ID matches the expected producer for the current slot. If verification fails, block production is halted with an appropriate error, ensuring that only valid block production records are added to the log.
+The pallet verifies this inherent data to ensure blocks include information about who produced them.
 
 ### Events
 
-- `Appended(T::BlockProducerId, T::Slot)`: Emitted when a block producer is appended to the log for a specific slot. This event is triggered during regular block production.
-- `Dropped(T::Slot)`: Emitted when production data is dropped up to a specific slot. This typically occurs after data has been processed for rewards and is no longer needed.
+- `Appended(T::BlockProducerId, T::Slot)`: Emitted when a block producer is appended to the log for a specific slot.
+- `Dropped(T::Slot)`: Emitted when production data is dropped up to a specific slot.
 
 ### Errors
 
@@ -120,11 +123,7 @@ The pallet verifies that the provided block producer ID matches the expected pro
 
 ## Hooks
 
-The Block Production Log pallet implements the following FRAME hooks to ensure proper handling of block production records:
-
-### on_initialize
-
-The `on_initialize` hook is called at the beginning of each block's execution, before any extrinsics are processed. For the Block Production Log pallet, this hook performs essential setup for inherent data verification:
+The Block Production Log pallet implements the `on_initialize` hook which is called at the beginning of each block's execution:
 
 ```rust
 fn on_initialize(n: BlockNumberFor<T>) -> Weight {
@@ -135,6 +134,39 @@ fn on_initialize(n: BlockNumberFor<T>) -> Weight {
 ```
 
 This hook ensures that each block's inherent data can be properly verified against the expected block production schedule.
+
+## Integration
+
+To integrate this pallet in your runtime:
+
+1. Add the pallet to your runtime's `Cargo.toml`:
+```toml
+[dependencies]
+pallet-block-production-log = { version = "4.0.0-dev", default-features = false }
+```
+
+2. Implement the pallet's Config trait for your runtime:
+```rust
+impl pallet_block_production_log::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type BlockProducerId = AccountId;
+    type Slot = u64;
+}
+```
+
+3. Add the pallet to your runtime:
+```rust
+construct_runtime!(
+    pub enum Runtime where
+        Block = Block,
+        NodeBlock = opaque::Block,
+        UncheckedExtrinsic = UncheckedExtrinsic
+    {
+        // Other pallets
+        BlockProductionLog: pallet_block_production_log::{Pallet, Call, Storage, Event<T>},
+    }
+);
+```
 
 ## Usage
 
@@ -157,19 +189,3 @@ This pallet is designed to work closely with the Block Participation pallet:
 3. Once processed, the Block Participation pallet signals that historical data can be pruned via the `drop_prefix` function.
 
 This separation of concerns creates a clean architecture that separates record-keeping from record processing.
-
-## Configuration Example
-
-```rust
-impl pallet_block_production_log::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type BlockProducerId = AccountId;
-    type Slot = u64;
-}
-```
-
-## Dependencies
-
-- frame_system
-- frame_support
-- sp_block_production_log (for inherent data handling)

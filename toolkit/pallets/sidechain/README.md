@@ -31,11 +31,19 @@ The Sidechain pallet serves several critical purposes in the partner chain ecosy
 
 ## Primitives
 
-The Sidechain pallet relies on primitives defined in the `toolkit/primitives/sidechain` crate and the `sidechain_domain` and `sidechain_slots` types.
+The Sidechain pallet relies on primitives defined in the Substrate blockchain framework along with custom imports:
+
+```rust
+use frame_support::pallet_prelude::*;
+use frame_system::pallet_prelude::BlockNumberFor;
+use sidechain_domain::UtxoId;
+use sidechain_domain::{ScEpochNumber, ScSlotNumber};
+use sp_sidechain::OnNewEpoch;
+```
 
 ## Configuration
 
-The pallet uses the following configuration traits:
+This pallet has the following configuration trait:
 
 ```rust
 #[pallet::config]
@@ -45,10 +53,27 @@ pub trait Config: frame_system::Config {
 }
 ```
 
+Where:
+- `current_slot_number()`: Function that returns the current slot number
+- `OnNewEpoch`: Trait that defines behavior to be executed when a new epoch begins
+
 ## Storage
 
 The pallet maintains several storage items:
 
+```rust
+#[pallet::storage]
+pub(super) type EpochNumber<T: Config> = StorageValue<_, ScEpochNumber, ValueQuery>;
+
+#[pallet::storage]
+pub(super) type SlotsPerEpoch<T: Config> =
+    StorageValue<_, sidechain_slots::SlotsPerEpoch, ValueQuery>;
+
+#[pallet::storage]
+pub(super) type GenesisUtxo<T: Config> = StorageValue<_, UtxoId, ValueQuery>;
+```
+
+These storage items track:
 1. `EpochNumber`: The current epoch number
 2. `SlotsPerEpoch`: The number of slots in each epoch
 3. `GenesisUtxo`: The genesis UTXO that established the sidechain
@@ -59,49 +84,119 @@ The pallet maintains several storage items:
 
 The Sidechain pallet does not expose direct extrinsics. Epoch transitions and related operations happen automatically through the hooks mechanism.
 
-### Public Functions (API)
+### Public Functions
 
-- **genesis_utxo()**: Returns the genesis UTXO
-- **current_epoch_number()**: Returns the current epoch number, calculated from the current slot and slots per epoch
-- **slots_per_epoch()**: Returns the number of slots per epoch
+```rust
+pub fn genesis_utxo() -> UtxoId {
+    GenesisUtxo::<T>::get()
+}
 
-### Inherent Data
+pub fn current_epoch_number() -> ScEpochNumber {
+    let current_slot = T::current_slot_number();
+    let slots_per_epoch = Self::slots_per_epoch();
+    slots_per_epoch.epoch_number_from_sc_slot(current_slot)
+}
 
-The Sidechain pallet does not use inherent data directly.
+pub fn slots_per_epoch() -> sidechain_slots::SlotsPerEpoch {
+    SlotsPerEpoch::<T>::get()
+}
+```
+
+These functions provide access to:
+- The genesis UTXO that established the sidechain
+- The current epoch number (calculated from current slot and slots per epoch)
+- The configured number of slots per epoch
 
 ### Events
 
 The Sidechain pallet does not emit events directly, but it triggers the OnNewEpoch handlers when epochs change.
 
+### Errors
+
+The Sidechain pallet does not define any custom errors.
+
 ## Hooks
 
 The pallet primarily operates through its hooks:
 
-- **on_initialize**: Called at the beginning of each block. This hook is where epoch transitions are detected by comparing the real epoch (calculated from the current slot) with the stored epoch. When a transition is detected, the OnNewEpoch handlers are called. It also initializes the EpochNumber storage item on the first run.
+```rust
+fn on_initialize(n: BlockNumberFor<T>) -> Weight {
+    let real_epoch = Self::current_epoch_number();
+
+    match EpochNumber::<T>::try_get().ok() {
+        Some(saved_epoch) if saved_epoch != real_epoch => {
+            log::info!("⏳ New epoch {real_epoch} starting at block {:?}", n);
+            EpochNumber::<T>::put(real_epoch);
+            <T::OnNewEpoch as OnNewEpoch>::on_new_epoch(saved_epoch, real_epoch)
+                .saturating_add(T::DbWeight::get().reads_writes(2, 1))
+        },
+        None => {
+            log::info!("⏳ Initial epoch {real_epoch} starting at block {:?}", n);
+            EpochNumber::<T>::put(real_epoch);
+            T::DbWeight::get().reads_writes(2, 1)
+        },
+        _ => T::DbWeight::get().reads_writes(2, 0),
+    }
+}
+```
+
+This hook runs at the beginning of each block and:
+1. Calculates the current epoch based on the current slot
+2. Compares it with the stored epoch number
+3. If different (or not initialized), updates the stored epoch and calls OnNewEpoch handlers
+4. If unchanged, does nothing substantial
+5. Returns appropriate weight for the operations performed
 
 ## Genesis Configuration
 
 The pallet requires the following genesis configuration:
 
 ```rust
+#[pallet::genesis_config]
+#[derive(frame_support::DefaultNoBound)]
 pub struct GenesisConfig<T: Config> {
     pub genesis_utxo: UtxoId,
     pub slots_per_epoch: sidechain_slots::SlotsPerEpoch,
     #[serde(skip)]
     pub _config: sp_std::marker::PhantomData<T>,
 }
+
+#[pallet::genesis_build]
+impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+    fn build(&self) {
+        GenesisUtxo::<T>::put(self.genesis_utxo);
+        SlotsPerEpoch::<T>::put(self.slots_per_epoch);
+    }
+}
 ```
 
-## Integration with Other Pallets
+This configuration initializes:
+- The genesis UTXO that links the sidechain to its parent chain
+- The number of slots per epoch that defines the temporal structure
 
-The Sidechain pallet serves as a core coordination mechanism for other pallets through the OnNewEpoch trait. Common integrations include:
+## Integration
 
-1. **Session Validator Management**: Coordinating validator set rotations with epoch boundaries
-2. **Rewards Distribution**: Processing accumulated rewards at epoch transitions
-3. **Parameter Updates**: Applying new protocol parameters at epoch boundaries
+To integrate this pallet in your runtime:
 
-A typical integration might look like:
+1. Add the pallet to your runtime's `Cargo.toml`:
+```toml
+[dependencies]
+pallet-sidechain = { version = "1.6.0", default-features = false }
+```
 
+2. Implement the pallet's Config trait for your runtime:
+```rust
+impl pallet_sidechain::Config for Runtime {
+    fn current_slot_number() -> ScSlotNumber {
+        // Provide implementation to fetch current slot, typically from a slot provider
+        Slots::current_slot()
+    }
+    
+    type OnNewEpoch = EpochTransitionHandlers;
+}
+```
+
+3. Define your OnNewEpoch handler:
 ```rust
 pub struct EpochTransitionHandlers;
 impl sp_sidechain::OnNewEpoch for EpochTransitionHandlers {
@@ -109,28 +204,62 @@ impl sp_sidechain::OnNewEpoch for EpochTransitionHandlers {
         // Perform epoch transition actions
         let mut weight = Weight::zero();
         
-        // Distribute rewards from the previous epoch
+        // Example: Distribute rewards from the previous epoch
         weight = weight.saturating_add(BlockRewards::process_epoch_rewards(old_epoch));
         
-        // Update protocol parameters for the new epoch
-        weight = weight.saturating_add(Parameters::update_for_epoch(new_epoch));
+        // Example: Update validator set for the new epoch
+        weight = weight.saturating_add(SessionValidatorManagement::update_validators(new_epoch));
         
         weight
     }
 }
-
-impl pallet_sidechain::Config for Runtime {
-    fn current_slot_number() -> ScSlotNumber {
-        Slots::current_slot()
-    }
-    type OnNewEpoch = EpochTransitionHandlers;
-}
 ```
 
-## Dependencies
+4. Add the pallet to your runtime:
+```rust
+construct_runtime!(
+    pub enum Runtime where
+        Block = Block,
+        NodeBlock = opaque::Block,
+        UncheckedExtrinsic = UncheckedExtrinsic
+    {
+        // Other pallets
+        Sidechain: pallet_sidechain::{Pallet, Storage, Config<T>},
+    }
+);
+```
 
-- frame_system
-- frame_support
-- sp_sidechain (for the OnNewEpoch trait)
-- sidechain_domain (for domain-specific types like ScEpochNumber, ScSlotNumber, UtxoId)
-- sidechain_slots (for slot-related types like SlotsPerEpoch)
+5. Configure genesis parameters in your chain spec:
+```rust
+pallet_sidechain: SidechainConfig {
+    genesis_utxo: [0u8; 32].into(),  // Replace with actual genesis UTXO
+    slots_per_epoch: 432000.into(),  // Example: 5 days at 1 second per slot
+    _config: Default::default(),
+},
+```
+
+## Usage
+
+The Sidechain pallet is typically used as a core coordination mechanism. The typical usage flow is:
+
+1. At runtime initialization, the pallet is configured with genesis parameters that establish the epoch structure.
+
+2. For each block, the `on_initialize` hook automatically checks if an epoch transition has occurred.
+
+3. When an epoch transition is detected, the configured OnNewEpoch handler is called, which typically:
+    - Updates validator sets through session management
+    - Processes accumulated rewards
+    - Updates protocol parameters
+    - Performs other epoch-based administrative tasks
+
+4. Other pallets can query the current epoch or slots per epoch to coordinate their own activities.
+
+## Integration with Other Pallets
+
+The Sidechain pallet serves as a core coordination mechanism for other pallets through the OnNewEpoch trait. Typical integrations include:
+
+1. **Session Validator Management**: Coordinating validator set rotations with epoch boundaries
+2. **Rewards Distribution**: Processing accumulated rewards at epoch transitions
+3. **Parameter Updates**: Applying new protocol parameters at epoch boundaries
+
+This separation of concerns creates a clean architecture that decouples temporal management from the specific behaviors that need to be coordinated at epoch transitions.

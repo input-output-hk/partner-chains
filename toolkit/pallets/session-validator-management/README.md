@@ -1,75 +1,40 @@
 # Session Validator Management Pallet
 
+A Substrate pallet for managing validator committees and rotations in partner chains.
+
 ## Overview
 
 The Session Validator Management pallet serves as an orchestration layer for managing validator committees within the partner chain ecosystem. It provides a comprehensive framework for determining which validators should be selected for block production and consensus duties during each epoch, as well as securely transitioning between committee sets.
 
-At its core, this pallet addresses the critical challenge of validator selection and rotation in a decentralized manner:
-
-1. **Committee Selection**: The pallet implements mechanisms to select a committee of validators for each upcoming epoch based on predefined criteria and selection algorithms. This selection can incorporate multiple factors including stake, performance history, and randomness to ensure fair and secure validator rotation.
-
-2. **Authority Recognition**: Once selected, validators need to be properly recognized as authorities within the consensus system. The pallet manages the association between validator identities and their authority credentials, ensuring seamless integration with the consensus layer.
-
-3. **Secure Transitions**: Perhaps most importantly, the pallet guarantees secure transitions between different validator sets. This is crucial for maintaining network liveness and preventing security vulnerabilities during committee rotations.
-
-4. **Committee Planning**: The pallet ensures that committees are always planned at least one epoch in advance, providing predictability and allowing validators to prepare for their duties.
-
-5. **Main Chain Integration**: For partner chains that coordinate with a main chain (like Cardano), the pallet maintains relevant configuration data about main chain scripts and addresses, establishing a secure link between the two chains' governance systems.
-
-This pallet is designed with the complexity of cross-chain validator selection in mind. It allows for sophisticated selection algorithms and seamless integration with both main chain data sources and the partner chain's session management system.
-
-The Session Validator Management pallet works in close coordination with the Partner Chains Session pallet, with a clear separation of concerns: this pallet focuses on who should be validators and when they should rotate, while the Session pallet manages the active validator set during each session.
+This pallet maintains information about the current and next validator committees, along with configuration data related to mainchain scripts for validator candidacy. It enables a secure and predictable rotation of validator committees across epochs.
 
 ## Purpose
 
-This pallet provides a way to rotate session validators based on arbitrary inputs and selection algorithm. Its key purposes include:
+This pallet serves several important purposes in the partner chain ecosystem:
 
-- Securely managing the rotation of validator committees across epochs
-- Implementing flexible validator selection algorithms
-- Facilitating coordination between main chain inputs and partner chain validator selection
-- Ensuring validator committees are always prepared in advance
-- Maintaining configuration data for cross-chain validator candidacy mechanisms
-- Providing runtime APIs for querying committee information
-
-## Migrations
-
-This pallet's storage has changed compared to its legacy version. See the [migrations README](src/migrations/README.md) for more information.
+1. **Committee Selection**: Implementing mechanisms to select validator committees for upcoming epochs based on predefined criteria and selection algorithms
+2. **Authority Recognition**: Managing the association between validator identities and their authority credentials
+3. **Secure Transitions**: Guaranteeing secure transitions between different validator sets
+4. **Committee Planning**: Ensuring committees are always planned at least one epoch in advance
+5. **Main Chain Integration**: Maintaining configuration data about main chain scripts for coordinating with a main chain (like Cardano)
 
 ## Primitives
 
-The Session Validator Management pallet relies on primitives defined in the `toolkit/primitives/session-validator-management` crate.
-
-## Hooks
-
-The Session Validator Management pallet implements the following FRAME hooks to handle committee management, inherent processing, and validator selection:
-
-### on_initialize
-
-The `on_initialize` hook is called at the beginning of each block's execution, before any extrinsics are processed. For the Session Validator Management pallet, this hook primarily handles initializing the committee for the first block.
-
-**Key responsibilities:**
-
-1. **First Block Initialization**: The hook ensures that the genesis committee is properly set as the committee for the first block's epoch, allowing the handover phase to occur correctly.
-
-2. **Weight Calculation**: The hook returns an appropriate weight based on the operations performed, ensuring proper accounting of computational resources.
-
-### on_runtime_upgrade
-
-The pallet also implements logic that runs during runtime upgrades:
+This pallet uses primitives defined in the Substrate blockchain framework along with specialized modules:
 
 ```rust
-fn on_runtime_upgrade() -> Weight {
-    migrations::migrate::<T>()
-}
+use frame_support::pallet_prelude::*;
+use frame_system::pallet_prelude::*;
+use sidechain_domain::byte_string::SizedByteString;
+use sidechain_domain::{MainchainAddress, PolicyId};
+use sp_runtime::traits::{MaybeSerializeDeserialize, One, Zero};
+use sp_session_validator_management::*;
+use sp_std::{ops::Add, vec, vec::Vec};
 ```
-
-**Key responsibilities:**
-
-1. **Storage Migration**: Handles migration of storage formats between different versions of the pallet, ensuring data integrity across runtime upgrades.
 
 ## Configuration
 
-The pallet uses the following configuration traits:
+This pallet has the following configuration trait:
 
 ```rust
 #[pallet::config]
@@ -131,34 +96,140 @@ pub trait Config: frame_system::Config {
 
 ## Storage
 
-The pallet maintains several storage items:
+The pallet maintains the following storage items:
 
-1. `CurrentCommittee`: Information about the current committee and its epoch
-2. `NextCommittee`: Information about the next committee and its epoch
-3. `MainChainScriptsConfiguration`: Configuration data for main chain scripts related to validator candidacy
+1. `CurrentCommittee`: A storage value holding information about the current committee and its epoch. Uses the `CommitteeInfo` struct containing an epoch number and a bounded vector of committee members.
+
+2. `NextCommittee`: An optional storage value holding information about the next committee and its epoch. Uses the same `CommitteeInfo` struct.
+
+3. `MainChainScriptsConfiguration`: A storage value containing configuration data for main chain scripts related to validator candidacy, including committee candidate address and policy IDs.
 
 ## API Specification
 
 ### Extrinsics
 
-- **set**: Sets the validators for a future epoch (primarily called through inherents)
-- **set_main_chain_scripts**: Updates the mainchain scripts configuration (requires root origin)
+#### `set`
 
-### Public Functions (API)
+Sets the validators for a future epoch (primarily called through inherents).
 
-- **get_next_unset_epoch_number**: Returns the next epoch number for which validators haven't been set
-- **get_current_authority**: Returns the authority at the given index
-- **get_current_authority_round_robin**: Returns the authority using round-robin selection
-- **current_committee_storage**: Returns the current committee info
-- **next_committee_storage**: Returns the next committee info
-- **next_committee**: Returns the next committee
-- **calculate_committee**: Calculates committee for given inputs
-- **rotate_committee_to_next_epoch**: Rotates committee to the next epoch
-- **get_current_committee**: Returns the current committee and epoch
-- **get_next_committee**: Returns the next committee and epoch
-- **get_main_chain_scripts**: Returns the mainchain scripts configuration
+```rust
+pub fn set(
+    origin: OriginFor<T>,
+    validators: BoundedVec<T::CommitteeMember, T::MaxValidators>,
+    for_epoch_number: T::ScEpochNumber,
+    selection_inputs_hash: SizedByteString<32>,
+) -> DispatchResult
+```
+
+#### `set_main_chain_scripts`
+
+Updates the mainchain scripts configuration (requires root origin).
+
+```rust
+pub fn set_main_chain_scripts(
+    origin: OriginFor<T>,
+    committee_candidate_address: MainchainAddress,
+    d_parameter_policy_id: PolicyId,
+    permissioned_candidates_policy_id: PolicyId,
+) -> DispatchResult
+```
+
+### Public Functions
+
+#### `get_next_unset_epoch_number`
+
+Returns the next epoch number for which validators haven't been set.
+
+```rust
+pub fn get_next_unset_epoch_number() -> T::ScEpochNumber
+```
+
+#### `get_current_authority`
+
+Returns the authority at the given index.
+
+```rust
+pub fn get_current_authority(index: usize) -> Option<T::AuthorityId>
+```
+
+#### `get_current_authority_round_robin`
+
+Returns the authority using round-robin selection.
+
+```rust
+pub fn get_current_authority_round_robin(index: usize) -> Option<T::CommitteeMember>
+```
+
+#### `current_committee_storage`
+
+Returns the current committee info.
+
+```rust
+pub fn current_committee_storage() -> CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>
+```
+
+#### `next_committee_storage`
+
+Returns the next committee info.
+
+```rust
+pub fn next_committee_storage() -> Option<CommitteeInfo<T::ScEpochNumber, T::CommitteeMember, T::MaxValidators>>
+```
+
+#### `next_committee`
+
+Returns the next committee's authority IDs.
+
+```rust
+pub fn next_committee() -> Option<BoundedVec<T::AuthorityId, T::MaxValidators>>
+```
+
+#### `calculate_committee`
+
+Calculates committee for given inputs and epoch.
+
+```rust
+pub fn calculate_committee(
+    authority_selection_inputs: T::AuthoritySelectionInputs,
+    sidechain_epoch: T::ScEpochNumber,
+) -> Option<Vec<T::CommitteeMember>>
+```
+
+#### `rotate_committee_to_next_epoch`
+
+Rotates committee to the next epoch and returns the validators.
+
+```rust
+pub fn rotate_committee_to_next_epoch() -> Option<Vec<T::CommitteeMember>>
+```
+
+#### `get_current_committee`
+
+Returns the current committee and epoch.
+
+```rust
+pub fn get_current_committee() -> (T::ScEpochNumber, Vec<T::CommitteeMember>)
+```
+
+#### `get_next_committee`
+
+Returns the next committee and epoch.
+
+```rust
+pub fn get_next_committee() -> Option<(T::ScEpochNumber, Vec<T::CommitteeMember>)>
+```
+
+#### `get_main_chain_scripts`
+
+Returns the mainchain scripts configuration.
+
+```rust
+pub fn get_main_chain_scripts() -> MainChainScripts
+```
 
 ### Inherent Data
+
+This pallet uses inherent data to provide authority selection inputs to the chain.
 
 #### Inherent Identifier
 ```rust
@@ -166,31 +237,65 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"/ariadne";
 ```
 
 #### Data Type
-`T::AuthoritySelectionInputs` - Input data for validator selection algorithm
+`T::AuthoritySelectionInputs` - Input data for the validator selection algorithm
 
-#### Inherent Required
-Yes, when no next committee has been set for future epochs. The pallet requires inherent data to determine committee selection.
+The pallet uses this inherent data to determine committee selection for future epochs when no next committee has been set yet.
 
 ### Events
 
-The pallet defines events, although note that the current implementation in lib.rs has an empty Event enum. In practice, implementations typically include events such as:
-
-- `CommitteeRotated`: Emitted when committee is rotated to a new epoch
-- `CommitteeSet`: Emitted when a committee is set for a future epoch
-- `MainChainScriptsSet`: Emitted when the mainchain scripts configuration is updated
+The current implementation has an empty Event enum. In practice, implementations typically include events for committee rotations, committee setting, and mainchain scripts updates.
 
 ### Errors
 
-The pallet defines the following errors:
+- `InvalidEpoch`: The epoch specified is invalid for the operation (e.g., trying to set a committee for an epoch that doesn't follow the current sequence)
+- `UnnecessarySetCall`: The set call is unnecessary because a committee is already set for the specified epoch
 
-- `InvalidEpoch`: The epoch is invalid for the operation
-- `UnnecessarySetCall`: The set call is unnecessary (committee is already set for the epoch)
+## Hooks
 
-## Integration Example
+The Session Validator Management pallet implements the following hooks:
 
-A typical integration will include:
+### on_initialize
 
-1. Defining a `CommitteeMember` type that implements the required trait:
+The `on_initialize` hook is called at the beginning of each block's execution:
+
+```rust
+fn on_initialize(block_nr: BlockNumberFor<T>) -> Weight {
+    if block_nr.is_one() {
+        CurrentCommittee::<T>::mutate(|committee| {
+            committee.epoch = T::current_epoch_number();
+        });
+        T::DbWeight::get().reads_writes(2, 1)
+    } else {
+        Weight::zero()
+    }
+}
+```
+
+This hook ensures that the genesis committee is properly set as the committee for the first block's epoch, allowing the handover phase to occur correctly.
+
+### on_runtime_upgrade
+
+The pallet also implements logic that runs during runtime upgrades:
+
+```rust
+fn on_runtime_upgrade() -> Weight {
+    migrations::migrate::<T>()
+}
+```
+
+This hook handles migration of storage formats between different versions of the pallet, ensuring data integrity across runtime upgrades.
+
+## Integration
+
+To integrate this pallet in your runtime:
+
+1. Add the pallet to your runtime's `Cargo.toml`:
+```toml
+[dependencies]
+pallet-session-validator-management = { version = "4.0.0-dev", default-features = false }
+```
+
+2. Implement a `CommitteeMember` type that implements the required trait:
 
 ```rust
 #[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Debug, MaxEncodedLen)]
@@ -213,7 +318,7 @@ impl sp_session_validator_management::CommitteeMember for CommitteeMember {
 }
 ```
 
-2. Implementing a validator selection function:
+3. Implement a validator selection function:
 
 ```rust
 fn select_authorities(
@@ -221,17 +326,11 @@ fn select_authorities(
     epoch: EpochNumber,
 ) -> Option<BoundedVec<CommitteeMember, MaxValidatorsConfig>> {
     // Selection logic to choose validators from candidates
-    let candidates = process_selection_inputs(inputs);
-    if candidates.is_empty() {
-        return None;
-    }
-    
-    let selected = select_based_on_criteria(&candidates, epoch);
-    Some(BoundedVec::truncate_from(selected))
+    // ...
 }
 ```
 
-3. Configuring the pallet in the runtime:
+4. Configure the pallet in your runtime:
 
 ```rust
 impl pallet_session_validator_management::Config for Runtime {
@@ -258,25 +357,41 @@ impl pallet_session_validator_management::Config for Runtime {
 }
 ```
 
-4. Integrating with the session management system:
-
+5. Add the pallet to your runtime:
 ```rust
-impl pallet_partner_chains_session::Config for Runtime {
-    // Session pallet configuration
-    type ValidatorId = AccountId;
-    type ShouldEndSession = SidechainEpochManager;
-    type NextSessionRotation = SidechainEpochManager;
-    type SessionManager = ValidatorManagementSessionManager<Runtime>;
-    type SessionHandler = (Aura, Grandpa);
-    type Keys = SessionKeys;
-    type WeightInfo = weights::WeightInfo<Runtime>;
-}
+construct_runtime!(
+    pub enum Runtime where
+        Block = Block,
+        NodeBlock = opaque::Block,
+        UncheckedExtrinsic = UncheckedExtrinsic
+    {
+        // Other pallets
+        SessionValidatorManagement: pallet_session_validator_management::{Pallet, Call, Storage, Config<T>},
+    }
+);
 ```
 
-## Dependencies
+## Usage with Partner Chains Session
 
-- frame_system
-- frame_support
-- sp_runtime
-- sp_session_validator_management
-- sidechain_domain (for main chain types)
+This pallet is typically used in conjunction with the Partner Chains Session pallet. A typical integration pattern:
+
+1. The Session Validator Management pallet maintains the validator committees and handles rotations
+2. The Partner Chains Session pallet integrates with these committees through a SessionManager implementation:
+
+```rust
+pub struct ValidatorManagementSessionManager<T>(PhantomData<T>);
+
+impl<T: Config> pallet_partner_chains_session::SessionManager<AuthorityId, AuthorityKeys> 
+    for ValidatorManagementSessionManager<T> 
+{
+    fn new_session(new_index: SessionIndex) -> Option<Vec<(AuthorityId, AuthorityKeys)>> {
+        // Get validators from Session Validator Management and convert to the format
+        // expected by the session pallet
+        SessionValidatorManagement::rotate_committee_to_next_epoch()
+            .map(|committee| committee.into_iter().map(|member| {
+                (member.authority_id(), member.authority_keys())
+            }).collect())
+    }
+    
+    // Other required implementations...
+}

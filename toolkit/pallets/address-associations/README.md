@@ -2,18 +2,30 @@
 
 ## Overview
 
-The Address Associations pallet provides functionality to associate mainchain (i.e., Cardano) stake public keys with partner chain addresses. This forms a critical link between the main chain and the partner chain, enabling cross-chain identity verification and operations.
+The Address Associations pallet provides functionality to create and maintain verifiable associations between mainchain (i.e., Cardano) stake public keys and partner chain addresses. This forms a critical link between the main chain and the partner chain, enabling cross-chain identity verification and operations.
 
 ## Purpose
 
-This pallet serves several purposes:
-- Establishes verifiable links between mainchain identities and partner chain addresses
-- Enables cross-chain validation of key ownership through cryptographic signatures
-- Provides a foundation for permission-based operations that require mainchain identity verification
+This pallet serves several key purposes:
+1. Establishes verifiable links between mainchain identities and partner chain addresses
+2. Enables cross-chain validation of key ownership through cryptographic signatures
+3. Provides a foundation for permission-based operations that require mainchain identity verification
+4. Maintains a registry of associations that other pallets can query and use
+
+## Primitives
+
+This pallet uses primitives defined in the Substrate blockchain framework along with custom imports:
+
+```rust
+use parity_scale_codec::Encode;
+use sidechain_domain::{StakePublicKey, UtxoId, MainchainKeyHash, StakeKeySignature};
+use frame_support::pallet_prelude::*;
+use frame_system::pallet_prelude::OriginFor;
+```
 
 ## Configuration
 
-The pallet uses the following configuration traits:
+The pallet has the following configuration trait:
 
 ```rust
 #[pallet::config]
@@ -97,6 +109,42 @@ pub enum Error<T> {
 - `MainchainKeyAlreadyAssociated`: The mainchain key is already associated with a partner chain address
 - `InvalidMainchainSignature`: The provided signature is invalid and cannot prove ownership of the stake key
 
+## Integration
+
+To integrate this pallet in your runtime:
+
+1. Add the pallet to your runtime's `Cargo.toml`:
+```toml
+[dependencies]
+pallet-address-associations = { version = "4.0.0-dev", default-features = false }
+```
+
+2. Implement the pallet's Config trait for your runtime:
+```rust
+impl pallet_address_associations::Config for Runtime {
+    type WeightInfo = pallet_address_associations::weights::SubstrateWeight<Runtime>;
+    type PartnerChainAddress = AccountId;
+    
+    fn genesis_utxo() -> UtxoId {
+        // Your implementation to provide the genesis UTXO ID
+    }
+}
+```
+
+3. Add the pallet to your runtime:
+```rust
+construct_runtime!(
+    pub enum Runtime where
+        Block = Block,
+        NodeBlock = opaque::Block,
+        UncheckedExtrinsic = UncheckedExtrinsic
+    {
+        // Other pallets
+        AddressAssociations: pallet_address_associations::{Pallet, Call, Storage, Config},
+    }
+);
+```
+
 ## Usage
 
 To associate a mainchain stake public key with a partner chain address, the caller must:
@@ -108,6 +156,15 @@ To associate a mainchain stake public key with a partner chain address, the call
 2. Submit the `associate_address` extrinsic with their partner chain address, the signature, and their stake public key
 
 The pallet verifies the signature to ensure the caller owns the mainchain stake key before creating the association.
+
+The message that needs to be signed is structured as follows:
+```rust
+pub struct AddressAssociationSignedMessage<PartnerChainAddress> {
+    pub stake_public_key: StakePublicKey,
+    pub partnerchain_address: PartnerChainAddress,
+    pub genesis_utxo: UtxoId,
+}
+```
 
 ## Types
 
@@ -122,9 +179,12 @@ The pallet relies on several types imported from the `sidechain_domain` crate:
 - frame_system
 - frame_support
 - sidechain_domain (for mainchain types)
+- parity_scale_codec (for encoding/decoding)
 
 ## Security Considerations
 
 - Signatures are verified cryptographically to prevent unauthorized associations
-- Once created, associations cannot be modified without governance intervention
+- Once created, associations cannot be modified through regular extrinsics (requires governance intervention)
 - The pallet ensures that a mainchain key can only be associated with one partner chain address
+- No events are emitted, which could make debugging and monitoring more challenging
+- The pallet does not provide a way to remove or update associations once created
