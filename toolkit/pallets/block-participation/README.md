@@ -93,7 +93,7 @@ pub struct InherentData {
 }
 ```
 
-## Integration
+## Integration Guide
 
 To integrate this pallet in your runtime:
 
@@ -146,7 +146,9 @@ This pallet relies on external storage for tracking block production data. The a
 
 The pallet processes block production data through inherents, which should be created and supplied by the runtime during block production.
 
-## Pallet Coupling
+## System Integration
+
+### Runtime
 
 Relationships between the `block-participation` pallet and other pallets in the system:
 
@@ -177,4 +179,33 @@ blockParticipation -->|🔍 **uses** *blocks_produced_up_to_slot* to track valid
 blockParticipation -->|🔍 **calls** *discard_blocks_produced_up_to_slot* to clear processed data| blockProductionLog
 blockParticipation -->|🧩 **imports** *InherentIdentifier* from primitives| spBlockParticipation
 blockParticipation -->|🧩 **uses** *Slot* type for block timing| spConsensusSlots
+```
+
+### Node
+
+Relationships between the `block-participation` pallet and the node client:
+
+```mermaid
+graph TB
+classDef main fill:#f9d,stroke:#333,stroke-width:4px
+classDef node fill:#fda,stroke:#333,stroke-width:2px
+classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
+
+%% Node (positioned above)
+node[node/node]:::node
+
+%% Main pallet (in the middle)
+blockParticipation[pallet-block-participation]:::main
+
+%% Relationships between node and block-participation pallet
+node -->|🔍 **uses** *should_release_data* to determine when to clear historical data| blockParticipation
+node -->|🔍 **calls** *blocks_produced_up_to_slot* to retrieve block production data| blockParticipation
+node -->|📝 **processes** *note_processing* for block participation inherents| blockParticipation
+node -->|🧩 **provides** *InherentData* structure with participation maps| blockParticipation
+
+%% Relationships that block-participation exposes to the node
+blockParticipation -->|🔍 **exposes** *participation_maps* for block rewards calculation| node
+blockParticipation -->|📝 **requires** *TARGET_INHERENT_ID* for inherent processing| node
+blockParticipation -->|🧩 **uses** *BlockAuthor* to identify block producers| node
+blockParticipation -->|🧩 **uses** *DelegatorId* to track delegator participation| node
 ```
