@@ -241,7 +241,32 @@ pallet_sidechain: SidechainConfig {
 Relationships between the `sidechain` pallet and other pallets in the system:
 
 ```mermaid
+graph TB
+    classDef main fill:#f9d,stroke:#333,stroke-width:4px
+    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
+    classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
 
+%% Pallets that depend on sidechain (positioned above)
+    sessionValidatorManagement[session-validator-management]:::consumer
+    
+%% Main pallet (in the middle)
+    sidechain[sidechain]:::main
+    
+%% Dependencies (positioned below)
+    frameSystem[frame_system]:::dependency
+    sidechainDomain[sidechain_domain]:::dependency
+    sidechainSlots[sidechain_slots]:::dependency
+    spSidechain[sp_sidechain]:::dependency
+    
+%% Relationships for pallets that depend on sidechain
+    sessionValidatorManagement -->|🔄 **uses** *current_epoch_number* for epoch tracking| sidechain
+    
+%% Relationships for dependencies
+    sidechain -->|📝 **implements** *Config* trait and hooks| frameSystem
+    sidechain -->|🧩 **uses** *ScEpochNumber* and *ScSlotNumber* types| sidechainDomain
+    sidechain -->|💰 **stores** *UtxoId* for genesis tracking| sidechainDomain
+    sidechain -->|⏳ **uses** *SlotsPerEpoch* for temporal management| sidechainSlots
+    sidechain -->|📝 **calls** *OnNewEpoch* for epoch transitions| spSidechain
 ```
 
 ## Usage
