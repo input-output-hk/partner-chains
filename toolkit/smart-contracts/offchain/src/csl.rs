@@ -368,7 +368,7 @@ impl UtxoIdExt for UtxoId {
 
 pub(crate) struct TransactionContext {
 	/// This key is added as required signer and used to sign the transaction.
-	pub(crate) payment_key: PrivateKey,
+	pub(crate) payment_key: CardanoPaymentSigningKey,
 	/// Used to pay for the transaction fees and uncovered transaction inputs
 	/// and as source of collateral inputs
 	pub(crate) payment_key_utxos: Vec<OgmiosUtxo>,
@@ -384,10 +384,10 @@ impl TransactionContext {
 		payment_key: &CardanoPaymentSigningKey,
 		client: &C,
 	) -> Result<TransactionContext, anyhow::Error> {
-		let payment_key = payment_key.clone().0;
+		let payment_key = payment_key.clone();
 		let network = client.shelley_genesis_configuration().await?.network.to_csl();
 		let protocol_parameters = client.query_protocol_parameters().await?;
-		let payment_address = key_hash_address(&payment_key.to_public().hash(), network);
+		let payment_address = key_hash_address(&payment_key.0.to_public().hash(), network);
 		let payment_key_utxos = client.query_utxos(&[payment_address.to_bech32(None)?]).await?;
 		Ok(TransactionContext {
 			payment_key,
@@ -398,35 +398,27 @@ impl TransactionContext {
 		})
 	}
 
-	pub(crate) async fn for_payment_key_with_change_address<C: QueryLedgerState + QueryNetwork>(
-		payment_key: &CardanoPaymentSigningKey,
-		change_address: &Address,
-		client: &C,
-	) -> Result<TransactionContext, anyhow::Error> {
-		let payment_key = payment_key.clone().0;
-		let network = client.shelley_genesis_configuration().await?.network.to_csl();
-		let protocol_parameters = client.query_protocol_parameters().await?;
-		let payment_address = key_hash_address(&payment_key.to_public().hash(), network);
-		let payment_key_utxos = client.query_utxos(&[payment_address.to_bech32(None)?]).await?;
-		Ok(TransactionContext {
-			payment_key,
-			payment_key_utxos,
-			network,
-			protocol_parameters,
+	pub(crate) fn with_change_address(&self, change_address: &Address) -> Self {
+		Self {
+			payment_key: self.payment_key.clone(),
+			payment_key_utxos: self.payment_key_utxos.clone(),
+			network: self.network,
+			protocol_parameters: self.protocol_parameters.clone(),
 			change_address: change_address.clone(),
-		})
+		}
 	}
 
 	pub(crate) fn payment_key_hash(&self) -> Ed25519KeyHash {
-		self.payment_key.to_public().hash()
+		self.payment_key.0.to_public().hash()
 	}
 
 	pub(crate) fn sign(&self, tx: &Transaction) -> Transaction {
 		let tx_hash: [u8; 32] = sidechain_domain::crypto::blake2b(tx.body().to_bytes().as_ref());
-		let signature = self.payment_key.sign(&tx_hash);
+		let signature = self.payment_key.0.sign(&tx_hash);
 		let mut witness_set = tx.witness_set();
 		let mut vkeywitnesses = witness_set.vkeys().unwrap_or_else(Vkeywitnesses::new);
-		vkeywitnesses.add(&Vkeywitness::new(&Vkey::new(&self.payment_key.to_public()), &signature));
+		vkeywitnesses
+			.add(&Vkeywitness::new(&Vkey::new(&self.payment_key.0.to_public()), &signature));
 		witness_set.set_vkeys(&vkeywitnesses);
 		Transaction::new(&tx.body(), &witness_set, tx.auxiliary_data())
 	}

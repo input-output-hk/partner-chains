@@ -1,8 +1,9 @@
 use crate::{
+	cardano_keys::CardanoPaymentSigningKey,
 	governance::{GovernancePolicyScript, PartnerChainsMultisigPolicy},
 	plutus_script::PlutusScript,
 };
-use cardano_serialization_lib::{Address, Language, PlutusData, PrivateKey};
+use cardano_serialization_lib::{Address, Language, PlutusData};
 use hex_literal::hex;
 use ogmios_client::{
 	query_ledger_state::{
@@ -12,8 +13,8 @@ use ogmios_client::{
 };
 use sidechain_domain::StakePoolPublicKey;
 
-pub(crate) fn payment_key() -> PrivateKey {
-	PrivateKey::from_normal_bytes(&hex!(
+pub(crate) fn payment_key() -> CardanoPaymentSigningKey {
+	CardanoPaymentSigningKey::from_normal_bytes(hex!(
 		"cf86dc85e4933424826e846c18d2695689bf65de1fc0c40fcd9389ba1cbdc069"
 	))
 	.unwrap()

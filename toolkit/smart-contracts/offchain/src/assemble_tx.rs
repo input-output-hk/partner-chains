@@ -37,10 +37,10 @@ pub async fn assemble_tx<
 ) -> anyhow::Result<Option<McTxHash>> {
 	let mut witness_set = transaction.witness_set();
 
-	let mut vk = witness_set.vkeys().unwrap_or_else(|| Vkeywitnesses::new());
+	let mut vk = witness_set.vkeys().unwrap_or_else(Vkeywitnesses::new);
 
 	for w in witnesses.iter() {
-		vk.add(&w);
+		vk.add(w);
 	}
 	witness_set.set_vkeys(&vk);
 

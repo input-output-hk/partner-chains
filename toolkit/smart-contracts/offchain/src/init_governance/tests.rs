@@ -6,7 +6,7 @@ use crate::init_governance::run_init_governance;
 use crate::scripts_data;
 use crate::test_values::protocol_parameters;
 use crate::{csl::TransactionContext, ogmios_mock::MockOgmiosClient};
-use cardano_serialization_lib::{Address, ExUnits, NetworkIdKind, PrivateKey};
+use cardano_serialization_lib::{Address, ExUnits, NetworkIdKind};
 use hex_literal::*;
 use ogmios_client::transactions::{
 	OgmiosBudget, OgmiosEvaluateTransactionResponse, OgmiosValidatorIndex,
@@ -180,7 +180,7 @@ async fn transaction_run() {
 	let genesis_utxo = genesis_utxo().utxo_id();
 	let result = run_init_governance(
 		governance_authority(),
-		&payment_key_domain(),
+		&payment_key(),
 		Some(genesis_utxo),
 		&mock_client,
 		ImmediateSuccess,
@@ -208,12 +208,8 @@ fn genesis_utxo() -> OgmiosUtxo {
 const PAYMENT_KEY_BYTES: [u8; 32] =
 	hex!("94f7531c9639654b77fa7e10650702b6937e05cd868f419f54bcb8368e413f04");
 
-fn payment_key_domain() -> CardanoPaymentSigningKey {
+fn payment_key() -> CardanoPaymentSigningKey {
 	CardanoPaymentSigningKey::from_normal_bytes(PAYMENT_KEY_BYTES).unwrap()
-}
-
-fn payment_key() -> PrivateKey {
-	PrivateKey::from_normal_bytes(&PAYMENT_KEY_BYTES).unwrap()
 }
 
 fn payment_address() -> Address {

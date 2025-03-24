@@ -35,7 +35,7 @@ pub async fn run_update_governance<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 >(
-	new_governance_authority: &Vec<MainchainKeyHash>,
+	new_governance_authority: &[MainchainKeyHash],
 	new_governance_threshold: u8,
 	payment_key: &CardanoPaymentSigningKey,
 	genesis_utxo_id: UtxoId,
@@ -71,7 +71,7 @@ fn update_governance_tx(
 	version_oracle_validator: &[u8],
 	version_oracle_policy: &[u8],
 	genesis_utxo: UtxoId,
-	new_governance_authority: &Vec<MainchainKeyHash>,
+	new_governance_authority: &[MainchainKeyHash],
 	new_governance_threshold: u8,
 	governance_data: &GovernanceData,
 	costs: Costs,

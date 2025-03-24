@@ -120,9 +120,6 @@ pub async fn upsert_permissioned_candidates<
 			)
 		},
 	};
-	if let Some(MultiSigSmartContractResult::TransactionSubmitted(tx_hash)) = result_opt {
-		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
-	}
 	Ok(result_opt)
 }
 
@@ -172,7 +169,7 @@ where
 				candidates,
 				governance_data,
 				costs,
-				&ctx,
+				ctx,
 			)
 		},
 		"Insert Permissioned Candidates",
@@ -207,7 +204,7 @@ where
 				current_utxo,
 				governance_data,
 				costs,
-				&ctx,
+				ctx,
 			)
 		},
 		"Update Permissioned Candidates",
@@ -233,7 +230,7 @@ fn mint_permissioned_candidates_token_tx(
 			policy,
 			&empty_asset_name(),
 			&permissioned_candidates_policy_redeemer_data(),
-			&costs.get_mint(&policy.clone().into()),
+			&costs.get_mint(&policy.clone()),
 		)?;
 	}
 	tx_builder.add_output_with_one_script_token(
