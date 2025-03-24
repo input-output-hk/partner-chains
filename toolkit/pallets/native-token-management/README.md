@@ -1,165 +1,179 @@
-# Native Token Management Primitives
+# Native Token Management Pallet
 
-A Substrate primitives crate for enabling cross-chain native token transfers from Cardano (main chain) to partner chains.
+A Substrate pallet for enabling cross-chain native token transfers from Cardano (main chain) to partner chains.
 
 ## Overview
 
-The Native Token Management primitives crate provides fundamental types, traits, and utilities that facilitate the observation and processing of native token transfers from the main chain (Cardano) to partner chains. It serves as the foundation for the Native Token Management pallet, defining the core data structures, inherent data provider mechanisms, and runtime APIs necessary for cross-chain token transfers.
+The Native Token Management pallet provides mechanisms to facilitate the observation and processing of native token transfers from the main chain (Cardano) to partner chains. It establishes a notion of liquid and illiquid supply of the native token on Cardano, represented as native tokens being either freely available in user accounts or locked under a designated illiquid supply address.
+
+When tokens are sent to the illiquid supply address on Cardano, this signals that an equivalent amount of tokens should be made available on the Partner Chain. The pallet consumes inherent data containing information about these transfers and triggers customizable logic to handle their movement on the partner chain side.
 
 ## Purpose
 
-This primitives crate serves several critical purposes in the partner chain ecosystem:
+This pallet serves several critical purposes in the partner chain ecosystem:
 
-1. Defining the core types for identifying and tracking native tokens on the main chain
-2. Providing a mechanism to observe and verify token transfers across chains
-3. Implementing the inherent data provider that fetches token transfer information
-4. Defining runtime APIs for accessing native token management functionality
-5. Establishing error handling for token transfer operations
-6. Enabling a secure bridge between the main chain and partner chains
+1. Enabling cross-chain native token movements between Cardano and partner chains
+2. Providing a configurable mechanism for handling token transfers
+3. Maintaining information about the main chain scripts (policy ID, asset name, validator address)
+4. Processing inherent data about token transfers from the main chain
+5. Supporting customizable token transfer handling logic through the `TokenTransferHandler` trait
+6. Tracking initialization status to determine when historical data needs to be queried
 
 ## Primitives
 
-The crate uses primitives defined in the Substrate blockchain framework along with custom imports:
+This pallet uses primitives defined in the Substrate blockchain framework along with custom imports:
 
 ```rust
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use frame_support::pallet_prelude::*;
+use frame_system::pallet_prelude::*;
 use sidechain_domain::*;
-use sp_inherents::*;
-use sp_runtime::scale_info::TypeInfo;
+use sp_native_token_management::*;
 ```
 
-## Core Types
+## Configuration
 
-### MainChainScripts
-
-The `MainChainScripts` struct defines the on-chain entities involved in native token management on Cardano:
+This pallet has the following configuration trait:
 
 ```rust
-#[derive(Default, Debug, Clone, PartialEq, Eq, TypeInfo, Encode, Decode, MaxEncodedLen)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct MainChainScripts {
-    /// Minting policy ID of the native token
-    pub native_token_policy_id: PolicyId,
-    /// Asset name of the native token
-    pub native_token_asset_name: AssetName,
-    /// Address of the illiquid supply validator. All tokens sent to that address are effectively locked
-    /// and considered "sent" to the Partner Chain.
-    pub illiquid_supply_validator_address: MainchainAddress,
+#[pallet::config]
+pub trait Config: frame_system::Config {
+    type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+    type TokenTransferHandler: TokenTransferHandler;
+    type WeightInfo: WeightInfo;
 }
 ```
 
-### TokenTransferData
-
-Represents the transfer data for native tokens:
+Where `TokenTransferHandler` is defined as:
 
 ```rust
-#[derive(Decode, Encode)]
-pub struct TokenTransferData {
-    pub token_amount: NativeTokenAmount,
+pub trait TokenTransferHandler {
+    fn handle_token_transfer(token_amount: NativeTokenAmount) -> DispatchResult;
 }
 ```
 
-### InherentError
+## Storage
 
-Defines the possible errors that can occur during the inherent data processing:
+The pallet maintains several storage items:
 
-```rust
-#[derive(Encode, Debug, PartialEq)]
-#[cfg_attr(feature = "std", derive(Decode, thiserror::Error))]
-pub enum InherentError {
-    #[cfg_attr(feature = "std", error("Inherent missing for token transfer of {0} tokens"))]
-    TokenTransferNotHandled(NativeTokenAmount),
-    #[cfg_attr(
-        feature = "std",
-        error("Incorrect token transfer amount: expected {0}, got {1} tokens")
-    )]
-    IncorrectTokenNumberTransfered(NativeTokenAmount, NativeTokenAmount),
-    #[cfg_attr(feature = "std", error("Unexpected transfer of {0} tokens"))]
-    UnexpectedTokenTransferInherent(NativeTokenAmount),
-}
-```
+1. `MainChainScriptsConfiguration`: Stores configuration information about the Cardano scripts (policy ID, asset name, validator address)
+2. `Initialized`: Tracks whether the pallet has been initialized, which determines if historical data needs to be queried
 
-## Runtime API
+## API Specification
 
-The crate declares a runtime API for accessing native token management functionality:
+### Extrinsics
+
+#### `transfer_tokens`
+
+Processes a token transfer from the main chain to the partner chain by calling the configured `TokenTransferHandler`.
 
 ```rust
-sp_api::decl_runtime_apis! {
-    pub trait NativeTokenManagementApi {
-        fn get_main_chain_scripts() -> Option<MainChainScripts>;
-        /// Gets current initializaion status and set it to `true` afterwards. This check is used to
-        /// determine whether historical data from the beginning of main chain should be queried.
-        fn initialized() -> bool;
-    }
-}
+pub fn transfer_tokens(origin: OriginFor<T>, token_amount: NativeTokenAmount) -> DispatchResult
 ```
 
-## Inherent Data
+#### `set_main_chain_scripts`
 
-This crate defines the inherent data provider used to fetch token transfers from the main chain.
+Changes the main chain scripts used for observing native token transfers.
 
-### Inherent Identifier
+```rust
+pub fn set_main_chain_scripts(
+    origin: OriginFor<T>,
+    native_token_policy_id: PolicyId,
+    native_token_asset_name: AssetName,
+    illiquid_supply_validator_address: MainchainAddress,
+) -> DispatchResult
+```
+
+### Public Functions
+
+#### `get_main_chain_scripts`
+
+Returns the current main chain scripts configuration.
+
+```rust
+pub fn get_main_chain_scripts() -> Option<sp_native_token_management::MainChainScripts>
+```
+
+#### `initialized`
+
+Returns the current initialization status.
+
+```rust
+pub fn initialized() -> bool
+```
+
+### Inherent Data
+
+This pallet uses inherent data to provide token transfer information from the main chain.
+
+#### Inherent Identifier
 ```rust
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"nattoken";
 ```
 
-### NativeTokenManagementDataSource Trait
+#### Data Type
+`TokenTransferData` - Contains information about the amount of tokens transferred
 
-```rust
-#[async_trait::async_trait]
-pub trait NativeTokenManagementDataSource {
-    /// Retrieves total of native token transfers into the illiquid supply in the range (after_block, to_block]
-    async fn get_total_native_token_transfer(
-        &self,
-        after_block: Option<McBlockHash>,
-        to_block: McBlockHash,
-        scripts: MainChainScripts,
-    ) -> Result<NativeTokenAmount, Box<dyn std::error::Error + Send + Sync>>;
-}
-```
+The pallet verifies this inherent data to ensure tokens are transferred correctly.
 
-### NativeTokenManagementInherentDataProvider
+### Events
 
-This provider is responsible for collecting token transfer information from the main chain and making it available to the runtime.
+- `TokensTransfered(NativeTokenAmount)`: Emitted when tokens are transferred to the partner chain.
 
-```rust
-pub struct NativeTokenManagementInherentDataProvider {
-    pub token_amount: Option<NativeTokenAmount>,
-}
-```
+### Errors
+
+- `TokenTransferNotHandled`: Inherent data for token transfer exists but was not handled
+- `IncorrectTokenNumberTransfered`: The token amount in the inherent extrinsic does not match the expected amount
+- `UnexpectedTokenTransferInherent`: Unexpected token transfer inherent extrinsic when none was expected
 
 ## Integration
 
-To integrate this primitives crate in your runtime:
+To integrate this pallet in your runtime:
 
-1. Add the crate to your runtime's `Cargo.toml`:
+1. Add the pallet to your runtime's `Cargo.toml`:
 ```toml
 [dependencies]
+pallet-native-token-management = { version = "4.0.0-dev", default-features = false }
 sp-native-token-management = { version = "4.0.0-dev", default-features = false }
 ```
 
-2. Implement the `NativeTokenManagementDataSource` trait to connect to your main chain data source:
+2. Implement the `TokenTransferHandler` trait:
 ```rust
-pub struct YourMainChainDataSource {
-    // Your implementation details
-}
+pub struct ExampleTokenTransferHandler;
 
-#[async_trait::async_trait]
-impl NativeTokenManagementDataSource for YourMainChainDataSource {
-    async fn get_total_native_token_transfer(
-        &self,
-        after_block: Option<McBlockHash>,
-        to_block: McBlockHash,
-        scripts: MainChainScripts,
-    ) -> Result<NativeTokenAmount, Box<dyn std::error::Error + Send + Sync>> {
-        // Implementation that connects to your main chain data source
-        // and fetches the total native token transfers
+impl TokenTransferHandler for ExampleTokenTransferHandler {
+    fn handle_token_transfer(token_amount: NativeTokenAmount) -> DispatchResult {
+        // Your custom logic for handling token transfers
+        // For example, mint tokens, update balances, etc.
+        Ok(())
     }
 }
 ```
 
-3. Create the inherent data provider in your node service:
+3. Implement the pallet's Config trait for your runtime:
+```rust
+impl pallet_native_token_management::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type TokenTransferHandler = ExampleTokenTransferHandler;
+    type WeightInfo = pallet_native_token_management::weights::WeightInfo<Runtime>;
+}
+```
 
+4. Add the pallet to your runtime:
+```rust
+construct_runtime!(
+    pub enum Runtime where
+        Block = Block,
+        NodeBlock = opaque::Block,
+        UncheckedExtrinsic = UncheckedExtrinsic
+    {
+        // Other pallets
+        NativeTokenManagement: pallet_native_token_management,
+    }
+);
+```
+
+5. Configure the inherent data provider in your node's service:
 ```rust
 let native_token_data_source = YourMainChainDataSource::new();
 
@@ -177,46 +191,27 @@ inherent_data_providers
 
 ## Usage
 
-The Native Token Management primitives are typically used as follows:
+The Native Token Management pallet is typically used as follows:
 
-1. In the node implementation, you create and register the inherent data provider to supply token transfer information from the main chain.
+1. Configure the pallet with the appropriate main chain scripts (policy ID, asset name, validator address) either through genesis configuration or by calling `set_main_chain_scripts` via governance.
 
-2. The inherent data provider will query the main chain data source to determine if any tokens have been transferred to the illiquid supply address.
+2. Implement the `TokenTransferHandler` trait with your custom logic for handling token transfers from the main chain to the partner chain.
 
-3. If tokens have been transferred, the provider will include this information as inherent data when a new block is authored.
+3. The node service creates and registers the `NativeTokenManagementInherentDataProvider` to supply token transfer information from the main chain.
 
-4. The corresponding pallet in the runtime will process this inherent data and handle the token transfers on the partner chain side.
+4. When tokens are transferred to the illiquid supply validator address on Cardano, the inherent data provider will detect this and include the information in the block.
 
-## Testing Support
+5. The pallet processes the inherent data and calls the `TokenTransferHandler` to handle the token transfer on the partner chain side.
 
-For testing purposes, the crate includes a mock implementation of the `NativeTokenManagementDataSource` trait:
+6. The `TokensTransfered` event is emitted to signal that tokens have been transferred.
 
-```rust
-#[cfg(any(test, feature = "mock"))]
-pub mod mock {
-    pub struct MockNativeTokenDataSource {
-        transfers: HashMap<(Option<McBlockHash>, McBlockHash), NativeTokenAmount>,
-    }
-
-    #[async_trait]
-    impl NativeTokenManagementDataSource for MockNativeTokenDataSource {
-        async fn get_total_native_token_transfer(
-            &self,
-            after_block: Option<McBlockHash>,
-            to_block: McBlockHash,
-            _scripts: MainChainScripts,
-        ) -> Result<NativeTokenAmount, Box<dyn std::error::Error + Send + Sync>> {
-            Ok(self.transfers.get(&(after_block, to_block)).cloned().unwrap_or_default())
-        }
-    }
-}
-```
+**IMPORTANT**: This pallet only handles the amount of tokens moved and does not attach any metadata to the transfers. It is not a fully-featured token bridge on its own and needs to be combined with a separate sender-receiver metadata channel to implement a complete bridge.
 
 ## Architecture
 
 ### Runtime
 
-Relationships between the `native-token-management` pallet and other pallets in the system:
+Relationships between the `native-token-management` pallet and other components in the system:
 
 ```mermaid
 graph TB
@@ -264,8 +259,7 @@ graph TB
     node -->|👥 **calls** *set_main_chain_scripts* via governance or sudo for configuration| nativeTokenManagement
     node -->|💰 **processes** *TokenTransferData* for native token movement| nativeTokenManagement
 ```
-    
 
 ## Migration
 
-See the guide in `docs/developer-guides/native-token-migration-guide.md` for how to add this feature to an already running chain.
+For adding this feature to an already running chain, refer to the migration guide in `docs/developer-guides/native-token-migration-guide.md`.
