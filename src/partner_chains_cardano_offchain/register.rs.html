@@ -537,6 +537,8 @@
 <a href="#537" id="537">537</a>
 <a href="#538" id="538">538</a>
 <a href="#539" id="539">539</a>
+<a href="#540" id="540">540</a>
+<a href="#541" id="541">541</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
 <span class="kw">use </span><span class="kw">crate</span>::csl::TransactionOutputAmountBuilderExt;
 <span class="kw">use </span><span class="kw">crate</span>::csl::{
@@ -905,6 +907,7 @@
 			payment_key_utxos: payment_key_utxos.clone(),
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
+			change_address: payment_addr(),
 		};
 		<span class="kw">let </span>own_registration_utxos = <span class="macro">vec!</span>[payment_key_utxos.get(<span class="number">1</span>).unwrap().clone()];
 		<span class="kw">let </span>registration_utxo = payment_key_utxos.first().unwrap();
@@ -951,6 +954,7 @@
 			payment_key_utxos: payment_key_utxos.clone(),
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
+			change_address: payment_addr(),
 		};
 		<span class="kw">let </span>registration_utxo = payment_key_utxos.first().unwrap();
 		<span class="kw">let </span>candidate_registration = candidate_registration(registration_utxo.utxo_id());

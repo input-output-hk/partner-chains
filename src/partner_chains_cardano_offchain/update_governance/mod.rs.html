@@ -121,36 +121,6 @@
 <a href="#121" id="121">121</a>
 <a href="#122" id="122">122</a>
 <a href="#123" id="123">123</a>
-<a href="#124" id="124">124</a>
-<a href="#125" id="125">125</a>
-<a href="#126" id="126">126</a>
-<a href="#127" id="127">127</a>
-<a href="#128" id="128">128</a>
-<a href="#129" id="129">129</a>
-<a href="#130" id="130">130</a>
-<a href="#131" id="131">131</a>
-<a href="#132" id="132">132</a>
-<a href="#133" id="133">133</a>
-<a href="#134" id="134">134</a>
-<a href="#135" id="135">135</a>
-<a href="#136" id="136">136</a>
-<a href="#137" id="137">137</a>
-<a href="#138" id="138">138</a>
-<a href="#139" id="139">139</a>
-<a href="#140" id="140">140</a>
-<a href="#141" id="141">141</a>
-<a href="#142" id="142">142</a>
-<a href="#143" id="143">143</a>
-<a href="#144" id="144">144</a>
-<a href="#145" id="145">145</a>
-<a href="#146" id="146">146</a>
-<a href="#147" id="147">147</a>
-<a href="#148" id="148">148</a>
-<a href="#149" id="149">149</a>
-<a href="#150" id="150">150</a>
-<a href="#151" id="151">151</a>
-<a href="#152" id="152">152</a>
-<a href="#153" id="153">153</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Building and submitting of the transaction that changes the current governance authority
 //!
 //! The transaction:
@@ -160,6 +130,7 @@
 //!    Plutus datum attached that contains the script ID (32) and policy hash.
 </span><span class="kw">use </span><span class="kw">crate</span>::csl::{Costs, TransactionExt};
 <span class="kw">use </span><span class="kw">crate</span>::governance::{GovernanceData, SimpleAtLeastN};
+<span class="kw">use </span><span class="kw">crate</span>::multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult};
 <span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
@@ -168,7 +139,6 @@
 	init_governance::transaction::version_oracle_datum_output,
 	plutus_script::PlutusScript,
 };
-<span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>cardano_serialization_lib::{
 	Language, PlutusData, Transaction, TransactionBuilder, TxInputsBuilder,
 };
@@ -177,12 +147,7 @@
 	query_network::QueryNetwork,
 	transactions::Transactions,
 };
-<span class="kw">use </span>serde_json::json;
-<span class="kw">use </span>sidechain_domain::{
-	MainchainKeyHash, McSmartContractResult,
-	McSmartContractResult::{TxCBOR, TxHash},
-	McTxHash, UtxoId, UtxoIndex,
-};
+<span class="kw">use </span>sidechain_domain::{MainchainKeyHash, UtxoId};
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>test;
@@ -199,12 +164,14 @@
 	genesis_utxo_id: UtxoId,
 	client: <span class="kw-2">&amp;</span>T,
 	await_tx: A,
-) -&gt; anyhow::Result&lt;McSmartContractResult&gt; {
-	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_key, client).<span class="kw">await</span><span class="question-mark">?</span>;
+) -&gt; anyhow::Result&lt;MultiSigSmartContractResult&gt; {
+	<span class="kw">let </span>payment_ctx = TransactionContext::for_payment_key(payment_key, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>governance_data = GovernanceData::get(genesis_utxo_id, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>tx = Costs::calculate_costs(
-		|costs| {
+	submit_or_create_tx_to_sign(
+		<span class="kw-2">&amp;</span>governance_data,
+		<span class="kw-2">&amp;</span>payment_ctx,
+		|costs, ctx| {
 			update_governance_tx(
 				raw_scripts::VERSION_ORACLE_VALIDATOR,
 				raw_scripts::VERSION_ORACLE_POLICY,
@@ -213,42 +180,15 @@
 				new_governance_threshold,
 				<span class="kw-2">&amp;</span>governance_data,
 				costs,
-				<span class="kw-2">&amp;</span>ctx,
+				ctx,
 			)
 		},
+		<span class="string">"Update Governance"</span>,
 		client,
+		<span class="kw-2">&amp;</span>await_tx,
 	)
-	.<span class="kw">await</span><span class="question-mark">?</span>;
-
-	<span class="kw">if </span>governance_data.policy.is_single_key_policy_for(<span class="kw-2">&amp;</span>ctx.payment_key_hash()) {
-		<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
-		<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
-			<span class="macro">anyhow!</span>(
-				<span class="string">"Submit governance update transaction request failed: {}, bytes: {}"</span>,
-				e,
-				hex::encode(signed_tx)
-			)
-		})<span class="question-mark">?</span>;
-		<span class="kw">let </span>tx_id = McTxHash(res.transaction.id);
-		<span class="macro">log::info!</span>(<span class="string">"Update Governance transaction submitted: {}"</span>, hex::encode(tx_id.<span class="number">0</span>));
-		await_tx
-			.await_tx_output(
-				client,
-				UtxoId { tx_hash: McTxHash(res.transaction.id), index: UtxoIndex(<span class="number">0</span>) },
-			)
-			.<span class="kw">await</span><span class="question-mark">?</span>;
-		<span class="prelude-val">Ok</span>(TxHash(tx_id))
-	} <span class="kw">else </span>{
-		<span class="kw">let </span>tx_envelope = <span class="macro">json!</span>(
-			{ <span class="string">"type"</span>: <span class="string">"Unwitnessed Tx ConwayEra"</span>,
-			  <span class="string">"description"</span>: <span class="string">""</span>,
-			  <span class="string">"cborHex"</span>: hex::encode(tx.to_bytes())
-			}
-		);
-		<span class="macro">log::info!</span>(<span class="string">"Transaction envelope: {}"</span>, tx_envelope);
-		<span class="prelude-val">Ok</span>(TxCBOR(tx.to_bytes()))
-	}
-}
+	.<span class="kw">await
+</span>}
 
 <span class="kw">fn </span>update_governance_tx(
 	version_oracle_validator: <span class="kw-2">&amp;</span>[u8],

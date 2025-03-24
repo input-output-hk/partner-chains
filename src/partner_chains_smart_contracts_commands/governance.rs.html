@@ -185,7 +185,7 @@
 		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
 		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
 
-		run_update_governance(
+		<span class="kw">let </span>result = run_update_governance(
 			<span class="kw-2">&amp;</span><span class="self">self</span>.new_governance_authority,
 			<span class="self">self</span>.new_governance_threshold,
 			<span class="kw-2">&amp;</span>payment_key,
@@ -194,7 +194,7 @@
 			FixedDelayRetries::two_minutes(),
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;
-
+		<span class="macro">println!</span>(<span class="string">"{}"</span>, serde_json::to_value(result)<span class="question-mark">?</span>);
 		<span class="prelude-val">Ok</span>(())
 	}
 }

@@ -569,27 +569,6 @@
 <a href="#569" id="569">569</a>
 <a href="#570" id="570">570</a>
 <a href="#571" id="571">571</a>
-<a href="#572" id="572">572</a>
-<a href="#573" id="573">573</a>
-<a href="#574" id="574">574</a>
-<a href="#575" id="575">575</a>
-<a href="#576" id="576">576</a>
-<a href="#577" id="577">577</a>
-<a href="#578" id="578">578</a>
-<a href="#579" id="579">579</a>
-<a href="#580" id="580">580</a>
-<a href="#581" id="581">581</a>
-<a href="#582" id="582">582</a>
-<a href="#583" id="583">583</a>
-<a href="#584" id="584">584</a>
-<a href="#585" id="585">585</a>
-<a href="#586" id="586">586</a>
-<a href="#587" id="587">587</a>
-<a href="#588" id="588">588</a>
-<a href="#589" id="589">589</a>
-<a href="#590" id="590">590</a>
-<a href="#591" id="591">591</a>
-<a href="#592" id="592">592</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Permissioned candidates are stored on chain in an UTXO at the Permissioned Candidates Validator address.
 //! There should be at most one UTXO at the validator address and it should contain the permissioned candidates list.
@@ -604,6 +583,7 @@
 	TransactionBuilderExt, TransactionContext, TransactionExt,
 };
 <span class="kw">use </span><span class="kw">crate</span>::governance::GovernanceData;
+<span class="kw">use </span><span class="kw">crate</span>::multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult};
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use crate</span>::{cardano_keys::CardanoPaymentSigningKey, scripts_data};
 <span class="kw">use </span>anyhow::anyhow;
@@ -617,7 +597,7 @@
 <span class="kw">use </span>partner_chains_plutus_data::permissioned_candidates::{
 	permissioned_candidates_to_plutus_data, PermissionedCandidateDatums,
 };
-<span class="kw">use </span>sidechain_domain::{McSmartContractResult, McTxHash, PermissionedCandidateData, UtxoId};
+<span class="kw">use </span>sidechain_domain::{PermissionedCandidateData, UtxoId};
 
 <span class="kw">pub trait </span>UpsertPermissionedCandidates {
 	<span class="attr">#[allow(async_fn_in_trait)]
@@ -626,7 +606,7 @@
 		genesis_utxo: UtxoId,
 		candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
 		payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
-	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McSmartContractResult&gt;&gt;;
+	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;MultiSigSmartContractResult&gt;&gt;;
 }
 
 <span class="kw">impl</span>&lt;C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId&gt;
@@ -637,7 +617,7 @@
 		genesis_utxo: UtxoId,
 		candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
 		payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
-	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McSmartContractResult&gt;&gt; {
+	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;MultiSigSmartContractResult&gt;&gt; {
 		upsert_permissioned_candidates(
 			genesis_utxo,
 			candidates,
@@ -658,7 +638,7 @@
 	payment_signing_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	ogmios_client: <span class="kw-2">&amp;</span>C,
 	await_tx: <span class="kw-2">&amp;</span>A,
-) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McSmartContractResult&gt;&gt; {
+) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;MultiSigSmartContractResult&gt;&gt; {
 	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>(validator, policy) =
 		scripts_data::permissioned_candidates_scripts(genesis_utxo, ctx.network)<span class="question-mark">?</span>;
@@ -688,6 +668,7 @@
 					<span class="kw-2">&amp;</span>governance_data,
 					ctx,
 					ogmios_client,
+					await_tx,
 				)
 				.<span class="kw">await</span><span class="question-mark">?</span>,
 			)
@@ -704,12 +685,13 @@
 					<span class="kw-2">&amp;</span>governance_data,
 					ctx,
 					ogmios_client,
+					await_tx,
 				)
 				.<span class="kw">await</span><span class="question-mark">?</span>,
 			)
 		},
 	};
-	<span class="kw">if let </span><span class="prelude-val">Some</span>(McSmartContractResult::TxHash(tx_hash)) = result_opt {
+	<span class="kw">if let </span><span class="prelude-val">Some</span>(MultiSigSmartContractResult::TransactionSubmitted(tx_hash)) = result_opt {
 		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.<span class="number">0</span>, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
 	}
 	<span class="prelude-val">Ok</span>(result_opt)
@@ -738,19 +720,23 @@
 	}
 }
 
-<span class="kw">async fn </span>insert_permissioned_candidates&lt;C&gt;(
+<span class="kw">async fn </span>insert_permissioned_candidates&lt;C, A&gt;(
 	validator: <span class="kw-2">&amp;</span>PlutusScript,
 	policy: <span class="kw-2">&amp;</span>PlutusScript,
 	candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
 	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
-	ctx: TransactionContext,
+	payment_ctx: TransactionContext,
 	client: <span class="kw-2">&amp;</span>C,
-) -&gt; anyhow::Result&lt;McSmartContractResult&gt;
+	await_tx: <span class="kw-2">&amp;</span>A,
+) -&gt; anyhow::Result&lt;MultiSigSmartContractResult&gt;
 <span class="kw">where
-	</span>C: Transactions + QueryLedgerState + QueryNetwork,
+	</span>C: Transactions + QueryLedgerState + QueryNetwork + QueryUtxoByUtxoId,
+	A: AwaitTx,
 {
-	<span class="kw">let </span>tx = Costs::calculate_costs(
-		|costs| {
+	submit_or_create_tx_to_sign(
+		governance_data,
+		<span class="kw-2">&amp;</span>payment_ctx,
+		|costs, ctx| {
 			mint_permissioned_candidates_token_tx(
 				validator,
 				policy,
@@ -760,42 +746,31 @@
 				<span class="kw-2">&amp;</span>ctx,
 			)
 		},
+		<span class="string">"Insert Permissioned Candidates"</span>,
 		client,
+		await_tx,
 	)
-	.<span class="kw">await</span><span class="question-mark">?</span>;
+	.<span class="kw">await
+</span>}
 
-	<span class="kw">if </span>governance_data.policy.is_single_key_policy_for(<span class="kw-2">&amp;</span>ctx.payment_key_hash()) {
-		<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
-		<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
-			<span class="macro">anyhow!</span>(
-				<span class="string">"Submit insert permissioned candidates transaction request failed: {}, bytes: {}"</span>,
-				e,
-				hex::encode(tx.to_bytes())
-			)
-		})<span class="question-mark">?</span>;
-		<span class="kw">let </span>tx_id = res.transaction.id;
-		<span class="macro">log::info!</span>(<span class="string">"Transaction submitted: {}"</span>, hex::encode(tx_id));
-		<span class="prelude-val">Ok</span>(McSmartContractResult::tx_hash(tx_id))
-	} <span class="kw">else </span>{
-		<span class="macro">log::info!</span>(<span class="string">"Transaction CBOR: {}"</span>, hex::encode(tx.to_bytes()));
-		<span class="prelude-val">Ok</span>(McSmartContractResult::TxCBOR(tx.to_bytes()))
-	}
-}
-
-<span class="kw">async fn </span>update_permissioned_candidates&lt;C&gt;(
+<span class="kw">async fn </span>update_permissioned_candidates&lt;C, A&gt;(
 	validator: <span class="kw-2">&amp;</span>PlutusScript,
 	policy: <span class="kw-2">&amp;</span>PlutusScript,
 	candidates: <span class="kw-2">&amp;</span>[PermissionedCandidateData],
 	current_utxo: <span class="kw-2">&amp;</span>OgmiosUtxo,
 	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
-	ctx: TransactionContext,
+	payment_ctx: TransactionContext,
 	client: <span class="kw-2">&amp;</span>C,
-) -&gt; anyhow::Result&lt;McSmartContractResult&gt;
+	await_tx: <span class="kw-2">&amp;</span>A,
+) -&gt; anyhow::Result&lt;MultiSigSmartContractResult&gt;
 <span class="kw">where
-	</span>C: Transactions + QueryNetwork + QueryLedgerState,
+	</span>C: Transactions + QueryNetwork + QueryLedgerState + QueryUtxoByUtxoId,
+	A: AwaitTx,
 {
-	<span class="kw">let </span>tx = Costs::calculate_costs(
-		|costs| {
+	submit_or_create_tx_to_sign(
+		governance_data,
+		<span class="kw-2">&amp;</span>payment_ctx,
+		|costs, ctx| {
 			update_permissioned_candidates_tx(
 				validator,
 				policy,
@@ -806,30 +781,12 @@
 				<span class="kw-2">&amp;</span>ctx,
 			)
 		},
+		<span class="string">"Update Permissioned Candidates"</span>,
 		client,
+		await_tx,
 	)
-	.<span class="kw">await</span><span class="question-mark">?</span>;
-
-	<span class="kw">if </span>governance_data.policy.is_single_key_policy_for(<span class="kw-2">&amp;</span>ctx.payment_key_hash()) {
-		<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
-		<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
-			<span class="macro">anyhow!</span>(
-				<span class="string">"Submit update permissioned candidates transaction request failed: {}, bytes: {}"</span>,
-				e,
-				hex::encode(<span class="kw-2">&amp;</span>signed_tx)
-			)
-		})<span class="question-mark">?</span>;
-		<span class="kw">let </span>tx_id = McTxHash(res.transaction.id);
-		<span class="macro">log::info!</span>(
-			<span class="string">"Update permissioned candidates transaction submitted: {}"</span>,
-			hex::encode(tx_id.<span class="number">0</span>)
-		);
-		<span class="prelude-val">Ok</span>(McSmartContractResult::TxHash(tx_id))
-	} <span class="kw">else </span>{
-		<span class="macro">log::info!</span>(<span class="string">"Transaction CBOR: {}"</span>, hex::encode(tx.to_bytes()));
-		<span class="prelude-val">Ok</span>(McSmartContractResult::TxCBOR(tx.to_bytes()))
-	}
-}
+	.<span class="kw">await
+</span>}
 
 <span class="doccomment">/// Builds a transaction that mints a Permissioned Candidates token and also mint governance token
 </span><span class="kw">fn </span>mint_permissioned_candidates_token_tx(
@@ -1129,6 +1086,7 @@
 			],
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
+			change_address: payment_addr(),
 		}
 	}
 

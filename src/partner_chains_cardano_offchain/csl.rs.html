@@ -1177,6 +1177,34 @@
 <a href="#1177" id="1177">1177</a>
 <a href="#1178" id="1178">1178</a>
 <a href="#1179" id="1179">1179</a>
+<a href="#1180" id="1180">1180</a>
+<a href="#1181" id="1181">1181</a>
+<a href="#1182" id="1182">1182</a>
+<a href="#1183" id="1183">1183</a>
+<a href="#1184" id="1184">1184</a>
+<a href="#1185" id="1185">1185</a>
+<a href="#1186" id="1186">1186</a>
+<a href="#1187" id="1187">1187</a>
+<a href="#1188" id="1188">1188</a>
+<a href="#1189" id="1189">1189</a>
+<a href="#1190" id="1190">1190</a>
+<a href="#1191" id="1191">1191</a>
+<a href="#1192" id="1192">1192</a>
+<a href="#1193" id="1193">1193</a>
+<a href="#1194" id="1194">1194</a>
+<a href="#1195" id="1195">1195</a>
+<a href="#1196" id="1196">1196</a>
+<a href="#1197" id="1197">1197</a>
+<a href="#1198" id="1198">1198</a>
+<a href="#1199" id="1199">1199</a>
+<a href="#1200" id="1200">1200</a>
+<a href="#1201" id="1201">1201</a>
+<a href="#1202" id="1202">1202</a>
+<a href="#1203" id="1203">1203</a>
+<a href="#1204" id="1204">1204</a>
+<a href="#1205" id="1205">1205</a>
+<a href="#1206" id="1206">1206</a>
+<a href="#1207" id="1207">1207</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>anyhow::Context;
@@ -1553,6 +1581,7 @@
 	</span><span class="kw">pub</span>(<span class="kw">crate</span>) payment_key_utxos: Vec&lt;OgmiosUtxo&gt;,
 	<span class="kw">pub</span>(<span class="kw">crate</span>) network: NetworkIdKind,
 	<span class="kw">pub</span>(<span class="kw">crate</span>) protocol_parameters: ProtocolParametersResponse,
+	<span class="kw">pub</span>(<span class="kw">crate</span>) change_address: Address,
 }
 
 <span class="kw">impl </span>TransactionContext {
@@ -1567,7 +1596,32 @@
 		<span class="kw">let </span>protocol_parameters = client.query_protocol_parameters().<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">let </span>payment_address = key_hash_address(<span class="kw-2">&amp;</span>payment_key.to_public().hash(), network);
 		<span class="kw">let </span>payment_key_utxos = client.query_utxos(<span class="kw-2">&amp;</span>[payment_address.to_bech32(<span class="prelude-val">None</span>)<span class="question-mark">?</span>]).<span class="kw">await</span><span class="question-mark">?</span>;
-		<span class="prelude-val">Ok</span>(TransactionContext { payment_key, payment_key_utxos, network, protocol_parameters })
+		<span class="prelude-val">Ok</span>(TransactionContext {
+			payment_key,
+			payment_key_utxos,
+			network,
+			protocol_parameters,
+			change_address: payment_address,
+		})
+	}
+
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>for_payment_key_with_change_address&lt;C: QueryLedgerState + QueryNetwork&gt;(
+		payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
+		change_address: <span class="kw-2">&amp;</span>Address,
+		client: <span class="kw-2">&amp;</span>C,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;TransactionContext, anyhow::Error&gt; {
+		<span class="kw">let </span>payment_key = payment_key.clone().<span class="number">0</span>;
+		<span class="kw">let </span>network = client.shelley_genesis_configuration().<span class="kw">await</span><span class="question-mark">?</span>.network.to_csl();
+		<span class="kw">let </span>protocol_parameters = client.query_protocol_parameters().<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let </span>payment_address = key_hash_address(<span class="kw-2">&amp;</span>payment_key.to_public().hash(), network);
+		<span class="kw">let </span>payment_key_utxos = client.query_utxos(<span class="kw-2">&amp;</span>[payment_address.to_bech32(<span class="prelude-val">None</span>)<span class="question-mark">?</span>]).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(TransactionContext {
+			payment_key,
+			payment_key_utxos,
+			network,
+			protocol_parameters,
+			change_address: change_address.clone(),
+		})
 	}
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>payment_key_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Ed25519KeyHash {
@@ -1782,7 +1836,7 @@
 				builder.add_inputs_from_and_change(
 					<span class="kw-2">&amp;</span>ctx.payment_key_utxos.to_csl()<span class="question-mark">?</span>,
 					CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
-					<span class="kw-2">&amp;</span>ChangeConfig::new(<span class="kw-2">&amp;</span>key_hash_address(<span class="kw-2">&amp;</span>ctx.payment_key_hash(), ctx.network)),
+					<span class="kw-2">&amp;</span>ChangeConfig::new(<span class="kw-2">&amp;</span>ctx.change_address),
 				)<span class="question-mark">?</span>;
 			} <span class="kw">else </span>{
 				builder.add_collateral_inputs(ctx, collateral_inputs)<span class="question-mark">?</span>;
@@ -1791,7 +1845,7 @@
 				</span>builder.add_inputs_from_and_change_with_collateral_return(
 					<span class="kw-2">&amp;</span>ctx.payment_key_utxos.to_csl()<span class="question-mark">?</span>,
 					CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
-					<span class="kw-2">&amp;</span>ChangeConfig::new(<span class="kw-2">&amp;</span>key_hash_address(<span class="kw-2">&amp;</span>ctx.payment_key_hash(), ctx.network)),
+					<span class="kw-2">&amp;</span>ChangeConfig::new(<span class="kw-2">&amp;</span>ctx.change_address),
 					<span class="kw-2">&amp;</span>ctx.protocol_parameters.collateral_percentage.into(),
 				)<span class="question-mark">?</span>;
 				builder.calc_script_data_hash(<span class="kw-2">&amp;</span>convert_cost_models(
@@ -2210,6 +2264,7 @@
 			payment_key_utxos: payment_utxos.clone(),
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
+			change_address: payment_addr(),
 		};
 		<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(<span class="kw-2">&amp;</span>ctx).unwrap());
 		tx_builder
@@ -2242,6 +2297,7 @@
 			payment_key_utxos: payment_utxos.clone(),
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
+			change_address: payment_addr(),
 		};
 		<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(<span class="kw-2">&amp;</span>ctx).unwrap());
 		tx_builder

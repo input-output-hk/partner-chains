@@ -55,6 +55,10 @@
 <a href="#55" id="55">55</a>
 <a href="#56" id="56">56</a>
 <a href="#57" id="57">57</a>
+<a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::parse_partnerchain_public_keys;
 <span class="kw">use </span><span class="kw">crate</span>::PaymentFilePath;
 <span class="kw">use </span>partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
@@ -100,7 +104,7 @@
 
 		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
 
-		upsert_permissioned_candidates(
+		<span class="kw">let </span>result = upsert_permissioned_candidates(
 			<span class="self">self</span>.genesis_utxo,
 			<span class="kw-2">&amp;</span>permissioned_candidates,
 			<span class="kw-2">&amp;</span>payment_key,
@@ -108,6 +112,10 @@
 			<span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes(),
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">match </span>result {
+			<span class="prelude-val">Some</span>(result) =&gt; <span class="macro">println!</span>(<span class="string">"{}"</span>, serde_json::to_value(result)<span class="question-mark">?</span>),
+			<span class="prelude-val">None </span>=&gt; <span class="macro">println!</span>(<span class="string">"{{}}"</span>),
+		}
 
 		<span class="prelude-val">Ok</span>(())
 	}

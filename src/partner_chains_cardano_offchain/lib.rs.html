@@ -34,6 +34,8 @@
 <a href="#34" id="34">34</a>
 <a href="#35" id="35">35</a>
 <a href="#36" id="36">36</a>
+<a href="#37" id="37">37</a>
+<a href="#38" id="38">38</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Off-chain code for Partner Chains Smart Contracts and general purpose utilities related to Cardano
 
 </span><span class="kw">pub mod </span>assemble_tx;
@@ -49,6 +51,8 @@
 </span><span class="kw">pub mod </span>governance;
 <span class="doccomment">/// Supports governance initialization
 </span><span class="kw">pub mod </span>init_governance;
+<span class="doccomment">/// Types and functions related to smart-contracts that support MultiSig governance
+</span><span class="kw">pub mod </span>multisig;
 <span class="attr">#[cfg(test)]
 </span><span class="kw">pub mod </span>ogmios_mock;
 <span class="doccomment">/// Supports Permissioned Candidates upsert
