@@ -238,6 +238,34 @@ pallet_sidechain: SidechainConfig {
 },
 ```
 
+## Usage
+
+The Sidechain pallet is typically used as a core coordination mechanism. The typical usage flow is:
+
+1. At runtime initialization, the pallet is configured with genesis parameters that establish the epoch structure.
+
+2. For each block, the `on_initialize` hook automatically checks if an epoch transition has occurred.
+
+3. When an epoch transition is detected, the configured OnNewEpoch handler is called, which typically:
+    - Updates validator sets through session management
+    - Processes accumulated rewards
+    - Updates protocol parameters
+    - Performs other epoch-based administrative tasks
+
+4. Other pallets can query the current epoch or slots per epoch to coordinate their own activities.
+
+## Integration with Other Pallets
+
+The Sidechain pallet serves as a core coordination mechanism for other pallets through the OnNewEpoch trait. Typical integrations include:
+
+1. **Session Validator Management**: Coordinating validator set rotations with epoch boundaries
+2. **Rewards Distribution**: Processing accumulated rewards at epoch transitions
+3. **Parameter Updates**: Applying new protocol parameters at epoch boundaries
+
+This separation of concerns creates a clean architecture that decouples temporal management from the specific behaviors that need to be coordinated at epoch transitions.
+
+### Runtime
+
 Relationships between the `sidechain` pallet and other pallets in the system:
 
 ```mermaid
@@ -269,28 +297,40 @@ graph TB
     sidechain -->|📝 **calls** *OnNewEpoch* for epoch transitions| spSidechain
 ```
 
-## Usage
+### Node
 
-The Sidechain pallet is typically used as a core coordination mechanism. The typical usage flow is:
+Relationships between the `partner-chains-session` pallet and the node:
 
-1. At runtime initialization, the pallet is configured with genesis parameters that establish the epoch structure.
+```mermaid
+graph TB
+classDef main fill:#f9d,stroke:#333,stroke-width:4px
+classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
+classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
 
-2. For each block, the `on_initialize` hook automatically checks if an epoch transition has occurred.
+%% Node positioned above (consumer)
+node[Partner Chain Node]:::consumer
 
-3. When an epoch transition is detected, the configured OnNewEpoch handler is called, which typically:
-    - Updates validator sets through session management
-    - Processes accumulated rewards
-    - Updates protocol parameters
-    - Performs other epoch-based administrative tasks
+%% Main pallet (in the middle)
+sidechain[sidechain]:::main
 
-4. Other pallets can query the current epoch or slots per epoch to coordinate their own activities.
+%% Dependencies (positioned below)
+frameSystem[frame_system]:::dependency
+sidechainDomain[sidechain_domain]:::dependency
+sidechainSlots[sidechain_slots]:::dependency
+spSidechain[sp_sidechain]:::dependency
+timeSource[time_source]:::dependency
 
-## Integration with Other Pallets
+%% Relationships from node to sidechain
+node -->|⏳ **uses** *current_epoch_number* for temporal tracking| sidechain
+node -->|🔄 **references** *ScEpochNumber* for epoch transitions| sidechain
+node -->|🧩 **uses** *slots_per_epoch* for slot configuration| sidechain
+node -->|📝 **implements** *CreateInherentDataProviders* for inherent data| sidechain
 
-The Sidechain pallet serves as a core coordination mechanism for other pallets through the OnNewEpoch trait. Typical integrations include:
-
-1. **Session Validator Management**: Coordinating validator set rotations with epoch boundaries
-2. **Rewards Distribution**: Processing accumulated rewards at epoch transitions
-3. **Parameter Updates**: Applying new protocol parameters at epoch boundaries
-
-This separation of concerns creates a clean architecture that decouples temporal management from the specific behaviors that need to be coordinated at epoch transitions.
+%% Relationships from sidechain to dependencies
+sidechain -->|📝 **implements** *on_initialize* hook for epoch detection| frameSystem
+sidechain -->|🧩 **uses** *ScEpochNumber* and *ScSlotNumber* types| sidechainDomain
+sidechain -->|💰 **stores** *UtxoId* for genesis tracking| sidechainDomain
+sidechain -->|⏳ **uses** *SlotsPerEpoch* for temporal management| sidechainSlots
+sidechain -->|📝 **calls** *OnNewEpoch* for epoch transitions| spSidechain
+sidechain -->|⏳ **depends on** *TimeSource* for slot timing| timeSource
+```
