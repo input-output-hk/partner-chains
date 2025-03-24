@@ -217,7 +217,46 @@ pub trait SessionHandler<ValidatorId> {
     fn on_disabled(validator_index: u32);
 }
 ```
-## Pallet Coupling
+## Usage
+
+To integrate this pallet in your runtime:
+
+1. Add the pallet to your runtime's `Cargo.toml`:
+```toml
+[dependencies]
+pallet-partner-chains-session = { version = "4.0.0-dev", default-features = false }
+```
+
+2. Implement the pallet's Config trait for your runtime:
+```rust
+impl pallet_partner_chains_session::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type ValidatorId = AccountId;
+    type ShouldEndSession = ShouldEndSession;
+    type NextSessionRotation = NextSessionRotation;
+    type SessionManager = SessionManager;
+    type SessionHandler = SessionHandler;
+    type Keys = SessionKeys;
+}
+```
+
+3. Add the pallet to your runtime:
+```rust
+construct_runtime!(
+    pub enum Runtime where
+        Block = Block,
+        NodeBlock = opaque::Block,
+        UncheckedExtrinsic = UncheckedExtrinsic
+    {
+        // Other pallets
+        PartnerChainsSession: pallet_partner_chains_session::{Pallet, Call, Storage, Event<T>},
+    }
+);
+```
+
+## Integration
+
+### Runtime
 
 Relationships between the `partner-chains-session` pallet and other pallets in the system:
 
@@ -259,41 +298,40 @@ graph TB
    partnerChainsSession -->|📝 **optionally implements** *pallet-session* compatibility| palletSession
 ```
 
-## Usage
+### Node
 
-To integrate this pallet in your runtime:
+Relationships between the `partner-chains-session` pallet and the node client:
 
-1. Add the pallet to your runtime's `Cargo.toml`:
-```toml
-[dependencies]
-pallet-partner-chains-session = { version = "4.0.0-dev", default-features = false }
-```
+```mermaid
+graph TB
+    classDef main fill:#f9d,stroke:#333,stroke-width:4px
+    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
+    classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
 
-2. Implement the pallet's Config trait for your runtime:
-```rust
-impl pallet_partner_chains_session::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type ValidatorId = AccountId;
-    type ShouldEndSession = ShouldEndSession;
-    type NextSessionRotation = NextSessionRotation;
-    type SessionManager = SessionManager;
-    type SessionHandler = SessionHandler;
-    type Keys = SessionKeys;
-}
-```
+%% Node positioned above (consumer)
+    partnerChainsNode[partner-chains-node]:::consumer
 
-3. Add the pallet to your runtime:
-```rust
-construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = opaque::Block,
-        UncheckedExtrinsic = UncheckedExtrinsic
-    {
-        // Other pallets
-        PartnerChainsSession: pallet_partner_chains_session::{Pallet, Call, Storage, Event<T>},
-    }
-);
+%% Main pallet (in the middle)
+    partnerChainsSession[pallet-partner-chains-session]:::main
+
+%% Dependencies (positioned below)
+    frameSystem[frame-system]:::dependency
+    spCore[sp-core]:::dependency
+    spRuntime[sp-runtime]:::dependency
+    spStaking[sp-staking]:::dependency
+
+%% Node's relationship with partner-chains-session
+    partnerChainsNode -->|👥 **uses** *validators_and_keys* for validator management| partnerChainsSession
+    partnerChainsNode -->|👥 **interacts with** *disable_index* for validator control| partnerChainsSession
+    partnerChainsNode -->|🔄 **calls** *rotate_session* for session transitions| partnerChainsSession
+    partnerChainsNode -->|📝 **integrates** *SessionHandler* for consensus operations| partnerChainsSession
+    partnerChainsNode -->|🔐 **processes** *Keys* for session management| partnerChainsSession
+
+%% Partner-chains-session's relationships with dependencies
+    partnerChainsSession -->|📝 **implements** *on_initialize* hook for block processing| frameSystem
+    partnerChainsSession -->|🧩 **uses** *KeyTypeId* for type identification| spCore
+    partnerChainsSession -->|🧩 **uses** *OpaqueKeys* for session key management| spRuntime
+    partnerChainsSession -->|🔗 **uses** *SessionIndex* for tracking sessions| spStaking
 ```
 
 ## Implementation Notes
