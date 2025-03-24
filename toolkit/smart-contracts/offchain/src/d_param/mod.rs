@@ -11,6 +11,10 @@ use crate::csl::{
 	TransactionBuilderExt, TransactionContext, TransactionExt,
 };
 use crate::governance::GovernanceData;
+use crate::multisig::submit_or_create_tx_to_sign;
+use crate::multisig::{
+	MultiSigSmartContractResult, MultiSigSmartContractResult::TransactionSubmitted,
+};
 use crate::plutus_script::PlutusScript;
 use anyhow::anyhow;
 use cardano_serialization_lib::{PlutusData, Transaction, TransactionBuilder, TxInputsBuilder};
@@ -20,7 +24,7 @@ use ogmios_client::{
 	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::d_param::{d_parameter_to_plutus_data, DParamDatum};
-use sidechain_domain::{DParameter, McTxHash, UtxoId};
+use sidechain_domain::{DParameter, UtxoId};
 
 #[cfg(test)]
 mod tests;
@@ -32,7 +36,7 @@ pub trait UpsertDParam {
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<McTxHash>>;
+	) -> anyhow::Result<Option<MultiSigSmartContractResult>>;
 }
 
 impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> UpsertDParam for C {
@@ -41,7 +45,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> Upse
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<McTxHash>> {
+	) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
 		upsert_d_param(
 			genesis_utxo,
 			d_parameter,
@@ -62,7 +66,7 @@ pub async fn upsert_d_param<
 	payment_signing_key: &CardanoPaymentSigningKey,
 	ogmios_client: &C,
 	await_tx: &A,
-) -> anyhow::Result<Option<McTxHash>> {
+) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
 	let (validator, policy) = crate::scripts_data::d_parameter_scripts(genesis_utxo, ctx.network)?;
 	let validator_address = validator.address_bech32(ctx.network)?;
@@ -96,7 +100,7 @@ pub async fn upsert_d_param<
 			)
 		},
 	};
-	if let Some(tx_hash) = tx_hash_opt {
+	if let Some(TransactionSubmitted(tx_hash)) = tx_hash_opt {
 		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
 	}
 	Ok(tx_hash_opt)
@@ -124,36 +128,28 @@ fn get_current_d_parameter(
 	}
 }
 
-async fn insert_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
+async fn insert_d_param<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
 	validator: &PlutusScript,
 	policy: &PlutusScript,
 	d_parameter: &DParameter,
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
 	client: &C,
-) -> anyhow::Result<McTxHash> {
+) -> anyhow::Result<MultiSigSmartContractResult> {
 	let gov_data = GovernanceData::get(genesis_utxo, client).await?;
 
-	let tx = Costs::calculate_costs(
-		|costs| mint_d_param_token_tx(validator, policy, d_parameter, &gov_data, costs, &ctx),
+	submit_or_create_tx_to_sign(
+		&gov_data,
+		&ctx,
+		|costs, ctx| mint_d_param_token_tx(validator, policy, d_parameter, &gov_data, costs, &ctx),
+		"Insert D-parameter",
 		client,
+		&FixedDelayRetries::two_minutes(),
 	)
-	.await?;
-
-	let signed_tx = ctx.sign(&tx).to_bytes();
-	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-		anyhow!(
-			"Submit insert D-parameter transaction request failed: {}, bytes: {}",
-			e,
-			hex::encode(signed_tx)
-		)
-	})?;
-	let tx_id = McTxHash(res.transaction.id);
-	log::info!("Transaction submitted: {}", hex::encode(tx_id.0));
-	Ok(tx_id)
+	.await
 }
 
-async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
+async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
 	validator: &PlutusScript,
 	policy: &PlutusScript,
 	d_parameter: &DParameter,
@@ -161,11 +157,13 @@ async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
 	client: &C,
-) -> anyhow::Result<McTxHash> {
+) -> anyhow::Result<MultiSigSmartContractResult> {
 	let governance_data = GovernanceData::get(genesis_utxo, client).await?;
 
-	let tx = Costs::calculate_costs(
-		|costs| {
+	submit_or_create_tx_to_sign(
+		&governance_data,
+		&ctx,
+		|costs, ctx| {
 			update_d_param_tx(
 				validator,
 				policy,
@@ -176,21 +174,11 @@ async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork>(
 				&ctx,
 			)
 		},
+		"Update D-parameter",
 		client,
+		&FixedDelayRetries::two_minutes(),
 	)
-	.await?;
-
-	let signed_tx = ctx.sign(&tx).to_bytes();
-	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-		anyhow!(
-			"Submit D-parameter update transaction request failed: {}, bytes: {}",
-			e,
-			hex::encode(signed_tx)
-		)
-	})?;
-	let tx_id = McTxHash(res.transaction.id);
-	log::info!("Update D-parameter transaction submitted: {}", hex::encode(tx_id.0));
-	Ok(tx_id)
+	.await
 }
 
 fn mint_d_param_token_tx(

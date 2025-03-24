@@ -11,9 +11,7 @@ use crate::{verify_json, CmdRun};
 use hex_literal::hex;
 use partner_chains_cardano_offchain::multisig::MultiSigSmartContractResult;
 use serde_json::json;
-use sidechain_domain::{
-	AuraPublicKey, DParameter, GrandpaPublicKey, McTxHash, SidechainPublicKey, UtxoId,
-};
+use sidechain_domain::{AuraPublicKey, DParameter, GrandpaPublicKey, SidechainPublicKey, UtxoId};
 use sp_core::offchain::Timestamp;
 
 #[test]
@@ -42,7 +40,7 @@ fn no_ariadne_parameters_on_main_chain_do_updates() {
 			UtxoId::default(),
 			new_d_parameter(),
 			payment_signing_key(),
-			Ok(Some(McTxHash([1; 32]))),
+			Ok(Some(MultiSigSmartContractResult::tx_submitted([1; 32]))),
 		)
 		.with_upsert_permissioned_candidates(
 			genesis_utxo(),
@@ -96,7 +94,7 @@ fn ariadne_parameters_are_on_main_chain_do_update() {
 			UtxoId::default(),
 			new_d_parameter(),
 			payment_signing_key(),
-			Ok(Some(McTxHash([1; 32]))),
+			Ok(Some(MultiSigSmartContractResult::tx_submitted([1; 32]))),
 		)
 		.with_upsert_permissioned_candidates(
 			genesis_utxo(),
