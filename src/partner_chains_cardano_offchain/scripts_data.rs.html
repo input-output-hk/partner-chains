@@ -400,23 +400,23 @@
 	get_scripts_data(genesis_utxo, network)
 }
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>VersionOracleData {
-	<span class="kw">pub</span>(<span class="kw">crate</span>) validator: PlutusScript,
-	<span class="kw">pub</span>(<span class="kw">crate</span>) policy: PlutusScript,
+<span class="kw">pub struct </span>VersionOracleData {
+	<span class="kw">pub </span>validator: PlutusScript,
+	<span class="kw">pub </span>policy: PlutusScript,
 }
 
 <span class="kw">impl </span>VersionOracleData {
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>policy_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PolicyId {
+	<span class="kw">pub fn </span>policy_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PolicyId {
 		<span class="self">self</span>.policy.policy_id()
 	}
 
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>policy_id_as_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
+	<span class="kw">pub fn </span>policy_id_as_plutus_data(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PlutusData {
 		PlutusData::BoundedBytes(<span class="self">self</span>.policy.script_hash().to_vec().into())
 	}
 }
 
 <span class="comment">// Returns version oracle data required by other scripts.
-</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>version_oracle(
+</span><span class="kw">pub fn </span>version_oracle(
 	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;VersionOracleData, anyhow::Error&gt; {
