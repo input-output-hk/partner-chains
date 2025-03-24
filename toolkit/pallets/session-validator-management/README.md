@@ -371,6 +371,36 @@ construct_runtime!(
 );
 ```
 
+## Usage with Partner Chains Session
+
+This pallet is typically used in conjunction with the Partner Chains Session pallet. A typical integration pattern:
+
+1. The Session Validator Management pallet maintains the validator committees and handles rotations
+2. The Partner Chains Session pallet integrates with these committees through a SessionManager implementation:
+
+```rust
+pub struct ValidatorManagementSessionManager<T>(PhantomData<T>);
+
+impl<T: Config> pallet_partner_chains_session::SessionManager<AuthorityId, AuthorityKeys> 
+    for ValidatorManagementSessionManager<T> 
+{
+    fn new_session(new_index: SessionIndex) -> Option<Vec<(AuthorityId, AuthorityKeys)>> {
+        // Get validators from Session Validator Management and convert to the format
+        // expected by the session pallet
+        SessionValidatorManagement::rotate_committee_to_next_epoch()
+            .map(|committee| committee.into_iter().map(|member| {
+                (member.authority_id(), member.authority_keys())
+            }).collect())
+    }
+    
+    // Other required implementations...
+}
+```
+
+## Integration with Other Pallets
+
+### Runtime
+
 Relationships between the `session-validator-management` pallet and other pallets in the system:
 
 ```mermaid
@@ -402,27 +432,37 @@ graph TB
     sessionValidatorManagement -->|📝 **implements** *ProvideInherent* for automatic committee updates| frameSystem
 ```
 
-## Usage with Partner Chains Session
+### Node
 
-This pallet is typically used in conjunction with the Partner Chains Session pallet. A typical integration pattern:
+Relationships between the `session-validator-management` pallet and the node:
 
-1. The Session Validator Management pallet maintains the validator committees and handles rotations
-2. The Partner Chains Session pallet integrates with these committees through a SessionManager implementation:
+```mermaid
+graph TB
+    classDef main fill:#f9d,stroke:#333,stroke-width:4px
+    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
+    classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
 
-```rust
-pub struct ValidatorManagementSessionManager<T>(PhantomData<T>);
+%% Node components that depend on session-validator-management (positioned above)
+    partnerChainsNode[partner-chains-node]:::consumer
+    proposalCIDP[ProposalCIDP]:::consumer
+    verifierCIDP[VerifierCIDP]:::consumer
+    ariadneIDP[AriadneInherentDataProvider]:::consumer
 
-impl<T: Config> pallet_partner_chains_session::SessionManager<AuthorityId, AuthorityKeys> 
-    for ValidatorManagementSessionManager<T> 
-{
-    fn new_session(new_index: SessionIndex) -> Option<Vec<(AuthorityId, AuthorityKeys)>> {
-        // Get validators from Session Validator Management and convert to the format
-        // expected by the session pallet
-        SessionValidatorManagement::rotate_committee_to_next_epoch()
-            .map(|committee| committee.into_iter().map(|member| {
-                (member.authority_id(), member.authority_keys())
-            }).collect())
-    }
+%% Main pallet (in the middle)
+    sessionValidatorManagement[pallet-session-validator-management]:::main
+
+%% Dependencies (positioned below)
     
-    // Other required implementations...
-}
+%% Relationships for Node components that depend on session-validator-management
+    partnerChainsNode -->|👥 **creates** *inherent data providers* for consensus| proposalCIDP
+    partnerChainsNode -->|👥 **creates** *inherent data providers* for validation| verifierCIDP
+    proposalCIDP -->|👥 **uses** *SessionValidatorManagementApi* for committee management| sessionValidatorManagement
+    verifierCIDP -->|👥 **uses** *SessionValidatorManagementApi* for authority verification| sessionValidatorManagement
+    ariadneIDP -->|👥 **provides** *AuthoritySelectionInputs* for committee selection| sessionValidatorManagement
+    partnerChainsNode -->|🧩 **uses** *authority_selection* data source for validator operations| sessionValidatorManagement
+    
+%% Relationships focused on runtime API usage
+    partnerChainsNode -->|📝 **calls** *select_authorities* through runtime API| sessionValidatorManagement
+    partnerChainsNode -->|🔍 **queries** *get_next_unset_epoch_number* for committee planning| sessionValidatorManagement
+    partnerChainsNode -->|👥 **accesses** *current_committee* and *next_committee* for consensus| sessionValidatorManagement
+```
