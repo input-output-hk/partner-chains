@@ -223,37 +223,40 @@ Relationships between the `partner-chains-session` pallet and other pallets in t
 
 ```mermaid
 graph TB
-    classDef main fill:#f9d,stroke:#333,stroke-width:4px
-    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
-    classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
+   classDef main fill:#f9d,stroke:#333,stroke-width:4px
+   classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
+   classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
 
 %% Pallets that depend on partner-chains-session (positioned above)
-    sessionValidatorManagement[pallet-session-validator-management]:::consumer
+   sessionValidatorManagement[pallet-session-validator-management]:::consumer
 
 %% Main pallet (in the middle)
-    partnerChainsSession[pallet-partner-chains-session]:::main
+   partnerChainsSession[pallet-partner-chains-session]:::main
 
 %% Dependencies (positioned below)
-    frameSupport[frame-support]:::dependency
-    frameSystem[frame-system]:::dependency
-    palletTimestamp[pallet-timestamp]:::dependency
-    spCore[sp-core]:::dependency
-    spRuntime[sp-runtime]:::dependency
-    spStaking[sp-staking]:::dependency
-    spStd[sp-std]:::dependency
-    palletSession[pallet-session]:::dependency
+   frameSupport[frame-support]:::dependency
+   frameSystem[frame-system]:::dependency
+   palletTimestamp[pallet-timestamp]:::dependency
+   spCore[sp-core]:::dependency
+   spRuntime[sp-runtime]:::dependency
+   spStaking[sp-staking]:::dependency
+   spStd[sp-std]:::dependency
+   palletSession[pallet-session]:::dependency
 
 %% Relationships for pallets that depend on partner-chains-session
-    sessionValidatorManagement -->|👥 **uses** *SessionManager* trait for validator management| partnerChainsSession
-    sessionValidatorManagement -->|🔄 **depends on** *rotate_session* for session rotation| partnerChainsSession
+   sessionValidatorManagement -->|👥 **uses** *SessionManager* trait for validator management| partnerChainsSession
+   sessionValidatorManagement -->|🔄 **depends on** *rotate_session* for session rotation| partnerChainsSession
 
 %% Relationships for dependencies
-    partnerChainsSession -->|📝 **implements** *Hooks* for block initialization| frameSystem
-    partnerChainsSession -->|👥 **uses** *ValidatorRegistration* trait| frameSupport
-    partnerChainsSession -->|🔄 **implements** *EstimateNextNewSession* trait| frameSupport
-    partnerChainsSession -->|🧩 **uses** *OpaqueKeys* for session key management| spRuntime
-    partnerChainsSession -->|🔗 **uses** *SessionIndex* for tracking sessions| spStaking
-    partnerChainsSession -->|📝 **optionally implements** *pallet-session* compatibility| palletSession
+   partnerChainsSession -->|📝 **implements** *Hooks* for block initialization| frameSystem
+   partnerChainsSession -->|👥 **uses** *ValidatorRegistration* trait| frameSupport
+   partnerChainsSession -->|🔄 **implements** *EstimateNextNewSession* trait| frameSupport
+   partnerChainsSession -->|🧩 **uses** *KeyTypeId* and *RuntimeAppPublic* types| spCore
+   partnerChainsSession -->|🧩 **uses** *OpaqueKeys* for session key management| spRuntime
+   partnerChainsSession -->|🔗 **uses** *SessionIndex* for tracking sessions| spStaking
+   partnerChainsSession -->|🧩 **uses** *prelude* for collections and standard types| spStd
+   partnerChainsSession -->|⏱️ **depends on** *timestamp* for session timing| palletTimestamp
+   partnerChainsSession -->|📝 **optionally implements** *pallet-session* compatibility| palletSession
 ```
 
 ## Usage
