@@ -145,3 +145,34 @@ construct_runtime!(
 This pallet relies on external storage for tracking block production data. The actual storage of block authors and delegator participation is expected to be handled by the runtime implementation through the Config trait methods.
 
 The pallet processes block production data through inherents, which should be created and supplied by the runtime during block production.
+
+## Pallet Coupling
+
+```mermaid
+graph TB
+classDef main fill:#f9d,stroke:#333,stroke-width:4px
+classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
+classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
+
+%% Pallets that might depend on block-participation (positioned above)
+%% Currently none explicitly identified
+
+%% Main pallet (in the middle)
+blockParticipation[pallet-block-participation]:::main
+
+%% Dependencies (positioned below)
+frameSystem[frame_system]:::dependency
+blockProductionLog[pallet-block-production-log]:::dependency
+spBlockParticipation[sp_block_participation]:::dependency
+spConsensusSlots[sp_consensus_slots]:::dependency
+
+%% Relationships for pallets that depend on block-participation
+%% Currently none explicitly identified
+
+%% Relationships for dependencies
+blockParticipation -->|📝 **uses** *Inherent* trait for block participation data processing| frameSystem
+blockParticipation -->|🔍 **uses** *blocks_produced_up_to_slot* to track validator participation| blockProductionLog
+blockParticipation -->|🔍 **calls** *discard_blocks_produced_up_to_slot* to clear processed data| blockProductionLog
+blockParticipation -->|🧩 **imports** *InherentIdentifier* from primitives| spBlockParticipation
+blockParticipation -->|🧩 **uses** *Slot* type for block timing| spConsensusSlots
+```

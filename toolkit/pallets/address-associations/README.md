@@ -146,6 +146,8 @@ construct_runtime!(
 ```
 ## Pallet Coupling
 
+Relationships between the `address-associations` pallet and other pallets in the system:
+
 ```mermaid
 graph TB
 classDef main fill:#f9d,stroke:#333,stroke-width:4px
