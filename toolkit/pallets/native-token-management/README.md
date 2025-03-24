@@ -175,34 +175,6 @@ inherent_data_providers
     .map_err(|e| format!("Failed to register inherent data provider: {:?}", e))?;
 ```
 
-## Pallet Coupling
-
-Relationships between the `native-token-management` pallet and other pallets in the system:
-
-```mermaid
-graph TB
-    classDef main fill:#f9d,stroke:#333,stroke-width:4px
-    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
-    classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
-
-%% Main pallet (in the middle)
-    nativeTokenManagement[pallet-native-token-management]:::main
-
-%% Dependencies (positioned below)
-    frameSupport[frame-support]:::dependency
-    frameSystem[frame-system]:::dependency
-    sidechainDomain[sidechain-domain]:::dependency
-    spNativeTokenManagement[sp-native-token-management]:::dependency
-
-%% Relationships for dependencies
-    nativeTokenManagement -->|🧩 **uses** *MainchainAddress*, *PolicyId*, *AssetName* types| sidechainDomain
-    nativeTokenManagement -->|🧩 **uses** *MainChainScripts*, *NativeTokenAmount* types| spNativeTokenManagement
-    nativeTokenManagement -->|📝 **uses** *StorageValue*, *DispatchResult* for storage and error handling| frameSupport
-    nativeTokenManagement -->|📝 **implements** *ProvideInherent* trait for inherent data handling| frameSupport
-    nativeTokenManagement -->|📝 **uses** *ensure_none*, *ensure_root* for origin checking| frameSystem
-    nativeTokenManagement -->|📝 **depends on** *Event* and *Config* trait for runtime integration| frameSystem
-```
-
 ## Usage
 
 The Native Token Management primitives are typically used as follows:
@@ -239,6 +211,60 @@ pub mod mock {
     }
 }
 ```
+
+## Integration
+
+### Runtime
+
+Relationships between the `native-token-management` pallet and other pallets in the system:
+
+```mermaid
+graph TB
+    classDef main fill:#f9d,stroke:#333,stroke-width:4px
+    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
+    classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
+
+%% Main pallet (in the middle)
+    nativeTokenManagement[pallet-native-token-management]:::main
+
+%% Dependencies (positioned below)
+    frameSupport[frame-support]:::dependency
+    frameSystem[frame-system]:::dependency
+    sidechainDomain[sidechain-domain]:::dependency
+    spNativeTokenManagement[sp-native-token-management]:::dependency
+
+%% Relationships for dependencies
+    nativeTokenManagement -->|🧩 **uses** *MainchainAddress*, *PolicyId*, *AssetName* types| sidechainDomain
+    nativeTokenManagement -->|🧩 **uses** *MainChainScripts*, *NativeTokenAmount* types| spNativeTokenManagement
+    nativeTokenManagement -->|📝 **uses** *StorageValue*, *DispatchResult* for storage and error handling| frameSupport
+    nativeTokenManagement -->|📝 **implements** *ProvideInherent* trait for inherent data handling| frameSupport
+    nativeTokenManagement -->|📝 **uses** *ensure_none*, *ensure_root* for origin checking| frameSystem
+    nativeTokenManagement -->|📝 **depends on** *Event* and *Config* trait for runtime integration| frameSystem
+```
+
+### Node
+
+Relationships between the `native-token-management` pallet and the node client:
+
+```mermaid
+graph TB
+    classDef main fill:#f9d,stroke:#333,stroke-width:4px
+    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
+
+%% Node (positioned above)
+    node[partner-chains/node]:::consumer
+
+%% Main pallet (in the middle)
+    nativeTokenManagement[pallet-native-token-management]:::main
+
+%% Relationships between node and pallet
+    node -->|🔍 **uses** *get_main_chain_scripts* to retrieve native token configuration| nativeTokenManagement
+    node -->|📝 **implements** *NativeTokenManagementDataSource* trait for main chain connectivity| nativeTokenManagement
+    node -->|🔄 **provides** *NativeTokenManagementInherentDataProvider* for block production| nativeTokenManagement
+    node -->|👥 **calls** *set_main_chain_scripts* via governance or sudo for configuration| nativeTokenManagement
+    node -->|💰 **processes** *TokenTransferData* for native token movement| nativeTokenManagement
+```
+    
 
 ## Migration
 

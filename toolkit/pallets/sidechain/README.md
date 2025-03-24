@@ -299,7 +299,7 @@ graph TB
 
 ### Node
 
-Relationships between the `partner-chains-session` pallet and the node:
+Relationships between the `partner-chains-session` pallet and the node client:
 
 ```mermaid
 graph TB

@@ -397,7 +397,7 @@ impl<T: Config> pallet_partner_chains_session::SessionManager<AuthorityId, Autho
 }
 ```
 
-## Integration with Other Pallets
+## Integration
 
 ### Runtime
 
@@ -434,7 +434,7 @@ graph TB
 
 ### Node
 
-Relationships between the `session-validator-management` pallet and the node:
+Relationships between the `session-validator-management` pallet and the node client:
 
 ```mermaid
 graph TB
