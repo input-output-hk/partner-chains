@@ -443,7 +443,7 @@ graph TB
     classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
 
 %% Node components that depend on session-validator-management (positioned above)
-    partnerChainsNode[partner-chains-node]:::consumer
+    partnerChainsNode[Partner Chain Node]:::consumer
     proposalCIDP[ProposalCIDP]:::consumer
     verifierCIDP[VerifierCIDP]:::consumer
     ariadneIDP[AriadneInherentDataProvider]:::consumer

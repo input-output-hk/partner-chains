@@ -308,7 +308,7 @@ graph TB
    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
 
 %% Node positioned above (consumer)
-   partnerChainsNode[partner-chains-node]:::consumer
+   partnerChainsNode[Partner Chain Node]:::consumer
 
 %% Main pallet (in the middle)
    partnerChainsSession[pallet-partner-chains-session]:::main

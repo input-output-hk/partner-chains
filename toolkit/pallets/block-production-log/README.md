@@ -236,7 +236,7 @@ graph TB
     blockProductionLog[pallet-block-production-log]:::main
 
 %% Node component (positioned above)
-    node[node/node]:::consumer
+    node[Partner Chain Node]:::consumer
 
 %% Relationships between node and the pallet
     node -->|👥 **uses** *BlockAuthorInherentProvider* for block producer identification| blockProductionLog

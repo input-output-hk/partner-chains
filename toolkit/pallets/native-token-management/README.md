@@ -252,7 +252,7 @@ graph TB
     classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
 
 %% Node (positioned above)
-    node[partner-chains/node]:::consumer
+    node[Partner Chain Node]:::consumer
 
 %% Main pallet (in the middle)
     nativeTokenManagement[pallet-native-token-management]:::main
