@@ -144,6 +144,37 @@ construct_runtime!(
     }
 );
 ```
+## Pallet Coupling
+
+```mermaid
+graph TB
+classDef main fill:#f9d,stroke:#333,stroke-width:4px
+classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
+classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
+
+%% Main pallet (in the middle)
+addressAssociations[pallet-address-associations]:::main
+
+%% Dependencies (positioned below)
+frameSupport[frame_support]:::dependency
+frameSystem[frame_system]:::dependency
+sidechainDomain[sidechain_domain]:::dependency
+parityScale[parity_scale_codec]:::dependency
+
+%% Relationships for dependencies
+addressAssociations -->|🧩 **uses** *StakePublicKey* for mainchain key representation| sidechainDomain
+addressAssociations -->|🧩 **uses** *UtxoId* for genesis UTXO representation| sidechainDomain
+addressAssociations -->|🧩 **uses** *MainchainKeyHash* for storage key| sidechainDomain
+addressAssociations -->|🧩 **uses** *StakeKeySignature* for signature verification| sidechainDomain
+
+    addressAssociations -->|📝 **uses** *StorageMap* for storing associations| frameSupport
+    addressAssociations -->|📝 **uses** *Blake2_128Concat* hasher for storage| frameSupport
+    addressAssociations -->|📝 **uses** *DispatchResult* for extrinsic returns| frameSupport
+    
+    addressAssociations -->|📝 **uses** *OriginFor* for transaction origins| frameSystem
+    
+    addressAssociations -->|🧩 **uses** *Encode* for message encoding| parityScale
+```
 
 ## Usage
 
