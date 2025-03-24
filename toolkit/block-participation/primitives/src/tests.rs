@@ -208,8 +208,8 @@ async fn provides_data_when_api_returns_a_slot() {
 	// 			block_count: 2,
 	// 			delegator_total_shares: 9000,
 	// 			delegators: vec![
-    //                 DelegatorBlockParticipationData { id: delegator1, share: 9000 },
-    //             ]
+	//                 DelegatorBlockParticipationData { id: delegator1, share: 9000 },
+	//             ]
 	// 		},
 	// 		BlockProducerParticipationData {
 	// 			block_producer: Some(producer1),
@@ -225,8 +225,8 @@ async fn provides_data_when_api_returns_a_slot() {
 	// 			block_count: 1,
 	// 			delegator_total_shares: 100,
 	// 			delegators: vec![
-    //                 DelegatorBlockParticipationData { id: delegator3, share: 100 },
-    //             ]
+	//                 DelegatorBlockParticipationData { id: delegator3, share: 100 },
+	//             ]
 	// 		},
 	// 		BlockProducerParticipationData {
 	// 			block_producer: Some(producer2),
@@ -242,8 +242,8 @@ async fn provides_data_when_api_returns_a_slot() {
 	// 			block_count: 1,
 	// 			delegator_total_shares: 9000,
 	// 			delegators: vec![
-    //                 DelegatorBlockParticipationData { id: delegator3, share: 9000 },
-    //             ]
+	//                 DelegatorBlockParticipationData { id: delegator3, share: 9000 },
+	//             ]
 	// 		},
 	// 		BlockProducerParticipationData {
 	// 			block_producer: Some(producer3),
@@ -259,8 +259,8 @@ async fn provides_data_when_api_returns_a_slot() {
 	// 			block_count: 1,
 	// 			delegator_total_shares: 12000,
 	// 			delegators: vec![
-    //                 DelegatorBlockParticipationData { id: delegator5, share: 12000 },
-    //             ]
+	//                 DelegatorBlockParticipationData { id: delegator5, share: 12000 },
+	//             ]
 	// 		},
 	// 		BlockProducerParticipationData {
 	// 			block_producer: Some(producer4),
@@ -276,8 +276,8 @@ async fn provides_data_when_api_returns_a_slot() {
 	// 			block_count: 1,
 	// 			delegator_total_shares: 200,
 	// 			delegators: vec![
-    //                 DelegatorBlockParticipationData { id: delegator1, share: 200 }
-    //             ]
+	//                 DelegatorBlockParticipationData { id: delegator1, share: 200 }
+	//             ]
 	// 		}
 	// 	]
 	// );
