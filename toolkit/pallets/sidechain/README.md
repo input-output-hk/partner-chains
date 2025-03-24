@@ -303,34 +303,18 @@ Relationships between the `partner-chains-session` pallet and the node:
 
 ```mermaid
 graph TB
-classDef main fill:#f9d,stroke:#333,stroke-width:4px
-classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
-classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
+   classDef main fill:#f9d,stroke:#333,stroke-width:4px
+   classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
 
 %% Node positioned above (consumer)
-node[Partner Chain Node]:::consumer
+   node[Partner Chain Node]:::consumer
 
 %% Main pallet (in the middle)
-sidechain[sidechain]:::main
-
-%% Dependencies (positioned below)
-frameSystem[frame_system]:::dependency
-sidechainDomain[sidechain_domain]:::dependency
-sidechainSlots[sidechain_slots]:::dependency
-spSidechain[sp_sidechain]:::dependency
-timeSource[time_source]:::dependency
+   sidechain[sidechain]:::main
 
 %% Relationships from node to sidechain
-node -->|⏳ **uses** *current_epoch_number* for temporal tracking| sidechain
-node -->|🔄 **references** *ScEpochNumber* for epoch transitions| sidechain
-node -->|🧩 **uses** *slots_per_epoch* for slot configuration| sidechain
-node -->|📝 **implements** *CreateInherentDataProviders* for inherent data| sidechain
-
-%% Relationships from sidechain to dependencies
-sidechain -->|📝 **implements** *on_initialize* hook for epoch detection| frameSystem
-sidechain -->|🧩 **uses** *ScEpochNumber* and *ScSlotNumber* types| sidechainDomain
-sidechain -->|💰 **stores** *UtxoId* for genesis tracking| sidechainDomain
-sidechain -->|⏳ **uses** *SlotsPerEpoch* for temporal management| sidechainSlots
-sidechain -->|📝 **calls** *OnNewEpoch* for epoch transitions| spSidechain
-sidechain -->|⏳ **depends on** *TimeSource* for slot timing| timeSource
+   node -->|⏳ **uses** *current_epoch_number* for temporal tracking| sidechain
+   node -->|🔄 **references** *ScEpochNumber* for epoch transitions| sidechain
+   node -->|🧩 **uses** *slots_per_epoch* for slot configuration| sidechain
+   node -->|📝 **implements** *CreateInherentDataProviders* for inherent data| sidechain
 ```
