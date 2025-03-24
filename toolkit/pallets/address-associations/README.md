@@ -109,7 +109,7 @@ pub enum Error<T> {
 - `MainchainKeyAlreadyAssociated`: The mainchain key is already associated with a partner chain address
 - `InvalidMainchainSignature`: The provided signature is invalid and cannot prove ownership of the stake key
 
-## Integration
+## Integration Guide
 
 To integrate this pallet in your runtime:
 
@@ -144,7 +144,31 @@ construct_runtime!(
     }
 );
 ```
-## Pallet Coupling
+
+## Usage
+
+To associate a mainchain stake public key with a partner chain address, the caller must:
+
+1. Generate a signature using their mainchain stake key over a message containing:
+    - The stake public key
+    - The partner chain address
+    - The genesis UTXO ID
+2. Submit the `associate_address` extrinsic with their partner chain address, the signature, and their stake public key
+
+The pallet verifies the signature to ensure the caller owns the mainchain stake key before creating the association.
+
+The message that needs to be signed is structured as follows:
+```rust
+pub struct AddressAssociationSignedMessage<PartnerChainAddress> {
+    pub stake_public_key: StakePublicKey,
+    pub partnerchain_address: PartnerChainAddress,
+    pub genesis_utxo: UtxoId,
+}
+```
+
+## Architecture
+
+### Runtime
 
 Relationships between the `address-associations` pallet and other pallets in the system:
 
@@ -178,25 +202,27 @@ addressAssociations -->|🧩 **uses** *StakeKeySignature* for signature verifica
     addressAssociations -->|🧩 **uses** *Encode* for message encoding| parityScale
 ```
 
-## Usage
+### Node
 
-To associate a mainchain stake public key with a partner chain address, the caller must:
+Relationships between the `address-associations` pallet and the node client:
 
-1. Generate a signature using their mainchain stake key over a message containing:
-    - The stake public key
-    - The partner chain address
-    - The genesis UTXO ID
-2. Submit the `associate_address` extrinsic with their partner chain address, the signature, and their stake public key
+```mermaid
+graph TB
+    classDef main fill:#f9d,stroke:#333,stroke-width:4px
+    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
 
-The pallet verifies the signature to ensure the caller owns the mainchain stake key before creating the association.
+%% Node (positioned above)
+    node[Partner Chain Node]:::consumer
 
-The message that needs to be signed is structured as follows:
-```rust
-pub struct AddressAssociationSignedMessage<PartnerChainAddress> {
-    pub stake_public_key: StakePublicKey,
-    pub partnerchain_address: PartnerChainAddress,
-    pub genesis_utxo: UtxoId,
-}
+%% Main pallet (in the middle)
+    addressAssociations[pallet-address-associations]:::main
+
+%% Relationships between node and address-associations pallet
+    node -->|🧩 **uses** *Config* trait to configure pallet| addressAssociations
+    node -->|👥 **calls** *associate_address* for mainchain-partnerchain linking| addressAssociations
+    node -->|🔍 **queries** *get_partner_chain_address_for* to verify associations| addressAssociations
+    node -->|🔍 **queries** *get_all_address_associations* for all registered links| addressAssociations
+    node -->|📊 **uses** *get_version* to check pallet compatibility| addressAssociations
 ```
 
 ## Types

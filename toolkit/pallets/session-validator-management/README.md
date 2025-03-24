@@ -397,7 +397,7 @@ impl<T: Config> pallet_partner_chains_session::SessionManager<AuthorityId, Autho
 }
 ```
 
-## Integration
+## Architecture
 
 ### Runtime
 

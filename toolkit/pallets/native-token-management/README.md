@@ -212,7 +212,7 @@ pub mod mock {
 }
 ```
 
-## Integration
+## Architecture
 
 ### Runtime
 

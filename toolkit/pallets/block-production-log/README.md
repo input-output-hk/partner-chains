@@ -180,7 +180,7 @@ The Block Production Log pallet is typically used in conjunction with the consen
 
 4. The `take_prefix` function combines retrieval and pruning in a single operation for cases where data will be processed immediately and then no longer needed.
 
-## Integration
+## Architecture
 
 This pallet is designed to work closely with the Block Participation pallet:
 

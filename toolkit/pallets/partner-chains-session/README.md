@@ -254,7 +254,7 @@ construct_runtime!(
 );
 ```
 
-## Integration
+## Architecture
 
 ### Runtime
 

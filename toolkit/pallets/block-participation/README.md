@@ -146,7 +146,7 @@ This pallet relies on external storage for tracking block production data. The a
 
 The pallet processes block production data through inherents, which should be created and supplied by the runtime during block production.
 
-## System Integration
+## Architecture
 
 ### Runtime
 

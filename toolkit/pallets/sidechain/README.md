@@ -254,7 +254,7 @@ The Sidechain pallet is typically used as a core coordination mechanism. The typ
 
 4. Other pallets can query the current epoch or slots per epoch to coordinate their own activities.
 
-## Integration with Other Pallets
+## Architecture
 
 The Sidechain pallet serves as a core coordination mechanism for other pallets through the OnNewEpoch trait. Typical integrations include:
 
