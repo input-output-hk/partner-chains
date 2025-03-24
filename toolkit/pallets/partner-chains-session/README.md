@@ -304,34 +304,21 @@ Relationships between the `partner-chains-session` pallet and the node client:
 
 ```mermaid
 graph TB
-    classDef main fill:#f9d,stroke:#333,stroke-width:4px
-    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
-    classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
+   classDef main fill:#f9d,stroke:#333,stroke-width:4px
+   classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
 
 %% Node positioned above (consumer)
-    partnerChainsNode[partner-chains-node]:::consumer
+   partnerChainsNode[partner-chains-node]:::consumer
 
 %% Main pallet (in the middle)
-    partnerChainsSession[pallet-partner-chains-session]:::main
-
-%% Dependencies (positioned below)
-    frameSystem[frame-system]:::dependency
-    spCore[sp-core]:::dependency
-    spRuntime[sp-runtime]:::dependency
-    spStaking[sp-staking]:::dependency
+   partnerChainsSession[pallet-partner-chains-session]:::main
 
 %% Node's relationship with partner-chains-session
-    partnerChainsNode -->|👥 **uses** *validators_and_keys* for validator management| partnerChainsSession
-    partnerChainsNode -->|👥 **interacts with** *disable_index* for validator control| partnerChainsSession
-    partnerChainsNode -->|🔄 **calls** *rotate_session* for session transitions| partnerChainsSession
-    partnerChainsNode -->|📝 **integrates** *SessionHandler* for consensus operations| partnerChainsSession
-    partnerChainsNode -->|🔐 **processes** *Keys* for session management| partnerChainsSession
-
-%% Partner-chains-session's relationships with dependencies
-    partnerChainsSession -->|📝 **implements** *on_initialize* hook for block processing| frameSystem
-    partnerChainsSession -->|🧩 **uses** *KeyTypeId* for type identification| spCore
-    partnerChainsSession -->|🧩 **uses** *OpaqueKeys* for session key management| spRuntime
-    partnerChainsSession -->|🔗 **uses** *SessionIndex* for tracking sessions| spStaking
+   partnerChainsNode -->|👥 **uses** *validators_and_keys* for validator management| partnerChainsSession
+   partnerChainsNode -->|👥 **interacts with** *disable_index* for validator control| partnerChainsSession
+   partnerChainsNode -->|🔄 **calls** *rotate_session* for session transitions| partnerChainsSession
+   partnerChainsNode -->|📝 **integrates** *SessionHandler* for consensus operations| partnerChainsSession
+   partnerChainsNode -->|🔐 **processes** *Keys* for session management| partnerChainsSession
 ```
 
 ## Implementation Notes
