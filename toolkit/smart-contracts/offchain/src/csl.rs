@@ -374,6 +374,7 @@ pub(crate) struct TransactionContext {
 	pub(crate) payment_key_utxos: Vec<OgmiosUtxo>,
 	pub(crate) network: NetworkIdKind,
 	pub(crate) protocol_parameters: ProtocolParametersResponse,
+	pub(crate) change_address: Address,
 }
 
 impl TransactionContext {
@@ -388,7 +389,32 @@ impl TransactionContext {
 		let protocol_parameters = client.query_protocol_parameters().await?;
 		let payment_address = key_hash_address(&payment_key.to_public().hash(), network);
 		let payment_key_utxos = client.query_utxos(&[payment_address.to_bech32(None)?]).await?;
-		Ok(TransactionContext { payment_key, payment_key_utxos, network, protocol_parameters })
+		Ok(TransactionContext {
+			payment_key,
+			payment_key_utxos,
+			network,
+			protocol_parameters,
+			change_address: payment_address,
+		})
+	}
+
+	pub(crate) async fn for_payment_key_with_change_address<C: QueryLedgerState + QueryNetwork>(
+		payment_key: &CardanoPaymentSigningKey,
+		change_address: &Address,
+		client: &C,
+	) -> Result<TransactionContext, anyhow::Error> {
+		let payment_key = payment_key.clone().0;
+		let network = client.shelley_genesis_configuration().await?.network.to_csl();
+		let protocol_parameters = client.query_protocol_parameters().await?;
+		let payment_address = key_hash_address(&payment_key.to_public().hash(), network);
+		let payment_key_utxos = client.query_utxos(&[payment_address.to_bech32(None)?]).await?;
+		Ok(TransactionContext {
+			payment_key,
+			payment_key_utxos,
+			network,
+			protocol_parameters,
+			change_address: change_address.clone(),
+		})
 	}
 
 	pub(crate) fn payment_key_hash(&self) -> Ed25519KeyHash {
@@ -603,7 +629,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 				builder.add_inputs_from_and_change(
 					&ctx.payment_key_utxos.to_csl()?,
 					CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
-					&ChangeConfig::new(&key_hash_address(&ctx.payment_key_hash(), ctx.network)),
+					&ChangeConfig::new(&ctx.change_address),
 				)?;
 			} else {
 				builder.add_collateral_inputs(ctx, collateral_inputs)?;
@@ -612,7 +638,7 @@ impl TransactionBuilderExt for TransactionBuilder {
 				builder.add_inputs_from_and_change_with_collateral_return(
 					&ctx.payment_key_utxos.to_csl()?,
 					CoinSelectionStrategyCIP2::LargestFirstMultiAsset,
-					&ChangeConfig::new(&key_hash_address(&ctx.payment_key_hash(), ctx.network)),
+					&ChangeConfig::new(&ctx.change_address),
 					&ctx.protocol_parameters.collateral_percentage.into(),
 				)?;
 				builder.calc_script_data_hash(&convert_cost_models(
@@ -1031,6 +1057,7 @@ mod prop_tests {
 			payment_key_utxos: payment_utxos.clone(),
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
+			change_address: payment_addr(),
 		};
 		let mut tx_builder = TransactionBuilder::new(&get_builder_config(&ctx).unwrap());
 		tx_builder
@@ -1063,6 +1090,7 @@ mod prop_tests {
 			payment_key_utxos: payment_utxos.clone(),
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
+			change_address: payment_addr(),
 		};
 		let mut tx_builder = TransactionBuilder::new(&get_builder_config(&ctx).unwrap());
 		tx_builder

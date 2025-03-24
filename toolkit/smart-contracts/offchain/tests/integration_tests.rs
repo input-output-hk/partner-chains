@@ -18,7 +18,9 @@ use partner_chains_cardano_offchain::{
 	assemble_tx,
 	await_tx::{AwaitTx, FixedDelayRetries},
 	cardano_keys::CardanoPaymentSigningKey,
-	d_param, init_governance, permissioned_candidates,
+	d_param, init_governance,
+	multisig::{MultiSigSmartContractResult, MultiSigTransactionData},
+	permissioned_candidates,
 	register::Register,
 	reserve::{self, release::release_reserve_funds},
 	scripts_data, update_governance,
@@ -26,10 +28,10 @@ use partner_chains_cardano_offchain::{
 use partner_chains_plutus_data::reserve::ReserveDatum;
 use sidechain_domain::{
 	AdaBasedStaking, AssetId, AssetName, AuraPublicKey, CandidateRegistration, DParameter,
-	GrandpaPublicKey, MainchainKeyHash, MainchainSignature, McSmartContractResult, McTxHash,
-	PermissionedCandidateData, PolicyId, SidechainPublicKey, SidechainSignature,
-	StakePoolPublicKey, UtxoId, UtxoIndex,
+	GrandpaPublicKey, MainchainKeyHash, MainchainSignature, McTxHash, PermissionedCandidateData,
+	PolicyId, SidechainPublicKey, SidechainSignature, StakePoolPublicKey, UtxoId, UtxoIndex,
 };
+
 use std::time::Duration;
 use testcontainers::{clients::Cli, Container, GenericImage};
 use tokio_retry::{strategy::FixedInterval, Retry};
@@ -94,26 +96,38 @@ async fn governance_flow() {
 	let container = cli.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
-	let _ = run_update_goveranance(&client, genesis_utxo).await;
-	let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
-	// TODO: ETCM-9576 run upsert for permissioned candidates and then d-param and sign and submit both later, to prove they can interleve
-	let upsert_result = permissioned_candidates::upsert_permissioned_candidates(
-		genesis_utxo,
-		&vec![],
-		&governance_authority_payment_key(),
+	let _ = run_update_governance(&client, genesis_utxo).await;
+
+	let upsert_candidates_1_result =
+		run_upsert_permissioned_candidates(genesis_utxo, 1u8, &client).await;
+
+	let update_authorities_result = run_update_governance(&client, genesis_utxo).await;
+
+	run_assemble_and_sign(
+		upsert_candidates_1_result.unwrap(),
+		&[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY],
 		&client,
-		&await_tx,
 	)
 	.await
 	.unwrap();
-	if let Some(McSmartContractResult::TxCBOR(tx_cbor)) = upsert_result {
-		let result =
-			run_assemble_and_sign(&tx_cbor, &[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY], &client)
-				.await;
-		assert!(result.is_some())
-	} else {
-		panic!("Expected transaction cbor, because governance policy is not '1 of 1'")
-	}
+
+	run_assemble_and_sign(
+		update_authorities_result,
+		&[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY],
+		&client,
+	)
+	.await
+	.unwrap();
+
+	let upsert_candidates_2_result =
+		run_upsert_permissioned_candidates(genesis_utxo, 2u8, &client).await;
+	run_assemble_and_sign(
+		upsert_candidates_2_result.unwrap(),
+		&[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY],
+		&client,
+	)
+	.await
+	.unwrap();
 }
 
 #[tokio::test]
@@ -313,13 +327,13 @@ async fn run_init_goveranance<
 	genesis_utxo
 }
 
-async fn run_update_goveranance<
+async fn run_update_governance<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 >(
 	client: &T,
 	genesis_utxo: UtxoId,
-) {
-	let _ = update_governance::run_update_governance(
+) -> MultiSigSmartContractResult {
+	update_governance::run_update_governance(
 		&vec![EVE_PUBLIC_KEY_HASH, GOVERNANCE_AUTHORITY],
 		2,
 		&governance_authority_payment_key(),
@@ -328,7 +342,7 @@ async fn run_update_goveranance<
 		FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
-	.unwrap();
+	.unwrap()
 }
 
 async fn run_upsert_d_param<
@@ -357,7 +371,7 @@ async fn run_upsert_permissioned_candidates<
 	genesis_utxo: UtxoId,
 	candidate: u8,
 	client: &T,
-) -> Option<McSmartContractResult> {
+) -> Option<MultiSigSmartContractResult> {
 	let candidates = vec![PermissionedCandidateData {
 		sidechain_public_key: SidechainPublicKey([candidate; 33].to_vec()),
 		aura_public_key: AuraPublicKey([candidate; 32].to_vec()),
@@ -639,14 +653,23 @@ async fn assert_illiquid_supply<T: QueryLedgerState>(
 async fn run_assemble_and_sign<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 >(
-	tx_bytes: &[u8],
+	multisig_result: MultiSigSmartContractResult,
 	signatories: &[[u8; 32]],
 	client: &T,
 ) -> Option<McTxHash> {
-	let tx = Transaction::from_bytes(tx_bytes.to_vec()).unwrap();
-	let witnesses: Vec<_> = signatories.iter().map(|s| sign(&tx, s)).collect();
-	let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
-	assemble_tx::assemble_tx(tx, witnesses, client, &await_tx).await.unwrap()
+	if let MultiSigSmartContractResult::TransactionToSign(MultiSigTransactionData {
+		tx_name: _,
+		temporary_wallet: _,
+		tx_cbor,
+	}) = multisig_result
+	{
+		let tx = Transaction::from_bytes(tx_cbor).unwrap();
+		let witnesses: Vec<_> = signatories.iter().map(|s| sign(&tx, s)).collect();
+		let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
+		assemble_tx::assemble_tx(tx, witnesses, client, &await_tx).await.unwrap()
+	} else {
+		panic!("Expected transaction cbor, because governance policy is not '1 of 1'")
+	}
 }
 
 fn sign(tx: &Transaction, private_key: &[u8; 32]) -> Vkeywitness {

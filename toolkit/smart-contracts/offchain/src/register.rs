@@ -366,6 +366,7 @@ mod tests {
 			payment_key_utxos: payment_key_utxos.clone(),
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
+			change_address: payment_addr(),
 		};
 		let own_registration_utxos = vec![payment_key_utxos.get(1).unwrap().clone()];
 		let registration_utxo = payment_key_utxos.first().unwrap();
@@ -412,6 +413,7 @@ mod tests {
 			payment_key_utxos: payment_key_utxos.clone(),
 			network: NetworkIdKind::Testnet,
 			protocol_parameters: protocol_parameters(),
+			change_address: payment_addr(),
 		};
 		let registration_utxo = payment_key_utxos.first().unwrap();
 		let candidate_registration = candidate_registration(registration_utxo.utxo_id());

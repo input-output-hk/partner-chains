@@ -43,7 +43,7 @@ impl UpsertPermissionedCandidatesCmd {
 
 		let client = self.common_arguments.get_ogmios_client().await?;
 
-		upsert_permissioned_candidates(
+		let result = upsert_permissioned_candidates(
 			self.genesis_utxo,
 			&permissioned_candidates,
 			&payment_key,
@@ -51,6 +51,10 @@ impl UpsertPermissionedCandidatesCmd {
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;
+		match result {
+			Some(result) => println!("{}", serde_json::to_value(result)?),
+			None => println!("{{}}"),
+		}
 
 		Ok(())
 	}
