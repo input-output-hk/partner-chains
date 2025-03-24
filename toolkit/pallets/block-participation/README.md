@@ -188,7 +188,7 @@ Relationships between the `block-participation` pallet and the node client:
 ```mermaid
 graph TB
 classDef main fill:#f9d,stroke:#333,stroke-width:4px
-classDef node fill:#fda,stroke:#333,stroke-width:2px
+classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
 classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
 
 %% Node (positioned above)
