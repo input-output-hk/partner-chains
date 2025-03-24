@@ -175,6 +175,34 @@ inherent_data_providers
     .map_err(|e| format!("Failed to register inherent data provider: {:?}", e))?;
 ```
 
+## Pallet Coupling
+
+Relationships between the `native-token-management` pallet and other pallets in the system:
+
+```mermaid
+graph TB
+    classDef main fill:#f9d,stroke:#333,stroke-width:4px
+    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
+    classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
+
+%% Main pallet (in the middle)
+    nativeTokenManagement[pallet-native-token-management]:::main
+
+%% Dependencies (positioned below)
+    frameSupport[frame-support]:::dependency
+    frameSystem[frame-system]:::dependency
+    sidechainDomain[sidechain-domain]:::dependency
+    spNativeTokenManagement[sp-native-token-management]:::dependency
+
+%% Relationships for dependencies
+    nativeTokenManagement -->|🧩 **uses** *MainchainAddress*, *PolicyId*, *AssetName* types| sidechainDomain
+    nativeTokenManagement -->|🧩 **uses** *MainChainScripts*, *NativeTokenAmount* types| spNativeTokenManagement
+    nativeTokenManagement -->|📝 **uses** *StorageValue*, *DispatchResult* for storage and error handling| frameSupport
+    nativeTokenManagement -->|📝 **implements** *ProvideInherent* trait for inherent data handling| frameSupport
+    nativeTokenManagement -->|📝 **uses** *ensure_none*, *ensure_root* for origin checking| frameSystem
+    nativeTokenManagement -->|📝 **depends on** *Event* and *Config* trait for runtime integration| frameSystem
+```
+
 ## Usage
 
 The Native Token Management primitives are typically used as follows:
