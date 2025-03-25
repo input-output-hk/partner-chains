@@ -46,6 +46,7 @@ pub enum RegisterValidatorDatum {
 		own_pkh: MainchainKeyHash,
 		aura_pub_key: AuraPublicKey,
 		grandpa_pub_key: GrandpaPublicKey,
+		im_online_pub_key: ImOnlinePublicKey,
 	},
 }
 
@@ -88,6 +89,7 @@ pub fn candidate_registration_to_plutus_data(
 		own_pkh: candidate_registration.own_pkh,
 		aura_pub_key: candidate_registration.aura_pub_key.clone(),
 		grandpa_pub_key: candidate_registration.grandpa_pub_key.clone(),
+		im_online_pub_key: candidate_registration.im_online_pub_key.clone(),
 	}
 	.into()
 }
@@ -103,6 +105,7 @@ impl From<RegisterValidatorDatum> for CandidateRegistration {
 				own_pkh,
 				aura_pub_key,
 				grandpa_pub_key,
+				im_online_pub_key,
 			} => CandidateRegistration {
 				stake_ownership,
 				partner_chain_pub_key: sidechain_pub_key,
@@ -111,6 +114,7 @@ impl From<RegisterValidatorDatum> for CandidateRegistration {
 				own_pkh,
 				aura_pub_key,
 				grandpa_pub_key,
+				im_online_pub_key,
 			},
 		}
 	}
@@ -123,7 +127,7 @@ fn decode_v0_register_validator_datum(
 	let fields = appendix
 		.as_constr_plutus_data()
 		.filter(|datum| datum.alternative().is_zero())
-		.filter(|datum| datum.data().len() >= 6)?
+		.filter(|datum| datum.data().len() >= 7)?
 		.data();
 	let stake_ownership = decode_ada_based_staking_datum(fields.get(0))?;
 	let sidechain_pub_key = fields.get(1).as_bytes().map(SidechainPublicKey)?;
@@ -131,6 +135,7 @@ fn decode_v0_register_validator_datum(
 	let registration_utxo = decode_utxo_id_datum(fields.get(3))?;
 	let aura_pub_key = fields.get(4).as_bytes().map(AuraPublicKey)?;
 	let grandpa_pub_key = fields.get(5).as_bytes().map(GrandpaPublicKey)?;
+	let im_online_pub_key = fields.get(6).as_bytes().map(ImOnlinePublicKey)?;
 
 	let own_pkh = MainchainKeyHash(datum.as_bytes()?.try_into().ok()?);
 	Some(RegisterValidatorDatum::V0 {
@@ -141,6 +146,7 @@ fn decode_v0_register_validator_datum(
 		own_pkh,
 		aura_pub_key,
 		grandpa_pub_key,
+		im_online_pub_key,
 	})
 }
 
@@ -149,7 +155,7 @@ fn decode_legacy_register_validator_datum(datum: &PlutusData) -> Option<Register
 	let fields = datum
 		.as_constr_plutus_data()
 		.filter(|datum| datum.alternative().is_zero())
-		.filter(|datum| datum.data().len() >= 7)?
+		.filter(|datum| datum.data().len() >= 8)?
 		.data();
 	let stake_ownership = decode_ada_based_staking_datum(fields.get(0))?;
 	let sidechain_pub_key = fields.get(1).as_bytes().map(SidechainPublicKey)?;
@@ -158,6 +164,7 @@ fn decode_legacy_register_validator_datum(datum: &PlutusData) -> Option<Register
 	let own_pkh = MainchainKeyHash(fields.get(4).as_bytes()?.try_into().ok()?);
 	let aura_pub_key = fields.get(5).as_bytes().map(AuraPublicKey)?;
 	let grandpa_pub_key = fields.get(6).as_bytes().map(GrandpaPublicKey)?;
+	let im_online_pub_key = fields.get(7).as_bytes().map(ImOnlinePublicKey)?;
 	Some(RegisterValidatorDatum::V0 {
 		stake_ownership,
 		sidechain_pub_key,
@@ -166,6 +173,7 @@ fn decode_legacy_register_validator_datum(datum: &PlutusData) -> Option<Register
 		own_pkh,
 		aura_pub_key,
 		grandpa_pub_key,
+		im_online_pub_key,
 	})
 }
 
@@ -211,6 +219,7 @@ impl From<RegisterValidatorDatum> for PlutusData {
 				own_pkh,
 				aura_pub_key,
 				grandpa_pub_key,
+				im_online_pub_key,
 			} => {
 				let mut appendix_fields = PlutusList::new();
 				appendix_fields.add(&stake_ownership_to_plutus_data(stake_ownership));
@@ -219,6 +228,7 @@ impl From<RegisterValidatorDatum> for PlutusData {
 				appendix_fields.add(&utxo_id_to_plutus_data(registration_utxo));
 				appendix_fields.add(&PlutusData::new_bytes(aura_pub_key.0));
 				appendix_fields.add(&PlutusData::new_bytes(grandpa_pub_key.0));
+				appendix_fields.add(&PlutusData::new_bytes(im_online_pub_key.0));
 				let appendix = ConstrPlutusData::new(&BigNum::zero(), &appendix_fields);
 				VersionedGenericDatum {
 					datum: PlutusData::new_bytes(own_pkh.0.to_vec()),

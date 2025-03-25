@@ -89,7 +89,7 @@ pub fn filter_trustless_candidates_registrations<TAccountId, TAccountKeys>(
 	genesis_utxo: UtxoId,
 ) -> Vec<(Candidate<TAccountId, TAccountKeys>, selection::Weight)>
 where
-	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
+	TAccountKeys: From<(sr25519::Public, ed25519::Public, sr25519::Public)>,
 	TAccountId: From<ecdsa::Public>,
 {
 	candidate_registrations
@@ -108,15 +108,15 @@ pub fn filter_invalid_permissioned_candidates<TAccountId, TAccountKeys>(
 	permissioned_candidates: Vec<PermissionedCandidateData>,
 ) -> Vec<Candidate<TAccountId, TAccountKeys>>
 where
-	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
+	TAccountKeys: From<(sr25519::Public, ed25519::Public, sr25519::Public)>,
 	TAccountId: TryFrom<sidechain_domain::SidechainPublicKey>,
 {
 	permissioned_candidates
 		.into_iter()
 		.filter_map(|candidate| {
-			let (account_id, aura_key, grandpa_key) =
+			let (account_id, aura_key, grandpa_key, im_online_key) =
 				validate_permissioned_candidate_data(candidate).ok()?;
-			let account_keys = (aura_key, grandpa_key).into();
+			let account_keys = (aura_key, grandpa_key, im_online_key).into();
 			Some(Candidate::Permissioned(PermissionedCandidate { account_id, account_keys }))
 		})
 		.collect()
@@ -128,7 +128,7 @@ fn select_latest_valid_candidate<TAccountId, TAccountKeys>(
 ) -> Option<CandidateWithStake<TAccountId, TAccountKeys>>
 where
 	TAccountId: From<ecdsa::Public>,
-	TAccountKeys: From<(sr25519::Public, ed25519::Public)>,
+	TAccountKeys: From<(sr25519::Public, ed25519::Public, sr25519::Public)>,
 {
 	let stake_delegation = validate_stake(candidate_registrations.stake_delegation).ok()?;
 	let stake_pool_pub_key = candidate_registrations.stake_pool_public_key;
@@ -180,6 +180,8 @@ pub enum RegistrationDataError {
 	InvalidAuraKey,
 	#[cfg_attr(feature = "std", error("Registration data is invalid: InvalidGrandpaKey"))]
 	InvalidGrandpaKey,
+	#[cfg_attr(feature = "std", error("Registration data is invalid: InvalidImOnlineKey"))]
+	InvalidImOnlineKey,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Encode, Decode, TypeInfo)]
@@ -197,11 +199,19 @@ pub enum PermissionedCandidateDataError {
 		error("Permissioned candidate data is invalid: InvalidGrandpaKey")
 	)]
 	InvalidGrandpaKey,
+	#[cfg_attr(
+		feature = "std",
+		error("Permissioned candidate data is invalid: InvalidImOnlineKey")
+	)]
+	InvalidImOnlineKey,
 }
 
 pub fn validate_permissioned_candidate_data<AccountId: TryFrom<SidechainPublicKey>>(
 	candidate: PermissionedCandidateData,
-) -> Result<(AccountId, sr25519::Public, ed25519::Public), PermissionedCandidateDataError> {
+) -> Result<
+	(AccountId, sr25519::Public, ed25519::Public, sr25519::Public),
+	PermissionedCandidateDataError,
+> {
 	Ok((
 		candidate
 			.sidechain_public_key
@@ -215,6 +225,10 @@ pub fn validate_permissioned_candidate_data<AccountId: TryFrom<SidechainPublicKe
 			.grandpa_public_key
 			.try_into_ed25519()
 			.ok_or(PermissionedCandidateDataError::InvalidGrandpaKey)?,
+		candidate
+			.im_online_public_key
+			.try_into_sr25519()
+			.ok_or(PermissionedCandidateDataError::InvalidImOnlineKey)?,
 	))
 }
 
@@ -223,7 +237,10 @@ pub fn validate_registration_data(
 	stake_pool_pub_key: &StakePoolPublicKey,
 	registration_data: &RegistrationData,
 	genesis_utxo: UtxoId,
-) -> Result<(ecdsa::Public, (sr25519::Public, ed25519::Public)), RegistrationDataError> {
+) -> Result<
+	(ecdsa::Public, (sr25519::Public, ed25519::Public, sr25519::Public)),
+	RegistrationDataError,
+> {
 	let aura_pub_key = registration_data
 		.aura_pub_key
 		.try_into_sr25519()
@@ -232,6 +249,10 @@ pub fn validate_registration_data(
 		.grandpa_pub_key
 		.try_into_ed25519()
 		.ok_or(RegistrationDataError::InvalidGrandpaKey)?;
+	let im_online_pub_key = registration_data
+		.im_online_pub_key
+		.try_into_sr25519()
+		.ok_or(RegistrationDataError::InvalidImOnlineKey)?;
 	let sidechain_pub_key = ecdsa::Public::from(
 		<[u8; 33]>::try_from(registration_data.sidechain_pub_key.0.clone())
 			.map_err(|_| RegistrationDataError::InvalidSidechainPubKey)?,
@@ -256,7 +277,7 @@ pub fn validate_registration_data(
 
 	// TODO - Stake Validation: https://input-output.atlassian.net/browse/ETCM-4082
 
-	Ok((sidechain_pub_key, (aura_pub_key, grandpa_pub_key)))
+	Ok((sidechain_pub_key, (aura_pub_key, grandpa_pub_key, im_online_pub_key)))
 }
 
 pub fn validate_stake(stake: Option<StakeDelegation>) -> Result<StakeDelegation, StakeError> {

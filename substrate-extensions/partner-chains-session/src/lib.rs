@@ -89,6 +89,8 @@
 extern crate alloc;
 
 use alloc::collections::BTreeSet;
+use frame_support::traits::FindAuthor;
+use frame_support::ConsensusEngineId;
 use frame_support::{
 	traits::{
 		EstimateNextNewSession, EstimateNextSessionRotation, OneSessionHandler,
@@ -524,5 +526,24 @@ impl<T: Config> frame_support::traits::DisabledValidators for Pallet<T> {
 
 	fn disabled_validators() -> Vec<u32> {
 		DisabledValidators::<T>::get()
+	}
+}
+
+/// Wraps the author-scraping logic for consensus engines that can recover
+/// the canonical index of an author. This then transforms it into the
+/// registering account-ID of that session key index.
+pub struct FindAccountFromAuthorIndex<T, Inner>(core::marker::PhantomData<(T, Inner)>);
+
+impl<T: Config, Inner: FindAuthor<u32>> FindAuthor<T::ValidatorId>
+	for FindAccountFromAuthorIndex<T, Inner>
+{
+	fn find_author<'a, I>(digests: I) -> Option<T::ValidatorId>
+	where
+		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+	{
+		let i = Inner::find_author(digests)?;
+
+		let validators = ValidatorsAndKeys::<T>::get();
+		validators.get(i as usize).cloned().map(|validator_and_key| validator_and_key.0)
 	}
 }

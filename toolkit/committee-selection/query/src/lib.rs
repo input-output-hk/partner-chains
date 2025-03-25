@@ -233,6 +233,7 @@ where
 					sidechain_public_key: candidate.sidechain_public_key.clone(),
 					aura_public_key: candidate.aura_public_key.clone(),
 					grandpa_public_key: candidate.grandpa_public_key.clone(),
+					im_online_public_key: candidate.im_online_public_key.clone(),
 				},
 			)
 		};

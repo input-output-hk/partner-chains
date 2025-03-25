@@ -23,9 +23,11 @@ serde_json = { workspace = true, default-features = false, features = [
 pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
 frame-support = { workspace = true }
+pallet-authorship = { workspace = true }
 pallet-grandpa = { workspace = true }
 pallet-partner-chains-session = { workspace = true, features = ["pallet-session-compat"] }
 pallet-session = { workspace = true }
+pallet-im-online = { workspace = true }
 pallet-sudo = { workspace = true }
 frame-system = { workspace = true }
 frame-try-runtime = { workspace = true, optional = true }
@@ -111,9 +113,11 @@ std = [
 	"frame-executive/std",
 	"frame-try-runtime/std",
 	"pallet-aura/std",
+	"pallet-authorship/std",
 	"pallet-balances/std",
 	"pallet-block-production-log/std",
 	"pallet-grandpa/std",
+	"pallet-im-online/std",
 	"pallet-sudo/std",
 	"pallet-partner-chains-session/std",
 	"pallet-session-validator-management/std",

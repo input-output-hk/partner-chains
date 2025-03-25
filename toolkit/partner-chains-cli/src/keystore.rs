@@ -14,6 +14,8 @@ pub const AURA: KeyDefinition<'static> =
 	KeyDefinition { name: "Aura", scheme: "sr25519", key_type: "aura" };
 pub const GRANDPA: KeyDefinition<'static> =
 	KeyDefinition { name: "Grandpa", scheme: "ed25519", key_type: "gran" };
+pub const IM_ONLINE: KeyDefinition<'static> =
+	KeyDefinition { name: "ImOnline", scheme: "sr25519", key_type: "imon" };
 pub const CROSS_CHAIN: KeyDefinition<'static> =
 	KeyDefinition { name: "Cross-chain", scheme: "ecdsa", key_type: "crch" };
 
