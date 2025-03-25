@@ -4,6 +4,7 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
+	use crate::AccountId;
 	use crate::BlockAuthor;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::OriginFor;
@@ -66,6 +67,17 @@ pub mod pallet {
 			_new_epoch: ScEpochNumber,
 		) -> sp_weights::Weight {
 			crate::RuntimeDbWeight::get().reads_writes(0, 0)
+		}
+	}
+
+	impl<T: Config> pallet_address_associations::OnNewAssociation<AccountId> for Pallet<T> {
+		fn on_new_association(
+			partner_chain_address: AccountId,
+			main_chain_key_hash: MainchainKeyHash,
+		) {
+			log::info!(
+				"New address association: {partner_chain_address:?} -> {main_chain_key_hash:?}"
+			);
 		}
 	}
 

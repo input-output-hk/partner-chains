@@ -20,6 +20,8 @@ fn saves_new_address_association() {
 			let pc_address =
 					AccountId32::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").unwrap();
 
+			assert_eq!(mock_pallet::LastNewAssociation::<Test>::get(), None);
+
 			assert_ok!(
 				super::Pallet::<Test>::associate_address(
 					OriginFor::<Test>::signed(AccountId32::new([1; 32])),
@@ -31,8 +33,10 @@ fn saves_new_address_association() {
 
 			assert_eq!(
 				Pallet::<Test>::get_partner_chain_address_for(&stake_public_key),
-				Some(pc_address)
+				Some(pc_address.clone())
 			);
+
+			assert_eq!(mock_pallet::LastNewAssociation::<Test>::get(), Some((pc_address,stake_public_key.hash())));
 		})
 }
 

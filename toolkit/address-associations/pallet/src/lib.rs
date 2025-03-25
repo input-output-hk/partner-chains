@@ -16,6 +16,7 @@ pub mod mock;
 pub mod tests;
 
 use parity_scale_codec::Encode;
+use sidechain_domain::MainchainKeyHash;
 use sidechain_domain::{StakePublicKey, UtxoId};
 
 #[derive(Debug, Clone, Encode)]
@@ -25,6 +26,20 @@ pub struct AddressAssociationSignedMessage<PartnerChainAddress> {
 	pub genesis_utxo: UtxoId,
 }
 
+pub trait OnNewAssociation<PartnerChainAddress> {
+	fn on_new_association(
+		partner_chain_address: PartnerChainAddress,
+		main_chain_key_hash: MainchainKeyHash,
+	);
+}
+
+impl<PartnerChainAddress> OnNewAssociation<PartnerChainAddress> for () {
+	fn on_new_association(
+		_partner_chain_address: PartnerChainAddress,
+		_main_chain_key_hash: MainchainKeyHash,
+	) {
+	}
+}
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -46,6 +61,8 @@ pub mod pallet {
 		type PartnerChainAddress: Member + Parameter + MaxEncodedLen;
 
 		fn genesis_utxo() -> UtxoId;
+
+		type OnNewAssociation: OnNewAssociation<Self::PartnerChainAddress>;
 	}
 
 	#[pallet::storage]
@@ -92,7 +109,10 @@ pub mod pallet {
 
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
 
-			AddressAssociations::<T>::insert(stake_key_hash, partnerchain_address);
+			AddressAssociations::<T>::insert(stake_key_hash.clone(), partnerchain_address.clone());
+
+			T::OnNewAssociation::on_new_association(partnerchain_address, stake_key_hash);
+
 			Ok(())
 		}
 	}
