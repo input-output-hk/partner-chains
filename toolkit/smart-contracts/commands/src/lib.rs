@@ -12,6 +12,7 @@ pub mod governance;
 pub mod permissioned_candidates;
 pub mod register;
 pub mod reserve;
+pub mod sign_tx;
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -36,6 +37,8 @@ pub enum SmartContractsCmd {
 	Governance(governance::GovernanceCmd),
 	/// Assemble and submit a transaction
 	AssembleAndSubmitTx(assemble_tx::AssembleAndSubmitCmd),
+	/// Sign a transaction CBOR using a payment signing key
+	SignTx(sign_tx::SignTxCmd),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -67,6 +70,7 @@ impl SmartContractsCmd {
 			Self::Deregister(cmd) => cmd.execute().await,
 			Self::Reserve(cmd) => cmd.execute().await,
 			Self::AssembleAndSubmitTx(cmd) => cmd.execute().await,
+			Self::SignTx(cmd) => cmd.execute().await,
 		}
 	}
 

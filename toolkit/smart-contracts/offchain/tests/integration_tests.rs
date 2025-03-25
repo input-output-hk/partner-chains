@@ -23,7 +23,7 @@ use partner_chains_cardano_offchain::{
 	permissioned_candidates,
 	register::Register,
 	reserve::{self, release::release_reserve_funds},
-	scripts_data, update_governance,
+	scripts_data, sign_tx, update_governance,
 };
 use partner_chains_plutus_data::reserve::ReserveDatum;
 use sidechain_domain::{
@@ -661,17 +661,23 @@ async fn run_assemble_and_sign<
 		tx_cbor,
 	}) = multisig_result
 	{
-		let tx = Transaction::from_bytes(tx_cbor).unwrap();
-		let witnesses: Vec<_> = signatories.iter().map(|s| sign(&tx, s)).collect();
+		let tx = Transaction::from_bytes(tx_cbor.clone()).unwrap();
+
+		// Convert raw keys to CardanoPaymentSigningKey and sign the transaction
+		let witnesses: Vec<_> = signatories
+			.iter()
+			.map(|s| {
+				let payment_key = CardanoPaymentSigningKey::from_normal_bytes(*s).unwrap();
+				let witness_bytes = sign_tx::sign_tx(tx_cbor.clone(), &payment_key).unwrap();
+				// Create a new Vec<u8> from the slice, dropping the CBOR array prefix (0x82, 0x00)
+				let vk_bytes = witness_bytes[2..].to_vec();
+				Vkeywitness::from_bytes(vk_bytes).unwrap()
+			})
+			.collect();
+
 		let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
 		assemble_tx::assemble_tx(tx, witnesses, client, &await_tx).await.unwrap()
 	} else {
 		panic!("Expected transaction cbor, because governance policy is not '1 of 1'")
 	}
-}
-
-fn sign(tx: &Transaction, private_key: &[u8; 32]) -> Vkeywitness {
-	let private_key = PrivateKey::from_normal_bytes(private_key).unwrap();
-	let tx_hash: [u8; 32] = sidechain_domain::crypto::blake2b(tx.body().to_bytes().as_ref());
-	Vkeywitness::new(&Vkey::new(&private_key.to_public()), &private_key.sign(&tx_hash))
 }

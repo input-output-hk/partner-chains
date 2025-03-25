@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use cardano_serialization_lib::PrivateKey;
+use cardano_serialization_lib::{PrivateKey, PublicKey};
 use sidechain_domain::MainchainKeyHash;
 
 /// Signing (payment) key abstraction layer. Hides internal crytpo library details.
@@ -39,6 +39,10 @@ impl CardanoPaymentSigningKey {
 				.try_into()
 				.expect("CSL PublicKeyHash is 28 bytes"),
 		)
+	}
+
+	pub fn to_csl_pub_key(&self) -> PublicKey {
+		self.0.to_public()
 	}
 
 	pub fn to_bytes(&self) -> Vec<u8> {
