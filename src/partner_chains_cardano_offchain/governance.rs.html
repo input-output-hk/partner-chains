@@ -433,12 +433,12 @@
 			<span class="self">Self</span>::MultiSig(PartnerChainsMultisigPolicy { script: <span class="kw">_</span>, key_hashes, threshold }) =&gt; {
 				<span class="kw-2">*</span>threshold == <span class="number">1
 					</span>&amp;&amp; key_hashes.len() == <span class="number">1
-					</span>&amp;&amp; key_hashes.iter().any(|h| <span class="kw-2">&amp;</span>Ed25519KeyHash::from(h.clone()) == key_hash)
+					</span>&amp;&amp; key_hashes.iter().any(|h| <span class="kw-2">&amp;</span>Ed25519KeyHash::from(<span class="kw-2">*</span>h) == key_hash)
 			},
 			<span class="self">Self</span>::AtLeastNNativeScript(SimpleAtLeastN { threshold, key_hashes }) =&gt; {
 				<span class="kw-2">*</span>threshold == <span class="number">1
 					</span>&amp;&amp; key_hashes.len() == <span class="number">1
-					</span>&amp;&amp; key_hashes.iter().any(|h| <span class="kw-2">&amp;</span>Ed25519KeyHash::from(h.clone()) == key_hash)
+					</span>&amp;&amp; key_hashes.iter().any(|h| <span class="kw-2">&amp;</span>Ed25519KeyHash::from(<span class="kw-2">*</span>h) == key_hash)
 			},
 		}
 	}

@@ -447,7 +447,7 @@
 		policy,
 		<span class="kw-2">&amp;</span>empty_asset_name(),
 		<span class="kw-2">&amp;</span>unit_plutus_data(),
-		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>policy.clone().into()),
+		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>policy.clone()),
 	)<span class="question-mark">?</span>;
 	tx_builder.add_output_with_one_script_token(
 		validator,

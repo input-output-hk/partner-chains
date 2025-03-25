@@ -473,7 +473,6 @@
 <a href="#473" id="473">473</a>
 <a href="#474" id="474">474</a>
 <a href="#475" id="475">475</a>
-<a href="#476" id="476">476</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! This transaction releases some funds to the illiquid supply.
 //! Inputs:
 //!     - previous utxo at the *reserve validator*, containing the reserve tokens and the
@@ -662,14 +661,13 @@
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::{empty_asset_name, reserve_release_tx, AssetNameExt, Costs, TransactionContext};
 	<span class="kw">use crate</span>::{
+		cardano_keys::CardanoPaymentSigningKey,
 		plutus_script::PlutusScript,
 		reserve::{release::OgmiosUtxoExt, ReserveData, ReserveUtxo},
 		scripts_data::ReserveScripts,
 		test_values::{payment_addr, protocol_parameters},
 	};
-	<span class="kw">use </span>cardano_serialization_lib::{
-		Int, Language, NetworkIdKind, PolicyID, PrivateKey, Transaction,
-	};
+	<span class="kw">use </span>cardano_serialization_lib::{Int, Language, NetworkIdKind, PolicyID, Transaction};
 	<span class="kw">use </span>hex_literal::hex;
 	<span class="kw">use </span>ogmios_client::types::{Asset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	<span class="kw">use </span>partner_chains_plutus_data::reserve::{
@@ -678,8 +676,8 @@
 	<span class="kw">use </span>pretty_assertions::assert_eq;
 	<span class="kw">use </span>sidechain_domain::{AssetName, PolicyId};
 
-	<span class="kw">fn </span>payment_key() -&gt; PrivateKey {
-		PrivateKey::from_normal_bytes(<span class="kw-2">&amp;</span><span class="macro">hex!</span>(
+	<span class="kw">fn </span>payment_key() -&gt; CardanoPaymentSigningKey {
+		CardanoPaymentSigningKey::from_normal_bytes(<span class="macro">hex!</span>(
 			<span class="string">"94f7531c9639654b77fa7e10650702b6937e05cd868f419f54bcb8368e413f04"
 		</span>))
 		.unwrap()

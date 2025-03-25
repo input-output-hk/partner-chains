@@ -1197,14 +1197,6 @@
 <a href="#1197" id="1197">1197</a>
 <a href="#1198" id="1198">1198</a>
 <a href="#1199" id="1199">1199</a>
-<a href="#1200" id="1200">1200</a>
-<a href="#1201" id="1201">1201</a>
-<a href="#1202" id="1202">1202</a>
-<a href="#1203" id="1203">1203</a>
-<a href="#1204" id="1204">1204</a>
-<a href="#1205" id="1205">1205</a>
-<a href="#1206" id="1206">1206</a>
-<a href="#1207" id="1207">1207</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
 <span class="kw">use </span><span class="kw">crate</span>::plutus_script::PlutusScript;
 <span class="kw">use </span>anyhow::Context;
@@ -1575,7 +1567,7 @@
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>TransactionContext {
 	<span class="doccomment">/// This key is added as required signer and used to sign the transaction.
-	</span><span class="kw">pub</span>(<span class="kw">crate</span>) payment_key: PrivateKey,
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) payment_key: CardanoPaymentSigningKey,
 	<span class="doccomment">/// Used to pay for the transaction fees and uncovered transaction inputs
 	/// and as source of collateral inputs
 	</span><span class="kw">pub</span>(<span class="kw">crate</span>) payment_key_utxos: Vec&lt;OgmiosUtxo&gt;,
@@ -1591,10 +1583,10 @@
 		payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 		client: <span class="kw-2">&amp;</span>C,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;TransactionContext, anyhow::Error&gt; {
-		<span class="kw">let </span>payment_key = payment_key.clone().<span class="number">0</span>;
+		<span class="kw">let </span>payment_key = payment_key.clone();
 		<span class="kw">let </span>network = client.shelley_genesis_configuration().<span class="kw">await</span><span class="question-mark">?</span>.network.to_csl();
 		<span class="kw">let </span>protocol_parameters = client.query_protocol_parameters().<span class="kw">await</span><span class="question-mark">?</span>;
-		<span class="kw">let </span>payment_address = key_hash_address(<span class="kw-2">&amp;</span>payment_key.to_public().hash(), network);
+		<span class="kw">let </span>payment_address = key_hash_address(<span class="kw-2">&amp;</span>payment_key.<span class="number">0</span>.to_public().hash(), network);
 		<span class="kw">let </span>payment_key_utxos = client.query_utxos(<span class="kw-2">&amp;</span>[payment_address.to_bech32(<span class="prelude-val">None</span>)<span class="question-mark">?</span>]).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(TransactionContext {
 			payment_key,
@@ -1605,35 +1597,27 @@
 		})
 	}
 
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>for_payment_key_with_change_address&lt;C: QueryLedgerState + QueryNetwork&gt;(
-		payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
-		change_address: <span class="kw-2">&amp;</span>Address,
-		client: <span class="kw-2">&amp;</span>C,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;TransactionContext, anyhow::Error&gt; {
-		<span class="kw">let </span>payment_key = payment_key.clone().<span class="number">0</span>;
-		<span class="kw">let </span>network = client.shelley_genesis_configuration().<span class="kw">await</span><span class="question-mark">?</span>.network.to_csl();
-		<span class="kw">let </span>protocol_parameters = client.query_protocol_parameters().<span class="kw">await</span><span class="question-mark">?</span>;
-		<span class="kw">let </span>payment_address = key_hash_address(<span class="kw-2">&amp;</span>payment_key.to_public().hash(), network);
-		<span class="kw">let </span>payment_key_utxos = client.query_utxos(<span class="kw-2">&amp;</span>[payment_address.to_bech32(<span class="prelude-val">None</span>)<span class="question-mark">?</span>]).<span class="kw">await</span><span class="question-mark">?</span>;
-		<span class="prelude-val">Ok</span>(TransactionContext {
-			payment_key,
-			payment_key_utxos,
-			network,
-			protocol_parameters,
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>with_change_address(<span class="kw-2">&amp;</span><span class="self">self</span>, change_address: <span class="kw-2">&amp;</span>Address) -&gt; <span class="self">Self </span>{
+		<span class="self">Self </span>{
+			payment_key: <span class="self">self</span>.payment_key.clone(),
+			payment_key_utxos: <span class="self">self</span>.payment_key_utxos.clone(),
+			network: <span class="self">self</span>.network,
+			protocol_parameters: <span class="self">self</span>.protocol_parameters.clone(),
 			change_address: change_address.clone(),
-		})
+		}
 	}
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>payment_key_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Ed25519KeyHash {
-		<span class="self">self</span>.payment_key.to_public().hash()
+		<span class="self">self</span>.payment_key.<span class="number">0</span>.to_public().hash()
 	}
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>sign(<span class="kw-2">&amp;</span><span class="self">self</span>, tx: <span class="kw-2">&amp;</span>Transaction) -&gt; Transaction {
 		<span class="kw">let </span>tx_hash: [u8; <span class="number">32</span>] = sidechain_domain::crypto::blake2b(tx.body().to_bytes().as_ref());
-		<span class="kw">let </span>signature = <span class="self">self</span>.payment_key.sign(<span class="kw-2">&amp;</span>tx_hash);
+		<span class="kw">let </span>signature = <span class="self">self</span>.payment_key.<span class="number">0</span>.sign(<span class="kw-2">&amp;</span>tx_hash);
 		<span class="kw">let </span><span class="kw-2">mut </span>witness_set = tx.witness_set();
 		<span class="kw">let </span><span class="kw-2">mut </span>vkeywitnesses = witness_set.vkeys().unwrap_or_else(Vkeywitnesses::new);
-		vkeywitnesses.add(<span class="kw-2">&amp;</span>Vkeywitness::new(<span class="kw-2">&amp;</span>Vkey::new(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key.to_public()), <span class="kw-2">&amp;</span>signature));
+		vkeywitnesses
+			.add(<span class="kw-2">&amp;</span>Vkeywitness::new(<span class="kw-2">&amp;</span>Vkey::new(<span class="kw-2">&amp;</span><span class="self">self</span>.payment_key.<span class="number">0</span>.to_public()), <span class="kw-2">&amp;</span>signature));
 		witness_set.set_vkeys(<span class="kw-2">&amp;</span>vkeywitnesses);
 		Transaction::new(<span class="kw-2">&amp;</span>tx.body(), <span class="kw-2">&amp;</span>witness_set, tx.auxiliary_data())
 	}

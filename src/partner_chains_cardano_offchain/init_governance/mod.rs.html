@@ -224,7 +224,7 @@
 
 	<span class="kw">let </span>result = client.submit_transaction(<span class="kw-2">&amp;</span>signed_transaction.to_bytes()).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>tx_id = result.transaction.id;
-	<span class="macro">log::info!</span>(<span class="string">"✅ Transaction submitted. ID: {}"</span>, hex::encode(<span class="kw-2">&amp;</span>tx_id));
+	<span class="macro">log::info!</span>(<span class="string">"✅ Transaction submitted. ID: {}"</span>, hex::encode(tx_id));
 	await_tx.await_tx_output(client, UtxoId::new(tx_id, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(InitGovernanceResult { tx_hash: McTxHash(tx_id), genesis_utxo: genesis_utxo.utxo_id() })
 }

@@ -99,10 +99,10 @@
 ) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
 	<span class="kw">let </span><span class="kw-2">mut </span>witness_set = transaction.witness_set();
 
-	<span class="kw">let </span><span class="kw-2">mut </span>vk = witness_set.vkeys().unwrap_or_else(|| Vkeywitnesses::new());
+	<span class="kw">let </span><span class="kw-2">mut </span>vk = witness_set.vkeys().unwrap_or_else(Vkeywitnesses::new);
 
 	<span class="kw">for </span>w <span class="kw">in </span>witnesses.iter() {
-		vk.add(<span class="kw-2">&amp;</span>w);
+		vk.add(w);
 	}
 	witness_set.set_vkeys(<span class="kw-2">&amp;</span>vk);
 

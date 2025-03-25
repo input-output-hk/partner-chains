@@ -106,7 +106,7 @@
 		<span class="kw-2">&amp;</span>version_oracle.policy,
 		<span class="kw-2">&amp;</span>version_oracle_asset_name(),
 		<span class="kw-2">&amp;</span>mint_redeemer(<span class="kw-2">&amp;</span>multi_sig_policy),
-		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>version_oracle.policy.clone().into()),
+		<span class="kw-2">&amp;</span>costs.get_mint(<span class="kw-2">&amp;</span>version_oracle.policy.clone()),
 	)<span class="question-mark">?</span>;
 
 	tx_builder.add_output(<span class="kw-2">&amp;</span>version_oracle_datum_output(
