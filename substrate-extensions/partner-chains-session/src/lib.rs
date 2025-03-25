@@ -89,6 +89,8 @@
 extern crate alloc;
 
 use alloc::collections::BTreeSet;
+use frame_support::traits::FindAuthor;
+use frame_support::ConsensusEngineId;
 use frame_support::{
 	traits::{
 		EstimateNextNewSession, EstimateNextSessionRotation, FindAuthor, OneSessionHandler,
