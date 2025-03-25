@@ -6318,6 +6318,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-im-online"
+version = "38.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2412-1#ab5882bbc67bcc48464566a2b48171265147acac"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-authorship",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+]
+
+[[package]]
 name = "pallet-native-token-management"
 version = "1.6.0"
 dependencies = [
@@ -6555,7 +6574,7 @@ checksum = "4e69bf016dc406eff7d53a7d3f7cf1c2e72c82b9088aac1118591e36dd2cd3e9"
 dependencies = [
  "bitcoin_hashes",
  "rand",
- "rand_core 0.6.4",
+ "rand_core 0.4.2",
  "serde",
  "unicode-normalization",
 ]
@@ -9949,10 +9968,12 @@ dependencies = [
  "minicbor 0.20.0",
  "pallet-address-associations",
  "pallet-aura",
+ "pallet-authorship",
  "pallet-balances",
  "pallet-block-participation",
  "pallet-block-production-log",
  "pallet-grandpa",
+ "pallet-im-online",
  "pallet-native-token-management",
  "pallet-partner-chains-session",
  "pallet-session",

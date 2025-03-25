@@ -683,6 +683,7 @@ pub struct RegistrationData {
 	pub tx_inputs: Vec<UtxoId>,
 	pub aura_pub_key: AuraPublicKey,
 	pub grandpa_pub_key: GrandpaPublicKey,
+	pub im_online_pub_key: ImOnlinePublicKey,
 }
 
 /// Information about an Authority Candidate's Registrations at some block.
@@ -782,6 +783,21 @@ impl From<ed25519::Public> for GrandpaPublicKey {
 	}
 }
 
+#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord, Hash)]
+#[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
+pub struct ImOnlinePublicKey(pub Vec<u8>);
+impl ImOnlinePublicKey {
+	pub fn try_into_sr25519(&self) -> Option<sr25519::Public> {
+		Some(sr25519::Public::from_raw(self.0.clone().try_into().ok()?))
+	}
+}
+
+impl From<sr25519::Public> for ImOnlinePublicKey {
+	fn from(value: sr25519::Public) -> Self {
+		Self(value.0.to_vec())
+	}
+}
+
 #[derive(Debug, Clone, PartialEq, Decode, Encode, MaxEncodedLen, TypeInfo, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct DParameter {
@@ -800,6 +816,7 @@ pub struct PermissionedCandidateData {
 	pub sidechain_public_key: SidechainPublicKey,
 	pub aura_public_key: AuraPublicKey,
 	pub grandpa_public_key: GrandpaPublicKey,
+	pub im_online_public_key: ImOnlinePublicKey,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -811,6 +828,7 @@ pub struct CandidateRegistration {
 	pub registration_utxo: UtxoId,
 	pub aura_pub_key: AuraPublicKey,
 	pub grandpa_pub_key: GrandpaPublicKey,
+	pub im_online_pub_key: ImOnlinePublicKey,
 }
 
 impl CandidateRegistration {
@@ -820,6 +838,7 @@ impl CandidateRegistration {
 			&& self.partner_chain_signature == other.partner_chain_signature
 			&& self.aura_pub_key == other.aura_pub_key
 			&& self.grandpa_pub_key == other.grandpa_pub_key
+			&& self.im_online_pub_key == other.im_online_pub_key
 	}
 }
 

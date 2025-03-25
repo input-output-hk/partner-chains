@@ -34,6 +34,7 @@ pub struct RawPermissionedCandidateData {
 	pub sidechain_public_key: SidechainPublicKey,
 	pub aura_public_key: AuraPublicKey,
 	pub grandpa_public_key: GrandpaPublicKey,
+	pub im_online_public_key: ImOnlinePublicKey,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
@@ -115,6 +116,7 @@ impl AuthoritySelectionInputs {
 				sidechain_public_key: candidate.sidechain_public_key,
 				aura_public_key: candidate.aura_public_key,
 				grandpa_public_key: candidate.grandpa_public_key,
+				im_online_public_key: candidate.im_online_public_key,
 			})
 			.collect::<Vec<PermissionedCandidateData>>();
 
