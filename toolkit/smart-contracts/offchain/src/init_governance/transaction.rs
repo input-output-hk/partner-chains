@@ -23,7 +23,7 @@ pub(crate) fn init_governance_transaction(
 		&version_oracle.policy,
 		&version_oracle_asset_name(),
 		&mint_redeemer(&multi_sig_policy),
-		&costs.get_mint(&version_oracle.policy.clone().into()),
+		&costs.get_mint(&version_oracle.policy.clone()),
 	)?;
 
 	tx_builder.add_output(&version_oracle_datum_output(

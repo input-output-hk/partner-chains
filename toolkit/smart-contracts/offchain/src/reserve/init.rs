@@ -162,7 +162,7 @@ fn init_script_tx(
 			&version_oracle.policy,
 			&version_oracle_asset_name(),
 			&witness,
-			&costs.get_mint(&version_oracle.policy.clone().into()),
+			&costs.get_mint(&version_oracle.policy.clone()),
 		)?;
 	}
 	{

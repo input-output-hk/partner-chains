@@ -43,12 +43,12 @@ impl GovernancePolicyScript {
 			Self::MultiSig(PartnerChainsMultisigPolicy { script: _, key_hashes, threshold }) => {
 				*threshold == 1
 					&& key_hashes.len() == 1
-					&& key_hashes.iter().any(|h| &Ed25519KeyHash::from(h.clone()) == key_hash)
+					&& key_hashes.iter().any(|h| &Ed25519KeyHash::from(*h) == key_hash)
 			},
 			Self::AtLeastNNativeScript(SimpleAtLeastN { threshold, key_hashes }) => {
 				*threshold == 1
 					&& key_hashes.len() == 1
-					&& key_hashes.iter().any(|h| &Ed25519KeyHash::from(h.clone()) == key_hash)
+					&& key_hashes.iter().any(|h| &Ed25519KeyHash::from(*h) == key_hash)
 			},
 		}
 	}

@@ -100,9 +100,7 @@ async fn governance_flow() {
 
 	let upsert_candidates_1_result =
 		run_upsert_permissioned_candidates(genesis_utxo, 1u8, &client).await;
-
 	let update_authorities_result = run_update_governance(&client, genesis_utxo).await;
-
 	run_assemble_and_sign(
 		upsert_candidates_1_result.unwrap(),
 		&[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY],

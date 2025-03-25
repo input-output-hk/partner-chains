@@ -88,6 +88,6 @@ impl<const N: u32> Display for BoundedString<N> {
 
 impl<const N: u32> Debug for BoundedString<N> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-		f.write_str(&alloc::format!("BoundedString<{N}>({self:?})"))
+		f.write_str(&alloc::format!("BoundedString<{}>({:?})", N, self.0))
 	}
 }
