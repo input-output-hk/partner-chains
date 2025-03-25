@@ -135,51 +135,6 @@ fn on_initialize(n: BlockNumberFor<T>) -> Weight {
 
 This hook ensures that each block's inherent data can be properly verified against the expected block production schedule.
 
-## Integration
-
-To integrate this pallet in your runtime:
-
-1. Add the pallet to your runtime's `Cargo.toml`:
-```toml
-[dependencies]
-pallet-block-production-log = { version = "4.0.0-dev", default-features = false }
-```
-
-2. Implement the pallet's Config trait for your runtime:
-```rust
-impl pallet_block_production_log::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type BlockProducerId = AccountId;
-    type Slot = u64;
-}
-```
-
-3. Add the pallet to your runtime:
-```rust
-construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = opaque::Block,
-        UncheckedExtrinsic = UncheckedExtrinsic
-    {
-        // Other pallets
-        BlockProductionLog: pallet_block_production_log::{Pallet, Call, Storage, Event<T>},
-    }
-);
-```
-
-## Usage
-
-The Block Production Log pallet is typically used in conjunction with the consensus mechanism and block participation tracking. The typical usage flow is:
-
-1. For each block, the `append` function is called (usually via inherent data) to record which validator produced the block at the current slot.
-
-2. Periodically, other pallets (such as a rewards pallet) can call `peek_prefix` to examine historical block production data without removing it.
-
-3. After historical data has been fully processed (typically determined by the Block Participation pallet), the `drop_prefix` function can be called to prune old data and manage storage growth.
-
-4. The `take_prefix` function combines retrieval and pruning in a single operation for cases where data will be processed immediately and then no longer needed.
-
 ## Architecture
 
 This pallet is designed to work closely with the Block Participation pallet:
@@ -245,3 +200,48 @@ graph TB
     node -->|🧩 **integrates** *INHERENT_IDENTIFIER* for block production data| blockProductionLog
     node -->|🔍 **calls** *append* through inherent data handling| blockProductionLog
 ```
+
+## Integration
+
+To integrate this pallet in your runtime:
+
+1. Add the pallet to your runtime's `Cargo.toml`:
+```toml
+[dependencies]
+pallet-block-production-log = { version = "4.0.0-dev", default-features = false }
+```
+
+2. Implement the pallet's Config trait for your runtime:
+```rust
+impl pallet_block_production_log::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type BlockProducerId = AccountId;
+    type Slot = u64;
+}
+```
+
+3. Add the pallet to your runtime:
+```rust
+construct_runtime!(
+    pub enum Runtime where
+        Block = Block,
+        NodeBlock = opaque::Block,
+        UncheckedExtrinsic = UncheckedExtrinsic
+    {
+        // Other pallets
+        BlockProductionLog: pallet_block_production_log::{Pallet, Call, Storage, Event<T>},
+    }
+);
+```
+
+## Usage
+
+The Block Production Log pallet is typically used in conjunction with the consensus mechanism and block participation tracking. The typical usage flow is:
+
+1. For each block, the `append` function is called (usually via inherent data) to record which validator produced the block at the current slot.
+
+2. Periodically, other pallets (such as a rewards pallet) can call `peek_prefix` to examine historical block production data without removing it.
+
+3. After historical data has been fully processed (typically determined by the Block Participation pallet), the `drop_prefix` function can be called to prune old data and manage storage growth.
+
+4. The `take_prefix` function combines retrieval and pruning in a single operation for cases where data will be processed immediately and then no longer needed.

@@ -109,63 +109,6 @@ pub enum Error<T> {
 - `MainchainKeyAlreadyAssociated`: The mainchain key is already associated with a partner chain address
 - `InvalidMainchainSignature`: The provided signature is invalid and cannot prove ownership of the stake key
 
-## Integration Guide
-
-To integrate this pallet in your runtime:
-
-1. Add the pallet to your runtime's `Cargo.toml`:
-```toml
-[dependencies]
-pallet-address-associations = { version = "4.0.0-dev", default-features = false }
-```
-
-2. Implement the pallet's Config trait for your runtime:
-```rust
-impl pallet_address_associations::Config for Runtime {
-    type WeightInfo = pallet_address_associations::weights::SubstrateWeight<Runtime>;
-    type PartnerChainAddress = AccountId;
-    
-    fn genesis_utxo() -> UtxoId {
-        // Your implementation to provide the genesis UTXO ID
-    }
-}
-```
-
-3. Add the pallet to your runtime:
-```rust
-construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = opaque::Block,
-        UncheckedExtrinsic = UncheckedExtrinsic
-    {
-        // Other pallets
-        AddressAssociations: pallet_address_associations::{Pallet, Call, Storage, Config},
-    }
-);
-```
-
-## Usage
-
-To associate a mainchain stake public key with a partner chain address, the caller must:
-
-1. Generate a signature using their mainchain stake key over a message containing:
-    - The stake public key
-    - The partner chain address
-    - The genesis UTXO ID
-2. Submit the `associate_address` extrinsic with their partner chain address, the signature, and their stake public key
-
-The pallet verifies the signature to ensure the caller owns the mainchain stake key before creating the association.
-
-The message that needs to be signed is structured as follows:
-```rust
-pub struct AddressAssociationSignedMessage<PartnerChainAddress> {
-    pub stake_public_key: StakePublicKey,
-    pub partnerchain_address: PartnerChainAddress,
-    pub genesis_utxo: UtxoId,
-}
-```
-
 ## Architecture
 
 ### Runtime
@@ -223,6 +166,63 @@ graph TB
     node -->|🔍 **queries** *get_partner_chain_address_for* to verify associations| addressAssociations
     node -->|🔍 **queries** *get_all_address_associations* for all registered links| addressAssociations
     node -->|📊 **uses** *get_version* to check pallet compatibility| addressAssociations
+```
+
+## Integration
+
+To integrate this pallet in your runtime:
+
+1. Add the pallet to your runtime's `Cargo.toml`:
+```toml
+[dependencies]
+pallet-address-associations = { version = "4.0.0-dev", default-features = false }
+```
+
+2. Implement the pallet's Config trait for your runtime:
+```rust
+impl pallet_address_associations::Config for Runtime {
+    type WeightInfo = pallet_address_associations::weights::SubstrateWeight<Runtime>;
+    type PartnerChainAddress = AccountId;
+    
+    fn genesis_utxo() -> UtxoId {
+        // Your implementation to provide the genesis UTXO ID
+    }
+}
+```
+
+3. Add the pallet to your runtime:
+```rust
+construct_runtime!(
+    pub enum Runtime where
+        Block = Block,
+        NodeBlock = opaque::Block,
+        UncheckedExtrinsic = UncheckedExtrinsic
+    {
+        // Other pallets
+        AddressAssociations: pallet_address_associations::{Pallet, Call, Storage, Config},
+    }
+);
+```
+
+## Usage
+
+To associate a mainchain stake public key with a partner chain address, the caller must:
+
+1. Generate a signature using their mainchain stake key over a message containing:
+    - The stake public key
+    - The partner chain address
+    - The genesis UTXO ID
+2. Submit the `associate_address` extrinsic with their partner chain address, the signature, and their stake public key
+
+The pallet verifies the signature to ensure the caller owns the mainchain stake key before creating the association.
+
+The message that needs to be signed is structured as follows:
+```rust
+pub struct AddressAssociationSignedMessage<PartnerChainAddress> {
+    pub stake_public_key: StakePublicKey,
+    pub partnerchain_address: PartnerChainAddress,
+    pub genesis_utxo: UtxoId,
+}
 ```
 
 ## Types

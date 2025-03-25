@@ -285,6 +285,71 @@ fn on_runtime_upgrade() -> Weight {
 
 This hook handles migration of storage formats between different versions of the pallet, ensuring data integrity across runtime upgrades.
 
+## Architecture
+
+### Runtime
+
+Relationships between the `session-validator-management` pallet and other pallets in the system:
+
+```mermaid
+graph TB
+    classDef main fill:#f9d,stroke:#333,stroke-width:4px
+    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
+    classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
+
+%% Pallets that depend on session-validator-management (positioned above)
+    partnerChainsSession[pallet-partner-chains-session]:::consumer
+
+%% Main pallet (in the middle)
+    sessionValidatorManagement[pallet-session-validator-management]:::main
+
+%% Dependencies (positioned below)
+    frameSystem[frame_system]:::dependency
+    sidechainPallet[pallet-sidechain]:::dependency
+    sidechainDomain[sidechain_domain]:::dependency
+    
+%% Relationships for pallets that depend on session-validator-management
+    partnerChainsSession -->|👥 **uses** *rotate_committee_to_next_epoch* for validator rotation| sessionValidatorManagement
+    partnerChainsSession -->|👥 **consumes** *get_current_authority* for authority selection| sessionValidatorManagement
+    partnerChainsSession -->|📝 **implements** *SessionManager* with validator information| sessionValidatorManagement
+
+%% Relationships for dependencies
+    sessionValidatorManagement -->|👥 **obtains** *current_epoch_number* for committee rotation| sidechainPallet
+    sessionValidatorManagement -->|📝 **uses** *Hooks* for block processing| frameSystem
+    sessionValidatorManagement -->|🧩 **uses** *MainchainAddress* and *PolicyId* for configuration| sidechainDomain
+    sessionValidatorManagement -->|📝 **implements** *ProvideInherent* for automatic committee updates| frameSystem
+```
+
+### Node
+
+Relationships between the `session-validator-management` pallet and the node client:
+
+```mermaid
+graph TB
+    classDef node fill:#bbf,stroke:#333,stroke-width:2px
+    classDef pallet fill:#f9d,stroke:#333,stroke-width:4px
+
+%% Node components (positioned above)
+    partnerChainsNode[Partner Chains Node]:::node
+    proposalCIDP[ProposalCIDP]:::node
+    verifierCIDP[VerifierCIDP]:::node
+    ariadneIDP[AriadneInherentDataProvider]:::node
+
+%% The target pallet (positioned below)
+    sessionValidatorManagement[Session Validator Management Pallet]:::pallet
+
+%% Relationships from node to pallet
+    partnerChainsNode -->|👥 **uses** *create_inherent_data_providers* for consensus operations| proposalCIDP
+    partnerChainsNode -->|👥 **uses** *create_inherent_data_providers* for verification operations| verifierCIDP
+    proposalCIDP -->|👥 **uses** *SessionValidatorManagementApi* for committee management| sessionValidatorManagement
+    verifierCIDP -->|👥 **uses** *SessionValidatorManagementApi* for authority verification| sessionValidatorManagement
+    ariadneIDP -->|🧩 **provides** *AuthoritySelectionInputs* as inherent data| sessionValidatorManagement
+    proposalCIDP -->|👥 **consumes** *select_authorities* for committee formation| sessionValidatorManagement
+    verifierCIDP -->|🔍 **queries** *get_next_unset_epoch_number* for committee planning| sessionValidatorManagement
+    verifierCIDP -->|👥 **accesses** *current_committee* and *next_committee* for consensus| sessionValidatorManagement
+    ariadneIDP -->|📝 **implements** *ProvideInherent* for committee formation| sessionValidatorManagement
+```
+
 ## Integration
 
 To integrate this pallet in your runtime:
@@ -395,69 +460,4 @@ impl<T: Config> pallet_partner_chains_session::SessionManager<AuthorityId, Autho
     
     // Other required implementations...
 }
-```
-
-## Architecture
-
-### Runtime
-
-Relationships between the `session-validator-management` pallet and other pallets in the system:
-
-```mermaid
-graph TB
-    classDef main fill:#f9d,stroke:#333,stroke-width:4px
-    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
-    classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
-
-%% Pallets that depend on session-validator-management (positioned above)
-    partnerChainsSession[pallet-partner-chains-session]:::consumer
-
-%% Main pallet (in the middle)
-    sessionValidatorManagement[pallet-session-validator-management]:::main
-
-%% Dependencies (positioned below)
-    frameSystem[frame_system]:::dependency
-    sidechainPallet[pallet-sidechain]:::dependency
-    sidechainDomain[sidechain_domain]:::dependency
-    
-%% Relationships for pallets that depend on session-validator-management
-    partnerChainsSession -->|👥 **uses** *rotate_committee_to_next_epoch* for validator rotation| sessionValidatorManagement
-    partnerChainsSession -->|👥 **consumes** *get_current_authority* for authority selection| sessionValidatorManagement
-    partnerChainsSession -->|📝 **implements** *SessionManager* with validator information| sessionValidatorManagement
-
-%% Relationships for dependencies
-    sessionValidatorManagement -->|👥 **obtains** *current_epoch_number* for committee rotation| sidechainPallet
-    sessionValidatorManagement -->|📝 **uses** *Hooks* for block processing| frameSystem
-    sessionValidatorManagement -->|🧩 **uses** *MainchainAddress* and *PolicyId* for configuration| sidechainDomain
-    sessionValidatorManagement -->|📝 **implements** *ProvideInherent* for automatic committee updates| frameSystem
-```
-
-### Node
-
-Relationships between the `session-validator-management` pallet and the node client:
-
-```mermaid
-graph TB
-    classDef node fill:#bbf,stroke:#333,stroke-width:2px
-    classDef pallet fill:#f9d,stroke:#333,stroke-width:4px
-
-%% Node components (positioned above)
-    partnerChainsNode[Partner Chains Node]:::node
-    proposalCIDP[ProposalCIDP]:::node
-    verifierCIDP[VerifierCIDP]:::node
-    ariadneIDP[AriadneInherentDataProvider]:::node
-
-%% The target pallet (positioned below)
-    sessionValidatorManagement[Session Validator Management Pallet]:::pallet
-
-%% Relationships from node to pallet
-    partnerChainsNode -->|👥 **uses** *create_inherent_data_providers* for consensus operations| proposalCIDP
-    partnerChainsNode -->|👥 **uses** *create_inherent_data_providers* for verification operations| verifierCIDP
-    proposalCIDP -->|👥 **uses** *SessionValidatorManagementApi* for committee management| sessionValidatorManagement
-    verifierCIDP -->|👥 **uses** *SessionValidatorManagementApi* for authority verification| sessionValidatorManagement
-    ariadneIDP -->|🧩 **provides** *AuthoritySelectionInputs* as inherent data| sessionValidatorManagement
-    proposalCIDP -->|👥 **consumes** *select_authorities* for committee formation| sessionValidatorManagement
-    verifierCIDP -->|🔍 **queries** *get_next_unset_epoch_number* for committee planning| sessionValidatorManagement
-    verifierCIDP -->|👥 **accesses** *current_committee* and *next_committee* for consensus| sessionValidatorManagement
-    ariadneIDP -->|📝 **implements** *ProvideInherent* for committee formation| sessionValidatorManagement
 ```

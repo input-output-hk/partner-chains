@@ -174,6 +174,71 @@ This configuration initializes:
 - The genesis UTXO that links the sidechain to its parent chain
 - The number of slots per epoch that defines the temporal structure
 
+## Architecture
+
+The Sidechain pallet serves as a core coordination mechanism for other pallets through the OnNewEpoch trait. Typical integrations include:
+
+1. **Session Validator Management**: Coordinating validator set rotations with epoch boundaries
+2. **Rewards Distribution**: Processing accumulated rewards at epoch transitions
+3. **Parameter Updates**: Applying new protocol parameters at epoch boundaries
+
+This separation of concerns creates a clean architecture that decouples temporal management from the specific behaviors that need to be coordinated at epoch transitions.
+
+### Runtime
+
+Relationships between the `sidechain` pallet and other pallets in the system:
+
+```mermaid
+graph TB
+    classDef main fill:#f9d,stroke:#333,stroke-width:4px
+    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
+    classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
+
+%% Pallets that depend on sidechain (positioned above)
+    sessionValidatorManagement[session-validator-management]:::consumer
+    
+%% Main pallet (in the middle)
+    sidechain[sidechain]:::main
+    
+%% Dependencies (positioned below)
+    frameSystem[frame_system]:::dependency
+    sidechainDomain[sidechain_domain]:::dependency
+    sidechainSlots[sidechain_slots]:::dependency
+    spSidechain[sp_sidechain]:::dependency
+    
+%% Relationships for pallets that depend on sidechain
+    sessionValidatorManagement -->|🔄 **uses** *current_epoch_number* for epoch tracking| sidechain
+    
+%% Relationships for dependencies
+    sidechain -->|📝 **implements** *Config* trait and hooks| frameSystem
+    sidechain -->|🧩 **uses** *ScEpochNumber* and *ScSlotNumber* types| sidechainDomain
+    sidechain -->|💰 **stores** *UtxoId* for genesis tracking| sidechainDomain
+    sidechain -->|⏳ **uses** *SlotsPerEpoch* for temporal management| sidechainSlots
+    sidechain -->|📝 **calls** *OnNewEpoch* for epoch transitions| spSidechain
+```
+
+### Node
+
+Relationships between the `partner-chains-session` pallet and the node client:
+
+```mermaid
+graph TB
+   classDef main fill:#f9d,stroke:#333,stroke-width:4px
+   classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
+
+%% Node positioned above (consumer)
+   node[Partner Chain Node]:::consumer
+
+%% Main pallet (in the middle)
+   sidechain[sidechain]:::main
+
+%% Relationships from node to sidechain
+   node -->|⏳ **uses** *current_epoch_number* for temporal tracking| sidechain
+   node -->|🔄 **references** *ScEpochNumber* for epoch transitions| sidechain
+   node -->|🧩 **uses** *slots_per_epoch* for slot configuration| sidechain
+   node -->|📝 **implements** *CreateInherentDataProviders* for inherent data| sidechain
+```
+
 ## Integration
 
 To integrate this pallet in your runtime:
@@ -253,68 +318,3 @@ The Sidechain pallet is typically used as a core coordination mechanism. The typ
     - Performs other epoch-based administrative tasks
 
 4. Other pallets can query the current epoch or slots per epoch to coordinate their own activities.
-
-## Architecture
-
-The Sidechain pallet serves as a core coordination mechanism for other pallets through the OnNewEpoch trait. Typical integrations include:
-
-1. **Session Validator Management**: Coordinating validator set rotations with epoch boundaries
-2. **Rewards Distribution**: Processing accumulated rewards at epoch transitions
-3. **Parameter Updates**: Applying new protocol parameters at epoch boundaries
-
-This separation of concerns creates a clean architecture that decouples temporal management from the specific behaviors that need to be coordinated at epoch transitions.
-
-### Runtime
-
-Relationships between the `sidechain` pallet and other pallets in the system:
-
-```mermaid
-graph TB
-    classDef main fill:#f9d,stroke:#333,stroke-width:4px
-    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
-    classDef dependency fill:#ddd,stroke:#333,stroke-width:1px
-
-%% Pallets that depend on sidechain (positioned above)
-    sessionValidatorManagement[session-validator-management]:::consumer
-    
-%% Main pallet (in the middle)
-    sidechain[sidechain]:::main
-    
-%% Dependencies (positioned below)
-    frameSystem[frame_system]:::dependency
-    sidechainDomain[sidechain_domain]:::dependency
-    sidechainSlots[sidechain_slots]:::dependency
-    spSidechain[sp_sidechain]:::dependency
-    
-%% Relationships for pallets that depend on sidechain
-    sessionValidatorManagement -->|🔄 **uses** *current_epoch_number* for epoch tracking| sidechain
-    
-%% Relationships for dependencies
-    sidechain -->|📝 **implements** *Config* trait and hooks| frameSystem
-    sidechain -->|🧩 **uses** *ScEpochNumber* and *ScSlotNumber* types| sidechainDomain
-    sidechain -->|💰 **stores** *UtxoId* for genesis tracking| sidechainDomain
-    sidechain -->|⏳ **uses** *SlotsPerEpoch* for temporal management| sidechainSlots
-    sidechain -->|📝 **calls** *OnNewEpoch* for epoch transitions| spSidechain
-```
-
-### Node
-
-Relationships between the `partner-chains-session` pallet and the node client:
-
-```mermaid
-graph TB
-   classDef main fill:#f9d,stroke:#333,stroke-width:4px
-   classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
-
-%% Node positioned above (consumer)
-   node[Partner Chain Node]:::consumer
-
-%% Main pallet (in the middle)
-   sidechain[sidechain]:::main
-
-%% Relationships from node to sidechain
-   node -->|⏳ **uses** *current_epoch_number* for temporal tracking| sidechain
-   node -->|🔄 **references** *ScEpochNumber* for epoch transitions| sidechain
-   node -->|🧩 **uses** *slots_per_epoch* for slot configuration| sidechain
-   node -->|📝 **implements** *CreateInherentDataProviders* for inherent data| sidechain
-```

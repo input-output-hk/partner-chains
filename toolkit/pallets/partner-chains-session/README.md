@@ -217,42 +217,6 @@ pub trait SessionHandler<ValidatorId> {
     fn on_disabled(validator_index: u32);
 }
 ```
-## Usage
-
-To integrate this pallet in your runtime:
-
-1. Add the pallet to your runtime's `Cargo.toml`:
-```toml
-[dependencies]
-pallet-partner-chains-session = { version = "4.0.0-dev", default-features = false }
-```
-
-2. Implement the pallet's Config trait for your runtime:
-```rust
-impl pallet_partner_chains_session::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type ValidatorId = AccountId;
-    type ShouldEndSession = ShouldEndSession;
-    type NextSessionRotation = NextSessionRotation;
-    type SessionManager = SessionManager;
-    type SessionHandler = SessionHandler;
-    type Keys = SessionKeys;
-}
-```
-
-3. Add the pallet to your runtime:
-```rust
-construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = opaque::Block,
-        UncheckedExtrinsic = UncheckedExtrinsic
-    {
-        // Other pallets
-        PartnerChainsSession: pallet_partner_chains_session::{Pallet, Call, Storage, Event<T>},
-    }
-);
-```
 
 ## Architecture
 
@@ -319,6 +283,43 @@ graph TB
    partnerChainsNode -->|🔄 **calls** *rotate_session* for session transitions| partnerChainsSession
    partnerChainsNode -->|📝 **integrates** *SessionHandler* for consensus operations| partnerChainsSession
    partnerChainsNode -->|🔐 **processes** *Keys* for session management| partnerChainsSession
+```
+
+## Usage
+
+To integrate this pallet in your runtime:
+
+1. Add the pallet to your runtime's `Cargo.toml`:
+```toml
+[dependencies]
+pallet-partner-chains-session = { version = "4.0.0-dev", default-features = false }
+```
+
+2. Implement the pallet's Config trait for your runtime:
+```rust
+impl pallet_partner_chains_session::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type ValidatorId = AccountId;
+    type ShouldEndSession = ShouldEndSession;
+    type NextSessionRotation = NextSessionRotation;
+    type SessionManager = SessionManager;
+    type SessionHandler = SessionHandler;
+    type Keys = SessionKeys;
+}
+```
+
+3. Add the pallet to your runtime:
+```rust
+construct_runtime!(
+    pub enum Runtime where
+        Block = Block,
+        NodeBlock = opaque::Block,
+        UncheckedExtrinsic = UncheckedExtrinsic
+    {
+        // Other pallets
+        PartnerChainsSession: pallet_partner_chains_session::{Pallet, Call, Storage, Event<T>},
+    }
+);
 ```
 
 ## Implementation Notes

@@ -93,59 +93,6 @@ pub struct InherentData {
 }
 ```
 
-## Integration Guide
-
-To integrate this pallet in your runtime:
-
-1. Add the pallet to your runtime's `Cargo.toml`:
-```toml
-[dependencies]
-pallet-block-participation = { version = "4.0.0-dev", default-features = false }
-```
-
-2. Implement the pallet's Config trait for your runtime:
-```rust
-impl pallet_block_participation::Config for Runtime {
-    type WeightInfo = pallet_block_participation::weights::SubstrateWeight<Runtime>;
-    type BlockAuthor = AccountId;
-    type DelegatorId = AccountId;
-    
-    fn should_release_data(slot: Slot) -> Option<Slot> {
-        // Your implementation
-    }
-    
-    fn blocks_produced_up_to_slot(slot: Slot) -> impl Iterator<Item = (Slot, Self::BlockAuthor)> {
-        // Your implementation
-    }
-    
-    fn discard_blocks_produced_up_to_slot(slot: Slot) {
-        // Your implementation
-    }
-    
-    const TARGET_INHERENT_ID: InherentIdentifier = *b"blkparti";
-}
-```
-
-3. Add the pallet to your runtime:
-```rust
-construct_runtime!(
-    pub enum Runtime where
-        Block = Block,
-        NodeBlock = opaque::Block,
-        UncheckedExtrinsic = UncheckedExtrinsic
-    {
-        // Other pallets
-        BlockParticipation: pallet_block_participation::{Pallet, Call, Storage, Inherent},
-    }
-);
-```
-
-## Implementation Details
-
-This pallet relies on external storage for tracking block production data. The actual storage of block authors and delegator participation is expected to be handled by the runtime implementation through the Config trait methods.
-
-The pallet processes block production data through inherents, which should be created and supplied by the runtime during block production.
-
 ## Architecture
 
 ### Runtime
@@ -209,3 +156,56 @@ blockParticipation -->|📝 **requires** *TARGET_INHERENT_ID* for inherent proce
 blockParticipation -->|🧩 **uses** *BlockAuthor* to identify block producers| node
 blockParticipation -->|🧩 **uses** *DelegatorId* to track delegator participation| node
 ```
+
+## Integration
+
+To integrate this pallet in your runtime:
+
+1. Add the pallet to your runtime's `Cargo.toml`:
+```toml
+[dependencies]
+pallet-block-participation = { version = "4.0.0-dev", default-features = false }
+```
+
+2. Implement the pallet's Config trait for your runtime:
+```rust
+impl pallet_block_participation::Config for Runtime {
+    type WeightInfo = pallet_block_participation::weights::SubstrateWeight<Runtime>;
+    type BlockAuthor = AccountId;
+    type DelegatorId = AccountId;
+    
+    fn should_release_data(slot: Slot) -> Option<Slot> {
+        // Your implementation
+    }
+    
+    fn blocks_produced_up_to_slot(slot: Slot) -> impl Iterator<Item = (Slot, Self::BlockAuthor)> {
+        // Your implementation
+    }
+    
+    fn discard_blocks_produced_up_to_slot(slot: Slot) {
+        // Your implementation
+    }
+    
+    const TARGET_INHERENT_ID: InherentIdentifier = *b"blkparti";
+}
+```
+
+3. Add the pallet to your runtime:
+```rust
+construct_runtime!(
+    pub enum Runtime where
+        Block = Block,
+        NodeBlock = opaque::Block,
+        UncheckedExtrinsic = UncheckedExtrinsic
+    {
+        // Other pallets
+        BlockParticipation: pallet_block_participation::{Pallet, Call, Storage, Inherent},
+    }
+);
+```
+
+## Implementation Details
+
+This pallet relies on external storage for tracking block production data. The actual storage of block authors and delegator participation is expected to be handled by the runtime implementation through the Config trait methods.
+
+The pallet processes block production data through inherents, which should be created and supplied by the runtime during block production.
