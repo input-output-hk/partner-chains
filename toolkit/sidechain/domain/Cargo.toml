@@ -31,8 +31,9 @@ figment = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
 bech32 = { workspace = true }
 sp-io = { workspace = true }
-secp256k1 = { workspace = true, features = ["global-context", "std"], optional = true }
-ed25519-zebra = { workspace = true, features = ["std"], optional = true }
+secp256k1 = { workspace = true, features = ["hashes", "alloc"] }
+ed25519-zebra = { workspace = true, optional = true }
+k256 = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }
@@ -50,8 +51,9 @@ std = [
 	"thiserror",
 	"bech32/std",
 	"sp-io/std",
-	"secp256k1",
+	"secp256k1/std",
 	"ed25519-zebra",
+	"ed25519-zebra/std",
 ]
 serde = [
 	"dep:serde",
