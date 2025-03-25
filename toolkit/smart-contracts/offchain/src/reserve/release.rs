@@ -186,14 +186,13 @@ fn v_function_from_utxo(utxo: &OgmiosUtxo) -> anyhow::Result<PlutusScript> {
 mod tests {
 	use super::{empty_asset_name, reserve_release_tx, AssetNameExt, Costs, TransactionContext};
 	use crate::{
+		cardano_keys::CardanoPaymentSigningKey,
 		plutus_script::PlutusScript,
 		reserve::{release::OgmiosUtxoExt, ReserveData, ReserveUtxo},
 		scripts_data::ReserveScripts,
 		test_values::{payment_addr, protocol_parameters},
 	};
-	use cardano_serialization_lib::{
-		Int, Language, NetworkIdKind, PolicyID, PrivateKey, Transaction,
-	};
+	use cardano_serialization_lib::{Int, Language, NetworkIdKind, PolicyID, Transaction};
 	use hex_literal::hex;
 	use ogmios_client::types::{Asset, OgmiosTx, OgmiosUtxo, OgmiosValue};
 	use partner_chains_plutus_data::reserve::{
@@ -202,8 +201,8 @@ mod tests {
 	use pretty_assertions::assert_eq;
 	use sidechain_domain::{AssetName, PolicyId};
 
-	fn payment_key() -> PrivateKey {
-		PrivateKey::from_normal_bytes(&hex!(
+	fn payment_key() -> CardanoPaymentSigningKey {
+		CardanoPaymentSigningKey::from_normal_bytes(hex!(
 			"94f7531c9639654b77fa7e10650702b6937e05cd868f419f54bcb8368e413f04"
 		))
 		.unwrap()

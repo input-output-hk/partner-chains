@@ -1,4 +1,5 @@
 use super::{test_values, update_governance_tx};
+use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::{empty_asset_name, key_hash_address, Costs, TransactionContext};
 use crate::governance::GovernanceData;
 use crate::test_values::{protocol_parameters, test_governance_policy};
@@ -8,15 +9,15 @@ use ogmios_client::types::{Asset, Datum, OgmiosTx, OgmiosUtxo, OgmiosValue};
 use pretty_assertions::assert_eq;
 use sidechain_domain::MainchainKeyHash;
 
-fn payment_key() -> PrivateKey {
-	PrivateKey::from_normal_bytes(&hex!(
+fn payment_key() -> CardanoPaymentSigningKey {
+	CardanoPaymentSigningKey::from_normal_bytes(hex!(
 		"94f7531c9639654b77fa7e10650702b6937e05cd868f419f54bcb8368e413f04"
 	))
 	.unwrap()
 }
 
 fn payment_key_address() -> Address {
-	key_hash_address(&payment_key().to_public().hash(), NetworkIdKind::Testnet)
+	key_hash_address(&payment_key().0.to_public().hash(), NetworkIdKind::Testnet)
 }
 
 fn test_address_bech32() -> String {

@@ -195,7 +195,7 @@ fn mint_d_param_token_tx(
 		policy,
 		&empty_asset_name(),
 		&unit_plutus_data(),
-		&costs.get_mint(&policy.clone().into()),
+		&costs.get_mint(&policy.clone()),
 	)?;
 	tx_builder.add_output_with_one_script_token(
 		validator,
