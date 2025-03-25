@@ -6298,6 +6298,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-block-producer-metadata-rpc"
+version = "1.6.0"
+dependencies = [
+ "derive-new",
+ "jsonrpsee",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "serde_json",
+ "sidechain-domain",
+ "sp-api",
+ "sp-block-producer-metadata",
+ "sp-blockchain",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
 name = "pallet-block-production-log"
 version = "1.6.0"
 dependencies = [
@@ -6777,6 +6795,7 @@ dependencies = [
  "jsonrpsee",
  "log",
  "main-chain-follower-mock",
+ "pallet-block-producer-metadata-rpc",
  "pallet-partner-chains-session",
  "pallet-session-validator-management",
  "pallet-session-validator-management-rpc",
@@ -6812,6 +6831,7 @@ dependencies = [
  "sp-api",
  "sp-block-builder",
  "sp-block-participation",
+ "sp-block-producer-metadata",
  "sp-block-production-log",
  "sp-blockchain",
  "sp-consensus",
@@ -9999,6 +10019,7 @@ dependencies = [
  "sp-api",
  "sp-block-builder",
  "sp-block-participation",
+ "sp-block-producer-metadata",
  "sp-block-production-log",
  "sp-consensus-aura",
  "sp-consensus-grandpa",
@@ -10292,6 +10313,7 @@ dependencies = [
  "k256",
  "parity-scale-codec",
  "sidechain-domain",
+ "sp-api",
 ]
 
 [[package]]

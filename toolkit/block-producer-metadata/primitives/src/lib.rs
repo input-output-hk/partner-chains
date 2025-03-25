@@ -1,7 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use parity_scale_codec::Encode;
+use parity_scale_codec::{Decode, Encode};
 use sidechain_domain::*;
+use sp_api;
+extern crate alloc;
 
 #[derive(Debug, Clone, Encode)]
 pub struct MetadataSignedMessage<Metadata> {
@@ -56,5 +58,16 @@ mod tests {
 		let signature = message.sign_with_key(&skey);
 
 		assert!(message.verify_signature(&vkey.into(), signature).is_ok());
+	}
+}
+
+sp_api::decl_runtime_apis! {
+	pub trait BlockProducerMetadataApi<Metadata>
+	where Metadata:Decode
+	{
+		/// Retrieves the metadata for a given SPO public key if it exists.
+		fn get_metadata_for(
+			cross_chain_pub_key: &CrossChainPublicKey,
+	) -> Option<Metadata>;
 	}
 }

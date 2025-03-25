@@ -109,6 +109,8 @@ main-chain-follower-mock = { workspace = true, features = [
 ] }
 tokio = { workspace = true }
 sp-block-participation = { workspace = true, features = ["std"] }
+sp-block-producer-metadata = { workspace = true, features = ["std"] }
+pallet-block-producer-metadata-rpc = { workspace = true }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }

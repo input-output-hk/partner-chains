@@ -11,6 +11,7 @@ use authority_selection_inherents::{
 	authority_selection_inputs::AuthoritySelectionInputs, CommitteeMember,
 };
 use jsonrpsee::RpcModule;
+use pallet_block_producer_metadata_rpc::*;
 use pallet_session_validator_management_rpc::*;
 use pallet_sidechain_rpc::*;
 use sc_consensus_grandpa::{
@@ -25,7 +26,7 @@ use sidechain_runtime::{
 	opaque::{Block, SessionKeys},
 	AccountId, Balance, Nonce,
 };
-use sidechain_runtime::{BlockNumber, CrossChainPublic, Hash};
+use sidechain_runtime::{BlockNumber, BlockProducerMetadataType, CrossChainPublic, Hash};
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
@@ -76,6 +77,7 @@ where
 	C::Api: sidechain_slots::SlotApi<Block>,
 	C::Api: sp_sidechain::GetGenesisUtxo<Block>,
 	C::Api: sp_sidechain::GetSidechainStatus<Block>,
+	C::Api: sp_block_producer_metadata::BlockProducerMetadataApi<Block, BlockProducerMetadataType>,
 	C::Api: sp_session_validator_management::SessionValidatorManagementApi<
 		Block,
 		CommitteeMember<CrossChainPublic, SessionKeys>,
@@ -105,6 +107,7 @@ where
 		)
 		.into_rpc(),
 	)?;
+	module.merge(BlockProducerMetadataRpc::new(client.clone()).into_rpc())?;
 
 	let GrandpaDeps {
 		shared_voter_state,
