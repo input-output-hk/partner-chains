@@ -36,6 +36,7 @@ class Node:
     pool_id: str = MISSING
     public_key: str = MISSING
     aura_public_key: str = MISSING
+    imonline_public_key: str = MISSING
     grandpa_public_key: str = MISSING
     rotation_candidate: bool = False
     permissioned_candidate: bool = False
