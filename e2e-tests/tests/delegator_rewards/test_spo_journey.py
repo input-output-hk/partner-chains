@@ -9,13 +9,22 @@ from pytest import fixture, mark, skip
 PARTICIPATION_DATA_SLOT_RANGE = 30
 
 
+##############################################################################################################
+# Disclaimer!                                                                                                #
+# The Registered SPO user journey is not fully covered because it requires a rewards distribution mechanism. #
+# Its implementation lies on the Chain Builder side. This test suite is designed to verify the correctness   #
+# of the raw inherent data that we pass to the Chain Builder to build such a mechanism. The raw inherent     #
+# data are exposed via testHelperPallet which serves as a replacement for distribution mechanism.            #
+##############################################################################################################
+
+
 @fixture(scope="module")
 def block_to_query_storage(api: BlockchainApi):
     block = api.get_block()
     block_no = block["header"]["number"]
     if block_no <= PARTICIPATION_DATA_SLOT_RANGE:
         skip(f"Participation data is released after {PARTICIPATION_DATA_SLOT_RANGE} slots, current block {block_no}.")
-    logging.info(f"Block to query storage: {block['header']['number']}")
+    logging.info(f"Block to query storage: {block_no}")
     return block
 
 
@@ -43,10 +52,10 @@ def pc_epochs(block_participation, config: ApiConfig, initial_pc_epoch):
     logging.info(f"Participation data up to slot: {up_to_slot}")
     start_pc_epoch = (up_to_slot - PARTICIPATION_DATA_SLOT_RANGE) // config.nodes_config.slots_in_epoch
     stop_pc_epoch = up_to_slot // config.nodes_config.slots_in_epoch
-    epochs = range(start_pc_epoch, stop_pc_epoch + 1)
+    epochs = range(start_pc_epoch, stop_pc_epoch)
     logging.info(f"Participation data spans PC epochs: {epochs}")
     if initial_pc_epoch in epochs:
-        epochs = range(initial_pc_epoch, stop_pc_epoch + 1)
+        epochs = range(initial_pc_epoch, stop_pc_epoch)
         logging.info(f"Initial PC epoch is greater than the first PC epoch. Adjusting... New range is: {epochs}")
     return epochs
 
