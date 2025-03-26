@@ -41,7 +41,6 @@ class Node:
     permissioned_candidate: bool = False
     cardano_payment_addr: str = MISSING
     keys_files: Optional[KeysFiles] = None
-    block_rewards_id: str = MISSING
 
 
 @dataclass
