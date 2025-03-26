@@ -26,6 +26,8 @@ pub mod register;
 pub mod reserve;
 /// Provides synthetized scripts data
 pub mod scripts_data;
+/// Signing transactions
+pub mod sign_tx;
 #[cfg(test)]
 pub mod test_values;
 /// Supports governance updates
