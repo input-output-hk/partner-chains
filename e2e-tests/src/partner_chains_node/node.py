@@ -47,6 +47,7 @@ class PartnerChainsNode:
         spo_signing_key,
         sidechain_signing_key,
         aura_verification_key,
+        iamonline_verification_key,
         grandpa_verification_key,
     ):
         get_signatures_cmd = (
@@ -70,7 +71,7 @@ class PartnerChainsNode:
             signatures = RegistrationSignatures(
                 spo_public_key=spo_public_key,
                 spo_signature=spo_signature,
-                sidechain_public_keys=f"{sidechain_public_key}:{aura_verification_key}:{grandpa_verification_key}",
+                sidechain_public_keys=f"{sidechain_public_key}:{aura_verification_key}:{grandpa_verification_key}:{iamonline_verification_key}",
                 sidechain_signature=sidechain_signature,
             )
         except Exception as e:

@@ -301,6 +301,7 @@ class SubstrateApi(BlockchainApi):
             self.read_cardano_key_file(keys_files.spo_signing_key),
             self._read_json_file(keys_files.partner_chain_signing_key)['skey'],
             self.config.nodes_config.nodes[candidate_name].aura_public_key,
+            self.config.nodes_config.nodes[candidate_name].imonline_public_key,
             self.config.nodes_config.nodes[candidate_name].grandpa_public_key,
         )
 

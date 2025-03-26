@@ -96,7 +96,7 @@ class SmartContracts:
     def upsert_permissioned_candidates(self, governance_key, new_candidates_list: dict[str, Node]):
         logging.debug("Creating permissioned candidates file...")
         candidates_file_content = "\n".join(
-            f"{candidate.public_key}:{candidate.aura_public_key}:{candidate.grandpa_public_key}"
+            f"{candidate.public_key}:{candidate.aura_public_key}:{candidate.grandpa_public_key}:{candidate.imonline_public_key}"
             for candidate in new_candidates_list.values()
         )
         permissioned_candidates_file = "/tmp/permissioned_candidates.csv"

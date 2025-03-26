@@ -39,6 +39,7 @@ def test_register_candidate(candidate: Candidates, api: BlockchainApi, db: Sessi
     registration = candidate_registrations[registered_mc_pub_key][0]
     registered_pc_pub_key = config.nodes_config.nodes[candidate.name].public_key
     registered_aura_pub_key = config.nodes_config.nodes[candidate.name].aura_public_key
+    registered_iamonline_pub_key = config.nodes_config.nodes[candidate.name].imonline_public_key
     registered_grandpa_pub_key = config.nodes_config.nodes[candidate.name].grandpa_public_key
     assert (
         registered_pc_pub_key == registration["sidechainPubKey"]
