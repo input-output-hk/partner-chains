@@ -27,7 +27,7 @@ impl UpsertDParameterCmd {
 		};
 		let client = self.common_arguments.get_ogmios_client().await?;
 
-		upsert_d_param(
+		let result = upsert_d_param(
 			self.genesis_utxo,
 			&d_param,
 			&payment_key,
@@ -35,7 +35,10 @@ impl UpsertDParameterCmd {
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;
-
+		match result {
+			Some(result) => println!("{}", serde_json::to_value(result)?),
+			None => println!("{{}}"),
+		}
 		Ok(())
 	}
 }
