@@ -280,7 +280,6 @@ fn verify_stake_pool_signature(
 	let spo_signature: [u8; 64] = registration_data
 		.mainchain_signature
 		.0
-		.clone()
 		.try_into()
 		.map_err(|_| RegistrationDataError::InvalidMainchainSignature)?;
 	let spo_signature = ed25519::Signature::from(spo_signature);

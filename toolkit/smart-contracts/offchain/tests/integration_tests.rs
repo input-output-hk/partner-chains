@@ -6,7 +6,7 @@
 //! In case of change to the supported cardano-node or ogmios,
 //! it should be updated accordingly and pushed to the registry.
 
-use cardano_serialization_lib::{NetworkIdKind, PrivateKey, Transaction, Vkey, Vkeywitness};
+use cardano_serialization_lib::{NetworkIdKind, Transaction, Vkeywitness};
 use hex_literal::hex;
 use ogmios_client::{
 	jsonrpsee::{client_for_url, OgmiosClients},
