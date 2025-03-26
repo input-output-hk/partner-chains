@@ -101,7 +101,7 @@ pub mod pallet {
 		/// This should remove exactly the same data as returned by `blocks_produced_up_to_slot`
 		fn discard_blocks_produced_up_to_slot(slot: Slot);
 
-		/// Inherent ID for which block participation data should be provided.
+		/// Inherent ID under which block participation data should be provided.
 		/// It should be set to the ID used by the pallet that will process participation data for
 		/// paying out block rewards or other purposes.
 		const TARGET_INHERENT_ID: InherentIdentifier;
