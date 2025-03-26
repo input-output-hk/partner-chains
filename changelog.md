@@ -11,6 +11,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * `governance init` and `governance update` will set Multisig policy implemented with ALeastN Native Script, instead of custom policy implemented as Plutus Script in partner-chains-smart-contracts. This policy doesn't require to set `required_signers` field in the transaction making it more user friendly.
 * Extracted the "Ariadne" committee selection algorithm to the `selection` crate.
 * `governance update` and `upsert-permissioned-candidates` commands are now protected from spending transaction inputs while transaction is being signed.
+* Added implementation of `FindAccountFromAuthorIndex` trait for `pallet_partner_chains_session`.
 
 ## Removed
 
