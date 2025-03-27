@@ -12,6 +12,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * Extracted the "Ariadne" committee selection algorithm to the `selection` crate.
 * `governance update` and `upsert-permissioned-candidates` commands are now protected from spending transaction inputs while transaction is being signed.
 * Added implementation of `FindAccountFromAuthorIndex` trait for `pallet_partner_chains_session`.
+* Unified `*toml` files package data
 
 ## Removed
 

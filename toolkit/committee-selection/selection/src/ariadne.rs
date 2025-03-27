@@ -155,7 +155,7 @@ mod tests {
 
 			let ratio_ratio = selected_ratio / expected_ratio;
 			assert!(
-				ratio_ratio < 1.1f64 && ratio_ratio < 0.9f64,
+				ratio_ratio < 1.1f64 && ratio_ratio > 0.9f64,
 				"Seat ratio should be within 10pp from D-Param. Ratio: {ratio_ratio:?}",
 			);
 		} else if num_trustless_seats > 0 {

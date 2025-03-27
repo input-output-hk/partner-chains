@@ -1,14 +1,19 @@
 [package]
 name = "sidechain-runtime"
-version = "1.6.0"
+version.workspace = true
 description = "A reference implementation of a partner chain runtime"
-authors = ["IOG"]
-edition = "2021"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
 license = "Unlicense"
 publish = false
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
+
+[lints]
+workspace = true
 
 [dependencies]
 log = { workspace = true }
@@ -76,6 +81,7 @@ sidechain-slots = { workspace = true }
 pallet-native-token-management = { workspace = true }
 sp-native-token-management = { workspace = true, features = ["serde"] }
 pallet-address-associations = { workspace = true }
+pallet-block-producer-metadata = { workspace = true }
 pallet-block-participation = { workspace = true }
 sp-block-participation = { workspace = true }
 
@@ -122,6 +128,7 @@ std = [
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 	"pallet-address-associations/std",
+	"pallet-block-producer-metadata/std",
 	"sp-api/std",
 	"sp-block-builder/std",
 	"sp-consensus-aura/std",
@@ -166,6 +173,7 @@ runtime-benchmarks = [
 	"pallet-block-production-log/runtime-benchmarks",
 	"pallet-native-token-management/runtime-benchmarks",
 	"pallet-address-associations/runtime-benchmarks",
+	"pallet-block-producer-metadata/runtime-benchmarks",
 	"pallet-block-participation/runtime-benchmarks",
 ]
 try-runtime = [

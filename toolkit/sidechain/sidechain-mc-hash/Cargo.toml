@@ -1,9 +1,15 @@
 [package]
 name = "sidechain-mc-hash"
-version = "1.6.0"
-edition = "2021"
+version.workspace = true
 description = "Logic for putting a main chain block reference in digest and inherent data"
 license = "Apache-2.0"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
 
 [dependencies]
 async-trait = { workspace = true }
