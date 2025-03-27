@@ -9,6 +9,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["ogmios_client",["",[],["jsonrpsee.rs","lib.rs","query_ledger_state.rs","query_network.rs","transactions.rs","types.rs"]]],\
 ["pallet_address_associations",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_block_participation",["",[],["lib.rs","weights.rs"]]],\
+["pallet_block_producer_metadata",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_block_production_log",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_native_token_management",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_partner_chains_session",["",[],["lib.rs","pallet_session_compat.rs"]]],\

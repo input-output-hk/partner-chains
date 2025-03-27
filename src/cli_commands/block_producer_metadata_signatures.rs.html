@@ -127,6 +127,10 @@
 <a href="#127" id="127">127</a>
 <a href="#128" id="128">128</a>
 <a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::key_params::CrossChainSigningKeyParam;
 <span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>byte_string::ByteString;
@@ -182,7 +186,9 @@
 		<span class="prelude-val">Ok</span>(<span class="macro">json!</span>({
 			<span class="string">"signature"</span>: signature,
 			<span class="string">"cross_chain_pub_key"</span>: <span class="self">self</span>.cross_chain_signing_key.vkey(),
-			<span class="string">"encoded_metadata"</span>: ByteString(encoded_metadata)
+			<span class="string">"cross_chain_pub_key_hash"</span>: <span class="self">self</span>.cross_chain_signing_key.vkey().hash(),
+			<span class="string">"encoded_metadata"</span>: ByteString(encoded_metadata),
+			<span class="string">"encoded_message"</span>: ByteString(message.encode())
 		}))
 	}
 }
@@ -209,7 +215,7 @@
 			genesis_utxo: UtxoId::new([<span class="number">1</span>; <span class="number">32</span>], <span class="number">1</span>),
 			metadata_file: <span class="string">"unused"</span>.to_string(),
 			cross_chain_signing_key: CrossChainSigningKeyParam(
-				secp256k1::SecretKey::from_slice(
+				k256::SecretKey::from_slice(
 					<span class="comment">// Alice cross-chain key
 					</span><span class="kw-2">&amp;</span><span class="macro">hex!</span>(<span class="string">"cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"</span>),
 				)
@@ -228,7 +234,9 @@
 
 		<span class="kw">let </span>expected_output = <span class="macro">json!</span>({
 			<span class="string">"cross_chain_pub_key"</span>: <span class="string">"0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1"</span>,
-			<span class="string">"signature"</span>: <span class="string">"0x3045022100f86d3aa75a6a8bda35dfdd2472b8e5f2f95446e4542ab0adb6f3e7681f01b740022060082c0debfb9616a54f88cf42b88e1a2f43c75dc4394bfdde33972deb491fcb"</span>,
+			<span class="string">"cross_chain_pub_key_hash" </span>: <span class="string">"0x4a20b7cab322b36838a8e4b6063c3563cdb79c97175f6c2d233dac4d"</span>,
+			<span class="string">"encoded_message"</span>: <span class="string">"0x84020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a148687474703a2f2f6578616d706c652e636f6d103132333401010101010101010101010101010101010101010101010101010101010101010100"</span>,
+			<span class="string">"signature"</span>: <span class="string">"0xf86d3aa75a6a8bda35dfdd2472b8e5f2f95446e4542ab0adb6f3e7681f01b74060082c0debfb9616a54f88cf42b88e1a2f43c75dc4394bfdde33972deb491fcb"</span>,
 			<span class="string">"encoded_metadata"</span>: <span class="string">"0x48687474703a2f2f6578616d706c652e636f6d1031323334"
 		</span>});
 
@@ -241,7 +249,7 @@
 			genesis_utxo: UtxoId::new([<span class="number">1</span>; <span class="number">32</span>], <span class="number">1</span>),
 			metadata_file: <span class="string">"unused"</span>.to_string(),
 			cross_chain_signing_key: CrossChainSigningKeyParam(
-				secp256k1::SecretKey::from_slice(
+				k256::SecretKey::from_slice(
 					<span class="comment">// Alice cross-chain key
 					</span><span class="kw-2">&amp;</span><span class="macro">hex!</span>(<span class="string">"cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"</span>),
 				)
