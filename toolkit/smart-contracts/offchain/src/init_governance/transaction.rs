@@ -12,7 +12,7 @@ pub(crate) fn init_governance_transaction(
 	costs: Costs,
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
-	let multi_sig_policy = governance_parameters.to_simple_at_least_n().to_csl_native_script();
+	let multi_sig_policy = governance_parameters.as_simple_at_least_n().to_csl_native_script();
 	let version_oracle = version_oracle(genesis_utxo.utxo_id(), ctx.network)?;
 	let config = crate::csl::get_builder_config(ctx)?;
 	let mut tx_builder = TransactionBuilder::new(&config);
