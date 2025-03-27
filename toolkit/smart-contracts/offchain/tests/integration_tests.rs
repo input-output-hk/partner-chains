@@ -6,7 +6,7 @@
 //! In case of change to the supported cardano-node or ogmios,
 //! it should be updated accordingly and pushed to the registry.
 
-use cardano_serialization_lib::{NetworkIdKind, PrivateKey, Transaction, Vkey, Vkeywitness};
+use cardano_serialization_lib::{NetworkIdKind, Transaction, Vkeywitness};
 use hex_literal::hex;
 use ogmios_client::{
 	jsonrpsee::{client_for_url, OgmiosClients},
@@ -165,13 +165,20 @@ async fn reserve_management_scenario() {
 	let container = client.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
-	let txs = run_init_reserve_management(genesis_utxo, &client).await;
-	assert_eq!(txs.len(), 3);
-	let txs = run_init_reserve_management(genesis_utxo, &client).await;
-	assert_eq!(txs.len(), 0);
-	let _ = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
+	let _ = run_update_governance(&client, genesis_utxo).await;
+	let results = run_init_reserve_management(genesis_utxo, &client).await;
+	assert_eq!(results.len(), 3);
+	for result in results {
+		run_assemble_and_sign(result, &[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY], &client).await;
+	}
+	let results = run_init_reserve_management(genesis_utxo, &client).await;
+	assert_eq!(results.len(), 0);
+	let result = run_create_reserve_management(genesis_utxo, V_FUNCTION_HASH, &client).await;
+	run_assemble_and_sign(result, &[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY], &client).await;
 	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT, &client).await;
-	run_deposit_to_reserve(genesis_utxo, &client).await;
+
+	let result = run_deposit_to_reserve(genesis_utxo, &client).await;
+	run_assemble_and_sign(result, &[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY], &client).await;
 	assert_reserve_deposited(genesis_utxo, INITIAL_DEPOSIT_AMOUNT + DEPOSIT_AMOUNT, &client).await;
 	run_release_reserve_funds(genesis_utxo, RELEASE_AMOUNT, V_FUNCTION_UTXO, &client).await;
 	assert_reserve_deposited(
@@ -189,15 +196,18 @@ async fn reserve_management_scenario() {
 	)
 	.await;
 	assert_illiquid_supply(genesis_utxo, 2 * RELEASE_AMOUNT, &client).await;
-	run_update_reserve_settings_management(
+	let result = run_update_reserve_settings_management(
 		genesis_utxo,
 		UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH,
 		&client,
 	)
 	.await;
+	run_assemble_and_sign(result.unwrap(), &[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY], &client)
+		.await;
 	assert_mutable_settings_eq(genesis_utxo, UPDATED_TOTAL_ACCRUED_FUNCTION_SCRIPT_HASH, &client)
 		.await;
-	run_handover_reserve(genesis_utxo, &client).await.unwrap();
+	let result = run_handover_reserve(genesis_utxo, &client).await.unwrap();
+	run_assemble_and_sign(result, &[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY], &client).await;
 	assert_reserve_handed_over(genesis_utxo, INITIAL_DEPOSIT_AMOUNT + DEPOSIT_AMOUNT, &client)
 		.await;
 }
@@ -391,7 +401,7 @@ async fn run_init_reserve_management<
 >(
 	genesis_utxo: UtxoId,
 	client: &T,
-) -> Vec<McTxHash> {
+) -> Vec<MultiSigSmartContractResult> {
 	reserve::init::init_reserve_management(
 		genesis_utxo,
 		&governance_authority_payment_key(),
@@ -408,7 +418,7 @@ async fn run_create_reserve_management<
 	genesis_utxo: UtxoId,
 	v_function_hash: PolicyId,
 	client: &T,
-) -> McTxHash {
+) -> MultiSigSmartContractResult {
 	reserve::create::create_reserve_utxo(
 		reserve::create::ReserveParameters {
 			total_accrued_function_script_hash: v_function_hash,
@@ -433,7 +443,7 @@ async fn run_update_reserve_settings_management<
 	genesis_utxo: UtxoId,
 	updated_total_accrued_function_script_hash: PolicyId,
 	client: &T,
-) -> Option<McTxHash> {
+) -> Option<MultiSigSmartContractResult> {
 	reserve::update_settings::update_reserve_settings(
 		genesis_utxo,
 		&governance_authority_payment_key(),
@@ -450,7 +460,7 @@ async fn run_deposit_to_reserve<
 >(
 	genesis_utxo: UtxoId,
 	client: &T,
-) {
+) -> MultiSigSmartContractResult {
 	reserve::deposit::deposit_to_reserve(
 		DEPOSIT_AMOUNT,
 		genesis_utxo,
@@ -459,7 +469,7 @@ async fn run_deposit_to_reserve<
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
-	.unwrap();
+	.unwrap()
 }
 
 async fn run_handover_reserve<
@@ -467,7 +477,7 @@ async fn run_handover_reserve<
 >(
 	genesis_utxo: UtxoId,
 	client: &T,
-) -> Result<McTxHash, anyhow::Error> {
+) -> Result<MultiSigSmartContractResult, anyhow::Error> {
 	reserve::handover::handover_reserve(
 		genesis_utxo,
 		&governance_authority_payment_key(),
