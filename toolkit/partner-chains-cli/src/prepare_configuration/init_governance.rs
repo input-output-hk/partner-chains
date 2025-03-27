@@ -4,7 +4,8 @@ use crate::{
 	IOContext,
 };
 use partner_chains_cardano_offchain::{
-	cardano_keys::CardanoPaymentSigningKey, init_governance::InitGovernance,
+	cardano_keys::CardanoPaymentSigningKey, governance::MultiSigParameters,
+	init_governance::InitGovernance,
 };
 use sidechain_domain::{MainchainKeyHash, McTxHash, UtxoId};
 
@@ -17,7 +18,11 @@ pub(crate) fn run_init_governance<C: IOContext>(
 	let (payment_key, governance_authority) = get_private_key_and_key_hash(context)?;
 	let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 	runtime
-		.block_on(offchain.init_governance(governance_authority, &payment_key, genesis_utxo))
+		.block_on(offchain.init_governance(
+			&MultiSigParameters::new_one_of_one(&governance_authority),
+			&payment_key,
+			genesis_utxo,
+		))
 		.map_err(|e| anyhow::anyhow!("Governance initalization failed: {e:?}!"))
 }
 
@@ -45,6 +50,7 @@ mod tests {
 		verify_json,
 	};
 	use hex_literal::hex;
+	use partner_chains_cardano_offchain::governance::MultiSigParameters;
 	use serde_json::{json, Value};
 	use sidechain_domain::{MainchainKeyHash, McTxHash, UtxoId};
 
@@ -91,7 +97,9 @@ mod tests {
 	fn preprod_offchain_mocks() -> OffchainMocks {
 		let mock = OffchainMock::new().with_init_governance(
 			TEST_GENESIS_UTXO,
-			MainchainKeyHash(hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b")),
+			MultiSigParameters::new_one_of_one(&MainchainKeyHash(hex!(
+				"e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
+			))),
 			hex!("d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386").to_vec(),
 			Ok(McTxHash(hex!("0000000000000000000000000000000000000000000000000000000000000000"))),
 		);
