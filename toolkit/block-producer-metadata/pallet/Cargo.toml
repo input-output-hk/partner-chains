@@ -1,0 +1,51 @@
+[package]
+name = "pallet-block-producer-metadata"
+version = "1.6.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+log = { workspace = true }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+sidechain-domain = { workspace = true }
+sp-std = { workspace = true }
+hex-literal = { workspace = true, optional = true }
+sp-core = { workspace = true, optional = true }
+sp-block-producer-metadata = { workspace = true }
+sp-runtime = { workspace = true, optional = true }
+sp-io = { workspace = true, optional = true}
+
+[dev-dependencies]
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+hex-literal = { workspace = true }
+k256 = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "frame-benchmarking/std",
+    "frame-support/std",
+    "frame-system/std",
+    "log/std",
+    "parity-scale-codec/std",
+    "scale-info/std",
+    "sidechain-domain/std",
+    "sp-std/std",
+    "sp-core?/std",
+    "sp-block-producer-metadata/std",
+]
+runtime-benchmarks = [
+    "frame-benchmarking/runtime-benchmarks",
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+    "sp-runtime/runtime-benchmarks",
+    "hex-literal",
+    "sp-core",
+    "sp-io"
+]

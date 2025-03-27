@@ -25,6 +25,7 @@ use frame_support::{
 	BoundedVec,
 };
 use opaque::SessionKeys;
+use pallet_block_producer_metadata;
 use pallet_grandpa::AuthorityId as GrandpaId;
 use pallet_session_validator_management::session_manager::ValidatorManagementSessionManager;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
@@ -462,8 +463,8 @@ impl AsCardanoSPO for BlockAuthor {
 
 pub const MAX_METADATA_URL_LENGTH: u32 = 512;
 
-#[derive(Clone, Debug, MaxEncodedLen, Encode, Deserialize)]
-pub struct BlockProducerMetadata {
+#[derive(Clone, Debug, MaxEncodedLen, Encode, Decode, Deserialize, PartialEq, Eq, TypeInfo)]
+pub struct BlockProducerMetadataType {
 	pub url: BoundedString<MAX_METADATA_URL_LENGTH>,
 	pub hash: SizedByteString<32>,
 }
@@ -478,6 +479,30 @@ impl pallet_block_production_log::benchmarking::BenchmarkHelper<BlockAuthor>
 	fn producer_id() -> BlockAuthor {
 		let id = sp_core::ecdsa::Public::from_slice(&[0u8; 33]).unwrap().into();
 		BlockAuthor::ProBono(id)
+	}
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct PalletBlockProducerMetadataBenchmarkHelper;
+
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_block_producer_metadata::benchmarking::BenchmarkHelper<BlockProducerMetadataType>
+	for PalletBlockProducerMetadataBenchmarkHelper
+{
+	fn metadata() -> BlockProducerMetadataType {
+		BlockProducerMetadataType {
+			url: "https://cool.stuff/spo.json".as_bytes().to_vec().try_into().unwrap(),
+			hash: SizedByteString::from([0; 32]),
+		}
+	}
+	fn cross_chain_pub_key() -> sidechain_domain::CrossChainPublicKey {
+		sidechain_domain::CrossChainPublicKey(
+			hex_literal::hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1")
+				.to_vec(),
+		)
+	}
+	fn cross_chain_signature() -> sidechain_domain::CrossChainSignature {
+		sidechain_domain::CrossChainSignature(hex_literal::hex!("d1e02e4a5484c3b7202ce6b844577048e7578dc62901cf8f51e6d74bbd3adb091688feacedd8343d0b04a0f5862b2e06148934a75e678e42051fde5431eca33d").to_vec())
 	}
 }
 
@@ -502,6 +527,19 @@ impl pallet_address_associations::Config for Runtime {
 	fn genesis_utxo() -> UtxoId {
 		Sidechain::genesis_utxo()
 	}
+}
+
+impl pallet_block_producer_metadata::Config for Runtime {
+	type WeightInfo = pallet_block_producer_metadata::weights::SubstrateWeight<Runtime>;
+
+	type BlockProducerMetadata = BlockProducerMetadataType;
+
+	fn genesis_utxo() -> UtxoId {
+		Sidechain::genesis_utxo()
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = PalletBlockProducerMetadataBenchmarkHelper;
 }
 
 impl pallet_block_participation::Config for Runtime {
@@ -541,6 +579,7 @@ construct_runtime!(
 		Sidechain: pallet_sidechain,
 		SessionCommitteeManagement: pallet_session_validator_management,
 		AddressAssociations: pallet_address_associations,
+		BlockProducerMetadata: pallet_block_producer_metadata,
 		BlockProductionLog: pallet_block_production_log,
 		BlockParticipation: pallet_block_participation,
 		// pallet_grandpa reads pallet_session::pallet::CurrentIndex storage.
@@ -603,6 +642,7 @@ mod benches {
 		[pallet_native_token_management, NativeTokenManagement]
 		[pallet_block_production_log, BlockProductionLog]
 		[pallet_address_associations, AddressAssociations]
+		[pallet_block_producer_metadata, BlockProducerMetadata]
 		[pallet_block_participation, BlockParticipation]
 	);
 }

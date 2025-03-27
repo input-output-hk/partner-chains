@@ -1,7 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use parity_scale_codec::Encode;
-use secp256k1::{hashes::sha256, Message, Secp256k1};
 use sidechain_domain::*;
 
 #[derive(Debug, Clone, Encode)]
@@ -12,25 +11,25 @@ pub struct MetadataSignedMessage<Metadata> {
 }
 
 impl<M: Encode> MetadataSignedMessage<M> {
-	pub fn sign_with_key(&self, skey: &secp256k1::SecretKey) -> CrossChainSignature {
+	#[cfg(feature = "std")]
+	pub fn sign_with_key(&self, skey: &k256::SecretKey) -> CrossChainSignature {
+		use k256::ecdsa::hazmat::DigestPrimitive;
+		use k256::ecdsa::*;
+		use k256::sha2::Digest;
+		use k256::Secp256k1;
 		let data = self.encode();
-		let data_hash = Message::from_hashed_data::<sha256::Hash>(&data);
-		CrossChainSignature(skey.sign_ecdsa(data_hash).serialize_der().into_iter().collect())
+		let digest = <Secp256k1 as DigestPrimitive>::Digest::new_with_prefix(data);
+
+		let (sig, _recid) = SigningKey::from(skey).sign_digest_recoverable(digest.clone()).unwrap();
+		CrossChainSignature(sig.to_vec())
 	}
 
 	pub fn verify_signature(
 		&self,
-		vkey: &secp256k1::PublicKey,
+		vkey: &CrossChainPublicKey,
 		signature: CrossChainSignature,
-	) -> Result<(), secp256k1::Error> {
-		let data = self.encode();
-		let data_hash = Message::from_hashed_data::<sha256::Hash>(&data);
-
-		let signature = secp256k1::ecdsa::Signature::from_der(&signature.0)
-			.or_else(|_| secp256k1::ecdsa::Signature::from_compact(&signature.0))
-			.expect("ecdsa::Signature from CrossChainSignature should always succeed");
-
-		vkey.verify(&Secp256k1::new(), &data_hash, &signature)
+	) -> Result<(), k256::ecdsa::signature::Error> {
+		signature.verify(vkey, &self.encode())
 	}
 }
 
@@ -48,14 +47,14 @@ mod tests {
 		};
 
 		// Alice cross-chain key
-		let skey = secp256k1::SecretKey::from_slice(&hex!(
+		let skey = k256::SecretKey::from_slice(&hex!(
 			"cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"
 		))
 		.unwrap();
-		let vkey = skey.public_key(&Secp256k1::new());
+		let vkey = skey.public_key();
 
 		let signature = message.sign_with_key(&skey);
 
-		assert_eq!(message.verify_signature(&vkey, signature), Ok(()));
+		assert!(message.verify_signature(&vkey.into(), signature).is_ok());
 	}
 }

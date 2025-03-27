@@ -81,6 +81,7 @@ sidechain-slots = { workspace = true }
 pallet-native-token-management = { workspace = true }
 sp-native-token-management = { workspace = true, features = ["serde"] }
 pallet-address-associations = { workspace = true }
+pallet-block-producer-metadata = { workspace = true }
 pallet-block-participation = { workspace = true }
 sp-block-participation = { workspace = true }
 
@@ -127,6 +128,7 @@ std = [
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
 	"pallet-address-associations/std",
+	"pallet-block-producer-metadata/std",
 	"sp-api/std",
 	"sp-block-builder/std",
 	"sp-consensus-aura/std",
@@ -171,6 +173,7 @@ runtime-benchmarks = [
 	"pallet-block-production-log/runtime-benchmarks",
 	"pallet-native-token-management/runtime-benchmarks",
 	"pallet-address-associations/runtime-benchmarks",
+	"pallet-block-producer-metadata/runtime-benchmarks",
 	"pallet-block-participation/runtime-benchmarks",
 ]
 try-runtime = [

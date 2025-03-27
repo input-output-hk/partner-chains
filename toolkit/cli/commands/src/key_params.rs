@@ -1,4 +1,3 @@
-use secp256k1::{PublicKey, Secp256k1, SecretKey};
 use sidechain_domain::*;
 use std::convert::Infallible;
 use std::fmt::Display;
@@ -7,11 +6,11 @@ use std::io::ErrorKind;
 use std::str::FromStr;
 
 #[derive(Clone, Debug)]
-pub struct SidechainSigningKeyParam(pub SecretKey);
+pub struct SidechainSigningKeyParam(pub secp256k1::SecretKey);
 
 impl SidechainSigningKeyParam {
-	pub fn to_pub_key(&self) -> PublicKey {
-		PublicKey::from_secret_key_global(&self.0)
+	pub fn to_pub_key(&self) -> secp256k1::PublicKey {
+		secp256k1::PublicKey::from_secret_key_global(&self.0)
 	}
 }
 
@@ -20,7 +19,7 @@ impl FromStr for SidechainSigningKeyParam {
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		let trimmed = s.trim_start_matches("0x");
-		let pair = SecretKey::from_str(trimmed)?;
+		let pair = secp256k1::SecretKey::from_str(trimmed)?;
 		Ok(SidechainSigningKeyParam(pair))
 	}
 }
@@ -39,7 +38,7 @@ impl FromStr for SidechainPublicKeyParam {
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		let trimmed = s.trim_start_matches("0x");
-		let pk = PublicKey::from_str(trimmed)?;
+		let pk = secp256k1::PublicKey::from_str(trimmed)?;
 		Ok(SidechainPublicKeyParam(SidechainPublicKey(pk.serialize().to_vec())))
 	}
 }
@@ -123,18 +122,18 @@ impl StakeSigningKeyParam {
 }
 
 #[derive(Clone, Debug)]
-pub struct CrossChainSigningKeyParam(pub secp256k1::SecretKey);
+pub struct CrossChainSigningKeyParam(pub k256::SecretKey);
 
 impl FromStr for CrossChainSigningKeyParam {
 	type Err = anyhow::Error;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		Ok(Self(secp256k1::SecretKey::from_slice(&hex::decode(s)?)?))
+		Ok(Self(k256::SecretKey::from_slice(&hex::decode(s)?)?))
 	}
 }
 
 impl CrossChainSigningKeyParam {
 	pub fn vkey(&self) -> CrossChainPublicKey {
-		CrossChainPublicKey(self.0.public_key(&Secp256k1::new()).serialize().to_vec())
+		CrossChainPublicKey(self.0.public_key().to_sec1_bytes().to_vec())
 	}
 }

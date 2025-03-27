@@ -1283,6 +1283,7 @@ dependencies = [
  "ed25519-zebra",
  "hex",
  "hex-literal",
+ "k256",
  "pallet-address-associations",
  "parity-scale-codec",
  "plutus",
@@ -6277,6 +6278,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-block-producer-metadata"
+version = "1.6.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "k256",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sidechain-domain",
+ "sp-block-producer-metadata",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-block-production-log"
 version = "1.6.0"
 dependencies = [
@@ -9893,6 +9914,7 @@ dependencies = [
  "figment",
  "hex",
  "hex-literal",
+ "k256",
  "lazy_static",
  "num-bigint",
  "num-derive",
@@ -9951,6 +9973,7 @@ dependencies = [
  "pallet-aura",
  "pallet-balances",
  "pallet-block-participation",
+ "pallet-block-producer-metadata",
  "pallet-block-production-log",
  "pallet-grandpa",
  "pallet-native-token-management",
@@ -10264,8 +10287,8 @@ name = "sp-block-producer-metadata"
 version = "1.6.0"
 dependencies = [
  "hex-literal",
+ "k256",
  "parity-scale-codec",
- "secp256k1 0.28.2",
  "sidechain-domain",
 ]
 
