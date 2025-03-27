@@ -149,14 +149,6 @@
 <a href="#149" id="149">149</a>
 <a href="#150" id="150">150</a>
 <a href="#151" id="151">151</a>
-<a href="#152" id="152">152</a>
-<a href="#153" id="153">153</a>
-<a href="#154" id="154">154</a>
-<a href="#155" id="155">155</a>
-<a href="#156" id="156">156</a>
-<a href="#157" id="157">157</a>
-<a href="#158" id="158">158</a>
-<a href="#159" id="159">159</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//!
 //! Specification for deposit transaction:
 //!
@@ -187,6 +179,7 @@
 		TransactionOutputAmountBuilderExt,
 	},
 	governance::GovernanceData,
+	multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult},
 	reserve::ReserveData,
 	scripts_data::ReserveScripts,
 };
@@ -198,7 +191,7 @@
 	types::OgmiosUtxo,
 };
 <span class="kw">use </span>partner_chains_plutus_data::reserve::ReserveRedeemer;
-<span class="kw">use </span>sidechain_domain::{McTxHash, UtxoId};
+<span class="kw">use </span>sidechain_domain::UtxoId;
 
 <span class="doccomment">/// Spends current UTXO at validator address to illiquid supply validator and burn reserve auth policy token, preventing further operations.
 </span><span class="kw">pub async fn </span>handover_reserve&lt;
@@ -209,7 +202,7 @@
 	payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	client: <span class="kw-2">&amp;</span>T,
 	await_tx: <span class="kw-2">&amp;</span>A,
-) -&gt; anyhow::Result&lt;McTxHash&gt; {
+) -&gt; anyhow::Result&lt;MultiSigSmartContractResult&gt; {
 	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_key, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>governance = GovernanceData::get(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>reserve = ReserveData::get(genesis_utxo, <span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
@@ -218,25 +211,16 @@
 		reserve.get_reserve_utxo(<span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>amount = get_amount_to_release(reserve_utxo);
 
-	<span class="kw">let </span>tx = Costs::calculate_costs(
-		|costs| build_tx(<span class="kw-2">&amp;</span>amount, utxo, <span class="kw-2">&amp;</span>reserve, <span class="kw-2">&amp;</span>governance, costs, <span class="kw-2">&amp;</span>ctx),
+	submit_or_create_tx_to_sign(
+		<span class="kw-2">&amp;</span>governance,
+		<span class="kw-2">&amp;</span>ctx,
+		|costs, ctx| build_tx(<span class="kw-2">&amp;</span>amount, utxo, <span class="kw-2">&amp;</span>reserve, <span class="kw-2">&amp;</span>governance, costs, <span class="kw-2">&amp;</span>ctx),
+		<span class="string">"Handover Reserve"</span>,
 		client,
+		await_tx,
 	)
-	.<span class="kw">await</span><span class="question-mark">?</span>;
-
-	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
-	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
-		<span class="macro">anyhow::anyhow!</span>(
-			<span class="string">"Handover Reserve transaction request failed: {}, tx bytes: {}"</span>,
-			e,
-			hex::encode(<span class="kw-2">&amp;</span>signed_tx)
-		)
-	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>tx_id = res.transaction.id;
-	<span class="macro">log::info!</span>(<span class="string">"Handover Reserve transaction submitted: {}"</span>, hex::encode(tx_id));
-	await_tx.await_tx_output(client, UtxoId::new(tx_id, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(McTxHash(tx_id))
-}
+	.<span class="kw">await
+</span>}
 
 <span class="kw">fn </span>get_amount_to_release(reserve_utxo: <span class="kw-2">&amp;</span>ReserveUtxo) -&gt; TokenAmount {
 	<span class="kw">let </span>token = reserve_utxo.datum.immutable_settings.token.clone();

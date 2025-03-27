@@ -137,14 +137,6 @@
 <a href="#137" id="137">137</a>
 <a href="#138" id="138">138</a>
 <a href="#139" id="139">139</a>
-<a href="#140" id="140">140</a>
-<a href="#141" id="141">141</a>
-<a href="#142" id="142">142</a>
-<a href="#143" id="143">143</a>
-<a href="#144" id="144">144</a>
-<a href="#145" id="145">145</a>
-<a href="#146" id="146">146</a>
-<a href="#147" id="147">147</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Transaction that creates a new reserve.
 //!
 //! Specification:
@@ -171,6 +163,7 @@
 		TransactionContext, TransactionExt, TransactionOutputAmountBuilderExt,
 	},
 	governance::GovernanceData,
+	multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult},
 	scripts_data::ReserveScripts,
 };
 <span class="kw">use </span>cardano_serialization_lib::{
@@ -185,7 +178,7 @@
 <span class="kw">use </span>partner_chains_plutus_data::reserve::{
 	ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats,
 };
-<span class="kw">use </span>sidechain_domain::{AssetId, McTxHash, PolicyId, UtxoId};
+<span class="kw">use </span>sidechain_domain::{AssetId, PolicyId, UtxoId};
 
 <span class="kw">pub async fn </span>create_reserve_utxo&lt;
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
@@ -196,30 +189,21 @@
 	payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	client: <span class="kw-2">&amp;</span>T,
 	await_tx: <span class="kw-2">&amp;</span>A,
-) -&gt; anyhow::Result&lt;McTxHash&gt; {
-	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_key, client).<span class="kw">await</span><span class="question-mark">?</span>;
+) -&gt; anyhow::Result&lt;MultiSigSmartContractResult&gt; {
+	<span class="kw">let </span>payment_ctx = TransactionContext::for_payment_key(payment_key, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>governance = GovernanceData::get(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="kw">let </span>reserve = ReserveData::get(genesis_utxo, <span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>reserve = ReserveData::get(genesis_utxo, <span class="kw-2">&amp;</span>payment_ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
 
-	<span class="kw">let </span>tx = Costs::calculate_costs(
-		|costs| create_reserve_tx(<span class="kw-2">&amp;</span>parameters, <span class="kw-2">&amp;</span>reserve, <span class="kw-2">&amp;</span>governance, costs, <span class="kw-2">&amp;</span>ctx),
+	submit_or_create_tx_to_sign(
+		<span class="kw-2">&amp;</span>governance,
+		<span class="kw-2">&amp;</span>payment_ctx,
+		|costs, ctx| create_reserve_tx(<span class="kw-2">&amp;</span>parameters, <span class="kw-2">&amp;</span>reserve, <span class="kw-2">&amp;</span>governance, costs, <span class="kw-2">&amp;</span>ctx),
+		<span class="string">"Create Reserve"</span>,
 		client,
+		await_tx,
 	)
-	.<span class="kw">await</span><span class="question-mark">?</span>;
-
-	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
-	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
-		<span class="macro">anyhow::anyhow!</span>(
-			<span class="string">"Create Reserve transaction request failed: {}, tx bytes: {}"</span>,
-			e,
-			hex::encode(signed_tx)
-		)
-	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>tx_id = res.transaction.id;
-	<span class="macro">log::info!</span>(<span class="string">"Create Reserve transaction submitted: {}"</span>, hex::encode(tx_id));
-	await_tx.await_tx_output(client, UtxoId::new(tx_id, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(McTxHash(tx_id))
-}
+	.<span class="kw">await
+</span>}
 
 <span class="kw">pub struct </span>ReserveParameters {
 	<span class="kw">pub </span>total_accrued_function_script_hash: PolicyId,

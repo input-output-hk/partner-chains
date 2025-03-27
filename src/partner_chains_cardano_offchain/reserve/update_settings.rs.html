@@ -136,9 +136,6 @@
 <a href="#136" id="136">136</a>
 <a href="#137" id="137">137</a>
 <a href="#138" id="138">138</a>
-<a href="#139" id="139">139</a>
-<a href="#140" id="140">140</a>
-<a href="#141" id="141">141</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Transaction that updates reserve settings.
 //!
 //! Specification:
@@ -158,10 +155,14 @@
 //!   * Governance Policy Script
 
 </span><span class="kw">use super</span>::{reserve_utxo_input_with_validator_script_reference, ReserveData};
-<span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
-<span class="kw">use </span><span class="kw">crate</span>::governance::GovernanceData;
-<span class="kw">use </span><span class="kw">crate</span>::reserve::ReserveUtxo;
-<span class="kw">use crate</span>::{await_tx::AwaitTx, csl::<span class="kw-2">*</span>};
+<span class="kw">use crate</span>::{
+	await_tx::AwaitTx,
+	cardano_keys::CardanoPaymentSigningKey,
+	csl::<span class="kw-2">*</span>,
+	governance::GovernanceData,
+	multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult},
+	reserve::ReserveUtxo,
+};
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>ogmios_client::types::OgmiosUtxo;
 <span class="kw">use </span>ogmios_client::{
@@ -170,7 +171,7 @@
 	transactions::Transactions,
 };
 <span class="kw">use </span>partner_chains_plutus_data::reserve::{ReserveDatum, ReserveRedeemer};
-<span class="kw">use </span>sidechain_domain::{McTxHash, ScriptHash, UtxoId};
+<span class="kw">use </span>sidechain_domain::{ScriptHash, UtxoId};
 
 <span class="kw">pub async fn </span>update_reserve_settings&lt;
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
@@ -181,7 +182,7 @@
 	total_accrued_function_script_hash: ScriptHash,
 	client: <span class="kw-2">&amp;</span>T,
 	await_tx: <span class="kw-2">&amp;</span>A,
-) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
+) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;MultiSigSmartContractResult&gt;&gt; {
 	<span class="kw">let </span>ctx = TransactionContext::for_payment_key(payment_key, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>governance = GovernanceData::get(genesis_utxo, client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>reserve = ReserveData::get(genesis_utxo, <span class="kw-2">&amp;</span>ctx, client).<span class="kw">await</span><span class="question-mark">?</span>;
@@ -200,33 +201,26 @@
 	reserve_datum.mutable_settings.total_accrued_function_script_hash =
 		total_accrued_function_script_hash.clone();
 
-	<span class="kw">let </span>tx = Costs::calculate_costs(
-		|costs| {
-			update_reserve_settings_tx(
-				<span class="kw-2">&amp;</span>reserve_datum,
-				<span class="kw-2">&amp;</span>reserve,
-				<span class="kw-2">&amp;</span>governance,
-				<span class="kw-2">&amp;</span>reserve_utxo,
-				costs,
-				<span class="kw-2">&amp;</span>ctx,
-			)
-		},
-		client,
-	)
-	.<span class="kw">await</span><span class="question-mark">?</span>;
-
-	<span class="kw">let </span>signed_tx = ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
-	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
-		<span class="macro">anyhow::anyhow!</span>(
-			<span class="string">"Update Reserve Settings transaction request failed: {}, tx bytes: {}"</span>,
-			e,
-			hex::encode(signed_tx)
+	<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(
+		submit_or_create_tx_to_sign(
+			<span class="kw-2">&amp;</span>governance,
+			<span class="kw-2">&amp;</span>ctx,
+			|costs, ctx| {
+				update_reserve_settings_tx(
+					<span class="kw-2">&amp;</span>reserve_datum,
+					<span class="kw-2">&amp;</span>reserve,
+					<span class="kw-2">&amp;</span>governance,
+					<span class="kw-2">&amp;</span>reserve_utxo,
+					costs,
+					<span class="kw-2">&amp;</span>ctx,
+				)
+			},
+			<span class="string">"Update Reserve Settings"</span>,
+			client,
+			await_tx,
 		)
-	})<span class="question-mark">?</span>;
-	<span class="kw">let </span>tx_id = res.transaction.id;
-	<span class="macro">log::info!</span>(<span class="string">"Update Reserve Settings transaction submitted: {}"</span>, hex::encode(tx_id));
-	await_tx.await_tx_output(client, UtxoId::new(tx_id, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(McTxHash(tx_id)))
+		.<span class="kw">await</span><span class="question-mark">?</span>,
+	))
 }
 
 <span class="kw">fn </span>update_reserve_settings_tx(
