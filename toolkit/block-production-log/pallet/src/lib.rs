@@ -34,6 +34,25 @@
 //! }
 //! ```
 //!
+//! #### Defining block producer ID
+//!
+//! The pallet expects the Partner Chain to provide a type representing its block producers.
+//! This type can be as simple as an Aura public key but can also be a more complex type if block producers
+//! are not a homogenous group. For example, in the context of a Partner Chain using Ariadne committee selection,
+//! it's typical to have two kinds of block producers: permissioned producers provided by the governance authority
+//! and registered candidates recruited from among Cardano stake pool operators. In this instance an example
+//! author type could be:
+//! ```rust
+//! #[derive(MaxEncodedLen, Encode, Decode, Clone, TypeInfo, PartialEq, Eq, Debug, Hash, PartialOrd, Ord)]
+//! pub enum BlockAuthor {
+//!     Incentivized(CrossChainPublic, StakePoolPublicKey),
+//!     ProBono(CrossChainPublic),
+//! }
+//! ```
+//!
+//! Keep in mind that other Partner Chains SDK components put their own constraints on the block author type
+//! that need to be adhered to for a Partner Chain to integrated them.
+//!
 //! #### Support for adding to a running chain
 //!
 //! The pallet and its inherent data provider defined in [sp_block_production_log] are written in a way that allows for
