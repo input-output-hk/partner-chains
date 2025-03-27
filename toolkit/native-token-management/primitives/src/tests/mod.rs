@@ -173,7 +173,7 @@ mod inherent_provider {
 	) -> Arc<TestApi> {
 		Arc::new(TestApi {
 			headers: [(
-				parent_hash.clone(),
+				parent_hash,
 				Header {
 					digest: Digest {
 						logs: match parent_mc_hash {
@@ -186,7 +186,7 @@ mod inherent_provider {
 					},
 					extrinsics_root: Default::default(),
 					number: parent_number,
-					parent_hash: parent_hash.clone(),
+					parent_hash,
 					state_root: Default::default(),
 				},
 			)]

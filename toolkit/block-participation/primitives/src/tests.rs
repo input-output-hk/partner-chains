@@ -59,7 +59,7 @@ sp_api::mock_impl_runtime_apis! {
 	impl BlockParticipationApi<Block, BlockProducer> for TestApi {
 
 		fn should_release_data(_slot: Slot) -> Option<Slot> {
-			self.payout_slot.clone()
+			self.payout_slot
 		}
 		fn blocks_produced_up_to_slot(_slot: Slot) -> Vec<(Slot, BlockProducer)> {
 			self.blocks_produced_up_to_slot.clone()
