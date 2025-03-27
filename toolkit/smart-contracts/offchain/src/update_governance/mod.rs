@@ -5,15 +5,16 @@
 //! 2. Mints exactly 1 multi-sig policy token as authentication
 //! 3. Produces a new governance UTXO at the version oracle validator address with a version oracle
 //!    Plutus datum attached that contains the script ID (32) and policy hash.
-use crate::csl::{Costs, TransactionExt};
-use crate::governance::{GovernanceData, SimpleAtLeastN};
-use crate::multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult};
 use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
-	csl::CostStore,
-	csl::{InputsBuilderExt, TransactionBuilderExt, TransactionContext},
+	csl::{
+		CostStore, Costs, InputsBuilderExt, TransactionBuilderExt, TransactionContext,
+		TransactionExt,
+	},
+	governance::{GovernanceData, MultiSigParameters},
 	init_governance::transaction::version_oracle_datum_output,
+	multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult},
 	plutus_script::PlutusScript,
 };
 use cardano_serialization_lib::{
@@ -24,7 +25,7 @@ use ogmios_client::{
 	query_network::QueryNetwork,
 	transactions::Transactions,
 };
-use sidechain_domain::{MainchainKeyHash, UtxoId};
+use sidechain_domain::UtxoId;
 
 #[cfg(test)]
 mod test;
@@ -35,8 +36,7 @@ pub async fn run_update_governance<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 >(
-	new_governance_authority: &[MainchainKeyHash],
-	new_governance_threshold: u8,
+	governance_parameters: &MultiSigParameters,
 	payment_key: &CardanoPaymentSigningKey,
 	genesis_utxo_id: UtxoId,
 	client: &T,
@@ -53,8 +53,7 @@ pub async fn run_update_governance<
 				raw_scripts::VERSION_ORACLE_VALIDATOR,
 				raw_scripts::VERSION_ORACLE_POLICY,
 				genesis_utxo_id,
-				new_governance_authority,
-				new_governance_threshold,
+				governance_parameters,
 				&governance_data,
 				costs,
 				ctx,
@@ -71,17 +70,12 @@ fn update_governance_tx(
 	version_oracle_validator: &[u8],
 	version_oracle_policy: &[u8],
 	genesis_utxo: UtxoId,
-	new_governance_authority: &[MainchainKeyHash],
-	new_governance_threshold: u8,
+	governance_parameters: &MultiSigParameters,
 	governance_data: &GovernanceData,
 	costs: Costs,
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
-	let multi_sig_policy = SimpleAtLeastN {
-		threshold: new_governance_threshold.into(),
-		key_hashes: new_governance_authority.iter().map(|key| key.0).collect(),
-	}
-	.to_csl_native_script();
+	let multi_sig_policy = governance_parameters.to_simple_at_least_n().to_csl_native_script();
 	let version_oracle_validator =
 		PlutusScript::from_wrapped_cbor(version_oracle_validator, Language::new_plutus_v2())?
 			.apply_data(genesis_utxo)?;

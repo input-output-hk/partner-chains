@@ -1,20 +1,18 @@
 use crate::{
-	csl::*, governance::SimpleAtLeastN, plutus_script::PlutusScript, scripts_data::version_oracle,
+	csl::*, governance::MultiSigParameters, plutus_script::PlutusScript,
+	scripts_data::version_oracle,
 };
 use cardano_serialization_lib::*;
 use ogmios_client::types::OgmiosUtxo;
 use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
-use sidechain_domain::MainchainKeyHash;
 
 pub(crate) fn init_governance_transaction(
-	governance_authority: MainchainKeyHash,
+	governance_parameters: &MultiSigParameters,
 	genesis_utxo: OgmiosUtxo,
 	costs: Costs,
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
-	let multi_sig_policy =
-		SimpleAtLeastN { threshold: 1, key_hashes: vec![governance_authority.0] }
-			.to_csl_native_script();
+	let multi_sig_policy = governance_parameters.to_simple_at_least_n().to_csl_native_script();
 	let version_oracle = version_oracle(genesis_utxo.utxo_id(), ctx.network)?;
 	let config = crate::csl::get_builder_config(ctx)?;
 	let mut tx_builder = TransactionBuilder::new(&config);

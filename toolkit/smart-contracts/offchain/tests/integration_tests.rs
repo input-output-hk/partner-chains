@@ -18,7 +18,9 @@ use partner_chains_cardano_offchain::{
 	assemble_tx,
 	await_tx::{AwaitTx, FixedDelayRetries},
 	cardano_keys::CardanoPaymentSigningKey,
-	d_param, init_governance,
+	d_param,
+	governance::MultiSigParameters,
+	init_governance,
 	multisig::{MultiSigSmartContractResult, MultiSigTransactionData},
 	permissioned_candidates,
 	register::Register,
@@ -324,7 +326,7 @@ async fn run_init_goveranance<
 		client.query_utxos(&[GOVERNANCE_AUTHORITY_ADDRESS.to_string()]).await.unwrap();
 	let genesis_utxo = governance_utxos.first().cloned().unwrap().utxo_id();
 	let _ = init_governance::run_init_governance(
-		GOVERNANCE_AUTHORITY,
+		&MultiSigParameters::new_one_of_one(&GOVERNANCE_AUTHORITY),
 		&governance_authority_payment_key(),
 		Some(genesis_utxo),
 		client,
@@ -342,8 +344,7 @@ async fn run_update_governance<
 	genesis_utxo: UtxoId,
 ) -> MultiSigSmartContractResult {
 	update_governance::run_update_governance(
-		&vec![EVE_PUBLIC_KEY_HASH, GOVERNANCE_AUTHORITY],
-		2,
+		&MultiSigParameters::new(&vec![EVE_PUBLIC_KEY_HASH, GOVERNANCE_AUTHORITY], 1).unwrap(),
 		&governance_authority_payment_key(),
 		genesis_utxo,
 		client,

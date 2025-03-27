@@ -2,6 +2,7 @@ use super::transaction::*;
 use crate::await_tx::mock::ImmediateSuccess;
 use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::Costs;
+use crate::governance::MultiSigParameters;
 use crate::init_governance::run_init_governance;
 use crate::scripts_data;
 use crate::test_values::{ogmios_native_1_of_1_script, ogmios_plutus_script, protocol_parameters};
@@ -149,7 +150,7 @@ fn expected_transaction() -> serde_json::Value {
 fn transaction_creation() {
 	let transaction: serde_json::Value = serde_json::from_str(
 		&init_governance_transaction(
-			governance_authority(),
+			&MultiSigParameters::new_one_of_one(&governance_authority()),
 			genesis_utxo(),
 			test_costs(),
 			&tx_context(),
@@ -227,7 +228,7 @@ async fn transaction_run() {
 
 	let genesis_utxo = genesis_utxo().utxo_id();
 	let result = run_init_governance(
-		governance_authority(),
+		&MultiSigParameters::new_one_of_one(&governance_authority()),
 		&payment_key(),
 		Some(genesis_utxo),
 		&mock_client,
