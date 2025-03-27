@@ -53,7 +53,7 @@ impl<BlockProducerId, DelegatorId> BlockProductionData<BlockProducerId, Delegato
 	}
 
 	pub fn up_to_slot(&self) -> Slot {
-		self.up_to_slot.clone()
+		self.up_to_slot
 	}
 
 	pub fn producer_participation(
@@ -97,7 +97,7 @@ pub trait AsCardanoSPO {
 }
 impl AsCardanoSPO for Option<MainchainKeyHash> {
 	fn as_cardano_spo(&self) -> Option<MainchainKeyHash> {
-		self.clone()
+		*self
 	}
 }
 

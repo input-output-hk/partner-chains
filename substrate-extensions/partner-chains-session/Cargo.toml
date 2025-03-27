@@ -1,12 +1,18 @@
 [package]
 name = "pallet-partner-chains-session"
-version = "1.6.0"
+version.workspace = true
 description = "FRAME pallet for setting validators with InherentData and session management"
-edition = "2021"
 license = "Apache-2.0"
+authors.workspace = true
+homepage.workspace = true
+edition.workspace = true
+repository.workspace = true
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
+
+[lints]
+workspace = true
 
 [dependencies]
 parity-scale-codec = { workspace = true, features = ["derive"] }

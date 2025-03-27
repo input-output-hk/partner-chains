@@ -35,7 +35,7 @@ impl BlockParticipationDataSource for StakeDistributionDataSourceImpl {
 		for pool_hash in pool_hashes {
 			match self.cache.get_distribution_for_pool(epoch, pool_hash) {
 				Some(pool_delegation) => {
-					stake_distribution.insert(pool_hash.clone(), pool_delegation);
+					stake_distribution.insert(*pool_hash, pool_delegation);
 				},
 				None => pool_hashes_to_query.push(pool_hash.0),
 			}

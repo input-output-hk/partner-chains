@@ -22,10 +22,10 @@ use crate::{
 		TransactionContext, TransactionExt, TransactionOutputAmountBuilderExt,
 	},
 	governance::GovernanceData,
+	multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult},
 	plutus_script::PlutusScript,
 	scripts_data::{self, VersionOracleData},
 };
-use anyhow::anyhow;
 use cardano_serialization_lib::{
 	AssetName, BigNum, ConstrPlutusData, JsError, Language, MultiAsset, PlutusData, PlutusList,
 	ScriptRef, Transaction, TransactionBuilder, TransactionOutputBuilder,
@@ -40,7 +40,7 @@ use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 use raw_scripts::{
 	ScriptId, ILLIQUID_CIRCULATION_SUPPLY_VALIDATOR, RESERVE_AUTH_POLICY, RESERVE_VALIDATOR,
 };
-use sidechain_domain::{McTxHash, UtxoId};
+use sidechain_domain::UtxoId;
 
 pub async fn init_reserve_management<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
@@ -50,7 +50,7 @@ pub async fn init_reserve_management<
 	payment_key: &CardanoPaymentSigningKey,
 	client: &T,
 	await_tx: &A,
-) -> anyhow::Result<Vec<McTxHash>> {
+) -> anyhow::Result<Vec<MultiSigSmartContractResult>> {
 	let reserve_validator = ScriptData::new(
 		"Reserve Management Validator",
 		RESERVE_VALIDATOR.to_vec(),
@@ -109,39 +109,26 @@ async fn initialize_script<
 	payment_key: &CardanoPaymentSigningKey,
 	client: &T,
 	await_tx: &A,
-) -> anyhow::Result<Option<McTxHash>> {
-	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
+) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
+	let payment_ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance = GovernanceData::get(genesis_utxo, client).await?;
-	let version_oracle = scripts_data::version_oracle(genesis_utxo, ctx.network)?;
+	let version_oracle = scripts_data::version_oracle(genesis_utxo, payment_ctx.network)?;
 
-	if script_is_initialized(&script, &version_oracle, &ctx, client).await? {
+	if script_is_initialized(&script, &version_oracle, &payment_ctx, client).await? {
 		log::info!("Script '{}' is already initialized", script.name);
 		return Ok(None);
 	}
-
-	let tx = Costs::calculate_costs(
-		|costs| init_script_tx(&script, &governance, &version_oracle, costs, &ctx),
-		client,
-	)
-	.await?;
-
-	let signed_tx = ctx.sign(&tx).to_bytes();
-	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-		anyhow!(
-			"Initialize Versioned '{}' transaction request failed: {}, tx bytes: {}",
-			script.name,
-			e,
-			hex::encode(signed_tx)
+	Ok(Some(
+		submit_or_create_tx_to_sign(
+			&governance,
+			&payment_ctx,
+			|costs, ctx| init_script_tx(&script, &governance, &version_oracle, costs, &ctx),
+			"Init Reserve Management",
+			client,
+			await_tx,
 		)
-	})?;
-	let tx_id = res.transaction.id;
-	log::info!(
-		"Initialize Versioned '{}' transaction submitted: {}",
-		script.name,
-		hex::encode(tx_id)
-	);
-	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
-	Ok(Some(McTxHash(tx_id)))
+		.await?,
+	))
 }
 
 fn init_script_tx(
@@ -187,7 +174,6 @@ fn init_script_tx(
 		&gov_tx_input,
 		&costs,
 	)?;
-
 	Ok(tx_builder.balance_update_and_build(ctx)?.remove_native_script_witnesses())
 }
 

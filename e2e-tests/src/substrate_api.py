@@ -440,9 +440,11 @@ class SubstrateApi(BlockchainApi):
 
     def get_permissioned_candidates(self, mc_epoch, valid_only):
         logger.info(f"Getting permissioned candidates for {mc_epoch} MC epoch.")
-        candidates = self.partner_chain_rpc.partner_chain_get_ariadne_parameters(mc_epoch).result[
-            "permissionedCandidates"
-        ]
+        response = self.partner_chain_rpc.partner_chain_get_ariadne_parameters(mc_epoch)
+        if response.error:
+            logger.error(f"Couldn't get permissioned candidates for {mc_epoch} MC epoch: {response.error}")
+            return None
+        candidates = response.result["permissionedCandidates"]
         if valid_only:
             candidates = [candidate for candidate in candidates if candidate["isValid"]]
         return candidates
@@ -461,10 +463,9 @@ class SubstrateApi(BlockchainApi):
             return None
 
         # get candidates from chain
-        try:
-            registrations = self.get_permissioned_candidates(mc_epoch, valid_only=True)
-        except (KeyError, TypeError) as e:
-            logger.error(f"Couldn't get permissioned candidates: {e}")
+        registrations = self.get_permissioned_candidates(mc_epoch, valid_only=True)
+        if not registrations:
+            logger.error("Couldn't get permissioned candidates")
             return None
 
         # update status of rotation candidates

@@ -28,6 +28,7 @@ use crate::{
 		TransactionOutputAmountBuilderExt,
 	},
 	governance::GovernanceData,
+	multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult},
 	reserve::ReserveData,
 	scripts_data::ReserveScripts,
 };
@@ -39,7 +40,7 @@ use ogmios_client::{
 	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::reserve::ReserveRedeemer;
-use sidechain_domain::{McTxHash, UtxoId};
+use sidechain_domain::UtxoId;
 
 /// Spends current UTXO at validator address to illiquid supply validator and burn reserve auth policy token, preventing further operations.
 pub async fn handover_reserve<
@@ -50,7 +51,7 @@ pub async fn handover_reserve<
 	payment_key: &CardanoPaymentSigningKey,
 	client: &T,
 	await_tx: &A,
-) -> anyhow::Result<McTxHash> {
+) -> anyhow::Result<MultiSigSmartContractResult> {
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance = GovernanceData::get(genesis_utxo, client).await?;
 	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
@@ -59,24 +60,15 @@ pub async fn handover_reserve<
 		reserve.get_reserve_utxo(&ctx, client).await?;
 	let amount = get_amount_to_release(reserve_utxo);
 
-	let tx = Costs::calculate_costs(
-		|costs| build_tx(&amount, utxo, &reserve, &governance, costs, &ctx),
+	submit_or_create_tx_to_sign(
+		&governance,
+		&ctx,
+		|costs, ctx| build_tx(&amount, utxo, &reserve, &governance, costs, &ctx),
+		"Handover Reserve",
 		client,
+		await_tx,
 	)
-	.await?;
-
-	let signed_tx = ctx.sign(&tx).to_bytes();
-	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-		anyhow::anyhow!(
-			"Handover Reserve transaction request failed: {}, tx bytes: {}",
-			e,
-			hex::encode(&signed_tx)
-		)
-	})?;
-	let tx_id = res.transaction.id;
-	log::info!("Handover Reserve transaction submitted: {}", hex::encode(tx_id));
-	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
-	Ok(McTxHash(tx_id))
+	.await
 }
 
 fn get_amount_to_release(reserve_utxo: &ReserveUtxo) -> TokenAmount {

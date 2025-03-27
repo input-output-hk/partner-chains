@@ -24,6 +24,7 @@ use crate::{
 		TransactionContext, TransactionExt, TransactionOutputAmountBuilderExt,
 	},
 	governance::GovernanceData,
+	multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult},
 	scripts_data::ReserveScripts,
 };
 use cardano_serialization_lib::{
@@ -38,7 +39,7 @@ use ogmios_client::{
 use partner_chains_plutus_data::reserve::{
 	ReserveDatum, ReserveImmutableSettings, ReserveMutableSettings, ReserveStats,
 };
-use sidechain_domain::{AssetId, McTxHash, PolicyId, UtxoId};
+use sidechain_domain::{AssetId, PolicyId, UtxoId};
 
 pub async fn create_reserve_utxo<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
@@ -49,29 +50,20 @@ pub async fn create_reserve_utxo<
 	payment_key: &CardanoPaymentSigningKey,
 	client: &T,
 	await_tx: &A,
-) -> anyhow::Result<McTxHash> {
-	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
+) -> anyhow::Result<MultiSigSmartContractResult> {
+	let payment_ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance = GovernanceData::get(genesis_utxo, client).await?;
-	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
+	let reserve = ReserveData::get(genesis_utxo, &payment_ctx, client).await?;
 
-	let tx = Costs::calculate_costs(
-		|costs| create_reserve_tx(&parameters, &reserve, &governance, costs, &ctx),
+	submit_or_create_tx_to_sign(
+		&governance,
+		&payment_ctx,
+		|costs, ctx| create_reserve_tx(&parameters, &reserve, &governance, costs, &ctx),
+		"Create Reserve",
 		client,
+		await_tx,
 	)
-	.await?;
-
-	let signed_tx = ctx.sign(&tx).to_bytes();
-	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-		anyhow::anyhow!(
-			"Create Reserve transaction request failed: {}, tx bytes: {}",
-			e,
-			hex::encode(signed_tx)
-		)
-	})?;
-	let tx_id = res.transaction.id;
-	log::info!("Create Reserve transaction submitted: {}", hex::encode(tx_id));
-	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
-	Ok(McTxHash(tx_id))
+	.await
 }
 
 pub struct ReserveParameters {

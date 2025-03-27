@@ -1,8 +1,15 @@
 [package]
 name = "pallet-block-participation"
-version = "1.6.0"
-edition = "2021"
+version.workspace = true
 license = "Apache-2.0"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
 
 [dependencies]
 frame-support = { workspace = true }

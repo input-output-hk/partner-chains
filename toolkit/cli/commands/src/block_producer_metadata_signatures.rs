@@ -46,14 +46,16 @@ impl BlockProducerMetadataSignatureCmd {
 		let message = MetadataSignedMessage {
 			cross_chain_pub_key: self.cross_chain_signing_key.vkey(),
 			metadata,
-			genesis_utxo: self.genesis_utxo.clone(),
+			genesis_utxo: self.genesis_utxo,
 		};
 		let signature = message.sign_with_key(&self.cross_chain_signing_key.0);
 
 		Ok(json!({
 			"signature": signature,
 			"cross_chain_pub_key": self.cross_chain_signing_key.vkey(),
-			"encoded_metadata": ByteString(encoded_metadata)
+			"cross_chain_pub_key_hash": self.cross_chain_signing_key.vkey().hash(),
+			"encoded_metadata": ByteString(encoded_metadata),
+			"encoded_message": ByteString(message.encode())
 		}))
 	}
 }
@@ -80,7 +82,7 @@ mod tests {
 			genesis_utxo: UtxoId::new([1; 32], 1),
 			metadata_file: "unused".to_string(),
 			cross_chain_signing_key: CrossChainSigningKeyParam(
-				secp256k1::SecretKey::from_slice(
+				k256::SecretKey::from_slice(
 					// Alice cross-chain key
 					&hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"),
 				)
@@ -99,7 +101,9 @@ mod tests {
 
 		let expected_output = json!({
 			"cross_chain_pub_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
-			"signature": "0x3045022100f86d3aa75a6a8bda35dfdd2472b8e5f2f95446e4542ab0adb6f3e7681f01b740022060082c0debfb9616a54f88cf42b88e1a2f43c75dc4394bfdde33972deb491fcb",
+			"cross_chain_pub_key_hash" : "0x4a20b7cab322b36838a8e4b6063c3563cdb79c97175f6c2d233dac4d",
+			"encoded_message": "0x84020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a148687474703a2f2f6578616d706c652e636f6d103132333401010101010101010101010101010101010101010101010101010101010101010100",
+			"signature": "0xf86d3aa75a6a8bda35dfdd2472b8e5f2f95446e4542ab0adb6f3e7681f01b74060082c0debfb9616a54f88cf42b88e1a2f43c75dc4394bfdde33972deb491fcb",
 			"encoded_metadata": "0x48687474703a2f2f6578616d706c652e636f6d1031323334"
 		});
 
@@ -112,7 +116,7 @@ mod tests {
 			genesis_utxo: UtxoId::new([1; 32], 1),
 			metadata_file: "unused".to_string(),
 			cross_chain_signing_key: CrossChainSigningKeyParam(
-				secp256k1::SecretKey::from_slice(
+				k256::SecretKey::from_slice(
 					// Alice cross-chain key
 					&hex!("cb6df9de1efca7a3998a8ead4e02159d5fa99c3e0d4fd6432667390bb4726854"),
 				)

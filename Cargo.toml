@@ -1,3 +1,10 @@
+[workspace.package]
+authors = ["IOG"]
+edition = "2021"
+homepage = "https://iohk.io/"
+repository = "https://github.com/input-output-hk/partner-chains.git"
+version = "1.6.0"
+
 [workspace]
 members = [
 	"node/node",
@@ -40,10 +47,46 @@ members = [
 	"toolkit/address-associations/pallet",
 	"toolkit/block-participation/pallet",
 	"toolkit/block-participation/primitives",
+	"toolkit/block-producer-metadata/pallet",
 	"toolkit/block-producer-metadata/primitives",
 	"toolkit/utils/db-sync-sqlx",
 ]
 resolver = "2"
+
+[workspace.lints.rust]
+suspicious_double_ref_op = { level = "allow", priority = 2 }
+unexpected_cfgs = { level = "warn", check-cfg = [
+	'cfg(build_opt_level, values("3"))',
+	'cfg(build_profile, values("debug", "release"))',
+	'cfg(enable_alloc_error_handler)',
+	'cfg(fuzzing)',
+] }
+
+[workspace.lints.clippy]
+all = { level = "allow", priority = 0 }
+bind_instead_of_map = { level = "allow", priority = 2 }              # stylistic
+borrowed-box = { level = "allow", priority = 2 }                     # Reasonable to fix this one
+complexity = { level = "warn", priority = 1 }
+correctness = { level = "warn", priority = 1 }
+default_constructed_unit_structs = { level = "allow", priority = 2 } # stylistic
+derivable_impls = { level = "allow", priority = 2 }                  # false positives
+eq_op = { level = "allow", priority = 2 }                            # In tests we test equality.
+erasing_op = { level = "allow", priority = 2 }                       # E.g. 0 * DOLLARS
+extra-unused-type-parameters = { level = "allow", priority = 2 }     # stylistic
+identity-op = { level = "allow", priority = 2 }                      # One case where we do 0 +
+if-same-then-else = { level = "allow", priority = 2 }
+needless-lifetimes = { level = "allow", priority = 2 }               # generated code
+needless_option_as_deref = { level = "allow", priority = 2 }         # false positives
+nonminimal-bool = { level = "allow", priority = 2 }                  # maybe
+option-map-unit-fn = { level = "allow", priority = 2 }               # stylistic
+stable_sort_primitive = { level = "allow", priority = 2 }            # prefer stable sort
+too-many-arguments = { level = "allow", priority = 2 }               # (Turning this on would lead to)
+type_complexity = { level = "allow", priority = 2 }
+unit_arg = { level = "allow", priority = 2 }                         # stylistic
+unnecessary_cast = { level = "allow", priority = 2 }                 # Types may change
+useless_conversion = { level = "allow", priority = 2 }               # Types may change
+while_immutable_condition = { level = "allow", priority = 2 }        # false positives
+zero-prefixed-literal = { level = "allow", priority = 2 }            # 00_1000_000
 
 [profile.release]
 panic = "unwind"
@@ -97,6 +140,7 @@ rand_chacha = { version = "0.3.1", default-features = false }
 rand = { version = "0.8.5", default-features = false }
 tokio-retry = { version = "0.3" }
 secp256k1 = { version = "0.28.2", default-features = false }
+k256 = { version = "0.13.4", default-features = false }
 serde = { version = "1.0.209", default-features = false, features = [
 	"derive",
 	"alloc",
@@ -261,6 +305,7 @@ pallet-block-participation = { path = "toolkit/block-participation/pallet", defa
 sp-block-participation = { path = "toolkit/block-participation/primitives", default-features = false }
 
 # block producer metadata
+pallet-block-producer-metadata = { path = "toolkit/block-producer-metadata/pallet", default-features = false }
 sp-block-producer-metadata = { path = "toolkit/block-producer-metadata/primitives", default-features = false }
 
 # main chain follower

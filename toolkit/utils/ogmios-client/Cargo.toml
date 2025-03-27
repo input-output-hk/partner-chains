@@ -1,11 +1,17 @@
 [package]
 name = "ogmios-client"
-version = "1.6.0"
-edition = "2021"
+version.workspace = true
 license = "Apache-2.0"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
+
+[lints]
+workspace = true
 
 [dependencies]
 fraction = { workspace = true, features = ["with-decimal", "with-serde-support"] }

@@ -1,13 +1,20 @@
 [package]
 name = "selection"
-version = "1.6.0"
+version.workspace = true
 description = "Selection logic for sidechain validators"
-edition = "2021"
 publish = false
 license = "Apache-2.0"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+readme = "README.md"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
+
+[lints]
+workspace = true
 
 [dependencies]
 rand_chacha = { workspace = true }

@@ -17,10 +17,14 @@
 //!   * Governance Policy Script
 
 use super::{reserve_utxo_input_with_validator_script_reference, ReserveData};
-use crate::cardano_keys::CardanoPaymentSigningKey;
-use crate::governance::GovernanceData;
-use crate::reserve::ReserveUtxo;
-use crate::{await_tx::AwaitTx, csl::*};
+use crate::{
+	await_tx::AwaitTx,
+	cardano_keys::CardanoPaymentSigningKey,
+	csl::*,
+	governance::GovernanceData,
+	multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult},
+	reserve::ReserveUtxo,
+};
 use cardano_serialization_lib::*;
 use ogmios_client::types::OgmiosUtxo;
 use ogmios_client::{
@@ -29,7 +33,7 @@ use ogmios_client::{
 	transactions::Transactions,
 };
 use partner_chains_plutus_data::reserve::{ReserveDatum, ReserveRedeemer};
-use sidechain_domain::{McTxHash, ScriptHash, UtxoId};
+use sidechain_domain::{ScriptHash, UtxoId};
 
 pub async fn update_reserve_settings<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
@@ -40,7 +44,7 @@ pub async fn update_reserve_settings<
 	total_accrued_function_script_hash: ScriptHash,
 	client: &T,
 	await_tx: &A,
-) -> anyhow::Result<Option<McTxHash>> {
+) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
 	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance = GovernanceData::get(genesis_utxo, client).await?;
 	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
@@ -59,33 +63,26 @@ pub async fn update_reserve_settings<
 	reserve_datum.mutable_settings.total_accrued_function_script_hash =
 		total_accrued_function_script_hash.clone();
 
-	let tx = Costs::calculate_costs(
-		|costs| {
-			update_reserve_settings_tx(
-				&reserve_datum,
-				&reserve,
-				&governance,
-				&reserve_utxo,
-				costs,
-				&ctx,
-			)
-		},
-		client,
-	)
-	.await?;
-
-	let signed_tx = ctx.sign(&tx).to_bytes();
-	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-		anyhow::anyhow!(
-			"Update Reserve Settings transaction request failed: {}, tx bytes: {}",
-			e,
-			hex::encode(signed_tx)
+	Ok(Some(
+		submit_or_create_tx_to_sign(
+			&governance,
+			&ctx,
+			|costs, ctx| {
+				update_reserve_settings_tx(
+					&reserve_datum,
+					&reserve,
+					&governance,
+					&reserve_utxo,
+					costs,
+					&ctx,
+				)
+			},
+			"Update Reserve Settings",
+			client,
+			await_tx,
 		)
-	})?;
-	let tx_id = res.transaction.id;
-	log::info!("Update Reserve Settings transaction submitted: {}", hex::encode(tx_id));
-	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
-	Ok(Some(McTxHash(tx_id)))
+		.await?,
+	))
 }
 
 fn update_reserve_settings_tx(

@@ -1,13 +1,19 @@
 [package]
 name = "pallet-session-validator-management"
-version = "1.6.0"
+version.workspace = true
 description = "FRAME pallet for setting validators with InherentData using pallet-session"
-edition = "2021"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
 license = "Unlicense"
 publish = false
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
+
+[lints]
+workspace = true
 
 [dependencies]
 parity-scale-codec = { workspace = true }

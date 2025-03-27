@@ -7,6 +7,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 ## Changed
 
 * Added implementation of `FindAccountFromAuthorIndex` trait for `pallet_partner_chains_session`.
+* Unified `*toml` files package data
 
 ## Removed
 

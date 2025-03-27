@@ -55,7 +55,7 @@ pub mod scenarios {
 		MockIO::Group(vec![
 			MockIO::list_dir(&keystore_path(), None),
 			MockIO::eprint("⚙️ Generating Cross-chain (ecdsa) key"),
-			MockIO::run_command_json(&format!("<mock executable> key generate --scheme ecdsa --output-type json"),
+			MockIO::run_command_json(&"<mock executable> key generate --scheme ecdsa --output-type json".to_string(),
 				&serde_json::json!({"publicKey": cross_chain_key, "secretPhrase": "cross-chain secret phrase"})),
 			MockIO::eprint("💾 Inserting Cross-chain (ecdsa) key"),
 			MockIO::run_command(&format!("<mock executable> key insert --base-path {DATA_PATH} --scheme ecdsa --key-type crch --suri 'cross-chain secret phrase'"), ""),
@@ -64,7 +64,7 @@ pub mod scenarios {
 
 			MockIO::list_dir(&keystore_path(), None),
 			MockIO::eprint("⚙️ Generating Grandpa (ed25519) key"),
-			MockIO::run_command_json(&format!("<mock executable> key generate --scheme ed25519 --output-type json"),
+			MockIO::run_command_json(&"<mock executable> key generate --scheme ed25519 --output-type json".to_string(),
 				&serde_json::json!({"publicKey": grandpa_key, "secretPhrase": "grandpa secret phrase"})),
 			MockIO::eprint("💾 Inserting Grandpa (ed25519) key"),
 			MockIO::run_command(&format!("<mock executable> key insert --base-path {DATA_PATH} --scheme ed25519 --key-type gran --suri 'grandpa secret phrase'"), ""),
@@ -73,7 +73,7 @@ pub mod scenarios {
 
 			MockIO::list_dir(&keystore_path(), None),
 			MockIO::eprint("⚙️ Generating Aura (sr25519) key"),
-			MockIO::run_command_json(&format!("<mock executable> key generate --scheme sr25519 --output-type json"),
+			MockIO::run_command_json(&"<mock executable> key generate --scheme sr25519 --output-type json".to_string(),
 				&serde_json::json!({"publicKey": aura_key, "secretPhrase": "aura secret phrase"})),
 			MockIO::eprint("💾 Inserting Aura (sr25519) key"),
 			MockIO::run_command(&format!("<mock executable> key insert --base-path {DATA_PATH} --scheme sr25519 --key-type aura --suri 'aura secret phrase'"), ""),

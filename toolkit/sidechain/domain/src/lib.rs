@@ -471,9 +471,70 @@ pub struct SidechainSignature(pub Vec<u8>);
 #[byte_string(debug, hex_serialize)]
 pub struct CrossChainPublicKey(pub Vec<u8>);
 
+impl CrossChainPublicKey {
+	pub fn hash(&self) -> CrossChainKeyHash {
+		CrossChainKeyHash(blake2b(&self.0))
+	}
+}
+
+impl From<k256::PublicKey> for CrossChainPublicKey {
+	fn from(value: k256::PublicKey) -> Self {
+		Self(value.to_sec1_bytes().to_vec())
+	}
+}
+
+impl From<CrossChainPublicKey> for k256::PublicKey {
+	fn from(value: CrossChainPublicKey) -> Self {
+		k256::PublicKey::from_sec1_bytes(&value.0)
+			.expect("CrossChainPublicKey converts to valid secp256k1::PublicKey")
+	}
+}
+
+const CROSS_CHAIN_KEY_HASH_LEN: usize = 28;
+
+#[derive(
+	Clone,
+	Copy,
+	Decode,
+	Default,
+	Encode,
+	Hash,
+	MaxEncodedLen,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	ToDatum,
+	TypeInfo,
+)]
+#[byte_string(debug, to_hex_string)]
+#[cfg_attr(feature = "std", byte_string(decode_hex))]
+#[cfg_attr(feature = "serde", byte_string(hex_serialize, hex_deserialize))]
+pub struct CrossChainKeyHash(pub [u8; CROSS_CHAIN_KEY_HASH_LEN]);
+
+impl Display for CrossChainKeyHash {
+	fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+		f.write_str(&self.to_hex_string())
+	}
+}
+
 #[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[byte_string(debug, hex_serialize)]
 pub struct CrossChainSignature(pub Vec<u8>);
+
+impl CrossChainSignature {
+	pub fn verify(
+		&self,
+		cross_chain_pubkey: &CrossChainPublicKey,
+		data: &[u8],
+	) -> Result<(), k256::ecdsa::signature::Error> {
+		use k256::ecdsa::signature::Verifier;
+
+		let vkey = k256::ecdsa::VerifyingKey::from_sec1_bytes(&cross_chain_pubkey.0[..])?;
+		let signature = k256::ecdsa::Signature::from_slice(&self.0[..])?;
+		vkey.verify(data, &signature)
+	}
+}
 
 #[derive(Default, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 #[byte_string(debug, hex_serialize)]
@@ -835,6 +896,7 @@ pub struct AdaBasedStaking {
 mod tests {
 	use super::*;
 	use core::str::FromStr;
+	use hex_literal::hex;
 
 	#[test]
 	fn main_chain_address_string_serialize_deserialize_round_trip() {
@@ -878,6 +940,19 @@ mod tests {
 			.expect("Encoded current should decode to legacy");
 
 		assert_eq!(current_decoded.0, vec![9; 64]);
+	}
+
+	#[test]
+	fn cross_chain_signature_verify_works() {
+		let signature =	CrossChainSignature(
+			hex!("d1e02e4a5484c3b7202ce6b844577048e7578dc62901cf8f51e6d74bbd3adb091688feacedd8343d0b04a0f5862b2e06148934a75e678e42051fde5431eca33d").to_vec()
+		);
+		let pubkey = CrossChainPublicKey(
+			hex!("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1").to_vec(),
+		);
+		let signed_data = hex!("84020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a16c68747470733a2f2f636f6f6c2e73747566662f73706f2e6a736f6e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+
+		assert!(signature.verify(&pubkey, &signed_data).is_ok())
 	}
 }
 

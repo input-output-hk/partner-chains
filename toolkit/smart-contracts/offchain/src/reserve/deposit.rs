@@ -24,6 +24,7 @@ use crate::{
 		TransactionContext, TransactionExt, TransactionOutputAmountBuilderExt,
 	},
 	governance::GovernanceData,
+	multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult},
 	scripts_data::ReserveScripts,
 };
 use cardano_serialization_lib::{
@@ -37,7 +38,7 @@ use ogmios_client::{
 	types::OgmiosUtxo,
 };
 use partner_chains_plutus_data::reserve::ReserveRedeemer;
-use sidechain_domain::{AssetId, McTxHash, UtxoId};
+use sidechain_domain::{AssetId, UtxoId};
 
 /// Spends current UTXO at validator address and creates a new UTXO with increased token amount
 pub async fn deposit_to_reserve<
@@ -49,34 +50,27 @@ pub async fn deposit_to_reserve<
 	payment_key: &CardanoPaymentSigningKey,
 	client: &T,
 	await_tx: &A,
-) -> anyhow::Result<McTxHash> {
-	let ctx = TransactionContext::for_payment_key(payment_key, client).await?;
+) -> anyhow::Result<MultiSigSmartContractResult> {
+	let payment_context = TransactionContext::for_payment_key(payment_key, client).await?;
 	let governance = GovernanceData::get(genesis_utxo, client).await?;
-	let reserve = ReserveData::get(genesis_utxo, &ctx, client).await?;
-	let reserve_utxo = reserve.get_reserve_utxo(&ctx, client).await?;
+	let reserve = ReserveData::get(genesis_utxo, &payment_context, client).await?;
+	let reserve_utxo = reserve.get_reserve_utxo(&payment_context, client).await?;
 	let utxo = reserve_utxo.utxo;
 	let token = reserve_utxo.datum.immutable_settings.token;
 	let current_amount = get_token_amount(&utxo, &token);
 	let token_amount = TokenAmount { token, amount: current_amount + amount };
 
-	let tx = Costs::calculate_costs(
-		|costs| deposit_to_reserve_tx(&token_amount, &utxo, &reserve, &governance, costs, &ctx),
+	submit_or_create_tx_to_sign(
+		&governance,
+		&payment_context,
+		|costs, ctx| {
+			deposit_to_reserve_tx(&token_amount, &utxo, &reserve, &governance, costs, &ctx)
+		},
+		"Deposit to Reserve",
 		client,
+		await_tx,
 	)
-	.await?;
-
-	let signed_tx = ctx.sign(&tx).to_bytes();
-	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
-		anyhow::anyhow!(
-			"Deposit to Reserve transaction request failed: {}, tx bytes: {}",
-			e,
-			hex::encode(signed_tx)
-		)
-	})?;
-	let tx_id = res.transaction.id;
-	log::info!("Deposit to Reserve transaction submitted: {}", hex::encode(tx_id));
-	await_tx.await_tx_output(client, UtxoId::new(tx_id, 0)).await?;
-	Ok(McTxHash(tx_id))
+	.await
 }
 
 fn get_token_amount(utxo: &OgmiosUtxo, token: &AssetId) -> u64 {
