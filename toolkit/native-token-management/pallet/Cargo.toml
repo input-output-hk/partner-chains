@@ -1,9 +1,16 @@
 [package]
 name = "pallet-native-token-management"
-version = "1.6.0"
-edition = "2021"
+version.workspace = true
 description = "Pallet responsible for handling changes to the illiquid supply of the native token on main chain."
 license = "Apache-2.0"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+readme = "README.md"
+
+[lints]
+workspace = true
 
 [dependencies]
 frame-benchmarking = { workspace = true, optional = true }

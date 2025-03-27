@@ -1,9 +1,16 @@
 [package]
 name = "pallet-block-production-log"
-version = "1.6.0"
-edition = "2021"
+version.workspace = true
 description = "Keeps log of slot to block producer id"
 license = "Apache-2.0"
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
 
 [dependencies]
 frame-benchmarking = { workspace = true, optional = true }
