@@ -1,8 +1,6 @@
 name: Devnet Partner Chains Tests
 
 on:
-  schedule:
-    - cron:  '30 4 * * *'
   workflow_dispatch:
     inputs:
       keyword:
