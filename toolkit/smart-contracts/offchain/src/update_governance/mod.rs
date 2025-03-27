@@ -75,7 +75,7 @@ fn update_governance_tx(
 	costs: Costs,
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
-	let multi_sig_policy = governance_parameters.to_simple_at_least_n().to_csl_native_script();
+	let multi_sig_policy = governance_parameters.as_simple_at_least_n().to_csl_native_script();
 	let version_oracle_validator =
 		PlutusScript::from_wrapped_cbor(version_oracle_validator, Language::new_plutus_v2())?
 			.apply_data(genesis_utxo)?;

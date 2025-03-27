@@ -266,20 +266,18 @@ impl MultiSigParameters {
 		if threshold == 0 {
 			return Err("threshold has to be a positive number");
 		}
-		if threshold as usize > governance_authorties.len() {
+		if usize::from(threshold) > governance_authorties.len() {
 			return Err("threshold cannot be greater than governance authorities length");
 		}
-		Ok(Self {
-			governance_authorties: governance_authorties.into_iter().map(|k| k.clone()).collect(),
-			threshold,
-		})
+		Ok(Self { governance_authorties: governance_authorties.to_vec(), threshold })
 	}
 
 	pub fn new_one_of_one(goveranance_authority: &MainchainKeyHash) -> Self {
 		Self { governance_authorties: vec![goveranance_authority.clone()], threshold: 1 }
 	}
 
-	pub(crate) fn to_simple_at_least_n(&self) -> SimpleAtLeastN {
+	/// Retruns [[SimpleAtLeastN]] for this MultiSig parameters.
+	pub(crate) fn as_simple_at_least_n(&self) -> SimpleAtLeastN {
 		SimpleAtLeastN {
 			threshold: self.threshold.into(),
 			key_hashes: self.governance_authorties.iter().map(|key_hash| key_hash.0).collect(),
