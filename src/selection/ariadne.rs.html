@@ -344,7 +344,7 @@
 
 			<span class="kw">let </span>ratio_ratio = selected_ratio / expected_ratio;
 			<span class="macro">assert!</span>(
-				ratio_ratio &lt; <span class="number">1.1f64 </span>&amp;&amp; ratio_ratio &lt; <span class="number">0.9f64</span>,
+				ratio_ratio &lt; <span class="number">1.1f64 </span>&amp;&amp; ratio_ratio &gt; <span class="number">0.9f64</span>,
 				<span class="string">"Seat ratio should be within 10pp from D-Param. Ratio: {ratio_ratio:?}"</span>,
 			);
 		} <span class="kw">else if </span>num_trustless_seats &gt; <span class="number">0 </span>{

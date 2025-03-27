@@ -404,7 +404,7 @@
 	}
 
 	<span class="kw">pub fn </span>up_to_slot(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Slot {
-		<span class="self">self</span>.up_to_slot.clone()
+		<span class="self">self</span>.up_to_slot
 	}
 
 	<span class="kw">pub fn </span>producer_participation(
@@ -448,8 +448,8 @@
 }
 <span class="kw">impl </span>AsCardanoSPO <span class="kw">for </span><span class="prelude-ty">Option</span>&lt;MainchainKeyHash&gt; {
 	<span class="kw">fn </span>as_cardano_spo(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;MainchainKeyHash&gt; {
-		<span class="self">self</span>.clone()
-	}
+		<span class="kw-2">*</span><span class="self">self
+	</span>}
 }
 
 <span class="kw">pub trait </span>CardanoDelegator {

@@ -165,7 +165,7 @@
 		<span class="kw">for </span>pool_hash <span class="kw">in </span>pool_hashes {
 			<span class="kw">match </span><span class="self">self</span>.cache.get_distribution_for_pool(epoch, pool_hash) {
 				<span class="prelude-val">Some</span>(pool_delegation) =&gt; {
-					stake_distribution.insert(pool_hash.clone(), pool_delegation);
+					stake_distribution.insert(<span class="kw-2">*</span>pool_hash, pool_delegation);
 				},
 				<span class="prelude-val">None </span>=&gt; pool_hashes_to_query.push(pool_hash.<span class="number">0</span>),
 			}
