@@ -7,6 +7,7 @@ COMMITTEE_REPETITIONS_IN_PC_EPOCH = 2
 
 
 @mark.block_reward
+@mark.xdist_group("faucet_tx")
 def test_delegator_can_associate_pc_address(api: BlockchainApi, new_wallet: Wallet, get_wallet: Wallet):
     logger.info("Signing address association...")
     stake_skey, stake_vkey = api.cardano_cli.generate_stake_keys()
