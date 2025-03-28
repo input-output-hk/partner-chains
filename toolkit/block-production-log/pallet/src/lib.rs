@@ -43,10 +43,11 @@
 //! and registered candidates recruited from among Cardano stake pool operators. In this instance an example
 //! author type could be:
 //! ```rust
-//! #[derive(MaxEncodedLen, Encode, Decode, Clone, TypeInfo, PartialEq, Eq, Debug, Hash, PartialOrd, Ord)]
+//! use sidechain_domain::*;
+//!
 //! pub enum BlockAuthor {
-//!     Incentivized(CrossChainPublic, StakePoolPublicKey),
-//!     ProBono(CrossChainPublic),
+//!     Incentivized(CrossChainPublicKey, StakePoolPublicKey),
+//!     ProBono(CrossChainPublicKey),
 //! }
 //! ```
 //!
