@@ -15,8 +15,7 @@
                 "public_key": "0x020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1",
                 "aura_public_key": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
                 "grandpa_public_key": "0x88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee",
-                "permissioned_candidate": true,
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000001"
+                "permissioned_candidate": true
             },
             "bob": {
                 "host": "10.0.10.13",
@@ -26,8 +25,7 @@
                 "public_key": "0x0390084fdbf27d2b79d26a4f13f0ccd982cb755a661969143c37cbc49ef5b91f27",
                 "aura_public_key": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48",
                 "grandpa_public_key": "0xd17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69",
-                "permissioned_candidate": true,
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000002"
+                "permissioned_candidate": true
             },
             "charlie": {
                 "host": "10.0.10.13",
@@ -37,8 +35,7 @@
                 "public_key": "0x0389411795514af1627765eceffcbd002719f031604fadd7d188e2dc585b4e1afb",
                 "aura_public_key": "0x90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22",
                 "grandpa_public_key": "0x439660b36c6c03afafca027b910b4fecf99801834c62a5e6006f27d978de234f",
-                "permissioned_candidate": true,
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000003"
+                "permissioned_candidate": true
             },
             "dave": {
                 "host": "10.0.10.13",
@@ -47,8 +44,7 @@
                 "pool_id": "2e36e13ad5665685f163e4fa3d32ccf0a333fda0a67c93cbac99f7a2",
                 "public_key": "0x03bc9d0ca094bd5b8b3225d7651eac5d18c1c04bf8ae8f8b263eebca4e1410ed0c",
                 "aura_public_key": "0x306721211d5404bd9da88e0204360a1a9ab8b87c66c1bc2fcdd37f3c2222cc20",
-                "grandpa_public_key": "0x5e639b43e0052c47447dac87d6fd2b6ec50bdd4d0f614e4299c665249bbd09d9",
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000004"
+                "grandpa_public_key": "0x5e639b43e0052c47447dac87d6fd2b6ec50bdd4d0f614e4299c665249bbd09d9"
             },
             "eve": {
                 "host": "10.0.10.13",
@@ -65,8 +61,7 @@
                     "spo_signing_key": "./secrets/substrate/devnet/keys/eve/cold.skey.json.decrypted",
                     "spo_public_key": "./secrets/substrate/devnet/keys/eve/cold.vkey.json.decrypted",
                     "partner_chain_signing_key": "./secrets/substrate/devnet/keys/eve/partner_chain.skey.json.decrypted"
-                },
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000005"
+                }
             },
             "ferdie": {
                 "host": "10.0.10.13",
@@ -83,8 +78,7 @@
                     "spo_signing_key": "./secrets/substrate/devnet/keys/ferdie/cold.skey.json.decrypted",
                     "spo_public_key": "./secrets/substrate/devnet/keys/ferdie/cold.vkey.json.decrypted",
                     "partner_chain_signing_key": "./secrets/substrate/devnet/keys/ferdie/partner_chain.skey.json.decrypted"
-                },
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000006"
+                }
             },
             "greg": {
                 "host": "10.0.10.13",
@@ -94,8 +88,7 @@
                 "public_key": "0x02dacce90fca29ca80404d9b4e8ff3d9dabd03def6a82e412acb2ad04dd734dbfc",
                 "aura_public_key": "0x2c4ed1038f6e4131c21b6b89885ed232c5b81bae09009376e9079cc8aa518a1c",
                 "grandpa_public_key": "0xfa41bacb202b0529288b05af1b324f85fe561091c2d29d9df1df37c3aa687c23",
-                "permissioned_candidate": false,
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000007"
+                "permissioned_candidate": false
             },
             "henry": {
                 "host": "10.0.10.13",
@@ -105,8 +98,7 @@
                 "public_key": "0x0263c9cdabbef76829fe5b35f0bbf3051bd1c41b80f58b5d07c271d0dd04de2a4e",
                 "aura_public_key": "0x9cedc9f7b926191f64d68ee77dd90c834f0e73c0f53855d77d3b0517041d5640",
                 "grandpa_public_key": "0xde21d8171821fc29a43a1ed90ee75623edc3794012010f165b6afc3483a569aa",
-                "permissioned_candidate": true,
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000008"
+                "permissioned_candidate": true
             }
         },
         "governance_authority": {

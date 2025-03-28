@@ -334,9 +334,7 @@ def update_db_with_active_candidates(db: Session, api: BlockchainApi) -> int:
                         candidate_db = StakeDistributionCommittee()
                         candidate_db.mc_epoch = mc_epoch
                         candidate_db.mc_vkey = active_candidate[2:]
-                        candidate_db.pool_id = api.cardano_cli.get_stake_pool_id(
-                            cold_vkey_file=None, cold_vkey=active_candidate[2:]
-                        )
+                        candidate_db.pool_id = api.cardano_cli.get_stake_pool_id(cold_vkey=active_candidate[2:])
                         candidate_db.stake_delegation = api.cardano_cli.get_stake_snapshot_of_pool(
                             candidate_db.pool_id
                         )["pools"][candidate_db.pool_id]["stakeGo"]
