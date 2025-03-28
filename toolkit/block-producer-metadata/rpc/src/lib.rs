@@ -24,8 +24,7 @@ pub trait BlockProducerMetadataRpcApi<Metadata> {
 #[derive(new)]
 pub struct BlockProducerMetadataRpc<C, Block, Metadata> {
 	client: Arc<C>,
-	_marker: std::marker::PhantomData<Block>,
-	_marker1: std::marker::PhantomData<Metadata>,
+	_marker: std::marker::PhantomData<(Block, Metadata)>,
 }
 
 impl<C, B, Metadata> BlockProducerMetadataRpc<C, B, Metadata> {}

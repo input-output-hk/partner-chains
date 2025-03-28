@@ -68,6 +68,6 @@ sp_api::decl_runtime_apis! {
 		/// Retrieves the metadata for a given SPO public key if it exists.
 		fn get_metadata_for(
 			cross_chain_pub_key: &CrossChainPublicKey,
-	) -> Option<Metadata>;
+		) -> Option<Metadata>;
 	}
 }
