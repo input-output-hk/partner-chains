@@ -25,6 +25,8 @@ the feature `pallet-session-compat`.
 
 ## Fixed
 
+* `governance init` when genesis utxo had a script attached, then transaction fee was sometimes calculated incorrectly
+
 ## Added
 
 
