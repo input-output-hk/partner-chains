@@ -26,13 +26,13 @@ echo "Initializing governance authority ..."
 export GENESIS_UTXO=$(cat /shared/genesis.utxo)
 
 ./partner-chains-node smart-contracts governance init \
-    --ogmios-url http://ogmios:$OGMIOS_PORT \
+    --ogmios-url ws://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
     --payment-key-file /keys/funded_address.skey \
     --governance-authority $GOVERNANCE_AUTHORITY
 
 if [ $? -eq 0 ]; then
-   echo "Successfully initialized governance authority!"
+    echo "Successfully initialized governance authority!"
 else
     echo "Failed to initialize governance authority!"
     exit 1
@@ -41,7 +41,7 @@ fi
 echo "Generating addresses.json file..."
 
 ./partner-chains-node smart-contracts get-scripts \
-    --ogmios-url http://ogmios:$OGMIOS_PORT \
+    --ogmios-url ws://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
 > addresses.json
 
@@ -62,7 +62,7 @@ export ILLIQUID_SUPPLY_VALIDATOR_ADDRESS="addr_test1wpy8ewg646rg4ce78nl3aassmkqu
 echo "Inserting D parameter..."
 
 ./partner-chains-node smart-contracts upsert-d-parameter \
-    --ogmios-url http://ogmios:$OGMIOS_PORT \
+    --ogmios-url ws://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
     --permissioned-candidates-count 3 \
     --registered-candidates-count 2 \
@@ -92,7 +92,7 @@ $bob_sidechain_vkey:$bob_aura_vkey:$bob_grandpa_vkey
 EOF
 
 ./partner-chains-node smart-contracts upsert-permissioned-candidates \
-    --ogmios-url http://ogmios:$OGMIOS_PORT \
+    --ogmios-url ws://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
     --permissioned-candidates-file permissioned_candidates.csv \
     --payment-key-file /keys/funded_address.skey
@@ -128,7 +128,7 @@ dave_grandpa_vkey=$(cat /partner-chains-nodes/partner-chains-node-4/keys/grandpa
 
 # Register Dave
 ./partner-chains-node smart-contracts register \
-    --ogmios-url http://ogmios:$OGMIOS_PORT \
+    --ogmios-url ws://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
     --spo-public-key $dave_spo_public_key \
     --spo-signature $dave_spo_signature \

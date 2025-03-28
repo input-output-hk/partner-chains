@@ -121,6 +121,7 @@ cardano-cli latest transaction build-raw \
   --tx-out "$dave_address+$tx_out3" \
   --tx-out "$eve_address+$tx_out4" \
   --tx-out "$new_address+$change" \
+  --tx-out-reference-script-file /shared/v-function.script \
   --tx-out "$new_address+$tx_out5_lovelace+$tx_out5_reward_token" \
   --tx-out "$vfunction_address+$tx_out6" \
   --tx-out-reference-script-file /shared/v-function.script \
