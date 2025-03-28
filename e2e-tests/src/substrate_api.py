@@ -620,6 +620,7 @@ class SubstrateApi(BlockchainApi):
     def sign_address_association(self, address, stake_signing_key):
         return self.partner_chains_node.sign_address_association(address, stake_signing_key)
 
+    @long_running_function
     def submit_address_association(self, signature, wallet):
         tx = Transaction()
         tx._unsigned = self.substrate.compose_call(
