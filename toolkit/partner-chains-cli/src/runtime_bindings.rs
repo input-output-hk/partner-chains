@@ -10,8 +10,7 @@ pub trait RuntimeTypeWrapper {
 pub trait PartnerChainRuntime {
 	type AuthorityId: Send + Sync + 'static + From<ecdsa::Public>;
 	type AuthorityKeys: Send + Sync + 'static + From<(sr25519::Public, ed25519::Public)> + Serialize;
-	type CommitteeMember: CommitteeMemberT<AuthorityId = Self::AuthorityId, AuthorityKeys = Self::AuthorityKeys>
-		+ Serialize;
+	type CommitteeMember: Serialize;
 }
 
 pub trait PartnerChainRuntimeBindings: PartnerChainRuntime {
@@ -23,10 +22,7 @@ where
 	R: CommitteePaletConfig,
 	<R as CommitteePaletConfig>::AuthorityId: From<ecdsa::Public>,
 	<R as CommitteePaletConfig>::AuthorityKeys: From<(sr25519::Public, ed25519::Public)>,
-	<R as CommitteePaletConfig>::CommitteeMember: CommitteeMemberT<
-			AuthorityId = <R as CommitteePaletConfig>::AuthorityId,
-			AuthorityKeys = <R as CommitteePaletConfig>::AuthorityKeys,
-		> + Serialize,
+	<R as CommitteePaletConfig>::CommitteeMember: Serialize,
 {
 	type AuthorityId = <R as CommitteePaletConfig>::AuthorityId;
 	type AuthorityKeys = <R as CommitteePaletConfig>::AuthorityKeys;
