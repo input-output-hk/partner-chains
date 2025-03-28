@@ -52,8 +52,6 @@ pub trait CommitteeMember {
 	type AuthorityKeys;
 	fn authority_id(&self) -> Self::AuthorityId;
 	fn authority_keys(&self) -> Self::AuthorityKeys;
-
-	fn initial(id: Self::AuthorityId, keys: Self::AuthorityKeys) -> Self;
 }
 impl<AuthorityId: Clone, AuthorityKeys: Clone> CommitteeMember for (AuthorityId, AuthorityKeys) {
 	type AuthorityId = AuthorityId;
@@ -63,9 +61,6 @@ impl<AuthorityId: Clone, AuthorityKeys: Clone> CommitteeMember for (AuthorityId,
 	}
 	fn authority_keys(&self) -> AuthorityKeys {
 		self.1.clone()
-	}
-	fn initial(id: Self::AuthorityId, keys: Self::AuthorityKeys) -> Self {
-		(id, keys)
 	}
 }
 

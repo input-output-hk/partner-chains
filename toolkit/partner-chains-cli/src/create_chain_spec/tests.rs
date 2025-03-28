@@ -37,9 +37,6 @@ impl CommitteeMember for TestMember {
 	fn authority_keys(&self) -> Self::AuthorityKeys {
 		unimplemented!("unused")
 	}
-	fn initial(id: Self::AuthorityId, keys: Self::AuthorityKeys) -> Self {
-		Self::Permissioned { id, keys }
-	}
 }
 
 #[derive(Debug, Default, Clone)]
