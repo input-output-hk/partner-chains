@@ -15,12 +15,40 @@ pub type Block = frame_system::mocking::MockBlock<Test>;
 pub type AccountId = AccountId32;
 pub type PartnerChainAddress = AccountId32;
 
+#[frame_support::pallet]
+pub mod mock_pallet {
+	use super::*;
+	use frame_support::pallet_prelude::*;
+
+	#[pallet::pallet]
+	pub struct Pallet<T>(_);
+
+	#[pallet::config]
+	pub trait Config: frame_system::Config {}
+
+	#[pallet::storage]
+	pub type LastNewAssociation<T: Config> =
+		StorageValue<_, (PartnerChainAddress, MainchainKeyHash), OptionQuery>;
+
+	impl<T: Config> crate::OnNewAssociation<AccountId> for Pallet<T> {
+		fn on_new_association(
+			partner_chain_address: PartnerChainAddress,
+			main_chain_key_hash: MainchainKeyHash,
+		) {
+			LastNewAssociation::<T>::put((partner_chain_address, main_chain_key_hash))
+		}
+	}
+}
+
 construct_runtime! {
 	pub enum Test {
 		System: frame_system,
-		AddressAssociations: crate::pallet
+		AddressAssociations: crate::pallet,
+		MockPallet: mock_pallet
 	}
 }
+
+impl mock_pallet::Config for Test {}
 
 impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
@@ -61,6 +89,8 @@ impl crate::pallet::Config for Test {
 	fn genesis_utxo() -> UtxoId {
 		UtxoId::new(hex!("59104061ffa0d66f9ba0135d6fc6a884a395b10f8ae9cb276fc2c3bfdfedc260"), 1)
 	}
+
+	type OnNewAssociation = MockPallet;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

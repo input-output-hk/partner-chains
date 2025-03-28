@@ -529,6 +529,8 @@ impl pallet_address_associations::Config for Runtime {
 	fn genesis_utxo() -> UtxoId {
 		Sidechain::genesis_utxo()
 	}
+
+	type OnNewAssociation = TestHelperPallet;
 }
 
 impl pallet_block_producer_metadata::Config for Runtime {
