@@ -34,9 +34,7 @@ pub(crate) fn init_governance_transaction(
 		ctx,
 	)?)?;
 
-	tx_builder.set_inputs(&{
-		TxInputsBuilder::with_key_inputs(&[genesis_utxo], &ctx.payment_key_hash())?
-	});
+	tx_builder.set_inputs(&{ TxInputsBuilder::with_regular_inputs(&[genesis_utxo])? });
 
 	Ok(tx_builder.balance_update_and_build(ctx)?)
 }
