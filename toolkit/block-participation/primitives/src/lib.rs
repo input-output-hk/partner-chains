@@ -42,7 +42,7 @@
 //! present in the runtime that can be used by the feature. The intended source is [pallet_block_production_log] but
 //! in principle anu pallet offering a similar interfaces can be used. An example of runtime API implementation using
 //! the block participation log pallet looks like the following:
-//! ```rust
+//! ```rust,ignore
 //!	impl sp_block_participation::BlockParticipationApi<Block, BlockAuthor> for Runtime {
 //!		fn should_release_data(slot: Slot) -> Option<Slot> {
 //!			BlockParticipationPallet::should_release_data(slot)
