@@ -2,6 +2,7 @@ use crate::io::IOContext;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 use anyhow::anyhow;
 use partner_chains_cardano_offchain::d_param::UpsertDParam;
+use partner_chains_cardano_offchain::governance::MultiSigParameters;
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
 use partner_chains_cardano_offchain::multisig::MultiSigSmartContractResult;
 use partner_chains_cardano_offchain::permissioned_candidates::UpsertPermissionedCandidates;
@@ -9,9 +10,7 @@ use partner_chains_cardano_offchain::register::{Deregister, Register};
 use partner_chains_cardano_offchain::scripts_data::{GetScriptsData, ScriptsData};
 use partner_chains_cardano_offchain::{cardano_keys::CardanoPaymentSigningKey, OffchainError};
 use pretty_assertions::assert_eq;
-use sidechain_domain::{
-	CandidateRegistration, DParameter, MainchainKeyHash, McTxHash, StakePoolPublicKey, UtxoId,
-};
+use sidechain_domain::{CandidateRegistration, DParameter, McTxHash, StakePoolPublicKey, UtxoId};
 use sp_core::offchain::Timestamp;
 use std::collections::HashMap;
 use std::panic::{catch_unwind, resume_unwind, UnwindSafe};
@@ -233,7 +232,7 @@ impl OffchainMocks {
 pub struct OffchainMock {
 	pub scripts_data: HashMap<UtxoId, Result<ScriptsData, OffchainError>>,
 	pub init_governance:
-		HashMap<(UtxoId, MainchainKeyHash, PrivateKeyBytes), Result<McTxHash, OffchainError>>,
+		HashMap<(UtxoId, MultiSigParameters, PrivateKeyBytes), Result<McTxHash, OffchainError>>,
 	pub upsert_d_param: HashMap<
 		(UtxoId, DParameter, PrivateKeyBytes),
 		Result<Option<MultiSigSmartContractResult>, String>,
@@ -270,7 +269,7 @@ impl OffchainMock {
 	pub(crate) fn with_init_governance(
 		self,
 		genesis_utxo: UtxoId,
-		governance: MainchainKeyHash,
+		governance: MultiSigParameters,
 		payment_key: PrivateKeyBytes,
 		result: Result<McTxHash, OffchainError>,
 	) -> Self {
@@ -348,12 +347,12 @@ impl GetScriptsData for OffchainMock {
 impl InitGovernance for OffchainMock {
 	async fn init_governance(
 		&self,
-		governance_authority: MainchainKeyHash,
+		governance_authority: &MultiSigParameters,
 		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
 	) -> Result<McTxHash, OffchainError> {
 		self.init_governance
-			.get(&(genesis_utxo_id, governance_authority, payment_key.to_bytes()))
+			.get(&(genesis_utxo_id, governance_authority.clone(), payment_key.to_bytes()))
 			.cloned()
 			.unwrap_or_else(|| {
 				Err(OffchainError::InternalError("No mock for init_governance".into()))

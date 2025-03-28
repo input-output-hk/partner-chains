@@ -29,7 +29,8 @@ export GENESIS_UTXO=$(cat /shared/genesis.utxo)
     --ogmios-url http://ogmios:$OGMIOS_PORT \
     --genesis-utxo $GENESIS_UTXO \
     --payment-key-file /keys/funded_address.skey \
-    --governance-authority $GOVERNANCE_AUTHORITY
+    --governance-authority $GOVERNANCE_AUTHORITY \
+    --threshold 1
 
 if [ $? -eq 0 ]; then
    echo "Successfully initialized governance authority!"

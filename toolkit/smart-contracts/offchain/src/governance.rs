@@ -10,7 +10,7 @@ use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 use partner_chains_plutus_data::PlutusDataExtensions as _;
 use serde::Serialize;
 use sidechain_domain::byte_string::ByteString;
-use sidechain_domain::UtxoId;
+use sidechain_domain::{MainchainKeyHash, UtxoId};
 
 #[derive(Clone, Debug)]
 pub(crate) struct GovernanceData {
@@ -249,6 +249,39 @@ pub async fn get_governance_policy_summary<T: QueryLedgerState + QueryNetwork>(
 		Ok(Some(summary))
 	} else {
 		Ok(None)
+	}
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct MultiSigParameters {
+	governance_authorties: Vec<MainchainKeyHash>,
+	threshold: u8,
+}
+
+impl MultiSigParameters {
+	pub fn new(governance_authorties: &[MainchainKeyHash], threshold: u8) -> Result<Self, &str> {
+		if governance_authorties.is_empty() {
+			return Err("governance authorities cannot be be empty");
+		}
+		if threshold == 0 {
+			return Err("threshold has to be a positive number");
+		}
+		if usize::from(threshold) > governance_authorties.len() {
+			return Err("threshold cannot be greater than governance authorities length");
+		}
+		Ok(Self { governance_authorties: governance_authorties.to_vec(), threshold })
+	}
+
+	pub fn new_one_of_one(goveranance_authority: &MainchainKeyHash) -> Self {
+		Self { governance_authorties: vec![goveranance_authority.clone()], threshold: 1 }
+	}
+
+	/// Retruns [[SimpleAtLeastN]] for this MultiSig parameters.
+	pub(crate) fn as_simple_at_least_n(&self) -> SimpleAtLeastN {
+		SimpleAtLeastN {
+			threshold: self.threshold.into(),
+			key_hashes: self.governance_authorties.iter().map(|key_hash| key_hash.0).collect(),
+		}
 	}
 }
 
