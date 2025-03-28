@@ -135,12 +135,25 @@
 <a href="#135" id="135">135</a>
 <a href="#136" id="136">136</a>
 <a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
 </pre></div><pre class="rust"><code><span class="attr">#![allow(deprecated)]
 
 </span><span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
 
 <span class="attr">#[frame_support::pallet]
 </span><span class="kw">pub mod </span>pallet {
+	<span class="kw">use </span><span class="kw">crate</span>::AccountId;
 	<span class="kw">use </span><span class="kw">crate</span>::BlockAuthor;
 	<span class="kw">use </span>frame_support::pallet_prelude::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_system::pallet_prelude::OriginFor;
@@ -203,6 +216,17 @@
 			_new_epoch: ScEpochNumber,
 		) -&gt; sp_weights::Weight {
 			<span class="kw">crate</span>::RuntimeDbWeight::get().reads_writes(<span class="number">0</span>, <span class="number">0</span>)
+		}
+	}
+
+	<span class="kw">impl</span>&lt;T: Config&gt; pallet_address_associations::OnNewAssociation&lt;AccountId&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
+		<span class="kw">fn </span>on_new_association(
+			partner_chain_address: AccountId,
+			main_chain_key_hash: MainchainKeyHash,
+		) {
+			<span class="macro">log::info!</span>(
+				<span class="string">"New address association: {partner_chain_address:?} -&gt; {main_chain_key_hash:?}"
+			</span>);
 		}
 	}
 
