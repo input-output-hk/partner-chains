@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use sidechain_runtime::opaque::SessionKeys;
 use sp_core::crypto::AccountId32;
 use sp_core::{ecdsa, ed25519, sr25519};
 use sp_runtime::traits::IdentifyAccount;
@@ -43,8 +42,10 @@ pub(crate) struct ParsedPermissionedCandidatesKeys {
 }
 
 impl ParsedPermissionedCandidatesKeys {
-	pub fn session_keys(&self) -> SessionKeys {
-		SessionKeys { aura: self.aura.into(), grandpa: self.grandpa.into() }
+	pub fn session_keys<SessionKeys: From<(sr25519::Public, ed25519::Public)>>(
+		&self,
+	) -> SessionKeys {
+		SessionKeys::from((sr25519::Public::from(self.aura), ed25519::Public::from(self.grandpa)))
 	}
 
 	pub fn account_id_32(&self) -> AccountId32 {

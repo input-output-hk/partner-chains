@@ -1,5 +1,8 @@
+use authority_selection_inherents::CommitteeMember;
 use clap::command;
-use partner_chains_node_commands::PartnerChainsSubcommand;
+use partner_chains_node_commands::{
+	PartnerChainRuntimeBindings, PartnerChainsSubcommand, RuntimeTypeWrapper,
+};
 use sc_cli::RunCmd;
 
 #[derive(Debug, clap::Parser)]
@@ -11,6 +14,17 @@ pub struct Cli {
 	pub run: RunCmd,
 }
 
+#[derive(Debug, Clone)]
+pub struct WizardBindings;
+impl RuntimeTypeWrapper for WizardBindings {
+	type Runtime = sidechain_runtime::Runtime;
+}
+impl PartnerChainRuntimeBindings for WizardBindings {
+	fn initial_member(id: Self::AuthorityId, keys: Self::AuthorityKeys) -> Self::CommitteeMember {
+		CommitteeMember::permissioned(id, keys)
+	}
+}
+
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
 	/// Key management cli utilities
@@ -18,7 +32,7 @@ pub enum Subcommand {
 	Key(sc_cli::KeySubcommand),
 
 	#[clap(flatten)]
-	PartnerChains(PartnerChainsSubcommand),
+	PartnerChains(PartnerChainsSubcommand<WizardBindings>),
 
 	/// Build a chain specification.
 	BuildSpec(sc_cli::BuildSpecCmd),

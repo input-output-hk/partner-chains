@@ -1,24 +1,39 @@
 use crate::config::ConfigFieldDefinition;
 use crate::io::IOContext;
 use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
+use crate::runtime_bindings::PartnerChainRuntime;
+use crate::runtime_bindings::PartnerChainRuntimeBindings;
 use crate::{config::config_fields, CmdRun};
 use anyhow::{anyhow, Context};
-use serde::de::DeserializeOwned;
-use serde_json::{json, Value as JValue};
+use serde_json::Value as JValue;
 use sidechain_domain::UtxoId;
+use sp_runtime::DeserializeOwned;
+use std::marker::PhantomData;
 
 #[cfg(test)]
 mod tests;
 
-#[derive(Clone, Debug, clap::Parser)]
-pub struct CreateChainSpecCmd;
+pub trait CreateChainSpecRuntimeBindings: PartnerChainRuntime {
+	fn initial_member(id: Self::AuthorityId, keys: Self::AuthorityKeys) -> Self::CommitteeMember;
+}
+impl<T: PartnerChainRuntimeBindings> CreateChainSpecRuntimeBindings for T {
+	fn initial_member(id: Self::AuthorityId, keys: Self::AuthorityKeys) -> Self::CommitteeMember {
+		<T as PartnerChainRuntimeBindings>::initial_member(id, keys)
+	}
+}
+
+#[derive(Clone, Debug, Default, clap::Parser)]
+pub struct CreateChainSpecCmd<T: CreateChainSpecRuntimeBindings> {
+	#[clap(skip)]
+	_phantom: PhantomData<T>,
+}
 
 const SESSION_INITIAL_VALIDATORS_PATH: &str =
 	"/genesis/runtimeGenesis/config/session/initialValidators";
 const SESSION_VALIDATOR_MANAGEMENT_INITIAL_AUTHORITIES_PATH: &str =
 	"/genesis/runtimeGenesis/config/sessionCommitteeManagement/initialAuthorities";
 
-impl CmdRun for CreateChainSpecCmd {
+impl<T: CreateChainSpecRuntimeBindings> CmdRun for CreateChainSpecCmd<T> {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		let config = CreateChainSpecConfig::load(context)?;
 		context.print("This wizard will create a chain spec JSON file according to the provided configuration, using WASM runtime code from the compiled node binary.");
@@ -39,7 +54,7 @@ impl CmdRun for CreateChainSpecCmd {
 	}
 }
 
-impl CreateChainSpecCmd {
+impl<T: CreateChainSpecRuntimeBindings> CreateChainSpecCmd<T> {
 	fn print_config<C: IOContext>(context: &C, config: &CreateChainSpecConfig) {
 		context.print("Chain parameters:");
 		context.print(format!("- Genesis UTXO: {}", config.genesis_utxo).as_str());
@@ -112,7 +127,9 @@ impl CreateChainSpecCmd {
 		let initial_validators = config
 			.initial_permissioned_candidates_parsed
 			.iter()
-			.map(|c| serde_json::to_value((c.account_id_32(), c.session_keys())))
+			.map(|c| {
+				serde_json::to_value((c.account_id_32(), c.session_keys::<T::AuthorityKeys>()))
+			})
 			.collect::<Result<Vec<serde_json::Value>, _>>()?;
 		let initial_validators = serde_json::Value::Array(initial_validators);
 		Self::update_field(&mut chain_spec, SESSION_INITIAL_VALIDATORS_PATH, initial_validators)?;
@@ -121,12 +138,9 @@ impl CreateChainSpecCmd {
 			.initial_permissioned_candidates_parsed
 			.iter()
 			.map(|c| -> anyhow::Result<serde_json::Value> {
-				Ok(json!({
-					"Permissioned": {
-						"id": serde_json::to_value(c.sidechain)?,
-						"keys": c.session_keys()
-					}
-				}))
+				let initial_member =
+					T::initial_member(c.sidechain.into(), c.session_keys::<T::AuthorityKeys>());
+				Ok(serde_json::to_value(initial_member)?)
 			})
 			.collect::<Result<Vec<serde_json::Value>, _>>()?;
 		let initial_authorities = serde_json::Value::Array(initial_authorities);
