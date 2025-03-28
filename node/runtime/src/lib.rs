@@ -32,11 +32,11 @@ use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier
 use parity_scale_codec::MaxEncodedLen;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sidechain_domain::byte_string::{BoundedString, SizedByteString};
 use sidechain_domain::{
-	DelegatorKey, MainchainKeyHash, PermissionedCandidateData, RegistrationData, ScEpochNumber,
-	ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
+	CrossChainPublicKey, DelegatorKey, MainchainKeyHash, PermissionedCandidateData,
+	RegistrationData, ScEpochNumber, ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
 };
 use sidechain_slots::Slot;
 use sp_api::impl_runtime_apis;
@@ -463,7 +463,9 @@ impl AsCardanoSPO for BlockAuthor {
 
 pub const MAX_METADATA_URL_LENGTH: u32 = 512;
 
-#[derive(Clone, Debug, MaxEncodedLen, Encode, Decode, Deserialize, PartialEq, Eq, TypeInfo)]
+#[derive(
+	Clone, Debug, MaxEncodedLen, Encode, Decode, Serialize, Deserialize, PartialEq, Eq, TypeInfo,
+)]
 pub struct BlockProducerMetadataType {
 	pub url: BoundedString<MAX_METADATA_URL_LENGTH>,
 	pub hash: SizedByteString<32>,
@@ -917,6 +919,15 @@ impl_runtime_apis! {
 				slots_per_epoch: Sidechain::slots_per_epoch(),
 				slot_duration: <Self as sp_consensus_aura::runtime_decl_for_aura_api::AuraApi<Block, AuraId>>::slot_duration()
 			}
+		}
+	}
+
+	impl sp_block_producer_metadata::BlockProducerMetadataApi<Block, BlockProducerMetadataType> for Runtime
+	{
+		fn get_metadata_for(
+			cross_chain_pub_key: &CrossChainPublicKey,
+		) -> Option<BlockProducerMetadataType> {
+			pallet_block_producer_metadata::BlockProducerMetadataStorage::<Runtime>::get(cross_chain_pub_key.hash())
 		}
 	}
 

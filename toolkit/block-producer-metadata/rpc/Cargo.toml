@@ -1,13 +1,11 @@
 [package]
-name = "pallet-sidechain-rpc"
+name = "pallet-block-producer-metadata-rpc"
 version.workspace = true
 license = "Apache-2.0"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lints]
 workspace = true
@@ -21,21 +19,13 @@ sp-core = { workspace = true, features = ['std'] }
 sp-runtime = { workspace = true, features = ['std'] }
 sp-api = { workspace = true, features = ['std'] }
 sp-blockchain = { workspace = true }
-sp-sidechain = { workspace = true, features = ['std'] }
+sp-block-producer-metadata = { workspace = true, features = ['std'] }
 sidechain-domain = { workspace = true, features = ['std'] }
-sidechain-slots = { workspace = true, features = ['std', 'serde'] }
 serde_json = { workspace = true, features = ['std'] }
-sp-timestamp = { workspace = true, features = ['std'] }
-hex = { workspace = true, features = ['std'] }
-tokio = { workspace = true, features = ["macros", "time", "parking_lot"] }
-time-source = { workspace = true }
 derive-new = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }
-pretty_assertions = { workspace = true }
-time-source = { workspace = true, features = ['mock'] }
-sp-consensus-slots = { workspace = true, features = ["std"] }
 
 [features]
 default = []

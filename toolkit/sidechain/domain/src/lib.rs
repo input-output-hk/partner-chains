@@ -468,7 +468,7 @@ pub struct VKeyWitnessCbor(pub Vec<u8>);
 pub struct SidechainSignature(pub Vec<u8>);
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
-#[byte_string(debug, hex_serialize)]
+#[byte_string(debug, hex_serialize, hex_deserialize)]
 pub struct CrossChainPublicKey(pub Vec<u8>);
 
 impl CrossChainPublicKey {

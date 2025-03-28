@@ -49,6 +49,7 @@ members = [
 	"toolkit/block-participation/primitives",
 	"toolkit/block-producer-metadata/pallet",
 	"toolkit/block-producer-metadata/primitives",
+	"toolkit/block-producer-metadata/rpc",
 	"toolkit/utils/db-sync-sqlx",
 ]
 resolver = "2"
@@ -306,6 +307,7 @@ sp-block-participation = { path = "toolkit/block-participation/primitives", defa
 
 # block producer metadata
 pallet-block-producer-metadata = { path = "toolkit/block-producer-metadata/pallet", default-features = false }
+pallet-block-producer-metadata-rpc = { path = "toolkit/block-producer-metadata/rpc", default-features = false }
 sp-block-producer-metadata = { path = "toolkit/block-producer-metadata/primitives", default-features = false }
 
 # main chain follower
