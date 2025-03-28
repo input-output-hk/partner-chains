@@ -85,8 +85,8 @@
 <a href="#85" id="85">85</a>
 <a href="#86" id="86">86</a>
 <a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>serde::{Deserialize, Serialize};
-<span class="kw">use </span>sidechain_runtime::opaque::SessionKeys;
 <span class="kw">use </span>sp_core::crypto::AccountId32;
 <span class="kw">use </span>sp_core::{ecdsa, ed25519, sr25519};
 <span class="kw">use </span>sp_runtime::traits::IdentifyAccount;
@@ -130,8 +130,10 @@
 }
 
 <span class="kw">impl </span>ParsedPermissionedCandidatesKeys {
-	<span class="kw">pub fn </span>session_keys(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; SessionKeys {
-		SessionKeys { aura: <span class="self">self</span>.aura.into(), grandpa: <span class="self">self</span>.grandpa.into() }
+	<span class="kw">pub fn </span>session_keys&lt;SessionKeys: From&lt;(sr25519::Public, ed25519::Public)&gt;&gt;(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+	) -&gt; SessionKeys {
+		SessionKeys::from((sr25519::Public::from(<span class="self">self</span>.aura), ed25519::Public::from(<span class="self">self</span>.grandpa)))
 	}
 
 	<span class="kw">pub fn </span>account_id_32(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; AccountId32 {

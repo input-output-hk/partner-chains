@@ -110,6 +110,8 @@
 <a href="#110" id="110">110</a>
 <a href="#111" id="111">111</a>
 <a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Provides wizard style CLI for Partner Chains setup and user operations.
 //! Interacts with Smart Contracts using [`partner_chains_cardano_offchain`] crate.
 
@@ -125,6 +127,7 @@
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>permissioned_candidates;
 <span class="kw">mod </span>prepare_configuration;
 <span class="kw">pub mod </span>register;
+<span class="kw">pub mod </span>runtime_bindings;
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>select_utxo;
 <span class="kw">mod </span>setup_main_chain_state;
 <span class="kw">pub mod </span>start_node;
@@ -134,18 +137,19 @@
 
 <span class="kw">use </span>clap::Parser;
 <span class="kw">use </span>io::<span class="kw-2">*</span>;
+<span class="kw">pub use </span>runtime_bindings::{PartnerChainRuntime, PartnerChainRuntimeBindings, RuntimeTypeWrapper};
 
 <span class="attr">#[derive(Clone, Debug, Parser)]
 #[command(
     after_long_help = HELP_EXAMPLES,
 )]
-</span><span class="kw">pub enum </span>Command {
+</span><span class="kw">pub enum </span>Command&lt;T: PartnerChainRuntime + PartnerChainRuntimeBindings&gt; {
 	<span class="doccomment">/// This wizard generates the keys required for operating a partner-chains node, stores them in the keystore directory, and prints the public keys and keystore location.
 	</span>GenerateKeys(generate_keys::GenerateKeysCmd),
 	<span class="doccomment">/// Wizard to obtain the configuration needed for the partner-chain governance authority. This configuration should be shared with chain participants and used to create the chain spec json file.
 	</span>PrepareConfiguration(prepare_configuration::PrepareConfigurationCmd),
 	<span class="doccomment">/// Wizard for creating a chain spec json file based on the chain configuration (see `prepare-configuration`).
-	</span>CreateChainSpec(create_chain_spec::CreateChainSpecCmd),
+	</span>CreateChainSpec(create_chain_spec::CreateChainSpecCmd&lt;T&gt;),
 	<span class="doccomment">/// Wizard for setting D-parameter and Permissioned Candidates list on the main chain.
 	/// Uses 'chain config' obtained after running `prepare-configuration`.
 	</span>SetupMainChainState(setup_main_chain_state::SetupMainChainStateCmd),
@@ -162,7 +166,7 @@
 	</span>Deregister(deregister::DeregisterCmd),
 }
 
-<span class="kw">impl </span>Command {
+<span class="kw">impl</span>&lt;T: PartnerChainRuntime + PartnerChainRuntimeBindings&gt; Command&lt;T&gt; {
 	<span class="kw">pub fn </span>run&lt;C: IOContext&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;()&gt; {
 		<span class="kw">match </span><span class="self">self </span>{
 			Command::GenerateKeys(cmd) =&gt; cmd.run(context),

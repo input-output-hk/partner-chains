@@ -8,14 +8,14 @@
              'life0: 'async_trait</span> { ... }
 <span class="item-spacer"></span>    fn <a href="#method.get_registrations" class="fn">get_registrations</a>&lt;'life0, 'async_trait&gt;(
         &amp;'life0 self,
-        mc_epoch_number: McEpochNumber,
-        stake_pool_public_key: StakePoolPublicKey,
+        mc_epoch_number: <a class="struct" href="../sidechain_domain/struct.McEpochNumber.html" title="struct sidechain_domain::McEpochNumber">McEpochNumber</a>,
+        stake_pool_public_key: <a class="struct" href="../sidechain_domain/struct.StakePoolPublicKey.html" title="struct sidechain_domain::StakePoolPublicKey">StakePoolPublicKey</a>,
     ) -&gt; <a class="struct" href="https://doc.rust-lang.org/1.81.0/core/pin/struct.Pin.html" title="struct core::pin::Pin">Pin</a>&lt;<a class="struct" href="https://doc.rust-lang.org/1.81.0/alloc/boxed/struct.Box.html" title="struct alloc::boxed::Box">Box</a>&lt;dyn <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/future/future/trait.Future.html" title="trait core::future::future::Future">Future</a>&lt;Output = <a class="enum" href="https://doc.rust-lang.org/1.81.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="struct" href="https://doc.rust-lang.org/1.81.0/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec</a>&lt;CandidateRegistrationEntry&gt;, Error&gt;&gt; + <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'async_trait&gt;&gt;
        <span class="where">where Self: <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Sync.html" title="trait core::marker::Sync">Sync</a> + 'async_trait,
              'life0: 'async_trait</span> { ... }
 <span class="item-spacer"></span>    fn <a href="#method.get_ariadne_parameters" class="fn">get_ariadne_parameters</a>&lt;'life0, 'async_trait&gt;(
         &amp;'life0 self,
-        epoch_number: McEpochNumber,
+        epoch_number: <a class="struct" href="../sidechain_domain/struct.McEpochNumber.html" title="struct sidechain_domain::McEpochNumber">McEpochNumber</a>,
     ) -&gt; <a class="struct" href="https://doc.rust-lang.org/1.81.0/core/pin/struct.Pin.html" title="struct core::pin::Pin">Pin</a>&lt;<a class="struct" href="https://doc.rust-lang.org/1.81.0/alloc/boxed/struct.Box.html" title="struct alloc::boxed::Box">Box</a>&lt;dyn <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/future/future/trait.Future.html" title="trait core::future::future::Future">Future</a>&lt;Output = <a class="enum" href="https://doc.rust-lang.org/1.81.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;AriadneParameters, Error&gt;&gt; + <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'async_trait&gt;&gt;
        <span class="where">where Self: <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Sync.html" title="trait core::marker::Sync">Sync</a> + 'async_trait,
              'life0: 'async_trait</span> { ... }
@@ -28,15 +28,15 @@
     'life0: 'async_trait,</div></h4></section></summary><div class="docblock"><p>Returns the committee for given sidechain epoch. The order of the list represents the order of slot allocation.</p>
 </div></details><details class="toggle method-toggle" open><summary><section id="method.get_registrations" class="method"><a class="src rightside" href="../src/pallet_session_validator_management_rpc/lib.rs.html#13">source</a><h4 class="code-header">fn <a href="#method.get_registrations" class="fn">get_registrations</a>&lt;'life0, 'async_trait&gt;(
     &amp;'life0 self,
-    mc_epoch_number: McEpochNumber,
-    stake_pool_public_key: StakePoolPublicKey,
+    mc_epoch_number: <a class="struct" href="../sidechain_domain/struct.McEpochNumber.html" title="struct sidechain_domain::McEpochNumber">McEpochNumber</a>,
+    stake_pool_public_key: <a class="struct" href="../sidechain_domain/struct.StakePoolPublicKey.html" title="struct sidechain_domain::StakePoolPublicKey">StakePoolPublicKey</a>,
 ) -&gt; <a class="struct" href="https://doc.rust-lang.org/1.81.0/core/pin/struct.Pin.html" title="struct core::pin::Pin">Pin</a>&lt;<a class="struct" href="https://doc.rust-lang.org/1.81.0/alloc/boxed/struct.Box.html" title="struct alloc::boxed::Box">Box</a>&lt;dyn <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/future/future/trait.Future.html" title="trait core::future::future::Future">Future</a>&lt;Output = <a class="enum" href="https://doc.rust-lang.org/1.81.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="struct" href="https://doc.rust-lang.org/1.81.0/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec</a>&lt;CandidateRegistrationEntry&gt;, Error&gt;&gt; + <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'async_trait&gt;&gt;<div class="where">where
     Self: <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Sync.html" title="trait core::marker::Sync">Sync</a> + 'async_trait,
     'life0: 'async_trait,</div></h4></section></summary><div class="docblock"><p>returns: Last active and valid registration followed by all newer invalid registrations for mc_epoch_number and mc_public_key.
 Regardless of <code>mc_epoch_number</code> value, it always uses validation api from the latest sidechain block.</p>
 </div></details><details class="toggle method-toggle" open><summary><section id="method.get_ariadne_parameters" class="method"><a class="src rightside" href="../src/pallet_session_validator_management_rpc/lib.rs.html#13">source</a><h4 class="code-header">fn <a href="#method.get_ariadne_parameters" class="fn">get_ariadne_parameters</a>&lt;'life0, 'async_trait&gt;(
     &amp;'life0 self,
-    epoch_number: McEpochNumber,
+    epoch_number: <a class="struct" href="../sidechain_domain/struct.McEpochNumber.html" title="struct sidechain_domain::McEpochNumber">McEpochNumber</a>,
 ) -&gt; <a class="struct" href="https://doc.rust-lang.org/1.81.0/core/pin/struct.Pin.html" title="struct core::pin::Pin">Pin</a>&lt;<a class="struct" href="https://doc.rust-lang.org/1.81.0/alloc/boxed/struct.Box.html" title="struct alloc::boxed::Box">Box</a>&lt;dyn <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/future/future/trait.Future.html" title="trait core::future::future::Future">Future</a>&lt;Output = <a class="enum" href="https://doc.rust-lang.org/1.81.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;AriadneParameters, Error&gt;&gt; + <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + 'async_trait&gt;&gt;<div class="where">where
     Self: <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Sync.html" title="trait core::marker::Sync">Sync</a> + 'async_trait,
     'life0: 'async_trait,</div></h4></section></summary><div class="docblock"><p>Regardless of <code>epoch_number</code> value, all the candidates data validation is done based on the validation api from the latest sidechain block.</p>

@@ -220,27 +220,56 @@
 <a href="#220" id="220">220</a>
 <a href="#221" id="221">221</a>
 <a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::ConfigFieldDefinition;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
 <span class="kw">use </span><span class="kw">crate</span>::permissioned_candidates::{ParsedPermissionedCandidatesKeys, PermissionedCandidateKeys};
+<span class="kw">use </span><span class="kw">crate</span>::runtime_bindings::PartnerChainRuntime;
+<span class="kw">use </span><span class="kw">crate</span>::runtime_bindings::PartnerChainRuntimeBindings;
 <span class="kw">use crate</span>::{config::config_fields, CmdRun};
 <span class="kw">use </span>anyhow::{anyhow, Context};
-<span class="kw">use </span>serde::de::DeserializeOwned;
-<span class="kw">use </span>serde_json::{json, Value <span class="kw">as </span>JValue};
+<span class="kw">use </span>serde_json::Value <span class="kw">as </span>JValue;
 <span class="kw">use </span>sidechain_domain::UtxoId;
+<span class="kw">use </span>sp_runtime::DeserializeOwned;
+<span class="kw">use </span>std::marker::PhantomData;
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
 
-<span class="attr">#[derive(Clone, Debug, clap::Parser)]
-</span><span class="kw">pub struct </span>CreateChainSpecCmd;
+<span class="kw">pub trait </span>CreateChainSpecRuntimeBindings: PartnerChainRuntime {
+	<span class="kw">fn </span>initial_member(id: <span class="self">Self</span>::AuthorityId, keys: <span class="self">Self</span>::AuthorityKeys) -&gt; <span class="self">Self</span>::CommitteeMember;
+}
+<span class="kw">impl</span>&lt;T: PartnerChainRuntimeBindings&gt; CreateChainSpecRuntimeBindings <span class="kw">for </span>T {
+	<span class="kw">fn </span>initial_member(id: <span class="self">Self</span>::AuthorityId, keys: <span class="self">Self</span>::AuthorityKeys) -&gt; <span class="self">Self</span>::CommitteeMember {
+		&lt;T <span class="kw">as </span>PartnerChainRuntimeBindings&gt;::initial_member(id, keys)
+	}
+}
+
+<span class="attr">#[derive(Clone, Debug, Default, clap::Parser)]
+</span><span class="kw">pub struct </span>CreateChainSpecCmd&lt;T: CreateChainSpecRuntimeBindings&gt; {
+	<span class="attr">#[clap(skip)]
+	</span>_phantom: PhantomData&lt;T&gt;,
+}
 
 <span class="kw">const </span>SESSION_INITIAL_VALIDATORS_PATH: <span class="kw-2">&amp;</span>str =
 	<span class="string">"/genesis/runtimeGenesis/config/session/initialValidators"</span>;
 <span class="kw">const </span>SESSION_VALIDATOR_MANAGEMENT_INITIAL_AUTHORITIES_PATH: <span class="kw-2">&amp;</span>str =
 	<span class="string">"/genesis/runtimeGenesis/config/sessionCommitteeManagement/initialAuthorities"</span>;
 
-<span class="kw">impl </span>CmdRun <span class="kw">for </span>CreateChainSpecCmd {
+<span class="kw">impl</span>&lt;T: CreateChainSpecRuntimeBindings&gt; CmdRun <span class="kw">for </span>CreateChainSpecCmd&lt;T&gt; {
 	<span class="kw">fn </span>run&lt;C: IOContext&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;()&gt; {
 		<span class="kw">let </span>config = CreateChainSpecConfig::load(context)<span class="question-mark">?</span>;
 		context.print(<span class="string">"This wizard will create a chain spec JSON file according to the provided configuration, using WASM runtime code from the compiled node binary."</span>);
@@ -261,7 +290,7 @@
 	}
 }
 
-<span class="kw">impl </span>CreateChainSpecCmd {
+<span class="kw">impl</span>&lt;T: CreateChainSpecRuntimeBindings&gt; CreateChainSpecCmd&lt;T&gt; {
 	<span class="kw">fn </span>print_config&lt;C: IOContext&gt;(context: <span class="kw-2">&amp;</span>C, config: <span class="kw-2">&amp;</span>CreateChainSpecConfig) {
 		context.print(<span class="string">"Chain parameters:"</span>);
 		context.print(<span class="macro">format!</span>(<span class="string">"- Genesis UTXO: {}"</span>, config.genesis_utxo).as_str());
@@ -334,7 +363,9 @@
 		<span class="kw">let </span>initial_validators = config
 			.initial_permissioned_candidates_parsed
 			.iter()
-			.map(|c| serde_json::to_value((c.account_id_32(), c.session_keys())))
+			.map(|c| {
+				serde_json::to_value((c.account_id_32(), c.session_keys::&lt;T::AuthorityKeys&gt;()))
+			})
 			.collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;serde_json::Value&gt;, <span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>;
 		<span class="kw">let </span>initial_validators = serde_json::Value::Array(initial_validators);
 		<span class="self">Self</span>::update_field(<span class="kw-2">&amp;mut </span>chain_spec, SESSION_INITIAL_VALIDATORS_PATH, initial_validators)<span class="question-mark">?</span>;
@@ -343,12 +374,9 @@
 			.initial_permissioned_candidates_parsed
 			.iter()
 			.map(|c| -&gt; anyhow::Result&lt;serde_json::Value&gt; {
-				<span class="prelude-val">Ok</span>(<span class="macro">json!</span>({
-					<span class="string">"Permissioned"</span>: {
-						<span class="string">"id"</span>: serde_json::to_value(c.sidechain)<span class="question-mark">?</span>,
-						<span class="string">"keys"</span>: c.session_keys()
-					}
-				}))
+				<span class="kw">let </span>initial_member =
+					T::initial_member(c.sidechain.into(), c.session_keys::&lt;T::AuthorityKeys&gt;());
+				<span class="prelude-val">Ok</span>(serde_json::to_value(initial_member)<span class="question-mark">?</span>)
 			})
 			.collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;serde_json::Value&gt;, <span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>;
 		<span class="kw">let </span>initial_authorities = serde_json::Value::Array(initial_authorities);

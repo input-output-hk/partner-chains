@@ -237,6 +237,17 @@
 <a href="#237" id="237">237</a>
 <a href="#238" id="238">238</a>
 <a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
@@ -247,6 +258,9 @@
 <span class="kw">use </span>frame_support::sp_runtime::traits::NumberFor;
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode};
 <span class="kw">use </span>partner_chains_cli::io::DefaultCmdRunContext;
+<span class="kw">pub use </span>partner_chains_cli::{
+	PartnerChainRuntime, PartnerChainRuntimeBindings, RuntimeTypeWrapper,
+};
 <span class="kw">use </span>partner_chains_smart_contracts_commands::SmartContractsCmd;
 <span class="kw">use </span>sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 <span class="kw">use </span>sc_service::TaskManager;
@@ -313,7 +327,8 @@
 
 <span class="attr">#[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
-</span><span class="kw">pub enum </span>PartnerChainsSubcommand {
+</span><span class="kw">pub enum </span>PartnerChainsSubcommand&lt;RuntimeBindings: PartnerChainRuntime + PartnerChainRuntimeBindings&gt;
+{
 	<span class="doccomment">/// Returns sidechain parameters
 	</span>SidechainParams(SidechainParamsCmd),
 
@@ -344,10 +359,17 @@
 
 	<span class="doccomment">/// Partner Chains text "wizards" for setting up chain
 	</span><span class="attr">#[command(subcommand)]
-	</span>Wizards(partner_chains_cli::Command),
+	</span>Wizards(partner_chains_cli::Command&lt;RuntimeBindings&gt;),
 }
 
-<span class="kw">pub fn </span>run&lt;Cli, Block, CommitteeMember, Client, BlockProducerMetadata&gt;(
+<span class="kw">pub fn </span>run&lt;
+	Cli,
+	Block,
+	CommitteeMember,
+	Client,
+	BlockProducerMetadata,
+	RuntimeBindings: PartnerChainRuntime + PartnerChainRuntimeBindings,
+&gt;(
 	cli: <span class="kw-2">&amp;</span>Cli,
 	get_deps: <span class="kw">impl </span>FnOnce(
 		sc_service::Configuration,
@@ -355,7 +377,7 @@
 		(Arc&lt;Client&gt;, TaskManager, Arc&lt;<span class="kw">dyn </span>AuthoritySelectionDataSource + Send + Sync&gt;),
 		sc_service::error::Error,
 	&gt;,
-	cmd: PartnerChainsSubcommand,
+	cmd: PartnerChainsSubcommand&lt;RuntimeBindings&gt;,
 ) -&gt; sc_cli::Result&lt;()&gt;
 <span class="kw">where
 	</span>Cli: SubstrateCli,
