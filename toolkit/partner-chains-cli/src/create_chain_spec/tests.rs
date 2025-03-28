@@ -1,4 +1,5 @@
 use crate::config::CHAIN_CONFIG_FILE_PATH;
+use super::{CreateChainSpecRuntimeBindings, PartnerChainRuntime};
 use crate::create_chain_spec::{CreateChainSpecCmd, INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE};
 use crate::tests::{MockIO, MockIOContext};
 use crate::{verify_json, CmdRun};
@@ -7,8 +8,6 @@ use colored::Colorize;
 use pallet_session_validator_management::CommitteeMember;
 use serde::Serialize;
 use sp_core::{ecdsa, ed25519, sr25519};
-
-use super::{CreateChainSpecRuntimeBindings, PartnerChainRuntime};
 
 #[derive(Debug, Default, Clone, Serialize)]
 struct TestSessionKeys {
