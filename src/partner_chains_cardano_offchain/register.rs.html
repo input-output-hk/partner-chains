@@ -790,7 +790,7 @@
 				<span class="kw-2">&amp;</span>costs.get_one_spend(),
 			)<span class="question-mark">?</span>;
 		}
-		inputs.add_key_inputs(<span class="kw-2">&amp;</span>[registration_utxo.clone()], <span class="kw-2">&amp;</span>ctx.payment_key_hash())<span class="question-mark">?</span>;
+		inputs.add_regular_inputs(<span class="kw-2">&amp;</span>[registration_utxo.clone()])<span class="question-mark">?</span>;
 		tx_builder.set_inputs(<span class="kw-2">&amp;</span>inputs);
 	}
 
