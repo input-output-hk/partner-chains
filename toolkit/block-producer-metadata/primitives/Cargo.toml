@@ -14,6 +14,7 @@ workspace = true
 
 [dependencies]
 sidechain-domain = { workspace = true }
+sp-api = { workspace = true }
 parity-scale-codec = { workspace = true }
 k256 = { workspace = true,features = ["sha256"] }
 
@@ -25,5 +26,6 @@ default = ["std"]
 std = [
     "sidechain-domain/std",
     "k256/std",
+    "sp-api/std",
     "parity-scale-codec/std",
 ]

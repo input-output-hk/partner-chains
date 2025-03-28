@@ -8,6 +8,9 @@ use cli_commands::registration_signatures::RegistrationSignaturesCmd;
 use frame_support::sp_runtime::traits::NumberFor;
 use parity_scale_codec::{Decode, Encode};
 use partner_chains_cli::io::DefaultCmdRunContext;
+pub use partner_chains_cli::{
+	PartnerChainRuntime, PartnerChainRuntimeBindings, RuntimeTypeWrapper,
+};
 use partner_chains_smart_contracts_commands::SmartContractsCmd;
 use sc_cli::{CliConfiguration, SharedParams, SubstrateCli};
 use sc_service::TaskManager;
@@ -74,7 +77,8 @@ impl CliConfiguration for RegistrationStatusCmd {
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
-pub enum PartnerChainsSubcommand {
+pub enum PartnerChainsSubcommand<RuntimeBindings: PartnerChainRuntime + PartnerChainRuntimeBindings>
+{
 	/// Returns sidechain parameters
 	SidechainParams(SidechainParamsCmd),
 
@@ -105,10 +109,17 @@ pub enum PartnerChainsSubcommand {
 
 	/// Partner Chains text "wizards" for setting up chain
 	#[command(subcommand)]
-	Wizards(partner_chains_cli::Command),
+	Wizards(partner_chains_cli::Command<RuntimeBindings>),
 }
 
-pub fn run<Cli, Block, CommitteeMember, Client, BlockProducerMetadata>(
+pub fn run<
+	Cli,
+	Block,
+	CommitteeMember,
+	Client,
+	BlockProducerMetadata,
+	RuntimeBindings: PartnerChainRuntime + PartnerChainRuntimeBindings,
+>(
 	cli: &Cli,
 	get_deps: impl FnOnce(
 		sc_service::Configuration,
@@ -116,7 +127,7 @@ pub fn run<Cli, Block, CommitteeMember, Client, BlockProducerMetadata>(
 		(Arc<Client>, TaskManager, Arc<dyn AuthoritySelectionDataSource + Send + Sync>),
 		sc_service::error::Error,
 	>,
-	cmd: PartnerChainsSubcommand,
+	cmd: PartnerChainsSubcommand<RuntimeBindings>,
 ) -> sc_cli::Result<()>
 where
 	Cli: SubstrateCli,

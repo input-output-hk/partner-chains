@@ -13,6 +13,7 @@ pub(crate) mod ogmios;
 pub(crate) mod permissioned_candidates;
 mod prepare_configuration;
 pub mod register;
+pub mod runtime_bindings;
 pub(crate) mod select_utxo;
 mod setup_main_chain_state;
 pub mod start_node;
@@ -22,18 +23,19 @@ mod tests;
 
 use clap::Parser;
 use io::*;
+pub use runtime_bindings::{PartnerChainRuntime, PartnerChainRuntimeBindings, RuntimeTypeWrapper};
 
 #[derive(Clone, Debug, Parser)]
 #[command(
     after_long_help = HELP_EXAMPLES,
 )]
-pub enum Command {
+pub enum Command<T: PartnerChainRuntime + PartnerChainRuntimeBindings> {
 	/// This wizard generates the keys required for operating a partner-chains node, stores them in the keystore directory, and prints the public keys and keystore location.
 	GenerateKeys(generate_keys::GenerateKeysCmd),
 	/// Wizard to obtain the configuration needed for the partner-chain governance authority. This configuration should be shared with chain participants and used to create the chain spec json file.
 	PrepareConfiguration(prepare_configuration::PrepareConfigurationCmd),
 	/// Wizard for creating a chain spec json file based on the chain configuration (see `prepare-configuration`).
-	CreateChainSpec(create_chain_spec::CreateChainSpecCmd),
+	CreateChainSpec(create_chain_spec::CreateChainSpecCmd<T>),
 	/// Wizard for setting D-parameter and Permissioned Candidates list on the main chain.
 	/// Uses 'chain config' obtained after running `prepare-configuration`.
 	SetupMainChainState(setup_main_chain_state::SetupMainChainStateCmd),
@@ -50,7 +52,7 @@ pub enum Command {
 	Deregister(deregister::DeregisterCmd),
 }
 
-impl Command {
+impl<T: PartnerChainRuntime + PartnerChainRuntimeBindings> Command<T> {
 	pub fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		match self {
 			Command::GenerateKeys(cmd) => cmd.run(context),

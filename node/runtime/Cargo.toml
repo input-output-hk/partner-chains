@@ -82,6 +82,7 @@ pallet-native-token-management = { workspace = true }
 sp-native-token-management = { workspace = true, features = ["serde"] }
 pallet-address-associations = { workspace = true }
 pallet-block-producer-metadata = { workspace = true }
+sp-block-producer-metadata = { workspace = true }
 pallet-block-participation = { workspace = true }
 sp-block-participation = { workspace = true }
 
@@ -129,6 +130,7 @@ std = [
 	"pallet-transaction-payment/std",
 	"pallet-address-associations/std",
 	"pallet-block-producer-metadata/std",
+	"sp-block-producer-metadata/std",
 	"sp-api/std",
 	"sp-block-builder/std",
 	"sp-consensus-aura/std",

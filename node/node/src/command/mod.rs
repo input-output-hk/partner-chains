@@ -1,3 +1,4 @@
+use crate::cli::WizardBindings;
 use crate::{chain_spec, staging, template_chain_spec, testnet};
 use crate::{
 	cli::{Cli, Subcommand},
@@ -71,7 +72,7 @@ pub fn run() -> sc_cli::Result<()> {
 					components.other.3.authority_selection,
 				))
 			};
-			partner_chains_node_commands::run::<_, _, _, _, BlockProducerMetadataType>(
+			partner_chains_node_commands::run::<_, _, _, _, BlockProducerMetadataType, WizardBindings>(
 				&cli,
 				make_dependencies,
 				cmd.clone(),

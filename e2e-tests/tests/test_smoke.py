@@ -27,6 +27,7 @@ class TestSmoke:
     @mark.ariadne
     @mark.substrate
     @mark.test_key('ETCM-6993')
+    @mark.xdist_group("faucet_tx")
     def test_transaction(self, api: BlockchainApi, new_wallet: Wallet, get_wallet: Wallet, config: ApiConfig):
         """Test node making a transaction
 

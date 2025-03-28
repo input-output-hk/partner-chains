@@ -4,8 +4,9 @@ use alloc::vec::Vec;
 use byte_string_derive::byte_string;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use serde::de::Error;
-use serde::Deserialize;
+use serde::de::Error as DeError;
+use serde::ser::Error as SerError;
+use serde::{Deserialize, Serialize};
 use sp_core::bounded::BoundedVec;
 use sp_core::ConstU32;
 
@@ -75,6 +76,17 @@ impl<'a, const N: u32> Deserialize<'a> for BoundedString<N> {
 			)
 			.map_err(|_| D::Error::custom("Size limit exceeded"))?,
 		))
+	}
+}
+
+impl<const N: u32> Serialize for BoundedString<N> {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		let str = alloc::string::String::from_utf8(self.0.to_vec())
+			.map_err(|_| S::Error::custom("String is not valid UTF-8"))?;
+		serializer.serialize_str(&str)
 	}
 }
 
