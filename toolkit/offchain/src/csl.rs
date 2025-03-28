@@ -682,10 +682,9 @@ pub(crate) trait InputsBuilderExt: Sized {
 	) -> Result<(), JsError>;
 
 	/// Adds ogmios inputs to the tx inputs builder.
-	fn add_key_inputs(&mut self, utxos: &[OgmiosUtxo], key: &Ed25519KeyHash)
-		-> Result<(), JsError>;
+	fn add_regular_inputs(&mut self, utxos: &[OgmiosUtxo]) -> Result<(), JsError>;
 
-	fn with_key_inputs(utxos: &[OgmiosUtxo], key: &Ed25519KeyHash) -> Result<Self, JsError>;
+	fn with_regular_inputs(utxos: &[OgmiosUtxo]) -> Result<Self, JsError>;
 }
 
 impl InputsBuilderExt for TxInputsBuilder {
@@ -712,20 +711,16 @@ impl InputsBuilderExt for TxInputsBuilder {
 		Ok(())
 	}
 
-	fn add_key_inputs(
-		&mut self,
-		utxos: &[OgmiosUtxo],
-		key: &Ed25519KeyHash,
-	) -> Result<(), JsError> {
+	fn add_regular_inputs(&mut self, utxos: &[OgmiosUtxo]) -> Result<(), JsError> {
 		for utxo in utxos.iter() {
-			self.add_key_input(key, &utxo.to_csl_tx_input(), &utxo.value.to_csl()?);
+			self.add_regular_utxo(&utxo.to_csl()?)?;
 		}
 		Ok(())
 	}
 
-	fn with_key_inputs(utxos: &[OgmiosUtxo], key: &Ed25519KeyHash) -> Result<Self, JsError> {
+	fn with_regular_inputs(utxos: &[OgmiosUtxo]) -> Result<Self, JsError> {
 		let mut tx_input_builder = Self::new();
-		tx_input_builder.add_key_inputs(utxos, key)?;
+		tx_input_builder.add_regular_inputs(utxos)?;
 		Ok(tx_input_builder)
 	}
 }

@@ -4,7 +4,7 @@ use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::{Costs, OgmiosUtxoExt};
 use crate::init_governance::run_init_governance;
 use crate::scripts_data;
-use crate::test_values::protocol_parameters;
+use crate::test_values::{ogmios_native_1_of_1_script, ogmios_plutus_script, protocol_parameters};
 use crate::{csl::TransactionContext, ogmios_mock::MockOgmiosClient};
 use cardano_serialization_lib::{ExUnits, NetworkIdKind, PrivateKey};
 use hex_literal::*;
@@ -152,6 +152,54 @@ fn transaction_creation() {
 	assert_eq!(transaction, expected_transaction())
 }
 
+#[test]
+fn plutus_script_attached_to_genesis_utxo_increases_fee() {
+	let fee_when_genesis_utxo_has_no_script = &init_governance_transaction(
+		governance_authority(),
+		genesis_utxo(),
+		test_costs(),
+		&tx_context(),
+	)
+	.unwrap()
+	.body()
+	.fee();
+
+	let fee_when_genesis_utxo_has_plutus_script = &init_governance_transaction(
+		governance_authority(),
+		genesis_utxo_with_plutus_script(),
+		test_costs(),
+		&tx_context(),
+	)
+	.unwrap()
+	.body()
+	.fee();
+	assert!(fee_when_genesis_utxo_has_no_script < fee_when_genesis_utxo_has_plutus_script);
+}
+
+#[test]
+fn native_attached_to_genesis_utxo_increases_fee() {
+	let fee_when_genesis_utxo_has_no_script = &init_governance_transaction(
+		governance_authority(),
+		genesis_utxo(),
+		test_costs(),
+		&tx_context(),
+	)
+	.unwrap()
+	.body()
+	.fee();
+
+	let fee_when_genesis_utxo_has_native_script = &init_governance_transaction(
+		governance_authority(),
+		genesis_utxo_with_native_script(),
+		test_costs(),
+		&tx_context(),
+	)
+	.unwrap()
+	.body()
+	.fee();
+	assert!(fee_when_genesis_utxo_has_no_script < fee_when_genesis_utxo_has_native_script);
+}
+
 #[tokio::test]
 async fn transaction_run() {
 	let transaction_id = [2; 32];
@@ -190,6 +238,32 @@ fn genesis_utxo() -> OgmiosUtxo {
 		value: OgmiosValue::new_lovelace(10000),
 		address: test_address_bech32(),
 
+		..Default::default()
+	}
+}
+
+fn genesis_utxo_with_plutus_script() -> OgmiosUtxo {
+	OgmiosUtxo {
+		transaction: OgmiosTx {
+			id: hex!("992a24e743a522eb3adf0bc39820a9a52093525f91ed6205b72fd4087c13b4ac"),
+		},
+		index: 1,
+		value: OgmiosValue::new_lovelace(10000),
+		address: test_address_bech32(),
+		script: Some(ogmios_plutus_script()),
+		..Default::default()
+	}
+}
+
+fn genesis_utxo_with_native_script() -> OgmiosUtxo {
+	OgmiosUtxo {
+		transaction: OgmiosTx {
+			id: hex!("992a24e743a522eb3adf0bc39820a9a52093525f91ed6205b72fd4087c13b4ac"),
+		},
+		index: 1,
+		value: OgmiosValue::new_lovelace(10000),
+		address: test_address_bech32(),
+		script: Some(ogmios_native_1_of_1_script()),
 		..Default::default()
 	}
 }

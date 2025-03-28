@@ -250,7 +250,7 @@ fn register_tx(
 				&costs.get_one_spend(),
 			)?;
 		}
-		inputs.add_key_inputs(&[registration_utxo.clone()], &ctx.payment_key_hash())?;
+		inputs.add_regular_inputs(&[registration_utxo.clone()])?;
 		tx_builder.set_inputs(&inputs);
 	}
 
