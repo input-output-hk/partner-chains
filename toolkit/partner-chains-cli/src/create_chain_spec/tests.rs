@@ -1,5 +1,5 @@
-use crate::config::CHAIN_CONFIG_FILE_PATH;
 use super::{CreateChainSpecRuntimeBindings, PartnerChainRuntime};
+use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::create_chain_spec::{CreateChainSpecCmd, INITIAL_PERMISSIONED_CANDIDATES_EXAMPLE};
 use crate::tests::{MockIO, MockIOContext};
 use crate::{verify_json, CmdRun};
