@@ -1464,7 +1464,7 @@
 </span><span class="kw">pub struct </span>SidechainSignature(<span class="kw">pub </span>Vec&lt;u8&gt;);
 
 <span class="attr">#[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
-#[byte_string(debug, hex_serialize)]
+#[byte_string(debug, hex_serialize, hex_deserialize)]
 </span><span class="kw">pub struct </span>CrossChainPublicKey(<span class="kw">pub </span>Vec&lt;u8&gt;);
 
 <span class="kw">impl </span>CrossChainPublicKey {

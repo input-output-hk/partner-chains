@@ -10,6 +10,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["pallet_address_associations",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_block_participation",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_block_producer_metadata",["",[],["lib.rs","weights.rs"]]],\
+["pallet_block_producer_metadata_rpc",["",[],["lib.rs"]]],\
 ["pallet_block_production_log",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_native_token_management",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_partner_chains_session",["",[],["lib.rs","pallet_session_compat.rs"]]],\

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["MetadataSignedMessage"]};
+window.SIDEBAR_ITEMS = {"struct":["MetadataSignedMessage"],"trait":["BlockProducerMetadataApi"]};

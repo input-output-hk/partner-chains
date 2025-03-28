@@ -91,14 +91,27 @@
 <a href="#91" id="91">91</a>
 <a href="#92" id="92">92</a>
 <a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt::{Debug, Display};
 
 <span class="kw">use </span>alloc::vec::Vec;
 <span class="kw">use </span>byte_string_derive::byte_string;
 <span class="kw">use </span>parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 <span class="kw">use </span>scale_info::TypeInfo;
-<span class="kw">use </span>serde::de::Error;
-<span class="kw">use </span>serde::Deserialize;
+<span class="kw">use </span>serde::de::Error <span class="kw">as </span>DeError;
+<span class="kw">use </span>serde::ser::Error <span class="kw">as </span>SerError;
+<span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>sp_core::bounded::BoundedVec;
 <span class="kw">use </span>sp_core::ConstU32;
 
@@ -168,6 +181,17 @@
 			)
 			.map_err(|<span class="kw">_</span>| D::Error::custom(<span class="string">"Size limit exceeded"</span>))<span class="question-mark">?</span>,
 		))
+	}
+}
+
+<span class="kw">impl</span>&lt;<span class="kw">const </span>N: u32&gt; Serialize <span class="kw">for </span>BoundedString&lt;N&gt; {
+	<span class="kw">fn </span>serialize&lt;S&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, serializer: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt;
+	<span class="kw">where
+		</span>S: serde::Serializer,
+	{
+		<span class="kw">let </span>str = alloc::string::String::from_utf8(<span class="self">self</span>.<span class="number">0</span>.to_vec())
+			.map_err(|<span class="kw">_</span>| S::Error::custom(<span class="string">"String is not valid UTF-8"</span>))<span class="question-mark">?</span>;
+		serializer.serialize_str(<span class="kw-2">&amp;</span>str)
 	}
 }
 
