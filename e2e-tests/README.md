@@ -58,3 +58,35 @@ Custom options:
 ```bash
 pytest -rP -v --blockchain substrate --env local --log-cli-level debug -vv -s -m "not probability"
 ```
+
+### Run multisig governance tests
+
+To test the multisig governance functionality, you need to configure additional governance authorities in your configuration file. The tests will verify both single signature and multisig workflows.
+
+```bash
+pytest -rP -v --blockchain substrate --env local -m "multisig_governance"
+```
+
+The multisig tests verify:
+1. Updating governance to use multiple authorities with a threshold of required signatures
+2. Testing multisig operations for various governance actions (D parameter, permissioned candidates, reserve operations)
+3. Creating, signing, and submitting transactions with multiple signatures
+4. Restoring governance back to the original single key setup after tests complete
+
+This test workflow ensures that the environment is left in the same state it started with, so that other tests that expect single-key governance will continue to work correctly.
+
+#### Configuration
+
+For multisig testing, add the following to your configuration file:
+
+```yaml
+nodes_config:
+  governance_authority:
+    mainchain_address: "main_authority_address"
+    mainchain_key: "path/to/main_authority.skey"
+  additional_governance_authorities:
+    - "path/to/second_authority.skey"
+    - "path/to/third_authority.skey"
+```
+
+The `additional_governance_authorities` should be a list of paths to the signing key files for additional authorities.

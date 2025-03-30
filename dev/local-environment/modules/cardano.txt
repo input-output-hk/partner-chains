@@ -14,6 +14,8 @@
       - ./configurations/cardano/keys/vrf.skey:/keys/vrf.skey
       - ./configurations/cardano/keys/funded_address.skey:/keys/funded_address.skey
       - ./configurations/cardano/keys/funded_address.vkey:/keys/funded_address.vkey
+      - ./configurations/cardano/keys/owner-utxo.skey:/keys/owner-utxo.skey
+      - ./configurations/cardano/keys/owner-utxo.vkey:/keys/owner-utxo.vkey
       - ./configurations/cardano/keys/op.cert:/keys/node.cert
       - ./configurations/cardano/reward_token_policy.script:/shared/reward_token_policy.script
       - ./configurations/cardano/v-function.script:/shared/v-function.script
