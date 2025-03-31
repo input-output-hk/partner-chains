@@ -10,10 +10,10 @@ inputs:
   os:
     description: "Operating system for the build (linux-x86_64, linux-arm64, macos-x86_64, macos-arm64)"
     required: true
-
 runs:
   using: "composite"
   steps:
+
     - name: Checkout
       uses: actions/checkout@v4
       with:
@@ -47,6 +47,19 @@ runs:
           sudo mv $HOME/protoc/bin/protoc /usr/local/bin/protoc
         fi
 
+    - name: Install LLVM for macOS
+      if: startsWith(inputs.os, 'macos')
+      shell: bash
+      run: |
+        brew install llvm
+        echo "LLVM_PATH=$(brew --prefix llvm)" >> $GITHUB_ENV
+        echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
+        # Ensure LLVM is found first in PATH to avoid Apple's default version
+        echo 'export PATH="$(brew --prefix llvm)/bin:$PATH"' >> ~/.bash_profile
+        source ~/.bash_profile
+        # Verify LLVM version
+        clang --version
+
     - name: Build partner-chains-node
       shell: bash
       run: |
@@ -63,11 +76,19 @@ runs:
           chmod +x $PARTNER_CHAINS_NODE
         elif [[ "${{ inputs.os }}" == "macos-x86_64" ]]; then
           rustup target add x86_64-apple-darwin
+          # Set LLVM environment variables for Rust build
+          export LLVM_CONFIG="${LLVM_PATH}/bin/llvm-config"
+          export CC="${LLVM_PATH}/bin/clang"
+          export CXX="${LLVM_PATH}/bin/clang++"
           cargo build -p partner-chains-node --locked --release --target x86_64-apple-darwin
           cp target/x86_64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE
           chmod +x $PARTNER_CHAINS_NODE
         elif [[ "${{ inputs.os }}" == "macos-arm64" ]]; then
           rustup target add aarch64-apple-darwin
+          # Set LLVM environment variables for Rust build
+          export LLVM_CONFIG="${LLVM_PATH}/bin/llvm-config"
+          export CC="${LLVM_PATH}/bin/clang"
+          export CXX="${LLVM_PATH}/bin/clang++"
           cargo build -p partner-chains-node --locked --release --target aarch64-apple-darwin
           cp target/aarch64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE
           chmod +x $PARTNER_CHAINS_NODE
