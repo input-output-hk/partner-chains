@@ -1,8 +1,16 @@
-name: Devnet Partner Chains Tests
+name: e2e tests
 
 on:
   workflow_dispatch:
     inputs:
+      env:
+        description: 'Environment to run tests'
+        required: true
+        default: 'devnet'
+        type: choice
+        options:
+        - devnet
+        - ci
       keyword:
         description: 'Run tests by keyword (-k)'
         type: string
@@ -34,14 +42,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-
     runs-on: eks
-
-    if: github.event.pull_request.draft == false
-
-    env:
-      TEST_ENVIRONMENT: devnet
-
     steps:
     - name: set ssh-agent to binary host
       uses: webfactory/ssh-agent@v0.8.0
@@ -60,7 +61,7 @@ jobs:
         ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
     - name: Set deployment_version as env variable
-      run: echo "DEPLOYMENT_VERSION=$(jq -r .deployment_version ./e2e-tests/config/substrate/devnet_nodes.json)" >> $GITHUB_ENV
+      run: echo "DEPLOYMENT_VERSION=$(jq -r .deployment_version ./e2e-tests/config/substrate/${{ inputs.env }}_nodes.json)" >> $GITHUB_ENV
 
     - name: Set XRay variables
       run: |
@@ -68,13 +69,11 @@ jobs:
           echo "TEST_PLAN=${{ inputs.plan }}" >> $GITHUB_ENV
         elif [ ! -z "${{ inputs.execution }}" ]; then
           echo "TEST_EXECUTION=${{ inputs.execution }}" >> $GITHUB_ENV
-        else
-          echo "TEST_PLAN=ETCM-7235" >> $GITHUB_ENV
         fi
 
     - name: set report_to_xray env variable
       run: |
-        echo "REPORT_TO_XRAY=$([[ '${{ github.event_name }}' == 'schedule' || -n '${{ github.event.inputs.plan }}' || -n '${{ github.event.inputs.execution }}' ]] && echo true || echo false )" >> $GITHUB_ENV
+        echo "REPORT_TO_XRAY=$([[ -n '${{ github.event.inputs.plan }}' || -n '${{ github.event.inputs.execution }}' ]] && echo true || echo false )" >> $GITHUB_ENV
 
     - name: install earthly
       uses: earthly/actions-setup@v1
@@ -87,7 +86,7 @@ jobs:
       env:
         EARTHLY_BUILD_ARGS: "CI_RUN=true"
         FORCE_COLOR: 1
-        SLACK_REF_NAME: ${{ github.event_name == 'schedule' && format('{0}/{1}', env.TEST_ENVIRONMENT, env.DEPLOYMENT_VERSION) || github.ref_name }}
+        SLACK_REF_NAME: ${{ github.event_name == 'schedule' && format('{0}/{1}', inputs.env, env.DEPLOYMENT_VERSION) || github.ref_name }}
         LOG_LEVEL: ${{ inputs.log_level }}
         KEYWORD: ${{ inputs.keyword }}
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -113,7 +112,7 @@ jobs:
           --ssh-auth-sock="$SSH_AUTH_SOCK" \
           +report \
           --log_level="${LOG_LEVEL:-"info"}" \
-          --env=${{ env.TEST_ENVIRONMENT }} \
+          --env=${{ inputs.env }} \
           --keyword="${KEYWORD:-"test_"}" \
           --repository ${{ github.repository }} \
           --job_url="$JOB_URL" \
