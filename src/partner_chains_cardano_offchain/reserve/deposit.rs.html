@@ -204,7 +204,7 @@
 
 	submit_or_create_tx_to_sign(
 		<span class="kw-2">&amp;</span>governance,
-		<span class="kw-2">&amp;</span>payment_context,
+		payment_context,
 		|costs, ctx| {
 			deposit_to_reserve_tx(<span class="kw-2">&amp;</span>token_amount, <span class="kw-2">&amp;</span>utxo, <span class="kw-2">&amp;</span>reserve, <span class="kw-2">&amp;</span>governance, costs, <span class="kw-2">&amp;</span>ctx)
 		},

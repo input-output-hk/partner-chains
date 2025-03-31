@@ -729,7 +729,7 @@
 {
 	submit_or_create_tx_to_sign(
 		governance_data,
-		<span class="kw-2">&amp;</span>payment_ctx,
+		payment_ctx,
 		|costs, ctx| {
 			mint_permissioned_candidates_token_tx(
 				validator,
@@ -763,7 +763,7 @@
 {
 	submit_or_create_tx_to_sign(
 		governance_data,
-		<span class="kw-2">&amp;</span>payment_ctx,
+		payment_ctx,
 		|costs, ctx| {
 			update_permissioned_candidates_tx(
 				validator,

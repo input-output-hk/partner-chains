@@ -260,6 +260,18 @@
 <a href="#260" id="260">260</a>
 <a href="#261" id="261">261</a>
 <a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
@@ -279,7 +291,7 @@
 	transactions::Transactions,
 };
 <span class="kw">use </span>serde::{Serialize, Serializer};
-<span class="kw">use </span>sidechain_domain::{byte_string::ByteString, crypto::blake2b, McTxHash, UtxoId, UtxoIndex};
+<span class="kw">use </span>sidechain_domain::{crypto::blake2b, McTxHash, UtxoId, UtxoIndex};
 
 <span class="doccomment">/// Successfull smart contracts offchain results in either transaction submission or creating transaction that has to be signed by the governance authorities
 </span><span class="attr">#[derive(Clone, Debug, Serialize)]
@@ -302,22 +314,25 @@
 </span><span class="attr">#[derive(Clone, Debug, Serialize)]
 </span><span class="kw">pub struct </span>TemporaryWalletData {
 	<span class="kw">pub </span>address: String,
-	<span class="kw">pub </span>private_key: ByteString,
-	<span class="kw">pub </span>funded_by_tx: McTxHash,
+	<span class="kw">pub </span>public_key_hash: String,
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>TemporaryWallet {
 	<span class="kw">pub </span>address: cardano_serialization_lib::Address,
 	<span class="kw">pub </span>private_key: CardanoPaymentSigningKey,
-	<span class="kw">pub </span>funded_by_tx: [u8; <span class="number">32</span>],
+}
+
+<span class="kw">impl </span>TemporaryWallet {
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>address_bech32(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
+		<span class="self">self</span>.address.to_bech32(<span class="prelude-val">None</span>).expect(<span class="string">"to_bech32 is safe with None prefix"</span>)
+	}
 }
 
 <span class="kw">impl </span>From&lt;TemporaryWallet&gt; <span class="kw">for </span>TemporaryWalletData {
 	<span class="kw">fn </span>from(value: TemporaryWallet) -&gt; <span class="self">Self </span>{
 		TemporaryWalletData {
-			address: value.address.to_bech32(<span class="prelude-val">None</span>).unwrap(),
-			private_key: value.private_key.to_bytes().into(),
-			funded_by_tx: McTxHash(value.funded_by_tx),
+			address: value.address_bech32(),
+			public_key_hash: hex::encode(<span class="kw-2">&amp;</span>value.private_key.to_pub_key_hash().<span class="number">0</span>),
 		}
 	}
 }
@@ -346,31 +361,22 @@
 	A: AwaitTx,
 &gt;(
 	make_tx: <span class="kw-2">&amp;</span>F,
-	payment_ctx: <span class="kw-2">&amp;</span>TransactionContext,
+	payment_ctx: TransactionContext,
 	client: <span class="kw-2">&amp;</span>T,
 	await_tx: <span class="kw-2">&amp;</span>A,
 ) -&gt; anyhow::Result&lt;TemporaryWallet&gt; {
-	<span class="kw">let </span>(private_key, address) = create_temporary_wallet(payment_ctx.network)<span class="question-mark">?</span>;
-
-	<span class="kw">let </span>tx_to_estimate_costs = Costs::calculate_costs(|c| make_tx(c, payment_ctx), client).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="kw">let </span>value = estimate_required_value(tx_to_estimate_costs.body(), payment_ctx)<span class="question-mark">?</span>;
-
-	<span class="kw">let </span>tx_hash = transfer_to_temporary_wallet(payment_ctx, <span class="kw-2">&amp;</span>address, <span class="kw-2">&amp;</span>value, client).<span class="kw">await</span><span class="question-mark">?</span>;
-	await_tx.await_tx_output(client, UtxoId::new(tx_hash, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(TemporaryWallet { address, private_key, funded_by_tx: tx_hash })
+	<span class="kw">let </span>wallet = create_temporary_wallet(payment_ctx.network)<span class="question-mark">?</span>;
+	<span class="kw">let </span>tx_to_estimate_costs = Costs::calculate_costs(|c| make_tx(c, <span class="kw-2">&amp;</span>payment_ctx), client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>value = estimate_required_value(tx_to_estimate_costs.body(), <span class="kw-2">&amp;</span>payment_ctx)<span class="question-mark">?</span>;
+	save_wallet_file(<span class="kw-2">&amp;</span>wallet)<span class="question-mark">?</span>;
+	transfer_to_temporary_wallet(payment_ctx, <span class="kw-2">&amp;</span>wallet.address, <span class="kw-2">&amp;</span>value, client, await_tx).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>(wallet)
 }
 
-<span class="kw">fn </span>create_temporary_wallet(
-	network: NetworkIdKind,
-) -&gt; <span class="prelude-ty">Result</span>&lt;(CardanoPaymentSigningKey, Address), JsError&gt; {
+<span class="kw">fn </span>create_temporary_wallet(network: NetworkIdKind) -&gt; <span class="prelude-ty">Result</span>&lt;TemporaryWallet, JsError&gt; {
 	<span class="kw">let </span>private_key = CardanoPaymentSigningKey(PrivateKey::generate_ed25519()<span class="question-mark">?</span>);
 	<span class="kw">let </span>address = key_hash_address(<span class="kw-2">&amp;</span>private_key.<span class="number">0</span>.to_public().hash(), network);
-	<span class="macro">log::info!</span>(
-		<span class="string">"Temporary wallet private key: {}, address: {}. Store this key for eventual re-claim of tokens."</span>,
-		private_key.<span class="number">0</span>.to_hex(),
-		address.to_bech32(<span class="prelude-val">None</span>)<span class="question-mark">?
-	</span>);
-	<span class="prelude-val">Ok</span>((private_key, address))
+	<span class="prelude-val">Ok</span>(TemporaryWallet { private_key, address })
 }
 
 <span class="doccomment">/// Estimates required value by subtracting change, fee and collateral from the sum of inputs.
@@ -399,15 +405,31 @@
 	total_input.clamped_sub(<span class="kw-2">&amp;</span>change).checked_add(<span class="kw-2">&amp;</span>Value::new(<span class="kw-2">&amp;</span><span class="number">5_000_000u32</span>.into()))
 }
 
-<span class="kw">async fn </span>transfer_to_temporary_wallet&lt;T: Transactions&gt;(
-	payment_ctx: <span class="kw-2">&amp;</span>TransactionContext,
+<span class="kw">fn </span>save_wallet_file(wallet: <span class="kw-2">&amp;</span>TemporaryWallet) -&gt; <span class="prelude-ty">Result</span>&lt;(), anyhow::Error&gt; {
+	<span class="kw">let </span>key_bytes = wallet.private_key.to_bytes();
+	<span class="comment">// CBOR wrappring the private key bytes. We don't have types to express this conveniently.
+	</span><span class="kw">let </span>cbor_hex = <span class="macro">format!</span>(<span class="string">"5820{}"</span>, hex::encode(key_bytes));
+	<span class="kw">let </span>json = <span class="macro">serde_json::json!</span>({
+		<span class="string">"type"</span>: <span class="string">"PaymentSigningKeyShelley_ed25519"</span>,
+		<span class="string">"description"</span>: <span class="string">"Temporary wallet key generated for a MultiSigTransaction"</span>,
+		<span class="string">"cborHex"</span>: cbor_hex
+	});
+	<span class="kw">let </span>file_name = <span class="macro">format!</span>(<span class="string">"{}.skey"</span>, wallet.address_bech32());
+	<span class="kw">let </span>file = std::fs::File::create(file_name)<span class="question-mark">?</span>;
+	serde_json::to_writer_pretty(file, <span class="kw-2">&amp;</span>json)<span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>(())
+}
+
+<span class="kw">async fn </span>transfer_to_temporary_wallet&lt;T: Transactions + QueryUtxoByUtxoId, A: AwaitTx&gt;(
+	payment_ctx: TransactionContext,
 	address: <span class="kw-2">&amp;</span>Address,
 	value: <span class="kw-2">&amp;</span>Value,
 	client: <span class="kw-2">&amp;</span>T,
-) -&gt; <span class="prelude-ty">Result</span>&lt;[u8; <span class="number">32</span>], anyhow::Error&gt; {
-	<span class="kw">let </span><span class="kw-2">mut </span>funding_tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(payment_ctx)<span class="question-mark">?</span>);
+	await_tx: <span class="kw-2">&amp;</span>A,
+) -&gt; <span class="prelude-ty">Result</span>&lt;(), anyhow::Error&gt; {
+	<span class="kw">let </span><span class="kw-2">mut </span>funding_tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>get_builder_config(<span class="kw-2">&amp;</span>payment_ctx)<span class="question-mark">?</span>);
 	funding_tx_builder.add_output(<span class="kw-2">&amp;</span>TransactionOutput::new(address, value))<span class="question-mark">?</span>;
-	<span class="kw">let </span>funding_tx = funding_tx_builder.balance_update_and_build(payment_ctx)<span class="question-mark">?</span>;
+	<span class="kw">let </span>funding_tx = funding_tx_builder.balance_update_and_build(<span class="kw-2">&amp;</span>payment_ctx)<span class="question-mark">?</span>;
 	<span class="kw">let </span>tx_hash: [u8; <span class="number">32</span>] = blake2b(funding_tx.body().to_bytes().as_ref());
 	<span class="macro">log::info!</span>(
 		<span class="string">"Founding temporary wallet {} with {} in transaction: {}"</span>,
@@ -416,7 +438,8 @@
 		<span class="kw-2">&amp;</span>hex::encode(tx_hash)
 	);
 	client.submit_transaction(<span class="kw-2">&amp;</span>payment_ctx.sign(<span class="kw-2">&amp;</span>funding_tx).to_bytes()).<span class="kw">await</span><span class="question-mark">?</span>;
-	<span class="prelude-val">Ok</span>(tx_hash)
+	await_tx.await_tx_output(client, UtxoId::new(tx_hash, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>(())
 }
 
 <span class="doccomment">/// If the chain has real MultiSig governance it:
@@ -427,7 +450,7 @@
 /// If the chain has single key MultiSig governance it creates and submits transaction paid by and signed by the payment wallet.
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>submit_or_create_tx_to_sign&lt;F, T, A&gt;(
 	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
-	payment_ctx: <span class="kw-2">&amp;</span>TransactionContext,
+	payment_ctx: TransactionContext,
 	make_tx: F,
 	tx_name: <span class="kw-2">&amp;</span>str,
 	client: <span class="kw-2">&amp;</span>T,
@@ -451,7 +474,7 @@
 }
 
 <span class="kw">async fn </span>submit_single_governance_key_tx&lt;F, T, A&gt;(
-	payment_ctx: <span class="kw-2">&amp;</span>TransactionContext,
+	payment_ctx: TransactionContext,
 	make_tx: F,
 	tx_name: <span class="kw-2">&amp;</span>str,
 	client: <span class="kw-2">&amp;</span>T,
@@ -462,7 +485,7 @@
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 {
-	<span class="kw">let </span>tx = Costs::calculate_costs(|c| make_tx(c, payment_ctx), client).<span class="kw">await</span><span class="question-mark">?</span>;
+	<span class="kw">let </span>tx = Costs::calculate_costs(|c| make_tx(c, <span class="kw-2">&amp;</span>payment_ctx), client).<span class="kw">await</span><span class="question-mark">?</span>;
 	<span class="kw">let </span>signed_tx = payment_ctx.sign(<span class="kw-2">&amp;</span>tx).to_bytes();
 	<span class="kw">let </span>res = client.submit_transaction(<span class="kw-2">&amp;</span>signed_tx).<span class="kw">await</span>.map_err(|e| {
 		<span class="macro">anyhow::anyhow!</span>(
@@ -484,7 +507,7 @@
 }
 
 <span class="kw">async fn </span>create_transaction_to_sign&lt;F, T, A&gt;(
-	payment_ctx: <span class="kw-2">&amp;</span>TransactionContext,
+	payment_ctx: TransactionContext,
 	make_tx: F,
 	tx_name: <span class="kw-2">&amp;</span>str,
 	client: <span class="kw-2">&amp;</span>T,
@@ -495,6 +518,7 @@
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 {
+	<span class="kw">let </span>original_ctx = payment_ctx.clone();
 	<span class="kw">let </span>temporary_wallet = fund_temporary_wallet(<span class="kw-2">&amp;</span>make_tx, payment_ctx, client, await_tx)
 		.<span class="kw">await
 		</span>.map_err(|e| {
@@ -503,7 +527,7 @@
 	<span class="kw">let </span>temp_wallet_ctx =
 		TransactionContext::for_payment_key(<span class="kw-2">&amp;</span>temporary_wallet.private_key, client)
 			.<span class="kw">await</span><span class="question-mark">?
-			</span>.with_change_address(<span class="kw-2">&amp;</span>payment_ctx.change_address);
+			</span>.with_change_address(<span class="kw-2">&amp;</span>original_ctx.change_address);
 	<span class="kw">let </span>tx =
 		Costs::calculate_costs(|c| make_tx(c, <span class="kw-2">&amp;</span>temp_wallet_ctx), client)
 			.<span class="kw">await
@@ -514,7 +538,7 @@
 					e
 				)
 			})<span class="question-mark">?</span>;
-	<span class="kw">let </span>signed_tx_by_caller = payment_ctx.sign(<span class="kw-2">&amp;</span>tx);
+	<span class="kw">let </span>signed_tx_by_caller = original_ctx.sign(<span class="kw-2">&amp;</span>tx);
 	<span class="kw">let </span>signed_tx = temp_wallet_ctx.sign(<span class="kw-2">&amp;</span>signed_tx_by_caller);
 	<span class="prelude-val">Ok</span>(MultiSigTransactionData {
 		tx_name: tx_name.to_owned(),

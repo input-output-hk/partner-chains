@@ -392,7 +392,7 @@
 
 	submit_or_create_tx_to_sign(
 		<span class="kw-2">&amp;</span>gov_data,
-		<span class="kw-2">&amp;</span>ctx,
+		ctx,
 		|costs, ctx| mint_d_param_token_tx(validator, policy, d_parameter, <span class="kw-2">&amp;</span>gov_data, costs, <span class="kw-2">&amp;</span>ctx),
 		<span class="string">"Insert D-parameter"</span>,
 		client,
@@ -414,7 +414,7 @@
 
 	submit_or_create_tx_to_sign(
 		<span class="kw-2">&amp;</span>governance_data,
-		<span class="kw-2">&amp;</span>ctx,
+		ctx,
 		|costs, ctx| {
 			update_d_param_tx(
 				validator,

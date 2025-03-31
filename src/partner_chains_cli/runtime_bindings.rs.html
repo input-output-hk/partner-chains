@@ -27,11 +27,9 @@
 <a href="#27" id="27">27</a>
 <a href="#28" id="28">28</a>
 <a href="#29" id="29">29</a>
-<a href="#30" id="30">30</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>pallet_session_validator_management::Config <span class="kw">as </span>CommitteePaletConfig;
 <span class="kw">use </span>serde::Serialize;
 <span class="kw">use </span>sp_core::{ecdsa, ed25519, sr25519};
-<span class="kw">use </span>sp_session_validator_management::CommitteeMember <span class="kw">as </span>CommitteeMemberT;
 
 <span class="kw">pub trait </span>RuntimeTypeWrapper {
 	<span class="kw">type </span>Runtime;

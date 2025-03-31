@@ -24,7 +24,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["partner_chains_node",["",[],["chain_spec.rs","inherent_data.rs","lib.rs","main_chain_follower.rs","rpc.rs","service.rs","staging.rs","template_chain_spec.rs","testnet.rs"]]],\
 ["partner_chains_node_commands",["",[],["lib.rs"]]],\
 ["partner_chains_plutus_data",["",[],["d_param.rs","lib.rs","permissioned_candidates.rs","registered_candidates.rs","reserve.rs","version_oracle.rs"]]],\
-["partner_chains_smart_contracts_commands",["",[],["assemble_tx.rs","d_parameter.rs","get_multisig_data.rs","get_scripts.rs","governance.rs","lib.rs","permissioned_candidates.rs","register.rs","reserve.rs","sign_tx.rs"]]],\
+["partner_chains_smart_contracts_commands",["",[],["assemble_tx.rs","d_parameter.rs","get_scripts.rs","governance.rs","lib.rs","permissioned_candidates.rs","register.rs","reserve.rs","sign_tx.rs"]]],\
 ["plutus",["",[],["cbor.rs","lib.rs"]]],\
 ["plutus_datum_derive",["",[],["lib.rs"]]],\
 ["sc_partner_chains_consensus_aura",["",[],["import_queue.rs","lib.rs"]]],\

@@ -113,11 +113,12 @@
 <a href="#113" id="113">113</a>
 <a href="#114" id="114">114</a>
 <a href="#115" id="115">115</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_keys::CardanoPaymentSigningKey;
-<span class="kw">use </span><span class="kw">crate</span>::csl::Costs;
-<span class="kw">use crate</span>::{
+</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
 	await_tx::{AwaitTx, FixedDelayRetries},
+	cardano_keys::CardanoPaymentSigningKey,
 	csl::key_hash_address,
+	csl::Costs,
+	governance::MultiSigParameters,
 	OffchainError,
 };
 <span class="kw">use </span>anyhow::anyhow;
@@ -126,8 +127,7 @@
 	query_network::QueryNetwork,
 	transactions::Transactions,
 };
-<span class="kw">use </span>sidechain_domain::McTxHash;
-<span class="kw">use </span>sidechain_domain::{MainchainKeyHash, UtxoId};
+<span class="kw">use </span>sidechain_domain::{McTxHash, UtxoId};
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
@@ -140,7 +140,7 @@
 	</span><span class="attr">#[allow(async_fn_in_trait)]
 	</span><span class="kw">async fn </span>init_governance(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		governance_authority: MainchainKeyHash,
+		governance_parameters: <span class="kw-2">&amp;</span>MultiSigParameters,
 		payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;McTxHash, OffchainError&gt;;
@@ -152,12 +152,12 @@
 {
 	<span class="kw">async fn </span>init_governance(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		governance_authority: MainchainKeyHash,
+		governance_parameters: <span class="kw-2">&amp;</span>MultiSigParameters,
 		payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;McTxHash, OffchainError&gt; {
 		run_init_governance(
-			governance_authority,
+			governance_parameters,
 			payment_key,
 			<span class="prelude-val">Some</span>(genesis_utxo_id),
 			<span class="self">self</span>,
@@ -179,7 +179,7 @@
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 &gt;(
-	governance_authority: MainchainKeyHash,
+	governance_parameters: <span class="kw-2">&amp;</span>MultiSigParameters,
 	payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	genesis_utxo_id: <span class="prelude-ty">Option</span>&lt;UtxoId&gt;,
 	client: <span class="kw-2">&amp;</span>T,
@@ -210,7 +210,7 @@
 	<span class="kw">let </span>tx = Costs::calculate_costs(
 		|costs| {
 			transaction::init_governance_transaction(
-				governance_authority,
+				governance_parameters,
 				genesis_utxo.clone(),
 				costs,
 				<span class="kw-2">&amp;</span>ctx,

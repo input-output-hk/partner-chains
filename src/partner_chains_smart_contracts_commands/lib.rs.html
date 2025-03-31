@@ -141,10 +141,6 @@
 <a href="#141" id="141">141</a>
 <a href="#142" id="142">142</a>
 <a href="#143" id="143">143</a>
-<a href="#144" id="144">144</a>
-<a href="#145" id="145">145</a>
-<a href="#146" id="146">146</a>
-<a href="#147" id="147">147</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>ogmios_client::jsonrpsee::{client_for_url, OgmiosClients};
 <span class="kw">use </span>partner_chains_cardano_offchain::cardano_keys::{
 	CardanoKeyFileContent, CardanoPaymentSigningKey,
@@ -153,7 +149,6 @@
 
 <span class="kw">pub mod </span>assemble_tx;
 <span class="kw">pub mod </span>d_parameter;
-<span class="kw">pub mod </span>get_multisig_data;
 <span class="kw">pub mod </span>get_scripts;
 <span class="kw">pub mod </span>governance;
 <span class="kw">pub mod </span>permissioned_candidates;
@@ -166,8 +161,6 @@
 </span><span class="kw">pub enum </span>SmartContractsCmd {
 	<span class="doccomment">/// Prints validator addresses and policy IDs of Partner Chain smart contracts
 	</span>GetScripts(get_scripts::GetScripts),
-	<span class="doccomment">/// Prints JSON summary of the current governance policy of a chain. Prints null if governance policy has not been set for given genesis utxo.
-	</span>GetGovernancePolicy(get_multisig_data::GetGovernancePolicy),
 	<span class="doccomment">/// Upsert DParameter
 	</span>UpsertDParameter(d_parameter::UpsertDParameterCmd),
 	<span class="doccomment">/// Upsert Permissioned Candidates
@@ -209,7 +202,6 @@
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; CmdResult&lt;()&gt; {
 		<span class="kw">match </span><span class="self">self </span>{
 			<span class="self">Self</span>::Governance(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
-			<span class="self">Self</span>::GetGovernancePolicy(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::GetScripts(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::UpsertDParameter(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::UpsertPermissionedCandidates(cmd) =&gt; cmd.execute().<span class="kw">await</span>,

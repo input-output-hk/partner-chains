@@ -115,12 +115,6 @@
 <a href="#115" id="115">115</a>
 <a href="#116" id="116">116</a>
 <a href="#117" id="117">117</a>
-<a href="#118" id="118">118</a>
-<a href="#119" id="119">119</a>
-<a href="#120" id="120">120</a>
-<a href="#121" id="121">121</a>
-<a href="#122" id="122">122</a>
-<a href="#123" id="123">123</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Building and submitting of the transaction that changes the current governance authority
 //!
 //! The transaction:
@@ -128,15 +122,16 @@
 //! 2. Mints exactly 1 multi-sig policy token as authentication
 //! 3. Produces a new governance UTXO at the version oracle validator address with a version oracle
 //!    Plutus datum attached that contains the script ID (32) and policy hash.
-</span><span class="kw">use </span><span class="kw">crate</span>::csl::{Costs, TransactionExt};
-<span class="kw">use </span><span class="kw">crate</span>::governance::{GovernanceData, SimpleAtLeastN};
-<span class="kw">use </span><span class="kw">crate</span>::multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult};
-<span class="kw">use crate</span>::{
+</span><span class="kw">use crate</span>::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
-	csl::CostStore,
-	csl::{InputsBuilderExt, TransactionBuilderExt, TransactionContext},
+	csl::{
+		CostStore, Costs, InputsBuilderExt, TransactionBuilderExt, TransactionContext,
+		TransactionExt,
+	},
+	governance::{GovernanceData, MultiSigParameters},
 	init_governance::transaction::version_oracle_datum_output,
+	multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult},
 	plutus_script::PlutusScript,
 };
 <span class="kw">use </span>cardano_serialization_lib::{
@@ -147,7 +142,7 @@
 	query_network::QueryNetwork,
 	transactions::Transactions,
 };
-<span class="kw">use </span>sidechain_domain::{MainchainKeyHash, UtxoId};
+<span class="kw">use </span>sidechain_domain::UtxoId;
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>test;
@@ -158,8 +153,7 @@
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 &gt;(
-	new_governance_authority: <span class="kw-2">&amp;</span>[MainchainKeyHash],
-	new_governance_threshold: u8,
+	governance_parameters: <span class="kw-2">&amp;</span>MultiSigParameters,
 	payment_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	genesis_utxo_id: UtxoId,
 	client: <span class="kw-2">&amp;</span>T,
@@ -170,14 +164,13 @@
 
 	submit_or_create_tx_to_sign(
 		<span class="kw-2">&amp;</span>governance_data,
-		<span class="kw-2">&amp;</span>payment_ctx,
+		payment_ctx,
 		|costs, ctx| {
 			update_governance_tx(
 				raw_scripts::VERSION_ORACLE_VALIDATOR,
 				raw_scripts::VERSION_ORACLE_POLICY,
 				genesis_utxo_id,
-				new_governance_authority,
-				new_governance_threshold,
+				governance_parameters,
 				<span class="kw-2">&amp;</span>governance_data,
 				costs,
 				ctx,
@@ -194,17 +187,12 @@
 	version_oracle_validator: <span class="kw-2">&amp;</span>[u8],
 	version_oracle_policy: <span class="kw-2">&amp;</span>[u8],
 	genesis_utxo: UtxoId,
-	new_governance_authority: <span class="kw-2">&amp;</span>[MainchainKeyHash],
-	new_governance_threshold: u8,
+	governance_parameters: <span class="kw-2">&amp;</span>MultiSigParameters,
 	governance_data: <span class="kw-2">&amp;</span>GovernanceData,
 	costs: Costs,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
 ) -&gt; anyhow::Result&lt;Transaction&gt; {
-	<span class="kw">let </span>multi_sig_policy = SimpleAtLeastN {
-		threshold: new_governance_threshold.into(),
-		key_hashes: new_governance_authority.iter().map(|key| key.<span class="number">0</span>).collect(),
-	}
-	.to_csl_native_script();
+	<span class="kw">let </span>multi_sig_policy = governance_parameters.as_simple_at_least_n().to_csl_native_script();
 	<span class="kw">let </span>version_oracle_validator =
 		PlutusScript::from_wrapped_cbor(version_oracle_validator, Language::new_plutus_v2())<span class="question-mark">?
 			</span>.apply_data(genesis_utxo)<span class="question-mark">?</span>;

@@ -98,10 +98,34 @@
 <a href="#98" id="98">98</a>
 <a href="#99" id="99">99</a>
 <a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::PaymentFilePath;
-<span class="kw">use </span>anyhow::anyhow;
 <span class="kw">use </span>partner_chains_cardano_offchain::{
-	await_tx::FixedDelayRetries, init_governance::run_init_governance,
+	await_tx::FixedDelayRetries,
+	governance::{get_governance_policy_summary, MultiSigParameters},
+	init_governance::run_init_governance,
 	update_governance::run_update_governance,
 };
 <span class="kw">use </span>sidechain_domain::{MainchainKeyHash, UtxoId};
@@ -113,6 +137,8 @@
 	</span>Init(InitGovernanceCmd),
 	<span class="doccomment">/// Update Partner Chain governance
 	</span>Update(UpdateGovernanceCmd),
+	<span class="doccomment">/// Prints JSON summary of the current governance policy of a chain. Prints null if governance policy has not been set for given genesis utxo.
+	</span>GetPolicy(GetPolicyCmd),
 }
 
 <span class="kw">impl </span>GovernanceCmd {
@@ -120,6 +146,7 @@
 		<span class="kw">match </span><span class="self">self </span>{
 			<span class="self">Self</span>::Init(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 			<span class="self">Self</span>::Update(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
+			<span class="self">Self</span>::GetPolicy(cmd) =&gt; cmd.execute().<span class="kw">await</span>,
 		}
 	}
 }
@@ -128,9 +155,12 @@
 </span><span class="kw">pub struct </span>InitGovernanceCmd {
 	<span class="attr">#[clap(flatten)]
 	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
-	<span class="doccomment">/// Governance authority to be set
-	</span><span class="attr">#[arg(long, short = <span class="string">'g'</span>)]
-	</span>governance_authority: MainchainKeyHash,
+	<span class="doccomment">/// Governance authority to be set, hex encoded, space delimited, order does not matter
+	</span><span class="attr">#[arg(short = <span class="string">'g'</span>, long, num_args = <span class="number">1</span>.., value_delimiter = <span class="string">' '</span>)]
+	</span>governance_authority: Vec&lt;MainchainKeyHash&gt;,
+	<span class="doccomment">/// Governance threshold to be set
+	</span><span class="attr">#[arg(short = <span class="string">'t'</span>, long)]
+	</span>threshold: u8,
 	<span class="attr">#[clap(flatten)]
 	</span>payment_key_file: PaymentFilePath,
 	<span class="doccomment">/// Genesis UTXO of the new chain, it will be spent durning initialization. If not set, then one will be selected from UTXOs of the payment key.
@@ -143,8 +173,11 @@
 		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
 		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
 
+		<span class="kw">let </span>multisig_parameters =
+			MultiSigParameters::new(<span class="kw-2">&amp;</span><span class="self">self</span>.governance_authority, <span class="self">self</span>.threshold)<span class="question-mark">?</span>;
+
 		<span class="kw">let </span>result = run_init_governance(
-			<span class="self">self</span>.governance_authority,
+			<span class="kw-2">&amp;</span>multisig_parameters,
 			<span class="kw-2">&amp;</span>payment_key,
 			<span class="self">self</span>.genesis_utxo,
 			<span class="kw-2">&amp;</span>client,
@@ -162,10 +195,10 @@
 	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
 	<span class="doccomment">/// New governance authorities keys hashes, hex encoded, space delimited, order does not matter
 	</span><span class="attr">#[arg(short = <span class="string">'g'</span>, long, num_args = <span class="number">1</span>.., value_delimiter = <span class="string">' '</span>)]
-	</span>new_governance_authority: Vec&lt;MainchainKeyHash&gt;,
+	</span>governance_authority: Vec&lt;MainchainKeyHash&gt;,
 	<span class="doccomment">/// Governance threshold to be set
-	</span><span class="attr">#[arg(long)]
-	</span>new_governance_threshold: u8,
+	</span><span class="attr">#[arg(short = <span class="string">'t'</span>, long)]
+	</span>threshold: u8,
 	<span class="attr">#[clap(flatten)]
 	</span>payment_key_file: PaymentFilePath,
 	<span class="doccomment">/// Genesis UTXO of the chain
@@ -175,19 +208,14 @@
 
 <span class="kw">impl </span>UpdateGovernanceCmd {
 	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
-		<span class="kw">if </span><span class="self">self</span>.new_governance_threshold &gt; <span class="self">self</span>.new_governance_authority.len() <span class="kw">as </span>u8 {
-			<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">anyhow!</span>(
-				<span class="string">"New governance threshold is greater than the number of governance authorities"
-			</span>)
-			.into());
-		}
-
 		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
 		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
 
+		<span class="kw">let </span>multisig_parameters =
+			MultiSigParameters::new(<span class="kw-2">&amp;</span><span class="self">self</span>.governance_authority, <span class="self">self</span>.threshold)<span class="question-mark">?</span>;
+
 		<span class="kw">let </span>result = run_update_governance(
-			<span class="kw-2">&amp;</span><span class="self">self</span>.new_governance_authority,
-			<span class="self">self</span>.new_governance_threshold,
+			<span class="kw-2">&amp;</span>multisig_parameters,
 			<span class="kw-2">&amp;</span>payment_key,
 			<span class="self">self</span>.genesis_utxo,
 			<span class="kw-2">&amp;</span>client,
@@ -195,6 +223,24 @@
 		)
 		.<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="macro">println!</span>(<span class="string">"{}"</span>, serde_json::to_value(result)<span class="question-mark">?</span>);
+		<span class="prelude-val">Ok</span>(())
+	}
+}
+
+<span class="attr">#[derive(Clone, Debug, clap::Parser)]
+</span><span class="kw">pub struct </span>GetPolicyCmd {
+	<span class="attr">#[clap(flatten)]
+	</span>common_arguments: <span class="kw">crate</span>::CommonArguments,
+	<span class="doccomment">/// Genesis UTXO that identifies the partner chain.
+	</span><span class="attr">#[arg(long, short = <span class="string">'c'</span>)]
+	</span>genesis_utxo: UtxoId,
+}
+
+<span class="kw">impl </span>GetPolicyCmd {
+	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
+		<span class="kw">let </span>client = <span class="self">self</span>.common_arguments.get_ogmios_client().<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let </span>summary = get_governance_policy_summary(<span class="self">self</span>.genesis_utxo, <span class="kw-2">&amp;</span>client).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="macro">print!</span>(<span class="string">"{}"</span>, serde_json::to_string(<span class="kw-2">&amp;</span>summary)<span class="question-mark">?</span>);
 		<span class="prelude-val">Ok</span>(())
 	}
 }

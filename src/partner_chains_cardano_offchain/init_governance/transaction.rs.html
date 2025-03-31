@@ -77,25 +77,21 @@
 <a href="#77" id="77">77</a>
 <a href="#78" id="78">78</a>
 <a href="#79" id="79">79</a>
-<a href="#80" id="80">80</a>
-<a href="#81" id="81">81</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
-	csl::<span class="kw-2">*</span>, governance::SimpleAtLeastN, plutus_script::PlutusScript, scripts_data::version_oracle,
+	csl::<span class="kw-2">*</span>, governance::MultiSigParameters, plutus_script::PlutusScript,
+	scripts_data::version_oracle,
 };
 <span class="kw">use </span>cardano_serialization_lib::<span class="kw-2">*</span>;
 <span class="kw">use </span>ogmios_client::types::OgmiosUtxo;
 <span class="kw">use </span>partner_chains_plutus_data::version_oracle::VersionOracleDatum;
-<span class="kw">use </span>sidechain_domain::MainchainKeyHash;
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>init_governance_transaction(
-	governance_authority: MainchainKeyHash,
+	governance_parameters: <span class="kw-2">&amp;</span>MultiSigParameters,
 	genesis_utxo: OgmiosUtxo,
 	costs: Costs,
 	ctx: <span class="kw-2">&amp;</span>TransactionContext,
 ) -&gt; anyhow::Result&lt;Transaction&gt; {
-	<span class="kw">let </span>multi_sig_policy =
-		SimpleAtLeastN { threshold: <span class="number">1</span>, key_hashes: <span class="macro">vec!</span>[governance_authority.<span class="number">0</span>] }
-			.to_csl_native_script();
+	<span class="kw">let </span>multi_sig_policy = governance_parameters.as_simple_at_least_n().to_csl_native_script();
 	<span class="kw">let </span>version_oracle = version_oracle(genesis_utxo.utxo_id(), ctx.network)<span class="question-mark">?</span>;
 	<span class="kw">let </span>config = <span class="kw">crate</span>::csl::get_builder_config(ctx)<span class="question-mark">?</span>;
 	<span class="kw">let </span><span class="kw-2">mut </span>tx_builder = TransactionBuilder::new(<span class="kw-2">&amp;</span>config);

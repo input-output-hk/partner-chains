@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["GovernanceCmd"],"struct":["InitGovernanceCmd","UpdateGovernanceCmd"]};
+window.SIDEBAR_ITEMS = {"enum":["GovernanceCmd"],"struct":["GetPolicyCmd","InitGovernanceCmd","UpdateGovernanceCmd"]};
