@@ -183,11 +183,20 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Extract Rust version from toolchain file
+        id: rust-version
+        run: |
+          RUST_VERSION=$(grep 'channel' rust-toolchain.toml | sed -E 's/.*"([^"]+)".*/\1/')
+          echo "RUST_VERSION=$RUST_VERSION" >> $GITHUB_ENV
+          echo "Using Rust version: $RUST_VERSION"
       - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@1.81.0
+        uses: actions-rs/toolchain@v1
         with:
+          toolchain: ${{ env.RUST_VERSION }}
+          profile: minimal
           components: clippy
-          targets: wasm32-unknown-unknown
+          target: wasm32-unknown-unknown
+          override: true
       - name: Verify toolchain version
         run: rustc --version
       - name: Run Clippy
