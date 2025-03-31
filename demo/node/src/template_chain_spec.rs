@@ -5,6 +5,9 @@ use partner_chains_demo_runtime::{
 	SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
 use sc_service::ChainType;
+use sc_service::ChainType;
+use sidechain_runtime::AccountId;
+use sp_core::crypto::Ss58Codec;
 
 /// Produces template chain spec for Partner Chains.
 /// This code should be run by `partner-chains-node wizards chain-spec`, to produce JSON chain spec file.
@@ -22,7 +25,10 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 		grandpa: GrandpaConfig { authorities: vec![], ..Default::default() },
 		sudo: SudoConfig {
 			// No sudo account by default, please update with your preferences.
-			key: None,
+			key: Some(
+				AccountId::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY")
+					.unwrap(),
+			),
 		},
 		transaction_payment: Default::default(),
 		session: SessionConfig {
