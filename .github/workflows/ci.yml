@@ -294,7 +294,7 @@ jobs:
     permissions:
       id-token: write
       contents: write
-    runs-on: ubuntu-latest-arm64
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout master
         uses: actions/checkout@v4
@@ -304,6 +304,8 @@ jobs:
       - name: Get current commit SHA
         id: get_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
       - name: Build and Upload for linux arm64
         uses: ./.github/actions/artifacts/build-pc-artifacts
         with:
@@ -621,22 +623,27 @@ jobs:
             ./to-build/staging_preprod_chain_spec.json
 
   build-linux-arm64-workflow-dispatch:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     permissions:
       id-token: write
       contents: write
-    runs-on: ubuntu-latest-arm64
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout specific SHA
+      - name: Checkout master
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.sha }}
+          ref: master
+      - name: Get current commit SHA
+        id: get_sha
+        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
       - name: Build and Upload for linux arm64
         uses: ./.github/actions/artifacts/build-pc-artifacts
         with:
-          sha: ${{ inputs.sha }}
-          tag: ${{ inputs.sha }}
+          sha: ${{ steps.get_sha.outputs.sha }}
+          tag: ${{ steps.get_sha.outputs.sha }}
           os: linux-arm64
 
   build-macos-x86_64-workflow-dispatch:

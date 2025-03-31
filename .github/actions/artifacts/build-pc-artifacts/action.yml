@@ -1,5 +1,5 @@
 name: "Build and Upload PC Artifacts"
-description: "Build and upload partner-chains artifacts for Linux and MacOS"
+description: "Build and upload partner-chains artifacts for Linux, macOS x86_64, and macOS arm64"
 inputs:
   tag:
     description: "partner-chains release tag to append to artifact name"
@@ -44,6 +44,12 @@ runs:
           unzip protoc-21.3-osx-aarch_64.zip -d $HOME/protoc
           sudo mv $HOME/protoc/bin/protoc /usr/local/bin/protoc
         fi
+    - name: Install cross-compilation dependencies for Linux ARM64
+      if: inputs.os == 'linux-arm64'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
     - name: Install LLVM for macOS
       if: startsWith(inputs.os, 'macos')
       shell: bash
@@ -68,6 +74,13 @@ runs:
           chmod +x $PARTNER_CHAINS_NODE
         elif [[ "${{ inputs.os }}" == "linux-arm64" ]]; then
           rustup target add aarch64-unknown-linux-gnu
+          
+          # Configure cross-compilation environment variables
+          export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
+          export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
+          export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
+          export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
+          
           cargo build -p partner-chains-node --locked --release --target aarch64-unknown-linux-gnu
           cp target/aarch64-unknown-linux-gnu/release/partner-chains-node $PARTNER_CHAINS_NODE
           chmod +x $PARTNER_CHAINS_NODE
