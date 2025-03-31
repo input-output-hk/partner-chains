@@ -24,7 +24,7 @@ jobs:
 
 ### Pre merge workflow ###############################################################################################################
 
-  build-linux-pre-merge:
+  build-linux-x86_64-pre-merge:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     outputs:
@@ -87,7 +87,7 @@ jobs:
 
   local-environment-tests:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-    needs: build-linux-pre-merge
+    needs: build-linux-x86_64-pre-merge
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -99,8 +99,8 @@ jobs:
         uses: ./.github/actions/tests/local-environment-tests
         with:
           tag: CI
-          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-pre-merge.outputs.sha }}
-          sha: ${{ needs.build-linux-pre-merge.outputs.sha }}
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
+          sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
           tests: premerge
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
@@ -143,7 +143,7 @@ jobs:
         shell: bash
 
   devshell-tests:
-    needs: build-linux-pre-merge
+    needs: build-linux-x86_64-pre-merge
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     strategy:
       matrix:
@@ -176,7 +176,7 @@ jobs:
 
   upload-chain-specs-pre-merge:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-    needs: build-linux-pre-merge
+    needs: build-linux-x86_64-pre-merge
     runs-on: eks
     steps:
       - name: Checkout
@@ -187,7 +187,7 @@ jobs:
       - name: Upload chain spec artifacts to Kubernetes
         uses: ./.github/actions/deploy/upload-chain-specs
         with:
-          sha: ${{ needs.build-linux-pre-merge.outputs.sha }}
+          sha: ${{ needs.build-linux-x86_64-pre-merge.outputs.sha }}
         env:
           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
@@ -195,12 +195,12 @@ jobs:
 
   pre-merge-checks-complete:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
-    needs: [build-linux-pre-merge, local-environment-tests, devshell-tests, upload-chain-specs-pre-merge]
+    needs: [build-linux-x86_64-pre-merge, local-environment-tests, devshell-tests, upload-chain-specs-pre-merge]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
         run: |
-          if [[ "${{ needs.build-linux-pre-merge.result }}" != "success" ||
+          if [[ "${{ needs.build-linux-x86_64-pre-merge.result }}" != "success" ||
                 "${{ needs.local-environment-tests.result }}" != "success" ||
                 "${{ needs.devshell-tests.result }}" != "success" ||
                 "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ]]; then
@@ -212,7 +212,7 @@ jobs:
 
 ### Post merge workflow ###############################################################################################################
 
-  build-linux-post-merge:
+  build-linux-x86_64-post-merge:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     outputs:
@@ -289,6 +289,30 @@ jobs:
             ./to-build/staging_preview_chain_spec.json
             ./to-build/staging_preprod_chain_spec.json
 
+  build-linux-arm64:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: master
+      - name: Get current commit SHA
+        id: get_sha
+        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Build and Upload for linux arm64
+        uses: ./.github/actions/artifacts/build-pc-artifacts
+        with:
+          sha: ${{ steps.get_sha.outputs.sha }}
+          tag: ${{ steps.get_sha.outputs.sha }}
+          os: linux-arm64
+
   build-macos-x86_64:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     permissions:
@@ -336,7 +360,8 @@ jobs:
   upload-to-s3:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
     needs:
-      - build-linux-post-merge
+      - build-linux-x86_64-post-merge
+      - build-linux-arm64
       - build-macos-x86_64
       - build-macos-arm64
     runs-on: ubuntu-latest
@@ -363,7 +388,7 @@ jobs:
 
   upload-chain-specs:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-    needs: build-linux-post-merge
+    needs: build-linux-x86_64-post-merge
     runs-on: eks
     steps:
       - name: Checkout
@@ -374,7 +399,7 @@ jobs:
       - name: Upload chain spec artifacts to Kubernetes
         uses: ./.github/actions/deploy/upload-chain-specs
         with:
-          sha: ${{ needs.build-linux-post-merge.outputs.sha }}
+          sha: ${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
         env:
           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
@@ -382,7 +407,7 @@ jobs:
 
   deploy-rustdoc:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-    needs: build-linux-post-merge
+    needs: build-linux-x86_64-post-merge
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -400,7 +425,7 @@ jobs:
 
   local-environment-tests-post-merge:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
-    needs: build-linux-post-merge
+    needs: build-linux-x86_64-post-merge
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -412,8 +437,8 @@ jobs:
         uses: ./.github/actions/tests/local-environment-tests
         with:
           tag: CI
-          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-post-merge.outputs.sha }}
-          sha: ${{ needs.build-linux-post-merge.outputs.sha }}
+          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
+          sha: ${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
           tests: postmerge
         env:
           SUBSTRATE_REPO_SSH_KEY: ${{ secrets.SUBSTRATE_REPO_SSH_KEY }}
@@ -457,7 +482,7 @@ jobs:
 
   deploy-ci-preview:
     needs:
-      - build-linux-post-merge
+      - build-linux-x86_64-post-merge
       - local-environment-tests-post-merge-alert
     permissions:
       id-token: write
@@ -471,8 +496,8 @@ jobs:
       - name: Deploy ci-preview
         uses: ./.github/actions/deploy/deploy-ci-preview
         with:
-          image:  ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-post-merge.outputs.sha }}
-          sha: ${{ needs.build-linux-post-merge.outputs.sha }}
+          image:  ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
+          sha: ${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
           no-wipe: true
         env:
           AWS_REGION: "eu-central-1"
@@ -512,22 +537,24 @@ jobs:
     if: ${{ always() && (github.event_name == 'pull_request' && github.event.pull_request.merged == true) }}
     needs:
       [
-        build-linux-post-merge,
+        build-linux-x86_64-post-merge,
         deploy-rustdoc,
         upload-chain-specs,
         local-environment-tests-post-merge,
         ci-preview-tests-post-merge,
         deploy-ci-preview,
+        upload-to-s3,
       ]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
         run: |
           if [[ "${{ needs.deploy-rustdoc.result }}" != "success" ||
-                "${{ needs.build-linux-post-merge.result }}" != "success" ||
+                "${{ needs.build-linux-x86_64-post-merge.result }}" != "success" ||
                 "${{ needs.upload-chain-specs.result }}" != "success" ||
                 "${{ needs.local-environment-tests-post-merge.result }}" != "success" ]]
-                "${{ needs.deploy-ci-preview.result }}" != "success" ]]; then
+                "${{ needs.deploy-ci-preview.result }}" != "success" ]]
+                "${{ needs.upload-to-s3.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1
           else
@@ -536,7 +563,7 @@ jobs:
 
 ### Workflow dispatch flow ###############################################################################################################
 
-  build-linux-workflow-dispatch:
+  build-linux-x86_64-workflow-dispatch:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
     steps:
@@ -595,6 +622,27 @@ jobs:
             ./to-build/staging_preview_chain_spec.json
             ./to-build/staging_preprod_chain_spec.json
 
+  build-linux-arm64-workflow-dispatch:
+    if: github.event_name == 'workflow_dispatch'
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout specific SHA
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Build and Upload for linux arm64
+        uses: ./.github/actions/artifacts/build-pc-artifacts
+        with:
+          sha: ${{ inputs.sha }}
+          tag: ${{ inputs.sha }}
+          os: linux-arm64
+
   build-macos-x86_64-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
     permissions:
@@ -636,7 +684,8 @@ jobs:
   upload-to-s3-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
     needs:
-      - build-linux-workflow-dispatch
+      - build-linux-x86_64-workflow-dispatch
+      - build-linux-arm64-workflow-dispatch
       - build-macos-x86_64-workflow-dispatch
       - build-macos-arm64-workflow-dispatch
     runs-on: ubuntu-latest
@@ -660,7 +709,7 @@ jobs:
 
   upload-chain-specs-workflow-dispatch:
     if: github.event_name == 'workflow_dispatch'
-    needs: build-linux-workflow-dispatch
+    needs: build-linux-x86_64-workflow-dispatch
     runs-on: eks
     steps:
       - name: Checkout specific SHA
@@ -679,12 +728,13 @@ jobs:
 
   workflow-dispatch-flow-complete:
     if: ${{ always() && github.event_name == 'workflow_dispatch' }}
-    needs: [build-linux-workflow-dispatch, build-macos-x86_64-workflow-dispatch, build-macos-arm64-workflow-dispatch, upload-to-s3-workflow-dispatch, upload-chain-specs-workflow-dispatch]
+    needs: [build-linux-x86_64-workflow-dispatch, build-linux-arm64-workflow-dispatch, build-macos-x86_64-workflow-dispatch, build-macos-arm64-workflow-dispatch, upload-to-s3-workflow-dispatch, upload-chain-specs-workflow-dispatch]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
         run: |
-          if [[ "${{ needs.build-linux-workflow-dispatch.result }}" != "success" ||
+          if [[ "${{ needs.build-linux-x86_64-workflow-dispatch.result }}" != "success" ||
+                "${{ needs.build-linux-arm64-workflow-dispatch.result }}" != "success" ||
                 "${{ needs.build-macos-x86_64-workflow-dispatch.result }}" != "success" ||
                 "${{ needs.build-macos-arm64-workflow-dispatch.result }}" != "success" ||
                 "${{ needs.upload-to-s3-workflow-dispatch.result }}" != "success" ||
