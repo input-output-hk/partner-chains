@@ -151,7 +151,7 @@ docker:
         && chown -R substrate:substrate /data /substrate \
         && ln -s /data /substrate/.local/share/partner-chains-node
 
-    COPY +build/partner-chains-node /usr/local/bin/
+    COPY +build/partner-chains-demo-node /usr/local/bin/partner-chains-node
     RUN /usr/local/bin/partner-chains-node --version
     RUN chown substrate:substrate /usr/local/bin/partner-chains-node && chmod +x /usr/local/bin/partner-chains-node
 
@@ -172,7 +172,7 @@ docker:
 
 deps:
     FROM +source
-    COPY +build/partner-chains-node .
+    COPY +build/partner-chains-demo-node .
     RUN ldd partner-chains-node \
         | awk 'NF == 4 { system("echo " $3) }' \
         | tar -czf deps.tgz --files-from=-
@@ -189,7 +189,7 @@ mock:
   RUN mkdir -p $SRCS \
       && touch $LIBS \
       && for crate in $SRCS; do if [ ! -f $crate/lib.rs ]; then touch $crate/main.rs; fi; done \
-      && touch node/node/src/lib.rs
+      && touch demo/node/src/lib.rs
 
 fetch-deps:
   FROM +mock
@@ -198,7 +198,7 @@ fetch-deps:
 
 INSTALL:
   FUNCTION
-  COPY +build/partner-chains-node /usr/local/bin
+  COPY +build/partner-chains-demo-node /usr/local/bin/partner-chains-node
   COPY +deps/deps /tmp/deps.tgz
 
   RUN tar -v -C / -xzf /tmp/deps.tgz \
