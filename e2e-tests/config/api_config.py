@@ -9,6 +9,7 @@ class Timeout:
     long_running_function: int = MISSING
     register_cmd: int = MISSING
     deregister_cmd: int = MISSING
+    main_chain_tx: int = MISSING
 
 
 @dataclass
@@ -44,15 +45,6 @@ class Node:
 
 
 @dataclass
-class NativeToken:
-    total_accrued_function_script_hash: str = MISSING
-    total_accrued_function_address: str = MISSING
-    policy_id: str = MISSING
-    asset_name: str = MISSING
-    token: str = SI("${.policy_id}.${.asset_name}")
-
-
-@dataclass
 class MainChainConfig:
     network: str = MISSING
     epoch_length: int = MISSING
@@ -61,13 +53,13 @@ class MainChainConfig:
     security_param: int = MISSING
     init_timestamp: int = MISSING
     block_stability_margin: int = MISSING
-    native_token: Optional[NativeToken] = None
 
 
 @dataclass
 class MainchainAccount:
     mainchain_address: str
     mainchain_key: str
+    mainchain_pub_key: str
     mainchain_pub_key_hash: str
 
 
@@ -85,6 +77,13 @@ class Tool:
     cli: str = MISSING
     ssh: Optional[SSH] = None
     shell: Optional[str] = SI("${...tools_shell}")
+
+
+@dataclass
+class Reserve:
+    token_name: str = MISSING
+    v_function_script_path: str = MISSING
+    v_function_updated_script_path: str = MISSING
 
 
 @dataclass
@@ -106,6 +105,7 @@ class NodesApiConfig:
     d_param_max: Optional[DParam] = None
     governance_authority: MainchainAccount = MISSING
     additional_governance_authorities: Optional[list[MainchainAccount]] = None
+    reserve: Optional[Reserve] = None
     network: str = SI("${partner_chain_main_cli_network:${..main_chain.network}}")
 
 

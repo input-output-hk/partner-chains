@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import logging
 import re
 import json
+import uuid
 from config.api_config import ApiConfig, Node
 from .models import RegistrationSignatures
 from ..run_command import Runner, Result
@@ -113,7 +114,7 @@ class SmartContracts:
             f"{candidate.public_key}:{candidate.aura_public_key}:{candidate.grandpa_public_key}"
             for candidate in new_candidates_list.values()
         )
-        permissioned_candidates_file = "/tmp/permissioned_candidates.csv"
+        permissioned_candidates_file = f"/tmp/permissioned_candidates_{uuid.uuid4().hex}.csv"
         save_file_cmd = f"echo '{candidates_file_content}' > {permissioned_candidates_file}"
         self.run_command.run(save_file_cmd)
 

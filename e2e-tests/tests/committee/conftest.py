@@ -570,34 +570,3 @@ def candidate_skey_with_cli(config: ApiConfig, candidate: Candidates):
         runner.run(f"rm -rf {temp_dir}")
     else:
         yield
-
-
-@fixture
-def governance_skey_with_cli(config: ApiConfig):
-    """
-    Securely copy the governance authority's init skey (a secret key used by the PCSC CLI to authorize admin operations)
-    to a temporary directory on the remote machine and update the path in the configuration. The temporary directory is
-    deleted after the test completes.
-
-    This fixture is executed only if SSH is configured in the stack settings, implying that the PCSC CLI (which
-    requires the key to be present on the localhost) is installed on the remote machine. Therefore, the key is
-    implicitly copied using SCP.
-
-    WARNING: This fixture copies secret file to a remote host and should be used with caution.
-
-    NOTE: Ensure that the SSH settings are correctly configured in the stack config.
-
-    :param config: The API configuration object.
-    """
-    if config.stack_config.ssh:
-        runner = RunnerFactory.get_runner(config.stack_config.ssh, "/bin/bash")
-        temp_dir = runner.run("mktemp -d").stdout.strip()
-        path = config.nodes_config.governance_authority.mainchain_key
-        filename = path.split("/")[-1]
-        runner.scp(path, temp_dir)
-        config.nodes_config.governance_authority.mainchain_key = f"{temp_dir}/{filename}"
-        yield
-        config.nodes_config.governance_authority.mainchain_key = path
-        runner.run(f"rm -rf {temp_dir}")
-    else:
-        yield

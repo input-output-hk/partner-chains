@@ -15,12 +15,18 @@
     "nodes_config": {
         "default_scheme": "ws",
         "default_rpc_scheme": "http",
-        "default_port": 9933
+        "default_port": 9933,
+        "reserve": {
+            "token_name": "Reward token",
+            "v_function_script_path": "./config/scripts/v-function-1975.script",
+            "v_function_updated_script_path": "./config/scripts/v-function-2025.script"
+        }
     },
     "timeouts": {
         "long_running_function": 50,
         "register_cmd": 300,
-        "deregister_cmd": 300
+        "deregister_cmd": 300,
+        "main_chain_tx": 180
     },
     "poll_intervals": {
         "transaction_finalization": 1
