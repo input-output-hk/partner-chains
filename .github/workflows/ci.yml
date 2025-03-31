@@ -183,13 +183,8 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          components: clippy
-          # No toolchain specified - will use rust-toolchain.toml from repo
-          override: false
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
       - name: Run Clippy
         env:
           RUSTFLAGS: "-Dwarnings"
