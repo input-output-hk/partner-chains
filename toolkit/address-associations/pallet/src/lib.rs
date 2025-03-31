@@ -109,7 +109,7 @@ pub mod pallet {
 
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
 
-			AddressAssociations::<T>::insert(stake_key_hash.clone(), partnerchain_address.clone());
+			AddressAssociations::<T>::insert(stake_key_hash, partnerchain_address.clone());
 
 			T::OnNewAssociation::on_new_association(partnerchain_address, stake_key_hash);
 

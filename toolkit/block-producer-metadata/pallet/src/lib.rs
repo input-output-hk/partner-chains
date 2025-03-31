@@ -78,9 +78,8 @@ pub mod pallet {
 				genesis_utxo,
 			};
 
-			let is_valid_signature = signature
-				.verify(&cross_chain_pub_key.into(), &metadata_message.encode())
-				.is_ok();
+			let is_valid_signature =
+				signature.verify(&cross_chain_pub_key, &metadata_message.encode()).is_ok();
 
 			ensure!(is_valid_signature, Error::<T>::InvalidMainchainSignature);
 
