@@ -5,7 +5,7 @@ use ogmios_client::{
 	query_ledger_state::{
 		PlutusCostModels, ProtocolParametersResponse, ReferenceScriptsCosts, ScriptExecutionPrices,
 	},
-	types::{OgmiosBytesSize, OgmiosTx, OgmiosUtxo, OgmiosValue},
+	types::{NativeScript, OgmiosBytesSize, OgmiosScript, OgmiosTx, OgmiosUtxo, OgmiosValue},
 };
 use sidechain_domain::StakePoolPublicKey;
 
@@ -76,5 +76,27 @@ pub(crate) fn make_utxo(id_byte: u8, index: u16, lovelace: u64, addr: &Address) 
 		value: OgmiosValue::new_lovelace(lovelace),
 		address: addr.to_bech32(None).unwrap(),
 		..Default::default()
+	}
+}
+
+pub(crate) fn ogmios_native_1_of_1_script() -> OgmiosScript {
+	OgmiosScript {
+		language: "native".into(),
+		cbor: hex!("830301818200581ce8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b")
+			.to_vec(),
+		json: Some(NativeScript::Some {
+			from: vec![NativeScript::Signature {
+				from: hex!("e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"),
+			}],
+			at_least: 1,
+		}),
+	}
+}
+
+pub(crate) fn ogmios_plutus_script() -> OgmiosScript {
+	OgmiosScript {
+		language: "plutus:v2".into(),
+		cbor: raw_scripts::MULTI_SIG_POLICY.to_vec(),
+		json: None,
 	}
 }
