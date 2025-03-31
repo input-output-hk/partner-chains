@@ -1,8 +1,9 @@
-use crate::cardano_keys::CardanoPaymentSigningKey;
-use crate::csl::Costs;
 use crate::{
 	await_tx::{AwaitTx, FixedDelayRetries},
+	cardano_keys::CardanoPaymentSigningKey,
 	csl::key_hash_address,
+	csl::Costs,
+	governance::MultiSigParameters,
 	OffchainError,
 };
 use anyhow::anyhow;
@@ -11,8 +12,7 @@ use ogmios_client::{
 	query_network::QueryNetwork,
 	transactions::Transactions,
 };
-use sidechain_domain::McTxHash;
-use sidechain_domain::{MainchainKeyHash, UtxoId};
+use sidechain_domain::{McTxHash, UtxoId};
 
 #[cfg(test)]
 mod tests;
@@ -25,7 +25,7 @@ pub trait InitGovernance {
 	#[allow(async_fn_in_trait)]
 	async fn init_governance(
 		&self,
-		governance_authority: MainchainKeyHash,
+		governance_parameters: &MultiSigParameters,
 		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
 	) -> Result<McTxHash, OffchainError>;
@@ -37,12 +37,12 @@ where
 {
 	async fn init_governance(
 		&self,
-		governance_authority: MainchainKeyHash,
+		governance_parameters: &MultiSigParameters,
 		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
 	) -> Result<McTxHash, OffchainError> {
 		run_init_governance(
-			governance_authority,
+			governance_parameters,
 			payment_key,
 			Some(genesis_utxo_id),
 			self,
@@ -64,7 +64,7 @@ pub async fn run_init_governance<
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 >(
-	governance_authority: MainchainKeyHash,
+	governance_parameters: &MultiSigParameters,
 	payment_key: &CardanoPaymentSigningKey,
 	genesis_utxo_id: Option<UtxoId>,
 	client: &T,
@@ -95,7 +95,7 @@ pub async fn run_init_governance<
 	let tx = Costs::calculate_costs(
 		|costs| {
 			transaction::init_governance_transaction(
-				governance_authority,
+				governance_parameters,
 				genesis_utxo.clone(),
 				costs,
 				&ctx,

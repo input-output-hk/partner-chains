@@ -1,7 +1,6 @@
 use pallet_session_validator_management::Config as CommitteePaletConfig;
 use serde::Serialize;
 use sp_core::{ecdsa, ed25519, sr25519};
-use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 
 pub trait RuntimeTypeWrapper {
 	type Runtime;

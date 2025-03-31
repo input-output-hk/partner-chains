@@ -66,7 +66,7 @@ pub async fn update_reserve_settings<
 	Ok(Some(
 		submit_or_create_tx_to_sign(
 			&governance,
-			&ctx,
+			ctx,
 			|costs, ctx| {
 				update_reserve_settings_tx(
 					&reserve_datum,

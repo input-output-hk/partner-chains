@@ -1,7 +1,7 @@
 use super::{test_values, update_governance_tx};
 use crate::cardano_keys::CardanoPaymentSigningKey;
 use crate::csl::{empty_asset_name, key_hash_address, Costs, TransactionContext};
-use crate::governance::GovernanceData;
+use crate::governance::{GovernanceData, MultiSigParameters};
 use crate::test_values::{protocol_parameters, test_governance_policy};
 use cardano_serialization_lib::*;
 use hex_literal::hex;
@@ -131,8 +131,7 @@ fn test_update_governance_tx() -> Transaction {
 		test_values::VERSION_ORACLE_VALIDATOR,
 		test_values::VERSION_ORACLE_POLICY,
 		genesis_utxo().utxo_id(),
-		&vec![new_governance_authority()],
-		1,
+		&MultiSigParameters::new_one_of_one(&new_governance_authority()),
 		&governance_data(),
 		test_costs(),
 		&tx_context(),

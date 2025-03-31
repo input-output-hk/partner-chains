@@ -17,7 +17,7 @@ use ogmios_client::{
 	transactions::Transactions,
 };
 use serde::{Serialize, Serializer};
-use sidechain_domain::{byte_string::ByteString, crypto::blake2b, McTxHash, UtxoId, UtxoIndex};
+use sidechain_domain::{crypto::blake2b, McTxHash, UtxoId, UtxoIndex};
 
 /// Successfull smart contracts offchain results in either transaction submission or creating transaction that has to be signed by the governance authorities
 #[derive(Clone, Debug, Serialize)]
@@ -40,22 +40,25 @@ pub struct MultiSigTransactionData {
 #[derive(Clone, Debug, Serialize)]
 pub struct TemporaryWalletData {
 	pub address: String,
-	pub private_key: ByteString,
-	pub funded_by_tx: McTxHash,
+	pub public_key_hash: String,
 }
 
 pub(crate) struct TemporaryWallet {
 	pub address: cardano_serialization_lib::Address,
 	pub private_key: CardanoPaymentSigningKey,
-	pub funded_by_tx: [u8; 32],
+}
+
+impl TemporaryWallet {
+	pub(crate) fn address_bech32(&self) -> String {
+		self.address.to_bech32(None).expect("to_bech32 is safe with None prefix")
+	}
 }
 
 impl From<TemporaryWallet> for TemporaryWalletData {
 	fn from(value: TemporaryWallet) -> Self {
 		TemporaryWalletData {
-			address: value.address.to_bech32(None).unwrap(),
-			private_key: value.private_key.to_bytes().into(),
-			funded_by_tx: McTxHash(value.funded_by_tx),
+			address: value.address_bech32(),
+			public_key_hash: hex::encode(&value.private_key.to_pub_key_hash().0),
 		}
 	}
 }
@@ -84,31 +87,22 @@ pub(crate) async fn fund_temporary_wallet<
 	A: AwaitTx,
 >(
 	make_tx: &F,
-	payment_ctx: &TransactionContext,
+	payment_ctx: TransactionContext,
 	client: &T,
 	await_tx: &A,
 ) -> anyhow::Result<TemporaryWallet> {
-	let (private_key, address) = create_temporary_wallet(payment_ctx.network)?;
-
-	let tx_to_estimate_costs = Costs::calculate_costs(|c| make_tx(c, payment_ctx), client).await?;
-	let value = estimate_required_value(tx_to_estimate_costs.body(), payment_ctx)?;
-
-	let tx_hash = transfer_to_temporary_wallet(payment_ctx, &address, &value, client).await?;
-	await_tx.await_tx_output(client, UtxoId::new(tx_hash, 0)).await?;
-	Ok(TemporaryWallet { address, private_key, funded_by_tx: tx_hash })
+	let wallet = create_temporary_wallet(payment_ctx.network)?;
+	let tx_to_estimate_costs = Costs::calculate_costs(|c| make_tx(c, &payment_ctx), client).await?;
+	let value = estimate_required_value(tx_to_estimate_costs.body(), &payment_ctx)?;
+	save_wallet_file(&wallet)?;
+	transfer_to_temporary_wallet(payment_ctx, &wallet.address, &value, client, await_tx).await?;
+	Ok(wallet)
 }
 
-fn create_temporary_wallet(
-	network: NetworkIdKind,
-) -> Result<(CardanoPaymentSigningKey, Address), JsError> {
+fn create_temporary_wallet(network: NetworkIdKind) -> Result<TemporaryWallet, JsError> {
 	let private_key = CardanoPaymentSigningKey(PrivateKey::generate_ed25519()?);
 	let address = key_hash_address(&private_key.0.to_public().hash(), network);
-	log::info!(
-		"Temporary wallet private key: {}, address: {}. Store this key for eventual re-claim of tokens.",
-		private_key.0.to_hex(),
-		address.to_bech32(None)?
-	);
-	Ok((private_key, address))
+	Ok(TemporaryWallet { private_key, address })
 }
 
 /// Estimates required value by subtracting change, fee and collateral from the sum of inputs.
@@ -137,15 +131,31 @@ fn estimate_required_value(
 	total_input.clamped_sub(&change).checked_add(&Value::new(&5_000_000u32.into()))
 }
 
-async fn transfer_to_temporary_wallet<T: Transactions>(
-	payment_ctx: &TransactionContext,
+fn save_wallet_file(wallet: &TemporaryWallet) -> Result<(), anyhow::Error> {
+	let key_bytes = wallet.private_key.to_bytes();
+	// CBOR wrappring the private key bytes. We don't have types to express this conveniently.
+	let cbor_hex = format!("5820{}", hex::encode(key_bytes));
+	let json = serde_json::json!({
+		"type": "PaymentSigningKeyShelley_ed25519",
+		"description": "Temporary wallet key generated for a MultiSigTransaction",
+		"cborHex": cbor_hex
+	});
+	let file_name = format!("{}.skey", wallet.address_bech32());
+	let file = std::fs::File::create(file_name)?;
+	serde_json::to_writer_pretty(file, &json)?;
+	Ok(())
+}
+
+async fn transfer_to_temporary_wallet<T: Transactions + QueryUtxoByUtxoId, A: AwaitTx>(
+	payment_ctx: TransactionContext,
 	address: &Address,
 	value: &Value,
 	client: &T,
-) -> Result<[u8; 32], anyhow::Error> {
-	let mut funding_tx_builder = TransactionBuilder::new(&get_builder_config(payment_ctx)?);
+	await_tx: &A,
+) -> Result<(), anyhow::Error> {
+	let mut funding_tx_builder = TransactionBuilder::new(&get_builder_config(&payment_ctx)?);
 	funding_tx_builder.add_output(&TransactionOutput::new(address, value))?;
-	let funding_tx = funding_tx_builder.balance_update_and_build(payment_ctx)?;
+	let funding_tx = funding_tx_builder.balance_update_and_build(&payment_ctx)?;
 	let tx_hash: [u8; 32] = blake2b(funding_tx.body().to_bytes().as_ref());
 	log::info!(
 		"Founding temporary wallet {} with {} in transaction: {}",
@@ -154,7 +164,8 @@ async fn transfer_to_temporary_wallet<T: Transactions>(
 		&hex::encode(tx_hash)
 	);
 	client.submit_transaction(&payment_ctx.sign(&funding_tx).to_bytes()).await?;
-	Ok(tx_hash)
+	await_tx.await_tx_output(client, UtxoId::new(tx_hash, 0)).await?;
+	Ok(())
 }
 
 /// If the chain has real MultiSig governance it:
@@ -165,7 +176,7 @@ async fn transfer_to_temporary_wallet<T: Transactions>(
 /// If the chain has single key MultiSig governance it creates and submits transaction paid by and signed by the payment wallet.
 pub(crate) async fn submit_or_create_tx_to_sign<F, T, A>(
 	governance_data: &GovernanceData,
-	payment_ctx: &TransactionContext,
+	payment_ctx: TransactionContext,
 	make_tx: F,
 	tx_name: &str,
 	client: &T,
@@ -189,7 +200,7 @@ where
 }
 
 async fn submit_single_governance_key_tx<F, T, A>(
-	payment_ctx: &TransactionContext,
+	payment_ctx: TransactionContext,
 	make_tx: F,
 	tx_name: &str,
 	client: &T,
@@ -200,7 +211,7 @@ where
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 {
-	let tx = Costs::calculate_costs(|c| make_tx(c, payment_ctx), client).await?;
+	let tx = Costs::calculate_costs(|c| make_tx(c, &payment_ctx), client).await?;
 	let signed_tx = payment_ctx.sign(&tx).to_bytes();
 	let res = client.submit_transaction(&signed_tx).await.map_err(|e| {
 		anyhow::anyhow!(
@@ -222,7 +233,7 @@ where
 }
 
 async fn create_transaction_to_sign<F, T, A>(
-	payment_ctx: &TransactionContext,
+	payment_ctx: TransactionContext,
 	make_tx: F,
 	tx_name: &str,
 	client: &T,
@@ -233,6 +244,7 @@ where
 	T: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
 	A: AwaitTx,
 {
+	let original_ctx = payment_ctx.clone();
 	let temporary_wallet = fund_temporary_wallet(&make_tx, payment_ctx, client, await_tx)
 		.await
 		.map_err(|e| {
@@ -241,7 +253,7 @@ where
 	let temp_wallet_ctx =
 		TransactionContext::for_payment_key(&temporary_wallet.private_key, client)
 			.await?
-			.with_change_address(&payment_ctx.change_address);
+			.with_change_address(&original_ctx.change_address);
 	let tx =
 		Costs::calculate_costs(|c| make_tx(c, &temp_wallet_ctx), client)
 			.await
@@ -252,7 +264,7 @@ where
 					e
 				)
 			})?;
-	let signed_tx_by_caller = payment_ctx.sign(&tx);
+	let signed_tx_by_caller = original_ctx.sign(&tx);
 	let signed_tx = temp_wallet_ctx.sign(&signed_tx_by_caller);
 	Ok(MultiSigTransactionData {
 		tx_name: tx_name.to_owned(),

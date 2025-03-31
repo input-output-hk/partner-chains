@@ -161,7 +161,7 @@ where
 {
 	submit_or_create_tx_to_sign(
 		governance_data,
-		&payment_ctx,
+		payment_ctx,
 		|costs, ctx| {
 			mint_permissioned_candidates_token_tx(
 				validator,
@@ -195,7 +195,7 @@ where
 {
 	submit_or_create_tx_to_sign(
 		governance_data,
-		&payment_ctx,
+		payment_ctx,
 		|costs, ctx| {
 			update_permissioned_candidates_tx(
 				validator,
