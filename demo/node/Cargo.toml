@@ -1,5 +1,5 @@
 [package]
-name = "partner-chains-node"
+name = "partner-chains-demo-node"
 version.workspace = true
 description = "A reference implementation of a partner chain node"
 authors.workspace = true
@@ -14,7 +14,7 @@ build = "build.rs"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [[bin]]
-name = "partner-chains-node"
+name = "partner-chains-demo-node"
 
 [lints]
 workspace = true

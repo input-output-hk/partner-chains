@@ -99,9 +99,9 @@ build:
   #CACHE --sharing shared --id cargo-build-$CACHE_KEY target
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
-  RUN ./target/*/partner-chains-node --version
-  SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node
-  SAVE ARTIFACT target/*/partner-chains-node AS LOCAL partner-chains-node-artifact
+  RUN ./target/*/partner-chains-demo-node --version
+  SAVE ARTIFACT target/*/partner-chains-demo-node AS LOCAL partner-chains-node
+  SAVE ARTIFACT target/*/partner-chains-demo-node AS LOCAL partner-chains-node-artifact
 
 test:
   FROM +build
