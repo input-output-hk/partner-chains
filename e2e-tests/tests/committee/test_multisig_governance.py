@@ -18,7 +18,7 @@ def governance_authority(config: ApiConfig) -> MainchainAccount:
 @fixture(scope="module")
 def additional_governance_authorities(config: ApiConfig) -> list[str]:
     """Additional authorities for multisig - should be set in test config"""
-    if not hasattr(config.nodes_config, "additional_governance_authorities"):
+    if not config.nodes_config.additional_governance_authorities:
         skip("Additional governance authorities not configured")
     return config.nodes_config.additional_governance_authorities
 
