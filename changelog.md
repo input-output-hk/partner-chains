@@ -6,11 +6,6 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
-* `upsert-d-parameter` command now works with multi-sig.
-* `governance update` command now accepts multiple governance authority key hashes, not just one. It also takes `new-governance-threshold` parameter, which is the number of signatures required to perform governance action.
-* `governance init` and `governance update` will set Multisig policy implemented with ALeastN Native Script, instead of custom policy implemented as Plutus Script in partner-chains-smart-contracts. This policy doesn't require to set `required_signers` field in the transaction making it more user friendly.
-* Extracted the "Ariadne" committee selection algorithm to the `selection` crate.
-* `governance update` and `upsert-permissioned-candidates` commands are now protected from spending transaction inputs while transaction is being signed.
 * Added implementation of `FindAccountFromAuthorIndex` trait for `pallet_partner_chains_session`.
 * Unified `*toml` files package data
 
@@ -29,6 +24,30 @@ the feature `pallet-session-compat`.
 
 ## Added
 
+### MultiSig support for governance operations
+
+Now, Governance mechanism uses ALeastN Native Script, instead of custom policy implemented as Plutus Script in partner-chains-smart-contracts. This policy doesn't require to set `required_signers` field in the transaction making it more user friendly.
+
+`governance init` and `governance update` now accept multiple key hashes
+for the `-g`/`--governance-authority` parameter.
+These commands now also require `-t`/`threshold` parameter to set the number
+of required signatures.
+
+All the `smart-contracts` sub-commands that require Governance: `governance update`, `upsert-d-parameter`, `upsert-permissioned-candidates`, `reserve init`, `reserve create`, `reserve deposit`, and `reserve handover` will now submit the transaction only if governance is "1 of 1". Otherwise these commands return a transaction CBOR that can be submitted with the new command `assemble-and-submit-tx`. Signatures can be obtained using `sign-tx`.
+
+Procedure of creating transaction to sign is as follows:
+* a temporary wallet is generated
+* temporary wallet private key is saved to a file
+* `--payment-key` transfers required funds to the temporary wallet
+* a transaction paid from this temporary wallet is created
+* transaction and temporary wallet data are printed to stdout.
+
+`assemble-and-submit-tx` and `sign-tx` are added for unified UX.
+Signing and transaction submission can be done in other ways as well.
+
+`governance get-policy` subcommand prints the current Governance Policy.
+
+### Other addtions
 
 * `sign-tx` command to `smart-contracts` commands for signing transactions
 * `sign-block-producer-metadata` command to `cli-commands` for signing block producer metadata upsert message

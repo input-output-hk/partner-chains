@@ -62,7 +62,7 @@ pub async fn deposit_to_reserve<
 
 	submit_or_create_tx_to_sign(
 		&governance,
-		&payment_context,
+		payment_context,
 		|costs, ctx| {
 			deposit_to_reserve_tx(&token_amount, &utxo, &reserve, &governance, costs, &ctx)
 		},

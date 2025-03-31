@@ -140,7 +140,7 @@ async fn insert_d_param<C: QueryLedgerState + Transactions + QueryNetwork + Quer
 
 	submit_or_create_tx_to_sign(
 		&gov_data,
-		&ctx,
+		ctx,
 		|costs, ctx| mint_d_param_token_tx(validator, policy, d_parameter, &gov_data, costs, &ctx),
 		"Insert D-parameter",
 		client,
@@ -162,7 +162,7 @@ async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork + Quer
 
 	submit_or_create_tx_to_sign(
 		&governance_data,
-		&ctx,
+		ctx,
 		|costs, ctx| {
 			update_d_param_tx(
 				validator,

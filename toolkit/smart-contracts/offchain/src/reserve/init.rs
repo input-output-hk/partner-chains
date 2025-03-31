@@ -121,7 +121,7 @@ async fn initialize_script<
 	Ok(Some(
 		submit_or_create_tx_to_sign(
 			&governance,
-			&payment_ctx,
+			payment_ctx,
 			|costs, ctx| init_script_tx(&script, &governance, &version_oracle, costs, &ctx),
 			"Init Reserve Management",
 			client,

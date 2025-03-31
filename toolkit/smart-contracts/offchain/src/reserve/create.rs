@@ -57,7 +57,7 @@ pub async fn create_reserve_utxo<
 
 	submit_or_create_tx_to_sign(
 		&governance,
-		&payment_ctx,
+		payment_ctx,
 		|costs, ctx| create_reserve_tx(&parameters, &reserve, &governance, costs, &ctx),
 		"Create Reserve",
 		client,
