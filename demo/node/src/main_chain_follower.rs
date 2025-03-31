@@ -1,11 +1,11 @@
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
-use db_sync_follower::{
+use pallet_sidechain_rpc::SidechainRpcDataSource;
+use partner_chains_db_sync_data_sources::{
 	block::BlockDataSourceImpl, candidates::CandidatesDataSourceImpl,
 	mc_hash::McHashDataSourceImpl, metrics::McFollowerMetrics,
 	native_token::NativeTokenManagementDataSourceImpl, sidechain_rpc::SidechainRpcDataSourceImpl,
 	stake_distribution::StakeDistributionDataSourceImpl,
 };
-use pallet_sidechain_rpc::SidechainRpcDataSource;
 use partner_chains_mock_data_sources::{
 	block::BlockDataSourceMock, candidate::AuthoritySelectionDataSourceMock,
 	mc_hash::McHashDataSourceMock, native_token::NativeTokenDataSourceMock,
@@ -70,7 +70,7 @@ pub const STAKE_CACHE_SIZE: usize = 100;
 pub async fn create_cached_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
 ) -> Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
-	let pool = db_sync_follower::data_sources::get_connection_from_env().await?;
+	let pool = partner_chains_db_sync_data_sources::data_sources::get_connection_from_env().await?;
 	// block data source is reused between mc_hash and sidechain_rpc to share cache
 	let block = Arc::new(BlockDataSourceImpl::new_from_env(pool.clone()).await?);
 	Ok(DataSources {

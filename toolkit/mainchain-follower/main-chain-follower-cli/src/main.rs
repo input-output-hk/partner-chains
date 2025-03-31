@@ -1,6 +1,6 @@
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionDataSource;
 use clap::Parser;
-use db_sync_follower::{
+use partner_chains_db_sync_data_sources::{
 	block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig},
 	candidates::CandidatesDataSourceImpl,
 	data_sources::{read_mc_epoch_config, PgPool},
@@ -86,7 +86,7 @@ mod data_source {
 	use super::*;
 
 	async fn pool() -> Result<PgPool> {
-		db_sync_follower::data_sources::get_connection_from_env().await
+		partner_chains_db_sync_data_sources::data_sources::get_connection_from_env().await
 	}
 
 	pub struct BlockDataSourceWrapper {

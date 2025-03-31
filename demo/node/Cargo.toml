@@ -91,7 +91,7 @@ frame-benchmarking = { workspace = true }
 partner-chains-demo-runtime = { workspace = true }
 sidechain-mc-hash = { workspace = true, features = ["mock"] }
 sp-native-token-management = { workspace = true }
-db-sync-follower = { workspace = true, features = [
+partner-chains-db-sync-data-sources = { workspace = true, features = [
     "block-source",
     "candidate-source",
     "native-token",

@@ -1882,44 +1882,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "db-sync-follower"
-version = "1.6.0"
-dependencies = [
- "async-trait",
- "authority-selection-inherents",
- "bigdecimal 0.4.5",
- "blake2b_simd",
- "cardano-serialization-lib",
- "chrono",
- "ctor",
- "db-sync-sqlx",
- "derive-new",
- "figment",
- "futures",
- "hex",
- "hex-literal",
- "itertools 0.13.0",
- "log",
- "lru",
- "num-bigint",
- "pallet-sidechain-rpc",
- "partner-chains-plutus-data",
- "serde",
- "serde_json",
- "sidechain-domain",
- "sidechain-mc-hash",
- "sp-block-participation",
- "sp-native-token-management",
- "sp-timestamp",
- "sqlx",
- "substrate-prometheus-endpoint",
- "testcontainers-modules",
- "thiserror",
- "tokio",
- "tokio-test",
-]
-
-[[package]]
 name = "db-sync-sqlx"
 version = "1.6.0"
 dependencies = [
@@ -5155,9 +5117,9 @@ version = "1.6.0"
 dependencies = [
  "authority-selection-inherents",
  "clap",
- "db-sync-follower",
  "env_logger 0.11.3",
  "log",
+ "partner-chains-db-sync-data-sources",
  "serde",
  "serde_json",
  "sidechain-domain",
@@ -6758,6 +6720,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "partner-chains-db-sync-data-sources"
+version = "1.6.0"
+dependencies = [
+ "async-trait",
+ "authority-selection-inherents",
+ "bigdecimal 0.4.5",
+ "blake2b_simd",
+ "cardano-serialization-lib",
+ "chrono",
+ "ctor",
+ "db-sync-sqlx",
+ "derive-new",
+ "figment",
+ "futures",
+ "hex",
+ "hex-literal",
+ "itertools 0.13.0",
+ "log",
+ "lru",
+ "num-bigint",
+ "pallet-sidechain-rpc",
+ "partner-chains-plutus-data",
+ "serde",
+ "serde_json",
+ "sidechain-domain",
+ "sidechain-mc-hash",
+ "sp-block-participation",
+ "sp-native-token-management",
+ "sp-timestamp",
+ "sqlx",
+ "substrate-prometheus-endpoint",
+ "testcontainers-modules",
+ "thiserror",
+ "tokio",
+ "tokio-test",
+]
+
+[[package]]
 name = "partner-chains-demo-node"
 version = "1.6.0"
 dependencies = [
@@ -6765,7 +6765,6 @@ dependencies = [
  "async-trait",
  "authority-selection-inherents",
  "clap",
- "db-sync-follower",
  "derive-new",
  "envy",
  "frame-benchmarking",
@@ -6781,6 +6780,7 @@ dependencies = [
  "pallet-sidechain-rpc",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
+ "partner-chains-db-sync-data-sources",
  "partner-chains-demo-runtime",
  "partner-chains-mock-data-sources",
  "partner-chains-node-commands",

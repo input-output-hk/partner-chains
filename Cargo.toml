@@ -311,7 +311,7 @@ pallet-block-producer-metadata-rpc = { path = "toolkit/block-producer-metadata/r
 sp-block-producer-metadata = { path = "toolkit/block-producer-metadata/primitives", default-features = false }
 
 # main chain follower
-db-sync-follower = { path = "toolkit/mainchain-follower/db-sync-follower" }
+partner-chains-db-sync-data-sources = { path = "toolkit/mainchain-follower/db-sync-follower" }
 partner-chains-mock-data-sources = { path = "toolkit/mainchain-follower/mock", default-features = false }
 
 # demo node
