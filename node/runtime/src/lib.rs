@@ -33,7 +33,7 @@ use parity_scale_codec::MaxEncodedLen;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
-use sidechain_domain::byte_string::{BoundedString, SizedByteString};
+use sidechain_domain::byte_string::SizedByteString;
 use sidechain_domain::{
 	CrossChainPublicKey, DelegatorKey, MainchainKeyHash, PermissionedCandidateData,
 	RegistrationData, ScEpochNumber, ScSlotNumber, StakeDelegation, StakePoolPublicKey, UtxoId,
@@ -461,13 +461,15 @@ impl AsCardanoSPO for BlockAuthor {
 	}
 }
 
-pub const MAX_METADATA_URL_LENGTH: u32 = 512;
+parameter_types! {
+	pub const MaxMetadataUrlLength: u32 = 512;
+}
 
 #[derive(
 	Clone, Debug, MaxEncodedLen, Encode, Decode, Serialize, Deserialize, PartialEq, Eq, TypeInfo,
 )]
 pub struct BlockProducerMetadataType {
-	pub url: BoundedString<MAX_METADATA_URL_LENGTH>,
+	pub url: BoundedVec<u8, MaxMetadataUrlLength>,
 	pub hash: SizedByteString<32>,
 }
 
