@@ -49,21 +49,15 @@ runs:
       if: startsWith(inputs.os, 'macos')
       shell: bash
       run: |
-        # Install specific LLVM version 19 to match working environment
         brew install llvm@19
         echo "LLVM_PATH=$(brew --prefix llvm@19)" >> $GITHUB_ENV
-        # Ensure LLVM is found first in PATH to avoid Apple's default version
         echo "$(brew --prefix llvm@19)/bin" >> $GITHUB_PATH
-        # Add to bash profile for any subshells
         echo 'export PATH="$(brew --prefix llvm@19)/bin:$PATH"' >> ~/.bash_profile
         source ~/.bash_profile
-        # Configure compiler flags
         echo "CC=$(brew --prefix llvm@19)/bin/clang" >> $GITHUB_ENV
         echo "CXX=$(brew --prefix llvm@19)/bin/clang++" >> $GITHUB_ENV
         echo "LLVM_CONFIG=$(brew --prefix llvm@19)/bin/llvm-config" >> $GITHUB_ENV
-        # Verify the version matches your working environment
         $(brew --prefix llvm@19)/bin/clang --version
-        # Create a configuration file like in your working environment
         mkdir -p /opt/homebrew/etc/clang
         echo "# clang configuration for GitHub Actions" > /opt/homebrew/etc/clang/arm64-apple-darwin24.cfg
     - name: Build partner-chains-node
