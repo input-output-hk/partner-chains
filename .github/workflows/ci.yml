@@ -174,6 +174,27 @@ jobs:
           "s3://cache.sc.iog.io?secret-key=${{ runner.temp }}/nix-key&region=$AWS_DEFAULT_REGION" \
           && rm /tmp/outputs
 
+  clippy-check:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          components: clippy
+          # No toolchain specified - will use rust-toolchain.toml from repo
+          override: false
+      - name: Run Clippy
+        env:
+          RUSTFLAGS: "-Dwarnings"
+        run: cargo clippy --all-targets --all-features
+
   upload-chain-specs-pre-merge:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     needs: build-linux-x86_64-pre-merge
@@ -195,7 +216,7 @@ jobs:
 
   pre-merge-checks-complete:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
-    needs: [build-linux-x86_64-pre-merge, local-environment-tests, devshell-tests, upload-chain-specs-pre-merge]
+    needs: [build-linux-x86_64-pre-merge, local-environment-tests, devshell-tests, upload-chain-specs-pre-merge, clippy-check]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
@@ -203,7 +224,8 @@ jobs:
           if [[ "${{ needs.build-linux-x86_64-pre-merge.result }}" != "success" ||
                 "${{ needs.local-environment-tests.result }}" != "success" ||
                 "${{ needs.devshell-tests.result }}" != "success" ||
-                "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ]]; then
+                "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ||
+                "${{ needs.clippy-check.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1
           else
