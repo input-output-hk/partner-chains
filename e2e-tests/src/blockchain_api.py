@@ -398,16 +398,31 @@ class BlockchainApi(ABC):
         """
         pass
 
-    def sign_block_producer_metadata(self, metadata: str, cross_chain_signing_key: str) -> BlockProducerMetadataSignature:
+    @abstractmethod
+    def sign_block_producer_metadata(self, metadata: dict, cross_chain_signing_key: str) -> BlockProducerMetadataSignature:
         """
         Creates a signature for block procuder metadata.
 
         Arguments:
-            metadata {str} -- block procuder metadata, currently a json object with `url` and `hash` fields
+            metadata {dict} -- block procuder metadata
             cross_chain_signing_key {str} -- Cross Chain Signing key in hex format
 
         Returns:
             BlockProducerMetadataSignature
+        """
+        pass
+
+    @abstractmethod
+    def submit_block_producer_metadata(self, signature: BlockProducerMetadataSignature, wallet: Wallet) -> Transaction:
+        """
+        Submits an extrinsic for upserting a block producer's metadata.
+
+        Arguments:
+            signature {BlockProducerMetadataSignature} -- Signature of the metadata
+            wallet {Wallet} -- Wallet used to sign the transaction
+
+        Returns:
+            Transaction
         """
         pass
 
@@ -436,6 +451,19 @@ class BlockchainApi(ABC):
 
         Returns:
             str -- PC SS58 address associated with the Cardano address
+        """
+        pass
+
+    @abstractmethod
+    def get_block_producer_metadata(self, cross_chain_public_key: str) -> str:
+        """
+        Fetches the block producer metadata for the given Cardano public key.
+
+        Arguments:
+            cross_chain_public_key {str} -- Cardano public key
+
+        returns:
+            str -- hex encoded metadata
         """
         pass
 

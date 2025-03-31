@@ -1,7 +1,7 @@
 from src.run_command import RunnerFactory
 from config.api_config import ApiConfig
 from .smart_contracts import SmartContracts
-from .models import AddressAssociationSignature, RegistrationSignatures
+from .models import AddressAssociationSignature, RegistrationSignatures, BlockProducerMetadataSignature
 import json
 import logging
 import uuid
@@ -43,8 +43,10 @@ class PartnerChainsNode:
             raise e
 
     def sign_block_producer_metadata(self, metadata, cross_chain_signing_key):
+        cross_chain_signing_key = cross_chain_signing_key.to_string().hex()
+        metadata_str = str(metadata).replace("'",'\\"')
         metadata_file_name = f"/tmp/metadata_{uuid.uuid4().hex}.json"
-        save_file_cmd = f"echo '{metadata}' > {metadata_file_name}"
+        save_file_cmd = f"echo '{metadata_str}' > {metadata_file_name}"
         self.run_command.run(save_file_cmd)
 
         sign_block_producer_metadata_cmd = (
@@ -57,7 +59,8 @@ class PartnerChainsNode:
         result = self.run_command.run(sign_block_producer_metadata_cmd)
         try:
             response = json.loads(result.stdout)
-            return AddressAssociationSignature(
+
+            return BlockProducerMetadataSignature(
                 cross_chain_pub_key=response["cross_chain_pub_key"],
                 cross_chain_pub_key_hash=response["cross_chain_pub_key_hash"],
                 encoded_message=response["encoded_message"],

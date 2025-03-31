@@ -619,7 +619,7 @@ class SubstrateApi(BlockchainApi):
         return self.partner_chains_node.sign_address_association(address, stake_signing_key)
 
     def sign_block_producer_metadata(self, metadata, cross_chain_signing_key):
-        return self.sign_block_producer_metadata(metadata, cross_chain_signing_key)
+        return self.partner_chains_node.sign_block_producer_metadata(metadata, cross_chain_signing_key)
 
     @long_running_function
     def submit_address_association(self, signature, wallet):
@@ -647,9 +647,40 @@ class SubstrateApi(BlockchainApi):
         tx.total_fee_amount = tx._receipt.total_fee_amount
         return tx
 
+    @long_running_function
+    def submit_block_producer_metadata(self, metadata, signature, wallet):
+        tx = Transaction()
+        tx._unsigned = self.substrate.compose_call(
+            call_module="BlockProducerMetadata",
+            call_function="upsert_metadata",
+            call_params={
+                "metadata": metadata,
+                "signature": signature.signature,
+                "cross_chain_pub_key": signature.cross_chain_pub_key,
+            },
+        )
+        logger.debug(f"Transaction built {tx._unsigned}")
+
+        if wallet.crypto_type and wallet.crypto_type == KeypairType.ECDSA:
+            tx._signed = self.__create_signed_ecdsa_extrinsic(call=tx._unsigned, keypair=wallet.raw)
+        else:
+            tx._signed = self.substrate.create_signed_extrinsic(call=tx._unsigned, keypair=wallet.raw)
+        logger.debug(f"Transaction signed {tx._signed}")
+
+        tx._receipt = self.substrate.submit_extrinsic(tx._signed, wait_for_inclusion=True)
+        logger.debug(f"Transaction sent {tx._receipt.extrinsic}")
+        tx.hash = tx._receipt.extrinsic_hash
+        tx.total_fee_amount = tx._receipt.total_fee_amount
+        return tx
+
     def get_address_association(self, stake_key_hash):
         result = self.substrate.query("AddressAssociations", "AddressAssociations", [f"0x{stake_key_hash}"])
         logger.debug(f"Address association for {stake_key_hash}: {result}")
+        return result.value
+
+    def get_block_producer_metadata(self, cross_chain_public_key_hash: str):
+        result = self.substrate.query("BlockProducerMetadata", "BlockProducerMetadataStorage", [f"0x{cross_chain_public_key_hash}"])
+        logger.debug(f"Block producer metadata for {cross_chain_public_key_hash}: {result}")
         return result.value
 
     def get_block_production_log(self, block_hash=None):
