@@ -629,21 +629,18 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout master
+      - name: Checkout specific SHA
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: master
-      - name: Get current commit SHA
-        id: get_sha
-        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          ref: ${{ github.sha }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Build and Upload for linux arm64
         uses: ./.github/actions/artifacts/build-pc-artifacts
         with:
-          sha: ${{ steps.get_sha.outputs.sha }}
-          tag: ${{ steps.get_sha.outputs.sha }}
+          sha: ${{ inputs.sha }}
+          tag: ${{ inputs.sha }}
           os: linux-arm64
 
   build-macos-x86_64-workflow-dispatch:
