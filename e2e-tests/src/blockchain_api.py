@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from src.partner_chain_rpc import PartnerChainRpcResponse, DParam
 from src.partner_chains_node.node import PartnerChainsNode
-from src.partner_chains_node.models import AddressAssociationSignature
+from src.partner_chains_node.models import AddressAssociationSignature, BlockProducerMetadataSignature
 from config.api_config import Node
 
 
@@ -395,6 +395,19 @@ class BlockchainApi(ABC):
 
         Returns:
             AddressAssociationSignature
+        """
+        pass
+
+    def sign_block_producer_metadata(self, metadata: str, cross_chain_signing_key: str) -> BlockProducerMetadataSignature:
+        """
+        Creates a signature for block procuder metadata.
+
+        Arguments:
+            metadata {str} -- block procuder metadata, currently a json object with `url` and `hash` fields
+            cross_chain_signing_key {str} -- Cross Chain Signing key in hex format
+
+        Returns:
+            BlockProducerMetadataSignature
         """
         pass
 

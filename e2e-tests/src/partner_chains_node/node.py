@@ -4,6 +4,7 @@ from .smart_contracts import SmartContracts
 from .models import AddressAssociationSignature, RegistrationSignatures
 import json
 import logging
+import uuid
 
 
 class PartnerChainsNodeException(Exception):
@@ -39,6 +40,32 @@ class PartnerChainsNode:
             )
         except Exception as e:
             logging.error(f"Could not parse response of sign-address-association cmd: {result}")
+            raise e
+
+    def sign_block_producer_metadata(self, metadata, cross_chain_signing_key):
+        metadata_file_name = f"/tmp/metadata_{uuid.uuid4().hex}.json"
+        save_file_cmd = f"echo '{metadata}' > {metadata_file_name}"
+        self.run_command.run(save_file_cmd)
+
+        sign_block_producer_metadata_cmd = (
+            f"{self.cli} sign-block-producer-metadata "
+            f"--genesis-utxo {self.config.genesis_utxo} "
+            f"--metadata-file {metadata_file_name} "
+            f"--cross-chain-signing-key {cross_chain_signing_key}"
+        )
+
+        result = self.run_command.run(sign_block_producer_metadata_cmd)
+        try:
+            response = json.loads(result.stdout)
+            return AddressAssociationSignature(
+                cross_chain_pub_key=response["cross_chain_pub_key"],
+                cross_chain_pub_key_hash=response["cross_chain_pub_key_hash"],
+                encoded_message=response["encoded_message"],
+                encoded_metadata=response["encoded_metadata"],
+                signature=response["signature"]
+            )
+        except Exception as e:
+            logging.error(f"Could not parse response of sign-block-producer-metadata cmd: {result}")
             raise e
 
     def get_signatures(

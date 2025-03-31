@@ -11,7 +11,6 @@ from .decorators import long_running_function
 import json
 import hashlib
 import logging as logger
-from .run_command import RunnerFactory
 from .cardano_cli import CardanoCli
 from .partner_chains_node.node import PartnerChainsNode
 from .partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, DParam
@@ -45,7 +44,6 @@ class SubstrateApi(BlockchainApi):
         self.db_sync = db_sync
         self.url = config.nodes_config.node.url
         self._substrate = None
-        self.run_command = RunnerFactory.get_runner(config.stack_config.ssh, config.stack_config.tools_shell)
         self.cardano_cli = CardanoCli(config.main_chain, config.stack_config.tools["cardano_cli"])
         self.partner_chains_node = PartnerChainsNode(config)
         self.partner_chain_rpc = PartnerChainRpc(config.nodes_config.node.rpc_url)
@@ -619,6 +617,9 @@ class SubstrateApi(BlockchainApi):
 
     def sign_address_association(self, address, stake_signing_key):
         return self.partner_chains_node.sign_address_association(address, stake_signing_key)
+
+    def sign_block_producer_metadata(self, metadata, cross_chain_signing_key):
+        return self.sign_block_producer_metadata(metadata, cross_chain_signing_key)
 
     @long_running_function
     def submit_address_association(self, signature, wallet):

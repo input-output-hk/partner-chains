@@ -14,3 +14,12 @@ class AddressAssociationSignature:
     partner_chain_address: str
     signature: str
     stake_public_key: str
+
+
+@dataclass
+class BlockProducerMetadataSignature:
+    cross_chain_pub_key: str
+    cross_chain_pub_key_hash: str
+    encoded_message: str
+    encoded_metadata: str
+    signature: str
