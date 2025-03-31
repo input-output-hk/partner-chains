@@ -1,12 +1,12 @@
 use crate::chain_spec::*;
 use authority_selection_inherents::CommitteeMember;
-use sc_service::ChainType;
-use sidechain_domain::*;
-use sidechain_runtime::{
+use partner_chains_demo_runtime::{
 	AccountId, AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig,
 	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
 	SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
+use sc_service::ChainType;
+use sidechain_domain::*;
 use sidechain_slots::SlotsPerEpoch;
 use sp_core::bytes::from_hex;
 use sp_core::{ed25519, sr25519};

@@ -5,16 +5,16 @@ use authority_selection_inherents::authority_selection_inputs::{
 use authority_selection_inherents::CommitteeMember;
 use derive_new::new;
 use jsonrpsee::core::async_trait;
+use partner_chains_demo_runtime::{
+	opaque::{Block, SessionKeys},
+	BlockAuthor, CrossChainPublic,
+};
 use sc_consensus_aura::{find_pre_digest, SlotDuration};
 use sc_service::Arc;
 use sidechain_domain::{
 	mainchain_epoch::MainchainEpochConfig, DelegatorKey, McBlockHash, ScEpochNumber,
 };
 use sidechain_mc_hash::{McHashDataSource, McHashInherentDataProvider as McHashIDP};
-use sidechain_runtime::{
-	opaque::{Block, SessionKeys},
-	BlockAuthor, CrossChainPublic,
-};
 use sidechain_slots::ScSlotConfig;
 use sp_api::ProvideRuntimeApi;
 use sp_block_participation::{

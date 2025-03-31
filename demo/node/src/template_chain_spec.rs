@@ -1,10 +1,10 @@
 use crate::chain_spec::*;
-use sc_service::ChainType;
-use sidechain_runtime::{
+use partner_chains_demo_runtime::{
 	AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig, RuntimeGenesisConfig,
 	SessionCommitteeManagementConfig, SessionConfig, SidechainConfig, SudoConfig, SystemConfig,
 	TestHelperPalletConfig,
 };
+use sc_service::ChainType;
 
 /// Produces template chain spec for Partner Chains.
 /// This code should be run by `partner-chains-node wizards chain-spec`, to produce JSON chain spec file.

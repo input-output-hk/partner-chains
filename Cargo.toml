@@ -315,4 +315,4 @@ db-sync-follower = { path = "toolkit/mainchain-follower/db-sync-follower" }
 main-chain-follower-mock = { path = "toolkit/mainchain-follower/mock", default-features = false }
 
 # demo node
-sidechain-runtime = { path = "demo/runtime" }
+partner-chains-demo-runtime = { path = "demo/runtime" }
