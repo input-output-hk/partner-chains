@@ -1,5 +1,5 @@
 name: "Build and Upload PC Artifacts"
-description: "Build and upload partner-chains artifacts for Linux, macOS x86_64, and macOS arm64"
+description: "Build and upload partner-chains artifacts for Linux and MacOS"
 inputs:
   tag:
     description: "partner-chains release tag to append to artifact name"
@@ -44,22 +44,19 @@ runs:
           unzip protoc-21.3-osx-aarch_64.zip -d $HOME/protoc
           sudo mv $HOME/protoc/bin/protoc /usr/local/bin/protoc
         fi
-    # Install LLVM for macOS builds - using specific version 19.1.7
     - name: Install LLVM for macOS
       if: startsWith(inputs.os, 'macos')
       shell: bash
       run: |
-        brew install llvm@19
-        echo "LLVM_PATH=$(brew --prefix llvm@19)" >> $GITHUB_ENV
-        echo "$(brew --prefix llvm@19)/bin" >> $GITHUB_PATH
-        echo 'export PATH="$(brew --prefix llvm@19)/bin:$PATH"' >> ~/.bash_profile
+        brew install llvm
+        echo "LLVM_PATH=$(brew --prefix llvm)" >> $GITHUB_ENV
+        echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
+        echo 'export PATH="$(brew --prefix llvm)/bin:$PATH"' >> ~/.bash_profile
         source ~/.bash_profile
-        echo "CC=$(brew --prefix llvm@19)/bin/clang" >> $GITHUB_ENV
-        echo "CXX=$(brew --prefix llvm@19)/bin/clang++" >> $GITHUB_ENV
-        echo "LLVM_CONFIG=$(brew --prefix llvm@19)/bin/llvm-config" >> $GITHUB_ENV
-        $(brew --prefix llvm@19)/bin/clang --version
-        mkdir -p /opt/homebrew/etc/clang
-        echo "# clang configuration for GitHub Actions" > /opt/homebrew/etc/clang/arm64-apple-darwin24.cfg
+        echo "CC=$(brew --prefix llvm)/bin/clang" >> $GITHUB_ENV
+        echo "CXX=$(brew --prefix llvm)/bin/clang++" >> $GITHUB_ENV
+        echo "LLVM_CONFIG=$(brew --prefix llvm)/bin/llvm-config" >> $GITHUB_ENV
+        clang --version
     - name: Build partner-chains-node
       shell: bash
       run: |
@@ -76,16 +73,12 @@ runs:
           chmod +x $PARTNER_CHAINS_NODE
         elif [[ "${{ inputs.os }}" == "macos-x86_64" ]]; then
           rustup target add x86_64-apple-darwin
-          # Environment variables are already set in the LLVM installation step
-          # Use RUST_FLAGS to ensure the right toolchain is used
           RUSTFLAGS="-C linker=${LLVM_PATH}/bin/clang" \
           cargo build -p partner-chains-node --locked --release --target x86_64-apple-darwin
           cp target/x86_64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE
           chmod +x $PARTNER_CHAINS_NODE
         elif [[ "${{ inputs.os }}" == "macos-arm64" ]]; then
           rustup target add aarch64-apple-darwin
-          # Environment variables are already set in the LLVM installation step
-          # Use RUST_FLAGS to ensure the right toolchain is used
           RUSTFLAGS="-C linker=${LLVM_PATH}/bin/clang" \
           cargo build -p partner-chains-node --locked --release --target aarch64-apple-darwin
           cp target/aarch64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE
