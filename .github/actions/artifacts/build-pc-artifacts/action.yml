@@ -45,7 +45,7 @@ runs:
           sudo mv $HOME/protoc/bin/protoc /usr/local/bin/protoc
         fi
     - name: Install cross-compilation dependencies for Linux ARM64
-      if: inputs.os == 'linux-arm64'
+      if: ${{ inputs.os == 'linux-arm64' }}
       shell: bash
       run: |
         sudo apt-get update
