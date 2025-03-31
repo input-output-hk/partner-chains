@@ -3,18 +3,19 @@ from src.blockchain_api import BlockchainApi
 from config.api_config import ApiConfig, MainchainAccount
 from typing import Tuple
 from config.api_config import Node
+import logging
 import random
 
 pytestmark = mark.multisig_governance
 
 
-@fixture(scope="session")
+@fixture(scope="module")
 def governance_authority(config: ApiConfig) -> MainchainAccount:
     """Default governance authority account"""
     return config.nodes_config.governance_authority
 
 
-@fixture(scope="session")
+@fixture(scope="module")
 def additional_governance_authorities(config: ApiConfig) -> list[str]:
     """Additional authorities for multisig - should be set in test config"""
     if not hasattr(config.nodes_config, "additional_governance_authorities"):
@@ -22,7 +23,7 @@ def additional_governance_authorities(config: ApiConfig) -> list[str]:
     return config.nodes_config.additional_governance_authorities
 
 
-@fixture(scope="session")
+@fixture(scope="module")
 def set_governance_to_multisig(api: BlockchainApi, governance_authority, additional_governance_authorities):
     """Test updating to multisig governance with multiple authorities"""
     # Combine existing authority with additional authorities
@@ -90,6 +91,7 @@ def set_governance_to_multisig(api: BlockchainApi, governance_authority, additio
     assert (
         final_policy["key_hashes"][0] == governance_authority.mainchain_pub_key_hash
     ), "Expected original key to be restored"
+    logging.info("Governance restored to single key successfully")
 
 
 @mark.xdist_group(name="governance_action")

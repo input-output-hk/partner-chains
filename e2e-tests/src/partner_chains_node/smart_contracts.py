@@ -17,7 +17,6 @@ class SmartContractsResponse:
 
 
 def parse_transaction_id(stdout: str) -> str:
-    logging.debug("STDOUT: " + stdout)
     pattern = r"Transaction output \'([a-f0-9]{64})\'"
     match = re.search(pattern, stdout)
     if match:
