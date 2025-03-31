@@ -457,10 +457,10 @@ class BlockchainApi(ABC):
     @abstractmethod
     def get_block_producer_metadata(self, cross_chain_public_key: str) -> str:
         """
-        Fetches the block producer metadata for the given Cardano public key.
+        Fetches the block producer metadata for the given cross-chain public key.
 
         Arguments:
-            cross_chain_public_key {str} -- Cardano public key
+            cross_chain_public_key {str} -- Cross-chain public key
 
         returns:
             str -- hex encoded metadata
