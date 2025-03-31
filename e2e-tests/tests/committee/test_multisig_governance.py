@@ -23,24 +23,18 @@ def additional_governance_authorities(config: ApiConfig) -> list[str]:
 
 
 @fixture(scope="session")
-def original_governance_policy(api: BlockchainApi):
-    """Store the original governance policy before tests modify it"""
-    response = api.partner_chains_node.smart_contracts.governance.get_policy()
-    if response.stderr or not response.json:
-        return None
-    return response.json
-
-@fixture(scope="session")
 def set_governance_to_multisig(api: BlockchainApi, governance_authority, additional_governance_authorities):
     """Test updating to multisig governance with multiple authorities"""
-     # Combine existing authority with additional authorities
-    all_authorities = [governance_authority.mainchain_pub_key_hash] + list(map(lambda x: x.mainchain_pub_key_hash, additional_governance_authorities))
+    # Combine existing authority with additional authorities
+    all_authorities = [governance_authority.mainchain_pub_key_hash] + list(
+        map(lambda x: x.mainchain_pub_key_hash, additional_governance_authorities)
+    )
     threshold = 2  # Require signatures from at least 2 authorities
 
     response = api.partner_chains_node.smart_contracts.governance.update(
         payment_key=governance_authority.mainchain_key,
         new_governance_authorities=all_authorities,
-        new_governance_threshold=threshold
+        new_governance_threshold=threshold,
     )
 
     yield response
@@ -49,7 +43,7 @@ def set_governance_to_multisig(api: BlockchainApi, governance_authority, additio
     response = api.partner_chains_node.smart_contracts.governance.update(
         payment_key=governance_authority.mainchain_key,
         new_governance_authorities=[governance_authority.mainchain_pub_key_hash],
-        new_governance_threshold=1
+        new_governance_threshold=1,
     )
 
     assert not response.stderr
@@ -61,8 +55,7 @@ def set_governance_to_multisig(api: BlockchainApi, governance_authority, additio
 
     # First signer
     first_witness_response = api.partner_chains_node.smart_contracts.sign_tx(
-        transaction_cbor=tx_cbor,
-        payment_key=governance_authority.mainchain_key
+        transaction_cbor=tx_cbor, payment_key=governance_authority.mainchain_key
     )
 
     assert not first_witness_response.stderr
@@ -71,8 +64,7 @@ def set_governance_to_multisig(api: BlockchainApi, governance_authority, additio
     # Second signer
     second_key = additional_governance_authorities[0].mainchain_key
     second_witness_response = api.partner_chains_node.smart_contracts.sign_tx(
-        transaction_cbor=tx_cbor,
-        payment_key=second_key
+        transaction_cbor=tx_cbor, payment_key=second_key
     )
 
     assert not second_witness_response.stderr
@@ -80,12 +72,13 @@ def set_governance_to_multisig(api: BlockchainApi, governance_authority, additio
 
     # Now submit the transaction with both witnesses
     submit_response = api.partner_chains_node.smart_contracts.assemble_and_submit_tx(
-        transaction_cbor=tx_cbor,
-        witnesses=[witness1, witness2]
+        transaction_cbor=tx_cbor, witnesses=[witness1, witness2]
     )
 
     assert not submit_response.stderr
-    assert submit_response.transaction_id is not None, "Expected transaction ID after submitting with multiple signatures"
+    assert (
+        submit_response.transaction_id is not None
+    ), "Expected transaction ID after submitting with multiple signatures"
 
     # Verify governance is now restored to single key
     final_response = api.partner_chains_node.smart_contracts.governance.get_policy()
@@ -94,12 +87,13 @@ def set_governance_to_multisig(api: BlockchainApi, governance_authority, additio
     final_policy = final_response.json
     assert len(final_policy["key_hashes"]) == 1, "Expected single governance authority after restoration"
     assert final_policy["threshold"] == 1, "Expected threshold to be 1 after restoration"
-    assert final_policy["key_hashes"][0] == governance_authority.mainchain_pub_key_hash, "Expected original key to be restored"
-
+    assert (
+        final_policy["key_hashes"][0] == governance_authority.mainchain_pub_key_hash
+    ), "Expected original key to be restored"
 
 
 @mark.xdist_group(name="governance_setup")
-def test_get_governance_policy(api: BlockchainApi, governance_authority):
+def test_get_governance_policy(api: BlockchainApi):
     """Verify the governance policy is initialized with the correct single authority"""
     response = api.partner_chains_node.smart_contracts.governance.get_policy()
     assert not response.stderr
@@ -148,7 +142,7 @@ def test_multisig_upsert_d_parameter(api: BlockchainApi, governance_authority, a
     response = api.partner_chains_node.smart_contracts.update_d_param(
         permissioned_candidates_count=random.randint(1, 5),
         registered_candidates_count=random.randint(1, 5),
-        payment_key=governance_authority.mainchain_key
+        payment_key=governance_authority.mainchain_key,
     )
 
     assert not response.stderr
@@ -161,8 +155,7 @@ def test_multisig_upsert_d_parameter(api: BlockchainApi, governance_authority, a
 
     # First signer
     first_witness_response = api.partner_chains_node.smart_contracts.sign_tx(
-        transaction_cbor=tx_cbor,
-        payment_key=governance_authority.mainchain_key
+        transaction_cbor=tx_cbor, payment_key=governance_authority.mainchain_key
     )
 
     assert not first_witness_response.stderr
@@ -172,8 +165,7 @@ def test_multisig_upsert_d_parameter(api: BlockchainApi, governance_authority, a
     # For testing, you may need to set up a second key or mock this
     second_key = additional_governance_authorities[0].mainchain_key  # Replace with actual key file path when available
     second_witness_response = api.partner_chains_node.smart_contracts.sign_tx(
-        transaction_cbor=tx_cbor,
-        payment_key=second_key
+        transaction_cbor=tx_cbor, payment_key=second_key
     )
 
     assert not second_witness_response.stderr
@@ -181,17 +173,23 @@ def test_multisig_upsert_d_parameter(api: BlockchainApi, governance_authority, a
 
     # Now submit the transaction with both witnesses
     submit_response = api.partner_chains_node.smart_contracts.assemble_and_submit_tx(
-        transaction_cbor=tx_cbor,
-        witnesses=[witness1, witness2]
+        transaction_cbor=tx_cbor, witnesses=[witness1, witness2]
     )
 
     assert not submit_response.stderr
-    assert submit_response.transaction_id is not None, "Expected transaction ID after submitting with multiple signatures"
+    assert (
+        submit_response.transaction_id is not None
+    ), "Expected transaction ID after submitting with multiple signatures"
 
 
 @mark.xdist_group(name="governance_action")
 @mark.usefixtures("governance_skey_with_cli")
-def test_multisig_upsert_permissioned_candidates(api: BlockchainApi, permissioned_candidates: Tuple[dict[str, Node], str], governance_authority, additional_governance_authorities):
+def test_multisig_upsert_permissioned_candidates(
+    api: BlockchainApi,
+    permissioned_candidates: Tuple[dict[str, Node], str],
+    governance_authority,
+    additional_governance_authorities,
+):
     """Test a multisig operation that modifies the permissioned candidates list"""
     # Get node configuration for permissioned candidates, but remove one, so that the list is different
     new_candidates_list, candidate_to_remove = permissioned_candidates
@@ -202,8 +200,7 @@ def test_multisig_upsert_permissioned_candidates(api: BlockchainApi, permissione
 
     # Try to update permissioned candidates
     response = api.partner_chains_node.smart_contracts.upsert_permissioned_candidates(
-        governance_key=governance_authority.mainchain_key,
-        new_candidates_list=new_candidates_list
+        governance_key=governance_authority.mainchain_key, new_candidates_list=new_candidates_list
     )
 
     assert not response.stderr
@@ -216,8 +213,7 @@ def test_multisig_upsert_permissioned_candidates(api: BlockchainApi, permissione
 
     # First signer
     first_witness_response = api.partner_chains_node.smart_contracts.sign_tx(
-        transaction_cbor=tx_cbor,
-        payment_key=governance_authority.mainchain_key
+        transaction_cbor=tx_cbor, payment_key=governance_authority.mainchain_key
     )
 
     assert not first_witness_response.stderr
@@ -226,8 +222,7 @@ def test_multisig_upsert_permissioned_candidates(api: BlockchainApi, permissione
     # Second signer
     second_key = additional_governance_authorities[0].mainchain_key  # Replace with actual key file path when available
     second_witness_response = api.partner_chains_node.smart_contracts.sign_tx(
-        transaction_cbor=tx_cbor,
-        payment_key=second_key
+        transaction_cbor=tx_cbor, payment_key=second_key
     )
 
     assert not second_witness_response.stderr
@@ -235,9 +230,10 @@ def test_multisig_upsert_permissioned_candidates(api: BlockchainApi, permissione
 
     # Now submit the transaction with both witnesses
     submit_response = api.partner_chains_node.smart_contracts.assemble_and_submit_tx(
-        transaction_cbor=tx_cbor,
-        witnesses=[witness1, witness2]
+        transaction_cbor=tx_cbor, witnesses=[witness1, witness2]
     )
 
     assert not submit_response.stderr
-    assert submit_response.transaction_id is not None, "Expected transaction ID after submitting with multiple signatures"
+    assert (
+        submit_response.transaction_id is not None
+    ), "Expected transaction ID after submitting with multiple signatures"

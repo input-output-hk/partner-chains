@@ -86,7 +86,7 @@
     "governance_authority": {
       "mainchain_address": "addr_test1vr5vxqpnpl3325cu4zw55tnapjqzzx78pdrnk8k5j7wl72c6y08nd",
       "mainchain_key": "/keys/funded_address.skey",
-      "mainchain_pub_key_hash": "e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
+      "mainchain_pub_key_hash": "0xe8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
     },
     "additional_governance_authorities": [
       {
