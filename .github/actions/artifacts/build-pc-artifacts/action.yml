@@ -45,11 +45,12 @@ runs:
           sudo mv $HOME/protoc/bin/protoc /usr/local/bin/protoc
         fi
     - name: Install cross-compilation dependencies for Linux ARM64
-      if: ${{ inputs.os == 'linux-arm64' }}
       shell: bash
       run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        if [[ "${{ inputs.os }}" == "linux-arm64" ]]; then
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        fi
     - name: Install LLVM for macOS
       if: startsWith(inputs.os, 'macos')
       shell: bash
