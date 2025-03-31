@@ -92,7 +92,7 @@ def set_governance_to_multisig(api: BlockchainApi, governance_authority, additio
     ), "Expected original key to be restored"
 
 
-@mark.xdist_group(name="governance_setup")
+@mark.xdist_group(name="governance_action")
 def test_get_governance_policy(api: BlockchainApi):
     """Verify the governance policy is initialized with the correct single authority"""
     response = api.partner_chains_node.smart_contracts.governance.get_policy()
@@ -104,7 +104,7 @@ def test_get_governance_policy(api: BlockchainApi):
     assert policy["threshold"] == 1, "Expected threshold to be 1"
 
 
-@mark.xdist_group(name="governance_setup")
+@mark.xdist_group(name="governance_action")
 @mark.usefixtures("governance_skey_with_cli")
 def test_update_governance_to_multisig(set_governance_to_multisig):
     """Test updating to multisig governance with multiple authorities"""
@@ -115,7 +115,7 @@ def test_update_governance_to_multisig(set_governance_to_multisig):
     assert response.transaction_id
 
 
-@mark.xdist_group(name="governance_setup")
+@mark.xdist_group(name="governance_action")
 def test_verify_multisig_policy(api: BlockchainApi, additional_governance_authorities):
     """Verify the governance policy has been updated to multisig"""
     response = api.partner_chains_node.smart_contracts.governance.get_policy()
