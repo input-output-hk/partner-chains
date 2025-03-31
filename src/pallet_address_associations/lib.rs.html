@@ -248,7 +248,7 @@
 
 			<span class="macro">ensure!</span>(is_valid_signature, Error::&lt;T&gt;::InvalidMainchainSignature);
 
-			AddressAssociations::&lt;T&gt;::insert(stake_key_hash.clone(), partnerchain_address.clone());
+			AddressAssociations::&lt;T&gt;::insert(stake_key_hash, partnerchain_address.clone());
 
 			T::OnNewAssociation::on_new_association(partnerchain_address, stake_key_hash);
 
