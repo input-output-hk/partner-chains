@@ -184,7 +184,12 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.81.0
+        with:
+          components: clippy
+          targets: wasm32-unknown-unknown
+      - name: Verify toolchain version
+        run: rustc --version
       - name: Run Clippy
         env:
           RUSTFLAGS: "-Dwarnings"
