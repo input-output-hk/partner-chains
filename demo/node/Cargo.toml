@@ -99,7 +99,7 @@ db-sync-follower = { workspace = true, features = [
     "sidechain-rpc",
     "block-participation",
 ] }
-main-chain-follower-mock = { workspace = true, features = [
+partner-chains-mock-data-sources = { workspace = true, features = [
     "block-source",
     "candidate-source",
     "native-token",

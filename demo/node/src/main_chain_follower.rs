@@ -5,12 +5,12 @@ use db_sync_follower::{
 	native_token::NativeTokenManagementDataSourceImpl, sidechain_rpc::SidechainRpcDataSourceImpl,
 	stake_distribution::StakeDistributionDataSourceImpl,
 };
-use main_chain_follower_mock::{
+use pallet_sidechain_rpc::SidechainRpcDataSource;
+use partner_chains_mock_data_sources::{
 	block::BlockDataSourceMock, candidate::AuthoritySelectionDataSourceMock,
 	mc_hash::McHashDataSourceMock, native_token::NativeTokenDataSourceMock,
 	sidechain_rpc::SidechainRpcDataSourceMock, stake_distribution::StakeDistributionDataSourceMock,
 };
-use pallet_sidechain_rpc::SidechainRpcDataSource;
 use sc_service::error::Error as ServiceError;
 use sidechain_mc_hash::McHashDataSource;
 use sp_block_participation::inherent_data::BlockParticipationDataSource;

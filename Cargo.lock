@@ -5166,26 +5166,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "main-chain-follower-mock"
-version = "1.6.0"
-dependencies = [
- "async-trait",
- "authority-selection-inherents",
- "hex",
- "hex-literal",
- "log",
- "pallet-sidechain-rpc",
- "rand",
- "serde",
- "serde_json",
- "sidechain-domain",
- "sidechain-mc-hash",
- "sp-block-participation",
- "sp-native-token-management",
- "sp-timestamp",
-]
-
-[[package]]
 name = "match_cfg"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6794,7 +6774,6 @@ dependencies = [
  "hex-literal",
  "jsonrpsee",
  "log",
- "main-chain-follower-mock",
  "pallet-block-producer-metadata-rpc",
  "pallet-partner-chains-session",
  "pallet-session-validator-management",
@@ -6803,6 +6782,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
  "partner-chains-demo-runtime",
+ "partner-chains-mock-data-sources",
  "partner-chains-node-commands",
  "plutus",
  "plutus-datum-derive",
@@ -6924,6 +6904,26 @@ dependencies = [
  "sp-version",
  "sp-weights",
  "substrate-wasm-builder",
+]
+
+[[package]]
+name = "partner-chains-mock-data-sources"
+version = "1.6.0"
+dependencies = [
+ "async-trait",
+ "authority-selection-inherents",
+ "hex",
+ "hex-literal",
+ "log",
+ "pallet-sidechain-rpc",
+ "rand",
+ "serde",
+ "serde_json",
+ "sidechain-domain",
+ "sidechain-mc-hash",
+ "sp-block-participation",
+ "sp-native-token-management",
+ "sp-timestamp",
 ]
 
 [[package]]
