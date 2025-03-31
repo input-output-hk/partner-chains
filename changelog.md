@@ -35,7 +35,12 @@ of required signatures.
 
 All the `smart-contracts` sub-commands that require Governance: `governance update`, `upsert-d-parameter`, `upsert-permissioned-candidates`, `reserve init`, `reserve create`, `reserve deposit`, and `reserve handover` will now submit the transaction only if governance is "1 of 1". Otherwise these commands return a transaction CBOR that can be submitted with the new command `assemble-and-submit-tx`. Signatures can be obtained using `sign-tx`.
 
-Procedure of creating transaction to sign is as follows: a temporary wallet is generated, `--payment-key` transfers required funds to his temporary wallet, temporary wallet data is logged, and a transaction paid from this temporary wallet is created and printed to output.
+Procedure of creating transaction to sign is as follows:
+* a temporary wallet is generated
+* temporary wallet private key is saved to a file
+* `--payment-key` transfers required funds to the temporary wallet
+* a transaction paid from this temporary wallet is created
+* transaction and temporary wallet data are printed to stdout.
 
 `assemble-and-submit-tx` and `sign-tx` are added for unified UX.
 Signing and transaction submission can be done in other ways as well.

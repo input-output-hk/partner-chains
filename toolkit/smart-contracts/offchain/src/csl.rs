@@ -375,6 +375,7 @@ impl UtxoIdExt for UtxoId {
 	}
 }
 
+#[derive(Clone)]
 pub(crate) struct TransactionContext {
 	/// This key is added as required signer and used to sign the transaction.
 	pub(crate) payment_key: CardanoPaymentSigningKey,

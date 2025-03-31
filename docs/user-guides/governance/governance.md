@@ -127,7 +127,12 @@ The user has to provide signatures in `-w` parameter:
 
 ### Details of creating transaction to sign
 
-Procedure of creating transaction to sign is as follows: a temporary wallet is generated, `--payment-key` transfers required funds to his temporary wallet, temporary wallet data is logged, and a transaction paid from this temporary wallet is created and printed to output.
+Procedure of creating transaction to sign is as follows:
+* a temporary wallet is generated
+* temporary wallet private key is saved to a file
+* `--payment-key` transfers required funds to the temporary wallet
+* a transaction paid from this temporary wallet is created
+* transaction and temporary wallet data are printed to stdout.
 
 ## Technical details
 

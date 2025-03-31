@@ -343,7 +343,7 @@ async fn run_update_governance<
 	client: &T,
 	genesis_utxo: UtxoId,
 ) -> MultiSigSmartContractResult {
-	update_governance::run_update_governance(
+	let result = update_governance::run_update_governance(
 		&MultiSigParameters::new(&vec![EVE_PUBLIC_KEY_HASH, GOVERNANCE_AUTHORITY], 1).unwrap(),
 		&governance_authority_payment_key(),
 		genesis_utxo,
@@ -351,7 +351,9 @@ async fn run_update_governance<
 		FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
-	.unwrap()
+	.unwrap();
+	cleanup_temp_wallet_file(&result);
+	result
 }
 
 async fn run_upsert_d_param<
@@ -363,7 +365,7 @@ async fn run_upsert_d_param<
 	pkey: &CardanoPaymentSigningKey,
 	client: &T,
 ) -> Option<MultiSigSmartContractResult> {
-	d_param::upsert_d_param(
+	let result = d_param::upsert_d_param(
 		genesis_utxo,
 		&DParameter { num_permissioned_candidates, num_registered_candidates },
 		pkey,
@@ -371,7 +373,9 @@ async fn run_upsert_d_param<
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
-	.unwrap()
+	.unwrap();
+	result.iter().for_each(cleanup_temp_wallet_file);
+	result
 }
 
 async fn run_upsert_permissioned_candidates<
@@ -386,7 +390,7 @@ async fn run_upsert_permissioned_candidates<
 		aura_public_key: AuraPublicKey([candidate; 32].to_vec()),
 		grandpa_public_key: GrandpaPublicKey([candidate; 32].to_vec()),
 	}];
-	permissioned_candidates::upsert_permissioned_candidates(
+	let result = permissioned_candidates::upsert_permissioned_candidates(
 		genesis_utxo,
 		&candidates,
 		&governance_authority_payment_key(),
@@ -394,7 +398,9 @@ async fn run_upsert_permissioned_candidates<
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
-	.unwrap()
+	.unwrap();
+	result.iter().for_each(cleanup_temp_wallet_file);
+	result
 }
 
 async fn run_init_reserve_management<
@@ -403,14 +409,16 @@ async fn run_init_reserve_management<
 	genesis_utxo: UtxoId,
 	client: &T,
 ) -> Vec<MultiSigSmartContractResult> {
-	reserve::init::init_reserve_management(
+	let results = reserve::init::init_reserve_management(
 		genesis_utxo,
 		&governance_authority_payment_key(),
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
-	.unwrap()
+	.unwrap();
+	results.iter().for_each(cleanup_temp_wallet_file);
+	results
 }
 
 async fn run_create_reserve_management<
@@ -420,7 +428,7 @@ async fn run_create_reserve_management<
 	v_function_hash: PolicyId,
 	client: &T,
 ) -> MultiSigSmartContractResult {
-	reserve::create::create_reserve_utxo(
+	let result = reserve::create::create_reserve_utxo(
 		reserve::create::ReserveParameters {
 			total_accrued_function_script_hash: v_function_hash,
 			token: AssetId {
@@ -435,7 +443,9 @@ async fn run_create_reserve_management<
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
-	.unwrap()
+	.unwrap();
+	cleanup_temp_wallet_file(&result);
+	result
 }
 
 async fn run_update_reserve_settings_management<
@@ -445,7 +455,7 @@ async fn run_update_reserve_settings_management<
 	updated_total_accrued_function_script_hash: PolicyId,
 	client: &T,
 ) -> Option<MultiSigSmartContractResult> {
-	reserve::update_settings::update_reserve_settings(
+	let result = reserve::update_settings::update_reserve_settings(
 		genesis_utxo,
 		&governance_authority_payment_key(),
 		updated_total_accrued_function_script_hash,
@@ -453,7 +463,9 @@ async fn run_update_reserve_settings_management<
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
-	.unwrap()
+	.unwrap();
+	result.iter().for_each(cleanup_temp_wallet_file);
+	result
 }
 
 async fn run_deposit_to_reserve<
@@ -462,7 +474,7 @@ async fn run_deposit_to_reserve<
 	genesis_utxo: UtxoId,
 	client: &T,
 ) -> MultiSigSmartContractResult {
-	reserve::deposit::deposit_to_reserve(
+	let result = reserve::deposit::deposit_to_reserve(
 		DEPOSIT_AMOUNT,
 		genesis_utxo,
 		&governance_authority_payment_key(),
@@ -470,7 +482,9 @@ async fn run_deposit_to_reserve<
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
 	.await
-	.unwrap()
+	.unwrap();
+	cleanup_temp_wallet_file(&result);
+	result
 }
 
 async fn run_handover_reserve<
@@ -479,13 +493,15 @@ async fn run_handover_reserve<
 	genesis_utxo: UtxoId,
 	client: &T,
 ) -> Result<MultiSigSmartContractResult, anyhow::Error> {
-	reserve::handover::handover_reserve(
+	let result = reserve::handover::handover_reserve(
 		genesis_utxo,
 		&governance_authority_payment_key(),
 		client,
 		&FixedDelayRetries::new(Duration::from_millis(500), 100),
 	)
-	.await
+	.await?;
+	cleanup_temp_wallet_file(&result);
+	Ok(result)
 }
 
 async fn run_release_reserve_funds<
@@ -690,5 +706,19 @@ async fn run_assemble_and_sign<
 		assemble_tx::assemble_tx(tx, witnesses, client, &await_tx).await.unwrap()
 	} else {
 		panic!("Expected transaction cbor, because governance policy is not '1 of 1'")
+	}
+}
+
+fn cleanup_temp_wallet_file(result: &MultiSigSmartContractResult) {
+	match result {
+		MultiSigSmartContractResult::TransactionSubmitted(_) => (),
+		MultiSigSmartContractResult::TransactionToSign(MultiSigTransactionData {
+			tx_name: _tx_name,
+			temporary_wallet,
+			tx_cbor: _tx_cbor,
+		}) => {
+			let file_name = format!("{}.skey", temporary_wallet.address);
+			std::fs::remove_file(file_name).unwrap()
+		},
 	}
 }

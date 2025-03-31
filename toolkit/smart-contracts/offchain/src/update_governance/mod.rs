@@ -47,7 +47,7 @@ pub async fn run_update_governance<
 
 	submit_or_create_tx_to_sign(
 		&governance_data,
-		&payment_ctx,
+		payment_ctx,
 		|costs, ctx| {
 			update_governance_tx(
 				raw_scripts::VERSION_ORACLE_VALIDATOR,

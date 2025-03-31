@@ -62,7 +62,7 @@ pub async fn handover_reserve<
 
 	submit_or_create_tx_to_sign(
 		&governance,
-		&ctx,
+		ctx,
 		|costs, ctx| build_tx(&amount, utxo, &reserve, &governance, costs, &ctx),
 		"Handover Reserve",
 		client,

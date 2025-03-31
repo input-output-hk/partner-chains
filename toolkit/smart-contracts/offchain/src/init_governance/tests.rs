@@ -167,7 +167,7 @@ fn transaction_creation() {
 #[test]
 fn plutus_script_attached_to_genesis_utxo_increases_fee() {
 	let fee_when_genesis_utxo_has_no_script = &init_governance_transaction(
-		governance_authority(),
+		&MultiSigParameters::new_one_of_one(&governance_authority()),
 		genesis_utxo(),
 		test_costs(),
 		&tx_context(),
@@ -177,7 +177,7 @@ fn plutus_script_attached_to_genesis_utxo_increases_fee() {
 	.fee();
 
 	let fee_when_genesis_utxo_has_plutus_script = &init_governance_transaction(
-		governance_authority(),
+		&MultiSigParameters::new_one_of_one(&governance_authority()),
 		genesis_utxo_with_plutus_script(),
 		test_costs(),
 		&tx_context(),
@@ -191,7 +191,7 @@ fn plutus_script_attached_to_genesis_utxo_increases_fee() {
 #[test]
 fn native_attached_to_genesis_utxo_increases_fee() {
 	let fee_when_genesis_utxo_has_no_script = &init_governance_transaction(
-		governance_authority(),
+		&MultiSigParameters::new_one_of_one(&governance_authority()),
 		genesis_utxo(),
 		test_costs(),
 		&tx_context(),
@@ -201,7 +201,7 @@ fn native_attached_to_genesis_utxo_increases_fee() {
 	.fee();
 
 	let fee_when_genesis_utxo_has_native_script = &init_governance_transaction(
-		governance_authority(),
+		&MultiSigParameters::new_one_of_one(&governance_authority()),
 		genesis_utxo_with_native_script(),
 		test_costs(),
 		&tx_context(),
