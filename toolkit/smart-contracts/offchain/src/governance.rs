@@ -273,7 +273,7 @@ impl MultiSigParameters {
 	}
 
 	pub fn new_one_of_one(goveranance_authority: &MainchainKeyHash) -> Self {
-		Self { governance_authorties: vec![goveranance_authority.clone()], threshold: 1 }
+		Self { governance_authorties: vec![*goveranance_authority], threshold: 1 }
 	}
 
 	/// Retruns [[SimpleAtLeastN]] for this MultiSig parameters.
