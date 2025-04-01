@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from src.partner_chain_rpc import PartnerChainRpcResponse, DParam
 from src.partner_chains_node.node import PartnerChainsNode
-from src.partner_chains_node.models import AddressAssociationSignature
+from src.partner_chains_node.models import AddressAssociationSignature, BlockProducerMetadataSignature
 from config.api_config import Node
 
 
@@ -399,6 +399,34 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
+    def sign_block_producer_metadata(self, metadata: dict, cross_chain_signing_key: str) -> BlockProducerMetadataSignature:
+        """
+        Creates a signature for block procuder metadata.
+
+        Arguments:
+            metadata {dict} -- block procuder metadata
+            cross_chain_signing_key {str} -- Cross Chain Signing key in hex format
+
+        Returns:
+            BlockProducerMetadataSignature
+        """
+        pass
+
+    @abstractmethod
+    def submit_block_producer_metadata(self, signature: BlockProducerMetadataSignature, wallet: Wallet) -> Transaction:
+        """
+        Submits an extrinsic for upserting a block producer's metadata.
+
+        Arguments:
+            signature {BlockProducerMetadataSignature} -- Signature of the metadata
+            wallet {Wallet} -- Wallet used to sign the transaction
+
+        Returns:
+            Transaction
+        """
+        pass
+
+    @abstractmethod
     def submit_address_association(self, signature: AddressAssociationSignature, wallet: Wallet) -> Transaction:
         """
         Submits the association between a PC address and a Cardano address to the network. This allows ADA delegators
@@ -423,6 +451,19 @@ class BlockchainApi(ABC):
 
         Returns:
             str -- PC SS58 address associated with the Cardano address
+        """
+        pass
+
+    @abstractmethod
+    def get_block_producer_metadata(self, cross_chain_public_key: str) -> str:
+        """
+        Fetches the block producer metadata for the given cross-chain public key.
+
+        Arguments:
+            cross_chain_public_key {str} -- Cross-chain public key
+
+        returns:
+            str -- hex encoded metadata
         """
         pass
 

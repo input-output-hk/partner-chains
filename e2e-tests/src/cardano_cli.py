@@ -2,6 +2,8 @@ import json
 from .run_command import RunnerFactory
 from config.api_config import MainChainConfig, Tool
 import logging as logger
+import hashlib
+import ecdsa
 
 
 class CardanoCli:
@@ -99,6 +101,24 @@ class CardanoCli:
         logger.info(f"Stake signing key: {signing_key}")
         logger.info(f"Stake verification key: {verification_key}")
         return signing_key, verification_key
+
+    def generate_cross_chain_keys(self):
+        logger.info("Generating cross chain keys")
+        pkey = ecdsa.SigningKey.generate(ecdsa.SECP256k1)
+
+        pkey_hex = pkey.to_string().hex()
+        vkey_bytes = pkey.get_verifying_key().to_string("compressed")
+        vkey_hex = vkey_bytes.hex()
+
+        blake2b = hashlib.blake2b(digest_size=28)
+        blake2b.update(vkey_bytes)
+        vkey_hash = blake2b.digest().hex()
+
+        logger.info(f"Cross chain signing key: {pkey_hex}")
+        logger.info(f"Cross chain verification key: {vkey_hex}")
+        logger.info(f"Cross chain verification key hash: {vkey_hash}")
+
+        return pkey, vkey_hex, vkey_hash
 
     def get_stake_key_hash(self, stake_key):
         logger.info("Getting stake key hash")

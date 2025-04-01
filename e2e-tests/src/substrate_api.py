@@ -11,7 +11,6 @@ from .decorators import long_running_function
 import json
 import hashlib
 import logging as logger
-from .run_command import RunnerFactory
 from .cardano_cli import CardanoCli
 from .partner_chains_node.node import PartnerChainsNode
 from .partner_chain_rpc import PartnerChainRpc, PartnerChainRpcResponse, DParam
@@ -45,7 +44,6 @@ class SubstrateApi(BlockchainApi):
         self.db_sync = db_sync
         self.url = config.nodes_config.node.url
         self._substrate = None
-        self.run_command = RunnerFactory.get_runner(config.stack_config.ssh, config.stack_config.tools_shell)
         self.cardano_cli = CardanoCli(config.main_chain, config.stack_config.tools["cardano_cli"])
         self.partner_chains_node = PartnerChainsNode(config)
         self.partner_chain_rpc = PartnerChainRpc(config.nodes_config.node.rpc_url)
@@ -620,6 +618,9 @@ class SubstrateApi(BlockchainApi):
     def sign_address_association(self, address, stake_signing_key):
         return self.partner_chains_node.sign_address_association(address, stake_signing_key)
 
+    def sign_block_producer_metadata(self, metadata, cross_chain_signing_key):
+        return self.partner_chains_node.sign_block_producer_metadata(metadata, cross_chain_signing_key)
+
     @long_running_function
     def submit_address_association(self, signature, wallet):
         tx = Transaction()
@@ -646,9 +647,40 @@ class SubstrateApi(BlockchainApi):
         tx.total_fee_amount = tx._receipt.total_fee_amount
         return tx
 
+    @long_running_function
+    def submit_block_producer_metadata(self, metadata, signature, wallet):
+        tx = Transaction()
+        tx._unsigned = self.substrate.compose_call(
+            call_module="BlockProducerMetadata",
+            call_function="upsert_metadata",
+            call_params={
+                "metadata": metadata,
+                "signature": signature.signature,
+                "cross_chain_pub_key": signature.cross_chain_pub_key,
+            },
+        )
+        logger.debug(f"Transaction built {tx._unsigned}")
+
+        if wallet.crypto_type and wallet.crypto_type == KeypairType.ECDSA:
+            tx._signed = self.__create_signed_ecdsa_extrinsic(call=tx._unsigned, keypair=wallet.raw)
+        else:
+            tx._signed = self.substrate.create_signed_extrinsic(call=tx._unsigned, keypair=wallet.raw)
+        logger.debug(f"Transaction signed {tx._signed}")
+
+        tx._receipt = self.substrate.submit_extrinsic(tx._signed, wait_for_inclusion=True)
+        logger.debug(f"Transaction sent {tx._receipt.extrinsic}")
+        tx.hash = tx._receipt.extrinsic_hash
+        tx.total_fee_amount = tx._receipt.total_fee_amount
+        return tx
+
     def get_address_association(self, stake_key_hash):
         result = self.substrate.query("AddressAssociations", "AddressAssociations", [f"0x{stake_key_hash}"])
         logger.debug(f"Address association for {stake_key_hash}: {result}")
+        return result.value
+
+    def get_block_producer_metadata(self, cross_chain_public_key_hash: str):
+        result = self.substrate.query("BlockProducerMetadata", "BlockProducerMetadataStorage", [f"0x{cross_chain_public_key_hash}"])
+        logger.debug(f"Block producer metadata for {cross_chain_public_key_hash}: {result}")
         return result.value
 
     def get_block_production_log(self, block_hash=None):

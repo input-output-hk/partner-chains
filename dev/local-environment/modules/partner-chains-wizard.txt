@@ -9,6 +9,8 @@
       - partner-chains-node-1-data:/data
       - ./configurations/cardano/keys/funded_address.skey:/keys/funded_address.skey
       - ./configurations/cardano/keys/funded_address.vkey:/keys/funded_address.vkey
+      - ./configurations/cardano/keys/owner-utxo.skey:/keys/owner-utxo.skey
+      - ./configurations/cardano/keys/owner-utxo.vkey:/keys/owner-utxo.vkey
       - ./configurations/wizard/governance-authority/entrypoint.sh:/entrypoint.sh
     environment:
       OGMIOS_PORT: ${OGMIOS_PORT}
@@ -51,6 +53,8 @@
       - partner-chains-node-3-data:/data
       - ./configurations/cardano/keys/funded_address.skey:/keys/funded_address.skey
       - ./configurations/cardano/keys/funded_address.vkey:/keys/funded_address.vkey
+      - ./configurations/cardano/keys/owner-utxo.skey:/keys/owner-utxo.skey
+      - ./configurations/cardano/keys/owner-utxo.vkey:/keys/owner-utxo.vkey
       - ./configurations/cardano/keys/cold.skey:/keys/cold.skey
       - ./configurations/cardano/keys/cold.vkey:/keys/cold.vkey
       - ./configurations/wizard/registered/entrypoint.sh:/entrypoint.sh

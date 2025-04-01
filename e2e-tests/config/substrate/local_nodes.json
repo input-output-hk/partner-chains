@@ -85,8 +85,16 @@
     },
     "governance_authority": {
       "mainchain_address": "addr_test1vr5vxqpnpl3325cu4zw55tnapjqzzx78pdrnk8k5j7wl72c6y08nd",
-      "mainchain_key": "/keys/funded_address.skey"
+      "mainchain_key": "/keys/funded_address.skey",
+      "mainchain_pub_key_hash": "0xe8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
     },
+    "additional_governance_authorities": [
+      {
+        "mainchain_address": "addr_test1vphpcf32drhhznv6rqmrmgpuwq06kug0lkg22ux777rtlqst2er0r%",
+        "mainchain_key": "/keys/owner-utxo.skey",
+        "mainchain_pub_key_hash": "6e1c262a68ef714d9a18363da03c701fab710ffd90a570def786bf82"
+      }
+    ],
     "selected_node": "alice",
     "node": "${nodes_config[nodes][${nodes_config[selected_node]}]}",
     "token_conversion_rate": 9,
