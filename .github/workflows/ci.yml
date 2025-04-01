@@ -611,18 +611,18 @@ jobs:
           env: ci
           decrypt: true
           blockchain: substrate
-        env:
-          USE_KUBECTL_RPC: true
-          KUBECTL_EXEC_POD: ci-preview-validator-1
-          K8S_NAMESPACE: ci-preview
-          AWS_REGION: "eu-central-1"
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+#        env:
+#          USE_KUBECTL_RPC: true
+#          KUBECTL_EXEC_POD: ci-preview-validator-1
+#          K8S_NAMESPACE: ci-preview
+#          AWS_REGION: "eu-central-1"
+#          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+#          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+#          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+#          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+#          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+#          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+#          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   post-merge-actions-complete:
     if: ${{ always() && (github.event_name == 'pull_request' && github.event.pull_request.merged == true) }}
