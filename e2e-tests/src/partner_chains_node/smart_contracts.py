@@ -235,8 +235,8 @@ class SmartContracts:
                 f"{self.cli} smart-contracts governance update "
                 f"--payment-key-file {payment_key} "
                 f"--genesis-utxo {self.config.genesis_utxo} "
-                f"--new-governance-authority {authorities_str} "
-                f"--new-governance-threshold {new_governance_threshold} "
+                f"--governance-authority {authorities_str} "
+                f"--threshold {new_governance_threshold} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.run(cmd)
@@ -244,7 +244,7 @@ class SmartContracts:
 
         def get_policy(self):
             cmd = (
-                f"{self.cli} smart-contracts get-governance-policy "
+                f"{self.cli} smart-contracts governance get-policy "
                 f"--genesis-utxo {self.config.genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
