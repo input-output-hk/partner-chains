@@ -3,6 +3,9 @@ import logging as logger
 from dataclasses import dataclass
 from pydantic import BaseModel
 from typing import Optional
+import os
+import subprocess
+import json
 
 
 class PartnerChainRpcResponseError(BaseModel):
@@ -43,52 +46,53 @@ class PartnerChainRpc:
             "id": id,
         }
 
+    def __exec_rpc(self, method: str, params: list = []):
+        if os.environ.get("USE_KUBECTL_RPC") != "true":
+            response = requests.post(
+                self.url,
+                headers=self.headers,
+                json=self.__get_body(method=method, params=params)
+            )
+            return response.json()
+
+        pod = os.environ["KUBECTL_EXEC_POD"]
+        namespace = os.environ.get("K8S_NAMESPACE", "default")
+
+        payload = json.dumps(self.__get_body(method=method, params=params))
+        cmd = [
+            "kubectl", "exec", pod, "-n", namespace, "--",
+            "curl", "-s", "-H", "Content-Type: application/json",
+            "-d", payload, "http://localhost:9933"
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        return json.loads(result.stdout)
+
     def partner_chain_get_epoch_committee(self, epoch) -> PartnerChainRpcResponse:
-        response = requests.post(
-            self.url, headers=self.headers, json=self.__get_body(method="sidechain_getEpochCommittee", params=[epoch])
-        )
-        json_data = response.json()
+        json_data = self.__exec_rpc("sidechain_getEpochCommittee", [epoch])
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)
 
     def partner_chain_get_status(self):
-        response = requests.post(self.url, headers=self.headers, json=self.__get_body(method="sidechain_getStatus"))
-        json_data = response.json()
+        json_data = self.__exec_rpc("sidechain_getStatus")
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)
 
     def partner_chain_get_ariadne_parameters(self, mc_epoch) -> PartnerChainRpcResponse:
-        response = requests.post(
-            self.url,
-            headers=self.headers,
-            json=self.__get_body(method="sidechain_getAriadneParameters", params=[mc_epoch]),
-        )
-        json_data = response.json()
+        json_data = self.__exec_rpc("sidechain_getAriadneParameters", [mc_epoch])
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)
 
     def partner_chain_get_params(self):
-        response = requests.post(self.url, headers=self.headers, json=self.__get_body(method="sidechain_getParams"))
-        json_data = response.json()
+        json_data = self.__exec_rpc("sidechain_getParams")
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)
 
     def partner_chain_get_registrations(self, mc_epoch, mc_key):
-        response = requests.post(
-            self.url,
-            headers=self.headers,
-            json=self.__get_body(method="sidechain_getRegistrations", params=[mc_epoch, mc_key]),
-        )
-        json_data = response.json()
+        json_data = self.__exec_rpc("sidechain_getRegistrations", [mc_epoch, mc_key])
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)
 
     def partner_chain_get_block_producer_metadata(self, cross_chain_pub_key_hash: str):
-        response = requests.post(
-            self.url,
-            headers=self.headers,
-            json=self.__get_body(method="block-producer-metadata_getMetadata", params=[f"0x{cross_chain_pub_key_hash}"]),
-        )
-        json_data = response.json()
+        json_data = self.__exec_rpc("block-producer-metadata_getMetadata", [f"0x{cross_chain_pub_key_hash}"])
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)
