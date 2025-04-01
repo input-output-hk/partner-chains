@@ -200,7 +200,7 @@ fn get_ariadne_parameters_io(result: serde_json::Value) -> MockIO {
 }
 
 fn print_post_update_info_io() -> MockIO {
-	MockIO::print("Done. Main chain state is set. Please remember that any changes can be observed immediately, but from the Partner Chain point of view they will be effective in two main chain epochs.")
+	MockIO::print("Done. Please remember that any changes to Caradno state can be observed immediately, but from the Partner Chain point of view they will be effective in two main chain epochs.")
 }
 
 fn prompt_d_parameter_update_io(choice: bool) -> MockIO {
