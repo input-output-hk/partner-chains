@@ -6,6 +6,7 @@ pub use pallet::*;
 pub mod pallet {
 	use crate::AccountId;
 	use crate::BlockAuthor;
+	use crate::System;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::OriginFor;
 	use frame_system::{ensure_none, ensure_root};
@@ -53,7 +54,7 @@ pub mod pallet {
 		pub fn should_release_participation_data(
 			slot: sidechain_slots::Slot,
 		) -> Option<sidechain_slots::Slot> {
-			if *slot % ParticipationDataReleasePeriod::<T>::get() == 0 {
+			if u64::from(System::block_number()) % ParticipationDataReleasePeriod::<T>::get() == 0 {
 				Some(slot)
 			} else {
 				None
