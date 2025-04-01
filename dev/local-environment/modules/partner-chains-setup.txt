@@ -10,6 +10,8 @@
       - ./configurations/genesis/shelley/genesis-utxo.skey:/shared/shelley/genesis-utxo.skey
       - ./configurations/cardano/keys/funded_address.skey:/keys/funded_address.skey
       - ./configurations/cardano/keys/funded_address.vkey:/keys/funded_address.vkey
+      - ./configurations/cardano/keys/owner-utxo.skey:/keys/owner-utxo.skey
+      - ./configurations/cardano/keys/owner-utxo.vkey:/keys/owner-utxo.vkey
       - ./configurations/cardano/keys/owner-stake.skey:/keys/owner-stake.skey
       - ./configurations/partner-chains-setup/entrypoint.sh:/entrypoint.sh
       - ./configurations/partner-chains-nodes/:/partner-chains-nodes/

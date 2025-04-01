@@ -69,6 +69,7 @@ class MainChainConfig:
 class MainchainAccount:
     mainchain_address: str
     mainchain_key: str
+    mainchain_pub_key_hash: str
 
 
 @dataclass
@@ -105,6 +106,7 @@ class NodesApiConfig:
     d_param_min: Optional[DParam] = None
     d_param_max: Optional[DParam] = None
     governance_authority: MainchainAccount = MISSING
+    additional_governance_authorities: Optional[list[MainchainAccount]] = None
     network: str = SI("${partner_chain_main_cli_network:${..main_chain.network}}")
 
 
