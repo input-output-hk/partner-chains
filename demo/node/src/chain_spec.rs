@@ -1,4 +1,6 @@
-use sidechain_runtime::{opaque::SessionKeys, AccountId, CrossChainPublic, Signature, WASM_BINARY};
+use partner_chains_demo_runtime::{
+	opaque::SessionKeys, AccountId, CrossChainPublic, Signature, WASM_BINARY,
+};
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 

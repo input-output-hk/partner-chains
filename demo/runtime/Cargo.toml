@@ -1,5 +1,5 @@
 [package]
-name = "sidechain-runtime"
+name = "partner-chains-demo-runtime"
 version.workspace = true
 description = "A reference implementation of a partner chain runtime"
 authors.workspace = true
