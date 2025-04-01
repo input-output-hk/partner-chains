@@ -145,6 +145,7 @@ docker:
         zlib1g \
         libgomp1 \
         curl \
+        wget \
         vim \
         dnsutils \
         jq \
