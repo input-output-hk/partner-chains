@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"sidechain_runtime":[["impl PalletInfo for <a class=\"struct\" href=\"sidechain_runtime/struct.PalletInfo.html\" title=\"struct sidechain_runtime::PalletInfo\">PalletInfo</a>"]]
+"partner_chains_demo_runtime":[["impl PalletInfo for <a class=\"struct\" href=\"partner_chains_demo_runtime/struct.PalletInfo.html\" title=\"struct partner_chains_demo_runtime::PalletInfo\">PalletInfo</a>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

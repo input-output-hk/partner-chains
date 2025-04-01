@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"sidechain_runtime":[["impl AsSystemOriginSigner&lt;&lt;<a class=\"struct\" href=\"sidechain_runtime/struct.Runtime.html\" title=\"struct sidechain_runtime::Runtime\">Runtime</a> as Config&gt;::AccountId&gt; for <a class=\"struct\" href=\"sidechain_runtime/struct.RuntimeOrigin.html\" title=\"struct sidechain_runtime::RuntimeOrigin\">RuntimeOrigin</a>"]]
+"partner_chains_demo_runtime":[["impl AsSystemOriginSigner&lt;&lt;<a class=\"struct\" href=\"partner_chains_demo_runtime/struct.Runtime.html\" title=\"struct partner_chains_demo_runtime::Runtime\">Runtime</a> as Config&gt;::AccountId&gt; for <a class=\"struct\" href=\"partner_chains_demo_runtime/struct.RuntimeOrigin.html\" title=\"struct partner_chains_demo_runtime::RuntimeOrigin\">RuntimeOrigin</a>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
