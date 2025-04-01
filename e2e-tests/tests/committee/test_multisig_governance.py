@@ -25,7 +25,6 @@ def additional_governance_authorities(config: ApiConfig) -> list[str]:
 
 @fixture(scope="module")
 def set_governance_to_multisig(api: BlockchainApi, governance_authority, additional_governance_authorities):
-    """Test updating to multisig governance with multiple authorities"""
     # Combine existing authority with additional authorities
     all_authorities = [governance_authority.mainchain_pub_key_hash] + list(
         map(lambda x: x.mainchain_pub_key_hash, additional_governance_authorities)
