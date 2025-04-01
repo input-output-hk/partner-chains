@@ -6,7 +6,8 @@ chmod 777 /shared
 
 echo "Calculating target time for synchronised chain start..."
 
-target_time=$(( ($(date +%s) / 10 + 1) * 10 ))
+# Local env Partner Chains epochs are 30 seconds long. PC and MC epochs have to align. The following line makes MC epoch 0 start at some PC epoch start.
+target_time=$(( ($(date +%s) / 30 + 1) * 30 ))
 echo "$target_time" > /shared/cardano.start
 byron_startTime=$target_time
 shelley_systemStart=$(date --utc +"%Y-%m-%dT%H:%M:%SZ" --date="@$target_time")
