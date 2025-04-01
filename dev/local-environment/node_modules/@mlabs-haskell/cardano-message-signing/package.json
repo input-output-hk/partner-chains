@@ -1,0 +1,28 @@
+{
+  "name": "@mlabs-haskell/cardano-message-signing",
+  "type": "module",
+  "version": "1.0.1",
+  "description": "Implements CIP-0008 message signing spec for the Cardano blockchain.",
+  "main": "./nodejs/index.js",
+  "browser": "./browser/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mlabs-haskell/cardano-message-signing.git"
+  },
+  "keywords": [
+    "cardano"
+  ],
+  "author": "klntsky",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mlabs-haskell/cardano-message-signing/issues"
+  },
+  "homepage": "https://github.com/mlabs-haskell/cardano-message-signing#readme",
+  "dependencies": {
+    "@emurgo/cardano-message-signing-browser": "^1.0.1",
+    "@emurgo/cardano-message-signing-nodejs": "^1.0.1"
+  }
+}

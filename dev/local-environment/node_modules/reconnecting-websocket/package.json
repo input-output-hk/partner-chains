@@ -1,0 +1,71 @@
+{
+    "name": "reconnecting-websocket",
+    "version": "4.4.0",
+    "description": "Reconnecting WebSocket",
+    "main": "./dist/reconnecting-websocket-cjs.js",
+    "module": "./dist/reconnecting-websocket-mjs.js",
+    "types": "./dist/reconnecting-websocket.d.ts",
+    "scripts": {
+        "build": "npm run clean && rollup -c && uglifyjs --compress --mangle -o dist/reconnecting-websocket-iife.min.js dist/reconnecting-websocket-iife.js",
+        "test": "npm run build && nyc --reporter=text-summary --reporter=lcov ava --verbose --serial test/test.js",
+        "clean": "del dist && del coverage && del .nyc_output",
+        "report": "nyc report --reporter=html && opn coverage/index.html",
+        "coveralls": "cat ./coverage/lcov.info | ./node_modules/.bin/coveralls",
+        "lint": "tslint *.ts",
+        "precommit": "lint-staged",
+        "prepublishOnly": "npm run clean && npm run lint && npm run build && npm test"
+    },
+    "keywords": [
+        "websocket",
+        "client",
+        "reconnecting",
+        "reconnection",
+        "reconnect",
+        "forever",
+        "persistent",
+        "forever",
+        "automatic"
+    ],
+    "author": "Pedro Ladaria <pedro.ladaria@gmail.com>",
+    "license": "MIT",
+    "devDependencies": {
+        "ava": "^2.3.0",
+        "coveralls": "^3.0.6",
+        "del-cli": "^1.1.0",
+        "husky": "^1.3.1",
+        "lint-staged": "^7.3.0",
+        "nyc": "^14.1.1",
+        "opn-cli": "^3.1.0",
+        "prettier": "^1.18.2",
+        "rollup": "^0.66.6",
+        "rollup-plugin-typescript2": "^0.23.0",
+        "tslib": "^1.10.0",
+        "tslint": "^5.19.0",
+        "typescript": "^3.7.5",
+        "uglify-es": "^3.3.10",
+        "ws": "^6.2.1"
+    },
+    "dependencies": {},
+    "directories": {
+        "test": "test"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/pladaria/reconnecting-websocket.git"
+    },
+    "bugs": {
+        "url": "https://github.com/pladaria/reconnecting-websocket/issues"
+    },
+    "publishConfig": {
+        "registry": "https://registry.npmjs.org"
+    },
+    "homepage": "https://github.com/pladaria/reconnecting-websocket#readme",
+    "lint-staged": {
+        "linters": {
+            "*.{js,md,ts}": [
+                "prettier --write",
+                "git add"
+            ]
+        }
+    }
+}
