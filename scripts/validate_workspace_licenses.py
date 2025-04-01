@@ -3,7 +3,7 @@ import json
 import toml
 
 ALLOWED_GPL_LICENSE = "GPL-3.0-or-later WITH Classpath-exception-2.0"
-CLASSPATH_EXCEPTION_CRATES = {"partner-chains-node"}  # Crates explicitly allowed to have dependencies licensed with ALLOWED_GPL_LICENSE
+CLASSPATH_EXCEPTION_CRATES = {"partner-chains-demo-node"}  # Crates explicitly allowed to have dependencies licensed with ALLOWED_GPL_LICENSE
 
 # Clarifications for crates with unknown licenses
 CLARIFICATIONS = {

@@ -14,6 +14,11 @@ use jsonrpsee::RpcModule;
 use pallet_block_producer_metadata_rpc::*;
 use pallet_session_validator_management_rpc::*;
 use pallet_sidechain_rpc::*;
+use partner_chains_demo_runtime::{
+	opaque::{Block, SessionKeys},
+	AccountId, Balance, Nonce,
+};
+use partner_chains_demo_runtime::{BlockNumber, BlockProducerMetadataType, CrossChainPublic, Hash};
 use sc_consensus_grandpa::{
 	FinalityProofProvider, GrandpaJustificationStream, SharedAuthoritySet, SharedVoterState,
 };
@@ -22,11 +27,6 @@ use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool_api::TransactionPool;
 use sidechain_domain::mainchain_epoch::MainchainEpochConfig;
 use sidechain_domain::ScEpochNumber;
-use sidechain_runtime::{
-	opaque::{Block, SessionKeys},
-	AccountId, Balance, Nonce,
-};
-use sidechain_runtime::{BlockNumber, BlockProducerMetadataType, CrossChainPublic, Hash};
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};

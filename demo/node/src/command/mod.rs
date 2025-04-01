@@ -4,9 +4,9 @@ use crate::{
 	cli::{Cli, Subcommand},
 	service,
 };
+use partner_chains_demo_runtime::{Block, BlockProducerMetadataType};
 use sc_cli::SubstrateCli;
 use sc_service::PartialComponents;
-use sidechain_runtime::{Block, BlockProducerMetadataType};
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {

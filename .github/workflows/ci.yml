@@ -62,7 +62,7 @@ jobs:
       - name: Copy Earthfile to build directory
         run: |
           cp Earthfile ./to-build/
-      - name: Build and Artifacts and Push Image
+      - name: Run Earthly (build, test, cargo fmt, cargo clippy, publish Docker image)
         working-directory: ./to-build
         env:
           EARTHLY_CI: true

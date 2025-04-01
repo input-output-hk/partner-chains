@@ -7,8 +7,8 @@ version = "1.6.0"
 
 [workspace]
 members = [
-	"node/node",
-	"node/runtime",
+	"demo/node",
+	"demo/runtime",
 	"toolkit/cli/commands",
 	"toolkit/cli/node-commands",
 	"toolkit/smart-contracts/commands",
@@ -315,4 +315,4 @@ db-sync-follower = { path = "toolkit/mainchain-follower/db-sync-follower" }
 main-chain-follower-mock = { path = "toolkit/mainchain-follower/mock", default-features = false }
 
 # demo node
-sidechain-runtime = { path = "node/runtime" }
+partner-chains-demo-runtime = { path = "demo/runtime" }

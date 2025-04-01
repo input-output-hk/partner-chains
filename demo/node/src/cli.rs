@@ -17,7 +17,7 @@ pub struct Cli {
 #[derive(Debug, Clone)]
 pub struct WizardBindings;
 impl RuntimeTypeWrapper for WizardBindings {
-	type Runtime = sidechain_runtime::Runtime;
+	type Runtime = partner_chains_demo_runtime::Runtime;
 }
 impl PartnerChainRuntimeBindings for WizardBindings {
 	fn initial_member(id: Self::AuthorityId, keys: Self::AuthorityKeys) -> Self::CommitteeMember {

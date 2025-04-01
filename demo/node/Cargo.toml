@@ -1,5 +1,5 @@
 [package]
-name = "partner-chains-node"
+name = "partner-chains-demo-node"
 version.workspace = true
 description = "A reference implementation of a partner chain node"
 authors.workspace = true
@@ -14,7 +14,7 @@ build = "build.rs"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [[bin]]
-name = "partner-chains-node"
+name = "partner-chains-demo-node"
 
 [lints]
 workspace = true
@@ -88,7 +88,7 @@ pallet-transaction-payment-rpc = { workspace = true }
 frame-benchmarking = { workspace = true }
 
 # Local Dependencies
-sidechain-runtime = { workspace = true }
+partner-chains-demo-runtime = { workspace = true }
 sidechain-mc-hash = { workspace = true, features = ["mock"] }
 sp-native-token-management = { workspace = true }
 db-sync-follower = { workspace = true, features = [

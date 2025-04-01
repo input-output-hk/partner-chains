@@ -7,12 +7,12 @@ use authority_selection_inherents::{
 };
 use hex_literal::hex;
 use main_chain_follower_mock::stake_distribution::StakeDistributionDataSourceMock;
+use partner_chains_demo_runtime::BlockAuthor;
 use sidechain_domain::{
 	DelegatorKey, MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber,
 	NativeTokenAmount, ScEpochNumber,
 };
 use sidechain_mc_hash::mock::MockMcHashDataSource;
-use sidechain_runtime::BlockAuthor;
 use sp_block_participation::BlockProductionData;
 use sp_consensus_aura::Slot;
 use sp_core::{ecdsa, H256};
