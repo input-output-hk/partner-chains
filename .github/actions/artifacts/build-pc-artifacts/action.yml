@@ -64,14 +64,14 @@ runs:
         echo "CXX=$(brew --prefix llvm)/bin/clang++" >> $GITHUB_ENV
         echo "LLVM_CONFIG=$(brew --prefix llvm)/bin/llvm-config" >> $GITHUB_ENV
         clang --version
-    - name: Build partner-chains-node
+    - name: Build partner-chains-demo-node
       shell: bash
       run: |
         cd $GITHUB_WORKSPACE
         if [[ "${{ inputs.os }}" == "linux-x86_64" ]]; then
           rustup target add x86_64-unknown-linux-gnu
-          cargo build -p partner-chains-node --locked --release --target x86_64-unknown-linux-gnu
-          cp target/x86_64-unknown-linux-gnu/release/partner-chains-node $PARTNER_CHAINS_NODE
+          cargo build -p partner-chains-demo-node --locked --release --target x86_64-unknown-linux-gnu
+          cp target/x86_64-unknown-linux-gnu/release/partner-chains-demo-node $PARTNER_CHAINS_NODE
           chmod +x $PARTNER_CHAINS_NODE
         elif [[ "${{ inputs.os }}" == "linux-arm64" ]]; then
           rustup target add aarch64-unknown-linux-gnu
@@ -82,24 +82,24 @@ runs:
           export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
           export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
           
-          cargo build -p partner-chains-node --locked --release --target aarch64-unknown-linux-gnu
-          cp target/aarch64-unknown-linux-gnu/release/partner-chains-node $PARTNER_CHAINS_NODE
+          cargo build -p partner-chains-demo-node --locked --release --target aarch64-unknown-linux-gnu
+          cp target/aarch64-unknown-linux-gnu/release/partner-chains-demo-node $PARTNER_CHAINS_NODE
           chmod +x $PARTNER_CHAINS_NODE
         elif [[ "${{ inputs.os }}" == "macos-x86_64" ]]; then
           rustup target add x86_64-apple-darwin
           RUSTFLAGS="-C linker=${LLVM_PATH}/bin/clang" \
-          cargo build -p partner-chains-node --locked --release --target x86_64-apple-darwin
-          cp target/x86_64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE
+          cargo build -p partner-chains-demo-node --locked --release --target x86_64-apple-darwin
+          cp target/x86_64-apple-darwin/release/partner-chains-demo-node $PARTNER_CHAINS_NODE
           chmod +x $PARTNER_CHAINS_NODE
         elif [[ "${{ inputs.os }}" == "macos-arm64" ]]; then
           rustup target add aarch64-apple-darwin
           RUSTFLAGS="-C linker=${LLVM_PATH}/bin/clang" \
-          cargo build -p partner-chains-node --locked --release --target aarch64-apple-darwin
-          cp target/aarch64-apple-darwin/release/partner-chains-node $PARTNER_CHAINS_NODE
+          cargo build -p partner-chains-demo-node --locked --release --target aarch64-apple-darwin
+          cp target/aarch64-apple-darwin/release/partner-chains-demo-node $PARTNER_CHAINS_NODE
           chmod +x $PARTNER_CHAINS_NODE
         fi
-    - name: Upload partner-chains-node artifact
+    - name: Upload partner-chains-demo-node artifact
       uses: actions/upload-artifact@v4
       with:
-        name: partner-chains-node-${{ inputs.os }}-artifact
+        name: partner-chains-demo-node-${{ inputs.os }}-artifact
         path: ${{ env.PARTNER_CHAINS_NODE }}
