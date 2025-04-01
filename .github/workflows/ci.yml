@@ -62,7 +62,7 @@ jobs:
       - name: Copy Earthfile to build directory
         run: |
           cp Earthfile ./to-build/
-      - name: Build and Artifacts and Push Image
+      - name: Run Earthly (build, test, cargo fmt, cargo clippy, publish Docker image)
         working-directory: ./to-build
         env:
           EARTHLY_CI: true
@@ -173,45 +173,6 @@ jobs:
           | nix copy --stdin --to \
           "s3://cache.sc.iog.io?secret-key=${{ runner.temp }}/nix-key&region=$AWS_DEFAULT_REGION" \
           && rm /tmp/outputs
-
-  clippy-check:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y protobuf-compiler
-      - name: Extract Rust version from toolchain file
-        id: rust-version
-        run: |
-          RUST_VERSION=$(grep 'channel' rust-toolchain.toml | sed -E 's/.*"([^"]+)".*/\1/')
-          echo "RUST_VERSION=$RUST_VERSION" >> $GITHUB_ENV
-          echo "Using Rust version: $RUST_VERSION"
-      - name: Setup Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ env.RUST_VERSION }}
-          profile: minimal
-          components: clippy
-          target: wasm32-unknown-unknown
-          override: true
-      - name: Verify toolchain version
-        run: rustc --version
-      - name: Run Clippy
-        env:
-          RUSTFLAGS: "-Dwarnings"
-        run: cargo clippy --all-targets
-        # We have an issue in this becnhmarking 'feature' pallet that clippy cannot fix:
-        #     error: unused import: `crate::Pallet as BlockProducerMetadata`
-        #       --> toolkit/block-producer-metadata/pallet/src/benchmarking.rs:6:5
-        # Will restore this full clippy check once fixed:
-        #run: cargo clippy --all-targets --all-features
 
   upload-chain-specs-pre-merge:
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
