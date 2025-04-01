@@ -16,12 +16,12 @@ runs:
     - name: Install kubectl and awscli
       run: |
         # Install kubectl
-        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        wget -O kubectl "https://dl.k8s.io/release/$(wget -qO- https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
         chmod +x ./kubectl
         sudo mv ./kubectl /usr/local/bin/kubectl
 
         # Install or update AWS CLI v2
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        wget -O "awscliv2.zip" "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
         unzip -o awscliv2.zip
         sudo ./aws/install --update
       shell: bash
@@ -43,23 +43,23 @@ runs:
       shell: bash
       run: |
         kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"sidechain_getStatus","params":[],"id":1}' \
+          wget -qO- --header="Content-Type: application/json" \
+          --post-data='{"jsonrpc":"2.0","method":"sidechain_getStatus","params":[],"id":1}' \
           http://localhost:9933 > status.json
 
     - name: Test Block Production
       shell: bash
       run: |
         BLOCK1=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"chain_getHeader","params":[],"id":1}' \
+          wget -qO- --header="Content-Type: application/json" \
+          --post-data='{"jsonrpc":"2.0","method":"chain_getHeader","params":[],"id":1}' \
           http://localhost:9933 | jq '.result.number | tonumber')
 
         sleep 30
 
         BLOCK2=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"chain_getHeader","params":[],"id":1}' \
+          wget -qO- --header="Content-Type: application/json" \
+          --post-data='{"jsonrpc":"2.0","method":"chain_getHeader","params":[],"id":1}' \
           http://localhost:9933 | jq '.result.number | tonumber')
 
         [[ "$BLOCK2" -gt "$BLOCK1" ]] || { echo "❌ Block number did not increase"; exit 1; }
@@ -83,8 +83,8 @@ runs:
       shell: bash
       run: |
         kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"partner_chain_getParams","params":[],"id":1}' \
+          wget -qO- --header="Content-Type: application/json" \
+          --post-data='{"jsonrpc":"2.0","method":"partner_chain_getParams","params":[],"id":1}' \
           http://localhost:9933 | tee /dev/stderr | jq -e '.result.genesis_utxo' || { echo "❌ Missing or invalid genesis UTXO"; exit 1; }
 
         echo "✅ Params test passed."
@@ -95,8 +95,8 @@ runs:
         MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
 
         kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
+          wget -qO- --header="Content-Type: application/json" \
+          --post-data="{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
           http://localhost:9933 | tee /dev/stderr | jq -e '
             .result.dParameter.numPermissionedCandidates and
             .result.dParameter.numRegisteredCandidates and
@@ -113,8 +113,8 @@ runs:
         EPOCH=$(jq '.result.sidechain.epoch' status.json)
 
         kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$EPOCH],\"id\":1}" \
+          wget -qO- --header="Content-Type: application/json" \
+          --post-data="{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$EPOCH],\"id\":1}" \
           http://localhost:9933 | tee /dev/stderr | jq -e '
             .result.sidechainEpoch and
             (.result.committee | length > 0) and
@@ -129,13 +129,13 @@ runs:
         MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
 
         MAINCHAIN_KEY=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
+          wget -qO- --header="Content-Type: application/json" \
+          --post-data="{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
           http://localhost:9933 | jq -r '.result.candidateRegistrations | keys[0]')
 
         kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getRegistrations\",\"params\":[$MC_EPOCH,\"$MAINCHAIN_KEY\"],\"id\":1}" \
+          wget -qO- --header="Content-Type: application/json" \
+          --post-data="{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getRegistrations\",\"params\":[$MC_EPOCH,\"$MAINCHAIN_KEY\"],\"id\":1}" \
           http://localhost:9933 | tee /dev/stderr | jq -e '
             (.result | length > 0) and
             (.result[0] | 
