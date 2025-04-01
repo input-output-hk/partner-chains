@@ -47,7 +47,7 @@
 		<span class="kw">let </span>f = |block: <span class="kw-2">&amp;</span>u32| compare_strategy.compare_block((<span class="kw-2">*</span>block).into(), <span class="self">self</span>);
 
 		binary_search_by(range, f)
-			.ok_or(ApiError::Application(<span class="string">"Could not find block number"</span>.to_string().into()))
+			.ok_or(ApiError::Application(<span class="string">"Could not find block"</span>.to_string().into()))
 			.map(|x| x.into())
 	}
 
