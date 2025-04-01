@@ -1,0 +1,23 @@
+[project]
+name = "e2e-tests"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "omegaconf==2.3.0",
+    "pytest==8.3.4",
+    "pytest-xdist==3.6.1",
+    "substrate-interface==1.7.11",
+    "sqlalchemy==2.0.38",
+    "psycopg2-binary==2.9.10",
+    "filelock==3.17.0",
+    "pytest-json-report==1.5.0",
+    "pydantic==2.10.6",
+    "scalecodec==1.2.11",
+    "paramiko==3.5.1",
+    "pytest-json-ctrf==0.3.5",
+    "numpy==2.2.3",
+    "scp==0.15.0",
+    "ecdsa==0.19.1"
+]
