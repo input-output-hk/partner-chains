@@ -1,12 +1,10 @@
 use crate::chain_spec::*;
 use partner_chains_demo_runtime::{
-	AuraConfig, BalancesConfig, GovernedMapConfig, GrandpaConfig, NativeTokenManagementConfig,
-	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
-	SudoConfig, SystemConfig, TestHelperPalletConfig,
+	AccountId, AuraConfig, BalancesConfig, GovernedMapConfig, GrandpaConfig,
+	NativeTokenManagementConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig,
+	SessionConfig, SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
 use sc_service::ChainType;
-use sc_service::ChainType;
-use sidechain_runtime::AccountId;
 use sp_core::crypto::Ss58Codec;
 
 /// Produces template chain spec for Partner Chains.
@@ -18,7 +16,11 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 		system: SystemConfig { ..Default::default() },
 		balances: BalancesConfig {
 			// Update if any endowed accounts are required.
-			balances: vec![],
+			balances: vec![(
+				AccountId::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY")
+					.unwrap(),
+				1_000_000_000_000_000_000_000u128,
+			)],
 			dev_accounts: None,
 		},
 		aura: AuraConfig { authorities: vec![] },
