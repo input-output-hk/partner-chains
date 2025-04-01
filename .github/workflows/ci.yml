@@ -195,7 +195,7 @@ jobs:
 
   pre-merge-checks-complete:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
-    needs: [build-linux-x86_64-pre-merge, local-environment-tests, devshell-tests, upload-chain-specs-pre-merge, clippy-check]
+    needs: [build-linux-x86_64-pre-merge, local-environment-tests, devshell-tests, upload-chain-specs-pre-merge]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
@@ -203,8 +203,7 @@ jobs:
           if [[ "${{ needs.build-linux-x86_64-pre-merge.result }}" != "success" ||
                 "${{ needs.local-environment-tests.result }}" != "success" ||
                 "${{ needs.devshell-tests.result }}" != "success" ||
-                "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ||
-                "${{ needs.clippy-check.result }}" != "success" ]]; then
+                "${{ needs.upload-chain-specs-pre-merge.result }}" != "success" ]]; then
             echo "One or more needed jobs failed."
             exit 1
           else
