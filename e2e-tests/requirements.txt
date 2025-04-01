@@ -12,3 +12,4 @@ paramiko==3.5.1
 pytest-json-ctrf==0.3.5
 numpy==2.2.3
 scp==0.15.0
+ecdsa==0.19.1
