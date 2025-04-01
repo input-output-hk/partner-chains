@@ -129,12 +129,7 @@ clippy:
   FROM +source
   CACHE --sharing shared --id cargo $CARGO_HOME
   ENV RUSTFLAGS="-Dwarnings"
-  RUN cargo clippy --all-targets
-  #  We have an issue in this becnhmarking 'feature' pallet that clippy cannot fix:
-  #      error: unused import: `crate::Pallet as BlockProducerMetadata`
-  #        --> toolkit/block-producer-metadata/pallet/src/benchmarking.rs:6:5
-  #  Will restore this full clippy check once fixed:
-  #  RUN cargo clippy --all-targets --all-features
+  RUN cargo clippy --all-targets --all-features
 
 docker:
     FROM ubuntu:24.04
