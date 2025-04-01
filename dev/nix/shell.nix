@@ -32,6 +32,8 @@
           OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
           packages = with pkgs;
             [
+              bashInteractive
+
               # core tooling to share across linux/macos
               coreutils
               pkg-config
