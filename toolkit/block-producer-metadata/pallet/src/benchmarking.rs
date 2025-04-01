@@ -27,9 +27,5 @@ mod benchmarks {
 		_(RawOrigin::None, metadata, cross_chain_signature, cross_chain_pub_key);
 	}
 
-	impl_benchmark_test_suite!(
-		Pallet,
-		crate::mock::new_test_ext(),
-		crate::mock::Test
-	);
+	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
 }
