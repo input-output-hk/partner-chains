@@ -7,6 +7,7 @@ ci-pre-merge:
   BUILD +test
   BUILD +licenses
   BUILD +fmt
+  BUILD +clippy
   BUILD +chainspecs
   ARG image=partner-chains-node
   ARG tags
@@ -123,6 +124,12 @@ fmt:
   FROM +source
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo fmt --check
+
+clippy:
+  FROM +source
+  CACHE --sharing shared --id cargo $CARGO_HOME
+  ENV RUSTFLAGS="-Dwarnings"
+  RUN cargo clippy --all-targets --all-features
 
 docker:
     FROM ubuntu:24.04
