@@ -3,7 +3,6 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
-use crate::Pallet as BlockProducerMetadata;
 use frame_benchmarking::v2::*;
 use frame_system::RawOrigin;
 use sidechain_domain::*;
@@ -29,7 +28,7 @@ mod benchmarks {
 	}
 
 	impl_benchmark_test_suite!(
-		BlockProducerMetadata,
+		Pallet,
 		crate::mock::new_test_ext(),
 		crate::mock::Test
 	);
