@@ -144,6 +144,11 @@ docker:
         libssl3 \
         zlib1g \
         libgomp1 \
+        curl \
+        vim \
+        dnsutils \
+        jq \
+        htop \
         && rm -rf /var/lib/apt/lists/*
 
     RUN useradd -m -u 1010 -U -s /bin/sh -d /substrate substrate \
