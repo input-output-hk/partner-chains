@@ -46,6 +46,7 @@
               python312Packages.pip
               python312Packages.virtualenv
               sops
+              uv
 
               # local development tools
               rustToolchain
