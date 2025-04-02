@@ -5,12 +5,12 @@
 //! This pallet keeps a log containing block producer IDs along with slot numbers of blocks produced by them.
 //! This log is updated every block and is meant to consumed by other features.
 //! The intended use of this pallet within the Partner Chains SDK is to expose block production data for consumption
-//! by the Block Participation feature implemented by the [sp_block_participation] and [pallet_block_participation]
+//! by the Block Participation feature implemented by the `sp_block_participation` and `pallet_block_participation`
 //! crates.
 //!
 //! ## Usage - PC Builder
 //!
-//! This pallet requires inherent data provided by the inherent data provider defined by [sp_block_producerion_log]
+//! This pallet requires inherent data provided by the inherent data provider defined by `sp_block_producerion_log`
 //! crate. Consult the crate's documentation for instruction on how to wire it into the node correctly.
 //!
 //! ### Adding to the runtime

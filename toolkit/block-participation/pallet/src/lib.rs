@@ -11,7 +11,7 @@
 //! The reason for that is that the feature's purpose is to produce inherent data containing block participation
 //! data for consumption by constom-written pallet provided by each Partner Chain itself.
 //!
-//! The pallet is expected to be used together with the [pallet_block_production_log] when deployed in the
+//! The pallet is expected to be used together with the `pallet_block_production_log` when deployed in the
 //! context of Partner Chains SDK.
 //!
 //! ## Usage
@@ -22,7 +22,7 @@
 //! - `BlockAuthor` and `DelegatorId` types representing block authors and their dependant block beneficiaries
 //! - `should_release_data` function that controls when the inherent data provider is active
 //! - `blocks_produced_up_to_slot` and `blocks_produced_upd_to_slot` functions that provide bindings for consuming
-//!   (reading and clearing) block production data. Most easily these should come from [pallet_block_production_log].
+//!   (reading and clearing) block production data. Most easily these should come from `pallet_block_production_log`.
 //!
 //! Consult documentation of [pallet::Config] for details on each configuration field.
 //!

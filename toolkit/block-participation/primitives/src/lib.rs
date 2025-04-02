@@ -33,13 +33,13 @@
 //! To incorporate this feature into a Partner Chain, one must do the following:
 //! 1. Implement a pallet consuming inherent data of type [BlockProductionData]
 //! 2. Include the block participation pallet into their runtime and configure it. Consult the documentation of
-//!   [pallet_block_participation] for details.
+//!    `pallet_block_participation` for details.
 //! 3. Implement [BlockParticipationApi] for their runtime.
-//! 4. Include [BlockParticipationInherentDataProvider] in their node's inherent data provider set for both proposal
-//!   and verification of blocks.
+//! 4. Include [inherent_data::BlockParticipationInherentDataProvider] in their node's inherent data
+//!    provider set for both proposal and verification of blocks.
 //!
 //! Configuring the pallet and implementing the runtime API requires there to be a source of block production data
-//! present in the runtime that can be used by the feature. The intended source is [pallet_block_production_log] but
+//! present in the runtime that can be used by the feature. The intended source is `pallet_block_production_log` but
 //! in principle anu pallet offering a similar interfaces can be used. An example of runtime API implementation using
 //! the block participation log pallet looks like the following:
 //! ```rust,ignore
@@ -162,7 +162,7 @@ impl IsFatalError for InherentError {
 }
 
 sp_api::decl_runtime_apis! {
-	/// Runtime api exposing configuration and runtime bindings necessary for [BlockParticipationInherentDataProvider].
+	/// Runtime api exposing configuration and runtime bindings necessary for [inherent_data::BlockParticipationInherentDataProvider].
 	///
 	/// This API should typically be implemented by simply exposing relevant functions and data from the feature's pallet.
 	pub trait BlockParticipationApi<BlockProducerId: Decode> {
@@ -257,7 +257,7 @@ pub mod inherent_data {
 		/// Creates a new inherent data provider of block participation data.
 		///
 		/// The returned inherent data provider will be inactive if [ProvideRuntimeApi] is not present
-		/// in the runtime or if [ProvideRuntimeApi::should_release_data] returns [None].
+		/// in the runtime or if [BlockParticipationApi::should_release_data] returns [None].
 		pub async fn new<Block: BlockT, T>(
 			client: &T,
 			data_source: &(dyn BlockParticipationDataSource + Send + Sync),
