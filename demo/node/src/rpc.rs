@@ -5,7 +5,7 @@
 
 #![warn(missing_docs)]
 
-use crate::main_chain_follower::DataSources;
+use crate::data_sources::DataSources;
 use authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 use authority_selection_inherents::{
 	authority_selection_inputs::AuthoritySelectionInputs, CommitteeMember,

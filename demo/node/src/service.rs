@@ -1,7 +1,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
+use crate::data_sources::DataSources;
 use crate::inherent_data::{CreateInherentDataConfig, ProposalCIDP, VerifierCIDP};
-use crate::main_chain_follower::DataSources;
 use crate::rpc::GrandpaDeps;
 use partner_chains_db_sync_data_sources::metrics::register_metrics_warn_errors;
 use partner_chains_db_sync_data_sources::metrics::McFollowerMetrics;
@@ -62,7 +62,7 @@ pub fn new_partial(
 	let mc_follower_metrics = register_metrics_warn_errors(config.prometheus_registry());
 	let data_sources = task::block_in_place(|| {
 		config.tokio_handle.block_on(
-			crate::main_chain_follower::create_cached_main_chain_follower_data_sources(
+			crate::data_sources::create_cached_main_chain_follower_data_sources(
 				mc_follower_metrics.clone(),
 			),
 		)
