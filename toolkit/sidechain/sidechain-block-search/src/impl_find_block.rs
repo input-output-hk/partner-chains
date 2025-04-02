@@ -17,7 +17,7 @@ where
 		let f = |block: &u32| compare_strategy.compare_block((*block).into(), self);
 
 		binary_search_by(range, f)
-			.ok_or(ApiError::Application("Could not find block number".to_string().into()))
+			.ok_or(ApiError::Application("Could not find block".to_string().into()))
 			.map(|x| x.into())
 	}
 
