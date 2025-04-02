@@ -23,7 +23,7 @@ members = [
 	"toolkit/sidechain/domain",
 	"toolkit/committee-selection/selection",
 	"toolkit/committee-selection/authority-selection-inherents",
-	"toolkit/data-sources/main-chain-follower-cli",
+	"toolkit/data-sources/cli",
 	"toolkit/data-sources/db-sync",
 	"toolkit/data-sources/mock",
 	"toolkit/utils/byte-string-derivation",
