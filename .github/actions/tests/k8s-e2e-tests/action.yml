@@ -91,7 +91,7 @@ runs:
       shell: bash
       run: |
         mkdir -p e2e-tests/secrets/substrate/${{ inputs.env }}
-        cp e2e-tests/secrets/substrate/${{ inputs.env }}/${{ inputs.env }}-ci-ci.json \
+        cp e2e-tests/secrets/substrate/${{ inputs.env }}/${{ inputs.env }}.json \
            e2e-tests/secrets/substrate/${{ inputs.env }}/${{ inputs.env }}-ci.json
 
     - name: Run tests
