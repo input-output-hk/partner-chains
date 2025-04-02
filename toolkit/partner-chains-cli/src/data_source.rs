@@ -1,7 +1,7 @@
 use crate::config::CardanoParameters;
 use crate::io::IOContext;
 
-pub fn set_main_chain_follower_env(
+pub fn set_data_sources_env(
 	context: &impl IOContext,
 	config: &CardanoParameters,
 	postgres_connection_string: &str,

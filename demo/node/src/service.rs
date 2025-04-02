@@ -61,11 +61,9 @@ pub fn new_partial(
 > {
 	let mc_follower_metrics = register_metrics_warn_errors(config.prometheus_registry());
 	let data_sources = task::block_in_place(|| {
-		config.tokio_handle.block_on(
-			crate::data_sources::create_cached_main_chain_follower_data_sources(
-				mc_follower_metrics.clone(),
-			),
-		)
+		config
+			.tokio_handle
+			.block_on(crate::data_sources::create_cached_data_sources(mc_follower_metrics.clone()))
 	})?;
 
 	let telemetry = config
@@ -234,7 +232,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		let shared_voter_state = shared_voter_state.clone();
 		let shared_authority_set = grandpa_link.shared_authority_set().clone();
 		let justification_stream = grandpa_link.justification_stream();
-		let main_chain_follower_data_sources = data_sources.clone();
+		let data_sources = data_sources.clone();
 
 		move |subscription_executor| {
 			let grandpa = GrandpaDeps {
@@ -251,7 +249,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 				client: client.clone(),
 				pool: pool.clone(),
 				grandpa,
-				main_chain_follower_data_sources: main_chain_follower_data_sources.clone(),
+				data_sources: data_sources.clone(),
 				time_source: Arc::new(SystemTimeSource),
 			};
 			crate::rpc::create_full(deps).map_err(Into::into)

@@ -26,7 +26,7 @@ pub struct DataSources {
 	pub block_participation: Arc<dyn BlockParticipationDataSource + Send + Sync>,
 }
 
-pub(crate) async fn create_cached_main_chain_follower_data_sources(
+pub(crate) async fn create_cached_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
 ) -> std::result::Result<DataSources, ServiceError> {
 	if use_mock_follower() {
@@ -37,7 +37,7 @@ pub(crate) async fn create_cached_main_chain_follower_data_sources(
 			)
 		})
 	} else {
-		create_cached_data_sources(metrics_opt).await.map_err(|err| {
+		create_cached_db_sync_data_sources(metrics_opt).await.map_err(|err| {
 			ServiceError::Application(
 				format!("Failed to create db-sync main chain follower: {err}").into(),
 			)
@@ -67,7 +67,7 @@ pub fn create_mock_data_sources(
 pub const CANDIDATES_FOR_EPOCH_CACHE_SIZE: usize = 64;
 pub const STAKE_CACHE_SIZE: usize = 100;
 
-pub async fn create_cached_data_sources(
+pub async fn create_cached_db_sync_data_sources(
 	metrics_opt: Option<McFollowerMetrics>,
 ) -> Result<DataSources, Box<dyn Error + Send + Sync + 'static>> {
 	let pool = partner_chains_db_sync_data_sources::data_sources::get_connection_from_env().await?;

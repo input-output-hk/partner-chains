@@ -57,7 +57,7 @@ pub struct FullDeps<C, P, B, T> {
 	/// GRANDPA specific dependencies.
 	pub grandpa: GrandpaDeps<B>,
 	/// Main chain follower data sources.
-	pub main_chain_follower_data_sources: DataSources,
+	pub data_sources: DataSources,
 	/// Source of system time
 	pub time_source: Arc<T>,
 }
@@ -94,7 +94,7 @@ where
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 
 	let mut module = RpcModule::new(());
-	let FullDeps { client, pool, grandpa, main_chain_follower_data_sources, time_source } = deps;
+	let FullDeps { client, pool, grandpa, data_sources, time_source } = deps;
 
 	module.merge(System::new(client.clone(), pool.clone()).into_rpc())?;
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
@@ -102,7 +102,7 @@ where
 		SidechainRpc::new(
 			client.clone(),
 			MainchainEpochConfig::read_from_env().unwrap(),
-			main_chain_follower_data_sources.sidechain_rpc.clone(),
+			data_sources.sidechain_rpc.clone(),
 			time_source.clone(),
 		)
 		.into_rpc(),
@@ -129,7 +129,7 @@ where
 	module.merge(
 		SessionValidatorManagementRpc::new(Arc::new(SessionValidatorManagementQuery::new(
 			client.clone(),
-			main_chain_follower_data_sources.authority_selection.clone(),
+			data_sources.authority_selection.clone(),
 		)))
 		.into_rpc(),
 	)?;
