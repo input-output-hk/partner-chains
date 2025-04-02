@@ -32,7 +32,7 @@ impl McFollowerMetrics {
 				CounterVec::new(
 					Opts::new(
 						"mc_follower_method_call_count",
-						"Total number of mainchain follower method calls",
+						"Total number of data source method calls",
 					),
 					&["method_name"],
 				)?,
@@ -48,7 +48,7 @@ pub fn register_metrics_warn_errors(
 	metrics_registry_opt.and_then(|registry| match McFollowerMetrics::register(registry) {
 		Ok(metrics) => Some(metrics),
 		Err(err) => {
-			warn!("Failed registering mainchain follower metrics with err: {}", err);
+			warn!("Failed registering data source metrics with err: {}", err);
 			None
 		},
 	})

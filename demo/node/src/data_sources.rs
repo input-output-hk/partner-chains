@@ -32,14 +32,13 @@ pub(crate) async fn create_cached_data_sources(
 	if use_mock_follower() {
 		create_mock_data_sources().map_err(|err| {
 			ServiceError::Application(
-				format!("Failed to create main chain follower mock: {err}. Check configuration.")
-					.into(),
+				format!("Failed to create mock data sources: {err}. Check configuration.").into(),
 			)
 		})
 	} else {
 		create_cached_db_sync_data_sources(metrics_opt).await.map_err(|err| {
 			ServiceError::Application(
-				format!("Failed to create db-sync main chain follower: {err}").into(),
+				format!("Failed to create db-sync data sources: {err}").into(),
 			)
 		})
 	}

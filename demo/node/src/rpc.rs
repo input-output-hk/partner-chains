@@ -56,7 +56,7 @@ pub struct FullDeps<C, P, B, T> {
 	pub pool: Arc<P>,
 	/// GRANDPA specific dependencies.
 	pub grandpa: GrandpaDeps<B>,
-	/// Main chain follower data sources.
+	/// Data sources.
 	pub data_sources: DataSources,
 	/// Source of system time
 	pub time_source: Arc<T>,
