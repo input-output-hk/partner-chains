@@ -86,6 +86,12 @@ runs:
           kubectl cp "sc/binary-host:$filepath" "$dest"
         done
 
+    - name: Provide fallback ci.json
+      shell: bash
+      run: |
+        mkdir -p e2e-tests/secrets/substrate/ci
+        cp e2e-tests/secrets/substrate/ci/ci-ci.json e2e-tests/secrets/substrate/ci/ci.json
+
     - name: Run tests
       id: run-tests
       continue-on-error: true
