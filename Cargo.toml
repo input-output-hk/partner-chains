@@ -310,7 +310,7 @@ pallet-block-producer-metadata = { path = "toolkit/block-producer-metadata/palle
 pallet-block-producer-metadata-rpc = { path = "toolkit/block-producer-metadata/rpc", default-features = false }
 sp-block-producer-metadata = { path = "toolkit/block-producer-metadata/primitives", default-features = false }
 
-# main chain follower
+# Data Sources
 partner-chains-db-sync-data-sources = { path = "toolkit/data-sources/db-sync" }
 partner-chains-mock-data-sources = { path = "toolkit/data-sources/mock", default-features = false }
 

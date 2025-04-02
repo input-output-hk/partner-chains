@@ -5112,22 +5112,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "main-chain-follower-cli"
-version = "1.6.0"
-dependencies = [
- "authority-selection-inherents",
- "clap",
- "env_logger 0.11.3",
- "log",
- "partner-chains-db-sync-data-sources",
- "serde",
- "serde_json",
- "sidechain-domain",
- "sp-timestamp",
- "tokio",
-]
-
-[[package]]
 name = "match_cfg"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6716,6 +6700,22 @@ dependencies = [
  "sp-session-validator-management",
  "tempfile",
  "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "partner-chains-data-sources-cli"
+version = "1.6.0"
+dependencies = [
+ "authority-selection-inherents",
+ "clap",
+ "env_logger 0.11.3",
+ "log",
+ "partner-chains-db-sync-data-sources",
+ "serde",
+ "serde_json",
+ "sidechain-domain",
+ "sp-timestamp",
  "tokio",
 ]
 

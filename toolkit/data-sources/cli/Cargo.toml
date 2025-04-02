@@ -1,5 +1,5 @@
 [package]
-name = "main-chain-follower-cli"
+name = "partner-chains-data-sources-cli"
 version.workspace = true
 license = "Apache-2.0"
 authors.workspace = true
