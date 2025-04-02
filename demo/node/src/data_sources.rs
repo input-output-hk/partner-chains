@@ -46,7 +46,7 @@ pub(crate) async fn create_cached_data_sources(
 }
 
 fn use_mock_follower() -> bool {
-	std::env::var("USE_MAIN_CHAIN_FOLLOWER_MOCK")
+	std::env::var("USE_MOCK_DATA_SOURCES")
 		.ok()
 		.and_then(|v| v.parse::<bool>().ok())
 		.unwrap_or(false)
