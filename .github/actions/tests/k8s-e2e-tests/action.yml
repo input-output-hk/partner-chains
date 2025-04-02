@@ -73,6 +73,19 @@ runs:
         kubectl config use-context my-context
       shell: bash
 
+    - name: Copy all decrypted keys from binary-host pod
+      shell: bash
+      run: |
+        echo "Fetching .decrypted files from binary-host pod..."
+        mkdir -p secrets/substrate/staging/keys
+
+        kubectl exec -n sc binary-host -- find / -name '*.decrypted' | while read -r filepath; do
+          filename=$(basename "$filepath")
+          dest="secrets/substrate/staging/keys/${filename}"
+          echo "Copying $filepath -> $dest"
+          kubectl cp "sc/binary-host:$filepath" "$dest"
+        done
+
     - name: Run tests
       id: run-tests
       continue-on-error: true
