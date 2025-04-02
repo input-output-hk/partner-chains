@@ -21,7 +21,7 @@ impl McFollowerMetrics {
 			time_elapsed: register(
 				HistogramVec::new(
 					HistogramOpts::new(
-						"mc_follower_method_time_elapsed",
+						"partner_chains_data_source_method_time_elapsed",
 						"Time spent in a method call",
 					),
 					&["method_name"],
@@ -31,7 +31,7 @@ impl McFollowerMetrics {
 			call_count: register(
 				CounterVec::new(
 					Opts::new(
-						"mc_follower_method_call_count",
+						"partner_chains_data_source_method_call_count",
 						"Total number of data source method calls",
 					),
 					&["method_name"],
