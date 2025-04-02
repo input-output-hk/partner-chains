@@ -1,10 +1,10 @@
-//! Primitives and support crate for [pallet_block_production_log].
+//! Primitives and support crate for `pallet_block_production_log`.
 //!
 //! This crate defines the primitive types and the inherent data provider for the block production log feature.
 //!
 //! ## Usage
 //!
-//! This crate supports operation of [pallet_block_production_log].
+//! This crate supports operation of `pallet_block_production_log`.
 //! Consult the pallet's documentation on how to include it in the runtime.
 //!
 //! ### Adding to the node
