@@ -10,6 +10,9 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * Unified `*toml` files package data
 * Renamed `sidechain-runtime` and `sidechain-node` to `partner-chains-demo-runtime` and `partner-chains-demo-node`
 respectively. Moved both crates to `demo/` directory.
+* Renamed `db-sync-follower` and `main-chain-follower-mock` crates to `partner-chains-db-sync-data-sources` and
+`partner-chains-mock-data-sources`. Environment variable `MAIN_CHAIN_FOLLOWER_MOCK_REGISTRATIONS_FILE` used by
+the mock data source has been changed to `MOCK_REGISTRATIONS_FILE` to match.
 
 ## Removed
 
