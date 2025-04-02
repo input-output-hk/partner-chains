@@ -49,7 +49,7 @@ pub enum DataSourceError {
 	DatumDecodeError { datum: PlutusData, to: String },
 	#[error("'{0}' not found. Possible causes: data source configuration error, db-sync not synced fully, or data not set on the main chain.")]
 	ExpectedDataNotFound(String),
-	#[error("Invalid data. {0} Possible cause it an error in Plutus scripts or data source is outdated.")]
+	#[error("Invalid data. {0} Possible cause is an error in Plutus scripts or data source is outdated.")]
 	InvalidData(String),
 }
 
