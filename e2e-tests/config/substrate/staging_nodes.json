@@ -21,8 +21,7 @@
                     "spo_signing_key": "./secrets/substrate/staging/keys/validator-1/cold.skey.json.decrypted",
                     "spo_public_key": "./secrets/substrate/staging/keys/validator-1/cold.vkey.json.decrypted",
                     "partner_chain_signing_key": "./secrets/substrate/staging/keys/validator-1/partner_chain.skey.json.decrypted"
-                },
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000201"
+                }
             },
             "validator-2": {
                 "host": "10.0.10.90",
@@ -39,8 +38,7 @@
                     "spo_signing_key": "./secrets/substrate/staging/keys/validator-2/cold.skey.json.decrypted",
                     "spo_public_key": "./secrets/substrate/staging/keys/validator-2/cold.vkey.json.decrypted",
                     "partner_chain_signing_key": "./secrets/substrate/staging/keys/validator-2/partner_chain.skey.json.decrypted"
-                },
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000202"
+                }
             },
             "validator-3": {
                 "host": "10.0.10.90",
@@ -57,8 +55,7 @@
                     "spo_signing_key": "./secrets/substrate/staging/keys/validator-3/cold.skey.json.decrypted",
                     "spo_public_key": "./secrets/substrate/staging/keys/validator-3/cold.vkey.json.decrypted",
                     "partner_chain_signing_key": "./secrets/substrate/staging/keys/validator-3/partner_chain.skey.json.decrypted"
-                },
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000203"
+                }
             },
             "validator-4": {
                 "host": "10.0.10.90",
@@ -75,8 +72,7 @@
                     "spo_signing_key": "./secrets/substrate/staging/keys/validator-4/cold.skey.json.decrypted",
                     "spo_public_key": "./secrets/substrate/staging/keys/validator-4/cold.vkey.json.decrypted",
                     "partner_chain_signing_key": "./secrets/substrate/staging/keys/validator-4/partner_chain.skey.json.decrypted"
-                },
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000204"
+                }
             },
             "validator-5": {
                 "host": "10.0.10.90",
@@ -93,8 +89,7 @@
                     "spo_signing_key": "./secrets/substrate/staging/keys/validator-5/cold.skey.json.decrypted",
                     "spo_public_key": "./secrets/substrate/staging/keys/validator-5/cold.vkey.json.decrypted",
                     "partner_chain_signing_key": "./secrets/substrate/staging/keys/validator-5/partner_chain.skey.json.decrypted"
-                },
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000205"
+                }
             }
         },
         "governance_authority": {

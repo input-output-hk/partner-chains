@@ -399,7 +399,9 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
-    def sign_block_producer_metadata(self, metadata: dict, cross_chain_signing_key: str) -> BlockProducerMetadataSignature:
+    def sign_block_producer_metadata(
+        self, metadata: dict, cross_chain_signing_key: str
+    ) -> BlockProducerMetadataSignature:
         """
         Creates a signature for block procuder metadata.
 
@@ -477,5 +479,30 @@ class BlockchainApi(ABC):
 
         Returns:
             block production log
+        """
+        pass
+
+    @abstractmethod
+    def get_block_participation_data(self, block_hash=None):
+        """
+        Calls testHelperPallet for block participation data. This helper pallet returns raw inherent data that can be
+        used by chain builders to implement rewards distribution logic.
+        Helper pallet releases data in a block produced in a slot divisible by 30.
+
+        Arguments:
+            block_hash {str} -- PC block hash
+
+        Returns:
+            block participation data
+        """
+        pass
+
+    @abstractmethod
+    def get_initial_pc_epoch(self) -> int:
+        """
+        Returns initial PC epoch
+
+        Returns:
+            int -- initial PC epoch
         """
         pass

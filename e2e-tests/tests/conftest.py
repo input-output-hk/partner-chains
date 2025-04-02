@@ -448,6 +448,21 @@ def current_pc_epoch(api: BlockchainApi) -> int:
 
 
 @fixture(scope="session")
+def initial_pc_epoch(api: BlockchainApi, config: ApiConfig) -> int:
+    initial_pc_epoch = api.get_initial_pc_epoch()
+    if not config.initial_pc_epoch:
+        logging.info(f"Setting initial SC epoch {initial_pc_epoch}.")
+        config.initial_pc_epoch = initial_pc_epoch
+    elif config.initial_pc_epoch != initial_pc_epoch:
+        logging.error(
+            f"Initial epoch in config {config.initial_pc_epoch} doesn't match the actual one {initial_pc_epoch}. "
+            "Overriding."
+        )
+        config.initial_pc_epoch = initial_pc_epoch
+    return initial_pc_epoch
+
+
+@fixture(scope="session")
 def pc_epoch_calculator(config: ApiConfig) -> PartnerChainEpochCalculator:
     return PartnerChainEpochCalculator(config)
 

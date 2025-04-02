@@ -61,7 +61,6 @@ Add payment signing key of the governance authority as `init.skey` to `secrets/<
   - `permissioned_candidate` - set to true if you want this node to participate in block production as permissioned candidate (true|false)
                                random candidate will be removed each execution to test rotation
                                use with caution, tests may alter your permissioned candidates resulting in not achieving consensus
-  - `block_reward_id` - reward id configured at the partner chain startup
   - `key_files` - a set of keys for registered candidates
     - `cardano_payment_key` - path to payment key of registered candidate (payment.skey from step 1)
     - `spo_signing_key` - path to signing key of registered candidate (cold.skey form step 1)
@@ -110,7 +109,6 @@ E.g. for Cardano Preview it will be:
                 "aura_public_key": <STRING>,
                 "grandpa_public_key": <STRING>",
                 "permissioned_candidate": <BOOLEAN>,
-                "block_rewards_id": <STRING>
                 "key_files": {
                     "cardano_payment_key": <STRING>,
                     "spo_signing_key": <STRING>,
