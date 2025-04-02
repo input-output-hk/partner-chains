@@ -9,7 +9,7 @@
 //! - it provides an inhrenent extrinsic that removes from the runtime storage data that has been already
 //!   processed by the inherent data provider
 //! The reason for that is that the feature's purpose is to produce inherent data containing block participation
-//! data for consumption by constom-written pallet provided by each Partner Chain itself.
+//! data for consumption by custom-written pallet provided by each Partner Chain itself.
 //!
 //! The pallet is expected to be used together with the `pallet_block_production_log` when deployed in the
 //! context of Partner Chains SDK.
@@ -26,7 +26,7 @@
 //!
 //! Consult documentation of [pallet::Config] for details on each configuration field.
 //!
-//! Assumming that the runtime also contains the `pallet_block_production_log`, an example configuration of
+//! Assuming that the runtime also contains the `pallet_block_production_log`, an example configuration of
 //! the pallet might look like the following:
 //! ```rust,ignore
 //! const RELEASE_PERIOD: u64 = 128;
