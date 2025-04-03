@@ -7,6 +7,7 @@ use crate::{
 use partner_chains_demo_runtime::{Block, BlockProducerMetadataType};
 use sc_cli::SubstrateCli;
 use sc_service::PartialComponents;
+use sp_runtime::AccountId32;
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
@@ -72,11 +73,15 @@ pub fn run() -> sc_cli::Result<()> {
 					components.other.3.authority_selection,
 				))
 			};
-			partner_chains_node_commands::run::<_, _, _, _, BlockProducerMetadataType, WizardBindings>(
-				&cli,
-				make_dependencies,
-				cmd.clone(),
-			)
+			partner_chains_node_commands::run::<
+				_,
+				_,
+				_,
+				_,
+				BlockProducerMetadataType,
+				WizardBindings,
+				AccountId32,
+			>(&cli, make_dependencies, cmd.clone())
 		},
 		Some(Subcommand::BuildSpec(cmd)) => {
 			let runner = cli.create_runner(cmd)?;

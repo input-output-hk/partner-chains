@@ -18,15 +18,15 @@ use sidechain_domain::{McEpochNumber, ScEpochNumber, StakePoolPublicKey};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
-use sp_runtime::AccountId32;
 use sp_runtime::DeserializeOwned;
+use sp_runtime::Serialize;
 use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 use sp_session_validator_management::SessionValidatorManagementApi;
 use sp_session_validator_management_query::commands::*;
 use sp_session_validator_management_query::SessionValidatorManagementQuery;
-use sp_sidechain::GetGenesisUtxo;
-use sp_sidechain::GetSidechainStatus;
+use sp_sidechain::{GetGenesisUtxo, GetSidechainStatus};
 use std::future::Future;
+use std::str::FromStr;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Parser)]
@@ -77,8 +77,10 @@ impl CliConfiguration for RegistrationStatusCmd {
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
-pub enum PartnerChainsSubcommand<RuntimeBindings: PartnerChainRuntime + PartnerChainRuntimeBindings>
-{
+pub enum PartnerChainsSubcommand<
+	RuntimeBindings: PartnerChainRuntime + PartnerChainRuntimeBindings,
+	PartnerchainAddress: Clone + Sync + Send + FromStr + 'static,
+> {
 	/// Returns sidechain parameters
 	SidechainParams(SidechainParamsCmd),
 
@@ -98,7 +100,7 @@ pub enum PartnerChainsSubcommand<RuntimeBindings: PartnerChainRuntime + PartnerC
 	RegistrationSignatures(RegistrationSignaturesCmd),
 
 	/// Signs address association
-	SignAddressAssociation(AddressAssociationSignaturesCmd<AccountId32>),
+	SignAddressAssociation(AddressAssociationSignaturesCmd<PartnerchainAddress>),
 
 	/// Signs block producer metadata for submitting to the runtime
 	SignBlockProducerMetadata(BlockProducerMetadataSignatureCmd),
@@ -119,6 +121,7 @@ pub fn run<
 	Client,
 	BlockProducerMetadata,
 	RuntimeBindings: PartnerChainRuntime + PartnerChainRuntimeBindings,
+	PartnerchainAddress,
 >(
 	cli: &Cli,
 	get_deps: impl FnOnce(
@@ -127,7 +130,7 @@ pub fn run<
 		(Arc<Client>, TaskManager, Arc<dyn AuthoritySelectionDataSource + Send + Sync>),
 		sc_service::error::Error,
 	>,
-	cmd: PartnerChainsSubcommand<RuntimeBindings>,
+	cmd: PartnerChainsSubcommand<RuntimeBindings, PartnerchainAddress>,
 ) -> sc_cli::Result<()>
 where
 	Cli: SubstrateCli,
@@ -146,6 +149,7 @@ where
 	CommitteeMember::AuthorityId: Decode + Encode + AsRef<[u8]> + Send + Sync + 'static,
 	CommitteeMember::AuthorityKeys: Decode + Encode,
 	BlockProducerMetadata: DeserializeOwned + Encode + Send + Sync,
+	PartnerchainAddress: Serialize + Clone + Sync + Send + FromStr + Encode + 'static,
 {
 	match cmd {
 		PartnerChainsSubcommand::SidechainParams(cmd) => {
