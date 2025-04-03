@@ -162,8 +162,8 @@ sp_api::decl_runtime_apis! {
 	{
 		/// Function returning the current block's author.
 		///
-		/// Its implementation must either use data exposed by the consensus mechanism used by the Partner Chain
-		/// or independently calculate it.
+		/// Its implementation must either use data exposed by the consensus mechanism used by the Partner Chain,
+		/// independently calculate it, or obtain it from another source.
 		///
 		/// Parameters:
 		/// - `slot`: slot number of the block currently being produced
