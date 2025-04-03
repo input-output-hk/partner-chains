@@ -73,6 +73,27 @@ runs:
         kubectl config use-context my-context
       shell: bash
 
+    - name: Copy all decrypted keys from binary-host pod
+      shell: bash
+      run: |
+        ENV="${{ inputs.env }}"
+        echo "Fetching .decrypted files from binary-host pod..."
+        mkdir -p "e2e-tests/secrets/substrate/$ENV/keys"
+    
+        kubectl exec -n sc binary-host -- find / -name '*.decrypted' | while read -r filepath; do
+          filename=$(basename "$filepath")
+          dest="e2e-tests/secrets/substrate/$ENV/keys/${filename}"
+          echo "Copying $filepath -> $dest"
+          kubectl cp "sc/binary-host:$filepath" "$dest"
+        done
+
+    - name: Provide fallback ${env}-ci.json
+      shell: bash
+      run: |
+        mkdir -p e2e-tests/secrets/substrate/${{ inputs.env }}
+        cp e2e-tests/secrets/substrate/${{ inputs.env }}/${{ inputs.env }}-ci.json \
+           e2e-tests/secrets/substrate/${{ inputs.env }}/${{ inputs.env }}.json
+
     - name: Run tests
       id: run-tests
       continue-on-error: true
