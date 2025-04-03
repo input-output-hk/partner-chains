@@ -2,10 +2,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["authority_selection_inherents",["",[],["ariadne_inherent_data_provider.rs","authority_selection_inputs.rs","filter_invalid_candidates.rs","lib.rs","select_authorities.rs"]]],\
 ["byte_string_derive",["",[],["lib.rs"]]],\
 ["cli_commands",["",[],["address_association_signatures.rs","block_producer_metadata_signatures.rs","key_params.rs","lib.rs","registration_signatures.rs"]]],\
-["db_sync_follower",["",[["block",[],["mod.rs"]],["candidates",[],["cached.rs","datum.rs","mod.rs"]],["mc_hash",[],["mod.rs"]],["native_token",[],["mod.rs"]],["sidechain_rpc",[],["mod.rs"]],["stake_distribution",[],["mod.rs"]]],["data_sources.rs","db_datum.rs","db_model.rs","lib.rs","metrics.rs"]]],\
 ["db_sync_sqlx",["",[],["lib.rs"]]],\
-["main_chain_follower_cli",["",[],["main.rs"]]],\
-["main_chain_follower_mock",["",[],["block.rs","candidate.rs","lib.rs","mc_hash.rs","native_token.rs","sidechain_rpc.rs","stake_distribution.rs"]]],\
 ["ogmios_client",["",[],["jsonrpsee.rs","lib.rs","query_ledger_state.rs","query_network.rs","transactions.rs","types.rs"]]],\
 ["pallet_address_associations",["",[],["lib.rs","weights.rs"]]],\
 ["pallet_block_participation",["",[],["lib.rs","weights.rs"]]],\
@@ -20,9 +17,12 @@ var srcIndex = new Map(JSON.parse('[\
 ["pallet_sidechain",["",[],["lib.rs"]]],\
 ["pallet_sidechain_rpc",["",[["types",[],["mod.rs","sidechain.rs"]]],["lib.rs"]]],\
 ["partner_chains_cardano_offchain",["",[["d_param",[],["mod.rs"]],["init_governance",[],["mod.rs","transaction.rs"]],["reserve",[],["create.rs","deposit.rs","handover.rs","init.rs","mod.rs","release.rs","update_settings.rs"]],["update_governance",[],["mod.rs"]]],["assemble_tx.rs","await_tx.rs","cardano_keys.rs","csl.rs","governance.rs","lib.rs","multisig.rs","permissioned_candidates.rs","plutus_script.rs","register.rs","scripts_data.rs","sign_tx.rs"]]],\
-["partner_chains_cli",["",[["create_chain_spec",[],["mod.rs"]],["deregister",[],["mod.rs"]],["generate_keys",[],["mod.rs"]],["ogmios",[],["config.rs","mod.rs"]],["prepare_configuration",[],["init_governance.rs","mod.rs","prepare_cardano_params.rs","prepare_main_chain_config.rs","select_genesis_utxo.rs"]],["register",[],["mod.rs","register1.rs","register2.rs","register3.rs"]],["setup_main_chain_state",[],["mod.rs"]],["start_node",[],["mod.rs"]]],["cardano_key.rs","config.rs","io.rs","keystore.rs","lib.rs","main_chain_follower.rs","permissioned_candidates.rs","runtime_bindings.rs","select_utxo.rs"]]],\
-["partner_chains_demo_node",["",[],["chain_spec.rs","inherent_data.rs","lib.rs","main_chain_follower.rs","rpc.rs","service.rs","staging.rs","template_chain_spec.rs","testnet.rs"]]],\
+["partner_chains_cli",["",[["create_chain_spec",[],["mod.rs"]],["deregister",[],["mod.rs"]],["generate_keys",[],["mod.rs"]],["ogmios",[],["config.rs","mod.rs"]],["prepare_configuration",[],["init_governance.rs","mod.rs","prepare_cardano_params.rs","prepare_main_chain_config.rs","select_genesis_utxo.rs"]],["register",[],["mod.rs","register1.rs","register2.rs","register3.rs"]],["setup_main_chain_state",[],["mod.rs"]],["start_node",[],["mod.rs"]]],["cardano_key.rs","config.rs","data_source.rs","io.rs","keystore.rs","lib.rs","permissioned_candidates.rs","runtime_bindings.rs","select_utxo.rs"]]],\
+["partner_chains_data_sources_cli",["",[],["main.rs"]]],\
+["partner_chains_db_sync_data_sources",["",[["block",[],["mod.rs"]],["candidates",[],["cached.rs","datum.rs","mod.rs"]],["mc_hash",[],["mod.rs"]],["native_token",[],["mod.rs"]],["sidechain_rpc",[],["mod.rs"]],["stake_distribution",[],["mod.rs"]]],["data_sources.rs","db_datum.rs","db_model.rs","lib.rs","metrics.rs"]]],\
+["partner_chains_demo_node",["",[],["chain_spec.rs","data_sources.rs","inherent_data.rs","lib.rs","rpc.rs","service.rs","staging.rs","template_chain_spec.rs","testnet.rs"]]],\
 ["partner_chains_demo_runtime",["",[],["genesis_config_presets.rs","lib.rs","test_helper_pallet.rs"]]],\
+["partner_chains_mock_data_sources",["",[],["block.rs","candidate.rs","lib.rs","mc_hash.rs","native_token.rs","sidechain_rpc.rs","stake_distribution.rs"]]],\
 ["partner_chains_node_commands",["",[],["lib.rs"]]],\
 ["partner_chains_plutus_data",["",[],["d_param.rs","lib.rs","permissioned_candidates.rs","registered_candidates.rs","reserve.rs","version_oracle.rs"]]],\
 ["partner_chains_smart_contracts_commands",["",[],["assemble_tx.rs","d_parameter.rs","get_scripts.rs","governance.rs","lib.rs","permissioned_candidates.rs","register.rs","reserve.rs","sign_tx.rs"]]],\

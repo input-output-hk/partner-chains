@@ -1,4 +1,4 @@
 (function() {var implementors = {
-"db_sync_follower":[["impl SidechainRpcDataSource for <a class=\"struct\" href=\"db_sync_follower/sidechain_rpc/struct.SidechainRpcDataSourceImpl.html\" title=\"struct db_sync_follower::sidechain_rpc::SidechainRpcDataSourceImpl\">SidechainRpcDataSourceImpl</a>"]],
-"main_chain_follower_mock":[["impl SidechainRpcDataSource for <a class=\"struct\" href=\"main_chain_follower_mock/sidechain_rpc/struct.SidechainRpcDataSourceMock.html\" title=\"struct main_chain_follower_mock::sidechain_rpc::SidechainRpcDataSourceMock\">SidechainRpcDataSourceMock</a>"]]
+"partner_chains_db_sync_data_sources":[["impl SidechainRpcDataSource for <a class=\"struct\" href=\"partner_chains_db_sync_data_sources/sidechain_rpc/struct.SidechainRpcDataSourceImpl.html\" title=\"struct partner_chains_db_sync_data_sources::sidechain_rpc::SidechainRpcDataSourceImpl\">SidechainRpcDataSourceImpl</a>"]],
+"partner_chains_mock_data_sources":[["impl SidechainRpcDataSource for <a class=\"struct\" href=\"partner_chains_mock_data_sources/sidechain_rpc/struct.SidechainRpcDataSourceMock.html\" title=\"struct partner_chains_mock_data_sources::sidechain_rpc::SidechainRpcDataSourceMock\">SidechainRpcDataSourceMock</a>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

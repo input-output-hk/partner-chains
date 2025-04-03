@@ -148,7 +148,7 @@
 
 </span><span class="attr">#![warn(missing_docs)]
 
-</span><span class="kw">use </span><span class="kw">crate</span>::main_chain_follower::DataSources;
+</span><span class="kw">use </span><span class="kw">crate</span>::data_sources::DataSources;
 <span class="kw">use </span>authority_selection_inherents::filter_invalid_candidates::CandidateValidationApi;
 <span class="kw">use </span>authority_selection_inherents::{
 	authority_selection_inputs::AuthoritySelectionInputs, CommitteeMember,
@@ -199,8 +199,8 @@
 	</span><span class="kw">pub </span>pool: Arc&lt;P&gt;,
 	<span class="doccomment">/// GRANDPA specific dependencies.
 	</span><span class="kw">pub </span>grandpa: GrandpaDeps&lt;B&gt;,
-	<span class="doccomment">/// Main chain follower data sources.
-	</span><span class="kw">pub </span>main_chain_follower_data_sources: DataSources,
+	<span class="doccomment">/// Data sources.
+	</span><span class="kw">pub </span>data_sources: DataSources,
 	<span class="doccomment">/// Source of system time
 	</span><span class="kw">pub </span>time_source: Arc&lt;T&gt;,
 }
@@ -237,7 +237,7 @@
 	<span class="kw">use </span>substrate_frame_rpc_system::{System, SystemApiServer};
 
 	<span class="kw">let </span><span class="kw-2">mut </span>module = RpcModule::new(());
-	<span class="kw">let </span>FullDeps { client, pool, grandpa, main_chain_follower_data_sources, time_source } = deps;
+	<span class="kw">let </span>FullDeps { client, pool, grandpa, data_sources, time_source } = deps;
 
 	module.merge(System::new(client.clone(), pool.clone()).into_rpc())<span class="question-mark">?</span>;
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
@@ -245,7 +245,7 @@
 		SidechainRpc::new(
 			client.clone(),
 			MainchainEpochConfig::read_from_env().unwrap(),
-			main_chain_follower_data_sources.sidechain_rpc.clone(),
+			data_sources.sidechain_rpc.clone(),
 			time_source.clone(),
 		)
 		.into_rpc(),
@@ -272,7 +272,7 @@
 	module.merge(
 		SessionValidatorManagementRpc::new(Arc::new(SessionValidatorManagementQuery::new(
 			client.clone(),
-			main_chain_follower_data_sources.authority_selection.clone(),
+			data_sources.authority_selection.clone(),
 		)))
 		.into_rpc(),
 	)<span class="question-mark">?</span>;

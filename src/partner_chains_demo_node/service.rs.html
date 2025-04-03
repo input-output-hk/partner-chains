@@ -382,15 +382,13 @@
 <a href="#382" id="382">382</a>
 <a href="#383" id="383">383</a>
 <a href="#384" id="384">384</a>
-<a href="#385" id="385">385</a>
-<a href="#386" id="386">386</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-</span><span class="kw">use </span><span class="kw">crate</span>::inherent_data::{CreateInherentDataConfig, ProposalCIDP, VerifierCIDP};
-<span class="kw">use </span><span class="kw">crate</span>::main_chain_follower::DataSources;
+</span><span class="kw">use </span><span class="kw">crate</span>::data_sources::DataSources;
+<span class="kw">use </span><span class="kw">crate</span>::inherent_data::{CreateInherentDataConfig, ProposalCIDP, VerifierCIDP};
 <span class="kw">use </span><span class="kw">crate</span>::rpc::GrandpaDeps;
-<span class="kw">use </span>db_sync_follower::metrics::register_metrics_warn_errors;
-<span class="kw">use </span>db_sync_follower::metrics::McFollowerMetrics;
+<span class="kw">use </span>partner_chains_db_sync_data_sources::metrics::register_metrics_warn_errors;
+<span class="kw">use </span>partner_chains_db_sync_data_sources::metrics::McFollowerMetrics;
 <span class="kw">use </span>partner_chains_demo_runtime::{<span class="self">self</span>, opaque::Block, RuntimeApi};
 <span class="kw">use </span>sc_client_api::BlockBackend;
 <span class="kw">use </span>sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
@@ -447,11 +445,9 @@
 &gt; {
 	<span class="kw">let </span>mc_follower_metrics = register_metrics_warn_errors(config.prometheus_registry());
 	<span class="kw">let </span>data_sources = task::block_in_place(|| {
-		config.tokio_handle.block_on(
-			<span class="kw">crate</span>::main_chain_follower::create_cached_main_chain_follower_data_sources(
-				mc_follower_metrics.clone(),
-			),
-		)
+		config
+			.tokio_handle
+			.block_on(<span class="kw">crate</span>::data_sources::create_cached_data_sources(mc_follower_metrics.clone()))
 	})<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>telemetry = config
@@ -620,7 +616,7 @@
 		<span class="kw">let </span>shared_voter_state = shared_voter_state.clone();
 		<span class="kw">let </span>shared_authority_set = grandpa_link.shared_authority_set().clone();
 		<span class="kw">let </span>justification_stream = grandpa_link.justification_stream();
-		<span class="kw">let </span>main_chain_follower_data_sources = data_sources.clone();
+		<span class="kw">let </span>data_sources = data_sources.clone();
 
 		<span class="kw">move </span>|subscription_executor| {
 			<span class="kw">let </span>grandpa = GrandpaDeps {
@@ -637,7 +633,7 @@
 				client: client.clone(),
 				pool: pool.clone(),
 				grandpa,
-				main_chain_follower_data_sources: main_chain_follower_data_sources.clone(),
+				data_sources: data_sources.clone(),
 				time_source: Arc::new(SystemTimeSource),
 			};
 			<span class="kw">crate</span>::rpc::create_full(deps).map_err(Into::into)

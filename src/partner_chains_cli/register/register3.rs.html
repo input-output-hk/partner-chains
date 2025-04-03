@@ -429,8 +429,8 @@
 <span class="kw">use </span><span class="kw">crate</span>::config;
 <span class="kw">use </span><span class="kw">crate</span>::config::config_fields;
 <span class="kw">use </span><span class="kw">crate</span>::config::CHAIN_CONFIG_FILE_PATH;
+<span class="kw">use </span><span class="kw">crate</span>::data_source::set_data_sources_env;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
-<span class="kw">use </span><span class="kw">crate</span>::main_chain_follower::set_main_chain_follower_env;
 <span class="kw">use </span><span class="kw">crate</span>::ogmios::config::establish_ogmios_configuration;
 <span class="kw">use </span><span class="kw">crate</span>::CmdRun;
 <span class="kw">use </span>clap::Parser;
@@ -526,7 +526,7 @@
 	<span class="kw">let </span>postgres_connection_string =
 		config_fields::POSTGRES_CONNECTION_STRING.prompt_with_default_from_file_and_save(context);
 	<span class="kw">let </span>chain_config = config::load_chain_config(context)<span class="question-mark">?</span>;
-	set_main_chain_follower_env(context, <span class="kw-2">&amp;</span>chain_config.cardano, <span class="kw-2">&amp;</span>postgres_connection_string);
+	set_data_sources_env(context, <span class="kw-2">&amp;</span>chain_config.cardano, <span class="kw-2">&amp;</span>postgres_connection_string);
 	<span class="prelude-val">Ok</span>(())
 }
 
