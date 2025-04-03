@@ -137,7 +137,91 @@
 <a href="#137" id="137">137</a>
 <a href="#138" id="138">138</a>
 <a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Pallet storing associations from main chain public key to parter chain address.
+//!
+//! ## Purpose of this pallet
+//!
+//! This pallet establishes a many-to-one mapping from Cardano staking keys to Partner Chain addresses.
+//! The purpose of this mapping is primarily to indicate the local PC address to be the recipient of any
+//! block production rewards or cross-chain token transfers credited to a Cardano key holders on a Partner
+//! Chain. Some intended scenarios inlude:
+//! 1. ADA delegators become eligible for block rewards due to their stake poool's operator participating
+//!    in a Partner Chain network. The on-chain payout mechanism uses data provided by this pallet to
+//!    identify each delegator's Partner Chain address based on their Cardano staking key.
+//! 2. A Partner Chain develops its own cross-chain bridge from Cardano. A Cardano user associates their
+//!    Cardano public key with a Partner Chain address that they control. The user then uses the bridge
+//!    to send some tokens to themselves. The receiving logic in the Partner Chain ledger then uses this
+//!    pallet's data to identify the user's PC account and comlete the transfer.
+//!
+//! ## Usage - PC Builder
+//!
+//! This pallet is self-contained and doesn't need any node support.
+//! To include the pallet in the runtime, one must only provide its configuration.
+//! Consult documentation of [pallet::Config] for explanation of all configuration fields.
+//!
+//! For the pallet to verify the validity of address associations submitted by Users, it requires a signature
+//! created using the Cardano private key corresponding to the public key being associated. A dedicated
+//! CLI command for creating the signature is provided by `cli_commands` crate. Consult the crate's
+//! documentation for more information.
+//!
+//! ## Usage - PC User
+//!
+//! This pallet expoes a single extrinsic `associate_address` accepting the Cardano public key
+//! and Partner Chain address to be associated together with a signature confirming that the submitter is
+//! the owner of the associated Cardano public key.
+//!
+//! To obtain the signature, the User should use the dedicated signing command wired into the Partner Chain
+//! node executable.
+//!
+//! *Important*: For compliance reasons, all address associations are final and can not be changed.
+//!
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
@@ -158,7 +242,8 @@
 <span class="kw">use </span>sidechain_domain::MainchainKeyHash;
 <span class="kw">use </span>sidechain_domain::{StakePublicKey, UtxoId};
 
-<span class="attr">#[derive(Debug, Clone, Encode)]
+<span class="doccomment">/// Schema of the message signed by a User to verify validity of submitted address association
+</span><span class="attr">#[derive(Debug, Clone, Encode)]
 </span><span class="kw">pub struct </span>AddressAssociationSignedMessage&lt;PartnerChainAddress&gt; {
 	<span class="kw">pub </span>stake_public_key: StakePublicKey,
 	<span class="kw">pub </span>partnerchain_address: PartnerChainAddress,
@@ -194,12 +279,16 @@
 
 	<span class="attr">#[pallet::config]
 	</span><span class="kw">pub trait </span>Config: frame_system::Config {
-		<span class="kw">type </span>WeightInfo: <span class="kw">crate</span>::weights::WeightInfo;
+		<span class="doccomment">/// Weight information on extrinsic in the pallet. For convenience weights in [weights] module can be used.
+		</span><span class="kw">type </span>WeightInfo: <span class="kw">crate</span>::weights::WeightInfo;
 
-		<span class="doccomment">/// Partner chain address type
+		<span class="doccomment">/// Type representing a local PC address. This can be a standard Substrate address, an
+		/// account ID, or some address type specific to the Partner Chain.
 		</span><span class="kw">type </span>PartnerChainAddress: Member + Parameter + MaxEncodedLen;
 
-		<span class="kw">fn </span>genesis_utxo() -&gt; UtxoId;
+		<span class="doccomment">/// Function returning the genesis UTXO of the Partner Chain.
+		/// This typically should be wired with the `genesis_utxo` function exposed by `pallet_sidechain`.
+		</span><span class="kw">fn </span>genesis_utxo() -&gt; UtxoId;
 
 		<span class="kw">type </span>OnNewAssociation: OnNewAssociation&lt;<span class="self">Self</span>::PartnerChainAddress&gt;;
 	}
@@ -220,7 +309,12 @@
 
 	<span class="attr">#[pallet::call]
 	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
-		<span class="attr">#[pallet::call_index(<span class="number">0</span>)]
+		<span class="doccomment">/// Extrinsic creating a new address association.
+		///
+		/// `signature` is expected to be a signature of the Cardano private key corresponding to `stake_public_key`
+		/// of [AddressAssociationSignedMessage] created using the associated public key, address and the genesis UTXO
+		/// of the particular Partner Chain it is being submitted to.
+		</span><span class="attr">#[pallet::call_index(<span class="number">0</span>)]
 		#[pallet::weight(T::WeightInfo::associate_address())]
 		</span><span class="kw">pub fn </span>associate_address(
 			_origin: OriginFor&lt;T&gt;,

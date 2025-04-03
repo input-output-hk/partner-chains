@@ -120,7 +120,7 @@
 <span class="kw">use </span>pallet_partner_chains_session::SessionIndex;
 <span class="kw">use </span>sp_std::vec::Vec;
 
-<span class="doccomment">/// Implements [`pallet_session::SessionManager`] and [`pallet_session::ShouldEndSession`] integrated with [`pallet_session_validator_management`].
+<span class="doccomment">/// Implements [pallet_session::SessionManager] and [pallet_session::ShouldEndSession] integrated with [crate::Pallet].
 ///
 /// To use it, wire it in runtime configuration of [`pallet_session`].
 </span><span class="attr">#[allow(dead_code)]
@@ -132,7 +132,7 @@
 <span class="kw">impl</span>&lt;T: <span class="kw">crate</span>::Config + pallet_session::Config&gt; pallet_session::SessionManager&lt;T::AccountId&gt;
 	<span class="kw">for </span>PalletSessionSupport&lt;T&gt;
 {
-	<span class="doccomment">/// Sets the first validator-set by mapping the current committee from [`pallet_session_validator_management`]
+	<span class="doccomment">/// Sets the first validator-set by mapping the current committee from [crate::Pallet]
 	</span><span class="kw">fn </span>new_session_genesis(_new_index: SessionIndex) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;T::AccountId&gt;&gt; {
 		<span class="prelude-val">Some</span>(
 			<span class="kw">crate</span>::Pallet::&lt;T&gt;::current_committee_storage()
@@ -143,7 +143,7 @@
 		)
 	}
 
-	<span class="doccomment">/// Rotates the committee in [`pallet_session_validator_management`] and plans this new committee as upcoming validator-set.
+	<span class="doccomment">/// Rotates the committee in [crate::Pallet] and plans this new committee as upcoming validator-set.
 	/// Updates the session index of [`pallet_session`].
 	</span><span class="comment">// Instead of Some((*).expect) we could just use (*). However, we rather panic in presence of important programming errors.
 	</span><span class="kw">fn </span>new_session(new_index: SessionIndex) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;T::AccountId&gt;&gt; {

@@ -473,8 +473,10 @@
 <a href="#473" id="473">473</a>
 <a href="#474" id="474">474</a>
 <a href="#475" id="475">475</a>
-</pre></div><pre class="rust"><code><span class="doccomment">//! This transaction releases some funds to the illiquid supply.
-//! Inputs:
+<a href="#476" id="476">476</a>
+</pre></div><pre class="rust"><code><span class="attr">#![allow(rustdoc::private_intra_doc_links)]
+</span><span class="comment">// This transaction releases some funds to the illiquid supply.
+</span><span class="doccomment">//! Inputs:
 //!     - previous utxo at the *reserve validator*, containing the reserve tokens and the
 //!       [ReserveData] plutus data with reserve configuration and release stats
 //! Reference inputs:
@@ -482,7 +484,7 @@
 //!       IMPORTANT: The V-Function script will evaluate against the total number of tokens that
 //!                  should have been released up to now.
 //!                  The number of tokens released in a single transaction equals
-//!                  &lt;current v-function value&gt; - &lt;number of previously released tokens&gt;.
+//!                  `&lt;current v-function value&gt; - &lt;number of previously released tokens&gt;`.
 //!     - utxo with authentication policy reference script
 //!     - utxo with validator version policy reference script
 //!     - utxo with illiquid supply validator reference script
