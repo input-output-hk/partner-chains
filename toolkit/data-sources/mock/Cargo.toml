@@ -1,5 +1,5 @@
 [package]
-name = "main-chain-follower-mock"
+name = "partner-chains-mock-data-sources"
 version.workspace = true
 publish = false
 license = "Apache-2.0"
@@ -8,6 +8,7 @@ edition.workspace = true
 homepage.workspace = true
 repository.workspace = true
 readme = "README.md"
+description = "Mock implementations of all data sources used by Partner Chains components"
 
 [lints]
 workspace = true

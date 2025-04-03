@@ -41,8 +41,8 @@ sequenceDiagram
 	BlockParticipationPallet -->> BlockParticipationIDP: SLOT: expected data upper bound
 	BlockParticipationIDP ->> ProductionLog: Fetch block production data up to SLOT<br>(Runtime API call)
 	ProductionLog -->> BlockParticipationIDP: PRODUCTION DATA
-	BlockParticipationIDP ->> MainChainFollower: Query stake distribution
-	MainChainFollower -->> BlockParticipationIDP: STAKE DISTRIBUTION
+	BlockParticipationIDP ->> DataSources: Query stake distribution
+	DataSources -->> BlockParticipationIDP: STAKE DISTRIBUTION
 	BlockParticipationIDP ->> BlockParticipationIDP: Join PRODUCTION DATA with STAKE DISTRIBUTION<br>creating BLOCK PARTICIPATION DATA
 	BlockParticipationIDP -->> HandlerPallet: Provide BLOCK PARTICIPATION DATA<br>(inherent data)
 	HandlerPallet ->> HandlerPallet: Handle BLOCK PARTICIPATION DATA (eg. payouts)<br>(inherent)

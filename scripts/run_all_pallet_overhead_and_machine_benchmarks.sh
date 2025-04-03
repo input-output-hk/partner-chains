@@ -25,7 +25,7 @@
 #
 # Should be run on a reference machine to gain accurate benchmarks
 
-export USE_MAIN_CHAIN_FOLLOWER_MOCK=true
+export USE_MOCK_DATA_SOURCES=true
 
 while getopts 'bfp:v' flag; do
   case "${flag}" in

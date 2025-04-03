@@ -28,7 +28,7 @@ impl ConnectionConfig {
 		let config: Self = Figment::new()
 			.merge(Env::raw())
 			.extract()
-			.map_err(|e| format!("Failed to read main chain follower connection: {e}"))?;
+			.map_err(|e| format!("Failed to read postgres data source connection: {e}"))?;
 		Ok(config)
 	}
 }

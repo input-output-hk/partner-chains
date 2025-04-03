@@ -45,11 +45,11 @@ pub enum DataSourceError {
 	BadRequest(String),
 	#[error("Internal error of data source: `{0}`.")]
 	InternalDataSourceError(String),
-	#[error("Could not decode {datum:?} to {to:?}, this means that there is an error in Plutus scripts or chain-follower is obsolete.")]
+	#[error("Could not decode {datum:?} to {to:?}, this means that there is an error in Plutus scripts or the data source is outdated.")]
 	DatumDecodeError { datum: PlutusData, to: String },
-	#[error("'{0}' not found. Possible causes: main chain follower configuration error, db-sync not synced fully, or data not set on the main chain.")]
+	#[error("'{0}' not found. Possible causes: data source configuration error, db-sync not synced fully, or data not set on the main chain.")]
 	ExpectedDataNotFound(String),
-	#[error("Invalid data. {0} Possible cause it an error in Plutus scripts or chain-follower is obsolete.")]
+	#[error("Invalid data. {0} Possible cause is an error in Plutus scripts or data source is outdated.")]
 	InvalidData(String),
 }
 

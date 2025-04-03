@@ -2,8 +2,8 @@ use crate::cardano_key::get_mc_payment_signing_key_from_file;
 use crate::config;
 use crate::config::config_fields;
 use crate::config::CHAIN_CONFIG_FILE_PATH;
+use crate::data_source::set_data_sources_env;
 use crate::io::IOContext;
-use crate::main_chain_follower::set_main_chain_follower_env;
 use crate::ogmios::config::establish_ogmios_configuration;
 use crate::CmdRun;
 use clap::Parser;
@@ -99,7 +99,7 @@ fn prepare_mc_follower_env<C: IOContext>(context: &C) -> anyhow::Result<()> {
 	let postgres_connection_string =
 		config_fields::POSTGRES_CONNECTION_STRING.prompt_with_default_from_file_and_save(context);
 	let chain_config = config::load_chain_config(context)?;
-	set_main_chain_follower_env(context, &chain_config.cardano, &postgres_connection_string);
+	set_data_sources_env(context, &chain_config.cardano, &postgres_connection_string);
 	Ok(())
 }
 
