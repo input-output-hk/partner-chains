@@ -1,4 +1,5 @@
-//! This transaction releases some funds to the illiquid supply.
+#![allow(rustdoc::private_intra_doc_links)]
+// This transaction releases some funds to the illiquid supply.
 //! Inputs:
 //!     - previous utxo at the *reserve validator*, containing the reserve tokens and the
 //!       [ReserveData] plutus data with reserve configuration and release stats
@@ -7,7 +8,7 @@
 //!       IMPORTANT: The V-Function script will evaluate against the total number of tokens that
 //!                  should have been released up to now.
 //!                  The number of tokens released in a single transaction equals
-//!                  <current v-function value> - <number of previously released tokens>.
+//!                  `<current v-function value> - <number of previously released tokens>`.
 //!     - utxo with authentication policy reference script
 //!     - utxo with validator version policy reference script
 //!     - utxo with illiquid supply validator reference script

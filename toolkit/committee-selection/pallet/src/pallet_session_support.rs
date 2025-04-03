@@ -6,7 +6,7 @@ use log::{debug, warn};
 use pallet_partner_chains_session::SessionIndex;
 use sp_std::vec::Vec;
 
-/// Implements [`pallet_session::SessionManager`] and [`pallet_session::ShouldEndSession`] integrated with [`pallet_session_validator_management`].
+/// Implements [pallet_session::SessionManager] and [pallet_session::ShouldEndSession] integrated with [crate::Pallet].
 ///
 /// To use it, wire it in runtime configuration of [`pallet_session`].
 #[allow(dead_code)]
@@ -18,7 +18,7 @@ pub struct PalletSessionSupport<T> {
 impl<T: crate::Config + pallet_session::Config> pallet_session::SessionManager<T::AccountId>
 	for PalletSessionSupport<T>
 {
-	/// Sets the first validator-set by mapping the current committee from [`pallet_session_validator_management`]
+	/// Sets the first validator-set by mapping the current committee from [crate::Pallet]
 	fn new_session_genesis(_new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
 		Some(
 			crate::Pallet::<T>::current_committee_storage()
@@ -29,7 +29,7 @@ impl<T: crate::Config + pallet_session::Config> pallet_session::SessionManager<T
 		)
 	}
 
-	/// Rotates the committee in [`pallet_session_validator_management`] and plans this new committee as upcoming validator-set.
+	/// Rotates the committee in [crate::Pallet] and plans this new committee as upcoming validator-set.
 	/// Updates the session index of [`pallet_session`].
 	// Instead of Some((*).expect) we could just use (*). However, we rather panic in presence of important programming errors.
 	fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
