@@ -46,7 +46,7 @@ impl AuthoritySelectionDataSource for MockAuthoritySelectionDataSource {
 					num_permissioned_candidates: 3,
 					num_registered_candidates: 2,
 				},
-				permissioned_candidates: candidates.clone(),
+				permissioned_candidates: Some(candidates.clone()),
 			}),
 			_ => Err("mock was called with unexpected argument".into()),
 		}

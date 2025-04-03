@@ -237,20 +237,26 @@ where
 			)
 		};
 
+		let permissioned_candidates = match ariadne_parameters_response.permissioned_candidates {
+			None => None,
+			Some(permissioned_candidates) => Some(
+				permissioned_candidates
+					.into_iter()
+					.map(|candidate| {
+						let validation_result =
+							validate_permissioned_candidate(&candidate).map_err(err_debug)?;
+						Ok::<PermissionedCandidateData, String>(PermissionedCandidateData::new(
+							candidate,
+							validation_result,
+						))
+					})
+					.collect::<Result<Vec<_>, _>>()?,
+			),
+		};
+
 		Ok(AriadneParameters {
 			d_parameter: ariadne_parameters_response.d_parameter.into(),
-			permissioned_candidates: ariadne_parameters_response
-				.permissioned_candidates
-				.into_iter()
-				.map(|candidate| {
-					let validation_result =
-						validate_permissioned_candidate(&candidate).map_err(err_debug)?;
-					Ok::<PermissionedCandidateData, String>(PermissionedCandidateData::new(
-						candidate,
-						validation_result,
-					))
-				})
-				.collect::<Result<Vec<_>, _>>()?,
+			permissioned_candidates,
 			candidate_registrations,
 		})
 	}

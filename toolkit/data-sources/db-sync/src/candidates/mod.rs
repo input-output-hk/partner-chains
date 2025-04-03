@@ -76,17 +76,18 @@ impl AuthoritySelectionDataSource for CandidatesDataSourceImpl {
 
 		let d_parameter = DParamDatum::try_from(d_datum)?.into();
 
-		let candidates_output = candidates_output_opt
-			.ok_or(ExpectedDataNotFound("Permissioned Candidates List".to_string()))?;
+		let permissioned_candidates = match candidates_output_opt {
+			None => None,
+			Some(candidates_output) => {
+				let candidates_datum = candidates_output.datum.ok_or(
+					ExpectedDataNotFound("Permissioned Candidates List Datum".to_string()),
+				)?;
 
-		let candidates_datum = candidates_output
-			.datum
-			.map(|d| d.0)
-			.ok_or(ExpectedDataNotFound("Permissioned Candidates List Datum".to_string()))?;
-
-		let permissioned_candidates = raw_permissioned_candidate_data_vec_from(
-			PermissionedCandidateDatums::try_from(candidates_datum)?
-		);
+				Some(raw_permissioned_candidate_data_vec_from(
+					PermissionedCandidateDatums::try_from(candidates_datum.0)?
+				))
+			},
+		};
 
 		Ok(AriadneParameters { d_parameter, permissioned_candidates })
 	}
