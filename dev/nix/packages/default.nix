@@ -40,33 +40,46 @@
         patches = [ ./pc.patch ];
       });
       partnerchains-stack = pkgs.callPackage ./partnerchains-stack { inherit (self'.packages) partnerchains-stack-unwrapped; };
-      partner-chains = customRustPlatform.buildRustPackage rec {
+      partnerchains-stack-unwrapped = pkgs.callPackage ./partnerchains-stack-unwrapped { };
+      partner-chains = 
+      let 
+        # Create a patched source
+        patchedSrc = pkgs.stdenv.mkDerivation {
+          name = "partner-chains-patched-src";
+          src = ../../../.;
+          patches = [./rust-src-std.patch];
+          buildPhase = "true"; # Skip build
+          installPhase = ''
+            cp -r . $out
+          '';
+        };
+      in customRustPlatform.buildRustPackage rec {
         pname = "partner-chains";
         version = "1.5";
-        src = ../../../.;
-        # cargoDeps = customRustPlatform.importCargoLock {
-        #   lockFile = ../../../Cargo.lock;
-        #   #lockFileContents = builtins.readFile ../../../Cargo.lock ++ builtins.readFile "${rustToolchain}/lib/rustlib/src/rust/library/Cargo.lock";
-        #   outputHashes = {
-        #     "binary-merkle-tree-16.0.0" = "sha256-E7Mq/0EwqVSnJ6nX7TZppLjwje7vYuxjjCkt5kWQjfQ=";
-        #     "pallas-addresses-0.31.0" = "sha256-gecokNSH018NSFb8Cm+Gvql8wkip0t/IkdgY3ZRILbE=";
-        #     "raw-scripts-7.0.2" = "sha256-rUms2AZGOEjh1/zvfVoqv/B1XFUiglDf9UAMaqFIQZU=";
-        #   };
-        # };
-        useFetchCargoVendor = true;
-        cargoHash = "sha256-25ya0mZBt5njJgvbGDWhi+PbLFNj0bRjuo5+VhG19tM=";
-        #SKIP_WASM_BUILD = 1;
+        src = patchedSrc; # Use the pre-patched source
+        
+        cargoLock = {
+          lockFile = "${patchedSrc}/Cargo.lock"; # Point to the patched lock file
+          outputHashes = {
+            "binary-merkle-tree-16.0.0" = "sha256-E7Mq/0EwqVSnJ6nX7TZppLjwje7vYuxjjCkt5kWQjfQ=";
+            "pallas-addresses-0.31.0" = "sha256-gecokNSH018NSFb8Cm+Gvql8wkip0t/IkdgY3ZRILbE=";
+            "raw-scripts-7.0.2" = "sha256-rUms2AZGOEjh1/zvfVoqv/B1XFUiglDf9UAMaqFIQZU=";
+          };
+        };
+        
         doCheck = false;
-        patches = [./rust-src-std.patch ];
+        
+        # We no longer need to patch here, as we're using pre-patched source
+        patches = [];
+        
         nativeBuildInputs = [
-          pkgs.stdenv.cc
+          pkgs.pkg-config
           pkgs.protobuf
           pkgs.clang
           pkgs.llvmPackages.lld
           customRustPlatform.bindgenHook
-          pkgs.rustc
-          pkgs.rustc.llvmPackages.lld
         ];
+        
         buildInputs = [
           pkgs.rocksdb
           pkgs.openssl
@@ -76,9 +89,11 @@
           pkgs.Security
           pkgs.SystemConfiguration
         ];
+        
         postFixup = ''
           patchelf --set-rpath ${pkgs.rocksdb}/lib $out/bin/partner-chains-node
         '';
+        
         CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_LINKER = "${pkgs.llvmPackages.lld}/bin/lld";
         RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
         LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
@@ -88,12 +103,14 @@
           pkgs.libz
           pkgs.clang
         ];
-        # https://github.com/NixOS/nixpkgs/issues/370494#issuecomment-2625163369
+        
+        # Platform-specific flags
         CFLAGS =
           if pkgs.lib.hasSuffix "linux" system then
             "-DJEMALLOC_STRERROR_R_RETURNS_CHAR_WITH_GNU_SOURCE"
           else
             "";
+            
         PROTOC = "${pkgs.protobuf}/bin/protoc";
         ROCKSDB_LIB_DIR = "${pkgs.rocksdb}/lib/";
         OPENSSL_NO_VENDOR = 1;
@@ -101,8 +118,9 @@
         OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
         OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
         BINDGEN_EXTRA_CLANG_ARGS = "-I${pkgs.stdenv.cc.cc}/include";
-
-
+        
+        # Add flags for building std library
+        #RUSTFLAGS = "-Z build-std";
       };
     };
   };
