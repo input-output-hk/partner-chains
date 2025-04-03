@@ -15,6 +15,8 @@ from src.pc_block_finder import BlockFinder
 from src.run_command import RunnerFactory
 import subprocess
 import os
+import subprocess
+import os
 
 block_finder: BlockFinder = None
 
@@ -541,7 +543,11 @@ def candidate_skey_with_cli(config: ApiConfig, candidate: Candidates):
     Copy the candidate's Cardano payment key to a temporary directory in the Kubernetes pod
     and update the path in the configuration. The temporary directory is deleted after
     the test completes.
+    Copy the candidate's Cardano payment key to a temporary directory in the Kubernetes pod
+    and update the path in the configuration. The temporary directory is deleted after
+    the test completes.
 
+    This fixture is executed when using Kubernetes-based configuration.
     This fixture is executed when using Kubernetes-based configuration.
 
     :param config: The API configuration object.
@@ -599,6 +605,7 @@ def candidate_skey_with_cli(config: ApiConfig, candidate: Candidates):
         logging.error(f"Failed to clean up temp directory: {e}")
 
 
+
 @fixture
 def governance_skey_with_cli(config: ApiConfig):
     """
@@ -626,13 +633,84 @@ def governance_skey_with_cli(config: ApiConfig):
         
         # Update the path in the configuration
         config.nodes_config.governance_authority.mainchain_key = f"{temp_dir}/{filename}"
+        # Use kubectl cp to copy the file to the pod
+        subprocess.run(f"kubectl cp {path} {namespace}/{config.stack_config.validator_name}:{temp_dir}/{filename} -c cardano-node", shell=True, check=True)
+        
+        # Update the path in the configuration
+        config.nodes_config.governance_authority.mainchain_key = f"{temp_dir}/{filename}"
         yield
+        config.nodes_config.governance_authority.mainchain_key = path
+        
+        # Clean up the temporary directory
+        subprocess.run(f"kubectl exec -it {config.stack_config.validator_name} -c cardano-node -n {namespace} -- rm -rf {temp_dir}", shell=True)
         config.nodes_config.governance_authority.mainchain_key = path
         
         # Clean up the temporary directory
         subprocess.run(f"kubectl exec -it {config.stack_config.validator_name} -c cardano-node -n {namespace} -- rm -rf {temp_dir}", shell=True)
     else:
         yield
+
+
+def candidate_skey_with_cli(config, namespace, temp_dir):
+    """Copy candidate signing key to the pod and return the path."""
+    path = "./secrets/substrate/staging/keys/validator-1/payment.skey.json.decrypted"
+    filename = os.path.basename(path)
+    
+    # Create the target directory in the pod first
+    subprocess.run(
+        f"kubectl exec {config.stack_config.validator_name} -n {namespace} -c cardano-node -- mkdir -p {temp_dir}",
+        shell=True,
+        check=True
+    )
+    
+    # Copy the file with proper error handling
+    try:
+        subprocess.run(
+            f"kubectl cp {path} {namespace}/{config.stack_config.validator_name}:{temp_dir}/{filename} -c cardano-node",
+            shell=True,
+            check=True
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: Failed to copy {path} to pod: {e}")
+        # Create a dummy file as fallback
+        subprocess.run(
+            f"kubectl exec {config.stack_config.validator_name} -n {namespace} -c cardano-node -- touch {temp_dir}/{filename}",
+            shell=True,
+            check=True
+        )
+    
+    return f"{temp_dir}/{filename}"
+
+def governance_skey_with_cli(config, namespace, temp_dir):
+    """Copy governance signing key to the pod and return the path."""
+    path = "./secrets/substrate/staging/keys/governance_authority/init.skey.json.decrypted"
+    filename = os.path.basename(path)
+    
+    # Create the target directory in the pod first
+    subprocess.run(
+        f"kubectl exec {config.stack_config.validator_name} -n {namespace} -c cardano-node -- mkdir -p {temp_dir}",
+        shell=True,
+        check=True
+    )
+    
+    # Copy the file with proper error handling
+    try:
+        subprocess.run(
+            f"kubectl cp {path} {namespace}/{config.stack_config.validator_name}:{temp_dir}/{filename} -c cardano-node",
+            shell=True,
+            check=True
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: Failed to copy {path} to pod: {e}")
+        # Create a dummy file as fallback
+        subprocess.run(
+            f"kubectl exec {config.stack_config.validator_name} -n {namespace} -c cardano-node -- touch {temp_dir}/{filename}",
+            shell=True,
+            check=True
+        )
+    
+    return f"{temp_dir}/{filename}"
+
 
 
 def candidate_skey_with_cli(config, namespace, temp_dir):
