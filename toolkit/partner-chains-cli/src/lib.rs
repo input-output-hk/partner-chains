@@ -4,11 +4,11 @@
 pub(crate) mod cardano_key;
 pub mod config;
 pub mod create_chain_spec;
+pub(crate) mod data_source;
 mod deregister;
 pub mod generate_keys;
 pub mod io;
 pub mod keystore;
-pub(crate) mod main_chain_follower;
 pub(crate) mod ogmios;
 pub(crate) mod permissioned_candidates;
 mod prepare_configuration;

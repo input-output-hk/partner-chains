@@ -1,5 +1,5 @@
 [package]
-name = "main-chain-follower-cli"
+name = "partner-chains-data-sources-cli"
 version.workspace = true
 license = "Apache-2.0"
 authors.workspace = true
@@ -17,7 +17,7 @@ workspace = true
 clap = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-db-sync-follower = { workspace = true, features = ["block-source", "candidate-source"] }
+partner-chains-db-sync-data-sources = { workspace = true, features = ["block-source", "candidate-source"] }
 tokio = { workspace = true }
 env_logger = { workspace = true }
 log = { workspace = true }

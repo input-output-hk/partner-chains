@@ -22,7 +22,7 @@ SIDECHAINS_NODE=./target/production/partner-chains-node
 ERR_FILE="benchmarking_errors.txt"
 rm -f $ERR_FILE
 
-export USE_MAIN_CHAIN_FOLLOWER_MOCK=true
+export USE_MOCK_DATA_SOURCES=true
 
 echo "[+] Benchmarking storages"
 OUTPUT=$(

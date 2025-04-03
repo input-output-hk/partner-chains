@@ -163,7 +163,7 @@ fn get_ariadne_parameters<C: IOContext>(
 	context.print("Will read the current D-Parameter and Permissioned Candidates from the main chain, using 'partner-chains-node ariadne-parameters' command.");
 	let postgres_connection_string =
 		POSTGRES_CONNECTION_STRING.prompt_with_default_from_file_and_save(context);
-	crate::main_chain_follower::set_main_chain_follower_env(
+	crate::data_source::set_data_sources_env(
 		context,
 		&chain_config.cardano,
 		&postgres_connection_string,

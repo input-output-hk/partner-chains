@@ -39,7 +39,7 @@ flowchart TB
 is left for the developers of each particular partner chain to implement according to their needs and
 ledger structure. Consult the implementation in `runtime/src/lib.rs` for an example with a mocked handler.
 2. Wire the data source into the node.
-Consult the reference implementation in `node/src/main_chain_follower.rs` for an example.
+Consult the reference implementation in `node/src/data_sources.rs` for an example.
 3. Add the inherent data provider to your inherent data provider creation logic.
 Consult the implementation in `node/src/inherent_data.rs` for an example.
 4. Release or otherwise make available for deployment the new version of node and runtime.
