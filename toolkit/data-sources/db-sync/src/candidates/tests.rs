@@ -89,7 +89,7 @@ async fn test_get_ariadne_parameters_returns_the_latest_candidates_if_there_were
 		)
 		.await
 		.unwrap();
-	assert_eq!(result.permissioned_candidates, latest_permissioned_candidates());
+	assert_eq!(result.permissioned_candidates, Some(latest_permissioned_candidates()));
 	assert_eq!(
 		result.d_parameter,
 		DParameter { num_permissioned_candidates: 1, num_registered_candidates: 3 }
@@ -108,7 +108,7 @@ async fn test_get_ariadne_parameters_returns_the_latest_params_for_the_future_ep
 		)
 		.await
 		.unwrap();
-	assert_eq!(result.permissioned_candidates, latest_permissioned_candidates())
+	assert_eq!(result.permissioned_candidates, Some(latest_permissioned_candidates()))
 }
 
 #[sqlx::test(migrations = "./testdata/migrations")]

@@ -364,7 +364,7 @@ pub fn create_inherent_data_struct(
 				num_permissioned_candidates: 0,
 				num_registered_candidates: max(candidates.len() as u16, 1),
 			},
-			permissioned_candidates: vec![],
+			permissioned_candidates: Some(Vec::new()),
 			registered_candidates: candidates,
 			epoch_nonce: EpochNonce(DUMMY_EPOCH_NONCE.to_vec()),
 		}),

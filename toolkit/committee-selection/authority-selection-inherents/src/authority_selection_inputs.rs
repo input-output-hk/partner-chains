@@ -8,7 +8,7 @@ use sidechain_domain::*;
 #[derive(Clone, Debug, Encode, Decode, TypeInfo, PartialEq, Eq)]
 pub struct AuthoritySelectionInputs {
 	pub d_parameter: DParameter,
-	pub permissioned_candidates: Vec<PermissionedCandidateData>,
+	pub permissioned_candidates: Option<Vec<PermissionedCandidateData>>,
 	pub registered_candidates: Vec<CandidateRegistrations>,
 	pub epoch_nonce: EpochNonce,
 }
@@ -39,7 +39,7 @@ pub struct RawPermissionedCandidateData {
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct AriadneParameters {
 	pub d_parameter: DParameter,
-	pub permissioned_candidates: Vec<RawPermissionedCandidateData>,
+	pub permissioned_candidates: Option<Vec<RawPermissionedCandidateData>>,
 }
 
 /// Queries about the Authority Candidates
@@ -108,15 +108,16 @@ impl AuthoritySelectionInputs {
 			})?;
 
 		let d_parameter = ariadne_parameters_response.d_parameter;
-		let permissioned_candidates = ariadne_parameters_response
-			.permissioned_candidates
-			.into_iter()
-			.map(|candidate| PermissionedCandidateData {
-				sidechain_public_key: candidate.sidechain_public_key,
-				aura_public_key: candidate.aura_public_key,
-				grandpa_public_key: candidate.grandpa_public_key,
-			})
-			.collect::<Vec<PermissionedCandidateData>>();
+		let permissioned_candidates =
+			ariadne_parameters_response.permissioned_candidates.map(|v| {
+				v.into_iter()
+					.map(|candidate| PermissionedCandidateData {
+						sidechain_public_key: candidate.sidechain_public_key,
+						aura_public_key: candidate.aura_public_key,
+						grandpa_public_key: candidate.grandpa_public_key,
+					})
+					.collect::<Vec<PermissionedCandidateData>>()
+			});
 
 		let registered_candidates: Vec<CandidateRegistrations> = candidate_data_source
 			.get_candidates(for_epoch, scripts.committee_candidate_address.clone())

@@ -93,8 +93,11 @@ mod tests {
 			invalid_reasons: None,
 		}];
 		let candidate_registrations = GetRegistrationsResponseMap::new();
-		let ariadne_parameters =
-			AriadneParameters { d_parameter, permissioned_candidates, candidate_registrations };
+		let ariadne_parameters = AriadneParameters {
+			d_parameter,
+			permissioned_candidates: Some(permissioned_candidates),
+			candidate_registrations,
+		};
 
 		let query = MockSessionValidatorManagementQuery {
 			ariadne_parameters: Some(ariadne_parameters),
