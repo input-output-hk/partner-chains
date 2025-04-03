@@ -28,7 +28,6 @@ pub(crate) fn run_init_governance<C: IOContext>(
 	);
 	if should_continue {
 		let offchain = context.offchain_impl(ogmios_config)?;
-		//let payment_key = get_private_key(context)?;
 		let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 		let tx_id = runtime
 			.block_on(offchain.init_governance(&multisig_parameters, &payment_key, genesis_utxo))
