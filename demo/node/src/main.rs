@@ -4,8 +4,8 @@
 mod chain_spec;
 mod cli;
 mod command;
+mod data_sources;
 mod inherent_data;
-mod main_chain_follower;
 mod rpc;
 mod service;
 mod staging;

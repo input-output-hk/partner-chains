@@ -151,7 +151,7 @@ pub struct MockRegistrationsConfig {
 
 impl MockRegistrationsConfig {
 	pub fn read() -> Result<MockRegistrationsConfig> {
-		let registrations_file_path = std::env::var("MAIN_CHAIN_FOLLOWER_MOCK_REGISTRATIONS_FILE")?;
+		let registrations_file_path = std::env::var("MOCK_REGISTRATIONS_FILE")?;
 		let registrations_config = Self::read_registrations(registrations_file_path)?;
 		Ok(registrations_config)
 	}

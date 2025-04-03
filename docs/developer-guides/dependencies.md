@@ -1,7 +1,7 @@
 # Partner Chain Dependencies
 
 For a local cluster of nodes we need to have the dependencies running.
-The main chain follower reads from **postgres** that **db-sync** writes to.
+The data sources read from **postgres** that **db-sync** writes to.
 **db-sync** itself requires UDS connection to **cardano-node**.
 
 For executing **partner-chains-node** CLI commands **ogmios** is required.

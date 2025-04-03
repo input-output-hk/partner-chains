@@ -1,8 +1,8 @@
 //! A fresh FRAME-based Substrate node, ready for hacking.
 
 pub mod chain_spec;
+mod data_sources;
 mod inherent_data;
-mod main_chain_follower;
 pub mod rpc;
 pub mod service;
 pub mod staging;

@@ -21,7 +21,7 @@ impl McFollowerMetrics {
 			time_elapsed: register(
 				HistogramVec::new(
 					HistogramOpts::new(
-						"mc_follower_method_time_elapsed",
+						"partner_chains_data_source_method_time_elapsed",
 						"Time spent in a method call",
 					),
 					&["method_name"],
@@ -31,8 +31,8 @@ impl McFollowerMetrics {
 			call_count: register(
 				CounterVec::new(
 					Opts::new(
-						"mc_follower_method_call_count",
-						"Total number of mainchain follower method calls",
+						"partner_chains_data_source_method_call_count",
+						"Total number of data source method calls",
 					),
 					&["method_name"],
 				)?,
@@ -48,7 +48,7 @@ pub fn register_metrics_warn_errors(
 	metrics_registry_opt.and_then(|registry| match McFollowerMetrics::register(registry) {
 		Ok(metrics) => Some(metrics),
 		Err(err) => {
-			warn!("Failed registering mainchain follower metrics with err: {}", err);
+			warn!("Failed registering data source metrics with err: {}", err);
 			None
 		},
 	})

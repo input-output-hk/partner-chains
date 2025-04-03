@@ -23,9 +23,9 @@ members = [
 	"toolkit/sidechain/domain",
 	"toolkit/committee-selection/selection",
 	"toolkit/committee-selection/authority-selection-inherents",
-	"toolkit/mainchain-follower/main-chain-follower-cli",
-	"toolkit/mainchain-follower/db-sync-follower",
-	"toolkit/mainchain-follower/mock",
+	"toolkit/data-sources/cli",
+	"toolkit/data-sources/db-sync",
+	"toolkit/data-sources/mock",
 	"toolkit/utils/byte-string-derivation",
 	"toolkit/utils/plutus",
 	"toolkit/utils/plutus/plutus-datum-derive",
@@ -310,9 +310,9 @@ pallet-block-producer-metadata = { path = "toolkit/block-producer-metadata/palle
 pallet-block-producer-metadata-rpc = { path = "toolkit/block-producer-metadata/rpc", default-features = false }
 sp-block-producer-metadata = { path = "toolkit/block-producer-metadata/primitives", default-features = false }
 
-# main chain follower
-db-sync-follower = { path = "toolkit/mainchain-follower/db-sync-follower" }
-main-chain-follower-mock = { path = "toolkit/mainchain-follower/mock", default-features = false }
+# Data Sources
+partner-chains-db-sync-data-sources = { path = "toolkit/data-sources/db-sync" }
+partner-chains-mock-data-sources = { path = "toolkit/data-sources/mock", default-features = false }
 
 # demo node
 partner-chains-demo-runtime = { path = "demo/runtime" }

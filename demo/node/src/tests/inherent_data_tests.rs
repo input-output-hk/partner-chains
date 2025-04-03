@@ -6,8 +6,8 @@ use authority_selection_inherents::{
 	authority_selection_inputs::AuthoritySelectionInputs, mock::MockAuthoritySelectionDataSource,
 };
 use hex_literal::hex;
-use main_chain_follower_mock::stake_distribution::StakeDistributionDataSourceMock;
 use partner_chains_demo_runtime::BlockAuthor;
+use partner_chains_mock_data_sources::stake_distribution::StakeDistributionDataSourceMock;
 use sidechain_domain::{
 	DelegatorKey, MainchainBlock, McBlockHash, McBlockNumber, McEpochNumber, McSlotNumber,
 	NativeTokenAmount, ScEpochNumber,

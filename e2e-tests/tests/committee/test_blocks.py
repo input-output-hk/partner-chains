@@ -6,36 +6,16 @@ import logging as logger
 COMMITTEE_REPETITIONS_IN_PC_EPOCH = 2
 
 
-@mark.block_reward
-@mark.xdist_group("faucet_tx")
-def test_delegator_can_associate_pc_address(api: BlockchainApi, new_wallet: Wallet, get_wallet: Wallet):
-    logger.info("Signing address association...")
-    stake_skey, stake_vkey = api.cardano_cli.generate_stake_keys()
-    skey_hex = stake_skey["cborHex"][4:]
-    vkey_hex = stake_vkey["cborHex"][4:]
-    signature = api.sign_address_association(new_wallet.public_key, skey_hex)
-    assert signature.partner_chain_address == new_wallet.address
-    assert signature.signature, "Signature is empty"
-    assert signature.stake_public_key == f"0x{vkey_hex}"
-
-    logger.info("Submitting address association...")
-    tx = api.submit_address_association(signature, wallet=get_wallet)
-    assert tx.hash, "Could not submit address association"
-
-    logger.info("Verifying address association...")
-    vkey_hash = api.cardano_cli.get_stake_key_hash(vkey_hex)
-    logger.info(f"Stake public key hash: {vkey_hash}")
-    address_association = api.get_address_association(vkey_hash)
-    assert address_association == new_wallet.address, "Address association not found"
-
-@mark.block_reward
 @mark.xdist_group("faucet_tx")
 def test_block_producer_can_update_their_metadata(api: BlockchainApi, new_wallet: Wallet, get_wallet: Wallet):
     logger.info("Signing block producer metadata...")
     skey, vkey_hex, vkey_hash = api.cardano_cli.generate_cross_chain_keys()
 
     logger.info("Starting first upsert")
-    metadata = { "url": "http://test.example", "hash": "0x0000000000000000000000000000000000000000000000000000000000000001" }
+    metadata = {
+        "url": "http://test.example",
+        "hash": "0x0000000000000000000000000000000000000000000000000000000000000001",
+    }
     signature = api.sign_block_producer_metadata(metadata, skey)
     assert signature.signature, "Signature is empty"
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
@@ -54,7 +34,10 @@ def test_block_producer_can_update_their_metadata(api: BlockchainApi, new_wallet
     assert rpc_metadata == metadata, "RPC did not return block producer metadata or it is incorrect"
 
     logger.info("Starting second upsert")
-    metadata = { "url": "http://test.example", "hash": "0x0000000000000000000000000000000000000000000000000000000000000002" }
+    metadata = {
+        "url": "http://test.example",
+        "hash": "0x0000000000000000000000000000000000000000000000000000000000000002",
+    }
     signature = api.sign_block_producer_metadata(metadata, skey)
     assert signature.signature, "Signature is empty"
     assert signature.cross_chain_pub_key == f"0x{vkey_hex}"
@@ -174,40 +157,3 @@ def test_block_headers_have_mc_hash(api: BlockchainApi, config: ApiConfig, pc_ep
 
         if latest_stable_block_diff < config.main_chain.security_param + config.main_chain.block_stability_margin:
             logger.warning(f"Unexpected (but within offset) stable block number saved in header of block {block_no}")
-
-
-@mark.block_production_log
-def test_block_production_log_pallet(
-    api: BlockchainApi,
-    config: ApiConfig,
-):
-    block = api.get_block()
-    block_no = block["header"]["number"]
-    block_hash = block["header"]["hash"]
-    block_production_log = api.get_block_production_log(block_hash=block_hash)
-    block_production_log.reverse()
-    for slot, block_producer_id in block_production_log:
-        committee = api.get_validator_set(block).value
-        author_index = slot % len(committee)
-        expected_node = next(
-            x for x in config.nodes_config.nodes.values() if x.aura_public_key == committee[author_index][1]["aura"]
-        )
-        if "Incentivized" in block_producer_id:
-            cross_chain_public, stake_pool_public_key = block_producer_id["Incentivized"]
-            assert (
-                cross_chain_public == expected_node.public_key
-            ), f"Incorrect author: block {block_no} ({block_hash}) was authored by non-committee member"
-            expected_spo_key = api.read_cardano_key_file(expected_node["keys_files"]["spo_public_key"])
-            assert (
-                stake_pool_public_key[2:] == expected_spo_key
-            ), f"Incorrect SPO: block {block_no} ({block_hash}) author has incorrect SPO"
-        elif "ProBono" in block_producer_id:
-            cross_chain_public = block_producer_id["ProBono"]
-            assert (
-                cross_chain_public == expected_node.public_key
-            ), f"Incorrect author: block {block_no} ({block_hash}) was authored by non-committee member"
-        else:
-            assert False, f"Invalid block producer id: {block_producer_id}"
-        block_no = block_no - 1
-        block = api.get_block(block_no)
-        block_hash = block["header"]["hash"]

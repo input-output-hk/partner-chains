@@ -1882,44 +1882,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "db-sync-follower"
-version = "1.6.0"
-dependencies = [
- "async-trait",
- "authority-selection-inherents",
- "bigdecimal 0.4.5",
- "blake2b_simd",
- "cardano-serialization-lib",
- "chrono",
- "ctor",
- "db-sync-sqlx",
- "derive-new",
- "figment",
- "futures",
- "hex",
- "hex-literal",
- "itertools 0.13.0",
- "log",
- "lru",
- "num-bigint",
- "pallet-sidechain-rpc",
- "partner-chains-plutus-data",
- "serde",
- "serde_json",
- "sidechain-domain",
- "sidechain-mc-hash",
- "sp-block-participation",
- "sp-native-token-management",
- "sp-timestamp",
- "sqlx",
- "substrate-prometheus-endpoint",
- "testcontainers-modules",
- "thiserror",
- "tokio",
- "tokio-test",
-]
-
-[[package]]
 name = "db-sync-sqlx"
 version = "1.6.0"
 dependencies = [
@@ -5150,42 +5112,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "main-chain-follower-cli"
-version = "1.6.0"
-dependencies = [
- "authority-selection-inherents",
- "clap",
- "db-sync-follower",
- "env_logger 0.11.3",
- "log",
- "serde",
- "serde_json",
- "sidechain-domain",
- "sp-timestamp",
- "tokio",
-]
-
-[[package]]
-name = "main-chain-follower-mock"
-version = "1.6.0"
-dependencies = [
- "async-trait",
- "authority-selection-inherents",
- "hex",
- "hex-literal",
- "log",
- "pallet-sidechain-rpc",
- "rand",
- "serde",
- "serde_json",
- "sidechain-domain",
- "sidechain-mc-hash",
- "sp-block-participation",
- "sp-native-token-management",
- "sp-timestamp",
-]
-
-[[package]]
 name = "match_cfg"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6778,6 +6704,60 @@ dependencies = [
 ]
 
 [[package]]
+name = "partner-chains-data-sources-cli"
+version = "1.6.0"
+dependencies = [
+ "authority-selection-inherents",
+ "clap",
+ "env_logger 0.11.3",
+ "log",
+ "partner-chains-db-sync-data-sources",
+ "serde",
+ "serde_json",
+ "sidechain-domain",
+ "sp-timestamp",
+ "tokio",
+]
+
+[[package]]
+name = "partner-chains-db-sync-data-sources"
+version = "1.6.0"
+dependencies = [
+ "async-trait",
+ "authority-selection-inherents",
+ "bigdecimal 0.4.5",
+ "blake2b_simd",
+ "cardano-serialization-lib",
+ "chrono",
+ "ctor",
+ "db-sync-sqlx",
+ "derive-new",
+ "figment",
+ "futures",
+ "hex",
+ "hex-literal",
+ "itertools 0.13.0",
+ "log",
+ "lru",
+ "num-bigint",
+ "pallet-sidechain-rpc",
+ "partner-chains-plutus-data",
+ "serde",
+ "serde_json",
+ "sidechain-domain",
+ "sidechain-mc-hash",
+ "sp-block-participation",
+ "sp-native-token-management",
+ "sp-timestamp",
+ "sqlx",
+ "substrate-prometheus-endpoint",
+ "testcontainers-modules",
+ "thiserror",
+ "tokio",
+ "tokio-test",
+]
+
+[[package]]
 name = "partner-chains-demo-node"
 version = "1.6.0"
 dependencies = [
@@ -6785,7 +6765,6 @@ dependencies = [
  "async-trait",
  "authority-selection-inherents",
  "clap",
- "db-sync-follower",
  "derive-new",
  "envy",
  "frame-benchmarking",
@@ -6794,7 +6773,6 @@ dependencies = [
  "hex-literal",
  "jsonrpsee",
  "log",
- "main-chain-follower-mock",
  "pallet-block-producer-metadata-rpc",
  "pallet-partner-chains-session",
  "pallet-session-validator-management",
@@ -6802,7 +6780,9 @@ dependencies = [
  "pallet-sidechain-rpc",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
+ "partner-chains-db-sync-data-sources",
  "partner-chains-demo-runtime",
+ "partner-chains-mock-data-sources",
  "partner-chains-node-commands",
  "plutus",
  "plutus-datum-derive",
@@ -6924,6 +6904,26 @@ dependencies = [
  "sp-version",
  "sp-weights",
  "substrate-wasm-builder",
+]
+
+[[package]]
+name = "partner-chains-mock-data-sources"
+version = "1.6.0"
+dependencies = [
+ "async-trait",
+ "authority-selection-inherents",
+ "hex",
+ "hex-literal",
+ "log",
+ "pallet-sidechain-rpc",
+ "rand",
+ "serde",
+ "serde_json",
+ "sidechain-domain",
+ "sidechain-mc-hash",
+ "sp-block-participation",
+ "sp-native-token-management",
+ "sp-timestamp",
 ]
 
 [[package]]
