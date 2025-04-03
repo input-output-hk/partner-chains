@@ -47,51 +47,51 @@ class PartnerChainRpc:
         }
 
     def __exec_rpc(self, method: str, params: list = []):
-        """
-        Execute an RPC request either via HTTP or kubectl exec.
-        Returns the raw JSON response for further processing.
-        """
+        # Check if we should use kubectl exec and if required env vars are set
+        use_kubectl = os.environ.get("USE_KUBECTL_RPC") == "true"
+        kubectl_pod_exists = "KUBECTL_EXEC_POD" in os.environ
+        
+        # If kubectl mode is desired but required env var is missing, log warning and fall back
+        if use_kubectl and not kubectl_pod_exists:
+            logger.warning("USE_KUBECTL_RPC is set to true but KUBECTL_EXEC_POD is not defined. Falling back to HTTP request.")
+            use_kubectl = False
+        
+        # Use the original HTTP method implementation
+        if not use_kubectl:
+            response = requests.post(
+                self.url,
+                headers=self.headers,
+                json=self.__get_body(method=method, params=params)
+            )
+            return response.json()
+        
+        # Use kubectl exec method
+        pod = os.environ["KUBECTL_EXEC_POD"]
+        namespace = os.environ.get("K8S_NAMESPACE", "default")
+        
+        payload = json.dumps(self.__get_body(method=method, params=params))
+        cmd = [
+            "kubectl", "exec", pod, "-n", namespace, "--",
+            "curl", "-s", "-H", "Content-Type: application/json",
+            "-d", payload, "http://localhost:9933"
+        ]
+        
         try:
-            if os.environ.get("USE_KUBECTL_RPC") != "true":
-                # Use standard HTTP request method
-                response = requests.post(
-                    self.url,
-                    headers=self.headers,
-                    json=self.__get_body(method=method, params=params)
-                )
-                return response.json()
-            else:
-                # Use kubectl exec method
-                pod = os.environ["KUBECTL_EXEC_POD"]
-                namespace = os.environ.get("K8S_NAMESPACE", "default")
-
-                payload = json.dumps(self.__get_body(method=method, params=params))
-                cmd = [
-                    "kubectl", "exec", pod, "-n", namespace, "--",
-                    "curl", "-s", "-H", "Content-Type: application/json",
-                    "-d", payload, "http://localhost:9933"
-                ]
-                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-                if not result.stdout.strip():
-                    raise ValueError(f"Empty response from kubectl exec command: {cmd}")
-                return json.loads(result.stdout)
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            return json.loads(result.stdout)
         except subprocess.CalledProcessError as e:
-            logger.error(f"Command failed: {e.cmd}, exit_code: {e.returncode}")
-            logger.error(f"stderr: {e.stderr}")
-            raise PartnerChainRpcException(f"Command execution failed: {e.stderr}", e.returncode)
+            logger.error(f"kubectl exec command failed: {e.stderr}")
+            raise PartnerChainRpcException(f"kubectl exec command failed: {e.stderr}")
         except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON response: {e}")
-            raise PartnerChainRpcException(f"Invalid JSON response: {e}")
-        except Exception as e:
-            logger.error(f"RPC execution error: {str(e)}")
-            raise PartnerChainRpcException(str(e))
+            logger.error(f"Failed to parse JSON from kubectl response: {e}")
+            raise PartnerChainRpcException(f"Failed to parse JSON from kubectl response: {e}")
 
     def partner_chain_get_epoch_committee(self, epoch) -> PartnerChainRpcResponse:
         json_data = self.__exec_rpc("sidechain_getEpochCommittee", [epoch])
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)
 
-    def partner_chain_get_status(self) -> PartnerChainRpcResponse:
+    def partner_chain_get_status(self):
         json_data = self.__exec_rpc("sidechain_getStatus")
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)
@@ -101,17 +101,17 @@ class PartnerChainRpc:
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)
 
-    def partner_chain_get_params(self) -> PartnerChainRpcResponse:
+    def partner_chain_get_params(self):
         json_data = self.__exec_rpc("sidechain_getParams")
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)
 
-    def partner_chain_get_registrations(self, mc_epoch, mc_key) -> PartnerChainRpcResponse:
+    def partner_chain_get_registrations(self, mc_epoch, mc_key):
         json_data = self.__exec_rpc("sidechain_getRegistrations", [mc_epoch, mc_key])
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)
 
-    def partner_chain_get_block_producer_metadata(self, cross_chain_pub_key_hash: str) -> PartnerChainRpcResponse:
+    def partner_chain_get_block_producer_metadata(self, cross_chain_pub_key_hash: str):
         json_data = self.__exec_rpc("block-producer-metadata_getMetadata", [f"0x{cross_chain_pub_key_hash}"])
         logger.debug(json_data)
         return PartnerChainRpcResponse.model_validate(json_data)
