@@ -61,7 +61,7 @@ fn derive_address(
 	address.to_bech32(None).map_err(|e| anyhow!(e.to_string()))
 }
 
-const INTRO: &str = "Now, let's set up the genesis utxo. It identifies a partner chain. This wizard will query Ogmios for your UTXOs using address derived from the payment signing key. This signing key is then used to spend the gensis utxo in order to initialize the chain governance. Please provide required data.";
+const INTRO: &str = "Now, let's set up the genesis UTXO. It identifies the partner chain. This wizard will query Ogmios for your UTXOs using the address derived from the payment signing key. This signing key will be then used for spending the genesis UTXO in order to initialize the chain governance. Please provide required data.";
 
 #[cfg(test)]
 mod tests {

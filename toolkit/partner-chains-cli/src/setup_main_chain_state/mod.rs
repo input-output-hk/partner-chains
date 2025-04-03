@@ -140,7 +140,7 @@ impl CmdRun for SetupMainChainStateCmd {
 				chain_config.chain_parameters.genesis_utxo,
 			)?;
 		}
-		context.print("Done. Please remember that any changes to Caradno state can be observed immediately, but from the Partner Chain point of view they will be effective in two main chain epochs.");
+		context.print("Done. Please remember that any changes to the Cardano state can be observed immediately, but from the Partner Chain point of view they will be effective in two main chain epochs.");
 		Ok(())
 	}
 }
