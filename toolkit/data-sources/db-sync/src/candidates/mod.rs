@@ -74,19 +74,28 @@ impl AuthoritySelectionDataSource for CandidatesDataSourceImpl {
 			.map(|d| d.0)
 			.ok_or(ExpectedDataNotFound("DParameter Datum".to_string()))?;
 
-		let d_parameter = DParamDatum::try_from(d_datum)?.into();
+		let d_parameter: DParameter = DParamDatum::try_from(d_datum)?.into();
 
-		let candidates_output = candidates_output_opt
-			.ok_or(ExpectedDataNotFound("Permissioned Candidates List".to_string()))?;
+		let no_permissioned_candidates_expected =
+			d_parameter.num_permissioned_candidates == 0;
 
-		let candidates_datum = candidates_output
-			.datum
-			.map(|d| d.0)
-			.ok_or(ExpectedDataNotFound("Permissioned Candidates List Datum".to_string()))?;
+		let permissioned_candidates = if no_permissioned_candidates_expected
+			&& candidates_output_opt.is_none()
+		{
+			Vec::new()
+		} else {
+			let candidates_output = candidates_output_opt
+				.ok_or(ExpectedDataNotFound("Permissioned Candidates List".to_string()))?;
 
-		let permissioned_candidates = raw_permissioned_candidate_data_vec_from(
-			PermissionedCandidateDatums::try_from(candidates_datum)?
-		);
+			let candidates_datum = candidates_output
+				.datum
+				.map(|d| d.0)
+				.ok_or(ExpectedDataNotFound("Permissioned Candidates List Datum".to_string()))?;
+
+			raw_permissioned_candidate_data_vec_from(PermissionedCandidateDatums::try_from(
+				candidates_datum,
+			)?)
+		};
 
 		Ok(AriadneParameters { d_parameter, permissioned_candidates })
 	}
