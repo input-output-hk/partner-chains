@@ -1,5 +1,5 @@
 diff --git a/Cargo.lock b/Cargo.lock
-index b6ceab24..573fa700 100644
+index d964f020..b0400a3a 100644
 --- a/Cargo.lock
 +++ b/Cargo.lock
 @@ -30,12 +30,34 @@ dependencies = [
@@ -60,7 +60,7 @@ index b6ceab24..573fa700 100644
   "rustc-demangle",
  ]
  
-@@ -1346,6 +1368,12 @@ version = "1.0.0"
+@@ -1349,6 +1371,12 @@ version = "1.0.0"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "2382f75942f4b3be3690fe4f86365e9c853c1587d6ee58212cebf6e2a9ccd101"
  
@@ -73,7 +73,7 @@ index b6ceab24..573fa700 100644
  [[package]]
  name = "concurrent-queue"
  version = "2.5.0"
-@@ -1469,6 +1497,15 @@ dependencies = [
+@@ -1472,6 +1500,15 @@ dependencies = [
   "cfg-if",
  ]
  
@@ -89,7 +89,7 @@ index b6ceab24..573fa700 100644
  [[package]]
  name = "cpufeatures"
  version = "0.2.12"
-@@ -2112,6 +2149,17 @@ dependencies = [
+@@ -2086,6 +2123,17 @@ dependencies = [
   "syn 2.0.87",
  ]
  
@@ -107,7 +107,7 @@ index b6ceab24..573fa700 100644
  [[package]]
  name = "doc-comment"
  version = "0.3.3"
-@@ -2579,6 +2627,16 @@ version = "0.4.2"
+@@ -2553,6 +2601,16 @@ version = "0.4.2"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "0ce7134b9999ecaf8bcd65542e436736ef32ddca1b3e06094cb6ec5755203b80"
  
@@ -124,7 +124,7 @@ index b6ceab24..573fa700 100644
  [[package]]
  name = "float-cmp"
  version = "0.9.0"
-@@ -2605,6 +2663,12 @@ version = "1.0.7"
+@@ -2579,6 +2637,12 @@ version = "1.0.7"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
  
@@ -137,7 +137,7 @@ index b6ceab24..573fa700 100644
  [[package]]
  name = "fork-tree"
  version = "13.0.1"
-@@ -2622,6 +2686,12 @@ dependencies = [
+@@ -2596,6 +2660,12 @@ dependencies = [
   "percent-encoding",
  ]
  
@@ -150,7 +150,7 @@ index b6ceab24..573fa700 100644
  [[package]]
  name = "forwarded-header-value"
  version = "0.1.1"
-@@ -3071,6 +3141,15 @@ dependencies = [
+@@ -3039,6 +3109,15 @@ dependencies = [
   "zeroize",
  ]
  
@@ -166,7 +166,7 @@ index b6ceab24..573fa700 100644
  [[package]]
  name = "getrandom"
  version = "0.2.15"
-@@ -3131,6 +3210,16 @@ version = "0.29.0"
+@@ -3099,6 +3178,16 @@ version = "0.29.0"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "40ecd4077b5ae9fd2e9e169b102c6c330d0605168eb0e8bf79952b256dbefffd"
  
@@ -183,7 +183,7 @@ index b6ceab24..573fa700 100644
  [[package]]
  name = "glob"
  version = "0.3.1"
-@@ -3262,6 +3351,17 @@ dependencies = [
+@@ -3230,6 +3319,17 @@ dependencies = [
   "allocator-api2",
  ]
  
@@ -201,7 +201,7 @@ index b6ceab24..573fa700 100644
  [[package]]
  name = "hashlink"
  version = "0.8.4"
-@@ -5377,6 +5477,15 @@ dependencies = [
+@@ -5309,6 +5409,15 @@ dependencies = [
   "adler",
  ]
  
@@ -217,7 +217,7 @@ index b6ceab24..573fa700 100644
  [[package]]
  name = "mio"
  version = "0.8.11"
-@@ -5949,11 +6058,13 @@ dependencies = [
+@@ -5881,11 +5990,13 @@ dependencies = [
  
  [[package]]
  name = "object"
@@ -233,7 +233,22 @@ index b6ceab24..573fa700 100644
  ]
  
  [[package]]
-@@ -7662,6 +7773,21 @@ dependencies = [
+@@ -6849,10 +6960,14 @@ dependencies = [
+  "frame-system-benchmarking",
+  "frame-system-rpc-runtime-api",
+  "frame-try-runtime",
++ "getopts",
++ "hashbrown 0.15.2",
+  "hex",
+  "hex-literal",
+  "log",
+  "minicbor 0.20.0",
++ "miniz_oxide 0.8.3",
++ "object 0.36.7",
+  "pallet-address-associations",
+  "pallet-aura",
+  "pallet-balances",
+@@ -7756,6 +7871,21 @@ dependencies = [
   "proc-macro2",
  ]
  
@@ -255,7 +270,7 @@ index b6ceab24..573fa700 100644
  [[package]]
  name = "radium"
  version = "0.7.0"
-@@ -8315,6 +8441,15 @@ dependencies = [
+@@ -8397,6 +8527,15 @@ dependencies = [
   "wait-timeout",
  ]
  
@@ -271,10 +286,10 @@ index b6ceab24..573fa700 100644
  [[package]]
  name = "rw-stream-sink"
  version = "0.4.0"
-@@ -10009,8 +10144,13 @@ dependencies = [
- name = "sidechain-runtime"
- version = "1.5.0"
+@@ -10787,8 +10926,13 @@ name = "sp-session-validator-management-query"
+ version = "1.6.0"
  dependencies = [
+  "async-trait",
 + "addr2line 0.24.2",
 + "allocator-api2",
   "authority-selection-inherents",
@@ -282,44 +297,29 @@ index b6ceab24..573fa700 100644
   "derive-new",
 + "dlmalloc",
 + "fortanix-sgx-abi",
-  "frame-benchmarking",
-  "frame-executive",
-  "frame-support",
-@@ -10018,10 +10158,14 @@ dependencies = [
-  "frame-system-benchmarking",
-  "frame-system-rpc-runtime-api",
-  "frame-try-runtime",
-+ "getopts",
-+ "hashbrown 0.15.2",
-  "hex",
   "hex-literal",
-  "log",
   "minicbor 0.20.0",
-+ "miniz_oxide 0.8.3",
-+ "object 0.36.7",
-  "pallet-address-associations",
-  "pallet-aura",
-  "pallet-balances",
-@@ -10043,6 +10187,8 @@ dependencies = [
   "parity-scale-codec",
-  "plutus",
-  "pretty_assertions",
-+ "r-efi",
-+ "r-efi-alloc",
-  "scale-info",
+@@ -10821,6 +10965,8 @@ dependencies = [
   "serde",
   "serde_json",
-@@ -10075,6 +10221,9 @@ dependencies = [
-  "sp-version",
-  "sp-weights",
-  "substrate-wasm-builder",
+  "sidechain-domain",
++ "r-efi",
++ "r-efi-alloc",
+  "sp-api",
+  "sp-blockchain",
+  "sp-runtime",
+@@ -10853,6 +10999,9 @@ dependencies = [
+  "sp-core",
+  "sp-externalities",
+  "sp-panic-handler",
 + "unicode-width",
 + "unwinding",
 + "windows-sys 0.59.0",
- ]
- 
- [[package]]
-@@ -12412,9 +12561,9 @@ checksum = "d4c87d22b6e3f4a18d4d40ef354e97c90fcb14dd91d7dc0aa9d8a1172ebf7202"
+  "sp-trie",
+  "thiserror",
+  "tracing",
+@@ -12367,9 +12516,9 @@ checksum = "d4c87d22b6e3f4a18d4d40ef354e97c90fcb14dd91d7dc0aa9d8a1172ebf7202"
  
  [[package]]
  name = "unicode-width"
@@ -331,7 +331,7 @@ index b6ceab24..573fa700 100644
  
  [[package]]
  name = "unicode-xid"
-@@ -12487,6 +12636,16 @@ version = "0.9.0"
+@@ -12442,6 +12591,16 @@ version = "0.9.0"
  source = "registry+https://github.com/rust-lang/crates.io-index"
  checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
  
@@ -348,7 +348,7 @@ index b6ceab24..573fa700 100644
  [[package]]
  name = "uplc"
  version = "1.1.6"
-@@ -12911,7 +13070,7 @@ dependencies = [
+@@ -12866,7 +13025,7 @@ dependencies = [
   "anyhow",
   "bincode",
   "cfg-if",
@@ -357,7 +357,7 @@ index b6ceab24..573fa700 100644
   "gimli 0.27.3",
   "log",
   "object 0.30.4",
-@@ -13130,6 +13289,15 @@ dependencies = [
+@@ -13085,6 +13244,15 @@ dependencies = [
   "windows-targets 0.52.6",
  ]
  
@@ -373,10 +373,10 @@ index b6ceab24..573fa700 100644
  [[package]]
  name = "windows-targets"
  version = "0.42.2"
-diff --git a/node/runtime/Cargo.toml b/node/runtime/Cargo.toml
+diff --git a/demo/runtime/Cargo.toml b/demo/runtime/Cargo.toml
 index 5a783e9c..b8030f94 100644
---- a/node/runtime/Cargo.toml
-+++ b/node/runtime/Cargo.toml
+--- a/demo/runtime/Cargo.toml
++++ b/demo/runtime/Cargo.toml
 @@ -95,6 +95,20 @@ pretty_assertions = { workspace = true }
  serde_json = { workspace = true }
  

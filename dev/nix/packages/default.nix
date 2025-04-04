@@ -47,6 +47,9 @@
         patchedSrc = pkgs.stdenv.mkDerivation {
           name = "partner-chains-patched-src";
           src = ../../../.;
+          
+          # Apply patch with fuzz factor to handle offsets and force option to continue despite failed hunks
+          patchFlags = ["-p1" "--fuzz=3" "--force"];
           patches = [./rust-src-std.patch];
           buildPhase = "true"; # Skip build
           installPhase = ''
@@ -91,7 +94,7 @@
         ];
         
         postFixup = ''
-          patchelf --set-rpath ${pkgs.rocksdb}/lib $out/bin/partner-chains-node
+          patchelf --set-rpath ${pkgs.rocksdb}/lib $out/bin/partner-chains-demo-node
         '';
         
         CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_LINKER = "${pkgs.llvmPackages.lld}/bin/lld";
@@ -118,9 +121,6 @@
         OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
         OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
         BINDGEN_EXTRA_CLANG_ARGS = "-I${pkgs.stdenv.cc.cc}/include";
-        
-        # Add flags for building std library
-        #RUSTFLAGS = "-Z build-std";
       };
     };
   };
