@@ -1,6 +1,6 @@
 [package]
 name = "pallet-block-rewards"
-version = "1.6.0"
+version = "1.6.1"
 edition = "2021"
 description = "Pallet to track due block rewards"
 license = "Apache-2.0"

@@ -1,6 +1,6 @@
 [package]
 name = "pallet-block-production-log"
-version = "1.6.0"
+version = "1.6.1"
 edition = "2021"
 description = "Keeps log of slot to block producer id"
 license = "Apache-2.0"

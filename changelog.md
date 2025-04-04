@@ -10,9 +10,13 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Fixed
 
-* `governance init` when genesis utxo had a script attached, then transaction fee was sometimes calculated incorrectly
-
 ## Added
+
+# v1.6.1
+
+## Fixed
+
+* `governance init` when genesis utxo had a script attached, then transaction fee was sometimes calculated incorrectly
 
 # v1.6.0
 
