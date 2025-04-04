@@ -1,8 +1,11 @@
 use crate::{
-	cardano_key,
-	config::{config_fields, ServiceConfig},
+	config::{
+		config_fields::{INITIAL_GOVERNANCE_AUTHORITIES, INITIAL_GOVERNANCE_THRESHOLD},
+		GovernanceAuthoritiesKeyHashes, ServiceConfig,
+	},
 	IOContext,
 };
+use anyhow::anyhow;
 use partner_chains_cardano_offchain::{
 	cardano_keys::CardanoPaymentSigningKey, governance::MultiSigParameters,
 	init_governance::InitGovernance,
@@ -11,31 +14,66 @@ use sidechain_domain::{MainchainKeyHash, McTxHash, UtxoId};
 
 pub(crate) fn run_init_governance<C: IOContext>(
 	genesis_utxo: UtxoId,
+	payment_key: &CardanoPaymentSigningKey,
 	ogmios_config: &ServiceConfig,
 	context: &C,
-) -> anyhow::Result<McTxHash> {
-	let offchain = context.offchain_impl(ogmios_config)?;
-	let (payment_key, governance_authority) = get_private_key_and_key_hash(context)?;
-	let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
-	runtime
-		.block_on(offchain.init_governance(
-			&MultiSigParameters::new_one_of_one(&governance_authority),
-			&payment_key,
-			genesis_utxo,
-		))
-		.map_err(|e| anyhow::anyhow!("Governance initalization failed: {e:?}!"))
+) -> anyhow::Result<Option<McTxHash>> {
+	let multisig_parameters = prompt_initial_governance(context)?;
+	let should_continue = context.prompt_yes_no(
+		&format!(
+			"Governance will be initialized with:\n{}\nDo you want to continue?",
+			multisig_parameters
+		),
+		false,
+	);
+	if should_continue {
+		let offchain = context.offchain_impl(ogmios_config)?;
+		let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
+		let tx_id = runtime
+			.block_on(offchain.init_governance(&multisig_parameters, &payment_key, genesis_utxo))
+			.map_err(|e| anyhow::anyhow!("Governance initalization failed: {e:?}!"))?;
+		context.eprint(&format!("Governance initialized successfully for UTXO: {}", genesis_utxo));
+		Ok(Some(tx_id))
+	} else {
+		Ok(None)
+	}
 }
 
-fn get_private_key_and_key_hash<C: IOContext>(
+fn prompt_initial_governance<C: IOContext>(
 	context: &C,
-) -> Result<(CardanoPaymentSigningKey, MainchainKeyHash), anyhow::Error> {
-	let cardano_signing_key_file = config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
-		.prompt_with_default_from_file_and_save(context);
-	let pkey =
-		cardano_key::get_mc_payment_signing_key_from_file(&cardano_signing_key_file, context)?;
-	let addr_hash = pkey.to_pub_key_hash();
+) -> Result<MultiSigParameters, anyhow::Error> {
+	context.eprint("Please provide the initial chain governance data:");
+	INITIAL_GOVERNANCE_AUTHORITIES.save_if_empty(GovernanceAuthoritiesKeyHashes(vec![]), context);
+	let authorities = INITIAL_GOVERNANCE_AUTHORITIES
+		.prompt_with_default_from_file_parse_and_save(context)
+		.map_err(|e| anyhow!("Failed to parse governance authorities: {}", e))?;
 
-	Ok((pkey, addr_hash))
+	INITIAL_GOVERNANCE_THRESHOLD.save_if_empty(0, context);
+	let threshold = INITIAL_GOVERNANCE_THRESHOLD
+		.prompt_with_default_from_file_parse_and_save(context)
+		.map_err(|e| anyhow!("Failed do parse threshold: {}", e))?;
+
+	MultiSigParameters::new(authorities.0.as_ref(), threshold).map_err(
+		|err| anyhow!(
+			"Initial Goveranance data is invalid: '{}'. Please run the wizard again and provide correct value or edit values in '{}' and the run the wizard again. Example: '{}'",
+			err,
+			INITIAL_GOVERNANCE_AUTHORITIES.config_file,
+			&example_governance_auth()
+		)
+	)
+}
+
+fn example_governance_auth() -> serde_json::Value {
+	serde_json::json!({
+		"initial_governance": {
+			"authorities" : [
+				MainchainKeyHash([0u8;28]),
+				MainchainKeyHash([1u8;28]),
+				MainchainKeyHash([2u8;28])
+			],
+			"threshold": 2
+		}
+	})
 }
 
 #[cfg(test)]
@@ -44,13 +82,15 @@ mod tests {
 	use crate::{
 		config::{
 			config_fields::{GENESIS_UTXO, OGMIOS_PROTOCOL},
-			NetworkProtocol, ServiceConfig, RESOURCES_CONFIG_FILE_PATH,
+			NetworkProtocol, ServiceConfig, CHAIN_CONFIG_FILE_PATH,
 		},
 		tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks},
 		verify_json,
 	};
 	use hex_literal::hex;
-	use partner_chains_cardano_offchain::governance::MultiSigParameters;
+	use partner_chains_cardano_offchain::{
+		cardano_keys::CardanoPaymentSigningKey, governance::MultiSigParameters,
+	};
 	use serde_json::{json, Value};
 	use sidechain_domain::{MainchainKeyHash, McTxHash, UtxoId};
 
@@ -59,25 +99,38 @@ mod tests {
 		let mock_context = MockIOContext::new()
 			.with_json_file(GENESIS_UTXO.config_file, serde_json::json!({}))
 			.with_json_file(OGMIOS_PROTOCOL.config_file, serde_json::json!({}))
-			.with_json_file("payment.skey", payment_key_content())
 			.with_offchain_mocks(preprod_offchain_mocks())
-			.with_expected_io(vec![MockIO::prompt(
-				"path to the payment signing key file",
-				Some("payment.skey"),
-				"payment.skey",
-			)]);
-		run_init_governance(TEST_GENESIS_UTXO, &ogmios_config(), &mock_context)
-			.expect("should succeed");
-		verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, test_resources_config());
+			.with_expected_io(vec![
+				MockIO::eprint("Please provide the initial chain governance data:"),
+				MockIO::prompt(
+					"Space separated keys hashes of the initial Multisig Governance Authorities",
+					Some(""),
+					"00000000000000000000000000000000000000000000000000000000  \n\t0x01010101010101010101010101010101010101010101010101010101",
+				),
+				MockIO::prompt(
+					"Initial Multisig Governance Threshold",
+					Some("0"),
+					"2",
+				),
+				MockIO::prompt_yes_no(
+"Governance will be initialized with:\
+\nGovernance authorities:\
+\n\t0x00000000000000000000000000000000000000000000000000000000\
+\n\t0x01010101010101010101010101010101010101010101010101010101\
+\nThreshold: 2\
+\nDo you want to continue?",false, true),
+				MockIO::eprint("Governance initialized successfully for UTXO: 0000000000000000000000000000000000000000000000000000000000000000#0")
+			]);
+		run_init_governance(
+			TEST_GENESIS_UTXO,
+			&test_private_key(),
+			&ogmios_config(),
+			&mock_context,
+		)
+		.expect("should succeed");
+		verify_json!(mock_context, CHAIN_CONFIG_FILE_PATH, expected_chain_config_content());
 	}
 
-	fn payment_key_content() -> serde_json::Value {
-		json!({
-			"type": "PaymentSigningKeyShelley_ed25519",
-			"description": "Payment Signing Key",
-			"cborHex": "5820d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
-		})
-	}
 	const TEST_GENESIS_UTXO: UtxoId = UtxoId::new([0u8; 32], 0);
 
 	fn ogmios_config() -> ServiceConfig {
@@ -88,21 +141,43 @@ mod tests {
 		}
 	}
 
-	fn test_resources_config() -> Value {
-		serde_json::json!({
-				"cardano_payment_signing_key_file": "payment.skey",
-		})
+	fn test_private_key() -> CardanoPaymentSigningKey {
+		CardanoPaymentSigningKey::from_normal_bytes(hex!(
+			"d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
+		))
+		.unwrap()
 	}
 
 	fn preprod_offchain_mocks() -> OffchainMocks {
 		let mock = OffchainMock::new().with_init_governance(
 			TEST_GENESIS_UTXO,
-			MultiSigParameters::new_one_of_one(&MainchainKeyHash(hex!(
-				"e8c300330fe315531ca89d4a2e7d0c80211bc70b473b1ed4979dff2b"
-			))),
+			MultiSigParameters::new(
+				&[
+					MainchainKeyHash(hex!(
+						"00000000000000000000000000000000000000000000000000000000"
+					)),
+					MainchainKeyHash(hex!(
+						"01010101010101010101010101010101010101010101010101010101"
+					)),
+				],
+				2u8,
+			)
+			.unwrap(),
 			hex!("d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386").to_vec(),
-			Ok(McTxHash(hex!("0000000000000000000000000000000000000000000000000000000000000000"))),
+			Ok(McTxHash(hex!("2222222200000000000000000000000000000000000000000000000000000000"))),
 		);
 		OffchainMocks::new_with_mock("http://localhost:1337", mock)
+	}
+
+	fn expected_chain_config_content() -> Value {
+		json!({
+			"initial_governance":  {
+				"authorities":  [
+					"0x00000000000000000000000000000000000000000000000000000000",
+					"0x01010101010101010101010101010101010101010101010101010101"
+				],
+				"threshold": 2
+			}
+		})
 	}
 }

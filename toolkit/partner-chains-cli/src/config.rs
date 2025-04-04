@@ -6,9 +6,9 @@ use crate::io::IOContext;
 use clap::{arg, Parser};
 use config_fields::CARDANO_SLOT_DURATION_MILLIS;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use sidechain_domain::UtxoId;
+use sidechain_domain::{MainchainKeyHash, UtxoId};
 use sp_core::offchain::{Duration, Timestamp};
-use std::fmt::{Display, Formatter};
+use std::fmt::{Display, Formatter, Write};
 use std::str::FromStr;
 use std::{marker::PhantomData, process::exit};
 
@@ -332,6 +332,35 @@ pub struct NativeTokenConfig {
 	pub illiquid_supply_address: String,
 }
 
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct GovernanceAuthoritiesKeyHashes(pub(crate) Vec<MainchainKeyHash>);
+
+impl FromStr for GovernanceAuthoritiesKeyHashes {
+	type Err = String;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		let mut key_hashes = vec![];
+		for x in s.split_whitespace() {
+			let trimmed = x.trim();
+			let key_hash = MainchainKeyHash::decode_hex(trimmed).map_err(|e| {
+				format!("'{}' is not a valid Cardano Key Hash, reason: {}", trimmed, e)
+			})?;
+			key_hashes.push(key_hash)
+		}
+		Ok(GovernanceAuthoritiesKeyHashes(key_hashes))
+	}
+}
+
+impl Display for GovernanceAuthoritiesKeyHashes {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		for key_hash in self.0.iter() {
+			f.write_str(&key_hash.to_hex_string())?;
+			f.write_char(' ')?;
+		}
+		Ok(())
+	}
+}
+
 #[derive(Deserialize)]
 pub struct ChainConfig {
 	pub cardano: CardanoParameters,
@@ -584,6 +613,26 @@ pub mod config_fields {
 			path: &["sidechain_block_beneficiary"],
 			name: "beneficiary for blocks created by the given node",
 			default: None,
+			_marker: PhantomData,
+		};
+
+	pub const INITIAL_GOVERNANCE_AUTHORITIES: ConfigFieldDefinition<
+		'static,
+		GovernanceAuthoritiesKeyHashes,
+	> = ConfigFieldDefinition {
+		config_file: CHAIN_CONFIG_FILE_PATH,
+		path: &["initial_governance", "authorities"],
+		name: "Space separated keys hashes of the initial Multisig Governance Authorities",
+		default: Some("[]"),
+		_marker: PhantomData,
+	};
+
+	pub const INITIAL_GOVERNANCE_THRESHOLD: ConfigFieldDefinition<'static, u8> =
+		ConfigFieldDefinition {
+			config_file: CHAIN_CONFIG_FILE_PATH,
+			path: &["initial_governance", "threshold"],
+			name: "Initial Multisig Governance Threshold",
+			default: Some("0"),
 			_marker: PhantomData,
 		};
 }

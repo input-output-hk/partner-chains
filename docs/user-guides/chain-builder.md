@@ -234,10 +234,25 @@ Before running this wizard, be sure that `ogmios` is available by host and port.
 1. Start the wizard:`./partner-chains-node wizards prepare-configuration`
 2. Update the bootnodes array and provide public ip or hostname
 3. Provide required payment keys and select genesis utxo to initialize the chain
-4. Configure initial native token supply address (optional)
-5. Store the main chain configuration
+4. Provide and confirm initial governance authorities.
+5. Configure initial native token supply address (optional)
+6. Store the main chain configuration
 
-This wizard will submit a governance initialization transaction, that spends the genesis utxo. It will also result in a `pc-chain-config.json` file. The wizard also adds required cardano addresses and policy ids to the configuration file.
+This wizard will submit a governance initialization transaction, that sets the governance policy with initial governance authorities and threshold, and spends the genesis utxo. It will also result in a `pc-chain-config.json` file. The wizard also adds required cardano addresses and policy ids to the configuration file.
+
+If user decided to not confirm initial governance settings, then he can update the `initial_governance` setting in `pc-chain-config.json` and re-run the wizard.
+
+Example of configuration:
+```json
+"initial_governance": {
+    "authorities": [
+      "0x00000000000000000000000000000000000000000000000000000000",
+      "0x01010101010101010101010101010101010101010101010101010101",
+      "0x02020202020202020202020202020202020202020202020202020202"
+    ],
+    "threshold": 2
+}
+```
 
 After chain-config file has been generated, it should be updated with your keys and the keys of other *permissioned* candidates in the `initial_permissioned_candidates` array.
 

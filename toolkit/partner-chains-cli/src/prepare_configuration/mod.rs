@@ -1,8 +1,3 @@
-mod init_governance;
-mod prepare_cardano_params;
-mod prepare_main_chain_config;
-mod select_genesis_utxo;
-
 use crate::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
 use crate::config::config_values::DEFAULT_CHAIN_NAME;
 use crate::generate_keys::network_key_path;
@@ -18,17 +13,32 @@ use std::str::FromStr;
 use std::vec;
 use thiserror::Error;
 
+mod init_governance;
+mod prepare_cardano_params;
+mod prepare_main_chain_config;
+mod select_genesis_utxo;
+
 #[derive(Clone, Debug, clap::Parser)]
 pub struct PrepareConfigurationCmd {}
 
 impl CmdRun for PrepareConfigurationCmd {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		establish_bootnodes(context)?;
-		let (genesis_utxo, ogmios_config) = select_genesis_utxo(context)?;
-		let _ = init_governance::run_init_governance(genesis_utxo, &ogmios_config, context)?;
-		prepare_main_chain_config(context, &ogmios_config, genesis_utxo)?;
-		context.eprint("🚀 All done!");
-		Ok(())
+		let (genesis_utxo, private_key, ogmios_config) = select_genesis_utxo(context)?;
+		if let Some(_tx_id) = init_governance::run_init_governance(
+			genesis_utxo,
+			&private_key,
+			&ogmios_config,
+			context,
+		)? {
+			prepare_main_chain_config(context, &ogmios_config, genesis_utxo)?;
+			context.eprint("🚀 All done!");
+			Ok(())
+		} else {
+			context
+				.eprint("Chain governance has not been initialized. Please run the wizard again.");
+			Ok(())
+		}
 	}
 }
 
