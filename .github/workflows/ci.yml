@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       sha:
-        description: "Commit SHA to build"
+        description: 'Commit SHA to build'
         required: true
         type: string
 
@@ -21,66 +21,67 @@ permissions:
   contents: write
 
 jobs:
-  ### Pre merge workflow ###############################################################################################################
 
-  #  ci-preview-direct-tests-pre-merge:
-  #    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-  #    runs-on: ubuntu-latest
-  #    steps:
-  #      - name: Checkout
-  #        uses: actions/checkout@v4
-  #        with:
-  #          fetch-depth: 0
-  #          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-  #      - name: Setup tests
-  #        uses: ./.github/actions/tests/setup-python
-  #        env:
-  #          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-  #          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-  #          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-  #          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
-  #      - name: Run direct kubectl exec tests against ci-preview
-  #        uses: ./.github/actions/tests/k8s-direct-tests
-  #        with:
-  #          namespace: ci-preview
-  #          pod: ci-preview-validator-1
-  #        env:
-  #          AWS_REGION: "eu-central-1"
-  #          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-  #          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-  #          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-  #          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-  #          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-  #          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-  #          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
-  #  ci-preview-e2e-tests-pre-merge:
-  #    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-  #    runs-on: eks
-  #    steps:
-  #      - name: Checkout
-  #        uses: actions/checkout@v4
-  #        with:
-  #          fetch-depth: 0
-  #          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-  #      - name: Setup tests
-  #        uses: ./.github/actions/tests/setup-python
-  #        env:
-  #          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-  #          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-  #          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-  #          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
-  #      - name: Run pytests against ci-preview over kubectl exec
-  #        uses: ./.github/actions/tests/k8s-e2e-tests
-  #        with:
-  #          env: ci
-  #          decrypt: true
-  #          blockchain: substrate
-  #      - name: Test against ci-preview
-  #        uses: ./.github/actions/tests/run-e2e-tests
-  #        with:
-  #          env: ci
-  #          decrypt: true
-  #          blockchain: substrate
+### Pre merge workflow ###############################################################################################################
+
+#  ci-preview-direct-tests-pre-merge:
+#    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#        with:
+#          fetch-depth: 0
+#          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+#      - name: Setup tests
+#        uses: ./.github/actions/tests/setup-python
+#        env:
+#          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+#          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+#          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+#          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+#      - name: Run direct kubectl exec tests against ci-preview
+#        uses: ./.github/actions/tests/k8s-direct-tests
+#        with:
+#          namespace: ci-preview
+#          pod: ci-preview-validator-1
+#        env:
+#          AWS_REGION: "eu-central-1"
+#          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+#          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+#          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+#          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+#          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+#          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+#          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+#  ci-preview-e2e-tests-pre-merge:
+#    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+#    runs-on: eks
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#        with:
+#          fetch-depth: 0
+#          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+#      - name: Setup tests
+#        uses: ./.github/actions/tests/setup-python
+#        env:
+#          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+#          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+#          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+#          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+#      - name: Run pytests against ci-preview over kubectl exec
+#        uses: ./.github/actions/tests/k8s-e2e-tests
+#        with:
+#          env: ci
+#          decrypt: true
+#          blockchain: substrate
+#      - name: Test against ci-preview
+#        uses: ./.github/actions/tests/run-e2e-tests
+#        with:
+#          env: ci
+#          decrypt: true
+#          blockchain: substrate
 
   build-linux-x86_64-pre-merge:
     runs-on: ubuntu-latest
@@ -120,9 +121,6 @@ jobs:
       - name: Copy Earthfile to build directory
         run: |
           cp Earthfile ./to-build/
-      - name: Clean Earthly caches
-        run: |
-          earthly -P prune
       - name: Run Earthly (build, test, cargo fmt, cargo clippy, publish Docker image)
         working-directory: ./to-build
         env:
@@ -256,13 +254,7 @@ jobs:
 
   pre-merge-checks-complete:
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
-    needs:
-      [
-        build-linux-x86_64-pre-merge,
-        local-environment-tests,
-        devshell-tests,
-        upload-chain-specs-pre-merge,
-      ]
+    needs: [build-linux-x86_64-pre-merge, local-environment-tests, devshell-tests, upload-chain-specs-pre-merge]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
@@ -277,21 +269,21 @@ jobs:
             echo "All needed jobs passed."
           fi
 
-  #  pre-merge-checks-complete:
-  #    if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
-  #    needs: [ci-preview-tests-pre-merge]
-  #    runs-on: ubuntu-latest
-  #    steps:
-  #      - name: Check if any needed job failed
-  #        run: |
-  #          if [[ "${{ needs.ci-preview-tests-pre-merge.result }}" != "success" ]]; then
-  #            echo "One or more needed jobs failed."
-  #            exit 1
-  #          else
-  #            echo "All needed jobs passed."
-  #          fi
+#  pre-merge-checks-complete:
+#    if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.merged == false }}
+#    needs: [ci-preview-tests-pre-merge]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Check if any needed job failed
+#        run: |
+#          if [[ "${{ needs.ci-preview-tests-pre-merge.result }}" != "success" ]]; then
+#            echo "One or more needed jobs failed."
+#            exit 1
+#          else
+#            echo "All needed jobs passed."
+#          fi
 
-  ### Post merge workflow ###############################################################################################################
+### Post merge workflow ###############################################################################################################
 
   build-linux-x86_64-post-merge:
     runs-on: ubuntu-latest
@@ -577,7 +569,7 @@ jobs:
       - name: Deploy ci-preview
         uses: ./.github/actions/deploy/deploy-ci-preview
         with:
-          image: ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
+          image:  ${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node:${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
           sha: ${{ needs.build-linux-x86_64-post-merge.outputs.sha }}
           no-wipe: true
         env:
@@ -607,40 +599,40 @@ jobs:
           kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
           K8S_SERVER: ${{ secrets.K8S_SERVER }}
           K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
-      #      - name: Run direct kubectl exec tests against ci-preview
-      #        uses: ./.github/actions/tests/k8s-direct-tests
-      #        with:
-      #          namespace: ci-preview
-      #          pod: ci-preview-validator-1
-      #        env:
-      #          AWS_REGION: "eu-central-1"
-      #          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-      #          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-      #          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-      #          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-      #          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-      #          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-      #          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+#      - name: Run direct kubectl exec tests against ci-preview
+#        uses: ./.github/actions/tests/k8s-direct-tests
+#        with:
+#          namespace: ci-preview
+#          pod: ci-preview-validator-1
+#        env:
+#          AWS_REGION: "eu-central-1"
+#          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+#          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+#          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+#          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+#          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+#          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+#          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
       - name: Test against ci-preview
         uses: ./.github/actions/tests/run-e2e-tests
-        #      - name: Run pytests against ci-preview over kubectl exec
-        #        uses: ./.github/actions/tests/k8s-e2e-tests
+#      - name: Run pytests against ci-preview over kubectl exec
+#        uses: ./.github/actions/tests/k8s-e2e-tests
         with:
           env: ci
           decrypt: true
           blockchain: substrate
-  #        env:
-  #          USE_KUBECTL_RPC: true
-  #          KUBECTL_EXEC_POD: ci-preview-validator-1
-  #          K8S_NAMESPACE: ci-preview
-  #          AWS_REGION: "eu-central-1"
-  #          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-  #          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-  #          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
-  #          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
-  #          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
-  #          K8S_SERVER: ${{ secrets.K8S_SERVER }}
-  #          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
+#        env:
+#          USE_KUBECTL_RPC: true
+#          KUBECTL_EXEC_POD: ci-preview-validator-1
+#          K8S_NAMESPACE: ci-preview
+#          AWS_REGION: "eu-central-1"
+#          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+#          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+#          AWS_ROLE_ARN_SECRET: ${{ secrets.AWS_ROLE_ARN_SECRET }}
+#          ECR_REGISTRY_SECRET: ${{ secrets.ECR_REGISTRY_SECRET }}
+#          kubeconfig_base64: ${{ secrets.kubeconfig_base64 }}
+#          K8S_SERVER: ${{ secrets.K8S_SERVER }}
+#          K8S_SA_TOKEN: ${{ secrets.K8S_SA_TOKEN }}
 
   post-merge-actions-complete:
     if: ${{ always() && (github.event_name == 'pull_request' && github.event.pull_request.merged == true) }}
@@ -670,7 +662,7 @@ jobs:
             echo "All needed jobs passed."
           fi
 
-  ### Workflow dispatch flow ###############################################################################################################
+### Workflow dispatch flow ###############################################################################################################
 
   build-linux-x86_64-workflow-dispatch:
     runs-on: ubuntu-latest
@@ -837,15 +829,7 @@ jobs:
 
   workflow-dispatch-flow-complete:
     if: ${{ always() && github.event_name == 'workflow_dispatch' }}
-    needs:
-      [
-        build-linux-x86_64-workflow-dispatch,
-        build-linux-arm64-workflow-dispatch,
-        build-macos-x86_64-workflow-dispatch,
-        build-macos-arm64-workflow-dispatch,
-        upload-to-s3-workflow-dispatch,
-        upload-chain-specs-workflow-dispatch,
-      ]
+    needs: [build-linux-x86_64-workflow-dispatch, build-linux-arm64-workflow-dispatch, build-macos-x86_64-workflow-dispatch, build-macos-arm64-workflow-dispatch, upload-to-s3-workflow-dispatch, upload-chain-specs-workflow-dispatch]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any needed job failed
