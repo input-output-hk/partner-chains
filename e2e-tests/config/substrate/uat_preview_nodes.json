@@ -1,6 +1,6 @@
 {
     "deployment_mc_epoch": 890,
-    "initial_pc_epoch": 4837864,
+    "initial_pc_epoch": 4843200,
     "genesis_utxo": "3b715a225582eae835c87d13d28fc4ea0366db8acecd13d9d80d1623d5aefd5e#1",
     "deployment_version": "v1.6.0",
     "test_environment": "uat_preview",
@@ -8,7 +8,7 @@
         "nodes": {
             "alice": {
                 "host": "alice.node.sc.iog.io",
-                "port": "30333",
+                "port": "9944",
                 "aura_ss58_address": "5GHLr2zBDNPXno9XdKgh541uRSiTxnZyzFcr4jK6HUbHMpit",
                 "pool_id": "da74fc8256d15c7ab3370a6ca28398986cb97c32e9ef66026ac61e99",
                 "public_key": "0x03b827f4da9711bab7292e5695576a841a4d20af9a07b1ba7a230168d2a78e9df4",
@@ -21,12 +21,11 @@
                     "spo_signing_key": "./secrets/substrate/uat/keys/validator-1/cold.skey.json.decrypted",
                     "spo_public_key": "./secrets/substrate/uat/keys/validator-1/cold.vkey.json.decrypted",
                     "partner_chain_signing_key": "./secrets/substrate/uat/keys/validator-1/partner_chain.skey.json.decrypted"
-                },
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000201"
+                }
             },
             "bob": {
                 "host": "bob.node.sc.iog.io",
-                "port": "30333",
+                "port": "9944",
                 "aura_ss58_address": "5DHbxU687f1Y3x8yBCWMtqSiJ5qt2yrxQPXNXZNNDaFtmXKv",
                 "pool_id": "eaed153a8b046770cfd094ee72d080ea682188e63ac11937e3f7f827",
                 "public_key": "0x02ef5bcd94d54a18ad199559782cd72ac3ccd850976aaaafbca8f9d2625afbf7c4",
@@ -39,12 +38,11 @@
                     "spo_signing_key": "./secrets/substrate/uat/keys/validator-2/cold.skey.json.decrypted",
                     "spo_public_key": "./secrets/substrate/uat/keys/validator-2/cold.vkey.json.decrypted",
                     "partner_chain_signing_key": "./secrets/substrate/uat/keys/validator-2/partner_chain.skey.json.decrypted"
-                },
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000202"
+                }
             },
             "charlie": {
                 "host": "charlie.node.sc.iog.io",
-                "port": "30333",
+                "port": "9944",
                 "aura_ss58_address": "5FYtL6HccYhk6KZeFP7hNnkMaXrAwVpTHJWsfnNJcu8AM6in",
                 "pool_id": "7dfba85597a867fffa59037df7f6adcd50e745dcceac2b48eda94b20",
                 "public_key": "0x02f2762ab6e1a125dc03908a7b738f8023d13763f28a11d7633c6c8bc463478430",
@@ -57,8 +55,7 @@
                     "spo_signing_key": "./secrets/substrate/uat/keys/validator-3/cold.skey.json.decrypted",
                     "spo_public_key": "./secrets/substrate/uat/keys/validator-3/cold.vkey.json.decrypted",
                     "partner_chain_signing_key": "./secrets/substrate/uat/keys/validator-3/partner_chain.skey.json.decrypted"
-                },
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000203"
+                }
             },
             "dave": {
                 "host": "dave.node.sc.iog.io",
@@ -74,12 +71,11 @@
                     "spo_signing_key": "./secrets/substrate/uat/keys/validator-4/cold.skey.json.decrypted",
                     "spo_public_key": "./secrets/substrate/uat/keys/validator-4/cold.vkey.json.decrypted",
                     "partner_chain_signing_key": "./secrets/substrate/uat/keys/validator-4/partner_chain.skey.json.decrypted"
-                },
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000204"
+                }
             },
             "eve": {
                 "host": "eve.node.sc.iog.io",
-                "port": "30333",
+                "port": "9944",
                 "aura_ss58_address": "5DsfhT7HJe6i5LYeKBzefrXijW5UgPsn2Cuyw5WMa4uEktTn",
                 "pool_id": "ae81beee7a6c3fa13bba811f91f63ebdd7eb25dd8a62476d4996de10",
                 "public_key": "0x03f38a062a4b372c045c1dddc4fe98a2c9cb1d6eec8bf02f973fd29b1096cd8155",
@@ -91,12 +87,11 @@
                     "spo_signing_key": "./secrets/substrate/uat/keys/validator-5/cold.skey.json.decrypted",
                     "spo_public_key": "./secrets/substrate/uat/keys/validator-5/cold.vkey.json.decrypted",
                     "partner_chain_signing_key": "./secrets/substrate/uat/keys/validator-5/partner_chain.skey.json.decrypted"
-                },
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000205"
+                }
             },
             "ferdie": {
                 "host": "ferdie.node.sc.iog.io",
-                "port": "30333",
+                "port": "9944",
                 "aura_ss58_address": "5CiPPseXPECbkjWCa6MnjNokrgYjMqmKndv2rSnekmSK2DjL",
                 "pool_id": "9ad70551d17317e44866850f9827f6464f0867e50bff5a87b1f9e3c0",
                 "public_key": "0x0291f1217d5a04cb83312ee3d88a6e6b33284e053e6ccfc3a90339a0299d12967c",
@@ -108,8 +103,7 @@
                     "spo_signing_key": "./secrets/substrate/devnet/keys/ferdie/cold.skey.json.decrypted",
                     "spo_public_key": "./secrets/substrate/devnet/keys/ferdie/cold.vkey.json.decrypted",
                     "partner_chain_signing_key": "./secrets/substrate/devnet/keys/ferdie/partner_chain.skey.json.decrypted"
-                },
-                "block_rewards_id": "0x0000000000000000000000000000000000000000000000000000000000000006"
+                }
             }
         },
         "governance_authority": {
