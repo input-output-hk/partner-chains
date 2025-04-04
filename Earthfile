@@ -51,7 +51,13 @@ setup:
       pkg-config \
       jq \
       libjq-dev \
-      && rm -rf /var/lib/apt/lists/*
+      unzip
+
+  # Install recent protoc
+  ENV PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+  RUN curl -LO $PB_REL/download/v29.3/protoc-29.3-linux-x86_64.zip
+  RUN unzip protoc-29.3-linux-x86_64.zip -d /usr/local
+  RUN protoc --version
 
   ENV PIP_CACHE_DIR=/root/.cache/pip
   CACHE /root/.cache/pip
@@ -66,7 +72,7 @@ setup:
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cp -rua /tmp/cargo/. $CARGO_HOME && rm -rf /tmp/cargo
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
-  
+
   # Install the toolchain
   RUN rustup toolchain install
   RUN rustup show
@@ -94,9 +100,6 @@ build-deps:
 
 build:
   FROM +source
-  LET WASM_BUILD_STD=0
-  #ARG CACHE_KEY=$(find . -type f -name "*.rs" -o -name "*.toml" | sort | xargs cat | sha256sum)
-  #CACHE --sharing shared --id cargo-build-$CACHE_KEY target
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
   RUN ./target/*/partner-chains-demo-node --version
@@ -105,7 +108,6 @@ build:
 
 test:
   FROM +build
-  LET WASM_BUILD_STD=0
   DO github.com/earthly/lib:3.0.2+INSTALL_DIND
   CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
