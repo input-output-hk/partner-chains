@@ -22,7 +22,7 @@ The binary values stored are not interpreted in any way by the mechanism
 
 ## Architecture and operation
 
-The feature is implemented by ### main components:
+The feature is implemented by 3 main components:
 1. Plutus scripts governing the creation, modification and deletion of entries in the Governed Map, along with
    the offchain commands necessary to create and submit transactions. These scripts determine a single
    Cardano address where the UTXOs containing the key-value entries are stored.
