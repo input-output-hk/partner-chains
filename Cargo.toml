@@ -51,6 +51,8 @@ members = [
 	"toolkit/block-producer-metadata/primitives",
 	"toolkit/block-producer-metadata/rpc",
 	"toolkit/utils/db-sync-sqlx",
+	"toolkit/governed-map/primitives",
+	"toolkit/governed-map/pallet",
 ]
 resolver = "2"
 
@@ -313,6 +315,10 @@ sp-block-producer-metadata = { path = "toolkit/block-producer-metadata/primitive
 # Data Sources
 partner-chains-db-sync-data-sources = { path = "toolkit/data-sources/db-sync" }
 partner-chains-mock-data-sources = { path = "toolkit/data-sources/mock", default-features = false }
+
+# Governed Map
+sp-governed-map = { path = "toolkit/governed-map/primitives", default-features = false }
+pallet-governed-map = { path = "toolkit/governed-map/pallet", default-features = false }
 
 # demo node
 partner-chains-demo-runtime = { path = "demo/runtime" }

@@ -1,0 +1,17 @@
+[package]
+name = "sp-governed-map"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+version.workspace = true
+license = "Apache-2.0"
+description = "Primitives for tracking the governed key-value store on main chain"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[lints]
+workspace = true
+
+[dependencies]
