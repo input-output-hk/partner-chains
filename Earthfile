@@ -35,8 +35,8 @@ setup:
   WORKDIR /build
   ENV CARGO_HOME=/root/.cargo
 
-  CACHE /var/lib/apt/lists
-  CACHE /var/cache/apt/archives
+  #CACHE /var/lib/apt/lists
+  #CACHE /var/cache/apt/archives
   RUN apt-get update && apt-get install -y \
       build-essential \
       curl \
@@ -60,7 +60,7 @@ setup:
   RUN protoc --version
 
   ENV PIP_CACHE_DIR=/root/.cache/pip
-  CACHE /root/.cache/pip
+  #CACHE /root/.cache/pip
   RUN pip3 install --break-system-packages tomlq toml
 
   # Install rustup
@@ -69,7 +69,7 @@ setup:
 
   # copy pre-existing $CARGO_HOME artifacts into the cache
   RUN cp -rl $CARGO_HOME /tmp/cargo
-  CACHE --sharing shared --id cargo $CARGO_HOME
+  #CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cp -rua /tmp/cargo/. $CARGO_HOME && rm -rf /tmp/cargo
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
 
@@ -93,15 +93,16 @@ source:
 
 build-deps:
   FROM +fetch-deps
-  CACHE --sharing shared --id cargo $CARGO_HOME
+  #CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo --locked chef prepare
   RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES
   SAVE ARTIFACT target
 
 build:
   FROM +source
-  CACHE --sharing shared --id cargo $CARGO_HOME
+  #CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
+  RUN blah
   RUN ./target/*/partner-chains-demo-node --version
   SAVE ARTIFACT target/*/partner-chains-demo-node AS LOCAL partner-chains-node
   SAVE ARTIFACT target/*/partner-chains-demo-node AS LOCAL partner-chains-node-artifact
@@ -109,7 +110,7 @@ build:
 test:
   FROM +build
   DO github.com/earthly/lib:3.0.2+INSTALL_DIND
-  CACHE --sharing shared --id cargo $CARGO_HOME
+  #CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
   WITH DOCKER
     RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
@@ -124,12 +125,12 @@ licenses:
 
 fmt:
   FROM +source
-  CACHE --sharing shared --id cargo $CARGO_HOME
+  #CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo fmt --check
 
 clippy:
   FROM +source
-  CACHE --sharing shared --id cargo $CARGO_HOME
+  #CACHE --sharing shared --id cargo $CARGO_HOME
   ENV RUSTFLAGS="-Dwarnings"
   RUN cargo clippy --all-targets --all-features
 
@@ -201,7 +202,7 @@ mock:
 
 fetch-deps:
   FROM +mock
-  CACHE --sharing shared --id cargo $CARGO_HOME
+  #CACHE --sharing shared --id cargo $CARGO_HOME
   RUN --ssh cargo fetch --locked
 
 INSTALL:
@@ -219,6 +220,7 @@ chainspecs:
   FROM +setup
   DO +INSTALL
 
+  RUN blahblah
   # Devnet
   COPY dev/envs/devnet/.envrc dev/envs/devnet/.envrc
   COPY dev/envs/devnet/addresses.json dev/envs/devnet/addresses.json
