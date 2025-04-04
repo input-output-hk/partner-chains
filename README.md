@@ -1,6 +1,6 @@
 # Partner Chains Node
 
-A [Substrate](https://substrate.io/)-based blockchain node written in Rust, designed for operation of Cardano Partner Chains, this node facilitates the creation and management of sidechains that integrate with the Cardano ecosystem.
+A [Substrate](https://substrate.io/)-based blockchain node written in Rust, designed for operation of Cardano Partner Chains, this node facilitates the creation and management of chains that integrate with the Cardano ecosystem.
 
 This alpha release is just the beginning of the journey. It is intended to gather early feedback from the community and is provided "as is." It should not be used in live production networks. Use at your own risk. We welcome and appreciate your feedback!
 
@@ -80,7 +80,7 @@ For managing payouts, they will leverage the provided artifacts to distribute pa
 3. Reward Distribution Mechanism: The Partner Chain instance uses the block production data from the node logs and the information from the smart contracts to determine the reward distribution. It then implements the transactions to send the appropriate amount of rewards to each validator.
 4. Automation and Verification: The entire process needs to be automated within the consensus layer of the Partner Chain. Automated tests will be implemented to verify that the reward distribution is functioning correctly over time.
 
-### Native Token Management
+### Native Token Reserve Management
 
 When establishing a partner chain managing the token treasury used for block production rewards and other applications is a central part of leveraging the Cardano network as the root of trust, as one of the primary objectives of a possible adversarial group attacking a partner chain might be to get access to the token treasury.
 
@@ -90,4 +90,4 @@ The mechanism for this includes a partner chain builder initializing a token res
 
 This means that tokens are moved from the reserve into a locked circulating supply on Cardano, at which point they become available in circulation on the partner chain either through a time direct observability.
 
-For more details on how to implement Native Token Management in a partner chain, refer to the [Native Token Migration Guide](docs/developer-guides/native-token-migration-guide.md)
+For more details on how to implement Native Token Reserve Management in a partner chain, refer to the [Native Token Migration Guide](docs/developer-guides/native-token-migration-guide.md)
