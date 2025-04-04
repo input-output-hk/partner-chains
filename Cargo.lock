@@ -6282,6 +6282,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-governed-map"
+version = "1.6.0"
+
+[[package]]
 name = "pallet-grandpa"
 version = "39.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2412-1#ab5882bbc67bcc48464566a2b48171265147acac"
@@ -10557,6 +10561,10 @@ dependencies = [
  "sp-api",
  "sp-runtime",
 ]
+
+[[package]]
+name = "sp-governed-map"
+version = "1.6.0"
 
 [[package]]
 name = "sp-inherents"
