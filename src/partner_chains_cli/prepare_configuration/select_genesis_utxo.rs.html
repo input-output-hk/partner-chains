@@ -136,6 +136,9 @@
 <a href="#136" id="136">136</a>
 <a href="#137" id="137">137</a>
 <a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::cardano_key;
 <span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{<span class="self">self</span>, GENESIS_UTXO};
 <span class="kw">use </span><span class="kw">crate</span>::config::{ConfigFieldDefinition, ServiceConfig};
@@ -144,15 +147,19 @@
 <span class="kw">use </span><span class="kw">crate</span>::ogmios::get_shelley_config;
 <span class="kw">use </span><span class="kw">crate</span>::select_utxo::{query_utxos, select_from_utxos};
 <span class="kw">use </span>anyhow::anyhow;
+<span class="kw">use </span>partner_chains_cardano_offchain::cardano_keys::CardanoPaymentSigningKey;
 <span class="kw">use </span>partner_chains_cardano_offchain::csl::NetworkTypeExt;
 <span class="kw">use </span>serde::de::DeserializeOwned;
 <span class="kw">use </span>sidechain_domain::{NetworkType, UtxoId};
 
-<span class="kw">pub fn </span>select_genesis_utxo&lt;C: IOContext&gt;(context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;(UtxoId, ServiceConfig)&gt; {
+<span class="kw">pub fn </span>select_genesis_utxo&lt;C: IOContext&gt;(
+	context: <span class="kw-2">&amp;</span>C,
+) -&gt; anyhow::Result&lt;(UtxoId, CardanoPaymentSigningKey, ServiceConfig)&gt; {
 	context.eprint(INTRO);
 	<span class="kw">let </span>ogmios_configuration = prompt_ogmios_configuration(context)<span class="question-mark">?</span>;
 	<span class="kw">let </span>shelley_config = get_shelley_config(<span class="kw-2">&amp;</span>ogmios_configuration.to_string(), context)<span class="question-mark">?</span>;
-	<span class="kw">let </span>address = derive_address(context, shelley_config.network)<span class="question-mark">?</span>;
+	<span class="kw">let </span>private_key = get_private_key(context)<span class="question-mark">?</span>;
+	<span class="kw">let </span>address = derive_address(<span class="kw-2">&amp;</span>private_key, shelley_config.network)<span class="question-mark">?</span>;
 	<span class="kw">let </span>utxo_query_result = query_utxos(context, <span class="kw-2">&amp;</span>ogmios_configuration, <span class="kw-2">&amp;</span>address)<span class="question-mark">?</span>;
 
 	<span class="kw">if </span>utxo_query_result.is_empty() {
@@ -164,7 +171,15 @@
 		select_from_utxos(context, <span class="string">"Select an UTXO to use as the genesis UTXO"</span>, utxo_query_result)<span class="question-mark">?</span>;
 
 	save_if_missing(GENESIS_UTXO, genesis_utxo, context);
-	<span class="prelude-val">Ok</span>((genesis_utxo, ogmios_configuration))
+	<span class="prelude-val">Ok</span>((genesis_utxo, private_key, ogmios_configuration))
+}
+
+<span class="kw">fn </span>get_private_key&lt;C: IOContext&gt;(context: <span class="kw-2">&amp;</span>C) -&gt; <span class="prelude-ty">Result</span>&lt;CardanoPaymentSigningKey, anyhow::Error&gt; {
+	<span class="kw">let </span>cardano_signing_key_file = config_fields::CARDANO_PAYMENT_SIGNING_KEY_FILE
+		.prompt_with_default_from_file_and_save(context);
+	<span class="kw">let </span>pkey =
+		cardano_key::get_mc_payment_signing_key_from_file(<span class="kw-2">&amp;</span>cardano_signing_key_file, context)<span class="question-mark">?</span>;
+	<span class="prelude-val">Ok</span>(pkey)
 }
 
 <span class="kw">fn </span>save_if_missing&lt;T, C: IOContext&gt;(field: ConfigFieldDefinition&lt;<span class="lifetime">'_</span>, T&gt;, new_value: T, context: <span class="kw-2">&amp;</span>C)
@@ -176,23 +191,18 @@
 	}
 }
 
-<span class="kw">fn </span>derive_address&lt;C: IOContext&gt;(
-	context: <span class="kw-2">&amp;</span>C,
+<span class="kw">fn </span>derive_address(
+	private_key: <span class="kw-2">&amp;</span>CardanoPaymentSigningKey,
 	cardano_network: NetworkType,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;String, anyhow::Error&gt; {
-	<span class="kw">let </span>cardano_payment_verification_key_file =
-		config_fields::CARDANO_PAYMENT_VERIFICATION_KEY_FILE
-			.prompt_with_default_from_file_and_save(context);
-	<span class="kw">let </span>key_bytes: [u8; <span class="number">32</span>] = cardano_key::get_payment_verification_key_bytes_from_file(
-		<span class="kw-2">&amp;</span>cardano_payment_verification_key_file,
-		context,
-	)<span class="question-mark">?</span>;
-	<span class="kw">let </span>address =
-		partner_chains_cardano_offchain::csl::payment_address(<span class="kw-2">&amp;</span>key_bytes, cardano_network.to_csl());
+	<span class="kw">let </span>address = partner_chains_cardano_offchain::csl::key_hash_address(
+		<span class="kw-2">&amp;</span>private_key.to_csl_pub_key().hash(),
+		cardano_network.to_csl(),
+	);
 	address.to_bech32(<span class="prelude-val">None</span>).map_err(|e| <span class="macro">anyhow!</span>(e.to_string()))
 }
 
-<span class="kw">const </span>INTRO: <span class="kw-2">&amp;</span>str = <span class="string">"Now, let's set up the genesis utxo. It identifies a partner chain. This wizard will query Ogmios for your UTXOs using address derived from the payment verification key. Please provide required data."</span>;
+<span class="kw">const </span>INTRO: <span class="kw-2">&amp;</span>str = <span class="string">"Now, let's set up the genesis UTXO. It identifies the partner chain. This wizard will query Ogmios for your UTXOs using the address derived from the payment signing key. This signing key will be then used for spending the genesis UTXO in order to initialize the chain governance. Please provide required data."</span>;
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
@@ -208,11 +218,11 @@
 	<span class="kw">use </span><span class="kw">crate</span>::tests::{MockIO, MockIOContext};
 	<span class="kw">use </span><span class="kw">crate</span>::verify_json;
 
-	<span class="kw">fn </span>test_vkey_file_json() -&gt; serde_json::Value {
+	<span class="kw">fn </span>payment_key_content() -&gt; serde_json::Value {
 		<span class="macro">serde_json::json!</span>({
-			<span class="string">"type"</span>: <span class="string">"PaymentVerificationKeyShelley_ed25519"</span>,
-			<span class="string">"description"</span>: <span class="string">"Payment Verification Key"</span>,
-			<span class="string">"cborHex"</span>: <span class="string">"5820516c971f57d5db063161b3240dfa95cdd8030242dd8756c5a003978b4113788c"
+			<span class="string">"type"</span>: <span class="string">"PaymentSigningKeyShelley_ed25519"</span>,
+			<span class="string">"description"</span>: <span class="string">"Payment Signing Key"</span>,
+			<span class="string">"cborHex"</span>: <span class="string">"5820d0a6c5c921266d15dc8d1ce1e51a01e929a686ed3ec1a9be1145727c224bf386"
 		</span>})
 	}
 
@@ -220,13 +230,13 @@
 	</span><span class="kw">fn </span>happy_path() {
 		<span class="kw">let </span>mock_context = MockIOContext::new()
 			.with_file(RESOURCES_CONFIG_FILE_PATH, <span class="string">"{}"</span>)
-			.with_json_file(<span class="string">"payment.vkey"</span>, test_vkey_file_json())
+			.with_json_file(<span class="string">"payment.skey"</span>, payment_key_content())
 			.with_expected_io(<span class="macro">vec!</span>[
 				MockIO::eprint(INTRO),
 				read_shelly_config_to_get_network(),
 				prompt_payment_vkey_and_read_it_to_derive_address(),
 				query_utxos_io(
-					<span class="string">"addr_test1vpmd59ajuvm34d723r8q2qzyz9ylq0x9pygqn7vun8qgpkgs7y5hw"</span>,
+					<span class="string">"addr_test1vr5vxqpnpl3325cu4zw55tnapjqzzx78pdrnk8k5j7wl72c6y08nd"</span>,
 					<span class="string">"http://localhost:1337"</span>,
 					mock_result_7_valid(),
 				),
@@ -248,7 +258,7 @@
 		<span class="macro">verify_json!</span>(
 			mock_context,
 			RESOURCES_CONFIG_FILE_PATH,
-			<span class="macro">serde_json::json!</span>({<span class="string">"cardano_payment_verification_key_file"</span>: <span class="string">"payment.vkey"</span>, <span class="string">"ogmios"</span>: default_ogmios_config_json()})
+			<span class="macro">serde_json::json!</span>({<span class="string">"cardano_payment_signing_key_file"</span>: <span class="string">"payment.skey"</span>, <span class="string">"ogmios"</span>: default_ogmios_config_json()})
 		);
 	}
 
@@ -267,11 +277,7 @@
 	}
 
 	<span class="kw">fn </span>prompt_payment_vkey_and_read_it_to_derive_address() -&gt; MockIO {
-		MockIO::prompt(
-			<span class="string">"path to the payment verification file"</span>,
-			<span class="prelude-val">Some</span>(<span class="string">"payment.vkey"</span>),
-			<span class="string">"payment.vkey"</span>,
-		)
+		MockIO::prompt(<span class="string">"path to the payment signing key file"</span>, <span class="prelude-val">Some</span>(<span class="string">"payment.skey"</span>), <span class="string">"payment.skey"</span>)
 	}
 }
 </code></pre></div></section></main></body></html>

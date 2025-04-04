@@ -482,12 +482,17 @@
 <a href="#482" id="482">482</a>
 <a href="#483" id="483">483</a>
 <a href="#484" id="484">484</a>
-</pre></div><pre class="rust"><code><span class="kw">mod </span>init_governance;
-<span class="kw">mod </span>prepare_cardano_params;
-<span class="kw">mod </span>prepare_main_chain_config;
-<span class="kw">mod </span>select_genesis_utxo;
-
-<span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
+<a href="#485" id="485">485</a>
+<a href="#486" id="486">486</a>
+<a href="#487" id="487">487</a>
+<a href="#488" id="488">488</a>
+<a href="#489" id="489">489</a>
+<a href="#490" id="490">490</a>
+<a href="#491" id="491">491</a>
+<a href="#492" id="492">492</a>
+<a href="#493" id="493">493</a>
+<a href="#494" id="494">494</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{BOOTNODES, SUBSTRATE_NODE_DATA_BASE_PATH};
 <span class="kw">use </span><span class="kw">crate</span>::config::config_values::DEFAULT_CHAIN_NAME;
 <span class="kw">use </span><span class="kw">crate</span>::generate_keys::network_key_path;
 <span class="kw">use </span><span class="kw">crate</span>::io::IOContext;
@@ -502,17 +507,32 @@
 <span class="kw">use </span>std::vec;
 <span class="kw">use </span>thiserror::Error;
 
+<span class="kw">mod </span>init_governance;
+<span class="kw">mod </span>prepare_cardano_params;
+<span class="kw">mod </span>prepare_main_chain_config;
+<span class="kw">mod </span>select_genesis_utxo;
+
 <span class="attr">#[derive(Clone, Debug, clap::Parser)]
 </span><span class="kw">pub struct </span>PrepareConfigurationCmd {}
 
 <span class="kw">impl </span>CmdRun <span class="kw">for </span>PrepareConfigurationCmd {
 	<span class="kw">fn </span>run&lt;C: IOContext&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, context: <span class="kw-2">&amp;</span>C) -&gt; anyhow::Result&lt;()&gt; {
 		establish_bootnodes(context)<span class="question-mark">?</span>;
-		<span class="kw">let </span>(genesis_utxo, ogmios_config) = select_genesis_utxo(context)<span class="question-mark">?</span>;
-		<span class="kw">let _ </span>= init_governance::run_init_governance(genesis_utxo, <span class="kw-2">&amp;</span>ogmios_config, context)<span class="question-mark">?</span>;
-		prepare_main_chain_config(context, <span class="kw-2">&amp;</span>ogmios_config, genesis_utxo)<span class="question-mark">?</span>;
-		context.eprint(<span class="string">"🚀 All done!"</span>);
-		<span class="prelude-val">Ok</span>(())
+		<span class="kw">let </span>(genesis_utxo, private_key, ogmios_config) = select_genesis_utxo(context)<span class="question-mark">?</span>;
+		<span class="kw">if let </span><span class="prelude-val">Some</span>(_tx_id) = init_governance::run_init_governance(
+			genesis_utxo,
+			<span class="kw-2">&amp;</span>private_key,
+			<span class="kw-2">&amp;</span>ogmios_config,
+			context,
+		)<span class="question-mark">? </span>{
+			prepare_main_chain_config(context, <span class="kw-2">&amp;</span>ogmios_config, genesis_utxo)<span class="question-mark">?</span>;
+			context.eprint(<span class="string">"🚀 All done!"</span>);
+			<span class="prelude-val">Ok</span>(())
+		} <span class="kw">else </span>{
+			context
+				.eprint(<span class="string">"Chain governance has not been initialized. Please run the wizard again."</span>);
+			<span class="prelude-val">Ok</span>(())
+		}
 	}
 }
 

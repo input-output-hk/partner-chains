@@ -591,6 +591,55 @@
 <a href="#591" id="591">591</a>
 <a href="#592" id="592">592</a>
 <a href="#593" id="593">593</a>
+<a href="#594" id="594">594</a>
+<a href="#595" id="595">595</a>
+<a href="#596" id="596">596</a>
+<a href="#597" id="597">597</a>
+<a href="#598" id="598">598</a>
+<a href="#599" id="599">599</a>
+<a href="#600" id="600">600</a>
+<a href="#601" id="601">601</a>
+<a href="#602" id="602">602</a>
+<a href="#603" id="603">603</a>
+<a href="#604" id="604">604</a>
+<a href="#605" id="605">605</a>
+<a href="#606" id="606">606</a>
+<a href="#607" id="607">607</a>
+<a href="#608" id="608">608</a>
+<a href="#609" id="609">609</a>
+<a href="#610" id="610">610</a>
+<a href="#611" id="611">611</a>
+<a href="#612" id="612">612</a>
+<a href="#613" id="613">613</a>
+<a href="#614" id="614">614</a>
+<a href="#615" id="615">615</a>
+<a href="#616" id="616">616</a>
+<a href="#617" id="617">617</a>
+<a href="#618" id="618">618</a>
+<a href="#619" id="619">619</a>
+<a href="#620" id="620">620</a>
+<a href="#621" id="621">621</a>
+<a href="#622" id="622">622</a>
+<a href="#623" id="623">623</a>
+<a href="#624" id="624">624</a>
+<a href="#625" id="625">625</a>
+<a href="#626" id="626">626</a>
+<a href="#627" id="627">627</a>
+<a href="#628" id="628">628</a>
+<a href="#629" id="629">629</a>
+<a href="#630" id="630">630</a>
+<a href="#631" id="631">631</a>
+<a href="#632" id="632">632</a>
+<a href="#633" id="633">633</a>
+<a href="#634" id="634">634</a>
+<a href="#635" id="635">635</a>
+<a href="#636" id="636">636</a>
+<a href="#637" id="637">637</a>
+<a href="#638" id="638">638</a>
+<a href="#639" id="639">639</a>
+<a href="#640" id="640">640</a>
+<a href="#641" id="641">641</a>
+<a href="#642" id="642">642</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::config_fields::{
 	CARDANO_ACTIVE_SLOTS_COEFF, CARDANO_EPOCH_DURATION_MILLIS, CARDANO_FIRST_EPOCH_NUMBER,
 	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_SECURITY_PARAMETER,
@@ -599,9 +648,9 @@
 <span class="kw">use </span>clap::{arg, Parser};
 <span class="kw">use </span>config_fields::CARDANO_SLOT_DURATION_MILLIS;
 <span class="kw">use </span>serde::{de::DeserializeOwned, Deserialize, Serialize};
-<span class="kw">use </span>sidechain_domain::UtxoId;
+<span class="kw">use </span>sidechain_domain::{MainchainKeyHash, UtxoId};
 <span class="kw">use </span>sp_core::offchain::{Duration, Timestamp};
-<span class="kw">use </span>std::fmt::{Display, Formatter};
+<span class="kw">use </span>std::fmt::{Display, Formatter, Write};
 <span class="kw">use </span>std::str::FromStr;
 <span class="kw">use </span>std::{marker::PhantomData, process::exit};
 
@@ -925,6 +974,35 @@
 	<span class="kw">pub </span>illiquid_supply_address: String,
 }
 
+<span class="attr">#[derive(Deserialize, Serialize, Clone, Debug)]
+</span><span class="kw">pub struct </span>GovernanceAuthoritiesKeyHashes(<span class="kw">pub</span>(<span class="kw">crate</span>) Vec&lt;MainchainKeyHash&gt;);
+
+<span class="kw">impl </span>FromStr <span class="kw">for </span>GovernanceAuthoritiesKeyHashes {
+	<span class="kw">type </span><span class="prelude-val">Err </span>= String;
+
+	<span class="kw">fn </span>from_str(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Err&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>key_hashes = <span class="macro">vec!</span>[];
+		<span class="kw">for </span>x <span class="kw">in </span>s.split_whitespace() {
+			<span class="kw">let </span>trimmed = x.trim();
+			<span class="kw">let </span>key_hash = MainchainKeyHash::decode_hex(trimmed).map_err(|e| {
+				<span class="macro">format!</span>(<span class="string">"'{}' is not a valid Cardano Key Hash, reason: {}"</span>, trimmed, e)
+			})<span class="question-mark">?</span>;
+			key_hashes.push(key_hash)
+		}
+		<span class="prelude-val">Ok</span>(GovernanceAuthoritiesKeyHashes(key_hashes))
+	}
+}
+
+<span class="kw">impl </span>Display <span class="kw">for </span>GovernanceAuthoritiesKeyHashes {
+	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; std::fmt::Result {
+		<span class="kw">for </span>key_hash <span class="kw">in </span><span class="self">self</span>.<span class="number">0</span>.iter() {
+			f.write_str(<span class="kw-2">&amp;</span>key_hash.to_hex_string())<span class="question-mark">?</span>;
+			f.write_char(<span class="string">' '</span>)<span class="question-mark">?</span>;
+		}
+		<span class="prelude-val">Ok</span>(())
+	}
+}
+
 <span class="attr">#[derive(Deserialize)]
 </span><span class="kw">pub struct </span>ChainConfig {
 	<span class="kw">pub </span>cardano: CardanoParameters,
@@ -1177,6 +1255,26 @@
 			path: <span class="kw-2">&amp;</span>[<span class="string">"sidechain_block_beneficiary"</span>],
 			name: <span class="string">"beneficiary for blocks created by the given node"</span>,
 			default: <span class="prelude-val">None</span>,
+			_marker: PhantomData,
+		};
+
+	<span class="kw">pub const </span>INITIAL_GOVERNANCE_AUTHORITIES: ConfigFieldDefinition&lt;
+		<span class="lifetime">'static</span>,
+		GovernanceAuthoritiesKeyHashes,
+	&gt; = ConfigFieldDefinition {
+		config_file: CHAIN_CONFIG_FILE_PATH,
+		path: <span class="kw-2">&amp;</span>[<span class="string">"initial_governance"</span>, <span class="string">"authorities"</span>],
+		name: <span class="string">"Space separated keys hashes of the initial Multisig Governance Authorities"</span>,
+		default: <span class="prelude-val">Some</span>(<span class="string">"[]"</span>),
+		_marker: PhantomData,
+	};
+
+	<span class="kw">pub const </span>INITIAL_GOVERNANCE_THRESHOLD: ConfigFieldDefinition&lt;<span class="lifetime">'static</span>, u8&gt; =
+		ConfigFieldDefinition {
+			config_file: CHAIN_CONFIG_FILE_PATH,
+			path: <span class="kw-2">&amp;</span>[<span class="string">"initial_governance"</span>, <span class="string">"threshold"</span>],
+			name: <span class="string">"Initial Multisig Governance Threshold"</span>,
+			default: <span class="prelude-val">Some</span>(<span class="string">"0"</span>),
 			_marker: PhantomData,
 		};
 }
