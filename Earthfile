@@ -181,7 +181,6 @@ chainspecs:
   FROM +setup
   DO +INSTALL
 
-  RUN blahblah
   # Devnet
   COPY dev/envs/devnet/.envrc dev/envs/devnet/.envrc
   COPY dev/envs/devnet/addresses.json dev/envs/devnet/addresses.json
