@@ -35,8 +35,8 @@ setup:
   WORKDIR /build
   ENV CARGO_HOME=/root/.cargo
 
-  #CACHE /var/lib/apt/lists
-  #CACHE /var/cache/apt/archives
+  CACHE /var/lib/apt/lists
+  CACHE /var/cache/apt/archives
   RUN apt-get update && apt-get install -y \
       build-essential \
       curl \
@@ -60,7 +60,7 @@ setup:
   RUN protoc --version
 
   ENV PIP_CACHE_DIR=/root/.cache/pip
-  #CACHE /root/.cache/pip
+  CACHE /root/.cache/pip
   RUN pip3 install --break-system-packages tomlq toml
 
   # Install rustup
@@ -69,7 +69,7 @@ setup:
 
   # copy pre-existing $CARGO_HOME artifacts into the cache
   RUN cp -rl $CARGO_HOME /tmp/cargo
-  #CACHE --sharing shared --id cargo $CARGO_HOME
+  CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cp -rua /tmp/cargo/. $CARGO_HOME && rm -rf /tmp/cargo
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
 
@@ -89,20 +89,11 @@ source:
   FOR crate IN $CRATES
       COPY --dir $crate $crate
   END
-  COPY --dir +build-deps/target .
-
-build-deps:
-  FROM +fetch-deps
-  #CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN cargo --locked chef prepare
-  RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES
-  SAVE ARTIFACT target
 
 build:
   FROM +source
-  #CACHE --sharing shared --id cargo $CARGO_HOME
+  CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
-  RUN blah
   RUN ./target/*/partner-chains-demo-node --version
   SAVE ARTIFACT target/*/partner-chains-demo-node AS LOCAL partner-chains-node
   SAVE ARTIFACT target/*/partner-chains-demo-node AS LOCAL partner-chains-node-artifact
@@ -110,7 +101,7 @@ build:
 test:
   FROM +build
   DO github.com/earthly/lib:3.0.2+INSTALL_DIND
-  #CACHE --sharing shared --id cargo $CARGO_HOME
+  CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
   WITH DOCKER
     RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
@@ -125,12 +116,12 @@ licenses:
 
 fmt:
   FROM +source
-  #CACHE --sharing shared --id cargo $CARGO_HOME
+  CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo fmt --check
 
 clippy:
   FROM +source
-  #CACHE --sharing shared --id cargo $CARGO_HOME
+  CACHE --sharing shared --id cargo $CARGO_HOME
   ENV RUSTFLAGS="-Dwarnings"
   RUN cargo clippy --all-targets --all-features
 
@@ -179,39 +170,9 @@ docker:
 		    SAVE IMAGE --push $image:$tag
 		END
 
-deps:
-    FROM +source
-    COPY +build/partner-chains-demo-node .
-    RUN ldd partner-chains-node \
-        | awk 'NF == 4 { system("echo " $3) }' \
-        | tar -czf deps.tgz --files-from=-
-    SAVE ARTIFACT deps.tgz deps
-
-mock:
-  FROM +setup
-  ARG CRATES=$(tomlq -r '.workspace.members[]' Cargo.toml)
-  ARG SRCS=$(tomlq -r '.workspace.members[] + "/src"' Cargo.toml)
-  ARG LIBS=$(tomlq -r '.workspace.dependencies[]|select(type == "object" and has("path")).path + "/src/lib.rs"' Cargo.toml)
-  FOR crate IN $CRATES
-    COPY --if-exists $crate/Cargo.toml $crate/Cargo.toml
-  END
-  RUN mkdir -p $SRCS \
-      && touch $LIBS \
-      && for crate in $SRCS; do if [ ! -f $crate/lib.rs ]; then touch $crate/main.rs; fi; done \
-      && touch demo/node/src/lib.rs
-
-fetch-deps:
-  FROM +mock
-  #CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN --ssh cargo fetch --locked
-
 INSTALL:
   FUNCTION
   COPY +build/partner-chains-demo-node /usr/local/bin/partner-chains-node
-  COPY +deps/deps /tmp/deps.tgz
-
-  RUN tar -v -C / -xzf /tmp/deps.tgz \
-      && rm -rf /tmp/deps.tgz
 
   RUN ldd /usr/local/bin/partner-chains-node \
       && /usr/local/bin/partner-chains-node --version
