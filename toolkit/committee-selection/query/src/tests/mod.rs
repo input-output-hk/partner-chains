@@ -351,10 +351,12 @@ mod get_registration_tests {
 				num_permissioned_candidates: 3,
 				num_registered_candidates: 2,
 			},
-			permissioned_candidates: permissioned_candidates
-				.into_iter()
-				.map(|data| PermissionedCandidateData::new(data, None))
-				.collect(),
+			permissioned_candidates: Some(
+				permissioned_candidates
+					.into_iter()
+					.map(|data| PermissionedCandidateData::new(data, None))
+					.collect(),
+			),
 			candidate_registrations: expected_registrations,
 		};
 
@@ -364,7 +366,7 @@ mod get_registration_tests {
 
 		let ariadne_parameters = api.get_ariadne_parameters(McEpochNumber(1)).await.unwrap();
 		assert_eq!(ariadne_parameters, expected);
-		for permissioned_candidate in ariadne_parameters.permissioned_candidates {
+		for permissioned_candidate in ariadne_parameters.permissioned_candidates.unwrap() {
 			assert!(permissioned_candidate.is_valid);
 			assert!(permissioned_candidate.invalid_reasons.is_none());
 		}
@@ -403,10 +405,10 @@ mod get_registration_tests {
 			SessionValidatorManagementQuery::new(client, Arc::new(candidate_data_source_mock));
 		let ariadne_parameters = api.get_ariadne_parameters(McEpochNumber(1)).await.unwrap();
 
-		for permissioned_candidate in ariadne_parameters.permissioned_candidates.clone() {
+		for permissioned_candidate in ariadne_parameters.permissioned_candidates.clone().unwrap() {
 			assert!(!permissioned_candidate.is_valid);
 		}
-		match &ariadne_parameters.permissioned_candidates[..] {
+		match &ariadne_parameters.permissioned_candidates.unwrap()[..] {
 			[first, second, third] => {
 				assert_eq!(
 					first.invalid_reasons,
