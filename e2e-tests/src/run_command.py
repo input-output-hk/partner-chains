@@ -74,7 +74,8 @@ class LocalRunner(Runner):
         executable = self.shell
         if self.shell and self.shell.split(" "):
             executable = None
-            command = "{shell} \"{command}\"".format(shell=self.shell, command=command)
+            escaped_command = command.replace('"', '\\"')
+            command = "{shell} \"{command}\"".format(shell=self.shell, command=escaped_command)
 
         try:
             completed_process = subprocess.run(

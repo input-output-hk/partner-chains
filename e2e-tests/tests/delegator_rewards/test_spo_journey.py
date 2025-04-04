@@ -177,7 +177,8 @@ def test_spo_participation(
                 "FROM epoch_stake es "
                 "JOIN stake_address sa ON es.addr_id = sa.id "
                 f"WHERE es.pool_id = (SELECT id FROM pool_hash WHERE view = '{stake_pool_id}') "
-                f"AND es.epoch_no = {mc_epoch_for_stake};"
+                f"AND es.epoch_no = {mc_epoch_for_stake} "
+                "AND es.amount > 0;"
             )
             spdd = db_sync.execute(query)
             expected_spo["delegators"] = []
