@@ -91,7 +91,9 @@ where
 
 		let (slot, timestamp) =
 			timestamp_and_slot_cidp(sc_slot_config.slot_duration, time_source.clone());
+		let parent_header = client.expect_header(parent_hash)?;
 		let mc_hash = McHashIDP::new_proposal(
+			parent_header,
 			mc_hash_data_source.as_ref(),
 			*slot,
 			sc_slot_config.slot_duration,
