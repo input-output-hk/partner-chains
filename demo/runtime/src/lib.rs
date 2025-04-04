@@ -860,13 +860,15 @@ impl_runtime_apis! {
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, alloc::string::String> {
 			use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch};
 			use sp_storage::TrackedStorageKey;
-
 			use frame_system_benchmarking::Pallet as SystemBench;
 			use baseline::Pallet as BaselineBench;
-			impl frame_system_benchmarking::Config for Runtime {}
-			impl baseline::Config for Runtime {}
-
 			use frame_support::traits::WhitelistedStorageKeys;
+
+			#[allow(non_local_definitions)]
+			impl frame_system_benchmarking::Config for Runtime {}
+			#[allow(non_local_definitions)]
+			impl frame_benchmarking::baseline::Config for Runtime {}
+
 			let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 
 			let mut batches = Vec::<BenchmarkBatch>::new();
