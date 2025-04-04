@@ -68,9 +68,9 @@ setup:
   ENV PATH="/root/.cargo/bin:${PATH}"
 
   # copy pre-existing $CARGO_HOME artifacts into the cache
-  RUN cp -rl $CARGO_HOME /tmp/cargo
-  CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN cp -rua /tmp/cargo/. $CARGO_HOME && rm -rf /tmp/cargo
+  #RUN cp -rl $CARGO_HOME /tmp/cargo
+  #CACHE --sharing shared --id cargo $CARGO_HOME
+  #RUN cp -rua /tmp/cargo/. $CARGO_HOME && rm -rf /tmp/cargo
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
 
   # Install the toolchain
@@ -92,7 +92,7 @@ source:
 
 build:
   FROM +source
-  CACHE --sharing shared --id cargo $CARGO_HOME
+  #CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
   RUN ./target/*/partner-chains-demo-node --version
   SAVE ARTIFACT target/*/partner-chains-demo-node AS LOCAL partner-chains-node
@@ -101,7 +101,7 @@ build:
 test:
   FROM +build
   DO github.com/earthly/lib:3.0.2+INSTALL_DIND
-  CACHE --sharing shared --id cargo $CARGO_HOME
+  #CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
   WITH DOCKER
     RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
@@ -116,12 +116,12 @@ licenses:
 
 fmt:
   FROM +source
-  CACHE --sharing shared --id cargo $CARGO_HOME
+  #CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo fmt --check
 
 clippy:
   FROM +source
-  CACHE --sharing shared --id cargo $CARGO_HOME
+  #CACHE --sharing shared --id cargo $CARGO_HOME
   ENV RUSTFLAGS="-Dwarnings"
   RUN cargo clippy --all-targets --all-features
 
