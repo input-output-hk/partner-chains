@@ -7,7 +7,7 @@ COMMITTEE_REPETITIONS_IN_PC_EPOCH = 2
 
 
 @mark.xdist_group("faucet_tx")
-def test_block_producer_can_update_their_metadata(api: BlockchainApi, new_wallet: Wallet, get_wallet: Wallet):
+def test_block_producer_can_update_their_metadata(api: BlockchainApi, get_wallet: Wallet):
     logger.info("Signing block producer metadata...")
     skey, vkey_hex, vkey_hash = api.cardano_cli.generate_cross_chain_keys()
 

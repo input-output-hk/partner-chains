@@ -4,7 +4,7 @@ use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
 
 /// Pseudo-random selection the authorities for the given sidechain epoch, according to the
-/// Ariadne specification: https://input-output.atlassian.net/wiki/spaces/SID/pages/4228612151/Ariadne+-+committee+selection+algorithm
+/// Ariadne specification: <https://input-output.atlassian.net/wiki/spaces/SID/pages/4228612151/Ariadne+-+committee+selection+algorithm>
 ///
 /// Committee size is P+T, where P (permissioned) and T (trustless) are constituents of the D parameter.
 ///
