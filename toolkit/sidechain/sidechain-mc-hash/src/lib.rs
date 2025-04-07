@@ -21,6 +21,7 @@ pub const MC_HASH_DIGEST_ID: [u8; 4] = *b"mcsh";
 #[derive(Debug)]
 pub struct McHashInherentDataProvider {
 	mc_block: MainchainBlock,
+	previous_mc_block: Option<MainchainBlock>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -47,7 +48,7 @@ pub enum McHashInherentError {
 
 impl From<MainchainBlock> for McHashInherentDataProvider {
 	fn from(mc_block: MainchainBlock) -> Self {
-		Self { mc_block }
+		Self { mc_block, previous_mc_block: None }
 	}
 }
 
@@ -130,12 +131,15 @@ impl McHashInherentDataProvider {
 					.ok_or(McHashInherentError::StableBlockNotFoundByHash(parent_mc_hash))?;
 
 				if mc_block.number >= parent_stable_mc_block.number {
-					Ok(Self { mc_block })
+					Ok(Self { mc_block, previous_mc_block: Some(parent_stable_mc_block) })
 				} else {
-					Ok(Self { mc_block: parent_stable_mc_block })
+					Ok(Self {
+						mc_block: parent_stable_mc_block.clone(),
+						previous_mc_block: Some(parent_stable_mc_block),
+					})
 				}
 			},
-			None => Ok(Self { mc_block }),
+			None => Ok(Self { mc_block, previous_mc_block: None }),
 		}
 	}
 
@@ -177,7 +181,10 @@ impl McHashInherentDataProvider {
 				parent_mc_state_reference_block.number,
 			))
 		} else {
-			Ok(Self::from(mc_state_reference_block))
+			Ok(Self {
+				mc_block: mc_state_reference_block,
+				previous_mc_block: Some(parent_mc_state_reference_block),
+			})
 		}
 	}
 
@@ -191,6 +198,10 @@ impl McHashInherentDataProvider {
 
 	pub fn mc_hash(&self) -> McBlockHash {
 		self.mc_block.hash.clone()
+	}
+
+	pub fn previous_mc_hash(&self) -> Option<McBlockHash> {
+		self.previous_mc_block.as_ref().map(|block| block.hash.clone())
 	}
 }
 
