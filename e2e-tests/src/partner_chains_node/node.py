@@ -36,7 +36,7 @@ class PartnerChainsNode:
             return AddressAssociationSignature(
                 partner_chain_address=response["partnerchain_address"],
                 signature=response["signature"],
-                stake_public_key=response["stake_public_key"]
+                stake_public_key=response["stake_public_key"],
             )
         except Exception as e:
             logging.error(f"Could not parse response of sign-address-association cmd: {result}")
@@ -44,7 +44,7 @@ class PartnerChainsNode:
 
     def sign_block_producer_metadata(self, metadata, cross_chain_signing_key):
         cross_chain_signing_key = cross_chain_signing_key.to_string().hex()
-        metadata_str = str(metadata).replace("'",'\\"')
+        metadata_str = json.dumps(metadata)
         metadata_file_name = f"/tmp/metadata_{uuid.uuid4().hex}.json"
         save_file_cmd = f"echo '{metadata_str}' > {metadata_file_name}"
         self.run_command.run(save_file_cmd)
@@ -65,7 +65,7 @@ class PartnerChainsNode:
                 cross_chain_pub_key_hash=response["cross_chain_pub_key_hash"],
                 encoded_message=response["encoded_message"],
                 encoded_metadata=response["encoded_metadata"],
-                signature=response["signature"]
+                signature=response["signature"],
             )
         except Exception as e:
             logging.error(f"Could not parse response of sign-block-producer-metadata cmd: {result}")

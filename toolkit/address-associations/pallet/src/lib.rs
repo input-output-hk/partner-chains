@@ -1,4 +1,41 @@
 //! Pallet storing associations from main chain public key to parter chain address.
+//!
+//! ## Purpose of this pallet
+//!
+//! This pallet establishes a many-to-one mapping from Cardano staking keys to Partner Chain addresses.
+//! The purpose of this mapping is primarily to indicate the local PC address to be the recipient of any
+//! block production rewards or cross-chain token transfers credited to a Cardano key holders on a Partner
+//! Chain. Some intended scenarios inlude:
+//! 1. ADA delegators become eligible for block rewards due to their stake poool's operator participating
+//!    in a Partner Chain network. The on-chain payout mechanism uses data provided by this pallet to
+//!    identify each delegator's Partner Chain address based on their Cardano staking key.
+//! 2. A Partner Chain develops its own cross-chain bridge from Cardano. A Cardano user associates their
+//!    Cardano public key with a Partner Chain address that they control. The user then uses the bridge
+//!    to send some tokens to themselves. The receiving logic in the Partner Chain ledger then uses this
+//!    pallet's data to identify the user's PC account and comlete the transfer.
+//!
+//! ## Usage - PC Builder
+//!
+//! This pallet is self-contained and doesn't need any node support.
+//! To include the pallet in the runtime, one must only provide its configuration.
+//! Consult documentation of [pallet::Config] for explanation of all configuration fields.
+//!
+//! For the pallet to verify the validity of address associations submitted by Users, it requires a signature
+//! created using the Cardano private key corresponding to the public key being associated. A dedicated
+//! CLI command for creating the signature is provided by `cli_commands` crate. Consult the crate's
+//! documentation for more information.
+//!
+//! ## Usage - PC User
+//!
+//! This pallet expoes a single extrinsic `associate_address` accepting the Cardano public key
+//! and Partner Chain address to be associated together with a signature confirming that the submitter is
+//! the owner of the associated Cardano public key.
+//!
+//! To obtain the signature, the User should use the dedicated signing command wired into the Partner Chain
+//! node executable.
+//!
+//! *Important*: For compliance reasons, all address associations are final and can not be changed.
+//!
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -19,6 +56,7 @@ use parity_scale_codec::Encode;
 use sidechain_domain::MainchainKeyHash;
 use sidechain_domain::{StakePublicKey, UtxoId};
 
+/// Schema of the message signed by a User to verify validity of submitted address association
 #[derive(Debug, Clone, Encode)]
 pub struct AddressAssociationSignedMessage<PartnerChainAddress> {
 	pub stake_public_key: StakePublicKey,
@@ -55,11 +93,15 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
+		/// Weight information on extrinsic in the pallet. For convenience weights in [weights] module can be used.
 		type WeightInfo: crate::weights::WeightInfo;
 
-		/// Partner chain address type
+		/// Type representing a local PC address. This can be a standard Substrate address, an
+		/// account ID, or some address type specific to the Partner Chain.
 		type PartnerChainAddress: Member + Parameter + MaxEncodedLen;
 
+		/// Function returning the genesis UTXO of the Partner Chain.
+		/// This typically should be wired with the `genesis_utxo` function exposed by `pallet_sidechain`.
 		fn genesis_utxo() -> UtxoId;
 
 		type OnNewAssociation: OnNewAssociation<Self::PartnerChainAddress>;
@@ -81,6 +123,11 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Extrinsic creating a new address association.
+		///
+		/// `signature` is expected to be a signature of the Cardano private key corresponding to `stake_public_key`
+		/// of [AddressAssociationSignedMessage] created using the associated public key, address and the genesis UTXO
+		/// of the particular Partner Chain it is being submitted to.
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::associate_address())]
 		pub fn associate_address(

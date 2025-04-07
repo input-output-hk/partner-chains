@@ -1,3 +1,62 @@
+//! Crate providing block participation data through the inherent data mechanism.
+//!
+//! ## Purpose of this crate
+//!
+//! This crate provides logic to compute and expose as inherent data aggregated information on block producers'
+//! and their delegators' participation in block production. This feature is implemented in an unusual way in
+//! that it publishes inherent data but leaves it to the specific Partner Chain's builders to implement the pallet
+//! that will consume this data. This is done because Partner Chains SDK can not anticipate how this data will
+//! have to be handled within every Partner Chain. The assumed use of the data provided is paying out of block
+//! production reward, however both ledger structure and reward calculation rules are inherently specific to
+//! their Partner Chain.
+//!
+//! ## Outline of operation
+//!
+//! 1. The inhrent data provider calls runtime API to check whether it should release block participation inherent
+//!    data (all points below assume this check is positive) and gets the upper slot limit.
+//! 2. The inhrent data provider retrieves data on block production up to the slot limit using runtime API and Cardano
+//!    delegation data using observability data source. The IDP joins and aggregates this data together producing
+//!    block participation data.
+//! 3. The IDP puts the block participation data into the inherent data of the current block, under the inherent
+//!    identifier indicated by the runtime API. This inherent identifier belongs to the Partner Chain's custom
+//!    handler crate.
+//! 4. The IDP produces an additional "operational" inherent data to signal its own pallet that participation data
+//!    has been released.
+//! 5. The Partner Chain's custom handler pallet consumes the block participation inherent data and produces an
+//!    inherent that performs block rewards payouts or otherwise handles the data according to this particular
+//!    Partner Chain's rules.
+//! 6. The block participation pallet consumes the operational inherent data and cleans up block production data
+//!    up to the slot limit.
+//!
+//! ## Usage
+//!
+//! To incorporate this feature into a Partner Chain, one must do the following:
+//! 1. Implement a pallet consuming inherent data of type [BlockProductionData]
+//! 2. Include the block participation pallet into their runtime and configure it. Consult the documentation of
+//!    `pallet_block_participation` for details.
+//! 3. Implement [BlockParticipationApi] for their runtime.
+//! 4. Include [inherent_data::BlockParticipationInherentDataProvider] in their node's inherent data
+//!    provider set for both proposal and verification of blocks.
+//!
+//! Configuring the pallet and implementing the runtime API requires there to be a source of block production data
+//! present in the runtime that can be used by the feature. The intended source is `pallet_block_production_log` but
+//! in principle anu pallet offering a similar interfaces can be used. An example of runtime API implementation using
+//! the block participation log pallet looks like the following:
+//! ```rust,ignore
+//!	impl sp_block_participation::BlockParticipationApi<Block, BlockAuthor> for Runtime {
+//!		fn should_release_data(slot: Slot) -> Option<Slot> {
+//!			BlockParticipationPallet::should_release_data(slot)
+//!		}
+//!		fn blocks_produced_up_to_slot(slot: Slot) -> Vec<(Slot, BlockAuthor)> {
+//!			<Runtime as pallet_block_participation::Config>::blocks_produced_up_to_slot(slot).collect()
+//!		}
+//!		fn target_inherent_id() -> InherentIdentifier {
+//!			<Runtime as pallet_block_participation::Config>::TARGET_INHERENT_ID
+//!		}
+//!	}
+//! ```
+//!
+//!
 #![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate alloc;
@@ -14,27 +73,46 @@ mod tests;
 
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blokpart";
 
+/// Represents a block producer's delegator along with their number of shares in that block producer's pool.
+///
+/// Values of this type can only be interpreted in the context of their enclosing [BlockProducerParticipationData].
 #[derive(Clone, Debug, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord)]
 pub struct DelegatorBlockParticipationData<DelegatorId> {
 	id: DelegatorId,
 	share: u64,
 }
 
+/// Aggregated data on block production of one block producer in one aggregation period.
+///
+/// Values of this type can only be interpreted in the context of their enclosing [BlockProductionData].
 #[derive(Clone, Debug, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord)]
 pub struct BlockProducerParticipationData<BlockProducerId, DelegatorId> {
+	/// Block producer ID
 	block_producer: BlockProducerId,
+	/// Number of block prodcued in the aggregation period represented by the current [BlockProducerParticipationData]
 	block_count: u32,
+	/// Total sum of shares of delegators in `delegators` field
 	delegator_total_shares: u64,
+	/// List of delegators of `block_producer` along with their share in the block producer's stake pool
 	delegators: Vec<DelegatorBlockParticipationData<DelegatorId>>,
 }
 
+/// Aggregated data on block production, grouped by the block producer and aggregation period (main chain epoch).
+///
+/// When provided by the inherent data provider it should aggregate data since the previous `up_to_slot` to the current `up_to_slot`.
 #[derive(Clone, Debug, PartialEq, Eq, Decode, Encode, TypeInfo)]
 pub struct BlockProductionData<BlockProducerId, DelegatorId> {
+	/// Data upper slot boundary.
 	up_to_slot: Slot,
+	/// Aggregated data on block producers and their delegators.
+	///
+	/// There may be more than one entry for the same block producer in this collection if the aggregated
+	/// period spans multiple aggregation periods.
 	producer_participation: Vec<BlockProducerParticipationData<BlockProducerId, DelegatorId>>,
 }
 
 impl<BlockProducerId, DelegatorId> BlockProductionData<BlockProducerId, DelegatorId> {
+	/// Construct a new instance of [BlockProductionData], ensuring stable ordering of data.
 	pub fn new(
 		up_to_slot: Slot,
 		mut producer_participation: Vec<
@@ -84,15 +162,22 @@ impl IsFatalError for InherentError {
 }
 
 sp_api::decl_runtime_apis! {
+	/// Runtime api exposing configuration and runtime bindings necessary for [inherent_data::BlockParticipationInherentDataProvider].
+	///
+	/// This API should typically be implemented by simply exposing relevant functions and data from the feature's pallet.
 	pub trait BlockParticipationApi<BlockProducerId: Decode> {
-		/// Should return slot up to which block production data should be released or None.
+		/// Returns slot up to which block production data should be released or [None].
 		fn should_release_data(slot: Slot) -> Option<Slot>;
+		/// Returns block authors since last processing up to `slot`.
 		fn blocks_produced_up_to_slot(slot: Slot) -> Vec<(Slot, BlockProducerId)>;
+		/// Returns the inherent ID under which block participation data should be provided.
 		fn target_inherent_id() -> InherentIdentifier;
 	}
 }
 
+/// Signifies that a type or some of its variants represents a Cardano stake pool operator
 pub trait AsCardanoSPO {
+	/// If [Self] represents a Cardano SPO, returns hash of this SPO's Cardano public key
 	fn as_cardano_spo(&self) -> Option<MainchainKeyHash>;
 }
 impl AsCardanoSPO for Option<MainchainKeyHash> {
@@ -101,6 +186,7 @@ impl AsCardanoSPO for Option<MainchainKeyHash> {
 	}
 }
 
+/// Signifies that a type represents a Cardano delegator
 pub trait CardanoDelegator {
 	fn from_delegator_key(key: DelegatorKey) -> Self;
 }
@@ -123,6 +209,7 @@ pub mod inherent_data {
 	use std::collections::HashMap;
 	use std::hash::Hash;
 
+	/// Cardano observability data source providing queries requird by [BlockParticipationInherentDataProvider].
 	#[async_trait::async_trait]
 	pub trait BlockParticipationDataSource {
 		/// Retrieves stake pool delegation distribution for provided epoch and pools
@@ -148,10 +235,9 @@ pub mod inherent_data {
 	/// Inherent data provider for block participation data.
 	/// This IDP is active only if the `BlockParticipationApi::should_release_data` function returns `Some`.
 	/// This IDP provides two sets of inherent data:
-	/// - One is the block production data saved under the inherent ID
-	///   indicated by `BlockParticipationApi::target_inherent_id()` function, which is intended for consumption by
-	///   a chain-specific handler pallet.
-	/// - The other is the slot limit returned by `BlockParticipationApi::should_release_data`. This inherent data
+	/// - One is the block production data saved under the inherent ID indicated by the function
+	///   [BlockParticipationApi::target_inherent_id], which is intended for consumption by a chain-specific handler pallet.
+	/// - The other is the slot limit returned by [BlockParticipationApi::should_release_data]. This inherent data
 	///   is needed for internal operation of the feature and triggers clearing of already handled data
 	///   from the block production log pallet.
 	#[derive(Debug, Clone, PartialEq)]
@@ -168,6 +254,10 @@ pub mod inherent_data {
 		BlockProducer: AsCardanoSPO + Decode + Clone + Hash + Eq + Ord + Debug,
 		Delegator: CardanoDelegator + Ord + Debug,
 	{
+		/// Creates a new inherent data provider of block participation data.
+		///
+		/// The returned inherent data provider will be inactive if [ProvideRuntimeApi] is not present
+		/// in the runtime or if [BlockParticipationApi::should_release_data] returns [None].
 		pub async fn new<Block: BlockT, T>(
 			client: &T,
 			data_source: &(dyn BlockParticipationDataSource + Send + Sync),

@@ -9,6 +9,9 @@ use crate::{cardano_key, CmdRun};
 use anyhow::anyhow;
 use anyhow::Context;
 use partner_chains_cardano_offchain::d_param::UpsertDParam;
+use partner_chains_cardano_offchain::multisig::{
+	MultiSigSmartContractResult, MultiSigTransactionData,
+};
 use partner_chains_cardano_offchain::permissioned_candidates::UpsertPermissionedCandidates;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -137,7 +140,7 @@ impl CmdRun for SetupMainChainStateCmd {
 				chain_config.chain_parameters.genesis_utxo,
 			)?;
 		}
-		context.print("Done. Main chain state is set. Please remember that any changes can be observed immediately, but from the Partner Chain point of view they will be effective in two main chain epochs.");
+		context.print("Done. Please remember that any changes to the Cardano state can be observed immediately, but from the Partner Chain point of view they will be effective in two main chain epochs.");
 		Ok(())
 	}
 }
@@ -248,14 +251,18 @@ fn set_candidates_on_main_chain<C: IOContext>(
 			cardano_key::get_mc_payment_signing_key_from_file(&payment_signing_key_path, context)?;
 		let offchain = context.offchain_impl(&ogmios_config)?;
 		let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
-		tokio_runtime
+		let result = tokio_runtime
 			.block_on(offchain.upsert_permissioned_candidates(
 				genesis_utxo,
 				&candidates.to_candidate_data(),
 				&pkey,
 			))
 			.context("Permissioned candidates update failed")?;
-		context.print("Permissioned candidates updated. The change will be effective in two main chain epochs.");
+		match result {
+			None => context.print("Permissioned candidates on the Cardano are already equal to value from the config file."),
+			Some(MultiSigSmartContractResult::TransactionSubmitted(_)) => context.print("Permissioned candidates updated. The change will be effective in two main chain epochs."),
+			Some(MultiSigSmartContractResult::TransactionToSign(tx_data)) => print_tx_to_sign_and_instruction(context, "update permissioned candidates", &tx_data)?,
+		}
 		Ok(Some(ogmios_config))
 	} else {
 		Ok(None)
@@ -293,12 +300,16 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 			sidechain_domain::DParameter { num_permissioned_candidates, num_registered_candidates };
 		let offchain = context.offchain_impl(&ogmios_config)?;
 		let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
-		tokio_runtime.block_on(offchain.upsert_d_param(
+		let result = tokio_runtime.block_on(offchain.upsert_d_param(
 			genesis_utxo,
 			&d_parameter,
 			&payment_signing_key,
 		))?;
-		context.print(&format!("D-parameter updated to ({}, {}). The change will be effective in two main chain epochs.", p, r));
+		match result {
+			None => context.print(&format!("D-parameter is set to ({}, {}) already.", p, r)),
+			Some(MultiSigSmartContractResult::TransactionSubmitted(_)) => context.print(&format!("D-parameter updated to ({}, {}). The change will be effective in two main chain epochs.", p, r)),
+			Some(MultiSigSmartContractResult::TransactionToSign(tx_data)) => print_tx_to_sign_and_instruction(context, "update D-parameter", &tx_data)?,
+		}
 	}
 	Ok(())
 }
@@ -311,4 +322,18 @@ fn load_chain_config_field<C: IOContext, T: DeserializeOwned>(
 		context.eprint(&format!("The '{}' configuration file is missing or invalid.\nIt should have been created and updated with initial permissioned candidates before running this wizard.", CHAIN_CONFIG_FILE_PATH));
 		anyhow!("failed to read '{}'", field.path.join("."))
 	})
+}
+
+fn print_tx_to_sign_and_instruction<C: IOContext>(
+	context: &C,
+	tx_name: &str,
+	tx: &MultiSigTransactionData,
+) -> anyhow::Result<()> {
+	let json = serde_json::to_string_pretty(&tx)?;
+	context.print(&format!(
+		"The Partner chain is governed by MultiSig. Sign and submit the {tx_name} transaction:"
+	));
+	context.print(&json);
+	context.print("Please find the instructions at: https://github.com/input-output-hk/partner-chains/blob/master/docs/user-guides/governance/governance.md#multisig-governance-usage-example");
+	Ok(())
 }

@@ -1,3 +1,51 @@
+//! Primitives and support crate for `pallet_block_production_log`.
+//!
+//! This crate defines the primitive types and the inherent data provider for the block production log feature.
+//!
+//! ## Usage
+//!
+//! This crate supports operation of `pallet_block_production_log`.
+//! Consult the pallet's documentation on how to include it in the runtime.
+//!
+//! ### Adding to the node
+//!
+//! #### Implementing the runtime API
+//!
+//! The block production log feature requires [BlockProductionLogApi] to be implemented by the Partner Chain runtime
+//! so the current block author can be identified. The concrete implementation must use or match the mechanism of
+//! block author selection used by the particular Partner Chain's consensus mechanism. The API should use the same
+//! type `CommitteeMember` to represent the block author as was configured in pallet's configuration.
+//!
+//! An example for a Partner Chain using Aura consensus looks like this:
+//! ```rust, ignore
+//! impl_runtime_apis! {
+//!     impl BlockProductionLogApi<Block, CommitteeMember> for Runtime {
+//!         fn get_author(slot: Slot) -> Option<CommitteeMember> {
+//!             SessionCommitteeManagement::get_current_authority_round_robin(*slot as usize)
+//!         }
+//!     }
+//! }
+//! ```
+//! using the `pallet_session_committee_management::Pallet::get_current_authority_round_robin` function
+//! which performs the same round-robin author selection that Aura does internally.
+//!
+//! #### Adding the inherent data provider
+//!
+//! The inherent data provider should be added to the node's `CreateInherentDataProviders` implementation for
+//! both proposal and validation of blocks.  eg.:
+//!
+//! ```rust,ignore
+//! // Create the inherent data provider. `slot` must be the slot number of the block currently being produced/verified
+//! let block_author_idp = BlockAuthorInherentProvider::new(client.as_ref(), parent_hash, slot)?;
+//! ...
+//! // Return the inherent data provider together with other IDPs
+//! Ok((timestamp_idp, slot_idp, ..., block_author_idp, ...))
+//! ```
+//!
+//! The inherent data provider created using `BlockAuthorInherentProvider::new` will check whether `BlockProductionLogApi`
+//! is available in the runtime and will only provide inherent data if the API is present.
+//!
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate alloc;
@@ -17,6 +65,7 @@ use {
 
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blprdlog";
 
+/// Error type used for failing calls of the block production log feature's inherent.
 #[derive(Encode, PartialEq)]
 #[cfg_attr(not(feature = "std"), derive(Debug))]
 #[cfg_attr(feature = "std", derive(Decode, thiserror::Error, sp_runtime::RuntimeDebug))]
@@ -35,6 +84,10 @@ impl IsFatalError for InherentError {
 	}
 }
 
+/// Inherent data provider providing the block author of the current block
+/// Parameters:
+/// - `Author`: Type representing a block author.
+/// - `author`: Optional value of the current block author. Inherent data is not provided if [None].
 #[cfg(feature = "std")]
 #[derive(Debug)]
 pub struct BlockAuthorInherentProvider<Author> {
@@ -43,6 +96,9 @@ pub struct BlockAuthorInherentProvider<Author> {
 
 #[cfg(feature = "std")]
 impl<Author> BlockAuthorInherentProvider<Author> {
+	/// Creates a new [BlockAuthorInherentProvider] using runtime API [BlockProductionLogApi].
+	///
+	/// The inherent data provider returned will be inert if [BlockProductionLogApi] is not detected in the runtime.
 	pub fn new<C, Member, Block>(
 		client: &C,
 		parent_hash: Block::Hash,
@@ -96,11 +152,21 @@ where
 }
 
 sp_api::decl_runtime_apis! {
+	/// Runtime API exposing data required for the [BlockAuthorInherentProvider] to operate.
+	/// Type parameters:
+	/// - `Member`: type representing a committee member eligible to be a block author. This type should correspond
+	///             to what is configured as the block author type used by the pallet.
 	pub trait BlockProductionLogApi<Member>
 	where
 		Member: Decode
 	{
-		/// Returns author based on current committee and provided slot
+		/// Function returning the current block's author.
+		///
+		/// Its implementation must either use data exposed by the consensus mechanism used by the Partner Chain,
+		/// independently calculate it, or obtain it from another source.
+		///
+		/// Parameters:
+		/// - `slot`: slot number of the block currently being produced
 		fn get_author(slot: sidechain_slots::Slot) -> Option<Member>;
 	}
 }

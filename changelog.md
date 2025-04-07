@@ -6,6 +6,7 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 ## Changed
 
+* Wizards are adjusted to use multiple governance authorities from the chain governance initialization through setting up Ariadne parameters
 * Added implementation of `FindAccountFromAuthorIndex` trait for `pallet_partner_chains_session`.
 * Unified `*toml` files package data
 * Renamed `sidechain-runtime` and `sidechain-node` to `partner-chains-demo-runtime` and `partner-chains-demo-node`

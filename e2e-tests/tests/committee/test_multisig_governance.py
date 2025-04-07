@@ -1,6 +1,6 @@
 from pytest import fixture, mark, skip
 from src.blockchain_api import BlockchainApi
-from config.api_config import ApiConfig, MainchainAccount
+from config.api_config import ApiConfig, MainchainAccount, DParam
 from typing import Tuple
 from config.api_config import Node
 import logging
@@ -135,14 +135,20 @@ def test_verify_multisig_policy(api: BlockchainApi, additional_governance_author
 
 @mark.xdist_group(name="governance_action")
 @mark.usefixtures("governance_skey_with_cli")
-def test_multisig_upsert_d_parameter(api: BlockchainApi, governance_authority, additional_governance_authorities):
+def test_multisig_upsert_d_parameter(
+    api: BlockchainApi, current_mc_epoch, governance_authority, additional_governance_authorities
+):
     """Test a multisig operation that modifies the D parameter"""
     # Try to update D parameter
 
     # TODO: Extract logic to calculate unique DParam
+    current_d_param = api.get_d_param(current_mc_epoch + 2)
+    new_d_param = current_d_param
+    while new_d_param == current_d_param:
+        new_d_param = DParam(random.randint(1, 5), random.randint(1, 5))
     response = api.partner_chains_node.smart_contracts.update_d_param(
-        permissioned_candidates_count=random.randint(1, 5),
-        registered_candidates_count=random.randint(1, 5),
+        permissioned_candidates_count=new_d_param.permissioned_candidates_number,
+        registered_candidates_count=new_d_param.trustless_candidates_number,
         payment_key=governance_authority.mainchain_key,
     )
 

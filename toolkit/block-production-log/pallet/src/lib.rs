@@ -1,3 +1,85 @@
+//! A Substrate pallet maintaining a consumable log of block production information.
+//!
+//! ## Purpose of this pallet
+//!
+//! This pallet keeps a log containing block producer IDs along with slot numbers of blocks produced by them.
+//! This log is updated every block and is meant to consumed by other features.
+//! The intended use of this pallet within the Partner Chains SDK is to expose block production data for consumption
+//! by the Block Participation feature implemented by the `sp_block_participation` and `pallet_block_participation`
+//! crates.
+//!
+//! ## Usage - PC Builder
+//!
+//! This pallet requires inherent data provided by the inherent data provider defined by `sp_block_producerion_log`
+//! crate. Consult the crate's documentation for instruction on how to wire it into the node correctly.
+//!
+//! ### Adding to the runtime
+//!
+//! The pallet requires a minimal configuration. Consult the documentation for [pallet::Config] for details.
+//!
+//! An example configuration for a runtime using Aura consensus might look like this:
+//!
+//! ```rust,ignore
+//! impl pallet_block_production_log::Config for Runtime {
+//!     type BlockProducerId = BlockAuthor;
+//!     type WeightInfo = pallet_block_production_log::weights::SubstrateWeight<Runtime>;
+//!
+//!     fn current_slot() -> sp_consensus_slots::Slot {
+//!         let slot: u64 = pallet_aura::CurrentSlot::<Runtime>::get().into();
+//!         sp_consensus_slots::Slot::from(slot)
+//!     }
+//!
+//!     #[cfg(feature = "runtime-benchmarks")]
+//!     type BenchmarkHelper = PalletBlockProductionLogBenchmarkHelper;
+//! }
+//! ```
+//!
+//! #### Defining block producer ID
+//!
+//! The pallet expects the Partner Chain to provide a type representing its block producers.
+//! This type can be as simple as an Aura public key but can also be a more complex type if block producers
+//! are not a homogenous group. For example, in the context of a Partner Chain using Ariadne committee selection,
+//! it's typical to have two kinds of block producers: permissioned producers provided by the governance authority
+//! and registered candidates recruited from among Cardano stake pool operators. In this instance an example
+//! author type could be:
+//! ```rust
+//! use sidechain_domain::*;
+//!
+//! pub enum BlockAuthor {
+//!     Incentivized(CrossChainPublicKey, StakePoolPublicKey),
+//!     ProBono(CrossChainPublicKey),
+//! }
+//! ```
+//!
+//! Keep in mind that other Partner Chains SDK components put their own constraints on the block author type
+//! that need to be adhered to for a Partner Chain to integrated them.
+//!
+//! #### Support for adding to a running chain
+//!
+//! The pallet and its inherent data provider defined in [sp_block_production_log] are written in a way that allows for
+//! adding it to an already live chain. The pallet allows for an initial period where inherent data is unavailable
+//! and considers its inherent extrinsic required only after the first block where inherent data is provided.
+//! Conversely, the inherent data provider is active only when the pallet and its runtime API is present for it to call.
+//!
+//! ### Consuming the log
+//!
+//! **Important**: Consuming the log is a destructive operation. Multiple features should not consume the log data
+//!                unless they are coordinated to read and clear the same log prefix.
+//!
+//! The pallet exposes three functions that allow other pallets to consume its data: `take_prefix`, `peek_prefix`
+//! and `drop_prefix`. Any feature using the log should be able to identify the slot number up to which it should
+//! process the log data and either:
+//! - call `take_prefix` from some pallet's logic and process the returned data within the same block
+//! - call `peek_prefix` inside an inherent data provider and use `drop_prefix` from the corresponding pallet
+//!   to clear the previously peeked data within the same block
+//!
+//! It is critically important to drop exactly the prefix processed to avoid either skipping or double-counting some blocks.
+//!
+//! ## Usage - PC user
+//!
+//! This pallet does not expose any user-facing functionalities.
+//!
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod benchmarking;
@@ -24,10 +106,14 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
+		/// ID type that can represent any block producer in the network.
+		/// This type should be defined by the Parnter Chain Depending on its consensus mechanism and possible block producer types.
 		type BlockProducerId: Member + Parameter + MaxEncodedLen;
 
+		/// Weight information on extrinsic in the pallet. For convenience weights in [weights] module can be used.
 		type WeightInfo: WeightInfo;
 
+		/// The slot number of current block.
 		fn current_slot() -> Slot;
 
 		#[cfg(feature = "runtime-benchmarks")]
@@ -119,6 +205,8 @@ pub mod pallet {
 			data.get_data::<T::BlockProducerId>(&Self::INHERENT_IDENTIFIER)
 				.map_err(|_| InherentError::InvalidData)
 		}
+
+		/// Returns all entries up to `slot` (inclusive) and removes them from the log
 		pub fn take_prefix(slot: &Slot) -> Vec<(Slot, T::BlockProducerId)> {
 			let removed_prefix = Log::<T>::mutate(|log| {
 				let pos = log.partition_point(|(s, _)| s <= slot);
@@ -127,10 +215,12 @@ pub mod pallet {
 			removed_prefix
 		}
 
+		/// Returns all entries up to `slot` (inclusive) from the log
 		pub fn peek_prefix(slot: Slot) -> impl Iterator<Item = (Slot, T::BlockProducerId)> {
 			Log::<T>::get().into_iter().take_while(move |(s, _)| s <= &slot)
 		}
 
+		/// Removes all entries up to `slot` (inclusive) from the log
 		pub fn drop_prefix(slot: &Slot) {
 			Log::<T>::mutate(|log| {
 				let position = log.partition_point(|(s, _)| s <= slot);
