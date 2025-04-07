@@ -10,14 +10,14 @@ ci-pre-merge:
   BUILD +clippy
   BUILD +chainspecs
   ARG tags
-  ARG --push images
+  ARG images
   BUILD +docker --image=$images --tags=$tags
 
 ci-post-merge:
   BUILD +build
   BUILD +chainspecs
   ARG tags
-  ARG --push images
+  ARG images
   BUILD +docker --image=$images --tags=$tags
 
 ci-workflow-dispatch:
@@ -27,7 +27,7 @@ ci-workflow-dispatch:
   BUILD +fmt
   BUILD +chainspecs
   ARG tags
-  ARG --push images
+  ARG images
   BUILD +docker --image=$images --tags=$tags
 
 setup:
@@ -119,7 +119,7 @@ clippy:
 docker:
     FROM ubuntu:24.04
     ARG tags
-    ARG --push images
+    ARG images
 
     RUN apt-get update && apt-get install -y \
         ca-certificates \
