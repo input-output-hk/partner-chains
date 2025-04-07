@@ -10,13 +10,13 @@ ci-pre-merge:
   BUILD +clippy
   BUILD +chainspecs
   ARG tags
-  BUILD +docker --image=$image --tags=$tags
+  BUILD +docker --image=$images --tags=$tags
 
 ci-post-merge:
   BUILD +build
   BUILD +chainspecs
   ARG tags
-  BUILD +docker --image=$image --tags=$tags
+  BUILD +docker --image=$images --tags=$tags
 
 ci-workflow-dispatch:
   BUILD +build
@@ -25,7 +25,7 @@ ci-workflow-dispatch:
   BUILD +fmt
   BUILD +chainspecs
   ARG tags
-  BUILD +docker --image=$image --tags=$tags
+  BUILD +docker --image=$images --tags=$tags
 
 setup:
   FROM ubuntu:24.04
@@ -116,7 +116,7 @@ clippy:
 docker:
     FROM ubuntu:24.04
     ARG tags
-    ARG image
+    ARG images
 
     RUN apt-get update && apt-get install -y \
         ca-certificates \
@@ -155,7 +155,7 @@ docker:
     ENTRYPOINT ["/usr/local/bin/partner-chains-node"]
 
     FOR tag IN $tags
-      FOR image IN $image
+      FOR image IN $images
         SAVE IMAGE --push $image:$tag
       END
     END
