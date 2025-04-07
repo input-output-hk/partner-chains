@@ -21,6 +21,7 @@ pub const MC_HASH_DIGEST_ID: [u8; 4] = *b"mcsh";
 #[derive(Debug)]
 pub struct McHashInherentDataProvider {
 	mc_block: MainchainBlock,
+	previous_mc_block: Option<MainchainBlock>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -41,11 +42,13 @@ pub enum McHashInherentError {
 	McStateReferenceRegressed(McBlockHash, Slot, McBlockNumber, McBlockNumber),
 	#[error("Failed to retrieve MC hash from digest: {0}")]
 	DigestError(String),
+	#[error("Failed to retrieve MC Block that was verified as stable by its hash")]
+	StableBlockNotFoundByHash(McBlockHash),
 }
 
 impl From<MainchainBlock> for McHashInherentDataProvider {
 	fn from(mc_block: MainchainBlock) -> Self {
-		Self { mc_block }
+		Self { mc_block, previous_mc_block: None }
 	}
 }
 
@@ -86,14 +89,30 @@ pub trait McHashDataSource {
 		hash: McBlockHash,
 		reference_timestamp: Timestamp,
 	) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>>;
+
+	/// Find block by hash.
+	/// # Arguments
+	/// * `hash` - the hash of the block
+	///
+	/// # Returns
+	/// * `Some(block)` - the block with given hash
+	/// * `None` - no block with the given hash was found
+	async fn get_block_by_hash(
+		&self,
+		hash: McBlockHash,
+	) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>>;
 }
 
 impl McHashInherentDataProvider {
-	pub async fn new_proposal(
+	pub async fn new_proposal<Header>(
+		parent_header: Header,
 		data_source: &(dyn McHashDataSource + Send + Sync),
 		slot: Slot,
 		slot_duration: SlotDuration,
-	) -> Result<Self, McHashInherentError> {
+	) -> Result<Self, McHashInherentError>
+	where
+		Header: HeaderT,
+	{
 		let slot_start_timestamp =
 			slot.timestamp(slot_duration).ok_or(McHashInherentError::SlotTooBig)?;
 		let mc_block = data_source
@@ -102,7 +121,26 @@ impl McHashInherentDataProvider {
 			.map_err(McHashInherentError::DataSourceError)?
 			.ok_or(StableBlockNotFound(slot_start_timestamp))?;
 
-		Ok(Self { mc_block })
+		match McHashInherentDigest::value_from_digest(&parent_header.digest().logs).ok() {
+			// If parent block references some MC state, it is illegal to propose older state
+			Some(parent_mc_hash) => {
+				let parent_stable_mc_block = data_source
+					.get_block_by_hash(parent_mc_hash.clone())
+					.await
+					.map_err(McHashInherentError::DataSourceError)?
+					.ok_or(McHashInherentError::StableBlockNotFoundByHash(parent_mc_hash))?;
+
+				if mc_block.number >= parent_stable_mc_block.number {
+					Ok(Self { mc_block, previous_mc_block: Some(parent_stable_mc_block) })
+				} else {
+					Ok(Self {
+						mc_block: parent_stable_mc_block.clone(),
+						previous_mc_block: Some(parent_stable_mc_block),
+					})
+				}
+			},
+			None => Ok(Self { mc_block, previous_mc_block: None }),
+		}
 	}
 
 	pub async fn new_verification<Header>(
@@ -143,7 +181,10 @@ impl McHashInherentDataProvider {
 				parent_mc_state_reference_block.number,
 			))
 		} else {
-			Ok(Self::from(mc_state_reference_block))
+			Ok(Self {
+				mc_block: mc_state_reference_block,
+				previous_mc_block: Some(parent_mc_state_reference_block),
+			})
 		}
 	}
 
@@ -157,6 +198,10 @@ impl McHashInherentDataProvider {
 
 	pub fn mc_hash(&self) -> McBlockHash {
 		self.mc_block.hash.clone()
+	}
+
+	pub fn previous_mc_hash(&self) -> Option<McBlockHash> {
+		self.previous_mc_block.as_ref().map(|block| block.hash.clone())
 	}
 }
 
@@ -302,11 +347,12 @@ pub mod mock {
 	#[derive(new, Clone)]
 	pub struct MockMcHashDataSource {
 		pub stable_blocks: Vec<MainchainBlock>,
+		pub unstable_blocks: Vec<MainchainBlock>,
 	}
 
 	impl From<Vec<MainchainBlock>> for MockMcHashDataSource {
 		fn from(stable_blocks: Vec<MainchainBlock>) -> Self {
-			Self { stable_blocks }
+			Self { stable_blocks, unstable_blocks: vec![] }
 		}
 	}
 
@@ -325,6 +371,18 @@ pub mod mock {
 			_reference_timestamp: Timestamp,
 		) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
 			Ok(self.stable_blocks.iter().find(|b| b.hash == hash).cloned())
+		}
+
+		async fn get_block_by_hash(
+			&self,
+			hash: McBlockHash,
+		) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
+			Ok(self
+				.stable_blocks
+				.iter()
+				.find(|b| b.hash == hash)
+				.cloned()
+				.or_else(|| self.unstable_blocks.iter().find(|b| b.hash == hash).cloned()))
 		}
 	}
 }

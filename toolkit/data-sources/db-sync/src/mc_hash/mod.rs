@@ -37,5 +37,12 @@ impl McHashDataSource for McHashDataSourceImpl {
 			.get_stable_block_for(hash, Timestamp::new(reference_timestamp.as_millis()))
 			.await?)
 	}
+
+	async fn get_block_by_hash(
+		&self,
+		hash: McBlockHash,
+	) -> std::result::Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
+		Ok(self.inner.get_block_by_hash(hash).await?)
+	}
 }
 );
