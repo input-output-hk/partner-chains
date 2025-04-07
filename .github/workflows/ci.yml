@@ -137,8 +137,7 @@ jobs:
         run: |
           # earthly -P +ci-pre-merge --image=${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node --tags="${{ steps.get_sha.outputs.sha }}"
           earthly -P +ci-pre-merge \
-          --image="${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node" \
-          --image="ghcr.io/${{ github.repository }}/partner-chains-node-unstable" \
+          --images="${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node ghcr.io/${{ github.repository }}/partner-chains-node-unstable" \
           --tags="${{ steps.get_sha.outputs.sha }} latest"
       - name: Upload partner-chains-node artifact
         uses: actions/upload-artifact@v4
@@ -348,8 +347,7 @@ jobs:
           EARTHLY_PUSH: true
         run: |
           earthly -P +ci-post-merge \
-          --image="${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node" \
-          --image="ghcr.io/${{ github.repository }}/partner-chains-node-unstable" \
+          --images="${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node ghcr.io/${{ github.repository }}/partner-chains-node-unstable" \
           --tags="${{ steps.get_sha.outputs.sha }} latest"
       - name: Rename artifact
         run: |
