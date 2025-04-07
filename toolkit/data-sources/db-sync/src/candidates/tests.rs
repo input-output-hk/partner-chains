@@ -97,6 +97,24 @@ async fn test_get_ariadne_parameters_returns_the_latest_candidates_if_there_were
 }
 
 #[sqlx::test(migrations = "./testdata/migrations")]
+async fn test_get_ariadne_parameters_returns_none_when_permissioned_list_not_set(pool: PgPool) {
+	let source = make_source(pool);
+	let result = source
+		.get_ariadne_parameters(
+			McEpochNumber(191),
+			d_parameter_policy(),
+			permissioned_candidates_policy(),
+		)
+		.await
+		.unwrap();
+	assert_eq!(
+		result.d_parameter,
+		DParameter { num_permissioned_candidates: 1, num_registered_candidates: 3 }
+	);
+	assert_eq!(result.permissioned_candidates, None)
+}
+
+#[sqlx::test(migrations = "./testdata/migrations")]
 async fn test_get_ariadne_parameters_returns_the_latest_params_for_the_future_epochs(pool: PgPool) {
 	let source = make_source(pool);
 	// The last tx was submitted at epoch 192

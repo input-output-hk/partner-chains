@@ -23,20 +23,8 @@ pub fn select_authorities<
 		TAccountId,
 		TAccountKeys,
 	>(input.registered_candidates, genesis_utxo);
-	let no_permissioned_candidates_expected = input.d_parameter.num_permissioned_candidates == 0;
-	let valid_permissioned_candidates = match input.permissioned_candidates {
-		None if no_permissioned_candidates_expected => {
-			info!("🤔 Permissioned candidates list has not been set, defaulting to empty list since P=0.");
-			Vec::new()
-		},
-		None => {
-			warn!("🚫 Failed to select validators for epoch {}, as P is non-zero and permissioned candidates list has not been set.", sidechain_epoch);
-			return None;
-		},
-		Some(permissioned_candidates) => {
-			filter_invalid_permissioned_candidates(permissioned_candidates)
-		},
-	};
+	let valid_permissioned_candidates =
+		filter_invalid_permissioned_candidates(input.permissioned_candidates);
 	let valid_permissioned_count = valid_permissioned_candidates.len();
 	let valid_registered_count = valid_registered_candidates.len();
 

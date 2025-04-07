@@ -8,7 +8,7 @@ use sidechain_domain::*;
 #[derive(Clone, Debug, Encode, Decode, TypeInfo, PartialEq, Eq)]
 pub struct AuthoritySelectionInputs {
 	pub d_parameter: DParameter,
-	pub permissioned_candidates: Option<Vec<PermissionedCandidateData>>,
+	pub permissioned_candidates: Vec<PermissionedCandidateData>,
 	pub registered_candidates: Vec<CandidateRegistrations>,
 	pub epoch_nonce: EpochNonce,
 }
@@ -101,23 +101,33 @@ impl AuthoritySelectionInputs {
 			.map_err(|err| {
 				AuthoritySelectionInputsCreationError::AriadneParametersQuery(
 					for_epoch,
-					scripts.d_parameter_policy_id,
-					scripts.permissioned_candidates_policy_id,
+					scripts.d_parameter_policy_id.clone(),
+					scripts.permissioned_candidates_policy_id.clone(),
 					err,
 				)
 			})?;
 
 		let d_parameter = ariadne_parameters_response.d_parameter;
-		let permissioned_candidates =
-			ariadne_parameters_response.permissioned_candidates.map(|v| {
-				v.into_iter()
-					.map(|candidate| PermissionedCandidateData {
-						sidechain_public_key: candidate.sidechain_public_key,
-						aura_public_key: candidate.aura_public_key,
-						grandpa_public_key: candidate.grandpa_public_key,
-					})
-					.collect::<Vec<PermissionedCandidateData>>()
-			});
+		let no_permissioned_candidates_expected = d_parameter.num_permissioned_candidates == 0;
+		let permissioned_candidates = match ariadne_parameters_response.permissioned_candidates {
+			None if no_permissioned_candidates_expected => Vec::new(),
+			None => {
+				return Err(AuthoritySelectionInputsCreationError::AriadneParametersQuery(
+					for_epoch,
+					scripts.d_parameter_policy_id,
+					scripts.permissioned_candidates_policy_id,
+					("Expected Data Not Found: Permissioned Candidates List".to_string()).into(),
+				))
+			},
+			Some(permissioned_candidates) => permissioned_candidates
+				.into_iter()
+				.map(|candidate| PermissionedCandidateData {
+					sidechain_public_key: candidate.sidechain_public_key,
+					aura_public_key: candidate.aura_public_key,
+					grandpa_public_key: candidate.grandpa_public_key,
+				})
+				.collect::<Vec<PermissionedCandidateData>>(),
+		};
 
 		let registered_candidates: Vec<CandidateRegistrations> = candidate_data_source
 			.get_candidates(for_epoch, scripts.committee_candidate_address.clone())

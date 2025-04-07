@@ -185,7 +185,7 @@ fn ariadne_all_permissioned_test() {
 	// R: [charlie, dave]
 	// D-param: (2, 0)
 	// Expected committee: [alice, bob]
-	let permissioned_validators = Some(vec![ALICE, BOB]);
+	let permissioned_validators = vec![ALICE, BOB];
 	let registered_validators = vec![CHARLIE, DAVE];
 	let d_parameter = DParameter { num_permissioned_candidates: 8, num_registered_candidates: 0 };
 	let authority_selection_inputs = create_authority_selection_inputs(
@@ -215,7 +215,7 @@ fn ariadne_only_permissioned_candidates_are_present_test() {
 	// P: [alice, bob]
 	// R: []
 	// D-param: (4, 4)
-	let permissioned_validators = Some(vec![ALICE, BOB]);
+	let permissioned_validators = vec![ALICE, BOB];
 	let registered_validators = vec![];
 	let d_parameter = DParameter { num_permissioned_candidates: 4, num_registered_candidates: 4 };
 	let authority_selection_inputs = create_authority_selection_inputs(
@@ -245,7 +245,7 @@ fn ariadne_3_to_2_test() {
 	// P: [alice, bob, charlie]
 	// R: [dave, eve]
 	// D-param: (3, 2)
-	let permissioned_validators = Some(vec![ALICE, BOB, CHARLIE]);
+	let permissioned_validators = vec![ALICE, BOB, CHARLIE];
 	let registered_validators = vec![DAVE, EVE];
 	let d_parameter = DParameter { num_permissioned_candidates: 3, num_registered_candidates: 2 };
 	let authority_selection_inputs = create_authority_selection_inputs(
@@ -275,7 +275,7 @@ fn ariadne_3_to_2_with_more_available_candidates_test() {
 	// P: [alice, bob, charlie, dave, eve]
 	// R: [ferdie, greg, henry, ida]
 	// D-param: (3, 2)
-	let permissioned_validators = Some(vec![ALICE, BOB, CHARLIE, DAVE, EVE]);
+	let permissioned_validators = vec![ALICE, BOB, CHARLIE, DAVE, EVE];
 	let registered_validators = vec![FERDIE, GREG, HENRY, IDA];
 	let d_parameter = DParameter { num_permissioned_candidates: 3, num_registered_candidates: 2 };
 	let authority_selection_inputs = create_authority_selection_inputs(
@@ -305,7 +305,7 @@ fn ariadne_4_to_7_test() {
 	// P: [alice, bob, charlie, dave]
 	// R: [eve, ferdie, greg, henry, ida, james, kim]
 	// D-param: (4, 7)
-	let permissioned_validators = Some(vec![ALICE, BOB, CHARLIE, DAVE]);
+	let permissioned_validators = vec![ALICE, BOB, CHARLIE, DAVE];
 	let registered_validators = vec![EVE, FERDIE, GREG, HENRY, IDA, JAMES, KIM];
 	let d_parameter = DParameter { num_permissioned_candidates: 4, num_registered_candidates: 7 };
 	let authority_selection_inputs = create_authority_selection_inputs(
@@ -335,7 +335,7 @@ fn ariadne_4_to_7_test() {
 #[test]
 fn ariadne_does_not_return_empty_committee() {
 	let authority_selection_inputs = create_authority_selection_inputs(
-		&Some(Vec::new()),
+		&[],
 		&[],
 		DParameter { num_permissioned_candidates: 1, num_registered_candidates: 1 },
 	);
@@ -345,57 +345,6 @@ fn ariadne_does_not_return_empty_committee() {
 		ScEpochNumber::zero(),
 	);
 	assert_eq!(calculated_committee, None);
-}
-
-#[test]
-fn ariadne_no_permissioned_list_when_p_is_not_0() {
-	// P: none
-	// R: [eve, ferdie, greg, henry, ida, james, kim]
-	// D-param: (3, 7)
-	let permissioned_validators = None;
-	let registered_validators = vec![EVE, FERDIE, GREG, HENRY, IDA, JAMES, KIM];
-	let d_parameter = DParameter { num_permissioned_candidates: 3, num_registered_candidates: 7 };
-	let authority_selection_inputs = create_authority_selection_inputs(
-		&permissioned_validators,
-		&registered_validators,
-		d_parameter,
-	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
-		UtxoId::default(),
-		authority_selection_inputs,
-		ScEpochNumber::zero(),
-	);
-	assert_eq!(calculated_committee, None);
-}
-
-#[test]
-fn ariadne_no_permissioned_list_when_p_is_0() {
-	// P: none
-	// R: [eve, ferdie, greg, henry, ida, james, kim]
-	// D-param: (0, 7)
-	let permissioned_validators = None;
-	let registered_validators = vec![EVE, FERDIE, GREG, HENRY, IDA, JAMES, KIM];
-	let d_parameter = DParameter { num_permissioned_candidates: 0, num_registered_candidates: 7 };
-	let authority_selection_inputs = create_authority_selection_inputs(
-		&permissioned_validators,
-		&registered_validators,
-		d_parameter,
-	);
-	let calculated_committee = select_authorities::<AccountId, AccountKeys>(
-		UtxoId::default(),
-		authority_selection_inputs,
-		ScEpochNumber::zero(),
-	);
-	assert!(calculated_committee.is_some());
-
-	let committee = calculated_committee.unwrap();
-	let committee_names = committee
-		.iter()
-		.map(|candidate| account_id_to_name(candidate.account_id()))
-		.collect::<Vec<_>>();
-	let expected_committee_names = vec!["greg", "kim", "henry", "ferdie", "ida", "henry", "greg"];
-
-	assert_eq!(committee_names, expected_committee_names);
 }
 
 // helpers
@@ -447,23 +396,20 @@ fn create_epoch_candidates_idp(validators: &[MockValidator]) -> Vec<CandidateReg
 }
 
 pub fn create_authority_selection_inputs(
-	permissioned_candidates: &Option<Vec<MockValidator>>,
+	permissioned_candidates: &[MockValidator],
 	validators: &[MockValidator],
 	d_parameter: DParameter,
 ) -> AuthoritySelectionInputs {
 	let epoch_candidates = create_epoch_candidates_idp(validators);
 
-	let permissioned_candidates_data: Option<Vec<PermissionedCandidateData>> =
-		permissioned_candidates.as_ref().map(|permissioned_candidates| {
-			permissioned_candidates
-				.iter()
-				.map(|c| PermissionedCandidateData {
-					sidechain_public_key: c.sidechain_pub_key(),
-					aura_public_key: c.aura_pub_key(),
-					grandpa_public_key: c.grandpa_pub_key(),
-				})
-				.collect()
-		});
+	let permissioned_candidates_data: Vec<PermissionedCandidateData> = permissioned_candidates
+		.iter()
+		.map(|c| PermissionedCandidateData {
+			sidechain_public_key: c.sidechain_pub_key(),
+			aura_public_key: c.aura_pub_key(),
+			grandpa_public_key: c.grandpa_pub_key(),
+		})
+		.collect();
 	AuthoritySelectionInputs {
 		d_parameter,
 		permissioned_candidates: permissioned_candidates_data,
