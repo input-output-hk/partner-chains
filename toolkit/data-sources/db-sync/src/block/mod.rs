@@ -65,6 +65,22 @@ impl BlockDataSourceImpl {
 		let reference_timestamp = BlockDataSourceImpl::timestamp_to_db_type(reference_timestamp)?;
 		self.get_stable_block_by_hash(hash, reference_timestamp).await
 	}
+
+	pub async fn get_block_by_hash(
+		&self,
+		hash: McBlockHash,
+	) -> Result<Option<MainchainBlock>, Box<dyn std::error::Error + Send + Sync>> {
+		let from_cache = if let Ok(cache) = self.stable_blocks_cache.lock() {
+			cache.find_by_hash(hash.clone())
+		} else {
+			None
+		};
+		let block_opt = match from_cache {
+			Some(block) => Some(block),
+			None => db_model::get_block_by_hash(&self.pool, hash).await?,
+		};
+		Ok(block_opt.map(From::from))
+	}
 }
 
 #[derive(Debug, Clone, Deserialize)]

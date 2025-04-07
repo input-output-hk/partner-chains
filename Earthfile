@@ -9,16 +9,16 @@ ci-pre-merge:
   BUILD +fmt
   BUILD +clippy
   BUILD +chainspecs
-  ARG image=partner-chains-node
   ARG tags
-  BUILD +docker --image=$image --tags=$tags
+  ARG images
+  BUILD +docker --image=$images --tags=$tags
 
 ci-post-merge:
   BUILD +build
   BUILD +chainspecs
-  ARG image=partner-chains-node
   ARG tags
-  BUILD +docker --image=$image --tags=$tags
+  ARG images
+  BUILD +docker --image=$images --tags=$tags
 
 ci-workflow-dispatch:
   BUILD +build
@@ -26,9 +26,9 @@ ci-workflow-dispatch:
   BUILD +licenses
   BUILD +fmt
   BUILD +chainspecs
-  ARG image=partner-chains-node
   ARG tags
-  BUILD +docker --image=$image --tags=$tags
+  ARG images
+  BUILD +docker --image=$images --tags=$tags
 
 setup:
   FROM ubuntu:24.04
@@ -51,7 +51,13 @@ setup:
       pkg-config \
       jq \
       libjq-dev \
-      && rm -rf /var/lib/apt/lists/*
+      unzip
+
+  # Install recent protoc
+  ENV PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+  RUN curl -LO $PB_REL/download/v29.3/protoc-29.3-linux-x86_64.zip
+  RUN unzip protoc-29.3-linux-x86_64.zip -d /usr/local
+  RUN protoc --version
 
   ENV PIP_CACHE_DIR=/root/.cache/pip
   CACHE /root/.cache/pip
@@ -61,12 +67,7 @@ setup:
   RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
   ENV PATH="/root/.cargo/bin:${PATH}"
 
-  # copy pre-existing $CARGO_HOME artifacts into the cache
-  RUN cp -rl $CARGO_HOME /tmp/cargo
-  CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN cp -rua /tmp/cargo/. $CARGO_HOME && rm -rf /tmp/cargo
   COPY Cargo.* .rustfmt.toml rust-toolchain.toml .
-  
   # Install the toolchain
   RUN rustup toolchain install
   RUN rustup show
@@ -83,21 +84,9 @@ source:
   FOR crate IN $CRATES
       COPY --dir $crate $crate
   END
-  COPY --dir +build-deps/target .
-
-build-deps:
-  FROM +fetch-deps
-  CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN cargo --locked chef prepare
-  RUN cargo --locked chef cook --profile=$PROFILE --features=$FEATURES
-  SAVE ARTIFACT target
 
 build:
   FROM +source
-  LET WASM_BUILD_STD=0
-  #ARG CACHE_KEY=$(find . -type f -name "*.rs" -o -name "*.toml" | sort | xargs cat | sha256sum)
-  #CACHE --sharing shared --id cargo-build-$CACHE_KEY target
-  CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo build --locked --profile=$PROFILE --features=$FEATURES
   RUN ./target/*/partner-chains-demo-node --version
   SAVE ARTIFACT target/*/partner-chains-demo-node AS LOCAL partner-chains-node
@@ -105,9 +94,7 @@ build:
 
 test:
   FROM +build
-  LET WASM_BUILD_STD=0
   DO github.com/earthly/lib:3.0.2+INSTALL_DIND
-  CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo test --no-run --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
   WITH DOCKER
     RUN cargo test --locked --profile=$PROFILE --features=$FEATURES,runtime-benchmarks
@@ -122,19 +109,17 @@ licenses:
 
 fmt:
   FROM +source
-  CACHE --sharing shared --id cargo $CARGO_HOME
   RUN cargo fmt --check
 
 clippy:
   FROM +source
-  CACHE --sharing shared --id cargo $CARGO_HOME
   ENV RUSTFLAGS="-Dwarnings"
   RUN cargo clippy --all-targets --all-features
 
 docker:
     FROM ubuntu:24.04
-    ARG image=partner-chains-node
     ARG tags
+    ARG images
 
     RUN apt-get update && apt-get install -y \
         ca-certificates \
@@ -172,43 +157,15 @@ docker:
 
     ENTRYPOINT ["/usr/local/bin/partner-chains-node"]
 
-		FOR tag IN $tags
-		    SAVE IMAGE --push $image:$tag
-		END
-
-deps:
-    FROM +source
-    COPY +build/partner-chains-demo-node .
-    RUN ldd partner-chains-node \
-        | awk 'NF == 4 { system("echo " $3) }' \
-        | tar -czf deps.tgz --files-from=-
-    SAVE ARTIFACT deps.tgz deps
-
-mock:
-  FROM +setup
-  ARG CRATES=$(tomlq -r '.workspace.members[]' Cargo.toml)
-  ARG SRCS=$(tomlq -r '.workspace.members[] + "/src"' Cargo.toml)
-  ARG LIBS=$(tomlq -r '.workspace.dependencies[]|select(type == "object" and has("path")).path + "/src/lib.rs"' Cargo.toml)
-  FOR crate IN $CRATES
-    COPY --if-exists $crate/Cargo.toml $crate/Cargo.toml
-  END
-  RUN mkdir -p $SRCS \
-      && touch $LIBS \
-      && for crate in $SRCS; do if [ ! -f $crate/lib.rs ]; then touch $crate/main.rs; fi; done \
-      && touch demo/node/src/lib.rs
-
-fetch-deps:
-  FROM +mock
-  CACHE --sharing shared --id cargo $CARGO_HOME
-  RUN --ssh cargo fetch --locked
+    FOR tag IN $tags
+      FOR image IN $images
+        SAVE IMAGE --push $image:$tag
+      END
+    END
 
 INSTALL:
   FUNCTION
   COPY +build/partner-chains-demo-node /usr/local/bin/partner-chains-node
-  COPY +deps/deps /tmp/deps.tgz
-
-  RUN tar -v -C / -xzf /tmp/deps.tgz \
-      && rm -rf /tmp/deps.tgz
 
   RUN ldd /usr/local/bin/partner-chains-node \
       && /usr/local/bin/partner-chains-node --version

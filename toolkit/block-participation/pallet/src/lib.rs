@@ -1,3 +1,61 @@
+//! Pallet providing configuration and supporting runtime logic for the block participation data feature of Partner Chains SDK.
+//!
+//! ## Purpose of this pallet
+//!
+//! This pallet provides the runtime-side logic supporting the block participation data feature of PC SDK.
+//! Unlike most pallets, this one is not meant to be interacted with either by the chain's users or other
+//! runtime components in the system. Instead, it only serves two purposes:
+//! - it provides all configuration required by the feature's inherent data provider defined in the primitives crate
+//! - it provides an inhrenent extrinsic that removes from the runtime storage data that has been already
+//!   processed by the inherent data provider
+//! The reason for that is that the feature's purpose is to produce inherent data containing block participation
+//! data for consumption by custom-written pallet provided by each Partner Chain itself.
+//!
+//! The pallet is expected to be used together with the `pallet_block_production_log` when deployed in the
+//! context of Partner Chains SDK.
+//!
+//! ## Usage
+//!
+//! ### Adding into the runtime
+//!
+//! The pallet's configuration can be divided into three groups by purpose:
+//! - `BlockAuthor` and `DelegatorId` types representing block authors and their dependant block beneficiaries
+//! - `should_release_data` function that controls when the inherent data provider is active
+//! - `blocks_produced_up_to_slot` and `blocks_produced_upd_to_slot` functions that provide bindings for consuming
+//!   (reading and clearing) block production data. Most easily these should come from `pallet_block_production_log`.
+//!
+//! Consult documentation of [pallet::Config] for details on each configuration field.
+//!
+//! Assuming that the runtime also contains the `pallet_block_production_log`, an example configuration of
+//! the pallet might look like the following:
+//! ```rust,ignore
+//! const RELEASE_PERIOD: u64 = 128;
+//!
+//! impl pallet_block_participation::Config for Runtime {
+//!     type WeightInfo = pallet_block_participation::weights::SubstrateWeight<Runtime>;
+//!     type BlockAuthor = BlockAuthor;
+//!     type DelegatorId = DelegatorKey;
+//!
+//!     // release data every `RELEASE_PERIOD` blocks, up to current slot
+//!     fn should_release_data(slot: sidechain_slots::Slot) -> Option<sidechain_slots::Slot> {
+//!         if System::block_number() % RELEASE_PERIOD == 0 {
+//!             Some(slot)
+//!         } else {
+//!             None
+//!         }
+//!     }
+//!
+//!     fn blocks_produced_up_to_slot(slot: Slot) -> impl Iterator<Item = (Slot, BlockAuthor)> {
+//!         BlockProductionLog::peek_prefix(slot)
+//!     }
+//!
+//!     fn discard_blocks_produced_up_to_slot(slot: Slot) {
+//!         BlockProductionLog::drop_prefix(&slot)
+//!     }
+//!
+//!     const TARGET_INHERENT_ID: InherentIdentifier = *b"_example";
+//! }
+//! ```
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -43,7 +101,7 @@ pub mod pallet {
 		/// This should remove exactly the same data as returned by `blocks_produced_up_to_slot`
 		fn discard_blocks_produced_up_to_slot(slot: Slot);
 
-		/// Inherent ID for which block participation data should be provided.
+		/// Inherent ID under which block participation data should be provided.
 		/// It should be set to the ID used by the pallet that will process participation data for
 		/// paying out block rewards or other purposes.
 		const TARGET_INHERENT_ID: InherentIdentifier;
@@ -110,7 +168,7 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		/// Should return slot up to which block production data should be released or None.
+		/// Returns slot up to which block production data should be released or [None].
 		pub fn should_release_data(slot: Slot) -> Option<Slot> {
 			<T as Config>::should_release_data(slot)
 		}

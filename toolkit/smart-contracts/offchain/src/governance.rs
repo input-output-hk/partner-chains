@@ -11,6 +11,7 @@ use partner_chains_plutus_data::PlutusDataExtensions as _;
 use serde::Serialize;
 use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::{MainchainKeyHash, UtxoId};
+use std::fmt::Display;
 
 #[derive(Clone, Debug)]
 pub(crate) struct GovernanceData {
@@ -282,6 +283,16 @@ impl MultiSigParameters {
 			threshold: self.threshold.into(),
 			key_hashes: self.governance_authorties.iter().map(|key_hash| key_hash.0).collect(),
 		}
+	}
+}
+
+impl Display for MultiSigParameters {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.write_str("Governance authorities:")?;
+		for authority in self.governance_authorties.iter() {
+			f.write_str(&format!("\n\t{}", &authority.to_hex_string()))?;
+		}
+		f.write_str(&format!("\nThreshold: {}", self.threshold))
 	}
 }
 

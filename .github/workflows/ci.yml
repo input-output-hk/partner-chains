@@ -19,6 +19,7 @@ env:
 permissions:
   id-token: write
   contents: write
+  packages: write
 
 jobs:
 
@@ -129,7 +130,9 @@ jobs:
           EARTHLY_OUTPUT: true
           EARTHLY_PUSH: true
         run: |
-          earthly -P +ci-pre-merge --image=${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node --tags="${{ steps.get_sha.outputs.sha }}"
+          earthly -P +ci-pre-merge \
+          --images="${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node" \
+          --tags="${{ steps.get_sha.outputs.sha }} latest"
       - name: Upload partner-chains-node artifact
         uses: actions/upload-artifact@v4
         with:
@@ -321,6 +324,12 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ secrets.ECR_REGISTRY_SECRET }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Copy Earthfile to build directory
         run: |
           cp Earthfile ./to-build/
@@ -331,7 +340,9 @@ jobs:
           EARTHLY_OUTPUT: true
           EARTHLY_PUSH: true
         run: |
-          earthly -P +ci-post-merge --image=${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node --tags="${{ steps.get_sha.outputs.sha }} latest"
+          earthly -P +ci-post-merge \
+          --images="${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node ghcr.io/${{ github.repository }}/partner-chains-node-unstable" \
+          --tags="${{ steps.get_sha.outputs.sha }} latest"
       - name: Rename artifact
         run: |
           cp ./to-build/partner-chains-node ./to-build/partner-chains-node-${{ steps.get_sha.outputs.sha }}-x86_64-linux
@@ -704,7 +715,7 @@ jobs:
           EARTHLY_OUTPUT: true
           EARTHLY_PUSH: true
         run: |
-          earthly -P +ci-workflow-dispatch --image=${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node --tags="${{ inputs.sha }}"
+          earthly -P +ci-workflow-dispatch --images="${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node" --tags="${{ inputs.sha }}"
       - name: Rename artifact
         run: |
           cp ./to-build/partner-chains-node ./to-build/partner-chains-node-${{ inputs.sha }}-x86_64-linux

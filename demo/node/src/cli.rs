@@ -4,6 +4,7 @@ use partner_chains_node_commands::{
 	PartnerChainRuntimeBindings, PartnerChainsSubcommand, RuntimeTypeWrapper,
 };
 use sc_cli::RunCmd;
+use sp_runtime::AccountId32;
 
 #[derive(Debug, clap::Parser)]
 pub struct Cli {
@@ -32,7 +33,7 @@ pub enum Subcommand {
 	Key(sc_cli::KeySubcommand),
 
 	#[clap(flatten)]
-	PartnerChains(PartnerChainsSubcommand<WizardBindings>),
+	PartnerChains(PartnerChainsSubcommand<WizardBindings, AccountId32>),
 
 	/// Build a chain specification.
 	BuildSpec(sc_cli::BuildSpecCmd),
