@@ -37,4 +37,8 @@ impl sidechain_mc_hash::McHashDataSource for McHashDataSourceMock {
 			.get_stable_block_for(hash, Timestamp::new(reference_timestamp.as_millis()))
 			.await?)
 	}
+
+	async fn get_block_by_hash(&self, hash: McBlockHash) -> Result<Option<MainchainBlock>> {
+		Ok(self.block_source.get_block_by_hash(hash).await?)
+	}
 }

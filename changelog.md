@@ -28,6 +28,7 @@ the feature `pallet-session-compat`.
 
 ## Fixed
 
+* MC Hash inherent data provider will not propose older MC state than one already present in the ledger
 * `governance init` when genesis utxo had a script attached, then transaction fee was sometimes calculated incorrectly
 
 ## Added
