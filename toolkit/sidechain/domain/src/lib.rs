@@ -232,7 +232,8 @@ impl AssetName {
 	}
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, TypeInfo, MaxEncodedLen, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AssetId {
 	pub policy_id: PolicyId,
 	pub asset_name: AssetName,

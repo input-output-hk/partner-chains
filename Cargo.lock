@@ -1979,6 +1979,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive-where"
+version = "1.2.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62d671cc41a825ebabc75757b62d3d168c577f9149b2d49ece1dad1f72119d25"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.87",
+]
+
+[[package]]
 name = "derive_more"
 version = "0.99.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6284,6 +6295,20 @@ dependencies = [
 [[package]]
 name = "pallet-governed-map"
 version = "1.6.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "pretty_assertions",
+ "scale-info",
+ "sidechain-domain",
+ "sp-core",
+ "sp-governed-map",
+ "sp-io",
+ "sp-runtime",
+]
 
 [[package]]
 name = "pallet-grandpa"
@@ -10026,6 +10051,7 @@ dependencies = [
  "bech32 0.9.1",
  "blake2b_simd",
  "byte-string-derive",
+ "derive-where",
  "derive_more",
  "ed25519-zebra",
  "figment",
@@ -10565,6 +10591,15 @@ dependencies = [
 [[package]]
 name = "sp-governed-map"
 version = "1.6.0"
+dependencies = [
+ "derive-where",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sidechain-domain",
+ "sp-inherents",
+ "thiserror",
+]
 
 [[package]]
 name = "sp-inherents"
