@@ -1,5 +1,9 @@
-(function() {var implementors = {
-"authority_selection_inherents":[["impl&lt;AuthorityId: <a class=\"trait\" href=\"https://doc.rust-lang.org/1.81.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a>, AuthorityKeys: <a class=\"trait\" href=\"https://doc.rust-lang.org/1.81.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a>&gt; CommitteeMember for <a class=\"enum\" href=\"authority_selection_inherents/enum.CommitteeMember.html\" title=\"enum authority_selection_inherents::CommitteeMember\">CommitteeMember</a>&lt;AuthorityId, AuthorityKeys&gt;"]],
-"pallet_session_validator_management":[],
-"sp_session_validator_management":[]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {
+    var implementors = Object.fromEntries([["authority_selection_inherents",[["impl&lt;AuthorityId: <a class=\"trait\" href=\"https://doc.rust-lang.org/1.86.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a>, AuthorityKeys: <a class=\"trait\" href=\"https://doc.rust-lang.org/1.86.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a>&gt; CommitteeMember for <a class=\"enum\" href=\"authority_selection_inherents/enum.CommitteeMember.html\" title=\"enum authority_selection_inherents::CommitteeMember\">CommitteeMember</a>&lt;AuthorityId, AuthorityKeys&gt;"]]],["pallet_session_validator_management",[]],["sp_session_validator_management",[]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[567,43,39]}

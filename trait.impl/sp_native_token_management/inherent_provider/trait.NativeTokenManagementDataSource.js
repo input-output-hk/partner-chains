@@ -1,4 +1,9 @@
-(function() {var implementors = {
-"partner_chains_db_sync_data_sources":[["impl NativeTokenManagementDataSource for <a class=\"struct\" href=\"partner_chains_db_sync_data_sources/native_token/struct.NativeTokenManagementDataSourceImpl.html\" title=\"struct partner_chains_db_sync_data_sources::native_token::NativeTokenManagementDataSourceImpl\">NativeTokenManagementDataSourceImpl</a>"]],
-"partner_chains_mock_data_sources":[["impl NativeTokenManagementDataSource for <a class=\"struct\" href=\"partner_chains_mock_data_sources/native_token/struct.NativeTokenDataSourceMock.html\" title=\"struct partner_chains_mock_data_sources::native_token::NativeTokenDataSourceMock\">NativeTokenDataSourceMock</a>"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {
+    var implementors = Object.fromEntries([["partner_chains_db_sync_data_sources",[["impl NativeTokenManagementDataSource for <a class=\"struct\" href=\"partner_chains_db_sync_data_sources/native_token/struct.NativeTokenManagementDataSourceImpl.html\" title=\"struct partner_chains_db_sync_data_sources::native_token::NativeTokenManagementDataSourceImpl\">NativeTokenManagementDataSourceImpl</a>"]]],["partner_chains_mock_data_sources",[["impl NativeTokenManagementDataSource for <a class=\"struct\" href=\"partner_chains_mock_data_sources/native_token/struct.NativeTokenDataSourceMock.html\" title=\"struct partner_chains_mock_data_sources::native_token::NativeTokenDataSourceMock\">NativeTokenDataSourceMock</a>"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[356,318]}

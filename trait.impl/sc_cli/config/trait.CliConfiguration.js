@@ -1,3 +1,9 @@
-(function() {var implementors = {
-"partner_chains_node_commands":[["impl CliConfiguration for <a class=\"struct\" href=\"partner_chains_node_commands/struct.AriadneParametersCmd.html\" title=\"struct partner_chains_node_commands::AriadneParametersCmd\">AriadneParametersCmd</a>"],["impl CliConfiguration for <a class=\"struct\" href=\"partner_chains_node_commands/struct.RegistrationStatusCmd.html\" title=\"struct partner_chains_node_commands::RegistrationStatusCmd\">RegistrationStatusCmd</a>"],["impl CliConfiguration for <a class=\"struct\" href=\"partner_chains_node_commands/struct.SidechainParamsCmd.html\" title=\"struct partner_chains_node_commands::SidechainParamsCmd\">SidechainParamsCmd</a>"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {
+    var implementors = Object.fromEntries([["partner_chains_node_commands",[["impl CliConfiguration for <a class=\"struct\" href=\"partner_chains_node_commands/struct.AriadneParametersCmd.html\" title=\"struct partner_chains_node_commands::AriadneParametersCmd\">AriadneParametersCmd</a>"],["impl CliConfiguration for <a class=\"struct\" href=\"partner_chains_node_commands/struct.RegistrationStatusCmd.html\" title=\"struct partner_chains_node_commands::RegistrationStatusCmd\">RegistrationStatusCmd</a>"],["impl CliConfiguration for <a class=\"struct\" href=\"partner_chains_node_commands/struct.SidechainParamsCmd.html\" title=\"struct partner_chains_node_commands::SidechainParamsCmd\">SidechainParamsCmd</a>"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[673]}

@@ -1,3 +1,9 @@
-(function() {var implementors = {
-"pallet_session_validator_management":[["impl&lt;T, ScEpochNumber&gt; ShouldEndSession&lt;&lt;&lt;&lt;T as Config&gt;::Block as HeaderProvider&gt;::HeaderT as Header&gt;::Number&gt; for <a class=\"struct\" href=\"pallet_session_validator_management/session_manager/struct.ValidatorManagementSessionManager.html\" title=\"struct pallet_session_validator_management::session_manager::ValidatorManagementSessionManager\">ValidatorManagementSessionManager</a>&lt;T&gt;<div class=\"where\">where\n    T: <a class=\"trait\" href=\"pallet_session_validator_management/pallet/trait.Config.html\" title=\"trait pallet_session_validator_management::pallet::Config\">Config</a>&lt;ScEpochNumber = ScEpochNumber&gt;,\n    ScEpochNumber: <a class=\"trait\" href=\"https://doc.rust-lang.org/1.81.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a> + <a class=\"trait\" href=\"https://doc.rust-lang.org/1.81.0/core/cmp/trait.PartialOrd.html\" title=\"trait core::cmp::PartialOrd\">PartialOrd</a>,</div>"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {
+    var implementors = Object.fromEntries([["pallet_session_validator_management",[["impl&lt;T, ScEpochNumber&gt; ShouldEndSession&lt;&lt;&lt;&lt;T as Config&gt;::Block as HeaderProvider&gt;::HeaderT as Header&gt;::Number&gt; for <a class=\"struct\" href=\"pallet_session_validator_management/session_manager/struct.ValidatorManagementSessionManager.html\" title=\"struct pallet_session_validator_management::session_manager::ValidatorManagementSessionManager\">ValidatorManagementSessionManager</a>&lt;T&gt;<div class=\"where\">where\n    T: <a class=\"trait\" href=\"pallet_session_validator_management/pallet/trait.Config.html\" title=\"trait pallet_session_validator_management::pallet::Config\">Config</a>&lt;ScEpochNumber = ScEpochNumber&gt;,\n    ScEpochNumber: <a class=\"trait\" href=\"https://doc.rust-lang.org/1.86.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a> + <a class=\"trait\" href=\"https://doc.rust-lang.org/1.86.0/core/cmp/trait.PartialOrd.html\" title=\"trait core::cmp::PartialOrd\">PartialOrd</a>,</div>"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[1017]}
