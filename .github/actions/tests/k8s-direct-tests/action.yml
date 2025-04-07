@@ -86,9 +86,9 @@ runs:
       run: |
         kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"partner_chain_getParams","params":[],"id":1}' \
+          -d '{"jsonrpc":"2.0","method":"sidechain_getParams","params":[],"id":1}' \
           http://localhost:9933 | tee /dev/stderr | jq -e '.result.genesis_utxo' || { echo "❌ Missing or invalid genesis UTXO"; exit 1; }
-
+    
         echo "✅ Params test passed."
 
     - name: Test Ariadne Parameters
