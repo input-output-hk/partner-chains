@@ -714,7 +714,7 @@ jobs:
           EARTHLY_OUTPUT: true
           EARTHLY_PUSH: true
         run: |
-          earthly -P +ci-workflow-dispatch --image="${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node" --tags="${{ inputs.sha }}"
+          earthly -P +ci-workflow-dispatch --images="${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node" --tags="${{ inputs.sha }}"
       - name: Rename artifact
         run: |
           cp ./to-build/partner-chains-node ./to-build/partner-chains-node-${{ inputs.sha }}-x86_64-linux
