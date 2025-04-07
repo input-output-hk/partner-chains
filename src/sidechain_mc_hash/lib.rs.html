@@ -328,6 +328,53 @@
 <a href="#328" id="328">328</a>
 <a href="#329" id="329">329</a>
 <a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::McHashInherentError::StableBlockNotFound;
 <span class="kw">use </span>async_trait::async_trait;
 <span class="kw">use </span>sidechain_domain::{byte_string::ByteString, <span class="kw-2">*</span>};
@@ -371,6 +418,8 @@
 	</span>McStateReferenceRegressed(McBlockHash, Slot, McBlockNumber, McBlockNumber),
 	<span class="attr">#[error(<span class="string">"Failed to retrieve MC hash from digest: {0}"</span>)]
 	</span>DigestError(String),
+	<span class="attr">#[error(<span class="string">"Failed to retrieve MC Block that was verified as stable by its hash"</span>)]
+	</span>StableBlockNotFoundByHash(McBlockHash),
 }
 
 <span class="kw">impl </span>From&lt;MainchainBlock&gt; <span class="kw">for </span>McHashInherentDataProvider {
@@ -416,14 +465,30 @@
 		hash: McBlockHash,
 		reference_timestamp: Timestamp,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;;
+
+	<span class="doccomment">/// Find block by hash.
+	/// # Arguments
+	/// * `hash` - the hash of the block
+	///
+	/// # Returns
+	/// * `Some(block)` - the block with given hash
+	/// * `None` - no block with the given hash was found
+	</span><span class="kw">async fn </span>get_block_by_hash(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		hash: McBlockHash,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;;
 }
 
 <span class="kw">impl </span>McHashInherentDataProvider {
-	<span class="kw">pub async fn </span>new_proposal(
+	<span class="kw">pub async fn </span>new_proposal&lt;Header&gt;(
+		parent_header: Header,
 		data_source: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>McHashDataSource + Send + Sync),
 		slot: Slot,
 		slot_duration: SlotDuration,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, McHashInherentError&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, McHashInherentError&gt;
+	<span class="kw">where
+		</span>Header: HeaderT,
+	{
 		<span class="kw">let </span>slot_start_timestamp =
 			slot.timestamp(slot_duration).ok_or(McHashInherentError::SlotTooBig)<span class="question-mark">?</span>;
 		<span class="kw">let </span>mc_block = data_source
@@ -432,7 +497,23 @@
 			</span>.map_err(McHashInherentError::DataSourceError)<span class="question-mark">?
 			</span>.ok_or(StableBlockNotFound(slot_start_timestamp))<span class="question-mark">?</span>;
 
-		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ mc_block })
+		<span class="kw">match </span>McHashInherentDigest::value_from_digest(<span class="kw-2">&amp;</span>parent_header.digest().logs).ok() {
+			<span class="comment">// If parent block references some MC state, it is illegal to propose older state
+			</span><span class="prelude-val">Some</span>(parent_mc_hash) =&gt; {
+				<span class="kw">let </span>parent_stable_mc_block = data_source
+					.get_block_by_hash(parent_mc_hash.clone())
+					.<span class="kw">await
+					</span>.map_err(McHashInherentError::DataSourceError)<span class="question-mark">?
+					</span>.ok_or(McHashInherentError::StableBlockNotFoundByHash(parent_mc_hash))<span class="question-mark">?</span>;
+
+				<span class="kw">if </span>mc_block.number &gt;= parent_stable_mc_block.number {
+					<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ mc_block })
+				} <span class="kw">else </span>{
+					<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ mc_block: parent_stable_mc_block })
+				}
+			},
+			<span class="prelude-val">None </span>=&gt; <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ mc_block }),
+		}
 	}
 
 	<span class="kw">pub async fn </span>new_verification&lt;Header&gt;(
@@ -632,11 +713,12 @@
 	<span class="attr">#[derive(new, Clone)]
 	</span><span class="kw">pub struct </span>MockMcHashDataSource {
 		<span class="kw">pub </span>stable_blocks: Vec&lt;MainchainBlock&gt;,
+		<span class="kw">pub </span>unstable_blocks: Vec&lt;MainchainBlock&gt;,
 	}
 
 	<span class="kw">impl </span>From&lt;Vec&lt;MainchainBlock&gt;&gt; <span class="kw">for </span>MockMcHashDataSource {
 		<span class="kw">fn </span>from(stable_blocks: Vec&lt;MainchainBlock&gt;) -&gt; <span class="self">Self </span>{
-			<span class="self">Self </span>{ stable_blocks }
+			<span class="self">Self </span>{ stable_blocks, unstable_blocks: <span class="macro">vec!</span>[] }
 		}
 	}
 
@@ -655,6 +737,18 @@
 			_reference_timestamp: Timestamp,
 		) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 			<span class="prelude-val">Ok</span>(<span class="self">self</span>.stable_blocks.iter().find(|b| b.hash == hash).cloned())
+		}
+
+		<span class="kw">async fn </span>get_block_by_hash(
+			<span class="kw-2">&amp;</span><span class="self">self</span>,
+			hash: McBlockHash,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;MainchainBlock&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
+			<span class="prelude-val">Ok</span>(<span class="self">self
+				</span>.stable_blocks
+				.iter()
+				.find(|b| b.hash == hash)
+				.cloned()
+				.or_else(|| <span class="self">self</span>.unstable_blocks.iter().find(|b| b.hash == hash).cloned()))
 		}
 	}
 }

@@ -276,6 +276,8 @@
 <a href="#276" id="276">276</a>
 <a href="#277" id="277">277</a>
 <a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider <span class="kw">as </span>AriadneIDP;
 <span class="kw">use </span>authority_selection_inherents::authority_selection_inputs::{
 	AuthoritySelectionDataSource, AuthoritySelectionInputs,
@@ -369,7 +371,9 @@
 
 		<span class="kw">let </span>(slot, timestamp) =
 			timestamp_and_slot_cidp(sc_slot_config.slot_duration, time_source.clone());
+		<span class="kw">let </span>parent_header = client.expect_header(parent_hash)<span class="question-mark">?</span>;
 		<span class="kw">let </span>mc_hash = McHashIDP::new_proposal(
+			parent_header,
 			mc_hash_data_source.as_ref(),
 			<span class="kw-2">*</span>slot,
 			sc_slot_config.slot_duration,
