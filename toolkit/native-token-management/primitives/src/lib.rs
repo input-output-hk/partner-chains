@@ -93,9 +93,7 @@ impl IsFatalError for InherentError {
 #[cfg(feature = "std")]
 mod inherent_provider {
 	use super::*;
-	use sidechain_mc_hash::get_mc_hash_for_block;
 	use sp_api::{ApiError, ApiExt, ProvideRuntimeApi};
-	use sp_blockchain::HeaderBackend;
 	use std::error::Error;
 	use std::sync::Arc;
 
@@ -120,8 +118,6 @@ mod inherent_provider {
 		DataSourceError(Box<dyn Error + Send + Sync>),
 		#[error("Failed to call runtime API: {0:?}")]
 		ApiError(ApiError),
-		#[error("Failed to retrieve previous MC hash: {0:?}")]
-		McHashError(Box<dyn Error + Send + Sync>),
 	}
 
 	impl From<ApiError> for IDPCreationError {
@@ -137,11 +133,11 @@ mod inherent_provider {
 			client: Arc<C>,
 			data_source: &(dyn NativeTokenManagementDataSource + Send + Sync),
 			mc_hash: McBlockHash,
+			parent_mc_hash: Option<McBlockHash>,
 			parent_hash: <Block as BlockT>::Hash,
 		) -> Result<Self, IDPCreationError>
 		where
 			Block: BlockT,
-			C: HeaderBackend<Block>,
 			C: ProvideRuntimeApi<Block> + Send + Sync,
 			C::Api: NativeTokenManagementApi<Block>,
 		{
@@ -152,12 +148,6 @@ mod inherent_provider {
 				let api = client.runtime_api();
 				let Some(scripts) = api.get_main_chain_scripts(parent_hash)? else {
 					return Ok(Self { token_amount: None });
-				};
-				let parent_mc_hash: Option<McBlockHash> = if api.initialized(parent_hash)? {
-					get_mc_hash_for_block(client.as_ref(), parent_hash)
-						.map_err(IDPCreationError::McHashError)?
-				} else {
-					None
 				};
 				let token_amount = data_source
 					.get_total_native_token_transfer(parent_mc_hash, mc_hash, scripts)
