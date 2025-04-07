@@ -129,13 +129,13 @@ runs:
       shell: bash
       run: |
         MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
-
-        MAINCHAIN_KEY=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+    
+        MAINCHAIN_KEY=$(kubectl exec "ci-preview-validator-1" -c substrate-node -n "ci-preview" -- \
           curl -s -H "Content-Type: application/json" \
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
           http://localhost:9933 | jq -r '.result.candidateRegistrations | keys[0]')
-
-        kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+    
+        kubectl exec "ci-preview-validator-1" -c substrate-node -n "ci-preview" -- \
           curl -s -H "Content-Type: application/json" \
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getRegistrations\",\"params\":[$MC_EPOCH,\"$MAINCHAIN_KEY\"],\"id\":1}" \
           http://localhost:9933 | tee /dev/stderr | jq -e '
@@ -150,7 +150,7 @@ runs:
               .sidechainSignature and
               .mainchainSignature and
               .crossChainSignature and
-              (.isValid | not == null) and
+              (.isValid | type == "boolean") and
               .stakeDelegation and
               .utxo and
               .utxo.utxoId and
@@ -160,5 +160,6 @@ runs:
               .utxo.txIndexWithinBlock
             )
           ' || { echo "❌ Invalid Registrations response"; exit 1; }
-
+    
         echo "✅ Registrations valid."
+    
