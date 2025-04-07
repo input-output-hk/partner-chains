@@ -1,9 +1,9 @@
 (function() {
-    var implementors = Object.fromEntries([["partner_chains_demo_runtime",[["impl&lt;__SrApiBlock__: BlockT, RuntimeApiImplCall: CallApiAt&lt;__SrApiBlock__&gt; + 'static&gt; <a class=\"trait\" href=\"sidechain_slots/trait.SlotApi.html\" title=\"trait sidechain_slots::SlotApi\">SlotApi</a>&lt;__SrApiBlock__&gt; for <a class=\"struct\" href=\"partner_chains_demo_runtime/struct.RuntimeApiImpl.html\" title=\"struct partner_chains_demo_runtime::RuntimeApiImpl\">RuntimeApiImpl</a>&lt;__SrApiBlock__, RuntimeApiImplCall&gt;<div class=\"where\">where\n    RuntimeApiImplCall::StateBackend: StateBackend&lt;HashingFor&lt;__SrApiBlock__&gt;&gt;,\n    <a class=\"primitive\" href=\"https://doc.rust-lang.org/1.86.0/std/primitive.reference.html\">&amp;'static RuntimeApiImplCall</a>: <a class=\"trait\" href=\"https://doc.rust-lang.org/1.86.0/core/marker/trait.Send.html\" title=\"trait core::marker::Send\">Send</a>,</div>"]]]]);
+    var implementors = Object.fromEntries([["partner_chains_demo_runtime",[["impl&lt;__SrApiBlock__: BlockT, RuntimeApiImplCall: CallApiAt&lt;__SrApiBlock__&gt; + 'static&gt; SlotApi&lt;__SrApiBlock__&gt; for <a class=\"struct\" href=\"partner_chains_demo_runtime/struct.RuntimeApiImpl.html\" title=\"struct partner_chains_demo_runtime::RuntimeApiImpl\">RuntimeApiImpl</a>&lt;__SrApiBlock__, RuntimeApiImplCall&gt;<div class=\"where\">where\n    RuntimeApiImplCall::StateBackend: StateBackend&lt;HashingFor&lt;__SrApiBlock__&gt;&gt;,\n    <a class=\"primitive\" href=\"https://doc.rust-lang.org/1.86.0/std/primitive.reference.html\">&amp;'static RuntimeApiImplCall</a>: <a class=\"trait\" href=\"https://doc.rust-lang.org/1.86.0/core/marker/trait.Send.html\" title=\"trait core::marker::Send\">Send</a>,</div>"]]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {
         window.pending_implementors = implementors;
     }
 })()
-//{"start":57,"fragment_lengths":[878]}
+//{"start":57,"fragment_lengths":[770]}
