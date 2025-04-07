@@ -124,7 +124,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ github.token }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Copy Earthfile to build directory
         run: |
           cp Earthfile ./to-build/
@@ -336,7 +336,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ github.token }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Copy Earthfile to build directory
         run: |
           cp Earthfile ./to-build/
