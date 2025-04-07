@@ -50,18 +50,20 @@ runs:
     - name: Test Block Production
       shell: bash
       run: |
-        BLOCK1=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        BLOCK1_HEX=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d '{"jsonrpc":"2.0","method":"chain_getHeader","params":[],"id":1}' \
-          http://localhost:9933 | jq '.result.number | tonumber')
-
+          http://localhost:9933 | jq -r '.result.number')
+        BLOCK1=$((BLOCK1_HEX))
+    
         sleep 30
-
-        BLOCK2=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+    
+        BLOCK2_HEX=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d '{"jsonrpc":"2.0","method":"chain_getHeader","params":[],"id":1}' \
-          http://localhost:9933 | jq '.result.number | tonumber')
-
+          http://localhost:9933 | jq -r '.result.number')
+        BLOCK2=$((BLOCK2_HEX))
+    
         [[ "$BLOCK2" -gt "$BLOCK1" ]] || { echo "❌ Block number did not increase"; exit 1; }
         echo "✅ Block producing test passed."
 
