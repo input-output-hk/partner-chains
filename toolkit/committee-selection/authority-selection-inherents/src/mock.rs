@@ -8,6 +8,7 @@ pub struct MockAuthoritySelectionDataSource {
 	/// `candidates[1]` is the list of candidates that will be returned for epoch 1 and so on.
 	pub candidates: Vec<Vec<CandidateRegistrations>>,
 	pub permissioned_candidates: Vec<Option<Vec<RawPermissionedCandidateData>>>,
+	pub num_permissioned_candidates: u16,
 }
 
 impl Default for MockAuthoritySelectionDataSource {
@@ -15,6 +16,7 @@ impl Default for MockAuthoritySelectionDataSource {
 		Self {
 			candidates: vec![vec![], vec![]],
 			permissioned_candidates: vec![Some(vec![]), Some(vec![])],
+			num_permissioned_candidates: 3,
 		}
 	}
 }
@@ -30,6 +32,10 @@ impl MockAuthoritySelectionDataSource {
 	) -> Self {
 		Self { permissioned_candidates, ..self }
 	}
+
+	pub fn with_num_permissioned_candidates(self, num_permissioned_candidates: u16) -> Self {
+		Self { num_permissioned_candidates, ..self }
+	}
 }
 
 #[async_trait::async_trait]
@@ -41,14 +47,14 @@ impl AuthoritySelectionDataSource for MockAuthoritySelectionDataSource {
 		_permissioned_candidates_policy: PolicyId,
 	) -> Result<AriadneParameters, Box<dyn std::error::Error + Send + Sync>> {
 		match self.permissioned_candidates.get(epoch_number.0 as usize) {
-			Some(Some(candidates)) => Ok(AriadneParameters {
+			Some(candidates) => Ok(AriadneParameters {
 				d_parameter: DParameter {
-					num_permissioned_candidates: 3,
+					num_permissioned_candidates: self.num_permissioned_candidates,
 					num_registered_candidates: 2,
 				},
-				permissioned_candidates: Some(candidates.clone()),
+				permissioned_candidates: candidates.clone(),
 			}),
-			_ => Err("mock was called with unexpected argument".into()),
+			_ => Err(format!("mock was called with unexpected argument: {}", epoch_number).into()),
 		}
 	}
 
