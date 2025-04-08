@@ -207,27 +207,11 @@ mod tests {
 	async fn return_empty_ariadne_cidp_if_runtime_requests_too_new_epoch() {
 		// This is the epoch number that is too new
 		let next_unset_epoch_number = ScEpochNumber(42);
-		let client = TestApi { next_unset_epoch_number };
-		let sc_slot_config = ScSlotConfig {
-			slots_per_epoch: SlotsPerEpoch(10),
-			slot_duration: SlotDuration::from_millis(1000),
-		};
-		let epoch_config = MainchainEpochConfig {
-			first_epoch_timestamp_millis: Timestamp::from_unix_millis(0),
-			first_epoch_number: 0,
-			epoch_duration_millis: Duration::from_millis(
-				u64::from(sc_slot_config.slots_per_epoch.0)
-					* sc_slot_config.slot_duration.as_millis()
-					* 10,
-			),
-			first_slot_number: 0,
-			slot_duration_millis: Duration::from_millis(1000),
-		};
 		let mc_reference_epoch = McEpochNumber(1);
 		let empty_ariadne_idp = AriadneInherentDataProvider::new(
-			&client,
-			&sc_slot_config,
-			&epoch_config,
+			&client(next_unset_epoch_number),
+			&sc_slot_config(),
+			&epoch_config(),
 			H256::zero(),
 			// This is the slot that will be used to calculate current_epoch_number
 			Slot::from(400u64),
@@ -238,5 +222,80 @@ mod tests {
 
 		assert!(empty_ariadne_idp.is_ok());
 		assert!(empty_ariadne_idp.unwrap().data.is_none());
+	}
+
+	#[tokio::test]
+	async fn error_if_num_permissioned_candidates_non_zero_and_no_permissioned_candidate_list() {
+		use crate::ariadne_inherent_data_provider::InherentProviderCreationError::InputsCreationError;
+		use crate::authority_selection_inputs::AuthoritySelectionInputsCreationError::AriadneParametersQuery;
+
+		let next_unset_epoch_number = ScEpochNumber(42);
+		let mc_reference_epoch = McEpochNumber(5);
+		let ariadne_idp = AriadneInherentDataProvider::new(
+			&client(next_unset_epoch_number),
+			&sc_slot_config(),
+			&epoch_config(),
+			H256::zero(),
+			// This is the slot that will be used to calculate current_epoch_number
+			Slot::from(400u64),
+			&MockAuthoritySelectionDataSource::default()
+				.with_permissioned_candidates(vec![None, None, None, None, None])
+				.with_num_permissioned_candidates(3),
+			mc_reference_epoch,
+		)
+		.await;
+
+		assert!(ariadne_idp.is_err());
+		assert!(matches!(
+			ariadne_idp.unwrap_err(),
+			InputsCreationError(AriadneParametersQuery(_, _, _, _))
+		));
+	}
+
+	#[tokio::test]
+	async fn ok_if_num_permissioned_candidates_zero_and_no_permissioned_candidate_list() {
+		let next_unset_epoch_number = ScEpochNumber(42);
+		let mc_reference_epoch = McEpochNumber(5);
+		let ariadne_idp = AriadneInherentDataProvider::new(
+			&client(next_unset_epoch_number),
+			&sc_slot_config(),
+			&epoch_config(),
+			H256::zero(),
+			// This is the slot that will be used to calculate current_epoch_number
+			Slot::from(400u64),
+			&MockAuthoritySelectionDataSource::default()
+				.with_permissioned_candidates(vec![None, None, None, None, None])
+				.with_num_permissioned_candidates(0),
+			mc_reference_epoch,
+		)
+		.await;
+
+		assert!(ariadne_idp.is_ok());
+		assert!(ariadne_idp.unwrap().data.is_some());
+	}
+
+	fn sc_slot_config() -> ScSlotConfig {
+		ScSlotConfig {
+			slots_per_epoch: SlotsPerEpoch(10),
+			slot_duration: SlotDuration::from_millis(1000),
+		}
+	}
+
+	fn client(next_unset_epoch_number: ScEpochNumber) -> TestApi {
+		TestApi { next_unset_epoch_number }
+	}
+
+	fn epoch_config() -> MainchainEpochConfig {
+		MainchainEpochConfig {
+			first_epoch_timestamp_millis: Timestamp::from_unix_millis(0),
+			first_epoch_number: 0,
+			epoch_duration_millis: Duration::from_millis(
+				u64::from(sc_slot_config().slots_per_epoch.0)
+					* sc_slot_config().slot_duration.as_millis()
+					* 10,
+			),
+			first_slot_number: 0,
+			slot_duration_millis: Duration::from_millis(1000),
+		}
 	}
 }
