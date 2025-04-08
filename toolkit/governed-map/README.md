@@ -1,7 +1,7 @@
 # Governed Map
 
-The following document describes the Governed Map feature of the Partner Chains Toolkit
-implemented by the crates in this folder.
+Crates in this folder implement the Substrate components supporting the Governed Map features
+of the Partner Chains Toolkit.
 
 ## Purpose
 
@@ -26,12 +26,12 @@ The feature is implemented by 3 main components:
 1. Plutus scripts governing the creation, modification and deletion of entries in the Governed Map, along with
    the offchain commands necessary to create and submit transactions. These scripts determine a single
    Cardano address where the UTXOs containing the key-value entries are stored.
-2. Inherent data provider, along with its Cardano observability data source, which monitors the key-value
+2. Inherent data provider, along with its Cardano observability data source, that monitors the key-value
    store's Cardano address for changes, and emits inherent data with the summary of these changes (inserts,
    updates, deletions).
 3. A pallet, which stores the current values of all the mappings and updates them via an inherent whenever
-   a diff inherent data is produced. This pallet also exposes hooks for downstream pallets to register for
-   to be notified about changes in the mapped values.
+   a diff inherent data is produced. This pallet also exposes hooks for downstream pallets to register to be
+   notified about changes in the mapped values.
 
 The general flow of data can be seen in the following diagram:
 
