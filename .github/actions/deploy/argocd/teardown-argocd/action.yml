@@ -20,14 +20,14 @@ runs:
     - name: Install kubectl and awscli
       run: |
         # Install kubectl
-        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" > /dev/null 2>&1 || { echo "❌ Failed to download kubectl"; exit 1; }
         chmod +x ./kubectl
         sudo mv ./kubectl /usr/local/bin/kubectl
-  
+
         # Install or update AWS CLI v2
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-        unzip -o awscliv2.zip
-        sudo ./aws/install --update
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" > /dev/null 2>&1 || { echo "❌ Failed to download AWS CLI"; exit 1; }
+        unzip -o awscliv2.zip > /dev/null 2>&1 || { echo "❌ Failed to unzip AWS CLI"; exit 1; }
+        sudo ./aws/install --update > /dev/null 2>&1 || { echo "❌ Failed to install AWS CLI"; exit 1; }
       shell: bash
 
     - name: Configure kubectl
@@ -36,11 +36,11 @@ runs:
         K8S_SERVER: ${{ env.K8S_SERVER }}
         K8S_SA_TOKEN: ${{ env.K8S_SA_TOKEN }}
       run: |
-        echo "${KUBECONFIG_BASE64}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml
-        kubectl config set-cluster my-cluster --server=${K8S_SERVER} --insecure-skip-tls-verify=true
-        kubectl config set-credentials github-actions --token=${K8S_SA_TOKEN}
-        kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
-        kubectl config use-context my-context
+        echo "${KUBECONFIG_BASE64}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml || { echo "❌ Failed to decode kubeconfig"; exit 1; }
+        kubectl config set-cluster my-cluster --server=${K8S_SERVER} --insecure-skip-tls-verify=true > /dev/null 2>&1 || { echo "❌ Failed to set cluster"; exit 1; }
+        kubectl config set-credentials github-actions --token=${K8S_SA_TOKEN} > /dev/null 2>&1 || { echo "❌ Failed to set credentials"; exit 1; }
+        kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default > /dev/null 2>&1 || { echo "❌ Failed to set context"; exit 1; }
+        kubectl config use-context my-context > /dev/null 2>&1 || { echo "❌ Failed to use context"; exit 1; }
       shell: bash
 
     - name: Download Manifest Artifact

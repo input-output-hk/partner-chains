@@ -16,14 +16,14 @@ runs:
     - name: Install kubectl and awscli
       run: |
         # Install kubectl
-        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" > /dev/null 2>&1 || { echo "❌ Failed to download kubectl"; exit 1; }
         chmod +x ./kubectl
         sudo mv ./kubectl /usr/local/bin/kubectl
-  
+
         # Install or update AWS CLI v2
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-        unzip -o awscliv2.zip
-        sudo ./aws/install --update
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" > /dev/null 2>&1 || { echo "❌ Failed to download AWS CLI"; exit 1; }
+        unzip -o awscliv2.zip > /dev/null 2>&1 || { echo "❌ Failed to unzip AWS CLI"; exit 1; }
+        sudo ./aws/install --update > /dev/null 2>&1 || { echo "❌ Failed to install AWS CLI"; exit 1; }
       shell: bash
     - name: Configure kubectl
       run: |

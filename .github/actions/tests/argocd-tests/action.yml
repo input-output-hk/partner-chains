@@ -38,11 +38,11 @@ runs:
         K8S_SERVER: ${{ env.K8S_SERVER }}
         K8S_SA_TOKEN: ${{ env.K8S_SA_TOKEN }}
       run: |
-        echo "${KUBECONFIG_BASE64}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml
-        kubectl config set-cluster my-cluster --server=${K8S_SERVER} --insecure-skip-tls-verify=true
-        kubectl config set-credentials github-actions --token=${K8S_SA_TOKEN}
-        kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
-        kubectl config use-context my-context
+        echo "${KUBECONFIG_BASE64}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml || { echo "❌ Failed to decode kubeconfig"; exit 1; }
+        kubectl config set-cluster my-cluster --server=${K8S_SERVER} --insecure-skip-tls-verify=true > /dev/null 2>&1 || { echo "❌ Failed to set cluster"; exit 1; }
+        kubectl config set-credentials github-actions --token=${K8S_SA_TOKEN} > /dev/null 2>&1 || { echo "❌ Failed to set credentials"; exit 1; }
+        kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default > /dev/null 2>&1 || { echo "❌ Failed to set context"; exit 1; }
+        kubectl config use-context my-context > /dev/null 2>&1 || { echo "❌ Failed to use context"; exit 1; }
       shell: bash
 
     - name: Check Deployment
