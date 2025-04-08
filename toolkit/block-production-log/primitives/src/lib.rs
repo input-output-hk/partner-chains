@@ -53,7 +53,6 @@ extern crate alloc;
 #[cfg(test)]
 mod test;
 
-use core::error::Error;
 use parity_scale_codec::{Decode, Encode};
 use sp_inherents::{InherentIdentifier, IsFatalError};
 use sp_runtime::traits::Block as BlockT;
@@ -103,7 +102,7 @@ impl<Author> BlockAuthorInherentProvider<Author> {
 		client: &C,
 		parent_hash: Block::Hash,
 		slot: sidechain_slots::Slot,
-	) -> Result<Self, Box<dyn Error + Send + Sync>>
+	) -> Result<Self, Box<dyn core::error::Error + Send + Sync>>
 	where
 		Member: Decode,
 		Block: BlockT,
