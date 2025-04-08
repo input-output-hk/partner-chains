@@ -106,7 +106,7 @@ runs:
 
         kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
           http://localhost:9933 | tee /dev/stderr | jq -e '
             .result.dParameter.numPermissionedCandidates and
             .result.dParameter.numRegisteredCandidates and
@@ -124,7 +124,7 @@ runs:
 
         kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$EPOCH],\"id":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$EPOCH],\"id\":1}" \
           http://localhost:9933 | tee /dev/stderr | jq -e '
             .result.sidechainEpoch and
             (.result.committee | length > 0) and
@@ -140,12 +140,12 @@ runs:
     
         MAINCHAIN_KEY=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
           http://localhost:9933 | jq -r '.result.candidateRegistrations | keys[0]')
     
         kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getRegistrations\",\"params\":[$MC_EPOCH,\"$MAINCHAIN_KEY\"],\"id":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getRegistrations\",\"params\":[$MC_EPOCH,\"$MAINCHAIN_KEY\"],\"id\":1}" \
           http://localhost:9933 | tee /dev/stderr | jq -e '
             (.result | length > 0) and
             (.result[0] | 
@@ -187,7 +187,7 @@ runs:
         # Get Ariadne parameters to check d-parameter
         ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
         # Extract d-parameter values
@@ -202,7 +202,7 @@ runs:
         # Get actual committee size
         COMMITTEE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$PC_EPOCH],\"id":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$PC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
         ACTUAL_COMMITTEE_SIZE=$(echo "$COMMITTEE" | jq '.result.committee | length')
@@ -228,7 +228,7 @@ runs:
         # Get committee members
         COMMITTEE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$PC_EPOCH],\"id":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$PC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
         # Extract committee member public keys
@@ -270,7 +270,7 @@ runs:
         # Get committee for current epoch
         CURRENT_COMMITTEE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$PC_EPOCH],\"id":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$PC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
         # Extract current committee member public keys
@@ -280,7 +280,7 @@ runs:
         NEXT_PC_EPOCH=$((PC_EPOCH + 1))
         NEXT_COMMITTEE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$NEXT_PC_EPOCH],\"id":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$NEXT_PC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
         # Extract next committee member public keys
@@ -307,7 +307,7 @@ runs:
         # Get Ariadne parameters to check d-parameter
         ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
         # Extract d-parameter values
@@ -319,7 +319,7 @@ runs:
           # Get permissioned candidates
           PERMISSIONED_CANDIDATES=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
             curl -s -H "Content-Type: application/json" \
-            -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getPermissionedCandidates\",\"params\":[$MC_EPOCH],\"id":1}" \
+            -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getPermissionedCandidates\",\"params\":[$MC_EPOCH],\"id\":1}" \
             http://localhost:9933)
           
           PERMISSIONED_COUNT=$(echo "$PERMISSIONED_CANDIDATES" | jq '.result | length')
@@ -339,7 +339,7 @@ runs:
           # Get trustless candidates
           TRUSTLESS_CANDIDATES=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
             curl -s -H "Content-Type: application/json" \
-            -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getTrustlessCandidates\",\"params\":[$MC_EPOCH],\"id":1}" \
+            -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getTrustlessCandidates\",\"params\":[$MC_EPOCH],\"id\":1}" \
             http://localhost:9933)
           
           TRUSTLESS_COUNT=$(echo "$TRUSTLESS_CANDIDATES" | jq '.result | length')
@@ -372,7 +372,7 @@ runs:
         # Get block production log
         BLOCK_PRODUCTION_LOG=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getBlockProductionLog\",\"params\":[\"$BLOCK_HASH\"],\"id":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getBlockProductionLog\",\"params\":[\"$BLOCK_HASH\"],\"id\":1}" \
           http://localhost:9933)
         
         # Check if block production log exists and has entries
@@ -401,7 +401,7 @@ runs:
         # Get block participation data
         PARTICIPATION_DATA=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getBlockParticipationData\",\"params\":[\"$BLOCK_HASH\"],\"id":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getBlockParticipationData\",\"params\":[\"$BLOCK_HASH\"],\"id\":1}" \
           http://localhost:9933)
         
         # Check if participation data exists and has required fields
@@ -430,7 +430,7 @@ runs:
         # Get Ariadne parameters to get a block producer's cross chain public key
         ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
         # Get the first permissioned candidate's cross chain public key
@@ -440,7 +440,7 @@ runs:
           # Get block producer metadata
           METADATA=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
             curl -s -H "Content-Type: application/json" \
-            -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getBlockProducerMetadata\",\"params\":[\"$CROSS_CHAIN_PUB_KEY\"],\"id":1}" \
+            -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getBlockProducerMetadata\",\"params\":[\"$CROSS_CHAIN_PUB_KEY\"],\"id\":1}" \
             http://localhost:9933)
           
           # Check if metadata exists and has required fields
