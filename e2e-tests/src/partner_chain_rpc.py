@@ -73,7 +73,7 @@ class PartnerChainRpc:
         cmd = [
             "kubectl", "exec", pod, "-n", namespace, "--",
             "curl", "-s", "-H", "Content-Type: application/json",
-            "-d", payload, "http://localhost:9933"
+            "-d", payload, self.url
         ]
         
         try:
