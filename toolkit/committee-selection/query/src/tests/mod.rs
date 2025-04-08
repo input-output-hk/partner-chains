@@ -3,8 +3,8 @@ mod mock;
 mod query_mock;
 mod runtime_api_mock;
 
-use super::types::{CommitteeMember, GetCommitteeResponse};
 use super::SessionValidatorManagementQuery;
+use super::types::{CommitteeMember, GetCommitteeResponse};
 use super::*;
 use crate::tests::query_mock::TestApi;
 use authority_selection_inherents::mock::MockAuthoritySelectionDataSource;
@@ -12,8 +12,8 @@ use mock::*;
 use sidechain_domain::*;
 use sp_core::bytes::to_hex;
 use sp_core::crypto::Ss58Codec;
-use sp_core::{ecdsa, ed25519, Pair};
-use sp_runtime::{traits::IdentifyAccount, MultiSigner};
+use sp_core::{Pair, ecdsa, ed25519};
+use sp_runtime::{MultiSigner, traits::IdentifyAccount};
 use sp_sidechain::SidechainStatus;
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
@@ -227,8 +227,8 @@ mod get_registration_tests {
 	}
 
 	#[tokio::test]
-	async fn only_last_valid_registration_data_and_newer_invalid_should_be_returned_regardless_of_stake(
-	) {
+	async fn only_last_valid_registration_data_and_newer_invalid_should_be_returned_regardless_of_stake()
+	 {
 		let stakes = vec![Some(StakeDelegation(5)), None, Some(StakeDelegation(0))];
 		for stake in stakes {
 			let supported_epoch = McEpochNumber(1);

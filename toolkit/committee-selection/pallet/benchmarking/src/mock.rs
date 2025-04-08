@@ -6,10 +6,10 @@ use frame_support::{
 use pallet_session_validator_management::pallet;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::ScEpochNumber;
-use sp_core::{crypto::AccountId32, H256};
+use sp_core::{H256, crypto::AccountId32};
 use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
 	BuildStorage,
+	traits::{BlakeTwo256, IdentityLookup},
 };
 
 type Block = frame_system::mocking::MockBlock<Test>;

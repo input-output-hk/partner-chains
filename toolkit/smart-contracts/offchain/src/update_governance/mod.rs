@@ -14,7 +14,7 @@ use crate::{
 	},
 	governance::{GovernanceData, MultiSigParameters},
 	init_governance::transaction::version_oracle_datum_output,
-	multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult},
+	multisig::{MultiSigSmartContractResult, submit_or_create_tx_to_sign},
 	plutus_script::PlutusScript,
 };
 use cardano_serialization_lib::{

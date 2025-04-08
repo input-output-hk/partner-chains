@@ -1,13 +1,13 @@
 use derive_new::new;
 use jsonrpsee::{
-	core::async_trait,
 	core::RpcResult,
+	core::async_trait,
 	proc_macros::rpc,
 	types::{ErrorObject, ErrorObjectOwned},
 };
 use sidechain_domain::{McEpochNumber, StakePoolPublicKey};
-use sp_session_validator_management_query::types::*;
 use sp_session_validator_management_query::SessionValidatorManagementQueryApi;
+use sp_session_validator_management_query::types::*;
 use std::sync::Arc;
 
 #[rpc(client, server, namespace = "sidechain")]

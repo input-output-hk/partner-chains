@@ -1,16 +1,16 @@
 #[cfg(test)]
 mod tests;
 
+use crate::CmdRun;
 use crate::cardano_key::{
 	get_mc_payment_signing_key_from_file, get_stake_pool_verification_key_from_file,
 };
+use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::config::config_fields::{
 	CARDANO_COLD_VERIFICATION_KEY_FILE, CARDANO_PAYMENT_SIGNING_KEY_FILE,
 };
-use crate::config::CHAIN_CONFIG_FILE_PATH;
 use crate::io::IOContext;
 use crate::ogmios::config::establish_ogmios_configuration;
-use crate::CmdRun;
 use anyhow::anyhow;
 use partner_chains_cardano_offchain::register::Deregister;
 

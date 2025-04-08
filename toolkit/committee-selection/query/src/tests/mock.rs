@@ -1,7 +1,7 @@
 use authority_selection_inherents::filter_invalid_candidates::RegisterValidatorSignedMessage;
 use plutus::ToDatum;
 use sidechain_domain::*;
-use sp_core::{ecdsa, ed25519, Pair};
+use sp_core::{Pair, ecdsa, ed25519};
 
 pub(crate) const TEST_UTXO_ID: UtxoId =
 	UtxoId { tx_hash: McTxHash([0u8; 32]), index: UtxoIndex(0) };

@@ -1,7 +1,7 @@
 use jsonrpsee::{
+	Extensions, RpcModule,
 	server::Server,
 	types::{ErrorObjectOwned, Params},
-	Extensions, RpcModule,
 };
 use serde_json::Value;
 use std::net::SocketAddr;

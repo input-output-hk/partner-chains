@@ -1,7 +1,7 @@
 use crate::mock::sp_runtime::testing::H256;
 use frame_support::sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
 	BuildStorage,
+	traits::{BlakeTwo256, IdentityLookup},
 };
 use frame_support::traits::{ConstU16, ConstU32, ConstU64};
 use frame_support::*;

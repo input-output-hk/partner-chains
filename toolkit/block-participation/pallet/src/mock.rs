@@ -7,8 +7,8 @@ use frame_support::{
 use sp_block_participation::Slot;
 use sp_core::H256;
 use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
 	AccountId32, BuildStorage,
+	traits::{BlakeTwo256, IdentityLookup},
 };
 
 pub type Block = frame_system::mocking::MockBlock<Test>;

@@ -1,13 +1,13 @@
 use authority_selection_inherents::ariadne_inherent_data_provider::AriadneInherentDataProvider;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::{
-	filter_trustless_candidates_registrations, RegisterValidatorSignedMessage,
+	RegisterValidatorSignedMessage, filter_trustless_candidates_registrations,
 };
 use frame_support::{
+	Hashable,
 	pallet_prelude::*,
 	parameter_types,
 	traits::{ConstBool, ConstU64},
-	Hashable,
 };
 use hex_literal::hex;
 use plutus::ToDatum;
@@ -16,11 +16,10 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::crypto::CryptoType;
 use sp_core::sr25519;
-use sp_core::{crypto::AccountId32, ed25519, ByteArray, ConstU128, Pair, H256};
+use sp_core::{ByteArray, ConstU128, H256, Pair, crypto::AccountId32, ed25519};
 use sp_runtime::{
-	impl_opaque_keys,
+	BuildStorage, Digest, DigestItem, MultiSigner, impl_opaque_keys,
 	traits::{BlakeTwo256, IdentifyAccount, IdentityLookup, OpaqueKeys},
-	BuildStorage, Digest, DigestItem, MultiSigner,
 };
 use sp_std::vec::Vec;
 use std::cmp::max;
@@ -163,11 +162,7 @@ impl pallet_session_validator_management::Config for Test {
 		.into_iter()
 		.map(|(c, _)| (c.account_id().clone(), c.account_keys().clone()))
 		.collect();
-		if candidates.is_empty() {
-			None
-		} else {
-			Some(BoundedVec::truncate_from(candidates))
-		}
+		if candidates.is_empty() { None } else { Some(BoundedVec::truncate_from(candidates)) }
 	}
 
 	fn current_epoch_number() -> ScEpochNumber {

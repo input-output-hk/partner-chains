@@ -1,9 +1,9 @@
+use crate::config::ServiceConfig;
 use crate::config::config_fields::{
 	COMMITTEE_CANDIDATES_ADDRESS, D_PARAMETER_POLICY_ID, ILLIQUID_SUPPLY_ADDRESS,
 	INITIAL_PERMISSIONED_CANDIDATES, NATIVE_TOKEN_ASSET_NAME, NATIVE_TOKEN_POLICY,
 	PERMISSIONED_CANDIDATES_POLICY_ID,
 };
-use crate::config::ServiceConfig;
 use crate::io::IOContext;
 use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 use partner_chains_cardano_offchain::scripts_data::GetScriptsData;
@@ -99,15 +99,15 @@ After setting up the permissioned candidates, execute the 'create-chain-spec' co
 mod tests {
 	use super::*;
 	use crate::config::config_fields::{GENESIS_UTXO, OGMIOS_PROTOCOL};
-	use crate::config::{NetworkProtocol, CHAIN_CONFIG_FILE_PATH};
+	use crate::config::{CHAIN_CONFIG_FILE_PATH, NetworkProtocol};
 	use crate::ogmios::test_values::{preprod_eras_summaries, preprod_shelley_config};
 	use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 	use crate::prepare_configuration::prepare_cardano_params::tests::PREPROD_CARDANO_PARAMS;
 	use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
 	use crate::verify_json;
 	use partner_chains_cardano_offchain::scripts_data::{Addresses, PolicyIds, ScriptsData};
-	use serde_json::json;
 	use serde_json::Value;
+	use serde_json::json;
 	use sidechain_domain::UtxoId;
 	use std::str::FromStr;
 
@@ -135,20 +135,24 @@ mod tests {
 
 		pub fn prompt_native_asset_scripts() -> MockIO {
 			MockIO::Group(vec![
-						MockIO::print("Partner Chains can store their initial token supply on Cardano as Cardano native tokens."),
-						MockIO::print("Creation of the native token is not supported by this wizard and must be performed manually before this step."),
-						MockIO::prompt_yes_no(
-							"Do you want to configure a native token for you Partner Chain?",
-							true,
-							true,
-						),
-						MockIO::prompt(
-							NATIVE_TOKEN_POLICY.name,
-							None,
-							"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
-						),
-						MockIO::prompt(NATIVE_TOKEN_ASSET_NAME.name, None, "5043546f6b656e44656d6f"),
-					])
+				MockIO::print(
+					"Partner Chains can store their initial token supply on Cardano as Cardano native tokens.",
+				),
+				MockIO::print(
+					"Creation of the native token is not supported by this wizard and must be performed manually before this step.",
+				),
+				MockIO::prompt_yes_no(
+					"Do you want to configure a native token for you Partner Chain?",
+					true,
+					true,
+				),
+				MockIO::prompt(
+					NATIVE_TOKEN_POLICY.name,
+					None,
+					"ada83ddd029614381f00e28de0922ab0dec6983ea9dd29ae20eef9b4",
+				),
+				MockIO::prompt(NATIVE_TOKEN_ASSET_NAME.name, None, "5043546f6b656e44656d6f"),
+			])
 		}
 	}
 

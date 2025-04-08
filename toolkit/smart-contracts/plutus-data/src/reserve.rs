@@ -1,6 +1,6 @@
 use crate::{
-	decoding_error_and_log, plutus_data_version_and_payload, DataDecodingError, DecodingResult,
-	VersionedDatum, VersionedGenericDatum,
+	DataDecodingError, DecodingResult, VersionedDatum, VersionedGenericDatum,
+	decoding_error_and_log, plutus_data_version_and_payload,
 };
 use cardano_serialization_lib::{BigInt, BigNum, ConstrPlutusData, PlutusData, PlutusList};
 use sidechain_domain::{AssetId, AssetName, PolicyId};

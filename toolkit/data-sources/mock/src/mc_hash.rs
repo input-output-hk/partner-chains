@@ -1,5 +1,5 @@
-use crate::block::BlockDataSourceMock;
 use crate::Result;
+use crate::block::BlockDataSourceMock;
 use async_trait::async_trait;
 use sidechain_domain::*;
 use sp_timestamp::Timestamp;

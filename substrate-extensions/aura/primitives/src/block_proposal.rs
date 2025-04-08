@@ -74,8 +74,8 @@ impl<B: BlockT, P: Proposer<B>, ID: InherentDigest> Proposer<B>
 
 #[cfg(test)]
 mod tests {
-	use crate::block_proposal::PartnerChainsProposer;
 	use crate::InherentDigest;
+	use crate::block_proposal::PartnerChainsProposer;
 	use futures::future;
 	use sp_consensus::{DisableProofRecording, Proposal, Proposer};
 	use sp_inherents::InherentData;

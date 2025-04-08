@@ -12,7 +12,7 @@ pub use alloc::{vec, vec::Vec};
 use core::fmt::{Debug, Formatter};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
-use serde_json::{json, Map as JMap, Value as JValue};
+use serde_json::{Map as JMap, Value as JValue, json};
 
 #[derive(Clone, PartialEq)]
 pub enum Datum {

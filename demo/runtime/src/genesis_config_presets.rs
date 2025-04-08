@@ -14,8 +14,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+extern crate alloc;
 
-use crate::{test_helper_pallet, AccountId, BalancesConfig, RuntimeGenesisConfig, SudoConfig};
+use crate::{AccountId, BalancesConfig, RuntimeGenesisConfig, SudoConfig, test_helper_pallet};
 use alloc::{vec, vec::Vec};
 use serde_json::Value;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;

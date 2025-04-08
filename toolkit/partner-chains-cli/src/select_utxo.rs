@@ -1,7 +1,7 @@
 use crate::{
+	IOContext,
 	config::ServiceConfig,
 	ogmios::{OgmiosRequest, OgmiosResponse},
-	IOContext,
 };
 use anyhow::anyhow;
 use ogmios_client::types::OgmiosUtxo;

@@ -1,7 +1,7 @@
 [package]
 name = "pallet-block-producer-metadata"
 version = "1.6.0"
-edition = "2021"
+edition.workspace = true
 license = "Apache-2.0"
 
 [dependencies]

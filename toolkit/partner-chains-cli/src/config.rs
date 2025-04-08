@@ -3,9 +3,9 @@ use crate::config::config_fields::{
 	CARDANO_FIRST_EPOCH_TIMESTAMP_MILLIS, CARDANO_FIRST_SLOT_NUMBER, CARDANO_SECURITY_PARAMETER,
 };
 use crate::io::IOContext;
-use clap::{arg, Parser};
+use clap::{Parser, arg};
 use config_fields::CARDANO_SLOT_DURATION_MILLIS;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use sidechain_domain::{MainchainKeyHash, UtxoId};
 use sp_core::offchain::{Duration, Timestamp};
 use std::fmt::{Display, Formatter, Write};
@@ -378,7 +378,9 @@ pub fn load_chain_config(context: &impl IOContext) -> anyhow::Result<ChainConfig
 		serde_json::from_str::<ChainConfig>(&chain_config_file)
 			.map_err(|err| anyhow::anyhow!(format!("⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} is invalid: {err}. Run prepare-configuration wizard or fix errors manually.")))
 	} else {
-		Err(anyhow::anyhow!(format!("⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} does not exists. Run prepare-configuration wizard first.")))
+		Err(anyhow::anyhow!(format!(
+			"⚠️ Chain config file {CHAIN_CONFIG_FILE_PATH} does not exists. Run prepare-configuration wizard first."
+		)))
 	}
 }
 

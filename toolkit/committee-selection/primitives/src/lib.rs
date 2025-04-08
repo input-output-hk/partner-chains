@@ -4,7 +4,7 @@
 use core::str::FromStr;
 
 use scale_info::TypeInfo;
-use sidechain_domain::{byte_string::SizedByteString, MainchainAddress, PolicyId};
+use sidechain_domain::{MainchainAddress, PolicyId, byte_string::SizedByteString};
 use sp_core::{Decode, Encode, MaxEncodedLen};
 use sp_inherents::{InherentIdentifier, IsFatalError};
 

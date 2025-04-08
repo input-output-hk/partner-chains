@@ -1,7 +1,7 @@
 use crate::PaymentFilePath;
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
-	governance::{get_governance_policy_summary, MultiSigParameters},
+	governance::{MultiSigParameters, get_governance_policy_summary},
 	init_governance::run_init_governance,
 	update_governance::run_update_governance,
 };

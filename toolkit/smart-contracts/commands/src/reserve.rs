@@ -2,7 +2,7 @@ use crate::PaymentFilePath;
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	reserve::{
-		create::{create_reserve_utxo, ReserveParameters},
+		create::{ReserveParameters, create_reserve_utxo},
 		deposit::deposit_to_reserve,
 		handover::handover_reserve,
 		init::init_reserve_management,

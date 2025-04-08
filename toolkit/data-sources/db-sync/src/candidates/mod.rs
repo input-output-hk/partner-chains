@@ -1,9 +1,9 @@
+use crate::DataSourceError::*;
 use crate::db_model::{
 	self, Address, Asset, BlockNumber, EpochNumber, MainchainTxOutput, StakePoolEntry,
 };
 use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
-use crate::DataSourceError::*;
 use authority_selection_inherents::authority_selection_inputs::*;
 use datum::raw_permissioned_candidate_data_vec_from;
 use itertools::Itertools;

@@ -64,7 +64,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
-use sidechain_domain::{DelegatorKey, MainchainKeyHash, McEpochNumber};
+use sidechain_domain::{DelegatorKey, MainchainKeyHash};
 pub use sp_consensus_slots::{Slot, SlotDuration};
 use sp_inherents::{InherentIdentifier, IsFatalError};
 

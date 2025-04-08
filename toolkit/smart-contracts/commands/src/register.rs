@@ -1,4 +1,4 @@
-use crate::{parse_partnerchain_public_keys, PaymentFilePath};
+use crate::{PaymentFilePath, parse_partnerchain_public_keys};
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	register::{run_deregister, run_register},

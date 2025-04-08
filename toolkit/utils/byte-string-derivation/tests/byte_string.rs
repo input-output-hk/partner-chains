@@ -2,7 +2,7 @@ extern crate alloc;
 extern crate byte_string_derive;
 
 use byte_string_derive::byte_string;
-use sp_core::{bounded_vec::BoundedVec, ConstU32};
+use sp_core::{ConstU32, bounded_vec::BoundedVec};
 
 use serde_test::Token as SerdeToken;
 

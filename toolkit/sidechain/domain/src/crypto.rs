@@ -13,9 +13,9 @@ pub use full_crypto::*;
 #[cfg(feature = "std")]
 mod full_crypto {
 	use crate::*;
-	use plutus::to_datum_cbor_bytes;
 	use plutus::ToDatum;
-	use secp256k1::{ecdsa::Signature, Message, PublicKey, SecretKey};
+	use plutus::to_datum_cbor_bytes;
+	use secp256k1::{Message, PublicKey, SecretKey, ecdsa::Signature};
 
 	pub fn hash<T: ToDatum>(msg: T) -> [u8; 32] {
 		blake2b(to_datum_cbor_bytes(msg).as_slice())

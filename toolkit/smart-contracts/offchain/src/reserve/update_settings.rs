@@ -16,13 +16,13 @@
 //!   * Reserve Validator Version Utxo
 //!   * Governance Policy Script
 
-use super::{reserve_utxo_input_with_validator_script_reference, ReserveData};
+use super::{ReserveData, reserve_utxo_input_with_validator_script_reference};
 use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::*,
 	governance::GovernanceData,
-	multisig::{submit_or_create_tx_to_sign, MultiSigSmartContractResult},
+	multisig::{MultiSigSmartContractResult, submit_or_create_tx_to_sign},
 	reserve::ReserveUtxo,
 };
 use cardano_serialization_lib::*;

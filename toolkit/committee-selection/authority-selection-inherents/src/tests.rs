@@ -9,7 +9,7 @@ use plutus::ToDatum;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::*;
-use sp_core::{ecdsa, ed25519, sr25519, Pair};
+use sp_core::{Pair, ecdsa, ed25519, sr25519};
 use sp_runtime::traits::Zero;
 
 #[test]
@@ -145,7 +145,7 @@ const ALL_MOCK_VALIDATORS: [(MockValidator, [u8; 33]); 11] = [
 pub fn account_id_to_name(account_id: &AccountId) -> &'static str {
 	ALL_MOCK_VALIDATORS
 		.iter()
-		.find(|(_, acc_id)| acc_id == &account_id.0 .0)
+		.find(|(_, acc_id)| acc_id == &account_id.0.0)
 		.expect("Committee keys should be known")
 		.0
 		.name
@@ -164,7 +164,7 @@ impl MockValidator {
 	}
 
 	pub fn sidechain_pub_key(&self) -> SidechainPublicKey {
-		SidechainPublicKey(self.account_id().0 .0.to_vec())
+		SidechainPublicKey(self.account_id().0.0.to_vec())
 	}
 	pub fn session_keys(&self) -> AccountKeys {
 		AccountKeys::from_seed(self.seed)

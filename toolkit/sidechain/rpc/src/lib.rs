@@ -2,12 +2,12 @@ pub mod types;
 
 use derive_new::new;
 use jsonrpsee::{
-	core::{async_trait, RpcResult},
+	core::{RpcResult, async_trait},
 	proc_macros::rpc,
-	types::{error::ErrorCode, ErrorObject, ErrorObjectOwned},
+	types::{ErrorObject, ErrorObjectOwned, error::ErrorCode},
 };
-use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_domain::MainchainBlock;
+use sidechain_domain::mainchain_epoch::{MainchainEpochConfig, MainchainEpochDerivation};
 use sidechain_slots::SlotApi;
 use sp_api::ProvideRuntimeApi;
 use sp_core::offchain::Timestamp;
