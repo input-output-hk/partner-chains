@@ -183,7 +183,7 @@ impl MockValidator {
 fn ariadne_all_permissioned_test() {
 	// P: [alice, bob]
 	// R: [charlie, dave]
-	// D-param: (2, 0)
+	// D-param: (8, 0)
 	// Expected committee: [alice, bob]
 	let permissioned_validators = vec![ALICE, BOB];
 	let registered_validators = vec![CHARLIE, DAVE];
@@ -201,11 +201,13 @@ fn ariadne_all_permissioned_test() {
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
-	let committee_names = committee
+	let mut committee_names = committee
 		.iter()
 		.map(|member| account_id_to_name(member.account_id()))
 		.collect::<Vec<_>>();
-	let expected_committee_names = vec!["bob", "bob", "alice", "bob", "bob", "alice", "bob", "bob"];
+	committee_names.sort();
+	let expected_committee_names =
+		vec!["alice", "alice", "alice", "alice", "bob", "bob", "bob", "bob"];
 
 	assert_eq!(committee_names, expected_committee_names);
 }
@@ -231,11 +233,13 @@ fn ariadne_only_permissioned_candidates_are_present_test() {
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
-	let committee_names = committee
+	let mut committee_names = committee
 		.iter()
 		.map(|member| account_id_to_name(member.account_id()))
 		.collect::<Vec<_>>();
-	let expected_committee_names = vec!["bob", "bob", "alice", "bob", "bob", "alice", "bob", "bob"];
+	committee_names.sort();
+	let expected_committee_names =
+		vec!["alice", "alice", "alice", "alice", "bob", "bob", "bob", "bob"];
 
 	assert_eq!(committee_names, expected_committee_names);
 }
@@ -261,11 +265,12 @@ fn ariadne_3_to_2_test() {
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
-	let committee_names = committee
+	let mut committee_names = committee
 		.iter()
 		.map(|member| account_id_to_name(member.account_id()))
 		.collect::<Vec<_>>();
-	let expected_committee_names = vec!["bob", "charlie", "charlie", "alice", "bob"];
+	committee_names.sort();
+	let expected_committee_names = vec!["alice", "bob", "charlie", "dave", "eve"];
 
 	assert_eq!(committee_names, expected_committee_names);
 }
@@ -295,9 +300,17 @@ fn ariadne_3_to_2_with_more_available_candidates_test() {
 		.iter()
 		.map(|member| account_id_to_name(member.account_id()))
 		.collect::<Vec<_>>();
-	let expected_committee_names = vec!["bob", "bob", "bob", "eve", "dave"];
-
-	assert_eq!(committee_names, expected_committee_names);
+	// No candidate has guaranteed seat. Every seat comes from random with repetitions.
+	let permissioned_selected = committee_names
+		.iter()
+		.filter(|name| permissioned_validators.iter().any(|validator| validator.name == **name))
+		.count();
+	assert_eq!(permissioned_selected, 3);
+	let registered_selected = committee_names
+		.iter()
+		.filter(|name| registered_validators.iter().any(|validator| validator.name == **name))
+		.count();
+	assert_eq!(registered_selected, 2);
 }
 
 #[test]
@@ -321,14 +334,15 @@ fn ariadne_4_to_7_test() {
 	assert!(calculated_committee.is_some());
 
 	let committee = calculated_committee.unwrap();
-	let committee_names = committee
+	let mut committee_names = committee
 		.iter()
 		.map(|member| account_id_to_name(member.account_id()))
 		.collect::<Vec<_>>();
+	committee_names.sort();
+	// Each permissioned has 1 guaranteed. henry, ida, james and kim as well. There are 3 randomly selected: eve, ferdie and james.
 	let expected_committee_names = vec![
-		"bob", "alice", "dave", "greg", "james", "bob", "ferdie", "charlie", "henry", "eve", "dave",
+		"alice", "bob", "charlie", "dave", "eve", "ferdie", "henry", "ida", "james", "james", "kim",
 	];
-
 	assert_eq!(committee_names, expected_committee_names);
 }
 

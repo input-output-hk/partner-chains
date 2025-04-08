@@ -77,7 +77,7 @@ pub fn weighted_with_guaranteed_assignment<T: Clone + Ord>(
 		return Vec::with_capacity(0);
 	}
 	let SelectGuaranteedResult { mut selected, remaining } = select_guaranteed(candidates, n);
-	let selected_count: u16 = selected.len().try_into().expect("selected count can exceed u16");
+	let selected_count: u16 = selected.len().try_into().expect("selected count can not exceed u16");
 	selected.extend(select_remaining(remaining, n - selected_count, rng));
 	selected
 }
