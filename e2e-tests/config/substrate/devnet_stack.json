@@ -3,18 +3,19 @@
         "ogmios_host": "devnet-services-service",
         "ogmios_port": 1337,
         "validator_name": "alice",
+        "namespace": "sc",
         "tools": {
             "cardano_cli": {
                 "cli": "cardano-cli",
-                "shell": "kubectl exec -it ${stack_config[validator_name]} -c cardano-node -n sc --"
+                "shell": "kubectl exec -it ${stack_config[validator_name]} -c cardano-node -n ${stack_config[namespace]} --"
             },
             "partner_chains_node": {
                 "cli": "/usr/local/bin/partner-chains-node",
-                "shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n sc --"
+                "shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --"
             },
             "bech32": {
-                "cli": "/tools/bech32",
-                "shell": "kubectl exec -it binary-host -c binary-host -n sc --"
+                "cli": "bech32",
+                "shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --"
             }
         }
     }

@@ -79,6 +79,16 @@ Each tool can be configured to run:
 - locally on the test runner machine
 - in a Kubernetes pod using kubectl exec
 
+#### Secret Key Handling:
+
+When running tests that require secret keys (such as committee tests), the system will automatically:
+1. Create a temporary directory in the validator pod
+2. Copy the required secret keys to this temporary directory using `kubectl cp`
+3. Update the configuration to use these temporary paths
+4. Clean up the temporary directory after the test completes
+
+This approach ensures that secret keys are securely handled within the Kubernetes environment.
+
 #### `<env>_stack.json` template:
 
 ```

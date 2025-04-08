@@ -12,6 +12,7 @@ from src.partner_chain_rpc import DParam
 from src.pc_epoch_calculator import PartnerChainEpochCalculator
 from src.pc_block_finder import BlockFinder
 from src.run_command import RunnerFactory
+import subprocess
 
 block_finder: BlockFinder = None
 
@@ -543,31 +544,41 @@ def get_pc_epoch_blocks(
 @fixture
 def candidate_skey_with_cli(config: ApiConfig, candidate: Candidates):
     """
-    Securely copy the candidate's Cardano payment key (a secret key used by the PCSC CLI to pay fees) to a temporary
-    directory on the remote machine and update the path in the configuration. The temporary directory is deleted after
+    Copy the candidate's Cardano payment key (a secret key used by the PCSC CLI to pay fees) to a temporary
+    directory in the Kubernetes pod and update the path in the configuration. The temporary directory is deleted after
     the test completes.
 
-    This fixture is executed only if SSH is configured in the stack settings, implying that the PCSC CLI (which
-    requires the key to be present on the localhost) is installed on the remote machine. Therefore, the key is
-    implicitly copied using SCP.
+    This fixture is executed when using Kubernetes-based configuration, where the PCSC CLI (which
+    requires the key to be present on the pod) is installed on the validator pod.
 
-    WARNING: This fixture copies secret file to a remote host and should be used with caution.
+    WARNING: This fixture copies secret file to a Kubernetes pod and should be used with caution.
 
-    NOTE: Ensure that the SSH settings are correctly configured in the stack config.
+    NOTE: Ensure that the Kubernetes configuration is correctly set up in the stack config.
 
     :param config: The API configuration object.
     :param candidate: The candidate to register/deregister.
     """
-    if config.stack_config.ssh:
-        runner = RunnerFactory.get_runner(config.stack_config.ssh, "/bin/bash")
-        temp_dir = runner.run("mktemp -d").stdout.strip()
+    if config.stack_config.validator_name:
+        # Get namespace from the stack configuration
+        namespace = config.stack_config.namespace
+        
+        # Create a temporary directory in the pod
+        temp_dir_cmd = f"kubectl exec -it {config.stack_config.validator_name} -c cardano-node -n {namespace} -- mktemp -d"
+        temp_dir = subprocess.run(temp_dir_cmd, shell=True, capture_output=True, text=True).stdout.strip()
+        
+        # Copy the key file to the pod
         path = config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key
         filename = path.split("/")[-1]
-        runner.scp(path, temp_dir)
+        # Use kubectl cp to copy the file to the pod
+        subprocess.run(f"kubectl cp {path} {namespace}/{config.stack_config.validator_name}:{temp_dir}/{filename} -c cardano-node", shell=True, check=True)
+        
+        # Update the path in the configuration
         config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key = f"{temp_dir}/{filename}"
         yield
         config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key = path
-        runner.run(f"rm -rf {temp_dir}")
+        
+        # Clean up the temporary directory
+        subprocess.run(f"kubectl exec -it {config.stack_config.validator_name} -c cardano-node -n {namespace} -- rm -rf {temp_dir}", shell=True)
     else:
         yield
 
@@ -575,29 +586,39 @@ def candidate_skey_with_cli(config: ApiConfig, candidate: Candidates):
 @fixture
 def governance_skey_with_cli(config: ApiConfig):
     """
-    Securely copy the governance authority's init skey (a secret key used by the PCSC CLI to authorize admin operations)
-    to a temporary directory on the remote machine and update the path in the configuration. The temporary directory is
+    Copy the governance authority's init skey (a secret key used by the PCSC CLI to authorize admin operations)
+    to a temporary directory in the Kubernetes pod and update the path in the configuration. The temporary directory is
     deleted after the test completes.
 
-    This fixture is executed only if SSH is configured in the stack settings, implying that the PCSC CLI (which
-    requires the key to be present on the localhost) is installed on the remote machine. Therefore, the key is
-    implicitly copied using SCP.
+    This fixture is executed when using Kubernetes-based configuration, where the PCSC CLI (which
+    requires the key to be present on the pod) is installed on the validator pod.
 
-    WARNING: This fixture copies secret file to a remote host and should be used with caution.
+    WARNING: This fixture copies secret file to a Kubernetes pod and should be used with caution.
 
-    NOTE: Ensure that the SSH settings are correctly configured in the stack config.
+    NOTE: Ensure that the Kubernetes configuration is correctly set up in the stack config.
 
     :param config: The API configuration object.
     """
-    if config.stack_config.ssh:
-        runner = RunnerFactory.get_runner(config.stack_config.ssh, "/bin/bash")
-        temp_dir = runner.run("mktemp -d").stdout.strip()
+    if config.stack_config.validator_name:
+        # Get namespace from the stack configuration
+        namespace = config.stack_config.namespace
+        
+        # Create a temporary directory in the pod
+        temp_dir_cmd = f"kubectl exec -it {config.stack_config.validator_name} -c cardano-node -n {namespace} -- mktemp -d"
+        temp_dir = subprocess.run(temp_dir_cmd, shell=True, capture_output=True, text=True).stdout.strip()
+        
+        # Copy the key file to the pod
         path = config.nodes_config.governance_authority.mainchain_key
         filename = path.split("/")[-1]
-        runner.scp(path, temp_dir)
+        # Use kubectl cp to copy the file to the pod
+        subprocess.run(f"kubectl cp {path} {namespace}/{config.stack_config.validator_name}:{temp_dir}/{filename} -c cardano-node", shell=True, check=True)
+        
+        # Update the path in the configuration
         config.nodes_config.governance_authority.mainchain_key = f"{temp_dir}/{filename}"
         yield
         config.nodes_config.governance_authority.mainchain_key = path
-        runner.run(f"rm -rf {temp_dir}")
+        
+        # Clean up the temporary directory
+        subprocess.run(f"kubectl exec -it {config.stack_config.validator_name} -c cardano-node -n {namespace} -- rm -rf {temp_dir}", shell=True)
     else:
         yield

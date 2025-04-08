@@ -117,6 +117,7 @@ class StackApiConfig:
     tools: dict[str, Tool] = MISSING
     tools_shell: Optional[str] = None
     validator_name: str = "validator-1"
+    namespace: str = "default"
 
 
 @dataclass
