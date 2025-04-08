@@ -13,8 +13,8 @@
                 "shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n staging-preview --"
             },
             "bech32": {
-                "cli": "bech32",
-                "shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n staging-preview --"
+                "cli": "/tools/bech32",
+                "shell": "kubectl exec -it binary-host -c binary-host -n sc --"
             }
         }
     }
