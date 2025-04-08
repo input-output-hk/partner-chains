@@ -2,17 +2,19 @@
 
 Welcome to `Partner Chains Tests`, a powerful and flexible test automation framework for system and end-to-end (E2E) tests for partner chains.
 
-## Features
+## Pytest e2e-test Overview
+
+### Features
 
 - **Blockchain agnostic**
   - Execute any test against multiple blockchains! Thanks to the abstraction of `BlockchainApi`, you can write tests for different blockchains. For example, we've implemented `SubstrateApi` for Substrate-based Partner Chains, but it is possible to support other blockchains by implementing the `BlockchainApi` interface.
 - **Pytest flavour**. You can write tests using well-known and one of the most popular frameworks, `pytest.`
 
-## Partner Chains Tests - Infrastructure
+### Partner Chains Tests - Infrastructure
 
 ![Test Infrastructure](/e2e-tests/docs/pc-tests-infra.png)
 
-## Installation
+### Installation
 
 1. Create and activate virtual environment
 
@@ -25,7 +27,7 @@ Welcome to `Partner Chains Tests`, a powerful and flexible test automation frame
 2. Install requirements `pip install -r requirements.txt`.
 3. Install sops to [manage keys](/e2e-tests/docs/secrets.md). You can also configure [your own keys with sops](/e2e-tests/docs/configure-sops.md)
 
-## Getting Started
+### Getting Started
 
 - Choose an environment to run tests. You have an option to run on [local](/e2e-tests/docs/run-tests-on-local-env.md) or [your own custom](/e2e-tests/docs/run-tests-on-new-env.md) environments
 - Run `pytest -h` to see all available options, or simply `pytest` to execute all tests.
@@ -51,15 +53,15 @@ Custom options:
   --sc-epoch=SC_EPOCH   SC epoch that parametrizes committee tests, default: <last_sc_epoch>.
 ```
 
-## Examples
+### Examples
 
-### Run tests on the local environment
+#### Run tests on the local environment
 
 ```bash
 pytest -rP -v --blockchain substrate --env local --log-cli-level debug -vv -s -m "not probability"
 ```
 
-### Run multisig governance tests
+#### Run multisig governance tests
 
 To test the multisig governance functionality, you need to configure additional governance authorities in your configuration file. The tests will verify both single signature and multisig workflows.
 
@@ -75,7 +77,7 @@ The multisig tests verify:
 
 This test workflow ensures that the environment is left in the same state it started with, so that other tests that expect single-key governance will continue to work correctly.
 
-#### Configuration
+### Configuration
 
 For multisig testing, add the following to your configuration file:
 
