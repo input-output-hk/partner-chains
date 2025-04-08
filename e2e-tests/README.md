@@ -91,6 +91,43 @@ nodes_config:
 
 The `additional_governance_authorities` should be a list of paths to the signing key files for additional authorities.
 
+---
+
+## Continuous Integration Test Layers
+
+The Partner Chains CI pipeline validates each commit across four progressive testing layers, from fast local checks to long-running staging validations. Below is a breakdown of environments, coverage, and behavior across each stage.
+
+| **Layer** | **Description** | **Validators** | **Environment** | **Test Coverage** | **Tests Run** | **Duration** | **Purpose & Details** |
+|-----------|------------------|----------------|------------------|--------------------|----------------|--------------|------------------------|
+| **CI Pre-Merge** | Runs on every pull request using `/dev/local-environment/`. | 5 (3 permissioned, 2 trustless) | Docker Compose | Smoke tests, RPC, metadata, committee epoch 2 | ~45 | ~12–15 min | Waits for epoch 2<br>Fails on skipped tests<br>Asserts node readiness and logs<br>Uses `setup.sh --non-interactive` to build full stack |
+| **CI Post-Merge** | Full run post-merge on `/dev/local-environment/`. | 5 | Docker Compose | Full test suite across epochs 2, 3, 4 (except probability) | ~120 | ~20–25 min | Epoch-gated execution<br>Runs `--mc-epoch 3` full committee tests<br>Repeats test suite 3 times<br>Includes smart contract and native token test groups |
+| **CI Preview (K8s)** | Cloud-native ephemeral test using ArgoCD-deployed `ci-preview`. | 7 (mixed) | Kubernetes | Smoke, RPC, metadata, committee sampling | ~30–40 | ~8–12 min | Uses `kubectl exec` to run tests inside validator pod<br>Runs `run-e2e-tests` with decrypt enabled<br>No ingress or external exposure required<br>Validates artifact compatibility with Kubernetes runtime |
+| **Pre-Release (Staging)** | 2-day full soak test triggered manually via `release.yml`. | 7 | Kubernetes | All test groups: smart contracts, metadata, committee rotation, probabilities, native token | ~150+ | ~48 hrs | Deployed via ArgoCD into `staging-preview` namespace<br>Waits for finalized blocks before test execution<br>Validates across 3 mainchain epochs<br>Uses `--latest-mc-epoch` for full-cycle test coverage<br>Fails on skipped tests or misconfiguration |
+
+### Environment Summary
+
+- **/dev/local-environment/**:
+  - Built with `setup.sh`, which generates `.env` and `docker-compose.yml`
+  - Composed of: 1 Cardano node, 1 Ogmios, 1 DB-Sync, 1 Postgres, 5 Partner Chain validator nodes
+  - Setup container inserts DParam values and performs initial on-chain registration
+  - Network bootstraps automatically on startup and begins block production after 2 epochs
+
+- **ci-preview (Kubernetes)**:
+  - Deployed via GitHub Actions and ArgoCD
+  - Executes tests using `kubectl exec` directly into the validator container
+  - Runs `run-e2e-tests` with `--decrypt` enabled
+  - Artifacts are built and injected using Earthly and ECR
+
+- **staging-preview (Kubernetes)**:
+  - Used for pre-release final validation
+  - 7 validator nodes run across multiple mainchain epochs
+  - Blocks must be finalized before test suite execution begins
+  - Includes native token tests, committee dynamics, registration, rewards, and governance
+  - Results uploaded before GHCR or release publish workflows can proceed
+
+All test layers upload full logs, metrics, and test reports to GitHub Artifacts for inspection and debugging.
+
+---
 
 ### End-to-End Test Matrix
 
