@@ -83,7 +83,6 @@ class SSH:
 @dataclass
 class Tool:
     cli: str = MISSING
-    ssh: Optional[SSH] = None
     shell: Optional[str] = SI("${...tools_shell}")
 
 
@@ -116,9 +115,8 @@ class StackApiConfig:
     ogmios_port: int = MISSING
     ogmios_url: str = SI("${.ogmios_scheme}://${.ogmios_host}:${.ogmios_port}")
     tools: dict[str, Tool] = MISSING
-    tools_host: str = MISSING
     tools_shell: Optional[str] = None
-    ssh: Optional[SSH] = None
+    validator_name: str = "validator-1"
 
 
 @dataclass

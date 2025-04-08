@@ -2,26 +2,19 @@
     "stack_config": {
         "ogmios_host": "devnet-services-service",
         "ogmios_port": 1337,
-        "tools_host": "10.0.12.65",
-        "ssh": {
-            "username": "root",
-            "host": "${stack_config[tools_host]}",
-            "port": 22,
-            "host_keys_path": "config/substrate/known_hosts",
-            "private_key_path": "secrets/substrate/devnet/keys/ssh-key.yaml.decrypted"
-        },
+        "validator_name": "alice",
         "tools": {
             "cardano_cli": {
-                "cli": "export CARDANO_NODE_SOCKET_PATH=/ipc/node.socket && /tools/cardano-cli",
-                "ssh": "${stack_config[ssh]}"
+                "cli": "cardano-cli",
+                "shell": "kubectl exec -it ${stack_config[validator_name]} -c cardano-node -n sc --"
             },
             "partner_chains_node": {
-                "cli": "/tools/partner-chains-node",
-                "ssh": "${stack_config[ssh]}"
+                "cli": "/usr/local/bin/partner-chains-node",
+                "shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n sc --"
             },
             "bech32": {
-                "cli": "/tools/bech32",
-                "ssh": "${stack_config[ssh]}"
+                "cli": "bech32",
+                "shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n sc --"
             }
         }
     }

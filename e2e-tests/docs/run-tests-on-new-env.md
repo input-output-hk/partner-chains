@@ -4,10 +4,10 @@
 
 * A partner chain node with JSON-RPC API available
 * A node with Postgres SQL (for automated test data)
-* A node with [cardano-node](https://github.com/IntersectMBO/cardano-node) + [cardano-db-sync](https://github.com/IntersectMBO/cardano-db-sync) + [postgres](https://www.postgresql.org/) (running locally OR on one of the partner-chains nodes)
-* [ogmios](https://github.com/CardanoSolutions/ogmios) (running locally OR on the remote host)
-* [partner-chains-node](https://github.com/input-output-hk/partner-chains) (running locally OR on the remote tools host)
-* cardano-cli (from a local cardano-node OR on the remote tools host)
+* A node with [cardano-node](https://github.com/IntersectMBO/cardano-node) + [cardano-db-sync](https://github.com/IntersectMBO/cardano-db-sync) + [postgres](https://www.postgresql.org/) (running locally OR in a Kubernetes pod)
+* [ogmios](https://github.com/CardanoSolutions/ogmios) (running locally OR in a Kubernetes pod)
+* [partner-chains-node](https://github.com/input-output-hk/partner-chains) (running locally OR in a Kubernetes pod)
+* cardano-cli (from a local cardano-node OR in a Kubernetes pod)
 
 **NOTE:**
 
@@ -51,95 +51,33 @@ Add payment signing key of the governance authority as `init.skey` to `secrets/<
 
 #### Each partner chain node is expected to have:
 
-- `name` - name of partner-chain `<node>`
-  - `host` - ip address of partner chain node
-  - `port` - port of partner chain node
-  - `aura_ss58_address` - SS58 address for Substrate Sr25519 key
-  - `public_key` - ECDSA public key (hex) for partner chain
-  - `aura_public_key` - Sr25519 public key (hex)
-  - `grandpa_public_key` - Ed25519 public key (hex)
-  - `permissioned_candidate` - set to true if you want this node to participate in block production as permissioned candidate (true|false)
-                               random candidate will be removed each execution to test rotation
-                               use with caution, tests may alter your permissioned candidates resulting in not achieving consensus
-  - `key_files` - a set of keys for registered candidates
-    - `cardano_payment_key` - path to payment key of registered candidate (payment.skey from step 1)
-    - `spo_signing_key` - path to signing key of registered candidate (cold.skey form step 1)
-    - `spo_public_key` - path to public key of registered candidate (cold.vkey from step 1)
-    - `sidechain_signing_key` - path to ECDSA private key (hex) (sidechain.skey from step 1)
-
-Additionally, you can add configuration of the main chain to `<env>_nodes.json`.
-
-E.g. for Cardano Preview it will be:
-
-```json
-    "main_chain": {
-        "network": "--testnet-magic 2",
-        "epoch_length": 86400,
-        "slot_length": 1,
-        "active_slots_coeff": 0.05,
-        "security_param": 432,
-        "init_timestamp": 1666656000,
-        "block_stability_margin": 0
-    }
-```
-
-#### `<env>_nodes.json` template:
-
-```
-{
-    "deployment_mc_epoch": <INT>,
-    "genesis_utxo": <STRING>,
-    "committee_participation_tolerance": <INT>,
-    "main_chain": {
-        "network": <STRING>,
-        "epoch_length": <INT>,
-        "slot_length": <INT>,
-        "active_slots_coeff": <FLOAT>,
-        "security_param": <INT>,
-        "init_timestamp": <INT>,
-        "block_stability_margin": <INT>
-    },
-    "nodes_config": {
-        "nodes": {
-            "<node>": {
-                "host": <STRING>,
-                "port": <INT>,
-                "aura_ss58_address": <STRING>,
-                "public_key": <STRING>,
-                "aura_public_key": <STRING>,
-                "grandpa_public_key": <STRING>",
-                "permissioned_candidate": <BOOLEAN>,
-                "key_files": {
-                    "cardano_payment_key": <STRING>,
-                    "spo_signing_key": <STRING>,
-                    "spo_public_key": <STRING>,
-                    "sidechain_signing_key": <STRING>
-                }
-            },
-            ...
-        },
-        "governance_authority": {
-            "mainchain_address": <STRING>,
-            "mainchain_key": "./secrets/<blockchain>/<env>/keys/<node>/init.skey"
-        },
-        "selected_node": <node>,
-        "node": "${nodes_config[nodes][${nodes_config[selected_node]}]}",
-        "token_conversion_rate": <INT>, // default - 9
-        "block_duration": <INT>,
-        "slots_in_epoch": <INT>,
-        "token_policy_id": <STRING>
-    }
-}
-```
+- `host` - hostname or IP address of the node
+- `port` - port number of the node
+- `rpc_url` - URL of the JSON-RPC API
+- `ws_url` - URL of the WebSocket API
+- `p2p_url` - URL of the P2P API
+- `metrics_url` - URL of the metrics API
+- `keys` - path to the node keys
 
 ### 4. Add `<env>_stack.json` to `config/<blockchain>/<env>` folder
 
-`<env>_stack.json` configuration file represents connection strings to partner chain dependencies (ogmios) and binaries (partner-chains-node, sidechain-main-cli, cardano-cli).
+`<env>_stack.json` configuration file represents the tools and services required for test execution.
 
-**NOTE:**
-- **ogmios** services can be executed on the remote host or made available on test runner machine
-- partner chains binaries can be made available on the test runner machine or on the remote host
-  - if you want to use the remote host - you need to configure your own SSH keys
+#### `<env>_stack.json` structure:
+
+- `ogmios_host` - hostname or IP address of the ogmios service
+- `ogmios_port` - port number of the ogmios service
+- `validator_name` - name of the validator pod to use (e.g., "ci-preview-validator-1", "staging-preview-validator-1", "alice")
+- `tools` - configuration for the tools required for test execution
+  - `cardano_cli` - configuration for the cardano-cli tool
+  - `partner_chains_node` - configuration for the partner-chains-node tool
+  - `bech32` - configuration for the bech32 tool
+
+#### Tools configuration:
+
+Each tool can be configured to run:
+- locally on the test runner machine
+- in a Kubernetes pod using kubectl exec
 
 #### `<env>_stack.json` template:
 
@@ -148,29 +86,26 @@ E.g. for Cardano Preview it will be:
     "stack_config": {
         "ogmios_host": <STRING>,
         "ogmios_port": 1337,
-        "tools_shell": "/bin/bash",
-        "tools_host": <STRING,
-        "ssh": {
-            "username": "root",
-            "host": "${stack_config[tools_host]}",
-            "port": 22,
-            "host_keys_path": "config/<blockchain>/known_hosts",
-            "private_key_path": <STRING>
-        },
+        "validator_name": <STRING>, // e.g., "ci-preview-validator-1", "staging-preview-validator-1", "alice"
         "tools": {
             "cardano_cli": {
-                "cli": <STRING>, // path to cardano-cli binary
+                "cli": "cardano-cli",
+                "shell": "kubectl exec -it ${stack_config[validator_name]} -c cardano-node -n <namespace> --"
             },
             "partner_chains_node": {
-                "cli": <STRING> // path to partner-chains-node binary
+                "cli": "/usr/local/bin/partner-chains-node",
+                "shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n <namespace> --"
             },
             "bech32": {
-                "cli": <STRING> // path to bech32 binary
+                "cli": "bech32",
+                "shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n <namespace> --"
             }
         }
     }
 }
 ```
+
+Where `<namespace>` is the Kubernetes namespace where your pods are running (e.g., "sc", "staging-preview", "ci-preview").
 
 ### 5. Add `<env>.json` to `secrets/<blockchain>`
 
