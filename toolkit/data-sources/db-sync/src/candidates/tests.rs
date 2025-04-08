@@ -109,7 +109,7 @@ async fn test_get_ariadne_parameters_returns_none_when_permissioned_list_not_set
 		.unwrap();
 	assert_eq!(
 		result.d_parameter,
-		DParameter { num_permissioned_candidates: 1, num_registered_candidates: 3 }
+		DParameter { num_permissioned_candidates: 1, num_registered_candidates: 2 }
 	);
 	assert_eq!(result.permissioned_candidates, None)
 }

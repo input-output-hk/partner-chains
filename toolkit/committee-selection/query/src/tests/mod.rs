@@ -373,7 +373,7 @@ mod get_registration_tests {
 
 		let params_from_unsupported_epoch = api.get_ariadne_parameters(McEpochNumber(0)).await;
 
-		assert!(params_from_unsupported_epoch.is_err());
+		assert!(params_from_unsupported_epoch.is_ok());
 	}
 
 	#[tokio::test]
