@@ -133,7 +133,7 @@ All test layers upload full logs, metrics, and test reports to GitHub Artifacts 
 
 ---
 
-## Continuous Integration Test Matrix## Continuous Integration Test Matrix
+## Continuous Integration Test Matrix
 
 #### **Smoke Tests / Node Health**
 
