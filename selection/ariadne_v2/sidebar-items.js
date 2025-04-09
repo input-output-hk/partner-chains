@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["select_authorities","weighted_with_guaranteed_assignment"]};
