@@ -459,3 +459,163 @@ runs:
           echo "⚠️ Skipping block producer metadata test as no permissioned candidates found"
         fi
     
+    #############################################
+    # Governance & Policy Tests
+    #############################################
+    
+    - name: Test Governance - Policy Structure
+      shell: bash
+      run: |
+        # Get governance policy
+        POLICY=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d '{"jsonrpc":"2.0","method":"sidechain_getGovernancePolicy","params":[],"id":1}' \
+          http://localhost:9933)
+        
+        # Verify policy structure
+        if echo "$POLICY" | jq -e '.result.key_hashes and .result.threshold' > /dev/null; then
+          KEY_COUNT=$(echo "$POLICY" | jq '.result.key_hashes | length')
+          THRESHOLD=$(echo "$POLICY" | jq '.result.threshold')
+          
+          if [ "$KEY_COUNT" -gt 0 ] && [ "$THRESHOLD" -gt 0 ]; then
+            echo "✅ Governance policy structure valid. Found $KEY_COUNT keys with threshold $THRESHOLD"
+          else
+            echo "❌ Invalid governance policy: key count or threshold is 0"
+            exit 1
+          fi
+        else
+          echo "❌ Failed to get governance policy or missing required fields"
+          exit 1
+        fi
+    
+    - name: Test Governance - D-Parameter Update
+      shell: bash
+      run: |
+        # Get current MC epoch
+        MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
+        
+        # Get current D-parameter
+        CURRENT_D_PARAM=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
+          http://localhost:9933 | jq '.result.dParameter')
+        
+        # Extract current values
+        CURRENT_P=$(echo "$CURRENT_D_PARAM" | jq '.numPermissionedCandidates')
+        CURRENT_T=$(echo "$CURRENT_D_PARAM" | jq '.numRegisteredCandidates')
+        
+        # Calculate new values (increment by 1 if possible, otherwise decrement)
+        NEW_P=$((CURRENT_P < 5 ? CURRENT_P + 1 : CURRENT_P - 1))
+        NEW_T=$((CURRENT_T < 5 ? CURRENT_T + 1 : CURRENT_T - 1))
+        
+        # Submit D-parameter update
+        UPDATE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_updateDParameter\",\"params\":[$NEW_P,$NEW_T],\"id\":1}" \
+          http://localhost:9933)
+        
+        # Verify update response
+        if echo "$UPDATE_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "✅ D-parameter update submitted successfully"
+          
+          # Verify the update was applied
+          sleep 5  # Wait for update to be processed
+          NEW_D_PARAM=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+            curl -s -H "Content-Type: application/json" \
+            -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
+            http://localhost:9933 | jq '.result.dParameter')
+          
+          NEW_P_CHECK=$(echo "$NEW_D_PARAM" | jq '.numPermissionedCandidates')
+          NEW_T_CHECK=$(echo "$NEW_D_PARAM" | jq '.numRegisteredCandidates')
+          
+          if [ "$NEW_P_CHECK" -eq "$NEW_P" ] && [ "$NEW_T_CHECK" -eq "$NEW_T" ]; then
+            echo "✅ D-parameter update verified. New values: P=$NEW_P, T=$NEW_T"
+          else
+            echo "❌ D-parameter update verification failed"
+            exit 1
+          fi
+        else
+          echo "❌ Failed to submit D-parameter update"
+          exit 1
+        fi
+    
+    #############################################
+    # Delegator & Rewards Tests
+    #############################################
+    
+    - name: Test Delegator - Block Participation Data
+      shell: bash
+      run: |
+        # Get latest block hash
+        BLOCK_HASH=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d '{"jsonrpc":"2.0","method":"chain_getHeader","params":[],"id":1}' \
+          http://localhost:9933 | jq -r '.result.hash')
+        
+        # Get block participation data
+        PARTICIPATION_DATA=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getBlockParticipationData\",\"params\":[\"$BLOCK_HASH\"],\"id\":1}" \
+          http://localhost:9933)
+        
+        # Verify participation data structure
+        if echo "$PARTICIPATION_DATA" | jq -e '.result.up_to_slot and .result.producer_participation' > /dev/null; then
+          PRODUCER_COUNT=$(echo "$PARTICIPATION_DATA" | jq '.result.producer_participation | length')
+          
+          if [ "$PRODUCER_COUNT" -gt 0 ]; then
+            echo "✅ Block participation data valid. Found $PRODUCER_COUNT producers"
+            
+            # Verify each producer has required fields
+            for PRODUCER in $(echo "$PARTICIPATION_DATA" | jq -c '.result.producer_participation[]'); do
+              if echo "$PRODUCER" | jq -e '.block_producer and .block_count' > /dev/null; then
+                echo "✅ Producer data structure valid"
+              else
+                echo "❌ Invalid producer data structure"
+                exit 1
+              fi
+            done
+          else
+            echo "❌ No producers found in participation data"
+            exit 1
+          fi
+        else
+          echo "❌ Invalid block participation data structure"
+          exit 1
+        fi
+    
+    - name: Test Delegator - SPO Participation
+      shell: bash
+      run: |
+        # Get current MC epoch
+        MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
+        
+        # Get trustless candidates (SPOs)
+        SPOS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getTrustlessCandidates\",\"params\":[$MC_EPOCH],\"id\":1}" \
+          http://localhost:9933)
+        
+        # Verify SPO data
+        if echo "$SPOS" | jq -e '.result' > /dev/null; then
+          SPO_COUNT=$(echo "$SPOS" | jq '.result | length')
+          
+          if [ "$SPO_COUNT" -gt 0 ]; then
+            echo "✅ Found $SPO_COUNT SPOs"
+            
+            # Verify each SPO has required fields
+            for SPO in $(echo "$SPOS" | jq -c '.result[]'); do
+              if echo "$SPO" | jq -e '.sidechainPubKey and .mainchainPubKey' > /dev/null; then
+                echo "✅ SPO data structure valid"
+              else
+                echo "❌ Invalid SPO data structure"
+                exit 1
+              fi
+            done
+          else
+            echo "⚠️ No SPOs found in current epoch"
+          fi
+        else
+          echo "❌ Failed to get SPO data"
+          exit 1
+        fi
+    
