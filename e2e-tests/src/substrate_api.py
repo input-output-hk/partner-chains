@@ -257,7 +257,7 @@ class SubstrateApi(BlockchainApi):
         response = self.partner_chains_node.smart_contracts.update_d_param(
             permissioned_candidates_count, registered_candidates_count, signing_key
         )
-        tx_id = response.transaction_id
+        tx_id = response.json["transaction_submitted"]
         effective_in_mc_epoch = self._effective_in_mc_epoch()
 
         if tx_id:
@@ -274,7 +274,7 @@ class SubstrateApi(BlockchainApi):
         response = self.partner_chains_node.smart_contracts.upsert_permissioned_candidates(
             self.config.nodes_config.governance_authority.mainchain_key, new_candidates_list
         )
-        tx_id = response.transaction_id
+        tx_id = response.json["transaction_submitted"]
         effective_in_mc_epoch = self._effective_in_mc_epoch()
 
         if tx_id:
@@ -308,7 +308,7 @@ class SubstrateApi(BlockchainApi):
             self.read_cardano_key_file(keys_files.spo_public_key),
             registration_utxo,
         )
-        tx_id = response.transaction_id
+        tx_id = response.json["transaction_submitted"]
         effective_in_mc_epoch = self._effective_in_mc_epoch()
 
         if tx_id:
@@ -328,7 +328,7 @@ class SubstrateApi(BlockchainApi):
         response = self.partner_chains_node.smart_contracts.deregister(
             keys_files.cardano_payment_key, self.read_cardano_key_file(keys_files.spo_public_key)
         )
-        tx_id = response.transaction_id
+        tx_id = response.json["transaction_submitted"]
         effective_in_mc_epoch = self._effective_in_mc_epoch()
 
         if tx_id:

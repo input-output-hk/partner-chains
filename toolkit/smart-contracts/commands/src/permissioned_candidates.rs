@@ -1,3 +1,4 @@
+use crate::option_to_json;
 use crate::parse_partnerchain_public_keys;
 use crate::PaymentFilePath;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
@@ -20,7 +21,7 @@ pub struct UpsertPermissionedCandidatesCmd {
 }
 
 impl UpsertPermissionedCandidatesCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 
 		let mut permissioned_candidates = Vec::new();
@@ -51,11 +52,6 @@ impl UpsertPermissionedCandidatesCmd {
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;
-		match result {
-			Some(result) => println!("{}", serde_json::to_value(result)?),
-			None => println!("{{}}"),
-		}
-
-		Ok(())
+		Ok(option_to_json(result))
 	}
 }

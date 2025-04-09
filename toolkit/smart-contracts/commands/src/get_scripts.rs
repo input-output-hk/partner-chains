@@ -11,14 +11,9 @@ pub struct GetScripts {
 }
 
 impl GetScripts {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let client = self.common_arguments.get_ogmios_client().await?;
 		let scripts_data = get_scripts_data_with_ogmios(self.genesis_utxo, &client).await?;
-
-		let json = serde_json::to_string_pretty(&scripts_data)?;
-
-		print!("{json}");
-
-		Ok(())
+		Ok(serde_json::json!(scripts_data))
 	}
 }

@@ -6696,7 +6696,6 @@ dependencies = [
  "anyhow",
  "cardano-serialization-lib",
  "cbor_event",
- "env_logger 0.11.3",
  "fraction",
  "hex",
  "hex-literal",
@@ -6983,7 +6982,6 @@ dependencies = [
  "authority-selection-inherents",
  "clap",
  "cli-commands",
- "env_logger 0.11.3",
  "frame-support",
  "log",
  "log4rs",
@@ -7023,7 +7021,6 @@ version = "1.6.0"
 dependencies = [
  "anyhow",
  "clap",
- "env_logger 0.11.3",
  "hex",
  "hex-literal",
  "ogmios-client",

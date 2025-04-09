@@ -21,6 +21,7 @@ use sidechain_domain::{crypto::blake2b, McTxHash, UtxoId, UtxoIndex};
 
 /// Successfull smart contracts offchain results in either transaction submission or creating transaction that has to be signed by the governance authorities
 #[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum MultiSigSmartContractResult {
 	TransactionSubmitted(McTxHash),
 	TransactionToSign(MultiSigTransactionData),
@@ -33,7 +34,7 @@ pub struct MultiSigTransactionData {
 	pub tx_name: String,
 	pub temporary_wallet: TemporaryWalletData,
 	#[serde(serialize_with = "serialize_as_conway_tx")]
-	pub tx_cbor: Vec<u8>,
+	pub tx: Vec<u8>,
 }
 
 /// To be used only for manual re-claim of the funds if transaction has not been submitted
@@ -269,6 +270,6 @@ where
 	Ok(MultiSigTransactionData {
 		tx_name: tx_name.to_owned(),
 		temporary_wallet: temporary_wallet.into(),
-		tx_cbor: signed_tx.to_bytes(),
+		tx: signed_tx.to_bytes(),
 	})
 }

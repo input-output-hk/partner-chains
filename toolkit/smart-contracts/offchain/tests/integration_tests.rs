@@ -108,16 +108,14 @@ async fn governance_flow() {
 		&[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY],
 		&client,
 	)
-	.await
-	.unwrap();
+	.await;
 
 	run_assemble_and_sign(
 		update_authorities_result,
 		&[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY],
 		&client,
 	)
-	.await
-	.unwrap();
+	.await;
 
 	let upsert_candidates_2_result =
 		run_upsert_permissioned_candidates(genesis_utxo, 2u8, &client).await;
@@ -126,8 +124,7 @@ async fn governance_flow() {
 		&[EVE_PAYMENT_KEY, GOVERNANCE_AUTHORITY_KEY],
 		&client,
 	)
-	.await
-	.unwrap();
+	.await;
 }
 
 #[tokio::test]
@@ -681,11 +678,11 @@ async fn run_assemble_and_sign<
 	multisig_result: MultiSigSmartContractResult,
 	signatories: &[[u8; 32]],
 	client: &T,
-) -> Option<McTxHash> {
+) -> McTxHash {
 	if let MultiSigSmartContractResult::TransactionToSign(MultiSigTransactionData {
 		tx_name: _,
 		temporary_wallet: _,
-		tx_cbor,
+		tx: tx_cbor,
 	}) = multisig_result
 	{
 		let tx = Transaction::from_bytes(tx_cbor.clone()).unwrap();
@@ -715,7 +712,7 @@ fn cleanup_temp_wallet_file(result: &MultiSigSmartContractResult) {
 		MultiSigSmartContractResult::TransactionToSign(MultiSigTransactionData {
 			tx_name: _tx_name,
 			temporary_wallet,
-			tx_cbor: _tx_cbor,
+			tx: _tx,
 		}) => {
 			let file_name = format!("{}.skey", temporary_wallet.address);
 			std::fs::remove_file(file_name).unwrap()

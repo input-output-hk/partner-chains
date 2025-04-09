@@ -1,7 +1,9 @@
 use ogmios_client::jsonrpsee::{client_for_url, OgmiosClients};
-use partner_chains_cardano_offchain::cardano_keys::{
-	CardanoKeyFileContent, CardanoPaymentSigningKey,
+use partner_chains_cardano_offchain::{
+	cardano_keys::{CardanoKeyFileContent, CardanoPaymentSigningKey},
+	multisig::MultiSigSmartContractResult,
 };
+use serde::Serialize;
 use sidechain_domain::*;
 
 pub mod assemble_tx;
@@ -54,10 +56,11 @@ impl CommonArguments {
 }
 
 type CmdResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
+type SubCmdResult = Result<serde_json::Value, Box<dyn std::error::Error + Send + Sync>>;
 
 impl SmartContractsCmd {
 	pub async fn execute(self) -> CmdResult<()> {
-		match self {
+		let result: serde_json::Value = match self {
 			Self::Governance(cmd) => cmd.execute().await,
 			Self::GetScripts(cmd) => cmd.execute().await,
 			Self::UpsertDParameter(cmd) => cmd.execute().await,
@@ -67,11 +70,26 @@ impl SmartContractsCmd {
 			Self::Reserve(cmd) => cmd.execute().await,
 			Self::AssembleAndSubmitTx(cmd) => cmd.execute().await,
 			Self::SignTx(cmd) => cmd.execute().await,
-		}
+		}?;
+		println!("{}", result);
+		Ok(())
 	}
 
 	pub fn execute_blocking(self) -> CmdResult<()> {
 		tokio::runtime::Runtime::new()?.block_on(self.execute())
+	}
+}
+
+/// Make a JSON object for a transaction hash. By default [McTxHash] is serialized
+/// to a JSONString.
+pub(crate) fn transaction_submitted_json(tx_hash: McTxHash) -> serde_json::Value {
+	serde_json::json!(MultiSigSmartContractResult::TransactionSubmitted(tx_hash))
+}
+
+pub(crate) fn option_to_json<T: Serialize>(value_opt: Option<T>) -> serde_json::Value {
+	match value_opt {
+		Some(value) => serde_json::json!(value),
+		None => serde_json::json!({}),
 	}
 }
 

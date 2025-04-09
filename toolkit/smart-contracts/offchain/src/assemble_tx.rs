@@ -13,7 +13,7 @@ pub trait AssembleTx {
 		&self,
 		transaction: Transaction,
 		witnesses: Vec<Vkeywitness>,
-	) -> anyhow::Result<Option<McTxHash>>;
+	) -> anyhow::Result<McTxHash>;
 }
 
 impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> AssembleTx for C {
@@ -21,7 +21,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> Asse
 		&self,
 		transaction: Transaction,
 		witnesses: Vec<Vkeywitness>,
-	) -> anyhow::Result<Option<McTxHash>> {
+	) -> anyhow::Result<McTxHash> {
 		assemble_tx(transaction, witnesses, self, &FixedDelayRetries::two_minutes()).await
 	}
 }
@@ -34,7 +34,7 @@ pub async fn assemble_tx<
 	witnesses: Vec<Vkeywitness>,
 	ogmios_client: &C,
 	await_tx: &A,
-) -> anyhow::Result<Option<McTxHash>> {
+) -> anyhow::Result<McTxHash> {
 	let mut witness_set = transaction.witness_set();
 
 	let mut vk = witness_set.vkeys().unwrap_or_else(Vkeywitnesses::new);
@@ -58,5 +58,5 @@ pub async fn assemble_tx<
 
 	await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_id.0, 0)).await?;
 
-	Ok(Some(tx_id))
+	Ok(tx_id)
 }

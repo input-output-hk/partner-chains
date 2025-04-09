@@ -13,7 +13,7 @@ pub struct SignTxCmd {
 }
 
 impl SignTxCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 
 		let vkey_witness = sign_tx(self.transaction.0, &payment_key)?;
@@ -25,9 +25,6 @@ impl SignTxCmd {
 				"cborHex": hex::encode(vkey_witness)
 			}
 		);
-
-		println!("{}", json);
-
-		Ok(())
+		Ok(json)
 	}
 }
