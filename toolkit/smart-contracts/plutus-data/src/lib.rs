@@ -1,6 +1,7 @@
 use cardano_serialization_lib::{PlutusData, PlutusList};
 
 pub mod d_param;
+pub mod key_value;
 pub mod permissioned_candidates;
 pub mod registered_candidates;
 pub mod reserve;

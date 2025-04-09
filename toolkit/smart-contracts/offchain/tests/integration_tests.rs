@@ -21,6 +21,7 @@ use partner_chains_cardano_offchain::{
 	d_param,
 	governance::MultiSigParameters,
 	init_governance,
+	key_value::KeyValueStore,
 	multisig::{MultiSigSmartContractResult, MultiSigTransactionData},
 	permissioned_candidates,
 	register::Register,
@@ -29,11 +30,11 @@ use partner_chains_cardano_offchain::{
 };
 use partner_chains_plutus_data::reserve::ReserveDatum;
 use sidechain_domain::{
-	AdaBasedStaking, AssetId, AssetName, AuraPublicKey, CandidateRegistration, DParameter,
-	GrandpaPublicKey, MainchainKeyHash, MainchainSignature, McTxHash, PermissionedCandidateData,
-	PolicyId, SidechainPublicKey, SidechainSignature, StakePoolPublicKey, UtxoId, UtxoIndex,
+	byte_string::ByteString, AdaBasedStaking, AssetId, AssetName, AuraPublicKey,
+	CandidateRegistration, DParameter, GrandpaPublicKey, MainchainKeyHash, MainchainSignature,
+	McTxHash, PermissionedCandidateData, PolicyId, SidechainPublicKey, SidechainSignature,
+	StakePoolPublicKey, UtxoId, UtxoIndex,
 };
-
 use std::time::Duration;
 use testcontainers::{clients::Cli, Container, GenericImage};
 use tokio_retry::{strategy::FixedInterval, Retry};
@@ -267,6 +268,37 @@ async fn update_legacy_governance() {
 	assert!(run_upsert_d_param(genesis_utxo, 0, 1, &governance_authority_payment_key(), &client)
 		.await
 		.is_some());
+}
+
+#[tokio::test]
+async fn key_value_store_operations() {
+	// Initialize client and container
+	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
+	let client = Cli::default();
+	let container = client.run(image);
+	let client = initialize(&container).await;
+	let genesis_utxo = run_init_goveranance(&client).await;
+
+	// Use the governance authority key
+	let skey = governance_authority_payment_key();
+
+	// Insert first key-value pair, should succeed
+	let key1 = "test_key".to_string();
+	let value1 = ByteString::from(hex::decode("0123456789abcdef").unwrap());
+	let result1 =
+		run_insert_key_value(genesis_utxo.clone(), key1.clone(), value1.clone(), &skey, &client)
+			.await;
+	assert!(result1.is_some(), "First key-value insertion should succeed");
+
+	// Try to insert the same key again, should fail
+	let result2 = run_insert_key_value(genesis_utxo.clone(), key1, value1, &skey, &client).await;
+	assert!(result2.is_none(), "Inserting the same key twice should fail");
+
+	// Insert a different key, should succeed
+	let key3 = "another_key".to_string();
+	let value3 = ByteString::from(hex::decode("fedcba9876543210").unwrap());
+	let result3 = run_insert_key_value(genesis_utxo, key3, value3, &skey, &client).await;
+	assert!(result3.is_some(), "Inserting a different key should succeed");
 }
 
 async fn initialize<'a>(container: &Container<'a, GenericImage>) -> OgmiosClients {
@@ -717,5 +749,23 @@ fn cleanup_temp_wallet_file(result: &MultiSigSmartContractResult) {
 			let file_name = format!("{}.skey", temporary_wallet.address);
 			std::fs::remove_file(file_name).unwrap()
 		},
+	}
+}
+
+async fn run_insert_key_value<
+	T: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
+>(
+	genesis_utxo: UtxoId,
+	key: String,
+	value: ByteString,
+	payment_signing_key: &CardanoPaymentSigningKey,
+	client: &T,
+) -> Option<McTxHash> {
+	// Use the KeyValueStore trait from the crate
+	match client.insert_key_value(genesis_utxo, key, value, payment_signing_key).await {
+		Ok(Some(MultiSigSmartContractResult::TransactionSubmitted(tx_hash))) => Some(tx_hash),
+		Ok(Some(_)) => panic!("Expected TransactionSubmitted"),
+		Ok(None) => None,
+		Err(e) => panic!("Error inserting key-value: {}", e),
 	}
 }
