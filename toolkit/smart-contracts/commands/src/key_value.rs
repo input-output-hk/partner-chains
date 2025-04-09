@@ -1,0 +1,56 @@
+use crate::PaymentFilePath;
+use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
+use partner_chains_cardano_offchain::key_value::insert_key_value;
+use sidechain_domain::byte_string::ByteString;
+use sidechain_domain::UtxoId;
+
+#[derive(Clone, Debug, clap::Subcommand)]
+#[allow(clippy::large_enum_variant)]
+pub enum KeyValueCmd {
+	Insert(InsertCmd),
+}
+
+impl KeyValueCmd {
+	pub async fn execute(self) -> crate::CmdResult<()> {
+		match self {
+			Self::Insert(cmd) => cmd.execute().await,
+		}
+	}
+}
+
+#[derive(Clone, Debug, clap::Parser)]
+pub struct InsertCmd {
+	#[clap(flatten)]
+	common_arguments: crate::CommonArguments,
+	#[arg(long)]
+	key: String,
+	#[arg(long)]
+	value: ByteString,
+	#[clap(flatten)]
+	payment_key_file: PaymentFilePath,
+	#[arg(long, short('g'))]
+	genesis_utxo: UtxoId,
+}
+
+impl InsertCmd {
+	pub async fn execute(self) -> crate::CmdResult<()> {
+		let payment_key = self.payment_key_file.read_key()?;
+
+		let client = self.common_arguments.get_ogmios_client().await?;
+
+		let result = insert_key_value(
+			self.genesis_utxo,
+			self.key,
+			self.value,
+			&payment_key,
+			&client,
+			&FixedDelayRetries::two_minutes(),
+		)
+		.await?;
+		match result {
+			Some(result) => println!("{}", serde_json::to_value(result)?),
+			None => println!("{{}}"),
+		}
+		Ok(())
+	}
+}

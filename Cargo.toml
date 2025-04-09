@@ -252,7 +252,7 @@ substrate-prometheus-endpoint = { package = "substrate-prometheus-endpoint", git
 substrate-test-runtime-client = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2412-1" }
 substrate-wasm-builder = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2412-1" }
 
-raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", tag = "v7.0.2" }
+raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", rev ="1ac404b3f8b4cc3256f563ad6f614f622383d392" }
 
 # local dependencies
 

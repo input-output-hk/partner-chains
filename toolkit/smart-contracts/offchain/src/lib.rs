@@ -13,6 +13,8 @@ pub mod d_param;
 pub mod governance;
 /// Supports governance initialization
 pub mod init_governance;
+/// Supports key-value pair management
+pub mod key_value;
 /// Types and functions related to smart-contracts that support MultiSig governance
 pub mod multisig;
 #[cfg(test)]

@@ -7007,6 +7007,7 @@ name = "partner-chains-plutus-data"
 version = "1.6.0"
 dependencies = [
  "cardano-serialization-lib",
+ "hex",
  "hex-literal",
  "log",
  "pretty_assertions",
@@ -7909,7 +7910,7 @@ dependencies = [
 [[package]]
 name = "raw-scripts"
 version = "7.0.2"
-source = "git+https://github.com/input-output-hk/partner-chains-smart-contracts.git?tag=v7.0.2#f2f9446d99e905550f28b912df026f84587e50b8"
+source = "git+https://github.com/input-output-hk/partner-chains-smart-contracts.git?rev=1ac404b3f8b4cc3256f563ad6f614f622383d392#1ac404b3f8b4cc3256f563ad6f614f622383d392"
 dependencies = [
  "hex-literal",
 ]
