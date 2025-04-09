@@ -144,6 +144,14 @@ All test layers upload full logs, metrics, and test reports to GitHub Artifacts 
 | Chain Status Matches Cardano Tip | `test_get_status` | Validate that `getStatus()` aligns with Cardano CLI tip | Epoch/slot data close to Cardano tip; timestamps and sidechain data present | Confirms sync between mainchain and sidechain | `curl -d '{"jsonrpc":"2.0","method":"sidechain_getStatus","params":[],"id":1}' http://localhost:9933` with Cardano CLI comparison |
 | Genesis Params Returned | `test_get_params` | Confirm genesis config is available via RPC | `genesis_utxo` returned and correct | Ensures sidechain is initialized with correct bootstrap parameters | `curl -d '{"jsonrpc":"2.0","method":"partner_chain_getParams","params":[],"id":1}' http://localhost:9933` with genesis validation |
 
+#### **RPC Interface Tests**
+
+| Test Name | Function | Purpose | Expected Result | Why This Test Matters | How Test is Run / RPC Example |
+|:---------|:---------|:--------|:----------------|:----------------------|:------------------------------|
+| Ariadne Parameters Structure | `test_get_ariadne_parameters` | Validate structure and presence of candidates & d-param | Correct types + keys exist for parameters with valid values | Ensures governance/consensus inputs are valid | `curl -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[<epoch>],"id":1}' http://localhost:9933` with structure validation |
+| Epoch Committee Present | `test_get_epoch_committee` | Verify committee members for a sidechain epoch | Valid list of members with `sidechainPubKey`s and correct count | Ensures authority resolution for epoch | `curl -d '{"jsonrpc":"2.0","method":"sidechain_getEpochCommittee","params":[<epoch>],"id":1}' http://localhost:9933` with member validation |
+| Candidate Registrations | `test_get_registrations` | Get validator registration info from RPC | List of valid, structured registrations with correct stake weights | Confirms the staking/validator registry is functioning | `curl -d '{"jsonrpc":"2.0","method":"sidechain_getRegistrations","params":[<epoch>,"<key>"],"id":1}' http://localhost:9933` with registration validation |
+
 #### **Committee Tests**
 
 | Test Name | Function | Purpose | Expected Result | Why This Test Matters | How Test is Run / RPC Example |
