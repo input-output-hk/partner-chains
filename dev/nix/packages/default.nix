@@ -16,12 +16,13 @@
     cardanoPackages = (flake-compat { src = inputs.cardano-node; }).defaultNix.packages.${system};
     dbSyncPackages = (flake-compat { src = inputs.cardano-dbsync; }).defaultNix.packages.${system};
     fenixPkgs = inputs'.fenix.packages;
-    # rustToolchain = with fenixPkgs;
+    # rustToolchainFile = with fenixPkgs;
     #   fromToolchainFile {
     #       file = ../../../rust-toolchain.toml;
     #       sha256 = "VZZnlyP69+Y3crrLHQyJirqlHrTtGTsyiSnZB8jEvVo=";
-    #     }
+    #     };
     rustToolchain = fenixPkgs.combine [
+      #rustToolchainFile
       fenixPkgs.latest.toolchain
       fenixPkgs.latest.rust-src
       fenixPkgs.targets.wasm32-unknown-unknown.latest.rust-std
@@ -94,7 +95,7 @@
         ];
         
         postFixup = ''
-          patchelf --set-rpath ${pkgs.rocksdb}/lib $out/bin/partner-chains-demo-node
+          patchelf --set-rpath "${pkgs.rocksdb}/lib:${pkgs.stdenv.cc.cc.lib}/lib" $out/bin/partner-chains-demo-node
         '';
         
         CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_LINKER = "${pkgs.llvmPackages.lld}/bin/lld";
