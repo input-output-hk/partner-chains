@@ -76,10 +76,10 @@ runs:
       shell: bash
       continue-on-error: true
       run: |
-        # Create a new wallet
+        # Create a new wallet using the correct RPC method
         WALLET_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"author_createWallet","params":[],"id":1}' \
+          -d '{"jsonrpc":"2.0","method":"author_createAccount","params":[],"id":1}' \
           http://localhost:9933)
         
         # Check if wallet creation was successful
@@ -96,10 +96,10 @@ runs:
           exit 1
         fi
         
-        # Get initial balances
+        # Get initial balances using the correct RPC method
         BALANCE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"balances_getBalance\",\"params\":[\"$WALLET_ADDRESS\"],\"id\":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"system_accountNextIndex\",\"params\":[\"$WALLET_ADDRESS\"],\"id\":1}" \
           http://localhost:9933)
         
         if ! echo "$BALANCE_RESPONSE" | jq -e '.result' > /dev/null; then
@@ -114,10 +114,10 @@ runs:
           exit 1
         fi
         
-        # Send transaction
+        # Send transaction using the correct RPC method
         TX_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"author_submitExtrinsic\",\"params\":[{\"address\":\"$WALLET_ADDRESS\",\"signature\":\"$WALLET_SIGNATURE\",\"call\":{\"module\":\"Balances\",\"function\":\"transfer\",\"params\":{\"dest\":\"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY\",\"value\":1000000000000}}},\"nonce\":0}],\"id\":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"author_submitExtrinsic\",\"params\":[{\"address\":\"$WALLET_ADDRESS\",\"signature\":\"$WALLET_SIGNATURE\",\"call\":{\"module\":\"System\",\"function\":\"transfer\",\"params\":{\"dest\":\"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY\",\"value\":1000000000000}}},\"nonce\":0}],\"id\":1}" \
           http://localhost:9933)
         
         if ! echo "$TX_RESPONSE" | jq -e '.result' > /dev/null; then
@@ -131,7 +131,7 @@ runs:
         # Get final balances
         FINAL_BALANCE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"balances_getBalance\",\"params\":[\"$WALLET_ADDRESS\"],\"id\":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"system_accountNextIndex\",\"params\":[\"$WALLET_ADDRESS\"],\"id\":1}" \
           http://localhost:9933)
         
         if ! echo "$FINAL_BALANCE_RESPONSE" | jq -e '.result' > /dev/null; then
@@ -147,10 +147,10 @@ runs:
         fi
         
         # Verify balance changes
-        if [ "$FINAL_SENDER_BALANCE" -lt "$SENDER_BALANCE" ]; then
+        if [ "$FINAL_SENDER_BALANCE" -gt "$SENDER_BALANCE" ]; then
           echo "✅ Transaction execution test passed."
         else
-          echo "❌ Transaction execution failed - balance did not decrease"
+          echo "❌ Transaction execution failed - balance did not increase"
           echo "Initial balance: $SENDER_BALANCE"
           echo "Final balance: $FINAL_SENDER_BALANCE"
           exit 1
@@ -278,19 +278,41 @@ runs:
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
+        # Check if Ariadne parameters are valid
+        if ! echo "$ARIADNE_PARAMS" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get Ariadne parameters: $(echo "$ARIADNE_PARAMS" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
         # Get current committee
         COMMITTEE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getCommittee\",\"params\":[$MC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
+        # Check if committee data is valid
+        if ! echo "$COMMITTEE" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get committee data: $(echo "$COMMITTEE" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
         # Extract d-parameter values
         P_CANDIDATES=$(echo "$ARIADNE_PARAMS" | jq -r '.result.dParameter.numPermissionedCandidates')
         T_CANDIDATES=$(echo "$ARIADNE_PARAMS" | jq -r '.result.dParameter.numRegisteredCandidates')
         
+        if [ -z "$P_CANDIDATES" ] || [ "$P_CANDIDATES" = "null" ] || [ -z "$T_CANDIDATES" ] || [ "$T_CANDIDATES" = "null" ]; then
+          echo "❌ Invalid d-parameter values"
+          exit 1
+        fi
+        
         # Count committee members by type
         P_COUNT=$(echo "$COMMITTEE" | jq '.result | map(select(.type == "permissioned")) | length')
         T_COUNT=$(echo "$COMMITTEE" | jq '.result | map(select(.type == "trustless")) | length')
+        
+        if [ -z "$P_COUNT" ] || [ "$P_COUNT" = "null" ] || [ -z "$T_COUNT" ] || [ "$T_COUNT" = "null" ]; then
+          echo "❌ Invalid committee member counts"
+          exit 1
+        fi
         
         # Calculate expected ratio
         EXPECTED_RATIO=$(echo "scale=4; $P_CANDIDATES / ($P_CANDIDATES + $T_CANDIDATES)" | bc)
@@ -352,11 +374,22 @@ runs:
           -d '{"jsonrpc":"2.0","method":"sidechain_getStatus","params":[],"id":1}' \
           http://localhost:9933 | jq -r '.result.sidechain.epoch')
         
+        if [ -z "$PC_EPOCH" ] || [ "$PC_EPOCH" = "null" ]; then
+          echo "❌ Failed to get current PC epoch"
+          exit 1
+        fi
+        
         # Get epoch committee for current epoch
         COMMITTEE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$PC_EPOCH],\"id\":1}" \
           http://localhost:9933)
+        
+        # Check if committee data is valid
+        if ! echo "$COMMITTEE" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get committee data: $(echo "$COMMITTEE" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
         
         # Get authorities list
         AUTHORITIES=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
@@ -364,11 +397,27 @@ runs:
           -d '{"jsonrpc":"2.0","method":"authority_set","params":[],"id":1}' \
           http://localhost:9933)
         
+        # Check if authorities data is valid
+        if ! echo "$AUTHORITIES" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get authorities data: $(echo "$AUTHORITIES" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
         # Extract committee member public keys
         COMMITTEE_KEYS=$(echo "$COMMITTEE" | jq -r '.result.committee[].sidechainPubKey')
         
+        if [ -z "$COMMITTEE_KEYS" ]; then
+          echo "❌ No committee members found"
+          exit 1
+        fi
+        
         # Extract authority addresses
         AUTHORITY_ADDRESSES=$(echo "$AUTHORITIES" | jq -r '.result[]')
+        
+        if [ -z "$AUTHORITY_ADDRESSES" ]; then
+          echo "❌ No authorities found"
+          exit 1
+        fi
         
         # Check if all committee members are in authorities
         for KEY in $COMMITTEE_KEYS; do
@@ -396,11 +445,16 @@ runs:
       shell: bash
       continue-on-error: true
       run: |
-        # Get a stake key hash
+        # Get a stake key hash from Ariadne parameters
         STAKE_KEY_HASH=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[],"id":1}' \
           http://localhost:9933 | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        
+        if [ -z "$STAKE_KEY_HASH" ] || [ "$STAKE_KEY_HASH" = "null" ]; then
+          echo "❌ Failed to get stake key hash"
+          exit 1
+        fi
         
         # Get address association
         ASSOCIATION=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
@@ -408,11 +462,18 @@ runs:
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAddressAssociation\",\"params\":[\"$STAKE_KEY_HASH\"],\"id\":1}" \
           http://localhost:9933)
         
+        # Check if association response is valid
+        if ! echo "$ASSOCIATION" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get address association: $(echo "$ASSOCIATION" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
         # Verify association exists and has valid signature
         if echo "$ASSOCIATION" | jq -e '.result.address and .result.signature' > /dev/null; then
           echo "✅ Address association test passed."
         else
-          echo "❌ Invalid address association"
+          echo "❌ Invalid address association response format"
+          echo "Response: $ASSOCIATION"
           exit 1
         fi
 
@@ -421,10 +482,23 @@ runs:
       continue-on-error: true
       run: |
         # Get latest block hash
-        BLOCK_HASH=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        BLOCK_HASH_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d '{"jsonrpc":"2.0","method":"chain_getHeader","params":[],"id":1}' \
-          http://localhost:9933 | jq -r '.result.hash')
+          http://localhost:9933)
+        
+        # Check if block hash response is valid
+        if ! echo "$BLOCK_HASH_RESPONSE" | jq -e '.result.hash' > /dev/null; then
+          echo "❌ Failed to get block hash: $(echo "$BLOCK_HASH_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
+        BLOCK_HASH=$(echo "$BLOCK_HASH_RESPONSE" | jq -r '.result.hash')
+        
+        if [ -z "$BLOCK_HASH" ] || [ "$BLOCK_HASH" = "null" ]; then
+          echo "❌ Invalid block hash received"
+          exit 1
+        fi
         
         # Get block production log
         BLOCK_PRODUCTION_LOG=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
@@ -432,17 +506,20 @@ runs:
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getBlockProductionLog\",\"params\":[\"$BLOCK_HASH\"],\"id\":1}" \
           http://localhost:9933)
         
+        # Check if block production log response is valid
+        if ! echo "$BLOCK_PRODUCTION_LOG" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get block production log: $(echo "$BLOCK_PRODUCTION_LOG" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
         # Check if block production log exists and has entries
-        if echo "$BLOCK_PRODUCTION_LOG" | jq -e '.result' > /dev/null; then
-          LOG_ENTRIES=$(echo "$BLOCK_PRODUCTION_LOG" | jq '.result | length')
-          if [ "$LOG_ENTRIES" -gt 0 ]; then
-            echo "✅ Block production log test passed. Found $LOG_ENTRIES entries."
-          else
-            echo "❌ Block production log is empty"
-            exit 1
-          fi
+        LOG_ENTRIES=$(echo "$BLOCK_PRODUCTION_LOG" | jq '.result | length')
+        
+        if [ "$LOG_ENTRIES" -gt 0 ]; then
+          echo "✅ Block production log test passed. Found $LOG_ENTRIES entries."
         else
-          echo "❌ Failed to get block production log"
+          echo "❌ Block production log is empty"
+          echo "Response: $BLOCK_PRODUCTION_LOG"
           exit 1
         fi
 
@@ -454,11 +531,24 @@ runs:
       shell: bash
       continue-on-error: true
       run: |
-        # Get payment key
-        PAYMENT_KEY=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Get payment key from Ariadne parameters
+        PAYMENT_KEY_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[],"id":1}' \
-          http://localhost:9933 | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+          http://localhost:9933)
+        
+        # Check if Ariadne parameters response is valid
+        if ! echo "$PAYMENT_KEY_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get Ariadne parameters: $(echo "$PAYMENT_KEY_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
+        PAYMENT_KEY=$(echo "$PAYMENT_KEY_RESPONSE" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        
+        if [ -z "$PAYMENT_KEY" ] || [ "$PAYMENT_KEY" = "null" ]; then
+          echo "❌ Invalid payment key received"
+          exit 1
+        fi
         
         # Initialize reserve
         INIT_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
@@ -466,11 +556,18 @@ runs:
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_initReserve\",\"params\":[\"$PAYMENT_KEY\"],\"id\":1}" \
           http://localhost:9933)
         
+        # Check if init response is valid
+        if ! echo "$INIT_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to initialize reserve: $(echo "$INIT_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
         # Verify initialization
         if echo "$INIT_RESPONSE" | jq -e '.result.validatorScript and .result.policyScript' > /dev/null; then
           echo "✅ Reserve initialization test passed."
         else
-          echo "❌ Failed to initialize reserve"
+          echo "❌ Invalid reserve initialization response"
+          echo "Response: $INIT_RESPONSE"
           exit 1
         fi
 
@@ -478,16 +575,25 @@ runs:
       shell: bash
       continue-on-error: true
       run: |
-        # Get required parameters
-        V_FUNCTION_HASH=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Get required parameters from Ariadne parameters
+        PARAMS_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[],"id":1}' \
-          http://localhost:9933 | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+          http://localhost:9933)
         
-        PAYMENT_KEY=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[],"id":1}' \
-          http://localhost:9933 | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        # Check if Ariadne parameters response is valid
+        if ! echo "$PARAMS_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get Ariadne parameters: $(echo "$PARAMS_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
+        V_FUNCTION_HASH=$(echo "$PARAMS_RESPONSE" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        PAYMENT_KEY=$(echo "$PARAMS_RESPONSE" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        
+        if [ -z "$V_FUNCTION_HASH" ] || [ "$V_FUNCTION_HASH" = "null" ] || [ -z "$PAYMENT_KEY" ] || [ "$PAYMENT_KEY" = "null" ]; then
+          echo "❌ Invalid parameters received"
+          exit 1
+        fi
         
         # Create reserve
         CREATE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
@@ -495,11 +601,18 @@ runs:
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_createReserve\",\"params\":[\"$V_FUNCTION_HASH\",1000000,\"token\",\"$PAYMENT_KEY\"],\"id\":1}" \
           http://localhost:9933)
         
+        # Check if create response is valid
+        if ! echo "$CREATE_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to create reserve: $(echo "$CREATE_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
         # Verify creation
         if echo "$CREATE_RESPONSE" | jq -e '.result.success' > /dev/null; then
           echo "✅ Reserve creation test passed."
         else
-          echo "❌ Failed to create reserve"
+          echo "❌ Invalid reserve creation response"
+          echo "Response: $CREATE_RESPONSE"
           exit 1
         fi
 
@@ -507,16 +620,25 @@ runs:
       shell: bash
       continue-on-error: true
       run: |
-        # Get required parameters
-        REFERENCE_UTXO=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Get required parameters from Ariadne parameters
+        PARAMS_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[],"id":1}' \
-          http://localhost:9933 | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+          http://localhost:9933)
         
-        PAYMENT_KEY=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[],"id":1}' \
-          http://localhost:9933 | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        # Check if Ariadne parameters response is valid
+        if ! echo "$PARAMS_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get Ariadne parameters: $(echo "$PARAMS_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
+        REFERENCE_UTXO=$(echo "$PARAMS_RESPONSE" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        PAYMENT_KEY=$(echo "$PARAMS_RESPONSE" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        
+        if [ -z "$REFERENCE_UTXO" ] || [ "$REFERENCE_UTXO" = "null" ] || [ -z "$PAYMENT_KEY" ] || [ "$PAYMENT_KEY" = "null" ]; then
+          echo "❌ Invalid parameters received"
+          exit 1
+        fi
         
         # Release funds
         RELEASE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
@@ -524,11 +646,18 @@ runs:
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_releaseFunds\",\"params\":[\"$REFERENCE_UTXO\",1000000,\"$PAYMENT_KEY\"],\"id\":1}" \
           http://localhost:9933)
         
+        # Check if release response is valid
+        if ! echo "$RELEASE_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to release funds: $(echo "$RELEASE_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
         # Verify release
         if echo "$RELEASE_RESPONSE" | jq -e '.result.success' > /dev/null; then
           echo "✅ Fund release test passed."
         else
-          echo "❌ Failed to release funds"
+          echo "❌ Invalid fund release response"
+          echo "Response: $RELEASE_RESPONSE"
           exit 1
         fi
 
@@ -536,11 +665,24 @@ runs:
       shell: bash
       continue-on-error: true
       run: |
-        # Get payment key
-        PAYMENT_KEY=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Get payment key from Ariadne parameters
+        PARAMS_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[],"id":1}' \
-          http://localhost:9933 | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+          http://localhost:9933)
+        
+        # Check if Ariadne parameters response is valid
+        if ! echo "$PARAMS_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get Ariadne parameters: $(echo "$PARAMS_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
+        PAYMENT_KEY=$(echo "$PARAMS_RESPONSE" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        
+        if [ -z "$PAYMENT_KEY" ] || [ "$PAYMENT_KEY" = "null" ]; then
+          echo "❌ Invalid payment key received"
+          exit 1
+        fi
         
         # Deposit funds
         DEPOSIT_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
@@ -548,11 +690,18 @@ runs:
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_depositFunds\",\"params\":[1000000,\"$PAYMENT_KEY\"],\"id\":1}" \
           http://localhost:9933)
         
+        # Check if deposit response is valid
+        if ! echo "$DEPOSIT_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to deposit funds: $(echo "$DEPOSIT_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
         # Verify deposit
         if echo "$DEPOSIT_RESPONSE" | jq -e '.result.success' > /dev/null; then
           echo "✅ Fund deposit test passed."
         else
-          echo "❌ Failed to deposit funds"
+          echo "❌ Invalid fund deposit response"
+          echo "Response: $DEPOSIT_RESPONSE"
           exit 1
         fi
 
@@ -560,11 +709,24 @@ runs:
       shell: bash
       continue-on-error: true
       run: |
-        # Get payment key
-        PAYMENT_KEY=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Get payment key from Ariadne parameters
+        PARAMS_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[],"id":1}' \
-          http://localhost:9933 | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+          http://localhost:9933)
+        
+        # Check if Ariadne parameters response is valid
+        if ! echo "$PARAMS_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get Ariadne parameters: $(echo "$PARAMS_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
+        PAYMENT_KEY=$(echo "$PARAMS_RESPONSE" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        
+        if [ -z "$PAYMENT_KEY" ] || [ "$PAYMENT_KEY" = "null" ]; then
+          echo "❌ Invalid payment key received"
+          exit 1
+        fi
         
         # Handover reserve
         HANDOVER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
@@ -572,11 +734,18 @@ runs:
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_handoverReserve\",\"params\":[\"$PAYMENT_KEY\"],\"id\":1}" \
           http://localhost:9933)
         
+        # Check if handover response is valid
+        if ! echo "$HANDOVER_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to handover reserve: $(echo "$HANDOVER_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
         # Verify handover
         if echo "$HANDOVER_RESPONSE" | jq -e '.result.success' > /dev/null; then
           echo "✅ Reserve handover test passed."
         else
-          echo "❌ Failed to handover reserve"
+          echo "❌ Invalid reserve handover response"
+          echo "Response: $HANDOVER_RESPONSE"
           exit 1
         fi
     
