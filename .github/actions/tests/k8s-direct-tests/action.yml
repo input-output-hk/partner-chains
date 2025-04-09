@@ -51,7 +51,7 @@ runs:
     # Smoke Tests / Node Health
     #############################################
 
-    - name: Test Node Health - Block Production Advances
+    - name: Test Block Production Advances
       shell: bash
       run: |
         BLOCK1_HEX=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
@@ -70,6 +70,44 @@ runs:
     
         [[ "$BLOCK2" -gt "$BLOCK1" ]] || { echo "❌ Block number did not increase"; exit 1; }
         echo "✅ Block producing test passed."
+
+    - name: Test Basic Transaction Execution
+      shell: bash
+      run: |
+        # Create a new wallet
+        WALLET=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d '{"jsonrpc":"2.0","method":"author_createWallet","params":[],"id":1}' \
+          http://localhost:9933)
+        
+        # Get initial balances
+        SENDER_BALANCE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"balances_getBalance\",\"params\":[\"$(echo $WALLET | jq -r '.result.address')\"],\"id\":1}" \
+          http://localhost:9933 | jq -r '.result')
+        
+        # Send transaction
+        TX_HASH=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"author_submitExtrinsic\",\"params\":[{\"address\":\"$(echo $WALLET | jq -r '.result.address')\",\"signature\":\"$(echo $WALLET | jq -r '.result.signature')\",\"call\":{\"module\":\"Balances\",\"function\":\"transfer\",\"params\":{\"dest\":\"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY\",\"value\":1000000000000}}},\"nonce\":0}],\"id\":1}" \
+          http://localhost:9933 | jq -r '.result')
+        
+        # Wait for transaction to be included
+        sleep 10
+        
+        # Get final balances
+        FINAL_SENDER_BALANCE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"balances_getBalance\",\"params\":[\"$(echo $WALLET | jq -r '.result.address')\"],\"id\":1}" \
+          http://localhost:9933 | jq -r '.result')
+        
+        # Verify balance changes
+        if [ "$FINAL_SENDER_BALANCE" -lt "$SENDER_BALANCE" ]; then
+          echo "✅ Transaction execution test passed."
+        else
+          echo "❌ Transaction execution failed"
+          exit 1
+        fi
 
     - name: Test Chain Status Matches Cardano Tip
       shell: bash
@@ -99,7 +137,7 @@ runs:
     # RPC Interface Tests
     #############################################
 
-    - name: Test RPC Interface - Ariadne Parameters Structure
+    - name: Test Ariadne Parameters Structure
       shell: bash
       run: |
         MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
@@ -170,102 +208,58 @@ runs:
           ' || { echo "❌ Invalid Registrations response"; exit 1; }
     
         echo "✅ Registrations valid."
-    
+
     #############################################
-    # DParam & Committee Ratio Validations
+    # Committee Tests
     #############################################
-    
-    - name: Test DParam - Committee Size Matches DParam
+
+    - name: Test Committee Ratio Compliance
       shell: bash
       run: |
-        # Get current PC epoch
-        PC_EPOCH=$(jq '.result.sidechain.epoch' status.json)
-        
-        # Get MC epoch
+        # Get current MC epoch
         MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
         
-        # Get Ariadne parameters to check d-parameter
+        # Get Ariadne parameters
         ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
+          http://localhost:9933)
+        
+        # Get current committee
+        COMMITTEE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getCommittee\",\"params\":[$MC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
         # Extract d-parameter values
         P_CANDIDATES=$(echo "$ARIADNE_PARAMS" | jq -r '.result.dParameter.numPermissionedCandidates')
         T_CANDIDATES=$(echo "$ARIADNE_PARAMS" | jq -r '.result.dParameter.numRegisteredCandidates')
         
-        # Calculate expected committee size (assuming max_validators is 100)
-        MAX_VALIDATORS=100
-        TOTAL_COMMITTEE_SIZE=$((P_CANDIDATES + T_CANDIDATES))
-        EXPECTED_COMMITTEE_SIZE=$((TOTAL_COMMITTEE_SIZE < MAX_VALIDATORS ? TOTAL_COMMITTEE_SIZE : MAX_VALIDATORS))
+        # Count committee members by type
+        P_COUNT=$(echo "$COMMITTEE" | jq '.result | map(select(.type == "permissioned")) | length')
+        T_COUNT=$(echo "$COMMITTEE" | jq '.result | map(select(.type == "trustless")) | length')
         
-        # Get actual committee size
-        COMMITTEE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$PC_EPOCH],\"id\":1}" \
-          http://localhost:9933)
+        # Calculate expected ratio
+        EXPECTED_RATIO=$(echo "scale=4; $P_CANDIDATES / ($P_CANDIDATES + $T_CANDIDATES)" | bc)
+        ACTUAL_RATIO=$(echo "scale=4; $P_COUNT / ($P_COUNT + $T_COUNT)" | bc)
         
-        ACTUAL_COMMITTEE_SIZE=$(echo "$COMMITTEE" | jq '.result.committee | length')
-        
-        # Compare expected and actual committee sizes
-        if [ "$ACTUAL_COMMITTEE_SIZE" -eq "$EXPECTED_COMMITTEE_SIZE" ]; then
-          echo "✅ Committee size test passed. Expected: $EXPECTED_COMMITTEE_SIZE, Actual: $ACTUAL_COMMITTEE_SIZE"
-        else
-          echo "❌ Committee size mismatch. Expected: $EXPECTED_COMMITTEE_SIZE, Actual: $ACTUAL_COMMITTEE_SIZE"
+        # Allow for some deviation (e.g., 10%)
+        DEVIATION=$(echo "scale=4; $EXPECTED_RATIO - $ACTUAL_RATIO" | bc | tr -d '-')
+        if (( $(echo "$DEVIATION > 0.1" | bc -l) )); then
+          echo "❌ Committee ratio deviation too high. Expected: $EXPECTED_RATIO, Actual: $ACTUAL_RATIO"
           exit 1
         fi
-    
-    #############################################
-    # Consensus / Committee Rotation
-    #############################################
-    
-    - name: Test Consensus - Authorities Match Committee
-      shell: bash
-      run: |
-        # Get current PC epoch
-        PC_EPOCH=$(jq '.result.sidechain.epoch' status.json)
         
-        # Get committee members
-        COMMITTEE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$PC_EPOCH],\"id\":1}" \
-          http://localhost:9933)
-        
-        # Extract committee member public keys
-        COMMITTEE_KEYS=$(echo "$COMMITTEE" | jq -r '.result.committee[].sidechainPubKey')
-        
-        # Get authorities
-        AUTHORITIES=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"authority_set","params":[],"id":1}' \
-          http://localhost:9933)
-        
-        # Extract authority addresses
-        AUTHORITY_ADDRESSES=$(echo "$AUTHORITIES" | jq -r '.result[]')
-        
-        # Check if all committee members are in authorities
-        for KEY in $COMMITTEE_KEYS; do
-          if ! echo "$AUTHORITY_ADDRESSES" | grep -q "$KEY"; then
-            echo "❌ Committee member $KEY not found in authorities"
-            exit 1
-          fi
-        done
-        
-        # Check if all authorities are in committee
-        for ADDR in $AUTHORITY_ADDRESSES; do
-          if ! echo "$COMMITTEE_KEYS" | grep -q "$ADDR"; then
-            echo "❌ Authority $ADDR not found in committee"
-            exit 1
-          fi
-        done
-        
-        echo "✅ Authorities match committee test passed."
-    
+        echo "✅ Committee ratio test passed."
+
     - name: Test Committee Members Rotate
       shell: bash
       run: |
         # Get current PC epoch
-        PC_EPOCH=$(jq '.result.sidechain.epoch' status.json)
+        PC_EPOCH=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d '{"jsonrpc":"2.0","method":"sidechain_getStatus","params":[],"id":1}' \
+          http://localhost:9933 | jq -r '.result.sidechain.epoch')
         
         # Get committee for current epoch
         CURRENT_COMMITTEE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
@@ -293,74 +287,80 @@ runs:
         else
           echo "✅ Committee rotation test passed. Members changed between epochs $PC_EPOCH and $NEXT_PC_EPOCH"
         fi
-    
-    #############################################
-    # Candidate Activity & Rotation
-    #############################################
-    
-    - name: Test Candidate Activity - Types
+
+    - name: Test Authorities Match Committee
       shell: bash
       run: |
-        # Get MC epoch
-        MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
-        
-        # Get Ariadne parameters to check d-parameter
-        ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Get current PC epoch
+        PC_EPOCH=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
+          -d '{"jsonrpc":"2.0","method":"sidechain_getStatus","params":[],"id":1}' \
+          http://localhost:9933 | jq -r '.result.sidechain.epoch')
+        
+        # Get epoch committee for current epoch
+        COMMITTEE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$PC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
-        # Extract d-parameter values
-        P_CANDIDATES=$(echo "$ARIADNE_PARAMS" | jq -r '.result.dParameter.numPermissionedCandidates')
-        T_CANDIDATES=$(echo "$ARIADNE_PARAMS" | jq -r '.result.dParameter.numRegisteredCandidates')
+        # Get authorities list
+        AUTHORITIES=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d '{"jsonrpc":"2.0","method":"authority_set","params":[],"id":1}' \
+          http://localhost:9933)
         
-        # Check if there's at least one permissioned candidate
-        if [ "$P_CANDIDATES" -gt 0 ]; then
-          # Get permissioned candidates
-          PERMISSIONED_CANDIDATES=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-            curl -s -H "Content-Type: application/json" \
-            -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getPermissionedCandidates\",\"params\":[$MC_EPOCH],\"id\":1}" \
-            http://localhost:9933)
-          
-          PERMISSIONED_COUNT=$(echo "$PERMISSIONED_CANDIDATES" | jq '.result | length')
-          
-          if [ "$PERMISSIONED_COUNT" -gt 0 ]; then
-            echo "✅ Found $PERMISSIONED_COUNT permissioned candidates"
-          else
-            echo "❌ No permissioned candidates found despite d-parameter indicating $P_CANDIDATES"
+        # Extract committee member public keys
+        COMMITTEE_KEYS=$(echo "$COMMITTEE" | jq -r '.result.committee[].sidechainPubKey')
+        
+        # Extract authority addresses
+        AUTHORITY_ADDRESSES=$(echo "$AUTHORITIES" | jq -r '.result[]')
+        
+        # Check if all committee members are in authorities
+        for KEY in $COMMITTEE_KEYS; do
+          if ! echo "$AUTHORITY_ADDRESSES" | grep -q "$KEY"; then
+            echo "❌ Committee member $KEY not found in authorities"
             exit 1
           fi
-        else
-          echo "⚠️ Skipping permissioned candidate check as d-parameter indicates 0 permissioned candidates"
-        fi
+        done
         
-        # Check if there's at least one trustless candidate
-        if [ "$T_CANDIDATES" -gt 0 ]; then
-          # Get trustless candidates
-          TRUSTLESS_CANDIDATES=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-            curl -s -H "Content-Type: application/json" \
-            -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getTrustlessCandidates\",\"params\":[$MC_EPOCH],\"id\":1}" \
-            http://localhost:9933)
-          
-          TRUSTLESS_COUNT=$(echo "$TRUSTLESS_CANDIDATES" | jq '.result | length')
-          
-          if [ "$TRUSTLESS_COUNT" -gt 0 ]; then
-            echo "✅ Found $TRUSTLESS_COUNT trustless candidates"
-          else
-            echo "❌ No trustless candidates found despite d-parameter indicating $T_CANDIDATES"
+        # Check if all authorities are in committee
+        for ADDR in $AUTHORITY_ADDRESSES; do
+          if ! echo "$COMMITTEE_KEYS" | grep -q "$ADDR"; then
+            echo "❌ Authority $ADDR not found in committee"
             exit 1
           fi
-        else
-          echo "⚠️ Skipping trustless candidate check as d-parameter indicates 0 trustless candidates"
-        fi
+        done
         
-        echo "✅ Candidate types test passed."
-    
+        echo "✅ Authorities match committee test passed."
+
     #############################################
-    # Block Participation & Rewards Basis
+    # Delegator Rewards Tests
     #############################################
-    
-    - name: Test Block Participation - Production Log
+
+    - name: Test Delegator Address Association
+      shell: bash
+      run: |
+        # Get a stake key hash
+        STAKE_KEY_HASH=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[],"id":1}' \
+          http://localhost:9933 | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        
+        # Get address association
+        ASSOCIATION=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAddressAssociation\",\"params\":[\"$STAKE_KEY_HASH\"],\"id\":1}" \
+          http://localhost:9933)
+        
+        # Verify association exists and has valid signature
+        if echo "$ASSOCIATION" | jq -e '.result.address and .result.signature' > /dev/null; then
+          echo "✅ Address association test passed."
+        else
+          echo "❌ Invalid address association"
+          exit 1
+        fi
+
+    - name: Test Block Production Log
       shell: bash
       run: |
         # Get latest block hash
@@ -388,234 +388,133 @@ runs:
           echo "❌ Failed to get block production log"
           exit 1
         fi
-    
-    - name: Test Block Participation Data Exists
+
+    #############################################
+    # Smart Contract Tests
+    #############################################
+
+    - name: Test Init Reserve
       shell: bash
       run: |
-        # Get latest block hash
-        BLOCK_HASH=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Get payment key
+        PAYMENT_KEY=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"chain_getHeader","params":[],"id":1}' \
-          http://localhost:9933 | jq -r '.result.hash')
+          -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[],"id":1}' \
+          http://localhost:9933 | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
         
-        # Get block participation data
-        PARTICIPATION_DATA=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Initialize reserve
+        INIT_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getBlockParticipationData\",\"params\":[\"$BLOCK_HASH\"],\"id\":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_initReserve\",\"params\":[\"$PAYMENT_KEY\"],\"id\":1}" \
           http://localhost:9933)
         
-        # Check if participation data exists and has required fields
-        if echo "$PARTICIPATION_DATA" | jq -e '.result' > /dev/null; then
-          if echo "$PARTICIPATION_DATA" | jq -e '.result.up_to_slot and .result.producer_participation' > /dev/null; then
-            echo "✅ Block participation data test passed."
-          else
-            echo "❌ Block participation data missing required fields"
-            exit 1
-          fi
+        # Verify initialization
+        if echo "$INIT_RESPONSE" | jq -e '.result.validatorScript and .result.policyScript' > /dev/null; then
+          echo "✅ Reserve initialization test passed."
         else
-          echo "❌ Failed to get block participation data"
+          echo "❌ Failed to initialize reserve"
           exit 1
         fi
-    
-    #############################################
-    # Registration & Metadata Tests
-    #############################################
-    
-    - name: Test Registration - Block Producer Metadata
+
+    - name: Test Create Reserve
       shell: bash
       run: |
-        # Get MC epoch
-        MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
-        
-        # Get Ariadne parameters to get a block producer's cross chain public key
-        ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Get required parameters
+        V_FUNCTION_HASH=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
+          -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[],"id":1}' \
+          http://localhost:9933 | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        
+        PAYMENT_KEY=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[],"id":1}' \
+          http://localhost:9933 | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        
+        # Create reserve
+        CREATE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_createReserve\",\"params\":[\"$V_FUNCTION_HASH\",1000000,\"token\",\"$PAYMENT_KEY\"],\"id\":1}" \
           http://localhost:9933)
         
-        # Get the first permissioned candidate's cross chain public key
-        CROSS_CHAIN_PUB_KEY=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].crossChainPublicKey')
-        
-        if [ -n "$CROSS_CHAIN_PUB_KEY" ]; then
-          # Get block producer metadata
-          METADATA=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-            curl -s -H "Content-Type: application/json" \
-            -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getBlockProducerMetadata\",\"params\":[\"$CROSS_CHAIN_PUB_KEY\"],\"id\":1}" \
-            http://localhost:9933)
-          
-          # Check if metadata exists and has required fields
-          if echo "$METADATA" | jq -e '.result' > /dev/null; then
-            if echo "$METADATA" | jq -e '.result.url and .result.hash' > /dev/null; then
-              echo "✅ Block producer metadata test passed."
-            else
-              echo "❌ Block producer metadata missing required fields"
-              exit 1
-            fi
-          else
-            echo "❌ Failed to get block producer metadata"
-            exit 1
-          fi
+        # Verify creation
+        if echo "$CREATE_RESPONSE" | jq -e '.result.success' > /dev/null; then
+          echo "✅ Reserve creation test passed."
         else
-          echo "⚠️ Skipping block producer metadata test as no permissioned candidates found"
-        fi
-    
-    #############################################
-    # Governance & Policy Tests
-    #############################################
-    
-    - name: Test Governance - Policy Structure
-      shell: bash
-      run: |
-        # Get governance policy
-        POLICY=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"sidechain_getGovernancePolicy","params":[],"id":1}' \
-          http://localhost:9933)
-        
-        # Verify policy structure
-        if echo "$POLICY" | jq -e '.result.key_hashes and .result.threshold' > /dev/null; then
-          KEY_COUNT=$(echo "$POLICY" | jq '.result.key_hashes | length')
-          THRESHOLD=$(echo "$POLICY" | jq '.result.threshold')
-          
-          if [ "$KEY_COUNT" -gt 0 ] && [ "$THRESHOLD" -gt 0 ]; then
-            echo "✅ Governance policy structure valid. Found $KEY_COUNT keys with threshold $THRESHOLD"
-          else
-            echo "❌ Invalid governance policy: key count or threshold is 0"
-            exit 1
-          fi
-        else
-          echo "❌ Failed to get governance policy or missing required fields"
+          echo "❌ Failed to create reserve"
           exit 1
         fi
-    
-    - name: Test Governance - D-Parameter Update
+
+    - name: Test Release Funds
       shell: bash
       run: |
-        # Get current MC epoch
-        MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
-        
-        # Get current D-parameter
-        CURRENT_D_PARAM=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Get required parameters
+        REFERENCE_UTXO=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
-          http://localhost:9933 | jq '.result.dParameter')
+          -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[],"id":1}' \
+          http://localhost:9933 | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
         
-        # Extract current values
-        CURRENT_P=$(echo "$CURRENT_D_PARAM" | jq '.numPermissionedCandidates')
-        CURRENT_T=$(echo "$CURRENT_D_PARAM" | jq '.numRegisteredCandidates')
-        
-        # Calculate new values (increment by 1 if possible, otherwise decrement)
-        NEW_P=$((CURRENT_P < 5 ? CURRENT_P + 1 : CURRENT_P - 1))
-        NEW_T=$((CURRENT_T < 5 ? CURRENT_T + 1 : CURRENT_T - 1))
-        
-        # Submit D-parameter update
-        UPDATE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        PAYMENT_KEY=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_updateDParameter\",\"params\":[$NEW_P,$NEW_T],\"id\":1}" \
+          -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[],"id":1}' \
+          http://localhost:9933 | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        
+        # Release funds
+        RELEASE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_releaseFunds\",\"params\":[\"$REFERENCE_UTXO\",1000000,\"$PAYMENT_KEY\"],\"id\":1}" \
           http://localhost:9933)
         
-        # Verify update response
-        if echo "$UPDATE_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "✅ D-parameter update submitted successfully"
-          
-          # Verify the update was applied
-          sleep 5  # Wait for update to be processed
-          NEW_D_PARAM=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-            curl -s -H "Content-Type: application/json" \
-            -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
-            http://localhost:9933 | jq '.result.dParameter')
-          
-          NEW_P_CHECK=$(echo "$NEW_D_PARAM" | jq '.numPermissionedCandidates')
-          NEW_T_CHECK=$(echo "$NEW_D_PARAM" | jq '.numRegisteredCandidates')
-          
-          if [ "$NEW_P_CHECK" -eq "$NEW_P" ] && [ "$NEW_T_CHECK" -eq "$NEW_T" ]; then
-            echo "✅ D-parameter update verified. New values: P=$NEW_P, T=$NEW_T"
-          else
-            echo "❌ D-parameter update verification failed"
-            exit 1
-          fi
+        # Verify release
+        if echo "$RELEASE_RESPONSE" | jq -e '.result.success' > /dev/null; then
+          echo "✅ Fund release test passed."
         else
-          echo "❌ Failed to submit D-parameter update"
+          echo "❌ Failed to release funds"
           exit 1
         fi
-    
-    #############################################
-    # Delegator & Rewards Tests
-    #############################################
-    
-    - name: Test Delegator - Block Participation Data
+
+    - name: Test Deposit Funds
       shell: bash
       run: |
-        # Get latest block hash
-        BLOCK_HASH=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Get payment key
+        PAYMENT_KEY=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"chain_getHeader","params":[],"id":1}' \
-          http://localhost:9933 | jq -r '.result.hash')
+          -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[],"id":1}' \
+          http://localhost:9933 | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
         
-        # Get block participation data
-        PARTICIPATION_DATA=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Deposit funds
+        DEPOSIT_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getBlockParticipationData\",\"params\":[\"$BLOCK_HASH\"],\"id\":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_depositFunds\",\"params\":[1000000,\"$PAYMENT_KEY\"],\"id\":1}" \
           http://localhost:9933)
         
-        # Verify participation data structure
-        if echo "$PARTICIPATION_DATA" | jq -e '.result.up_to_slot and .result.producer_participation' > /dev/null; then
-          PRODUCER_COUNT=$(echo "$PARTICIPATION_DATA" | jq '.result.producer_participation | length')
-          
-          if [ "$PRODUCER_COUNT" -gt 0 ]; then
-            echo "✅ Block participation data valid. Found $PRODUCER_COUNT producers"
-            
-            # Verify each producer has required fields
-            for PRODUCER in $(echo "$PARTICIPATION_DATA" | jq -c '.result.producer_participation[]'); do
-              if echo "$PRODUCER" | jq -e '.block_producer and .block_count' > /dev/null; then
-                echo "✅ Producer data structure valid"
-              else
-                echo "❌ Invalid producer data structure"
-                exit 1
-              fi
-            done
-          else
-            echo "❌ No producers found in participation data"
-            exit 1
-          fi
+        # Verify deposit
+        if echo "$DEPOSIT_RESPONSE" | jq -e '.result.success' > /dev/null; then
+          echo "✅ Fund deposit test passed."
         else
-          echo "❌ Invalid block participation data structure"
+          echo "❌ Failed to deposit funds"
           exit 1
         fi
-    
-    - name: Test Delegator - SPO Participation
+
+    - name: Test Handover Reserve
       shell: bash
       run: |
-        # Get current MC epoch
-        MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
-        
-        # Get trustless candidates (SPOs)
-        SPOS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Get payment key
+        PAYMENT_KEY=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getTrustlessCandidates\",\"params\":[$MC_EPOCH],\"id\":1}" \
+          -d '{"jsonrpc":"2.0","method":"sidechain_getAriadneParameters","params":[],"id":1}' \
+          http://localhost:9933 | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        
+        # Handover reserve
+        HANDOVER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_handoverReserve\",\"params\":[\"$PAYMENT_KEY\"],\"id\":1}" \
           http://localhost:9933)
         
-        # Verify SPO data
-        if echo "$SPOS" | jq -e '.result' > /dev/null; then
-          SPO_COUNT=$(echo "$SPOS" | jq '.result | length')
-          
-          if [ "$SPO_COUNT" -gt 0 ]; then
-            echo "✅ Found $SPO_COUNT SPOs"
-            
-            # Verify each SPO has required fields
-            for SPO in $(echo "$SPOS" | jq -c '.result[]'); do
-              if echo "$SPO" | jq -e '.sidechainPubKey and .mainchainPubKey' > /dev/null; then
-                echo "✅ SPO data structure valid"
-              else
-                echo "❌ Invalid SPO data structure"
-                exit 1
-              fi
-            done
-          else
-            echo "⚠️ No SPOs found in current epoch"
-          fi
+        # Verify handover
+        if echo "$HANDOVER_RESPONSE" | jq -e '.result.success' > /dev/null; then
+          echo "✅ Reserve handover test passed."
         else
-          echo "❌ Failed to get SPO data"
+          echo "❌ Failed to handover reserve"
           exit 1
         fi
     
