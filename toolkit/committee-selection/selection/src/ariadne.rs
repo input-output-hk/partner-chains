@@ -1,4 +1,4 @@
-use crate::{weighted_random, Weight, WeightedRandomSelectionConfig};
+use crate::{Weight, WeightedRandomSelectionConfig, weighted_random};
 use alloc::vec::Vec;
 use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;

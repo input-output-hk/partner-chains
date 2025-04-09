@@ -19,20 +19,20 @@
 
 //! Module implementing the logic for verifying and importing AuRa blocks.
 
-use crate::{authorities, AuthorityId, LOG_TARGET};
+use crate::{AuthorityId, LOG_TARGET, authorities};
 use log::{debug, info, trace};
 use parity_scale_codec::Codec;
-use sc_client_api::{backend::AuxStore, BlockOf, UsageProvider};
+use sc_client_api::{BlockOf, UsageProvider, backend::AuxStore};
 use sc_consensus::{
 	block_import::{BlockImport, BlockImportParams, ForkChoiceStrategy},
 	import_queue::{BasicQueue, DefaultImportQueue, Verifier},
 };
 use sc_consensus_aura::{
-	standalone::SealVerificationError, CheckForEquivocation, CompatibilityMode, Error,
-	ImportQueueParams,
+	CheckForEquivocation, CompatibilityMode, Error, ImportQueueParams,
+	standalone::SealVerificationError,
 };
-use sc_consensus_slots::{check_equivocation, CheckedHeader};
-use sc_telemetry::{telemetry, TelemetryHandle, CONSENSUS_DEBUG, CONSENSUS_TRACE};
+use sc_consensus_slots::{CheckedHeader, check_equivocation};
+use sc_telemetry::{CONSENSUS_DEBUG, CONSENSUS_TRACE, TelemetryHandle, telemetry};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
@@ -43,8 +43,8 @@ use sp_core::crypto::Pair;
 use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
 use sp_partner_chains_consensus_aura::{CurrentSlotProvider, InherentDigest};
 use sp_runtime::{
-	traits::{Block as BlockT, Header, NumberFor},
 	DigestItem,
+	traits::{Block as BlockT, Header, NumberFor},
 };
 use std::{fmt::Debug, marker::PhantomData, sync::Arc};
 

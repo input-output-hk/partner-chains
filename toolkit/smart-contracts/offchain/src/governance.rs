@@ -6,8 +6,8 @@ use ogmios_client::types::NativeScript as OgmiosNativeScript;
 use ogmios_client::{
 	query_ledger_state::QueryLedgerState, query_network::QueryNetwork, types::OgmiosUtxo,
 };
-use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 use partner_chains_plutus_data::PlutusDataExtensions as _;
+use partner_chains_plutus_data::version_oracle::VersionOracleDatum;
 use serde::Serialize;
 use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::{MainchainKeyHash, UtxoId};
@@ -298,7 +298,7 @@ impl Display for MultiSigParameters {
 
 #[cfg(test)]
 mod tests {
-	use super::{read_policy, GovernancePolicySummary};
+	use super::{GovernancePolicySummary, read_policy};
 	use crate::{
 		governance::{GovernancePolicyScript, PartnerChainsMultisigPolicy, SimpleAtLeastN},
 		plutus_script::PlutusScript,

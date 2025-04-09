@@ -2,8 +2,8 @@ use crate::{
 	await_tx::AwaitTx,
 	cardano_keys::CardanoPaymentSigningKey,
 	csl::{
-		get_builder_config, key_hash_address, Costs, OgmiosUtxoExt, TransactionBuilderExt,
-		TransactionContext,
+		Costs, OgmiosUtxoExt, TransactionBuilderExt, TransactionContext, get_builder_config,
+		key_hash_address,
 	},
 	governance::GovernanceData,
 };
@@ -17,7 +17,7 @@ use ogmios_client::{
 	transactions::Transactions,
 };
 use serde::{Serialize, Serializer};
-use sidechain_domain::{crypto::blake2b, McTxHash, UtxoId, UtxoIndex};
+use sidechain_domain::{McTxHash, UtxoId, UtxoIndex, crypto::blake2b};
 
 /// Successfull smart contracts offchain results in either transaction submission or creating transaction that has to be signed by the governance authorities
 #[derive(Clone, Debug, Serialize)]

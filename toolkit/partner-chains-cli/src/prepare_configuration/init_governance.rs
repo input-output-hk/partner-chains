@@ -1,9 +1,9 @@
 use crate::{
-	config::{
-		config_fields::{INITIAL_GOVERNANCE_AUTHORITIES, INITIAL_GOVERNANCE_THRESHOLD},
-		GovernanceAuthoritiesKeyHashes, ServiceConfig,
-	},
 	IOContext,
+	config::{
+		GovernanceAuthoritiesKeyHashes, ServiceConfig,
+		config_fields::{INITIAL_GOVERNANCE_AUTHORITIES, INITIAL_GOVERNANCE_THRESHOLD},
+	},
 };
 use anyhow::anyhow;
 use partner_chains_cardano_offchain::{
@@ -81,8 +81,8 @@ mod tests {
 	use super::run_init_governance;
 	use crate::{
 		config::{
+			CHAIN_CONFIG_FILE_PATH, NetworkProtocol, ServiceConfig,
 			config_fields::{GENESIS_UTXO, OGMIOS_PROTOCOL},
-			NetworkProtocol, ServiceConfig, CHAIN_CONFIG_FILE_PATH,
 		},
 		tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks},
 		verify_json,
@@ -91,7 +91,7 @@ mod tests {
 	use partner_chains_cardano_offchain::{
 		cardano_keys::CardanoPaymentSigningKey, governance::MultiSigParameters,
 	};
-	use serde_json::{json, Value};
+	use serde_json::{Value, json};
 	use sidechain_domain::{MainchainKeyHash, McTxHash, UtxoId};
 
 	#[test]

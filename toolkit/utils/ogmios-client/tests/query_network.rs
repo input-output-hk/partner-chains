@@ -7,7 +7,7 @@ use ogmios_client::{
 	query_network::{QueryNetwork, ShelleyGenesisConfigurationResponse},
 	types::SlotLength,
 };
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use sidechain_domain::NetworkType;
 use time::OffsetDateTime;
 

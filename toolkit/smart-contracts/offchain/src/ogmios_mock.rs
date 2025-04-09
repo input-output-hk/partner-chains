@@ -1,11 +1,11 @@
 use ogmios_client::{
+	OgmiosClientError,
 	query_ledger_state::{
 		OgmiosTip, ProtocolParametersResponse, QueryLedgerState, QueryUtxoByUtxoId,
 	},
 	query_network::{QueryNetwork, ShelleyGenesisConfigurationResponse},
 	transactions::{OgmiosEvaluateTransactionResponse, SubmitTransactionResponse, Transactions},
 	types::OgmiosUtxo,
-	OgmiosClientError,
 };
 
 #[derive(Clone, Default, Debug)]

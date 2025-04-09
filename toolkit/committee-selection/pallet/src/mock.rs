@@ -1,4 +1,4 @@
-use crate::{pallet, Call};
+use crate::{Call, pallet};
 use frame_support::{
 	dispatch::PostDispatchInfo,
 	pallet_prelude::*,
@@ -6,10 +6,10 @@ use frame_support::{
 	traits::{ConstU64, UnfilteredDispatchable},
 };
 use sidechain_domain::byte_string::SizedByteString;
-use sp_core::{blake2_256, H256};
+use sp_core::{H256, blake2_256};
 use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
 	BuildStorage,
+	traits::{BlakeTwo256, IdentityLookup},
 };
 use sp_session_validator_management::MainChainScripts;
 
@@ -98,11 +98,7 @@ impl pallet::Config for Test {
 		_sidechain_epoch: Self::ScEpochNumber,
 	) -> Option<BoundedVec<(Self::AuthorityId, Self::AuthorityKeys), Self::MaxValidators>> {
 		// This is a good approximation of the real selection algorithm, that returs None iff there are no valid candidates to select from.
-		if input.is_empty() {
-			None
-		} else {
-			Some(input)
-		}
+		if input.is_empty() { None } else { Some(input) }
 	}
 
 	fn current_epoch_number() -> Self::ScEpochNumber {

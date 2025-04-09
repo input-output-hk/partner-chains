@@ -1,5 +1,5 @@
-use crate::db_datum::DbDatum;
 use crate::SqlxError;
+use crate::db_datum::DbDatum;
 use bigdecimal::ToPrimitive;
 use cardano_serialization_lib::PlutusData;
 use chrono::NaiveDateTime;
@@ -10,7 +10,7 @@ use sidechain_domain::{
 	UtxoIndex,
 };
 use sqlx::{
-	database::HasValueRef, error::BoxDynError, postgres::PgTypeInfo, Decode, Pool, Postgres,
+	Decode, Pool, Postgres, database::HasValueRef, error::BoxDynError, postgres::PgTypeInfo,
 };
 use std::str::FromStr;
 

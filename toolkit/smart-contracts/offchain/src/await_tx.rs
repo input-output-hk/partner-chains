@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use ogmios_client::query_ledger_state::QueryUtxoByUtxoId;
 use sidechain_domain::UtxoId;
 use std::time::Duration;
-use tokio_retry::{strategy::FixedInterval, Retry};
+use tokio_retry::{Retry, strategy::FixedInterval};
 
 pub trait AwaitTx {
 	#[allow(async_fn_in_trait)]
@@ -74,9 +74,9 @@ pub(crate) mod mock {
 mod tests {
 	use super::{AwaitTx, FixedDelayRetries};
 	use ogmios_client::{
+		OgmiosClientError,
 		query_ledger_state::QueryUtxoByUtxoId,
 		types::{OgmiosTx, OgmiosUtxo},
-		OgmiosClientError,
 	};
 	use sidechain_domain::{McTxHash, UtxoId, UtxoIndex};
 	use std::{cell::RefCell, time::Duration};

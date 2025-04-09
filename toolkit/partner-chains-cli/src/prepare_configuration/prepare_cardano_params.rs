@@ -1,7 +1,7 @@
 use crate::config::{CardanoParameters, ServiceConfig};
 use crate::io::IOContext;
 use crate::ogmios::{
-	get_shelley_config, EraSummary, OgmiosRequest, OgmiosResponse, ShelleyGenesisConfiguration,
+	EraSummary, OgmiosRequest, OgmiosResponse, ShelleyGenesisConfiguration, get_shelley_config,
 };
 
 pub fn prepare_cardano_params<C: IOContext>(
@@ -61,12 +61,12 @@ fn get_first_epoch_era(eras_summaries: Vec<EraSummary>) -> Result<EraSummary, an
 pub mod tests {
 
 	use super::*;
-	use crate::config::{NetworkProtocol, CHAIN_CONFIG_FILE_PATH};
+	use crate::config::{CHAIN_CONFIG_FILE_PATH, NetworkProtocol};
+	use crate::ogmios::EraSummary;
 	use crate::ogmios::test_values::{
 		preprod_eras_summaries, preprod_shelley_config, preview_eras_summaries,
 		preview_shelley_config,
 	};
-	use crate::ogmios::EraSummary;
 	use crate::prepare_configuration::prepare_cardano_params::prepare_cardano_params;
 	use crate::tests::{MockIO, MockIOContext};
 

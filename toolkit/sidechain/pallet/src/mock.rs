@@ -1,8 +1,8 @@
 use crate::pallet;
 use frame_support::{
 	sp_runtime::{
-		traits::{BlakeTwo256, IdentityLookup},
 		BuildStorage,
+		traits::{BlakeTwo256, IdentityLookup},
 	},
 	*,
 };

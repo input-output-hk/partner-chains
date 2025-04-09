@@ -3,7 +3,7 @@ use clap::Parser;
 use partner_chains_db_sync_data_sources::{
 	block::{BlockDataSourceImpl, DbSyncBlockDataSourceConfig},
 	candidates::CandidatesDataSourceImpl,
-	data_sources::{read_mc_epoch_config, PgPool},
+	data_sources::{PgPool, read_mc_epoch_config},
 };
 use sidechain_domain::*;
 use sp_timestamp::Timestamp;

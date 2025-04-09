@@ -159,7 +159,12 @@ where
 pub enum StakeError {
 	#[cfg_attr(feature = "std", error("Stake should be greater than 0"))]
 	InvalidStake,
-	#[cfg_attr(feature = "std", error("Stake delegation information cannot be computed yet. Registration will turn valid if stake delegation for the epoch will be greater than 0"))]
+	#[cfg_attr(
+		feature = "std",
+		error(
+			"Stake delegation information cannot be computed yet. Registration will turn valid if stake delegation for the epoch will be greater than 0"
+		)
+	)]
 	UnknownStake,
 }
 
@@ -192,10 +197,7 @@ pub enum PermissionedCandidateDataError {
 	InvalidSidechainPubKey,
 	#[cfg_attr(feature = "std", error("Permissioned candidate data is invalid: InvalidAuraKey"))]
 	InvalidAuraKey,
-	#[cfg_attr(
-		feature = "std",
-		error("Permissioned candidate data is invalid: InvalidGrandpaKey")
-	)]
+	#[cfg_attr(feature = "std", error("Permissioned candidate data is invalid: InvalidGrandpaKey"))]
 	InvalidGrandpaKey,
 }
 
@@ -308,11 +310,7 @@ fn verify_sidechain_signature(
 		sidechain_signature_with_v[64] = *v;
 		ecdsa::Signature::from(sidechain_signature_with_v).verify(signed_message_encoded, &pub_key)
 	});
-	if is_valid {
-		Ok(())
-	} else {
-		Err(RegistrationDataError::InvalidSidechainSignature)
-	}
+	if is_valid { Ok(()) } else { Err(RegistrationDataError::InvalidSidechainSignature) }
 }
 
 fn verify_tx_inputs(registration_data: &RegistrationData) -> Result<(), RegistrationDataError> {
@@ -453,12 +451,10 @@ mod tests {
 		#[test]
 		fn should_work() {
 			let (mainchain_pub_key, registration_data, genesis_utxo) = create_valid_parameters();
-			assert!(validate_registration_data(
-				&mainchain_pub_key,
-				&registration_data,
-				genesis_utxo,
-			)
-			.is_ok());
+			assert!(
+				validate_registration_data(&mainchain_pub_key, &registration_data, genesis_utxo,)
+					.is_ok()
+			);
 		}
 
 		#[test]
@@ -526,12 +522,14 @@ mod tests {
 			)
 			.unwrap();
 			assert_ne!(different_genesis_utxo, genesis_utxo);
-			assert!(validate_registration_data(
-				&mainchain_pub_key,
-				&registration_data,
-				different_genesis_utxo,
-			)
-			.is_err());
+			assert!(
+				validate_registration_data(
+					&mainchain_pub_key,
+					&registration_data,
+					different_genesis_utxo,
+				)
+				.is_err()
+			);
 		}
 
 		#[test]

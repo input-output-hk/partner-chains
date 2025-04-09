@@ -80,11 +80,7 @@ impl MainchainEpochDerivation for MainchainEpochConfig {
 		let res: u32 = (time_elapsed / self.epoch_duration_millis.millis())
 			.try_into()
 			.map_err(|_| EpochDerivationError::EpochTooBig)?;
-		if res > i32::MAX as u32 {
-			Err(EpochDerivationError::EpochTooBig)
-		} else {
-			Ok(res)
-		}
+		if res > i32::MAX as u32 { Err(EpochDerivationError::EpochTooBig) } else { Ok(res) }
 	}
 
 	fn timestamp_to_mainchain_epoch(

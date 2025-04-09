@@ -1,6 +1,6 @@
 //! Requests to evalute and submit transactions via Ogmios`.
 
-use crate::{types::OgmiosTx, ByNameParamsBuilder, OgmiosClient, OgmiosClientError};
+use crate::{ByNameParamsBuilder, OgmiosClient, OgmiosClientError, types::OgmiosTx};
 use serde::Deserialize;
 
 pub trait Transactions {

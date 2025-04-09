@@ -1,6 +1,6 @@
 //! Queries that start with `queryNetwork/`.
 
-use crate::{types::SlotLength, OgmiosClient, OgmiosClientError, OgmiosParams};
+use crate::{OgmiosClient, OgmiosClientError, OgmiosParams, types::SlotLength};
 use fraction::Decimal;
 use serde::Deserialize;
 use serde_json::Value;

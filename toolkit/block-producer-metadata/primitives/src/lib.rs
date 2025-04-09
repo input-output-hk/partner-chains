@@ -15,10 +15,10 @@ pub struct MetadataSignedMessage<Metadata> {
 impl<M: Encode> MetadataSignedMessage<M> {
 	#[cfg(feature = "std")]
 	pub fn sign_with_key(&self, skey: &k256::SecretKey) -> CrossChainSignature {
+		use k256::Secp256k1;
 		use k256::ecdsa::hazmat::DigestPrimitive;
 		use k256::ecdsa::*;
 		use k256::sha2::Digest;
-		use k256::Secp256k1;
 		let data = self.encode();
 		let digest = <Secp256k1 as DigestPrimitive>::Digest::new_with_prefix(data);
 
