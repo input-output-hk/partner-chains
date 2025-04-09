@@ -18,7 +18,7 @@ use rand_chacha::ChaCha20Rng;
 /// If candidates of one type are missing, then their seats are assigned to candidates of other
 /// type. It is because D-parameter is desired not mandatory ratio.
 /// If `registered_seats` and `permissioned_seats` are 0, empty committee is returned.
-/// It is same as for original ariadne.
+/// It is same as for original Ariadne.
 pub fn select_authorities<SC>(
 	registered_seats: u16,
 	permissioned_seats: u16,
@@ -77,7 +77,7 @@ pub fn weighted_with_guaranteed_assignment<T: Clone + Ord>(
 		return Vec::with_capacity(0);
 	}
 	let SelectGuaranteedResult { mut selected, remaining } = select_guaranteed(candidates, n);
-	let selected_count: u16 = selected.len().try_into().unwrap();
+	let selected_count: u16 = selected.len().try_into().expect("selected count can exceed u16");
 	selected.extend(select_remaining(remaining, n - selected_count, rng));
 	selected
 }
@@ -88,11 +88,10 @@ fn select_guaranteed<T: Clone + Ord>(
 ) -> SelectGuaranteedResult<T> {
 	let threshold: u128 = weighted_candidates.iter().map(|(_, weight)| weight).sum();
 	let scale: u128 = u128::from(n);
-	let scaled_candidates: Vec<_> = weighted_candidates
+	let scaled_candidates = weighted_candidates
 		.iter()
 		.filter(|(_, weight)| *weight > 0)
-		.map(|(c, weight)| (c.clone(), weight * scale))
-		.collect();
+		.map(|(c, weight)| (c.clone(), weight * scale));
 	let mut selected = Vec::with_capacity(n.into());
 	let mut remaining = Vec::with_capacity(n.into());
 	for (c, weight) in scaled_candidates {
