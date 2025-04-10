@@ -112,11 +112,11 @@ impl sp_inherents::InherentDataProvider for GovernedMapInherentDataProvider {
 	}
 }
 
-/// Cardano observability data source API
+/// Cardano observability data source API used by [GovernedMapInherentDataProvider].
 #[cfg(feature = "std")]
 #[async_trait::async_trait]
 pub trait GovernedMapDataSource {
-	/// Returns all key-value mappings stored in the Governed Map after execution of `mc_block`.
+	/// Returns all key-value mappings stored in the Governed Map on Cardano after execution of `mc_block`.
 	async fn get_current_mappings(
 		&self,
 		mc_block: McBlockHash,
