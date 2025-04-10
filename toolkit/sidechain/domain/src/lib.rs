@@ -15,7 +15,6 @@ pub use alloc::collections::btree_map::BTreeMap;
 use alloc::format;
 pub use alloc::vec::Vec;
 use alloc::{str::FromStr, string::String, string::ToString, vec};
-use byte_string::ByteString;
 use byte_string_derive::byte_string;
 use core::{
 	fmt::{Display, Formatter},
@@ -842,18 +841,6 @@ impl GrandpaPublicKey {
 impl From<ed25519::Public> for GrandpaPublicKey {
 	fn from(value: ed25519::Public) -> Self {
 		Self(value.0.to_vec())
-	}
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, TypeInfo, PartialOrd, Ord)]
-pub struct KeyValue {
-	pub key: String,
-	pub value: ByteString,
-}
-
-impl KeyValue {
-	pub fn new(key: String, value: ByteString) -> Self {
-		Self { key, value }
 	}
 }
 

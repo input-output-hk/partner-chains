@@ -1,16 +1,16 @@
 use crate::PaymentFilePath;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
-use partner_chains_cardano_offchain::key_value::insert_key_value;
+use partner_chains_cardano_offchain::governed_map::run_insert;
 use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::UtxoId;
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
-pub enum KeyValueCmd {
+pub enum GovernedMapCmd {
 	Insert(InsertCmd),
 }
 
-impl KeyValueCmd {
+impl GovernedMapCmd {
 	pub async fn execute(self) -> crate::CmdResult<()> {
 		match self {
 			Self::Insert(cmd) => cmd.execute().await,
@@ -38,7 +38,7 @@ impl InsertCmd {
 
 		let client = self.common_arguments.get_ogmios_client().await?;
 
-		let result = insert_key_value(
+		let result = run_insert(
 			self.genesis_utxo,
 			self.key,
 			self.value,

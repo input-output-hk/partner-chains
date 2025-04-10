@@ -1,4 +1,4 @@
-use super::{get_current_key_value, insert_key_value_tx};
+use super::{get_current_value, insert_key_value_tx};
 use crate::csl::{empty_asset_name, TransactionContext};
 use crate::governance::GovernanceData;
 use crate::test_values::*;
@@ -7,11 +7,12 @@ use cardano_serialization_lib::{
 };
 use hex_literal::hex;
 use ogmios_client::types::{Asset as OgmiosAsset, Datum, OgmiosTx, OgmiosUtxo, OgmiosValue};
-use partner_chains_plutus_data::key_value::key_value_to_plutus_data;
+use partner_chains_plutus_data::governed_map::{
+	governed_map_datum_to_plutus_data, GovernedMapDatum,
+};
 use sidechain_domain::byte_string::ByteString;
-use sidechain_domain::KeyValue;
 
-mod insert_key_value_tx_tests {
+mod governed_map_insert_tx_tests {
 	use crate::csl::Costs;
 
 	use super::*;
@@ -37,7 +38,7 @@ mod insert_key_value_tx_tests {
 		)
 	}
 
-	fn insert_key_value_tx_test() -> Transaction {
+	fn governerd_map_insert_tx_test() -> Transaction {
 		insert_key_value_tx(
 			&test_validator(),
 			&test_policy(),
@@ -52,7 +53,7 @@ mod insert_key_value_tx_tests {
 
 	#[test]
 	fn at_least_one_input_is_used_for_transaction() {
-		let inputs = insert_key_value_tx_test().body().inputs();
+		let inputs = governerd_map_insert_tx_test().body().inputs();
 
 		// There should be at least one input
 		assert!(inputs.len() > 0, "Transaction should have at least one input");
@@ -71,7 +72,7 @@ mod insert_key_value_tx_tests {
 
 	#[test]
 	fn greater_input_is_selected_as_collateral() {
-		let body = insert_key_value_tx_test().body();
+		let body = governerd_map_insert_tx_test().body();
 		assert_eq!(
 			body.collateral().unwrap().get(0).to_string(),
 			greater_payment_utxo().to_string()
@@ -80,7 +81,7 @@ mod insert_key_value_tx_tests {
 
 	#[test]
 	fn redeemer_is_set_correctly() {
-		let tx = insert_key_value_tx_test();
+		let tx = governerd_map_insert_tx_test();
 
 		let redeemers = tx.witness_set().redeemers().unwrap();
 		assert_eq!(redeemers.len(), 2);
@@ -100,7 +101,7 @@ mod insert_key_value_tx_tests {
 
 	#[test]
 	fn collateral_is_set_correctly() {
-		let body = insert_key_value_tx_test().body();
+		let body = governerd_map_insert_tx_test().body();
 
 		let collateral_return = body.collateral_return().unwrap();
 		assert_eq!(collateral_return.address(), payment_addr());
@@ -113,7 +114,7 @@ mod insert_key_value_tx_tests {
 
 	#[test]
 	fn change_is_returned_correctly() {
-		let body = insert_key_value_tx_test().body();
+		let body = governerd_map_insert_tx_test().body();
 		let outputs = body.outputs();
 		let script_output = (outputs.into_iter())
 			.find(|o| o.address() == validator_addr())
@@ -136,7 +137,7 @@ mod insert_key_value_tx_tests {
 
 	#[test]
 	fn mints_one_key_value_token_at_validator_address() {
-		let body = &insert_key_value_tx_test().body();
+		let body = &governerd_map_insert_tx_test().body();
 
 		let key_value_token_mint_amount = body
 			.mint()
@@ -152,7 +153,7 @@ mod insert_key_value_tx_tests {
 
 	#[test]
 	fn should_send_key_value_token_to_validator_address() {
-		let body = &insert_key_value_tx_test().body();
+		let body = &governerd_map_insert_tx_test().body();
 
 		let outputs = body.outputs();
 
@@ -171,7 +172,7 @@ mod insert_key_value_tx_tests {
 
 	#[test]
 	fn attaches_correct_plutus_data_at_validator_address() {
-		let outputs = insert_key_value_tx_test().body().outputs();
+		let outputs = governerd_map_insert_tx_test().body().outputs();
 
 		let script_output = (outputs.into_iter())
 			.find(|o| o.address() == validator_addr())
@@ -184,14 +185,14 @@ mod insert_key_value_tx_tests {
 	}
 }
 
-mod get_current_key_value_tests {
+mod get_current_value_tests {
 	use super::*;
 	use pretty_assertions::assert_eq;
 
 	#[test]
 	fn returns_none_when_no_utxos() {
 		let utxos = vec![];
-		let result = get_current_key_value(utxos, test_key(), test_policy().policy_id()).unwrap();
+		let result = get_current_value(utxos, test_key(), test_policy().policy_id()).unwrap();
 		assert_eq!(result, None);
 	}
 
@@ -203,7 +204,7 @@ mod get_current_key_value_tests {
 			value: OgmiosValue { lovelace: 1000000, native_tokens: vec![].into_iter().collect() },
 			address: validator_addr().to_bech32(None).unwrap(),
 			datum: Some(Datum {
-				bytes: PlutusData::from(key_value_to_plutus_data(&KeyValue::new(
+				bytes: PlutusData::from(governed_map_datum_to_plutus_data(&GovernedMapDatum::new(
 					test_key(),
 					test_value(),
 				)))
@@ -211,8 +212,7 @@ mod get_current_key_value_tests {
 			}),
 			..Default::default()
 		};
-		let result =
-			get_current_key_value(vec![utxo], test_key(), test_policy().policy_id()).unwrap();
+		let result = get_current_value(vec![utxo], test_key(), test_policy().policy_id()).unwrap();
 		assert_eq!(result, None);
 	}
 
@@ -232,7 +232,7 @@ mod get_current_key_value_tests {
 			},
 			address: validator_addr().to_bech32(None).unwrap(),
 			datum: Some(Datum {
-				bytes: PlutusData::from(key_value_to_plutus_data(&KeyValue::new(
+				bytes: PlutusData::from(governed_map_datum_to_plutus_data(&GovernedMapDatum::new(
 					"different_key".to_string(),
 					test_value(),
 				)))
@@ -240,8 +240,7 @@ mod get_current_key_value_tests {
 			}),
 			..Default::default()
 		};
-		let result =
-			get_current_key_value(vec![utxo], test_key(), test_policy().policy_id()).unwrap();
+		let result = get_current_value(vec![utxo], test_key(), test_policy().policy_id()).unwrap();
 		assert_eq!(result, None);
 	}
 
@@ -261,7 +260,7 @@ mod get_current_key_value_tests {
 			},
 			address: validator_addr().to_bech32(None).unwrap(),
 			datum: Some(Datum {
-				bytes: PlutusData::from(key_value_to_plutus_data(&KeyValue::new(
+				bytes: PlutusData::from(governed_map_datum_to_plutus_data(&GovernedMapDatum::new(
 					test_key(),
 					test_value(),
 				)))
@@ -269,8 +268,7 @@ mod get_current_key_value_tests {
 			}),
 			..Default::default()
 		};
-		let result =
-			get_current_key_value(vec![utxo], test_key(), test_policy().policy_id()).unwrap();
+		let result = get_current_value(vec![utxo], test_key(), test_policy().policy_id()).unwrap();
 		assert_eq!(result, Some(test_value()));
 	}
 }
@@ -346,5 +344,5 @@ fn test_value() -> ByteString {
 }
 
 fn expected_plutus_data() -> PlutusData {
-	key_value_to_plutus_data(&KeyValue::new(test_key(), test_value()))
+	governed_map_datum_to_plutus_data(&GovernedMapDatum::new(test_key(), test_value()))
 }

@@ -79,7 +79,7 @@ pub fn get_scripts_data(
 		permissioned_candidates_scripts(genesis_utxo, network)?;
 	let reserve = reserve_scripts(genesis_utxo, network)?;
 	let (generic_container_validator, generic_container_policy) =
-		generic_container_scripts(genesis_utxo, network)?;
+		governed_map_scripts(genesis_utxo, network)?;
 	Ok(ScriptsData {
 		addresses: Addresses {
 			committee_candidate_validator: committee_candidate_validator.address_bech32(network)?,
@@ -163,7 +163,7 @@ pub(crate) fn version_scripts_and_address(
 	Ok((validator, policy, address))
 }
 
-pub(crate) fn generic_container_scripts(
+pub(crate) fn governed_map_scripts(
 	genesis_utxo: UtxoId,
 	network: NetworkIdKind,
 ) -> Result<(PlutusScript, PlutusScript), anyhow::Error> {

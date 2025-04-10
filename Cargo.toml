@@ -173,12 +173,12 @@ envy = { version = "0.4.2" }
 log4rs = { version = "1.3.0" }
 bech32 = { version = "0.9.1", default-features = false }
 sqlx = { version = "0.7.4", default-features = false, features = [
-    "runtime-tokio-rustls",
-    "postgres",
-    "macros",
-    "chrono",
-    "migrate",
-    "bigdecimal",
+	"runtime-tokio-rustls",
+	"postgres",
+	"macros",
+	"chrono",
+	"migrate",
+	"bigdecimal",
 ] }
 derive-where = { version = "1.2.7", default-features = false }
 
@@ -252,8 +252,7 @@ substrate-prometheus-endpoint = { package = "substrate-prometheus-endpoint", git
 substrate-test-runtime-client = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2412-1" }
 substrate-wasm-builder = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2412-1" }
 
-raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", rev ="1ac404b3f8b4cc3256f563ad6f614f622383d392" }
-
+raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", tag = "v7.1.0" }
 # local dependencies
 
 # utils
