@@ -34,6 +34,7 @@ sp-io = { workspace = true }
 secp256k1 = { workspace = true, features = ["hashes", "alloc"] }
 ed25519-zebra = { workspace = true, optional = true }
 k256 = { workspace = true }
+derive-where = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }
