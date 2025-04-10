@@ -19,7 +19,7 @@ the mock data source has been changed to `MOCK_REGISTRATIONS_FILE` to match. Pro
 
 ## Removed
 
-* Obsolete `block-rewards` pallet and its companion primitives crate. Block authorship information can be tracked
+* [**BREAKING CHANGE**] Obsolete `block-rewards` pallet and its companion primitives crate. Block authorship information can be tracked
 using the `block-production-log` pallet instead.
 * Crate `pallet-session-runtime-stub` which provided stub config for Substrate's `pallet-session` when using `pallet-partner-chains-session`.
 Its functionality was merged into `pallet-partner-chains-session` under the feature `pallet-session-compat`.
