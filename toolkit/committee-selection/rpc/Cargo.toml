@@ -13,5 +13,5 @@ workspace = true
 [dependencies]
 derive-new = { workspace = true }
 jsonrpsee = { workspace = true }
-sidechain-domain = { workspace = true, default-features = true }
-sp-session-validator-management-query = { workspace = true, default-features = true }
+sidechain-domain = { workspace = true, features = ["std"] }
+sp-session-validator-management-query = { workspace = true }
