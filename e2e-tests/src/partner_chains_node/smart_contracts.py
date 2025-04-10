@@ -13,39 +13,15 @@ class SmartContractsResponse:
     returncode: int
     stdout: str
     stderr: str
-    transaction_id: str = None
-    transaction_cbor: str = None
     json: dict = None
-
-
-def parse_transaction_id(stdout: str) -> str:
-    pattern = r"Transaction output \'([a-f0-9]{64})\'"
-    match = re.search(pattern, stdout)
-    if match:
-        return match.group(1)
-    else:
-        return None
-
-
-def parse_transaction_cbor(stdout: str) -> str:
-    pattern = r"\"TransactionToSign\":.*\"cborHex\":\"([a-f0-9]+)\""
-    match = re.search(pattern, stdout)
-    if match:
-        return match.group(1)
-    else:
-        return None
-
-
-def parse_response(result: Result) -> SmartContractsResponse:
-    response = SmartContractsResponse(returncode=result.returncode, stdout=result.stdout, stderr=result.stderr)
-    response.transaction_id = parse_transaction_id(result.stdout)
-    response.transaction_cbor = parse_transaction_cbor(result.stdout)
-    return response
 
 
 def parse_json_response(result: Result) -> SmartContractsResponse:
     response = SmartContractsResponse(returncode=result.returncode, stdout=result.stdout, stderr=result.stderr)
-    response.json = json.loads(result.stdout)
+    try:
+        response.json = json.loads(result.stdout)
+    except:
+        pass
     return response
 
 
@@ -79,7 +55,7 @@ class SmartContracts:
         response = self.run_command.run(cmd)
         logging.debug("RESPONSE:")
         logging.debug(response)
-        return parse_response(response)
+        return parse_json_response(response)
 
     def register(self, signatures: RegistrationSignatures, payment_key, spo_public_key, registration_utxo):
         cmd = (
@@ -95,7 +71,7 @@ class SmartContracts:
         )
 
         response = self.run_command.run(cmd, timeout=self.config.timeouts.register_cmd)
-        return parse_response(response)
+        return parse_json_response(response)
 
     def deregister(self, payment_key, spo_public_key):
         cmd = (
@@ -107,7 +83,7 @@ class SmartContracts:
         )
 
         response = self.run_command.run(cmd, timeout=self.config.timeouts.deregister_cmd)
-        return parse_response(response)
+        return parse_json_response(response)
 
     def upsert_permissioned_candidates(self, governance_key, new_candidates_list: dict[str, Node]):
         logging.debug("Creating permissioned candidates file...")
@@ -128,7 +104,7 @@ class SmartContracts:
         )
 
         response = self.run_command.run(cmd, timeout=self.config.timeouts.register_cmd)
-        return parse_response(response)
+        return parse_json_response(response)
 
     def sign_tx(self, transaction_cbor, payment_key):
         cmd = (
@@ -150,7 +126,7 @@ class SmartContracts:
         )
 
         response = self.run_command.run(cmd)
-        return parse_response(response)
+        return parse_json_response(response)
 
     class Reserve:
         def __init__(self, cli, run_command, config: ApiConfig):
@@ -166,7 +142,7 @@ class SmartContracts:
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.run(cmd)
-            return parse_response(response)
+            return parse_json_response(response)
 
         def create(self, v_function_hash, initial_deposit, token, payment_key):
             cmd = (
@@ -179,7 +155,7 @@ class SmartContracts:
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.run(cmd)
-            return parse_response(response)
+            return parse_json_response(response)
 
         def release(self, reference_utxo, amount, payment_key):
             cmd = (
@@ -191,7 +167,7 @@ class SmartContracts:
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.run(cmd)
-            return parse_response(response)
+            return parse_json_response(response)
 
         def deposit(self, amount, payment_key):
             cmd = (
@@ -202,7 +178,7 @@ class SmartContracts:
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.run(cmd)
-            return parse_response(response)
+            return parse_json_response(response)
 
         def update_settings(self, v_function_hash, payment_key):
             cmd = (
@@ -213,7 +189,7 @@ class SmartContracts:
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.run(cmd)
-            return parse_response(response)
+            return parse_json_response(response)
 
         def handover(self, payment_key):
             cmd = (
@@ -223,7 +199,7 @@ class SmartContracts:
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.run(cmd)
-            return parse_response(response)
+            return parse_json_response(response)
 
     class Governance:
         def __init__(self, cli, run_command, config: ApiConfig):
@@ -242,7 +218,7 @@ class SmartContracts:
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.run(cmd)
-            return parse_response(response)
+            return parse_json_response(response)
 
         def get_policy(self):
             cmd = (

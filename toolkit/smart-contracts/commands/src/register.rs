@@ -1,4 +1,6 @@
-use crate::{parse_partnerchain_public_keys, PaymentFilePath};
+use crate::{
+	option_to_json, parse_partnerchain_public_keys, transaction_submitted_json, PaymentFilePath,
+};
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	register::{run_deregister, run_register},
@@ -40,7 +42,7 @@ pub struct RegisterCmd {
 }
 
 impl RegisterCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
 		let candidate_registration = CandidateRegistration {
@@ -56,7 +58,7 @@ impl RegisterCmd {
 			grandpa_pub_key: self.partner_chain_public_keys.grandpa_public_key,
 		};
 
-		run_register(
+		let result = run_register(
 			self.genesis_utxo,
 			&candidate_registration,
 			&payment_key,
@@ -64,8 +66,7 @@ impl RegisterCmd {
 			FixedDelayRetries::two_minutes(),
 		)
 		.await?;
-
-		Ok(())
+		Ok(option_to_json(result.map(transaction_submitted_json)))
 	}
 }
 
@@ -84,11 +85,11 @@ pub struct DeregisterCmd {
 }
 
 impl DeregisterCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_signing_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
 
-		run_deregister(
+		let result = run_deregister(
 			self.genesis_utxo,
 			&payment_signing_key,
 			self.spo_public_key,
@@ -96,7 +97,6 @@ impl DeregisterCmd {
 			FixedDelayRetries::two_minutes(),
 		)
 		.await?;
-
-		Ok(())
+		Ok(option_to_json(result.map(transaction_submitted_json)))
 	}
 }

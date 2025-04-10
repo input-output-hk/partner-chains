@@ -1,8 +1,7 @@
-use crate::PaymentFilePath;
+use crate::{option_to_json, PaymentFilePath};
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 use partner_chains_cardano_offchain::d_param::upsert_d_param;
-use sidechain_domain::DParameter;
-use sidechain_domain::UtxoId;
+use sidechain_domain::{DParameter, UtxoId};
 
 #[derive(Clone, Debug, clap::Parser)]
 pub struct UpsertDParameterCmd {
@@ -19,7 +18,7 @@ pub struct UpsertDParameterCmd {
 }
 
 impl UpsertDParameterCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 		let d_param = DParameter {
 			num_permissioned_candidates: self.permissioned_candidates_count,
@@ -35,10 +34,7 @@ impl UpsertDParameterCmd {
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;
-		match result {
-			Some(result) => println!("{}", serde_json::to_value(result)?),
-			None => println!("{{}}"),
-		}
-		Ok(())
+
+		Ok(option_to_json(result))
 	}
 }

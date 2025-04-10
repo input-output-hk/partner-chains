@@ -1,4 +1,4 @@
-use crate::PaymentFilePath;
+use crate::{option_to_json, transaction_submitted_json, PaymentFilePath};
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	reserve::{
@@ -31,7 +31,7 @@ pub enum ReserveCmd {
 }
 
 impl ReserveCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		match self {
 			Self::Init(cmd) => cmd.execute().await,
 			Self::Create(cmd) => cmd.execute().await,
@@ -55,17 +55,17 @@ pub struct InitReserveCmd {
 }
 
 impl InitReserveCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
-		let _ = init_reserve_management(
+		let result = init_reserve_management(
 			self.genesis_utxo,
 			&payment_key,
 			&client,
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;
-		Ok(())
+		Ok(serde_json::json!(result))
 	}
 }
 
@@ -90,10 +90,10 @@ pub struct CreateReserveCmd {
 }
 
 impl CreateReserveCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
-		let _ = create_reserve_utxo(
+		let result = create_reserve_utxo(
 			ReserveParameters {
 				total_accrued_function_script_hash: self.total_accrued_function_script_hash,
 				token: self.token,
@@ -105,7 +105,7 @@ impl CreateReserveCmd {
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;
-		Ok(())
+		Ok(serde_json::json!(result))
 	}
 }
 
@@ -124,10 +124,10 @@ pub struct DepositReserveCmd {
 }
 
 impl DepositReserveCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
-		let _ = deposit_to_reserve(
+		let result = deposit_to_reserve(
 			self.amount,
 			self.genesis_utxo,
 			&payment_key,
@@ -135,7 +135,7 @@ impl DepositReserveCmd {
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;
-		Ok(())
+		Ok(serde_json::json!(result))
 	}
 }
 
@@ -154,10 +154,10 @@ pub struct UpdateReserveSettingsCmd {
 }
 
 impl UpdateReserveSettingsCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
-		let _ = update_reserve_settings(
+		let result = update_reserve_settings(
 			self.genesis_utxo,
 			&payment_key,
 			self.total_accrued_function_script_hash,
@@ -165,7 +165,7 @@ impl UpdateReserveSettingsCmd {
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;
-		Ok(())
+		Ok(option_to_json(result))
 	}
 }
 
@@ -181,17 +181,17 @@ pub struct HandoverReserveCmd {
 }
 
 impl HandoverReserveCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
-		let _ = handover_reserve(
+		let result = handover_reserve(
 			self.genesis_utxo,
 			&payment_key,
 			&client,
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;
-		Ok(())
+		Ok(serde_json::json!(result))
 	}
 }
 
@@ -213,10 +213,10 @@ pub struct ReleaseReserveCmd {
 }
 
 impl ReleaseReserveCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
-		let _ = release_reserve_funds(
+		let result = release_reserve_funds(
 			self.amount,
 			self.genesis_utxo,
 			self.reference_utxo,
@@ -225,6 +225,6 @@ impl ReleaseReserveCmd {
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;
-		Ok(())
+		Ok(transaction_submitted_json(result))
 	}
 }

@@ -1,3 +1,4 @@
+use crate::transaction_submitted_json;
 use partner_chains_cardano_offchain::assemble_tx::assemble_tx;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 use partner_chains_cardano_offchain::csl::{transaction_from_bytes, vkey_witness_from_bytes};
@@ -16,7 +17,7 @@ pub struct AssembleAndSubmitCmd {
 }
 
 impl AssembleAndSubmitCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let client = self.common_arguments.get_ogmios_client().await?;
 
 		let transaction = transaction_from_bytes(self.transaction.0)?;
@@ -27,8 +28,8 @@ impl AssembleAndSubmitCmd {
 			.map(|w| vkey_witness_from_bytes(w.0.clone().into_iter().skip(2).collect()))
 			.collect::<Result<Vec<_>, _>>()?;
 
-		assemble_tx(transaction, witnesses, &client, &FixedDelayRetries::two_minutes()).await?;
-
-		Ok(())
+		let tx_hash =
+			assemble_tx(transaction, witnesses, &client, &FixedDelayRetries::two_minutes()).await?;
+		Ok(transaction_submitted_json(tx_hash))
 	}
 }
