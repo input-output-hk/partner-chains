@@ -20,7 +20,7 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_block_rewards::Config {}
+	pub trait Config: frame_system::Config {}
 
 	#[pallet::storage]
 	#[pallet::unbounded]
@@ -62,9 +62,6 @@ pub mod pallet {
 
 	impl<T: Config> sp_sidechain::OnNewEpoch for Pallet<T> {
 		fn on_new_epoch(old_epoch: ScEpochNumber, _new_epoch: ScEpochNumber) -> sp_weights::Weight {
-			let rewards = pallet_block_rewards::Pallet::<T>::get_rewards_and_clear();
-			log::info!("Rewards accrued in epoch {old_epoch}: {rewards:?}");
-
 			crate::RuntimeDbWeight::get().reads_writes(1, 1)
 		}
 	}
