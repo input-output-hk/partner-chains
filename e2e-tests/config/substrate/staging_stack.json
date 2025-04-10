@@ -7,7 +7,7 @@
         "tools": {
             "cardano_cli": {
                 "cli": "cardano-cli",
-                "shell": "kubectl exec -it ${stack_config[validator_name]} -c cardano-node -n ${stack_config[namespace]} --"
+                "shell": "kubectl exec -it staging-preview-services -c cardano-node -n staging-preview --"
             },
             "partner_chains_node": {
                 "cli": "/usr/local/bin/partner-chains-node",
