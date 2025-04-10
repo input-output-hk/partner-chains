@@ -4,7 +4,7 @@ from src.blockchain_api import BlockchainApi
 from src.partner_chains_node.models import VFunction
 
 
-pytestmark = [mark.reserve, mark.xdist_group(name="governance_action")]
+pytestmark = [mark.xdist_group(name="governance_action")]
 
 
 def test_enough_funds_for_minting(transaction_input):

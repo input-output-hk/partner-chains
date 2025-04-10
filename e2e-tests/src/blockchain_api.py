@@ -587,3 +587,13 @@ class BlockchainApi(ABC):
                                     False - if no changes were observed during the timeout
         """
         pass
+
+    @abstractmethod
+    def subscribe_token_transfer(self) -> int:
+        """
+        Subscribes to token transfer events. Timeouts after <main_chain.security_param> blocks.
+
+        Returns:
+            int -- The number of token transfers observed
+        """
+        pass

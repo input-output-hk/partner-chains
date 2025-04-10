@@ -6,7 +6,7 @@ from src.partner_chains_node.models import VFunction
 from pytest import fixture, mark, skip
 
 
-pytestmark = [mark.reserve, mark.xdist_group(name="governance_action")]
+pytestmark = [mark.xdist_group(name="governance_action")]
 
 INITIAL_RESERVE_DEPOSIT = 1000
 
@@ -94,7 +94,7 @@ class TestReleaseFunds:
     def amount_to_release(self, reserve_initial_balance):
         return random.randint(1, min(reserve_initial_balance, 100))
 
-    @fixture(scope="class")
+    @fixture(scope="class", autouse=True)
     def release_funds(
         self,
         amount_to_release,
@@ -114,7 +114,6 @@ class TestReleaseFunds:
         assert response.returncode == 0
         assert response.json
 
-    @mark.usefixtures("release_funds")
     def test_circulation_supply_balance_after_release(
         self,
         circulation_supply_initial_balance,
@@ -126,12 +125,15 @@ class TestReleaseFunds:
         circulation = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
         assert circulation_supply_initial_balance + amount_to_release == circulation
 
-    @mark.usefixtures("release_funds")
     def test_reserve_balance_after_release(
         self, reserve_initial_balance, amount_to_release, api: BlockchainApi, reserve_asset_id, addresses
     ):
         reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
         assert reserve_initial_balance - amount_to_release == reserve_balance
+
+    def test_observe_released_funds(self, api: BlockchainApi, amount_to_release):
+        observed_transfer = api.subscribe_token_transfer()
+        assert observed_transfer == amount_to_release
 
 
 class TestDepositFunds:

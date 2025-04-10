@@ -1,10 +1,23 @@
-from pytest import fixture
+from pytest import fixture, mark
 from config.api_config import ApiConfig
 from src.blockchain_api import BlockchainApi
 from src.cardano_cli import cbor_to_bech32, hex_to_bech32
 from src.partner_chains_node.models import Reserve, VFunction
 import json
 import logging
+
+
+def pytest_collection_modifyitems(items):
+    for item in items:
+        if "tests/reserve" in item.nodeid:
+            item.add_marker(mark.reserve)
+        if "observe" in item.nodeid:
+            item.add_marker(
+                mark.skipif(
+                    item.config.security_param > 20,
+                    reason="Observability tests would take too long to run with a high main chain security parameter",
+                )
+            )
 
 
 @fixture(scope="session")
