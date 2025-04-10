@@ -24,13 +24,13 @@ def init_reserve(api: BlockchainApi, payment_key):
 
 @fixture(scope="module", autouse=True)
 def native_token_initial_balance(
-    api: BlockchainApi, governance_address, reserve_token, mint_token, wait_until, config: ApiConfig
+    api: BlockchainApi, governance_address, reserve_asset_id, mint_token, wait_until, config: ApiConfig
 ):
-    balance = api.get_mc_balance(governance_address, reserve_token)
+    balance = api.get_mc_balance(governance_address, reserve_asset_id)
     if balance < INITIAL_RESERVE_DEPOSIT:
         mint_token(INITIAL_RESERVE_DEPOSIT)
         wait_until(
-            lambda: api.get_mc_balance(governance_address, reserve_token) == balance + INITIAL_RESERVE_DEPOSIT,
+            lambda: api.get_mc_balance(governance_address, reserve_asset_id) == balance + INITIAL_RESERVE_DEPOSIT,
             timeout=config.timeouts.main_chain_tx,
         )
         balance = balance + INITIAL_RESERVE_DEPOSIT
@@ -53,20 +53,21 @@ def create_reserve(api: BlockchainApi, reserve, payment_key):
 
 
 @fixture(scope="class")
-def reserve_initial_balance(create_reserve, api: BlockchainApi, addresses, reserve_token):
-    balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_token)
+def reserve_initial_balance(create_reserve, api: BlockchainApi, addresses, reserve_asset_id):
+    balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
     return balance
 
 
 @fixture(scope="class")
-def circulation_supply_initial_balance(create_reserve, api: BlockchainApi, reserve_token, addresses):
-    circulation_balance = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_token)
+def circulation_supply_initial_balance(create_reserve, api: BlockchainApi, reserve_asset_id, addresses):
+    circulation_balance = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
     return circulation_balance
 
 
 class TestInitReserve:
     def test_init_reserve(self, init_reserve):
         response = init_reserve
+        assert response.returncode == 0
         assert not response.stderr
         if (
             "Script 'Reserve Management Validator' is already initialized" in response.stdout
@@ -88,14 +89,14 @@ class TestCreateReserve:
 
     @mark.usefixtures("create_reserve")
     def test_native_token_balance_is_smaller_by_initial_deposit(
-        self, native_token_initial_balance, api: BlockchainApi, reserve_token, governance_address
+        self, native_token_initial_balance, api: BlockchainApi, reserve_asset_id, governance_address
     ):
-        native_token_current_balance = api.get_mc_balance(governance_address, reserve_token)
+        native_token_current_balance = api.get_mc_balance(governance_address, reserve_asset_id)
         assert native_token_initial_balance - INITIAL_RESERVE_DEPOSIT == native_token_current_balance
 
     @mark.usefixtures("create_reserve")
-    def test_reserve_balance_is_equal_to_initial_deposit(self, api: BlockchainApi, reserve_token, addresses):
-        reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_token)
+    def test_reserve_balance_is_equal_to_initial_deposit(self, api: BlockchainApi, reserve_asset_id, addresses):
+        reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
         assert INITIAL_RESERVE_DEPOSIT == reserve_balance
 
 
@@ -126,23 +127,28 @@ class TestReleaseFunds:
 
     @mark.usefixtures("release_funds")
     def test_circulation_supply_balance_after_release(
-        self, circulation_supply_initial_balance, amount_to_release, api: BlockchainApi, reserve_token, addresses
+        self,
+        circulation_supply_initial_balance,
+        amount_to_release,
+        api: BlockchainApi,
+        reserve_asset_id,
+        addresses,
     ):
-        circulation = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_token)
+        circulation = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
         assert circulation_supply_initial_balance + amount_to_release == circulation
 
     @mark.usefixtures("release_funds")
     def test_reserve_balance_after_release(
-        self, reserve_initial_balance, amount_to_release, api: BlockchainApi, reserve_token, addresses
+        self, reserve_initial_balance, amount_to_release, api: BlockchainApi, reserve_asset_id, addresses
     ):
-        reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_token)
+        reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
         assert reserve_initial_balance - amount_to_release == reserve_balance
 
 
 class TestDepositFunds:
     @fixture(scope="class")
-    def native_token_balance(self, api: BlockchainApi, governance_address, reserve_token):
-        balance = api.get_mc_balance(governance_address, reserve_token)
+    def native_token_balance(self, api: BlockchainApi, governance_address, reserve_asset_id):
+        balance = api.get_mc_balance(governance_address, reserve_asset_id)
         logging.info(f"Native token balance: {balance}")
         return balance
 
@@ -163,9 +169,9 @@ class TestDepositFunds:
         assert response.transaction_id
 
     def test_reserve_balance_after_deposit(
-        self, reserve_initial_balance, amount_to_deposit, api: BlockchainApi, reserve_token, addresses
+        self, reserve_initial_balance, amount_to_deposit, api: BlockchainApi, reserve_asset_id, addresses
     ):
-        reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_token)
+        reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
         assert reserve_initial_balance + amount_to_deposit == reserve_balance
 
     def test_native_token_balance_after_deposit(
@@ -173,10 +179,10 @@ class TestDepositFunds:
         native_token_balance,
         amount_to_deposit,
         api: BlockchainApi,
-        reserve_token,
+        reserve_asset_id,
         governance_address,
     ):
-        native_token = api.get_mc_balance(governance_address, reserve_token)
+        native_token = api.get_mc_balance(governance_address, reserve_asset_id)
         assert native_token_balance - amount_to_deposit == native_token
 
 
@@ -224,12 +230,17 @@ class TestHandoverReserve:
         assert not response.stderr
         assert response.transaction_id
 
-    def test_reserve_balance_after_handover(self, api: BlockchainApi, reserve_token, addresses):
-        reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_token)
+    def test_reserve_balance_after_handover(self, api: BlockchainApi, reserve_asset_id, addresses):
+        reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)
         assert reserve_balance == 0
 
     def test_circulation_supply_balance_after_handover(
-        self, circulation_supply_initial_balance, reserve_initial_balance, api: BlockchainApi, reserve_token, addresses
+        self,
+        circulation_supply_initial_balance,
+        reserve_initial_balance,
+        api: BlockchainApi,
+        reserve_asset_id,
+        addresses,
     ):
-        circulation = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_token)
+        circulation = api.get_mc_balance(addresses["IlliquidCirculationSupplyValidator"], reserve_asset_id)
         assert circulation_supply_initial_balance + reserve_initial_balance == circulation

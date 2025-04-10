@@ -179,15 +179,15 @@ class CardanoCli:
             logger.error(result.stderr)
         return result.stdout.strip()
 
-    def build_mint_tx(self, tx_in, address, lovelace, amount, token, policy_script_filepath):
+    def build_mint_tx(self, tx_in, address, lovelace, amount, asset_id, policy_script_filepath):
         logger.debug("Building transaction for minting tokens...")
         minting_token_tx_filepath = f"/tmp/minting_tx_{uuid.uuid4().hex}.raw"
         cmd = (
             f"{self.cli} latest transaction build "
             f"--tx-in {tx_in} "
-            f"--tx-out '{address}+{lovelace}+{amount} {token}' "
+            f"--tx-out '{address}+{lovelace}+{amount} {asset_id}' "
             f"--change-address {address} "
-            f"--mint='{amount} {token}' "
+            f"--mint='{amount} {asset_id}' "
             f"--minting-script-file {policy_script_filepath} "
             f"--out-file {minting_token_tx_filepath} "
             f"{self.network}"

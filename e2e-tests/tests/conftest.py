@@ -532,17 +532,15 @@ def write_file():
 @fixture(scope="session")
 def governance_skey_with_cli(config: ApiConfig):
     """
-    Securely copy the governance authority's init skey (a secret key used by the PCSC CLI to authorize admin operations)
-    to a temporary directory on the remote machine and update the path in the configuration. The temporary directory is
-    deleted after the test completes.
+    Securely copy the governance authority's init skey (a secret key used by the smart-contracts to authorize admin
+    operations) to a temporary directory on the remote machine and update the path in the configuration.
+    The temporary directory is deleted after the test completes.
 
-    This fixture is executed only if SSH is configured in the stack settings, implying that the PCSC CLI (which
-    requires the key to be present on the localhost) is installed on the remote machine. Therefore, the key is
-    implicitly copied using SCP.
+    This fixture is executed only if:
+    - you call it directly in test or other fixture
+    - SSH is configured in `<env>_stack.json` for given tool
 
     WARNING: This fixture copies secret file to a remote host and should be used with caution.
-
-    NOTE: Ensure that the SSH settings are correctly configured in the stack config.
 
     :param config: The API configuration object.
     """

@@ -25,8 +25,8 @@ def governance_vkey_bech32(config: ApiConfig):
 
 
 @fixture(scope="package")
-def reserve(reserve_token, v_function: VFunction) -> Reserve:
-    reserve = Reserve(token=reserve_token, v_function=v_function)
+def reserve(reserve_asset_id, v_function: VFunction) -> Reserve:
+    reserve = Reserve(token=reserve_asset_id, v_function=v_function)
     return reserve
 
 
@@ -52,7 +52,7 @@ def minting_policy_id(api: BlockchainApi, minting_policy_filepath):
 
 
 @fixture(scope="package")
-def reserve_token(config: ApiConfig, minting_policy_id) -> str:
+def reserve_asset_id(config: ApiConfig, minting_policy_id) -> str:
     asset_name = config.nodes_config.reserve.token_name
     asset_name_hex = asset_name.encode("utf-8").hex()
     policy_id = minting_policy_id
@@ -62,7 +62,7 @@ def reserve_token(config: ApiConfig, minting_policy_id) -> str:
 @fixture(scope="package")
 def mint_token(
     governance_address: str,
-    reserve_token: str,
+    reserve_asset_id: str,
     transaction_input: str,
     minting_policy_filepath,
     api: BlockchainApi,
@@ -77,7 +77,7 @@ def mint_token(
             address=governance_address,
             lovelace=lovelace_amount,
             amount=amount,
-            token=reserve_token,
+            asset_id=reserve_asset_id,
             policy_script_filepath=minting_policy_filepath,
         )
 

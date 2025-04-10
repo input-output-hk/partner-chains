@@ -10,6 +10,7 @@ from ..run_command import Runner, Result
 
 @dataclass
 class SmartContractsResponse:
+    returncode: int
     stdout: str
     stderr: str
     transaction_id: str = None
@@ -36,14 +37,14 @@ def parse_transaction_cbor(stdout: str) -> str:
 
 
 def parse_response(result: Result) -> SmartContractsResponse:
-    response = SmartContractsResponse(stdout=result.stdout, stderr=result.stderr)
+    response = SmartContractsResponse(returncode=result.returncode, stdout=result.stdout, stderr=result.stderr)
     response.transaction_id = parse_transaction_id(result.stdout)
     response.transaction_cbor = parse_transaction_cbor(result.stdout)
     return response
 
 
 def parse_json_response(result: Result) -> SmartContractsResponse:
-    response = SmartContractsResponse(stdout=result.stdout, stderr=result.stderr)
+    response = SmartContractsResponse(returncode=result.returncode, stdout=result.stdout, stderr=result.stderr)
     response.json = json.loads(result.stdout)
     return response
 

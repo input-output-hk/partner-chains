@@ -12,14 +12,14 @@ def test_enough_funds_for_minting(transaction_input):
 
 
 def test_mint_tokens_for_reserve(
-    api: BlockchainApi, governance_address: str, reserve_token, mint_token, wait_until, config: ApiConfig
+    api: BlockchainApi, governance_address: str, reserve_asset_id, mint_token, wait_until, config: ApiConfig
 ):
-    initial_balance = api.get_mc_balance(governance_address, reserve_token)
+    initial_balance = api.get_mc_balance(governance_address, reserve_asset_id)
     tokens_to_mint = 1000
     result = mint_token(tokens_to_mint)
     assert "Transaction successfully submitted" in result
     assert wait_until(
-        lambda: api.get_mc_balance(governance_address, reserve_token) == initial_balance + tokens_to_mint,
+        lambda: api.get_mc_balance(governance_address, reserve_asset_id) == initial_balance + tokens_to_mint,
         timeout=config.timeouts.main_chain_tx,
     )
 
