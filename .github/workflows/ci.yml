@@ -46,6 +46,7 @@ jobs:
         with:
           namespace: ci-preview
           pod: ci-preview-validator-1
+          env: ci-preview
         env:
           AWS_REGION: "eu-central-1"
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -616,6 +617,7 @@ jobs:
 #        with:
 #          namespace: ci-preview
 #          pod: ci-preview-validator-1
+#          env: ci-preview
 #        env:
 #          AWS_REGION: "eu-central-1"
 #          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
