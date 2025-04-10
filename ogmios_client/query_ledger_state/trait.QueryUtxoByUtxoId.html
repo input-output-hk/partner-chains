@@ -2,11 +2,11 @@
     // Required method
     async fn <a href="#tymethod.query_utxo_by_id" class="fn">query_utxo_by_id</a>(
         &amp;self,
-        utxo: UtxoId,
+        utxo: <a class="struct" href="../../sidechain_domain/struct.UtxoId.html" title="struct sidechain_domain::UtxoId">UtxoId</a>,
     ) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.86.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="enum" href="https://doc.rust-lang.org/1.86.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../types/struct.OgmiosUtxo.html" title="struct ogmios_client::types::OgmiosUtxo">OgmiosUtxo</a>&gt;, <a class="enum" href="../enum.OgmiosClientError.html" title="enum ogmios_client::OgmiosClientError">OgmiosClientError</a>&gt;;
 }</code></pre><h2 id="required-methods" class="section-header">Required Methods<a href="#required-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="tymethod.query_utxo_by_id" class="method"><a class="src rightside" href="../../src/ogmios_client/query_ledger_state.rs.html#35-38">Source</a><h4 class="code-header">async fn <a href="#tymethod.query_utxo_by_id" class="fn">query_utxo_by_id</a>(
     &amp;self,
-    utxo: UtxoId,
+    utxo: <a class="struct" href="../../sidechain_domain/struct.UtxoId.html" title="struct sidechain_domain::UtxoId">UtxoId</a>,
 ) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.86.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="enum" href="https://doc.rust-lang.org/1.86.0/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="struct" href="../types/struct.OgmiosUtxo.html" title="struct ogmios_client::types::OgmiosUtxo">OgmiosUtxo</a>&gt;, <a class="enum" href="../enum.OgmiosClientError.html" title="enum ogmios_client::OgmiosClientError">OgmiosClientError</a>&gt;</h4></section></summary><div class="docblock"><p>Query for a single UTXO by transaction hash and output index.
 Warning: it does not return datum, datumHash, nor script fields.
 Parameters:</p>

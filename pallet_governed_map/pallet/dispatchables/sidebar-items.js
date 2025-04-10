@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["register_changes","set_main_chain_scripts"]};
