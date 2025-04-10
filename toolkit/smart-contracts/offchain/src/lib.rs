@@ -11,10 +11,10 @@ pub mod csl;
 pub mod d_param;
 /// Governance data types
 pub mod governance;
+/// Supports key-value pair management
+pub mod governed_map;
 /// Supports governance initialization
 pub mod init_governance;
-/// Supports key-value pair management
-pub mod key_value;
 /// Types and functions related to smart-contracts that support MultiSig governance
 pub mod multisig;
 #[cfg(test)]

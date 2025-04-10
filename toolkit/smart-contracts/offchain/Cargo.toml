@@ -38,7 +38,10 @@ tokio = { workspace = true }
 tokio-retry = { workspace = true }
 
 [dev-dependencies]
-fraction = { workspace = true, features = ["with-decimal", "with-serde-support"] }
+fraction = { workspace = true, features = [
+    "with-decimal",
+    "with-serde-support",
+] }
 proptest = { workspace = true }
 time = { workspace = true, features = ["std", "serde", "parsing"] }
 pretty_assertions = { workspace = true }

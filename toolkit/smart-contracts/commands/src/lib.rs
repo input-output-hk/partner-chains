@@ -10,7 +10,7 @@ pub mod assemble_tx;
 pub mod d_parameter;
 pub mod get_scripts;
 pub mod governance;
-pub mod key_value;
+pub mod governed_map;
 pub mod permissioned_candidates;
 pub mod register;
 pub mod reserve;
@@ -41,7 +41,7 @@ pub enum SmartContractsCmd {
 	SignTx(sign_tx::SignTxCmd),
 	/// Insert key-value pair into the cardano ledger
 	#[command(subcommand)]
-	KeyValue(key_value::KeyValueCmd),
+	GovernedMap(governed_map::GovernedMapCmd),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -74,10 +74,15 @@ impl SmartContractsCmd {
 			Self::Reserve(cmd) => cmd.execute().await,
 			Self::AssembleAndSubmitTx(cmd) => cmd.execute().await,
 			Self::SignTx(cmd) => cmd.execute().await,
+<<<<<<< HEAD
 			Self::KeyValue(cmd) => cmd.execute().await,
 		}?;
 		println!("{}", result);
 		Ok(())
+=======
+			Self::GovernedMap(cmd) => cmd.execute().await,
+		}
+>>>>>>> 0bcf0bf7b (Governed map refactor)
 	}
 
 	pub fn execute_blocking(self) -> CmdResult<()> {

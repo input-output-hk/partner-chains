@@ -20,42 +20,13 @@ use ogmios_client::{
 	transactions::Transactions,
 	types::OgmiosUtxo,
 };
-use partner_chains_plutus_data::key_value::{key_value_to_plutus_data, KeyValueDatum};
+use partner_chains_plutus_data::governed_map::{
+	governed_map_datum_to_plutus_data, GovernedMapDatum,
+};
 use sidechain_domain::byte_string::ByteString;
-use sidechain_domain::{KeyValue, PolicyId, UtxoId};
+use sidechain_domain::{PolicyId, UtxoId};
 
-pub trait KeyValueStore {
-	#[allow(async_fn_in_trait)]
-	async fn insert_key_value(
-		&self,
-		genesis_utxo: UtxoId,
-		key: String,
-		value: ByteString,
-		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<MultiSigSmartContractResult>>;
-}
-
-impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> KeyValueStore for C {
-	async fn insert_key_value(
-		&self,
-		genesis_utxo: UtxoId,
-		key: String,
-		value: ByteString,
-		payment_signing_key: &CardanoPaymentSigningKey,
-	) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
-		insert_key_value(
-			genesis_utxo,
-			key,
-			value,
-			payment_signing_key,
-			self,
-			&FixedDelayRetries::two_minutes(),
-		)
-		.await
-	}
-}
-
-pub async fn insert_key_value<
+pub async fn run_insert<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
 	A: AwaitTx,
 >(
@@ -67,15 +38,24 @@ pub async fn insert_key_value<
 	await_tx: &A,
 ) -> anyhow::Result<Option<MultiSigSmartContractResult>> {
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
-	let (validator, policy) =
-		crate::scripts_data::generic_container_scripts(genesis_utxo, ctx.network)?;
+	let (validator, policy) = crate::scripts_data::governed_map_scripts(genesis_utxo, ctx.network)?;
 	let validator_address = validator.address_bech32(ctx.network)?;
 	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
 
-	let tx_hash_opt = match get_current_key_value(validator_utxos, key.clone(), policy.policy_id())?
-	{
+	let tx_hash_opt = match get_current_value(validator_utxos, key.clone(), policy.policy_id())? {
+		Some(current_value) if current_value != value => {
+			return Err(anyhow!(
+				"There is already a value stored for key '{}': {:?}",
+				key,
+				current_value
+			));
+		},
 		Some(current_value) => {
-			log::info!("There is already a value stored for key '{}': {:?}", key, current_value);
+			log::info!(
+				"Value for key '{}' is already set to {:?}. Skipping insert.",
+				key,
+				current_value
+			);
 			None
 		},
 		None => {
@@ -89,7 +69,7 @@ pub async fn insert_key_value<
 	Ok(tx_hash_opt)
 }
 
-fn get_current_key_value(
+fn get_current_value(
 	validator_utxos: Vec<OgmiosUtxo>,
 	key: String,
 	token: PolicyId,
@@ -101,11 +81,11 @@ fn get_current_key_value(
 		if let Some(datum) = utxo.datum {
 			let datum_plutus_data =
 				PlutusData::from_bytes(datum.bytes).map_err(|e| {
-					anyhow!("Internal error: could not decode datum of D-parameter validator script: {}", e)
+					anyhow!("Internal error: could not decode datum of Governed Map validator script: {}", e)
 				})?;
 			let datum_key =
-				KeyValueDatum::try_from(datum_plutus_data).map_err(|e| {
-					anyhow!("Internal error: could not decode datum of D-parameter validator script: {}", e)
+				GovernedMapDatum::try_from(datum_plutus_data).map_err(|e| {
+					anyhow!("Internal error: could not decode datum of Governed Map validator script: {}", e)
 				})?;
 			if datum_key.key == key {
 				return Ok(Some(datum_key.value));
@@ -167,7 +147,7 @@ fn insert_key_value_tx(
 	tx_builder.add_output_with_one_script_token(
 		validator,
 		policy,
-		&key_value_to_plutus_data(&KeyValue::new(key, value)),
+		&governed_map_datum_to_plutus_data(&GovernedMapDatum::new(key, value)),
 		ctx,
 	)?;
 

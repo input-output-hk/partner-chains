@@ -20,8 +20,8 @@ use partner_chains_cardano_offchain::{
 	cardano_keys::CardanoPaymentSigningKey,
 	d_param,
 	governance::MultiSigParameters,
+	governed_map::run_insert,
 	init_governance,
-	key_value::KeyValueStore,
 	multisig::{MultiSigSmartContractResult, MultiSigTransactionData},
 	permissioned_candidates,
 	register::Register,
@@ -271,34 +271,52 @@ async fn update_legacy_governance() {
 }
 
 #[tokio::test]
-async fn key_value_store_operations() {
+async fn governed_map_operations() {
 	// Initialize client and container
 	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
 	let client = Cli::default();
 	let container = client.run(image);
 	let client = initialize(&container).await;
 	let genesis_utxo = run_init_goveranance(&client).await;
-
+	let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
 	// Use the governance authority key
 	let skey = governance_authority_payment_key();
 
 	// Insert first key-value pair, should succeed
 	let key1 = "test_key".to_string();
 	let value1 = ByteString::from(hex::decode("0123456789abcdef").unwrap());
-	let result1 =
-		run_insert_key_value(genesis_utxo.clone(), key1.clone(), value1.clone(), &skey, &client)
-			.await;
-	assert!(result1.is_some(), "First key-value insertion should succeed");
+	let result1 = run_governance_map_insert(
+		genesis_utxo,
+		key1.clone(),
+		value1.clone(),
+		&skey,
+		&client,
+		&await_tx,
+	)
+	.await;
+	assert!(result1.is_ok_and(|x| x.is_some()), "First key-value insertion should succeed");
 
 	// Try to insert the same key again, should fail
-	let result2 = run_insert_key_value(genesis_utxo.clone(), key1, value1, &skey, &client).await;
-	assert!(result2.is_none(), "Inserting the same key twice should fail");
+	let result2 =
+		run_governance_map_insert(genesis_utxo, key1.clone(), value1, &skey, &client, &await_tx)
+			.await;
+	assert!(
+		result2.is_ok_and(|x| x.is_none()),
+		"Inserting the same key twice with the same valueshould be a no-op"
+	);
+
+	let value3 = ByteString::from(hex::decode("0000").unwrap());
+	let result3 =
+		run_governance_map_insert(genesis_utxo, key1, value3, &skey, &client, &await_tx).await;
+
+	assert!(result3.is_err(), "Inserting the same key with a different value should fail");
 
 	// Insert a different key, should succeed
-	let key3 = "another_key".to_string();
-	let value3 = ByteString::from(hex::decode("fedcba9876543210").unwrap());
-	let result3 = run_insert_key_value(genesis_utxo, key3, value3, &skey, &client).await;
-	assert!(result3.is_some(), "Inserting a different key should succeed");
+	let key4 = "another_key".to_string();
+	let value4 = ByteString::from(hex::decode("fedcba9876543210").unwrap());
+	let result4 =
+		run_governance_map_insert(genesis_utxo, key4, value4, &skey, &client, &await_tx).await;
+	assert!(result4.is_ok_and(|x| x.is_some()), "Inserting a different key should succeed");
 }
 
 async fn initialize<'a>(container: &Container<'a, GenericImage>) -> OgmiosClients {
@@ -752,20 +770,18 @@ fn cleanup_temp_wallet_file(result: &MultiSigSmartContractResult) {
 	}
 }
 
-async fn run_insert_key_value<
+async fn run_governance_map_insert<
 	T: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
+	A: AwaitTx,
 >(
 	genesis_utxo: UtxoId,
 	key: String,
 	value: ByteString,
 	payment_signing_key: &CardanoPaymentSigningKey,
 	client: &T,
-) -> Option<McTxHash> {
-	// Use the KeyValueStore trait from the crate
-	match client.insert_key_value(genesis_utxo, key, value, payment_signing_key).await {
-		Ok(Some(MultiSigSmartContractResult::TransactionSubmitted(tx_hash))) => Some(tx_hash),
-		Ok(Some(_)) => panic!("Expected TransactionSubmitted"),
-		Ok(None) => None,
-		Err(e) => panic!("Error inserting key-value: {}", e),
-	}
+	await_tx: &A,
+) -> Result<Option<MultiSigSmartContractResult>, anyhow::Error> {
+	let result = run_insert(genesis_utxo, key, value, payment_signing_key, client, await_tx).await;
+	result.iter().for_each(|x| x.iter().for_each(cleanup_temp_wallet_file));
+	result
 }
