@@ -33,6 +33,10 @@ the feature `pallet-session-compat`.
 
 ## Added
 
+* `ariadne_v2` selection algorithm that selects committee respecting D-parameter and candidates
+weights, but has much less variance, thanks to assigning guaranteed seats to candidates with
+expected number of seats greater or equal 1.
+
 ### MultiSig support for governance operations
 
 Now, Governance mechanism uses ALeastN Native Script, instead of custom policy implemented as Plutus Script in partner-chains-smart-contracts. This policy doesn't require to set `required_signers` field in the transaction making it more user friendly.

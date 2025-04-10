@@ -180,7 +180,7 @@ DO $$
         d_parameter_policy hash28type := decode('500000000000000000000000000000000000434845434b504f494e69', 'hex');
     BEGIN
         INSERT INTO tx ( id     , hash     , block_id , block_index , out_sum , fee , deposit , size , invalid_before , invalid_hereafter , valid_contract , script_size )
-        VALUES         ( tx1_id , tx1_hash , 3        , 0           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
+        VALUES         ( tx1_id , tx1_hash , 1        , 2           , 0       , 0   , 0       , 1024 , NULL           , NULL              , TRUE           , 1024        )
         ;
 
         INSERT INTO tx_out ( id   , tx_id  , index , address    , address_raw , address_has_script , payment_cred , stake_address_id , value , data_hash                  )

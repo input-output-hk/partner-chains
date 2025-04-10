@@ -206,8 +206,8 @@ impl AuthoritySelectionDataSource for AuthoritySelectionDataSourceMock {
 			candidates.iter().cloned().map(|c| c.info_string()).collect::<Vec<_>>()
 		);
 
-		let permissioned_candidates: Vec<RawPermissionedCandidateData> =
-			candidates.into_iter().map(|p| p.into()).collect();
+		let permissioned_candidates: Option<Vec<RawPermissionedCandidateData>> =
+			Some(candidates.into_iter().map(|p| p.into()).collect());
 
 		Ok(AriadneParameters { d_parameter: d_parameter.into(), permissioned_candidates })
 	}

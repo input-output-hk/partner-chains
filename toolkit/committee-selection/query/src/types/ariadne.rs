@@ -8,7 +8,7 @@ use sidechain_domain::{AuraPublicKey, GrandpaPublicKey, SidechainPublicKey};
 #[serde(rename_all = "camelCase")]
 pub struct AriadneParameters {
 	pub d_parameter: DParameter,
-	pub permissioned_candidates: Vec<PermissionedCandidateData>,
+	pub permissioned_candidates: Option<Vec<PermissionedCandidateData>>,
 	pub candidate_registrations: GetRegistrationsResponseMap,
 }
 

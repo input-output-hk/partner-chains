@@ -544,6 +544,7 @@ def get_pc_epoch_blocks(
 @fixture
 def candidate_skey_with_cli(config: ApiConfig, candidate: Candidates):
     """
+
     Copy the candidate's Cardano payment key (a secret key used by the PCSC CLI to pay fees) to a temporary
     directory in the Kubernetes pod and update the path in the configuration. The temporary directory is deleted after
     the test completes.
@@ -581,7 +582,6 @@ def candidate_skey_with_cli(config: ApiConfig, candidate: Candidates):
         subprocess.run(f"kubectl exec -it {config.stack_config.validator_name} -c cardano-node -n {namespace} -- rm -rf {temp_dir}", shell=True)
     else:
         yield
-
 
 @fixture
 def governance_skey_with_cli(config: ApiConfig):
@@ -622,3 +622,4 @@ def governance_skey_with_cli(config: ApiConfig):
         subprocess.run(f"kubectl exec -it {config.stack_config.validator_name} -c cardano-node -n {namespace} -- rm -rf {temp_dir}", shell=True)
     else:
         yield
+
