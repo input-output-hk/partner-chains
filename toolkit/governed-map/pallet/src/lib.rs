@@ -7,11 +7,16 @@
 //! key-value pair is inserted, updated or deleted.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
+
+pub use pallet::*;
+
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
-use frame_system::WeightInfo;
 use sidechain_domain::byte_string::*;
 use sp_governed_map::*;
+
+pub mod weights;
 
 #[cfg(test)]
 mod tests;
@@ -19,9 +24,13 @@ mod tests;
 #[cfg(test)]
 mod mock;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use crate::weights::WeightInfo;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
@@ -42,12 +51,20 @@ pub mod pallet {
 		/// Maximum length of data stored under a single key in the Governed Map
 		type MaxValueLength: Get<u32>;
 
-		// TODO benchmarks
-		type WeightInfo: WeightInfo;
+		/// Weight functions for the pallet's extrinsics
+		type WeightInfo: weights::WeightInfo;
+
+		/// Helper functions required by the pallet's benchmarks to construct realistic input data.
+		///
+		/// An implementation for [()] is provided for simplicity. Chains that require more precise weights or
+		/// expect an unusual number of parameter changes should implement this trait themselves in their runtime.
+		#[cfg(feature = "runtime-benchmarks")]
+		type BenchmarkHelper: crate::benchmarking::BenchmarkHelper<Self>;
 	}
 
-	pub(crate) type MapKey<T> = BoundedString<<T as Config>::MaxKeyLength>;
-	pub(crate) type MapValue<T> = BoundedVec<u8, <T as Config>::MaxValueLength>;
+	pub type MapKey<T> = BoundedString<<T as Config>::MaxKeyLength>;
+	pub type MapValue<T> = BoundedVec<u8, <T as Config>::MaxValueLength>;
+	pub type Changes<T> = BoundedVec<(MapKey<T>, Option<MapValue<T>>), <T as Config>::MaxChanges>;
 
 	/// Stores the latest state of the Governed Map that was observed on Cardano.
 	#[pallet::storage]
@@ -111,8 +128,10 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		fn decode_inherent_data(data: &InherentData) -> Option<Vec<GovernedMapChangeV1>> {
-			data.get_data::<Vec<GovernedMapChangeV1>>(&INHERENT_IDENTIFIER)
+		fn decode_inherent_data(
+			data: &InherentData,
+		) -> Option<alloc::vec::Vec<GovernedMapChangeV1>> {
+			data.get_data::<alloc::vec::Vec<GovernedMapChangeV1>>(&INHERENT_IDENTIFIER)
 				.expect("Governed Map inherent data is not encoded correctly")
 		}
 
@@ -125,8 +144,7 @@ pub mod pallet {
 				return Err(TooManyChanges);
 			}
 
-			let mut changes: BoundedVec<(MapKey<T>, Option<MapValue<T>>), T::MaxChanges> =
-				BoundedVec::new();
+			let mut changes = Changes::<T>::new();
 			for GovernedMapChangeV1 { key, new_value } in raw_changes {
 				let new_value = match new_value {
 					Some(new_value) => Some(Self::bound_value(&key, new_value)?),
@@ -152,11 +170,8 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Inherent to register any changes in the state of the Governed Map on Cardano compared to the state currently stored in the pallet.
 		#[pallet::call_index(0)]
-		#[pallet::weight((0, DispatchClass::Mandatory))]
-		pub fn register_changes(
-			origin: OriginFor<T>,
-			changes: BoundedVec<(MapKey<T>, Option<MapValue<T>>), T::MaxChanges>,
-		) -> DispatchResult {
+		#[pallet::weight((T::WeightInfo::register_changes(), DispatchClass::Mandatory))]
+		pub fn register_changes(origin: OriginFor<T>, changes: Changes<T>) -> DispatchResult {
 			ensure_none(origin)?;
 
 			log::info!("💾 Registering {} Governed Map changes", changes.len(),);
@@ -172,7 +187,7 @@ pub mod pallet {
 		///
 		/// This extrinsic must be run either using `sudo` or some other chain governance mechanism.
 		#[pallet::call_index(1)]
-		#[pallet::weight((0, DispatchClass::Normal))]
+		#[pallet::weight((T::WeightInfo::set_main_chain_scripts(), DispatchClass::Normal))]
 		pub fn set_main_chain_scripts(
 			origin: OriginFor<T>,
 			new_main_chain_script: MainChainScriptsV1,
