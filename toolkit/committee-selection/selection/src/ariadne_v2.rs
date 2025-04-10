@@ -157,18 +157,26 @@ mod tests {
 			(0..2 * r).into_iter().map(|i| (format!("R{i}"), 1)).collect();
 		let permissioned_candidates: Vec<_> =
 			(0..2 * r).into_iter().map(|i| format!("P{i}")).collect();
-		let committee = select_authorities(
+		let result = select_authorities(
 			r.into(),
 			p.into(),
-			registered_candidates,
-			permissioned_candidates,
+			registered_candidates.clone(),
+			permissioned_candidates.clone(),
 			seed.0,
-		)
-		.unwrap();
-		let permissioned = committee.iter().filter(|c| c.starts_with("P")).count();
-		let registered = committee.iter().filter(|c| c.starts_with("R")).count();
-		assert_eq!(permissioned, 3);
-		assert_eq!(registered, 2);
+		);
+		match result {
+			None => assert!(
+				(p > 0 || r > 0)
+					&& registered_candidates.is_empty()
+					&& permissioned_candidates.is_empty()
+			),
+			Some(committee) => {
+				let permissioned = committee.iter().filter(|c| c.starts_with("P")).count();
+				let registered = committee.iter().filter(|c| c.starts_with("R")).count();
+				assert_eq!(permissioned, p.into());
+				assert_eq!(registered, r.into());
+			},
+		}
 	}
 
 	#[quickcheck]
