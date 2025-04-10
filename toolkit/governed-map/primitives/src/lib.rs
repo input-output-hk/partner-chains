@@ -124,6 +124,7 @@ pub trait GovernedMapDataSource {
 	) -> Result<BTreeMap<String, ByteString>, Box<dyn std::error::Error + Send + Sync>>;
 }
 
+/// Error type returned when creation of [GovernedMapInherentDataProvider] fails.
 #[cfg(feature = "std")]
 #[derive(Debug, thiserror::Error)]
 pub enum InherentProviderCreationError {
