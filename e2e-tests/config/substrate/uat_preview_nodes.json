@@ -9,11 +9,11 @@
             "alice": {
                 "host": "alice.node.sc.iog.io",
                 "port": "9944",
-                "aura_ss58_address": "5GHLr2zBDNPXno9XdKgh541uRSiTxnZyzFcr4jK6HUbHMpit",
+                "aura_ss58_address": "5DU2xsSHPigU2md6r3rSU9kKAuQvHyJLS5Xsq2pVt18K9AK8",
                 "pool_id": "da74fc8256d15c7ab3370a6ca28398986cb97c32e9ef66026ac61e99",
-                "public_key": "0x03b827f4da9711bab7292e5695576a841a4d20af9a07b1ba7a230168d2a78e9df4",
-                "aura_public_key": "0xba94651de6279a38a416b97b9720c3df76224435e951ac73e9e302a4ee9fcf73",
-                "grandpa_public_key": "0xdde2501588713ddad5daf5a898c19d82cd591609c9184679868640c8cfe8287d",
+                "public_key": "0x03046279673f9e241478a577b91c798ebee4c6087f9d9ddd22cee7e059166dbf4a",
+                "aura_public_key": "0x3e073288910089cd56e725e478b616ed753b694e8bcca3a2a5ba1b40eb72ca4e",
+                "grandpa_public_key": "0xd9d0a86780aeefecb026e1bef06c85fc8609fb833cc62de3df03fdb43e7e4b2a",
                 "rotation_candidate": true,
                 "cardano_payment_addr": "addr_test1vq6ywn0f007x32j47jrk5qy9hy3gknsvszrcpdqkeaye7pshu2w2t",
                 "keys_files": {
@@ -26,11 +26,11 @@
             "bob": {
                 "host": "bob.node.sc.iog.io",
                 "port": "9944",
-                "aura_ss58_address": "5DHbxU687f1Y3x8yBCWMtqSiJ5qt2yrxQPXNXZNNDaFtmXKv",
+                "aura_ss58_address": "5CAWrgrjdwURGdRManWLgun2oLtyC6LtRwRCvVe4zh8ap3Cw",
                 "pool_id": "eaed153a8b046770cfd094ee72d080ea682188e63ac11937e3f7f827",
-                "public_key": "0x02ef5bcd94d54a18ad199559782cd72ac3ccd850976aaaafbca8f9d2625afbf7c4",
-                "aura_public_key": "0x36128fff2acc04f206ccaf4e9f8e9995998efced29075a58b7d76d3735c21208",
-                "grandpa_public_key": "0x8f9a9856a27cc114ce85b64f41144f0c907c4bd8b3102b083b52b6b61aff6c47",
+                "public_key": "0x034f94750f274bbfb38f38d931f009d321acd56c8bcbe5c17eff34ee186a0277cf",
+                "aura_public_key": "0x046e71b9ef1631574426c173d5f8b2ba4bbc6a3680c9cf3502710fe84891301a",
+                "grandpa_public_key": "0x98853817df07cb4be9f3f76429d09e01eac35b18c3d777e663ccc89e3012dd64",
                 "permissioned_candidate": true,
                 "cardano_payment_addr": "addr_test1vz80jkz5d2kdaykfrqlqryr6lt46tunk4ldfjqv88hevrpsrdfmm5",
                 "keys_files": {
@@ -43,11 +43,11 @@
             "charlie": {
                 "host": "charlie.node.sc.iog.io",
                 "port": "9944",
-                "aura_ss58_address": "5FYtL6HccYhk6KZeFP7hNnkMaXrAwVpTHJWsfnNJcu8AM6in",
+                "aura_ss58_address": "5H986Epy9e8MHL3617TthaoRfvANu9uLvfKjp3g3e4Aajj4M",
                 "pool_id": "7dfba85597a867fffa59037df7f6adcd50e745dcceac2b48eda94b20",
-                "public_key": "0x02f2762ab6e1a125dc03908a7b738f8023d13763f28a11d7633c6c8bc463478430",
-                "aura_public_key": "0x9a32d3896a56e822321f7bc915befc8ce112c5d67e3c6497295bd3d7b020f94c",
-                "grandpa_public_key": "0x4f3c0ecc6dc474f27ad7967f5cdbd50da047ffedbc91b65f5cd247515489c98f",
+                "public_key": "0x024f0ff7822ddd402cb1da57af91d6e5d7ca70fa3d89d96e31a465e8078ace764f",
+                "aura_public_key": "0xe08bba4b24e9f986ab06e51d9bb9e4ab767eddc27aa25a86bc7a9edc438c517b",
+                "grandpa_public_key": "0x8b99d6737bd58e06b61bdd07d71abc235101b3c8860f6ad5cc7f27d4ce5b3a58",
                 "permissioned_candidate": true,
                 "cardano_payment_addr": "addr_test1vrxc6wvtmqrqx4n9e89sqf9u0w0jcp8a96s7gkddfsr0ppcdvzcf6",
                 "keys_files": {
