@@ -147,6 +147,39 @@ mod tests {
 	}
 
 	#[quickcheck]
+	fn permissioned_get_p_seats_registered_get_r_seats(p: u8, r: u8, seed: TestNonce) {
+		// There are more candidates of given type than places for them.
+		// No candidate has guaranteed place, only P:R ratio is guaranteed
+
+		let p: u16 = p.into();
+		let r: u16 = r.into();
+		let registered_candidates: Vec<_> =
+			(0..2 * r).into_iter().map(|i| (format!("R{i}"), 1)).collect();
+		let permissioned_candidates: Vec<_> =
+			(0..2 * r).into_iter().map(|i| format!("P{i}")).collect();
+		let result = select_authorities(
+			r.into(),
+			p.into(),
+			registered_candidates.clone(),
+			permissioned_candidates.clone(),
+			seed.0,
+		);
+		match result {
+			None => assert!(
+				(p > 0 || r > 0)
+					&& registered_candidates.is_empty()
+					&& permissioned_candidates.is_empty()
+			),
+			Some(committee) => {
+				let permissioned = committee.iter().filter(|c| c.starts_with("P")).count();
+				let registered = committee.iter().filter(|c| c.starts_with("R")).count();
+				assert_eq!(permissioned, p.into());
+				assert_eq!(registered, r.into());
+			},
+		}
+	}
+
+	#[quickcheck]
 	fn guaranteed_places_are_given_only_registered(seed: TestNonce) {
 		// committee size is 11, each candidate has 3 guaranteed places,
 		// and there are 2 places for random selection.
