@@ -9,6 +9,7 @@ from src.blockchain_api import BlockchainApi, Wallet
 from src.blockchain_types import BlockchainTypes
 from src.pc_epoch_calculator import PartnerChainEpochCalculator
 from src.partner_chain_rpc import PartnerChainRpc
+from src.run_command import Runner, RunnerFactory
 from config.api_config import ApiConfig
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -16,6 +17,7 @@ from src.db.models import Base
 from filelock import FileLock
 from typing import Generator
 import time
+import uuid
 
 _config: ApiConfig = None
 partner_chain_rpc_api: PartnerChainRpc = None
@@ -345,23 +347,7 @@ def decrypt_keys(tmp_path_factory, config, blockchain, nodes_env, decrypt, ci_ru
                 os.remove(fn)
     else:
         # the yield statement is needed on both if/else sides because that's how the fixture communicates setup is done
-
-        # dirty hack for midnight until they use our tools host
-        if blockchain == "midnight":
-            ssh_key_path = "secrets/substrate/devnet/keys/ssh-key.yaml"
-            subprocess.check_output(
-                [
-                    f"find {ssh_key_path} -type f -not -name '*.decrypted' -exec "
-                    f"sh -c \"sops -d '{{}}' > '{{}}.decrypted'\" \;"  # noqa: W605
-                ],
-                shell=True,
-            )
-            yield
-            subprocess.check_output(
-                ["find secrets -type f -name '*.decrypted' -exec rm {} \;"], shell=True  # noqa: W605
-            )
-        else:
-            yield
+        yield
 
 
 @fixture(scope="session")
@@ -492,7 +478,7 @@ def skip_on_new_chain(request, full_mc_epoch_has_passed_since_deployment):
         skip("Test requires at least one full MC epoch that has passed in order to verify data for the past epoch.")
 
 
-@fixture
+@fixture(scope="session")
 def wait_until():
     """Generic wait function until <condition> is True.
 
@@ -501,16 +487,16 @@ def wait_until():
         args {Any} -- position args used by <condition>
 
     Keyword Arguments:
-        timeout {int} -- timeout in seconds (default: {10})
-        poll_interval {int} -- poll interval in seconds (default: {10})
+        timeout {int} -- timeout in seconds (default: {20})
+        poll_interval {int} -- poll interval in seconds (default: {3})
 
     Returns:
         Any -- returns <condition> result, None if timed out.
     """
 
-    def _wait_until(condition, *args, timeout=10, poll_interval=10):
+    def _wait_until(condition, *args, timeout=20, poll_interval=3):
         start = time.time()
-        logging.info(f"WAIT UNTIL: {condition}{args}. TIMEOUT: {timeout}, POLL_INTERVAL: {poll_interval}")
+        logging.info(f"WAIT UNTIL: {condition}. TIMEOUT: {timeout}, POLL_INTERVAL: {poll_interval}")
         while time.time() - start < timeout:
             result = condition(*args)
             if result:
@@ -519,3 +505,78 @@ def wait_until():
         raise TimeoutError(f"WAIT UNTIL function TIMED OUT after {timeout}s on {condition} with args {args}.")
 
     yield _wait_until
+
+
+@fixture(scope="session")
+def write_file():
+    """Writes a file in location that is available by CLI being in use in tests.
+
+    Example usage:
+    ```python
+    def test_something(api: BlockchainApi, write_file):
+        content = {"keyHash": <key_hash>, "type": "sig"}
+        filepath = write_file(api.cardano_cli.run_command , content)
+        policy_id = api.cardano_cli.get_policy_id(filepath)
+        assert policy_id
+    ```
+
+    The file is created in `/tmp` directory with a random name.
+    The content is passed as a string and is converted to JSON format.
+    The file is created on the same host that is configured in the `<env>_stack.json` for given tool (SSH or shell).
+    The file is removed after the test completes.
+
+
+    Returns:
+        str: filepath available to use by CLI
+
+    Yields:
+        function: write_file callable function that takes runner and content as arguments
+    """
+    saved_files = {}
+
+    def _write_file(runner: Runner, content: str):
+        filepath = f"/tmp/{uuid.uuid4().hex}"
+        content_json = json.dumps(content)
+        runner.run(f"echo '{content_json}' > {filepath}")
+
+        if runner not in saved_files:
+            saved_files[runner] = []
+        saved_files[runner].append(filepath)
+        return filepath
+
+    yield _write_file
+
+    for runner, filepaths in saved_files.items():
+        logging.info("Cleaning up temporary cli files on remote host...")
+        cmd = f"rm {' '.join(filepaths)}"
+        runner.run(cmd)
+
+
+@fixture(scope="session")
+def governance_skey_with_cli(config: ApiConfig):
+    """
+    Securely copy the governance authority's init skey (a secret key used by the smart-contracts to authorize admin
+    operations) to a temporary directory on the remote machine and update the path in the configuration.
+    The temporary directory is deleted after the test completes.
+
+    This fixture is executed only if:
+    - you call it directly in test or other fixture
+    - SSH is configured in `<env>_stack.json` for given tool
+
+    WARNING: This fixture copies secret file to a remote host and should be used with caution.
+
+    :param config: The API configuration object.
+    """
+    if config.stack_config.ssh:
+        runner = RunnerFactory.get_runner(config.stack_config.ssh, "/bin/bash")
+        temp_dir = runner.run("mktemp -d").stdout.strip()
+        path = config.nodes_config.governance_authority.mainchain_key
+        filename = path.split("/")[-1]
+        runner.scp(path, temp_dir)
+        config.nodes_config.governance_authority.mainchain_key = f"{temp_dir}/{filename}"
+        yield
+        logging.info("Cleaning up governance skey file on remote host...")
+        config.nodes_config.governance_authority.mainchain_key = path
+        runner.run(f"rm -rf {temp_dir}")
+    else:
+        yield

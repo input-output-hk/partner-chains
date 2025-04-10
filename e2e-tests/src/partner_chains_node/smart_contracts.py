@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import logging
 import re
 import json
+import uuid
 from config.api_config import ApiConfig, Node
 from .models import RegistrationSignatures
 from ..run_command import Runner, Result
@@ -9,6 +10,7 @@ from ..run_command import Runner, Result
 
 @dataclass
 class SmartContractsResponse:
+    returncode: int
     stdout: str
     stderr: str
     transaction_id: str = None
@@ -35,14 +37,14 @@ def parse_transaction_cbor(stdout: str) -> str:
 
 
 def parse_response(result: Result) -> SmartContractsResponse:
-    response = SmartContractsResponse(stdout=result.stdout, stderr=result.stderr)
+    response = SmartContractsResponse(returncode=result.returncode, stdout=result.stdout, stderr=result.stderr)
     response.transaction_id = parse_transaction_id(result.stdout)
     response.transaction_cbor = parse_transaction_cbor(result.stdout)
     return response
 
 
 def parse_json_response(result: Result) -> SmartContractsResponse:
-    response = SmartContractsResponse(stdout=result.stdout, stderr=result.stderr)
+    response = SmartContractsResponse(returncode=result.returncode, stdout=result.stdout, stderr=result.stderr)
     response.json = json.loads(result.stdout)
     return response
 
@@ -113,7 +115,7 @@ class SmartContracts:
             f"{candidate.public_key}:{candidate.aura_public_key}:{candidate.grandpa_public_key}"
             for candidate in new_candidates_list.values()
         )
-        permissioned_candidates_file = "/tmp/permissioned_candidates.csv"
+        permissioned_candidates_file = f"/tmp/permissioned_candidates_{uuid.uuid4().hex}.csv"
         save_file_cmd = f"echo '{candidates_file_content}' > {permissioned_candidates_file}"
         self.run_command.run(save_file_cmd)
 

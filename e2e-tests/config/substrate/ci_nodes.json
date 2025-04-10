@@ -94,7 +94,8 @@
     },
     "governance_authority": {
       "mainchain_address": "addr_test1vq0sjaaupatuvl9x6aefdsd4whlqtfku93068qzkhf3u2rqt9cnuq",
-      "mainchain_key": "./secrets/substrate/staging/keys/governance_authority/init.skey.json.decrypted"
+      "mainchain_key": "./secrets/substrate/staging/keys/governance_authority/init.skey.json.decrypted",
+      "mainchain_pub_key": "a90ba46b07c0c2c940e3e3149aee5817130a1d8b600bc85b91345e4f7a1e5aca"
     },
     "selected_node": "validator-4",
     "node": "${nodes_config[nodes][${nodes_config[selected_node]}]}",

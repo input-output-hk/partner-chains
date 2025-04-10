@@ -467,7 +467,7 @@ pub const MAX_METADATA_URL_LENGTH: u32 = 512;
 	Clone, Debug, MaxEncodedLen, Encode, Decode, Serialize, Deserialize, PartialEq, Eq, TypeInfo,
 )]
 pub struct BlockProducerMetadataType {
-	pub url: BoundedString<MAX_METADATA_URL_LENGTH>,
+	pub url: BoundedString<ConstU32<MAX_METADATA_URL_LENGTH>>,
 	pub hash: SizedByteString<32>,
 }
 

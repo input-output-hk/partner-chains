@@ -23,3 +23,23 @@ class BlockProducerMetadataSignature:
     encoded_message: str
     encoded_metadata: str
     signature: str
+
+
+@dataclass
+class VFunction:
+    cbor: str
+    script_path: str
+    script_hash: str
+    address: str
+    reference_utxo: str
+
+    def __repr__(self) -> str:
+        return (
+            f"VFunction(script_hash={self.script_hash}, address={self.address}, reference_utxo={self.reference_utxo})"
+        )
+
+
+@dataclass
+class Reserve:
+    token: str
+    v_function: VFunction
