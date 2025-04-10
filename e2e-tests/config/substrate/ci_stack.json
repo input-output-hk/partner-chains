@@ -8,15 +8,15 @@
         "tools": {
             "cardano_cli": {
                 "cli": "cardano-cli",
-                "shell": "kubectl exec -it devnet-services -c cardano-node -n sc --"
+                "shell": "kubectl exec ${stack_config[validator_name]} -c cardano-node -n ${stack_config[namespace]} --"
             },
             "partner_chains_node": {
                 "cli": "/usr/local/bin/partner-chains-node",
-                "shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --"
+                "shell": "kubectl exec ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --"
             },
             "bech32": {
                 "cli": "/tools/bech32",
-                "shell": "kubectl exec -it binary-host -c binary-host -n sc --"
+                "shell": "kubectl exec binary-host -c binary-host -n sc --"
             }
         }
     }
