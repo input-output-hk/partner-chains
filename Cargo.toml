@@ -179,14 +179,14 @@ sp-storage = { default-features = false, git = "https://github.com/paritytech/po
 sp-weights = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409-4" }
 substrate-build-script-utils = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409-4" }
 substrate-frame-rpc-system = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409-4" }
-substrate-prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409-4" }
+substrate-prometheus-endpoint = { default-features = false, package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409-4" }
 substrate-test-runtime-client = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409-4" }
 substrate-wasm-builder = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk.git", tag = "polkadot-stable2409-4" }
 
-raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", tag = "v7.0.2" }
+raw-scripts = { git = "https://github.com/input-output-hk/partner-chains-smart-contracts.git", tag = "v7.0.2", default-features = false }
 
 # local dependencies
-sidechain-runtime = { path = "node/runtime" }
+sidechain-runtime = { path = "node/runtime", default-features = false }
 pallet-block-rewards = { path = "toolkit/pallets/block-rewards", default-features = false }
 pallet-sidechain = { path = "toolkit/pallets/sidechain", default-features = false }
 pallet-sidechain-rpc = { path = "toolkit/pallets/sidechain/rpc", default-features = false }
@@ -194,21 +194,21 @@ sp-session-validator-management = { default-features = false, path = "toolkit/pr
 sp-session-validator-management-query = { default-features = false, path = "toolkit/primitives/session-validator-management/query" }
 pallet-session-validator-management = { default-features = false, path = "toolkit/pallets/session-validator-management" }
 pallet-session-validator-management-benchmarking = { default-features = false, path = "toolkit/pallets/session-validator-management/benchmarking" }
-pallet-session-validator-management-rpc = { path = "toolkit/pallets/session-validator-management/rpc" }
+pallet-session-validator-management-rpc = { path = "toolkit/pallets/session-validator-management/rpc", default-features = false }
 ogmios-client = { path = "toolkit/utils/ogmios-client", default-features = false }
 sp-block-rewards = { path = "toolkit/primitives/block-rewards", default-features = false }
 selection = { path = "toolkit/primitives/selection", default-features = false }
 sidechain-domain = { path = "toolkit/primitives/domain", default-features = false }
 sidechain-block-search = { path = "toolkit/primitives/sidechain-block-search", default-features = false }
-db-sync-follower = { path = "toolkit/mainchain-follower/db-sync-follower" }
+db-sync-follower = { path = "toolkit/mainchain-follower/db-sync-follower", default-features = false }
 main-chain-follower-mock = { path = "toolkit/mainchain-follower/mock", default-features = false }
 plutus = { path = "toolkit/utils/plutus", default-features = false }
 plutus-datum-derive = { default-features = false, path = "toolkit/utils/plutus/plutus-datum-derive" }
 byte-string-derive = { default-features = false, path = "toolkit/utils/byte-string-derivation" }
 sidechain-slots = { path = "toolkit/primitives/sidechain-slots", default-features = false }
-cli-commands = { path = "toolkit/cli/commands" }
-partner-chains-node-commands = { path = "toolkit/cli/node-commands" }
-time-source = { path = "toolkit/utils/time-source" }
+cli-commands = { path = "toolkit/cli/commands", default-features = false }
+partner-chains-node-commands = { path = "toolkit/cli/node-commands", default-features = false }
+time-source = { path = "toolkit/utils/time-source", default-features = false }
 sidechain-mc-hash = { path = "toolkit/primitives/sidechain-mc-hash", default-features = false }
 authority-selection-inherents = { path = "toolkit/primitives/authority-selection-inherents", default-features = false }
 session-manager = { path = "toolkit/primitives/session-manager", default-features = false }
