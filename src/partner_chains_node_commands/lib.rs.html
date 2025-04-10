@@ -196,7 +196,7 @@
 <a href=#196 id=196 data-nosnippet>196</a>			<span class="prelude-val">Ok</span>(())
 <a href=#197 id=197 data-nosnippet>197</a>		},
 <a href=#198 id=198 data-nosnippet>198</a>		PartnerChainsSubcommand::SmartContracts(cmd) =&gt; {
-<a href=#199 id=199 data-nosnippet>199</a>			<span class="kw">crate</span>::setup_log4rs()<span class="question-mark">?</span>;
+<a href=#199 id=199 data-nosnippet>199</a>			setup_log4rs()<span class="question-mark">?</span>;
 <a href=#200 id=200 data-nosnippet>200</a>			<span class="prelude-val">Ok</span>(cmd.execute_blocking()<span class="question-mark">?</span>)
 <a href=#201 id=201 data-nosnippet>201</a>		},
 <a href=#202 id=202 data-nosnippet>202</a>		PartnerChainsSubcommand::Wizards(cmd) =&gt; {
@@ -208,47 +208,49 @@
 <a href=#208 id=208 data-nosnippet>208</a>	}
 <a href=#209 id=209 data-nosnippet>209</a>}
 <a href=#210 id=210 data-nosnippet>210</a>
-<a href=#211 id=211 data-nosnippet>211</a><span class="doccomment">/// This sets logging in a very opinionated way.
-<a href=#212 id=212 data-nosnippet>212</a>/// Because Rust env_logger clashes with log4rs, this is exposed to be invoked by users of smart-contracts commands.
-<a href=#213 id=213 data-nosnippet>213</a></span><span class="kw">pub fn </span>setup_log4rs() -&gt; <span class="prelude-ty">Result</span>&lt;(), Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
-<a href=#214 id=214 data-nosnippet>214</a>	<span class="kw">let </span>stdout = log4rs::append::console::ConsoleAppender::builder().build();
-<a href=#215 id=215 data-nosnippet>215</a>	<span class="kw">let </span>ogmios_log = log4rs::append::file::FileAppender::builder().build(<span class="string">"ogmios_client.log"</span>)<span class="question-mark">?</span>;
-<a href=#216 id=216 data-nosnippet>216</a>
-<a href=#217 id=217 data-nosnippet>217</a>	<span class="kw">let </span>log_config = log4rs::config::Config::builder()
-<a href=#218 id=218 data-nosnippet>218</a>		.appender(log4rs::config::Appender::builder().build(<span class="string">"stdout"</span>, Box::new(stdout)))
-<a href=#219 id=219 data-nosnippet>219</a>		.appender(log4rs::config::Appender::builder().build(<span class="string">"ogmios-log"</span>, Box::new(ogmios_log)))
-<a href=#220 id=220 data-nosnippet>220</a>		.logger(
-<a href=#221 id=221 data-nosnippet>221</a>			log4rs::config::Logger::builder()
-<a href=#222 id=222 data-nosnippet>222</a>				.appender(<span class="string">"ogmios-log"</span>)
-<a href=#223 id=223 data-nosnippet>223</a>				.additive(<span class="bool-val">false</span>)
-<a href=#224 id=224 data-nosnippet>224</a>				.build(<span class="string">"ogmios_client::jsonrpsee"</span>, log::LevelFilter::Debug),
-<a href=#225 id=225 data-nosnippet>225</a>		)
-<a href=#226 id=226 data-nosnippet>226</a>		.build(log4rs::config::Root::builder().appender(<span class="string">"stdout"</span>).build(log::LevelFilter::Info))<span class="question-mark">?</span>;
-<a href=#227 id=227 data-nosnippet>227</a>
-<a href=#228 id=228 data-nosnippet>228</a>	log4rs::init_config(log_config)<span class="question-mark">?</span>;
+<a href=#211 id=211 data-nosnippet>211</a><span class="doccomment">/// This sets logging to stderr, leaving stdout for smart-contracts JSON outputs.
+<a href=#212 id=212 data-nosnippet>212</a>/// Ogmios interactions are logged to a file.
+<a href=#213 id=213 data-nosnippet>213</a></span><span class="kw">fn </span>setup_log4rs() -&gt; <span class="prelude-ty">Result</span>&lt;(), Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
+<a href=#214 id=214 data-nosnippet>214</a>	<span class="kw">let </span>stderr = log4rs::append::console::ConsoleAppender::builder()
+<a href=#215 id=215 data-nosnippet>215</a>		.target(log4rs::append::console::Target::Stderr)
+<a href=#216 id=216 data-nosnippet>216</a>		.build();
+<a href=#217 id=217 data-nosnippet>217</a>	<span class="kw">let </span>ogmios_log = log4rs::append::file::FileAppender::builder().build(<span class="string">"ogmios_client.log"</span>)<span class="question-mark">?</span>;
+<a href=#218 id=218 data-nosnippet>218</a>
+<a href=#219 id=219 data-nosnippet>219</a>	<span class="kw">let </span>log_config = log4rs::config::Config::builder()
+<a href=#220 id=220 data-nosnippet>220</a>		.appender(log4rs::config::Appender::builder().build(<span class="string">"stderr"</span>, Box::new(stderr)))
+<a href=#221 id=221 data-nosnippet>221</a>		.appender(log4rs::config::Appender::builder().build(<span class="string">"ogmios-log"</span>, Box::new(ogmios_log)))
+<a href=#222 id=222 data-nosnippet>222</a>		.logger(
+<a href=#223 id=223 data-nosnippet>223</a>			log4rs::config::Logger::builder()
+<a href=#224 id=224 data-nosnippet>224</a>				.appender(<span class="string">"ogmios-log"</span>)
+<a href=#225 id=225 data-nosnippet>225</a>				.additive(<span class="bool-val">false</span>)
+<a href=#226 id=226 data-nosnippet>226</a>				.build(<span class="string">"ogmios_client::jsonrpsee"</span>, log::LevelFilter::Debug),
+<a href=#227 id=227 data-nosnippet>227</a>		)
+<a href=#228 id=228 data-nosnippet>228</a>		.build(log4rs::config::Root::builder().appender(<span class="string">"stderr"</span>).build(log::LevelFilter::Info))<span class="question-mark">?</span>;
 <a href=#229 id=229 data-nosnippet>229</a>
-<a href=#230 id=230 data-nosnippet>230</a>	<span class="prelude-val">Ok</span>(())
-<a href=#231 id=231 data-nosnippet>231</a>}
-<a href=#232 id=232 data-nosnippet>232</a>
-<a href=#233 id=233 data-nosnippet>233</a><span class="kw">async fn </span>print_result&lt;FIn&gt;(command_future: FIn) -&gt; <span class="prelude-ty">Result</span>&lt;(), sc_cli::Error&gt;
-<a href=#234 id=234 data-nosnippet>234</a><span class="kw">where
-<a href=#235 id=235 data-nosnippet>235</a>	</span>FIn: Future&lt;Output = <span class="prelude-ty">Result</span>&lt;String, String&gt;&gt;,
-<a href=#236 id=236 data-nosnippet>236</a>{
-<a href=#237 id=237 data-nosnippet>237</a>	<span class="kw">let </span>result = command_future.<span class="kw">await</span>.unwrap_or_else(|e| e);
-<a href=#238 id=238 data-nosnippet>238</a>	<span class="macro">println!</span>(<span class="string">"{}"</span>, result);
-<a href=#239 id=239 data-nosnippet>239</a>	<span class="prelude-val">Ok</span>(())
-<a href=#240 id=240 data-nosnippet>240</a>}
-<a href=#241 id=241 data-nosnippet>241</a>
-<a href=#242 id=242 data-nosnippet>242</a><span class="attr">#[cfg(test)]
-<a href=#243 id=243 data-nosnippet>243</a></span><span class="kw">mod </span>tests {
-<a href=#244 id=244 data-nosnippet>244</a>
-<a href=#245 id=245 data-nosnippet>245</a>	<span class="kw">async fn </span>some_err() -&gt; <span class="prelude-ty">Result</span>&lt;String, String&gt; {
-<a href=#246 id=246 data-nosnippet>246</a>		<span class="prelude-val">Err</span>(<span class="string">"some err"</span>.to_string())
-<a href=#247 id=247 data-nosnippet>247</a>	}
-<a href=#248 id=248 data-nosnippet>248</a>
-<a href=#249 id=249 data-nosnippet>249</a>	<span class="attr">#[tokio::test]
-<a href=#250 id=250 data-nosnippet>250</a>	</span><span class="kw">async fn </span>print_async_doesnt_fail_if_result_is_error() {
-<a href=#251 id=251 data-nosnippet>251</a>		<span class="kw">let </span>result = <span class="kw">super</span>::print_result(some_err()).<span class="kw">await</span>;
-<a href=#252 id=252 data-nosnippet>252</a>		<span class="macro">assert!</span>(result.is_ok());
-<a href=#253 id=253 data-nosnippet>253</a>	}
-<a href=#254 id=254 data-nosnippet>254</a>}</code></pre></div></section></main></body></html>
+<a href=#230 id=230 data-nosnippet>230</a>	log4rs::init_config(log_config)<span class="question-mark">?</span>;
+<a href=#231 id=231 data-nosnippet>231</a>
+<a href=#232 id=232 data-nosnippet>232</a>	<span class="prelude-val">Ok</span>(())
+<a href=#233 id=233 data-nosnippet>233</a>}
+<a href=#234 id=234 data-nosnippet>234</a>
+<a href=#235 id=235 data-nosnippet>235</a><span class="kw">async fn </span>print_result&lt;FIn&gt;(command_future: FIn) -&gt; <span class="prelude-ty">Result</span>&lt;(), sc_cli::Error&gt;
+<a href=#236 id=236 data-nosnippet>236</a><span class="kw">where
+<a href=#237 id=237 data-nosnippet>237</a>	</span>FIn: Future&lt;Output = <span class="prelude-ty">Result</span>&lt;String, String&gt;&gt;,
+<a href=#238 id=238 data-nosnippet>238</a>{
+<a href=#239 id=239 data-nosnippet>239</a>	<span class="kw">let </span>result = command_future.<span class="kw">await</span>.unwrap_or_else(|e| e);
+<a href=#240 id=240 data-nosnippet>240</a>	<span class="macro">println!</span>(<span class="string">"{}"</span>, result);
+<a href=#241 id=241 data-nosnippet>241</a>	<span class="prelude-val">Ok</span>(())
+<a href=#242 id=242 data-nosnippet>242</a>}
+<a href=#243 id=243 data-nosnippet>243</a>
+<a href=#244 id=244 data-nosnippet>244</a><span class="attr">#[cfg(test)]
+<a href=#245 id=245 data-nosnippet>245</a></span><span class="kw">mod </span>tests {
+<a href=#246 id=246 data-nosnippet>246</a>
+<a href=#247 id=247 data-nosnippet>247</a>	<span class="kw">async fn </span>some_err() -&gt; <span class="prelude-ty">Result</span>&lt;String, String&gt; {
+<a href=#248 id=248 data-nosnippet>248</a>		<span class="prelude-val">Err</span>(<span class="string">"some err"</span>.to_string())
+<a href=#249 id=249 data-nosnippet>249</a>	}
+<a href=#250 id=250 data-nosnippet>250</a>
+<a href=#251 id=251 data-nosnippet>251</a>	<span class="attr">#[tokio::test]
+<a href=#252 id=252 data-nosnippet>252</a>	</span><span class="kw">async fn </span>print_async_doesnt_fail_if_result_is_error() {
+<a href=#253 id=253 data-nosnippet>253</a>		<span class="kw">let </span>result = <span class="kw">super</span>::print_result(some_err()).<span class="kw">await</span>;
+<a href=#254 id=254 data-nosnippet>254</a>		<span class="macro">assert!</span>(result.is_ok());
+<a href=#255 id=255 data-nosnippet>255</a>	}
+<a href=#256 id=256 data-nosnippet>256</a>}</code></pre></div></section></main></body></html>

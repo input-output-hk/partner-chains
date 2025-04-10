@@ -13,7 +13,7 @@
 <a href=#13 id=13 data-nosnippet>13</a>		<span class="kw-2">&amp;</span><span class="self">self</span>,
 <a href=#14 id=14 data-nosnippet>14</a>		transaction: Transaction,
 <a href=#15 id=15 data-nosnippet>15</a>		witnesses: Vec&lt;Vkeywitness&gt;,
-<a href=#16 id=16 data-nosnippet>16</a>	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt;;
+<a href=#16 id=16 data-nosnippet>16</a>	) -&gt; anyhow::Result&lt;McTxHash&gt;;
 <a href=#17 id=17 data-nosnippet>17</a>}
 <a href=#18 id=18 data-nosnippet>18</a>
 <a href=#19 id=19 data-nosnippet>19</a><span class="kw">impl</span>&lt;C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId&gt; AssembleTx <span class="kw">for </span>C {
@@ -21,7 +21,7 @@
 <a href=#21 id=21 data-nosnippet>21</a>		<span class="kw-2">&amp;</span><span class="self">self</span>,
 <a href=#22 id=22 data-nosnippet>22</a>		transaction: Transaction,
 <a href=#23 id=23 data-nosnippet>23</a>		witnesses: Vec&lt;Vkeywitness&gt;,
-<a href=#24 id=24 data-nosnippet>24</a>	) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
+<a href=#24 id=24 data-nosnippet>24</a>	) -&gt; anyhow::Result&lt;McTxHash&gt; {
 <a href=#25 id=25 data-nosnippet>25</a>		assemble_tx(transaction, witnesses, <span class="self">self</span>, <span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes()).<span class="kw">await
 <a href=#26 id=26 data-nosnippet>26</a>	</span>}
 <a href=#27 id=27 data-nosnippet>27</a>}
@@ -34,7 +34,7 @@
 <a href=#34 id=34 data-nosnippet>34</a>	witnesses: Vec&lt;Vkeywitness&gt;,
 <a href=#35 id=35 data-nosnippet>35</a>	ogmios_client: <span class="kw-2">&amp;</span>C,
 <a href=#36 id=36 data-nosnippet>36</a>	await_tx: <span class="kw-2">&amp;</span>A,
-<a href=#37 id=37 data-nosnippet>37</a>) -&gt; anyhow::Result&lt;<span class="prelude-ty">Option</span>&lt;McTxHash&gt;&gt; {
+<a href=#37 id=37 data-nosnippet>37</a>) -&gt; anyhow::Result&lt;McTxHash&gt; {
 <a href=#38 id=38 data-nosnippet>38</a>	<span class="kw">let </span><span class="kw-2">mut </span>witness_set = transaction.witness_set();
 <a href=#39 id=39 data-nosnippet>39</a>
 <a href=#40 id=40 data-nosnippet>40</a>	<span class="kw">let </span><span class="kw-2">mut </span>vk = witness_set.vkeys().unwrap_or_else(Vkeywitnesses::new);
@@ -58,5 +58,5 @@
 <a href=#58 id=58 data-nosnippet>58</a>
 <a href=#59 id=59 data-nosnippet>59</a>	await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_id.<span class="number">0</span>, <span class="number">0</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
 <a href=#60 id=60 data-nosnippet>60</a>
-<a href=#61 id=61 data-nosnippet>61</a>	<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(tx_id))
+<a href=#61 id=61 data-nosnippet>61</a>	<span class="prelude-val">Ok</span>(tx_id)
 <a href=#62 id=62 data-nosnippet>62</a>}</code></pre></div></section></main></body></html>

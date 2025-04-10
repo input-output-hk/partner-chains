@@ -13,7 +13,7 @@
 <a href=#13 id=13 data-nosnippet>13</a>}
 <a href=#14 id=14 data-nosnippet>14</a>
 <a href=#15 id=15 data-nosnippet>15</a><span class="kw">impl </span>SignTxCmd {
-<a href=#16 id=16 data-nosnippet>16</a>	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::CmdResult&lt;()&gt; {
+<a href=#16 id=16 data-nosnippet>16</a>	<span class="kw">pub async fn </span>execute(<span class="self">self</span>) -&gt; <span class="kw">crate</span>::SubCmdResult {
 <a href=#17 id=17 data-nosnippet>17</a>		<span class="kw">let </span>payment_key = <span class="self">self</span>.payment_key_file.read_key()<span class="question-mark">?</span>;
 <a href=#18 id=18 data-nosnippet>18</a>
 <a href=#19 id=19 data-nosnippet>19</a>		<span class="kw">let </span>vkey_witness = sign_tx(<span class="self">self</span>.transaction.<span class="number">0</span>, <span class="kw-2">&amp;</span>payment_key)<span class="question-mark">?</span>;
@@ -25,9 +25,6 @@
 <a href=#25 id=25 data-nosnippet>25</a>				<span class="string">"cborHex"</span>: hex::encode(vkey_witness)
 <a href=#26 id=26 data-nosnippet>26</a>			}
 <a href=#27 id=27 data-nosnippet>27</a>		);
-<a href=#28 id=28 data-nosnippet>28</a>
-<a href=#29 id=29 data-nosnippet>29</a>		<span class="macro">println!</span>(<span class="string">"{}"</span>, json);
-<a href=#30 id=30 data-nosnippet>30</a>
-<a href=#31 id=31 data-nosnippet>31</a>		<span class="prelude-val">Ok</span>(())
-<a href=#32 id=32 data-nosnippet>32</a>	}
-<a href=#33 id=33 data-nosnippet>33</a>}</code></pre></div></section></main></body></html>
+<a href=#28 id=28 data-nosnippet>28</a>		<span class="prelude-val">Ok</span>(json)
+<a href=#29 id=29 data-nosnippet>29</a>	}
+<a href=#30 id=30 data-nosnippet>30</a>}</code></pre></div></section></main></body></html>
