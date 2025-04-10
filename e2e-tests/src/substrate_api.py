@@ -679,7 +679,9 @@ class SubstrateApi(BlockchainApi):
         return result.value
 
     def get_block_producer_metadata(self, cross_chain_public_key_hash: str):
-        result = self.substrate.query("BlockProducerMetadata", "BlockProducerMetadataStorage", [f"0x{cross_chain_public_key_hash}"])
+        result = self.substrate.query(
+            "BlockProducerMetadata", "BlockProducerMetadataStorage", [f"0x{cross_chain_public_key_hash}"]
+        )
         logger.debug(f"Block producer metadata for {cross_chain_public_key_hash}: {result}")
         return result.value
 
@@ -701,3 +703,31 @@ class SubstrateApi(BlockchainApi):
         logger.debug(f"Current session index: {session_index_result}, epoch number: {epoch_result}")
         initial_epoch = epoch_result.value - session_index_result.value
         return initial_epoch
+
+    def observe_token_transfer(self):
+        current_main_chain_block = self.get_mc_block()
+        max_main_chain_block = current_main_chain_block + self.config.main_chain.security_param
+
+        def subscription_handler(obj, update_nr, subscription_id):
+            block_no = obj["header"]["number"]
+            logger.debug(f"New block #{block_no}")
+            block = self.substrate.get_block(block_number=block_no)
+
+            token_transfer_value = None
+            for idx, extrinsic in enumerate(block["extrinsics"]):
+                logger.debug(f"# {idx}: {extrinsic.value}")
+                if (
+                    extrinsic.value["call"]["call_module"] == "NativeTokenManagement"
+                    and extrinsic.value["call"]["call_function"] == "transfer_tokens"
+                ):
+                    token_transfer_value = extrinsic.value["call"]["call_args"][0]["value"]
+                    break
+            if token_transfer_value:
+                return token_transfer_value
+            if self.get_mc_block() > max_main_chain_block:
+                logger.warning("Max main chain block reached. Stopping subscription.")
+                self.substrate.rpc_request("chain_unsubscribeNewHeads", [subscription_id])
+                return False
+
+        result = self.substrate.subscribe_block_headers(subscription_handler)
+        return result

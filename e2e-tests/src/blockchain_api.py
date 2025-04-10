@@ -508,3 +508,10 @@ class BlockchainApi(ABC):
             int -- initial PC epoch
         """
         pass
+
+    @abstractmethod
+    def observe_token_transfer(self) -> int:
+        """
+        TODO
+        """
+        pass
