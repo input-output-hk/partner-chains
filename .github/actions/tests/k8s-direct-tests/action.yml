@@ -447,13 +447,21 @@ runs:
       continue-on-error: true
       run: |
         # Get latest block hash
-        BLOCK_HASH=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        BLOCK_HASH_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d '{"jsonrpc":"2.0","method":"chain_getHeader","params":[],"id":1}' \
-          http://localhost:9933 | jq -r '.result.hash')
+          http://localhost:9933)
+        
+        # Check if block hash response is valid
+        if ! echo "$BLOCK_HASH_RESPONSE" | jq -e '.result.hash' > /dev/null; then
+          echo "❌ Failed to get block hash: $(echo "$BLOCK_HASH_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+          exit 1
+        fi
+        
+        BLOCK_HASH=$(echo "$BLOCK_HASH_RESPONSE" | jq -r '.result.hash')
         
         if [ -z "$BLOCK_HASH" ] || [ "$BLOCK_HASH" = "null" ]; then
-          echo "❌ Failed to get block hash"
+          echo "❌ Invalid block hash received"
           exit 1
         fi
         
@@ -489,22 +497,23 @@ runs:
         # Get current MC epoch
         MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
         
-        # Get payment key from Ariadne parameters
-        PAYMENT_KEY_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Get Ariadne parameters with epoch
+        ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
         # Check if Ariadne parameters response is valid
-        if ! echo "$PAYMENT_KEY_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to get Ariadne parameters: $(echo "$PAYMENT_KEY_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+        if ! echo "$ARIADNE_PARAMS" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get Ariadne parameters: $(echo "$ARIADNE_PARAMS" | jq -r '.error.message // "Unknown error"')"
           exit 1
         fi
         
-        PAYMENT_KEY=$(echo "$PAYMENT_KEY_RESPONSE" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        # Get payment key from the first permissioned candidate
+        PAYMENT_KEY=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
         
         if [ -z "$PAYMENT_KEY" ] || [ "$PAYMENT_KEY" = "null" ]; then
-          echo "❌ Invalid payment key received"
+          echo "❌ Failed to get payment key from Ariadne parameters"
           exit 1
         fi
         
@@ -536,23 +545,24 @@ runs:
         # Get current MC epoch
         MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
         
-        # Get required parameters from Ariadne parameters
-        PARAMS_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Get Ariadne parameters with epoch
+        ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
         # Check if Ariadne parameters response is valid
-        if ! echo "$PARAMS_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to get Ariadne parameters: $(echo "$PARAMS_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+        if ! echo "$ARIADNE_PARAMS" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get Ariadne parameters: $(echo "$ARIADNE_PARAMS" | jq -r '.error.message // "Unknown error"')"
           exit 1
         fi
         
-        V_FUNCTION_HASH=$(echo "$PARAMS_RESPONSE" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
-        PAYMENT_KEY=$(echo "$PARAMS_RESPONSE" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        # Get required parameters from the first permissioned candidate
+        V_FUNCTION_HASH=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        PAYMENT_KEY=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
         
         if [ -z "$V_FUNCTION_HASH" ] || [ "$V_FUNCTION_HASH" = "null" ] || [ -z "$PAYMENT_KEY" ] || [ "$PAYMENT_KEY" = "null" ]; then
-          echo "❌ Invalid parameters received"
+          echo "❌ Failed to get required parameters from Ariadne parameters"
           exit 1
         fi
         
@@ -584,23 +594,24 @@ runs:
         # Get current MC epoch
         MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
         
-        # Get required parameters from Ariadne parameters
-        PARAMS_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Get Ariadne parameters with epoch
+        ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
         # Check if Ariadne parameters response is valid
-        if ! echo "$PARAMS_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to get Ariadne parameters: $(echo "$PARAMS_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+        if ! echo "$ARIADNE_PARAMS" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get Ariadne parameters: $(echo "$ARIADNE_PARAMS" | jq -r '.error.message // "Unknown error"')"
           exit 1
         fi
         
-        REFERENCE_UTXO=$(echo "$PARAMS_RESPONSE" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
-        PAYMENT_KEY=$(echo "$PARAMS_RESPONSE" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        # Get required parameters from the first permissioned candidate
+        REFERENCE_UTXO=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        PAYMENT_KEY=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
         
         if [ -z "$REFERENCE_UTXO" ] || [ "$REFERENCE_UTXO" = "null" ] || [ -z "$PAYMENT_KEY" ] || [ "$PAYMENT_KEY" = "null" ]; then
-          echo "❌ Invalid parameters received"
+          echo "❌ Failed to get required parameters from Ariadne parameters"
           exit 1
         fi
         
@@ -632,22 +643,23 @@ runs:
         # Get current MC epoch
         MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
         
-        # Get payment key from Ariadne parameters
-        PARAMS_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Get Ariadne parameters with epoch
+        ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
         # Check if Ariadne parameters response is valid
-        if ! echo "$PARAMS_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to get Ariadne parameters: $(echo "$PARAMS_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+        if ! echo "$ARIADNE_PARAMS" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get Ariadne parameters: $(echo "$ARIADNE_PARAMS" | jq -r '.error.message // "Unknown error"')"
           exit 1
         fi
         
-        PAYMENT_KEY=$(echo "$PARAMS_RESPONSE" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        # Get payment key from the first permissioned candidate
+        PAYMENT_KEY=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
         
         if [ -z "$PAYMENT_KEY" ] || [ "$PAYMENT_KEY" = "null" ]; then
-          echo "❌ Invalid payment key received"
+          echo "❌ Failed to get payment key from Ariadne parameters"
           exit 1
         fi
         
@@ -679,22 +691,23 @@ runs:
         # Get current MC epoch
         MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
         
-        # Get payment key from Ariadne parameters
-        PARAMS_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        # Get Ariadne parameters with epoch
+        ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
           -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
         # Check if Ariadne parameters response is valid
-        if ! echo "$PARAMS_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to get Ariadne parameters: $(echo "$PARAMS_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+        if ! echo "$ARIADNE_PARAMS" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get Ariadne parameters: $(echo "$ARIADNE_PARAMS" | jq -r '.error.message // "Unknown error"')"
           exit 1
         fi
         
-        PAYMENT_KEY=$(echo "$PARAMS_RESPONSE" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        # Get payment key from the first permissioned candidate
+        PAYMENT_KEY=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
         
         if [ -z "$PAYMENT_KEY" ] || [ "$PAYMENT_KEY" = "null" ]; then
-          echo "❌ Invalid payment key received"
+          echo "❌ Failed to get payment key from Ariadne parameters"
           exit 1
         fi
         

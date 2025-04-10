@@ -1,12 +1,7 @@
-import io
 import logging
-import paramiko
 import subprocess
-import yaml
 from abc import ABC, abstractmethod
-from config.api_config import SSH
-from scp import SCPClient
-import time
+from typing import Optional
 
 
 STDOUT_MAX_LEN = 2000
@@ -24,11 +19,8 @@ class Result:
 
 class RunnerFactory:
     @staticmethod
-    def get_runner(ssh: SSH, shell: str):
-        if ssh:
-            return SSHRunner(ssh)
-        else:
-            return LocalRunner(shell)
+    def get_runner(ssh: Optional[None], shell: str):
+        return LocalRunner(shell)
 
 
 class Runner(ABC):
@@ -36,16 +28,8 @@ class Runner(ABC):
     def run(self, command: str, timeout=120) -> Result:
         """Run any command.
 
-        Currently supports two types of runners: LocalRunner and SSHRunner.
-
-        LocalRunner is used when no SSH configuration is provided.
+        Currently only supports LocalRunner.
         It uses subprocess.run to execute the command with shell=True.
-
-        SSHRunner is used when SSH configuration is provided.
-        It uses paramiko.SSHClient to establish an SSH connection and execute the command.
-        It uses get_pty=True to allocate a pseudo-terminal for the command (needed for saving logs to a file
-        on remote host for some commands). This implies that the stderr is merged into stdout, see bug ->
-        https://github.com/paramiko/paramiko/issues/1142
 
         Arguments:
             command {str} -- command to run
@@ -105,86 +89,3 @@ class LocalRunner(Runner):
         except Exception as e:
             logging.error(f"UNKNOWN ERROR: {e}")
             raise e
-
-
-class SSHRunner(Runner):
-    def __init__(self, ssh_config: SSH):
-        self.host = ssh_config.host
-        self.port = ssh_config.port
-        self.user = ssh_config.username
-        self.key_path = ssh_config.private_key_path
-        self.client = paramiko.SSHClient()
-        if ssh_config.host_keys_path:
-            self.client.load_host_keys(ssh_config.host_keys_path)
-
-    def load_key_from_yaml(self, path):
-        with open(path, "r") as file:
-            key = yaml.safe_load(file)["ssh_key"]
-            return key
-
-    def connect(self):
-        logging.debug(f"SSH: Connecting to {self.host}:{self.port} as {self.user}")
-        try:
-            private_key_str = self.load_key_from_yaml(self.key_path)
-            private_key = paramiko.RSAKey.from_private_key(io.StringIO(private_key_str))
-            self.client.connect(self.host, self.port, self.user, pkey=private_key)
-        except paramiko.AuthenticationException as auth_err:
-            logging.error(f"Authentication failed: {auth_err}")
-            raise auth_err
-        except paramiko.SSHException as ssh_err:
-            logging.error(f"Unable to establish SSH connection: {ssh_err}")
-            raise ssh_err
-        except Exception as e:
-            logging.error(f"An error occurred: {e}")
-            raise e
-
-        return None
-
-    def run(self, command: str, timeout=120) -> Result:
-        self.connect()
-        logging.debug(f"CMD: '{command}' TIMEOUT: {timeout}")
-        try:
-            _, stdout, stderr = self.client.exec_command(command, get_pty=True, timeout=timeout)
-
-            # Wait until we can read the channel.
-            # We check stdout only because stderr is merged into in with get_pty=True
-            end_time = time.time() + timeout
-            while not stdout.channel.exit_status_ready():
-                time.sleep(1)
-                if time.time() > end_time:
-                    raise TimeoutError(f"Command '{command}' timed out after {timeout}s")
-            output = stdout.read().decode()
-
-            # this blocks execution until the command finishes, but it should be merged already into stdout
-            returncode = stderr.channel.recv_exit_status()
-            error = stderr.read().decode()
-
-            result = Result(returncode=returncode, stdout=output, stderr=error)
-            truncated_output = (
-                result.stdout[:STDOUT_MAX_LEN] + "..." if len(result.stdout) > STDOUT_MAX_LEN else result.stdout
-            )
-            logging.debug(f"STDOUT: {truncated_output}")
-            if result.stderr:
-                logging.error(f"STDERR: {result.stderr}")
-            return result
-        except TimeoutError as e:
-            logging.error(f"TIMEOUT: {e}")
-            raise e
-        except Exception as e:
-            logging.error(f"UNKNOWN ERROR: {e}")
-            raise e
-        finally:
-            self.close()
-
-    def scp(self, path, remote_path):
-        self.connect()
-        logging.debug(f"SCP: '{path}' INTO: {remote_path}")
-        try:
-            with SCPClient(self.client.get_transport()) as scp:
-                scp.put(path, remote_path=remote_path)
-        finally:
-            self.close()
-
-    def close(self):
-        self.client.close()
-        logging.debug(f"SSH: disconnected from {self.host}:{self.port} as {self.user}")

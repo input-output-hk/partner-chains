@@ -28,7 +28,7 @@ class CardanoCli:
     def __init__(self, config: MainChainConfig, cardano_cli: Tool):
         self.cli = cardano_cli.cli
         self.network = config.network
-        self.run_command = RunnerFactory.get_runner(cardano_cli.ssh, cardano_cli.shell)
+        self.run_command = RunnerFactory.get_runner(None, cardano_cli.shell)
 
     def query_tip(self) -> int:
         cmd = f"{self.cli} latest query tip {self.network}"
