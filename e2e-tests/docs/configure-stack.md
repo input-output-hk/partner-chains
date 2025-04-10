@@ -60,8 +60,9 @@ Here's a template for the `<env>_stack.json` file:
                 "shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --"
             },
             "bech32": {
-                "cli": "bech32",
-                "shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --"
+                "cli": "/tools/bech32",
+                "shell": "kubectl exec -it binary-host -c binary-host -n sc --"
+                #"shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --"
             }
         }
     }
@@ -113,8 +114,9 @@ To configure the stack in Kubernetes, you will need to do the following:
                 "shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --"
             },
             "bech32": {
-                "cli": "bech32",
-                "shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --"
+                "cli": "/tools/bech32",
+                "shell": "kubectl exec -it binary-host -c binary-host -n sc --"
+                #"shell": "kubectl exec -it ${stack_config[validator_name]} -c substrate-node -n ${stack_config[namespace]} --"
             }
         }
     }
