@@ -129,12 +129,9 @@ class CardanoCli:
         logger.debug(f"Stake verification key: {verification_key}")
         return signing_key, verification_key
 
-    def build_address(self, payment_vkey, stake_vkey=None):
+    def build_address(self, payment_vkey):
         logger.debug("Building address...")
-        cmd = f"{self.cli} latest address build --payment-verification-key {payment_vkey}"
-        if stake_vkey:
-            cmd += f" --stake-verification-key {stake_vkey}"
-        cmd += f" {self.network}"
+        cmd = f"{self.cli} latest address build --payment-verification-key {payment_vkey} {self.network}"
         result = self.run_command.run(cmd)
         if result.stderr:
             logger.error(result.stderr)
@@ -174,15 +171,15 @@ class CardanoCli:
             logger.error(result.stderr)
         return result.stdout.strip()
 
-    def generate_policy_id(self, script_file):
-        logger.debug("Generating policy id...")
+    def get_policy_id(self, script_file):
+        logger.debug("Calculating policy id...")
         cmd = f"{self.cli} latest transaction policyid --script-file {script_file}"
         result = self.run_command.run(cmd)
         if result.stderr:
             logger.error(result.stderr)
         return result.stdout.strip()
 
-    def mint_token(self, tx_in, address, lovelace, amount, token, policy_script_filepath):
+    def build_mint_tx(self, tx_in, address, lovelace, amount, token, policy_script_filepath):
         logger.debug("Building transaction for minting tokens...")
         minting_token_tx_filepath = f"/tmp/minting_tx_{uuid.uuid4().hex}.raw"
         cmd = (

@@ -47,7 +47,7 @@ def minting_policy_filepath(api: BlockchainApi, governance_vkey_bech32, write_fi
 
 @fixture(scope="package")
 def minting_policy_id(api: BlockchainApi, minting_policy_filepath):
-    policy_id = api.cardano_cli.generate_policy_id(minting_policy_filepath)
+    policy_id = api.cardano_cli.get_policy_id(minting_policy_filepath)
     return policy_id
 
 
@@ -72,7 +72,7 @@ def mint_token(
 
     def _mint_token(amount: int):
         logging.info(f"Minting {amount} native tokens...")
-        _, tx_filepath = api.cardano_cli.mint_token(
+        _, tx_filepath = api.cardano_cli.build_mint_tx(
             tx_in=transaction_input(),
             address=governance_address,
             lovelace=lovelace_amount,
@@ -123,7 +123,7 @@ def v_function_factory(
         v_function_script = read_v_function_script_file(v_function_path)
         v_function_cbor = v_function_script["cborHex"]
         script_path = write_file(api.cardano_cli.run_command, v_function_script)
-        script_hash = api.cardano_cli.generate_policy_id(script_path)
+        script_hash = api.cardano_cli.get_policy_id(script_path)
         attach_v_function_to_utxo(v_function_address, script_path)
         utxo = wait_until(reference_utxo, v_function_address, v_function_cbor, timeout=config.timeouts.main_chain_tx)
         v_function = VFunction(
