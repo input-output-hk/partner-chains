@@ -1,5 +1,6 @@
 {
     "stack_config": {
+        "ogmios_scheme": "ws",
         "ogmios_host": "devnet-services-service",
         "ogmios_port": 1337,
         "tools_host": "10.0.12.65",

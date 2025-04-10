@@ -13,7 +13,8 @@ STDOUT_MAX_LEN = 2000
 
 
 class Result:
-    def __init__(self, stdout: str, stderr: str):
+    def __init__(self, returncode: int, stdout: str, stderr: str):
+        self.returncode = returncode
         self.stdout = stdout
         self.stderr = stderr
 
@@ -53,7 +54,7 @@ class Runner(ABC):
             timeout {int} -- default: 120s
 
         Returns:
-            Result -- object containing stdout and stderr
+            Result -- object containing returncode, stdout and stderr
         """
         pass
 
@@ -86,7 +87,11 @@ class LocalRunner(Runner):
                 executable=executable,
                 encoding="utf-8",
             )
-            result = Result(stdout=completed_process.stdout, stderr=completed_process.stderr)
+            result = Result(
+                returncode=completed_process.returncode,
+                stdout=completed_process.stdout,
+                stderr=completed_process.stderr,
+            )
             truncated_output = (
                 result.stdout[:STDOUT_MAX_LEN] + "..." if len(result.stdout) > STDOUT_MAX_LEN else result.stdout
             )
@@ -151,10 +156,10 @@ class SSHRunner(Runner):
             output = stdout.read().decode()
 
             # this blocks execution until the command finishes, but it should be merged already into stdout
-            stderr.channel.recv_exit_status()
+            returncode = stderr.channel.recv_exit_status()
             error = stderr.read().decode()
 
-            result = Result(stdout=output, stderr=error)
+            result = Result(returncode=returncode, stdout=output, stderr=error)
             truncated_output = (
                 result.stdout[:STDOUT_MAX_LEN] + "..." if len(result.stdout) > STDOUT_MAX_LEN else result.stdout
             )

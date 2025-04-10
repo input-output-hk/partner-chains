@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from src.cardano_cli import CardanoCli
 from src.partner_chain_rpc import PartnerChainRpcResponse, DParam
 from src.partner_chains_node.node import PartnerChainsNode
 from src.partner_chains_node.models import AddressAssociationSignature, BlockProducerMetadataSignature
@@ -27,6 +28,7 @@ class Wallet:
 
 
 class BlockchainApi(ABC):
+    cardano_cli: CardanoCli
     partner_chains_node: PartnerChainsNode
 
     @abstractmethod
