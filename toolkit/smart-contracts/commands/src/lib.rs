@@ -74,15 +74,10 @@ impl SmartContractsCmd {
 			Self::Reserve(cmd) => cmd.execute().await,
 			Self::AssembleAndSubmitTx(cmd) => cmd.execute().await,
 			Self::SignTx(cmd) => cmd.execute().await,
-<<<<<<< HEAD
-			Self::KeyValue(cmd) => cmd.execute().await,
+			Self::GovernedMap(cmd) => cmd.execute().await,
 		}?;
 		println!("{}", result);
 		Ok(())
-=======
-			Self::GovernedMap(cmd) => cmd.execute().await,
-		}
->>>>>>> 0bcf0bf7b (Governed map refactor)
 	}
 
 	pub fn execute_blocking(self) -> CmdResult<()> {
