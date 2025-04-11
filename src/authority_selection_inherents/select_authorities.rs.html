@@ -30,7 +30,7 @@
 <a href=#30 id=30 data-nosnippet>30</a>
 <a href=#31 id=31 data-nosnippet>31</a>	<span class="kw">let </span>random_seed = seed_from_nonce_and_sc_epoch(<span class="kw-2">&amp;</span>input.epoch_nonce, <span class="kw-2">&amp;</span>sidechain_epoch);
 <a href=#32 id=32 data-nosnippet>32</a>
-<a href=#33 id=33 data-nosnippet>33</a>	<span class="kw">if let </span><span class="prelude-val">Some</span>(validators) = selection::ariadne::select_authorities(
+<a href=#33 id=33 data-nosnippet>33</a>	<span class="kw">if let </span><span class="prelude-val">Some</span>(validators) = selection::ariadne_v2::select_authorities(
 <a href=#34 id=34 data-nosnippet>34</a>		input.d_parameter.num_registered_candidates,
 <a href=#35 id=35 data-nosnippet>35</a>		input.d_parameter.num_permissioned_candidates,
 <a href=#36 id=36 data-nosnippet>36</a>		valid_registered_candidates,
