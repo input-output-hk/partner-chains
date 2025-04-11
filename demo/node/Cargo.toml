@@ -94,6 +94,7 @@ sp-native-token-management = { workspace = true }
 partner-chains-db-sync-data-sources = { workspace = true, features = [
     "block-source",
     "candidate-source",
+    "governed-map",
     "native-token",
     "mc-hash",
     "sidechain-rpc",
@@ -102,6 +103,7 @@ partner-chains-db-sync-data-sources = { workspace = true, features = [
 partner-chains-mock-data-sources = { workspace = true, features = [
     "block-source",
     "candidate-source",
+    "governed-map",
     "native-token",
     "mc-hash",
     "sidechain-rpc",
