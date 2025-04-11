@@ -28,8 +28,7 @@ impl TryFrom<PlutusData> for GovernedMapDatum {
 			.and_then(|list| {
 				list.get(0)
 					.as_bytes()
-					.map(|key| String::from_utf8(key).ok().map(|key| (list, key)))
-					.flatten()
+					.and_then(|key| String::from_utf8(key).ok().map(|key| (list, key)))
 			})
 			.and_then(|(list, key)| list.get(1).as_bytes().map(|value| (key, value)))
 			.ok_or_else(error)
