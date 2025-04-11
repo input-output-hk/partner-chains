@@ -15,11 +15,11 @@ sp-core = { workspace = true }
 sp-runtime = { workspace = true }
 sp-api = { workspace = true }
 sp-blockchain = { workspace = true }
-sp-session-validator-management = { workspace = true, default-features = true }
-sp-sidechain = { workspace = true, default-features = true }
-sidechain-domain = { workspace = true, default-features = true }
+sp-session-validator-management = { workspace = true, features = ["std"] }
+sp-sidechain = { workspace = true, features = ["std"] }
+sidechain-domain = { workspace = true, features = ["std"] }
 sidechain-block-search = { workspace = true }
-authority-selection-inherents = { workspace = true, default-features = true }
+authority-selection-inherents = { workspace = true, features = ["std"] }
 thiserror = { workspace = true }
 plutus = { workspace = true }
 

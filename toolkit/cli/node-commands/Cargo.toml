@@ -16,13 +16,13 @@ parity-scale-codec = { workspace = true }
 partner-chains-cli = { workspace = true }
 partner-chains-smart-contracts-commands = { workspace = true }
 plutus = { workspace = true }
-sidechain-domain = { workspace = true, default-features = true }
-sc-cli = { workspace = true, default-features = true }
-sc-service = { workspace = true, default-features = true }
-sp-api = { workspace = true, default-features = true }
-sp-blockchain = { workspace = true, default-features = true }
-sp-runtime = { workspace = true, default-features = true }
-sp-sidechain = { workspace = true, default-features = true }
+sidechain-domain = { workspace = true, features = ["std"] }
+sc-cli = { workspace = true }
+sc-service = { workspace = true }
+sp-api = { workspace = true, features = ["std"] }
+sp-blockchain = { workspace = true }
+sp-runtime = { workspace = true, features = ["std"] }
+sp-sidechain = { workspace = true, features = ["std"] }
 sp-session-validator-management = { workspace = true }
 sp-session-validator-management-query = { workspace = true }
 
