@@ -7,7 +7,7 @@ license = "Apache-2.0"
 
 [dependencies]
 log = { workspace = true }
-sidechain-domain = { workspace = true, default-features = true }
+sidechain-domain = { workspace = true, features = ["std"] }
 
 cardano-serialization-lib = { workspace = true }
 thiserror = { workspace = true }
