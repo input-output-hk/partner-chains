@@ -5,6 +5,8 @@ use std::sync::Arc;
 pub mod block;
 #[cfg(feature = "candidate-source")]
 pub mod candidate;
+#[cfg(feature = "governed-map")]
+pub mod governed_map;
 #[cfg(feature = "mc-hash")]
 pub mod mc_hash;
 #[cfg(feature = "native-token")]
