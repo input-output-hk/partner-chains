@@ -1,4 +1,5 @@
 use core::fmt::{Debug, Display};
+use core::ops::Deref;
 
 use alloc::string::ToString;
 use alloc::vec::Vec;
@@ -21,9 +22,23 @@ use sp_core::Get;
 #[cfg_attr(feature = "serde", byte_string(hex_serialize, hex_deserialize))]
 pub struct ByteString(pub Vec<u8>);
 
+impl From<&[u8]> for ByteString {
+	fn from(bytes: &[u8]) -> Self {
+		Self(bytes.to_vec())
+	}
+}
+
 impl From<Vec<u8>> for ByteString {
 	fn from(vec: Vec<u8>) -> Self {
 		Self(vec)
+	}
+}
+
+impl Deref for ByteString {
+	type Target = [u8];
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
 	}
 }
 
@@ -58,7 +73,7 @@ impl<const N: usize> Default for SizedByteString<N> {
 /// Byte-encoded text string with bounded length
 #[derive(TypeInfo, Encode, Decode, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
-#[derive_where(Clone, PartialEq, Eq, Default)]
+#[derive_where(Clone, PartialEq, Eq, Default, PartialOrd, Ord)]
 pub struct BoundedString<T: Get<u32>>(pub BoundedVec<u8, T>);
 
 impl<T: Get<u32>> TryFrom<Vec<u8>> for BoundedString<T> {
