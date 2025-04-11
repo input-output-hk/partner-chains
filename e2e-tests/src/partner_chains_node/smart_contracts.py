@@ -178,7 +178,7 @@ class SmartContracts:
                 f"--genesis-utxo {self.config.genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.run(cmd)
+            response = self.run_command.run(cmd, timeout=self.config.timeouts.main_chain_tx)
             return parse_response(response)
 
         def release(self, reference_utxo, amount, payment_key):
