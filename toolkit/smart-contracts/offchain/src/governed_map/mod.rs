@@ -137,7 +137,6 @@ fn insert_key_value_tx(
 	ctx: &TransactionContext,
 ) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
-	// The essence of transaction: mint D-Param token and set output with it, mint a governance token.
 	tx_builder.add_mint_one_script_token(
 		policy,
 		&empty_asset_name(),
