@@ -43,9 +43,6 @@ class Runner(ABC):
 
         SSHRunner is used when SSH configuration is provided.
         It uses paramiko.SSHClient to establish an SSH connection and execute the command.
-        It uses get_pty=True to allocate a pseudo-terminal for the command (needed for saving logs to a file
-        on remote host for some commands). This implies that the stderr is merged into stdout, see bug ->
-        https://github.com/paramiko/paramiko/issues/1142
 
         Arguments:
             command {str} -- command to run
@@ -97,7 +94,7 @@ class LocalRunner(Runner):
             )
             logging.debug(f"STDOUT: {truncated_output}")
             if result.stderr:
-                logging.error(f"STDERR: {result.stderr}")
+                logging.warning(f"STDERR: {result.stderr}")
             return result
         except subprocess.TimeoutExpired as e:
             logging.error(f"TIMEOUT: {e}")
@@ -144,12 +141,11 @@ class SSHRunner(Runner):
         self.connect()
         logging.debug(f"CMD: '{command}' TIMEOUT: {timeout}")
         try:
-            _, stdout, stderr = self.client.exec_command(command, get_pty=True, timeout=timeout)
+            _, stdout, stderr = self.client.exec_command(command, timeout=timeout)
 
             # Wait until we can read the channel.
-            # We check stdout only because stderr is merged into in with get_pty=True
             end_time = time.time() + timeout
-            while not stdout.channel.exit_status_ready():
+            while not stdout.channel.exit_status_ready() and not stderr.channel.exit_status_ready():
                 time.sleep(1)
                 if time.time() > end_time:
                     raise TimeoutError(f"Command '{command}' timed out after {timeout}s")
@@ -165,7 +161,7 @@ class SSHRunner(Runner):
             )
             logging.debug(f"STDOUT: {truncated_output}")
             if result.stderr:
-                logging.error(f"STDERR: {result.stderr}")
+                logging.warning(f"STDERR: {result.stderr}")
             return result
         except TimeoutError as e:
             logging.error(f"TIMEOUT: {e}")

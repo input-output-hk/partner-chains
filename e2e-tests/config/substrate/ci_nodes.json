@@ -110,6 +110,9 @@
     "d_param_max": {
       "permissioned_candidates_number": 6,
       "trustless_candidates_number": 4
+    },
+    "reserve": {
+      "token_name": "PCTokenDemo"
     }
   }
 }

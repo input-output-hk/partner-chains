@@ -68,8 +68,8 @@ class TestInitReserve:
     def test_init_reserve(self, init_reserve):
         response = init_reserve
         assert response.returncode == 0
-        if (response.json == []):
-        	skip("Reserve already initialized")
+        if response.json == []:
+            skip("Reserve already initialized")
 
 
 class TestCreateReserve:
