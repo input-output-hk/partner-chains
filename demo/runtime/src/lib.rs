@@ -566,6 +566,16 @@ impl pallet_block_participation::Config for Runtime {
 	const TARGET_INHERENT_ID: InherentIdentifier = TestHelperPallet::INHERENT_IDENTIFIER;
 }
 
+impl pallet_governed_map::Config for Runtime {
+	type MaxChanges = ConstU32<16>;
+	type MaxKeyLength = ConstU32<64>;
+	type MaxValueLength = ConstU32<512>;
+	type WeightInfo = pallet_governed_map::weights::SubstrateWeight<Runtime>;
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
+}
+
 impl crate::test_helper_pallet::Config for Runtime {}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -594,6 +604,7 @@ construct_runtime!(
 		// The order matters!! pallet_partner_chains_session needs to come last for correct initialization order
 		Session: pallet_partner_chains_session,
 		NativeTokenManagement: pallet_native_token_management,
+		GovernedMap: pallet_governed_map,
 		TestHelperPallet: crate::test_helper_pallet,
 	}
 );
@@ -648,6 +659,7 @@ mod benches {
 		[pallet_address_associations, AddressAssociations]
 		[pallet_block_producer_metadata, BlockProducerMetadata]
 		[pallet_block_participation, BlockParticipation]
+		[pallet_governed_map, GovernedMap]
 	);
 }
 

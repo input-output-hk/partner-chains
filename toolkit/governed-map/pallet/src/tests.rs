@@ -1,5 +1,4 @@
 use crate::mock::*;
-use crate::pallet::*;
 use crate::*;
 use frame_support::traits::UnfilteredDispatchable;
 use sp_core::bounded_vec;
