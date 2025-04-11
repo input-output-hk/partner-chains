@@ -13,6 +13,9 @@ inputs:
   tests:
     description: "Test set to run (premerge or postmerge)"
     required: true
+  multisig:
+    description: "Run multisig tests"
+    required: false
 
 outputs: {}
 
@@ -102,6 +105,7 @@ runs:
         keyword: "test_get_status or test_get_params"
         blockchain: substrate
         local-environment: "true"
+        multisig: ${{ inputs.multisig == true && 'true' || '' }}
     - name: Wait for epoch 2
       uses: ./.github/actions/tests/wait-for-epoch
       with:
@@ -121,6 +125,7 @@ runs:
         blockchain: substrate
         markers: "not probability and not rpc"
         local-environment: "true"
+        multisig: ${{ inputs.multisig == true && 'true' || '' }}
     - name: Wait for epoch 3
       if: ${{ inputs.tests == 'postmerge' }}
       uses: ./.github/actions/tests/wait-for-epoch
@@ -138,6 +143,7 @@ runs:
         blockchain: substrate
         markers: "not probability"
         local-environment: "true"
+        multisig: ${{ inputs.multisig == true && 'true' || '' }}
     - name: Wait for epoch 4
       if: ${{ inputs.tests == 'postmerge' }}
       uses: ./.github/actions/tests/wait-for-epoch
@@ -154,8 +160,9 @@ runs:
         mc_epoch: 3
         init_timestamp: ${{ env.INIT_TIMESTAMP }}
         blockchain: substrate
-        markers: "not probability and not reserve"
+        markers: "not probability and not reserve_init"
         local-environment: "true"
+        multisig: ${{ inputs.multisig == true && 'true' || '' }}
     - name: Check if no skipped tests
       if: ${{ inputs.tests == 'postmerge' }}
       run: |

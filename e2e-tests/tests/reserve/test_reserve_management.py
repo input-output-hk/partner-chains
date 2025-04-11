@@ -65,6 +65,7 @@ def circulation_supply_initial_balance(create_reserve, api: BlockchainApi, reser
 
 
 class TestInitReserve:
+    @mark.reserve_init
     def test_init_reserve(self, init_reserve):
         response = init_reserve
         assert response.returncode == 0
