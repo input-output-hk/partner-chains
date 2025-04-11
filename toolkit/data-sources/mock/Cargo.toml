@@ -24,13 +24,14 @@ serde_json = { workspace = true }
 sidechain-domain = { workspace = true }
 sp-timestamp = { workspace = true }
 sp-native-token-management = { workspace = true, optional = true }
+sp-governed-map = { workspace = true, optional = true }
 sidechain-mc-hash = { workspace = true, optional = true }
 sp-block-participation = { workspace = true, optional = true }
 pallet-sidechain-rpc = { workspace = true, optional = true }
 authority-selection-inherents = { workspace = true, optional = true }
 
 [features]
-default = ["std", "block-source", "candidate-source", "native-token"]
+default = ["std", "block-source", "candidate-source", "governed-map", "native-token"]
 std = [
 	"serde_json/std",
 	"sidechain-domain/std",
@@ -40,6 +41,7 @@ std = [
 ]
 block-source = []
 candidate-source = ["authority-selection-inherents"]
+governed-map = ["sp-governed-map"]
 native-token = ["sp-native-token-management"]
 mc-hash = ["sidechain-mc-hash"]
 sidechain-rpc = ["pallet-sidechain-rpc"]
