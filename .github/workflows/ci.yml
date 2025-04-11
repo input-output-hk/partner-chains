@@ -131,7 +131,7 @@ jobs:
         run: |
           earthly -P +ci-pre-merge \
           --images="${{ secrets.ECR_REGISTRY_SECRET }}/partner-chains-node" \
-          --tags="${{ steps.get_sha.outputs.sha }} latest"
+          --tags="${{ steps.get_sha.outputs.sha }}"
       - name: Upload partner-chains-node artifact
         uses: actions/upload-artifact@v4
         with:
