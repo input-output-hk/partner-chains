@@ -44,7 +44,7 @@ mod idp_v1 {
 	}
 
 	#[tokio::test]
-	async fn is_inert_if_no_changes() {
+	async fn is_empty_when_there_are_no_changes() {
 		let api = TestApiV1 {
 			stored_mappings: [
 				("deleted_key".into(), vec![1].into()),
@@ -64,7 +64,7 @@ mod idp_v1 {
 		.await
 		.expect("Should succeed");
 
-		assert_eq!(idp, GovernedMapInherentDataProvider::Inert);
+		assert_eq!(idp, GovernedMapInherentDataProvider::ActiveV1 { changes: vec![] });
 	}
 
 	#[tokio::test]

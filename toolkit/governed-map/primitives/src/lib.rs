@@ -199,7 +199,7 @@ impl GovernedMapInherentDataProvider {
 		let mut changes: ChangesV1 = ChangesV1::new();
 
 		for (key, value) in current_entries.iter() {
-			if !entries_in_storage.contains_key(key) || entries_in_storage[key] != *value {
+			if entries_in_storage.get(key) != Some(value) {
 				changes.push(GovernedMapChangeV1::upsert(&key, &value));
 			}
 		}
@@ -212,11 +212,7 @@ impl GovernedMapInherentDataProvider {
 
 		changes.sort();
 
-		if changes.is_empty() {
-			Ok(Self::Inert)
-		} else {
-			Ok(Self::ActiveV1 { changes })
-		}
+		Ok(Self::ActiveV1 { changes })
 	}
 }
 
