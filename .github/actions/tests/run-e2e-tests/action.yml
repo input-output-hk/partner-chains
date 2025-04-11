@@ -43,6 +43,9 @@ inputs:
     description: 'Number of threads to use'
     required: false
     default: '4'
+  multisig:
+    description: 'Run multisig tests'
+    required: false
 
 runs:
   using: composite
@@ -77,6 +80,11 @@ runs:
           decrypt_switch="--decrypt"
         fi
 
+        multisig_switch=""
+        if [ "${{ inputs.multisig }}" = "true" ]; then
+          multisig_switch="--multisig"
+        fi
+
         pytest_cmd="pytest --blockchain '${{ inputs.blockchain }}' \
           --env '${{ inputs.env }}' \
           --log-cli-level '${{ inputs.log_level }}' \
@@ -90,6 +98,7 @@ runs:
           ${latest_mc_epoch_switch} \
           ${deployment_mc_epoch_switch} \
           ${decrypt_switch} \
+          ${multisig_switch} \
           --json-report \
           --json-report-file=logs/.report.json \
           --json-report-summary \
