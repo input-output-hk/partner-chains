@@ -11,7 +11,7 @@ pub enum GovernedMapCmd {
 }
 
 impl GovernedMapCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		match self {
 			Self::Insert(cmd) => cmd.execute().await,
 		}
@@ -33,7 +33,7 @@ pub struct InsertCmd {
 }
 
 impl InsertCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 
 		let client = self.common_arguments.get_ogmios_client().await?;
@@ -47,10 +47,6 @@ impl InsertCmd {
 			&FixedDelayRetries::two_minutes(),
 		)
 		.await?;
-		match result {
-			Some(result) => println!("{}", serde_json::to_value(result)?),
-			None => println!("{{}}"),
-		}
-		Ok(())
+		Ok(serde_json::json!(result))
 	}
 }
