@@ -142,8 +142,7 @@ pub mod pallet {
 				return Err(TooManyChanges);
 			}
 
-			let mut changes: BoundedVec<(MapKey<T>, Option<MapValue<T>>), T::MaxChanges> =
-				BoundedVec::new();
+			let mut changes = Changes::<T>::new();
 			for GovernedMapChangeV1 { key, new_value } in raw_changes {
 				let new_value = match new_value {
 					Some(new_value) => Some(Self::bound_value(&key, new_value)?),
@@ -170,10 +169,7 @@ pub mod pallet {
 		/// Inherent to register any changes in the state of the Governed Map on Cardano compared to the state currently stored in the pallet.
 		#[pallet::call_index(0)]
 		#[pallet::weight((T::WeightInfo::register_changes(), DispatchClass::Mandatory))]
-		pub fn register_changes(
-			origin: OriginFor<T>,
-			changes: BoundedVec<(MapKey<T>, Option<MapValue<T>>), T::MaxChanges>,
-		) -> DispatchResult {
+		pub fn register_changes(origin: OriginFor<T>, changes: Changes<T>) -> DispatchResult {
 			ensure_none(origin)?;
 
 			log::info!("💾 Registering {} Governed Map changes", changes.len(),);

@@ -74,6 +74,9 @@ impl crate::pallet::Config for Test {
 	type MaxValueLength = ConstU32<512>;
 
 	type WeightInfo = ();
+
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
