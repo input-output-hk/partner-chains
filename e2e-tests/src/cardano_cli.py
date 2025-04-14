@@ -31,8 +31,10 @@ class CardanoCli:
         self.run_command = RunnerFactory.get_runner(None, cardano_cli.shell)
 
     def query_tip(self) -> int:
-        cmd = f"{self.cli} latest query tip --socket-path /ipc/node.socket {self.network}"
-        result = self.run_command.run(cmd)
+        cmd = [self.cli, "latest", "query", "tip", "--socket-path", "/ipc/node.socket"]
+        if self.network:
+            cmd.append(self.network)
+        result = self.run_command.run(" ".join(cmd))
         if result.returncode != 0:
             logger.error(f"Command failed with return code {result.returncode}")
             if result.stderr:

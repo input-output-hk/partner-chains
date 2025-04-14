@@ -53,39 +53,25 @@ class LocalRunner(Runner):
             full_cmd = "{shell} \"{cli} {cmd}\"".format(shell=self.shell, cli=cli, cmd=cmd)
         return full_cmd
 
-    def run(self, command: str, timeout=120) -> Result:
-        logging.debug(f"CMD: '{command}' TIMEOUT: {timeout} SHELL: {self.shell}")
-
-        executable = self.shell
-        if self.shell and self.shell.split(" "):
-            executable = None
-            escaped_command = command.replace('"', '\\"')
-            command = "{shell} \"{command}\"".format(shell=self.shell, command=escaped_command)
-
+    def run(self, command: str, timeout: Optional[int] = None) -> Result:
+        """Run a command and return the result."""
         try:
             completed_process = subprocess.run(
-                command,
+                command.split(),
                 timeout=timeout,
                 capture_output=True,
-                shell=True,
-                executable=executable,
+                shell=False,
+                executable=self.shell,
                 encoding="utf-8",
             )
-            result = Result(
+            return Result(
                 returncode=completed_process.returncode,
                 stdout=completed_process.stdout,
                 stderr=completed_process.stderr,
             )
-            truncated_output = (
-                result.stdout[:STDOUT_MAX_LEN] + "..." if len(result.stdout) > STDOUT_MAX_LEN else result.stdout
-            )
-            logging.debug(f"STDOUT: {truncated_output}")
-            if result.stderr:
-                logging.error(f"STDERR: {result.stderr}")
-            return result
-        except subprocess.TimeoutExpired as e:
-            logging.error(f"TIMEOUT: {e}")
-            raise e
+        except subprocess.TimeoutExpired:
+            logging.error(f"Command timed out after {timeout} seconds")
+            return Result(returncode=-1, stdout="", stderr=f"Command timed out after {timeout} seconds")
         except Exception as e:
-            logging.error(f"UNKNOWN ERROR: {e}")
-            raise e
+            logging.error(f"Failed to run command: {e}")
+            return Result(returncode=-1, stdout="", stderr=str(e))
