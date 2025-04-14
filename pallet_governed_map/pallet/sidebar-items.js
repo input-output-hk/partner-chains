@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Call"],"mod":["dispatchables","storage_types"],"struct":["GenesisConfig","Pallet"],"trait":["Config"],"type":["MainChainScripts","Mapping","Module"]};
+window.SIDEBAR_ITEMS = {"constant":["PALLET_VERSION"],"enum":["Call"],"mod":["dispatchables","storage_types"],"struct":["GenesisConfig","Pallet"],"trait":["Config"],"type":["MainChainScripts","Mapping","Module"]};
