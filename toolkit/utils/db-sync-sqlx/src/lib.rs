@@ -149,6 +149,12 @@ impl Asset {
 	}
 }
 
+impl From<sidechain_domain::AssetId> for Asset {
+	fn from(asset: AssetId) -> Self {
+		Self { policy_id: asset.policy_id.into(), asset_name: asset.asset_name.into() }
+	}
+}
+
 #[derive(Debug, Copy, Clone, sqlx::FromRow, PartialEq)]
 pub struct EpochNumberRow(pub EpochNumber);
 
