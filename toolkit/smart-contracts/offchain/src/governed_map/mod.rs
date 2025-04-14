@@ -45,9 +45,7 @@ pub async fn run_insert<
 	let tx_hash_opt = match get_current_value(validator_utxos, key.clone(), policy.policy_id())? {
 		Some(current_value) if current_value != value => {
 			return Err(anyhow!(
-				"There is already a value stored for key '{}': {:?}",
-				key,
-				current_value
+				"There is already a value stored for key '{key}': {current_value:?}"
 			));
 		},
 		Some(current_value) => {

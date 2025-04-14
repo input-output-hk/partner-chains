@@ -24,7 +24,7 @@ pub struct Addresses {
 	pub permissioned_candidates_validator: String,
 	pub reserve_validator: String,
 	pub version_oracle_validator: String,
-	pub generic_container_validator: String,
+	pub governed_map_validator: String,
 }
 
 /// Policy IDs of applied scripts in partner-chains smart contracts.
@@ -78,7 +78,7 @@ pub fn get_scripts_data(
 	let (permissioned_candidates_validator, permissioned_candidates_policy) =
 		permissioned_candidates_scripts(genesis_utxo, network)?;
 	let reserve = reserve_scripts(genesis_utxo, network)?;
-	let (generic_container_validator, generic_container_policy) =
+	let (governed_map_validator, generic_container_policy) =
 		governed_map_scripts(genesis_utxo, network)?;
 	Ok(ScriptsData {
 		addresses: Addresses {
@@ -90,7 +90,7 @@ pub fn get_scripts_data(
 				.address_bech32(network)?,
 			reserve_validator: reserve.validator.address_bech32(network)?,
 			version_oracle_validator: version_oracle_data.validator.address_bech32(network)?,
-			generic_container_validator: generic_container_validator.address_bech32(network)?,
+			governed_map_validator: governed_map_validator.address_bech32(network)?,
 		},
 		policy_ids: PolicyIds {
 			d_parameter: d_parameter_policy.policy_id(),
@@ -292,7 +292,7 @@ mod tests {
 					"addr_test1wqs5y7fn6sns7v7eey94mj2wd7ysadr3zmstjfzhk0frdtgsm8pgk".into(),
 				version_oracle_validator:
 					"addr_test1wqxm9e576k5ew7g7ctuqx77p9u7zytesnjsx54q2etck00gqplk0l".into(),
-				generic_container_validator:
+				governed_map_validator:
 					"addr_test1wrgswjxke7a5zghreggpmk52nm4y7l3jst34hgeqexvparcln6wke".into(),
 			},
 			policy_ids: PolicyIds {

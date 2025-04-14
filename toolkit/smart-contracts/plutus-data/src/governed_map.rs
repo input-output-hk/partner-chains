@@ -43,6 +43,12 @@ pub fn governed_map_datum_to_plutus_data(governed_map_datum: &GovernedMapDatum) 
 	PlutusData::new_list(&list)
 }
 
+impl From<GovernedMapDatum> for PlutusData {
+	fn from(governed_map_datum: GovernedMapDatum) -> Self {
+		governed_map_datum_to_plutus_data(&governed_map_datum)
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;

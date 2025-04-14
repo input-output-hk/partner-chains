@@ -39,7 +39,7 @@ pub enum SmartContractsCmd {
 	AssembleAndSubmitTx(assemble_tx::AssembleAndSubmitCmd),
 	/// Sign a transaction CBOR using a payment signing key
 	SignTx(sign_tx::SignTxCmd),
-	/// Insert key-value pair into the cardano ledger
+	/// Manage the Governed Map key-value store on Cardano
 	#[command(subcommand)]
 	GovernedMap(governed_map::GovernedMapCmd),
 }

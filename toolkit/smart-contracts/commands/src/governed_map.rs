@@ -7,8 +7,10 @@ use sidechain_domain::UtxoId;
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
 pub enum GovernedMapCmd {
-	/// Inserts a key-value pair into the governed map. If a value for the key already exists it won't be updated.
-	/// In rare cases, race conditions may occur, and two inserts with the same key will both succeed.
+	/// Inserts a key-value pair into the Governed Gap. If a value for the key already exists it won't be updated.
+	///
+	/// NOTE: In rare cases, race conditions may occur, and two inserts with the same key will both succeed.
+	/// In that case the second one in terms of block and transaction number is considered valid.
 	Insert(InsertCmd),
 }
 

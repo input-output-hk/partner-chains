@@ -11,7 +11,7 @@ pub mod csl;
 pub mod d_param;
 /// Governance data types
 pub mod governance;
-/// Supports key-value pair management
+/// Supports Governed Map key-value pair store management
 pub mod governed_map;
 /// Supports governance initialization
 pub mod init_governance;
