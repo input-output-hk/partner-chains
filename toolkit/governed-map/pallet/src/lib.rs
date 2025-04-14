@@ -26,6 +26,8 @@ pub mod pallet {
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
+	pub const PALLET_VERSION: u32 = 1;
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// Maximum number of changes that can be registered in a single inherent.
@@ -191,6 +193,11 @@ pub mod pallet {
 		/// Returns an iterator over all key-value pairs in the pallet storage.
 		pub fn get_all_key_value_pairs() -> impl Iterator<Item = (MapKey<T>, MapValue<T>)> {
 			Mapping::<T>::iter()
+		}
+
+		/// Returns current pallet version.
+		pub fn get_version() -> u32 {
+			PALLET_VERSION
 		}
 	}
 }
