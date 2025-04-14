@@ -66,6 +66,16 @@ runs:
           exit 1
         fi
         
+        # Set Ogmios URL based on environment
+        if [ "${{ inputs.env }}" = "ci-preview" ] || [ "${{ inputs.env }}" = "devnet" ]; then
+          export OGMIOS_URL="ws://devnet-services-service:1337"
+        elif [ "${{ inputs.env }}" = "staging-preview" ]; then
+          export OGMIOS_URL="ws://staging-preview-services-service:1337"
+        else
+          echo "❌ Unsupported environment: ${{ inputs.env }}"
+          exit 1
+        fi
+        
         # Get genesis UTXO from the node
         echo "Getting genesis UTXO from the node..."
         GENESIS_UTXO_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
@@ -94,6 +104,7 @@ runs:
         echo "REFERENCE_UTXO=$REFERENCE_UTXO" >> /tmp/env_vars.sh
         echo "TRANSACTION_CBOR=$TRANSACTION_CBOR" >> /tmp/env_vars.sh
         echo "WITNESSES=$WITNESSES" >> /tmp/env_vars.sh
+        echo "OGMIOS_URL=$OGMIOS_URL" >> /tmp/env_vars.sh
         chmod +x /tmp/env_vars.sh
 
     - name: Fetch Sidechain Status
@@ -605,9 +616,8 @@ runs:
         echo "Testing get-scripts..."
         SCRIPTS_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           partner-chains-node smart-contracts get-scripts \
-          --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337)
+          --ogmios-url "$OGMIOS_URL")
         
         if ! echo "$SCRIPTS_RESPONSE" | jq -e '.addresses' > /dev/null; then
           echo "❌ get-scripts test failed: Invalid response format"
@@ -619,9 +629,8 @@ runs:
         echo "Testing upsert-d-parameter..."
         D_PARAM_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           partner-chains-node smart-contracts upsert-d-parameter \
-          --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337 \
+          --ogmios-url "$OGMIOS_URL" \
           --d-parameter 0.5)
         
         if ! echo "$D_PARAM_RESPONSE" | jq -e '.result' > /dev/null; then
@@ -634,9 +643,8 @@ runs:
         echo "Testing upsert-permissioned-candidates..."
         PERM_CANDIDATES_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           partner-chains-node smart-contracts upsert-permissioned-candidates \
-          --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337 \
+          --ogmios-url "$OGMIOS_URL" \
           --candidates "$COMMITTEE_CANDIDATE_ADDRESS")
         
         if ! echo "$PERM_CANDIDATES_RESPONSE" | jq -e '.result' > /dev/null; then
@@ -649,9 +657,8 @@ runs:
         echo "Testing register..."
         REGISTER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           partner-chains-node smart-contracts register \
-          --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337 \
+          --ogmios-url "$OGMIOS_URL" \
           --registration-utxo "$REGISTRATION_UTXO" \
           --reference-utxo "$REFERENCE_UTXO" \
           --transaction-cbor "$TRANSACTION_CBOR" \
@@ -667,9 +674,8 @@ runs:
         echo "Testing deregister..."
         DEREGISTER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           partner-chains-node smart-contracts deregister \
-          --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337 \
+          --ogmios-url "$OGMIOS_URL" \
           --registration-utxo "$REGISTRATION_UTXO" \
           --reference-utxo "$REFERENCE_UTXO" \
           --transaction-cbor "$TRANSACTION_CBOR" \
@@ -685,9 +691,8 @@ runs:
         echo "Testing reserve init..."
         INIT_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           partner-chains-node smart-contracts reserve init \
-          --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337)
+          --ogmios-url "$OGMIOS_URL")
         
         if ! echo "$INIT_RESPONSE" | jq -e '.result' > /dev/null; then
           echo "❌ reserve init test failed: Invalid response format"
@@ -699,9 +704,8 @@ runs:
         echo "Testing reserve create..."
         CREATE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           partner-chains-node smart-contracts reserve create \
-          --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337)
+          --ogmios-url "$OGMIOS_URL")
         
         if ! echo "$CREATE_RESPONSE" | jq -e '.result' > /dev/null; then
           echo "❌ reserve create test failed: Invalid response format"
@@ -713,9 +717,8 @@ runs:
         echo "Testing reserve deposit..."
         DEPOSIT_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           partner-chains-node smart-contracts reserve deposit \
-          --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337 \
+          --ogmios-url "$OGMIOS_URL" \
           --amount 1000000)
         
         if ! echo "$DEPOSIT_RESPONSE" | jq -e '.result' > /dev/null; then
@@ -728,9 +731,8 @@ runs:
         echo "Testing reserve handover..."
         HANDOVER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           partner-chains-node smart-contracts reserve handover \
-          --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337 \
+          --ogmios-url "$OGMIOS_URL" \
           --new-owner "$RESERVE_VALIDATOR_ADDRESS")
         
         if ! echo "$HANDOVER_RESPONSE" | jq -e '.result' > /dev/null; then
