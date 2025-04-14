@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["governed_map_datum_to_plutus_data"],"struct":["GovernedMapDatum"]};
