@@ -2,7 +2,6 @@ use crate::metrics::McFollowerMetrics;
 use crate::observed_async_trait;
 use crate::DataSourceError::ExpectedDataNotFound;
 use crate::Result;
-use cardano_serialization_lib::PlutusData;
 use derive_new::new;
 use log::warn;
 use partner_chains_plutus_data::governed_map::GovernedMapDatum;
