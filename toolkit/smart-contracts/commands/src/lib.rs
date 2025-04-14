@@ -10,6 +10,7 @@ pub mod assemble_tx;
 pub mod d_parameter;
 pub mod get_scripts;
 pub mod governance;
+pub mod governed_map;
 pub mod permissioned_candidates;
 pub mod register;
 pub mod reserve;
@@ -38,6 +39,9 @@ pub enum SmartContractsCmd {
 	AssembleAndSubmitTx(assemble_tx::AssembleAndSubmitCmd),
 	/// Sign a transaction CBOR using a payment signing key
 	SignTx(sign_tx::SignTxCmd),
+	/// Manage the Governed Map key-value store on Cardano
+	#[command(subcommand)]
+	GovernedMap(governed_map::GovernedMapCmd),
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -70,6 +74,7 @@ impl SmartContractsCmd {
 			Self::Reserve(cmd) => cmd.execute().await,
 			Self::AssembleAndSubmitTx(cmd) => cmd.execute().await,
 			Self::SignTx(cmd) => cmd.execute().await,
+			Self::GovernedMap(cmd) => cmd.execute().await,
 		}?;
 		println!("{}", result);
 		Ok(())
