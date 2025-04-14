@@ -2,9 +2,9 @@
 <a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span><span class="kw">crate</span>::chain_spec::<span class="kw-2">*</span>;
 <a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span>authority_selection_inherents::CommitteeMember;
 <a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span>partner_chains_demo_runtime::{
-<a href=#5 id=5 data-nosnippet>5</a>	AccountId, AuraConfig, BalancesConfig, GrandpaConfig, NativeTokenManagementConfig,
-<a href=#6 id=6 data-nosnippet>6</a>	RuntimeGenesisConfig, SessionCommitteeManagementConfig, SessionConfig, SidechainConfig,
-<a href=#7 id=7 data-nosnippet>7</a>	SudoConfig, SystemConfig, TestHelperPalletConfig,
+<a href=#5 id=5 data-nosnippet>5</a>	AccountId, AuraConfig, BalancesConfig, GovernedMapConfig, GrandpaConfig,
+<a href=#6 id=6 data-nosnippet>6</a>	NativeTokenManagementConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig,
+<a href=#7 id=7 data-nosnippet>7</a>	SessionConfig, SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
 <a href=#8 id=8 data-nosnippet>8</a>};
 <a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>sc_service::ChainType;
 <a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span>sidechain_domain::<span class="kw-2">*</span>;
@@ -152,11 +152,15 @@
 <a href=#152 id=152 data-nosnippet>152</a>			main_chain_scripts: sp_native_token_management::MainChainScripts::read_from_env()<span class="question-mark">?</span>,
 <a href=#153 id=153 data-nosnippet>153</a>			..Default::default()
 <a href=#154 id=154 data-nosnippet>154</a>		},
-<a href=#155 id=155 data-nosnippet>155</a>		test_helper_pallet: TestHelperPalletConfig {
-<a href=#156 id=156 data-nosnippet>156</a>			participation_data_release_period: <span class="number">30</span>,
+<a href=#155 id=155 data-nosnippet>155</a>		governed_map: GovernedMapConfig {
+<a href=#156 id=156 data-nosnippet>156</a>			main_chain_script: <span class="prelude-val">Some</span>(Default::default()),
 <a href=#157 id=157 data-nosnippet>157</a>			..Default::default()
 <a href=#158 id=158 data-nosnippet>158</a>		},
-<a href=#159 id=159 data-nosnippet>159</a>	};
-<a href=#160 id=160 data-nosnippet>160</a>
-<a href=#161 id=161 data-nosnippet>161</a>	<span class="prelude-val">Ok</span>(serde_json::to_value(config).expect(<span class="string">"Genesis config must be serialized correctly"</span>))
-<a href=#162 id=162 data-nosnippet>162</a>}</code></pre></div></section></main></body></html>
+<a href=#159 id=159 data-nosnippet>159</a>		test_helper_pallet: TestHelperPalletConfig {
+<a href=#160 id=160 data-nosnippet>160</a>			participation_data_release_period: <span class="number">30</span>,
+<a href=#161 id=161 data-nosnippet>161</a>			..Default::default()
+<a href=#162 id=162 data-nosnippet>162</a>		},
+<a href=#163 id=163 data-nosnippet>163</a>	};
+<a href=#164 id=164 data-nosnippet>164</a>
+<a href=#165 id=165 data-nosnippet>165</a>	<span class="prelude-val">Ok</span>(serde_json::to_value(config).expect(<span class="string">"Genesis config must be serialized correctly"</span>))
+<a href=#166 id=166 data-nosnippet>166</a>}</code></pre></div></section></main></body></html>
