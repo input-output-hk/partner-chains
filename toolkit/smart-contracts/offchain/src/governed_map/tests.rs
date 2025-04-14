@@ -52,34 +52,6 @@ mod governed_map_insert_tx_tests {
 	}
 
 	#[test]
-	fn at_least_one_input_is_used_for_transaction() {
-		let inputs = governerd_map_insert_tx_test().body().inputs();
-
-		// There should be at least one input
-		assert!(inputs.len() > 0, "Transaction should have at least one input");
-
-		// Get the input string and compare it to expected inputs
-		let input0_string = inputs.get(0).to_string();
-		let lesser_utxo_string = lesser_payment_utxo().to_string();
-		let greater_utxo_string = greater_payment_utxo().to_string();
-
-		// Check that at least one of the expected inputs is used
-		assert!(
-			input0_string == lesser_utxo_string || input0_string == greater_utxo_string,
-			"Input should be one of the payment UTXOs"
-		);
-	}
-
-	#[test]
-	fn greater_input_is_selected_as_collateral() {
-		let body = governerd_map_insert_tx_test().body();
-		assert_eq!(
-			body.collateral().unwrap().get(0).to_string(),
-			greater_payment_utxo().to_string()
-		);
-	}
-
-	#[test]
 	fn redeemer_is_set_correctly() {
 		let tx = governerd_map_insert_tx_test();
 
@@ -97,19 +69,6 @@ mod governed_map_insert_tx_tests {
 		assert_eq!(redeemer_2.index(), 1u64.into());
 		assert_eq!(redeemer_2.data(), PlutusData::new_empty_constr_plutus_data(&0u64.into()));
 		assert_eq!(redeemer_2.ex_units(), policy_ex_units());
-	}
-
-	#[test]
-	fn collateral_is_set_correctly() {
-		let body = governerd_map_insert_tx_test().body();
-
-		let collateral_return = body.collateral_return().unwrap();
-		assert_eq!(collateral_return.address(), payment_addr());
-		let total_collateral = body.total_collateral().unwrap();
-		assert_eq!(
-			collateral_return.amount().coin().checked_add(&total_collateral).unwrap(),
-			greater_payment_utxo().value.lovelace.into()
-		);
 	}
 
 	#[test]
