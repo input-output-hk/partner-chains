@@ -186,14 +186,14 @@ class BlockchainApi(ABC):
         ```
         {
             "SPOPubKey1": [
-                {"sidechainPubKey": "0x000000", "mainchainPubKey": "0x111111", "isValid": true, ...}
+                {"sidechainPubKey": "0x000000", "mainchainPubKey": "0x111111", "isValid": True, ...}
             ],
             "SPOPubKey2": [
-                {"sidechainPubKey": "0x000001", "mainchainPubKey": "0x222222", "isValid": false, ...}
-            ]
+                {"sidechainPubKey": "0x000001", "mainchainPubKey": "0x222222", "isValid": False, ...}
+            ],
             "SPOPubKey3": [
-                {"sidechainPubKey": "0x000002", "mainchainPubKey": "0x333333", "isValid": true, ...},
-                {"sidechainPubKey": "0x000003", "mainchainPubKey": "0x444444", "isValid": true, ...}
+                {"sidechainPubKey": "0x000002", "mainchainPubKey": "0x333333", "isValid": True, ...},
+                {"sidechainPubKey": "0x000003", "mainchainPubKey": "0x444444", "isValid": True, ...}
             ]
         }
         ```

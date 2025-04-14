@@ -47,6 +47,7 @@ class StakeDistributionCommittee(Base):
     probability: Mapped[Optional[float]] = mapped_column(default=0.0)
     actual_attendance: Mapped[Optional[int]]
     expected_attendance: Mapped[Optional[float]]
+    guaranteed_seats: Mapped[Optional[int]]
 
     def __repr__(self) -> str:
         return (
