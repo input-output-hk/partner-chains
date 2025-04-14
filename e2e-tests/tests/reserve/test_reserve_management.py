@@ -68,14 +68,8 @@ class TestInitReserve:
     def test_init_reserve(self, init_reserve):
         response = init_reserve
         assert response.returncode == 0
-        assert not response.stderr
-        if (
-            "Script 'Reserve Management Validator' is already initialized" in response.stdout
-            and "Script 'Reserve Management Policy' is already initialized" in response.stdout
-            and "Script 'Illiquid Circulation Validator' is already initialized" in response.stdout
-        ):
+        if response.json == []:
             skip("Reserve already initialized")
-        assert response.transaction_id
 
 
 class TestCreateReserve:
@@ -84,8 +78,8 @@ class TestCreateReserve:
 
     def test_create_reserve(self, create_reserve):
         response = create_reserve
-        assert not response.stderr
-        assert response.transaction_id
+        assert response.returncode == 0
+        assert response.json
 
     @mark.usefixtures("create_reserve")
     def test_native_token_balance_is_smaller_by_initial_deposit(
@@ -122,8 +116,8 @@ class TestReleaseFunds:
 
     def test_release_funds(self, release_funds):
         response = release_funds
-        assert not response.stderr
-        assert response.transaction_id
+        assert response.returncode == 0
+        assert response.json
 
     @mark.usefixtures("release_funds")
     def test_circulation_supply_balance_after_release(
@@ -165,8 +159,8 @@ class TestDepositFunds:
 
     def test_deposit_funds(self, deposit_funds):
         response = deposit_funds
-        assert not response.stderr
-        assert response.transaction_id
+        assert response.returncode == 0
+        assert response.json
 
     def test_reserve_balance_after_deposit(
         self, reserve_initial_balance, amount_to_deposit, api: BlockchainApi, reserve_asset_id, addresses
@@ -202,21 +196,22 @@ class TestUpdateVFunction:
 
     def test_update_v_function(self, update_v_function):
         response = update_v_function
-        assert not response.stderr
-        assert response.transaction_id
+        assert response.returncode == 0
+        assert response.json
 
     def test_release_funds_with_updated_v_function(self, api: BlockchainApi, new_v_function: VFunction, payment_key):
         response = api.partner_chains_node.smart_contracts.reserve.release(
             reference_utxo=new_v_function.reference_utxo, amount=1, payment_key=payment_key
         )
-        assert not response.stderr
-        assert response.transaction_id
+        assert response.returncode == 0
+        assert response.json
 
     def test_release_funds_with_old_v_function(self, api: BlockchainApi, v_function: VFunction, payment_key):
         response = api.partner_chains_node.smart_contracts.reserve.release(
             reference_utxo=v_function.reference_utxo, amount=1, payment_key=payment_key
         )
-        assert "Error" in response.stdout or response.stderr
+        assert response.returncode == 1
+        assert "Error" in response.stderr
 
 
 class TestHandoverReserve:
@@ -227,8 +222,8 @@ class TestHandoverReserve:
 
     def test_handover_reserve(self, handover_reserve):
         response = handover_reserve
-        assert not response.stderr
-        assert response.transaction_id
+        assert response.returncode == 0
+        assert response.json
 
     def test_reserve_balance_after_handover(self, api: BlockchainApi, reserve_asset_id, addresses):
         reserve_balance = api.get_mc_balance(addresses["ReserveValidator"], reserve_asset_id)

@@ -196,7 +196,7 @@ where
 			Ok(())
 		},
 		PartnerChainsSubcommand::SmartContracts(cmd) => {
-			crate::setup_log4rs()?;
+			setup_log4rs()?;
 			Ok(cmd.execute_blocking()?)
 		},
 		PartnerChainsSubcommand::Wizards(cmd) => {
@@ -208,14 +208,16 @@ where
 	}
 }
 
-/// This sets logging in a very opinionated way.
-/// Because Rust env_logger clashes with log4rs, this is exposed to be invoked by users of smart-contracts commands.
-pub fn setup_log4rs() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-	let stdout = log4rs::append::console::ConsoleAppender::builder().build();
+/// This sets logging to stderr, leaving stdout for smart-contracts JSON outputs.
+/// Ogmios interactions are logged to a file.
+fn setup_log4rs() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+	let stderr = log4rs::append::console::ConsoleAppender::builder()
+		.target(log4rs::append::console::Target::Stderr)
+		.build();
 	let ogmios_log = log4rs::append::file::FileAppender::builder().build("ogmios_client.log")?;
 
 	let log_config = log4rs::config::Config::builder()
-		.appender(log4rs::config::Appender::builder().build("stdout", Box::new(stdout)))
+		.appender(log4rs::config::Appender::builder().build("stderr", Box::new(stderr)))
 		.appender(log4rs::config::Appender::builder().build("ogmios-log", Box::new(ogmios_log)))
 		.logger(
 			log4rs::config::Logger::builder()
@@ -223,7 +225,7 @@ pub fn setup_log4rs() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 				.additive(false)
 				.build("ogmios_client::jsonrpsee", log::LevelFilter::Debug),
 		)
-		.build(log4rs::config::Root::builder().appender("stdout").build(log::LevelFilter::Info))?;
+		.build(log4rs::config::Root::builder().appender("stderr").build(log::LevelFilter::Info))?;
 
 	log4rs::init_config(log_config)?;
 

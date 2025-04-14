@@ -192,7 +192,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	spec_version: 151,
+	spec_version: 170,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -467,7 +467,7 @@ pub const MAX_METADATA_URL_LENGTH: u32 = 512;
 	Clone, Debug, MaxEncodedLen, Encode, Decode, Serialize, Deserialize, PartialEq, Eq, TypeInfo,
 )]
 pub struct BlockProducerMetadataType {
-	pub url: BoundedString<MAX_METADATA_URL_LENGTH>,
+	pub url: BoundedString<ConstU32<MAX_METADATA_URL_LENGTH>>,
 	pub hash: SizedByteString<32>,
 }
 

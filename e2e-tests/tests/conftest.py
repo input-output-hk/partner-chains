@@ -37,6 +37,7 @@ def pytest_addoption(parser):
         "--ci-run", action="store_true", help="Overrides config values specific for executing from ci runner"
     )
     parser.addoption("--decrypt", action="store_true", help="Decrypts secrets and keys files")
+    parser.addoption("--multisig", action="store_true", help="Use multisig governance authority")
 
     # command line args that can override config options
     # NOTE: do not add default values so config defaults are used
@@ -237,6 +238,11 @@ def ci_run(request):
 @fixture(scope="session")
 def decrypt(request):
     return request.config.getoption("--decrypt")
+
+
+@fixture(scope="session")
+def multisig(request):
+    return request.config.getoption("--multisig")
 
 
 def load_config(blockchain, nodes_env, ci_run, node_host, node_port, deployment_mc_epoch, init_timestamp):
@@ -580,3 +586,46 @@ def governance_skey_with_cli(config: ApiConfig):
         runner.run(f"rm -rf {temp_dir}")
     else:
         yield
+
+
+@fixture(scope="session")
+def governance_authority(config: ApiConfig):
+    return config.nodes_config.governance_authority
+
+
+@fixture(scope="session")
+def additional_governance_authorities(config: ApiConfig):
+    return config.nodes_config.additional_governance_authorities
+
+
+@fixture(scope="session", autouse=True)
+def set_governance_to_multisig(multisig, api: BlockchainApi, governance_authority, additional_governance_authorities):
+    if not multisig:
+        yield
+        return
+
+    if not additional_governance_authorities:
+        raise UsageError("--multisig requires additional governance authorities to be set in the config.")
+
+    logging.info("Updating governance to use multiple authorities for the session...")
+    all_authorities = [governance_authority.mainchain_pub_key_hash] + list(
+        map(lambda x: x.mainchain_pub_key_hash, additional_governance_authorities)
+    )
+    threshold = 2
+
+    response = api.partner_chains_node.smart_contracts.governance.update(
+        payment_key=governance_authority.mainchain_key,
+        new_governance_authorities=all_authorities,
+        new_governance_threshold=threshold,
+    )
+
+    yield response
+
+    response = api.partner_chains_node.smart_contracts.governance.update(
+        payment_key=governance_authority.mainchain_key,
+        new_governance_authorities=[governance_authority.mainchain_pub_key_hash],
+        new_governance_threshold=1,
+    )
+
+    assert response.returncode == 0
+    logging.info("Governance restored to single key successfully")

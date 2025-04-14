@@ -105,7 +105,7 @@ Owner of `key1` wants to set D-parameter to (7, 5).
 --registered-candidates-count 5 \
 -k key1.skey | jq .
 ...
-{"TransactionToSign":{"temporary_wallet":{"address":"addr_test1vzeg2g6gcnlvnemk9hgvsaxxktf8suxwd63hm54w9erxuwc49exyq","funded_by_tx":"0xed99c5eb6d12053c514915fcb0445c9ce9839b65570db042fcd1c9d9cc9fbcf8","private_key":"0x730f9c6f26666da41dedbe596f6b2f7d36a98ce768591010b537e4f48417448f"},"tx_cbor":{"cborHex":"84aa00..transaction bytes redacted..f6","description":"","type":"Tx ConwayEra"},"tx_name":"Insert D-parameter"}}
+{"transaction_to_sign":{"temporary_wallet":{"address":"addr_test1vzeg2g6gcnlvnemk9hgvsaxxktf8suxwd63hm54w9erxuwc49exyq","funded_by_tx":"0xed99c5eb6d12053c514915fcb0445c9ce9839b65570db042fcd1c9d9cc9fbcf8","private_key":"0x730f9c6f26666da41dedbe596f6b2f7d36a98ce768591010b537e4f48417448f"},"tx":{"cborHex":"84aa00..transaction bytes redacted..f6","description":"","type":"Tx ConwayEra"},"tx_name":"Insert D-parameter"}}
 ```
 The user gets the transaction data. It already contains the `key1` signature. Transaction requires signature of `key2` owner, before it can be submitted.
 

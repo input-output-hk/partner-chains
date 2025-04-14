@@ -1,4 +1,4 @@
-use crate::PaymentFilePath;
+use crate::{option_to_json, PaymentFilePath};
 use partner_chains_cardano_offchain::{
 	await_tx::FixedDelayRetries,
 	governance::{get_governance_policy_summary, MultiSigParameters},
@@ -19,7 +19,7 @@ pub enum GovernanceCmd {
 }
 
 impl GovernanceCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		match self {
 			Self::Init(cmd) => cmd.execute().await,
 			Self::Update(cmd) => cmd.execute().await,
@@ -46,7 +46,7 @@ pub struct InitGovernanceCmd {
 }
 
 impl InitGovernanceCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
 
@@ -61,8 +61,7 @@ impl InitGovernanceCmd {
 			FixedDelayRetries::two_minutes(),
 		)
 		.await?;
-		println!("{}", serde_json::to_string_pretty(&result)?);
-		Ok(())
+		Ok(serde_json::json!(result))
 	}
 }
 
@@ -84,7 +83,7 @@ pub struct UpdateGovernanceCmd {
 }
 
 impl UpdateGovernanceCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
 		let client = self.common_arguments.get_ogmios_client().await?;
 
@@ -99,8 +98,7 @@ impl UpdateGovernanceCmd {
 			FixedDelayRetries::two_minutes(),
 		)
 		.await?;
-		println!("{}", serde_json::to_value(result)?);
-		Ok(())
+		Ok(serde_json::json!(result))
 	}
 }
 
@@ -114,10 +112,9 @@ pub struct GetPolicyCmd {
 }
 
 impl GetPolicyCmd {
-	pub async fn execute(self) -> crate::CmdResult<()> {
+	pub async fn execute(self) -> crate::SubCmdResult {
 		let client = self.common_arguments.get_ogmios_client().await?;
 		let summary = get_governance_policy_summary(self.genesis_utxo, &client).await?;
-		print!("{}", serde_json::to_string(&summary)?);
-		Ok(())
+		Ok(option_to_json(summary))
 	}
 }

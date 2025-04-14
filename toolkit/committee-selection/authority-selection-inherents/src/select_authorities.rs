@@ -30,7 +30,7 @@ pub fn select_authorities<
 
 	let random_seed = seed_from_nonce_and_sc_epoch(&input.epoch_nonce, &sidechain_epoch);
 
-	if let Some(validators) = selection::ariadne::select_authorities(
+	if let Some(validators) = selection::ariadne_v2::select_authorities(
 		input.d_parameter.num_registered_candidates,
 		input.d_parameter.num_permissioned_candidates,
 		valid_registered_candidates,

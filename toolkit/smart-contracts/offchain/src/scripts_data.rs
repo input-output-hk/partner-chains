@@ -24,6 +24,7 @@ pub struct Addresses {
 	pub permissioned_candidates_validator: String,
 	pub reserve_validator: String,
 	pub version_oracle_validator: String,
+	pub governed_map_validator: String,
 }
 
 /// Policy IDs of applied scripts in partner-chains smart contracts.
@@ -34,6 +35,7 @@ pub struct PolicyIds {
 	pub permissioned_candidates: PolicyId,
 	pub reserve_auth: PolicyId,
 	pub version_oracle: PolicyId,
+	pub generic_container: PolicyId,
 }
 
 pub trait GetScriptsData {
@@ -76,7 +78,8 @@ pub fn get_scripts_data(
 	let (permissioned_candidates_validator, permissioned_candidates_policy) =
 		permissioned_candidates_scripts(genesis_utxo, network)?;
 	let reserve = reserve_scripts(genesis_utxo, network)?;
-
+	let (governed_map_validator, generic_container_policy) =
+		governed_map_scripts(genesis_utxo, network)?;
 	Ok(ScriptsData {
 		addresses: Addresses {
 			committee_candidate_validator: committee_candidate_validator.address_bech32(network)?,
@@ -87,12 +90,14 @@ pub fn get_scripts_data(
 				.address_bech32(network)?,
 			reserve_validator: reserve.validator.address_bech32(network)?,
 			version_oracle_validator: version_oracle_data.validator.address_bech32(network)?,
+			governed_map_validator: governed_map_validator.address_bech32(network)?,
 		},
 		policy_ids: PolicyIds {
 			d_parameter: d_parameter_policy.policy_id(),
 			permissioned_candidates: permissioned_candidates_policy.policy_id(),
 			reserve_auth: reserve.auth_policy.policy_id(),
 			version_oracle: version_oracle_data.policy_id(),
+			generic_container: generic_container_policy.policy_id(),
 		},
 	})
 }
@@ -156,6 +161,26 @@ pub(crate) fn version_scripts_and_address(
 	.apply_uplc_data(validator.address_data(network)?)?;
 	let address = validator.address_bech32(network)?;
 	Ok((validator, policy, address))
+}
+
+pub(crate) fn governed_map_scripts(
+	genesis_utxo: UtxoId,
+	network: NetworkIdKind,
+) -> Result<(PlutusScript, PlutusScript), anyhow::Error> {
+	let version_oracle_data = version_oracle(genesis_utxo, network)?;
+	let validator = PlutusScript::from_wrapped_cbor(
+		raw_scripts::GENERIC_CONTAINER_VALIDATOR,
+		Language::new_plutus_v2(),
+	)?
+	.apply_data(genesis_utxo)?
+	.apply_data(version_oracle_data.policy_id())?;
+	let policy = PlutusScript::from_wrapped_cbor(
+		raw_scripts::GENERIC_CONTAINER_POLICY,
+		Language::new_plutus_v2(),
+	)?
+	.apply_data(genesis_utxo)?
+	.apply_data(version_oracle_data.policy_id())?;
+	Ok((validator, policy))
 }
 
 pub(crate) fn d_parameter_scripts(
@@ -267,6 +292,8 @@ mod tests {
 					"addr_test1wqs5y7fn6sns7v7eey94mj2wd7ysadr3zmstjfzhk0frdtgsm8pgk".into(),
 				version_oracle_validator:
 					"addr_test1wqxm9e576k5ew7g7ctuqx77p9u7zytesnjsx54q2etck00gqplk0l".into(),
+				governed_map_validator:
+					"addr_test1wrgswjxke7a5zghreggpmk52nm4y7l3jst34hgeqexvparcln6wke".into(),
 			},
 			policy_ids: PolicyIds {
 				d_parameter: PolicyId(hex!(
@@ -280,6 +307,9 @@ mod tests {
 				)),
 				version_oracle: PolicyId(hex!(
 					"aa7f601aa9f441a26823d872f052d52767229f3301567c86475dfcfb"
+				)),
+				generic_container: PolicyId(hex!(
+					"9eb40bc81d93331ec485cc0a7a0eea8d06ff42cd776db8808b2f8980"
 				)),
 			},
 		}

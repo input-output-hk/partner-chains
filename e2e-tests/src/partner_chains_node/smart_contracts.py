@@ -1,8 +1,8 @@
-from dataclasses import dataclass
 import logging
-import re
 import json
 import uuid
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from config.api_config import ApiConfig, Node
 from .models import RegistrationSignatures
 from ..run_command import Runner, Result
@@ -13,39 +13,68 @@ class SmartContractsResponse:
     returncode: int
     stdout: str
     stderr: str
-    transaction_id: str = None
-    transaction_cbor: str = None
     json: dict = None
 
 
-def parse_transaction_id(stdout: str) -> str:
-    pattern = r"Transaction output \'([a-f0-9]{64})\'"
-    match = re.search(pattern, stdout)
-    if match:
-        return match.group(1)
+class SignatureHandler(ABC):
+    @abstractmethod
+    def handle_transaction(self, response: SmartContractsResponse, smart_contracts: "SmartContracts"):
+        pass
+
+
+class SingleSignatureHandler(SignatureHandler):
+    def handle_transaction(self, response: SmartContractsResponse, smart_contracts: "SmartContracts"):
+        # In the single-signature case, the transaction is already signed and submitted.
+        # Simply return the response.
+        return response
+
+
+class MultiSignatureHandler(SignatureHandler):
+
+    def sign_and_submit_tx(self, tx_cbor, smart_contracts: "SmartContracts"):
+        witnesses = []
+        for authority in smart_contracts.config.nodes_config.additional_governance_authorities:
+            witness = smart_contracts.sign_tx(tx_cbor, authority.mainchain_key)
+            witnesses.append(witness.json["cborHex"])
+        submit_response = smart_contracts.assemble_and_submit_tx(tx_cbor, witnesses)
+        return submit_response
+
+    def handle_transaction(self, response: SmartContractsResponse, smart_contracts: "SmartContracts"):
+        if isinstance(response.json, list):
+            for tx in response.json:
+                tx_cbor = tx["transaction_to_sign"]["tx"]["cborHex"]
+                response = self.sign_and_submit_tx(tx_cbor, smart_contracts)
+        else:
+            tx_cbor = response.json["transaction_to_sign"]["tx"]["cborHex"]
+            response = self.sign_and_submit_tx(tx_cbor, smart_contracts)
+
+        return response
+
+
+def handle_governance_signature(
+    response: SmartContractsResponse, smart_contracts: "SmartContracts"
+) -> SmartContractsResponse:
+    def contains_key(data, key):
+        if isinstance(data, dict):
+            return key in data
+        elif isinstance(data, list):
+            return any(key in item for item in data if isinstance(item, dict))
+        return False
+
+    if contains_key(response.json, "transaction_to_sign"):
+        handler = MultiSignatureHandler()
     else:
-        return None
+        handler = SingleSignatureHandler()
 
-
-def parse_transaction_cbor(stdout: str) -> str:
-    pattern = r"\"TransactionToSign\":.*\"cborHex\":\"([a-f0-9]+)\""
-    match = re.search(pattern, stdout)
-    if match:
-        return match.group(1)
-    else:
-        return None
-
-
-def parse_response(result: Result) -> SmartContractsResponse:
-    response = SmartContractsResponse(returncode=result.returncode, stdout=result.stdout, stderr=result.stderr)
-    response.transaction_id = parse_transaction_id(result.stdout)
-    response.transaction_cbor = parse_transaction_cbor(result.stdout)
-    return response
+    return handler.handle_transaction(response, smart_contracts)
 
 
 def parse_json_response(result: Result) -> SmartContractsResponse:
     response = SmartContractsResponse(returncode=result.returncode, stdout=result.stdout, stderr=result.stderr)
-    response.json = json.loads(result.stdout)
+    try:
+        response.json = json.loads(result.stdout)
+    except json.JSONDecodeError as e:
+        logging.warning(f"Failed to parse {result.stdout} as JSON. Error: {e}")
     return response
 
 
@@ -54,8 +83,8 @@ class SmartContracts:
         self.cli = cli
         self.run_command = run_command
         self.config = config
-        self.reserve = SmartContracts.Reserve(cli, run_command, config)
-        self.governance = SmartContracts.Governance(cli, run_command, config)
+        self.reserve = SmartContracts.Reserve(self)
+        self.governance = SmartContracts.Governance(self)
 
     def get_scripts(self):
         cmd = (
@@ -77,9 +106,8 @@ class SmartContracts:
         )
 
         response = self.run_command.run(cmd)
-        logging.debug("RESPONSE:")
-        logging.debug(response)
-        return parse_response(response)
+        parsed_response = parse_json_response(response)
+        return handle_governance_signature(parsed_response, self)
 
     def register(self, signatures: RegistrationSignatures, payment_key, spo_public_key, registration_utxo):
         cmd = (
@@ -95,7 +123,7 @@ class SmartContracts:
         )
 
         response = self.run_command.run(cmd, timeout=self.config.timeouts.register_cmd)
-        return parse_response(response)
+        return parse_json_response(response)
 
     def deregister(self, payment_key, spo_public_key):
         cmd = (
@@ -107,7 +135,7 @@ class SmartContracts:
         )
 
         response = self.run_command.run(cmd, timeout=self.config.timeouts.deregister_cmd)
-        return parse_response(response)
+        return parse_json_response(response)
 
     def upsert_permissioned_candidates(self, governance_key, new_candidates_list: dict[str, Node]):
         logging.debug("Creating permissioned candidates file...")
@@ -128,7 +156,8 @@ class SmartContracts:
         )
 
         response = self.run_command.run(cmd, timeout=self.config.timeouts.register_cmd)
-        return parse_response(response)
+        parsed_response = parse_json_response(response)
+        return handle_governance_signature(parsed_response, self)
 
     def sign_tx(self, transaction_cbor, payment_key):
         cmd = (
@@ -150,13 +179,14 @@ class SmartContracts:
         )
 
         response = self.run_command.run(cmd)
-        return parse_response(response)
+        return parse_json_response(response)
 
     class Reserve:
-        def __init__(self, cli, run_command, config: ApiConfig):
-            self.cli = cli
-            self.run_command = run_command
-            self.config = config
+        def __init__(self, parent: "SmartContracts"):
+            self.cli = parent.cli
+            self.run_command = parent.run_command
+            self.config = parent.config
+            self.parent = parent
 
         def init(self, payment_key):
             cmd = (
@@ -166,7 +196,8 @@ class SmartContracts:
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.run(cmd)
-            return parse_response(response)
+            parsed_response = parse_json_response(response)
+            return handle_governance_signature(parsed_response, self.parent)
 
         def create(self, v_function_hash, initial_deposit, token, payment_key):
             cmd = (
@@ -178,8 +209,9 @@ class SmartContracts:
                 f"--genesis-utxo {self.config.genesis_utxo} "
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
-            response = self.run_command.run(cmd)
-            return parse_response(response)
+            response = self.run_command.run(cmd, timeout=self.config.timeouts.main_chain_tx)
+            parsed_response = parse_json_response(response)
+            return handle_governance_signature(parsed_response, self.parent)
 
         def release(self, reference_utxo, amount, payment_key):
             cmd = (
@@ -191,7 +223,7 @@ class SmartContracts:
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.run(cmd)
-            return parse_response(response)
+            return parse_json_response(response)
 
         def deposit(self, amount, payment_key):
             cmd = (
@@ -202,7 +234,8 @@ class SmartContracts:
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.run(cmd)
-            return parse_response(response)
+            parsed_response = parse_json_response(response)
+            return handle_governance_signature(parsed_response, self.parent)
 
         def update_settings(self, v_function_hash, payment_key):
             cmd = (
@@ -213,7 +246,8 @@ class SmartContracts:
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.run(cmd)
-            return parse_response(response)
+            parsed_response = parse_json_response(response)
+            return handle_governance_signature(parsed_response, self.parent)
 
         def handover(self, payment_key):
             cmd = (
@@ -223,13 +257,15 @@ class SmartContracts:
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.run(cmd)
-            return parse_response(response)
+            parsed_response = parse_json_response(response)
+            return handle_governance_signature(parsed_response, self.parent)
 
     class Governance:
-        def __init__(self, cli, run_command, config: ApiConfig):
-            self.cli = cli
-            self.run_command = run_command
-            self.config = config
+        def __init__(self, parent: "SmartContracts"):
+            self.cli = parent.cli
+            self.run_command = parent.run_command
+            self.config = parent.config
+            self.parent = parent
 
         def update(self, payment_key, new_governance_authorities, new_governance_threshold=1):
             authorities_str = " ".join(new_governance_authorities)
@@ -242,7 +278,8 @@ class SmartContracts:
                 f"--ogmios-url {self.config.stack_config.ogmios_url}"
             )
             response = self.run_command.run(cmd)
-            return parse_response(response)
+            parsed_response = parse_json_response(response)
+            return handle_governance_signature(parsed_response, self.parent)
 
         def get_policy(self):
             cmd = (

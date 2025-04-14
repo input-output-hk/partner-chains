@@ -1979,6 +1979,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive-where"
+version = "1.2.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62d671cc41a825ebabc75757b62d3d168c577f9149b2d49ece1dad1f72119d25"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.87",
+]
+
+[[package]]
 name = "derive_more"
 version = "0.99.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6284,6 +6295,20 @@ dependencies = [
 [[package]]
 name = "pallet-governed-map"
 version = "1.6.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "pretty_assertions",
+ "scale-info",
+ "sidechain-domain",
+ "sp-core",
+ "sp-governed-map",
+ "sp-io",
+ "sp-runtime",
+]
 
 [[package]]
 name = "pallet-grandpa"
@@ -6671,7 +6696,6 @@ dependencies = [
  "anyhow",
  "cardano-serialization-lib",
  "cbor_event",
- "env_logger 0.11.3",
  "fraction",
  "hex",
  "hex-literal",
@@ -6958,7 +6982,6 @@ dependencies = [
  "authority-selection-inherents",
  "clap",
  "cli-commands",
- "env_logger 0.11.3",
  "frame-support",
  "log",
  "log4rs",
@@ -6998,7 +7021,6 @@ version = "1.6.0"
 dependencies = [
  "anyhow",
  "clap",
- "env_logger 0.11.3",
  "hex",
  "hex-literal",
  "ogmios-client",
@@ -7886,8 +7908,8 @@ dependencies = [
 
 [[package]]
 name = "raw-scripts"
-version = "7.0.2"
-source = "git+https://github.com/input-output-hk/partner-chains-smart-contracts.git?tag=v7.0.2#f2f9446d99e905550f28b912df026f84587e50b8"
+version = "7.1.0"
+source = "git+https://github.com/input-output-hk/partner-chains-smart-contracts.git?tag=v7.1.0#32ec5bb6967cd9c9c1b95af2cb4468b54ad0c148"
 dependencies = [
  "hex-literal",
 ]
@@ -10026,6 +10048,7 @@ dependencies = [
  "bech32 0.9.1",
  "blake2b_simd",
  "byte-string-derive",
+ "derive-where",
  "derive_more",
  "ed25519-zebra",
  "figment",
@@ -10565,6 +10588,19 @@ dependencies = [
 [[package]]
 name = "sp-governed-map"
 version = "1.6.0"
+dependencies = [
+ "async-trait",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sidechain-domain",
+ "sp-api",
+ "sp-inherents",
+ "sp-runtime",
+ "thiserror",
+ "tokio",
+]
 
 [[package]]
 name = "sp-inherents"

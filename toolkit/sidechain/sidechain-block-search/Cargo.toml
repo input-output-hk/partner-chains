@@ -15,7 +15,7 @@ workspace = true
 [dependencies]
 parity-scale-codec = { workspace = true, features = ['std'] }
 scale-info = { workspace = true, features = ['std'] }
-serde = { workspace = true, default-features = true }
+serde = { workspace = true, features = ['std'] }
 
 sp-core = { workspace = true, features = ['std'] }
 sp-runtime = { workspace = true, features = ['std'] }
