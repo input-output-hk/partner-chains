@@ -40,7 +40,7 @@ impl ProvideRuntimeApi<Block> for TestApiV1 {
 }
 
 sp_api::mock_impl_runtime_apis! {
-	impl GovernedMapApi<Block> for TestApiV1 {
+	impl GovernedMapIDPApi<Block> for TestApiV1 {
 		fn get_stored_mappings() -> BTreeMap<String, ByteString> {
 			self.stored_mappings.clone()
 		}

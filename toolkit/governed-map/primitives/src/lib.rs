@@ -4,11 +4,12 @@ extern crate alloc;
 
 use alloc::fmt::Debug;
 use alloc::string::String;
-use core::ops::Deref;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sidechain_domain::{byte_string::*, *};
 use sp_inherents::*;
+use sp_runtime::traits::Get;
+use sp_runtime::BoundedVec;
 #[cfg(feature = "std")]
 use {sp_api::*, std::collections::BTreeMap};
 
@@ -69,6 +70,60 @@ impl IsFatalError for InherentError {
 		true
 	}
 }
+
+/// Handler trait for runtime components which need to react to changes in the Governed Map.
+pub trait OnGovernedMappingChange<MaxKeyLength, MaxValueLength>
+where
+	MaxKeyLength: Get<u32>,
+	MaxValueLength: Get<u32>,
+{
+	/// Processes a change to a single governed mapping.
+	fn on_governed_mapping_change(
+		key: BoundedString<MaxKeyLength>,
+		new_value: Option<BoundedVec<u8, MaxValueLength>>,
+		old_value: Option<BoundedVec<u8, MaxValueLength>>,
+	);
+}
+
+impl<MaxKeyLength, MaxValueLength> OnGovernedMappingChange<MaxKeyLength, MaxValueLength> for ()
+where
+	MaxKeyLength: Get<u32>,
+	MaxValueLength: Get<u32>,
+{
+	fn on_governed_mapping_change(
+		_key: BoundedString<MaxKeyLength>,
+		_new_value: Option<BoundedVec<u8, MaxValueLength>>,
+		_old_value: Option<BoundedVec<u8, MaxValueLength>>,
+	) {
+	}
+}
+
+macro_rules! impl_tuple_on_governed_mapping_change {
+    ($first_type:ident, $($type:ident),+) => {
+		impl<MaxKeyLength, MaxValueLength, $first_type, $($type),+>
+			OnGovernedMappingChange<MaxKeyLength, MaxValueLength>
+		for ($first_type, $($type),+) where
+			MaxKeyLength: Get<u32>,
+			MaxValueLength: Get<u32>,
+			$first_type: OnGovernedMappingChange<MaxKeyLength, MaxValueLength>,
+			$($type: OnGovernedMappingChange<MaxKeyLength, MaxValueLength>),+
+		{
+			fn on_governed_mapping_change(
+				key: BoundedString<MaxKeyLength>,
+				new_value: Option<BoundedVec<u8, MaxValueLength>>,
+				old_value: Option<BoundedVec<u8, MaxValueLength>>,
+			) {
+				<$first_type as OnGovernedMappingChange<MaxKeyLength, MaxValueLength>>::on_governed_mapping_change(key.clone(), new_value.clone(), old_value.clone());
+				$(<$type as OnGovernedMappingChange<MaxKeyLength, MaxValueLength>>::on_governed_mapping_change(key.clone(), new_value.clone(), old_value.clone());)+
+			}
+		}
+    };
+}
+
+impl_tuple_on_governed_mapping_change!(A, B);
+impl_tuple_on_governed_mapping_change!(A, B, C);
+impl_tuple_on_governed_mapping_change!(A, B, C, D);
+impl_tuple_on_governed_mapping_change!(A, B, C, D, E);
 
 type ChangesV1 = Vec<GovernedMapChangeV1>;
 
@@ -146,7 +201,7 @@ impl GovernedMapInherentDataProvider {
 	/// - an IDP compatible with the pallet version signalled through the runtime API
 	///
 	/// Parameters:
-	/// - `client`: runtime client capable of providing [GovernedMapApi] runtime API
+	/// - `client`: runtime client capable of providing [GovernedMapIDPApi] runtime API
 	/// - `parent_hash`: parent hash of the current block
 	/// - `mc_hash`: Cardano block hash referenced by the current block
 	/// - `data_source`: data source implementing [GovernedMapDataSource]
@@ -159,32 +214,35 @@ impl GovernedMapInherentDataProvider {
 	where
 		Block: sp_runtime::traits::Block,
 		T: ProvideRuntimeApi<Block> + Send + Sync,
-		T::Api: GovernedMapApi<Block>,
+		T::Api: GovernedMapIDPApi<Block>,
 	{
 		let api = client.runtime_api();
-		if !api.has_api::<dyn GovernedMapApi<Block>>(parent_hash)? {
+		if !api.has_api::<dyn GovernedMapIDPApi<Block>>(parent_hash)? {
 			log::info!("💤 Skipping Governed Map observation. Pallet not detected in the runtime.");
 			return Ok(Self::Inert);
 		}
 
 		match api.get_pallet_version(parent_hash)? {
-			1 => Self::new_v1(api.deref(), parent_hash, mc_hash, data_source).await,
+			1 => Self::new_v1(client, parent_hash, mc_hash, data_source).await,
 			unsupported_version => {
 				Err(InherentProviderCreationError::UnsupportedPalletVersion(unsupported_version, 1))
 			},
 		}
 	}
 
-	async fn new_v1<Api, Block>(
-		api: &Api,
+	async fn new_v1<T, Block>(
+		client: &T,
 		parent_hash: Block::Hash,
 		mc_hash: McBlockHash,
 		data_source: &(dyn GovernedMapDataSource + Send + Sync),
 	) -> Result<Self, InherentProviderCreationError>
 	where
 		Block: sp_runtime::traits::Block,
-		Api: GovernedMapApi<Block>,
+		T: ProvideRuntimeApi<Block> + Send + Sync,
+		T::Api: GovernedMapIDPApi<Block>,
 	{
+		let api = client.runtime_api();
+
 		let Some(main_chain_script) = api.get_main_chain_scripts(parent_hash)? else {
 			log::info!("💤 Skipping Governed Map observation. Main chain scripts not set yet.");
 			return Ok(Self::Inert);
@@ -219,7 +277,7 @@ impl GovernedMapInherentDataProvider {
 sp_api::decl_runtime_apis! {
 	/// Runtime API exposing data required for the [GovernedMapInherentDataProvider] to operate.
 	#[api_version(1)]
-	pub trait GovernedMapApi
+	pub trait GovernedMapIDPApi
 	{
 		/// Returns all key-value mappings currently stored in the pallet
 		fn get_stored_mappings() -> BTreeMap<String, ByteString>;

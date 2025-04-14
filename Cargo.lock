@@ -6868,6 +6868,7 @@ dependencies = [
  "sp-consensus-aura",
  "sp-consensus-grandpa",
  "sp-core",
+ "sp-governed-map",
  "sp-inherents",
  "sp-io",
  "sp-keyring",

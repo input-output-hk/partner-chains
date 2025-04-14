@@ -8,12 +8,14 @@ use partner_chains_db_sync_data_sources::{
 };
 use partner_chains_mock_data_sources::{
 	block::BlockDataSourceMock, candidate::AuthoritySelectionDataSourceMock,
-	mc_hash::McHashDataSourceMock, native_token::NativeTokenDataSourceMock,
-	sidechain_rpc::SidechainRpcDataSourceMock, stake_distribution::StakeDistributionDataSourceMock,
+	governed_map::GovernedMapDataSourceMock, mc_hash::McHashDataSourceMock,
+	native_token::NativeTokenDataSourceMock, sidechain_rpc::SidechainRpcDataSourceMock,
+	stake_distribution::StakeDistributionDataSourceMock,
 };
 use sc_service::error::Error as ServiceError;
 use sidechain_mc_hash::McHashDataSource;
 use sp_block_participation::inherent_data::BlockParticipationDataSource;
+use sp_governed_map::GovernedMapDataSource;
 use sp_native_token_management::NativeTokenManagementDataSource;
 use std::{error::Error, sync::Arc};
 
@@ -24,6 +26,7 @@ pub struct DataSources {
 	pub native_token: Arc<dyn NativeTokenManagementDataSource + Send + Sync>,
 	pub sidechain_rpc: Arc<dyn SidechainRpcDataSource + Send + Sync>,
 	pub block_participation: Arc<dyn BlockParticipationDataSource + Send + Sync>,
+	pub governed_map: Arc<dyn GovernedMapDataSource + Send + Sync>,
 }
 
 pub(crate) async fn create_cached_data_sources(
@@ -60,6 +63,7 @@ pub fn create_mock_data_sources(
 		authority_selection: Arc::new(AuthoritySelectionDataSourceMock::new_from_env()?),
 		native_token: Arc::new(NativeTokenDataSourceMock::new()),
 		block_participation: Arc::new(StakeDistributionDataSourceMock::new()),
+		governed_map: Arc::new(GovernedMapDataSourceMock::new([].into())),
 	})
 }
 
@@ -91,6 +95,9 @@ pub async fn create_cached_db_sync_data_sources(
 			pool,
 			metrics_opt,
 			STAKE_CACHE_SIZE,
+		)),
+		governed_map: Arc::new(GovernedMapDataSourceMock::new(
+			[("key1".into(), vec![1, 2, 3].into())].into(),
 		)),
 	})
 }

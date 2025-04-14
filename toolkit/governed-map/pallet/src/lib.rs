@@ -11,6 +11,8 @@ extern crate alloc;
 
 pub use pallet::*;
 
+use crate::alloc::string::{String, ToString};
+use crate::weights::WeightInfo;
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 use sidechain_domain::byte_string::*;
@@ -30,7 +32,6 @@ mod benchmarking;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use crate::weights::WeightInfo;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
@@ -50,6 +51,16 @@ pub mod pallet {
 
 		/// Maximum length of data stored under a single key in the Governed Map
 		type MaxValueLength: Get<u32>;
+
+		/// Handler called for each change in the governed mappings.
+		///
+		/// If your runtime does not need to react to any changes, a no-op implementation for [()] can be used.
+		/// Otherwise, it is advised to benchmark the runtime and use your own weights to include weight consumed
+		/// by the handler.
+		type OnGovernedMappingChange: OnGovernedMappingChange<
+			Self::MaxKeyLength,
+			Self::MaxValueLength,
+		>;
 
 		/// Weight functions for the pallet's extrinsics
 		type WeightInfo: weights::WeightInfo;
@@ -177,7 +188,9 @@ pub mod pallet {
 			log::info!("💾 Registering {} Governed Map changes", changes.len(),);
 
 			for (key, value) in changes {
-				Mapping::<T>::set(key, value);
+				let old_value = Mapping::<T>::get(&key);
+				Mapping::<T>::set(&key, value.clone());
+				T::OnGovernedMappingChange::on_governed_mapping_change(key, value, old_value);
 			}
 
 			Ok(())
@@ -210,9 +223,20 @@ pub mod pallet {
 			Mapping::<T>::iter()
 		}
 
+		/// Returns an iterator over all key-value pairs in the pallet storage, using unbound types.
+		pub fn get_all_key_value_pairs_unbounded() -> impl Iterator<Item = (String, ByteString)> {
+			Self::get_all_key_value_pairs()
+				.map(|(key, value)| (key.to_string(), value.to_vec().into()))
+		}
+
 		/// Returns current pallet version.
 		pub fn get_version() -> u32 {
 			PALLET_VERSION
+		}
+
+		/// Returns the current main chain scripts
+		pub fn get_main_chain_scripts() -> Option<MainChainScriptsV1> {
+			MainChainScripts::<T>::get()
 		}
 	}
 }
