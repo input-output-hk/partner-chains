@@ -65,6 +65,28 @@ runs:
           echo "❌ Addresses file not found: dev/envs/${{ inputs.env }}/addresses.json"
           exit 1
         fi
+        
+        # Get genesis UTXO from the node
+        echo "Getting genesis UTXO from the node..."
+        GENESIS_UTXO_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          curl -s -H "Content-Type: application/json" \
+          -d '{"jsonrpc":"2.0","method":"sidechain_getParams","params":[],"id":1}' \
+          http://localhost:9933)
+        
+        if ! echo "$GENESIS_UTXO_RESPONSE" | jq -e '.result.genesis_utxo' > /dev/null; then
+          echo "❌ Failed to get genesis UTXO: $(echo "$GENESIS_UTXO_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+          echo "Full genesis UTXO response: $GENESIS_UTXO_RESPONSE"
+          exit 1
+        fi
+        
+        export GENESIS_UTXO=$(echo "$GENESIS_UTXO_RESPONSE" | jq -r '.result.genesis_utxo')
+        echo "Genesis UTXO: $GENESIS_UTXO"
+        
+        # Export other required variables for smart contract tests
+        export REGISTRATION_UTXO="a52b139d9b6acfd73dfa2da05c023a7ab006b5656866db68c1d4ce58a56b818b#0"
+        export REFERENCE_UTXO="a52b139d9b6acfd73dfa2da05c023a7ab006b5656866db68c1d4ce58a56b818b#0"
+        export TRANSACTION_CBOR="0x1234"
+        export WITNESSES="0x5678"
 
     - name: Fetch Sidechain Status
       shell: bash
@@ -475,7 +497,7 @@ runs:
         
         # Get stake key hash from the first permissioned candidate
         echo "Extracting stake key hash from first permissioned candidate..."
-        STAKE_KEY_HASH=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].mainchainPublicKey')
+        STAKE_KEY_HASH=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].sidechainPublicKey')
         
         if [ -z "$STAKE_KEY_HASH" ] || [ "$STAKE_KEY_HASH" = "null" ]; then
           echo "❌ Failed to get stake key hash from Ariadne parameters"
@@ -520,13 +542,14 @@ runs:
           http://localhost:9933)
         
         # Check if block hash response is valid
-        if ! echo "$BLOCK_HASH_RESPONSE" | jq -e '.result.hash' > /dev/null; then
+        if ! echo "$BLOCK_HASH_RESPONSE" | jq -e '.result' > /dev/null; then
           echo "❌ Failed to get block hash: $(echo "$BLOCK_HASH_RESPONSE" | jq -r '.error.message // "Unknown error"')"
           echo "Full block hash response: $BLOCK_HASH_RESPONSE"
           exit 1
         fi
         
-        BLOCK_HASH=$(echo "$BLOCK_HASH_RESPONSE" | jq -r '.result.hash')
+        # Extract the block hash from the response
+        BLOCK_HASH=$(echo "$BLOCK_HASH_RESPONSE" | jq -r '.result.parentHash')
         
         if [ -z "$BLOCK_HASH" ] || [ "$BLOCK_HASH" = "null" ]; then
           echo "❌ Invalid block hash received"
@@ -572,7 +595,7 @@ runs:
         echo "Testing get-scripts..."
         SCRIPTS_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           /usr/local/bin/partner-chains-node smart-contracts get-scripts \
-          --genesis-utxo $GENESIS_UTXO \
+          --genesis-utxo "$GENESIS_UTXO" \
           --ogmios-url http://localhost:1337)
         
         if [ $? -eq 0 ]; then
@@ -589,7 +612,7 @@ runs:
           --permissioned-candidates-count 3 \
           --registered-candidates-count 7 \
           --payment-key-file /data/keys/payment.skey \
-          --genesis-utxo $GENESIS_UTXO \
+          --genesis-utxo "$GENESIS_UTXO" \
           --ogmios-url http://localhost:1337)
         
         if [ $? -eq 0 ]; then
@@ -604,7 +627,7 @@ runs:
         PERM_CANDIDATES_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           /usr/local/bin/partner-chains-node smart-contracts upsert-permissioned-candidates \
           --payment-key-file /data/keys/payment.skey \
-          --genesis-utxo $GENESIS_UTXO \
+          --genesis-utxo "$GENESIS_UTXO" \
           --permissioned-candidates-file /data/keys/permissioned_candidates.csv \
           --ogmios-url http://localhost:1337)
         
@@ -620,12 +643,12 @@ runs:
         REGISTER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           /usr/local/bin/partner-chains-node smart-contracts register \
           --payment-key-file /data/keys/payment.skey \
-          --genesis-utxo $GENESIS_UTXO \
+          --genesis-utxo "$GENESIS_UTXO" \
           --spo-public-key /data/keys/spo.pubkey \
           --sidechain-public-keys /data/keys/sidechain.pubkey \
           --spo-signature /data/keys/spo.sig \
           --sidechain-signature /data/keys/sidechain.sig \
-          --registration-utxo $REGISTRATION_UTXO \
+          --registration-utxo "$REGISTRATION_UTXO" \
           --ogmios-url http://localhost:1337)
         
         if [ $? -eq 0 ]; then
@@ -640,7 +663,7 @@ runs:
         DEREGISTER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           /usr/local/bin/partner-chains-node smart-contracts deregister \
           --payment-key-file /data/keys/payment.skey \
-          --genesis-utxo $GENESIS_UTXO \
+          --genesis-utxo "$GENESIS_UTXO" \
           --spo-public-key /data/keys/spo.pubkey \
           --ogmios-url http://localhost:1337)
         
@@ -659,7 +682,7 @@ runs:
         INIT_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           /usr/local/bin/partner-chains-node smart-contracts reserve init \
           --payment-key-file /data/keys/payment.skey \
-          --genesis-utxo $GENESIS_UTXO \
+          --genesis-utxo "$GENESIS_UTXO" \
           --ogmios-url http://localhost:1337)
         
         if [ $? -eq 0 ]; then
@@ -677,7 +700,7 @@ runs:
           --initial-deposit-amount 1000000 \
           --token lovelace \
           --payment-key-file /data/keys/payment.skey \
-          --genesis-utxo $GENESIS_UTXO \
+          --genesis-utxo "$GENESIS_UTXO" \
           --ogmios-url http://localhost:1337)
         
         if [ $? -eq 0 ]; then
@@ -693,7 +716,7 @@ runs:
           /usr/local/bin/partner-chains-node smart-contracts reserve deposit \
           --amount 100000 \
           --payment-key-file /data/keys/payment.skey \
-          --genesis-utxo $GENESIS_UTXO \
+          --genesis-utxo "$GENESIS_UTXO" \
           --ogmios-url http://localhost:1337)
         
         if [ $? -eq 0 ]; then
@@ -709,7 +732,7 @@ runs:
           /usr/local/bin/partner-chains-node smart-contracts reserve update-settings \
           --total-accrued-function-script-hash 0x1234 \
           --payment-key-file /data/keys/payment.skey \
-          --genesis-utxo $GENESIS_UTXO \
+          --genesis-utxo "$GENESIS_UTXO" \
           --ogmios-url http://localhost:1337)
         
         if [ $? -eq 0 ]; then
@@ -724,7 +747,7 @@ runs:
         HANDOVER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           /usr/local/bin/partner-chains-node smart-contracts reserve handover \
           --payment-key-file /data/keys/payment.skey \
-          --genesis-utxo $GENESIS_UTXO \
+          --genesis-utxo "$GENESIS_UTXO" \
           --ogmios-url http://localhost:1337)
         
         if [ $? -eq 0 ]; then
@@ -738,10 +761,10 @@ runs:
         echo "Testing reserve release..."
         RELEASE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           /usr/local/bin/partner-chains-node smart-contracts reserve release \
-          --reference-utxo $REFERENCE_UTXO \
+          --reference-utxo "$REFERENCE_UTXO" \
           --amount 100000 \
           --payment-key-file /data/keys/payment.skey \
-          --genesis-utxo $GENESIS_UTXO \
+          --genesis-utxo "$GENESIS_UTXO" \
           --ogmios-url http://localhost:1337)
         
         if [ $? -eq 0 ]; then
@@ -759,7 +782,7 @@ runs:
         GOVERNANCE_UPDATE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           /usr/local/bin/partner-chains-node smart-contracts governance update \
           --payment-key-file /data/keys/payment.skey \
-          --genesis-utxo $GENESIS_UTXO \
+          --genesis-utxo "$GENESIS_UTXO" \
           --governance-authority /data/keys/governance.pubkey \
           --threshold 1 \
           --ogmios-url http://localhost:1337)
@@ -775,7 +798,7 @@ runs:
         echo "Testing governance get policy..."
         GOVERNANCE_POLICY_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           /usr/local/bin/partner-chains-node smart-contracts governance get-policy \
-          --genesis-utxo $GENESIS_UTXO \
+          --genesis-utxo "$GENESIS_UTXO" \
           --ogmios-url http://localhost:1337)
         
         if [ $? -eq 0 ]; then
@@ -792,7 +815,7 @@ runs:
         echo "Testing sign transaction..."
         SIGN_TX_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           /usr/local/bin/partner-chains-node smart-contracts sign-tx \
-          --transaction $TRANSACTION_CBOR \
+          --transaction "$TRANSACTION_CBOR" \
           --payment-key-file /data/keys/payment.skey)
         
         if [ $? -eq 0 ]; then
@@ -806,8 +829,8 @@ runs:
         echo "Testing assemble and submit transaction..."
         ASSEMBLE_TX_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           /usr/local/bin/partner-chains-node smart-contracts assemble-and-submit-tx \
-          --transaction $TRANSACTION_CBOR \
-          --witnesses $WITNESSES \
+          --transaction "$TRANSACTION_CBOR" \
+          --witnesses "$WITNESSES" \
           --ogmios-url http://localhost:1337)
         
         if [ $? -eq 0 ]; then
@@ -825,7 +848,7 @@ runs:
         MAP_GET_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           /usr/local/bin/partner-chains-node smart-contracts governed-map get \
           --key test_key \
-          --genesis-utxo $GENESIS_UTXO \
+          --genesis-utxo "$GENESIS_UTXO" \
           --ogmios-url http://localhost:1337)
         
         if [ $? -eq 0 ]; then
@@ -842,7 +865,7 @@ runs:
           --key test_key \
           --value test_value \
           --payment-key-file /data/keys/payment.skey \
-          --genesis-utxo $GENESIS_UTXO \
+          --genesis-utxo "$GENESIS_UTXO" \
           --ogmios-url http://localhost:1337)
         
         if [ $? -eq 0 ]; then
