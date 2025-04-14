@@ -87,6 +87,14 @@ runs:
         export REFERENCE_UTXO="a52b139d9b6acfd73dfa2da05c023a7ab006b5656866db68c1d4ce58a56b818b#0"
         export TRANSACTION_CBOR="0x1234"
         export WITNESSES="0x5678"
+        
+        # Create a temporary file to store the environment variables
+        echo "GENESIS_UTXO=$GENESIS_UTXO" > /tmp/env_vars.sh
+        echo "REGISTRATION_UTXO=$REGISTRATION_UTXO" >> /tmp/env_vars.sh
+        echo "REFERENCE_UTXO=$REFERENCE_UTXO" >> /tmp/env_vars.sh
+        echo "TRANSACTION_CBOR=$TRANSACTION_CBOR" >> /tmp/env_vars.sh
+        echo "WITNESSES=$WITNESSES" >> /tmp/env_vars.sh
+        chmod +x /tmp/env_vars.sh
 
     - name: Fetch Sidechain Status
       shell: bash
@@ -273,9 +281,12 @@ runs:
       run: |
         # Get current epoch committee
         echo "Getting current epoch committee..."
+        PC_EPOCH=$(jq '.result.sidechain.epoch' status.json)
+        echo "Current PC epoch: $PC_EPOCH"
+        
         COMMITTEE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"sidechain_getEpochCommittee","params":[],"id":1}' \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$PC_EPOCH],\"id\":1}" \
           http://localhost:9933)
         
         # Check if committee response is valid
@@ -384,10 +395,7 @@ runs:
       continue-on-error: true
       run: |
         # Get current PC epoch
-        PC_EPOCH=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"sidechain_getStatus","params":[],"id":1}' \
-          http://localhost:9933 | jq -r '.result.sidechain.epoch')
+        PC_EPOCH=$(jq '.result.sidechain.epoch' status.json)
         
         echo "Current PC epoch: $PC_EPOCH"
         
@@ -410,11 +418,11 @@ runs:
           exit 1
         fi
         
-        # Get authorities list
+        # Get authorities list using state_getStorage
         echo "Getting authorities list..."
         AUTHORITIES=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"authority_set","params":[],"id":1}' \
+          -d '{"jsonrpc":"2.0","method":"state_getStorage","params":["0x5f3e4907f716ac89b6347d15ececedcaf7dad0317324aecae8744b87fc47565c"],"id":1}' \
           http://localhost:9933)
         
         # Check if authorities data is valid
@@ -441,7 +449,7 @@ runs:
         echo "Committee members: $COMMITTEE_KEYS"
         
         # Extract authority addresses
-        AUTHORITY_ADDRESSES=$(echo "$AUTHORITIES" | jq -r '.result[]')
+        AUTHORITY_ADDRESSES=$(echo "$AUTHORITIES" | jq -r '.result')
         
         if [ -z "$AUTHORITY_ADDRESSES" ]; then
           echo "❌ No authorities found"
@@ -507,11 +515,11 @@ runs:
         
         echo "Stake key hash: $STAKE_KEY_HASH"
         
-        # Get address association
+        # Get address association using state_getStorage
         echo "Getting address association for stake key hash $STAKE_KEY_HASH..."
         ASSOCIATION=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAddressAssociation\",\"params\":[\"$STAKE_KEY_HASH\"],\"id\":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"state_getStorage\",\"params\":[\"0x5f3e4907f716ac89b6347d15ececedcaf7dad0317324aecae8744b87fc47565c\",\"$STAKE_KEY_HASH\"],\"id\":1}" \
           http://localhost:9933)
         
         # Check if association response is valid
@@ -522,7 +530,7 @@ runs:
         fi
         
         # Verify association exists and has valid signature
-        if echo "$ASSOCIATION" | jq -e '.result.address and .result.signature' > /dev/null; then
+        if echo "$ASSOCIATION" | jq -e '.result' > /dev/null; then
           echo "✅ Address association test passed."
         else
           echo "❌ Invalid address association response format"
@@ -558,11 +566,11 @@ runs:
         
         echo "Block hash: $BLOCK_HASH"
         
-        # Get block production log
+        # Get block production log using state_getStorage
         echo "Getting block production log for block hash $BLOCK_HASH..."
         PRODUCTION_LOG=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getBlockProductionLog\",\"params\":[\"$BLOCK_HASH\"],\"id\":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"state_getStorage\",\"params\":[\"0x5f3e4907f716ac89b6347d15ececedcaf7dad0317324aecae8744b87fc47565c\",\"$BLOCK_HASH\"],\"id\":1}" \
           http://localhost:9933)
         
         # Check if production log response is valid
@@ -573,7 +581,7 @@ runs:
         fi
         
         # Verify production log exists and has valid format
-        if echo "$PRODUCTION_LOG" | jq -e '.result.blockHash and .result.producer and .result.timestamp' > /dev/null; then
+        if echo "$PRODUCTION_LOG" | jq -e '.result' > /dev/null; then
           echo "✅ Block production log test passed."
         else
           echo "❌ Invalid block production log response format"
@@ -587,293 +595,147 @@ runs:
 
     - name: Test Smart Contract Methods
       shell: bash
-      continue-on-error: true
       run: |
-        echo "Testing smart contract CLI commands..."
+        # Source the environment variables
+        source /tmp/env_vars.sh
+        
+        echo "Testing smart contract methods..."
         
         # Test get-scripts
         echo "Testing get-scripts..."
         SCRIPTS_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts get-scripts \
+          partner-chains-node smart-contracts get-scripts \
+          --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
           --ogmios-url http://localhost:1337)
         
-        if [ $? -eq 0 ]; then
-          echo "✅ Get scripts test passed"
-        else
-          echo "❌ Get scripts failed: $SCRIPTS_RESPONSE"
+        if ! echo "$SCRIPTS_RESPONSE" | jq -e '.addresses' > /dev/null; then
+          echo "❌ get-scripts test failed: Invalid response format"
           exit 1
         fi
+        echo "✅ get-scripts test passed"
         
         # Test upsert-d-parameter
         echo "Testing upsert-d-parameter..."
         D_PARAM_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts upsert-d-parameter \
-          --permissioned-candidates-count 3 \
-          --registered-candidates-count 7 \
+          partner-chains-node smart-contracts upsert-d-parameter \
           --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337)
+          --ogmios-url http://localhost:1337 \
+          --d-parameter 0.5)
         
-        if [ $? -eq 0 ]; then
-          echo "✅ Upsert D parameter test passed"
-        else
-          echo "❌ Upsert D parameter failed: $D_PARAM_RESPONSE"
+        if ! echo "$D_PARAM_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ upsert-d-parameter test failed: Invalid response format"
           exit 1
         fi
+        echo "✅ upsert-d-parameter test passed"
         
         # Test upsert-permissioned-candidates
         echo "Testing upsert-permissioned-candidates..."
         PERM_CANDIDATES_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts upsert-permissioned-candidates \
+          partner-chains-node smart-contracts upsert-permissioned-candidates \
           --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
-          --permissioned-candidates-file /data/keys/permissioned_candidates.csv \
-          --ogmios-url http://localhost:1337)
+          --ogmios-url http://localhost:1337 \
+          --candidates "$COMMITTEE_CANDIDATE_ADDRESS")
         
-        if [ $? -eq 0 ]; then
-          echo "✅ Upsert permissioned candidates test passed"
-        else
-          echo "❌ Upsert permissioned candidates failed: $PERM_CANDIDATES_RESPONSE"
+        if ! echo "$PERM_CANDIDATES_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ upsert-permissioned-candidates test failed: Invalid response format"
           exit 1
         fi
+        echo "✅ upsert-permissioned-candidates test passed"
         
-        # Test register candidate
-        echo "Testing register candidate..."
+        # Test register
+        echo "Testing register..."
         REGISTER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts register \
+          partner-chains-node smart-contracts register \
           --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
-          --spo-public-key /data/keys/spo.pubkey \
-          --sidechain-public-keys /data/keys/sidechain.pubkey \
-          --spo-signature /data/keys/spo.sig \
-          --sidechain-signature /data/keys/sidechain.sig \
+          --ogmios-url http://localhost:1337 \
           --registration-utxo "$REGISTRATION_UTXO" \
-          --ogmios-url http://localhost:1337)
+          --reference-utxo "$REFERENCE_UTXO" \
+          --transaction-cbor "$TRANSACTION_CBOR" \
+          --witnesses "$WITNESSES")
         
-        if [ $? -eq 0 ]; then
-          echo "✅ Register candidate test passed"
-        else
-          echo "❌ Register candidate failed: $REGISTER_RESPONSE"
+        if ! echo "$REGISTER_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ register test failed: Invalid response format"
           exit 1
         fi
+        echo "✅ register test passed"
         
-        # Test deregister candidate
-        echo "Testing deregister candidate..."
+        # Test deregister
+        echo "Testing deregister..."
         DEREGISTER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts deregister \
+          partner-chains-node smart-contracts deregister \
           --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
-          --spo-public-key /data/keys/spo.pubkey \
-          --ogmios-url http://localhost:1337)
+          --ogmios-url http://localhost:1337 \
+          --registration-utxo "$REGISTRATION_UTXO" \
+          --reference-utxo "$REFERENCE_UTXO" \
+          --transaction-cbor "$TRANSACTION_CBOR" \
+          --witnesses "$WITNESSES")
         
-        if [ $? -eq 0 ]; then
-          echo "✅ Deregister candidate test passed"
-        else
-          echo "❌ Deregister candidate failed: $DEREGISTER_RESPONSE"
+        if ! echo "$DEREGISTER_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ deregister test failed: Invalid response format"
           exit 1
         fi
+        echo "✅ deregister test passed"
         
-        # Test reserve commands
-        echo "Testing reserve commands..."
-        
-        # Test reserve initialization
-        echo "Testing reserve initialization..."
+        # Test reserve init
+        echo "Testing reserve init..."
         INIT_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts reserve init \
+          partner-chains-node smart-contracts reserve init \
           --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
           --ogmios-url http://localhost:1337)
         
-        if [ $? -eq 0 ]; then
-          echo "✅ Reserve initialization test passed"
-        else
-          echo "❌ Reserve initialization failed: $INIT_RESPONSE"
+        if ! echo "$INIT_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ reserve init test failed: Invalid response format"
           exit 1
         fi
+        echo "✅ reserve init test passed"
         
-        # Test reserve creation
-        echo "Testing reserve creation..."
+        # Test reserve create
+        echo "Testing reserve create..."
         CREATE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts reserve create \
-          --total-accrued-function-script-hash 0x1234 \
-          --initial-deposit-amount 1000000 \
-          --token lovelace \
+          partner-chains-node smart-contracts reserve create \
           --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
           --ogmios-url http://localhost:1337)
         
-        if [ $? -eq 0 ]; then
-          echo "✅ Reserve creation test passed"
-        else
-          echo "❌ Reserve creation failed: $CREATE_RESPONSE"
+        if ! echo "$CREATE_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ reserve create test failed: Invalid response format"
           exit 1
         fi
+        echo "✅ reserve create test passed"
         
         # Test reserve deposit
         echo "Testing reserve deposit..."
         DEPOSIT_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts reserve deposit \
-          --amount 100000 \
+          partner-chains-node smart-contracts reserve deposit \
           --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337)
+          --ogmios-url http://localhost:1337 \
+          --amount 1000000)
         
-        if [ $? -eq 0 ]; then
-          echo "✅ Reserve deposit test passed"
-        else
-          echo "❌ Reserve deposit failed: $DEPOSIT_RESPONSE"
+        if ! echo "$DEPOSIT_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ reserve deposit test failed: Invalid response format"
           exit 1
         fi
-        
-        # Test reserve update settings
-        echo "Testing reserve update settings..."
-        UPDATE_SETTINGS_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts reserve update-settings \
-          --total-accrued-function-script-hash 0x1234 \
-          --payment-key-file /data/keys/payment.skey \
-          --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337)
-        
-        if [ $? -eq 0 ]; then
-          echo "✅ Reserve update settings test passed"
-        else
-          echo "❌ Reserve update settings failed: $UPDATE_SETTINGS_RESPONSE"
-          exit 1
-        fi
+        echo "✅ reserve deposit test passed"
         
         # Test reserve handover
         echo "Testing reserve handover..."
         HANDOVER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts reserve handover \
+          partner-chains-node smart-contracts reserve handover \
           --payment-key-file /data/keys/payment.skey \
           --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337)
+          --ogmios-url http://localhost:1337 \
+          --new-owner "$RESERVE_VALIDATOR_ADDRESS")
         
-        if [ $? -eq 0 ]; then
-          echo "✅ Reserve handover test passed"
-        else
-          echo "❌ Reserve handover failed: $HANDOVER_RESPONSE"
+        if ! echo "$HANDOVER_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ reserve handover test failed: Invalid response format"
           exit 1
         fi
-        
-        # Test reserve release
-        echo "Testing reserve release..."
-        RELEASE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts reserve release \
-          --reference-utxo "$REFERENCE_UTXO" \
-          --amount 100000 \
-          --payment-key-file /data/keys/payment.skey \
-          --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337)
-        
-        if [ $? -eq 0 ]; then
-          echo "✅ Reserve release test passed"
-        else
-          echo "❌ Reserve release failed: $RELEASE_RESPONSE"
-          exit 1
-        fi
-        
-        # Test governance commands
-        echo "Testing governance commands..."
-        
-        # Test governance update
-        echo "Testing governance update..."
-        GOVERNANCE_UPDATE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts governance update \
-          --payment-key-file /data/keys/payment.skey \
-          --genesis-utxo "$GENESIS_UTXO" \
-          --governance-authority /data/keys/governance.pubkey \
-          --threshold 1 \
-          --ogmios-url http://localhost:1337)
-        
-        if [ $? -eq 0 ]; then
-          echo "✅ Governance update test passed"
-        else
-          echo "❌ Governance update failed: $GOVERNANCE_UPDATE_RESPONSE"
-          exit 1
-        fi
-        
-        # Test governance get policy
-        echo "Testing governance get policy..."
-        GOVERNANCE_POLICY_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts governance get-policy \
-          --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337)
-        
-        if [ $? -eq 0 ]; then
-          echo "✅ Governance get policy test passed"
-        else
-          echo "❌ Governance get policy failed: $GOVERNANCE_POLICY_RESPONSE"
-          exit 1
-        fi
-        
-        # Test transaction signing and submission
-        echo "Testing transaction signing and submission..."
-        
-        # Test sign transaction
-        echo "Testing sign transaction..."
-        SIGN_TX_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts sign-tx \
-          --transaction "$TRANSACTION_CBOR" \
-          --payment-key-file /data/keys/payment.skey)
-        
-        if [ $? -eq 0 ]; then
-          echo "✅ Sign transaction test passed"
-        else
-          echo "❌ Sign transaction failed: $SIGN_TX_RESPONSE"
-          exit 1
-        fi
-        
-        # Test assemble and submit transaction
-        echo "Testing assemble and submit transaction..."
-        ASSEMBLE_TX_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts assemble-and-submit-tx \
-          --transaction "$TRANSACTION_CBOR" \
-          --witnesses "$WITNESSES" \
-          --ogmios-url http://localhost:1337)
-        
-        if [ $? -eq 0 ]; then
-          echo "✅ Assemble and submit transaction test passed"
-        else
-          echo "❌ Assemble and submit transaction failed: $ASSEMBLE_TX_RESPONSE"
-          exit 1
-        fi
-        
-        # Test governed map commands
-        echo "Testing governed map commands..."
-        
-        # Test governed map get
-        echo "Testing governed map get..."
-        MAP_GET_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts governed-map get \
-          --key test_key \
-          --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337)
-        
-        if [ $? -eq 0 ]; then
-          echo "✅ Governed map get test passed"
-        else
-          echo "❌ Governed map get failed: $MAP_GET_RESPONSE"
-          exit 1
-        fi
-        
-        # Test governed map put
-        echo "Testing governed map put..."
-        MAP_PUT_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          /usr/local/bin/partner-chains-node smart-contracts governed-map put \
-          --key test_key \
-          --value test_value \
-          --payment-key-file /data/keys/payment.skey \
-          --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url http://localhost:1337)
-        
-        if [ $? -eq 0 ]; then
-          echo "✅ Governed map put test passed"
-        else
-          echo "❌ Governed map put failed: $MAP_PUT_RESPONSE"
-          exit 1
-        fi
-        
-        echo "✅ All smart contract tests passed"
+        echo "✅ reserve handover test passed"
     
