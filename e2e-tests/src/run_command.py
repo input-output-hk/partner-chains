@@ -57,10 +57,10 @@ class LocalRunner(Runner):
         """Run a command and return the result."""
         try:
             completed_process = subprocess.run(
-                command.split(),
+                command,
                 timeout=timeout,
                 capture_output=True,
-                shell=False,
+                shell=True,
                 executable=self.shell,
                 encoding="utf-8",
             )

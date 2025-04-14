@@ -562,292 +562,295 @@ runs:
     # Smart Contract Tests
     #############################################
 
-    - name: Test Init Reserve
+    - name: Test Smart Contract Methods
       shell: bash
       continue-on-error: true
       run: |
-        # Get current MC epoch
-        MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
-        echo "Current MC epoch: $MC_EPOCH"
+        echo "Testing smart contract CLI commands..."
         
-        # Get Ariadne parameters with epoch
-        echo "Getting Ariadne parameters for epoch $MC_EPOCH..."
-        ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
-          http://localhost:9933)
+        # Test get-scripts
+        echo "Testing get-scripts..."
+        SCRIPTS_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          /usr/local/bin/partner-chains-node smart-contracts get-scripts \
+          --genesis-utxo $GENESIS_UTXO \
+          --ogmios-url http://localhost:1337)
         
-        # Check if Ariadne parameters response is valid
-        if ! echo "$ARIADNE_PARAMS" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to get Ariadne parameters: $(echo "$ARIADNE_PARAMS" | jq -r '.error.message // "Unknown error"')"
-          echo "Full Ariadne parameters response: $ARIADNE_PARAMS"
+        if [ $? -eq 0 ]; then
+          echo "✅ Get scripts test passed"
+        else
+          echo "❌ Get scripts failed: $SCRIPTS_RESPONSE"
           exit 1
         fi
         
-        # Get payment key from the first permissioned candidate
-        echo "Extracting payment key from first permissioned candidate..."
-        PAYMENT_KEY=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].sidechainPublicKey')
+        # Test upsert-d-parameter
+        echo "Testing upsert-d-parameter..."
+        D_PARAM_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          /usr/local/bin/partner-chains-node smart-contracts upsert-d-parameter \
+          --permissioned-candidates-count 3 \
+          --registered-candidates-count 7 \
+          --payment-key-file /data/keys/payment.skey \
+          --genesis-utxo $GENESIS_UTXO \
+          --ogmios-url http://localhost:1337)
         
-        if [ -z "$PAYMENT_KEY" ] || [ "$PAYMENT_KEY" = "null" ]; then
-          echo "❌ Failed to get payment key from Ariadne parameters"
-          echo "Permissioned candidates: $(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates')"
+        if [ $? -eq 0 ]; then
+          echo "✅ Upsert D parameter test passed"
+        else
+          echo "❌ Upsert D parameter failed: $D_PARAM_RESPONSE"
           exit 1
         fi
         
-        echo "Payment key: $PAYMENT_KEY"
+        # Test upsert-permissioned-candidates
+        echo "Testing upsert-permissioned-candidates..."
+        PERM_CANDIDATES_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          /usr/local/bin/partner-chains-node smart-contracts upsert-permissioned-candidates \
+          --payment-key-file /data/keys/payment.skey \
+          --genesis-utxo $GENESIS_UTXO \
+          --permissioned-candidates-file /data/keys/permissioned_candidates.csv \
+          --ogmios-url http://localhost:1337)
         
-        # Initialize reserve
-        echo "Initializing reserve with payment key $PAYMENT_KEY..."
+        if [ $? -eq 0 ]; then
+          echo "✅ Upsert permissioned candidates test passed"
+        else
+          echo "❌ Upsert permissioned candidates failed: $PERM_CANDIDATES_RESPONSE"
+          exit 1
+        fi
+        
+        # Test register candidate
+        echo "Testing register candidate..."
+        REGISTER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          /usr/local/bin/partner-chains-node smart-contracts register \
+          --payment-key-file /data/keys/payment.skey \
+          --genesis-utxo $GENESIS_UTXO \
+          --spo-public-key /data/keys/spo.pubkey \
+          --sidechain-public-keys /data/keys/sidechain.pubkey \
+          --spo-signature /data/keys/spo.sig \
+          --sidechain-signature /data/keys/sidechain.sig \
+          --registration-utxo $REGISTRATION_UTXO \
+          --ogmios-url http://localhost:1337)
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ Register candidate test passed"
+        else
+          echo "❌ Register candidate failed: $REGISTER_RESPONSE"
+          exit 1
+        fi
+        
+        # Test deregister candidate
+        echo "Testing deregister candidate..."
+        DEREGISTER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          /usr/local/bin/partner-chains-node smart-contracts deregister \
+          --payment-key-file /data/keys/payment.skey \
+          --genesis-utxo $GENESIS_UTXO \
+          --spo-public-key /data/keys/spo.pubkey \
+          --ogmios-url http://localhost:1337)
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ Deregister candidate test passed"
+        else
+          echo "❌ Deregister candidate failed: $DEREGISTER_RESPONSE"
+          exit 1
+        fi
+        
+        # Test reserve commands
+        echo "Testing reserve commands..."
+        
+        # Test reserve initialization
+        echo "Testing reserve initialization..."
         INIT_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_initReserve\",\"params\":[\"$PAYMENT_KEY\"],\"id\":1}" \
-          http://localhost:9933)
+          /usr/local/bin/partner-chains-node smart-contracts reserve init \
+          --payment-key-file /data/keys/payment.skey \
+          --genesis-utxo $GENESIS_UTXO \
+          --ogmios-url http://localhost:1337)
         
-        # Check if init response is valid
-        if ! echo "$INIT_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to initialize reserve: $(echo "$INIT_RESPONSE" | jq -r '.error.message // "Unknown error"')"
-          echo "Full init response: $INIT_RESPONSE"
-          exit 1
-        fi
-        
-        # Verify initialization
-        if echo "$INIT_RESPONSE" | jq -e '.result.validatorScript and .result.policyScript' > /dev/null; then
-          echo "✅ Reserve initialization test passed."
+        if [ $? -eq 0 ]; then
+          echo "✅ Reserve initialization test passed"
         else
-          echo "❌ Invalid reserve initialization response"
-          echo "Response: $INIT_RESPONSE"
-          exit 1
-        fi
-
-    - name: Test Create Reserve
-      shell: bash
-      continue-on-error: true
-      run: |
-        # Get current MC epoch
-        MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
-        echo "Current MC epoch: $MC_EPOCH"
-        
-        # Get Ariadne parameters with epoch
-        echo "Getting Ariadne parameters for epoch $MC_EPOCH..."
-        ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
-          http://localhost:9933)
-        
-        # Check if Ariadne parameters response is valid
-        if ! echo "$ARIADNE_PARAMS" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to get Ariadne parameters: $(echo "$ARIADNE_PARAMS" | jq -r '.error.message // "Unknown error"')"
-          echo "Full Ariadne parameters response: $ARIADNE_PARAMS"
+          echo "❌ Reserve initialization failed: $INIT_RESPONSE"
           exit 1
         fi
         
-        # Get required parameters from the first permissioned candidate
-        echo "Extracting required parameters from first permissioned candidate..."
-        V_FUNCTION_HASH=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].sidechainPublicKey')
-        PAYMENT_KEY=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].sidechainPublicKey')
-        
-        if [ -z "$V_FUNCTION_HASH" ] || [ "$V_FUNCTION_HASH" = "null" ] || [ -z "$PAYMENT_KEY" ] || [ "$PAYMENT_KEY" = "null" ]; then
-          echo "❌ Failed to get required parameters from Ariadne parameters"
-          echo "Permissioned candidates: $(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates')"
-          exit 1
-        fi
-        
-        echo "V function hash: $V_FUNCTION_HASH"
-        echo "Payment key: $PAYMENT_KEY"
-        
-        # Create reserve
-        echo "Creating reserve with v function hash $V_FUNCTION_HASH and payment key $PAYMENT_KEY..."
+        # Test reserve creation
+        echo "Testing reserve creation..."
         CREATE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_createReserve\",\"params\":[\"$V_FUNCTION_HASH\",1000000,\"token\",\"$PAYMENT_KEY\"],\"id\":1}" \
-          http://localhost:9933)
+          /usr/local/bin/partner-chains-node smart-contracts reserve create \
+          --total-accrued-function-script-hash 0x1234 \
+          --initial-deposit-amount 1000000 \
+          --token lovelace \
+          --payment-key-file /data/keys/payment.skey \
+          --genesis-utxo $GENESIS_UTXO \
+          --ogmios-url http://localhost:1337)
         
-        # Check if create response is valid
-        if ! echo "$CREATE_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to create reserve: $(echo "$CREATE_RESPONSE" | jq -r '.error.message // "Unknown error"')"
-          echo "Full create response: $CREATE_RESPONSE"
-          exit 1
-        fi
-        
-        # Verify creation
-        if echo "$CREATE_RESPONSE" | jq -e '.result.success' > /dev/null; then
-          echo "✅ Reserve creation test passed."
+        if [ $? -eq 0 ]; then
+          echo "✅ Reserve creation test passed"
         else
-          echo "❌ Invalid reserve creation response"
-          echo "Response: $CREATE_RESPONSE"
-          exit 1
-        fi
-
-    - name: Test Release Funds
-      shell: bash
-      continue-on-error: true
-      run: |
-        # Get current MC epoch
-        MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
-        echo "Current MC epoch: $MC_EPOCH"
-        
-        # Get Ariadne parameters with epoch
-        echo "Getting Ariadne parameters for epoch $MC_EPOCH..."
-        ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
-          http://localhost:9933)
-        
-        # Check if Ariadne parameters response is valid
-        if ! echo "$ARIADNE_PARAMS" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to get Ariadne parameters: $(echo "$ARIADNE_PARAMS" | jq -r '.error.message // "Unknown error"')"
-          echo "Full Ariadne parameters response: $ARIADNE_PARAMS"
+          echo "❌ Reserve creation failed: $CREATE_RESPONSE"
           exit 1
         fi
         
-        # Get required parameters from the first permissioned candidate
-        echo "Extracting required parameters from first permissioned candidate..."
-        REFERENCE_UTXO=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].sidechainPublicKey')
-        PAYMENT_KEY=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].sidechainPublicKey')
-        
-        if [ -z "$REFERENCE_UTXO" ] || [ "$REFERENCE_UTXO" = "null" ] || [ -z "$PAYMENT_KEY" ] || [ "$PAYMENT_KEY" = "null" ]; then
-          echo "❌ Failed to get required parameters from Ariadne parameters"
-          echo "Permissioned candidates: $(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates')"
-          exit 1
-        fi
-        
-        echo "Reference UTXO: $REFERENCE_UTXO"
-        echo "Payment key: $PAYMENT_KEY"
-        
-        # Release funds
-        echo "Releasing funds with reference UTXO $REFERENCE_UTXO and payment key $PAYMENT_KEY..."
-        RELEASE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_releaseFunds\",\"params\":[\"$REFERENCE_UTXO\",1000000,\"$PAYMENT_KEY\"],\"id\":1}" \
-          http://localhost:9933)
-        
-        # Check if release response is valid
-        if ! echo "$RELEASE_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to release funds: $(echo "$RELEASE_RESPONSE" | jq -r '.error.message // "Unknown error"')"
-          echo "Full release response: $RELEASE_RESPONSE"
-          exit 1
-        fi
-        
-        # Verify release
-        if echo "$RELEASE_RESPONSE" | jq -e '.result.success' > /dev/null; then
-          echo "✅ Fund release test passed."
-        else
-          echo "❌ Invalid fund release response"
-          echo "Response: $RELEASE_RESPONSE"
-          exit 1
-        fi
-
-    - name: Test Deposit Funds
-      shell: bash
-      continue-on-error: true
-      run: |
-        # Get current MC epoch
-        MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
-        echo "Current MC epoch: $MC_EPOCH"
-        
-        # Get Ariadne parameters with epoch
-        echo "Getting Ariadne parameters for epoch $MC_EPOCH..."
-        ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
-          http://localhost:9933)
-        
-        # Check if Ariadne parameters response is valid
-        if ! echo "$ARIADNE_PARAMS" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to get Ariadne parameters: $(echo "$ARIADNE_PARAMS" | jq -r '.error.message // "Unknown error"')"
-          echo "Full Ariadne parameters response: $ARIADNE_PARAMS"
-          exit 1
-        fi
-        
-        # Get payment key from the first permissioned candidate
-        echo "Extracting payment key from first permissioned candidate..."
-        PAYMENT_KEY=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].sidechainPublicKey')
-        
-        if [ -z "$PAYMENT_KEY" ] || [ "$PAYMENT_KEY" = "null" ]; then
-          echo "❌ Failed to get payment key from Ariadne parameters"
-          echo "Permissioned candidates: $(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates')"
-          exit 1
-        fi
-        
-        echo "Payment key: $PAYMENT_KEY"
-        
-        # Deposit funds
-        echo "Depositing funds with payment key $PAYMENT_KEY..."
+        # Test reserve deposit
+        echo "Testing reserve deposit..."
         DEPOSIT_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_depositFunds\",\"params\":[1000000,\"$PAYMENT_KEY\"],\"id\":1}" \
-          http://localhost:9933)
+          /usr/local/bin/partner-chains-node smart-contracts reserve deposit \
+          --amount 100000 \
+          --payment-key-file /data/keys/payment.skey \
+          --genesis-utxo $GENESIS_UTXO \
+          --ogmios-url http://localhost:1337)
         
-        # Check if deposit response is valid
-        if ! echo "$DEPOSIT_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to deposit funds: $(echo "$DEPOSIT_RESPONSE" | jq -r '.error.message // "Unknown error"')"
-          echo "Full deposit response: $DEPOSIT_RESPONSE"
-          exit 1
-        fi
-        
-        # Verify deposit
-        if echo "$DEPOSIT_RESPONSE" | jq -e '.result.success' > /dev/null; then
-          echo "✅ Fund deposit test passed."
+        if [ $? -eq 0 ]; then
+          echo "✅ Reserve deposit test passed"
         else
-          echo "❌ Invalid fund deposit response"
-          echo "Response: $DEPOSIT_RESPONSE"
-          exit 1
-        fi
-
-    - name: Test Handover Reserve
-      shell: bash
-      continue-on-error: true
-      run: |
-        # Get current MC epoch
-        MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
-        echo "Current MC epoch: $MC_EPOCH"
-        
-        # Get Ariadne parameters with epoch
-        echo "Getting Ariadne parameters for epoch $MC_EPOCH..."
-        ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
-          http://localhost:9933)
-        
-        # Check if Ariadne parameters response is valid
-        if ! echo "$ARIADNE_PARAMS" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to get Ariadne parameters: $(echo "$ARIADNE_PARAMS" | jq -r '.error.message // "Unknown error"')"
-          echo "Full Ariadne parameters response: $ARIADNE_PARAMS"
+          echo "❌ Reserve deposit failed: $DEPOSIT_RESPONSE"
           exit 1
         fi
         
-        # Get payment key from the first permissioned candidate
-        echo "Extracting payment key from first permissioned candidate..."
-        PAYMENT_KEY=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].sidechainPublicKey')
+        # Test reserve update settings
+        echo "Testing reserve update settings..."
+        UPDATE_SETTINGS_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          /usr/local/bin/partner-chains-node smart-contracts reserve update-settings \
+          --total-accrued-function-script-hash 0x1234 \
+          --payment-key-file /data/keys/payment.skey \
+          --genesis-utxo $GENESIS_UTXO \
+          --ogmios-url http://localhost:1337)
         
-        if [ -z "$PAYMENT_KEY" ] || [ "$PAYMENT_KEY" = "null" ]; then
-          echo "❌ Failed to get payment key from Ariadne parameters"
-          echo "Permissioned candidates: $(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates')"
+        if [ $? -eq 0 ]; then
+          echo "✅ Reserve update settings test passed"
+        else
+          echo "❌ Reserve update settings failed: $UPDATE_SETTINGS_RESPONSE"
           exit 1
         fi
         
-        echo "Payment key: $PAYMENT_KEY"
-        
-        # Handover reserve
-        echo "Handing over reserve with payment key $PAYMENT_KEY..."
+        # Test reserve handover
+        echo "Testing reserve handover..."
         HANDOVER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_handoverReserve\",\"params\":[\"$PAYMENT_KEY\"],\"id\":1}" \
-          http://localhost:9933)
+          /usr/local/bin/partner-chains-node smart-contracts reserve handover \
+          --payment-key-file /data/keys/payment.skey \
+          --genesis-utxo $GENESIS_UTXO \
+          --ogmios-url http://localhost:1337)
         
-        # Check if handover response is valid
-        if ! echo "$HANDOVER_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to handover reserve: $(echo "$HANDOVER_RESPONSE" | jq -r '.error.message // "Unknown error"')"
-          echo "Full handover response: $HANDOVER_RESPONSE"
-          exit 1
-        fi
-        
-        # Verify handover
-        if echo "$HANDOVER_RESPONSE" | jq -e '.result.success' > /dev/null; then
-          echo "✅ Reserve handover test passed."
+        if [ $? -eq 0 ]; then
+          echo "✅ Reserve handover test passed"
         else
-          echo "❌ Invalid reserve handover response"
-          echo "Response: $HANDOVER_RESPONSE"
+          echo "❌ Reserve handover failed: $HANDOVER_RESPONSE"
           exit 1
         fi
+        
+        # Test reserve release
+        echo "Testing reserve release..."
+        RELEASE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          /usr/local/bin/partner-chains-node smart-contracts reserve release \
+          --reference-utxo $REFERENCE_UTXO \
+          --amount 100000 \
+          --payment-key-file /data/keys/payment.skey \
+          --genesis-utxo $GENESIS_UTXO \
+          --ogmios-url http://localhost:1337)
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ Reserve release test passed"
+        else
+          echo "❌ Reserve release failed: $RELEASE_RESPONSE"
+          exit 1
+        fi
+        
+        # Test governance commands
+        echo "Testing governance commands..."
+        
+        # Test governance update
+        echo "Testing governance update..."
+        GOVERNANCE_UPDATE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          /usr/local/bin/partner-chains-node smart-contracts governance update \
+          --payment-key-file /data/keys/payment.skey \
+          --genesis-utxo $GENESIS_UTXO \
+          --governance-authority /data/keys/governance.pubkey \
+          --threshold 1 \
+          --ogmios-url http://localhost:1337)
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ Governance update test passed"
+        else
+          echo "❌ Governance update failed: $GOVERNANCE_UPDATE_RESPONSE"
+          exit 1
+        fi
+        
+        # Test governance get policy
+        echo "Testing governance get policy..."
+        GOVERNANCE_POLICY_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          /usr/local/bin/partner-chains-node smart-contracts governance get-policy \
+          --genesis-utxo $GENESIS_UTXO \
+          --ogmios-url http://localhost:1337)
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ Governance get policy test passed"
+        else
+          echo "❌ Governance get policy failed: $GOVERNANCE_POLICY_RESPONSE"
+          exit 1
+        fi
+        
+        # Test transaction signing and submission
+        echo "Testing transaction signing and submission..."
+        
+        # Test sign transaction
+        echo "Testing sign transaction..."
+        SIGN_TX_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          /usr/local/bin/partner-chains-node smart-contracts sign-tx \
+          --transaction $TRANSACTION_CBOR \
+          --payment-key-file /data/keys/payment.skey)
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ Sign transaction test passed"
+        else
+          echo "❌ Sign transaction failed: $SIGN_TX_RESPONSE"
+          exit 1
+        fi
+        
+        # Test assemble and submit transaction
+        echo "Testing assemble and submit transaction..."
+        ASSEMBLE_TX_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          /usr/local/bin/partner-chains-node smart-contracts assemble-and-submit-tx \
+          --transaction $TRANSACTION_CBOR \
+          --witnesses $WITNESSES \
+          --ogmios-url http://localhost:1337)
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ Assemble and submit transaction test passed"
+        else
+          echo "❌ Assemble and submit transaction failed: $ASSEMBLE_TX_RESPONSE"
+          exit 1
+        fi
+        
+        # Test governed map commands
+        echo "Testing governed map commands..."
+        
+        # Test governed map get
+        echo "Testing governed map get..."
+        MAP_GET_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          /usr/local/bin/partner-chains-node smart-contracts governed-map get \
+          --key test_key \
+          --genesis-utxo $GENESIS_UTXO \
+          --ogmios-url http://localhost:1337)
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ Governed map get test passed"
+        else
+          echo "❌ Governed map get failed: $MAP_GET_RESPONSE"
+          exit 1
+        fi
+        
+        # Test governed map put
+        echo "Testing governed map put..."
+        MAP_PUT_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          /usr/local/bin/partner-chains-node smart-contracts governed-map put \
+          --key test_key \
+          --value test_value \
+          --payment-key-file /data/keys/payment.skey \
+          --genesis-utxo $GENESIS_UTXO \
+          --ogmios-url http://localhost:1337)
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ Governed map put test passed"
+        else
+          echo "❌ Governed map put failed: $MAP_PUT_RESPONSE"
+          exit 1
+        fi
+        
+        echo "✅ All smart contract tests passed"
     
