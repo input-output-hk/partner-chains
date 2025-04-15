@@ -20,7 +20,7 @@ class Result:
 
 class RunnerFactory:
     @staticmethod
-    def get_runner(ssh: Optional[None], shell: str):
+    def get_runner(shell: str):
         return LocalRunner(shell)
 
 

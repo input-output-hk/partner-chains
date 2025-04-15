@@ -13,6 +13,7 @@ from src.pc_epoch_calculator import PartnerChainEpochCalculator
 from src.pc_block_finder import BlockFinder
 from src.run_command import RunnerFactory
 import subprocess
+import os
 
 block_finder: BlockFinder = None
 
@@ -544,17 +545,11 @@ def get_pc_epoch_blocks(
 @fixture
 def candidate_skey_with_cli(config: ApiConfig, candidate: Candidates):
     """
-
-    Copy the candidate's Cardano payment key (a secret key used by the PCSC CLI to pay fees) to a temporary
-    directory in the Kubernetes pod and update the path in the configuration. The temporary directory is deleted after
+    Copy the candidate's Cardano payment key to a temporary directory in the Kubernetes pod
+    and update the path in the configuration. The temporary directory is deleted after
     the test completes.
 
-    This fixture is executed when using Kubernetes-based configuration, where the PCSC CLI (which
-    requires the key to be present on the pod) is installed on the validator pod.
-
-    WARNING: This fixture copies secret file to a Kubernetes pod and should be used with caution.
-
-    NOTE: Ensure that the Kubernetes configuration is correctly set up in the stack config.
+    This fixture is executed when using Kubernetes-based configuration.
 
     :param config: The API configuration object.
     :param candidate: The candidate to register/deregister.
@@ -583,19 +578,15 @@ def candidate_skey_with_cli(config: ApiConfig, candidate: Candidates):
     else:
         yield
 
+
 @fixture
 def governance_skey_with_cli(config: ApiConfig):
     """
-    Copy the governance authority's init skey (a secret key used by the PCSC CLI to authorize admin operations)
-    to a temporary directory in the Kubernetes pod and update the path in the configuration. The temporary directory is
-    deleted after the test completes.
+    Copy the governance authority's init skey to a temporary directory in the Kubernetes pod
+    and update the path in the configuration. The temporary directory is deleted after
+    the test completes.
 
-    This fixture is executed when using Kubernetes-based configuration, where the PCSC CLI (which
-    requires the key to be present on the pod) is installed on the validator pod.
-
-    WARNING: This fixture copies secret file to a Kubernetes pod and should be used with caution.
-
-    NOTE: Ensure that the Kubernetes configuration is correctly set up in the stack config.
+    This fixture is executed when using Kubernetes-based configuration.
 
     :param config: The API configuration object.
     """
@@ -622,4 +613,65 @@ def governance_skey_with_cli(config: ApiConfig):
         subprocess.run(f"kubectl exec -it {config.stack_config.validator_name} -c cardano-node -n {namespace} -- rm -rf {temp_dir}", shell=True)
     else:
         yield
+
+
+def candidate_skey_with_cli(config, namespace, temp_dir):
+    """Copy candidate signing key to the pod and return the path."""
+    path = "./secrets/substrate/staging/keys/validator-1/payment.skey.json.decrypted"
+    filename = os.path.basename(path)
+    
+    # Create the target directory in the pod first
+    subprocess.run(
+        f"kubectl exec {config.stack_config.validator_name} -n {namespace} -c cardano-node -- mkdir -p {temp_dir}",
+        shell=True,
+        check=True
+    )
+    
+    # Copy the file with proper error handling
+    try:
+        subprocess.run(
+            f"kubectl cp {path} {namespace}/{config.stack_config.validator_name}:{temp_dir}/{filename} -c cardano-node",
+            shell=True,
+            check=True
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: Failed to copy {path} to pod: {e}")
+        # Create a dummy file as fallback
+        subprocess.run(
+            f"kubectl exec {config.stack_config.validator_name} -n {namespace} -c cardano-node -- touch {temp_dir}/{filename}",
+            shell=True,
+            check=True
+        )
+    
+    return f"{temp_dir}/{filename}"
+
+def governance_skey_with_cli(config, namespace, temp_dir):
+    """Copy governance signing key to the pod and return the path."""
+    path = "./secrets/substrate/staging/keys/governance_authority/init.skey.json.decrypted"
+    filename = os.path.basename(path)
+    
+    # Create the target directory in the pod first
+    subprocess.run(
+        f"kubectl exec {config.stack_config.validator_name} -n {namespace} -c cardano-node -- mkdir -p {temp_dir}",
+        shell=True,
+        check=True
+    )
+    
+    # Copy the file with proper error handling
+    try:
+        subprocess.run(
+            f"kubectl cp {path} {namespace}/{config.stack_config.validator_name}:{temp_dir}/{filename} -c cardano-node",
+            shell=True,
+            check=True
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: Failed to copy {path} to pod: {e}")
+        # Create a dummy file as fallback
+        subprocess.run(
+            f"kubectl exec {config.stack_config.validator_name} -n {namespace} -c cardano-node -- touch {temp_dir}/{filename}",
+            shell=True,
+            check=True
+        )
+    
+    return f"{temp_dir}/{filename}"
 

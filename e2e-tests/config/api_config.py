@@ -64,15 +64,6 @@ class MainchainAccount:
 
 
 @dataclass
-class SSH:
-    username: str = MISSING
-    host: str = MISSING
-    port: int = MISSING
-    host_keys_path: Optional[str] = None
-    private_key_path: Optional[str] = None
-
-
-@dataclass
 class Tool:
     cli: str = MISSING
     shell: Optional[str] = SI("${...tools_shell}")

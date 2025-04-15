@@ -46,45 +46,31 @@ class PartnerChainRpc:
             "id": id,
         }
 
-    def __exec_rpc(self, method: str, params: list = []):
-        # Check if we should use kubectl exec and if required env vars are set
-        use_kubectl = os.environ.get("USE_KUBECTL_RPC") == "true"
-        kubectl_pod_exists = "KUBECTL_EXEC_POD" in os.environ
-        
-        # If kubectl mode is desired but required env var is missing, log warning and fall back
-        if use_kubectl and not kubectl_pod_exists:
-            logger.warning("USE_KUBECTL_RPC is set to true but KUBECTL_EXEC_POD is not defined. Falling back to HTTP request.")
-            use_kubectl = False
-        
-        # Use the original HTTP method implementation
-        if not use_kubectl:
-            response = requests.post(
-                self.url,
-                headers=self.headers,
-                json=self.__get_body(method=method, params=params)
-            )
-            return response.json()
-        
-        # Use kubectl exec method
-        pod = os.environ["KUBECTL_EXEC_POD"]
-        namespace = os.environ.get("K8S_NAMESPACE", "default")
-        
-        payload = json.dumps(self.__get_body(method=method, params=params))
-        cmd = [
-            "kubectl", "exec", pod, "-n", namespace, "--",
-            "curl", "-s", "-H", "Content-Type: application/json",
-            "-d", payload, self.url
-        ]
-        
+    def __exec_rpc(self, method: str, params: list = None) -> dict:
+        if params is None:
+            params = []
+        request = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": method,
+            "params": params
+        }
+        result = run_command.run(
+            ["curl", "-s", "-X", "POST", "-H", "Content-Type: application/json", "-d", json.dumps(request), self.url]
+        )
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-            return json.loads(result.stdout)
-        except subprocess.CalledProcessError as e:
-            logger.error(f"kubectl exec command failed: {e.stderr}")
-            raise PartnerChainRpcException(f"kubectl exec command failed: {e.stderr}")
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON from kubectl response: {e}")
-            raise PartnerChainRpcException(f"Failed to parse JSON from kubectl response: {e}")
+            try:
+                response = json.loads(result.stdout)
+            except json.JSONDecodeError as e:
+                logging.error(f"Failed to decode JSON response: {e}")
+                logging.error(f"Raw response: {result.stdout}")
+                raise PartnerChainRpcException(f"Failed to decode JSON response: {e}. Raw response: {result.stdout}")
+            
+            if "error" in response:
+                raise PartnerChainRpcException(response["error"])
+            return response["result"]
+        except json.JSONDecodeError:
+            raise PartnerChainRpcException(f"Failed to decode response: {result.stdout}")
 
     def partner_chain_get_epoch_committee(self, epoch) -> PartnerChainRpcResponse:
         json_data = self.__exec_rpc("sidechain_getEpochCommittee", [epoch])
