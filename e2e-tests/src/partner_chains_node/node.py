@@ -57,9 +57,12 @@ class PartnerChainsNode:
         )
 
         result = self.run_command.run(sign_block_producer_metadata_cmd)
+        if not result.stdout:
+            logging.error(f"Command failed with stderr: {result.stderr}")
+            raise PartnerChainsNodeException("Failed to sign block producer metadata")
+            
         try:
             response = json.loads(result.stdout)
-
             return BlockProducerMetadataSignature(
                 cross_chain_pub_key=response["cross_chain_pub_key"],
                 cross_chain_pub_key_hash=response["cross_chain_pub_key_hash"],
@@ -67,9 +70,15 @@ class PartnerChainsNode:
                 encoded_metadata=response["encoded_metadata"],
                 signature=response["signature"],
             )
+        except json.JSONDecodeError as e:
+            logging.error(f"Could not parse response of sign-block-producer-metadata cmd: {result.stdout}")
+            raise PartnerChainsNodeException(f"Invalid JSON response: {e}")
+        except KeyError as e:
+            logging.error(f"Missing required field in response: {e}")
+            raise PartnerChainsNodeException(f"Missing required field in response: {e}")
         except Exception as e:
-            logging.error(f"Could not parse response of sign-block-producer-metadata cmd: {result}")
-            raise e
+            logging.error(f"Unexpected error in sign-block-producer-metadata: {e}")
+            raise PartnerChainsNodeException(f"Unexpected error: {e}")
 
     def get_signatures(
         self,

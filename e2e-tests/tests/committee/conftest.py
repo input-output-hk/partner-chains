@@ -554,29 +554,56 @@ def candidate_skey_with_cli(config: ApiConfig, candidate: Candidates):
     :param config: The API configuration object.
     :param candidate: The candidate to register/deregister.
     """
-    if config.stack_config.validator_name:
-        # Get namespace from the stack configuration
-        namespace = config.stack_config.namespace
-        
-        # Create a temporary directory in the pod
-        temp_dir_cmd = f"kubectl exec -it {config.stack_config.validator_name} -c cardano-node -n {namespace} -- mktemp -d"
-        temp_dir = subprocess.run(temp_dir_cmd, shell=True, capture_output=True, text=True).stdout.strip()
-        
-        # Copy the key file to the pod
-        path = config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key
-        filename = path.split("/")[-1]
-        # Use kubectl cp to copy the file to the pod
-        subprocess.run(f"kubectl cp {path} {namespace}/{config.stack_config.validator_name}:{temp_dir}/{filename} -c cardano-node", shell=True, check=True)
-        
-        # Update the path in the configuration
-        config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key = f"{temp_dir}/{filename}"
+    # Get pod name and namespace from config
+    pod_name = config.stack_config.validator_name
+    namespace = config.stack_config.namespace
+    
+    if not pod_name or not namespace:
+        logging.warning("Pod name or namespace not configured, skipping candidate skey setup")
         yield
-        config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key = path
-        
-        # Clean up the temporary directory
-        subprocess.run(f"kubectl exec -it {config.stack_config.validator_name} -c cardano-node -n {namespace} -- rm -rf {temp_dir}", shell=True)
-    else:
+        return
+    
+    # Create a temporary directory in the pod
+    temp_dir_cmd = f"kubectl exec {pod_name} -n {namespace} -c substrate-node -- mktemp -d"
+    try:
+        temp_dir = subprocess.check_output(temp_dir_cmd, shell=True).decode().strip()
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to create temp directory: {e}")
         yield
+        return
+    
+    # Get the path to the candidate key
+    path = config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key
+    if not path or not os.path.exists(path):
+        logging.error(f"Candidate key file not found at {path}")
+        yield
+        return
+        
+    filename = os.path.basename(path)
+    
+    # Copy the key to the pod
+    copy_cmd = f"kubectl cp {path} {namespace}/{pod_name}:{temp_dir}/{filename} -c substrate-node"
+    try:
+        subprocess.check_output(copy_cmd, shell=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to copy candidate key: {e}")
+        yield
+        return
+    
+    # Update the path in the config
+    original_path = config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key
+    config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key = f"{temp_dir}/{filename}"
+    
+    yield
+    
+    # Clean up
+    logging.info("Cleaning up candidate skey file in pod...")
+    config.nodes_config.nodes[candidate.name].keys_files.cardano_payment_key = original_path
+    cleanup_cmd = f"kubectl exec {pod_name} -n {namespace} -c substrate-node -- rm -rf {temp_dir}"
+    try:
+        subprocess.check_output(cleanup_cmd, shell=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to clean up temp directory: {e}")
 
 
 @fixture

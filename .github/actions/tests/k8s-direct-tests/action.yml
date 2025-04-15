@@ -298,18 +298,20 @@ runs:
         # Get current d-parameter
         echo "Getting current d-parameter..."
         D_PARAM_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          partner-chains-node smart-contracts ariadne get-parameters --genesis-utxo "$GENESIS_UTXO" --ogmios-url "$OGMIOS_URL" | jq '.')
+          curl -s -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$EPOCH],\"id\":1}" \
+          http://localhost:9933 | jq '.')
         
         # Check if d-parameter response is valid
-        if ! echo "$D_PARAM_RESPONSE" | jq -e '.result.dParameter' > /dev/null; then
+        if ! echo "$D_PARAM_RESPONSE" | jq -e '.result' > /dev/null; then
           echo "❌ Failed to get d-parameter: $(echo "$D_PARAM_RESPONSE" | jq -r '.error.message // "Unknown error"')"
           echo "Full d-parameter response: $D_PARAM_RESPONSE"
           exit 1
         fi
         
         # Extract d-parameter values
-        NUM_PERMISSIONED=$(echo "$D_PARAM_RESPONSE" | jq -r '.result.dParameter.numPermissionedCandidates')
-        NUM_REGISTERED=$(echo "$D_PARAM_RESPONSE" | jq -r '.result.dParameter.numRegisteredCandidates')
+        NUM_PERMISSIONED=$(echo "$D_PARAM_RESPONSE" | jq -r '.result.numPermissionedCandidates')
+        NUM_REGISTERED=$(echo "$D_PARAM_RESPONSE" | jq -r '.result.numRegisteredCandidates')
         
         # Skip if P or T is 0
         if [ "$NUM_PERMISSIONED" -eq 0 ] || [ "$NUM_REGISTERED" -eq 0 ]; then
@@ -334,7 +336,9 @@ runs:
         # Get committee members for the current epoch
         echo "Getting epoch committee for epoch $EPOCH..."
         COMMITTEE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          partner-chains-node smart-contracts ariadne get-committee --genesis-utxo "$GENESIS_UTXO" --ogmios-url "$OGMIOS_URL" --epoch "$EPOCH" | jq '.')
+          curl -s -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$EPOCH],\"id\":1}" \
+          http://localhost:9933 | jq '.')
         
         # Check if committee response is valid
         if ! echo "$COMMITTEE_RESPONSE" | jq -e '.result' > /dev/null; then
@@ -544,8 +548,9 @@ runs:
         # Get Ariadne parameters for the current epoch
         echo "Getting Ariadne parameters for epoch $MC_EPOCH..."
         ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          partner-chains-node smart-contracts ariadne get-parameters --genesis-utxo "$GENESIS_UTXO" --ogmios-url "$OGMIOS_URL" \
-          --epoch "$MC_EPOCH" | jq '.')
+          curl -s -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
+          http://localhost:9933 | jq '.')
         
         # Check if Ariadne parameters response is valid
         if ! echo "$ARIADNE_PARAMS" | jq -e '.result.dParameter' > /dev/null; then
