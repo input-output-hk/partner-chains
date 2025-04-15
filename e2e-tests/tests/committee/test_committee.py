@@ -190,7 +190,9 @@ class TestCommitteeDistribution:
             expected_p_candidates = (
                 d_param_cache.trustless_candidates_number + d_param_cache.permissioned_candidates_number
             )
-        assert p_candidates_seats(pc_epoch) == expected_p_candidates
+        if not p_candidates_available:
+            expected_p_candidates = 0
+        assert expected_p_candidates == p_candidates_seats(pc_epoch)
 
     @mark.ariadne
     @mark.committee_distribution
@@ -221,7 +223,9 @@ class TestCommitteeDistribution:
             expected_t_candidates = (
                 d_param_cache.trustless_candidates_number + d_param_cache.permissioned_candidates_number
             )
-        assert t_candidates_seats(pc_epoch) == expected_t_candidates
+        if not t_candidates_available:
+            expected_t_candidates = 0
+        assert expected_t_candidates == t_candidates_seats(pc_epoch)
 
     @mark.test_key('ETCM-7032')
     @mark.committee_distribution
