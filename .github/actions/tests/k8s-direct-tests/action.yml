@@ -580,6 +580,8 @@ runs:
         # Validate stake key hash length (should be 64 chars after removing 0x prefix)
         if [ ${#STAKE_KEY_HASH_CLEAN} -ne 64 ]; then
           echo "❌ Invalid stake key hash length: ${#STAKE_KEY_HASH_CLEAN} (expected 64)"
+          echo "Original key: $STAKE_KEY_HASH"
+          echo "Cleaned key: $STAKE_KEY_HASH_CLEAN"
           exit 1
         fi
         
