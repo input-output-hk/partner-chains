@@ -42,7 +42,7 @@ pub async fn run_insert<
 	let validator_address = validator.address_bech32(ctx.network)?;
 	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
 
-	let tx_hash_opt = match get_current_value(validator_utxos, key.clone(), policy.policy_id())? {
+	let tx_hash_opt = match get_current_value(validator_utxos, key.clone(), policy.policy_id()) {
 		Some(current_value) if current_value != value => {
 			return Err(anyhow!(
 				"There is already a value stored for key '{key}': {current_value:?}"
@@ -67,30 +67,31 @@ pub async fn run_insert<
 	Ok(tx_hash_opt)
 }
 
+
+fn ogmios_utxos_to_governed_map_utxos(
+	utxos: impl Iterator<Item = OgmiosUtxo>,
+	token: PolicyId,
+) -> impl Iterator<Item = GovernedMapDatum> {
+	utxos.flat_map(move |utxo| {
+		let _ = utxo.value.native_tokens.get(&token.0)?;
+		let datum = utxo.datum?;
+		let datum_plutus_data = PlutusData::from_bytes(datum.bytes).ok()?;
+
+		GovernedMapDatum::try_from(datum_plutus_data).ok()
+	})
+}
+
 fn get_current_value(
 	validator_utxos: Vec<OgmiosUtxo>,
 	key: String,
 	token: PolicyId,
-) -> Result<Option<ByteString>, anyhow::Error> {
-	for utxo in validator_utxos {
-		if let None = utxo.value.native_tokens.get(&token.0) {
-			continue;
-		}
-		if let Some(datum) = utxo.datum {
-			let datum_plutus_data =
-				PlutusData::from_bytes(datum.bytes).map_err(|e| {
-					anyhow!("Internal error: could not decode datum of Governed Map validator script: {}", e)
-				})?;
-			let datum_key =
-				GovernedMapDatum::try_from(datum_plutus_data).map_err(|e| {
-					anyhow!("Internal error: could not decode datum of Governed Map validator script: {}", e)
-				})?;
-			if datum_key.key == key {
-				return Ok(Some(datum_key.value));
-			}
+) -> Option<ByteString> {
+	for datum_key in ogmios_utxos_to_governed_map_utxos(validator_utxos.into_iter(), token) {
+		if datum_key.key == key {
+			return Some(datum_key.value);
 		}
 	}
-	Ok(None)
+	None
 }
 
 async fn insert<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
