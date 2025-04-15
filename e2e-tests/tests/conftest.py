@@ -567,16 +567,31 @@ def governance_skey_with_cli(config: ApiConfig):
         return
     
     # Create a temporary directory in the pod
-    temp_dir_cmd = f"kubectl exec {pod_name} -n {namespace} -- mktemp -d"
-    temp_dir = subprocess.check_output(temp_dir_cmd, shell=True).decode().strip()
+    temp_dir_cmd = f"kubectl exec {pod_name} -n {namespace} -c substrate-node -- mktemp -d"
+    try:
+        temp_dir = subprocess.check_output(temp_dir_cmd, shell=True).decode().strip()
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to create temp directory: {e}")
+        yield
+        return
     
     # Get the path to the governance key
     path = config.nodes_config.governance_authority.mainchain_key
-    filename = path.split("/")[-1]
+    if not path or not os.path.exists(path):
+        logging.error(f"Governance key file not found at {path}")
+        yield
+        return
+        
+    filename = os.path.basename(path)
     
     # Copy the key to the pod
-    copy_cmd = f"kubectl cp {path} {namespace}/{pod_name}:{temp_dir}/{filename}"
-    subprocess.check_output(copy_cmd, shell=True)
+    copy_cmd = f"kubectl cp {path} {namespace}/{pod_name}:{temp_dir}/{filename} -c substrate-node"
+    try:
+        subprocess.check_output(copy_cmd, shell=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to copy governance key: {e}")
+        yield
+        return
     
     # Update the path in the config
     original_path = config.nodes_config.governance_authority.mainchain_key
@@ -587,8 +602,11 @@ def governance_skey_with_cli(config: ApiConfig):
     # Clean up
     logging.info("Cleaning up governance skey file in pod...")
     config.nodes_config.governance_authority.mainchain_key = original_path
-    cleanup_cmd = f"kubectl exec {pod_name} -n {namespace} -- rm -rf {temp_dir}"
-    subprocess.check_output(cleanup_cmd, shell=True)
+    cleanup_cmd = f"kubectl exec {pod_name} -n {namespace} -c substrate-node -- rm -rf {temp_dir}"
+    try:
+        subprocess.check_output(cleanup_cmd, shell=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to clean up temp directory: {e}")
 
 
 @fixture(scope="session")

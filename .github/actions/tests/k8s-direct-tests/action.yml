@@ -547,6 +547,23 @@ runs:
           partner-chains-node smart-contracts ariadne get-parameters --genesis-utxo "$GENESIS_UTXO" --ogmios-url "$OGMIOS_URL" \
           --epoch "$MC_EPOCH" | jq '.')
         
+        # Check if Ariadne parameters response is valid
+        if ! echo "$ARIADNE_PARAMS" | jq -e '.result.dParameter' > /dev/null; then
+          echo "❌ Failed to get Ariadne parameters: $(echo "$ARIADNE_PARAMS" | jq -r '.error.message // "Unknown error"')"
+          echo "Full Ariadne parameters response: $ARIADNE_PARAMS"
+          exit 1
+        fi
+        
+        # Verify Ariadne parameters structure
+        if ! echo "$ARIADNE_PARAMS" | jq -e '.result.dParameter.numPermissionedCandidates' > /dev/null || \
+           ! echo "$ARIADNE_PARAMS" | jq -e '.result.dParameter.numRegisteredCandidates' > /dev/null; then
+          echo "❌ Invalid Ariadne parameters structure"
+          echo "Response: $ARIADNE_PARAMS"
+          exit 1
+        fi
+        
+        echo "✅ Ariadne parameters valid."
+        
         # Extract stake key hash from first permissioned candidate
         echo "Extracting stake key hash from first permissioned candidate..."
         STAKE_KEY_HASH=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].sidechainPublicKey')
@@ -649,51 +666,79 @@ runs:
         
         echo "Testing smart contract methods..."
         
-        # Check if partner-chains-node has execute permissions
-        if ! kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- which partner-chains-node > /dev/null 2>&1; then
+        # First verify the binary exists and is executable
+        if ! kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- which partner-chains-node > /dev/null; then
           echo "❌ partner-chains-node binary not found"
           exit 1
         fi
         
-        # Test get-scripts
+        # Test get-scripts command
         echo "Testing get-scripts..."
-        GET_SCRIPTS_RESULT=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          partner-chains-node smart-contracts get-scripts \
-          --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url "$OGMIOS_URL" 2>&1)
-        GET_SCRIPTS_EXIT_CODE=$?
+        SCRIPTS_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          partner-chains-node smart-contracts get-scripts --genesis-utxo "$GENESIS_UTXO" --ogmios-url "$OGMIOS_URL" 2>&1)
 
-        if [ $GET_SCRIPTS_EXIT_CODE -ne 0 ]; then
-          if echo "$GET_SCRIPTS_RESULT" | grep -q "Permission denied"; then
-            echo "⚠️ Permission denied error - this may be expected in some environments"
-            echo "Full error: $GET_SCRIPTS_RESULT"
+        if [ $? -ne 0 ]; then
+          if echo "$SCRIPTS_RESPONSE" | grep -q "Permission denied"; then
+            echo "⚠️ Permission denied when executing get-scripts (this may be expected)"
+            echo "Response: $SCRIPTS_RESPONSE"
           else
-            echo "❌ get-scripts test failed: $GET_SCRIPTS_RESULT"
+            echo "❌ Failed to get scripts: $SCRIPTS_RESPONSE"
             exit 1
           fi
         else
-          echo "✅ get-scripts test passed"
+          echo "✅ get-scripts command successful"
         fi
         
-        # Test other smart contract methods with similar error handling
-        for METHOD in "reserve create" "reserve deposit" "reserve handover"; do
-          echo "Testing $METHOD..."
-          METHOD_RESULT=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-            partner-chains-node smart-contracts $METHOD \
-            --genesis-utxo "$GENESIS_UTXO" \
-            --ogmios-url "$OGMIOS_URL" 2>&1)
-          METHOD_EXIT_CODE=$?
+        # Test register command
+        echo "Testing register..."
+        REGISTER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          partner-chains-node smart-contracts register --genesis-utxo "$GENESIS_UTXO" --ogmios-url "$OGMIOS_URL" 2>&1)
 
-          if [ $METHOD_EXIT_CODE -ne 0 ]; then
-            if echo "$METHOD_RESULT" | grep -q "Permission denied"; then
-              echo "⚠️ Permission denied error for $METHOD - this may be expected in some environments"
-              echo "Full error: $METHOD_RESULT"
-            else
-              echo "❌ $METHOD test failed: $METHOD_RESULT"
-              exit 1
-            fi
+        if [ $? -ne 0 ]; then
+          if echo "$REGISTER_RESPONSE" | grep -q "Permission denied"; then
+            echo "⚠️ Permission denied when executing register (this may be expected)"
+            echo "Response: $REGISTER_RESPONSE"
           else
-            echo "✅ $METHOD test passed"
+            echo "❌ Failed to execute register: $REGISTER_RESPONSE"
+            exit 1
           fi
-        done
+        else
+          echo "✅ register command successful"
+        fi
+
+        # Test deregister command
+        echo "Testing deregister..."
+        DEREGISTER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          partner-chains-node smart-contracts deregister --genesis-utxo "$GENESIS_UTXO" --ogmios-url "$OGMIOS_URL" 2>&1)
+
+        if [ $? -ne 0 ]; then
+          if echo "$DEREGISTER_RESPONSE" | grep -q "Permission denied"; then
+            echo "⚠️ Permission denied when executing deregister (this may be expected)"
+            echo "Response: $DEREGISTER_RESPONSE"
+          else
+            echo "❌ Failed to execute deregister: $DEREGISTER_RESPONSE"
+            exit 1
+          fi
+        else
+          echo "✅ deregister command successful"
+        fi
+
+        # Test reserve command
+        echo "Testing reserve..."
+        RESERVE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          partner-chains-node smart-contracts reserve --genesis-utxo "$GENESIS_UTXO" --ogmios-url "$OGMIOS_URL" 2>&1)
+
+        if [ $? -ne 0 ]; then
+          if echo "$RESERVE_RESPONSE" | grep -q "Permission denied"; then
+            echo "⚠️ Permission denied when executing reserve (this may be expected)"
+            echo "Response: $RESERVE_RESPONSE"
+          else
+            echo "❌ Failed to execute reserve: $RESERVE_RESPONSE"
+            exit 1
+          fi
+        else
+          echo "✅ reserve command successful"
+        fi
+
+        echo "✅ All smart contract method tests completed"
     
