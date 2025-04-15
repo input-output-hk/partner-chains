@@ -12,6 +12,12 @@ DECLARE
       { "bytes": "22222222222222222222222222222222" }
     ]
   }';
+  governed_map_entry_2a jsonb := '{
+    "list": [
+      { "bytes": "6B657932" },
+      { "bytes": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }
+    ]
+  }';
   governed_map_entry_3 jsonb := '{
     "list": [
       { "bytes": "6B657933" },
@@ -27,7 +33,8 @@ DECLARE
   invalid_datum jsonb := '{ "constructor": 0, "fields": [{ "int": 1 }] }';
 
   ins_tx_id integer       := 0;
-  del_tx_id integer       := 1;
+  ins_tx_ida integer      := 1;
+  del_tx_id integer       := 2;
   consumed_tx_id integer  := 4;
   ins_tx_id2 integer      := 5;
   ups_tx_id integer       := 6;
@@ -72,7 +79,8 @@ VALUES             (0 , bhash_0, NULL    , 189410  , NULL         , NULL    , NU
 INSERT INTO tx ( id            , hash            , block_id, block_index, out_sum, fee, deposit, size, invalid_before, invalid_hereafter, valid_contract, script_size )
     VALUES     ( consumed_tx_id, consumed_tx_hash, 1       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
               ,( ins_tx_id     , hash1           , 1       , 1          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
-              ,( del_tx_id     , hash2           , 4       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
+              ,( ins_tx_ida    , hash2           , 1       , 2          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
+              ,( del_tx_id     , hash3           , 4       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
               ,( ins_tx_id2    , hash5           , 6       , 0          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
               ,( ups_tx_id     , hash7           , 7       , 2          , 0      , 0  , 0      , 1024, NULL          , NULL             , TRUE          , 1024        )
 ;
@@ -83,18 +91,21 @@ INSERT INTO tx_out ( id   , tx_id           , index, address     , address_raw, 
                   ,( 2    , consumed_tx_id  , 2    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL      )
                   ,( 4    , ins_tx_id       , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash1     ) -- add key1
                   ,( 5    , ins_tx_id       , 1    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash2     ) -- add invalid
-                  ,( 6    , ins_tx_id       , 2    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash3     ) -- add key2
-                  ,( 7    , del_tx_id       , 0    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL      ) -- delete key1
-                  ,( 8    , ins_tx_id2      , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash5     ) -- add key3
-                  ,( 9    , ups_tx_id       , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash6     ) -- upsert key3
+                  ,( 6    , ins_tx_ida      , 2    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash3     ) -- add key2a
+                  ,( 7    , ins_tx_id       , 3    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash4     ) -- add key2 simulating 2 utxos with the same key
+                  ,( 8    , del_tx_id       , 0    , 'other_addr', ''         , TRUE              , NULL        , NULL            , 0    , NULL      ) -- delete key1
+                  ,( 9    , ins_tx_id2      , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash5     ) -- add key3
+                  ,( 10   , ups_tx_id       , 0    , script_addr , ''         , TRUE              , NULL        , NULL            , 0    , hash6     ) -- upsert key3
 ;
 
 INSERT INTO ma_tx_out ( id   , quantity , tx_out_id , ident)
 VALUES                ( 0    , 1        , 4         , 999  )
                      ,( 1    , 1        , 5         , 999  )
                      ,( 2    , 1        , 6         , 999  )
-                     ,( 3    , 1        , 8         , 999  )
-                     ,( 4    , 1        , 9         , 999  )
+                     ,( 3    , 1        , 7         , 999  )
+                     ,( 4    , 1        , 8         , 999  )
+                     ,( 5    , 1        , 9         , 999  )
+                     ,( 6    , 1        , 10        , 999  )
 ;
 
 INSERT INTO tx_in ( id, tx_in_id   , tx_out_id     , tx_out_index, redeemer_id )
@@ -109,9 +120,10 @@ INSERT INTO tx_in ( id, tx_in_id   , tx_out_id     , tx_out_index, redeemer_id )
 INSERT INTO datum ( id   , hash  , tx_id     , value                )
            VALUES ( 0    , hash1 , ins_tx_id , governed_map_entry_1 )
                  ,( 1    , hash2 , ins_tx_id , invalid_datum        )
-                 ,( 2    , hash3 , ins_tx_id , governed_map_entry_2 )
+                 ,( 2    , hash3 , ins_tx_ida, governed_map_entry_2a)
+                 ,( 3    , hash4 , ins_tx_id , governed_map_entry_2 )
                  ,( 4    , hash5 , ins_tx_id2, governed_map_entry_3 )
-                 ,( 6    , hash6 , ups_tx_id , governed_map_entry_3a )
+                 ,( 6    , hash6 , ups_tx_id , governed_map_entry_3a)
 ;
 
 END $$;

@@ -383,7 +383,6 @@ pub(crate) async fn get_datums_at_address_with_token(
 			LEFT JOIN tx_in consuming_tx_in	ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
 			LEFT JOIN tx consuming_tx		ON consuming_tx_in.tx_in_id = consuming_tx.id
 			LEFT JOIN block consuming_block	ON consuming_tx.block_id = consuming_block.id
-			LEFT JOIN tx_in consumes_tx_in	ON consumes_tx_in.tx_in_id = origin_tx.id
 			INNER JOIN datum				ON tx_out.data_hash = datum.hash
 			INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
 			INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
