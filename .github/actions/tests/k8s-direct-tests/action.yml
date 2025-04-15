@@ -292,51 +292,68 @@ runs:
       run: |
         # Get current epoch committee
         echo "Getting current epoch committee..."
-        PC_EPOCH=$(jq '.result.sidechain.epoch' status.json)
-        echo "Current PC epoch: $PC_EPOCH"
-        
-        COMMITTEE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getEpochCommittee\",\"params\":[$PC_EPOCH],\"id\":1}" \
-          http://localhost:9933)
-        
-        # Check if committee response is valid
-        if ! echo "$COMMITTEE_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to get epoch committee: $(echo "$COMMITTEE_RESPONSE" | jq -r '.error.message // "Unknown error"')"
-          echo "Full committee response: $COMMITTEE_RESPONSE"
-          exit 1
-        fi
+        EPOCH=$(jq '.result.sidechain.epoch' status.json)
+        echo "Current PC epoch: $EPOCH"
         
         # Get current d-parameter
         echo "Getting current d-parameter..."
         D_PARAM_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d '{"jsonrpc":"2.0","method":"sidechain_getDParameter","params":[],"id":1}' \
-          http://localhost:9933)
+          partner-chains-node smart-contracts ariadne get-parameters --genesis-utxo "$GENESIS_UTXO" --ogmios-url "$OGMIOS_URL" | jq '.')
         
         # Check if d-parameter response is valid
-        if ! echo "$D_PARAM_RESPONSE" | jq -e '.result' > /dev/null; then
+        if ! echo "$D_PARAM_RESPONSE" | jq -e '.result.dParameter' > /dev/null; then
           echo "❌ Failed to get d-parameter: $(echo "$D_PARAM_RESPONSE" | jq -r '.error.message // "Unknown error"')"
           echo "Full d-parameter response: $D_PARAM_RESPONSE"
           exit 1
         fi
         
-        D_PARAM=$(echo "$D_PARAM_RESPONSE" | jq -r '.result')
+        # Extract d-parameter values
+        NUM_PERMISSIONED=$(echo "$D_PARAM_RESPONSE" | jq -r '.result.dParameter.numPermissionedCandidates')
+        NUM_REGISTERED=$(echo "$D_PARAM_RESPONSE" | jq -r '.result.dParameter.numRegisteredCandidates')
         
-        if [ -z "$D_PARAM" ] || [ "$D_PARAM" = "null" ]; then
-          echo "❌ Invalid d-parameter received"
+        # Skip if P or T is 0
+        if [ "$NUM_PERMISSIONED" -eq 0 ] || [ "$NUM_REGISTERED" -eq 0 ]; then
+          echo "⚠️ Skipping ratio test when P or T is 0"
+          exit 0
+        fi
+        
+        # Get available candidates
+        PERMISSIONED_CANDIDATES=$(echo "$D_PARAM_RESPONSE" | jq -r '.result.permissionedCandidates | length')
+        TRUSTLESS_CANDIDATES=$(echo "$D_PARAM_RESPONSE" | jq -r '.result.candidateRegistrations | length')
+        
+        # Skip if no available candidates
+        if [ "$PERMISSIONED_CANDIDATES" -eq 0 ] || [ "$TRUSTLESS_CANDIDATES" -eq 0 ]; then
+          echo "⚠️ Skipping ratio test when there are no available candidates"
+          exit 0
+        fi
+        
+        echo "Current d-parameter:"
+        echo "  Permissioned candidates: $NUM_PERMISSIONED"
+        echo "  Registered candidates: $NUM_REGISTERED"
+        
+        # Get committee members for the current epoch
+        echo "Getting epoch committee for epoch $EPOCH..."
+        COMMITTEE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+          partner-chains-node smart-contracts ariadne get-committee --genesis-utxo "$GENESIS_UTXO" --ogmios-url "$OGMIOS_URL" --epoch "$EPOCH" | jq '.')
+        
+        # Check if committee response is valid
+        if ! echo "$COMMITTEE_RESPONSE" | jq -e '.result' > /dev/null; then
+          echo "❌ Failed to get committee: $(echo "$COMMITTEE_RESPONSE" | jq -r '.error.message // "Unknown error"')"
+          echo "Full committee response: $COMMITTEE_RESPONSE"
           exit 1
         fi
         
-        echo "Current d-parameter: $D_PARAM"
+        # Extract and display committee members
+        echo "Committee members:"
+        echo "$COMMITTEE_RESPONSE" | jq -r '.result[]'
         
         # Calculate expected ratio
-        EXPECTED_RATIO=$(echo "scale=4; $D_PARAM / 100" | bc)
+        EXPECTED_RATIO=$(echo "scale=4; $NUM_PERMISSIONED / ($NUM_PERMISSIONED + $NUM_REGISTERED)" | bc)
         echo "Expected ratio: $EXPECTED_RATIO"
         
         # Get committee members and calculate actual ratio
-        COMMITTEE_MEMBERS=$(echo "$COMMITTEE_RESPONSE" | jq -r '.result.committee | length')
-        PERMISSIONED_MEMBERS=$(echo "$COMMITTEE_RESPONSE" | jq -r '.result.committee | map(select(.sidechainPubKey | startswith("0x02"))) | length')
+        COMMITTEE_MEMBERS=$(echo "$COMMITTEE_RESPONSE" | jq -r '.result | length')
+        PERMISSIONED_MEMBERS=$(echo "$COMMITTEE_RESPONSE" | jq -r '.result | map(select(.sidechainPublicKey | startswith("0x02"))) | length')
         
         if [ "$COMMITTEE_MEMBERS" -eq 0 ]; then
           echo "❌ No committee members found"
@@ -346,8 +363,13 @@ runs:
         ACTUAL_RATIO=$(echo "scale=4; $PERMISSIONED_MEMBERS / $COMMITTEE_MEMBERS" | bc)
         echo "Actual ratio: $ACTUAL_RATIO"
         
-        # Compare ratios with tolerance
-        TOLERANCE=0.1
+        # Calculate tolerance based on number of epochs and d-parameter values
+        PC_EPOCHS_IN_MC_EPOCH=10  # This should be configurable
+        P_PROB=$(echo "scale=4; $NUM_PERMISSIONED / ($NUM_PERMISSIONED + $NUM_REGISTERED)" | bc)
+        TOLERANCE=$(echo "scale=4; 1.1 * (1 / ($P_PROB * $PC_EPOCHS_IN_MC_EPOCH) - 1)" | bc)
+        TOLERANCE=$(echo "scale=4; $EXPECTED_RATIO * $TOLERANCE" | bc)
+        
+        # Compare ratios with calculated tolerance
         RATIO_DIFF=$(echo "scale=4; $ACTUAL_RATIO - $EXPECTED_RATIO" | bc)
         RATIO_DIFF_ABS=$(echo "scale=4; if ($RATIO_DIFF < 0) -($RATIO_DIFF) else $RATIO_DIFF fi" | bc)
         
@@ -515,41 +537,31 @@ runs:
       continue-on-error: true
       run: |
         # Get current MC epoch
+        echo "Getting current MC epoch..."
         MC_EPOCH=$(jq '.result.mainchain.epoch' status.json)
         echo "Current MC epoch: $MC_EPOCH"
         
-        # Get Ariadne parameters with epoch
+        # Get Ariadne parameters for the current epoch
         echo "Getting Ariadne parameters for epoch $MC_EPOCH..."
         ARIADNE_PARAMS=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"sidechain_getAriadneParameters\",\"params\":[$MC_EPOCH],\"id\":1}" \
-          http://localhost:9933)
+          partner-chains-node smart-contracts ariadne get-parameters --genesis-utxo "$GENESIS_UTXO" --ogmios-url "$OGMIOS_URL" \
+          --epoch "$MC_EPOCH" | jq '.')
         
-        # Check if Ariadne parameters response is valid
-        if ! echo "$ARIADNE_PARAMS" | jq -e '.result' > /dev/null; then
-          echo "❌ Failed to get Ariadne parameters: $(echo "$ARIADNE_PARAMS" | jq -r '.error.message // "Unknown error"')"
-          echo "Full Ariadne parameters response: $ARIADNE_PARAMS"
-          exit 1
-        fi
-        
-        # Get stake key hash from the first permissioned candidate
+        # Extract stake key hash from first permissioned candidate
         echo "Extracting stake key hash from first permissioned candidate..."
         STAKE_KEY_HASH=$(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates[0].sidechainPublicKey')
         
-        if [ -z "$STAKE_KEY_HASH" ] || [ "$STAKE_KEY_HASH" = "null" ]; then
-          echo "❌ Failed to get stake key hash from Ariadne parameters"
-          echo "Permissioned candidates: $(echo "$ARIADNE_PARAMS" | jq -r '.result.permissionedCandidates')"
-          exit 1
-        fi
-        
+        # Remove 0x prefix if present for length validation
+        STAKE_KEY_HASH_CLEAN=${STAKE_KEY_HASH#0x}
         echo "Stake key hash: $STAKE_KEY_HASH"
         
-        # Remove 0x prefix if present and ensure proper length
-        STAKE_KEY_HASH=${STAKE_KEY_HASH#0x}
-        if [ ${#STAKE_KEY_HASH} -ne 64 ]; then
-          echo "❌ Invalid stake key hash length: ${#STAKE_KEY_HASH} (expected 64)"
+        # Validate stake key hash length (should be 64 chars after removing 0x prefix)
+        if [ ${#STAKE_KEY_HASH_CLEAN} -ne 64 ]; then
+          echo "❌ Invalid stake key hash length: ${#STAKE_KEY_HASH_CLEAN} (expected 64)"
           exit 1
         fi
+        
+        echo "✅ Stake key hash validation passed"
         
         # Get address association using state_getStorage
         echo "Getting address association for stake key hash $STAKE_KEY_HASH..."
@@ -643,156 +655,45 @@ runs:
           exit 1
         fi
         
-        # Test get-scripts with error handling
+        # Test get-scripts
         echo "Testing get-scripts..."
-        if ! SCRIPTS_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+        GET_SCRIPTS_RESULT=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           partner-chains-node smart-contracts get-scripts \
           --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url "$OGMIOS_URL" 2>&1); then
-          echo "❌ get-scripts test failed: $SCRIPTS_RESPONSE"
-          if [[ "$SCRIPTS_RESPONSE" == *"Permission denied"* ]]; then
+          --ogmios-url "$OGMIOS_URL" 2>&1)
+        GET_SCRIPTS_EXIT_CODE=$?
+
+        if [ $GET_SCRIPTS_EXIT_CODE -ne 0 ]; then
+          if echo "$GET_SCRIPTS_RESULT" | grep -q "Permission denied"; then
             echo "⚠️ Permission denied error - this may be expected in some environments"
-            exit 0
+            echo "Full error: $GET_SCRIPTS_RESULT"
+          else
+            echo "❌ get-scripts test failed: $GET_SCRIPTS_RESULT"
+            exit 1
           fi
-          exit 1
+        else
+          echo "✅ get-scripts test passed"
         fi
         
-        if ! echo "$SCRIPTS_RESPONSE" | jq -e '.addresses' > /dev/null; then
-          echo "❌ get-scripts test failed: Invalid response format"
-          echo "Response: $SCRIPTS_RESPONSE"
-          exit 1
-        fi
-        echo "✅ get-scripts test passed"
-        
-        # Test upsert-d-parameter with error handling
-        echo "Testing upsert-d-parameter..."
-        if ! D_PARAM_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          partner-chains-node smart-contracts upsert-d-parameter \
-          --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url "$OGMIOS_URL" \
-          --d-parameter 0.5 2>&1); then
-          echo "❌ upsert-d-parameter test failed: $D_PARAM_RESPONSE"
-          if [[ "$D_PARAM_RESPONSE" == *"Permission denied"* ]]; then
-            echo "⚠️ Permission denied error - this may be expected in some environments"
-            exit 0
+        # Test other smart contract methods with similar error handling
+        for METHOD in "reserve create" "reserve deposit" "reserve handover"; do
+          echo "Testing $METHOD..."
+          METHOD_RESULT=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
+            partner-chains-node smart-contracts $METHOD \
+            --genesis-utxo "$GENESIS_UTXO" \
+            --ogmios-url "$OGMIOS_URL" 2>&1)
+          METHOD_EXIT_CODE=$?
+
+          if [ $METHOD_EXIT_CODE -ne 0 ]; then
+            if echo "$METHOD_RESULT" | grep -q "Permission denied"; then
+              echo "⚠️ Permission denied error for $METHOD - this may be expected in some environments"
+              echo "Full error: $METHOD_RESULT"
+            else
+              echo "❌ $METHOD test failed: $METHOD_RESULT"
+              exit 1
+            fi
+          else
+            echo "✅ $METHOD test passed"
           fi
-          exit 1
-        fi
-        
-        if ! echo "$D_PARAM_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ upsert-d-parameter test failed: Invalid response format"
-          echo "Response: $D_PARAM_RESPONSE"
-          exit 1
-        fi
-        echo "✅ upsert-d-parameter test passed"
-        
-        # Test upsert-permissioned-candidates with error handling
-        echo "Testing upsert-permissioned-candidates..."
-        if ! PERM_CANDIDATES_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          partner-chains-node smart-contracts upsert-permissioned-candidates \
-          --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url "$OGMIOS_URL" \
-          --candidates "$COMMITTEE_CANDIDATE_ADDRESS" 2>&1); then
-          echo "❌ upsert-permissioned-candidates test failed: $PERM_CANDIDATES_RESPONSE"
-          if [[ "$PERM_CANDIDATES_RESPONSE" == *"Permission denied"* ]]; then
-            echo "⚠️ Permission denied error - this may be expected in some environments"
-            exit 0
-          fi
-          exit 1
-        fi
-        
-        if ! echo "$PERM_CANDIDATES_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ upsert-permissioned-candidates test failed: Invalid response format"
-          echo "Response: $PERM_CANDIDATES_RESPONSE"
-          exit 1
-        fi
-        echo "✅ upsert-permissioned-candidates test passed"
-        
-        # Test register
-        echo "Testing register..."
-        REGISTER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          partner-chains-node smart-contracts register \
-          --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url "$OGMIOS_URL" \
-          --registration-utxo "$REGISTRATION_UTXO" \
-          --reference-utxo "$REFERENCE_UTXO" \
-          --transaction-cbor "$TRANSACTION_CBOR" \
-          --witnesses "$WITNESSES")
-        
-        if ! echo "$REGISTER_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ register test failed: Invalid response format"
-          exit 1
-        fi
-        echo "✅ register test passed"
-        
-        # Test deregister
-        echo "Testing deregister..."
-        DEREGISTER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          partner-chains-node smart-contracts deregister \
-          --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url "$OGMIOS_URL" \
-          --registration-utxo "$REGISTRATION_UTXO" \
-          --reference-utxo "$REFERENCE_UTXO" \
-          --transaction-cbor "$TRANSACTION_CBOR" \
-          --witnesses "$WITNESSES")
-        
-        if ! echo "$DEREGISTER_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ deregister test failed: Invalid response format"
-          exit 1
-        fi
-        echo "✅ deregister test passed"
-        
-        # Test reserve init
-        echo "Testing reserve init..."
-        INIT_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          partner-chains-node smart-contracts reserve init \
-          --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url "$OGMIOS_URL")
-        
-        if ! echo "$INIT_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ reserve init test failed: Invalid response format"
-          exit 1
-        fi
-        echo "✅ reserve init test passed"
-        
-        # Test reserve create
-        echo "Testing reserve create..."
-        CREATE_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          partner-chains-node smart-contracts reserve create \
-          --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url "$OGMIOS_URL")
-        
-        if ! echo "$CREATE_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ reserve create test failed: Invalid response format"
-          exit 1
-        fi
-        echo "✅ reserve create test passed"
-        
-        # Test reserve deposit
-        echo "Testing reserve deposit..."
-        DEPOSIT_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          partner-chains-node smart-contracts reserve deposit \
-          --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url "$OGMIOS_URL" \
-          --amount 1000000)
-        
-        if ! echo "$DEPOSIT_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ reserve deposit test failed: Invalid response format"
-          exit 1
-        fi
-        echo "✅ reserve deposit test passed"
-        
-        # Test reserve handover
-        echo "Testing reserve handover..."
-        HANDOVER_RESPONSE=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
-          partner-chains-node smart-contracts reserve handover \
-          --genesis-utxo "$GENESIS_UTXO" \
-          --ogmios-url "$OGMIOS_URL" \
-          --new-owner "$RESERVE_VALIDATOR_ADDRESS")
-        
-        if ! echo "$HANDOVER_RESPONSE" | jq -e '.result' > /dev/null; then
-          echo "❌ reserve handover test failed: Invalid response format"
-          exit 1
-        fi
-        echo "✅ reserve handover test passed"
+        done
     

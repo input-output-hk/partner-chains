@@ -558,8 +558,8 @@ def governance_skey_with_cli(config: ApiConfig):
     :param config: The API configuration object.
     """
     # Get pod name and namespace from config
-    pod_name = config.nodes_config.node.pod_name
-    namespace = config.nodes_config.node.namespace
+    pod_name = config.stack_config.validator_name
+    namespace = config.stack_config.namespace
     
     if not pod_name or not namespace:
         logging.warning("Pod name or namespace not configured, skipping governance skey setup")
