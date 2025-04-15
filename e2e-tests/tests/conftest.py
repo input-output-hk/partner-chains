@@ -515,36 +515,24 @@ def wait_until():
 
 @fixture(scope="session")
 def write_file():
-    """Writes a file in location that is available by CLI being in use in tests.
+    """
+    Write a file to a temporary directory and return the path.
+    The file is deleted after the test completes.
 
-    Example usage:
-    ```python
-    def test_something(api: BlockchainApi, write_file):
-        content = {"keyHash": <key_hash>, "type": "sig"}
-        filepath = write_file(api.cardano_cli.run_command , content)
-        policy_id = api.cardano_cli.get_policy_id(filepath)
-        assert policy_id
-    ```
-
-    The file is created in `/tmp` directory with a random name.
-    The content is passed as a string and is converted to JSON format.
-    The file is created on the same host that is configured in the `<env>_stack.json` for given tool (SSH or shell).
-    The file is removed after the test completes.
-
-
-    Returns:
-        str: filepath available to use by CLI
-
-    Yields:
-        function: write_file callable function that takes runner and content as arguments
+    :return: A function that takes a runner and content and returns the path to the written file.
     """
     saved_files = {}
 
     def _write_file(runner: Runner, content: str):
-        filepath = f"/tmp/{uuid.uuid4().hex}"
-        content_json = json.dumps(content)
-        runner.run(f"echo '{content_json}' > {filepath}")
+        """
+        Write content to a temporary file.
 
+        :param runner: The runner to use for file operations
+        :param content: The content to write to the file
+        :return: The path to the written file
+        """
+        filepath = runner.run("mktemp").stdout.strip()
+        runner.run(f"echo '{content}' > {filepath}")
         if runner not in saved_files:
             saved_files[runner] = []
         saved_files[runner].append(filepath)
