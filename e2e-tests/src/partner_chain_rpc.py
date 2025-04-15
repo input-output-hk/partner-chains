@@ -2,7 +2,7 @@ import requests
 import logging as logger
 from dataclasses import dataclass
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Any, Dict
 import os
 import subprocess
 import json
@@ -46,31 +46,52 @@ class PartnerChainRpc:
             "id": id,
         }
 
-    def __exec_rpc(self, method: str, params: list = None) -> dict:
+    def __exec_rpc(self, method: str, params: Optional[list] = None) -> Dict[str, Any]:
+        """
+        Execute an RPC call to the partner chain node.
+
+        :param method: The RPC method to call
+        :param params: Optional parameters for the RPC call
+        :return: The JSON response from the RPC call
+        """
         if params is None:
             params = []
-        request = {
+
+        data = {
             "jsonrpc": "2.0",
-            "id": 1,
             "method": method,
-            "params": params
+            "params": params,
+            "id": 1,
         }
-        result = run_command.run(
-            ["curl", "-s", "-X", "POST", "-H", "Content-Type: application/json", "-d", json.dumps(request), self.url]
-        )
+
         try:
-            try:
-                response = json.loads(result.stdout)
-            except json.JSONDecodeError as e:
-                logging.error(f"Failed to decode JSON response: {e}")
-                logging.error(f"Raw response: {result.stdout}")
-                raise PartnerChainRpcException(f"Failed to decode JSON response: {e}. Raw response: {result.stdout}")
+            result = subprocess.run(
+                [
+                    "curl",
+                    "-s",
+                    "-H",
+                    "Content-Type: application/json",
+                    "-d",
+                    json.dumps(data),
+                    self.url,
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
             
-            if "error" in response:
-                raise PartnerChainRpcException(response["error"])
-            return response["result"]
-        except json.JSONDecodeError:
-            raise PartnerChainRpcException(f"Failed to decode response: {result.stdout}")
+            try:
+                return json.loads(result.stdout)
+            except json.JSONDecodeError as e:
+                logging.error(f"Failed to parse JSON response: {e}")
+                logging.error(f"Raw response: {result.stdout}")
+                raise PartnerChainRpcException(f"Failed to parse JSON response: {e}")
+
+        except subprocess.CalledProcessError as e:
+            logging.error(f"RPC call failed: {e}")
+            logging.error(f"stdout: {e.stdout}")
+            logging.error(f"stderr: {e.stderr}")
+            raise PartnerChainRpcException(f"RPC call failed: {e}")
 
     def partner_chain_get_epoch_committee(self, epoch) -> PartnerChainRpcResponse:
         json_data = self.__exec_rpc("sidechain_getEpochCommittee", [epoch])
