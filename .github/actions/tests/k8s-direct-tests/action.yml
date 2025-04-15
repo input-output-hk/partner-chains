@@ -575,9 +575,11 @@ runs:
         
         # Remove 0x prefix if present for length validation
         STAKE_KEY_HASH_CLEAN=${STAKE_KEY_HASH#0x}
+        # Remove 02 prefix if present (this is a special prefix for permissioned candidates)
+        STAKE_KEY_HASH_CLEAN=${STAKE_KEY_HASH_CLEAN#02}
         echo "Stake key hash: $STAKE_KEY_HASH"
         
-        # Validate stake key hash length (should be 64 chars after removing 0x prefix)
+        # Validate stake key hash length (should be 64 chars after removing 0x and 02 prefixes)
         if [ ${#STAKE_KEY_HASH_CLEAN} -ne 64 ]; then
           echo "❌ Invalid stake key hash length: ${#STAKE_KEY_HASH_CLEAN} (expected 64)"
           echo "Original key: $STAKE_KEY_HASH"
