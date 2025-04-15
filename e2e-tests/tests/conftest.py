@@ -549,31 +549,46 @@ def write_file():
 @fixture(scope="session")
 def governance_skey_with_cli(config: ApiConfig):
     """
-    Securely copy the governance authority's init skey (a secret key used by the smart-contracts to authorize admin
-    operations) to a temporary directory on the remote machine and update the path in the configuration.
+    Copy the governance authority's init skey (a secret key used by the smart-contracts to authorize admin
+    operations) to a temporary directory in the Kubernetes pod and update the path in the configuration.
     The temporary directory is deleted after the test completes.
 
-    This fixture is executed only if:
-    - you call it directly in test or other fixture
-    - SSH is configured in `<env>_stack.json` for given tool
-
-    WARNING: This fixture copies secret file to a remote host and should be used with caution.
+    This fixture is executed only if you call it directly in test or other fixture.
 
     :param config: The API configuration object.
     """
-    if config.stack_config.ssh:
-        runner = RunnerFactory.get_runner(config.stack_config.ssh, "/bin/bash")
-        temp_dir = runner.run("mktemp -d").stdout.strip()
-        path = config.nodes_config.governance_authority.mainchain_key
-        filename = path.split("/")[-1]
-        runner.scp(path, temp_dir)
-        config.nodes_config.governance_authority.mainchain_key = f"{temp_dir}/{filename}"
+    # Get pod name and namespace from config
+    pod_name = config.nodes_config.node.pod_name
+    namespace = config.nodes_config.node.namespace
+    
+    if not pod_name or not namespace:
+        logging.warning("Pod name or namespace not configured, skipping governance skey setup")
         yield
-        logging.info("Cleaning up governance skey file on remote host...")
-        config.nodes_config.governance_authority.mainchain_key = path
-        runner.run(f"rm -rf {temp_dir}")
-    else:
-        yield
+        return
+    
+    # Create a temporary directory in the pod
+    temp_dir_cmd = f"kubectl exec {pod_name} -n {namespace} -- mktemp -d"
+    temp_dir = subprocess.check_output(temp_dir_cmd, shell=True).decode().strip()
+    
+    # Get the path to the governance key
+    path = config.nodes_config.governance_authority.mainchain_key
+    filename = path.split("/")[-1]
+    
+    # Copy the key to the pod
+    copy_cmd = f"kubectl cp {path} {namespace}/{pod_name}:{temp_dir}/{filename}"
+    subprocess.check_output(copy_cmd, shell=True)
+    
+    # Update the path in the config
+    original_path = config.nodes_config.governance_authority.mainchain_key
+    config.nodes_config.governance_authority.mainchain_key = f"{temp_dir}/{filename}"
+    
+    yield
+    
+    # Clean up
+    logging.info("Cleaning up governance skey file in pod...")
+    config.nodes_config.governance_authority.mainchain_key = original_path
+    cleanup_cmd = f"kubectl exec {pod_name} -n {namespace} -- rm -rf {temp_dir}"
+    subprocess.check_output(cleanup_cmd, shell=True)
 
 
 @fixture(scope="session")
