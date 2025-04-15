@@ -8,17 +8,18 @@ use frame_system::RawOrigin;
 /// Trait for injecting chain-specific test values for benchmarking.
 pub trait BenchmarkHelper<T: crate::Config> {
 	/// Returns a list of changes to the Governed Map parameters of length `length`.
-	///
-	/// This function should return data that matches the number of changes and size of data
-	/// expected for during normal operation of the benchmarked chain.
 	fn changes(length: u32) -> crate::Changes<T> {
 		BoundedVec::truncate_from((0..length).map(|i| (Self::key(i), Self::value(i))).collect())
 	}
 
 	/// Returns `index`th mock Governance Map key
+	///
+	/// Size of data returned by this function should match the expected distribution
 	fn key(index: u32) -> crate::MapKey<T>;
 
 	/// Returns `index`th mock Governance Map value
+	///
+	/// Size of data returned by this function should match the expected distribution
 	fn value(index: u32) -> Option<crate::MapValue<T>>;
 
 	/// Returns new value of the main chain scripts stored in the pallet.
