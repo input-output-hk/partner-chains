@@ -6796,6 +6796,7 @@ dependencies = [
  "sidechain-domain",
  "sidechain-mc-hash",
  "sp-block-participation",
+ "sp-governed-map",
  "sp-native-token-management",
  "sp-timestamp",
  "sqlx",
@@ -6973,6 +6974,7 @@ dependencies = [
  "sidechain-domain",
  "sidechain-mc-hash",
  "sp-block-participation",
+ "sp-governed-map",
  "sp-native-token-management",
  "sp-timestamp",
 ]

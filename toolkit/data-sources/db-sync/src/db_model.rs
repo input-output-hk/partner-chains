@@ -109,6 +109,11 @@ pub(crate) struct TokenTxOutput {
 	pub datum: Option<DbDatum>,
 }
 
+#[derive(Debug, Clone, sqlx::FromRow, PartialEq)]
+pub(crate) struct DatumOutput {
+	pub datum: DbDatum,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct NativeTokenAmount(pub u128);
 impl From<NativeTokenAmount> for sidechain_domain::NativeTokenAmount {
@@ -362,6 +367,41 @@ pub(crate) async fn get_token_utxo_for_epoch(
 		.await?)
 }
 
+#[cfg(feature = "governed-map")]
+pub(crate) async fn get_datums_at_address_with_token(
+	pool: &Pool<Postgres>,
+	address: &Address,
+	block: BlockNumber,
+	asset: Asset,
+) -> Result<Vec<DatumOutput>, SqlxError> {
+	let query = "
+			SELECT
+				datum.value as datum
+			FROM tx_out
+			INNER JOIN tx origin_tx			ON tx_out.tx_id = origin_tx.id
+			INNER JOIN block origin_block	ON origin_tx.block_id = origin_block.id
+			LEFT JOIN tx_in consuming_tx_in	ON tx_out.tx_id = consuming_tx_in.tx_out_id AND tx_out.index = consuming_tx_in.tx_out_index
+			LEFT JOIN tx consuming_tx		ON consuming_tx_in.tx_in_id = consuming_tx.id
+			LEFT JOIN block consuming_block	ON consuming_tx.block_id = consuming_block.id
+			LEFT JOIN tx_in consumes_tx_in	ON consumes_tx_in.tx_in_id = origin_tx.id
+			INNER JOIN datum				ON tx_out.data_hash = datum.hash
+			INNER JOIN ma_tx_out			ON tx_out.id = ma_tx_out.tx_out_id
+			INNER JOIN multi_asset			ON multi_asset.id = ma_tx_out.ident
+			WHERE
+				tx_out.address = $1 AND origin_block.block_no <= $2
+				AND (consuming_tx_in.id IS NULL OR consuming_block.block_no > $2)
+				AND multi_asset.policy = $3
+				AND multi_asset.name = $4
+				ORDER BY origin_block.block_no DESC, origin_tx.block_index DESC";
+	Ok(sqlx::query_as::<_, DatumOutput>(query)
+		.bind(&address.0)
+		.bind(block)
+		.bind(&asset.policy_id.0)
+		.bind(&asset.asset_name.0)
+		.fetch_all(pool)
+		.await?)
+}
+
 #[cfg(feature = "candidate-source")]
 pub(crate) async fn get_epoch_nonce(
 	pool: &Pool<Postgres>,
@@ -401,7 +441,7 @@ pub(crate) async fn get_utxos_for_address(
           	LEFT JOIN datum                  ON tx_out.data_hash = datum.hash
           	WHERE
           		tx_out.address = $1 AND origin_block.block_no <= $2
-          		AND (consuming_tx_in.id IS NULL OR consuming_block.block_no > $3)
+          		AND (consuming_tx_in.id IS NULL OR consuming_block.block_no > $2)
           		GROUP BY (
 					utxo_id_tx_hash,
 					utxo_id_index,
@@ -414,7 +454,6 @@ pub(crate) async fn get_utxos_for_address(
 				)";
 	let rows = sqlx::query_as::<_, MainchainTxOutputRow>(query)
 		.bind(&address.0)
-		.bind(block)
 		.bind(block)
 		.fetch_all(pool)
 		.await?;
