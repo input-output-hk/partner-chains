@@ -1,16 +1,25 @@
 //! Benchmarking setup for pallet-governed-map
 
 use super::*;
+use alloc::format;
 use frame_benchmarking::v2::*;
 use frame_system::RawOrigin;
 
 /// Trait for injecting chain-specific test values for benchmarking.
 pub trait BenchmarkHelper<T: crate::Config> {
-	/// Returns a list of changes to the Governed Map parameters.
+	/// Returns a list of changes to the Governed Map parameters of length `length`.
 	///
 	/// This function should return data that matches the number of changes and size of data
 	/// expected for during normal operation of the benchmarked chain.
-	fn changes() -> crate::Changes<T>;
+	fn changes(length: u32) -> crate::Changes<T> {
+		BoundedVec::truncate_from((0..length).map(|i| (Self::key(i), Self::value(i))).collect())
+	}
+
+	/// Returns `index`th mock Governance Map key
+	fn key(index: u32) -> crate::MapKey<T>;
+
+	/// Returns `index`th mock Governance Map value
+	fn value(index: u32) -> Option<crate::MapValue<T>>;
 
 	/// Returns new value of the main chain scripts stored in the pallet.
 	///
@@ -21,22 +30,13 @@ pub trait BenchmarkHelper<T: crate::Config> {
 }
 
 impl<T: crate::Config> BenchmarkHelper<T> for () {
-	fn changes() -> crate::Changes<T> {
-		BoundedVec::truncate_from(alloc::vec![
-			(BoundedString::try_from("key1").unwrap(), None),
-			(
-				BoundedString::try_from("key2").unwrap(),
-				Some(BoundedVec::truncate_from(alloc::vec!(1; 128)))
-			),
-			(
-				BoundedString::try_from("key3").unwrap(),
-				Some(BoundedVec::truncate_from(alloc::vec!(1; 128)))
-			),
-			(
-				BoundedString::try_from("key4").unwrap(),
-				Some(BoundedVec::truncate_from(alloc::vec!(1; 128)))
-			),
-		])
+	fn key(index: u32) -> crate::MapKey<T> {
+		BoundedString::try_from(format!("key{index}").as_str()).unwrap()
+	}
+
+	fn value(index: u32) -> Option<crate::MapValue<T>> {
+		let i = (index % (u8::MAX as u32)) as u8;
+		Some(BoundedVec::truncate_from(alloc::vec!(i; 128)))
 	}
 }
 
@@ -45,8 +45,8 @@ mod benchmarks {
 	use super::*;
 
 	#[benchmark]
-	fn register_changes() {
-		let changes = T::BenchmarkHelper::changes();
+	fn register_changes(l: Linear<1, { T::MaxChanges::get() }>) {
+		let changes = T::BenchmarkHelper::changes(l);
 
 		#[extrinsic_call]
 		_(RawOrigin::None, changes);
