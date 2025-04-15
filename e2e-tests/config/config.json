@@ -1,7 +1,7 @@
 {
     "atms_kind": "plain-ecdsa-secp256k1",
     "committee_epoch_slippage": 0,
-    "committee_participation_tolerance": 0.18,
+    "committee_participation_tolerance": 0.05,
     "max_validators": 32,
     "main_chain": {
         "network": "--testnet-magic 2",

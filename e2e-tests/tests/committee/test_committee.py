@@ -7,7 +7,6 @@ from pytest import fixture, mark, skip
 from src.db.models import Candidates, PermissionedCandidates, StakeDistributionCommittee
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-import math
 import numpy as np
 
 
@@ -24,26 +23,26 @@ class TestCommitteeDistribution:
         return _p_candidates_available
 
     @fixture(scope="class")
-    def p_candidates_count(
+    def p_candidates_seats(
         self,
         current_mc_epoch,
         get_pc_epoch_committee,
         p_candidates_available,
         pc_epoch_calculator: PartnerChainEpochCalculator,
     ):
-        candidates_count = {}
+        seats = {}
 
-        def _p_candidates_count(pc_epoch):
-            if pc_epoch not in candidates_count:
+        def _p_candidates_seats(pc_epoch):
+            if pc_epoch not in seats:
                 mc_epoch = pc_epoch_calculator.find_mc_epoch(pc_epoch, current_mc_epoch)
                 p_candidates = p_candidates_available(mc_epoch)
                 pc_pub_keys = [candidate['sidechainPublicKey'] for candidate in p_candidates]
                 committee = get_pc_epoch_committee(pc_epoch)
                 count = sum(1 for member in committee if member['sidechainPubKey'] in pc_pub_keys)
-                candidates_count[pc_epoch] = count
-            return candidates_count[pc_epoch]
+                seats[pc_epoch] = count
+            return seats[pc_epoch]
 
-        return _p_candidates_count
+        return _p_candidates_seats
 
     @fixture(scope="class")
     def t_candidates_available(self, api: BlockchainApi):
@@ -57,26 +56,26 @@ class TestCommitteeDistribution:
         return _t_candidates_available
 
     @fixture(scope="class")
-    def t_candidates_count(
+    def t_candidates_seats(
         self,
         current_mc_epoch,
         get_pc_epoch_committee,
         t_candidates_available,
         pc_epoch_calculator: PartnerChainEpochCalculator,
     ):
-        candidates_count = {}
+        seats = {}
 
-        def _t_candidates_count(pc_epoch):
-            if pc_epoch not in candidates_count:
+        def _t_candidates_seats(pc_epoch):
+            if pc_epoch not in seats:
                 mc_epoch = pc_epoch_calculator.find_mc_epoch(pc_epoch, current_mc_epoch)
                 t_candidates = t_candidates_available(mc_epoch)
                 pc_pub_keys = [candidate['sidechainPubKey'] for spo in t_candidates.values() for candidate in spo]
                 committee = get_pc_epoch_committee(pc_epoch)
                 count = sum(1 for member in committee if member['sidechainPubKey'] in pc_pub_keys)
-                candidates_count[pc_epoch] = count
-            return candidates_count[pc_epoch]
+                seats[pc_epoch] = count
+            return seats[pc_epoch]
 
-        return _t_candidates_count
+        return _t_candidates_seats
 
     @mark.committee_distribution
     @mark.ariadne
@@ -140,8 +139,8 @@ class TestCommitteeDistribution:
         current_mc_epoch,
         p_candidates_available,
         t_candidates_available,
-        p_candidates_count,
-        t_candidates_count,
+        p_candidates_seats,
+        t_candidates_seats,
     ):
         """Verify committee ratio in given mc epoch equals d-parameter ratio.
         Ariadne v2 introduced guarantees resulting in slot assignment that now has P entries for permissioned
@@ -159,26 +158,24 @@ class TestCommitteeDistribution:
             skip("Cannot test ratio when there are no available candidates.")
 
         expected_ratio = d_param_cache.permissioned_candidates_number / d_param_cache.trustless_candidates_number
-        p_candidates_attendance = p_candidates_count(pc_epoch)
-        t_candidates_attendance = t_candidates_count(pc_epoch)
-        ratio = p_candidates_attendance / t_candidates_attendance
+        ratio = p_candidates_seats(pc_epoch) / t_candidates_seats(pc_epoch)
         logging.info(f"Ariadne observed ratio: {ratio}, expected ratio: {expected_ratio}")
         assert expected_ratio == ratio
 
     @mark.ariadne
     @mark.committee_distribution
-    def test_epoch_p_candidates_count(
+    def test_epoch_p_candidates_seats(
         self,
         config: ApiConfig,
         pc_epoch,
         p_candidates_available,
         t_candidates_available,
         d_param_cache,
-        p_candidates_count,
+        p_candidates_seats,
         pc_epoch_calculator: PartnerChainEpochCalculator,
         current_mc_epoch,
     ):
-        """Test that the number of permissioned candidates in the committee is equal to the P parameter in DParam."""
+        """Test that the number of permissioned candidates seats in the committee is equal to the P in DParam."""
         if pc_epoch < config.initial_pc_epoch:
             skip("Cannot query committee before initial epoch.")
         if pc_epoch == config.initial_pc_epoch:
@@ -193,22 +190,22 @@ class TestCommitteeDistribution:
             expected_p_candidates = (
                 d_param_cache.trustless_candidates_number + d_param_cache.permissioned_candidates_number
             )
-        assert p_candidates_count(pc_epoch) == expected_p_candidates
+        assert p_candidates_seats(pc_epoch) == expected_p_candidates
 
     @mark.ariadne
     @mark.committee_distribution
-    def test_epoch_t_candidates_count(
+    def test_epoch_t_candidates_seats(
         self,
         config: ApiConfig,
         pc_epoch,
         p_candidates_available,
         t_candidates_available,
         d_param_cache,
-        t_candidates_count,
+        t_candidates_seats,
         pc_epoch_calculator: PartnerChainEpochCalculator,
         current_mc_epoch,
     ):
-        """Test that the number of trustless candidates in the committee is equal to the T parameter in DParam."""
+        """Test that the number of trustless candidates seats in the committee is equal to the T in DParam."""
         if pc_epoch < config.initial_pc_epoch:
             skip("Cannot query committee before initial epoch.")
         if pc_epoch == config.initial_pc_epoch:
@@ -224,7 +221,7 @@ class TestCommitteeDistribution:
             expected_t_candidates = (
                 d_param_cache.trustless_candidates_number + d_param_cache.permissioned_candidates_number
             )
-        assert t_candidates_count(pc_epoch) == expected_t_candidates
+        assert t_candidates_seats(pc_epoch) == expected_t_candidates
 
     @mark.test_key('ETCM-7032')
     @mark.committee_distribution
@@ -292,7 +289,6 @@ class TestCommitteeDistribution:
             skip("On deployment day tolerance may be exceeded.")
         update_committee_expected_attendance(mc_epoch)
         candidates = db.query(StakeDistributionCommittee).filter_by(mc_epoch=mc_epoch).all()
-        probability_sum = 0
         for candidate in candidates:
             target = candidate.expected_attendance
             target = round(target)  # round target to avoid near-zero attendance, e.g. 0.0001
@@ -301,12 +297,6 @@ class TestCommitteeDistribution:
             assert (
                 target - tolerance <= actual <= target + tolerance
             ), f"Incorrect attendance for {candidate.pc_pub_key}"
-
-            probability_sum += candidate.probability
-
-        assert math.isclose(
-            probability_sum, 1, rel_tol=1e-9
-        ), f"Sum of probabilities is not equal to 1: {probability_sum}"
 
     @mark.ariadne
     @mark.committee_distribution

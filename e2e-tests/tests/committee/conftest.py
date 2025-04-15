@@ -16,7 +16,6 @@ from src.run_command import RunnerFactory
 
 block_finder: BlockFinder = None
 
-PERMISSIONED_CANDIDATE_WEIGHT = 1
 CANDIDATES_STABILITY_OFFSET_IN_MC_EPOCHS = 2
 
 
@@ -439,22 +438,12 @@ def update_committee_expected_attendance(
         epochs_num = len(pc_epoch_calculator.find_pc_epochs(mc_epoch))
         for candidate in candidates:
             if candidate.mc_vkey == "permissioned":
-                probability_of_selection_in_single_epoch = (permissioned_seats / total_committee_seats) * (
-                    PERMISSIONED_CANDIDATE_WEIGHT / permissioned_candidates_count
-                )
-                expected_attendance = permissioned_seats * (
-                    PERMISSIONED_CANDIDATE_WEIGHT / permissioned_candidates_count
-                )
+                expected_attendance = permissioned_seats / permissioned_candidates_count
                 guaranteed_seats = math.floor(expected_attendance)
             else:
-                probability_of_selection_in_single_epoch = (trustless_seats / total_committee_seats) * (
-                    candidate.stake_delegation / total_stake
-                )
                 expected_attendance = trustless_seats * (candidate.stake_delegation / total_stake)
                 guaranteed_seats = math.floor(expected_attendance)
-            expected_attendance_in_single_epoch = total_committee_seats * probability_of_selection_in_single_epoch
-            total_expected_attendance = epochs_num * expected_attendance_in_single_epoch
-            candidate.probability = probability_of_selection_in_single_epoch
+            total_expected_attendance = epochs_num * expected_attendance
             candidate.expected_attendance = total_expected_attendance
             candidate.guaranteed_seats = epochs_num * guaranteed_seats
             db.commit()
