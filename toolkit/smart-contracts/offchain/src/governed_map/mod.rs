@@ -67,7 +67,6 @@ pub async fn run_insert<
 	Ok(tx_hash_opt)
 }
 
-
 fn ogmios_utxos_to_governed_map_utxos(
 	utxos: impl Iterator<Item = OgmiosUtxo>,
 	token: PolicyId,
@@ -86,12 +85,9 @@ fn get_current_value(
 	key: String,
 	token: PolicyId,
 ) -> Option<ByteString> {
-	for datum_key in ogmios_utxos_to_governed_map_utxos(validator_utxos.into_iter(), token) {
-		if datum_key.key == key {
-			return Some(datum_key.value);
-		}
-	}
-	None
+	ogmios_utxos_to_governed_map_utxos(validator_utxos.into_iter(), token)
+		.find(|datum| datum.key == key)
+		.map(|datum| datum.value)
 }
 
 async fn insert<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
