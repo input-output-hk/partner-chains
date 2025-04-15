@@ -174,6 +174,7 @@ pub fn testnet_genesis(
 		},
 		aura: AuraConfig { authorities: vec![] },
 		grandpa: GrandpaConfig { authorities: vec![], ..Default::default() },
+		im_online: Default::default(),
 		sudo: SudoConfig {
 			// Assign network admin rights.
 			key: root_key,

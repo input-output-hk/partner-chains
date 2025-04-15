@@ -15,8 +15,11 @@ use authority_selection_inherents::filter_invalid_candidates::{
 };
 use authority_selection_inherents::select_authorities::select_authorities;
 use authority_selection_inherents::CommitteeMember;
+use ext::PartnerChainsSessionFrameSupport;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::inherent::ProvideInherent;
+use frame_support::pallet_prelude::TransactionPriority;
+use frame_support::traits::{ValidatorSet, ValidatorSetWithIdentification};
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
 	construct_runtime, parameter_types,
@@ -24,9 +27,11 @@ use frame_support::{
 	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, IdentityFee},
 	BoundedVec,
 };
+use frame_system::offchain::{CreateInherent, CreateTransactionBase};
 use opaque::SessionKeys;
 use pallet_block_producer_metadata;
 use pallet_grandpa::AuthorityId as GrandpaId;
+use pallet_partner_chains_session::SessionIndex;
 use pallet_session_validator_management::session_manager::ValidatorManagementSessionManager;
 use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier};
 use parity_scale_codec::MaxEncodedLen;
@@ -44,8 +49,10 @@ use sp_block_participation::AsCardanoSPO;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(feature = "runtime-benchmarks")]
 use sp_core::ByteArray;
+use sp_core::LogLevel;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_inherents::InherentIdentifier;
+use sp_runtime::traits::Convert;
 use sp_runtime::{
 	generic, impl_opaque_keys,
 	traits::{
@@ -64,6 +71,7 @@ use sp_weights::Weight;
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+pub mod ext;
 pub mod genesis_config_presets;
 
 #[cfg(test)]
@@ -375,7 +383,7 @@ impl pallet_partner_chains_session::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
 	type ShouldEndSession = ValidatorManagementSessionManager<Runtime>;
-	type NextSessionRotation = ();
+	type NextSessionRotation = PartnerChainsSessionFrameSupport<Runtime>;
 	type SessionManager = ValidatorManagementSessionManager<Runtime>;
 	type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = opaque::SessionKeys;
@@ -399,6 +407,11 @@ impl pallet_session_validator_management::Config for Runtime {
 		input: AuthoritySelectionInputs,
 		sidechain_epoch: ScEpochNumber,
 	) -> Option<BoundedVec<Self::CommitteeMember, Self::MaxValidators>> {
+		for i in 0..5 {
+			let is_online = pallet_im_online::Pallet::<Runtime>::is_online(i);
+			let msg = alloc::format!("{i} is online: {is_online}");
+			sp_io::logging::log(LogLevel::Error, "stdout", msg.as_bytes());
+		}
 		Some(BoundedVec::truncate_from(
 			select_authorities(Sidechain::genesis_utxo(), input, sidechain_epoch)?
 				.into_iter()
@@ -578,6 +591,73 @@ impl pallet_governed_map::Config for Runtime {
 
 impl crate::test_helper_pallet::Config for Runtime {}
 
+pub struct GlueCode;
+
+impl ValidatorSet<AccountId> for GlueCode {
+	type ValidatorId = AccountId;
+	type ValidatorIdOf = ValidatorIdOf;
+
+	fn session_index() -> SessionIndex {
+		pallet_session::Pallet::<Runtime>::current_index()
+	}
+	fn validators() -> Vec<Self::ValidatorId> {
+		let (_epoch, validators) =
+			pallet_session_validator_management::Pallet::<Runtime>::get_current_committee();
+
+		use sp_session_validator_management::CommitteeMember;
+		validators
+			.into_iter()
+			.map(|committee_member| committee_member.authority_id().into())
+			.collect()
+	}
+}
+
+pub struct ValidatorIdOf;
+
+impl<T> Convert<T, Option<T>> for ValidatorIdOf {
+	fn convert(t: T) -> Option<T> {
+		Some(t)
+	}
+}
+
+impl ValidatorSetWithIdentification<AccountId> for GlueCode {
+	type Identification = AccountId;
+	type IdentificationOf = ValidatorIdOf;
+}
+
+parameter_types! {
+	pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+	pub const ImOnlineMaxPeerInHeartbeats: u32 = 1000;
+	pub const ImOnlineMaxKeys: u32 = 1000;
+}
+
+impl CreateInherent<pallet_im_online::Call<Runtime>> for Runtime {
+	fn create_inherent(call: Self::RuntimeCall) -> Self::Extrinsic {
+		generic::UncheckedExtrinsic::new_bare(call).into()
+	}
+}
+
+impl<C> CreateTransactionBase<C> for Runtime
+where
+	RuntimeCall: From<C>,
+{
+	type Extrinsic = UncheckedExtrinsic;
+
+	type RuntimeCall = RuntimeCall;
+}
+
+impl pallet_im_online::Config for Runtime {
+	type AuthorityId = AuraId;
+	type RuntimeEvent = RuntimeEvent;
+	type NextSessionRotation = PartnerChainsSessionFrameSupport<Runtime>;
+	type ValidatorSet = GlueCode;
+	type ReportUnresponsiveness = ();
+	type UnsignedPriority = ImOnlineUnsignedPriority;
+	type WeightInfo = pallet_im_online::weights::SubstrateWeight<Runtime>;
+	type MaxKeys = ImOnlineMaxKeys;
+	type MaxPeerInHeartbeats = ImOnlineMaxPeerInHeartbeats;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime {
@@ -592,6 +672,7 @@ construct_runtime!(
 		// Sidechain pallet must come after the Aura pallet, since it gets the slot number from it
 		Sidechain: pallet_sidechain,
 		SessionCommitteeManagement: pallet_session_validator_management,
+		ImOnline: pallet_im_online,
 		AddressAssociations: pallet_address_associations,
 		BlockProducerMetadata: pallet_block_producer_metadata,
 		BlockProductionLog: pallet_block_production_log,

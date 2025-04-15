@@ -29,7 +29,10 @@ pallet-aura = { workspace = true }
 pallet-balances = { workspace = true }
 frame-support = { workspace = true }
 pallet-grandpa = { workspace = true }
-pallet-partner-chains-session = { workspace = true, features = ["pallet-session-compat"] }
+pallet-im-online = { workspace = true }
+pallet-partner-chains-session = { workspace = true, features = [
+	"pallet-session-compat",
+] }
 pallet-session = { workspace = true }
 pallet-sudo = { workspace = true }
 frame-system = { workspace = true }
@@ -46,6 +49,7 @@ sp-consensus-slots = { workspace = true }
 sp-core = { workspace = true }
 sp-genesis-builder = { workspace = true }
 sp-inherents = { workspace = true }
+sp-io = { workspace = true }
 sp-keyring = { workspace = true }
 sp-offchain = { workspace = true }
 sp-runtime = { workspace = true }
@@ -73,7 +77,9 @@ sp-block-production-log = { workspace = true }
 pallet-block-production-log = { workspace = true }
 sp-sidechain = { workspace = true }
 pallet-sidechain = { workspace = true }
-pallet-session-validator-management = { workspace = true, features = ["pallet-session-compat"] }
+pallet-session-validator-management = { workspace = true, features = [
+	"pallet-session-compat",
+] }
 sp-session-validator-management = { workspace = true, features = ["serde"] }
 pallet-session-validator-management-benchmarking = { workspace = true, optional = true }
 sidechain-domain = { workspace = true, features = ["serde"] }
@@ -123,6 +129,7 @@ std = [
 	"pallet-balances/std",
 	"pallet-block-production-log/std",
 	"pallet-grandpa/std",
+	"pallet-im-online/std",
 	"pallet-sudo/std",
 	"pallet-partner-chains-session/std",
 	"pallet-session-validator-management/std",
@@ -142,6 +149,7 @@ std = [
 	"sp-genesis-builder/std",
 	"sp-keyring/std",
 	"sp-inherents/std",
+	"sp-io/std",
 	"sp-offchain/std",
 	"sp-runtime/std",
 	"sp-session/std",
