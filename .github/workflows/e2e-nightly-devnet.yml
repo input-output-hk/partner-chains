@@ -117,6 +117,7 @@ jobs:
           +report \
           --log_level="${LOG_LEVEL:-"info"}" \
           --env=${{ env.TEST_ENVIRONMENT }} \
+          --stack=${{ env.TEST_ENVIRONMENT }} \
           --keyword="${KEYWORD:-"test_"}" \
           --repository ${{ github.repository }} \
           --job_url="$JOB_URL" \
@@ -138,7 +139,7 @@ jobs:
         retention-days: 15
         overwrite: true
         include-hidden-files: true
-        path: e2e-tests/logs
+        path: e2e-tests/debug.log
 
     - name: Setup Node
       uses: actions/setup-node@v4
