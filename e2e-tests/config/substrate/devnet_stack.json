@@ -16,7 +16,7 @@
                 "ssh": "${stack_config[ssh]}"
             },
             "partner_chains_node": {
-                "cli": "/tools/partner-chains-node",
+                "cli": "/tools/devnet/partner-chains-node",
                 "ssh": "${stack_config[ssh]}"
             },
             "bech32": {
