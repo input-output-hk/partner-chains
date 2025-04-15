@@ -2,6 +2,7 @@ import logging
 import subprocess
 from abc import ABC, abstractmethod
 from typing import Optional
+import shlex
 
 
 STDOUT_MAX_LEN = 2000
@@ -50,18 +51,25 @@ class LocalRunner(Runner):
     def _cmd(self, cli, cmd) -> str:
         full_cmd = "{cli} {cmd}".format(cli=cli, cmd=cmd)
         if self.shell:
-            full_cmd = "{shell} \"{cli} {cmd}\"".format(shell=self.shell, cli=cli, cmd=cmd)
+            full_cmd = "{shell} {cli} {cmd}".format(shell=self.shell, cli=cli, cmd=cmd)
         return full_cmd
 
     def run(self, command: str, timeout: Optional[int] = None) -> Result:
         """Run a command and return the result."""
         try:
+            # Split the command into a list of arguments
+            if self.shell:
+                # For shell commands, split on spaces but preserve quoted strings
+                cmd_parts = shlex.split(self.shell)
+                cmd_parts.extend(shlex.split(command))
+            else:
+                cmd_parts = shlex.split(command)
+
             completed_process = subprocess.run(
-                command,
+                cmd_parts,
                 timeout=timeout,
                 capture_output=True,
-                shell=True,
-                executable=self.shell,
+                shell=False,  # Don't use shell=True to avoid command injection
                 encoding="utf-8",
             )
             return Result(
