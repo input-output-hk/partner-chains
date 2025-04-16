@@ -151,7 +151,7 @@ mod get_current_value_tests {
 	#[test]
 	fn returns_none_when_no_utxos() {
 		let utxos = vec![];
-		let result = get_current_value(utxos, test_key(), test_policy().policy_id()).unwrap();
+		let result = get_current_value(utxos, test_key(), test_policy().policy_id());
 		assert_eq!(result, None);
 	}
 
@@ -171,7 +171,7 @@ mod get_current_value_tests {
 			}),
 			..Default::default()
 		};
-		let result = get_current_value(vec![utxo], test_key(), test_policy().policy_id()).unwrap();
+		let result = get_current_value(vec![utxo], test_key(), test_policy().policy_id());
 		assert_eq!(result, None);
 	}
 
@@ -199,7 +199,7 @@ mod get_current_value_tests {
 			}),
 			..Default::default()
 		};
-		let result = get_current_value(vec![utxo], test_key(), test_policy().policy_id()).unwrap();
+		let result = get_current_value(vec![utxo], test_key(), test_policy().policy_id());
 		assert_eq!(result, None);
 	}
 
@@ -227,7 +227,7 @@ mod get_current_value_tests {
 			}),
 			..Default::default()
 		};
-		let result = get_current_value(vec![utxo], test_key(), test_policy().policy_id()).unwrap();
+		let result = get_current_value(vec![utxo], test_key(), test_policy().policy_id());
 		assert_eq!(result, Some(test_value()));
 	}
 }
