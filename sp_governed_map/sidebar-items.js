@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["INHERENT_IDENTIFIER"],"enum":["GovernedMapInherentDataProvider","InherentError","InherentProviderCreationError"],"struct":["GovernedMapChangeV1","MainChainScriptsV1"],"trait":["GovernedMapApi","GovernedMapDataSource"]};
+window.SIDEBAR_ITEMS = {"constant":["INHERENT_IDENTIFIER"],"enum":["GovernedMapInherentDataProvider","InherentError","InherentProviderCreationError"],"struct":["GovernedMapChangeV1","MainChainScriptsV1"],"trait":["GovernedMapDataSource","GovernedMapIDPApi","OnGovernedMappingChange"]};
