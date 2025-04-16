@@ -30,6 +30,10 @@
           OPENSSL_DIR = "${pkgs.openssl.dev}";
           OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
           OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
+
+          # Force skip support check of c++17 in CC crate
+          CRATE_CC_NO_DEFAULTS = "1";
+
           packages = with pkgs;
             [
               bashInteractive
