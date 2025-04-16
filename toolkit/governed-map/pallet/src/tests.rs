@@ -102,6 +102,33 @@ mod inherent {
 		})
 	}
 
+	#[test]
+	fn calls_the_on_change_hook() {
+		new_test_ext().execute_with(|| {
+			Mapping::<Test>::set(bstring("key1"), Some(bvec(&[1])));
+			Mapping::<Test>::set(bstring("key2"), Some(bvec(&[1, 2])));
+
+			Call::<Test>::register_changes {
+				changes: bounded_vec![
+					(bstring("key1"), Some(bvec(&[1, 1, 1]))),
+					(bstring("key2"), None),
+					(bstring("key3"), Some(bvec(&[2]))),
+				],
+			}
+			.dispatch_bypass_filter(RuntimeOrigin::none())
+			.expect("Should succeed");
+
+			assert_eq!(
+				mock_pallet::HookCalls::<Test>::get(),
+				vec![
+					(bstring("key1"), Some(bvec(&[1, 1, 1])), Some(bvec(&[1]))),
+					(bstring("key2"), None, Some(bvec(&[1, 2]))),
+					(bstring("key3"), Some(bvec(&[2])), None),
+				]
+			)
+		})
+	}
+
 	mod provide_inherent {
 		use super::*;
 		use pretty_assertions::assert_eq;

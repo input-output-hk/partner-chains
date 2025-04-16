@@ -3,7 +3,9 @@ use frame_support::{
 	construct_runtime,
 	traits::{ConstU16, ConstU64},
 };
+use sidechain_domain::byte_string::BoundedString;
 use sp_core::H256;
+use sp_governed_map::OnGovernedMappingChange;
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 	AccountId32, BuildStorage,
@@ -12,13 +14,44 @@ use sp_runtime::{
 pub type Block = frame_system::mocking::MockBlock<Test>;
 pub type AccountId = AccountId32;
 
+pub(crate) const TEST_MAX_CHANGES: u32 = 8;
+pub(crate) type MaxChanges = ConstU32<TEST_MAX_CHANGES>;
+pub(crate) type MaxKeyLength = ConstU32<64>;
+pub(crate) type MaxValueLength = ConstU32<512>;
+
 #[frame_support::pallet]
 pub mod mock_pallet {
+	use frame_support::pallet_prelude::*;
+
+	use super::*;
+
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {}
+
+	#[pallet::storage]
+	#[pallet::unbounded]
+	pub type HookCalls<T: Config> = StorageValue<
+		_,
+		Vec<(
+			BoundedString<MaxKeyLength>,
+			Option<BoundedVec<u8, MaxValueLength>>,
+			Option<BoundedVec<u8, MaxValueLength>>,
+		)>,
+		ValueQuery,
+	>;
+
+	impl<T: Config> OnGovernedMappingChange<MaxKeyLength, MaxValueLength> for Pallet<T> {
+		fn on_governed_mapping_change(
+			key: BoundedString<MaxKeyLength>,
+			new_value: Option<BoundedVec<u8, MaxValueLength>>,
+			old_value: Option<BoundedVec<u8, MaxValueLength>>,
+		) {
+			HookCalls::<T>::append((key, new_value, old_value))
+		}
+	}
 }
 
 construct_runtime! {
@@ -64,14 +97,14 @@ impl frame_system::Config for Test {
 	type PostTransactions = ();
 }
 
-pub(crate) const TEST_MAX_CHANGES: u32 = 8;
-
 impl crate::pallet::Config for Test {
-	type MaxChanges = ConstU32<TEST_MAX_CHANGES>;
+	type MaxChanges = MaxChanges;
 
-	type MaxKeyLength = ConstU32<64>;
+	type MaxKeyLength = MaxKeyLength;
 
-	type MaxValueLength = ConstU32<512>;
+	type MaxValueLength = MaxValueLength;
+
+	type OnGovernedMappingChange = Mock;
 
 	type WeightInfo = ();
 

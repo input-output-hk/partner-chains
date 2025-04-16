@@ -113,6 +113,7 @@ tokio = { workspace = true }
 sp-block-participation = { workspace = true, features = ["std"] }
 sp-block-producer-metadata = { workspace = true, features = ["std"] }
 pallet-block-producer-metadata-rpc = { workspace = true }
+sp-governed-map = { workspace = true, features = ["std"] }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }

@@ -8,6 +8,8 @@ extern crate frame_benchmarking;
 
 extern crate alloc;
 
+use alloc::collections::BTreeMap;
+use alloc::string::String;
 use authority_selection_inherents::authority_selection_inputs::AuthoritySelectionInputs;
 use authority_selection_inherents::filter_invalid_candidates::{
 	validate_permissioned_candidate_data, PermissionedCandidateDataError, RegistrationDataError,
@@ -33,6 +35,7 @@ use parity_scale_codec::MaxEncodedLen;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
+use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::byte_string::{BoundedString, SizedByteString};
 use sidechain_domain::{
 	CrossChainPublicKey, DelegatorKey, MainchainKeyHash, PermissionedCandidateData,
@@ -45,6 +48,7 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(feature = "runtime-benchmarks")]
 use sp_core::ByteArray;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_governed_map::MainChainScriptsV1;
 use sp_inherents::InherentIdentifier;
 use sp_runtime::{
 	generic, impl_opaque_keys,
@@ -566,11 +570,19 @@ impl pallet_block_participation::Config for Runtime {
 	const TARGET_INHERENT_ID: InherentIdentifier = TestHelperPallet::INHERENT_IDENTIFIER;
 }
 
+parameter_types! {
+	pub const MaxChanges: u32 = 16;
+	pub const MaxKeyLength: u32 = 64;
+	pub const MaxValueLength: u32 = 512;
+}
+
 impl pallet_governed_map::Config for Runtime {
-	type MaxChanges = ConstU32<16>;
-	type MaxKeyLength = ConstU32<64>;
-	type MaxValueLength = ConstU32<512>;
+	type MaxChanges = MaxChanges;
+	type MaxKeyLength = MaxKeyLength;
+	type MaxValueLength = MaxValueLength;
 	type WeightInfo = pallet_governed_map::weights::SubstrateWeight<Runtime>;
+
+	type OnGovernedMappingChange = TestHelperPallet;
 
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
@@ -1007,6 +1019,19 @@ impl_runtime_apis! {
 		}
 		fn target_inherent_id() -> InherentIdentifier {
 			<Runtime as pallet_block_participation::Config>::TARGET_INHERENT_ID
+		}
+	}
+
+	impl sp_governed_map::GovernedMapIDPApi<Block> for Runtime {
+		fn get_stored_mappings() -> BTreeMap<String, ByteString> {
+			GovernedMap::get_all_key_value_pairs_unbounded()
+				.collect()
+		}
+		fn get_main_chain_scripts() -> Option<MainChainScriptsV1> {
+			GovernedMap::get_main_chain_scripts()
+		}
+		fn get_pallet_version() -> u32 {
+			GovernedMap::get_version()
 		}
 	}
 }
