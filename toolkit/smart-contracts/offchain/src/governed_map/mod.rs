@@ -83,13 +83,13 @@ pub async fn run_list<C: QueryLedgerState + QueryNetwork + Transactions + QueryU
 fn ogmios_utxos_to_governed_map_utxos(
 	utxos: impl Iterator<Item = OgmiosUtxo>,
 	token: PolicyId,
-) -> impl Iterator<Item = GovernedMapDatum> {
+) -> impl Iterator<Item = (OgmiosUtxo, GovernedMapDatum)> {
 	utxos.flat_map(move |utxo| {
-		let _ = utxo.value.native_tokens.get(&token.0)?;
-		let datum = utxo.datum?;
+		let _ = utxo.clone().value.native_tokens.get(&token.0)?;
+		let datum = utxo.clone().datum?;
 		let datum_plutus_data = PlutusData::from_bytes(datum.bytes).ok()?;
 
-		GovernedMapDatum::try_from(datum_plutus_data).ok()
+		GovernedMapDatum::try_from(datum_plutus_data).ok().and_then(|d| Some((utxo, d)))
 	})
 }
 
@@ -99,8 +99,19 @@ fn get_current_value(
 	token: PolicyId,
 ) -> Option<ByteString> {
 	ogmios_utxos_to_governed_map_utxos(validator_utxos.into_iter(), token)
-		.find(|datum| datum.key == key)
-		.map(|datum| datum.value)
+		.find(|(_, datum)| datum.key == key)
+		.map(|(_, datum)| datum.value)
+}
+
+fn get_utxos_for_key(
+	validator_utxos: Vec<OgmiosUtxo>,
+	key: String,
+	token: PolicyId,
+) -> Vec<OgmiosUtxo> {
+	ogmios_utxos_to_governed_map_utxos(validator_utxos.into_iter(), token.clone())
+		.filter(|(utxo, datum)| datum.key == key && utxo.value.native_tokens.contains_key(&token.0))
+		.map(|(utxo, _)| utxo)
+		.collect()
 }
 
 async fn insert<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
@@ -183,7 +194,8 @@ pub async fn run_remove<
 	let validator_address = validator.address_bech32(ctx.network)?;
 	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
 
-	let utxos_for_key = get_utxos_for_key(validator_utxos, key.clone(), policy.policy_id())?;
+	let utxos_for_key = get_utxos_for_key(validator_utxos, key.clone(), policy.policy_id());
+
 	let tx_hash_opt = match utxos_for_key.len() {
 		0 => {
 			log::info!("There is no value stored for key '{}'. Skipping remove.", key);
@@ -197,31 +209,6 @@ pub async fn run_remove<
 		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
 	}
 	Ok(tx_hash_opt)
-}
-
-fn get_utxos_for_key(
-	utxos: Vec<OgmiosUtxo>,
-	key: String,
-	token: PolicyId,
-) -> anyhow::Result<Vec<OgmiosUtxo>> {
-	let mut utxos_for_key = Vec::new();
-	for utxo in utxos {
-		if let Some(datum) = utxo.clone().datum {
-			let datum_plutus_data =
-				PlutusData::from_bytes(datum.bytes).map_err(|e| {
-					anyhow!("Internal error: could not decode datum of Governed Map validator script: {}", e)
-				})?;
-			let governed_map_datum =
-				GovernedMapDatum::try_from(datum_plutus_data).map_err(|e| {
-					anyhow!("Internal error: could not decode datum of Governed Map validator script: {}", e)
-				})?;
-			let contains_governed_map_token = utxo.value.native_tokens.contains_key(&token.0);
-			if governed_map_datum.key == key && contains_governed_map_token {
-				utxos_for_key.push(utxo);
-			}
-		}
-	}
-	Ok(utxos_for_key)
 }
 
 async fn remove<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(

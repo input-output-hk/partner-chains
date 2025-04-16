@@ -239,7 +239,7 @@ mod get_utxos_for_key_tests {
 	#[test]
 	fn returns_empty_when_no_utxos() {
 		let utxos = vec![];
-		let result = get_utxos_for_key(utxos, test_key(), test_policy().policy_id()).unwrap();
+		let result = get_utxos_for_key(utxos, test_key(), test_policy().policy_id());
 		assert_eq!(result.len(), 0);
 	}
 
@@ -259,7 +259,7 @@ mod get_utxos_for_key_tests {
 			}),
 			..Default::default()
 		};
-		let result = get_utxos_for_key(vec![utxo], test_key(), test_policy().policy_id()).unwrap();
+		let result = get_utxos_for_key(vec![utxo], test_key(), test_policy().policy_id());
 		assert_eq!(result.len(), 0);
 	}
 
@@ -287,7 +287,7 @@ mod get_utxos_for_key_tests {
 			}),
 			..Default::default()
 		};
-		let result = get_utxos_for_key(vec![utxo], test_key(), test_policy().policy_id()).unwrap();
+		let result = get_utxos_for_key(vec![utxo], test_key(), test_policy().policy_id());
 		assert_eq!(result.len(), 0);
 	}
 
@@ -316,8 +316,7 @@ mod get_utxos_for_key_tests {
 			..Default::default()
 		};
 		let result =
-			get_utxos_for_key(vec![expected_utxo.clone()], test_key(), test_policy().policy_id())
-				.unwrap();
+			get_utxos_for_key(vec![expected_utxo.clone()], test_key(), test_policy().policy_id());
 		assert_eq!(result.len(), 1);
 		assert_eq!(result[0].transaction.id, expected_utxo.transaction.id);
 		assert_eq!(result[0].index, expected_utxo.index);
@@ -372,7 +371,7 @@ mod get_utxos_for_key_tests {
 		};
 
 		let utxos = vec![utxo1, utxo2];
-		let result = get_utxos_for_key(utxos, test_key(), test_policy().policy_id()).unwrap();
+		let result = get_utxos_for_key(utxos, test_key(), test_policy().policy_id());
 		assert_eq!(result.len(), 2);
 	}
 }
