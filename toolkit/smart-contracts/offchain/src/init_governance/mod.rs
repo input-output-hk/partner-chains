@@ -46,7 +46,7 @@ where
 			payment_key,
 			Some(genesis_utxo_id),
 			self,
-			FixedDelayRetries::two_minutes(),
+			FixedDelayRetries::five_minutes(),
 		)
 		.await
 		.map(|result| result.tx_hash)

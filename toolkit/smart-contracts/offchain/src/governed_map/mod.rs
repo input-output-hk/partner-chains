@@ -117,7 +117,7 @@ async fn insert<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByU
 		},
 		"Insert Key-Value pair",
 		client,
-		&FixedDelayRetries::two_minutes(),
+		&FixedDelayRetries::five_minutes(),
 	)
 	.await
 }

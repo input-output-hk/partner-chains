@@ -22,7 +22,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> Asse
 		transaction: Transaction,
 		witnesses: Vec<Vkeywitness>,
 	) -> anyhow::Result<McTxHash> {
-		assemble_tx(transaction, witnesses, self, &FixedDelayRetries::two_minutes()).await
+		assemble_tx(transaction, witnesses, self, &FixedDelayRetries::five_minutes()).await
 	}
 }
 
