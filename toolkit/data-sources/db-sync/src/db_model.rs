@@ -391,7 +391,7 @@ pub(crate) async fn get_datums_at_address_with_token(
 				AND (consuming_tx_in.id IS NULL OR consuming_block.block_no > $2)
 				AND multi_asset.policy = $3
 				AND multi_asset.name = $4
-				ORDER BY origin_block.block_no DESC, origin_tx.block_index DESC";
+				ORDER BY origin_block.block_no ASC, origin_tx.block_index ASC";
 	Ok(sqlx::query_as::<_, DatumOutput>(query)
 		.bind(&address.0)
 		.bind(block)

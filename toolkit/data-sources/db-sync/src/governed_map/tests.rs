@@ -21,7 +21,7 @@ async fn test_governed_map_fails_on_wrong_block_hash(pool: PgPool) {
 async fn test_governed_map_insert(pool: PgPool) {
 	let source = make_source(pool);
 	let mc_block =
-		McBlockHash(hex!("0BEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1"));
+		McBlockHash(hex!("B702000000000000000000000000000000000000000000000000000000000002"));
 	let result = source.get_current_mappings(mc_block, scripts()).await;
 	let mut expected: BTreeMap<String, ByteString> = BTreeMap::new();
 	expected.insert(
@@ -39,7 +39,7 @@ async fn test_governed_map_insert(pool: PgPool) {
 async fn test_governed_map_delete(pool: PgPool) {
 	let source = make_source(pool);
 	let mc_block =
-		McBlockHash(hex!("BBEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1"));
+		McBlockHash(hex!("B702000000000000000000000000000000000000000000000000000000000005"));
 	let result = source.get_current_mappings(mc_block, scripts()).await;
 	let mut expected: BTreeMap<String, ByteString> = BTreeMap::new();
 	expected.insert(
@@ -53,7 +53,7 @@ async fn test_governed_map_delete(pool: PgPool) {
 async fn test_governed_map_upsert(pool: PgPool) {
 	let source = make_source(pool);
 	let mc_block =
-		McBlockHash(hex!("DBEED7FB0067F14D6F6436C7F7DEDB27CE3CEB4D2D18FF249D43B22D86FAE3F1"));
+		McBlockHash(hex!("B702000000000000000000000000000000000000000000000000000000000008"));
 	let result = source.get_current_mappings(mc_block, scripts()).await;
 	let mut expected: BTreeMap<String, ByteString> = BTreeMap::new();
 	expected.insert(
