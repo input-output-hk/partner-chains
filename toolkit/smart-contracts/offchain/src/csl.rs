@@ -199,6 +199,7 @@ pub trait CostStore {
 	fn get_mint(&self, script: &PlutusScript) -> ExUnits;
 	fn get_spend(&self, spend_ix: u32) -> ExUnits;
 	fn get_one_spend(&self) -> ExUnits;
+	fn get_spend_indicies(&self) -> Vec<u32>;
 }
 
 impl CostStore for Costs {
@@ -233,6 +234,12 @@ impl CostStore for Costs {
 					),
 				}
 			},
+		}
+	}
+	fn get_spend_indicies(&self) -> Vec<u32> {
+		match self {
+			Costs::ZeroCosts => vec![],
+			Costs::Costs(cost_lookup) => cost_lookup.spends.keys().cloned().collect(),
 		}
 	}
 }
@@ -474,6 +481,15 @@ pub(crate) trait TransactionBuilderExt {
 		ex_units: &ExUnits,
 	) -> Result<(), JsError>;
 
+	fn add_mint_script_tokens(
+		&mut self,
+		script: &PlutusScript,
+		asset_name: &AssetName,
+		redeemer_data: &PlutusData,
+		ex_units: &ExUnits,
+		amount: &Int,
+	) -> Result<(), JsError>;
+
 	/// Adds minting of tokens (with empty asset name) for the given script using reference input.
 	/// IMPORTANT: Because CSL doesn't properly calculate transaction fee if the script is Native,
 	/// this function adds reference input and regular native script, that is added to witnesses.
@@ -562,6 +578,26 @@ impl TransactionBuilderExt for TransactionBuilder {
 			&Redeemer::new(&RedeemerTag::new_mint(), &0u32.into(), redeemer_data, ex_units),
 		);
 		mint_builder.add_asset(&mint_witness, asset_name, &Int::new_i32(1))?;
+		self.set_mint_builder(&mint_builder);
+		Ok(())
+	}
+
+	fn add_mint_script_tokens(
+		&mut self,
+		script: &PlutusScript,
+		asset_name: &AssetName,
+		redeemer_data: &PlutusData,
+		ex_units: &ExUnits,
+		amount: &Int,
+	) -> Result<(), JsError> {
+		let mut mint_builder = self.get_mint_builder().unwrap_or(MintBuilder::new());
+
+		let validator_source = PlutusScriptSource::new(&script.to_csl());
+		let mint_witness = MintWitness::new_plutus_script(
+			&validator_source,
+			&Redeemer::new(&RedeemerTag::new_mint(), &0u32.into(), redeemer_data, ex_units),
+		);
+		mint_builder.add_asset(&mint_witness, asset_name, amount)?;
 		self.set_mint_builder(&mint_builder);
 		Ok(())
 	}
