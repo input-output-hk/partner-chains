@@ -1,0 +1,28 @@
+{
+    "stack_config": {
+        "ogmios_host": "dave.node.sc.iog.io",
+        "ogmios_port": 1337,
+        "tools_host": "dave.node.sc.iog.io",
+        "ssh": {
+            "username": "root",
+            "host": "${stack_config[tools_host]}",
+            "port": 22,
+            "host_keys_path": "config/substrate/known_hosts",
+            "private_key_path": "secrets/substrate/uat_preview/keys/ssh-key.yaml.decrypted"
+        },
+        "tools": {
+            "cardano_cli": {
+                "cli": "export CARDANO_NODE_SOCKET_PATH=/run/cardano-node/node.socket && cardano-cli",
+                "ssh": "${stack_config[ssh]}"
+            },
+            "partner_chains_node": {
+                "cli": "/tools/staging/partner-chains-node-latest",
+                "ssh": "${stack_config[ssh]}"
+            },
+            "bech32": {
+                "cli": "/tools/bech32",
+                "ssh": "${stack_config[ssh]}"
+            }
+        }
+    }
+}
