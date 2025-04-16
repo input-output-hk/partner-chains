@@ -31,7 +31,9 @@ impl GovernedMapDataSource for GovernedMapDataSourceImpl {
 		let entries = self.get_current_mapping_entries(mc_block, scripts).await?;
 		for entry in entries {
 			match GovernedMapDatum::try_from(entry.datum.0) {
-				Ok(GovernedMapDatum{key, value}) => {governed_map.insert(key, value);},
+				Ok(GovernedMapDatum{key, value}) => {
+					governed_map.insert(key, value);
+				},
 				Err(err) => warn!("Failed decoding map entry: {err}"),
 			}
 		}
