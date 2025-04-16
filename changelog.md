@@ -9,6 +9,10 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 * Failure of `smart-contracts reserve release` command when releasing all tokens in the reserve
 * Failure of `smart-contracts reserve handover` command when reserve is empty
 
+## Removed
+
+* Removed unnecessary transitive dependencies from multiple crates
+
 # v1.5.0
 
 ## Changed
