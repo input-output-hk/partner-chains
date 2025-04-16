@@ -48,7 +48,7 @@ impl InitGovernanceCmd {
 			&payment_key,
 			self.genesis_utxo,
 			&client,
-			FixedDelayRetries::two_minutes(),
+			FixedDelayRetries::five_minutes(),
 		)
 		.await?;
 		Ok(())
@@ -79,7 +79,7 @@ impl UpdateGovernanceCmd {
 			&payment_key,
 			self.genesis_utxo,
 			&client,
-			FixedDelayRetries::two_minutes(),
+			FixedDelayRetries::five_minutes(),
 		)
 		.await?;
 

@@ -4,6 +4,10 @@ This changelog is based on [Keep A Changelog](https://keepachangelog.com/en/1.1.
 
 # v1.5.1
 
+## Changed
+
+* Default `smart-contracts` timeout from 2 minutes to 5 minutes
+
 ## Fixed
 
 * Failure of `smart-contracts reserve release` command when releasing all tokens in the reserve
@@ -99,7 +103,7 @@ provider will not query the main chain state or produce inherent data at all.
 * * Specific changes will depend on the node implementation.
 * Update toolchain to 1.81.0
 * Implemented batch queries and caching for the native token observability. Improves performance of the full-sync.
-* Added ogmios-client interal library for communication with Ogmios
+* Added ogmios-client internal library for communication with Ogmios
 * Using Ogmios for reading Cardano Network parameters in `partner-chains-cli`, instead of asking user to choose them
 * Bugfix: rephrased vague log message when selecting the epoch committee
 * Removed the `main-chain-follower-api` completely. Each crate that depended on it now defines its own `*DataSource`

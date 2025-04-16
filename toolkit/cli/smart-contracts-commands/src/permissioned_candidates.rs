@@ -49,7 +49,7 @@ impl UpsertPermissionedCandidatesCmd {
 			&permissioned_candidates,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::two_minutes(),
+			&FixedDelayRetries::five_minutes(),
 		)
 		.await?;
 
