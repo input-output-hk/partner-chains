@@ -170,7 +170,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Inherent to register any changes in the state of the Governed Map on Cardano compared to the state currently stored in the pallet.
 		#[pallet::call_index(0)]
-		#[pallet::weight((T::WeightInfo::register_changes(), DispatchClass::Mandatory))]
+		#[pallet::weight((T::WeightInfo::register_changes(changes.len() as u32), DispatchClass::Mandatory))]
 		pub fn register_changes(origin: OriginFor<T>, changes: Changes<T>) -> DispatchResult {
 			ensure_none(origin)?;
 
