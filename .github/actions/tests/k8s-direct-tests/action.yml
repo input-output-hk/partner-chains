@@ -310,8 +310,21 @@ runs:
         fi
         
         # Extract d-parameter values
-        NUM_PERMISSIONED=$(echo "$D_PARAM_RESPONSE" | jq -r '.result.numPermissionedCandidates')
-        NUM_REGISTERED=$(echo "$D_PARAM_RESPONSE" | jq -r '.result.numRegisteredCandidates')
+        NUM_PERMISSIONED=$(echo "$D_PARAM_RESPONSE" | jq -r '.result.dParameter.numPermissionedCandidates')
+        NUM_REGISTERED=$(echo "$D_PARAM_RESPONSE" | jq -r '.result.dParameter.numRegisteredCandidates')
+        
+        # Check if values are null or empty
+        if [ "$NUM_PERMISSIONED" = "null" ] || [ -z "$NUM_PERMISSIONED" ]; then
+          echo "❌ Failed to get permissioned candidates count"
+          echo "Response: $D_PARAM_RESPONSE"
+          exit 1
+        fi
+        
+        if [ "$NUM_REGISTERED" = "null" ] || [ -z "$NUM_REGISTERED" ]; then
+          echo "❌ Failed to get registered candidates count"
+          echo "Response: $D_PARAM_RESPONSE"
+          exit 1
+        fi
         
         # Skip if P or T is 0
         if [ "$NUM_PERMISSIONED" -eq 0 ] || [ "$NUM_REGISTERED" -eq 0 ]; then
@@ -591,9 +604,13 @@ runs:
         
         # Get address association using state_getStorage
         echo "Getting address association for stake key hash $STAKE_KEY_HASH..."
+        # Remove 0x and 02 prefixes for the storage key
+        STAKE_KEY_CLEAN=${STAKE_KEY_HASH#0x}
+        STAKE_KEY_CLEAN=${STAKE_KEY_CLEAN#02}
+        
         ASSOCIATION=$(kubectl exec "${{ inputs.pod }}" -c substrate-node -n "${{ inputs.namespace }}" -- \
           curl -s -H "Content-Type: application/json" \
-          -d "{\"jsonrpc\":\"2.0\",\"method\":\"state_getStorage\",\"params\":[\"0x5f3e4907f716ac89b6347d15ececedcaf7dad0317324aecae8744b87fc47565c\",\"0x$STAKE_KEY_HASH\"],\"id\":1}" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"state_getStorage\",\"params\":[\"0x5f3e4907f716ac89b6347d15ececedcaf7dad0317324aecae8744b87fc47565c\",\"0x$STAKE_KEY_CLEAN\"],\"id\":1}" \
           http://localhost:9933)
         
         # Check if association response is valid

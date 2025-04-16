@@ -179,10 +179,26 @@ def attach_v_function_to_utxo(transaction_input, governance_address, payment_key
 def reference_utxo(api: BlockchainApi):
 
     def _reference_utxo(v_function_address, cbor):
+        logging.info(f"Looking for reference UTXO with CBOR {cbor} at address {v_function_address}")
         utxo_dict = api.cardano_cli.get_utxos(v_function_address)
-        reference_utxo = next(
-            filter(lambda utxo: utxo_dict[utxo]["referenceScript"]["script"]["cborHex"] == cbor, utxo_dict), None
-        )
+        if not utxo_dict:
+            logging.warning(f"No UTXOs found at address {v_function_address}")
+            return None
+            
+        logging.debug(f"Found {len(utxo_dict)} UTXOs at address {v_function_address}")
+        reference_utxo = None
+        for utxo, details in utxo_dict.items():
+            try:
+                if details.get("referenceScript", {}).get("script", {}).get("cborHex") == cbor:
+                    reference_utxo = utxo
+                    logging.info(f"Found matching reference UTXO: {utxo}")
+                    break
+            except (KeyError, AttributeError) as e:
+                logging.debug(f"Error checking UTXO {utxo}: {e}")
+                continue
+                
+        if not reference_utxo:
+            logging.warning(f"No UTXO found with matching CBOR script")
         return reference_utxo
 
     return _reference_utxo

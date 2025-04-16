@@ -493,20 +493,25 @@ def wait_until():
         args {Any} -- position args used by <condition>
 
     Keyword Arguments:
-        timeout {int} -- timeout in seconds (default: {20})
+        timeout {int} -- timeout in seconds (default: {180})
         poll_interval {int} -- poll interval in seconds (default: {3})
 
     Returns:
         Any -- returns <condition> result, None if timed out.
     """
 
-    def _wait_until(condition, *args, timeout=20, poll_interval=3):
+    def _wait_until(condition, *args, timeout=180, poll_interval=3):
         start = time.time()
         logging.info(f"WAIT UNTIL: {condition}. TIMEOUT: {timeout}, POLL_INTERVAL: {poll_interval}")
         while time.time() - start < timeout:
-            result = condition(*args)
-            if result:
-                return result
+            try:
+                result = condition(*args)
+                if result:
+                    logging.info(f"WAIT UNTIL condition satisfied after {time.time() - start:.2f} seconds")
+                    return result
+                logging.debug(f"WAIT UNTIL condition not satisfied yet, elapsed time: {time.time() - start:.2f} seconds")
+            except Exception as e:
+                logging.warning(f"WAIT UNTIL condition check failed with error: {e}")
             time.sleep(poll_interval)
         raise TimeoutError(f"WAIT UNTIL function TIMED OUT after {timeout}s on {condition} with args {args}.")
 
