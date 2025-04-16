@@ -22,7 +22,7 @@
 <a href=#22 id=22 data-nosnippet>22</a>		transaction: Transaction,
 <a href=#23 id=23 data-nosnippet>23</a>		witnesses: Vec&lt;Vkeywitness&gt;,
 <a href=#24 id=24 data-nosnippet>24</a>	) -&gt; anyhow::Result&lt;McTxHash&gt; {
-<a href=#25 id=25 data-nosnippet>25</a>		assemble_tx(transaction, witnesses, <span class="self">self</span>, <span class="kw-2">&amp;</span>FixedDelayRetries::two_minutes()).<span class="kw">await
+<a href=#25 id=25 data-nosnippet>25</a>		assemble_tx(transaction, witnesses, <span class="self">self</span>, <span class="kw-2">&amp;</span>FixedDelayRetries::five_minutes()).<span class="kw">await
 <a href=#26 id=26 data-nosnippet>26</a>	</span>}
 <a href=#27 id=27 data-nosnippet>27</a>}
 <a href=#28 id=28 data-nosnippet>28</a>
