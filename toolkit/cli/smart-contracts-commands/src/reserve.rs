@@ -62,7 +62,7 @@ impl InitReserveCmd {
 			self.genesis_utxo,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::two_minutes(),
+			&FixedDelayRetries::five_minutes(),
 		)
 		.await?;
 		Ok(())
@@ -102,7 +102,7 @@ impl CreateReserveCmd {
 			self.genesis_utxo,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::two_minutes(),
+			&FixedDelayRetries::five_minutes(),
 		)
 		.await?;
 		Ok(())
@@ -132,7 +132,7 @@ impl DepositReserveCmd {
 			self.genesis_utxo,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::two_minutes(),
+			&FixedDelayRetries::five_minutes(),
 		)
 		.await?;
 		Ok(())
@@ -162,7 +162,7 @@ impl UpdateReserveSettingsCmd {
 			&payment_key,
 			self.total_accrued_function_script_hash,
 			&client,
-			&FixedDelayRetries::two_minutes(),
+			&FixedDelayRetries::five_minutes(),
 		)
 		.await?;
 		Ok(())
@@ -188,7 +188,7 @@ impl HandoverReserveCmd {
 			self.genesis_utxo,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::two_minutes(),
+			&FixedDelayRetries::five_minutes(),
 		)
 		.await?;
 		Ok(())
@@ -222,7 +222,7 @@ impl ReleaseReserveCmd {
 			self.reference_utxo,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::two_minutes(),
+			&FixedDelayRetries::five_minutes(),
 		)
 		.await?;
 		Ok(())

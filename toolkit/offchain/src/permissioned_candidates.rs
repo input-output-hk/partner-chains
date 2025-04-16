@@ -51,7 +51,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>
 			candidates,
 			payment_signing_key,
 			self,
-			&FixedDelayRetries::two_minutes(),
+			&FixedDelayRetries::five_minutes(),
 		)
 		.await
 	}

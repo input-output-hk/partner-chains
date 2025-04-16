@@ -23,8 +23,8 @@ impl FixedDelayRetries {
 		Self { delay, retries }
 	}
 
-	pub fn two_minutes() -> Self {
-		Self { delay: Duration::from_secs(5), retries: 23 }
+	pub fn five_minutes() -> Self {
+		Self { delay: Duration::from_secs(5), retries: 59 }
 	}
 }
 

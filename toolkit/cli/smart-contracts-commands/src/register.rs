@@ -61,7 +61,7 @@ impl RegisterCmd {
 			&candidate_registration,
 			&payment_key,
 			&client,
-			FixedDelayRetries::two_minutes(),
+			FixedDelayRetries::five_minutes(),
 		)
 		.await?;
 
@@ -93,7 +93,7 @@ impl DeregisterCmd {
 			&payment_signing_key,
 			self.spo_public_key,
 			&client,
-			FixedDelayRetries::two_minutes(),
+			FixedDelayRetries::five_minutes(),
 		)
 		.await?;
 

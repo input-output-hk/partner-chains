@@ -47,7 +47,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> Upse
 			d_parameter,
 			payment_signing_key,
 			self,
-			&FixedDelayRetries::two_minutes(),
+			&FixedDelayRetries::five_minutes(),
 		)
 		.await
 	}
