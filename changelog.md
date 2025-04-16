@@ -96,6 +96,17 @@ type implemented in `node/runtime/src/lib.rs` for reference using Ariadne.
   block production reward payouts in their own runtimes. See `toolkit/primitives/block-participation/README.md`
   for more information.
 
+# v1.5.1
+
+## Fixed
+
+* Failure of `smart-contracts reserve release` command when releasing all tokens in the reserve
+* Failure of `smart-contracts reserve handover` command when reserve is empty
+
+## Removed
+
+* Removed unnecessary transitive dependencies from multiple crates
+
 # v1.5.0
 
 ## Changed
