@@ -19,19 +19,27 @@ where
 {
 	fn average_session_length() -> BlockNumberFor<T> {
 		let spe = pallet_sidechain::Pallet::<T>::slots_per_epoch();
-		BlockNumberFor::<T>::from(spe.0)
+		let bn = BlockNumberFor::<T>::from(spe.0);
+		let msg = alloc::format!("average session length: {bn:?}");
+		sp_io::logging::log(sp_core::LogLevel::Error, "stdout", msg.as_bytes());
+		bn
 	}
 
 	//TODO: weights
 	fn estimate_current_session_progress(now: BlockNumberFor<T>) -> (Option<Permill>, Weight) {
 		if T::ShouldEndSession::should_end_session(now) {
 			// Should surely end session
+			let msg = alloc::format!("should end session is true for {now:?}");
+			sp_io::logging::log(sp_core::LogLevel::Error, "stdout", msg.as_bytes());
 			(Some(Permill::one()), Zero::zero())
 		} else {
 			let slots_per_epoch = pallet_sidechain::Pallet::<T>::slots_per_epoch();
 			let current_slot = T::current_slot_number();
 			let slot_in_epoch = slots_per_epoch.slot_number_in_epoch(current_slot.0.into());
-			(Some(Permill::from_rational(slot_in_epoch, slots_per_epoch.0)), Zero::zero())
+			let progress = Permill::from_rational(slot_in_epoch, slots_per_epoch.0);
+			let msg = alloc::format!("estimate_current_session_progress: {progress:?}");
+			sp_io::logging::log(sp_core::LogLevel::Error, "stdout", msg.as_bytes());
+			(Some(progress), Zero::zero())
 		}
 	}
 
