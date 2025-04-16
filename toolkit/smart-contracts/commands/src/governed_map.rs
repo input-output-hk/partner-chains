@@ -48,7 +48,7 @@ impl InsertCmd {
 			self.value,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::two_minutes(),
+			&FixedDelayRetries::five_minutes(),
 		)
 		.await?;
 		Ok(serde_json::json!(result))

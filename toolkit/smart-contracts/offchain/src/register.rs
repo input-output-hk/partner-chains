@@ -48,7 +48,7 @@ where
 			candidate_registration,
 			payment_signing_key,
 			self,
-			FixedDelayRetries::two_minutes(),
+			FixedDelayRetries::five_minutes(),
 		)
 		.await
 		.map_err(|e| OffchainError::InternalError(e.to_string()))
@@ -143,7 +143,7 @@ where
 			payment_signing_key,
 			stake_ownership_pub_key,
 			self,
-			FixedDelayRetries::two_minutes(),
+			FixedDelayRetries::five_minutes(),
 		)
 		.await
 		.map_err(|e| OffchainError::InternalError(e.to_string()))

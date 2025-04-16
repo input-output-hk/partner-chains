@@ -51,7 +51,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId> Upse
 			d_parameter,
 			payment_signing_key,
 			self,
-			&FixedDelayRetries::two_minutes(),
+			&FixedDelayRetries::five_minutes(),
 		)
 		.await
 	}
@@ -144,7 +144,7 @@ async fn insert_d_param<C: QueryLedgerState + Transactions + QueryNetwork + Quer
 		|costs, ctx| mint_d_param_token_tx(validator, policy, d_parameter, &gov_data, costs, &ctx),
 		"Insert D-parameter",
 		client,
-		&FixedDelayRetries::two_minutes(),
+		&FixedDelayRetries::five_minutes(),
 	)
 	.await
 }
@@ -176,7 +176,7 @@ async fn update_d_param<C: QueryLedgerState + Transactions + QueryNetwork + Quer
 		},
 		"Update D-parameter",
 		client,
-		&FixedDelayRetries::two_minutes(),
+		&FixedDelayRetries::five_minutes(),
 	)
 	.await
 }

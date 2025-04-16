@@ -29,7 +29,8 @@ impl AssembleAndSubmitCmd {
 			.collect::<Result<Vec<_>, _>>()?;
 
 		let tx_hash =
-			assemble_tx(transaction, witnesses, &client, &FixedDelayRetries::two_minutes()).await?;
+			assemble_tx(transaction, witnesses, &client, &FixedDelayRetries::five_minutes())
+				.await?;
 		Ok(transaction_submitted_json(tx_hash))
 	}
 }
