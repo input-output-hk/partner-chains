@@ -2,7 +2,7 @@ use crate::chain_spec::get_account_id_from_seed;
 use crate::chain_spec::*;
 use authority_selection_inherents::CommitteeMember;
 use partner_chains_demo_runtime::{
-	AccountId, AuraConfig, BalancesConfig, GovernedMapConfig, GrandpaConfig,
+	AccountId, AuraConfig, BalancesConfig, GovernedMapConfig, GrandpaConfig, ImOnlineConfig,
 	NativeTokenManagementConfig, RuntimeGenesisConfig, SessionCommitteeManagementConfig,
 	SessionConfig, SidechainConfig, SudoConfig, SystemConfig, TestHelperPalletConfig,
 };
@@ -123,7 +123,12 @@ pub fn staging_genesis(
 		},
 		aura: AuraConfig { authorities: vec![] },
 		grandpa: GrandpaConfig { authorities: vec![], ..Default::default() },
-		im_online: Default::default(),
+		im_online: ImOnlineConfig {
+			keys: initial_authorities
+				.iter()
+				.map(|authority_keys| authority_keys.session.aura.clone())
+				.collect(),
+		},
 		sudo: SudoConfig {
 			// Assign network admin rights.
 			key: root_key,
