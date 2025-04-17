@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["run_insert"]};
+window.SIDEBAR_ITEMS = {"fn":["run_insert","run_list"]};
