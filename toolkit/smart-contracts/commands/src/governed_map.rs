@@ -1,6 +1,7 @@
 use crate::PaymentFilePath;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
-use partner_chains_cardano_offchain::governed_map::run_insert;
+use partner_chains_cardano_offchain::governed_map::{run_insert, run_list};
+use serde_json::json;
 use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::UtxoId;
 
@@ -12,12 +13,15 @@ pub enum GovernedMapCmd {
 	/// NOTE: In rare cases, race conditions may occur, and two inserts with the same key will both succeed.
 	/// In that case the second one in terms of block and transaction number is considered valid.
 	Insert(InsertCmd),
+	/// Lists all key-value pairs currently stored in the Governed Map
+	List(ListCmd),
 }
 
 impl GovernedMapCmd {
 	pub async fn execute(self) -> crate::SubCmdResult {
 		match self {
 			Self::Insert(cmd) => cmd.execute().await,
+			Self::List(cmd) => cmd.execute().await,
 		}
 	}
 }
@@ -52,5 +56,25 @@ impl InsertCmd {
 		)
 		.await?;
 		Ok(serde_json::json!(result))
+	}
+}
+
+#[derive(Clone, Debug, clap::Parser)]
+pub struct ListCmd {
+	#[clap(flatten)]
+	common_arguments: crate::CommonArguments,
+	#[arg(long, short('g'))]
+	genesis_utxo: UtxoId,
+}
+
+impl ListCmd {
+	pub async fn execute(self) -> crate::SubCmdResult {
+		let client = self.common_arguments.get_ogmios_client().await?;
+		let kv_pairs: Vec<_> = run_list(self.genesis_utxo, &client)
+			.await?
+			.map(|datum| json!({"key": datum.key, "value": datum.value.to_hex_string()}))
+			.collect();
+
+		Ok(json!(kv_pairs))
 	}
 }

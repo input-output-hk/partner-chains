@@ -1,5 +1,5 @@
 use crate::csl::{
-	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs,
+	empty_asset_name, get_builder_config, unit_plutus_data, CostStore, Costs, NetworkTypeExt,
 	TransactionBuilderExt, TransactionExt,
 };
 use crate::governance::GovernanceData;
@@ -65,6 +65,17 @@ pub async fn run_insert<
 		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
 	}
 	Ok(tx_hash_opt)
+}
+
+pub async fn run_list<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>(
+	genesis_utxo: UtxoId,
+	ogmios_client: &C,
+) -> anyhow::Result<impl Iterator<Item = GovernedMapDatum>> {
+	let network = ogmios_client.shelley_genesis_configuration().await?.network.to_csl();
+	let (validator, policy) = crate::scripts_data::governed_map_scripts(genesis_utxo, network)?;
+	let validator_address = validator.address_bech32(network)?;
+	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
+	Ok(ogmios_utxos_to_governed_map_utxos(validator_utxos.into_iter(), policy.policy_id()))
 }
 
 fn ogmios_utxos_to_governed_map_utxos(
