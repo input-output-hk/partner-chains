@@ -32,11 +32,43 @@ apt -qq update &> /dev/null
 apt -qq -y install expect curl jq ncat &> /dev/null
 cp /usr/local/bin/partner-chains-node /partner-chains-node
 
+# COMPATIBILITY WITH v1.4.0 (PC-CLI and PC-CONTRACTS-CLI)
+ldd --version
+apt update && apt install -y wget unzip curl
+
+# Download and install nvm:
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+\. "$HOME/.nvm/nvm.sh"
+nvm install 22
+node -v # Should print "v22.14.0".
+nvm current # Should print "v22.14.0".
+npm -v # Should print "10.9.2".
+
+
+# Initialize flags
+PC_CLI_READY=0
+PC_CONTRACTS_CLI_READY=0
+
+# Check which artifacts need to be downloaded
+if [ "$PC_CONTRACTS_CLI_READY" -eq 0 ]; then
+  echo "Downloading pc-contracts-cli and node_modules..."
+  wget -q -O ./pc-contracts-cli.zip "$PC_CONTRACTS_CLI_ZIP_URL"
+  unzip -o ./pc-contracts-cli.zip > /dev/null
+fi
+
+if [ "$PC_CLI_READY" -eq 0 ]; then
+  echo "Downloading partner-chains-cli..."
+  wget -q -O ./partner-chains-cli "$PARTNER_CHAINS_CLI_URL"
+fi
+
+# Set executable permissions
+chmod +x ./partner-chains-cli
+chmod +x ./pc-contracts-cli
 
 echo "Beginning configuration..."
 echo "Generating keys..."
 expect <<EOF
-spawn ./partner-chains-node wizards generate-keys
+spawn ./partner-chains-cli generate-keys
 set timeout 60
 expect "node base path (./data)"
 send "\r"
@@ -44,9 +76,9 @@ expect eof
 EOF
 
 
-echo "Waiting for the Cardano network to sync and for Ogmios to start..."
+echo "Waiting for the Cardano network to sync and for Kupo and Ogmios to start..."
 while true; do
-    if nc -z ogmios $OGMIOS_PORT; then
+    if nc -z kupo $KUPO_PORT && nc -z ogmios $OGMIOS_PORT; then
         break
     else
         sleep 1
@@ -56,7 +88,7 @@ done
 
 echo "Preparing configuration..."
 expect <<EOF
-spawn ./partner-chains-node wizards prepare-configuration
+spawn ./partner-chains-cli prepare-configuration
 set timeout 180
 expect "node base path (./data)"
 send "\r"
@@ -100,12 +132,12 @@ permissioned_candidate_public_keys=$(cat /shared/partner-chains-public-keys.json
 jq '.initial_permissioned_candidates = [
     '"$governance_authority_public_keys"',
     '"$permissioned_candidate_public_keys"'
-]' pc-chain-config.json > tmp.json && mv tmp.json pc-chain-config.json
+]' partner-chains-cli-chain-config.json > tmp.json && mv tmp.json partner-chains-cli-chain-config.json
 
 
 echo "Creating chain spec..."
 expect <<EOF
-spawn ./partner-chains-node wizards create-chain-spec
+spawn ./partner-chains-cli create-chain-spec
 expect "Do you want to continue? (Y/n)"
 send "\r"
 expect eof
@@ -130,20 +162,27 @@ echo "Copying chain-spec.json file to /shared/chain-spec.json..."
 cp chain-spec.json /shared/chain-spec.json
 echo "chain-spec.json generation complete."
 
-echo "Copying pc-chain-config.json file to /shared/pc-chain-config.json..."
-cp pc-chain-config.json /shared/pc-chain-config.json
+echo "Copying partner-chains-cli-chain-config.json file to /shared/partner-chains-cli-chain-config.json..."
+cp partner-chains-cli-chain-config.json /shared/partner-chains-cli-chain-config.json
 
 touch /shared/chain-spec.ready
 
-
 echo "Setting up main chain state..."
 expect <<EOF
-spawn ./partner-chains-node wizards setup-main-chain-state
+spawn ./partner-chains-cli setup-main-chain-state
 set timeout 300
-expect "DB-Sync Postgres connection string (postgresql://postgres-user:postgres-password@localhost:5432/cexplorer)"
+expect "DB-Sync Postgres connection string"
 send "postgresql://postgres:$POSTGRES_PASSWORD@postgres:$POSTGRES_PORT/cexplorer\r"
+expect "Partner Chains node executable"
+send "\r"
 expect "Do you want to set/update the permissioned candidates on the main chain with values from configuration file? (y/N)"
 send "y\r"
+expect "Kupo protocol (http/https)"
+send "\r"
+expect "Kupo hostname"
+send "kupo\r"
+expect "Kupo port"
+send "\r"
 expect "Ogmios protocol (http/https)"
 send "\r"
 expect "Ogmios hostname (ogmios)"
@@ -158,6 +197,18 @@ expect "Enter P, the number of permissioned candidates seats, as a non-negative 
 send "2\r"
 expect "Enter R, the number of registered candidates seats, as a non-negative integer. (0)"
 send "1\r"
+expect "Kupo protocol (http/https)"
+send "\r"
+expect "Kupo hostname"
+send "\r"
+expect "Kupo port"
+send "\r"
+expect "Ogmios protocol (http/https)"
+send "\r"
+expect "Ogmios hostname (ogmios)"
+send "\r"
+expect "Ogmios port (1337)"
+send "\r"
 expect "path to the payment signing key file (/keys/funded_address.skey)"
 send "\r"
 expect "Done. Main chain state is set."

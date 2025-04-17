@@ -439,6 +439,7 @@ create_docker_compose() {
       5)
         echo -e "Including all services with wizard partner chain node.\n"
         cat ./modules/cardano.txt >> docker-compose.yml
+        cat ./modules/kupo.txt >> docker-compose.yml
         cat ./modules/ogmios.txt >> docker-compose.yml
         cat ./modules/db-sync.txt >> docker-compose.yml
         cat ./modules/postgres.txt >> docker-compose.yml
