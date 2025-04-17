@@ -20,7 +20,7 @@ use partner_chains_cardano_offchain::{
 	cardano_keys::CardanoPaymentSigningKey,
 	d_param,
 	governance::MultiSigParameters,
-	governed_map::{run_insert, run_insert_with_force, run_list, run_remove},
+	governed_map::{run_get, run_insert, run_insert_with_force, run_list, run_remove},
 	init_governance,
 	multisig::{MultiSigSmartContractResult, MultiSigTransactionData},
 	permissioned_candidates,
@@ -340,7 +340,7 @@ async fn governed_map_operations() {
 
 	assert_eq!(
 		listed_values,
-		vec![(key1, value1), (key4.clone(), value4.clone()),],
+		vec![(key1.clone(), value1.clone()), (key4.clone(), value4.clone()),],
 		"All inserted and not changed or deleted keys should be listed"
 	);
 	// Now test the remove functionality
@@ -376,6 +376,12 @@ async fn governed_map_operations() {
 		remove_result3.is_ok_and(|x| x.is_none()),
 		"Removing a non-existent key should be a no-op"
 	);
+
+	let get_key1_result = run_get(genesis_utxo, key1, &client).await.unwrap();
+	assert_eq!(get_key1_result, Some(value1), "Existing key value should be returned by get");
+
+	let get_removed_key_result = run_get(genesis_utxo, key4, &client).await.unwrap();
+	assert_eq!(get_removed_key_result, None, "Get for non-existent key should return None");
 }
 
 async fn initialize<'a>(container: &Container<'a, GenericImage>) -> OgmiosClients {

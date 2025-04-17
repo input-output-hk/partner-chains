@@ -81,6 +81,18 @@ pub async fn run_list<C: QueryLedgerState + QueryNetwork + Transactions + QueryU
 		.map(|(_, datum)| datum))
 }
 
+pub async fn run_get<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>(
+	genesis_utxo: UtxoId,
+	key: String,
+	ogmios_client: &C,
+) -> anyhow::Result<Option<ByteString>> {
+	let network = ogmios_client.shelley_genesis_configuration().await?.network.to_csl();
+	let (validator, policy) = crate::scripts_data::governed_map_scripts(genesis_utxo, network)?;
+	let validator_address = validator.address_bech32(network)?;
+	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
+	Ok(get_current_value(validator_utxos, key, policy.policy_id()))
+}
+
 fn ogmios_utxos_to_governed_map_utxos(
 	utxos: impl Iterator<Item = OgmiosUtxo>,
 	token: PolicyId,
