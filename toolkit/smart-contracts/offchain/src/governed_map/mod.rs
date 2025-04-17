@@ -108,7 +108,7 @@ fn get_utxos_for_key(
 	key: String,
 	token: PolicyId,
 ) -> Vec<OgmiosUtxo> {
-	ogmios_utxos_to_governed_map_utxos(validator_utxos.into_iter(), token.clone())
+	ogmios_utxos_to_governed_map_utxos(validator_utxos.into_iter(), token)
 		.filter(|(_, datum)| datum.key == key)
 		.map(|(utxo, _)| utxo)
 		.collect()
