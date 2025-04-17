@@ -199,7 +199,7 @@ pub trait CostStore {
 	fn get_mint(&self, script: &PlutusScript) -> ExUnits;
 	fn get_spend(&self, spend_ix: u32) -> ExUnits;
 	fn get_one_spend(&self) -> ExUnits;
-	fn get_spend_indicies(&self) -> Vec<u32>;
+	fn get_spend_indices(&self) -> Vec<u32>;
 }
 
 impl CostStore for Costs {
@@ -236,7 +236,7 @@ impl CostStore for Costs {
 			},
 		}
 	}
-	fn get_spend_indicies(&self) -> Vec<u32> {
+	fn get_spend_indices(&self) -> Vec<u32> {
 		match self {
 			Costs::ZeroCosts => vec![],
 			Costs::Costs(cost_lookup) => cost_lookup.spends.keys().cloned().collect(),

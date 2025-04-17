@@ -251,7 +251,7 @@ fn remove_key_value_tx(
 		&costs,
 	)?;
 
-	let spend_indicies = costs.get_spend_indicies();
+	let spend_indicies = costs.get_spend_indices();
 
 	let mut inputs = TxInputsBuilder::new();
 	for (ix, utxo) in utxos_for_key.iter().enumerate() {
@@ -279,7 +279,7 @@ fn remove_key_value_tx(
 #[cfg(test)]
 mod tests;
 
-/// Neccesary to test rare case, wher two inserts for the same key are executed
+/// Necessary to test rare case, where two inserts for the same key are executed
 #[allow(dead_code)]
 pub async fn run_insert_with_force<
 	C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
