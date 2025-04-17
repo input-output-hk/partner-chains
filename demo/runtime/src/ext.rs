@@ -9,6 +9,8 @@ use sp_runtime::{
 };
 use sp_weights::Weight;
 
+use crate::BlockNumber;
+
 pub struct PartnerChainsSessionFrameSupport<T>(PhantomData<T>);
 
 impl<T> EstimateNextSessionRotation<BlockNumberFor<T>> for PartnerChainsSessionFrameSupport<T>
@@ -27,6 +29,10 @@ where
 
 	//TODO: weights
 	fn estimate_current_session_progress(now: BlockNumberFor<T>) -> (Option<Permill>, Weight) {
+		//T::ShouldEndSession::should_end_session(now.next());
+		let x = T::ShouldEndSession::should_end_session(now + BlockNumber::from(1u32).into());
+		let msg = alloc::format!("should end session is {x} for {now:?}+1");
+		sp_io::logging::log(sp_core::LogLevel::Error, "stdout", msg.as_bytes());
 		if T::ShouldEndSession::should_end_session(now) {
 			// Should surely end session
 			let msg = alloc::format!("should end session is true for {now:?}");
@@ -39,7 +45,8 @@ where
 			let progress = Permill::from_rational(slot_in_epoch, slots_per_epoch.0);
 			let msg = alloc::format!("estimate_current_session_progress: {progress:?}");
 			sp_io::logging::log(sp_core::LogLevel::Error, "stdout", msg.as_bytes());
-			(Some(progress), Zero::zero())
+			//(Some(progress), Zero::zero())
+			(Some(Permill::one()), Zero::zero())
 		}
 	}
 

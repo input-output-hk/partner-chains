@@ -598,11 +598,7 @@ impl ValidatorSet<AccountId> for GlueCode {
 	type ValidatorIdOf = ValidatorIdOf;
 
 	fn session_index() -> SessionIndex {
-		let si1 = pallet_partner_chains_session::Pallet::<Runtime>::current_index();
-		let si2 = pallet_session::Pallet::<Runtime>::current_index();
-		let msg = alloc::format!("session_index: {si1}, {si2}");
-		sp_io::logging::log(LogLevel::Error, "stdout", msg.as_bytes());
-		si1
+		pallet_partner_chains_session::Pallet::<Runtime>::current_index()
 	}
 	fn validators() -> Vec<Self::ValidatorId> {
 		let (_epoch, validators) =
