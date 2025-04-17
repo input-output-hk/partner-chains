@@ -621,6 +621,19 @@ class SubstrateApi(BlockchainApi):
                 return extrinsic_dict["call"]["call_args"][0]["value"]
         return 0
 
+    def get_block_slot(self, block):
+        for log_data in block["header"]["digest"]["logs"]:
+            engine = bytes(log_data[1][0])
+            if "PreRuntime" in log_data and engine == b'aura':
+                aura_predigest = self.substrate.runtime_config.create_scale_object(
+                    type_string='RawAuraPreDigest', data=ScaleBytes(bytes(log_data[1][1]))
+                )
+
+                aura_predigest.decode(check_remaining=self.config.get("strict_scale_decode"))
+
+                return aura_predigest.value["slot_number"]
+        return None
+
     def get_block_header(self, block_no):
         return self.substrate.get_block_header(block_number=block_no)["header"]
 

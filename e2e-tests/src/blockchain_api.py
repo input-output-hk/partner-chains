@@ -446,6 +446,18 @@ class BlockchainApi(ABC):
         pass
 
     @abstractmethod
+    def get_block_slot(self, block):
+        """
+        Gets the slot of a block.
+
+        Arguments: Block (dict)
+
+        Returns:
+            (int) - The slot of that block
+        """
+        pass
+
+    @abstractmethod
     def get_block_header(self, block_no: int) -> str:
         """
         Gets the header of a block.

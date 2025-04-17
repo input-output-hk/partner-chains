@@ -49,23 +49,25 @@ def test_block_beneficiaries_match_committee_seats(
     committee = get_pc_epoch_committee(pc_epoch)
     round_robin_turns = config.nodes_config.slots_in_epoch / len(committee)
     round_robin_turns_int = int(round_robin_turns)
-    round_robin_turns_fraction = round_robin_turns - round_robin_turns_int
+    offset = api.get_block_slot(get_pc_epoch_blocks(pc_epoch)[first_block_no]) % len(committee)
+    committee = committee[offset:] + committee[:offset]
+    remaining_seats = config.nodes_config.slots_in_epoch % len(committee)
+    committee = committee * round_robin_turns_int + committee[:remaining_seats]
 
     seat_cnt_dict = {}
     seat_cnt = 0
     for seat in committee:
         if beneficiary_pub_key_dict[seat['sidechainPubKey']] in seat_cnt_dict:
-            seat_cnt_dict[beneficiary_pub_key_dict[seat['sidechainPubKey']]] += round_robin_turns
+            seat_cnt_dict[beneficiary_pub_key_dict[seat['sidechainPubKey']]] += 1
         else:
-            seat_cnt_dict[beneficiary_pub_key_dict[seat['sidechainPubKey']]] = round_robin_turns
-        seat_cnt += round_robin_turns
+            seat_cnt_dict[beneficiary_pub_key_dict[seat['sidechainPubKey']]] = 1
+        seat_cnt += 1
 
-    assert math.isclose(seat_cnt, block_cnt, rel_tol=1e-9), "Committee seat count not equal to block rewards count"
+    assert seat_cnt == block_cnt
     for seat in seat_cnt_dict:
-        assert abs(
-            block_cnt_dict[seat]
-            - (seat_cnt_dict[seat] - round_robin_turns_fraction * int(seat_cnt_dict[seat] / round_robin_turns_int))
-        ) in (0, 1), f"Block rewards for {seat} does not match committee seat expected distribution"
+        assert (
+            block_cnt_dict[seat] == seat_cnt_dict[seat]
+        ), f"Block rewards for {seat} does not match committee seat expected distribution"
 
 
 @mark.skip_blockchain("pc_evm", reason="not implemented yet on pc_evm")
