@@ -15,7 +15,10 @@ use anyhow::anyhow;
 use partner_chains_cardano_offchain::register::Deregister;
 
 #[derive(Clone, Debug, clap::Parser)]
-pub struct DeregisterCmd;
+pub struct DeregisterCmd {
+	#[clap(flatten)]
+	common_arguments: crate::CommonArguments,
+}
 
 impl CmdRun for DeregisterCmd {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
@@ -40,6 +43,7 @@ impl CmdRun for DeregisterCmd {
 		let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 		runtime
 			.block_on(offchain.deregister(
+				self.common_arguments.retries(),
 				chain_config.chain_parameters.genesis_utxo,
 				&payment_signing_key,
 				stake_ownership_pub_key,

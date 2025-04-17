@@ -693,6 +693,7 @@ async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryU
 	let registration_utxo = eve_utxos.first().unwrap().utxo_id();
 	client
 		.register(
+			FixedDelayRetries::five_minutes(),
 			genesis_utxo,
 			&CandidateRegistration {
 				stake_ownership: AdaBasedStaking {

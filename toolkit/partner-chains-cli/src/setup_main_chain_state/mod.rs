@@ -8,6 +8,7 @@ use crate::permissioned_candidates::{ParsedPermissionedCandidatesKeys, Permissio
 use crate::{cardano_key, CmdRun};
 use anyhow::anyhow;
 use anyhow::Context;
+use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 use partner_chains_cardano_offchain::d_param::UpsertDParam;
 use partner_chains_cardano_offchain::multisig::{
 	MultiSigSmartContractResult, MultiSigTransactionData,
@@ -22,7 +23,10 @@ use sidechain_domain::{McEpochNumber, UtxoId};
 mod tests;
 
 #[derive(Clone, Debug, clap::Parser)]
-pub struct SetupMainChainStateCmd;
+pub struct SetupMainChainStateCmd {
+	#[clap(flatten)]
+	common_arguments: crate::CommonArguments,
+}
 
 /// Formats of the output of the `ariadne-parameters` command.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -109,6 +113,7 @@ impl CmdRun for SetupMainChainStateCmd {
 					&config_initial_authorities,
 				);
 				set_candidates_on_main_chain(
+					self.common_arguments.retries(),
 					context,
 					config_initial_authorities,
 					chain_config.chain_parameters.genesis_utxo,
@@ -120,6 +125,7 @@ impl CmdRun for SetupMainChainStateCmd {
 				ariadne_parameters.d_parameter.num_registered_candidates
 			));
 			set_d_parameter_on_main_chain(
+				self.common_arguments.retries(),
 				context,
 				ogmios_config,
 				ariadne_parameters.d_parameter,
@@ -127,6 +133,7 @@ impl CmdRun for SetupMainChainStateCmd {
 			)?;
 		} else {
 			let ogmios_config: Option<ServiceConfig> = set_candidates_on_main_chain(
+				self.common_arguments.retries(),
 				context,
 				config_initial_authorities,
 				chain_config.chain_parameters.genesis_utxo,
@@ -134,6 +141,7 @@ impl CmdRun for SetupMainChainStateCmd {
 			let default_d_parameter =
 				DParameter { num_permissioned_candidates: 0, num_registered_candidates: 0 };
 			set_d_parameter_on_main_chain(
+				self.common_arguments.retries(),
 				context,
 				ogmios_config,
 				default_d_parameter,
@@ -238,6 +246,7 @@ fn print_on_chain_and_config_permissioned_candidates<C: IOContext>(
 }
 
 fn set_candidates_on_main_chain<C: IOContext>(
+	retries: FixedDelayRetries,
 	context: &C,
 	candidates: SortedPermissionedCandidates,
 	genesis_utxo: UtxoId,
@@ -253,6 +262,7 @@ fn set_candidates_on_main_chain<C: IOContext>(
 		let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 		let result = tokio_runtime
 			.block_on(offchain.upsert_permissioned_candidates(
+				retries,
 				genesis_utxo,
 				&candidates.to_candidate_data(),
 				&pkey,
@@ -270,6 +280,7 @@ fn set_candidates_on_main_chain<C: IOContext>(
 }
 
 fn set_d_parameter_on_main_chain<C: IOContext>(
+	retries: FixedDelayRetries,
 	context: &C,
 	ogmios_config: Option<ServiceConfig>,
 	default_d_parameter: DParameter,
@@ -301,6 +312,7 @@ fn set_d_parameter_on_main_chain<C: IOContext>(
 		let offchain = context.offchain_impl(&ogmios_config)?;
 		let tokio_runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 		let result = tokio_runtime.block_on(offchain.upsert_d_param(
+			retries,
 			genesis_utxo,
 			&d_parameter,
 			&payment_signing_key,

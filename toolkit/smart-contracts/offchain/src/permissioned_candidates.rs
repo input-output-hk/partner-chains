@@ -32,6 +32,7 @@ pub trait UpsertPermissionedCandidates {
 	#[allow(async_fn_in_trait)]
 	async fn upsert_permissioned_candidates(
 		&self,
+		retries: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		candidates: &[PermissionedCandidateData],
 		payment_signing_key: &CardanoPaymentSigningKey,
@@ -43,6 +44,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>
 {
 	async fn upsert_permissioned_candidates(
 		&self,
+		retries: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		candidates: &[PermissionedCandidateData],
 		payment_signing_key: &CardanoPaymentSigningKey,
@@ -52,7 +54,7 @@ impl<C: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId>
 			candidates,
 			payment_signing_key,
 			self,
-			&FixedDelayRetries::five_minutes(),
+			&retries,
 		)
 		.await
 	}

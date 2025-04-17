@@ -1,5 +1,4 @@
 use crate::{GenesisUtxo, PaymentFilePath};
-use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 use partner_chains_cardano_offchain::governed_map::{
 	run_get, run_insert, run_list, run_remove, run_update,
 };
@@ -62,7 +61,7 @@ impl InsertCmd {
 			self.value,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::five_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(serde_json::json!(result))
@@ -131,7 +130,7 @@ impl RemoveCmd {
 			self.key,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::five_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(serde_json::json!(result))
@@ -172,7 +171,7 @@ impl UpdateCmd {
 			self.current_value,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::five_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(serde_json::json!(result))

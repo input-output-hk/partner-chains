@@ -7,12 +7,13 @@ use crate::{
 };
 use anyhow::anyhow;
 use partner_chains_cardano_offchain::{
-	cardano_keys::CardanoPaymentSigningKey, governance::MultiSigParameters,
-	init_governance::InitGovernance,
+	await_tx::FixedDelayRetries, cardano_keys::CardanoPaymentSigningKey,
+	governance::MultiSigParameters, init_governance::InitGovernance,
 };
 use sidechain_domain::{MainchainKeyHash, McTxHash, UtxoId};
 
 pub(crate) fn run_init_governance<C: IOContext>(
+	retries: FixedDelayRetries,
 	genesis_utxo: UtxoId,
 	payment_key: &CardanoPaymentSigningKey,
 	ogmios_config: &ServiceConfig,
@@ -30,7 +31,12 @@ pub(crate) fn run_init_governance<C: IOContext>(
 		let offchain = context.offchain_impl(ogmios_config)?;
 		let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 		let tx_id = runtime
-			.block_on(offchain.init_governance(&multisig_parameters, &payment_key, genesis_utxo))
+			.block_on(offchain.init_governance(
+				retries,
+				&multisig_parameters,
+				&payment_key,
+				genesis_utxo,
+			))
 			.map_err(|e| anyhow::anyhow!("Governance initalization failed: {e:?}!"))?;
 		context.eprint(&format!("Governance initialized successfully for UTXO: {}", genesis_utxo));
 		Ok(Some(tx_id))
@@ -89,7 +95,8 @@ mod tests {
 	};
 	use hex_literal::hex;
 	use partner_chains_cardano_offchain::{
-		cardano_keys::CardanoPaymentSigningKey, governance::MultiSigParameters,
+		await_tx::FixedDelayRetries, cardano_keys::CardanoPaymentSigningKey,
+		governance::MultiSigParameters,
 	};
 	use serde_json::{json, Value};
 	use sidechain_domain::{MainchainKeyHash, McTxHash, UtxoId};
@@ -122,6 +129,7 @@ mod tests {
 				MockIO::eprint("Governance initialized successfully for UTXO: 0000000000000000000000000000000000000000000000000000000000000000#0")
 			]);
 		run_init_governance(
+			FixedDelayRetries::five_minutes(),
 			TEST_GENESIS_UTXO,
 			&test_private_key(),
 			&ogmios_config(),

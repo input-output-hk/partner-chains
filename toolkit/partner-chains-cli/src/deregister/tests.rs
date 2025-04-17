@@ -4,7 +4,7 @@ use crate::ogmios::config::tests::{
 	default_ogmios_config_json, default_ogmios_service_config, establish_ogmios_configuration_io,
 };
 use crate::tests::{MockIO, MockIOContext, OffchainMock, OffchainMocks};
-use crate::{verify_json, CmdRun};
+use crate::{verify_json, CmdRun, CommonArguments};
 use hex_literal::hex;
 use partner_chains_cardano_offchain::OffchainError;
 use serde_json::json;
@@ -34,7 +34,7 @@ fn happy_path() {
 			read_keys_io(),
 			establish_ogmios_configuration_io(None, default_ogmios_service_config()),
 		]);
-	let result = DeregisterCmd.run(&mock_context);
+	let result = deregister_cmd().run(&mock_context);
 	assert!(result.is_ok());
 	verify_json!(mock_context, RESOURCES_CONFIG_FILE_PATH, final_resources_config_content());
 }
@@ -58,7 +58,7 @@ fn errors_if_smart_contracts_dont_output_transaction_id() {
 			read_keys_io(),
 			establish_ogmios_configuration_io(None, default_ogmios_service_config()),
 		]);
-	let result = DeregisterCmd.run(&mock_context);
+	let result = deregister_cmd().run(&mock_context);
 	assert_eq!(
 		result.err().unwrap().to_string(),
 		r#"Candidate deregistration failed: InternalError("test error")!"#
@@ -70,7 +70,7 @@ fn errors_if_smart_contracts_dont_output_transaction_id() {
 fn fails_when_chain_config_is_not_valid() {
 	let mock_context =
 		MockIOContext::new().with_json_file(CHAIN_CONFIG_FILE_PATH, invalid_chain_config_content());
-	let result = DeregisterCmd.run(&mock_context);
+	let result = deregister_cmd().run(&mock_context);
 	assert_eq!(
 	    result.err().unwrap().to_string(),
 		"Couldn't parse chain configuration file pc-chain-config.json. The chain configuration file that was used for registration is required in the working directory."
@@ -88,7 +88,7 @@ fn fails_when_payment_signing_key_is_not_valid() {
             MockIO::print("Payment signing key and cold verification key used for registration are required to deregister."),
             read_payment_signing_key()
 		]);
-	let result = DeregisterCmd.run(&mock_context);
+	let result = deregister_cmd().run(&mock_context);
 	assert_eq!(
 		result.err().unwrap().to_string(),
 		"Failed to parse Cardano key file my_payment.skey: 'expected ident at line 1 column 2'"
@@ -103,7 +103,7 @@ fn fails_when_cold_key_is_not_valid() {
 		.with_json_file(MY_PAYMEMENT_SKEY, valid_payment_signing_key_content())
 		.with_file(MY_COLD_VKEY, "not a proper Cardano key json")
 		.with_expected_io(vec![print_info_io(), read_keys_io()]);
-	let result = DeregisterCmd.run(&mock_context);
+	let result = deregister_cmd().run(&mock_context);
 	assert_eq!(
 		result.err().unwrap().to_string(),
 		"Failed to parse Cardano key file my_cold.vkey: 'expected ident at line 1 column 2'"
@@ -113,6 +113,10 @@ fn fails_when_cold_key_is_not_valid() {
 		RESOURCES_CONFIG_FILE_PATH,
 		json!({"cardano_payment_signing_key_file": MY_PAYMEMENT_SKEY, "cardano_cold_verification_key_file": MY_COLD_VKEY})
 	);
+}
+
+fn deregister_cmd() -> DeregisterCmd {
+	DeregisterCmd { common_arguments: CommonArguments { retry_delay_seconds: 5, retry_count: 59 } }
 }
 
 fn print_info_io() -> MockIO {

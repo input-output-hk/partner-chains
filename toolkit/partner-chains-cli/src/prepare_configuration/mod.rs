@@ -19,13 +19,17 @@ mod prepare_main_chain_config;
 mod select_genesis_utxo;
 
 #[derive(Clone, Debug, clap::Parser)]
-pub struct PrepareConfigurationCmd {}
+pub struct PrepareConfigurationCmd {
+	#[clap(flatten)]
+	common_arguments: crate::CommonArguments,
+}
 
 impl CmdRun for PrepareConfigurationCmd {
 	fn run<C: IOContext>(&self, context: &C) -> anyhow::Result<()> {
 		establish_bootnodes(context)?;
 		let (genesis_utxo, private_key, ogmios_config) = select_genesis_utxo(context)?;
 		if let Some(_tx_id) = init_governance::run_init_governance(
+			self.common_arguments.retries(),
 			genesis_utxo,
 			&private_key,
 			&ogmios_config,
@@ -206,7 +210,7 @@ pub mod tests {
 	use crate::prepare_configuration::PrepareConfigurationError::NetworkKeyNotFoundError;
 	use crate::prepare_configuration::Protocol::{Dns, Ipv4};
 	use crate::tests::{MockIO, MockIOContext};
-	use crate::verify_json;
+	use crate::{verify_json, CommonArguments};
 
 	const KEY: &str = "962515971a22aa95706c2109ba6e9502c7f39b33bdf63024f46f77894424f1fe";
 	pub const CHAIN_NAME: &str = "partner_chains_template";
@@ -413,7 +417,8 @@ pub mod tests {
 			.with_json_file(RESOURCES_CONFIG_FILE_PATH, serde_json::json!({}))
 			.with_expected_io(vec![scenarios::show_intro(), scenarios::read_config()]);
 
-		let result = PrepareConfigurationCmd {}.run(&mock_context);
+		let result =
+			PrepareConfigurationCmd { common_arguments: common_arguments() }.run(&mock_context);
 
 		let error = result.expect_err("should return error");
 		assert_eq!(error.to_string(), NetworkKeyNotFoundError(network_key_file()).to_string());
@@ -461,10 +466,15 @@ pub mod tests {
 			),
 		]);
 
-		let result = PrepareConfigurationCmd {}.run(&mock_context);
+		let result =
+			PrepareConfigurationCmd { common_arguments: common_arguments() }.run(&mock_context);
 
 		let error = result.expect_err("should return error");
 		assert!(error.to_string().contains("⚠️ Invalid IP address"));
+	}
+
+	fn common_arguments() -> CommonArguments {
+		CommonArguments { retry_delay_seconds: 5, retry_count: 59 }
 	}
 
 	pub fn prompt<T>(field_definition: ConfigFieldDefinition<'_, T>, value: &str) -> MockIO {
