@@ -213,7 +213,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 /// up by `pallet_aura` to implement `fn slot_duration()`.
 ///
 /// Change this to adjust the block time.
-pub const MILLISECS_PER_BLOCK: u64 = 6000;
+pub const MILLISECS_PER_BLOCK: u64 = 1000;
 
 // NOTE: Currently it is not possible to change the slot duration after the chain has started.
 //       Attempting to do so will brick block production.
@@ -594,35 +594,56 @@ impl crate::test_helper_pallet::Config for Runtime {}
 pub struct GlueCode;
 
 impl ValidatorSet<AccountId> for GlueCode {
-	type ValidatorId = AccountId;
-	type ValidatorIdOf = ValidatorIdOf;
+	type ValidatorId = AuraId;
+	type ValidatorIdOf = CrossChainPublicIsAccountId;
 
 	fn session_index() -> SessionIndex {
 		pallet_partner_chains_session::Pallet::<Runtime>::current_index()
 	}
 	fn validators() -> Vec<Self::ValidatorId> {
+		use sp_session_validator_management::CommitteeMember;
+
+		// let (_epoch, validators) =
+		// 	pallet_session_validator_management::Pallet::<Runtime>::get_current_committee();
+
+		// use sp_session_validator_management::CommitteeMember;
+		// validators
+		// 	.into_iter()
+		// 	.map(|committee_member| committee_member.authority_id().into())
+		// 	.collect()
 		let (_epoch, validators) =
 			pallet_session_validator_management::Pallet::<Runtime>::get_current_committee();
-
-		use sp_session_validator_management::CommitteeMember;
-		validators
-			.into_iter()
-			.map(|committee_member| committee_member.authority_id().into())
-			.collect()
+		validators.into_iter().map(|v| v.authority_keys().aura).collect()
+		//pallet_aura::Pallet::<Runtime>::
 	}
 }
 
-pub struct ValidatorIdOf;
+pub struct CrossChainPublicIsAccountId;
+pub struct AccountIdIsCrossChainPublic;
 
-impl<T> Convert<T, Option<T>> for ValidatorIdOf {
-	fn convert(t: T) -> Option<T> {
-		Some(t)
+impl Convert<AccountId, Option<AuraId>> for CrossChainPublicIsAccountId {
+	fn convert(t: AccountId) -> Option<AuraId> {
+		let v = pallet_partner_chains_session::ValidatorsAndKeys::<Runtime>::get();
+		let x = v.into_iter().find(|(v, _k)| *v == t).map(|(_v, k)| k.aura);
+		let msg = alloc::format!("Convert<AccountId, Option<AuraId>> {x:?}");
+		sp_io::logging::log(LogLevel::Info, "stdout", msg.as_bytes());
+		x
+	}
+}
+
+impl Convert<AuraId, Option<AccountId>> for AccountIdIsCrossChainPublic {
+	fn convert(t: AuraId) -> Option<AccountId> {
+		let v = pallet_partner_chains_session::ValidatorsAndKeys::<Runtime>::get();
+		let x = v.into_iter().find(|(_v, k)| k.aura == t).map(|(v, _k)| v);
+		let msg = alloc::format!("Convert<AuraId, Option<AccountId>> {x:?}");
+		sp_io::logging::log(LogLevel::Info, "stdout", msg.as_bytes());
+		x
 	}
 }
 
 impl ValidatorSetWithIdentification<AccountId> for GlueCode {
 	type Identification = AccountId;
-	type IdentificationOf = ValidatorIdOf;
+	type IdentificationOf = AccountIdIsCrossChainPublic;
 }
 
 parameter_types! {

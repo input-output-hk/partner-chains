@@ -48,9 +48,7 @@ fn testnet_genesis(
 			..Default::default()
 		},
 		// AURA keys re-used here!
-		im_online: pallet_im_online::GenesisConfig {
-			keys: initial_authorities.iter().map(|x| (x.0.clone())).collect::<Vec<_>>(),
-		},
+		im_online: pallet_im_online::GenesisConfig::default(),
 		sudo: SudoConfig { key: Some(root) },
 		test_helper_pallet: test_helper_pallet::GenesisConfig {
 			participation_data_release_period:
