@@ -93,6 +93,7 @@ impl ListCmd {
 		Ok(json!(kv_pairs))
 	}
 }
+
 impl RemoveCmd {
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let payment_key = self.payment_key_file.read_key()?;
@@ -108,5 +109,25 @@ impl RemoveCmd {
 		)
 		.await?;
 		Ok(serde_json::json!(result))
+	}
+}
+
+#[derive(Clone, Debug, clap::Parser)]
+pub struct ListCmd {
+	#[clap(flatten)]
+	common_arguments: crate::CommonArguments,
+	#[arg(long, short('g'))]
+	genesis_utxo: UtxoId,
+}
+
+impl ListCmd {
+	pub async fn execute(self) -> crate::SubCmdResult {
+		let client = self.common_arguments.get_ogmios_client().await?;
+		let kv_pairs: Vec<_> = run_list(self.genesis_utxo, &client)
+			.await?
+			.map(|datum| json!({"key": datum.key, "value": datum.value.to_hex_string()}))
+			.collect();
+
+		Ok(json!(kv_pairs))
 	}
 }
