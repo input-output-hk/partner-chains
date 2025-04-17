@@ -20,7 +20,7 @@ use partner_chains_cardano_offchain::{
 	cardano_keys::CardanoPaymentSigningKey,
 	d_param,
 	governance::MultiSigParameters,
-	governed_map::run_insert,
+	governed_map::{run_insert, run_list},
 	init_governance,
 	multisig::{MultiSigSmartContractResult, MultiSigTransactionData},
 	permissioned_candidates,
@@ -297,9 +297,15 @@ async fn governed_map_operations() {
 	assert!(result1.is_ok_and(|x| x.is_some()), "First key-value insertion should succeed");
 
 	// Try to insert the same key again, should fail
-	let result2 =
-		run_governance_map_insert(genesis_utxo, key1.clone(), value1, &skey, &client, &await_tx)
-			.await;
+	let result2 = run_governance_map_insert(
+		genesis_utxo,
+		key1.clone(),
+		value1.clone(),
+		&skey,
+		&client,
+		&await_tx,
+	)
+	.await;
 	assert!(
 		result2.is_ok_and(|x| x.is_none()),
 		"Inserting the same key twice with the same valueshould be a no-op"
@@ -307,16 +313,36 @@ async fn governed_map_operations() {
 
 	let value3 = ByteString::from(hex::decode("0000").unwrap());
 	let result3 =
-		run_governance_map_insert(genesis_utxo, key1, value3, &skey, &client, &await_tx).await;
+		run_governance_map_insert(genesis_utxo, key1.clone(), value3, &skey, &client, &await_tx)
+			.await;
 
 	assert!(result3.is_err(), "Inserting the same key with a different value should fail");
 
 	// Insert a different key, should succeed
 	let key4 = "another_key".to_string();
 	let value4 = ByteString::from(hex::decode("fedcba9876543210").unwrap());
-	let result4 =
-		run_governance_map_insert(genesis_utxo, key4, value4, &skey, &client, &await_tx).await;
+	let result4 = run_governance_map_insert(
+		genesis_utxo,
+		key4.clone(),
+		value4.clone(),
+		&skey,
+		&client,
+		&await_tx,
+	)
+	.await;
 	assert!(result4.is_ok_and(|x| x.is_some()), "Inserting a different key should succeed");
+
+	let listed_values: Vec<_> = run_list(genesis_utxo, &client)
+		.await
+		.unwrap()
+		.map(|d| (d.key, d.value))
+		.collect();
+
+	assert_eq!(
+		listed_values,
+		vec![(key1, value1), (key4, value4),],
+		"All inserted and not changed or deleted keys should be listed"
+	);
 }
 
 async fn initialize<'a>(container: &Container<'a, GenericImage>) -> OgmiosClients {
