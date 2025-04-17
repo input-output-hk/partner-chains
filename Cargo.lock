@@ -6589,7 +6589,7 @@ checksum = "4e69bf016dc406eff7d53a7d3f7cf1c2e72c82b9088aac1118591e36dd2cd3e9"
 dependencies = [
  "bitcoin_hashes",
  "rand",
- "rand_core 0.4.2",
+ "rand_core 0.6.4",
  "serde",
  "unicode-normalization",
 ]
@@ -6865,10 +6865,12 @@ dependencies = [
  "sc-consensus-grandpa-rpc",
  "sc-executor",
  "sc-network",
+ "sc-offchain",
  "sc-partner-chains-consensus-aura",
  "sc-rpc",
  "sc-rpc-api",
  "sc-service",
+ "sc-statement-store",
  "sc-telemetry",
  "sc-transaction-pool",
  "sc-transaction-pool-api",
@@ -6970,6 +6972,7 @@ dependencies = [
  "sp-session-validator-management",
  "sp-sidechain",
  "sp-staking",
+ "sp-statement-store",
  "sp-std",
  "sp-storage",
  "sp-transaction-pool",
@@ -9428,6 +9431,25 @@ dependencies = [
  "parity-scale-codec",
  "parking_lot 0.12.3",
  "sp-core",
+]
+
+[[package]]
+name = "sc-statement-store"
+version = "20.0.0"
+source = "git+https://github.com/paritytech/polkadot-sdk.git?tag=polkadot-stable2412-1#ab5882bbc67bcc48464566a2b48171265147acac"
+dependencies = [
+ "log",
+ "parity-db",
+ "parking_lot 0.12.3",
+ "sc-client-api",
+ "sc-keystore",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-runtime",
+ "sp-statement-store",
+ "substrate-prometheus-endpoint",
+ "tokio",
 ]
 
 [[package]]

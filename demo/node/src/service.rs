@@ -3,10 +3,11 @@
 use crate::data_sources::DataSources;
 use crate::inherent_data::{CreateInherentDataConfig, ProposalCIDP, VerifierCIDP};
 use crate::rpc::GrandpaDeps;
+use futures::FutureExt;
 use partner_chains_db_sync_data_sources::metrics::register_metrics_warn_errors;
 use partner_chains_db_sync_data_sources::metrics::McFollowerMetrics;
 use partner_chains_demo_runtime::{self, opaque::Block, RuntimeApi};
-use sc_client_api::BlockBackend;
+use sc_client_api::{Backend, BlockBackend};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 use sc_consensus_grandpa::SharedVoterState;
 pub use sc_executor::WasmExecutor;
@@ -55,6 +56,7 @@ pub fn new_partial(
 			Option<Telemetry>,
 			DataSources,
 			Option<McFollowerMetrics>,
+			//Arc<sc_statement_store::Store>,
 		),
 	>,
 	ServiceError,
@@ -148,6 +150,16 @@ pub fn new_partial(
 		compatibility_mode: Default::default(),
 	})?;
 
+	// let statement_store = sc_statement_store::Store::new_shared(
+	// 	&config.data_path,
+	// 	Default::default(),
+	// 	client.clone(),
+	// 	keystore_container.local_keystore(),
+	// 	config.prometheus_registry(),
+	// 	&task_manager.spawn_handle(),
+	// )
+	// .map_err(|e| ServiceError::Other(format!("Statement store error: {:?}", e)))?;
+
 	Ok(sc_service::PartialComponents {
 		client,
 		backend,
@@ -156,7 +168,14 @@ pub fn new_partial(
 		keystore_container,
 		select_chain,
 		transaction_pool,
-		other: (grandpa_block_import, grandpa_link, telemetry, data_sources, mc_follower_metrics),
+		other: (
+			grandpa_block_import,
+			grandpa_link,
+			telemetry,
+			data_sources,
+			mc_follower_metrics,
+			//	statement_store,
+		),
 	})
 }
 
@@ -263,7 +282,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		task_manager: &mut task_manager,
 		transaction_pool: transaction_pool.clone(),
 		rpc_builder: Box::new(rpc_extensions_builder),
-		backend,
+		backend: backend.clone(),
 		system_rpc_tx,
 		tx_handler_controller,
 		sync_service: sync_service.clone(),
@@ -360,14 +379,14 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		let grandpa_config = sc_consensus_grandpa::GrandpaParams {
 			config: grandpa_config,
 			link: grandpa_link,
-			network,
+			network: network.clone(),
 			sync: Arc::new(sync_service),
 			notification_service: grandpa_notification_service,
 			voting_rule: sc_consensus_grandpa::VotingRulesBuilder::default().build(),
 			prometheus_registry,
 			shared_voter_state,
 			telemetry: telemetry.as_ref().map(|x| x.handle()),
-			offchain_tx_pool_factory: OffchainTransactionPoolFactory::new(transaction_pool),
+			offchain_tx_pool_factory: OffchainTransactionPoolFactory::new(transaction_pool.clone()),
 		};
 
 		// the GRANDPA voter task is considered infallible, i.e.
@@ -376,6 +395,27 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 			"grandpa-voter",
 			None,
 			sc_consensus_grandpa::run_grandpa_voter(grandpa_config)?,
+		);
+	}
+
+	{
+		let offchain_workers =
+			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
+				runtime_api_provider: client.clone(),
+				keystore: Some(keystore_container.keystore()),
+				offchain_db: backend.offchain_storage(),
+				transaction_pool: Some(OffchainTransactionPoolFactory::new(
+					transaction_pool.clone(),
+				)),
+				network_provider: Arc::new(network.clone()),
+				is_validator: role.is_authority(),
+				enable_http_requests: true,
+				custom_extensions: |_| vec![],
+			})?;
+		task_manager.spawn_handle().spawn(
+			"offchain-workers-runner",
+			"offchain-work",
+			offchain_workers.run(client.clone(), task_manager.spawn_handle()).boxed(),
 		);
 	}
 
