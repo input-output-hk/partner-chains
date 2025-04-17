@@ -55,14 +55,8 @@ impl InsertCmd {
 			&FixedDelayRetries::five_minutes(),
 		)
 		.await?;
-		Ok(serde_json::json!(result).into())
+		Ok(serde_json::json!(result))
 	}
-}
-
-#[derive(Clone, Debug, clap::ValueEnum)]
-pub enum OutputFormat {
-	Json,
-	Table,
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -71,8 +65,6 @@ pub struct ListCmd {
 	common_arguments: crate::CommonArguments,
 	#[arg(long, short('g'))]
 	genesis_utxo: UtxoId,
-	#[arg(long, value_enum, default_value_t=OutputFormat::Json)]
-	output_format: OutputFormat,
 }
 
 impl ListCmd {
