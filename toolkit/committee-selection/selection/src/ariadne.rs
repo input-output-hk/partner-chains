@@ -1,4 +1,4 @@
-use crate::{weighted_random, Weight, WeightedRandomSelectionConfig};
+use crate::{weighted_random, Weight};
 use alloc::vec::Vec;
 use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
@@ -30,7 +30,6 @@ where
 	SC: Ord + Clone,
 {
 	let committee_size = num_trustless_candidates + num_permissioned_candidates;
-	let weighted_config = WeightedRandomSelectionConfig { size: committee_size };
 	let mut weighted_candidates = alloc::vec![];
 
 	let total_stake: u128 = trustless_candidates.iter().map(|(_, weight)| weight).sum();
@@ -52,7 +51,7 @@ where
 	weighted_candidates.extend(permissioned_candidates);
 	weighted_candidates.sort();
 
-	weighted_random::select_authorities(weighted_candidates, seed, &weighted_config)
+	weighted_random::select_authorities(weighted_candidates, seed, committee_size)
 }
 
 fn trustless_candidates_with_weights<Candidate: Clone>(
