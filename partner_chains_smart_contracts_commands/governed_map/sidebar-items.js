@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["GovernedMapCmd"],"struct":["InsertCmd","ListCmd","RemoveCmd"]};
+window.SIDEBAR_ITEMS = {"enum":["GovernedMapCmd"],"struct":["GetCmd","InsertCmd","ListCmd","RemoveCmd"]};
