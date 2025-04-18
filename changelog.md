@@ -33,6 +33,7 @@ the feature `pallet-session-compat`.
 * `governance init` when genesis utxo had a script attached, then transaction fee was sometimes calculated incorrectly
 
 ## Added
+* `governed-map remove` command, that removes a key-value pair from the governed map
 * `governed-map insert` command, that inserts a key-value pair into the governed map
 * `ariadne_v2` selection algorithm that selects committee respecting D-parameter and candidates
 weights, but has much less variance, thanks to assigning guaranteed seats to candidates with

@@ -20,7 +20,7 @@ use partner_chains_cardano_offchain::{
 	cardano_keys::CardanoPaymentSigningKey,
 	d_param,
 	governance::MultiSigParameters,
-	governed_map::{run_insert, run_list},
+	governed_map::{run_insert, run_insert_with_force, run_list, run_remove},
 	init_governance,
 	multisig::{MultiSigSmartContractResult, MultiSigTransactionData},
 	permissioned_candidates,
@@ -340,8 +340,41 @@ async fn governed_map_operations() {
 
 	assert_eq!(
 		listed_values,
-		vec![(key1, value1), (key4, value4),],
+		vec![(key1, value1), (key4.clone(), value4.clone()),],
 		"All inserted and not changed or deleted keys should be listed"
+	);
+	// Now test the remove functionality
+
+	let result_force = run_governance_map_insert_with_force(
+		genesis_utxo,
+		key4.clone(),
+		value4.clone(),
+		&skey,
+		&client,
+		&await_tx,
+	)
+	.await;
+	assert!(result_force.is_ok_and(|x| x.is_some()), "force insertion succeed");
+	// Remove a key that exists, should succeed
+	let remove_result1 =
+		run_governance_map_remove(genesis_utxo, key4.clone(), &skey, &client, &await_tx).await;
+	assert!(remove_result1.is_ok_and(|x| x.is_some()), "Removing an existing key should succeed");
+
+	// Try to remove the same key again, should be a no-op
+	let remove_result2 =
+		run_governance_map_remove(genesis_utxo, key4.clone(), &skey, &client, &await_tx).await;
+	assert!(
+		remove_result2.is_ok_and(|x| x.is_none()),
+		"Removing a non-existent key should be a no-op"
+	);
+
+	// Try to remove a key that never existed, should be a no-op
+	let never_existed_key = "key_never_existed".to_string();
+	let remove_result3 =
+		run_governance_map_remove(genesis_utxo, never_existed_key, &skey, &client, &await_tx).await;
+	assert!(
+		remove_result3.is_ok_and(|x| x.is_none()),
+		"Removing a non-existent key should be a no-op"
 	);
 }
 
@@ -808,6 +841,39 @@ async fn run_governance_map_insert<
 	await_tx: &A,
 ) -> Result<Option<MultiSigSmartContractResult>, anyhow::Error> {
 	let result = run_insert(genesis_utxo, key, value, payment_signing_key, client, await_tx).await;
+	result.iter().for_each(|x| x.iter().for_each(cleanup_temp_wallet_file));
+	result
+}
+
+async fn run_governance_map_insert_with_force<
+	T: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
+	genesis_utxo: UtxoId,
+	key: String,
+	value: ByteString,
+	payment_signing_key: &CardanoPaymentSigningKey,
+	client: &T,
+	await_tx: &A,
+) -> Result<Option<MultiSigSmartContractResult>, anyhow::Error> {
+	let result =
+		run_insert_with_force(genesis_utxo, key, value, payment_signing_key, client, await_tx)
+			.await;
+	result.iter().for_each(|x| x.iter().for_each(cleanup_temp_wallet_file));
+	result
+}
+
+async fn run_governance_map_remove<
+	T: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
+	genesis_utxo: UtxoId,
+	key: String,
+	payment_signing_key: &CardanoPaymentSigningKey,
+	client: &T,
+	await_tx: &A,
+) -> Result<Option<MultiSigSmartContractResult>, anyhow::Error> {
+	let result = run_remove(genesis_utxo, key, payment_signing_key, client, await_tx).await;
 	result.iter().for_each(|x| x.iter().for_each(cleanup_temp_wallet_file));
 	result
 }

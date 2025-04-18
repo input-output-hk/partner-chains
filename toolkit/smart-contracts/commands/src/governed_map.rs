@@ -1,6 +1,6 @@
 use crate::PaymentFilePath;
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
-use partner_chains_cardano_offchain::governed_map::{run_insert, run_list};
+use partner_chains_cardano_offchain::governed_map::{run_insert, run_list, run_remove};
 use serde_json::json;
 use sidechain_domain::byte_string::ByteString;
 use sidechain_domain::UtxoId;
@@ -15,6 +15,8 @@ pub enum GovernedMapCmd {
 	Insert(InsertCmd),
 	/// Lists all key-value pairs currently stored in the Governed Map
 	List(ListCmd),
+	/// Removes a key-value pair from the Governed Map
+	Remove(RemoveCmd),
 }
 
 impl GovernedMapCmd {
@@ -22,6 +24,7 @@ impl GovernedMapCmd {
 		match self {
 			Self::Insert(cmd) => cmd.execute().await,
 			Self::List(cmd) => cmd.execute().await,
+			Self::Remove(cmd) => cmd.execute().await,
 		}
 	}
 }
@@ -67,6 +70,18 @@ pub struct ListCmd {
 	genesis_utxo: UtxoId,
 }
 
+#[derive(Clone, Debug, clap::Parser)]
+pub struct RemoveCmd {
+	#[clap(flatten)]
+	common_arguments: crate::CommonArguments,
+	#[arg(long)]
+	key: String,
+	#[clap(flatten)]
+	payment_key_file: PaymentFilePath,
+	#[arg(long, short('g'))]
+	genesis_utxo: UtxoId,
+}
+
 impl ListCmd {
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let client = self.common_arguments.get_ogmios_client().await?;
@@ -76,5 +91,22 @@ impl ListCmd {
 			.collect();
 
 		Ok(json!(kv_pairs))
+	}
+}
+impl RemoveCmd {
+	pub async fn execute(self) -> crate::SubCmdResult {
+		let payment_key = self.payment_key_file.read_key()?;
+
+		let client = self.common_arguments.get_ogmios_client().await?;
+
+		let result = run_remove(
+			self.genesis_utxo,
+			self.key,
+			&payment_key,
+			&client,
+			&FixedDelayRetries::five_minutes(),
+		)
+		.await?;
+		Ok(serde_json::json!(result))
 	}
 }
