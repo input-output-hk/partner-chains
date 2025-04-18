@@ -340,7 +340,7 @@ async fn governed_map_operations() {
 
 	assert_eq!(
 		listed_values,
-		vec![(key1, value1), (key4, value4),],
+		vec![(key1, value1), (key4.clone(), value4.clone()),],
 		"All inserted and not changed or deleted keys should be listed"
 	);
 	// Now test the remove functionality

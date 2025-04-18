@@ -70,6 +70,7 @@ pub struct ListCmd {
 	genesis_utxo: UtxoId,
 }
 
+#[derive(Clone, Debug, clap::Parser)]
 pub struct RemoveCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,

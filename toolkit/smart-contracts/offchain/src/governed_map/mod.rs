@@ -77,7 +77,8 @@ pub async fn run_list<C: QueryLedgerState + QueryNetwork + Transactions + QueryU
 	let (validator, policy) = crate::scripts_data::governed_map_scripts(genesis_utxo, network)?;
 	let validator_address = validator.address_bech32(network)?;
 	let validator_utxos = ogmios_client.query_utxos(&[validator_address]).await?;
-	Ok(ogmios_utxos_to_governed_map_utxos(validator_utxos.into_iter(), policy.policy_id()))
+	Ok(ogmios_utxos_to_governed_map_utxos(validator_utxos.into_iter(), policy.policy_id())
+		.map(|(_, datum)| datum))
 }
 
 fn ogmios_utxos_to_governed_map_utxos(
