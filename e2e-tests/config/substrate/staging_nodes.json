@@ -128,7 +128,7 @@
             "mainchain_address": "addr_test1vq0sjaaupatuvl9x6aefdsd4whlqtfku93068qzkhf3u2rqt9cnuq",
             "mainchain_key": "./secrets/substrate/staging/keys/governance_authority/init.skey.json.decrypted"
         },
-        "selected_node": "validator-4",
+        "selected_node": "validator-1",
         "node": "${nodes_config[nodes][${nodes_config[selected_node]}]}",
         "token_conversion_rate": 9,
         "block_duration": 6,
