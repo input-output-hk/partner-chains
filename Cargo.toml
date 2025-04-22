@@ -122,7 +122,7 @@ itertools = "0.13.0"
 jsonrpsee = { version = "0.24", features = ["client-core", "server", "macros"] }
 libp2p-identity = "0.2"
 log = { version = "0.4", default-features = false }
-minicbor = { version = "0.20", features = ["alloc"] }
+minicbor = { version = "0.25.1", features = ["alloc"] }
 num-bigint = { version = "0.4.3", default-features = false }
 num-traits = { version = "0.2.17", default-features = false }
 parity-scale-codec = { package = "parity-scale-codec", version = "3.6.12", default-features = false, features = [
@@ -130,8 +130,8 @@ parity-scale-codec = { package = "parity-scale-codec", version = "3.6.12", defau
 	"max-encoded-len",
 ] }
 quickcheck = { version = "1.0.3" }
-pallas-addresses = { git = "https://github.com/txpipe/pallas.git", tag = "v0.31.0" }
-pallas-primitives = { git = "https://github.com/txpipe/pallas.git", tag = "v0.31.0" }
+pallas-addresses = { version = "0.32.0" }
+pallas-primitives = { version = "0.32.0" }
 proptest = { version = "1.5.0" }
 scale-info = { version = "2.11.1", default-features = false, features = [
 	"derive",
@@ -156,7 +156,7 @@ tempfile = "3.10.1"
 thiserror = { version = "1.0.48" }
 time = { version = "0.3.36", default-features = false }
 tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
-uplc = { version = "1.1.6" }
+uplc = { version = "1.1.16" }
 lazy_static = "1.4.0"
 lru = { version = "0.12.4" }
 pretty_assertions = { version = "1.4.1" }
