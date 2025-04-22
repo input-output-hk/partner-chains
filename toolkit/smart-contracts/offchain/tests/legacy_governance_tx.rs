@@ -1,5 +1,6 @@
 use cardano_serialization_lib::*;
 use hex_literal::hex;
+use pallas_primitives::MaybeIndefArray;
 use partner_chains_cardano_offchain::plutus_script::PlutusScript as PCPlutusScript;
 use partner_chains_cardano_offchain::scripts_data::version_oracle;
 use sidechain_domain::UtxoId;
@@ -20,12 +21,12 @@ pub fn legacy_governance_init_transaction(
 				.to_bytes();
 		PCPlutusScript::from_wrapped_cbor(raw_scripts::MULTI_SIG_POLICY, Language::new_plutus_v2())
 			.unwrap()
-			.apply_uplc_data(uplc::PlutusData::Array(vec![
-				uplc::PlutusData::Array(vec![uplc::PlutusData::BoundedBytes(
-					governance_authorithy_key_hash.into(),
-				)]),
+			.apply_uplc_data(uplc::PlutusData::Array(MaybeIndefArray::Indef(vec![
+				uplc::PlutusData::Array(MaybeIndefArray::Indef(vec![
+					uplc::PlutusData::BoundedBytes(governance_authorithy_key_hash.into()),
+				])),
 				uplc::PlutusData::BigInt(uplc::BigInt::Int(1.into())),
-			]))
+			])))
 			.unwrap()
 			.to_csl()
 	};
