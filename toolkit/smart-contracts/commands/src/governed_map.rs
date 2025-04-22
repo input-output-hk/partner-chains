@@ -1,9 +1,8 @@
-use crate::PaymentFilePath;
+use crate::{GenesisUtxo, PaymentFilePath};
 use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 use partner_chains_cardano_offchain::governed_map::{run_get, run_insert, run_list, run_remove};
 use serde_json::json;
 use sidechain_domain::byte_string::ByteString;
-use sidechain_domain::UtxoId;
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
@@ -42,8 +41,8 @@ pub struct InsertCmd {
 	value: ByteString,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
-	#[arg(long, short('g'))]
-	genesis_utxo: UtxoId,
+	#[clap(flatten)]
+	genesis_utxo: GenesisUtxo,
 }
 
 impl InsertCmd {
@@ -53,7 +52,7 @@ impl InsertCmd {
 		let client = self.common_arguments.get_ogmios_client().await?;
 
 		let result = run_insert(
-			self.genesis_utxo,
+			self.genesis_utxo.into(),
 			self.key,
 			self.value,
 			&payment_key,
@@ -69,8 +68,8 @@ impl InsertCmd {
 pub struct ListCmd {
 	#[clap(flatten)]
 	common_arguments: crate::CommonArguments,
-	#[arg(long, short('g'))]
-	genesis_utxo: UtxoId,
+	#[clap(flatten)]
+	genesis_utxo: GenesisUtxo,
 }
 
 #[derive(Clone, Debug, clap::Parser)]
@@ -81,14 +80,14 @@ pub struct RemoveCmd {
 	key: String,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
-	#[arg(long, short('g'))]
-	genesis_utxo: UtxoId,
+	#[clap(flatten)]
+	genesis_utxo: GenesisUtxo,
 }
 
 impl ListCmd {
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let client = self.common_arguments.get_ogmios_client().await?;
-		let kv_pairs: Vec<_> = run_list(self.genesis_utxo, &client)
+		let kv_pairs: Vec<_> = run_list(self.genesis_utxo.into(), &client)
 			.await?
 			.map(|datum| json!({"key": datum.key, "value": datum.value.to_hex_string()}))
 			.collect();
@@ -104,7 +103,7 @@ impl RemoveCmd {
 		let client = self.common_arguments.get_ogmios_client().await?;
 
 		let result = run_remove(
-			self.genesis_utxo,
+			self.genesis_utxo.into(),
 			self.key,
 			&payment_key,
 			&client,
@@ -121,14 +120,15 @@ pub struct GetCmd {
 	common_arguments: crate::CommonArguments,
 	#[arg(long)]
 	key: String,
-	#[arg(long, short('g'))]
-	genesis_utxo: UtxoId,
+	#[clap(flatten)]
+	genesis_utxo: GenesisUtxo,
 }
 
 impl GetCmd {
 	pub async fn execute(self) -> crate::SubCmdResult {
 		let client = self.common_arguments.get_ogmios_client().await?;
-		let Some(value) = run_get(self.genesis_utxo, self.key.clone(), &client).await? else {
+		let Some(value) = run_get(self.genesis_utxo.into(), self.key.clone(), &client).await?
+		else {
 			return Ok(json!({}).into());
 		};
 

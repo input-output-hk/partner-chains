@@ -112,6 +112,19 @@ impl PaymentFilePath {
 	}
 }
 
+#[derive(Clone, Debug, clap::Parser)]
+pub(crate) struct GenesisUtxo {
+	/// Genesis UTXO that identifies the partner chain.
+	#[arg(long, short = 'c')]
+	genesis_utxo: UtxoId,
+}
+
+impl From<GenesisUtxo> for UtxoId {
+	fn from(value: GenesisUtxo) -> Self {
+		value.genesis_utxo
+	}
+}
+
 // Parses public keys in formatted as SIDECHAIN_KEY:AURA_KEY:GRANDPA_KEY
 pub(crate) fn parse_partnerchain_public_keys(
 	partner_chain_public_keys: &str,
