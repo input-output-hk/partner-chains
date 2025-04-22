@@ -11,29 +11,26 @@ outputs: {}
 runs:
   using: composite
   steps:
-    - name: Install kubectl and awscli
-      shell: bash
+    - name: Install kubectl, kubernetes-helm, and awscli
       run: |
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-        chmod +x ./kubectl && sudo mv ./kubectl /usr/local/bin/kubectl
-
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
-        unzip -o awscliv2.zip
-        sudo ./aws/install --update
+        chmod +x ./kubectl
+        sudo mv ./kubectl /usr/local/bin/kubectl
+        curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+        sudo apt-get install apt-transport-https --yes
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+        sudo apt-get update
+        sudo apt-get install helm
+      shell: bash
 
     - name: Configure kubectl
-      shell: bash
-      env:
-        KUBECONFIG_BASE64: ${{ env.kubeconfig_base64 }}
-        K8S_SERVER:       ${{ env.K8S_SERVER }}
-        K8S_SA_TOKEN:     ${{ env.K8S_SA_TOKEN }}
       run: |
-        echo "$KUBECONFIG_BASE64" | base64 --decode > "$RUNNER_TEMP/kubeconfig.yaml"
-        export KUBECONFIG="$RUNNER_TEMP/kubeconfig.yaml"
-        kubectl config set-cluster my-cluster --server="$K8S_SERVER" --insecure-skip-tls-verify
-        kubectl config set-credentials github-actions --token="$K8S_SA_TOKEN"
+        echo "${{ env.kubeconfig_base64 }}" | base64 --decode > ${{ runner.temp }}/kubeconfig.yaml
+        kubectl config set-cluster my-cluster --server=${{ env.K8S_SERVER }} --insecure-skip-tls-verify=true
+        kubectl config set-credentials github-actions --token=${{ env.K8S_SA_TOKEN }}
         kubectl config set-context my-context --cluster=my-cluster --user=github-actions --namespace=default
         kubectl config use-context my-context
+      shell: bash
 
     - name: Download chain‑spec artifacts
       uses: actions/download-artifact@v4
