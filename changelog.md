@@ -68,6 +68,20 @@ Signing and transaction submission can be done in other ways as well.
 * `sign-block-producer-metadata` command to `cli-commands` for signing block producer metadata upsert message
 * `db-sync-sqlx` crate containing Rust types representing Cardano primitives present in postgres tables populated by Db-Sync
 
+# v1.6.1
+
+## Changed
+
+* Default `smart-contracts` timeout from 2 minutes to 5 minutes
+
+## Fixed
+
+* `governance init` when genesis utxo had a script attached, then transaction fee was sometimes calculated incorrectly
+
+## Removed
+
+* Removed unnecessary transitive dependencies from multiple crates
+
 # v1.6.0
 
 ## Changed
