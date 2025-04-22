@@ -271,7 +271,7 @@ fn remove_key_value_tx(
 		inputs.add_script_utxo_input(
 			utxo,
 			validator,
-			&PlutusData::new_bytes(vec![]),
+			&unit_plutus_data(),
 			&costs.get_spend(*spend_indicies.get(ix).unwrap_or(&0)),
 		)?;
 	}

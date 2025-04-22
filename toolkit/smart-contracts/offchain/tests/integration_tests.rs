@@ -8,6 +8,7 @@
 
 use cardano_serialization_lib::{NetworkIdKind, Transaction, Vkeywitness};
 use hex_literal::hex;
+use itertools::Itertools;
 use ogmios_client::{
 	jsonrpsee::{client_for_url, OgmiosClients},
 	query_ledger_state::{QueryLedgerState, QueryUtxoByUtxoId},
@@ -339,8 +340,11 @@ async fn governed_map_operations() {
 		.collect();
 
 	assert_eq!(
-		listed_values,
-		vec![(key1.clone(), value1.clone()), (key4.clone(), value4.clone()),],
+		listed_values.iter().sorted().collect::<Vec<_>>(),
+		vec![(key1.clone(), value1.clone()), (key4.clone(), value4.clone()),]
+			.iter()
+			.sorted()
+			.collect::<Vec<_>>(),
 		"All inserted and not changed or deleted keys should be listed"
 	);
 	// Now test the remove functionality

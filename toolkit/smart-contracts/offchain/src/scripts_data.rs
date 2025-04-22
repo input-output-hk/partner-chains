@@ -169,13 +169,13 @@ pub(crate) fn governed_map_scripts(
 ) -> Result<(PlutusScript, PlutusScript), anyhow::Error> {
 	let version_oracle_data = version_oracle(genesis_utxo, network)?;
 	let validator = PlutusScript::from_wrapped_cbor(
-		raw_scripts::GENERIC_CONTAINER_VALIDATOR,
+		raw_scripts::GOVERNED_MAP_VALIDATOR,
 		Language::new_plutus_v2(),
 	)?
 	.apply_data(genesis_utxo)?
 	.apply_data(version_oracle_data.policy_id())?;
 	let policy = PlutusScript::from_wrapped_cbor(
-		raw_scripts::GENERIC_CONTAINER_POLICY,
+		raw_scripts::GOVERNED_MAP_POLICY,
 		Language::new_plutus_v2(),
 	)?
 	.apply_data(genesis_utxo)?
@@ -293,7 +293,7 @@ mod tests {
 				version_oracle_validator:
 					"addr_test1wqxm9e576k5ew7g7ctuqx77p9u7zytesnjsx54q2etck00gqplk0l".into(),
 				governed_map_validator:
-					"addr_test1wrgswjxke7a5zghreggpmk52nm4y7l3jst34hgeqexvparcln6wke".into(),
+					"addr_test1wppqfuvptxq3rwv2qwke2dkh8vd0mmc8k4r6a44k86tpckss2zg4v".into(),
 			},
 			policy_ids: PolicyIds {
 				d_parameter: PolicyId(hex!(

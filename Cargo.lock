@@ -6699,6 +6699,7 @@ dependencies = [
  "fraction",
  "hex",
  "hex-literal",
+ "itertools 0.13.0",
  "log",
  "minicbor 0.20.0",
  "ogmios-client",
@@ -7913,8 +7914,8 @@ dependencies = [
 
 [[package]]
 name = "raw-scripts"
-version = "7.1.0"
-source = "git+https://github.com/input-output-hk/partner-chains-smart-contracts.git?tag=v7.1.0#32ec5bb6967cd9c9c1b95af2cb4468b54ad0c148"
+version = "7.1.1"
+source = "git+https://github.com/input-output-hk/partner-chains-smart-contracts.git?tag=v7.1.1#1861a496b3216b64d3fafd8d7910fb5d94077bb8"
 dependencies = [
  "hex-literal",
 ]
