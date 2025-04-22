@@ -112,55 +112,68 @@
 <a href=#112 id=112 data-nosnippet>112</a>	}
 <a href=#113 id=113 data-nosnippet>113</a>}
 <a href=#114 id=114 data-nosnippet>114</a>
-<a href=#115 id=115 data-nosnippet>115</a><span class="comment">// Parses public keys in formatted as SIDECHAIN_KEY:AURA_KEY:GRANDPA_KEY
-<a href=#116 id=116 data-nosnippet>116</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>parse_partnerchain_public_keys(
-<a href=#117 id=117 data-nosnippet>117</a>	partner_chain_public_keys: <span class="kw-2">&amp;</span>str,
-<a href=#118 id=118 data-nosnippet>118</a>) -&gt; CmdResult&lt;PermissionedCandidateData&gt; {
-<a href=#119 id=119 data-nosnippet>119</a>	<span class="kw">let </span>partner_chain_public_keys = partner_chain_public_keys.replace(<span class="string">"0x"</span>, <span class="string">""</span>);
-<a href=#120 id=120 data-nosnippet>120</a>	<span class="kw">if let </span>[sidechain_pub_key, aura_pub_key, grandpa_pub_key] =
-<a href=#121 id=121 data-nosnippet>121</a>		partner_chain_public_keys.split(<span class="string">":"</span>).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()[..]
-<a href=#122 id=122 data-nosnippet>122</a>	{
-<a href=#123 id=123 data-nosnippet>123</a>		<span class="prelude-val">Ok</span>(PermissionedCandidateData {
-<a href=#124 id=124 data-nosnippet>124</a>			sidechain_public_key: SidechainPublicKey(hex::decode(sidechain_pub_key)<span class="question-mark">?</span>),
-<a href=#125 id=125 data-nosnippet>125</a>			aura_public_key: AuraPublicKey(hex::decode(aura_pub_key)<span class="question-mark">?</span>),
-<a href=#126 id=126 data-nosnippet>126</a>			grandpa_public_key: GrandpaPublicKey(hex::decode(grandpa_pub_key)<span class="question-mark">?</span>),
-<a href=#127 id=127 data-nosnippet>127</a>		})
-<a href=#128 id=128 data-nosnippet>128</a>	} <span class="kw">else </span>{
-<a href=#129 id=129 data-nosnippet>129</a>		<span class="prelude-val">Err</span>(<span class="string">"Failed to parse partner chain public keys."</span>.into())
-<a href=#130 id=130 data-nosnippet>130</a>	}
-<a href=#131 id=131 data-nosnippet>131</a>}
-<a href=#132 id=132 data-nosnippet>132</a>
-<a href=#133 id=133 data-nosnippet>133</a><span class="attr">#[cfg(test)]
-<a href=#134 id=134 data-nosnippet>134</a></span><span class="kw">mod </span>test {
-<a href=#135 id=135 data-nosnippet>135</a>	<span class="kw">use </span><span class="kw">crate</span>::parse_partnerchain_public_keys;
-<a href=#136 id=136 data-nosnippet>136</a>	<span class="kw">use </span>hex_literal::hex;
-<a href=#137 id=137 data-nosnippet>137</a>	<span class="kw">use </span>sidechain_domain::{
-<a href=#138 id=138 data-nosnippet>138</a>		AuraPublicKey, GrandpaPublicKey, PermissionedCandidateData, SidechainPublicKey,
-<a href=#139 id=139 data-nosnippet>139</a>	};
-<a href=#140 id=140 data-nosnippet>140</a>
-<a href=#141 id=141 data-nosnippet>141</a>	<span class="attr">#[test]
-<a href=#142 id=142 data-nosnippet>142</a>	</span><span class="kw">fn </span>parse_partnerchain_public_keys_with_0x_prefix() {
-<a href=#143 id=143 data-nosnippet>143</a>		<span class="kw">let </span>input = <span class="string">"039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180:e85534c93315d60f808568d1dce5cb9e8ba6ed0b204209c5cc8f3bec56c10b73:cdf3e5b33f53c8b541bbaea383225c45654f24de38c585725f3cff25b2802f55"</span>;
-<a href=#144 id=144 data-nosnippet>144</a>		<span class="macro">assert_eq!</span>(parse_partnerchain_public_keys(input).unwrap(), expected_public_keys())
-<a href=#145 id=145 data-nosnippet>145</a>	}
-<a href=#146 id=146 data-nosnippet>146</a>
-<a href=#147 id=147 data-nosnippet>147</a>	<span class="attr">#[test]
-<a href=#148 id=148 data-nosnippet>148</a>	</span><span class="kw">fn </span>parse_partnerchain_public_keys_without_0x_prefix() {
-<a href=#149 id=149 data-nosnippet>149</a>		<span class="kw">let </span>input = <span class="string">"0x039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180:0xe85534c93315d60f808568d1dce5cb9e8ba6ed0b204209c5cc8f3bec56c10b73:0xcdf3e5b33f53c8b541bbaea383225c45654f24de38c585725f3cff25b2802f55"</span>;
-<a href=#150 id=150 data-nosnippet>150</a>		<span class="macro">assert_eq!</span>(parse_partnerchain_public_keys(input).unwrap(), expected_public_keys())
-<a href=#151 id=151 data-nosnippet>151</a>	}
-<a href=#152 id=152 data-nosnippet>152</a>
-<a href=#153 id=153 data-nosnippet>153</a>	<span class="kw">fn </span>expected_public_keys() -&gt; PermissionedCandidateData {
-<a href=#154 id=154 data-nosnippet>154</a>		PermissionedCandidateData {
-<a href=#155 id=155 data-nosnippet>155</a>			sidechain_public_key: SidechainPublicKey(
-<a href=#156 id=156 data-nosnippet>156</a>				<span class="macro">hex!</span>(<span class="string">"039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180"</span>).to_vec(),
-<a href=#157 id=157 data-nosnippet>157</a>			),
-<a href=#158 id=158 data-nosnippet>158</a>			aura_public_key: AuraPublicKey(
-<a href=#159 id=159 data-nosnippet>159</a>				<span class="macro">hex!</span>(<span class="string">"e85534c93315d60f808568d1dce5cb9e8ba6ed0b204209c5cc8f3bec56c10b73"</span>).to_vec(),
-<a href=#160 id=160 data-nosnippet>160</a>			),
-<a href=#161 id=161 data-nosnippet>161</a>			grandpa_public_key: GrandpaPublicKey(
-<a href=#162 id=162 data-nosnippet>162</a>				<span class="macro">hex!</span>(<span class="string">"cdf3e5b33f53c8b541bbaea383225c45654f24de38c585725f3cff25b2802f55"</span>).to_vec(),
-<a href=#163 id=163 data-nosnippet>163</a>			),
-<a href=#164 id=164 data-nosnippet>164</a>		}
-<a href=#165 id=165 data-nosnippet>165</a>	}
-<a href=#166 id=166 data-nosnippet>166</a>}</code></pre></div></section></main></body></html>
+<a href=#115 id=115 data-nosnippet>115</a><span class="attr">#[derive(Clone, Debug, clap::Parser)]
+<a href=#116 id=116 data-nosnippet>116</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>GenesisUtxo {
+<a href=#117 id=117 data-nosnippet>117</a>	<span class="doccomment">/// Genesis UTXO that identifies the partner chain.
+<a href=#118 id=118 data-nosnippet>118</a>	</span><span class="attr">#[arg(long, short = <span class="string">'c'</span>)]
+<a href=#119 id=119 data-nosnippet>119</a>	</span>genesis_utxo: UtxoId,
+<a href=#120 id=120 data-nosnippet>120</a>}
+<a href=#121 id=121 data-nosnippet>121</a>
+<a href=#122 id=122 data-nosnippet>122</a><span class="kw">impl </span>From&lt;GenesisUtxo&gt; <span class="kw">for </span>UtxoId {
+<a href=#123 id=123 data-nosnippet>123</a>	<span class="kw">fn </span>from(value: GenesisUtxo) -&gt; <span class="self">Self </span>{
+<a href=#124 id=124 data-nosnippet>124</a>		value.genesis_utxo
+<a href=#125 id=125 data-nosnippet>125</a>	}
+<a href=#126 id=126 data-nosnippet>126</a>}
+<a href=#127 id=127 data-nosnippet>127</a>
+<a href=#128 id=128 data-nosnippet>128</a><span class="comment">// Parses public keys in formatted as SIDECHAIN_KEY:AURA_KEY:GRANDPA_KEY
+<a href=#129 id=129 data-nosnippet>129</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>parse_partnerchain_public_keys(
+<a href=#130 id=130 data-nosnippet>130</a>	partner_chain_public_keys: <span class="kw-2">&amp;</span>str,
+<a href=#131 id=131 data-nosnippet>131</a>) -&gt; CmdResult&lt;PermissionedCandidateData&gt; {
+<a href=#132 id=132 data-nosnippet>132</a>	<span class="kw">let </span>partner_chain_public_keys = partner_chain_public_keys.replace(<span class="string">"0x"</span>, <span class="string">""</span>);
+<a href=#133 id=133 data-nosnippet>133</a>	<span class="kw">if let </span>[sidechain_pub_key, aura_pub_key, grandpa_pub_key] =
+<a href=#134 id=134 data-nosnippet>134</a>		partner_chain_public_keys.split(<span class="string">":"</span>).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;()[..]
+<a href=#135 id=135 data-nosnippet>135</a>	{
+<a href=#136 id=136 data-nosnippet>136</a>		<span class="prelude-val">Ok</span>(PermissionedCandidateData {
+<a href=#137 id=137 data-nosnippet>137</a>			sidechain_public_key: SidechainPublicKey(hex::decode(sidechain_pub_key)<span class="question-mark">?</span>),
+<a href=#138 id=138 data-nosnippet>138</a>			aura_public_key: AuraPublicKey(hex::decode(aura_pub_key)<span class="question-mark">?</span>),
+<a href=#139 id=139 data-nosnippet>139</a>			grandpa_public_key: GrandpaPublicKey(hex::decode(grandpa_pub_key)<span class="question-mark">?</span>),
+<a href=#140 id=140 data-nosnippet>140</a>		})
+<a href=#141 id=141 data-nosnippet>141</a>	} <span class="kw">else </span>{
+<a href=#142 id=142 data-nosnippet>142</a>		<span class="prelude-val">Err</span>(<span class="string">"Failed to parse partner chain public keys."</span>.into())
+<a href=#143 id=143 data-nosnippet>143</a>	}
+<a href=#144 id=144 data-nosnippet>144</a>}
+<a href=#145 id=145 data-nosnippet>145</a>
+<a href=#146 id=146 data-nosnippet>146</a><span class="attr">#[cfg(test)]
+<a href=#147 id=147 data-nosnippet>147</a></span><span class="kw">mod </span>test {
+<a href=#148 id=148 data-nosnippet>148</a>	<span class="kw">use </span><span class="kw">crate</span>::parse_partnerchain_public_keys;
+<a href=#149 id=149 data-nosnippet>149</a>	<span class="kw">use </span>hex_literal::hex;
+<a href=#150 id=150 data-nosnippet>150</a>	<span class="kw">use </span>sidechain_domain::{
+<a href=#151 id=151 data-nosnippet>151</a>		AuraPublicKey, GrandpaPublicKey, PermissionedCandidateData, SidechainPublicKey,
+<a href=#152 id=152 data-nosnippet>152</a>	};
+<a href=#153 id=153 data-nosnippet>153</a>
+<a href=#154 id=154 data-nosnippet>154</a>	<span class="attr">#[test]
+<a href=#155 id=155 data-nosnippet>155</a>	</span><span class="kw">fn </span>parse_partnerchain_public_keys_with_0x_prefix() {
+<a href=#156 id=156 data-nosnippet>156</a>		<span class="kw">let </span>input = <span class="string">"039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180:e85534c93315d60f808568d1dce5cb9e8ba6ed0b204209c5cc8f3bec56c10b73:cdf3e5b33f53c8b541bbaea383225c45654f24de38c585725f3cff25b2802f55"</span>;
+<a href=#157 id=157 data-nosnippet>157</a>		<span class="macro">assert_eq!</span>(parse_partnerchain_public_keys(input).unwrap(), expected_public_keys())
+<a href=#158 id=158 data-nosnippet>158</a>	}
+<a href=#159 id=159 data-nosnippet>159</a>
+<a href=#160 id=160 data-nosnippet>160</a>	<span class="attr">#[test]
+<a href=#161 id=161 data-nosnippet>161</a>	</span><span class="kw">fn </span>parse_partnerchain_public_keys_without_0x_prefix() {
+<a href=#162 id=162 data-nosnippet>162</a>		<span class="kw">let </span>input = <span class="string">"0x039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180:0xe85534c93315d60f808568d1dce5cb9e8ba6ed0b204209c5cc8f3bec56c10b73:0xcdf3e5b33f53c8b541bbaea383225c45654f24de38c585725f3cff25b2802f55"</span>;
+<a href=#163 id=163 data-nosnippet>163</a>		<span class="macro">assert_eq!</span>(parse_partnerchain_public_keys(input).unwrap(), expected_public_keys())
+<a href=#164 id=164 data-nosnippet>164</a>	}
+<a href=#165 id=165 data-nosnippet>165</a>
+<a href=#166 id=166 data-nosnippet>166</a>	<span class="kw">fn </span>expected_public_keys() -&gt; PermissionedCandidateData {
+<a href=#167 id=167 data-nosnippet>167</a>		PermissionedCandidateData {
+<a href=#168 id=168 data-nosnippet>168</a>			sidechain_public_key: SidechainPublicKey(
+<a href=#169 id=169 data-nosnippet>169</a>				<span class="macro">hex!</span>(<span class="string">"039799ff93d184146deacaa455dade51b13ed16f23cdad11d1ad6af20103391180"</span>).to_vec(),
+<a href=#170 id=170 data-nosnippet>170</a>			),
+<a href=#171 id=171 data-nosnippet>171</a>			aura_public_key: AuraPublicKey(
+<a href=#172 id=172 data-nosnippet>172</a>				<span class="macro">hex!</span>(<span class="string">"e85534c93315d60f808568d1dce5cb9e8ba6ed0b204209c5cc8f3bec56c10b73"</span>).to_vec(),
+<a href=#173 id=173 data-nosnippet>173</a>			),
+<a href=#174 id=174 data-nosnippet>174</a>			grandpa_public_key: GrandpaPublicKey(
+<a href=#175 id=175 data-nosnippet>175</a>				<span class="macro">hex!</span>(<span class="string">"cdf3e5b33f53c8b541bbaea383225c45654f24de38c585725f3cff25b2802f55"</span>).to_vec(),
+<a href=#176 id=176 data-nosnippet>176</a>			),
+<a href=#177 id=177 data-nosnippet>177</a>		}
+<a href=#178 id=178 data-nosnippet>178</a>	}
+<a href=#179 id=179 data-nosnippet>179</a>}</code></pre></div></section></main></body></html>
