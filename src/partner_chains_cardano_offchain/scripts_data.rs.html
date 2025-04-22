@@ -169,13 +169,13 @@
 <a href=#169 id=169 data-nosnippet>169</a>) -&gt; <span class="prelude-ty">Result</span>&lt;(PlutusScript, PlutusScript), anyhow::Error&gt; {
 <a href=#170 id=170 data-nosnippet>170</a>	<span class="kw">let </span>version_oracle_data = version_oracle(genesis_utxo, network)<span class="question-mark">?</span>;
 <a href=#171 id=171 data-nosnippet>171</a>	<span class="kw">let </span>validator = PlutusScript::from_wrapped_cbor(
-<a href=#172 id=172 data-nosnippet>172</a>		raw_scripts::GENERIC_CONTAINER_VALIDATOR,
+<a href=#172 id=172 data-nosnippet>172</a>		raw_scripts::GOVERNED_MAP_VALIDATOR,
 <a href=#173 id=173 data-nosnippet>173</a>		Language::new_plutus_v2(),
 <a href=#174 id=174 data-nosnippet>174</a>	)<span class="question-mark">?
 <a href=#175 id=175 data-nosnippet>175</a>	</span>.apply_data(genesis_utxo)<span class="question-mark">?
 <a href=#176 id=176 data-nosnippet>176</a>	</span>.apply_data(version_oracle_data.policy_id())<span class="question-mark">?</span>;
 <a href=#177 id=177 data-nosnippet>177</a>	<span class="kw">let </span>policy = PlutusScript::from_wrapped_cbor(
-<a href=#178 id=178 data-nosnippet>178</a>		raw_scripts::GENERIC_CONTAINER_POLICY,
+<a href=#178 id=178 data-nosnippet>178</a>		raw_scripts::GOVERNED_MAP_POLICY,
 <a href=#179 id=179 data-nosnippet>179</a>		Language::new_plutus_v2(),
 <a href=#180 id=180 data-nosnippet>180</a>	)<span class="question-mark">?
 <a href=#181 id=181 data-nosnippet>181</a>	</span>.apply_data(genesis_utxo)<span class="question-mark">?
@@ -293,7 +293,7 @@
 <a href=#293 id=293 data-nosnippet>293</a>				version_oracle_validator:
 <a href=#294 id=294 data-nosnippet>294</a>					<span class="string">"addr_test1wqxm9e576k5ew7g7ctuqx77p9u7zytesnjsx54q2etck00gqplk0l"</span>.into(),
 <a href=#295 id=295 data-nosnippet>295</a>				governed_map_validator:
-<a href=#296 id=296 data-nosnippet>296</a>					<span class="string">"addr_test1wrgswjxke7a5zghreggpmk52nm4y7l3jst34hgeqexvparcln6wke"</span>.into(),
+<a href=#296 id=296 data-nosnippet>296</a>					<span class="string">"addr_test1wppqfuvptxq3rwv2qwke2dkh8vd0mmc8k4r6a44k86tpckss2zg4v"</span>.into(),
 <a href=#297 id=297 data-nosnippet>297</a>			},
 <a href=#298 id=298 data-nosnippet>298</a>			policy_ids: PolicyIds {
 <a href=#299 id=299 data-nosnippet>299</a>				d_parameter: PolicyId(<span class="macro">hex!</span>(
