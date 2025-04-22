@@ -475,7 +475,7 @@ mod governed_map_remove_tx_tests {
 				assert_eq!(redeemer.data(), PlutusData::new_empty_constr_plutus_data(&0u64.into()));
 			} else if redeemer.tag() == RedeemerTag::new_spend() {
 				spend_count += 1;
-				assert_eq!(redeemer.data(), PlutusData::new_bytes(vec![]));
+				assert_eq!(redeemer.data(), PlutusData::new_empty_constr_plutus_data(&0u64.into()));
 				assert_eq!(redeemer.ex_units(), spend_ex_units());
 			}
 		}
