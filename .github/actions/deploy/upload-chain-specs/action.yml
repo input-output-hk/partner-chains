@@ -1,4 +1,4 @@
-name: "Upload Chain Spec Artifacts to Kubernetes"
+name: "Upload Chain Spec Artifacts to Kubernetes PVC"
 description: "Uploads chain spec artifacts to PVCs for devnet, staging-preview, and staging-preprod environments."
 
 inputs:
