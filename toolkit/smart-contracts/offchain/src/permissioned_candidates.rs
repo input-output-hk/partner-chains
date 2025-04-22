@@ -225,14 +225,12 @@ fn mint_permissioned_candidates_token_tx(
 ) -> anyhow::Result<Transaction> {
 	let mut tx_builder = TransactionBuilder::new(&get_builder_config(ctx)?);
 	// The essence of transaction: mint permissioned candidates token and set output with it, mint a governance token.
-	{
-		tx_builder.add_mint_one_script_token(
-			policy,
-			&empty_asset_name(),
-			&permissioned_candidates_policy_redeemer_data(),
-			&costs.get_mint(&policy.clone()),
-		)?;
-	}
+	tx_builder.add_mint_one_script_token(
+		policy,
+		&empty_asset_name(),
+		&permissioned_candidates_policy_redeemer_data(),
+		&costs.get_mint(&policy.clone()),
+	)?;
 	tx_builder.add_output_with_one_script_token(
 		validator,
 		policy,
