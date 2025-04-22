@@ -86,14 +86,22 @@ class SmartContracts:
         self.reserve = SmartContracts.Reserve(self)
         self.governance = SmartContracts.Governance(self)
 
-    def get_scripts(self):
-        cmd = (
-            f"{self.cli} smart-contracts get-scripts "
-            f"--genesis-utxo {self.config.genesis_utxo} "
-            f"--ogmios-url {self.config.stack_config.ogmios_url}"
-        )
-        response = self.run_command.run(cmd)
-        return parse_json_response(response)
+    def get_scripts(self) -> dict:
+        """Get all scripts from the node."""
+        cmd = f"{self.cli} get-scripts"
+        result = self.run_command.run(cmd)
+        if not result.stdout:
+            logging.error(f"Failed to get scripts: {result.stderr}")
+            raise PartnerChainsNodeException(f"Failed to get scripts: {result.stderr}")
+        try:
+            response = parse_json_response(result)
+            if not response or "addresses" not in response:
+                logging.error(f"Invalid response format from get_scripts: {response}")
+                raise PartnerChainsNodeException("Invalid response format from get_scripts")
+            return response
+        except Exception as e:
+            logging.error(f"Error parsing get_scripts response: {e}")
+            raise PartnerChainsNodeException(f"Error parsing get_scripts response: {e}")
 
     def update_d_param(self, permissioned_candidates_count, registered_candidates_count, payment_key):
         cmd = (

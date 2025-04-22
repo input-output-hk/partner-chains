@@ -42,43 +42,32 @@ class PartnerChainsNode:
             logging.error(f"Could not parse response of sign-address-association cmd: {result}")
             raise e
 
-    def sign_block_producer_metadata(self, metadata, cross_chain_signing_key):
-        cross_chain_signing_key = cross_chain_signing_key.to_string().hex()
-        metadata_str = json.dumps(metadata)
-        metadata_file_name = f"/tmp/metadata_{uuid.uuid4().hex}.json"
-        save_file_cmd = f"echo '{metadata_str}' > {metadata_file_name}"
-        self.run_command.run(save_file_cmd)
+    def sign_block_producer_metadata(self, stake_key_hash: str, payment_key: str) -> dict:
+        # Remove '0x' prefix if present and ensure correct length
+        if stake_key_hash.startswith('0x'):
+            stake_key_hash = stake_key_hash[2:]
+        if len(stake_key_hash) != 56:  # Expected length for stake key hash
+            logging.error(f"Invalid stake key hash length: {len(stake_key_hash)}")
+            raise PartnerChainsNodeException(f"Invalid stake key hash length: {len(stake_key_hash)}")
 
-        sign_block_producer_metadata_cmd = (
+        cmd = (
             f"{self.cli} sign-block-producer-metadata "
-            f"--genesis-utxo {self.config.genesis_utxo} "
-            f"--metadata-file {metadata_file_name} "
-            f"--cross-chain-signing-key {cross_chain_signing_key}"
+            f"--stake-key-hash {stake_key_hash} "
+            f"--payment-key {payment_key}"
         )
-
-        result = self.run_command.run(sign_block_producer_metadata_cmd)
+        result = self.run_command.run(cmd)
         if not result.stdout:
-            logging.error(f"Command failed with stderr: {result.stderr}")
-            raise PartnerChainsNodeException("Failed to sign block producer metadata")
-            
+            logging.error(f"Failed to sign block producer metadata: {result.stderr}")
+            raise PartnerChainsNodeException(f"Failed to sign block producer metadata: {result.stderr}")
         try:
-            response = json.loads(result.stdout)
-            return BlockProducerMetadataSignature(
-                cross_chain_pub_key=response["cross_chain_pub_key"],
-                cross_chain_pub_key_hash=response["cross_chain_pub_key_hash"],
-                encoded_message=response["encoded_message"],
-                encoded_metadata=response["encoded_metadata"],
-                signature=response["signature"],
-            )
-        except json.JSONDecodeError as e:
-            logging.error(f"Could not parse response of sign-block-producer-metadata cmd: {result.stdout}")
-            raise PartnerChainsNodeException(f"Invalid JSON response: {e}")
-        except KeyError as e:
-            logging.error(f"Missing required field in response: {e}")
-            raise PartnerChainsNodeException(f"Missing required field in response: {e}")
+            response = parse_json_response(result)
+            if not response or "signature" not in response:
+                logging.error(f"Invalid response format from sign_block_producer_metadata: {response}")
+                raise PartnerChainsNodeException("Invalid response format from sign_block_producer_metadata")
+            return response
         except Exception as e:
-            logging.error(f"Unexpected error in sign-block-producer-metadata: {e}")
-            raise PartnerChainsNodeException(f"Unexpected error: {e}")
+            logging.error(f"Error parsing sign_block_producer_metadata response: {e}")
+            raise PartnerChainsNodeException(f"Error parsing sign_block_producer_metadata response: {e}")
 
     def get_signatures(
         self,

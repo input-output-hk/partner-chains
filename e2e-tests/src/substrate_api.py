@@ -437,14 +437,43 @@ class SubstrateApi(BlockchainApi):
         return rotation_candidates
 
     def get_permissioned_candidates(self, mc_epoch, valid_only):
-        logger.info(f"Getting permissioned candidates for {mc_epoch} MC epoch.")
+        logger.info(f"Getting permissioned candidates for MC epoch {mc_epoch} (valid_only={valid_only})")
         response = self.partner_chain_rpc.partner_chain_get_ariadne_parameters(mc_epoch)
+        
         if response.error:
-            logger.error(f"Couldn't get permissioned candidates for {mc_epoch} MC epoch: {response.error}")
+            logger.error(f"Failed to get permissioned candidates for MC epoch {mc_epoch}")
+            logger.error(f"Error details: {json.dumps(response.error, indent=2)}")
             return None
+            
+        if not response.result:
+            logger.error(f"Empty result from get_ariadne_parameters for MC epoch {mc_epoch}")
+            logger.error("This could indicate a node sync issue or invalid epoch number")
+            return None
+            
+        if "permissionedCandidates" not in response.result:
+            logger.error(f"Response missing 'permissionedCandidates' field for MC epoch {mc_epoch}")
+            logger.error(f"Available fields in response: {list(response.result.keys())}")
+            logger.error(f"Full response: {json.dumps(response.result, indent=2)}")
+            return None
+            
         candidates = response.result["permissionedCandidates"]
+        if candidates is None:
+            logger.error(f"permissionedCandidates is None for MC epoch {mc_epoch}")
+            logger.error("This could indicate an uninitialized state or pending update")
+            return None
+            
+        logger.info(f"Found {len(candidates)} total candidates")
+        
         if valid_only:
-            candidates = [candidate for candidate in candidates if candidate["isValid"]]
+            valid_candidates = [candidate for candidate in candidates if candidate["isValid"]]
+            logger.info(f"Filtered to {len(valid_candidates)} valid candidates")
+            if len(valid_candidates) < len(candidates):
+                logger.warning(f"Excluded {len(candidates) - len(valid_candidates)} invalid candidates")
+                for candidate in candidates:
+                    if not candidate["isValid"]:
+                        logger.debug(f"Invalid candidate: {json.dumps(candidate, indent=2)}")
+            return valid_candidates
+            
         return candidates
 
     def get_permissioned_rotation_candidates(self, mc_epoch):
@@ -498,9 +527,41 @@ class SubstrateApi(BlockchainApi):
     def get_d_param(self, mc_epoch=None) -> DParam:
         if not mc_epoch:
             mc_epoch = self.get_mc_epoch()
-        response = self.partner_chain_rpc.partner_chain_get_ariadne_parameters(mc_epoch).result["dParameter"]
-        d_param = DParam(response["numPermissionedCandidates"], response["numRegisteredCandidates"])
-        return d_param
+            logger.info(f"No MC epoch provided, using current epoch: {mc_epoch}")
+        else:
+            logger.info(f"Getting d-parameter for MC epoch: {mc_epoch}")
+            
+        response = self.partner_chain_rpc.partner_chain_get_ariadne_parameters(mc_epoch)
+        
+        if response.error:
+            logger.error(f"Failed to get d-parameter for MC epoch {mc_epoch}")
+            logger.error(f"Error details: {json.dumps(response.error, indent=2)}")
+            raise PartnerChainRpcException(f"Failed to get d-parameter: {response.error}")
+        
+        if not response.result:
+            logger.error(f"Empty result from get_ariadne_parameters for MC epoch {mc_epoch}")
+            logger.error("This could indicate a node sync issue or invalid epoch number")
+            raise PartnerChainRpcException("Invalid response format from get_ariadne_parameters")
+            
+        if "dParameter" not in response.result:
+            logger.error(f"Response missing 'dParameter' field for MC epoch {mc_epoch}")
+            logger.error(f"Available fields in response: {list(response.result.keys())}")
+            logger.error(f"Full response: {json.dumps(response.result, indent=2)}")
+            raise PartnerChainRpcException("Invalid response format from get_ariadne_parameters")
+            
+        d_param = response.result["dParameter"]
+        logger.debug(f"Raw d-parameter response: {json.dumps(d_param, indent=2)}")
+        
+        if d_param["numPermissionedCandidates"] is None:
+            logger.error("numPermissionedCandidates is null in d-parameter response")
+            raise PartnerChainRpcException("Null value for numPermissionedCandidates in d-parameter")
+            
+        if d_param["numRegisteredCandidates"] is None:
+            logger.error("numRegisteredCandidates is null in d-parameter response")
+            raise PartnerChainRpcException("Null value for numRegisteredCandidates in d-parameter")
+            
+        logger.info(f"D-parameter values - Permissioned: {d_param['numPermissionedCandidates']}, Registered: {d_param['numRegisteredCandidates']}")
+        return DParam(d_param["numPermissionedCandidates"], d_param["numRegisteredCandidates"])
 
     def get_block_extrinsic_value(self, extrinsic_name, block_no):
         block = self.get_block(block_no)
@@ -674,7 +735,11 @@ class SubstrateApi(BlockchainApi):
         return tx
 
     def get_address_association(self, stake_key_hash):
-        result = self.substrate.query("AddressAssociations", "AddressAssociations", [f"0x{stake_key_hash}"])
+        # Remove 0x prefix if present
+        if stake_key_hash.startswith('0x'):
+            stake_key_hash = stake_key_hash[2:]
+            
+        result = self.substrate.query("AddressAssociations", "AddressAssociations", [stake_key_hash])
         logger.debug(f"Address association for {stake_key_hash}: {result}")
         return result.value
 
