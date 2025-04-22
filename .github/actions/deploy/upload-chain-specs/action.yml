@@ -47,9 +47,9 @@ runs:
           NS=$1
           SRC_FILE=$2
           DST_FILE=$3
-          POD_NAME=pvc-uploader-${RANDOM}
+          POD_NAME=pvc-uploader-${NS}
 
-          cat <<EOF | kubectl apply -f -
+          kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Pod
 metadata:
@@ -80,27 +80,17 @@ EOF
           kubectl delete pod ${POD_NAME} -n ${NS} --wait
         }
 
-        if [ -f ./devnet_chain_spec.json ]; then
-          upload_to_pvc sc devnet_chain_spec.json "devnet-chain-spec-${{ inputs.sha }}.json"
-        fi
-        if [ -f ./ci_preview_chain_spec.json ]; then
-          upload_to_pvc ci-preview ci_preview_chain_spec.json "ci-preview-chain-spec-${{ inputs.sha }}.json"
-        fi
-        if [ -f ./staging_preview_chain_spec.json ]; then
-          upload_to_pvc staging-preview staging_preview_chain_spec.json "staging-preview-chain-spec-${{ inputs.sha }}.json"
-        fi
-        if [ -f ./staging_preprod_chain_spec.json ]; then
-          upload_to_pvc staging-preprod staging_preprod_chain_spec.json "staging-preprod-chain-spec-${{ inputs.sha }}.json"
-        fi
+        [ -f ./devnet_chain_spec.json ] && upload_to_pvc sc devnet_chain_spec.json "devnet-chain-spec-${{ inputs.sha }}.json"
+        [ -f ./ci_preview_chain_spec.json ] && upload_to_pvc ci-preview ci_preview_chain_spec.json "ci-preview-chain-spec-${{ inputs.sha }}.json"
+        [ -f ./staging_preview_chain_spec.json ] && upload_to_pvc staging-preview staging_preview_chain_spec.json "staging-preview-chain-spec-${{ inputs.sha }}.json"
+        [ -f ./staging_preprod_chain_spec.json ] && upload_to_pvc staging-preprod staging_preprod_chain_spec.json "staging-preprod-chain-spec-${{ inputs.sha }}.json"
       shell: bash
 
     - name: Cleanup temp uploader pods
       run: |
         echo "Deleting pvc-uploader-* pods in known namespaces..."
-
-        kubectl delete pod -n sc --ignore-not-found --wait $(kubectl get pods -n sc -o name | grep '^pod/pvc-uploader-' || true)
-        kubectl delete pod -n ci-preview --ignore-not-found --wait $(kubectl get pods -n ci-preview -o name | grep '^pod/pvc-uploader-' || true)
-        kubectl delete pod -n staging-preview --ignore-not-found --wait $(kubectl get pods -n staging-preview -o name | grep '^pod/pvc-uploader-' || true)
-        kubectl delete pod -n staging-preprod --ignore-not-found --wait $(kubectl get pods -n staging-preprod -o name | grep '^pod/pvc-uploader-' || true)
+        kubectl delete pod pvc-uploader-sc -n sc --ignore-not-found --wait
+        kubectl delete pod pvc-uploader-ci-preview -n ci-preview --ignore-not-found --wait
+        kubectl delete pod pvc-uploader-staging-preview -n staging-preview --ignore-not-found --wait
+        kubectl delete pod pvc-uploader-staging-preprod -n staging-preprod --ignore-not-found --wait
       shell: bash
-
