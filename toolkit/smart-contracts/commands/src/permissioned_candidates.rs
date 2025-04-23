@@ -1,5 +1,4 @@
 use crate::{option_to_json, parse_partnerchain_public_keys, GenesisUtxo, PaymentFilePath};
-use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 use partner_chains_cardano_offchain::permissioned_candidates::upsert_permissioned_candidates;
 use std::fs::read_to_string;
 
@@ -46,7 +45,7 @@ impl UpsertPermissionedCandidatesCmd {
 			&permissioned_candidates,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::five_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(option_to_json(result))
