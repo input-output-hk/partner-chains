@@ -14,6 +14,8 @@ use sidechain_domain::*;
 #[derive(Clone, Debug, Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct Register3Cmd {
+	#[clap(flatten)]
+	common_arguments: crate::CommonArguments,
 	#[arg(long)]
 	pub genesis_utxo: UtxoId,
 	#[arg(long)]
@@ -69,6 +71,7 @@ impl CmdRun for Register3Cmd {
 		let runtime = tokio::runtime::Runtime::new().map_err(|e| anyhow::anyhow!(e))?;
 		runtime
 			.block_on(offchain.register(
+				self.common_arguments.retries(),
 				self.genesis_utxo,
 				&candidate_registration,
 				&payment_signing_key,
@@ -312,6 +315,7 @@ mod tests {
 
 	fn mock_register3_cmd() -> Register3Cmd {
 		Register3Cmd {
+			common_arguments: crate::CommonArguments { retry_delay_seconds: 5, retry_count: 59 },
             genesis_utxo: genesis_utxo(),
             registration_utxo: "cdefe62b0a0016c2ccf8124d7dda71f6865283667850cc7b471f761d2bc1eb13#0".parse().unwrap(),
             partner_chain_pub_key: "020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1".parse().unwrap(),

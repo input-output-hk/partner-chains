@@ -27,6 +27,7 @@ pub trait Register {
 	#[allow(async_fn_in_trait)]
 	async fn register(
 		&self,
+		retries: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		candidate_registration: &CandidateRegistration,
 		payment_signing_key: &CardanoPaymentSigningKey,
@@ -39,19 +40,14 @@ where
 {
 	async fn register(
 		&self,
+		retries: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		candidate_registration: &CandidateRegistration,
 		payment_signing_key: &CardanoPaymentSigningKey,
 	) -> Result<Option<McTxHash>, OffchainError> {
-		run_register(
-			genesis_utxo,
-			candidate_registration,
-			payment_signing_key,
-			self,
-			FixedDelayRetries::five_minutes(),
-		)
-		.await
-		.map_err(|e| OffchainError::InternalError(e.to_string()))
+		run_register(genesis_utxo, candidate_registration, payment_signing_key, self, retries)
+			.await
+			.map_err(|e| OffchainError::InternalError(e.to_string()))
 	}
 }
 
@@ -122,6 +118,7 @@ pub trait Deregister {
 	#[allow(async_fn_in_trait)]
 	async fn deregister(
 		&self,
+		retries: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		payment_signing_key: &CardanoPaymentSigningKey,
 		stake_ownership_pub_key: StakePoolPublicKey,
@@ -134,19 +131,14 @@ where
 {
 	async fn deregister(
 		&self,
+		retries: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		payment_signing_key: &CardanoPaymentSigningKey,
 		stake_ownership_pub_key: StakePoolPublicKey,
 	) -> Result<Option<McTxHash>, OffchainError> {
-		run_deregister(
-			genesis_utxo,
-			payment_signing_key,
-			stake_ownership_pub_key,
-			self,
-			FixedDelayRetries::five_minutes(),
-		)
-		.await
-		.map_err(|e| OffchainError::InternalError(e.to_string()))
+		run_deregister(genesis_utxo, payment_signing_key, stake_ownership_pub_key, self, retries)
+			.await
+			.map_err(|e| OffchainError::InternalError(e.to_string()))
 	}
 }
 

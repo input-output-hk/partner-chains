@@ -1,6 +1,7 @@
 use crate::io::IOContext;
 use crate::ogmios::{OgmiosRequest, OgmiosResponse};
 use anyhow::anyhow;
+use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 use partner_chains_cardano_offchain::d_param::UpsertDParam;
 use partner_chains_cardano_offchain::governance::MultiSigParameters;
 use partner_chains_cardano_offchain::init_governance::InitGovernance;
@@ -347,6 +348,7 @@ impl GetScriptsData for OffchainMock {
 impl InitGovernance for OffchainMock {
 	async fn init_governance(
 		&self,
+		_retries: FixedDelayRetries,
 		governance_authority: &MultiSigParameters,
 		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
@@ -363,6 +365,7 @@ impl InitGovernance for OffchainMock {
 impl UpsertDParam for OffchainMock {
 	async fn upsert_d_param(
 		&self,
+		_retries: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		d_parameter: &DParameter,
 		payment_signing_key: &CardanoPaymentSigningKey,
@@ -383,6 +386,7 @@ impl UpsertDParam for OffchainMock {
 impl Register for OffchainMock {
 	async fn register(
 		&self,
+		_retries: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		candidate_registration: &CandidateRegistration,
 		payment_signing_key: &CardanoPaymentSigningKey,
@@ -402,6 +406,7 @@ impl Register for OffchainMock {
 impl Deregister for OffchainMock {
 	async fn deregister(
 		&self,
+		_retries: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		payment_signing_key: &CardanoPaymentSigningKey,
 		stake_ownership_pub_key: StakePoolPublicKey,
@@ -421,6 +426,7 @@ impl Deregister for OffchainMock {
 impl UpsertPermissionedCandidates for OffchainMock {
 	async fn upsert_permissioned_candidates(
 		&self,
+		_retries: FixedDelayRetries,
 		genesis_utxo: UtxoId,
 		candidates: &[sidechain_domain::PermissionedCandidateData],
 		payment_signing_key: &CardanoPaymentSigningKey,

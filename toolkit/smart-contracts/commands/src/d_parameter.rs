@@ -1,5 +1,4 @@
 use crate::{option_to_json, GenesisUtxo, PaymentFilePath};
-use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 use partner_chains_cardano_offchain::d_param::upsert_d_param;
 use sidechain_domain::DParameter;
 
@@ -31,7 +30,7 @@ impl UpsertDParameterCmd {
 			&d_param,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::five_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 

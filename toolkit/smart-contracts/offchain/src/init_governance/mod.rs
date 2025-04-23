@@ -25,6 +25,7 @@ pub trait InitGovernance {
 	#[allow(async_fn_in_trait)]
 	async fn init_governance(
 		&self,
+		retries: FixedDelayRetries,
 		governance_parameters: &MultiSigParameters,
 		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
@@ -37,6 +38,7 @@ where
 {
 	async fn init_governance(
 		&self,
+		retries: FixedDelayRetries,
 		governance_parameters: &MultiSigParameters,
 		payment_key: &CardanoPaymentSigningKey,
 		genesis_utxo_id: UtxoId,
@@ -46,7 +48,7 @@ where
 			payment_key,
 			Some(genesis_utxo_id),
 			self,
-			FixedDelayRetries::five_minutes(),
+			retries,
 		)
 		.await
 		.map(|result| result.tx_hash)

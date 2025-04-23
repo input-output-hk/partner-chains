@@ -1,10 +1,12 @@
 use ogmios_client::jsonrpsee::{client_for_url, OgmiosClients};
 use partner_chains_cardano_offchain::{
+	await_tx::FixedDelayRetries,
 	cardano_keys::{CardanoKeyFileContent, CardanoPaymentSigningKey},
 	multisig::MultiSigSmartContractResult,
 };
 use serde::Serialize;
 use sidechain_domain::*;
+use std::time::Duration;
 
 pub mod assemble_tx;
 pub mod d_parameter;
@@ -49,6 +51,10 @@ pub enum SmartContractsCmd {
 pub struct CommonArguments {
 	#[arg(default_value = "ws://localhost:1337", long, short = 'O')]
 	ogmios_url: String,
+	#[arg(default_value = "5", long)]
+	retry_delay_seconds: u64,
+	#[arg(default_value = "59", long)]
+	retry_count: usize,
 }
 
 impl CommonArguments {
@@ -56,6 +62,10 @@ impl CommonArguments {
 		Ok(client_for_url(&self.ogmios_url).await.map_err(|e| {
 			format!("Failed to connect to Ogmios at {} with: {}", &self.ogmios_url, e)
 		})?)
+	}
+
+	pub fn retries(&self) -> FixedDelayRetries {
+		FixedDelayRetries::new(Duration::from_secs(self.retry_delay_seconds), self.retry_count)
 	}
 }
 

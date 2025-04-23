@@ -7,9 +7,7 @@ use crate::multisig::submit_or_create_tx_to_sign;
 use crate::multisig::MultiSigSmartContractResult::TransactionSubmitted;
 use crate::plutus_script::PlutusScript;
 use crate::{
-	await_tx::{AwaitTx, FixedDelayRetries},
-	cardano_keys::CardanoPaymentSigningKey,
-	csl::TransactionContext,
+	await_tx::AwaitTx, cardano_keys::CardanoPaymentSigningKey, csl::TransactionContext,
 	multisig::MultiSigSmartContractResult,
 };
 use anyhow::anyhow;
@@ -61,7 +59,10 @@ pub async fn run_insert<
 		},
 		None => {
 			log::info!("There is no value stored for key '{}'. Inserting new one.", key);
-			Some(insert(&validator, &policy, key, value, ctx, genesis_utxo, ogmios_client).await?)
+			Some(
+				insert(&validator, &policy, key, value, ctx, genesis_utxo, ogmios_client, await_tx)
+					.await?,
+			)
 		},
 	};
 	if let Some(TransactionSubmitted(tx_hash)) = tx_hash_opt {
@@ -128,7 +129,10 @@ fn get_utxos_for_key(
 		.collect()
 }
 
-async fn insert<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
+async fn insert<
+	C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
 	validator: &PlutusScript,
 	policy: &PlutusScript,
 	key: String,
@@ -136,6 +140,7 @@ async fn insert<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByU
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
 	client: &C,
+	await_tx: &A,
 ) -> anyhow::Result<MultiSigSmartContractResult> {
 	let governance_data = GovernanceData::get(genesis_utxo, client).await?;
 
@@ -155,7 +160,7 @@ async fn insert<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByU
 		},
 		"Insert Key-Value pair",
 		client,
-		&FixedDelayRetries::five_minutes(),
+		await_tx,
 	)
 	.await
 }
@@ -216,7 +221,8 @@ pub async fn run_remove<
 			None
 		},
 		_ => Some(
-			remove(&validator, &policy, &utxos_for_key, ctx, genesis_utxo, ogmios_client).await?,
+			remove(&validator, &policy, &utxos_for_key, ctx, genesis_utxo, ogmios_client, await_tx)
+				.await?,
 		),
 	};
 	if let Some(TransactionSubmitted(tx_hash)) = tx_hash_opt {
@@ -225,13 +231,17 @@ pub async fn run_remove<
 	Ok(tx_hash_opt)
 }
 
-async fn remove<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
+async fn remove<
+	C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
 	validator: &PlutusScript,
 	policy: &PlutusScript,
 	utxos_for_key: &Vec<OgmiosUtxo>,
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
 	client: &C,
+	await_tx: &A,
 ) -> anyhow::Result<MultiSigSmartContractResult> {
 	let governance_data = GovernanceData::get(genesis_utxo, client).await?;
 
@@ -243,7 +253,7 @@ async fn remove<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByU
 		},
 		"Remove Key-Value pair",
 		client,
-		&FixedDelayRetries::five_minutes(),
+		await_tx,
 	)
 	.await
 }
@@ -309,8 +319,9 @@ pub async fn run_insert_with_force<
 	let ctx = TransactionContext::for_payment_key(payment_signing_key, ogmios_client).await?;
 	let (validator, policy) = crate::scripts_data::governed_map_scripts(genesis_utxo, ctx.network)?;
 
-	let tx_hash_opt =
-		Some(insert(&validator, &policy, key, value, ctx, genesis_utxo, ogmios_client).await?);
+	let tx_hash_opt = Some(
+		insert(&validator, &policy, key, value, ctx, genesis_utxo, ogmios_client, await_tx).await?,
+	);
 
 	if let Some(TransactionSubmitted(tx_hash)) = tx_hash_opt {
 		await_tx.await_tx_output(ogmios_client, UtxoId::new(tx_hash.0, 0)).await?;
@@ -360,6 +371,7 @@ pub async fn run_update<
 					ctx,
 					genesis_utxo,
 					ogmios_client,
+					await_tx,
 				)
 				.await?,
 			)
@@ -375,7 +387,10 @@ pub async fn run_update<
 	Ok(tx_hash_opt)
 }
 
-async fn update<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId>(
+async fn update<
+	C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
 	validator: &PlutusScript,
 	policy: &PlutusScript,
 	key: String,
@@ -384,6 +399,7 @@ async fn update<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByU
 	ctx: TransactionContext,
 	genesis_utxo: UtxoId,
 	client: &C,
+	await_tx: &A,
 ) -> anyhow::Result<MultiSigSmartContractResult> {
 	let governance_data = GovernanceData::get(genesis_utxo, client).await?;
 
@@ -404,7 +420,7 @@ async fn update<C: QueryLedgerState + Transactions + QueryNetwork + QueryUtxoByU
 		},
 		"Update Key-Value pair",
 		client,
-		&FixedDelayRetries::five_minutes(),
+		await_tx,
 	)
 	.await
 }
