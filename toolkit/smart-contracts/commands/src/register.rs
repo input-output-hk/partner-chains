@@ -2,10 +2,7 @@ use crate::{
 	option_to_json, parse_partnerchain_public_keys, transaction_submitted_json, GenesisUtxo,
 	PaymentFilePath,
 };
-use partner_chains_cardano_offchain::{
-	await_tx::FixedDelayRetries,
-	register::{run_deregister, run_register},
-};
+use partner_chains_cardano_offchain::register::{run_deregister, run_register};
 use sidechain_domain::{
 	AdaBasedStaking, CandidateRegistration, MainchainSignature, PermissionedCandidateData,
 	SidechainSignature, StakePoolPublicKey, UtxoId,
@@ -63,7 +60,7 @@ impl RegisterCmd {
 			&candidate_registration,
 			&payment_key,
 			&client,
-			FixedDelayRetries::five_minutes(),
+			self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(option_to_json(result.map(transaction_submitted_json)))
@@ -93,7 +90,7 @@ impl DeregisterCmd {
 			&payment_signing_key,
 			self.spo_public_key,
 			&client,
-			FixedDelayRetries::five_minutes(),
+			self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(option_to_json(result.map(transaction_submitted_json)))

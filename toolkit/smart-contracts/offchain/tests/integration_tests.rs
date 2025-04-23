@@ -21,7 +21,7 @@ use partner_chains_cardano_offchain::{
 	cardano_keys::CardanoPaymentSigningKey,
 	d_param,
 	governance::MultiSigParameters,
-	governed_map::{run_get, run_insert, run_insert_with_force, run_list, run_remove},
+	governed_map::{run_get, run_insert, run_insert_with_force, run_list, run_remove, run_update},
 	init_governance,
 	multisig::{MultiSigSmartContractResult, MultiSigTransactionData},
 	permissioned_candidates,
@@ -388,6 +388,50 @@ async fn governed_map_operations() {
 	assert_eq!(get_removed_key_result, None, "Get for non-existent key should return None");
 }
 
+#[tokio::test]
+async fn governed_map_update() {
+	// Initialize client and container
+	let image = GenericImage::new(TEST_IMAGE, TEST_IMAGE_TAG);
+	let client = Cli::default();
+	let container = client.run(image);
+	let client = initialize(&container).await;
+	let genesis_utxo = run_init_goveranance(&client).await;
+	let await_tx = FixedDelayRetries::new(Duration::from_millis(500), 100);
+	// Use the governance authority key
+	let skey = governance_authority_payment_key();
+
+	let insert = |k, v| run_governance_map_insert(genesis_utxo, k, v, &skey, &client, &await_tx);
+	let update = |k, v, expected| {
+		run_governance_map_update(genesis_utxo, k, v, expected, &skey, &client, &await_tx)
+	};
+
+	let key1 = "test_key".to_string();
+	let missing_key = "missing key".to_string();
+	let value1 = ByteString::from(hex::decode("0badfeed").unwrap());
+	let value2 = ByteString::from(hex::decode("0beefbed").unwrap());
+	let value3 = ByteString::from(hex::decode("0fabdeed").unwrap());
+	let value4 = ByteString::from(hex::decode("0cafedad").unwrap());
+	let wrong_value = ByteString::from(hex::decode("0000000000").unwrap());
+
+	let result = insert(key1.clone(), value1.clone()).await;
+	assert!(result.is_ok_and(|x| x.is_some()), "First key-value insertion should succeed");
+
+	let result = update(missing_key, value1, None).await;
+	assert!(result.is_err(), "Updating a non-existing key should fail");
+
+	let result = update(key1.clone(), value2.clone(), None).await;
+	assert!(result.is_ok_and(|x| x.is_some()), "Updating an existing key should succeed");
+
+	let result = update(key1.clone(), value3.clone(), Some(value2.clone())).await;
+	assert!(
+		result.is_ok_and(|x| x.is_some()),
+		"Updating an existing key should succeed with correct expected value"
+	);
+
+	let result = update(key1.clone(), value4.clone(), Some(wrong_value)).await;
+	assert!(result.is_err(), "Updating an existing key should fail with incorrect expected value");
+}
+
 async fn initialize<'a>(container: &Container<'a, GenericImage>) -> OgmiosClients {
 	let ogmios_port = container.get_host_port_ipv4(1337);
 	println!("Ogmios port: {}", ogmios_port);
@@ -649,6 +693,7 @@ async fn run_register<T: QueryLedgerState + Transactions + QueryNetwork + QueryU
 	let registration_utxo = eve_utxos.first().unwrap().utxo_id();
 	client
 		.register(
+			FixedDelayRetries::five_minutes(),
 			genesis_utxo,
 			&CandidateRegistration {
 				stake_ownership: AdaBasedStaking {
@@ -884,6 +929,32 @@ async fn run_governance_map_remove<
 	await_tx: &A,
 ) -> Result<Option<MultiSigSmartContractResult>, anyhow::Error> {
 	let result = run_remove(genesis_utxo, key, payment_signing_key, client, await_tx).await;
+	result.iter().for_each(|x| x.iter().for_each(cleanup_temp_wallet_file));
+	result
+}
+
+async fn run_governance_map_update<
+	T: QueryLedgerState + QueryNetwork + Transactions + QueryUtxoByUtxoId,
+	A: AwaitTx,
+>(
+	genesis_utxo: UtxoId,
+	key: String,
+	value: ByteString,
+	expected_current_value: Option<ByteString>,
+	payment_signing_key: &CardanoPaymentSigningKey,
+	client: &T,
+	await_tx: &A,
+) -> Result<Option<MultiSigSmartContractResult>, anyhow::Error> {
+	let result = run_update(
+		genesis_utxo,
+		key,
+		value,
+		expected_current_value,
+		payment_signing_key,
+		client,
+		await_tx,
+	)
+	.await;
 	result.iter().for_each(|x| x.iter().for_each(cleanup_temp_wallet_file));
 	result
 }

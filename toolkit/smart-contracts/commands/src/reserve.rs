@@ -1,14 +1,11 @@
 use crate::{option_to_json, transaction_submitted_json, GenesisUtxo, PaymentFilePath};
-use partner_chains_cardano_offchain::{
-	await_tx::FixedDelayRetries,
-	reserve::{
-		create::{create_reserve_utxo, ReserveParameters},
-		deposit::deposit_to_reserve,
-		handover::handover_reserve,
-		init::init_reserve_management,
-		release::release_reserve_funds,
-		update_settings::update_reserve_settings,
-	},
+use partner_chains_cardano_offchain::reserve::{
+	create::{create_reserve_utxo, ReserveParameters},
+	deposit::deposit_to_reserve,
+	handover::handover_reserve,
+	init::init_reserve_management,
+	release::release_reserve_funds,
+	update_settings::update_reserve_settings,
 };
 use sidechain_domain::{AssetId, ScriptHash, UtxoId};
 use std::num::NonZero;
@@ -61,7 +58,7 @@ impl InitReserveCmd {
 			self.genesis_utxo.into(),
 			&payment_key,
 			&client,
-			&FixedDelayRetries::five_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(serde_json::json!(result))
@@ -100,7 +97,7 @@ impl CreateReserveCmd {
 			self.genesis_utxo.into(),
 			&payment_key,
 			&client,
-			&FixedDelayRetries::five_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(serde_json::json!(result))
@@ -129,7 +126,7 @@ impl DepositReserveCmd {
 			self.genesis_utxo.into(),
 			&payment_key,
 			&client,
-			&FixedDelayRetries::five_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(serde_json::json!(result))
@@ -159,7 +156,7 @@ impl UpdateReserveSettingsCmd {
 			&payment_key,
 			self.total_accrued_function_script_hash,
 			&client,
-			&FixedDelayRetries::five_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(option_to_json(result))
@@ -185,7 +182,7 @@ impl HandoverReserveCmd {
 			self.genesis_utxo,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::five_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(serde_json::json!(result))
@@ -219,7 +216,7 @@ impl ReleaseReserveCmd {
 			self.reference_utxo,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::five_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(transaction_submitted_json(result))

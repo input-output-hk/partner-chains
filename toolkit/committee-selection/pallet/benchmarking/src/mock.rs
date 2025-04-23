@@ -26,6 +26,7 @@ type AuthorityId = AccountId32;
 	MaxEncodedLen,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	Serialize,
 	Deserialize,
 	TypeInfo,

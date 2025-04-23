@@ -10,6 +10,7 @@ to the issue.
 - [ ] The size limit of 400 LOC isn't needlessly exceeded
 - [ ] The PR refers to a JIRA ticket (if one exists)
 - [ ] New tests are added if needed and existing tests are updated.
+- [ ] New code is documented and existing documentation is updated.
 - [ ] Relevant logging and metrics added
 - [ ] Any changes are noted in the `changelog.md` for affected crate
 - [ ] Self-reviewed the diff

@@ -48,6 +48,7 @@ macro_rules! impl_pallet_session_config {
 				pallet_partner_chains_session::pallet_session_compat::PalletSessionStubImpls;
 			type SessionHandler = <$type as pallet_partner_chains_session::Config>::SessionHandler;
 			type Keys = <$type as pallet_partner_chains_session::Config>::Keys;
+			type DisablingStrategy = ();
 			type WeightInfo = ();
 		}
 	};

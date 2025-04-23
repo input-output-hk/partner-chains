@@ -1,13 +1,14 @@
 use crate::{GenesisUtxo, PaymentFilePath};
-use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
-use partner_chains_cardano_offchain::governed_map::{run_get, run_insert, run_list, run_remove};
+use partner_chains_cardano_offchain::governed_map::{
+	run_get, run_insert, run_list, run_remove, run_update,
+};
 use serde_json::json;
 use sidechain_domain::byte_string::ByteString;
 
 #[derive(Clone, Debug, clap::Subcommand)]
 #[allow(clippy::large_enum_variant)]
 pub enum GovernedMapCmd {
-	/// Inserts a key-value pair into the Governed Gap. If a value for the key already exists it won't be updated.
+	/// Inserts a key-value pair into the Governed Map. If a value for the key already exists it won't be updated.
 	///
 	/// NOTE: In rare cases, race conditions may occur, and two inserts with the same key will both succeed.
 	/// In that case the second one in terms of block and transaction number is considered valid.
@@ -18,6 +19,8 @@ pub enum GovernedMapCmd {
 	Remove(RemoveCmd),
 	/// Retrieves the value stored in the Governed Map for the given key
 	Get(GetCmd),
+	/// Updates a key-value pair in the Governed Map. If the key is missing it won't be inserted.
+	Update(UpdateCmd),
 }
 
 impl GovernedMapCmd {
@@ -27,6 +30,7 @@ impl GovernedMapCmd {
 			Self::List(cmd) => cmd.execute().await,
 			Self::Remove(cmd) => cmd.execute().await,
 			Self::Get(cmd) => cmd.execute().await,
+			Self::Update(cmd) => cmd.execute().await,
 		}
 	}
 }
@@ -57,7 +61,7 @@ impl InsertCmd {
 			self.value,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::five_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(serde_json::json!(result))
@@ -78,6 +82,25 @@ pub struct RemoveCmd {
 	common_arguments: crate::CommonArguments,
 	#[arg(long)]
 	key: String,
+	#[clap(flatten)]
+	payment_key_file: PaymentFilePath,
+	#[clap(flatten)]
+	genesis_utxo: GenesisUtxo,
+}
+
+#[derive(Clone, Debug, clap::Parser)]
+pub struct UpdateCmd {
+	#[clap(flatten)]
+	common_arguments: crate::CommonArguments,
+	#[arg(long, help = "The key of the entry, UTF-8 encodable string.")]
+	key: String,
+	#[arg(long, help = "The value of the entry, hex encoded bytes.")]
+	value: ByteString,
+	#[arg(
+		long,
+		help = "If provided update will fail unless the current value matches the one on the ledger."
+	)]
+	current_value: Option<ByteString>,
 	#[clap(flatten)]
 	payment_key_file: PaymentFilePath,
 	#[clap(flatten)]
@@ -107,7 +130,7 @@ impl RemoveCmd {
 			self.key,
 			&payment_key,
 			&client,
-			&FixedDelayRetries::five_minutes(),
+			&self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(serde_json::json!(result))
@@ -133,5 +156,24 @@ impl GetCmd {
 		};
 
 		Ok(json!(value.to_hex_string()).into())
+	}
+}
+impl UpdateCmd {
+	pub async fn execute(self) -> crate::SubCmdResult {
+		let payment_key = self.payment_key_file.read_key()?;
+
+		let client = self.common_arguments.get_ogmios_client().await?;
+
+		let result = run_update(
+			self.genesis_utxo.into(),
+			self.key,
+			self.value,
+			self.current_value,
+			&payment_key,
+			&client,
+			&self.common_arguments.retries(),
+		)
+		.await?;
+		Ok(serde_json::json!(result))
 	}
 }

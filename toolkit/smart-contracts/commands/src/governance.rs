@@ -1,6 +1,5 @@
 use crate::{option_to_json, GenesisUtxo, PaymentFilePath};
 use partner_chains_cardano_offchain::{
-	await_tx::FixedDelayRetries,
 	governance::{get_governance_policy_summary, MultiSigParameters},
 	init_governance::run_init_governance,
 	update_governance::run_update_governance,
@@ -58,7 +57,7 @@ impl InitGovernanceCmd {
 			&payment_key,
 			self.genesis_utxo,
 			&client,
-			FixedDelayRetries::five_minutes(),
+			self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(serde_json::json!(result))
@@ -94,7 +93,7 @@ impl UpdateGovernanceCmd {
 			&payment_key,
 			self.genesis_utxo.into(),
 			&client,
-			FixedDelayRetries::five_minutes(),
+			self.common_arguments.retries(),
 		)
 		.await?;
 		Ok(serde_json::json!(result))

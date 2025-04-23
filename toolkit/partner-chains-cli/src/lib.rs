@@ -23,7 +23,24 @@ mod tests;
 
 use clap::Parser;
 use io::*;
+use partner_chains_cardano_offchain::await_tx::FixedDelayRetries;
 pub use runtime_bindings::{PartnerChainRuntime, PartnerChainRuntimeBindings, RuntimeTypeWrapper};
+use std::time::Duration;
+
+#[derive(Clone, Debug, clap::Parser)]
+#[command(author, version, about, long_about = None)]
+pub struct CommonArguments {
+	#[arg(default_value = "5", long)]
+	retry_delay_seconds: u64,
+	#[arg(default_value = "59", long)]
+	retry_count: usize,
+}
+
+impl CommonArguments {
+	pub fn retries(&self) -> FixedDelayRetries {
+		FixedDelayRetries::new(Duration::from_secs(self.retry_delay_seconds), self.retry_count)
+	}
+}
 
 #[derive(Clone, Debug, Parser)]
 #[command(
