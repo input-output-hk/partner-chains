@@ -5,7 +5,7 @@ extern crate alloc;
 use crate::{Datum, Datum::*, MapDatumEntry};
 
 use minicbor::{
-	data::Tag,
+	data::{IanaTag, Tag},
 	encode,
 	encode::{Encoder, Write},
 };
@@ -49,8 +49,8 @@ fn encode_integer<W: Write, C>(
 		_ => {
 			let (sign, bytes) = i.to_bytes_be();
 			match sign {
-				Sign::Plus => e.tag(Tag::PosBignum)?,
-				Sign::Minus => e.tag(Tag::NegBignum)?,
+				Sign::Plus => e.tag(IanaTag::PosBignum)?,
+				Sign::Minus => e.tag(IanaTag::NegBignum)?,
 				Sign::NoSign => unreachable!("NoSign is not possible here, since 0 is a valid i64"),
 			};
 			encode_bytestring(&bytes, e, ctx)
@@ -145,14 +145,14 @@ fn encode_entries<W: Write, C>(
 }
 
 fn constructor_small_tag(value: u64) -> Tag {
-	Tag::Unassigned(value + 121)
+	Tag::new(value + 121)
 }
 
 fn constructor_big_tag(value: u64) -> Tag {
-	Tag::Unassigned(1280 + value - 7)
+	Tag::new(1280 + value - 7)
 }
 
-const CONSTRUCTOR_OVER_LIMIT_TAG: Tag = Tag::Unassigned(102);
+const CONSTRUCTOR_OVER_LIMIT_TAG: Tag = Tag::new(102);
 
 #[cfg(test)]
 mod tests {

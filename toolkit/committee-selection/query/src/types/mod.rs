@@ -2,7 +2,7 @@ mod ariadne;
 mod registrations;
 
 pub use ariadne::*;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 pub use registrations::*;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
@@ -10,7 +10,17 @@ use sp_core::bytes::to_hex;
 use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 
 #[derive(
-	Clone, Eq, PartialEq, Encode, Decode, Default, TypeInfo, Debug, Serialize, Deserialize,
+	Clone,
+	Eq,
+	PartialEq,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Default,
+	TypeInfo,
+	Debug,
+	Serialize,
+	Deserialize,
 )]
 #[serde(rename_all = "camelCase")]
 pub struct GetCommitteeResponse {
@@ -46,7 +56,17 @@ impl GetCommitteeResponse {
 }
 
 #[derive(
-	Clone, Eq, PartialEq, Encode, Decode, Default, TypeInfo, Debug, Serialize, Deserialize,
+	Clone,
+	Eq,
+	PartialEq,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Default,
+	TypeInfo,
+	Debug,
+	Serialize,
+	Deserialize,
 )]
 #[serde(rename_all = "camelCase")]
 pub struct CommitteeMember {

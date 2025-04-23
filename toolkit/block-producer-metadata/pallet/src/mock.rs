@@ -8,7 +8,7 @@ use scale_info::TypeInfo;
 use sidechain_domain::byte_string::SizedByteString;
 use sidechain_domain::*;
 use sp_core::H256;
-use sp_runtime::codec::{Decode, Encode, MaxEncodedLen};
+use sp_runtime::codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 	AccountId32, BoundedVec, BuildStorage,
@@ -58,7 +58,9 @@ impl frame_system::Config for Test {
 	type PostTransactions = ();
 }
 
-#[derive(Clone, Debug, MaxEncodedLen, Encode, Decode, PartialEq, Eq, TypeInfo)]
+#[derive(
+	Clone, Debug, MaxEncodedLen, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo,
+)]
 pub struct BlockProducerUrlMetadata {
 	pub url: BoundedVec<u8, ConstU32<512>>,
 	pub hash: SizedByteString<32>,

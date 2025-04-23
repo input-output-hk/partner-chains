@@ -16,6 +16,7 @@ pub fn chain_spec() -> Result<ChainSpec, envy::Error> {
 		balances: BalancesConfig {
 			// Update if any endowed accounts are required.
 			balances: vec![],
+			dev_accounts: None,
 		},
 		aura: AuraConfig { authorities: vec![] },
 		grandpa: GrandpaConfig { authorities: vec![], ..Default::default() },

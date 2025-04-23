@@ -4,7 +4,7 @@ extern crate alloc;
 
 use alloc::fmt::Debug;
 use alloc::string::String;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sidechain_domain::{byte_string::*, *};
 use sp_inherents::*;
@@ -21,7 +21,18 @@ mod tests;
 pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"govrnmap";
 
 /// Cardano identifiers necessary for observation of the Governed Map
-#[derive(Debug, Clone, PartialEq, Eq, TypeInfo, Encode, Decode, MaxEncodedLen, Default)]
+#[derive(
+	Debug,
+	Clone,
+	PartialEq,
+	Eq,
+	TypeInfo,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	MaxEncodedLen,
+	Default,
+)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MainChainScriptsV1 {
 	pub validator_address: MainchainAddress,

@@ -5,7 +5,7 @@ use alloc::string::ToString;
 use alloc::vec::Vec;
 use byte_string_derive::byte_string;
 use derive_where::derive_where;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::de::Error as DeError;
 use serde::ser::Error as SerError;
@@ -43,7 +43,7 @@ impl Deref for ByteString {
 }
 
 // Constant size variant of `ByteString` that's usable as a runtime type
-#[derive(Eq, Clone, PartialEq, TypeInfo, MaxEncodedLen, Encode, Decode)]
+#[derive(Eq, Clone, PartialEq, TypeInfo, MaxEncodedLen, Encode, Decode, DecodeWithMemTracking)]
 #[byte_string(debug)]
 #[byte_string(to_hex_string)]
 #[cfg_attr(feature = "std", byte_string(decode_hex))]
@@ -71,7 +71,7 @@ impl<const N: usize> Default for SizedByteString<N> {
 }
 
 /// Byte-encoded text string with bounded length
-#[derive(TypeInfo, Encode, Decode, MaxEncodedLen)]
+#[derive(TypeInfo, Encode, Decode, DecodeWithMemTracking, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 #[derive_where(Clone, PartialEq, Eq, Default, PartialOrd, Ord)]
 pub struct BoundedString<T: Get<u32>>(pub BoundedVec<u8, T>);

@@ -25,7 +25,6 @@ derive_more = { workspace = true }
 num-traits = { workspace = true }
 num-derive = { workspace = true }
 sp-std = { workspace = true }
-lazy_static = { workspace = true }
 blake2b_simd = { workspace = true }
 figment = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
@@ -56,8 +55,4 @@ std = [
 	"ed25519-zebra",
 	"ed25519-zebra/std",
 ]
-serde = [
-	"dep:serde",
-	"scale-info/serde",
-	"sp-core/serde",
-]
+serde = ["dep:serde", "scale-info/serde", "sp-core/serde"]

@@ -62,7 +62,7 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use scale_info::TypeInfo;
 use sidechain_domain::{DelegatorKey, MainchainKeyHash, McEpochNumber};
 pub use sp_consensus_slots::{Slot, SlotDuration};
@@ -76,7 +76,9 @@ pub const INHERENT_IDENTIFIER: InherentIdentifier = *b"blokpart";
 /// Represents a block producer's delegator along with their number of shares in that block producer's pool.
 ///
 /// Values of this type can only be interpreted in the context of their enclosing [BlockProducerParticipationData].
-#[derive(Clone, Debug, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord)]
+#[derive(
+	Clone, Debug, PartialEq, Eq, Decode, DecodeWithMemTracking, Encode, TypeInfo, PartialOrd, Ord,
+)]
 pub struct DelegatorBlockParticipationData<DelegatorId> {
 	id: DelegatorId,
 	share: u64,
@@ -85,7 +87,9 @@ pub struct DelegatorBlockParticipationData<DelegatorId> {
 /// Aggregated data on block production of one block producer in one aggregation period.
 ///
 /// Values of this type can only be interpreted in the context of their enclosing [BlockProductionData].
-#[derive(Clone, Debug, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord)]
+#[derive(
+	Clone, Debug, PartialEq, Eq, Decode, DecodeWithMemTracking, Encode, TypeInfo, PartialOrd, Ord,
+)]
 pub struct BlockProducerParticipationData<BlockProducerId, DelegatorId> {
 	/// Block producer ID
 	block_producer: BlockProducerId,
@@ -100,7 +104,7 @@ pub struct BlockProducerParticipationData<BlockProducerId, DelegatorId> {
 /// Aggregated data on block production, grouped by the block producer and aggregation period (main chain epoch).
 ///
 /// When provided by the inherent data provider it should aggregate data since the previous `up_to_slot` to the current `up_to_slot`.
-#[derive(Clone, Debug, PartialEq, Eq, Decode, Encode, TypeInfo)]
+#[derive(Clone, Debug, PartialEq, Eq, Decode, DecodeWithMemTracking, Encode, TypeInfo)]
 pub struct BlockProductionData<BlockProducerId, DelegatorId> {
 	/// Data upper slot boundary.
 	up_to_slot: Slot,
@@ -143,7 +147,10 @@ impl<BlockProducerId, DelegatorId> BlockProductionData<BlockProducerId, Delegato
 
 #[derive(Encode, PartialEq)]
 #[cfg_attr(not(feature = "std"), derive(Debug))]
-#[cfg_attr(feature = "std", derive(Decode, thiserror::Error, sp_runtime::RuntimeDebug))]
+#[cfg_attr(
+	feature = "std",
+	derive(Decode, DecodeWithMemTracking, thiserror::Error, sp_runtime::RuntimeDebug)
+)]
 pub enum InherentError {
 	#[cfg_attr(feature = "std", error("Block participation inherent not produced when expected"))]
 	InherentRequired,
