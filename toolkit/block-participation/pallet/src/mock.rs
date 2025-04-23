@@ -25,9 +25,6 @@ pub mod mock_pallet {
 	pub trait Config: frame_system::Config {}
 
 	#[pallet::storage]
-	pub type CurrentSlot<T: Config> = StorageValue<_, Slot, ValueQuery>;
-
-	#[pallet::storage]
 	pub type SlotToPay<T: Config> = StorageMap<_, Twox64Concat, Slot, Slot, OptionQuery>;
 
 	#[pallet::storage]
