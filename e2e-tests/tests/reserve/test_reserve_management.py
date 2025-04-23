@@ -26,16 +26,43 @@ def init_reserve(api: BlockchainApi, payment_key):
 def native_token_initial_balance(
     api: BlockchainApi, governance_address, reserve_asset_id, mint_token, wait_until, config: ApiConfig
 ):
-    balance = api.get_mc_balance(governance_address, reserve_asset_id)
-    if balance < INITIAL_RESERVE_DEPOSIT:
-        mint_token(INITIAL_RESERVE_DEPOSIT)
-        wait_until(
-            lambda: api.get_mc_balance(governance_address, reserve_asset_id) == balance + INITIAL_RESERVE_DEPOSIT,
-            timeout=config.timeouts.main_chain_tx,
-        )
-        balance = balance + INITIAL_RESERVE_DEPOSIT
-    logging.info(f"Native token initial balance: {balance}")
-    return balance
+    try:
+        logging.info(f"Checking initial balance for {reserve_asset_id} at {governance_address}")
+        balance = api.get_mc_balance(governance_address, reserve_asset_id)
+        logging.info(f"Current balance: {balance}")
+        
+        if balance < INITIAL_RESERVE_DEPOSIT:
+            logging.info(f"Minting {INITIAL_RESERVE_DEPOSIT} tokens to reach required balance")
+            mint_result = mint_token(INITIAL_RESERVE_DEPOSIT)
+            logging.info(f"Mint transaction result: {mint_result}")
+            
+            try:
+                logging.info("Waiting for balance to update...")
+                wait_until(
+                    lambda: api.get_mc_balance(governance_address, reserve_asset_id) == balance + INITIAL_RESERVE_DEPOSIT,
+                    timeout=config.timeouts.main_chain_tx,
+                )
+                balance = balance + INITIAL_RESERVE_DEPOSIT
+                logging.info(f"Balance successfully updated to {balance}")
+            except TimeoutError as e:
+                current_balance = api.get_mc_balance(governance_address, reserve_asset_id)
+                logging.error(f"Failed to wait for balance update after {config.timeouts.main_chain_tx}s")
+                logging.error(f"Expected balance: {balance + INITIAL_RESERVE_DEPOSIT}")
+                logging.error(f"Current balance: {current_balance}")
+                logging.error(f"Mint transaction result: {mint_result}")
+                raise TimeoutError(
+                    f"Token balance did not update to expected value after {config.timeouts.main_chain_tx}s. "
+                    f"Expected: {balance + INITIAL_RESERVE_DEPOSIT}, Current: {current_balance}"
+                ) from e
+        else:
+            logging.info(f"Current balance {balance} already meets required amount {INITIAL_RESERVE_DEPOSIT}")
+            
+        return balance
+    except Exception as e:
+        logging.error(f"Failed to initialize native token balance: {str(e)}")
+        logging.error(f"Governance address: {governance_address}")
+        logging.error(f"Reserve asset ID: {reserve_asset_id}")
+        raise
 
 
 @fixture(scope="module")

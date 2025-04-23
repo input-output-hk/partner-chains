@@ -486,34 +486,50 @@ def skip_on_new_chain(request, full_mc_epoch_has_passed_since_deployment):
 
 @fixture(scope="session")
 def wait_until():
-    """Generic wait function until <condition> is True.
+    """
+    Wait until a condition is met.
 
-    Arguments:
-        condition {function} -- function name or lambda, e.g. lambda x: x + 1 == 2, x = 1
-        args {Any} -- position args used by <condition>
-
-    Keyword Arguments:
-        timeout {int} -- timeout in seconds (default: {180})
-        poll_interval {int} -- poll interval in seconds (default: {3})
-
-    Returns:
-        Any -- returns <condition> result, None if timed out.
+    :param condition: A function that returns True when the condition is met
+    :param args: Arguments to pass to the condition function
+    :param timeout: Maximum time to wait in seconds
+    :param poll_interval: Time between checks in seconds
+    :return: The result of the condition function if it returns True, None if timed out
     """
 
     def _wait_until(condition, *args, timeout=180, poll_interval=3):
         start = time.time()
-        logging.info(f"WAIT UNTIL: {condition}. TIMEOUT: {timeout}, POLL_INTERVAL: {poll_interval}")
+        condition_name = condition.__name__ if hasattr(condition, '__name__') else str(condition)
+        logging.info(f"Starting WAIT UNTIL for condition: {condition_name}")
+        logging.info(f"Timeout: {timeout}s, Poll interval: {poll_interval}s")
+        logging.info(f"Arguments: {args}")
+        
+        last_error = None
         while time.time() - start < timeout:
             try:
                 result = condition(*args)
                 if result:
-                    logging.info(f"WAIT UNTIL condition satisfied after {time.time() - start:.2f} seconds")
+                    elapsed = time.time() - start
+                    logging.info(f"Condition '{condition_name}' satisfied after {elapsed:.2f} seconds")
+                    logging.info(f"Result: {result}")
                     return result
-                logging.debug(f"WAIT UNTIL condition not satisfied yet, elapsed time: {time.time() - start:.2f} seconds")
+                elapsed = time.time() - start
+                logging.debug(f"Condition '{condition_name}' not satisfied yet (elapsed: {elapsed:.2f}s)")
             except Exception as e:
-                logging.warning(f"WAIT UNTIL condition check failed with error: {e}")
+                last_error = e
+                logging.warning(f"Condition '{condition_name}' check failed: {str(e)}")
+                logging.debug(f"Error details: {type(e).__name__}: {str(e)}")
             time.sleep(poll_interval)
-        raise TimeoutError(f"WAIT UNTIL function TIMED OUT after {timeout}s on {condition} with args {args}.")
+        
+        error_msg = (
+            f"WAIT UNTIL timed out after {timeout}s\n"
+            f"Condition: {condition_name}\n"
+            f"Arguments: {args}\n"
+        )
+        if last_error:
+            error_msg += f"Last error encountered: {type(last_error).__name__}: {str(last_error)}"
+        
+        logging.error(error_msg)
+        raise TimeoutError(error_msg)
 
     yield _wait_until
 
