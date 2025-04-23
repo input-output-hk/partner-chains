@@ -17,6 +17,7 @@ the mock data source has been changed to `MOCK_REGISTRATIONS_FILE` to match. Pro
 `mc_follower_method_time_elapsed` and `mc_follower_method_call_count` were also renamed to
 `partner_chains_data_source_method_time_elapsed` and `partner_chains_data_source_method_call_count` respectively.
 * Default `smart-contracts` timeout from 2 minutes to 5 minutes
+* Update polkadot-sdk to polkadot-stable2503.
 
 ## Removed
 
