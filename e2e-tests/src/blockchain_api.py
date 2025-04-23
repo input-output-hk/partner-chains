@@ -508,3 +508,57 @@ class BlockchainApi(ABC):
             int -- initial PC epoch
         """
         pass
+
+    @abstractmethod
+    def set_governed_map_address(self, address: str, policy_id: str, wallet: Wallet) -> Transaction:
+        """
+        Sets an address of governed map stored on the main chain.
+
+        Arguments:
+            address {str} -- An address to be set
+            policy_id {str} -- Policy ID
+            wallet {Wallet} -- Wallet used to sign the transaction
+
+        Returns:
+            tx {Transaction} -- Transaction object
+        """
+        pass
+
+    @abstractmethod
+    def get_governed_map(self) -> dict:
+        """
+        Retrieves the governed map from the main chain.
+
+        Returns:
+            dict -- Governed map
+        """
+        pass
+
+    @abstractmethod
+    def get_governed_map_key(self, key: str) -> str:
+        """
+        Retrieves a specific key from the governed map.
+
+        Arguments:
+            key {str} -- Key to retrieve
+
+        Returns:
+            str -- Value associated with the key
+        """
+        pass
+
+    @abstractmethod
+    def subscribe_governed_map_change(self, key: str = None, key_value: tuple = None) -> list | tuple | bool:
+        """
+        Subscribes to changes in the governed map. Timeouts after main chain security parameter.
+
+        Arguments:
+            key {str} -- Key to observe (default: {None})
+            key_value {tuple} -- Tuple of key and value to observe (default: {None})
+
+        Returns:
+            list | tuple | bool -- List of tuples or a single tuple with key and value of registered change
+                                    True - if the governed map was reinitialized with 0 changes
+                                    False - if no changes were observed during the timeout
+        """
+        pass
