@@ -1,5 +1,5 @@
-#![cfg(any(feature = "runtime-benchmarks", test))]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg(any(feature = "runtime-benchmarks", test))]
 
 #[cfg(test)]
 mod mock;

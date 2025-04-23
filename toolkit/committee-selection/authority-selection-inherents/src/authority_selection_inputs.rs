@@ -1,11 +1,11 @@
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use plutus::*;
 use scale_info::TypeInfo;
 use sidechain_domain::*;
 
 /// The part of data for selection of authorities that comes from the main chain.
 /// It is unfiltered, so the selection algorithm should filter out invalid candidates.
-#[derive(Clone, Debug, Encode, Decode, TypeInfo, PartialEq, Eq)]
+#[derive(Clone, Debug, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq)]
 pub struct AuthoritySelectionInputs {
 	pub d_parameter: DParameter,
 	pub permissioned_candidates: Vec<PermissionedCandidateData>,

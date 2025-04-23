@@ -5,7 +5,7 @@ extern crate alloc;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sidechain_domain::StakePoolPublicKey;
-use sp_core::{Decode, Encode, MaxEncodedLen};
+use sp_core::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use sp_session_validator_management::CommitteeMember as CommitteeMemberT;
 
 pub mod ariadne_inherent_data_provider;
@@ -22,7 +22,17 @@ mod tests;
 pub mod mock;
 
 #[derive(
-	Serialize, Deserialize, Clone, Encode, Decode, TypeInfo, MaxEncodedLen, Debug, PartialEq, Eq,
+	Serialize,
+	Deserialize,
+	Clone,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	Debug,
+	PartialEq,
+	Eq,
 )]
 pub enum CommitteeMember<AuthorityId, AuthorityKeys> {
 	Permissioned { id: AuthorityId, keys: AuthorityKeys },

@@ -204,7 +204,7 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		Vec::default(),
 	));
 
-	let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
+	let (network, system_rpc_tx, tx_handler_controller, sync_service) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &config,
 			net_config,
@@ -381,6 +381,5 @@ pub async fn new_full<Network: sc_network::NetworkBackend<Block, <Block as Block
 		);
 	}
 
-	network_starter.start_network();
 	Ok(task_manager)
 }

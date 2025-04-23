@@ -23,7 +23,7 @@ use core::{
 use crypto::blake2b;
 use derive_more::{From, Into};
 use num_derive::*;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen, WrapperTypeEncode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen, WrapperTypeEncode};
 use plutus_datum_derive::*;
 use scale_info::TypeInfo;
 use sp_core::{bounded::BoundedVec, ecdsa, ed25519, sr25519, ConstU32};
@@ -43,7 +43,19 @@ pub fn offset_data_epoch(epoch: &McEpochNumber) -> Result<McEpochNumber, u32> {
 
 /// A main chain epoch number. In range [0, 2^31-1].
 #[derive(
-	Default, Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, Hash, TypeInfo, Ord, PartialOrd,
+	Default,
+	Debug,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Hash,
+	TypeInfo,
+	Ord,
+	PartialOrd,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, FromStr))]
 pub struct McEpochNumber(pub u32);
@@ -61,7 +73,19 @@ impl Display for McEpochNumber {
 }
 /// Amount of Lovelace (which is a fraction of 1 ADA) staked/locked on Cardano
 #[derive(
-	Default, Clone, Copy, Debug, Encode, Decode, TypeInfo, ToDatum, PartialEq, Eq, PartialOrd, Ord,
+	Default,
+	Clone,
+	Copy,
+	Debug,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	ToDatum,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct StakeDelegation(pub u64);
@@ -79,6 +103,7 @@ impl StakeDelegation {
 	Debug,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	TypeInfo,
 	ToDatum,
 	PartialEq,
@@ -103,6 +128,7 @@ impl Display for NativeTokenAmount {
 	Debug,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	PartialEq,
 	Eq,
 	PartialOrd,
@@ -119,7 +145,18 @@ impl Display for McBlockNumber {
 }
 
 #[derive(
-	Default, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Encode, Decode, TypeInfo, Hash,
+	Default,
+	Debug,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	Hash,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, FromStr))]
 pub struct McSlotNumber(pub u64);
@@ -131,7 +168,18 @@ impl Display for McSlotNumber {
 }
 
 #[derive(
-	Default, Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, TypeInfo, Hash, MaxEncodedLen,
+	Default,
+	Debug,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	Hash,
+	MaxEncodedLen,
 )]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize, FromStr))]
 pub struct ScSlotNumber(pub u64);
@@ -156,6 +204,7 @@ pub struct MainchainBlock {
 	Eq,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	PartialOrd,
 	Ord,
 	ToDatum,
@@ -180,7 +229,9 @@ const MAX_MAINCHAIN_ADDRESS_BYTES: u32 = 120;
 /// Wraps UTF-8 bytes of Mainchain Address in bech32 format.
 /// Example: utf-8 bytes of "addr_test1wz5qc7fk2pat0058w4zwvkw35ytptej3nuc3je2kgtan5dq3rt4sc" are
 /// "0x616464725f7465737431777a35716337666b327061743030353877347a77766b77333579747074656a336e7563336a65326b6774616e356471337274347363"
-#[derive(Clone, Default, PartialEq, Eq, Encode, Decode, TypeInfo, MaxEncodedLen)]
+#[derive(
+	Clone, Default, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen,
+)]
 #[byte_string(debug)]
 #[cfg_attr(feature = "serde", byte_string(hex_serialize, hex_deserialize))]
 pub struct MainchainAddress(BoundedVec<u8, ConstU32<MAX_MAINCHAIN_ADDRESS_BYTES>>);
@@ -213,7 +264,19 @@ impl Display for MainchainAddress {
 /// Cardano Policy Id is a 224 bits blake2b hash.
 const POLICY_ID_LEN: usize = 28;
 /// Cardano Policy Id
-#[derive(Clone, Default, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
+#[derive(
+	Clone,
+	Default,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	ToDatum,
+	TypeInfo,
+	MaxEncodedLen,
+	Hash,
+)]
 #[byte_string(debug, decode_hex, hex_serialize, hex_deserialize)]
 #[cfg_attr(feature = "std", byte_string(to_hex_string))]
 pub struct PolicyId(pub [u8; POLICY_ID_LEN]);
@@ -222,7 +285,18 @@ pub type ScriptHash = PolicyId;
 
 pub const MAX_ASSET_NAME_LEN: u32 = 32;
 
-#[derive(Clone, Default, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen)]
+#[derive(
+	Clone,
+	Default,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	ToDatum,
+	TypeInfo,
+	MaxEncodedLen,
+)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct AssetName(pub BoundedVec<u8, ConstU32<MAX_ASSET_NAME_LEN>>);
 
@@ -232,7 +306,18 @@ impl AssetName {
 	}
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, TypeInfo, MaxEncodedLen, Default)]
+#[derive(
+	Clone,
+	Debug,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	Default,
+)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct AssetId {
 	pub policy_id: PolicyId,
@@ -263,7 +348,18 @@ impl FromStr for AssetId {
 const STAKE_POOL_PUBLIC_KEY_LEN: usize = 32;
 
 #[derive(
-	Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash, Ord, PartialOrd,
+	Clone,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	ToDatum,
+	TypeInfo,
+	MaxEncodedLen,
+	Hash,
+	Ord,
+	PartialOrd,
 )]
 #[cfg_attr(feature = "std", byte_string(to_hex_string))]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
@@ -287,7 +383,18 @@ impl TryFrom<Vec<u8>> for StakePoolPublicKey {
 
 const STAKE_PUBLIC_KEY_LEN: usize = 32;
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen, Hash)]
+#[derive(
+	Clone,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	ToDatum,
+	TypeInfo,
+	MaxEncodedLen,
+	Hash,
+)]
 #[cfg_attr(feature = "std", byte_string(to_hex_string))]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct StakePublicKey(pub [u8; STAKE_PUBLIC_KEY_LEN]);
@@ -306,6 +413,7 @@ const MAINCHAIN_KEY_HASH_LEN: usize = 28;
 	Clone,
 	Copy,
 	Decode,
+	DecodeWithMemTracking,
 	Default,
 	Encode,
 	Hash,
@@ -338,7 +446,7 @@ impl MainchainKeyHash {
 /// EDDSA signature, 64 bytes.
 pub const MAINCHAIN_SIGNATURE_LEN: usize = 64;
 
-#[derive(Clone, TypeInfo, PartialEq, Eq, Hash)]
+#[derive(Clone, DecodeWithMemTracking, TypeInfo, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "std", byte_string(to_hex_string))]
 #[byte_string(debug, hex_serialize, decode_hex)]
 /// EDDSA signature
@@ -387,7 +495,7 @@ impl MainchainSignature {
 /// EDDSA signature, 64 bytes.
 pub const STAKE_KEY_SIGNATURE_LEN: usize = 64;
 
-#[derive(Clone, Encode, Decode, PartialEq, Eq, Hash, TypeInfo)]
+#[derive(Clone, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, Hash, TypeInfo)]
 #[byte_string(debug, hex_serialize, decode_hex)]
 /// EDDSA signature made with Stake Signing Key
 pub struct StakeKeySignature(pub [u8; STAKE_KEY_SIGNATURE_LEN]);
@@ -411,6 +519,7 @@ impl StakeKeySignature {
 	Debug,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	PartialEq,
 	TypeInfo,
 	ToDatum,
@@ -444,7 +553,19 @@ impl ScEpochNumber {
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, PartialOrd, Ord, Hash)]
+#[derive(
+	Clone,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	ToDatum,
+	TypeInfo,
+	PartialOrd,
+	Ord,
+	Hash,
+)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex, as_ref)]
 pub struct SidechainPublicKey(pub Vec<u8>);
 
@@ -455,20 +576,20 @@ impl From<ecdsa::Public> for SidechainPublicKey {
 }
 
 /// CBOR bytes of Cardano Transaction.
-#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
+#[derive(Clone, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct TransactionCbor(pub Vec<u8>);
 
 /// CBOR bytes of Cardano VKeyWitness.
-#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
+#[derive(Clone, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct VKeyWitnessCbor(pub Vec<u8>);
 
-#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
+#[derive(Clone, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq, Hash)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct SidechainSignature(pub Vec<u8>);
 
-#[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
+#[derive(Clone, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo)]
 #[byte_string(debug, hex_serialize, hex_deserialize)]
 pub struct CrossChainPublicKey(pub Vec<u8>);
 
@@ -497,6 +618,7 @@ const CROSS_CHAIN_KEY_HASH_LEN: usize = 28;
 	Clone,
 	Copy,
 	Decode,
+	DecodeWithMemTracking,
 	Default,
 	Encode,
 	Hash,
@@ -519,7 +641,7 @@ impl Display for CrossChainKeyHash {
 	}
 }
 
-#[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
+#[derive(Clone, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo)]
 #[byte_string(debug, hex_serialize)]
 pub struct CrossChainSignature(pub Vec<u8>);
 
@@ -537,7 +659,7 @@ impl CrossChainSignature {
 	}
 }
 
-#[derive(Default, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
+#[derive(Default, Clone, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo)]
 #[byte_string(debug, hex_serialize)]
 pub struct EpochNonce(pub Vec<u8>);
 
@@ -551,6 +673,7 @@ pub struct EpochNonce(pub Vec<u8>);
 	Eq,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	ToDatum,
 	TypeInfo,
 	MaxEncodedLen,
@@ -625,6 +748,7 @@ impl Display for UtxoId {
 	Eq,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	PartialOrd,
 	Ord,
 	ToDatum,
@@ -648,7 +772,18 @@ impl FromStr for UtxoIndex {
 pub const TX_HASH_SIZE: usize = 32;
 
 #[derive(
-	Default, Copy, Clone, Hash, PartialEq, Eq, Encode, Decode, ToDatum, TypeInfo, MaxEncodedLen,
+	Default,
+	Copy,
+	Clone,
+	Hash,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	ToDatum,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 #[byte_string(debug, from_bytes, decode_hex, hex_serialize, hex_deserialize)]
 #[constructor_datum]
@@ -664,7 +799,19 @@ impl TryFrom<Vec<u8>> for McTxHash {
 	}
 }
 
-#[derive(Default, Clone, Decode, Encode, PartialEq, Eq, TypeInfo, ToDatum, MaxEncodedLen, Hash)]
+#[derive(
+	Default,
+	Clone,
+	Decode,
+	DecodeWithMemTracking,
+	Encode,
+	PartialEq,
+	Eq,
+	TypeInfo,
+	ToDatum,
+	MaxEncodedLen,
+	Hash,
+)]
 #[byte_string(debug, decode_hex, hex_serialize, hex_deserialize)]
 pub struct McBlockHash(pub [u8; 32]);
 
@@ -675,7 +822,9 @@ impl Display for McBlockHash {
 	}
 }
 
-#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
+#[derive(
+	Default, Debug, Copy, Clone, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo,
+)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct UtxoInfo {
@@ -730,7 +879,7 @@ pub struct CommitteeHash(pub Vec<u8>);
 /// UTxO Output of a Registration Transaction on Cardano
 ///
 /// Note: A Registration Transaction is called by a user on Cardano to register themselves as a Sidechain Authority Candidate
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
+#[derive(Debug, Clone, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct RegistrationData {
 	/// UTXO that is an input parameter to the registration transaction
@@ -748,7 +897,7 @@ pub struct RegistrationData {
 }
 
 /// Information about an Authority Candidate's Registrations at some block.
-#[derive(Debug, Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
+#[derive(Debug, Clone, Encode, Decode, DecodeWithMemTracking, PartialEq, Eq, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct CandidateRegistrations {
 	pub stake_pool_public_key: StakePoolPublicKey,
@@ -785,7 +934,7 @@ impl CandidateRegistrations {
 /// -- @
 /// newtype ATMSPlainAggregatePubKey = ATMSPlainAggregatePubKey ByteString
 /// <https://github.com/input-output-hk/partner-chains-smart-contracts/blob/5b19d25a95c3ab49ae0e4c6ce0ec3376f13b3766/docs/Specification.md#L554-L561>
-#[derive(Clone, Debug, Decode, Encode, Eq, PartialEq, ToDatum, TypeInfo)]
+#[derive(Clone, Debug, Decode, DecodeWithMemTracking, Encode, Eq, PartialEq, ToDatum, TypeInfo)]
 pub struct ATMSPlainAggregatePubKey(pub [u8; 32]);
 
 impl ATMSPlainAggregatePubKey {
@@ -799,11 +948,22 @@ impl ATMSPlainAggregatePubKey {
 
 pub const VALIDATOR_HASH_LEN: usize = 28;
 
-#[derive(Clone, Decode, Default, Eq, Encode, MaxEncodedLen, PartialEq, TypeInfo, ToDatum)]
+#[derive(
+	Clone,
+	Decode,
+	DecodeWithMemTracking,
+	Default,
+	Eq,
+	Encode,
+	MaxEncodedLen,
+	PartialEq,
+	TypeInfo,
+	ToDatum,
+)]
 #[byte_string(debug, decode_hex, hex_serialize, hex_deserialize)]
 pub struct ValidatorHash(pub [u8; VALIDATOR_HASH_LEN]);
 
-#[derive(Debug, Clone, TypeInfo, Decode, Encode, Eq, PartialEq, ToDatum)]
+#[derive(Debug, Clone, TypeInfo, Decode, DecodeWithMemTracking, Encode, Eq, PartialEq, ToDatum)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SidechainPublicKeysSorted(Vec<SidechainPublicKey>);
 
@@ -814,7 +974,9 @@ impl SidechainPublicKeysSorted {
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord, Hash)]
+#[derive(
+	Clone, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialOrd, Ord, Hash,
+)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct AuraPublicKey(pub Vec<u8>);
 impl AuraPublicKey {
@@ -829,7 +991,9 @@ impl From<sr25519::Public> for AuraPublicKey {
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Encode, Decode, TypeInfo, PartialOrd, Ord, Hash)]
+#[derive(
+	Clone, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialOrd, Ord, Hash,
+)]
 #[byte_string(debug, hex_serialize, hex_deserialize, decode_hex)]
 pub struct GrandpaPublicKey(pub Vec<u8>);
 impl GrandpaPublicKey {
@@ -844,7 +1008,18 @@ impl From<ed25519::Public> for GrandpaPublicKey {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq, Decode, Encode, MaxEncodedLen, TypeInfo, Eq, Hash)]
+#[derive(
+	Debug,
+	Clone,
+	PartialEq,
+	Decode,
+	DecodeWithMemTracking,
+	Encode,
+	MaxEncodedLen,
+	TypeInfo,
+	Eq,
+	Hash,
+)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct DParameter {
 	pub num_permissioned_candidates: u16,
@@ -857,7 +1032,19 @@ impl DParameter {
 	}
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Decode, Encode, TypeInfo, PartialOrd, Ord, Hash)]
+#[derive(
+	Debug,
+	Clone,
+	PartialEq,
+	Eq,
+	Decode,
+	DecodeWithMemTracking,
+	Encode,
+	TypeInfo,
+	PartialOrd,
+	Ord,
+	Hash,
+)]
 pub struct PermissionedCandidateData {
 	pub sidechain_public_key: SidechainPublicKey,
 	pub aura_public_key: AuraPublicKey,
@@ -924,7 +1111,7 @@ mod tests {
 
 	#[test]
 	fn main_chain_signature_should_be_backward_compatible_with_vec() {
-		#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Eq, Hash)]
+		#[derive(Clone, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Eq, Hash)]
 		#[byte_string(debug, hex_serialize, decode_hex)]
 		struct LegacyMCSignature(pub Vec<u8>);
 
@@ -957,7 +1144,18 @@ mod tests {
 	}
 }
 
-#[derive(Clone, PartialEq, Eq, Ord, PartialOrd, TypeInfo, MaxEncodedLen, Encode, Decode)]
+#[derive(
+	Clone,
+	PartialEq,
+	Eq,
+	Ord,
+	PartialOrd,
+	TypeInfo,
+	MaxEncodedLen,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+)]
 pub enum DelegatorKey {
 	StakeKeyHash([u8; 28]),
 	ScriptKeyHash { hash_raw: [u8; 28], script_hash: [u8; 28] },
